@@ -15,9 +15,15 @@
 //
 // A client holds the chunks its view window covers (the visible set) and a ring of one chunk around them (the prefetch). A chunk entering the ring has
 // its owed draws queued in the presentation lane (FIFO, under its budget): a walker is a chunk away from seeing it, so the queue has time. A chunk
-// that becomes visible to an observer has what it still owes drawn nearest first: as much as the tick has room for at once, the rest over the next
-// frames (interest_arrival_drain()), so a login or a teleport onto an undrawn area does not stall the server for a second (playtest 2026-11-08:
-// 2199 owed draws run in one tick on arrival). Until its draw an atom shows its mapped appearance.
+// that becomes visible to an observer is never shown with a draw still owed (the user's rule: no player sees an object drawn late). Everything here
+// is driven by these chunk events alone, never by a scan of viewers, atoms or rings:
+//   - entering the ring (one chunk past the view's edge, on every side): what the chunk owes joins the prefetch queue, nearest the observer's eye
+//     first, and is drawn ahead of the presentation backlog as ticks have room, so a walker's next chunk is drawn before it comes into view;
+//   - becoming visible on a view jump (a login, an arrival, a teleport: most of what the client sees is new at once): the client's screen is covered
+//     (a black fullscreen), its owed draws are drawn nearest the eye first over as many ticks as they take, and the cover lifts when none is left;
+//   - becoming visible otherwise (a walker's edge the prefetch has not finished, or a holder that is no client, such as a camera screen): what it
+//     still owes is drawn at once, in that tick.
+// The drain that works the queues is a keyed timer that exists only while a queue holds something (interest_arrival_drain()).
 
 /// Edge of a chunk in turfs.
 #define INTEREST_CHUNK 16
@@ -133,84 +139,127 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	else
 		GLOB.interest_holds -= owner
 		GLOB.interest_visible -= owner
+	if(!length(keys))
+		interest_uncover(owner) // the observer went: nothing of its own waits behind a cover
 	var/list/arriving
+	var/list/ringed
 	for(var/key in entered)
 		if((key in visible) && !(was_visible && (key in was_visible)))
 			LAZYADD(arriving, key)
 		else
-			interest_scan(round(key / 1048576), round((key % 1048576) / 1024), key % 1024)
+			LAZYADD(ringed, key)
 	for(var/key in visible)
 		if((was_visible && (key in was_visible)) || (entered && (key in entered)))
 			continue
 		LAZYADD(arriving, key)
+	if(length(ringed))
+		interest_prefetch(ringed, visible, eye)
 	if(length(arriving))
-		interest_arrive(arriving, visible, eye)
+		interest_arrive(owner, arriving, visible, eye)
 
-/// Walks the turfs of chunk (z, cx, cy), which entered an observer's ring: its parked atoms join the presentation queue. Returns how many it queued.
-/// (A chunk that becomes visible goes through interest_arrive() instead: its owed draws are drawn nearest the observer first.)
-/proc/interest_scan(z, cx, cy)
-	. = 0
-	GLOB.interest_chunks_entered++
-	if(z < 1 || z > world.maxz)
-		return
-	var/x0 = cx * INTEREST_CHUNK + 1
-	var/y0 = cy * INTEREST_CHUNK + 1
-	if(x0 > world.maxx || y0 > world.maxy)
-		return
-	var/turf/low = locate(x0, y0, z)
-	var/turf/high = locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)
-	for(var/turf/T as anything in block(low, high))
-		. += interest_wake(T)
-		FOR_CONTENTS(var/atom/movable/A as anything, T)
-			. += interest_wake(A)
-	if(.)
-		log_world("INTEREST: chunk [cx],[cy] z[z] in the ring, [.] parked draw(s) queued")
+// ---- arrival: what a newly visible area owes, drawn before it is seen ----
 
-// ---- arrival: what a newly visible area owes, drawn nearest first ----
-
-/// Owed arrival draws one pass always runs, whatever the tick has spent: the nearest of an arrival (what stands around the viewer) are on screen at once.
+/// Owed draws one drain pass always runs while ticks are tight: a covered arrival and the prefetch keep moving on a busy server.
 #define INTEREST_ARRIVAL_MIN_STEP 32
-/// Handles (handle_of()) of the atoms that owe a draw in chunks that just became visible, nearest to their viewer first (several viewers' arrivals append in turn).
-GLOBAL_LIST_EMPTY(interest_arrivals)
-/// Owed draws run from the arrival queue, and the frames the queue took more than one of.
-GLOBAL_VAR_INIT(interest_arrival_drawn, 0)
-GLOBAL_VAR_INIT(interest_arrival_spread, 0)
-/// The most owed draws one drain pass runs besides the tick's budget (0: the budget alone). Tests set it to see the spread a busy tick makes.
+/// Observer key -> handles (handle_of()) of the atoms it owes behind its cover, nearest its eye first. Present only while that observer is covered.
+GLOBAL_ALIST_EMPTY(interest_covered)
+/// Handles of atoms owed in ring chunks (a chunk away from someone's view), nearest the observer first, drawn ahead of the presentation backlog.
+GLOBAL_LIST_EMPTY(interest_prefetched)
+/// Owed draws run behind a cover, by the prefetch, and at once (a visible chunk the prefetch had not finished); covers raised.
+GLOBAL_VAR_INIT(interest_cover_drawn, 0)
+GLOBAL_VAR_INIT(interest_prefetch_drawn, 0)
+GLOBAL_VAR_INIT(interest_at_once_drawn, 0)
+GLOBAL_VAR_INIT(interest_covers_raised, 0)
+/// The most owed draws one drain pass runs (0: the tick's budget decides). Tests set it to see the spread a busy tick makes.
 GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
+/// Observer keys that tests treat as coverable without a client (a client is what a cover is shown on).
+GLOBAL_LIST_EMPTY(interest_test_coverable)
 
-/// The chunks `keys` became visible to an observer that sees `visible` from `eye` (null for a holder with no eye: the middle of what it sees): what
-/// they owe is queued nearest the eye first and drawn as the tick allows (interest_arrival_drain()).
-/proc/interest_arrive(list/keys, list/visible, turf/eye = null)
-	// Where the observer looks from, in chunk coordinates (fractional: a turf is 1/INTEREST_CHUNK of a chunk).
-	var/mid_cx
-	var/mid_cy
+/// Where the observer looks from, in chunk coordinates (fractional), for nearest-first ordering: `eye`, or the middle of what it sees.
+/proc/interest_view_middle(list/visible, turf/eye)
 	if(eye)
-		mid_cx = (eye.x - INTEREST_CHUNK / 2) / INTEREST_CHUNK
-		mid_cy = (eye.y - INTEREST_CHUNK / 2) / INTEREST_CHUNK
-	else
-		var/sum_x = 0
-		var/sum_y = 0
-		for(var/key in visible)
-			sum_x += round((key % 1048576) / 1024)
-			sum_y += key % 1024
-		mid_cx = sum_x / max(1, length(visible))
-		mid_cy = sum_y / max(1, length(visible))
+		return list((eye.x - INTEREST_CHUNK / 2) / INTEREST_CHUNK, (eye.y - INTEREST_CHUNK / 2) / INTEREST_CHUNK)
+	var/sum_x = 0
+	var/sum_y = 0
+	for(var/key in visible)
+		sum_x += round((key % 1048576) / 1024)
+		sum_y += key % 1024
+	return list(sum_x / max(1, length(visible)), sum_y / max(1, length(visible)))
+
+/// The handles of what chunks `keys` owe, nearest (mid_cx, mid_cy) first: chunk by chunk, and turf by turf inside each chunk.
+/proc/interest_owed_ordered(list/keys, list/middle)
+	. = list()
 	var/list/by_distance = list()
 	for(var/key in keys)
 		var/cx = round((key % 1048576) / 1024)
 		var/cy = key % 1024
-		by_distance["[key]"] = (cx - mid_cx) ** 2 + (cy - mid_cy) ** 2
+		by_distance["[key]"] = (cx - middle[1]) ** 2 + (cy - middle[2]) ** 2
 	by_distance = sortTim(by_distance, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
-	var/queued = 0
 	for(var/key_text in by_distance)
 		var/key = text2num(key_text)
-		queued += interest_collect_owed(round(key / 1048576), round((key % 1048576) / 1024), key % 1024, mid_cx, mid_cy)
-	if(queued)
-		log_world("INTEREST: [length(keys)] chunk(s) visible, [queued] owed draw(s) queued nearest first")
-	interest_arrival_drain()
+		interest_collect_owed(., round(key / 1048576), round((key % 1048576) / 1024), key % 1024, middle[1], middle[2])
 
-/// Appends what chunk (z, cx, cy) owes to the arrival queue, nearest to the chunk point (mid_cx, mid_cy) first. Returns how many.
-/proc/interest_collect_owed(z, cx, cy, mid_cx, mid_cy)
+/// Chunks `keys` entered an observer's ring: what they owe is drawn ahead of the backlog, nearest the observer first, before they come into view.
+/proc/interest_prefetch(list/keys, list/visible, turf/eye)
+	var/list/owed = interest_owed_ordered(keys, interest_view_middle(visible, eye))
+	if(!length(owed))
+		return
+	GLOB.interest_prefetched += owed
+	interest_drain_soon()
+
+/// Chunks `keys` became visible to `owner` (seeing `visible` from `eye`). Nothing they owe may be seen undrawn: on a view jump the owner's screen is
+/// covered while its draws run over the ticks they take; otherwise (a walker's edge the prefetch has not finished, or no client to cover) they run now.
+/proc/interest_arrive(owner, list/keys, list/visible, turf/eye)
+	var/list/owed = interest_owed_ordered(keys, interest_view_middle(visible, eye))
+	if(!length(owed))
+		return
+	var/list/covered = GLOB.interest_covered[owner]
+	var/jump = length(keys) * 2 >= max(1, length(visible))
+	if(!covered && jump && length(owed) > INTEREST_ARRIVAL_MIN_STEP && interest_cover(owner))
+		covered = list()
+		GLOB.interest_covered[owner] = covered
+	if(covered)
+		covered += owed
+		log_world("INTEREST: [length(keys)] chunk(s) visible behind [owner]'s cover, [length(owed)] owed draw(s) queued nearest first")
+		interest_arrival_drain()
+		return
+	var/drawn = 0
+	for(var/handle in owed)
+		var/atom/A = handle_get(handle)
+		if(isatom(A) && !QDELETED(A))
+			drawn += interest_draw_now(A)
+	GLOB.interest_at_once_drawn += drawn
+	if(drawn)
+		log_world("INTEREST: [length(keys)] chunk(s) visible, [drawn] owed draw(s) run now")
+
+/// Covers `owner`'s screen (a client's mob gets a black fullscreen) while its view is drawn. FALSE when there is no client to cover.
+/proc/interest_cover(owner)
+	if(owner in GLOB.interest_test_coverable)
+		GLOB.interest_covers_raised++
+		return TRUE
+	var/client/C = handle_get(owner)
+	if(!istype(C) || !C.mob)
+		return FALSE
+	C.mob.overlay_fullscreen("interest_cover", /atom/movable/screen/fullscreen/blind)
+	GLOB.interest_covers_raised++
+	return TRUE
+
+/// Lifts `owner`'s cover, if it has one, and forgets what was owed behind it (an observer that left owes nothing of its own).
+/proc/interest_uncover(owner)
+	if(isnull(GLOB.interest_covered[owner]))
+		return
+	GLOB.interest_covered -= owner
+	var/client/C = handle_get(owner)
+	if(istype(C) && C.mob)
+		C.mob.clear_fullscreen("interest_cover", 2)
+
+/// Arms the drain for the next tick while any queue holds something.
+/proc/interest_drain_soon()
+	if(!after_pending(null, "interest_arrival_drain"))
+		after(null, world.tick_lag, GLOBAL_PROC_REF(interest_arrival_drain), key = "interest_arrival_drain")
+
+/// Appends to `into` the handles of what chunk (z, cx, cy) owes, nearest the chunk point (mid_cx, mid_cy) first. Returns how many.
+/proc/interest_collect_owed(list/into, z, cx, cy, mid_cx, mid_cy)
 	. = 0
 	GLOB.interest_chunks_entered++
 	if(z < 1 || z > world.maxz)
@@ -221,7 +270,7 @@ GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
 		return
 	var/turf/low = locate(x0, y0, z)
 	var/turf/high = locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)
-	// The middle of the view in turfs: owed atoms are ordered by their turf's distance to it (a chunk is 16 turfs, so the order inside one matters).
+	// The point to order by, in turfs: a chunk is 16 turfs, so the order inside one matters.
 	var/mid_x = mid_cx * INTEREST_CHUNK + INTEREST_CHUNK / 2
 	var/mid_y = mid_cy * INTEREST_CHUNK + INTEREST_CHUNK / 2
 	var/list/owed = list()
@@ -239,35 +288,77 @@ GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
 	owed = sortTim(owed, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
 	for(var/turf/T as anything in owed)
 		if(T.refresh_queued)
-			GLOB.interest_arrivals += handle_of(T)
+			into += handle_of(T)
 			.++
 		FOR_CONTENTS(var/atom/movable/A as anything, T)
 			if(A.refresh_queued)
-				GLOB.interest_arrivals += handle_of(A)
+				into += handle_of(A)
 				.++
 
-/// Draws from the arrival queue until the tick's budget is spent; what is left is drawn on the next frame (a keyed timer that exists only while the
-/// queue does). Returns how many it drew.
+/// One pass over the queues: every covered observer's owed draws first (its screen is black until they are done), then the prefetch, as the tick allows.
+/// A covered observer whose queue empties is uncovered. The pass re-arms itself for the next tick only while something is left. Returns how many it drew.
 /proc/interest_arrival_drain()
 	. = 0
-	var/list/Q = GLOB.interest_arrivals
-	var/i = 0
-	while(i < length(Q))
-		i++
-		var/atom/A = handle_get(Q[i])
-		if(isatom(A) && !QDELETED(A))
-			var/drawn = interest_draw_now(A)
-			. += drawn
-			GLOB.interest_arrival_drawn += drawn
-		if(i >= length(Q))
+	var/budget_hit = FALSE
+	for(var/owner in GLOB.interest_covered)
+		var/list/Q = GLOB.interest_covered[owner]
+		var/i = 0
+		while(i < length(Q))
+			i++
+			var/atom/A = handle_get(Q[i])
+			if(isatom(A) && !QDELETED(A))
+				var/drawn = interest_draw_now(A)
+				. += drawn
+				GLOB.interest_cover_drawn += drawn
+			if(interest_arrival_pass_full(.))
+				budget_hit = TRUE
+				break
+		Q.Cut(1, i + 1)
+		if(!length(Q))
+			interest_uncover(owner)
+		if(budget_hit)
 			break
-		if(GLOB.interest_arrival_step_max ? (. >= GLOB.interest_arrival_step_max) : (. >= INTEREST_ARRIVAL_MIN_STEP && KERNEL_OVER_BUDGET))
-			break
-	Q.Cut(1, i + 1)
-	if(length(Q))
-		GLOB.interest_arrival_spread++
-		if(!after_pending(null, "interest_arrival_drain"))
-			after(null, world.tick_lag, GLOBAL_PROC_REF(interest_arrival_drain), key = "interest_arrival_drain")
+	if(!budget_hit)
+		var/list/P = GLOB.interest_prefetched
+		var/j = 0
+		while(j < length(P))
+			j++
+			var/atom/A = handle_get(P[j])
+			if(isatom(A) && !QDELETED(A))
+				var/drawn = interest_draw_now(A)
+				. += drawn
+				GLOB.interest_prefetch_drawn += drawn
+			if(interest_arrival_pass_full(.))
+				break
+		P.Cut(1, j + 1)
+	if(length(GLOB.interest_covered) || length(GLOB.interest_prefetched))
+		interest_drain_soon()
+
+/// Has a drain pass that ran `drawn` draws used its share of the tick?
+/proc/interest_arrival_pass_full(drawn)
+	if(GLOB.interest_arrival_step_max)
+		return drawn >= GLOB.interest_arrival_step_max
+	return drawn >= INTEREST_ARRIVAL_MIN_STEP && KERNEL_OVER_BUDGET
+
+/// The atoms in `owner`'s visible chunks that still owe a draw while it can see them (not covered): must always be empty (the rule the tests hold).
+/proc/interest_view_owing(owner)
+	. = list()
+	if(!isnull(GLOB.interest_covered[owner]))
+		return
+	for(var/key in GLOB.interest_visible[owner])
+		var/z = round(key / 1048576)
+		var/cx = round((key % 1048576) / 1024)
+		var/cy = key % 1024
+		var/x0 = cx * INTEREST_CHUNK + 1
+		var/y0 = cy * INTEREST_CHUNK + 1
+		if(z < 1 || z > world.maxz || x0 > world.maxx || y0 > world.maxy)
+			continue
+		for(var/turf/T as anything in block(locate(x0, y0, z), locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)))
+			if(T.refresh_queued & DEP_PARKED)
+				. += T
+			FOR_CONTENTS(var/atom/movable/A as anything, T)
+				if(A.refresh_queued & DEP_PARKED)
+					. += A
 
 /// A parked `A` owes a draw and something can see its chunk coming: it joins the presentation queue with everything it owed. Returns 1 when it did.
 /proc/interest_wake(atom/A)
