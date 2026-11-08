@@ -6,6 +6,9 @@
 
 /// TRUE while lights draw as client glows instead of the DM corner and underlay lighting (client_lighting_set()).
 GLOBAL_VAR_INIT(client_lighting, FALSE)
+/// TRUE: a glow's bounds cover its reach, so BYOND sends it to every client that sees any turf it lights (a light just off
+/// screen still spills on). FALSE (benchmarks): bounds are one tile and only clients seeing the light's own turf get it.
+GLOBAL_VAR_INIT(client_glow_bounds, FALSE)
 
 /// One light source's glow.
 /obj/effect/overlay/client_glow
@@ -53,6 +56,14 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	G.set_pixel_y(-offset + (pixel_turf ? (pixel_turf.y - source_turf.y) * WORLD_ICON_SIZE : 0))
 	G.set_color(light_color)
 	G.set_alpha(clamp(round(255 * min(light_power, 1)), 0, 255))
+	// Bounds over the reach: BYOND counts the glow as standing on every turf they cover (its locs) and sends it to any client
+	// that sees one of them. The glow is placed, never moved, so no Crossed()/Entered() fires on the covered turfs.
+	var/reach_px = GLOB.client_glow_bounds ? CEILING(range, 1) * WORLD_ICON_SIZE : 0
+	if(G.bound_x != -reach_px)
+		G.bound_x = -reach_px
+		G.bound_y = -reach_px
+		G.bound_width = 2 * reach_px + WORLD_ICON_SIZE
+		G.bound_height = 2 * reach_px + WORLD_ICON_SIZE
 	if(G.loc != source_turf)
 		G.abstract_move(source_turf)
 	client_glow_mask_apply(CEILING(range, 1), G.icon, offset) // the shadow mask (client_shadow.dm)
