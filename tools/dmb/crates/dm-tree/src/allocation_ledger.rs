@@ -383,11 +383,10 @@ fn walk(
             }
             let compatibility;
             let (declarations, argument_offset) = if let Some(headers) = headers {
-                let row = headers.row(item.header_span()).map_err(|message| Error {
+                headers.formals(item.header_span()).map_err(|message| Error {
                     span: item.header_span(),
                     message,
-                })?;
-                (&row.declarations, row.argument_offset)
+                })?
             } else {
                 let (_, arguments, trailing) =
                     crate::adapter::signature_parts(header).map_err(|message| Error {
@@ -401,7 +400,7 @@ fn walk(
                             message: e.message,
                         })?;
                 (
-                    &compatibility.declarations,
+                    compatibility.declarations.as_slice(),
                     arguments.as_ptr() as usize - item.header().as_ptr() as usize,
                 )
             };

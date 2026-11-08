@@ -941,7 +941,7 @@ impl OriginalProcedureHeaders {
             }
         }
     }
-    fn original(&self, header: Span, offset: usize) -> Result<HeaderView<'_>, String> {
+    fn header_ordinal(&self, header: Span, offset: usize) -> Result<usize, &'static str> {
         let span = Span::new(
             header
                 .start
@@ -952,15 +952,13 @@ impl OriginalProcedureHeaders {
                 .checked_sub(offset)
                 .ok_or("header before current binding")?,
         );
-        if self
-            .headers
-            .binary_search_by_key(&span.start, |s| s.start)
-            .ok()
-            .and_then(|i| self.headers.get(i))
-            != Some(&span)
-        {
-            return Err("procedure has no exact original header recipe".into());
-        }
+        self.headers.binary_search_by_key(&span.start, |s|s.start).ok()
+            .filter(|&ordinal|self.headers[ordinal]==span)
+            .ok_or("procedure has no exact original header recipe")
+    }
+
+    fn original(&self, header: Span, offset: usize) -> Result<HeaderView<'_>, String> {
+        let span = self.headers[self.header_ordinal(header, offset)?];
         let first = self.tokens.window().partition_point(|t| t.span.start < span.start);
         let end = self.tokens.window().partition_point(|t| t.span.start < span.end);
         HeaderView::original_window(&self.source, self.token_window(first, end)?, span)
@@ -1102,7 +1100,39 @@ impl HeaderSettingsTail {
     }
 }
 const HEADER_ALLOCATION_PAGE_LEN: usize = 256;
-pub(crate) struct HeaderAllocationRows(HeaderAllocationStorage);
+pub(crate) struct HeaderAllocationRows(HeaderAllocationStorage, Option<VisitedAllocationHeaders>);
+
+struct VisitedAllocationHeaders {
+    owner: Arc<OriginalProcedureHeaders>,
+    offset: usize,
+    bits: Vec<u64>,
+    storage: Option<dm_syntax::SettingRootLease>,
+    duplicate: bool,
+    invalid_span: Option<&'static str>,
+}
+
+impl VisitedAllocationHeaders {
+    fn seen(&self, ordinal: usize) -> bool {
+        self.bits.get(ordinal / 64).is_some_and(|word|word & (1 << (ordinal % 64)) != 0)
+    }
+
+    fn ensure_bits(&mut self, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<()> {
+        if let Some(storage) = &self.storage {
+            if !a.matches_lease_domain(storage) {
+                return Err(std::io::ErrorKind::InvalidInput.into());
+            }
+        } else {
+            let (mut bits, storage) = super::original_primary_signatures::allocate_funded_rows(
+                self.owner.headers.len().div_ceil(64), a,
+            )?;
+            bits.resize(bits.capacity(), 0);
+            self.bits = bits;
+            self.storage = Some(storage);
+        }
+        Ok(())
+    }
+}
+
 
 enum HeaderAllocationStorage {
     Dense(AdapterRows<HeaderAllocationRow>),
@@ -1115,7 +1145,15 @@ impl HeaderAllocationRows {
             HeaderAllocationStorage::Paged(super::original_primary_signatures::FundedRowPages::new())
         } else {
             HeaderAllocationStorage::Dense(AdapterRows::default())
-        })
+        }, None)
+    }
+
+    pub(crate) fn new_prepared(owner: Arc<OriginalProcedureHeaders>, offset: usize) -> Self {
+        let mut rows = Self::new(true);
+        rows.1 = Some(VisitedAllocationHeaders {
+            owner, offset, bits: Vec::new(), storage: None, duplicate: false, invalid_span: None,
+        });
+        rows
     }
 
     pub(crate) fn reserve_compatibility(&mut self) -> Result<(), std::collections::TryReserveError> {
@@ -1135,6 +1173,51 @@ impl HeaderAllocationRows {
             HeaderAllocationStorage::Dense(rows) => rows.push_reserved(row),
             HeaderAllocationStorage::Paged(rows) => rows.push_reserved(row),
         }
+    }
+
+    pub(crate) fn stage_checked(&mut self, row: HeaderAllocationRow, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<()> {
+        let (HeaderAllocationStorage::Paged(rows), Some(visited)) = (&mut self.0, &mut self.1) else {
+            self.reserve_checked(a)?;
+            self.push_reserved(row);
+            return Ok(());
+        };
+        if visited.storage.as_ref().is_some_and(|storage|!a.matches_lease_domain(storage)) {
+            return Err(std::io::ErrorKind::InvalidInput.into());
+        }
+        let ordinal = match visited.owner.header_ordinal(row.header, visited.offset) {
+            Ok(ordinal) => ordinal,
+            Err(error) => { visited.invalid_span.get_or_insert(error); return Ok(()); }
+        };
+        if visited.seen(ordinal) {
+            visited.duplicate = true;
+            return Ok(());
+        }
+        visited.ensure_bits(a)?;
+        if !row.declarations.is_empty() || row.settings.is_some() {
+            rows.ensure_slot(a)?;
+            rows.push_reserved(row);
+        }
+        visited.bits[ordinal / 64] |= 1 << (ordinal % 64);
+        Ok(())
+    }
+
+    fn validate_headers(&self, inputs: &OriginalProcedureHeaders, offset: usize) -> Result<(), String> {
+        if let Some(visited) = &self.1 {
+            if !std::ptr::eq(visited.owner.as_ref(), inputs) || offset != visited.offset {
+                return Err("allocation receipt belongs to another original header owner".into());
+            }
+            if let Some(error) = visited.invalid_span { return Err(error.into()); }
+            for (ordinal, span) in inputs.headers.iter().enumerate() {
+                if visited.seen(ordinal) {
+                    let start = span.start.checked_add(offset).ok_or("header projection overflow")?;
+                    let end = span.end.checked_add(offset).ok_or("header projection overflow")?;
+                    inputs.original(Span::new(start, end), offset)?;
+                }
+            }
+        } else {
+            for row in self.iter() { inputs.original(row.header, offset)?; }
+        }
+        Ok(())
     }
 
     fn iter(&self) -> impl Iterator<Item = &HeaderAllocationRow> {
@@ -1248,15 +1331,14 @@ impl<'a> HeaderAllocationReceipt<'a> {
             rows,
         };
         value.finish()?;
-        for row in value.rows.iter() {
-            inputs.original(row.header, offset)?;
-        }
+        value.rows.validate_headers(inputs, offset)?;
         install(inputs, &mut value.rows, offset)?;
         Ok(value)
     }
     fn finish(&self) -> Result<(), String> {
-        if self.rows.iter().zip(self.rows.iter().skip(1))
-            .any(|(left, right)| left.header.start == right.header.start) {
+        if self.rows.1.as_ref().is_some_and(|seen|seen.duplicate)
+            || self.rows.iter().zip(self.rows.iter().skip(1))
+                .any(|(left, right)| left.header.start == right.header.start) {
             return Err("duplicate original header allocation receipt".into());
         }
         Ok(())
@@ -1270,16 +1352,28 @@ impl<'a> HeaderAllocationReceipt<'a> {
         }
         Ok(())
     }
-    pub(crate) fn row(&self, header: Span) -> Result<&HeaderAllocationRow, String> {
-        let row = self.rows.row_at_start(header.start)
-            .ok_or("procedure has no runtime header allocation receipt")?;
-        if row.header != header {
-            return Err("runtime header allocation extent differs".into());
+    pub(crate) fn formals(&self, header: Span) -> Result<(&[super::HeaderTypeDeclaration], usize), String> {
+        if let Some(row) = self.rows.row_at_start(header.start) {
+            if row.header != header { return Err("runtime header allocation extent differs".into()); }
+            return Ok((&row.declarations, row.argument_offset));
         }
-        Ok(row)
+        if let Some(visited) = &self.rows.1 {
+            if let Some(start) = header.start.checked_sub(self.offset) {
+                if let Ok(ordinal) = visited.owner.headers.binary_search_by_key(&start, |span|span.start) {
+                    if visited.seen(ordinal) {
+                        if visited.owner.header_ordinal(header, self.offset) != Ok(ordinal) {
+                            return Err("runtime header allocation extent differs".into());
+                        }
+                        // No formal declaration consumes the offset in this row.
+                        return Ok((&[], 0));
+                    }
+                }
+            }
+        }
+        Err("procedure has no runtime header allocation receipt".into())
     }
     pub(crate) fn has(&self, header: Span) -> bool {
-        self.row(header).is_ok()
+        self.formals(header).is_ok()
     }
 }
 
@@ -1357,6 +1451,48 @@ mod original_item_receipt_tests {
             OriginalItems::from_items(&parsed.items), &headers, 0, rows, &a,
         );
         assert!(matches!(result, Err(OriginalHeaderFailure::Source(message)) if message == "duplicate original header allocation receipt"));
+    }
+
+    #[test]
+    fn sparse_header_receipt_marks_exact_empty_rows_without_allocating_dense_pages() {
+        use std::sync::atomic::Ordering;
+        let source = "/proc/first()\n    return\n/proc/second()\n    return\n/proc/third()\n    return\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        let headers = Arc::new(OriginalProcedureHeaders::from_primary(
+            source.into(), &parsed.items, 0, parsed.tokens,
+        ).unwrap());
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a = dm_syntax::SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
+        let mut rows = HeaderAllocationRows::new_prepared(Arc::clone(&headers), 0);
+        let first = parsed.items[0].header_span;
+        let second = parsed.items[1].header_span;
+        let mut row = staged_header(first.start);
+        row.header = first;
+        rows.stage_checked(row, &a).unwrap();
+        assert_eq!(counter.load(Ordering::Acquire) - root, std::mem::size_of::<u64>());
+        assert_eq!(rows.iter().count(), 0);
+
+        let mut row = staged_header(second.start);
+        row.header = second;
+        row.argument_offset = 7;
+        row.declarations.push(crate::procedure::HeaderTypeDeclaration {
+            path: dm_ir::SymbolId::of("/datum/probe"), relative_span: Span::new(1, 3),
+        });
+        rows.stage_checked(row, &a).unwrap();
+        assert_eq!(rows.iter().count(), 1);
+        let receipt = HeaderAllocationReceipt::from_original_rows_checked(
+            OriginalItems::from_items(&parsed.items), &headers, 0, rows, &a,
+        ).unwrap();
+        assert!(receipt.has(first));
+        assert!(receipt.formals(first).unwrap().0.is_empty());
+        assert_eq!(receipt.formals(second).unwrap().1, 7);
+        assert_eq!(receipt.formals(second).unwrap().0[0].relative_span, Span::new(1, 3));
+        assert_eq!(receipt.formals(Span::new(first.start, first.end - 1)).err().unwrap(),
+            "runtime header allocation extent differs");
+        assert!(!receipt.has(parsed.items[2].header_span));
+        drop(receipt);
+        assert_eq!(counter.load(Ordering::Acquire), root);
     }
 
     #[test]

@@ -235,7 +235,12 @@ fn from_items_with_cursor_progress_using<D:AdapterDemand>(
     skip_general_constants:bool,
     prepared_signatures:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
 ) -> Result<DeclarationAdapterProgress,D::Operational> {
-    let mut header_rows = crate::procedure::header_input::HeaderAllocationRows::new(prepared_signatures.is_some());
+    use crate::procedure::header_input::HeaderAllocationRows;
+    let mut header_rows = if let (Some(prepared),Some((_,offset))) = (&prepared_signatures,headers) {
+        HeaderAllocationRows::new_prepared(prepared.share_actual_headers(), offset)
+    } else {
+        HeaderAllocationRows::new(false)
+    };
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
         skeletons: Vec::new(),
@@ -762,7 +767,15 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                 }
                 if context.headers.is_some() && matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
                 {
-                    if !context.demand.reserve_header_row(context.header_rows)? {
+                    let settings = original_settings_payload
+                        .map(|payload|context.demand.header_settings_tail(payload)).transpose()?;
+                    let row = crate::procedure::header_input::HeaderAllocationRow {
+                        header: item.raw.header_span(),
+                        argument_offset: header_argument_offset.expect("issued signature"),
+                        declarations: header_declarations,
+                        settings,
+                    };
+                    if !context.demand.stage_header_row(context.header_rows, row)? {
                         context.errors.push(AdapterError {
                     original_fatal: None,
                             kind: dm_syntax::DiagnosticKind::Unsupported,
@@ -771,16 +784,6 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         });
                         continue;
                     }
-                    let settings = original_settings_payload
-                        .map(|payload|context.demand.header_settings_tail(payload)).transpose()?;
-                    context
-                        .header_rows
-                        .push_reserved(crate::procedure::header_input::HeaderAllocationRow {
-                            header: item.raw.header_span(),
-                            argument_offset: header_argument_offset.expect("issued signature"),
-                            declarations: header_declarations,
-                            settings,
-                        });
                 }
                 context.result.skeletons.push(skeleton);
                 context.result.origins.push(Provenance {

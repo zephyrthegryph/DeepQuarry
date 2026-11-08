@@ -90,7 +90,21 @@ impl Mode{
    Self::Resource{at,raw,escaped,kind}=>{while *at<source.len(){if let Some(a)=a{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;}let(ch,width)=lexical_char(source,*at,purpose)?;*at+=width;if *escaped{*escaped=false;continue}if ch=='\\'&&!*raw{*escaped=true;continue}if ch=='\''{done!(*kind,*at,false)}}if final_input{done!(*kind,source.len(),true)}Ok(ModeProgress::NeedInput)},
    Self::BlockComment{at,depth}=>{while *at+1<source.len(){if let Some(a)=a{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;}if source[*at..].starts_with(b"/*"){*depth=depth.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;*at+=2}else if source[*at..].starts_with(b"*/"){*depth-=1;*at+=2;if *depth==0{done!(TokenKind::Comment,*at,false)}}else{*at+=lexical_char(source,*at,purpose)?.1}}if final_input{done!(TokenKind::Comment,source.len(),true)}Ok(ModeProgress::NeedInput)},
    Self::LineComment{at,original}=>{if let Some(cursor)=original{return Ok(match cursor.advance(source,final_input,a)?{LineProgress::NeedInput=>ModeProgress::NeedInput,LineProgress::Complete(facts)=>ModeProgress::OriginalComment{facts,unterminated:false}})}while *at<source.len(){let(ch,width)=lexical_char(source,*at,purpose)?;if matches!(ch,'\r'|'\n'){done!(TokenKind::Comment,*at,false)}*at+=width;}if final_input{done!(TokenKind::Comment,*at,false)}Ok(ModeProgress::NeedInput)},
-   Self::Whitespace{at}|Self::Ident{at}=>{if purpose==NativeLexicalPurpose::Original0290Macro&&matches!(source.get(start),Some(b' '|b'\t')){done!(TokenKind::Whitespace,start+1,false)}let whitespace=source.get(start).is_some_and(|b|matches!(b,b' '|b'\t'));while *at<source.len(){let(ch,width)=lexical_char(source,*at,purpose)?;if if whitespace{matches!(ch,' '| '\t')}else{lexical_ident_continue(ch,purpose)}{*at+=width}else{done!(if whitespace{TokenKind::Whitespace}else{TokenKind::Ident},*at,false)}}if final_input{done!(if whitespace{TokenKind::Whitespace}else{TokenKind::Ident},*at,false)}Ok(ModeProgress::NeedInput)},
+   Self::Whitespace{at}|Self::Ident{at}=>{if purpose==NativeLexicalPurpose::Original0290Macro{
+    if matches!(source.get(start),Some(b' '|b'\t')){done!(TokenKind::Whitespace,start+1,false)}
+    // The Original lexical role consumes one physical byte at a time and its
+    // identifier alphabet is ASCII. Start at the same resumable frontier.
+    if *at<source.len(){
+     let tail=&source[*at..];
+     if let Some(stop)=tail.iter().position(|byte|!byte.is_ascii_alphanumeric()&&*byte!=b'_'){
+      *at+=stop;done!(TokenKind::Ident,*at,false)
+     }
+     *at=source.len();
+    }
+    if final_input{done!(TokenKind::Ident,*at,false)}
+    return Ok(ModeProgress::NeedInput);
+   }
+   let whitespace=source.get(start).is_some_and(|b|matches!(b,b' '|b'\t'));while *at<source.len(){let(ch,width)=lexical_char(source,*at,purpose)?;if if whitespace{matches!(ch,' '| '\t')}else{lexical_ident_continue(ch,purpose)}{*at+=width}else{done!(if whitespace{TokenKind::Whitespace}else{TokenKind::Ident},*at,false)}}if final_input{done!(if whitespace{TokenKind::Whitespace}else{TokenKind::Ident},*at,false)}Ok(ModeProgress::NeedInput)},
    Self::Number{at,original}=>{if let Some(cursor)=original{ return Ok(match cursor.advance(source,final_input,a)?{NumberProgress::NeedInput=>ModeProgress::NeedInput,NumberProgress::Complete(facts)=>ModeProgress::OriginalNumber{facts}})}while *at<source.len(){let(ch,width)=lexical_char(source,*at,purpose)?;let offset=*at-start;let exponent=matches!(ch,'+'|'-')&&offset>0&&matches!(source[*at-1],b'e'|b'E')&&!source[start..].starts_with(b"0x")&&!source[start..].starts_with(b"0X");if exponent&&*at+1==source.len()&&!final_input{return Ok(ModeProgress::NeedInput)}let sign=exponent&&source.get(*at+1).is_some_and(u8::is_ascii_digit);if ch.is_ascii_alphanumeric()||matches!(ch,'.'|'_')||sign{*at+=width}else{break}}
     if source[start..*at].ends_with(b".") {let tail=&source[*at..];if tail.starts_with(b"#INF")||tail.starts_with(b"#IND"){done!(TokenKind::Number,*at+4,false)}if !final_input&&!tail.is_empty()&&(b"#INF".starts_with(tail)||b"#IND".starts_with(tail)){return Ok(ModeProgress::NeedInput)}}if *at==source.len()&&!final_input{return Ok(ModeProgress::NeedInput)}done!(TokenKind::Number,*at,false)
    }
@@ -178,6 +192,31 @@ impl NativeTokenCursor{
   let bytes="α".as_bytes();let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut native=NativeTokenCursor::default();let mut original=NativeTokenCursor::for_purpose(NativeLexicalPurpose::Original0290Macro);
   let NativeTokenStep::Token(n)=native.next_bytes_available_using(bytes,true,&a,|_,_,_|true).unwrap()else{panic!("native scalar")};assert_eq!(n.span,Span::new(0,2));let NativeTokenStep::Token(o)=original.next_bytes_available_using(bytes,true,&a,|_,_,_|true).unwrap()else{panic!("actual original byte")};assert_eq!(o.span,Span::new(0,1));assert_eq!(o.kind,TokenKind::Unknown);
   let mut invalid=NativeTokenCursor::default();assert_eq!(invalid.next_bytes_available_using(&[0xff],true,&a,|_,_,_|true).err().unwrap().kind(),io::ErrorKind::InvalidData);
+ }
+}
+
+#[cfg(test)]
+mod original_ascii_identifier_controls {
+ use super::*;
+
+ #[test]
+ fn original_byte_identifier_resumes_and_preserves_real_lookahead() {
+  let raw=b"_name09\xffsuffix";
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let admission=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut cursor=NativeTokenCursor::for_original_source_bytes(raw);
+  for prefix in 1..=7 {
+   assert_eq!(cursor.peek_bytes_available_using(&raw[..prefix],false,&admission,|_,_,_|panic!("valid identifier prefix")).unwrap(),NativeTokenStep::NeedInput);
+  }
+  let NativeTokenStep::Token(token)=cursor.peek_bytes_available_using(raw,true,&admission,|_,_,_|panic!("identifier has no notice")).unwrap()else{panic!("actual identifier")};
+  assert_eq!(token.span,Span::new(0,7));
+  assert_eq!(token.kind,TokenKind::Ident);
+  let facts=cursor.original_ident_facts().unwrap();
+  assert_eq!(facts.span(),token.span);
+  assert!(!facts.whitespace());
+  assert_eq!(facts.read_point(),crate::OriginalLexicalNoticePoint::consumed(7));
+  cursor.commit_peek().unwrap();
+  assert_eq!(cursor.position(),7);
  }
 }
 

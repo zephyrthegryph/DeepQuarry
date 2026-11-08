@@ -1228,6 +1228,7 @@ impl PreparedOriginalSignatures{
  }
  pub(crate) fn take_adapter_storage(&mut self)->Option<dm_syntax::SettingRootLease>{self.adapter_storage.take()}
  pub(crate) fn actual_headers(&self)->&OriginalProcedureHeaders{&self.headers}
+ pub(crate) fn share_actual_headers(&self)->Arc<OriginalProcedureHeaders>{Arc::clone(&self.headers)}
  pub(crate) fn retain_input_failure_message(&mut self,reason:super::OriginalInputParameterFatal,message:String)->std::io::Result<()>{let mut in_source=false;self.headers.visit_source(|source|in_source=reason.token_span().end<=source.len());if self.input_failure_message.is_some()||self.failure_storage.as_ref().is_none_or(|credit|credit.bytes()<message.capacity())||!in_source{return Err(std::io::ErrorKind::InvalidInput.into())}self.input_failure_message=Some((reason,message));Ok(())}
  pub(crate) fn input_failure_message(&self,reason:super::OriginalInputParameterFatal)->Option<&str>{self.input_failure_message.as_ref().filter(|(actual,_)|*actual==reason).map(|(_,message)|message.as_str())}
 

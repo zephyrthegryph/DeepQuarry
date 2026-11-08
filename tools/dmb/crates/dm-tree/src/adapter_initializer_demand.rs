@@ -1,7 +1,7 @@
 //! Existing adapter policy with a typed, operation-local original-RHS demand.
 //! This does not issue namespace/type semantics or own a parallel declaration model.
 use super::*;
-use crate::procedure::{adapter_rows::AdapterRows, header_input::{HeaderSettingsPayload, HeaderSettingsTail}};
+use crate::procedure::{adapter_rows::AdapterRows, header_input::{HeaderAllocationRow, HeaderAllocationRows, HeaderSettingsPayload, HeaderSettingsTail}};
 mod sealed{pub trait Sealed{}}
 pub(super) enum WalkFailure<E>{Source(String),Operational(E)}
 impl<E> From<String> for WalkFailure<E>{fn from(message:String)->Self{Self::Source(message)}}
@@ -31,7 +31,7 @@ pub(super) trait AdapterDemand:sealed::Sealed{
         &self,signature:dm_ir::ProcedureSignature,settings:SettingRows,
         prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     )->Result<Arc<dm_ir::ProcedureMetadata>,Self::Operational>;
-    fn reserve_header_row(&self, rows:&mut crate::procedure::header_input::HeaderAllocationRows)
+    fn stage_header_row(&self, rows:&mut HeaderAllocationRows, row:HeaderAllocationRow)
         -> Result<bool, Self::Operational>;
     fn header_settings_tail(&self, payload: HeaderSettingsPayload)
         -> Result<HeaderSettingsTail, Self::Operational>;
@@ -82,8 +82,10 @@ impl AdapterDemand for Compatibility{
     fn procedure_metadata(&self,signature:dm_ir::ProcedureSignature,settings:SettingRows,_:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<dm_ir::ProcedureMetadata>,Self::Operational>{
         Ok(Arc::new(dm_ir::ProcedureMetadata{signature,settings:settings.into_shared()}))
     }
-    fn reserve_header_row(&self, rows:&mut crate::procedure::header_input::HeaderAllocationRows)->Result<bool,Self::Operational>{
-        Ok(rows.reserve_compatibility().is_ok())
+    fn stage_header_row(&self, rows:&mut HeaderAllocationRows, row:HeaderAllocationRow)->Result<bool,Self::Operational>{
+        if rows.reserve_compatibility().is_err() { return Ok(false); }
+        rows.push_reserved(row);
+        Ok(true)
     }
     fn header_settings_tail(&self, payload: HeaderSettingsPayload) -> Result<HeaderSettingsTail, Self::Operational> {
         Ok(HeaderSettingsTail::compatibility(payload))
@@ -138,8 +140,8 @@ impl AdapterDemand for Checked<'_,'_>{
             None=>Ok(Arc::new(dm_ir::ProcedureMetadata{signature,settings:settings.into_shared()})),
         }
     }
-    fn reserve_header_row(&self, rows:&mut crate::procedure::header_input::HeaderAllocationRows)->Result<bool,Self::Operational>{
-        rows.reserve_checked(self.admission)?;
+    fn stage_header_row(&self, rows:&mut HeaderAllocationRows, row:HeaderAllocationRow)->Result<bool,Self::Operational>{
+        rows.stage_checked(row,self.admission)?;
         Ok(true)
     }
     fn header_settings_tail(&self, payload: HeaderSettingsPayload) -> Result<HeaderSettingsTail, Self::Operational> {
