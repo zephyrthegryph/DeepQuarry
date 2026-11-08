@@ -942,8 +942,17 @@ impl OriginalSignatureObserver<'_,'_>{
   let argument_offset=parts.argument_offset;
   let parsed=if let Some(formals)=formals{
    let live=completed_live.as_ref().expect("actual early owner");if live.argument_start()!=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?||closed!=Some(parts.closing_span()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"completed formal cursor differs from actual primary header"))}
-   let credit=self.failure_storage.as_mut().expect("actual header credit");if bytes>credit.bytes(){let extra=bytes-credit.bytes();self.a.grow(credit,extra)?}
-   parts.finish_formals(formals.finish(),&mut self.symbols)
+   // The closed formal clauses already paid for their live parser products.
+   // Only the trailing annotation and the Vec-to-Arc overlap are new work.
+   let formals = formals.finish();
+   let (tokens, text) = parts.trailing_geometry();
+   let extra = header_work_bytes(tokens, text)?
+    .checked_sub(ACTIVE_HEADER_FIXED)
+    .and_then(|tail| tail.checked_add(arc_payload::<dm_ir::Parameter>(formals.parameters.len())?))
+    .ok_or(std::io::ErrorKind::OutOfMemory)?;
+   let credit = self.failure_storage.as_mut().expect("actual header credit");
+   self.a.grow(credit, extra)?;
+   parts.finish_formals(formals,&mut self.symbols)
   }else{parts.parse_original(&mut self.symbols)};
   let mut signature=match parsed{Ok(actual)=>actual,Err(mut actual)=>{self.notices_complete&=actual.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut actual.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}self.failure=Some(actual);self.failure_live=completed_live;return Ok(OriginalHeaderFlow::Stop)}};
   self.notices_complete&=signature.formal_notices_complete;let origin=event.span().start.checked_add(argument_offset).ok_or(std::io::ErrorKind::InvalidInput)?;for notice in std::mem::take(&mut signature.formal_notices){self.record_formal_notice(event.span().start,notice.checked_shift(origin)?)?;}

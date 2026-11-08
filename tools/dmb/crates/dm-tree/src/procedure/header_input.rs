@@ -1046,6 +1046,9 @@ pub(crate) struct IssuedHeaderParts<'a, 'n> {
 }
 impl IssuedHeaderParts<'_, '_> {
     pub(crate) fn closing_span(&self)->Span{self.closing.span}
+    pub(super) fn trailing_geometry(&self) -> (usize, usize) {
+        (self.trailing.token_window().len(), self.trailing.text().len())
+    }
     pub(crate) fn parse_formals(&self,symbols:&mut SymbolTable)->Result<super::ParsedFormalParameters,SignatureError>{
       self.parse_formals_with_dialect(symbols,false)
     }
