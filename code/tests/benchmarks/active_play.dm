@@ -292,6 +292,15 @@
 		if(length(entry) >= 6 && entry[6])
 			dep_kinds["sampled rows"] += length(entry[6])
 	detail("ap_menu_dep_kinds", dep_kinds)
+	// Why the rows a cold menu decided were left out: what a visible-rows-only build would skip.
+	var/list/hidden_kinds = list()
+	if(length(crew) >= 2)
+		op_menu_cache_clear()
+		var/list/hidden_rows = list()
+		op_menu(crew[1], crew[2], crew[1].get_active_hand(), hidden_rows)
+		for(var/list/row as anything in hidden_rows)
+			hidden_kinds["[row["hidden_by"]]"]++
+	detail("ap_menu_hidden_kinds", hidden_kinds)
 	count_metric("ap_menu_rebuilds_after_unrelated_change", unrelated_reads ? unrelated_builds / unrelated_reads : 0, "builds")
 	metric("ap_menu_warm_us", menu_reads ? menu_warm_ms * 1000 / menu_reads : 0, "us")
 	count_metric("ap_menu_rows", menu_reads ? menu_rows / menu_reads : 0, "rows", "none")
