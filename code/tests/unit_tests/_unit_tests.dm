@@ -228,6 +228,7 @@
 #include "dq_global_guard_tests.dm"
 #include "dq_init_plan_golden.dm"
 #include "dq_init_plan_tests.dm"
+#include "dq_join_construction_tests.dm"
 #include "dq_stat_hop_tests.dm"
 #include "dq_stat_sum_running_tests.dm"
 #include "dq_init_sweep_6_tests.dm"
