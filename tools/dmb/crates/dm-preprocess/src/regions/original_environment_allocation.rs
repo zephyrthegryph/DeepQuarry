@@ -151,15 +151,30 @@ impl OriginalFinalMacros {
 /// (a stack or shared binding may still own it).
 pub(crate) struct OriginalEnvironment{
  environment:MacroEnvironment,
+ // Inline negative filter. A set bit only permits the exact map lookup.
+ // Undef can restore any prior epoch, so bits stay set until this owner drops.
+ name_prefixes: [u64; 128],
  allowance:SettingRootLease,
  metadata:usize,
  map_high_water:usize,
 }
 /// Lookup-only Original loan. Unlike the ordinary MacroEnvironment, this
 /// view cannot clone or expose an OrdMap root beyond a scoped read.
-pub(crate) struct OriginalEnvironmentRead<'a>(&'a MacroEnvironment);
+pub(crate) struct OriginalEnvironmentRead<'a>(&'a MacroEnvironment, &'a [u64; 128]);
+
+fn name_prefix(name: &str) -> (usize, u64) {
+ let bytes = name.as_bytes();
+ let first = bytes.first().copied().unwrap_or(0) & 127;
+ let second = bytes.get(1).copied().unwrap_or(0) & 63;
+ (usize::from(first), 1u64 << second)
+}
+
 impl<'a> OriginalEnvironmentRead<'a>{
  pub(crate) fn actual_original_product(&self,name:&str)->io::Result<Option<&'a OriginalDefinitionProduct>>{
+  let (index, mask) = name_prefix(name);
+  if self.1[index] & mask == 0 {
+   return Ok(None);
+  }
   self.0.actual_original_product(name)
  }
  pub(in crate::regions) fn expansion_definition_using(&self, name: &str, a: &SettingAdmission<'_>)
@@ -187,14 +202,14 @@ impl OriginalEnvironment{
  pub(crate) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{
   original_poll(a)?;let map=map_live(0)?;
   let allowance=a.reserve(map).map_err(|e|a.take_operational_error().unwrap_or(e))?;
-  original_poll(a)?;Ok(Self{environment:MacroEnvironment::default(),allowance,metadata:0,map_high_water:map})
+  original_poll(a)?;Ok(Self{environment:MacroEnvironment::default(),name_prefixes:[0;128],allowance,metadata:0,map_high_water:map})
  }
  #[cfg(debug_assertions)]
  pub(crate) fn trace_reservations(&self) -> (usize, usize, usize) {
   (self.environment.len(), self.metadata, self.map_high_water)
  }
  /// An operation-scoped read loan, not an exported snapshot/owner.
- pub(crate) fn read(&self)->OriginalEnvironmentRead<'_>{OriginalEnvironmentRead(&self.environment)}
+ pub(crate) fn read(&self)->OriginalEnvironmentRead<'_>{OriginalEnvironmentRead(&self.environment, &self.name_prefixes)}
  #[cfg(test)]
  pub(crate) fn environment(&self)->&MacroEnvironment{&self.environment}
  pub(crate) fn len(&self)->usize{self.environment.len()}
@@ -228,7 +243,12 @@ impl OriginalEnvironment{
     *metadata=adjusted;
    }
    Ok(())
-  })
+  })?;
+  // This is the only Original map insertion seam, including bootstrap.
+  // Update after commit and before returning the exclusively borrowed owner.
+  let (index, mask) = name_prefix(name);
+  self.name_prefixes[index] |= mask;
+  Ok(())
  }
  pub(crate) fn insert_borrowed_using(&mut self,name:&str,metadata:&Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{
   original_poll(a)?;
@@ -374,7 +394,7 @@ impl OriginalEnvironment{
   for ordinal in 0..64{
    env.insert_borrowed_using(&format!("K{ordinal:02}"),&row,None,empty_product(&good),&good).unwrap();
   }
-  let key="K64";
+  let key="Z64";
   let cap=map_peak(65).unwrap();
   let bound=metadata_fixed_bound(key).unwrap()+text_bound(row.replacement.len()).unwrap();
   let before=used.load(Ordering::Acquire);
@@ -387,6 +407,9 @@ impl OriginalEnvironment{
   assert_eq!(env.insert_borrowed_using(key,&row,None,product.clone(),&short).unwrap_err().kind(),io::ErrorKind::OutOfMemory);
   assert_eq!(env.environment.fingerprint(),fingerprint);
   assert_eq!(env.len(),64);
+  let (index, mask) = name_prefix(key);
+  assert_eq!(env.name_prefixes[index] & mask, 0, "failed insert must not mark a previously clear prefix");
+  assert!(env.read().actual_original_product(key).unwrap().is_none());
   assert_eq!(env.map_high_water,old_map);
   assert_eq!(env.metadata,old_metadata);
   let exact=SettingAdmission::new(&used,requested,&||Ok(()));
@@ -559,7 +582,7 @@ impl OriginalEnvironment{
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let caller:BTreeMap<String,String>=BTreeMap::from([("TRUE".into(),"7".into()),("ASSERT".into(),"8".into()),("EXTRA".into(),"9".into())]);
   let mut expected=BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut expected);for(name,value)in &caller{expected.insert(name.clone(),Macro{parameters:None,variadic:false,replacement:value.clone()});}
   let mut seen=Vec::new();env.install_initial_definitions_using(crate::InitialEnvironment::OriginalChecker0290,&caller,&a,&mut|input,a|{let key=input.name();assert_eq!(input.metadata(),&expected[key]);assert_eq!(input.provenance(),if caller.contains_key(key){crate::initial_environment::OriginalInitialProvenance::CallerDefinition}else{crate::initial_environment::OriginalInitialProvenance::FixedDefault});seen.push(key.to_owned());let mut definition=empty(a)?;if let Some(names)=&input.metadata().parameters{let mut actual=crate::macro_expansion::OriginalMacroRows::new(a)?;for name in names{let mut text=crate::macro_expansion::OriginalMacroText::new(a)?;text.push_str(name,a)?;actual.push(text,a)?;}definition.parameters=Some(actual);}Ok(definition)}).unwrap();
-  assert_eq!(seen,expected.keys().cloned().collect::<Vec<_>>());assert_eq!(env.len(),expected.len());for(name,value)in &expected{assert_eq!(crate::MacroLookup::get_key_value(env.environment(),name).unwrap().1,value);}drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  assert_eq!(seen,expected.keys().cloned().collect::<Vec<_>>());assert_eq!(env.len(),expected.len());for(name,value)in &expected{assert_eq!(crate::MacroLookup::get_key_value(env.environment(),name).unwrap().1,value);assert!(env.read().actual_original_product(name).unwrap().is_some(), "bootstrap key {name}");}drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn direct_initial_quota_precedes_temporary_metadata_and_first_factory_io_rolls_back_same_empty_map(){
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&a).unwrap();let caller=BTreeMap::from([("AAAA".into(),"x".repeat(4*1024*1024))]);let before=METADATA_COPIES.with(|n|n.get());let mut calls=0;
@@ -580,6 +603,27 @@ impl OriginalEnvironment{
    env.insert_product_using(name,"1",None,product(1,&a),&a).unwrap();env.insert_product_using(name,"2",None,product(2,&a),&a).unwrap();let current=env.environment.actual_original_product(name).unwrap().unwrap();assert!(matches!(current.cloned_definition_using(&a).unwrap().replacement.as_slice()[0].value,Value::Int(2)));let mut versions=0;env.environment.visit_original_products_while(|key,_,_,_|{if key.as_ref()==name{versions+=1}true});assert_eq!(versions,2,"pinned DefineMap retains both actual epochs");env.remove_using(name,&a).unwrap();assert!(matches!(env.environment.actual_original_product(name).unwrap().unwrap().cloned_definition_using(&a).unwrap().replacement.as_slice()[0].value,Value::Int(1)));env.remove_using(name,&a).unwrap();assert!(env.environment.actual_original_product(name).unwrap().is_none());assert!(crate::MacroLookup::get_key_value(&env.environment,name).is_none());
   }assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
+ #[test]
+ fn original_name_filter_keeps_short_unicode_and_colliding_names_exact() {
+  let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a = SettingAdmission::new(&used, 4 << 20, &|| Ok(()));
+  let mut env = OriginalEnvironment::new(&a).unwrap();
+  for (name, absent) in [("A", "A@"), ("Aa", "Aa_other"), ("α", "α_other")] {
+   assert_eq!(name_prefix(name), name_prefix(absent));
+   let older = product(1, &a);
+   let newer = product(2, &a);
+   env.insert_product_using(name, "1", None, Arc::clone(&older), &a).unwrap();
+   env.insert_product_using(name, "2", None, Arc::clone(&newer), &a).unwrap();
+   assert!(std::ptr::eq(env.read().actual_original_product(name).unwrap().unwrap(), newer.as_ref()));
+   assert!(env.read().actual_original_product(absent).unwrap().is_none());
+   env.remove_using(name, &a).unwrap();
+   assert!(std::ptr::eq(env.read().actual_original_product(name).unwrap().unwrap(), older.as_ref()));
+   env.remove_using(name, &a).unwrap();
+   assert!(env.read().actual_original_product(name).unwrap().is_none());
+  }
+  assert_eq!(env.len(), 0);
+ }
+
  #[test]fn ordinary_removal_preserves_first_real_io_and_does_not_mutate_the_current_binding(){
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let good=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut env=OriginalEnvironment::new(&good).unwrap();env.insert_product_using("A","7",None,product(7,&good),&good).unwrap();let fingerprint=env.environment.fingerprint();let io=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,4<<20,&io);assert_eq!(env.remove_using("A",&failed).unwrap_err().raw_os_error(),Some(1450));assert_eq!(env.environment.fingerprint(),fingerprint);assert!(env.environment.actual_original_product("A").unwrap().is_some());env.remove_using("A",&good).unwrap();assert_eq!(env.len(),0);drop(env);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
