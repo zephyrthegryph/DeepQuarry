@@ -232,6 +232,14 @@ class ViewBoundary extends Component<
   componentDidCatch(error: unknown) {
     // The panel's console is the only place this shows; the message names the section for a bug report.
     console.error(`stat panel: ${this.props.resetKey} failed to draw`, error);
+    Byond.sendMessage('col/page', {
+      type: 'WM-Log',
+      payload: {
+        event: 'stat-view-failed',
+        name: this.props.resetKey,
+        error: String((error as Error)?.stack || error),
+      },
+    });
   }
 
   render() {

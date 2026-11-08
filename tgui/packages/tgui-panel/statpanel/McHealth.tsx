@@ -279,6 +279,14 @@ function Overruns({ data }: { data: McHealthData }) {
       title="Overruns"
       summary={`${data.window_5m.overruns} in 5 min, worst first`}
     >
+      {[...(data.stalls || [])].reverse().map((s) => (
+        <div className="mc-stall" key={`${s.at}-${s.gap_ms}`}>
+          <b>Froze {(s.gap_ms / 1000).toFixed(1)}s</b> at {s.at}:{' '}
+          {s.top && s.top_ms >= s.gap_ms / 2
+            ? `${s.top} (${s.top_ms} ms)`
+            : 'outside the scheduled systems (a verb, input or BYOND)'}
+        </div>
+      ))}
       {outliers.length === 0 && (
         <div className="mch-muted">
           {overrunSummary(outliers, data.window_5m)}
@@ -608,7 +616,12 @@ export function McHealthPanel(props: {
     'tick_budget_ms',
     'target_tps',
   ]);
-  const overruns = useSlices(data, ['outliers', 'window_5m', 'tick_budget_ms']);
+  const overruns = useSlices(data, [
+    'outliers',
+    'stalls',
+    'window_5m',
+    'tick_budget_ms',
+  ]);
   const memory = useSlices(data, ['rust', 'gc']);
   const entities = useSlices(data, ['entities', 'churn']);
   const native = useSlices(data, ['rust']);

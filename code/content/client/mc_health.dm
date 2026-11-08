@@ -37,6 +37,7 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 		),
 		"window_5s" = Kernel.performance_window(5),
 		"ticks" = mc_health_recent_ticks(),
+		"stalls" = km_meter().stalls || list(),
 	)
 
 /// The slow sections, in the groups that are rebuilt together. After the first send, at most one group is rebuilt per send (the stalest one past

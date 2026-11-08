@@ -185,6 +185,9 @@ CAPABILITIES(/datum/input_stats)
 	var/last_overrun_line
 	var/list/last_overrun_top
 	var/last_overrun_usage = 0
+	/// Real time of the last end_tick(), and the latest freezes (a verb or proc that holds the server between ticks charges no system).
+	var/last_end_real = 0
+	var/list/stalls
 
 CAPABILITIES(/datum/tick_meter)
 	owns_one(nameof(attr), /datum/km_attr)
@@ -307,6 +310,10 @@ CAPABILITIES(/datum/tick_meter)
 /datum/tick_meter/proc/end_tick(usage, maptick, pre_usage = 0)
 	var/overrun = usage > KM_OVERRUN_USAGE
 	total_ticks++
+	var/now_real = REALTIMEOFDAY
+	if(last_end_real && (now_real - last_end_real) * 100 >= KM_STALL_MS)
+		note_stall((now_real - last_end_real) * 100, usage, pre_usage)
+	last_end_real = now_real
 	// The tick's costliest systems, largest first, built straight into its flight recorder entry.
 	ring_pos = ring_pos % ring_len + 1
 	var/base = (ring_pos - 1) * KM_TOP_N
@@ -402,6 +409,20 @@ CAPABILITIES(/datum/tick_meter)
 	n_touched = 0
 	tick_charged = 0
 	input_ms = 0
+
+/// The server was held for `gap_ms` of real time between two ticks: recorded and logged whether or not any system was charged.
+/datum/tick_meter/proc/note_stall(gap_ms, usage, pre_usage)
+	var/worst
+	var/worst_ms = 0
+	for(var/i in 1 to n_touched)
+		if(tick_ms[touched[i]] > worst_ms)
+			worst_ms = tick_ms[touched[i]]
+			worst = km_systems().keys[touched[i]]
+	LAZYADD(stalls, list(list("gap_ms" = round(gap_ms), "usage" = round(usage), "pre" = round(pre_usage), "input_ms" = round(input_ms), "top" = worst, "top_ms" = round(worst_ms), "at" = time2text(world.timeofday, "hh:mm:ss"))))
+	if(length(stalls) > KM_STALL_KEEP)
+		stalls.Cut(1, 2)
+	if(log_overruns)
+		log_admin("STALL: the server was held [round(gap_ms)]ms between ticks (tick [round(usage)]%, before the kernel [round(pre_usage)]%, input [round(input_ms)]ms, top system [worst || "none"] [round(worst_ms)]ms)")
 
 /// An overrun tick: builds the record of what caused it (allocating is fine here, it is the exception) and, when
 /// enabled and not flooding, writes the admin-log line.

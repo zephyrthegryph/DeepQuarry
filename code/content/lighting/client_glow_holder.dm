@@ -189,7 +189,8 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		glow_image.blend_mode = BLEND_ADD
 		glow_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		glow_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		glow_image.filters = filter(type = "alpha", render_source = mask_name)
+		if(!GLOB.client_glow_masks_off)
+			glow_image.filters = filter(type = "alpha", render_source = mask_name)
 		var/image/hide_image = image(null) // overrides the real glow for this viewer: never drawn twice
 		hide_image.override = TRUE
 		image_anchor(hide_image, G)
