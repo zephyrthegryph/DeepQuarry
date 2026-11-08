@@ -96,10 +96,36 @@ impl WorkspaceAuxiliaryQuestion {
         Self::LibraryLayeringFullAllow, Self::MapEdits, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
     ];
 
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
+        Self::RequirementBool, Self::PlayerLink, Self::UntypedMember, Self::WeakRawRead,
+        Self::RelWriteUndeclared, Self::Untyped, Self::StoredRefs, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms,
+        Self::LibraryLayeringFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
+        Self::RequirementBool, Self::PlayerLink, Self::UntypedMember, Self::WeakRawRead,
+        Self::RelWriteUndeclared, Self::Untyped, Self::StoredRefs, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms, Self::SiliconEntry,
+        Self::LibraryLayeringFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
+    pub(crate) fn is_private_authored_checker(questions: &[Self]) -> bool {
+        questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS
+    }
+
     pub(crate) fn is_extended_authored_doc_ui(questions: &[Self]) -> bool {
         questions == Self::PRIVATE_EXTENDED_AUTHORED_DOC_UI
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS
     }
 
     pub(crate) const AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =
@@ -265,7 +291,9 @@ impl PolicyInputRequest {
         }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::ImageDir)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
-                || workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::ImageDir]
+                || (workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::ImageDir]
+                    && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
+                    && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS)
                 || !workspace_generators.is_empty() || !self.files.is_empty()
                 || !self.search_folders.is_empty())
         {
@@ -285,7 +313,8 @@ impl PolicyInputRequest {
         }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::SiliconEntry)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
-                || workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::SiliconEntry])
+                || (workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::SiliconEntry]
+                    && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS))
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"silicon_entry requires its exclusive full Original Analyze subject"));
         }

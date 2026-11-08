@@ -811,15 +811,30 @@ fn private_97_policies_share_authored_mixed_semantic_and_fixed_discovery() {
 
 #[test]
 fn private_101_policies_share_the_actual_staged_checker_body_domain() {
+    exercise_private_combined_report(false, false);
+}
+
+#[test]
+fn private_102_policies_share_clean_original_image_dir() {
+    exercise_private_combined_report(true, false);
+}
+
+#[test]
+fn private_103_policies_preserve_silicon_actor_in_a_hidden_loaded_interface_file() {
+    exercise_private_combined_report(true, true);
+}
+
+fn exercise_private_combined_report(image_dir: bool, actors: bool) {
     let (mut host, mut request, root) = fixture(concat!(
         "#define CAPABILITIES(...)\n",
         "#define PROC_REF(P) #P\n",
-        "/datum/act\n/datum/act/eval\n/obj/probe\n",
+        "/datum/act\n    var/actor\n/datum/act/eval\n/obj/probe\n",
         "    var/known\n",
         "/obj/probe/proc/dynamic(datum/act/eval/A)\n",
         "    return vars[\"probe\"]\n",
         "CAPABILITIES(/obj/probe,when(PROC_REF(dynamic)))\n",
         "/obj/unread\n/proc/ctor_probe(loc)\n    new /obj/unread(loc, 2)\n",
+        "/proc/image_loan_probe(image/actual)\n    actual.dir = 2\n",
     ));
     let dispatcher = dq_analyze::ui_actions_policy::DISPATCHER;
     for (relative, content) in [
@@ -830,6 +845,7 @@ fn private_101_policies_share_the_actual_staged_checker_body_domain() {
             "#include \"code/content/probe.dm\"\n",
             "#include \"code/body_probe.dm\"\n",
             "#include \"code/tests/unit_tests/tracked.dm\"\n",
+            "#include \"interface/.silicon_actor.dm\"\n",
         )),
         ("code/engine/probe.dm", "/proc/engine_probe()\n    library_probe()\n"),
         ("code/library/probe.dm", "/proc/library_probe()\n    downstream_probe()\n"),
@@ -854,6 +870,11 @@ fn private_101_policies_share_the_actual_staged_checker_body_domain() {
             "/proc/checker_control()\n    set mystery = 1\n    return\n",
         )),
         ("code/tests/unit_tests/tracked.dm", "/datum/holder/proc/test_update()\n    plain = 3\n"),
+        ("interface/.silicon_actor.dm", concat!(
+            "#define isAI(A) istype(A, /mob/living/silicon/ai)\n",
+            "/datum/act/op\n/mob/living/silicon/ai\n",
+            "/obj/machinery/proc/silicon_actor(datum/act/op/A)\n    return isAI(A.actor)\n",
+        )),
         (dispatcher, ui_fixture::DISPATCHER),
     ] {
         let path = root.join(relative);
@@ -863,7 +884,9 @@ fn private_101_policies_share_the_actual_staged_checker_body_domain() {
     std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
     let intent = request.policy_inputs.as_mut().unwrap();
     intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
-    intent.workspace_auxiliary = Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER.to_vec();
+    intent.workspace_auxiliary = if actors { Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS }
+        else if image_dir { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE }
+        else { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER }.to_vec();
     intent.workspace.as_mut().unwrap().recursive_roots =
         Q::EXTENDED_AUTHORED_DOC_UI_ROOTS.iter().map(|name| root.join(name)).collect();
     assert!(intent.clone().admit().is_err());
@@ -897,9 +920,10 @@ fn private_101_policies_share_the_actual_staged_checker_body_domain() {
         .cloned().collect();
     assert_eq!(registry.names().len() - joined_exclusions.len(), 97);
     let bodies = ["stored_refs", "tracked", "tracked_tests", "untyped"];
+    let image_selected = |name: &str| (image_dir && name == "image_dir_after_build") || (actors && name == "silicon_entry");
     let checker_exclusions: Vec<_> = joined_exclusions.iter()
-        .filter(|name| !bodies.contains(&name.strip_prefix('-').unwrap())).cloned().collect();
-    assert_eq!(registry.names().len() - checker_exclusions.len(), 101);
+        .filter(|name| !bodies.contains(&name.strip_prefix('-').unwrap()) && !image_selected(name.strip_prefix('-').unwrap())).cloned().collect();
+    assert_eq!(registry.names().len() - checker_exclusions.len(), 101 + usize::from(image_dir) + usize::from(actors));
 
     let stage = || crate::selected_report_spool::Stage::new(&cache).unwrap();
     let prepare = |host: &mut crate::runner_host::BuildHost, mut diagnostics, mut checker| {
@@ -914,14 +938,17 @@ fn private_101_policies_share_the_actual_staged_checker_body_domain() {
     let mut foreign_host = crate::runner_host::BuildHost::default();
     let (_, foreign, _) = prepare(&mut foreign_host, stage(), stage());
     let (clean, report) = current(&host, |snapshot| {
-        let error = snapshot.stage_private_extended_authored_with_checker(
+        let run = if actors { SourceSnapshot::stage_private_extended_authored_with_actors }
+            else if image_dir { SourceSnapshot::stage_private_extended_authored_with_checker_and_image }
+            else { SourceSnapshot::stage_private_extended_authored_with_checker };
+        let error = run(snapshot,
             &prepared, &checker_exclusions, &budget, &root, stage(), &foreign,
         ).err().expect("a separate host's real Checker transcript cannot authorize this body domain");
         assert!(error.to_string().contains("Checker source owners differ"), "{error}");
-        assert!(snapshot.stage_private_extended_authored_with_checker(
+        assert!(run(snapshot,
             &prepared, &joined_exclusions, &budget, &root, stage(), &transcript,
         ).is_err(), "97 exclusions cannot authorize 101");
-        let (clean, verified) = snapshot.stage_private_extended_authored_with_checker(
+        let (clean, verified) = run(snapshot,
             &prepared, &checker_exclusions, &budget, &root, stage(), &transcript,
         ).unwrap();
         let mut output = Vec::new();
@@ -937,5 +964,7 @@ fn private_101_policies_share_the_actual_staged_checker_body_domain() {
         assert!(report.contains(marker), "missing {marker}: {report}");
     }
     assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
+    assert_eq!(report.contains("[image_dir_after_build/"), image_dir, "{report}");
+    assert_eq!(report.contains("interface/.silicon_actor.dm:5: [silicon_entry/handler_actor_check]"), actors, "{report}");
     require_private_reactive_raw_legacy(&root, &checker_exclusions, clean, &report);
 }

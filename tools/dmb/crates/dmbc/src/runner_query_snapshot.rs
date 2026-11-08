@@ -1402,7 +1402,9 @@ impl QueryAttempt {
         let evidence=if let Some(child)=&child{Arc::clone(child.semantic_source_evidence())}else{inputs.diagnostic_source_evidence(frontend)?};
         let mut snapshot=SourceSnapshot::capture_diagnostic_sources(frontend,Arc::clone(&queries),child,evidence)?;
         if intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let subject=inputs.original_analysis_subject().ok_or_else(||std::io::Error::other("full Analyze subject issuance absent"))?;subject.bind_frontend(frontend)?;subject.discovery().validate_recording(inputs)?;snapshot.analysis_subject=Some(Arc::clone(subject));}
-        if intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::ImageDir]{
+        if intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::ImageDir]
+            || intent.workspace_auxiliary()==crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
+            || intent.workspace_auxiliary()==crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS {
             snapshot.image_dir_proof=Some(frontend.clean_original_image_dir_proof()
                 .map_err(|message|std::io::Error::new(std::io::ErrorKind::Unsupported,message))?);
         }

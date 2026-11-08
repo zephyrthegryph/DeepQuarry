@@ -86,9 +86,11 @@ pub(crate) struct WorkspaceCapture {
 pub(crate) enum SiliconActorDomain<'a> {
     CodeOnly,
     SelectedCodeMaps(&'a dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData),
+    SelectedAuthored(&'a dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData),
 }
 impl SiliconActorDomain<'_> {
     fn includes(self, relative: &str) -> bool {
+        if let Self::SelectedAuthored(plan) = self { return plan.matches_loaded_dm(relative); }
         relative.ends_with(".dm")
             && (relative.starts_with("code/")
                 || (matches!(self, Self::SelectedCodeMaps(_)) && relative.starts_with("maps/")))
@@ -158,7 +160,7 @@ impl WorkspaceCapture {
      self.require_scope(scope)?;
      let questions=self.auxiliary.as_slice();
      if questions != [Q::OpOrder] && questions != Q::SELECTED_ORDER_AND_OWNERSHIP
-          && !((questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC || questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER) && self.has_extended_authored_doc_ui_capture()) {
+          && !((questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC || Q::is_private_authored_checker(questions)) && self.has_extended_authored_doc_ui_capture()) {
       return Err("actual op_order fixed manifest purpose absent".into());
      }
      self.with_order_manifest(scope,visit)
@@ -405,6 +407,22 @@ impl WorkspaceCapture {
     pub(crate) fn code_policy_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,configuration:&dq_analyze::captured_raw_file::Config,policy:&'static str,group:&'static str)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_code_dm(relative)&&!configuration.policy_path_exempt(policy,group,relative)))}
     // Legacy Tree::load keeps hidden DM even when a selected file scan
     // excludes it. Silicon's actor phase can name those same captured files.
+    pub(crate) fn covers_joined_silicon_actors(
+        &self, plan: &dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,
+        admit: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> io::Result<bool> {
+        use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+        if !self.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS)
+            || !self.has_extended_authored_doc_ui_capture() {
+            return Ok(false);
+        }
+        for directory in plan.loaded_dm_roots() {
+            if directory.is_empty() || !self.discovery.covers_dm_roots(&[(directory, "dm")], true, admit)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
     pub(crate) fn silicon_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,domain:SiliconActorDomain<'_>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
         self.page_needed(scope,start,count,budget,|relative|Ok(domain.includes(relative)))
     }

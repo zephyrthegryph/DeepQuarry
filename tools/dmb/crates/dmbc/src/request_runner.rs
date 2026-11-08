@@ -904,7 +904,7 @@ fn run_build_attempt(
                     let checker=if preparation_output.needs_combined_checker(){
                         use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
                         let private_combined = private_authored_doc_ui
-                            && intent.workspace_auxiliary() == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER;
+                            && Q::is_private_authored_checker(intent.workspace_auxiliary());
                         if (!private_combined && !Q::admits_combined_reports(intent.workspace_auxiliary())) ||
                            analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) ||
                            view.preparation_purpose()!=dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete {
@@ -1992,7 +1992,7 @@ pub(crate) fn prepare_private_authored_with_checker(
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     if !host.retains_artifacts() || request.record_inputs.is_some() || request.replay_inputs.is_some()
         || request.policy_inputs.as_ref().is_none_or(|intent|
-            intent.workspace_auxiliary.as_slice() != Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER)
+            !Q::is_private_authored_checker(intent.workspace_auxiliary.as_slice()))
     {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "private combined report requires its exact live authored intent").into());
     }

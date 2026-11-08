@@ -298,6 +298,7 @@ struct ReportStage<'a> {
     ordinary_fold_sys: bool,
     ordinary_semantic_and_fixed: bool,
     private_checker_body: bool,
+    private_image_dir: bool,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -361,7 +362,7 @@ impl ReportStage<'_> {
             }
             ReportRows::Union(rows) => match rows {
             UnionRows::ImageDir(data) => {
-                if self.selected != PRIVATE_IMAGE_DIR_ROSTER || meta.name != "image_dir_after_build"
+                if (self.selected != PRIVATE_IMAGE_DIR_ROSTER && !self.private_image_dir) || meta.name != "image_dir_after_build"
                     || !std::ptr::eq(meta,data.metadata()) || !matches!(meta.policy,Policy::Hard)
                     || !data.allow_used().is_empty() {
                     return Err(io::Error::new(io::ErrorKind::InvalidData,"selected ImageDir role differs"));
@@ -844,7 +845,7 @@ impl super::super::RawWorkspaceSnapshot {
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, judgment: JudgmentV2::Raw, library_baseline: None,
+            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, judgment: JudgmentV2::Raw, library_baseline: None,
         };
         for &name in selected {
             let policy_started = std::time::Instant::now();
@@ -991,7 +992,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false, false, None)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false, false, None, false, false)
     }
 
     #[cfg(test)]
@@ -999,7 +1000,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false, false, None)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false, false, None, false, false)
     }
 
     #[cfg(test)]
@@ -1007,7 +1008,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, false, None)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, false, None, false, false)
     }
 
     #[cfg(test)]
@@ -1015,7 +1016,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, None)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, None, false, false)
     }
 
     #[cfg(test)]
@@ -1023,14 +1024,30 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker))
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), false, false)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_with_checker_and_image(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), true, false)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_with_actors(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), true, true)
     }
 
     #[cfg(test)]
     fn stage_private_extended_union(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool, ordinary_semantics: bool,
-        checker: Option<&crate::request_runner::PreparedCheckerTranscript>,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, image_dir: bool, actors: bool,
     ) -> io::Result<(bool, Verified)> {
         let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
         let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
@@ -1040,7 +1057,9 @@ impl SourceSnapshot {
         let sys = if ordinary_fold_sys { Roster::WithSysSourcePolicies.names() } else { &[] };
         let semantic = if ordinary_semantics { PRIVATE_ORDINARY_SEMANTIC_AND_FIXED } else { &[] };
         let bodies = if checker.is_some() { &["stored_refs", "tracked", "tracked_tests", "untyped"][..] } else { &[] };
-        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys).chain(semantic).chain(bodies);
+        let image = if image_dir { &["image_dir_after_build"][..] } else { &[] };
+        let silicon = if actors { &["silicon_entry"][..] } else { &[] };
+        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys).chain(semantic).chain(bodies).chain(image).chain(silicon);
         let selected = selection.names();
         if selected.iter().any(|name| !qualified().any(|&actual| name == actual))
             || qualified().any(|&name| !selected.iter().any(|actual| actual == name))
@@ -1057,7 +1076,9 @@ impl SourceSnapshot {
         subject.require_bound_mapping(child.policy().mapping())?;
         let guard = self.workspace_native_read()?;
         workspace.require_scope(&guard)?;
-        let questions = if checker.is_some() { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER }
+        let questions = if actors { Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS }
+            else if image_dir { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE }
+            else if checker.is_some() { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER }
             else if ordinary_semantics { Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC }
             else if mixed { Q::PRIVATE_EXTENDED_AUTHORED_DOC_UI } else { Q::SELECTED_REACTIVE };
         let has_domains = if mixed {
@@ -1101,7 +1122,7 @@ impl SourceSnapshot {
             || pin(policy_revision) != Some(workspace.policy_revision()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation differs from its current workspace"));
         }
-        let private_checker_body = questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER;
+        let private_checker_body = Q::is_private_authored_checker(questions);
         match checker {
             Some(checker) if private_checker_body => {
                 self.require_staged_checker_body_domain(checker)?;
@@ -1120,6 +1141,8 @@ impl SourceSnapshot {
             authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys,
             ordinary_semantic_and_fixed: ordinary_fold_sys && (private_checker_body || questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC),
             private_checker_body,
+            private_image_dir: questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
+                || questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS,
             judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, private_checker_body, Some(&mut |meta, rows, scope, budget| {
@@ -1244,6 +1267,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         ordinary_fold_sys: false,
         ordinary_semantic_and_fixed: false,
         private_checker_body: false,
+        private_image_dir: false,
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };

@@ -859,7 +859,16 @@ pub(crate) use derived_reads::WorkspaceDerivedWitness;
 impl WorkspaceCodeReader<'_,'_>{
  fn require_silicon_discovery(&self,domain:SiliconActorDomain<'_>)->Result<(),Failure>{
   self.require_full_code_discovery()?;
-  if let SiliconActorDomain::SelectedCodeMaps(plan)=domain { self.require_hidden_selected_tree(plan,false)?; }
+  match domain {
+   SiliconActorDomain::CodeOnly => (),
+   SiliconActorDomain::SelectedCodeMaps(plan) => self.require_hidden_selected_tree(plan,false)?,
+   SiliconActorDomain::SelectedAuthored(plan) => {
+    if !self.capture.covers_joined_silicon_actors(plan,&mut|bytes|
+      self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))? {
+     return Err("silicon actor report lacks the actual authored loaded-DM tree".into());
+    }
+   }
+  }
   self.checkpoint()
  }
 

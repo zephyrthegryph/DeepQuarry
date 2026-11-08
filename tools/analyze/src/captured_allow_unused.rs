@@ -88,5 +88,15 @@ impl SelectedTreePlanData{
   }}c.checkpoint()?;Ok(Self{plan,roots})
  }
  pub fn roots(&self)->&[&'static str]{&self.roots}
+ /// Exact physical DM roots in the legacy loaded tree, including hidden files.
+ pub fn loaded_dm_roots(&self) -> impl Iterator<Item = &str> {
+  self.plan.entries.iter().filter(|(_, ext)| ext == "dm").map(|(dir, _)| dir.as_str())
+ }
+ /// The global loader retains hidden files regardless of each lint's scan filter.
+ pub fn matches_loaded_dm(&self, relative: &str) -> bool {
+  std::path::Path::new(relative).extension().and_then(|ext| ext.to_str()) == Some("dm")
+   && self.loaded_dm_roots().any(|dir|
+   dir.is_empty() || relative.strip_prefix(dir).is_some_and(|suffix| suffix.starts_with('/')))
+ }
  pub fn matches_path(&self,relative:&str)->bool{if !crate::tree::CODE_MAPS_DM.matches_path(relative){return false}let extension=relative.rsplit_once('.').map_or("",|(_,extension)|extension);self.plan.entries.iter().any(|(dir,ext)|ext==extension&&(dir.is_empty()||(relative.starts_with(dir)&&relative.as_bytes().get(dir.len())==Some(&b'/'))))}
 }

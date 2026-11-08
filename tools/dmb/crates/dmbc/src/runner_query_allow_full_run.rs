@@ -94,15 +94,19 @@ impl SourceSnapshot{
   let mut c=Operation{budget,poll:&poll};let selection=full_unused::registered_full_selection(exclusions,&mut c)?;
   if selection.names().is_empty(){kc::reserve(&mut c,||exclusions.iter().try_fold(128usize,|n,name|n.checked_add(name.len().checked_mul(4)?)))?;return Err(Failure::Unsupported(format!("no lint matches {exclusions:?}")))}
   if selection.names().iter().any(|name|name=="image_dir_after_build"){
-   if stage.is_none() || !selection.names().iter().map(String::as_str).eq(PRIVATE_IMAGE_DIR_ROSTER.iter().copied())
-    || !capture.matches_auxiliary_questions(&[Q::ImageDir]){
+   let named = selection.names().iter().map(String::as_str).eq(PRIVATE_IMAGE_DIR_ROSTER.iter().copied())
+    && capture.matches_auxiliary_questions(&[Q::ImageDir]);
+   let joined = private_checker_body
+    && (capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE)
+     || capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS));
+   if stage.is_none() || (!named && !joined) {
     return Err("image_dir_after_build requires its exact private selected report".into());
    }
    let child=self.workspace_semantic_inputs_with_guard(Q::ImageDir,&guard)?;
    self.image_dir_proof.as_ref().ok_or("image_dir_after_build clean Original proof is missing")?
     .bind(child.policy().archive())?;
   }
-  if capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER)
+  if Q::is_private_authored_checker(capture.auxiliary())
       && (!private_checker_body || stage.is_none()) {
    return Err("private full ALLOW requires the verified staged Checker body domain".into());
   }
@@ -134,7 +138,7 @@ impl SourceSnapshot{
      let tests=policy.tracked().expect("selected tracked policy");
      let question=if tests{Q::TrackedTests}else{Q::Tracked};
      if !capture.matches_auxiliary_questions(Q::SELECTED_STORED_AND_TRACKED)
-       && !(private_checker_body && capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER)){
+       && !(private_checker_body && Q::is_private_authored_checker(capture.auxiliary())){
       return Err("tracked union needs its complete selected stored/track profile".into());
      }
      let child=self.workspace_semantic_inputs_with_guard(question,&guard)?;
@@ -166,8 +170,12 @@ impl SourceSnapshot{
      usage.record_fold(name,frame,&[],&mut c).map_err(operational)})?;},
     Producer::Special("silicon_entry")=>{
      let stage=stage.as_deref_mut().ok_or("silicon_entry selected report adapter absent")?;
+     use crate::runner_host::workspace_capture::SiliconActorDomain;
+     let domain = if private_checker_body && capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS) {
+      SiliconActorDomain::SelectedAuthored(&selected_tree)
+     } else { SiliconActorDomain::SelectedCodeMaps(&selected_tree) };
      self.with_original_silicon_entry_policy_using(
-      crate::runner_host::workspace_capture::SiliconActorDomain::SelectedCodeMaps(&selected_tree),
+      domain,
       |data,config,child|{
        let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
        let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
