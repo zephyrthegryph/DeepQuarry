@@ -233,6 +233,23 @@ export class DockHost {
     return (at.y - this.origin.y) / (window.devicePixelRatio || 1);
   }
 
+  /** Tells the server log what was sent and what the client reads back (once per change to a shown place). */
+  private async report(id: string, sent: Record<string, unknown>) {
+    try {
+      const got = await Byond.winget(id, [
+        'pos',
+        'size',
+        'is-visible',
+        'alpha',
+        'is-pane',
+        'titlebar',
+      ]);
+      Byond.sendMessage('WM-Log', { id, sent, got, origin: this.origin });
+    } catch (error) {
+      Byond.sendMessage('WM-Log', { id, sent, error: String(error) });
+    }
+  }
+
   /** The dock area's node (the list drags measure it). */
   get areaNode(): HTMLElement | null {
     return this.area;
@@ -354,6 +371,9 @@ export class DockHost {
         this.loggedHidden.delete(id);
       }
       Byond.winset(id, params ?? { 'is-visible': false });
+      if (params) {
+        this.report(id, params);
+      }
     }
   }
 }
