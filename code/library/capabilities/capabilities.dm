@@ -80,7 +80,7 @@
 /proc/caps_init(atom/holder, mapload)
 	var/plan = CTOR_PLAN_FOR(holder) // the construction plan of the atom InitAtom() is initializing (ctor_plan.dm), else null
 	if(plan)
-		if(plan & CTOR_ENGINE_INIT)
+		if((plan & CTOR_ENGINE_INIT) && !(plan & CTOR_SETUP_ONLY))
 			BOOT_PHASE_BEGIN(bp_engine)
 			engine_holder_init(holder, mapload)
 			BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init" + BOOT_KIND(holder), holder)

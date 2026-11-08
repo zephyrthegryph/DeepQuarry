@@ -19,6 +19,9 @@
 #define CTOR_ENGINE_INIT (1<<8)
 /// Declares per-instance every() work (rx_type_enrols()).
 #define CTOR_ENROLS (1<<9)
+/// engine_holder_init()'s only work is noting the setup() rows (the init plan's one step is the lifecycle forms, and their only init form is plain
+/// setup rows): caps_init() skips the engine init and InitAtom() runs the rows itself, without setup_pending.
+#define CTOR_SETUP_ONLY (1<<11)
 /// Set on every built plan, so a plan with no other fact is still told from "not built".
 #define CTOR_PLANNED (1<<10)
 /// The CTOR_* bits of `D` when it is the atom whose Initialize() chain InitAtom() is running, else 0 (the caller takes its old path).

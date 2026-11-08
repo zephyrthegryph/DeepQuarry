@@ -23,7 +23,8 @@ GLOBAL_REAL_VAR(ctor_plans_built) = 0
 	if(bits)
 		return bits
 	var/datum/type_table/T = table_of(A)
-	if(!init_plan_of(A, T) || !GLOB?.init_from_table_types || !GLOB.map_resolvers || !islist(GLOB.rx_enrol_cache))
+	var/datum/init_plan/IP = init_plan_of(A, T)
+	if(!IP || !GLOB?.init_from_table_types || !GLOB.map_resolvers || !islist(GLOB.rx_enrol_cache))
 		return 0
 	bits = CTOR_PLANNED
 	var/datum/own_table/own = own_table_of(A)
@@ -41,6 +42,8 @@ GLOBAL_REAL_VAR(ctor_plans_built) = 0
 			bits |= CTOR_PARAM_EARLY
 		if(LP.setup_rows_early)
 			bits |= CTOR_SETUP_EARLY
+		if(IP.steps == 1 && LP.setup_rows_plain && !LP.setup_rows_params && !LP.setup_with_params && !LP.keeps_if && !LP.contains && !LP.knows && !LP.param_applies && !LP.param_drops && !LP.starts_as && !LP.derives && !LP.registries && !LP.radios && !LP.adjacencies && !LP.lives_while && !LP.rolls && isatom(A))
+			bits |= CTOR_SETUP_ONLY
 	if(GLOB.init_from_table_types[A.type])
 		bits |= CTOR_FROM_TABLE
 	if(GLOB.map_resolvers[A.type])

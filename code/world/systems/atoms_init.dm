@@ -91,7 +91,11 @@
 		result = INITIALIZE_HINT_QDEL
 	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
 	BOOT_PHASE_BEGIN(bp_setup)
-	if(length(setup_pending) && setup_pending[A])
+	if((plan & CTOR_SETUP_ONLY) && result == INITIALIZE_HINT_NORMAL && !QDELETED(A))
+		// The plan says the type's only engine init is its setup rows (ctor_plan.dm): no setup_pending note was made, they run here.
+		if(setup_run(A, FALSE, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
+			result = INITIALIZE_HINT_QDEL
+	else if(length(setup_pending) && setup_pending[A])
 		if(result == INITIALIZE_HINT_NORMAL)
 			// A setup(PROC_REF(x), mapload = TRUE) hook may return INITIALIZE_HINT_QDEL: handled below as an Initialize() return.
 			if(setup_run(A, FALSE, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
