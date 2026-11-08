@@ -55,10 +55,17 @@
 	)
 	*/
 
-/// The window the chat is in for this client: its own window (docked in the right-hand column or floating) once it has one, else the
-/// column page. Everything the chat is sent (messages, input focus, channels, language rules) goes to it.
+/// The window the chat is in for this client. Everything the chat is sent (messages, input focus, channels, language rules) goes to it.
 /client/proc/chat_window() as /datum/tgui_window
-	return chat_ui_window || tgui_panel?.window
+	return chat_window_of(chat_ui_window, tgui_panel?.window)
+
+/// Where the chat is, given its own window and the column page: a floating window while an interface holds it, else the page. Docked,
+/// the chat is part of the column page, whose own message bus has it, so the page itself takes its messages; a closed floating window
+/// (released back to the pool) is not the chat's.
+/proc/chat_window_of(datum/tgui_window/own, datum/tgui_window/page) as /datum/tgui_window
+	if(own && !istype(own, /datum/tgui_window/column_part) && own.locked_by())
+		return own
+	return page
 
 /// The chat's own window, set while it has one (doc/rewrite/proposals/window_system.md section 12).
 /client/var/tmp/datum/tgui_window/chat_ui_window

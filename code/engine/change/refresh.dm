@@ -1254,11 +1254,10 @@ GLOBAL_ALIST_EMPTY(construction_held_writes)
 	if(!held)
 		held = alist()
 		GLOB.construction_held_writes[handle] = held
-	var/held_handle = handle_of(E)
-	var/list/vars_of = held[held_handle]
+	var/list/vars_of = held[handle_of(E)]
 	if(!vars_of)
 		vars_of = list()
-		held[held_handle] = vars_of
+		held[handle_of(E)] = vars_of
 	vars_of[var_name] = TRUE
 
 /// Publishes once each var of a record A holds that was written under A's construction and that a reader follows.

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { gameDataAtom } from 'tgui/events/store';
-import { CHAT_WINDOW, ColumnHost, decodeRaw } from './host';
+import { ColumnHost, decodeRaw } from './host';
 
 const byond = (globalThis as any).Byond;
 const original = byond.sendMessage;
@@ -23,10 +23,10 @@ const forWindow = (wid: string) =>
   sent.filter((m) => m.type === 'col/msg' && m.payload.wid === wid);
 
 describe('the column page', () => {
-  it('starts with the chat as its only window', () => {
+  it('starts empty: the chat and the stat panel are server windows like any other', () => {
     const host = new ColumnHost();
-    expect(Object.keys(host.state.windows)).toEqual([CHAT_WINDOW]);
-    expect(host.state.groups).toHaveLength(1);
+    expect(Object.keys(host.state.windows)).toEqual([]);
+    expect(host.state.groups).toHaveLength(0);
   });
 
   it('opens a docked interface, routes its messages to its own store, and names it from its first update', () => {
@@ -76,7 +76,7 @@ describe('the column page', () => {
     ).not.toThrow();
   });
 
-  it('docks the stat panel like any other window: its own entry, above the chat', () => {
+  it('docks the stat panel like any other window: its own entry', () => {
     const host = new ColumnHost();
     host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
     host.receive('col/msg', {
@@ -90,10 +90,7 @@ describe('the column page', () => {
       title: 'Status',
       kind: 'tgui',
     });
-    expect(host.state.groups.map((g) => g.windows)).toEqual([
-      ['col-1'],
-      [CHAT_WINDOW],
-    ]);
+    expect(host.state.groups.map((g) => g.windows)).toEqual([['col-1']]);
     // Its own protocol's messages reach its window's listeners (useWindowMessages).
     const got: unknown[] = [];
     host.backends

@@ -212,6 +212,11 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		snapshot["airs"] = airs
 		snapshot["watch"] = vg_air_watch_new(airs)
 		changed = vg_air_watch_changed(snapshot["watch"], snapshot["revs"])
+	// A turf replaced since (ChangeTurf) holds another mixture than the handle the snapshot keeps: the old handle's revision says nothing about the
+	// air standing there now, so its index is judged too, through the current turf's air, and the handle is rebound to it below.
+	var/list/replaced = unit_test_air_replaced(snapshot)
+	if(length(replaced))
+		changed = changed ? (changed | replaced) : replaced
 	if(length(changed))
 		var/list/fresh = list()
 		for(var/i in changed)
@@ -221,6 +226,17 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 			fresh += air
 		vg_air_watch_rebind(snapshot["watch"], changed, fresh)
 	return changed
+
+/// Indices of the snapshot's turfs whose air is no longer the mixture the snapshot holds for them: the turf at that place was replaced (its air
+/// datum is another one, or not made yet). A plain var read per turf, no call.
+/proc/unit_test_air_replaced(list/snapshot)
+	var/list/airs = snapshot["airs"]
+	var/list/turfs = snapshot["turfs"]
+	. = list()
+	for(var/i in 1 to length(turfs))
+		var/turf/open/T = turfs[i]
+		if(istype(T) && T._air != airs[i])
+			. += i
 
 /// Makes the snapshot current for the mixtures that changed (a between-test drift becomes the baseline): their readings, revisions and cold-room marks.
 /proc/unit_test_air_refresh(list/snapshot)

@@ -1,4 +1,4 @@
-// The right-hand column's page as the client loads it (happy-dom): the chat renders in its window, the stat panel docks above it, a
+// The right-hand column's page as the client loads it (happy-dom): the stat panel and the chat dock as tgui windows, a
 // docked interface renders from its own messages, drops are judged in the page, and nothing logs an error.
 import './requireContext.testing';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test';
@@ -74,6 +74,24 @@ function openStatPanel() {
   });
 }
 
+/** The server opens the chat as a docked tgui window (chat_ui.dm), after the stat panel, with the draft it kept. */
+function openChat(draft = '') {
+  if (columnHost.backends.has('col-chat')) return;
+  columnHost.receive('col/open', { wid: 'col-chat', kind: 'tgui' });
+  columnHost.receive('col/msg', {
+    wid: 'col-chat',
+    raw: raw('update', {
+      config: {
+        interface: { name: 'Chat' },
+        title: 'Chat',
+        status: 2,
+        user: { name: 'Nick Price', observer: 0 },
+      },
+      data: { draft },
+    }),
+  });
+}
+
 function renderPage() {
   return render(
     <Provider store={store}>
@@ -86,14 +104,8 @@ describe('the column page', () => {
   it('renders the chat in its window, the stat panel docked above it, and a docked PDA from its own messages', async () => {
     errors = [];
     const page = renderPage();
-    // The chat: its tab row and its input, inside a column window (tgui layouts are mocked in tests, so its Pane is a plain box).
-    expect(
-      page.container.querySelector('.column-window .ChatTabs'),
-    ).toBeTruthy();
-    expect(
-      page.container.querySelector('.column-window [data-chat-input]'),
-    ).toBeTruthy();
     act(() => openStatPanel());
+    act(() => openChat('half a sente'));
     // Its own protocol: the verbs it is sent reach its store through its window.
     act(() => {
       columnHost.receive('col/msg', {
@@ -118,8 +130,25 @@ describe('the column page', () => {
     expect(groups()[0].querySelector('.stat-views')?.textContent).toContain(
       'Status',
     );
-    expect(groups()[1].querySelector('.ChatTabs')).toBeTruthy();
+    // The chat (the real Chat interface, the tgui-panel chat inside): its tab row and its input, filling the rest below.
+    await waitFor(
+      () =>
+        expect(
+          groups()[1].querySelector('.EmbeddedInterface .ChatTabs'),
+        ).toBeTruthy(),
+      { timeout: 5000 },
+    );
+    const input =
+      groups()[1].querySelector<HTMLInputElement>('[data-chat-input]');
+    expect(input).toBeTruthy();
     expect(groups()[1].className).toContain('column-group--fill');
+    // It starts with the draft the server kept, and asks for what it has not shown.
+    expect(input!.value).toBe('half a sente');
+    expect(
+      sent
+        .filter((m) => m.payload?.wid === 'col-chat')
+        .map((m) => m.payload.type),
+    ).toContain('chat/ready');
     // A docked PDA: opened by the server, named and drawn from its own update.
     act(() => {
       columnHost.receive('col/open', { wid: 'col-7', kind: 'tgui' });
@@ -170,7 +199,7 @@ describe('the column page', () => {
     expect(
       sent.filter((m) => m.payload?.wid === 'col-7').map((m) => m.payload.type),
     ).toContain('ready');
-    // Its float and close buttons are on its header (the chat has none: it has no native window to go to yet).
+    // Its float and close buttons are on its header.
     const pda = groups().find((g) => g.textContent?.includes('PDA'))!;
     expect(pda.querySelectorAll('.Button').length).toBeGreaterThanOrEqual(3);
     expect(errors).toEqual([]);
@@ -186,10 +215,11 @@ describe('a native window dropped on the column', () => {
   it('docks at the exact list index the drop point falls at, judged in the page', async () => {
     const page = renderPage();
     act(() => openStatPanel());
-    // Whatever an earlier test docked is closed but the stat panel: the column holds it and the chat.
+    act(() => openChat());
+    // Whatever an earlier test docked is closed but the stat panel and the chat.
     act(() => {
       for (const wid of [...columnHost.backends.keys()].filter(
-        (w) => w !== 'col-stat',
+        (w) => w !== 'col-stat' && w !== 'col-chat',
       )) {
         columnHost.receive('col/close', { wid });
       }

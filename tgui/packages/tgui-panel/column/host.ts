@@ -26,8 +26,6 @@ import {
   serializeSaved,
 } from './model';
 
-/** The chat's window id in the column. */
-export const CHAT_WINDOW = 'chat';
 const SAVE_DELAY_MS = 1000;
 
 /** Sends a message of the column page itself (its layout saves, drop answers, logs): the server's window dock (window_dock.dm). */
@@ -65,13 +63,6 @@ export class ColumnHost {
   private lastSaved = '';
   /** What each docked interface was last told about being on screen (wm/view). */
   private viewHidden = new Map<string, boolean>();
-
-  constructor() {
-    this.dispatch({
-      type: 'open',
-      window: { id: CHAT_WINDOW, iface: 'Chat', title: 'Chat', kind: 'chat' },
-    });
-  }
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -198,12 +189,25 @@ export class ColumnHost {
           iface,
           title,
           kind: 'tgui',
-          at: win.at ?? (placed ? undefined : this.state.groups.length - 1),
+          at: win.at ?? (placed ? undefined : this.unplacedIndex(wid)),
         },
       });
     } else {
       this.dispatch({ type: 'title', id: wid, title });
     }
+  }
+
+  /**
+   * Where a window with no saved place goes: above the chat, which fills the
+   * rest of the column at its foot; with no chat docked, last.
+   */
+  private unplacedIndex(wid: string): number {
+    const { groups, windows } = this.state;
+    const chat = groups.findIndex((group) =>
+      group.windows.some((id) => id !== wid && windows[id]?.iface === 'Chat'),
+    );
+    const others = groups.filter((group) => !group.windows.includes(wid));
+    return chat < 0 ? others.length : others.indexOf(groups[chat]);
   }
 
   private closed(wid: string) {

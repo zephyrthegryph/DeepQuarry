@@ -258,6 +258,23 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 /// stat_compute() for the rules a row list adds nothing to (ALL, ANY, SUM, PRODUCT, MAX, MIN, MASK_OR) on a stat none of whose rows exist: no row
 /// list, no combine call. The constant comes first and the contributions follow in order, as in the general path, so the value is the same.
 /proc/stat_compute_fast(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)
+	// The contributions gated by a holder proc share one evaluation context (as stat_relation_changed()'s run does): a context per gate was
+	// a take and a release per condition (a machine's power stat asks three).
+	var/datum/act/op/ctx = null
+	for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+		if(C.gate_kinds && (CG_PROC in C.gate_kinds))
+			ctx = pooled_op_context(E)
+			break
+	if(!ctx)
+		return stat_compute_fast_with(E, def, I, rec, null)
+	try
+		. = stat_compute_fast_with(E, def, I, rec, ctx)
+	catch(var/exception/fault)
+		ctx.release()
+		throw fault
+	ctx.release()
+
+/proc/stat_compute_fast_with(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec, datum/act/op/ctx)
 	var/rule = def.rule
 	var/has_const = FALSE
 	var/constant = null
@@ -272,26 +289,26 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 			if(has_const && !constant)
 				return FALSE
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C) && !stat_contrib_value(E, def, C))
+				if(stat_contrib_active(E, C, ctx) && !stat_contrib_value(E, def, C))
 					return FALSE
 			return TRUE
 		if(STAT_RULE_ANY)
 			if(has_const && constant)
 				return TRUE
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C) && stat_contrib_value(E, def, C))
+				if(stat_contrib_active(E, C, ctx) && stat_contrib_value(E, def, C))
 					return TRUE
 			return FALSE
 		if(STAT_RULE_PRODUCT)
 			. = has_const ? constant : 1
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. *= stat_contrib_value(E, def, C)
 		if(STAT_RULE_MASK_OR)
 			var/any_member = has_const
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. |= stat_contrib_value(E, def, C)
 					any_member = TRUE
 			if(!any_member)
@@ -300,7 +317,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 			. = has_const ? constant : null
 			var/is_max = (rule == STAT_RULE_MAX)
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(!stat_contrib_active(E, C))
+				if(!stat_contrib_active(E, C, ctx))
 					continue
 				var/v = stat_contrib_value(E, def, C)
 				if(isnull(.) || (is_max ? (v > .) : (v < .)))
@@ -310,7 +327,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 		else
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. += stat_contrib_value(E, def, C)
 
 /// A boolean stat's contribution as TRUE or FALSE; any other value as it is.
@@ -463,8 +480,11 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 			if(length(I.contribs[def.skey]) || def.rule == STAT_RULE_FORMULA || rec.constants[def.skey])
 				todo += def
 		todo = stat_sort_by_rank(I, todo)
+	var/census_start = GLOB.stat_template_census ? TICK_USAGE_REAL : 0
 	for(var/datum/stat_def/def as anything in todo)
 		stat_recompute(E, def, TRUE)
+	if(GLOB.stat_template_census)
+		stat_template_census_note(E, I, rec, census_start)
 	for(var/datum/stat_hop/sys as anything in I.hops["sys"])
 		var/list/readers = GLOB.stat_sys_index[sys.system]
 		if(!readers)
@@ -1247,3 +1267,69 @@ PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cann
 				if(!length(rrec.hop_targets))
 					rrec.hop_targets = null
 	rec.hop_in = null
+
+// ---- the template census (stat_templates.md; -params bench_stat_template_census=1) ----
+
+/// TRUE measures the init stat computes and which of them a per-type template could serve. Off unless the world asks.
+GLOBAL_VAR_INIT(stat_template_census, FALSE)
+/// "eligible" / "ineligible" -> list(instances, tick-usage percent spent); and per eligible type -> list(instances, percent).
+GLOBAL_LIST_EMPTY(stat_template_census_rows)
+
+/// TRUE when type I's init computes read nothing outside the instance: no hop, no system, no contributes_to across a relation, no read through a
+/// relation ("x.y") and no capability key (stat_templates.md, "When an instance may take the template").
+/proc/stat_template_type_eligible(datum/stat_type_info/I)
+	var/static/list/verdicts = list()
+	if(!isnull(verdicts[I.owner_type]))
+		return verdicts[I.owner_type]
+	. = TRUE
+	if(length(I.hop_rels) || length(I.hops) || length(I.ct_entries) || length(I.untracked))
+		. = FALSE
+	else
+		for(var/skey in I.contribs)
+			for(var/datum/stat_contrib/C as anything in I.contribs[skey])
+				if(C.value_kind == CV_CAPKEY)
+					. = FALSE
+				for(var/read in C.reads)
+					if(findtext("[read]", ".") || findtext("[read]", "capkey"))
+						. = FALSE
+	verdicts[I.owner_type] = .
+
+/// One instance's init computes: time and whether a template could have served it (type eligible, no map-edited stat constant, no own value on an input).
+/proc/stat_template_census_note(datum/E, datum/stat_type_info/I, datum/stat_record/rec, start)
+	var/spent = TICK_USAGE_REAL - start
+	if(spent < 0)
+		spent = 0 // the computes crossed a tick: not counted as time, still counted as an instance
+	var/eligible = stat_template_type_eligible(I) && !rec.constants
+	if(eligible)
+		for(var/key in I.inputs)
+			if(istext(key) && (key in E.vars) && E.vars[key] != initial(E.vars[key]))
+				eligible = FALSE
+				break
+	var/bucket = eligible ? "eligible" : "ineligible"
+	var/list/row = GLOB.stat_template_census_rows[bucket] || list(0, 0)
+	row[1]++
+	row[2] += spent
+	GLOB.stat_template_census_rows[bucket] = row
+	if(eligible)
+		var/type_key = "[E.type]"
+		var/list/type_row = GLOB.stat_template_census_rows[type_key] || list(0, 0)
+		type_row[1]++
+		type_row[2] += spent
+		GLOB.stat_template_census_rows[type_key] = type_row
+
+/proc/stat_template_census_report()
+	for(var/bucket in list("eligible", "ineligible"))
+		var/list/row = GLOB.stat_template_census_rows[bucket] || list(0, 0)
+		log_world("STAT TEMPLATE CENSUS: [bucket]: [row[1]] instance(s), [round(row[2], 0.1)]% of a tick in total")
+	var/list/types = list()
+	for(var/key in GLOB.stat_template_census_rows)
+		if(key != "eligible" && key != "ineligible")
+			var/list/type_row = GLOB.stat_template_census_rows[key]
+			types[key] = type_row[2]
+	var/list/sorted = sortTim(types, GLOBAL_PROC_REF(cmp_numeric_dsc), TRUE)
+	var/shown = 0
+	for(var/key in sorted)
+		var/list/type_row = GLOB.stat_template_census_rows[key]
+		log_world("STAT TEMPLATE CENSUS: [key]: [type_row[1]] instance(s), [round(type_row[2], 0.1)]%")
+		if(++shown >= 25)
+			break
