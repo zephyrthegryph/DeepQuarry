@@ -249,28 +249,18 @@ export function Window(props: Props) {
       className={classes(['Window', readOnly && 'Window--readonly'])}
       theme={theme}
     >
-      {!fitted && (
+      {!fitted && !docked && (
         <TitleBar
           className="Window__titleBar"
           title={title || decodeHtmlEntities(config.title)}
           status={config.status}
           fancy={fancy}
-          // Docked, the window is a native pane in the right-hand column (BYOND lays it out, as it does the chat): no window drag.
-          onDragStart={docked ? () => {} : dragStartHandler}
+          onDragStart={dragStartHandler}
           onClose={suspendStart}
           canClose={canClose}
         >
           {buttons}
-          {docked && (
-            <Button
-              icon="up-right-from-square"
-              tooltip="Float"
-              tooltipPosition="bottom-start"
-              color="transparent"
-              onClick={() => Byond.sendMessage('wm/float')}
-            />
-          )}
-          {dockable && !docked && (
+          {dockable && (
             <Button
               icon="table-columns"
               tooltip="Dock in the side panel"
@@ -285,7 +275,7 @@ export function Window(props: Props) {
         ref={restRef}
         className={classes([
           'Window__rest',
-          !fitted && 'Window__restwithTitlebar',
+          !fitted && !docked && 'Window__restwithTitlebar',
           debug.debugLayout && 'debug-layout',
         ])}
       >

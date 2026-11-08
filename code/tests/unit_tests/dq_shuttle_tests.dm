@@ -338,7 +338,7 @@
 	TEST_ASSERT(total_o2_after >= soaked_o2 * 0.99, "escape shuttle lost oxygen while moving: [soaked_o2] -> [total_o2_after]")
 	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite()), "escape shuttle could not return to its off-station landmark")
 
-/// A move leaves at most one lighting underlay on every dynamic turf it touches, keeps a lighting object on each, and keeps
+/// A move leaves at most one lighting underlay on every dynamic turf it touches, keeps a lighting object on each lit one (an unlit one may have none, and then shows no underlay), and keeps
 /// lighting out of the appearance a landed holder remembers (a stale gradient would come back when the shuttle leaves).
 /datum/unit_test/dq_shuttle_move_keeps_lighting
 
@@ -352,7 +352,10 @@
 	if(!T.has_dynamic_lighting())
 		TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 0, "[label]: non-dynamic [T.type] at [T.x],[T.y],[T.z] kept a lighting underlay")
 		return
-	TEST_ASSERT_NOTNULL(T.lighting_object, "[label]: dynamic [T.type] at [T.x],[T.y],[T.z] has no lighting object")
+	if(!T.lighting_object)
+		TEST_ASSERT(!T.lighting_corners_lit(), "[label]: lit dynamic [T.type] at [T.x],[T.y],[T.z] has no lighting object")
+		TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 0, "[label]: [T.type] at [T.x],[T.y],[T.z] has a lighting underlay and no object")
+		return
 	TEST_ASSERT_EQUAL(T.lighting_object.affected_turf, T, "[label]: lighting object at [T.x],[T.y],[T.z] names another turf")
 	TEST_ASSERT(lighting_underlays(T.underlays) <= 1, "[label]: [T.type] at [T.x],[T.y],[T.z] stacked lighting underlays")
 
@@ -381,7 +384,7 @@
 	var/updated = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/T in contents_of(A))
-			if(T.lighting_object)
+			if(T.lighting_ensure_object())
 				T.lighting_object.update()
 				TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 1, "[T.type] at [T.x],[T.y],[T.z] does not show one lighting underlay after an update")
 				updated++

@@ -295,11 +295,8 @@ export async function revealWindow(
     return false;
   }
   if (config?.window?.docked) {
-    // Docked (doc/rewrite/proposals/window_system.md section 11): the window
-    // is a native pane in the right-hand column, laid out by BYOND. Show it
-    // (the page hid itself while mounting) and tell the server it is up, which
-    // seats the pane.
-    Byond.winset(Byond.windowId, { alpha: 255, 'is-visible': true });
+    // Docked (doc/rewrite/proposals/window_system.md): the stat panel places
+    // and shows this window; tell it the page is up.
     revealedGeneration = currentGeneration;
     Byond.sendMessage('wm/ready');
     return true;

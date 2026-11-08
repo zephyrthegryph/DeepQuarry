@@ -112,6 +112,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	/// What a Menu read can know of the op without its state (op_menu_never_lists()): null until asked, 0 nothing, 1 never a Menu line,
 	/// 2 a line only on the actor's own holder. Derived from the immutable parts, once.
 	var/menu_static
+	/// P.conds in the order op_conds_cheapest_first() tests them, made on first use.
+	var/list/conds_ordered
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 /// The compiled ops of a type table, by key and in order.

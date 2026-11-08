@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { flow } from 'tgui-core/fp';
-import { type BooleanLike, classes } from 'tgui-core/react';
+import type { BooleanLike } from 'tgui-core/react';
 import { capitalizeAll, createSearch } from 'tgui-core/string';
 import { getLayoutState, LAYOUT, LayoutToggle } from './common/LayoutToggle';
 
@@ -39,6 +39,8 @@ type Product = {
   color: string;
   isatom: BooleanLike;
   path: string;
+  /** The product's picture (its own small asset), or null. */
+  image?: string | null;
   amount: number;
   max_amount: number; // Not used?
 };
@@ -157,7 +159,7 @@ export const VendingProductsGrid = (props: { products: Product[] }) => {
       {products.map((product) => (
         <ImageButton
           key={product.key}
-          asset={product.isatom ? ['vending32x32', product.path] : undefined}
+          imageSrc={product.image || undefined}
           disabled={!product.amount}
           tooltip={`${capitalizeAll(product.name)}${product.desc ? ` - ${product.desc}` : ''}`}
           tooltipPosition="bottom-end"
@@ -201,11 +203,15 @@ const VendingRow = (props: { product: Product }) => {
   return (
     <Table.Row className="candystripe">
       <Table.Cell collapsing>
-        {(product.isatom && (
-          <span
-            className={classes(['vending32x32', product.path])}
+        {(product.image && (
+          <img
+            src={product.image}
+            alt=""
+            width={32}
+            height={32}
             style={{
               verticalAlign: 'middle',
+              imageRendering: 'pixelated',
             }}
           />
         )) ||

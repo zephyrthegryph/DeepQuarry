@@ -326,3 +326,30 @@ CAPABILITIES(/obj/dq_setup_marks_probe)
 		GLOB.type_look_stamp -= type
 	if(isnull(was_lazy))
 		GLOB.type_look_lazy -= type
+
+/// Draw on first view holds only atoms on the map: a client's HUD (screen objects in nullspace: plane masters, fullscreen overlays) made during
+/// boot is drawn at once, so a player who connects while the server boots never keeps an undrawn screen. A map atom of the same kind is still held.
+/datum/unit_test/dq_boot_hold_spares_screens_and_non_map_atoms
+
+/datum/unit_test/dq_boot_hold_spares_screens_and_non_map_atoms/Run()
+	var/type = /obj/dq_stamp_plain
+	refresh_flush()
+	GLOB.type_look_stamp -= type
+	GLOB.type_derives_cache -= type
+	set_global(nameof(GLOB.boot_created_settled), FALSE)
+	var/datum/materialize_batch/batch = SSatoms.batch_open("dq_boot_hold_spares_screens") // the boot map load's frame is open
+	var/obj/sample = new type(test_floor())
+	var/obj/on_map = new type(test_floor())
+	var/obj/in_nullspace = new type(null) // where a HUD's screen objects live
+	var/atom/movable/screen/hud_piece = new
+	SSatoms.batch_close(batch)
+	TEST_ASSERT(sample.refresh_queued & DEP_CREATED, "the first map instance is the type's sample")
+	TEST_ASSERT_EQUAL(on_map.refresh_queued, DEP_PARKED, "a later map instance is still held for the verdict")
+	TEST_ASSERT(in_nullspace.refresh_queued != DEP_PARKED, "an atom with no turf under it (a HUD's) is never held")
+	TEST_ASSERT(hud_piece.refresh_queued != DEP_PARKED, "and neither is a screen object")
+	refresh_settle_created()
+	refresh_flush()
+	qdel(sample)
+	qdel(on_map)
+	qdel(in_nullspace)
+	qdel(hud_piece)

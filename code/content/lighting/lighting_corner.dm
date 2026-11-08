@@ -135,22 +135,32 @@
 
 	src.largest_color_luminosity = round(largest_color_luminosity, LIGHTING_ROUND_VALUE)
 
+	// A lit corner makes the lighting object of a turf that has none yet (lazy lighting objects, lighting_build_overlay).
+	var/lit = largest_color_luminosity > 0
 	var/datum/lighting_object/lighting_object = master_NE?.lighting_object
+	if (!lighting_object && lit && master_NE)
+		lighting_object = master_NE.lighting_ensure_object()
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
 		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_SE?.lighting_object
+	if (!lighting_object && lit && master_SE)
+		lighting_object = master_SE.lighting_ensure_object()
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
 		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_SW?.lighting_object
+	if (!lighting_object && lit && master_SW)
+		lighting_object = master_SW.lighting_ensure_object()
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
 		SSlighting.queue_object(lighting_object)
 
 	lighting_object = master_NW?.lighting_object
+	if (!lighting_object && lit && master_NW)
+		lighting_object = master_NW.lighting_ensure_object()
 	if (lighting_object && !lighting_object.needs_update)
 		lighting_object.needs_update = TRUE
 		SSlighting.queue_object(lighting_object)

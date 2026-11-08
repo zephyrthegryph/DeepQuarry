@@ -203,6 +203,12 @@ pub fn refresh_panel() {
         }
         Ok(())
     });
+    // Each field's counts as its own step left them (kept by the field task as it runs): no walk of the world.
+    for (name, active, edges, touched) in vg_core::field::field_counts() {
+        metrics.gauge(&format!("world.awake.field_{name}_chunks")).set(f64::from(active));
+        metrics.gauge(&format!("world.stepped.field_{name}_edges")).set(f64::from(edges));
+        metrics.gauge(&format!("world.stepped.field_{name}_touched")).set(f64::from(touched));
+    }
 }
 
 /// The metrics whose names start with any of `prefixes` (comma-separated), after refreshing the sampled gauges: what the MC Health panel reads

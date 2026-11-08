@@ -15,8 +15,15 @@
 //
 // A client holds the chunks its view window covers (the visible set) and a ring of one chunk around them (the prefetch). A chunk entering the ring has
 // its owed draws queued in the presentation lane (FIFO, under its budget): a walker is a chunk away from seeing it, so the queue has time. A chunk
-// that becomes visible to an observer has everything it still owes drawn at once, outside the budget (interest_scan(now = TRUE)): the lane being
-// behind, a teleport or a zoom never shows an undrawn atom.
+// that becomes visible to an observer is never shown with a draw still owed (the user's rule: no player sees an object drawn late). Everything here
+// is driven by these chunk events alone, never by a scan of viewers, atoms or rings:
+//   - entering the ring (one chunk past the view's edge, on every side): what the chunk owes joins the prefetch queue, nearest the observer's eye
+//     first, and is drawn ahead of the presentation backlog as ticks have room, so a walker's next chunk is drawn before it comes into view;
+//   - becoming visible on a view jump (a login, an arrival, a teleport: most of what the client sees is new at once): the client's screen is covered
+//     (a black fullscreen), its owed draws are drawn nearest the eye first over as many ticks as they take, and the cover lifts when none is left;
+//   - becoming visible otherwise (a walker's edge the prefetch has not finished, or a holder that is no client, such as a camera screen): what it
+//     still owes is drawn at once, in that tick.
+// The drain that works the queues is a keyed timer that exists only while a queue holds something (interest_arrival_drain()).
 
 /// Edge of a chunk in turfs.
 #define INTEREST_CHUNK 16
@@ -110,10 +117,9 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 // ---- holds ----
 
 /// Sets what `owner` (an observer key) holds to `keys` (chunk keys; null or empty releases everything), of which `visible` are in its view. A chunk going
-/// from unheld to held is walked: the draws it owes are queued, or run at once when the chunk is visible to the owner. A chunk that becomes visible to
-/// the owner while already held (it was the ring) has what it still owes drawn at once. A chunk going to unheld is counted, nothing else (what it drew
-/// stays drawn).
-/proc/interest_hold_set(owner, list/keys, list/visible)
+/// from unheld to held is walked: the draws it owes are queued. A chunk that becomes visible to the owner (new, or the ring it held already) has what
+/// it owes drawn nearest `eye` first, as the tick allows (interest_arrive()). A chunk going to unheld is counted, nothing else (what it drew stays drawn).
+/proc/interest_hold_set(owner, list/keys, list/visible, turf/eye = null)
 	var/list/was = GLOB.interest_holds[owner]
 	var/list/was_visible = GLOB.interest_visible[owner]
 	var/list/entered
@@ -133,16 +139,140 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	else
 		GLOB.interest_holds -= owner
 		GLOB.interest_visible -= owner
+	if(!length(keys))
+		interest_uncover(owner) // the observer went: nothing of its own waits behind a cover
+	var/list/arriving
+	var/list/ringed
 	for(var/key in entered)
-		interest_scan(round(key / 1048576), round((key % 1048576) / 1024), key % 1024, (key in visible) && !(key in was_visible))
+		if((key in visible) && !(was_visible && (key in was_visible)))
+			LAZYADD(arriving, key)
+		else
+			LAZYADD(ringed, key)
 	for(var/key in visible)
 		if((was_visible && (key in was_visible)) || (entered && (key in entered)))
 			continue
-		interest_scan(round(key / 1048576), round((key % 1048576) / 1024), key % 1024, TRUE)
+		LAZYADD(arriving, key)
+	if(length(ringed))
+		interest_prefetch(ringed, visible, eye)
+	if(length(arriving))
+		interest_arrive(owner, arriving, visible, eye)
 
-/// Walks the turfs of chunk (z, cx, cy). With `now` everything that still owes a draw there (parked, or queued behind the lane) is drawn on the spot;
-/// without it the parked ones join the queue. Returns how many it handled.
-/proc/interest_scan(z, cx, cy, now)
+// ---- arrival: what a newly visible area owes, drawn before it is seen ----
+
+/// Owed draws one drain pass always runs while ticks are tight: a covered arrival and the prefetch keep moving on a busy server.
+#define INTEREST_ARRIVAL_MIN_STEP 32
+/// Observer key -> handles (handle_of()) of the atoms it owes behind its cover, nearest its eye first. Present only while that observer is covered.
+GLOBAL_ALIST_EMPTY(interest_covered)
+/// Handles of atoms owed in ring chunks (a chunk away from someone's view), nearest the observer first, drawn ahead of the presentation backlog.
+GLOBAL_LIST_EMPTY(interest_prefetched)
+/// Owed draws run behind a cover, by the prefetch, and at once (a visible chunk the prefetch had not finished); covers raised.
+GLOBAL_VAR_INIT(interest_cover_drawn, 0)
+GLOBAL_VAR_INIT(interest_prefetch_drawn, 0)
+GLOBAL_VAR_INIT(interest_at_once_drawn, 0)
+GLOBAL_VAR_INIT(interest_covers_raised, 0)
+/// The most owed draws one drain pass runs (0: the tick's budget decides). Tests set it to see the spread a busy tick makes.
+GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
+/// Observer keys that tests treat as coverable without a client (a client is what a cover is shown on).
+GLOBAL_LIST_EMPTY(interest_test_coverable)
+
+/// Where the observer looks from, in chunk coordinates (fractional), for nearest-first ordering: `eye`, or the middle of what it sees.
+/proc/interest_view_middle(list/visible, turf/eye)
+	if(eye)
+		return list((eye.x - INTEREST_CHUNK / 2) / INTEREST_CHUNK, (eye.y - INTEREST_CHUNK / 2) / INTEREST_CHUNK)
+	var/sum_x = 0
+	var/sum_y = 0
+	for(var/key in visible)
+		sum_x += round((key % 1048576) / 1024)
+		sum_y += key % 1024
+	return list(sum_x / max(1, length(visible)), sum_y / max(1, length(visible)))
+
+/// The handles of what chunks `keys` owe, nearest (mid_cx, mid_cy) first: chunk by chunk, and turf by turf inside each chunk.
+/proc/interest_owed_ordered(list/keys, list/middle)
+	. = list()
+	var/list/by_distance = list()
+	for(var/key in keys)
+		var/cx = round((key % 1048576) / 1024)
+		var/cy = key % 1024
+		by_distance["[key]"] = (cx - middle[1]) ** 2 + (cy - middle[2]) ** 2
+	by_distance = sortTim(by_distance, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
+	for(var/key_text in by_distance)
+		var/key = text2num(key_text)
+		interest_collect_owed(., round(key / 1048576), round((key % 1048576) / 1024), key % 1024, middle[1], middle[2])
+
+/// Chunks `keys` entered an observer's ring: what they owe is drawn ahead of the backlog, nearest the observer first, before they come into view.
+/proc/interest_prefetch(list/keys, list/visible, turf/eye)
+	var/list/owed = interest_owed_ordered(keys, interest_view_middle(visible, eye))
+	if(!length(owed))
+		return
+	// Each joins the presentation queue as it always did (the lane draws it if nothing else does first), and the prefetch draws them nearest first,
+	// ahead of whatever backlog that queue holds.
+	var/queued = 0
+	for(var/handle in owed)
+		var/atom/A = handle_get(handle)
+		if(isatom(A))
+			queued += interest_wake(A)
+	if(queued)
+		log_world("INTEREST: [length(keys)] chunk(s) in the ring, [queued] parked draw(s) queued, [length(owed)] prefetched nearest first")
+	GLOB.interest_prefetched += owed
+	interest_drain_soon()
+
+/// Chunks `keys` became visible to `owner` (seeing `visible` from `eye`). Nothing they owe may be seen undrawn: on a view jump the owner's screen is
+/// covered while its draws run over the ticks they take; otherwise (a walker's edge the prefetch has not finished, or no client to cover) they run now.
+/proc/interest_arrive(owner, list/keys, list/visible, turf/eye)
+	var/list/owed = interest_owed_ordered(keys, interest_view_middle(visible, eye))
+	if(!length(owed))
+		return
+	var/list/covered = GLOB.interest_covered[owner]
+	var/jump = length(keys) * 2 >= max(1, length(visible))
+	if(!covered && jump && length(owed) > INTEREST_ARRIVAL_MIN_STEP && interest_cover(owner))
+		covered = list()
+		GLOB.interest_covered[owner] = covered
+	if(covered)
+		covered += owed
+		log_world("INTEREST: [length(keys)] chunk(s) visible behind [owner]'s cover, [length(owed)] owed draw(s) queued nearest first")
+		interest_arrival_drain()
+		return
+	var/drawn = 0
+	for(var/handle in owed)
+		var/atom/A = handle_get(handle)
+		if(isatom(A) && !QDELETED(A))
+			drawn += interest_draw_now(A)
+	GLOB.interest_at_once_drawn += drawn
+	if(drawn)
+		log_world("INTEREST: [length(keys)] chunk(s) visible, [drawn] owed draw(s) run now")
+
+/// Covers `owner`'s screen (a client's mob gets a black fullscreen) while its view is drawn. FALSE when there is no client to cover.
+/proc/interest_cover(owner)
+	if(owner in GLOB.interest_test_coverable)
+		GLOB.interest_covers_raised++
+		return TRUE
+	var/client/C = handle_get(owner)
+	if(!istype(C) || !C.mob || !C.mob.view_cover_set(TRUE))
+		return FALSE
+	GLOB.interest_covers_raised++
+	return TRUE
+
+/// Lifts `owner`'s cover, if it has one, and forgets what was owed behind it (an observer that left owes nothing of its own).
+/proc/interest_uncover(owner)
+	if(isnull(GLOB.interest_covered[owner]))
+		return
+	GLOB.interest_covered -= owner
+	var/client/C = handle_get(owner)
+	if(istype(C) && C.mob)
+		C.mob.view_cover_set(FALSE)
+
+/// Covers (`covered`) or uncovers this mob's view of the map while what it is about to see is drawn. TRUE when it could. The engine's default has no
+/// cover to show; the HUD implements it (code/content/hud/fullscreen.dm).
+/mob/proc/view_cover_set(covered)
+	return FALSE
+
+/// Arms the drain for the next tick while any queue holds something.
+/proc/interest_drain_soon()
+	if(!after_pending(null, "interest_arrival_drain"))
+		after(null, world.tick_lag, GLOBAL_PROC_REF(interest_arrival_drain), key = "interest_arrival_drain")
+
+/// Appends to `into` the handles of what chunk (z, cx, cy) owes, nearest the chunk point (mid_cx, mid_cy) first. Returns how many.
+/proc/interest_collect_owed(list/into, z, cx, cy, mid_cx, mid_cy)
 	. = 0
 	GLOB.interest_chunks_entered++
 	if(z < 1 || z > world.maxz)
@@ -153,12 +283,95 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 		return
 	var/turf/low = locate(x0, y0, z)
 	var/turf/high = locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)
+	// The point to order by, in turfs: a chunk is 16 turfs, so the order inside one matters.
+	var/mid_x = mid_cx * INTEREST_CHUNK + INTEREST_CHUNK / 2
+	var/mid_y = mid_cy * INTEREST_CHUNK + INTEREST_CHUNK / 2
+	var/list/owed = list()
 	for(var/turf/T as anything in block(low, high))
-		. += now ? interest_draw_now(T) : interest_wake(T)
+		var/owes = !!T.refresh_queued
+		if(!owes)
+			FOR_CONTENTS(var/atom/movable/A as anything, T)
+				if(A.refresh_queued)
+					owes = TRUE
+					break
+		if(owes)
+			owed[T] = (T.x - mid_x) ** 2 + (T.y - mid_y) ** 2
+	if(!length(owed))
+		return
+	owed = sortTim(owed, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
+	for(var/turf/T as anything in owed)
+		if(T.refresh_queued)
+			into += handle_of(T)
+			.++
 		FOR_CONTENTS(var/atom/movable/A as anything, T)
-			. += now ? interest_draw_now(A) : interest_wake(A)
-	if(.)
-		log_world("INTEREST: chunk [cx],[cy] z[z] [now ? "visible, [.] owed draw(s) run now" : "in the ring, [.] parked draw(s) queued"]")
+			if(A.refresh_queued)
+				into += handle_of(A)
+				.++
+
+/// One pass over the queues: every covered observer's owed draws first (its screen is black until they are done), then the prefetch, as the tick allows.
+/// A covered observer whose queue empties is uncovered. The pass re-arms itself for the next tick only while something is left. Returns how many it drew.
+/proc/interest_arrival_drain()
+	. = 0
+	var/budget_hit = FALSE
+	for(var/owner in GLOB.interest_covered)
+		var/list/Q = GLOB.interest_covered[owner]
+		var/i = 0
+		while(i < length(Q))
+			i++
+			var/atom/A = handle_get(Q[i])
+			if(isatom(A) && !QDELETED(A))
+				var/drawn = interest_draw_now(A)
+				. += drawn
+				GLOB.interest_cover_drawn += drawn
+			if(interest_arrival_pass_full(.))
+				budget_hit = TRUE
+				break
+		Q.Cut(1, i + 1)
+		if(!length(Q))
+			interest_uncover(owner)
+		if(budget_hit)
+			break
+	if(!budget_hit)
+		var/list/P = GLOB.interest_prefetched
+		var/j = 0
+		while(j < length(P))
+			j++
+			var/atom/A = handle_get(P[j])
+			if(isatom(A) && !QDELETED(A))
+				var/drawn = interest_draw_now(A)
+				. += drawn
+				GLOB.interest_prefetch_drawn += drawn
+			if(interest_arrival_pass_full(.))
+				break
+		P.Cut(1, j + 1)
+	if(length(GLOB.interest_covered) || length(GLOB.interest_prefetched))
+		interest_drain_soon()
+
+/// Has a drain pass that ran `drawn` draws used its share of the tick?
+/proc/interest_arrival_pass_full(drawn)
+	if(GLOB.interest_arrival_step_max)
+		return drawn >= GLOB.interest_arrival_step_max
+	return drawn >= INTEREST_ARRIVAL_MIN_STEP && KERNEL_OVER_BUDGET
+
+/// The atoms in `owner`'s visible chunks that still owe a draw while it can see them (not covered): must always be empty (the rule the tests hold).
+/proc/interest_view_owing(owner)
+	. = list()
+	if(!isnull(GLOB.interest_covered[owner]))
+		return
+	for(var/key in GLOB.interest_visible[owner])
+		var/z = round(key / 1048576)
+		var/cx = round((key % 1048576) / 1024)
+		var/cy = key % 1024
+		var/x0 = cx * INTEREST_CHUNK + 1
+		var/y0 = cy * INTEREST_CHUNK + 1
+		if(z < 1 || z > world.maxz || x0 > world.maxx || y0 > world.maxy)
+			continue
+		for(var/turf/T as anything in block(locate(x0, y0, z), locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)))
+			if(T.refresh_queued & DEP_PARKED)
+				. += T
+			FOR_CONTENTS(var/atom/movable/A as anything, T)
+				if(A.refresh_queued & DEP_PARKED)
+					. += A
 
 /// A parked `A` owes a draw and something can see its chunk coming: it joins the presentation queue with everything it owed. Returns 1 when it did.
 /proc/interest_wake(atom/A)
@@ -347,7 +560,7 @@ GLOBAL_REAL(init_open, /alist)
 		keys = interest_view_keys(at_eye, half, visible)
 	if(at_mob && at_mob != at_eye)
 		keys = (keys || list()) | interest_view_keys(at_mob, half, visible)
-	interest_hold_set(token, keys, visible)
+	interest_hold_set(token, keys, visible, at_eye || at_mob)
 	return TRUE
 
 /// The client left: it holds nothing.

@@ -263,6 +263,21 @@
 		stoplag()
 	end_window("ap_menu")
 	metric("ap_menu_cold_us", menu_reads ? menu_cold_ms * 1000 / menu_reads : 0, "us")
+	// The first-ever read of a pair: no menu and no kept pass-1 rows.
+	var/first_ms = 0
+	var/first_reads = 0
+	for(var/i in 1 to length(crew) step 2)
+		var/mob/living/carbon/human/A = crew[i]
+		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+		if(A == B)
+			continue
+		op_menu_cache_clear()
+		GLOB.op_menu_pass1_rows.Cut()
+		var/stamp = TICK_USAGE_REAL
+		interaction_menu_data(A, B)
+		first_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		first_reads++
+	metric("ap_menu_first_us", first_reads ? first_ms * 1000 / first_reads : 0, "us")
 	// After an unrelated change of the crewmate (its act generation moves, none of the keys the menu read): is the menu still cached?
 	var/unrelated_builds = 0
 	var/unrelated_reads = 0
