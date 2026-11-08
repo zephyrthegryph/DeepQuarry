@@ -292,14 +292,19 @@
 // The air alarm: its window and its lock
 // =====================================================================================================================
 
-/// A fresh alarm holds its own thresholds the moment it exists, so a reading taken at once (the area's election, a gas watch) has bands to read, and two
-/// alarms never share one table.
+/// A fresh alarm holds its type's thresholds the moment it exists, so a reading taken at once (the area's election, a gas watch) has bands to read, and
+/// a band one alarm writes never reaches another (the table is a starting list: shared until written, copied on the write).
 /datum/unit_test/dq_atmos_m/alarm_has_thresholds_from_creation
 /datum/unit_test/dq_atmos_m/alarm_has_thresholds_from_creation/run_gate()
 	var/obj/machinery/alarm/A = alarm(main = FALSE)
 	var/obj/machinery/alarm/B = alarm(dx = 3, dy = 3, main = FALSE)
 	TEST_ASSERT(islist(A.TLV), "a fresh alarm has no thresholds")
-	TEST_ASSERT(A.TLV != B.TLV, "two alarms share one threshold table")
+	var/list/before = am_alarm_tlv(A, "pressure")
+	B.set_TLV_at("pressure", list(1, 2, 3, 4))
+	var/list/written = am_alarm_tlv(B, "pressure")
+	var/list/other = am_alarm_tlv(A, "pressure")
+	TEST_ASSERT_EQUAL(written[1], 1, "the alarm's own write took")
+	TEST_ASSERT_EQUAL(other[1], before[1], "a band one alarm wrote reached another alarm's thresholds")
 	TEST_ASSERT_EQUAL(A.tlv_level("pressure", ONE_ATMOSPHERE), 0, "normal pressure is not outside its band")
 	TEST_ASSERT_EQUAL(A.tlv_level("pressure", 0), 2, "vacuum is outside its band")
 
