@@ -133,6 +133,10 @@
 	if(movement_cost && path_weight == 1) // This updates pathweight automatically. //
 		path_weight = movement_cost
 
+	// The decks above and below hear of a new turf (a transparent one redraws what it shows). Not while the world's map loads: every turf is
+	// being made then, and a transparent turf sets itself up from the deck below when it initializes (make_z_transparent()).
+	if(atoms_booting())
+		return
 	// GetAbove()/GetBelow() inlined: src is already the turf, and most z-levels have no neighbour.
 	if(HasAbove(z))
 		var/turf/Ab = get_step(src, UP)

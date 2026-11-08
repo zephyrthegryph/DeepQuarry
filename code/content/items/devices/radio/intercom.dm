@@ -26,7 +26,7 @@
 	set_on(A?.powered(EQUIP))
 
 CAPABILITIES(/obj/item/radio/intercom)
-	configure(movable_motion(blocks_emissive = NONE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(start_listening_to_area))
 	configure(light_glow(color = "#00ff00", power = 0.25))
 	owns_one(nameof(circuit), starts = nameof(circuit))

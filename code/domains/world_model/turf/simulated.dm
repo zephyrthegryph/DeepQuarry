@@ -56,7 +56,7 @@
 	if(istype(loc, /area/chapel))
 		holy = 1
 	levelupdate()
-	if(is_outdoors())
+	if(SSplanets?.planet_at_z(z) && is_outdoors()) // only a planet's z keeps its outdoor turfs (weather, sun): elsewhere nothing reads them
 		SSplanets.addTurf(src)
 
 /turf/simulated/examine(mob/user)
