@@ -290,8 +290,8 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		var/turf/open/OT = T
 		if(OT.active_hotspot)
 			qdel(OT.active_hotspot)
-		if(OT.air)
-			OT.air.copy_from(dq_unit_test_block_default_air())
+		if(OT.turf_air())
+			OT.turf_air().copy_from(dq_unit_test_block_default_air())
 			OT.air_update_turf(TRUE, FALSE)
 		heat_set_solid(OT, T20C)
 	else if(istype(T, /turf/simulated/wall))
@@ -1445,7 +1445,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		return cache
 	cache = list()
 	for(var/turf/open/T in world)
-		if(T.air && !T.blocks_air && !istype(T, /turf/space))
+		if(T.turf_air() && !T.blocks_air && !istype(T, /turf/space))
 			cache += T
 	log_test("AIR GUARD: watching [length(cache)] turf(s) for leftover air; none excluded")
 	return cache
@@ -1456,10 +1456,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/list/live = list()
 	var/list/mixes = list()
 	for(var/turf/open/T as anything in unit_test_air_tracked())
-		if(QDELETED(T) || !istype(T) || !T.air || T.blocks_air)
+		if(QDELETED(T) || !istype(T) || !T.turf_air() || T.blocks_air)
 			continue
 		live += T
-		mixes += T.air
+		mixes += T.turf_air()
 	var/list/readings = read_gas_mixtures(mixes)
 	// The map's cryogenic rooms (air colder than the heat guard's cold-room line) are not judged, like their floors: they warm toward room temperature by design, from
 	// the heat of the APCs and machines standing in them, in whichever test the world happens to be running. `skip` marks them (turf -> their temperature, K).
@@ -1500,7 +1500,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	for(var/k in 1 to length(moved))
 		var/i = moved[k]
 		var/turf/open/T = turfs[i]
-		if(QDELETED(T) || !istype(T) || !T.air || !T.x) // (a turf a test replaced is off the map, its handle names whatever stands there now: not judged)
+		if(QDELETED(T) || !istype(T) || !T.turf_air() || !T.x) // (a turf a test replaced is off the map, its handle names whatever stands there now: not judged)
 			continue
 		if(touched && T.loc)
 			touched[T.loc] = TRUE
@@ -1559,7 +1559,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		return
 	var/list/turfs = list()
 	for(var/turf/open/T as anything in skip)
-		if(!QDELETED(T) && istype(T) && T.air)
+		if(!QDELETED(T) && istype(T) && T.turf_air())
 			turfs += T
 	var/list/now = read_gas_mixtures(unit_test_airs_of(turfs))
 	var/list/by_area = list()
@@ -1581,7 +1581,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 
 /// Puts one turf's air back to the batched record `was` read before the test (offset into it): the gases, then the temperature.
 /proc/unit_test_air_put_back(turf/open/T, list/was, offset)
-	var/datum/gas_mixture/air = T.air
+	var/datum/gas_mixture/air = T.turf_air()
 	air.clear()
 	for(var/gas_id in 0 to GAS_ID_COUNT - 1)
 		var/moles = was[offset + GAS_READ_MOLES(gas_id)]
@@ -1595,7 +1595,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 /proc/unit_test_airs_of(list/turfs)
 	. = list()
 	for(var/turf/open/T as anything in turfs)
-		. += T.air
+		. += T.turf_air()
 
 /// The settings of a map atmospherics machine or air alarm a test can leave changed (and a later test then reads): a machine on or off, a pump's target, an alarm's mode.
 /proc/unit_test_machine_vars()

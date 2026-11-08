@@ -9,8 +9,8 @@
 	var/list/turfs = unit_test_air_tracked()
 	var/pressure = -1
 	for(var/turf/open/T in turfs)
-		if(T.air)
-			pressure = T.air.return_pressure()
+		if(T.turf_air())
+			pressure = T.turf_air().return_pressure()
 			break
 	return list("turfs" = turfs, "k" = vg_heat_turf_temperatures(turfs), "pressure" = pressure)
 

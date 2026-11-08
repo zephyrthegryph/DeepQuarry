@@ -94,13 +94,13 @@ GLOBAL_VAR_INIT(turf_move_new_ms, 0)
 	var/was_open = isopenturf(src)
 	var/datum/gas_mixture/old_air
 	var/turf/open/old_open_turf = src
-	if(istype(old_open_turf) && old_open_turf.air)
+	if(istype(old_open_turf) && old_open_turf.turf_air())
 		// Space turfs share one immutable vacuum that outlives this turf, so read
 		// it directly instead of allocating a throwaway copy.
 		// A successor that holds no air, or shares an immutable mixture (which drops every write), takes nothing: no copy to make and delete.
 		var/turf/open/successor_path = N
 		if(ispath(N, /turf/open) && !initial(successor_path.immutable_atmos))
-			old_air = old_open_turf.immutable_atmos ? old_open_turf.air : old_open_turf.air.copy()
+			old_air = old_open_turf.immutable_atmos ? old_open_turf.turf_air() : old_open_turf.turf_air().copy()
 	var/old_air_shared = istype(old_open_turf) && old_open_turf.immutable_atmos
 	var/datum/sunlight_handler/old_shandler
 	var/turf/simulated/simself = src
@@ -150,8 +150,8 @@ GLOBAL_VAR_INIT(turf_move_new_ms, 0)
 		post_with += W
 		after(post_change[1], 0, post_change[2], with = post_with)
 	var/turf/open/new_open_turf = W
-	if(old_air && istype(new_open_turf) && new_open_turf.air)
-		new_open_turf.air.copy_from(old_air)
+	if(old_air && istype(new_open_turf) && new_open_turf.turf_air())
+		new_open_turf.turf_air().copy_from(old_air)
 	if(old_air_shared)
 		old_air = null
 	else
