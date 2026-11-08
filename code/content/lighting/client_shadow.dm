@@ -110,6 +110,7 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 	glow_mask_key = key
 	var/obj/effect/overlay/client_glow_mask/M = glow_mask
 	M.set_icon(glow_icon)
+	M.set_icon_state(G.icon_state) // the glow's own state: a state the icon lacks draws nothing, and the mask would be only as big as its tiles
 	M.overlays = CACHED_FAST(client_glow_masks, key)
 	client_glow_index(TRUE)
 	return TRUE

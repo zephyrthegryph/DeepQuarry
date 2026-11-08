@@ -149,6 +149,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	for(var/h in LAZYCOPY(held))
 		if(!keep[h])
 			drop_handle(h)
+	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s), [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
 
 /// Shows, updates or drops this viewer's copy of light `L`. Returns TRUE while it is held.
 /datum/client_glow_holder/proc/consider(datum/light_source/L)
@@ -177,7 +178,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/image/mask_image
 	if(!entry)
 		var/mask_name = "*cglow_mask_[handle_text(handle_of(L))]_[handle_text(handle_of(src))]"
-		mask_image = image(G.icon)
+		mask_image = image(G.icon, null, G.icon_state) // the glow's own state, so the mask is the glow's size and the alpha filter lines them up
 		mask_image.plane = PLANE_LIGHTING
 		mask_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_TOGETHER
 		mask_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
