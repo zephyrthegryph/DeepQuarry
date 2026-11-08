@@ -30,7 +30,7 @@ pub(super) fn actual_grammar_spelling_using(token:&Token<'_>,provider:&dyn Sourc
  match(&token.lexical_frame,token.lexical_span){
   (Some(frame),Some(span))=>{
    if !frame.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
-   let bytes=provider.original_source_bytes(frame.acquisition())?.ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual lexical spelling issuer is unavailable"))?;let spelling=bytes.get(span.range()).ok_or(io::ErrorKind::InvalidInput)?;
+   let bytes=original_fill_bucket!(Provider,provider.original_source_bytes(frame.acquisition()))?.ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual lexical spelling issuer is unavailable"))?;let spelling=bytes.get(span.range()).ok_or(io::ErrorKind::InvalidInput)?;
    // Whole original token spelling is converted ONCE with the shared codec;
    // all physical coordinates remain in the original raw frame, not this UTF8
    // grammar DATA. Any invalid byte makes the WHOLE spelling Latin1.

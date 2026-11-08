@@ -49,8 +49,8 @@ impl OriginalRawFrame{
   let identity=&self.identity;
   let lexer=&mut self.lexer;
   let result=(||{
-   let bytes=provider.original_source_bytes(identity.acquisition())?.ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual current raw byte view is unavailable"))?;
-   lexer.next_using(bytes,a,|notice|lexical_error(notice,bytes,identity),|event,bytes|consume(event,bytes,identity))
+   let bytes=original_fill_bucket!(Provider,provider.original_source_bytes(identity.acquisition()))?.ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual current raw byte view is unavailable"))?;
+   original_fill_bucket!(Lex,lexer.next_using(bytes,a,|notice|lexical_error(notice,bytes,identity),|event,bytes|consume(event,bytes,identity)))
   })();
   if result.is_err(){self.failed=true}
   result

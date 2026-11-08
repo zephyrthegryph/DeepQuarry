@@ -16,6 +16,10 @@ mod allocator;
 #[cfg(feature = "allocation-sites")]
 pub mod allocation_sites;
 mod clock;
+
+/// Native thread CPU clock for bounded external stage sampling.
+#[doc(hidden)]
+pub fn sample_thread_cpu_ns()->Option<u64>{clock::thread_coarse_ns()}
 mod internal_observer;
 mod memory;
 mod names;

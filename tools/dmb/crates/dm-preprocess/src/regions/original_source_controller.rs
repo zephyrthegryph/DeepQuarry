@@ -111,12 +111,14 @@ impl OriginalStreamControl for Control<'_>{
  fn conditional_eof(&mut self,actual:super::original_conditional::Unterminated,a:&SettingAdmission<'_>)->io::Result<()>{self.shared.borrow_mut().conditionals.record_using(actual.history,a)?;self.shared.borrow_mut().static_message(Location::Expansion(actual.origin),Severity::Error,None,actual.message,a)?;Ok(())}
  fn indent_notice(&mut self,kind:NativeIndentNotice,location:Option<Origin>,a:&SettingAdmission<'_>)->io::Result<()>{self.shared.borrow_mut().message(location.map(Location::Expansion).unwrap_or(Location::Default),Severity::Error,None,a,|text,a|original_format_using(text,a,|out|kind.write_message(out)))?;Ok(())}
  fn emitted(&mut self,actual:&Token<'static>,token:SpanToken,cover:Span,produced:OriginalProducedSpan<'_>,driver:&mut RawSourceDriver,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<()>{if token!=produced.token()||cover!=produced.cover(){return Err(io::ErrorKind::InvalidInput.into())}let saved=driver.take_delivery_trace_using(a)?;
+ #[cfg(feature="original-fill-sample")]
+ let _sample=super::original_fill_sample::scope(super::original_fill_sample::Bucket::Emit);
  let mut state=self.shared.borrow_mut();
  let State{plan,origins,..}=&mut *state;
  let occurrence=actual.origin.occurrence;
  let lease=plan.lease(occurrence)?;
  let row=driver.observe_physical_row_using(actual.origin,&lease,provider,None,a)?;
  let region=plan.region_for_emission_using(occurrence,row.row().decoded,a)?;
- let (path,trace)=plan.emission_owners_using(occurrence,&saved,driver,provider,a)?;
+ let (path,trace)=original_fill_bucket!(Macro,plan.emission_owners_using(occurrence,&saved,driver,provider,a))?;
  origins.append_produced_using(actual,produced,region,path,trace,&lease,provider,driver,Some(&row),a,self.work)}
 }

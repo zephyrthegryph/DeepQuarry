@@ -397,6 +397,15 @@ pub use original_lexical_frame::OriginalLexicalFrameIdentity;
 mod original_literal_source;
 pub use original_literal_source::{OriginalLiteralSourceBinding,OriginalLiteralSourceView};
 
+macro_rules! original_fill_bucket {
+    ($bucket:ident, $work:expr) => {{
+        #[cfg(feature="original-fill-sample")]
+        let _sample = $crate::regions::original_fill_sample::scope($crate::regions::original_fill_sample::Bucket::$bucket);
+        $work
+    }};
+}
+#[cfg(feature="original-fill-sample")]
+mod original_fill_sample;
 mod original_batch_execution;
 mod original_batch_primary;
 pub use original_batch_execution::{OriginalBatchSyntaxHost,OriginalBatchExecution};

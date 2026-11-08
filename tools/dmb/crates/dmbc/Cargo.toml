@@ -6,6 +6,7 @@ license = "GPL-3.0-only"
 description = "Native compiler client and immutable output pair publication"
 
 [features]
+original-fill-sample = ["dm-preprocess/original-fill-sample"]
 allocation-counting = ["dm-profile/allocation-counting"]
 allocation-sites = ["allocation-counting", "dm-profile/allocation-sites"]
 

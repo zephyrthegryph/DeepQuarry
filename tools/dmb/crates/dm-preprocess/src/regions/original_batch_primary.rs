@@ -61,8 +61,10 @@ fn fill(source:&mut dyn OriginalPreparedTokenSource,owner:&OriginalOutputIdentit
  let mut batch=Batch::new(owner,a)?;
  while batch.len()<UNITS{
   if cancel.is_some_and(|s|s.cancelled.load(Ordering::Acquire)){source.stop();return Ok(None)}
+  #[cfg(feature="original-fill-sample")]
+  let _row_sample=super::original_fill_sample::row(batch.len());
   a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
-  match source.next_prepared()?{Some(token)=>batch.push(token,a)?,None if source.reached_eof()=>break,None=>return Err(io::Error::new(io::ErrorKind::InvalidData,"batch producer pause is not actual EOF"))}
+  match source.next_prepared()?{Some(token)=>original_fill_bucket!(BatchPush,batch.push(token,a))?,None if source.reached_eof()=>break,None=>return Err(io::Error::new(io::ErrorKind::InvalidData,"batch producer pause is not actual EOF"))}
  }
  if batch.len()==0{return Ok(None)}
  let mut batch=batch.seal_using(a)?;
@@ -74,7 +76,18 @@ fn send_batches(source:&mut dyn OriginalPreparedTokenSource,a:&SettingAdmission<
  let mut trace=ProducerTrace{enabled:trace_enabled,fill:BatchTrace::default(),send:BatchTrace::default()};
  let initial=source.initial_delivery();
  if tx.send(Message::Start(initial.clone(),source.projects_body_spelling())).is_err(){source.stop();return Ok(())}
- loop{let next=trace.fill.measure(trace_enabled,||fill(source,initial.owner(),a,Some(signals)))?;if signals.cancelled.load(Ordering::Acquire){source.stop();return Ok(())}match next{Some(batch)=>if trace.send.measure(trace_enabled,||tx.send(Message::Batch(batch))).is_err(){source.stop();return Ok(())},None if source.reached_eof()=>{let _=tx.send(Message::End(source.actual_end()));return Ok(())},None=>{source.stop();return Ok(())}}}
+ #[cfg(feature="original-fill-sample")]
+ let mut batch_sampler=super::original_fill_sample::Sampler::from_environment();
+ loop{let next=trace.fill.measure(trace_enabled,||{
+  #[cfg(feature="original-fill-sample")]
+  let mut batch_sample=batch_sampler.next();
+  let result=fill(source,initial.owner(),a,Some(signals));
+  #[cfg(feature="original-fill-sample")]
+  if let Some(sample)=&mut batch_sample{
+   sample.finished_rows(result.as_ref().ok().map(|batch|batch.as_ref().map_or(0,Batch::len)));
+  }
+  result
+ })?;if signals.cancelled.load(Ordering::Acquire){source.stop();return Ok(())}match next{Some(batch)=>if trace.send.measure(trace_enabled,||tx.send(Message::Batch(batch))).is_err(){source.stop();return Ok(())},None if source.reached_eof()=>{let _=tx.send(Message::End(source.actual_end()));return Ok(())},None=>{source.stop();return Ok(())}}}
 }
 struct AsyncSource<'a,'budget>{rx:Option<Receiver<Message>>,current:Option<Cursor>,initial:OriginalDeliveryFrontier,signals:&'a Signals,a:&'a SettingAdmission<'budget>,trace_enabled:bool,receive:BatchTrace,actual_end:Option<OriginalProducedEnd>,ended:bool,stopped:bool,project_body_spelling:bool}
 impl<'a,'budget> AsyncSource<'a,'budget>{

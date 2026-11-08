@@ -86,6 +86,8 @@ impl OriginalRawInputs{
   self.observe_physical_row_using(origin,lease,provider,None,a).map(OriginalPhysicalRowObservation::into_row)
  }
  pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'_>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
+  #[cfg(feature="original-fill-sample")]
+  let _sample=super::original_fill_sample::scope(super::original_fill_sample::Bucket::Coordinate);
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}poll(a)?;
   let geometries = &self.geometries;
   let active = self.frames.as_slice().last().filter(|open| {
@@ -113,7 +115,7 @@ impl OriginalRawInputs{
     first
    }
   };
-  let geometry=&mut self.geometries.get_mut(at).expect("located source geometry");let raw=provider.original_source_bytes(lease)?.ok_or(io::ErrorKind::NotConnected)?;
+  let geometry=&mut self.geometries.get_mut(at).expect("located source geometry");let raw=original_fill_bucket!(Provider,provider.original_source_bytes(lease))?.ok_or(io::ErrorKind::NotConnected)?;
   let offset=origin.physical.start;let eof_token=!origin.invocation&&origin.physical.start==origin.physical.end&&offset==raw.len()&&geometry.actual_eof;
   if let Some(prior)=prior.filter(|prior|prior.origin==origin&&prior.lease.same_binding(lease)
    &&std::ptr::eq(prior.bytes,raw)&&prior.row.actual_eof==eof_token
@@ -168,7 +170,7 @@ impl OriginalRawInputs{
    let sink=RefCell::new(&mut *sink);let points=RefCell::new(points);
    let token=frame.next_physical_using(provider,a,|notice,bytes,identity|{let location=points.borrow_mut().notice(bytes,notice.point,a)?;sink.borrow_mut().lexical(identity,occurrence,location,notice,a)},|event,bytes,identity|{
     let span=match &event{super::original_raw_frame::OriginalPhysicalLexeme::FinalNewline{at}=>Span::new(*at,*at),super::original_raw_frame::OriginalPhysicalLexeme::Scalar{token,..}=>token.span,super::original_raw_frame::OriginalPhysicalLexeme::Quote(part)=>part.token_span(),super::original_raw_frame::OriginalPhysicalLexeme::QuoteFailure{recovery,..}=>recovery.token_span()};
-    let point=points.borrow_mut().at(bytes,span.start,a)?;let origin=Origin{physical:span,line:point.line,byte_column:Some(point.column),occurrence,invocation:false};
+    let point=original_fill_bucket!(Coordinate,points.borrow_mut().at(bytes,span.start,a))?;let origin=Origin{physical:span,line:point.line,byte_column:Some(point.column),occurrence,invocation:false};
     original_token_factory::project_using(event,bytes,Geometry::Physical{origin,frame:identity},a,&mut|point,notice|{let location=points.borrow_mut().notice(bytes,point,a)?;sink.borrow_mut().numeric(identity,occurrence,location,point,notice,a)})
    })?;
    match token{Some(Some(token))=>{self.last_input=Some(token.origin);return Ok(RawStep::Token(token))},Some(None)=>continue,None=>{

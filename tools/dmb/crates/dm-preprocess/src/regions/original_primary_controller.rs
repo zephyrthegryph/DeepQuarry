@@ -91,7 +91,7 @@ impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
  pub(super) fn enable_batch_geometry(&mut self){self.loan_batch_geometry=true;}
  fn pull_inner(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   loop{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
-   let actual=match self.driver.next_logical_using(self.provider,self.notices,self.host,self.a)?{
+   let actual=match original_fill_bucket!(Macro,self.driver.next_logical_using(self.provider,self.notices,self.host,self.a))?{
     DriverEvent::Token(LogicalToken::Actual(token))=>token,
     DriverEvent::Token(LogicalToken::Delimiter{spelling,location:None})=>{if spelling!=";"{return Err(io::Error::new(io::ErrorKind::InvalidData,"default logical state issued unexpected nonphysical punctuation"))}let prepared=self.cursor.prepare_default_semicolon(self.a)?;self.control.default_semicolon(prepared.produced(),self.driver,self.a)?;return Ok(Some(prepared.into_delivery()))},
     DriverEvent::Token(LogicalToken::Delimiter{spelling,location:Some(origin)})=>{Token{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:Value::Punct(spelling),origin}},
@@ -103,7 +103,7 @@ impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
     DriverEvent::ActualEnd=>{self.actual_end=Some(self.cursor.seal_actual_end(self.a)?);self.ended=true;return Ok(None)},
     DriverEvent::Stopped=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"source stopped without its actual receiver stop handoff")),
    };
-   let prepared=self.cursor.prepare(actual,self.provider,self.a)?;
+   let prepared=original_fill_bucket!(Emit,self.cursor.prepare(actual,self.provider,self.a))?;
    self.control.emitted(prepared.actual()?,prepared.token(),prepared.cover(),prepared.produced(),self.driver,self.provider,self.a)?;return Ok(Some(prepared.into_delivery()))
   }
  }
