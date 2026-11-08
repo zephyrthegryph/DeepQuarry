@@ -14,7 +14,14 @@ struct State {
     reserved: usize,
     owners: BTreeMap<PolicyStorageKey, usize>,
     error: Option<String>,
-    general_views:bool,
+    demand: Demand,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Demand {
+    General,
+    RawClean,
+    RawCode,
 }
 pub(super) struct Budget(Mutex<State>);
 pub(super) struct Reservation<'a> {
@@ -35,7 +42,7 @@ impl Budget {
             base,
             reserved: 0,
             owners: BTreeMap::new(),
-            error: None,general_views:true,
+            error: None, demand: Demand::General,
         }))))
     }
     fn used(s: &State) -> Option<usize> {
@@ -57,8 +64,16 @@ impl Budget {
             .error
             .clone()
     }
-    pub(super) fn restrict_to_raw_clean(&self){self.0.lock().unwrap_or_else(|e|e.into_inner()).general_views=false;}
-    pub(super) fn require_general_view(&self)->bool{let mut s=self.0.lock().unwrap_or_else(|e|e.into_inner());if !s.general_views{s.error.get_or_insert_with(||"this captured loan funded only raw/clean views".into());return false}s.error.is_none()}
+    pub(super) fn restrict(&self, demand: Demand) {
+        self.0.lock().unwrap_or_else(|e| e.into_inner()).demand = demand;
+    }
+    pub(super) fn require_view(&self, demand: Demand) -> bool {
+        let mut state = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        if state.demand != Demand::General && state.demand != demand {
+            state.error.get_or_insert_with(|| "this captured loan did not fund the requested derived view".into());
+        }
+        state.error.is_none()
+    }
     pub(super) fn reserve(&self, bytes: Option<usize>) -> Option<Reservation<'_>> {
         let mut s = self.0.lock().unwrap_or_else(|e| e.into_inner());
         if s.error.is_some() {

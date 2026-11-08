@@ -5,7 +5,7 @@ use std::collections::{BTreeMap,BTreeSet};
 pub(crate) type Table=BTreeMap<String,BTreeSet<String>>;
 #[derive(Default)]pub(crate) struct Schema{pub vars:Table,pub typed:Table,pub tracked:Table,pub relations:Table,pub published:Vec<(String,String,String)>}
 fn insert<C:Control>(table:&mut Table,owner:&str,name:&str,c:&mut C)->Result<(),C::Error>{if !table.contains_key(owner){kc::reserve(c,||Some(2048))?;table.insert(kc::own(c,owner)?,BTreeSet::new());}let set=table.get_mut(owner).unwrap();if !set.contains(name){kc::reserve(c,||Some(512))?;set.insert(kc::own(c,name)?);}Ok(())}
-fn admit<C:Control>(c:&mut C,pattern:&crate::pat::Pat)->Result<(),C::Error>{kc::reserve(c,||pattern.capture_group_count().checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64))}
+fn admit<C:Control>(c:&mut C,pattern:&crate::pat::Pat)->Result<(),C::Error>{kc::temporary(c,0,||pattern.capture_group_count().checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64))}
 // Every gate is a necessary literal in the corresponding pattern. Ordinary
 // source lines need neither a capture allocation nor an admission for one.
 macro_rules! first {
@@ -33,7 +33,9 @@ pub(crate) fn file<C:Control>(code:&crate::tree::View,c:&mut C)->Result<Schema,C
   if let Some(m)=first!(c,line,line.contains("PUBLISHED_BY("),r"PUBLISHED_BY\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\)"){kc::row(c,&mut out.published)?;out.published.push((kc::own(c,m.s(1))?,kc::own(c,m.s(2))?,kc::own(c,m.s(3))?));}
  }Ok(out)
 }
-pub(crate) fn relations<C:Control>(schema:&mut Schema,proc:Procedure<'_>,c:&mut C)->Result<(),C::Error>{if proc.name!="relations"||proc.owner=="/"{return Ok(())}for(_,line)in proc.lines.iter(){crate::reactive_dependency_policy::captures(crate::pat!(r"\b(?:rel|ref|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)"),line,c,|c,m|insert(&mut schema.relations,proc.owner,m.s(1),c))?}Ok(())}
+pub(crate) fn relations<C:Control>(schema:&mut Schema,proc:Procedure<'_>,c:&mut C)->Result<(),C::Error>{if proc.name!="relations"||proc.owner=="/"{return Ok(())}for(_,line)in proc.lines.iter(){crate::pat!(r"\b(?:rel|ref|owns?)_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)").try_for_each_capture(line,c,
+ |c,groups|kc::temporary(c,0,||groups.checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64)),
+ |c,m|insert(&mut schema.relations,proc.owner,m.s(1),c))?}Ok(())}
 /// Prefix iteration borrows every real segment and adds only the historical DM
 /// implicit parents. Triple/internal slashes and empty owner preserve old chain().
 pub(crate) fn chain(path:&str,mut visit:impl FnMut(&str,&str)){

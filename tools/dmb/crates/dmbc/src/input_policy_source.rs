@@ -32,12 +32,18 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
  /// The canonical FileInput-backed raw receipt proves this read only. It is
  /// not the productive raw driver's exact path/open receipt or a source grant.
  pub(crate) fn with_recorded_policy_file_using(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+  self.with_recorded_policy_file_demand(root,path,budget,lender,false,visit)
+ }
+ pub(crate) fn with_recorded_policy_file_code_using(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+  self.with_recorded_policy_file_demand(root,path,budget,lender,true,visit)
+ }
+ fn with_recorded_policy_file_demand(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,code_only:bool,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
   if self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(Failure::Operational(invalid("raw preflight requires actual Original recorder context")))}
   crate::daemon::control::checkpoint()?;budget.require().map_err(|m|quota(budget,m))?;
   // Real recorder path/fact/search-folder nodes are acquired by the same read;
   // the operation funds that ownership before those copies can be published.
   pay(budget,path.as_os_str().len().checked_mul(32).and_then(|n|n.checked_add(8192)))?;
-  dq_analyze::captured_raw_file::with_original_policy_file_prepared(root,path,0,budget,|scratch|{
+  let prepare=|scratch:&Budget|{
    crate::daemon::control::checkpoint()?;scratch.require().map_err(|m|quota(scratch,m))?;
    lender.prepare_source()?;let limit=budget.remaining();let bytes=self.read_policy_vec_admitted(path,limit,&mut|bytes|scratch.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?.ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::NotFound,"selected raw preflight file disappeared before its actual read")))?;
    let lease=self.finish_raw_source_read_admitted(path,bytes,&mut|plan|{
@@ -50,7 +56,12 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
    // Clone a genuine UTF8 view or do only the existing Analyze lossiness/newline
    // projection. No tokenization, parser, schema inference or blanket BOM strip.
    Ok(super::normalize_recorded_policy_original(&original))
-  },visit)
+  };
+  if code_only{
+   dq_analyze::captured_raw_file::with_original_policy_file_code_prepared(root,path,budget,prepare,visit)
+  }else{
+   dq_analyze::captured_raw_file::with_original_policy_file_prepared(root,path,0,budget,prepare,visit)
+  }
  }
 }
 #[cfg(test)]mod tests{

@@ -55,7 +55,7 @@ impl Facts for Judge<'_>{
  fn never_written(&self,owner:&str,name:&str)->Result<bool,Failure>{self.writes.never_written(self.index,owner,name)}
  fn allowed(&self,rel:&str,line:usize)->Result<bool,Failure>{if rel!=self.file.rel{return Err("derived ALLOW loan differs from current raw procedure file".into())}let mut c=Operation{budget:self.budget,poll:self.poll};let Some(kept)=crate::allow::kept_using(self.file,line,"derived_reads",&mut c)?else{return Ok(false)};let code=kept.code.unwrap_or_default();let mut data=self.data.borrow_mut();if !data.allows.iter().any(|a|a.rel==rel&&a.line as usize==kept.line&&a.name=="derived_reads"&&a.code==code){kc::row(&mut c,&mut data.allows)?;self.budget.charge(code.capacity()).map_err(|m|oom(self.budget,m))?;data.allows.push(AllowUse{rel:kc::own(&mut c,rel)?,line:u32::try_from(kept.line).map_err(|_|oom(self.budget,"derived ALLOW line overflow"))?,name:kc::own(&mut c,"derived_reads")?,code});}if !data.digests.contains_key(rel){kc::reserve(&mut c,||Some(2048))?;data.digests.insert(kc::own(&mut c,rel)?,crate::captured_raw_file::source_allow_digest(self.file));}Ok(true)}
 }
-fn procedures<C:Control>(file:&SourceFile,c:&mut C,mut visit:impl FnMut(usize,Procedure<'_>,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{if file.rel==reaction::GENERATED_REL{return Ok(())}let code=file.code();for(number,line)in code.numbered(){c.checkpoint()?;let Some(header)=reaction::header_admitted(line,|groups|kc::reserve(c,||groups.checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64)))?else{continue};let owner=header.owner.trim_end_matches('/');let owner=if owner.is_empty(){"/"}else{owner};let first=number.checked_add(1).ok_or_else(||c.overflow())?;visit(number,Procedure{owner,name:header.name,relative:&file.rel,args:header.args,lines:Lines::IndentedCode{view:code,first}},c)?}Ok(())}
+fn procedures<C:Control>(file:&SourceFile,c:&mut C,mut visit:impl FnMut(usize,Procedure<'_>,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{if file.rel==reaction::GENERATED_REL{return Ok(())}let code=file.code();for(number,line)in code.numbered(){c.checkpoint()?;let Some(header)=reaction::header_admitted(line,|groups|kc::temporary(c,0,||groups.checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64)))?else{continue};let owner=header.owner.trim_end_matches('/');let owner=if owner.is_empty(){"/"}else{owner};let first=number.checked_add(1).ok_or_else(||c.overflow())?;visit(number,Procedure{owner,name:header.name,relative:&file.rel,args:header.args,lines:Lines::IndentedCode{view:code,first}},c)?}Ok(())}
 trait DerivedPages{
  fn budget(&self)->&Arc<Budget>;
  fn require(&self)->Result<(),Failure>;
@@ -111,7 +111,7 @@ fn entry_backing(entry:&Entry)->Option<usize>{
  Some(bytes)
 }
 
-fn index_file(index:&mut Index,file:&SourceFile,scratch:&mut Operation<'_>,retained:&mut Operation<'_>,transfer:bool)->Result<(),Failure>{
+fn index_file(index:&mut Index,file:&SourceFile,scratch:&mut impl Control<Error=Failure>,retained:&mut Operation<'_>,transfer:bool)->Result<(),Failure>{
  let mut own=if file.rel==reaction::GENERATED_REL{Schema::default()}else{schema::file(file.code(),scratch)?};
  procedures(file,scratch,|header,proc,scratch|{
   schema::relations(&mut own,Procedure{owner:proc.owner,name:proc.name,relative:proc.relative,args:proc.args,lines:proc.lines},scratch)?;
@@ -159,6 +159,29 @@ impl UnsealedDerivedIndexData{
   n=n.checked_add(i.set_calls.len().checked_add(1)?.checked_mul(512)?)?;for c in &i.set_calls{n=n.checked_add(c.capacity())?}Some(n)
  }
 }
+/// Per-file matcher high water. Slot zero covers mutually exclusive schema,
+/// header and outer entry captures. Entry arguments and nested relation
+/// selectors can coexist with an outer capture and use separate slots.
+struct MatcherScratch<'a>{
+ operation:Operation<'a>,
+ peaks:[usize;3],
+}
+impl Control for MatcherScratch<'_>{
+ type Error=Failure;
+ const CHECKED:bool=true;
+ fn checkpoint(&mut self)->Result<(),Failure>{self.operation.checkpoint()}
+ fn reserve(&mut self,bytes:usize)->Result<(),Failure>{self.operation.reserve(bytes)}
+ fn temporary(&mut self,slot:usize,bytes:usize)->Result<(),Failure>{
+  let Some(&old)=self.peaks.get(slot)else{return Err(self.overflow())};
+  if bytes>old{
+   self.operation.reserve(bytes-old)?;
+   self.peaks[slot]=bytes;
+  }
+  Ok(())
+ }
+ fn overflow(&mut self)->Failure{self.operation.overflow()}
+ fn allocation_failed(&mut self)->Failure{self.operation.allocation_failed()}
+}
 struct PreflightPhase{funding:Arc<Budget>,complete:bool}impl Drop for PreflightPhase{fn drop(&mut self){if !self.complete{self.funding.keep_failed_scratch()}}}
 /// SAME selected raw index builder, before any semantic frontend, PolicyInputs,
 /// Globals or BODY. The host must later bind its genuine raw recorder/current
@@ -180,7 +203,7 @@ pub fn prepare_selected_pages(pages:&dyn crate::reactive_raw_policy_pages::RawPo
    }else{None};
    let local=fallback.as_deref().unwrap_or(actual);
    let mut guard=PreflightPhase{funding:fallback.as_ref().map_or_else(||Arc::clone(&funding),Arc::clone),complete:fallback.is_none()};
-   let mut scratch=Operation{budget:local,poll};
+   let mut scratch=MatcherScratch{operation:Operation{budget:local,poll},peaks:[0;3]};
    index_file(&mut index,views.source_file()?,&mut scratch,&mut retained,true)?;
    guard.complete=true;
    Ok(true)
@@ -247,6 +270,30 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
   let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
   drop(data);
   assert_eq!(budget.used(),66*fixed,"one root, one retained child and exactly one file child per page leave only fixed grants");
+ }
+ #[test]
+ fn one_large_file_reuses_sequential_and_nested_matcher_slots(){
+  struct Single<'a>{root:&'a std::path::Path,budget:&'a Arc<Budget>,text:dm_preprocess::SourceText}
+  impl crate::reactive_raw_policy_pages::RawPolicyPages for Single<'_>{
+   fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+    crate::captured_raw_file::with_original_policy_file_code_prepared(
+     self.root,&self.root.join("code/large.dm"),self.budget,|_|Ok(self.text.clone()),visit)
+   }
+  }
+  let root=std::env::current_dir().unwrap().join("derived-matcher-scratch");
+  let mut source="STAT(/datum/probe, value)\n".repeat(12_000);
+  source.push_str("/datum/probe/derived()\n    return list(derive(nameof(output), nameof(value), rel_each(nameof(items), nameof(/obj/item::value))))\n");
+  let budget=Budget::new(2*1024*1024).unwrap();
+  let data=prepare_selected_pages(&Single{root:&root,budget:&budget,text:source.into()},&budget,&||Ok(())).unwrap();
+  assert_eq!(data.index.schema.tracked["datum/probe"].iter().map(String::as_str).collect::<Vec<_>>(),["value"]);
+  let rows=&data.index.entries["datum/probe"];
+  assert_eq!(rows.len(),1);
+  let row=&rows[0];
+  assert_eq!(row.line,12_002);
+  assert_eq!(row.name.as_deref(),Some("output"));
+  assert!(row.local.contains("value"));
+  assert!(row.local.contains("items"));
+  assert_eq!(row.remote,[(Some("/obj/item".into()),"value".into())]);
  }
  #[test]fn treefree_preflight_refuses_actual_io_early_stop_and_quota_then_recovers(){let pages=pages();let budget=Budget::new(8*1024*1024).unwrap();pages.fail.set(true);assert!(matches!(prepare_selected_pages(&pages,&budget,&||Ok(())),Err(Failure::Operational(ref error))if error.raw_os_error()==Some(1450)));assert_eq!(pages.passes.get(),0);pages.fail.set(false);pages.stop.set(true);assert!(matches!(prepare_selected_pages(&pages,&budget,&||Ok(())),Err(Failure::Unsupported(_))));pages.stop.set(false);let tiny=Budget::new(256).unwrap();assert!(matches!(prepare_selected_pages(&pages,&tiny,&||Ok(())),Err(Failure::Operational(ref error))if error.kind()==io::ErrorKind::OutOfMemory));let fresh=Budget::new(8*1024*1024).unwrap();let data=prepare_selected_pages(&pages,&fresh,&||Ok(())).unwrap();assert_eq!(data.index.entry_order.len(),1);}
 }
