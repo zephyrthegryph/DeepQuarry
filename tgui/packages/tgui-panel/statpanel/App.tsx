@@ -20,7 +20,7 @@ import {
   type PanelView,
   type ServerPage,
 } from './layout';
-import { McTab } from './McTab';
+import { McHealthPanel } from './McHealth';
 import { MenuPage } from './MenuPage';
 import { MENU_SECTIONS, QUICK_ITEMS, run } from './menu';
 import {
@@ -30,6 +30,7 @@ import {
   type Verb,
   verbCommand,
   verbGroupsOf,
+  verbsOfTab,
   viewsOf,
 } from './store';
 
@@ -397,10 +398,10 @@ function ServerView({ state, store }: { state: State; store: StatStore }) {
         ))}
       </div>
       {page === 'Health' && (
-        <McTab
-          parts={state.mcParts}
-          metrics={state.mcMetrics}
+        <McHealthPanel
+          data={state.mcMetrics}
           token={state.hrefToken}
+          location={state.mcLocation}
         />
       )}
       {page === 'Tools' && <VerbGroups state={state} view="Server" />}
@@ -456,8 +457,10 @@ export function App(props: {
   // "/" anywhere in the panel puts the cursor in the search box.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== '/' || document.activeElement?.tagName === 'INPUT') return;
-      const box = document.querySelector<HTMLInputElement>('.stat-search input');
+      if (event.key !== '/' || document.activeElement?.tagName === 'INPUT')
+        return;
+      const box =
+        document.querySelector<HTMLInputElement>('.stat-search input');
       if (!box) return;
       event.preventDefault();
       box.focus();
