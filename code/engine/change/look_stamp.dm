@@ -81,6 +81,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 			continue
 		kept += D
 	refresh_queue_replace(kept)
+	skipped += boot_created_release() // the atoms held by type while the map loaded: an empty default look owes nothing, the rest are queued now
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")
 	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [length(Q)] left, [(REALTIMEOFDAY - start) * 100] ms")
@@ -278,3 +279,65 @@ GLOBAL_VAR_INIT(refresh_park_residual, "")
 		text += " [best] x[by_type[best]],"
 		by_type -= best
 	return text
+
+// ---- draw on first view: the fresh atoms of a map load wait by type, not in the queue ----
+//
+// A type's look verdict (type_look_stamp, type_look_lazy) is learned from one sampled first draw. Before it is known, a map load used to queue every
+// fresh atom for its first refresh (519 k at a full-map boot), and the settle walked them all to drop the 368 k of types whose default look is empty.
+// Now the first fresh instance of a type with no verdict yet is queued as its sample, and every later one is held out of the queue: parked (DEP_PARKED,
+// it owes its whole first refresh) in its type's bucket. refresh_settle_created() decides each bucket from the sample: an empty default look owes
+// nothing; any other is queued again for its first refresh as before, where the park or the boot drain takes it. A real mark on a held atom queues it
+// at once with what it owes (refresh_mark()), and its bucket entry is then skipped.
+
+/// type -> the fresh atoms of a map load held for the type's verdict (boot_created_hold()). Null outside a load's settle window.
+GLOBAL_LIST_EMPTY(boot_created_buckets)
+/// type -> TRUE once a fresh instance of the type has been queued as its sample during a map load.
+GLOBAL_LIST_EMPTY(boot_created_sampled)
+/// Fresh atoms held by type, and how many of them the settle released without a draw (the bench reads both).
+/// TRUE once the boot settle ran: a later map load (an expedition, a template) queues its fresh atoms as before, since no settle follows it.
+GLOBAL_VAR_INIT(boot_created_settled, FALSE)
+GLOBAL_VAR_INIT(boot_created_held, 0)
+GLOBAL_VAR_INIT(boot_created_dropped, 0)
+
+/// caps_init(), for a fresh `A` not yet queued: TRUE when it is held in its type's bucket instead of queued (a map load, a type with no verdict, its
+/// sample already queued). FALSE queues it as before; the first such instance of a type is recorded as the sample.
+/proc/boot_created_hold(atom/A)
+	if(GLOB.boot_created_settled || !materialization_host().frame_running() || !isnull(GLOB.type_look_stamp[A.type]) || ismob(A))
+		return FALSE
+	if(!GLOB.boot_created_sampled[A.type])
+		GLOB.boot_created_sampled[A.type] = TRUE
+		return FALSE
+	var/list/bucket = GLOB.boot_created_buckets[A.type]
+	if(!bucket)
+		bucket = list()
+		GLOB.boot_created_buckets[A.type] = bucket
+	bucket += A
+	A.refresh_queued = DEP_PARKED
+	GLOB.boot_created_held++
+	return TRUE
+
+/// refresh_forget(): a held atom is destroyed before the settle: it leaves its bucket (it was appended last, so the search from the end is short).
+/proc/boot_created_forget(datum/D)
+	var/list/bucket = GLOB.boot_created_buckets?[D.type]
+	bucket?.Remove(D)
+
+/// refresh_settle_created(), once the samples are drawn: each bucket by its type's verdict. Returns how many held atoms owed nothing.
+/proc/boot_created_release()
+	var/list/buckets = GLOB.boot_created_buckets
+	GLOB.boot_created_buckets = list()
+	GLOB.boot_created_sampled = list()
+	GLOB.boot_created_settled = TRUE
+	. = 0
+	for(var/type in buckets)
+		var/list/bucket = buckets[type]
+		var/empty = GLOB.type_look_stamp[type]
+		for(var/atom/A as anything in bucket)
+			if(QDELETED(A) || A.refresh_queued != DEP_PARKED)
+				continue // deleted, or a real mark queued it already with what it owed
+			A.refresh_queued = 0
+			if(empty)
+				.++
+				continue
+			refresh_mark(A, DEP_ALL)
+			A.refresh_queued |= DEP_CREATED
+	GLOB.boot_created_dropped += .

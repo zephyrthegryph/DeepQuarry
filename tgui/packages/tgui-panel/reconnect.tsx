@@ -64,7 +64,6 @@ export function ReconnectStatus(props: { restarting: boolean }) {
       {state.active ? (
         <Button
           compact
-          color="white"
           tooltip="Stop reconnecting automatically"
           tooltipPosition="bottom"
           onClick={() => reconnector.cancel()}
@@ -74,7 +73,6 @@ export function ReconnectStatus(props: { restarting: boolean }) {
       ) : null}
       <Button
         compact
-        color="white"
         tooltip="Reconnect now"
         tooltipPosition="bottom"
         onClick={() => {
@@ -86,7 +84,6 @@ export function ReconnectStatus(props: { restarting: boolean }) {
       {url ? (
         <Button
           compact
-          color="white"
           icon="power-off"
           tooltip="Relaunch game"
           tooltipPosition="bottom-end"

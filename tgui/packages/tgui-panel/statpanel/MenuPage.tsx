@@ -6,17 +6,13 @@ import {
   HELP_ITEMS,
   ICON_SIZES,
   iconSizeCommand,
-  LINK_ITEMS,
   type MenuItem,
   ROUND_ITEMS,
+  run,
   textModeCommand,
   ZOOM_MODES,
   zoomModeCommand,
 } from './menu';
-
-function run(command: string) {
-  setTimeout(() => Byond.command(command), 0);
-}
 
 function Items({ items }: { items: MenuItem[] }) {
   return (
@@ -121,9 +117,6 @@ export function MenuPage() {
       </Section>
       <Section title="Help and preferences">
         <Items items={HELP_ITEMS} />
-      </Section>
-      <Section title="Links">
-        <Items items={LINK_ITEMS} />
       </Section>
     </>
   );

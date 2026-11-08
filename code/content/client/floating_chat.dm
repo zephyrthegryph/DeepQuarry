@@ -384,12 +384,6 @@ GLOBAL_LIST_INIT(chat_input_channels, list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNE
 	)))
 	dx_winget(src, src, SKIN_CHAT_FLOAT_WINDOW, "pos;size", PROC_REF(chat_float_measured))
 
-/client/verb/toggle_floating_chat()
-	set name = "toggle-floating-chat"
-	set hidden = TRUE // the Menu page: Float / dock chat
-
-	prefs?.update_preference_by_type(/datum/preference/toggle/chat_floating, !prefs.read_preference(/datum/preference/toggle/chat_floating))
-
 /client/verb/dock_chat()
 	set name = "dock-chat"
 	set hidden = TRUE // the floating chat window closing runs it

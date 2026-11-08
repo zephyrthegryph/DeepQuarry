@@ -591,6 +591,7 @@
 #include "dq_core_tests.dm"
 #include "dq_tgui_client_tests.dm"
 #include "dq_nonblocking_ui_tests.dm"
+#include "dq_spritesheet_loader_tests.dm"
 #include "dq_ui_push_cost_tests.dm"
 #include "dq_tgui_status_tests.dm"
 #include "dq_window_dock_tests.dm"

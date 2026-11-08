@@ -61,6 +61,9 @@
 	var/datum/op_cand/near_miss
 	/// The gate that dropped candidates before any was a candidate (the actor gate's reason), or null.
 	var/gate_reason
+	/// A Menu read's shared op context (list(act)) while its rows are decided, and whether a row it listed shows a cooldown.
+	var/list/menu_scratch
+	var/menu_timed = FALSE
 	/// Whether the caller wants the near miss (a click's refusal reason): when it does not (a Menu read), a candidate the origin or authority refuses
 	/// is never made, the same as one its binding's input drops.
 	var/near_misses = TRUE
@@ -659,14 +662,8 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /// Sorts the survivors: intent rank, tier, then target before held before actor, then binding specificity, then declaration order; then explicit
 /// relative priorities and click orders, which win over all of these.
 /proc/op_resolution_sort(datum/op_resolution/R)
-	var/list/sorted = list()
-	for(var/datum/op_cand/C as anything in R.ordered)
-		var/position = length(sorted) + 1
-		for(var/i in 1 to length(sorted))
-			if(op_cand_precedes(C, sorted[i]))
-				position = i
-				break
-		sorted.Insert(position, C)
+	// A total order (declaration order breaks every tie), so any sort gives the one result: a merge sort, not an insertion over the survivors.
+	var/list/sorted = sortTim(R.ordered.Copy(), GLOBAL_PROC_REF(op_cand_cmp))
 	op_specificity_sort(sorted)
 	R.ordered = op_order_relative(sorted)
 
@@ -770,6 +767,12 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 				sorted[slots[k]] = held[k]
 		start = stop + 1
 
+/// op_cand_precedes() as a sort comparator.
+/proc/op_cand_cmp(datum/op_cand/A, datum/op_cand/B)
+	if(A == B)
+		return 0
+	return op_cand_precedes(A, B) ? -1 : 1
+
 /// Does candidate A come before B?
 /proc/op_cand_precedes(datum/op_cand/A, datum/op_cand/B)
 	if(A.rank != B.rank)
@@ -792,13 +795,20 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /proc/op_act_fill(datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, datum/capability/cap, datum/prov/V, mob/actor, datum/target, obj/held, origin, authority)
 	RETURN_TYPE(/datum/act/op)
 	var/datum/act/op/A = take(/datum/act/op)
+	op_act_set(A, P, B, holder, side, granted_by, cap, V, actor, target, held, origin, authority)
+	return A
+
+/// Fills an op context's entry fields for (op, binding) on `holder` (op_act_fill()), or refills one a Menu read reuses for its next row: the held
+/// relation is written only when it moves (a Menu's rows all share the actor's held item).
+/proc/op_act_set(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, datum/capability/cap, datum/prov/V, mob/actor, datum/target, obj/held, origin, authority)
 	A.set_key(P.key)
 	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
 	A.cap = cap
 	A.activation = granted_by // ALLOW(ownership): a pooled transient: reset on release
 	A.source = granted_by ? granted_by.source : holder // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = actor
-	A.set_held_provider(held)
+	if(A.held_provider() != held)
+		A.set_held_provider(held)
 	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
 	// An actor-side op that declares a reach (a natural weapon's bite) is aimed at what the input addressed.
 	var/aimed = side == CAND_ACTOR && !isnull(target) && target != actor && (!isnull(LAZYACCESS(P.selects, "reach")) || B?.bind_kind == BIND_CLICKS)
@@ -808,7 +818,6 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	A.origin = origin
 	A.authority = authority
 	A.provider = V?.source
-	return A
 
 // ---- pass 2 and the winner ----
 
@@ -964,10 +973,12 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 			return P.label_state_text
 	return op_label(P)
 
-/// The menus read so far: key -> list(rows, time stamp or null). The key is (actor, target, held, the act generation of each of the three, the actor's
-/// provider set generation), the ids never reused (a ref would be). An entity's act generation bumps when a published key, a relation, a stat, its place or
-/// its contents change (op_changed()), and the provider set generation when an activation with provides attaches or detaches, so a stale read never
-/// matches: the key itself is what changed. Only a menu that shows a cooldown also carries the time it was read at (a cooldown ends with no publication).
+/// The menus read so far: key -> list(rows, time stamp or null, dependencies, read scope, hidden rows, sampled rows). The key is (actor, target, held,
+/// the place generation of the actor and the target (where they are and what they hold, down their contents), the held item's act generation, the
+/// actor's provider set and the capability generations, the actor's stance), the ids never reused. What the rows read is a dependency per (entity,
+/// key) (op_menu_record_reads(): an unrelated change of a crewmate leaves the menu cached), a row that depends on its holder's whole state (a path,
+/// a state-worded label) records the holder's act generation, and a row that sampled state is asked again (op_menu_sampled_rows_same()). Only a
+/// menu that shows a cooldown also carries the time it was read at (a cooldown ends with no publication).
 // Temporary synchronous read scope: list(parent frame, encountered read_once).
 GLOBAL_LIST(op_menu_read_frame)
 GLOBAL_LIST_EMPTY(op_menu_cache) // ALLOW(cache): keyed by generations, so a state change makes the old entry unreachable; bounded by OP_MENU_CACHE_MAX
@@ -1044,9 +1055,9 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/datum/rx_state/actor_state = actor ? rx_of(actor) : null
 	var/datum/rx_state/target_state = target ? rx_of(target) : null
 	var/datum/rx_state/held_state = held ? rx_of(held) : null
-	var/cache_key = "[actor ? SHARED_CACHE_UID(actor) : "-"]|[target ? SHARED_CACHE_UID(target) : "-"]|[held ? SHARED_CACHE_UID(held) : "-"]|[actor_state?.act_gen]|[target_state?.act_gen]|[held_state?.act_gen]|[actor_state?.provider_gen]"
+	var/cache_key = "[actor ? SHARED_CACHE_UID(actor) : "-"]|[target ? SHARED_CACHE_UID(target) : "-"]|[held ? SHARED_CACHE_UID(held) : "-"]|[actor_state?.place_gen]|[target_state?.place_gen]|[held_state?.act_gen]|[actor_state?.provider_gen]|[actor_state?.capability_generation]|[target_state?.capability_generation]|[actor?.op_input_stance()]"
 	var/list/cached = GLOB.op_menu_cache[cache_key]
-	if(cached && (isnull(cached[2]) || cached[2] == stamp) && op_menu_dependencies_valid(cached[3]))
+	if(cached && (isnull(cached[2]) || cached[2] == stamp) && op_menu_dependencies_valid(cached[3]) && op_menu_sampled_rows_same(cached, actor, target, held))
 		var/list/cached_rows = cached[1]
 		var/list/parent_frame = frame[1]
 		while(parent_frame)
@@ -1065,12 +1076,76 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	GLOB.op_menu_builds++
 	// A Menu shows no near miss: the candidates the menu origin refuses are never made.
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null, near_misses = FALSE)
+	var/list/sampled_rows = list() // the rows whose decision sampled state (read_once()): asked again on a later read, not the whole menu
 	var/list/rows = list()
 	var/list/hidden = list() // the rows left out, with the requirement that hid each (the admin "Show hidden" view)
 	var/list/seen = list()
 	var/list/label_rows = list() // label -> the row listed under it: one line per label (op_menu_lists())
 	var/timed = FALSE
 	var/list/stance_skips = op_menu_stance_skips(R)
+	R.menu_scratch = list(take(/datum/act/op))
+	try
+		op_menu_rows(R, frame, rows, hidden, seen, label_rows, sampled_rows, stance_skips)
+	catch(var/exception/fault)
+		var/datum/act/op/failed_act = R.menu_scratch[1]
+		R.menu_scratch = null
+		failed_act.release()
+		throw fault
+	var/datum/act/op/menu_act = R.menu_scratch[1]
+	R.menu_scratch = null
+	menu_act.release()
+	timed = R.menu_timed
+	op_menu_tool_hints(R, rows, hidden, seen)
+	if(hidden_out)
+		hidden_out += hidden
+	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
+		op_menu_cache_clear()
+	if(!frame[2])
+		var/list/replaced = GLOB.op_menu_cache[cache_key]
+		var/datum/lookup_read_scope/old_scope = length(replaced) >= 4 ? replaced[4] : null
+		if(old_scope && !QDELETED(old_scope))
+			lifeform_end(old_scope, END_SCOPE)
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4], hidden, length(sampled_rows) ? sampled_rows : null)
+		frame[5] = TRUE
+	return rows.Copy()
+
+/// A Menu row's decision, in the order the Menu asks: list(signature, when() holds, the path is shut, the requirements' refusal, the FAILS_HIDDEN
+/// requirements that hide it). The signature is the decision as text, what a sampled row is compared by. One pooled act serves the row's when()
+/// and its requirements (they read the same fields).
+/proc/op_menu_decide(datum/op_resolution/R, datum/op_cand/C)
+	return op_menu_decide_fields(R, C.oplan, C.binding, C.holder, C.side, C.activation, C.cap, C.provider)
+
+/proc/op_menu_decide_fields(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, datum/capability/cap, datum/prov/V)
+	if(R.menu_scratch)
+		// One context serves every row of a Menu read: refilled per row, released by the read (conditions and requirements never write it).
+		var/datum/act/op/shared = R.menu_scratch[1]
+		op_act_set(shared, P, B, holder, side, granted_by, cap, V, R.actor, R.target, R.held, R.origin, R.authority)
+		return op_menu_decide_in(R, P, B, holder, side, shared)
+	var/datum/act/op/A = op_act_fill(P, B, holder, side, granted_by, cap, V, R.actor, R.target, R.held, R.origin, R.authority)
+	try
+		. = op_menu_decide_in(R, P, B, holder, side, A)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
+	A.release()
+
+/proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
+	if(length(P.conds))
+		GLOB.op_count_whens++
+	for(var/cond in P.conds)
+		if(!op_cond(A, cond))
+			return list("when", FALSE, FALSE, null, null)
+	if(op_path_reason(R, P, side, holder))
+		return list("path", TRUE, TRUE, null, null)
+	var/list/hid_by = list()
+	var/why = op_require_reason(A, P, B, hid_by)
+	if(length(hid_by))
+		var/datum/entry/part/req/hider = hid_by[1]
+		return list("hidden|[hider.type]", TRUE, FALSE, why, hid_by)
+	return list("open|[why ? reason_text(why) : ""]", TRUE, FALSE, why, hid_by)
+
+/// The rows of a Menu read, in order (op_menu_read()): one decision per candidate in the read's shared context.
+/proc/op_menu_rows(datum/op_resolution/R, list/frame, list/rows, list/hidden, list/seen, list/label_rows, list/sampled_rows, list/stance_skips)
 	for(var/datum/op_cand/C as anything in R.ordered)
 		if(seen[C.oplan.key])
 			continue
@@ -1081,8 +1156,18 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			continue
 		if(op_cand_swallows_only(C))
 			continue
-		// The row's own decision (when, path, requirements) in one act.
+		// The row's own decision (when, path, requirements) in one act. A decision that sampled state with read_once() leaves the rest of the
+		// menu cacheable: the row is kept as a sampled row, and a later read asks it again and rebuilds only when its answer moved. The other
+		// rows stay valid through the reads they recorded (op_menu_record_reads(): each read entity's act generation, which a change of what it
+		// holds, down to an implant in one of its organs, moves: op_moved()).
+		var/sampled_before = frame[2]
+		frame[2] = FALSE
+		if(C.oplan.space || C.oplan.label_state)
+			op_menu_record_holder(C.side == CAND_TARGET ? R.target : C.holder)
 		var/list/decision = op_menu_decide(R, C)
+		if(frame[2])
+			sampled_rows += list(op_menu_sampled_row(C, decision[1]))
+		frame[2] = sampled_before
 		if(!decision[2])
 			hidden += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "hidden_by" = "when()"))
 			continue
@@ -1092,7 +1177,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/label = op_menu_label(R, C)
 		var/list/same = label_rows[label]
 		if(!isnull(C.oplan.cooldown_t))
-			timed = TRUE
+			R.menu_timed = TRUE
 		var/enabled = TRUE
 		var/reason = null
 		var/list/hid_by = decision[5]
@@ -1119,49 +1204,42 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			continue
 		label_rows[label] = row
 		rows += list(row)
-	op_menu_tool_hints(R, rows, hidden, seen)
-	if(hidden_out)
-		hidden_out += hidden
-	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
-		op_menu_cache_clear()
-	if(!frame[2])
-		var/list/replaced = GLOB.op_menu_cache[cache_key]
-		var/datum/lookup_read_scope/old_scope = length(replaced) >= 4 ? replaced[4] : null
-		if(old_scope && !QDELETED(old_scope))
-			lifeform_end(old_scope, END_SCOPE)
-		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4], hidden)
-		frame[5] = TRUE
-	return rows.Copy()
 
-/// A Menu row's decision, in the order the Menu asks: list(signature, when() holds, the path is shut, the requirements' refusal, the FAILS_HIDDEN
-/// requirements that hide it). One pooled act serves the row's when()
-/// and its requirements (they read the same fields).
-/proc/op_menu_decide(datum/op_resolution/R, datum/op_cand/C)
-	return op_menu_decide_fields(R, C.oplan, C.binding, C.holder, C.side, C.activation, C.cap, C.provider)
+/// What a cached menu keeps of a row whose decision sampled state: enough to ask it again (the plan, binding and capability are compiled, shared
+/// parts; the entities are handles, never held; the provider is found again among the actor's by its entry and its source), and the answer.
+/proc/op_menu_sampled_row(datum/op_cand/C, signature)
+	return list(C.oplan, C.binding, handle_of(C.holder), C.side, C.activation ? handle_of(C.activation) : null, C.cap, C.provider?.entry, C.provider ? handle_of(C.provider.source) : null, signature)
 
-/proc/op_menu_decide_fields(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/activation/granted_by, datum/capability/cap, datum/prov/V)
-	var/datum/act/op/A = op_act_fill(P, B, holder, side, granted_by, cap, V, R.actor, R.target, R.held, R.origin, R.authority)
-	try
-		. = op_menu_decide_in(R, P, B, holder, side, A)
-	catch(var/exception/fault)
-		A.release()
-		throw fault
-	A.release()
-
-/proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
-	if(length(P.conds))
-		GLOB.op_count_whens++
-	for(var/cond in P.conds)
-		if(!op_cond(A, cond))
-			return list("when", FALSE, FALSE, null, null)
-	if(op_path_reason(R, P, side, holder))
-		return list("path", TRUE, TRUE, null, null)
-	var/list/hid_by = list()
-	var/why = op_require_reason(A, P, B, hid_by)
-	if(length(hid_by))
-		var/datum/entry/part/req/hider = hid_by[1]
-		return list("hidden|[hider.type]", TRUE, FALSE, why, hid_by)
-	return list("open|[why ? reason_text(why) : ""]", TRUE, FALSE, why, hid_by)
+/// TRUE when every sampled row of the cached menu decides as it did when the menu was built. A sampled row whose entities are gone counts as moved.
+/proc/op_menu_sampled_rows_same(list/cached, mob/actor, atom/target, obj/held)
+	var/list/sampled = length(cached) >= 6 ? cached[6] : null
+	if(!length(sampled))
+		return TRUE
+	var/datum/op_resolution/R = op_resolution_new(actor, target, held, ORIGIN_MENU, actor_authority(actor), null)
+	for(var/list/row as anything in sampled)
+		var/datum/holder = handle_get(row[3])
+		if(!holder || QDELETED(holder))
+			return FALSE
+		var/datum/activation/granted_by = row[5] ? handle_get(row[5]) : null
+		if(row[5] && (!granted_by || granted_by.dead))
+			return FALSE
+		var/datum/prov/V = null
+		if(row[7])
+			var/datum/source = handle_get(row[8])
+			if(!source)
+				return FALSE
+			if(isnull(R.providers))
+				R.providers = providers_for(actor, held)
+			for(var/datum/prov/candidate as anything in R.providers)
+				if(candidate.entry == row[7] && candidate.source == source)
+					V = candidate
+					break
+			if(!V)
+				return FALSE
+		var/list/decision = op_menu_decide_fields(R, row[1], row[2], holder, row[4], granted_by, row[6], V)
+		if(decision[1] != row[9])
+			return FALSE
+	return TRUE
 
 /// The ops that asked (menu(hint_tool = TRUE)) to be listed while the actor holds no tool that fits: a greyed row "needs a <tool>", unless the op is
 /// closed by its when() or its path. Adds to `rows`; `seen` keeps the keys already listed.

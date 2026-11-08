@@ -30,10 +30,3 @@ CAPABILITIES(/datum/tgui_feedback)
 /datum/tgui_feedback/proc/ui_act_submit(datum/act/op/A, comment, rating)
 	message_admins("TGUI Feedback: Rating [rating] - Comment: [comment]")
 	. = TRUE
-
-/client/verb/tgui_feedback()
-	set name = "Submit TGUI Feedback"
-	set hidden = TRUE // the Menu page
-
-	var/datum/tgui_feedback/feedback = new()
-	feedback.tgui_interact(usr)

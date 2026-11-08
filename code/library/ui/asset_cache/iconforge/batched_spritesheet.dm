@@ -173,8 +173,17 @@
 		return
 	if(!entries_created)
 		entries_created = TRUE
-		create_spritesheets() // the input data, compared with the cache below
+		// The input data, compared with the cache below. A deferred sheet makes it inside the asset loading service's generation: a fault here
+		// (a runtime, or a stack_trace() inside the service's try) must still end this sheet's generation, or the service's count of sheets in
+		// flight stays up and deferred assets never settle.
+		try
+			create_spritesheets()
+		catch(var/exception/fault)
+			realize_failed()
+			dq_report_caught(fault, "spritesheet [name] ([type]): create_spritesheets()")
+			return
 	if(!length(entries))
+		realize_failed()
 		CRASH("Spritesheet [name] ([type]) is empty! What are you doing?")
 
 	if(getting_genned)
@@ -254,6 +263,14 @@
 	queued_generation_active = TRUE
 	SSasset_loading.assets_generating++
 	INVOKE_ASYNC(src, PROC_REF(realize_spritesheets), TRUE) // The proc is called inside a subsystem and waits with an UNTIL // ALLOW(scheduler): realize_spritesheets waits with UNTIL
+
+/// The sheet cannot be built: its queued generation ends (the asset loading service's count of sheets in flight goes back down) and it leaves the
+/// queue. The sheet stays unbuilt; what asks for it later builds it again (ensure_ready()), and that may report the same fault.
+/datum/asset/spritesheet_batched/proc/realize_failed()
+	entries_created = FALSE
+	entries = null
+	finish_queued_generation()
+	SSasset_loading.dequeue_asset(src)
 
 /datum/asset/spritesheet_batched/proc/finish_queued_generation()
 	if(!queued_generation_active)

@@ -136,7 +136,11 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	return POWER_CONSUMPTION
 
 // Do not do power stuff in New/Initialize until after ..()
-/// The machine reports its draw and joins its area's power once it is made.
+/// Whether this machine never draws power (unpowered_machine(), a pipe): it has no power_area and is not among its area's power_machines.
+/obj/machinery/proc/draws_no_power()
+	return !!cap_of(src, CAP_UNPOWERED_MACHINE)
+
+/// The machine reports its draw and joins its area's power once it is made (a machine that never draws joins nothing).
 /obj/machinery/proc/machine_power_start()
 	// only add this if we init on a non-turf (and non-null)
 	if(!STATE_PEEK(src, machinery_misc, recursive_set) && loc && !isturf(loc))
@@ -144,6 +148,8 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 		dq_add_recursive_move(src)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
 	STATE_SET(src, machinery_misc, power_init_complete, TRUE)
+	if(draws_no_power())
+		return
 	rel_set(src, nameof(power_area), get_area(src)) // the machine's draw reaches the area's demand with the relation
 
 // Or in Destroy at all, but especially after the ..().
@@ -178,7 +184,7 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
 	if(old_area == new_area)
 		return
-	if(!STATE_PEEK(src, machinery_misc, power_init_complete))
+	if(!STATE_PEEK(src, machinery_misc, power_init_complete) || draws_no_power())
 		return
 	rel_set(src, nameof(power_area), new_area) // the draw follows the relation: it leaves the old area's demand and joins the new one's
 	power_change() // Force check in case the old area was powered and the new one isn't or vice versa.
