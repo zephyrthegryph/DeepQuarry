@@ -19,3 +19,6 @@ export const previewEnabledAtom = atom(true);
 
 /** The channels the speaker can use now (chat/channels): the lobby has OOC only. OOC until the server says. */
 export const availableChannelsAtom = atom<InputChannel[]>(['OOC']);
+
+/** What the input row holds: kept outside the row, so a chat window that moves (docked, floating) keeps its draft. */
+export const chatDraftAtom = atom('');

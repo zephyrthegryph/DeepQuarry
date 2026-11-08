@@ -1,4 +1,4 @@
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   activeAt,
@@ -13,14 +13,15 @@ import { focusMap } from 'tgui/focus';
 import { classes } from 'tgui-core/react';
 import {
   availableChannelsAtom,
+  chatDraftAtom,
   inputFocusRequestAtom,
   languageRulesAtom,
   previewEnabledAtom,
   radioOptionsAtom,
 } from './atoms';
 import {
-  COMMON_OPTION,
   ChatInputModel,
+  COMMON_OPTION,
   type InputChannel,
   keyAction,
   MAX_LENGTH,
@@ -29,9 +30,9 @@ import {
   parseCommonPrefix,
   parseRadioPrefix,
   previewEntry,
-  settleChannel,
   type RadioOption,
   radioColorName,
+  settleChannel,
 } from './model';
 
 /** Marks the field for panelFocus.ts, which must not hand focus to the map while it is used. */
@@ -54,7 +55,7 @@ export function ChatInput() {
   const input = model.current;
   const field = useRef<HTMLInputElement>(null);
   const [channel, setChannelState] = useState<InputChannel>('Say');
-  const [value, setValue] = useState('');
+  const [value, setValue] = useAtom(chatDraftAtom);
   const [caret, setCaret] = useState(0);
   const pendingSelection = useRef<[number, number] | null>(null);
   const request = useAtomValue(inputFocusRequestAtom);
@@ -229,8 +230,8 @@ export function ChatInput() {
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
             setChannel(
-            nextChannel(channel, event.shiftKey ? -1 : 1, available),
-          );
+              nextChannel(channel, event.shiftKey ? -1 : 1, available),
+            );
             field.current?.focus();
           }}
         >

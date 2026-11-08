@@ -95,30 +95,7 @@ CAPABILITIES(/datum/tgui_panel)
 		return TRUE
 	if(type == "ready")
 		broken = FALSE
-		var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
-		window.send_message("connected", list(
-			"round_id" = GLOB.round_id, // Sends the round ID to the chat, requires round IDs
-			"chatlog_db_backend" = CONFIG_GET(flag/chatlog_database_backend),
-			"chatlog_api_endpoint" = CONFIG_GET(string/chatlog_database_api_endpoint),
-			"chatlog_stored_rounds" = islist(stored_rounds) ? list("0") + stored_rounds : list("0"),
-		))
-		window.send_message("update", list(
-			"config" = list(
-				"client" = list(
-					"ckey" = client().ckey,
-					"chatlog_token" = client().chatlog_token,
-					"address" = client().address,
-					"computer_id" = client().computer_id,
-				),
-				"server" = list(
-					"round_id" = GLOB.round_id,
-				),
-				"window" = list(
-					"fancy" = FALSE,
-					"locked" = FALSE,
-				),
-			),
-		))
+		send_chat_config(window)
 		// A (re)loaded column page holds no windows: its arrangement and every column window go to it again (column_part.dm).
 		column_page_loaded()
 		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
@@ -145,6 +122,34 @@ CAPABILITIES(/datum/tgui_panel)
 	if(type == "telemetry")
 		analyze_telemetry(payload)
 		return TRUE
+
+/// The chat's connect messages to `window`: the round and chatlog settings ("connected") and the client's config (`update_type`: the
+/// column page's "update"; a floating chat window's "chat/config", since a tgui window's own update is its data).
+/datum/tgui_panel/proc/send_chat_config(datum/tgui_window/window, update_type = "update")
+	var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
+	window.send_message("connected", list(
+		"round_id" = GLOB.round_id, // Sends the round ID to the chat, requires round IDs
+		"chatlog_db_backend" = CONFIG_GET(flag/chatlog_database_backend),
+		"chatlog_api_endpoint" = CONFIG_GET(string/chatlog_database_api_endpoint),
+		"chatlog_stored_rounds" = islist(stored_rounds) ? list("0") + stored_rounds : list("0"),
+	))
+	window.send_message(update_type, list(
+		"config" = list(
+			"client" = list(
+				"ckey" = client().ckey,
+				"chatlog_token" = client().chatlog_token,
+				"address" = client().address,
+				"computer_id" = client().computer_id,
+			),
+			"server" = list(
+				"round_id" = GLOB.round_id,
+			),
+			"window" = list(
+				"fancy" = FALSE,
+				"locked" = FALSE,
+			),
+		),
+	))
 
 /**
  * public

@@ -595,6 +595,7 @@
 #include "code\content\client\character_setup_api.dm"
 #include "code\content\client\chat_column.dm"
 #include "code\content\client\chat_speech.dm"
+#include "code\content\client\chat_ui.dm"
 #include "code\content\client\preferences_factions.dm"
 #include "code\content\client\preferences_save_service.dm"
 #include "code\content\client\preferences_savefile.dm"

@@ -14,6 +14,7 @@ import {
   storedRoundsAtom,
   versionAtom,
 } from './atoms';
+import { isChatGuest } from './guest';
 import { rebuildRoundTracking, saveChatToStorage } from './helpers';
 import { startChatStateMigration } from './migration';
 import { createMessage } from './model';
@@ -106,7 +107,8 @@ export function useChatPersistence() {
 
     if (loaded && settings.saveInterval) {
       saveInterval = setInterval(() => {
-        if (!game.databaseBackendEnabled) {
+        // Only the column page's chat keeps the stored log: a floating one holds the server's last messages.
+        if (!game.databaseBackendEnabled && !isChatGuest()) {
           saveChatToStorage();
         }
       }, settings.saveInterval * 1000);
@@ -172,6 +174,11 @@ export function useChatPersistence() {
 
   useEffect(() => {
     async function fetchChat() {
+      // A floating chat shows the server's history (chat/ready), not the column page's stored log.
+      if (loaded && isChatGuest()) {
+        chatRenderer.onStateLoaded();
+        return;
+      }
       if (!loaded || !game.userData) {
         return;
       }
