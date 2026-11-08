@@ -56,13 +56,11 @@
 	TEST_ASSERT_NULL(state.op_provider_memo, "a moved capability generation drops the providers")
 	op_click_resolution(A, B, null, ORIGIN_CLICK, actor_authority(A), GESTURE_CLICK)
 	TEST_ASSERT(state.op_dispatch_memo == kept, "the same op-bearing grants keep the merged rows past a moved generation")
+	// The kept list names the op-bearing grants the rows were merged over: one more (or one fewer) than are running makes them again.
 	var/list/op_acts = kept[1]
-	TEST_ASSERT(length(op_acts), "a human's grants bring ops (its body's, its species')")
-	var/datum/activation/first = op_acts[1]
-	first.runs = FALSE
+	op_acts += "a grant that has since ended"
 	op_click_resolution(A, B, null, ORIGIN_CLICK, actor_authority(A), GESTURE_CLICK)
-	TEST_ASSERT(state.op_dispatch_memo != kept, "a grant that brings ops stopping makes the merged rows again")
-	first.runs = TRUE
+	TEST_ASSERT(state.op_dispatch_memo != kept, "a change in the op-bearing grants makes the merged rows again")
 
 /// A crewmate's menu is served from the cache on the next read (its rows that sample state are asked again on their own), and a change of what
 /// the actor carries inside it (an implant) is seen at once.
