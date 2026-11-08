@@ -48,9 +48,11 @@ CAPABILITIES_PART(/client, client_glow_holder)
 	/// This light's key in the holders' held lists, taken once while it is alive (a dying datum's handle cannot be looked up again).
 	var/glow_holder_key
 
+SCHEMA(/datum/light_source, glow_holder_key, schema_text())
+
 /datum/light_source/proc/glow_holder_key()
 	if(!glow_holder_key)
-		glow_holder_key = "[handle_of(src)]"
+		glow_holder_key = handle_text(handle_of(src))
 	return glow_holder_key
 
 /// Every live holder (REGISTRY_CLIENT_GLOW_HOLDERS): a light event walks them, one per connected client plus test and benchmark viewers.
@@ -173,7 +175,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/image/glow_image
 	var/image/mask_image
 	if(!entry)
-		var/mask_name = "*cglow_mask_[handle_of(L)]_[handle_of(src)]"
+		var/mask_name = "*cglow_mask_[handle_text(handle_of(L))]_[handle_text(handle_of(src))]"
 		mask_image = image(G.icon)
 		mask_image.plane = PLANE_LIGHTING
 		mask_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_TOGETHER
