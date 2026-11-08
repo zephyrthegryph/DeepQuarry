@@ -15,7 +15,6 @@ SYSTEM_DEF(job)
 	var/list/type_occupations = list()	//Dict of all jobs, keys are types
 
 	var/list/department_datums = list()
-	var/list/job_icon_cache = list()
 	var/debug_messages = FALSE
 
 	var/savepath = "data/job_camp_list.json"
