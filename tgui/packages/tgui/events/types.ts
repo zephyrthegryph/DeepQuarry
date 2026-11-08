@@ -34,6 +34,10 @@ type TguiWindow = {
   dockable?: BinaryIO;
   /** Floated by a drag out of the dock: the screen point ("x,y", physical px) to open under, once. */
   float_at?: string | null;
+  /** Opened by a float out of the column: brought to the front once shown. */
+  floated?: boolean;
+  /** Docked: whether the column offers float for it (never for the stat panel). */
+  floatable?: boolean;
 };
 
 type User = {

@@ -169,6 +169,18 @@ function NativeWindow(props: Props) {
   }, [config?.window?.native_shell]);
 
   const { scale } = config?.window || false;
+  // A float out of the column comes with one update (float_at, floated); the next update clears them, and that must not cancel the
+  // placement or the bring-to-front of the reveal already under way. Held here until a reveal uses them.
+  const pendingFloat = useRef<{
+    at: string | null | undefined;
+    floated: boolean;
+  } | null>(null);
+  if (config.window?.floated || config.window?.float_at) {
+    pendingFloat.current = {
+      at: config.window?.float_at,
+      floated: Boolean(config.window?.floated),
+    };
+  }
 
   useLayoutEffect(() => {
     let cancelled = false;
@@ -206,7 +218,8 @@ function NativeWindow(props: Props) {
         if (cancelled) {
           return;
         }
-        const under = underPointer(config.window?.float_at, geometry?.size);
+        const float = pendingFloat.current;
+        const under = underPointer(float?.at, geometry?.size);
         if (under) {
           // Pulled out of the dock: it opens under the pointer, as a popped-out chat does.
           geometry = { ...geometry, pos: under };
@@ -214,6 +227,10 @@ function NativeWindow(props: Props) {
         }
         profileStartup('geometry_finished', config.interface?.name);
         await revealWindow(config.window?.generation, geometry);
+        if (float && !config.window?.docked) {
+          pendingFloat.current = null;
+          if (float.floated) floatedShown(Boolean(under));
+        }
         if (under) {
           // Remembered, so the next geometry recall (float_at is sent once) keeps it there.
           storeWindowGeometry();
@@ -239,7 +256,6 @@ function NativeWindow(props: Props) {
     config.window?.key,
     config.window?.locked,
     config.window?.docked,
-    config.window?.float_at,
     fitted,
     height,
     isReadyToRender,
@@ -400,6 +416,16 @@ Window.Content = WindowContent;
  * The window place that puts a screen point ("x,y", physical px) on the
  * middle of the window's titlebar, or null when there is no point.
  */
+/**
+ * A window that just came out of the column is brought to the front: the
+ * player's pointer and focus are still on the main window (a fullscreen one
+ * covers every other window), where the new window would open unseen.
+ */
+export function floatedShown(underPointer: boolean): void {
+  Byond.winset(Byond.windowId, { focus: true });
+  logger.log('floated window brought to the front', { underPointer });
+}
+
 export function underPointer(
   at: string | null | undefined,
   size: [number, number] | undefined,

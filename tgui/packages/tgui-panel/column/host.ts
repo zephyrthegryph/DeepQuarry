@@ -266,15 +266,35 @@ export class ColumnHost {
     this.dispatch({ type: 'close', id: wid });
   }
 
+  /**
+   * Whether docked window `wid` may leave the column (float or close): a
+   * tgui window whose interface floats (the stat panel never does), and
+   * never the column's last window (the column is never empty). The server
+   * holds the same rule (window_dock.dm may_leave()).
+   */
+  mayLeave(wid: string): boolean {
+    const win = this.state.windows[wid];
+    if (win?.kind !== 'tgui') return false;
+    const floatable = this.backends.get(wid)?.store.get(configAtom)
+      ?.window?.floatable;
+    if (floatable === false) return false;
+    const docked = Object.values(this.state.windows).filter(
+      (w) => w.kind === 'tgui',
+    ).length;
+    return docked > 1;
+  }
+
   /** Closes a docked interface (its close button). */
   close(wid: string) {
+    if (!this.mayLeave(wid)) return;
     sendFor(wid, 'close');
   }
 
   /** Floats a docked interface out into a native window, under a screen point when a drag gave one. */
   float(wid: string, at?: { x: number; y: number } | null) {
-    // A drag can end after its window closed (the server closed it, the page reloaded): nothing is left to float.
-    if (!this.state.windows[wid]) return;
+    // A drag can end after its window closed (the server closed it, the page reloaded): nothing is left to float. Nor does a window
+    // the column keeps (the stat panel, the last window).
+    if (!this.mayLeave(wid)) return;
     sendFor(wid, 'wm/float', at ? { at } : {});
   }
 
