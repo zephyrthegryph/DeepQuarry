@@ -55,8 +55,84 @@ struct DenseLiteralData {
     rows: Vec<crate::OriginalLiteralData>,
     credit: crate::SettingRootLease,
 }
+const COMPACT_CODE_HALF: usize = LITERAL_PAGE_LEN / 2;
+const DIRECT_CODE_ORDINALS: u32 = 32;
+const SHORT_CODE_PROJECTED: u32 = 254;
+const SHORT_CODE_WIDE: u32 = 255;
+
+enum CompactLiteralCodes {
+    Narrow { cells: Vec<u16>, bases: [u32; 2] },
+    Wide(Vec<u32>),
+}
+impl CompactLiteralCodes {
+    fn narrow_bases(codes: &[u32; LITERAL_PAGE_LEN]) -> Option<[u32; 2]> {
+        let mut bases = [0; 2];
+        for (base, half) in bases.iter_mut().zip(codes.chunks_exact(COMPACT_CODE_HALF)) {
+            let mut minimum = u32::MAX;
+            let mut maximum = 0;
+            for ordinal in half.iter().map(|code|code >> 8)
+                .filter(|&ordinal|(DIRECT_CODE_ORDINALS..PROJECTED_COMPACT_ORDINAL).contains(&ordinal))
+            {
+                minimum = minimum.min(ordinal);
+                maximum = maximum.max(ordinal);
+            }
+            if maximum != 0 {
+                if maximum - minimum >= SHORT_CODE_PROJECTED - DIRECT_CODE_ORDINALS {
+                    return None;
+                }
+                *base = minimum;
+            }
+        }
+        Some(bases)
+    }
+
+    fn encode(code: u32, base: u32) -> u16 {
+        let ordinal = code >> 8;
+        let short = match ordinal {
+            PROJECTED_COMPACT_ORDINAL => SHORT_CODE_PROJECTED,
+            WIDE_LITERAL_ORDINAL => SHORT_CODE_WIDE,
+            ordinal if ordinal < DIRECT_CODE_ORDINALS => ordinal,
+            ordinal => {
+                let short = ordinal.checked_sub(base).expect("admitted literal code base") + DIRECT_CODE_ORDINALS;
+                assert!(short < SHORT_CODE_PROJECTED, "admitted literal code delta");
+                short
+            }
+        };
+        ((short << 8) | (code & 255)) as u16
+    }
+
+    fn at(&self, index: usize) -> u32 {
+        match self {
+            Self::Wide(codes) => codes[index],
+            Self::Narrow { cells, bases } => {
+                let cell = u32::from(cells[index]);
+                let ordinal = match cell >> 8 {
+                    SHORT_CODE_PROJECTED => PROJECTED_COMPACT_ORDINAL,
+                    SHORT_CODE_WIDE => WIDE_LITERAL_ORDINAL,
+                    short if short < DIRECT_CODE_ORDINALS => short,
+                    short => bases[index / COMPACT_CODE_HALF] + (short - DIRECT_CODE_ORDINALS),
+                };
+                (ordinal << 8) | (cell & 255)
+            }
+        }
+    }
+
+    fn iter(&self) -> impl Iterator<Item=u32> + '_ {
+        let len = match self { Self::Narrow { cells, .. } => cells.len(), Self::Wide(codes) => codes.len() };
+        (0..len).map(|index|self.at(index))
+    }
+
+    fn project(&mut self, index: usize, descriptor: usize) {
+        let descriptor = u32::from(u8::try_from(descriptor).expect("bounded literal descriptor column"));
+        match self {
+            Self::Wide(codes) => codes[index] = (PROJECTED_COMPACT_ORDINAL << 8) | descriptor,
+            Self::Narrow { cells, .. } => cells[index] = ((SHORT_CODE_PROJECTED << 8) | descriptor) as u16,
+        }
+    }
+}
+
 struct CompactLiteralData {
-    codes: Vec<u32>,
+    codes: CompactLiteralCodes,
     owners: Vec<OriginalLiteralOwner>,
     wide: Vec<crate::OriginalLiteralData>,
     projections: Option<Box<Vec<ProjectedLiteral>>>,
@@ -144,7 +220,7 @@ impl LiteralPageData {
             },
             Self::Dense(data) => data.rows[index].as_view(),
             Self::Compact(data) => {
-                let code = data.codes[index];
+                let code = data.codes.at(index);
                 let key = (code & 0xff) as usize;
                 let packed_ordinal = code >> 8;
                 match packed_ordinal {
@@ -186,7 +262,10 @@ impl LiteralPageData {
             Self::Dense(data) => buffer(&data.rows, visit),
             Self::Projected(data)=>{buffer(&data.codes,visit);buffer(&data.full,visit);buffer(&data.descriptors,visit)},
             Self::Compact(data) => {
-                buffer(&data.codes, visit);
+                match &data.codes {
+                    CompactLiteralCodes::Narrow { cells, .. } => buffer(cells, visit),
+                    CompactLiteralCodes::Wide(codes) => buffer(codes, visit),
+                }
                 buffer(&data.owners, visit);
                 buffer(&data.wide, visit);
                 if let Some(projections) = &data.projections {
@@ -209,7 +288,12 @@ impl LiteralPageData {
             return Ok(());
         };
         let plan = LiteralPagePlan::new(&dense.rows);
-        let codes_layout = Layout::array::<u32>(LITERAL_PAGE_LEN).expect("bounded codes");
+        let narrow_bases = CompactLiteralCodes::narrow_bases(&plan.codes);
+        let codes_layout = if narrow_bases.is_some() {
+            Layout::array::<u16>(LITERAL_PAGE_LEN).expect("bounded short codes")
+        } else {
+            Layout::array::<u32>(LITERAL_PAGE_LEN).expect("bounded wide codes")
+        };
         let owner_layout = Layout::array::<OriginalLiteralOwner>(plan.owners).expect("bounded owners");
         let wide_layout = Layout::array::<crate::OriginalLiteralData>(plan.wide).expect("bounded wide literals");
         let bytes = codes_layout.size() + owner_layout.size() + wide_layout.size();
@@ -217,14 +301,22 @@ impl LiteralPageData {
         let Some(credit) = a.try_reserve_optimization(bytes)
             .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))? else { return Ok(()); };
         let mut compact = CompactLiteralData {
-            codes: alloc_funded_literal_rows(LITERAL_PAGE_LEN, codes_layout)?,
+            codes: match narrow_bases {
+                Some(bases) => CompactLiteralCodes::Narrow { cells: alloc_funded_literal_rows(LITERAL_PAGE_LEN, codes_layout)?, bases },
+                None => CompactLiteralCodes::Wide(alloc_funded_literal_rows(LITERAL_PAGE_LEN, codes_layout)?),
+            },
             owners: alloc_funded_literal_rows(plan.owners, owner_layout)?,
             wide: alloc_funded_literal_rows(plan.wide, wide_layout)?,
             projections: None,
             credit,
         };
         a.checkpoint().map_err(|proxy| a.take_operational_error().unwrap_or(proxy))?;
-        compact.codes.extend_from_slice(&plan.codes);
+        match &mut compact.codes {
+            CompactLiteralCodes::Narrow { cells, bases } => cells.extend(
+                plan.codes.iter().enumerate().map(|(index, &code)|CompactLiteralCodes::encode(code,bases[index / COMPACT_CODE_HALF])),
+            ),
+            CompactLiteralCodes::Wide(codes) => codes.extend_from_slice(&plan.codes),
+        }
         for (value, code) in dense.rows.drain(..).zip(plan.codes) {
             let key = (code & 0xff) as usize;
             if code >> 8 == WIDE_LITERAL_ORDINAL {
@@ -413,14 +505,14 @@ impl LiteralPage {
   let mut candidates=[false;LITERAL_PAGE_LEN];
   let mut references=[0u16;LITERAL_PAGE_LEN];
   if let LiteralPageData::Compact(data)=&self.data{
-   for code in &data.codes{if code>>8!=WIDE_LITERAL_ORDINAL{references[(code&255)as usize]+=1;}}
+   for code in data.codes.iter(){if code>>8!=WIDE_LITERAL_ORDINAL{references[(code&255)as usize]+=1;}}
   }
   let mut count=0usize;let mut released=0usize;
   for at in 0..self.len(){
    a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
    if self.body[at/64]&(1u64<<(at%64))==0{continue}
    if let LiteralPageData::Compact(data)=&self.data{
-    let code=data.codes[at];if code>>8!=WIDE_LITERAL_ORDINAL&&references[(code&255)as usize]!=1{continue}
+    let code=data.codes.at(at);if code>>8!=WIDE_LITERAL_ORDINAL&&references[(code&255)as usize]!=1{continue}
    }
    let(span,data)=self.get_data(at,base,None,Some(owner)).ok_or(io::ErrorKind::InvalidData)?;
    if data.raw()?!=source.get(span.range()).ok_or(io::ErrorKind::InvalidInput)?{return Err(io::ErrorKind::InvalidData.into())}
@@ -523,7 +615,7 @@ impl LiteralPage {
         };
         let mut groups = [Group::default(); LITERAL_PAGE_LEN];
         let mut candidates = [None; LITERAL_PAGE_LEN];
-        for (index, &code) in compact.codes.iter().enumerate() {
+        for (index, code) in compact.codes.iter().enumerate() {
             if index % 32 == 0 {
                 a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
             }
@@ -621,7 +713,7 @@ impl LiteralPage {
         };
         let mut descriptors = alloc_funded_literal_rows(count, layout)?;
         for (index, candidate) in candidates.iter().enumerate() {
-            let code = compact.codes[index];
+            let code = compact.codes.at(index);
             let group = &groups[(code & 255) as usize];
             if let Some(descriptor) = candidate {
                 if group.includes(index, code >> 8) {
@@ -650,14 +742,14 @@ impl LiteralPage {
             let owner = &mut compact.owners[bank];
             released += if let Some(single) = group.singleton {
                 debug_assert_eq!(group.bank_references, 1);
-                let ordinal = compact.codes[usize::from(single)] >> 8;
+                let ordinal = compact.codes.at(usize::from(single)) >> 8;
                 owner.retire_projected_single_using(ordinal as usize, a)?
             } else {
                 owner.withdraw_packed_using(group.eligible, group.eligible == group.references, a)?
             };
             let mut descriptor_index = 0;
             for (index, candidate) in candidates.iter().enumerate() {
-                let code = compact.codes[index];
+                let code = compact.codes.at(index);
                 let old_bank = (code & 255) as usize;
                 let ordinal = code >> 8;
                 if candidate.is_none() {
@@ -669,8 +761,7 @@ impl LiteralPage {
                     descriptor_index += 1;
                 } else if groups[old_bank].includes(index, ordinal) {
                     if old_bank == bank {
-                        compact.codes[index] = (PROJECTED_COMPACT_ORDINAL << 8)
-                            | descriptor_index as u32;
+                        compact.codes.project(index, descriptor_index);
                     }
                     descriptor_index += 1;
                 }
@@ -692,7 +783,7 @@ impl LiteralPage {
             .map_err(|error| a.take_operational_error().unwrap_or(error))? else { return Ok(0); };
         let mut seen = [0u32; LITERAL_PAGE_LEN];
         let mut masks = [0u32; LITERAL_PAGE_LEN];
-        for (at, &code) in data.codes.iter().enumerate() {
+        for (at, code) in data.codes.iter().enumerate() {
             if at % 32 == 0 { a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?; }
             let ordinal = code >> 8;
             if ordinal >= u32::BITS { continue; }
@@ -964,7 +1055,7 @@ impl LiteralPages {
             }
             for index in 0..page.len() {
                 if matches!(&page.data, LiteralPageData::Compact(data)
-                    if data.codes[index] >> 8 == PROJECTED_COMPACT_ORDINAL)
+                    if data.codes.at(index) >> 8 == PROJECTED_COMPACT_ORDINAL)
                 {
                     continue;
                 }
@@ -1444,7 +1535,7 @@ impl OriginalPrimaryLiteralFacts{
    // Physical Arc counts alone no longer describe the logical shared rows.
    let mut occurrences = [0u16; LITERAL_PAGE_LEN];
    if let LiteralPageData::Compact(compact) = &page.data {
-    for &code in &compact.codes {
+    for code in compact.codes.iter() {
      if code >> 8 < PROJECTED_COMPACT_ORDINAL { occurrences[(code & 0xff) as usize] += 1; }
     }
    }
@@ -1463,7 +1554,7 @@ impl OriginalPrimaryLiteralFacts{
      packed_run.take().unwrap().finish(&mut rejections);
     }
     let bank = match &page.data {
-     LiteralPageData::Compact(compact) => compact.codes[index] >> 8 < PROJECTED_COMPACT_ORDINAL,
+     LiteralPageData::Compact(compact) => compact.codes.at(index) >> 8 < PROJECTED_COMPACT_ORDINAL,
      _ => false,
     };
     packed_run.get_or_insert_with(|| ProjectionPackedRun::new(data, current, page_at))
@@ -1488,7 +1579,7 @@ impl OriginalPrimaryLiteralFacts{
    }
    let (exclusive,bytes)=data.trace_payload();
    let repeated = if let LiteralPageData::Compact(compact) = &page.data {
-    let code = compact.codes[index];
+    let code = compact.codes.at(index);
     code >> 8 != WIDE_LITERAL_ORDINAL && occurrences[(code & 0xff) as usize] > 1
    } else { false };
    if settled_body {
@@ -1499,7 +1590,7 @@ impl OriginalPrimaryLiteralFacts{
        rejections.single_unique_zero_serial_body_lease += bytes;
       } else {
        match &page.data {
-        LiteralPageData::Compact(compact) if compact.codes[index] >> 8 == WIDE_LITERAL_ORDINAL =>
+        LiteralPageData::Compact(compact) if compact.codes.at(index) >> 8 == WIDE_LITERAL_ORDINAL =>
          rejections.single_unique_nonzero_wide_body_lease += bytes,
         LiteralPageData::Compact(_) => rejections.single_unique_nonzero_compact_body_lease += bytes,
         _ => rejections.single_unique_nonzero_other_body_lease += bytes,
@@ -1795,6 +1886,49 @@ mod literal_page_controls {
     }
 
     #[test]
+    fn literal_code_halves_preserve_actual_large_serials_and_wide_fallback() {
+        let root = crate::SettingChargeCounter::root_allocation_bytes();
+        let used = crate::SettingChargeCounter::try_new(root).unwrap();
+        let a = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+        let mut pool = crate::OriginalLiteralPool::new(&a).unwrap();
+        let mut issue = || {
+            let raw = String::from("7");
+            let credit = a.reserve(raw.capacity()).unwrap();
+            pool.issue_using(raw, credit, crate::OriginalTokenValue::Int(7), crate::OriginalStringMode::Unknown, &a).unwrap()
+        };
+        for _ in 0..32 { drop(issue()); }
+        let first = issue();
+        for _ in 0..221 { drop(issue()); }
+        let last = issue();
+        assert!(!first.same_owner(&last));
+        assert_eq!(first.raw().as_ptr(), last.raw().as_ptr());
+        assert_eq!(last.as_view().ordinal() - first.as_view().ordinal(), 222);
+        for split in [true, false] {
+            let mut page = LiteralPage::new(0, &a).unwrap();
+            let issued = |index| if (split && index < COMPACT_CODE_HALF) || (!split && index % 2 == 0) {
+                &first
+            } else {
+                &last
+            };
+            for index in 0..LITERAL_PAGE_LEN {
+                page.push((Span::new(index*2,index*2+1), issued(index).clone()), &a).unwrap();
+            }
+            page.data.settle_full_using(&a).unwrap();
+            let LiteralPageData::Compact(data) = &page.data else { panic!("shared actual owner compacts") };
+            assert_eq!(matches!(data.codes, CompactLiteralCodes::Narrow { .. }), split);
+            assert_eq!(data.credit.bytes(), LITERAL_PAGE_LEN * if split { 2 } else { 4 }
+                + mem::size_of::<OriginalLiteralOwner>());
+            for index in 0..LITERAL_PAGE_LEN {
+                let (_, value) = page.get(index).unwrap();
+                assert!(value.same_owner(issued(index)));
+                assert_eq!(value.raw().unwrap().as_ptr(), issued(index).raw().as_ptr());
+            }
+        }
+        drop((first,last,pool));
+        assert_eq!(used.load(Ordering::Acquire), root);
+    }
+
+    #[test]
     fn compact_literal_page_keeps_exact_data_on_denial_first_error_and_detach() {
         use std::cell::Cell;
         let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
@@ -1818,7 +1952,7 @@ mod literal_page_controls {
             page.push((Span::new(i * 2, i * 2 + 1), value), &a).unwrap();
         }
         let old = used.load(Ordering::Acquire);
-        let exact = LITERAL_PAGE_LEN * mem::size_of::<u32>() + 2 * mem::size_of::<OriginalLiteralOwner>();
+        let exact = LITERAL_PAGE_LEN * mem::size_of::<u16>() + 2 * mem::size_of::<OriginalLiteralOwner>();
         let work = mem::size_of::<LiteralPagePlan>();
         let short = crate::SettingAdmission::new(&used, old + work + exact - 1, &|| Ok(()));
         page.data.settle_full_using(&short).unwrap();
@@ -1837,6 +1971,7 @@ mod literal_page_controls {
         page.data.settle_full_using(&exact_limit).unwrap();
         let LiteralPageData::Compact(data) = &page.data else { panic!("exact admitted bank") };
         assert_eq!(data.credit.bytes(), exact);
+        assert!(matches!(data.codes, CompactLiteralCodes::Narrow { .. }));
         assert_eq!(used.load(Ordering::Acquire),
             old - LITERAL_PAGE_LEN * mem::size_of::<crate::OriginalLiteralData>() + exact);
         for i in 0..LITERAL_PAGE_LEN {
@@ -2239,8 +2374,8 @@ mod literal_page_controls {
         let fault = || Err(io::Error::from_raw_os_error(1450));
         let failing = crate::SettingAdmission::new(&used, 8 << 20, &fault);
         let LiteralPageData::Compact(compact) = &mut page.data else { panic!("compact bank") };
-        let bank = (compact.codes[1] & 255) as usize;
-        let ordinal = compact.codes[1] >> 8;
+        let bank = (compact.codes.at(1) & 255) as usize;
+        let ordinal = compact.codes.at(1) >> 8;
         let incomplete = compact.owners[bank].withdraw_packed_using(1 << ordinal, true, &a).unwrap_err();
         assert_eq!(incomplete.kind(), io::ErrorKind::InvalidData);
         let error = compact.owners[bank].withdraw_packed_using(1 << ordinal, false, &failing).unwrap_err();
