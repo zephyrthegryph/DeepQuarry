@@ -251,7 +251,7 @@ impl SourceFile {
         let data = self.data();
         data.views.marker.get_or_init(|| {
             if let Some(budget) = &data.captured_budget {
-                if !budget.require_view(captured_budget::Demand::General){return String::new().into();}
+                if !budget.require_view(captured_budget::Demand::RawMarker){return String::new().into();}
                 let Some(permit) =
                     budget.reserve(captured_budget::marker_transform_bound(&data.raw.text))
                 else {
@@ -378,6 +378,17 @@ impl SourceFile {
     pub(crate) fn raw_code_view_extra_bound(rel: &str, abs: &Path, text: &str) -> Option<usize> {
         Self::raw_clean_view_extra_bound(rel, abs, text)?
             .checked_add(captured_budget::code_transform_bound(text)?)
+    }
+    #[cfg(feature="native-policy")]
+    pub(crate) fn restrict_to_raw_marker(&self) {
+        if let Some(budget) = &self.data().captured_budget {
+            budget.restrict(captured_budget::Demand::RawMarker);
+        }
+    }
+    #[cfg(feature="native-policy")]
+    pub(crate) fn raw_marker_view_extra_bound(rel: &str, abs: &Path, text: &str) -> Option<usize> {
+        Self::raw_clean_view_extra_bound(rel, abs, text)?
+            .checked_add(captured_budget::marker_transform_bound(text)?)
     }
     pub(crate) fn raw_clean_view_extra_bound(rel:&str,abs:&Path,text:&str)->Option<usize>{let lines=text.bytes().filter(|b|*b==b'\n').count().checked_add(1)?;std::mem::size_of::<SourceFile>().checked_add(std::mem::size_of::<Data>())?.checked_add(std::mem::size_of::<DerivedViews>())?.checked_add(captured_budget::OWNER_METADATA)?.checked_add(rel.len())?.checked_add(abs.as_os_str().len().checked_mul(4)?)?.checked_add(lines.checked_mul(4)?)?.checked_add(4096)}
     pub(crate) fn raw_policy_clean_bound(text:&str)->Option<usize>{captured_budget::transform_bound(text,6)}

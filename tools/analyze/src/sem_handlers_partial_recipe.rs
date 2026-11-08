@@ -7,6 +7,18 @@ use crate::key_policy_control::{self as kc,Control};
 pub const DEFAULT_TRY_CALLS:&[&str]=&["ACT_ATTEMPT","ACT_TRY","act_try","e0_act_try"];
 pub fn candidate(code:&str)->bool{crate::pat!(r"\bACT_TRY\b|\b(?:e0_)?act_try\b|\bdatum/act\b").is_match(code)}
 pub fn output_base(relative:&str,code:&str)->bool{relative.starts_with("code/engine/")&&crate::pat!(r"/proc/(?:draw|ui_data|push_to_rust|examine)\s*\(").is_match(code)}
+/// DATA from the two existing CODE matchers. A source lender authenticates
+/// reuse; these booleans carry no file identity or coverage.
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum HandlerCodeFacts { Neither, Candidate, OutputBase, Both }
+impl HandlerCodeFacts {
+ pub fn classify(relative:&str,code:&str)->Self{
+  match (candidate(code),output_base(relative,code)){
+   (false,false)=>Self::Neither,(true,false)=>Self::Candidate,
+   (false,true)=>Self::OutputBase,(true,true)=>Self::Both,
+  }
+ }
+}
 pub fn defines(relative:&str)->bool{crate::scopes::is_defines(relative)}
 
 /// Legacy Sem::build_partial uses a stricter manifest grammar and last
@@ -51,11 +63,16 @@ impl Selection{
  /// An exempt CODE page can still define a macro for the partial TU, but
  /// cannot seed structural candidates or the standard-output phase.
  pub(crate) fn push_selected<C:Control>(&mut self,relative:&str,fingerprint:u128,selected_code:Option<&str>,c:&mut C)->Result<(),C::Error>{
+  self.push_facts_using(relative,fingerprint,||selected_code.map(|code|HandlerCodeFacts::classify(relative,code)),c)
+ }
+ pub(crate) fn push_facts<C:Control>(&mut self,relative:&str,fingerprint:u128,facts:Option<HandlerCodeFacts>,c:&mut C)->Result<(),C::Error>{
+  self.push_facts_using(relative,fingerprint,||facts,c)
+ }
+ fn push_facts_using<C:Control>(&mut self,relative:&str,fingerprint:u128,facts:impl FnOnce()->Option<HandlerCodeFacts>,c:&mut C)->Result<(),C::Error>{
   c.checkpoint()?;
-  if let Some(code)=selected_code{
-   if candidate(code){append(&mut self.candidates,relative,fingerprint,c)?}
-   self.has_output_base|=output_base(relative,code);
-  }
+  let facts=facts();
+  if matches!(facts,Some(HandlerCodeFacts::Candidate|HandlerCodeFacts::Both)){append(&mut self.candidates,relative,fingerprint,c)?}
+  self.has_output_base|=matches!(facts,Some(HandlerCodeFacts::OutputBase|HandlerCodeFacts::Both));
   if defines(relative){append(&mut self.defines,relative,fingerprint,c)?}
   c.checkpoint()
  }

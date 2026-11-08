@@ -86,17 +86,51 @@ impl<P:SnapshotProvider+Sync> dm_preprocess::SourceProvider for HandlerStructura
  fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{if self.subject.require_operation(self.inputs).is_err(){return None}if canonical_path(path)==self.subject.captured.as_ref()?.project{return self.subject.captured.as_ref()?.header.prepared().original().same_view(text).then(||self.subject.captured.as_ref().unwrap().header.clone())}dm_preprocess::SourceProvider::source_acquisition(self.inputs,path,text)}
  fn prepared_source(&self,path:&Path)->Option<Arc<dm_preprocess::regions::prepared_source::PreparedSource>>{if self.subject.require_operation(self.inputs).is_err(){return None}if canonical_path(path)==self.subject.captured.as_ref()?.project{return Some(Arc::clone(self.subject.captured.as_ref()?.header.prepared()))}dm_preprocess::SourceProvider::prepared_source(self.inputs,path)}
 }
-struct Pages<'a,'l,'provider,P:SnapshotProvider>{inputs:&'a RecordingInputs<P>,root:&'a Path,files:&'a [PathBuf],budget:&'a Arc<Budget>,lender:&'a std::cell::RefCell<&'l mut (dyn super::RecordedPolicySourceLender+'provider)>,trace:bool}
-impl<P:SnapshotProvider> dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_,P>{
+use dq_analyze::sem_handlers_partial_recipe::HandlerCodeFacts;
+fn handler_relative_order<'a>(root:&Path,path:&'a Path)->Option<impl Iterator<Item=u8>+Clone+'a>{
+ Some(path.strip_prefix(root).ok()?.to_str()?.bytes().map(|b|if b==b'\\'{b'/'}else{b}))
+}
+fn handler_code_at<'a>(
+ root:&Path,path:&Path,roster:&mut std::iter::Peekable<impl Iterator<Item=(&'a Path,Option<HandlerCodeFacts>)>>,
+)->Option<HandlerCodeFacts>{
+ let current=handler_relative_order(root,path)?;
+ while let Some(&(candidate,_))=roster.peek(){
+  match handler_relative_order(root,candidate)?.cmp(current.clone()){
+   std::cmp::Ordering::Less=>{roster.next();},
+   std::cmp::Ordering::Equal if candidate.as_os_str()==path.as_os_str()=>return roster.next().and_then(|(_,facts)|facts),
+   _=>return None,
+  }
+ }
+ None
+}
+struct Pages<'a,'l,'provider,P:SnapshotProvider,I:Iterator>{inputs:&'a RecordingInputs<P>,root:&'a Path,files:&'a [PathBuf],budget:&'a Arc<Budget>,lender:&'a std::cell::RefCell<&'l mut (dyn super::RecordedPolicySourceLender+'provider)>,trace:bool,code_roster:std::cell::RefCell<Option<std::iter::Peekable<I>>>,code_facts:std::cell::Cell<Option<HandlerCodeFacts>>}
+impl<'a,P:SnapshotProvider,I:Iterator<Item=(&'a Path,Option<HandlerCodeFacts>)>> dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'a,'_,'_,P,I>{
+ fn handler_code_facts(&self)->Option<HandlerCodeFacts>{self.code_facts.get()}
  fn for_each(&self,visit:&mut dyn FnMut(&str,dq_analyze::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+  let mut reused_code = 0;
   for (index, path) in self.files.iter().enumerate() {
    crate::daemon::control::checkpoint()?;
-   let result = self.inputs.with_recorded_policy_file_using(self.root,path,self.budget,&mut **self.lender.borrow_mut(),visit);
+   let code=self.code_roster.borrow_mut().as_mut().and_then(|roster|handler_code_at(self.root,path,roster));
+   let mut consume=|relative:&str,views:dq_analyze::captured_raw_file::RawPolicyViews<'_>|{
+    self.code_facts.set(code);
+    let pending=visit(relative,views);
+    self.code_facts.set(None);
+    pending
+   };
+   let result = if code.is_some(){
+    self.inputs.with_recorded_policy_file_marker_using(self.root,path,self.budget,&mut **self.lender.borrow_mut(),&mut consume)
+   }else{
+    self.inputs.with_recorded_policy_file_using(self.root,path,self.budget,&mut **self.lender.borrow_mut(),&mut consume)
+   };
    if self.trace && (result.is_err() || index % 1024 == 0) {
     let relative = path.strip_prefix(self.root).unwrap_or(path).display();
     eprintln!("original handler preflight file={index} path={relative} used={} remaining={}", self.budget.used(), self.budget.remaining());
    }
    if !result? { return Ok(false); }
+   reused_code += usize::from(code.is_some());
+  }
+  if self.trace {
+   eprintln!("original handler CODE views reused={reused_code} of {}", self.files.len());
   }
   Ok(true)
  }
@@ -174,7 +208,9 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let handler_scope=config.borrowed_report_scope("sem/handlers",dq_analyze::sem_handlers_policy::metadata().group);let extra=handler_scope.map_or(&[][..],|scope|scope.list("try_calls"));
   mark("marker");
   // Discovery already owns the exact legacy slash-string ordering.
-  let recipe_plan={let source_lender=std::cell::RefCell::new(&mut *lender);let pages=Pages{inputs:self,root:&workspace.root,files:discovery.files(),budget,lender:&source_lender,trace};dq_analyze::captured_sem_handlers_recipe::select_scoped_from_pages(&pages,&order,extra,handler_scope,manifest_text,budget,&crate::daemon::control::checkpoint).map_err(actual)?};
+  let recipe_plan={let source_lender=std::cell::RefCell::new(&mut *lender);let pages=Pages{inputs:self,root:&workspace.root,files:discovery.files(),budget,lender:&source_lender,trace,
+   code_roster:std::cell::RefCell::new(derived.map(|owner|owner.handler_code_roster(self,queries,&workspace.root)).transpose()?.map(Iterator::peekable)),
+   code_facts:std::cell::Cell::new(None)};dq_analyze::captured_sem_handlers_recipe::select_scoped_from_pages(&pages,&order,extra,handler_scope,manifest_text,budget,&crate::daemon::control::checkpoint).map_err(actual)?};
   drop(order);
   drop(order_budget);
   mark("recipe");
@@ -241,7 +277,12 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
  /// Uses the current borrowed executor and SAME QueryDb resource/BODY host.
  /// No private executor, parser, RetainedSemanticTree or model cache is created.
  pub(crate) fn prepare_handlers_structural(&self,subject:Arc<HandlerStructuralSubject>,executor:&dm_exec::BuildExecutor,queries:&Arc<crate::query_db::QueryDb>)->io::Result<PreparedHandlersStructural>{
-  subject.require_current(self)?;if subject.recipe.candidates.is_empty(){return Ok(PreparedHandlersStructural{subject,frontend:None})}let provider=subject.provider(self)?;let seed=dm_tree::checker_builtins::original_analysis_seed().map_err(|error|io::Error::new(io::ErrorKind::InvalidData,format!("invalid Original builtin catalog: {error:?}")))?;
+  if subject.recipe.candidates.is_empty() {
+   subject.require_current(self)?;
+   return Ok(PreparedHandlersStructural{subject,frontend:None});
+  }
+  let provider=subject.provider(self)?;
+  let seed=dm_tree::checker_builtins::original_analysis_seed().map_err(|error|io::Error::new(io::ErrorKind::InvalidData,format!("invalid Original builtin catalog: {error:?}")))?;
   let host=Arc::clone(queries)as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
   let frontend=dm_tree::frontend::build_for_original_handlers_structural_checked(subject.project()?,&provider,dm_tree::frontend::FrontendConfig{workers:executor.workers(),engine:Some(seed.frontend_seed()),observer:None},None,executor,&host).map_err(|failure|match failure{dm_tree::frontend::FrontendBuildFailure::Operational(actual)=>actual,dm_tree::frontend::FrontendBuildFailure::Diagnostics(errors)=>io::Error::new(io::ErrorKind::Unsupported,HandlerNativeFrontier(errors))})?;
   let frontend=Arc::new(frontend.with_body_queries(Arc::clone(queries)as Arc<dyn dm_tree::frontend::BodySyntaxQueries>).map_err(io::Error::other)?);subject.bind_frontend(&frontend,self)?;Ok(PreparedHandlersStructural{subject,frontend:Some(frontend)})
@@ -249,6 +290,25 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
 }
 #[cfg(test)]mod partial_subject_tests{
  use super::*;
+ #[test]
+ fn handler_code_cursor_matches_exact_provider_path_and_skips_missing_rows(){
+  let root=Path::new("root");
+  let skipped=root.join("code/0.dm");
+  let slash=root.join("code/a.dm");
+  let backslash=root.join("code\\a.dm");
+  let missing=root.join("code/b.dm");
+  let present=root.join("code/c.dm");
+  let mut rows=[
+   (skipped.as_path(),None),
+   (slash.as_path(),Some(HandlerCodeFacts::Candidate)),
+   (missing.as_path(),None),
+   (present.as_path(),Some(HandlerCodeFacts::Both)),
+  ].into_iter().peekable();
+  assert_eq!(handler_code_at(root,&backslash,&mut rows),None);
+  assert_eq!(handler_code_at(root,&slash,&mut rows),Some(HandlerCodeFacts::Candidate));
+  assert_eq!(handler_code_at(root,&missing,&mut rows),None);
+  assert_eq!(handler_code_at(root,&present,&mut rows),Some(HandlerCodeFacts::Both));
+ }
  fn fixture(label:&str)->(PathBuf,crate::policy_request::AdmittedPolicyRequest,RecordingInputs){
   let root=crate::test_scratch::dir(label);for(rel,text)in[("code/__defines/context.dm","/datum/act\n"),("code/candidate.dm","/proc/probe(datum/act/A)\n    START_ACTION()\n"),("code/ordinary_macros.dm","#define START_ACTION ACT_ATTEMPT\n"),("deepquarry.dme","#include \"code/__defines/context.dm\"\n#include \"code/ordinary_macros.dm\"\n#include \"code/candidate.dm\"\n")]{let path=root.join(rel);std::fs::create_dir_all(path.parent().unwrap()).unwrap();std::fs::write(path,text).unwrap();}
   let intent=crate::policy_request::PolicyInputRequest{analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),workspace_auxiliary:vec![crate::policy_request::WorkspaceAuxiliaryQuestion::SemHandlers],workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")}),..Default::default()}.admit().unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);(root,intent,inputs)

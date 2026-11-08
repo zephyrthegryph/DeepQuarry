@@ -2,6 +2,7 @@
 use super::*;
 use std::sync::{Arc,Mutex,OnceLock};
 use dq_analyze::{captured_generator_budget::Budget,captured_raw_file::{Config,RawPolicyViews},captured_raw_policy::Configuration,captured_reactive_reads::Failure,captured_derived_reads::UnsealedDerivedIndexData};
+use dq_analyze::sem_handlers_partial_recipe::HandlerCodeFacts;
 use crate::runner_host::workspace_discovery::{DiscoveryReceipt,DiscoveryContract};
 fn operational(f:Failure)->io::Error{match f{Failure::Operational(e)=>e,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)}}
 // Derived owns only CODE_DM. A selected report can also carry a separate
@@ -20,7 +21,7 @@ fn pay(b:&Budget,bytes:Option<usize>)->io::Result<()>{let n=bytes.ok_or(io::Erro
 pub(crate) struct DerivedPreflight{
  // Payload precedes its actual operation funding. The host binds this owner,
  // never the unsealed DATA or a vector/hash supplied by a caller.
- index:Mutex<Option<UnsealedDerivedIndexData>>,facts:InputSnapshot,discovery:Arc<DiscoveryReceipt>,config:Arc<Config>,configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,issuer:Arc<()>,queries:crate::query_db::NativeQueryOwnerIdentity,subject_issuer:OnceLock<Arc<()>>,joined_registry:bool,charge:usize,budget:Arc<Budget>,
+ index:Mutex<Option<UnsealedDerivedIndexData>>,facts:InputSnapshot,discovery:Arc<DiscoveryReceipt>,config:Arc<Config>,configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,issuer:Arc<()>,queries:crate::query_db::NativeQueryOwnerIdentity,subject_issuer:OnceLock<Arc<()>>,joined_registry:bool,handler_code:Vec<Option<HandlerCodeFacts>>,charge:usize,budget:Arc<Budget>,
 }
 impl DerivedPreflight{
  pub(crate) fn require_bound_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<()>{self.require_bound_frame(subject,workspace,scope,inputs)}
@@ -39,6 +40,15 @@ impl DerivedPreflight{
   self.require_recording(inputs)?;
   self.require_configuration(path, current)?;
   Ok((self.configuration_bytes.clone(), Arc::clone(&self.config)))
+ }
+ /// Borrow the actual roster and its per-file DATA together. Handler still
+ /// performs its own exact bounded read before making a result visible.
+ pub(super) fn handler_code_roster<'a,P:SnapshotProvider>(&'a self,inputs:&RecordingInputs<P>,queries:&crate::query_db::QueryDb,root:&Path)->io::Result<impl Iterator<Item=(&'a Path,Option<HandlerCodeFacts>)>+'a>{
+  if !self.joined_registry||!self.queries.matches(queries)||root!=self.discovery.contract().root||self.handler_code.len()!=self.discovery.files().len(){
+   return Err(invalid("handler CODE facts require their actual joined roster"));
+  }
+  self.require_recording(inputs)?;
+  Ok(self.discovery.files().iter().map(PathBuf::as_path).zip(self.handler_code.iter().copied()))
  }
  pub(crate) fn account_shared_capture_aliases(&self, seen: &mut BTreeSet<usize>) -> io::Result<()> {
   self.discovery.retained_charge_with(seen)?;
@@ -109,37 +119,57 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
    let width = discovery.files().iter().map(|path| path.as_os_str().len()).max().unwrap_or(0);
    pay(&scratch, width.checked_mul(8).and_then(|size| size.checked_add(512)))?;
    let capacity = discovery.files().len();
-   pay(budget, capacity.checked_mul(std::mem::size_of::<&Path>()))?;
+   pay(budget, capacity.checked_mul(std::mem::size_of::<(usize,&Path)>()))?;
    let mut selected = Vec::new();
    selected.try_reserve_exact(capacity).map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
    if selected.capacity() != capacity { return Err(io::ErrorKind::OutOfMemory.into()); }
-   for path in discovery.files() {
+   for (ordinal,path) in discovery.files().iter().enumerate() {
     crate::daemon::control::checkpoint()?;
     let relative = path.strip_prefix(&workspace.root).map_err(|_| invalid("Derived preflight path escapes actual root"))?;
     let rel = relative.to_string_lossy().replace('\\', "/");
     if dq_analyze::captured_raw_file::is_code_dm(&rel)
      && !config.policy_path_exempt("derived_reads", dq_analyze::captured_derived_reads::metadata().group, &rel) {
-     selected.push(path.as_path());
+     selected.push((ordinal,path.as_path()));
     }
    }
    selected
   };
-  struct Pages<'a,P>{inputs:&'a RecordingInputs<P>,root:&'a Path,selected:&'a[&'a Path],budget:&'a Arc<Budget>,lender:std::cell::RefCell<&'a mut dyn super::RecordedPolicySourceLender>,ended:std::cell::Cell<bool>}
-  impl<P:SnapshotProvider> dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,P>{fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.ended.get(){return Err("Derived cold raw model phase repeated".into())}for path in self.selected{crate::daemon::control::checkpoint()?;if !self.inputs.with_recorded_policy_file_code_using(self.root,path,self.budget,&mut **self.lender.borrow_mut(),visit)?{return Ok(false)}}self.ended.set(true);Ok(true)}}
+  struct Pages<'a,P>{inputs:&'a RecordingInputs<P>,root:&'a Path,selected:&'a[(usize,&'a Path)],current:std::cell::Cell<usize>,budget:&'a Arc<Budget>,lender:std::cell::RefCell<&'a mut dyn super::RecordedPolicySourceLender>,ended:std::cell::Cell<bool>}
+  impl<P:SnapshotProvider> dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,P>{fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.ended.get(){return Err("Derived cold raw model phase repeated".into())}for &(ordinal,path) in self.selected{crate::daemon::control::checkpoint()?;self.current.set(ordinal);if !self.inputs.with_recorded_policy_file_code_using(self.root,path,self.budget,&mut **self.lender.borrow_mut(),visit)?{return Ok(false)}}self.ended.set(true);Ok(true)}}
   mark("selection", selected.len());
-  let pages=Pages{inputs:self,root:&workspace.root,selected:&selected,budget,lender:std::cell::RefCell::new(lender),ended:false.into()};let index=dq_analyze::captured_derived_reads::prepare_selected_pages(&pages,budget,&crate::daemon::control::checkpoint).map_err(operational)?;if !pages.ended.get(){return Err(invalid("Derived preflight did not exhaust actual selected source"))}discovery.validate_recording(self)?;
+  let mut handler_code=Vec::new();
+  if joined_registry{
+   let count=discovery.files().len();
+   pay(budget,count.checked_mul(std::mem::size_of::<Option<HandlerCodeFacts>>()))?;
+   handler_code.try_reserve_exact(count).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;
+   if handler_code.capacity()!=count{return Err(io::ErrorKind::OutOfMemory.into())}
+   handler_code.resize(count,None);
+  }
+  let pages=Pages{inputs:self,root:&workspace.root,selected:&selected,current:std::cell::Cell::new(usize::MAX),budget,lender:std::cell::RefCell::new(lender),ended:false.into()};
+  let index=if joined_registry{
+   dq_analyze::captured_derived_reads::prepare_selected_pages_with_code(&pages,budget,&crate::daemon::control::checkpoint,&mut|relative,code|{
+    let slot=handler_code.get_mut(pages.current.get()).ok_or_else(||Failure::from("Derived file has no actual handler ordinal"))?;
+    if let Some(code)=code{
+     if !config.policy_path_exempt("sem/handlers",dq_analyze::sem_handlers_policy::metadata().group,relative){
+      *slot=Some(HandlerCodeFacts::classify(relative,code.text.as_str()));
+     }
+    }
+    Ok(())
+   })
+  }else{dq_analyze::captured_derived_reads::prepare_selected_pages(&pages,budget,&crate::daemon::control::checkpoint)}.map_err(operational)?;
+  if !pages.ended.get(){return Err(invalid("Derived preflight did not exhaust actual selected source"))}discovery.validate_recording(self)?;
   mark("schema", selected.len());
   // Preadmit exact path capacities and a conservative SAME-recording closure
   // bound before cloning any file/directory metadata, not selected_count*1024.
   let mut paths=BTreeSet::new();pay(budget,Some(128))?;
-  for path in &selected{pay(budget,path.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(128)))?;}
+  for &(_,path) in &selected{pay(budget,path.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(128)))?;}
   pay(budget,configuration.capacity().checked_add(128))?;
   {let current=self.snapshot.lock().map_err(|_|invalid("Derived recording mutex poisoned"))?;pay(budget,Some(current.policy_closure_charge()?))?;}
-  for path in &selected{paths.insert(path.to_path_buf());}paths.insert(configuration.clone());let facts=self.policy_workspace_closure(&paths,discovery.directory_paths())?;
+  for &(_,path) in &selected{paths.insert(path.to_path_buf());}paths.insert(configuration.clone());let facts=self.policy_workspace_closure(&paths,discovery.directory_paths())?;
   mark("closure", selected.len());
   let mut seen=BTreeSet::new();
-  let charge=Some(std::mem::size_of::<DerivedPreflight>()+std::mem::size_of::<Budget>()+4*std::mem::size_of::<usize>()+crate::query_db::NativeQueryOwnerIdentity::retained_charge()).and_then(|n|n.checked_add(if joined_registry{0}else{config.budget_charge()})).and_then(|n|n.checked_add(bytes.as_ref().map_or(0,|bytes|bytes.capacity()+std::mem::size_of::<dm_resources::SharedBytesOwner>()+2*std::mem::size_of::<usize>()))).and_then(|n|n.checked_add(configuration.capacity())).and_then(|n|n.checked_add(discovery.retained_charge_with(&mut seen).ok()?)).and_then(|n|n.checked_add(facts.policy_closure_charge_with(&mut seen).ok()?)).ok_or(io::ErrorKind::OutOfMemory)?;
-  pay(budget,Some(crate::query_db::NativeQueryOwnerIdentity::retained_charge()+std::mem::size_of::<DerivedPreflight>()+2*std::mem::size_of::<usize>()))?;let owner=Arc::new(DerivedPreflight{index:Mutex::new(Some(index)),facts,discovery,config,configuration,configuration_bytes:bytes,issuer:Arc::clone(&self.source_issuer),queries:queries.native_query_owner_identity(),subject_issuer:OnceLock::new(),joined_registry,charge,budget:Arc::clone(budget)});owner.require_recording(self)?;Ok(owner)
+  let charge=Some(std::mem::size_of::<DerivedPreflight>()+std::mem::size_of::<Budget>()+4*std::mem::size_of::<usize>()+crate::query_db::NativeQueryOwnerIdentity::retained_charge()).and_then(|n|n.checked_add(if joined_registry{0}else{config.budget_charge()})).and_then(|n|n.checked_add(bytes.as_ref().map_or(0,|bytes|bytes.capacity()+std::mem::size_of::<dm_resources::SharedBytesOwner>()+2*std::mem::size_of::<usize>()))).and_then(|n|n.checked_add(handler_code.capacity().checked_mul(std::mem::size_of::<Option<HandlerCodeFacts>>())?)).and_then(|n|n.checked_add(configuration.capacity())).and_then(|n|n.checked_add(discovery.retained_charge_with(&mut seen).ok()?)).and_then(|n|n.checked_add(facts.policy_closure_charge_with(&mut seen).ok()?)).ok_or(io::ErrorKind::OutOfMemory)?;
+  pay(budget,Some(crate::query_db::NativeQueryOwnerIdentity::retained_charge()+std::mem::size_of::<DerivedPreflight>()+2*std::mem::size_of::<usize>()))?;let owner=Arc::new(DerivedPreflight{index:Mutex::new(Some(index)),facts,discovery,config,configuration,configuration_bytes:bytes,issuer:Arc::clone(&self.source_issuer),queries:queries.native_query_owner_identity(),subject_issuer:OnceLock::new(),joined_registry,handler_code,charge,budget:Arc::clone(budget)});owner.require_recording(self)?;Ok(owner)
  }
  pub(crate) fn issue_original_analysis_subject_derived(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,preflight:Arc<DerivedPreflight>)->io::Result<Arc<OriginalAnalysisSubject>>{if preflight.is_joined_registry(){
   let subject=self.issue_original_analysis_subject_full_registry(intent,&preflight)?;

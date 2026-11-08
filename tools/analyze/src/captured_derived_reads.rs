@@ -187,6 +187,19 @@ struct PreflightPhase{funding:Arc<Budget>,complete:bool}impl Drop for PreflightP
 /// Globals or BODY. The host must later bind its genuine raw recorder/current
 /// scope before any use with a semantic subject; DATA equality grants nothing.
 pub fn prepare_selected_pages(pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<UnsealedDerivedIndexData,Failure>{
+ prepare_selected_pages_observed(pages,budget,poll,None)
+}
+/// Same cold fold; observes only CODE views already demanded by index_file.
+pub fn prepare_selected_pages_with_code(
+ pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,
+ observe:&mut dyn FnMut(&str,Option<&crate::tree::View>)->Result<(),Failure>,
+)->Result<UnsealedDerivedIndexData,Failure>{
+ prepare_selected_pages_observed(pages,budget,poll,Some(observe))
+}
+fn prepare_selected_pages_observed(
+ pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,
+ mut observe:Option<&mut dyn FnMut(&str,Option<&crate::tree::View>)->Result<(),Failure>>,
+)->Result<UnsealedDerivedIndexData,Failure>{
  check(budget,poll)?;let funding=Budget::scoped_temporaries(budget).map_err(|m|oom(budget,m))?;let mut phase=PreflightPhase{funding:Arc::clone(&funding),complete:false};
  let pending=(||{
   let mut index=Index::default();
@@ -205,6 +218,9 @@ pub fn prepare_selected_pages(pages:&dyn crate::reactive_raw_policy_pages::RawPo
    let mut guard=PreflightPhase{funding:fallback.as_ref().map_or_else(||Arc::clone(&funding),Arc::clone),complete:fallback.is_none()};
    let mut scratch=MatcherScratch{operation:Operation{budget:local,poll},peaks:[0;3]};
    index_file(&mut index,views.source_file()?,&mut scratch,&mut retained,true)?;
+   if let Some(observe)=&mut observe{
+    if relative==reaction::GENERATED_REL{observe(relative,None)?;}else{observe(relative,Some(views.code()?))?;}
+   }
    guard.complete=true;
    Ok(true)
   })?;

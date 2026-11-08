@@ -22,6 +22,7 @@ pub(super) enum Demand {
     General,
     RawClean,
     RawCode,
+    RawMarker,
 }
 pub(super) struct Budget(Mutex<State>);
 pub(super) struct Reservation<'a> {

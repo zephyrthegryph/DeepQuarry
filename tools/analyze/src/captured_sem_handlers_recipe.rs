@@ -26,7 +26,13 @@ pub fn select_scoped_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,
   if previous.as_str() >= relative{return Err("handlers structural CODE_DM pages are not unique slash-string ordered".into())}
   previous.clear();
   if !recipe_funding.string(&mut previous,relative){return Err(oom(&recipe_funding,"handler source order allocation denied"));}
-  let original=views.raw()?;let hash=blake3::hash(original.as_bytes());let fingerprint=u128::from_le_bytes(hash.as_bytes()[..16].try_into().expect("fixed digest width"));let code=if scope.is_some_and(|scope|scope.exempt(relative)){None}else{Some(views.code()?.text.as_str())};selection.push_selected(relative,fingerprint,code,&mut control)?;visit(relative,views)
+  let original=views.raw()?;let hash=blake3::hash(original.as_bytes());let fingerprint=u128::from_le_bytes(hash.as_bytes()[..16].try_into().expect("fixed digest width"));if scope.is_some_and(|scope|scope.exempt(relative)){
+   selection.push_facts(relative,fingerprint,None,&mut control)?;
+  }else if let Some(facts)=pages.handler_code_facts(){
+   selection.push_facts(relative,fingerprint,Some(facts),&mut control)?;
+  }else{
+   selection.push_selected(relative,fingerprint,Some(views.code()?.text.as_str()),&mut control)?;
+  }visit(relative,views)
  }),order,&marker_funding,crate::sem_handlers_partial_recipe::DECLARATION_MARKERS,true,true,true,poll)?;
  let declared=demand_from_rows(&rows,budget,poll)?;
  let mut generated=Vec::new();for marker in &rows.markers{control.checkpoint()?;if marker.name!="ACTION"||marker.args.iter().any(|arg|arg=="FIXED"){continue}let Some(name)=marker.args.first()else{continue};kc::row(&mut control,&mut generated)?;kc::reserve(&mut control,||name.len().checked_add(64))?;let name=name.replace('/',"_");generated.push(kc::format(&mut control,format_args!("act_{name}"))?);}
@@ -76,6 +82,38 @@ fn demand_from_rows(rows:&crate::captured_marker_rows::Rows<'_>,budget:&Arc<Budg
   assert_eq!(plan.recipe.try_calls.last().map(String::as_str),Some("act_example"));
   let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
   assert_eq!(budget.used(),before+2*fixed+plan.recipe.retained_backing().unwrap());
+ }
+ #[test]
+ fn handler_reuses_code_facts_on_marker_only_page_and_classifies_missing_page(){
+  struct Mixed<'a>{root:&'a std::path::Path,budget:&'a Arc<Budget>,fact:Cell<Option<crate::sem_handlers_partial_recipe::HandlerCodeFacts>>,reuse:bool}
+  impl RawPolicyPages for Mixed<'_>{
+   fn handler_code_facts(&self)->Option<crate::sem_handlers_partial_recipe::HandlerCodeFacts>{self.fact.get()}
+   fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+    for (index,relative) in ["code/a.dm","code/engine/b.dm"].into_iter().enumerate(){
+     let text=if index==0{"/proc/candidate(datum/act/A)\n    return\nACTION(a)\n"}else{"/datum/probe/proc/draw()\n    act_try()\nACTION(b)\n"};
+     let path=self.root.join(relative);
+     let read=if self.reuse&&index==0{
+      crate::captured_raw_file::with_original_policy_file_marker_prepared(self.root,&path,self.budget,|_|Ok(text.into()),&mut|rel,views|{
+       self.fact.set(Some(crate::sem_handlers_partial_recipe::HandlerCodeFacts::Candidate));
+       let result=visit(rel,views);self.fact.set(None);result
+      })
+     }else{
+      crate::captured_raw_file::with_original_policy_file(self.root,&path,text.into(),0,self.budget,visit)
+     };
+     if !read?{return Ok(false)}
+    }Ok(true)
+   }
+  }
+  let root=std::env::current_dir().unwrap().join("handlers-code-reuse");
+  let run=|reuse|{
+   let budget=Budget::new(16*1024*1024).unwrap();
+   select_with_demand_from_pages(&Mixed{root:&root,budget:&budget,fact:Cell::new(None),reuse},&HashMap::new(),&[],&budget,&||Ok(())).unwrap()
+  };
+  let expected=run(false);let actual=run(true);
+  assert_eq!(actual.recipe,expected.recipe);
+  assert_eq!(actual.requires_full,expected.requires_full);
+  assert!(actual.recipe.has_output_base);
+  assert_eq!(actual.recipe.candidates.len(),2);
  }
  #[test]fn stopped_and_operational_pages_never_become_available_empty_tu(){let pages=fixture();pages.stop.set(true);assert!(matches!(select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())),Err(Failure::Unsupported(_))));pages.stop.set(false);pages.fail.set(true);assert!(matches!(select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())),Err(Failure::Operational(e))if e.raw_os_error()==Some(1450)));pages.fail.set(false);assert!(!select_from_pages(&pages,&HashMap::new(),&[],&Budget::new(8*1024*1024).unwrap(),&||Ok(())).unwrap().candidates.is_empty());}
 }

@@ -26,18 +26,23 @@ pub(crate) trait RecordedPolicySourceLender {
  fn prepare_source(&mut self)->io::Result<()>{self.0.charge(3*256).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
  fn acquired(&mut self,lease:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{let original=super::recorded_source_original(lease)?;if let super::RecordedSourceOriginal::Bytes(bytes)=original{self.0.charge(bytes.capacity()+std::mem::size_of::<dm_resources::SharedBytesOwner>()+2*std::mem::size_of::<usize>()).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?}Ok(())}
 }
+#[derive(Clone,Copy)]
+enum PolicyFileDemand{General,Code,Marker}
 impl<P:SnapshotProvider> RecordingInputs<P>{
  #[cfg(test)]pub(crate) fn with_recorded_policy_file(&self,root:&Path,path:&Path,budget:&Arc<Budget>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{self.with_recorded_policy_file_using(root,path,budget,&mut TestLender(budget),visit)}
  /// Borrow the original policy view of ONE actual admitted recorded read.
  /// The canonical FileInput-backed raw receipt proves this read only. It is
  /// not the productive raw driver's exact path/open receipt or a source grant.
  pub(crate) fn with_recorded_policy_file_using(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
-  self.with_recorded_policy_file_demand(root,path,budget,lender,false,visit)
+  self.with_recorded_policy_file_demand(root,path,budget,lender,PolicyFileDemand::General,visit)
  }
  pub(crate) fn with_recorded_policy_file_code_using(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
-  self.with_recorded_policy_file_demand(root,path,budget,lender,true,visit)
+  self.with_recorded_policy_file_demand(root,path,budget,lender,PolicyFileDemand::Code,visit)
  }
- fn with_recorded_policy_file_demand(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,code_only:bool,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+ pub(crate) fn with_recorded_policy_file_marker_using(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+  self.with_recorded_policy_file_demand(root,path,budget,lender,PolicyFileDemand::Marker,visit)
+ }
+ fn with_recorded_policy_file_demand(&self,root:&Path,path:&Path,budget:&Arc<Budget>,lender:&mut dyn RecordedPolicySourceLender,demand:PolicyFileDemand,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
   if self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(Failure::Operational(invalid("raw preflight requires actual Original recorder context")))}
   crate::daemon::control::checkpoint()?;budget.require().map_err(|m|quota(budget,m))?;
   // Real recorder path/fact/search-folder nodes are acquired by the same read;
@@ -67,10 +72,10 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
    // projection. No tokenization, parser, schema inference or blanket BOM strip.
    Ok(super::normalize_recorded_policy_original(&original))
   };
-  if code_only{
-   dq_analyze::captured_raw_file::with_original_policy_file_code_prepared(root,path,budget,prepare,visit)
-  }else{
-   dq_analyze::captured_raw_file::with_original_policy_file_prepared(root,path,0,budget,prepare,visit)
+  match demand{
+   PolicyFileDemand::Code=>dq_analyze::captured_raw_file::with_original_policy_file_code_prepared(root,path,budget,prepare,visit),
+   PolicyFileDemand::Marker=>dq_analyze::captured_raw_file::with_original_policy_file_marker_prepared(root,path,budget,prepare,visit),
+   PolicyFileDemand::General=>dq_analyze::captured_raw_file::with_original_policy_file_prepared(root,path,0,budget,prepare,visit),
   }
  }
 }
