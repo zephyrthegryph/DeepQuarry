@@ -26,6 +26,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/portrait_cache)
 	var/list/by_appearance
 	/// Keys in use order, oldest first: the cache drops from the front past PORTRAIT_CACHE_MAX.
 	var/list/use_order
+	/// Photos whose picture is being drawn (/datum/photo_render): owned here until each finishes, whichever photos or copies are left.
+	var/list/photo_renders
 	/// Counters for the tests and the trace: pictures served from the cache, renders started, getFlatIcon fallbacks.
 	var/hits = 0
 	var/renders = 0
@@ -33,6 +35,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/portrait_cache)
 
 CAPABILITIES(/datum/portrait_cache)
 	owns_many(nameof(portraits))
+	owns_many(nameof(photo_renders))
 
 /// One picture: its key, the picture once it landed (base 64 PNG and the /icon), and who is waiting for it while it renders.
 /datum/portrait
