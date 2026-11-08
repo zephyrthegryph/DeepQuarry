@@ -55,6 +55,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	G.set_pixel_x(-offset + (pixel_turf ? (pixel_turf.x - source_turf.x) * WORLD_ICON_SIZE : 0))
 	G.set_pixel_y(-offset + (pixel_turf ? (pixel_turf.y - source_turf.y) * WORLD_ICON_SIZE : 0))
 	G.set_color(light_color)
+	G.set_plane(client_glow_plane()) // its own plane in compare mode (client_lighting_compare.dm)
 	G.set_alpha(clamp(round(255 * min(light_power, 1)), 0, 255))
 	// Bounds over the reach: BYOND counts the glow as standing on every turf they cover (its locs) and sends it to any client
 	// that sees one of them. The glow is placed, never moved, so no Crossed()/Entered() fires on the covered turfs.
@@ -85,11 +86,15 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	on = !!on
 	if(GLOB.client_lighting == on)
 		return
+	if(!on && GLOB.client_lighting_compare)
+		client_lighting_compare_set(FALSE) // compare mode runs on client lighting
 	GLOB.client_lighting = on
 	client_glow_holders_switched(on)
 	log_world("client lighting: [on ? "on" : "off"]")
+	client_glow_screens_sync() // the black base on every client's lighting plane (client_lighting_compare.dm)
 	if(!SSlighting.is_initialized())
 		return
+	client_glow_whites_set(on) // turfs outside dynamic lighting stay bright over the base
 	var/list/all_turfs = block(locate(1, 1, 1), locate(world.maxx, world.maxy, world.maxz))
 	if(on)
 		for(var/turf/T as anything in all_turfs)

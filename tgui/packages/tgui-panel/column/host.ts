@@ -6,7 +6,7 @@
  *
  * Server windows in the column (the stat panel, docked interfaces) are
  * "column parts": the server opens one with `col/open {wid}`, sends it
- * messages as `col/msg {wid, type, payload}` (a raw string as `{wid, raw}`) and closes it with `col/close {wid}`; the
+ * messages as `col/msg {wid, type, payload}` and closes it with `col/close {wid}`; the
  * page answers for it with `col/msg {wid, type, payload}`.
  */
 import {
@@ -44,17 +44,6 @@ export function sendFor(
   payload: Record<string, unknown> = {},
 ) {
   Byond.sendMessage('col/msg', { wid, type, payload });
-}
-
-/** A raw tgui message (TGUI_CREATE_MESSAGE's format) as {type, payload}. */
-export function decodeRaw(raw: unknown): { type: string; payload: any } | null {
-  if (typeof raw !== 'string') return null;
-  try {
-    const message = JSON.parse(decodeURIComponent(raw));
-    return typeof message?.type === 'string' ? message : null;
-  } catch {
-    return null;
-  }
 }
 
 export class ColumnHost {
@@ -159,11 +148,11 @@ export class ColumnHost {
 
   private message(payload: any) {
     const wid = payload?.wid;
-    // One envelope, decoded once with the page's message: {wid, type, payload}; a raw native string (an asset mapping) as {wid, raw}.
+    // One envelope {wid, type, payload}, decoded once with the page's own message (column_part.dm wrap_message()).
     const message =
       typeof payload?.type === 'string'
         ? { type: payload.type as string, payload: payload.payload }
-        : decodeRaw(payload?.raw);
+        : null;
     if (typeof wid !== 'string' || !message) return;
     const backend = this.backends.get(wid);
     if (!backend) return;
@@ -284,6 +273,8 @@ export class ColumnHost {
 
   /** Floats a docked interface out into a native window, under a screen point when a drag gave one. */
   float(wid: string, at?: { x: number; y: number } | null) {
+    // A drag can end after its window closed (the server closed it, the page reloaded): nothing is left to float.
+    if (!this.state.windows[wid]) return;
     sendFor(wid, 'wm/float', at ? { at } : {});
   }
 

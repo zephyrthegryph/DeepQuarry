@@ -10,6 +10,13 @@
 	/// The key of the op this entry performs.
 	var/op_key
 
+/// The mob's own entry: nothing else holds it (no target), so when the mob is deleted the entry goes with it, not only out of its list (the slot
+/// table would keep it, a leak the boot gate reports).
+/datum/action/op_ability/owner_unlinked(mob/owner)
+	..()
+	if(QDELETED(owner) && !QDELETED(src))
+		spent(src)
+
 /datum/action/op_ability/ability_id()
 	return "[ability_category]/op/[op_key]"
 

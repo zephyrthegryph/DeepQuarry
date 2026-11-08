@@ -17,6 +17,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, floor)
 	var/obj/item/dq_observe_cost_listener/L = allocate(/obj/item/dq_observe_cost_listener, floor)
 	var/cycles = 500
+	var/spared_before = GLOB.rx_counter_writes_spared
 	var/start = TICK_USAGE_REAL
 	for(var/i in 1 to cycles)
 		observe(H, /datum/notice/qdeleting, L, then(TYPE_PROC_REF(/obj/item/dq_observe_cost_listener, on_gone)))
@@ -24,7 +25,7 @@
 		unobserve(H, /datum/notice/qdeleting, L)
 		unobserve(H, /datum/notice/moved, L)
 	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
-	log_world("dq_observe_cost_cycle: [round(ms * 1000 / (cycles * 4), 0.1)] us per observe or unobserve ([cycles] cycles)")
+	log_world("dq_observe_cost_cycle: [round(ms * 1000 / (cycles * 4), 0.1)] us per observe or unobserve ([cycles] cycles); [GLOB.rx_counter_writes_spared - spared_before] rx counter publishes spared")
 	observe(H, /datum/notice/moved, L, then(TYPE_PROC_REF(/obj/item/dq_observe_cost_listener, on_moved)))
 	H.forceMove(get_step(floor, EAST) || floor)
 	TEST_ASSERT(L.heard >= 1 || H.loc == floor, "the observer hears its carrier move")

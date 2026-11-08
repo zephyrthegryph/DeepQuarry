@@ -856,13 +856,19 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 		A.set_held_provider(held)
 	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
 	// An actor-side op that declares a reach (a natural weapon's bite) is aimed at what the input addressed.
-	var/aimed = side == CAND_ACTOR && !isnull(target) && target != actor && (!isnull(LAZYACCESS(P.selects, "reach")) || B?.bind_kind == BIND_CLICKS)
-	A.target = ((side == CAND_ACTOR && !aimed) || isnull(target)) ? holder : target
+	A.target = op_act_target(P, B, holder, side, actor, target)
 	if(istype(A.target, /atom))
 		A.target_atom = A.target // ALLOW(ownership): a pooled transient: reset on release
 	A.origin = origin
 	A.authority = authority
 	A.provider = V?.source
+
+/// The target an op context for (op, binding) on `holder` from `side` holds (op_act_set()).
+/proc/op_act_target(datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, mob/actor, datum/target)
+	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
+	// An actor-side op that declares a reach (a natural weapon's bite) is aimed at what the input addressed.
+	var/aimed = side == CAND_ACTOR && !isnull(target) && target != actor && (!isnull(LAZYACCESS(P.selects, "reach")) || B?.bind_kind == BIND_CLICKS)
+	return ((side == CAND_ACTOR && !aimed) || isnull(target)) ? holder : target
 
 // ---- pass 2 and the winner ----
 
@@ -1194,30 +1200,30 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /// What a row's when() answers depend on (holder, target, capability, activation), as the read's small numbers for them: a row asks it once for all
 /// its conditions, and the numbers are list lookups by the object, not REF() text.
 /proc/op_menu_cond_row_key(datum/op_resolution/R, datum/act/op/A)
+	return op_menu_cond_key_of(R, A.holder, A.target, A.cap, A.activation)
+
+/// op_menu_cond_row_key() for the fields a row's context would hold, before it is filled.
+/proc/op_menu_cond_key_of(datum/op_resolution/R, datum/holder, datum/target, datum/cap, datum/activation)
 	var/list/ids = R.menu_cond_ids
 	if(isnull(ids))
 		ids = list()
 		R.menu_cond_ids = ids
-	var/datum/D = A.holder
-	var/h = D ? ids[D] : 0
+	var/h = holder ? ids[holder] : 0
 	if(isnull(h))
 		h = length(ids) + 1
-		ids[D] = h
-	D = A.target
-	var/t = D ? ids[D] : 0
+		ids[holder] = h
+	var/t = target ? ids[target] : 0
 	if(isnull(t))
 		t = length(ids) + 1
-		ids[D] = t
-	D = A.cap
-	var/c = D ? ids[D] : 0
+		ids[target] = t
+	var/c = cap ? ids[cap] : 0
 	if(isnull(c))
 		c = length(ids) + 1
-		ids[D] = c
-	D = A.activation
-	var/a = D ? ids[D] : 0
+		ids[cap] = c
+	var/a = activation ? ids[activation] : 0
 	if(isnull(a))
 		a = length(ids) + 1
-		ids[D] = a
+		ids[activation] = a
 	return "[h]|[t]|[c]|[a]"
 
 /proc/op_menu_decide_in(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, datum/act/op/A)
