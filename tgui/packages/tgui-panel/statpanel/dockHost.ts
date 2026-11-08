@@ -118,6 +118,7 @@ export class DockHost {
   /** While a header is dragged every window hides, so the drop targets show. */
   dragging = false;
   private frame = 0;
+  private loggedHidden = new Set<string>();
 
   constructor() {
     window.addEventListener('resize', () => {
@@ -297,21 +298,23 @@ export class DockHost {
   /** Re-places on the next frame (layout, scroll and resize all come here). */
   schedule = () => {
     if (!this.frame) {
-      this.frame = requestAnimationFrame(() => {
-        this.frame = 0;
-        this.place();
-      });
+      this.frame = requestAnimationFrame(() => this.placeNow());
     }
   };
 
-  private place() {
+  /**
+   * Places every docked window over its entry's body: shown ones get their
+   * screen rect, the rest are hidden. Only windows whose placement changed
+   * are sent, each as its own `Byond.winset(id, params)`, all in the same
+   * frame. (A bulk `Byond.winset({ "id.prop": ... })` with no id sent nothing
+   * BYOND applied, so no docked window was ever shown: 2026-11-08.)
+   */
+  placeNow() {
+    this.frame = 0;
     // Windows are never hidden for a drag: they ride along with their entry (its live transform is in the rect).
     const shown = shownIds(this.state);
     const ratio = window.devicePixelRatio || 1;
     const clip = this.area?.getBoundingClientRect();
-    // Every window that moved goes in one bulk winset ("id.prop" keys), so they move together in one native call.
-    const batch: Record<string, string | number | boolean> = {};
-    let moved = 0;
     for (const id of Object.keys(this.state.windows)) {
       const body = this.bodies.get(id);
       let params: Record<string, string | number | boolean> | null = null;
@@ -337,15 +340,20 @@ export class DockHost {
         continue;
       }
       this.placed.set(id, next);
-      for (const [key, value] of Object.entries(
-        params ?? { 'is-visible': false },
-      )) {
-        batch[`${id}.${key}`] = value;
+      if (!params && !this.loggedHidden.has(id)) {
+        // Hard to see from outside: say why a docked window is not on screen.
+        this.loggedHidden.add(id);
+        console.log('window dock: not placed', {
+          id,
+          shown: shown.includes(id),
+          body: !!body,
+          area: !!clip,
+          origin: this.origin,
+        });
+      } else if (params) {
+        this.loggedHidden.delete(id);
       }
-      moved++;
-    }
-    if (moved) {
-      Byond.winset(batch);
+      Byond.winset(id, params ?? { 'is-visible': false });
     }
   }
 }
