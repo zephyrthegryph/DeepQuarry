@@ -35,6 +35,8 @@
 		// a stale lighting gradient as part of the turf's permanent appearance.
 		lighting_object.removefromturf()
 		spent(lighting_object, force = TRUE)
+	else
+		set_luminosity(1) // what a removed lighting object leaves (lighting_object on_destroy)
 
 /// A copy of this turf's underlays without its lighting underlay: what a snapshot of the turf's appearance keeps. The lighting object stays.
 /turf/proc/underlays_without_lighting()
@@ -49,17 +51,49 @@
 	underlays = snapshot.Copy()
 	lighting_object?.addtoturf()
 
-// Builds a lighting object for us, but only if our area is dynamic.
+// Readies a dynamic turf for lighting, but only if our area is dynamic. The lighting object itself is made on first need
+// (lighting_ensure_object): an unlit turf without one looks the same as one showing "dark" (luminosity 0 over the black
+// lighting backdrop), so a map of mostly dark turfs costs no object, underlay or update for them.
 /turf/proc/lighting_build_overlay()
 	if(!has_dynamic_lighting())
 		return
 
 	lighting_clear_overlay()
-	new/datum/lighting_object(src)
+	if(lighting_needs_object())
+		new/datum/lighting_object(src)
+		return
+	set_luminosity(0)
+	if(CONFIG_GET(number/starlight))
+		for(var/turf/space/space_tile in RANGE_TURFS(1, src))
+			space_tile.update_starlight()
+
+/// TRUE when this dynamic turf must show a lighting object now rather than on first light: a corner already carries light.
+/turf/proc/lighting_needs_object()
+	return lighting_corners_lit()
+
+/// TRUE when any of this turf's lighting corners carries light.
+/turf/proc/lighting_corners_lit()
+	var/datum/lighting_corner/C = lighting_corner_NE
+	if(C && (C.lum_r || C.lum_g || C.lum_b))
+		return TRUE
+	C = lighting_corner_SE
+	if(C && (C.lum_r || C.lum_g || C.lum_b))
+		return TRUE
+	C = lighting_corner_SW
+	if(C && (C.lum_r || C.lum_g || C.lum_b))
+		return TRUE
+	C = lighting_corner_NW
+	return C && (C.lum_r || C.lum_g || C.lum_b)
+
+/// This turf's lighting object, made now if the turf is dynamic and has none yet (a light reached it, or a reader needs its lum).
+/turf/proc/lighting_ensure_object() as /datum/lighting_object
+	if(!lighting_object && SSlighting.is_initialized() && has_dynamic_lighting())
+		new/datum/lighting_object(src)
+	return lighting_object
 
 // Used to get a scaled lumcount.
 /turf/proc/get_lumcount(minlum = 0, maxlum = 1)
-	if (!lighting_object)
+	if (!lighting_object && (!SSlighting.is_initialized() || !has_dynamic_lighting()))
 		return 1
 
 	var/totallums = 0

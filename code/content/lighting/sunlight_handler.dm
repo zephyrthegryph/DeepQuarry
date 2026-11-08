@@ -22,6 +22,10 @@
 			rel_set(src, nameof(shandler), new /datum/sunlight_handler(src))
 			shandler.manualInit()
 
+// Sun turfs keep an object from the start: the sunlight handler shades through it (only_sun_object).
+/turf/simulated/lighting_needs_object()
+	return shandler || ..() || (SSplanets.is_initialized() && SSplanets.planet_at_z(z)) || SSlighting.get_pshandler_z(z)
+
 /turf/simulated/lighting_build_overlay()
 	..()
 	if(shandler)
