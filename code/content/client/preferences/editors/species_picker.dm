@@ -97,18 +97,38 @@ GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
 	var/icon/p = icon('icons/mob/pai.dmi', "pai-repairbot", dir = SOUTH, frame = 1, moving = FALSE)
 	GLOB.dq_species_preview_cache["__pai__"] = icon2base64(p)
 
-/// Builds the thumbnail of the next species in `remaining` (one mannequin per step, two seconds apart), then the next.
-/proc/dq_species_preview_warm_next(list/remaining)
+/// A client is joining now (its login checks are outstanding, or it connected in the last minute): the background thumbnail builds wait.
+/proc/dq_species_preview_someone_joining()
+	for(var/client/C as anything in GLOB.clients)
+		if(C.login_pending || ELAPSED(C, connection_time, CLOCK_WORLD) < 1 MINUTES)
+			return TRUE
+	return FALSE
+
+/// Builds the thumbnail of the next species in `remaining` (one mannequin per step, two seconds apart), then the next. A step waits while a
+/// client is joining or the tick is already over its budget (a mannequin costs a few hundred ms). Logs each build and the end.
+/proc/dq_species_preview_warm_next(list/remaining, built = 0, deferred = 0)
+	if(length(remaining) && (dq_species_preview_someone_joining() || KERNEL_OVER_BUDGET))
+		after(null, 2 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(remaining, built, deferred + 1))
+		return
 	while(length(remaining))
 		var/species_name = remaining[1]
 		remaining.Cut(1, 2)
 		var/datum/species/S = GLOB.all_species[species_name]
 		if(!S || GLOB.dq_species_preview_cache[species_name])
 			continue
+		var/started = TICK_USAGE_REAL
 		dq_species_preview_b64(S)
+		built++
+		log_world("SPECIES_WARMUP built the [species_name] thumbnail mannequin in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.1)] ms ([length(remaining)] left)")
 		break
 	if(length(remaining))
-		after(null, 2 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(remaining))
+		after(null, 2 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(remaining, built, deferred))
+		return
+	log_world("SPECIES_WARMUP done: [built] species built in the background, [deferred] steps waited for a joining client or a busy tick")
+	GLOB.dq_species_preview_warmed = TRUE
+
+/// TRUE once the background thumbnail builds after init are done (the warm-up test reads it).
+GLOBAL_VAR_INIT(dq_species_preview_warmed, FALSE)
 
 /// Species thumbnails rendering in the portrait cache: species name -> when it was asked for (a render that never landed is asked again).
 GLOBAL_LIST_EMPTY(dq_species_preview_waits)
