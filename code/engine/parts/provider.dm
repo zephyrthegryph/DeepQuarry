@@ -47,6 +47,12 @@
 	var/provider_gen = 0
 	/// The act generation: bumped when a published key, relation or containment of this entity changes (caches key on it).
 	var/act_gen = 0
+	/// The place generation: bumped when this entity, or something it holds down its contents, moves, or its provider set changes. A cached
+	/// Menu keys on it instead of the act generation: what the rows read is tracked per key (menu_keys), only reach and contents here.
+	var/place_gen = 0
+	/// key -> generation of the published keys a cached Menu read on this entity (op_menu_record_reads()): bumped by state_changed() for a
+	/// watched key only, so an unrelated change of a crewmate leaves a menu cached on its other keys valid.
+	var/list/menu_keys
 	/// The waiting claiming op (claims()) that holds this entity, or null.
 	var/datum/pending_op/claimed_by
 
@@ -56,6 +62,7 @@
 	var/datum/rx_state/S = rx_of(D)
 	S.provider_gen++
 	S.act_gen++
+	S.place_gen++
 
 /// The provider set generation of an entity.
 /proc/provider_gen_of(datum/D)
@@ -76,6 +83,7 @@
 	var/datum/rx_state/moved_state = AM.rx
 	if(moved_state)
 		moved_state.act_gen++
+		moved_state.place_gen++
 		if(moved_state.observed?[OP_KEEP_MOVED])
 			publish_change(AM, OP_KEEP_MOVED)
 	if(isturf(container))
@@ -83,6 +91,7 @@
 	var/datum/rx_state/container_state = container.rx
 	if(container_state)
 		container_state.act_gen++
+		container_state.place_gen++
 		if(container_state.observed?[OP_KEEP_HAND])
 			publish_change(container, OP_KEEP_HAND)
 	// What a container holds inside its contents changed what it carries too (an implant put into an organ of a body): every holder up the
@@ -90,6 +99,7 @@
 	for(var/atom/up = container.loc; up && !isturf(up); up = up.loc)
 		if(up.rx)
 			up.rx.act_gen++
+			up.rx.place_gen++
 
 /// A keep of a waiting op on `D` state_changed (the actor swapped hands): published when something watches it.
 /proc/op_keep_poke(datum/D, key)

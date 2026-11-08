@@ -250,7 +250,7 @@
 			var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
 			if(A == B)
 				continue
-			op_changed(B)
+			op_menu_cache_clear() // cold: no cached menu at all (a state change of B no longer clears what B's change did not touch)
 			var/stamp = TICK_USAGE_REAL
 			var/list/data = interaction_menu_data(A, B)
 			var/cold_done = TICK_USAGE_REAL
@@ -263,6 +263,20 @@
 		stoplag()
 	end_window("ap_menu")
 	metric("ap_menu_cold_us", menu_reads ? menu_cold_ms * 1000 / menu_reads : 0, "us")
+	// After an unrelated change of the crewmate (its act generation moves, none of the keys the menu read): is the menu still cached?
+	var/unrelated_before = GLOB.op_menu_builds
+	var/unrelated_reads = 0
+	for(var/i in 1 to length(crew) step 2)
+		var/mob/living/carbon/human/A = crew[i]
+		var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
+		if(A == B)
+			continue
+		interaction_menu_data(A, B)
+		op_changed(B)
+		op_changed(A)
+		interaction_menu_data(A, B)
+		unrelated_reads++
+	count_metric("ap_menu_rebuilds_after_unrelated_change", unrelated_reads ? (GLOB.op_menu_builds - unrelated_before) / unrelated_reads : 0, "builds")
 	metric("ap_menu_warm_us", menu_reads ? menu_warm_ms * 1000 / menu_reads : 0, "us")
 	count_metric("ap_menu_rows", menu_reads ? menu_rows / menu_reads : 0, "rows", "none")
 	count_metric("ap_menu_builds", GLOB.op_menu_builds - builds_before, "builds")
@@ -276,7 +290,7 @@
 			var/mob/living/carbon/human/B = crew[min(i + 1, length(crew))]
 			if(A == B)
 				continue
-			op_changed(B)
+			op_menu_cache_clear() // cold: no cached menu at all (a state change of B no longer clears what B's change did not touch)
 			var/stamp = TICK_USAGE_REAL
 			interaction_menu_data(A, B)
 			legacy_menu_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)

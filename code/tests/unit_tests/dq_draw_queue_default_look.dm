@@ -249,3 +249,34 @@ CAPABILITIES(/obj/dq_setup_marks_probe)
 	TEST_ASSERT(!istype(back, /turf/simulated/wall), "the wall became a floor again ([back.type]; was drawn [before])")
 	TEST_ASSERT(!back.density, "which can be walked on")
 	TEST_ASSERT_EQUAL(back.refresh_queued, 0, "and the floor's draw ran")
+
+/// Draw on first view at boot: while the boot map loads, a type with no look verdict queues one fresh instance as its sample and holds the rest out of
+/// the queue by type; the settle drops the held atoms of an empty default look without walking the queue, and a real mark on a held atom queues it.
+/datum/unit_test/dq_boot_created_held_by_type
+
+/datum/unit_test/dq_boot_created_held_by_type/Run()
+	var/turf/T = test_floor()
+	var/type = /obj/dq_stamp_plain
+	refresh_flush()
+	GLOB.type_look_stamp -= type
+	GLOB.type_derives_cache -= type
+	set_global(nameof(GLOB.boot_created_settled), FALSE)
+	var/datum/materialize_batch/batch = SSatoms.batch_open("dq_boot_created_held_by_type") // the boot map load's frame is open
+	var/obj/sample = new type(T)
+	var/obj/held = new type(T)
+	var/obj/written = new type(T)
+	SSatoms.batch_close(batch)
+	TEST_ASSERT(sample.refresh_queued & DEP_CREATED, "the first fresh instance is queued as the type's sample")
+	TEST_ASSERT_EQUAL(held.refresh_queued, DEP_PARKED, "a later one is held out of the queue, owing its first refresh")
+	TEST_ASSERT(!(held in GLOB.refresh_queue), "and is not in the queue")
+	refresh_mark(written, DEP_ALL)
+	TEST_ASSERT(written in GLOB.refresh_queue, "a real mark on a held atom queues it at once")
+	refresh_settle_created()
+	TEST_ASSERT(GLOB.type_look_stamp[type], "the sample records an empty default look")
+	TEST_ASSERT(!held.refresh_queued, "the held atom of an empty default look owes nothing after the settle")
+	TEST_ASSERT(written.refresh_queued, "the written one keeps its refresh")
+	TEST_ASSERT(GLOB.boot_created_settled, "the boot settle closes the hold: a later map load queues as before")
+	refresh_flush()
+	qdel(sample)
+	qdel(held)
+	qdel(written)

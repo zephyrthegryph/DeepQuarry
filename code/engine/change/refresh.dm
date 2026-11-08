@@ -85,6 +85,10 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 			GLOB.state_changed_preinit_skipped++
 			return
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
+	if(var_name)
+		var/datum/rx_state/menu_state = E.rx
+		if(menu_state?.menu_keys && !isnull(menu_state.menu_keys[var_name]))
+			menu_state.menu_keys[var_name]++ // a cached Menu row read this key (op_menu_record_reads())
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
 	if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
 		stat_inputs_changed(E, var_name)
@@ -394,6 +398,8 @@ GLOBAL_VAR_INIT(refresh_forget_scan_max, 0)
 		return
 	GLOB.refresh_push_queue -= D
 	refresh_queue_drop(D)
+	if(D.refresh_queued == DEP_PARKED)
+		boot_created_forget(D)
 	D.refresh_queued = 0
 	D.refresh_bits = 0
 /// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
