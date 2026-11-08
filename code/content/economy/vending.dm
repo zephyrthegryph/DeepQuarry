@@ -456,10 +456,8 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 	panel.tgui_interact(A.actor)
 	return OP_OK
 
-/obj/machinery/vending/ui_assets(mob/user)
-	return list(
-		get_asset_datum(/datum/asset/spritesheet_batched/vending),
-	)
+// No ui_assets: the window shows each product's own picture (vending_product_image_url()), sent as it is listed, not the sheet of every vendor's
+// stock (a megabyte on a client's first vendor).
 
 /// The window's data: products of the shown categories, the coin, the panel and the customer.
 /obj/machinery/vending/ui_data(datum/act/eval/A)
@@ -482,6 +480,7 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 			"color" = I.display_color,
 			"isatom" = ispath(I.item_path, /atom),
 			"path" = replacetext(replacetext("[I.item_path]", "/obj/item/", ""), "/", "-"),
+			"image" = ispath(I.item_path, /atom) ? vending_product_image_url(I.item_path, A.actor?.client) : null,
 			"amount" = I.get_amount()
 		)))
 

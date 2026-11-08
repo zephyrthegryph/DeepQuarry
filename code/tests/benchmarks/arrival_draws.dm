@@ -25,6 +25,8 @@
 	var/total_ms = 0
 	var/total_frames = 0
 	var/total_owed = 0
+	var/total_owing = 0
+	var/total_parked_left = 0
 	begin_window()
 	for(var/n in 1 to viewers)
 		var/turf/T = spots[n]
@@ -38,6 +40,7 @@
 		count_metric("arrival[n]_parked", GLOB.refresh_deferred - parked_before, "draws", "none")
 		stoplag()
 		var/stamp = TICK_USAGE_REAL
+		GLOB.interest_test_coverable += "bench-arrival-[n]" // a player arriving: covered while its view is drawn
 		interest_view_set("bench-arrival-[n]", T, null, world.view)
 		var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		worst_ms = max(worst_ms, ms)
@@ -48,11 +51,24 @@
 			frames++
 		total_frames += frames
 		total_owed += GLOB.interest_drawn_now - owed_before
+		// Draws skipped would show here: what the viewer can see that still owes a draw once its arrival is done (must be 0).
+		var/owing = length(interest_view_owing("bench-arrival-[n]"))
+		var/parked_left = 0
+		for(var/turf/seen in range(world.view, T))
+			if(seen.refresh_queued & DEP_PARKED)
+				parked_left++
+			for(var/atom/movable/thing in seen)
+				if(thing.refresh_queued & DEP_PARKED)
+					parked_left++
+		total_owing += owing
+		total_parked_left += parked_left
 	end_window("arrival")
 	metric("arrival_tick_ms_worst", worst_ms, "ms")
 	metric("arrival_tick_ms_mean", total_ms / viewers, "ms")
 	metric("arrival_frames_mean", total_frames / viewers, "frames", "none")
 	count_metric("arrival_owed_drawn_after", total_owed, "draws", "none")
+	count_metric("arrival_owing_in_view_after", total_owing, "atoms")
+	count_metric("arrival_parked_in_range_after", total_parked_left, "atoms")
 	for(var/n in 1 to viewers)
 		interest_hold_set("bench-arrival-[n]", null)
 	set_global_benchmark_defer(FALSE)
@@ -61,6 +77,6 @@
 /proc/set_global_benchmark_defer(on)
 	GLOB.interest_defer_marks = on
 
-/// Owed draws still waiting in the arrival queue (none on a build that draws an arrival all at once).
+/// Owed draws still waiting behind a cover or in the prefetch.
 /proc/benchmark_arrivals_left()
-	return ("interest_arrivals" in GLOB.vars) ? length(GLOB.vars["interest_arrivals"]) : 0
+	return length(GLOB.interest_covered) + length(GLOB.interest_prefetched)
