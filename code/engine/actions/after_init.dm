@@ -53,7 +53,7 @@
 		if(!isnum(delay) || delay <= 0)
 			after_init_fire(holder, C, mapload, TRUE)
 		else
-			after(holder, delay, GLOBAL_PROC_REF(after_init_fire), key = "after_init:[index]", with = list(holder, C, mapload))
+			after(holder, delay, GLOBAL_PROC_REF(after_init_fire), key = __key_timed_end("after_init", __key_timed_start() ? null : "after_init:[index]"), with = list(holder, C, mapload))
 		if(QDELETED(holder))
 			return
 

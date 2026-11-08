@@ -2775,6 +2775,7 @@
 #include "code\engine\kernel\sequence.dm"
 #include "code\engine\kernel\sequence_state.dm"
 #include "code\engine\kernel\sequence_table.dm"
+#include "code\engine\kernel\zz_key_probe.dm"
 #include "code\engine\lifeforms\adjacency.dm"
 #include "code\engine\lifeforms\contents.dm"
 #include "code\engine\lifeforms\datum_new.dm"

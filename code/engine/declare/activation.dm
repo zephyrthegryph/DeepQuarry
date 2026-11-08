@@ -222,7 +222,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 			LAZYADD(A.applied, list(list(E, engine)))
 	def.on_activate(A)
 	if(lasts)
-		after(holder, lasts, GLOBAL_PROC_REF(activation_expire), key = "activation:[A.serial]", with = list(A))
+		after(holder, lasts, GLOBAL_PROC_REF(activation_expire), key = __key_timed_end("activation", __key_timed_start() ? null : "activation:[A.serial]"), with = list(A))
 	activation_restack(holder, def.key)
 	rx.spares_defs_key = null
 	holder.capabilities_changed(def)

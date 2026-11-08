@@ -889,7 +889,7 @@ CAPABILITIES(/datum/work_item/sequence)
 	if(state.rewake_next && state.rewake_next <= due)
 		return
 	state.rewake_next = due
-	rx_after(E, delay, TYPE_PROC_REF(/datum, seq_rewake), "seq:[seq.idx]:rewake", CLOCK_OWN, list(seq.idx))
+	rx_after(E, delay, TYPE_PROC_REF(/datum, seq_rewake), __key_timed_end("seq", __key_timed_start() ? null : "seq:[seq.idx]:rewake"), CLOCK_OWN, list(seq.idx))
 
 /// The member's rewake timer went off: every step whose due time has come wakes and runs on its next frame (no
 /// should_run() pre-check: a rewake is for work that drifts with time), and the timer is armed for the next one. A parked
@@ -918,7 +918,7 @@ CAPABILITIES(/datum/work_item/sequence)
 			woke = TRUE
 	if(next)
 		state.rewake_next = next
-		rx_after(src, next - seq_rewake_now(src), TYPE_PROC_REF(/datum, seq_rewake), "seq:[seq_idx]:rewake", CLOCK_OWN, list(seq_idx))
+		rx_after(src, next - seq_rewake_now(src), TYPE_PROC_REF(/datum, seq_rewake), __key_timed_end("seq", __key_timed_start() ? null : "seq:[seq_idx]:rewake"), CLOCK_OWN, list(seq_idx))
 	if(!woke)
 		return
 	state.seq.wakes++
