@@ -142,7 +142,7 @@ pub fn detail_using<E:From<Unsupported>+From<String>>(inputs:&PolicyInputs,root:
                         .to_string_lossy()
                         .replace('\\', "/");
                 } else {
-                    list = fact.metadata.declared_type == Some(SymbolId::of("/list"));
+                    list = fact.metadata.declared_type() == Some(SymbolId::of("/list"));
                 }
             }
         }

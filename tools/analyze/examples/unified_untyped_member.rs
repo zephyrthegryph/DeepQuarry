@@ -123,7 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 && row.definition == dm_tree::DefinitionMode::Declare
         })
         .ok_or("pinned world declaration absent")?;
-    if row.metadata.declared_type != Some(dm_ir::SymbolId::of("/world"))
+    if row.metadata.declared_type() != Some(dm_ir::SymbolId::of("/world"))
         || row.metadata.flags & 1 == 0
     {
         return Err("pinned world declaration contract changed".into());
@@ -141,7 +141,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     seed.fields = vec![dm_ir::OpaqueFieldBase {
         owner: row.owner,
         name: row.name,
-        declared_type: dm_ir::DeclaredTypeKnowledge::Known(row.metadata.declared_type.unwrap()),
+        declared_type: dm_ir::DeclaredTypeKnowledge::Known(row.metadata.declared_type().unwrap()),
     }]
     .into();
     let primary_rich = std::env::args().any(|arg| arg == "--primary-rich");

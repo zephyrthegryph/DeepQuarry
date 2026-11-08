@@ -76,8 +76,8 @@ impl AllocationInput {
                         dm_tree::initializers::InitializerOriginKind::Declaration(member),
                     ) => plan.source.tree.member(member).map(|member| {
                         (
-                            member.metadata.declared_type,
-                            member.metadata.list_element_type,
+                            member.metadata.declared_type(),
+                            member.metadata.list_element_type(),
                         )
                     }),
                     _ => None,

@@ -380,8 +380,8 @@ pub(crate) fn field_declared_hint<R: Resolver + ?Sized>(
 }
 pub(crate) fn field_declared_hint_using<R:Resolver+?Sized,E:From<Unsupported>+From<String>>(tree:&dm_tree::SemanticTree,resolver:&R,archive:Option<&dm_tree::frontend::BodyArchive>,owner:SymbolId,name:SymbolId,data:&DeclarationMeaning,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<String>,E>{
     poll()?;
-    if !has_field_qualifiers(tree, data.declared_type, data.list_element_type)? {
-        let hint = declaration_type(tree, data.declared_type, data.list_element_type)?;
+    if !has_field_qualifiers(tree, data.declared_type(), data.list_element_type())? {
+        let hint = declaration_type(tree, data.declared_type(), data.list_element_type())?;
         return Ok((!hint.is_empty()).then_some(hint));
     }
     let archive = archive.ok_or_else(|| {
@@ -397,8 +397,8 @@ pub(crate) fn field_declared_hint_using<R:Resolver+?Sized,E:From<Unsupported>+Fr
         .ok_or_else(|| Unsupported("qualified field checker profile unavailable".into()))?;
     let fact = crate::checker_variable_facts::variable_using(tree,resolver,profile,owner,name,poll)?
         .ok_or_else(|| Unsupported("qualified source formal unavailable".into()))?;
-    if fact.metadata.declared_type != data.declared_type
-        || fact.metadata.list_element_type != data.list_element_type
+    if fact.metadata.declared_type() != data.declared_type()
+        || fact.metadata.list_element_type() != data.list_element_type()
     {
         return Err(Unsupported(
             "qualified target metadata differs from selected original formal".into(),
@@ -600,7 +600,7 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
             name: SymbolId::of(name),
         };
         match resolve_using(self.resolver,query,poll)? {
-            M::Member { data, .. } if data.inherited_opaque.is_none() => {
+            M::Member { data, .. } if data.inherited_opaque().is_none() => {
                 // Refuse BEFORE callers can skip an apparently typed target.
                 // These reserved type segments carry checker qualifiers, not a
                 // proven declared type; do not strip or guess their meaning.
@@ -692,11 +692,11 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
                 owner,
                 name: SymbolId::of(name),
             },poll)? {
-                M::Member { data, .. } if data.inherited_opaque.is_none() => {
-                    if data.declared_type != declared {
+                M::Member { data, .. } if data.inherited_opaque().is_none() => {
+                    if data.declared_type() != declared {
                         return Err(Unsupported("inconsistent source field type answers".into()).into());
                     }
-                    data.list_element_type
+                    data.list_element_type()
                 }
                 _ => None,
             }
@@ -708,14 +708,14 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
                 owner,
                 name: SymbolId::of(name),
             },poll)? {
-                M::Member { data, .. } if data.inherited_opaque.is_none() => data,
+                M::Member { data, .. } if data.inherited_opaque().is_none() => data,
                 _ => {
                     return Err(Unsupported(
                         "qualified field type has no original source metadata".into(),
                     ).into())
                 }
             };
-            if data.declared_type != declared || data.list_element_type != element {
+            if data.declared_type() != declared || data.list_element_type() != element {
                 return Err(Unsupported(
                     "qualified receiver type differs from original field metadata".into(),
                 ).into());

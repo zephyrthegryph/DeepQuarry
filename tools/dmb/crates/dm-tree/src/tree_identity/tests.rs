@@ -49,13 +49,13 @@ pub(crate) fn legacy_identity(skeletons: &[Skeleton], fields: &[dm_ir::OpaqueFie
 }
 fn legacy_metadata(metadata: &MemberMetadata) -> u128 {
     let mut bytes = Vec::new();
-    bytes.push(u8::from(metadata.inherited_opaque.is_some()));
-    if let Some(base) = &metadata.inherited_opaque {
+    bytes.push(u8::from(metadata.inherited_opaque().is_some()));
+    if let Some(base) = metadata.inherited_opaque() {
         bytes.extend_from_slice(&base.canonical_bytes());
     }
     for symbol in [
-        metadata.declared_type,
-        metadata.list_element_type,
+        metadata.declared_type(),
+        metadata.list_element_type(),
         metadata.display_name(),
     ] {
         bytes.push(u8::from(symbol.is_some()));
@@ -123,13 +123,11 @@ fn populated() -> MemberMetadata {
         })),
         b"exact\0canonical".as_slice().into(),
     ).with_field_tail(dm_ir::DeclarationFieldMeaning {
-        inherited_opaque: Some(dm_ir::OpaqueFieldBase {
+        types: dm_ir::FieldTypeIds::new(Some(SymbolId::of("/datum")), Some(SymbolId::of("/obj")), Some(dm_ir::OpaqueFieldBase {
             owner: SymbolId::of("/datum"),
             name: SymbolId::of("value"),
             declared_type: dm_ir::DeclaredTypeKnowledge::KnownUntyped,
-        }),
-        declared_type: Some(SymbolId::of("/datum")),
-        list_element_type: Some(SymbolId::of("/obj")),
+        })),
         array: Some(Arc::new(dm_ir::ArrayDeclaration {
             dimensions: vec![None, Some(expression.clone())].into(),
             element_type: Some(SymbolId::of("/obj")),
@@ -144,13 +142,13 @@ fn streaming_metadata_matches_independent_legacy_for_every_optional_combination(
     for mask in 0..512 {
         let mut metadata = populated();
         if mask & 1 == 0 {
-            metadata.field_tail_mut().inherited_opaque = None;
+            metadata.field_tail_mut().set_inherited_opaque(None);
         }
         if mask & 2 == 0 {
-            metadata.field_tail_mut().declared_type = None;
+            metadata.field_tail_mut().set_declared_type(None);
         }
         if mask & 4 == 0 {
-            metadata.field_tail_mut().list_element_type = None;
+            metadata.field_tail_mut().set_list_element_type(None);
         }
         if mask & 8 == 0 {
             metadata.set_display_name(None);

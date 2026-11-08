@@ -139,7 +139,7 @@ fn field_types_flags_defaults_and_inherited_overrides_are_native_metadata() {
     let M::Member { data, .. } = Resolver::resolve(&tree, query("/atom", "contents")) else {
         panic!()
     };
-    assert_eq!(data.declared_type, Some(SymbolId::of("/list")));
+    assert_eq!(data.declared_type(), Some(SymbolId::of("/list")));
 }
 #[test]
 fn signatures_preserve_effective_reference_defaults_not_comment_hints() {

@@ -35,7 +35,7 @@ impl Compiler<'_> {
         };
         let declared = match lookup.resolver.resolve(query) {
             ResolvedMeaning::DeclaredType(declared) => declared?,
-            ResolvedMeaning::Member { data, .. } => data.declared_type?,
+            ResolvedMeaning::Member { data, .. } => data.declared_type()?,
             _ => return None,
         };
         let text = lookup.text(query, declared).ok()?;

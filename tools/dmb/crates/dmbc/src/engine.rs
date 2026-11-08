@@ -637,7 +637,7 @@ mod tests {
             .member(field)
             .unwrap()
             .metadata
-            .inherited_opaque
+            .inherited_opaque()
             .is_none());
     }
     #[test]
@@ -766,7 +766,7 @@ mod tests {
             .resolve(owner, SymbolId::of("byond_version"), MemberKind::Var)
             .unwrap();
         let metadata = &tree.member(member).unwrap().metadata;
-        assert!(metadata.inherited_opaque.is_some());
+        assert!(metadata.inherited_opaque().is_some());
         assert!(metadata.initializer.is_some());
         let query = ResolveQuery::Var {
             owner: SymbolId::of("/savefile"),

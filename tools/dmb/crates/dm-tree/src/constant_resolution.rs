@@ -385,7 +385,7 @@ impl Resolver for ScalarSnapshot {
             return ResolvedMeaning::Unsupported(query);
         };
         let member = tree.member(id).expect("resolved member belongs to tree");
-        if member.metadata.inherited_opaque.is_some() {
+        if member.metadata.inherited_opaque().is_some() {
             return ResolvedMeaning::Unsupported(query);
         }
         if !constant_query && member.metadata.flags & 2 == 0 {

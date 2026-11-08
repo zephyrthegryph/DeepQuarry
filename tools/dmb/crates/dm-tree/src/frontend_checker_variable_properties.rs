@@ -87,7 +87,7 @@ impl BodyArchive {
             .ok_or("checker qualifier formal unavailable")?;
         if node.kind != MemberKind::Var
             || node.definition != DefinitionMode::Declare
-            || node.metadata.inherited_opaque.is_some()
+            || node.metadata.inherited_opaque().is_some()
         {
             return Err("checker qualifier needs exact authored formal".into());
         }
@@ -112,7 +112,7 @@ impl BodyArchive {
             .ok_or("checker formal variable member unavailable")?;
         if node.kind != MemberKind::Var
             || node.definition != DefinitionMode::Declare
-            || node.metadata.inherited_opaque.is_some()
+            || node.metadata.inherited_opaque().is_some()
         {
             return Err("checker variable needs an exact authored formal declaration".into());
         }
@@ -129,7 +129,7 @@ impl BodyArchive {
     }
     /// Original current ordinal avoids constructing the legacy target grouping.
     pub fn checker_variable_qualifiers_original_at(&self,formal:MemberId,ordinal:crate::OccurrenceId,profile:PackedU128,proof:&crate::checker_builtins::ValidatedCheckerProfile<'_>)->Result<u8,String>{
-        self.require_original_variable_occurrence(formal,ordinal,profile,proof)?;let node=self.tree().member(formal).ok_or("checker qualifier formal unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque.is_some(){return Err("checker qualifier needs exact authored formal".into())}self.mapping.declaration_checker_qualifiers(ordinal)
+        self.require_original_variable_occurrence(formal,ordinal,profile,proof)?;let node=self.tree().member(formal).ok_or("checker qualifier formal unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque().is_some(){return Err("checker qualifier needs exact authored formal".into())}self.mapping.declaration_checker_qualifiers(ordinal)
     }
     pub fn checker_variable_properties_original_at(&self,formal:MemberId,ordinal:crate::OccurrenceId,profile:PackedU128,proof:&crate::checker_builtins::ValidatedCheckerProfile<'_>)->Result<CheckerVariableProperties<'_>,String>{self.require_original_variable_occurrence(formal,ordinal,profile,proof)?;self.checker_variable_properties_at(formal,ordinal)}
     fn checker_variable_properties_at(&self,formal:MemberId,ordinal:crate::OccurrenceId)->Result<CheckerVariableProperties<'_>,String>{
@@ -152,15 +152,15 @@ pub(in crate::frontend) fn properties_for_issued_original<'a>(tree:&'a crate::Se
  let mut reserve=|_|Ok(());let mut operational=|actual:std::io::Error|actual.to_string();properties_for_issued_original_using(tree,formal,flags,&mut PropertyWork{reserve:&mut reserve,operational:&mut operational})
 }
 fn properties_for_issued_original_using<'a,E:From<String>+From<&'static str>>(tree:&'a crate::SemanticTree,formal:MemberId,flags:impl FnOnce()->Result<u8,String>,work:&mut PropertyWork<'_,E>)->Result<CheckerVariableProperties<'a>,E>{
- work.fund(0)?;let node=tree.member(formal).ok_or("checker formal variable member unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque.is_some(){return Err("checker variable needs an exact authored formal declaration".into())}
+ work.fund(0)?;let node=tree.member(formal).ok_or("checker formal variable member unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque().is_some(){return Err("checker variable needs an exact authored formal declaration".into())}
  let flags=flags()?;let data=node.metadata.as_ref();
  let declared_hint=if let Some(array)=&data.array{
   if array.dimensions.len()!=1{return Err("nested array checker type projection is not issued".into())}
   let element=array.element_type.map(|path|cleaned_type_using(tree,path,flags,work)).transpose()?.flatten();if element.as_ref().is_some_and(|path|path=="/list"||path.starts_with("/list/")){return Err("array-of-list checker type projection is not issued".into())}
   Some(match element{Some(path)=>property_text(&["/list",&path],work)?,None=>property_text(&["/list"],work)?})
- }else if data.declared_type==Some(SymbolId::of("/list")){
-  Some(match data.list_element_type{Some(element)=>match cleaned_type_using(tree,element,flags,work)?{Some(path)=>property_text(&["/list",&path],work)?,None=>property_text(&["/list"],work)?},None=>property_text(&["/list"],work)?})
- }else{data.declared_type.map(|path|cleaned_type_using(tree,path,flags,work)).transpose()?.flatten()};
+ }else if data.declared_type()==Some(SymbolId::of("/list")){
+  Some(match data.list_element_type(){Some(element)=>match cleaned_type_using(tree,element,flags,work)?{Some(path)=>property_text(&["/list",&path],work)?,None=>property_text(&["/list"],work)?},None=>property_text(&["/list"],work)?})
+ }else{data.declared_type().map(|path|cleaned_type_using(tree,path,flags,work)).transpose()?.flatten()};
  let(declared_type,list_element_type)=match declared_hint.as_deref(){None=>(None,None),Some(path)=>{let projected=dm_syntax::project_declaration_type(path);(Some(SymbolId::of(projected.runtime_path)),match projected.list_element_path{Some(tail)=>Some(SymbolId::of(&property_text(&["/",tail],work)?)),None=>None})}};
  Ok(CheckerVariableProperties{formal,owner:tree.type_node(node.owner).ok_or("checker variable owner unavailable")?.path,name:node.name,metadata:data,qualifiers:flags,declared_type,list_element_type,declared_hint})
 }
@@ -189,7 +189,7 @@ mod tests {
             .resolve(owner, SymbolId::of("value"), crate::MemberKind::Var)
             .unwrap();
         let data = &tree.member(id).unwrap().metadata;
-        let original = data.declared_type.unwrap();
+        let original = data.declared_type().unwrap();
         assert_eq!(
             tree.symbols().text(original),
             Some("/SpacemanDMM_private/datum")
@@ -200,7 +200,7 @@ mod tests {
                 .as_deref(),
             Some("/datum")
         );
-        assert_eq!(data.declared_type, Some(original));
+        assert_eq!(data.declared_type(), Some(original));
         assert!(
             cleaned_type(&tree, original, 0).is_err(),
             "matching text alone cannot authorize qualifier removal"
@@ -216,8 +216,7 @@ mod tests {
                     .unwrap(),
             )
             .unwrap()
-            .metadata
-            .declared_type
+            .metadata.declared_type()
             .unwrap()
         };
         assert_eq!(

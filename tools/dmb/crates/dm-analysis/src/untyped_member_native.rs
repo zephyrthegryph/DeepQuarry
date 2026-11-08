@@ -48,7 +48,7 @@ fn static_names_using<E:From<Unsupported>>(tree: &SemanticTree, profile: PackedU
         .filter(|m| m.kind == MemberKind::Var && m.definition == DefinitionMode::Declare)
     {
         checkpoint()?;
-        if member.metadata.inherited_opaque.is_some() {
+        if member.metadata.inherited_opaque().is_some() {
             return Err(Unsupported("static-name flags are incomplete".into()).into());
         }
         let owner = tree
@@ -85,10 +85,9 @@ impl Receiver<'_> {
         let Some(fact) = fact else { return Ok(None) };
         if let Some(formal) = fact.formal {
             let qualified = fact
-                .metadata
-                .declared_type
+                .metadata.declared_type()
                 .into_iter()
-                .chain(fact.metadata.list_element_type)
+                .chain(fact.metadata.list_element_type())
                 .any(|symbol| {
                     spelling(self.tree, self.profile, symbol)
                         .is_ok_and(dm_syntax::has_checker_qualifiers)
@@ -102,13 +101,13 @@ impl Receiver<'_> {
                 return Ok(Some(properties.declared_hint().map(str::to_owned)));
             }
         }
-        let Some(ty) = fact.metadata.declared_type else {
+        let Some(ty) = fact.metadata.declared_type() else {
             return Ok(Some(None));
         };
         checkpoint()?;
         let mut ty = spelling(self.tree, self.profile, ty)?.to_owned();
         if ty == "/list" {
-            if let Some(element) = fact.metadata.list_element_type {
+            if let Some(element) = fact.metadata.list_element_type() {
                 ty.push_str(spelling(self.tree, self.profile, element)?);
             }
         }

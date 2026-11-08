@@ -871,7 +871,7 @@ impl SourceExportMapping {
         let node = tree.member(member)?;
         if node.kind != MemberKind::Var
             || node.definition != crate::DefinitionMode::Declare
-            || node.metadata.inherited_opaque.is_some()
+            || node.metadata.inherited_opaque().is_some()
         {
             return None;
         }

@@ -503,7 +503,7 @@ impl ProjectResolver<'_> {
         match self.answer(query)? {
             M::Missing => Ok(None),
             M::DeclaredType(value) => Ok(value),
-            M::Member { data, .. } => Ok(data.declared_type),
+            M::Member { data, .. } => Ok(data.declared_type()),
             _ => Err(self.error(query, "declared type metadata unavailable")),
         }
     }

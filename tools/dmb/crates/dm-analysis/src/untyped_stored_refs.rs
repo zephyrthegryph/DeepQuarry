@@ -426,9 +426,9 @@ fn list_place_using<E:From<Unsupported>+From<String>>(w:&Walker<'_,SemanticTree>
             .declared_hint()
             .is_none_or(is_collection_type));
     }
-    Ok(fact.metadata.declared_type.is_none()
-        || fact.metadata.declared_type == Some(SymbolId::of("/list"))
-        || fact.metadata.declared_type == Some(SymbolId::of("/alist")))
+    Ok(fact.metadata.declared_type().is_none()
+        || fact.metadata.declared_type() == Some(SymbolId::of("/list"))
+        || fact.metadata.declared_type() == Some(SymbolId::of("/alist")))
 }
 fn point(
     inputs: &PolicyInputs,

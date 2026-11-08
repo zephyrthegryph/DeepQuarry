@@ -167,13 +167,13 @@ fn projected_identity_rows<'a>(
 
 pub(crate) fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
     let mut bytes = Xxh3::new();
-    bytes.update(&[u8::from(metadata.inherited_opaque.is_some())]);
-    if let Some(base) = &metadata.inherited_opaque {
+    bytes.update(&[u8::from(metadata.inherited_opaque().is_some())]);
+    if let Some(base) = metadata.inherited_opaque() {
         bytes.update(&base.canonical_bytes());
     }
     for symbol in [
-        metadata.declared_type,
-        metadata.list_element_type,
+        metadata.declared_type(),
+        metadata.list_element_type(),
         metadata.display_name(),
     ] {
         bytes.update(&[u8::from(symbol.is_some())]);

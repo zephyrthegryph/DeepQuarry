@@ -199,11 +199,11 @@ fn own_formal(
             return Ok(None);
         }
         match node.definition {
-            DefinitionMode::Declare if node.metadata.inherited_opaque.is_none() => {
+            DefinitionMode::Declare if node.metadata.inherited_opaque().is_none() => {
                 return Ok(Some(id))
             }
             DefinitionMode::Override => (),
-            DefinitionMode::Declare if node.metadata.inherited_opaque.is_some() => return Ok(None),
+            DefinitionMode::Declare if node.metadata.inherited_opaque().is_some() => return Ok(None),
             _ => return Err("visibility own-entry declaration mode unavailable".into()),
         }
         let Some(previous) = node.previous else {

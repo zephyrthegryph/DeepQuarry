@@ -61,7 +61,7 @@ impl BaseVarDeclaration<'_> {
                 None => "/list".into(),
             });
         }
-        match (self.metadata.declared_type, self.metadata.list_element_type) {
+        match (self.metadata.declared_type(), self.metadata.list_element_type()) {
             (Some(container), Some(element)) if container == SymbolId::of("/list") => {
                 Ok(format!("/list{}", spelling(element)?))
             }
@@ -141,7 +141,7 @@ fn effective_metadata<'a>(
             && name == formal.name
             && selected.owner == formal.owner
             && Arc::ptr_eq(&data, &selected.metadata)
-            && data.inherited_opaque.is_none() =>
+            && data.inherited_opaque().is_none() =>
         {
             Ok((effective, selected.metadata.as_ref()))
         }
@@ -217,7 +217,7 @@ pub fn base_var_declarations_using<'a,W:DeclarationWork>(archive:&'a BodyArchive
         if owner == SymbolId::of("/") {
             continue;
         }
-        if member.metadata.inherited_opaque.is_some() {
+        if member.metadata.inherited_opaque().is_some() {
             return Err(Unsupported("base-var declared flags are opaque".into()).into());
         }
         if member.metadata.flags & NO_INSTANCE_COST != 0 {
@@ -234,7 +234,7 @@ pub fn base_var_declarations_using<'a,W:DeclarationWork>(archive:&'a BodyArchive
             .ok_or_else(|| Unsupported("base-var authored value is absent".into()))?;
         if value.owner != member.owner
             || value.name != member.name
-            || value.metadata.inherited_opaque.is_some()
+            || value.metadata.inherited_opaque().is_some()
         {
             return Err(Unsupported(
                 "base-var authored initializer is incomplete or foreign".into(),

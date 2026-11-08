@@ -709,11 +709,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             || self.type_errors.is_none()
             || fact.metadata.array.is_some()
             || fact.metadata.flags & !15 != 0
-            || fact.metadata.list_element_type.is_some()
+            || fact.metadata.list_element_type().is_some()
         {
             return Ok(None);
         }
-        let Some(owner) = fact.metadata.declared_type else {
+        let Some(owner) = fact.metadata.declared_type() else {
             return Ok(None);
         };
         // Avoid a whole authored-roster scan on ordinary known-type reads.
@@ -784,10 +784,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     ) -> Result<TypeFact, D::Error> {
         if let (Some(archive), Some(formal)) = (self.prefix_archive, fact.formal) {
             let qualified = fact
-                .metadata
-                .declared_type
+                .metadata.declared_type()
                 .into_iter()
-                .chain(fact.metadata.list_element_type)
+                .chain(fact.metadata.list_element_type())
                 .any(|id| {
                     self.tree
                         .symbols()
@@ -812,8 +811,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         checked_type(
             self.tree,
             self.resolver,
-            fact.metadata.declared_type,
-            fact.metadata.list_element_type,
+            fact.metadata.declared_type(),
+            fact.metadata.list_element_type(),
         ).map_err(D::Error::from)
     }
     fn arguments(&mut self,args:&'a [Expr])->Result<(),D::Error>{self.arguments_for_call(args,None)}

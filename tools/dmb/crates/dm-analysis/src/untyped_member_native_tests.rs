@@ -234,7 +234,7 @@ fn owned_primary_field_qualifiers_admit_untyped_and_preserve_unknown_nonempty_hi
     );
     assert!(
         tree.symbols()
-            .text(view.metadata.declared_type.unwrap())
+            .text(view.metadata.declared_type().unwrap())
             .unwrap()
             .contains("SpacemanDMM_private"),
         "runtime metadata unchanged"
@@ -270,7 +270,7 @@ fn public_property_view_uses_actual_profile_formal_and_source_issuance() {
         "borrow SAME original metadata, no reified declaration"
     );
     assert_eq!(
-        tree.symbols().text(view.metadata.declared_type.unwrap()),
+        tree.symbols().text(view.metadata.declared_type().unwrap()),
         Some("/SpacemanDMM_private")
     );
     assert!(archive
@@ -309,7 +309,7 @@ fn public_property_view_preserves_list_container_when_qualifier_is_the_only_elem
         assert_eq!(view.declared_type, Some(SymbolId::of("/list")));
         assert!(tree
             .symbols()
-            .text(view.metadata.list_element_type.unwrap())
+            .text(view.metadata.list_element_type().unwrap())
             .unwrap()
             .contains("SpacemanDMM_private"));
     }

@@ -173,7 +173,7 @@ pub fn probe_relation_types(
         )?;
         let Some(fact) = fact else { answers.push(None); continue };
         let answer = if let Some(formal) = fact.formal {
-            let width = [fact.metadata.declared_type, fact.metadata.list_element_type,
+            let width = [fact.metadata.declared_type(), fact.metadata.list_element_type(),
                 fact.metadata.array.as_ref().and_then(|array| array.element_type)]
                 .into_iter().flatten().try_fold(0usize, |n, id| n.checked_add(tree.symbols().text(id)?.len()));
             kc::reserve(&mut control, || width?.checked_mul(64)?.checked_add(4096))?;
@@ -182,8 +182,8 @@ pub fn probe_relation_types(
             let property = questions.variable_properties_original_at(formal, ordinal, profile, &proof)?;
             Some(kc::own(&mut control, property.declared_hint().unwrap_or(""))?)
         } else {
-            let declared = fact.metadata.declared_type.and_then(|id| tree.symbols().text(id)).unwrap_or("");
-            let element = fact.metadata.list_element_type.and_then(|id| tree.symbols().text(id));
+            let declared = fact.metadata.declared_type().and_then(|id| tree.symbols().text(id)).unwrap_or("");
+            let element = fact.metadata.list_element_type().and_then(|id| tree.symbols().text(id));
             Some(match element {
                 Some(element) if declared == "/list" => kc::format(&mut control, format_args!("/list{element}"))?,
                 Some(_) => return Err("Declare overlay builtin list-element owner inconsistent".into()),

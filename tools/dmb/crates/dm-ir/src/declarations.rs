@@ -388,16 +388,84 @@ impl OpaqueFieldBase {
     }
 }
 
+/// Exact optional type IDs and inherited opaque knowledge in one inline block.
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub struct FieldTypeIds {
+    ids: [SymbolId; 5],
+    state: u8,
+}
+
+impl Default for FieldTypeIds {
+    fn default() -> Self { Self::new(None, None, None) }
+}
+
+impl std::fmt::Debug for FieldTypeIds {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FieldTypeIds")
+            .field("declared_type", &self.optional(0))
+            .field("list_element_type", &self.optional(1))
+            .field("inherited_opaque", &self.opaque())
+            .finish()
+    }
+}
+
+impl FieldTypeIds {
+    const EMPTY: Self = Self { ids: [SymbolId::ZERO; 5], state: 0 };
+
+    pub fn new(declared: Option<SymbolId>, element: Option<SymbolId>, opaque: Option<OpaqueFieldBase>) -> Self {
+        let mut result = Self::EMPTY;
+        result.set_optional(0, declared);
+        result.set_optional(1, element);
+        result.set_opaque(opaque);
+        result
+    }
+
+    fn optional(&self, index: usize) -> Option<SymbolId> {
+        (self.state & (1 << index) != 0).then_some(self.ids[index])
+    }
+
+    fn set_optional(&mut self, index: usize, id: Option<SymbolId>) {
+        let bit = 1 << index;
+        self.state = (self.state & !bit) | (u8::from(id.is_some()) << index);
+        self.ids[index] = id.unwrap_or(SymbolId::ZERO);
+    }
+
+    fn opaque(&self) -> Option<OpaqueFieldBase> {
+        let declared_type = match self.state >> 2 {
+            0 => return None,
+            1 => DeclaredTypeKnowledge::Known(self.ids[4]),
+            2 => DeclaredTypeKnowledge::KnownUntyped,
+            3 => DeclaredTypeKnowledge::Unsupported,
+            _ => unreachable!("private field type state"),
+        };
+        Some(OpaqueFieldBase { owner: self.ids[2], name: self.ids[3], declared_type })
+    }
+
+    fn set_opaque(&mut self, opaque: Option<OpaqueFieldBase>) {
+        self.state &= 3;
+        self.ids[2..].fill(SymbolId::ZERO);
+        if let Some(base) = opaque {
+            self.ids[2] = base.owner;
+            self.ids[3] = base.name;
+            self.state |= match base.declared_type {
+                DeclaredTypeKnowledge::Known(id) => {
+                    self.ids[4] = id;
+                    1 << 2
+                }
+                DeclaredTypeKnowledge::KnownUntyped => 2 << 2,
+                DeclaredTypeKnowledge::Unsupported => 3 << 2,
+            };
+        }
+    }
+}
+
 /// Fields used by variable values and declarations. A procedure meaning
 /// normally has none of these facts and retains no field allocation.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DeclarationFieldMeaning {
     /// Authored overrides preserve their exact initializer, but flags, array
     /// shape and formal default are unknown when this inherited base is opaque.
-    pub inherited_opaque: Option<OpaqueFieldBase>,
-    pub declared_type: Option<SymbolId>,
-    /// Formal authored list/T hint. Inherited opaque metadata leaves it unknown.
-    pub list_element_type: Option<SymbolId>,
+    pub types: FieldTypeIds,
     pub array: Option<Arc<ArrayDeclaration>>,
     pub initializer: Option<SymbolicExpression>,
     /// Formal field declaration default, retained apart from class overrides.
@@ -406,9 +474,7 @@ pub struct DeclarationFieldMeaning {
 }
 
 static EMPTY_FIELD_MEANING: DeclarationFieldMeaning = DeclarationFieldMeaning {
-    inherited_opaque: None,
-    declared_type: None,
-    list_element_type: None,
+    types: FieldTypeIds::EMPTY,
     array: None,
     initializer: None,
     declared_initializer: None,
@@ -416,6 +482,17 @@ static EMPTY_FIELD_MEANING: DeclarationFieldMeaning = DeclarationFieldMeaning {
 };
 
 impl DeclarationFieldMeaning {
+    pub fn declared_type(&self) -> Option<SymbolId> { self.types.optional(0) }
+
+    /// Formal authored list/T hint. Inherited opaque metadata leaves it unknown.
+    pub fn list_element_type(&self) -> Option<SymbolId> { self.types.optional(1) }
+
+    pub fn inherited_opaque(&self) -> Option<OpaqueFieldBase> { self.types.opaque() }
+
+    pub fn set_declared_type(&mut self, id: Option<SymbolId>) { self.types.set_optional(0, id); }
+    pub fn set_list_element_type(&mut self, id: Option<SymbolId>) { self.types.set_optional(1, id); }
+    pub fn set_inherited_opaque(&mut self, opaque: Option<OpaqueFieldBase>) { self.types.set_opaque(opaque); }
+
     /// Exact additional allocation made by with_field_tail.
     pub fn allocation_bytes(&self) -> usize {
         if self == &EMPTY_FIELD_MEANING { 0 } else { std::mem::size_of::<Self>() }

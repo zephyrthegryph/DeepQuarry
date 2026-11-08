@@ -39,7 +39,7 @@ fn authored_formal_globals_and_fixed_sdk_fields_share_original_native_owner() {
     .unwrap();
     assert_eq!(current.owner, SymbolId::of("/datum/holder"));
     assert_eq!(
-        current.metadata.declared_type,
+        current.metadata.declared_type(),
         Some(SymbolId::of("/datum/item"))
     );
     assert_eq!(

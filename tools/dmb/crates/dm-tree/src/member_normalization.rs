@@ -143,7 +143,7 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
             let node = members.member(i);
             if modes[i] == DefinitionMode::Override
                 && previous.is_none()
-                && node.metadata.inherited_opaque.is_none()
+                && node.metadata.inherited_opaque().is_none()
                 && !original_base
                 // The pinned partial ObjectTree inserts the value with no
                 // VarDeclaration when the selected TU omits the base field.

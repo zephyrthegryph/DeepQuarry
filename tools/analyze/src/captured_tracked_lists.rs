@@ -52,15 +52,15 @@ impl<'a> BorrowedTrackedLists<'a>{
                 // element/nested dimensions cannot remove that container.
                 return Ok(true);
             }
-            let path=fact.metadata.declared_type.and_then(|id|tree.symbols().text(id));
-            let width=path.map_or(0,str::len).checked_add(fact.metadata.list_element_type.and_then(|id|tree.symbols().text(id)).map_or(0,str::len)).ok_or("tracked-list type width overflow")?;
+            let path=fact.metadata.declared_type().and_then(|id|tree.symbols().text(id));
+            let width=path.map_or(0,str::len).checked_add(fact.metadata.list_element_type().and_then(|id|tree.symbols().text(id)).map_or(0,str::len)).ok_or("tracked-list type width overflow")?;
             charge(&self.budget,width.checked_mul(64).and_then(|n|n.checked_add(4096)))?;
             let props=archive.checker_variable_properties(formal,profile)?;
             Ok(props.declared_hint().is_some_and(|p|p=="/list"||p.starts_with("/list/")))
         }else{
             // Borrow the hash-qualified ORIGINAL builtin declaration metadata,
             // including its list-element annotation, never runtime value types.
-            Ok(fact.metadata.declared_type==Some(SymbolId::of("/list")))
+            Ok(fact.metadata.declared_type()==Some(SymbolId::of("/list")))
         }
     }
     fn subtype(&self,child:&str,parent:&str)->Result<bool,String>{

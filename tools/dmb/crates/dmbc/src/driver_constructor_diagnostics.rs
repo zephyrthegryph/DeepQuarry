@@ -24,8 +24,8 @@ impl DriverEvaluator<'_> {
         };
         match self.resolver.resolve(query) {
             ResolvedMeaning::DeclaredType(value) => Ok(value),
-            ResolvedMeaning::Member { data, .. } if data.inherited_opaque.is_none() => {
-                Ok(data.declared_type)
+            ResolvedMeaning::Member { data, .. } if data.inherited_opaque().is_none() => {
+                Ok(data.declared_type())
             }
             ResolvedMeaning::ProcedureStatic(declaration) => Ok(declaration.declared_type),
             _ => Err("initializer constructor declared type is not captured".into()),

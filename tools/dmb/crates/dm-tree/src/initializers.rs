@@ -282,7 +282,7 @@ pub fn capture_declaration_draft<'a>(
             value,
             declared_array,
             declaration_flags: metadata
-                .inherited_opaque
+                .inherited_opaque()
                 .is_none()
                 .then_some(metadata.flags),
         });

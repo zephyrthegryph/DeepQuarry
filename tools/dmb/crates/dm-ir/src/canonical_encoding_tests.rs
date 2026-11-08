@@ -24,7 +24,7 @@ fn declaration()->DeclarationMeaning{
   signature:ProcedureSignature{variadic:true,parameters:Arc::from([Parameter::new(SymbolId::of("value"),Some(SymbolId::of("/list")),Some(SymbolId::of("/datum/value")),0x1234,dm_syntax::Span::new(100,200)).with_tail(crate::ParameterTail{array:Some(array.clone()),default:Some(expression.clone()),input_annotation:Some(expression.clone()),source_expression:Some(expression.clone())})]),return_annotation:Some(expression.clone())},
   settings:Arc::from([ProcedureSettingNode::Conditional{condition:expression.clone(),then_branch:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("setting"),operation:SettingOperation::In,value:expression.clone()})]),else_branch:Arc::from([ProcedureSettingNode::UnsupportedContext{canonical_header:expression.clone(),children:Arc::from([ProcedureSettingNode::Setting(ProcedureSetting{name:SymbolId::of("other"),operation:SettingOperation::Assign,value:expression.clone()})])}])}]),
  });
- DeclarationMeaning::new(Some(SymbolId::of("alias")),0x87654321,Some(procedure),"α authored header".as_bytes().into()).with_field_tail(DeclarationFieldMeaning{inherited_opaque:Some(OpaqueFieldBase{owner:SymbolId::of("/base"),name:SymbolId::of("opaque"),declared_type:DeclaredTypeKnowledge::Known(SymbolId::of("/datum"))}),declared_type:Some(SymbolId::of("/datum/value")),list_element_type:Some(SymbolId::of("/datum/element")),array:Some(array),initializer:Some(expression.clone()),declared_initializer:Some(expression),resolved_constant:Some(SemanticValue::List(Arc::from([(Some(SemanticValue::Text(Arc::from("key".as_bytes()))),SemanticValue::List(Arc::from([(None,SemanticValue::NumberBits(0x80000000)),(Some(SemanticValue::Type(SymbolId::of("/datum"))),SemanticValue::Resource(SymbolId::of("file.dmi")))]))),(None,SemanticValue::Null)])))})
+ DeclarationMeaning::new(Some(SymbolId::of("alias")),0x87654321,Some(procedure),"α authored header".as_bytes().into()).with_field_tail(DeclarationFieldMeaning{types:crate::FieldTypeIds::new(Some(SymbolId::of("/datum/value")),Some(SymbolId::of("/datum/element")),Some(OpaqueFieldBase{owner:SymbolId::of("/base"),name:SymbolId::of("opaque"),declared_type:DeclaredTypeKnowledge::Known(SymbolId::of("/datum"))})),array:Some(array),initializer:Some(expression.clone()),declared_initializer:Some(expression),resolved_constant:Some(SemanticValue::List(Arc::from([(Some(SemanticValue::Text(Arc::from("key".as_bytes()))),SemanticValue::List(Arc::from([(None,SemanticValue::NumberBits(0x80000000)),(Some(SemanticValue::Type(SymbolId::of("/datum"))),SemanticValue::Resource(SymbolId::of("file.dmi")))]))),(None,SemanticValue::Null)])))})
 }
 #[test]fn admitted_native_canonical_encoder_matches_frozen_original_full_declarations_and_answers(){
  let data=Arc::new(declaration());let identity=ProcedureIdentity{owner:SymbolId::of("/datum"),name:SymbolId::of("probe"),verb:true,occurrence:7};
@@ -298,11 +298,11 @@ impl FrozenOldBytes for DeclarationMeaning{fn old_bytes(&self)->Vec<u8>{
         let mut out = b"dm-declaration-meaning-v1\0".to_vec();
         optional(
             &mut out,
-            self.inherited_opaque.as_ref().map(|v| v.old_bytes()),
+            self.inherited_opaque().as_ref().map(|v| v.old_bytes()),
         );
         for value in [
-            self.declared_type,
-            self.list_element_type,
+            self.declared_type(),
+            self.list_element_type(),
             self.display_name(),
         ] {
             optional(&mut out, value.map(|v| v.bits().to_le_bytes().to_vec()));
@@ -596,4 +596,46 @@ fn compact_declaration_display_name_preserves_zero_presence_and_wire_bytes() {
     declaration.set_display_name(None);
     assert_eq!(declaration, missing);
     assert_eq!(declaration.canonical_bytes(), missing.canonical_bytes());
+}
+
+#[test]
+fn compact_field_type_ids_preserve_all_zero_presence_and_opaque_states() {
+    use crate::{FieldTypeIds, portable_answer::PortableResolvedAnswer};
+    #[cfg(target_pointer_width = "64")]
+    assert_eq!(
+        std::mem::size_of::<FieldTypeIds>() + 16,
+        std::mem::size_of::<(Option<SymbolId>, Option<SymbolId>, Option<OpaqueFieldBase>)>(),
+    );
+    let zero = SymbolId::ZERO;
+    let states = [None, Some(DeclaredTypeKnowledge::Known(zero)),
+        Some(DeclaredTypeKnowledge::KnownUntyped), Some(DeclaredTypeKnowledge::Unsupported)];
+    let mut fields = DeclarationFieldMeaning::default();
+    for declared in [None, Some(zero)] {
+        for element in [None, Some(zero)] {
+            for state in states {
+                let opaque = state.map(|declared_type| OpaqueFieldBase { owner: zero, name: zero, declared_type });
+                fields.set_declared_type(declared);
+                fields.set_list_element_type(element);
+                fields.set_inherited_opaque(opaque.clone());
+                assert_eq!(fields, DeclarationFieldMeaning {
+                    types: FieldTypeIds::new(declared, element, opaque.clone()),
+                    ..Default::default()
+                });
+                assert_eq!((fields.declared_type(), fields.list_element_type(), fields.inherited_opaque()),
+                    (declared, element, opaque.clone()));
+                assert_eq!(fields.allocation_bytes() == 0,
+                    declared.is_none() && element.is_none() && opaque.is_none());
+                let meaning = Arc::new(DeclarationMeaning::default().with_field_tail(fields.clone()));
+                assert_eq!(meaning.canonical_bytes(), meaning.old_bytes());
+                let answer = ResolvedMeaning::Member { owner: zero, name: zero, fingerprint: 1u128.into(), data: meaning.clone() };
+                let wire = PortableResolvedAnswer::capture_declared(&answer).unwrap();
+                let ResolvedMeaning::Member { data, .. } = wire.restore().unwrap() else { panic!("member transport") };
+                assert_eq!(data, meaning);
+            }
+        }
+    }
+    fields.set_declared_type(None);
+    fields.set_list_element_type(None);
+    fields.set_inherited_opaque(None);
+    assert_eq!(fields, DeclarationFieldMeaning::default());
 }

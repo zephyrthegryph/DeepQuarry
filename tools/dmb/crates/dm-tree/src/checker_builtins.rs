@@ -237,10 +237,10 @@ fn import() -> Result<CheckerBuiltinCatalog, CheckerBuiltinError> {
                     let path = format!("/{path}");
                     let projection = dm_syntax::project_declaration_type(&path);
                     let fields = metadata.field_tail_mut();
-                    fields.declared_type = Some(SymbolId::of(projection.runtime_path));
-                    fields.list_element_type = projection
+                    fields.set_declared_type(Some(SymbolId::of(projection.runtime_path)));
+                    fields.set_list_element_type(projection
                         .list_element_path
-                        .map(|p| SymbolId::of(&format!("/{p}")));
+                        .map(|p| SymbolId::of(&format!("/{p}"))));
                 }
                 metadata.flags = row
                     .flags
@@ -557,7 +557,7 @@ impl SemanticTree {
         let row = &catalog.declarations[index];
         if !Arc::ptr_eq(&row.metadata, metadata)
             || row.metadata.procedure.is_none()
-            || row.metadata.inherited_opaque.is_some()
+            || row.metadata.inherited_opaque().is_some()
         {
             return Err(CheckerBuiltinError::Shape(
                 "builtin procedure is not original catalog metadata",
@@ -647,5 +647,5 @@ impl OriginalVariableDeclarations{
  pub(crate) fn for_seed(seed:Option<&crate::frontend::EngineSeed>)->Option<Self>{
   let seed=seed?;let original=original_analysis_seed().ok()?;if !std::ptr::eq(seed,original.frontend_seed()){return None}let catalog=pinned_catalog_storage().as_ref().ok()?.as_ref();if catalog.profile!=original.profile(){return None}Some(Self{catalog})
  }
- pub(crate) fn variable(&self,tree:&SemanticTree,owner:SymbolId,name:SymbolId)->Option<&Arc<DeclarationMeaning>>{if self.catalog.spelling(owner)!=tree.symbols().text(owner)||self.catalog.spelling(name)!=tree.symbols().text(name){return None}let index=*self.catalog.members.get(&(owner,name,MemberKind::Var))?;let row=&self.catalog.declarations[index];(row.metadata.procedure.is_none()&&row.metadata.inherited_opaque.is_none()).then_some(&row.metadata)}
+ pub(crate) fn variable(&self,tree:&SemanticTree,owner:SymbolId,name:SymbolId)->Option<&Arc<DeclarationMeaning>>{if self.catalog.spelling(owner)!=tree.symbols().text(owner)||self.catalog.spelling(name)!=tree.symbols().text(name){return None}let index=*self.catalog.members.get(&(owner,name,MemberKind::Var))?;let row=&self.catalog.declarations[index];(row.metadata.procedure.is_none()&&row.metadata.inherited_opaque().is_none()).then_some(&row.metadata)}
 }

@@ -74,7 +74,7 @@ pub fn callable(
             data,
             ..
         } => {
-            if resolved_name != name || data.procedure.is_none() || data.inherited_opaque.is_some()
+            if resolved_name != name || data.procedure.is_none() || data.inherited_opaque().is_some()
             {
                 return Err("checker builtin callable metadata is opaque or mismatched".into());
             }
@@ -136,7 +136,7 @@ fn source_candidate(
             let Some(M::Declaration { identity, data, .. }) = rows.first() else {
                 return Err("checker call facts need nonempty exact source chain".into());
             };
-            if data.procedure.is_none() || data.inherited_opaque.is_some() {
+            if data.procedure.is_none() || data.inherited_opaque().is_some() {
                 return Err("checker source callable metadata is opaque".into());
             }
             Ok(Some(CallableFact::Source {

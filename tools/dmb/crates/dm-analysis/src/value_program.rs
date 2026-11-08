@@ -331,7 +331,7 @@ impl<'a> Index<'a> {
                 Origin::Archive(archive) => Some(archive),
                 Origin::Live(_) => None,
             };
-            let untyped = data.metadata.inherited_opaque.is_none()
+            let untyped = data.metadata.inherited_opaque().is_none()
                 && untyped::field_declared_hint_using(
                     tree,
                     resolver,
@@ -341,7 +341,7 @@ impl<'a> Index<'a> {
                     &data.metadata,&mut||work.checkpoint(),
                 )?
                 .is_none();
-            let candidate = untyped && init_ok && data.metadata.inherited_opaque.is_none();
+            let candidate = untyped && init_ok && data.metadata.inherited_opaque().is_none();
             *fields.entry((owner, data.name)).or_insert(true) &= candidate;
         }
         let mut field_names: BTreeMap<_, Vec<_>> = BTreeMap::new();

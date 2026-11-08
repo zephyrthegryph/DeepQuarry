@@ -42,7 +42,7 @@ fn grow<T>(value: &mut Vec<T>, additional: usize, work: &mut dyn CanonicalWork) 
 pub(crate) enum Root<'a> {
     Expression(&'a SymbolicExpression), Signature(&'a ProcedureSignature),
     Procedure(&'a ProcedureMetadata), Array(&'a ArrayDeclaration),
-    Semantic(&'a SemanticValue), Opaque(&'a OpaqueFieldBase),
+    Semantic(&'a SemanticValue), Opaque(&'a OpaqueFieldBase), DeclarationOpaque(&'a DeclarationMeaning),
     Declaration(&'a DeclarationMeaning), Meaning(&'a ResolvedMeaning),
     Static(&'a ProcedureStaticDeclaration),
 }
@@ -126,21 +126,29 @@ impl<'a,const INLINE: usize> Encoder<'a,'_,INLINE> {
     fn expression(&mut self,value:&SymbolicExpression)->io::Result<()> {
         value.try_write_canonical(&mut|chunk|self.bytes(chunk))
     }
+    fn opaque(&mut self,value:&OpaqueFieldBase)->io::Result<()> {
+        self.bytes(b"dm-opaque-intrinsic-field-v1\0")?;
+        self.symbol(value.owner)?;
+        self.symbol(value.name)?;
+        match value.declared_type {
+            DeclaredTypeKnowledge::Known(path) => { self.byte(1)?; self.symbol(path) },
+            DeclaredTypeKnowledge::Unsupported => self.byte(0),
+            DeclaredTypeKnowledge::KnownUntyped => self.byte(2),
+        }
+    }
     fn step(&mut self,task:Task<'a>)->io::Result<()> {
         match task {
             Task::Frame(root)=>{let at=self.out.written().len();self.length(0)?;let start=self.out.written().len();self.push(Task::EndFrame{at,start})?;self.root(root)?;},
             Task::EndFrame{at,start}=>{let len=self.out.written().len().checked_sub(start).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"canonical frame frontier changed"))?;let bytes=u64::try_from(len).map_err(|_|oom("canonical frame length exceeds u64"))?.to_le_bytes();self.out.written().get_mut(at..start).filter(|field|field.len()==8).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"canonical frame placeholder changed"))?.copy_from_slice(&bytes);},
             Task::Root(Root::Expression(value))=>self.expression(value)?,
-            Task::Root(Root::Opaque(value))=>{
-                self.bytes(b"dm-opaque-intrinsic-field-v1\0")?;self.symbol(value.owner)?;self.symbol(value.name)?;
-                match value.declared_type{DeclaredTypeKnowledge::Known(path)=>{self.byte(1)?;self.symbol(path)?},DeclaredTypeKnowledge::Unsupported=>self.byte(0)?,DeclaredTypeKnowledge::KnownUntyped=>self.byte(2)?}
-            },
+            Task::Root(Root::Opaque(value))=>self.opaque(value)?,
+            Task::Root(Root::DeclarationOpaque(value))=>self.opaque(&value.inherited_opaque().expect("issued declaration opaque field"))?,
             Task::Root(Root::Declaration(value))=>{self.bytes(b"dm-declaration-meaning-v1\0")?;self.push(Task::DeclarationField(value,0))?;},
             Task::DeclarationField(value,field)=>{
                 if field<10{self.push(Task::DeclarationField(value,field+1))?}
                 match field{
-                    0=>{self.byte(u8::from(value.inherited_opaque.is_some()))?;if let Some(v)=&value.inherited_opaque{self.frame(Root::Opaque(v))?}},
-                    1|2|3=>{let v=match field{1=>value.declared_type,2=>value.list_element_type,_=>value.display_name()};self.byte(u8::from(v.is_some()))?;if let Some(v)=v{self.length(8)?;self.symbol(v)?}},
+                    0=>{self.byte(u8::from(value.inherited_opaque().is_some()))?;if value.inherited_opaque().is_some(){self.frame(Root::DeclarationOpaque(value))?}},
+                    1|2|3=>{let v=match field{1=>value.declared_type(),2=>value.list_element_type(),_=>value.display_name()};self.byte(u8::from(v.is_some()))?;if let Some(v)=v{self.length(8)?;self.symbol(v)?}},
                     4=>self.bytes(&value.flags.to_le_bytes())?,
                     5=>{self.byte(u8::from(value.procedure.is_some()))?;if let Some(v)=&value.procedure{self.frame(Root::Procedure(v))?}},
                     6=>{self.byte(u8::from(value.array.is_some()))?;if let Some(v)=&value.array{self.frame(Root::Array(v))?}},

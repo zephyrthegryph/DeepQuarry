@@ -273,7 +273,7 @@ impl GenerationNativeQuestions {
         proof.require(self.tree(),profile).map_err(|e|format!("generation variable profile: {e:?}"))?;
         if self.snapshot.tree.declarations().get(ordinal.0 as usize)!=Some(&Target::Member(formal)){return Err("generation variable occurrence belongs to another actual declaration".into())}
         let node=self.tree().member(formal).ok_or("generation qualifier formal unavailable")?;
-        if node.kind!=MemberKind::Var||node.definition!=crate::DefinitionMode::Declare||node.metadata.inherited_opaque.is_some(){return Err("generation qualifier needs exact authored formal".into())}
+        if node.kind!=MemberKind::Var||node.definition!=crate::DefinitionMode::Declare||node.metadata.inherited_opaque().is_some(){return Err("generation qualifier needs exact authored formal".into())}
         let span=self.expanded_spans.get(ordinal.0 as usize).ok_or("generation variable original span missing")?;
         self.syntax.declaration_cursor_at_for_policy(span.start as usize).ok_or("generation original declaration cursor unissued")?;
         let flags=self.syntax.declaration_checker_qualifiers_at_for_policy(span.start as usize).ok_or("generation original variable qualifiers unavailable")?;
@@ -368,7 +368,7 @@ impl GenerationNativeQuestions{
                 MemberKind::Var=>{
                     if node.definition!=crate::DefinitionMode::Declare{continue}
                     if tree.source_formal_variable_member(owner_id,node.name).map_err(str::to_owned)?!=Some(member){continue}
-                    if node.metadata.inherited_opaque.is_some()||node.metadata.procedure.is_some(){return Err("generation original variable metadata opaque".into())}
+                    if node.metadata.inherited_opaque().is_some()||node.metadata.procedure.is_some(){return Err("generation original variable metadata opaque".into())}
                     let span=self.expanded_spans.get(index).ok_or("generation definition expanded span unavailable")?;
                     self.syntax.declaration_cursor_at_for_policy(span.start as usize).ok_or("generation original variable cursor unissued")?
                 },

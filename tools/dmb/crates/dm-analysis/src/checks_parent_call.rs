@@ -564,7 +564,7 @@ fn source_predecessor_mode(
             M::Member {
                 owner, name, data, ..
             } => {
-                if name != id.name || data.procedure.is_none() || data.inherited_opaque.is_some() {
+                if name != id.name || data.procedure.is_none() || data.inherited_opaque().is_some() {
                     return Err("source-parent builtin metadata is unissued".into());
                 }
                 if owner == id.owner {

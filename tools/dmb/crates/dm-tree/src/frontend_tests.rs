@@ -578,8 +578,8 @@ fn opaque_intrinsic_field_bases_preserve_authored_values_without_inventing_metad
             .resolve(ty, base.name, MemberKind::Var)
             .unwrap();
         let metadata = &model.snapshot.tree.member(member).unwrap().metadata;
-        assert_eq!(metadata.inherited_opaque.as_ref(), Some(&base));
-        assert_eq!(metadata.declared_type, Some(SymbolId::of("/datum")));
+        assert_eq!(metadata.inherited_opaque(), Some(base));
+        assert_eq!(metadata.declared_type(), Some(SymbolId::of("/datum")));
         assert_eq!(
             metadata
                 .initializer

@@ -19,7 +19,7 @@ fn source_formal_metadata_ignores_child_default_overrides() {
         panic!("formal source declaration unavailable");
     };
     assert_eq!(owner, SymbolId::of("/datum/holder"));
-    assert_eq!(data.declared_type, Some(SymbolId::of("/datum/item")));
+    assert_eq!(data.declared_type(), Some(SymbolId::of("/datum/item")));
     // Effective defaults still keep their ordinary runtime lookup behavior.
     assert!(
         matches!(Resolver::resolve(tree,Q::Var{owner:SymbolId::of("/datum/holder/child"),name:SymbolId::of("current")}),M::Member{owner,..} if owner==SymbolId::of("/datum/holder/child"))

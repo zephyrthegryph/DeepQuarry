@@ -328,7 +328,7 @@ fn proc(value: Procedure, symbols: Names) -> Option<Arc<ProcedureMetadata>> {
     }))
 }
 fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeaning> {
-    if value.inherited_opaque.is_some() {
+    if value.inherited_opaque().is_some() {
         return None;
     }
     Some(PortableMeaning {
@@ -345,8 +345,8 @@ fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeanin
                 })
             })
             .transpose_option()?,
-        declared: value.declared_type,
-        element: value.list_element_type,
+        declared: value.declared_type(),
+        element: value.list_element_type(),
         display: value.display_name(),
         flags: value.flags,
         array: value.array.as_deref().map(array),
@@ -359,7 +359,6 @@ fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeanin
 }
 fn meta(value: PortableMeaning, symbols: Names) -> Option<DeclarationMeaning> {
     let fields = crate::DeclarationFieldMeaning {
-        inherited_opaque: None,
         resolved_constant: value
             .constant
             .map(|constant| {
@@ -374,8 +373,7 @@ fn meta(value: PortableMeaning, symbols: Names) -> Option<DeclarationMeaning> {
                 })
             })
             .transpose_option()?,
-        declared_type: symbol(value.declared, symbols)?,
-        list_element_type: symbol(value.element, symbols)?,
+        types: crate::FieldTypeIds::new(symbol(value.declared, symbols)?, symbol(value.element, symbols)?, None),
         array: value
             .array
             .map(|value| arr(value, symbols))

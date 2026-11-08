@@ -137,7 +137,7 @@ impl MetadataDependencies {
                         };
                         if !matches!(metadata.flags, 0 | 4)
                             || metadata.array.is_some()
-                            || metadata.inherited_opaque.is_some()
+                            || metadata.inherited_opaque().is_some()
                             || metadata.initializer.is_some() != metadata.declared_initializer.is_some()
                         {
                             ok = false;

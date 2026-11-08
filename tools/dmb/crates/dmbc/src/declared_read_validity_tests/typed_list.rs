@@ -24,8 +24,8 @@ fn real_typed_list_global_read_licenses_projected_runtime_list_type() {
         let M::Member { data, .. } = host.resolve(Q::GlobalVar(value)) else {
             panic!("authored global variable metadata missing");
         };
-        assert_eq!(data.declared_type, Some(list));
-        assert_eq!(data.list_element_type, Some(SymbolId::of("/datum/probe")));
+        assert_eq!(data.declared_type(), Some(list));
+        assert_eq!(data.list_element_type(), Some(SymbolId::of("/datum/probe")));
         assert_eq!(
             host.resolve(Q::RuntimeType(list)),
             M::Unsupported(Q::RuntimeType(list))

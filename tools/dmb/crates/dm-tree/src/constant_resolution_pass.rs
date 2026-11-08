@@ -157,7 +157,7 @@ impl Pass<'_> {
         let(_,owner,name)=query.parts();
         let Some(id)=self.member(owner,name)else{return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::MissingDeclaration))};
         let node=self.tree.member(id).expect("resolved member belongs to tree");let metadata=&node.metadata;
-        if metadata.inherited_opaque.is_some()&&!matches!(query,ScalarQuery::EffectiveDefault{..}){return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::OpaqueInheritedMetadata))}
+        if metadata.inherited_opaque().is_some()&&!matches!(query,ScalarQuery::EffectiveDefault{..}){return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::OpaqueInheritedMetadata))}
         if matches!(query,ScalarQuery::Const{..})&&metadata.flags&2==0{return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::NotConst))}
         let(expression,scope,source_member)=match query{
             ScalarQuery::DeclaredDefault{..}=>{let declaration=self.tree.override_chain(id).into_iter().rev().find(|id|self.tree.member(*id).is_some_and(|node|node.definition==DefinitionMode::Declare));let scope=declaration.and_then(|id|self.tree.member(id)).map_or(node.owner,|node|node.owner);(metadata.declared_initializer.as_ref(),scope,declaration.unwrap_or(id))},

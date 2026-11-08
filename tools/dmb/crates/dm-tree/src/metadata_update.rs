@@ -376,14 +376,14 @@ fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&Semant
                 dm_ir::DeclaredTypeKnowledge::Unsupported
                 | dm_ir::DeclaredTypeKnowledge::KnownUntyped => None,
             };
-            if member.metadata.declared_type == declared_type
-                && member.metadata.inherited_opaque.as_ref() == Some(opaque)
+            if member.metadata.declared_type() == declared_type
+                && member.metadata.inherited_opaque().as_ref() == Some(opaque)
             {
                 return false;
             }
             let mut metadata = member.metadata.as_ref().clone();
-            metadata.field_tail_mut().declared_type = declared_type;
-            metadata.field_tail_mut().inherited_opaque = Some(opaque.clone());
+            metadata.field_tail_mut().set_declared_type(declared_type);
+            metadata.field_tail_mut().set_inherited_opaque(Some(opaque.clone()));
             members.set_metadata(index, Arc::new(metadata));
             return false;
         }
@@ -391,13 +391,13 @@ fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&Semant
             // The authored initializer/constant remains this source override.
             // Only genuine formal declaration properties come from the catalog.
             let mut metadata=member.metadata.as_ref().clone();
-            metadata.field_tail_mut().declared_type=base.declared_type;
-            metadata.field_tail_mut().list_element_type=base.list_element_type;
+            metadata.field_tail_mut().set_declared_type(base.declared_type());
+            metadata.field_tail_mut().set_list_element_type(base.list_element_type());
             metadata.set_display_name(base.display_name());
             metadata.flags=base.flags;
             metadata.field_tail_mut().array=base.array.clone();
             metadata.field_tail_mut().declared_initializer=base.declared_initializer.clone();
-            metadata.field_tail_mut().inherited_opaque=None;
+            metadata.field_tail_mut().set_inherited_opaque(None);
             members.set_metadata(index,Arc::new(metadata));
             return true;
         }
@@ -418,9 +418,9 @@ pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
             if let Some(previous) = member.previous {
                 let inherited = members.member(previous.index()).metadata;
                 let current = member.metadata;
-                if current.inherited_opaque == inherited.inherited_opaque
-                    && current.declared_type == inherited.declared_type
-                    && current.list_element_type == inherited.list_element_type
+                if current.inherited_opaque() == inherited.inherited_opaque()
+                    && current.declared_type() == inherited.declared_type()
+                    && current.list_element_type() == inherited.list_element_type()
                     && current.flags == inherited.flags
                     && current.array == inherited.array
                     && current.declared_initializer == inherited.declared_initializer
@@ -428,9 +428,9 @@ pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
                     continue;
                 }
                 let mut metadata = current.as_ref().clone();
-                metadata.field_tail_mut().inherited_opaque = inherited.inherited_opaque.clone();
-                metadata.field_tail_mut().declared_type = inherited.declared_type;
-                metadata.field_tail_mut().list_element_type = inherited.list_element_type;
+                metadata.field_tail_mut().set_inherited_opaque(inherited.inherited_opaque());
+                metadata.field_tail_mut().set_declared_type(inherited.declared_type());
+                metadata.field_tail_mut().set_list_element_type(inherited.list_element_type());
                 metadata.flags = inherited.flags;
                 metadata.field_tail_mut().array = inherited.array.clone();
                 metadata.field_tail_mut().declared_initializer = inherited.declared_initializer.clone();

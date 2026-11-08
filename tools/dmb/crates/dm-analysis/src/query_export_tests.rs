@@ -104,12 +104,11 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
     let owner = SymbolId::of("/datum/example");
     let name = SymbolId::of("field");
     let mut data = DeclarationMeaning::default().with_field_tail(dm_ir::DeclarationFieldMeaning {
-        inherited_opaque: Some(OpaqueFieldBase {
+        types: dm_ir::FieldTypeIds::new(None, Some(SymbolId::of("/datum/placeholder")), Some(OpaqueFieldBase {
             owner,
             name,
             declared_type: DeclaredTypeKnowledge::Unsupported,
-        }),
-        list_element_type: Some(SymbolId::of("/datum/placeholder")),
+        })),
         ..Default::default()
     });
     let opaque = answer(
@@ -128,7 +127,7 @@ fn opaque_member_export_keeps_uncertified_flags_distinct_from_authored_zero() {
     assert_eq!(opaque["declared_type_status"], "unsupported");
     assert!(opaque["list_element_type"].is_null());
     assert_eq!(opaque["list_element_type_status"], "unknown");
-    data.field_tail_mut().inherited_opaque = None;
+    data.field_tail_mut().set_inherited_opaque(None);
     let authored = answer(
         &SymbolTable::default(),
         &ResolvedMeaning::Member {

@@ -457,7 +457,7 @@ fn repeated_var_namespace_keeps_declaring_owner_and_runtime_type() {
         Some(field.owner),
         tree.lookup_type(SymbolId::of("/datum/base"))
     );
-    assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/obj")));
+    assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/obj")));
 }
 #[test]
 fn typed_list_declarations_expose_the_runtime_container_type() {
@@ -468,7 +468,7 @@ fn typed_list_declarations_expose_the_runtime_container_type() {
         .iter()
         .find(|member| member.name == SymbolId::of("feedback"))
         .unwrap();
-    assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
+    assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/list")));
     assert!(
         field.metadata.array.is_none(),
         "a typed list is not a sized array"
@@ -501,7 +501,7 @@ fn namespaces_arrays_defaults_and_settings_bridge_to_tree() {
                 .unwrap(),
         )
         .unwrap();
-    assert_eq!(array.metadata.declared_type, Some(SymbolId::of("/list")));
+    assert_eq!(array.metadata.declared_type(), Some(SymbolId::of("/list")));
     assert_eq!(array.metadata.flags & 1, 1);
     let proc = tree
         .member(
@@ -530,7 +530,7 @@ fn inherited_field_assignment_preserves_type_and_flags() {
                 .unwrap(),
         )
         .unwrap();
-    assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
+    assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/list")));
     assert_eq!(field.metadata.flags & 4, 4);
     assert!(field.previous.is_some());
 }
@@ -546,9 +546,9 @@ fn typed_list_hints_survive_formal_inheritance_without_changing_container() {
                     .unwrap(),
             )
             .unwrap();
-        assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
+        assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/list")));
         assert_eq!(
-            field.metadata.list_element_type,
+            field.metadata.list_element_type(),
             Some(SymbolId::of("/datum/item"))
         );
         assert!(field.metadata.array.is_none());
@@ -563,7 +563,7 @@ fn forward_multilevel_field_inheritance_resolves_in_dependency_order() {
         .resolve(child, SymbolId::of("value"), MemberKind::Var)
         .unwrap();
     assert_eq!(
-        tree.member(id).unwrap().metadata.declared_type,
+        tree.member(id).unwrap().metadata.declared_type(),
         Some(SymbolId::of("/list"))
     );
     assert_eq!(tree.member(id).unwrap().metadata.flags & 4, 4);

@@ -25,7 +25,7 @@ impl dm_ir::Resolver for SemanticTree {
                 .and_then(|id| self.resolve(id, name, kind))
                 .map(|id| {
                     let node = &self.members[id.index()];
-                    if node.metadata.inherited_opaque.is_some() {
+                    if node.metadata.inherited_opaque().is_some() {
                         return M::Unsupported(query);
                     }
                     let mut bytes = if matches!(query, Q::Proc { .. } | Q::GlobalProc(_)) {
@@ -329,7 +329,7 @@ impl dm_ir::Resolver for SemanticTree {
                 .and_then(|id| self.resolve(id, name, MemberKind::Var))
                 .map(|id| {
                     let node = &self.members[id.index()];
-                    if node.metadata.inherited_opaque.is_some() {
+                    if node.metadata.inherited_opaque().is_some() {
                         return M::Unsupported(query);
                     }
                     match &node.metadata.resolved_constant {
@@ -453,7 +453,7 @@ impl SemanticTree {
             match node.definition {
                 DefinitionMode::Declare => {
                     if self.member_occurrence(id).is_none()
-                        || node.metadata.inherited_opaque.is_some()
+                        || node.metadata.inherited_opaque().is_some()
                     {
                         return Err("formal variable lacks exact authored source");
                     }

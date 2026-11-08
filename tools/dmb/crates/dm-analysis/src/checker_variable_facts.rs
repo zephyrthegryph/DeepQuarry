@@ -55,7 +55,7 @@ pub fn variable_using<E:From<String>>(tree:&SemanticTree,resolver:&(impl Resolve
                 name: actual,
                 data,
                 ..
-            } if actual == name && data.inherited_opaque.is_none() && data.procedure.is_none() => {
+            } if actual == name && data.inherited_opaque().is_none() && data.procedure.is_none() => {
                 (control.borrow_mut())()?;
                 let formal = tree
                     .source_formal_variable_member(owner, name)
@@ -93,7 +93,7 @@ pub fn variable_using<E:From<String>>(tree:&SemanticTree,resolver:&(impl Resolve
             name: actual,
             data,
             ..
-        } if actual == name && data.inherited_opaque.is_none() && data.procedure.is_none() => {
+        } if actual == name && data.inherited_opaque().is_none() && data.procedure.is_none() => {
             Some(VariableFact {
                 formal: None,
                 owner,
@@ -154,7 +154,7 @@ fn variable_original_using(tree:&SemanticTree,_profile:PackedU128,owner:SymbolId
         let Some(formal)=tree.source_formal_variable_member(receiver,name).map_err(str::to_owned)? else{return Ok(None)};
         let node=tree.member(formal).ok_or("checker original formal unavailable")?;
         let owner=tree.type_node(node.owner).ok_or("checker original formal owner unavailable")?.path;
-        if node.metadata.inherited_opaque.is_some()||node.metadata.procedure.is_some(){return Err("checker original variable metadata opaque".into());}
+        if node.metadata.inherited_opaque().is_some()||node.metadata.procedure.is_some(){return Err("checker original variable metadata opaque".into());}
         Ok(Some(VariableFact{formal:Some(formal),owner,name,metadata:Arc::clone(&node.metadata)}))
     },||{
         // Same native ancestry and original hash-qualified catalog as
@@ -163,7 +163,7 @@ fn variable_original_using(tree:&SemanticTree,_profile:PackedU128,owner:SymbolId
         for _ in 0..=tree.types().len(){
             let owner=tree.type_node(current).ok_or("checker original ancestor unavailable")?.path;
             if let Some(row)=catalog.declarations.iter().find(|r|r.owner==owner&&r.name==name&&r.kind==dm_tree::MemberKind::Var){
-                if row.metadata.inherited_opaque.is_some()||row.metadata.procedure.is_some(){return Err("checker original builtin variable opaque".into());}
+                if row.metadata.inherited_opaque().is_some()||row.metadata.procedure.is_some(){return Err("checker original builtin variable opaque".into());}
                 return Ok(Some(VariableFact{formal:None,owner,name,metadata:Arc::clone(&row.metadata)}));
             }
             let Some(parent)=tree.parent(current) else{return Ok(None)};

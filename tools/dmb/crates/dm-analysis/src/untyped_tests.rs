@@ -143,7 +143,7 @@ fn archive_scope_keeps_issued_metadata_without_a_frontend_or_foreign_tree_input(
     assert!(!std::ptr::eq(scope.tree, foreign.snapshot.tree.as_ref()));
     assert_eq!(scope.locals["value"], "/datum/original");
     let (_, field) = scope.field(scope.owner, "saved").unwrap().unwrap();
-    assert!(field.declared_type.is_none());
+    assert!(field.declared_type().is_none());
     // The archive entry point accepts no replacement tree or member. It draws
     // parameter spelling/types from the exact issued archive despite matching
     // owner and proc names in another revision.

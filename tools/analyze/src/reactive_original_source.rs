@@ -267,7 +267,7 @@ impl<'a> ReadSource<'a>{
         }
         use dm_ir::{Resolver,ResolveQuery as Q,ResolvedMeaning as M};
         for verb in[false,true]{match Resolver::resolve(tree,Q::CheckerBuiltinProc{profile,owner:owner_symbol,name,verb}){
-            M::Missing=>(),M::Member{owner,data,..}=>{if data.procedure.is_none()||data.inherited_opaque.is_some(){return Err("reactive own builtin callable unissued".into());}if owner==owner_symbol{return Ok(true);}},
+            M::Missing=>(),M::Member{owner,data,..}=>{if data.procedure.is_none()||data.inherited_opaque().is_some(){return Err("reactive own builtin callable unissued".into());}if owner==owner_symbol{return Ok(true);}},
             _=>return Err("reactive own builtin callable presence unissued".into()),
         }}
         Ok(false)
@@ -348,7 +348,7 @@ impl<'a> ReadSource<'a>{
             // 64B per original spelling byte covers both live pointer-vector
             // peaks and String copies on 64-bit hosts, without using whole-file
             // width per variable or inventing a copied declaration table.
-            let width=[fact.metadata.declared_type,fact.metadata.list_element_type,fact.metadata.array.as_ref().and_then(|a|a.element_type)]
+            let width=[fact.metadata.declared_type(),fact.metadata.list_element_type(),fact.metadata.array.as_ref().and_then(|a|a.element_type)]
                 .into_iter().flatten().try_fold(0usize,|n,id|tree.symbols().text(id).and_then(|s|n.checked_add(s.len())));
             charge(self.budget,width.and_then(|n|n.checked_mul(64)).and_then(|n|n.checked_add(4096)))?;
             archive.checker_variable_qualifiers(formal,profile)?;
@@ -356,8 +356,8 @@ impl<'a> ReadSource<'a>{
             let props=archive.checker_variable_properties(formal,profile)?;
             (props.declared_hint().unwrap_or("").to_owned(),fact.metadata.flags)
         }else{
-            let declared=fact.metadata.declared_type.and_then(|id|tree.symbols().text(id)).unwrap_or("");
-            let element=fact.metadata.list_element_type.and_then(|id|tree.symbols().text(id));
+            let declared=fact.metadata.declared_type().and_then(|id|tree.symbols().text(id)).unwrap_or("");
+            let element=fact.metadata.list_element_type().and_then(|id|tree.symbols().text(id));
             charge(self.budget,declared.len().checked_add(element.map_or(0,str::len)).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(512)))?;
             let declared=match element{
                 Some(element) if declared=="/list"=>format!("/list{element}"),
@@ -492,7 +492,7 @@ impl<'a> ReadSource<'a>{
         self.require()?;let archive=self.inputs.archive();let tree=archive.tree();
         for(ordinal,occurrence)in archive.original_declaration_occurrences().source_order().iter().enumerate(){checkpoint()?;self.require()?;let Target::Member(member)=occurrence.target else{continue};let node=tree.member(member).ok_or("reactive definition member missing")?;let ordinal=dm_tree::OccurrenceId(u32::try_from(ordinal).map_err(|_|"reactive definition ordinal overflow")?);if archive.source_mapping().location_of(ordinal).is_none(){continue}
             let owner=tree.type_node(node.owner).and_then(|n|tree.symbols().text(n.path)).ok_or("reactive definition owner missing")?;let name=tree.symbols().text(node.name).ok_or("reactive definition name missing")?;
-            let(path,line)=match node.kind{MemberKind::Var=>{if node.definition!=dm_tree::DefinitionMode::Declare{continue}let formal=tree.source_formal_variable_member(tree.type_node(node.owner).ok_or("reactive source owner missing")?.path,node.name).map_err(str::to_owned)?;if formal!=Some(member){continue}if node.metadata.inherited_opaque.is_some()||node.metadata.procedure.is_some(){return Err("checker original variable metadata opaque".into())}let cursor=archive.source_mapping().declaration_policy_compatibility_cursor(ordinal)?;(cursor.path,cursor.line)},MemberKind::Proc|MemberKind::Verb=>{let origin=archive.callable_header_policy_line(member)?;(origin.path,origin.line)}};
+            let(path,line)=match node.kind{MemberKind::Var=>{if node.definition!=dm_tree::DefinitionMode::Declare{continue}let formal=tree.source_formal_variable_member(tree.type_node(node.owner).ok_or("reactive source owner missing")?.path,node.name).map_err(str::to_owned)?;if formal!=Some(member){continue}if node.metadata.inherited_opaque().is_some()||node.metadata.procedure.is_some(){return Err("checker original variable metadata opaque".into())}let cursor=archive.source_mapping().declaration_policy_compatibility_cursor(ordinal)?;(cursor.path,cursor.line)},MemberKind::Proc|MemberKind::Verb=>{let origin=archive.callable_header_policy_line(member)?;(origin.path,origin.line)}};
             emit(OriginalDefinitionPoint{member,ordinal,line,owner,name,path})?;
         }checkpoint()?;Ok(())
     }

@@ -487,9 +487,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     let array =
                         crate::procedure::parse_array(declaration, element_type, context.symbols)?;
                     let fields = dm_ir::DeclarationFieldMeaning {
-                        inherited_opaque: None,
-                        declared_type,
-                        list_element_type,
+                        types: dm_ir::FieldTypeIds::new(declared_type, list_element_type, None),
                         array,
                         declared_initializer: symbolic_initializer.clone(),
                         initializer: symbolic_initializer,

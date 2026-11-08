@@ -99,7 +99,7 @@ impl DriverEvaluator<'_> {
         qualified_initial: bool,
         demand:&D,
     ) -> Result<Option<SemanticValue>, D::Error> {
-        if data.inherited_opaque.is_some() || (!qualified_initial && data.flags & 2 == 0) {
+        if data.inherited_opaque().is_some() || (!qualified_initial && data.flags & 2 == 0) {
             return Err("declaration constant metadata is not certified".into());
         }
         if let Some(value) = &data.resolved_constant {
@@ -403,7 +403,7 @@ impl DriverEvaluator<'_> {
                                 owner, name, data, ..
                             } => {
                                 if unqualified
-                                    && data.inherited_opaque.is_none()
+                                    && data.inherited_opaque().is_none()
                                     && data.flags & 2 == 0
                                 {
                                     return Ok(None);
@@ -443,7 +443,7 @@ impl DriverEvaluator<'_> {
                             ResolvedMeaning::Member {
                                 owner, name, data, ..
                             } => {
-                                if data.inherited_opaque.is_none() && data.flags & 2 == 0 {
+                                if data.inherited_opaque().is_none() && data.flags & 2 == 0 {
                                     return Ok(None);
                                 }
                                 return Ok(match self

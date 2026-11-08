@@ -78,13 +78,13 @@ impl SemanticTree {
             Origin::Source(id) => {
                 let node = &self.members[id.index()];
                 if matches!(query, Q::DeclaredVarType { .. }) {
-                    return match node.metadata.inherited_opaque.as_ref() {
+                    return match node.metadata.inherited_opaque().as_ref() {
                         Some(base) => match base.declared_type {
                             DeclaredTypeKnowledge::Known(path) => M::DeclaredType(Some(path)),
                             DeclaredTypeKnowledge::KnownUntyped => M::DeclaredType(None),
                             DeclaredTypeKnowledge::Unsupported => M::Unsupported(query),
                         },
-                        None => M::DeclaredType(node.metadata.declared_type),
+                        None => M::DeclaredType(node.metadata.declared_type()),
                     };
                 }
                 match self.variable_storage_for_member(id) {
@@ -103,7 +103,7 @@ impl SemanticTree {
             name: node.name,
         };
         let name = node.name;
-        if let Some(base) = &node.metadata.inherited_opaque {
+        if let Some(base) = node.metadata.inherited_opaque() {
             return self
                 .inventory
                 .index

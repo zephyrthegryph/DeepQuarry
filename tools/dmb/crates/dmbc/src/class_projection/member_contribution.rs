@@ -48,7 +48,7 @@ pub(super) fn produce(
                 FieldRole::Assignment
             };
             let (flags, shared, declaring_owner, intrinsic) =
-                if let Some(base) = &metadata.inherited_opaque {
+                if let Some(base) = metadata.inherited_opaque() {
                     if role == FieldRole::Declaration {
                         return Err(ProjectionError::OpaqueField {
                             owner,

@@ -243,7 +243,7 @@ impl RetainedStorage {
                 key,
                 definition: member.definition,
                 flags: member.metadata.flags & (1 | 2 | 8),
-                opaque: member.metadata.inherited_opaque.clone(),
+                opaque: member.metadata.inherited_opaque(),
                 previous: member.previous.map(|id| member_keys[id.index()]),
             });
         }
