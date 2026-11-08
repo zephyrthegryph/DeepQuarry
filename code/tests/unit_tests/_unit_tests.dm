@@ -1335,6 +1335,7 @@
 #include "../benchmarks/map_plan_cost.dm"
 #include "../benchmarks/radio_broadcast.dm"
 #include "../benchmarks/active_play.dm"
+#include "../benchmarks/op_steady.dm"
 #include "../benchmarks/arrival_draws.dm"
 #include "../benchmarks/draw_cost.dm"
 #include "../benchmarks/mob_make_cost.dm"
