@@ -37,6 +37,10 @@
 	var/list/kinds = list("melee", "item_on_mob", "item_on_floor", "toggle", "menu", "examine", "surgery", "construction")
 	var/list/kind_ms = list()
 	var/list/kind_n = list()
+	var/list/outcomes = list()
+	var/asleep = 0
+	var/dead_skips = 0
+	var/healed = 0
 	var/op_ms = 0
 	var/ticks = 0
 	var/stop_at = world.time + param("seconds", 300) SECONDS
@@ -49,6 +53,14 @@
 			var/mob/living/carbon/human/B = crew[(i % 2) ? min(i + 1, length(crew)) : i - 1]
 			if(QDELETED(A) || QDELETED(B) || A == B || (ticks + i) % act_every)
 				continue
+			if(A.stat == DEAD || B.stat == DEAD)
+				dead_skips++
+				continue
+			// the melee knocks crew down: one who is not up and able is healed before acting (outside the timed span), so each act is a capable one
+			for(var/mob/living/carbon/human/H as anything in list(A, B))
+				if(H.stat != CONSCIOUS || H.incapacitated() || !H.operation_actor_capable())
+					H.rejuvenate()
+					healed++
 			var/kind = kinds[(round((ticks + i) / act_every) % length(kinds)) + 1]
 			var/obj/item/T = A.get_active_hand()
 			// surgery and construction hold their own tool for the act: the toolbox goes down and comes back outside the timed span
@@ -66,34 +78,42 @@
 				G = new /obj/structure/girder(A.loc)
 				girders[i] = G
 			STATE_SET(A, cooldowns, next_click, 0)
+			// no client and no AI brain is the SSD rule: life puts the crew to sleep every cycle, and a sleeper's acts refuse or go cheap
+			active_play_wake(list(A, B))
+			var/datum/op_result/result = null
 			var/stamp = TICK_USAGE_REAL
 			switch(kind)
 				if("melee")
 					A.set_use_stance(I_HURT)
-					op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 				if("item_on_mob")
 					A.set_use_stance(I_HELP)
-					op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 				if("item_on_floor")
-					op_resolve_click(A, get_turf(A), T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, get_turf(A), T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 				if("toggle")
 					var/obj/item/flashlight/F = lights[i]
 					if(F.loc != A.loc)
 						F.forceMove(A.loc)
-					op_resolve_click(A, F, F, GESTURE_SELF, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, F, F, GESTURE_SELF, ORIGIN_CLICK, TRUE, TRUE)
 				if("menu")
 					interaction_menu_data(A, B)
 				if("examine")
-					op_resolve_click(A, B, T, GESTURE_SHIFT, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, B, T, GESTURE_SHIFT, ORIGIN_CLICK, TRUE, TRUE)
 				if("surgery")
 					A.set_use_stance(I_HELP)
-					op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, B, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 				if("construction")
-					op_resolve_click(A, G, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
+					result = op_resolve_click(A, G, T, GESTURE_CLICK, ORIGIN_CLICK, TRUE, TRUE)
 			var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 			op_ms += ms
 			kind_ms[kind] += ms
 			kind_n[kind]++
+			if(kind != "menu")
+				var/outcome_key = "[kind]: [result ? "[result.key] [result.outcome] [result.reason]" : "none"]"
+				outcomes[outcome_key]++
+			if(A.stat || A.has_status(STAT_SLEEPING))
+				asleep++
 			if(swap)
 				if(swap.loc == A)
 					A.drop_from_inventory(swap, A.loc)
@@ -107,6 +127,12 @@
 	end_window("op_steady")
 	metric("op_steady_ms_per_tick", ticks ? op_ms / ticks : 0, "ms")
 	count_metric("op_steady_ticks", ticks, "ticks", "none")
+	count_metric("op_steady_actor_asleep_acts", asleep, "acts", "none")
+	count_metric("op_steady_dead_skips", dead_skips, "acts", "none")
+	count_metric("op_steady_healed", healed, "heals", "none")
+	detail("op_steady_outcomes", outcomes)
+	for(var/key in outcomes)
+		log_world("op_steady outcome [key] x[outcomes[key]]")
 	for(var/kind in kind_ms)
 		metric("op_steady_[kind]_us", kind_n[kind] ? kind_ms[kind] * 1000 / kind_n[kind] : 0, "us")
 	for(var/mob/living/carbon/human/H as anything in crew)

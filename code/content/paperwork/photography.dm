@@ -263,10 +263,12 @@ CAPABILITIES(/obj/item/camera)
 /datum/photo_render
 	/// The photo being drawn (it owns this drawing).
 	var/obj/item/photo/photo
+	/// Copies made of it before the picture was finished: filled with it too.
+	var/list/copies
 	var/size = 3
 	/// list(list(picture or null, portrait key, lying, x, y, blend)) in layer order.
 	var/list/entries
-	/// list(list(icon, x, y, blend)) drawn last (the areas), drawn at the shot.
+	/// The areas, drawn last: entries as above.
 	var/list/tops
 	var/pending = 0
 	var/done = FALSE
@@ -274,6 +276,11 @@ CAPABILITIES(/obj/item/camera)
 
 CAPABILITIES(/datum/photo_render)
 	ref_one(nameof(photo))
+	ref_many(nameof(copies))
+
+/// `copy` was copied from the photo before its picture was finished: it is filled too when it is.
+/datum/photo_render/proc/add_copy(obj/item/photo/copy)
+	rel_add(src, nameof(copies), copy)
 
 /datum/photo_render/proc/start(obj/item/camera/camera, obj/item/photo/photo, list/turfs, turf/center)
 	rel_set(src, nameof(src.photo), photo)
@@ -299,22 +306,12 @@ CAPABILITIES(/datum/photo_render)
 			xoff += A.pixel_x
 			yoff += A.pixel_y
 		var/lying = isliving(A) && A:lying
-		var/icon/picture
-		var/key
-		if(ismovable(A))
-			var/datum/portrait/P = portrait_request(A, A.dir, src, PROC_REF(landed))
-			picture = P?.picture
-			key = P ? null : portrait_key_of(A, A.dir)
-			if(!P && key)
-				pending++
-		else
-			picture = getFlatIcon(A, no_anim = TRUE) // a turf is drawn at the shot, as before
-		entries += list(list(picture, key, lying, A.pixel_x + xoff, A.pixel_y + yoff, blendMode2iconMode(A.blend_mode)))
+		entries += list(ask(A, lying, A.pixel_x + xoff, A.pixel_y + yoff, blendMode2iconMode(A.blend_mode)))
 	tops = list()
 	for(var/turf/the_turf in turfs)
 		var/xoff = (the_turf.x - center.x) * 32 + center_offset
 		var/yoff = (the_turf.y - center.y) * 32 + center_offset
-		tops += list(list(getFlatIcon(the_turf.loc, no_anim = TRUE), xoff, yoff, blendMode2iconMode(the_turf.blend_mode)))
+		tops += list(ask(the_turf.loc, FALSE, xoff, yoff, blendMode2iconMode(the_turf.blend_mode)))
 	photo.fill_from(compose(FALSE)) // the black frame (what the photo shows while its pictures are drawn)
 	if(!pending)
 		finish()
@@ -322,9 +319,17 @@ CAPABILITIES(/datum/photo_render)
 	rel_set(photo, nameof(photo.rendering), src) // the photo holds it until it finishes (the portrait cache calls back by handle)
 	after(src, PHOTO_RENDER_TIMEOUT, PROC_REF(finish))
 
+/// The entry for `A` drawn at (x, y): list(picture or null while it is drawn, its portrait key, lying, x, y, blend).
+/datum/photo_render/proc/ask(atom/A, lying, x, y, blend)
+	var/datum/portrait/P = portrait_request(A, A.dir, src, PROC_REF(landed))
+	var/key = P ? null : portrait_key_of(A, A.dir)
+	if(!P && key)
+		pending++
+	return list(P?.picture, key, lying, x, y, blend)
+
 /// An atom's picture landed.
 /datum/photo_render/proc/landed(datum/portrait/P)
-	for(var/list/entry as anything in entries)
+	for(var/list/entry as anything in entries + tops)
 		if(entry[2] == P.key && !entry[1])
 			entry[1] = P.picture
 			pending--
@@ -337,7 +342,11 @@ CAPABILITIES(/datum/photo_render)
 	done = TRUE
 	var/obj/item/photo/photo = src.photo
 	if(photo && !QDELETED(photo))
-		photo.fill_from(compose(TRUE))
+		var/icon/finished = compose(TRUE)
+		photo.fill_from(finished)
+		for(var/obj/item/photo/copy as anything in copies)
+			if(!QDELETED(copy))
+				copy.fill_from(icon(finished))
 		if(photo.rendering == src)
 			rel_clear(photo, nameof(photo.rendering))
 
@@ -356,7 +365,8 @@ CAPABILITIES(/datum/photo_render)
 			img.BecomeLying()
 		res.Blend(img, entry[6], entry[4], entry[5])
 	for(var/list/top as anything in tops)
-		res.Blend(top[1], top[4], top[2], top[3])
+		if(top[1])
+			res.Blend(top[1], top[6], top[4], top[5])
 	return res
 
 #undef PHOTO_RENDER_TIMEOUT
@@ -470,6 +480,8 @@ CAPABILITIES(/datum/photo_render)
 
 	if(copy_id)
 		p.id = id
+	// Copied before its picture was finished: the copy is filled when it is (photo_render), not left with the black frame.
+	rendering?.add_copy(p)
 
 	return p
 

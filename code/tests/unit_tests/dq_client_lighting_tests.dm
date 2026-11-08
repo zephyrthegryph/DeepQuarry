@@ -173,3 +173,149 @@
 	TEST_ASSERT_EQUAL(row[2], watched_band(T.get_lumcount(), levels), "the band follows the level once the light is gone")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
+
+// ---- the per-client glow holder (client_glow_holder.dm) ----
+
+/// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
+/datum/unit_test/proc/client_glow_holder_setup(list/out)
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes)))
+		set_global(counter, GLOB.vars[counter]) // teardown restores the counters
+	var/obj/machinery/light/F = allocate(/obj/machinery/light, run_loc_floor_bottom_left)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/datum/client_glow_holder/H = new
+	H.view_at(client_glow_test_eye(get_turf(F)), 7, 7)
+	out += F
+	out += H
+
+/// A light just off screen shows its glow on screen: the viewer holds a glow image on a turf it always sees, offset to the
+/// light's true place, and a mask image whose render target the glow image's alpha filter names; the real glow is hidden.
+/datum/unit_test/dq_client_glow_holder_off_screen
+
+/datum/unit_test/dq_client_glow_holder_off_screen/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	TEST_ASSERT_NOTNULL(S?.glow, "the fixture glows")
+	TEST_ASSERT(LT.x < H.safe[1] || LT.x > H.safe[3], "the light stands off the safe box")
+	var/list/entry = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(entry, "the viewer holds the off-screen light's glow")
+	var/image/glow_image = entry[1]
+	var/image/mask_image = entry[2]
+	var/image/hide_image = entry[3]
+	var/turf/A = glow_image.loc
+	TEST_ASSERT(isturf(A) && A.x >= H.safe[1] && A.x <= H.safe[3] && A.y >= H.safe[2] && A.y <= H.safe[4], "the glow image's anchor is seen from anywhere in the eye's chunk")
+	TEST_ASSERT_EQUAL(A.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "its x offset puts it on the light")
+	TEST_ASSERT_EQUAL(A.y + (glow_image.pixel_y - S.glow.pixel_y) / WORLD_ICON_SIZE, LT.y, "its y offset puts it on the light")
+	TEST_ASSERT_EQUAL(glow_image.blend_mode, BLEND_ADD, "the copy adds like the glow")
+	TEST_ASSERT_EQUAL(glow_image.plane, PLANE_LIGHTING, "the copy is on the lighting plane")
+	TEST_ASSERT(findtext(mask_image.render_target, "*") == 1, "the mask image is a hidden render target")
+	TEST_ASSERT(mask_image.render_target != S.glow_mask.render_target, "the mask image has a render target of its own")
+	var/list/filters = glow_image.filters
+	TEST_ASSERT(length(filters) && filters[1]:render_source == mask_image.render_target, "the glow image's alpha filter reads its own mask image")
+	TEST_ASSERT_EQUAL(mask_image.loc, A, "the mask image stands on the same anchor")
+	TEST_ASSERT(hide_image.override && hide_image.loc == S.glow, "the real glow is overridden for this viewer: never drawn twice")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// No double drawing: once the eye's chunk puts the light in its safe box, the copy goes and the normal glow shows.
+/datum/unit_test/dq_client_glow_holder_in_view
+
+/datum/unit_test/dq_client_glow_holder_in_view/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	TEST_ASSERT_NOTNULL(H.entry_of(S), "held while off screen")
+	H.view_at(get_turf(F), 7, 7)
+	TEST_ASSERT_NULL(H.entry_of(S), "the light's turf is always on screen: the copy is dropped")
+	TEST_ASSERT_EQUAL(length(H.images()), 0, "no image is left over it")
+	TEST_ASSERT_NOTNULL(S.glow, "the normal glow shows")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// Occlusion still applies: a blocker next to the light rebuilds the copy's mask image, and the shadowed turf leaves it.
+/datum/unit_test/dq_client_glow_holder_occlusion
+
+/datum/unit_test/dq_client_glow_holder_occlusion/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	var/turf/east1 = locate(LT.x + 1, LT.y, LT.z)
+	var/image/mask_image = H.entry_of(S)[2]
+	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach), "one mask tile per reached turf")
+	TEST_ASSERT(S.glow_reach["2,0"], "the floor two east is lit before the blocker")
+	var/before = length(mask_image.overlays)
+	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
+	SSlighting.light_step(0, TRUE)
+	mask_image = H.entry_of(S)?[2]
+	TEST_ASSERT_NOTNULL(mask_image, "still held")
+	TEST_ASSERT(!S.glow_reach["2,0"], "the floor behind the blocker is in shadow")
+	TEST_ASSERT(length(mask_image.overlays) < before, "the copy's mask lost the shadowed tiles ([length(mask_image.overlays)] < [before])")
+	TEST_ASSERT_EQUAL(length(mask_image.overlays), length(S.glow_reach), "the copy's mask matches the reach")
+	qdel(B)
+	SSlighting.light_step(0, TRUE)
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// Event-driven: a step inside the eye's chunk touches nothing; crossing into the next chunk recomputes.
+/datum/unit_test/dq_client_glow_holder_events
+
+/datum/unit_test/dq_client_glow_holder_events/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/turf/E = client_glow_test_eye(get_turf(F))
+	var/cx0 = round((E.x - 1) / CLIENT_GLOW_CHUNK) * CLIENT_GLOW_CHUNK + 1
+	var/recomputes = GLOB.client_glow_holder_recomputes
+	var/touched = GLOB.client_glow_holder_made + GLOB.client_glow_holder_updated + GLOB.client_glow_holder_dropped
+	for(var/x in cx0 to cx0 + CLIENT_GLOW_CHUNK - 1)
+		H.view_at(locate(x, E.y, E.z), 7, 7)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_recomputes, recomputes, "stepping inside the chunk recomputes nothing")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_made + GLOB.client_glow_holder_updated + GLOB.client_glow_holder_dropped, touched, "stepping inside the chunk touches no image")
+	var/turf/next = locate(cx0 + CLIENT_GLOW_CHUNK, E.y, E.z) || locate(cx0 - 1, E.y, E.z)
+	H.view_at(next, 7, 7)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_recomputes, recomputes + 1, "crossing a chunk recomputes once")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// Cleanup: client lighting off, the light deleted and the viewer leaving each leave no image.
+/datum/unit_test/dq_client_glow_holder_cleanup
+
+/datum/unit_test/dq_client_glow_holder_cleanup/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/turf/E = client_glow_test_eye(get_turf(F))
+	TEST_ASSERT(length(H.images()), "held before")
+	client_lighting_set(FALSE)
+	TEST_ASSERT_EQUAL(length(H.images()), 0, "client lighting off: no image")
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	H.view_at(E, 7, 7)
+	var/datum/light_source/S = F.light
+	TEST_ASSERT_NOTNULL(H.entry_of(S), "held again")
+	var/list/copy = H.entry_of(S)
+	qdel(S)
+	TEST_ASSERT_NULL(H.entry_of(S), "light deleted: its copy is dropped")
+	for(var/image/I as anything in copy)
+		TEST_ASSERT(!(I in H.images()), "light deleted: none of its images is left")
+	spent(H)
+	TEST_ASSERT(!(H in REGISTRY_MEMBERS(REGISTRY_CLIENT_GLOW_HOLDERS)), "a gone viewer is not walked")
+	TEST_ASSERT_EQUAL(LAZYLEN(H.held), 0, "a gone viewer holds nothing")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)

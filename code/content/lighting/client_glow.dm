@@ -68,9 +68,11 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 		G.abstract_move(source_turf)
 	client_glow_mask_apply(CEILING(range, 1), G.icon, offset) // the shadow mask (client_shadow.dm)
 	applied = TRUE
+	client_glow_holders_consider(src) // viewers holding an off-screen copy follow (client_glow_holder.dm)
 
 /// This light stops glowing (it went off, moved into nullspace or left client lighting).
 /datum/light_source/proc/client_glow_clear()
+	client_glow_holders_drop(src)
 	client_glow_mask_clear()
 	if(glow)
 		var/obj/effect/overlay/client_glow/G = glow
@@ -84,6 +86,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	if(GLOB.client_lighting == on)
 		return
 	GLOB.client_lighting = on
+	client_glow_holders_switched(on)
 	log_world("client lighting: [on ? "on" : "off"]")
 	if(!SSlighting.is_initialized())
 		return

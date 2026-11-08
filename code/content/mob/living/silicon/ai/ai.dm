@@ -34,6 +34,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/backup_charge = AI_BACKUP_CAPACITY
 	var/viewalerts = 0
 	var/icon/holo_icon				//Default is assigned when AI is created.
+	/// A hologram being drawn (request_holo_compound): list(dir -> landed picture, dir -> portrait key still drawing); null when none.
+	var/list/holo_compound
 	var/holo_color = null
 	var/list/connected_robots = list() // ALLOW(instance_list): d: per-mob connected_robots, filled at runtime; mobs are few
 	var/obj/item/pda/ai/aiPDA = null
@@ -632,9 +634,45 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 //I am the icon meister. Bow fefore me.	//>fefore
 /mob/living/silicon/ai/proc/hologram_from_dummy(mob/living/carbon/human/dummy/dummy)
 	draw_now(dummy)
-	var/new_holo = getHologramIcon(getCompoundIcon(dummy))
-	spent(holo_icon)
+	request_holo_compound(dummy) // its look is read now; the dummy can go
 	spent(dummy)
+
+/// The hologram of `A`: its four directions, animated, from the shared portrait cache (drawn off the tick, as getCompoundIcon drew them on
+/// it). The old hologram stays until all four land (holo_compound_landed); a newer request replaces an older one still drawing.
+/mob/living/silicon/ai/proc/request_holo_compound(atom/A)
+	var/list/pictures = list()
+	var/list/waiting = list()
+	holo_compound = list(pictures, waiting)
+	for(var/dir in list(NORTH, SOUTH, EAST, WEST))
+		var/datum/portrait/P = portrait_request(A, dir, src, PROC_REF(holo_compound_landed), animated = TRUE)
+		if(P)
+			pictures["[dir]"] = P.picture
+		else
+			waiting["[dir]"] = portrait_key_of(A, dir, animated = TRUE)
+	if(!length(waiting))
+		holo_compound_finish()
+
+/mob/living/silicon/ai/proc/holo_compound_landed(datum/portrait/P)
+	if(!holo_compound)
+		return
+	var/list/pictures = holo_compound[1]
+	var/list/waiting = holo_compound[2]
+	for(var/dir in waiting.Copy())
+		if(waiting[dir] == P.key)
+			pictures[dir] = P.picture
+			waiting -= dir
+	if(!length(waiting))
+		holo_compound_finish()
+
+/// All four directions landed: the hologram is their compound icon (as getCompoundIcon built it), through getHologramIcon.
+/mob/living/silicon/ai/proc/holo_compound_finish()
+	var/list/pictures = holo_compound[1]
+	holo_compound = null
+	var/icon/full = icon('icons/effects/effects.dmi', "icon_state" = "nothing") // starts blank, as getCompoundIcon does
+	for(var/dir in list(NORTH, SOUTH, EAST, WEST))
+		full.Insert(icon(pictures["[dir]"]), dir = dir) // copies: the cached pictures are shared
+	var/new_holo = getHologramIcon(full)
+	spent(holo_icon)
 	set_holo_icon(new_holo)
 
 /mob/living/silicon/ai/proc/ai_hologram_change()
@@ -718,9 +756,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	var/list/targets = trackable_mobs()
 	if(!targets[input])
 		return
-	var/new_holo = getHologramIcon(getCompoundIcon(targets[input]))
-	spent(holo_icon)
-	set_holo_icon(new_holo)
+	request_holo_compound(targets[input])
 
 /mob/living/silicon/ai/proc/hologram_premade_chosen(datum/act/request/A)
 	if(!A.answer)
