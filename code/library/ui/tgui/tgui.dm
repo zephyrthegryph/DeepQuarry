@@ -197,21 +197,7 @@
 		with_static_data = TRUE))
 	// A window floated out of the column opens under the pointer once (window_dock.dm); later updates leave it where it is.
 	float_at = null
-	if(floated)
-		floated = FALSE
-		after(src, TGUI_FLOAT_SHOW_WAIT, PROC_REF(float_shown_check), key = "float_shown", clock = CLOCK_WORLD)
 
-/// A window floated out of the column must be on screen by now: its page reports `visible` when it reveals itself. If it has not,
-/// the window is shown, made opaque and brought to the front from here, so a float never leaves a window the player cannot see.
-/datum/tgui/proc/float_shown_check()
-	var/datum/tgui_window/shown = window()
-	if(closing || !shown || docked || !user?.client)
-		return
-	if(shown.visible)
-		log_tgui(user, "Floated [interface] is on screen.", window = shown)
-		return
-	log_tgui(user, "Floated [interface] did not report itself shown in [TGUI_FLOAT_SHOW_WAIT / 10] s: showing it from the server.", window = shown)
-	winset(user.client, shown.id, "is-visible=true;alpha=255;focus=true")
 
 /// Queues this UI's assets. Returns TRUE when the caller must wait for the client's ack.
 /datum/tgui/proc/send_assets(list/startup_profile, startup_timer)
@@ -441,8 +427,6 @@
 			"preapplied_geometry" = window()?.preapplied_geometry,
 			"docked" = docked ? TRUE : FALSE,
 			"float_at" = float_at,
-			// Opened by a float out of the column: the page brings it to the front once shown (layouts/Window.tsx floatedShown()).
-			"floated" = floated ? TRUE : FALSE,
 			"dockable" = dockable() ? TRUE : FALSE,
 			// Docked: whether the column offers float for it (never for an always-docked interface such as the stat panel).
 			"floatable" = GLOB.window_dock_always_docked[interface] ? FALSE : TRUE,

@@ -169,17 +169,11 @@ function NativeWindow(props: Props) {
   }, [config?.window?.native_shell]);
 
   const { scale } = config?.window || false;
-  // A float out of the column comes with one update (float_at, floated); the next update clears them, and that must not cancel the
-  // placement or the bring-to-front of the reveal already under way. Held here until a reveal uses them.
-  const pendingFloat = useRef<{
-    at: string | null | undefined;
-    floated: boolean;
-  } | null>(null);
-  if (config.window?.floated || config.window?.float_at) {
-    pendingFloat.current = {
-      at: config.window?.float_at,
-      floated: Boolean(config.window?.floated),
-    };
+  // A float out of the column comes with one update (float_at); the next update clears it, and that must not cancel the
+  // placement of the reveal already under way. Held here until a reveal uses it.
+  const pendingFloat = useRef<string | null>(null);
+  if (config.window?.float_at) {
+    pendingFloat.current = config.window.float_at;
   }
 
   useLayoutEffect(() => {
@@ -219,17 +213,24 @@ function NativeWindow(props: Props) {
           return;
         }
         const float = pendingFloat.current;
-        const under = underPointer(float?.at, geometry?.size);
+        const under = underPointer(float, geometry?.size);
         if (under) {
           // Pulled out of the dock: it opens under the pointer, as a popped-out chat does.
           geometry = { ...geometry, pos: under };
           logger.log('floated from the dock under the pointer', under);
         }
         profileStartup('geometry_finished', config.interface?.name);
-        await revealWindow(config.window?.generation, geometry);
+        if (float) floatTrace('reveal-start', { at: float, under, geometry });
+        const revealed = await revealWindow(
+          config.window?.generation,
+          geometry,
+        );
+        if (float) {
+          floatTrace('reveal-done', { revealed });
+          void floatTraceNative();
+        }
         if (float && !config.window?.docked) {
           pendingFloat.current = null;
-          if (float.floated) floatedShown(Boolean(under));
         }
         if (under) {
           // Remembered, so the next geometry recall (float_at is sent once) keeps it there.
@@ -416,14 +417,25 @@ Window.Content = WindowContent;
  * The window place that puts a screen point ("x,y", physical px) on the
  * middle of the window's titlebar, or null when there is no point.
  */
-/**
- * A window that just came out of the column is brought to the front: the
- * player's pointer and focus are still on the main window (a fullscreen one
- * covers every other window), where the new window would open unseen.
- */
-export function floatedShown(underPointer: boolean): void {
-  Byond.winset(Byond.windowId, { focus: true });
-  logger.log('floated window brought to the front', { underPointer });
+/** One step of a float's reveal, in the server's tgui log: a float that never shows is diagnosed from these. */
+function floatTrace(step: string, detail: Record<string, unknown>): void {
+  Byond.sendMessage('wm/log', { float: step, window: Byond.windowId, ...detail });
+}
+
+/** What the client says the floated window is once the reveal has finished. */
+async function floatTraceNative(): Promise<void> {
+  try {
+    const state = await Byond.winget(Byond.windowId, [
+      'is-visible',
+      'alpha',
+      'pos',
+      'size',
+      'is-minimized',
+    ]);
+    floatTrace('native-after-reveal', { state });
+  } catch (error) {
+    floatTrace('native-query-failed', { error: String(error) });
+  }
 }
 
 export function underPointer(

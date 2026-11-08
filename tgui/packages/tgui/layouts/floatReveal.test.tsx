@@ -1,4 +1,4 @@
-// A window floated out of the column (layouts/Window.tsx, window_dock.dm): it reveals under the pointer and comes to the front, and
+// A window floated out of the column (layouts/Window.tsx, window_dock.dm): it reveals under the pointer, and
 // the update that follows (which clears float_at) neither cancels that nor moves it.
 (globalThis as any).__TGUI_WINDOW_GEOMETRY_MANIFEST__ ??= {};
 
@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 let key = 0;
-const config = (float_at: string | null, floated: boolean) =>
+const config = (float_at: string | null) =>
   ({
     interface: { name: 'Chat', layout: '' },
     title: 'Chat',
@@ -41,7 +41,6 @@ const config = (float_at: string | null, floated: boolean) =>
       native_shell: true,
       docked: false,
       float_at,
-      floated,
       dockable: true,
     },
     client: { ckey: 'n', address: '', computer_id: '', profiling: false },
@@ -62,7 +61,7 @@ async function floatOut(nextUpdateAfterMs: number) {
         : {}) as any;
   Byond.sendMessage = ((type: string) => sentTypes.push(type)) as any;
   store.set(suspendedAtom, false);
-  store.set(configAtom, config('554,723', true));
+  store.set(configAtom, config('554,723'));
   render(
     <Window title="Chat" width={520} height={640}>
       <Window.Content>chat</Window.Content>
@@ -71,8 +70,8 @@ async function floatOut(nextUpdateAfterMs: number) {
   await act(async () => {
     await new Promise((r) => setTimeout(r, nextUpdateAfterMs));
   });
-  // The server's next update: float_at and floated are cleared.
-  act(() => store.set(configAtom, config(null, false)));
+  // The server's next update: float_at is cleared.
+  act(() => store.set(configAtom, config(null)));
   await act(async () => {
     await new Promise((r) => setTimeout(r, 1200));
   });
@@ -81,12 +80,11 @@ async function floatOut(nextUpdateAfterMs: number) {
 
 describe('a window floated out of the column', () => {
   for (const wait of [0, 50]) {
-    it(`shows under the pointer and comes to the front (next update after ${wait} ms)`, async () => {
+    it(`shows under the pointer (next update after ${wait} ms)`, async () => {
       const { sets, sentTypes } = await floatOut(wait);
-      // Opaque at last, placed under the drop point (centred on its width), brought to the front, and reported shown.
+      // Opaque at last, placed under the drop point (centred on its width) and reported shown.
       expect(sets.some((s) => s.alpha === 255)).toBe(true);
       expect(sets.some((s) => s.pos === '294,707')).toBe(true);
-      expect(sets.some((s) => s.focus === true)).toBe(true);
       expect(sentTypes).toContain('visible');
     });
   }

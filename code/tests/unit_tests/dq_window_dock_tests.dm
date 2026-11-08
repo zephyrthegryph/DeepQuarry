@@ -84,6 +84,10 @@
 	qdel(ui)
 
 /datum/unit_test/dq_window_dock_points
+/// A dock with no column to keep: dq_window_dock_column_keeps tests that rule, this one only the float.
+/datum/window_dock/dq_may_leave/may_leave(datum/tgui/ui)
+	return TRUE
+
 /datum/unit_test/dq_window_dock_points/Run()
 	TEST_ASSERT_EQUAL(dock_point_text(list("x" = 120.4, "y" = -30)), "120,-30", "a page point becomes screen text")
 	TEST_ASSERT_NULL(dock_point_text(list("x" = "1", "y" = 2)), "a point that is not two numbers is dropped")
@@ -91,7 +95,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
 	var/datum/tgui/dq_dock_probe/ui = new(user, host, "Probe")
-	var/datum/window_dock/dock = new(null)
+	var/datum/window_dock/dock = new /datum/window_dock/dq_may_leave(null)
 	TEST_ASSERT(!dock.undock(ui, "300,40"), "a floating window has nothing to float out of")
 	ui.docked = TRUE
 	TEST_ASSERT(dock.undock(ui, "300,40"), "a docked window floats (reopened by its host)")

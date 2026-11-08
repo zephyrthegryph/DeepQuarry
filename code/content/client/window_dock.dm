@@ -37,8 +37,6 @@
 	var/list/drop_index
 	/// Interface name -> the screen point ("x,y") a drag out of the column ended at: its next native window opens under it.
 	var/list/float_points
-	/// Interface name -> TRUE while it is on its way out of the column: its native window is watched until it shows (tgui.dm).
-	var/list/floating
 
 /datum/window_dock/New(client/owner)
 	rel_set(src, nameof(owner), owner)
@@ -195,7 +193,6 @@ CAPABILITIES(/datum/window_dock)
 	log_tgui(owner(), "Window dock: [ui.interface] floated[at ? " under [at]" : ""].", window = ui.window())
 	if(at)
 		LAZYSET(float_points, ui.interface, at)
-	LAZYSET(floating, ui.interface, TRUE)
 	reopen(ui)
 	return TRUE
 
@@ -260,9 +257,6 @@ CAPABILITIES(/datum/window_dock)
 		return null
 	if(!dock.wants(interface))
 		// Floating: a drag out of the column left a point for it, so its window opens under the pointer (one update carries it).
-		if(LAZYACCESS(dock.floating, interface))
-			floated = TRUE
-			LAZYREMOVE(dock.floating, interface)
 		var/at = LAZYACCESS(dock.float_points, interface)
 		if(at)
 			float_at = at

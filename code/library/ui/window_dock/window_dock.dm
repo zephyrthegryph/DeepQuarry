@@ -35,8 +35,6 @@ GLOBAL_LIST_INIT(window_dock_always_docked, list(
 	var/view_stale = FALSE
 	/// Floated out of the column: the screen point ("x,y", physical pixels) its native window opens under, for the update that opens it.
 	var/float_at
-	/// Opened by a float out of the column: its native window is watched until it shows (float_shown_check()).
-	var/floated = FALSE
 
 SCHEMA(/datum/tgui, float_at, schema_text())
 

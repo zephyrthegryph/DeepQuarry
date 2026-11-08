@@ -86,8 +86,6 @@
 
 /// What a column part (code/library/ui/tgui/column_part.dm) is in the right-hand column's page.
 #define COLUMN_PART_TGUI "tgui"
-/// How long a window floated out of the column has to report itself shown before the server shows it (tgui.dm float_shown_check()).
-#define TGUI_FLOAT_SHOW_WAIT (3 SECONDS)
 /// The head of a column window's message (column_part.dm wrap_message()): `{"type":"col/msg","payload":{"wid":"` url-encoded.
 #define COLUMN_ENVELOPE_HEAD "%7b%22type%22%3a%22col/msg%22%2c%22payload%22%3a%7b%22wid%22%3a%22"
 
