@@ -95,3 +95,24 @@
 				break
 	TEST_ASSERT(checked > 0, "nothing on the new level to check")
 	test_driver_end()
+
+/// A turf that becomes space while the round runs (a breach) joins the air arena and the heat field in one Rust call
+/// (vg_hook_register_one_turf()): it is in the arena as vacuum, shares air with the floor beside it, and its solid is a
+/// space cell, as the DM chain (update_air_ref(), air_block_mask(), update_heat_cell()) left it.
+/datum/unit_test/dq_breach_space_registers_in_one_call
+
+/datum/unit_test/dq_breach_space_registers_in_one_call/Run()
+	var/turf/floor = run_loc_floor_bottom_left
+	var/turf/neighbour = get_step(floor, EAST)
+	TEST_ASSERT(istype(neighbour, /turf/open) && !neighbour.blocks_air, "the floor beside the breach is open")
+	var/original = floor.type
+	var/turf/space/S = floor.ChangeTurf(/turf/space)
+	TEST_ASSERT(istype(S, /turf/space), "the floor became space")
+	TEST_ASSERT(vg_topology_matches(S), "the breach is in the air arena")
+	TEST_ASSERT(vg_atmos_open_dirs(S) & EAST, "the breach shares air with the floor beside it")
+	TEST_ASSERT(S.return_air().return_pressure() < 1, "the breach is vacuum")
+	TEST_ASSERT_EQUAL(S.heat_cell_kind(), HEAT_CELL_SPACE, "the breach's solid is a space cell")
+	TEST_ASSERT_EQUAL(vg_hook_register_one_turf(S), 1, "space registers in one call")
+	// The floor put back reads as vacuum (ChangeTurf carries the space's air) in DM and in the arena, yet the air guard reports +82.1 mol on it
+	// after the test: a known leak that master shows on the old registration path too (doc/atmos/breach_air_guard_leak.md).
+	S.ChangeTurf(original)

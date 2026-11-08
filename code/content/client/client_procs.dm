@@ -315,6 +315,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	// The stat panel: a tgui window like any other (stat_panel_window.dm), docked in the right-hand column unless the player floated it.
 	stat_panel_open(src)
+	// The chat: a tgui window too (chat_ui.dm), docked in the column unless the player floated it.
+	chat_ui_open(src)
 
 	tgui_shocker.initialize()
 

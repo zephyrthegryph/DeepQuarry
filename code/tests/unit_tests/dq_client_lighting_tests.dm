@@ -22,6 +22,19 @@
 	TEST_ASSERT_EQUAL(S.glow.loc, get_turf(L), "the glow sits on the light's turf")
 	TEST_ASSERT(S.glow.alpha > 0, "the glow is visible (alpha [S.glow.alpha])")
 	TEST_ASSERT_EQUAL(S.glow.blend_mode, BLEND_ADD, "the glow adds onto the lighting plane")
+	var/turf/edge = locate(T.x + CEILING(S.light_range, 1), T.y, T.z)
+	if(edge && GLOB.client_glow_bounds)
+		TEST_ASSERT(edge in S.glow.locs, "the glow's bounds reach the turf at the edge of its range, so a client seeing only that turf gets it")
+	var/live_glows = 0
+	var/holders = 0
+	for(var/obj/effect/overlay/client_glow/G in world)
+		if(!QDELETED(G))
+			live_glows++
+	for(var/datum/light_source/LS)
+		if(!QDELETED(LS) && LS.glow)
+			holders++
+	TEST_ASSERT_EQUAL(live_glows, holders, "one live glow per glowing light (no duplicates)")
+	log_test("CLIENT GLOW COUNT: [glows] glows in the world loop, [live_glows] live, [holders] lights holding one")
 	var/objects = 0
 	for(var/turf/U as anything in block(locate(1, 1, T.z), locate(world.maxx, world.maxy, T.z)))
 		if(U.lighting_object)
