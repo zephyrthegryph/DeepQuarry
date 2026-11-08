@@ -24,6 +24,11 @@ export function lastShownSequence(): number | null {
   return lastSequence;
 }
 
+/** The stored log holds every message through `sequence` (chat/log.ts): what follows is the next one expected. */
+export function markShownThrough(sequence: number): void {
+  if (lastSequence === null || sequence > lastSequence) lastSequence = sequence;
+}
+
 /** How many sequence numbers the duplicate check holds (tests). */
 export function seenCount(): number {
   return seen.size;

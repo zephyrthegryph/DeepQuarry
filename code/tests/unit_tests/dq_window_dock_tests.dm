@@ -161,4 +161,8 @@
 	TEST_ASSERT_EQUAL(chat.draft, "", "and keeps no draft")
 	TEST_ASSERT(!chat.ui_prepare(user, null), "and opens for no one")
 	TEST_ASSERT_EQUAL(chat.ui_data(null)["draft"], "", "a new window starts from the kept draft")
+	TEST_ASSERT(istext(chat.ui_data(null)["session"]) && length(chat.ui_data(null)["session"]), "it names its connection, for the stored log's mark")
+	var/datum/chat_ui/other = new(null)
+	TEST_ASSERT(other.session != chat.session, "and another connection has another name")
+	qdel(other)
 	qdel(chat)
