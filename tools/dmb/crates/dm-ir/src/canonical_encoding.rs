@@ -56,13 +56,63 @@ enum Task<'a> {
     MeaningItems(&'a [ResolvedMeaning],usize),
     StaticField(&'a ProcedureStaticDeclaration,u8),
 }
-struct Encoder<'a,'w> { out:Vec<u8>, tasks:Vec<Task<'a>>, work:&'w mut dyn CanonicalWork }
-impl<'a> Encoder<'a,'_> {
-    fn bytes(&mut self, bytes:&[u8])->io::Result<()> { grow(&mut self.out,bytes.len(),self.work)?;self.out.extend_from_slice(bytes);Ok(()) }
+/// The same encoder may append to a caller's already funded byte buffer.
+#[doc(hidden)]
+pub trait CanonicalByteSink {
+    fn append(&mut self, bytes: &[u8], work: &mut dyn CanonicalWork) -> io::Result<()>;
+    fn written(&mut self) -> &mut [u8];
+}
+impl CanonicalByteSink for Vec<u8> {
+    fn append(&mut self, bytes: &[u8], work: &mut dyn CanonicalWork) -> io::Result<()> {
+        grow(self, bytes.len(), work)?;
+        self.extend_from_slice(bytes);
+        Ok(())
+    }
+    fn written(&mut self) -> &mut [u8] { self.as_mut_slice() }
+}
+
+struct Tasks<'a, const INLINE: usize> {
+    inline: [Option<Task<'a>>; INLINE],
+    len: usize,
+    spill: Vec<Task<'a>>,
+}
+impl<'a, const INLINE: usize> Tasks<'a, INLINE> {
+    fn new() -> Self { Self { inline: [const { None }; INLINE], len: 0, spill: Vec::new() } }
+    fn push(&mut self, task: Task<'a>, work: &mut dyn CanonicalWork) -> io::Result<()> {
+        if self.len < INLINE {
+            work.poll()?;
+            self.inline[self.len] = Some(task);
+            self.len += 1;
+        } else {
+            grow(&mut self.spill, 1, work)?;
+            self.spill.push(task);
+        }
+        Ok(())
+    }
+    fn pop(&mut self) -> Option<Task<'a>> {
+        if let Some(task) = self.spill.pop() { return Some(task); }
+        self.len = self.len.checked_sub(1)?;
+        self.inline[self.len].take()
+    }
+    fn heap_bytes(&self) -> io::Result<usize> {
+        let capacity = self.spill.capacity();
+        capacity.checked_mul(size_of::<Task<'_>>())
+            .and_then(|n| n.checked_add(if capacity == 0 { 0 } else { 128 }))
+            .ok_or_else(|| oom("canonical task storage geometry overflow"))
+    }
+}
+
+struct Encoder<'a,'w,const INLINE: usize> {
+    out: &'w mut dyn CanonicalByteSink,
+    tasks: Tasks<'a,INLINE>,
+    work: &'w mut dyn CanonicalWork,
+}
+impl<'a,const INLINE: usize> Encoder<'a,'_,INLINE> {
+    fn bytes(&mut self, bytes:&[u8])->io::Result<()> { self.out.append(bytes, self.work) }
     fn byte(&mut self,byte:u8)->io::Result<()> { self.bytes(&[byte]) }
     fn length(&mut self,len:usize)->io::Result<()> { self.bytes(&u64::try_from(len).map_err(|_|oom("canonical length exceeds u64"))?.to_le_bytes()) }
     fn symbol(&mut self,symbol:SymbolId)->io::Result<()> { self.bytes(&symbol.bits().to_le_bytes()) }
-    fn push(&mut self,task:Task<'a>)->io::Result<()> { grow(&mut self.tasks,1,self.work)?;self.tasks.push(task);Ok(()) }
+    fn push(&mut self,task:Task<'a>)->io::Result<()> { self.tasks.push(task, self.work) }
     fn root(&mut self,root:Root<'a>)->io::Result<()> { self.push(Task::Root(root)) }
     fn frame(&mut self,root:Root<'a>)->io::Result<()> {
         self.push(Task::Frame(root))
@@ -78,8 +128,8 @@ impl<'a> Encoder<'a,'_> {
     }
     fn step(&mut self,task:Task<'a>)->io::Result<()> {
         match task {
-            Task::Frame(root)=>{let at=self.out.len();self.length(0)?;let start=self.out.len();self.push(Task::EndFrame{at,start})?;self.root(root)?;},
-            Task::EndFrame{at,start}=>{let len=self.out.len().checked_sub(start).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"canonical frame frontier changed"))?;let bytes=u64::try_from(len).map_err(|_|oom("canonical frame length exceeds u64"))?.to_le_bytes();self.out.get_mut(at..start).filter(|field|field.len()==8).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"canonical frame placeholder changed"))?.copy_from_slice(&bytes);},
+            Task::Frame(root)=>{let at=self.out.written().len();self.length(0)?;let start=self.out.written().len();self.push(Task::EndFrame{at,start})?;self.root(root)?;},
+            Task::EndFrame{at,start}=>{let len=self.out.written().len().checked_sub(start).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"canonical frame frontier changed"))?;let bytes=u64::try_from(len).map_err(|_|oom("canonical frame length exceeds u64"))?.to_le_bytes();self.out.written().get_mut(at..start).filter(|field|field.len()==8).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"canonical frame placeholder changed"))?.copy_from_slice(&bytes);},
             Task::Root(Root::Expression(value))=>self.expression(value)?,
             Task::Root(Root::Opaque(value))=>{
                 self.bytes(b"dm-opaque-intrinsic-field-v1\0")?;self.symbol(value.owner)?;self.symbol(value.name)?;
@@ -167,10 +217,10 @@ impl<'a> Encoder<'a,'_> {
         match value{
             M::Missing=>unreachable!(),
             M::Unsupported(query)=>{
-                self.byte(1)?;let at=self.out.len();self.length(0)?;let start=self.out.len();
+                self.byte(1)?;let at=self.out.written().len();self.length(0)?;let start=self.out.written().len();
                 let mut first=None;
-                struct Writer<'a,'b,'w>{owner:&'a mut Encoder<'b,'w>,first:&'a mut Option<io::Error>}
-                impl io::Write for Writer<'_,'_,'_>{fn write(&mut self,bytes:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("earlier actual canonical sink failure"))}match self.owner.bytes(bytes){Ok(())=>Ok(bytes.len()),Err(actual)=>{*self.first=Some(actual);Err(io::Error::other("actual canonical sink failure"))}}}fn flush(&mut self)->io::Result<()>{Ok(())}}
+                struct Writer<'a,'b,'w,const INLINE:usize>{owner:&'a mut Encoder<'b,'w,INLINE>,first:&'a mut Option<io::Error>}
+                impl<const INLINE:usize> io::Write for Writer<'_,'_,'_,INLINE>{fn write(&mut self,bytes:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("earlier actual canonical sink failure"))}match self.owner.bytes(bytes){Ok(())=>Ok(bytes.len()),Err(actual)=>{*self.first=Some(actual);Err(io::Error::other("actual canonical sink failure"))}}}fn flush(&mut self)->io::Result<()>{Ok(())}}
                 let result=serde_json::to_writer(Writer{owner:self,first:&mut first},query);
                 if let Some(actual)=first{return Err(actual)}result.map_err(io::Error::other)?;self.step(Task::EndFrame{at,start})?;
             },
@@ -192,13 +242,30 @@ impl<'a> Encoder<'a,'_> {
     }
 }
 pub(crate) fn encode(root:Root<'_>,work:&mut dyn CanonicalWork)->io::Result<Vec<u8>> {
-    let mut encoder=Encoder{out:Vec::new(),tasks:Vec::new(),work};encoder.root(root)?;
-    while let Some(task)=encoder.tasks.pop(){encoder.work.poll()?;encoder.step(task)?}
-    let scratch=encoder.tasks.capacity().checked_mul(size_of::<Task<'_>>()).and_then(|n|n.checked_add(128))
-        .ok_or_else(||oom("canonical task storage geometry overflow"))?;
+    let mut out = Vec::new();
+    encode_into::<0>(root, &mut out, work)?;
+    Ok(out)
+}
+
+pub(crate) fn append_procedure(
+    value: &ProcedureMetadata, out: &mut dyn CanonicalByteSink, work: &mut dyn CanonicalWork,
+) -> io::Result<()> {
+    encode_into::<8>(Root::Procedure(value), out, work)
+}
+
+fn encode_into<const INLINE: usize>(
+    root: Root<'_>, out: &mut dyn CanonicalByteSink, work: &mut dyn CanonicalWork,
+) -> io::Result<()> {
+    let mut encoder = Encoder { out, tasks: Tasks::<INLINE>::new(), work };
+    encoder.root(root)?;
+    while let Some(task) = encoder.tasks.pop() {
+        encoder.work.poll()?;
+        encoder.step(task)?;
+    }
+    let scratch = encoder.tasks.heap_bytes()?;
     drop(encoder.tasks);
-    encoder.work.release_retired(scratch)?;
-    Ok(encoder.out)
+    if scratch != 0 { encoder.work.release_retired(scratch)?; }
+    Ok(())
 }
 
 #[cfg(test)]

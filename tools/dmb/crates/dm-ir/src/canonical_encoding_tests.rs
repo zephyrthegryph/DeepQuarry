@@ -76,6 +76,59 @@ fn canonical_encoder_retires_actual_task_and_replaced_output_storage() {
  assert!(procedure.canonical_bytes_using(&mut Work{limit:Some(exact.peak),..Work::default()}).is_err());
 }
 
+#[test]
+fn procedure_canonical_append_reuses_prefix_inline_and_releases_actual_spill() {
+ struct Sink(Vec<u8>);
+ impl CanonicalByteSink for Sink {
+  fn append(&mut self, bytes:&[u8],work:&mut dyn CanonicalWork)->io::Result<()> {
+   work.poll()?;
+   assert!(self.0.len()+bytes.len()<=self.0.capacity(),"test sink is preallocated");
+   self.0.extend_from_slice(bytes);
+   Ok(())
+  }
+  fn written(&mut self)->&mut [u8]{self.0.as_mut_slice()}
+ }
+ #[derive(Default)]struct Scratch{work:Work,peak:usize}
+ impl CanonicalWork for Scratch{
+  fn poll(&mut self)->io::Result<()>{self.work.poll()}
+  fn reserve(&mut self,n:usize)->io::Result<()>{
+   self.work.reserve(n)?;self.peak=self.peak.max(self.work.bytes);Ok(())
+  }
+  fn release_retired(&mut self,n:usize)->io::Result<()>{self.work.bytes-=n;Ok(())}
+ }
+ let plain=ProcedureMetadata{
+  signature:ProcedureSignature{parameters:Arc::from([]),variadic:false,return_annotation:None},
+  settings:Arc::from([]),
+ };
+ let mut nested=Arc::<[ProcedureSettingNode]>::from([]);
+ for _ in 0..24{
+  nested=Arc::from([ProcedureSettingNode::UnsupportedContext{
+   canonical_header:expression(),children:nested,
+  }]);
+ }
+ let deep=ProcedureMetadata{signature:plain.signature.clone(),settings:nested};
+ let prefix=b"issued lexical header";
+ for (procedure,spills) in [(&plain,false),(&deep,true)]{
+  let expected=procedure.old_bytes();
+  let mut output=Sink(Vec::with_capacity(prefix.len()+expected.len()));
+  output.0.extend_from_slice(prefix);
+  let before=output.0.as_ptr();
+  let mut scratch=Scratch::default();
+  procedure.append_canonical_using(&mut output,&mut scratch).unwrap();
+  assert_eq!(output.0.as_ptr(),before);
+  assert_eq!(&output.0[..prefix.len()],prefix);
+  assert_eq!(&output.0[prefix.len()..],expected.as_slice());
+  assert_eq!(scratch.work.bytes,0);
+  assert_eq!(scratch.peak!=0,spills);
+
+  output.0.truncate(prefix.len());
+  let mut failed=Scratch{work:Work{io_at:Some(17),..Work::default()},peak:0};
+  let actual=procedure.append_canonical_using(&mut output,&mut failed).unwrap_err();
+  assert_eq!(actual.raw_os_error(),Some(1450));
+  assert_eq!(&output.0[..prefix.len()],prefix);
+ }
+}
+
 impl FrozenOldBytes for SymbolicExpression{fn old_bytes(&self)->Vec<u8>{
         let mut bytes = Vec::new();
         self.write_canonical(|chunk| bytes.extend_from_slice(chunk));

@@ -1679,6 +1679,84 @@ fn original_simple_string_index(expr:&Expr,tokens:&[Token],original_profile:bool
     }
 }
 
+// These special returns share a parser AST with many unsupported call forms.
+// Check every consumed delimiter and child, and keep the nested topology closed.
+fn original_return_list(expr: &Expr, tokens: &[Token]) -> bool {
+    fn punct(token: &Token, text: &str) -> bool {
+        matches!(token.kind, TokenKind::Punctuation | TokenKind::Operator) && token.text == text
+    }
+
+    fn call<'a>(expr: &'a Expr, tokens: &[Token], name: &str) -> Option<&'a [Expr]> {
+        let ExprKind::Call { callee, args } = &expr.kind else { return None };
+        let [head, open, rest @ .., close] = tokens else { return None };
+        if head.kind != TokenKind::Ident || head.text != name || !simple_term(callee, head)
+            || !punct(open, "(") || !punct(close, ")")
+            || expr.span != Span::new(head.span.start, close.span.end)
+        {
+            return None;
+        }
+        let mut remaining = rest;
+        for (index, arg) in args.iter().enumerate() {
+            if index != 0 {
+                let (comma, after) = remaining.split_first()?;
+                if !punct(comma, ",") { return None; }
+                remaining = after;
+            }
+            let (actual, after) = remaining.split_at(remaining.partition_point(|token| token.span.end <= arg.span.end));
+            if actual.first()?.span.start != arg.span.start || actual.last()?.span.end != arg.span.end {
+                return None;
+            }
+            remaining = after;
+        }
+        remaining.is_empty().then_some(args)
+    }
+
+    fn within<'a>(tokens: &'a [Token], expr: &Expr) -> &'a [Token] {
+        let start = tokens.partition_point(|token| token.span.end <= expr.span.start);
+        let end = tokens.partition_point(|token| token.span.start < expr.span.end);
+        &tokens[start..end]
+    }
+
+    fn nameof(expr: &Expr, tokens: &[Token], qualified: bool) -> bool {
+        let tokens = within(tokens, expr);
+        let Some([arg]) = call(expr, tokens, "nameof") else { return false };
+        let actual = within(tokens, arg);
+        if !qualified {
+            return matches!(actual, [only]
+                if matches!(&arg.kind, ExprKind::Ident(name) if original_ascii_identifier(name))
+                && simple_term(arg, only));
+        }
+        let ExprKind::StaticMember { object, selector } = &arg.kind else { return false };
+        let ExprKind::TypePath(path) = &object.kind else { return false };
+        let [segments @ .., separator, member] = actual else { return false };
+        let Some(path) = path.strip_prefix('/') else { return false };
+        if segments.is_empty() || segments.len() % 2 != 0 || !punct(separator, "::")
+            || member.kind != TokenKind::Ident || &member.text != selector || !original_ascii_identifier(selector)
+            || object.span != Span::new(segments[0].span.start, segments[segments.len() - 1].span.end)
+        {
+            return false;
+        }
+        let mut parts = path.split('/');
+        segments.chunks_exact(2).all(|pair| {
+            let name = &pair[1];
+            punct(&pair[0], "/") && name.kind == TokenKind::Ident
+                && original_ascii_identifier(&name.text) && parts.next() == Some(name.text.as_str())
+        }) && parts.next().is_none()
+    }
+
+    if tokens.len() > 64 { return false; }
+    let Some(args) = call(expr, tokens, "list") else { return false };
+    if (2..=16).contains(&args.len()) && args.iter().all(|arg| {
+        matches!(within(tokens, arg), [only] if simple_term(arg, only))
+    }) {
+        return true;
+    }
+    let [drawn] = args else { return false };
+    let Some([value, relation]) = call(drawn, within(tokens, drawn), "drawn_from") else { return false };
+    let Some([link, member]) = call(relation, within(tokens, relation), "rel") else { return false };
+    nameof(value, tokens, false) && nameof(link, tokens, false) && nameof(member, tokens, true)
+}
+
 fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->Option<OriginalSimpleExpression>{
  let complete=match tokens{
   [only]=>simple_term(expr,only),
@@ -1687,7 +1765,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
   [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3],original_profile)),
   _=>false,
  };
- let kind=if complete{OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens){OriginalSimpleKind::OrdinaryCallStatement}else if original_simple_assignment(expr,tokens){OriginalSimpleKind::SimpleAssignmentStatement}else{return None};
+ let kind=if complete||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens){OriginalSimpleKind::OrdinaryCallStatement}else if original_simple_assignment(expr,tokens){OriginalSimpleKind::SimpleAssignmentStatement}else{return None};
  Some(OriginalSimpleExpression{kind,span:expr.span,operator:None})
 }
 

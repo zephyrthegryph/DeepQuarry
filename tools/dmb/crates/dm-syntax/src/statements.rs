@@ -1454,6 +1454,30 @@ impl OriginalBodyGrammarOutcome{
  #[test]fn actual_original_available_body_provenance_is_closed_over_empty_void_simple_and_member_return(){
   for text in["","    return\n","    return 1\n","    return argument\n","    return argument + 1\n","    return argument.field\n","    return list(argument)\n"]{let body=outcome(text);assert!(body.diagnostics.is_empty(),"{text}: {:?}",body.diagnostics);assert_eq!(body.original_grammar.unwrap().kind(),OriginalBodyGrammarKind::Available,"{text}");}
  }
+ #[test]
+ fn original_return_list_witness_requires_exact_positional_arguments_and_nested_derived_shape() {
+  for expression in [
+    "list(mutable, value)",
+    "list(drawn_from(nameof(value), rel(nameof(link), nameof(/datum/foreign::far))))",
+  ] {
+    let syntax = crate::parse(&format!("/proc/probe(mutable, value)\n    return {expression}\n"));
+    let body = parse_proc_body(&syntax.items[0]);
+    assert!(body.diagnostics.is_empty(), "{expression}: {:?}", body.diagnostics);
+    assert_eq!(body.original_grammar.unwrap().kind(), OriginalBodyGrammarKind::Available);
+  }
+  for expression in [
+    "list(mutable = value, value)",
+    "list(mutable,)",
+    "list(mutable, choose())",
+    "list(other(nameof(value), rel(nameof(link), nameof(/datum/foreign::far))))",
+    "list(drawn_from(nameof(value), rel(nameof(link), nameof(argument.far))))",
+    "list(drawn_from(nameof(value), rel(nameof(link), nameof(/datum/foreign::far))), value)",
+  ] {
+    let syntax = crate::parse(&format!("/proc/probe(mutable, value)\n    return {expression}\n"));
+    let body = parse_proc_body(&syntax.items[0]);
+    assert!(body.original_grammar.is_none(), "unwitnessed {expression}");
+  }
+ }
  #[test]fn original_string_index_witness_requires_consumed_simple_receiver_key_and_delimiters(){
   let body=outcome("    return vars[\"probe\"]\n");
   let proof=body.original_grammar.unwrap();

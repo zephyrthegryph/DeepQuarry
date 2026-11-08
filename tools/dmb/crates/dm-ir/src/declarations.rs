@@ -172,6 +172,14 @@ impl ProcedureMetadata {
     pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
         crate::canonical_encoding::encode(crate::canonical_encoding::Root::Procedure(self), work)
     }
+
+    /// Append the identical encoding into the caller's funded final buffer.
+    #[doc(hidden)]
+    pub fn append_canonical_using(
+        &self, out: &mut dyn crate::CanonicalByteSink, work: &mut dyn crate::CanonicalWork,
+    ) -> std::io::Result<()> {
+        crate::canonical_encoding::append_procedure(self, out, work)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
