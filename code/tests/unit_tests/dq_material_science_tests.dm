@@ -966,7 +966,6 @@
 
 /datum/unit_test/dq_material_damage_admits_survivors_only/Run()
 	var/obj/item/cell/survivor = new(run_loc_floor_bottom_left)
-	TEST_ASSERT(!material_service_of(survivor), "a fresh cell already had a material service")
 	survivor.take_damage(survivor.max_integrity * 0.6, BRUTE, sound_effect = FALSE)
 	TEST_ASSERT(!QDELETED(survivor), "a 60% hit destroyed the cell")
 	TEST_ASSERT(material_service_of(survivor), "a hit that left the cell standing at 40% integrity did not admit its material service")

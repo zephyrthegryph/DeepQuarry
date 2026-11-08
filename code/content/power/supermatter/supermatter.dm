@@ -252,7 +252,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		mob.status_at_least(STAT_WEAKENED, DETONATION_MOB_CONCUSSION)
 		to_chat(mob, span_danger("An invisible force slams you against the ground!"))
 
-	// Effect 2: Z-level wide electrical pulse
+	// Effect 2: Z-level wide electrical pulse. The APCs fail one a tick, not all in this one: every machine of an area whose APC fails
+	// recomputes its power at that tick's drain, and the station's APCs failing together held three ticks of 7.6 s each
+	// (station_explosion bench, trigger=supermatter). Each APC's draw (overload, outage length) is rolled here, as before.
+	var/apc_delay = 0
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(!(A.z in affected_z))
 			continue
@@ -262,10 +265,12 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			A.overload_lighting()
 		// Causes the APCs to go into system failure mode.
 		var/random_change = rand(100 - DETONATION_SHUTDOWN_RNG_FACTOR, 100 + DETONATION_SHUTDOWN_RNG_FACTOR) / 100
-		if(A.is_critical)
-			A.energy_fail(round(DETONATION_SHUTDOWN_CRITAPC * random_change))
+		var/outage = round((A.is_critical ? DETONATION_SHUTDOWN_CRITAPC : DETONATION_SHUTDOWN_APC) * random_change)
+		if(!apc_delay)
+			A.energy_fail(outage)
 		else
-			A.energy_fail(round(DETONATION_SHUTDOWN_APC * random_change))
+			after(A, apc_delay, TYPE_PROC_REF(/obj/machinery/power/apc, energy_fail), key = "sm_pulse_fail", with = list(outage))
+		apc_delay += 1 TICK
 
 	// Effect 3: Break solar arrays
 	for(var/obj/machinery/power/solar/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))

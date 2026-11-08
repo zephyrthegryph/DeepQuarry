@@ -591,7 +591,7 @@ CAPABILITIES(/datum/contract/social)
 		"asset_name" = source.name,
 		"asset_label" = asset_label,
 		"atom_type" = source.type,
-		"fact_id" = "infrastructure-damage:[handle_text(handle_of(source))]",
+		"fact_id" = contract_infrastructure_fact_id(handle_of(source)),
 		"fact_revision" = revision,
 		"fact_active" = current_damage > 0,
 		"metrics" = list(
@@ -600,7 +600,7 @@ CAPABILITIES(/datum/contract/social)
 			"maximum_integrity" = source.max_integrity,
 		),
 		"detail" = "[source] sustained [round(amount, 0.1)] integrity damage in [get_area(source)].",
-	), "infrastructure-damage:[handle_text(handle_of(source))]:[revision]", source)
+	), contract_infrastructure_occurrence_id(handle_of(source), revision), source)
 
 /proc/contract_report_station_repair(atom/source, amount)
 	if(!SScontracts || !contract_atom_is_station_infrastructure(source) || !isnum(amount) || amount <= 0)
@@ -619,7 +619,7 @@ CAPABILITIES(/datum/contract/social)
 		"integrity" = source.get_integrity(),
 		"maximum_integrity" = source.max_integrity,
 		"detail" = "Restored [round(amount, 0.1)] integrity to [source] in [get_area(source)].",
-	), "infrastructure-repair:[handle_text(handle_of(source))]:[world.time]:[source.get_integrity()]", source)
+	), "[handle_text(handle_of(source))]:[world.time]:[source.get_integrity()]:infrastructure-repair", source)
 	var/revision = SScontracts.next_infrastructure_revision(source)
 	var/current_damage = max(0, source.max_integrity - source.get_integrity())
 	emit_contract_event(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, list(
@@ -628,7 +628,7 @@ CAPABILITIES(/datum/contract/social)
 		"asset_name" = source.name,
 		"asset_label" = asset_label,
 		"atom_type" = source.type,
-		"fact_id" = "infrastructure-damage:[handle_text(handle_of(source))]",
+		"fact_id" = contract_infrastructure_fact_id(handle_of(source)),
 		"fact_revision" = revision,
 		"fact_active" = current_damage > 0,
 		"metrics" = list(
@@ -637,7 +637,7 @@ CAPABILITIES(/datum/contract/social)
 			"maximum_integrity" = source.max_integrity,
 		),
 		"detail" = "[source] damage state was revised after repairs in [get_area(source)].",
-	), "infrastructure-damage:[handle_text(handle_of(source))]:[revision]", source)
+	), contract_infrastructure_occurrence_id(handle_of(source), revision), source)
 
 /// Grade progress is deliberately virtual so portfolios can incorporate both
 /// their value and breadth dimensions without teaching the social contract
@@ -652,3 +652,12 @@ CAPABILITIES(/datum/contract/social)
 	return min(value_ratio, clamp(portfolio_category_count() / distinct_category_target, 0, 1))
 SCHEMA(/datum/contract/social, minimum_grade_ratio, num())
 SCHEMA(/datum/contract/social, success_grade_ratio, num())
+
+// Contract keys put the part that varies first. A key that is a constant prefix and then a number ("infrastructure-damage:<handle>") stalled
+// the server for about 0.9 s at roughly every 490th new key of one prefix (BYOND's string table: the alloc_stall bench reproduces it with
+// any constant prefix, and not with the number first); a station blast publishes thousands of them.
+/proc/contract_infrastructure_fact_id(handle)
+	return "[handle_text(handle)]:infrastructure-damage"
+
+/proc/contract_infrastructure_occurrence_id(handle, revision)
+	return "[handle_text(handle)]:[revision]:infrastructure-damage"
