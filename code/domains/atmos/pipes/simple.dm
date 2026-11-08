@@ -316,4 +316,4 @@
 	level = 2
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/simple)
-	setup(PROC_REF(prepare_pipe_renderer))
+	setup(PROC_REF(prepare_pipe_renderer), early = TRUE) // the renderer's icon is set before the chain reads the sprite

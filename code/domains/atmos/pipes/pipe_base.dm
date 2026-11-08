@@ -41,6 +41,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	preset(nameof(material_template), PROC_REF(drive_material_template), from = list(nameof(material_total)), when = nameof(power_rating), default = /datum/material_template/pressure)
 	configure(buckle_rules(require_restraints = 1, lying = -1))
 	unpowered_machine() // a pipe draws nothing: it carries no has_power for an APC flip to re-evaluate
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE)) // it lies under the floor or on the plating: nothing glows under it to block
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
 	owns_many(nameof(leak_watches), /datum/native_watch/world)
 	op("unwrench", tool(TOOL_WRENCH), wait(1 SECOND), when(PROC_REF(wrenchable)),
