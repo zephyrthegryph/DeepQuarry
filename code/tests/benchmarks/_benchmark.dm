@@ -75,11 +75,13 @@
 
 /// Waits for deferred asset generation so it isn't measured as scenario work.
 /datum/benchmark/proc/wait_for_assets(timeout_seconds = 120)
+	timeout_seconds = param("asset_timeout", timeout_seconds) // --arg=asset_timeout=N: a slow sheet generation on a loaded machine
 	var/waited = 0
 	while((length(asset_loading_generate_queue()) || asset_loading_assets_generating() || asset_loading_last_queue_len()) && waited++ < world.fps * timeout_seconds)
 		stoplag()
 	if(waited >= world.fps * timeout_seconds)
 		fail("deferred assets did not settle within [timeout_seconds]s")
+	metric("assets_settle_seconds", waited / world.fps, "s", "none")
 
 /// Sleeps until `subsystem` has fired `count` more times.
 /datum/benchmark/proc/wait_fires(datum/system/subsystem, count, timeout_seconds = 300)

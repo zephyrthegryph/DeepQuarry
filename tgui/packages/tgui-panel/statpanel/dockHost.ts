@@ -20,7 +20,8 @@ import {
 } from './windowDock';
 
 const SAVE_DELAY_MS = 1000;
-const ORIGIN_POLL_MS = 1000;
+/** A slow fallback only: the origin is measured on load, resize, dock changes and drag starts (window_system.md 10.4). */
+const ORIGIN_POLL_MS = 5000;
 
 const isPoint = (value: unknown): value is Point =>
   !!value &&
@@ -85,6 +86,24 @@ async function pageOrigin(): Promise<Point | null> {
   }
 }
 
+/**
+ * Tells the page which side of it the chat is on (`html[data-chat-side]`), so
+ * the panel leaves out its own frame edge there: the chat's frame is the one
+ * line between them, the same 3px gap as every other edge, not two frames.
+ */
+async function markChatSide(): Promise<void> {
+  try {
+    const got = await Byond.winget('rpane.rpanewindow', 'left');
+    const side = got === 'outputwindow' ? 'top' : 'bottom';
+    if (document.documentElement.dataset.chatSide !== side) {
+      document.documentElement.dataset.chatSide = side;
+      console.log('statpanel: chat side', side);
+    }
+  } catch {
+    // An older client: both frames stay.
+  }
+}
+
 export class DockHost {
   state: DockState = emptyDock();
   private version = 0;
@@ -99,9 +118,14 @@ export class DockHost {
   /** While a header is dragged every window hides, so the drop targets show. */
   dragging = false;
   private frame = 0;
+  private loggedHidden = new Set<string>();
 
   constructor() {
-    window.addEventListener('resize', () => this.refreshOrigin());
+    window.addEventListener('resize', () => {
+      this.refreshOrigin();
+      markChatSide();
+    });
+    markChatSide();
     setInterval(() => {
       if (this.state.groups.length) {
         this.refreshOrigin();
@@ -234,6 +258,9 @@ export class DockHost {
 
   setDragging(dragging: boolean) {
     this.dragging = dragging;
+    if (dragging) {
+      this.refreshOrigin();
+    }
     this.version++;
     for (const listener of this.listeners) listener();
     this.schedule();
@@ -271,15 +298,21 @@ export class DockHost {
   /** Re-places on the next frame (layout, scroll and resize all come here). */
   schedule = () => {
     if (!this.frame) {
-      this.frame = requestAnimationFrame(() => {
-        this.frame = 0;
-        this.place();
-      });
+      this.frame = requestAnimationFrame(() => this.placeNow());
     }
   };
 
-  private place() {
-    const shown = this.dragging ? [] : shownIds(this.state);
+  /**
+   * Places every docked window over its entry's body: shown ones get their
+   * screen rect, the rest are hidden. Only windows whose placement changed
+   * are sent, each as its own `Byond.winset(id, params)`, all in the same
+   * frame. (A bulk `Byond.winset({ "id.prop": ... })` with no id sent nothing
+   * BYOND applied, so no docked window was ever shown: 2026-11-08.)
+   */
+  placeNow() {
+    this.frame = 0;
+    // Windows are never hidden for a drag: they ride along with their entry (its live transform is in the rect).
+    const shown = shownIds(this.state);
     const ratio = window.devicePixelRatio || 1;
     const clip = this.area?.getBoundingClientRect();
     for (const id of Object.keys(this.state.windows)) {
@@ -307,6 +340,19 @@ export class DockHost {
         continue;
       }
       this.placed.set(id, next);
+      if (!params && !this.loggedHidden.has(id)) {
+        // Hard to see from outside: say why a docked window is not on screen.
+        this.loggedHidden.add(id);
+        console.log('window dock: not placed', {
+          id,
+          shown: shown.includes(id),
+          body: !!body,
+          area: !!clip,
+          origin: this.origin,
+        });
+      } else if (params) {
+        this.loggedHidden.delete(id);
+      }
       Byond.winset(id, params ?? { 'is-visible': false });
     }
   }

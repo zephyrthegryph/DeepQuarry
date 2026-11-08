@@ -72,6 +72,9 @@ const ALLOWED_BLOCK = new Set([
   'tr',
   'td',
   'th',
+  // Collapsible sections of admin reports (the generated-station architecture map).
+  'details',
+  'summary',
 ]);
 
 export const isSafeHtmlImageSrc = (src: string): boolean =>
@@ -89,6 +92,44 @@ export const safeHtmlColor = (value: string | null): string | undefined => {
 export const safeHtmlFontFace = (value: string | null): string | undefined => {
   const face = value?.trim() ?? '';
   return /^[a-z0-9 _,-]{1,80}$/i.test(face) ? face : undefined;
+};
+
+// Inline styles admin reports use (the tick report's overrun rows, the architecture map's dark page): each declaration is
+// kept only for a listed property whose value passes that property's check, so no url(), expression() or positioning
+// gets through.
+const LENGTH = /^\d+(?:\.\d+)?(?:px|em|rem|%)?$/i;
+const STYLE_RULES: Record<string, (value: string) => string | undefined> = {
+  color: (v) => safeHtmlColor(v),
+  background: (v) => safeHtmlColor(v),
+  'background-color': (v) => safeHtmlColor(v),
+  'font-family': (v) => safeHtmlFontFace(v),
+  'font-size': (v) => (LENGTH.test(v) ? v : undefined),
+  'line-height': (v) => (LENGTH.test(v) ? v : undefined),
+  'font-weight': (v) => (/^(?:bold|normal|[1-9]00)$/i.test(v) ? v : undefined),
+  'font-style': (v) => (/^(?:italic|normal)$/i.test(v) ? v : undefined),
+  'text-align': (v) => (/^(?:left|right|center)$/i.test(v) ? v : undefined),
+};
+
+const cssToReactKey = (prop: string) =>
+  prop === 'background'
+    ? 'backgroundColor'
+    : prop.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+
+/** The allowed declarations of a style attribute, as a React style object (undefined when none survive). */
+export const safeHtmlStyle = (
+  value: string | null,
+): Record<string, string> | undefined => {
+  if (!value) return undefined;
+  const style: Record<string, string> = {};
+  for (const declaration of value.split(';')) {
+    const colon = declaration.indexOf(':');
+    if (colon < 0) continue;
+    const prop = declaration.slice(0, colon).trim().toLowerCase();
+    const rule = STYLE_RULES[prop];
+    const kept = rule?.(declaration.slice(colon + 1).trim());
+    if (kept) style[cssToReactKey(prop)] = kept;
+  }
+  return Object.keys(style).length ? style : undefined;
 };
 
 const parseByondLink = (
@@ -217,7 +258,11 @@ const renderNode = (node: ChildNode, key: number, props: Props): ReactNode => {
         </Box>
       );
     }
-    return <span key={key}>{children}</span>;
+    return (
+      <span key={key} style={safeHtmlStyle(el.getAttribute('style'))}>
+        {children}
+      </span>
+    );
   }
 
   if (tag === 'font') {
@@ -239,11 +284,23 @@ const renderNode = (node: ChildNode, key: number, props: Props): ReactNode => {
     );
   }
 
+  if (tag === 'details') {
+    return (
+      <details key={key} open={el.hasAttribute('open')}>
+        {children}
+      </details>
+    );
+  }
+
   if (ALLOWED_INLINE.has(tag) || ALLOWED_BLOCK.has(tag)) {
     // Dynamic JSX element — typed as ElementType so TS doesn't try to
     // resolve every possible HTML tag against JSX.IntrinsicElements.
     const Tag = tag as ElementType;
-    return <Tag key={key}>{children}</Tag>;
+    return (
+      <Tag key={key} style={safeHtmlStyle(el.getAttribute('style'))}>
+        {children}
+      </Tag>
+    );
   }
 
   // Unknown tag: render children as fallback so we don't lose content.
@@ -254,13 +311,15 @@ export const HtmlRenderer = (props: Props) => {
   if (!props.html) return null;
   // Wrap in a host node so DOMParser gives us a single fragment with all
   // top-level children accessible.
-  const doc = new DOMParser().parseFromString(
-    `<div>${props.html}</div>`,
-    'text/html',
+  // A whole page (<html><body style=...>) keeps its body's allowed style on a wrapper; a fragment parses into the body too.
+  const doc = new DOMParser().parseFromString(props.html, 'text/html');
+  const nodes = Array.from(doc.body.childNodes).map((c, i) =>
+    renderNode(c, i, props),
   );
-  const root = doc.body.firstChild as Element | null;
-  if (!root) return null;
-  return (
-    <>{Array.from(root.childNodes).map((c, i) => renderNode(c, i, props))}</>
+  const bodyStyle = safeHtmlStyle(doc.body.getAttribute('style'));
+  return bodyStyle ? (
+    <Box style={{ ...bodyStyle, padding: '0.5em' }}>{nodes}</Box>
+  ) : (
+    nodes
   );
 };

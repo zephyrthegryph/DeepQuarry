@@ -15,6 +15,7 @@
 
 /mob/living/Login()
 	..()
+	settle_active_hand() // never spawn or take a body with a missing hand selected
 	on_client_changed("login")
 	sync_game_settings()
 	//Mind updates

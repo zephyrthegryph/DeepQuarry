@@ -73,6 +73,18 @@
       justify-content: center;
       line-height: 1;
     }
+
+    // The button's content box (tgui-core: a stretched block) centres the icon on the row, not at its top.
+    > .Button .Button__content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: stretch;
+    }
+
+    > .Button .Button--icon {
+      line-height: 1;
+    }
   }
 
   // The tab strip: the area a dragged tab is held inside (dq/Tabs.tsx clamps it).

@@ -66,8 +66,8 @@
 	.[HAIR_ACCESSORY_LAYER] = hair[2]
 	.[EYES_LAYER] = eyes_look(look)
 	var/list/tail = tail_look()
-	if(tail)
-		.[tail[1]] = tail[2]
+	for(var/list/tail_part as anything in tail)
+		.[tail_part[1]] = tail_part[2]
 	.[WING_LAYER] = wing_look(FALSE)
 	if(wing_style?.multi_dir)
 		.[WING_LOWER_LAYER] = wing_look(TRUE)
@@ -76,7 +76,7 @@
 	.[MODIFIER_EFFECTS_LAYER] = modifier_look()
 	.[FIRE_LAYER] = fire_look()
 	.[MOB_WATER_LAYER] = water_look()
-	worn_look(., look, !!tail && (tail[1] == TAIL_LOWER_LAYER || tail[1] == TAIL_UPPER_LAYER))
+	worn_look(., look, length(tail) > 0)
 
 
 /// The human's layers as one flat list of images (look_layers()), less the layer indices in `discarded`.
@@ -552,33 +552,61 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 
 // ---- the tail, wings and bellies ----
 
-/mob/living/carbon/human/proc/get_tail_layer()
-	// Layer follows facing direction: the tail sits under the clothing when facing south, east or west, and over the uniform
-	// (TAIL_UPPER_LAYER) when facing north, where it hangs over the back of the pants. Individual tail sprites may override the lower dirs.
-	var/list/lower_dirs = list(SOUTH, EAST, WEST)
-	if(tail_style)
-		lower_dirs = tail_style.lower_layer_dirs
-	if(dir in lower_dirs)
-		return TAIL_LOWER_LAYER
-	return TAIL_UPPER_LAYER
+/// The facings in which the tail sits under the clothing (TAIL_LOWER_LAYER): south, east and west unless the tail sprite names others.
+/// Facing the rest it hangs over the uniform (TAIL_UPPER_LAYER), over the back of the pants.
+/mob/living/carbon/human/proc/tail_lower_dirs()
+	return tail_style ? tail_style.lower_layer_dirs : list(SOUTH, EAST, WEST)
 
-/// The tail: list(layer, image), or null for none.
+/// The layer the tail shows on while facing as the human does now.
+/mob/living/carbon/human/proc/get_tail_layer()
+	return (dir in tail_lower_dirs()) ? TAIL_LOWER_LAYER : TAIL_UPPER_LAYER
+
+/// The tail: a list of list(layer, image), empty for none. The tail is drawn twice, once on each tail layer, each copy keeping only the frames of
+/// the facings it shows in (icon_keep_dirs()): BYOND picks the frame for the dir, so turning round needs no redraw (the draw reads no dir).
 /mob/living/carbon/human/proc/tail_look()
-	var/tail_layer = get_tail_layer()
+	. = list()
 	if(tail_style?.clip_mask_state)
-		tail_layer = TAIL_UPPER_LAYER		// Use default, let clip mask handle everything
-	var/image/tail_image = get_tail_image(BODY_LAYER + tail_layer)
-	if(tail_image)
-		return list(tail_layer, tail_image)
+		var/image/clipped = get_tail_image(BODY_LAYER + TAIL_UPPER_LAYER) // one copy over the uniform: the clip mask handles every facing
+		if(clipped)
+			. += list(list(TAIL_UPPER_LAYER, clipped))
+		return
+	var/list/lower_dirs = tail_lower_dirs()
+	var/list/upper_dirs = GLOB.cardinal - lower_dirs
+	for(var/tail_layer in list(TAIL_LOWER_LAYER, TAIL_UPPER_LAYER))
+		var/list/dirs = tail_layer == TAIL_LOWER_LAYER ? lower_dirs : upper_dirs
+		if(!length(dirs))
+			continue
+		var/image/tail_image = get_tail_image(BODY_LAYER + tail_layer, dirs)
+		if(tail_image)
+			. += list(list(tail_layer, tail_image))
+	if(length(.))
+		return
 	var/species_tail = species.get_tail(src) // Species tail icon_state prefix.
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!species_tail || (suit && (worn_of(suit).hides & HIDETAIL)))
-		return null
+		return
 	var/obj/item/organ/external/chest = limb_tagged(BP_TORSO)
 	var/state = "[species_tail]_s"
 	if(species.get_tail_animation(src))
 		state = (stat == DEAD) ? "[species_tail]_static" : (tail_anim_state || "[species_tail]_idle[tail_idle_variant()]")
-	return list(tail_layer, human_layer_image(get_tail_icon(), state, BODY_LAYER + tail_layer, alpha = chest?.transparent ? 180 : 255))
+	for(var/tail_layer in list(TAIL_LOWER_LAYER, TAIL_UPPER_LAYER))
+		var/list/dirs = tail_layer == TAIL_LOWER_LAYER ? lower_dirs : upper_dirs
+		if(!length(dirs))
+			continue
+		var/icon/masked = human_look_icon("tail_dirs|[species.get_race_key(src)]|[looks.skin_color]|[looks.hair_color]|[state]|[jointext(dirs, ",")]", "build_species_tail_dirs", state, dirs)
+		. += list(list(tail_layer, human_layer_image(masked, "", BODY_LAYER + tail_layer, alpha = chest?.transparent ? 180 : 255)))
+
+/// The species tail in `state`, keeping only the frames of `dirs`.
+/mob/living/carbon/human/proc/build_species_tail_dirs(state, list/dirs)
+	return icon_keep_dirs(icon(get_tail_icon(), state), dirs)
+
+/// `I` (one state, any frames) with only its `dirs` facings drawn, the others blank. An overlay made from it shows only while its holder faces one
+/// of `dirs`, so a draw that layers a part by facing needs no redraw when the holder turns.
+/proc/icon_keep_dirs(icon/I, list/dirs)
+	var/icon/kept = icon('icons/mob/human.dmi', "blank")
+	for(var/facing in dirs)
+		kept.Insert(icon(I, dir = facing), dir = facing)
+	return kept
 
 /// Which of the ten idle loops (`<tail>_idle0` to `<tail>_idle9`, same frames at shifted delays) this human's animated species tail
 /// plays until an emote picks another: fixed per mob, so a crowd does not wag in step, and the same on every redraw.
@@ -605,15 +633,16 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return tail_icon
 
 /// A custom or prosthetic tail's image at `layer`, or null.
-/mob/living/carbon/human/proc/get_tail_image(layer = FLOAT_LAYER)
+/// `dirs`: only those facings are drawn (icon_keep_dirs()); null draws every facing.
+/mob/living/carbon/human/proc/get_tail_image(layer = FLOAT_LAYER, list/dirs = null)
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!tail_style || (suit && (worn_of(suit).hides & HIDETAIL) && !istaurtail(tail_style)) || tail_hidden)
 		return null
 	var/loaf = tail_style.can_loaf && resting
 	var/wag = wagging && tail_style.ani_state
-	return human_look_icon("tail|[tail_style.type]|[loaf]|[wag]|[looks.tail_color]|[looks.tail_color2]|[looks.tail_color3]|[looks.tail_alpha]|[layer]", "build_tail_image", loaf, wag, layer)
+	return human_look_icon("tail|[tail_style.type]|[loaf]|[wag]|[looks.tail_color]|[looks.tail_color2]|[looks.tail_color3]|[looks.tail_alpha]|[layer]|[dirs ? jointext(dirs, ",") : "all"]", "build_tail_image", loaf, wag, layer, dirs)
 
-/mob/living/carbon/human/proc/build_tail_image(loaf, wag, layer)
+/mob/living/carbon/human/proc/build_tail_image(loaf, wag, layer, list/dirs)
 	var/tail_file = loaf ? tail_style.icon_loaf : tail_style.icon
 	var/icon/tail_s = new/icon("icon" = tail_file, "icon_state" = (wag ? tail_style.ani_state : tail_style.icon_state))
 	if(tail_style.do_colouration)
@@ -626,6 +655,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		var/icon/overlay = new/icon("icon" = tail_file, "icon_state" = wag ? tail_style.extra_overlay2_w : tail_style.extra_overlay2)
 		overlay.Blend(looks.tail_color3, tail_style.color_blend_mode)
 		tail_s.Blend(overlay, ICON_OVERLAY)
+	if(dirs)
+		tail_s = icon_keep_dirs(tail_s, dirs)
 	var/image/working = image(tail_s)
 	if(tail_style.em_block)
 		working = look_composed_image(working, list(em_block_image_generic(working)))

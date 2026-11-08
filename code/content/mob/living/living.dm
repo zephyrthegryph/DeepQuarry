@@ -778,16 +778,15 @@
 	else // No colors, so remove the client's color.
 		animate(client, color = null, time = 10)
 
+/// Swaps to the other hand, if it exists and works; a body with one working hand keeps it, one with none selects none.
 /mob/living/swap_hand()
-	set_hand(!hand)
+	var/target = isnull(hand) ? FALSE : !hand
+	if(!hand_works(target))
+		settle_active_hand() // the other hand is gone: stay on (or move to) the one that works
+		return
+	set_hand(target)
 	op_keep_poke(src, OP_KEEP_HAND)
-	if(hud_used?.l_hand_hud_object && hud_used.r_hand_hud_object)
-		if(hand)	//This being 1 means the left hand is in use
-			hud_used.l_hand_hud_object.icon_state = "l_hand_active"
-			hud_used.r_hand_hud_object.icon_state = "r_hand_inactive"
-		else
-			hud_used.l_hand_hud_object.icon_state = "l_hand_inactive"
-			hud_used.r_hand_hud_object.icon_state = "r_hand_active"
+	update_hand_hud()
 
 	// We just swapped hands, so the thing in our inactive hand will notice it's not the focus
 	var/obj/item/I = get_inactive_hand()
@@ -805,8 +804,15 @@
 		if(selhand == "left" || selhand == "l")
 			selhand = 1
 
-	if(selhand != src.hand)
-		swap_hand()
+	// Only a hand that exists and works can be selected.
+	if((selhand ? TRUE : FALSE) != (src.hand ? TRUE : FALSE) || isnull(src.hand))
+		if(hand_works(selhand ? TRUE : FALSE))
+			set_hand(selhand ? TRUE : FALSE)
+			op_keep_poke(src, OP_KEEP_HAND)
+			update_hand_hud()
+			var/obj/item/I = get_inactive_hand()
+			if(I)
+				I.in_inactive_hand(src)
 
 /mob/living/throw_item(atom/target, stance = I_HURT)
 	if(incapacitated() || !target || istype(target, /atom/movable/screen) || is_incorporeal())
@@ -1428,3 +1434,37 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 		look.overlay(entry)
 	look.overlay(look_overlay_image('icons/obj/glamour.dmi', "animation", plane = PLANE_LIGHTING_ABOVE), when = glamour_shift)
 	look_status_indicators(look)
+
+// ---- The active hand ----
+// `hand` is TRUE for the left hand, FALSE for the right, null for none: swap and select only ever pick a hand that exists and works, and
+// a spawn or any limb change (the part attach/detach hooks, code/domains/body/parts/attach.dm) moves the selection off a hand that is gone.
+
+/// Whether this mob's left (`left` TRUE) or right hand exists and works: its hand slot is declared and usable (the limb is there and not a
+/// stump, the species and the mob allow it). A body may add more (a human's hand must not be dead or mutated).
+/mob/living/proc/hand_works(left)
+	return body_slot_usable(left ? SLOT_ID_HAND_L : SLOT_ID_HAND_R)
+
+/// Keeps the active hand on a hand that works: the current one if it still does, else the right, else the left, else none (null).
+/mob/living/proc/settle_active_hand()
+	if(!isnull(hand) && hand_works(hand ? TRUE : FALSE))
+		return
+	var/next = null
+	if(hand_works(FALSE))
+		next = FALSE
+	else if(hand_works(TRUE))
+		next = TRUE
+	if(next == hand && !isnull(hand))
+		return
+	if(isnull(next) && isnull(hand))
+		update_hand_hud()
+		return
+	log_world("HANDS: [src] ([type]) active hand [isnull(hand) ? "none" : (hand ? "left" : "right")] -> [isnull(next) ? "none" : (next ? "left" : "right")]")
+	set_hand(next)
+	update_hand_hud()
+
+/// Shows which hand is active on the HUD; neither when no hand is.
+/mob/living/proc/update_hand_hud()
+	if(!hud_used?.l_hand_hud_object || !hud_used.r_hand_hud_object)
+		return
+	hud_used.l_hand_hud_object.icon_state = (!isnull(hand) && hand) ? "l_hand_active" : "l_hand_inactive"
+	hud_used.r_hand_hud_object.icon_state = (!isnull(hand) && !hand) ? "r_hand_active" : "r_hand_inactive"

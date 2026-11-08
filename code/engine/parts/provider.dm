@@ -85,6 +85,11 @@
 		container_state.act_gen++
 		if(container_state.observed?[OP_KEEP_HAND])
 			publish_change(container, OP_KEEP_HAND)
+	// What a container holds inside its contents changed what it carries too (an implant put into an organ of a body): every holder up the
+	// chain, to its turf, has changed for a menu or a wait cached on it.
+	for(var/atom/up = container.loc; up && !isturf(up); up = up.loc)
+		if(up.rx)
+			up.rx.act_gen++
 
 /// A keep of a waiting op on `D` state_changed (the actor swapped hands): published when something watches it.
 /proc/op_keep_poke(datum/D, key)
@@ -285,29 +290,29 @@
 		at = at.loc
 	return at
 
-/// The reason an op of `plan` cannot reach `target`, or null when it can, and the provider that does it (set in `chosen`). Providers are
-/// the actor's and the held item's now.
+/// Whether an op of `plan` can reach `target`: the provider that does it (a /datum/prov), null when it reaches with no provider, else the reason
+/// it cannot (a /datum/msg type or text). Providers are the actor's and the held item's now; nothing is allocated.
 /// `provs`, when given, is providers_for(actor, held) already read (a resolution reads it once for all its candidates).
-/proc/reach_gate(mob/actor, atom/target, obj/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/chosen, list/provs = null)
+/proc/reach_gate(mob/actor, atom/target, obj/held, datum/op_plan/P, datum/entry/part/bind/B, authority, list/provs = null)
 	var/policy = op_reach_policy(P, B)
 	var/need = op_affordance(P, B, held)
 	if(isnull(provs))
 		provs = providers_for(actor, held)
-	var/list/fits = list()
 	// The authority a provider has to carry is the input's narrowed to what the binding accepts: a borg's click carries both physical and remote
 	// access, and a hand op takes only its hand, a remote() op only its interface.
 	if(!(authority & AUTH_ADMIN))
 		var/chosen_authority = LAZYACCESS(P.selects, "authority")
 		authority &= isnull(chosen_authority) ? B.authority_mask() : chosen_authority
+	// The providers that fit (the affordance, the authority, what they carry), and the one of them that would perform it.
+	var/obj/carrier = length(provs) ? actor?.held_carrier() : null
+	var/fits = 0
+	var/datum/prov/best = null
 	for(var/datum/prov/V as anything in provs)
-		if(need && (V.aff() & need) != need)
+		if(!reach_gate_fits(V, need, authority, policy, held))
 			continue
-		if(!(V.authority_mask() & authority) && (policy != REACH_ANY))
-			continue
-		if(!V.accepts(held))
-			continue
-		fits += V
-	if(need && !length(fits))
+		fits++
+		best = reach_better_provider(best, V, held, carrier)
+	if(need && !fits)
 		return /datum/msg/op/no_hands
 	// Distance (REACH_ADJACENT only), then exposure (every spatial policy), then each op's own provider.
 	var/atom/surface = isatom(target) ? reach_surface(actor, target) : null
@@ -321,23 +326,24 @@
 	switch(policy)
 		if(REACH_ADJACENT)
 			// Each provider reaches the surface when its reach covers the distance (and a clear line when it asks for one).
-			var/list/able = list()
-			if(!need && !length(fits))
+			if(!need && !fits)
 				// an op that needs nothing of its provider (by(0): a mouse climbing into a bag) reaches what is next to the actor
 				if(dist > 1)
 					return /datum/msg/op/unreachable
-				able = null
-			for(var/datum/prov/V as anything in fits)
-				var/range = V.reach()
-				if(isnull(range) || range < dist)
-					continue
-				if(V.entry.args["los"] && dist > 0 && !reach_line_clear(actor, surface))
-					continue
-				able += V
-			if(!isnull(able))
-				if(!length(able))
+			else
+				var/datum/prov/best_able = null
+				for(var/datum/prov/V as anything in provs)
+					if(!reach_gate_fits(V, need, authority, policy, held))
+						continue
+					var/range = V.reach()
+					if(isnull(range) || range < dist)
+						continue
+					if(V.entry.args["los"] && dist > 0 && !reach_line_clear(actor, surface))
+						continue
+					best_able = reach_better_provider(best_able, V, held, carrier)
+				if(!best_able)
 					return /datum/msg/op/unreachable
-				fits = able
+				best = best_able
 		if(REACH_INSIDE)
 			var/inside = FALSE
 			if(isatom(target) && actor)
@@ -361,28 +367,35 @@
 		if(why)
 			return why
 	// The provider: the held item's (or its carrier's) first, then the hand, then any other by shortest reach.
-	if(length(fits))
-		chosen += reach_pick_provider(fits, held, actor?.held_carrier())
-	return null
+	return best
+
+/// Does provider V fit an op that needs affordances `need` under `authority` (a REACH_ANY op asks no authority of it), holding `held`?
+/proc/reach_gate_fits(datum/prov/V, need, authority, policy, obj/held)
+	if(need && (V.aff() & need) != need)
+		return FALSE
+	if(!(V.authority_mask() & authority) && (policy != REACH_ANY))
+		return FALSE
+	return V.accepts(held)
 
 /// The provider that performs an op among `fits`: the held item's (or the carrier's that holds it: a cyborg's gripper), else the shortest reach.
 /proc/reach_pick_provider(list/fits, obj/held, obj/carrier = null)
 	var/datum/prov/best = null
 	for(var/datum/prov/V as anything in fits)
-		if(!best)
-			best = V
-			continue
-		var/best_held = (best.source == held) || (carrier && best.source == carrier)
-		var/this_held = (V.source == held) || (carrier && V.source == carrier)
-		if(this_held != best_held)
-			if(this_held)
-				best = V
-			continue
-		var/best_reach = isnull(best.reach()) ? 1000 : best.reach()
-		var/this_reach = isnull(V.reach()) ? 1000 : V.reach()
-		if(this_reach < best_reach)
-			best = V
+		best = reach_better_provider(best, V, held, carrier)
 	return best
+
+/// The better of `best` (or null) and V, met in this order, to perform an op: one the held item (or its carrier) gives beats one it does not,
+/// then the shorter reach; a tie keeps the one met first.
+/proc/reach_better_provider(datum/prov/best, datum/prov/V, obj/held, obj/carrier)
+	if(!best)
+		return V
+	var/best_held = (best.source == held) || (carrier && best.source == carrier)
+	var/this_held = (V.source == held) || (carrier && V.source == carrier)
+	if(this_held != best_held)
+		return this_held ? V : best
+	var/best_reach = isnull(best.reach()) ? 1000 : best.reach()
+	var/this_reach = isnull(V.reach()) ? 1000 : V.reach()
+	return this_reach < best_reach ? V : best
 
 /// Chebyshev distance from the actor to the surface the target is reached through, or null on another z-level.
 /proc/reach_distance(mob/actor, atom/surface)
