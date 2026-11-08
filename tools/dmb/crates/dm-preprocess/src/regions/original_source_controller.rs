@@ -37,6 +37,9 @@ impl OriginalMacroHost for Host<'_>{
  fn take_docs_for_define(&mut self,a:&SettingAdmission<'_>)->io::Result<Rows<Doc<'static>>>{self.0.borrow_mut().ordinary.take_docs_for_define(a)}
  fn before_identifier(&mut self,name:&str,origin:Origin,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<()>{let mut state=self.0.borrow_mut();state.line(origin);state.ordinary.before_identifier(name,origin,queue,a)}
  fn ordinary_token(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<()>{let mut state=self.0.borrow_mut();state.line(token.origin);state.ordinary.ordinary_token(token,queue,a)}
+ fn ordinary_token_or_direct(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<Option<(Token<'static>,super::original_output_trace::OriginalOutputTrace)>>{
+  let mut state=self.0.borrow_mut();state.line(token.origin);state.ordinary.ordinary_direct_using(token,queue,a)
+ }
  fn direct_noncall_output(&mut self,token:&Token<'static>,a:&SettingAdmission<'_>)->io::Result<()>{self.0.borrow_mut().ordinary.direct_noncall_output(token,a)}
  fn invocation(&mut self,_:&str,_:Origin,a:&SettingAdmission<'_>)->io::Result<()>{poll(a)}
  fn dynamic(&mut self,file:bool,invocation:Origin,current:Option<usize>,last:Option<Origin>,a:&SettingAdmission<'_>)->io::Result<Token<'static>>{

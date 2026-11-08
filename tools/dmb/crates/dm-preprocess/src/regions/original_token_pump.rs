@@ -51,7 +51,15 @@ impl OriginalTokenPump{
    // Direct noncall '#' output is drained above and never redispatched here.
    if matches!(token.value,Value::Punct("#")){self.directive=true;return Ok(PumpEvent::Directive{hash:token.origin})}
    if original_conditional::is_disabled_using(conditionals,a)?{continue}
-   if !matches!(token.value,Value::Ident{..}){source.host.ordinary_token(token,source.queue,a)?;continue}
+   if !matches!(token.value,Value::Ident{..}){
+    if let Some((token,trace))=source.host.ordinary_token_or_direct(token,source.queue,a)?{
+     // The old loop polls after successful push and before any output.
+     a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+     self.delivery=Some(trace);
+     return Ok(PumpEvent::Token(token))
+    }
+    continue
+   }
    self.cursor.begin_outer_using(token,a)?;self.outer=true;
   }
  }

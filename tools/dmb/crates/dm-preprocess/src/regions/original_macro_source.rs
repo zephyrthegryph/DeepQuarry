@@ -23,6 +23,12 @@ pub(super) trait OriginalMacroHost{
  /// SAME old generic real_next branch: accumulate following docs; update
  /// interpolation depth; flush pending docs before nonwhitespace output.
  fn ordinary_token(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<()>;
+ /// The outer pump drains one ordinary output immediately. Buffered
+ /// conditionals and generic hosts continue through the actual queue.
+ fn ordinary_token_or_direct(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<Option<(Token<'static>,super::original_output_trace::OriginalOutputTrace)>>{
+  self.ordinary_token(token,queue,a)?;
+  Ok(None)
+ }
  /// Direct second token of a noncall bypasses generic docs/lookup processing.
  fn direct_noncall_output(&mut self,token:&Token<'static>,a:&SettingAdmission<'_>)->io::Result<()>;
  fn dynamic(&mut self,file:bool,invocation:Origin,current_occurrence:Option<usize>,last_input:Option<Origin>,a:&SettingAdmission<'_>)->io::Result<Token<'static>>;

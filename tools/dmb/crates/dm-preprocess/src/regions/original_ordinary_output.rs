@@ -25,9 +25,17 @@ impl OriginalOrdinaryOutput{
  fn interpolation_token(&mut self,value:&Value<'_>){match value{Value::InterpBegin(_)=>self.interpolation=self.interpolation.wrapping_add(1),Value::InterpEnd(_)=>self.interpolation=self.interpolation.wrapping_sub(1),_=>()}}
  pub(super) fn direct_noncall_output(&mut self,token:&Token<'static>,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;self.interpolation_token(&token.value);Ok(())}
  pub(super) fn ordinary_token(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<()>{
+  self.ordinary_using(token,queue,false,a).map(|_|())
+ }
+ pub(super) fn ordinary_direct_using(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<Option<(Token<'static>,super::original_output_trace::OriginalOutputTrace)>>{
+  self.ordinary_using(token,queue,true,a)
+ }
+ fn ordinary_using(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,direct:bool,a:&SettingAdmission<'_>)->io::Result<Option<(Token<'static>,super::original_output_trace::OriginalOutputTrace)>>{
   self.check(a)?;let result=(||{self.interpolation_token(&token.value);
-   if matches!(&token.value,Value::DocComment{kind,..}if following(*kind)){self.docs.push(Some(token),a)?;return Ok(())}
-   if !whitespace(&token.value){self.flush_docs(queue,a)?;}queue.push(token,a)
+   if matches!(&token.value,Value::DocComment{kind,..}if following(*kind)){self.docs.push(Some(token),a)?;return Ok(None)}
+   if !whitespace(&token.value){self.flush_docs(queue,a)?;}
+   if direct&&queue.is_empty(){return queue.direct_using(token,a).map(Some)}
+   queue.push(token,a)?;Ok(None)
   })();if result.is_err(){self.failed=true}result
  }
  /// #define drains the SAME pending docs once. Actual raw-frame/value/point

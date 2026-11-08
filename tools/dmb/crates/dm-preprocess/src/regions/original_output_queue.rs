@@ -20,6 +20,14 @@ impl<'s>OriginalOutputQueue<'s>{
   }
   let result=self.rows.push(Some(Entry{token,trace:self.trace.clone()}),a);if result.is_err(){self.failed=true}result
  }
+ /// Produce the same one-row drain without writing a temporary queue row.
+ /// The real push would keep this capacity after its immediate drain.
+ pub(super) fn direct_using(&mut self,token:Token<'s>,a:&SettingAdmission<'_>)->io::Result<(Token<'s>,OriginalOutputTrace)>{
+  if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed actual output queue cannot resume"))}
+  if self.head!=0||self.rows.len()!=0{return Err(io::ErrorKind::InvalidInput.into())}
+  if let Err(error)=self.rows.ensure(1,a){self.failed=true;return Err(error)}
+  Ok((token,self.trace.clone()))
+ }
  pub(super) fn pop(&mut self)->io::Result<Option<Token<'s>>>{self.pop_with_trace().map(|actual|actual.map(|(token,_)|token))}
  pub(super) fn pop_with_trace(&mut self)->io::Result<Option<(Token<'s>,OriginalOutputTrace)>>{
   if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed actual output queue cannot be drained as successful output"))}
@@ -57,6 +65,59 @@ impl<'s>OriginalOutputQueue<'s>{
   for _ in 0..64{q.push(ident("defined"),&a).unwrap();q.push(token(Value::Punct("(")),&a).unwrap();assert!(q.preserves_defined_operand());q.pop().unwrap();assert!(!q.preserves_defined_operand());q.pop().unwrap();}
   assert!(q.rows.capacity()<=4);drop(q);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
+ #[test]
+ fn direct_single_row_preserves_push_capacity_and_first_checkpoint_error() {
+  fn run(direct: bool, fault: Option<usize>) -> (Option<i32>, usize, usize) {
+   let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let observed = std::cell::Cell::new(0usize);
+   let enabled = std::cell::Cell::new(false);
+   let checkpoint = || {
+    if enabled.get() {
+     observed.set(observed.get() + 1);
+     if fault == Some(observed.get()) { return Err(io::Error::from_raw_os_error(1450)); }
+    }
+    Ok(())
+   };
+   let a = SettingAdmission::new(&used, 1 << 20, &checkpoint);
+   let mut queue = OriginalOutputQueue::new(&a).unwrap();
+   let origin=Origin{physical:dm_syntax::Span::new(0,1),line:1,byte_column:Some(1),occurrence:0,invocation:true};
+   queue.trace_pushed_using("LIVE",origin,1,None,None,&a).unwrap();
+   enabled.set(true);
+   let row: io::Result<_> = (|| {
+    if direct {
+     let row = queue.direct_using(ident("issued"), &a)?;
+     // This is the outer pump's post-push checkpoint.
+     a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))?;
+     Ok(row)
+    } else {
+     queue.push(ident("issued"), &a)?;
+     a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))?;
+     Ok(queue.pop_with_trace()?.unwrap())
+    }
+   })();
+   enabled.set(false);
+   let kind = match row {
+    Ok((token,trace)) => {
+     assert!(matches!(token.value,Value::Ident{spelling,..}if spelling.get()=="issued"));
+     let mut seen = 0;
+     trace.visit_inner_to_outer_using(&a, |frame| { assert_eq!(frame.name,"LIVE"); seen+=1; Ok(()) }).unwrap();
+     assert_eq!(seen,1);
+     assert!(queue.is_empty());
+     None
+    }
+    Err(error) => error.raw_os_error(),
+   };
+   (kind, observed.get(), queue.rows.capacity())
+  }
+  let old = run(false, None);
+  assert_eq!(old, run(true, None));
+  for checkpoint in 1..=old.1 {
+   let queued = run(false, Some(checkpoint));
+   assert_eq!(queued.0,Some(1450));
+   assert_eq!(queued,run(true,Some(checkpoint)));
+  }
+ }
+
  #[test]fn queue_retains_first_real_io_and_cannot_be_resumed_after_failed_append(){
   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let fail=std::cell::Cell::new(false);let checkpoint=||if fail.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())};let a=SettingAdmission::new(&used,1<<20,&checkpoint);let mut q=OriginalOutputQueue::new(&a).unwrap();
   q.push(ident("defined"),&a).unwrap();fail.set(true);assert_eq!(q.push(token(Value::Punct("(")),&a).unwrap_err().raw_os_error(),Some(1450));fail.set(false);assert!(q.push(ident("retry"),&a).is_err());assert!(q.pop().is_err());assert!(!q.preserves_defined_operand());drop(q);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
