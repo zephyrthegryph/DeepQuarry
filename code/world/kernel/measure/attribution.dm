@@ -441,6 +441,9 @@ GLOBAL_VAR_INIT(km_slow_calls_logged, 0)
 	GLOB.km_slow_calls_logged++
 	var/init_real = km_meter().attr.init_real
 	var/since = init_real ? "+[round((REALTIMEOFDAY - init_real) * 0.1)]s after init" : "during init"
+	if(istype(what, /datum/entry))
+		var/datum/entry/E = what
+		what = "[E.kind]: [copytext(E.sig, 1, 160)]" // the entry by what it declares (an every(), a started_work() step), not "/datum/entry"
 	log_world("SLOW CALL: [round(ms, 0.1)] ms [holder?.type] -> [what] ([since]) [holder?.slow_call_detail()] clients [length(GLOB.clients)]")
 
 /// The proc profile as it stands (world.Profile, running under AUTO_PROFILE) as one line: the `self_rows` procs with the most self time and the `total_rows`
