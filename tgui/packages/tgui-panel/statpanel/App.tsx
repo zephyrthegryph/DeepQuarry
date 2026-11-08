@@ -12,6 +12,7 @@ import { Button, Input } from 'tgui-core/components';
 import { useChatScanlines } from '../consoleScanlines';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { AbilitiesTab } from './AbilitiesTab';
+import { DockArea } from './DockArea';
 import { InspectTab } from './InspectTab';
 import {
   CLOSED_BY_DEFAULT,
@@ -498,6 +499,7 @@ export function App(props: {
   return (
     <div className="stat-root">
       <MapSplitHandle />
+      <DockArea />
       <Tabs
         layout={tabsLayout(tabsStyle)}
         className="stat-views"
