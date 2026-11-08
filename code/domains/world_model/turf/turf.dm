@@ -124,7 +124,11 @@
 			Entered(AM)
 
 	//Lighting related
-	set_luminosity(GLOB.client_lighting || !(dynamic_lighting)) // client lighting: BYOND shows every turf, the lighting plane darkens
+	// client lighting: BYOND shows every turf, the lighting plane darkens. A turf whose luminosity already holds it (a space turf's type default) is not
+	// written: set_luminosity() would only assign the same value (or keep it, for a fake-sunlit tile).
+	var/lum = GLOB.client_lighting || !(dynamic_lighting)
+	if(luminosity != lum)
+		set_luminosity(lum)
 
 	if(opacity)
 		directional_opacity = ALL_CARDINALS

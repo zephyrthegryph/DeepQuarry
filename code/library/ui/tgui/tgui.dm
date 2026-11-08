@@ -126,6 +126,7 @@
 	if(!window())
 		return FALSE
 	STAMP(src, opened_at, CLOCK_WORLD)
+	tgui_count_open(interface)
 	var/list/default_geometry = SStgui.get_default_geometry(interface)
 	window().acquire_lock(src, default_geometry)
 	dock_on_open()
@@ -636,6 +637,10 @@
 				return
 
 			LAZYREMOVE(open_byondui_elements, byond_ui_id)
+		else
+			// A window with a protocol of its own (the stat panel): its host handles what tgui does not.
+			if(type && src_object()?.ui_raw_message(user, type, payload))
+				return TRUE
 
 /// Wrapper for behavior to potentially wait until the next tick if the server is overloaded
 /datum/tgui/proc/on_act_message(act_type, payload, state)
@@ -687,3 +692,12 @@ CAPABILITIES(/datum/tgui)
 	if(unit)
 		lookup_reads_prepare(unit, A, lookup_scope)
 	A.release()
+
+/// Counts the windows opened per interface this round and logs each open with its running count (the tgui log, "TGUI OPEN <interface> <n>"):
+/// the asset prefetch ranks interfaces by how often players open them.
+/proc/tgui_count_open(interface)
+	var/static/alist/open_counts = alist()
+	var/count = (open_counts[interface] || 0) + 1
+	open_counts[interface] = count
+	logger.Log(LOG_CATEGORY_HREF_TGUI, "TGUI OPEN [interface] [count]")
+	return count

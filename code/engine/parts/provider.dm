@@ -145,12 +145,26 @@
 	var/list/provs = memo[2]
 	var/list/conds = memo[3]
 	var/list/acts = memo[4]
+	// The same when() block guards several providers (a species' hands() reached through more than one grant): each block is asked once.
+	var/list/answered = null
 	for(var/i in 1 to length(provs))
 		var/datum/activation/granted_by = acts[i]
 		if(granted_by && (granted_by.dead || !granted_by.runs))
 			continue
 		var/list/whens = conds[i]
-		if(!length(whens) || op_whens_hold(D, whens))
+		if(!length(whens))
+			into += provs[i]
+			continue
+		var/whens_key = ""
+		for(var/datum/entry/W as anything in whens)
+			whens_key += "[REF(W)],"
+		if(isnull(answered))
+			answered = list()
+		var/known = answered[whens_key]
+		if(isnull(known))
+			known = op_whens_hold(D, whens) ? TRUE : FALSE
+			answered[whens_key] = known
+		if(known)
 			into += provs[i]
 
 /// Every provider `D` could give, its when() blocks and the activation that brought it (null for the table's own), in collection order: interned on

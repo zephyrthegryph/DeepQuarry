@@ -5,7 +5,7 @@
 // on_message() as if from its own page. A UI in a column part is routed, updated and closed exactly as in a native window.
 
 /datum/tgui_window/column_part
-	/// What the column page shows for it: COLUMN_PART_STAT (the stat panel) or COLUMN_PART_TGUI (a tgui interface).
+	/// What the column page shows for it: COLUMN_PART_TGUI (a tgui interface).
 	var/kind = COLUMN_PART_TGUI
 	/// The column list index a drop asked for (null: wherever the page's saved arrangement puts this interface).
 	var/at
@@ -61,6 +61,10 @@
 
 /// Hook: a message from one of the column page's windows (`col/msg {wid, type, payload}`): to that window (content: window_dock.dm).
 /datum/tgui_panel/proc/column_message(list/payload)
+	return FALSE
+
+/// Hook: a message of the column page itself (`col/page {type, payload}`: its layout saves, drop answers, logs), for the window dock.
+/datum/tgui_panel/proc/column_page_message(list/payload)
 	return FALSE
 
 /// Hook: the column page (re)loaded and holds no windows: its saved arrangement and every open column window go to it again.

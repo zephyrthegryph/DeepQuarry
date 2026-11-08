@@ -7,8 +7,8 @@
  * always says where each interface was last seen (persisted per player).
  */
 
-/** What a column window shows: the chat, a stat panel view, or a docked tgui interface. */
-export type WindowKind = 'chat' | 'stat' | 'tgui';
+/** What a column window shows: the chat, or a docked tgui interface (the stat panel is one). */
+export type WindowKind = 'chat' | 'tgui';
 
 export type DockWindow = {
   id: string;

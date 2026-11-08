@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { gameDataAtom } from 'tgui/events/store';
-import { CHAT_WINDOW, ColumnHost, decodeRaw, statWindowId } from './host';
+import { CHAT_WINDOW, ColumnHost, decodeRaw } from './host';
 
 const byond = (globalThis as any).Byond;
 const original = byond.sendMessage;
@@ -76,29 +76,34 @@ describe('the column page', () => {
     ).not.toThrow();
   });
 
-  it('shows the stat panel views as one stack that follows the panel view', () => {
+  it('docks the stat panel like any other window: its own entry, above the chat', () => {
     const host = new ColumnHost();
-    host.receive('col/open', { wid: 'statbrowser', kind: 'stat' });
-    expect(forWindow('statbrowser').map((m) => m.payload.type)).toEqual([
-      'ready',
-      'Set-Tab',
-      'Update-Verbs',
+    host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
+    host.receive('col/msg', {
+      wid: 'col-1',
+      raw: raw('update', {
+        config: { interface: { name: 'StatPanel' }, title: 'Status' },
+      }),
+    });
+    expect(host.state.windows['col-1']).toMatchObject({
+      iface: 'StatPanel',
+      title: 'Status',
+      kind: 'tgui',
+    });
+    expect(host.state.groups.map((g) => g.windows)).toEqual([
+      ['col-1'],
+      [CHAT_WINDOW],
     ]);
-    const stat = Object.values(host.state.windows).filter(
-      (w) => w.kind === 'stat',
-    );
-    expect(stat.length).toBeGreaterThan(1);
-    const stack = host.state.groups.find((g) =>
-      g.windows.includes(statWindowId('Status')),
-    );
-    expect(stack?.windows.length).toBe(stat.length);
-    expect(host.state.groups[0].id).toBe(stack?.id ?? '');
-    expect(host.state.groups.at(-1)?.windows).toEqual([CHAT_WINDOW]);
-    host.activate(statWindowId('Actions'));
-    expect(host.stat.store.state.view).toBe('Actions');
-    expect(
-      stack && host.state.groups.find((g) => g.id === stack.id)?.active,
-    ).toBe(statWindowId('Actions'));
+    // Its own protocol's messages reach its window's listeners (useWindowMessages).
+    const got: unknown[] = [];
+    host.backends
+      .get('col-1')!
+      .listeners.add((type, payload) => got.push([type, payload]));
+    host.receive('col/msg', {
+      wid: 'col-1',
+      raw: raw('update_verbs', { n: 1 }),
+    });
+    expect(got).toEqual([['update_verbs', { n: 1 }]]);
   });
 
   it('tells the server which docked windows are off screen: a background tab, a collapsed entry', () => {

@@ -1,14 +1,11 @@
 /**
- * The stat panel inside the right-hand column's page (doc/rewrite/proposals/
- * window_system.md section 12). The server's stat panel is a column window
- * with the id `statbrowser`: what it sends arrives here unwrapped, and what
- * the panel sends goes out through `send`, wrapped for that id.
+ * The stat panel's store and its message handling, as the StatPanel tgui
+ * window hosts them (tgui/interfaces/StatPanel.tsx, docked in the right-hand
+ * column or floating): what the server sends the window arrives in
+ * `receive`, and what the panel sends goes out through `send`.
  */
 import { loadMappings, loadStyleSheet } from 'common/assets';
 import { StatStore } from './store';
-
-/** The stat panel's window id, as the server knows it (SKIN_STAT_BROWSER). */
-export const STAT_WINDOW_ID = 'statbrowser';
 
 export type StatHost = {
   store: StatStore;
@@ -38,14 +35,9 @@ export function createStatHost(
         loadMappings(payload, assetMap);
         return;
       }
-      if (type === 'ping') {
-        send('ping/reply', payload);
-        return;
-      }
       store.receive(type, payload);
     },
     ready() {
-      send('ready');
       send('Set-Tab', { tab: 'Status' });
       send('Update-Verbs');
       // The server can miss the first request while the client is still logging in.

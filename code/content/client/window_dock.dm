@@ -48,13 +48,15 @@ CAPABILITIES(/datum/window_dock)
 /datum/window_dock/proc/owner() as /client
 	return owner
 
-/// Whether the saved layout docks `interface` when it opens.
+/// Whether `interface` opens docked: what the saved layout says, else its default (window_dock_default_docked).
 /datum/window_dock/proc/wants(interface)
 	if(isnull(wants_cache))
 		wants_cache = window_dock_wanted(owner()?.prefs?.read_preference(/datum/preference/text/window_layout))
-	return !!wants_cache[interface]
+	if(interface in wants_cache)
+		return !!wants_cache[interface]
+	return !!GLOB.window_dock_default_docked[interface]
 
-/// The interfaces a saved layout's text docks, as an interface-keyed list.
+/// What a saved layout's text says of each interface it names: interface -> TRUE (opens docked) or FALSE (floats).
 /proc/window_dock_wanted(text)
 	. = list()
 	if(!istext(text) || !length(text))
@@ -64,8 +66,8 @@ CAPABILITIES(/datum/window_dock)
 		return
 	for(var/interface in layout)
 		var/list/place = layout[interface]
-		if(istext(interface) && islist(place) && place["dock"])
-			.[interface] = TRUE
+		if(istext(interface) && islist(place) && !isnull(place["dock"]))
+			.[interface] = place["dock"] ? TRUE : FALSE
 
 /// The column page's messages for the dock (they come through the stat panel's routing).
 /datum/window_dock/proc/panel_message(type, list/payload)
@@ -184,6 +186,12 @@ CAPABILITIES(/datum/window_dock)
 		return
 	var/index = payload?["index"]
 	dock(ui, isnum(index) ? max(0, round(index)) : null)
+
+/datum/tgui_panel/column_page_message(list/payload)
+	if(!islist(payload) || !istext(payload["type"]))
+		return FALSE
+	window_dock_of(client())?.panel_message(payload["type"], islist(payload["payload"]) ? payload["payload"] : null)
+	return TRUE
 
 /datum/tgui_panel/column_message(list/payload)
 	return column_route(client(), payload)
