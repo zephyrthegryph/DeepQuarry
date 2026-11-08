@@ -1329,6 +1329,7 @@
 #include "../benchmarks/move_integrity.dm"
 #include "../benchmarks/shuttle_landing.dm"
 #include "../benchmarks/join_cost.dm"
+#include "../benchmarks/map_plan_cost.dm"
 #include "../benchmarks/radio_broadcast.dm"
 #include "../benchmarks/active_play.dm"
 #include "../benchmarks/arrival_draws.dm"
