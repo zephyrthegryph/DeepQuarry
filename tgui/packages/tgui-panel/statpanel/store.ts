@@ -6,6 +6,7 @@
 
 import { type AbilitiesData, hasAbilities } from './abilities';
 import type { InspectData } from './inspect';
+import type { McHealthData } from './mcHealthData';
 import {
   ADMIN_VIEWS,
   dataTabOf,
@@ -27,8 +28,9 @@ export type State = {
   version: number;
   currentTab: string;
   statusParts: string[];
-  mcParts: (string | number)[][];
-  mcMetrics: any;
+  /** Where the admin's eye is, for the MC Health panel's Advanced section. */
+  mcLocation: string;
+  mcMetrics: McHealthData | null;
   hrefToken: string | null;
   verbs: Verb[];
   spells: string[][];
@@ -54,7 +56,7 @@ export function initialState(): State {
     version: 0,
     currentTab: 'Status',
     statusParts: ['Loading...'],
-    mcParts: [['Loading...', '']],
+    mcLocation: '',
     mcMetrics: null,
     hrefToken: null,
     verbs: [],
@@ -156,7 +158,10 @@ export function verbGroupsOf(
 export type Found = { label: string; path: string; command: string };
 
 /** Menu page sections searched with the verbs (menu.ts). */
-export type MenuSection = { name: string; items: { label: string; command: string }[] };
+export type MenuSection = {
+  name: string;
+  items: { label: string; command: string }[];
+};
 
 /**
  * One search over everything the panel offers: the verbs of every view this client has (with the view and group they
@@ -191,7 +196,8 @@ export function searchAll(
       });
     }
   }
-  const starts = (f: Found) => (f.label.toLowerCase().startsWith(needle) ? 0 : 1);
+  const starts = (f: Found) =>
+    f.label.toLowerCase().startsWith(needle) ? 0 : 1;
   return found.sort(
     (a, b) => starts(a) - starts(b) || a.label.localeCompare(b.label),
   );
@@ -327,7 +333,7 @@ export class StatStore {
       }
       case 'update_mc':
         this.changed({
-          mcParts: [['Location:', payload.coord_entry], ...payload.mc_data],
+          mcLocation: payload.coord_entry || '',
           mcMetrics: payload.mc_metrics,
           permanentTabs: this.withTab(tabs, 'MC'),
         });

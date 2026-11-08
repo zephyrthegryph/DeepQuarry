@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - admin: "Server > Health is the new MC panel: one page with the server's health in words, recent ticks, what uses the tick, overruns, memory, entities and the native side. The old six MC sub-tabs and the raw controller table are gone."

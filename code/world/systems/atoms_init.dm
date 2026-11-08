@@ -61,7 +61,7 @@
 	var/atom/outer_initializing = GLOB.atom_initializing
 	var/outer_plan = ctor_plan_current
 	GLOB.atom_initializing = A
-	ctor_plan_current = plan
+	ctor_plan_current = plan | 0 // a number: the plan bits
 	if(outer_initializing)
 		GLOB.atoms_init_outer += outer_initializing // still partway through its own Initialize() while this one's runs
 	if((plan ? (plan & CTOR_FROM_TABLE) : GLOB.init_from_table_types[A.type]) && length(arguments) == 1 && !A.color)

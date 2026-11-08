@@ -161,251 +161,242 @@ h3 {
   }
 }
 
-.mc-dashboard {
+// The MC Health panel (McHealth.tsx).
+.mch {
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
 }
 
-.mc-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+.mch-health {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.mch-verdict {
+  display: flex;
+  align-items: center;
   gap: var(--space-m);
 }
 
-.mc-metric-card,
-.mc-panel {
-  padding: var(--space-m) var(--space-ml);
-  background-color: var(--stat-section);
+.mch-pill {
+  padding: 1px 8px;
+  border-radius: var(--border-radius-medium);
+  font-weight: bold;
+  text-transform: uppercase;
+
+  &--good {
+    background-color: hsl(100, 55%, 30%);
+  }
+
+  &--average {
+    background-color: hsl(40, 70%, 35%);
+  }
+
+  &--bad {
+    background-color: hsl(0, 60%, 38%);
+  }
+}
+
+.mch-why,
+.mch-muted,
+.mch-sum {
+  color: var(--stat-muted);
+}
+
+.mch-gauge {
+  position: relative;
+  height: 1.4em;
+  border: 1px solid var(--stat-line);
+  border-radius: var(--border-radius-small);
+  overflow: hidden;
+
+  span {
+    position: relative;
+    padding-left: var(--space-sm);
+    line-height: 1.4em;
+  }
+
+  &__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+
+    &--good {
+      background-color: hsla(100, 55%, 40%, 0.6);
+    }
+
+    &--average {
+      background-color: hsla(40, 70%, 45%, 0.6);
+    }
+
+    &--bad {
+      background-color: hsla(0, 60%, 45%, 0.6);
+    }
+  }
+}
+
+.mch-kpis,
+.mch-dist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7em, 1fr));
+  gap: var(--space-xs) var(--space-m);
+}
+
+.mch-kpi {
+  display: flex;
+  flex-direction: column;
+
+  span,
+  small {
+    color: var(--stat-muted);
+    font-size: 0.9em;
+  }
+}
+
+.mch-card {
   border: 1px solid var(--stat-line);
   border-radius: var(--border-radius-medium);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-sm) var(--space-ml);
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    h3 {
+      margin: 0;
+      font-size: 1em;
+    }
+  }
+
+  &__body {
+    padding: var(--space-sm) var(--space-ml) var(--space-ml);
+    border-top: 1px solid var(--stat-line);
+  }
 }
 
-.mc-panel h3 + .mc-panel-hint {
-  display: block;
-  margin-top: calc(-1 * var(--space-s));
+.mch-sum {
+  margin-left: auto;
 }
 
-// Neutral unless a threshold is crossed; then the value and edge take the colour.
-.mc-metric-card {
+.mch-winsel {
   display: flex;
-  flex-direction: column;
   gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
 
-  &--warning {
-    border-color: hsl(from var(--color-average) h s l / 0.6);
-
-    .mc-metric-value {
-      color: var(--color-average);
-    }
+  button {
+    border: 1px solid var(--stat-line);
+    background: none;
+    color: var(--stat-muted);
+    cursor: pointer;
   }
 
-  &--critical {
-    border-color: hsl(from var(--color-bad) h s l / 0.7);
-
-    .mc-metric-value {
-      color: var(--color-bad);
-    }
+  .mch-on {
+    color: var(--stat-text);
+    border-color: var(--stat-text);
   }
 }
 
-.mc-metric-label {
-  color: var(--stat-muted);
-  font-size: 0.78em;
-  font-weight: bold;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.mc-metric-value {
-  font-size: 1.6em;
-  font-weight: bold;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.mc-metric-detail,
-.mc-panel-hint,
-.mc-outlier-note,
-.mc-empty {
-  color: var(--stat-muted);
-  font-size: 0.82em;
-}
-
-.mc-panel h3 {
-  margin: 0 0 0.35em;
-}
-
-.mc-tick-graph {
+.mch-timeline {
   position: relative;
   display: flex;
   align-items: flex-end;
   gap: 1px;
-  height: 7em;
-  margin-top: 0.4em;
-  overflow: hidden;
+  height: 60px;
 }
 
-.mc-tick-bar {
-  flex: 1 1 1px;
+.mch-bar {
+  flex: 1;
   min-width: 1px;
-}
+  background-color: hsl(210, 40%, 55%);
+  cursor: pointer;
 
-.mc-tick-bar,
-.mc-subsystem-used,
-.mc-breakdown-bar {
-  &.healthy {
-    background-color: var(--color-good);
+  &--over {
+    background-color: hsl(0, 70%, 55%);
   }
 
-  &.warning {
-    background-color: var(--color-average);
-  }
-
-  &.critical {
-    background-color: var(--color-bad);
+  &--pinned {
+    outline: 1px solid var(--stat-text);
   }
 }
 
-.mc-budget-line {
+.mch-budget {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 50%;
-  border-top: 1px dashed var(--color-bad);
+  border-top: 1px dashed var(--stat-muted);
   pointer-events: none;
 }
 
-.mc-performance-table {
+.mch-tickdetail,
+.mch-line {
+  margin: var(--space-sm) 0;
+}
+
+.mch-stack {
+  display: flex;
+  height: 8px;
+  margin-bottom: var(--space-sm);
+  background-color: var(--stat-line);
+
+  div:nth-child(odd) {
+    background-color: hsl(210, 45%, 55%);
+  }
+
+  div:nth-child(even) {
+    background-color: hsl(190, 40%, 45%);
+  }
+}
+
+.mch-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82em;
 
-  th,
-  td {
-    padding: 0.25em;
-    text-align: right;
-    border-bottom: 1px solid var(--stat-line);
-  }
-
-  th:first-child,
-  td:first-child {
+  th {
     text-align: left;
-  }
-}
-
-.mc-subsystem-row {
-  display: grid;
-  grid-template-columns: minmax(8em, 1fr) minmax(7em, 2fr) auto;
-  gap: 0.45em;
-  align-items: center;
-  margin: 0.23em 0;
-  font-size: 0.82em;
-}
-
-.mc-subsystem-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mc-subsystem-track,
-.mc-breakdown-track {
-  display: flex;
-  height: 0.6em;
-  overflow: hidden;
-  background-color: var(--stat-track);
-  border-radius: 1em;
-}
-
-.mc-subsystem-used,
-.mc-subsystem-overrun,
-.mc-breakdown-bar {
-  flex: none;
-  height: 100%;
-}
-
-.mc-subsystem-overrun {
-  background-color: hsl(from var(--color-bad) h s calc(l * 0.6));
-}
-
-.mc-subsystem-value {
-  text-align: right;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.mc-outlier {
-  padding: 0.27em 0;
-  border-bottom: 1px solid var(--stat-line);
-  font-size: 0.82em;
-}
-
-.mc-outlier-heading {
-  width: 100%;
-  padding: 0.2em;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  font-family: monospace;
-}
-
-.mc-outlier-breakdown {
-  margin: 0.3em 0.5em 0.5em 1em;
-}
-
-.mc-breakdown-row {
-  display: grid;
-  grid-template-columns: minmax(9em, 1.2fr) minmax(6em, 2fr) 4em;
-  gap: 0.4em;
-  align-items: center;
-  margin: 0.2em 0;
-}
-
-.mc-runtime-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.3em 0.8em;
-}
-
-.mc-runtime-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5em;
-  padding: 0.2em 0;
-  border-bottom: 1px solid var(--stat-line);
-  font-size: 0.82em;
-
-  span {
     color: var(--stat-muted);
+    font-weight: normal;
+  }
+
+  td,
+  th {
+    padding: 1px var(--space-sm) 1px 0;
   }
 }
 
-.mc-details {
+.mch-subhead {
   margin-top: var(--space-m);
-  border: 1px solid var(--stat-line);
-  border-radius: var(--border-radius-medium);
+  color: var(--stat-muted);
+  font-weight: bold;
+}
 
-  summary {
-    padding: var(--space-sm) var(--space-ml);
-    cursor: pointer;
-    color: var(--stat-muted);
-    font-weight: bold;
+.mch-overrun {
+  padding: 2px 0;
+  border-top: 1px solid var(--stat-line);
+  cursor: pointer;
+}
 
-    &:hover {
-      color: var(--stat-text);
-    }
-  }
+.mch-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+  margin-bottom: var(--space-sm);
+}
 
-  &[open] summary {
-    border-bottom: 1px solid var(--stat-line);
-  }
-
-  .stat-table {
-    margin: var(--space-s) 0;
-  }
+.mch-link {
+  border: 0;
+  background: none;
+  color: var(--stat-link, #6699ff);
+  cursor: pointer;
+  padding: 0;
 }
 
 // The console look (tgui/styles/console.scss), as the lobby and the chat pane

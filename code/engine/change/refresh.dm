@@ -398,6 +398,8 @@ GLOBAL_VAR_INIT(refresh_forget_scan_max, 0)
 		return
 	GLOB.refresh_push_queue -= D
 	refresh_queue_drop(D)
+	if(D.refresh_queued == DEP_PARKED)
+		boot_created_forget(D)
 	D.refresh_queued = 0
 	D.refresh_bits = 0
 /// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
