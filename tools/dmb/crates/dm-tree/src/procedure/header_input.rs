@@ -1068,7 +1068,7 @@ pub(crate) struct HeaderAllocationReceipt<'a> {
     items: OriginalItems<'a>,
     pub(crate) inputs: &'a OriginalProcedureHeaders,
     pub(crate) offset: usize,
-    rows: AdapterRows<HeaderAllocationRow>,
+    rows: HeaderAllocationRows,
 }
 pub(crate) struct HeaderAllocationRow {
     pub(crate) header: Span,
@@ -1101,22 +1101,119 @@ impl HeaderSettingsTail {
         Ok(Self { payload: Box::new(payload), _storage: Some(storage) })
     }
 }
+const HEADER_ALLOCATION_PAGE_LEN: usize = 256;
+pub(crate) struct HeaderAllocationRows(HeaderAllocationStorage);
+
+enum HeaderAllocationStorage {
+    Dense(AdapterRows<HeaderAllocationRow>),
+    Paged(super::original_primary_signatures::FundedRowPages<HeaderAllocationRow, HEADER_ALLOCATION_PAGE_LEN>),
+}
+
+impl HeaderAllocationRows {
+    pub(crate) fn new(paged: bool) -> Self {
+        Self(if paged {
+            HeaderAllocationStorage::Paged(super::original_primary_signatures::FundedRowPages::new())
+        } else {
+            HeaderAllocationStorage::Dense(AdapterRows::default())
+        })
+    }
+
+    pub(crate) fn reserve_compatibility(&mut self) -> Result<(), std::collections::TryReserveError> {
+        let HeaderAllocationStorage::Dense(rows) = &mut self.0 else { unreachable!("compatibility has no checked pages") };
+        rows.reserve_compatibility()
+    }
+
+    pub(crate) fn reserve_checked(&mut self, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<()> {
+        match &mut self.0 {
+            HeaderAllocationStorage::Dense(rows) => rows.reserve_checked(a),
+            HeaderAllocationStorage::Paged(rows) => rows.ensure_slot(a),
+        }
+    }
+
+    pub(crate) fn push_reserved(&mut self, row: HeaderAllocationRow) {
+        match &mut self.0 {
+            HeaderAllocationStorage::Dense(rows) => rows.push_reserved(row),
+            HeaderAllocationStorage::Paged(rows) => rows.push_reserved(row),
+        }
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &HeaderAllocationRow> {
+        let (dense, paged) = match &self.0 {
+            HeaderAllocationStorage::Dense(rows) => (Some(rows.iter()), None),
+            HeaderAllocationStorage::Paged(rows) => (None, Some(rows.iter())),
+        };
+        dense.into_iter().flatten().chain(paged.into_iter().flatten())
+    }
+
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut HeaderAllocationRow> {
+        let (dense, paged) = match &mut self.0 {
+            HeaderAllocationStorage::Dense(rows) => (Some(rows.iter_mut()), None),
+            HeaderAllocationStorage::Paged(rows) => (None, Some(rows.iter_mut())),
+        };
+        dense.into_iter().flatten().chain(paged.into_iter().flatten())
+    }
+
+    fn sort_compatibility(&mut self) {
+        let HeaderAllocationStorage::Dense(rows) = &mut self.0 else { unreachable!("compatibility has no checked pages") };
+        rows.sort_unstable_by_key(|row| row.header.start);
+    }
+
+    fn sort_checked(&mut self, a: &dm_syntax::SettingAdmission<'_>) -> Result<(), OriginalHeaderFailure> {
+        let HeaderAllocationStorage::Paged(rows) = &mut self.0 else {
+            self.sort_compatibility();
+            return Ok(());
+        };
+        if rows.iter().zip(rows.iter().skip(1)).all(|(left, right)| left.header.start <= right.header.start) {
+            return Ok(());
+        }
+
+        // The ordinary authored walk is monotone. Preserve the old sort if
+        // a projection ever reorders it, without copying the whole row arena.
+        let (mut order, _storage) = super::original_primary_signatures::allocate_funded_rows(rows.len(), a)?;
+        order.extend(0..rows.len());
+        order.sort_unstable_by_key(|&ordinal| rows.get(ordinal).expect("staged row").header.start);
+        for start in 0..order.len() {
+            let mut at = start;
+            loop {
+                let next = std::mem::replace(&mut order[at], at);
+                if next == start { break; }
+                rows.swap(at, next);
+                at = next;
+            }
+        }
+        // The directory is declared after the Vec in the returned tuple;
+        // explicitly destroy the actual scratch before returning its credit.
+        drop(order);
+        Ok(())
+    }
+
+    fn row_at_start(&self, start: usize) -> Option<&HeaderAllocationRow> {
+        match &self.0 {
+            HeaderAllocationStorage::Dense(rows) => rows.binary_search_by_key(&start, |r|r.header.start)
+                .ok().and_then(|ordinal|rows.get(ordinal)),
+            HeaderAllocationStorage::Paged(rows) => rows.find(start, |_, row|row.header.start)
+                .and_then(|ordinal|rows.get(ordinal)),
+        }
+    }
+}
+
 impl<'a> HeaderAllocationReceipt<'a> {
     pub(crate) fn from_rows(
         items: &'a [Item],
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
-        rows: AdapterRows<HeaderAllocationRow>,
+        mut rows: HeaderAllocationRows,
     ) -> Result<Self, String> {
+        rows.sort_compatibility();
         Self::from_rows_using(OriginalItems::from_items(items), inputs, offset, rows, |inputs, rows, offset| {
-            inputs.install_settings(rows, offset)
+            inputs.install_settings(rows.iter_mut(), offset)
         })
     }
     pub(crate) fn from_rows_checked(
         items: &'a [Item],
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
-        rows: AdapterRows<HeaderAllocationRow>,
+        rows: HeaderAllocationRows,
         a: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<Self, OriginalHeaderFailure> {
         Self::from_original_rows_checked(OriginalItems::from_items(items), inputs, offset, rows, a)
@@ -1125,21 +1222,22 @@ impl<'a> HeaderAllocationReceipt<'a> {
         items: OriginalItems<'a>,
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
-        rows: AdapterRows<HeaderAllocationRow>,
+        mut rows: HeaderAllocationRows,
         a: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<Self, OriginalHeaderFailure> {
+        rows.sort_checked(a)?;
         Self::from_rows_using(items, inputs, offset, rows, |inputs, rows, offset| {
-            inputs.install_settings_checked(rows, offset, a)
+            inputs.install_settings_checked(rows.iter_mut(), offset, a)
         })
     }
     fn from_rows_using<E: From<String>>(
         items: OriginalItems<'a>,
         inputs: &'a OriginalProcedureHeaders,
         offset: usize,
-        rows: AdapterRows<HeaderAllocationRow>,
+        rows: HeaderAllocationRows,
         install: impl FnOnce(
             &OriginalProcedureHeaders,
-            &mut [HeaderAllocationRow],
+            &mut HeaderAllocationRows,
             usize,
         ) -> Result<(), E>,
     ) -> Result<Self, E> {
@@ -1156,13 +1254,9 @@ impl<'a> HeaderAllocationReceipt<'a> {
         install(inputs, &mut value.rows, offset)?;
         Ok(value)
     }
-    pub(crate) fn finish(&mut self) -> Result<(), String> {
-        self.rows.sort_unstable_by_key(|r| r.header.start);
-        if self
-            .rows
-            .windows(2)
-            .any(|p| p[0].header.start == p[1].header.start)
-        {
+    fn finish(&self) -> Result<(), String> {
+        if self.rows.iter().zip(self.rows.iter().skip(1))
+            .any(|(left, right)| left.header.start == right.header.start) {
             return Err("duplicate original header allocation receipt".into());
         }
         Ok(())
@@ -1177,11 +1271,8 @@ impl<'a> HeaderAllocationReceipt<'a> {
         Ok(())
     }
     pub(crate) fn row(&self, header: Span) -> Result<&HeaderAllocationRow, String> {
-        let i = self
-            .rows
-            .binary_search_by_key(&header.start, |r| r.header.start)
-            .map_err(|_| "procedure has no runtime header allocation receipt")?;
-        let row = &self.rows[i];
+        let row = self.rows.row_at_start(header.start)
+            .ok_or("procedure has no runtime header allocation receipt")?;
         if row.header != header {
             return Err("runtime header allocation extent differs".into());
         }
@@ -1200,13 +1291,81 @@ mod tests;
 mod original_item_receipt_tests {
     use super::*;
 
+    fn staged_header(start: usize) -> HeaderAllocationRow {
+        HeaderAllocationRow {
+            header: Span::new(start, start + 2),
+            argument_offset: start,
+            declarations: Vec::new(),
+            settings: None,
+        }
+    }
+
+    #[test]
+    fn checked_header_pages_bound_growth_and_sort_disorder_across_page_boundaries() {
+        use std::sync::atomic::Ordering;
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a = dm_syntax::SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
+        let mut rows = HeaderAllocationRows::new(true);
+        let page = HEADER_ALLOCATION_PAGE_LEN;
+        for start in 1..=page {
+            rows.reserve_checked(&a).unwrap();
+            rows.push_reserved(staged_header(start));
+        }
+        let before = counter.load(Ordering::Acquire);
+        let page_bytes = page * std::mem::size_of::<HeaderAllocationRow>();
+        let low = dm_syntax::SettingAdmission::new(&counter, before + page_bytes - 1, &|| Ok(()));
+        assert_eq!(rows.reserve_checked(&low).unwrap_err().kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(counter.load(Ordering::Acquire), before);
+        rows.reserve_checked(&a).unwrap();
+        rows.push_reserved(staged_header(0));
+        assert_eq!(counter.load(Ordering::Acquire), before + page_bytes);
+
+        let before_sort = counter.load(Ordering::Acquire);
+        let scratch = (page + 1) * std::mem::size_of::<usize>();
+        let low = dm_syntax::SettingAdmission::new(&counter, before_sort + scratch - 1, &|| Ok(()));
+        assert!(matches!(rows.sort_checked(&low), Err(OriginalHeaderFailure::Operational(error)) if error.kind() == std::io::ErrorKind::OutOfMemory));
+        assert_eq!(rows.iter().next().unwrap().header.start, 1);
+        assert_eq!(counter.load(Ordering::Acquire), before_sort);
+        rows.sort_checked(&a).unwrap();
+        assert_eq!(counter.load(Ordering::Acquire), before_sort);
+        for start in 0..=page {
+            let row = rows.row_at_start(start).unwrap();
+            assert_eq!((row.header, row.argument_offset), (Span::new(start, start + 2), start));
+        }
+        // A tight cap still admits a sealed monotonic roster without scratch.
+        let no_room = dm_syntax::SettingAdmission::new(&counter, before_sort, &|| Ok(()));
+        rows.sort_checked(&no_room).unwrap();
+        drop(rows);
+        assert_eq!(counter.load(Ordering::Acquire), root);
+    }
+
+    #[test]
+    fn checked_paged_receipt_keeps_duplicate_rejection_before_original_lookup() {
+        let source = "/datum/first\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        let headers = OriginalProcedureHeaders::from_primary(source.into(), &parsed.items, 0, parsed.tokens).unwrap();
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a = dm_syntax::SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
+        let mut rows = HeaderAllocationRows::new(true);
+        for start in [1, 0, 1] {
+            rows.reserve_checked(&a).unwrap();
+            rows.push_reserved(staged_header(start));
+        }
+        let result = HeaderAllocationReceipt::from_original_rows_checked(
+            OriginalItems::from_items(&parsed.items), &headers, 0, rows, &a,
+        );
+        assert!(matches!(result, Err(OriginalHeaderFailure::Source(message)) if message == "duplicate original header allocation receipt"));
+    }
+
     #[test]
     fn allocation_receipt_requires_the_same_borrowed_item_interval() {
         let source = "/datum/first\n/datum/second\n";
         let parsed = dm_syntax::parse_declaration_skeleton(source);
         let foreign = parsed.items.clone();
         let headers = OriginalProcedureHeaders::from_primary(source.into(), &parsed.items, 0, parsed.tokens).unwrap();
-        let receipt = HeaderAllocationReceipt::from_rows(&parsed.items, &headers, 0, AdapterRows::default()).unwrap();
+        let receipt = HeaderAllocationReceipt::from_rows(&parsed.items, &headers, 0, HeaderAllocationRows::new(false)).unwrap();
         assert!(receipt.require_original_items(OriginalItems::from_items(&parsed.items)).is_ok());
         assert!(receipt.require_original_items(OriginalItems::from_items(&foreign)).is_err());
         assert!(receipt.require_original_items(OriginalItems::from_items(&parsed.items[..1])).is_err());

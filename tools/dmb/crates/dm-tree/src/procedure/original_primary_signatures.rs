@@ -779,18 +779,18 @@ impl<T> FundedRowPage<T> {
     }
 }
 
-struct FundedRowPages<T, const PAGE_LEN: usize> {
+pub(super) struct FundedRowPages<T, const PAGE_LEN: usize> {
     pages: Vec<FundedRowPage<T>>,
     directory: Option<dm_syntax::SettingRootLease>,
     len: usize,
 }
 
 impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self { pages: Vec::new(), directory: None, len: 0 }
     }
 
-    fn len(&self) -> usize {
+    pub(super) fn len(&self) -> usize {
         self.len
     }
 
@@ -802,12 +802,27 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         self.pages.last().and_then(|page| page.rows.last())
     }
 
-    fn iter(&self) -> impl Iterator<Item = &T> {
+    pub(super) fn iter(&self) -> impl Iterator<Item = &T> {
         self.pages.iter().flat_map(|page| page.rows.iter())
     }
 
 
-    fn get(&self, ordinal: usize) -> Option<&T> {
+    pub(super) fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.pages.iter_mut().flat_map(|page| page.rows.iter_mut())
+    }
+
+    pub(super) fn swap(&mut self, left: usize, right: usize) {
+        let (left, right) = (left.min(right), left.max(right));
+        let (left_page, right_page) = (left / PAGE_LEN, right / PAGE_LEN);
+        if left_page == right_page {
+            self.pages[left_page].rows.swap(left % PAGE_LEN, right % PAGE_LEN);
+        } else {
+            let (first, second) = self.pages.split_at_mut(right_page);
+            std::mem::swap(&mut first[left_page].rows[left % PAGE_LEN], &mut second[0].rows[right % PAGE_LEN]);
+        }
+    }
+
+    pub(super) fn get(&self, ordinal: usize) -> Option<&T> {
         self.pages.get(ordinal / PAGE_LEN)?.rows.get(ordinal % PAGE_LEN)
     }
 
@@ -815,7 +830,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         self.pages.get_mut(ordinal / PAGE_LEN)?.rows.get_mut(ordinal % PAGE_LEN)
     }
 
-    fn find(&self, key: usize, key_of: impl Fn(usize, &T) -> usize) -> Option<usize> {
+    pub(super) fn find(&self, key: usize, key_of: impl Fn(usize, &T) -> usize) -> Option<usize> {
         let (mut left, mut right) = (0, self.len);
         while left < right {
             let mid = left + (right - left) / 2;
@@ -862,7 +877,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         Ok(())
     }
 
-    fn ensure_slot(&mut self, a: &SettingAdmission<'_>) -> std::io::Result<()> {
+    pub(super) fn ensure_slot(&mut self, a: &SettingAdmission<'_>) -> std::io::Result<()> {
         self.len.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
         if self.directory.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
             return Err(std::io::ErrorKind::InvalidInput.into());
@@ -876,7 +891,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
         Ok(())
     }
 
-    fn push_reserved(&mut self, row: T) {
+    pub(super) fn push_reserved(&mut self, row: T) {
         let page = self.pages.last_mut().expect("admitted signature row page");
         assert!(page.rows.len() < page.rows.capacity());
         page.rows.push(row);
@@ -905,7 +920,7 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<T, PAGE_LEN> {
     }
 
     #[cfg(any(debug_assertions, test))]
-    fn buffer_bytes(&self) -> usize {
+    pub(super) fn buffer_bytes(&self) -> usize {
         self.pages.iter().fold(self.directory.as_ref().map_or(0, |credit| credit.bytes()),
             |bytes, page| bytes.saturating_add(page.credit.as_ref().map_or(0, |credit| credit.bytes())))
     }

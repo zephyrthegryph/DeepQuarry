@@ -31,7 +31,7 @@ pub(super) trait AdapterDemand:sealed::Sealed{
         &self,signature:dm_ir::ProcedureSignature,settings:SettingRows,
         prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     )->Result<Arc<dm_ir::ProcedureMetadata>,Self::Operational>;
-    fn reserve_header_row(&self, rows:&mut AdapterRows<crate::procedure::header_input::HeaderAllocationRow>)
+    fn reserve_header_row(&self, rows:&mut crate::procedure::header_input::HeaderAllocationRows)
         -> Result<bool, Self::Operational>;
     fn header_settings_tail(&self, payload: HeaderSettingsPayload)
         -> Result<HeaderSettingsTail, Self::Operational>;
@@ -82,7 +82,7 @@ impl AdapterDemand for Compatibility{
     fn procedure_metadata(&self,signature:dm_ir::ProcedureSignature,settings:SettingRows,_:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>)->Result<Arc<dm_ir::ProcedureMetadata>,Self::Operational>{
         Ok(Arc::new(dm_ir::ProcedureMetadata{signature,settings:settings.into_shared()}))
     }
-    fn reserve_header_row(&self, rows:&mut AdapterRows<crate::procedure::header_input::HeaderAllocationRow>)->Result<bool,Self::Operational>{
+    fn reserve_header_row(&self, rows:&mut crate::procedure::header_input::HeaderAllocationRows)->Result<bool,Self::Operational>{
         Ok(rows.reserve_compatibility().is_ok())
     }
     fn header_settings_tail(&self, payload: HeaderSettingsPayload) -> Result<HeaderSettingsTail, Self::Operational> {
@@ -138,7 +138,7 @@ impl AdapterDemand for Checked<'_,'_>{
             None=>Ok(Arc::new(dm_ir::ProcedureMetadata{signature,settings:settings.into_shared()})),
         }
     }
-    fn reserve_header_row(&self, rows:&mut AdapterRows<crate::procedure::header_input::HeaderAllocationRow>)->Result<bool,Self::Operational>{
+    fn reserve_header_row(&self, rows:&mut crate::procedure::header_input::HeaderAllocationRows)->Result<bool,Self::Operational>{
         rows.reserve_checked(self.admission)?;
         Ok(true)
     }

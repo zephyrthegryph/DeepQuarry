@@ -195,7 +195,7 @@ fn from_ast_with_cursor_issued(
 ) -> Result<
     (
         AdaptedDeclarations,
-        crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,
+        crate::procedure::header_input::HeaderAllocationRows,
     ),
     Vec<AdapterError>,
 > {
@@ -214,7 +214,7 @@ fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
 ) -> Result<Result<
     (
         AdaptedDeclarations,
-        crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,
+        crate::procedure::header_input::HeaderAllocationRows,
     ),
     Vec<AdapterError>,
 >,D::Operational> {
@@ -235,7 +235,7 @@ fn from_items_with_cursor_progress_using<D:AdapterDemand>(
     skip_general_constants:bool,
     prepared_signatures:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
 ) -> Result<DeclarationAdapterProgress,D::Operational> {
-    let mut header_rows = crate::procedure::adapter_rows::AdapterRows::default();
+    let mut header_rows = crate::procedure::header_input::HeaderAllocationRows::new(prepared_signatures.is_some());
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
         skeletons: Vec::new(),
@@ -347,7 +347,7 @@ struct AdapterContext<'a,'op,D:AdapterDemand> {
     no_expansion: Arc<[Span]>,
     source: Option<&'a str>,
     headers: Option<(&'a crate::procedure::OriginalProcedureHeaders, usize)>,
-    header_rows: &'a mut crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,
+    header_rows: &'a mut crate::procedure::header_input::HeaderAllocationRows,
     file: FileId,
     include_occurrence: u32,
     region: u128,
@@ -1237,11 +1237,11 @@ mod checked_tests;
 
 /// Genuine adapter products only. This is not a graph, source proof, semantic
 /// availability result, header-completion token or compiler admission.
-pub(crate) struct DeclarationAdapterProgress{facts:AdaptedDeclarations,header_rows:crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,errors:Vec<AdapterError>}
+pub(crate) struct DeclarationAdapterProgress{facts:AdaptedDeclarations,header_rows:crate::procedure::header_input::HeaderAllocationRows,errors:Vec<AdapterError>}
 impl DeclarationAdapterProgress{
  pub(crate) fn facts(&self)->&AdaptedDeclarations{&self.facts}
  pub(crate) fn errors(&self)->&[AdapterError]{&self.errors}
- pub(crate) fn into_parts(self)->(AdaptedDeclarations,crate::procedure::adapter_rows::AdapterRows<crate::procedure::header_input::HeaderAllocationRow>,Vec<AdapterError>){(self.facts,self.header_rows,self.errors)}
+ pub(crate) fn into_parts(self)->(AdaptedDeclarations,crate::procedure::header_input::HeaderAllocationRows,Vec<AdapterError>){(self.facts,self.header_rows,self.errors)}
 }
 /// Caller must hold the current primary Original product (already truncated
 /// before type-child prescans) and its SAME header/admission owners. A blanket

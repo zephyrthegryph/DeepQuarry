@@ -252,9 +252,9 @@ impl OriginalProcedureHeaders {
             },
         )
     }
-    pub(super) fn install_settings(
+    pub(super) fn install_settings<'rows>(
         &self,
-        rows: &mut [HeaderAllocationRow],
+        rows: impl Iterator<Item = &'rows mut HeaderAllocationRow>,
         offset: usize,
     ) -> Result<(), String> {
         self.install_settings_using(rows, offset, |roster, body, owner, footprints| {
@@ -262,9 +262,9 @@ impl OriginalProcedureHeaders {
             push(&mut roster.rows, row)
         })
     }
-    pub(super) fn install_settings_checked(
+    pub(super) fn install_settings_checked<'rows>(
         &self,
-        rows: &mut [HeaderAllocationRow],
+        rows: impl Iterator<Item = &'rows mut HeaderAllocationRow>,
         offset: usize,
         a: &SettingAdmission<'_>,
     ) -> Result<(), super::OriginalHeaderFailure> {
@@ -275,9 +275,9 @@ impl OriginalProcedureHeaders {
             push_checked(roster, row, a)
         })
     }
-    fn install_settings_using<E: From<String> + From<&'static str>>(
+    fn install_settings_using<'rows, E: From<String> + From<&'static str>>(
         &self,
-        rows: &mut [HeaderAllocationRow],
+        rows: impl Iterator<Item = &'rows mut HeaderAllocationRow>,
         offset: usize,
         mut push_row: impl FnMut(&mut SettingsRoster, Span, Arc<ProcedureMetadata>, AdapterRows<SettingFootprint>) -> Result<(), E>,
     ) -> Result<(), E> {
@@ -746,7 +746,7 @@ mod tests {
         }];
         let denied_used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let low = SettingAdmission::new(&denied_used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (1), &|| Ok(()));
-        assert!(matches!(other.install_settings_checked(&mut denied, 0, &low),
+        assert!(matches!(other.install_settings_checked(denied.iter_mut(), 0, &low),
             Err(super::super::OriginalHeaderFailure::Operational(e)) if e.kind() == std::io::ErrorKind::OutOfMemory));
         assert!(other.settings.get().is_none());
         assert_eq!(denied_used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
