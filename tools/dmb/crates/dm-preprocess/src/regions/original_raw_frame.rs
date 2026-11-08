@@ -98,12 +98,25 @@ impl OriginalRawLexer{
    }
    let prior_position=self.cursor.position();
    let boundary=if self.directive==OriginalDirectiveLexicalState::Stringy{self.cursor.prepare_original_directive_boundary_using(bytes,true,a,|_,_,_|true)?}else{self.cursor.prepare_original_boundary_using(bytes,true,a,|_,_,_|true)?};
-   match boundary{dm_syntax::OriginalPreparedBoundary::Productive(_)|dm_syntax::OriginalPreparedBoundary::End=>{},dm_syntax::OriginalPreparedBoundary::Stopped=>return Err(io::Error::new(io::ErrorKind::Interrupted,"actual raw lexical sink stopped")),dm_syntax::OriginalPreparedBoundary::NeedInput=>return Err(io::ErrorKind::InvalidData.into())}
+   let scalar=match boundary{
+    dm_syntax::OriginalPreparedBoundary::Scalar(token)=>Some(token),
+    dm_syntax::OriginalPreparedBoundary::Productive(_)|dm_syntax::OriginalPreparedBoundary::End=>None,
+    dm_syntax::OriginalPreparedBoundary::Stopped=>return Err(io::Error::new(io::ErrorKind::Interrupted,"actual raw lexical sink stopped")),
+    dm_syntax::OriginalPreparedBoundary::NeedInput=>return Err(io::ErrorKind::InvalidData.into()),
+   };
    let productive=self.cursor.position();crossed_directive_line(&mut self.directive,&bytes[prior_position..productive]);
    if bytes.get(productive)==Some(&b'\n'){crossed_directive_line(&mut self.directive,b"\n");}
    if self.directive==OriginalDirectiveLexicalState::Stringy&&productive<bytes.len(){self.directive=OriginalDirectiveLexicalState::None;let quote=dm_syntax::OriginalQuotedFrame::start_directive_using(bytes,productive,a)?;self.push_quote(quote,a)?;continue}
-   if let Some(quote)=dm_syntax::OriginalQuotedFrame::start_using(bytes,self.cursor.position(),a)?{self.push_quote(quote,a)?;continue}
-   match self.cursor.peek_bytes_available_using(bytes,true,a,|_,_,_|true)?{
+   let step=if let Some(token)=scalar{
+    // The boundary already owns this scalar peek, its facts and its
+    // once-only lexical notice. Keep the skipped quote probe's poll.
+    a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+    dm_syntax::NativeTokenStep::Token(token)
+   }else{
+    if let Some(quote)=dm_syntax::OriginalQuotedFrame::start_using(bytes,self.cursor.position(),a)?{self.push_quote(quote,a)?;continue}
+    self.cursor.peek_bytes_available_using(bytes,true,a,|_,_,_|true)?
+   };
+   match step{
     dm_syntax::NativeTokenStep::Token(token)=>{
      self.read_point=Some(if let Some(facts)=self.cursor.original_number_facts(){facts.notice_point()}
       else if let Some(facts)=self.cursor.original_ident_facts(){facts.read_point()}
@@ -209,4 +222,63 @@ impl OriginalRawLexer{
  #[test]fn actual_ident_lookahead_newline_cancels_stringy_and_initial_definition_has_no_file_directive_state(){
   let bytes=b"#warn\nword\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut physical=OriginalRawLexer::new(NativeTokenCursor::for_original_source_bytes(bytes),true,&a).unwrap();step(&mut physical,bytes,&a);step(&mut physical,bytes,&a);assert_eq!(step(&mut physical,bytes,&a).unwrap().1,"\n");assert_eq!(step(&mut physical,bytes,&a).unwrap().0,"Ident");let mut initial=OriginalRawLexer::for_initial_definition(&a).unwrap();step(&mut initial,b"#warn word",&a);step(&mut initial,b"#warn word",&a);assert_eq!(step(&mut initial,b"#warn word",&a).unwrap(),("Ident".into(),"word".into()));drop((physical,initial));assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
+}
+
+#[cfg(test)]
+mod prepared_scalar_fast_path_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn prepared_scalar_keeps_the_post_boundary_checkpoint_before_delivery() {
+        let bytes = b"actual";
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let polls = Cell::new(0usize);
+        let fail = Cell::new(None);
+        let checkpoint = || {
+            let next = polls.get() + 1;
+            polls.set(next);
+            if fail.get() == Some(next) { Err(io::Error::from_raw_os_error(1450)) } else { Ok(()) }
+        };
+        let a = SettingAdmission::new(&used, 1 << 20, &checkpoint);
+        let mut cursor = NativeTokenCursor::for_original_source_bytes(bytes);
+        assert!(matches!(cursor.prepare_original_boundary_using(bytes, true, &a,
+            |_, _, _| panic!("valid identifier")).unwrap(), dm_syntax::OriginalPreparedBoundary::Scalar(_)));
+        let boundary_polls = polls.get();
+        let mut raw = OriginalRawLexer::new(NativeTokenCursor::for_original_source_bytes(bytes), true, &a).unwrap();
+        polls.set(0);
+        // Initial raw-loop poll, actual scalar boundary polls, then the
+        // original quote-candidate poll. Delivery must not precede it.
+        fail.set(Some(boundary_polls + 2));
+        let result: io::Result<Option<()>> = raw.next_using(bytes, &a,
+            |_| panic!("no lexical notice"), |_, _| panic!("cancellation must win before delivery"));
+        assert_eq!(result.unwrap_err().raw_os_error(), Some(1450));
+        assert_eq!(polls.get(), boundary_polls + 2);
+        assert!(raw.failed);
+    }
+
+    #[test]
+    fn prepared_scalar_reports_resource_notice_before_delivering_the_same_recovery_once() {
+        let bytes = b"'unterminated";
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut raw = OriginalRawLexer::new(NativeTokenCursor::for_original_source_bytes(bytes), true, &a).unwrap();
+        let notices = Cell::new(0);
+        let seen = raw.next_using(bytes, &a, |notice| {
+            let mut message = String::new();
+            notice.write_message(&mut message).unwrap();
+            assert_eq!(message, "unterminated resource literal");
+            notices.set(notices.get() + 1);
+            Ok(())
+        }, |event, source| {
+            assert_eq!(notices.get(), 1);
+            let OriginalPhysicalLexeme::Scalar { token, resource: Some(resource), .. } = event
+                else { panic!("actual resource recovery scalar"); };
+            assert!(resource.recovering());
+            assert_eq!(&source[token.span.range()], bytes);
+            Ok(())
+        }).unwrap();
+        assert_eq!(seen, Some(()));
+        assert_eq!(notices.get(), 1);
+    }
 }

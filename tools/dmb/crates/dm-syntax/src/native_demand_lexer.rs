@@ -113,7 +113,13 @@ impl Mode{
 }
 
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum NativeTokenStep{Token(SpanToken),NeedInput,Stopped,End}
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalPreparedBoundary{Productive(usize),NeedInput,End,Stopped}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalPreparedBoundary{
+ /// Quote/directive boundary. No scalar has been peeked here.
+ Productive(usize),
+ /// The cursor's own visible peek, including issued Original facts.
+ Scalar(SpanToken),
+ NeedInput,End,Stopped,
+}
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum NativeTokenProgress{NeedInput,Stopped,Complete}
 #[derive(Clone,Copy)]struct OriginalControlAfter{line_head:bool,close_allowed:bool,join:u8}
 pub struct NativeTokenCursor{purpose:NativeLexicalPurpose,position:usize,finished:bool,mode:Option<Mode>,peek:Option<(SpanToken,Option<&'static str>,bool)>,number:Option<OriginalNumberFacts>,comment:Option<OriginalCommentFacts>,resource:Option<OriginalResourceFacts>,punctuation:Option<OriginalPunctuationFacts>,ident:Option<OriginalIdentFacts>,whitespace:Option<OriginalWhitespaceFacts>,original:OriginalControlAfter,pending_original:Option<OriginalControlAfter>}
@@ -151,7 +157,7 @@ impl NativeTokenCursor{
    // SAME opener judge, before constructing any whole-literal mode. Skip
    // decisions and all ordinary token work remain the SAME cursor below.
    if self.peek.is_none()&&self.mode.is_none()&&self.position<source.len()&&((directive_line&&!matches!(source[self.position],b'\r'|b' '|b'\t'))||source[self.position]==b'@'||quoted_start_bytes(source,self.position,final_input)?.is_some()){return Ok(OriginalPreparedBoundary::Productive(self.position))}
-   match self.peek_inner_once(source,final_input,Some(a),&mut diagnostic)?{NativeTokenStep::Token(token)=>{if self.pending_original.is_none(){let(skip,after)=self.original_control(token,source)?;self.pending_original=Some(after);if skip{self.commit_peek()?;continue}}self.finish_original_visible(token,source);return Ok(OriginalPreparedBoundary::Productive(self.position))},NativeTokenStep::NeedInput=>return Ok(OriginalPreparedBoundary::NeedInput),NativeTokenStep::End=>return Ok(OriginalPreparedBoundary::End),NativeTokenStep::Stopped=>return Ok(OriginalPreparedBoundary::Stopped)}
+   match self.peek_inner_once(source,final_input,Some(a),&mut diagnostic)?{NativeTokenStep::Token(token)=>{if self.pending_original.is_none(){let(skip,after)=self.original_control(token,source)?;self.pending_original=Some(after);if skip{self.commit_peek()?;continue}}self.finish_original_visible(token,source);return Ok(OriginalPreparedBoundary::Scalar(token))},NativeTokenStep::NeedInput=>return Ok(OriginalPreparedBoundary::NeedInput),NativeTokenStep::End=>return Ok(OriginalPreparedBoundary::End),NativeTokenStep::Stopped=>return Ok(OriginalPreparedBoundary::Stopped)}
   }
  }
  fn finish_original_visible(&mut self,token:SpanToken,source:&[u8]){if token.kind==TokenKind::Ident&&self.ident.is_none(){self.ident=Some(OriginalIdentFacts::issued(token.span,source));}if token.kind==TokenKind::Whitespace&&self.whitespace.is_none(){self.whitespace=Some(OriginalWhitespaceFacts::issued(token.span,source.get(token.span.start)==Some(&b'\t')));}}
@@ -221,3 +227,36 @@ mod original_ascii_identifier_controls {
 }
 
 #[cfg(test)]mod actual_directive_stringy_boundary_controls{use super::*;use std::sync::{atomic::{Ordering}};#[test]fn actual_directive_boundary_stops_before_payload_ident_peek_and_quote_resumes_same_cursor(){let raw=b"#error causal failure\nAFTER";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut cursor=NativeTokenCursor::for_original_source_bytes(raw);for wanted in [b"#".as_slice(),b"error".as_slice()]{let NativeTokenStep::Token(token)=cursor.next_bytes_available_using(raw,true,&a,|_,_,_|panic!("valid scalar")).unwrap()else{panic!("actual directive prefix")};assert_eq!(&raw[token.span.range()],wanted);}let OriginalPreparedBoundary::Productive(at)=cursor.prepare_original_directive_boundary_using(raw,true,&a,|_,_,_|panic!("valid boundary")).unwrap()else{panic!("actual payload boundary")};assert_eq!(at,7);assert!(cursor.peek.is_none());let mut quote=crate::OriginalQuotedFrame::start_directive_using(raw,at,&a).unwrap();let crate::OriginalQuotedStep::Part(part)=quote.next_using(raw,true,&a).unwrap()else{panic!("genuine line String")};let mut value=Vec::new();part.visit_value_bytes(|bytes|{value.extend_from_slice(bytes);Ok::<_,()>(())}).unwrap().unwrap();assert_eq!(value,b"causal failure");quote.continue_cursor(&mut cursor).unwrap();assert_eq!(&raw[cursor.position()..],b"AFTER");drop(quote);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}}
+
+#[cfg(test)]
+mod original_prepared_scalar_controls {
+    use super::*;
+
+    #[test]
+    fn prepared_original_scalar_retains_exact_peek_and_reports_lexical_notice_once() {
+        let bytes = b"'unterminated";
+        let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let a = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let mut cursor = NativeTokenCursor::for_original_source_bytes(bytes);
+        let mut notices = 0;
+        let OriginalPreparedBoundary::Scalar(token) = cursor.prepare_original_boundary_using(bytes, true, &a,
+            |span, kind, message| {
+                assert_eq!(span.range(), 0..bytes.len());
+                assert_eq!(kind, DiagnosticKind::Lexical);
+                assert_eq!(message, "unterminated resource literal");
+                notices += 1;
+                true
+            }).unwrap()
+        else { panic!("actual prepared scalar"); };
+        assert_eq!(token.kind, TokenKind::Resource);
+        assert_eq!(cursor.position(), 0);
+        assert!(cursor.original_resource_facts().unwrap().recovering());
+        let NativeTokenStep::Token(same) = cursor.peek_bytes_available_using(bytes, true, &a,
+            |_, _, _| panic!("legacy repeated peek must not emit another notice")).unwrap()
+        else { panic!("actual retained peek"); };
+        assert_eq!((same.kind, same.span), (token.kind, token.span));
+        assert_eq!(notices, 1);
+        cursor.commit_peek().unwrap();
+        assert_eq!(cursor.position(), bytes.len());
+    }
+}
