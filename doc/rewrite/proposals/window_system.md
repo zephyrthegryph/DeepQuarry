@@ -172,3 +172,13 @@ Also part of the one system: floating windows (tgui and the chat) may sit on any
 stat panel leaves out its frame edge on the chat's side (`html[data-chat-side]`).
 
 What stays: one `winset` per frame while something moves, and a docked window's page re-renders only when its own data changes.
+
+### 10.5 Windows that still open their own way
+
+Every admin report that was a raw `browse()` window (contract inspector and board, generated-station architecture, tick report) is
+now a pooled tgui window (`dq_admin_report_html`, `AdminReport`), so it docks, stacks and floats like the rest. Admin paper was
+already tgui. Two stay out on purpose:
+- the lobby screen (`lobby_browser`): a dedicated full-size skin element behind the lobby menu, never a window to dock;
+- the in-game admin viewer: it navigates a browser to an external web app (cross-origin, its own auth), which a tgui page cannot
+  host; "Admin Viewer (Browser)" opens the same thing in the player's own browser.
+The modal prompts (section 8) stay separate by design.
