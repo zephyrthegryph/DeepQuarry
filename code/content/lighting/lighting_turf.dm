@@ -95,6 +95,9 @@
 
 // Used to get a scaled lumcount.
 /turf/proc/get_lumcount(minlum = 0, maxlum = 1)
+	// Client lighting: no corners; the level is worked out from the glowing lights in reach (client_light_level.dm).
+	if(GLOB.client_lighting && SSlighting.is_initialized() && has_dynamic_lighting())
+		return CLAMP01((client_light_level(src) - minlum) / (maxlum - minlum) + dynamic_lumcount)
 	if (!lighting_object && (!SSlighting.is_initialized() || !has_dynamic_lighting()))
 		return 1
 

@@ -42,13 +42,18 @@ CAPABILITIES(/turf/open)
 	owns_one(nameof(active_hotspot), /obj/effect/hotspot)
 	owns_one(nameof(_air), /datum/gas_mixture)
 	// The Rust arena registration of a turf made after the map loaded (the map's turfs register in one call, setup_allturfs()).
-	setup(PROC_REF(open_air_start))
+	setup(PROC_REF(open_air_start), mapload = TRUE)
 
 /// A turf made after the map loaded joins the Rust air arena. It makes no mixture: its cell takes its gas from its air
 /// template, and the datum is made when something first reads the air (turf_air()).
-/turf/open/proc/open_air_start()
+/turf/open/proc/open_air_start(mapload)
 	PRIVATE_PROC(TRUE)
+	// The space of a level made while the round runs is already in the arena: the level registered whole when it was made
+	// (/world/proc/increment_max_z(), SSair.register_level_turfs()), so its map-loaded vacuum makes no call of its own.
+	if(mapload && immutable_atmos && GLOB.air_bulk_levels["[z]"])
+		return INITIALIZE_HINT_NORMAL
 	register_open_air()
+	return INITIALIZE_HINT_NORMAL
 
 /// Base turfs make nothing ahead of a read: the air is made when it is first read (turf_air()).
 /turf/proc/settle_air()
@@ -107,6 +112,13 @@ PROC_SUMMARY(/turf/open/proc/air_template) // a round-long template per turf typ
 		mix.parse_string_immutable(initial_gas_mix)
 		SSair.planetary[initial_gas_mix] = mix
 
+/// The z-level being made right now while the atmos core runs (/world/proc/increment_max_z()), whose turfs register in one call after; 0 otherwise.
+GLOBAL_VAR_INIT(air_level_registering, 0)
+/// The z-levels ("[z]" -> TRUE) the atmos core registered whole when they were made while the round ran.
+GLOBAL_LIST_EMPTY(air_bulk_levels)
+/// Turfs that joined the arena one at a time (register_open_air()) since boot: the cost the level and map registrations save.
+GLOBAL_VAR_INIT(air_turfs_registered_alone, 0)
+
 /// After the turf is initialized: join the Rust air arena when SSair is already running.
 /turf/open/proc/register_open_air()
 	PRIVATE_PROC(TRUE)
@@ -115,7 +127,8 @@ PROC_SUMMARY(/turf/open/proc/air_template) // a round-long template per turf typ
 	// turf then. For turfs created AFTER SSair init (ChangeTurf, runtime spawns)
 	// we register here, with the air-block mask of whatever is already on the
 	// turf, so Rust builds its adjacency.
-	if(SSair.initialized)
+	if(SSair.initialized && GLOB.air_level_registering != z) // a level being made registers whole after (SSair.register_level_turfs())
+		GLOB.air_turfs_registered_alone++
 		update_air_ref(0, air_block_mask())
 
 /// Phase 1 (unbind): its fire goes out first (it cools the air it sits in),

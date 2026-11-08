@@ -450,6 +450,17 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 		auxmos_register_turfs_bulk(turf_masks)
 	log_world("AIR_INIT: turfs registered by the Rust core; [length(turf_masks)] turf(s) asked their objects for air passage")
 
+/// A z-level made while the round runs (/world/proc/increment_max_z()): the atmos core registers its turfs in one call, as
+/// setup_allturfs() does the map's; DM asks only the objects that decide air passage in a proc.
+/datum/system/air/proc/register_level_turfs(z)
+	GLOB.air_bulk_levels["[z]"] = TRUE
+	var/list/asking = vg_hook_register_level_turfs(z, world.maxx, world.maxy)
+	var/list/turf_masks = list()
+	for(var/turf/open/open_setup as anything in asking)
+		turf_masks[open_setup] = open_setup.air_block_mask()
+	if(length(turf_masks))
+		auxmos_register_turfs_bulk(turf_masks)
+
 // log_active_turfs / resolve_active_graph removed — they existed only to service
 // the DM roundstart active-turf diffing pass, which is gone (auxmos discovers
 // active turfs from the arena).
