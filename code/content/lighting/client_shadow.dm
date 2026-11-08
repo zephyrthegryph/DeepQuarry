@@ -8,6 +8,8 @@
 /// Cumulative mask rebuilds and reach-triggered redraws (benchmarks, the door test).
 GLOBAL_VAR_INIT(client_glow_mask_builds, 0)
 GLOBAL_VAR_INIT(client_glow_reconsiders, 0)
+/// TRUE: glows draw uncut by their shadow masks (the diagnostic verb below).
+GLOBAL_VAR_INIT(client_glow_masks_off, FALSE)
 /// "z,cx,cy" -> lights glowing from that chunk (client lighting only).
 GLOBAL_LIST_EMPTY(client_glow_chunks)
 
@@ -110,7 +112,8 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 		// stair-stepping. A reached wall tile stays in the mask whole, so its face is lit; only its outer rim softens.
 		M.add_filter("client_shadow_soft", 1, list(type = "blur", size = CLIENT_GLOW_MASK_BLUR))
 		vis_add(G, M)
-		G.add_filter("client_shadow", 1, list(type = "alpha", render_source = M.render_target))
+		if(!GLOB.client_glow_masks_off)
+			G.add_filter("client_shadow", 1, list(type = "alpha", render_source = M.render_target))
 	glow_mask_key = key
 	var/obj/effect/overlay/client_glow_mask/M = glow_mask
 	M.overlays = CACHED_FAST(client_glow_masks, key)
@@ -174,3 +177,42 @@ DECLARE_SHARED_CACHE(client_glow_masks, GLOBAL_PROC_REF(client_glow_mask_build),
 					continue
 				GLOB.client_glow_reconsiders++
 				L.client_glow_mask_refresh() // only the mask: the glow's place, size and tint did not change
+
+/// One line on what the glows are: how many, how much of their square each mask lets through, and how strong they are.
+/proc/client_glow_census()
+	var/glows = 0
+	var/tiles = 0
+	var/possible = 0
+	var/faint = 0
+	var/one_tile = 0
+	for(var/datum/light_source/L)
+		if(QDELETED(L) || !L.glow)
+			continue
+		glows++
+		var/reached = length(L.glow_reach)
+		var/side = 2 * L.glow_mask_range + 1
+		tiles += reached
+		possible += side * side
+		if(reached <= 1)
+			one_tile++
+		var/obj/effect/overlay/client_glow/G = L.glow
+		if(G.alpha < 128)
+			faint++
+	return "client glows: [glows] glow(s), masks open on [possible ? round(100 * tiles / possible) : 0]% of their squares ([tiles]/[possible] tiles), [one_tile] with one tile or none, [faint] under half strength, masks [GLOB.client_glow_masks_off ? "OFF" : "on"]"
+
+// Separates "the shadow masks cut the light away" from "the glows do not light the world": with the masks off, a dark room lit up is the mask.
+ADMIN_VERB(toggle_client_glow_masks, R_DEBUG|R_SERVER, "Toggle Client Glow Masks", "Draw every client glow without its shadow mask, live, and report what the glows are.", ADMIN_CATEGORY_DEBUG_GAME)
+	GLOB.client_glow_masks_off = !GLOB.client_glow_masks_off
+	for(var/datum/light_source/L)
+		if(QDELETED(L) || !L.glow || !L.glow_mask)
+			continue
+		var/obj/effect/overlay/client_glow/G = L.glow
+		var/obj/effect/overlay/client_glow_mask/M = L.glow_mask
+		if(GLOB.client_glow_masks_off)
+			G.remove_filter("client_shadow")
+		else
+			G.add_filter("client_shadow", 1, list(type = "alpha", render_source = M.render_target))
+	client_glow_holders_switched(TRUE)
+	var/census = client_glow_census()
+	log_world(census)
+	message_admins("[key_name_admin(user)] toggled client glow masks. [census]")
