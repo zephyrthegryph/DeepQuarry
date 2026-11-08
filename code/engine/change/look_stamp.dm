@@ -329,11 +329,9 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 /// the way a turf's contents are, so it stayed undrawn and the player kept a grey screen. (`mapload` cannot tell them apart: INITIALIZE_IMMEDIATE
 /// types, the HUD's among them, always initialize as a map load.)
 /proc/boot_created_hold(atom/A)
-	if(isnull(get_turf(A)))
-		return FALSE
+	if(GLOB.boot_created_settled || ismob(A) || A.periodic_cadence || A.periodic_interval || isnull(get_turf(A)) || !materialization_host().frame_running())
+		return FALSE // the cheap tests first: this runs for every atom created at boot
 	look_verdicts_load() // the verdicts a previous boot of this world learned: a known type is neither held nor sampled
-	if(GLOB.boot_created_settled || !materialization_host().frame_running() || ismob(A) || A.periodic_cadence || A.periodic_interval)
-		return FALSE
 	if(!isnull(GLOB.type_look_stamp[A.type]))
 		// A known verdict (a previous boot of this world): a lazy type's fresh atom is parked at once when the boot leaves first draws to the clients,
 		// as the park would make of it, without a queue entry; any other is queued as before.

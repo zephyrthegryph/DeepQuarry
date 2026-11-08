@@ -230,6 +230,7 @@
 #include "dq_init_plan_tests.dm"
 #include "dq_join_construction_tests.dm"
 #include "dq_stat_hop_tests.dm"
+#include "dq_stat_template_tests.dm"
 #include "dq_stat_sum_running_tests.dm"
 #include "dq_init_sweep_6_tests.dm"
 #include "dq_init_wave_4_tests.dm"

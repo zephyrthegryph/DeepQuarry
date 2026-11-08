@@ -110,9 +110,10 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 	RETURN_TYPE(/datum/type_trait)
 	if(isnull(holder))
 		return type_trait_default(kind) // a read through an empty slot (worn?.x): the kind's defaults
-	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
-	if(own)
-		return own
+	if(GLOB.per_type_copies[kind]) // only a kind some holder copied on write has an instance's own trait to look for
+		var/datum/type_trait/own = per_type_copy_peek(holder, kind)
+		if(own)
+			return own
 	if(!SSstatic_entries.ready)
 		static_entries_ensure("type_trait_of([holder.type], [kind])")
 	var/datum/type_trait/shared = GLOB.type_trait_tables[kind]?[holder.type]
