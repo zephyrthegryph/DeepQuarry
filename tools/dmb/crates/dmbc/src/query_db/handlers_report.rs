@@ -25,11 +25,11 @@ impl QueryDb{
   require_current(self,capture,proof)?;checkpoint(budget)?;
   let mut funding=Funding{budget:Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?,done:false};
   let poll=||crate::daemon::control::checkpoint();let mut builder=Builder::new(&funding.budget,&poll)?;let subject=capture.prepared().subject();
-  let selected=full.and_then(|(_,_,child,reader,plan)|plan.map(|plan|reader.selected_handler_files(child.policy(),plan))).transpose()?;
+  let selected=full.and_then(|(_,_,child,reader,plan)|plan.map(|plan|reader.handler_report_files(child.policy(),plan))).transpose()?;
   self.with_handlers_structural_budget_locked(capture,proof,budget,|data,_|{
    for row in data.rows(){let mapping=capture.structural_inputs()?.mapping();builder.push(row.rule,&row.relative,row.line,&row.message,&mut|relative,visit|with_handler_report_file(subject,mapping,budget,selected.as_ref(),relative,visit)).map_err(actual)?;}Ok(())
   })?;
-  if let Some((workspace,guard,full_capture,reader,selected_tree))=full{
+  if let Some((workspace,guard,full_capture,reader,selected_tree))=full.filter(|_|subject.requires_full_model()){
    self.with_handler_declarations_reader_locked(workspace,guard,full_capture,reader,selected_tree.is_some(),|data,_|{
     for row in data.sites(){builder.push(&row.rule,&row.rel,row.line,&row.msg,&mut|relative,visit|with_handler_report_file(subject,full_capture.policy().mapping(),budget,selected.as_ref(),relative,visit)).map_err(actual)?;}Ok(())
    })?;
@@ -50,7 +50,10 @@ impl QueryDb{
  /// Real independently admitted full model; same current reader/budget owns
  /// partial structural and full declared/output child evaluation.
  pub(crate) fn with_handlers_full_report<T>(self:&Arc<Self>,capture:&Arc<HandlerPreparedCapture>,proof:&Arc<HandlerPolicyAdmission>,workspace:&Arc<WorkspaceCapture>,guard:&NativeReadGuard<'_>,full_capture:&Arc<CapturedPolicyInputs>,selected_tree:Option<&SelectedTreePlanData>,consume:impl FnOnce(&Data,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
-  let produced=(||{require_current(self,capture,proof)?;if !proof.is_current(){return Err("failed handler proof cannot publish a current full report".into())}if !capture.prepared().subject().requires_full_model(){return Err("handler full partition was not requested".into())}if workspace.root()!=capture.root(){return Err("handler partial and full workspace roots differ".into())}
+  let produced=(||{require_current(self,capture,proof)?;if !proof.is_current(){return Err("failed handler proof cannot publish a current full report".into())}let joined=crate::policy_request::WorkspaceAuxiliaryQuestion::is_private_handlers_domain(workspace.auxiliary());
+   if !capture.prepared().subject().requires_full_model()&&!(joined&&selected_tree.is_some()){
+    return Err("handler full partition was not requested".into());
+   }if workspace.root()!=capture.root(){return Err("handler partial and full workspace roots differ".into())}
    if selected_tree.is_some()!=capture.prepared().subject().is_selected_full(){return Err("handler full report does not match the actual partial source purpose".into())}
    let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
    self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|self.collect_handler_partitions(capture,proof,reader.budget(),Some((workspace,guard,full_capture,reader,selected_tree)),consume))

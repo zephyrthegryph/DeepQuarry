@@ -3,27 +3,31 @@
 use std::{io,path::Path,sync::Arc};
 use crate::{input_snapshot::HandlerPreparedCapture,policy_request::{AdmittedPolicyRequest,AnalysisContext,WorkspaceAuxiliaryQuestion as Q},query_db::QueryDb,request_runner::runner_freshness::HandlerPolicyAdmission};
 fn invalid(message:&str)->io::Error{io::Error::new(io::ErrorKind::InvalidInput,message)}
-pub(crate) struct HandlerWorkspaceSnapshot{capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>,revision:u128,full_subject:Option<Arc<crate::input_snapshot::OriginalAnalysisSubject>>,full_revision:Option<u128>}
+pub(crate) struct HandlerWorkspaceSnapshot{capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>,revision:u128,full_subject:Option<Arc<crate::input_snapshot::OriginalAnalysisSubject>>,full_revision:Option<u128>,joined_selected:bool}
 impl HandlerWorkspaceSnapshot{
  /// Issuance is possible only after the real normal input barrier issued the
  /// distinct partial admission for this exact retained current producer.
  pub(crate) fn issued(intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>)->io::Result<Self>{
   crate::daemon::control::checkpoint()?;
   let subject=capture.prepared().subject();
-  let purpose=if subject.is_selected_full(){Q::SemHandlersFullAllow}else{Q::SemHandlers};
-  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=[purpose]||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||intent.workspace().is_none_or(|workspace|workspace.root!=capture.root())||(subject.is_selected_full()&&!subject.requires_full_model())||!proof.is_current()||!Arc::ptr_eq(&capture,proof.capture())||!capture.uses_queries(&queries){return Err(invalid("handler snapshot differs from its actual exclusive current partial-purpose admission"))}
+  let joined_selected=Q::is_private_handlers_domain(intent.workspace_auxiliary());
+  let purpose=if subject.is_selected_full(){Q::admits_selected_handlers(intent.workspace_auxiliary())}else{intent.workspace_auxiliary()==[Q::SemHandlers]};
+  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||!purpose||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||intent.workspace().is_none_or(|workspace|workspace.root!=capture.root())||(subject.is_selected_full()&&!subject.requires_full_model()&&!joined_selected)||!proof.is_current()||!Arc::ptr_eq(&capture,proof.capture())||!capture.uses_queries(&queries){return Err(invalid("handler snapshot differs from its actual exclusive current partial-purpose admission"))}
   capture.require_bound()?;
   // The key is a private current-owner query namespace, not evidence of source
   // equality or EOF. A real source revision stays separately optional below.
   let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"handler-private-partial-current-query-owner-v1");hash.update(&capture.issuance().to_le_bytes());match capture.prepared().frontend(){Some(_)=>{hash.update(&[1]);hash.update(&capture.structural_inputs()?.source_revision().to_le_bytes());},None=>{hash.update(&[0]);}}
-  let revision=hash.digest128();Ok(Self{capture,proof,queries,revision,full_subject:None,full_revision:None})
+  let revision=hash.digest128();Ok(Self{capture,proof,queries,revision,full_subject:None,full_revision:None,joined_selected})
  }
  pub(crate) fn requires_full(&self)->bool{self.capture.prepared().subject().requires_full_model()}
+ /// A joined structural-only handler still borrows the independently
+ /// prepared workspace for final raw ALLOW lookup, never for declarations.
+ fn binds_full_scope(&self)->bool{self.requires_full()||self.joined_selected}
  pub(super) fn bind_full_snapshot(&mut self,full:Option<&super::SourceSnapshot>)->io::Result<()>{
-  if let Some(full)=full{if !self.requires_full(){return Err(invalid("unrequested full handler source cannot be bound"))}full.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.full_subject=Some(Arc::clone(full.analysis_subject.as_ref().ok_or_else(||invalid("handler full source subject absent"))?));self.full_revision=Some(full.source_revision);}self.require_full_snapshot(full)
+  if let Some(full)=full{if !self.binds_full_scope(){return Err(invalid("unrequested full handler scope cannot be bound"))}full.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.full_subject=Some(Arc::clone(full.analysis_subject.as_ref().ok_or_else(||invalid("handler full source subject absent"))?));self.full_revision=Some(full.source_revision);}self.require_full_snapshot(full)
  }
  pub(super) fn require_full_snapshot(&self,full:Option<&super::SourceSnapshot>)->io::Result<()>{
-  self.require_current()?;match(full,self.requires_full()){
+  self.require_current()?;match(full,self.binds_full_scope()){
    (None,false)=>Ok(()),
    (Some(full),true)=>{full.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;if self.full_revision!=Some(full.source_revision)||full.analysis_subject.as_ref().zip(self.full_subject.as_ref()).is_none_or(|(actual,bound)|!Arc::ptr_eq(actual,bound))||!full.matches_original_analysis_subject(&self.capture.root().join("deepquarry.dme"))||full.native_raw_queries.as_ref().is_none_or(|queries|!Arc::ptr_eq(queries,&self.queries)){return Err(invalid("handler demanded full partition lacks its separately issued actual source/query owner"))}Ok(())},
    (None,true)=>Err(io::Error::new(io::ErrorKind::NotConnected,"handler demanded full partition remains genuinely unprepared")),
@@ -46,8 +50,8 @@ impl super::QueryAttempt{
  pub(crate) fn admit_handlers_source(&mut self,intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>)->io::Result<u128>{
   if self.finished||self.pending_source.is_some()||self.pending_workspace.is_some()||self.pending_diagnostic.is_some(){return Err(invalid("handler source cannot publish over unfinished source admission"))}
   let mut snapshot=HandlerWorkspaceSnapshot::issued(intent,capture,proof,queries)?;let revision=snapshot.revision();let mut state=self.state.lock().unwrap_or_else(|e|e.into_inner());
-  if snapshot.requires_full(){if !self.captured{return Err(invalid("handler full partition was not actually admitted by this current query attempt"))}snapshot.bind_full_snapshot(state.snapshot.as_ref())?;}else{snapshot.bind_full_snapshot(None)?;}crate::daemon::control::checkpoint()?;
-  if self.enabled{if !snapshot.requires_full(){state.snapshot=None;}state.raw_snapshot=None;state.handlers_snapshot=Some(snapshot);state.publication_pair=None;self.captured=true;}Ok(revision)
+  if snapshot.binds_full_scope(){if !self.captured{return Err(invalid("handler full partition was not actually admitted by this current query attempt"))}snapshot.bind_full_snapshot(state.snapshot.as_ref())?;}else{snapshot.bind_full_snapshot(None)?;}crate::daemon::control::checkpoint()?;
+  if self.enabled{if !snapshot.binds_full_scope(){state.snapshot=None;}state.raw_snapshot=None;state.handlers_snapshot=Some(snapshot);state.publication_pair=None;self.captured=true;}Ok(revision)
  }
  pub(crate) fn finish_handlers_source(&mut self){let mut state=self.state.lock().unwrap_or_else(|e|e.into_inner());state.publication_pair=None;state.last_request_outcome="handler_source_prepared";self.finished=true;}
 }
@@ -55,7 +59,7 @@ impl super::QueryAttempt{
 impl HandlerWorkspaceSnapshot{
  pub(super) fn with_selected_full_report<T>(&self,full:&super::SourceSnapshot,guard:&super::workspace_native_guard::NativeReadGuard<'_>,plan:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->io::Result<T>)->io::Result<T>{
   let subject=self.capture.prepared().subject();
-  if !subject.is_selected_full()||!self.requires_full(){return Err(invalid("selected handlers requires its actual demanded-full partial child"))}
+  if !subject.is_selected_full()||!self.binds_full_scope(){return Err(invalid("selected handlers requires its actual admitted partial child and workspace scope"))}
   self.require_full_snapshot(Some(full))?;
   let workspace=full.native_workspace.as_ref().ok_or_else(||invalid("selected handlers requires actual full workspace"))?;
   let capture=full.workspace_semantic_inputs_with_guard(Q::SemHandlersFullAllow,guard)?;

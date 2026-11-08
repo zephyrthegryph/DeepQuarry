@@ -1404,7 +1404,8 @@ impl QueryAttempt {
         if intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let subject=inputs.original_analysis_subject().ok_or_else(||std::io::Error::other("full Analyze subject issuance absent"))?;subject.bind_frontend(frontend)?;subject.discovery().validate_recording(inputs)?;snapshot.analysis_subject=Some(Arc::clone(subject));}
         if intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::ImageDir]
             || intent.workspace_auxiliary()==crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
-            || intent.workspace_auxiliary()==crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS {
+            || crate::policy_request::WorkspaceAuxiliaryQuestion::is_private_authored_actor_domain(intent.workspace_auxiliary())
+            || crate::policy_request::WorkspaceAuxiliaryQuestion::is_private_grep_domain(intent.workspace_auxiliary()) {
             snapshot.image_dir_proof=Some(frontend.clean_original_image_dir_proof()
                 .map_err(|message|std::io::Error::new(std::io::ErrorKind::Unsupported,message))?);
         }

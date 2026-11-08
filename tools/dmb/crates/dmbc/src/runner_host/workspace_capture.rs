@@ -412,7 +412,7 @@ impl WorkspaceCapture {
         admit: &mut dyn FnMut(usize) -> io::Result<()>,
     ) -> io::Result<bool> {
         use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-        if !self.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS)
+        if !(Q::is_private_authored_actor_domain(self.auxiliary()) || Q::is_private_grep_domain(self.auxiliary()))
             || !self.has_extended_authored_doc_ui_capture() {
             return Ok(false);
         }
@@ -919,7 +919,9 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             } else {
                 let relative = path.strip_prefix(&discovery.contract().root)
                     .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "authored UI source escapes actual root"))?;
-                if relative.starts_with("tgui/packages/tgui/interfaces") &&
+                let grep_payload = questions.contains(&Q::CheckGrep)
+                    && dq_analyze::lints::check_grep::native::selects_filesystem_source(relative);
+                if !grep_payload && relative.starts_with("tgui/packages/tgui/interfaces") &&
                     !keeps_discovered_ui_path(relative, true, true, status.prepared.needs_sources(), |relative| {
                         Ok(discovery.productive_ui_configuration(configuration)?
                             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "authored UI lacks its actual discovery configuration"))?
@@ -1027,7 +1029,8 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         let poll = &crate::daemon::control::checkpoint;
         let mut control = Operation { budget, poll };
         let mut maps = Vec::new();
-        let directories = inputs.fold_regular_map_edits_inputs(&discovery.contract().root, budget, lender, |path, relative, bytes| {
+        let joined = Q::is_private_grep_domain(questions);
+        let mut parse = |path: &Path, relative: &str, bytes: &[u8]| {
             let rows = ParsedMap::parse(bytes, budget, poll).map_err(map_edits_failure)?;
             kc::row(&mut control, &mut maps).map_err(map_edits_failure)?;
             let relative = kc::own(&mut control, relative).map_err(map_edits_failure)?;
@@ -1036,12 +1039,27 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             let width = path.as_os_str().len().checked_mul(32).and_then(|n| n.checked_add(8192))
                 .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
             budget.charge(width).map_err(map_edits_quota)?;
-            if !selected.insert(path.to_owned()) {
+            if !selected.insert(path.to_owned()) && !joined {
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits source path has a second selected role"));
             }
             maps.push(MapEditsFile { relative, rows });
             Ok(())
-        })?;
+        };
+        let directories = if joined {
+            inputs.fold_observed_map_edits_inputs(&discovery, budget, lender, |path, relative| {
+                let file = files.iter().find(|file| file.path == path)
+                    .ok_or_else(|| io::Error::other("joined MapEdits has no exact captured CheckGrep payload"))?;
+                let Original::Owned(bytes) = &file.original else {
+                    return Err(io::Error::other("joined MapEdits requires the actual raw DMM payload owner"));
+                };
+                if file.fact != inputs.recorded_file_fact(path)? {
+                    return Err(io::Error::other("joined MapEdits original DMM observation changed"));
+                }
+                parse(path, relative, bytes.as_slice())
+            })?
+        } else {
+            inputs.fold_regular_map_edits_inputs(&discovery.contract().root, budget, lender, parse)?
+        };
         // The original directory backing is shared with the recorded facts.
         // Budget the closure's second key/index allocation before it is made.
         for directory in &directories {

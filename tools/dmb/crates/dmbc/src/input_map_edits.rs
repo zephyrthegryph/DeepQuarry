@@ -34,6 +34,7 @@ fn path_charge(path: &Path, multiplier: usize, overhead: usize) -> io::Result<us
 fn collect<P: SnapshotProvider>(
     inputs: &RecordingInputs<P>, folder: &Path, depth: usize, budget: &Arc<Budget>,
     scratch: &Arc<Budget>, lender: &mut dyn RecordedPolicySourceLender, paths: &mut Vec<PathBuf>, directories: &mut Vec<PathBuf>,
+    joined: Option<&crate::runner_host::workspace_discovery::DiscoveryReceipt>,
 ) -> io::Result<()> {
     crate::daemon::control::checkpoint()?;
     if depth == MAX_NESTING {
@@ -42,7 +43,13 @@ fn collect<P: SnapshotProvider>(
     // One exact lexical folder observation. Child classification is the
     // existing no-follow typed provider contract. Never silently skip an
     // observation where legacy would have examined a link's target.
-    let listing = inputs.capture_policy_directory_lent(folder, false, 0, budget, lender)?;
+    let acquired;
+    let listing = if let Some(discovery) = joined {
+        discovery.joined_map_directory(folder)?
+    } else {
+        acquired = inputs.capture_policy_directory_lent(folder, false, 0, budget, lender)?;
+        &acquired
+    };
     {
         let mut work = Operation { budget: scratch, poll: &crate::daemon::control::checkpoint };
         kc::row(&mut work, directories).map_err(map_failure)?;
@@ -69,7 +76,7 @@ fn collect<P: SnapshotProvider>(
             .and_then(|bytes| bytes.checked_add(512)).ok_or(io::ErrorKind::OutOfMemory)?)?).map_err(quota)?;
         let path = folder.join(child);
         if entry.kind == PolicyEntryKind::Directory {
-            collect(inputs, &path, depth + 1, budget, scratch, lender, paths, directories)?;
+            collect(inputs, &path, depth + 1, budget, scratch, lender, paths, directories, joined)?;
         } else {
             // Move the same allocation into the candidate roster; retain
             // funding after the iteration's temporary slot is dropped.
@@ -91,6 +98,26 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         &self, root: &Path, budget: &Arc<Budget>, lender: &mut dyn RecordedPolicySourceLender,
         mut visit: impl FnMut(&Path, &str, &[u8]) -> io::Result<()>,
     ) -> io::Result<Vec<PathBuf>> {
+        self.fold_map_edits_using(root, budget, lender, None, |path, relative, bytes| {
+            visit(path, relative, bytes.expect("standalone MapEdits reads the actual payload"))
+        })
+    }
+
+    pub(crate) fn fold_observed_map_edits_inputs(
+        &self, discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
+        budget: &Arc<Budget>, lender: &mut dyn RecordedPolicySourceLender,
+        mut visit: impl FnMut(&Path, &str) -> io::Result<()>,
+    ) -> io::Result<Vec<PathBuf>> {
+        discovery.validate_recording(self)?;
+        self.fold_map_edits_using(&discovery.contract().root, budget, lender, Some(discovery),
+            |path, relative, _| visit(path, relative))
+    }
+
+    fn fold_map_edits_using(
+        &self, root: &Path, budget: &Arc<Budget>, lender: &mut dyn RecordedPolicySourceLender,
+        joined: Option<&crate::runner_host::workspace_discovery::DiscoveryReceipt>,
+        mut visit: impl FnMut(&Path, &str, Option<&[u8]>) -> io::Result<()>,
+    ) -> io::Result<Vec<PathBuf>> {
         if !root.is_absolute() || canonical_path(root) != root
             || self.initial_environment != dm_preprocess::InitialEnvironment::OriginalChecker0290 {
             return Err(invalid("MapEdits requires the fixed actual Original workspace root"));
@@ -101,7 +128,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         let mut directories = Vec::new();
         // Directory names cross the temporary path scope and feed the
         // enclosing policy closure; fund them for the rest of this operation.
-        collect(self, &root.join("maps"), 0, budget, budget, lender, &mut paths, &mut directories)?;
+        collect(self, &root.join("maps"), 0, budget, budget, lender, &mut paths, &mut directories, joined)?;
         let pending = (|| -> io::Result<()> {
             paths.sort_unstable();
             for path in paths {
@@ -113,6 +140,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                 if map_edits_policy::skips_map(&relative) {
                     continue;
                 }
+                if joined.is_some() {
+                    visit(&path, &relative, None)?;
+                    continue;
+                }
                 // Fund the recorder nodes before the existing admitted read. The
                 // bounded reader authenticates the same handle and lexical path.
                 budget.charge(path_charge(&path, 32, 8192)?).map_err(quota)?;
@@ -120,15 +151,22 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                     bytes_scope.charge(bytes).map_err(quota)
                 })?.ok_or_else(|| io::Error::new(io::ErrorKind::Interrupted,
                     "discovered MapEdits input disappeared before its bounded read"))?;
-                visit(&path, &relative, &payload)?;
+                visit(&path, &relative, Some(&payload))?;
             }
             crate::daemon::control::checkpoint()?;
             Ok(())
         })();
-        let settled = self.snapshot.lock()
-            .map_err(|_| invalid("map_edits capture mutex poisoned"))
-            .and_then(|snapshot| snapshot.policy_closure_charge())
-            .and_then(|bytes| lender.directory_metadata_settled(&self.source_issuer, bytes));
+        // The joined fold borrows already-observed directories and bytes. It
+        // neither opens a recorder directory window nor changes its metadata.
+        // Settle only the ordinary fold, which used the lent directory reader.
+        let settled = if joined.is_none() {
+            self.snapshot.lock()
+                .map_err(|_| invalid("map_edits capture mutex poisoned"))
+                .and_then(|snapshot| snapshot.policy_closure_charge())
+                .and_then(|bytes| lender.directory_metadata_settled(&self.source_issuer, bytes))
+        } else {
+            Ok(())
+        };
         pending?;
         settled?;
         Ok(directories)

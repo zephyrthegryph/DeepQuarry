@@ -114,10 +114,61 @@ impl WorkspaceAuxiliaryQuestion {
         Self::LibraryLayeringFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
     ];
 
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_WITH_GREP: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::CheckGrep, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
+        Self::RequirementBool, Self::PlayerLink, Self::UntypedMember, Self::WeakRawRead,
+        Self::RelWriteUndeclared, Self::Untyped, Self::StoredRefs, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms, Self::SiliconEntry,
+        Self::LibraryLayeringFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::CheckGrep, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
+        Self::RequirementBool, Self::PlayerLink, Self::UntypedMember, Self::WeakRawRead,
+        Self::RelWriteUndeclared, Self::Untyped, Self::StoredRefs, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms, Self::SiliconEntry,
+        Self::LibraryLayeringFullAllow, Self::SemHandlersFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
+    pub(crate) const PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS: &'static [Self] = &[
+        Self::DeadlinePollingAllowlist, Self::Keys, Self::SemReads, Self::UntrackedInputs,
+        Self::Tracked, Self::TrackedTests, Self::Decl, Self::Init, Self::BaseVars,
+        Self::RequirementBool, Self::PlayerLink, Self::UntypedMember, Self::WeakRawRead,
+        Self::RelWriteUndeclared, Self::Untyped, Self::StoredRefs, Self::Ownership,
+        Self::SetterPublishes, Self::OpOrder, Self::SysReactive, Self::Lifeforms, Self::SiliconEntry,
+        Self::LibraryLayeringFullAllow, Self::SemHandlersFullAllow, Self::MapEdits, Self::ImageDir, Self::EngineLayeringFullAllow, Self::DocUiFullAllow,
+    ];
+
+    pub(crate) fn is_private_authored_actor_domain(questions: &[Self]) -> bool {
+        questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+    }
+
+    pub(crate) fn admits_selected_handlers(questions: &[Self]) -> bool {
+        questions == [Self::SemHandlersFullAllow]
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+    }
+
+    pub(crate) fn is_private_grep_domain(questions: &[Self]) -> bool {
+        questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+    }
+    pub(crate) fn is_private_handlers_domain(questions: &[Self]) -> bool {
+        questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS
+            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS
+    }
+
+
+
     pub(crate) fn is_private_authored_checker(questions: &[Self]) -> bool {
         questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
-            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS
+            || Self::is_private_authored_actor_domain(questions)
+            || Self::is_private_grep_domain(questions)
     }
 
     pub(crate) fn is_extended_authored_doc_ui(questions: &[Self]) -> bool {
@@ -125,7 +176,8 @@ impl WorkspaceAuxiliaryQuestion {
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER
             || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
-            || questions == Self::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS
+            || Self::is_private_authored_actor_domain(questions)
+            || Self::is_private_grep_domain(questions)
     }
 
     pub(crate) const AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =
@@ -133,9 +185,14 @@ impl WorkspaceAuxiliaryQuestion {
     pub(crate) const EXTENDED_AUTHORED_DOC_UI_ROOTS: &'static [&'static str] =
         &["code", "doc/rewrite", "interface", "maps", "modular_chomp", "tgui/packages/tgui/interfaces"];
 
+    pub(crate) const AUTHORED_DOC_UI_CHECK_GREP_ROOTS: &'static [&'static str] =
+        &["code", "doc/rewrite", "interface", "maps", "modular_chomp", "tgui"];
+
     pub(crate) fn authored_doc_ui_roots(questions: &[Self]) -> Option<&'static [&'static str]> {
         if questions == Self::PRIVATE_AUTHORED_DOC_UI {
             Some(Self::AUTHORED_DOC_UI_ROOTS)
+        } else if Self::is_private_grep_domain(questions) {
+            Some(Self::AUTHORED_DOC_UI_CHECK_GREP_ROOTS)
         } else if Self::is_extended_authored_doc_ui(questions) {
             Some(Self::EXTENDED_AUTHORED_DOC_UI_ROOTS)
         } else {
@@ -293,7 +350,8 @@ impl PolicyInputRequest {
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
                 || (workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::ImageDir]
                     && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
-                    && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS)
+                    && !WorkspaceAuxiliaryQuestion::is_private_authored_actor_domain(&workspace_auxiliary)
+                    && !WorkspaceAuxiliaryQuestion::is_private_grep_domain(&workspace_auxiliary))
                 || !workspace_generators.is_empty() || !self.files.is_empty()
                 || !self.search_folders.is_empty())
         {
@@ -314,7 +372,8 @@ impl PolicyInputRequest {
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::SiliconEntry)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
                 || (workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::SiliconEntry]
-                    && workspace_auxiliary.as_slice() != WorkspaceAuxiliaryQuestion::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS))
+                    && !WorkspaceAuxiliaryQuestion::is_private_authored_actor_domain(&workspace_auxiliary)
+                    && !WorkspaceAuxiliaryQuestion::is_private_grep_domain(&workspace_auxiliary)))
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"silicon_entry requires its exclusive full Original Analyze subject"));
         }
@@ -342,7 +401,7 @@ impl PolicyInputRequest {
         }
         if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::SemHandlersFullAllow)
             && (self.analysis_context != Some(AnalysisContext::OriginalAnalyze0290)
-                || workspace_auxiliary.as_slice() != [WorkspaceAuxiliaryQuestion::SemHandlersFullAllow]
+                || !WorkspaceAuxiliaryQuestion::admits_selected_handlers(&workspace_auxiliary)
                 || !workspace_generators.is_empty() || !self.files.is_empty() || !self.search_folders.is_empty())
         {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected handlers requires its exact full Original Analyze role"));

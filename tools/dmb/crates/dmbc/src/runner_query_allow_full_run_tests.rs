@@ -811,20 +811,35 @@ fn private_97_policies_share_authored_mixed_semantic_and_fixed_discovery() {
 
 #[test]
 fn private_101_policies_share_the_actual_staged_checker_body_domain() {
-    exercise_private_combined_report(false, false);
+    exercise_private_combined_report(false, false, false, false);
 }
 
 #[test]
 fn private_102_policies_share_clean_original_image_dir() {
-    exercise_private_combined_report(true, false);
+    exercise_private_combined_report(true, false, false, false);
 }
 
 #[test]
 fn private_103_policies_preserve_silicon_actor_in_a_hidden_loaded_interface_file() {
-    exercise_private_combined_report(true, true);
+    exercise_private_combined_report(true, true, false, false);
 }
 
-fn exercise_private_combined_report(image_dir: bool, actors: bool) {
+#[test]
+fn private_104_policies_share_exact_check_grep_inputs_with_map_and_ui() {
+    exercise_private_combined_report(true, true, true, false);
+}
+
+#[test]
+fn private_104_policies_join_actual_demanded_handlers_and_hidden_loaded_allow() {
+    exercise_private_combined_report(true, true, false, true);
+}
+
+#[test]
+fn private_105_policies_join_check_grep_and_real_handler_demand() {
+    exercise_private_combined_report(true, true, true, true);
+}
+
+fn exercise_private_combined_report(image_dir: bool, actors: bool, grep: bool, handlers: bool) {
     let (mut host, mut request, root) = fixture(concat!(
         "#define CAPABILITIES(...)\n",
         "#define PROC_REF(P) #P\n",
@@ -875,20 +890,66 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool) {
             "/datum/act/op\n/mob/living/silicon/ai\n",
             "/obj/machinery/proc/silicon_actor(datum/act/op/A)\n    return isAI(A.actor)\n",
         )),
-        (dispatcher, ui_fixture::DISPATCHER),
+        (dispatcher, if grep { "malformed dispatcher\n" } else { ui_fixture::DISPATCHER }),
     ] {
         let path = root.join(relative);
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(path, content).unwrap();
     }
+    if grep {
+        for (relative, contents) in [
+            ("another.dme", "// genuine additional root DME bytes\n"),
+            ("code/.hidden/check_probe.tsx", "export const hiddenProbe = 1;\n"),
+            ("tgui/packages/tgui/interfaces/grep-only.dm", "// CheckGrep-only DM payload\n"),
+            ("tgui/grep_probe.jsx", "observed name only; contents are not acquired"),
+            ("tgui/.hidden/ignored.jsx", "hidden name is excluded"),
+        ] {
+            let path = root.join(relative);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, contents).unwrap();
+        }
+    }
+    if handlers {
+        use std::io::Write as _;
+        let mut manifest = std::fs::OpenOptions::new().append(true).open(root.join("deepquarry.dme")).unwrap();
+        manifest.write_all(concat!(
+            "#include \"code/non_handler_fixtures.dm\"\n",
+            "#include \"code/handler_partial.dm\"\n",
+            "#include \"code/engine/present/protocols.dm\"\n",
+            "#include \"interface/.handler_output.dm\"\n",
+        ).as_bytes()).unwrap();
+        // The handler structural selector observes whole candidate files.
+        // Keep the unrelated constructor and image probes in the complete
+        // Original TU without requiring them to be part of the partial TU.
+        let probe = root.join("code/probe.dm");
+        let content = std::fs::read_to_string(&probe).unwrap();
+        let (handler, unrelated) = content.split_once("/obj/unread\n")
+            .expect("actual fixture constructor boundary");
+        std::fs::write(probe, handler).unwrap();
+        std::fs::write(root.join("code/non_handler_fixtures.dm"),
+            format!("/obj/unread\n{unrelated}")).unwrap();
+        std::fs::create_dir_all(root.join("code/__defines")).unwrap();
+        std::fs::create_dir_all(root.join("code/engine/present")).unwrap();
+        for (relative, content) in [
+            ("code/__defines/handler_context.dm", "/datum/act\n"),
+            ("code/handler_partial.dm", "/proc/leak(datum/act/A)\n    return list(A)\n"),
+            ("code/engine/present/protocols.dm", "/datum/look\n/atom/proc/draw(datum/look/look)\n    return\n"),
+            ("interface/.handler_output.dm", "/obj/bad/draw(extra,datum/look/look) // ALLOW(handlers): this fixture uses a hidden loaded output suppression\n    return\n"),
+        ] {
+            std::fs::write(root.join(relative), content).unwrap();
+        }
+    }
     std::fs::write(root.join("tools/ci/lint_scopes.toml"), report_config::with_overlay("")).unwrap();
     let intent = request.policy_inputs.as_mut().unwrap();
     intent.analysis_context = Some(AnalysisContext::OriginalAnalyze0290);
-    intent.workspace_auxiliary = if actors { Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS }
+    intent.workspace_auxiliary = if handlers && grep { Q::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS }
+        else if handlers { Q::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS }
+        else if grep { Q::PRIVATE_EXTENDED_AUTHORED_WITH_GREP }
+        else if actors { Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS }
         else if image_dir { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE }
         else { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER }.to_vec();
     intent.workspace.as_mut().unwrap().recursive_roots =
-        Q::EXTENDED_AUTHORED_DOC_UI_ROOTS.iter().map(|name| root.join(name)).collect();
+        Q::authored_doc_ui_roots(&intent.workspace_auxiliary).unwrap().iter().map(|name| root.join(name)).collect();
     assert!(intent.clone().admit().is_err());
     assert!(!Q::admits_combined_reports(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER));
     let mut incomplete = request.clone();
@@ -920,10 +981,10 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool) {
         .cloned().collect();
     assert_eq!(registry.names().len() - joined_exclusions.len(), 97);
     let bodies = ["stored_refs", "tracked", "tracked_tests", "untyped"];
-    let image_selected = |name: &str| (image_dir && name == "image_dir_after_build") || (actors && name == "silicon_entry");
+    let image_selected = |name: &str| (image_dir && name == "image_dir_after_build") || (actors && name == "silicon_entry") || (grep && name == "check_grep") || (handlers && name == "sem/handlers");
     let checker_exclusions: Vec<_> = joined_exclusions.iter()
         .filter(|name| !bodies.contains(&name.strip_prefix('-').unwrap()) && !image_selected(name.strip_prefix('-').unwrap())).cloned().collect();
-    assert_eq!(registry.names().len() - checker_exclusions.len(), 101 + usize::from(image_dir) + usize::from(actors));
+    assert_eq!(registry.names().len() - checker_exclusions.len(), 101 + usize::from(image_dir) + usize::from(actors) + usize::from(grep) + usize::from(handlers));
 
     let stage = || crate::selected_report_spool::Stage::new(&cache).unwrap();
     let prepare = |host: &mut crate::runner_host::BuildHost, mut diagnostics, mut checker| {
@@ -937,10 +998,35 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool) {
     let (prepared, transcript, checker) = prepare(&mut host, stage(), stage());
     let mut foreign_host = crate::runner_host::BuildHost::default();
     let (_, foreign, _) = prepare(&mut foreign_host, stage(), stage());
-    let (clean, report) = current(&host, |snapshot| {
-        let run = if actors { SourceSnapshot::stage_private_extended_authored_with_actors }
-            else if image_dir { SourceSnapshot::stage_private_extended_authored_with_checker_and_image }
-            else { SourceSnapshot::stage_private_extended_authored_with_checker };
+    let (clean, report) = {
+        let state = host.query_state();
+        let state = state.lock().unwrap();
+        let snapshot = state.snapshot.as_ref().unwrap();
+        if grep {
+            let capture = snapshot.native_workspace.as_ref().unwrap();
+            let guard = snapshot.workspace_native_read().unwrap();
+            let (dmes, jsx) = capture.check_grep_names(&guard).unwrap();
+            assert!(dmes.contains(&root.join("another.dme")));
+            assert_eq!(jsx, &[root.join("tgui/grep_probe.jsx")]);
+            let paths: Vec<_> = (0..capture.file_count()).map(|i| capture.path(i).unwrap()).collect();
+            assert!(paths.contains(&root.join("code/.hidden/check_probe.tsx").as_path()));
+            assert!(paths.contains(&root.join("tgui/packages/tgui/interfaces/grep-only.dm").as_path()));
+            assert!(paths.contains(&root.join("tgui/packages/tgui/interfaces/Machine.tsx").as_path()));
+            assert!(!paths.contains(&root.join("tgui/grep_probe.jsx").as_path()));
+            assert_eq!(paths.iter().filter(|path| **path == root.join("maps/edit.dmm")).count(), 1);
+        }
+        let run = |snapshot: &SourceSnapshot, prepared, exclusions: &[String], budget, root: &std::path::Path, file, checker| {
+            if handlers {
+                let handler = state.handlers_snapshot.as_ref().expect("actual current handler child");
+                snapshot.stage_private_extended_authored_with_handlers(prepared, exclusions, budget, root, file, checker, grep, handler)
+            } else {
+                let producer = if grep { SourceSnapshot::stage_private_extended_authored_with_check_grep }
+                    else if actors { SourceSnapshot::stage_private_extended_authored_with_actors }
+                    else if image_dir { SourceSnapshot::stage_private_extended_authored_with_checker_and_image }
+                    else { SourceSnapshot::stage_private_extended_authored_with_checker };
+                producer(snapshot, prepared, exclusions, budget, root, file, checker)
+            }
+        };
         let error = run(snapshot,
             &prepared, &checker_exclusions, &budget, &root, stage(), &foreign,
         ).err().expect("a separate host's real Checker transcript cannot authorize this body domain");
@@ -954,7 +1040,7 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool) {
         let mut output = Vec::new();
         verified.publish(&mut output).unwrap();
         (clean, String::from_utf8(output).unwrap())
-    });
+    };
     assert!(!clean);
     assert!(!transcript.clean);
     let mut checker_bytes = Vec::new();
@@ -966,5 +1052,39 @@ fn exercise_private_combined_report(image_dir: bool, actors: bool) {
     assert_eq!(report.matches("allow annotations: 1 unused").count(), 1, "{report}");
     assert_eq!(report.contains("[image_dir_after_build/"), image_dir, "{report}");
     assert_eq!(report.contains("interface/.silicon_actor.dm:5: [silicon_entry/handler_actor_check]"), actors, "{report}");
+    assert_eq!(report.contains("tgui/grep_probe.jsx"), grep, "{report}");
+    assert!(!report.contains("tgui/.hidden/ignored.jsx"), "{report}");
+    if handlers {
+        assert!(report.contains("code/handler_partial.dm:2: [handlers/context_escape]"), "{report}");
+        assert!(!report.contains("interface/.handler_output.dm:1: [handlers/output_signature]"), "{report}");
+        assert!(!report.contains("interface/.handler_output.dm:1: ALLOW(handlers) is unused"), "{report}");
+    }
     require_private_reactive_raw_legacy(&root, &checker_exclusions, clean, &report);
+    if handlers && grep {
+        // The joined report independently needs a complete Original workspace.
+        // Remove handler declaration demand while retaining the genuine partial
+        // candidate, and ensure the handler producer stays structural-only.
+        let probe = root.join("code/probe.dm");
+        let original = std::fs::read_to_string(&probe).unwrap();
+        assert!(original.contains("when(PROC_REF(dynamic))"));
+        std::fs::write(&probe, original.replace("when(PROC_REF(dynamic))", "cover()")).unwrap();
+        std::fs::write(root.join("code/engine/present/protocols.dm"), "/datum/look\n").unwrap();
+        let (prepared, transcript, _) = prepare(&mut host, stage(), stage());
+        let (clean, report) = {
+            let state = host.query_state();
+            let state = state.lock().unwrap();
+            let snapshot = state.snapshot.as_ref().unwrap();
+            let handlers = state.handlers_snapshot.as_ref().expect("actual structural handler child");
+            assert!(!handlers.requires_full(), "must not promote structural-only handler selection");
+            let (clean, verified) = snapshot.stage_private_extended_authored_with_handlers(
+                &prepared, &checker_exclusions, &budget, &root, stage(), &transcript, true, handlers,
+            ).unwrap();
+            let mut bytes = Vec::new();
+            verified.publish(&mut bytes).unwrap();
+            (clean, String::from_utf8(bytes).unwrap())
+        };
+        assert!(report.contains("code/handler_partial.dm:2: [handlers/context_escape]"), "{report}");
+        assert!(!report.contains("[handlers/output_signature]"), "{report}");
+        require_private_reactive_raw_legacy(&root, &checker_exclusions, clean, &report);
+    }
 }

@@ -98,7 +98,7 @@ impl SourceSnapshot{
     && capture.matches_auxiliary_questions(&[Q::ImageDir]);
    let joined = private_checker_body
     && (capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE)
-     || capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS));
+     || (Q::is_private_authored_actor_domain(capture.auxiliary()) || Q::is_private_grep_domain(capture.auxiliary())));
    if stage.is_none() || (!named && !joined) {
     return Err("image_dir_after_build requires its exact private selected report".into());
    }
@@ -171,7 +171,7 @@ impl SourceSnapshot{
     Producer::Special("silicon_entry")=>{
      let stage=stage.as_deref_mut().ok_or("silicon_entry selected report adapter absent")?;
      use crate::runner_host::workspace_capture::SiliconActorDomain;
-     let domain = if private_checker_body && capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS) {
+     let domain = if private_checker_body && (Q::is_private_authored_actor_domain(capture.auxiliary()) || Q::is_private_grep_domain(capture.auxiliary())) {
       SiliconActorDomain::SelectedAuthored(&selected_tree)
      } else { SiliconActorDomain::SelectedCodeMaps(&selected_tree) };
      self.with_original_silicon_entry_policy_using(

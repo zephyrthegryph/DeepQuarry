@@ -52,6 +52,21 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
   self.require_hidden_selected_tree(plan,true)?;
   Ok(SelectedHandlerFiles{reader:self,inputs,domain:SiliconActorDomain::SelectedCodeMaps(plan)})
  }
+ pub(crate) fn handler_report_files<'reader>(
+  &'reader self,inputs:&'reader dm_analysis::policy_inputs::PolicyInputs,
+  plan:&'reader dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,
+ )->Result<SelectedHandlerFiles<'reader,'capture,'scope>,Failure>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+  if !Q::is_private_handlers_domain(self.capture.auxiliary()){
+   return self.selected_handler_files(inputs,plan);
+  }
+  self.require_policy_inputs(inputs)?;
+  if !self.capture.covers_joined_silicon_actors(plan,&mut |bytes|
+   self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?{
+   return Err("joined handler ALLOW lookup lacks its actual full loaded-DM tree".into());
+  }
+  Ok(SelectedHandlerFiles{reader:self,inputs,domain:SiliconActorDomain::SelectedAuthored(plan)})
+ }
 }
 impl SelectedHandlerFiles<'_,'_,'_>{
  /// None is a true negative in the authenticated selected tree.

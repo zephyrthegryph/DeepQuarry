@@ -20,7 +20,7 @@ pub(crate) struct DiscoveryContract {
 /// The selector actually executed by the only recursive receipt issuer.
 /// No caller flag, include glob or exclusion list can construct this value.
 #[derive(Clone,Copy)]
-enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1, AuthoredDocUiExtendedV1}
+enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1, AuthoredDocUiExtendedV1, AuthoredCheckGrepV1}
 /// Obligations of the one physical traversal selected by the private issuer.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 struct DiscoveryFacets {
@@ -46,15 +46,21 @@ impl DiscoverySelection{
  fn facets(self) -> DiscoveryFacets {
      use DiscoverySelection::*;
      DiscoveryFacets {
-         map_root_no_follow: matches!(self, MapEditsJoinedDmNoLinksV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
-         productive_docs: matches!(self, DocSnippetsDemandV2 | DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
-         docs_share_complete_dm: matches!(self, DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
-         visible_ui: matches!(self, UiActionsVisibleRootsV1 | UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
-         ui_shares_complete_dm: matches!(self, UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1),
+         map_root_no_follow: matches!(self, MapEditsJoinedDmNoLinksV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1 | AuthoredCheckGrepV1),
+         productive_docs: matches!(self, DocSnippetsDemandV2 | DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1 | AuthoredCheckGrepV1),
+         docs_share_complete_dm: matches!(self, DocSnippetsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1 | AuthoredCheckGrepV1),
+         visible_ui: matches!(self, UiActionsVisibleRootsV1 | UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1 | AuthoredCheckGrepV1),
+         ui_shares_complete_dm: matches!(self, UiActionsJoinedAllowV1 | DocUiJoinedAllowV1 | AuthoredDocUiJoinedV1 | AuthoredDocUiExtendedV1 | AuthoredCheckGrepV1),
      }
  }
 
+ fn observes_check_grep(self) -> bool {
+  matches!(self, Self::CheckGrepDmAndRawNoChildLinksV1 | Self::AuthoredCheckGrepV1)
+ }
+
  fn includes_file(self,path:&Path,root:&Path)->bool{match self{
+  Self::AuthoredCheckGrepV1 => Self::AuthoredDocUiExtendedV1.includes_file(path,root)
+    || path.strip_prefix(root).is_ok_and(dq_analyze::lints::check_grep::native::selects_filesystem_source),
   Self::AuthoredDocUiExtendedV1=>Self::AuthoredDocUiJoinedV1.includes_file(path,root)
    ||path.strip_prefix(root).is_ok_and(|relative|
       (relative.starts_with("interface")||relative.starts_with("modular_chomp"))
@@ -101,7 +107,7 @@ pub(crate) struct DiscoveryReceipt {
     doc_configuration:Option<DocConfiguration>,
 }
 impl DiscoveryReceipt {
-    pub(crate) fn check_grep_names(&self)->io::Result<(&[PathBuf],&[PathBuf])>{match (&self.selection,&self.check_grep){(DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1,Some(names))=>Ok((&names.dmes,&names.jsx)),_=>Err(io::Error::new(io::ErrorKind::Unsupported,"complete check_grep selection was not actually observed"))}}
+    pub(crate) fn check_grep_names(&self)->io::Result<(&[PathBuf],&[PathBuf])>{match &self.check_grep{Some(names) if self.selection.observes_check_grep()=>Ok((&names.dmes,&names.jsx)),_=>Err(io::Error::new(io::ErrorKind::Unsupported,"complete check_grep selection was not actually observed"))}}
     /// Full CODE_DM coverage is a property of this actual unfiltered typed
     /// traversal, not a normal folder fact or a caller's claimed prefix.
     pub(crate) fn covers_code_dm(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
@@ -116,18 +122,19 @@ impl DiscoveryReceipt {
         if matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::OwnershipCodeDmV2)&&roots!=[("code","dm")]{return Ok(false)}
-        if matches!(self.selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1)
+        if matches!(self.selection,DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1|DiscoverySelection::AuthoredCheckGrepV1)
             && roots.iter().any(|(root,ext)| *ext!="dm"
                 || !(Path::new(root).starts_with("code")||Path::new(root).starts_with("maps")
-                    || matches!(self.selection,DiscoverySelection::AuthoredDocUiExtendedV1)
-                        && (Path::new(root).starts_with("interface")||Path::new(root).starts_with("modular_chomp")))) {
+                    || (matches!(self.selection,DiscoverySelection::AuthoredDocUiExtendedV1|DiscoverySelection::AuthoredCheckGrepV1)
+                        && (Path::new(root).starts_with("interface")||Path::new(root).starts_with("modular_chomp")))
+                    || matches!(self.selection,DiscoverySelection::AuthoredCheckGrepV1) && Path::new(root).starts_with("tgui/packages/tgui/interfaces"))) {
             return Ok(false)
         }
         self.covers_selected_roots(roots,missing_is_empty,false,admit)
     }
     /// A mixed MD receipt can certify only the actual doc purpose, never CODE authority.
     pub(crate) fn covers_doc_snippets(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
-        if !matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1){return Ok(false)}
+        if !matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::DocSnippetsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1|DiscoverySelection::AuthoredCheckGrepV1){return Ok(false)}
         if self.selection.facets().productive_docs{
           let config=self.doc_configuration.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"productive Doc discovery has no actual configuration owner"))?;
           for relative in ["code/","doc/rewrite/"]{crate::daemon::control::checkpoint()?;admit(1024)?;if config.excludes_subtree(relative){continue}if !self.facts.policy_directories().contains_key(&self.contract.root.join(relative.trim_end_matches('/'))){return Ok(false)}}return Ok(true)
@@ -143,7 +150,7 @@ impl DiscoveryReceipt {
     fn covers_selected_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,doc:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
         for &(directory,extension) in roots{
             crate::daemon::control::checkpoint()?;
-            if extension!="dm"&&!(doc&&directory=="doc/rewrite"&&extension=="md")&&!(matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1)&&directory=="tgui/packages/tgui/interfaces"&&matches!(extension,"tsx"|"ts"|"jsx"|"js")){return Ok(false)}
+            if extension!="dm"&&!(doc&&directory=="doc/rewrite"&&extension=="md")&&!(matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1|DiscoverySelection::AuthoredCheckGrepV1)&&directory=="tgui/packages/tgui/interfaces"&&matches!(extension,"tsx"|"ts"|"jsx"|"js")){return Ok(false)}
             if matches!(self.selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)&&!["code","maps","tgui/packages/tgui/interfaces"].iter().any(|root|Path::new(directory).starts_with(root)){return Ok(false)}
             if !self.contract.recursive_roots.iter().any(|root|root.strip_prefix(&self.contract.root).is_ok_and(|relative|Path::new(directory).starts_with(relative))){return Ok(false)}
             admit(self.contract.root.as_os_str().len().checked_add(directory.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(512)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"code discovery proof path overflow"))?)?;
@@ -184,6 +191,8 @@ impl DiscoveryReceipt {
         let selected = match self.selection {
             DiscoverySelection::AuthoredDocUiJoinedV1 => Q::AUTHORED_DOC_UI_ROOTS,
             DiscoverySelection::AuthoredDocUiExtendedV1 => Q::EXTENDED_AUTHORED_DOC_UI_ROOTS,
+            DiscoverySelection::AuthoredCheckGrepV1 if self.check_grep.is_some() =>
+                Q::AUTHORED_DOC_UI_CHECK_GREP_ROOTS,
             _ => return false,
         };
         roots == selected && self.has_authored_doc_ui_facets()
@@ -218,6 +227,13 @@ impl DiscoveryReceipt {
 
     pub(crate) fn files(&self) -> &[PathBuf] {
         &self.files
+    }
+    pub(crate) fn joined_map_directory(&self, path: &Path) -> io::Result<&Listing> {
+        if !matches!(self.selection, DiscoverySelection::AuthoredCheckGrepV1) || !path.starts_with(self.contract.root.join("maps")) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined MapEdits directory escapes its actual traversal"));
+        }
+        self.facts.policy_directories().get(path).filter(|fact| !fact.follow_root)
+            .map(|fact| &fact.listing).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "joined MapEdits requires its actual no-follow directory observation"))
     }
     pub(crate) fn directory_paths(&self) -> impl Iterator<Item = &PathBuf> {
         self.facts.policy_directories().keys()
@@ -403,7 +419,7 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
     let mut files = BTreeSet::new();
     let mut observed = BTreeSet::new();
     let mut dmes=BTreeSet::new();let mut jsx=BTreeSet::new();
-    if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1){
+    if selection.observes_check_grep(){
      let listing=match lender.as_mut(){Some((budget,owner))=>inputs.capture_policy_directory_lent(&contract.root,true,metadata,budget,&mut **owner)?,None=>inputs.capture_policy_directory_bounded(&contract.root,true,metadata)?};observed.insert(contract.root.clone());
      let Listing::Present(entries)=listing else{return Err(io::Error::new(io::ErrorKind::Interrupted,"check_grep workspace root disappeared or changed kind"))};
      for entry in entries.iter(){crate::daemon::control::checkpoint()?;if entry.kind==Kind::File&&dq_analyze::lints::check_grep::native::is_root_dme(&entry.name){let path=contract.root.join(&entry.name);metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep root DME metadata overflow"))?;fund_metadata(metadata)?;check(inputs,metadata)?;dmes.insert(path.clone());files.insert(path);}}
@@ -418,7 +434,7 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
                 if relative!=Path::new("doc/rewrite")||config.excludes_subtree("doc/rewrite/"){continue}
             }
         }
-        if facets.ui_shares_complete_dm
+        if facets.ui_shares_complete_dm && !selection.observes_check_grep()
             && folder.strip_prefix(&contract.root).is_ok_and(|relative|
                 relative.starts_with("tgui/packages/tgui/interfaces")
                 && relative.components().any(|part|part.as_os_str().to_string_lossy().starts_with('.'))) {continue}
@@ -444,6 +460,13 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
             Listing::Present(entries) => {
                 for entry in entries.iter() {
                     let path = folder.join(&entry.name);
+                    if entry.kind == Kind::File && selection.observes_check_grep() {
+                        let relative=path.strip_prefix(&contract.root).map_err(|_|io::Error::other("check_grep JSX observation escapes root"))?;
+                        if dq_analyze::lints::check_grep::native::is_jsx_path(relative)&&!jsx.contains(&path) {
+                            metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep JSX metadata overflow"))?;
+                            fund_metadata(metadata)?;check(inputs,metadata)?;jsx.insert(path.clone());
+                        }
+                    }
                     match entry.kind {
                         Kind::Directory => {
                             metadata = metadata.checked_add(512 + path.capacity() * 4).ok_or_else(
@@ -466,10 +489,6 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
                                 fund_metadata(metadata)?;check(inputs, metadata)?;
                                 files.insert(path);
                             }
-                        }
-                        Kind::File if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)=>{
-                         let relative=path.strip_prefix(&contract.root).map_err(|_|io::Error::other("check_grep JSX observation escapes root"))?;
-                         if dq_analyze::lints::check_grep::native::is_jsx_path(relative)&&!jsx.contains(&path){metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep JSX metadata overflow"))?;fund_metadata(metadata)?;check(inputs,metadata)?;jsx.insert(path);}
                         }
                         Kind::File | Kind::Symlink | Kind::Other => {}
                     }
@@ -505,7 +524,7 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut con
         if result.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"check_grep actual name capacity exceeds admitted overlap"))}
         result.extend(rows);Ok(result)
     };
-    let check_grep=if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1){Some(CheckGrepNames{dmes:names_vec(dmes)?,jsx:names_vec(jsx)?})}else{None};
+    let check_grep=if selection.observes_check_grep(){Some(CheckGrepNames{dmes:names_vec(dmes)?,jsx:names_vec(jsx)?})}else{None};
     Ok(DiscoveryReceipt {
         issuer: inputs.policy_discovery_issuer(),
         selection,
@@ -587,7 +606,9 @@ pub(crate) fn discover_authored_doc_ui<P: SnapshotProvider>(
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     let roots = Q::authored_doc_ui_roots(questions)
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "authored mixed discovery requires its exact private question roster"))?;
-    let selection = if Q::is_extended_authored_doc_ui(questions) {
+    let selection = if Q::is_private_grep_domain(questions) {
+        DiscoverySelection::AuthoredCheckGrepV1
+    } else if Q::is_extended_authored_doc_ui(questions) {
         DiscoverySelection::AuthoredDocUiExtendedV1
     } else {
         DiscoverySelection::AuthoredDocUiJoinedV1

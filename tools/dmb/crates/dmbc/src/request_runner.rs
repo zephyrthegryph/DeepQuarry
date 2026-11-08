@@ -345,7 +345,9 @@ fn run_build_attempt(
     // completion; the existing full semantic pipeline still follows below.
     // Genuine partial source is prepared before any independent full Subject.
     let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers)?,None=>None}}else{None};
-    if handlers_capture.as_ref().is_some_and(|capture|!capture.prepared().subject().requires_full_model()){
+    if handlers_capture.as_ref().is_some_and(|capture|
+        !capture.prepared().subject().requires_full_model() && !capture.prepared().subject().is_selected_full()
+    ){
         let capture=handlers_capture.take().expect("actual structural-only preparation");let intent=policy_inputs.as_ref().expect("actual handler intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
         let partial_source_revision=match capture.prepared().frontend(){Some(_)=>Some(format!("{:032x}",capture.structural_inputs()?.source_revision())),None=>None};
         let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),queries.as_ref())?.1.into_shared()?;

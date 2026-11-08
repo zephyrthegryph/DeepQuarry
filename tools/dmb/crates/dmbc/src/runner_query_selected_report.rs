@@ -299,6 +299,7 @@ struct ReportStage<'a> {
     ordinary_semantic_and_fixed: bool,
     private_checker_body: bool,
     private_image_dir: bool,
+    private_check_grep: bool,
     judgment: JudgmentV2,
     // Outer None means the fixed role is unissued; inner None is its observed empty baseline.
     library_baseline: Option<Option<&'a [u8]>>,
@@ -306,7 +307,7 @@ struct ReportStage<'a> {
 impl ReportStage<'_> {
     fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
         if let ReportRows::Union(UnionRows::CheckGrep(data)) = &rows {
-            if self.selected != Roster::WithCheckGrep.names()
+            if (self.selected != Roster::WithCheckGrep.names() && !self.private_check_grep)
                 || self.selected.get(self.finished).copied() != Some(meta.name)
                 || !std::ptr::eq(meta, dq_analyze::lints::check_grep::native::metadata())
                 || !self.judgment.is_raw() || !matches!(meta.policy, Policy::Custom)
@@ -845,7 +846,7 @@ impl super::super::RawWorkspaceSnapshot {
         let mut usage = UsageJoinData::new(&selection, frame);
         let mut stage = ReportStage {
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
-            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, judgment: JudgmentV2::Raw, library_baseline: None,
+            authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, private_check_grep: false, judgment: JudgmentV2::Raw, library_baseline: None,
         };
         for &name in selected {
             let policy_started = std::time::Instant::now();
@@ -992,7 +993,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false, false, None, false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, false, false, false, None, false, false, false, None)
     }
 
     #[cfg(test)]
@@ -1000,7 +1001,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false, false, None, false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, false, false, None, false, false, false, None)
     }
 
     #[cfg(test)]
@@ -1008,7 +1009,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, false, None, false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, false, None, false, false, false, None)
     }
 
     #[cfg(test)]
@@ -1016,7 +1017,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, None, false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, None, false, false, false, None)
     }
 
     #[cfg(test)]
@@ -1024,7 +1025,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), false, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), false, false, false, None)
     }
 
     #[cfg(test)]
@@ -1032,7 +1033,7 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), true, false)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), true, false, false, None)
     }
 
     #[cfg(test)]
@@ -1040,14 +1041,33 @@ impl SourceSnapshot {
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
     ) -> io::Result<(bool, Verified)> {
-        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), true, true)
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), true, true, false, None)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_with_check_grep(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file, true, true, true, Some(checker), true, true, true, None)
+    }
+
+    #[cfg(test)]
+    pub(super) fn stage_private_extended_authored_with_handlers(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
+        grep: bool, handlers: &super::super::HandlerWorkspaceSnapshot,
+    ) -> io::Result<(bool, Verified)> {
+        self.stage_private_extended_union(prepared, exclusions, retained, root, file,
+            true, true, true, Some(checker), true, true, grep, Some(handlers))
     }
 
     #[cfg(test)]
     fn stage_private_extended_union(
         &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, file: Stage, mixed: bool, ordinary_fold_sys: bool, ordinary_semantics: bool,
-        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, image_dir: bool, actors: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, image_dir: bool, actors: bool, grep: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>,
     ) -> io::Result<(bool, Verified)> {
         let mut control = Operation { budget: retained, poll: &|| crate::daemon::control::checkpoint() };
         let selection = full_unused::registered_full_selection(exclusions, &mut control).map_err(operational)?;
@@ -1059,7 +1079,9 @@ impl SourceSnapshot {
         let bodies = if checker.is_some() { &["stored_refs", "tracked", "tracked_tests", "untyped"][..] } else { &[] };
         let image = if image_dir { &["image_dir_after_build"][..] } else { &[] };
         let silicon = if actors { &["silicon_entry"][..] } else { &[] };
-        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys).chain(semantic).chain(bodies).chain(image).chain(silicon);
+        let grep_policy = if grep { &["check_grep"][..] } else { &[] };
+        let handler = if handlers.is_some() { &["sem/handlers"][..] } else { &[] };
+        let qualified = || raw.iter().chain(PRIVATE_REACTIVE_RAW_UNION).chain(extra).chain(fold).chain(sys).chain(semantic).chain(bodies).chain(image).chain(silicon).chain(grep_policy).chain(handler);
         let selected = selection.names();
         if selected.iter().any(|name| !qualified().any(|&actual| name == actual))
             || qualified().any(|&name| !selected.iter().any(|actual| actual == name))
@@ -1076,7 +1098,10 @@ impl SourceSnapshot {
         subject.require_bound_mapping(child.policy().mapping())?;
         let guard = self.workspace_native_read()?;
         workspace.require_scope(&guard)?;
-        let questions = if actors { Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS }
+        let questions = if handlers.is_some() && grep { Q::PRIVATE_EXTENDED_AUTHORED_WITH_GREP_AND_HANDLERS }
+            else if handlers.is_some() { Q::PRIVATE_EXTENDED_AUTHORED_WITH_HANDLERS }
+            else if grep { Q::PRIVATE_EXTENDED_AUTHORED_WITH_GREP }
+            else if actors { Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS }
             else if image_dir { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE }
             else if checker.is_some() { Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER }
             else if ordinary_semantics { Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC }
@@ -1098,7 +1123,7 @@ impl SourceSnapshot {
             order.push(name.as_str());
         }
         self.stage_selected_report_using(prepared, exclusions, retained, root,
-            &order, questions, JudgmentV2::Raw, false, false, None, file, ordinary_fold_sys, checker)
+            &order, questions, JudgmentV2::Raw, false, handlers.is_some(), handlers, file, ordinary_fold_sys, checker)
     }
 
     fn stage_selected_report_using(
@@ -1142,7 +1167,9 @@ impl SourceSnapshot {
             ordinary_semantic_and_fixed: ordinary_fold_sys && (private_checker_body || questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC),
             private_checker_body,
             private_image_dir: questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE
-                || questions == Q::PRIVATE_EXTENDED_AUTHORED_WITH_ACTORS,
+                || Q::is_private_authored_actor_domain(questions)
+                || Q::is_private_grep_domain(questions),
+            private_check_grep: Q::is_private_grep_domain(questions),
             judgment, library_baseline,
         });
         let clean = self.with_native_allow_full_run_using(&self.tree, exclusions, Some(retained), handlers, private_checker_body, Some(&mut |meta, rows, scope, budget| {
@@ -1268,6 +1295,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
         ordinary_semantic_and_fixed: false,
         private_checker_body: false,
         private_image_dir: false,
+        private_check_grep: false,
         judgment: JudgmentV2::Raw,
         library_baseline: None,
     };

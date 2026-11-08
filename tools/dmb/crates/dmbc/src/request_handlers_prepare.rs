@@ -5,7 +5,7 @@ use super::*;
 use crate::{input_snapshot::{RecordingInputs,SnapshotProvider,HandlerPreparedCapture},policy_request::{AdmittedPolicyRequest,AnalysisContext,WorkspaceAuxiliaryQuestion as Q}};
 pub(super) fn prepare<P:SnapshotProvider+Sync>(inputs:&RecordingInputs<P>,intent:&AdmittedPolicyRequest,host:&mut crate::runner_host::BuildHost,workers:usize)->Result<Option<Arc<HandlerPreparedCapture>>,Box<dyn std::error::Error>>{
  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290){return Ok(None)}
- let selected=match intent.workspace_auxiliary(){[Q::SemHandlers]=>false,[Q::SemHandlersFullAllow]=>true,_=>return Ok(None)};
+ let selected=Q::admits_selected_handlers(intent.workspace_auxiliary());if !selected && intent.workspace_auxiliary()!=[Q::SemHandlers]{return Ok(None)}
  if !intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||intent.workspace().is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"handler preparation requires its exact exclusive workspace request").into())}
  let queries=Arc::clone(host.query_db());
  let subject=if selected{

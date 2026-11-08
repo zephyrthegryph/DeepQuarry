@@ -96,14 +96,18 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
  /// the actual selected files and config through its existing input ledger.
  pub(crate) fn issue_handlers_structural_subject_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,selected:Option<&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender,queries:&crate::query_db::QueryDb)->io::Result<HandlerStructuralSubject>{
   use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
-  let auxiliary=if selected.is_some(){&[Q::SemHandlersFullAllow][..]}else{&[Q::SemHandlers][..]};
-  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||intent.workspace_auxiliary()!=auxiliary||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(fail("handlers partial child requires its actual Original Analyze purpose"))}
+  let auxiliary=if selected.is_some(){Q::admits_selected_handlers(intent.workspace_auxiliary())}else{intent.workspace_auxiliary()==[Q::SemHandlers]};
+  if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||!auxiliary||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(fail("handlers partial child requires its actual Original Analyze purpose"))}
   let workspace=intent.workspace().ok_or_else(||fail("handlers child has no admitted workspace"))?;let mut control=Native{budget};control.checkpoint()?;
   if let Some(plan)=selected{
    let roots=&workspace.recursive_roots;
    let exact=roots.len()==2&&roots.iter().zip(["code","maps"]).all(|(path,relative)|
     path.strip_prefix(&workspace.root).ok()==Some(Path::new(relative)));
-   if !exact||plan.roots()!=["code","maps"]||workspace.configuration.strip_prefix(&workspace.root).ok()!=Some(Path::new("tools/ci/lint_scopes.toml")){
+   let joined=Q::is_private_handlers_domain(intent.workspace_auxiliary())
+    && Q::authored_doc_ui_roots(intent.workspace_auxiliary()).is_some_and(|expected|
+      roots.len()==expected.len() && roots.iter().zip(expected).all(|(path,relative)|
+        path.strip_prefix(&workspace.root).ok()==Some(Path::new(relative))));
+   if (!exact&&!joined)||plan.roots()!=["code","maps"]||workspace.configuration.strip_prefix(&workspace.root).ok()!=Some(Path::new("tools/ci/lint_scopes.toml")){
     return Err(fail("selected handlers requires its exact admitted CODE+MAPS workspace and plan"));
    }
    kc::reserve(&mut control,||workspace.root.as_os_str().len().checked_mul(8)?.checked_add(1024))?;
@@ -135,7 +139,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let handler_scope=config.borrowed_report_scope("sem/handlers",dq_analyze::sem_handlers_policy::metadata().group);let extra=handler_scope.map_or(&[][..],|scope|scope.list("try_calls"));
   let recipe_plan={let source_lender=std::cell::RefCell::new(&mut *lender);let pages=Pages{inputs:self,root:&workspace.root,files,budget,lender:&source_lender};dq_analyze::captured_sem_handlers_recipe::select_scoped_from_pages(&pages,&order,extra,handler_scope,manifest_text,budget,&crate::daemon::control::checkpoint).map_err(actual)?};
   let recipe=recipe_plan.recipe;let requires_full=recipe_plan.requires_full;
-  if selected.is_some()&&!requires_full{
+  if selected.is_some()&&!requires_full&&!Q::is_private_handlers_domain(intent.workspace_auxiliary()){
    return Err(io::Error::new(io::ErrorKind::Unsupported,"selected handlers requires genuine full-model demand"));
   }
   let mut selection_files=BTreeSet::new();for path in discovery.files(){kc::reserve(&mut control,||path.as_os_str().len().checked_mul(4)?.checked_add(256))?;selection_files.insert(path.clone());}selection_files.insert(workspace.configuration.clone());if marker_lease.is_some(){selection_files.insert(manifest);}
