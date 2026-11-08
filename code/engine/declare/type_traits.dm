@@ -148,15 +148,20 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 /proc/type_trait_own(datum/holder, kind)
 	RETURN_TYPE(/datum/type_trait)
 	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
-	if(own)
+	if(own && !GLOB.type_trait_interned[own])
 		return own
-	var/datum/type_trait/shared = type_trait_of(holder, kind)
+	var/datum/type_trait/shared = own || type_trait_of(holder, kind) // an interned variant is shared: a private write copies it
 	own = shared.copy()
 	own.kind = kind
 	return per_type_copy_make(holder, kind, own)
 
 /// Sets one field of `holder`'s trait of `kind` at run time: the holder's own copy (copy on write), then the kind's key is published so readers
 /// follow. Returns TRUE when the value changed. The domain setters (set_active_power_usage(), set_hitsound()) are this with a fixed field.
+/// trait -> field -> value text -> the interned variant trait that write makes of that trait (set_trait()); and variant -> TRUE. Round-long: a variant is a
+/// flyweight like the type's own trait, and the table stays as small as the set of distinct writes.
+GLOBAL_LIST_EMPTY(type_trait_variants)
+GLOBAL_LIST_EMPTY(type_trait_interned)
+
 /proc/set_trait(datum/holder, kind, field, value)
 	var/datum/type_trait/now = type_trait_of(holder, kind)
 	if(!(field in now.vars))
@@ -164,8 +169,33 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 		return FALSE
 	if(now.vars[field] == value)
 		return FALSE
-	var/datum/type_trait/own = type_trait_own(holder, kind)
-	own.vars[field] = value // ALLOW(api): the one generic trait writer; the field is checked against the trait's vars above
+	// Copy on write, shared: instances that make the same write to the same trait (every item of one blueprint sets the same fields) hold one interned
+	// variant, not a copy each. A variant is read-only; a holder writing it again moves to the next variant (or a private copy, for a value that is not
+	// plain data), so no holder ever writes a trait another holder reads.
+	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
+	var/datum/type_trait/target
+	if((!own || GLOB.type_trait_interned[own]) && (isnull(value) || isnum(value) || istext(value) || ispath(value)))
+		var/list/by_field = GLOB.type_trait_variants[now]
+		if(!by_field)
+			by_field = list()
+			GLOB.type_trait_variants[now] = by_field
+		var/list/by_value = by_field[field]
+		if(!by_value)
+			by_value = list()
+			by_field[field] = by_value
+		var/value_key = isnull(value) ? "~null" : "[isnum(value) ? "#" : ""][value]" // text keys: a number would index the list
+		var/datum/type_trait/variant = by_value[value_key]
+		if(!variant)
+			variant = now.copy()
+			variant.kind = kind
+			by_value[value_key] = variant
+			GLOB.type_trait_interned[variant] = TRUE
+			target = variant // written once, below, as the variant is made
+		per_type_copy_make(holder, kind, variant)
+	else
+		target = type_trait_own(holder, kind)
+	if(target)
+		target.vars[field] = value // ALLOW(api): the one generic trait writer; the field is checked against the trait's vars above
 	var/key = type_trait_engine(kind)?.publish_key
 	if(key)
 		tracked_changed(holder, key)
