@@ -67,6 +67,12 @@ impl ColdFrontend {
             source_revision(self)
         }
     }
+
+    /// A sealed diagnostic owner has already authenticated this exact mapping
+    /// and never exposes mutable access to the frontend it contains.
+    pub(super) fn sealed_source_export_revision(&self) -> u128 {
+        *self.source_export_mapping.revision.get_or_init(|| source_revision(self))
+    }
     /// Exact current producer inputs; public compatibility mutations decline.
     pub fn source_export_mapping(&self) -> Option<&Arc<SourceExportMapping>> {
         self.source_export_mapping
@@ -453,6 +459,7 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
     let chunk_digest = |range: std::ops::Range<usize>| -> u128 {
         let mut hash = Xxh3::new();
         let mut traces = HashMap::new();
+        let mut current_path = None;
         for index in range {
             let Some(origin) = origins.get(index) else {
                 break;
@@ -488,7 +495,13 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
                     trace.digest128()
                 });
             hash.update(&trace.to_le_bytes());
-            let path = origin.origin.path.to_string_lossy();
+            // Adjacent emitted tokens borrow the same immutable path owner.
+            // Decode its spelling once instead of once per physical token.
+            let owner = origin.origin.path;
+            if current_path.as_ref().is_none_or(|(previous, _)| !std::ptr::eq(*previous, owner)) {
+                current_path = Some((owner, owner.to_string_lossy()));
+            }
+            let (_, path) = current_path.as_ref().expect("current physical origin path");
             hash.update(&(path.len() as u64).to_le_bytes());
             hash.update(path.as_bytes());
             for value in [

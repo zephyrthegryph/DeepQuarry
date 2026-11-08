@@ -295,7 +295,10 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   let seed=dm_tree::checker_builtins::original_analysis_seed().map_err(|error|io::Error::new(io::ErrorKind::InvalidData,format!("invalid Original builtin catalog: {error:?}")))?;
   let host=Arc::clone(queries)as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
   let frontend=dm_tree::frontend::build_for_original_handlers_structural_checked(subject.project()?,&provider,dm_tree::frontend::FrontendConfig{workers:executor.workers(),engine:Some(seed.frontend_seed()),observer:None},None,executor,&host).map_err(|failure|match failure{dm_tree::frontend::FrontendBuildFailure::Operational(actual)=>actual,dm_tree::frontend::FrontendBuildFailure::Diagnostics(errors)=>io::Error::new(io::ErrorKind::Unsupported,HandlerNativeFrontier(errors))})?;
-  let frontend=Arc::new(frontend.with_body_queries(Arc::clone(queries)as Arc<dyn dm_tree::frontend::BodySyntaxQueries>).map_err(io::Error::other)?);subject.bind_frontend(&frontend,self)?;Ok(PreparedHandlersStructural{subject,frontend:Some(frontend)})
+  dm_profile::request_mark("handlers.partial_frontend_done");
+  let frontend=Arc::new(frontend.with_body_queries(Arc::clone(queries)as Arc<dyn dm_tree::frontend::BodySyntaxQueries>).map_err(io::Error::other)?);subject.bind_frontend(&frontend,self)?;
+  dm_profile::request_mark("handlers.partial_source_bound");
+  Ok(PreparedHandlersStructural{subject,frontend:Some(frontend)})
  }
 }
 #[cfg(test)]mod partial_subject_tests{
@@ -504,6 +507,7 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
  pub(crate) fn capture_handlers_prepared(&self,prepared:PreparedHandlersStructural,queries:&Arc<crate::query_db::QueryDb>)->io::Result<Arc<HandlerPreparedCapture>>{
   let budget=Arc::clone(&prepared.subject.budget);let budget=&budget;prepared.subject.require_current(self)?;let mut c=Native{budget};
   let inputs=match &prepared.frontend{Some(frontend)=>{let source=frontend.handlers_structural_source().map_err(|m|fail(&m))?;Some(dm_analysis::policy_inputs::HandlersStructuralInputs::capture(&source).map_err(io::Error::other)?)},None=>None};
+  dm_profile::request_mark("handlers.partial_revision_done");
   // Same InputSnapshot clone-admission contract as current policy captures.
   let facts={let current=self.snapshot.lock().map_err(|_|fail("handler final input ledger poisoned"))?;let bytes=current.policy_closure_charge()?;kc::reserve(&mut c,||bytes.checked_mul(2)?.checked_add(std::mem::size_of::<HandlerPreparedCapture>()+crate::query_db::NativeQueryOwnerIdentity::retained_charge()+4096))?;
    // Immutable path/open/payload facts clone only their funded shared roots;

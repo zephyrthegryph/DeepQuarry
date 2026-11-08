@@ -129,10 +129,7 @@ impl DiagnosticFrontend {
     pub fn source_view(&self) -> Result<DiagnosticSourceView<'_>, String> {
         if !self.receipt.authenticates(&self.inner.snapshot.tree)
             || !self.archive.matches_tree(&self.inner.snapshot.tree)
-            || !self
-                .inner
-                .source_export_mapping()
-                .is_some_and(|mapping| Arc::ptr_eq(mapping, self.archive.source_mapping()))
+            || !Arc::ptr_eq(&self.inner.source_export_mapping, self.archive.source_mapping())
         {
             return Err("diagnostic original source handles no longer agree".into());
         }
@@ -316,7 +313,7 @@ impl DiagnosticSourceView<'_> {
         &self.owner.inner.bodies
     }
     pub fn source_revision(&self) -> u128 {
-        self.owner.inner.source_export_revision()
+        self.owner.inner.sealed_source_export_revision()
     }
     pub fn receipt(&self) -> &Arc<DiagnosticDeclarationReceipt> {
         &self.owner.receipt
