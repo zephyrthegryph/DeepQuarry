@@ -107,7 +107,7 @@ impl<'op> SettingAdmission<'op> {
         self
     }
 
-    pub(crate) fn uses_bounded_static_lookup_checkpoints(&self) -> bool {
+    pub fn uses_bounded_static_lookup_checkpoints(&self) -> bool {
         self.bounded_static_lookup_checkpoints
     }
 

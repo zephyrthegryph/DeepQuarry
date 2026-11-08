@@ -104,13 +104,26 @@ fn actual_line_start<T: Copy>(starts: &[T], offset: usize, decode: impl Fn(T) ->
 }
 
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(super) struct OriginalRawPoint{pub(super) line:usize,pub(super) column:usize}
+const MAX_PHYSICAL_SCAN: usize = 64;
+
 impl OriginalRawPointIndex{
  pub(super) fn new(bytes:&[u8],a:&SettingAdmission<'_>)->io::Result<Self>{let bom=if bytes.starts_with(&[0xef,0xbb,0xbf]){3}else{0};let mut starts=LineStarts::new(bytes.len(),a)?;starts.push(bom,a)?;Ok(Self{starts,indexed:bom,bom,scanned_line_end:0})}
  /// Index only actual demanded byte frontier; later earlier token spans use
  /// this SAME line roster without rescanning or a separate source store.
  pub(super) fn at(&mut self,bytes:&[u8],offset:usize,a:&SettingAdmission<'_>)->io::Result<OriginalRawPoint>{
   if offset<self.bom||offset>bytes.len()||self.indexed>bytes.len(){return Err(io::ErrorKind::InvalidInput.into())}
-  while self.indexed<offset{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;if bytes[self.indexed]==b'\n'{self.starts.push(self.indexed+1,a)?;}self.indexed+=1;}
+  let width = if a.uses_bounded_static_lookup_checkpoints() { MAX_PHYSICAL_SCAN } else { 1 };
+  while self.indexed < offset {
+   a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+   let end = offset.min(self.indexed.saturating_add(width));
+   if let Some(lf) = bytes[self.indexed..end].iter().position(|&byte| byte == b'\n') {
+    let start = self.indexed + lf + 1;
+    self.starts.push(start, a)?;
+    self.indexed = start;
+   } else {
+    self.indexed = end;
+   }
+  }
   let (line,start)=self.starts.at_or_before(offset).ok_or(io::ErrorKind::InvalidData)?;
   Ok(OriginalRawPoint{line,column:offset-start+1})
  }
@@ -138,11 +151,15 @@ impl OriginalRawPointIndex{
    return Ok(self.scanned_line_end)
   }
   let mut end=self.indexed;
+  let width = if a.uses_bounded_static_lookup_checkpoints() { MAX_PHYSICAL_SCAN } else { 1 };
   while end<bytes.len(){
    poll()?;
-   let byte=bytes[end];
-   end+=1;
-   if byte==b'\n'{break}
+   let next = bytes.len().min(end.saturating_add(width));
+   if let Some(lf) = bytes[end..next].iter().position(|&byte| byte == b'\n') {
+    end += lf + 1;
+    break;
+   }
+   end = next;
   }
   self.scanned_line_end=end;
   Ok(end)
@@ -155,6 +172,24 @@ impl OriginalRawPointIndex{
  use super::*;use std::sync::{atomic::{Ordering}};
  #[test]fn actual_raw_point_roster_preserves_byte_columns_bom_crlf_backward_spans_and_eof_zero_column(){
   let bytes=b"\xef\xbb\xbf\xc3\xa9\r\nx\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut index=OriginalRawPointIndex::new(bytes,&a).unwrap();assert_eq!(index.at(bytes,3,&a).unwrap(),OriginalRawPoint{line:1,column:1});assert_eq!(index.at(bytes,4,&a).unwrap(),OriginalRawPoint{line:1,column:2});assert_eq!(index.at(bytes,7,&a).unwrap(),OriginalRawPoint{line:2,column:1});assert_eq!(index.at(bytes,5,&a).unwrap(),OriginalRawPoint{line:1,column:3});assert_eq!(index.notice(bytes,OriginalLexicalNoticePoint::eof(bytes.len()),&a).unwrap(),OriginalRawPoint{line:3,column:0});drop(index);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn bounded_physical_scans_keep_exact_points_and_line_boundaries() {
+     let mut bytes = b"\xef\xbb\xbf".to_vec();
+     bytes.extend(std::iter::repeat_n(b'x', MAX_PHYSICAL_SCAN + 2));
+     bytes.extend_from_slice(b"\r\n\xc3\xa9\nlast");
+     let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let ordinary = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+     let bounded = SettingAdmission::new(&used, 1 << 20, &|| Ok(())).with_bounded_static_lookup_checkpoints();
+     let mut expected = OriginalRawPointIndex::new(&bytes, &ordinary).unwrap();
+     let mut actual = OriginalRawPointIndex::new(&bytes, &bounded).unwrap();
+     for offset in [3, 4, MAX_PHYSICAL_SCAN + 7, bytes.len(), 3] {
+         let point = expected.at(&bytes, offset, &ordinary).unwrap();
+         assert_eq!(actual.at(&bytes, offset, &bounded).unwrap(), point);
+         assert_eq!(actual.line_end_using(&bytes, point.line, &bounded).unwrap(),
+             expected.line_end_using(&bytes, point.line, &ordinary).unwrap());
+     }
  }
 
  #[test]
