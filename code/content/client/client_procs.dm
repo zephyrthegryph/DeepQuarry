@@ -982,7 +982,12 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			category = ADMIN_CATEGORY_MAIN
 		panel_tabs |= category
 		verblist[++verblist.len] = list(category, verb_to_init.name, verb_to_init.desc)
-	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist))
+	// The rest of the admin's verbs are not on the panel, but its search finds them (the browser's list: what their rights allow).
+	var/list/searchable = list()
+	if(pinned_names)
+		for(var/datum/admin_verb/listed as anything in admin_verbs_listed_for(src))
+			searchable[++searchable.len] = list(listed.category, listed.name)
+	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist, searchable = searchable))
 
 /client/proc/check_panel_loaded()
 	if(stat_panel && stat_panel.is_ready())

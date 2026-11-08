@@ -14,8 +14,10 @@ import {
   type PanelView,
   PLAYER_VIEWS,
   placeOf,
+  SERVER_PAGES,
   type ServerPage,
 } from './layout';
+import { run } from './menu';
 
 export type Host = {
   sendMessage: (type: string, payload?: object) => void;
@@ -33,6 +35,8 @@ export type State = {
   mcMetrics: McHealthData | null;
   hrefToken: string | null;
   verbs: Verb[];
+  /** Admin verbs the panel does not list but its search finds (init_verbs). */
+  searchable: Verb[];
   spells: string[][];
   examine: string[];
   inspect: InspectData | null;
@@ -60,6 +64,7 @@ export function initialState(): State {
     mcMetrics: null,
     hrefToken: null,
     verbs: [],
+    searchable: [],
     spells: [],
     examine: [],
     inspect: null,
@@ -136,7 +141,13 @@ export function verbGroupsOf(
 }
 
 /** A search result: what to show, where it lives, the command it runs. */
-export type Found = { label: string; path: string; command: string };
+export type Found = {
+  label: string;
+  path: string;
+  command: string;
+  /** A panel result: Enter or a click opens this view instead of running a command. */
+  opens?: { view: PanelView; page?: ServerPage };
+};
 
 /** Menu page sections searched with the verbs (menu.ts). */
 export type MenuSection = {
@@ -157,7 +168,24 @@ export function searchAll(
   if (!needle) return [];
   const views = viewsOf(state);
   const found: Found[] = [];
-  for (const verb of state.verbs) {
+  for (const view of views) {
+    if (view.toLowerCase().includes(needle))
+      found.push({ label: view, path: 'Panel', command: '', opens: { view } });
+  }
+  if (views.includes('Server')) {
+    for (const page of SERVER_PAGES) {
+      if (page.toLowerCase().includes(needle))
+        found.push({
+          label: page,
+          path: 'Panel › Server',
+          command: '',
+          opens: { view: 'Server', page },
+        });
+    }
+  }
+  const listed = new Set(state.verbs.map((verb) => verb[1]));
+  const unlisted = state.searchable.filter((verb) => !listed.has(verb[1]));
+  for (const verb of [...state.verbs, ...unlisted]) {
     if (!verb[1].toLowerCase().includes(needle)) continue;
     const place = placeOf(verb[0]);
     if (!views.includes(place.view)) continue;
@@ -247,6 +275,12 @@ export class StatStore {
     this.setTab(dataTabOf(this.state.view, this.state.serverPage));
   }
 
+  /** Acts on a search result: opens a panel, or runs the command. */
+  activate(found: Found) {
+    if (found.opens) this.setView(found.opens.view, found.opens.page);
+    else run(found.command);
+  }
+
   setTab(tab: string) {
     if (tab === this.state.currentTab) return;
     this.host.sendMessage('Set-Tab', { tab });
@@ -297,7 +331,10 @@ export class StatStore {
       case 'init_verbs':
         // The server just cut panel_tabs: it needs the permanent tabs back.
         for (const tab of tabs) this.host.sendMessage('Send-Tabs', { tab });
-        this.changed({ verbs: this.addVerbs([], payload.verblist || []) });
+        this.changed({
+          verbs: this.addVerbs([], payload.verblist || []),
+          searchable: payload.searchable || [],
+        });
         break;
       case 'add_verb_list':
         this.changed({ verbs: this.addVerbs(state.verbs, payload) });

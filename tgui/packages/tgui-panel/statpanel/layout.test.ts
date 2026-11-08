@@ -71,6 +71,27 @@ describe('right panel layout', () => {
 });
 
 describe('panel search', () => {
+  it('finds panels and admin verbs the panel does not list', async () => {
+    const { searchAll, initialState } = await import('./store');
+    const state = {
+      ...initialState(),
+      verbs: [['Admin', 'Admin Verbs']] as [string, string][],
+      searchable: [
+        ['Debug', 'Toggle Client Lighting'],
+        ['Admin', 'Admin Verbs'],
+      ] as [string, string][],
+    };
+    expect(searchAll(state, 'client light', [])[0].command).toBe(
+      'Toggle-Client-Lighting',
+    );
+    expect(searchAll(state, 'admin verbs', [])).toHaveLength(1);
+    expect(searchAll(state, 'health', [])[0].opens).toEqual({
+      view: 'Server',
+      page: 'Health',
+    });
+    expect(searchAll(state, 'staff', [])[0].opens).toEqual({ view: 'Staff' });
+  });
+
   it('finds verbs and Menu items, says where each lives, prefix first', async () => {
     const { searchAll, initialState } = await import('./store');
     const { MENU_SECTIONS } = await import('./menu');

@@ -10,6 +10,8 @@ export type PanelView = 'Status' | 'Actions' | 'Game' | 'Staff' | 'Server';
 
 /** The Server view's sub-pages. */
 export type ServerPage = 'Health' | 'Tools' | 'Queries';
+/** The Server view's pages the search finds (Queries only while one runs, so it is left out). */
+export const SERVER_PAGES: ServerPage[] = ['Health', 'Tools'];
 
 export const PLAYER_VIEWS: PanelView[] = ['Status', 'Actions', 'Game'];
 export const ADMIN_VIEWS: PanelView[] = [

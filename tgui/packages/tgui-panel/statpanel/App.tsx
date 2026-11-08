@@ -198,7 +198,7 @@ export function StatSearch(props: {
       value={query}
       onChange={setQuery}
       onEnter={() => {
-        if (found.length) run(found[0].command);
+        if (found.length) store.activate(found[0]);
         setQuery('');
       }}
       onEscape={() => setQuery('')}
@@ -513,7 +513,7 @@ export function StatWindow(props: {
                 <Button
                   key={`${item.path}/${item.label}`}
                   fluid
-                  onClick={() => run(item.command)}
+                  onClick={() => store.activate(item)}
                 >
                   {item.label}
                   <span className="stat-results__path">{item.path}</span>
