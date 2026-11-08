@@ -129,6 +129,8 @@
 	var/lum = GLOB.client_lighting || !(dynamic_lighting)
 	if(luminosity != lum)
 		set_luminosity(lum)
+	if(GLOB.client_lighting && SSlighting.is_initialized() && !has_dynamic_lighting())
+		client_glow_white(TRUE) // a turf made outside dynamic lighting stays bright over the black base
 
 	if(opacity)
 		directional_opacity = ALL_CARDINALS

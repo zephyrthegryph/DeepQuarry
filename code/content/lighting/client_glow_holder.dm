@@ -61,6 +61,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /client/interest_eye_moved(turf/at_eye)
 	..()
 	client_glow_holder_eye(src, at_eye) // held off-screen glows follow the eye's glow chunk
+	client_glow_screen_sync(src) // the lighting screen objects (client_lighting_compare.dm); one comparison when in step
 
 /client/interest_eye_left()
 	..()
@@ -184,7 +185,6 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		mask_image.render_target = mask_name
 		mask_image.filters = filter(type = "blur", size = CLIENT_GLOW_MASK_BLUR)
 		glow_image = image(G.icon, null, G.icon_state)
-		glow_image.plane = PLANE_LIGHTING
 		glow_image.layer = G.layer
 		glow_image.blend_mode = BLEND_ADD
 		glow_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
@@ -211,6 +211,8 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		image_anchor(mask_image, A)
 		client_images_add(client, entry)
 	glow_image.icon = G.icon
+	glow_image.plane = G.plane
+	mask_image.plane = G.plane
 	glow_image.color = G.color
 	glow_image.alpha = G.alpha
 	glow_image.pixel_x = px

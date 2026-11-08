@@ -319,3 +319,88 @@
 	TEST_ASSERT_EQUAL(LAZYLEN(H.held), 0, "a gone viewer holds nothing")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
+
+// ---- compare mode (client_lighting_compare.dm) ----
+
+/// Compare mode runs both engines: a lit fixture keeps its glow (on the glow plane) and its turf gets a lighting object, every
+/// dynamic turf has one and stays shown to BYOND; switching off goes back to glows alone; client lighting off ends it too.
+/datum/unit_test/dq_client_lighting_compare
+
+/datum/unit_test/dq_client_lighting_compare/Run()
+	set_global(nameof(GLOB.client_glow_whites), GLOB.client_glow_whites)
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay)))
+		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the modes off for the next test
+	set_global(nameof(GLOB.client_lighting_compare), FALSE)
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	client_lighting_compare_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/datum/light_source/S = L.light
+	TEST_ASSERT(GLOB.client_lighting, "compare mode turns client lighting on")
+	TEST_ASSERT_NOTNULL(S?.glow, "compare: the light glows")
+	TEST_ASSERT_EQUAL(S.glow.plane, PLANE_CLIENT_GLOW, "compare: the glow is on the glow plane")
+	TEST_ASSERT_NOTNULL(T.lighting_object, "compare: the lit turf has its lighting object")
+	var/turf/far = run_loc_floor_top_right
+	TEST_ASSERT(!far.has_dynamic_lighting() || far.lighting_object, "compare: every dynamic turf has a lighting object")
+	TEST_ASSERT_EQUAL(T.luminosity, 1, "compare: the turf stays shown for the glows")
+	TEST_ASSERT(T.lighting_corners_lit(), "compare: the corners carry the light too")
+	var/list/dm_screen = client_glow_screen(CLIENT_GLOW_SCREEN_COMPARE_DM)
+	var/list/glow_screen = client_glow_screen(CLIENT_GLOW_SCREEN_COMPARE_GLOW)
+	TEST_ASSERT(!(GLOB.client_glow_relay in dm_screen), "the DM view does not relay the glow plane")
+	TEST_ASSERT(GLOB.client_glow_relay in glow_screen, "the client view relays the glow plane")
+	TEST_ASSERT(GLOB.client_glow_compare_base in glow_screen, "the client view has the glow plane's black base")
+	TEST_ASSERT(GLOB.client_glow_plane_master in dm_screen, "the DM view hides the glow plane behind its master")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_relay.render_source, GLOB.client_glow_plane_master.render_target, "the relay draws the glow plane's render target")
+	TEST_ASSERT(findtext(GLOB.client_glow_plane_master.render_target, "*") == 1, "the glow plane renders only as a hidden target")
+	client_lighting_compare_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(GLOB.client_lighting, "compare off keeps client lighting")
+	TEST_ASSERT_NULL(T.lighting_object, "compare off: no lighting object")
+	TEST_ASSERT_EQUAL(S.glow?.plane, PLANE_LIGHTING, "compare off: the glow is back on the lighting plane")
+	TEST_ASSERT(!T.lighting_corners_lit(), "compare off: the corners hold no light")
+	client_lighting_compare_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(!GLOB.client_lighting_compare, "client lighting off ends compare mode")
+	TEST_ASSERT_NULL(S.glow, "client lighting off: no glow")
+	TEST_ASSERT_NOTNULL(T.lighting_object, "client lighting off: the DM lighting is back")
+
+/// The dark base: in client mode every client's screen holds a black base on the lighting plane, under the glows (an unlit
+/// turf would otherwise multiply by nothing and show fully bright), and a turf outside dynamic lighting carries a white tile
+/// over it; DM mode shows neither.
+/datum/unit_test/dq_client_lighting_dark_base
+
+/datum/unit_test/dq_client_lighting_dark_base/Run()
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay)))
+		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	set_global(nameof(GLOB.client_glow_whites), GLOB.client_glow_whites)
+	TEST_ASSERT_EQUAL(length(client_glow_screen(client_glow_screen_state(null))), 0, "DM lighting: no base on the screen")
+	var/turf/fixed
+	for(var/turf/T as anything in block(locate(1, 1, 1), locate(world.maxx, world.maxy, world.maxz)))
+		if(!T.has_dynamic_lighting())
+			fixed = T
+			break
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/list/screen = client_glow_screen(client_glow_screen_state(null))
+	TEST_ASSERT(GLOB.client_glow_base in screen, "client lighting: the screen holds the black base")
+	var/atom/movable/screen/client_glow_base/B = GLOB.client_glow_base
+	TEST_ASSERT_EQUAL(B.plane, PLANE_LIGHTING, "the base is on the lighting plane")
+	TEST_ASSERT_EQUAL(B.color, "#000000", "the base is black")
+	TEST_ASSERT(B.layer < (BACKGROUND_LAYER + 22), "the base is under the glows")
+	var/mutable_appearance/white = CACHED_FAST(client_glow_white_tiles, "[PLANE_LIGHTING]")
+	TEST_ASSERT(white.layer > B.layer && white.layer < (BACKGROUND_LAYER + 22), "a white tile sits between the base and the glows")
+	TEST_ASSERT(!(white in run_loc_floor_bottom_left.underlays), "a dynamic floor has no white tile")
+	if(fixed)
+		var/area/FA = fixed.loc
+		TEST_ASSERT((white in fixed.underlays) || client_glow_area_white(FA) == white, "a turf outside dynamic lighting ([fixed.type] in [FA.type]) carries a white tile, its own or its area's")
+	log_test("CLIENT DARK BASE: [GLOB.client_glow_whites] area(s) and turf(s) outside dynamic lighting carry a white tile")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_EQUAL(length(client_glow_screen(client_glow_screen_state(null))), 0, "DM lighting again: no base")
+	if(fixed)
+		var/area/FA2 = fixed.loc
+		TEST_ASSERT(!(white in fixed.underlays) && !client_glow_area_white(FA2), "DM lighting again: the white tile is gone")
