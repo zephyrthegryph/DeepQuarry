@@ -386,6 +386,10 @@ CAPABILITIES(/datum/system/tgui)
 /datum/system/tgui/proc/hide_stale_window(exists, client/client, window_id)
 	if(!exists)
 		return
+	// The answer can arrive after the slot was handed out again: a shell a UI holds is that UI's to show.
+	var/datum/tgui_window/current = client?.tgui_window_of(window_id)
+	if(current?.locked)
+		return
 	winset(client, window_id, "alpha=0")
 	winshow(client, window_id, FALSE)
 

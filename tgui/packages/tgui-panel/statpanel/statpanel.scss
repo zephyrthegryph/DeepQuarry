@@ -49,17 +49,22 @@
   height: 100%;
 }
 
-// In a column window: its search over its content.
-.stat-toolbar {
+// The view tabs and, at their right, the search.
+.stat-tabrow {
   display: flex;
-  padding: 3px 3px 0;
+  align-items: center;
+  gap: 3px;
+
+  .DqTabs {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
-
 .stat-search {
-  flex: 0 1 13em;
-  min-width: 8em;
-  margin: var(--space-s) 0 var(--space-sm) auto;
+  flex: 0 1 11em;
+  min-width: 6em;
+  margin-right: 3px;
 }
 
 .stat-content {

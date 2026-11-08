@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "A floating chat no longer disappears when you connect."
+  - qol: "The status panel cannot be collapsed, and its search now sits in the tab bar."
+  - bugfix: "The CRT effect covers the whole right-hand column whether or not the chat is docked."

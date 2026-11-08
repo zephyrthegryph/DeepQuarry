@@ -106,6 +106,7 @@ function run(page: 'Health' | 'Status', seconds: number): Run {
   const view = render(
     <Profiler id="panel" onRender={onRender}>
       <StatWindow
+        query=""
         store={store}
         view={page === 'Health' ? 'Server' : 'Status'}
       />

@@ -3,6 +3,9 @@
 @use '~tgui/styles/console';
 
 .column {
+  // The CRT scanlines belong to the whole page, whichever windows are docked in it.
+  @include console.console-frame(false);
+
   position: fixed;
   inset: 0;
   display: flex;
@@ -146,5 +149,10 @@
 // The chat draws a frame around its own page (ChatConsole.scss, console-frame: fixed). In the column each window is framed by its
 // entry, so the page-wide frame goes; the scanlines over the whole page stay.
 .column-window .ChatConsole::before {
+  display: none;
+}
+
+// The page has its scanlines already (.column).
+.column-window .ChatConsole::after {
   display: none;
 }

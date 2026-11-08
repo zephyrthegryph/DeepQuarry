@@ -372,17 +372,21 @@ function Group(props: {
     !!drag?.window && !drag.float && !drag.join && drag.to === index;
   const offset = groupOffset(drag, group.id);
   const ghost = ghostText(drag, group.id);
-  const toggle = () =>
+  const foldable = host.mayCollapse(group);
+  const collapsed = host.collapsed(group);
+  const toggle = () => {
+    if (!foldable) return;
     host.dispatch({
       type: 'collapse',
       group: group.id,
-      collapsed: !group.collapsed,
+      collapsed: !collapsed,
     });
+  };
   return (
     <div
       className={[
         'column-group',
-        group.collapsed && 'column-group--collapsed',
+        collapsed && 'column-group--collapsed',
         fill && 'column-group--fill',
         dragged && 'column-group--dragged',
         dragged && drag?.float && 'column-group--floating',
@@ -393,7 +397,7 @@ function Group(props: {
       data-column-group={group.id}
       style={{
         transform: offset ? `translateY(${offset}px)` : undefined,
-        height: group.collapsed || fill ? undefined : `${height}px`,
+        height: collapsed || fill ? undefined : `${height}px`,
       }}
     >
       <div
@@ -404,13 +408,15 @@ function Group(props: {
           if (!(event.target as HTMLElement).closest(NO_DRAG)) toggle();
         }}
       >
-        <Button
-          compact
-          color="transparent"
-          icon={group.collapsed ? 'chevron-right' : 'chevron-down'}
-          tooltip={group.collapsed ? 'Expand' : 'Collapse'}
-          onClick={toggle}
-        />
+        {foldable && (
+          <Button
+            compact
+            color="transparent"
+            icon={collapsed ? 'chevron-right' : 'chevron-down'}
+            tooltip={collapsed ? 'Expand' : 'Collapse'}
+            onClick={toggle}
+          />
+        )}
         {stacked ? (
           <Tabs
             className="column-tabs"
@@ -459,7 +465,7 @@ function Group(props: {
           </>
         )}
       </div>
-      {!group.collapsed && (
+      {!collapsed && (
         <div className="column-body">
           {group.windows.map((id) => {
             const win = windows[id];
@@ -496,7 +502,7 @@ export function Column() {
   // The last expanded entry fills what the others leave.
   let fillAt = -1;
   groups.forEach((group, index) => {
-    if (!group.collapsed) fillAt = index;
+    if (!host.collapsed(group)) fillAt = index;
   });
   const insertEnd =
     !!drag?.window && !drag.float && !drag.join && drag.to >= groups.length;

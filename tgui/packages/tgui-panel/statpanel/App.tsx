@@ -182,6 +182,30 @@ function Debug({ state, store }: { state: State; store: StatStore }) {
   );
 }
 
+/** The panel's search, in its tab row: runs the first of `found` on Enter. */
+export function StatSearch(props: {
+  query: string;
+  setQuery: (query: string) => void;
+  store: StatStore;
+}) {
+  const { query, setQuery, store } = props;
+  useSyncExternalStore(store.subscribe, store.getVersion);
+  const found = searchAll(store.state, query, MENU_SECTIONS);
+  return (
+    <Input
+      className="stat-search"
+      placeholder="Search (/)"
+      value={query}
+      onChange={setQuery}
+      onEnter={() => {
+        if (found.length) run(found[0].command);
+        setQuery('');
+      }}
+      onEscape={() => setQuery('')}
+    />
+  );
+}
+
 /**
  * One view (or the card) failing to draw shows a short error in its place; the tab row, the search and the other views keep working,
  * and the panel never falls back to blank. Reset by a new `resetKey` (another view, another card).
@@ -459,10 +483,14 @@ function ViewContent({ state, store }: { state: State; store: StatStore }) {
  * sends the data of the current one), so a view shown alongside another,
  * split out of the stack, offers to switch to it.
  */
-export function StatWindow(props: { store: StatStore; view: PanelView }) {
+export function StatWindow(props: {
+  query: string;
+  store: StatStore;
+  view: PanelView;
+}) {
   const { store, view } = props;
   useSyncExternalStore(store.subscribe, store.getVersion);
-  const [query, setQuery] = useState('');
+  const { query } = props;
   const { state } = store;
   const found = searchAll(state, query, MENU_SECTIONS);
   const overlay = overlayOf(state, store);
@@ -477,19 +505,6 @@ export function StatWindow(props: { store: StatStore; view: PanelView }) {
   }
   return (
     <div className="stat-root stat-root--embedded">
-      <div className="stat-toolbar">
-        <Input
-          className="stat-search"
-          placeholder="Search (/)"
-          value={query}
-          onChange={setQuery}
-          onEnter={() => {
-            if (found.length) run(found[0].command);
-            setQuery('');
-          }}
-          onEscape={() => setQuery('')}
-        />
-      </div>
       <div className="stat-content">
         {query.trim() ? (
           found.length ? (

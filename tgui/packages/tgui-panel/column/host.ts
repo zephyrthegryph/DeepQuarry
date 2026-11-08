@@ -46,6 +46,9 @@ export function sendFor(
   Byond.sendMessage('col/msg', { wid, type, payload });
 }
 
+/** Windows the column never folds (the server's window_dock_always_docked). */
+const ALWAYS_OPEN = new Set(['StatPanel']);
+
 export class ColumnHost {
   state: DockState = emptyDock();
   /** Docked tgui interfaces by window id: their own stores and channels. */
@@ -89,7 +92,7 @@ export class ColumnHost {
     for (const group of this.state.groups) {
       for (const id of group.windows) {
         if (this.state.windows[id]?.kind !== 'tgui') continue;
-        const hidden = group.collapsed || id !== group.active;
+        const hidden = this.collapsed(group) || id !== group.active;
         if (this.viewHidden.get(id) === hidden) continue;
         this.viewHidden.set(id, hidden);
         sendFor(id, 'wm/view', { hidden });
@@ -272,6 +275,18 @@ export class ColumnHost {
    * never the column's last window (the column is never empty). The server
    * holds the same rule (window_dock.dm may_leave()).
    */
+  /** Whether an entry can fold to its header: never one holding an always-docked window. */
+  mayCollapse(group: { windows: string[] }): boolean {
+    return !group.windows.some((id) =>
+      ALWAYS_OPEN.has(this.state.windows[id]?.iface ?? ''),
+    );
+  }
+
+  /** Whether an entry is folded now (a saved fold of an always-docked window does not count). */
+  collapsed(group: { collapsed: boolean; windows: string[] }): boolean {
+    return group.collapsed && this.mayCollapse(group);
+  }
+
   mayLeave(wid: string): boolean {
     const win = this.state.windows[wid];
     if (win?.kind !== 'tgui') return false;

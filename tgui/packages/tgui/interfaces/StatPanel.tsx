@@ -8,11 +8,11 @@
  */
 import 'tgui-panel/statpanel/statpanel.scss';
 
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useWindowMessages, useWindowSend } from 'tgui/backend';
 import { Tabs } from 'tgui/dq';
 import { Window } from 'tgui/layouts';
-import { StatWindow } from 'tgui-panel/statpanel/App';
+import { StatSearch, StatWindow } from 'tgui-panel/statpanel/App';
 import { createStatHost } from 'tgui-panel/statpanel/host';
 import type { PanelView } from 'tgui-panel/statpanel/layout';
 import { type StatStore, viewsOf } from 'tgui-panel/statpanel/store';
@@ -35,6 +35,7 @@ export function StatPanel() {
 function StatPanelBody(props: { store: StatStore }) {
   const { store } = props;
   useSyncExternalStore(store.subscribe, store.getVersion);
+  const [query, setQuery] = useState('');
   const { state } = store;
   const views = useMemo(
     () => viewsOf(state),
@@ -42,23 +43,27 @@ function StatPanelBody(props: { store: StatStore }) {
   );
   return (
     <div className="stat-root stat-root--window">
-      <Tabs
-        className="stat-views"
-        tabs={views.map((view) => ({
-          id: view,
-          label:
-            view === 'Staff' && state.tickets.length ? (
-              <>
-                Staff <span className="stat-badge">{state.tickets.length}</span>
-              </>
-            ) : (
-              view
-            ),
-          selected: view === state.view,
-        }))}
-        onSelect={(view) => store.setView(view as PanelView)}
-      />
-      <StatWindow store={store} view={state.view} />
+      <div className="stat-tabrow">
+        <Tabs
+          className="stat-views"
+          tabs={views.map((view) => ({
+            id: view,
+            label:
+              view === 'Staff' && state.tickets.length ? (
+                <>
+                  Staff{' '}
+                  <span className="stat-badge">{state.tickets.length}</span>
+                </>
+              ) : (
+                view
+              ),
+            selected: view === state.view,
+          }))}
+          onSelect={(view) => store.setView(view as PanelView)}
+        />
+        <StatSearch query={query} setQuery={setQuery} store={store} />
+      </div>
+      <StatWindow query={query} store={store} view={state.view} />
     </div>
   );
 }

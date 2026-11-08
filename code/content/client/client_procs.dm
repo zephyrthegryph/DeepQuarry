@@ -313,6 +313,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	tgui_panel.initialize()
 
+	// Before anything opens a pooled window: this closes and forgets every pooled shell the client still has.
+	SStgui.reconcile_client_windows(src)
+
 	// The stat panel: a tgui window like any other (stat_panel_window.dm), docked in the right-hand column unless the player floated it.
 	stat_panel_open(src)
 	// The chat: a tgui window too (chat_ui.dm), docked in the column unless the player floated it.
@@ -344,7 +347,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	attempt_auto_fit_viewport()
 	fully_created = TRUE
-	SStgui.reconcile_client_windows(src)
 	SStgui.schedule_client_prewarm(src)
 
 	// Now that we're fully initialized, use our prefs
