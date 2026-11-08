@@ -1,5 +1,5 @@
-/// The calls-per-atom ratchet of a space-turf run (E7, init_plan.md): 28 measured 2026-11-08; lower it as the engine sheds calls.
-#define MAPLOAD_SPACE_CALLS_CEILING 29
+/// The calls-per-atom ratchet of a space-turf run (E7, init_plan.md): 28 measured 2026-11-08, 22.02 after space registers in one call (vg_hook_register_one_turf()); lower it as the engine sheds calls.
+#define MAPLOAD_SPACE_CALLS_CEILING 23
 
 // mapload_init: what Initialize() costs per atom on the map-load path, per representative type, without booting the full map.
 //

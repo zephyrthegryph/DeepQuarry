@@ -82,7 +82,7 @@
 		"asset_name" = report.name,
 		"asset_label" = asset_label,
 		"atom_type" = report.source_type,
-		"fact_id" = "infrastructure-damage:[handle_text(key)]",
+		"fact_id" = contract_infrastructure_fact_id(key),
 		"fact_revision" = revision,
 		"fact_active" = current_damage > 0,
 		"metrics" = list(
@@ -91,7 +91,7 @@
 			"maximum_integrity" = report.max_integrity,
 		),
 		"detail" = "[report.name] sustained [round(report.total_amount, 0.1)] integrity damage in [report.area_name].",
-	), "infrastructure-damage:[handle_text(key)]:[revision]")
+	), contract_infrastructure_occurrence_id(key, revision))
 	event.source_ref = key
 	event.source_type = report.source_type
 	event.location_ref = report.location_ref

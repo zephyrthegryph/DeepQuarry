@@ -152,7 +152,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 	var/stable_fact_id = event.fact_id || event.occurrence_id
 	if(!stable_fact_id)
 		return FALSE
-	var/fact_key = "[event.event_type]|[stable_fact_id]"
+	var/fact_key = "[stable_fact_id]|[event.event_type]" // varying part first: see contract_infrastructure_fact_id()
 	var/list/facts = facts_by_signal[signal.id]
 	var/datum/contract_opportunity_observation/previous = facts[fact_key]
 	if(previous)
