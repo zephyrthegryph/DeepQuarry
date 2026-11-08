@@ -223,6 +223,51 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
  }
 
  #[test]
+ fn issued_compact_callable_spellings_keep_their_owner_across_the_engine_union() {
+  let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+  let a = dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let live = Arc::new(AtomicUsize::new(0));
+  let work = Work { live: live.clone(), fail: false };
+  let executor = dm_exec::BuildExecutor::new(1).unwrap();
+  let host = StreamHost { counter: counter.clone() };
+  let adapter = TreeOriginalBatchHost(&host);
+  let source = Source::new("/datum/scope
+    proc/long_callable()
+        return 1
+/proc/exact_source_path()
+    return 2
+");
+  let batch = OriginalBatchExecution::new(&source,&adapter,&executor);
+  let streamed = prepare_original_stream_with_lazy_body_parameters_using(
+   Path::new("actual-compact-symbols.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch),true,
+  ).unwrap();
+  let spelling = "/datum/scope/proc/long_callable";
+  let id = dm_ir::SymbolId::of(spelling);
+  let current = streamed.primary.adapt_for_original_outcome(&a).unwrap().into_current(&a).unwrap();
+  let local = current.current()[0].symbols();
+  assert_eq!(local.compact_spelling_len(),2);
+  let exact = "/proc/exact_source_path";
+  let offset = streamed.expanded.text.find(exact).unwrap();
+  assert_eq!(local.text(dm_ir::SymbolId::of(exact)).unwrap().as_ptr(),
+   streamed.expanded.text[offset..].as_ptr());
+  let address = local.text(id).unwrap().as_ptr();
+  let seed = crate::checker_builtins::original_analysis_seed().unwrap();
+  let prepared = current.into_prepared(Some(seed.frontend_seed()),&a).unwrap();
+  assert_eq!(prepared.parsed.adapted.symbols.text(id).unwrap().as_ptr(),address);
+  let detached = prepared.parsed.adapted.symbols.clone();
+  drop(prepared);
+  drop(streamed.expanded);
+  drop(streamed.plan);
+  assert_eq!(detached.text(id),Some(spelling));
+  assert_eq!(detached.text(id).unwrap().as_ptr(),address);
+  assert!(counter.load(Ordering::Acquire)>root);
+  drop(detached);
+  assert_eq!(counter.load(Ordering::Acquire),root);
+  assert_eq!(live.load(Ordering::Acquire),0);
+ }
+
+ #[test]
  fn actual_lazy_body_realizes_only_its_parameter_owner_and_preserves_first_io() {
   let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
   let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();

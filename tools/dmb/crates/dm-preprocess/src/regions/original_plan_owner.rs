@@ -605,6 +605,7 @@ mod trace_storage_tests {
             definitions: [SourceAcquisitionLease; 2],
             calls: RefCell<Vec<usize>>,
             fail_at: Cell<Option<usize>>,
+            issuer: Arc<()>,
             epoch: std::sync::atomic::AtomicUsize,
             flip_epoch_at: Cell<Option<usize>>,
         }
@@ -624,6 +625,9 @@ mod trace_storage_tests {
                     return Err(io::Error::from_raw_os_error(1450));
                 }
                 Ok(Some(lease.source_text().as_bytes()))
+            }
+            fn original_geometry_recorder(&self) -> Option<(&Arc<()>, &std::sync::atomic::AtomicUsize)> {
+                Some((&self.issuer, &self.epoch))
             }
             fn original_geometry_byte_loan<'a>(&'a self, lease: &'a SourceAcquisitionLease)
                 -> io::Result<Option<crate::OriginalGeometryByteLoan<'a>>>
@@ -658,6 +662,7 @@ mod trace_storage_tests {
             ],
             calls: RefCell::new(Vec::new()),
             fail_at: Cell::new(None),
+            issuer: Arc::new(()),
             epoch: std::sync::atomic::AtomicUsize::new(0),
             flip_epoch_at: Cell::new(None),
         };
@@ -756,8 +761,19 @@ mod trace_storage_tests {
         assert_eq!(*sources.calls.borrow(), [1]);
         assert!(plan.projected_trace(&equal_but_distinct).same_owner(&current));
 
-        // Revoking the proof between authored frames restores the real lender.
+        // Once both authored cross-file geometries are certified, an exact
+        // trace hit needs no new source lends. The report owner is unchanged.
         sources.calls.borrow_mut().clear();
+        plan.project_trace_using(&equal_but_distinct, &mut driver, &sources, None, &a).unwrap();
+        assert_eq!(*sources.calls.borrow(), [0], "only the stack-only author was unproved");
+        sources.calls.borrow_mut().clear();
+        plan.project_trace_using(&equal_but_distinct, &mut driver, &sources, None, &a).unwrap();
+        assert!(sources.calls.borrow().is_empty());
+        assert!(plan.projected_trace(&equal_but_distinct).same_owner(&current));
+
+        // Revoking the proof before another physical input is validated
+        // restores both byte lends in the original inner-to-outer order.
+        sources.epoch.store(2, Ordering::SeqCst);
         sources.flip_epoch_at.set(Some(1));
         plan.project_trace_using(&equal_but_distinct, &mut driver, &sources, Some(&emission), &a).unwrap();
         assert_eq!(*sources.calls.borrow(), [1, 0]);
@@ -765,6 +781,7 @@ mod trace_storage_tests {
         drop(current);
 
         sources.calls.borrow_mut().clear();
+        sources.epoch.store(0, Ordering::SeqCst);
         sources.fail_at.set(Some(2));
         let error = plan.trace_using(&equal_but_distinct, &mut driver, &sources, &a).unwrap_err();
         assert_eq!(error.raw_os_error(), Some(1450));

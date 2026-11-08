@@ -14,6 +14,9 @@ impl HeapCensus {
         }
         let storage = table.visit_storage(|_, spelling| self.arc_text(owner, spelling));
         self.owner(owner).observed_items += storage.local_len as u64;
+        table.visit_compact_spelling_storage(|address, payload, capacity| {
+            self.exposed_buffer(owner, address, payload, capacity);
+        });
         // std HashMap exposes usable capacity, not allocated bucket count. Twice
         // capacity plus one bounds the private power-of-two bucket roster, and
         // includes one control byte per bucket plus alignment padding.

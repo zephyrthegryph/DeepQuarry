@@ -259,6 +259,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         if !current{return Err(invalid("Original byte lease differs from current issuer/path/input facts"))}
         match recorded_source_original_with_receipt(lease,receipt)?{RecordedSourceOriginal::Utf8(text)=>Ok(text.as_bytes()),RecordedSourceOriginal::Bytes(bytes)=>Ok(bytes.as_slice())}
     }
+    pub(super) fn original_geometry_recorder(&self) -> (&Arc<()>, &AtomicUsize) {
+        (&self.source_issuer, self.snapshot.published_epoch_flag())
+    }
+
     pub(super) fn original_geometry_byte_loan<'a>(
         &'a self, lease: &'a dm_preprocess::SourceAcquisitionLease,
     ) -> io::Result<dm_preprocess::OriginalGeometryByteLoan<'a>> {

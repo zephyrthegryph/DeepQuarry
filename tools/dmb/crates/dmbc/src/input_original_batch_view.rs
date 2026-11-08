@@ -28,6 +28,9 @@ impl<P:SnapshotProvider+Sync> SourceProvider for OriginalBatchRecordingView<'_,P
     fn original_raw_source_open_admitted(&self,path:&Path,max:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_read:&mut dyn FnMut(usize)->io::Result<()>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<dm_preprocess::OriginalRawReadOutcome>{self.inputs.original_raw_source_open_admitted(path,max,work,after_open,before_read,before_decode,acquired)}
  fn original_raw_source_open_owned_admitted(&self,path:&Path,max:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_read:&mut dyn FnMut(usize)->io::Result<()>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,fund_text:&dm_preprocess::source_arena_credit::OriginalReadTextFunding<'_>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<dm_preprocess::OriginalRawReadOutcome>{self.inputs.original_raw_source_open_owned_admitted(path,max,work,after_open,before_read,before_decode,fund_text,acquired)}
     fn original_source_bytes<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{self.inputs.original_source_bytes(lease)}
+    fn original_geometry_recorder(&self) -> Option<(&Arc<()>, &std::sync::atomic::AtomicUsize)> {
+        Some(self.inputs.original_geometry_recorder())
+    }
     fn original_geometry_byte_loan<'a>(&'a self, lease: &'a dm_preprocess::SourceAcquisitionLease)
         -> io::Result<Option<dm_preprocess::OriginalGeometryByteLoan<'a>>> {
         self.inputs.original_geometry_byte_loan(lease).map(Some)

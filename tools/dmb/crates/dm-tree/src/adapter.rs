@@ -645,7 +645,16 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         header, context.prepared_signatures.is_some(),
                     )?;
                     let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
-                    context.symbol(&path)?;
+                    let source_start = issued.as_ref().and_then(|parts| {
+                        // The primary opening token bounds the physical prefix;
+                        // normalized prefix coordinates alone are never a loan.
+                        let start = item.raw.header_span().start;
+                        let width = parts.argument_offset.checked_sub(1)?;
+                        (width == path.len() && raw.starts_with('/')).then_some(start)
+                    });
+                    context.demand.intern_callable_path(
+                        context.symbols, &path, source_start, context.prepared_signatures.as_deref_mut(),
+                    )?;
                     let owner_id = context.symbol(&owner)?;
                     let name_id = context.symbol(name)?;
                     let procedure = Some(context.demand.procedure_metadata(
@@ -796,8 +805,9 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                 #[cfg(debug_assertions)]
                 if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
                     eprintln!(
-                        "ORIGINAL_ADAPTER_ALLOCATION_FAILURE span={:?} declarations={}",
+                        "ORIGINAL_ADAPTER_ALLOCATION_FAILURE span={:?} declarations={} compact_spellings={}",
                         item.raw.header_span(), context.result.skeletons.len(),
+                        context.symbols.compact_spelling_len(),
                     );
                 }
                 return Err(actual);

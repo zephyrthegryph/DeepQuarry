@@ -16,6 +16,8 @@ pub use warnings::WarningCode;
 
 mod packed_u128;
 pub use packed_u128::PackedU128;
+mod compact_spellings;
+pub use compact_spellings::CompactSpellingSource;
 mod symbols;
 pub use symbols::{LocalSymbolStorage, SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
 mod string_roster;

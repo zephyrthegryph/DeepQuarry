@@ -3,7 +3,10 @@
 //! These are semantic names, never BYOND table indexes. The linker assigns wire
 //! indexes separately. Hash collisions are errors and leave the table unchanged.
 
+use crate::compact_spellings::{CompactOwner, CompactSpellingSource};
+use dm_syntax::SettingAdmission;
 use std::collections::HashMap;
+use std::io;
 use std::fmt;
 use std::sync::Arc;
 
@@ -54,6 +57,7 @@ impl std::error::Error for SymbolCollision {}
 #[derive(Clone, Debug, Default)]
 pub struct SymbolTable {
     texts: HashMap<SymbolId, Arc<str>>,
+    compact: Option<CompactOwner>,
     parent: Option<Arc<SymbolTable>>,
     local_spelling_bytes: usize,
     non_intern_epoch: usize,
@@ -136,6 +140,7 @@ impl SymbolTable {
     /// Exact immutable catalog authority: no local delta and the same owned parent.
     pub fn is_empty_overlay_of(&self, source: &Arc<SymbolTable>) -> bool {
         self.texts.is_empty()
+            && self.compact_spelling_len() == 0
             && self
                 .parent
                 .as_ref()
@@ -144,6 +149,7 @@ impl SymbolTable {
     pub fn overlay(parent: Arc<SymbolTable>) -> Self {
         Self {
             texts: HashMap::new(),
+            compact: None,
             parent: Some(parent),
             local_spelling_bytes: 0,
             non_intern_epoch: 0,
@@ -161,6 +167,79 @@ impl SymbolTable {
     }
     pub fn intern(&mut self, text: &str) -> Result<SymbolId, SymbolCollision> {
         self.insert(SymbolId::of(text), text)
+    }
+
+    /// Offer a separately funded compact lane for an actual Original adapter.
+    /// A denied optimization leaves subsequent insertions on the owned lane.
+    pub fn enable_compact_spellings(&mut self, a: &SettingAdmission<'_>) -> io::Result<()> {
+        if self.compact.is_none() {
+            self.compact = CompactOwner::new(a)?;
+        }
+        Ok(())
+    }
+
+    /// Bind the one actual source before issuing any compact locators.
+    pub fn bind_compact_spelling_source<T: CompactSpellingSource + 'static>(
+        &mut self, source: T, a: &SettingAdmission<'_>,
+    ) -> io::Result<()> {
+        if let Some(owner) = &mut self.compact {
+            owner.bind_source(source, a)?;
+        }
+        Ok(())
+    }
+
+    /// Insert into the compact lane. A wide value, shared immutable lane, or
+    /// optional funding miss asks the caller to use its ordinary owned route.
+    pub fn intern_compact_spelling(
+        &mut self,
+        text: &str,
+        a: &SettingAdmission<'_>,
+    ) -> io::Result<Result<Option<SymbolId>, SymbolCollision>> {
+        if self.compact.is_none() { return Ok(Ok(None)); }
+        self.intern_compact_spelling_at(text, None, a)
+    }
+
+    /// The caller proposes a source-relative start from an already issued
+    /// header. Only exact UTF-8 bytes in the bound immutable owner are loaned.
+    pub fn intern_compact_spelling_at(
+        &mut self, text: &str, source_start: Option<usize>, a: &SettingAdmission<'_>,
+    ) -> io::Result<Result<Option<SymbolId>, SymbolCollision>> {
+        a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+        let id = SymbolId::of(text);
+        if let Some(existing) = self.text(id) {
+            return Ok(if existing == text {
+                Ok(Some(id))
+            } else {
+                Err(SymbolCollision { id, existing: Arc::from(existing), incoming: Arc::from(text) })
+            });
+        }
+        let Some(owner) = &mut self.compact else { return Ok(Ok(None)) };
+        Ok(Ok(owner.insert(id, text, source_start, a)?.then_some(id)))
+    }
+
+    pub fn compact_spelling_len(&self) -> usize {
+        self.compact.as_ref().map_or(0, |owner| owner.get().len())
+    }
+
+    /// Visit exact allocations in the local compact lane. Deduplicate addresses
+    /// across table aliases, and visit the ordinary parent independently.
+    pub fn visit_compact_spelling_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        if let Some(owner) = &self.compact {
+            owner.get().visit_storage(visit);
+        }
+    }
+
+    /// Visit both representations without materializing Arc<str> or sorting.
+    pub fn visit_local_spelling_texts(&self, mut visit: impl FnMut(SymbolId, &str)) -> Option<&Arc<Self>> {
+        for (&id, text) in &self.texts {
+            visit(id, text);
+        }
+        if let Some(owner) = &self.compact {
+            for (id, text) in owner.get().rows() {
+                visit(id, text);
+            }
+        }
+        self.parent.as_ref()
     }
 
     /// Reuse the primary exact spelling allocation proof for a caller with
@@ -185,6 +264,16 @@ impl SymbolTable {
     /// Merge certified IDs and shared spellings without hashing their text again.
     /// Validate the complete incoming ancestry before mutating this dictionary.
     pub fn merge_from(&mut self, source: &SymbolTable) -> Result<(), SymbolCollision> {
+        self.merge_from_impl(source, false)
+    }
+
+    /// Preserve the exact immutable lane when the incoming local roster is
+    /// disjoint and the destination has no compact owner.
+    pub fn merge_from_with_compact_spellings(&mut self, source: &SymbolTable) -> Result<(), SymbolCollision> {
+        self.merge_from_impl(source, true)
+    }
+
+    fn merge_from_impl(&mut self, source: &SymbolTable, loan_compact: bool) -> Result<(), SymbolCollision> {
         fn check(
             target: &SymbolTable,
             source: &SymbolTable,
@@ -193,28 +282,42 @@ impl SymbolTable {
             if let Some(parent) = &source.parent {
                 check(target, parent, collision);
             }
-            for (&id, incoming) in &source.texts {
+            let _ = source.visit_local_spelling_texts(|id, incoming| {
                 if let Some(existing) = target.text(id) {
-                    if existing != incoming.as_ref()
+                    if existing != incoming
                         && collision.as_ref().is_none_or(|previous| id < previous.id)
                     {
                         *collision = Some(SymbolCollision {
                             id,
                             existing: Arc::from(existing),
-                            incoming: Arc::clone(incoming),
+                            incoming: source.texts.get(&id).cloned().unwrap_or_else(|| Arc::from(incoming)),
                         });
                     }
                 }
-            }
+            });
         }
-        fn append(target: &mut SymbolTable, source: &SymbolTable) {
+        fn append(target: &mut SymbolTable, source: &SymbolTable, loan_compact: bool) {
             if let Some(parent) = &source.parent {
-                append(target, parent);
+                append(target, parent, false);
             }
             for (&id, text) in &source.texts {
                 if target.text(id).is_none() {
                     target.texts.insert(id, Arc::clone(text));
                     target.local_spelling_bytes = target.local_spelling_bytes.saturating_add(arc_spelling_bytes(text));
+                }
+            }
+            if let Some(owner) = &source.compact {
+                if loan_compact && target.compact.is_none()
+                    && owner.get().rows().all(|(id, _)| target.text(id).is_none())
+                {
+                    target.compact = Some(owner.clone());
+                } else {
+                    for (id, text) in owner.get().rows() {
+                        if target.text(id).is_none() {
+                            target.texts.insert(id, Arc::from(text));
+                            target.local_spelling_bytes = target.local_spelling_bytes.saturating_add(arc_spelling_bytes(text));
+                        }
+                    }
                 }
             }
         }
@@ -223,9 +326,9 @@ impl SymbolTable {
         if let Some(collision) = collision {
             return Err(collision);
         }
-        let before = self.texts.len();
-        append(self, source);
-        if self.texts.len() != before {
+        let before = self.texts.len() + self.compact_spelling_len();
+        append(self, source, loan_compact);
+        if self.texts.len() + self.compact_spelling_len() != before {
             self.non_intern_epoch = self.non_intern_epoch.saturating_add(1);
         }
         Ok(())
@@ -234,6 +337,7 @@ impl SymbolTable {
     /// Remove inactive local entries while preserving immutable parent backing.
     pub fn retain_local(&mut self, mut keep: impl FnMut(SymbolId) -> bool) {
         self.non_intern_epoch = self.non_intern_epoch.saturating_add(1);
+        self.materialize_compact();
         let mut bytes = 0usize;
         self.texts.retain(|&id, text| {
             let retained = keep(id);
@@ -246,6 +350,9 @@ impl SymbolTable {
     }
     /// Drop one local spelling (an inherited one is the parent's and stays).
     pub fn remove_local(&mut self, id: SymbolId) -> bool {
+        if self.compact.as_ref().is_some_and(|owner| owner.get().text(id).is_some()) {
+            self.materialize_compact();
+        }
         let Some(text) = self.texts.remove(&id) else { return false };
         if self.local_spelling_bytes != usize::MAX {
             self.local_spelling_bytes -= arc_spelling_bytes(&text);
@@ -254,8 +361,19 @@ impl SymbolTable {
         true
     }
 
+    fn materialize_compact(&mut self) {
+        if let Some(owner) = self.compact.take() {
+            for (id, text) in owner.get().rows() {
+                self.texts.insert(id, Arc::from(text));
+                self.local_spelling_bytes = self.local_spelling_bytes.saturating_add(arc_spelling_bytes(text));
+            }
+        }
+    }
+
     fn insert(&mut self, id: SymbolId, text: &str) -> Result<SymbolId, SymbolCollision> {
-        if let Some(existing) = self.parent.as_ref().and_then(|parent| parent.text(id)) {
+        if let Some(existing) = self.compact.as_ref().and_then(|owner| owner.get().text(id))
+            .or_else(|| self.parent.as_ref().and_then(|parent| parent.text(id)))
+        {
             if existing != text {
                 return Err(SymbolCollision {
                     id,
@@ -284,13 +402,18 @@ impl SymbolTable {
     }
 
     pub fn text(&self, id: SymbolId) -> Option<&str> {
-        self.shared_text(id).map(AsRef::as_ref)
+        self.texts.get(&id).map(AsRef::as_ref)
+            .or_else(|| self.compact.as_ref().and_then(|owner| owner.get().text(id)))
+            .or_else(|| self.parent.as_ref().and_then(|parent| parent.text(id)))
     }
 
-    /// Borrow the existing immutable spelling owner through the same overlay
-    /// precedence as `text`. Shared storage is not symbol or revision authority.
+    /// Borrow the Arc-backed spelling owner. A compact spelling is available
+    /// through `text` and has no individual Arc to borrow.
     pub fn shared_text(&self, id: SymbolId) -> Option<&Arc<str>> {
         self.texts.get(&id).or_else(|| {
+            if self.compact.as_ref().is_some_and(|owner| owner.get().text(id).is_some()) {
+                return None;
+            }
             self.parent
                 .as_ref()
                 .and_then(|parent| parent.shared_text(id))
@@ -298,7 +421,7 @@ impl SymbolTable {
     }
 
     pub fn len(&self) -> usize {
-        self.texts.len() + self.parent.as_ref().map_or(0, |parent| parent.len())
+        self.texts.len() + self.compact_spelling_len() + self.parent.as_ref().map_or(0, |parent| parent.len())
     }
 
     pub fn is_empty(&self) -> bool {
@@ -324,6 +447,9 @@ impl SymbolTable {
             .iter()
             .map(|(&id, text)| (id, text.as_ref()))
             .collect();
+        if let Some(owner) = &self.compact {
+            symbols.extend(owner.get().rows());
+        }
         if let Some(parent) = &self.parent {
             symbols.extend(parent.ordered());
         }
@@ -335,6 +461,117 @@ impl SymbolTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn compact_spelling_loan_shares_exact_prefix_and_falls_back_for_other_geometry() {
+        use dm_syntax::SettingChargeCounter;
+        use std::sync::atomic::Ordering;
+
+        struct Source(Arc<str>);
+        impl CompactSpellingSource for Source {
+            fn text(&self) -> &str { &self.0 }
+            fn visit_storage(&self, _: &mut dyn FnMut(usize, usize, usize)) {}
+        }
+
+        let root = SettingChargeCounter::root_allocation_bytes();
+        let counter = SettingChargeCounter::try_new(root).unwrap();
+        let a = SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
+        let owner: Arc<str> = Arc::from("é/datum/test/proc/known()");
+        let weak = Arc::downgrade(&owner);
+        let exact = "/datum/test/proc/known";
+        let expected = owner.get(2..2 + exact.len()).unwrap().as_ptr();
+        let mut table = SymbolTable::default();
+        table.enable_compact_spellings(&a).unwrap();
+        table.bind_compact_spelling_source(Source(owner), &a).unwrap();
+
+        let exact_id = table.intern_compact_spelling_at(exact, Some(2), &a).unwrap().unwrap().unwrap();
+        assert_eq!(table.text(exact_id).unwrap().as_ptr(), expected);
+        let loan_bytes = counter.load(Ordering::Acquire);
+        assert!(loan_bytes < 16 * 1024, "exact source hit requires no slab");
+        let fallback = "/datum/test/proc/other";
+        let fallback_id = table.intern_compact_spelling_at(fallback, Some(1), &a).unwrap().unwrap().unwrap();
+        assert_eq!(table.text(fallback_id), Some(fallback));
+        assert!(counter.load(Ordering::Acquire) >= loan_bytes + 16 * 1024);
+
+        let mut detached = SymbolTable::default();
+        detached.merge_from_with_compact_spellings(&table).unwrap();
+        drop(table);
+        assert_eq!(detached.text(exact_id).unwrap().as_ptr(), expected);
+        assert!(weak.upgrade().is_some());
+        drop(detached);
+        assert!(weak.upgrade().is_none());
+        assert_eq!(counter.load(Ordering::Acquire), root);
+    }
+
+    #[test]
+    fn compact_spelling_merges_without_rematerializing_and_drops_with_last_alias() {
+        use dm_syntax::SettingChargeCounter;
+        use std::sync::atomic::Ordering;
+
+        let root = SettingChargeCounter::root_allocation_bytes();
+        let counter = SettingChargeCounter::try_new(root).unwrap();
+        let a = SettingAdmission::new(&counter, 8 << 20, &|| Ok(()));
+        let mut current = SymbolTable::default();
+        current.enable_compact_spellings(&a).unwrap();
+        for ordinal in 0..1000 {
+            let text = format!("/datum/long_qualifier/proc/námé_{ordinal}");
+            let id = current.intern_compact_spelling(&text, &a).unwrap().unwrap().unwrap();
+            assert_eq!(current.intern(&text).unwrap(), id);
+            assert!(current.shared_text(id).is_none());
+        }
+        let id = current.intern("ordinary").unwrap();
+        assert!(current.shared_text(id).is_some());
+        let mut storage = Vec::new();
+        current.visit_compact_spelling_storage(|ptr, used, capacity| {
+            assert!(used <= capacity);
+            storage.push((ptr, used, capacity));
+        });
+        let used = counter.load(Ordering::Acquire);
+        assert_eq!(storage.iter().map(|row| row.2).sum::<usize>(), used - root);
+
+        let mut aggregate = SymbolTable::default();
+        aggregate.merge_from_with_compact_spellings(&current).unwrap();
+        assert_eq!(aggregate.ordered(), current.ordered());
+        assert_eq!(aggregate.compact_spelling_len(), 1000);
+        let mut merged_storage = Vec::new();
+        aggregate.visit_compact_spelling_storage(|ptr, used, capacity| merged_storage.push((ptr, used, capacity)));
+        assert_eq!(storage, merged_storage);
+        let id = SymbolId::of("/datum/long_qualifier/proc/námé_10");
+        let mut generic = SymbolTable::default();
+        generic.merge_from(&aggregate).unwrap();
+        assert_eq!(generic.ordered(), aggregate.ordered());
+        assert!(generic.shared_text(id).is_some());
+        let detached = aggregate.clone();
+        drop((current, aggregate));
+        assert_eq!(counter.load(Ordering::Acquire), used);
+        assert_eq!(detached.text(id), Some("/datum/long_qualifier/proc/námé_10"));
+        drop(detached);
+        assert_eq!(counter.load(Ordering::Acquire), root);
+    }
+
+    #[test]
+    fn compact_spelling_denial_and_wide_fallback_do_not_publish_any_entry() {
+        use dm_syntax::SettingChargeCounter;
+        use std::sync::atomic::Ordering;
+
+        let root = SettingChargeCounter::root_allocation_bytes();
+        let counter = SettingChargeCounter::try_new(root).unwrap();
+        let a = SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
+        let mut table = SymbolTable::default();
+        table.enable_compact_spellings(&a).unwrap();
+        let owner = counter.load(Ordering::Acquire);
+        let denied = SettingAdmission::new(&counter, owner + 16_000, &|| Ok(()));
+        assert_eq!(table.intern_compact_spelling("small", &denied).unwrap().unwrap(), None);
+        assert_eq!(counter.load(Ordering::Acquire), owner);
+        let wide = "w".repeat(32_768);
+        assert_eq!(table.intern_compact_spelling(&wide, &a).unwrap().unwrap(), None);
+        assert!(table.is_empty());
+        assert_eq!(table.intern(&wide).unwrap(), SymbolId::of(&wide));
+        let interrupted = SettingAdmission::new(&counter, 1 << 20, &|| Err(io::Error::from_raw_os_error(1450)));
+        assert_eq!(table.intern_compact_spelling("cancelled", &interrupted).unwrap_err().raw_os_error(), Some(1450));
+        drop(table);
+        assert_eq!(counter.load(Ordering::Acquire), root);
+    }
 
     #[test]
     fn exact_spelling_delta_requires_same_bucket_capacity_and_only_intern_mutations() {

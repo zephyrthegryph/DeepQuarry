@@ -15,6 +15,23 @@ pub(super) struct CurrentOriginalDeclarations{
  offset:usize,
  _lease:Arc<dm_syntax::SettingRootLease>,
 }
+struct ActualCompactSpellingSource(dm_preprocess::SourceText);
+impl dm_ir::CompactSpellingSource for ActualCompactSpellingSource {
+ fn text(&self) -> &str { self.0.as_str() }
+
+ fn visit_storage(&self, visit: &mut dyn FnMut(usize, usize, usize)) {
+  self.0.visit_derived_resource_storage(|ptr, bytes| visit(ptr, bytes, bytes));
+  self.0.visit_fingerprint_storage(&mut *visit);
+  self.0.visit_storage(|ptr, size, storage| {
+   visit(ptr, size, size);
+   match storage {
+    dm_preprocess::SourceTextStorage::Reserved { text, committed } => visit(text.as_ptr() as usize, text.len(), committed),
+    dm_preprocess::SourceTextStorage::Transformed(text) => visit(text.as_ptr() as usize, text.len(), text.capacity()),
+    dm_preprocess::SourceTextStorage::Original(text) => visit(text.as_ptr() as usize, text.len(), text.len()),
+   }
+  });
+ }
+}
 impl CurrentOriginalDeclarations{
  pub(super) fn parse(source:dm_preprocess::SourceText,offset:usize,admission:&dm_syntax::SettingAdmission<'_>)->io::Result<Self>{
   if offset.checked_add(source.len()).is_none_or(|end|end>u32::MAX as usize){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original declaration source span exceeds current native geometry"))}
@@ -67,7 +84,15 @@ impl CurrentOriginalDeclarations{
   if !admission.matches_lease_domain(&self._lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"current original primary adapter uses another native resource owner"))}
   let end=self.offset.checked_add(self.source.len()).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
   if expanded.get(self.offset..end)!=Some(self.source.as_str()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original primary source differs from actual expanded source region"))}
-  let symbols=self.symbols.take().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual original primary products were already adapted"))?;
+  let mut symbols=self.symbols.take().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual original primary products were already adapted"))?;
+  // Lazy body parameters are issued only on the complete single-input compact
+  // route. Keep early-fatal and grouped original symbol ownership unchanged.
+  if self.offset == 0 && self.fatal.is_none() && self.headers.lazy_body_parameters() {
+   original_operation(admission, || symbols.enable_compact_spellings(admission))?;
+   if self.source.source_arena_payload_credit().is_some() && self.source.source_arena_control_credit().is_some() {
+    original_operation(admission, || symbols.bind_compact_spelling_source(ActualCompactSpellingSource(self.source.clone()), admission))?;
+   }
+  }
   let items=self.items.view(&self.source)?;
   let progress=crate::adapter::from_original_primary_progress_checked(items,&self.diagnostics,symbols,FileId(0),0,0,expanded,&self.headers,self.offset,admission,skip_constants,&mut self.prepared)?;
   if let Some(error) = progress.errors().first() {
@@ -301,7 +326,12 @@ impl OriginalCurrentDeclarations{
    original_operation(a,||a.checkpoint())?;reserve_slot(&mut syntax,&mut metadata,a)?;reserve_slot(&mut allocations,&mut metadata,a)?;
    // Same existing root-context union, skeleton leaves, original origin leaves
    // and event leaves as the ordinary declaration worker's ordered merge.
-   adapted.symbols.merge_from(current.symbols()).map_err(|error|io::Error::new(io::ErrorKind::InvalidData,error.to_string()))?;
+   let union = if count == 1 && self.frontier.is_none() {
+    adapted.symbols.merge_from_with_compact_spellings(current.symbols())
+   } else {
+    adapted.symbols.merge_from(current.symbols())
+   };
+   union.map_err(|error|io::Error::new(io::ErrorKind::InvalidData,error.to_string()))?;
    adapted.skeletons.push_leaf(current.skeletons());let(origin,offset)=current.origin_leaf();origins.push(origin,offset).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"current original relative origin overflow"))?;
    allocations.push(current.event_leaf());syntax.push(current.syntax);
   }

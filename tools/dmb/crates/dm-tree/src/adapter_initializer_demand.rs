@@ -44,6 +44,12 @@ pub(super) trait AdapterDemand:sealed::Sealed{
     )->Result<SymbolId,WalkFailure<Self::Operational>>{
         symbols.intern(text).map_err(|error|WalkFailure::Source(error.to_string()))
     }
+    fn intern_callable_path(
+        &self, symbols: &mut SymbolTable, text: &str, _source_start: Option<usize>,
+        prepared: Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
+    ) -> Result<SymbolId, WalkFailure<Self::Operational>> {
+        self.intern_adapter_spelling(symbols, text, prepared)
+    }
     fn lexical_procedure_header(
         &self, text: &str, _prepared: bool,
     ) -> Result<LexicalProcedureHeader, WalkFailure<Self::Operational>> {
@@ -163,6 +169,16 @@ impl AdapterDemand for Checked<'_,'_>{
             None=>symbols.intern(text),
         };
         inserted.map_err(|error|WalkFailure::Source(error.to_string()))
+    }
+    fn intern_callable_path(
+        &self, symbols: &mut SymbolTable, text: &str, source_start: Option<usize>,
+        prepared: Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
+    ) -> Result<SymbolId, WalkFailure<Self::Operational>> {
+        match symbols.intern_compact_spelling_at(text, source_start, self.admission).map_err(WalkFailure::Operational)? {
+            Ok(Some(id)) => Ok(id),
+            Ok(None) => self.intern_adapter_spelling(symbols, text, prepared),
+            Err(error) => Err(WalkFailure::Source(error.to_string())),
+        }
     }
     fn lexical_procedure_header(
         &self, text: &str, prepared: bool,

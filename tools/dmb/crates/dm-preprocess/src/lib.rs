@@ -177,12 +177,24 @@ impl<'a> OriginalGeometryByteLoan<'a> {
         bytes: &'a [u8], current: &'a std::sync::atomic::AtomicUsize, expected: std::num::NonZeroUsize,
     ) -> Self { Self { bytes, epoch: Some((current, expected)) } }
     pub fn bytes(&self) -> &'a [u8] { self.bytes }
+    fn exact_epoch_for(&self, flag: &std::sync::atomic::AtomicUsize) -> Option<std::num::NonZeroUsize> {
+        let (actual, expected) = self.epoch?;
+        (std::ptr::eq(actual, flag) && self.same_current_epoch()).then_some(expected)
+    }
     pub fn same_current_epoch(&self) -> bool {
         self.epoch.is_some_and(|(flag, expected)| flag.load(std::sync::atomic::Ordering::SeqCst) == expected.get())
     }
 }
 
 pub trait SourceProvider {
+    /// A genuine recording view may lend its existing issuer and revocation
+    /// flag. Keep that pair fixed for this provider and recorder attempt. This
+    /// is identity only. It cannot issue an acquisition or geometry.
+    #[doc(hidden)]
+    fn original_geometry_recorder(&self) -> Option<(&std::sync::Arc<()>, &std::sync::atomic::AtomicUsize)> {
+        None
+    }
+
     /// Optional borrowed attempt observer. This descriptor issues no absence
     /// witness; only a genuine opaque root-failure loan plus recorder facts can.
     fn original_root_open_observer(&self)->Option<&dyn regions::OriginalRootOpenObserver>{None}

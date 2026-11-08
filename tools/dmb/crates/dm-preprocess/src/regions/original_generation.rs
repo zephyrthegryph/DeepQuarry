@@ -82,6 +82,9 @@ impl Recipe<'_>{
   #[cfg(debug_assertions)]
   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
    eprintln!("ORIGINAL_PHYSICAL_LINE_STARTS failed={} {:?}", result.is_err(), driver.trace_line_starts());
+   if let Some((attempts, hits)) = driver.trace_definition_geometry() {
+    eprintln!("ORIGINAL_DEFINITION_GEOMETRY attempts={attempts} exact_hits={hits}");
+   }
   }
   result.inspect_err(|_error| {
    #[cfg(debug_assertions)]

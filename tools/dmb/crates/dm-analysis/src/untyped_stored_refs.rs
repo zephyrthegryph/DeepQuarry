@@ -42,13 +42,13 @@ fn strings_charge(parts: &[&str], remaining: &mut usize) -> Result<(), Unsupport
 }
 fn maximum_spelling(table: &dm_ir::SymbolTable) -> usize {
     let mut longest = 0;
-    let storage = table.visit_storage(|_, s| longest = longest.max(s.len()));
-    if let Some(parent) = storage.parent {
+    let parent = table.visit_local_spelling_texts(|_, s| longest = longest.max(s.len()));
+    if let Some(parent) = parent {
         longest = longest.max(maximum_spelling(parent));
     }
     longest
 }
-fn maximum_spelling_using<E>(table:&dm_ir::SymbolTable,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<usize,E>{checkpoint()?;let mut longest=0;let mut failure=None;let storage=table.visit_storage(|_,word|{if failure.is_none(){match checkpoint(){Ok(())=>longest=longest.max(word.len()),Err(actual)=>failure=Some(actual)}}});if let Some(actual)=failure{return Err(actual)}if let Some(parent)=storage.parent{longest=longest.max(maximum_spelling_using(parent,checkpoint)?);}Ok(longest)}
+fn maximum_spelling_using<E>(table:&dm_ir::SymbolTable,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<usize,E>{checkpoint()?;let mut longest=0;let mut failure=None;let parent=table.visit_local_spelling_texts(|_,word|{if failure.is_none(){match checkpoint(){Ok(())=>longest=longest.max(word.len()),Err(actual)=>failure=Some(actual)}}});if let Some(actual)=failure{return Err(actual)}if let Some(parent)=parent{longest=longest.max(maximum_spelling_using(parent,checkpoint)?);}Ok(longest)}
 
 /// Scalar census over ORIGINAL issued header spans and provider path widths.
 /// No source spelling allocation, second parser, or retained declaration table.

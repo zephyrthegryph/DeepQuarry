@@ -4,7 +4,7 @@
 use super::{original_raw_frame::{OriginalRawFrame,OriginalRawNotice},original_raw_points::OriginalRawPointIndex,original_token_factory::{self,Geometry},original_lexical_frame::OriginalLexicalFrameIdentity};
 use crate::{SourceProvider,SourceAcquisitionLease,macro_expansion::{OriginalMacroRows as Rows,OriginalPagedMacroRows as PagedRows,OriginalMacroToken as Token,OriginalMacroOrigin as Origin,OriginalMacroRawStep as RawStep}};
 use dm_syntax::{SettingAdmission,Span,OriginalLexicalNoticePoint,numeric_form::OriginalNumberNotice};
-use std::{io,cell::RefCell};
+use std::{io,cell::RefCell,num::NonZeroUsize,sync::{Arc,atomic::Ordering}};
 struct OpenFrame{frame:OriginalRawFrame,path:Option<super::original_file_path::OriginalFilePath>,geometry_at:usize,occurrence:usize,expansion_floor:usize}
 /// Source notices retain exact same raw acquisition/frame and issued position.
 /// The outer DirectivePass records them in its actual report/trace owner before
@@ -42,10 +42,33 @@ impl OriginalPhysicalRowObservation<'_>{
 /// One actual producer-local boundary pair, never a byte/source grant.
 #[derive(Clone,Copy)]
 struct DecodedRowBoundary{geometry_at:usize,raw:Span,decoded:Span}
-pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:PagedRows<SourceGeometry>,failed:bool,stack_changed:bool,last_input:Option<Origin>,last_decoded_row:Option<DecodedRowBoundary>}
+// Small, producer-local and fully charged inline. The entry contains no
+// raw bytes, acquisition owner, mapping or retained provider borrow.
+struct DefinitionGeometry {
+    origin: Origin,
+    issuer: Arc<()>,
+    epoch: NonZeroUsize,
+    geometry_at: usize,
+    raw_len: usize,
+    row: OriginalPhysicalRow,
+    end: usize,
+}
+const DEFINITION_GEOMETRY_SLOTS: usize = 8;
+
+pub(super) struct OriginalRawInputs{frames:Rows<OpenFrame>,geometries:PagedRows<SourceGeometry>,failed:bool,stack_changed:bool,last_input:Option<Origin>,last_decoded_row:Option<DecodedRowBoundary>,definition_geometry:[Option<DefinitionGeometry>;DEFINITION_GEOMETRY_SLOTS],
+ #[cfg(debug_assertions)]
+ definition_geometry_census: Option<(usize, usize)>,
+}
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 impl OriginalRawInputs{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{frames:Rows::new(a)?,geometries:PagedRows::new(a)?,failed:false,stack_changed:false,last_input:None,last_decoded_row:None})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{frames:Rows::new(a)?,geometries:PagedRows::new(a)?,failed:false,stack_changed:false,last_input:None,last_decoded_row:None,definition_geometry:std::array::from_fn(|_|None),
+  #[cfg(debug_assertions)]
+  definition_geometry_census:std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some().then_some((0, 0)),
+ })}
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_definition_geometry(&self) -> Option<(usize, usize)> {
+  self.definition_geometry_census
+ }
  #[cfg(debug_assertions)]
  pub(super) fn trace_line_starts(&self) -> super::original_raw_points::PhysicalLineStartCensus {
   let mut census = super::original_raw_points::PhysicalLineStartCensus::default();
@@ -92,13 +115,68 @@ impl OriginalRawInputs{
  pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
   self.observe_row_with_loan_using(origin,lease,provider,prior,false,a)
  }
- pub(super) fn observe_definition_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
-  self.observe_row_with_loan_using(origin,lease,provider,prior,true,a)
+ pub(super) fn definition_geometry_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>,observation_failed:&mut bool)->io::Result<(super::OriginalByteCursor,usize)>{
+  #[cfg(feature="original-fill-sample")]
+  let _sample=super::original_fill_sample::scope(super::original_fill_sample::Bucket::Coordinate);
+  if self.failed{*observation_failed=true;return Err(io::ErrorKind::InvalidInput.into())}
+  let mut observe_error=|_: &io::Error| *observation_failed=true;
+  poll(a).inspect_err(&mut observe_error)?;
+  let recorder=provider.original_geometry_recorder();
+  #[cfg(debug_assertions)]
+  if let Some((attempts, _)) = &mut self.definition_geometry_census {
+   *attempts += 1;
+  }
+  let slot=(origin.occurrence.wrapping_mul(17)^origin.physical.start.rotate_right(2))%DEFINITION_GEOMETRY_SLOTS;
+  if let Some((issuer,flag))=recorder {
+   if let Some(saved)=self.definition_geometry[slot].as_ref().filter(|saved|
+    saved.origin==origin&&Arc::ptr_eq(issuer,&saved.issuer)) {
+    if let Some(geometry)=self.geometries.get(saved.geometry_at).filter(|geometry|
+     geometry.occurrence==origin.occurrence&&geometry.geometry.matches_context(lease,a)
+      &&geometry.points.contains_issued_row(saved.raw_len,origin.physical.start,origin.line,saved.row.raw)) {
+     // This is the old byte-lender position. An intervening acquisition or
+     // mutable/poisoned recorder revokes the certificate before any use.
+     if flag.load(Ordering::SeqCst)==saved.epoch.get() {
+      poll(a).inspect_err(&mut observe_error)?; // known physical line end
+      for offset in [saved.row.raw.start,saved.row.raw.end,origin.physical.start] {
+       geometry.geometry.check_point_using(lease,offset,a).inspect_err(&mut observe_error)?;
+      }
+      self.last_decoded_row=Some(DecodedRowBoundary{
+       geometry_at:saved.geometry_at,raw:saved.row.raw,decoded:saved.row.decoded,
+      });
+      geometry.geometry.check_point_using(lease,origin.physical.end,a)?;
+      #[cfg(debug_assertions)]
+      if let Some((_, hits)) = &mut self.definition_geometry_census {
+       *hits += 1;
+      }
+      return Ok((saved.row.point,saved.end));
+     }
+    }
+   }
+  }
+  let observed=self.observe_row_after_poll_using(origin,lease,provider,prior,true,a).inspect_err(&mut observe_error)?;
+  let end=self.decoded_observed_end_using(&observed,a)?;
+  let row=observed.row;
+  // Ignore empty/EOF anchors whose physical status can change as the
+  // independent lexer reaches EOF. Only a full exact recorder loan can mint.
+  if !row.actual_eof&&origin.physical.start<origin.physical.end {
+   if let Some((issuer,flag))=recorder {
+    if let Some(epoch)=observed.loan.exact_epoch_for(flag) {
+     self.definition_geometry[slot]=Some(DefinitionGeometry{
+      origin,issuer:Arc::clone(issuer),epoch,geometry_at:observed.geometry_at,
+      raw_len:observed.loan.bytes().len(),row,end,
+     });
+    }
+   }
+  }
+  Ok((row.point,end))
  }
  fn observe_row_with_loan_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,definition:bool,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
   #[cfg(feature="original-fill-sample")]
   let _sample=super::original_fill_sample::scope(super::original_fill_sample::Bucket::Coordinate);
   if self.failed{return Err(io::ErrorKind::InvalidInput.into())}poll(a)?;
+  self.observe_row_after_poll_using(origin,lease,provider,prior,definition,a)
+ }
+ fn observe_row_after_poll_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&OriginalPhysicalRowObservation<'source>>,definition:bool,a:&SettingAdmission<'_>)->io::Result<OriginalPhysicalRowObservation<'source>>{
   let geometries = &self.geometries;
   let active = self.frames.as_slice().last().filter(|open| {
    open.occurrence == origin.occurrence

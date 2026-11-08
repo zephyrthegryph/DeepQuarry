@@ -191,11 +191,10 @@ impl RawSourceDriver{
   // different author acquisition or an ordinary provider takes the same
   // full route as before.
   self.check(a)?;
-  let result=self.inputs.observe_definition_row_using(origin,lease,provider,emission,a);
-  if result.is_err(){self.failed=true}
-  let observed=result?;
-  let end=self.inputs.decoded_observed_end_using(&observed,a)?;
-  Ok((observed.row().point,end))
+  let mut observation_failed=false;
+  let result=self.inputs.definition_geometry_using(origin,lease,provider,emission,a,&mut observation_failed);
+  if observation_failed{self.failed=true}
+  result
  }
  pub(super) fn observe_physical_row_using<'source>(&mut self,origin:Origin,lease:&'source SourceAcquisitionLease,provider:&'source dyn SourceProvider,prior:Option<&super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRowObservation<'source>>{
   self.check(a)?;let result=self.inputs.observe_physical_row_using(origin,lease,provider,prior,a);if result.is_err(){self.failed=true}result
@@ -207,6 +206,10 @@ impl RawSourceDriver{
  #[cfg(debug_assertions)]
  pub(super) fn trace_last_outer_origin(&self) -> Option<Origin> {
   self.pump.last_outer()
+ }
+ #[cfg(debug_assertions)]
+ pub(super) fn trace_definition_geometry(&self) -> Option<(usize, usize)> {
+  self.inputs.trace_definition_geometry()
  }
  #[cfg(debug_assertions)]
  pub(super) fn trace_line_starts(&self) -> super::original_raw_points::PhysicalLineStartCensus {
