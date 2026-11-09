@@ -37,6 +37,10 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
     # code-split UI chunk. Persistent HTTP/1.1 matches production webroot hosting.
     protocol_version = 'HTTP/1.1'
 
+    def log_request(self, code='-', size='-'):
+        # Every chunk is a request; the log (build.ts ServerTarget) keeps errors only.
+        pass
+
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS')

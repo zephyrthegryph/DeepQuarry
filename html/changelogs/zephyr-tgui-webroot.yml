@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "The local test server keeps its asset webroot running, and a tgui page that cannot load a file now reports it."

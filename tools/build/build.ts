@@ -3901,6 +3901,48 @@ export const BuildTarget = new Juke.Target({
   dependsOn: [TguiTarget, DmTarget, VerdigrisTarget], // verdigris FFI lib
 });
 
+const ASSET_WEBROOT_LOG = 'data/logs/asset-webroot.log';
+const ASSET_WEBROOT_RESTART_MS = 5000;
+
+/**
+ * The local asset webroot (config/example ASSET_TRANSPORT webroot). Every tgui page loads its
+ * bundles from it, so it lives as long as the server: a helper that exits is logged with its
+ * code and started again, and what it prints goes to ASSET_WEBROOT_LOG.
+ */
+function startAssetWebroot() {
+  let stopped = false;
+  let child: ReturnType<typeof spawn> | undefined;
+  fs.mkdirSync('data/logs', { recursive: true });
+  const launch = () => {
+    const log = fs.openSync(ASSET_WEBROOT_LOG, 'a');
+    child = spawn(
+      process.platform === 'win32' ? 'python' : 'python3',
+      ['tools/localhost-asset-webroot-server.py'],
+      { stdio: ['ignore', log, log], windowsHide: true },
+    );
+    fs.closeSync(log);
+    child.on('error', (error) => {
+      Juke.logger.warn(`Could not start the local asset webroot: ${error}`);
+    });
+    child.on('exit', (code, signal) => {
+      if (stopped) return;
+      Juke.logger.warn(
+        `The local asset webroot exited (code ${code}, signal ${signal}); restarting. See ${ASSET_WEBROOT_LOG}.`,
+      );
+      setTimeout(() => {
+        if (!stopped) launch();
+      }, ASSET_WEBROOT_RESTART_MS);
+    });
+  };
+  launch();
+  return {
+    stop: () => {
+      stopped = true;
+      child?.kill();
+    },
+  };
+}
+
 export const ServerTarget = new Juke.Target({
   parameters: [DmVersionParameter, PortParameter],
   dependsOn: [BuildTarget],
@@ -3911,16 +3953,7 @@ export const ServerTarget = new Juke.Target({
       namedDmVersion: get(DmVersionParameter),
       playerFacing: true,
     };
-    const webroot = spawn(
-      process.platform === 'win32' ? 'python' : 'python3',
-      ['tools/localhost-asset-webroot-server.py'],
-      { stdio: 'ignore', windowsHide: true },
-    );
-    webroot.on('error', () => {
-      Juke.logger.warn(
-        'Could not start the local asset webroot; use the configured external webroot.',
-      );
-    });
+    const webroot = startAssetWebroot();
     try {
       await DreamDaemon(
         options,
@@ -3934,7 +3967,7 @@ export const ServerTarget = new Juke.Target({
         `config-directory=${process.env.DQ_SERVER_CONFIG_DIR || 'config/example'}&dd_log=1${process.env.DQ_WORLD_PARAMS ? `&${process.env.DQ_WORLD_PARAMS}` : ''}`,
       );
     } finally {
-      webroot.kill();
+      webroot.stop();
     }
   },
 });
