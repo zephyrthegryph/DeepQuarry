@@ -817,7 +817,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	return canmove
 
 /mob/proc/facedir(ndir)
-	if(!canface() || (client && (client.moving || !checkMoveCooldown())))
+	if(!canface() || (client && (client.moving == TIME_NOW(CLOCK_WORLD) || !checkMoveCooldown())))
 		DEBUG_INPUT("Denying Facedir for [src] (moving=[client?.moving])")
 		return 0
 	set_dir(ndir)

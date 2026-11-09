@@ -206,7 +206,8 @@
 				return
 
 	// We're in the middle of another move we've already decided to do
-	if(moving)
+	// (the tick it began: a runtime in a move never reaches the line clearing it, and must not freeze the player for good)
+	if(moving == TIME_NOW(CLOCK_WORLD))
 		return 0
 
 	// We're still cooling down from the last move
@@ -322,7 +323,7 @@
 			total_delay += 3
 
 	// We are now going to move
-	moving = 1
+	STAMP(src, moving, CLOCK_WORLD)
 	var/pre_move_loc = loc
 
 	// Confused direction randomization

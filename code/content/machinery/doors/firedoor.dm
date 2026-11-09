@@ -179,12 +179,12 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	op("use", hand(), label("Use"), priority(OP_PRIORITY_PART), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work)),
 			req(PROC_REF(not_locked_out))),
-		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
+		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes))), ends_on_no = TRUE), then(PROC_REF(used)))
 	// A silicon link and a pilot bump ask the same question by this key.
 	op("remote_use", remote(), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work)),
 			req(PROC_REF(not_locked_out))),
-		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
+		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes))), ends_on_no = TRUE), then(PROC_REF(used)))
 	op("force_claws", hand(), label("Force"), when(PROC_REF(claws_force)), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), then(PROC_REF(claws_forced)))
 	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_CLAW + 5), wait(0), then(PROC_REF(nothing_done)))

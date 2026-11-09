@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Answering No on an emergency shutter's prompt no longer operates it."
+  - bugfix: "An error while stepping no longer leaves a player unable to walk."
+  - bugfix: "Walking over footprints no longer errors."
