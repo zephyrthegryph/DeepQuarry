@@ -2044,10 +2044,14 @@ fn original_composed_expression(
             let (receiver, tail) = child_prefix(object, tokens);
             matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. })
                 && original_conditional_child(object, receiver, false, depth)
-                && matches!(tail, [open, key, close] if punctuation(open, "[")
+                && matches!(tail, [open, key @ .., close] if punctuation(open, "[")
                     && punctuation(close, "]")
-                    && matches!(&index.kind, ExprKind::Ident(_) | ExprKind::Literal(_))
-                    && original_conditional_child(index, std::slice::from_ref(key), false, depth))
+                    && (matches!(&index.kind, ExprKind::Ident(_) | ExprKind::Literal(_))
+                        || matches!(&index.kind, ExprKind::Binary { op, lhs, rhs }
+                            if op == "+" && matches!(&lhs.kind, ExprKind::Ident(_))
+                                && matches!(&rhs.kind, ExprKind::Literal(value)
+                                    if original_decimal(value.as_str()))))
+                    && original_conditional_child(index, key, false, depth))
         }
         ExprKind::Call { callee, args } => {
             let (head, rest) = child_prefix(callee, tokens);

@@ -624,6 +624,7 @@ mod body_syntax_census_tests;
      }
  }
 
+ #[test]
  fn actual_original_indexed_writes_require_exact_target_and_indexed_value() {
      let fixture = r#"
 /proc/probe(rlist, keys, values, altlist, i)
@@ -662,7 +663,6 @@ mod body_syntax_census_tests;
      }
  }
 
- #[test]
  #[test]
  fn actual_original_comparison_and_boolean_controls_compose_in_one_body() {
      let fixture = r#"
@@ -1725,6 +1725,67 @@ mod body_syntax_census_tests;
              if expected {
                  let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
                      panic!("actual Original continue in while is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_negated_positional_stack_call_already_has_a_witness() {
+     let fixture = r#"
+/obj/item/stack/proc/use(used)
+    if(!can_use(used))
+        return 0
+    return 1
+/obj/item/stack/proc/can_use(used)
+    return used
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     let input = original_input(&front, "use");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) =
+             body.original_code_disposition()?
+         else {
+             panic!("the exact stack condition must use the existing Original witness");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_offset_indices_preserve_all_seven_dispatch_arguments() {
+     let fixture = r#"
+/proc/probe(obj/machinery/power/apc/target, list/flat, p)
+    target.on_apc_report(flat[p + 0], flat[p + 1], flat[p + 2], flat[p + 3], flat[p + 4], flat[p + 5], flat[p + 6])
+    return 1
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("p + 6", "p - 6"), false),
+         (fixture.replace("p + 6", "p + offset"), false),
+         (fixture.replace("p + 6", "get_offset() + 6"), false),
+         (fixture.replace("flat[p + 6]", "flat?[p + 6]"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original dispatch argument index proof is available");
                  };
                  assert!(proof.belongs_to(&body));
              } else {

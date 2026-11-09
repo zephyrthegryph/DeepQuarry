@@ -1127,6 +1127,12 @@ fn parse_statements_admitted(
         admission: &'a dm_syntax::SettingAdmission<'op>,
     }
     impl dm_syntax::SettingSyntaxProvider for Original<'_, '_> {
+        #[cfg(debug_assertions)]
+        fn traces_original_body_grammar(&self) -> bool {
+            self.syntax.original_body_recipe(self.body, self.code).ok()
+                .is_some_and(|recipe| recipe.checker_body_profile())
+        }
+
         fn original_expression(&self,source:&str,offset:usize)->std::io::Result<Option<dm_syntax::ParsedExpr>>{self.syntax.original_body_expression(self.body,self.code,source,offset,self.admission)}
         fn original_joined_return(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;

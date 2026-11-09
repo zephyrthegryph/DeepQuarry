@@ -220,6 +220,9 @@ pub struct SettingStatement {
 pub enum OriginalLeafBlockLink { ElseIf, Else, DoWhile }
 
 pub trait SettingSyntaxProvider {
+    #[cfg(debug_assertions)]
+    fn traces_original_body_grammar(&self) -> bool { false }
+
     /// Optional SAME original expression producer. Some returns snippet-local
     /// syntax once; operational errors must escape the admitted BODY producer.
     /// None denotes the unchanged ordinary parser route, not original parity.
@@ -318,7 +321,9 @@ fn parse_body_items_using_settings(
         && !admission.is_some_and(|admission| admission.is_stopped())
     {
         if let (Some((leaf, reason)), Some(first)) = (first_unissued, items.first()) {
-            trace_original_unissued_leaf(first.header_span.start, leaf, reason, source);
+            if settings.is_some_and(|provider| provider.traces_original_body_grammar()) {
+                trace_original_unissued_leaf(first.header_span.start, leaf, reason, source);
+            }
         }
     }
     result

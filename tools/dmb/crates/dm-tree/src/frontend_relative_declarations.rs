@@ -107,6 +107,11 @@ pub(crate) struct CurrentBodyRecipe<'a> {
     headers: Option<&'a Arc<crate::procedure::OriginalProcedureHeaders>>,
 }
 impl CurrentBodyRecipe<'_> {
+    #[cfg(debug_assertions)]
+    pub(crate) fn checker_body_profile(&self) -> bool {
+        self.headers.is_some_and(|headers| headers.checker_body_profile())
+    }
+
     pub(crate) fn source_window(&self)->Result<Span,&'static str>{let source=self.headers.ok_or("actual original header owner unissued")?;let end=self.offset.checked_add(source.abi_source_len()).ok_or("current original source window overflows")?;Ok(Span::new(self.offset,end))}
     pub(crate) fn parse_original_admitted(&self,a:&dm_syntax::SettingAdmission<'_>)
         ->std::io::Result<Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>> {
