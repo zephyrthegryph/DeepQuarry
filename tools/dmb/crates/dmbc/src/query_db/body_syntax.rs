@@ -1798,6 +1798,54 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_list_as_anything_and_nested_bare_break_authenticate_own_loops() {
+     let fixture = r#"
+/proc/probe(list/rank_rows, list/admin_ranks)
+    for(var/list/row as anything in rank_rows)
+        var/rank_name = row[1]
+        for(var/datum/admin_rank/R in admin_ranks)
+            if(R.name == rank_name)
+                break
+    return 0
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("as anything", "as text"), false),
+         (fixture.replace("in rank_rows", "in rank_rows.list"), false),
+         (fixture.replace("var/list/row", "var/row"), false),
+         (fixture.replace("                break", "                break target"), false),
+         (fixture.replace("        for(var/datum/admin_rank/R in admin_ranks)", "        for(var/R in 1 to 2)"), false),
+         ("/proc/probe()\n    break\n".to_owned(), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original as-anything and break are available");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let statements = &product.parsed().unwrap().statement_storage().parsed().statements;
+                 let dm_syntax::StatementKind::For {
+                     control: dm_syntax::ForControl::Each { binding, .. }, ..
+                 } = &statements[0].kind else {
+                     panic!("actual loop must declare its iteration local");
+                 };
+                 assert_eq!(binding, "var/list/row");
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_else_if_chain_authenticates_every_link() {
      let fixture = r#"
 /proc/probe(a, b)

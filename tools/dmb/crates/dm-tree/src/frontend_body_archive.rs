@@ -1206,6 +1206,29 @@ fn parse_statements_admitted(
             }
             Ok(to)
         }
+        fn original_for_each_anything_prefix(
+            &self, prefix: dm_syntax::Span, name: dm_syntax::Span,
+        ) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(prefix) = tokens.tokens(prefix) else { return Ok(false); };
+            let mut index = 0;
+            for (kind, span, spelling) in prefix {
+                self.admission.checkpoint()?;
+                match (index, kind, spelling) {
+                    (_, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (0, TokenKind::Ident, "var") | (2, TokenKind::Ident, "list")
+                    | (5, TokenKind::Ident, "as") | (6, TokenKind::Ident, "anything")
+                    | (7, TokenKind::Ident, "in")
+                    | (1 | 3, TokenKind::Operator | TokenKind::Punctuation, "/") => index += 1,
+                    (4, TokenKind::Ident, _) if span == name => index += 1,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(index == 8)
+        }
         fn original_classic_for_separators(
             &self, first: dm_syntax::Span, second: dm_syntax::Span,
         ) -> std::io::Result<bool> {
@@ -1336,14 +1359,14 @@ fn parse_statements_admitted(
             }
             Ok(false)
         }
-        fn original_bare_continue(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
+        fn original_bare_loop_control(&self, header: dm_syntax::Span, keyword: &'static str) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let tail = dm_syntax::Span::new(header.start, tokens.current_span().end);
             let Ok(mut actual) = tokens.tokens(tail) else { return Ok(false); };
-            if !matches!(actual.next(), Some((TokenKind::Ident, span, "continue")) if span == header) {
+            if !matches!(actual.next(), Some((TokenKind::Ident, span, actual)) if span == header && actual == keyword) {
                 return Ok(false);
             }
             for (kind, _, text) in actual {

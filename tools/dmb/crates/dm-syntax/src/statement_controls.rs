@@ -207,12 +207,14 @@ pub(super) fn parse_for(
         let mut grouped_index = false;
         let mut call_member = false;
         let mut subtraction = false;
+        let mut simple_original = false;
         let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
             expression_complete = parsed.original_simple_expression.is_some_and(|value| {
                 value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
             });
             let actual_original = parsed.original_simple_expression.is_some_and(|value| value.is_original());
             let kind = parsed.expr.as_ref().map(|value| &value.kind);
+            simple_original = actual_original && matches!(kind, Some(ExprKind::Ident(_)));
             dotted_original = actual_original && matches!(kind, Some(ExprKind::Member { via_colon: false, .. }));
             grouped_index = actual_original && matches!(kind,
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
@@ -222,7 +224,31 @@ pub(super) fn parse_for(
         let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
         *original_control = expression_complete && source_binding.is_some()
             && original_for_each_clause(clause, &lexical, at, dotted_original, grouped_index, call_member, subtraction);
-        return Some(ForControl::Each { source_binding, binding: binding.into(), iterable });
+        let mut declaration = binding;
+        if let Some((before_hint, _)) = split_top_level_keyword(binding, "as")
+            .filter(|(_, hint)| hint.trim() == "anything")
+            .filter(|_| !*original_control && expression_complete && simple_original)
+        {
+            if let Some(name) = source_binding {
+                let prefix = Span::new(offset_of(binding), iterable.span.start);
+                match origins.settings.map(|provider| {
+                    provider.original_for_each_anything_prefix(prefix, name.name())
+                }).transpose() {
+                    Ok(Some(true)) => {
+                        *original_control = true;
+                        // The source hint governs iteration, not the local's name.
+                        declaration = before_hint.trim_end();
+                    }
+                    Ok(_) => {}
+                    Err(actual) => {
+                        if let Some(admission) = origins.admission {
+                            admission.record_operational_error(actual);
+                        }
+                    }
+                }
+            }
+        }
+        return Some(ForControl::Each { source_binding, binding: declaration.into(), iterable });
     }
     if let Some((begin, remainder)) = split_top_level_keyword(clause, "to") {
         if crate::local_variable_syntax::top_level_local_assignment(begin).is_none()
