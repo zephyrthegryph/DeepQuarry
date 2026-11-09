@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 #[path = "input_paired_dmm.rs"]
 mod paired;
-pub(crate) use paired::PairedDmmStage;
+pub(crate) use paired::{PairedDmmFacts, PairedDmmStage};
 
 const MAX_NESTING: usize = 256;
 
@@ -169,7 +169,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             self.snapshot.lock()
                 .map_err(|_| invalid("map_edits capture mutex poisoned"))
                 .and_then(|snapshot| snapshot.policy_closure_charge())
-                .and_then(|bytes| lender.directory_metadata_settled(&self.source_issuer, bytes))
+                .and_then(|bytes| lender.directory_metadata_settled(&self.policy_metadata_owner(None)?, bytes))
         } else {
             Ok(())
         };

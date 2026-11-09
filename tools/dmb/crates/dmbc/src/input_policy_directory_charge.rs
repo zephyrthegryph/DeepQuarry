@@ -4,7 +4,7 @@ use super::*;
 use std::sync::{Mutex, MutexGuard, Weak};
 const INDEX_COORD: usize = 128 + std::mem::size_of::<(usize, Weak<Vec<PolicyDirectoryEntry>>)>();
 #[derive(Debug)]
-pub(crate) struct DirectoryChargeMemo(Mutex<State>);
+pub(crate) struct DirectoryChargeMemo(Mutex<State>, std::sync::OnceLock<Arc<()>>);
 #[derive(Debug)]
 pub(super) struct State {
     initialized: bool,
@@ -27,7 +27,7 @@ impl Default for DirectoryChargeMemo {
             name_visits: 0,
             #[cfg(test)]
             owner_lookups: 0,
-        }))
+        }), Default::default())
     }
 }
 // Snapshot clones have their OWN path capacities. Rebuild once lazily, while
@@ -48,6 +48,20 @@ impl PartialEq for DirectoryChargeMemo {
 }
 impl Eq for DirectoryChargeMemo {}
 impl DirectoryChargeMemo {
+    pub(super) fn metadata_owner(
+        &self, budget: Option<&dq_analyze::captured_generator_budget::Budget>,
+    ) -> io::Result<Arc<()>> {
+        if let Some(owner) = self.1.get() {
+            return Ok(Arc::clone(owner));
+        }
+        let budget = budget.ok_or_else(|| invalid("actual recorder metadata owner absent"))?;
+        // Called under the actual snapshot lock. A clone or deserialization
+        // starts without this resource identity; moving the maps preserves it.
+        budget.charge(2 * std::mem::size_of::<usize>())
+            .map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
+        Ok(Arc::clone(self.1.get_or_init(|| Arc::new(()))))
+    }
+
     pub(super) fn lock<'a>(
         &'a self,
         rows: &BTreeMap<PathBuf, PolicyDirectoryObservation>,

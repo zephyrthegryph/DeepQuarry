@@ -28,14 +28,52 @@ enum Outcome<E> {
     Failed(E),
     Consumed,
 }
-struct Entry {
+struct FactRow {
     ordinal: usize,
     fact: Observed,
+}
+
+pub(crate) struct PairedDmmFacts {
+    discovery: Arc<DiscoveryReceipt>,
+    rows: Vec<FactRow>,
+}
+
+impl PairedDmmFacts {
+    fn slot(&self, ordinal: usize) -> io::Result<usize> {
+        self.rows.binary_search_by_key(&ordinal, |row| row.ordinal)
+            .map_err(|_| invalid("paired DMM omitted expected capture slot"))
+    }
+
+    pub(crate) fn path(&self, ordinal: usize) -> io::Result<&Path> {
+        self.slot(ordinal)?;
+        self.discovery.files().get(ordinal).map(PathBuf::as_path)
+            .ok_or_else(|| invalid("paired DMM path absent from its discovery ordinal"))
+    }
+
+    pub(crate) fn require(&self, ordinal: usize, fact: &FileInput) -> io::Result<()> {
+        let slot = self.slot(ordinal)?;
+        if self.discovery.files().get(ordinal) != Some(&fact.path) {
+            return Err(invalid("paired DMM fact path differs from its discovery ordinal"));
+        }
+        self.rows[slot].fact.require(fact)
+    }
+
+    pub(crate) fn facts_in(&self, current: &InputSnapshot) -> bool {
+        self.rows.iter().all(|row| {
+            self.discovery.files().get(row.ordinal)
+                .and_then(|path| current.recorded_canonical_file(path))
+                .is_some_and(|fact| self.discovery.files().get(row.ordinal) == Some(&fact.path)
+                    && row.fact.require(fact).is_ok())
+        })
+    }
+}
+
+struct Entry {
     map: Outcome<io::Error>,
     grep: Outcome<Failure>,
 }
 pub(crate) struct PairedDmmStage {
-    discovery: Arc<DiscoveryReceipt>,
+    facts: Arc<PairedDmmFacts>,
     recorder: Arc<()>,
     queries: NativeQueryOwnerIdentity,
     entries: Vec<Entry>,
@@ -68,11 +106,14 @@ impl PairedDmmStage {
         let is_dmm = |path: &Path| path.strip_prefix(root).is_ok_and(|relative|
             relative.starts_with("maps") && relative.extension().is_some_and(|ext| ext == "dmm"));
         let count = discovery.files().iter().filter(|path| is_dmm(path)).count();
-        let fixed = count.checked_mul(std::mem::size_of::<Entry>() + std::mem::size_of::<usize>())
-            .and_then(|n| n.checked_add(std::mem::size_of::<Self>() + NativeQueryOwnerIdentity::retained_charge()))
+        let fixed = count.checked_mul(std::mem::size_of::<Entry>() + std::mem::size_of::<FactRow>()
+                + std::mem::size_of::<usize>())
+            .and_then(|n| n.checked_add(std::mem::size_of::<Self>() + NativeQueryOwnerIdentity::retained_charge()
+                + std::mem::size_of::<PairedDmmFacts>() + 2 * std::mem::size_of::<usize>()))
             .ok_or(io::ErrorKind::OutOfMemory)?;
         budget.charge(fixed).map_err(quota)?;
         let mut entries = exact_vec(count)?;
+        let mut fact_rows = exact_vec(count)?;
         let mut map_order = exact_vec(count)?;
         inputs.fold_observed_map_edits_inputs(&discovery, budget, lender, |path, _| {
             let ordinal = discovery.files().iter().position(|candidate| candidate == path && is_dmm(candidate))
@@ -92,7 +133,8 @@ impl PairedDmmStage {
 
         let before = inputs.snapshot.lock().map_err(|_| invalid("paired DMM recorder poisoned"))?
             .policy_closure_charge()?;
-        lender.prepare_directory_metadata(&inputs.source_issuer, before)?;
+        let metadata_owner = inputs.policy_metadata_owner(Some(budget))?;
+        lender.prepare_directory_metadata(&metadata_owner, before)?;
         let mut read_failure = None;
         let read_result = (|| -> io::Result<()> {
             for (ordinal, path) in discovery.files().iter().enumerate().filter(|(_, path)| is_dmm(path)) {
@@ -163,14 +205,15 @@ impl PairedDmmStage {
                         })
                     })?
                 } else { Outcome::Unselected };
-                entries.push(Entry { ordinal, fact: Observed { stamp: fact.stamp, content: fact.content }, map, grep });
+                fact_rows.push(FactRow { ordinal, fact: Observed { stamp: fact.stamp, content: fact.content } });
+                entries.push(Entry { map, grep });
                 drop((raw, raw_scope));
             }
             Ok(())
         })();
         let settled = inputs.snapshot.lock().map_err(|_| invalid("paired DMM recorder poisoned"))
             .and_then(|snapshot| snapshot.policy_closure_charge())
-            .and_then(|bytes| lender.directory_metadata_settled(&inputs.source_issuer, bytes));
+            .and_then(|bytes| lender.directory_metadata_settled(&metadata_owner, bytes));
         read_result?;
         if let Err(later) = settled {
             return Err(read_failure.map_or(later, |(_, first)| first));
@@ -179,7 +222,8 @@ impl PairedDmmStage {
             Ok(spool) => spool,
             Err(later) => return Err(read_failure.map_or(later, |(_, first)| first)),
         };
-        Ok(Self { discovery, recorder: Arc::clone(&inputs.source_issuer),
+        let facts = Arc::new(PairedDmmFacts { discovery, rows: fact_rows });
+        Ok(Self { facts, recorder: Arc::clone(&inputs.source_issuer),
             queries: queries.native_query_owner_identity(), entries, map_order, read_failure, spool })
     }
 
@@ -188,7 +232,7 @@ impl PairedDmmStage {
     pub(crate) fn require_recording<P: SnapshotProvider>(
         &self, inputs: &RecordingInputs<P>, discovery: &Arc<DiscoveryReceipt>, queries: &QueryDb,
     ) -> io::Result<()> {
-        if !Arc::ptr_eq(&self.discovery, discovery) || !Arc::ptr_eq(&self.recorder, &inputs.source_issuer)
+        if !Arc::ptr_eq(&self.facts.discovery, discovery) || !Arc::ptr_eq(&self.recorder, &inputs.source_issuer)
             || !self.queries.matches(queries) {
             return Err(invalid("paired DMM belongs to another recorder, discovery or QueryDb"));
         }
@@ -198,8 +242,12 @@ impl PairedDmmStage {
     pub(crate) fn retained_fixed_bytes(&self) -> usize {
         std::mem::size_of::<Self>()
             + self.entries.capacity() * std::mem::size_of::<Entry>()
+            + std::mem::size_of::<PairedDmmFacts>() + 2 * std::mem::size_of::<usize>()
+            + self.facts.rows.capacity() * std::mem::size_of::<FactRow>()
             + self.map_order.capacity() * std::mem::size_of::<usize>()
     }
+
+    pub(crate) fn facts(&self) -> &Arc<PairedDmmFacts> { &self.facts }
 
     pub(crate) fn map_order(&self) -> &[usize] { &self.map_order }
 
@@ -209,27 +257,22 @@ impl PairedDmmStage {
             return Err(self.read_failure.take().unwrap().1);
         }
         let fact = fact.ok_or_else(|| invalid("paired DMM missing its actual recorded file fact"))?;
-        self.entry(ordinal, fact).map(|_| ())
+        self.facts.require(ordinal, fact)
     }
 
-    fn entry(&mut self, ordinal: usize, fact: &FileInput) -> io::Result<&mut Entry> {
-        if self.discovery.files().get(ordinal).is_none_or(|path| path != &fact.path) {
-            return Err(invalid("paired DMM fact path differs from its discovery ordinal"));
-        }
-        let at = self.entries.binary_search_by_key(&ordinal, |row| row.ordinal)
-            .map_err(|_| invalid("paired DMM omitted expected capture slot"))?;
-        let row = &mut self.entries[at];
-        row.fact.require(fact)?;
-        Ok(row)
+    fn entry(&mut self, ordinal: usize) -> io::Result<&mut Entry> {
+        let slot = self.facts.slot(ordinal)?;
+        self.entries.get_mut(slot).ok_or_else(|| invalid("paired DMM outcome slot differs"))
     }
 
     pub(crate) fn take_grep(
-        &mut self, ordinal: usize, fact: &FileInput, relative: &str, budget: &Budget,
+        &mut self, ordinal: usize, relative: &str, budget: &Budget,
     ) -> Result<grep::StaticFileData, Failure> {
-        budget.charge(path_charge(&fact.path, 4, 512)?).map_err(quota)?;
-        let expected = dq_analyze::util::rel_slash(&fact.path, &self.discovery.contract().root);
+        let path = self.facts.path(ordinal)?;
+        budget.charge(path_charge(path, 4, 512)?).map_err(quota)?;
+        let expected = dq_analyze::util::rel_slash(path, &self.facts.discovery.contract().root);
         if relative != expected { return Err("paired DMM grep relative path differs".into()); }
-        let slot = &mut self.entry(ordinal, fact)?.grep;
+        let slot = &mut self.entry(ordinal)?.grep;
         let range = match slot {
             Outcome::Ready(range) => range.clone(),
             Outcome::Failed(_) => {
@@ -250,7 +293,8 @@ impl PairedDmmStage {
     }
 
     pub(crate) fn require_map_outcome(&mut self, ordinal: usize, fact: &FileInput) -> io::Result<()> {
-        let slot = &mut self.entry(ordinal, fact)?.map;
+        self.facts.require(ordinal, fact)?;
+        let slot = &mut self.entry(ordinal)?.map;
         match slot {
             Outcome::Ready(_) => Ok(()),
             Outcome::Failed(_) => {
@@ -262,10 +306,10 @@ impl PairedDmmStage {
     }
 
     pub(crate) fn take_map(
-        &mut self, ordinal: usize, fact: &FileInput, budget: &Arc<Budget>,
+        &mut self, ordinal: usize, budget: &Arc<Budget>,
         mut visit: impl FnMut(&str, &str, usize) -> io::Result<()>,
     ) -> io::Result<()> {
-        let slot = &mut self.entry(ordinal, fact)?.map;
+        let slot = &mut self.entry(ordinal)?.map;
         let range = match slot {
             Outcome::Ready(range) => range.clone(),
             Outcome::Failed(_) => {
@@ -453,17 +497,25 @@ mod tests {
         staged.require_capture_slot(map_index, Some(&map_fact)).unwrap();
         staged.require_capture_slot(palette_index, Some(&palette_fact)).unwrap();
         assert_eq!(staged.map_order(), &[map_index]);
+        let donor = Arc::clone(staged.facts());
+        let original = inputs.snapshot().unwrap();
+        assert!(donor.facts_in(&original));
+        let mut changed_recording = original.clone();
+        changed_recording.files.get_mut(&map_fact.path).unwrap().content ^= 1;
+        assert!(!donor.facts_in(&changed_recording));
+        changed_recording.files.remove(&map_fact.path);
+        assert!(!donor.facts_in(&changed_recording));
         let mut rows = Vec::new();
-        staged.take_map(map_index, &map_fact, &budget, |ty, field, line| {
+        staged.take_map(map_index, &budget, |ty, field, line| {
             rows.push((ty.to_owned(), field.to_owned(), line));
             Ok(())
         }).unwrap();
         assert_eq!(rows, [("/obj/probe".to_owned(), "step_x".to_owned(), 2)]);
         for (index, fact) in [(map_index, &map_fact), (palette_index, &palette_fact)] {
             let relative = dq_analyze::util::rel_slash(&fact.path, &discovery.contract().root);
-            let grep = staged.take_grep(index, fact, &relative, &budget).unwrap();
+            let grep = staged.take_grep(index, &relative, &budget).unwrap();
             assert!(grep.run.sites.iter().any(|site| site.rule == "step_xy" && site.rel == relative));
-            let warm = staged.take_grep(index, fact, &relative, &budget).unwrap();
+            let warm = staged.take_grep(index, &relative, &budget).unwrap();
             assert_eq!(warm.run.sites, grep.run.sites);
             assert_eq!(warm.allow_used, grep.allow_used);
             assert!(warm.source_lines().eq(grep.source_lines()));
@@ -480,5 +532,7 @@ mod tests {
         assert_ne!(changed.content, map_fact.content);
         assert_eq!(staged.require_capture_slot(map_index, Some(&changed)).unwrap_err().kind(),
             io::ErrorKind::InvalidData);
+        drop(staged);
+        assert!(donor.facts_in(&original));
     }
 }

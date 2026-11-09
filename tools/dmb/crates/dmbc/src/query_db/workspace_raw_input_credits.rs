@@ -442,6 +442,15 @@ fn oom()->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,"raw source input-
 fn charge(b:&Budget,n:usize)->io::Result<()>{b.charge(n).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
 /// Operation-local funding only; the ledger carries weak storage, never source data or answers.
 pub(crate) struct RawInputCredits<'a>{ledger:&'a mut Ledger,budget:&'a Arc<Budget>,source_nodes:usize,capture_node:bool,prepared:bool}
+impl RawInputCredits<'_> {
+ pub(crate) fn retain_late_recorder_growth(&mut self,owner:&Arc<()>,growth:usize)->io::Result<()>{
+  let key=(251,Arc::as_ptr(owner) as usize);
+  let old=self.ledger.rows.get(&key).ok_or_else(||io::Error::other("staged recorder metadata owner absent"))?;
+  let bytes=old.bytes.checked_add(growth).ok_or_else(oom)?;
+  self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(owner),bytes),bytes});
+  Ok(())
+ }
+}
 impl RawInputCredits<'_>{
  /// Reserve weak/key bookkeeping BEFORE a new source/decode allocation can occur.
  pub(crate) fn prepare_source(&mut self)->io::Result<()>{crate::daemon::control::checkpoint()?;if self.prepared{return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source accounting preparation was not consumed"))}let needed=3usize.saturating_sub(self.source_nodes);charge(self.budget,needed.checked_mul(NODE).ok_or_else(oom)?)?;self.source_nodes+=needed;self.prepared=true;Ok(())}
@@ -689,18 +698,19 @@ impl QueryDb{
 impl crate::input_snapshot::RecordedPolicySourceLender for RawInputCredits<'_>{
  fn with_held_source_work(&mut self,queries:&crate::query_db::QueryDb,visit:&mut dyn FnMut(&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>)->io::Result<()>{RawInputCredits::with_held_source_work(self,queries,|work|visit(work))}
 
- fn prepare_directory_metadata(&mut self,issuer:&Arc<()>,bytes:usize)->io::Result<()>{
-  let key=(251,Arc::as_ptr(issuer)as usize);
-  let old=self.ledger.rows.get(&key).map_or(0,|row|row.bytes);
+ fn prepare_directory_metadata(&mut self,owner:&Arc<()>,bytes:usize)->io::Result<()>{
+  let key=(251,Arc::as_ptr(owner)as usize);
+  let old=self.ledger.rows.get(&key).map_or(0,|row|row.bytes.saturating_sub(2*std::mem::size_of::<usize>()));
   if !self.ledger.rows.contains_key(&key){charge(self.budget,NODE)?;}
   // Actual metadata is published before a surprise denial, as with raw reads.
-  self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),bytes),bytes});
+  let funded=bytes.checked_add(2*std::mem::size_of::<usize>()).ok_or_else(oom)?;
+  self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(owner),funded),bytes:funded});
   // The actual recorder row now funds this delta for its own lifetime.
   // The current operation still needs the full debit for its active peak.
   self.budget.retain_nested(bytes.saturating_sub(old)).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))
  }
- fn directory_window_started(&mut self,issuer:&Arc<()>,upper:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource node was not prepared"))}self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),upper),bytes:upper});Ok(())}
- fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource window absent"))}self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),actual),bytes:actual});Ok(())}
+ fn directory_window_started(&mut self,owner:&Arc<()>,upper:usize)->io::Result<()>{let key=(251,Arc::as_ptr(owner)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource node was not prepared"))}let funded=upper.checked_add(2*std::mem::size_of::<usize>()).ok_or_else(oom)?;self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(owner),funded),bytes:funded});Ok(())}
+ fn directory_metadata_settled(&mut self,owner:&Arc<()>,actual:usize)->io::Result<()>{let key=(251,Arc::as_ptr(owner)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource window absent"))}let funded=actual.checked_add(2*std::mem::size_of::<usize>()).ok_or_else(oom)?;self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(owner),funded),bytes:funded});Ok(())}
  fn settle_directory_window(&mut self,window:dq_analyze::captured_generator_budget::ReservedWindow,retained:usize)->Result<(),String>{
   window.settle_registered(self.budget,retained)
  }
@@ -749,7 +759,12 @@ impl QueryDb {
 /// preparation. It is never a source mapping or a freshness receipt.
 pub(crate) struct FundedPairedDmm {
     pub(crate) stage: std::sync::Mutex<crate::input_snapshot::PairedDmmStage>,
+    facts: Arc<crate::input_snapshot::PairedDmmFacts>,
     _allocation: Arc<()>,
+}
+
+impl FundedPairedDmm {
+    pub(crate) fn facts(&self) -> &crate::input_snapshot::PairedDmmFacts { &self.facts }
 }
 
 impl QueryDb {
@@ -788,7 +803,7 @@ impl QueryDb {
         self.workspace_input_base_headroom_locked(credits.ledger.refresh()?)?;
         crate::daemon::control::checkpoint()?;
         Ok(Arc::new(FundedPairedDmm {
-            stage: std::sync::Mutex::new(stage), _allocation: allocation,
+            facts: Arc::clone(stage.facts()), stage: std::sync::Mutex::new(stage), _allocation: allocation,
         }))
     }
 }
@@ -845,17 +860,24 @@ impl QueryDb {
   let offered=provider.maximum.load(Ordering::Acquire);
   assert!(offered>0&&offered<16*1024,"provider must see remaining family window, not unconditional64MiB");
   assert!(budget.remaining()>1024,"unused maximum is refunded after real metadata settlement");
-  let key=(251,Arc::as_ptr(&inputs.policy_discovery_issuer())as usize);
+  let identity=inputs.policy_discovery_issuer();
+  let key=(251,inputs.policy_metadata_owner_address().unwrap());
+  assert_ne!(key.1,Arc::as_ptr(&identity) as usize);
   let registered=credits.ledger.rows.get(&key).unwrap().bytes;
   assert!(registered >= inputs.policy_discovery_metadata_charge().unwrap());
   assert!(registered>0);
-  assert_eq!(budget.used()-budget.temporary_charge(),registered);
+  assert_eq!(budget.used()-budget.temporary_charge(),registered-2*std::mem::size_of::<usize>());
   assert_eq!(budget.remaining(),16*1024-budget.used(),"the operation still pays the full debit");
   drop(listing);drop(credits);
   assert_eq!(ledger.rows.get(&key).unwrap().bytes,registered);
   assert!(ledger.refresh().unwrap()>FIXED);
-  drop(inputs);
-  assert_eq!(ledger.refresh().unwrap(),FIXED,"an independently held operation budget cannot keep recorder metadata live");
+  let clone=inputs.snapshot().unwrap();
+  let moved=inputs.into_snapshot().unwrap();
+  assert!(ledger.refresh().unwrap()>FIXED,"the moved maps still own their metadata token");
+  drop(moved);
+  assert_eq!(Arc::strong_count(&identity),1);
+  assert_eq!(ledger.refresh().unwrap(),FIXED,"a retained issuer, unrelated snapshot clone and operation budget cannot keep the original metadata row live");
+  drop((clone,identity));
 
  }
  #[test]fn actual_directory_error_survives_window_cleanup_and_quota_refuses_before_provider(){

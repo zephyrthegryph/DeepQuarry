@@ -174,7 +174,7 @@ mod map_edits;
 #[path = "input_workspace_raw_spool.rs"]
 mod workspace_raw_spool;
 pub(crate) use workspace_raw_spool::{WorkspaceRawSpool, WorkspaceRawSpoolBuilder, WorkspaceRawSpoolIdentity};
-pub(crate) use map_edits::PairedDmmStage;
+pub(crate) use map_edits::{PairedDmmFacts, PairedDmmStage};
 pub(crate) use policy_directories::PolicyDirectoryStorage;
 pub use policy_directories::{
     PolicyDirectoryEntries, PolicyDirectoryEntry, PolicyDirectoryListing,
@@ -820,9 +820,6 @@ pub struct InputSnapshot {
     folders: BTreeMap<PathBuf, FolderListing>,
     #[serde(default)]
     policy_directories: BTreeMap<PathBuf, PolicyDirectoryObservation>,
-    // Resource bookkeeping only; never part of facts, wire identity or authority.
-    #[serde(skip)]
-    policy_directory_accounting: policy_directories::DirectoryChargeMemo,
     negative_files: BTreeSet<PathBuf>,
     generated_outputs: BTreeSet<PathBuf>,
     #[serde(default)]
@@ -835,6 +832,10 @@ pub struct InputSnapshot {
     structure_proof: StructureProof,
     #[serde(skip)]
     watch: WatchMark,
+    // Resource bookkeeping only; never part of facts, wire identity or authority.
+    // Drop the actual accounted maps before dropping their lifetime token.
+    #[serde(skip)]
+    policy_directory_accounting: policy_directories::DirectoryChargeMemo,
 }
 
 // Human-readable snapshots retain the established optional empty field. Binary

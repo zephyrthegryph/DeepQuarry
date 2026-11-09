@@ -230,24 +230,19 @@ impl WorkspaceCapture {
     ) -> io::Result<()> {
         self.require_scope(scope)?;
         let stage = self.paired_dmm.as_ref().ok_or_else(|| io::Error::other("paired maps absent"))?;
+        let stage_facts = stage.facts();
         let mut stage = stage.stage.lock().map_err(|_| io::Error::other("paired maps poisoned"))?;
         for index in 0..stage.map_order().len() {
             crate::daemon::control::checkpoint()?;
             let ordinal = stage.map_order()[index];
-            let fact = self.paired_fact(ordinal)?;
+            let path = stage_facts.path(ordinal)?;
             let scratch = dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(map_edits_quota)?;
-            scratch.charge(fact.path.as_os_str().len().checked_mul(8).and_then(|n| n.checked_add(512))
+            scratch.charge(path.as_os_str().len().checked_mul(8).and_then(|n| n.checked_add(512))
                 .ok_or(io::ErrorKind::OutOfMemory)?).map_err(map_edits_quota)?;
-            let relative = dq_analyze::util::rel_slash(&fact.path, self.root());
-            stage.take_map(ordinal, fact, &scratch, |ty, var, line| visit(&relative, ty, var, line))?;
+            let relative = dq_analyze::util::rel_slash(path, self.root());
+            stage.take_map(ordinal, &scratch, |ty, var, line| visit(&relative, ty, var, line))?;
         }
         self.require_scope(scope)
-    }
-
-    fn paired_fact(&self, ordinal: usize) -> io::Result<&FileInput> {
-        let path = self.discovery.files().get(ordinal).ok_or_else(|| io::Error::other("paired DMM ordinal absent"))?;
-        self.facts.files().find(|fact| &fact.path == path)
-            .ok_or_else(|| io::Error::other("paired DMM captured file fact absent"))
     }
 
     pub(crate) fn paired_grep_fragment(
@@ -257,7 +252,7 @@ impl WorkspaceCapture {
         self.require_scope(scope)?;
         let stage = self.paired_dmm.as_ref().ok_or_else(|| io::Error::other("paired grep absent"))?;
         stage.stage.lock().map_err(|_| io::Error::other("paired grep poisoned"))?
-            .take_grep(ordinal, self.paired_fact(ordinal)?, relative, budget)
+            .take_grep(ordinal, relative, budget)
     }
 
     pub(crate) fn has_semantic_question(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{question.is_semantic()&&self.auxiliary.contains(&question)}
@@ -478,6 +473,7 @@ impl WorkspaceCapture {
         });
         same && self.shared_derived.as_ref().is_none_or(|donor| donor.workspace_files_in(complete))
             && self.raw_spool.as_ref().is_none_or(|spool| spool.facts_in(complete))
+            && self.paired_dmm.as_ref().is_none_or(|owner| owner.facts().facts_in(complete))
             && self.facts.original_observations_subset_of(complete) && self
             .policy_directories()
             .iter()
@@ -990,6 +986,9 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
     }
     queries.with_semantic_workspace_capture_inputs(|budget, credits| {
         let variable = raw_spool_cache.is_some();
+        let recorder_before = if variable {
+            Some((inputs.late_workspace_recorder_owner()?, inputs.late_workspace_recorder_charge()?))
+        } else { None };
         let baseline_funding = if variable {
             Some(Budget::scoped_temporaries(budget).map_err(map_edits_quota)?)
         } else {
@@ -1026,11 +1025,33 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
             None => Budget::reserve_window(budget, EXTRA_BUDGET - baseline_paid).map_err(map_edits_quota)?,
         };
         let capture_limit = ordinary.capacity() + baseline_paid;
-        let capture = capture_original(
+        let pending = capture_original(
             OriginalWorkspaceSource { mapping: frontend.mapping(), plan: frontend.original_plan(),
                 revision: frontend.source_revision() },
             inputs, discovery, configuration, questions, Some((budget, credits)), None, full_ci_baselines, paired_dmm, raw_spool_cache.map(|cache| (queries, cache)), capture_limit,
-        )?;
+        );
+        // Recorder facts can outlive either a successful capture or a failed
+        // provider read. Publish their growth before releasing the window.
+        let recorder_growth = if let Some((owner, before)) = recorder_before {
+            match inputs.late_workspace_recorder_charge().and_then(|after| {
+                let growth = after.saturating_sub(before);
+                credits.retain_late_recorder_growth(&owner, growth)?;
+                Ok(growth)
+            }) {
+                Ok(growth) => growth,
+                Err(error) => {
+                    ordinary.keep();
+                    return match pending { Err(first) => Err(first), Ok(_) => Err(error) };
+                }
+            }
+        } else { 0 };
+        let capture = match pending {
+            Ok(capture) => capture,
+            Err(first) => {
+                let _ = ordinary.settle_registered(budget, recorder_growth);
+                return Err(first);
+            }
+        };
         let retained = capture.retained_charge()?.checked_add(2*std::mem::size_of::<usize>())
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
         if let Some(baseline_funding) = baseline_funding {
@@ -1040,7 +1061,9 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
             }
             // The raw family gate stays held. Settle both already-funded
             // pieces without allocating or running an observer between them.
-            ordinary.settle(retained.saturating_sub(baseline_paid)).map_err(map_edits_quota)?;
+            let ordinary_retained = retained.saturating_sub(baseline_paid)
+                .checked_add(recorder_growth).ok_or(io::ErrorKind::OutOfMemory)?;
+            ordinary.settle(ordinary_retained).map_err(map_edits_quota)?;
             drop(baseline_funding);
             budget.charge(retained.min(baseline_paid)).map_err(map_edits_quota)?;
         } else {
@@ -1160,21 +1183,47 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             .ok_or(io::ErrorKind::OutOfMemory)?;
         used = used.checked_add(bytes).ok_or(io::ErrorKind::OutOfMemory)?;
     }
+    // The alias index is discovery scratch, not source authority. Build it
+    // under the same admission before classifying the per-file reserve.
+    let alias_reserve = alias_index::AliasIndex::reserve_charge(known.keys())?;
+    used = used.checked_add(alias_reserve).filter(|&bytes| bytes <= capture_limit)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "workspace alias index exceeds capture allowance"))?;
+    let joined_maps = map_work.is_some() && Q::is_private_grep_domain(questions);
+    let is_joined_map = |path: &Path| joined_maps
+        && path.extension().is_some_and(|ext| ext == "dmm")
+        && path.strip_prefix(&discovery.contract().root)
+            .is_ok_and(|relative| relative.starts_with("maps"));
     let mut mapped_scratch = 0;
+    let mut donor_rows = 0usize;
+    let mut spool_rows = 0usize;
     let mut fallback_rows = 0usize;
     let mut fallback_bytes = 0usize;
     for path in discovery.files() {
+        crate::daemon::control::checkpoint()?;
         let width = path.capacity().checked_mul(8).and_then(|n| n.checked_add(2048))
             .ok_or(io::ErrorKind::OutOfMemory)?;
-        if staged && (known.get(path.as_path()).is_some_and(|index|
-            mapping.source_acquisition(*index).is_some())
-            || paired_dmm.is_some() && path.strip_prefix(&discovery.contract().root)
-                .is_ok_and(|relative| relative.starts_with("maps")
-                    && relative.extension().is_some_and(|ext| ext == "dmm")))
+        let exact = known.get(path.as_path());
+        let donor_row = staged
+            && shared_derived.as_ref().is_some_and(|owner| owner.workspace_file(path).is_some())
+            && inputs.has_policy_file_and_parent(path)?;
+        donor_rows += usize::from(donor_row);
+        if staged && (exact.is_some_and(|&index| mapping.source_acquisition(index).is_some())
+            || donor_row || paired_dmm.is_some() && is_joined_map(path))
         {
-            // Already recorded compiled or staged DMM facts need only a
-            // single temporary loan. A local clone is admitted later, under
-            // the recorder lock, only when the actual donor cannot supply it.
+            // The donor's requested file and ordinary parent already exist.
+            // Capture still authenticates the alias or reread, if needed.
+            // Any local closure clone is admitted separately below.
+            mapped_scratch = mapped_scratch.max(width);
+        } else if staged && exact.is_none() && spools_authored_ui(path, &discovery.contract().root)
+        {
+            // Typed discovery already owns the parent listing. A spooled
+            // payload can add one ordinary fact (key and fact path buffers).
+            // Its durable spool entry is funded by the builder below.
+            spool_rows += 1;
+            let fact = path.capacity().checked_mul(8)
+                .and_then(|n| n.checked_add(128 + std::mem::size_of::<FileInput>()))
+                .ok_or(io::ErrorKind::OutOfMemory)?;
+            used = used.checked_add(fact).ok_or(io::ErrorKind::OutOfMemory)?;
             mapped_scratch = mapped_scratch.max(width);
         } else {
             // Uncompiled/fallback reads may still add ordinary recorder
@@ -1184,24 +1233,25 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             used = used.checked_add(width).ok_or(io::ErrorKind::OutOfMemory)?;
         }
     }
-    used = used.checked_add(mapped_scratch).ok_or(io::ErrorKind::OutOfMemory)?;
+    let mut primary_scratch = 0usize;
     for path in known.keys() {
-        // Include primary alias spelling capacity even if every source needs an
-        // alias. This temporary conservative reserve is not retained storage.
-        used = used
-            .checked_add(path.as_os_str().len() * 2)
-            .ok_or_else(|| io::Error::other("workspace primary metadata overflow"))?;
+        let spelling = path.as_os_str().len().checked_mul(2).ok_or(io::ErrorKind::OutOfMemory)?;
+        if staged {
+            // The primary spelling is borrowed by the index and selection.
+            // Only one authenticated challenge owns a temporary copy.
+            primary_scratch = primary_scratch.max(spelling);
+        } else {
+            used = used.checked_add(spelling).ok_or(io::ErrorKind::OutOfMemory)?;
+        }
     }
-    let alias_reserve = alias_index::AliasIndex::reserve_charge(known.keys())?;
-    used = used
-        .checked_add(alias_reserve)
-        .ok_or_else(|| io::Error::other("workspace alias metadata overflow"))?;
-    if used > capture_limit {
-        if staged && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    used = used.checked_add(mapped_scratch).and_then(|n| n.checked_add(primary_scratch))
+        .ok_or(io::ErrorKind::OutOfMemory)?;
+    if staged && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
             let baseline_bytes = full_ci_baselines.as_ref().map_or(0, |rows| rows.preflight_charge);
             let subject_bytes = inputs.original_analysis_subject().map_or(0, |subject| subject.charge());
-            eprintln!("ORIGINAL_WORKSPACE_METADATA bytes={used} admitted={capture_limit} known_bytes={known_bytes} alias_bytes={alias_reserve} file_slots={staged_file_slots} fallback_rows={fallback_rows} fallback_bytes={fallback_bytes} baseline_bytes={baseline_bytes} subject_bytes={subject_bytes}");
-        }
+            eprintln!("ORIGINAL_WORKSPACE_METADATA bytes={used} admitted={capture_limit} known_bytes={known_bytes} alias_bytes={alias_reserve} file_slots={staged_file_slots} donor_rows={donor_rows} spool_rows={spool_rows} fallback_rows={fallback_rows} fallback_bytes={fallback_bytes} baseline_bytes={baseline_bytes} subject_bytes={subject_bytes}");
+    }
+    if used > capture_limit {
         return Err(io::Error::new(io::ErrorKind::OutOfMemory,
             format!("workspace metadata needs {used} bytes before payload read, with {capture_limit} admitted"),
         ));
@@ -1251,11 +1301,6 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     } else {
         None
     };
-    let joined_maps = map_work.is_some() && Q::is_private_grep_domain(questions);
-    let is_joined_map = |path: &Path| joined_maps
-        && path.extension().is_some_and(|ext| ext == "dmm")
-        && path.strip_prefix(&discovery.contract().root)
-            .is_ok_and(|relative| relative.starts_with("maps"));
     let map_fact_count = if paired_dmm.is_some() { 0 } else { discovery.files().iter().filter(|path| is_joined_map(path)).count() };
     let map_fact_storage = map_fact_count.checked_mul(std::mem::size_of::<(usize, FileInput)>())
         .ok_or(io::ErrorKind::OutOfMemory)?;
@@ -1429,6 +1474,14 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         .chain(keys_manifest_path.iter().map(PathBuf::as_path))
         .chain(base_vars_configuration_path.iter().map(PathBuf::as_path))
         .chain(check_grep_paths.iter().flat_map(|paths| paths.iter().flatten().map(PathBuf::as_path)));
+    // The emitted rows carry occurrence indices or sealed frame slots.
+    // Neither temporary lookup table is needed by the fact closure.
+    drop(aliases);
+    drop(known);
+    if staged {
+        used = used.checked_sub(known_bytes).and_then(|bytes| bytes.checked_sub(alias_reserve))
+            .ok_or_else(|| io::Error::other("workspace lookup scratch was not admitted"))?;
+    }
     let fixed_paths: Vec<_> = if staged {
         let mut count = 0usize;
         for path in fixed_path_inputs() {
@@ -1565,7 +1618,6 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             capture_limit.checked_sub(used).ok_or(io::ErrorKind::OutOfMemory)?,
             frontend.revision, &canonical_configuration,
             |path, fact| {
-                let Some(builder) = &raw_builder else { return Ok(false); };
                 let index = compact_selected.binary_search_by(|(selected, _)| selected.cmp(&path))
                     .map_err(|_| io::Error::other("raw workspace selected key disappeared"))?;
                 let insertion = compact_selected[index].1;
@@ -1575,7 +1627,15 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
                         if discovered == ordinal && file.path(&discovery).as_path() == path
                             && spools_authored_ui(path, &discovery.contract().root) =>
                     {
-                        builder.require_fact(*ordinal, fact)?;
+                        raw_builder.as_ref().ok_or_else(|| io::Error::other("raw spool builder absent"))?
+                            .require_fact(*ordinal, fact)?;
+                        Ok(true)
+                    }
+                    (FilePath::Discovered(discovered), Original::PairedDmm(ordinal))
+                        if discovered == ordinal && file.path(&discovery).as_path() == path =>
+                    {
+                        paired_dmm.as_ref().ok_or_else(|| io::Error::other("paired DMM owner absent"))?
+                            .facts().require(*ordinal, fact)?;
                         Ok(true)
                     }
                     _ => Ok(false),
@@ -1735,13 +1795,11 @@ fn capture_optional_original_using<P:SnapshotProvider>(inputs:&RecordingInputs<P
             let observed=inputs.original_analysis_subject().and_then(|subject|subject.fixed_candidate(path));
             if alias_fact.is_none() && observed.is_none() {
                 if let Some((builder, ordinal)) = spool {
-                    let remaining = remaining.checked_sub(128).ok_or(io::ErrorKind::OutOfMemory)?;
                     let scratch = dq_analyze::captured_generator_budget::Budget::new(remaining)
                         .map_err(map_edits_quota)?;
                     let Some(fact) = builder.append_actual(inputs, ordinal, &scratch)? else {
                         return Ok(None);
                     };
-                    *used = used.checked_add(128).ok_or(io::ErrorKind::OutOfMemory)?;
                     return Ok(Some(CapturedOriginal { fact, original: Original::Spool(ordinal) }));
                 }
             }

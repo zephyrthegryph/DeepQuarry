@@ -101,7 +101,9 @@ impl WorkspaceRawSpoolBuilder {
         let path = self.discovery.files().get(ordinal)
             .ok_or_else(|| invalid("raw workspace spool ordinal absent from actual discovery"))?;
         let raw = Budget::scoped_temporaries(budget).map_err(quota)?;
-        let result = inputs.read_policy_vec_admitted(path, budget.remaining(),
+        // This ordinal and its parent come from the exact, validated typed
+        // discovery. Reuse that directory fact, as the paired map reader does.
+        let result = inputs.read_policy_payload_admitted(path, budget.remaining(),
             &mut |capacity| raw.charge(capacity).map_err(quota));
         let Some(bytes) = result? else { return Ok(None); };
         let fact = inputs.recorded_file_fact(path)?;

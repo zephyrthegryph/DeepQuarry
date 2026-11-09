@@ -286,8 +286,43 @@ impl InputSnapshot {
     }
 }
 impl<P: SnapshotProvider> RecordingInputs<P> {
+    pub(super) fn policy_metadata_owner(
+        &self, budget: Option<&dq_analyze::captured_generator_budget::Budget>,
+    ) -> io::Result<Arc<()>> {
+        self.snapshot.lock().map_err(|_| invalid("input mutex poisoned during metadata funding"))?
+            .policy_directory_accounting.metadata_owner(budget)
+    }
+    #[cfg(test)]
+    pub(crate) fn policy_metadata_owner_address(&self) -> io::Result<usize> {
+        Ok(Arc::as_ptr(&self.policy_metadata_owner(None)?) as usize)
+    }
     pub(crate) fn policy_discovery_issuer(&self) -> Arc<()> {
         Arc::clone(&self.source_issuer)
+    }
+    pub(crate) fn has_policy_file_and_parent(&self, path: &Path) -> io::Result<bool> {
+        let current = self.snapshot.lock().map_err(|_| invalid("input mutex poisoned"))?;
+        Ok(path.parent().is_some_and(|parent| current.folders.contains_key(parent))
+            && current.files.contains_key(path))
+    }
+    pub(crate) fn late_workspace_recorder_charge(&self) -> io::Result<usize> {
+        let current = self.snapshot.lock().map_err(|_| invalid("input mutex poisoned"))?;
+        let mut bytes = current.policy_closure_charge()?;
+        for (path, listing) in &current.folders {
+            let storage = match listing {
+                FolderListing::Missing => 0,
+                FolderListing::Present(names) => names.iter().try_fold(
+                    names.capacity().checked_mul(std::mem::size_of::<String>())
+                        .ok_or(io::ErrorKind::OutOfMemory)?,
+                    |sum, name| sum.checked_add(name.capacity()).ok_or(io::ErrorKind::OutOfMemory),
+                )?,
+            };
+            bytes = bytes.checked_add(128).and_then(|n| n.checked_add(path.capacity()))
+                .and_then(|n| n.checked_add(storage)).ok_or(io::ErrorKind::OutOfMemory)?;
+        }
+        Ok(bytes)
+    }
+    pub(crate) fn late_workspace_recorder_owner(&self) -> io::Result<Arc<()>> {
+        self.policy_metadata_owner(None)
     }
     pub(crate) fn policy_discovery_metadata_charge(&self) -> io::Result<usize> {
         self.snapshot
@@ -565,17 +600,19 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
  /// provider before Vec/name growth. Ordinary directory wrappers are unchanged.
  pub(crate) fn capture_policy_directory_lent(&self,path:&Path,follow_root:bool,other_metadata:usize,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,lender:&mut dyn super::RecordedPolicySourceLender)->io::Result<PolicyDirectoryListing>{
   let metadata=||self.snapshot.lock().map_err(|_|invalid("input mutex poisoned during directory settlement"))?.policy_closure_charge();
-  let before=metadata()?;lender.prepare_directory_metadata(&self.source_issuer,before)?;
+  let before=metadata()?;
+  let owner=self.policy_metadata_owner(Some(budget))?;
+  lender.prepare_directory_metadata(&owner,before)?;
   let window=dq_analyze::captured_generator_budget::Budget::reserve_window(budget,METADATA_BOUND).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
   let upper=before.checked_add(window.capacity()).ok_or(io::ErrorKind::OutOfMemory)?;
-  lender.directory_window_started(&self.source_issuer,upper)?;
+  lender.directory_window_started(&owner,upper)?;
   let pending=self.capture_policy_directory_with_limit(path,follow_root,other_metadata,Some(window.capacity()));
   // Settle even after real provider/record errors. If metadata cannot be
   // inspected, retain the admitted window and its already-published resource
   // bound. Neither cleanup denial nor cancellation can replace the first IO.
   match metadata(){
    Ok(actual)=>{
-    let settled=lender.directory_metadata_settled(&self.source_issuer,actual);
+    let settled=lender.directory_metadata_settled(&owner,actual);
     if let Err(error)=settled{window.keep();return match pending{Err(first)=>Err(first),Ok(_)=>Err(error)}}
     let settled=lender.settle_directory_window(window,actual.saturating_sub(before)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m));
     match pending{Err(first)=>Err(first),Ok(listing)=>{settled?;Ok(listing)}}
