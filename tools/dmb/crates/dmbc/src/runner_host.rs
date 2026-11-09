@@ -46,6 +46,7 @@ fn next_session_id() -> u64 {
 /// One semantic session's retained artifacts and bounded executor. A long-lived
 /// caller reuses this owner across requests without retaining a publication lease.
 pub struct BuildHost {
+    joined_report_replay: Option<compound_replay::Entry>,
     // Diagnostic lifecycle markers, never semantic cache admission or output identity.
     session_id: u64,
     engine_generation: u64,
@@ -153,6 +154,7 @@ impl Default for BuildHost {
     fn default() -> Self {
         Self {
             session_id: next_session_id(),
+            joined_report_replay: None,
             query_db: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
@@ -286,6 +288,7 @@ impl BuildHost {
     pub fn one_shot() -> Self {
         Self {
             session_id: next_session_id(),
+            joined_report_replay: None,
             query_db: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
@@ -651,7 +654,12 @@ impl BuildHost {
             self.memo = Some(memo.released());
         }
     }
+    pub(crate) fn discard_joined_report_replay(&mut self) {
+        self.joined_report_replay = None;
+    }
+
     pub(crate) fn clear_regions(&mut self) {
+        self.discard_joined_report_replay();
         if let Some((_, startup)) = &self.startup {
             startup.clear_callable_index();
         }
@@ -1380,6 +1388,7 @@ impl BuildHost{
  /// Explicit source-query pressure tier. This can only discard optional
  /// capabilities; no source/result identity or synthetic completeness is issued.
  pub fn release_optional_query_sources(&mut self)->std::io::Result<()>{
+  self.discard_joined_report_replay();
   let mut state=self.query_state.try_lock().map_err(|error|match error{std::sync::TryLockError::WouldBlock=>std::io::Error::new(std::io::ErrorKind::WouldBlock,"query sources are currently borrowed"),std::sync::TryLockError::Poisoned(_)=>std::io::Error::other("query source state poisoned")})?;
   if let Some(snapshot)=state.snapshot.as_mut(){snapshot.release_body_queries()}Ok(())
  }
@@ -1581,6 +1590,9 @@ fn original_exclusions_shape<'a>(request: &'a crate::request::BuildRequest, root
     let cache = request.cache_root.as_deref().filter(|path| path.is_absolute()).ok_or_else(original_exclusions_invalid)?;
     Ok((workspace, cache))
 }
+
+#[path="runner_compound_replay.rs"]
+mod compound_replay;
 
 impl BuildHost {
     /// Preflight the wire request before it may supersede another caller. The
@@ -1794,8 +1806,8 @@ impl BuildHost {
     ) -> Result<T, Box<dyn std::error::Error>> {
         use crate::daemon::{control, prepare_deadline};
         use std::io;
-        use crate::daemon::selected_report_wire::{CompoundRoster, Frame};
-        Self::compound_report_paths(&prepare,roster)?;
+        use crate::daemon::selected_report_wire::{CompoundRoster, CompoundSendScratch, Frame};
+        let (root, physical_cache) = Self::compound_report_paths(&prepare,roster)?;
         if roster.is_full() && !exclusions.is_empty(){
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"full compound registry cannot exclude policies").into());
         }
@@ -1827,6 +1839,28 @@ impl BuildHost {
             }
             None
         };
+        let candidate = compound_replay::Candidate::closed(
+            &prepare, root, physical_cache, roster, compact_checker,
+        );
+        if let Some(entry) = self.joined_report_replay.take() {
+            if candidate.as_ref().is_some_and(|candidate|entry.matches(candidate, exclusions))
+                && entry.joined.replay_inputs_current(
+                    &crate::policy_request::canonical_analysis_project(
+                        &prepare.project, Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),
+                    )?,
+                )?
+            {
+                if let Some(output) = entry.output_for_replay()? {
+                    let compiled = crate::request_runner::compile_with_joined_selected_inputs(compile, self, &entry.joined)?;
+                    if !matches!(compiled, crate::request::BuildOutcome::Published { .. }) {
+                        return Err(io::Error::other("exact native compilation did not publish a pair").into());
+                    }
+                    let delivered = finish(output.with_publication(compiled, roster, None))?;
+                    self.joined_report_replay = Some(entry);
+                    return Ok(delivered);
+                }
+            }
+        }
         let (joined, frame, clean, notices, checked, report, credit) = match roster {
             CompoundRoster::Selected(expected) => self.stage_selected_original_reports_using(
                 prepare, exclusions, SelectedReportMode::Combined, true, compact_checker,
@@ -1847,9 +1881,24 @@ impl BuildHost {
         if !matches!(compiled, crate::request::BuildOutcome::Published { .. }) {
             return Err(io::Error::other("exact native compilation did not publish a pair").into());
         }
-        Ok(finish(crate::daemon::selected_report_wire::CompiledSelectedReports {
-            compiled, roster, frame, clean, diagnostics: notices, checker: checked, report, _credit: credit,
-        })?)
+        let output = compound_replay::Reports {
+            frame, clean, diagnostics: notices, checker: checked, report, credit: credit.into_control(),
+        };
+        let work = self.source_arena_work();
+        // If there is no delivery headroom, leave ordinary sending alone.
+        // Successful promotion transfers this exact existing transport grant
+        // even if optional key/control retention subsequently declines.
+        let slot = candidate.as_ref().and_then(|_| compound_replay::RetainedSlot::acquire());
+        let send_scratch = slot.as_ref().and_then(|_| CompoundSendScratch::reserve(work).ok());
+        let (output, retain) = match candidate.filter(|_|send_scratch.is_some()).and_then(|candidate|
+            candidate.try_retain(exclusions, work)) {
+            Some(key) => output.try_retain(key, self.source_arena_work()),
+            None => (output, None),
+        };
+        let delivered = finish(output.with_publication(compiled, roster, send_scratch))?;
+        self.joined_report_replay = retain.zip(slot).map(|((key, reports), slot)|
+            compound_replay::Entry { key, reports, joined, _slot: slot });
+        Ok(delivered)
     }
 
     fn stage_compound_full_registry(
@@ -2207,7 +2256,7 @@ mod joined_selected_publication_control {
         let mut checker_bytes = Vec::new();
         let mut analyze_bytes = Vec::new();
         let (outcome, clean) = host.compile_with_original_selected_reports(
-            prepare.clone(), compile, &exclusions, &mut diagnostics, &mut checker_bytes, &mut analyze_bytes,
+            prepare.clone(), compile.clone(), &exclusions, &mut diagnostics, &mut checker_bytes, &mut analyze_bytes,
         ).unwrap();
         assert!(matches!(outcome, BuildOutcome::Published { .. }));
         assert!(!clean);
@@ -2215,6 +2264,41 @@ mod joined_selected_publication_control {
         assert!(artifacts.join("deepquarry.rsc").is_file());
         assert!(std::str::from_utf8(&checker_bytes).unwrap().contains("undefined field"));
         assert!(std::str::from_utf8(&analyze_bytes).unwrap().contains("[reads/dynamic_read]"));
+
+        let cached = host.joined_report_replay.as_ref().expect("admitted compound replay");
+        let exact_spool = cached.reports.report.replay_alias().unwrap();
+        let mut warm_diagnostics = Vec::new();
+        let mut warm_checker_bytes = Vec::new();
+        let mut warm_analyze_bytes = Vec::new();
+        let (outcome, warm_clean) = host.compile_with_original_selected_reports(
+            prepare.clone(), compile.clone(), &exclusions,
+            &mut warm_diagnostics, &mut warm_checker_bytes, &mut warm_analyze_bytes,
+        ).unwrap();
+        assert!(matches!(outcome, BuildOutcome::Published { session_hit:false, .. }));
+        assert_eq!((warm_clean,warm_diagnostics,warm_checker_bytes,warm_analyze_bytes),
+            (clean,diagnostics.clone(),checker_bytes.clone(),analyze_bytes.clone()));
+        assert!(exact_spool.same_replay_backing(&host.joined_report_replay.as_ref().unwrap().reports.report),
+            "unchanged compound used the exact prior report rather than rebuilding it");
+
+        let shared = root.join("code/common.dm");
+        let modified = std::fs::metadata(&shared).unwrap().modified().unwrap();
+        let before = std::fs::read_to_string(&shared).unwrap();
+        let after = before.replace("return 1688","return 1689");
+        assert_ne!(before,after);
+        assert_eq!(before.len(),after.len());
+        std::fs::write(&shared,after).unwrap();
+        std::fs::File::options().write(true).open(&shared).unwrap()
+            .set_times(std::fs::FileTimes::new().set_modified(modified)).unwrap();
+        assert_eq!(std::fs::metadata(&shared).unwrap().modified().unwrap(),modified);
+        let mut edited_checker = Vec::new();
+        let (outcome, _) = host.compile_with_original_selected_reports(
+            prepare.clone(), compile, &exclusions,
+            &mut std::io::sink(), &mut edited_checker, &mut std::io::sink(),
+        ).unwrap();
+        assert!(matches!(outcome, BuildOutcome::Published { session_hit:false, .. }));
+        assert_ne!(edited_checker,checker_bytes);
+        assert!(!exact_spool.same_replay_backing(&host.joined_report_replay.as_ref().unwrap().reports.report),
+            "same-size and same-stamp source edit must issue new Original report backing");
 
         // The real publication left the Strict variant active. The next
         // selected pair must lend exactly that variant's already-built memo.

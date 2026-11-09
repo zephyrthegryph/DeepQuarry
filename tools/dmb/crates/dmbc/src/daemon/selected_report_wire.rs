@@ -23,6 +23,16 @@ const FRAGMENT: usize = 8192;
 // At most one frame and fixed-sized decoded fragment live. Numeric-byte JSON
 // can expand a single u8 to four bytes before the enclosing record is counted.
 const SEND_SCRATCH: usize = FRAGMENT * 18 + 4096;
+/// An actual transport grant from the same host, obtained before any
+/// optional cold report retention can consume its headroom.
+pub(crate) struct CompoundSendScratch(dm_preprocess::source_arena_credit::SourceArenaCredit);
+
+impl CompoundSendScratch {
+    pub(crate) fn reserve(work: &dyn SourceArenaWork) -> io::Result<Self> {
+        work.reserve(SEND_SCRATCH).map(Self)
+    }
+}
+
 
 fn invalid(message: &'static str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
@@ -30,6 +40,7 @@ fn invalid(message: &'static str) -> io::Error {
 
 // Actual service-issued coordinates. The shared wire data alone cannot be
 // supplied to the sender in place of a retained BuildOutcome.
+#[derive(Clone, Copy)]
 pub(crate) struct Frame(WireFrame);
 impl Frame {
     pub(crate) fn from_prepared(prepared: &BuildOutcome) -> io::Result<Self> {
@@ -62,7 +73,8 @@ pub(crate) struct CompiledSelectedReports {
     pub(crate) diagnostics: Option<Verified>,
     pub(crate) checker: (WireFrame, Verified),
     pub(crate) report: Verified,
-    pub(crate) _credit: dm_preprocess::source_arena_credit::SourceArenaCredit,
+    pub(crate) _credit: dm_preprocess::source_arena_credit::SourceArenaControlCredit,
+    pub(crate) send_scratch: Option<CompoundSendScratch>,
 }
 
 impl CompiledSelectedReports {
@@ -78,7 +90,7 @@ impl CompiledSelectedReports {
     pub(crate) fn send(
         self, stream: &mut impl Write, expected: CompoundRoster, work: &dyn SourceArenaWork,
     ) -> Result<(), SendFailure> {
-        let Self { compiled, roster, frame, clean, diagnostics, checker, report, _credit } = self;
+        let Self { compiled, roster, frame, clean, diagnostics, checker, report, _credit, send_scratch } = self;
         if roster != expected {
             return Err(SendFailure::BeforePublication(invalid("compound selected roster differs")));
         }
@@ -113,7 +125,7 @@ impl CompiledSelectedReports {
         let terminal = CompoundTerminal { schema, native_pair: pair, selected };
         terminal.require(roster).map_err(SendFailure::BeforePublication)?;
         encode_header(&terminal).map_err(SendFailure::BeforePublication)?;
-        send_channels(stream, diagnostics, Some(checker), report, work, SendReply::SelectedCompilationFinished(terminal))
+        send_channels(stream, diagnostics, Some(checker), report, work, send_scratch, SendReply::SelectedCompilationFinished(terminal))
     }
 }
 
@@ -367,14 +379,20 @@ fn send_with_checker(
         terminal.require(roster).map_err(SendFailure::BeforePublication)?;
         SendReply::SelectedReportFinished(terminal)
     };
-    send_channels(stream, diagnostics, checker, report, work, terminal)
+    send_channels(stream, diagnostics, checker, report, work, None, terminal)
 }
 
 fn send_channels(
     stream: &mut impl Write, diagnostics: Option<Verified>, checker: Option<(WireFrame, Verified)>,
-    report: Verified, work: &dyn SourceArenaWork, terminal: SendReply<'_>,
+    report: Verified, work: &dyn SourceArenaWork, prepaid: Option<CompoundSendScratch>, terminal: SendReply<'_>,
 ) -> Result<(), SendFailure> {
-    let _frame = work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
+    let _frame = match prepaid {
+        Some(CompoundSendScratch(credit)) => {
+            control::checkpoint().map_err(SendFailure::BeforePublication)?;
+            credit
+        }
+        None => work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?,
+    };
     control::begin_publication().map_err(SendFailure::BeforePublication)?;
     let sent = (|| {
         if let Some(diagnostics) = diagnostics {

@@ -394,7 +394,10 @@ fn exercise_compound_terminal(roster: CompoundRoster) {
     let checker_frame = WireFrame { policy_revision: Hex128(4), ..frame().0 };
     let mut wire = Vec::new();
     protocol::send(&mut wire, &protocol::Reply::Accepted).unwrap();
-    let work = Work { allow: true };
+    let mut work = Work { allow: true };
+    let credit = work.reserve(SEND_SCRATCH).unwrap().into_control();
+    let send_scratch = CompoundSendScratch::reserve(&work).unwrap();
+    work.allow = false; // A duplicate reserve at the actual send would now fail.
     CompiledSelectedReports {
         compiled: BuildOutcome::Published {
             publication_proof: None, pair: pair.clone(), store: store.root_path().to_owned(),
@@ -404,7 +407,8 @@ fn exercise_compound_terminal(roster: CompoundRoster) {
         diagnostics: Some(verified(&cache, b"preparation\n")),
         checker: (checker_frame, verified(&cache, b"checker\n")),
         report: verified(&cache, b"analyze\n"),
-        _credit: work.reserve(SEND_SCRATCH).unwrap(),
+        _credit: credit,
+        send_scratch: Some(send_scratch),
     }.send(&mut wire, roster, &work).unwrap();
 
     let verify = |actual: &crate::publish::OutputPair| {

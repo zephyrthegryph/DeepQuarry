@@ -156,6 +156,7 @@ fn run_build_with_selected_publication(
     joined: Option<&JoinedSelectedInputs>,
     private_authored_doc_ui: bool,
 )->Result<BuildOutcome,Box<dyn std::error::Error>>{
+    if joined.is_none() { host.discard_joined_report_replay(); }
     if source_override.is_some(){
         if request.command!=BuildCommand::PrepareQuery||!host.retains_artifacts()||request.policy_inputs.as_ref().and_then(|p|p.analysis_context).is_none()||request.record_inputs.is_some()||request.replay_inputs.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"borrowed source requires retained Original preparation without journal overrides").into())}
         // No default-provider cache or prepared-source artifact may stand in for

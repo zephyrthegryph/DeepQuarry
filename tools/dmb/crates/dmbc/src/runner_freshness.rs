@@ -575,6 +575,25 @@ impl JoinedSelectedInputs {
         Ok(())
     }
 
+    /// Advisory exact replay check. A current native input snapshot must
+    /// still pass the two-role publication barrier in `require_current`.
+    pub(crate) fn replay_inputs_current(
+        &self, project: &std::path::Path,
+    ) -> Result<bool, Box<dyn Error>> {
+        use crate::input_snapshot::GeneratedOutputInputs;
+        if self.project != project {
+            return Ok(false);
+        }
+        crate::daemon::control::checkpoint()?;
+        let proofs = crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&self.inputs)?;
+        let provider = GeneratedOutputInputs::new(&proofs, self.inputs.generated_outputs().iter().cloned());
+        match admit(&self.inputs, &provider) {
+            Ok(()) => Ok(self.inputs.exact_positive_contents_match(&provider)?),
+            Err(error) if error.is::<InputsMoved>() => Ok(false),
+            Err(error) => Err(error),
+        }
+    }
+
     pub(super) fn require_current(
         &self, project: &std::path::Path, native: &InputSnapshot,
     ) -> Result<(), Box<dyn Error>> {
