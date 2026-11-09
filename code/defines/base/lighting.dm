@@ -167,11 +167,6 @@ do { \
 #define CLIENT_GLOW_KEEP_CHUNKS 2
 /// The most dropped glow images (and, apart, hide images) one holder keeps to reuse; past it a dropped image is simply let go.
 #define CLIENT_GLOW_POOL_MAX 64
-/// The bits scan_delta() tests per axis (glow_axis_bits()).
-#define GLOW_BIT_RING_OVER 1
-#define GLOW_BIT_RING_INSIDE 2
-#define GLOW_BIT_DROP_OVER 4
-#define GLOW_BIT_DROP_INSIDE 8
 /// Where iconforge writes baked shadow masks before they enter the resource cache.
 #define CLIENT_GLOW_MASK_DIR "data/client_glow_masks/"
 /// Baked shadow masks kept; shapes asked for at once; bakes running at once.

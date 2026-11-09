@@ -544,6 +544,9 @@
 		if(!at)
 			continue
 		H.view_at(at, 7, 7)
+		var/moved = GLOB.client_glow_holder_stands_moved
+		H.refresh_stands() // the full pass: the delta crossing's stand upkeep left nothing for it to move
+		TEST_ASSERT_EQUAL(GLOB.client_glow_holder_stands_moved, moved, "a delta crossing leaves every stand where a full pass puts it (eye at [at.x],[at.y])")
 		var/list/reach = H.reach
 		var/list/keep = H.keep_reach
 		var/in_reach = !(LT.x + r < reach[1] || LT.x - r > reach[3] || LT.y + r < reach[2] || LT.y - r > reach[4])
