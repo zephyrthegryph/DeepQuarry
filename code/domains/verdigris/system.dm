@@ -58,6 +58,14 @@
 	var/cache_misses = 0
 	/// Pipe devices stepped in the last frame.
 	var/pipe_devices_last = 0
+	/// How long a paced frame delivers records (ms) before leaving the rest for the next frame; a test sets it to 0.
+	var/delivery_budget_ms = NATIVE_DELIVERY_BUDGET_MS
+	/// The records of earlier frames that deliver() ran out of budget for, in emission order (the next frame delivers them before its own).
+	var/list/deferred_box
+	/// The deferral streak being traced (NATIVE_DELIVERY_DEFERRED): frames that left records, records delivered late, the most waiting at once.
+	var/deferred_frames = 0
+	var/deferred_late = 0
+	var/deferred_peak = 0
 
 /datum/system/native/initialize()
 	. = ..()
@@ -97,7 +105,7 @@
 	read_cache = null
 	var/list/box = vg_frame(elapsed, budget)
 	var/vg_done = TICK_USAGE_REAL
-	deliver(box)
+	deliver(box, budgeted = elapsed > 0)
 	if(length(GLOB.apc_charge_backlog))
 		apc_charge_drain() // the APC reports the delivery deferred (code/modules/power/apc.dm): a few a tick
 	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
@@ -149,8 +157,14 @@
 /datum/system/native/proc/drain()
 	return run_frame(0, NATIVE_WAKE_BUDGET * 4)
 
-/// Hands every record of `box` to its consumer, in emission order.
-/datum/system/native/proc/deliver(list/box)
+/// Hands every record of `box` to its consumer, in emission order. A `budgeted` (paced) frame stops after NATIVE_DELIVERY_BUDGET_MS and keeps the
+/// rest for the next frame, which delivers it first; a hand-stepped frame (tests, drain()) delivers all of it.
+/datum/system/native/proc/deliver(list/box, budgeted = FALSE)
+	var/started = TICK_USAGE_REAL
+	var/had_deferred = !!deferred_box
+	if(had_deferred)
+		box = deferred_box + box
+		deferred_box = null
 	var/n = length(box)
 	last_records = 0
 	last_changed = 0
@@ -164,6 +178,11 @@
 	last_slowest = ""
 	var/i = 1
 	while(i + 3 <= n)
+		if(budgeted && last_records && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= delivery_budget_ms)
+			deferred_box = box.Copy(i)
+			deferred_frames++
+			deferred_peak = max(deferred_peak, length(deferred_box))
+			break
 		var/kind = box[i]
 		var/a = box[i + 1]
 		var/b = box[i + 2]
@@ -198,6 +217,13 @@
 			last_slowest_ms = record_ms
 			var/datum/target = SSvg.entity_lookup(a)
 			last_slowest = "[kind == NATIVE_REC_CHANGED ? "CHANGED" : (kind == NATIVE_REC_NOTICE ? "NOTICE" : "CROSSED")] a=[a] b=[b] payload=[count] target=[target ? target.type : "none"]"
+	if(had_deferred)
+		deferred_late += last_records
+	if(!deferred_box && deferred_frames)
+		log_world("NATIVE_DELIVERY_DEFERRED: a paced frame left records for [deferred_frames] later frame(s): [deferred_late] records were delivered by those frames, at most [deferred_peak] list entries waited at once, and a frame delivers for [NATIVE_DELIVERY_BUDGET_MS] ms")
+		deferred_frames = 0
+		deferred_late = 0
+		deferred_peak = 0
 
 /// CHANGED (`a`, `key`): a world watch's change wake goes to its lane, anything else is a change of the entity's datum.
 /datum/system/native/proc/on_changed(a, key, list/box, p, count)

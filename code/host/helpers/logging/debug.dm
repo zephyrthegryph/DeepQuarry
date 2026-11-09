@@ -42,9 +42,21 @@
 /proc/log_topic(text, list/data)
 	logger.Log(LOG_CATEGORY_GAME_TOPIC, text, data)
 
+/// A log line that takes this long (ms) to write is traced (LOG_WORLD_SLOW).
+#define LOG_WORLD_SLOW_MS 25
+
 /// Log to both DD and the logfile.
 /proc/log_world(text, list/data)
+	var/static/noting = FALSE
+	var/started = TICK_USAGE_REAL
 #ifdef USE_CUSTOM_ERROR_HANDLER
 	logger.Log(LOG_CATEGORY_RUNTIME, text, data)
 #endif
+	var/file_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	SEND_TEXT(world.log, text)
+	var/total_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	// A write that blocks (the console, the log file, a scanner on the disk) stalls the whole tick whoever wrote the line: name which half was slow.
+	if(total_ms >= LOG_WORLD_SLOW_MS && !noting)
+		noting = TRUE
+		log_world("LOG_WORLD_SLOW: a log line of [length(text)] characters took [round(total_ms, 0.1)] ms: runtime log file [round(file_ms, 0.1)] ms, world.log (dd.log) [round(total_ms - file_ms, 0.1)] ms; it began [copytext("[text]", 1, 80)]")
+		noting = FALSE

@@ -114,6 +114,9 @@ CAPABILITIES(/datum/system/proximity)
 					release(M, STAT_RELEVANCE, P)
 				cell_prune(P)
 
+/// An eye update that takes this long (ms) is traced with its two halves (PROXIMITY_EYE_SLOW).
+#define PROXIMITY_EYE_SLOW_MS 25
+
 /// The client's eye is counted in the cell of get_turf(client.eye): call it after anything that can have moved it.
 /datum/system/proximity/proc/eye_update(client/C)
 	var/datum/proximity_eye/R = C.proximity_eye
@@ -121,8 +124,13 @@ CAPABILITIES(/datum/system/proximity)
 		R = new
 		R.client = C
 		rel_set(C, nameof(C.proximity_eye), R)
+	var/started = TICK_USAGE_REAL
 	eye_place(R, get_turf(C.eye))
+	var/placed_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	interest_eye_update(C) // the chunks this eye holds (engine/change/interest.dm)
+	var/total_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(total_ms >= PROXIMITY_EYE_SLOW_MS)
+		log_world("PROXIMITY_EYE_SLOW: [C.ckey]'s eye update took [round(total_ms, 0.1)] ms: counting it into its cell and waking the cells around [round(placed_ms, 0.1)] ms, the chunks it holds (interest_eye_update) [round(total_ms - placed_ms, 0.1)] ms")
 
 /// The client left: its eye stops counting.
 /datum/system/proximity/proc/eye_remove(client/C)

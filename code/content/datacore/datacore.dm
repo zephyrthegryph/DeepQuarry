@@ -453,8 +453,6 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		L.set_fields_at("citizenship", H.bio.citizenship)
 		L.set_fields_at("faction", H.bio.personal_faction)
 		L.set_fields_at("religion", H.bio.religion)
-		var/icon/record_image = icon(cached_character_icon(H), dir = SOUTH)
-		L.set_fields_at("image", record_image)
 		L.set_fields_at("antagfac", H.bio.antag_faction)
 		L.set_fields_at("antagvis", H.bio.antag_vis)
 		L.set_fields_at("offmap", hidden)
@@ -470,15 +468,10 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 
 /datum/datacore/proc/CreateGeneralRecord(mob/living/carbon/human/H, id, hidden)
 	ResetPDAManifest()
-	var/icon/front
-	var/icon/side
-	if(H)
-		var/icon/charicon = cached_character_icon(H)
-		front = icon(charicon, dir = SOUTH, frame = 1)
-		side = icon(charicon, dir = WEST, frame = 1)
-	else // Sending null things through browse_rsc() makes a runtime and breaks the console trying to view the record.
-		front = icon('html/images/no_image32.png')
-		side = icon('html/images/no_image32.png')
+	// Sending null things through browse_rsc() makes a runtime and breaks the console trying to view the record: the no-image picture stands
+	// until the person's own portraits land (request_photos()).
+	var/icon/front = icon('html/images/no_image32.png')
+	var/icon/side = icon('html/images/no_image32.png')
 
 	if(!id)
 		id = text("[]", add_zero(num2hex(rand(1, 65536), 5), 4))
@@ -506,6 +499,8 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	G.set_fields_at("photo-south", "'data:image/png;base64,[icon2base64(front)]'")
 	G.set_fields_at("photo-west", "'data:image/png;base64,[icon2base64(side)]'")
 	G.set_fields_at("notes", "No notes found.")
+	if(H)
+		G.request_photos(H)
 	if(hidden)
 		rel_add(src, nameof(hidden_general), G)
 	else
