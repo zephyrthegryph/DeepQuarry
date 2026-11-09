@@ -1479,6 +1479,42 @@ mod body_syntax_census_tests;
      }
  }
 
+ fn actual_original_backup_rank_new_reads_exact_nested_string_indices() {
+     let fixture = r#"
+/proc/probe(list/json, J)
+    var/datum/admin_rank/json_rank = new("[J]", "rank_backup", json["ranks"]["[J]"]["include rights"], json["ranks"]["[J]"]["exclude rights"], json["ranks"]["[J]"]["can edit rights"])
+    return json_rank
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace(r#"["include rights"]"#, r#"["include rights"]["extra"]"#), false),
+         (fixture.replace(r#"["[J]"]["include rights"]"#, r#"["[J + 1]"]["include rights"]"#), false),
+         (fixture.replace(r#"["include rights"]"#, "[1]"), false),
+         (fixture.replace(r#"json["ranks"]"#, r#"get_json()["ranks"]"#), false),
+         (fixture.replace(r#"["include rights"]"#, r#"?["include rights"]"#), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original backup rank reads are available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  #[test]
  fn actual_original_implicit_constructor_consumes_exact_positional_children() {
      let fixture = r#"
@@ -1836,6 +1872,46 @@ mod body_syntax_census_tests;
                      panic!("actual loop must declare its iteration local");
                  };
                  assert_eq!(binding, "var/list/row");
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_for_each_accepts_only_the_witnessed_bare_string_index() {
+     let fixture = r#"
+/proc/probe(list/json, key)
+    for(var/J in json["ranks"])
+        if(J)
+            continue
+        return J
+    return 0
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace(r#"json["ranks"]"#, "json[1]"), false),
+         (fixture.replace(r#"json["ranks"]"#, "json[key]"), false),
+         (fixture.replace(r#"json["ranks"]"#, r#"json?["ranks"]"#), false),
+         (fixture.replace(r#"json["ranks"]"#, r#"json["rank keys"]"#), false),
+         (fixture.replace(r#"json["ranks"]"#, r#"json["ranks"]["next"]"#), false),
+         (fixture.replace("var/J in", "J in"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original bare string-index iterable is available");
+                 };
+                 assert!(proof.belongs_to(&body));
              } else {
                  assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
                      if error.kind() == std::io::ErrorKind::Unsupported), "{text}");

@@ -1935,6 +1935,28 @@ fn original_plain_index(
                 && original_conditional_child(index, key, false, depth)))
 }
 
+fn original_nested_string_index(expr: &Expr) -> bool {
+    let mut current = expr;
+    let mut layers = 0;
+    while let ExprKind::Index { object, index } = &current.kind {
+        layers += 1;
+        if layers > 3 { return false; }
+        let ExprKind::Literal(literal) = &index.kind else { return false; };
+        if !matches!(literal.original_value(), Some(crate::OriginalTokenValue::String(_))) {
+            let Some(parts) = literal.original_prepared_body_parts(index.span) else { return false; };
+            let [child] = parts.expressions.as_slice() else { return false; };
+            let ExprKind::Ident(name) = &child.kind else { return false; };
+            if parts.fragments.len() != 2 || !original_ordinary_call_name(name)
+                || literal.as_str().strip_prefix("\"[").and_then(|raw| raw.strip_suffix("]\"")) != Some(name.as_str())
+            {
+                return false;
+            }
+        }
+        current = object;
+    }
+    layers >= 2 && matches!(&current.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
+}
+
 fn original_composed_expression(
     expr: &Expr, tokens: &[Token], conditional: bool, depth: usize, keyword_call: bool,
 ) -> bool {
@@ -2042,7 +2064,8 @@ fn original_composed_expression(
         ExprKind::Index { object, index } => {
             if original_plain_index(expr, object, index, tokens, depth) { return true; }
             let (receiver, tail) = child_prefix(object, tokens);
-            matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. })
+            (matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. })
+                || (matches!(&object.kind, ExprKind::Index { .. }) && original_nested_string_index(expr)))
                 && original_conditional_child(object, receiver, false, depth)
                 && matches!(tail, [open, key @ .., close] if punctuation(open, "[")
                     && punctuation(close, "]")

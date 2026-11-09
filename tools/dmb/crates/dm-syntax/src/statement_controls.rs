@@ -48,6 +48,7 @@ pub(super) fn split_case_alternatives_with_tokens(
 fn original_for_each_clause(
     clause: &str, lexical: &crate::SpannedLexed, separator: usize,
     dotted: bool, grouped_index: bool, call_member: bool, subtraction: bool,
+    bare_string_index: bool,
 ) -> bool {
     use crate::TokenKind;
     if !lexical.diagnostics.is_empty() { return false; }
@@ -71,6 +72,12 @@ fn original_for_each_clause(
     if !tokens.next().is_some_and(identifier) { return false; }
     if call_member { return tokens.next().is_some_and(|token| token.text(clause) == "("); }
     if subtraction { return true; } // exact remainder consumed by the Original expression witness
+    if bare_string_index {
+        return tokens.next().is_some_and(|token| token.text(clause) == "[")
+            && tokens.next().is_some_and(|token| token.kind == TokenKind::String)
+            && tokens.next().is_some_and(|token| token.text(clause) == "]")
+            && tokens.next().is_none();
+    }
     while let Some(dot) = tokens.next() {
         if !dotted || dot.text(clause) != "." || !tokens.next().is_some_and(identifier) {
             return false;
@@ -87,6 +94,16 @@ fn original_call_member_iterable(expression: &Expr) -> bool {
     }
     matches!(&receiver.kind, ExprKind::Call { callee, args }
         if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(_)))
+}
+
+fn original_for_each_bare_string_index(expression: &Expr) -> bool {
+    let ExprKind::Index { object, index } = &expression.kind else { return false; };
+    let ExprKind::Literal(literal) = &index.kind else { return false; };
+    let Some(raw) = literal.as_str().strip_prefix('"').and_then(|raw| raw.strip_suffix('"'))
+        else { return false; };
+    matches!(&object.kind, ExprKind::Ident(name) if crate::expression_parser::original_ascii_identifier(name))
+        && crate::expression_parser::original_ascii_identifier(raw)
+        && matches!(literal.original_value(), Some(crate::OriginalTokenValue::String(cooked)) if cooked == raw)
 }
 
 fn original_for_each_subtraction(expression: &Expr) -> bool {
@@ -208,6 +225,7 @@ pub(super) fn parse_for(
         let mut call_member = false;
         let mut subtraction = false;
         let mut simple_original = false;
+        let mut bare_string_index = false;
         let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
             expression_complete = parsed.original_simple_expression.is_some_and(|value| {
                 value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
@@ -220,10 +238,13 @@ pub(super) fn parse_for(
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
             call_member = actual_original && parsed.expr.as_ref().is_some_and(original_call_member_iterable);
             subtraction = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_subtraction);
+            bare_string_index = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_bare_string_index);
         })?;
         let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
         *original_control = expression_complete && source_binding.is_some()
-            && original_for_each_clause(clause, &lexical, at, dotted_original, grouped_index, call_member, subtraction);
+            && original_for_each_clause(
+                clause, &lexical, at, dotted_original, grouped_index, call_member, subtraction, bare_string_index,
+            );
         let mut declaration = binding;
         if let Some((before_hint, _)) = split_top_level_keyword(binding, "as")
             .filter(|(_, hint)| hint.trim() == "anything")
