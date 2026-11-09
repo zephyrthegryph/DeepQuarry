@@ -1147,6 +1147,23 @@ fn parse_statements_admitted(
             // expression. A following token is not proof that it is valid.
             Ok(keyword.start == header.start && keyword.end == next.start)
         }
+        fn original_inline_if_return(&self, boundary: dm_syntax::Span) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(boundary) = tokens.tokens(boundary) else { return Ok(false); };
+            let mut significant = 0;
+            for (kind, _, spelling) in boundary {
+                self.admission.checkpoint()?;
+                match (kind, spelling, significant) {
+                    (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _, _) => (),
+                    (TokenKind::Punctuation, ")", 0) | (TokenKind::Ident, "return", 1) => significant += 1,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(significant == 2)
+        }
         fn original_statement_block_open(&self, gap: dm_syntax::Span) -> std::io::Result<bool> {
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
@@ -1167,6 +1184,7 @@ fn parse_statements_admitted(
         }
         fn original_leaf_block_link(
             &self, tail: dm_syntax::Span, next: dm_syntax::Span, link: dm_syntax::OriginalLeafBlockLink,
+            closes: usize,
         ) -> std::io::Result<bool> {
             use dm_syntax::OriginalLeafBlockLink;
             use dm_syntax::TokenKind;
@@ -1175,7 +1193,7 @@ fn parse_statements_admitted(
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             if tail.end != next.start { return Ok(false); }
             let Ok(tail) = tokens.tokens(tail) else { return Ok(false); };
-            let mut closed = false;
+            let mut closed = 0;
             for (kind, _, spelling) in tail {
                 self.admission.checkpoint()?;
                 match (kind, spelling) {
@@ -1183,11 +1201,11 @@ fn parse_statements_admitted(
                     // A leaf can end with a semicolon; the pinned IF parser
                     // also skips semicolons following its then block.
                     (TokenKind::Punctuation, ";") => (),
-                    (TokenKind::Punctuation, "}") if !closed => closed = true,
+                    (TokenKind::Punctuation, "}") if closed < closes => closed += 1,
                     _ => return Ok(false),
                 }
             }
-            if !closed { return Ok(false); }
+            if closed != closes { return Ok(false); }
             let Ok(header) = tokens.tokens(next) else { return Ok(false); };
             let significant = |(kind, _, _): &(TokenKind, dm_syntax::Span, &str)| !matches!(
                 kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment);

@@ -417,7 +417,16 @@ fn control_close_tokens(rest: &str, tokens: &[crate::SpanToken]) -> Option<usize
 }
 
 /// Borrow the same inline tail used by the unique control-body parser.
-pub(super) fn control_inline<'a>(item:&'a Item,keyword:&str)->Option<&'a str>{let rest=item.header.trim().strip_prefix(keyword)?.trim_start();let close=control_close(rest)?;let inline=rest[close+1..].trim().trim_end_matches(';').trim();(!inline.is_empty()).then_some(inline)}
+pub(super) fn control_inline<'a>(item: &'a Item, keyword: &str) -> Option<&'a str> {
+    control_inline_header(&item.header, keyword)
+}
+
+pub(super) fn control_inline_header<'a>(header: &'a str, keyword: &str) -> Option<&'a str> {
+    let rest = header.trim().strip_prefix(keyword)?.trim_start();
+    let close = control_close(rest)?;
+    let inline = rest[close + 1..].trim().trim_end_matches(';').trim();
+    (!inline.is_empty()).then_some(inline)
+}
 pub(super) fn control_body(
     item: &Item,
     keyword: &str,

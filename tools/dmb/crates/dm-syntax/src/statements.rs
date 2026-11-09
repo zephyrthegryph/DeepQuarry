@@ -230,13 +230,17 @@ pub trait SettingSyntaxProvider {
     fn original_joined_return(&self, _header: Span) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// Match the actual condition close and first inline return token.
+    fn original_inline_if_return(&self, _boundary: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
     /// Match the actual logical block opener between two committed items.
     fn original_statement_block_open(&self, _gap: Span) -> std::io::Result<bool> {
         Ok(false)
     }
-    /// Match the exact Original block close and next attached production.
+    /// Match the exact Original block closes and next attached production.
     fn original_leaf_block_link(
-        &self, _tail: Span, _next: Span, _link: OriginalLeafBlockLink,
+        &self, _tail: Span, _next: Span, _link: OriginalLeafBlockLink, _closes: usize,
     ) -> std::io::Result<bool> { Ok(false) }
     /// Recognize an actual uninitialized var/static/name from this body.
     fn original_uninitialized_static_local(&self, _header: Span) -> std::io::Result<bool> { Ok(false) }
@@ -730,10 +734,11 @@ fn parse_if(
             || matches!(&callee.kind, ExprKind::Member { .. } | ExprKind::SafeMember { .. }),
         _ => false,
     });
+    let inline = control_inline(item, "if");
     let mut require_next_proof = false;
     if newly_composed || require_continuation_proof {
         // A compatibility Item can attach children after an authored ';'.
-        let opening = control_inline(item, "if").is_none()
+        let opening = inline.is_none()
             && item.header.trim_end().ends_with(')')
             && original_indented_block_boundary(item, origins);
         let continuation = match else_items {
@@ -746,13 +751,29 @@ fn parse_if(
                 original_linked_leaf_block(item, next, OriginalLeafBlockLink::ElseIf, origins),
             _ => false,
         };
-        let issued = opening && continuation;
+        let inline_return = else_items.is_empty() && item.children.is_empty()
+            && condition.as_ref().zip(inline).is_some_and(|(condition, inline)| {
+                if !starts_keyword(inline, "return") { return false; }
+                let start = item.header_span.start
+                    + (inline.as_ptr() as usize - item.header.as_ptr() as usize);
+                let boundary = Span::new(condition.span.end, start + "return".len());
+                match origins.settings.map(|provider| provider.original_inline_if_return(boundary)).transpose() {
+                    Ok(value) => value == Some(true),
+                    Err(actual) => {
+                        if let Some(admission) = origins.admission {
+                            admission.record_operational_error(actual);
+                        }
+                        false
+                    }
+                }
+            });
+        let issued = (opening && continuation) || inline_return;
         origins.require_original(issued, item.header_span, "if_boundary");
         // A newly admitted multi-link chain must prove each following link,
         // even when a nested condition is in the older simple cohort.
         require_next_proof = issued && (require_continuation_proof || else_items.len() > 1);
     }
-    let then_branch = control_body(item, "if", diagnostics, origins);
+    let then_branch = control_body_from_inline(item, inline, diagnostics, origins);
     let mut span = item.span;
     let else_branch = if let Some((other, remaining)) = else_items.split_first() {
         span.end = else_items.last().unwrap().span.end;
@@ -831,9 +852,28 @@ fn original_indented_block_boundary(item: &Item, origins: &BodyOrigins<'_>) -> b
 fn original_linked_leaf_block(
     item: &Item, next: &Item, link: OriginalLeafBlockLink, origins: &BodyOrigins<'_>,
 ) -> bool {
-    let Some(last) = item.children.last().filter(|last| last.children.is_empty()) else { return false };
+    let Some(mut last) = item.children.last() else { return false };
+    let mut closes = 1;
+    while let Some(child) = last.children.last() {
+        if matches!(link, OriginalLeafBlockLink::DoWhile) || closes == 32 {
+            return false;
+        }
+        let header = last.header.trim();
+        let indented_if = starts_keyword(header, "if") && header.ends_with(')')
+            && control_inline(last, "if").is_none();
+        let indented_else_if = header.strip_prefix("else").map(str::trim_start)
+            .is_some_and(|tail| starts_keyword(tail, "if") && tail.ends_with(')')
+                && control_inline_header(tail, "if").is_none());
+        if !(indented_if || indented_else_if || header == "else")
+            || !original_indented_block_boundary(last, origins)
+        {
+            return false;
+        }
+        closes += 1;
+        last = child;
+    }
     let tail = Span::new(last.header_span.end, next.header_span.start);
-    match origins.settings.map(|provider| provider.original_leaf_block_link(tail, next.header_span, link)).transpose() {
+    match origins.settings.map(|provider| provider.original_leaf_block_link(tail, next.header_span, link, closes)).transpose() {
         Ok(value) => value == Some(true),
         Err(actual) => {
             if let Some(admission) = origins.admission {

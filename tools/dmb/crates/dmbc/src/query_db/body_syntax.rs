@@ -1222,6 +1222,83 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_nested_if_tail_proves_each_close_before_outer_else() {
+     let fixture = r#"
+/proc/probe(a, b, c)
+    if(!a)
+        if(!b)
+            return 1
+        else if(!c)
+            return 2
+        else
+            if(!a)
+                return 3
+    else
+        return 4
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("        else\n            if(!a)\n                return 3", ""), true),
+         (fixture.replace("    else\n        return 4", "    else return 4"), false),
+         (fixture.replace("            if(!a)\n                return 3", "            while(!a)\n                return 3"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original nested tail links to the outer else: {text}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_inline_if_consumes_one_return_without_an_else() {
+     let fixture = concat!(
+         "#define INVESTIGATE_DIR \"data/investigate/\"\n",
+         "/proc/investigate_reset()\n",
+         "    if(fdel(INVESTIGATE_DIR))\treturn 1\n",
+         "    return 0\n",
+     );
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("\treturn 1", "\treturn"), true),
+         (fixture.replace("\treturn 1", "\tfdel(INVESTIGATE_DIR)"), false),
+         (fixture.replace("\treturn 1\n", "\treturn 1\n    else\n        return 2\n"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "investigate_reset");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original inline return is available: {text}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_else_if_chain_authenticates_every_link() {
      let fixture = r#"
 /proc/probe(a, b)
