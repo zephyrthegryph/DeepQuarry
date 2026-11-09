@@ -3,13 +3,36 @@ import gzip
 import io
 import mimetypes
 import os
+import re
 import socket
+import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from functools import lru_cache
 
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', 'data', 'asset-store')
 )
+DEFAULT_PORT = 18715  # outside Windows' dynamic range (49152-65535), where WinNAT reserves blocks at will
+BIND_FAILED = 3  # exit code the server watcher in tools/build/build.ts reads
+
+
+def configured_port():
+    # One source: the port of ASSET_CDN_URL in the server's resources.txt.
+    config = os.path.join(
+        os.path.dirname(__file__), '..',
+        os.environ.get('DQ_SERVER_CONFIG_DIR') or 'config/example', 'resources.txt',
+    )
+    try:
+        with open(config) as f:
+            for line in f:
+                m = re.match(r'\s*ASSET_CDN_URL\s+https?://[^/:\s]+:(\d+)', line)
+                if m:
+                    return int(m.group(1))
+    except OSError:
+        pass
+    return DEFAULT_PORT
+
+
 COMPRESSIBLE_EXTENSIONS = {
     '.css', '.html', '.js', '.json', '.map', '.svg', '.txt', '.xml',
 }
@@ -82,7 +105,12 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
 
 os.makedirs(ROOT, exist_ok=True)
 os.chdir(ROOT)
-httpd = AssetHTTPServer(('127.0.0.1', 58715), CORSRequestHandler)
+PORT = configured_port()
+try:
+    httpd = AssetHTTPServer(('127.0.0.1', PORT), CORSRequestHandler)
+except OSError as error:
+    print(f'asset webroot: cannot bind 127.0.0.1:{PORT}: {error}', flush=True)
+    sys.exit(BIND_FAILED)
 try:
     httpd.serve_forever()
 except KeyboardInterrupt:

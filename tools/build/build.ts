@@ -3903,6 +3903,8 @@ export const BuildTarget = new Juke.Target({
 
 const ASSET_WEBROOT_LOG = 'data/logs/asset-webroot.log';
 const ASSET_WEBROOT_RESTART_MS = 5000;
+const ASSET_WEBROOT_RESTART_MAX_MS = 60000;
+const ASSET_WEBROOT_BIND_FAILED = 3; // exit code of tools/localhost-asset-webroot-server.py when it cannot bind
 
 /**
  * The local asset webroot (config/example ASSET_TRANSPORT webroot). Every tgui page loads its
@@ -3912,8 +3914,11 @@ const ASSET_WEBROOT_RESTART_MS = 5000;
 function startAssetWebroot() {
   let stopped = false;
   let child: ReturnType<typeof spawn> | undefined;
+  let delay = ASSET_WEBROOT_RESTART_MS;
+  let bindWarned = false;
   fs.mkdirSync('data/logs', { recursive: true });
   const launch = () => {
+    const startedAt = Date.now();
     const log = fs.openSync(ASSET_WEBROOT_LOG, 'a');
     child = spawn(
       process.platform === 'win32' ? 'python' : 'python3',
@@ -3926,12 +3931,29 @@ function startAssetWebroot() {
     });
     child.on('exit', (code, signal) => {
       if (stopped) return;
-      Juke.logger.warn(
-        `The local asset webroot exited (code ${code}, signal ${signal}); restarting. See ${ASSET_WEBROOT_LOG}.`,
-      );
+      // A helper that ran a while was healthy: start the backoff over.
+      if (Date.now() - startedAt > 30000) delay = ASSET_WEBROOT_RESTART_MS;
+      if (code === ASSET_WEBROOT_BIND_FAILED) {
+        if (!bindWarned) {
+          bindWarned = true;
+          let detail = '';
+          try {
+            detail = fs.readFileSync(ASSET_WEBROOT_LOG, 'utf8').trim().split('\n').filter((l) => l.includes('cannot bind')).pop() || '';
+          } catch {}
+          Juke.logger.warn(
+            `The local asset webroot cannot bind its port, so tgui will not load: ${detail || 'see ' + ASSET_WEBROOT_LOG}. Retrying every ${ASSET_WEBROOT_RESTART_MAX_MS / 1000}s at most; change ASSET_CDN_URL in the server config to use another port.`,
+          );
+        }
+      } else {
+        Juke.logger.warn(
+          `The local asset webroot exited (code ${code}, signal ${signal}); restarting in ${delay / 1000}s. See ${ASSET_WEBROOT_LOG}.`,
+        );
+      }
+      const wait = delay;
+      delay = Math.min(delay * 2, ASSET_WEBROOT_RESTART_MAX_MS);
       setTimeout(() => {
         if (!stopped) launch();
-      }, ASSET_WEBROOT_RESTART_MS);
+      }, wait);
     });
   };
   launch();
