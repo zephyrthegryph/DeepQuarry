@@ -276,7 +276,7 @@ mod exact_vector_funding_tests {
         for at in 0..8 {
             assert!(storage.push(&mut tokens,token(at)));
         }
-        assert_eq!(peak.load(Ordering::Acquire),overlap);
+        assert_eq!(peak.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+overlap);
         assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (4096+8*width));
         assert_eq!(tokens,(0..8).map(token).collect::<Vec<_>>());
         drop((tokens,storage));
@@ -312,7 +312,7 @@ mod exact_vector_funding_tests {
         let observe=||{
             let live=used.load(Ordering::Acquire);
             peak.fetch_max(live,Ordering::AcqRel);
-            if stop.get()&&live==overlap{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}
+            if stop.get()&&live==crate::SettingChargeCounter::root_allocation_bytes()+overlap{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}
         };
         let a=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (overlap),&observe);
         for fail in [false,true] {
@@ -331,7 +331,7 @@ mod exact_vector_funding_tests {
                 let result=result.unwrap();
                 assert_eq!(result.iter().map(|row|row.span.start).collect::<Vec<_>>(),(0..8).collect::<Vec<_>>());
                 assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (4096+8*width));
-                assert_eq!(peak.load(Ordering::Acquire),overlap);
+                assert_eq!(peak.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+overlap);
                 drop(result);
             }
             drop(storage);

@@ -1352,11 +1352,11 @@ impl OriginalLiteralRef<'_>{
   drop((resource, changed));
   assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
 
-  let long = format!("'{}'", "x".repeat(256));
-  let wide = OriginalLiteralData::from_value_using(long.clone(), OriginalTokenValue::Resource(&long[1..long.len()-1]), &a).unwrap();
+  let long = format!("'{}value'", "x".repeat(256));
+  let wide = OriginalLiteralData::from_value_using(long, OriginalTokenValue::Resource("value"), &a).unwrap();
   let OriginalTokenValue::Resource(value) = wide.value() else { panic!("same issued Resource variant") };
-  assert_ne!(value.as_ptr(), wide.raw()[1..].as_ptr(), "wide spans keep the full-width owned path");
-  assert_eq!(value.len(), 256);
+  assert_ne!(value.as_ptr(), wide.raw()[257..].as_ptr(), "a wide prefix needs independent value storage");
+  assert_eq!(value, "value");
   drop(wide);
   assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
