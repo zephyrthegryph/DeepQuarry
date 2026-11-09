@@ -120,6 +120,26 @@ impl JoinedClosure {
 }
 
 impl DerivedPreflight{
+ // These two ordinary rosters may replace a copied Handler prefix only
+ // after exact same-recorder, same-query and same-value checks by its issuer.
+ pub(super) fn handler_prefix_donor<P:SnapshotProvider>(
+  &self,inputs:&RecordingInputs<P>,queries:&crate::query_db::QueryDb,current:&InputSnapshot,
+ )->bool{
+  Arc::ptr_eq(&self.issuer,&inputs.source_issuer)&&self.queries.matches(queries)&&self.handler_prefix_matches(current)
+ }
+ pub(super) fn handler_prefix_matches(&self,current:&InputSnapshot)->bool{
+  let DerivedClosure::Joined(facts)=&self.facts else{return false};
+  self.joined_registry&&self.discovery.directories_in(current)
+   && facts.files.iter().all(|row|{
+    let path=row.path(&self.discovery,&self.configuration);
+    current.files.get(path).is_some_and(|file|row.matches(path,file))
+   })
+ }
+ pub(super) fn handler_prefix_contains_file(&self,path:&PathBuf,fact:&FileInput)->bool{
+  let DerivedClosure::Joined(facts)=&self.facts else{return false};
+  facts.files.binary_search_by(|row|row.path(&self.discovery,&self.configuration).cmp(path.as_path()))
+   .is_ok_and(|index|facts.files[index].matches(path,fact))
+ }
  pub(crate) fn require_bound_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<()>{self.require_bound_frame(subject,workspace,scope,inputs)}
  pub(crate) fn take_bound_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<Option<UnsealedDerivedIndexData>>{self.require_bound_current(subject,workspace,scope,inputs)?;Ok(self.index.lock().map_err(|_|invalid("Derived current index poisoned"))?.take())}
  pub(crate) fn require_configuration(&self,path:&Path,bytes:Option<&[u8]>)->io::Result<()>{if path!=self.configuration||bytes!=self.configuration_bytes.as_ref().map(|b|b.as_slice()){return Err(invalid("Derived actual current configuration differs from raw preflight"))}Ok(())}

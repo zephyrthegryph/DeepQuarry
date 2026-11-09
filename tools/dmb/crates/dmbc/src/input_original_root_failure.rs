@@ -74,12 +74,12 @@ impl OriginalRootOpenFailure{
  /// Only the exact failed root may differ between captured prefix and current
  /// open ledger, and its earlier value must belong to the opaque attempt's
  /// genuine before-open owner. All other observations remain exact subsets.
- pub(super) fn require_handler_prefix<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>,queries:&crate::query_db::QueryDb,prefix:&InputSnapshot)->io::Result<()>{
+ pub(super) fn require_handler_prefix<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>,queries:&crate::query_db::QueryDb,prefix:&InputSnapshot,extra_ordinary:impl FnOnce(&InputSnapshot)->bool)->io::Result<()>{
   self.require_recording(inputs,queries)?;
   let before=&self.attempt.pending.get().ok_or_else(||invalid("failed root has no actual observation transaction"))?.0;
   let current=inputs.snapshot.lock().map_err(|_|invalid("handler failed-prefix ledger poisoned"))?;
   let ordinary=prefix.files.iter().all(|(p,v)|current.files.get(p)==Some(v))&&prefix.folders.iter().all(|(p,v)|current.folders.get(p)==Some(v))&&prefix.policy_directories.iter().all(|(p,v)|current.policy_directories.get(p)==Some(v))&&prefix.negative_files.is_subset(&current.negative_files)&&prefix.generated_outputs.is_subset(&current.generated_outputs);
   let opened=prefix.opened_reads.iter().all(|(p,v)|if p==&self.attempt.root{before.get(p).as_ref()==Some(v)}else{current.opened_reads.get(p).as_ref()==Some(v)});
-  if !ordinary||!opened||!prefix.path_presence.iter().all(|(p,v)|current.path_presence.get(p).as_ref()==Some(v))||!prefix.original_payloads.iter().all(|(p,v)|current.original_payloads.get(p).as_ref()==Some(v)){return Err(invalid("failed handler prefix differs from its exact before/current recorded observations"))}Ok(())
+  if !ordinary||!extra_ordinary(&current)||!opened||!prefix.path_presence.iter().all(|(p,v)|current.path_presence.get(p).as_ref()==Some(v))||!prefix.original_payloads.iter().all(|(p,v)|current.original_payloads.get(p).as_ref()==Some(v)){return Err(invalid("failed handler prefix differs from its exact before/current recorded observations"))}Ok(())
  }
 }

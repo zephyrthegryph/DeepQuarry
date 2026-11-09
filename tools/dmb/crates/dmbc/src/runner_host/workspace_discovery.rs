@@ -238,6 +238,18 @@ impl DiscoveryReceipt {
     pub(crate) fn directory_paths(&self) -> impl Iterator<Item = &PathBuf> {
         self.facts.policy_directories().keys()
     }
+    pub(crate) fn directory_matches(
+        &self, path: &PathBuf, expected: &crate::input_snapshot::PolicyDirectoryObservation,
+    ) -> bool {
+        self.facts.policy_directories().get(path)==Some(expected)
+    }
+
+    pub(crate) fn all_directories_match(
+        &self, mut require: impl FnMut(&PathBuf,&crate::input_snapshot::PolicyDirectoryObservation)->bool,
+    ) -> bool {
+        self.facts.policy_directories().iter().all(|(path,fact)|require(path,fact))
+    }
+
     pub(crate) fn directories_in(&self, current: &crate::input_snapshot::InputSnapshot) -> bool {
         self.facts.policy_directories().iter()
             .all(|(path,fact)| current.policy_directories().get(path)==Some(fact))

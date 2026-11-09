@@ -44,11 +44,13 @@ impl HandlerStructuralSubject{
   let selection=selection.as_ref().ok_or_else(||fail("detached handlers require admitted selected ALLOW files"))?;
   Ok(selection.discovery.files().iter().any(|path|path.strip_prefix(&self.root).ok().and_then(|path|path.to_str()).is_some_and(|path|path.chars().map(|c|if c=='\\'{'/'}else{c}).eq(relative.chars()))))
  }
- fn retire_selection_after_staging(&self,final_prefix:&InputSnapshot)->io::Result<()>{
+ fn retire_selection_after_staging(&self,final_prefix:&InputSnapshot,borrowed:bool)->io::Result<()>{
   if !self.is_selected_full(){return Err(fail("standalone handlers cannot retire their source selection"))}
   let mut selection=self.selection.lock().map_err(|_|fail("handlers selection phase poisoned"))?;
   let live=selection.as_ref().ok_or_else(||fail("handler selection phase already retired"))?;
-  if !handler_facts_subset(&live.facts,final_prefix)||!live.discovery.directories_in(final_prefix){
+  let donor=borrowed.then(||self._configuration_owner.as_deref()).flatten();
+  if !handler_facts_subset(&live.facts,final_prefix,donor)
+   ||!live.discovery.all_directories_match(|path,fact|prefix_directory_matches(final_prefix,donor,path,fact)){
    return Err(fail("handler final prefix omits actual staged source selection"));
   }
   let retired=selection.take();
@@ -472,7 +474,7 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   let plan=SelectedTreePlanData::new([CODE_MAPS_DM],&mut work).unwrap();
   let subject=queries.prepare_selected_handlers_preflight(&inputs,&intent,&plan,None).unwrap();
   let identity=Arc::downgrade(&subject);
-  assert!(subject.retire_selection_after_staging(&InputSnapshot::new(0)).is_err());
+  assert!(subject.retire_selection_after_staging(&InputSnapshot::new(0),false).is_err());
   assert!(subject.old_tree_contains("code/candidate.dm").unwrap());
   let executor=dm_exec::BuildExecutor::new(1).unwrap();
   let prepared=inputs.prepare_handlers_structural(Arc::clone(&subject),&executor,&queries,true).unwrap();
@@ -492,6 +494,51 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   assert!(!capture.is_recorded_in(&changed));
   assert!(subject.old_tree_contains("code/candidate.dm").is_err());
   assert!(matches!(capture.take_staged_rows(),Err(Failure::Unsupported(message)) if message=="deferred structural failure"));
+ }
+ #[test]
+ fn joined_handler_prefix_borrows_only_exact_actual_derived_facts(){
+  use crate::policy_request::{AnalysisContext,PolicyInputRequest,WorkspacePolicyRequest,WorkspaceAuxiliaryQuestion as Q};
+  use dq_analyze::{captured_allow_annotations::{Operation,full_unused::SelectedTreePlanData},tree::CODE_MAPS_DM};
+  let(root,_,inputs)=fixture("joined-handler-borrowed-prefix");
+  let intent=PolicyInputRequest{
+   analysis_context:Some(AnalysisContext::OriginalAnalyze0290),
+   workspace_auxiliary:Q::PRIVATE_FULL_REGISTRY.to_vec(),
+   workspace:Some(WorkspacePolicyRequest{
+    root:root.clone(),configuration:root.join("tools/ci/lint_scopes.toml"),
+    recursive_roots:Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY).unwrap().iter().map(|name|root.join(name)).collect(),
+   }),..Default::default()
+  }.admit_private_authored_doc_ui().unwrap();
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let donor=queries.prepare_derived_preflight(&inputs,&intent).unwrap();
+  let budget=Budget::new(1<<20).unwrap();let mut work=Operation{budget:&budget,poll:&||Ok(())};
+  let plan=SelectedTreePlanData::new([CODE_MAPS_DM],&mut work).unwrap();
+  let subject=queries.prepare_selected_handlers_preflight(&inputs,&intent,&plan,Some(&donor)).unwrap();
+  let namespace=subject.captured().unwrap().namespace.clone();
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries,true).unwrap();
+  let capture=inputs.capture_handlers_prepared(prepared,&queries,true).unwrap();
+  let actual=inputs.snapshot().unwrap();
+  let code=canonical_path(&root.join("code/candidate.dm"));
+  let directory=canonical_path(&root.join("code"));
+  assert!(capture.borrowed_prefix);
+  assert!(actual.files.contains_key(&code));
+  assert!(!capture.facts.files.contains_key(&code));
+  assert!(!capture.facts.policy_directories.contains_key(&directory));
+  assert!(capture.facts.policy_directories.contains_key(&namespace));
+  assert!(capture.is_recorded_in(&actual));
+  let proof=crate::request_runner::runner_freshness::admit_handlers_structural_staging(&inputs,Arc::clone(&capture),&queries).unwrap();
+  drop(proof);
+  let capture=HandlerPreparedCapture::detach_staged(capture,Err(Failure::Unsupported("deferred structural result".into()))).unwrap();
+  assert!(capture.is_recorded_in(&actual));
+  let mut changed=actual.clone();
+  changed.files.get_mut(&code).unwrap().content^=1;
+  assert!(!capture.is_recorded_in(&changed),"donated same-stamp file still checked");
+  let mut changed=actual.clone();
+  changed.policy_directories.remove(&directory).unwrap();
+  assert!(!capture.is_recorded_in(&changed),"donated typed listing still checked");
+  let mut changed=actual;
+  changed.policy_directories.remove(&namespace).unwrap();
+  assert!(!capture.is_recorded_in(&changed),"private unmatched namespace still checked");
  }
  #[test]fn actual_native_partial_prepare_is_not_filtered_full_graph_or_full_purpose(){
   let(_,intent,inputs)=fixture("handlers-partial-native-purpose");let queries=Arc::new(crate::query_db::QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries,false).unwrap();
@@ -546,7 +593,7 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
 pub(crate) struct HandlerPreparedCapture{
  prepared:PreparedHandlersStructural,
  inputs:Option<dm_analysis::policy_inputs::HandlersStructuralInputs>,
- facts:InputSnapshot,queries:crate::query_db::NativeQueryOwnerIdentity,issuance:u64,
+ facts:InputSnapshot,borrowed_prefix:bool,queries:crate::query_db::NativeQueryOwnerIdentity,issuance:u64,
  staged:Option<DetachedStructural>,
  partial_pin: PartialPin,
  // Metadata/recipe payload drops before its actual producer funding.
@@ -611,7 +658,7 @@ impl HandlerPreparedCapture{
   }
   capture.staged=Some(DetachedStructural{rows:std::sync::Mutex::new(Some(rows))});
   capture.budget.charge(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>()).map_err(|m|quota(&capture.budget,&m))?;
-  capture.prepared.subject.retire_selection_after_staging(&capture.facts)?;
+  capture.prepared.subject.retire_selection_after_staging(&capture.facts,capture.borrowed_prefix)?;
   Ok(Arc::new(capture))
  }
  pub(crate) fn prepared(&self)->&PreparedHandlersStructural{&self.prepared}
@@ -627,7 +674,11 @@ impl HandlerPreparedCapture{
  }
  pub(crate) fn try_calls(&self)->&[String]{&self.prepared.subject.recipe.try_calls}
  pub(crate) fn is_recorded_in(&self,complete:&InputSnapshot)->bool{
-  handler_facts_subset(&self.facts,complete)
+  handler_facts_subset(&self.facts,complete,None)
+   && (!self.borrowed_prefix || self.prefix_donor().is_some_and(|donor|donor.handler_prefix_matches(complete)))
+ }
+ fn prefix_donor(&self)->Option<&super::DerivedPreflight>{
+  self.prepared.subject._configuration_owner.as_deref()
  }
  pub(crate) fn require_bound(&self)->io::Result<()>{
   crate::daemon::control::checkpoint()?;self.budget.require().map_err(|m|quota(&self.budget,&m))?;
@@ -661,8 +712,10 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   };
   let partial_pin=if joined_staging { PartialPin::JoinedStaging { model_present: inputs.is_some() } } else { PartialPin::Reportable(revision) };
   dm_profile::request_mark("handlers.partial_revision_done");
-  let facts = {
+  let (facts,borrowed_prefix) = {
    let current = self.snapshot.lock().map_err(|_| fail("handler final input ledger poisoned"))?;
+   let donor = prepared.subject._configuration_owner.as_deref().filter(|donor|
+    joined_staging && donor.handler_prefix_donor(self,queries,&current));
    let closure = current.policy_closure_charge()?;
    let fixed = std::mem::size_of::<HandlerPreparedCapture>()
     + crate::query_db::NativeQueryOwnerIdentity::retained_charge() + 4096;
@@ -692,7 +745,22 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
    if window.capacity() != overlap {
     return Err(quota(budget, "handler final input ledger clone overlap was not admitted"));
    }
-   let facts = current.clone();
+   let facts = if let Some(donor)=donor {
+    // Copy only the exact unmatched remainder. The donor already funds
+    // its own ordinary facts. Original roots keep their existing owners.
+    let mut facts=InputSnapshot::new(current.scanned_ns);
+    facts.files=current.files.iter().filter(|(path,fact)|!donor.handler_prefix_contains_file(path,fact))
+     .map(|(path,fact)|(path.clone(),fact.clone())).collect();
+    facts.policy_directories=current.policy_directories.iter().filter(|(path,fact)|!donor.discovery().directory_matches(path,fact))
+     .map(|(path,fact)|(path.clone(),fact.clone())).collect();
+    facts.folders=current.folders.clone();
+    facts.negative_files=current.negative_files.clone();
+    facts.generated_outputs=current.generated_outputs.clone();
+    facts.path_presence=current.path_presence.clone();
+    facts.opened_reads=current.opened_reads.clone();
+    facts.original_payloads=current.original_payloads.clone();
+    facts
+   } else { current.clone() };
    // The clone owns its map/path storage; its immutable listing payloads
    // remain counted once here even though they may share existing funding.
    // The clone never carries the recorder's incremental directory index.
@@ -706,16 +774,25 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
    if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
     eprintln!("ORIGINAL_HANDLER_FACTS_SETTLEMENT overlap={overlap} retained={retained} released={}", overlap - retained);
    }
-   facts
+   (facts,donor.is_some())
   };
   dm_profile::request_mark("handlers.partial_closure_captured");
   static NEXT:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);let issuance=NEXT.fetch_update(std::sync::atomic::Ordering::Relaxed,std::sync::atomic::Ordering::Relaxed,|next|next.checked_add(1)).map_err(|_|fail("handlers capture issuance exhausted"))?;
-  let result=Arc::new(HandlerPreparedCapture{prepared,inputs,facts,staged:None,partial_pin,queries:queries.native_query_owner_identity(),issuance,budget:Arc::clone(budget)});result.require_bound()?;Ok(result)
+  let result=Arc::new(HandlerPreparedCapture{prepared,inputs,facts,borrowed_prefix,staged:None,partial_pin,queries:queries.native_query_owner_identity(),issuance,budget:Arc::clone(budget)});result.require_bound()?;Ok(result)
  }
 }
 
-fn handler_facts_subset(facts:&InputSnapshot,complete:&InputSnapshot)->bool{
- facts.files.iter().all(|(p,v)|complete.files.get(p)==Some(v))&&facts.folders.iter().all(|(p,v)|complete.folders.get(p)==Some(v))&&facts.policy_directories.iter().all(|(p,v)|complete.policy_directories.get(p)==Some(v))&&facts.negative_files.is_subset(&complete.negative_files)&&facts.generated_outputs.is_subset(&complete.generated_outputs)&&facts.original_observations_subset_of(complete)
+fn prefix_directory_matches(
+ complete:&InputSnapshot,donor:Option<&super::DerivedPreflight>,path:&PathBuf,fact:&PolicyDirectoryObservation,
+)->bool{
+ complete.policy_directories.get(path)==Some(fact)||donor.is_some_and(|donor|donor.discovery().directory_matches(path,fact))
+}
+fn handler_facts_subset(facts:&InputSnapshot,complete:&InputSnapshot,donor:Option<&super::DerivedPreflight>)->bool{
+ facts.files.iter().all(|(p,v)|complete.files.get(p)==Some(v)||donor.is_some_and(|donor|donor.handler_prefix_contains_file(p,v)))
+  &&facts.folders.iter().all(|(p,v)|complete.folders.get(p)==Some(v))
+  &&facts.policy_directories.iter().all(|(p,v)|prefix_directory_matches(complete,donor,p,v))
+  &&facts.negative_files.is_subset(&complete.negative_files)&&facts.generated_outputs.is_subset(&complete.generated_outputs)
+  &&facts.original_observations_subset_of(complete)
 }
 impl HandlerPreparedCapture{
  pub(crate) fn require_failed_full_prefix<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>,queries:&crate::query_db::QueryDb,failed:&super::OriginalRootOpenFailure)->io::Result<()>{
@@ -724,12 +801,13 @@ impl HandlerPreparedCapture{
   if !self.prepared.subject.requires_full_model()||failed.root()!=full.project()||!full.matches_workspace_root(self.root()){return Err(fail("handler failed prefix has another actual full root or unrequested partition"))}
   let selection=self.prepared.subject.selection.lock().map_err(|_|fail("handlers selection phase poisoned"))?;
   match selection.as_ref() {
-   Some(live)=>failed.require_handler_prefix(inputs,queries,&live.facts)?,
+   Some(live)=>failed.require_handler_prefix(inputs,queries,&live.facts,|_|true)?,
    // Retirement proved exact containment, including the before-open root row.
    None if self.has_staged_rows()=>{},
    None=>return Err(fail("live handler failed prefix lost its actual selection")),
   }
   drop(selection);
-  failed.require_handler_prefix(inputs,queries,&self.facts)
+  failed.require_handler_prefix(inputs,queries,&self.facts,|current|
+   !self.borrowed_prefix||self.prefix_donor().is_some_and(|donor|donor.handler_prefix_matches(current)))
  }
 }
