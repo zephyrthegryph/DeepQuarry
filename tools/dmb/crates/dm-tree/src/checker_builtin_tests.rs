@@ -187,6 +187,36 @@ fn incompatible_existing_hierarchy_is_rejected_without_alternative_tree() {
 }
 
 #[test]
+fn pinned_profile_memo_is_local_to_the_immutable_tree() {
+    let tree = seeded("/datum/example\n");
+    let profile = pinned_catalog().unwrap().profile;
+    let foreign = PackedU128::new(profile.get() ^ 1);
+    PROFILE_SCANS.with(|count| count.set(0));
+    let proof = tree.validated_checker_profile(profile).unwrap();
+    tree.validate_checker_builtin_profile(profile).unwrap();
+    assert!(matches!(
+        tree.validate_checker_builtin_profile(foreign),
+        Err(CheckerBuiltinError::Shape("foreign checker profile"))
+    ));
+    assert_eq!(PROFILE_SCANS.with(|count| count.get()), 1);
+
+    let mut rewritten = tree.clone();
+    let image = rewritten.lookup_type(SymbolId::of("/image")).unwrap();
+    let atom = rewritten.lookup_type(SymbolId::of("/atom")).unwrap();
+    let mut types = rewritten.types.to_vec();
+    types[image.index()].parent = Some(atom);
+    rewritten.types = types.into();
+    assert!(proof.require(&rewritten, profile).is_err());
+    assert!(matches!(
+        rewritten.validate_checker_builtin_profile(profile),
+        Err(CheckerBuiltinError::ParentMismatch(owner)) if owner == SymbolId::of("/image")
+    ));
+    assert_eq!(PROFILE_SCANS.with(|count| count.get()), 2);
+    tree.validate_checker_builtin_profile(profile).unwrap();
+    assert_eq!(PROFILE_SCANS.with(|count| count.get()), 2);
+}
+
+#[test]
 fn generic_client_parent_edge_does_not_grant_original_profile() {
     let mut symbols = SymbolTable::default();
     let rows = data::PARENTS.iter().map(|&(owner, parent)| {

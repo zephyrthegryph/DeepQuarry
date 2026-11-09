@@ -346,6 +346,23 @@ impl CheckerBuiltinCatalog {
     /// immutable tree/profile and original catalog metadata Arc join.
     pub fn own_callable(&self,owner:SymbolId,name:SymbolId,verb:bool)->Option<&CheckerBuiltinDeclaration>{let kind=if verb{MemberKind::Verb}else{MemberKind::Proc};self.members.get(&(owner,name,kind)).and_then(|index|self.declarations.get(*index))}
 }
+/// Successful validation belongs only to this instance's immutable graph.
+#[derive(Debug, Default)]
+pub(crate) struct ProfileValidation(OnceLock<()>);
+
+impl Clone for ProfileValidation {
+    fn clone(&self) -> Self {
+        // Declaration rewrites start with a clone before replacing graph data.
+        Self::default()
+    }
+}
+
+impl ProfileValidation {
+    pub(crate) fn clear(&mut self) {
+        self.0.take();
+    }
+}
+
 impl SemanticTree {
     /// Validate the fixed profile against this ORIGINAL compiler owner. The
     /// provider is immutable and always available for its exact hash; there is
@@ -359,6 +376,11 @@ impl SemanticTree {
         if profile != catalog.profile {
             return Err(CheckerBuiltinError::Shape("foreign checker profile"));
         }
+        if self.checker_profile_validation.0.get().is_some() {
+            return Ok(());
+        }
+        #[cfg(test)]
+        PROFILE_SCANS.with(|count| count.set(count.get() + 1));
         for &(owner, parent) in data::PARENTS {
             let owner = SymbolId::of(owner);
             let id = self
@@ -387,6 +409,9 @@ impl SemanticTree {
                 )));
             }
         }
+        // Concurrent first readers may both scan the same immutable graph.
+        // Only a completed, successful validation can publish the memo.
+        let _ = self.checker_profile_validation.0.set(());
         Ok(())
     }
     pub fn checker_builtin_profile(&self) -> Option<PackedU128> {
@@ -612,7 +637,11 @@ impl SemanticTree {
 
 #[path="checker_profile.rs"]mod profile;
 pub use profile::ValidatedCheckerProfile;
-#[cfg(test)]thread_local!{static PROFILE_VALIDATIONS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+#[cfg(test)]
+thread_local! {
+    static PROFILE_VALIDATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static PROFILE_SCANS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
 
 #[cfg(test)]mod catalog_spelling_tests{use super::*;#[test]fn fixed_catalog_spelling_covers_every_actual_callable_and_parameter_without_source_interning(){let catalog=pinned_catalog().unwrap();let mut callables=0;let mut parameters=0;for row in catalog.declarations.iter().filter(|row|matches!(row.kind,MemberKind::Proc|MemberKind::Verb)){callables+=1;for symbol in[row.owner,row.name]{let text=catalog.spelling(symbol).expect("issued builtin spelling");assert_eq!(SymbolId::of(text),symbol);}for parameter in row.metadata.procedure.as_ref().unwrap().signature.parameters.iter(){parameters+=1;let text=catalog.spelling(parameter.name).expect("issued parameter spelling");assert_eq!(SymbolId::of(text),parameter.name);}}assert!(callables>100);assert!(parameters>100);assert!(catalog.spelling(SymbolId::of("__not_a_pinned_catalog_symbol__")).is_none());}}
 

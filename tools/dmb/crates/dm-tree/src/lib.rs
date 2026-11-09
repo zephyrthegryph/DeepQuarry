@@ -137,6 +137,7 @@ pub struct SemanticTree {
     original_input_retention:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,
     // Only the pinned Original declaration adapter can issue this proof.
     original_authored_client_parent: bool,
+    checker_profile_validation: checker_builtins::ProfileValidation,
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
     members: MemberArena,
@@ -686,6 +687,7 @@ fn build_with_intrinsic_members_structural_mode(
     let mut tree = SemanticTree {
         original_input_retention:None,
         original_authored_client_parent: false,
+        checker_profile_validation: Default::default(),
         symbols: Arc::new(symbols),
         types: types.into(),
         members: MemberArena::default(),
@@ -920,6 +922,7 @@ fn build_with_intrinsic_members_structural_mode(
     for (node, ids) in mutable_types.iter_mut().zip(owned) {
         node.members = ids.into();
     }
+    tree.checker_profile_validation.clear();
     tree.types = mutable_types.into();
     tree.members = match normalization {
         Some((_, retained)) => retained.publish_members(&members, member_projection.as_ref()),

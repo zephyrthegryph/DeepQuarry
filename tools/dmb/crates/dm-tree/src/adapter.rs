@@ -1162,6 +1162,7 @@ impl SharedAdaptedDeclarations {
             },
         )?);
         drop(_occurrence_timer);
+        tree.checker_profile_validation.clear();
         tree.original_authored_client_parent = original_authored_client_parent;
         tree.original_input_retention=primary;
         let tree = Arc::new(tree);
