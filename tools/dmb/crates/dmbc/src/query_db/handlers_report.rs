@@ -28,7 +28,7 @@ impl QueryDb{
   let selected=full.and_then(|(_,_,child,reader,plan)|plan.map(|plan|reader.handler_report_files(child.policy(),plan))).transpose()?;
   if let Some(staged)=capture.take_staged_rows()?{
    let files=selected.as_ref().ok_or("detached handler structural rows require full selected ALLOW files")?;
-   staged.replay(self,capture.issuance(),capture.partial_revision()?,budget,|rule,relative,line,message|{
+   staged.replay(self,capture.issuance(),capture.joined_model_present().ok_or("detached handler lacks its actual joined model disposition")?,budget,|rule,relative,line,message|{
     builder.push(rule,relative,line,message,&mut|relative,visit|files.with_file(relative,visit)).map_err(actual)
    })?;
   }else{

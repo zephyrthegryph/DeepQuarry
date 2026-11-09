@@ -9,7 +9,7 @@ pub(crate) struct StagedRows {
     sealed: Sealed,
     queries: NativeQueryOwnerIdentity,
     issuance: u64,
-    revision: Option<u128>,
+    model_present: bool,
 }
 fn invalid(message: &'static str) -> io::Error { io::Error::new(io::ErrorKind::InvalidData,message) }
 
@@ -26,21 +26,21 @@ fn put_string(output:&mut impl Write,text:&str)->io::Result<()>{
     output.write_all(text.as_bytes())
 }
 impl StagedRows {
-    pub(super) fn write(cache:&Path,queries:NativeQueryOwnerIdentity,issuance:u64,revision:Option<u128>,data:&StructuralData)->io::Result<Self>{
-        if data.issuance!=issuance || (revision.is_none() && !data.rows().is_empty()){
+    pub(super) fn write(cache:&Path,queries:NativeQueryOwnerIdentity,issuance:u64,model_present:bool,data:&StructuralData)->io::Result<Self>{
+        if data.issuance!=issuance || (!model_present && !data.rows().is_empty()){
             return Err(invalid("handler staged rows differ from the actual partial disposition"));
         }
         let sealed=write_rows(cache,data.rows())?;
-        Ok(Self{sealed,queries,issuance,revision})
+        Ok(Self{sealed,queries,issuance,model_present})
     }
 
     /// Final caller must separately authenticate its retained partial closure
     /// against the current full capture before calling this one-shot reader.
     pub(crate) fn replay(
-        self,queries:&QueryDb,issuance:u64,revision:Option<u128>,budget:&Arc<Budget>,
+        self,queries:&QueryDb,issuance:u64,model_present:bool,budget:&Arc<Budget>,
         visit:impl FnMut(&'static str,&str,u32,&str)->io::Result<()>,
     )->io::Result<()>{
-        if !self.queries.matches(queries)||self.issuance!=issuance||self.revision!=revision{
+        if !self.queries.matches(queries)||self.issuance!=issuance||self.model_present!=model_present{
             return Err(invalid("handler staged rows belong to another partial producer"));
         }
         replay_rows(self.sealed,budget,visit)
@@ -133,9 +133,13 @@ mod tests{
         let owner=QueryDb::default();let other=QueryDb::default();
         let data=StructuralData{issuance:17,rows:Vec::new()};
         let budget=Budget::new(4096).unwrap();
-        let stage=StagedRows::write(&root,owner.native_query_owner_identity(),17,None,&data).unwrap();
-        assert!(stage.replay(&other,17,None,&budget,|_,_,_,_|panic!("foreign rows")).is_err());
-        let stage=StagedRows::write(&root,owner.native_query_owner_identity(),17,None,&data).unwrap();
-        stage.replay(&owner,17,None,&budget,|_,_,_,_|panic!("empty rows")).unwrap();
+        let stage=StagedRows::write(&root,owner.native_query_owner_identity(),17,false,&data).unwrap();
+        assert!(stage.replay(&other,17,false,&budget,|_,_,_,_|panic!("foreign rows")).is_err());
+        let stage=StagedRows::write(&root,owner.native_query_owner_identity(),17,false,&data).unwrap();
+        assert!(stage.replay(&owner,18,false,&budget,|_,_,_,_|panic!("another issuance")).is_err());
+        let stage=StagedRows::write(&root,owner.native_query_owner_identity(),17,false,&data).unwrap();
+        assert!(stage.replay(&owner,17,true,&budget,|_,_,_,_|panic!("another model disposition")).is_err());
+        let stage=StagedRows::write(&root,owner.native_query_owner_identity(),17,false,&data).unwrap();
+        stage.replay(&owner,17,false,&budget,|_,_,_,_|panic!("empty rows")).unwrap();
     }
 }

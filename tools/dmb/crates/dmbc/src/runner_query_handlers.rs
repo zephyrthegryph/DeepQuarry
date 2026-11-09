@@ -16,7 +16,11 @@ impl HandlerWorkspaceSnapshot{
   capture.require_bound()?;
   // The key is a private current-owner query namespace, not evidence of source
   // equality or EOF. A real source revision stays separately optional below.
-  let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"handler-private-partial-current-query-owner-v1");hash.update(&capture.issuance().to_le_bytes());match capture.partial_revision()?{Some(revision)=>{hash.update(&[1]);hash.update(&revision.to_le_bytes());},None=>{hash.update(&[0]);}}
+  let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"handler-private-partial-current-query-owner-v1");hash.update(&capture.issuance().to_le_bytes());
+  if let Some(model_present)=capture.joined_model_present(){
+   if !joined_selected||!capture.has_staged_rows(){return Err(invalid("private joined handler requires its actual detached stage"))}
+   hash.update(&[2,u8::from(model_present)]);
+  }else{match capture.partial_revision()?{Some(revision)=>{hash.update(&[1]);hash.update(&revision.to_le_bytes());},None=>{hash.update(&[0]);}}}
   let revision=hash.digest128();Ok(Self{capture,proof,queries,revision,full_subject:None,full_revision:None,joined_selected})
  }
  pub(crate) fn requires_full(&self)->bool{self.capture.prepared().subject().requires_full_model()}

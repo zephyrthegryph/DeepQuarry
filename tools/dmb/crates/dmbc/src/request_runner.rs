@@ -351,8 +351,9 @@ fn run_build_attempt(
     };
     if joined_derived.is_some() { dm_profile::detail_mark("request.joined_derived", total); }
     // Genuine partial source is prepared before any independent full Subject.
-    let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers,joined_derived.as_ref())?,None=>None}}else{None};
-    if joined_derived.is_some()&&preparation_output.needs_combined_checker()&&preparation_output.wants_joined_inputs(){
+    let stage_handlers=joined_derived.is_some()&&preparation_output.needs_combined_checker()&&preparation_output.wants_joined_inputs();
+    let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>handlers_prepare::prepare(&inputs_capture,intent,host,workers,joined_derived.as_ref(),stage_handlers)?,None=>None}}else{None};
+    if stage_handlers{
         let capture=handlers_capture.take().ok_or("full registry partial handler source absent")?;
         let cache=cache_root.as_deref().ok_or("full registry handler row stage requires its admitted cache root")?;
         let queries=Arc::clone(host.query_db());
@@ -376,7 +377,7 @@ fn run_build_attempt(
         !capture.prepared().subject().requires_full_model() && !capture.prepared().subject().is_selected_full()
     ){
         let capture=handlers_capture.take().expect("actual structural-only preparation");let intent=policy_inputs.as_ref().expect("actual handler intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
-        let partial_source_revision=match capture.prepared().frontend(){Some(_)=>Some(format!("{:032x}",capture.structural_inputs()?.source_revision())),None=>None};
+        let partial_source_revision=capture.partial_revision()?.map(|revision|format!("{revision:032x}"));
         let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),queries.as_ref())?.1.into_shared()?;
         input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
         let query=query_attempt.admit_handlers_source(intent,capture,proof,queries)?;query_attempt.finish_handlers_source();
@@ -1002,9 +1003,9 @@ fn run_build_attempt(
                     query_attempt.admit_diagnostic_policy(admission)?;
                 }
                 if let Some(capture)=handlers_capture.take(){
-                    let partial_source_revision=capture.partial_revision()?.map(|revision|format!("{revision:032x}"));
-                    let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),source_policy_queries.as_ref())?.1.into_shared()?;
                     let selected=capture.prepared().subject().is_selected_full();
+                    let partial_source_revision=if selected{None}else{capture.partial_revision()?.map(|revision|format!("{revision:032x}"))};
+                    let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),source_policy_queries.as_ref())?.1.into_shared()?;
                     let query=query_attempt.admit_handlers_source(intent,capture,proof,Arc::clone(&source_policy_queries))?;
                     if !selected {
                         query_attempt.finish_handlers_source();

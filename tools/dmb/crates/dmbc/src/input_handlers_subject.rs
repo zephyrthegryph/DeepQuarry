@@ -262,7 +262,45 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let retained_facts=selection_facts.policy_closure_charge_with(&mut BTreeSet::new())?;kc::reserve(&mut control,||retained_facts.checked_add(4096))?;
   drop(closure_scratch);
   mark("closure");
-  let issuer=Arc::new(());let captured=if let Some(directory)=directory{let project=directory.join("synth.dme");kc::reserve(&mut control,||canonical_root.as_os_str().len().checked_mul(128)?.checked_add(8192))?;let rendered_root=dm_preprocess::regions::filesystem_comparison_key(&canonical_root);let rendered=recipe.render(&rendered_root,&mut control)?;let lexical=dm_preprocess::regions::prepared_source::PreparedSource::include_header_retained_bound(rendered.len(),recipe.includes.len()).ok_or_else(||quota(budget,"handlers synthetic root lexical pregrant overflow"))?;kc::reserve(&mut control,||Some(lexical))?;kc::reserve(&mut control,||rendered.capacity().checked_add(2048)?.checked_add(project.as_os_str().len().checked_mul(8)?))?;let header=self.prepare_subject_header_for(super::prepared::SubjectHeaderPurpose::HandlersStructural,&canonical_root,rendered.into(),HeaderReceipt{issuer:Arc::clone(&issuer),path:project.clone()})?;Some(CapturedHandlerRoot{project,namespace:directory,header})}else{None};
+  let issuer = Arc::new(());
+  let captured = if let Some(directory) = directory {
+   let project = directory.join("synth.dme");
+   let scratch = Budget::scoped_temporaries(budget).map_err(|m| quota(budget, &m))?;
+   let mut render_control = Native { budget: &scratch };
+   let rendered = (|| {
+    kc::reserve(&mut render_control, || canonical_root.as_os_str().len().checked_mul(128)?.checked_add(8192))?;
+    let rendered_root = dm_preprocess::regions::filesystem_comparison_key(&canonical_root);
+    recipe.render(&rendered_root, &mut render_control)
+   })();
+   let rendered = match rendered {
+    Ok(rendered) => rendered,
+    Err(first) => {
+     scratch.keep_failed_scratch();
+     return Err(first);
+    }
+   };
+   // Move only the real rendered String into the permanent header grant.
+   // Earlier path/format allocations and old Vec generations are already dead.
+   kc::reserve(&mut control, || rendered.capacity().checked_add(2048)?.checked_add(project.as_os_str().len().checked_mul(8)?))?;
+   let _before = budget.used();
+   drop(scratch);
+   #[cfg(debug_assertions)]
+   if trace {
+    eprintln!("ORIGINAL_HANDLER_HEADER_RENDER released={} retained_text={}", _before - budget.used(), rendered.capacity());
+   }
+   let lexical = dm_preprocess::regions::prepared_source::PreparedSource::include_header_retained_bound(rendered.len(), recipe.includes.len())
+    .ok_or_else(|| quota(budget, "handlers synthetic root lexical pregrant overflow"))?;
+   kc::reserve(&mut control, || Some(lexical))?;
+   let header = self.prepare_subject_header_for(
+    super::prepared::SubjectHeaderPurpose::HandlersStructural,
+    &canonical_root,
+    rendered.into(),
+    HeaderReceipt { issuer: Arc::clone(&issuer), path: project.clone() },
+   )?;
+   Some(CapturedHandlerRoot { project, namespace: directory, header })
+  } else {
+   None
+  };
   kc::reserve(&mut control,||Some(std::mem::size_of::<HandlerStructuralSubject>()+2*std::mem::size_of::<usize>()))?;
   kc::reserve(&mut control,||workspace.root.as_os_str().len().checked_add(canonical_root.as_os_str().len())?.checked_mul(4))?;
   let subject=HandlerStructuralSubject{root:workspace.root.clone(),canonical_root,captured,discovery,recipe,requires_full,selected_full:selected.is_some(),configuration:workspace.configuration.clone(),configuration_bytes:config_bytes,config,selection_facts,issuer,recorder:Arc::clone(&self.source_issuer),bound:Default::default(),_configuration_owner:derived.cloned(),budget:Arc::clone(budget)};subject.require_current(self)?;Ok(subject)
@@ -395,8 +433,26 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
  }
  #[test]fn no_candidates_issues_no_synthetic_root_or_structural_model_even_with_physical_namespace(){
   let(root,intent,inputs)=fixture("handlers-no-candidates-native");std::fs::write(root.join("code/__defines/context.dm"),"#define ORDINARY 1\n").unwrap();std::fs::write(root.join("code/candidate.dm"),"/datum/ordinary\n").unwrap();std::fs::create_dir_all(root.join("__dmb_original_handlers_structural__")).unwrap();
-  let budget=Budget::new(64*1024*1024).unwrap();let subject=Arc::new(crate::query_db::QueryDb::default()).prepare_handlers_preflight(&inputs,&intent).unwrap();assert!(subject.recipe.candidates.is_empty());assert!(!subject.requires_full_model());assert!(subject.captured.is_none());assert!(subject.project().is_err());assert!(subject.provider(&inputs).is_err());
-  let queries=Arc::new(crate::query_db::QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries).unwrap();assert!(prepared.frontend().is_none(),"no ordinary parser diagnostics/model outcome is manufactured when old code never requested a model");
+  let queries=Arc::new(crate::query_db::QueryDb::default());let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();assert!(subject.recipe.candidates.is_empty());assert!(!subject.requires_full_model());assert!(subject.captured.is_none());assert!(subject.project().is_err());assert!(subject.provider(&inputs).is_err());
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries).unwrap();assert!(prepared.frontend().is_none(),"no ordinary parser diagnostics/model outcome is manufactured when old code never requested a model");
+  let owner = Arc::clone(&prepared.subject.budget);
+  let before = owner.used();
+  let expected = inputs.snapshot().unwrap();
+  let capture = inputs.capture_handlers_prepared(prepared, &queries, false).unwrap();
+  assert!(capture.is_recorded_in(&expected));
+  let one = capture.facts.policy_closure_charge().unwrap();
+  let fixed = std::mem::size_of::<HandlerPreparedCapture>()
+   + crate::query_db::NativeQueryOwnerIdentity::retained_charge() + 4096;
+  assert!(owner.used() - before >= one + fixed);
+  let original = inputs.snapshot.lock().unwrap();
+  assert!(owner.used() - before < original.policy_closure_charge().unwrap() * 2 + fixed
+   + original.folders.iter().map(|(path, listing)| {
+    path.capacity() * 4 + 256 + match listing {
+     FolderListing::Present(names) => names.len() * std::mem::size_of::<String>() * 4 + 128
+      + names.iter().map(|name| name.len() * 4 + 64).sum::<usize>(),
+     _ => 0,
+    }
+   }).sum::<usize>() + original.generated_outputs.iter().map(|path| path.capacity() * 4 + 256).sum::<usize>());
  }
  #[test]fn reads_as_only_still_demands_distinct_full_model_without_structural_model(){
   let(root,intent,inputs)=fixture("handlers-reads-as-only-full-demand");std::fs::write(root.join("code/__defines/context.dm"),"#define ORDINARY 1\n").unwrap();std::fs::write(root.join("code/candidate.dm"),"READS_AS(/datum/ordinary, value)\n").unwrap();
@@ -425,17 +481,24 @@ pub(crate) struct HandlerPreparedCapture{
  inputs:Option<dm_analysis::policy_inputs::HandlersStructuralInputs>,
  facts:InputSnapshot,queries:crate::query_db::NativeQueryOwnerIdentity,issuance:u64,
  staged:Option<DetachedStructural>,
+ partial_pin: PartialPin,
  // Metadata/recipe payload drops before its actual producer funding.
  budget:Arc<Budget>,
 }
+// The ordinary outcome publishes an exact source join token. A private joined
+// attempt uses its fresh capture issuance and keeps the closure, never exports
+// a partial-source revision, and records only actual model availability.
+enum PartialPin {
+ Reportable(Option<u128>),
+ JoinedStaging { model_present: bool },
+}
 struct DetachedStructural{
- revision:Option<u128>,
  rows:std::sync::Mutex<Option<Result<crate::query_db::StagedHandlerStructuralRows,Failure>>>,
 }
 impl HandlerPreparedCapture{
  pub(crate) fn require_staging_recording<P:SnapshotProvider>(&self,recording:&RecordingInputs<P>,queries:&crate::query_db::QueryDb)->io::Result<()>{
   self.require_bound()?;
-  if self.has_staged_rows()||!self.prepared.subject.is_selected_full()||!self.uses_queries(queries){
+  if self.has_staged_rows()||!self.prepared.subject.is_selected_full()||self.joined_model_present().is_none()||!self.uses_queries(queries){
    return Err(fail("handler stage requires actual live selected partial inputs"));
   }
   self.prepared.subject.require_recording(recording)?;
@@ -444,8 +507,16 @@ impl HandlerPreparedCapture{
   Ok(())
  }
  pub(crate) fn partial_revision(&self)->io::Result<Option<u128>>{
-  if let Some(staged)=&self.staged{return Ok(staged.revision)}
-  self.prepared.frontend.as_ref().map(|_|self.structural_inputs().map(|inputs|inputs.source_revision())).transpose()
+  match self.partial_pin {
+   PartialPin::Reportable(revision) => Ok(revision),
+   PartialPin::JoinedStaging { .. } => Err(fail("private joined handler has no reportable partial source revision")),
+  }
+ }
+ pub(crate) fn joined_model_present(&self)->Option<bool>{
+  match self.partial_pin {
+   PartialPin::Reportable(_) => None,
+   PartialPin::JoinedStaging { model_present } => Some(model_present),
+  }
  }
  pub(crate) fn has_staged_rows(&self)->bool{self.staged.is_some()}
  pub(crate) fn take_staged_rows(&self)->Result<Option<crate::query_db::StagedHandlerStructuralRows>,Failure>{
@@ -457,9 +528,8 @@ impl HandlerPreparedCapture{
   capture:Arc<Self>,rows:Result<crate::query_db::StagedHandlerStructuralRows,Failure>,
  )->io::Result<Arc<Self>>{
   capture.require_bound()?;
-  if capture.has_staged_rows()||!capture.prepared.subject.is_selected_full(){return Err(fail("only a live selected partial owner can detach"))}
+  if capture.has_staged_rows()||!capture.prepared.subject.is_selected_full()||capture.joined_model_present().is_none(){return Err(fail("only a live selected partial owner can detach"))}
   let mut capture=Arc::try_unwrap(capture).map_err(|_|fail("handler staged producer still has a live owning alias"))?;
-  let revision=capture.partial_revision()?;
   // The replacement Arc is funded separately: the old query Weak may
   // still retain its control block. No archive owner crosses the handoff.
   let archive=capture.inputs.as_ref().map(|inputs|Arc::downgrade(inputs.archive()));
@@ -472,7 +542,7 @@ impl HandlerPreparedCapture{
    }
    eprintln!("original handler partial detached archive_live={}",archive.as_ref().is_some_and(|archive|archive.strong_count()!=0));
   }
-  capture.staged=Some(DetachedStructural{revision,rows:std::sync::Mutex::new(Some(rows))});
+  capture.staged=Some(DetachedStructural{rows:std::sync::Mutex::new(Some(rows))});
   capture.budget.charge(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>()).map_err(|m|quota(&capture.budget,&m))?;
   Ok(Arc::new(capture))
  }
@@ -493,9 +563,9 @@ impl HandlerPreparedCapture{
  }
  pub(crate) fn require_bound(&self)->io::Result<()>{
   crate::daemon::control::checkpoint()?;self.budget.require().map_err(|m|quota(&self.budget,&m))?;
-  if let Some(staged)=&self.staged{
+  if self.staged.is_some(){
    if !self.prepared.subject.is_selected_full()||self.prepared.frontend.is_some()||self.inputs.is_some()
-    ||staged.revision.is_none()!=self.prepared.subject.recipe.candidates.is_empty(){
+    ||self.joined_model_present()!=Some(!self.prepared.subject.recipe.candidates.is_empty()){
     return Err(fail("handler detached disposition differs from actual partial preparation"));
    }
    return Ok(())
@@ -508,19 +578,71 @@ impl HandlerPreparedCapture{
  }
 }
 impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
- pub(crate) fn capture_handlers_prepared(&self,prepared:PreparedHandlersStructural,queries:&Arc<crate::query_db::QueryDb>)->io::Result<Arc<HandlerPreparedCapture>>{
-  let budget=Arc::clone(&prepared.subject.budget);let budget=&budget;prepared.subject.require_current(self)?;let mut c=Native{budget};
-  let inputs=match &prepared.frontend{Some(frontend)=>{let source=frontend.handlers_structural_source().map_err(|m|fail(&m))?;Some(dm_analysis::policy_inputs::HandlersStructuralInputs::capture(&source).map_err(io::Error::other)?)},None=>None};
+ pub(crate) fn capture_handlers_prepared(&self,prepared:PreparedHandlersStructural,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<Arc<HandlerPreparedCapture>>{
+  let budget=Arc::clone(&prepared.subject.budget);let budget=&budget;prepared.subject.require_current(self)?;
+  if joined_staging && !prepared.subject.is_selected_full(){return Err(fail("handler joined staging requires its actual selected preparation"))}
+  let mut revision=None;
+  let inputs=match &prepared.frontend{
+   Some(frontend)=>{
+    let source=frontend.handlers_structural_source().map_err(|m|fail(&m))?;
+    let inputs=dm_analysis::policy_inputs::HandlersStructuralInputs::capture(&source).map_err(io::Error::other)?;
+    if !joined_staging { revision=Some(source.view().source_revision()); }
+    Some(inputs)
+   },
+   None=>None,
+  };
+  let partial_pin=if joined_staging { PartialPin::JoinedStaging { model_present: inputs.is_some() } } else { PartialPin::Reportable(revision) };
   dm_profile::request_mark("handlers.partial_revision_done");
-  // Same InputSnapshot clone-admission contract as current policy captures.
-  let facts={let current=self.snapshot.lock().map_err(|_|fail("handler final input ledger poisoned"))?;let bytes=current.policy_closure_charge()?;kc::reserve(&mut c,||bytes.checked_mul(2)?.checked_add(std::mem::size_of::<HandlerPreparedCapture>()+crate::query_db::NativeQueryOwnerIdentity::retained_charge()+4096))?;
-   // Immutable path/open/payload facts clone only their funded shared roots;
-   // the old folder Vec<String> and generated-path maps deep-copy separately.
-   for(path,listing)in &current.folders{kc::reserve(&mut c,||path.capacity().checked_mul(4)?.checked_add(256))?;if let FolderListing::Present(names)=listing{kc::reserve(&mut c,||names.len().checked_mul(std::mem::size_of::<String>()*4)?.checked_add(128))?;for name in names{kc::reserve(&mut c,||name.len().checked_mul(4)?.checked_add(64))?;}}}
-   for path in &current.generated_outputs{kc::reserve(&mut c,||path.capacity().checked_mul(4)?.checked_add(256))?;}current.clone()};
+  let facts = {
+   let current = self.snapshot.lock().map_err(|_| fail("handler final input ledger poisoned"))?;
+   let closure = current.policy_closure_charge()?;
+   let fixed = std::mem::size_of::<HandlerPreparedCapture>()
+    + crate::query_db::NativeQueryOwnerIdentity::retained_charge() + 4096;
+   let overflow = || quota(budget, "handler final input ledger storage overflow");
+   let mut extra = fixed;
+   let mut add = |bytes: Option<usize>| {
+    extra = extra.checked_add(bytes.ok_or_else(overflow)?).ok_or_else(overflow)?;
+    Ok::<_, io::Error>(())
+   };
+   // Preserve the existing envelopes for the ordinary folder/list and
+   // generated path clones. Original path roots are immutable shared credits.
+   for (path, listing) in &current.folders {
+    add(path.capacity().checked_mul(4).and_then(|n| n.checked_add(256)))?;
+    if let FolderListing::Present(names) = listing {
+     add(names.len().checked_mul(std::mem::size_of::<String>() * 4)
+      .and_then(|n| n.checked_add(128)))?;
+     for name in names {
+      add(name.len().checked_mul(4).and_then(|n| n.checked_add(64)))?;
+     }
+    }
+   }
+   for path in &current.generated_outputs {
+    add(path.capacity().checked_mul(4).and_then(|n| n.checked_add(256)))?;
+   }
+   let overlap = closure.checked_mul(2).and_then(|n| n.checked_add(extra)).ok_or_else(overflow)?;
+   let window = Budget::reserve_window(budget, overlap).map_err(|m| quota(budget, &m))?;
+   if window.capacity() != overlap {
+    return Err(quota(budget, "handler final input ledger clone overlap was not admitted"));
+   }
+   let facts = current.clone();
+   // The clone owns its map/path storage; its immutable listing payloads
+   // remain counted once here even though they may share existing funding.
+   // The clone never carries the recorder's incremental directory index.
+   let retained = facts.policy_closure_charge()?.checked_add(extra).ok_or_else(overflow)?;
+   if retained > overlap {
+    drop(facts);
+    return Err(quota(budget, "handler final input ledger exceeds its clone admission"));
+   }
+   window.settle(retained).map_err(|m| quota(budget, &m))?;
+   #[cfg(debug_assertions)]
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    eprintln!("ORIGINAL_HANDLER_FACTS_SETTLEMENT overlap={overlap} retained={retained} released={}", overlap - retained);
+   }
+   facts
+  };
   dm_profile::request_mark("handlers.partial_closure_captured");
-  static NEXT:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);let issuance=NEXT.fetch_add(1,std::sync::atomic::Ordering::Relaxed);if issuance==u64::MAX{return Err(fail("handlers capture issuance exhausted"))}
-  let result=Arc::new(HandlerPreparedCapture{prepared,inputs,facts,staged:None,queries:queries.native_query_owner_identity(),issuance,budget:Arc::clone(budget)});result.require_bound()?;Ok(result)
+  static NEXT:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);let issuance=NEXT.fetch_update(std::sync::atomic::Ordering::Relaxed,std::sync::atomic::Ordering::Relaxed,|next|next.checked_add(1)).map_err(|_|fail("handlers capture issuance exhausted"))?;
+  let result=Arc::new(HandlerPreparedCapture{prepared,inputs,facts,staged:None,partial_pin,queries:queries.native_query_owner_identity(),issuance,budget:Arc::clone(budget)});result.require_bound()?;Ok(result)
  }
 }
 

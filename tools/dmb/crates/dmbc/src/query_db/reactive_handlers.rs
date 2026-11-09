@@ -43,9 +43,9 @@ impl QueryDb{
   proof:&Arc<crate::request_runner::runner_freshness::HandlerPolicyAdmission>,cache:&std::path::Path,
  )->Result<handler_structural_staging::StagedRows,Failure>{
   if !proof.is_structural_staging()||capture.has_staged_rows(){return Err("handler stage requires its actual live partial owner and staging-only admission".into())}
-  let revision=capture.prepared().frontend().map(|_|capture.structural_inputs().map(|inputs|inputs.source_revision())).transpose()?;
+  let model_present=capture.joined_model_present().ok_or("handler stage requires its private joined model disposition")?;
   self.with_handlers_structural(capture,proof,|data,_|
-   handler_structural_staging::StagedRows::write(cache,self.native_query_owner_identity(),capture.issuance(),revision,data)
+   handler_structural_staging::StagedRows::write(cache,self.native_query_owner_identity(),capture.issuance(),model_present,data)
   )
  }
  /// Internal sibling of the full reader: caller already holds the raw-family
