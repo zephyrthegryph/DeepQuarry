@@ -175,6 +175,10 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 			return list(all[1], all[3], all[4], all[5])
 	return list()
 
+/// The client's screen was emptied: the next sync puts every lighting screen object back.
+/proc/client_glow_screen_forget(client/C)
+	C.lighting_screen = CLIENT_GLOW_SCREEN_NONE
+
 /// Puts this client's screen in step with the lighting mode and its compare view. Cheap when it already is (one comparison).
 /proc/client_glow_screen_sync(client/C)
 	if(!C)

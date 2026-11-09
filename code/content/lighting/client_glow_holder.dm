@@ -109,6 +109,22 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/list/halves = client_glow_view_halves(C.view)
 	C.glow_holder.view_at(at_eye, halves[1], halves[2])
 
+/// A mob Login just emptied client.images and client.screen: the holder's images and the lighting screen objects are gone from the client whatever
+/// their records say, and an equal chunk signature would otherwise leave them gone. Forget both, so the eye update that follows the login rebuilds them.
+/proc/client_glow_client_emptied(client/C)
+	if(!C)
+		return
+	log_world("client lighting: [C.ckey] login emptied images and screen; [LAZYLEN(C.glow_holder?.held)] held glow(s) and screen state [C.lighting_screen] forgotten")
+	client_glow_screen_forget(C)
+	var/datum/client_glow_holder/H = C.glow_holder
+	if(!H)
+		return
+	H.sig = null
+	H.held = null
+	H.held_shape = null
+	H.cut_shape = null
+	H.delivering = null
+
 /// The client left: its held glows go.
 /proc/client_glow_holder_gone(client/C)
 	if(!C?.glow_holder)
@@ -121,7 +137,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /datum/client_glow_holder/proc/view_at(turf/eye, hx, hy)
 	if(!eye)
 		sig = null
-		drop_all()
+		drop_all("eye has no turf")
 		return
 	var/cx = round((eye.x - 1) / CLIENT_GLOW_CHUNK)
 	var/cy = round((eye.y - 1) / CLIENT_GLOW_CHUNK)
@@ -133,7 +149,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(new_sig == sig)
 		return
 	if(now_unlit != unlit || now_unmasked != unmasked)
-		drop_all() // the entries have the other shape
+		drop_all("darkness sight changed: unlit [unlit]->[now_unlit], unmasked [unmasked]->[now_unmasked]") // the entries have the other shape
 		unlit = now_unlit
 		unmasked = now_unmasked
 	sig = new_sig
@@ -175,6 +191,8 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		log_world("client glow holder: [client.ckey] first hold at [time2text(world.realtime, "hh:mm:ss")], [LAZYLEN(held)] glow(s)") // the load-in timeline
 	if(!(GLOB.client_glow_holder_recomputes % 64))
 		log_world(client_glow_census())
+	if(client && length(client.images) < LAZYLEN(held))
+		log_world("client glow holder: [client.ckey] has [length(client.images)] images for [LAZYLEN(held)] held glows: something took them off the client")
 	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s)[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
 
 /// Shows, updates or drops this viewer's copy of light `L`. Returns TRUE while it is held.
@@ -362,7 +380,9 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	client_images_remove(client, entry)
 	GLOB.client_glow_holder_dropped++
 
-/datum/client_glow_holder/proc/drop_all()
+/datum/client_glow_holder/proc/drop_all(reason = "unspecified")
+	if(LAZYLEN(held))
+		log_world("client glow holder: [client?.ckey] dropped all [LAZYLEN(held)] held glow(s): [reason]") // every glow gone at once shows as black with only the darksight circle
 	for(var/h in LAZYCOPY(held))
 		drop_handle(h)
 
@@ -390,7 +410,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /proc/client_glow_holders_switched(on)
 	for(var/datum/client_glow_holder/H as anything in REGISTRY_COPY(REGISTRY_CLIENT_GLOW_HOLDERS))
 		H.sig = null
-		H.drop_all()
+		H.drop_all("client lighting switched")
 	if(on)
 		for(var/client/C as anything in GLOB.clients)
 			client_glow_holder_eye(C, get_turf(C.eye || C.mob))

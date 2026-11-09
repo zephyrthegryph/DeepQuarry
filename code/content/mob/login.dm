@@ -55,6 +55,7 @@ ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
 
 	client_images_clear(client)				//remove the images such as AIs being unable to see runes
 	client_screen_clear(client)				//remove hud items just in case
+	client_glow_client_emptied(client) // the held glows and lighting screen objects went with them
 	if(hud_used)
 		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)

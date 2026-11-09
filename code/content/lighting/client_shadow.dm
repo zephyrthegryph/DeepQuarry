@@ -246,10 +246,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	if(GLOB.client_glow_baker.icons[key] || GLOB.client_glow_baker.pending[key])
 		return
 	GLOB.client_glow_baker.prefetched++
-	client_glow_mask_request(key)
+	client_glow_mask_request(key, TRUE)
 
-/proc/client_glow_mask_request(key)
+/proc/client_glow_mask_request(key, ahead = FALSE)
 	if(GLOB.client_glow_baker.pending[key])
+		if(!ahead) // a viewer holds it now: it goes before the shapes only asked for ahead
+			var/at = GLOB.client_glow_baker.queue.Find(key)
+			if(at > 1)
+				GLOB.client_glow_baker.queue.Cut(at, at + 1)
+				GLOB.client_glow_baker.queue.Insert(1, key)
 		return
 	if(client_glow_store_load(key))
 		return
@@ -258,7 +263,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		return
 	GLOB.client_glow_baker.pending[key] = TRUE
 	GLOB.client_glow_baker.asked_at[key] = REALTIMEOFDAY
-	GLOB.client_glow_baker.queue += key
+	if(ahead || !length(GLOB.client_glow_baker.queue))
+		GLOB.client_glow_baker.queue += key
+	else
+		GLOB.client_glow_baker.queue.Insert(1, key)
 	client_glow_mask_pump()
 
 /proc/client_glow_mask_dir_ready()
