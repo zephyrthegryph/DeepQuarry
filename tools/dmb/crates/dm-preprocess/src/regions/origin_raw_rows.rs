@@ -1764,6 +1764,7 @@ const _: () = assert!(std::mem::size_of::<TinyOriginCell>() == 2);
 struct OriginDictionary {
     keys: [u32; 256],
     key_count: usize,
+    tiny_keys: usize,
     rows: usize,
     short_rows: usize,
 }
@@ -1805,7 +1806,7 @@ impl OriginDictionary {
                 write+=1;
             }
         }
-        let mut result=Self{keys:[0;256],key_count:write.min(256),rows:0,short_rows:0};
+        let mut result=Self{keys:[0;256],key_count:write.min(256),tiny_keys:0,rows:0,short_rows:0};
         if write>result.key_count {
             scratch[..write].select_nth_unstable_by(result.key_count,|a,b|b.cmp(a));
         }
@@ -1816,22 +1817,33 @@ impl OriginDictionary {
             result.rows+=count;
             if ShortOriginCell::pack(Self::row(key)).is_some(){result.short_rows+=count}
         }
-        result.keys[..result.key_count].sort_unstable();
+        // Keep exactly the previous selected keys and scores. Only their
+        // funded representation changes, so the replacement cannot grow.
+        let keys=&mut result.keys[..result.key_count];
+        keys.sort_unstable_by_key(|&key|(TinyOriginCell::pack(Self::row(key)).is_none(),key));
+        result.tiny_keys=keys.partition_point(|&key|TinyOriginCell::pack(Self::row(key)).is_some());
         result
     }
 
     fn code(&self,row:NarrowRow)->Option<u8>{
-        self.keys[..self.key_count].binary_search(&Self::key(row))
-            .ok().map(|index|u8::try_from(index).expect("one-byte dictionary index"))
+        let (first,last)=if TinyOriginCell::pack(row).is_some(){(0,self.tiny_keys)}
+            else{(self.tiny_keys,self.key_count)};
+        self.keys[first..last].binary_search(&Self::key(row))
+            .ok().map(|index|u8::try_from(first+index).expect("one-byte dictionary index"))
     }
 
-    fn words(&self)->usize{self.key_count*2+self.rows.div_ceil(2)}
+    fn words(&self)->usize{dictionary_key_words(self.key_count,self.tiny_keys)+self.rows.div_ceil(2)}
+}
+
+fn dictionary_key_words(keys:usize,tiny:usize)->usize{
+    debug_assert!(tiny<=keys);
+    keys*2-tiny
 }
 
 #[derive(Clone, Copy)]
 enum OriginSmallLayout {
     Tiny,
-    Dictionary { keys: u16, rows: u16 },
+    Dictionary { keys: u16, tiny_keys: u16, rows: u16 },
 }
 
 struct TinyOriginColumn {
@@ -1853,10 +1865,10 @@ impl TinyOriginColumn {
         count>Self::LEGACY_BYTES+std::mem::size_of::<Option<Box<Self>>>()
     }
 
-    fn dictionary_keys(&self)->Option<usize>{
+    fn dictionary_keys(&self)->Option<(usize,usize)>{
         match self.layout{
             OriginSmallLayout::Tiny=>None,
-            OriginSmallLayout::Dictionary{keys,..}=>Some(usize::from(keys)),
+            OriginSmallLayout::Dictionary{keys,tiny_keys,..}=>Some((usize::from(keys),usize::from(tiny_keys))),
         }
     }
     fn len(&self)->usize{
@@ -1867,19 +1879,21 @@ impl TinyOriginColumn {
     }
     fn cell(&self,ordinal:usize)->Option<NarrowRow>{
         if ordinal>=self.len(){return None}
-        let Some(keys)=self.dictionary_keys() else{return self.rows.get(ordinal).map(TinyOriginCell::unpack)};
-        let indices=keys*2;
+        let Some((keys,tiny_keys))=self.dictionary_keys() else{return self.rows.get(ordinal).map(TinyOriginCell::unpack)};
+        let indices=dictionary_key_words(keys,tiny_keys);
         let index=usize::from(self.rows[indices+ordinal/2].0.to_le_bytes()[ordinal%2]);
-        let low=u32::from(self.rows[index*2].0);
-        let high=u32::from(self.rows[index*2+1].0);
+        if index<tiny_keys{return self.rows.get(index).map(TinyOriginCell::unpack)}
+        let at=tiny_keys+(index-tiny_keys)*2;
+        let low=u32::from(self.rows[at].0);
+        let high=u32::from(self.rows[at+1].0);
         Some(OriginDictionary::row(low|(high<<16)))
     }
     fn truncate(&mut self,keep:usize,rows:usize){
         match &mut self.layout{
             OriginSmallLayout::Tiny=>self.rows.truncate(rows),
-            OriginSmallLayout::Dictionary{keys,rows:logical_rows}=>{
+            OriginSmallLayout::Dictionary{keys,tiny_keys,rows:logical_rows}=>{
                 *logical_rows=u16::try_from(rows).expect("one page of dictionary rows");
-                self.rows.truncate(usize::from(*keys)*2+rows.div_ceil(2));
+                self.rows.truncate(dictionary_key_words(usize::from(*keys),usize::from(*tiny_keys))+rows.div_ceil(2));
             }
         }
         self.rank.truncate(keep);
@@ -2029,11 +2043,16 @@ impl PhysicalOriginPage {
             let mut rank = RowGroupRank::new();
             let mut tiny = if use_dictionary{
                 let mut rows=exact_rows(dictionary.words(),a)?;
-                for &key in &dictionary.keys[..dictionary.key_count]{
+                for &key in &dictionary.keys[..dictionary.tiny_keys]{
+                    rows.push(TinyOriginCell::pack(OriginDictionary::row(key)).expect("exact Tiny dictionary key"));
+                }
+                for &key in &dictionary.keys[dictionary.tiny_keys..dictionary.key_count]{
                     rows.push(TinyOriginCell(key as u16));
                     rows.push(TinyOriginCell((key>>16) as u16));
                 }
-                let layout=OriginSmallLayout::Dictionary{keys:dictionary.key_count as u16,rows:dictionary.rows as u16};
+                let layout=OriginSmallLayout::Dictionary{
+                    keys:dictionary.key_count as u16,tiny_keys:dictionary.tiny_keys as u16,rows:dictionary.rows as u16,
+                };
                 Some(TinyOriginColumn{rank:RowGroupRank::new(),rows,layout})
             }else if tiny!=0{
                 Some(TinyOriginColumn{rank:RowGroupRank::new(),rows:exact_rows(tiny,a)?,layout:OriginSmallLayout::Tiny})
@@ -2960,14 +2979,14 @@ impl OriginalRawOrigins{
  pub(super) fn trace_capacity(&self) -> (usize, usize, usize, usize, usize, usize) {
   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
     let (mut eligible, mut profitable_pages, mut settled_pages, mut settled_rows) = (0, 0, 0, 0);
-    let (mut dictionary_pages,mut dictionary_rows,mut dictionary_keys,mut dictionary_bytes,mut dictionary_saved)=(0,0,0,0,0);
+    let (mut dictionary_pages,mut dictionary_rows,mut dictionary_keys,mut dictionary_tiny_keys,mut dictionary_bytes,mut dictionary_saved)=(0,0,0,0,0,0);
     for owner in self.rows.pages.iter() {
         let page = owner.get();
         let mut fits = page.narrow.iter().filter(|&&row| TinyOriginCell::pack(row).is_some()).count();
         if let Some(mixed) = &page.mixed {
             fits += mixed.short.iter().filter(|row| TinyOriginCell::pack(row.unpack()).is_some()).count();
             if let Some(tiny) = &mixed.tiny {
-                if let Some(keys)=tiny.dictionary_keys(){
+                if let Some((keys,tiny_keys))=tiny.dictionary_keys(){
                     let mut original_short=0;
                     let mut original_tiny=0;
                     for local in 0..page.len(){
@@ -2983,6 +3002,7 @@ impl OriginalRawOrigins{
                     dictionary_pages+=1;
                     dictionary_rows+=tiny.len();
                     dictionary_keys+=keys;
+                    dictionary_tiny_keys+=tiny_keys;
                     dictionary_bytes+=mixed.bytes();
                     if page.len()==ROW_PAGE_LEN{
                         dictionary_saved+=prior.min(page.len()*4).saturating_sub(mixed.bytes());
@@ -2998,7 +3018,7 @@ impl OriginalRawOrigins{
         if page.len() == ROW_PAGE_LEN && TinyOriginColumn::profitable(fits) { profitable_pages += 1; }
     }
     let tiny_layout_overhead=settled_pages*(std::mem::size_of::<TinyOriginColumn>()-TinyOriginColumn::LEGACY_BYTES);
-    eprintln!("ORIGINAL_ORIGIN_DICTIONARY_COLUMNS pages={dictionary_pages} rows={dictionary_rows} keys={dictionary_keys} page_bytes={dictionary_bytes} saved_over_previous_best={dictionary_saved} remaining_tiny_layout_overhead={tiny_layout_overhead}");
+    eprintln!("ORIGINAL_ORIGIN_DICTIONARY_COLUMNS pages={dictionary_pages} rows={dictionary_rows} keys={dictionary_keys} tiny_keys={dictionary_tiny_keys} key_bytes_avoided={} page_bytes={dictionary_bytes} saved_over_previous_best={dictionary_saved} remaining_tiny_layout_overhead={tiny_layout_overhead}",dictionary_tiny_keys*2);
     eprintln!("ORIGINAL_ORIGIN_TINY_COLUMNS eligible={eligible} profitable_pages={profitable_pages} settled_pages={settled_pages} settled_rows={settled_rows}");
   }
   let (mut compact_bytes, mut full_bytes, mut group_bytes) = (0usize, 0usize, 0usize);
@@ -4400,7 +4420,7 @@ impl OriginalRawOrigins{
   page.get_mut().unwrap().settle_full_columns(&a,&work).unwrap();
   let mixed=page.get().mixed.as_ref().unwrap();
   let dictionary=mixed.tiny.as_ref().unwrap();
-  assert_eq!(dictionary.dictionary_keys(),Some(1));
+  assert_eq!(dictionary.dictionary_keys(),Some((1,0)));
   assert_eq!(dictionary.len(),ROW_PAGE_LEN-5);
   for (at, old) in exact_cells {
    let actual=mixed.cell(at).unwrap();
@@ -4427,6 +4447,36 @@ impl OriginalRawOrigins{
   drop(page);
   assert_eq!(live.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),fixed);
+ }
+
+ #[test]
+ fn exact_dictionary_key_bank_preserves_mixed_width_at_odd_and_page_edges(){
+    let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+    let admission=SettingAdmission::new(&syntax,root,&||Ok(()));
+    let live=Arc::new(AtomicUsize::new(0));
+    let work=CappedWork::new(live.clone(),usize::MAX);
+    let tiny=NarrowRow{tag:7<<4,fields:[31,31,7]};
+    let wide=NarrowRow{tag:7<<4,fields:[63,63,16]};
+    let fallback=NarrowRow::escape(NarrowRow::FULL,0);
+    let expected=|at|if at==64{fallback}else if at%2==0{tiny}else{wide};
+    let mut page=PhysicalOriginPageOwner::new(PhysicalOriginPage::new(0,&work).unwrap());
+    let actual=page.get_mut().unwrap();
+    let mut funding=PageFunding{work:&work,credit:&mut actual.credit};
+    actual.narrow=funding.allocate(ROW_PAGE_LEN,&admission).unwrap();
+    actual.narrow.extend((0..ROW_PAGE_LEN).map(expected));
+    actual.settle_full_columns(&admission,&work).unwrap();
+    let mixed=actual.mixed.as_ref().unwrap();
+    let dictionary=mixed.tiny.as_ref().unwrap();
+    assert_eq!(dictionary.dictionary_keys(),Some((2,1)));
+    assert_eq!(dictionary.rows.capacity(),3+(ROW_PAGE_LEN-1).div_ceil(2));
+    for at in [0,1,63,64,65,ROW_PAGE_LEN-1]{
+        let row=mixed.cell(at).unwrap();
+        let expected=expected(at);
+        assert_eq!((row.tag,row.fields),(expected.tag,expected.fields));
+    }
+    drop(page);
+    assert_eq!(live.load(Ordering::Acquire),0);
  }
 
  #[test]
