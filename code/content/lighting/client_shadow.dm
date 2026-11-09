@@ -115,7 +115,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/rect_count = length(rects) / 4
 	var/rings = rect_count ? clamp(round((CLIENT_GLOW_MASK_STEPS_MAX - 1) / rect_count), 1, length(ring_colors)) : 0
 	for(var/ring in (length(ring_colors) - rings + 1) to length(ring_colors))
-		var/grow = length(ring_colors) - ring
+		var/grow = (length(ring_colors) - ring) * CLIENT_GLOW_MASK_RING_STEP
 		for(var/i = 1, i < length(rects), i += 4)
 			var/x1 = max(rects[i] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
 			var/y1 = max(rects[i + 1] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
@@ -237,8 +237,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/sx = source_turf.x
 	var/sy = source_turf.y
 	for(var/turf/T as anything in seen)
-		if(T.directional_opacity)
-			continue // an opaque tile, the light's own included, is lit from the visible floor beside it, not by this cut
+		if(T.directional_opacity == ALL_CARDINALS)
+			continue // a fully opaque tile (a border object leaves the rest of its tile lit); an opaque tile, the light's own included, is lit from the visible floor beside it, not by this cut
 		offsets += T.x - sx
 		offsets += T.y - sy
 	var/key = "[margin]|[jointext(offsets, ",")]"

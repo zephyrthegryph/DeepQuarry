@@ -66,9 +66,9 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	G.set_icon(client_glow_icon(pixel_bounds))
 	var/offset = (pixel_bounds - 32) * 0.5
 	// A wall-mounted device's pixel offset rounds its pixel_turf onto the wall: centred there its glow, and an unbaked or uncut glow above all, falls on both sides of the wall.
-	var/turf/centre = pixel_turf && !pixel_turf.directional_opacity ? pixel_turf : source_turf
-	G.set_pixel_x(-offset + (centre.x - source_turf.x) * WORLD_ICON_SIZE)
-	G.set_pixel_y(-offset + (centre.y - source_turf.y) * WORLD_ICON_SIZE)
+	// The baked cut is measured from source_turf, so the sprite stands there too: centred a tile away, the cut would land a tile off.
+	G.set_pixel_x(-offset)
+	G.set_pixel_y(-offset)
 	G.set_color(light_color)
 	G.set_plane(client_glow_plane())
 	client_glow_note_moving()
@@ -159,3 +159,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	if(!on)
 		for(var/turf/T as anything in all_turfs)
 			T.lighting_build_overlay() // create_all_lighting_objects() without its yields
+
+ADMIN_VERB(toggle_client_lighting, R_DEBUG|R_SERVER, "Toggle Client Lighting", "Switch every light between client-rendered glows and the DM lighting, live.", ADMIN_CATEGORY_DEBUG_GAME)
+	client_lighting_set(!GLOB.client_lighting)
+	message_admins("[key_name_admin(user)] turned client lighting [GLOB.client_lighting ? "on" : "off"].")

@@ -173,6 +173,8 @@ do { \
 #define CLIENT_GLOW_SPREAD_OFFSET 4
 #define CLIENT_GLOW_SPREAD_ALPHA 160
 /// The blur over the whole glow plane that softens every tile-shaped cut, so neighbouring colours blend (one filter per client, none per light).
+/// Pixels each fade ring of a baked cut adds: wide enough that lights with different reach blend instead of leaving tile-shaped seams (client rig).
+#define CLIENT_GLOW_MASK_RING_STEP 4
 #define CLIENT_GLOW_SOFTEN_SIZE 4
 /// A light this short (a wall device, a console) draws at CLIENT_GLOW_SMALL_SCALE of its power.
 #define CLIENT_GLOW_SMALL_RANGE 2

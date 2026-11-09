@@ -227,7 +227,7 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 /// This turf's opacity changed or it was just made: it is on the walls plane exactly while it is opaque. Events only.
 /turf/proc/client_glow_wall_sync()
 	underlays -= client_walls_tile()
-	if(GLOB.client_lighting && directional_opacity)
+	if(GLOB.client_lighting && directional_opacity == ALL_CARDINALS)
 		underlays += client_walls_tile()
 
 /// The white tile every area draws on the visibility plane: BYOND shows it only on turfs this client sees.
@@ -263,7 +263,7 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 			n++
 			continue
 		for(var/turf/T as anything in contents_of(A, /turf))
-			if(T.directional_opacity)
+			if(T.directional_opacity == ALL_CARDINALS)
 				T.client_glow_wall_sync()
 			if(!IS_DYNAMIC_LIGHTING(T) && T.client_glow_white(on))
 				n++
