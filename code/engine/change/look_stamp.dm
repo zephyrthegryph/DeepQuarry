@@ -56,8 +56,8 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		// A fresh instance samples both verdicts. A type every instance of which was written during init (windows, pipes, lattices) has none left on its
 		// creation mark: one written instance samples the lazy verdict alone (its draw is not the type's default look, so it says nothing of the stamp).
 		var/fresh_sample = (D.refresh_queued & DEP_CREATED) && isnull(GLOB.type_look_stamp[D.type])
-		if(!fresh_sample && (!isatom(D) || !isnull(GLOB.type_look_lazy[D.type])))
-			continue
+		if(!fresh_sample && (!isatom(D) || (!isnull(GLOB.type_look_lazy[D.type]) && look_lazy_reachable(D))))
+			continue // (a known lazy verdict spares only an atom a client can come near: any other is drawn now)
 		sampled[D.type] = TRUE
 		var/pending = D.refresh_queued & ~DEP_CREATED
 		var/bits = D.refresh_bits
@@ -225,9 +225,15 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 			windows++
 	return "[entries] entries ([datums] datums): look [look], values [values], effects [effects], ui/run [windows], nothing live [dead]"
 
+/// Whether a client can come near `A`: only an atom standing somewhere interest can reach is ever drawn on a viewer's approach (interest_enter() walks the
+/// contents of chunks). An area has no place and an atom in nullspace has none either, so a parked draw of theirs would never be asked for: they are never
+/// lazy, whatever a sampled or cached verdict says (a verdict cache written by an older build marks areas lazy).
+/proc/look_lazy_reachable(atom/A)
+	return !isarea(A) && !isnull(get_turf(A))
+
 /// Whether a fresh queued `A` may be parked: its type's verdict is lazy and this instance has nothing the verdict did not see.
 /proc/look_lazy_ok(atom/A)
-	if(!GLOB.type_look_lazy[A.type] || A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
+	if(!look_lazy_reachable(A) || !GLOB.type_look_lazy[A.type] || A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
 		return FALSE
 	return !ismob(A)
 

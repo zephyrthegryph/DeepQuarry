@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Area map-editor sprites no longer show in game after a restart: an area is never left with a parked first draw"
