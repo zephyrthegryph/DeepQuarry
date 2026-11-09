@@ -1999,6 +1999,7 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
 
     let mut build = request(&root, Q::DocSnippets);
     build.cache_root = Some(cache.clone());
+    build.progress_enabled = cbt;
     let intent = build.policy_inputs.as_mut().unwrap();
     intent.workspace_auxiliary.clear(); // Only the compound host may issue the private registry profile.
     intent.workspace.as_mut().unwrap().recursive_roots =
@@ -2045,6 +2046,14 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
     let seal = |bytes: &[u8]| Seal { length: bytes.len() as u64, hash: Hex128(xxhash_rust::xxh3::xxh3_128(bytes)) };
     let inspect = |name: &str, result: std::process::Output, field: &str| {
         assert_eq!(result.status.code(), Some(1), "{}", String::from_utf8_lossy(&result.stderr));
+        if cbt && name == "compound-full-cold" {
+            let lifecycle = std::fs::read_to_string(transport.join("daemon/lifecycle.log")).unwrap();
+            let reused = lifecycle.lines().find_map(|line| {
+                line.strip_prefix("native compound shared authored type owners: ")
+                    .and_then(|count| count.parse::<usize>().ok())
+            }).unwrap_or(0);
+            assert!(reused > 0, "actual CBT Strict compile must borrow eligible authored type owners: {lifecycle}");
+        }
         let line = result.stdout.iter().position(|&byte| byte == b'\n').unwrap();
         let terminal: Terminal = serde_json::from_slice(&result.stdout[..line]).unwrap();
         let (schema, report_schema) = if cbt {

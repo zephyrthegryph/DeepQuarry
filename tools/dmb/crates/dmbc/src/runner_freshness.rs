@@ -563,6 +563,10 @@ impl JoinedSelectedInputs {
         self
     }
 
+    pub(super) fn strict_profile(&self) -> crate::request::CompoundStrictProfile {
+        self.strict_profile
+    }
+
     pub(super) fn require_strict_profile(&self, defines: &std::collections::BTreeMap<String, String>) -> std::io::Result<()> {
         if !self.strict_profile.matches(defines) {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,

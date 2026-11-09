@@ -681,7 +681,7 @@ impl BuildHost {
         workers: usize,
         disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
     ) -> Result<HostParts<'a>, Box<dyn std::error::Error>> {
-        self.execution_with_selected_declaration_loans(workers, disk, false, false)
+        self.execution_with_selected_declaration_loans(workers, disk, false, None)
             .map(|(parts, _)| parts)
     }
 
@@ -690,15 +690,15 @@ impl BuildHost {
         workers: usize,
         disk: Option<&'a dyn dm_preprocess::regions::ExpansionMemo>,
         selected_original: bool,
-        joined_strict: bool,
+        joined_strict: Option<crate::request::CompoundStrictProfile>,
     ) -> Result<(HostParts<'a>, Option<&'a dm_tree::frontend::RetainedSemanticTree>), Box<dyn std::error::Error>> {
         // These are mutually exclusive admitted request roles. Each returns a
         // disjoint borrow of the existing stashed variant.
         let prior = self.engine.as_ref().and_then(|engine| {
             if selected_original {
                 Self::stashed_strict_callable_prior(engine, &self.variants)
-            } else if joined_strict {
-                Self::stashed_original_type_prior(engine, &self.variants)
+            } else if let Some(profile) = joined_strict {
+                Self::stashed_original_type_prior(engine, &self.variants, profile)
             } else {
                 None
             }
@@ -755,13 +755,14 @@ impl BuildHost {
     fn stashed_original_type_prior<'a>(
         strict: &RetainedEngine,
         variants: &'a BTreeMap<EngineConfiguration, VariantState>,
+        profile: crate::request::CompoundStrictProfile,
     ) -> Option<&'a dm_tree::frontend::RetainedSemanticTree> {
         use crate::policy_request::AnalysisContext;
         let current = &strict.configuration;
         if current.analysis_context.is_some() {
             return None;
         }
-        let mut expected = BTreeMap::new();
+        let mut expected = profile.defines();
         crate::pinned_target::admit_defines(&mut expected).ok()?;
         if current.defines != expected {
             return None;

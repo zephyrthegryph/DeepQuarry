@@ -728,7 +728,7 @@ fn run_build_attempt(
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             selected_original_anchors,
-            joined.is_some(),
+            joined.map(JoinedSelectedInputs::strict_profile),
         )?;
     let strict_callable_prior = selected_original_anchors.then_some(declaration_prior).flatten();
     let original_type_prior = joined.is_some().then_some(declaration_prior).flatten();

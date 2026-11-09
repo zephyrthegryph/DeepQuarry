@@ -632,6 +632,11 @@ mod authored_callable_anchor_loan_tests {
         let defines = Default::default();
         let input = concat!(
             "/datum/stable\n",
+            "/datum/other_parent\n",
+            "/datum/cbt_changed\n",
+            "#ifdef CBT\n",
+            "    parent_type = /datum/other_parent\n",
+            "#endif\n",
             "#ifdef SPACEMAN_DMM\n",
             "/datum/only_original\n",
             "#else\n",
@@ -650,6 +655,7 @@ mod authored_callable_anchor_loan_tests {
         let strict_defines = BTreeMap::from([
             ("DM_VERSION".into(), "516".into()),
             ("DM_BUILD".into(), "1687".into()),
+            ("CBT".into(), "1".into()),
         ]);
 
         let build = |prior| {
@@ -679,6 +685,13 @@ mod authored_callable_anchor_loan_tests {
         let original_rows = donor.declarations.owner(stable).unwrap().shared_rows();
         assert!(Arc::ptr_eq(original_rows, strict.owner(stable).unwrap().shared_rows()));
         assert!(!Arc::ptr_eq(original_rows, plain.owner(stable).unwrap().shared_rows()));
+        let changed = SymbolId::of("/datum/cbt_changed");
+        let original_changed = donor.declarations.owner(changed).unwrap().shared_rows();
+        let current_changed = strict.owner(changed).unwrap().shared_rows();
+        assert!(!Arc::ptr_eq(original_changed, current_changed), "same owner path with changed CBT ancestry cannot borrow Original rows");
+        let changed_type = current.snapshot.tree.lookup_type(changed).unwrap();
+        let parent = current.snapshot.tree.parent(changed_type).unwrap();
+        assert_eq!(current.snapshot.tree.type_node(parent).unwrap().path, SymbolId::of("/datum/other_parent"));
     }
 
     #[test]
