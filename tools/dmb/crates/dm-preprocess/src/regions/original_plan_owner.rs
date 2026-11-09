@@ -104,7 +104,7 @@ struct TraceProjectionReservations {
  short_span_fits_actually_pooled:usize,
 }
 pub(super) struct OriginalPlanOwner{
- plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<usize>,failed:bool,
+ plan:DirectivePlan,paths:OriginalPlanPaths,current_region:Option<(usize,usize)>,failed:bool,
  empty_region:Option<EmptyOriginalRegion>,
  empty_trace:Option<OriginalMacroTrace>,
  last_trace:Option<LastTraceProjection>,
@@ -187,8 +187,23 @@ impl OriginalPlanOwner{
  /// occurrence. A return from a real child starts another encounter segment;
  /// no environment snapshot or PreparedLine is fabricated for raw output.
  pub(super) fn region_for_emission_using(&mut self,occurrence:usize,decoded_row:Span,a:&SettingAdmission<'_>)->io::Result<usize>{
-  self.check(a)?;let result=(||{let lease=self.plan.source_acquisitions.get(&occurrence).ok_or(io::ErrorKind::InvalidInput)?;if decoded_row.start>decoded_row.end||decoded_row.end>lease.source_text().as_str().len(){return Err(io::ErrorKind::InvalidInput.into())}
-   if let Some(index)=self.current_region{let row=&mut self.plan.regions[index];if row.occurrence==occurrence{row.source_span.start=row.source_span.start.min(decoded_row.start);row.source_span.end=row.source_span.end.max(decoded_row.end);return Ok(index)}}
+  self.check(a)?;let result=(||{
+   if let Some((index, decoded_len)) = self.current_region {
+    let row = &mut self.plan.regions[index];
+    if row.occurrence == occurrence {
+     // The extent came from this plan's exact acquisition when the region
+     // was opened. The Original acquisition roster cannot replace a slot.
+     if decoded_row.start > decoded_row.end || decoded_row.end > decoded_len {
+      return Err(io::ErrorKind::InvalidInput.into());
+     }
+     row.source_span.start = row.source_span.start.min(decoded_row.start);
+     row.source_span.end = row.source_span.end.max(decoded_row.end);
+     return Ok(index);
+    }
+   }
+   let lease=self.plan.source_acquisitions.get(&occurrence).ok_or(io::ErrorKind::InvalidInput)?;
+   let decoded_len=lease.source_text().as_str().len();
+   if decoded_row.start>decoded_row.end||decoded_row.end>decoded_len{return Err(io::ErrorKind::InvalidInput.into())}
    if self.empty_region.is_none() {
     grow(&mut self.credit,EmptyOriginalRegion::BYTES,a)?;
     self.empty_region=Some(EmptyOriginalRegion{segments:Arc::new(Vec::new()),effects:Arc::new(Vec::new())});
@@ -199,7 +214,7 @@ impl OriginalPlanOwner{
    let empty=self.empty_region.as_ref().expect("admitted Original empty region storage");
    let index=self.plan.regions.len();
    let region=IncludeRegion{occurrence,source_span:decoded_row,encounter_ordinal:self.plan.items.len(),manifest_source:self.plan.occurrences[occurrence].path.extension().is_some_and(|e|e=="dme"),segments:Arc::clone(&empty.segments),effects:Arc::clone(&empty.effects)};
-   push(&mut self.plan.regions,region,&mut self.credit,a)?;push(&mut self.plan.items,OrderedItem::Text(index),&mut self.credit,a)?;self.current_region=Some(index);Ok(index)
+   push(&mut self.plan.regions,region,&mut self.credit,a)?;push(&mut self.plan.items,OrderedItem::Text(index),&mut self.credit,a)?;self.current_region=Some((index,decoded_len));Ok(index)
   })();if result.is_err(){self.failed=true}result
  }
 
@@ -920,6 +935,27 @@ mod opened_path_storage_tests {
         let(long,long_path)=measure(Path::new("E:/root/a-much-longer-physical-prefix/child.dm"));
         assert!(long_path>short_path);
         assert_eq!(long-short,long_path-short_path,"one physical PathBuf is shared by the two actual indexes and its occurrence");
+    }
+
+    #[test]
+    fn original_emission_extent_is_immutable_per_region_and_occurrence() {
+        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let a = SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+        let root = Path::new("root.dme");
+        let child = Path::new("child.dm");
+        let mut owner = OriginalPlanOwner::new(root, InitialEnvironment::OriginalChecker0290, &BTreeMap::new(), None, &a).unwrap();
+        let long = SourceAcquisitionLease::from_raw_original_bytes(b"abcdef\n".to_vec(), 17u64);
+        let short = SourceAcquisitionLease::from_raw_original_bytes(b"x\n".to_vec(), 18u64);
+        let first = owner.register_opened_using(root, root, long, None, Span::default(), 0, &a).unwrap();
+        let second = owner.register_opened_using(child, child, short, Some(first), Span::new(0, 1), 1, &a).unwrap();
+        assert_eq!(owner.region_for_emission_using(first, Span::new(0, 2), &a).unwrap(), 0);
+        assert_eq!(owner.region_for_emission_using(first, Span::new(2, 7), &a).unwrap(), 0);
+        assert_eq!(owner.region_for_emission_using(second, Span::new(0, 1), &a).unwrap(), 1);
+        let bad = owner.region_for_emission_using(second, Span::new(1, 7), &a).unwrap_err();
+        assert_eq!(bad.kind(), io::ErrorKind::InvalidInput);
+        assert_eq!(owner.plan.regions[0].source_span, Span::new(0, 7));
+        assert_eq!(owner.plan.regions[1].source_span, Span::new(0, 1));
+        assert!(owner.region_for_emission_using(second, Span::new(0, 2), &a).is_err(), "failure remains latched");
     }
 
     #[test]
