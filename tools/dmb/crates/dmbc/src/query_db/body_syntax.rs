@@ -939,7 +939,8 @@ mod body_syntax_census_tests;
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &format!("/datum/list_owner\n/proc/probe()\n    {local}\n    return sound_cache\n"));
-         let archive = front.source_view().unwrap().archive();
+         let view = front.source_view().unwrap();
+         let archive = view.archive();
          setting_syntax::with_setting_admission(&db.body_charge, |a| archive.with_current_body_checked(0, a, |current| {
              match (available, current.syntax().original_code_disposition()) {
                  (true, Ok(D::Available(grant))) => assert!(grant.belongs_to(current.syntax())),
@@ -1192,6 +1193,37 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_for_each_subtracts_one_index_from_the_same_member() {
+     let fixture = "/proc/probe(regex/admin_ranks_regex)\n    for(var/i in admin_ranks_regex.group - admin_ranks_regex.group[1])\n        return i\n    return 0\n";
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("group - ", "group + "), false),
+         (fixture.replace("group[1]", "other[1]"), false),
+         (fixture.replace("group[1]", "group[2 + 1]"), false),
+         (fixture.replace("var/i in", "i in"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original ForEach member subtraction is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_for_list_owns_zero_argument_call_and_member_iterable() {
      let fixture = r#"
 /proc/probe(M)
@@ -1403,7 +1435,8 @@ mod body_syntax_census_tests;
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &format!("/proc/probe(target_list, list_length, input, listfrom, sound_cache, file_path, L, key, temp, Q, x, object)\n    {body}\n"));
-         let archive = front.source_view().unwrap().archive();
+         let view = front.source_view().unwrap();
+         let archive = view.archive();
          setting_syntax::with_setting_admission(&db.body_charge, |a| archive.with_current_body_checked(0, a, |current| {
              match (available, current.syntax().original_code_disposition()) {
                  (true, Ok(D::Available(grant))) => assert!(grant.belongs_to(current.syntax())),
@@ -1447,15 +1480,20 @@ mod body_syntax_census_tests;
  }
 
  #[test]
- fn actual_original_implicit_regex_constructor_consumes_issued_raw_strings() {
+ fn actual_original_implicit_constructor_consumes_exact_positional_children() {
      let fixture = r#"
 /proc/probe()
     var/regex/admin_ranks_regex = new(@"^Name\s*=\s*(.+?)\s*\n+Include\s*=\s*([\l @]*?)\s*\n+Exclude\s*=\s*([\l @]*?)\s*\n+Edit\s*=\s*([\l @]*?)\s*\n*$", "gm")
-    return admin_ranks_regex
+    var/datum/admin_rank/txt_rank = new(admin_ranks_regex.group[1], "rank_txt")
+    return txt_rank
 "#;
      for (text, expected) in [
          (fixture.to_owned(), true),
-         (fixture.replace(", \"gm\")", ", 2)"), false),
+         (fixture.replace(", \"gm\")", ", 2)"), true),
+         (fixture.replace("admin_ranks_regex.group[1], \"rank_txt\"", ""), true),
+         (fixture.replace(", \"rank_txt\")", ", \"rank_txt\",)"), false),
+         (fixture.replace(", \"rank_txt\")", ", name = \"rank_txt\")"), false),
+         (fixture.replace("admin_ranks_regex.group[1], \"rank_txt\"", &vec!["1"; 17].join(", ")), false),
          (fixture.replace(", \"gm\")", ", , \"gm\")"), false),
          (fixture.replace("= new(", "= new /regex("), false),
      ] {
@@ -1468,7 +1506,38 @@ mod body_syntax_census_tests;
              let disposition = body.original_code_disposition();
              if expected {
                  let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
-                     panic!("actual Original implicit regex construction is available");
+                     panic!("actual Original implicit positional construction is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_initialized_for_range_uses_the_authored_equals_separator() {
+     let fixture = "/proc/probe(uses_charge)\n    for(var/i = 1 to uses_charge)\n        return i\n    return 0\n";
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("var/i = 1", "i=1"), false),
+         (fixture.replace("var/i = 1", "var/num/i=1"), false),
+         (fixture.replace("1 to uses_charge)", "1 to uses_charge step 2)"), false),
+         (fixture.replace("1 to uses_charge)", "1; uses_charge; i++)"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original initialized range is available");
                  };
                  assert!(proof.belongs_to(&body));
              } else {
@@ -1616,6 +1685,46 @@ mod body_syntax_census_tests;
              if expected {
                  let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
                      panic!("actual Original coordinate locate is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_continue_uses_the_innermost_authenticated_loop() {
+     let fixture = r#"
+#define QDELETED(X) (isnull(X) || X.gc_destroyed)
+/proc/probe(txt_rank)
+    while(txt_rank)
+        if(QDELETED(txt_rank))
+            continue
+        if(QDELETED(txt_rank)) continue
+        return 1
+    return 0
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("if(QDELETED(txt_rank)) continue", "if(QDELETED(txt_rank)) continue target"), false),
+         (fixture.replace("if(QDELETED(txt_rank)) continue", "if(QDELETED(txt_rank)); continue"), false),
+         (fixture.replace("if(QDELETED(txt_rank)) continue", "do\n            continue\n        while(txt_rank)"), false),
+         (fixture.replace("if(QDELETED(txt_rank)) continue", "for(var/i in 1 to 2)\n            continue"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original continue in while is available");
                  };
                  assert!(proof.belongs_to(&body));
              } else {

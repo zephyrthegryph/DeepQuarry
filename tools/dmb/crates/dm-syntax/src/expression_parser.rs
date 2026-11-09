@@ -2106,6 +2106,12 @@ fn original_composed_expression(
                 return args.len() == 3 && matches!(head, [name] if simple_term(callee, name))
                     && arguments_match(args, body, false, false);
             }
+            // Pinned NewImplicit has a separate parenthesized argument list.
+            // Require exact positional children and both delimiters.
+            if matches!(&callee.kind, ExprKind::Ident(name) if name == "new") {
+                return args.len() <= 16 && matches!(head, [keyword] if simple_term(callee, keyword))
+                    && arguments_match(args, body, false, false);
+            }
             // Pinned list and alist share the same constructor argument grammar.
             if list_constructor {
                 return matches!(head, [name] if simple_term(callee, name))
@@ -2196,25 +2202,6 @@ fn original_plain_assignment(expr: &Expr, tokens: &[Token]) -> bool {
         && original_conditional_child(rhs, value, true, 32)
 }
 
-// Pinned NewImplicit with a parenthesized two-string argument list.
-// Each raw or quoted string is one genuine Original lexical value.
-fn original_implicit_two_string_constructor(expr: &Expr, tokens: &[Token]) -> bool {
-    let [keyword, open, first, comma, second, close] = tokens else { return false; };
-    let ExprKind::Call { callee, args } = &expr.kind else { return false; };
-    let [left, right] = args.as_slice() else { return false; };
-    let string = |value: &Expr, token: &Token| matches!(&value.kind, ExprKind::Literal(literal)
-        if token.kind == TokenKind::String && value.span == token.span
-            && literal.as_str() == token.text
-            && matches!(literal.original_value(), Some(crate::OriginalTokenValue::String(_))));
-    matches!(&callee.kind, ExprKind::Ident(name) if name == "new")
-        && simple_term(callee, keyword)
-        && open.kind == TokenKind::Punctuation && open.text == "("
-        && comma.kind == TokenKind::Punctuation && comma.text == ","
-        && close.kind == TokenKind::Punctuation && close.text == ")"
-        && expr.span == Span::new(keyword.span.start, close.span.end)
-        && string(left, first) && string(right, second)
-}
-
 fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->Option<OriginalSimpleExpression>{
  let complete=match tokens{
   [only]=>simple_term(expr,only),
@@ -2235,10 +2222,9 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
      && original_conditional_child(expr, tokens, true, 32);
  let plain_index = original_profile && matches!(&expr.kind, ExprKind::Index { object, index }
      if original_plain_index(expr, object, index, tokens, 32));
- let implicit_constructor = original_profile && original_implicit_two_string_constructor(expr, tokens);
  let return_slot = original_profile && matches!((&expr.kind, tokens), (ExprKind::Ident(name), [dot])
      if name == "." && dot.kind == TokenKind::Punctuation && dot.text == "." && dot.span == expr.span);
- let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||implicit_constructor||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile{original_post_update(expr,tokens)?}else{return None};
+ let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile{original_post_update(expr,tokens)?}else{return None};
  Some(OriginalSimpleExpression{kind,span:expr.span,operator:None,original_profile})
 }
 

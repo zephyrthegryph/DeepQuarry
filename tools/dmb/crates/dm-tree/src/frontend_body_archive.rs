@@ -1147,7 +1147,9 @@ fn parse_statements_admitted(
             // expression. A following token is not proof that it is valid.
             Ok(keyword.start == header.start && keyword.end == next.start)
         }
-        fn original_inline_if_return(&self, boundary: dm_syntax::Span) -> std::io::Result<bool> {
+        fn original_inline_if_leaf(
+            &self, boundary: dm_syntax::Span, keyword: &'static str,
+        ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
@@ -1158,7 +1160,8 @@ fn parse_statements_admitted(
                 self.admission.checkpoint()?;
                 match (kind, spelling, significant) {
                     (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _, _) => (),
-                    (TokenKind::Punctuation, ")", 0) | (TokenKind::Ident, "return", 1) => significant += 1,
+                    (TokenKind::Punctuation, ")", 0) => significant += 1,
+                    (TokenKind::Ident, actual, 1) if actual == keyword => significant += 1,
                     _ => return Ok(false),
                 }
             }
@@ -1166,6 +1169,7 @@ fn parse_statements_admitted(
         }
         fn original_for_range_header(
             &self, prefix: dm_syntax::Span, name: dm_syntax::Span, between: dm_syntax::Span,
+            initialized: bool,
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
@@ -1177,8 +1181,9 @@ fn parse_statements_admitted(
                 self.admission.checkpoint()?;
                 match (index, kind, spelling) {
                     (_, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
-                    (0, TokenKind::Ident, "var") | (1, TokenKind::Operator | TokenKind::Punctuation, "/")
-                        | (3, TokenKind::Ident, "in") => index += 1,
+                    (0, TokenKind::Ident, "var") | (1, TokenKind::Operator | TokenKind::Punctuation, "/") => index += 1,
+                    (3, TokenKind::Ident, "in") if !initialized => index += 1,
+                    (3, TokenKind::Operator | TokenKind::Punctuation, "=") if initialized => index += 1,
                     (2, TokenKind::Ident, _) if span == name => index += 1,
                     _ => return Ok(false),
                 }

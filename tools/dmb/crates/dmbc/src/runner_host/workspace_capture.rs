@@ -49,7 +49,6 @@ impl CapturedOriginal {
 
 struct File {
     path: PathBuf,
-    fact: FileInput,
     original: Original,
 }
 /// Data from the actual visible dispatcher acquisition, never a source witness.
@@ -273,7 +272,6 @@ impl WorkspaceCapture {
         if let Some(raw)=&self.raw_source{let bytes=std::mem::size_of::<RawSourceIdentity>()+2*std::mem::size_of::<usize>();census.exposed_buffer("query_snapshot.workspace.raw_identity",raw.as_ptr()as usize,bytes,bytes);}
         for file in &self.files {
             census.path(owner, &file.path);
-            census.path(owner, &file.fact.path);
             match &file.original {
                 Original::Native(native) => {
                     native.identity.visit_storage(|storage| {
@@ -724,7 +722,6 @@ impl WorkspaceCapture {
         if self.raw_source.is_some(){add(std::mem::size_of::<RawSourceIdentity>()+std::mem::size_of::<crate::query_db::QueryDb>()+4*std::mem::size_of::<usize>())?;}
         for file in &self.files {
             add(file.path.capacity())?;
-            add(file.fact.path.capacity())?;
             match &file.original {
                 Original::Native(native) => {
                     let mut metadata = 0;
@@ -1019,6 +1016,22 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     } else {
         None
     };
+    let joined_maps = map_work.is_some() && Q::is_private_grep_domain(questions);
+    let is_joined_map = |path: &Path| joined_maps
+        && path.extension().is_some_and(|ext| ext == "dmm")
+        && path.strip_prefix(&discovery.contract().root)
+            .is_ok_and(|relative| relative.starts_with("maps"));
+    let map_fact_count = discovery.files().iter().filter(|path| is_joined_map(path)).count();
+    let map_fact_storage = map_fact_count.checked_mul(std::mem::size_of::<(usize, FileInput)>())
+        .ok_or(io::ErrorKind::OutOfMemory)?;
+    used = used.checked_add(map_fact_storage).filter(|&n| n <= EXTRA_BUDGET)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "joined MapEdits fact index exceeds capture allowance"))?;
+    let mut map_facts = Vec::new();
+    map_facts.try_reserve_exact(map_fact_count)
+        .map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
+    if map_facts.capacity() > map_fact_count {
+        return Err(io::Error::new(io::ErrorKind::OutOfMemory, "joined MapEdits fact index capacity exceeds admission"));
+    }
     let mut files = Vec::with_capacity(discovery.files().len());
     for path in discovery.files() {
         crate::daemon::control::checkpoint()?;
@@ -1045,11 +1058,10 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         } else {
             capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,path,&mut used,0)?.ok_or_else(||io::Error::other("discovered source disappeared before capture"))?
         };
-        files.push(File {
-            path: path.clone(),
-            fact:captured.fact,
-            original:captured.original,
-        });
+        if is_joined_map(path) && matches!(&captured.original, Original::Owned(_)) {
+            map_facts.push((files.len(), captured.fact));
+        }
+        files.push(File { path: path.clone(), original: captured.original });
     }
     let remaining = EXTRA_BUDGET
         .checked_sub(used)
@@ -1091,8 +1103,8 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
      if files.capacity()<wanted{files.try_reserve_exact(requested.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"check_grep actual fixed-file capacity exceeds admission"))}}
      let mut indices=[None;6];for(index,path)in paths.iter().enumerate(){let Some(path)=path else{continue};crate::daemon::control::checkpoint()?;
       if let Some(existing)=files.iter().position(|file|file.path==*path){indices[index]=Some(existing);continue}
-      if path==configuration{if let Some(bytes)=&config{indices[index]=Some(files.len());files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(path)?,original:Original::Owned(bytes.clone())});}continue}
-      if let Some(CapturedOriginal{original,fact})=capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,path,&mut used,128)?{indices[index]=Some(files.len());files.push(File{path:path.clone(),fact,original});}
+      if path==configuration{if let Some(bytes)=&config{indices[index]=Some(files.len());inputs.recorded_file_fact(path)?;files.push(File{path:path.clone(),original:Original::Owned(bytes.clone())});}continue}
+      if let Some(CapturedOriginal{original,..})=capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,path,&mut used,128)?{indices[index]=Some(files.len());files.push(File{path:path.clone(),original});}
      }
      check_grep=Some(indices);check_grep_paths=Some(paths);
     }
@@ -1105,14 +1117,14 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
      if files.capacity()<wanted{files.try_reserve_exact(1).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"keys manifest actual capacity exceeds admission"))}}
      let index=if let Some(existing)=files.iter().position(|file|file.path==path){Some(existing)}else{
       let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,&path,&mut used,128)?};
-      if let Some(CapturedOriginal{original,fact})=original{let index=files.len();files.push(File{path:path.clone(),fact,original});Some(index)}else{None}
+      if let Some(CapturedOriginal{original,..})=original{let index=files.len();files.push(File{path:path.clone(),original});Some(index)}else{None}
      };keys_manifest=Some(index);keys_manifest_path=Some(path);
     }
 
     if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::BaseVars){
      let width=discovery.contract().root.as_os_str().len().checked_add("/tools/ci/lint_scopes.toml".len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)).ok_or(io::ErrorKind::OutOfMemory)?;let wanted=files.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;let capacity=wanted.checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?;
      used=used.checked_add(width).and_then(|n|if files.capacity()<wanted{n.checked_add(capacity.checked_mul(std::mem::size_of::<File>())?)}else{Some(n)}).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;let path=discovery.contract().root.join("tools/ci/lint_scopes.toml");if files.capacity()<wanted{files.try_reserve_exact(1).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"base-vars fixed configuration capacity exceeds admission"))}}
-     let mut existing=None;for(index,file)in files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path==path{existing=Some(index);break}}let index=if let Some(existing)=existing{Some(existing)}else{let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,&path,&mut used,128)?};if let Some(CapturedOriginal{original,fact})=original{let index=files.len();files.push(File{path:path.clone(),fact,original});Some(index)}else{None}};base_vars_configuration=Some(index);base_vars_configuration_path=Some(path);
+     let mut existing=None;for(index,file)in files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path==path{existing=Some(index);break}}let index=if let Some(existing)=existing{Some(existing)}else{let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,&path,&mut used,128)?};if let Some(CapturedOriginal{original,..})=original{let index=files.len();files.push(File{path:path.clone(),original});Some(index)}else{None}};base_vars_configuration=Some(index);base_vars_configuration_path=Some(path);
     }
 
     let library_baseline = if let Some(work) = library_sites {
@@ -1172,12 +1184,15 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         };
         let directories = if joined {
             inputs.fold_observed_map_edits_inputs(&discovery, budget, lender, |path, relative| {
-                let file = files.iter().find(|file| file.path == path)
+                let (index, file) = files.iter().enumerate().find(|(_, file)| file.path == path)
                     .ok_or_else(|| io::Error::other("joined MapEdits has no exact captured CheckGrep payload"))?;
                 let Original::Owned(bytes) = &file.original else {
                     return Err(io::Error::other("joined MapEdits requires the actual raw DMM payload owner"));
                 };
-                if file.fact != inputs.recorded_file_fact(path)? {
+                let fact = map_facts.binary_search_by_key(&index, |row| row.0)
+                    .ok().map(|at| &map_facts[at].1)
+                    .ok_or_else(|| io::Error::other("joined MapEdits has no actual captured file fact"))?;
+                if *fact != inputs.recorded_file_fact(path)? {
                     return Err(io::Error::other("joined MapEdits original DMM observation changed"));
                 }
                 parse(path, relative, bytes.as_slice())
@@ -1197,6 +1212,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     } else {
         Vec::new()
     };
+    drop(map_facts);
     let facts = inputs.policy_workspace_closure(&selected, discovery.directory_paths().chain(&map_directories))?;
     let policy_revision = crate::policy_request::workspace_revision(
         frontend.revision,
@@ -1642,7 +1658,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
    drop(scratch);
    lease
   };
-  files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(path)?,original:Original::RawInput(lease)});selected.push(path.clone());
+  inputs.recorded_file_fact(path)?;files.push(File{path:path.clone(),original:Original::RawInput(lease)});selected.push(path.clone());
  }
  dm_profile::detail_mark("raw_capture.sources", capture_started);
  let mut op_order_manifest=None;
@@ -1652,7 +1668,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
   let scratch=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;let allowance=budget.remaining().saturating_sub(8192)/8;if allowance==0{return Err(quota("op_order fixed manifest has no actual input allowance".into()))}scratch.charge(allowance+8192).map_err(quota)?;
   let old=prior.as_ref().and_then(|(capture, _)| capture.prior_raw_input(&path, purpose));
   credits.prepare_source()?;let lease=inputs.read_raw_source(&path,allowance,old,|capacity,exceptional,needs_decode|scratch.charge(capacity.checked_mul(if !needs_decode{0}else if exceptional{13}else{5}).and_then(|n|n.checked_add(8192)).ok_or(io::ErrorKind::OutOfMemory)?).map_err(quota))?;
-  let index=if let Some(lease)=lease{credits.retain(&lease)?;let index=files.len();files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(&path)?,original:Original::RawInput(lease)});Some(index)}else{None};
+  let index=if let Some(lease)=lease{credits.retain(&lease)?;let index=files.len();inputs.recorded_file_fact(&path)?;files.push(File{path:path.clone(),original:Original::RawInput(lease)});Some(index)}else{None};
   op_order_manifest=Some(index);selected.push(path);drop(scratch);
  }
  let ui_dispatcher=prepared_ui.map(|prepared|UiDispatcherCapture{index:ui_dispatcher_index,prepared});

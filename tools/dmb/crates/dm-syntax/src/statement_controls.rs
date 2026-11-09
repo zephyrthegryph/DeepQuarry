@@ -45,7 +45,10 @@ pub(super) fn split_case_alternatives_with_tokens(
 
 // Exact lexical subset of the existing ForList arm. The selected split
 // tells us which token is the actual top-level separator.
-fn original_for_each_clause(clause: &str, lexical: &crate::SpannedLexed, separator: usize, dotted: bool, grouped_index: bool, call_member: bool) -> bool {
+fn original_for_each_clause(
+    clause: &str, lexical: &crate::SpannedLexed, separator: usize,
+    dotted: bool, grouped_index: bool, call_member: bool, subtraction: bool,
+) -> bool {
     use crate::TokenKind;
     if !lexical.diagnostics.is_empty() { return false; }
     let mut tokens = lexical.tokens.iter()
@@ -67,6 +70,7 @@ fn original_for_each_clause(clause: &str, lexical: &crate::SpannedLexed, separat
     if grouped_index { return tokens.next().is_some_and(|token| token.text(clause) == "("); }
     if !tokens.next().is_some_and(identifier) { return false; }
     if call_member { return tokens.next().is_some_and(|token| token.text(clause) == "("); }
+    if subtraction { return true; } // exact remainder consumed by the Original expression witness
     while let Some(dot) = tokens.next() {
         if !dotted || dot.text(clause) != "." || !tokens.next().is_some_and(identifier) {
             return false;
@@ -83,6 +87,19 @@ fn original_call_member_iterable(expression: &Expr) -> bool {
     }
     matches!(&receiver.kind, ExprKind::Call { callee, args }
         if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(_)))
+}
+
+fn original_for_each_subtraction(expression: &Expr) -> bool {
+    let ExprKind::Binary { op, lhs, rhs } = &expression.kind else { return false; };
+    let ExprKind::Member { object: left, selector: left_name, via_colon: false } = &lhs.kind
+        else { return false; };
+    let ExprKind::Index { object, index } = &rhs.kind else { return false; };
+    let ExprKind::Member { object: right, selector: right_name, via_colon: false } = &object.kind
+        else { return false; };
+    op == "-" && left_name == right_name
+        && matches!((&left.kind, &right.kind), (ExprKind::Ident(a), ExprKind::Ident(b)) if a == b)
+        && matches!(&index.kind, ExprKind::Literal(value)
+            if crate::expression_parser::original_decimal(value.as_str()))
 }
 
 pub(super) fn parse_for(
@@ -177,21 +194,10 @@ pub(super) fn parse_for(
                 Some(&mut bounds_witnessed),
             )?;
             if bounds_witnessed {
-                let ForControl::Range { start, end, step: None, .. } = &control else { return Some(control); };
-                if let Some(binding_fact) = origins.for_list_binding(clause, &lexical, clause_base, binding) {
-                    let prefix = Span::new(offset_of(binding), start.span.start);
-                    let between = Span::new(start.span.end, end.span.start);
-                    match origins.settings.map(|provider| {
-                        provider.original_for_range_header(prefix, binding_fact.name(), between)
-                    }).transpose() {
-                        Ok(value) => *original_control = value == Some(true),
-                        Err(actual) => {
-                            if let Some(admission) = origins.admission {
-                                admission.record_operational_error(actual);
-                            }
-                        }
-                    }
-                }
+                let name = origins.for_list_binding(clause, &lexical, clause_base, binding);
+                *original_control = original_declared_range_header(
+                    &control, offset_of(binding), name, false, origins,
+                );
             }
             return Some(control);
         }
@@ -200,6 +206,7 @@ pub(super) fn parse_for(
         let mut dotted_original = false;
         let mut grouped_index = false;
         let mut call_member = false;
+        let mut subtraction = false;
         let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
             expression_complete = parsed.original_simple_expression.is_some_and(|value| {
                 value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
@@ -210,10 +217,11 @@ pub(super) fn parse_for(
             grouped_index = actual_original && matches!(kind,
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
             call_member = actual_original && parsed.expr.as_ref().is_some_and(original_call_member_iterable);
+            subtraction = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_subtraction);
         })?;
         let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
         *original_control = expression_complete && source_binding.is_some()
-            && original_for_each_clause(clause, &lexical, at, dotted_original, grouped_index, call_member);
+            && original_for_each_clause(clause, &lexical, at, dotted_original, grouped_index, call_member, subtraction);
         return Some(ForControl::Each { source_binding, binding: binding.into(), iterable });
     }
     if let Some((begin, remainder)) = split_top_level_keyword(clause, "to") {
@@ -275,7 +283,18 @@ pub(super) fn parse_for(
             begin,
             crate::LocalSourceKind::ForBinding,
         );
-        return parse_range_control(binding, start_source, remainder, clause, clause_base, diagnostics, None);
+        let mut bounds_witnessed = false;
+        let control = parse_range_control(
+            binding, start_source, remainder, clause, clause_base, diagnostics,
+            Some(&mut bounds_witnessed),
+        )?;
+        if bounds_witnessed {
+            let name = origins.for_list_binding(clause, &lexical, clause_base, binding);
+            *original_control = original_declared_range_header(
+                &control, offset_of(binding), name, true, origins,
+            );
+        }
+        return Some(control);
     }
     let mut parts = split_for_clauses(clause);
     if parts.len() == 2 {
@@ -388,6 +407,27 @@ pub(super) fn parse_for(
         message: "unsupported for control".into(),
     });
     None
+}
+
+fn original_declared_range_header(
+    control: &ForControl, binding_start: usize, name: Option<ForListBinding>,
+    initialized: bool, origins: &BodyOrigins<'_>,
+) -> bool {
+    let (ForControl::Range { start, end, step: None, .. }, Some(name)) = (control, name)
+        else { return false; };
+    let prefix = Span::new(binding_start, start.span.start);
+    let between = Span::new(start.span.end, end.span.start);
+    match origins.settings.map(|provider| {
+        provider.original_for_range_header(prefix, name.name(), between, initialized)
+    }).transpose() {
+        Ok(value) => value == Some(true),
+        Err(actual) => {
+            if let Some(admission) = origins.admission {
+                admission.record_operational_error(actual);
+            }
+            false
+        }
+    }
 }
 
 fn parse_range_control(
