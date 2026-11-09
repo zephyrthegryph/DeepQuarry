@@ -1759,15 +1759,130 @@ impl TinyOriginCell {
 }
 const _: () = assert!(std::mem::size_of::<TinyOriginCell>() == 2);
 
+// Dictionary candidates are complete exact NarrowRows, excluding escapes.
+// Score the actual Short/four fallback, then pay each key and all rank/storage.
+struct OriginDictionary {
+    keys: [u32; 256],
+    key_count: usize,
+    rows: usize,
+    short_rows: usize,
+}
+
+impl OriginDictionary {
+    fn key(row: NarrowRow) -> u32 {
+        let [output,raw,width]=row.fields;
+        u32::from_le_bytes([row.tag,output,raw,width])
+    }
+
+    fn row(key: u32) -> NarrowRow {
+        let [tag,output,raw,width]=key.to_le_bytes();
+        NarrowRow { tag, fields:[output,raw,width] }
+    }
+
+    fn choose(dense: &[NarrowRow]) -> Self {
+        // Reuse the fixed scratch for the aggregated keys after sorting.
+        // Run counts and weighted scores are bounded by one physical page.
+        let mut scratch=[0u64;ROW_PAGE_LEN];
+        let mut len=0;
+        for &row in dense {
+            if row.tag & NarrowRow::MODE != NarrowRow::ESCAPE {
+                scratch[len]=u64::from(Self::key(row));
+                len+=1;
+            }
+        }
+        scratch[..len].sort_unstable();
+        let (mut read,mut write)=(0,0);
+        while read<len {
+            let first=read;
+            let key=scratch[read];
+            read+=1;
+            while read<len&&scratch[read]==key { read+=1; }
+            let count=read-first;
+            let weight=if ShortOriginCell::pack(Self::row(key as u32)).is_some(){2}else{3};
+            let score=count*weight;
+            if score>std::mem::size_of::<u32>() {
+                scratch[write]=(score as u64)<<48 | (count as u64)<<32 | key;
+                write+=1;
+            }
+        }
+        let mut result=Self{keys:[0;256],key_count:write.min(256),rows:0,short_rows:0};
+        if write>result.key_count {
+            scratch[..write].select_nth_unstable_by(result.key_count,|a,b|b.cmp(a));
+        }
+        for (index,&candidate) in scratch[..result.key_count].iter().enumerate(){
+            let key=candidate as u32;
+            let count=((candidate>>32)&0xffff) as usize;
+            result.keys[index]=key;
+            result.rows+=count;
+            if ShortOriginCell::pack(Self::row(key)).is_some(){result.short_rows+=count}
+        }
+        result.keys[..result.key_count].sort_unstable();
+        result
+    }
+
+    fn code(&self,row:NarrowRow)->Option<u8>{
+        self.keys[..self.key_count].binary_search(&Self::key(row))
+            .ok().map(|index|u8::try_from(index).expect("one-byte dictionary index"))
+    }
+
+    fn words(&self)->usize{self.key_count*2+self.rows.div_ceil(2)}
+}
+
+#[derive(Clone, Copy)]
+enum OriginSmallLayout {
+    Tiny,
+    Dictionary { keys: u16, rows: u16 },
+}
+
 struct TinyOriginColumn {
     rank: RowGroupRank,
     rows: Vec<TinyOriginCell>,
+    layout: OriginSmallLayout,
 }
 impl TinyOriginColumn {
     fn profitable(count: usize) -> bool {
         // Each eligible cell also fits the short column. Pay the entire
         // extra rank, Vec and optional pointer before claiming any savings.
         count > std::mem::size_of::<Self>() + std::mem::size_of::<Option<Box<Self>>>()
+    }
+
+    // The former Tiny owner consisted only of these two fixed fields.
+    const LEGACY_BYTES: usize=std::mem::size_of::<(RowGroupRank,Vec<TinyOriginCell>)>();
+
+    fn legacy_profitable(count:usize)->bool{
+        count>Self::LEGACY_BYTES+std::mem::size_of::<Option<Box<Self>>>()
+    }
+
+    fn dictionary_keys(&self)->Option<usize>{
+        match self.layout{
+            OriginSmallLayout::Tiny=>None,
+            OriginSmallLayout::Dictionary{keys,..}=>Some(usize::from(keys)),
+        }
+    }
+    fn len(&self)->usize{
+        match self.layout{
+            OriginSmallLayout::Tiny=>self.rows.len(),
+            OriginSmallLayout::Dictionary{rows,..}=>usize::from(rows),
+        }
+    }
+    fn cell(&self,ordinal:usize)->Option<NarrowRow>{
+        if ordinal>=self.len(){return None}
+        let Some(keys)=self.dictionary_keys() else{return self.rows.get(ordinal).map(TinyOriginCell::unpack)};
+        let indices=keys*2;
+        let index=usize::from(self.rows[indices+ordinal/2].0.to_le_bytes()[ordinal%2]);
+        let low=u32::from(self.rows[index*2].0);
+        let high=u32::from(self.rows[index*2+1].0);
+        Some(OriginDictionary::row(low|(high<<16)))
+    }
+    fn truncate(&mut self,keep:usize,rows:usize){
+        match &mut self.layout{
+            OriginSmallLayout::Tiny=>self.rows.truncate(rows),
+            OriginSmallLayout::Dictionary{keys,rows:logical_rows}=>{
+                *logical_rows=u16::try_from(rows).expect("one page of dictionary rows");
+                self.rows.truncate(usize::from(*keys)*2+rows.div_ceil(2));
+            }
+        }
+        self.rank.truncate(keep);
     }
 
     fn bytes(&self) -> usize {
@@ -1794,7 +1909,7 @@ struct MixedOriginCells {
 }
 impl MixedOriginCells {
     fn len(&self) -> usize {
-        self.short.len() + self.four.len() + self.tiny.as_ref().map_or(0, |tiny| tiny.rows.len())
+        self.short.len() + self.four.len() + self.tiny.as_deref().map_or(0, TinyOriginColumn::len)
     }
 
     fn cell(&self, local: usize) -> Option<NarrowRow> {
@@ -1806,7 +1921,7 @@ impl MixedOriginCells {
         let tiny = if let Some(tiny) = &self.tiny {
             let through = tiny.rank.through(local);
             if tiny.rank.bits[word] & bit != 0 {
-                return tiny.rows.get(through - 1).map(TinyOriginCell::unpack);
+                return tiny.cell(through - 1);
             }
             through
         } else { 0 };
@@ -1823,8 +1938,7 @@ impl MixedOriginCells {
         let four = self.rank.through(keep - 1);
         let tiny = if let Some(tiny) = &mut self.tiny {
             let count = tiny.rank.through(keep - 1);
-            tiny.rows.truncate(count);
-            tiny.rank.truncate(keep);
+            tiny.truncate(keep,count);
             count
         } else { 0 };
         self.short.truncate(keep - four - tiny);
@@ -1886,14 +2000,25 @@ impl PhysicalOriginPage {
             }
         }
         let four = ROW_PAGE_LEN - short;
+        let legacy_tiny=if TinyOriginColumn::legacy_profitable(tiny){tiny}else{0};
         let tiny = if TinyOriginColumn::profitable(tiny) { tiny } else { 0 };
-        short -= tiny;
-        let bytes = std::mem::size_of::<MixedOriginCells>()
-            + short * std::mem::size_of::<ShortOriginCell>()
-            + four * std::mem::size_of::<NarrowRow>()
-            + if tiny == 0 { 0 } else {
-                std::mem::size_of::<TinyOriginColumn>() + tiny * std::mem::size_of::<TinyOriginCell>()
-            };
+        let mixed_base=std::mem::size_of::<MixedOriginCells>();
+        let mixed_bytes=|count:usize,owner:usize|mixed_base
+            +(short-count)*std::mem::size_of::<ShortOriginCell>()
+            +four*std::mem::size_of::<NarrowRow>()
+            +if count==0{0}else{owner+count*std::mem::size_of::<TinyOriginCell>()};
+        let tiny_bytes=mixed_bytes(tiny,std::mem::size_of::<TinyOriginColumn>());
+        let legacy_bytes=mixed_bytes(legacy_tiny,TinyOriginColumn::LEGACY_BYTES);
+        let dictionary=OriginDictionary::choose(&self.narrow);
+        let dictionary_short=short-dictionary.short_rows;
+        let dictionary_four=four-(dictionary.rows-dictionary.short_rows);
+        let dictionary_bytes=mixed_base+std::mem::size_of::<TinyOriginColumn>()
+            +dictionary.words()*std::mem::size_of::<TinyOriginCell>()
+            +dictionary_short*std::mem::size_of::<ShortOriginCell>()
+            +dictionary_four*std::mem::size_of::<NarrowRow>();
+        let (short,four,bytes,use_dictionary)=if dictionary.rows!=0&&dictionary_bytes<tiny_bytes.min(legacy_bytes){
+            (dictionary_short,dictionary_four,dictionary_bytes,true)
+        }else{(short-tiny,four,tiny_bytes,false)};
         let old = self.narrow.capacity() * std::mem::size_of::<NarrowRow>();
         if bytes >= old || !work.try_grow_original_origin_storage(&mut self.credit, bytes)? { return Ok(()); }
 
@@ -1902,24 +2027,44 @@ impl PhysicalOriginPage {
             let mut packed = exact_rows(short, a)?;
             let mut old_cells = exact_rows(four, a)?;
             let mut rank = RowGroupRank::new();
-            let mut tiny = if tiny == 0 { None } else {
-                Some(TinyOriginColumn { rank: RowGroupRank::new(), rows: exact_rows(tiny, a)? })
-            };
+            let mut tiny = if use_dictionary{
+                let mut rows=exact_rows(dictionary.words(),a)?;
+                for &key in &dictionary.keys[..dictionary.key_count]{
+                    rows.push(TinyOriginCell(key as u16));
+                    rows.push(TinyOriginCell((key>>16) as u16));
+                }
+                let layout=OriginSmallLayout::Dictionary{keys:dictionary.key_count as u16,rows:dictionary.rows as u16};
+                Some(TinyOriginColumn{rank:RowGroupRank::new(),rows,layout})
+            }else if tiny!=0{
+                Some(TinyOriginColumn{rank:RowGroupRank::new(),rows:exact_rows(tiny,a)?,layout:OriginSmallLayout::Tiny})
+            }else{None};
+            let mut dictionary_rows=0;
             for (at, &row) in self.narrow.iter().enumerate() {
                 let before = old_cells.len();
+                let mut in_small=false;
                 if let Some(tiny) = &mut tiny {
-                    let cell = TinyOriginCell::pack(row);
-                    tiny.rank.append(at, tiny.rows.len(), cell.is_some());
-                    if let Some(cell) = cell {
-                        tiny.rows.push(cell);
-                        rank.append(at, before, false);
-                        continue;
+                    if use_dictionary{
+                        let code=dictionary.code(row);
+                        tiny.rank.append(at,dictionary_rows,code.is_some());
+                        if let Some(code)=code{
+                            if dictionary_rows%2==0{tiny.rows.push(TinyOriginCell(u16::from(code)))}
+                            else{tiny.rows.last_mut().expect("issued low byte").0|=u16::from(code)<<8}
+                            dictionary_rows+=1;
+                            in_small=true;
+                        }
+                    }else{
+                        let cell=TinyOriginCell::pack(row);
+                        tiny.rank.append(at,tiny.rows.len(),cell.is_some());
+                        if let Some(cell)=cell{tiny.rows.push(cell);in_small=true}
                     }
                 }
-                if let Some(cell) = ShortOriginCell::pack(row) { packed.push(cell); }
-                else { old_cells.push(row); }
-                rank.append(at, before, before != old_cells.len());
+                if !in_small{
+                    if let Some(cell)=ShortOriginCell::pack(row){packed.push(cell)}
+                    else{old_cells.push(row)}
+                }
+                rank.append(at,before,before!=old_cells.len());
             }
+            if use_dictionary{debug_assert_eq!(dictionary_rows,dictionary.rows);}
             a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
             let tiny = tiny.map(box_origin_column).transpose()?;
             box_origin_column(MixedOriginCells { rank, short: packed, four: old_cells, tiny })
@@ -2815,20 +2960,45 @@ impl OriginalRawOrigins{
  pub(super) fn trace_capacity(&self) -> (usize, usize, usize, usize, usize, usize) {
   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
     let (mut eligible, mut profitable_pages, mut settled_pages, mut settled_rows) = (0, 0, 0, 0);
+    let (mut dictionary_pages,mut dictionary_rows,mut dictionary_keys,mut dictionary_bytes,mut dictionary_saved)=(0,0,0,0,0);
     for owner in self.rows.pages.iter() {
         let page = owner.get();
         let mut fits = page.narrow.iter().filter(|&&row| TinyOriginCell::pack(row).is_some()).count();
         if let Some(mixed) = &page.mixed {
             fits += mixed.short.iter().filter(|row| TinyOriginCell::pack(row.unpack()).is_some()).count();
             if let Some(tiny) = &mixed.tiny {
-                fits += tiny.rows.len();
-                settled_pages += 1;
-                settled_rows += tiny.rows.len();
+                if let Some(keys)=tiny.dictionary_keys(){
+                    let mut original_short=0;
+                    let mut original_tiny=0;
+                    for local in 0..page.len(){
+                        let row=mixed.cell(local).expect("issued exact dictionary row");
+                        original_short+=usize::from(ShortOriginCell::pack(row).is_some());
+                        original_tiny+=usize::from(TinyOriginCell::pack(row).is_some());
+                    }
+                    fits=original_tiny;
+                    let paid_tiny=if TinyOriginColumn::legacy_profitable(original_tiny){original_tiny}else{0};
+                    let prior=std::mem::size_of::<MixedOriginCells>()
+                        +(original_short-paid_tiny)*3+(page.len()-original_short)*4
+                        +if paid_tiny==0{0}else{TinyOriginColumn::LEGACY_BYTES+paid_tiny*2};
+                    dictionary_pages+=1;
+                    dictionary_rows+=tiny.len();
+                    dictionary_keys+=keys;
+                    dictionary_bytes+=mixed.bytes();
+                    if page.len()==ROW_PAGE_LEN{
+                        dictionary_saved+=prior.min(page.len()*4).saturating_sub(mixed.bytes());
+                    }
+                }else{
+                    fits+=tiny.len();
+                    settled_pages+=1;
+                    settled_rows+=tiny.len();
+                }
             }
         }
         eligible += fits;
         if page.len() == ROW_PAGE_LEN && TinyOriginColumn::profitable(fits) { profitable_pages += 1; }
     }
+    let tiny_layout_overhead=settled_pages*(std::mem::size_of::<TinyOriginColumn>()-TinyOriginColumn::LEGACY_BYTES);
+    eprintln!("ORIGINAL_ORIGIN_DICTIONARY_COLUMNS pages={dictionary_pages} rows={dictionary_rows} keys={dictionary_keys} page_bytes={dictionary_bytes} saved_over_previous_best={dictionary_saved} remaining_tiny_layout_overhead={tiny_layout_overhead}");
     eprintln!("ORIGINAL_ORIGIN_TINY_COLUMNS eligible={eligible} profitable_pages={profitable_pages} settled_pages={settled_pages} settled_rows={settled_rows}");
   }
   let (mut compact_bytes, mut full_bytes, mut group_bytes) = (0usize, 0usize, 0usize);
@@ -4145,7 +4315,10 @@ impl OriginalRawOrigins{
     let prepare = page.get_mut().unwrap();
     let mut funding = PageFunding { work: &work, credit: &mut prepare.credit };
     prepare.narrow = funding.allocate(ROW_PAGE_LEN, &admission).unwrap();
-    prepare.narrow.resize(ROW_PAGE_LEN, tiny);
+    // Distinct geometry deliberately leaves no whole-row dictionary win.
+    let tiny_at=|index:usize|NarrowRow{tag:tiny.tag,
+        fields:[(index&31) as u8,((index>>5)&31) as u8,((index>>10)&7) as u8]};
+    prepare.narrow.extend((0..ROW_PAGE_LEN).map(tiny_at));
     prepare.narrow[63] = short;
     prepare.narrow[64] = full;
     prepare.narrow[65] = short;
@@ -4167,7 +4340,8 @@ impl OriginalRawOrigins{
     page.get_mut().unwrap().settle_full_columns(&admission, &work).unwrap();
     let mixed = page.get().mixed.as_ref().unwrap();
     assert_eq!((mixed.tiny.as_ref().unwrap().rows.len(), mixed.short.len(), mixed.four.len()), (ROW_PAGE_LEN - 3, 2, 1));
-    for (at, expected) in [(0,tiny),(63,short),(64,full),(65,short),(66,tiny),(ROW_PAGE_LEN-1,tiny)] {
+    assert!(mixed.tiny.as_ref().unwrap().dictionary_keys().is_none());
+    for (at, expected) in [(0,tiny_at(0)),(63,short),(64,full),(65,short),(66,tiny_at(66)),(ROW_PAGE_LEN-1,tiny_at(ROW_PAGE_LEN-1))] {
         let actual = mixed.cell(at).unwrap();
         assert_eq!((actual.tag, actual.fields), (expected.tag, expected.fields));
     }
@@ -4182,7 +4356,7 @@ impl OriginalRawOrigins{
  }
 
  #[test]
- fn mixed_origin_columns_preserve_page_ordinals_credit_and_trim_reappend() {
+ fn dictionary_origin_columns_preserve_page_ordinals_credit_and_trim_reappend() {
   use dm_syntax::TokenKind::{Ident,Number,Resource};
   let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();
   let syntax=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
@@ -4213,6 +4387,11 @@ impl OriginalRawOrigins{
   }
   let exact_cells=[0,63,64,65,66,4095].map(|at|(at,page.get().cell(at).unwrap()));
   let before=live.load(Ordering::Acquire);
+  let failing=SettingAdmission::new(&syntax,4<<20,&||Err(io::Error::from_raw_os_error(1450)));
+  let first=page.get_mut().unwrap().settle_full_columns(&failing,&work).unwrap_err();
+  assert_eq!(first.raw_os_error(),Some(1450));
+  assert!(page.get().mixed.is_none());
+  assert_eq!(live.load(Ordering::Acquire),before);
   work.limit.store(before,Ordering::Release);
   page.get_mut().unwrap().settle_full_columns(&a,&work).unwrap();
   assert!(page.get().mixed.is_none());
@@ -4220,7 +4399,9 @@ impl OriginalRawOrigins{
   work.limit.store(usize::MAX,Ordering::Release);
   page.get_mut().unwrap().settle_full_columns(&a,&work).unwrap();
   let mixed=page.get().mixed.as_ref().unwrap();
-  assert_eq!((mixed.short.len(),mixed.four.len()),(ROW_PAGE_LEN-3,3));
+  let dictionary=mixed.tiny.as_ref().unwrap();
+  assert_eq!(dictionary.dictionary_keys(),Some(1));
+  assert_eq!(dictionary.len(),ROW_PAGE_LEN-5);
   for (at, old) in exact_cells {
    let actual=mixed.cell(at).unwrap();
    assert_eq!((actual.tag,actual.fields),(old.tag,old.fields));
@@ -4246,6 +4427,27 @@ impl OriginalRawOrigins{
   drop(page);
   assert_eq!(live.load(Ordering::Acquire),0);
   assert_eq!(syntax.load(Ordering::Acquire),fixed);
+ }
+
+ #[test]
+ fn dictionary_choice_is_bounded_and_keeps_complete_cell_identity(){
+    let mut rows=Vec::new();
+    for key in 0..300{
+        let row=NarrowRow{tag:7<<4,fields:[(key/4) as u8,(key%4) as u8,1]};
+        rows.extend(std::iter::repeat_n(row,12));
+    }
+    let escape=NarrowRow::escape(NarrowRow::FULL,0);
+    rows.extend(std::iter::repeat_n(escape,ROW_PAGE_LEN-rows.len()));
+    let dictionary=OriginDictionary::choose(&rows);
+    assert_eq!(dictionary.key_count,256);
+    assert_eq!(dictionary.rows,256*12);
+    assert!(dictionary.code(escape).is_none());
+    for &row in &rows{
+        if let Some(code)=dictionary.code(row){
+            let recovered=OriginDictionary::row(dictionary.keys[usize::from(code)]);
+            assert_eq!((recovered.tag,recovered.fields),(row.tag,row.fields));
+        }
+    }
  }
 
  #[test]
