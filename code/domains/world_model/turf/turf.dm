@@ -134,6 +134,7 @@
 
 	if(opacity)
 		directional_opacity = ALL_CARDINALS
+		client_glow_wall_sync() // a wall made after boot joins the walls plane
 		sight_opacity_changed(src)
 
 	//Pathfinding related

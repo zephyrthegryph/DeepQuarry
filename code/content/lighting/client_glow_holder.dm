@@ -4,7 +4,7 @@
 //   - where it stands: on the light's own turf when the eye saw that turf at the crossing, else on the reached turf the eye saw that is
 //     nearest the eye, offset to the light's place. Playtesting showed an image drawn far from where it stands is culled, so the offset stays within the light's range.
 //   - the reach box: the turfs seen from some eye position in the chunk. Every light whose reach overlaps it is held.
-//   - a held light is a glow image, cut by an alpha filter naming its shape's baked mask once that is ready (client_shadow.dm), and an override image that hides
+//   - a held light is a glow image, baked to its reach shape once that is ready (client_shadow.dm), and an override image that hides
 //     the real glow from this client, so it is never drawn twice.
 //
 // Events only: the eye crossing a chunk or changing view (interest_eye_update()), a light glowing, moving or changing
@@ -236,10 +236,9 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 			best_y = y
 	return best == INFINITY ? S : locate(best_x, best_y, S.z)
 
-/// Gives a held glow its cut: the baked mask of its shape, its previous cut while a new one bakes, or none.
+/// Gives a held glow the picture it should show: the baked cut of its shape, its previous cut while a new one bakes, or the plain sprite.
 /datum/client_glow_holder/proc/apply_shape(datum/light_source/L, h, image/glow_image, obj/effect/overlay/client_glow/G)
-	glow_image.icon = G.icon
-	if(unmasked)
+	if(unmasked || L.glow_plain)
 		LAZYREMOVE(held_shape, h)
 		LAZYREMOVE(cut_shape, h)
 		show_plain(glow_image, G)
@@ -257,11 +256,13 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		show_plain(glow_image, G)
 
 /datum/client_glow_holder/proc/show_plain(image/glow_image, obj/effect/overlay/client_glow/G)
-	glow_image.filters = null
+	glow_image.icon = G.icon
+	glow_image.icon_state = G.icon_state
 
-/// Cuts a held glow with the baked mask of `shape`.
+/// Shows a held glow baked to `shape`.
 /datum/client_glow_holder/proc/cut_with(h, image/glow_image, shape, baked)
-	glow_image.filters = filter(type = "alpha", icon = baked)
+	glow_image.icon = baked
+	glow_image.icon_state = null
 	LAZYSET(cut_shape, h, shape)
 
 /// A shape finished baking: every held glow waiting on it shows it.

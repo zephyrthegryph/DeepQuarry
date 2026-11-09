@@ -20,6 +20,7 @@ CAPABILITIES(/datum/plane_holder)
 	// 'Utility' planes
 	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/fullbright, VIS_FULLBRIGHT) //Lighting system (lighting_overlay objects)
 	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/lighting, VIS_LIGHTING) //Lighting system (but different!)
+	client_glow_master_compose(plane_masters[VIS_LIGHTING]) // adds the client glow planes (client_lighting_compare.dm)
 	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/o_light_visual, VIS_O_LIGHT) //Object lighting (using masks)
 	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/emissive, VIS_EMISSIVE) //Emissive overlays
 	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/openspace, VIS_OPENSPACE) //Openspace drop shadows mostly

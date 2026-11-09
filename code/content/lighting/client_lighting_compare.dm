@@ -7,6 +7,12 @@
 // the lighting plane, under the glows (client_glow_screen()), and a turf outside dynamic lighting (space, a fullbright area),
 // which the DM engine leaves bright by drawing nothing, carries a white tile on the plane over the base (client_glow_white()).
 //
+// The glow plane. Every glow draws on PLANE_CLIENT_GLOW, a hidden render target whose master is alpha-cut by PLANE_CLIENT_VISIBLE, so light on a turf this client does not see is gone.
+// PLANE_CLIENT_VISIBLE is one white tile as every area's overlay: BYOND draws an area's overlays only on the turfs it shows this client, so the client builds its own visibility map.
+// The lighting plane master adds that plane over its black base with a layer filter. A second hidden plane, PLANE_CLIENT_SPREAD, holds a relay of the glow plane, blooms it about a tile
+// and keeps only the opaque tiles (PLANE_CLIENT_WALLS, a white underlay on each opaque turf set on opacity changes), and the master adds that too: a wall is lit only from floor this client can see.
+// All of this was seen working in an isolated client rig. A relay must stand at screen_loc "1,1": at "CENTER" it draws shifted by about half a view. No server work when a player moves.
+//
 // Compare mode. The server runs both engines at once, the DM corner lighting (a lighting object on every dynamic turf, as the
 // classic engine had before lazy objects, since turfs stay at luminosity 1 for the glows) and the client glows, and each client
 // picks which one it sees, live:
@@ -33,6 +39,27 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 	blend_mode = BLEND_OVERLAY
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
 
+/// The plane of "turfs this client sees": renders only as the glow plane's alpha source.
+/atom/movable/screen/plane_master/client_visible
+	plane = PLANE_CLIENT_VISIBLE
+	render_target = CLIENT_VISIBLE_RENDER_TARGET
+	blend_mode = BLEND_OVERLAY
+	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
+
+/// The plane of opaque tiles: renders only as the wall spread's alpha source.
+/atom/movable/screen/plane_master/client_walls
+	plane = PLANE_CLIENT_WALLS
+	render_target = CLIENT_WALLS_RENDER_TARGET
+	blend_mode = BLEND_OVERLAY
+	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
+
+/// The bloomed glow plane cut to opaque tiles, added to the lighting plane by its master's filter.
+/atom/movable/screen/plane_master/client_spread
+	plane = PLANE_CLIENT_SPREAD
+	render_target = CLIENT_SPREAD_RENDER_TARGET
+	blend_mode = BLEND_OVERLAY
+	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
+
 /// The black base the glows add onto (on the lighting plane in client mode, on the glow plane in compare mode).
 /atom/movable/screen/client_glow_base
 	name = ""
@@ -53,24 +80,38 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 /// compiler (doc/rewrite/native_render_source_initializer_repro.md).
 /atom/movable/screen/client_glow_relay
 	name = ""
-	screen_loc = "CENTER"
+	screen_loc = "1,1" // at "CENTER" a render_source relay draws shifted by about half a view (client rig)
 	plane = PLANE_LIGHTING
 	layer = BACKGROUND_LAYER + 30
 	blend_mode = BLEND_OVERLAY
 	appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
+/// The glow plane copied onto the spread plane.
+/atom/movable/screen/client_glow_relay/spread
+	plane = PLANE_CLIENT_SPREAD
+	layer = 1
+	appearance_flags = NONE
+
 /// The shared screen objects (a screen object may sit on many screens); made on first use.
 GLOBAL_DATUM(client_glow_plane_master, /atom/movable/screen/plane_master/client_glow)
 GLOBAL_DATUM(client_glow_base, /atom/movable/screen/client_glow_base)
 GLOBAL_DATUM(client_glow_compare_base, /atom/movable/screen/client_glow_base/compare)
 GLOBAL_DATUM(client_glow_relay, /atom/movable/screen/client_glow_relay)
+GLOBAL_DATUM(client_walls_plane_master, /atom/movable/screen/plane_master/client_walls)
+GLOBAL_DATUM(client_spread_plane_master, /atom/movable/screen/plane_master/client_spread)
+GLOBAL_DATUM(client_glow_spread_relay, /atom/movable/screen/client_glow_relay/spread)
+GLOBAL_DATUM(client_visible_plane_master, /atom/movable/screen/plane_master/client_visible)
 
 CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	owns_one(nameof(client_glow_plane_master), /atom/movable/screen/plane_master/client_glow)
 	owns_one(nameof(client_glow_base), /atom/movable/screen/client_glow_base)
 	owns_one(nameof(client_glow_compare_base), /atom/movable/screen/client_glow_base/compare)
 	owns_one(nameof(client_glow_relay), /atom/movable/screen/client_glow_relay)
+	owns_one(nameof(client_walls_plane_master), /atom/movable/screen/plane_master/client_walls)
+	owns_one(nameof(client_spread_plane_master), /atom/movable/screen/plane_master/client_spread)
+	owns_one(nameof(client_glow_spread_relay), /atom/movable/screen/client_glow_relay/spread)
+	owns_one(nameof(client_visible_plane_master), /atom/movable/screen/plane_master/client_visible)
 
 /client
 	/// Compare mode: TRUE when this client sees the DM lighting, FALSE the client glows.
@@ -78,7 +119,7 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	/// What this client's screen shows of client lighting now (CLIENT_GLOW_SCREEN_*).
 	var/tmp/lighting_screen = CLIENT_GLOW_SCREEN_NONE
 
-/// Every shared screen object: list(master, base, compare base, relay).
+/// Every shared screen object: list(glow master, base, compare base, compare relay, visibility master, walls master, spread master, spread relay).
 /proc/client_glow_screen_objects()
 	if(!GLOB.client_glow_plane_master)
 		rel_set(GLOB, nameof(GLOB.client_glow_plane_master), new /atom/movable/screen/plane_master/client_glow)
@@ -87,7 +128,25 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 		var/atom/movable/screen/client_glow_relay/R = new
 		R.render_source = CLIENT_GLOW_RENDER_TARGET
 		rel_set(GLOB, nameof(GLOB.client_glow_relay), R)
-	return list(GLOB.client_glow_plane_master, GLOB.client_glow_base, GLOB.client_glow_compare_base, GLOB.client_glow_relay)
+		rel_set(GLOB, nameof(GLOB.client_visible_plane_master), new /atom/movable/screen/plane_master/client_visible)
+		rel_set(GLOB, nameof(GLOB.client_walls_plane_master), new /atom/movable/screen/plane_master/client_walls)
+		rel_set(GLOB, nameof(GLOB.client_spread_plane_master), new /atom/movable/screen/plane_master/client_spread)
+		var/atom/movable/screen/client_glow_relay/spread/S = new
+		S.render_source = CLIENT_GLOW_RENDER_TARGET
+		rel_set(GLOB, nameof(GLOB.client_glow_spread_relay), S)
+		GLOB.client_glow_plane_master.add_filter("client_visible_cut", 1, list(type = "alpha", render_source = CLIENT_VISIBLE_RENDER_TARGET))
+		GLOB.client_spread_plane_master.add_filter("client_wall_spread", 1, list(type = "bloom", threshold = "#000000", size = CLIENT_GLOW_SPREAD_SIZE, offset = CLIENT_GLOW_SPREAD_OFFSET, alpha = CLIENT_GLOW_SPREAD_ALPHA))
+		GLOB.client_spread_plane_master.add_filter("client_walls_only", 2, list(type = "alpha", render_source = CLIENT_WALLS_RENDER_TARGET))
+	return list(GLOB.client_glow_plane_master, GLOB.client_glow_base, GLOB.client_glow_compare_base, GLOB.client_glow_relay, GLOB.client_visible_plane_master, GLOB.client_walls_plane_master, GLOB.client_spread_plane_master, GLOB.client_glow_spread_relay)
+
+/// The lighting master adds the glow plane and the wall spread over its black base, before its emissive masks so those still punch through; compare mode relays instead. A filter whose source is not on this screen adds nothing.
+/proc/client_glow_master_compose(atom/movable/screen/plane_master/lighting/M)
+	M.remove_filter("client_glow_add")
+	M.remove_filter("client_spread_add")
+	if(GLOB.client_lighting_compare)
+		return
+	M.add_filter("client_glow_add", -2, list(type = "layer", render_source = CLIENT_GLOW_RENDER_TARGET, blend_mode = BLEND_ADD))
+	M.add_filter("client_spread_add", -1, list(type = "layer", render_source = CLIENT_SPREAD_RENDER_TARGET, blend_mode = BLEND_ADD))
 
 /// The screen state a client wants now.
 /proc/client_glow_screen_state(client/C)
@@ -102,11 +161,11 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	var/list/all = client_glow_screen_objects()
 	switch(state)
 		if(CLIENT_GLOW_SCREEN_BASE)
-			return list(all[2])
+			return list(all[2], all[1], all[5], all[6], all[7], all[8])
 		if(CLIENT_GLOW_SCREEN_COMPARE_DM)
 			return list(all[1])
 		if(CLIENT_GLOW_SCREEN_COMPARE_GLOW)
-			return list(all[1], all[3], all[4])
+			return list(all[1], all[3], all[4], all[5])
 	return list()
 
 /// Puts this client's screen in step with the lighting mode and its compare view. Cheap when it already is (one comparison).
@@ -124,8 +183,12 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	for(var/client/C as anything in GLOB.clients)
 		client_glow_screen_sync(C)
 
-/// The plane a glow and a white tile draw on now.
+/// The plane a glow draws on.
 /proc/client_glow_plane()
+	return PLANE_CLIENT_GLOW
+
+/// The plane a white tile draws on now: above the relay on the lighting plane, or on the glow plane under compare's opaque relay.
+/proc/client_glow_white_plane()
 	return GLOB.client_lighting_compare ? PLANE_CLIENT_GLOW : PLANE_LIGHTING
 
 /// The white tile on `plane`: one shared appearance per plane, so a turf's underlay costs no appearance of its own.
@@ -142,9 +205,29 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 	underlays -= CACHED_FAST(client_glow_white_tiles, "[PLANE_CLIENT_GLOW]")
 	var/area/A = loc
 	if(on && !IS_DYNAMIC_LIGHTING(src) && IS_DYNAMIC_LIGHTING(A))
-		underlays += CACHED_FAST(client_glow_white_tiles, "[client_glow_plane()]")
+		underlays += CACHED_FAST(client_glow_white_tiles, "[client_glow_white_plane()]")
 		return TRUE
 	return FALSE
+
+/// The white tile an opaque turf carries on the walls plane.
+/proc/client_walls_tile()
+	var/static/mutable_appearance/tile
+	if(!tile)
+		tile = mutable_appearance(LIGHTING_ICON, "transparent", CLIENT_GLOW_WHITE_LAYER, PLANE_CLIENT_WALLS, 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
+	return tile
+
+/// This turf's opacity changed or it was just made: it is on the walls plane exactly while it is opaque. Events only.
+/turf/proc/client_glow_wall_sync()
+	underlays -= client_walls_tile()
+	if(GLOB.client_lighting && directional_opacity)
+		underlays += client_walls_tile()
+
+/// The white tile every area draws on the visibility plane: BYOND shows it only on turfs this client sees.
+/proc/client_visible_tile()
+	var/static/mutable_appearance/tile
+	if(!tile)
+		tile = mutable_appearance(LIGHTING_ICON, "transparent", CLIENT_GLOW_WHITE_LAYER, PLANE_CLIENT_VISIBLE, 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
+	return tile
 
 /// The white tile an area outside dynamic lighting draws in client mode (its draw()), or null: BYOND draws an area's overlays on
 /// every turf of the area, so the whole area stays bright for one appearance (space is most of the map's turfs).
@@ -156,6 +239,9 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 /area
 	/// Client lighting: the plane this area's white tile is on (client_glow_whites_set()), 0 for none. Its draw() reads it.
 	var/client_glow_white_plane = 0
+	/// Client lighting: this area draws the visibility tile (client_glow_whites_set(), set_ambient_luminosity() for a later area). Its draw() reads it,
+	/// so the setter redraws the area: an area whose nothing else changes is never redrawn otherwise.
+	var/client_visible_shown = FALSE
 
 /// Everything outside dynamic lighting gets its white tile (on) or loses it, in one pass: an area outside dynamic lighting as
 /// its overlay; inside a dynamic area, a turf outside dynamic lighting as its underlay. Returns how many carry one.
@@ -163,11 +249,14 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 	var/n = 0
 	var/start = REALTIMEOFDAY
 	for(var/area/A in world)
+		A.set_client_visible_shown(!!on)
 		if(!A.dynamic_lighting)
-			A.set_client_glow_white_plane(on ? client_glow_plane() : 0) // its draw() adds or drops the white tile
+			A.set_client_glow_white_plane(on ? client_glow_white_plane() : 0) // its draw() adds or drops the white tile
 			n++
 			continue
 		for(var/turf/T as anything in contents_of(A, /turf))
+			if(T.directional_opacity)
+				T.client_glow_wall_sync()
 			if(!IS_DYNAMIC_LIGHTING(T) && T.client_glow_white(on))
 				n++
 	log_world("client lighting: [n] area(s) and turf(s) outside dynamic lighting [on ? "carry" : "dropped"] a white tile ([(REALTIMEOFDAY - start) * 100] ms)")
@@ -200,6 +289,8 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 				L.remove_lum()
 			L.force_update()
 		client_glow_whites_set(TRUE) // the white tiles move to the plane the glows use now
+	for(var/atom/movable/screen/plane_master/lighting/M in world)
+		client_glow_master_compose(M)
 	client_glow_screens_sync()
 
 ADMIN_VERB(toggle_client_lighting_compare, R_DEBUG|R_SERVER, "Toggle Lighting Compare", "Run the DM lighting and the client glows together, so each admin can switch which one they see (costs both engines).", ADMIN_CATEGORY_DEBUG_GAME)

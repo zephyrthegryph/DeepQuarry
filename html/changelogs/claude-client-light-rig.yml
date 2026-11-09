@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Client lighting cuts light to what you can see, so a wall is dark from its unlit side and lit from its lit side."

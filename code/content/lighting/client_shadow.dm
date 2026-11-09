@@ -1,8 +1,8 @@
-// Client lighting, piece 2: shadow masks. Each glow is cut by an alpha mask of the turfs its light reaches (the world opacity
-// layer's sight from the light's turf, code/domains/verdigris/sight/), so a glow no longer shines through walls. The mask is
-// a baked icon, the size of the glow sprite: one opaque tile per reached turf with a few faded pixels around it, drawn off-thread by
-// iconforge and shared by every light with the same reach. A viewer's glow stays uncut until its shape is first baked; after a change
-// it keeps its previous cut until the new one lands. A reach is recomputed only when its light is redrawn (it moved or changed) or
+// Client lighting, piece 2: baked shapes. Each glow is the light's sprite already cut to the open floor its light reaches (the world opacity
+// layer's sight from the light's turf, code/domains/verdigris/sight/), baked off-thread by iconforge, white so one icon serves every colour,
+// and shared by every light with the same reach. No filter per light, and nothing depends on another object being drawn. Opaque tiles are not in the
+// cut: walls take their light from the visible floor beside them, on the glow plane (client_lighting_compare.dm). The gameplay reach (glow_reach) still has them.
+// A viewer's glow is the plain sprite until its shape is first baked; after a change it keeps its previous cut until the new one lands. A reach is recomputed only when its light is redrawn (it moved or changed) or
 // when opacity changes inside its reach (a door, a wall built), found through a per-chunk index of glowing lights.
 
 
@@ -124,7 +124,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 			if(x1 > x2 || y1 > y2)
 				continue
 			steps += list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "color" = ring_colors[ring], "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2))
-	return list("icon_file" = resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(size))), "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = steps)
+	var/source = resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(size)))
+	var/list/mask = list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = steps)
+	return list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = list(list("type" = RUSTG_ICONFORGE_BLEND_ICON, "icon" = mask, "blend_mode" = ICON_MULTIPLY, "x" = 1, "y" = 1)))
 
 /// The baked mask of this shape, or null while it is not ready (asks for it).
 /proc/client_glow_mask_icon(key)
@@ -225,19 +227,20 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		client_glow_holders_consider(src) // the held copies take the new mask
 
 /// Recomputes this light's reach and mask shape (client_glow_apply()). `margin` is the glow sprite's: the baked mask is the same size,
-/// so the alpha filter lines the two up with no offset. TRUE when the shape changed.
+/// so the two line up with no offset. TRUE when the shape changed.
 /datum/light_source/proc/client_glow_mask_apply(range, margin)
 	glow_mask_range = range
 	glow_mask_margin = margin
 	// The reach first, as a shape key: an opacity change that leaves this light's reach as it was (most of them) stops here.
 	var/list/seen = sight_view_turfs(source_turf, range)
-	var/list/offsets = new /list(length(seen) * 2)
-	var/i = 0
+	var/list/offsets = list()
 	var/sx = source_turf.x
 	var/sy = source_turf.y
 	for(var/turf/T as anything in seen)
-		offsets[++i] = T.x - sx
-		offsets[++i] = T.y - sy
+		if(T != source_turf && T.directional_opacity)
+			continue // an opaque tile is lit from the visible floor beside it, not by this cut
+		offsets += T.x - sx
+		offsets += T.y - sy
 	var/key = "[margin]|[jointext(offsets, ",")]"
 	if(key == glow_mask_key && glow_reach_origin == source_turf)
 		return

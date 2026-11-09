@@ -159,6 +159,7 @@
 		if(. != directional_opacity)
 			sight_opacity_changed(src)
 			reconsider_lights()
+			client_glow_wall_sync()
 		return
 	directional_opacity = NONE
 	for(var/atom/movable/opacity_source as anything in opacity_sources)
@@ -169,6 +170,7 @@
 			break
 	if(. != directional_opacity)
 		sight_opacity_changed(src)
+		client_glow_wall_sync()
 	if(. != directional_opacity && (. == ALL_CARDINALS || directional_opacity == ALL_CARDINALS))
 		reconsider_lights() //The lighting system only cares whether the tile is fully concealed from all directions or not.
 
