@@ -3,6 +3,10 @@ use super::*;
 use dm_analysis::{checker_effects::{CompactGraphPage, CompactGraphPageBuilder, EffectReportWork}, policy_body_demand::PolicyFailure};
 use std::{io, path::Path};
 
+fn trace_compact_checker() -> bool {
+    cfg!(debug_assertions) && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some()
+}
+
 const MODEL: Kind = Kind(31);
 const CHUNK: Kind = Kind(32);
 use dm_analysis::checker_order::{ARCHIVED_CHUNK_WIDTH as WIDTH, ArchivedChunkOrdinals};
@@ -268,19 +272,25 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
         }
         let mut lookups = Vec::new();
         let context = Mutex::new(ctx);
-        for &ordinal in roster {
+        let trace = stage.is_some() && trace_compact_checker();
+        for (local, &ordinal) in roster.iter().enumerate() {
+            let operation = std::cell::Cell::new("prepare_current_body");
             let body_mark = work.mark().map_err(transport)?;
             work.reserve(ExecutionAdmission::fixed_control_charge()).map_err(transport)?;
             let admission = pages::page_execution_admission(&ledger).map_err(|message| transport(io::Error::other(message)))?;
             let obtain = |syntax: &Arc<dm_tree::frontend::BodySyntaxInput>| {
                 use dm_tree::frontend::BodySyntaxFailure as F;
+                operation.set("admit_syntax_dependency");
                 let key = body_syntax::code_key(syntax)?;
                 let mut context = context.lock().unwrap_or_else(|error| error.into_inner());
                 if !context.has_dependency(key) {
                     pages::reserve_actual_dependency(&ledger, p.key, p.old_edges, context.dependency_count() + 1, &admission, admission.available())
                         .map_err(F::Operational)?;
                 }
-                body_syntax::obtain_product(&mut context, syntax)
+                operation.set("obtain_kind4_syntax");
+                let product = body_syntax::obtain_product(&mut context, syntax)?;
+                operation.set("bind_or_evaluate_body");
+                Ok(product)
             };
             let before = work.charged_bytes_for_chunk();
             let mut scratch = graph_work::GraphWork::new(Arc::clone(&ledger), p.key);
@@ -289,10 +299,25 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
                 output: Mutex::new((&mut work, &mut lookups)), error: Mutex::new(None),
             };
             let pending = compute_current_body_using(&input, ordinal, &recorder, &admission, &body_charge, &obtain, Some(&source_proof));
+            let trace_failure = |operation| {
+                if trace {
+                    let source = input.archive().occurrences().get(ordinal).map(|row| &row.source);
+                    let _ = io::Write::write_fmt(&mut io::stderr().lock(), format_args!(
+                        "checker.body_failed rank={} ordinal={ordinal} window_start={} window_count={} operation={operation} syntax_bytes={} file={} line={}\n",
+                        p.start + local, p.start, p.count, body_charge.load(Ordering::Acquire),
+                        source.map_or("", |row| row.semantic_path.as_ref()),
+                        source.map_or(0, |row| row.line),
+                    ));
+                }
+            };
             if let Some(actual) = recorder.error.into_inner().unwrap_or_else(|error| error.into_inner()) {
+                trace_failure("resolve_body_lookup");
                 return Err(actual);
             }
-            let body = pending.map_err(failure)?;
+            let body = pending.map_err(|actual| {
+                trace_failure(operation.get());
+                failure(actual)
+            })?;
             drop(scratch);
             let body_charge = body.charge();
             work.reserve(body_charge).map_err(transport)?;
@@ -415,6 +440,7 @@ impl QueryDb {
                 PolicyFailure::Operational(actual) => actual,
                 PolicyFailure::Unsupported(reason) => io::Error::other(reason.0),
             };
+            let trace = trace_compact_checker().then(std::time::Instant::now);
             let ledger = &self.purity.ledger;
             let source = EffectSource::new(input.archive(), input.profile()).map_err(transport)?;
             let resolver = input.archive().tree();
@@ -429,6 +455,9 @@ impl QueryDb {
                     |ordinal| replay.body(ordinal),
                     |rows| keyword(rows).map_err(PolicyFailure::Operational),
                 ).map_err(transport)?;
+            }
+            if let Some(started) = trace {
+                let _ = io::Write::write_fmt(&mut io::stderr().lock(), format_args!("checker.keywords_done bodies={} elapsed_ms={}\n", source.len(), started.elapsed().as_millis()));
             }
             validate()?;
             let graph_mark = work.mark()?;
@@ -476,7 +505,11 @@ impl QueryDb {
                     for row in rows.iter().filter(|row| row.phase() == wanted) { graph_row(row)?; }
                 }
             }
-            validate()
+            validate()?;
+            if let Some(started) = trace {
+                let _ = io::Write::write_fmt(&mut io::stderr().lock(), format_args!("checker.graph_done nodes={} replay_elapsed_ms={}\n", current.len(), started.elapsed().as_millis()));
+            }
+            Ok(())
         })?;
         Ok((phases.prelude, phases.body, phases.clean))
     }
@@ -501,10 +534,16 @@ impl QueryDb {
         work.reserve(ExecutionAdmission::fixed_control_charge())?;
         let admission = pages::page_execution_admission(&self.purity.ledger).map_err(oom_string)?;
         let mut chunks = reserve_chunk_list(total.div_ceil(width), &mut work)?;
+        let trace = trace_compact_checker().then(std::time::Instant::now);
+        let progress_stride = total.div_ceil(4).max(1);
+        let mut next_progress = progress_stride;
         let staged = dm_analysis::checker_order::with_archived_order_using(
             input.archive(), &admission, &mut work, &crate::daemon::control::checkpoint,
             |order, _| {
                 if order.len() != total { return Err("checker archived order has different body coverage".into()); }
+                if let Some(started) = trace {
+                    let _ = io::Write::write_fmt(&mut io::stderr().lock(), format_args!("checker.body_windows completed=0 total={total} windows=0 elapsed_ms={}\n", started.elapsed().as_millis()));
+                }
                 for start in (0..total).step_by(width) {
                     crate::daemon::control::checkpoint().map_err(PolicyFailure::Operational)?;
                     let count = width.min(total - start);
@@ -516,6 +555,18 @@ impl QueryDb {
                         return Err("checker window omitted its actual private stage".into());
                     }
                     chunks.push(Arc::clone(result));
+                    if let Some(started) = trace {
+                        let completed = start + count;
+                        if completed >= next_progress || completed == total {
+                            let _ = io::Write::write_fmt(&mut io::stderr().lock(), format_args!(
+                                "checker.body_windows completed={completed} total={total} windows={} syntax_bytes={} elapsed_ms={}\n",
+                                chunks.len(), self.body_charge.load(Ordering::Acquire), started.elapsed().as_millis(),
+                            ));
+                            while next_progress <= completed && next_progress < total {
+                                next_progress = next_progress.saturating_add(progress_stride);
+                            }
+                        }
+                    }
                 }
                 Ok(())
             },

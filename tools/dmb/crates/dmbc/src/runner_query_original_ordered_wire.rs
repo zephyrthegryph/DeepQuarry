@@ -264,6 +264,8 @@ impl SourceSnapshot {
         use super::{OriginalDeclarationAndBody as Body, OriginalThroughGraph as Graph,
                     OriginalThroughKeywords as Keyword, OriginalThroughReaderDeclarations as Reader};
         use std::{cell::RefCell, io::Write as _};
+        let trace = (cfg!(debug_assertions) && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some())
+            .then(std::time::Instant::now);
         self.with_effect_scope(input, environment, explicit, tree, |db, scope| {
             let mut declarations = OrderedArray::new(cache)?;
             let validate = || scope.validate(db, input).map_err(io::Error::other);
@@ -286,6 +288,9 @@ impl SourceSnapshot {
                 }
                 Ok(())
             })?;
+            if let Some(started) = trace {
+                let _ = io::Write::write_fmt(&mut io::stderr().lock(), format_args!("checker.declarations_done bodies={} elapsed_ms={}\n", input.archive().len(), started.elapsed().as_millis()));
+            }
             let tail = RefCell::new(OrderedArray::new(cache)?);
             let (prelude, body, body_clean) = db.with_archived_compact_report(
                 input, scope, width, cache, write_body_diagnostic_row,
