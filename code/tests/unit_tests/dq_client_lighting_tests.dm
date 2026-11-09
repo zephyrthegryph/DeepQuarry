@@ -482,3 +482,13 @@
 	if(fixed)
 		var/area/FA2 = fixed.loc
 		TEST_ASSERT(!(white in fixed.underlays) && !client_glow_area_white(FA2), "DM lighting again: the white tile is gone")
+
+/// Every hidden master the lighting composition reads must be drawn: the base plane master starts at alpha 0, which renders an empty target.
+/datum/unit_test/dq_client_lighting_masters_opaque
+
+/datum/unit_test/dq_client_lighting_masters_opaque/Run()
+	for(var/path in list(/atom/movable/screen/plane_master/client_glow, /atom/movable/screen/plane_master/client_visible, /atom/movable/screen/plane_master/client_walls, /atom/movable/screen/plane_master/client_spread))
+		var/atom/movable/screen/plane_master/M = new path
+		TEST_ASSERT_EQUAL(M.alpha, 255, "[path]: a hidden render target at alpha 0 is empty")
+		qdel(M)
+	return TRUE

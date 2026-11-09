@@ -37,6 +37,7 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 	plane = PLANE_CLIENT_GLOW
 	render_target = CLIENT_GLOW_RENDER_TARGET
 	blend_mode = BLEND_OVERLAY
+	alpha = 255 // the base plane master is alpha 0, and a hidden render target at alpha 0 renders empty: the world goes black (client rig)
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
 
 /// The plane of "turfs this client sees": renders only as the glow plane's alpha source.
@@ -44,6 +45,7 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 	plane = PLANE_CLIENT_VISIBLE
 	render_target = CLIENT_VISIBLE_RENDER_TARGET
 	blend_mode = BLEND_OVERLAY
+	alpha = 255 // the base plane master is alpha 0, and a hidden render target at alpha 0 renders empty: the world goes black (client rig)
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
 
 /// The plane of opaque tiles: renders only as the wall spread's alpha source.
@@ -51,6 +53,7 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 	plane = PLANE_CLIENT_WALLS
 	render_target = CLIENT_WALLS_RENDER_TARGET
 	blend_mode = BLEND_OVERLAY
+	alpha = 255 // the base plane master is alpha 0, and a hidden render target at alpha 0 renders empty: the world goes black (client rig)
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
 
 /// The bloomed glow plane cut to opaque tiles, added to the lighting plane by its master's filter.
@@ -58,6 +61,7 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 	plane = PLANE_CLIENT_SPREAD
 	render_target = CLIENT_SPREAD_RENDER_TARGET
 	blend_mode = BLEND_OVERLAY
+	alpha = 255 // the base plane master is alpha 0, and a hidden render target at alpha 0 renders empty: the world goes black (client rig)
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
 
 /// The black base the glows add onto (on the lighting plane in client mode, on the glow plane in compare mode).
