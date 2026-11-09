@@ -696,6 +696,89 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_gaussian_else_and_do_while_keep_exact_block_links() {
+     let fixture = r#"
+/proc/gaussian(mean, stddev)
+    var/static/gaussian_next
+    var/R1;var/R2;var/working
+    if(gaussian_next != null)
+        R1 = gaussian_next
+        gaussian_next = null
+    else
+        do
+            R1 = rand(-10000,10000)/10000
+            R2 = rand(-10000,10000)/10000
+            working = R1*R1 + R2*R2
+        while(working >= 1 || working==0)
+        working = sqrt(-2 * log(working) / working)
+        R1 *= working
+        gaussian_next = R2 * working
+    return (mean + stddev * R1)
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("        do\n", "        do ;\n"), false),
+         (fixture.replace("if(gaussian_next != null)", "if(gaussian_next != null) ;"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "gaussian");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original else and do-while are available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_else_if_attaches_only_after_the_consumed_then_block() {
+     let fixture = r#"
+/proc/probe(character)
+    var/datum/mind/M
+    if(ismob(character))
+        var/mob/C = character
+        M = C.mind
+    else if(istype(character, /datum/mind))
+        M = character
+    return M
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("else if(istype(character, /datum/mind))\n        M = character",
+             "else if(istype(character, /datum/mind)) M = character"), false),
+         (fixture.replace("if(ismob(character))", "if(ismob(character)) ;"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original else-if attaches to the completed block");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_admin_attack_safe_call_consumes_only_absolute_unmodified_path_argument() {
      let fixture = r#"
 #define R_ADMIN (1<<1)
@@ -731,6 +814,65 @@ mod body_syntax_census_tests;
                  assert!(proof.belongs_to(&body));
              } else {
                  assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_static_local_and_standalone_increment_use_issued_tokens() {
+     let fixture = r#"
+/proc/wrapper(next)
+    var/static/__f
+    if(!__f)
+        __f = choose(next)
+    next++
+    return __f
+#define VERDIGRIS (__verdigris || __detect_verdigris())
+#define VG_COUNT_FFI_CALL __verdigris_ffi_calls++
+/proc/vg_adjust_multi_hook(...)
+    var/static/__f
+    if(!__f)
+        __f = load_ext(VERDIGRIS, "byond:adjust_multi_hook_ffi")
+    VG_COUNT_FFI_CALL
+    return call_ext(__f)(arglist(args))
+/proc/vg_air_watch_changed(watch, revisions)
+    var/static/__f
+    if(!__f)
+        __f = load_ext(VERDIGRIS, "byond:air_watch_changed_ffi")
+    VG_COUNT_FFI_CALL
+    return call_ext(__f)(watch, revisions)
+/proc/local_row()
+    var/R1;var/R2;var/working
+    return R1
+/proc/static_initializer()
+    var/static/__f = 1
+    return __f
+/proc/member_increment(target)
+    target.next++
+    return target
+/proc/prefix_increment(next)
+    ++next
+    return next
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     for (name, expected) in [("wrapper", true), ("vg_adjust_multi_hook", true), ("vg_air_watch_changed", true), ("local_row", true), ("static_initializer", false),
+         ("member_increment", false), ("prefix_increment", false)]
+     {
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original static/increment grammar is available: {name}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{name}");
              }
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();
@@ -875,6 +1017,139 @@ mod body_syntax_census_tests;
          assert!(parsed.diagnostics.is_empty(), "{source}: {:?}", parsed.diagnostics);
          let syntax = dm_syntax::parse(&format!("/proc/compat()\n    return {source}\n"));
          assert!(dm_syntax::parse_proc_body(&syntax.items[0]).original_grammar.is_none(), "{source}");
+     }
+ }
+
+ #[test]
+ fn actual_original_local_initializers_and_plain_return_slot_compose_exact_values() {
+     let fixture = r#"
+/proc/solve(a, b, c)
+    . = list()
+    var/d = b*b - 4*a*c
+    var/bottom = 2*a
+    if(d < 0)
+        return
+    var/root = sqrt(d)
+    . = (-b + root) / bottom
+/proc/angle(inc, dec)
+    if(inc < 0)
+        inc += 360
+    . = inc > dec ? -dec : inc
+/proc/unsupported_local(a)
+    var/value = sqrt(number = a)
+    return value
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     for (name, expected) in [("solve", true), ("angle", true), ("unsupported_local", false)] {
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual local and return-slot grammar is available: {name}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{name}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_for_list_owns_zero_argument_call_and_member_iterable() {
+     let fixture = r#"
+/proc/probe(M)
+    if(ticker_mode().antag_templates && ticker_mode().antag_templates.len)
+        for(var/datum/antagonist/antag in ticker_mode().antag_templates)
+            if(antag.is_antagonist(M))
+                return 2
+    return 0
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("in ticker_mode().", "in ticker_mode(M)."), false),
+         (fixture.replace("in ticker_mode().", "in ticker_mode()?."), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original ForList call-member iterable is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_braced_assert_and_dot_accumulation_have_exact_statement_proofs() {
+     let fixture = r#"
+#undef ASSERT
+#define ASSERT(condition, message...) \
+    if (!(condition)) { \
+        CRASH(assertion_message(__FILE__, __LINE__, #condition, ##message)) \
+    }
+/proc/solve(a, b, c)
+    ASSERT(a)
+    . = list()
+    var/d = b*b - 4*a*c
+    var/bottom = 2*a
+    if(d < 0)
+        return
+    var/root = sqrt(d)
+    . += (-b + root) / bottom
+    if(!d)
+        return
+    . += (-b - root) / bottom
+/proc/ret()
+    return .
+/proc/call_with_trailing_comma(a)
+    return choose(a,)
+/proc/call_with_interior_hole(a)
+    return choose(a,,a)
+/proc/two_crash_args(a)
+    CRASH(a, a)
+/proc/crash_as_return(a)
+    return CRASH(a)
+/proc/crash_as_local(a)
+    var/invalid = CRASH(a)
+    return invalid
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     for (name, expected) in [("solve", true), ("ret", true), ("call_with_trailing_comma", true),
+         ("call_with_interior_hole", false), ("two_crash_args", false),
+         ("crash_as_return", false), ("crash_as_local", false)]
+     {
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original crash/dot grammar is available: {name}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{name}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
      }
  }
 

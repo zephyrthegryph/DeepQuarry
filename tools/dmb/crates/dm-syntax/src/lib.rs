@@ -337,7 +337,7 @@ pub use setting_slots::SettingExpressionSlots;
 mod setting_projection;
 pub use setting_projection::{ProjectedExprView, SettingValueView, SettingView,SyntaxProjection};
 pub use statements::{
-    parse_body_items_with_context_and_settings, parse_body_items_with_admitted_literals, SettingStatement, SettingSyntaxProvider,
+    parse_body_items_with_context_and_settings, parse_body_items_with_admitted_literals, OriginalLeafBlockLink, SettingStatement, SettingSyntaxProvider,
 };
 
 mod syntax_ledger_views;

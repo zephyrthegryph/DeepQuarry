@@ -1165,6 +1165,78 @@ fn parse_statements_admitted(
             }
             Ok(open)
         }
+        fn original_leaf_block_link(
+            &self, tail: dm_syntax::Span, next: dm_syntax::Span, link: dm_syntax::OriginalLeafBlockLink,
+        ) -> std::io::Result<bool> {
+            use dm_syntax::OriginalLeafBlockLink;
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            if tail.end != next.start { return Ok(false); }
+            let Ok(tail) = tokens.tokens(tail) else { return Ok(false); };
+            let mut closed = false;
+            for (kind, _, spelling) in tail {
+                self.admission.checkpoint()?;
+                match (kind, spelling) {
+                    (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    // A leaf can end with a semicolon; the pinned IF parser
+                    // also skips semicolons following its then block.
+                    (TokenKind::Punctuation, ";") => (),
+                    (TokenKind::Punctuation, "}") if !closed => closed = true,
+                    _ => return Ok(false),
+                }
+            }
+            if !closed { return Ok(false); }
+            let Ok(header) = tokens.tokens(next) else { return Ok(false); };
+            let significant = |(kind, _, _): &(TokenKind, dm_syntax::Span, &str)| !matches!(
+                kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment);
+            let mut header = header.filter(significant);
+            match link {
+                OriginalLeafBlockLink::ElseIf => Ok(matches!(header.next(), Some((TokenKind::Ident, _, "else")))
+                    && matches!(header.next(), Some((TokenKind::Ident, _, "if")))
+                    && matches!(header.next(), Some((TokenKind::Punctuation, _, "(")))),
+                OriginalLeafBlockLink::Else => Ok(matches!(header.next(), Some((TokenKind::Ident, _, "else")))
+                    && header.next().is_none()),
+                OriginalLeafBlockLink::DoWhile => {
+                    if !matches!(header.next(), Some((TokenKind::Ident, _, "while")))
+                        || !matches!(header.next(), Some((TokenKind::Punctuation, _, "("))) {
+                        return Ok(false);
+                    }
+                    let suffix = dm_syntax::Span::new(next.end, tokens.current_span().end);
+                    let Ok(suffix) = tokens.tokens(suffix) else { return Ok(false); };
+                    for token in suffix {
+                        self.admission.checkpoint()?;
+                        if significant(&token) {
+                            return Ok(matches!(token, (TokenKind::Punctuation, _, ";" | "}")));
+                        }
+                    }
+                    Ok(false)
+                }
+            }
+        }
+        fn original_uninitialized_static_local(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(tokens) = tokens.tokens(header) else { return Ok(false); };
+            let mut tokens = tokens.filter(|(kind, _, _)| !matches!(
+                kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment));
+            for (kind, text) in [(TokenKind::Ident, "var"), (TokenKind::Operator, "/"),
+                (TokenKind::Ident, "static"), (TokenKind::Operator, "/")]
+            {
+                let Some((actual, _, spelling)) = tokens.next() else { return Ok(false); };
+                if spelling != text || !(actual == kind || (text == "/" && actual == TokenKind::Punctuation)) {
+                    return Ok(false);
+                }
+            }
+            let Some((TokenKind::Ident, _, name)) = tokens.next() else { return Ok(false); };
+            let mut name = name.bytes();
+            Ok(name.next().is_some_and(|byte| byte == b'_' || byte.is_ascii_alphabetic())
+                && name.all(|byte| byte == b'_' || byte.is_ascii_alphanumeric())
+                && tokens.next().is_none())
+        }
         fn original_bare_continue(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
