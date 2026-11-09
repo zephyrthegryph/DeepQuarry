@@ -59,6 +59,50 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	/// Sum of the time from request to baked, deciseconds (real time).
 	var/wait_ds = 0
 
+/// The reached tiles (flat text list dx,dy,...) merged into rectangles: a flat number list x0,y0,x1,y1,... (tile offsets, inclusive).
+/// Horizontal runs per row, then a run identical to the row below's extends that rectangle upward.
+/proc/client_glow_mask_rects(list/offsets)
+	. = list()
+	if(!length(offsets))
+		return
+	var/list/rows = list()
+	var/low = INFINITY
+	var/high = -INFINITY
+	for(var/i = 1, i < length(offsets), i += 2)
+		var/x = text2num(offsets[i])
+		var/y = text2num(offsets[i + 1])
+		var/list/row = rows["[y]"]
+		if(!row)
+			row = rows["[y]"] = list()
+		row += x
+		low = min(low, y)
+		high = max(high, y)
+	var/list/open = list() // "x0,x1" -> index of its rectangle in the result
+	for(var/y in low to high)
+		var/list/row = rows["[y]"]
+		var/list/next_open = list()
+		if(row)
+			sortTim(row, GLOBAL_PROC_REF(cmp_numeric_asc))
+			var/start = row[1]
+			var/last = start
+			for(var/n in 2 to length(row) + 1)
+				var/x = n <= length(row) ? row[n] : null
+				if(!isnull(x) && x == last + 1)
+					last = x
+					continue
+				var/run = "[start],[last]"
+				var/at = open[run]
+				if(at)
+					.[at + 3] = y
+				else
+					at = length(.) + 1
+					. += list(start, y, last, y)
+				next_open[run] = at
+				if(!isnull(x))
+					start = x
+					last = x
+		open = next_open
+
 /// The iconforge sprite of a mask of this shape (key "margin|dx,dy,dx,dy,..."): the glow sprite wiped clear, then the reached tiles.
 /// Rings go widest and faintest first over every tile, so a tile's fade can never overwrite a neighbour's solid body.
 /proc/client_glow_mask_sprite(key)
@@ -68,15 +112,18 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/size = margin * 2 + WORLD_ICON_SIZE
 	var/list/steps = list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "x1" = 1, "y1" = 1, "x2" = size, "y2" = size))
 	var/static/list/ring_colors = list("#FFFFFF33", "#FFFFFF66", "#FFFFFF99", "#FFFFFFCC", "#FFFFFFFF")
-	for(var/ring in 1 to length(ring_colors))
+	var/list/rects = client_glow_mask_rects(offsets)
+	// Iconforge refuses a sprite past CLIENT_GLOW_MASK_STEPS_MAX transforms. Merged rectangles keep a shape under it; a jagged one
+	// gives up its faintest rings, never its solid body, so the fade narrows but the cut stays.
+	var/rect_count = length(rects) / 4
+	var/rings = rect_count ? clamp(round((CLIENT_GLOW_MASK_STEPS_MAX - 1) / rect_count), 1, length(ring_colors)) : 0
+	for(var/ring in (length(ring_colors) - rings + 1) to length(ring_colors))
 		var/grow = length(ring_colors) - ring
-		for(var/i = 1, i < length(offsets), i += 2)
-			var/x0 = text2num(offsets[i]) * WORLD_ICON_SIZE + margin
-			var/y0 = text2num(offsets[i + 1]) * WORLD_ICON_SIZE + margin
-			var/x1 = max(x0 + 1 - grow, 1)
-			var/y1 = max(y0 + 1 - grow, 1)
-			var/x2 = min(x0 + WORLD_ICON_SIZE + grow, size)
-			var/y2 = min(y0 + WORLD_ICON_SIZE + grow, size)
+		for(var/i = 1, i < length(rects), i += 4)
+			var/x1 = max(rects[i] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
+			var/y1 = max(rects[i + 1] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
+			var/x2 = min((rects[i + 2] + 1) * WORLD_ICON_SIZE + margin + grow, size)
+			var/y2 = min((rects[i + 3] + 1) * WORLD_ICON_SIZE + margin + grow, size)
 			if(x1 > x2 || y1 > y2)
 				continue
 			steps += list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "color" = ring_colors[ring], "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2))

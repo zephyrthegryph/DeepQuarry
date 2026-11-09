@@ -166,3 +166,5 @@ do { \
 #define CLIENT_GLOW_MASK_CACHE_MAX 8192
 #define CLIENT_GLOW_MASK_QUEUE_MAX 512
 #define CLIENT_GLOW_MASK_BAKES_MAX 16
+/// Iconforge's own limit on one sprite's transforms is 128; the mask stays under it.
+#define CLIENT_GLOW_MASK_STEPS_MAX 127

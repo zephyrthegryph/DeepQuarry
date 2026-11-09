@@ -85,6 +85,20 @@
 	TEST_ASSERT_NOTNULL(baked.GetPixel(margin + 34, margin + 16), "the reached tile's edge fades outward")
 	fdel(png)
 	TEST_ASSERT(S.glow_reach["2,0"], "the open floor two tiles east is lit")
+	// The largest glow, wide open and then checkered (the most rectangles a shape can need): both must bake, iconforge refuses over 128 steps.
+	var/list/open_tiles = list()
+	var/list/checkered = list()
+	for(var/dx in -5 to 5)
+		for(var/dy in -5 to 5)
+			open_tiles += "[dx],[dy]"
+			if(!((dx + dy) % 2))
+				checkered += "[dx],[dy]"
+	var/list/open_sprite = client_glow_mask_sprite("160|[jointext(open_tiles, ",")]")
+	TEST_ASSERT(length(open_sprite["transform"]) <= CLIENT_GLOW_MASK_STEPS_MAX, "an open range 6 mask fits iconforge's transform limit")
+	for(var/list/shape in list(open_tiles, checkered))
+		var/big_png = client_glow_mask_bake_blocking("160|[jointext(shape, ",")]")
+		TEST_ASSERT_NOTNULL(big_png, "iconforge baked a range 6 mask")
+		fdel(big_png)
 	var/builds = GLOB.client_glow_mask_builds
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
 	SSlighting.light_step(0, TRUE)
