@@ -7,7 +7,6 @@ use crate::{
     tree::{SourceFile, Tree},
 };
 use std::{
-    collections::BTreeMap,
     panic::{catch_unwind, AssertUnwindSafe},
     path::Path,
     sync::Arc,
@@ -390,13 +389,10 @@ impl Config {
         self.charge
     }
     /// Retained interpreted scopes, excluding raw bytes, parse scratch and
-    /// the outer Config owner. Other toolchains use the existing envelope.
+    /// the outer Config owner.
     #[cfg(feature = "native-policy")]
     pub fn retained_scope_bound(&self) -> Option<usize> {
-        #[cfg(dq_audited_scope_storage)]
-        { crate::scopes::retained_scope_allocation_bound(&self.scopes) }
-        #[cfg(not(dq_audited_scope_storage))]
-        { None }
+        crate::scopes::retained_scope_allocation_bound(&self.scopes)
     }
     /// Same interpreted scopes as typed adapters; not the raw-only roster.
     pub fn typed_policy_list(&self, name: &str, list: &str) -> Result<Vec<String>, String> {
@@ -425,16 +421,14 @@ impl Config {
     pub fn check_grep_scope(&self)->Result<Scope,String>{self.scope_named("check_grep","")}
     fn scope_named(&self,name:&'static str,group:&'static str)->Result<Scope,String>{
         let scope = self.scopes.for_lint(name,group);
-        // HashMaps are ordered for the semantic fingerprint; TOML comments and
-        // unrelated lint sections do not invalidate this interpreted projection.
-        let lists: BTreeMap<_, _> = scope.lists.iter().collect();
-        let tables: BTreeMap<_, _> = scope.tables.iter().collect();
+        // Sorted scope tables preserve the original semantic fingerprint.
+        // TOML comments and unrelated lint sections do not invalidate it.
         let bytes = serde_json::to_vec(&(
             &scope.exempt_prefixes,
             &scope.exempt_contains,
             &scope.exempt_files,
-            lists,
-            tables,
+            &scope.lists,
+            &scope.tables,
             &scope.ceilings,
             &scope.reason_codes,
         ))

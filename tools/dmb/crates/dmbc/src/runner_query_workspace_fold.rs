@@ -2,7 +2,7 @@
 //! No retained source/Budget cache or shared-warm-work claim is made here.
 use super::SourceSnapshot;
 use dq_analyze::{captured_sys_hygiene_pages::HygieneData,scopes::LintScope,captured_generator_budget::Budget};
-use serde::{Serialize,Serializer,ser::{SerializeMap,SerializeSeq}};
+use serde::{Serialize,Serializer,ser::SerializeSeq};
 use std::{io::{self,Write},path::Path,mem::size_of};
 trait ReportData{
  fn sites(&self)->&[dq_analyze::lint::Site];fn text_at(&self,index:usize)->io::Result<Option<&str>>;fn require_text_shape(&self)->io::Result<()>;
@@ -66,12 +66,9 @@ impl ReportData for dq_analyze::captured_base_vars_pages::BaseVarsData{fn sites(
 
 fn oom()->io::Error{io::ErrorKind::OutOfMemory.into()}
 fn charge(b:&Budget,n:Option<usize>)->io::Result<()>{b.charge(n.ok_or_else(oom)?).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
-struct Sorted<'a,V>{entries:Vec<(&'a String,&'a V)>}
-impl<'a,V> Sorted<'a,V>{fn new(map:&'a std::collections::HashMap<String,V>,budget:&Budget)->io::Result<Self>{let capacity=map.len().checked_mul(4).ok_or_else(oom)?;charge(budget,capacity.checked_mul(size_of::<(&String,&V)>()).and_then(|n|n.checked_add(size_of::<Self>()+64)))?;let mut entries=Vec::new();entries.try_reserve_exact(map.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if entries.capacity()>capacity{return Err(oom())}entries.extend(map.iter());entries.sort_unstable_by(|a,b|a.0.cmp(b.0));Ok(Self{entries})}}
-impl<V:Serialize> Serialize for Sorted<'_,V>{fn serialize<S:Serializer>(&self,s:S)->Result<S::Ok,S::Error>{let mut out=s.serialize_map(Some(self.entries.len()))?;for(key,value)in &self.entries{out.serialize_entry(key,value)?;}out.end()}}
 struct Count(usize);impl Write for Count{fn write(&mut self,b:&[u8])->io::Result<usize>{self.0=self.0.checked_add(b.len()).ok_or_else(oom)?;Ok(b.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
 struct Fixed(Vec<u8>);impl Write for Fixed{fn write(&mut self,b:&[u8])->io::Result<usize>{if b.len()>self.0.capacity()-self.0.len(){return Err(oom())}self.0.extend_from_slice(b);Ok(b.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
-fn scope_json(scope:&LintScope,budget:&Budget)->io::Result<Fixed>{let lists=Sorted::new(&scope.lists,budget)?;let tables=Sorted::new(&scope.tables,budget)?;let row=(&scope.exempt_prefixes,&scope.exempt_contains,&scope.exempt_files,lists,tables,&scope.ceilings,&scope.reason_codes);let mut count=Count(0);serde_json::to_writer(&mut count,&row).map_err(io::Error::from)?;let max=count.0.checked_mul(4).ok_or_else(oom)?;charge(budget,max.checked_add(size_of::<Fixed>()+64))?;let mut out=Fixed(Vec::new());out.0.try_reserve_exact(count.0).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if out.0.capacity()>max{return Err(oom())}serde_json::to_writer(&mut out,&row).map_err(io::Error::from)?;Ok(out)}
+fn scope_json(scope:&LintScope,budget:&Budget)->io::Result<Fixed>{let row=(&scope.exempt_prefixes,&scope.exempt_contains,&scope.exempt_files,&scope.lists,&scope.tables,&scope.ceilings,&scope.reason_codes);let mut count=Count(0);serde_json::to_writer(&mut count,&row).map_err(io::Error::from)?;let max=count.0.checked_mul(4).ok_or_else(oom)?;charge(budget,max.checked_add(size_of::<Fixed>()+64))?;let mut out=Fixed(Vec::new());out.0.try_reserve_exact(count.0).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if out.0.capacity()>max{return Err(oom())}serde_json::to_writer(&mut out,&row).map_err(io::Error::from)?;Ok(out)}
 struct Hex<'a>(&'a [u8;20]);impl Serialize for Hex<'_>{fn serialize<S:Serializer>(&self,s:S)->Result<S::Ok,S::Error>{let mut text=[0u8;40];for(i,b)in self.0.iter().enumerate(){text[2*i]=b"0123456789abcdef"[(b>>4)as usize];text[2*i+1]=b"0123456789abcdef"[(b&15)as usize];}s.serialize_str(std::str::from_utf8(&text).expect("hex is ASCII"))}}
 struct Items<'a>{data:&'a dyn ReportData,name:&'static str,start:usize,end:usize}
 impl Serialize for Items<'_>{fn serialize<S:Serializer>(&self,s:S)->Result<S::Ok,S::Error>{let mut out=s.serialize_seq(Some(self.end-self.start))?;for index in self.start..self.end{

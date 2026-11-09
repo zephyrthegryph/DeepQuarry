@@ -301,7 +301,7 @@ impl<'a> Cx<'a> {
 
     /// A named string table (`[lint.<name>.tables.<key>]`), empty when absent.
     pub fn table(&self, key: &str) -> std::collections::BTreeMap<String, String> {
-        self.scope.table(key).cloned().unwrap_or_default()
+        self.scope.owned_table(key)
     }
 }
 

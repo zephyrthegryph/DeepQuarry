@@ -114,7 +114,7 @@ impl<'a> BorrowedBaseVarCandidates<'a> {
             .filter(|file| !file.hidden)
             .map(|file| (file.rel.as_str(), *file))
             .collect::<HashMap<_, _>>();
-        let hot = scope.table(HOT_TABLE).cloned().unwrap_or_default();
+        let hot = scope.owned_table(HOT_TABLE);
         let mut sink = Sink::new();
         sink.note(format!(
             "base_vars: {} hot base vars homed by base_var_home_hot",

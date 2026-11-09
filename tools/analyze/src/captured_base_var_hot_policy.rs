@@ -192,7 +192,7 @@ impl<'a> CapturedBaseVarHotPolicy<'a> {
     ) -> Result<RawRun, String> {
         checkpoint()?;
         let scope = self.raw.scopes.for_lint("base_vars", "");
-        let hot = scope.table(HOT_TABLE).cloned().unwrap_or_default();
+        let hot = scope.owned_table(HOT_TABLE);
         let mut sink = Sink::new();
         sink.note(format!(
             "base_vars: {} hot base vars homed by base_var_home_hot",
