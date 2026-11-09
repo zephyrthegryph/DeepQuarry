@@ -967,8 +967,125 @@ impl RepeatedOutputs {
     }
 }
 
+// Each immutable block owns either exact 5-byte rows relative to its
+// minima or unchanged dense anchors. Escape words always stay dense.
+const GROUP_ANCHOR_BLOCK: usize = 32;
+
+#[derive(Clone, Copy)]
+struct GroupAnchorBlock {
+    raw: u32,
+    line: u16,
+    output: u16,
+    start: u16,
+    narrow: bool,
+}
+
+impl GroupAnchorBlock {
+    fn base(rows: &[PackedGroup]) -> Option<Self> {
+        let mut base = Self {
+            raw: u32::MAX, line: u16::MAX, output: u16::MAX, start: 0, narrow: true,
+        };
+        for row in rows {
+            let OldPackedGroup([low, high, _, line, output]) = row.unpack()?;
+            base.raw = base.raw.min(u32::from(low) | (u32::from(high) << 16));
+            base.line = base.line.min(line);
+            base.output = base.output.min(output);
+        }
+        rows.iter().all(|row| base.encode(*row).is_some()).then_some(base)
+    }
+
+    fn encode(self, row: PackedGroup) -> Option<[u8; 5]> {
+        let OldPackedGroup([low, high, width, line, output]) = row.unpack()?;
+        let raw = (u32::from(low) | (u32::from(high) << 16)).checked_sub(self.raw)?;
+        let line = line.checked_sub(self.line)?;
+        let output = output.checked_sub(self.output)?;
+        if raw >= 1 << 14 || width >= 1 << 8 || line >= 1 << 9 || output >= 1 << 9 {
+            return None;
+        }
+        let bytes = (u64::from(raw) | (u64::from(width) << 14)
+            | (u64::from(line) << 22) | (u64::from(output) << 31)).to_le_bytes();
+        Some([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4]])
+    }
+
+    fn decode(self, [a, b, c, d, e]: [u8; 5]) -> PackedGroup {
+        let bits = u64::from_le_bytes([a, b, c, d, e, 0, 0, 0]);
+        let raw = self.raw + (bits as u32 & 0x3fff);
+        PackedGroup::pack(&OldPackedGroup([
+            raw as u16, (raw >> 16) as u16, ((bits >> 14) & 255) as u16,
+            self.line + ((bits >> 22) & 511) as u16,
+            self.output + (bits >> 31) as u16,
+        ])).expect("issued narrow group anchor")
+    }
+}
+
+struct CompactGroupAnchors {
+    blocks: Vec<GroupAnchorBlock>,
+    narrow: Vec<[u8; 5]>,
+    dense: Vec<PackedGroup>,
+}
+
+impl CompactGroupAnchors {
+    fn visit(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+        fn column<T>(rows: &Vec<T>, visit: &mut impl FnMut(usize, usize, usize)) {
+            if rows.capacity() != 0 {
+                visit(rows.as_ptr() as usize, rows.len(), rows.capacity() * std::mem::size_of::<T>());
+            }
+        }
+        visit(self as *const Self as usize, 1, std::mem::size_of::<Self>());
+        column(&self.blocks, visit);
+        column(&self.narrow, visit);
+        column(&self.dense, visit);
+    }
+}
+
+enum GroupAnchors {
+    Dense(Vec<PackedGroup>),
+    Compact(Box<CompactGroupAnchors>),
+}
+
+impl GroupAnchors {
+    fn get(&self, index: usize) -> PackedGroup {
+        match self {
+            Self::Dense(rows) => rows[index],
+            Self::Compact(rows) => {
+                let block = rows.blocks[index / GROUP_ANCHOR_BLOCK];
+                let at = usize::from(block.start) + index % GROUP_ANCHOR_BLOCK;
+                if block.narrow { block.decode(rows.narrow[at]) } else { rows.dense[at] }
+            }
+        }
+    }
+
+    fn visit(&self, visit: &mut impl FnMut(usize, usize, usize)) {
+        match self {
+            Self::Dense(rows) => visit(rows.as_ptr() as usize, rows.len(),
+                rows.capacity() * std::mem::size_of::<PackedGroup>()),
+            Self::Compact(rows) => rows.visit(visit),
+        }
+    }
+}
+
+fn visit_group_anchor_blocks(
+    dense: &[PackedGroup], mut visit: impl FnMut(&[PackedGroup]) -> io::Result<()>,
+) -> io::Result<()> {
+    let mut block = [PackedGroup::full(); GROUP_ANCHOR_BLOCK];
+    let mut len = 0;
+    for (index, &cell) in dense.iter().enumerate() {
+        if index != 0 && RepeatedGroupGeometry::repeats(dense[index - 1], cell) {
+            continue;
+        }
+        block[len] = cell;
+        len += 1;
+        if len == block.len() {
+            visit(&block)?;
+            len = 0;
+        }
+    }
+    if len != 0 { visit(&block[..len])?; }
+    Ok(())
+}
+
 struct RepeatedGroupGeometry {
-    anchors: Vec<PackedGroup>,
+    anchors: GroupAnchors,
     outputs: RepeatedOutputs,
     rank: RowGroupRank,
 }
@@ -990,24 +1107,69 @@ impl RepeatedGroupGeometry {
         }
         let anchors = dense.len() - repeats;
         let output_width = if short { std::mem::size_of::<u8>() } else { std::mem::size_of::<u16>() };
-        let bytes = std::mem::size_of::<Self>() + anchors * std::mem::size_of::<PackedGroup>()
+        let dense_anchor_bytes = anchors * std::mem::size_of::<PackedGroup>();
+        let mut narrow_rows = 0;
+        visit_group_anchor_blocks(dense, |block| {
+            if GroupAnchorBlock::base(block).is_some() { narrow_rows += block.len(); }
+            Ok(())
+        })?;
+        let block_count = anchors.div_ceil(GROUP_ANCHOR_BLOCK);
+        let compact_anchor_bytes = std::mem::size_of::<CompactGroupAnchors>()
+            + block_count * std::mem::size_of::<GroupAnchorBlock>()
+            + narrow_rows * 5 + (anchors - narrow_rows) * std::mem::size_of::<PackedGroup>();
+        let legacy_control = std::mem::size_of::<(Vec<PackedGroup>, RepeatedOutputs, RowGroupRank)>();
+        let compact = std::mem::size_of::<Self>() + compact_anchor_bytes
+            < legacy_control + dense_anchor_bytes;
+        let bytes = std::mem::size_of::<Self>()
+            + if compact { compact_anchor_bytes } else { dense_anchor_bytes }
             + repeats * output_width;
         if bytes >= std::mem::size_of_val(dense)
             || !funding.work.try_grow_original_origin_storage(funding.credit, bytes)? {
             return Ok(Vec::new());
         }
         let result = (|| {
+            let anchors = if compact {
+                let mut rows = CompactGroupAnchors {
+                    blocks: exact_rows(block_count, a)?,
+                    narrow: exact_rows(narrow_rows, a)?,
+                    dense: exact_rows(anchors - narrow_rows, a)?,
+                };
+                visit_group_anchor_blocks(dense, |block| {
+                    let base = if let Some(mut base) = GroupAnchorBlock::base(block) {
+                        base.start = rows.narrow.len() as u16;
+                        for &row in block {
+                            rows.narrow.push(base.encode(row).expect("prechecked narrow group anchor"));
+                        }
+                        base
+                    } else {
+                        let start = rows.dense.len() as u16;
+                        rows.dense.extend_from_slice(block);
+                        GroupAnchorBlock { raw: 0, line: 0, output: 0, start, narrow: false }
+                    };
+                    rows.blocks.push(base);
+                    Ok(())
+                })?;
+                GroupAnchors::Compact(box_origin_column(rows)?)
+            } else {
+                let mut rows = exact_rows(anchors, a)?;
+                visit_group_anchor_blocks(dense, |block| {
+                    rows.extend_from_slice(block);
+                    Ok(())
+                })?;
+                GroupAnchors::Dense(rows)
+            };
             let mut page = Self {
-                anchors: exact_rows(anchors, a)?,
+                anchors,
                 outputs: if short { RepeatedOutputs::Short(exact_rows(repeats, a)?) }
                     else { RepeatedOutputs::Wide(exact_rows(repeats, a)?) },
                 rank: RowGroupRank::new(),
             };
+            let mut anchors_before = 0;
             for (index, &cell) in dense.iter().enumerate() {
                 let anchor = index == 0 || !Self::repeats(dense[index - 1], cell);
-                page.rank.append(index, page.anchors.len(), anchor);
+                page.rank.append(index, anchors_before, anchor);
                 if anchor {
-                    page.anchors.push(cell);
+                    anchors_before += 1;
                 } else {
                     match &mut page.outputs {
                         RepeatedOutputs::Short(rows) => rows.push(u8::try_from(cell.0[3])
@@ -1026,7 +1188,7 @@ impl RepeatedGroupGeometry {
 
     fn get(&self, index: usize) -> PackedGroup {
         let rank = self.rank.through(index);
-        let mut cell = self.anchors[rank - 1];
+        let mut cell = self.anchors.get(rank - 1);
         if self.rank.bits[index / TRACE_WORD_BITS] & (1 << (index % TRACE_WORD_BITS)) == 0 {
             cell.0[3] = self.outputs.get(index - rank);
         }
@@ -1035,9 +1197,9 @@ impl RepeatedGroupGeometry {
 
     fn release(mut owner: Vec<Self>, funding: &mut PageFunding<'_>) -> io::Result<()> {
         let page = owner.pop().expect("issued compact group geometry");
-        let bytes = owner.capacity() * std::mem::size_of::<Self>()
-            + page.anchors.capacity() * std::mem::size_of::<PackedGroup>()
+        let mut bytes = owner.capacity() * std::mem::size_of::<Self>()
             + page.outputs.storage().2;
+        page.anchors.visit(&mut |_, _, n| bytes += n);
         drop(page);
         drop(owner);
         funding.work.shrink(funding.credit, bytes)
@@ -1046,8 +1208,7 @@ impl RepeatedGroupGeometry {
     fn visit(owner: &[Self], mut visit: impl FnMut(usize, usize, usize)) {
         let Some(page) = owner.first() else { return; };
         visit(owner.as_ptr() as usize, 1, std::mem::size_of::<Self>());
-        visit(page.anchors.as_ptr() as usize, page.anchors.len(),
-            page.anchors.capacity() * std::mem::size_of::<PackedGroup>());
+        page.anchors.visit(&mut visit);
         let (address, rows, bytes) = page.outputs.storage();
         visit(address, rows, bytes);
     }
@@ -1249,6 +1410,7 @@ impl OriginGroups {
             self.old.visit_storage(|_, _, n| old = old.saturating_add(n));
             self.full.visit_storage(|_, _, n| full = full.saturating_add(n));
             let mut repeat_bytes = 0usize;
+            let (mut narrow_anchor_pages, mut narrow_anchor_rows, mut anchor_savings) = (0, 0, 0);
             let mut repeated_rows = 0usize;
             let mut repeat_pages = 0usize;
             let mut short_output_pages = 0usize;
@@ -1262,10 +1424,19 @@ impl OriginGroups {
                         short_output_pages += 1;
                         short_output_rows += rows;
                     }
+                    if let GroupAnchors::Compact(rows) = &geometry.anchors {
+                        narrow_anchor_pages += 1;
+                        narrow_anchor_rows += rows.narrow.len();
+                        let old = std::mem::size_of::<(Vec<PackedGroup>, RepeatedOutputs, RowGroupRank)>()
+                            + (rows.narrow.len() + rows.dense.len()) * std::mem::size_of::<PackedGroup>();
+                        let mut new = std::mem::size_of::<RepeatedGroupGeometry>();
+                        rows.visit(&mut |_, _, n| new += n);
+                        anchor_savings += old - new;
+                    }
                     RepeatedGroupGeometry::visit(&page.repeated_geometry, |_, _, n| repeat_bytes += n);
                 }
             }
-            eprintln!("ORIGINAL_ORIGIN_GROUP_GEOMETRY central_bytes={central} old_side_bytes={old} full_side_bytes={full} repeat_bytes={repeat_bytes} repeat_pages={repeat_pages} repeated_rows={repeated_rows} short_output_pages={short_output_pages} short_output_rows={short_output_rows}");
+            eprintln!("ORIGINAL_ORIGIN_GROUP_GEOMETRY central_bytes={central} old_side_bytes={old} full_side_bytes={full} repeat_bytes={repeat_bytes} repeat_pages={repeat_pages} repeated_rows={repeated_rows} short_output_pages={short_output_pages} short_output_rows={short_output_rows} narrow_anchor_pages={narrow_anchor_pages} narrow_anchor_rows={narrow_anchor_rows} anchor_savings={anchor_savings}");
         }
         let mut rank_bytes = 0usize;
         self.trace_pages.visit_storage(|_, _, bytes| rank_bytes = rank_bytes.saturating_add(bytes));
@@ -3357,6 +3528,48 @@ impl OriginalRawOrigins{
     assert!(groups.packed_cell(0).is_none());
     drop(groups);
     drop(credit);
+    assert_eq!(live.load(Ordering::Acquire), 0);
+ }
+
+ #[test]
+ fn narrow_repeated_group_anchors_preserve_exact_escape_and_block_boundaries() {
+    let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+    let a = SettingAdmission::new(&syntax, root, &|| Ok(()));
+    let live = Arc::new(AtomicUsize::new(0));
+    let work = CappedWork::new(live.clone(), usize::MAX);
+    let mut credit = work.reserve(0).unwrap();
+    let mut funding = PageFunding { work: &work, credit: &mut credit };
+    let mut cells = Vec::new();
+    for anchor in 0..ROW_PAGE_LEN / 2 {
+        let raw = (0x10000 + 64 * anchor) as u32;
+        let line = (4095 - anchor) as u16;
+        let first = PackedGroup::pack(&OldPackedGroup([
+            raw as u16, (raw >> 16) as u16, 255, line, (2 * anchor) as u16,
+        ])).unwrap();
+        let mut second = first;
+        second.0[3] += 1;
+        cells.push(first);
+        cells.push(second);
+    }
+    cells[2 * GROUP_ANCHOR_BLOCK] = PackedGroup::old();
+    cells[2 * GROUP_ANCHOR_BLOCK + 1] = PackedGroup::full();
+    let owner = RepeatedGroupGeometry::stage(&cells, &a, &mut funding).unwrap();
+    let page = &owner[0];
+    let GroupAnchors::Compact(anchors) = &page.anchors else {
+        panic!("profitable compact group anchors");
+    };
+    assert!(anchors.blocks[0].narrow);
+    assert!(!anchors.blocks[1].narrow);
+    assert!(anchors.blocks[2].narrow);
+    assert_eq!(anchors.blocks.len(), (ROW_PAGE_LEN / 2 + 1).div_ceil(GROUP_ANCHOR_BLOCK));
+    for (index, cell) in cells.iter().enumerate() {
+        assert_eq!(page.get(index).0, cell.0);
+    }
+    let mut physical = 0;
+    RepeatedGroupGeometry::visit(&owner, |_, _, bytes| physical += bytes);
+    assert_eq!(live.load(Ordering::Acquire), physical);
+    RepeatedGroupGeometry::release(owner, &mut funding).unwrap();
     assert_eq!(live.load(Ordering::Acquire), 0);
  }
 
