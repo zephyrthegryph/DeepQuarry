@@ -234,6 +234,14 @@ pub trait SettingSyntaxProvider {
     fn original_inline_if_return(&self, _boundary: Span) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// Authenticate the range header's var/name/in prefix and to separator.
+    fn original_for_range_header(&self, _prefix: Span, _name: Span, _between: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
+    /// Authenticate both classic-loop separators in the same Original body.
+    fn original_classic_for_separators(&self, _first: Span, _second: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
     /// Match the actual logical block opener between two committed items.
     fn original_statement_block_open(&self, _gap: Span) -> std::io::Result<bool> {
         Ok(false)
@@ -942,12 +950,13 @@ fn parse_one(
     } else if starts_keyword(header, "for") {
         let boundary = control_inline(item, "for").is_none() && header.ends_with(')')
             && original_indented_block_boundary(item, origins);
-        let mut original_each = false;
-        let control = parse_for(item, diagnostics, origins, &mut original_each);
-        origins.require_original(boundary && original_each, item.header_span, "for_control");
+        let mut original_control = false;
+        let control = parse_for(item, diagnostics, origins, &mut original_control);
+        origins.require_original(boundary && original_control, item.header_span, "for_control");
         control.map(|control| {
             let parent = origins.original_for_continue;
-            origins.original_for_continue = boundary && original_each;
+            origins.original_for_continue = boundary && original_control
+                && matches!(&control, ForControl::Each { .. });
             let body = control_body(item, "for", diagnostics, origins);
             origins.original_for_continue = parent;
             StatementKind::For { control, body }
@@ -1051,9 +1060,24 @@ fn parse_one(
                 let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
                     OriginalSimpleKind::OrdinaryCallStatement=>ordinary_call,
                     OriginalSimpleKind::SimpleAssignmentStatement | OriginalSimpleKind::PlainAssignment=>assignment,
-                    OriginalSimpleKind::PostIncrementStatement=>increment,
+                    OriginalSimpleKind::PostIncrementStatement | OriginalSimpleKind::PostDecrementStatement=>increment,
                     OriginalSimpleKind::CrashStatement=>crash,
-                    OriginalSimpleKind::Complete=>ordinary_call&&matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,..})if matches!(&callee.kind,ExprKind::Ident(_))),
+                    OriginalSimpleKind::Complete => ordinary_call && parsed.expr.as_ref().is_some_and(|expr| {
+                        let ExprKind::Call { callee, .. } = &expr.kind else { return false; };
+                        if matches!(&callee.kind, ExprKind::Ident(_)) {
+                            return true;
+                        }
+                        if !actual.is_original() {
+                            return false;
+                        }
+                        // Complete consumed all argument and member tokens.
+                        // Keep this statement role to identifier-rooted dot paths.
+                        let mut receiver = callee.as_ref();
+                        while let ExprKind::Member { object, via_colon: false, .. } = &receiver.kind {
+                            receiver = object;
+                        }
+                        matches!(&receiver.kind, ExprKind::Ident(_))
+                    }),
                     OriginalSimpleKind::MissingArithmeticOperand=>false,
                 });
                 origins.require_original(issued, item.header_span, "statement_expression");
@@ -1095,7 +1119,7 @@ fn original_crash_statement_candidate(header: &str) -> bool {
 }
 
 fn original_post_increment_candidate(header: &str) -> bool {
-    header.strip_suffix("++")
+    header.strip_suffix("++").or_else(|| header.strip_suffix("--"))
         .is_some_and(|name| crate::expression_parser::original_ordinary_call_name(name.trim_end()))
 }
 
@@ -1684,7 +1708,7 @@ impl OriginalBodyGrammarOutcome{
   let shift=|span:Span|Some(Span::new(span.start.checked_add(offset)?,span.end.checked_add(offset)?));
   let expression=shift(actual.span())?;let operator=match actual.operator(){Some(span)=>Some(shift(span)?),None=>None};
   if expression.start<statement.start||expression.end>statement.end{return None}
-  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete|crate::expression_parser::OriginalSimpleKind::PlainAssignment=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
+  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete|crate::expression_parser::OriginalSimpleKind::PlainAssignment=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::PostDecrementStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
  }
  pub fn prefix_settings(self)->usize{self.prefix_settings}
  pub fn kind(self)->OriginalBodyGrammarKind{self.kind}

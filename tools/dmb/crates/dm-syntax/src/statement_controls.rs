@@ -89,7 +89,7 @@ pub(super) fn parse_for(
     item: &Item,
     diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
-    original_each: &mut bool,
+    original_control: &mut bool,
 ) -> Option<ForControl> {
     let (clause, _, lexical, clause_base) = control_clause_origin_tokens(item, "for", diagnostics)?;
     let offset_of = |part: &str| clause_base + (part.as_ptr() as usize - clause.as_ptr() as usize);
@@ -171,14 +171,29 @@ pub(super) fn parse_for(
             });
         }
         if let Some((start_source, remainder)) = split_top_level_keyword(iterable, "to") {
-            return parse_range_control(
-                binding,
-                start_source,
-                remainder,
-                clause,
-                clause_base,
-                diagnostics,
-            );
+            let mut bounds_witnessed = false;
+            let control = parse_range_control(
+                binding, start_source, remainder, clause, clause_base, diagnostics,
+                Some(&mut bounds_witnessed),
+            )?;
+            if bounds_witnessed {
+                let ForControl::Range { start, end, step: None, .. } = &control else { return Some(control); };
+                if let Some(binding_fact) = origins.for_list_binding(clause, &lexical, clause_base, binding) {
+                    let prefix = Span::new(offset_of(binding), start.span.start);
+                    let between = Span::new(start.span.end, end.span.start);
+                    match origins.settings.map(|provider| {
+                        provider.original_for_range_header(prefix, binding_fact.name(), between)
+                    }).transpose() {
+                        Ok(value) => *original_control = value == Some(true),
+                        Err(actual) => {
+                            if let Some(admission) = origins.admission {
+                                admission.record_operational_error(actual);
+                            }
+                        }
+                    }
+                }
+            }
+            return Some(control);
         }
         let offset = offset_of(iterable);
         let mut expression_complete = false;
@@ -197,7 +212,7 @@ pub(super) fn parse_for(
             call_member = actual_original && parsed.expr.as_ref().is_some_and(original_call_member_iterable);
         })?;
         let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
-        *original_each = expression_complete && source_binding.is_some()
+        *original_control = expression_complete && source_binding.is_some()
             && original_for_each_clause(clause, &lexical, at, dotted_original, grouped_index, call_member);
         return Some(ForControl::Each { source_binding, binding: binding.into(), iterable });
     }
@@ -226,7 +241,7 @@ pub(super) fn parse_for(
                 });
                 return None;
             }
-            let (end, step) = parse_range_tail(remainder, clause, clause_base, diagnostics)?;
+            let (end, step) = parse_range_tail(remainder, clause, clause_base, diagnostics, None)?;
             return Some(ForControl::RangeImplicitArray {
                 binding: begin.trim().into(),
                 end,
@@ -260,7 +275,7 @@ pub(super) fn parse_for(
             begin,
             crate::LocalSourceKind::ForBinding,
         );
-        return parse_range_control(binding, start_source, remainder, clause, clause_base, diagnostics);
+        return parse_range_control(binding, start_source, remainder, clause, clause_base, diagnostics, None);
     }
     let mut parts = split_for_clauses(clause);
     if parts.len() == 2 {
@@ -270,6 +285,10 @@ pub(super) fn parse_for(
         parts.extend(["", ""]);
     }
     if parts.len() == 3 {
+        use crate::expression_parser::OriginalSimpleKind;
+        let mut initial_witnessed = false;
+        let mut test_witnessed = false;
+        let mut step_witnessed = false;
         let initial = parts[0];
         let initializer = if initial.is_empty() {
             None
@@ -300,30 +319,63 @@ pub(super) fn parse_for(
                 value,
             })
         } else {
-            Some(ForInitializer::Expr(parse_expr(
+            Some(ForInitializer::Expr(parse_expr_observed(
                 initial,
                 offset_of(initial),
                 diagnostics,
+                &mut |parsed| {
+                    initial_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
+                        proof.is_original() && proof.kind() == OriginalSimpleKind::PlainAssignment
+                    });
+                },
             )?))
         };
         let condition = if parts[1].is_empty() {
             None
         } else {
-            Some(parse_expr(
+            Some(parse_expr_observed(
                 parts[1],
                 offset_of(parts[1]),
                 diagnostics,
+                &mut |parsed| {
+                    test_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
+                        proof.is_original() && proof.kind() == OriginalSimpleKind::Complete
+                    });
+                },
             )?)
         };
         let step = if parts[2].is_empty() {
             None
         } else {
-            Some(parse_expr(
+            Some(parse_expr_observed(
                 parts[2],
                 offset_of(parts[2]),
                 diagnostics,
+                &mut |parsed| {
+                    step_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
+                        proof.is_original() && proof.kind() == OriginalSimpleKind::PostIncrementStatement
+                    });
+                },
             )?)
         };
+        if initial_witnessed && test_witnessed && step_witnessed {
+            if let (Some(ForInitializer::Expr(initial)), Some(test), Some(step)) =
+                (&initializer, &condition, &step)
+            {
+                let first = Span::new(initial.span.end, test.span.start);
+                let second = Span::new(test.span.end, step.span.start);
+                match origins.settings.map(|provider| {
+                    provider.original_classic_for_separators(first, second)
+                }).transpose() {
+                    Ok(value) => *original_control = value == Some(true),
+                    Err(actual) => {
+                        if let Some(admission) = origins.admission {
+                            admission.record_operational_error(actual);
+                        }
+                    }
+                }
+            }
+        }
         return Some(ForControl::CStyle {
             initializer,
             condition,
@@ -345,14 +397,25 @@ fn parse_range_control(
     clause: &str,
     base: usize,
     diagnostics: &mut BodyDiagnostics<'_>,
+    witness: Option<&mut bool>,
 ) -> Option<ForControl> {
     let start_source = start_source.trim();
-    let start = parse_expr(
+    let mut start_witnessed = false;
+    let start = parse_expr_observed(
         start_source,
         base + (start_source.as_ptr() as usize - clause.as_ptr() as usize),
         diagnostics,
+        &mut |parsed| {
+            start_witnessed = witness.is_some() && original_complete_range_bound(parsed);
+        },
     )?;
-    let (end, step) = parse_range_tail(remainder, clause, base, diagnostics)?;
+    let mut end_witnessed = false;
+    let (end, step) = parse_range_tail(
+        remainder, clause, base, diagnostics, witness.as_ref().map(|_| &mut end_witnessed),
+    )?;
+    if let Some(witness) = witness {
+        *witness = start_witnessed && end_witnessed && step.is_none();
+    }
     Some(ForControl::Range {
         binding: binding.into(),
         start,
@@ -361,20 +424,33 @@ fn parse_range_control(
     })
 }
 
+fn original_complete_range_bound(parsed: &crate::ParsedExpr) -> bool {
+    parsed.original_simple_expression.is_some_and(|value| {
+        value.is_original() && value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+    })
+}
+
 fn parse_range_tail(
     remainder: &str,
     clause: &str,
     base: usize,
     diagnostics: &mut BodyDiagnostics<'_>,
+    end_witnessed: Option<&mut bool>,
 ) -> Option<(Expr, Option<Expr>)> {
     let (end_source, step_source) = remainder
         .split_once(" step ")
         .map_or((remainder, None), |(end, step)| (end, Some(step)));
     let end_source = end_source.trim();
-    let end = parse_expr(
+    let mut end_witnessed = end_witnessed;
+    let end = parse_expr_observed(
         end_source,
         base + (end_source.as_ptr() as usize - clause.as_ptr() as usize),
         diagnostics,
+        &mut |parsed| {
+            if let Some(witness) = end_witnessed.as_deref_mut() {
+                *witness = original_complete_range_bound(parsed);
+            }
+        },
     )?;
     let step = if let Some(source) = step_source {
         let source = source.trim();

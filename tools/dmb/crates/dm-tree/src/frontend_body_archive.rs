@@ -1164,6 +1164,63 @@ fn parse_statements_admitted(
             }
             Ok(significant == 2)
         }
+        fn original_for_range_header(
+            &self, prefix: dm_syntax::Span, name: dm_syntax::Span, between: dm_syntax::Span,
+        ) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let (Ok(prefix), Ok(between)) = (tokens.tokens(prefix), tokens.tokens(between)) else { return Ok(false); };
+            let mut index = 0;
+            for (kind, span, spelling) in prefix {
+                self.admission.checkpoint()?;
+                match (index, kind, spelling) {
+                    (_, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (0, TokenKind::Ident, "var") | (1, TokenKind::Operator | TokenKind::Punctuation, "/")
+                        | (3, TokenKind::Ident, "in") => index += 1,
+                    (2, TokenKind::Ident, _) if span == name => index += 1,
+                    _ => return Ok(false),
+                }
+            }
+            if index != 4 { return Ok(false); }
+            let mut to = false;
+            for (kind, _, spelling) in between {
+                self.admission.checkpoint()?;
+                match (kind, spelling) {
+                    (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (TokenKind::Ident, "to") if !to => to = true,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(to)
+        }
+        fn original_classic_for_separators(
+            &self, first: dm_syntax::Span, second: dm_syntax::Span,
+        ) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let mut expected = None;
+            for span in [first, second] {
+                let Ok(gap) = tokens.tokens(span) else { return Ok(false); };
+                let mut actual = None;
+                for (kind, _, spelling) in gap {
+                    self.admission.checkpoint()?;
+                    match (kind, spelling) {
+                        (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                        (TokenKind::Punctuation, ";" | ",") if actual.is_none() => actual = Some(spelling),
+                        _ => return Ok(false),
+                    }
+                }
+                if actual.is_none() || expected.is_some_and(|expected| actual != Some(expected)) {
+                    return Ok(false);
+                }
+                expected = actual;
+            }
+            Ok(true)
+        }
         fn original_statement_block_open(&self, gap: dm_syntax::Span) -> std::io::Result<bool> {
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
@@ -1249,11 +1306,24 @@ fn parse_statements_admitted(
                     return Ok(false);
                 }
             }
-            let Some((TokenKind::Ident, _, name)) = tokens.next() else { return Ok(false); };
-            let mut name = name.bytes();
-            Ok(name.next().is_some_and(|byte| byte == b'_' || byte.is_ascii_alphabetic())
-                && name.all(|byte| byte == b'_' || byte.is_ascii_alphanumeric())
-                && tokens.next().is_none())
+            // The remaining exact slash path is a name, optionally
+            // preceded by type components. Other storage modifiers, array
+            // suffixes, grouped locals and initializers stay outside this proof.
+            for _ in 0..16 {
+                let Some((TokenKind::Ident, _, name)) = tokens.next() else { return Ok(false); };
+                let mut bytes = name.bytes();
+                if !bytes.next().is_some_and(|byte| byte == b'_' || byte.is_ascii_alphabetic())
+                    || !bytes.all(|byte| byte == b'_' || byte.is_ascii_alphanumeric()) {
+                    return Ok(false);
+                }
+                match tokens.next() {
+                    None => return Ok(true),
+                    Some((TokenKind::Operator | TokenKind::Punctuation, _, "/"))
+                        if !matches!(name, "const" | "global" | "static" | "tmp" | "final") => {}
+                    _ => return Ok(false),
+                }
+            }
+            Ok(false)
         }
         fn original_bare_continue(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
