@@ -935,7 +935,7 @@ fn parse_one(
 // actual callee, complete parentheses, argument roots and separator tokens.
 fn original_ordinary_call_header(header:&str)->bool{
     let Some((name,_))=header.strip_suffix(')').and_then(|head|head.split_once('('))else{return false};
-    crate::expression_parser::original_ordinary_call_name(name.trim_end())
+    name.trim_end().split('.').all(crate::expression_parser::original_ordinary_call_name)
 }
 
 // Route only names whose assignment-shaped statements reach the generic
@@ -943,6 +943,7 @@ fn original_ordinary_call_header(header:&str)->bool{
 fn original_simple_assignment_candidate(header: &str) -> bool {
     let Some((target, _)) = header.split_once('=') else { return false; };
     let target = target.trim_end_matches(['+', '-', '*', '/', '%', '|', '&', '^', '<', '>']).trim();
+    if target == "." { return true; }
     let name = target.split(['.', '[']).next().unwrap_or(target).trim_end();
     crate::expression_parser::original_ordinary_call_name(name)
         && !matches!(name, "break" | "continue" | "goto")

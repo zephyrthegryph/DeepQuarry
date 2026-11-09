@@ -737,6 +737,147 @@ mod body_syntax_census_tests;
      }
  }
 
+ #[test]
+ fn actual_fast_split_stack_witness_consumes_return_slot_and_dynamic_constructor() {
+     let fixture = r#"
+/proc/fast_split_stack(obj/item/stack/target, amount)
+    if(!target.use(amount))
+        return null
+    . = new target.type(target.drop_location(), amount)
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace(". = new", ". += new"), false),
+         (fixture.replace("new target.type", "new target?.type"), false),
+         (fixture.replace("target.drop_location(), amount", "target.drop_location(), quantity = amount"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "fast_split_stack");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual return-slot dynamic constructor is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_gcd_and_mean_use_exact_arithmetic_body_witnesses() {
+     let fixture = r#"
+/proc/GCD(a, b)
+    return b ? GCD(b, (a) % (b)) : a
+/proc/Mean(...)
+    var/sum = 0
+    for(var/val in args)
+        sum += val
+    return sum / args.len
+/proc/scaled(amount)
+    return -(amount * 0.125)
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     for name in ["GCD", "Mean", "scaled"] {
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+                 panic!("actual Original arithmetic body is available: {name}");
+             };
+             assert!(proof.belongs_to(&body));
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_admin_intercom_dotted_statement_call_keeps_keyed_argument_scope() {
+     let fixture = r#"
+/proc/admin_intercom_line(message, sender, channel, speech_verb)
+    GLOB.global_announcer.autosay(message, sender, channel, states = speech_verb)
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("announcer.autosay", "announcer?.autosay"), false),
+         (fixture.replace("states = speech_verb", "states = choose(state = speech_verb)"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "admin_intercom_line");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual dotted statement call is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_static_returns_keep_issued_values_and_absolute_paths() {
+     let fixture = r#"
+/datum/choice
+/proc/static_text()
+    return "static value"
+/proc/static_resource()
+    return 'icons/probe.dmi'
+/proc/static_type()
+    return /datum/choice
+/proc/mixed_static(choice)
+    if(choice)
+        return ""
+    return /datum/choice
+/proc/relative_type()
+    return .choice
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     for (name, expected) in [
+         ("static_text", true), ("static_resource", true), ("static_type", true),
+         ("mixed_static", true), ("relative_type", false),
+     ] {
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual static return grammar is available: {name}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{name}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+     for source in [r#""static value""#, "'icons/probe.dmi'", "/datum/choice"] {
+         let parsed = dm_syntax::parse_expression(source);
+         assert!(parsed.diagnostics.is_empty(), "{source}: {:?}", parsed.diagnostics);
+         let syntax = dm_syntax::parse(&format!("/proc/compat()\n    return {source}\n"));
+         assert!(dm_syntax::parse_proc_body(&syntax.items[0]).original_grammar.is_none(), "{source}");
+     }
+ }
+
  #[test]fn actual_compound_if_disposition_binds_same_primary_product_and_rejects_foreign_and_quota_io(){
   for body in["    if(argument)\n        return 1\n    return 2\n","    if(argument)\n        return 1\n    else\n        return 2\n"]{
    let text=format!("/proc/p(argument)\n{body}");let db=Arc::new(QueryDb::default());

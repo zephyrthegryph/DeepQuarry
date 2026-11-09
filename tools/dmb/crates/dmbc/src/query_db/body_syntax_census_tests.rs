@@ -14,6 +14,40 @@ use std::{io, path::Path};
 
 const MAX_WINDOW: usize = 1024;
 const MAX_EXAMPLES: usize = 32;
+
+#[derive(Clone, Copy)]
+enum Order { Archive, Checker }
+
+impl Order {
+    fn label(self) -> &'static str {
+        match self { Self::Archive => "archive_ordinal", Self::Checker => "checker_rank" }
+    }
+}
+
+#[derive(Default)]
+struct Examples {
+    total: usize,
+    roots: [usize; ROOT_NAMES.len()],
+    native_rejected: usize,
+}
+
+impl Examples {
+    fn include(&mut self, roots: Option<u32>) -> bool {
+        if self.total == MAX_EXAMPLES { return false; }
+        if let Some(roots) = roots {
+            let Some((_, count)) = self.roots.iter_mut().enumerate()
+                .filter(|(index, count)| roots & (1u32 << *index) != 0 && **count < 2)
+                .min_by_key(|(_, count)| **count)
+            else { return false; };
+            *count += 1;
+        } else {
+            if self.native_rejected == 4 { return false; }
+            self.native_rejected += 1;
+        }
+        self.total += 1;
+        true
+    }
+}
 const ROOT_NAMES: [&str; 18] = [
     "if", "while", "do_while", "spawn", "set", "for", "switch", "try", "throw",
     "label", "goto", "return", "local", "assignment", "call", "expression", "loop_exit",
@@ -86,7 +120,8 @@ fn inspect(
     db: &QueryDb,
     archive: &BodyArchive,
     ordinal: usize,
-    describe: bool,
+    rank: Option<usize>,
+    examples: &mut Examples,
 ) -> Result<Disposition, BodySyntaxFailure> {
     let occurrence = archive.occurrences().get(ordinal).ok_or_else(|| invalid("missing archive body ordinal"))?;
     let input = archive.syntax_inputs()
@@ -96,17 +131,15 @@ fn inspect(
         return Err(invalid("census BODY owner differs"));
     }
     let show = |reason: &str, detail: &str| {
-        if describe {
-            eprintln!("original.census ordinal={ordinal} file={} line={} result={reason} detail={detail:?}",
-                occurrence.source.semantic_path, occurrence.source.line);
-        }
+        eprintln!("original.census rank={rank:?} ordinal={ordinal} file={} line={} result={reason} detail={detail:?}",
+            occurrence.source.semantic_path, occurrence.source.line);
     };
     db.with_setting_admission(|admission| {
         // Same producer and budget as Kind4; keep only one body product alive
         // and do not prepare or populate any graph rows for the census.
         let product = input.parse_original_product_with_setting_admission(admission)?;
         if let Some(diagnostic) = product.bind_error(input)? {
-            show("native_rejected", &diagnostic.message);
+            if examples.include(None) { show("native_rejected", &diagnostic.message); }
             return Ok(Disposition::NativeRejected);
         }
         let syntax = product.parsed().ok_or_else(|| invalid("BODY producer supplied no parse or rejection"))?;
@@ -123,13 +156,17 @@ fn inspect(
                 // A sample of real root headers is context, not a claim to
                 // identify which nested production failed to issue a witness.
                 let parsed = bound.canonical_statement_storage().parsed();
-                let detail = parsed.statements.first().map_or("", |first| first.raw_header.as_str());
-                let end = detail.char_indices().nth(120).map_or(detail.len(), |(end, _)| end);
-                show("unissued", &detail[..end]);
                 let mut roots = 0u32;
                 for statement in &parsed.statements {
                     admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
                     roots |= 1 << root_bucket(&statement.kind);
+                }
+                if examples.include(Some(roots)) {
+                    for statement in parsed.statements.iter().take(3) {
+                        let detail = &statement.raw_header;
+                        let end = detail.char_indices().nth(120).map_or(detail.len(), |(end, _)| end);
+                        show("unissued", &detail[..end]);
+                    }
                 }
                 Ok(Disposition::Unissued(roots))
             }
@@ -144,10 +181,10 @@ fn survey(host: &BuildHost, start: usize, count: usize) -> [usize; 4] {
     let guard = state.lock().unwrap();
     let snapshot = guard.snapshot.as_ref().expect("actual Original snapshot");
     let archive = snapshot.original_body_census_archive().unwrap();
-    survey_archive(db, archive, start, count)
+    survey_archive(db, archive, start, count, Order::Archive)
 }
 
-fn survey_archive(db: &Arc<QueryDb>, archive: &BodyArchive, start: usize, count: usize) -> [usize; 4] {
+fn survey_archive(db: &Arc<QueryDb>, archive: &BodyArchive, start: usize, count: usize, order: Order) -> [usize; 4] {
     assert!((1..=MAX_WINDOW).contains(&count), "invalid survey window size");
     assert_eq!(archive.source_mapping().initial_environment(), dm_preprocess::InitialEnvironment::OriginalChecker0290);
     assert!(archive.uses_body_queries(db.as_ref()));
@@ -155,11 +192,19 @@ fn survey_archive(db: &Arc<QueryDb>, archive: &BodyArchive, start: usize, count:
     let end = start.checked_add(count).unwrap().min(total);
     assert!(start < end, "window starts beyond actual callable roster");
     let before = db.db.stats(BODY_SYNTAX).computed;
+    let mut ordinals = [0; MAX_WINDOW];
+    let ordinals = &mut ordinals[..end - start];
+    match order {
+        Order::Archive => ordinals.iter_mut().zip(start..end).for_each(|(slot, ordinal)| *slot = ordinal),
+        Order::Checker => db.checker_order_window_for_census(archive, start, ordinals).unwrap(),
+    }
     let mut counts = [0; 4];
     let mut unissued_roots = [0usize; ROOT_NAMES.len()];
-    for ordinal in start..end {
-        let disposition = inspect(db.as_ref(), archive, ordinal, counts[2] + counts[3] < MAX_EXAMPLES)
-            .unwrap_or_else(|error| panic!("Original census stopped at ordinal {ordinal}; prior counts {counts:?}: {error:?}"));
+    let mut examples = Examples::default();
+    for (index, &ordinal) in ordinals.iter().enumerate() {
+        let rank = match order { Order::Archive => None, Order::Checker => Some(start + index) };
+        let disposition = inspect(db.as_ref(), archive, ordinal, rank, &mut examples)
+            .unwrap_or_else(|error| panic!("Original census stopped at rank {rank:?}, ordinal {ordinal}; prior counts {counts:?}: {error:?}"));
         match disposition {
             Disposition::Available => counts[0] += 1,
             Disposition::Skipped => counts[1] += 1,
@@ -173,8 +218,8 @@ fn survey_archive(db: &Arc<QueryDb>, archive: &BodyArchive, start: usize, count:
         }
     }
     assert_eq!(db.db.stats(BODY_SYNTAX).computed, before, "survey must not install Kind4 products");
-    eprintln!("original.census range={start}..{end} total={total} available={} skipped={} unissued={} native_rejected={}",
-        counts[0], counts[1], counts[2], counts[3]);
+    eprintln!("original.census coordinate={} range={start}..{end} total={total} available={} skipped={} unissued={} native_rejected={}",
+        order.label(), counts[0], counts[1], counts[2], counts[3]);
     for (root, count) in ROOT_NAMES.into_iter().zip(unissued_roots).filter(|(_, count)| *count != 0) {
         eprintln!("original.census unissued_bodies_containing_root={root} count={count}");
     }
@@ -184,7 +229,7 @@ fn survey_archive(db: &Arc<QueryDb>, archive: &BodyArchive, start: usize, count:
 // Only the ignored checkout probe needs the compact compound frontend.
 // Borrow the same genuine recorder and authenticated body roster as the
 // production compact builder, then stop before report or Strict publication.
-fn compact_checkout_survey(project: &Path, start: usize, count: usize) -> [usize; 4] {
+fn compact_checkout_survey(project: &Path, start: usize, count: usize, order: Order) -> [usize; 4] {
     let root = project.parent().unwrap();
     let intent = PolicyInputRequest {
         analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
@@ -215,7 +260,7 @@ fn compact_checkout_survey(project: &Path, start: usize, count: usize) -> [usize
     recorder.diagnostic_source_evidence(&view).unwrap().check(view.mapping()).unwrap();
     assert!(view.archive().matches_tree(view.tree()));
     assert!(Arc::ptr_eq(view.archive().source_mapping(), view.mapping()));
-    survey_archive(&queries, view.archive(), start, count)
+    survey_archive(&queries, view.archive(), start, count, order)
 }
 
 #[test]
@@ -231,7 +276,7 @@ fn actual_original_census_classifies_issued_skipped_and_unissued_without_kind4()
     )).unwrap();
     let host = prepare(&project);
     assert_eq!(survey(&host, 0, 3), [1, 1, 1, 0]);
-    assert_eq!(compact_checkout_survey(&project, 0, 3), [1, 1, 1, 0]);
+    assert_eq!(compact_checkout_survey(&project, 0, 3, Order::Checker), [1, 1, 1, 0]);
     let state = host.query_state();
     let guard = state.lock().unwrap();
     let archive = guard.snapshot.as_ref().unwrap().original_body_census_archive().unwrap();
@@ -239,9 +284,23 @@ fn actual_original_census_classifies_issued_skipped_and_unissued_without_kind4()
         "genuine original per-body grammar outcome is not issued for this syntax");
     assert!(!CurrentBodySyntax::is_unissued_original_grammar(&copied_message));
     let foreign = QueryDb::default();
-    assert!(matches!(inspect(&foreign, archive, 0, false),
+    assert!(matches!(inspect(&foreign, archive, 0, None, &mut Examples::default()),
         Err(BodySyntaxFailure::Operational(error)) if error.kind() == io::ErrorKind::InvalidData));
     assert_eq!(foreign.db.stats(BODY_SYNTAX).computed, 0);
+}
+
+#[test]
+fn compact_census_checker_rank_can_differ_from_archive_ordinal() {
+    let root = crate::test_scratch::dir("original-body-census-checker-rank");
+    std::fs::create_dir(root.join("code")).unwrap();
+    let project = root.join("deepquarry.dme");
+    std::fs::write(&project, "#include \"code/probe.dm\"\n").unwrap();
+    std::fs::write(root.join("code/probe.dm"), concat!(
+        "/datum/z/proc/available()\n    return 1\n",
+        "/datum/a/proc/unissued()\n    return (1 +)\n",
+    )).unwrap();
+    assert_eq!(compact_checkout_survey(&project, 0, 1, Order::Archive), [1, 0, 0, 0]);
+    assert_eq!(compact_checkout_survey(&project, 0, 1, Order::Checker), [0, 0, 1, 0]);
 }
 
 #[test]
@@ -251,12 +310,17 @@ fn authenticated_original_checkout_body_syntax_census() {
     assert!(project.is_absolute());
     let start = std::env::var("DMB_ORIGINAL_CENSUS_START").map_or(0, |value| value.parse().unwrap());
     let count = std::env::var("DMB_ORIGINAL_CENSUS_COUNT").map_or(128, |value| value.parse().unwrap());
+    let order = match std::env::var("DMB_ORIGINAL_CENSUS_ORDER").as_deref() {
+        Ok("archive") => Order::Archive,
+        Ok("checker") | Err(std::env::VarError::NotPresent) => Order::Checker,
+        _ => panic!("DMB_ORIGINAL_CENSUS_ORDER must be checker or archive"),
+    };
     assert!((1..=MAX_WINDOW).contains(&count), "invalid survey window size");
     std::thread::Builder::new().stack_size(dm_exec::COMPILER_STACK_BYTES)
         .spawn(move || {
             use crate::daemon::control::{bind_with_deadline, Cancellation};
             use std::time::{Duration, Instant};
             let _deadline = bind_with_deadline(Cancellation::default(), Instant::now() + Duration::from_secs(300));
-            compact_checkout_survey(&project, start, count);
+            compact_checkout_survey(&project, start, count, order);
         }).unwrap().join().unwrap();
 }

@@ -1381,6 +1381,36 @@ impl QueryDb {
 pub(super) mod pages;
 
 #[path="purity_graph_work.rs"]mod graph_work;
+
+#[cfg(test)]
+impl QueryDb {
+    pub(super) fn checker_order_window_for_census(
+        &self,
+        archive: &dm_tree::frontend::BodyArchive,
+        start: usize,
+        ordinals: &mut [usize],
+    ) -> Result<(), dm_analysis::policy_body_demand::PolicyFailure> {
+        use dm_analysis::policy_body_demand::PolicyFailure;
+        let mut work = graph_work::GraphWork::new(Arc::clone(&self.purity.ledger), Key::new(REPORT, archive.tree().identity()));
+        work.reserve(ExecutionAdmission::fixed_control_charge()).map_err(PolicyFailure::Operational)?;
+        let admission = pages::page_execution_admission(&self.purity.ledger)
+            .map_err(|message| PolicyFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory, message)))?;
+        dm_analysis::checker_order::with_archived_order_using(
+            archive, &admission, &mut work, &crate::daemon::control::checkpoint,
+            |order, _| {
+                if order.len() != archive.len() || start.checked_add(ordinals.len()).is_none_or(|end| end > order.len()) {
+                    return Err("census window escapes the actual Checker callable roster".into());
+                }
+                for (offset, ordinal) in ordinals.iter_mut().enumerate() {
+                    crate::daemon::control::checkpoint().map_err(PolicyFailure::Operational)?;
+                    *ordinal = order.ordinal(start + offset).ok_or("census Checker rank omitted body ordinal")?;
+                }
+                Ok(())
+            },
+        )
+    }
+}
+
 #[path="purity_global_graph.rs"]pub(super) mod global_graph;
 #[cfg(test)]impl QueryDb{pub(crate) fn effect_graph_work_for_test(&self)->usize{self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner()).active_graph_work}}
 
