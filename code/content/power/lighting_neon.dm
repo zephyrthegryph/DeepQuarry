@@ -51,11 +51,8 @@
 	light_type = /obj/item/light/bulb/neon/green
 	shows_alerts = FALSE
 	anchored = TRUE
-	plane = ABOVE_MOB_PLANE
-	layer = ABOVE_MOB_LAYER
 	construct_type = null
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
-	overlay_above_everything = TRUE
 
 //Generic Signs
 
