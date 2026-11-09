@@ -734,6 +734,54 @@ impl QueryDb {
  }
 }
 
+/// The paired result keeps its input-family charge across full Original
+/// preparation. It is never a source mapping or a freshness receipt.
+pub(crate) struct FundedPairedDmm {
+    pub(crate) stage: std::sync::Mutex<crate::input_snapshot::PairedDmmStage>,
+    _allocation: Arc<()>,
+}
+
+impl QueryDb {
+    pub(crate) fn prepare_paired_dmm<P: crate::input_snapshot::SnapshotProvider>(
+        &self,
+        inputs: &crate::input_snapshot::RecordingInputs<P>,
+        derived: &Arc<crate::input_snapshot::DerivedPreflight>,
+        cache: &Path,
+    ) -> io::Result<Arc<FundedPairedDmm>> {
+        crate::daemon::control::checkpoint()?;
+        let _gate = self.raw_policy.gate.lock().unwrap_or_else(|e| e.into_inner());
+        let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e| e.into_inner());
+        ledger.bind_source_arena(&self.raw_policy.admission)?;
+        let available = self.workspace_input_base_headroom_locked(ledger.refresh()?)?;
+        let budget = Budget::new(available).map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+        charge(&budget, NODE + std::mem::size_of::<FundedPairedDmm>() + 4 * std::mem::size_of::<usize>())?;
+        let mut credits = RawInputCredits {
+            ledger: &mut ledger, budget: &budget, source_nodes: 0, capture_node: false, prepared: false,
+        };
+        let stage = crate::input_snapshot::PairedDmmStage::stage(
+            inputs, derived, self, &budget, &mut credits, cache,
+        )?;
+        let bytes = stage.retained_fixed_bytes()
+            .checked_add(std::mem::size_of::<FundedPairedDmm>() - std::mem::size_of::<crate::input_snapshot::PairedDmmStage>())
+            .and_then(|n| n.checked_add(4 * std::mem::size_of::<usize>()))
+            .ok_or_else(oom)?;
+        let allocation = Arc::new(());
+        let key = (249, Arc::as_ptr(&allocation) as usize);
+        if credits.ledger.rows.contains_key(&key) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "paired DMM allocation identity collision"));
+        }
+        credits.ledger.replace_row(key, Row {
+            owner: Observation::RecorderMetadata(Arc::downgrade(&allocation), bytes), bytes,
+        });
+        budget.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
+        self.workspace_input_base_headroom_locked(credits.ledger.refresh()?)?;
+        crate::daemon::control::checkpoint()?;
+        Ok(Arc::new(FundedPairedDmm {
+            stage: std::sync::Mutex::new(stage), _allocation: allocation,
+        }))
+    }
+}
+
 #[cfg(test)]mod derived_preflight_resource_controls{
  use super::*;use crate::input_snapshot::{RecordingInputs,FileSystemInputs};
  #[test]fn actual_preflight_and_exceptional_originals_share_existing_input_ledger_until_their_real_owners_drop(){

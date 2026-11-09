@@ -171,6 +171,7 @@ mod policy_read;
 pub(crate) use policy_read::FixedLibraryBaseline;
 #[path = "input_map_edits.rs"]
 mod map_edits;
+pub(crate) use map_edits::PairedDmmStage;
 pub(crate) use policy_directories::PolicyDirectoryStorage;
 pub use policy_directories::{
     PolicyDirectoryEntries, PolicyDirectoryEntry, PolicyDirectoryListing,

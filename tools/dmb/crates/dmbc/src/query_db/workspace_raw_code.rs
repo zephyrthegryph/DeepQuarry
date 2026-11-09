@@ -197,7 +197,35 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
  pub(crate) fn for_each_code_file(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
   self.for_each_file(FileDomain::Code,visit)
  }
+ pub(crate) fn has_paired_dmm(&self)->bool { self.capture.has_paired_dmm() }
+ pub(crate) fn for_each_check_grep_static(
+  &self, config:&Config, ignored:&dyn Fn(&str)->bool,
+  visit:&mut dyn FnMut(dq_analyze::lints::check_grep::native::StaticFile<'_>)->Result<(),Failure>,
+ )->Result<bool,Failure>{
+  use dq_analyze::lints::check_grep::native as grep;
+  let visit=std::cell::RefCell::new(visit);
+  let oom=|message:String|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message));
+  let mut paired=|ordinal,path:&std::path::Path| {
+   let scratch=Budget::scoped_temporaries(&self.budget).map_err(oom)?;
+   scratch.charge(path.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(512))
+      .ok_or_else(||oom("paired CheckGrep relative extent overflow".into()))?).map_err(oom)?;
+   let relative=dq_analyze::util::rel_slash(path,self.root());
+   if ignored(&relative)||config.policy_path_exempt("check_grep","",&relative) {return Ok(())}
+   let data=self.capture.paired_grep_fragment(self.scope,ordinal,&relative,&self.budget)?;
+   (*visit.borrow_mut())(grep::StaticFile::StagedDmm{relative:&relative,data})
+  };
+  self.capture.check_grep_names(self.scope)?;
+  self.for_each_file_using(FileDomain::CheckGrep(config,false),&mut|_,views|{
+    grep::with_source_file(views,&mut|file|(*visit.borrow_mut())(grep::StaticFile::Source(file)))?;
+    Ok(true)
+  },Some(&mut paired))
+ }
  fn for_each_file(&self,domain:FileDomain<'_>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+  self.for_each_file_using(domain,visit,None)
+ }
+ fn for_each_file_using(&self,domain:FileDomain<'_>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>,
+  mut paired:Option<&mut dyn FnMut(usize,&std::path::Path)->Result<(),Failure>>,
+ )->Result<bool,Failure>{
   self.checkpoint()?;let mut start=0;
   while start<self.capture.file_count(){
    self.checkpoint()?;
@@ -210,6 +238,10 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
    let live=files.iter().try_fold(files.capacity().checked_mul(std::mem::size_of::<CurrentFile>()).ok_or_else(||invalid("code page metadata overflow"))?,|n,file|n.checked_add(file.charge).and_then(|n|n.checked_add(file.path.capacity())).ok_or_else(||invalid("code page live ownership overflow")))?;
    for file in &files{
     self.checkpoint()?;
+    if let SourceProof::PairedDmm(ordinal)=&file.proof {
+     if let Some(visit)=paired.as_deref_mut(){visit(*ordinal,&file.path)?;self.checkpoint()?;}
+     continue;
+    }
     let Some(text)=&file.text else{continue};
     // The unused-ALLOW visitor reads only normalized raw text.
     // Keep the actual page-live reservation, without granting code or

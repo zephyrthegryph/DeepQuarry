@@ -289,11 +289,19 @@ impl SourceSnapshot {
             })?.into_witness()?.ok_or("map_edits actual CODE_DM index did not complete")?;
             let names = names.finish_using(&mut control)?;
             let mut sites = Vec::new();
+            if workspace.has_paired_dmm() {
+                workspace.with_paired_map_rows(&guard, budget, |relative, ty, var, line| {
+                    names.append_map_row_using(relative, ty, var, line, |owner, field| {
+                        map_edits_policy::native_declaration(tree, &builtin, profile, owner, field).map_err(Failure::Unsupported)
+                    }, &mut sites, &mut control).map_err(operational)
+                })?;
+            } else {
             workspace.for_each_map_edit_file(&guard, |relative, rows| {
                 names.append_map_using(relative, rows, |owner, field| {
                     map_edits_policy::native_declaration(tree, &builtin, profile, owner, field).map_err(Failure::Unsupported)
                 }, &mut sites, &mut control).map_err(operational)
             })?;
+            }
             if !witness.matches(workspace, &guard, inputs)? {
                 return Err("map_edits CODE completion belongs to another capture".into());
             }

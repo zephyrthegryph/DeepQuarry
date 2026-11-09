@@ -146,6 +146,16 @@ impl DerivedPreflight{
  pub(crate) fn discovery(&self)->&Arc<DiscoveryReceipt>{&self.discovery}
  pub(crate) fn is_joined_registry(&self)->bool{self.joined_registry}
  pub(crate) fn configuration_bytes(&self)->Option<&dm_resources::SharedBytes>{self.configuration_bytes.as_ref()}
+ pub(super) fn joined_configuration<P: SnapshotProvider>(
+  &self, inputs: &RecordingInputs<P>, queries: &crate::query_db::QueryDb,
+ ) -> io::Result<&Config> {
+  if !self.joined_registry || !self.queries.matches(queries) {
+   return Err(invalid("joined configuration requires its actual query owner"));
+  }
+  self.require_recording(inputs)?;
+  Ok(&self.config)
+ }
+
  pub(super) fn lend_handler_configuration<P: SnapshotProvider>(
   &self, inputs: &RecordingInputs<P>, queries: &crate::query_db::QueryDb,
   path: &Path, current: Option<&[u8]>,

@@ -396,6 +396,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         files: &BTreeSet<PathBuf>,
         directories: impl Iterator<Item = &'a PathBuf>,
     ) -> io::Result<InputSnapshot> {
+        self.policy_workspace_closure_paths(files.iter().map(PathBuf::as_path), directories)
+    }
+    pub(crate) fn policy_workspace_closure_paths<'a, 'b>(
+        &self,
+        files: impl Iterator<Item = &'a Path>,
+        directories: impl Iterator<Item = &'b PathBuf>,
+    ) -> io::Result<InputSnapshot> {
         let current = self
             .snapshot
             .lock()
@@ -404,12 +411,12 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         result.path_presence=current.path_presence.clone();result.opened_reads=current.opened_reads.clone();result.original_payloads=current.original_payloads.clone();
         for path in files {
             if let Some(file) = current.files.get(path) {
-                result.files.insert(path.clone(), file.clone());
+                result.files.insert(path.to_path_buf(), file.clone());
             } else if current.opened_reads.get(path).is_some_and(|s|s.is_readable())&&current.original_payloads.get(path).is_some(){
                 // This actual exact reader did not issue an ordinary FileInput.
                 // Its independently funded immutable observations travel below.
             } else if current.negative_files.contains(path) {
-                result.negative_files.insert(path.clone());
+                result.negative_files.insert(path.to_path_buf());
             } else {
                 return Err(invalid("workspace requests an unrecorded file/absence"));
             }

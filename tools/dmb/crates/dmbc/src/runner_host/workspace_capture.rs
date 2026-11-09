@@ -7,7 +7,6 @@ use crate::runner_host::workspace_discovery::DiscoveryReceipt;
 use crate::query_db::{CurrentWorkspaceRawFile as CurrentFile,WorkspaceRawSourceProof as SourceProof};
 use dm_preprocess::{
     regions::{canonical_path, relative_filesystem_path},
-    SourceAcquisitionIdentity,
 };
 use dm_resources::SharedBytes;
 use dm_tree::frontend::{ColdFrontend, SourceExportMapping};
@@ -22,14 +21,15 @@ pub(crate) const LIBRARY_SITES_BASELINE: &str = "tools/ci/library_layering_basel
 #[path = "workspace_alias_index.rs"]
 mod alias_index;
 pub(crate) use alias_index::AliasIndex as WorkspaceAliasIndex;
+// The capture's exact immutable mapping owns these acquisition slots.
 struct Native {
     occurrence: usize,
-    identity: SourceAcquisitionIdentity,
 }
 enum Original {
     Native(Native),
     Owned(SharedBytes),
     RawInput(dm_preprocess::SourceAcquisitionLease),
+    PairedDmm(usize),
 }
 struct CapturedOriginal{original:Original,fact:FileInput}
 impl CapturedOriginal {
@@ -37,19 +37,32 @@ impl CapturedOriginal {
         match &self.original {
             Original::Native(native) => {
                 let lease = mapping.source_acquisition(native.occurrence)
-                    .filter(|lease| native.identity.matches(lease))
                     .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "dispatcher Original acquisition differs"))?;
                 crate::input_snapshot::recorded_source_original(lease)
             }
             Original::Owned(bytes) => Ok(RecordedSourceOriginal::Bytes(bytes)),
-            Original::RawInput(_) => Err(io::Error::new(io::ErrorKind::InvalidInput, "dispatcher requires its authored capture owner")),
+            Original::RawInput(_) | Original::PairedDmm(_) => Err(io::Error::new(io::ErrorKind::InvalidInput, "dispatcher requires its authored capture owner")),
         }
     }
 }
 
+enum FilePath {
+    Discovered(usize),
+    Fixed(Box<PathBuf>),
+}
+
 struct File {
-    path: PathBuf,
+    path: FilePath,
     original: Original,
+}
+
+impl File {
+    fn path<'a>(&'a self, discovery: &'a DiscoveryReceipt) -> &'a PathBuf {
+        match &self.path {
+            FilePath::Discovered(index) => &discovery.files()[*index],
+            FilePath::Fixed(path) => path,
+        }
+    }
 }
 /// Data from the actual visible dispatcher acquisition, never a source witness.
 struct MapEditsFile {
@@ -124,6 +137,7 @@ pub(crate) struct WorkspaceCapture {
     keys_manifest:Option<Option<usize>>,
     base_vars_configuration:Option<Option<usize>>,
     map_edits: Option<Vec<MapEditsFile>>,
+    paired_dmm: Option<Arc<crate::query_db::FundedPairedDmm>>,
     facts: InputSnapshot,
 }
 /// Actor rows use the exact legacy selected Tree, including hidden DM.
@@ -162,7 +176,7 @@ impl WorkspaceCapture {
             && Q::authored_doc_ui_roots(&self.auxiliary)
                 .is_some_and(|roots| self.discovery.matches_authored_doc_ui_profile(roots))
             && self.ui_dispatcher.is_some()
-            && self.map_edits.is_some()
+            && (self.map_edits.is_some() || self.paired_dmm.is_some())
     }
 
     pub(crate) fn has_extended_authored_doc_ui_capture(&self) -> bool {
@@ -186,6 +200,45 @@ impl WorkspaceCapture {
         }
         self.require_scope(scope)?;
         crate::daemon::control::checkpoint()
+    }
+
+    pub(crate) fn has_paired_dmm(&self) -> bool { self.paired_dmm.is_some() }
+
+    pub(crate) fn with_paired_map_rows(
+        &self, scope: &crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,
+        budget: &Arc<dq_analyze::captured_generator_budget::Budget>,
+        mut visit: impl FnMut(&str, &str, &str, usize) -> io::Result<()>,
+    ) -> io::Result<()> {
+        self.require_scope(scope)?;
+        let stage = self.paired_dmm.as_ref().ok_or_else(|| io::Error::other("paired maps absent"))?;
+        let mut stage = stage.stage.lock().map_err(|_| io::Error::other("paired maps poisoned"))?;
+        for index in 0..stage.map_order().len() {
+            crate::daemon::control::checkpoint()?;
+            let ordinal = stage.map_order()[index];
+            let fact = self.paired_fact(ordinal)?;
+            let scratch = dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(map_edits_quota)?;
+            scratch.charge(fact.path.as_os_str().len().checked_mul(8).and_then(|n| n.checked_add(512))
+                .ok_or(io::ErrorKind::OutOfMemory)?).map_err(map_edits_quota)?;
+            let relative = dq_analyze::util::rel_slash(&fact.path, self.root());
+            stage.take_map(ordinal, fact, &scratch, |ty, var, line| visit(&relative, ty, var, line))?;
+        }
+        self.require_scope(scope)
+    }
+
+    fn paired_fact(&self, ordinal: usize) -> io::Result<&FileInput> {
+        let path = self.discovery.files().get(ordinal).ok_or_else(|| io::Error::other("paired DMM ordinal absent"))?;
+        self.facts.files().find(|fact| &fact.path == path)
+            .ok_or_else(|| io::Error::other("paired DMM captured file fact absent"))
+    }
+
+    pub(crate) fn paired_grep_fragment(
+        &self, scope: &crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,
+        ordinal: usize, relative: &str, budget: &dq_analyze::captured_generator_budget::Budget,
+    ) -> Result<dq_analyze::lints::check_grep::native::StaticFileData, dq_analyze::captured_reactive_reads::Failure> {
+        self.require_scope(scope)?;
+        let stage = self.paired_dmm.as_ref().ok_or_else(|| io::Error::other("paired grep absent"))?;
+        stage.stage.lock().map_err(|_| io::Error::other("paired grep poisoned"))?
+            .take_grep(ordinal, self.paired_fact(ordinal)?, relative, budget)
     }
 
     pub(crate) fn has_semantic_question(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{question.is_semantic()&&self.auxiliary.contains(&question)}
@@ -217,7 +270,7 @@ impl WorkspaceCapture {
     }
     fn with_order_manifest<R>(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,visit:impl FnOnce(Option<&[u8]>)->Result<R,dq_analyze::captured_reactive_reads::Failure>)->Result<R,dq_analyze::captured_reactive_reads::Failure>{
      use dq_analyze::captured_reactive_reads::Failure;self.require_scope(scope)?;
-     let pending=match self.keys_manifest.ok_or("keys original manifest observation unavailable")?{None=>visit(None),Some(index)=>{let file=self.files.get(index).ok_or("keys original manifest file absent")?;if file.path.parent()!=Some(self.root())||file.path.file_name()!=Some(std::ffi::OsStr::new("deepquarry.dme")){return Err("keys original fixed manifest role differs".into())}let original=self.original(index,scope)?;visit(Some(match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()}))}};
+     let pending=match self.keys_manifest.ok_or("keys original manifest observation unavailable")?{None=>visit(None),Some(index)=>{let file=self.files.get(index).ok_or("keys original manifest file absent")?;if file.path(&self.discovery).parent()!=Some(self.root())||file.path(&self.discovery).file_name()!=Some(std::ffi::OsStr::new("deepquarry.dme")){return Err("keys original fixed manifest role differs".into())}let original=self.original(index,scope)?;visit(Some(match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()}))}};
      if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_scope(scope)?;crate::daemon::control::checkpoint()?;pending
     }
     pub(crate) fn require_check_grep_archive(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,archive:&dm_tree::frontend::BodyArchive)->io::Result<()>{
@@ -235,7 +288,7 @@ impl WorkspaceCapture {
      let indices=self.check_grep.as_ref().ok_or("check_grep fixed observations unavailable")?;
      let pending=match indices[which.index()]{None=>visit(None),Some(index)=>{
       let file=self.files.get(index).ok_or("check_grep fixed source index absent")?;
-      if file.path.strip_prefix(self.root()).ok()!=Some(Path::new(which.relative())){return Err("check_grep fixed source role differs".into())}
+      if file.path(&self.discovery).strip_prefix(self.root()).ok()!=Some(Path::new(which.relative())){return Err("check_grep fixed source role differs".into())}
       let original=self.original(index,scope)?;visit(Some(match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()}))
      }};
      if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_scope(scope)?;crate::daemon::control::checkpoint()?;pending
@@ -243,9 +296,9 @@ impl WorkspaceCapture {
     pub(crate) fn for_each_check_grep_dme(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,visit:&mut dyn FnMut(&str,&[u8])->Result<(),dq_analyze::captured_reactive_reads::Failure>)->Result<(),dq_analyze::captured_reactive_reads::Failure>{
      use dq_analyze::captured_reactive_reads::Failure;let(names,_)=self.check_grep_names(scope)?;let mut count=0;
      for(index,file)in self.files.iter().enumerate(){
-      if file.path.parent()!=Some(self.root()){continue}let Some(name)=file.path.file_name().and_then(|name|name.to_str())else{continue};
+      if file.path(&self.discovery).parent()!=Some(self.root()){continue}let Some(name)=file.path(&self.discovery).file_name().and_then(|name|name.to_str())else{continue};
       if !dq_analyze::lints::check_grep::native::is_root_dme(name){continue}
-      if names.binary_search(&file.path).is_err(){return Err("check_grep root manifest is outside its typed discovery".into())}
+      if names.binary_search(file.path(&self.discovery)).is_err(){return Err("check_grep root manifest is outside its typed discovery".into())}
       crate::daemon::control::checkpoint()?;self.require_scope(scope)?;
       let original=self.original(index,scope)?;let pending=visit(name,match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()});
       if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_scope(scope)?;crate::daemon::control::checkpoint()?;pending?;count+=1;
@@ -254,7 +307,10 @@ impl WorkspaceCapture {
     }
     pub(crate) fn check_grep_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,configuration:&dq_analyze::captured_raw_file::Config,include_exempt:bool)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
      self.check_grep_names(scope)?;
-     self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::lints::check_grep::native::selects_source(relative)&&(include_exempt||!configuration.policy_path_exempt("check_grep","",relative))))
+     self.page_needed(scope,start,count,budget,|relative|Ok(
+         !(self.has_paired_dmm() && paired_dmm_relative(relative))
+         && dq_analyze::lints::check_grep::native::selects_source(relative)
+         && (include_exempt || !configuration.policy_path_exempt("check_grep","",relative))))
     }
 
     pub(crate) fn census(self: &Arc<Self>, census: &mut crate::heap_census::HeapCensus) {
@@ -271,19 +327,13 @@ impl WorkspaceCapture {
 
         if let Some(raw)=&self.raw_source{let bytes=std::mem::size_of::<RawSourceIdentity>()+2*std::mem::size_of::<usize>();census.exposed_buffer("query_snapshot.workspace.raw_identity",raw.as_ptr()as usize,bytes,bytes);}
         for file in &self.files {
-            census.path(owner, &file.path);
+            if let FilePath::Fixed(path) = &file.path {
+                let bytes = std::mem::size_of::<PathBuf>();
+                census.exposed_buffer(owner, path.as_ref() as *const PathBuf as usize, bytes, bytes);
+                census.path(owner, path);
+            }
             match &file.original {
-                Original::Native(native) => {
-                    native.identity.visit_storage(|storage| {
-                        if let dm_preprocess::source_acquisition::AcquisitionStorage::Object {
-                            address,
-                            bytes,
-                        } = storage
-                        {
-                            census.exposed_buffer(owner, address, bytes, bytes);
-                        }
-                    });
-                }
+                Original::Native(_) | Original::PairedDmm(_) => {}
                 Original::RawInput(lease) => {census.source_acquisition(lease);}
                 Original::Owned(bytes) => {
                     if census.shared_bytes_owner(owner, bytes) {
@@ -507,7 +557,7 @@ impl WorkspaceCapture {
         for(index,source)in self.discovery.files().iter().enumerate(){
             crate::daemon::control::checkpoint()?;
             if *source==path{
-                if self.files.get(index).is_none_or(|file|file.path!=path){return Err(io::Error::new(io::ErrorKind::InvalidData,"silicon source does not match its actual discovery index"))}
+                if self.files.get(index).is_none_or(|file|file.path(&self.discovery)!=&path){return Err(io::Error::new(io::ErrorKind::InvalidData,"silicon source does not match its actual discovery index"))}
                 return Ok(Some(index));
             }
         }
@@ -538,20 +588,21 @@ impl WorkspaceCapture {
         let mut end = start;
         for (index, file) in self.files.iter().enumerate().skip(start).take(count) {
             crate::daemon::control::checkpoint()?;
-            let rel = relative_filesystem_path(&file.path, self.root())
+            let rel = relative_filesystem_path(file.path(&self.discovery), self.root())
                 .ok_or_else(|| io::Error::other("workspace page path escapes root"))?
                 .to_string_lossy()
                 .replace('\\', "/");
             let excluded = !needed(&rel)?;
-            let path_charge = file.path.capacity().checked_add(
+            let path_charge = file.path(&self.discovery).capacity().checked_add(
                 if retain_raw_selection { rel.capacity() } else { 0 },
             ).ok_or_else(|| io::Error::other("workspace path accounting overflow"))?;
             let proof = match &file.original {
                 Original::Native(native) => SourceProof::Native(
-                    scope.original_identity(native.occurrence, &native.identity)?,
+                    scope.captured_acquisition(self, native.occurrence)?.original_identity(),
                 ),
                 Original::RawInput(lease)=>SourceProof::Native(lease.original_identity()),
                 Original::Owned(bytes) => SourceProof::Owned(bytes.downgrade()),
+                Original::PairedDmm(ordinal) => SourceProof::PairedDmm(*ordinal),
             };
             let mut own = BTreeMap::new();
             let mut funded=std::collections::BTreeSet::new();
@@ -634,7 +685,7 @@ impl WorkspaceCapture {
                 ));
             }
             result.push(CurrentFile {
-                path: file.path.clone(),
+                path: file.path(&self.discovery).clone(),
                 text,
                 proof,
                 charge,
@@ -653,7 +704,7 @@ impl WorkspaceCapture {
     pub(crate) fn path(&self, index: usize) -> io::Result<&Path> {
         self.files
             .get(index)
-            .map(|file| file.path.as_path())
+            .map(|file| file.path(&self.discovery).as_path())
             .ok_or_else(|| io::Error::other("workspace file index unavailable"))
     }
     pub(crate) fn productive_ui_configuration(&self)->io::Result<Option<&dq_analyze::captured_raw_file::Config>>{self.discovery.productive_ui_configuration(&self.configuration)}
@@ -686,9 +737,10 @@ impl WorkspaceCapture {
             .ok_or_else(|| io::Error::other("workspace file index unavailable"))?
             .original
         {
-            Original::Native(native) => scope.original(native.occurrence, &native.identity),
+            Original::Native(native) => crate::input_snapshot::recorded_source_original(scope.captured_acquisition(self, native.occurrence)?),
             Original::RawInput(lease)=>crate::input_snapshot::recorded_source_original(lease),
             Original::Owned(bytes) => Ok(RecordedSourceOriginal::Bytes(bytes)),
+            Original::PairedDmm(_) => Err(io::Error::new(io::ErrorKind::Unsupported, "paired DMM has no raw materialization")),
         }
     }
     // Exact borrowed owner accounting: metadata and extra owned originals count;
@@ -721,21 +773,11 @@ impl WorkspaceCapture {
         if let Some(ui)=&self.ui_dispatcher{add(ui.prepared.budget_charge())?;}
         if self.raw_source.is_some(){add(std::mem::size_of::<RawSourceIdentity>()+std::mem::size_of::<crate::query_db::QueryDb>()+4*std::mem::size_of::<usize>())?;}
         for file in &self.files {
-            add(file.path.capacity())?;
+            if let FilePath::Fixed(path) = &file.path {
+                add(std::mem::size_of::<PathBuf>() + path.capacity())?;
+            }
             match &file.original {
-                Original::Native(native) => {
-                    let mut metadata = 0;
-                    native.identity.visit_storage(|v| {
-                        if let dm_preprocess::source_acquisition::AcquisitionStorage::Object {
-                            bytes,
-                            ..
-                        } = v
-                        {
-                            metadata = bytes.saturating_add(2 * std::mem::size_of::<usize>());
-                        }
-                    });
-                    add(metadata)?;
-                }
+                Original::Native(_) | Original::PairedDmm(_) => {}
                 Original::RawInput(lease)=>{
                     let mut metadata=0usize;
                     lease.visit_storage(|storage|match storage{
@@ -793,11 +835,11 @@ struct OriginalWorkspaceSource<'a>{mapping:&'a Arc<SourceExportMapping>,plan:&'a
 pub(crate) fn capture_analysis_with_auxiliary<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
     if frontend.original_analysis_completeness().is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"workspace full source capture refuses partial diagnostic purpose"))}
     if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis workspace requires its actual original context"))}
-    capture_original(OriginalWorkspaceSource{mapping:frontend.mapping(),plan:frontend.original_plan(),revision:frontend.source_revision()},inputs,discovery,configuration,questions,None,None,None)
+    capture_original(OriginalWorkspaceSource{mapping:frontend.mapping(),plan:frontend.original_plan(),revision:frontend.source_revision()},inputs,discovery,configuration,questions,None,None,None,None)
 }
 pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
     let mapping=frontend.source_export_mapping().ok_or_else(||io::Error::other("workspace compiler mapping unproven"))?;
-    capture_original(OriginalWorkspaceSource{mapping,plan:&frontend.plan,revision:frontend.source_export_revision()},inputs,discovery,configuration,questions,None,None,None)
+    capture_original(OriginalWorkspaceSource{mapping,plan:&frontend.plan,revision:frontend.source_export_revision()},inputs,discovery,configuration,questions,None,None,None,None)
 }
 /// Same Original workspace and same library semantic child. Only this private
 /// selected attempt adds the fixed read-only baseline to the captured closure.
@@ -820,7 +862,7 @@ pub(crate) fn capture_analysis_with_library_baseline<P: SnapshotProvider>(
     capture_original(OriginalWorkspaceSource {
         mapping: frontend.mapping(), plan: frontend.original_plan(),
         revision: frontend.source_revision(),
-    }, inputs, discovery, configuration, questions, None, Some(work), None)
+    }, inputs, discovery, configuration, questions, None, Some(work), None, None)
 }
 /// Exclusive authored MapEdits capture. Keep the existing workspace
 /// capture allowance funded while the map provider owns its scratch and parsed
@@ -833,15 +875,16 @@ pub(crate) fn capture_analysis_map_edits<P: SnapshotProvider>(
     questions: &[crate::policy_request::WorkspaceAuxiliaryQuestion],
     queries: &crate::query_db::QueryDb,
 ) -> io::Result<Arc<WorkspaceCapture>> {
-    capture_analysis_map_edits_using(frontend, inputs, discovery, configuration, questions, queries, false)
+    capture_analysis_map_edits_using(frontend, inputs, discovery, configuration, questions, queries, false, None)
 }
 
 pub(crate) fn capture_analysis_full_ci<P: SnapshotProvider>(
     frontend: &dm_tree::frontend::DiagnosticSourceView<'_>, inputs: &RecordingInputs<P>,
     discovery: Arc<DiscoveryReceipt>, configuration: &Path,
     questions: &[crate::policy_request::WorkspaceAuxiliaryQuestion], queries: &crate::query_db::QueryDb,
+    paired_dmm: Option<Arc<crate::query_db::FundedPairedDmm>>,
 ) -> io::Result<Arc<WorkspaceCapture>> {
-    capture_analysis_map_edits_using(frontend, inputs, discovery, configuration, questions, queries, true)
+    capture_analysis_map_edits_using(frontend, inputs, discovery, configuration, questions, queries, true, paired_dmm)
 }
 
 fn capture_analysis_map_edits_using<P: SnapshotProvider>(
@@ -849,6 +892,7 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
     discovery: Arc<DiscoveryReceipt>, configuration: &Path,
     questions: &[crate::policy_request::WorkspaceAuxiliaryQuestion], queries: &crate::query_db::QueryDb,
     full_ci: bool,
+    paired_dmm: Option<Arc<crate::query_db::FundedPairedDmm>>,
 ) -> io::Result<Arc<WorkspaceCapture>> {
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     use dq_analyze::captured_generator_budget::Budget;
@@ -870,6 +914,13 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
     {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its fixed authored model and CODE discovery"));
     }
+    if let Some(owner) = &paired_dmm {
+        if !full_ci || questions != Q::PRIVATE_FULL_REGISTRY {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "paired DMM requires exact private Full CI"));
+        }
+        owner.stage.lock().map_err(|_| io::Error::other("paired DMM stage poisoned"))?
+            .require_recording(inputs, &discovery, queries)?;
+    }
     queries.with_semantic_workspace_capture_inputs(|budget, credits| {
         let ordinary = Budget::reserve_window(budget, EXTRA_BUDGET).map_err(map_edits_quota)?;
         if ordinary.capacity() != EXTRA_BUDGET {
@@ -888,7 +939,7 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
         let capture = capture_original(
             OriginalWorkspaceSource { mapping: frontend.mapping(), plan: frontend.original_plan(),
                 revision: frontend.source_revision() },
-            inputs, discovery, configuration, questions, Some((budget, credits)), None, full_ci_baselines,
+            inputs, discovery, configuration, questions, Some((budget, credits)), None, full_ci_baselines, paired_dmm,
         )?;
         let retained = capture.retained_charge()?.checked_add(2*std::mem::size_of::<usize>())
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
@@ -910,7 +961,11 @@ fn map_edits_failure(failure: dq_analyze::captured_reactive_reads::Failure) -> i
     }
 }
 
-fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion],map_work:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,library_sites:Option<&dyn dm_preprocess::source_arena_credit::SourceArenaWork>,full_ci_baselines:Option<Box<FullCiBaselines>>)->io::Result<Arc<WorkspaceCapture>>{
+pub(crate) fn paired_dmm_relative(relative: &str) -> bool {
+    relative.starts_with("maps/") && relative.ends_with(".dmm")
+}
+
+fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion],map_work:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,library_sites:Option<&dyn dm_preprocess::source_arena_credit::SourceArenaWork>,full_ci_baselines:Option<Box<FullCiBaselines>>,paired_dmm:Option<Arc<crate::query_db::FundedPairedDmm>>)->io::Result<Arc<WorkspaceCapture>>{
     if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::MapEdits) != map_work.is_some() {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits requires its actual capture producer"));
     }
@@ -1021,7 +1076,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         && path.extension().is_some_and(|ext| ext == "dmm")
         && path.strip_prefix(&discovery.contract().root)
             .is_ok_and(|relative| relative.starts_with("maps"));
-    let map_fact_count = discovery.files().iter().filter(|path| is_joined_map(path)).count();
+    let map_fact_count = if paired_dmm.is_some() { 0 } else { discovery.files().iter().filter(|path| is_joined_map(path)).count() };
     let map_fact_storage = map_fact_count.checked_mul(std::mem::size_of::<(usize, FileInput)>())
         .ok_or(io::ErrorKind::OutOfMemory)?;
     used = used.checked_add(map_fact_storage).filter(|&n| n <= EXTRA_BUDGET)
@@ -1033,8 +1088,27 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         return Err(io::Error::new(io::ErrorKind::OutOfMemory, "joined MapEdits fact index capacity exceeds admission"));
     }
     let mut files = Vec::with_capacity(discovery.files().len());
-    for path in discovery.files() {
+    for (source_index, path) in discovery.files().iter().enumerate() {
         crate::daemon::control::checkpoint()?;
+        if let Some(owner) = &paired_dmm {
+            if is_joined_map(path) {
+                if let Some(&index) = known.get(path.as_path()) {
+                    let actual = frontend.plan.occurrences().get(index)
+                        .filter(|row| row.path.as_path() == path.as_path())
+                        .ok_or_else(|| io::Error::other("paired DMM occurrence differs"))?;
+                    if actual.non_text_kind() != Some(dm_preprocess::regions::NonTextKind::Map) {
+                        return Err(io::Error::new(io::ErrorKind::Unsupported, "paired DMM cannot replace a compiled acquisition"));
+                    }
+                } else if aliases.candidate(path)?.is_some() {
+                    return Err(io::Error::new(io::ErrorKind::Unsupported, "paired DMM cannot replace a compiled alias"));
+                }
+                let mut stage = owner.stage.lock().map_err(|_| io::Error::other("paired DMM stage poisoned"))?;
+                stage.replay_capture_error(source_index)?;
+                stage.require_capture_slot(source_index, Some(&inputs.recorded_file_fact(path)?))?;
+                files.push(File { path: FilePath::Discovered(source_index), original: Original::PairedDmm(source_index) });
+                continue;
+            }
+        }
         let captured = if let Some((dispatcher, acquired, status)) = &mut ui {
             if dispatcher.as_path() == path.as_path() {
                 status.index = Some(files.len());
@@ -1061,7 +1135,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         if is_joined_map(path) && matches!(&captured.original, Original::Owned(_)) {
             map_facts.push((files.len(), captured.fact));
         }
-        files.push(File { path: path.clone(), original: captured.original });
+        files.push(File { path: FilePath::Discovered(source_index), original: captured.original });
     }
     let remaining = EXTRA_BUDGET
         .checked_sub(used)
@@ -1102,9 +1176,9 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
      let paths=std::array::from_fn(|index|{let fixed=Fixed::all()[index];requested.contains(&fixed).then(||discovery.contract().root.join(fixed.relative()))});
      if files.capacity()<wanted{files.try_reserve_exact(requested.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"check_grep actual fixed-file capacity exceeds admission"))}}
      let mut indices=[None;6];for(index,path)in paths.iter().enumerate(){let Some(path)=path else{continue};crate::daemon::control::checkpoint()?;
-      if let Some(existing)=files.iter().position(|file|file.path==*path){indices[index]=Some(existing);continue}
-      if path==configuration{if let Some(bytes)=&config{indices[index]=Some(files.len());inputs.recorded_file_fact(path)?;files.push(File{path:path.clone(),original:Original::Owned(bytes.clone())});}continue}
-      if let Some(CapturedOriginal{original,..})=capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,path,&mut used,128)?{indices[index]=Some(files.len());files.push(File{path:path.clone(),original});}
+      if let Some(existing)=files.iter().position(|file|file.path(&discovery)==path){indices[index]=Some(existing);continue}
+      if path==configuration{if let Some(bytes)=&config{indices[index]=Some(files.len());inputs.recorded_file_fact(path)?;files.push(File{path:FilePath::Fixed(Box::new(path.clone())),original:Original::Owned(bytes.clone())});}continue}
+      if let Some(CapturedOriginal{original,..})=capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,path,&mut used,128)?{indices[index]=Some(files.len());files.push(File{path:FilePath::Fixed(Box::new(path.clone())),original});}
      }
      check_grep=Some(indices);check_grep_paths=Some(paths);
     }
@@ -1115,16 +1189,16 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
      used=used.checked_add(width).and_then(|n|if files.capacity()<wanted{n.checked_add(capacity.checked_mul(std::mem::size_of::<File>())?)}else{Some(n)}).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
      let path=discovery.contract().root.join("deepquarry.dme");
      if files.capacity()<wanted{files.try_reserve_exact(1).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"keys manifest actual capacity exceeds admission"))}}
-     let index=if let Some(existing)=files.iter().position(|file|file.path==path){Some(existing)}else{
+     let index=if let Some(existing)=files.iter().position(|file|file.path(&discovery)==&path){Some(existing)}else{
       let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,&path,&mut used,128)?};
-      if let Some(CapturedOriginal{original,..})=original{let index=files.len();files.push(File{path:path.clone(),original});Some(index)}else{None}
+      if let Some(CapturedOriginal{original,..})=original{let index=files.len();files.push(File{path:FilePath::Fixed(Box::new(path.clone())),original});Some(index)}else{None}
      };keys_manifest=Some(index);keys_manifest_path=Some(path);
     }
 
     if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::BaseVars){
      let width=discovery.contract().root.as_os_str().len().checked_add("/tools/ci/lint_scopes.toml".len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)).ok_or(io::ErrorKind::OutOfMemory)?;let wanted=files.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;let capacity=wanted.checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?;
      used=used.checked_add(width).and_then(|n|if files.capacity()<wanted{n.checked_add(capacity.checked_mul(std::mem::size_of::<File>())?)}else{Some(n)}).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;let path=discovery.contract().root.join("tools/ci/lint_scopes.toml");if files.capacity()<wanted{files.try_reserve_exact(1).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"base-vars fixed configuration capacity exceeds admission"))}}
-     let mut existing=None;for(index,file)in files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path==path{existing=Some(index);break}}let index=if let Some(existing)=existing{Some(existing)}else{let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,&path,&mut used,128)?};if let Some(CapturedOriginal{original,..})=original{let index=files.len();files.push(File{path:path.clone(),original});Some(index)}else{None}};base_vars_configuration=Some(index);base_vars_configuration_path=Some(path);
+     let mut existing=None;for(index,file)in files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path(&discovery)==&path{existing=Some(index);break}}let index=if let Some(existing)=existing{Some(existing)}else{let original=if path==configuration{config.as_ref().map(|bytes|inputs.recorded_file_fact(&path).map(|fact|CapturedOriginal{original:Original::Owned(bytes.clone()),fact})).transpose()?}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&aliases,&path,&mut used,128)?};if let Some(CapturedOriginal{original,..})=original{let index=files.len();files.push(File{path:FilePath::Fixed(Box::new(path.clone())),original});Some(index)}else{None}};base_vars_configuration=Some(index);base_vars_configuration_path=Some(path);
     }
 
     let library_baseline = if let Some(work) = library_sites {
@@ -1139,19 +1213,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         Some((path,bytes))
     } else { None };
 
-    let mut selected = std::collections::BTreeSet::new();
-    for file in &files {
-        selected.insert(file.path.clone());
-        if let Original::Native(native) = &file.original {
-            // The recorded capture above already checked this immutable
-            // occurrence against its exact primary receipt and binding. Only
-            // the selected closure needs a copy of its physical path.
-            let primary = frontend.plan.occurrences().get(native.occurrence)
-                .ok_or_else(|| io::Error::other("workspace native primary occurrence absent"))?;
-            selected.insert(primary.path.as_ref().clone());
-        }
-    }
-    selected.extend(std::iter::once(canonical_path(configuration))
+    let fixed_paths: Vec<_> = std::iter::once(canonical_path(configuration))
         .chain(deadline.iter().map(|(path,_)|canonical_path(path)))
         .chain(library_baseline.iter().filter(|(_, fact)| fact.selects_file_fact()).map(|(path,_)|canonical_path(path)))
         .chain(full_ci_baselines.iter().flat_map(|capture| capture.files())
@@ -1159,9 +1221,32 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         .chain(keys_manifest_path.iter().map(|path|canonical_path(path)))
         .chain(base_vars_configuration_path.iter().map(|path|canonical_path(path)))
         .chain(check_grep_paths.iter().flat_map(|paths|paths.iter().flatten().map(|path|canonical_path(path))))
-        );
+        .collect();
+    let mut standalone_map_paths = std::collections::BTreeSet::new();
+    let mut selected = std::collections::BTreeSet::new();
+    for file in &files {
+        selected.insert(file.path(&discovery).as_path());
+        if let Original::Native(native) = &file.original {
+            // The recorded capture above already checked this immutable
+            // occurrence against its exact primary receipt and binding. Only
+            // the selected closure needs a copy of its physical path.
+            let primary = frontend.plan.occurrences().get(native.occurrence)
+                .ok_or_else(|| io::Error::other("workspace native primary occurrence absent"))?;
+            selected.insert(primary.path.as_path());
+        }
+    }
+    selected.extend(fixed_paths.iter().map(PathBuf::as_path));
     let mut map_edits = None;
-    let map_directories = if let Some((budget, lender)) = map_work {
+    let map_directories = if let Some(owner) = &paired_dmm {
+        let mut stage = owner.stage.lock().map_err(|_| io::Error::other("paired MapEdits stage poisoned"))?;
+        for index in 0..stage.map_order().len() {
+            crate::daemon::control::checkpoint()?;
+            let ordinal = stage.map_order()[index];
+            let path = discovery.files().get(ordinal).ok_or_else(|| io::Error::other("paired MapEdits ordinal absent"))?;
+            stage.require_map_outcome(ordinal, &inputs.recorded_file_fact(path)?)?;
+        }
+        Vec::new()
+    } else if let Some((budget, lender)) = map_work {
         use dq_analyze::{captured_allow_annotations::Operation, key_policy_control as kc, map_edits_policy::ParsedMap};
         let poll = &crate::daemon::control::checkpoint;
         let mut control = Operation { budget, poll };
@@ -1176,7 +1261,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             let width = path.as_os_str().len().checked_mul(32).and_then(|n| n.checked_add(8192))
                 .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
             budget.charge(width).map_err(map_edits_quota)?;
-            if !selected.insert(path.to_owned()) && !joined {
+            if !joined && (selected.contains(path) || !standalone_map_paths.insert(path.to_owned())) {
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, "map_edits source path has a second selected role"));
             }
             maps.push(MapEditsFile { relative, rows });
@@ -1184,7 +1269,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         };
         let directories = if joined {
             inputs.fold_observed_map_edits_inputs(&discovery, budget, lender, |path, relative| {
-                let (index, file) = files.iter().enumerate().find(|(_, file)| file.path == path)
+                let (index, file) = files.iter().enumerate().find(|(_, file)| file.path(&discovery) == path)
                     .ok_or_else(|| io::Error::other("joined MapEdits has no exact captured CheckGrep payload"))?;
                 let Original::Owned(bytes) = &file.original else {
                     return Err(io::Error::other("joined MapEdits requires the actual raw DMM payload owner"));
@@ -1196,7 +1281,8 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
                     return Err(io::Error::other("joined MapEdits original DMM observation changed"));
                 }
                 parse(path, relative, bytes.as_slice())
-            })?
+            })?;
+            Vec::new()
         } else {
             inputs.fold_regular_map_edits_inputs(&discovery.contract().root, budget, lender, parse)?
         };
@@ -1213,7 +1299,10 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         Vec::new()
     };
     drop(map_facts);
-    let facts = inputs.policy_workspace_closure(&selected, discovery.directory_paths().chain(&map_directories))?;
+    selected.extend(standalone_map_paths.iter().map(PathBuf::as_path));
+    let facts = inputs.policy_workspace_closure_paths(
+        selected.into_iter(), discovery.directory_paths().chain(&map_directories),
+    )?;
     let policy_revision = crate::policy_request::workspace_revision(
         frontend.revision,
         &facts,
@@ -1248,7 +1337,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         hash.update(&policy_revision.to_le_bytes());hash.digest128()
     }else{policy_revision};
     let policy_revision=if let Some(question)=crate::policy_request::WorkspaceAuxiliaryQuestion::exclusive_layering(&auxiliary){let mut hash=xxhash_rust::xxh3::Xxh3::new();match question.layering().expect("exact layering role"){dq_analyze::engine_layering_policy::Layer::Engine=>hash.update(b"native-workspace-engine_layering-intent-v1"),dq_analyze::engine_layering_policy::Layer::Library=>hash.update(b"native-workspace-library_layering-intent-v1")};hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
-    let policy_revision = if map_edits.is_some() {
+    let policy_revision = if map_edits.is_some() || paired_dmm.is_some() {
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
         hash.update(b"native-workspace-map-edits-regular-v1");
         hash.update(&policy_revision.to_le_bytes());
@@ -1294,6 +1383,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         keys_manifest,
         base_vars_configuration,
         map_edits,
+        paired_dmm,
         facts,
     });
     if result.retained_charge()? > EXTRA_BUDGET {
@@ -1332,7 +1422,6 @@ fn capture_optional_original<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mapp
             crate::input_snapshot::recorded_source_original(lease)?; // prove original-byte representation now
             CapturedOriginal{fact:alias_fact.unwrap_or_else(||primary_fact.clone()),original:Original::Native(Native {
                 occurrence: *index,
-                identity: lease.identity(),
             })}
         } else {
             let remaining = EXTRA_BUDGET
@@ -1399,7 +1488,7 @@ impl WorkspaceCapture{
 }
 
 impl WorkspaceCapture{
- pub(crate) fn with_base_vars_configuration<R>(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,visit:impl FnOnce(Option<&[u8]>)->Result<R,dq_analyze::captured_reactive_reads::Failure>)->Result<R,dq_analyze::captured_reactive_reads::Failure>{use dq_analyze::captured_reactive_reads::Failure;self.require_scope(scope)?;if !self.auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::BaseVars){return Err("base-vars fixed configuration was not selected".into())}let pending=match self.base_vars_configuration.ok_or("base-vars fixed configuration observation absent")?{None=>visit(None),Some(index)=>{let file=self.files.get(index).ok_or("base-vars fixed configuration file absent")?;if file.path.strip_prefix(self.root()).ok()!=Some(Path::new("tools/ci/lint_scopes.toml")){return Err("base-vars fixed configuration role differs".into())}let original=self.original(index,scope)?;visit(Some(match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()}))}};if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_scope(scope)?;crate::daemon::control::checkpoint()?;pending}
+ pub(crate) fn with_base_vars_configuration<R>(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,visit:impl FnOnce(Option<&[u8]>)->Result<R,dq_analyze::captured_reactive_reads::Failure>)->Result<R,dq_analyze::captured_reactive_reads::Failure>{use dq_analyze::captured_reactive_reads::Failure;self.require_scope(scope)?;if !self.auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::BaseVars){return Err("base-vars fixed configuration was not selected".into())}let pending=match self.base_vars_configuration.ok_or("base-vars fixed configuration observation absent")?{None=>visit(None),Some(index)=>{let file=self.files.get(index).ok_or("base-vars fixed configuration file absent")?;if file.path(&self.discovery).strip_prefix(self.root()).ok()!=Some(Path::new("tools/ci/lint_scopes.toml")){return Err("base-vars fixed configuration role differs".into())}let original=self.original(index,scope)?;visit(Some(match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()}))}};if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_scope(scope)?;crate::daemon::control::checkpoint()?;pending}
  pub(crate) fn covers_base_vars(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{self.discovery.covers_dm_roots(&[("code","dm")],false,admit)}
  pub(crate) fn base_vars_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(relative.starts_with("code/")&&relative.ends_with(".dm")))}
  pub(crate) fn covers_requirement_bool(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{self.discovery.covers_dm_roots(&[("code","dm")],true,admit)}
@@ -1441,7 +1530,7 @@ impl WorkspaceCapture{
     { return Ok(false); }
     for (current, old) in self.files.iter().zip(&prior.files) {
         crate::daemon::control::checkpoint()?;
-        if current.path != old.path { return Ok(false); }
+        if current.path(&self.discovery) != old.path(&prior.discovery) { return Ok(false); }
         let (Original::RawInput(current), Original::RawInput(old)) = (&current.original, &old.original)
             else { return Ok(false); };
         if !current.original_identity().same_live_original(&old.original_identity()) {
@@ -1464,10 +1553,10 @@ impl WorkspaceCapture{
         let key = |path: &Path| relative_filesystem_path(path, self.root())
             .map(|relative| relative.to_string_lossy().replace('\\', "/"));
         let sought = key(path)?;
-        let index = self.files.binary_search_by(|file| key(&file.path).as_ref().cmp(&Some(&sought))).ok()?;
-        self.files.get(index).filter(|file| file.path == path)?
+        let index = self.files.binary_search_by(|file| key(file.path(&self.discovery)).as_ref().cmp(&Some(&sought))).ok()?;
+        self.files.get(index).filter(|file| file.path(&self.discovery) == path)?
     } else {
-        self.files.iter().find(|file| file.path == path)?
+        self.files.iter().find(|file| file.path(&self.discovery) == path)?
     };
     match &file.original {
         Original::RawInput(lease) => Some(lease),
@@ -1635,7 +1724,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let mut files=Vec::new();files.try_reserve_exact(source_count+usize::from(purpose==RawSourcePurpose::OpOrder)).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if files.capacity()>max_slots{return Err(io::ErrorKind::OutOfMemory.into())}
  let mut selected=Vec::new();selected.try_reserve_exact(slots).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if selected.capacity()>max_slots{return Err(io::ErrorKind::OutOfMemory.into())}
  let mut ui_dispatcher_index=None;
- for path in discovery.files(){
+ for (source_index, path) in discovery.files().iter().enumerate(){
   if engine.is_some(){break}
   if prepared_ui.is_some()&&ui_dispatcher_path.as_ref()!=Some(path){
    let relative=path.strip_prefix(&workspace.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"UI selected source escapes actual root"))?;
@@ -1658,7 +1747,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
    drop(scratch);
    lease
   };
-  inputs.recorded_file_fact(path)?;files.push(File{path:path.clone(),original:Original::RawInput(lease)});selected.push(path.clone());
+  inputs.recorded_file_fact(path)?;files.push(File{path:FilePath::Discovered(source_index),original:Original::RawInput(lease)});selected.push(path.clone());
  }
  dm_profile::detail_mark("raw_capture.sources", capture_started);
  let mut op_order_manifest=None;
@@ -1668,13 +1757,13 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
   let scratch=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(quota)?;let allowance=budget.remaining().saturating_sub(8192)/8;if allowance==0{return Err(quota("op_order fixed manifest has no actual input allowance".into()))}scratch.charge(allowance+8192).map_err(quota)?;
   let old=prior.as_ref().and_then(|(capture, _)| capture.prior_raw_input(&path, purpose));
   credits.prepare_source()?;let lease=inputs.read_raw_source(&path,allowance,old,|capacity,exceptional,needs_decode|scratch.charge(capacity.checked_mul(if !needs_decode{0}else if exceptional{13}else{5}).and_then(|n|n.checked_add(8192)).ok_or(io::ErrorKind::OutOfMemory)?).map_err(quota))?;
-  let index=if let Some(lease)=lease{credits.retain(&lease)?;let index=files.len();inputs.recorded_file_fact(&path)?;files.push(File{path:path.clone(),original:Original::RawInput(lease)});Some(index)}else{None};
+  let index=if let Some(lease)=lease{credits.retain(&lease)?;let index=files.len();inputs.recorded_file_fact(&path)?;files.push(File{path:FilePath::Fixed(Box::new(path.clone())),original:Original::RawInput(lease)});Some(index)}else{None};
   op_order_manifest=Some(index);selected.push(path);drop(scratch);
  }
  let ui_dispatcher=prepared_ui.map(|prepared|UiDispatcherCapture{index:ui_dispatcher_index,prepared});
  let config_width=workspace.configuration.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(1024)).ok_or(io::ErrorKind::OutOfMemory)?;used=used.checked_add(config_width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;let configuration=canonical_path(&workspace.configuration);if discovery.files().contains(&configuration){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw configuration cannot also be selected source"))}let config=match &engine{Some(proof)=>{if configuration!=proof.preflight().configuration().0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine configuration path differs"))}proof.preflight().configuration_bytes().cloned()},None=>match doc_config{Some(bytes)=>bytes,None=>inputs.read_policy_candidate(&configuration,EXTRA_BUDGET-used)?}};used=used.checked_add(config.as_ref().map_or(0,SharedBytes::capacity)).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;selected.push(configuration.clone());
  let selected=selected.into_iter().collect::<std::collections::BTreeSet<_>>();let facts=inputs.policy_workspace_closure(&selected,discovery.directory_paths())?;let revision=crate::policy_request::workspace_revision(0,&facts,&workspace.root,&workspace.recursive_roots,&configuration)?;let owner=Arc::new(RawSourceIdentity{revision,queries:Arc::downgrade(queries),purpose});let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"original-source-only-not-semantic-v1");hash.update(purpose.name().as_bytes());hash.update(&revision.to_le_bytes());let policy_revision=hash.digest128();
- let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,shared_derived:None,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,library_baseline:None,full_ci_baselines:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,facts});
+ let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,shared_derived:None,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,library_baseline:None,full_ci_baselines:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,paired_dmm:None,facts});
  if used>EXTRA_BUDGET||capture.retained_charge()?>EXTRA_BUDGET{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc retained source exceeds existing capture allowance"))}capture.discovery.validate_recording(inputs)?;let metadata=capture.retained_charge()?;budget.charge(metadata).map_err(quota)?;credits.retain_capture_metadata(&capture,metadata)?;drop(metadata_peak);dm_profile::detail_mark("raw_capture.settled", capture_started);Ok((capture,owner))
 }
 
@@ -1704,12 +1793,12 @@ impl WorkspaceCapture {
   for path in self.discovery.files(){crate::daemon::control::checkpoint()?;if path.strip_prefix(self.root()).is_ok_and(|path|path==relative){if observed.replace(path).is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Sys reactive fixed source discovery repeated"))}}}
   let Some(path)=observed else{return Ok(None)};
   let mut selected=None;
-  for(index,file)in self.files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path==*path{if selected.replace(index).is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Sys reactive fixed source acquisition repeated"))}}}
+  for(index,file)in self.files.iter().enumerate(){crate::daemon::control::checkpoint()?;if file.path(&self.discovery)==path{if selected.replace(index).is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Sys reactive fixed source acquisition repeated"))}}}
   selected.map(Some).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"discovered Sys reactive AUTO lacks actual acquisition"))
  }
  pub(crate) fn sys_reactive_auto_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,index:usize,budget:usize)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
   let file=self.files.get(index).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"Sys reactive fixed source index absent"))?;
-  if !file.path.strip_prefix(self.root()).is_ok_and(|p|p==Path::new(dq_analyze::auto_setter_calls_policy::AUTO_REL)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Sys reactive fixed source index changed role"))}
+  if !file.path(&self.discovery).strip_prefix(self.root()).is_ok_and(|p|p==Path::new(dq_analyze::auto_setter_calls_policy::AUTO_REL)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Sys reactive fixed source index changed role"))}
   self.page_needed(scope,index,1,budget,|relative|Ok(relative==dq_analyze::auto_setter_calls_policy::AUTO_REL))
  }
 }

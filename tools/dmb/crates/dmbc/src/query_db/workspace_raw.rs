@@ -68,7 +68,7 @@ use resource_inventory::ResourceInventory;
 #[path="workspace_source_arena.rs"]mod source_arena;
 pub(crate) use source_arena::{retire_path_fact_node, seal_path_fact_control};
 #[path="workspace_raw_input_credits.rs"]mod raw_input_credits;
-pub(crate) use raw_input_credits::RawInputCredits;
+pub(crate) use raw_input_credits::{FundedPairedDmm, RawInputCredits};
 /// Resource-only live allocation census. Addresses never authorize content or
 /// policy reuse. All payload owners remain in Db values; this stores numbers.
 #[derive(Default)]
@@ -198,6 +198,7 @@ impl Owners {
 pub(crate) enum SourceProof {
     Native(OriginalAcquisitionIdentity),
     Owned(dm_resources::WeakSharedBytes),
+    PairedDmm(usize),
 }
 impl SourceProof {
     fn metadata_charge(&self) -> usize {
@@ -215,6 +216,7 @@ impl SourceProof {
                 });
                 n
             }
+            Self::PairedDmm(_) => 0,
             Self::Owned(_) => {
                 std::mem::size_of::<SharedBytesOwner>() + 2 * std::mem::size_of::<usize>()
             }

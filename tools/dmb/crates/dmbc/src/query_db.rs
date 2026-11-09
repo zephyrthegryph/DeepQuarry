@@ -40,7 +40,7 @@ const SOURCE_ANSWERS_BUDGET: usize = 64 * 1024 * 1024;
 type AnswerMap<K, V> = hashbrown::HashMap<K, V, RandomState, SourceAllocator>;
 type AnswerStamps = allocator_api2::vec::Vec<(u128, u128), SourceAllocator>;
 pub use raw_policy::workspace::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
-pub(crate) use raw_policy::workspace::{RawInputCredits, retire_path_fact_node, seal_path_fact_control};
+pub(crate) use raw_policy::workspace::{FundedPairedDmm, RawInputCredits, retire_path_fact_node, seal_path_fact_control};
 mod value_proofs;
 pub(crate) use raw_policy::workspace::{
     CurrentFile as CurrentWorkspaceRawFile, SourceProof as WorkspaceRawSourceProof,

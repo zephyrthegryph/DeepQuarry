@@ -101,6 +101,33 @@ impl Write for Stage {
 
 pub(crate) struct Sealed { file: File, length: u64, hash: u128 }
 impl Sealed {
+    /// Loan one bounded range to a private stage reader. The caller still
+    /// owns semantic frame identity and exact source proof. This operation
+    /// cannot produce a public Verified report or expose the backing file.
+    pub(crate) fn with_private_frame<T>(
+        &mut self, start: u64, end: u64,
+        read: impl FnOnce(&mut dyn Read) -> io::Result<T>,
+    ) -> io::Result<T> {
+        let count = end.checked_sub(start).filter(|count| *count != 0 && end <= self.length)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "private stage frame escapes sealed stream"))?;
+        crate::daemon::control::checkpoint()?;
+        self.file.seek(SeekFrom::Start(start))?;
+        let result = {
+            let mut frame = (&mut self.file).take(count);
+            let value = read(&mut frame);
+            match value {
+                Err(first) => Err(first),
+                Ok(value) if frame.limit() == 0 => Ok(value),
+                Ok(_) => Err(io::Error::new(io::ErrorKind::InvalidData, "private stage frame was not fully read")),
+            }
+        };
+        let rewind = self.file.rewind();
+        let value = result?;
+        rewind?;
+        crate::daemon::control::checkpoint()?;
+        Ok(value)
+    }
+
     /// The actual report owner validates its selected policies, frame, status
     /// and ALLOW completion here. No public sink is available in this state.
     pub(crate) fn validate<T>(mut self, validate: impl FnOnce(&mut dyn Read) -> io::Result<T>) -> io::Result<(Verified, T)> {
@@ -269,6 +296,31 @@ impl Verified {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn private_stage_frames_reorder_without_consuming_or_widening_the_seal() {
+        let root = crate::test_scratch::dir("selected-report-private-frame");
+        let mut stage = Stage::new(&root).unwrap();
+        stage.write_all(b"abcdef").unwrap();
+        let mut sealed = stage.seal().unwrap();
+        let read = |input: &mut dyn Read| {
+            let mut bytes = [0; 3];
+            input.read_exact(&mut bytes)?;
+            Ok(bytes)
+        };
+        assert_eq!(sealed.with_private_frame(3, 6, read).unwrap(), *b"def");
+        let refused = sealed.with_private_frame::<()>(0, 3, |_| Err(io::Error::from_raw_os_error(1450))).unwrap_err();
+        assert_eq!(refused.raw_os_error(), Some(1450));
+        assert!(sealed.with_private_frame(0, 3, |_| Ok(())).is_err());
+        assert_eq!(sealed.with_private_frame(0, 3, read).unwrap(), *b"abc");
+        assert!(sealed.with_private_frame(2, 7, read).is_err());
+        let (_, whole) = sealed.validate(|input| {
+            let mut bytes = [0; 6];
+            input.read_exact(&mut bytes)?;
+            Ok(bytes)
+        }).unwrap();
+        assert_eq!(whole, *b"abcdef");
+    }
 
     #[test]
     fn replayed_spool_reads_share_exact_sealed_file_and_recover_after_output_failure() {

@@ -75,6 +75,12 @@ impl policy::Inputs for Source<'_,'_,'_>{
  fn budget(&self)->&Arc<Budget>{self.reader.budget()}
  fn checkpoint(&self)->io::Result<()>{self.require().map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::other(message)})}
  fn files(&self,include_exempt:bool,visit:&mut dyn FnMut(&dq_analyze::tree::SourceFile)->Result<(),Failure>)->Result<(),Failure>{self.require()?;if !self.reader.for_each_check_grep_file(self.config,include_exempt,&mut|_,views|{policy::with_source_file(views,visit)?;Ok(true)})?{return Err("check_grep original file traversal stopped".into())}self.require()}
+ fn static_files_skipping(&self,ignored:&dyn Fn(&str)->bool,visit:&mut dyn FnMut(policy::StaticFile<'_>)->Result<(),Failure>)->Result<(),Failure>{
+  if !self.reader.has_paired_dmm(){return self.static_files(visit)}
+  self.require()?;
+  if !self.reader.for_each_check_grep_static(self.config,ignored,visit)?{return Err("paired CheckGrep traversal stopped".into())}
+  self.require()
+ }
  fn fixed(&self,which:policy::Fixed,visit:&mut dyn FnMut(Option<&[u8]>)->Result<(),Failure>)->Result<(),Failure>{self.require()?;self.reader.with_check_grep_fixed(which,|bytes|visit(bytes))?;self.require()}
  fn dmes(&self,visit:&mut dyn FnMut(&str,&[u8])->Result<(),Failure>)->Result<(),Failure>{self.require()?;self.reader.for_each_check_grep_dme(visit)?;self.require()}
  fn jsx(&self,visit:&mut dyn FnMut(&str)->Result<(),Failure>)->Result<(),Failure>{self.require()?;let(_,names)=self.reader.check_grep_names()?;let mut peak=0;for path in names{self.require()?;let wanted=path.as_os_str().len().checked_add(self.reader.root().as_os_str().len()).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(1024)).ok_or_else(||oom("check_grep JSX path overflow"))?;if wanted>peak{reserve(self.reader.budget(),Some(wanted-peak))?;peak=wanted;}let relative=dq_analyze::util::rel_slash(path,self.reader.root());if !policy::is_jsx_name(&relative){return Err("check_grep JSX name differs from typed selection".into())}visit(&relative)?;}self.require()}

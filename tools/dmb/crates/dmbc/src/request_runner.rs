@@ -384,6 +384,13 @@ fn run_build_attempt(
         let query=query_attempt.admit_handlers_source(intent,capture,proof,queries)?;query_attempt.finish_handlers_source();
         return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:None,retained:retains_query_owners});
     }
+    let paired_dmm = if std::env::var_os("DMB_EXPERIMENTAL_PAIRED_DMM").as_deref() == Some(std::ffi::OsStr::new("1"))
+        && stage_handlers && preparation_output.needs_full_ci_baselines()
+    {
+        let derived = joined_derived.as_ref().expect("actual joined Derived preflight");
+        let cache = cache_root.as_deref().ok_or("paired DMM requires its admitted cache root")?;
+        Some(host.query_db().prepare_paired_dmm(&inputs_capture, derived, cache)?)
+    } else { None };
     let derived_preflight=if joined_derived.is_some(){joined_derived}else if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
         Some(Arc::clone(host.query_db()).prepare_derived_preflight(&inputs_capture,policy_inputs.as_ref().expect("exact admitted Derived intent"))?)
     }else{None};
@@ -955,7 +962,7 @@ fn run_build_attempt(
                     } else { None };
                     let captured=if preparation_output.needs_full_ci_baselines(){
                         crate::runner_host::workspace_capture::capture_analysis_full_ci(
-                            &view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),
+                            &view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),paired_dmm,
                         )?
                     }else if crate::policy_request::WorkspaceAuxiliaryQuestion::admits_map_edits_capture(intent.workspace_auxiliary()){
                         crate::runner_host::workspace_capture::capture_analysis_map_edits(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref())?

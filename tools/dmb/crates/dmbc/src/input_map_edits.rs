@@ -7,6 +7,10 @@ use dq_analyze::{
 };
 use std::sync::Arc;
 
+#[path = "input_paired_dmm.rs"]
+mod paired;
+pub(crate) use paired::PairedDmmStage;
+
 const MAX_NESTING: usize = 256;
 
 fn unsupported(message: &'static str) -> io::Error {
@@ -50,7 +54,7 @@ fn collect<P: SnapshotProvider>(
         acquired = inputs.capture_policy_directory_lent(folder, false, 0, budget, lender)?;
         &acquired
     };
-    {
+    if joined.is_none() {
         let mut work = Operation { budget: scratch, poll: &crate::daemon::control::checkpoint };
         kc::row(&mut work, directories).map_err(map_failure)?;
         scratch.charge(path_charge(folder, 4, 256)?).map_err(quota)?;
@@ -107,10 +111,12 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         &self, discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
         budget: &Arc<Budget>, lender: &mut dyn RecordedPolicySourceLender,
         mut visit: impl FnMut(&Path, &str) -> io::Result<()>,
-    ) -> io::Result<Vec<PathBuf>> {
+    ) -> io::Result<()> {
         discovery.validate_recording(self)?;
+        // Each joined directory must be found in this exact discovery.
+        // Its typed path is already part of the workspace closure roster.
         self.fold_map_edits_using(&discovery.contract().root, budget, lender, Some(discovery),
-            |path, relative, _| visit(path, relative))
+            |path, relative, _| visit(path, relative)).map(|_| ())
     }
 
     fn fold_map_edits_using(

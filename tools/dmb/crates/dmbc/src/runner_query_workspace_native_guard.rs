@@ -107,17 +107,18 @@ impl NativeReadGuard<'_> {
     pub(crate) fn matches(&self, origin: &Weak<SourceExportMapping>, revision: u128) -> bool {
         revision == self.revision && self.mapping.is_some_and(|mapping|Weak::ptr_eq(origin,&Arc::downgrade(mapping)))
     }
-    pub(crate) fn original_identity(
+    /// The capture authenticated this occurrence on the same immutable
+    /// mapping during issuance. Borrow the slot only after checking both
+    /// owners and both revisions against this registered scope.
+    pub(crate) fn captured_acquisition(
         &self,
+        capture: &crate::runner_host::workspace_capture::WorkspaceCapture,
         index: usize,
-        identity: &dm_preprocess::SourceAcquisitionIdentity,
-    ) -> io::Result<dm_preprocess::source_acquisition::OriginalAcquisitionIdentity> {
-        let lease = self
-            .mapping.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"raw source scope has no compiled acquisition index"))?
-            .source_acquisition(index)
-            .filter(|lease| identity.matches(lease))
-            .ok_or_else(|| io::Error::other("stale/foreign workspace original token"))?;
-        Ok(lease.original_identity())
+    ) -> io::Result<&dm_preprocess::SourceAcquisitionLease> {
+        capture.require_scope(self)?;
+        self.mapping
+            .and_then(|mapping| mapping.source_acquisition(index))
+            .ok_or_else(|| io::Error::other("registered workspace acquisition unavailable"))
     }
     pub(crate) fn original<'a>(
         &'a self,

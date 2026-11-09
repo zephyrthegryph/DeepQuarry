@@ -4,6 +4,8 @@
 use super::*;
 use crate::{captured_generator_budget::Budget,captured_reactive_reads::Failure};
 use std::{io,sync::Arc};
+#[path = "native_dmm_wire.rs"]
+mod dmm_wire;
 // The same pre-existing native policy singleton serves both judgment and metadata.
 fn policy()->&'static CheckGrep{static POLICY:std::sync::LazyLock<CheckGrep>=std::sync::LazyLock::new(CheckGrep::new);&POLICY}
 /// Actual unique rule-derived lists, not a second registry/parts projection.
@@ -33,11 +35,27 @@ impl Fixed{
 pub struct SemanticRequest{pub relative:String,pub slot_mutation:bool,pub non_client_holder:bool}
 /// Required observations. There are deliberately no empty/default providers.
 /// These callbacks produce DATA; they never grant complete/current authority.
+pub enum StaticFile<'a> {
+ Source(&'a SourceFile),
+ // This is producer data. The private host must authenticate replay.
+ StagedDmm { relative: &'a str, data: StaticFileData },
+}
 pub trait Inputs{
  fn scope(&self)->&LintScope;
  fn budget(&self)->&Arc<Budget>;
  fn checkpoint(&self)->io::Result<()>;
  fn files(&self,include_exempt:bool,visit:&mut dyn FnMut(&SourceFile)->Result<(),Failure>)->Result<(),Failure>;
+ fn static_files(&self,visit:&mut dyn FnMut(StaticFile<'_>)->Result<(),Failure>)->Result<(),Failure>{
+  self.files(false,&mut |file|visit(StaticFile::Source(file)))
+ }
+ fn static_files_skipping(&self,_ignored:&dyn Fn(&str)->bool,visit:&mut dyn FnMut(StaticFile<'_>)->Result<(),Failure>)->Result<(),Failure>{
+  self.static_files(visit)
+ }
+ /// Existing providers retain their old visitation. A closed private
+ /// host can omit non-CODE source materialization for proven CODE passes.
+ fn code_files(&self,include_exempt:bool,visit:&mut dyn FnMut(&SourceFile)->Result<(),Failure>)->Result<(),Failure>{
+  self.files(include_exempt,visit)
+ }
  fn fixed(&self,which:Fixed,visit:&mut dyn FnMut(Option<&[u8]>)->Result<(),Failure>)->Result<(),Failure>;
  fn dmes(&self,visit:&mut dyn FnMut(&str,&[u8])->Result<(),Failure>)->Result<(),Failure>;
  fn jsx(&self,visit:&mut dyn FnMut(&str)->Result<(),Failure>)->Result<(),Failure>;
@@ -66,16 +84,104 @@ pub fn update_baseline_after_delivery(root:&Path,scope:&LintScope,run:&Run,mode:
 fn oom(b:&Budget,message:impl Into<String>)->Failure{b.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message.into()))}
 fn reserve(b:&Budget,bytes:Option<usize>)->Result<(),Failure>{b.charge(bytes.ok_or_else(||oom(b,"check_grep output capacity overflow"))?).map_err(|m|oom(b,m))}
 fn own(b:&Budget,text:&str)->Result<String,Failure>{reserve(b,text.len().checked_mul(4).and_then(|n|n.checked_add(64)))?;Ok(text.to_owned())}
-fn checked(source:&dyn Inputs)->Result<(),Failure>{source.budget().require().map_err(|m|oom(source.budget(),m))?;source.checkpoint()?;source.budget().require().map_err(|m|oom(source.budget(),m))}
+fn checked_for(budget:&Budget,poll:&dyn Fn()->io::Result<()>)->Result<(),Failure>{
+ budget.require().map_err(|message|oom(budget,message))?;
+ poll()?;
+ budget.require().map_err(|message|oom(budget,message))
+}
+fn checked(source:&dyn Inputs)->Result<(),Failure>{checked_for(source.budget(),&||source.checkpoint())}
 fn sink(source:&dyn Inputs)->Result<Sink,Failure>{Sink::bounded_budget(source.budget()).map_err(|m|oom(source.budget(),m))}
 fn pending_sink(source:&dyn Inputs,out:&Sink)->Result<(),Failure>{if let Some(message)=out.admission_error(){return Err(oom(source.budget(),message))}checked(source)}
-fn remember(source:&dyn Inputs,file:&SourceFile,sites:&[Site],lines:&mut Vec<Line>)->Result<(),Failure>{
- for site in sites{checked(source)?;if !site.msg.is_empty(){continue}if !source.budget().row(lines){return Err(oom(source.budget(),"check_grep report-line vector refused"))}let raw=file.raw();let line=site.line as usize;let original=if line>=1&&line<=raw.num_lines(){raw.line(line)}else{""};reserve(source.budget(),original.len().checked_mul(8).and_then(|n|n.checked_add(128)))?;lines.push(Line{relative:own(source.budget(),&site.rel)?,line:site.line,text:crate::util::normalize_ws(original)});}
+fn remember_for(budget:&Budget,poll:&dyn Fn()->io::Result<()>,file:&SourceFile,sites:&[Site],lines:&mut Vec<Line>)->Result<(),Failure>{
+ for site in sites{checked_for(budget,poll)?;if !site.msg.is_empty(){continue}if !budget.row(lines){return Err(oom(budget,"check_grep report-line vector refused"))}let raw=file.raw();let line=site.line as usize;let original=if line>=1&&line<=raw.num_lines(){raw.line(line)}else{""};reserve(budget,original.len().checked_mul(8).and_then(|n|n.checked_add(128)))?;lines.push(Line{relative:own(budget,&site.rel)?,line:site.line,text:crate::util::normalize_ws(original)});}
  Ok(())
 }
-fn remember_allow(source:&dyn Inputs,file:&SourceFile,used:&[crate::lint::AllowUse],digests:&mut std::collections::BTreeMap<String,[u8;20]>)->Result<(),Failure>{
+fn remember_allow_for(budget:&Budget,poll:&dyn Fn()->io::Result<()>,file:&SourceFile,used:&[crate::lint::AllowUse],digests:&mut std::collections::BTreeMap<String,[u8;20]>)->Result<(),Failure>{
  if used.is_empty(){return Ok(())}for row in used{if row.rel!=file.rel{return Err("check_grep ALLOW label differs from actual original file".into())}}
- if !digests.contains_key(file.rel.as_str()){reserve(source.budget(),Some(2048+std::mem::size_of::<(String,[u8;20])>()))?;let digest=crate::captured_raw_file::source_allow_digest(file);digests.insert(own(source.budget(),&file.rel)?,digest);}checked(source)
+ if !digests.contains_key(file.rel.as_str()){reserve(budget,Some(2048+std::mem::size_of::<(String,[u8;20])>()))?;let digest=crate::captured_raw_file::source_allow_digest(file);digests.insert(own(budget,&file.rel)?,digest);}checked_for(budget,poll)
+}
+fn remember(source:&dyn Inputs,file:&SourceFile,sites:&[Site],lines:&mut Vec<Line>)->Result<(),Failure>{
+ remember_for(source.budget(),&||source.checkpoint(),file,sites,lines)
+}
+fn remember_allow(source:&dyn Inputs,file:&SourceFile,used:&[crate::lint::AllowUse],digests:&mut std::collections::BTreeMap<String,[u8;20]>)->Result<(),Failure>{
+ remember_allow_for(source.budget(),&||source.checkpoint(),file,used,digests)
+}
+
+/// One file's static scanner DATA. The caller still owes discovery, scope,
+/// ignored-output selection, exact source binding and all nonstatic passes.
+pub struct StaticFileData {
+ pub run: Run,
+ pub allow_used: Vec<crate::lint::AllowUse>,
+ lines: Vec<Line>,
+ allow_digest: Option<[u8;20]>,
+}
+impl StaticFileData {
+ pub fn source_lines(&self)->impl Iterator<Item=(&str,u32,&str)> {
+  self.lines.iter().map(|row|(row.relative.as_str(),row.line,row.text.as_str()))
+ }
+ pub fn allow_source_digest(&self)->Option<&[u8;20]>{self.allow_digest.as_ref()}
+}
+
+fn scan_static_file_into(
+ scope:&LintScope,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,file:&SourceFile,
+ lines:&mut Vec<Line>,allow_digests:&mut std::collections::BTreeMap<String,[u8;20]>,
+)->Result<Sink,Failure>{
+ let mut local=Sink::bounded_budget(budget).map_err(|message|oom(budget,message))?;
+ local.set_current(&file.rel);
+ for part in policy().compiled(){
+  checked_for(budget,poll)?;
+  part.scan_with(scope,file,&mut local);
+  if let Some(message)=local.admission_error(){return Err(oom(budget,message))}
+  checked_for(budget,poll)?;
+ }
+ remember_for(budget,poll,file,&local.sites,lines)?;
+ remember_allow_for(budget,poll,file,&local.allow_used,allow_digests)?;
+ Ok(local)
+}
+
+/// Runs the same static producer used in the complete CheckGrep file pass.
+/// The result carries no file identity, completion, judgment or report grant.
+pub fn scan_static_file(
+ scope:&LintScope,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,file:&SourceFile,
+)->Result<StaticFileData,Failure>{
+ checked_for(budget,poll)?;
+ let mut lines=Vec::new();
+ let mut digests=std::collections::BTreeMap::new();
+ let mut local=scan_static_file_into(scope,budget,poll,file,&mut lines,&mut digests)?;
+ Ok(StaticFileData{
+  run:Run{sites:std::mem::take(&mut local.sites),notes:std::mem::take(&mut local.notes)},
+  allow_used:std::mem::take(&mut local.allow_used),
+  lines,
+  allow_digest:digests.remove(file.rel.as_str()),
+ })
+}
+fn append_staged_dmm(
+ source:&dyn Inputs,relative:&str,data:StaticFileData,out:&mut Sink,lines:&mut Vec<Line>,
+ digests:&mut std::collections::BTreeMap<String,[u8;20]>,
+)->Result<(),Failure>{
+ if !relative.starts_with("maps/")||!relative.ends_with(".dmm")||!selects_source(relative){
+  return Err("check_grep staged static data has another file role".into());
+ }
+ let StaticFileData{run,allow_used,lines:staged_lines,allow_digest}=data;
+ if run.sites.iter().any(|site|site.rel!=relative)||allow_used.iter().any(|used|used.rel!=relative)
+   ||staged_lines.iter().any(|line|line.relative!=relative){
+  return Err("check_grep staged static data belongs to another file".into());
+ }
+ for line in staged_lines {
+  checked(source)?;
+  if !source.budget().row(lines){return Err(oom(source.budget(),"check_grep staged source-line vector refused"))}
+  lines.push(line);
+ }
+ if let Some(digest)=allow_digest{
+  reserve(source.budget(),Some(2048+std::mem::size_of::<(String,[u8;20])>()))?;
+  if digests.insert(own(source.budget(),relative)?,digest).is_some(){
+   return Err("check_grep staged ALLOW source repeats".into());
+  }
+ }
+ let mut local=Sink::default();
+ local.sites=run.sites;local.notes=run.notes;local.allow_used=allow_used;
+ let allow_start=out.allow_used.len();
+ append(source,local,out,allow_start)
 }
 fn append(source:&dyn Inputs,mut from:Sink,to:&mut Sink,allow_start:usize)->Result<(),Failure>{
  pending_sink(source,&from)?;for site in from.sites.drain(..){if !source.budget().row(&mut to.sites){return Err(oom(source.budget(),"check_grep joined finding vector refused"))}to.sites.push(site)}for row in from.allow_used.drain(..){if to.allow_used[allow_start..].contains(&row){continue}if !source.budget().row(&mut to.allow_used){return Err(oom(source.budget(),"check_grep joined ALLOW vector refused"))}to.allow_used.push(row)}for note in from.notes.drain(..){if !source.budget().row(&mut to.notes){return Err(oom(source.budget(),"check_grep joined note vector refused"))}to.notes.push(note)}std::mem::drop(from);Ok(())
@@ -102,16 +208,21 @@ pub fn judge(source:&dyn Inputs)->Result<Output,Failure>{
 fn scan_using(source:&dyn Inputs)->Result<BaselineData,Failure>{
  checked(source)?;let policy=policy();let mut output=sink(source)?;let mut lines=Vec::new();let mut allow_digests=std::collections::BTreeMap::new();let mut requests=Vec::new();
  let ignored=fixed_text(source,Fixed::GitIgnore,|text|{let mut rows=std::collections::BTreeSet::new();for row in ignored_outputs(text.unwrap_or("")){reserve(source.budget(),row.len().checked_mul(4).and_then(|n|n.checked_add(2048)))?;rows.insert(own(source.budget(),row)?);}Ok(rows)})?;
- source.files(false,&mut|file|{checked(source)?;if Files::Code.matches(file){let slot_mutation=file.text().contains("slot_flags");let non_client_holder=file.text().contains(".holder");if slot_mutation||non_client_holder{if !source.budget().row(&mut requests){return Err(oom(source.budget(),"check_grep semantic request vector refused"))}requests.push(SemanticRequest{relative:own(source.budget(),&file.rel)?,slot_mutation,non_client_holder});}}if ignored.contains(&file.rel){return Ok(())}let mut local=sink(source)?;local.set_current(&file.rel);for part in policy.compiled(){checked(source)?;part.scan_with(source.scope(),file,&mut local);pending_sink(source,&local)?;}remember(source,file,&local.sites,&mut lines)?;remember_allow(source,file,&local.allow_used,&mut allow_digests)?;let allow_start=output.allow_used.len();append(source,local,&mut output,allow_start)})?;
+ source.static_files_skipping(&|relative|ignored.contains(relative),&mut|entry|{checked(source)?;
+ let file=match entry{
+  StaticFile::Source(file)=>file,
+  StaticFile::StagedDmm{relative,data}=>return append_staged_dmm(source,relative,data,&mut output,&mut lines,&mut allow_digests),
+ };
+ if Files::Code.matches(file){let slot_mutation=file.text().contains("slot_flags");let non_client_holder=file.text().contains(".holder");if slot_mutation||non_client_holder{if !source.budget().row(&mut requests){return Err(oom(source.budget(),"check_grep semantic request vector refused"))}requests.push(SemanticRequest{relative:own(source.budget(),&file.rel)?,slot_mutation,non_client_holder});}}if ignored.contains(&file.rel){return Ok(())}let local=scan_static_file_into(source.scope(),source.budget(),&||source.checkpoint(),file,&mut lines,&mut allow_digests)?;let allow_start=output.allow_used.len();append(source,local,&mut output,allow_start)})?;
  // No raw-file loan remains live while the actual host prepares requested
  // original-body position facts. This permits one global callable walk and
  // file-grouped loans, instead of nested loans or files-times-bodies searches.
  requests.sort_unstable_by(|a,b|a.relative.cmp(&b.relative));if requests.windows(2).any(|pair|pair[0].relative==pair[1].relative){return Err("check_grep semantic request file repeats".into())}source.prepare_positions(&requests)?;checked(source)?;std::mem::drop(requests);
  let tree_allow_start=output.allow_used.len();
  let slot=policy.compiled().iter().find(|c|c.rule=="legacy_equip_restriction_vars__slot_flags").ok_or("check_grep slot rule missing")?;let slot_pattern=regex::Regex::new(r"slot_flags\s*&[^=]").unwrap();
- source.files(false,&mut|file|{checked(source)?;if !Files::Code.matches(file)||!file.text().contains("slot_flags"){return Ok(())}let mut local=sink(source)?;local.set_current(&file.rel);let mut called=false;source.positions(file,Semantic::SlotMutation,&mut|positions|{if called{return Err("check_grep slot proof repeated".into())}called=true;let mut scratch=Temps{budget:Budget::scoped_temporaries(source.budget()).map_err(|message|oom(source.budget(),message))?,complete:false};reserve(&scratch.budget,file.raw_quiet().num_lines().checked_mul(4*std::mem::size_of::<usize>()).and_then(|n|n.checked_add(4096)))?;slot.scan_lines_with(source.scope(),file,&mut local,slot_flags_guard_lines(file.text(),&slot_pattern,positions));pending_sink(source,&local)?;scratch.complete=true;std::mem::drop(scratch);Ok(())})?;if !called{return Err("check_grep slot proof omitted".into())}remember(source,file,&local.sites,&mut lines)?;remember_allow(source,file,&local.allow_used,&mut allow_digests)?;append(source,local,&mut output,tree_allow_start)})?;
+ source.code_files(false,&mut|file|{checked(source)?;if !Files::Code.matches(file)||!file.text().contains("slot_flags"){return Ok(())}let mut local=sink(source)?;local.set_current(&file.rel);let mut called=false;source.positions(file,Semantic::SlotMutation,&mut|positions|{if called{return Err("check_grep slot proof repeated".into())}called=true;let mut scratch=Temps{budget:Budget::scoped_temporaries(source.budget()).map_err(|message|oom(source.budget(),message))?,complete:false};reserve(&scratch.budget,file.raw_quiet().num_lines().checked_mul(4*std::mem::size_of::<usize>()).and_then(|n|n.checked_add(4096)))?;slot.scan_lines_with(source.scope(),file,&mut local,slot_flags_guard_lines(file.text(),&slot_pattern,positions));pending_sink(source,&local)?;scratch.complete=true;std::mem::drop(scratch);Ok(())})?;if !called{return Err("check_grep slot proof omitted".into())}remember(source,file,&local.sites,&mut lines)?;remember_allow(source,file,&local.allow_used,&mut allow_digests)?;append(source,local,&mut output,tree_allow_start)})?;
  let holder=policy.compiled().iter().find(|c|c.rule=="admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder").ok_or("check_grep holder rule missing")?;let holder_pattern=regex::Regex::new(r"\.holder\b").unwrap();
- source.files(false,&mut|file|{checked(source)?;if !Files::Code.matches(file)||!file.text().contains(".holder"){return Ok(())}let mut local=sink(source)?;local.set_current(&file.rel);let mut called=false;source.positions(file,Semantic::NonClientHolder,&mut|positions|{if called{return Err("check_grep holder proof repeated".into())}called=true;let mut scratch=Temps{budget:Budget::scoped_temporaries(source.budget()).map_err(|message|oom(source.budget(),message))?,complete:false};let width=file.text().len().checked_mul(16).and_then(|n|n.checked_add(file.raw_quiet().num_lines().checked_mul(4*(std::mem::size_of::<String>()+std::mem::size_of::<usize>()+std::mem::size_of::<u32>()))?)).and_then(|n|n.checked_add(file.rel.len().checked_mul(128)?)).and_then(|n|n.checked_add(8192));reserve(&scratch.budget,width)?;let masked=mask_act_holder_fields(file.text(),positions);let hits=masked.split('\n').enumerate().filter_map(|(i,line)|holder_pattern.is_match(line).then_some(i+1)).collect();let filtered=SourceFile::from_text(&file.rel,&masked);holder.scan_lines_with(source.scope(),&filtered,&mut local,hits);pending_sink(source,&local)?;std::mem::drop(filtered);std::mem::drop(masked);scratch.complete=true;std::mem::drop(scratch);Ok(())})?;if !called{return Err("check_grep holder proof omitted".into())}remember(source,file,&local.sites,&mut lines)?;remember_allow(source,file,&local.allow_used,&mut allow_digests)?;append(source,local,&mut output,tree_allow_start)})?;
+ source.code_files(false,&mut|file|{checked(source)?;if !Files::Code.matches(file)||!file.text().contains(".holder"){return Ok(())}let mut local=sink(source)?;local.set_current(&file.rel);let mut called=false;source.positions(file,Semantic::NonClientHolder,&mut|positions|{if called{return Err("check_grep holder proof repeated".into())}called=true;let mut scratch=Temps{budget:Budget::scoped_temporaries(source.budget()).map_err(|message|oom(source.budget(),message))?,complete:false};let width=file.text().len().checked_mul(16).and_then(|n|n.checked_add(file.raw_quiet().num_lines().checked_mul(4*(std::mem::size_of::<String>()+std::mem::size_of::<usize>()+std::mem::size_of::<u32>()))?)).and_then(|n|n.checked_add(file.rel.len().checked_mul(128)?)).and_then(|n|n.checked_add(8192));reserve(&scratch.budget,width)?;let masked=mask_act_holder_fields(file.text(),positions);let hits=masked.split('\n').enumerate().filter_map(|(i,line)|holder_pattern.is_match(line).then_some(i+1)).collect();let filtered=SourceFile::from_text(&file.rel,&masked);holder.scan_lines_with(source.scope(),&filtered,&mut local,hits);pending_sink(source,&local)?;std::mem::drop(filtered);std::mem::drop(masked);scratch.complete=true;std::mem::drop(scratch);Ok(())})?;if !called{return Err("check_grep holder proof omitted".into())}remember(source,file,&local.sites,&mut lines)?;remember_allow(source,file,&local.allow_used,&mut allow_digests)?;append(source,local,&mut output,tree_allow_start)})?;
  let dynamic=fixed_text(source,Fixed::Seeds,|seeds|fixed_text(source,Fixed::Bindings,|bindings|Ok(dynamic_parts_from(seeds,bindings))))?;
  if !dynamic.is_empty(){source.files(true,&mut|file|{checked(source)?;let mut local=sink(source)?;local.set_current(&file.rel);for part in &dynamic{part.scan_with(source.scope(),file,&mut local);pending_sink(source,&local)?}remember(source,file,&local.sites,&mut lines)?;remember_allow(source,file,&local.allow_used,&mut allow_digests)?;append(source,local,&mut output,tree_allow_start)})?;}
  source.dmes(&mut|relative,bytes|{checked(source)?;let start=output.sites.len();scan_dme_bytes(relative,bytes,&mut output);pending_sink(source,&output)?;remember_dme(source,relative,bytes,&output.sites[start..],&mut lines)})?;
@@ -163,6 +274,53 @@ pub fn is_effective_body(archive:&dm_tree::frontend::BodyArchive,ordinal:usize,b
  fn files(&self,_:bool,_:&mut dyn FnMut(&SourceFile)->Result<(),Failure>)->Result<(),Failure>{panic!("refused fixed observation must prevent file traversal")}
  fn dmes(&self,_:&mut dyn FnMut(&str,&[u8])->Result<(),Failure>)->Result<(),Failure>{panic!("no DME after refusal")}fn jsx(&self,_:&mut dyn FnMut(&str)->Result<(),Failure>)->Result<(),Failure>{panic!("no JSX after refusal")}fn prepare_positions(&self,_:&[SemanticRequest])->Result<(),Failure>{panic!("no body preparation after refusal")}fn positions(&self,_:&SourceFile,_:Semantic,_:&mut dyn FnMut(&std::collections::BTreeSet<(usize,usize)>)->Result<(),Failure>)->Result<(),Failure>{panic!("no semantic positions after refusal")}
  }
+ #[test]
+ fn static_file_matches_existing_part_order_source_lines_and_allow_data() {
+  let scope=LintScope::default();
+  let source=SourceFile::from_text("maps/static-seam.dmm",concat!(
+   "\"a\" = (/turf,/area/test)\n",
+   "/obj/structure/machinery/power/apc{\n",
+   "\tpixel_x = 19\n",
+   "},\n",
+   "/obj/test{\n",
+   "\tstep_x = 2 // ALLOW(check_grep): legacy fixture preserves intentional offset\n",
+   "\ttag = \"new value\"\n",
+   "},\n",
+  ));
+  let mut legacy=Sink::default();
+  legacy.set_current(&source.rel);
+  for part in policy().compiled(){part.scan_with(&scope,&source,&mut legacy);}
+  let budget=Budget::new(4<<20).unwrap();
+  let got=scan_static_file(&scope,&budget,&||Ok(()),&source).unwrap();
+  assert!(legacy.sites.iter().any(|site|site.rule=="wrongly_offset_apcs"));
+  assert_eq!(got.run.sites,legacy.sites);
+  assert_eq!(got.run.notes,legacy.notes);
+  assert_eq!(got.allow_used,legacy.allow_used); assert!(!got.allow_used.is_empty());
+  let expected_lines:Vec<_>=legacy.sites.iter().filter(|site|site.msg.is_empty()).map(|site|{
+   (site.rel.clone(),site.line,crate::util::normalize_ws(source.raw().line(site.line as usize)))
+  }).collect();
+  let lines:Vec<_>=got.source_lines().map(|(path,line,text)|(path.to_owned(),line,text.to_owned())).collect();
+  assert_eq!(lines,expected_lines);
+  let expected_digest=(!legacy.allow_used.is_empty()).then(||crate::captured_raw_file::source_allow_digest(&source));
+  assert_eq!(got.allow_source_digest(),expected_digest.as_ref());
+  let mut wire=Vec::new();
+  got.write_dmm_fragment(&source.rel,&mut wire).unwrap();
+  let decoded=StaticFileData::read_dmm_fragment(&source.rel,&mut wire.as_slice(),&budget,&||Ok(())).unwrap();
+  assert_eq!(decoded.run.sites,got.run.sites);
+  assert_eq!(decoded.run.notes,got.run.notes);
+  assert_eq!(decoded.allow_used,got.allow_used);
+  assert!(decoded.source_lines().eq(got.source_lines()));
+  assert_eq!(decoded.allow_source_digest(),got.allow_source_digest());
+  let tiny=Budget::new(128).unwrap();
+  let refused=StaticFileData::read_dmm_fragment(&source.rel,&mut wire.as_slice(),&tiny,&||Ok(())).err().unwrap();
+  assert_eq!(refused.kind(),io::ErrorKind::OutOfMemory);
+
+
+  let fail=||Err(io::Error::from_raw_os_error(1450));
+  let error=scan_static_file(&scope,&Budget::new(4<<20).unwrap(),&fail,&source).err().unwrap();
+  assert!(matches!(error,Failure::Operational(error)if error.raw_os_error()==Some(1450)));
+ }
+
  #[test]fn semantic_provider_stop_runs_final_control_but_actual_first_io_survives_late_cancellation(){
  for actual in [false,true]{let source=Refusal{budget:Budget::new(4*1024*1024).unwrap(),scope:LintScope::default(),late:Cell::new(false),actual};let error=judge(&source).err().expect("provider refusal cannot produce an output");match error{Failure::Operational(error)if actual=>assert_eq!(error.raw_os_error(),Some(1450)),Failure::Operational(error)=>assert_eq!(error.kind(),io::ErrorKind::Interrupted),Failure::Unsupported(message)=>panic!("late current control must precede semantic refusal: {message}")}}
  }

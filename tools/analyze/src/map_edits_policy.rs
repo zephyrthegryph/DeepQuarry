@@ -324,27 +324,37 @@ impl Names {
             return control.checkpoint();
         }
         for (ty, var, number) in map.edits() {
-            control.checkpoint()?;
-            let Some(ty) = self.owner_for(ty, var) else { continue };
-            let (rule, msg) = match declaration(ty, var)? {
-                Declaration::Variable => continue,
-                Declaration::Type => ("unknown_var", kc::format(control, format_args!("{ty}.{var}"))?),
-                Declaration::Missing => ("unknown_type", kc::own(control, ty)?),
-            };
-            let line = u32::try_from(number).map_err(|_| control.overflow())?;
-            let ident = kc::format(control, format_args!("{ty}::{var}"))?;
-            // Sink::site_decl substitutes each control character with one
-            // ASCII space. Same width, so use the already-funded String.
-            let mut ident = ident.into_bytes();
-            for byte in &mut ident {
-                if matches!(*byte, b'\t' | b'\n' | b'\r') { *byte = b' '; }
-            }
-            let ident = String::from_utf8(ident).expect("ASCII replacement preserves valid UTF-8");
-            if C::CHECKED { kc::row(control, out)?; }
-            out.push(Site { rule: kc::own(control, rule)?, rel: kc::own(control, relative)?,
-                line, msg, key: String::new(), ident });
+            self.append_map_row_using(relative, ty, var, number, &mut declaration, out, control)?;
         }
         control.checkpoint()
+    }
+
+    /// Replay a single already-ordered map row from a bounded native stage.
+    pub fn append_map_row_using<C: Control>(
+        &self, relative: &str, ty: &str, var: &str, number: usize,
+        mut declaration: impl FnMut(&str, &str) -> Result<Declaration, C::Error>,
+        out: &mut Vec<Site>, control: &mut C,
+    ) -> Result<(), C::Error> {
+        control.checkpoint()?;
+        let Some(ty) = self.owner_for(ty, var) else { return Ok(()); };
+        let (rule, msg) = match declaration(ty, var)? {
+            Declaration::Variable => return Ok(()),
+            Declaration::Type => ("unknown_var", kc::format(control, format_args!("{ty}.{var}"))?),
+            Declaration::Missing => ("unknown_type", kc::own(control, ty)?),
+        };
+        let line = u32::try_from(number).map_err(|_| control.overflow())?;
+        let ident = kc::format(control, format_args!("{ty}::{var}"))?;
+        // Sink::site_decl substitutes each control character with one
+        // ASCII space. Same width, so use the already-funded String.
+        let mut ident = ident.into_bytes();
+        for byte in &mut ident {
+            if matches!(*byte, b'\t' | b'\n' | b'\r') { *byte = b' '; }
+        }
+        let ident = String::from_utf8(ident).expect("ASCII replacement preserves valid UTF-8");
+        if C::CHECKED { kc::row(control, out)?; }
+        out.push(Site { rule: kc::own(control, rule)?, rel: kc::own(control, relative)?,
+            line, msg, key: String::new(), ident });
+        Ok(())
     }
 
     /// Uses the actual map bytes and the original lossy UTF-8 conversion.
