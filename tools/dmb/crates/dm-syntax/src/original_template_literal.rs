@@ -1,6 +1,15 @@
 //! SAME consumed Original template parts and Pratt children, not a bracket parser.
 use super::*;use std::{io,mem::size_of};
 fn poll(a:&crate::SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))}
+fn capacity_bytes<T>(count:usize)->io::Result<usize>{
+    count.checked_mul(size_of::<T>()).ok_or(io::ErrorKind::OutOfMemory.into())
+}
+fn envelope<T>(count:usize)->io::Result<usize>{
+    capacity_bytes::<T>(count.checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?)
+}
+fn refund(a:&crate::SettingAdmission<'_>,credit:&mut crate::SettingRootLease,bytes:usize)->io::Result<()>{
+    a.shrink(credit,bytes).map_err(|error|a.take_operational_error().unwrap_or(error))
+}
 struct Part{data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:Vec<crate::SpanToken>}
 pub(crate) struct OriginalTemplateBuilder{rows:Vec<Part>,credit:Option<crate::SettingRootLease>}
 impl Drop for OriginalTemplateBuilder{fn drop(&mut self){for mut row in self.rows.drain(..){if let Some(expr)=row.expression.take(){crate::setting_drop::drop_expression(expr,None)}}}}
@@ -8,12 +17,35 @@ struct PendingParts(Option<LiteralParts>);
 impl Drop for PendingParts{fn drop(&mut self){if let Some(parts)=self.0.take(){crate::setting_drop::drop_literal_parts(parts,None)}}}
 impl OriginalTemplateBuilder{
  pub(crate) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{poll(a)?;Ok(Self{rows:Vec::new(),credit:Some(a.reserve(size_of::<Self>())?)})}
- fn grow(&mut self,n:usize,a:&crate::SettingAdmission<'_>)->io::Result<()>{a.grow(self.credit.as_mut().ok_or(io::ErrorKind::InvalidInput)?,n)}
+ fn grow(&mut self,n:usize,a:&crate::SettingAdmission<'_>)->io::Result<()>{
+    a.grow(self.credit.as_mut().ok_or(io::ErrorKind::InvalidInput)?,n)
+        .map_err(|error|a.take_operational_error().unwrap_or(error))
+ }
  pub(crate) fn push(&mut self,data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:&[crate::Token],a:&crate::SettingAdmission<'_>)->io::Result<()>{
   // Own the AST on ALL fallible paths; its iterative release precedes credit.
   let mut part=Part{data,span,expression,tokens:Vec::new()};
-  let result=(||{poll(a)?;let n=tokens.len().checked_mul(size_of::<crate::SpanToken>()).and_then(|n|n.checked_mul(4)).ok_or(io::ErrorKind::OutOfMemory)?;self.grow(n,a)?;part.tokens.try_reserve_exact(tokens.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if part.tokens.capacity()>tokens.len().saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}for t in tokens{part.tokens.push(crate::SpanToken{kind:t.kind,span:t.span});}
-   if self.rows.len()==self.rows.capacity(){let n=self.rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;self.grow(n.checked_mul(4*size_of::<Part>()).ok_or(io::ErrorKind::OutOfMemory)?,a)?;self.rows.try_reserve_exact(n-self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if self.rows.capacity()>n*4{return Err(io::ErrorKind::OutOfMemory.into())}}poll(a)?;Ok(())})();
+  let result=(||{
+    poll(a)?;
+    let token_bound=envelope::<crate::SpanToken>(tokens.len())?;
+    self.grow(token_bound,a)?;
+    part.tokens.try_reserve_exact(tokens.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+    let actual=capacity_bytes::<crate::SpanToken>(part.tokens.capacity())?;
+    refund(a,self.credit.as_mut().unwrap(),token_bound.checked_sub(actual).ok_or(io::ErrorKind::OutOfMemory)?)?;
+    for token in tokens {
+        part.tokens.push(crate::SpanToken{kind:token.kind,span:token.span});
+    }
+    if self.rows.len()==self.rows.capacity(){
+        let old=capacity_bytes::<Part>(self.rows.capacity())?;
+        let count=self.rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;
+        let bound=envelope::<Part>(count)?;
+        self.grow(bound,a)?;
+        self.rows.try_reserve_exact(count-self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+        let actual=capacity_bytes::<Part>(self.rows.capacity())?;
+        if actual>bound{return Err(io::ErrorKind::OutOfMemory.into())}
+        refund(a,self.credit.as_mut().unwrap(),old.checked_add(bound-actual).ok_or(io::ErrorKind::OutOfMemory)?)?;
+    }
+    poll(a)
+  })();
   if let Err(error)=result{if let Some(expr)=part.expression.take(){crate::setting_drop::drop_expression(expr,None)}return Err(error)}self.rows.push(part);Ok(())
  }
  pub(crate) fn finish(mut self,raw:&str,origin:usize,a:&crate::SettingAdmission<'_>)->io::Result<LiteralText>{
@@ -21,14 +53,26 @@ impl OriginalTemplateBuilder{
   let last=self.rows.len()-1;let mut previous=origin;let mut nonempty=false;
   for(i,row)in self.rows.iter().enumerate(){poll(a)?;let text=match(i,row.data.value()){(0,crate::OriginalTokenValue::InterpBegin(s))=>s,(i,crate::OriginalTokenValue::InterpEnd(s))if i==last=>s,(i,crate::OriginalTokenValue::InterpPart(s))if i>0&&i<last=>s,_=>return Err(io::ErrorKind::InvalidInput.into())};if row.span.start<previous||row.span.end>origin.checked_add(raw.len()).ok_or(io::ErrorKind::InvalidInput)?||row.span.start>=row.span.end{return Err(io::ErrorKind::InvalidInput.into())}let local=Span::new(row.span.start-origin,row.span.end-origin);if raw.get(local.range())!=Some(row.data.raw()){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual template fragment differs from its producer source range"))}if i==0&&row.expression.is_some(){return Err(io::ErrorKind::InvalidInput.into())}previous=row.span.end;nonempty|=!text.is_empty();}
   if self.rows[0].span.start!=origin||previous!=origin+raw.len(){return Err(io::ErrorKind::InvalidInput.into())}
-  // Exact consumed literal width bounds eager child/cleanup/storage; it grants
-  // neither unseen BODY demand nor a second parser. Ordinary literals skip it.
-  let peak=crate::setting_prepare::literal_parser_peak(raw,a)?;self.grow(peak.checked_add(2*size_of::<LiteralState>()).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
-  let mut pending=PendingParts(Some(LiteralParts{runtime_error:Some("Original typed template runtime byte decoding is not yet issued".into()),fragments:Vec::new(),template:Vec::new(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:true,pinned_segment_nonempty:nonempty})}));
+  // This path moves already parsed children and typed fragments. Admit only
+  // the allocations made here; the producer's parse/cleanup guard still owns
+  // the incoming AST until the enclosing syntax owner measures it.
+  let count=self.rows.len();
+  let fragment_bound=envelope::<LiteralFragment>(count)?;
+  let expression_bound=envelope::<Expr>(count-1)?;
+  let owners=size_of::<LiteralState>()+2*size_of::<usize>()+crate::setting_expression::root_storage_envelope();
+  self.grow(owners,a)?;
+  self.grow(fragment_bound,a)?;
+  self.grow(expression_bound,a)?;
+  let mut pending=PendingParts(Some(LiteralParts{runtime_error:None,fragments:Vec::new(),template:Vec::new(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:true,pinned_segment_nonempty:nonempty})}));
   let parts=pending.0.as_mut().unwrap();parts.fragments.try_reserve_exact(self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;parts.expressions.try_reserve_exact(self.rows.len()-1).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
-  if parts.fragments.capacity()>self.rows.len()*4||parts.expressions.capacity()>self.rows.len()*4{return Err(io::ErrorKind::OutOfMemory.into())}
+  let unused_fragments=fragment_bound.checked_sub(capacity_bytes::<LiteralFragment>(parts.fragments.capacity())?).ok_or(io::ErrorKind::OutOfMemory)?;
+  let unused_expressions=expression_bound.checked_sub(capacity_bytes::<Expr>(parts.expressions.capacity())?).ok_or(io::ErrorKind::OutOfMemory)?;
+  refund(a,self.credit.as_mut().unwrap(),unused_fragments.checked_add(unused_expressions).ok_or(io::ErrorKind::OutOfMemory)?)?;
   for mut row in self.rows.drain(..){let expression=row.expression.take().map(|expr|{let index=parts.expressions.len();parts.expressions.push(expr);index});for token in &mut row.tokens{token.span.start=token.span.start.checked_sub(origin).ok_or(io::ErrorKind::InvalidInput)?;token.span.end=token.span.end.checked_sub(origin).ok_or(io::ErrorKind::InvalidInput)?;}parts.fragments.push(LiteralFragment{range:Span::new(row.span.start-origin,row.span.end-origin),expression,tokens:row.tokens,original:Some(row.data)});}
-  decode_actual_template_runtime(parts,a)?;
+  let builder_bytes=capacity_bytes::<Part>(self.rows.capacity())?.checked_add(size_of::<Self>()).ok_or(io::ErrorKind::OutOfMemory)?;
+  drop(std::mem::take(&mut self.rows));
+  refund(a,self.credit.as_mut().unwrap(),builder_bytes)?;
+  decode_actual_template_runtime(parts,a,self.credit.as_mut().unwrap())?;
   let raw=crate::admitted_message_using(a,self.credit.as_mut().unwrap(),|out|out.write_str(raw))?;poll(a)?;
   let retention=OnceLock::new();let _=retention.set(crate::SharedSettingRetention::new(self.credit.take().unwrap()));
   let prepared=OnceLock::new();let _=prepared.set(Ok(pending.0.take()));
@@ -47,6 +91,38 @@ impl OriginalTemplateBuilder{
   assert!(value.parts().unwrap().is_some());let parts=value.syntax_parts().unwrap().unwrap();assert_eq!(parts.expressions.len(),1);assert!(matches!(parts.expressions[0].kind,ExprKind::Member{..}));let address=&parts.expressions[0]as*const Expr;
   let alias=value.clone();let mut texts=Vec::new();for part in alias.pinned_fragments().unwrap().unwrap(){let mut text=String::new();part.unwrap().write_text(&mut text).unwrap();texts.push(text)}assert_eq!(texts,["[typed, not grammar]","tail"]);assert_eq!(alias.syntax_parts().unwrap().unwrap().expressions.as_ptr(),address);drop(value);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());assert_eq!(alias.syntax_parts().unwrap().unwrap().expressions.as_ptr(),address);drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());assert_eq!(literal_child_parses_for_test(),before);
  }
+ #[test]
+ fn already_parsed_template_finishes_under_actual_storage_headroom(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let build=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let body="\r".to_owned()+&"[".repeat(512);
+  let begin=format!("\"{body}[");
+  let end="]\"";
+  let raw=format!("{begin}{end}");
+  let mut builder=OriginalTemplateBuilder::new(&build).unwrap();
+  for (text,value,span) in [
+    (begin.as_str(),crate::OriginalTokenValue::InterpBegin(body.as_str()),Span::new(0,begin.len())),
+    (end,crate::OriginalTokenValue::InterpEnd(""),Span::new(begin.len(),raw.len())),
+  ]{
+    let data=crate::OriginalLiteralData::from_value_with_mode_using(text.into(),value,crate::OriginalStringMode::Normal,&build).unwrap();
+    builder.push(data,span,None,&[],&build).unwrap();
+  }
+  let before=used.load(Ordering::Acquire);
+  let remaining=64<<10;
+  assert!(crate::setting_prepare::literal_parser_peak(&raw,&build).unwrap()>remaining);
+  let finish=crate::SettingAdmission::new(&used,before+remaining,&||Ok(()));
+  let literal=builder.finish(&raw,0,&finish).unwrap();
+  let parts=literal.syntax_parts().unwrap().unwrap();
+  assert_eq!(&parts.template[..512],&[b'[';512]);
+  assert_eq!(&parts.template[512..],&[0xff,1]);
+  assert!(used.load(Ordering::Acquire)<before+16*1024);
+  let alias=literal.clone();
+  let retained=used.load(Ordering::Acquire);
+  drop(literal);
+  assert_eq!(used.load(Ordering::Acquire),retained);
+  drop(alias);
+  assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
  #[test]fn template_part_never_masquerades_as_complete_static_or_empty_default(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let part=crate::OriginalLiteralData::from_value_using("\"x[".into(),crate::OriginalTokenValue::InterpBegin("x"),&a).unwrap();assert_eq!(LiteralText::from_original_data(&part,0,&a).unwrap_err().kind(),io::ErrorKind::Unsupported);let mut b=OriginalTemplateBuilder::new(&a).unwrap();b.push(part,Span::new(0,3),None,&[],&a).unwrap();assert_eq!(b.finish("\"x[",0,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
  #[test]fn eager_template_failure_preserves_first_io_and_releases_actual_payload_before_credit(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let good=||Ok(());let a=crate::SettingAdmission::new(&used,8<<20,&good);let mut b=OriginalTemplateBuilder::new(&a).unwrap();for(raw,value,span)in[("\"[",crate::OriginalTokenValue::InterpBegin(""),Span::new(0,2)),("]\"",crate::OriginalTokenValue::InterpEnd(""),Span::new(2,4))]{b.push(crate::OriginalLiteralData::from_value_using(raw.into(),value,&a).unwrap(),span,None,&[],&a).unwrap()}
   let stopped=||Err(io::Error::from_raw_os_error(1450));let fail=crate::SettingAdmission::new(&used,8<<20,&stopped);assert_eq!(b.finish("\"[]\"",0,&fail).unwrap_err().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
@@ -56,19 +132,48 @@ impl OriginalTemplateBuilder{
 
 /// Decode only actual typed segment VALUE bytes. Child slots are known from
 /// Begin/Part/End products, never searched for in the text or reparsed.
-fn decode_actual_template_runtime(parts:&mut LiteralParts,a:&crate::SettingAdmission<'_>)->io::Result<()>{
- let text_bytes=parts.fragments.iter().try_fold(0usize,|n,row|{let data=row.original.as_ref().ok_or(io::ErrorKind::InvalidInput)?;let s=match data.value(){crate::OriginalTokenValue::InterpBegin(s)|crate::OriginalTokenValue::InterpPart(s)|crate::OriginalTokenValue::InterpEnd(s)=>s,_=>return Err(io::ErrorKind::InvalidInput)};n.checked_add(s.len()).ok_or(io::ErrorKind::OutOfMemory)}).map_err(io::Error::from)?;
+fn decode_actual_template_runtime(parts:&mut LiteralParts,a:&crate::SettingAdmission<'_>,credit:&mut crate::SettingRootLease)->io::Result<()>{
+ let (text_bytes,normalization)=parts.fragments.iter().try_fold((0usize,0usize),|(n,max_cr),row|{
+    poll(a)?;
+    let data=row.original.as_ref().ok_or(io::ErrorKind::InvalidInput)?;
+    let value=match data.value(){crate::OriginalTokenValue::InterpBegin(s)|crate::OriginalTokenValue::InterpPart(s)|crate::OriginalTokenValue::InterpEnd(s)=>s,_=>return Err(io::ErrorKind::InvalidInput.into())};
+    let n=n.checked_add(value.len()).ok_or(io::ErrorKind::OutOfMemory)?;
+    Ok::<_,io::Error>((n,if value.contains('\r'){max_cr.max(value.len())}else{max_cr}))
+ })?;
+ // Preserve the existing output envelope. Every input byte emits at most
+ // one literal byte or a fixed escape expansion (at most five bytes), and
+ // each fragment adds at most one two-byte interpolation marker.
  let cap=text_bytes.checked_mul(16).and_then(|n|n.checked_add(parts.fragments.len().checked_mul(2)?)).ok_or(io::ErrorKind::OutOfMemory)?;
- let mut template=Vec::new();template.try_reserve_exact(cap).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if template.capacity()>cap.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}
+ let template_bound=envelope::<u8>(cap)?;
+ let scratch_bound=envelope::<u8>(normalization)?;
+ // One decoder error is kept; its only variable text is an escape name
+ // drawn from this input, plus a fixed message. Allow formatter growth.
+ let error_bound=envelope::<u8>(text_bytes.checked_add(128).ok_or(io::ErrorKind::OutOfMemory)?)?;
+ let bound=template_bound.checked_add(scratch_bound).and_then(|n|n.checked_add(error_bound)).ok_or(io::ErrorKind::OutOfMemory)?;
+ a.grow(credit,bound).map_err(|error|a.take_operational_error().unwrap_or(error))?;
+ let mut template=Vec::new();
+ template.try_reserve_exact(cap).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+ if template.capacity()>template_bound{return Err(io::ErrorKind::OutOfMemory.into())}
  let mut runtime_error=None;let mut next_marker=None;let mut substituted=false;
  for(i,row)in parts.fragments.iter().enumerate(){
   poll(a)?;
   if i>0{substituted=true;let marker=next_marker.take().unwrap_or_else(||if row.expression.is_none(){1}else if interpolation_starts_sentence(&template){2}else{1});template.extend([0xff,marker]);}
   let data=row.original.as_ref().ok_or(io::ErrorKind::InvalidInput)?;let value=match data.value(){crate::OriginalTokenValue::InterpBegin(s)|crate::OriginalTokenValue::InterpPart(s)|crate::OriginalTokenValue::InterpEnd(s)=>s,_=>return Err(io::ErrorKind::InvalidInput.into())};
   if data.string_mode()!=crate::OriginalStringMode::Normal{runtime_error.get_or_insert_with(||"Original interpolation runtime lexical mode is not issued".into());continue}
-  let normalized=value.contains('\r').then(||without_cr(value).0);let value=normalized.as_deref().unwrap_or(value);let mut at=0;
+  let mut normalized=String::new();
+  let value=if value.contains('\r'){
+    normalized.try_reserve_exact(value.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+    if normalized.capacity()>scratch_bound{return Err(io::ErrorKind::OutOfMemory.into())}
+    for chunk in value.split('\r'){normalized.push_str(chunk);}
+    normalized.as_str()
+  }else{value};
+  let mut at=0;
   while at<value.len(){poll(a)?;let ch=value[at..].chars().next().unwrap();if ch=='\\'{if let Err(error)=decode_text_escape(value,&mut at,&mut template,&mut runtime_error,&mut next_marker,substituted){runtime_error.get_or_insert(error);break}}else{let mut bytes=[0;4];if runtime_error.is_none(){template.extend_from_slice(ch.encode_utf8(&mut bytes).as_bytes());}at+=ch.len_utf8();}}
  }
+ let error_capacity=runtime_error.as_ref().map_or(0,String::capacity);
+ if error_capacity>error_bound{return Err(io::ErrorKind::OutOfMemory.into())}
+ let actual=template.capacity().checked_add(error_capacity).ok_or(io::ErrorKind::OutOfMemory)?;
+ refund(a,credit,bound.checked_sub(actual).ok_or(io::ErrorKind::OutOfMemory)?)?;
  poll(a)?;parts.template=template;parts.runtime_error=runtime_error;Ok(())
 }
 

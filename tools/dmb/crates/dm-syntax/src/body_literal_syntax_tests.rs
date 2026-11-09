@@ -108,3 +108,59 @@ fn native_membership_child_cancellation_never_publishes_different_normalization(
  let prepared=prepare_native(source,&retry).unwrap();let(parsed,admission)=prepared.into_parts();assert_eq!(parsed,body(source));
  drop_body_literal_syntax(parsed,Some(admission));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
 }
+
+#[test]
+fn body_peak_skips_paid_template_but_keeps_fresh_nested_literal_and_foreign_refusal() {
+ let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+ let counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
+ let a = SettingAdmission::new(&counter, 16 << 20, &|| Ok(()));
+ let inner = r#""inner [1]""#;
+ let prefix = r#""outer ["#;
+ let suffix = r#"]tail""#;
+ let raw = format!("{prefix}{inner}{suffix}");
+ let split = prefix.len() + inner.len();
+ let data = |raw: &str, value| {
+  crate::OriginalLiteralData::from_value_with_mode_using(
+   raw.to_owned(), value, crate::OriginalStringMode::Normal, &a,
+  ).unwrap()
+ };
+ let mut builder = crate::literal::OriginalTemplateBuilder::new(&a).unwrap();
+ builder.push(
+  data(prefix, crate::OriginalTokenValue::InterpBegin("outer ")),
+  crate::Span::new(0, prefix.len()), None, &[], &a,
+ ).unwrap();
+ let child = Expr {
+  span: crate::Span::new(prefix.len(), split),
+  kind: ExprKind::Literal(crate::LiteralText::at(inner.to_owned(), prefix.len())),
+ };
+ builder.push(
+  data(suffix, crate::OriginalTokenValue::InterpEnd("tail")),
+  crate::Span::new(split, raw.len()), Some(child), &[], &a,
+ ).unwrap();
+ let value = builder.finish(&raw, 0, &a).unwrap();
+ let children = value.prepared_syntax_parts().unwrap().unwrap().unwrap().expressions.as_ptr();
+ let root = Expr { kind: ExprKind::Literal(value), span: crate::Span::new(0, raw.len()) };
+ let prior_parses = crate::literal::literal_child_parses_for_test();
+ let actual = input_peak(&root, &a).unwrap();
+ assert!(actual > 0, "fresh nested literal still needs a parser permit");
+ assert_eq!(actual, crate::setting_prepare::literal_parser_peak(inner, &a).unwrap());
+ assert_eq!(crate::literal::literal_child_parses_for_test(), prior_parses);
+
+ let foreign_counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
+ let foreign = SettingAdmission::new(&foreign_counter, 16 << 20, &|| Ok(()));
+ assert_eq!(input_peak(&root, &foreign).unwrap_err().kind(), io::ErrorKind::InvalidInput);
+ assert_eq!(foreign_counter.load(Ordering::Acquire), fixed);
+
+ let failed = SettingAdmission::new(&counter, 16 << 20, &|| Err(io::Error::from_raw_os_error(1450)));
+ assert!(input_peak(&root, &failed).is_err());
+ assert_eq!(failed.take_operational_error().unwrap().raw_os_error(), Some(1450));
+
+ let permit = a.reserve(actual).unwrap();
+ crate::setting_prepare::prepare_body_measure(&root, &a).unwrap();
+ assert_eq!(crate::literal::literal_child_parses_for_test() - prior_parses, 1);
+ let ExprKind::Literal(value) = &root.kind else { panic!("actual Original template"); };
+ assert_eq!(value.prepared_syntax_parts().unwrap().unwrap().unwrap().expressions.as_ptr(), children);
+ drop(root);
+ drop(permit);
+ assert_eq!(counter.load(Ordering::Acquire), fixed);
+}

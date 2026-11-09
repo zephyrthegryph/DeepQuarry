@@ -77,7 +77,18 @@ fn input_peak(root:&Expr,a:&SettingAdmission<'_>)->io::Result<usize>{
  let mut pending=Worklist::new(a)?;pending.push(root)?;let mut peak=0;
  while let Some(e)=pending.pop(){
   a.checkpoint()?;
-  if let ExprKind::Literal(l)=&e.kind{l.require_fresh_body_owner(a)?;if l.shared_storage().is_some(){peak=add(a,peak,crate::setting_prepare::literal_parser_peak(l.as_str(),a)?)?;}continue;}
+  if let ExprKind::Literal(literal)=&e.kind {
+   if literal.require_fresh_body_owner(a)? {
+    // No parser is entered for this owner. Any existing child can still
+    // contain fresh ordinary literals, which need their own peak.
+    if let Some(Ok(Some(parts))) = literal.prepared_syntax_parts() {
+     pending.extend(parts.expressions.iter())?;
+    }
+   } else if literal.shared_storage().is_some() {
+    peak = add(a, peak, crate::setting_prepare::literal_parser_peak(literal.as_str(),a)?)?;
+   }
+   continue;
+  }
   // This shared child iterator is called ONLY on nonliteral nodes here: no
   // deferred literal parser/cache is entered during resource preflight.
   let mut failed=None;

@@ -298,14 +298,22 @@ impl LiteralText {
             .map(|parts|parts.as_ref())
             .map_err(String::as_str)
     }
-    pub(crate) fn require_fresh_body_owner(&self,a:&crate::SettingAdmission<'_>)->std::io::Result<()>{
-        let Backing::Text(state)=&self.0 else{return a.checkpoint()};
-        if state.original_prepared{return if state.retention.get().is_some_and(|r|r.is_admitted_by(a)){a.checkpoint()}else{Err(std::io::ErrorKind::InvalidInput.into())}}
+    /// True identifies an independently admitted Original template whose
+    /// interpolation syntax has already been produced by this counter.
+    pub(crate) fn require_fresh_body_owner(&self,a:&crate::SettingAdmission<'_>)->std::io::Result<bool>{
+        let Backing::Text(state)=&self.0 else{return a.checkpoint().map(|()| false)};
+        if state.original_prepared{
+            return if state.retention.get().is_some_and(|r|r.is_admitted_by(a)){
+                a.checkpoint().map(|()| true)
+            }else{
+                Err(std::io::ErrorKind::InvalidInput.into())
+            }
+        }
         if Arc::strong_count(state.0.as_ref().expect("live literal owner"))!=1||state.parts.get().is_some()||state.retention.get().is_some(){
             a.record_operational_error(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native body literal requires its fresh unpublished original owner"));
             return Err(std::io::ErrorKind::InvalidInput.into());
         }
-        a.checkpoint()
+        a.checkpoint().map(|()| false)
     }
     /// Prepare the SAME issuing literal caches while a native root is still
     /// unpublished and its canonical slot is serialized. Caller pre-admits the
