@@ -403,7 +403,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         files: impl Iterator<Item = &'a Path>,
         directories: impl Iterator<Item = &'b PathBuf>,
     ) -> io::Result<InputSnapshot> {
-        self.policy_workspace_closure_using(files, directories, None)
+        self.policy_workspace_closure_using(files, directories, None, None, None, false, |_, _| Ok(false), |facts, _| Ok(facts))
     }
 
     pub(crate) fn policy_workspace_joined_files<'a>(
@@ -411,33 +411,132 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         files: impl Iterator<Item = &'a Path>,
         discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
     ) -> io::Result<InputSnapshot> {
-        discovery.validate_recording(self)?;
-        self.policy_workspace_closure_using(files, std::iter::empty(), Some(discovery))
+        self.policy_workspace_joined_files_using(files, discovery, None)
     }
 
-    fn policy_workspace_closure_using<'a, 'b>(
+    pub(crate) fn policy_workspace_joined_files_using<'a>(
+        &self,
+        files: impl Iterator<Item = &'a Path>,
+        discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
+        donor: Option<&super::DerivedPreflight>,
+    ) -> io::Result<InputSnapshot> {
+        self.policy_workspace_joined_files_with_limit(files, discovery, donor, None)
+    }
+
+    pub(crate) fn policy_workspace_joined_files_with_limit<'a>(
+        &self,
+        files: impl Iterator<Item = &'a Path>,
+        discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
+        donor: Option<&super::DerivedPreflight>,
+        local_limit: Option<usize>,
+    ) -> io::Result<InputSnapshot> {
+        self.policy_workspace_joined_files_finish(files, discovery, donor, local_limit, false, |_, _| Ok(false), |facts, _| Ok(facts))
+    }
+
+    pub(crate) fn policy_workspace_joined_files_hashed(
+        &self,
+        selected: &[(&Path, usize)],
+        discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
+        donor: &super::DerivedPreflight,
+        local_limit: usize,
+        revision: u128,
+        configuration: &Path,
+        auxiliary: impl Fn(&Path, &FileInput) -> io::Result<bool>,
+    ) -> io::Result<(InputSnapshot, u128)> {
+        self.policy_workspace_joined_files_finish(
+            selected.iter().map(|&(path, _)| path), discovery, Some(donor), Some(local_limit), true, auxiliary,
+            |facts, current| {
+                let policy_revision = crate::policy_request::workspace_revision_using(
+                    revision, &facts, discovery.policy_directories(), None, Some((selected, current)),
+                    &discovery.contract().root, &discovery.contract().recursive_roots, configuration,
+                )?;
+                Ok((facts, policy_revision))
+            },
+        )
+    }
+
+    fn policy_workspace_joined_files_finish<'a, T>(
+        &self,
+        files: impl Iterator<Item = &'a Path>,
+        discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
+        donor: Option<&super::DerivedPreflight>,
+        local_limit: Option<usize>,
+        selected_key_may_differ: bool,
+        auxiliary: impl Fn(&Path, &FileInput) -> io::Result<bool>,
+        finish: impl FnOnce(InputSnapshot, &InputSnapshot) -> io::Result<T>,
+    ) -> io::Result<T> {
+        discovery.validate_recording(self)?;
+        if let Some(donor) = donor {
+            if !std::ptr::eq(donor.discovery().as_ref(), discovery) {
+                return Err(invalid("workspace file donor belongs to another discovery"));
+            }
+            donor.require_recording(self)?;
+        }
+        self.policy_workspace_closure_using(files, std::iter::empty(), Some(discovery), donor, local_limit, selected_key_may_differ, auxiliary, finish)
+    }
+
+    fn policy_workspace_closure_using<'a, 'b, T>(
         &self,
         files: impl Iterator<Item = &'a Path>,
         directories: impl Iterator<Item = &'b PathBuf>,
         discovery: Option<&crate::runner_host::workspace_discovery::DiscoveryReceipt>,
-    ) -> io::Result<InputSnapshot> {
+        donor: Option<&super::DerivedPreflight>,
+        mut local_limit: Option<usize>,
+        selected_key_may_differ: bool,
+        auxiliary: impl Fn(&Path, &FileInput) -> io::Result<bool>,
+        finish: impl FnOnce(InputSnapshot, &InputSnapshot) -> io::Result<T>,
+    ) -> io::Result<T> {
         let current = self
             .snapshot
             .lock()
             .map_err(|_| invalid("input mutex poisoned"))?;
+        let mut charge_local = |width: usize| -> io::Result<()> {
+            if let Some(remaining) = &mut local_limit {
+                // Keep the old conservative per-row allowance for the BTree
+                // node and path allocation, including insertion scratch.
+                let bytes = width.checked_mul(8).and_then(|n| n.checked_add(2048))
+                    .ok_or(io::ErrorKind::OutOfMemory)?;
+                *remaining = remaining.checked_sub(bytes)
+                    .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory, "joined workspace local fact exceeds admitted capture"))?;
+            }
+            Ok(())
+        };
         let mut result = InputSnapshot::new(current.scanned_ns);
         result.path_presence=current.path_presence.clone();result.opened_reads=current.opened_reads.clone();result.original_payloads=current.original_payloads.clone();
+        let mut borrowed = 0usize;
+        let mut previous: Option<&Path> = None;
         for path in files {
+            if donor.is_some() {
+                if previous.is_some_and(|previous| previous >= path) {
+                    return Err(invalid("joined workspace selected facts are not unique path order"));
+                }
+                previous = Some(path);
+            }
             if let Some(file) = current.files.get(path) {
-                result.files.insert(path.to_path_buf(), file.clone());
+                if let Some((actual, stamp, content)) = donor.and_then(|owner| owner.workspace_file(path)) {
+                    if (!selected_key_may_differ && actual.as_os_str() != path.as_os_str())
+                        || file.path.as_os_str() != actual.as_os_str()
+                        || &file.stamp != stamp || file.content != content {
+                        return Err(invalid("workspace file donor differs from the recorded selected fact"));
+                    }
+                    borrowed = borrowed.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
+                } else if !auxiliary(path, file)? {
+                    charge_local(path.as_os_str().len().max(file.path.capacity()))?;
+                    result.files.insert(path.to_path_buf(), file.clone());
+                }
             } else if current.opened_reads.get(path).is_some_and(|s|s.is_readable())&&current.original_payloads.get(path).is_some(){
                 // This actual exact reader did not issue an ordinary FileInput.
                 // Its independently funded immutable observations travel below.
             } else if current.negative_files.contains(path) {
+                charge_local(path.as_os_str().len())?;
                 result.negative_files.insert(path.to_path_buf());
             } else {
                 return Err(invalid("workspace requests an unrecorded file/absence"));
             }
+        }
+        if donor.is_some_and(|owner| borrowed != owner.workspace_file_count()
+            || owner.workspace_missing_configuration().is_some_and(|path| !result.negative_files.contains(path))) {
+            return Err(invalid("workspace selection does not contain every donated file fact"));
         }
         if let Some(discovery) = discovery {
             discovery.require_current_directories(&current)?;
@@ -453,7 +552,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                 observation.listing.clone(),
             )?;
         }
-        Ok(result)
+        finish(result, &current)
     }
 }
 
@@ -478,7 +577,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
    Ok(actual)=>{
     let settled=lender.directory_metadata_settled(&self.source_issuer,actual);
     if let Err(error)=settled{window.keep();return match pending{Err(first)=>Err(first),Ok(_)=>Err(error)}}
-    let settled=window.settle(actual.saturating_sub(before)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m));
+    let settled=lender.settle_directory_window(window,actual.saturating_sub(before)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m));
     match pending{Err(first)=>Err(first),Ok(listing)=>{settled?;Ok(listing)}}
    }
    Err(error)=>{window.keep();match pending{Err(first)=>Err(first),Ok(_)=>Err(error)}}

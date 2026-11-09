@@ -695,10 +695,15 @@ impl crate::input_snapshot::RecordedPolicySourceLender for RawInputCredits<'_>{
   if !self.ledger.rows.contains_key(&key){charge(self.budget,NODE)?;}
   // Actual metadata is published before a surprise denial, as with raw reads.
   self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),bytes),bytes});
-  charge(self.budget,bytes.saturating_sub(old))
+  // The actual recorder row now funds this delta for its own lifetime.
+  // The current operation still needs the full debit for its active peak.
+  self.budget.retain_nested(bytes.saturating_sub(old)).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))
  }
  fn directory_window_started(&mut self,issuer:&Arc<()>,upper:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource node was not prepared"))}self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),upper),bytes:upper});Ok(())}
  fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>{let key=(251,Arc::as_ptr(issuer)as usize);if !self.ledger.rows.contains_key(&key){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory resource window absent"))}self.ledger.replace_row(key,Row{owner:Observation::RecorderMetadata(Arc::downgrade(issuer),actual),bytes:actual});Ok(())}
+ fn settle_directory_window(&mut self,window:dq_analyze::captured_generator_budget::ReservedWindow,retained:usize)->Result<(),String>{
+  window.settle_registered(self.budget,retained)
+ }
  fn prepare_source(&mut self)->io::Result<()>{RawInputCredits::prepare_source(self)}
  fn acquired(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{self.retain(lease)}
  fn acquired_preflight_file(&mut self,lease:&SourceAcquisitionLease)->io::Result<()>{
@@ -835,7 +840,23 @@ impl QueryDb {
  }
  #[test]fn actual_bounded_directory_provider_receives_small_reserved_window_and_unused_credit_returns(){
   let root=crate::test_scratch::dir("actual-small-directory-window");std::fs::write(root.join("a.dm"),"/datum/a\n").unwrap();let provider=Observe{maximum:0.into(),fail:false};let inputs=RecordingInputs::new(&provider,0);let budget=Budget::new(16*1024).unwrap();let mut ledger=Ledger::default();let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};
-  let listing=inputs.capture_policy_directory_lent(&root,true,0,&budget,&mut credits).unwrap();assert!(matches!(listing,PolicyDirectoryListing::Present(_)));let offered=provider.maximum.load(Ordering::Acquire);assert!(offered>0&&offered<16*1024,"provider must see remaining family window, not unconditional64MiB");assert!(budget.remaining()>1024,"unused maximum is refunded after real metadata settlement");drop(listing);drop(credits);assert!(ledger.refresh().unwrap()>FIXED);drop(inputs);assert_eq!(ledger.refresh().unwrap(),FIXED);
+  let listing=inputs.capture_policy_directory_lent(&root,true,0,&budget,&mut credits).unwrap();
+  assert!(matches!(listing,PolicyDirectoryListing::Present(_)));
+  let offered=provider.maximum.load(Ordering::Acquire);
+  assert!(offered>0&&offered<16*1024,"provider must see remaining family window, not unconditional64MiB");
+  assert!(budget.remaining()>1024,"unused maximum is refunded after real metadata settlement");
+  let key=(251,Arc::as_ptr(&inputs.policy_discovery_issuer())as usize);
+  let registered=credits.ledger.rows.get(&key).unwrap().bytes;
+  assert!(registered >= inputs.policy_discovery_metadata_charge().unwrap());
+  assert!(registered>0);
+  assert_eq!(budget.used()-budget.temporary_charge(),registered);
+  assert_eq!(budget.remaining(),16*1024-budget.used(),"the operation still pays the full debit");
+  drop(listing);drop(credits);
+  assert_eq!(ledger.rows.get(&key).unwrap().bytes,registered);
+  assert!(ledger.refresh().unwrap()>FIXED);
+  drop(inputs);
+  assert_eq!(ledger.refresh().unwrap(),FIXED,"an independently held operation budget cannot keep recorder metadata live");
+
  }
  #[test]fn actual_directory_error_survives_window_cleanup_and_quota_refuses_before_provider(){
   let root=crate::test_scratch::dir("actual-directory-first-io");let provider=Observe{maximum:0.into(),fail:true};let inputs=RecordingInputs::new(&provider,0);let budget=Budget::new(16*1024).unwrap();let mut ledger=Ledger::default();let mut credits=RawInputCredits{ledger:&mut ledger,budget:&budget,source_nodes:0,capture_node:false,prepared:false};let error=inputs.capture_policy_directory_lent(&root,true,0,&budget,&mut credits).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert!(budget.remaining()>1024);drop(credits);drop(inputs);assert_eq!(ledger.refresh().unwrap(),FIXED);

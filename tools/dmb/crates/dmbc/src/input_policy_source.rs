@@ -20,6 +20,9 @@ pub(crate) trait RecordedPolicySourceLender {
  fn prepare_directory_metadata(&mut self,issuer:&Arc<()>,bytes:usize)->io::Result<()>;
  fn directory_window_started(&mut self,issuer:&Arc<()>,upper:usize)->io::Result<()>;
  fn directory_metadata_settled(&mut self,issuer:&Arc<()>,actual:usize)->io::Result<()>;
+ fn settle_directory_window(&mut self,window:dq_analyze::captured_generator_budget::ReservedWindow,retained:usize)->Result<(),String>{
+  window.settle(retained)
+ }
 }
 #[cfg(test)]struct TestLender<'a>(&'a Budget);
 #[cfg(test)]impl RecordedPolicySourceLender for TestLender<'_>{

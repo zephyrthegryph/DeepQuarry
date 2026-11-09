@@ -604,6 +604,71 @@ pub(crate) fn workspace_revision_with_directories(
     recursive_roots: &[PathBuf],
     configuration: &std::path::Path,
 ) -> io::Result<u128> {
+    workspace_revision_with_file_donor(source, facts, directories, None, root, recursive_roots, configuration)
+}
+
+pub(crate) fn workspace_revision_with_file_donor(
+    source: u128,
+    facts: &crate::input_snapshot::InputSnapshot,
+    directories: &std::collections::BTreeMap<PathBuf, crate::input_snapshot::PolicyDirectoryObservation>,
+    donor: Option<&crate::input_snapshot::DerivedPreflight>,
+    root: &std::path::Path,
+    recursive_roots: &[PathBuf],
+    configuration: &std::path::Path,
+) -> io::Result<u128> {
+    workspace_revision_using(source, facts, directories, donor, None, root, recursive_roots, configuration)
+}
+
+pub(crate) fn workspace_revision_using(
+    source: u128,
+    facts: &crate::input_snapshot::InputSnapshot,
+    directories: &std::collections::BTreeMap<PathBuf, crate::input_snapshot::PolicyDirectoryObservation>,
+    donor: Option<&crate::input_snapshot::DerivedPreflight>,
+    selected_current: Option<(&[(&std::path::Path, usize)], &crate::input_snapshot::InputSnapshot)>,
+    root: &std::path::Path,
+    recursive_roots: &[PathBuf],
+    configuration: &std::path::Path,
+) -> io::Result<u128> {
+    #[derive(serde::Serialize)]
+    struct FileWire<'a> {
+        path: &'a std::path::Path,
+        stamp: &'a crate::input_snapshot::Stamp,
+        content: u128,
+    }
+    struct Files<'a> {
+        local: &'a std::collections::BTreeMap<PathBuf, crate::input_snapshot::FileInput>,
+        donor: Option<&'a crate::input_snapshot::DerivedPreflight>,
+        selected_current: Option<(&'a [(&'a std::path::Path, usize)], &'a crate::input_snapshot::InputSnapshot)>,
+    }
+    impl serde::Serialize for Files<'_> {
+        fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+            use serde::ser::{Error, SerializeMap};
+            if let Some((selected, current)) = self.selected_current {
+                let positives = || selected.iter().filter_map(|&(path, _)|
+                    current.recorded_canonical_file(path).map(|file| (path, file)));
+                let mut map = serializer.serialize_map(Some(positives().count()))?;
+                for (path, file) in positives() { map.serialize_entry(path, file)?; }
+                return map.end();
+            }
+            let Some(donor) = self.donor else { return self.local.serialize(serializer); };
+            let count = self.local.len().checked_add(donor.workspace_file_count())
+                .ok_or_else(|| S::Error::custom("workspace merged file count overflow"))?;
+            let mut map = serializer.serialize_map(Some(count))?;
+            let mut local = self.local.iter().peekable();
+            for (path, stamp, content) in donor.workspace_files() {
+                while local.peek().is_some_and(|(key, _)| key.as_path() < path) {
+                    let (key, fact) = local.next().expect("peeked local fact");
+                    map.serialize_entry(key, fact)?;
+                }
+                if local.peek().is_some_and(|(key, _)| key.as_path() == path) {
+                    return Err(S::Error::custom("workspace file donor repeats a local fact"));
+                }
+                map.serialize_entry(path, &FileWire { path, stamp, content })?;
+            }
+            for (key, fact) in local { map.serialize_entry(key, fact)?; }
+            map.end()
+        }
+    }
     struct HashWriter(xxhash_rust::xxh3::Xxh3);
     impl io::Write for HashWriter {
         fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
@@ -624,7 +689,7 @@ pub(crate) fn workspace_revision_with_directories(
         encoded = serde_json::to_writer(
             &mut hash,
             &(
-                files,
+                Files { local: files, donor, selected_current },
                 folders,
                 negative,
                 generated,

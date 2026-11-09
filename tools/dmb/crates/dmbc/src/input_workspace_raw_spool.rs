@@ -17,6 +17,18 @@ struct Entry {
     content: u128,
 }
 
+impl Entry {
+    fn require(&self, discovery: &DiscoveryReceipt, fact: &FileInput) -> io::Result<()> {
+        if discovery.files().get(self.ordinal) != Some(&fact.path) {
+            return Err(invalid("raw workspace spool original path differs"));
+        }
+        if self.stamp != fact.stamp || self.content != fact.content {
+            return Err(invalid("raw workspace spool original fact differs"));
+        }
+        Ok(())
+    }
+}
+
 pub(crate) struct WorkspaceRawSpoolBuilder {
     discovery: Arc<DiscoveryReceipt>,
     recorder: Arc<()>,
@@ -109,6 +121,12 @@ impl WorkspaceRawSpoolBuilder {
         Ok(Some(fact))
     }
 
+    pub(crate) fn require_fact(&self, ordinal: usize, fact: &FileInput) -> io::Result<()> {
+        let at = self.entries.binary_search_by_key(&ordinal, |entry| entry.ordinal)
+            .map_err(|_| invalid("raw workspace spool omitted actual ordinal"))?;
+        self.entries[at].require(&self.discovery, fact)
+    }
+
     fn capture_fixed() -> usize {
         // The live builder has a streaming hash while the sealed owner does
         // not. Prepay both controls through the one-way seal handoff.
@@ -155,34 +173,51 @@ impl WorkspaceRawSpool {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn identity(self: &Arc<Self>, ordinal: usize, fact: &FileInput)
         -> io::Result<WorkspaceRawSpoolIdentity>
     {
-        self.entry(ordinal, fact)?;
+        self.slot(ordinal)?.require(&self.discovery, fact)?;
+        self.identity_for_slot(ordinal)
+    }
+
+    pub(crate) fn identity_for_slot(self: &Arc<Self>, ordinal: usize)
+        -> io::Result<WorkspaceRawSpoolIdentity>
+    {
+        self.slot(ordinal)?;
         Ok(WorkspaceRawSpoolIdentity { owner: Arc::downgrade(self), ordinal })
     }
 
-    fn entry(&self, ordinal: usize, fact: &FileInput) -> io::Result<&Entry> {
-        if self.discovery.files().get(ordinal) != Some(&fact.path) {
-            return Err(invalid("raw workspace spool original path differs"));
-        }
+    fn slot(&self, ordinal: usize) -> io::Result<&Entry> {
         let index = self.entries.binary_search_by_key(&ordinal, |entry| entry.ordinal)
             .map_err(|_| invalid("raw workspace spool omitted actual ordinal"))?;
-        let entry = &self.entries[index];
-        if entry.stamp != fact.stamp || entry.content != fact.content {
-            return Err(invalid("raw workspace spool original fact differs"));
-        }
-        Ok(entry)
+        Ok(&self.entries[index])
+    }
+
+    pub(crate) fn facts_in(&self, current: &InputSnapshot) -> bool {
+        self.entries.iter().all(|entry| {
+            self.discovery.files().get(entry.ordinal)
+                .and_then(|path| current.recorded_canonical_file(path))
+                .is_some_and(|fact| entry.require(&self.discovery, fact).is_ok())
+        })
     }
 
     /// Called only behind the matching NativeReadGuard. Source freshness is
     /// supplied by its current capture closure, not by the spool digest.
     /// Read one immutable private frame and release its raw copy before the
     /// normalized page owner crosses the callback.
+    #[cfg(test)]
     pub(crate) fn normalized(
         &self, ordinal: usize, fact: &FileInput, available: usize,
     ) -> io::Result<Option<dm_preprocess::SourceText>> {
-        let entry = self.entry(ordinal, fact)?;
+        self.slot(ordinal)?.require(&self.discovery, fact)?;
+        self.normalized_slot(ordinal, available)
+    }
+
+    pub(crate) fn normalized_slot(
+        &self, ordinal: usize, available: usize,
+    ) -> io::Result<Option<dm_preprocess::SourceText>> {
+        let entry = self.slot(ordinal)?;
         let n = usize::try_from(entry.stamp.size).map_err(|_| io::ErrorKind::OutOfMemory)?;
         if entry.frame.end.checked_sub(entry.frame.start) != entry.stamp.size.checked_add(1) {
             return Err(invalid("raw workspace spool file width differs"));
@@ -255,11 +290,22 @@ mod tests {
         let cache = crate::test_scratch::dir("workspace-raw-spool-actual-scratch");
         let mut build = WorkspaceRawSpoolBuilder::new(&inputs, Arc::clone(&discovery), &queries, 1, &budget, &cache).unwrap();
         let fact = build.append_actual(&inputs, ordinal, &budget).unwrap().unwrap();
+        build.require_fact(ordinal, &fact).unwrap();
+        assert!(build.require_fact(ordinal + 1, &fact).is_err());
         let spool = build.seal().unwrap();
+        let recorded = inputs.snapshot().unwrap();
+        assert!(spool.facts_in(&recorded));
+        let mut changed_recording = recorded.clone();
+        changed_recording.files.get_mut(&fact.path).unwrap().content ^= 1;
+        assert!(!spool.facts_in(&changed_recording));
+        changed_recording.files.remove(&fact.path);
+        assert!(!spool.facts_in(&changed_recording));
         spool.require_recording(&inputs, &discovery, &queries).unwrap();
         let other = RecordingInputs::new(FileSystemInputs, 0);
         assert!(spool.require_recording(&other, &discovery, &queries).is_err());
         let before = spool.identity(ordinal, &fact).unwrap();
+        assert!(before.same_live(&spool.identity_for_slot(ordinal).unwrap()));
+        assert!(spool.identity_for_slot(ordinal + 1).is_err());
         assert!(before.same_live(&spool.identity(ordinal, &fact).unwrap()));
         assert!(spool.normalized(ordinal, &fact, 10).unwrap().is_none());
 

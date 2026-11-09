@@ -476,7 +476,9 @@ impl WorkspaceCapture {
                         && generated.is_subset(all_generated);
                 });
         });
-        same && self.facts.original_observations_subset_of(complete) && self
+        same && self.shared_derived.as_ref().is_none_or(|donor| donor.workspace_files_in(complete))
+            && self.raw_spool.as_ref().is_none_or(|spool| spool.facts_in(complete))
+            && self.facts.original_observations_subset_of(complete) && self
             .policy_directories()
             .iter()
             .all(|(p, f)| complete.policy_directories().get(p) == Some(f))
@@ -623,9 +625,7 @@ impl WorkspaceCapture {
                 if !matches!(&file.path, FilePath::Discovered(index) if index == ordinal) {
                     return Err(io::Error::other("raw spool discovery slot differs"));
                 }
-                let fact = self.facts.recorded_canonical_file(file.path(&self.discovery))
-                    .ok_or_else(|| io::Error::other("raw spool source omitted from capture closure"))?;
-                Some((spool, *ordinal, fact))
+                Some((spool, *ordinal))
             } else {
                 None
             };
@@ -637,9 +637,9 @@ impl WorkspaceCapture {
                 Original::Owned(bytes) => SourceProof::Owned(bytes.downgrade()),
                 Original::PairedDmm(ordinal) => SourceProof::PairedDmm(*ordinal),
                 Original::Spool(_) => {
-                    let (spool, ordinal, fact) = spool_frame
+                    let (spool, ordinal) = spool_frame
                         .ok_or_else(|| io::Error::other("raw spool page has no exact frame"))?;
-                    SourceProof::Spool(spool.identity(ordinal, fact)?)
+                    SourceProof::Spool(spool.identity_for_slot(ordinal)?)
                 }
             };
             let mut own = BTreeMap::new();
@@ -656,9 +656,9 @@ impl WorkspaceCapture {
             };
             let text = if excluded {
                 None
-            } else if let Some((spool, ordinal, fact)) = spool_frame {
+            } else if let Some((spool, ordinal)) = spool_frame {
                 let available = budget.saturating_sub(total).saturating_sub(path_charge);
-                let Some(text) = spool.normalized(ordinal, fact, available)? else {
+                let Some(text) = spool.normalized_slot(ordinal, available)? else {
                     if result.is_empty() {
                         return Err(io::Error::new(io::ErrorKind::OutOfMemory,
                             "whole spooled source normalization exceeds remaining input budget"));
@@ -750,6 +750,10 @@ impl WorkspaceCapture {
         &self.facts
     }
     pub(crate) fn file_facts(&self) -> &InputSnapshot { &self.facts }
+    pub(crate) fn borrows_file_facts(&self, donor: &crate::input_snapshot::DerivedPreflight) -> bool {
+        self.shared_derived.as_deref().is_some_and(|actual| std::ptr::eq(actual, donor))
+    }
+
     pub(crate) fn policy_directories(&self) -> &BTreeMap<PathBuf, crate::input_snapshot::PolicyDirectoryObservation> {
         if self.shared_derived.is_some() { self.discovery.policy_directories() }
         else { self.facts.policy_directories() }
@@ -1144,11 +1148,43 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         }
     }
     if let Some(subject)=inputs.original_analysis_subject(){used=used.checked_add(subject.charge()).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Analyze subject/capture charge overflow"))?;}
-    for path in discovery.files() {
-        used = used
-            .checked_add(2048 + path.capacity() * 8)
-            .ok_or_else(|| io::Error::other("workspace metadata overflow"))?;
+    let staged = raw_spool_context.is_some();
+    // CheckGrep has at most six fixed paths, Keys and BaseVars one each.
+    let staged_file_slots = discovery.files().len().checked_add(if staged { 8 } else { 0 })
+        .ok_or(io::ErrorKind::OutOfMemory)?;
+    if staged {
+        // Discovered File paths borrow their existing discovery ordinal.
+        // Their File vector is the only durable per-discovery-row allocation
+        // here; fixed rows are separately admitted at their insertion sites.
+        let bytes = staged_file_slots.checked_mul(std::mem::size_of::<File>())
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        used = used.checked_add(bytes).ok_or(io::ErrorKind::OutOfMemory)?;
     }
+    let mut mapped_scratch = 0;
+    let mut fallback_rows = 0usize;
+    let mut fallback_bytes = 0usize;
+    for path in discovery.files() {
+        let width = path.capacity().checked_mul(8).and_then(|n| n.checked_add(2048))
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        if staged && (known.get(path.as_path()).is_some_and(|index|
+            mapping.source_acquisition(*index).is_some())
+            || paired_dmm.is_some() && path.strip_prefix(&discovery.contract().root)
+                .is_ok_and(|relative| relative.starts_with("maps")
+                    && relative.extension().is_some_and(|ext| ext == "dmm")))
+        {
+            // Already recorded compiled or staged DMM facts need only a
+            // single temporary loan. A local clone is admitted later, under
+            // the recorder lock, only when the actual donor cannot supply it.
+            mapped_scratch = mapped_scratch.max(width);
+        } else {
+            // Uncompiled/fallback reads may still add ordinary recorder
+            // metadata. Retain their prior allowance before the provider.
+            fallback_rows += 1;
+            fallback_bytes = fallback_bytes.checked_add(width).ok_or(io::ErrorKind::OutOfMemory)?;
+            used = used.checked_add(width).ok_or(io::ErrorKind::OutOfMemory)?;
+        }
+    }
+    used = used.checked_add(mapped_scratch).ok_or(io::ErrorKind::OutOfMemory)?;
     for path in known.keys() {
         // Include primary alias spelling capacity even if every source needs an
         // alias. This temporary conservative reserve is not retained storage.
@@ -1161,6 +1197,11 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         .checked_add(alias_reserve)
         .ok_or_else(|| io::Error::other("workspace alias metadata overflow"))?;
     if used > capture_limit {
+        if staged && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+            let baseline_bytes = full_ci_baselines.as_ref().map_or(0, |rows| rows.preflight_charge);
+            let subject_bytes = inputs.original_analysis_subject().map_or(0, |subject| subject.charge());
+            eprintln!("ORIGINAL_WORKSPACE_METADATA bytes={used} admitted={capture_limit} known_bytes={known_bytes} alias_bytes={alias_reserve} file_slots={staged_file_slots} fallback_rows={fallback_rows} fallback_bytes={fallback_bytes} baseline_bytes={baseline_bytes} subject_bytes={subject_bytes}");
+        }
         return Err(io::Error::new(io::ErrorKind::OutOfMemory,
             format!("workspace metadata needs {used} bytes before payload read, with {capture_limit} admitted"),
         ));
@@ -1247,7 +1288,15 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             Some(builder)
         }
     } else { None };
-    let mut files = Vec::with_capacity(discovery.files().len());
+    let mut files = if staged {
+        let count = staged_file_slots;
+        let mut files = Vec::new();
+        files.try_reserve_exact(count).map_err(|actual| io::Error::new(io::ErrorKind::OutOfMemory, actual))?;
+        if files.capacity() != count { return Err(io::ErrorKind::OutOfMemory.into()); }
+        files
+    } else {
+        Vec::with_capacity(discovery.files().len())
+    };
     for (source_index, path) in discovery.files().iter().enumerate() {
         crate::daemon::control::checkpoint()?;
         if let Some(owner) = &paired_dmm {
@@ -1372,29 +1421,75 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         Some((path,bytes))
     } else { None };
 
-    let fixed_paths: Vec<_> = std::iter::once(canonical_path(configuration))
-        .chain(deadline.iter().map(|(path,_)|canonical_path(path)))
-        .chain(library_baseline.iter().filter(|(_, fact)| fact.selects_file_fact()).map(|(path,_)|canonical_path(path)))
+    let fixed_path_inputs = || std::iter::once(configuration)
+        .chain(deadline.iter().map(|(path, _)| path.as_path()))
+        .chain(library_baseline.iter().filter(|(_, fact)| fact.selects_file_fact()).map(|(path, _)| path.as_path()))
         .chain(full_ci_baselines.iter().flat_map(|capture| capture.files())
-            .filter(|(_, fact)| fact.selects_file_fact()).map(|(path, _)| canonical_path(path)))
-        .chain(keys_manifest_path.iter().map(|path|canonical_path(path)))
-        .chain(base_vars_configuration_path.iter().map(|path|canonical_path(path)))
-        .chain(check_grep_paths.iter().flat_map(|paths|paths.iter().flatten().map(|path|canonical_path(path))))
-        .collect();
+            .filter(|(_, fact)| fact.selects_file_fact()).map(|(path, _)| path.as_path()))
+        .chain(keys_manifest_path.iter().map(PathBuf::as_path))
+        .chain(base_vars_configuration_path.iter().map(PathBuf::as_path))
+        .chain(check_grep_paths.iter().flat_map(|paths| paths.iter().flatten().map(PathBuf::as_path)));
+    let fixed_paths: Vec<_> = if staged {
+        let mut count = 0usize;
+        for path in fixed_path_inputs() {
+            count = count.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
+            // Preserve a conservative allowance for canonical path ownership.
+            let width = path.as_os_str().len().checked_mul(8)
+                .and_then(|n| n.checked_add(2048 + std::mem::size_of::<PathBuf>()))
+                .ok_or(io::ErrorKind::OutOfMemory)?;
+            used = used.checked_add(width).filter(|n| *n <= capture_limit)
+                .ok_or(io::ErrorKind::OutOfMemory)?;
+        }
+        let mut paths = Vec::new();
+        paths.try_reserve_exact(count).map_err(|actual| io::Error::new(io::ErrorKind::OutOfMemory, actual))?;
+        if paths.capacity() != count { return Err(io::ErrorKind::OutOfMemory.into()); }
+        paths.extend(fixed_path_inputs().map(canonical_path));
+        paths
+    } else {
+        fixed_path_inputs().map(canonical_path).collect()
+    };
     let mut standalone_map_paths = std::collections::BTreeSet::new();
     let mut selected = std::collections::BTreeSet::new();
-    for file in &files {
-        selected.insert(file.path(&discovery).as_path());
+    let mut compact_selected = Vec::<(&Path, usize)>::new();
+    if staged {
+        // Each capture row can select its own path and at most one primary.
+        let rows = files.len().checked_mul(2).and_then(|n| n.checked_add(fixed_paths.len()))
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        let bytes = rows.checked_mul(std::mem::size_of::<(&Path, usize)>()).ok_or(io::ErrorKind::OutOfMemory)?;
+        used = used.checked_add(bytes).filter(|n| *n <= capture_limit).ok_or(io::ErrorKind::OutOfMemory)?;
+        compact_selected.try_reserve_exact(rows).map_err(|actual| io::Error::new(io::ErrorKind::OutOfMemory, actual))?;
+        if compact_selected.capacity() != rows { return Err(io::ErrorKind::OutOfMemory.into()); }
+    }
+    let mut select = |path, ordinal| {
+        if staged { compact_selected.push((path, ordinal)); }
+        else { selected.insert(path); }
+    };
+    for (index, file) in files.iter().enumerate() {
+        select(file.path(&discovery).as_path(), index * 2);
         if let Original::Native(native) = &file.original {
             // The recorded capture above already checked this immutable
             // occurrence against its exact primary receipt and binding. Only
             // the selected closure needs a copy of its physical path.
             let primary = frontend.plan.occurrences().get(native.occurrence)
                 .ok_or_else(|| io::Error::other("workspace native primary occurrence absent"))?;
-            selected.insert(primary.path.as_path());
+            select(primary.path.as_path(), index * 2 + 1);
         }
     }
-    selected.extend(fixed_paths.iter().map(PathBuf::as_path));
+    for (index, path) in fixed_paths.iter().enumerate() {
+        select(path.as_path(), files.len() * 2 + index);
+    }
+    if staged {
+        // Match BTreeSet::insert: equivalent paths keep the first raw
+        // spelling encountered in the existing capture traversal.
+        compact_selected.sort_unstable();
+        compact_selected.dedup_by(|left, right| left.0 == right.0);
+    }
+    if staged && files.capacity() != files.len() {
+        let overlap = files.len().checked_mul(std::mem::size_of::<File>())
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        used = used.checked_add(overlap).filter(|n| *n <= capture_limit)
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+    }
     let mut map_edits = None;
     let map_directories = if let Some(owner) = &paired_dmm {
         let mut stage = owner.stage.lock().map_err(|_| io::Error::other("paired MapEdits stage poisoned"))?;
@@ -1459,24 +1554,54 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     };
     drop(map_facts);
     selected.extend(standalone_map_paths.iter().map(PathBuf::as_path));
-    let (facts, borrowed_directories) = if shared_derived.is_some() {
+    let canonical_configuration = canonical_path(configuration);
+    let (facts, policy_revision) = if staged {
         if !map_directories.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined workspace has directories outside actual discovery"));
         }
-        (inputs.policy_workspace_joined_files(selected.into_iter(), &discovery)?, Some(discovery.policy_directories()))
+        inputs.policy_workspace_joined_files_hashed(
+            &compact_selected, &discovery, shared_derived.as_deref()
+                .ok_or_else(|| io::Error::other("staged workspace has no actual Derived donor"))?,
+            capture_limit.checked_sub(used).ok_or(io::ErrorKind::OutOfMemory)?,
+            frontend.revision, &canonical_configuration,
+            |path, fact| {
+                let Some(builder) = &raw_builder else { return Ok(false); };
+                let index = compact_selected.binary_search_by(|(selected, _)| selected.cmp(&path))
+                    .map_err(|_| io::Error::other("raw workspace selected key disappeared"))?;
+                let insertion = compact_selected[index].1;
+                let Some(file) = files.get(insertion / 2).filter(|_| insertion % 2 == 0) else { return Ok(false); };
+                match (&file.path, &file.original) {
+                    (FilePath::Discovered(discovered), Original::Spool(ordinal))
+                        if discovered == ordinal && file.path(&discovery).as_path() == path
+                            && spools_authored_ui(path, &discovery.contract().root) =>
+                    {
+                        builder.require_fact(*ordinal, fact)?;
+                        Ok(true)
+                    }
+                    _ => Ok(false),
+                }
+            },
+        )?
     } else {
-        (inputs.policy_workspace_closure_paths(
-            selected.into_iter(), discovery.directory_paths().chain(&map_directories),
-        )?, None)
+        let (facts, borrowed_directories) = if shared_derived.is_some() {
+            if !map_directories.is_empty() {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined workspace has directories outside actual discovery"));
+            }
+            (inputs.policy_workspace_joined_files_using(selected.into_iter(), &discovery, shared_derived.as_deref())?,
+                Some(discovery.policy_directories()))
+        } else {
+            (inputs.policy_workspace_closure_paths(
+                selected.into_iter(), discovery.directory_paths().chain(&map_directories),
+            )?, None)
+        };
+        let revision = crate::policy_request::workspace_revision_with_file_donor(
+            frontend.revision, &facts,
+            borrowed_directories.unwrap_or_else(|| facts.policy_directories()),
+            shared_derived.as_deref(), &discovery.contract().root,
+            &discovery.contract().recursive_roots, &canonical_configuration,
+        )?;
+        (facts, revision)
     };
-    let policy_revision = crate::policy_request::workspace_revision_with_directories(
-        frontend.revision,
-        &facts,
-        borrowed_directories.unwrap_or_else(|| facts.policy_directories()),
-        &discovery.contract().root,
-        &discovery.contract().recursive_roots,
-        &canonical_path(configuration),
-    )?;
     let policy_revision=if auxiliary.is_empty(){policy_revision}else{let flags=[auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DeadlinePollingAllowlist),auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)];let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-auxiliary-v1");hash.update(&policy_revision.to_le_bytes());hash.update(&[u8::from(flags[0]),u8::from(flags[1])]);hash.digest128()};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-doc-snippets-source-purpose-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-check-grep-baseline-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
@@ -1544,7 +1669,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         discovery,
         shared_derived,
         files: files.into_boxed_slice(),
-        configuration: canonical_path(configuration),
+        configuration: canonical_configuration,
         config,
         auxiliary,
         deadline,

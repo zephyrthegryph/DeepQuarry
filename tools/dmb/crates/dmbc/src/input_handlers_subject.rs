@@ -37,6 +37,7 @@ pub(crate) struct HandlerStructuralSubject{
  configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,config:Arc<dq_analyze::captured_raw_file::Config>,
  selection:std::sync::Mutex<Option<HandlerSelectionPhase>>,issuer:Arc<()>,recorder:Arc<()>,
  bound:std::sync::OnceLock<std::sync::Weak<dm_tree::frontend::SourceExportMapping>>,
+ detached_producer:std::sync::atomic::AtomicBool,
  _configuration_owner: Option<Arc<super::DerivedPreflight>>,
  // Last: source/recipe allocations are gone before their producer funding.
  budget:Arc<Budget>,
@@ -68,6 +69,7 @@ impl HandlerStructuralSubject{
   }
   // Otherwise preserve the actual header owner and grant unchanged.
   drop(phase);
+  self.detached_producer.store(true,std::sync::atomic::Ordering::Release);
   #[cfg(debug_assertions)]
   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
    eprintln!("ORIGINAL_HANDLER_PRODUCER_RETIRED released={}",before.saturating_sub(self.budget.used()));
@@ -100,7 +102,11 @@ impl HandlerStructuralSubject{
  }
 
  pub(crate) fn require_configuration(&self,path:&Path,bytes:Option<&[u8]>)->io::Result<()>{if path!=self.configuration||bytes!=self.configuration_bytes.as_ref().map(|b|b.as_slice()){return Err(fail("handlers actual interpreted configuration differs from selected raw preflight"))}Ok(())}
- pub(crate) fn input_retained_charge(&self)->io::Result<usize>{self.budget.require().map_err(|m|quota(&self.budget,&m))?;Ok(self.budget.used())}
+ pub(crate) fn input_retained_charge(&self)->io::Result<usize>{self.budget.require().map_err(|m|quota(&self.budget,&m))?;Ok(if self.detached_producer.load(std::sync::atomic::Ordering::Acquire) {
+  // The recorder row owns these directory settlements separately. The
+  // active operation still uses its complete unadjusted Budget::used().
+  self.budget.temporary_charge()
+ } else { self.budget.used() })}
  pub(crate) fn census(self:&Arc<Self>,c:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.handlers_preflight";if !c.arc_object(owner,self){return}c.path(owner,&self.root);c.path(owner,&self.canonical_root);c.path(owner,&self.configuration);c.arc_object(owner,&self.config);c.arc_object(owner,&self.issuer);c.arc_object(owner,&self.recorder);if let Ok(selection)=self.selection.lock(){if let Some(live)=selection.as_ref(){live.discovery.census(c);c.workspace_policy_facts(&live.facts);}}if let Some(bytes)=&self.configuration_bytes{if c.shared_bytes_owner(owner, bytes){c.vec_payload(owner,bytes.shared_owner().bytes());}}if let Some(mapping)=self.bound.get().and_then(std::sync::Weak::upgrade){c.source_export_mapping(&mapping);}if let Ok(producer)=self.producer(){if let Some(root)=&producer.captured{c.path(owner,&root.project);c.path(owner,&root.namespace);}}c.unknown(owner,"private Recipe and Config collection nodes and source Budget parent chain lack allocator geometry; admission totals are not heap bytes");}
  fn require_operation<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{crate::daemon::control::checkpoint()?;self.budget.require().map_err(|_|quota(&self.budget,"handlers current operation budget denied"))?;if !Arc::ptr_eq(&self.recorder,&inputs.source_issuer){return Err(fail("handlers partial subject belongs to another actual input recorder"))}Ok(())}
  pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{
@@ -384,7 +390,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   kc::reserve(&mut control,||Some(std::mem::size_of::<HandlerProducerPhase>()+2*std::mem::size_of::<usize>()))?;
   let has_candidates=!recipe.candidates.is_empty();
   let producer=Arc::new(HandlerProducerPhase{captured,recipe:Some(recipe),recipe_credit,header_credit});
-  let subject=HandlerStructuralSubject{root:workspace.root.clone(),canonical_root,producer:std::sync::Mutex::new(Some(producer)),has_candidates,requires_full,selected_full:selected.is_some(),configuration:workspace.configuration.clone(),configuration_bytes:config_bytes,config,selection:std::sync::Mutex::new(Some(selection)),issuer,recorder:Arc::clone(&self.source_issuer),bound:Default::default(),_configuration_owner:derived.cloned(),budget:Arc::clone(budget)};subject.require_current(self)?;Ok(subject)
+  let subject=HandlerStructuralSubject{root:workspace.root.clone(),canonical_root,producer:std::sync::Mutex::new(Some(producer)),has_candidates,requires_full,selected_full:selected.is_some(),configuration:workspace.configuration.clone(),configuration_bytes:config_bytes,config,selection:std::sync::Mutex::new(Some(selection)),issuer,recorder:Arc::clone(&self.source_issuer),bound:Default::default(),detached_producer:Default::default(),_configuration_owner:derived.cloned(),budget:Arc::clone(budget)};subject.require_current(self)?;Ok(subject)
  }
 }
 

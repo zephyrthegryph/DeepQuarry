@@ -356,6 +356,17 @@ impl ReservedWindow {
         self.budget.used.fetch_sub(self.bytes-retained,Ordering::AcqRel);
         Ok(())
     }
+    /// Keep the original operation debit after successful settlement while
+    /// identifying the already-registered external part. The caller must
+    /// first publish that part's actual independently accounted owner.
+    pub fn settle_registered(self, operation: &Arc<Budget>, retained: usize) -> Result<(), String> {
+        if !Arc::ptr_eq(&self.budget, operation) {
+            return self.settle(retained);
+        }
+        self.settle(retained)?;
+        operation.nested_retained.fetch_add(retained, Ordering::AcqRel);
+        Ok(())
+    }
     /// An error with no allocated backing remaining may simply drop the window.
     /// If cleanup cannot prove the amount, keep the full admitted window instead.
     pub fn keep(mut self){self.settled=true;}

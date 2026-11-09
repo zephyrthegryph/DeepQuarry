@@ -1954,7 +1954,7 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
         ("maps/stale.dm", "/proc/stale()\n    return // ALLOW(scheduler): full registry fixture leaves an annotation unused\n"),
         ("maps/probe.dmm", "\"a\" = (/datum/full_registry_interface{missing_map_var = 1})\n"),
         ("tgui/standalone.jsx", "CheckGrep observes this filename rather than its content\n"),
-        ("tgui/packages/tgui/interfaces/Probe.tsx", "export const probe = 1;\n"),
+        ("tgui/packages/tgui/interfaces/Probe.tsx", "export const bruteLoss = 1;\n"),
         ("code/_generated/reads.dm", "// deliberately stale actual file\n"),
         ("code/derived.dm", concat!(
             "#define TRACKED(T,V)\n#define PUBLISHED_BY(T,V,K)\n",
@@ -2076,7 +2076,7 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
         assert_eq!(terminal.selected.report, seal(analyze));
         assert!(String::from_utf8_lossy(checker).contains(field));
         let analyze_text = String::from_utf8_lossy(analyze);
-        for marker in ["[handlers/context_escape]", "[derived_reads/", "standalone.jsx", "maps/probe.dmm", "missing_map_var", "allow annotations: 1 unused", field] {
+        for marker in ["[handlers/context_escape]", "[derived_reads/", "standalone.jsx", "tgui/packages/tgui/interfaces/Probe.tsx", "bruteLoss", "maps/probe.dmm", "missing_map_var", "allow annotations: 1 unused", field] {
             assert!(analyze_text.contains(marker), "missing {marker}: {analyze_text}");
         }
         let expected = daemon.run_program(&legacy, &[

@@ -126,6 +126,28 @@ impl JoinedClosure {
 }
 
 impl DerivedPreflight{
+ pub(crate) fn workspace_file_count(&self) -> usize {
+  match &self.facts { DerivedClosure::Joined(facts) if self.joined_registry => facts.files.len(), _ => 0 }
+ }
+ pub(crate) fn workspace_files(&self) -> impl Iterator<Item = (&Path, &Stamp, u128)> {
+  let files = match &self.facts { DerivedClosure::Joined(facts) if self.joined_registry => facts.files.as_slice(), _ => &[] };
+  files.iter().map(move |row| (row.path(&self.discovery, &self.configuration), &row.stamp, row.content))
+ }
+ pub(crate) fn workspace_file(&self, path: &Path) -> Option<(&Path, &Stamp, u128)> {
+  let DerivedClosure::Joined(facts) = &self.facts else { return None };
+  if !self.joined_registry { return None; }
+  let index = facts.files.binary_search_by(|row| row.path(&self.discovery, &self.configuration).cmp(path)).ok()?;
+  let row = &facts.files[index];
+  Some((row.path(&self.discovery, &self.configuration), &row.stamp, row.content))
+ }
+ pub(crate) fn workspace_missing_configuration(&self) -> Option<&Path> {
+  let DerivedClosure::Joined(facts) = &self.facts else { return None };
+  (self.joined_registry && facts.configuration_missing).then_some(self.configuration.as_path())
+ }
+ pub(crate) fn workspace_files_in(&self, current: &InputSnapshot) -> bool {
+  self.workspace_files().all(|(path, stamp, content)| current.files.get(path).is_some_and(|file|
+   file.path.as_os_str() == path.as_os_str() && &file.stamp == stamp && file.content == content))
+ }
  // These two ordinary rosters may replace a copied Handler prefix only
  // after exact same-recorder, same-query and same-value checks by its issuer.
  pub(super) fn handler_prefix_donor<P:SnapshotProvider>(
@@ -210,7 +232,9 @@ impl DerivedPreflight{
  fn require_subject(&self,subject:&OriginalAnalysisSubject)->io::Result<()>{if self.subject_issuer.get().is_none_or(|owner|!Arc::ptr_eq(owner,subject.actual_subject_issuer()))||!subject.derived_preflight().is_ok_and(|p|std::ptr::eq(p,self)){return Err(invalid("Derived preflight has no actual issued full subject"))}Ok(())}
  fn require_bound_frame(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<()>{crate::daemon::control::checkpoint()?;workspace.require_scope(scope)?;self.require_subject(subject)?;subject.require_bound_mapping(inputs.mapping())?;workspace.require_analysis_subject(subject)?;if !scope.uses_query_owner(&self.queries)||workspace.root()!=self.discovery.contract().root||!workspace.matches_auxiliary_questions(if self.joined_registry {
   crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_FULL_REGISTRY
- } else { &[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads] }){return Err(invalid("Derived bound mapping/current QueryDb/role/workspace differs"))}self.require_subset_with_directories(workspace.file_facts(),workspace.policy_directories())?;self.budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
+ } else { &[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads] }){return Err(invalid("Derived bound mapping/current QueryDb/role/workspace differs"))}if !workspace.borrows_file_facts(self) {
+  self.require_subset_with_directories(workspace.file_facts(),workspace.policy_directories())?;
+ }self.budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
  pub(crate) fn require_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs,queries:&crate::query_db::QueryDb)->io::Result<()>{self.require_subject(subject)?;subject.require_bound_mapping(inputs.mapping())?;workspace.require_analysis_subject(subject)?;if !scope.uses_queries(queries)||!self.queries.matches(queries){return Err(invalid("Derived actual current QueryDb owner differs"))}self.require_bound_frame(subject,workspace,scope,inputs)}
  pub(crate) fn take_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs,queries:&crate::query_db::QueryDb)->io::Result<Option<UnsealedDerivedIndexData>>{self.require_current(subject,workspace,scope,inputs,queries)?;Ok(self.index.lock().map_err(|_|invalid("Derived preflight index poisoned"))?.take())}
  pub(crate) fn census(self:&Arc<Self>,census:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.derived_preflight";if !census.arc_object(owner,self){return}self.discovery.census(census);match &self.facts{DerivedClosure::Standalone(facts)=>census.workspace_policy_facts(facts),DerivedClosure::Joined(facts)=>{census.vec_payload(owner,&facts.files);},}census.path(owner,&self.configuration);census.arc_object(owner,&self.issuer);census.arc_object(owner,&self.config);if let Some(issuer)=self.subject_issuer.get(){census.arc_object(owner,issuer);}self.queries.visit_storage(|pointer,logical,capacity|{census.exposed_buffer("query_snapshot.derived_query_counter",pointer,logical,capacity);});if let Some(bytes)=&self.configuration_bytes{if census.shared_bytes_owner(owner, bytes){census.vec_payload(owner,bytes.shared_owner().bytes());}}census.unknown(owner,"private raw identifier index BTree nodes, retained source Budget parent chain and interpreted Config backing are not exposed; admission bounds are not reported as heap bytes");}
@@ -351,6 +375,62 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let DerivedClosure::Joined(closure)=&owner.facts else {panic!("actual joined capture must seal ordinal rows")};
   assert!(closure.configuration_missing);
   assert_eq!(closure.files.len(),1);
+  let fixed = root.join("fixed.txt");
+  std::fs::write(&fixed, b"actual fixed workspace file").unwrap();
+  inputs.read_policy_candidate(&fixed, 4096).unwrap();
+  let mut chosen = [canonical_path(&source), canonical_path(&fixed), owner.configuration.clone()];
+  chosen.sort();
+  let full = inputs.policy_workspace_joined_files(chosen.iter().map(PathBuf::as_path), &owner.discovery).unwrap();
+  let compact = inputs.policy_workspace_joined_files_using(
+   chosen.iter().map(PathBuf::as_path), &owner.discovery, Some(&owner),
+  ).unwrap();
+  // Equivalent Path ordering with byte-distinct input spelling. The first
+  // selected key is serialized verbatim, but its value is the recorder's.
+  let alternative = root.join("code").join(".").join(source.file_name().unwrap());
+  let canonical_source = canonical_path(&source);
+  assert_eq!(alternative, canonical_source);
+  assert_ne!(alternative.as_os_str(), canonical_source.as_os_str());
+  let mut selected: Vec<_> = [&alternative, &canonical_source, &owner.configuration]
+   .into_iter().enumerate().map(|(ordinal, path)| (path.as_path(), ordinal)).collect();
+  selected.sort_unstable();
+  selected.dedup_by(|later, earlier| later.0 == earlier.0);
+  assert!(selected.iter().any(|(path, _)| path.as_os_str()==alternative.as_os_str()));
+  let legacy = inputs.policy_workspace_joined_files(
+   selected.iter().map(|&(path, _)| path), &owner.discovery,
+  ).unwrap();
+  let (_, actual_hash) = inputs.policy_workspace_joined_files_hashed(
+   &selected, &owner.discovery, &owner, 1 << 20, 7, &owner.configuration, |_, _| Ok(false),
+  ).unwrap();
+  assert_eq!(actual_hash, crate::policy_request::workspace_revision_with_directories(
+   7, &legacy, owner.discovery.policy_directories(), &root,
+   &owner.discovery.contract().recursive_roots, &owner.configuration,
+  ).unwrap());
+  assert_eq!(full.files().count(), 2);
+  assert_eq!(compact.files().count(), 1);
+  let local = compact.recorded_canonical_file(&canonical_path(&fixed)).unwrap();
+  let positive = 2048 + 8 * local.path.capacity().max(local.path.as_os_str().len());
+  let negative = 2048 + 8 * owner.configuration.as_os_str().len();
+  // A zero allowance cannot copy local facts. A window for exactly the
+  // local positive and missing configuration needs no room for the donor.
+  let select = || chosen.iter().map(PathBuf::as_path);
+  let failure = inputs.policy_workspace_joined_files_with_limit(
+   select(), &owner.discovery, Some(&owner), Some(0),
+  ).unwrap_err();
+  assert_eq!(failure.kind(), io::ErrorKind::OutOfMemory);
+  let exact = inputs.policy_workspace_joined_files_with_limit(
+   select(), &owner.discovery, Some(&owner), Some(positive + negative),
+  ).unwrap();
+  assert_eq!(exact.files().count(), 1);
+  assert!(compact.recorded_canonical_file(&canonical_path(&fixed)).is_some());
+  let roots = &owner.discovery.contract().recursive_roots;
+  let dirs = owner.discovery.policy_directories();
+  assert_eq!(
+   crate::policy_request::workspace_revision_with_directories(7, &full, dirs, &root, roots, &owner.configuration).unwrap(),
+   crate::policy_request::workspace_revision_with_file_donor(7, &compact, dirs, Some(&owner), &root, roots, &owner.configuration).unwrap(),
+  );
+  assert!(inputs.policy_workspace_joined_files_using(
+   std::iter::once(owner.configuration.as_path()), &owner.discovery, Some(&owner),
+  ).is_err());
   let current=inputs.snapshot.lock().unwrap();
   let mut changed=current.clone();
   drop(current);
