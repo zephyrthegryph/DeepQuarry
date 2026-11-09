@@ -530,6 +530,7 @@ impl QueryDb{
     ledger.bind_source_arena(&self.raw_policy.admission)?;
     let exact_sources = ledger.refresh()?;
     let available = self.workspace_input_base_headroom_locked(exact_sources)?;
+    dm_profile::request_mark("joined.workspace_headroom_checked");
     #[cfg(debug_assertions)]
     if available < 64 * 1024 * 1024 && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
         eprintln!("ORIGINAL_WORKSPACE_CAPTURE_HEADROOM available={available}");

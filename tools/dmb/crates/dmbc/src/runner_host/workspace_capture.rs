@@ -984,6 +984,9 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
         owner.stage.lock().map_err(|_| io::Error::other("paired DMM stage poisoned"))?
             .require_recording(inputs, &discovery, queries)?;
     }
+    if full_ci {
+        dm_profile::request_mark("joined.workspace_capture_contract_checked");
+    }
     queries.with_semantic_workspace_capture_inputs(|budget, credits| {
         let variable = raw_spool_cache.is_some();
         let recorder_before = if variable {
@@ -1017,6 +1020,9 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
         } else {
             None
         };
+        if full_ci {
+            dm_profile::request_mark("joined.workspace_baselines_captured");
+        }
         let baseline_paid = if variable {
             full_ci_baselines.as_ref().expect("actual staged Full CI").preflight_charge
         } else { 0 };
@@ -1260,6 +1266,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         ));
     }
     let aliases = alias_index::AliasIndex::new(known.keys(), alias_reserve)?;
+    dm_profile::request_mark("joined.workspace_file_budget_admitted");
     let mut ui = if questions.contains(&Q::DocUiFullAllow) {
         // The funded MapEdits caller holds an ordinary capture window covering
         // all capture_limit bytes. The dispatcher uses only the remainder of that
@@ -1406,6 +1413,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         }
         files.push(File { path: FilePath::Discovered(source_index), original: captured.original });
     }
+    dm_profile::request_mark("joined.workspace_files_acquired");
     let remaining = capture_limit
         .checked_sub(used)
         .ok_or_else(|| io::Error::other("workspace metadata leaves no config budget"))?;
@@ -1669,6 +1677,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         )?;
         (facts, revision)
     };
+    dm_profile::request_mark("joined.workspace_facts_closed");
     let policy_revision=if auxiliary.is_empty(){policy_revision}else{let flags=[auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DeadlinePollingAllowlist),auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)];let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-auxiliary-v1");hash.update(&policy_revision.to_le_bytes());hash.update(&[u8::from(flags[0]),u8::from(flags[1])]);hash.digest128()};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-doc-snippets-source-purpose-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-check-grep-baseline-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};

@@ -962,7 +962,9 @@ fn run_build_attempt(
                     // before those reads enter the common recorder. Both
                     // captures still enter the same final freshness closure.
                     let early_checker = if preparation_output.needs_full_ci_baselines() {
-                        Some(capture_checker_policy()?)
+                        let checker = capture_checker_policy()?;
+                        dm_profile::request_mark("joined.checker_policy_bound");
+                        Some(checker)
                     } else { None };
                     let captured=if preparation_output.needs_full_ci_baselines(){
                         crate::runner_host::workspace_capture::capture_analysis_full_ci(

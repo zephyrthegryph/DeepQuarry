@@ -856,6 +856,7 @@ fn capture_source<P: SnapshotProvider>(
     joined: Option<&JoinedHeaderCharge>,
     subject: Option<&Arc<crate::input_snapshot::OriginalAnalysisSubject>>,
 ) -> io::Result<CapturedPolicyInputs> {
+    let checker_decoded = matches!(compiled_views, CompiledViews::CheckerDecoded);
     let original = match &frontend {
         CaptureSource::Diagnostic(view) if view.original_plan().is_original_diagnostic() => Some(*view),
         _ => None,
@@ -927,6 +928,9 @@ fn capture_source<P: SnapshotProvider>(
                 },
             );
         }
+    }
+    if checker_decoded {
+        dm_profile::request_mark("joined.checker_roster_checked");
     }
     let explicit_search_folders = search_folders
         .iter()
@@ -1082,6 +1086,9 @@ fn capture_source<P: SnapshotProvider>(
     }
     let policy = frontend.capture_policy(extra).map_err(io::Error::other)?;
     let facts = inputs.snapshot()?;
+    if checker_decoded {
+        dm_profile::request_mark("joined.checker_facts_captured");
+    }
     let captured = CapturedPolicyInputs {
         analysis_subject: subject.cloned(),
         semantic_sources: frontend.evidence(inputs, compiled_views)?,
@@ -1097,6 +1104,9 @@ fn capture_source<P: SnapshotProvider>(
         untyped_inputs: Mutex::new(BTreeMap::new()),
     };
     admit_capture_charge(captured.budget_charge())?;
+    if checker_decoded {
+        dm_profile::request_mark("joined.checker_capture_charged");
+    }
     Ok(captured)
 }
 fn untyped_owner_charge(
