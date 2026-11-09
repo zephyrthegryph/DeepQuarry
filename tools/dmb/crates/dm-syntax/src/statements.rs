@@ -643,6 +643,20 @@ fn parse_if(
     origins: &mut BodyOrigins<'_>,
 ) -> Statement {
     let condition = parse_control_condition_origin(item, "if", diagnostics, origins);
+    let newly_composed = condition.as_ref().is_some_and(|value| match &value.kind {
+        ExprKind::Unary { .. } => true,
+        ExprKind::Call { callee, args } => !args.is_empty()
+            || matches!(&callee.kind, ExprKind::Member { .. } | ExprKind::SafeMember { .. }),
+        _ => false,
+    });
+    if newly_composed {
+        // Match the pinned parenthesized IF followed by one indented block.
+        // A compatibility Item can attach children after an authored ';'.
+        origins.original_compound_complete &= else_items.is_empty()
+            && control_inline(item, "if").is_none()
+            && item.header.trim_end().ends_with(')')
+            && original_indented_block_boundary(item, origins);
+    }
     let then_branch = control_body(item, "if", diagnostics, origins);
     let mut span = item.span;
     let else_branch = if let Some((other, remaining)) = else_items.split_first() {
@@ -858,7 +872,7 @@ fn parse_one(
                 let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
                     OriginalSimpleKind::OrdinaryCallStatement=>ordinary_call,
                     OriginalSimpleKind::SimpleAssignmentStatement=>assignment,
-                    OriginalSimpleKind::Complete=>ordinary_call&&matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,args})if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(_))),
+                    OriginalSimpleKind::Complete=>ordinary_call&&matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,..})if matches!(&callee.kind,ExprKind::Ident(_))),
                     OriginalSimpleKind::MissingArithmeticOperand=>false,
                 });
                 origins.original_compound_complete&=issued;

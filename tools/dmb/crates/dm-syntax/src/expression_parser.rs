@@ -1630,7 +1630,7 @@ fn original_positional_statement_call(expr:&Expr,tokens:&[Token])->bool{
     })
 }
 
-fn original_simple_assignment(expr: &Expr, tokens: &[Token]) -> bool {
+fn original_simple_assignment(expr: &Expr, tokens: &[Token], original_profile: bool) -> bool {
     let ExprKind::Binary { op, lhs, rhs } = &expr.kind else { return false; };
     let [target, assignment, value @ ..] = tokens else { return false; };
     if !matches!(op.as_str(), "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=")
@@ -1640,6 +1640,12 @@ fn original_simple_assignment(expr: &Expr, tokens: &[Token]) -> bool {
         || expr.span != Span::new(target.span.start, rhs.span.end)
     {
         return false;
+    }
+    if original_profile && op == "="
+        && matches!(&rhs.kind, ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(_)))
+        && original_conditional_child(rhs, value, false, 32)
+    {
+        return true;
     }
     match value {
         [only] => simple_term(rhs, only),
@@ -1807,21 +1813,35 @@ fn original_conditional_child(expr: &Expr, tokens: &[Token], conditional: bool, 
             }
             remaining.is_empty() && children.next().is_none()
         }
-        ExprKind::Member { object, selector, via_colon: false } => {
+        ExprKind::Member { object, selector, via_colon: false }
+        | ExprKind::SafeMember { object, selector, via_colon: false } => {
             let (receiver, tail) = child_prefix(object, tokens);
+            let separator = if matches!(&expr.kind, ExprKind::SafeMember { .. }) { "?." } else { "." };
             matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. })
                 && original_conditional_child(object, receiver, false, depth)
-                && matches!(tail, [dot, name] if punctuation(dot, ".") && name.kind == TokenKind::Ident
+                && matches!(tail, [dot, name] if punctuation(dot, separator) && name.kind == TokenKind::Ident
                     && name.text == *selector && original_ascii_identifier(selector))
+        }
+        ExprKind::Unary { op, value } if op == "!" => {
+            matches!(tokens, [not, child @ ..] if punctuation(not, "!")
+                && matches!(&value.kind, ExprKind::Ident(_))
+                && original_conditional_child(value, child, false, depth))
         }
         ExprKind::Group(value) => {
             matches!(tokens, [open, body @ .., close] if punctuation(open, "(")
                 && punctuation(close, ")") && original_conditional_child(value, body, true, depth))
         }
         ExprKind::Call { callee, args } => {
-            let [head, open, body @ .., close] = tokens else { return false };
-            if !matches!(&callee.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
-                || !simple_term(callee, head) || !punctuation(open, "(") || !punctuation(close, ")") {
+            let (head, rest) = child_prefix(callee, tokens);
+            let [open, body @ .., close] = rest else { return false };
+            let ordinary = match &callee.kind {
+                ExprKind::Ident(name) => original_ordinary_call_name(name),
+                ExprKind::Member { selector, via_colon: false, .. }
+                | ExprKind::SafeMember { selector, via_colon: false, .. } => original_ordinary_call_name(selector),
+                _ => false,
+            };
+            if !ordinary || !original_conditional_child(callee, head, false, depth)
+                || !punctuation(open, "(") || !punctuation(close, ")") {
                 return false;
             }
             let mut remaining = body;
@@ -1861,9 +1881,10 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
   [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3],original_profile)),
   _=>false,
  };
- let conditional = original_profile && matches!(&expr.kind, ExprKind::Conditional { .. })
+ let original_composed = original_profile
+     && matches!(&expr.kind, ExprKind::Conditional { .. } | ExprKind::Unary { .. } | ExprKind::Call { .. })
      && original_conditional_child(expr, tokens, true, 32);
- let kind=if complete||conditional||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens){OriginalSimpleKind::OrdinaryCallStatement}else if original_simple_assignment(expr,tokens){OriginalSimpleKind::SimpleAssignmentStatement}else{return None};
+ let kind=if complete||original_composed||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens){OriginalSimpleKind::OrdinaryCallStatement}else if original_simple_assignment(expr,tokens,original_profile){OriginalSimpleKind::SimpleAssignmentStatement}else{return None};
  Some(OriginalSimpleExpression{kind,span:expr.span,operator:None})
 }
 

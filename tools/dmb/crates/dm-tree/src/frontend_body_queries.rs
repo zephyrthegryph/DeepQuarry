@@ -747,7 +747,16 @@ impl<'syntax> CurrentBodySyntax<'syntax>{
   let code=self.input.original_code.as_ref().ok_or_else(||binding_error("original code disposition lacks actual canonical code identity"))?;
   let recipe=self.input.syntax.original_body_recipe(self.input.span,code).map_err(|_|binding_error("original code disposition current recipe differs"))?;
   if !recipe.setting_headers().is_some_and(|headers|headers.checker_body_profile()){return Err(unissued_original_body("original body grammar profile is not actually issued"))}
-  let parsed:&'syntax dm_syntax::ParsedBody=self.original.statements.parsed();let outcome=parsed.original_grammar.as_ref().ok_or_else(||unissued_original_body("genuine original per-body grammar outcome is not issued for this syntax"))?;
+  let parsed:&'syntax dm_syntax::ParsedBody=self.original.statements.parsed();let outcome=parsed.original_grammar.as_ref().ok_or_else(|| {
+   if cfg!(debug_assertions) && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    if let Some(source) = self.input.mapping.output(self.input.span.start) {
+     let _ = std::io::Write::write_fmt(&mut std::io::stderr().lock(), format_args!(
+      "original.body_unissued file={} line={}\n", source.semantic_path, source.line,
+     ));
+    }
+   }
+   unissued_original_body("genuine original per-body grammar outcome is not issued for this syntax")
+  })?;
   if let Some(roots)=outcome.scope_roots(){
    if roots!=parsed.statements.len()||outcome.prefix_settings()>=roots||outcome.statement_span().is_some()||outcome.kind()!=dm_syntax::OriginalBodyGrammarKind::Available||!parsed.diagnostics.is_empty(){return Err(binding_error("original compound scope differs from the same consuming Native body"))}
   }else{match outcome.statement_span(){
