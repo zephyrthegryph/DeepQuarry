@@ -368,6 +368,47 @@
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
 
+/// Hysteresis: a glow is acquired by the reach box but kept until it leaves the keep box, so a walk back and forth over a chunk edge makes and
+/// drops nothing after the first crossing, and walking on far enough drops it.
+/datum/unit_test/dq_client_glow_holder_chunk_hysteresis
+
+/datum/unit_test/dq_client_glow_holder_chunk_hysteresis/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	var/turf/A = client_glow_test_eye(LT)
+	var/step = (A.x > LT.x ? 1 : -1) * CLIENT_GLOW_CHUNK
+	var/turf/B = locate(A.x + step, A.y, A.z)
+	TEST_ASSERT_NOTNULL(B, "the next chunk away from the light exists")
+	TEST_ASSERT_NOTNULL(H.entry_of(S), "held from the first chunk")
+	H.view_at(B, 7, 7)
+	TEST_ASSERT_NOTNULL(H.entry_of(S), "one chunk further away it is still kept")
+	var/images = length(H.images())
+	var/made = GLOB.client_glow_holder_made
+	var/dropped = GLOB.client_glow_holder_dropped
+	for(var/i in 1 to 4)
+		H.view_at(A, 7, 7)
+		H.view_at(B, 7, 7)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_made, made, "walking back and forth over the edge makes no glow")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_dropped, dropped, "walking back and forth over the edge drops no glow")
+	TEST_ASSERT_EQUAL(length(H.images()), images, "the held images stay as they were")
+	var/turf/far
+	for(var/chunks in 2 to 8)
+		far = locate(A.x + step * chunks, A.y, A.z)
+		if(!far)
+			break
+		H.view_at(far, 7, 7)
+		if(!H.entry_of(S))
+			break
+	TEST_ASSERT_NULL(H.entry_of(S), "clear of the keep box the glow is dropped")
+	TEST_ASSERT(GLOB.client_glow_holder_dropped > dropped, "leaving the keep range drops it")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
 /// Cleanup: client lighting off, the light deleted and the viewer leaving each leave no image.
 /datum/unit_test/dq_client_glow_holder_cleanup
 

@@ -3,7 +3,8 @@
 // of every glow in reach as its own images (client.images), recomputed only when the eye crosses a chunk (CLIENT_GLOW_CHUNK turfs a side).
 //   - where it stands: on the light's own turf when the eye saw that turf at the crossing, else on the reached turf the eye saw that is
 //     nearest the eye, offset to the light's place. Playtesting showed an image drawn far from where it stands is culled, so the offset stays within the light's range.
-//   - the reach box: the turfs seen from some eye position in the chunk. Every light whose reach overlaps it is held.
+//   - the reach box: the turfs seen from some eye position in the chunk. Every light whose reach overlaps it is held, and stays held until its reach
+//     leaves the keep box (the reach box grown by one chunk), so a walk back and forth over a chunk edge changes no image.
 //   - a held light is a glow image, baked to its reach shape once that is ready (client_shadow.dm), and an override image that hides
 //     the real glow from this client, so it is never drawn twice.
 //
@@ -26,6 +27,9 @@ GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
 	var/z = 0
 	/// The reach box, inclusive turf coordinates: list(x0, y0, x1, y1).
 	var/list/reach
+	/// The keep box: the reach box grown by one chunk each way. A glow is acquired when its reach overlaps `reach` but kept while it overlaps this,
+	/// so crossing a chunk edge and walking back makes and drops nothing: a chunk step moves the reach box by exactly the margin.
+	var/list/keep_reach
 	/// "x:y" -> TRUE for the turfs the eye saw at its last chunk crossing: decides where a held glow stands.
 	var/list/seen_keys
 	var/eye_x = 0
@@ -163,6 +167,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/ex1 = ex0 + CLIENT_GLOW_CHUNK - 1
 	var/ey1 = ey0 + CLIENT_GLOW_CHUNK - 1
 	reach = list(ex0 - hx, ey0 - hy, ex1 + hx, ey1 + hy)
+	keep_reach = list(reach[1] - CLIENT_GLOW_CHUNK, reach[2] - CLIENT_GLOW_CHUNK, reach[3] + CLIENT_GLOW_CHUNK, reach[4] + CLIENT_GLOW_CHUNK)
 	eye_x = eye.x
 	eye_y = eye.y
 	seen_keys = list()
@@ -200,7 +205,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	// server cost; the images are the client's (the map FPS is only on the client, so this is as near as the server can say).
 	var/made = GLOB.client_glow_holder_made - made_before
 	var/dropped = GLOB.client_glow_holder_dropped - dropped_before
-	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s)[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [made] made and [dropped] dropped this crossing in [round((REALTIMEOFDAY - started) * 100)] ms, [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
+	log_world("client glow holder: [client?.ckey] entered chunk [new_sig] from eye [eye.type] at [eye.x],[eye.y] (mob [viewer ? "[viewer.type]" : "none"]), holding [LAZYLEN(held)] glow(s), [LAZYLEN(held) - made] kept[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [made] made and [dropped] dropped this crossing in [round((REALTIMEOFDAY - started) * 100)] ms, [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
 
 /// Shows, updates or drops this viewer's copy of light `L`. Returns TRUE while it is held.
 /datum/client_glow_holder/proc/consider(datum/light_source/L)
@@ -214,12 +219,12 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(unlit)
 		return consider_unlit(L, S)
 	var/r = CEILING(L.light_range, 1)
-	if(S.x + r < reach[1] || S.x - r > reach[3] || S.y + r < reach[2] || S.y - r > reach[4])
-		drop(L) // its reach never comes on screen from this chunk
-		return FALSE
 	var/obj/effect/overlay/client_glow/G = L.glow
 	var/h = L.glow_holder_key()
 	var/list/entry = LAZYACCESS(held, h)
+	if(!reach_overlaps(S, r, entry ? keep_reach : reach))
+		drop(L) // not held yet and its reach never comes on screen from this chunk, or held and now clear of the keep box
+		return FALSE
 	var/image/glow_image
 	if(!entry)
 		glow_image = image(G.icon, null, G.icon_state)
@@ -242,13 +247,23 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		image_anchor(glow_image, stand_on)
 	var/px = (S.x - stand_on.x) * WORLD_ICON_SIZE + G.pixel_x
 	var/py = (S.y - stand_on.y) * WORLD_ICON_SIZE + G.pixel_y
-	glow_image.plane = G.plane
-	glow_image.color = G.color
-	glow_image.alpha = G.alpha
-	glow_image.pixel_x = px
-	glow_image.pixel_y = py
+	// Only a changed value is written: an assignment to an image the client holds can cost a client update even when nothing differs.
+	if(glow_image.plane != G.plane)
+		glow_image.plane = G.plane
+	if(glow_image.color != G.color)
+		glow_image.color = G.color
+	if(glow_image.alpha != G.alpha)
+		glow_image.alpha = G.alpha
+	if(glow_image.pixel_x != px)
+		glow_image.pixel_x = px
+	if(glow_image.pixel_y != py)
+		glow_image.pixel_y = py
 	apply_shape(L, h, glow_image, G)
 	return TRUE
+
+/// TRUE when a light at `S` with reach `r` overlaps `box` (list(x0, y0, x1, y1)).
+/datum/client_glow_holder/proc/reach_overlaps(turf/S, r, list/box)
+	return !(S.x + r < box[1] || S.x - r > box[3] || S.y + r < box[2] || S.y - r > box[4])
 
 /// Where light `L`'s held glow stands: its own turf if the eye saw it, else the turf of its reach the eye saw that is nearest the eye.
 /datum/client_glow_holder/proc/stand_turf(datum/light_source/L, turf/S)
@@ -357,11 +372,12 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /// never draws the glows (a ghost sees through walls, so otherwise all of them, for no visible light).
 /datum/client_glow_holder/proc/consider_unlit(datum/light_source/L, turf/S)
 	var/r = CEILING(L.light_range, 1)
-	if(S.x + r < reach[1] || S.x - r > reach[3] || S.y + r < reach[2] || S.y - r > reach[4])
+	var/h = L.glow_holder_key()
+	var/has = !!LAZYACCESS(held, h)
+	if(!reach_overlaps(S, r, has ? keep_reach : reach))
 		drop(L)
 		return FALSE
-	var/h = L.glow_holder_key()
-	if(LAZYACCESS(held, h))
+	if(has)
 		return TRUE
 	var/image/hide_image = image(null)
 	hide_image.override = TRUE
