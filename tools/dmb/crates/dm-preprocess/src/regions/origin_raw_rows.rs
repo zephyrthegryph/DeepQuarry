@@ -1730,30 +1730,104 @@ impl ShortOriginCell {
 }
 const _: () = assert!(std::mem::size_of::<ShortOriginCell>() == 3);
 
+/// Two exact bytes for ordinary, equal-width cells with small geometry.
+#[repr(transparent)]
+struct TinyOriginCell(u16);
+impl TinyOriginCell {
+    const KINDS: [u8; 8] = [0, 1, 2, 5, 6, 7, 8, 9];
+
+    fn pack(row: NarrowRow) -> Option<Self> {
+        let [output, raw, width] = row.fields;
+        if row.tag & 15 != 0 || output >= 32 || raw >= 32 || width >= 8 {
+            return None;
+        }
+        let kind = match row.tag >> 4 {
+            0..=2 => row.tag >> 4,
+            kind @ 5..=9 => kind - 2,
+            _ => return None,
+        };
+        Some(Self(u16::from(output) | (u16::from(raw) << 5)
+            | (u16::from(width) << 10) | (u16::from(kind) << 13)))
+    }
+
+    fn unpack(&self) -> NarrowRow {
+        NarrowRow {
+            tag: Self::KINDS[usize::from(self.0 >> 13)] << 4,
+            fields: [(self.0 & 31) as u8, ((self.0 >> 5) & 31) as u8, ((self.0 >> 10) & 7) as u8],
+        }
+    }
+}
+const _: () = assert!(std::mem::size_of::<TinyOriginCell>() == 2);
+
+struct TinyOriginColumn {
+    rank: RowGroupRank,
+    rows: Vec<TinyOriginCell>,
+}
+impl TinyOriginColumn {
+    fn profitable(count: usize) -> bool {
+        // Each eligible cell also fits the short column. Pay the entire
+        // extra rank, Vec and optional pointer before claiming any savings.
+        count > std::mem::size_of::<Self>() + std::mem::size_of::<Option<Box<Self>>>()
+    }
+
+    fn bytes(&self) -> usize {
+        std::mem::size_of::<Self>() + self.rows.capacity() * std::mem::size_of::<TinyOriginCell>()
+    }
+}
+
+// Allocate one exact Global layout after its enclosing column paid for it.
+fn box_origin_column<T>(value: T) -> io::Result<Box<T>> {
+    let layout = std::alloc::Layout::new::<T>();
+    assert_ne!(layout.size(), 0);
+    let pointer = std::ptr::NonNull::new(unsafe { std::alloc::alloc(layout) }.cast::<T>())
+        .ok_or(io::ErrorKind::OutOfMemory)?;
+    // SAFETY: the nonzero, exact Global layout is initialized once.
+    Ok(unsafe { pointer.as_ptr().write(value); Box::from_raw(pointer.as_ptr()) })
+}
+
 struct MixedOriginCells {
     // Rank contains the count of unchanged four-byte cells through local.
     rank: RowGroupRank,
     short: Vec<ShortOriginCell>,
     four: Vec<NarrowRow>,
+    tiny: Option<Box<TinyOriginColumn>>,
 }
 impl MixedOriginCells {
-    fn len(&self) -> usize { self.short.len() + self.four.len() }
+    fn len(&self) -> usize {
+        self.short.len() + self.four.len() + self.tiny.as_ref().map_or(0, |tiny| tiny.rows.len())
+    }
+
     fn cell(&self, local: usize) -> Option<NarrowRow> {
         if local >= self.len() { return None; }
+        let word = local / TRACE_WORD_BITS;
+        let bit = 1 << (local % TRACE_WORD_BITS);
         let four = self.rank.through(local);
-        if self.rank.bits[local / TRACE_WORD_BITS] & (1 << (local % TRACE_WORD_BITS)) != 0 {
-            self.four.get(four - 1).copied()
-        } else {
-            self.short.get(local - four).map(ShortOriginCell::unpack)
-        }
+        if self.rank.bits[word] & bit != 0 { return self.four.get(four - 1).copied(); }
+        let tiny = if let Some(tiny) = &self.tiny {
+            let through = tiny.rank.through(local);
+            if tiny.rank.bits[word] & bit != 0 {
+                return tiny.rows.get(through - 1).map(TinyOriginCell::unpack);
+            }
+            through
+        } else { 0 };
+        self.short.get(local - four - tiny).map(ShortOriginCell::unpack)
     }
+
     fn bytes(&self) -> usize {
         std::mem::size_of::<Self>() + self.short.capacity() * std::mem::size_of::<ShortOriginCell>()
             + self.four.capacity() * std::mem::size_of::<NarrowRow>()
+            + self.tiny.as_ref().map_or(0, |tiny| tiny.bytes())
     }
+
     fn truncate(&mut self, keep: usize) {
         let four = self.rank.through(keep - 1);
-        self.short.truncate(keep - four);
+        let tiny = if let Some(tiny) = &mut self.tiny {
+            let count = tiny.rank.through(keep - 1);
+            tiny.rows.truncate(count);
+            tiny.rank.truncate(keep);
+            count
+        } else { 0 };
+        self.short.truncate(keep - four - tiny);
         self.four.truncate(four);
         self.rank.truncate(keep);
     }
@@ -1801,11 +1875,25 @@ impl PhysicalOriginPage {
 
     fn settle_full_columns(&mut self, a: &SettingAdmission<'_>, work: &dyn SourceArenaWork) -> io::Result<()> {
         if self.mixed.is_some() || self.narrow.len() != ROW_PAGE_LEN { return Ok(()); }
-        let short = self.narrow.iter().filter(|&&row| ShortOriginCell::pack(row).is_some()).count();
+        let mut short = 0;
+        let mut tiny = 0;
+        for &row in &self.narrow {
+            if TinyOriginCell::pack(row).is_some() {
+                tiny += 1;
+                short += 1;
+            } else if ShortOriginCell::pack(row).is_some() {
+                short += 1;
+            }
+        }
         let four = ROW_PAGE_LEN - short;
-        let box_bytes = std::mem::size_of::<MixedOriginCells>();
-        let bytes = box_bytes + short * std::mem::size_of::<ShortOriginCell>()
-            + four * std::mem::size_of::<NarrowRow>();
+        let tiny = if TinyOriginColumn::profitable(tiny) { tiny } else { 0 };
+        short -= tiny;
+        let bytes = std::mem::size_of::<MixedOriginCells>()
+            + short * std::mem::size_of::<ShortOriginCell>()
+            + four * std::mem::size_of::<NarrowRow>()
+            + if tiny == 0 { 0 } else {
+                std::mem::size_of::<TinyOriginColumn>() + tiny * std::mem::size_of::<TinyOriginCell>()
+            };
         let old = self.narrow.capacity() * std::mem::size_of::<NarrowRow>();
         if bytes >= old || !work.try_grow_original_origin_storage(&mut self.credit, bytes)? { return Ok(()); }
 
@@ -1814,23 +1902,27 @@ impl PhysicalOriginPage {
             let mut packed = exact_rows(short, a)?;
             let mut old_cells = exact_rows(four, a)?;
             let mut rank = RowGroupRank::new();
+            let mut tiny = if tiny == 0 { None } else {
+                Some(TinyOriginColumn { rank: RowGroupRank::new(), rows: exact_rows(tiny, a)? })
+            };
             for (at, &row) in self.narrow.iter().enumerate() {
                 let before = old_cells.len();
+                if let Some(tiny) = &mut tiny {
+                    let cell = TinyOriginCell::pack(row);
+                    tiny.rank.append(at, tiny.rows.len(), cell.is_some());
+                    if let Some(cell) = cell {
+                        tiny.rows.push(cell);
+                        rank.append(at, before, false);
+                        continue;
+                    }
+                }
                 if let Some(cell) = ShortOriginCell::pack(row) { packed.push(cell); }
                 else { old_cells.push(row); }
                 rank.append(at, before, before != old_cells.len());
             }
-            // The optional family grant includes the exact nonzero Global
-            // layout. No old physical storage is returned on first failure.
-            let pointer = std::ptr::NonNull::new(unsafe { std::alloc::alloc(
-                std::alloc::Layout::new::<MixedOriginCells>()) }.cast::<MixedOriginCells>())
-                .ok_or(io::ErrorKind::OutOfMemory)?;
-            // SAFETY: pointer is one funded Global cell; write once before
-            // Box assumes its ordinary drop layout.
-            Ok(unsafe {
-                pointer.as_ptr().write(MixedOriginCells { rank, short: packed, four: old_cells });
-                Box::from_raw(pointer.as_ptr())
-            })
+            a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
+            let tiny = tiny.map(box_origin_column).transpose()?;
+            box_origin_column(MixedOriginCells { rank, short: packed, four: old_cells, tiny })
         };
         let mixed = match build() {
             Ok(mixed) => mixed,
@@ -2043,6 +2135,11 @@ impl PhysicalOriginPageOwner {
             visit(mixed.as_ref() as *const _ as usize, bytes, bytes);
             column(&mixed.short, mixed.short.capacity(), visit);
             column(&mixed.four, mixed.four.capacity(), visit);
+            if let Some(tiny) = &mixed.tiny {
+                let bytes = std::mem::size_of::<TinyOriginColumn>();
+                visit(tiny.as_ref() as *const _ as usize, bytes, bytes);
+                column(&tiny.rows, tiny.rows.capacity(), visit);
+            }
         }
         page.output_bases.visit_storage(visit);
         if let Some(side) = &page.raw_widths {
@@ -2716,6 +2813,24 @@ impl OriginalRawOrigins{
  }
  #[cfg(debug_assertions)]
  pub(super) fn trace_capacity(&self) -> (usize, usize, usize, usize, usize, usize) {
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+    let (mut eligible, mut profitable_pages, mut settled_pages, mut settled_rows) = (0, 0, 0, 0);
+    for owner in self.rows.pages.iter() {
+        let page = owner.get();
+        let mut fits = page.narrow.iter().filter(|&&row| TinyOriginCell::pack(row).is_some()).count();
+        if let Some(mixed) = &page.mixed {
+            fits += mixed.short.iter().filter(|row| TinyOriginCell::pack(row.unpack()).is_some()).count();
+            if let Some(tiny) = &mixed.tiny {
+                fits += tiny.rows.len();
+                settled_pages += 1;
+                settled_rows += tiny.rows.len();
+            }
+        }
+        eligible += fits;
+        if page.len() == ROW_PAGE_LEN && TinyOriginColumn::profitable(fits) { profitable_pages += 1; }
+    }
+    eprintln!("ORIGINAL_ORIGIN_TINY_COLUMNS eligible={eligible} profitable_pages={profitable_pages} settled_pages={settled_pages} settled_rows={settled_rows}");
+  }
   let (mut compact_bytes, mut full_bytes, mut group_bytes) = (0usize, 0usize, 0usize);
   self.rows.visit_compact_storage(|_, _, capacity| compact_bytes = compact_bytes.saturating_add(capacity));
   self.rows.visit_full_storage(|_, _, capacity| full_bytes = full_bytes.saturating_add(capacity));
@@ -4010,6 +4125,60 @@ impl OriginalRawOrigins{
     let exact = ShortOriginCell::pack(wide).expect("wider short punctuation").unpack();
     assert_eq!(exact.offsets(|| Some(241)), Some([127, 5, 4, 100, 100, 241]));
     assert!(ShortOriginCell::pack(NarrowRow { tag: 2 << 4, fields: [64, 64, 1] }).is_none());
+ }
+
+ #[test]
+ fn tiny_origin_columns_pack_only_profitable_exact_rows_and_release_last_owner() {
+    let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+    let admission = SettingAdmission::new(&syntax, root, &|| Ok(()));
+    let live = Arc::new(AtomicUsize::new(0));
+    let work = CappedWork::new(live.clone(), usize::MAX);
+    let tiny = NarrowRow { tag: 7 << 4, fields: [31, 31, 7] };
+    let short = NarrowRow { tag: 1 << 4, fields: [32, 31, 7] };
+    let full = NarrowRow::escape(NarrowRow::FULL, 0).with_projected_kind(Some(dm_syntax::TokenKind::String));
+    assert!(TinyOriginCell::pack(short).is_none());
+    assert!(TinyOriginCell::pack(NarrowRow { fields: [31, 31, 8], ..tiny }).is_none());
+    assert!(TinyOriginCell::pack(NarrowRow { tag: tiny.tag | NarrowRow::TRAILING, ..tiny }).is_none());
+
+    let mut page = PhysicalOriginPageOwner::new(PhysicalOriginPage::new(0, &work).unwrap());
+    let prepare = page.get_mut().unwrap();
+    let mut funding = PageFunding { work: &work, credit: &mut prepare.credit };
+    prepare.narrow = funding.allocate(ROW_PAGE_LEN, &admission).unwrap();
+    prepare.narrow.resize(ROW_PAGE_LEN, tiny);
+    prepare.narrow[63] = short;
+    prepare.narrow[64] = full;
+    prepare.narrow[65] = short;
+    let before = live.load(Ordering::Acquire);
+    let failing = SettingAdmission::new(&syntax, root, &|| Err(io::Error::from_raw_os_error(1450)));
+    let actual = page.get_mut().unwrap().settle_full_columns(&failing, &work).unwrap_err();
+    assert_eq!(actual.raw_os_error(), Some(1450));
+    assert!(page.get().mixed.is_none());
+    assert_eq!(live.load(Ordering::Acquire), before);
+    let overhead = std::mem::size_of::<TinyOriginColumn>() + std::mem::size_of::<Option<Box<TinyOriginColumn>>>();
+    assert!(!TinyOriginColumn::profitable(overhead));
+    assert!(TinyOriginColumn::profitable(overhead + 1));
+
+    work.limit.store(before, Ordering::Release);
+    page.get_mut().unwrap().settle_full_columns(&admission, &work).unwrap();
+    assert!(page.get().mixed.is_none());
+    assert_eq!(live.load(Ordering::Acquire), before);
+    work.limit.store(usize::MAX, Ordering::Release);
+    page.get_mut().unwrap().settle_full_columns(&admission, &work).unwrap();
+    let mixed = page.get().mixed.as_ref().unwrap();
+    assert_eq!((mixed.tiny.as_ref().unwrap().rows.len(), mixed.short.len(), mixed.four.len()), (ROW_PAGE_LEN - 3, 2, 1));
+    for (at, expected) in [(0,tiny),(63,short),(64,full),(65,short),(66,tiny),(ROW_PAGE_LEN-1,tiny)] {
+        let actual = mixed.cell(at).unwrap();
+        assert_eq!((actual.tag, actual.fields), (expected.tag, expected.fields));
+    }
+    let held = live.load(Ordering::Acquire);
+    assert_eq!(held, before - ROW_PAGE_LEN * std::mem::size_of::<NarrowRow>() + mixed.bytes());
+    let loan = page.loan_full().unwrap();
+    assert!(std::ptr::eq(page.get(), loan.get()));
+    drop(page);
+    assert_eq!(live.load(Ordering::Acquire), held);
+    drop(loan);
+    assert_eq!(live.load(Ordering::Acquire), 0);
  }
 
  #[test]
