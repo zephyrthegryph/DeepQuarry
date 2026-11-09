@@ -32,6 +32,24 @@ fn build_using(text:&str,test_original_host:&std::sync::Arc<SettingExpressionQue
 type SettingExpressionQueriesDyn = dyn crate::frontend::SettingExpressionQueries;
 
 #[test]
+fn actual_original_client_parent_accepts_profile_and_resolves_through_authored_parent() {
+    let front = build("/client\n    parent_type = /datum\n");
+    let view = front.source_view().unwrap();
+    view.require_original_analysis_seed().unwrap();
+    let tree = view.tree();
+    let client = SymbolId::of("/client");
+    let datum = SymbolId::of("/datum");
+    let actual_parent = tree.parent(tree.lookup_type(client).unwrap()).unwrap();
+    assert_eq!(tree.type_node(actual_parent).unwrap().path, datum);
+    let profile = tree.checker_builtin_profile().expect("actual authored client parent preserves the pinned profile");
+    assert_eq!(profile, crate::checker_builtins::original_analysis_seed().unwrap().profile());
+    let actual = Resolver::resolve(tree.as_ref(), Q::CheckerIntrinsicCallable {
+        profile, owner: client, name: SymbolId::of("Read"), verb: false,
+    });
+    assert!(matches!(actual, M::Presence(true)), "{actual:?}");
+}
+
+#[test]
 fn original_compiled_source_body_keeps_assign_into_and_float_mod_assign() {
     use crate::frontend::{BodySyntax, BodySyntaxFailure, BodySyntaxInput, BodySyntaxQueries};
     use dm_syntax::{ExprKind, StatementKind};

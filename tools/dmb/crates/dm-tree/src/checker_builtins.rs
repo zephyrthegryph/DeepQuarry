@@ -364,8 +364,16 @@ impl SemanticTree {
             let id = self
                 .lookup_type(owner)
                 .ok_or(CheckerBuiltinError::UnknownOwner(owner))?;
-            if self.parent(id).map(|id| self.types[id.index()].path) != parent.map(SymbolId::of) {
-                return Err(CheckerBuiltinError::ParentMismatch(owner));
+            let actual = self.parent(id).map(|id| self.types[id.index()].path);
+            if actual != parent.map(SymbolId::of) {
+                // DreamChecker 0290 treats /client's authored parent_type
+                // as a valid override and resolves members in the real graph.
+                let authored_client = self.original_authored_client_parent
+                    && owner == SymbolId::of("/client")
+                    && actual == Some(SymbolId::of("/datum"));
+                if !authored_client {
+                    return Err(CheckerBuiltinError::ParentMismatch(owner));
+                }
             }
         }
         for (&id, &spelling) in &catalog.spellings {

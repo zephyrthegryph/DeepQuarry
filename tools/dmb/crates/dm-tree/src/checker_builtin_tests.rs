@@ -187,6 +187,21 @@ fn incompatible_existing_hierarchy_is_rejected_without_alternative_tree() {
 }
 
 #[test]
+fn generic_client_parent_edge_does_not_grant_original_profile() {
+    let mut symbols = SymbolTable::default();
+    let rows = data::PARENTS.iter().map(|&(owner, parent)| {
+        let path = symbols.intern(owner).unwrap();
+        let parent = if owner == "/client" { Some("/datum") } else { parent };
+        Skeleton::Type { path, explicit_parent: parent.map(|p| symbols.intern(p).unwrap()) }
+    }).collect::<Vec<_>>();
+    let tree = crate::build(symbols, &rows).unwrap();
+    assert!(matches!(
+        tree.validate_checker_builtin_profile(pinned_catalog().unwrap().profile),
+        Err(CheckerBuiltinError::ParentMismatch(owner)) if owner == SymbolId::of("/client")
+    ));
+}
+
+#[test]
 fn checker_queries_borrow_original_owner_without_cow_or_world_mutation() {
     let source = seeded("/datum/example/proc/probe()\n    return 1\n");
     let identity = source.identity();

@@ -1057,6 +1057,14 @@ impl SharedAdaptedDeclarations {
             ));
         }
         let engine_count = skeletons.len();
+        // The pinned Checker accepts this authored edge. The ordinary
+        // builder and engine-only rows cannot grant the exception.
+        let original_authored_client_parent = primary.is_some()
+            && crate::checker_builtins::OriginalVariableDeclarations::for_seed(seed).is_some()
+            && self.skeletons.iter().any(|row| matches!(row,
+                Skeleton::Type { path, explicit_parent: Some(parent) }
+                if *path == SymbolId::of("/client") && *parent == SymbolId::of("/datum")
+            ));
         skeletons.append(self.skeletons);
         drop(seed_timer);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
@@ -1154,6 +1162,7 @@ impl SharedAdaptedDeclarations {
             },
         )?);
         drop(_occurrence_timer);
+        tree.original_authored_client_parent = original_authored_client_parent;
         tree.original_input_retention=primary;
         let tree = Arc::new(tree);
         Ok(TreeSnapshot { tree, occurrences })

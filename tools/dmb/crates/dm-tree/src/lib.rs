@@ -135,6 +135,8 @@ pub enum Target {
 #[derive(Clone, Debug)]
 pub struct SemanticTree {
     original_input_retention:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,
+    // Only the pinned Original declaration adapter can issue this proof.
+    original_authored_client_parent: bool,
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
     members: MemberArena,
@@ -683,6 +685,7 @@ fn build_with_intrinsic_members_structural_mode(
     }
     let mut tree = SemanticTree {
         original_input_retention:None,
+        original_authored_client_parent: false,
         symbols: Arc::new(symbols),
         types: types.into(),
         members: MemberArena::default(),

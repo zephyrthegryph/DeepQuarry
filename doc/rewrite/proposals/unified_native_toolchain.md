@@ -3752,3 +3752,20 @@ row count. The request reached generated `declare.dm` line 30,513 and
 refused a 16,384-byte syntax grant under the unchanged 128 MiB local cap.
 It emitted no semantic report. This run does not establish whole-checkout
 parity or the combined performance targets.
+
+The later selected checkout completed the Original declaration tree and indexed
+109,675 callable bodies. It charged 27,953,632 bytes for the joined Checker
+capture under the unchanged 64 MiB cap. That charge excludes only backing
+whose exact native source or syntax owner remains funded, and the joined
+Checker captures its decoded source and configuration without acquiring
+unused raw Analyze views.
+
+Each repeated Original include now proves its own recorded open, payload and
+encoding. The canonical source roster still needs an authenticated backing for
+each path. The checkout cleared that proof after correcting a malformed UTF-8
+byte in a test comment. The final compiler freshness comparison now receives
+the recorder's admitted ledger by ownership transfer. The focused controls
+reject a foreign recorder and facts added after admission. Both compound
+fixtures passed, and the checkout passed freshness admission before stopping
+on the Checker builtin profile's treatment of an authored client parent.
+These runs produced no real-checkout compound report or installed pair.
