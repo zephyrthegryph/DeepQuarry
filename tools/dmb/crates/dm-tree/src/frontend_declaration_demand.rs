@@ -29,7 +29,7 @@ pub(super) trait Permit {
     fn original_primary_admitted(&self)->bool{false}
     fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>;
     fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>;
-    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>;
+    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool,compact_compound:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>;
     fn borrow_authored_callables<'a>(
         &self, _: &'a crate::declaration_contributions::KeyedDeclarations,
         _: &'a crate::owner_callable::RetainedCallableOwners,
@@ -63,7 +63,7 @@ impl Permit for Compatibility {
     fn checkpoint(&self)->Result<(),Self::Failure>{Ok(())}
     fn original_primary_failure(&self,_:&super::original_declaration_input::OriginalPrimaryRetention,_:&DeclarationSyntax,_:&Mapping<'_>,_:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>{Err(vec![internal("actual original primary fatal reporting requires native checked admission")])}
     fn original_analysis_declarations(&self,_:&ExpandedRegions,_:Option<&EngineSeed>,_:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>{Err(vec![internal("Original Analyze primary preparation requires the existing checked native host")])}
-    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,_lazy_body_parameters:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{Err(vec![internal("actual Original stream requires the existing checked native resource host")])}
+    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,_lazy_body_parameters:bool,_compact_compound:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{Err(vec![internal("actual Original stream requires the existing checked native resource host")])}
     fn retain_generation_metadata(&self,_:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>{Err(vec![internal("generation metadata requires checked native admission")])}
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>{Ok(state.get_shared(key,text,offset))}
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{Ok(if checker_settings{OriginalProcedureHeaders::for_declaration_profile(source,items,offset,tokens,None,true).map_err(|failure|match failure{crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>message,crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual.to_string()})}else{match tokens{Some(tokens)=>OriginalProcedureHeaders::from_primary(source,items,offset,tokens),None=>OriginalProcedureHeaders::reissue(source,items,offset)}})}
@@ -143,7 +143,7 @@ impl Permit for CheckedPermit<'_,'_>{
 
     type Failure=FrontendBuildFailure;
     fn checkpoint(&self)->Result<(),Self::Failure>{actual_checkpoint(self.admission).map_err(FrontendBuildFailure::Operational)}
-    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{
+    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool,compact_compound:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{
       self.checkpoint()?;let a=self.admission;
       let source_work=self.host.original_source_work().map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>FrontendBuildFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>FrontendBuildFailure::Diagnostics(vec![actual].into())})?;
       let batch_host=super::original_stream::TreeOriginalBatchHost(self.host);
@@ -156,7 +156,7 @@ impl Permit for CheckedPermit<'_,'_>{
        return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"compound BODY parameter demand requires actual Original batch preparation")))
       }
       let streamed=if lazy_body_parameters{
-       super::original_stream::prepare_original_stream_with_lazy_body_parameters_using(project,provider,defines,omissions,usize::MAX,source_work,a,batch.as_ref(),true)
+       super::original_stream::prepare_original_stream_with_parameter_mode_using(project,provider,defines,omissions,usize::MAX,source_work,a,batch.as_ref(),true,compact_compound)
       }else{
        super::original_stream::prepare_original_stream_using(project,provider,defines,omissions,usize::MAX,source_work,a,batch.as_ref())
       }.map_err(FrontendBuildFailure::Operational)?;

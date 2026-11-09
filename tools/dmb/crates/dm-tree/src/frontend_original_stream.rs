@@ -82,8 +82,20 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
  a:&dm_syntax::SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,
  lazy_parameters:bool,
 )->io::Result<StreamedOriginalDeclarations>{
+ prepare_original_stream_with_parameter_mode_using(
+  project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,lazy_parameters,lazy_parameters,
+ )
+}
+
+pub(crate) fn prepare_original_stream_with_parameter_mode_using(
+ project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,
+ omissions:GenerationOmissions,max_raw_bytes:usize,
+ source_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+ a:&dm_syntax::SettingAdmission<'_>,batch:Option<&OriginalBatchExecution<'_>>,
+ lazy_parameters:bool,compact_compound:bool,
+)->io::Result<StreamedOriginalDeclarations>{
  let mut observer=actual(a,||crate::procedure::original_primary_signatures::OriginalSignatureObserver::new(a))?;
- let product=actual(a,||if lazy_parameters{
+ let product=actual(a,||if compact_compound{
    let batch=batch.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"compact compound diagnostics require actual batch execution"))?;
    GenerationDirectivePlan::prepare_original_compound_diagnostic_stream_using(
      project,provider,defines,omissions,max_raw_bytes,source_work,a,batch,&mut observer)
@@ -98,7 +110,7 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
  })?;
  #[cfg(debug_assertions)]
  observer.trace_live_stream_retention();
- let geometry=if lazy_parameters{product.header_token_geometry()}else{None};
+ let geometry=if compact_compound{product.header_token_geometry()}else{None};
  let(plan,expanded,primary,binding)=actual(a,||product.into_diagnostic_parts_using(a)).inspect_err(|_error|{
   #[cfg(debug_assertions)]
   observer.trace_failed_stream_retention("diagnostic_handoff");
@@ -271,6 +283,7 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
 
  #[test]
  fn actual_lazy_body_realizes_only_its_parameter_owner_and_preserves_first_io() {
+  for compact_compound in [false,true] {
   let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
   let counter = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
   let live = Arc::new(AtomicUsize::new(0));
@@ -285,8 +298,8 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
   let host = StreamHost { counter: counter.clone() };
   let adapter = TreeOriginalBatchHost(&host);
   let batch = OriginalBatchExecution::new(&source,&adapter,&executor);
-  let streamed = prepare_original_stream_with_lazy_body_parameters_using(
-    Path::new("actual-lazy-parameters.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch),true,
+  let streamed = prepare_original_stream_with_parameter_mode_using(
+    Path::new("actual-lazy-parameters.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,Some(&batch),true,compact_compound,
   ).unwrap();
   let input = &streamed.primary().inputs()[0];
   let headers = input.headers();
@@ -309,6 +322,7 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
   drop(streamed);
   assert_eq!(counter.load(Ordering::Acquire),root);
   assert_eq!(live.load(Ordering::Acquire),0);
+  }
  }
 
  #[test]
@@ -495,6 +509,46 @@ pub(crate) fn prepare_original_stream_with_lazy_body_parameters_using(
   assert_eq!(view.original_analysis_completeness(),Some(super::super::OriginalAnalysisCompleteness::Complete));drop(signature);drop(view);assert!(frontend.try_into_compilable().is_err(),"no completed Original diagnostic plan may become a compiler plan");
   let partial=super::super::build_for_original_handlers_structural_checked(Path::new("actual-published-partial.dme"),&source,config,None,&executor,&host).unwrap();
   assert_eq!(partial.preparation_purpose(),super::super::DiagnosticPreparationPurpose::OriginalHandlersStructuralComplete);assert!(partial.original_analysis_completeness().is_none());assert!(partial.checker_source_view().is_err());let view=partial.source_view().unwrap();assert!(view.original_plan().ordinary().is_none());assert_eq!(view.archive().header_parameters_using(0,&||Ok(())).unwrap().entries().unwrap().len(),1);
+ }
+
+ #[test]
+ fn joined_handler_formal_mode_preserves_actual_default_and_fatal_prefix() {
+  let host=super::original_resource_host::Host::new() as Arc<dyn SettingExpressionQueries>;
+  let seed=crate::checker_builtins::original_analysis_seed().unwrap();
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};
+  let path=Path::new("actual-handler-formal-parity.dme");
+  let source=Source::new("/proc/p(obj/A = null)\n    return A\n");
+  let eager=super::super::build_for_original_handlers_structural_checked(path,&source,config,None,&executor,&host).unwrap();
+  let lazy=super::super::build_for_joined_original_handlers_structural_checked(path,&source,config,None,&executor,&host).unwrap();
+  let eager=eager.handlers_structural_source().unwrap();
+  let lazy=lazy.handlers_structural_source().unwrap();
+  assert_eq!(eager.completeness(),lazy.completeness());
+  assert_eq!(lazy.completeness(),super::super::OriginalAnalysisCompleteness::Complete);
+  let eager=eager.view().archive();
+  let lazy=lazy.view().archive();
+  assert!(lazy.header_parameters_using(0,&||Ok(())).is_err());
+  let before=eager.header_parameters_using(0,&||Ok(())).unwrap();
+  assert_eq!(before.name(&before.entries().unwrap()[0]).unwrap(),"A");
+  host.with_declaration_admission(&mut |a|{
+   lazy.with_header_parameters_admitted(0,a,|actual|{
+    let entries=actual.entries().unwrap();
+    assert_eq!(entries.len(),1);
+    assert_eq!(actual.name(&entries[0]).unwrap(),"A");
+    Ok(())
+   })
+  }).unwrap();
+
+  let malformed=Source::new("#warn EARLY_HANDLER\n/proc/p(var/A=)\n#error FUTURE_HANDLER\n");
+  let eager=super::super::build_for_original_handlers_structural_checked(path,&malformed,config,None,&executor,&host).unwrap();
+  let lazy=super::super::build_for_joined_original_handlers_structural_checked(path,&malformed,config,None,&executor,&host).unwrap();
+  for outcome in [&eager,&lazy] {
+   let structural=outcome.handlers_structural_source().unwrap();
+   assert_eq!(structural.completeness(),super::super::OriginalAnalysisCompleteness::PrimaryPrefix);
+   let notices=structural.view().original_preprocess_notices().unwrap();
+   assert_eq!(notices.len(),1);
+   assert!(notices.iter().next().unwrap().unwrap().message.contains("EARLY_HANDLER"));
+  }
  }
 
  #[test]fn strict_fatal_report_retains_same_source_credit_after_actual_host_drop_then_releases_all(){

@@ -285,7 +285,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvide
         .as_ref()
         .and_then(|state| state.previous_frontend(project,defines,provider.initial_environment(),diagnostic.is_some()))};
     let (plan,plan_reuse,expanded,mut prepared_original)=if original_mode{
-        let(plan,expanded,prepared)=demand.run(|permit|permit.original_stream_declarations(project,provider,defines,executor,config.engine,previous.as_ref().map(|row|row.syntax.as_ref()),original_role,lazy_body_parameters))?;
+        let(plan,expanded,prepared)=demand.run(|permit|permit.original_stream_declarations(project,provider,defines,executor,config.engine,previous.as_ref().map(|row|row.syntax.as_ref()),original_role,lazy_body_parameters,lazy_body_parameters && role == crate::diagnostic_declarations::DeclarationRole::Ordinary))?;
         timings.directive_planning=stage_start.elapsed();
         observe(config,FrontendStage::DirectivePlanning,ProgressKind::Completed,timings.directive_planning,plan.regions().len(),plan.regions().len());
         crate::change_set::record_outcome(format!("frontend actual Original stream: directive/token/formal/native primary consumed once; {} source regions; {:.3}s",plan.regions().len(),timings.directive_planning.as_secs_f64()));
@@ -1298,9 +1298,20 @@ pub fn build_for_original_image_dir_checked<P:SourceProvider>(
 /// No compiler semantic-state predecessor can be reused or published here.
 /// The host must bind its captured synthetic recipe/root acquisition separately.
 pub fn build_for_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
+ build_original_handlers_structural_checked(project,provider,config,memo,executor,host,false)
+}
+
+/// Internal joined staging still uses the ordinary Handler producer and formal
+/// ledger. Only the duplicate finalized metadata is realized on BODY demand.
+#[doc(hidden)]
+pub fn build_for_joined_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
+ build_original_handlers_structural_checked(project,provider,config,memo,executor,host,true)
+}
+
+fn build_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>,lazy_body_parameters:bool)->Result<DiagnosticFrontend,FrontendBuildFailure>{
  use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host,type_loan:None};let mut receipt=None;let mut primary=None;let defines=BTreeMap::new();
  let result=(||{
-  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,&defines,config,memo,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::HandlersStructural,None,false)?;
+  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,&defines,config,memo,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::HandlersStructural,None,lazy_body_parameters)?;
   let diagnostic=DiagnosticFrontend::bind_handlers_structural(frontend,receipt.ok_or_else(||vec![internal("handlers structural builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
   diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("handlers structural builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
  })();demand.finish(result)

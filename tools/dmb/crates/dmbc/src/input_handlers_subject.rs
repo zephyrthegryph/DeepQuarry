@@ -12,10 +12,16 @@ struct Native<'a>{budget:&'a Budget}
 impl Control for Native<'_>{type Error=io::Error;const CHECKED:bool=true;fn checkpoint(&mut self)->io::Result<()>{self.budget.require().map_err(|_|quota(self.budget,"handlers subject budget denied"))?;crate::daemon::control::checkpoint()}fn reserve(&mut self,n:usize)->io::Result<()>{self.budget.charge(n).map_err(|_|quota(self.budget,"handlers subject allocation denied"))}fn overflow(&mut self)->io::Error{quota(self.budget,"handlers subject allocation overflow")}fn allocation_failed(&mut self)->io::Error{quota(self.budget,"handlers subject allocation refused")}}
 struct HeaderReceipt{issuer:Arc<()>,path:PathBuf}
 struct CapturedHandlerRoot{project:PathBuf,namespace:PathBuf,header:dm_preprocess::AcquiredSource}
+struct HandlerSelectionPhase {
+ discovery: Arc<DiscoveryReceipt>,
+ facts: InputSnapshot,
+ // Discovery, fact clones and owned path buffers drop before this refund.
+ _credit: Arc<Budget>,
+}
 pub(crate) struct HandlerStructuralSubject{
- root:PathBuf,canonical_root:PathBuf,captured:Option<CapturedHandlerRoot>,discovery:Arc<DiscoveryReceipt>,recipe:Recipe,requires_full:bool,selected_full:bool,
+ root:PathBuf,canonical_root:PathBuf,captured:Option<CapturedHandlerRoot>,recipe:Recipe,requires_full:bool,selected_full:bool,
  configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,config:Arc<dq_analyze::captured_raw_file::Config>,
- selection_facts:InputSnapshot,issuer:Arc<()>,recorder:Arc<()>,
+ selection:std::sync::Mutex<Option<HandlerSelectionPhase>>,issuer:Arc<()>,recorder:Arc<()>,
  bound:std::sync::OnceLock<std::sync::Weak<dm_tree::frontend::SourceExportMapping>>,
  _configuration_owner: Option<Arc<super::DerivedPreflight>>,
  // Last: source/recipe allocations are gone before their producer funding.
@@ -33,17 +39,36 @@ impl HandlerStructuralSubject{
  /// Actual old CODE-tree membership, not physical-path inference or authority.
  /// Preserve exact slash registration spelling; do not collapse ParentDir or
  /// turn a compiled include outside the selected tree into an ALLOW source.
- pub(crate) fn old_tree_contains(&self,relative:&str)->bool{self.discovery.files().iter().any(|path|path.strip_prefix(&self.root).ok().and_then(|path|path.to_str()).is_some_and(|path|path.chars().map(|c|if c=='\\'{'/'}else{c}).eq(relative.chars())))}
+ pub(crate) fn old_tree_contains(&self,relative:&str)->io::Result<bool>{
+  let selection=self.selection.lock().map_err(|_|fail("handlers selection phase poisoned"))?;
+  let selection=selection.as_ref().ok_or_else(||fail("detached handlers require admitted selected ALLOW files"))?;
+  Ok(selection.discovery.files().iter().any(|path|path.strip_prefix(&self.root).ok().and_then(|path|path.to_str()).is_some_and(|path|path.chars().map(|c|if c=='\\'{'/'}else{c}).eq(relative.chars()))))
+ }
+ fn retire_selection_after_staging(&self,final_prefix:&InputSnapshot)->io::Result<()>{
+  if !self.is_selected_full(){return Err(fail("standalone handlers cannot retire their source selection"))}
+  let mut selection=self.selection.lock().map_err(|_|fail("handlers selection phase poisoned"))?;
+  let live=selection.as_ref().ok_or_else(||fail("handler selection phase already retired"))?;
+  if !handler_facts_subset(&live.facts,final_prefix)||!live.discovery.directories_in(final_prefix){
+   return Err(fail("handler final prefix omits actual staged source selection"));
+  }
+  let retired=selection.take();
+  drop(selection);
+  drop(retired);
+  Ok(())
+ }
 
  pub(crate) fn require_configuration(&self,path:&Path,bytes:Option<&[u8]>)->io::Result<()>{if path!=self.configuration||bytes!=self.configuration_bytes.as_ref().map(|b|b.as_slice()){return Err(fail("handlers actual interpreted configuration differs from selected raw preflight"))}Ok(())}
  pub(crate) fn input_retained_charge(&self)->io::Result<usize>{self.budget.require().map_err(|m|quota(&self.budget,&m))?;Ok(self.budget.used())}
- pub(crate) fn census(self:&Arc<Self>,c:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.handlers_preflight";if !c.arc_object(owner,self){return}c.path(owner,&self.root);c.path(owner,&self.canonical_root);c.path(owner,&self.configuration);c.arc_object(owner,&self.config);c.arc_object(owner,&self.issuer);c.arc_object(owner,&self.recorder);self.discovery.census(c);c.workspace_policy_facts(&self.selection_facts);if let Some(bytes)=&self.configuration_bytes{if c.shared_bytes_owner(owner, bytes){c.vec_payload(owner,bytes.shared_owner().bytes());}}if let Some(mapping)=self.bound.get().and_then(std::sync::Weak::upgrade){c.source_export_mapping(&mapping);}if let Some(root)=&self.captured{c.path(owner,&root.project);c.path(owner,&root.namespace);}c.unknown(owner,"private Recipe and Config collection nodes and source Budget parent chain lack allocator geometry; admission totals are not heap bytes");}
+ pub(crate) fn census(self:&Arc<Self>,c:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.handlers_preflight";if !c.arc_object(owner,self){return}c.path(owner,&self.root);c.path(owner,&self.canonical_root);c.path(owner,&self.configuration);c.arc_object(owner,&self.config);c.arc_object(owner,&self.issuer);c.arc_object(owner,&self.recorder);if let Ok(selection)=self.selection.lock(){if let Some(live)=selection.as_ref(){live.discovery.census(c);c.workspace_policy_facts(&live.facts);}}if let Some(bytes)=&self.configuration_bytes{if c.shared_bytes_owner(owner, bytes){c.vec_payload(owner,bytes.shared_owner().bytes());}}if let Some(mapping)=self.bound.get().and_then(std::sync::Weak::upgrade){c.source_export_mapping(&mapping);}if let Some(root)=&self.captured{c.path(owner,&root.project);c.path(owner,&root.namespace);}c.unknown(owner,"private Recipe and Config collection nodes and source Budget parent chain lack allocator geometry; admission totals are not heap bytes");}
  fn require_operation<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{crate::daemon::control::checkpoint()?;self.budget.require().map_err(|_|quota(&self.budget,"handlers current operation budget denied"))?;if !Arc::ptr_eq(&self.recorder,&inputs.source_issuer){return Err(fail("handlers partial subject belongs to another actual input recorder"))}Ok(())}
  pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{
-  self.require_operation(inputs)?;self.discovery.validate_recording(inputs)?;
+  self.require_operation(inputs)?;
+  let selection=self.selection.lock().map_err(|_|fail("handlers selection phase poisoned"))?;
+  let selection=selection.as_ref().ok_or_else(||fail("detached handlers cannot prepare a live source"))?;
+  selection.discovery.validate_recording(inputs)?;
   // Borrow the SAME ledger: do not clone all selected facts per physical read.
   let current=inputs.snapshot.lock().map_err(|_|fail("handlers current input ledger poisoned"))?;
-  if !self.selection_facts.original_observations_subset_of(&current)||!self.selection_facts.files.iter().all(|(path,fact)|current.files.get(path)==Some(fact))||!self.selection_facts.negative_files.iter().all(|path|current.negative_files.contains(path)&&!current.files.contains_key(path))||!self.selection_facts.policy_directories.iter().all(|(path,fact)|current.policy_directories.get(path)==Some(fact)){return Err(fail("handlers selection/negative dependencies changed; reissue the child recipe"))}Ok(())
+  if !selection.facts.original_observations_subset_of(&current)||!selection.facts.files.iter().all(|(path,fact)|current.files.get(path)==Some(fact))||!selection.facts.negative_files.iter().all(|path|current.negative_files.contains(path)&&!current.files.contains_key(path))||!selection.facts.policy_directories.iter().all(|(path,fact)|current.policy_directories.get(path)==Some(fact)){return Err(fail("handlers selection/negative dependencies changed; reissue the child recipe"))}Ok(())
  }
  pub(crate) fn require_current<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{self.require_recording(inputs)?;let current=inputs.snapshot.lock().map_err(|_|fail("handlers current input ledger poisoned"))?;if !current.restat(&inputs.provider)?.unchanged(){return Err(fail("handlers actual input closure changed before publication"))}Ok(())}
  pub(crate) fn provider<'a,P:SnapshotProvider+Sync>(&'a self,inputs:&'a RecordingInputs<P>)->io::Result<HandlerStructuralProvider<'a,P>>{self.require_current(inputs)?;self.captured()?;Ok(HandlerStructuralProvider{subject:self,inputs})}
@@ -188,9 +213,11 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let recursive_roots=if selected.is_some(){vec![workspace.root.join("code")]}else{workspace.recursive_roots.clone()};
   mark("configuration");
   let discovery_scratch=Budget::scoped_temporaries(budget).map_err(|message|quota(budget,&message))?;
+  let selection_credit=Budget::scoped_temporaries(budget).map_err(|message|quota(budget,&message))?;
+  let mut retained_selection=Native{budget:&selection_credit};
   let discovery=Arc::new(crate::runner_host::workspace_discovery::discover_handlers_code_admitted(self,DiscoveryContract{root:workspace.root.clone(),recursive_roots},budget,&discovery_scratch,lender)?);
   discovery.validate_recording(self)?;
-  let retained_discovery=discovery.retained_charge()?;kc::reserve(&mut control,||retained_discovery.checked_add(1024))?;
+  let retained_discovery=discovery.retained_charge()?;kc::reserve(&mut retained_selection,||retained_discovery.checked_add(1024))?;
   drop(discovery_scratch);
   mark("discovery");
   let manifest=workspace.root.join("deepquarry.dme");
@@ -259,7 +286,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let selection_facts=self.policy_workspace_closure(&selection_files,discovery.directory_paths().chain(directory.iter()))?;
   drop(selection_files);
   drop(selection_scratch);
-  let retained_facts=selection_facts.policy_closure_charge_with(&mut BTreeSet::new())?;kc::reserve(&mut control,||retained_facts.checked_add(4096))?;
+  let retained_facts=selection_facts.policy_closure_charge_with(&mut BTreeSet::new())?;kc::reserve(&mut retained_selection,||retained_facts.checked_add(4096))?;
   drop(closure_scratch);
   mark("closure");
   let issuer = Arc::new(());
@@ -303,7 +330,8 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   };
   kc::reserve(&mut control,||Some(std::mem::size_of::<HandlerStructuralSubject>()+2*std::mem::size_of::<usize>()))?;
   kc::reserve(&mut control,||workspace.root.as_os_str().len().checked_add(canonical_root.as_os_str().len())?.checked_mul(4))?;
-  let subject=HandlerStructuralSubject{root:workspace.root.clone(),canonical_root,captured,discovery,recipe,requires_full,selected_full:selected.is_some(),configuration:workspace.configuration.clone(),configuration_bytes:config_bytes,config,selection_facts,issuer,recorder:Arc::clone(&self.source_issuer),bound:Default::default(),_configuration_owner:derived.cloned(),budget:Arc::clone(budget)};subject.require_current(self)?;Ok(subject)
+  let selection=HandlerSelectionPhase{discovery,facts:selection_facts,_credit:selection_credit};
+  let subject=HandlerStructuralSubject{root:workspace.root.clone(),canonical_root,captured,recipe,requires_full,selected_full:selected.is_some(),configuration:workspace.configuration.clone(),configuration_bytes:config_bytes,config,selection:std::sync::Mutex::new(Some(selection)),issuer,recorder:Arc::clone(&self.source_issuer),bound:Default::default(),_configuration_owner:derived.cloned(),budget:Arc::clone(budget)};subject.require_current(self)?;Ok(subject)
  }
 }
 
@@ -324,7 +352,8 @@ impl PreparedHandlersStructural{
 impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
  /// Uses the current borrowed executor and SAME QueryDb resource/BODY host.
  /// No private executor, parser, RetainedSemanticTree or model cache is created.
- pub(crate) fn prepare_handlers_structural(&self,subject:Arc<HandlerStructuralSubject>,executor:&dm_exec::BuildExecutor,queries:&Arc<crate::query_db::QueryDb>)->io::Result<PreparedHandlersStructural>{
+ pub(crate) fn prepare_handlers_structural(&self,subject:Arc<HandlerStructuralSubject>,executor:&dm_exec::BuildExecutor,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<PreparedHandlersStructural>{
+  if joined_staging && !subject.is_selected_full(){return Err(fail("handler joined staging requires its actual selected preparation"))}
   if subject.recipe.candidates.is_empty() {
    subject.require_current(self)?;
    return Ok(PreparedHandlersStructural{subject,frontend:None});
@@ -332,7 +361,12 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   let provider=subject.provider(self)?;
   let seed=dm_tree::checker_builtins::original_analysis_seed().map_err(|error|io::Error::new(io::ErrorKind::InvalidData,format!("invalid Original builtin catalog: {error:?}")))?;
   let host=Arc::clone(queries)as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
-  let frontend=dm_tree::frontend::build_for_original_handlers_structural_checked(subject.project()?,&provider,dm_tree::frontend::FrontendConfig{workers:executor.workers(),engine:Some(seed.frontend_seed()),observer:None},None,executor,&host).map_err(|failure|match failure{dm_tree::frontend::FrontendBuildFailure::Operational(actual)=>actual,dm_tree::frontend::FrontendBuildFailure::Diagnostics(errors)=>io::Error::new(io::ErrorKind::Unsupported,HandlerNativeFrontier(errors))})?;
+  let build=if joined_staging {
+   dm_tree::frontend::build_for_joined_original_handlers_structural_checked
+  } else {
+   dm_tree::frontend::build_for_original_handlers_structural_checked
+  };
+  let frontend=build(subject.project()?,&provider,dm_tree::frontend::FrontendConfig{workers:executor.workers(),engine:Some(seed.frontend_seed()),observer:None},None,executor,&host).map_err(|failure|match failure{dm_tree::frontend::FrontendBuildFailure::Operational(actual)=>actual,dm_tree::frontend::FrontendBuildFailure::Diagnostics(errors)=>io::Error::new(io::ErrorKind::Unsupported,HandlerNativeFrontier(errors))})?;
   dm_profile::request_mark("handlers.partial_frontend_done");
   let frontend=Arc::new(frontend.with_body_queries(Arc::clone(queries)as Arc<dyn dm_tree::frontend::BodySyntaxQueries>).map_err(io::Error::other)?);subject.bind_frontend(&frontend,self)?;
   dm_profile::request_mark("handlers.partial_source_bound");
@@ -420,21 +454,54 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   assert_eq!(subject.recipe.candidates.iter().map(|row|row.relative.as_str()).collect::<Vec<_>>(),["code/__defines/context.dm","code/candidate.dm"]);
   assert!(subject.recipe.try_calls.iter().any(|name|name=="act_code_marker"));
   assert!(!subject.recipe.try_calls.iter().any(|name|name=="act_map_marker"));
-  assert!(!subject.old_tree_contains("maps/handler.dm"));
+  assert!(!subject.old_tree_contains("maps/handler.dm").unwrap());
   subject.require_current(&current).unwrap();
   assert!(subject.require_current(&inputs).is_err());
   assert!(current.original_analysis_subject().is_none(),"the structural projection cannot issue a full graph");
  }
 
+ #[test]
+ fn selected_handler_retirement_releases_same_subject_credit_and_keeps_exact_prefix(){
+  use dq_analyze::{captured_allow_annotations::{Operation,full_unused::SelectedTreePlanData},tree::CODE_MAPS_DM};
+  let(root,_,inputs)=fixture("selected-handler-retirement");
+  std::fs::create_dir(root.join("maps")).unwrap();
+  std::fs::write(root.join("code/demand.dm"),"READS_AS(/datum/ordinary, value)\n").unwrap();
+  let intent=selected_intent(&root);
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let budget=Budget::new(1<<20).unwrap();let mut work=Operation{budget:&budget,poll:&||Ok(())};
+  let plan=SelectedTreePlanData::new([CODE_MAPS_DM],&mut work).unwrap();
+  let subject=queries.prepare_selected_handlers_preflight(&inputs,&intent,&plan,None).unwrap();
+  let identity=Arc::downgrade(&subject);
+  assert!(subject.retire_selection_after_staging(&InputSnapshot::new(0)).is_err());
+  assert!(subject.old_tree_contains("code/candidate.dm").unwrap());
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let prepared=inputs.prepare_handlers_structural(Arc::clone(&subject),&executor,&queries,true).unwrap();
+  let capture=inputs.capture_handlers_prepared(prepared,&queries,true).unwrap();
+  let proof=crate::request_runner::runner_freshness::admit_handlers_structural_staging(&inputs,Arc::clone(&capture),&queries).unwrap();
+  drop(proof);
+  let before=subject.budget.used();
+  let phase=subject.selection.lock().unwrap().as_ref().unwrap()._credit.used();
+  let capture=HandlerPreparedCapture::detach_staged(capture,Err(Failure::Unsupported("deferred structural failure".into()))).unwrap();
+  assert!(Arc::ptr_eq(&identity.upgrade().unwrap(),capture.prepared().subject()));
+  assert!(subject.selection.lock().unwrap().is_none());
+  assert!(before-subject.budget.used()>phase/2,"retired physical phase must return its charged payload");
+  let current=inputs.snapshot().unwrap();
+  assert!(capture.is_recorded_in(&current));
+  let mut changed=current;
+  assert!(changed.policy_directories.remove(&root.join("code")).is_some());
+  assert!(!capture.is_recorded_in(&changed));
+  assert!(subject.old_tree_contains("code/candidate.dm").is_err());
+  assert!(matches!(capture.take_staged_rows(),Err(Failure::Unsupported(message)) if message=="deferred structural failure"));
+ }
  #[test]fn actual_native_partial_prepare_is_not_filtered_full_graph_or_full_purpose(){
-  let(_,intent,inputs)=fixture("handlers-partial-native-purpose");let queries=Arc::new(crate::query_db::QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries).unwrap();
+  let(_,intent,inputs)=fixture("handlers-partial-native-purpose");let queries=Arc::new(crate::query_db::QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries,false).unwrap();
   let partial=prepared.frontend.as_ref().unwrap().handlers_structural_source().unwrap();let view=partial.view();assert_eq!(prepared.frontend.as_ref().unwrap().preparation_purpose(),dm_tree::frontend::DiagnosticPreparationPurpose::OriginalHandlersStructuralComplete);assert!(view.original_analysis_completeness().is_none());assert!(prepared.frontend.as_ref().unwrap().checker_source_view().is_err());assert!(view.expanded_text().contains("START_ACTION"));assert!(!view.original_plan().occurrences().iter().any(|row|row.path.ends_with("ordinary_macros.dm")),"ordinary macro file must never be compiled into this actual partial TU");
   let other=Arc::new(crate::query_db::QueryDb::default()).prepare_handlers_preflight(&inputs,&intent).unwrap();assert!(other.bind_frontend(prepared.frontend.as_ref().unwrap(),&inputs).is_err(),"equal recipe bytes cannot impersonate another current captured root acquisition");
  }
  #[test]fn no_candidates_issues_no_synthetic_root_or_structural_model_even_with_physical_namespace(){
   let(root,intent,inputs)=fixture("handlers-no-candidates-native");std::fs::write(root.join("code/__defines/context.dm"),"#define ORDINARY 1\n").unwrap();std::fs::write(root.join("code/candidate.dm"),"/datum/ordinary\n").unwrap();std::fs::create_dir_all(root.join("__dmb_original_handlers_structural__")).unwrap();
   let queries=Arc::new(crate::query_db::QueryDb::default());let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();assert!(subject.recipe.candidates.is_empty());assert!(!subject.requires_full_model());assert!(subject.captured.is_none());assert!(subject.project().is_err());assert!(subject.provider(&inputs).is_err());
-  let executor=dm_exec::BuildExecutor::new(1).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries).unwrap();assert!(prepared.frontend().is_none(),"no ordinary parser diagnostics/model outcome is manufactured when old code never requested a model");
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries,false).unwrap();assert!(prepared.frontend().is_none(),"no ordinary parser diagnostics/model outcome is manufactured when old code never requested a model");
   let owner = Arc::clone(&prepared.subject.budget);
   let before = owner.used();
   let expected = inputs.snapshot().unwrap();
@@ -544,6 +611,7 @@ impl HandlerPreparedCapture{
   }
   capture.staged=Some(DetachedStructural{rows:std::sync::Mutex::new(Some(rows))});
   capture.budget.charge(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>()).map_err(|m|quota(&capture.budget,&m))?;
+  capture.prepared.subject.retire_selection_after_staging(&capture.facts)?;
   Ok(Arc::new(capture))
  }
  pub(crate) fn prepared(&self)->&PreparedHandlersStructural{&self.prepared}
@@ -559,7 +627,7 @@ impl HandlerPreparedCapture{
  }
  pub(crate) fn try_calls(&self)->&[String]{&self.prepared.subject.recipe.try_calls}
  pub(crate) fn is_recorded_in(&self,complete:&InputSnapshot)->bool{
-  let facts=&self.facts;facts.files.iter().all(|(p,v)|complete.files.get(p)==Some(v))&&facts.folders.iter().all(|(p,v)|complete.folders.get(p)==Some(v))&&facts.policy_directories.iter().all(|(p,v)|complete.policy_directories.get(p)==Some(v))&&facts.negative_files.is_subset(&complete.negative_files)&&facts.generated_outputs.is_subset(&complete.generated_outputs)&&facts.original_observations_subset_of(complete)
+  handler_facts_subset(&self.facts,complete)
  }
  pub(crate) fn require_bound(&self)->io::Result<()>{
   crate::daemon::control::checkpoint()?;self.budget.require().map_err(|m|quota(&self.budget,&m))?;
@@ -646,11 +714,22 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
  }
 }
 
+fn handler_facts_subset(facts:&InputSnapshot,complete:&InputSnapshot)->bool{
+ facts.files.iter().all(|(p,v)|complete.files.get(p)==Some(v))&&facts.folders.iter().all(|(p,v)|complete.folders.get(p)==Some(v))&&facts.policy_directories.iter().all(|(p,v)|complete.policy_directories.get(p)==Some(v))&&facts.negative_files.is_subset(&complete.negative_files)&&facts.generated_outputs.is_subset(&complete.generated_outputs)&&facts.original_observations_subset_of(complete)
+}
 impl HandlerPreparedCapture{
  pub(crate) fn require_failed_full_prefix<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>,queries:&crate::query_db::QueryDb,failed:&super::OriginalRootOpenFailure)->io::Result<()>{
   self.require_bound()?;self.prepared.subject.require_operation(inputs)?;if !self.uses_queries(queries){return Err(fail("handler failed prefix has another actual query owner"))}
   let full=inputs.original_analysis_subject().ok_or_else(||fail("handler failed prefix lacks its actual independently requested full subject"))?;
   if !self.prepared.subject.requires_full_model()||failed.root()!=full.project()||!full.matches_workspace_root(self.root()){return Err(fail("handler failed prefix has another actual full root or unrequested partition"))}
-  failed.require_handler_prefix(inputs,queries,&self.prepared.subject.selection_facts)?;failed.require_handler_prefix(inputs,queries,&self.facts)
+  let selection=self.prepared.subject.selection.lock().map_err(|_|fail("handlers selection phase poisoned"))?;
+  match selection.as_ref() {
+   Some(live)=>failed.require_handler_prefix(inputs,queries,&live.facts)?,
+   // Retirement proved exact containment, including the before-open root row.
+   None if self.has_staged_rows()=>{},
+   None=>return Err(fail("live handler failed prefix lost its actual selection")),
+  }
+  drop(selection);
+  failed.require_handler_prefix(inputs,queries,&self.facts)
  }
 }

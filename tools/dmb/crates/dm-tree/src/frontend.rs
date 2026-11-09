@@ -975,6 +975,7 @@ pub use pipeline::{
     build_for_original_compound_with_callable_anchors_checked,
     build_for_original_analysis_with_state_checked,
     build_for_original_image_dir_checked,
+    build_for_joined_original_handlers_structural_checked,
     build_for_original_handlers_structural_checked,
 };
 #[path = "frontend_semantic_state.rs"]

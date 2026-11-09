@@ -20,6 +20,6 @@ pub(super) fn prepare<P:SnapshotProvider+Sync>(inputs:&RecordingInputs<P>,intent
  }else{queries.prepare_handlers_preflight(inputs,intent)?};
  // Lease the existing host pool using the same controlled worker entry as the
  // normal runner. No private executor/cache/compiler is constructed here.
- let prepared={let(_,execution,_semantic)=host.execution(workers,None)?;execution.run(|executor|inputs.prepare_handlers_structural(subject,executor,&queries))??};
+ let prepared={let(_,execution,_semantic)=host.execution(workers,None)?;execution.run(|executor|inputs.prepare_handlers_structural(subject,executor,&queries,joined_staging))??};
  let capture=inputs.capture_handlers_prepared(prepared,&queries,joined_staging)?;capture.require_bound()?;Ok(Some(capture))
 }

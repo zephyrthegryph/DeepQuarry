@@ -238,6 +238,10 @@ impl DiscoveryReceipt {
     pub(crate) fn directory_paths(&self) -> impl Iterator<Item = &PathBuf> {
         self.facts.policy_directories().keys()
     }
+    pub(crate) fn directories_in(&self, current: &crate::input_snapshot::InputSnapshot) -> bool {
+        self.facts.policy_directories().iter()
+            .all(|(path,fact)| current.policy_directories().get(path)==Some(fact))
+    }
     pub(crate) fn require_current_directories(&self, current: &crate::input_snapshot::InputSnapshot) -> io::Result<()> {
         for (path, fact) in self.facts.policy_directories() {
             crate::daemon::control::checkpoint()?;

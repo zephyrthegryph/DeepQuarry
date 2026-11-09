@@ -5,7 +5,7 @@ use dq_analyze::{captured_generator_budget::Budget,captured_reactive_reads::Fail
 fn quota(b:&Budget,message:impl Into<String>)->Failure{b.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message.into()))}
 pub(super) fn with_actual_file(subject:&crate::input_snapshot::HandlerStructuralSubject,mapping:&dm_tree::frontend::SourceExportMapping,relative:&str,budget:&Arc<Budget>,visit:&mut dyn FnMut(Option<dq_analyze::captured_raw_file::RawPolicyViews<'_>>)->Result<(),Failure>)->Result<(),Failure>{
  crate::daemon::control::checkpoint()?;budget.require().map_err(|m|quota(budget,m))?;
- if !subject.old_tree_contains(relative){return visit(None)}
+ if !subject.old_tree_contains(relative)?{return visit(None)}
  // This is the original reported relative spelling, not a canonicalized alias.
  budget.charge(subject.root_path().as_os_str().len().checked_add(subject.canonical_root_path().as_os_str().len()).and_then(|n|n.checked_add(relative.len().checked_mul(2)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||quota(budget,"handler original path overflow"))?).map_err(|m|quota(budget,m))?;
  // The report uses the logical root and unchanged relative spelling. The
