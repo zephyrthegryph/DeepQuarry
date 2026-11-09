@@ -238,6 +238,15 @@ impl DiscoveryReceipt {
     pub(crate) fn directory_paths(&self) -> impl Iterator<Item = &PathBuf> {
         self.facts.policy_directories().keys()
     }
+    pub(crate) fn require_current_directories(&self, current: &crate::input_snapshot::InputSnapshot) -> io::Result<()> {
+        for (path, fact) in self.facts.policy_directories() {
+            crate::daemon::control::checkpoint()?;
+            if current.policy_directories().get(path) != Some(fact) {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Derived actual preflight typed directory changed"));
+            }
+        }
+        Ok(())
+    }
     pub(crate) fn validate_recording<P: SnapshotProvider>(
         &self,
         inputs: &RecordingInputs<P>,

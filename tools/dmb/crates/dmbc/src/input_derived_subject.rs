@@ -21,8 +21,104 @@ fn pay(b:&Budget,bytes:Option<usize>)->io::Result<()>{let n=bytes.ok_or(io::Erro
 pub(crate) struct DerivedPreflight{
  // Payload precedes its actual operation funding. The host binds this owner,
  // never the unsealed DATA or a vector/hash supplied by a caller.
- index:Mutex<Option<UnsealedDerivedIndexData>>,facts:InputSnapshot,discovery:Arc<DiscoveryReceipt>,config:Arc<Config>,configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,issuer:Arc<()>,queries:crate::query_db::NativeQueryOwnerIdentity,subject_issuer:OnceLock<Arc<()>>,joined_registry:bool,handler_code:Vec<Option<HandlerCodeFacts>>,charge:usize,budget:Arc<Budget>,
+ index:Mutex<Option<UnsealedDerivedIndexData>>,facts:DerivedClosure,discovery:Arc<DiscoveryReceipt>,config:Arc<Config>,configuration:PathBuf,configuration_bytes:Option<dm_resources::SharedBytes>,issuer:Arc<()>,queries:crate::query_db::NativeQueryOwnerIdentity,subject_issuer:OnceLock<Arc<()>>,joined_registry:bool,handler_code:Vec<Option<HandlerCodeFacts>>,charge:usize,budget:Arc<Budget>,
 }
+enum DerivedClosure {
+ Standalone(InputSnapshot),
+ Joined(JoinedClosure),
+}
+
+struct JoinedClosure {
+ files: Vec<JoinedFileFact>,
+ configuration_missing: bool,
+}
+
+struct JoinedFileFact {
+ ordinal: usize,
+ stamp: Stamp,
+ content: u128,
+}
+
+impl JoinedFileFact {
+ const CONFIGURATION: usize = usize::MAX;
+
+ fn path<'a>(&self, discovery: &'a DiscoveryReceipt, configuration: &'a Path) -> &'a Path {
+  if self.ordinal == Self::CONFIGURATION { configuration }
+  else { discovery.files()[self.ordinal].as_path() }
+ }
+
+ fn capture(ordinal: usize, path: &Path, file: &FileInput) -> io::Result<Self> {
+  // The ordinary reader records this exact canonical key in both places.
+  // Omit the redundant FileInput path only after checking it.
+  if path.as_os_str() != file.path.as_os_str() {
+   return Err(invalid("Derived ordinary file path differs from its discovery key"));
+  }
+  Ok(Self { ordinal, stamp: file.stamp.clone(), content: file.content })
+ }
+
+ fn matches(&self, path: &Path, file: &FileInput) -> bool {
+  path.as_os_str() == file.path.as_os_str() && self.stamp == file.stamp && self.content == file.content
+ }
+}
+
+impl JoinedClosure {
+ fn capture(
+  current: &InputSnapshot, discovery: &DiscoveryReceipt, configuration: &Path,
+  selected: &[(usize, &Path)], budget: &Budget,
+ ) -> io::Result<Self> {
+  let config = current.files.get(configuration);
+  let config_selected = selected.iter().any(|(_, path)| *path == configuration);
+  let capacity = selected.len().checked_add(usize::from(config.is_some() && !config_selected))
+   .ok_or(io::ErrorKind::OutOfMemory)?;
+  pay(budget, capacity.checked_mul(std::mem::size_of::<JoinedFileFact>()))?;
+  let mut files = Vec::new();
+  files.try_reserve_exact(capacity).map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
+  if files.capacity() != capacity { return Err(io::ErrorKind::OutOfMemory.into()); }
+  for &(ordinal, path) in selected {
+   crate::daemon::control::checkpoint()?;
+   if discovery.files().get(ordinal).is_none_or(|file| file.as_os_str() != path.as_os_str()) {
+    return Err(invalid("Derived selected file lost its actual discovery ordinal"));
+   }
+   let file = current.files.get(path).ok_or_else(|| invalid("Derived selected CODE file lacks its recorded ordinary read"))?;
+   files.push(JoinedFileFact::capture(ordinal, path, file)?);
+  }
+  if let Some(config) = config.filter(|_| !config_selected) {
+   files.push(JoinedFileFact::capture(JoinedFileFact::CONFIGURATION, configuration, config)?);
+  }
+  let configuration_missing = config.is_none();
+  if configuration_missing && !current.negative_files.contains(configuration) {
+   return Err(invalid("Derived configuration has no recorded file or absence"));
+  }
+  // Preserve the old snapshot's ordinary path ordering at proof checks.
+  files.sort_unstable_by(|left, right| left.path(discovery, configuration).cmp(right.path(discovery, configuration)));
+  if files.windows(2).any(|row| row[0].path(discovery, configuration) == row[1].path(discovery, configuration)) {
+   return Err(invalid("Derived selected CODE file repeats its canonical discovery path"));
+  }
+  Ok(Self { files, configuration_missing })
+ }
+
+ fn require_subset(&self, current: &InputSnapshot, discovery: &DiscoveryReceipt, configuration: &Path) -> io::Result<()> {
+  for row in &self.files {
+   crate::daemon::control::checkpoint()?;
+   let path = row.path(discovery, configuration);
+   if !current.files.get(path).is_some_and(|file| row.matches(path, file)) {
+    return Err(invalid("Derived actual preflight file fact changed"));
+   }
+  }
+  if self.configuration_missing {
+   crate::daemon::control::checkpoint()?;
+   if current.files.contains_key(configuration) || !current.negative_files.contains(configuration) {
+    return Err(invalid("Derived actual preflight negative changed"));
+   }
+  }
+  discovery.require_current_directories(current)
+ }
+
+ fn retained_charge(&self) -> Option<usize> {
+  self.files.capacity().checked_mul(std::mem::size_of::<JoinedFileFact>())
+ }
+}
+
 impl DerivedPreflight{
  pub(crate) fn require_bound_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<()>{self.require_bound_frame(subject,workspace,scope,inputs)}
  pub(crate) fn take_bound_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<Option<UnsealedDerivedIndexData>>{self.require_bound_current(subject,workspace,scope,inputs)?;Ok(self.index.lock().map_err(|_|invalid("Derived current index poisoned"))?.take())}
@@ -52,16 +148,20 @@ impl DerivedPreflight{
  }
  pub(crate) fn account_shared_capture_aliases(&self, seen: &mut BTreeSet<usize>) -> io::Result<()> {
   self.discovery.retained_charge_with(seen)?;
-  self.facts.policy_closure_charge_with(seen)?;
+  if let DerivedClosure::Standalone(facts)=&self.facts{facts.policy_closure_charge_with(seen)?;}
   if let Some(bytes)=&self.configuration_bytes{seen.insert(bytes.owner_address());}
   Ok(())
  }
  /// Dynamic resource bound only. The proof remains the sealed recorder owner.
  pub(crate) fn input_retained_charge(&self)->io::Result<usize>{let index=self.index.lock().map_err(|_|invalid("Derived preflight index poisoned during resource census"))?;self.charge.checked_add(match index.as_ref(){Some(data)=>data.retained_charge().ok_or(io::ErrorKind::OutOfMemory)?,None=>0}).ok_or_else(||io::ErrorKind::OutOfMemory.into())}
  fn require_subset(&self,current:&InputSnapshot)->io::Result<()>{
-  for(p,v)in &self.facts.files{crate::daemon::control::checkpoint()?;if current.files.get(p)!=Some(v){return Err(invalid("Derived actual preflight file fact changed"))}}
-  for p in &self.facts.negative_files{crate::daemon::control::checkpoint()?;if !current.negative_files.contains(p){return Err(invalid("Derived actual preflight negative changed"))}}
-  for(p,v)in &self.facts.policy_directories{crate::daemon::control::checkpoint()?;if current.policy_directories.get(p)!=Some(v){return Err(invalid("Derived actual preflight typed directory changed"))}}Ok(())
+  let facts=match &self.facts {
+   DerivedClosure::Standalone(facts)=>facts,
+   DerivedClosure::Joined(facts)=>return facts.require_subset(current,&self.discovery,&self.configuration),
+  };
+  for(p,v)in &facts.files{crate::daemon::control::checkpoint()?;if current.files.get(p)!=Some(v){return Err(invalid("Derived actual preflight file fact changed"))}}
+  for p in &facts.negative_files{crate::daemon::control::checkpoint()?;if !current.negative_files.contains(p){return Err(invalid("Derived actual preflight negative changed"))}}
+  for(p,v)in &facts.policy_directories{crate::daemon::control::checkpoint()?;if current.policy_directories.get(p)!=Some(v){return Err(invalid("Derived actual preflight typed directory changed"))}}Ok(())
  }
  pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{crate::daemon::control::checkpoint()?;if !Arc::ptr_eq(&self.issuer,&inputs.source_issuer){return Err(invalid("Derived preflight belongs to another actual recorder"))}self.discovery.validate_recording(inputs)?;let current=inputs.snapshot.lock().map_err(|_|invalid("Derived current recording poisoned"))?;self.require_subset(&current)}
  fn bind_subject<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>,subject:&Arc<OriginalAnalysisSubject>)->io::Result<()>{self.require_recording(inputs)?;if inputs.original_analysis_subject().is_none_or(|current|!Arc::ptr_eq(current,subject))||!subject.matches_workspace_root(&self.discovery.contract().root){return Err(invalid("Derived bind is not this recorder's actual full subject"))}pay(&self.budget,Some(2*std::mem::size_of::<usize>()))?;if self.subject_issuer.set(Arc::clone(subject.actual_subject_issuer())).is_err(){return Err(invalid("Derived preflight full subject was already bound"))}Ok(())}
@@ -74,7 +174,7 @@ impl DerivedPreflight{
  } else { &[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads] }){return Err(invalid("Derived bound mapping/current QueryDb/role/workspace differs"))}self.require_subset(workspace.facts())?;self.budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
  pub(crate) fn require_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs,queries:&crate::query_db::QueryDb)->io::Result<()>{self.require_subject(subject)?;subject.require_bound_mapping(inputs.mapping())?;workspace.require_analysis_subject(subject)?;if !scope.uses_queries(queries)||!self.queries.matches(queries){return Err(invalid("Derived actual current QueryDb owner differs"))}self.require_bound_frame(subject,workspace,scope,inputs)}
  pub(crate) fn take_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs,queries:&crate::query_db::QueryDb)->io::Result<Option<UnsealedDerivedIndexData>>{self.require_current(subject,workspace,scope,inputs,queries)?;Ok(self.index.lock().map_err(|_|invalid("Derived preflight index poisoned"))?.take())}
- pub(crate) fn census(self:&Arc<Self>,census:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.derived_preflight";if !census.arc_object(owner,self){return}self.discovery.census(census);census.workspace_policy_facts(&self.facts);census.path(owner,&self.configuration);census.arc_object(owner,&self.issuer);census.arc_object(owner,&self.config);if let Some(issuer)=self.subject_issuer.get(){census.arc_object(owner,issuer);}self.queries.visit_storage(|pointer,logical,capacity|{census.exposed_buffer("query_snapshot.derived_query_counter",pointer,logical,capacity);});if let Some(bytes)=&self.configuration_bytes{if census.shared_bytes_owner(owner, bytes){census.vec_payload(owner,bytes.shared_owner().bytes());}}census.unknown(owner,"private raw identifier index BTree nodes, retained source Budget parent chain and interpreted Config backing are not exposed; admission bounds are not reported as heap bytes");}
+ pub(crate) fn census(self:&Arc<Self>,census:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.derived_preflight";if !census.arc_object(owner,self){return}self.discovery.census(census);match &self.facts{DerivedClosure::Standalone(facts)=>census.workspace_policy_facts(facts),DerivedClosure::Joined(facts)=>{census.vec_payload(owner,&facts.files);},}census.path(owner,&self.configuration);census.arc_object(owner,&self.issuer);census.arc_object(owner,&self.config);if let Some(issuer)=self.subject_issuer.get(){census.arc_object(owner,issuer);}self.queries.visit_storage(|pointer,logical,capacity|{census.exposed_buffer("query_snapshot.derived_query_counter",pointer,logical,capacity);});if let Some(bytes)=&self.configuration_bytes{if census.shared_bytes_owner(owner, bytes){census.vec_payload(owner,bytes.shared_owner().bytes());}}census.unknown(owner,"private raw identifier index BTree nodes, retained source Budget parent chain and interpreted Config backing are not exposed; admission bounds are not reported as heap bytes");}
 }
 impl<P:SnapshotProvider> RecordingInputs<P>{
  /// Closed cold purpose. This performs selected raw schema before manifest,
@@ -161,14 +261,20 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   mark("schema", selected.len());
   // Preadmit exact path capacities and a conservative SAME-recording closure
   // bound before cloning any file/directory metadata, not selected_count*1024.
-  let mut paths=BTreeSet::new();pay(budget,Some(128))?;
-  for &(_,path) in &selected{pay(budget,path.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(128)))?;}
-  pay(budget,configuration.capacity().checked_add(128))?;
-  {let current=self.snapshot.lock().map_err(|_|invalid("Derived recording mutex poisoned"))?;pay(budget,Some(current.policy_closure_charge()?))?;}
-  for &(_,path) in &selected{paths.insert(path.to_path_buf());}paths.insert(configuration.clone());let facts=self.policy_workspace_closure(&paths,discovery.directory_paths())?;
+  let facts = if joined_registry {
+   let current=self.snapshot.lock().map_err(|_|invalid("Derived recording mutex poisoned"))?;
+   DerivedClosure::Joined(JoinedClosure::capture(&current,&discovery,&configuration,&selected,budget)?)
+  }else{
+   let mut paths=BTreeSet::new();pay(budget,Some(128))?;
+   for &(_,path) in &selected{pay(budget,path.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(128)))?;}
+   pay(budget,configuration.capacity().checked_add(128))?;
+   {let current=self.snapshot.lock().map_err(|_|invalid("Derived recording mutex poisoned"))?;pay(budget,Some(current.policy_closure_charge()?))?;}
+   for &(_,path) in &selected{paths.insert(path.to_path_buf());}paths.insert(configuration.clone());
+   DerivedClosure::Standalone(self.policy_workspace_closure(&paths,discovery.directory_paths())?)
+  };
   mark("closure", selected.len());
   let mut seen=BTreeSet::new();
-  let charge=Some(std::mem::size_of::<DerivedPreflight>()+std::mem::size_of::<Budget>()+4*std::mem::size_of::<usize>()+crate::query_db::NativeQueryOwnerIdentity::retained_charge()).and_then(|n|n.checked_add(if joined_registry{0}else{config.budget_charge()})).and_then(|n|n.checked_add(bytes.as_ref().map_or(0,|bytes|bytes.capacity()+std::mem::size_of::<dm_resources::SharedBytesOwner>()+2*std::mem::size_of::<usize>()))).and_then(|n|n.checked_add(handler_code.capacity().checked_mul(std::mem::size_of::<Option<HandlerCodeFacts>>())?)).and_then(|n|n.checked_add(configuration.capacity())).and_then(|n|n.checked_add(discovery.retained_charge_with(&mut seen).ok()?)).and_then(|n|n.checked_add(facts.policy_closure_charge_with(&mut seen).ok()?)).ok_or(io::ErrorKind::OutOfMemory)?;
+  let charge=Some(std::mem::size_of::<DerivedPreflight>()+std::mem::size_of::<Budget>()+4*std::mem::size_of::<usize>()+crate::query_db::NativeQueryOwnerIdentity::retained_charge()).and_then(|n|n.checked_add(if joined_registry{0}else{config.budget_charge()})).and_then(|n|n.checked_add(bytes.as_ref().map_or(0,|bytes|bytes.capacity()+std::mem::size_of::<dm_resources::SharedBytesOwner>()+2*std::mem::size_of::<usize>()))).and_then(|n|n.checked_add(handler_code.capacity().checked_mul(std::mem::size_of::<Option<HandlerCodeFacts>>())?)).and_then(|n|n.checked_add(configuration.capacity())).and_then(|n|n.checked_add(discovery.retained_charge_with(&mut seen).ok()?)).and_then(|n|n.checked_add(match &facts{DerivedClosure::Standalone(facts)=>facts.policy_closure_charge_with(&mut seen).ok()?,DerivedClosure::Joined(facts)=>facts.retained_charge()?,})).ok_or(io::ErrorKind::OutOfMemory)?;
   pay(budget,Some(crate::query_db::NativeQueryOwnerIdentity::retained_charge()+std::mem::size_of::<DerivedPreflight>()+2*std::mem::size_of::<usize>()))?;let owner=Arc::new(DerivedPreflight{index:Mutex::new(Some(index)),facts,discovery,config,configuration,configuration_bytes:bytes,issuer:Arc::clone(&self.source_issuer),queries:queries.native_query_owner_identity(),subject_issuer:OnceLock::new(),joined_registry,handler_code,charge,budget:Arc::clone(budget)});owner.require_recording(self)?;Ok(owner)
  }
  pub(crate) fn issue_original_analysis_subject_derived(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,preflight:Arc<DerivedPreflight>)->io::Result<Arc<OriginalAnalysisSubject>>{if preflight.is_joined_registry(){
@@ -181,6 +287,60 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
  use super::*;
  pub(super) fn intent(root:&Path)->crate::policy_request::AdmittedPolicyRequest{crate::policy_request::PolicyInputRequest{analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.to_path_buf(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")}),workspace_auxiliary:vec![crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads],..Default::default()}.admit().unwrap()}
  #[test]fn actual_derived_preflight_finishes_raw_before_hostile_manifest_and_has_no_model_or_public_binding(){let root=crate::test_scratch::dir("derived-real-cold-preflight");std::fs::create_dir_all(root.join("code")).unwrap();std::fs::write(root.join("deepquarry.dme"),"#include \"unterminated\n").unwrap();let code=root.join("code/a.dm");std::fs::write(&code,"/datum/probe\n    var/value\n/datum/probe/derived()\n    return list(drawn_from(nameof(value)))\n/datum/probe/broken()\n    ) : \"bad body\n").unwrap();let mut inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let queries=Arc::new(crate::query_db::QueryDb::default());let budget=Budget::new(32*1024*1024).unwrap();let selected=intent(&root);let owner=queries.prepare_derived_preflight(&inputs,&selected).unwrap();assert!(owner.index.lock().unwrap().is_some());assert!(inputs.original_analysis_subject().is_none());assert!(inputs.source_acquisitions.lock().unwrap().is_empty(),"raw index cannot invoke native PreparedSource or parse bad BODY");assert!(inputs.recorded_file_fact(&code).is_ok());let wrong=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);assert!(owner.require_recording(&wrong).is_err(),"equal root/text cannot replace actual recorder");assert!(inputs.recorded_file_fact(&root.join("deepquarry.dme")).is_err(),"raw model phase must precede even opening the actual project");let subject=inputs.issue_original_analysis_subject_derived(&selected,Arc::clone(&owner)).unwrap();assert!(std::ptr::eq(subject.derived_preflight().unwrap(),owner.as_ref()));assert!(inputs.source_acquisitions.lock().unwrap().is_empty(),"metadata issuance alone prepares no semantic source");}
+ #[test]fn joined_derived_ordinal_proof_preserves_actual_file_config_and_directory_facts(){
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+  let root=crate::test_scratch::dir("derived-real-joined-ordinals");
+  std::fs::create_dir_all(root.join("code")).unwrap();
+  let source=root.join("code/a.dm");
+  std::fs::write(&source,"/datum/probe\n    var/value\n").unwrap();
+  let request=crate::policy_request::PolicyInputRequest{
+   analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),
+   workspace:Some(crate::policy_request::WorkspacePolicyRequest{
+    root:root.clone(),
+    recursive_roots:Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY).unwrap().iter().map(|name|root.join(name)).collect(),
+    configuration:root.join("tools/ci/lint_scopes.toml"),
+   }),
+   workspace_auxiliary:Q::PRIVATE_FULL_REGISTRY.to_vec(), ..Default::default()
+  };
+  let request=request.admit_private_authored_doc_ui().unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let owner=queries.prepare_derived_preflight(&inputs,&request).unwrap();
+  let DerivedClosure::Joined(closure)=&owner.facts else {panic!("actual joined capture must seal ordinal rows")};
+  assert!(closure.configuration_missing);
+  assert_eq!(closure.files.len(),1);
+  let current=inputs.snapshot.lock().unwrap();
+  let mut changed=current.clone();
+  drop(current);
+  assert!(owner.require_subset(&changed).is_ok());
+  changed.files.get_mut(&canonical_path(&source)).unwrap().content^=1;
+  assert!(owner.require_subset(&changed).unwrap_err().to_string().contains("file fact changed"));
+  changed=inputs.snapshot.lock().unwrap().clone();
+  changed.negative_files.remove(&owner.configuration);
+  assert!(owner.require_subset(&changed).unwrap_err().to_string().contains("negative changed"));
+  changed=inputs.snapshot.lock().unwrap().clone();
+  let mut config=changed.files.get(&canonical_path(&source)).unwrap().clone();
+  config.path=owner.configuration.clone();
+  changed.files.insert(config.path.clone(),config);
+  assert!(owner.require_subset(&changed).unwrap_err().to_string().contains("negative changed"));
+  changed=inputs.snapshot.lock().unwrap().clone();
+  let directory=owner.discovery.directory_paths().next().unwrap();
+  changed.policy_directories.get_mut(directory).unwrap().follow_root^=true;
+  assert!(owner.require_subset(&changed).unwrap_err().to_string().contains("typed directory changed"));
+
+  // A new operation with an authored config must retain its actual stamp and
+  // digest in the same ordinal proof alongside the selected CODE file.
+  std::fs::create_dir_all(root.join("tools/ci")).unwrap();
+  std::fs::write(root.join("tools/ci/lint_scopes.toml"),"").unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let owner=queries.prepare_derived_preflight(&inputs,&request).unwrap();
+  let DerivedClosure::Joined(closure)=&owner.facts else {panic!("actual joined capture must seal ordinal rows")};
+  assert!(!closure.configuration_missing);
+  assert!(closure.files.iter().any(|row|row.ordinal==JoinedFileFact::CONFIGURATION));
+  let mut changed=inputs.snapshot.lock().unwrap().clone();
+  changed.files.get_mut(&owner.configuration).unwrap().stamp.size^=1;
+  assert!(owner.require_subset(&changed).unwrap_err().to_string().contains("file fact changed"));
+ }
  #[test]fn derived_configuration_failure_precedes_any_typed_code_discovery(){let root=crate::test_scratch::dir("derived-real-config-first");std::fs::create_dir_all(root.join("code")).unwrap();std::fs::create_dir_all(root.join("tools/ci")).unwrap();std::fs::write(root.join("tools/ci/lint_scopes.toml"),"[not valid TOML").unwrap();std::fs::write(root.join("code/a.dm"),"/obj/a\n").unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let queries=Arc::new(crate::query_db::QueryDb::default());let budget=Budget::new(32*1024*1024).unwrap();assert!(queries.prepare_derived_preflight(&inputs,&intent(&root)).is_err());assert!(inputs.snapshot.lock().unwrap().policy_directories.is_empty(),"config interpretation precedes recursive source discovery");}
 }
 
