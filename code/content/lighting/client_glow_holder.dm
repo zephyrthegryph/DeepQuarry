@@ -155,6 +155,9 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	sig = new_sig
 	z = eye.z
 	GLOB.client_glow_holder_recomputes++
+	var/started = REALTIMEOFDAY
+	var/made_before = GLOB.client_glow_holder_made
+	var/dropped_before = GLOB.client_glow_holder_dropped
 	var/ex0 = cx * CLIENT_GLOW_CHUNK + 1
 	var/ey0 = cy * CLIENT_GLOW_CHUNK + 1
 	var/ex1 = ex0 + CLIENT_GLOW_CHUNK - 1
@@ -193,7 +196,11 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		log_world(client_glow_census())
 	if(client && length(client.images) < LAZYLEN(held))
 		log_world("client glow holder: [client.ckey] has [length(client.images)] images for [LAZYLEN(held)] held glows: something took them off the client")
-	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s)[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
+	// This crossing's cost: the server time it took, and the glows (two client.images each) the client was sent or told to forget. The server time is
+	// server cost; the images are the client's (the map FPS is only on the client, so this is as near as the server can say).
+	var/made = GLOB.client_glow_holder_made - made_before
+	var/dropped = GLOB.client_glow_holder_dropped - dropped_before
+	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s)[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [made] made and [dropped] dropped this crossing in [round((REALTIMEOFDAY - started) * 100)] ms, [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
 
 /// Shows, updates or drops this viewer's copy of light `L`. Returns TRUE while it is held.
 /datum/client_glow_holder/proc/consider(datum/light_source/L)

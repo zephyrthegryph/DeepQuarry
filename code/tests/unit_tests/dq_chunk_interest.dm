@@ -493,6 +493,32 @@
 	TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "and nothing in view owes a draw while the viewer can see")
 	interest_clean(probes)
 
+/// A walker crossing a chunk edge keeps most of its old view: what the new chunks still owe is drawn at once and the screen is never covered (the black flash
+/// a running player saw every chunk edge). Only a view that kept nothing of the old one is a jump.
+/datum/unit_test/dq_interest_walker_is_not_covered
+
+/datum/unit_test/dq_interest_walker_is_not_covered/Run()
+	interest_isolate()
+	var/turf/base = test_floor()
+	var/start_x = round((base.x - 1) / INTEREST_CHUNK) * INTEREST_CHUNK + 1
+	var/turf/home = locate(start_x, base.y, base.z)
+	var/turf/stepped = locate(start_x + 9, base.y, base.z) // its window reaches the next chunk and keeps the one it held
+	var/turf/edge = locate(start_x + INTEREST_CHUNK, base.y, base.z)
+	TEST_ASSERT(home && stepped && edge, "the map has room for two neighbouring chunks")
+	var/list/probes = interest_probes(edge, INTEREST_ARRIVAL_MIN_STEP + 8)
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		refresh_mark(probe, DEP_ALL)
+	GLOB.interest_test_coverable += "dq-test-walker"
+	interest_view_set("dq-test-walker", home, null, world.view)
+	GLOB.interest_covered -= "dq-test-walker" // the first view is a jump; this test is about the step after it
+	var/raised = GLOB.interest_covers_raised
+	interest_view_set("dq-test-walker", stepped, null, world.view)
+	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-walker"]), "a step across a chunk edge does not cover the viewer")
+	TEST_ASSERT_EQUAL(GLOB.interest_covers_raised, raised, "and raises no cover")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-walker")), "what the new chunk owed is drawn when it comes into view")
+	interest_clean(probes)
+
 /// A viewer that cannot be covered (no client: a camera screen) gets everything in view drawn at once: it never sees an owed draw.
 /datum/unit_test/dq_interest_uncoverable_view_draws_at_once
 

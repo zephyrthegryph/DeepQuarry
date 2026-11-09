@@ -155,7 +155,13 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 	if(length(ringed))
 		interest_prefetch(ringed, visible, eye)
 	if(length(arriving))
-		interest_arrive(owner, arriving, visible, eye)
+		// A view jump (a login, an arrival, a teleport) leaves nothing of the old view in the new one. A walker's window always overlaps the one it held a step ago.
+		var/relocated = TRUE
+		for(var/key in visible)
+			if(was_visible && (key in was_visible))
+				relocated = FALSE
+				break
+		interest_arrive(owner, arriving, visible, eye, relocated)
 
 // ---- perceivability: nothing is drawn that no viewer could perceive ----
 //
@@ -251,12 +257,12 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 
 /// Chunks `keys` became visible to `owner` (seeing `visible` from `eye`). Nothing they owe may be seen undrawn: on a view jump the owner's screen is
 /// covered while its draws run over the ticks they take; otherwise (a walker's edge the prefetch has not finished, or no client to cover) they run now.
-/proc/interest_arrive(owner, list/keys, list/visible, turf/eye)
+/proc/interest_arrive(owner, list/keys, list/visible, turf/eye, relocated = TRUE)
 	var/list/owed = interest_owed_ordered(keys, interest_view_middle(visible, eye))
 	if(!length(owed))
 		return
 	var/list/covered = GLOB.interest_covered[owner]
-	var/jump = length(keys) * 2 >= max(1, length(visible))
+	var/jump = relocated // never the share of the view that is new: a walker crossing a chunk edge gets half of a two-chunk window new, and was blacked out for a frame by it
 	if(!covered && jump && length(owed) > INTEREST_ARRIVAL_MIN_STEP && interest_cover(owner))
 		covered = list()
 		GLOB.interest_covered[owner] = covered
@@ -267,13 +273,14 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		interest_arrival_drain(INTEREST_ARRIVAL_MIN_STEP)
 		return
 	var/drawn = 0
+	var/started = REALTIMEOFDAY
 	for(var/handle in owed)
 		var/atom/A = handle_get(handle)
 		if(isatom(A) && !QDELETED(A))
 			drawn += interest_draw_now(A)
 	GLOB.interest_at_once_drawn += drawn
 	if(drawn)
-		log_world("INTEREST: [length(keys)] chunk(s) visible, [drawn] owed draw(s) run now")
+		log_world("INTEREST: [length(keys)] chunk(s) visible, [drawn] owed draw(s) run now in [round((REALTIMEOFDAY - started) * 100)] ms[relocated ? "" : " (a walker's edge, no cover)"]")
 
 /// Covers `owner`'s screen (a client's mob gets a black fullscreen) while its view is drawn. FALSE when there is no client to cover.
 /proc/interest_cover(owner)
