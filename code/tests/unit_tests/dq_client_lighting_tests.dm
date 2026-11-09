@@ -446,7 +446,7 @@
 	TEST_ASSERT(GLOB.client_glow_base in screen, "client lighting: the screen holds the black base")
 	TEST_ASSERT(GLOB.client_glow_spread_relay in screen, "client lighting: the screen holds the spread relay")
 	TEST_ASSERT_EQUAL(GLOB.client_glow_spread_relay.screen_loc, "1,1", "the relay stands at 1,1: at CENTER it draws shifted")
-	TEST_ASSERT_EQUAL(length(GLOB.client_glow_plane_master.filters), 1, "the glow plane is cut by the visibility plane")
+	TEST_ASSERT_EQUAL(length(GLOB.client_glow_plane_master.filters), 2, "the glow plane is cut by the visibility plane")
 	TEST_ASSERT_EQUAL(length(GLOB.client_spread_plane_master.filters), 2, "the spread plane is bloomed and limited to opaque tiles")
 	var/atom/movable/screen/plane_master/lighting/lit_master = new
 	client_glow_master_compose(lit_master)

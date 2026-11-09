@@ -215,7 +215,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		look.state("newscaster_off")
 		look.overlay("crack3", broken_now())
 		return
-	look.glow(GLOW(2, 0.9, "#00ff00"))
+	look.glow(GLOW(2, 0.25, "#00ff00"))
 	if(wanted_up)
 		look.state("newscaster_wanted")
 		look.glow("newscaster_wanted_ov")

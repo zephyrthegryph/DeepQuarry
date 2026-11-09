@@ -237,8 +237,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/sx = source_turf.x
 	var/sy = source_turf.y
 	for(var/turf/T as anything in seen)
-		if(T != source_turf && T.directional_opacity)
-			continue // an opaque tile is lit from the visible floor beside it, not by this cut
+		if(T.directional_opacity)
+			continue // an opaque tile, the light's own included, is lit from the visible floor beside it, not by this cut
 		offsets += T.x - sx
 		offsets += T.y - sy
 	var/key = "[margin]|[jointext(offsets, ",")]"

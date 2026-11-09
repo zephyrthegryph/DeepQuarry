@@ -24,7 +24,7 @@ GLOBAL_VAR_INIT(client_glow_bounds, FALSE)
 	appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	anchored = TRUE
-	vis_flags = NONE
+	vis_flags = VIS_HIDE // not drawn through a turf in vis_contents: open space would show the deck below's glow, uncut (client rig)
 
 /datum/light_source
 	/// The glow this light shows while client lighting is on; null otherwise.

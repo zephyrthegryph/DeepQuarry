@@ -74,7 +74,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 		if(poster in postertypes)
 			var/list/settings = postertypes[poster]
 			new_color = settings[1]
-	look.glow(GLOW(2, 2, new_color))
+	look.glow(GLOW(2, 0.4, new_color))
 
 /// The station's security level changed: an alert above green on a station level shows the warning; coming out of it, a fresh advert.
 /obj/machinery/holoposter/proc/security_changed()

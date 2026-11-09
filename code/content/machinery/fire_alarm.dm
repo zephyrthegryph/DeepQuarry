@@ -101,7 +101,7 @@ CAPABILITIES(/obj/machinery/firealarm)
 	if(seclevel)
 		look.glow("overlay_[seclevel]")
 	if(!detecting)
-		look.glow(GLOW(4, 0.9, "#ff0000"))
+		look.glow(GLOW(3, 0.5, "#ff0000"))
 	else if(seclevel)
 		look.glow(level_glow(seclevel))
 

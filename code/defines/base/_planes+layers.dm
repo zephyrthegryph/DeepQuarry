@@ -161,7 +161,7 @@ What is the naming convention for planes or layers?
 	#define CLIENT_VISIBLE_RENDER_TARGET "*CLIENT_VISIBLE_PLANE"
 #define PLANE_CLIENT_WALLS		14 //One white tile on every opaque turf: a hidden render target limiting the wall spread to opaque tiles (client_lighting_compare.dm)
 	#define CLIENT_WALLS_RENDER_TARGET "*CLIENT_WALLS_PLANE"
-#define PLANE_CLIENT_SPREAD		14.5 //The glow plane bloomed and cut to opaque tiles: a hidden render target added by the lighting master (client_lighting_compare.dm)
+#define PLANE_CLIENT_SPREAD		25 //The glow plane bloomed and cut to opaque tiles: a hidden render target added by the lighting master; a whole number: a fractional plane loses its master and the spread vanishes (client rig) (client_lighting_compare.dm)
 	#define CLIENT_SPREAD_RENDER_TARGET "*CLIENT_SPREAD_PLANE"
 
 // "Character HUDs", aka HUDs, but not the game's UI. Things like medhuds. I know Planes say they must be intergers, but it's lies.
