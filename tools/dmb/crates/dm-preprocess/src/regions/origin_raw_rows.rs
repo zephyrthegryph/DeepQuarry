@@ -1938,6 +1938,8 @@ struct OriginDictionary {
     tiny_keys: usize,
     rows: usize,
     short_rows: usize,
+    hot: [u32; 15],
+    hot_rows: usize,
 }
 
 impl OriginDictionary {
@@ -1977,9 +1979,18 @@ impl OriginDictionary {
                 write+=1;
             }
         }
-        let mut result=Self{keys:[0;256],key_count:write.min(256),tiny_keys:0,rows:0,short_rows:0};
+        let mut result=Self{keys:[0;256],key_count:write.min(256),tiny_keys:0,rows:0,short_rows:0,hot:[0;15],hot_rows:0};
         if write>result.key_count {
             scratch[..write].select_nth_unstable_by(result.key_count,|a,b|b.cmp(a));
+        }
+        let hot_count = result.hot.len().min(result.key_count);
+        let selected = &mut scratch[..result.key_count];
+        if selected.len() > hot_count {
+            selected.select_nth_unstable_by(hot_count, |a,b| (*b << 16).cmp(&(*a << 16)));
+        }
+        for (slot, &entry) in result.hot.iter_mut().zip(selected[..hot_count].iter()) {
+            *slot = entry as u32;
+            result.hot_rows += ((entry >> 32) & 0xffff) as usize;
         }
         for (index,&candidate) in scratch[..result.key_count].iter().enumerate(){
             let key=candidate as u32;
@@ -2004,6 +2015,94 @@ impl OriginDictionary {
     }
 
     fn words(&self)->usize{dictionary_key_words(self.key_count,self.tiny_keys)+self.rows.div_ceil(2)}
+
+    fn nibble(&self) -> Option<DictionaryNibbles> {
+        if self.hot_rows == 0 { return None; }
+        let keys = dictionary_key_words(self.key_count, self.tiny_keys);
+        let escapes = self.rows - self.hot_rows;
+        let words = keys + DictionaryNibbles::fixed_words(self.rows) + escapes.div_ceil(2);
+        if words >= self.words() { return None; }
+        let mut nibbles = DictionaryNibbles { words, symbols: [15; 256], ids: [0; 15] };
+        for (at, &key) in self.hot[..self.key_count.min(self.hot.len())].iter().enumerate() {
+            let id = self.code(Self::row(key)).expect("selected dictionary hot key");
+            nibbles.ids[at] = id;
+            nibbles.symbols[usize::from(id)] = at as u8;
+        }
+        Some(nibbles)
+    }
+}
+
+// Keep the exact existing key bank. Fifteen frequent original IDs have
+// four-bit symbols; the sixteenth symbol selects the ordered byte side.
+// Each immutable 32-code block stores the preceding escape count and eight
+// nibble words. No separate allocation or change to the page rank is needed.
+struct DictionaryNibbles {
+    words: usize,
+    symbols: [u8; 256],
+    ids: [u8; 15],
+}
+
+impl DictionaryNibbles {
+    const HEADER: usize = 9;
+    const BLOCK: usize = 32;
+    const BLOCK_WORDS: usize = 9;
+    const ESCAPE: u16 = 15;
+
+    fn fixed_words(rows: usize) -> usize {
+        Self::HEADER + rows.div_ceil(Self::BLOCK) * Self::BLOCK_WORDS
+    }
+
+    fn block(ordinal: usize) -> usize {
+        Self::HEADER + ordinal / Self::BLOCK * Self::BLOCK_WORDS
+    }
+
+    fn byte(words: &[TinyOriginCell], index: usize) -> u8 {
+        words[index / 2].0.to_le_bytes()[index % 2]
+    }
+
+    fn append_byte(words: &mut Vec<TinyOriginCell>, at: usize, value: u8) {
+        if at % 2 == 0 { words.push(TinyOriginCell(u16::from(value))); }
+        else { words.last_mut().expect("issued low byte").0 |= u16::from(value) << 8; }
+    }
+
+    fn initialize(&self, words: &mut Vec<TinyOriginCell>, rows: usize) {
+        let end = words.len() + Self::fixed_words(rows);
+        for (at, &id) in self.ids.iter().enumerate() { Self::append_byte(words, at, id); }
+        words.push(TinyOriginCell(rows as u16));
+        words.resize_with(end, || TinyOriginCell(0));
+    }
+
+    fn push(&self, words: &mut Vec<TinyOriginCell>, keys: usize, ordinal: usize,
+            id: u8, escapes: &mut usize) {
+        let local = ordinal % Self::BLOCK;
+        let block = keys + Self::block(ordinal);
+        if local == 0 { words[block].0 = *escapes as u16; }
+        let symbol = u16::from(self.symbols[usize::from(id)]);
+        words[block + 1 + local / 4].0 |= symbol << (4 * (local % 4));
+        if symbol == Self::ESCAPE {
+            Self::append_byte(words, *escapes, id);
+            *escapes += 1;
+        }
+    }
+
+    fn escape_count(word: u16) -> usize {
+        ((word & (word >> 1) & (word >> 2) & (word >> 3) & 0x1111).count_ones()) as usize
+    }
+
+    fn get(words: &[TinyOriginCell], ordinal: usize) -> u8 {
+        let local = ordinal % Self::BLOCK;
+        let block = Self::block(ordinal);
+        let word = local / 4;
+        let shift = (local % 4) * 4;
+        let value = words[block + 1 + word].0;
+        let symbol = (value >> shift) & 15;
+        if symbol != Self::ESCAPE { return Self::byte(words, usize::from(symbol)); }
+        let before = words[block + 1..block + 1 + word].iter()
+            .map(|row| Self::escape_count(row.0)).sum::<usize>();
+        let in_word = Self::escape_count(value & ((1u16 << shift) - 1));
+        let side = Self::fixed_words(usize::from(words[Self::HEADER - 1].0));
+        Self::byte(&words[side..], usize::from(words[block].0) + before + in_word)
+    }
 }
 
 fn dictionary_key_words(keys:usize,tiny:usize)->usize{
@@ -2015,6 +2114,7 @@ fn dictionary_key_words(keys:usize,tiny:usize)->usize{
 enum OriginSmallLayout {
     Tiny,
     Dictionary { keys: u16, tiny_keys: u16, rows: u16 },
+    NibbleDictionary { keys: u16, tiny_keys: u16, rows: u16 },
 }
 
 struct TinyOriginColumn {
@@ -2039,20 +2139,25 @@ impl TinyOriginColumn {
     fn dictionary_keys(&self)->Option<(usize,usize)>{
         match self.layout{
             OriginSmallLayout::Tiny=>None,
-            OriginSmallLayout::Dictionary{keys,tiny_keys,..}=>Some((usize::from(keys),usize::from(tiny_keys))),
+            OriginSmallLayout::Dictionary{keys,tiny_keys,..}
+            |OriginSmallLayout::NibbleDictionary{keys,tiny_keys,..}=>Some((usize::from(keys),usize::from(tiny_keys))),
         }
     }
     fn len(&self)->usize{
         match self.layout{
             OriginSmallLayout::Tiny=>self.rows.len(),
-            OriginSmallLayout::Dictionary{rows,..}=>usize::from(rows),
+            OriginSmallLayout::Dictionary{rows,..}|OriginSmallLayout::NibbleDictionary{rows,..}=>usize::from(rows),
         }
     }
     fn cell(&self,ordinal:usize)->Option<NarrowRow>{
         if ordinal>=self.len(){return None}
         let Some((keys,tiny_keys))=self.dictionary_keys() else{return self.rows.get(ordinal).map(TinyOriginCell::unpack)};
         let indices=dictionary_key_words(keys,tiny_keys);
-        let index=usize::from(self.rows[indices+ordinal/2].0.to_le_bytes()[ordinal%2]);
+        let words = &self.rows[indices..];
+        let index = usize::from(match self.layout {
+            OriginSmallLayout::NibbleDictionary { .. } => DictionaryNibbles::get(words, ordinal),
+            _ => DictionaryNibbles::byte(words, ordinal),
+        });
         if index<tiny_keys{return self.rows.get(index).map(TinyOriginCell::unpack)}
         let at=tiny_keys+(index-tiny_keys)*2;
         let low=u32::from(self.rows[at].0);
@@ -2062,6 +2167,12 @@ impl TinyOriginColumn {
     fn truncate(&mut self,keep:usize,rows:usize){
         match &mut self.layout{
             OriginSmallLayout::Tiny=>self.rows.truncate(rows),
+            // The immutable nibble directory locates its escape suffix using
+            // the original extent. A prefix trim hides the suffix; reappend
+            // reconstructs dense cells before releasing this full allocation.
+            OriginSmallLayout::NibbleDictionary{rows:logical_rows,..}=>{
+                *logical_rows=u16::try_from(rows).expect("one page of dictionary rows");
+            }
             OriginSmallLayout::Dictionary{keys,tiny_keys,rows:logical_rows}=>{
                 *logical_rows=u16::try_from(rows).expect("one page of dictionary rows");
                 self.rows.truncate(dictionary_key_words(usize::from(*keys),usize::from(*tiny_keys))+rows.div_ceil(2));
@@ -2195,10 +2306,12 @@ impl PhysicalOriginPage {
         let tiny_bytes=mixed_bytes(tiny,std::mem::size_of::<TinyOriginColumn>());
         let legacy_bytes=mixed_bytes(legacy_tiny,TinyOriginColumn::LEGACY_BYTES);
         let dictionary=OriginDictionary::choose(&self.narrow);
+        let nibbles = dictionary.nibble();
+        let dictionary_words = nibbles.as_ref().map_or_else(|| dictionary.words(), |plan| plan.words);
         let dictionary_short=short-dictionary.short_rows;
         let dictionary_four=four-(dictionary.rows-dictionary.short_rows);
         let dictionary_bytes=mixed_base+std::mem::size_of::<TinyOriginColumn>()
-            +dictionary.words()*std::mem::size_of::<TinyOriginCell>()
+            +dictionary_words*std::mem::size_of::<TinyOriginCell>()
             +dictionary_short*std::mem::size_of::<ShortOriginCell>()
             +dictionary_four*std::mem::size_of::<NarrowRow>();
         let (short,four,bytes,use_dictionary)=if dictionary.rows!=0&&dictionary_bytes<tiny_bytes.min(legacy_bytes){
@@ -2213,7 +2326,7 @@ impl PhysicalOriginPage {
             let mut old_cells = exact_rows(four, a)?;
             let mut rank = RowGroupRank::new();
             let mut tiny = if use_dictionary{
-                let mut rows=exact_rows(dictionary.words(),a)?;
+                let mut rows=exact_rows(dictionary_words,a)?;
                 for &key in &dictionary.keys[..dictionary.tiny_keys]{
                     rows.push(TinyOriginCell::pack(OriginDictionary::row(key)).expect("exact Tiny dictionary key"));
                 }
@@ -2221,14 +2334,22 @@ impl PhysicalOriginPage {
                     rows.push(TinyOriginCell(key as u16));
                     rows.push(TinyOriginCell((key>>16) as u16));
                 }
-                let layout=OriginSmallLayout::Dictionary{
-                    keys:dictionary.key_count as u16,tiny_keys:dictionary.tiny_keys as u16,rows:dictionary.rows as u16,
+                let keys = dictionary.key_count as u16;
+                let tiny_keys = dictionary.tiny_keys as u16;
+                let count = dictionary.rows as u16;
+                let layout = if let Some(plan) = &nibbles {
+                    plan.initialize(&mut rows, dictionary.rows);
+                    OriginSmallLayout::NibbleDictionary { keys, tiny_keys, rows: count }
+                } else {
+                    OriginSmallLayout::Dictionary { keys, tiny_keys, rows: count }
                 };
                 Some(TinyOriginColumn{rank:RowGroupRank::new(),rows,layout})
             }else if tiny!=0{
                 Some(TinyOriginColumn{rank:RowGroupRank::new(),rows:exact_rows(tiny,a)?,layout:OriginSmallLayout::Tiny})
             }else{None};
             let mut dictionary_rows=0;
+            let mut dictionary_escapes=0;
+            let key_words=dictionary_key_words(dictionary.key_count,dictionary.tiny_keys);
             for (at, &row) in self.narrow.iter().enumerate() {
                 let before = old_cells.len();
                 let mut in_small=false;
@@ -2237,8 +2358,11 @@ impl PhysicalOriginPage {
                         let code=dictionary.code(row);
                         tiny.rank.append(at,dictionary_rows,code.is_some());
                         if let Some(code)=code{
-                            if dictionary_rows%2==0{tiny.rows.push(TinyOriginCell(u16::from(code)))}
-                            else{tiny.rows.last_mut().expect("issued low byte").0|=u16::from(code)<<8}
+                            if let Some(plan) = &nibbles {
+                                plan.push(&mut tiny.rows, key_words, dictionary_rows, code, &mut dictionary_escapes);
+                            } else {
+                                DictionaryNibbles::append_byte(&mut tiny.rows, dictionary_rows, code);
+                            }
                             dictionary_rows+=1;
                             in_small=true;
                         }
@@ -2254,7 +2378,10 @@ impl PhysicalOriginPage {
                 }
                 rank.append(at,before,before!=old_cells.len());
             }
-            if use_dictionary{debug_assert_eq!(dictionary_rows,dictionary.rows);}
+            if use_dictionary {
+                debug_assert_eq!(dictionary_rows,dictionary.rows);
+                debug_assert_eq!(tiny.as_ref().unwrap().rows.len(), dictionary_words);
+            }
             a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
             let tiny = tiny.map(box_origin_column).transpose()?;
             box_origin_column(MixedOriginCells { rank, short: packed, four: old_cells, tiny })
@@ -3151,6 +3278,7 @@ impl OriginalRawOrigins{
   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
     let (mut eligible, mut profitable_pages, mut settled_pages, mut settled_rows) = (0, 0, 0, 0);
     let (mut dictionary_pages,mut dictionary_rows,mut dictionary_keys,mut dictionary_tiny_keys,mut dictionary_bytes,mut dictionary_saved)=(0,0,0,0,0,0);
+    let (mut nibble_pages, mut nibble_savings) = (0, 0);
     for owner in self.rows.pages.iter() {
         let page = owner.get();
         let mut fits = page.narrow.iter().filter(|&&row| TinyOriginCell::pack(row).is_some()).count();
@@ -3175,6 +3303,13 @@ impl OriginalRawOrigins{
                     dictionary_keys+=keys;
                     dictionary_tiny_keys+=tiny_keys;
                     dictionary_bytes+=mixed.bytes();
+                    if matches!(tiny.layout, OriginSmallLayout::NibbleDictionary { .. }) {
+                        nibble_pages += 1;
+                        let extent = usize::from(tiny.rows[dictionary_key_words(keys,tiny_keys)
+                            + DictionaryNibbles::HEADER - 1].0);
+                        nibble_savings += (dictionary_key_words(keys,tiny_keys) + extent.div_ceil(2)
+                            - tiny.rows.capacity()) * std::mem::size_of::<TinyOriginCell>();
+                    }
                     if page.len()==ROW_PAGE_LEN{
                         dictionary_saved+=prior.min(page.len()*4).saturating_sub(mixed.bytes());
                     }
@@ -3189,7 +3324,7 @@ impl OriginalRawOrigins{
         if page.len() == ROW_PAGE_LEN && TinyOriginColumn::profitable(fits) { profitable_pages += 1; }
     }
     let tiny_layout_overhead=settled_pages*(std::mem::size_of::<TinyOriginColumn>()-TinyOriginColumn::LEGACY_BYTES);
-    eprintln!("ORIGINAL_ORIGIN_DICTIONARY_COLUMNS pages={dictionary_pages} rows={dictionary_rows} keys={dictionary_keys} tiny_keys={dictionary_tiny_keys} key_bytes_avoided={} page_bytes={dictionary_bytes} saved_over_previous_best={dictionary_saved} remaining_tiny_layout_overhead={tiny_layout_overhead}",dictionary_tiny_keys*2);
+    eprintln!("ORIGINAL_ORIGIN_DICTIONARY_COLUMNS pages={dictionary_pages} rows={dictionary_rows} keys={dictionary_keys} tiny_keys={dictionary_tiny_keys} key_bytes_avoided={} page_bytes={dictionary_bytes} saved_over_previous_best={dictionary_saved} remaining_tiny_layout_overhead={tiny_layout_overhead} nibble_pages={nibble_pages} nibble_savings={nibble_savings}",dictionary_tiny_keys*2);
     eprintln!("ORIGINAL_ORIGIN_TINY_COLUMNS eligible={eligible} profitable_pages={profitable_pages} settled_pages={settled_pages} settled_rows={settled_rows}");
   }
   let (mut compact_bytes, mut full_bytes, mut group_bytes) = (0usize, 0usize, 0usize);
@@ -4634,6 +4769,7 @@ impl OriginalRawOrigins{
   let mixed=page.get().mixed.as_ref().unwrap();
   let dictionary=mixed.tiny.as_ref().unwrap();
   assert_eq!(dictionary.dictionary_keys(),Some((1,0)));
+  assert!(matches!(dictionary.layout,OriginSmallLayout::NibbleDictionary{..}));
   assert_eq!(dictionary.len(),ROW_PAGE_LEN-5);
   for (at, old) in exact_cells {
    let actual=mixed.cell(at).unwrap();
@@ -4682,7 +4818,8 @@ impl OriginalRawOrigins{
     let mixed=actual.mixed.as_ref().unwrap();
     let dictionary=mixed.tiny.as_ref().unwrap();
     assert_eq!(dictionary.dictionary_keys(),Some((2,1)));
-    assert_eq!(dictionary.rows.capacity(),3+(ROW_PAGE_LEN-1).div_ceil(2));
+    assert!(matches!(dictionary.layout,OriginSmallLayout::NibbleDictionary{..}));
+    assert_eq!(dictionary.rows.capacity(),3+DictionaryNibbles::fixed_words(ROW_PAGE_LEN-1));
     for at in [0,1,63,64,65,ROW_PAGE_LEN-1]{
         let row=mixed.cell(at).unwrap();
         let expected=expected(at);
@@ -4690,6 +4827,23 @@ impl OriginalRawOrigins{
     }
     drop(page);
     assert_eq!(live.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn nibble_dictionary_checks_exact_escape_rank_and_partial_blocks() {
+    let hot = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56];
+    let mut plan = DictionaryNibbles { words: 0, ids: hot, symbols: [15; 256] };
+    for (at, id) in hot.into_iter().enumerate() { plan.symbols[usize::from(id)] = at as u8; }
+    let expected: Vec<u8> = (0..257).map(|at| {
+        if matches!(at % 32, 0 | 3 | 4 | 7 | 30 | 31) { (at as u8) | 1 }
+        else { hot[at % hot.len()] }
+    }).collect();
+    let mut words = vec![TinyOriginCell(0)];
+    plan.initialize(&mut words, expected.len());
+    let mut escapes = 0;
+    for (at, &id) in expected.iter().enumerate() { plan.push(&mut words, 1, at, id, &mut escapes); }
+    assert_eq!(words.len(), 1 + DictionaryNibbles::fixed_words(expected.len()) + escapes.div_ceil(2));
+    for (at, &id) in expected.iter().enumerate() { assert_eq!(DictionaryNibbles::get(&words[1..], at), id); }
  }
 
  #[test]
