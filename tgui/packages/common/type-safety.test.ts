@@ -1,6 +1,6 @@
 import { describe, it } from 'bun:test';
 import assert from 'node:assert/strict';
-import * as z from 'zod';
+import * as z from 'zod/mini';
 import { smoothMerge } from './type-safety';
 
 describe('smoothMerge', () => {

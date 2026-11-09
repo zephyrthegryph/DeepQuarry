@@ -66,6 +66,11 @@ run_gen gen_dme_check tools/build/gen_dme.py --check
 if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
 else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
 
+# Font Awesome: html/font-awesome/ ships only the icons the code names (tools/fontawesome/subset.py), so an icon added to the code or DM data
+# without rerunning the subset would draw as an empty box. Standard library only.
+run_gen fontawesome_check tools/fontawesome/subset.py --check
+gen_names+=(fontawesome_check)
+
 # Variant families (code/content/variants/README.md): VARIANT() keys exist, and a converted family gets no new data-only leaf type.
 ( "$PY" tools/ci/check_variants.py >"$gen_dir/check_variants.out" 2>&1; echo $? >"$gen_dir/check_variants.rc" ) &
 gen_names+=(check_variants)

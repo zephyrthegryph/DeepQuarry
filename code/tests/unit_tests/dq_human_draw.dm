@@ -115,13 +115,20 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(H.rx?.look_key, south_key, "turning round leaves the look as it is (no redraw)")
 
-/// TRUE when the image's icon has no visible pixel facing `facing`.
-/datum/unit_test/proc/dq_hd_blank_facing(image/I, facing)
-	var/icon/frame = icon(I.icon, I.icon_state, facing)
-	for(var/x in 1 to frame.Width())
-		for(var/y in 1 to frame.Height())
-			if(frame.GetPixel(x, y))
-				return FALSE
+/// TRUE when the layer has no visible pixel facing `facing`: its own icon and every part it is made of (emissive blockers are not part of the picture).
+/datum/unit_test/proc/dq_hd_blank_facing(I, facing)
+	if(I.icon)
+		var/icon/frame = icon(I.icon, I.icon_state, facing)
+		for(var/x in 1 to frame.Width())
+			for(var/y in 1 to frame.Height())
+				if(frame.GetPixel(x, y))
+					return FALSE
+	for(var/part in I.overlays)
+		var/mutable_appearance/MA = new(part)
+		if(MA.plane != FLOAT_PLANE)
+			continue
+		if(!dq_hd_blank_facing(MA, facing))
+			return FALSE
 	return TRUE
 
 /// An injury draws its overlay and healing it takes the overlay off.
@@ -148,3 +155,42 @@
 	var/list/composed = H.build_body_look('icons/mob/human.dmi', FALSE, FALSE, FALSE, FALSE)
 	var/image/flat = composed[2]
 	TEST_ASSERT_EQUAL(length(flat.overlays), 0, "the composed body is one icon")
+
+/// A hulk and a skeleton are layered too: the hulk's green is one colour over the whole body, the skeleton draws the skeleton sprites.
+/datum/unit_test/dq_human_draw_layered_forms
+
+/datum/unit_test/dq_human_draw_layered_forms/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "forms")
+	TEST_ASSERT(H.can_layer_body(FALSE, FALSE), "a plain body is layered")
+	TEST_ASSERT(H.can_layer_body(FALSE, TRUE), "a skeleton is layered")
+	TEST_ASSERT(!H.can_layer_body(TRUE, FALSE), "a husk is not (its tone has no client form)")
+	var/list/plain = H.build_layered_body_look('icons/mob/human.dmi', FALSE, FALSE)
+	var/list/hulk = H.build_layered_body_look('icons/mob/human.dmi', TRUE, FALSE)
+	var/image/hulk_body = hulk[2]
+	TEST_ASSERT(hulk_body.color, "a hulk's body carries the green")
+	TEST_ASSERT(hulk_body.appearance_flags & KEEP_TOGETHER, "and the green covers the body as one picture")
+	var/image/plain_body = plain[2]
+	TEST_ASSERT(!plain_body.color, "a plain body is not tinted as a whole")
+	TEST_ASSERT_EQUAL(length(hulk_body.overlays), length(plain_body.overlays), "a hulk has the same parts as a plain body")
+	var/list/skeleton = H.build_layered_body_look('icons/mob/human.dmi', FALSE, TRUE)
+	var/image/skeleton_body = skeleton[2]
+	TEST_ASSERT(length(skeleton_body.overlays) >= 5, "a skeleton is made of its limbs")
+
+/// The head draws its eyes and its hair as layers: no composited icon stands in for them.
+/datum/unit_test/dq_human_draw_layered_face
+
+/datum/unit_test/dq_human_draw_layered_face/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "face")
+	H.looks.set_hair_style(dq_profile_style(H, GLOB.hair_styles_list, "Short Hair"))
+	H.looks.set_hair_color(rgb(200, 40, 90))
+	refresh_flush()
+	var/image/hair = H.look_layers()[HAIR_LAYER]
+	TEST_ASSERT(hair, "a haired human draws a hair layer")
+	TEST_ASSERT(!hair.icon, "the hair layer is a group of tinted parts, not one composited icon")
+	TEST_ASSERT(length(hair.overlays) >= 1, "the hair is a part of the group")
+	var/list/body = H.body_look(new /datum/look)
+	var/image/body_image = body[2]
+	var/with_head = length(body_image.overlays)
+	var/obj/item/organ/external/head/head = H.limb_tagged(BP_HEAD)
+	TEST_ASSERT(length(head.layered_parts(FALSE)) >= 2, "the head is its sprite and its eyes, as parts")
+	TEST_ASSERT(with_head >= 6, "the head's parts are in the body")

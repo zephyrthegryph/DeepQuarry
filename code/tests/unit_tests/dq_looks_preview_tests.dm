@@ -11,12 +11,12 @@
 	var/list/flat = flattener.flatten(mannequin, SOUTH)
 	return "[json_encode(flat)]|[flattener.unsupported]"
 
-/// The first coloured style of `styles` this character may wear that is not `except` (a colour change must show).
+/// The first coloured style of `styles` this character may wear that is not `except` and has a sprite to draw (a colour change must show).
 /proc/dq_test_wearable_style(datum/preferences/P, list/styles, except)
 	var/list/available = P.get_available_styles(styles)
 	for(var/name in available)
 		var/datum/sprite_accessory/S = available[name]
-		if(istype(S) && S.do_colouration && name != except && !istaurtail(S))
+		if(istype(S) && S.do_colouration && name != except && !istaurtail(S) && icon_exists(S.icon, S.icon_state))
 			return name
 
 /// Each Looks change schedules a preview render (south now, every direction after), and that render draws the change.

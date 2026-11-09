@@ -114,3 +114,12 @@ Until C the flag is off by default and nothing changes. During C each builder fa
 2. How far layering goes depends on section 7's result.
 3. `ColorTone` approximation: acceptable, or renderer?
 4. The exact semantics of `icon += rgb(,,,a)` against `image.alpha` should be checked by eye during C.
+
+## 10. Stage C, second step (2026-11-09)
+
+Layered now (no server composite): the head (eyes, lips, markings in `get_icon()` order), hair, facial hair and ears (a group of tinted parts; a gradient is a
+`BLEND_INSET_OVERLAY` part in a `KEEP_TOGETHER` group of its own; a shading sheet is a `BLEND_ADD` part), glowing eyes, wings, bellies, tails, hulk (one
+`color` on a `KEEP_TOGETHER` body), skeleton and prosthetic limbs tinted once. Tails still read a static per-sprite icon of only the frames of the facings a layer
+shows in (`tail_part()`): BYOND hides nothing per facing but frames, and the same icon serves every colour. Still composited: husk and dead limbs (`ColorTone`
+has no client form), transparent limbs, limbs blanked by a marking, a prosthetic tinted twice, taur bodies (the leg cutter), damage masks, and the voodoo ears
+(`get_ears_overlay()`).

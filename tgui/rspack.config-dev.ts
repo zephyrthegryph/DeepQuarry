@@ -20,6 +20,12 @@ export const config = {
     hot: true,
   },
   mode: 'development',
+  // Live generations (SStgui/reload_development_chunks) publish the shell alone, so
+  // the development build stays one bundle per entry; only production shares code.
+  optimization: {
+    ...oldConfig.optimization,
+    splitChunks: false,
+  },
   output: {
     ...oldConfig.output,
     path: path.resolve(import.meta.dirname, './public/.tmp'),

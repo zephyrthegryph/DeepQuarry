@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Heads, hair, ears, glowing eyes, tails, wings and bellies are tinted layers the client draws, and hulks, skeletons and prosthetic limbs layer like any body, so fewer icons are built and sent"
