@@ -1,17 +1,11 @@
 // Client lighting, piece 3: the per-client glow holder. BYOND sends a glow only to clients that see the light's own turf, so a
 // light just off screen would not spill onto the screen and its glow would pop in as the player walks. Each client holds a copy
-// of such a glow as its own images (client.images), anchored on a turf it is sure to see and offset to the light's true place:
-// an image on a map turf scrolls and glides with the world, so stepping changes nothing.
-//
-// The geometry is per eye chunk (CLIENT_GLOW_CHUNK turfs a side), so the images change only when the eye crosses a chunk:
-//   - the anchor: one invisible object per viewer whose bounds cover the eye's chunk. BYOND sends an object when any turf of its
-//     locs is seen, and the eye's own turf always is, so images on it show whatever walls stand between the eye and any one turf.
-//   - the reach box: the turfs seen from some eye position in the chunk (the views' union). Every light whose reach overlaps it
-//     is held, on screen or not: a light whose own turf is hidden behind a wall still lights the turfs this viewer does see. A held
-//     light is a glow image, cut by its shape's baked mask (below), and an override
-//     image that hides the real glow from this client, so it is never drawn twice.
-// The mask: an alpha filter on the glow image naming a baked icon of the light's reach shape (client_shadow.dm). Nothing else has to be
-// drawn for it. Until a shape is baked the image is uncut; when a shape changes it keeps the old cut until the new one arrives.
+// of every glow in reach as its own images (client.images), recomputed only when the eye crosses a chunk (CLIENT_GLOW_CHUNK turfs a side).
+//   - where it stands: on the light's own turf when the eye saw that turf at the crossing, else on the reached turf the eye saw that is
+//     nearest the eye, offset to the light's place. Playtesting showed an image drawn far from where it stands is culled, so the offset stays within the light's range.
+//   - the reach box: the turfs seen from some eye position in the chunk. Every light whose reach overlaps it is held.
+//   - a held light is a glow image, baked to its reach shape once that is ready (client_shadow.dm), and an override image that hides
+//     the real glow from this client, so it is never drawn twice.
 //
 // Events only: the eye crossing a chunk or changing view (interest_eye_update()), a light glowing, moving or changing
 // (client_glow_apply()), its mask rebuilding (client_glow_mask_apply()), going out (client_glow_clear()), client lighting
@@ -22,9 +16,6 @@ GLOBAL_VAR_INIT(client_glow_holder_made, 0)
 GLOBAL_VAR_INIT(client_glow_holder_updated, 0)
 GLOBAL_VAR_INIT(client_glow_holder_dropped, 0)
 GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
-/// TRUE: a held glow stands on its light's own turf. FALSE: on the viewer's chunk anchor, offset to the light (Cycle Client Glow Anchor).
-/// Every image shares that one anchor, yet playtesting saw single lights lose their glow by viewer position, so a far offset from it is suspect.
-GLOBAL_VAR_INIT(client_glow_on_light_turf, TRUE)
 
 /// One viewer's held glows. A client owns one (client.glow_holder); tests and benchmarks make one with no client.
 /datum/client_glow_holder
@@ -35,8 +26,12 @@ GLOBAL_VAR_INIT(client_glow_on_light_turf, TRUE)
 	var/z = 0
 	/// The reach box, inclusive turf coordinates: list(x0, y0, x1, y1).
 	var/list/reach
-	/// The object the held images stand on: it covers the eye's chunk (client_glow_anchor).
-	var/obj/effect/overlay/client_glow_anchor/anchor
+	/// "x:y" -> TRUE for the turfs the eye saw at its last chunk crossing: decides where a held glow stands.
+	var/list/seen_keys
+	var/eye_x = 0
+	var/eye_y = 0
+	/// TRUE once this viewer's first hold has been logged (the load-in timeline).
+	var/first_hold_logged = FALSE
 	/// TRUE: a ghost still seeing darkness: its held copies carry no shadow mask (it sees through walls, so masks buy it nothing).
 	var/unmasked = FALSE
 	/// TRUE: this viewer does not see darkness (a ghost with darkness off, darkvision): lights draw nothing for it, so each is only hidden.
@@ -47,19 +42,6 @@ GLOBAL_VAR_INIT(client_glow_on_light_turf, TRUE)
 	var/list/held_shape
 	/// light source glow_holder_key -> the mask shape its glow image is cut by now. Lazy.
 	var/list/cut_shape
-
-/// A viewer's image holder: drawn as nothing, its bounds put it on every turf of the eye's chunk, one of which the viewer always sees.
-/obj/effect/overlay/client_glow_anchor
-	name = ""
-	icon = null
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	anchored = TRUE
-	vis_flags = NONE
-	bound_width = CLIENT_GLOW_CHUNK * WORLD_ICON_SIZE
-	bound_height = CLIENT_GLOW_CHUNK * WORLD_ICON_SIZE
-
-CAPABILITIES(/datum/client_glow_holder)
-	owns_one(nameof(anchor), /obj/effect/overlay/client_glow_anchor)
 
 /client
 	/// This client's held off-screen glows (client lighting only).
@@ -158,11 +140,12 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/ex1 = ex0 + CLIENT_GLOW_CHUNK - 1
 	var/ey1 = ey0 + CLIENT_GLOW_CHUNK - 1
 	reach = list(ex0 - hx, ey0 - hy, ex1 + hx, ey1 + hy)
-	var/turf/anchor_turf = locate(ex0, ey0, eye.z)
-	if(!anchor)
-		rel_set(src, nameof(anchor), new /obj/effect/overlay/client_glow_anchor(anchor_turf))
-	else if(anchor.loc != anchor_turf)
-		anchor.abstract_move(anchor_turf)
+	eye_x = eye.x
+	eye_y = eye.y
+	seen_keys = list()
+	if(!unlit)
+		for(var/turf/T as anything in sight_view_turfs(eye, max(hx, hy)))
+			seen_keys["[T.x]:[T.y]"] = TRUE
 	// Candidates: lights indexed in the glow chunks a reach could overlap the reach box from.
 	var/list/keep = list()
 	var/c0x = round((reach[1] - CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK)
@@ -177,6 +160,11 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	for(var/h in LAZYCOPY(held))
 		if(!keep[h])
 			drop_handle(h)
+	if(!first_hold_logged && client)
+		first_hold_logged = TRUE
+		log_world("client glow holder: [client.ckey] first hold at [time2text(world.realtime, "hh:mm:ss")], [LAZYLEN(held)] glow(s)") // the load-in timeline
+	if(!(GLOB.client_glow_holder_recomputes % 64))
+		log_world(client_glow_census())
 	log_world("client glow holder: [client?.ckey] entered chunk [new_sig], holding [LAZYLEN(held)] glow(s)[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
 
 /// Shows, updates or drops this viewer's copy of light `L`. Returns TRUE while it is held.
@@ -194,7 +182,6 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(S.x + r < reach[1] || S.x - r > reach[3] || S.y + r < reach[2] || S.y - r > reach[4])
 		drop(L) // its reach never comes on screen from this chunk
 		return FALSE
-	var/obj/effect/overlay/client_glow_anchor/A = anchor
 	var/obj/effect/overlay/client_glow/G = L.glow
 	var/h = L.glow_holder_key()
 	var/list/entry = LAZYACCESS(held, h)
@@ -215,40 +202,80 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	else
 		glow_image = entry[1]
 		GLOB.client_glow_holder_updated++
-	var/atom/stand_on = GLOB.client_glow_on_light_turf ? S : A
+	var/turf/stand_on = stand_turf(L, S)
 	if(glow_image.loc != stand_on)
 		image_anchor(glow_image, stand_on)
 	var/px = (S.x - stand_on.x) * WORLD_ICON_SIZE + G.pixel_x
 	var/py = (S.y - stand_on.y) * WORLD_ICON_SIZE + G.pixel_y
-	glow_image.icon = G.icon
 	glow_image.plane = G.plane
 	glow_image.color = G.color
 	glow_image.alpha = G.alpha
 	glow_image.pixel_x = px
 	glow_image.pixel_y = py
-	if(!unmasked && !GLOB.client_glow_masks_off && LAZYACCESS(held_shape, h) != L.glow_mask_key)
-		LAZYSET(held_shape, h, L.glow_mask_key)
-		var/mask = client_glow_mask_icon(L.glow_mask_key)
-		if(mask)
-			cut_with(h, glow_image, L.glow_mask_key, mask)
+	apply_shape(L, h, glow_image, G)
 	return TRUE
 
-/// Cuts a held glow image with the baked mask of `shape`.
-/datum/client_glow_holder/proc/cut_with(h, image/glow_image, shape, mask)
-	glow_image.filters = filter(type = "alpha", icon = mask)
+/// Where light `L`'s held glow stands: its own turf if the eye saw it, else the turf of its reach the eye saw that is nearest the eye.
+/datum/client_glow_holder/proc/stand_turf(datum/light_source/L, turf/S)
+	if(seen_keys["[S.x]:[S.y]"] || !L.glow_reach_origin)
+		return S
+	var/turf/O = L.glow_reach_origin
+	var/best_x
+	var/best_y
+	var/best = INFINITY
+	for(var/key in L.glow_reach)
+		var/list/xy = splittext(key, ",")
+		var/x = O.x + text2num(xy[1])
+		var/y = O.y + text2num(xy[2])
+		if(!seen_keys["[x]:[y]"])
+			continue
+		var/dist = abs(x - eye_x) + abs(y - eye_y)
+		if(dist < best)
+			best = dist
+			best_x = x
+			best_y = y
+	return best == INFINITY ? S : locate(best_x, best_y, S.z)
+
+/// Gives a held glow the picture it should show: the baked cut of its shape, its previous cut while a new one bakes, or the plain sprite.
+/datum/client_glow_holder/proc/apply_shape(datum/light_source/L, h, image/glow_image, obj/effect/overlay/client_glow/G)
+	if(unmasked || L.glow_plain)
+		LAZYREMOVE(held_shape, h)
+		LAZYREMOVE(cut_shape, h)
+		show_plain(glow_image, G)
+		return
+	var/shape = L.glow_mask_key
+	if(LAZYACCESS(held_shape, h) != shape)
+		LAZYSET(held_shape, h, shape)
+		var/baked = client_glow_mask_icon(shape)
+		if(baked)
+			cut_with(h, glow_image, shape, baked)
+			return
+	var/cut = LAZYACCESS(cut_shape, h)
+	if(!cut || copytext(cut, 1, findtext(cut, "|")) != copytext(shape, 1, findtext(shape, "|"))) // a cut of another sprite size cannot stand in
+		LAZYREMOVE(cut_shape, h)
+		show_plain(glow_image, G)
+
+/datum/client_glow_holder/proc/show_plain(image/glow_image, obj/effect/overlay/client_glow/G)
+	glow_image.icon = G.icon
+	glow_image.icon_state = G.icon_state
+
+/// Shows a held glow baked to `shape`.
+/datum/client_glow_holder/proc/cut_with(h, image/glow_image, shape, baked)
+	glow_image.icon = baked
+	glow_image.icon_state = null
 	LAZYSET(cut_shape, h, shape)
 
-/// A mask shape finished baking: every held glow waiting on it is cut.
-/datum/client_glow_holder/proc/shape_ready(shape, mask)
+/// A shape finished baking: every held glow waiting on it shows it.
+/datum/client_glow_holder/proc/shape_ready(shape, baked)
 	for(var/h in held_shape)
 		if(held_shape[h] != shape || LAZYACCESS(cut_shape, h) == shape)
 			continue
 		var/list/entry = LAZYACCESS(held, h)
 		if(length(entry) == 2)
-			cut_with(h, entry[1], shape, mask)
+			cut_with(h, entry[1], shape, baked)
 
 /// A viewer that sees no darkness: every light its view can reach is hidden from it with a plain override image, so its client
-/// never draws the glows and their filtered masks (a ghost sees through walls, so otherwise all of them, for no visible light).
+/// never draws the glows (a ghost sees through walls, so otherwise all of them, for no visible light).
 /datum/client_glow_holder/proc/consider_unlit(datum/light_source/L, turf/S)
 	var/r = CEILING(L.light_range, 1)
 	if(S.x + r < reach[1] || S.x - r > reach[3] || S.y + r < reach[2] || S.y - r > reach[4])
@@ -318,10 +345,3 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /proc/client_glow_test_eye(turf/L)
 	var/x = L.x > 20 ? L.x - 10 : L.x + 10
 	return locate(x, L.y, L.z)
-
-ADMIN_VERB(cycle_client_glow_anchor, R_DEBUG|R_SERVER, "Cycle Client Glow Anchor", "Stand held client glows on their own light's turf, or on the viewer's chunk anchor, live.", ADMIN_CATEGORY_DEBUG_GAME)
-	GLOB.client_glow_on_light_turf = !GLOB.client_glow_on_light_turf
-	client_glow_holders_switched(TRUE)
-	var/report = "client glow anchor: held glows stand on [GLOB.client_glow_on_light_turf ? "their light's turf" : "the viewer's chunk anchor"]"
-	log_world(report)
-	message_admins("[key_name_admin(user)]: [report]")

@@ -1,12 +1,4 @@
-// A comparison switch (doc/rewrite/proposals/client_side_compositing.md, section 7): the plain body as tinted overlays the client layers,
-// against the body icon human_look.dm composes on the server. Off by default. A body this path cannot show yet stays composited.
-
-/// Whether a plain human body is drawn as layers instead of one composed icon.
-GLOBAL_VAR_INIT(human_look_layered, FALSE)
-
-/mob/living/carbon/human
-	/// Whether this human's plain body is drawn as layers (the two verbs below set it; a human made later stays composited).
-	var/look_layered = FALSE
+// The plain body as tinted overlays the client layers (doc/rewrite/proposals/client_side_compositing.md). A body this path cannot show yet stays composited by human_look.dm.
 
 /// Whether this body can be layered today: none of the looks the proposal classes as needing a filter, a matrix pass or pixels.
 /mob/living/carbon/human/proc/can_layer_body(husk, hulk, skeleton)
@@ -72,16 +64,7 @@ GLOBAL_VAR_INIT(human_look_layered, FALSE)
 		polish.color = nail_polish.color
 		. += polish
 
-ADMIN_VERB(toggle_layered_human_bodies, R_DEBUG|R_SERVER, "Toggle Layered Human Bodies", "Switch every plain human body between one composed icon and client-side layers, to compare client frame cost.", ADMIN_CATEGORY_DEBUG_GAME)
-	GLOB.human_look_layered = !GLOB.human_look_layered
-	var/redrawn = 0
-	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
-		H.set_look_layered(GLOB.human_look_layered)
-		redrawn++
-	log_world("human look: layered bodies [GLOB.human_look_layered ? "on" : "off"], [redrawn] human(s) redrawn")
-	message_admins("[key_name_admin(user)] set layered human bodies [GLOB.human_look_layered ? "on" : "off"] ([redrawn] humans redrawn).")
-
-ADMIN_VERB(spawn_look_test_crowd, R_DEBUG|R_SPAWN, "Spawn Look Test Crowd", "Put 20 humans around you, to compare client frame cost of human looks.", ADMIN_CATEGORY_DEBUG_GAME)
+ADMIN_VERB(spawn_look_test_crowd, R_DEBUG|R_SPAWN, "Spawn Look Test Crowd", "Put 20 humans around you, to check client frame cost of human looks.", ADMIN_CATEGORY_DEBUG_GAME)
 	var/turf/centre = get_turf(user.mob)
 	if(!centre)
 		return
@@ -91,8 +74,7 @@ ADMIN_VERB(spawn_look_test_crowd, R_DEBUG|R_SPAWN, "Spawn Look Test Crowd", "Put
 			break
 		if(T.density)
 			continue
-		var/mob/living/carbon/human/H = new /mob/living/carbon/human(T)
-		H.set_look_layered(GLOB.human_look_layered)
+		new /mob/living/carbon/human(T)
 		spawned++
 	log_world("human look: spawned a test crowd of [spawned]")
 	message_admins("[key_name_admin(user)] spawned a look test crowd of [spawned].")

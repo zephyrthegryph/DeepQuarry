@@ -2,9 +2,10 @@
 // plane, blended additively over its black backdrop; the plane master multiplies the result over the world, so the client's
 // GPU does the blending and the server only sends where each glow sits, its colour, size and strength. The DM lighting
 // corners and turf underlays are not touched in this mode: no lighting object is made, and a light skips its corner work.
-// Off by default: until the shadow masks land a glow shines through walls (later pieces: masks, gameplay light, culling).
+// The default lighting of a running server. Glows draw on a hidden plane that is cut to what this client sees, spread onto walls and relayed to the lighting plane (client_lighting_compare.dm).
 
-/// TRUE while lights draw as client glows instead of the DM corner and underlay lighting (client_lighting_set()).
+/// TRUE while lights draw as client glows instead of the DM corner and underlay lighting. The lighting system sets it at boot
+/// (a test sets it through client_lighting_set()); a unit-test world stays on the DM engine unless the test asks.
 GLOBAL_VAR_INIT(client_lighting, FALSE)
 /// TRUE: a glow's bounds cover its reach, so BYOND sends it to every client that sees any turf it lights (a light just off
 /// screen still spills on). FALSE (benchmarks): bounds are one tile and only clients seeing the light's own turf get it.
@@ -28,6 +29,10 @@ GLOBAL_VAR_INIT(client_glow_bounds, FALSE)
 /datum/light_source
 	/// The glow this light shows while client lighting is on; null otherwise.
 	var/obj/effect/overlay/client_glow/glow
+	/// TRUE once this light has changed turf while glowing.
+	var/glow_has_moved = FALSE
+	/// TRUE: viewers draw this light's plain glow, with no baked cut (client_glow_note_moving()).
+	var/glow_plain = FALSE
 
 CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	owns_one(nameof(glow), /obj/effect/overlay/client_glow)
@@ -61,7 +66,8 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	G.set_pixel_x(-offset + (pixel_turf ? (pixel_turf.x - source_turf.x) * WORLD_ICON_SIZE : 0))
 	G.set_pixel_y(-offset + (pixel_turf ? (pixel_turf.y - source_turf.y) * WORLD_ICON_SIZE : 0))
 	G.set_color(light_color)
-	G.set_plane(client_glow_plane()) // its own plane in compare mode (client_lighting_compare.dm)
+	G.set_plane(client_glow_plane())
+	client_glow_note_moving()
 	G.set_alpha(clamp(round(255 * min(light_power, 1)), 0, 255))
 	// Bounds over the reach: BYOND counts the glow as standing on every turf they cover (its locs) and sends it to any client
 	// that sees one of them. The glow is placed, never moved, so no Crossed()/Entered() fires on the covered turfs.
@@ -76,6 +82,13 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	client_glow_mask_apply(CEILING(range, 1), offset) // the shadow mask (client_shadow.dm)
 	applied = TRUE
 	client_glow_holders_consider(src) // viewers holding an off-screen copy follow (client_glow_holder.dm)
+
+/// A carried light, a mob's own light and anything that has changed turf since it first glowed draw uncut: their shape changes as they go, and
+/// a bake per step would be a storm. The visibility cut on the glow plane still removes what they spill on tiles this client cannot see.
+/datum/light_source/proc/client_glow_note_moving()
+	if(glow_reach_origin && glow_reach_origin != source_turf)
+		glow_has_moved = TRUE
+	glow_plain = glow_has_moved || top_atom != source_atom || ismob(source_atom)
 
 /// This light stops glowing (it went off, moved into nullspace or left client lighting).
 /datum/light_source/proc/client_glow_clear()
@@ -121,7 +134,3 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	if(!on)
 		for(var/turf/T as anything in all_turfs)
 			T.lighting_build_overlay() // create_all_lighting_objects() without its yields
-
-ADMIN_VERB(toggle_client_lighting, R_DEBUG|R_SERVER, "Toggle Client Lighting", "Switch every light between client-rendered glows and the DM lighting, live.", ADMIN_CATEGORY_DEBUG_GAME)
-	client_lighting_set(!GLOB.client_lighting)
-	message_admins("[key_name_admin(user)] turned client lighting [GLOB.client_lighting ? "on" : "off"].")

@@ -204,7 +204,6 @@
 
 /// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
 /datum/unit_test/proc/client_glow_holder_setup(list/out)
-	set_global(nameof(GLOB.client_glow_on_light_turf), FALSE) // these tests pin the chunk anchor; dq_client_glow_holder_light_turf covers the other
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
 	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes)))
 		set_global(counter, GLOB.vars[counter]) // teardown restores the counters
@@ -216,8 +215,8 @@
 	out += F
 	out += H
 
-/// A light just off screen shows its glow on screen: the viewer holds a glow image on a turf it always sees, offset to the
-/// light's true place, and a mask image whose render target the glow image's alpha filter names; the real glow is hidden.
+/// A light just off screen shows its glow on screen: the viewer holds a glow image on a turf it saw, offset to the light's true
+/// place and within the light's range, baked to its shape once ready; the real glow is hidden.
 /datum/unit_test/dq_client_glow_holder_off_screen
 
 /datum/unit_test/dq_client_glow_holder_off_screen/Run()
@@ -232,16 +231,16 @@
 	TEST_ASSERT_NOTNULL(entry, "the viewer holds the off-screen light's glow")
 	var/image/glow_image = entry[1]
 	var/image/hide_image = entry[2]
-	var/obj/effect/overlay/client_glow_anchor/A = glow_image.loc
-	TEST_ASSERT_EQUAL(A, H.anchor, "the glow image stands on the viewer's anchor")
-	TEST_ASSERT(client_glow_test_eye(LT) in H.anchor.locs, "the anchor covers the eye's turf, which the viewer always sees")
+	var/turf/A = glow_image.loc
+	TEST_ASSERT(isturf(A) && H.seen_keys["[A.x]:[A.y]"], "the hidden light's glow stands on a turf the eye saw")
+	TEST_ASSERT(max(abs(A.x - LT.x), abs(A.y - LT.y)) <= CEILING(S.light_range, 1), "it stands within the light's range")
 	TEST_ASSERT_EQUAL(A.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "its x offset puts it on the light")
 	TEST_ASSERT_EQUAL(A.y + (glow_image.pixel_y - S.glow.pixel_y) / WORLD_ICON_SIZE, LT.y, "its y offset puts it on the light")
 	TEST_ASSERT_EQUAL(glow_image.blend_mode, BLEND_ADD, "the copy adds like the glow")
-	TEST_ASSERT_EQUAL(glow_image.plane, PLANE_LIGHTING, "the copy is on the lighting plane")
+	TEST_ASSERT_EQUAL(glow_image.plane, PLANE_CLIENT_GLOW, "the copy is on the glow plane")
 	H.shape_ready(S.glow_mask_key, 'icons/effects/light_overlays/light_32.dmi')
-	var/list/filters = glow_image.filters
-	TEST_ASSERT(length(filters), "a baked shape cuts the waiting glow image")
+	TEST_ASSERT_EQUAL(glow_image.icon, 'icons/effects/light_overlays/light_32.dmi', "a baked shape replaces the waiting glow image's picture")
+	TEST_ASSERT(!length(glow_image.filters), "a held glow carries no filter of its own")
 	TEST_ASSERT(hide_image.override && hide_image.loc == S.glow, "the real glow is overridden for this viewer: never drawn twice")
 	spent(H)
 	client_lighting_set(FALSE)
@@ -262,9 +261,7 @@
 	TEST_ASSERT_NOTNULL(entry, "still held with the eye on the light")
 	var/image/glow_image = entry[1]
 	var/turf/LT = get_turf(F)
-	TEST_ASSERT_EQUAL(glow_image.loc, H.anchor, "on the moved anchor")
-	TEST_ASSERT(LT in H.anchor.locs, "the anchor followed the eye's chunk")
-	TEST_ASSERT_EQUAL(H.anchor.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "the copy's offset still puts it on the light")
+	TEST_ASSERT_EQUAL(glow_image.loc, LT, "a light the eye sees stands on its own turf")
 	spent(H)
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
@@ -279,8 +276,7 @@
 	var/datum/client_glow_holder/H = got[2]
 	var/datum/light_source/S = F.light
 	var/turf/LT = get_turf(F)
-	set_global(nameof(GLOB.client_glow_on_light_turf), TRUE)
-	H.consider(S)
+	H.view_at(LT, 7, 7)
 	var/list/entry = H.entry_of(S)
 	TEST_ASSERT_NOTNULL(entry, "the viewer holds the light")
 	var/image/glow_image = entry[1]
@@ -310,6 +306,10 @@
 	TEST_ASSERT(!S.glow_reach["2,0"], "the floor behind the blocker is in shadow")
 	TEST_ASSERT(S.glow_mask_key != before, "the shape changed")
 	TEST_ASSERT_EQUAL(H.held_shape[S.glow_holder_key], S.glow_mask_key, "the copy wants the new shape")
+	TEST_ASSERT(S.glow_reach["1,0"], "the gameplay reach keeps the opaque tile")
+	var/list/shape_offsets = splittext(splittext(S.glow_mask_key, "|")[2], ",")
+	for(var/i = 1, i < length(shape_offsets), i += 2)
+		TEST_ASSERT(!(shape_offsets[i] == "1" && shape_offsets[i + 1] == "0"), "the baked shape leaves out the opaque tile")
 	qdel(B)
 	SSlighting.light_step(0, TRUE)
 	spent(H)
@@ -374,7 +374,7 @@
 /datum/unit_test/dq_client_lighting_compare
 
 /datum/unit_test/dq_client_lighting_compare/Run()
-	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay)))
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_glow_normal_relay), nameof(GLOB.client_visible_plane_master)))
 		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the modes off for the next test
 	set_global(nameof(GLOB.client_lighting_compare), FALSE)
@@ -403,7 +403,7 @@
 	SSlighting.light_step(0, TRUE)
 	TEST_ASSERT(GLOB.client_lighting, "compare off keeps client lighting")
 	TEST_ASSERT_NULL(T.lighting_object, "compare off: no lighting object")
-	TEST_ASSERT_EQUAL(S.glow?.plane, PLANE_LIGHTING, "compare off: the glow is back on the lighting plane")
+	TEST_ASSERT_EQUAL(S.glow?.plane, PLANE_CLIENT_GLOW, "compare off: the glow stays on the glow plane")
 	TEST_ASSERT(!T.lighting_corners_lit(), "compare off: the corners hold no light")
 	client_lighting_compare_set(TRUE)
 	SSlighting.light_step(0, TRUE)
@@ -419,7 +419,7 @@
 /datum/unit_test/dq_client_lighting_dark_base
 
 /datum/unit_test/dq_client_lighting_dark_base/Run()
-	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay)))
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_glow_normal_relay), nameof(GLOB.client_visible_plane_master)))
 		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
 	TEST_ASSERT_EQUAL(length(client_glow_screen(client_glow_screen_state(null))), 0, "DM lighting: no base on the screen")
@@ -444,6 +444,9 @@
 	dynamic.luminosity = old_luminosity
 	var/list/screen = client_glow_screen(client_glow_screen_state(null))
 	TEST_ASSERT(GLOB.client_glow_base in screen, "client lighting: the screen holds the black base")
+	TEST_ASSERT((GLOB.client_visible_plane_master in screen) && (GLOB.client_glow_normal_relay in screen), "client lighting: the screen holds the visibility plane and the relay")
+	var/atom/movable/screen/plane_master/client_glow/glow_master = GLOB.client_glow_plane_master
+	TEST_ASSERT_EQUAL(length(glow_master.filters), 2, "the glow plane is cut and spread by exactly two filters")
 	var/atom/movable/screen/client_glow_base/B = GLOB.client_glow_base
 	TEST_ASSERT_EQUAL(B.plane, PLANE_LIGHTING, "the base is on the lighting plane")
 	TEST_ASSERT_EQUAL(B.color, "#000000", "the base is black")

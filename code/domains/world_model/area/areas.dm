@@ -241,6 +241,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	look.overlay(look_cached_image("spoiler_obfuscation", 'icons/misc/static.dmi', null, null, PLANE_MESONS), when = flag_check(AREA_NO_SPOILERS))
 	// Client lighting: an area outside dynamic lighting stays bright over the lighting plane's black base (client_lighting_compare.dm).
 	look.overlay(client_glow_area_white(src))
+	look.overlay(client_visible_tile()) // the turfs this client sees, for the glow plane's cut (client_lighting_compare.dm)
 
 
 /// An area's channel state flipped (its APC, or the area itself): the things watching the area's power re-check it.

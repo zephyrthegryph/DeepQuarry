@@ -142,12 +142,9 @@
 
 /datum/unit_test/dq_human_draw_layered_body/Run()
 	var/mob/living/carbon/human/H = dq_hd_body(list(), "layered")
-	TEST_ASSERT(!GLOB.human_look_layered && !H.look_layered, "layered bodies are off by default")
-	H.set_look_layered(TRUE)
 	var/list/body = H.body_look(new /datum/look)
-	H.set_look_layered(FALSE)
 	var/image/layered = body[2]
 	TEST_ASSERT(length(layered.overlays) >= 5, "the limbs are overlays of the body image")
-	var/list/composed = H.body_look(new /datum/look)
+	var/list/composed = H.build_body_look('icons/mob/human.dmi', FALSE, FALSE, FALSE, FALSE)
 	var/image/flat = composed[2]
 	TEST_ASSERT_EQUAL(length(flat.overlays), 0, "the composed body is one icon")

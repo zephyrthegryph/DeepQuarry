@@ -7,6 +7,12 @@
 // the lighting plane, under the glows (client_glow_screen()), and a turf outside dynamic lighting (space, a fullbright area),
 // which the DM engine leaves bright by drawing nothing, carries a white tile on the plane over the base (client_glow_white()).
 //
+// The glow plane. Every glow draws on PLANE_CLIENT_GLOW, a hidden render target over its own black base. Its master carries two filters: an
+// alpha cut by PLANE_CLIENT_VISIBLE, so light on a turf this client does not see is gone, and a bloom that carries the remaining floor light about a tile onto the
+// walls beside it, so a wall is lit only from a side this client can see. A relay draws the result on the lighting plane, over the black base. PLANE_CLIENT_VISIBLE is
+// one white tile as every area's overlay: BYOND draws an area's overlays only on the turfs it shows this client, so the client builds its own visibility map, with no
+// server work when a player moves. The white tiles stay on the lighting plane, above the relay, so they neither bloom nor get cut.
+//
 // Compare mode. The server runs both engines at once, the DM corner lighting (a lighting object on every dynamic turf, as the
 // classic engine had before lazy objects, since turfs stay at luminosity 1 for the glows) and the client glows, and each client
 // picks which one it sees, live:
@@ -30,6 +36,13 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 /atom/movable/screen/plane_master/client_glow
 	plane = PLANE_CLIENT_GLOW
 	render_target = CLIENT_GLOW_RENDER_TARGET
+	blend_mode = BLEND_OVERLAY
+	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
+
+/// The plane of "turfs this client sees": renders only as the glow plane's alpha source.
+/atom/movable/screen/plane_master/client_visible
+	plane = PLANE_CLIENT_VISIBLE
+	render_target = CLIENT_VISIBLE_RENDER_TARGET
 	blend_mode = BLEND_OVERLAY
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
 
@@ -60,17 +73,25 @@ GLOBAL_VAR_INIT(client_lighting_compare, FALSE)
 	appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
+/// The glow plane on the lighting plane in normal play: over the black base, under the white tiles.
+/atom/movable/screen/client_glow_relay/normal
+	layer = BACKGROUND_LAYER + 22
+
 /// The shared screen objects (a screen object may sit on many screens); made on first use.
 GLOBAL_DATUM(client_glow_plane_master, /atom/movable/screen/plane_master/client_glow)
 GLOBAL_DATUM(client_glow_base, /atom/movable/screen/client_glow_base)
 GLOBAL_DATUM(client_glow_compare_base, /atom/movable/screen/client_glow_base/compare)
 GLOBAL_DATUM(client_glow_relay, /atom/movable/screen/client_glow_relay)
+GLOBAL_DATUM(client_glow_normal_relay, /atom/movable/screen/client_glow_relay/normal)
+GLOBAL_DATUM(client_visible_plane_master, /atom/movable/screen/plane_master/client_visible)
 
 CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	owns_one(nameof(client_glow_plane_master), /atom/movable/screen/plane_master/client_glow)
 	owns_one(nameof(client_glow_base), /atom/movable/screen/client_glow_base)
 	owns_one(nameof(client_glow_compare_base), /atom/movable/screen/client_glow_base/compare)
 	owns_one(nameof(client_glow_relay), /atom/movable/screen/client_glow_relay)
+	owns_one(nameof(client_glow_normal_relay), /atom/movable/screen/client_glow_relay/normal)
+	owns_one(nameof(client_visible_plane_master), /atom/movable/screen/plane_master/client_visible)
 
 /client
 	/// Compare mode: TRUE when this client sees the DM lighting, FALSE the client glows.
@@ -78,7 +99,7 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	/// What this client's screen shows of client lighting now (CLIENT_GLOW_SCREEN_*).
 	var/tmp/lighting_screen = CLIENT_GLOW_SCREEN_NONE
 
-/// Every shared screen object: list(master, base, compare base, relay).
+/// Every shared screen object: list(master, base, compare base, relay, normal relay, visibility master).
 /proc/client_glow_screen_objects()
 	if(!GLOB.client_glow_plane_master)
 		rel_set(GLOB, nameof(GLOB.client_glow_plane_master), new /atom/movable/screen/plane_master/client_glow)
@@ -87,7 +108,14 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 		var/atom/movable/screen/client_glow_relay/R = new
 		R.render_source = CLIENT_GLOW_RENDER_TARGET
 		rel_set(GLOB, nameof(GLOB.client_glow_relay), R)
-	return list(GLOB.client_glow_plane_master, GLOB.client_glow_base, GLOB.client_glow_compare_base, GLOB.client_glow_relay)
+		var/atom/movable/screen/client_glow_relay/normal/N = new
+		N.render_source = CLIENT_GLOW_RENDER_TARGET
+		rel_set(GLOB, nameof(GLOB.client_glow_normal_relay), N)
+		rel_set(GLOB, nameof(GLOB.client_visible_plane_master), new /atom/movable/screen/plane_master/client_visible)
+		var/atom/movable/screen/plane_master/client_glow/M = GLOB.client_glow_plane_master
+		M.add_filter("client_visible_cut", 1, list(type = "alpha", render_source = CLIENT_VISIBLE_RENDER_TARGET))
+		M.add_filter("client_wall_spread", 2, list(type = "bloom", threshold = "#000000", size = CLIENT_GLOW_SPREAD_SIZE, offset = CLIENT_GLOW_SPREAD_OFFSET, alpha = CLIENT_GLOW_SPREAD_ALPHA))
+	return list(GLOB.client_glow_plane_master, GLOB.client_glow_base, GLOB.client_glow_compare_base, GLOB.client_glow_relay, GLOB.client_glow_normal_relay, GLOB.client_visible_plane_master)
 
 /// The screen state a client wants now.
 /proc/client_glow_screen_state(client/C)
@@ -102,11 +130,11 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	var/list/all = client_glow_screen_objects()
 	switch(state)
 		if(CLIENT_GLOW_SCREEN_BASE)
-			return list(all[2])
+			return list(all[2], all[1], all[3], all[5], all[6])
 		if(CLIENT_GLOW_SCREEN_COMPARE_DM)
 			return list(all[1])
 		if(CLIENT_GLOW_SCREEN_COMPARE_GLOW)
-			return list(all[1], all[3], all[4])
+			return list(all[1], all[3], all[4], all[6])
 	return list()
 
 /// Puts this client's screen in step with the lighting mode and its compare view. Cheap when it already is (one comparison).
@@ -124,8 +152,12 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	for(var/client/C as anything in GLOB.clients)
 		client_glow_screen_sync(C)
 
-/// The plane a glow and a white tile draw on now.
+/// The plane a glow draws on.
 /proc/client_glow_plane()
+	return PLANE_CLIENT_GLOW
+
+/// The plane a white tile draws on now: above the relay on the lighting plane, or on the glow plane under compare's opaque relay.
+/proc/client_glow_white_plane()
 	return GLOB.client_lighting_compare ? PLANE_CLIENT_GLOW : PLANE_LIGHTING
 
 /// The white tile on `plane`: one shared appearance per plane, so a turf's underlay costs no appearance of its own.
@@ -142,9 +174,16 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 	underlays -= CACHED_FAST(client_glow_white_tiles, "[PLANE_CLIENT_GLOW]")
 	var/area/A = loc
 	if(on && !IS_DYNAMIC_LIGHTING(src) && IS_DYNAMIC_LIGHTING(A))
-		underlays += CACHED_FAST(client_glow_white_tiles, "[client_glow_plane()]")
+		underlays += CACHED_FAST(client_glow_white_tiles, "[client_glow_white_plane()]")
 		return TRUE
 	return FALSE
+
+/// The white tile every area draws on the visibility plane: BYOND shows it only on turfs this client sees.
+/proc/client_visible_tile()
+	var/static/mutable_appearance/tile
+	if(!tile)
+		tile = mutable_appearance(LIGHTING_ICON, "transparent", CLIENT_GLOW_WHITE_LAYER, PLANE_CLIENT_VISIBLE, 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
+	return tile
 
 /// The white tile an area outside dynamic lighting draws in client mode (its draw()), or null: BYOND draws an area's overlays on
 /// every turf of the area, so the whole area stays bright for one appearance (space is most of the map's turfs).
@@ -164,7 +203,7 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 	var/start = REALTIMEOFDAY
 	for(var/area/A in world)
 		if(!A.dynamic_lighting)
-			A.set_client_glow_white_plane(on ? client_glow_plane() : 0) // its draw() adds or drops the white tile
+			A.set_client_glow_white_plane(on ? client_glow_white_plane() : 0) // its draw() adds or drops the white tile
 			n++
 			continue
 		for(var/turf/T as anything in contents_of(A, /turf))

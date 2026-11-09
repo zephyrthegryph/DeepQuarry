@@ -584,11 +584,6 @@
 /datum/config_entry/number/starlight // Whether space turfs have ambient light or not and how strong it is.
 	default = 0
 
-/// Lights draw as client-rendered glows with shadow masks instead of the DM corner lighting from round start
-/// (code/content/lighting/client_glow.dm); admins switch it live with Toggle Client Lighting. Ignored by unit-test builds.
-/datum/config_entry/flag/client_lighting
-	default = FALSE
-
 // FIXME: Unused
 ///datum/config_entry/str_list/ert_species
 

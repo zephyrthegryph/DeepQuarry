@@ -4,7 +4,7 @@
  * (code/content/client/mc_health.dm) only while this page is open, at most once a second. Sections remember open/closed per admin.
  */
 
-import { memo, type ReactNode, useMemo, useState } from 'react';
+import { memo, type ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   averageTickParts,
   bytes,
@@ -602,6 +602,29 @@ const EntitiesMemo = memo(Entities);
 const NativeMemo = memo(Native);
 const AdvancedMemo = memo(Advanced);
 
+/**
+ * BYOND exposes no measure of how fast the map draws (client.fps is only the target), so this counts this browser panel's frames.
+ * The panel can read smooth while the map stutters; the label says what it is.
+ */
+function PanelFps() {
+  const [fps, setFps] = useState(0);
+  useEffect(() => {
+    let frames = 0;
+    let start = performance.now();
+    let handle = requestAnimationFrame(function tick(now) {
+      frames++;
+      if (now - start >= 1000) {
+        setFps(Math.round((frames * 1000) / (now - start)));
+        frames = 0;
+        start = now;
+      }
+      handle = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(handle);
+  }, []);
+  return <div className="stat-empty">UI panel: {fps} FPS (not the map)</div>;
+}
+
 export function McHealthPanel(props: {
   data: McHealthData | null;
   token: string | null;
@@ -640,6 +663,7 @@ export function McHealthPanel(props: {
     );
   return (
     <div className="mch">
+      <PanelFps />
       <Health data={data} />
       <UsesMemo data={uses} />
       <OverrunsMemo data={overruns} />

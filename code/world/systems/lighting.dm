@@ -32,9 +32,8 @@ SYSTEM_DEF(lighting)
 	#else
 	if(!initialized)
 		initialized = TRUE
-		if(CONFIG_GET(flag/client_lighting))
-			GLOB.client_lighting = TRUE // client-rendered glows from round start: no lighting objects (client_glow.dm)
-			log_world("client lighting: on (config)")
+		GLOB.client_lighting = TRUE // client-rendered glows from round start: no lighting objects (client_glow.dm)
+		log_world("client lighting: on")
 		create_all_lighting_objects()
 	#endif
 
