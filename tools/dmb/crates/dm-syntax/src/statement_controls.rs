@@ -480,7 +480,11 @@ pub(super) fn parse_control_condition_origin(
         clause,
         item.header_span.start + item.header.find(clause).unwrap_or(0),
         diagnostics,
-        &mut|parsed|{origins.original_compound_complete&=parsed.original_simple_expression.is_some_and(|value|value.kind()==crate::expression_parser::OriginalSimpleKind::Complete);},
+        &mut |parsed| {
+            let issued = parsed.original_simple_expression.is_some_and(|value| value.kind() == crate::expression_parser::OriginalSimpleKind::Complete);
+            let start = item.header_span.start + item.header.find(clause).unwrap_or(0);
+            origins.require_original(issued, Span::new(start, start + clause.len()), "control_condition");
+        },
     )?;
     origins.push(ControlOrigin {
         condition: condition.span,

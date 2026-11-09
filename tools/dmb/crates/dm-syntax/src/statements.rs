@@ -245,6 +245,21 @@ pub trait SettingSyntaxProvider {
     fn switch_case_cursor(&self,_item:&Item)->Result<OriginalCaseCursor,&'static str>{Err("original switch block cursor was not issued")}
 }
 
+#[cfg(debug_assertions)]
+fn trace_original_unissued_leaf(body_start: usize, leaf: Span, reason: &str, source: Option<&str>) {
+    use std::{io::Write, sync::atomic::{AtomicUsize, Ordering}};
+    static REMAINING: AtomicUsize = AtomicUsize::new(32);
+    if REMAINING.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |left| left.checked_sub(1)).is_err() {
+        return;
+    }
+    let snippet = source.and_then(|source| source.get(leaf.range())).map(|text| {
+        let end = text.char_indices().nth(96).map_or(text.len(), |(at, _)| at);
+        &text[..end]
+    });
+    let _ = writeln!(std::io::stderr().lock(),
+        "original.body_leaf_unissued body_start={body_start} span={leaf:?} reason={reason} source={snippet:?}");
+}
+
 fn parse_body_items_using_settings(
     items: &[Item],
     settings: Option<&dyn SettingSyntaxProvider>,
@@ -261,6 +276,13 @@ fn parse_body_items_using_settings(
         deferred_literal_purity,
         source,
         original_compound_complete:true,
+        #[cfg(debug_assertions)]
+        trace_unissued_leaf: settings.is_some() && {
+            static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+            *ENABLED.get_or_init(|| std::env::var_os("DMB_ORIGINAL_TRACE_GRAMMAR_LEAF").is_some())
+        },
+        #[cfg(debug_assertions)]
+        first_unissued_leaf: None,
         original_compound_seen_statement:false,
         original_for_continue:false,
         original_terminal_header:items.last().filter(|item|item.children.is_empty()).map(|item|item.header_span),
@@ -272,9 +294,19 @@ fn parse_body_items_using_settings(
     result.statements = parse_sequence_first(items, None, &mut diagnostics, &mut origins, Some(&mut prefix_settings));
     drop(diagnostics);
     let compound=origins.original_compound_complete&&origins.original_compound_seen_statement;
+    #[cfg(debug_assertions)]
+    let first_unissued = origins.first_unissued_leaf;
     result.local_variables.finish_source_order();
     finish_original_setting_prefix(&mut result, prefix_settings);
     if compound&&result.diagnostics.is_empty(){result.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings,scope_roots:Some(result.statements.len()),kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});}
+    #[cfg(debug_assertions)]
+    if result.original_grammar.is_none() && result.diagnostics.is_empty()
+        && !admission.is_some_and(|admission| admission.is_stopped())
+    {
+        if let (Some((leaf, reason)), Some(first)) = (first_unissued, items.first()) {
+            trace_original_unissued_leaf(first.header_span.start, leaf, reason, source);
+        }
+    }
     result
 }
 
@@ -322,6 +354,10 @@ impl std::ops::DerefMut for BodyDiagnostics<'_>{fn deref_mut(&mut self)->&mut Se
 struct BodyOrigins<'a> {
     source: Option<&'a str>,
     original_compound_complete:bool,
+    #[cfg(debug_assertions)]
+    trace_unissued_leaf: bool,
+    #[cfg(debug_assertions)]
+    first_unissued_leaf: Option<(Span, &'static str)>,
     original_compound_seen_statement:bool,
     original_for_continue:bool,
     original_terminal_header:Option<Span>,
@@ -333,6 +369,14 @@ struct BodyOrigins<'a> {
     deferred_literal_purity:bool,
 }
 impl BodyOrigins<'_> {
+    fn require_original(&mut self, issued: bool, _span: Span, _reason: &'static str) {
+        #[cfg(debug_assertions)]
+        if self.trace_unissued_leaf && !issued && self.first_unissued_leaf.is_none() {
+            self.first_unissued_leaf = Some((_span, _reason));
+        }
+        self.original_compound_complete &= issued;
+    }
+
     fn catch_parts(&mut self,source:&str,tokens:&[crate::SpanToken],base:usize){
         let mut start=0usize;
         for end in 0..=tokens.len(){
@@ -482,7 +526,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             // punctuation or an interpolation token. Let parse_one's same
             // provider lookup settle this only for the otherwise unknown leaf.
             defer_joined_return = item.children.is_empty() && possible_joined_return(header);
-            origins.original_compound_complete &= defer_joined_return;
+            origins.require_original(defer_joined_return, item.header_span, "statement_head");
         }
         if !item.children.is_empty()
             && (header == "var" || (header.starts_with("var/") && !header.contains('=')))
@@ -512,7 +556,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 crate::LocalSourceKind::Statement,
             );
             if parts.len() > 1 {
-                origins.original_compound_complete = false;
+                origins.require_original(false, item.header_span, "multiple_local_declarations");
                 parse_var_parts(item, "", diagnostics, &mut statements,origins.deferred_literal_purity);
                 index += 1;
                 continue;
@@ -539,7 +583,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             {
                 end += 1;
             }
-            statements.push(parse_if(item, &items[index + 1..end], diagnostics, origins));
+            statements.push(parse_if(item, &items[index + 1..end], diagnostics, origins, false));
             index = end;
             continue;
         }
@@ -554,7 +598,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                         && next.header.trim_end().ends_with(')')
                         && original_indented_block_boundary(item, origins)
                         && original_linked_leaf_block(item, next, OriginalLeafBlockLink::DoWhile, origins);
-                    origins.original_compound_complete &= witnessed;
+                    origins.require_original(witnessed, next.header_span, "do_while_boundary");
                     statements.push(Statement {
                         kind: StatementKind::DoWhile {
                             body: parse_sequence(&item.children, diagnostics, origins),
@@ -663,7 +707,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 *count += 1;
             } else {
                 root_prefix = None;
-                origins.original_compound_complete = false;
+                origins.require_original(false, item.header_span, "initial_setting");
             }
         }
         statements.push(statement);
@@ -677,6 +721,7 @@ fn parse_if(
     else_items: &[Item],
     diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
+    require_continuation_proof: bool,
 ) -> Statement {
     let condition = parse_control_condition_origin(item, "if", diagnostics, origins);
     let newly_composed = condition.as_ref().is_some_and(|value| match &value.kind {
@@ -685,7 +730,8 @@ fn parse_if(
             || matches!(&callee.kind, ExprKind::Member { .. } | ExprKind::SafeMember { .. }),
         _ => false,
     });
-    if newly_composed {
+    let mut require_next_proof = false;
+    if newly_composed || require_continuation_proof {
         // A compatibility Item can attach children after an authored ';'.
         let opening = control_inline(item, "if").is_none()
             && item.header.trim_end().ends_with(')')
@@ -695,12 +741,16 @@ fn parse_if(
             [next] if opening && next.header.trim() == "else" =>
                 original_indented_block_boundary(next, origins)
                     && original_linked_leaf_block(item, next, OriginalLeafBlockLink::Else, origins),
-            [next] if opening && next.header.trim_start().strip_prefix("else")
+            [next, ..] if opening && next.header.trim_start().strip_prefix("else")
                     .is_some_and(|rest| starts_keyword(rest.trim_start(), "if")) =>
                 original_linked_leaf_block(item, next, OriginalLeafBlockLink::ElseIf, origins),
             _ => false,
         };
-        origins.original_compound_complete &= opening && continuation;
+        let issued = opening && continuation;
+        origins.require_original(issued, item.header_span, "if_boundary");
+        // A newly admitted multi-link chain must prove each following link,
+        // even when a nested condition is in the older simple cohort.
+        require_next_proof = issued && (require_continuation_proof || else_items.len() > 1);
     }
     let then_branch = control_body(item, "if", diagnostics, origins);
     let mut span = item.span;
@@ -720,7 +770,7 @@ fn parse_if(
             if !starts_keyword(rest, "if") {
                 // Native inline-else compatibility drops surplus clauses; that
                 // is not a fully consumed Original source scope.
-                if !remaining.is_empty(){origins.original_compound_complete=false;}
+                origins.require_original(remaining.is_empty(), other.header_span, "else_chain");
                 let mut inline = other.clone();
                 inline.header = rest.trim_end_matches(';').into();
                 inline.header_span.start += other.header.find(rest).unwrap_or(0);
@@ -729,7 +779,7 @@ fn parse_if(
                 let mut nested = other.clone();
                 nested.header = rest.into();
                 nested.header_span.start += other.header.find(rest).unwrap_or(0);
-                vec![parse_if(&nested, remaining, diagnostics, origins)]
+                vec![parse_if(&nested, remaining, diagnostics, origins, require_next_proof)]
             }
         } else {
             diagnostics.push(Diagnostic {
@@ -821,7 +871,7 @@ fn parse_one(
         false
     };
     if defer_joined_return {
-        origins.original_compound_complete &= joined_return;
+        origins.require_original(joined_return, item.header_span, "joined_return");
     }
     if crate::return_has_block(header, !item.children.is_empty())
         || (joined_return && !item.children.is_empty())
@@ -844,7 +894,7 @@ fn parse_one(
                 value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
             });
         });
-        origins.original_compound_complete &= witnessed && condition.is_some();
+        origins.require_original(witnessed && condition.is_some(), item.header_span, "while_control");
         condition.map(|condition| StatementKind::While {
             condition,
             body: control_body_from_inline(item, inline, diagnostics, origins),
@@ -854,7 +904,7 @@ fn parse_one(
             && original_indented_block_boundary(item, origins);
         let mut original_each = false;
         let control = parse_for(item, diagnostics, origins, &mut original_each);
-        origins.original_compound_complete &= boundary && original_each;
+        origins.require_original(boundary && original_each, item.header_span, "for_control");
         control.map(|control| {
             let parent = origins.original_for_continue;
             origins.original_for_continue = boundary && original_each;
@@ -864,7 +914,7 @@ fn parse_one(
         })
     } else if starts_keyword(header, "switch") {
         let parsed = parse_switch(item, diagnostics, origins);
-        origins.original_compound_complete &= parsed.is_some();
+        origins.require_original(parsed.is_some(), item.header_span, "switch_control");
         parsed
     } else if starts_keyword(header, "spawn") {
         parse_spawn(item, diagnostics, origins)
@@ -895,7 +945,11 @@ fn parse_one(
         let leading = item.header.len() - item.header.trim_start().len();
         let offset = item.header_span.start + leading + (header.len() - rest.len());
         parse_expr_observed(rest,offset,diagnostics,&mut|parsed|{
-            origins.original_compound_complete&=parsed.original_simple_expression.is_some_and(|value|value.kind()==crate::expression_parser::OriginalSimpleKind::Complete);
+            use crate::expression_parser::OriginalSimpleKind;
+            let issued = parsed.original_simple_expression.is_some_and(|value| {
+                matches!(value.kind(), OriginalSimpleKind::Complete | OriginalSimpleKind::PlainAssignment)
+            });
+            origins.require_original(issued, Span::new(offset, offset + rest.len()), "return_expression");
             if origins.original_terminal_header==Some(item.header_span){if let Some(actual)=parsed.original_simple_expression{*origins.original_grammar=OriginalBodyGrammarOutcome::from_simple_return(actual,offset,item.header_span);}}
         }).map(|expr| StatementKind::Return(Some(expr)))
     } else if starts_keyword(header, "throw") {
@@ -920,7 +974,7 @@ fn parse_one(
     } else if header == "continue" {
         if origins.original_for_continue && item.children.is_empty() {
             match origins.settings.map(|provider| provider.original_bare_continue(item.header_span)).transpose() {
-                Ok(actual) => origins.original_compound_complete &= actual == Some(true),
+                Ok(actual) => origins.require_original(actual == Some(true), item.header_span, "continue_terminator"),
                 Err(actual) => {
                     origins.original_compound_complete = false;
                     if let Some(admission) = diagnostics.admission {
@@ -936,7 +990,7 @@ fn parse_one(
     } else if header.starts_with("var/") || starts_keyword(header, "var") {
         let parsed = parse_var(item, diagnostics, origins.deferred_literal_purity, &mut original_local_head);
         let issued = original_local_head && parsed.is_some();
-        origins.original_compound_complete &= issued;
+        origins.require_original(issued, item.header_span, "local_declaration_or_initializer");
         origins.original_compound_seen_statement |= issued;
         parsed
     } else if !item.children.is_empty() {
@@ -956,13 +1010,13 @@ fn parse_one(
                 use crate::expression_parser::OriginalSimpleKind;
                 let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
                     OriginalSimpleKind::OrdinaryCallStatement=>ordinary_call,
-                    OriginalSimpleKind::SimpleAssignmentStatement=>assignment,
+                    OriginalSimpleKind::SimpleAssignmentStatement | OriginalSimpleKind::PlainAssignment=>assignment,
                     OriginalSimpleKind::PostIncrementStatement=>increment,
                     OriginalSimpleKind::CrashStatement=>crash,
                     OriginalSimpleKind::Complete=>ordinary_call&&matches!(parsed.expr.as_ref().map(|expr|&expr.kind),Some(ExprKind::Call{callee,..})if matches!(&callee.kind,ExprKind::Ident(_))),
                     OriginalSimpleKind::MissingArithmeticOperand=>false,
                 });
-                origins.original_compound_complete&=issued;
+                origins.require_original(issued, item.header_span, "statement_expression");
                 origins.original_compound_seen_statement|=issued;
             }
         }).map(|expr| match expr.kind {
@@ -1430,7 +1484,7 @@ fn parse_switch(
     }
     // Decimal case terms have no case-positioned diagnostics. Current
     // source reporting reissues a cursor from live tokens if it needs one.
-    origins.original_compound_complete &= witnessed && !cases.is_empty();
+    origins.require_original(witnessed && !cases.is_empty(), item.header_span, "switch_cases");
     Some(StatementKind::Switch {
         selector,
         cases,
@@ -1556,7 +1610,7 @@ impl OriginalBodyGrammarOutcome{
   let shift=|span:Span|Some(Span::new(span.start.checked_add(offset)?,span.end.checked_add(offset)?));
   let expression=shift(actual.span())?;let operator=match actual.operator(){Some(span)=>Some(shift(span)?),None=>None};
   if expression.start<statement.start||expression.end>statement.end{return None}
-  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
+  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete|crate::expression_parser::OriginalSimpleKind::PlainAssignment=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
  }
  pub fn prefix_settings(self)->usize{self.prefix_settings}
  pub fn kind(self)->OriginalBodyGrammarKind{self.kind}
@@ -1668,10 +1722,10 @@ fn joined_return_scope_uses_the_existing_provider_once_and_preserves_first_io() 
  use super::*;
  fn body(code:&str)->ParsedBody{let syntax=crate::parse(&format!("/proc/probe(argument)\n{code}"));parse_proc_body(&syntax.items[0])}
  #[test]fn same_primary_if_and_return_branches_issue_demonstrated_compound_scope(){
-  for code in["    if(argument)\n        return 1\n","    if(argument)\n        return 1\n    return 2\n","    if(argument)\n        return 1\n    else\n        return 2\n"]{let parsed=body(code);assert!(parsed.diagnostics.is_empty());let fact=parsed.original_grammar.unwrap();assert_eq!(fact.kind(),OriginalBodyGrammarKind::Available);assert_eq!(fact.scope_roots(),Some(parsed.statements.len()));}
+  for code in["    if(argument)\n        return 1\n","    if(argument)\n        return 1\n    return 2\n","    if(argument)\n        return 1\n    else\n        return 2\n","    if(argument)\n        argument = 1\n    return 2\n","    if(argument)\n        var/value = 1\n    return 2\n"]{let parsed=body(code);assert!(parsed.diagnostics.is_empty());let fact=parsed.original_grammar.unwrap();assert_eq!(fact.kind(),OriginalBodyGrammarKind::Available);assert_eq!(fact.scope_roots(),Some(parsed.statements.len()));}
  }
  #[test]fn unknown_statement_expression_or_recovery_never_inherits_compound_scope(){
-  for code in["    if(argument)\n        return 1\n    else return 2\n    else if(argument)\n        return 3\n","    if(argument)\n        return 1 +\n    return 2\n","    if(choose(1))\n        return 1\n    return 2\n","    if(argument)\n        argument = 1\n    return 2\n","    if(argument)\n        var/value = 1\n    return 2\n","    if(argument)\n        return 1\n    throw\n"]{assert!(body(code).original_grammar.is_none(),"unissued {code}");}
+  for code in["    if(argument)\n        return 1\n    else return 2\n    else if(argument)\n        return 3\n","    if(argument)\n        return 1 +\n    return 2\n","    if(choose(1))\n        return 1\n    return 2\n","    if(argument)\n        argument = other = 1\n    return 2\n","    if(argument)\n        var/value = other = 1\n    return 2\n","    if(argument)\n        return 1\n    throw\n"]{assert!(body(code).original_grammar.is_none(),"unissued {code}");}
  }
 }
 

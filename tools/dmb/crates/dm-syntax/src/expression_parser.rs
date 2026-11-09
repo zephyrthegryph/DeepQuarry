@@ -1584,7 +1584,7 @@ pub(crate) fn parse_expression_with_primary_tokens(source:&str,admission:Option<
 /// Source-neutral private grammar provenance. A caller cannot construct this
 /// from diagnostics, an empty parse, a source hash or a semantic-model option.
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) struct OriginalSimpleExpression{kind:OriginalSimpleKind,span:Span,operator:Option<Span>,original_profile:bool}
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalSimpleKind{Complete,OrdinaryCallStatement,SimpleAssignmentStatement,PostIncrementStatement,CrashStatement,MissingArithmeticOperand}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalSimpleKind{Complete,OrdinaryCallStatement,SimpleAssignmentStatement,PlainAssignment,PostIncrementStatement,CrashStatement,MissingArithmeticOperand}
 impl OriginalSimpleExpression{
  pub(crate) fn kind(self)->OriginalSimpleKind{self.kind}
  pub(crate) fn span(self)->Span{self.span}
@@ -1694,9 +1694,7 @@ fn original_simple_assignment(expr: &Expr, tokens: &[Token], original_profile: b
                 && original_zero_call(rhs, value, true))
             || original_return_slot_mini_constructor(rhs, value));
     }
-    if plain && original_profile && op == "="
-        && original_conditional_child(rhs, value, true, 32)
-    {
+    if original_profile && original_plain_assignment(expr, tokens) {
         return true;
     }
     match value {
@@ -2090,6 +2088,19 @@ fn original_crash_statement(expr: &Expr, tokens: &[Token]) -> bool {
         }
 }
 
+/// A plain assignment may also occupy the root of a return expression.
+fn original_plain_assignment(expr: &Expr, tokens: &[Token]) -> bool {
+    let ExprKind::Binary { op, lhs, rhs } = &expr.kind else { return false };
+    let [name, equals, value @ ..] = tokens else { return false };
+    op == "="
+        && matches!(equals.kind, TokenKind::Operator | TokenKind::Punctuation)
+        && equals.text == "="
+        && matches!(&lhs.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
+        && simple_term(lhs, name)
+        && expr.span == Span::new(name.span.start, rhs.span.end)
+        && original_conditional_child(rhs, value, true, 32)
+}
+
 fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->Option<OriginalSimpleExpression>{
  let complete=match tokens{
   [only]=>simple_term(expr,only),
@@ -2110,7 +2121,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
      && original_conditional_child(expr, tokens, true, 32);
  let return_slot = original_profile && matches!((&expr.kind, tokens), (ExprKind::Ident(name), [dot])
      if name == "." && dot.kind == TokenKind::Punctuation && dot.text == "." && dot.span == expr.span);
- let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_simple_assignment(expr,tokens,original_profile){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile&&original_post_increment(expr,tokens){OriginalSimpleKind::PostIncrementStatement}else{return None};
+ let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile&&original_post_increment(expr,tokens){OriginalSimpleKind::PostIncrementStatement}else{return None};
  Some(OriginalSimpleExpression{kind,span:expr.span,operator:None,original_profile})
 }
 

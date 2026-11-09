@@ -359,6 +359,33 @@ mod body_syntax_census_tests;
    })).unwrap();assert_eq!(db.db.stats(BODY_SYNTAX).computed,1);
   }
  }
+ #[test]
+ fn actual_original_plain_assignment_return_owns_its_body_disposition() {
+    use dm_tree::frontend::OriginalBodyDisposition as D;
+    for (body, available) in [
+        ("return argument = value", true),
+        ("return argument = (value ? 1 : 2)", true),
+        ("if(value)\n        return argument = value\n    return argument", true),
+        ("return argument.field = value", false),
+        ("return argument += value", false),
+        ("return (argument = value)", false),
+        ("return argument = value = other", false),
+        ("if(argument = value)\n        return value", false),
+    ] {
+        let db = Arc::new(QueryDb::default());
+        let mut state = RetainedSemanticTree::new();
+        let front = original_frontend(&mut state, &db, &format!("/proc/p(argument, value, other)\n    {body}\n"));
+        let archive = Arc::clone(front.source_view().unwrap().archive());
+        setting_syntax::with_setting_admission(&db.body_charge, |a| archive.with_current_body_checked(0, a, |current| {
+            match (available, current.syntax().original_code_disposition()) {
+                (true, Ok(D::Available(grant))) => assert!(grant.belongs_to(current.syntax())),
+                (false, Err(BodySyntaxFailure::Operational(error))) => assert_eq!(error.kind(), std::io::ErrorKind::Unsupported),
+                _ => panic!("actual current disposition differs for {body}"),
+            }
+            Ok(())
+        })).unwrap();
+    }
+ }
  #[test]fn actual_current_original_disposition_never_lends_a_foreign_grant_or_swallows_native_io(){
   let db=Arc::new(QueryDb::default());let text="/proc/p(argument)\n    return argument.field\n";let own=original_frontend(&mut RetainedSemanticTree::new(),&db,text);let other=original_frontend(&mut RetainedSemanticTree::new(),&db,text);let original=original_input(&own,"p");let foreign=original_input(&other,"p");let product=db.syntax_product_checked(&original).unwrap();
   setting_syntax::with_setting_admission(&db.body_charge,|a|{let bound=original.bind_original_product_checked(product.parsed().unwrap(),a)?;assert!(matches!(bound.original_code_disposition()?,dm_tree::frontend::OriginalBodyDisposition::Available(_)));assert!(foreign.bind_original_product_checked(product.parsed().unwrap(),a).is_err());Ok::<(),BodySyntaxFailure>(())}).unwrap();
@@ -1147,6 +1174,46 @@ mod body_syntax_census_tests;
                  assert!(proof.belongs_to(&body));
              } else {
                  assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{name}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_else_if_chain_authenticates_every_link() {
+     let fixture = r#"
+/proc/probe(a, b)
+    if(!a)
+        return 1
+    else if(!b)
+        return 2
+    else
+        return 3
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("else if(!b)", "else if(b)"), true),
+         (fixture.replace("    else\n        return 3", "    else return 3"), false),
+         (fixture.replace("else if(!b)", "else if(b)")
+             .replace("    else\n        return 3", "    else return 3"), false),
+         (fixture.replace("    else if(!b)\n        return 2", "    else if(!b) return 2"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original linked else-if chain is available: {text}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
              }
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();
