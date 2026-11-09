@@ -245,7 +245,7 @@ impl StoredParts {
                             line: e.line,
                             kind: e.kind.to_string(),
                             name: e.name,
-                            local: e.local.into_iter().collect(),
+                            local: e.local,
                             remote: e.remote,
                             hops: e.hops,
                         })
@@ -270,14 +270,19 @@ impl StoredParts {
                 .map(|(i, es)| {
                     let es = es
                         .into_iter()
-                        .map(|e| Entry {
-                            rel: e.rel,
-                            line: e.line,
-                            kind: intern_kind(&e.kind),
-                            name: e.name,
-                            local: e.local.into_iter().collect(),
-                            remote: e.remote,
-                            hops: e.hops,
+                        .map(|e| {
+                            let mut local = e.local;
+                            local.sort_unstable();
+                            local.dedup();
+                            Entry {
+                                rel: e.rel,
+                                line: e.line,
+                                kind: intern_kind(&e.kind),
+                                name: e.name,
+                                local,
+                                remote: e.remote,
+                                hops: e.hops,
+                            }
                         })
                         .collect();
                     (i, es)

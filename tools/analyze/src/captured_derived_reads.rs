@@ -89,7 +89,6 @@ fn sealed_index_backing(schema:&SealedSchema,entries:&Entries,entry_order:&Vec<S
  bytes=bytes.checked_add(entries.capacity().checked_mul(std::mem::size_of::<(String,Vec<Entry>)>())?)?;
  for (owner,rows) in entries{
   bytes=bytes.checked_add(owner.capacity())?.checked_add(rows.capacity().checked_mul(std::mem::size_of::<Entry>())?)?;
-  // Entry.local still uses its existing conservative BTreeSet admission.
   for entry in rows{bytes=bytes.checked_add(entry_backing(entry)?)?;}
  }
  Some(bytes)
@@ -129,7 +128,7 @@ impl Facts for Judge<'_>{
  fn has(&self,t:Table,owner:&str,name:&str)->Result<bool,Failure>{check(self.budget,self.poll)?;Ok(match t{Table::Tracked=>self.index.has(NameTable::Tracked,owner,name),Table::Relation=>self.index.has(NameTable::Relations,owner,name),Table::Object=>self.index.has(NameTable::Typed,owner,name),Table::Derived=>{let mut yes=false;visit_entries(self.index,owner,|e|yes|=e.kind=="derive"&&e.name.as_deref().is_some_and(|v|!v.is_empty()&&v==name));yes}})}
  fn exact(&self,owner:&str)->Result<bool,Failure>{let mut yes=false;schema::chain(owner,|_,a|yes|=self.index.entries(a).is_some_and(|es|!es.is_empty()));Ok(yes)}
  fn declared_value(&self,owner:&str,value:&str)->Result<bool,Failure>{self.has(Table::Derived,owner,value)}
- fn declared_read(&self,owner:&str,kind:&str,value:Option<&str>,name:&str)->Result<bool,Failure>{let mut yes=false;visit_entries(self.index,owner,|e|yes|=e.kind==kind&&value.is_none_or(|v|e.name.as_deref()==Some(v))&&e.local.contains(name));Ok(yes)}
+ fn declared_read(&self,owner:&str,kind:&str,value:Option<&str>,name:&str)->Result<bool,Failure>{let mut yes=false;visit_entries(self.index,owner,|e|yes|=e.kind==kind&&value.is_none_or(|v|e.name.as_deref()==Some(v))&&e.has_local(name));Ok(yes)}
  fn published(&self,owner:&str,name:&str)->Result<bool,Failure>{let mut yes=false;schema::chain(owner,|_,a|{let mut last=None;for(t,v,k)in self.index.published(){if strip(t)==a&&v==name{last=Some(k.as_str())}}yes|=last.is_some_and(|k|!k.is_empty());});Ok(yes)}
  fn never_written(&self,owner:&str,name:&str)->Result<bool,Failure>{self.writes.never_written(self.index,owner,name)}
  fn allowed(&self,rel:&str,line:usize)->Result<bool,Failure>{if rel!=self.file.rel{return Err("derived ALLOW loan differs from current raw procedure file".into())}let mut c=Operation{budget:self.budget,poll:self.poll};let Some(kept)=crate::allow::kept_using(self.file,line,"derived_reads",&mut c)?else{return Ok(false)};let code=kept.code.unwrap_or_default();let mut data=self.data.borrow_mut();if !data.allows.iter().any(|a|a.rel==rel&&a.line as usize==kept.line&&a.name=="derived_reads"&&a.code==code){kc::row(&mut c,&mut data.allows)?;self.budget.charge(code.capacity()).map_err(|m|oom(self.budget,m))?;data.allows.push(AllowUse{rel:kc::own(&mut c,rel)?,line:u32::try_from(kept.line).map_err(|_|oom(self.budget,"derived ALLOW line overflow"))?,name:kc::own(&mut c,"derived_reads")?,code});}if !data.digests.contains_key(rel){kc::reserve(&mut c,||Some(2048))?;data.digests.insert(kc::own(&mut c,rel)?,crate::captured_raw_file::source_allow_digest(self.file));}Ok(true)}
@@ -181,7 +180,7 @@ fn find_file<T>(source:&dyn DerivedPages,relative:&str,run:impl FnOnce(&SourceFi
 /// the actual host admits this consumer and its complete original acquisition.
 fn entry_backing(entry:&Entry)->Option<usize>{
  let mut bytes=entry.rel.capacity().checked_add(entry.name.as_ref().map_or(0,String::capacity))?
-  .checked_add(entry.local.len().checked_mul(512)?)?
+  .checked_add(entry.local.capacity().checked_mul(std::mem::size_of::<String>())?)?
   .checked_add(entry.remote.capacity().checked_mul(std::mem::size_of::<(Option<String>,String)>())?)?
   .checked_add(entry.hops.capacity().checked_mul(std::mem::size_of::<String>())?)?;
  for name in &entry.local{bytes=bytes.checked_add(name.capacity())?;}
@@ -366,7 +365,7 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
   assert_eq!(rows.len(),64);
   assert_eq!(rows[0].rel,"code/file_0.dm");
   assert_eq!(rows[63].rel,"code/file_63.dm");
-  assert!(rows.iter().all(|entry|entry.local.contains("value")));
+  assert!(rows.iter().all(|entry|entry.has_local("value")));
   assert!(data.funding.used()>=rows.iter().map(|entry|entry_backing(entry).unwrap()).sum::<usize>());
   let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
   drop(data);
@@ -392,10 +391,38 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
   let row=&rows[0];
   assert_eq!(row.line,12_002);
   assert_eq!(row.name.as_deref(),Some("output"));
-  assert!(row.local.contains("value"));
-  assert!(row.local.contains("items"));
+  assert!(row.has_local("value"));
+  assert!(row.has_local("items"));
   assert_eq!(row.remote,[(Some("/obj/item".into()),"value".into())]);
  }
+ #[test]
+ fn sealed_entry_locals_preserve_sorted_unique_names_and_charge_actual_backing() {
+  let root = std::env::current_dir().unwrap().join("derived-entry-locals");
+  let source = concat!(
+   "/datum/probe/derived()\n",
+   "    return list(drawn_from(nameof(z), nameof(a), nameof(z), rel(nameof(m), nameof(remote)), nameof(m)))\n",
+  );
+  let pages = Pages {
+   file: crate::captured_raw_file::File::capture(&root, &root.join("code/probe.dm"), source.into()).unwrap(),
+   fail: Cell::new(false),
+   stop: Cell::new(false),
+   passes: Cell::new(0),
+  };
+  let budget = Budget::new(8 * 1024 * 1024).unwrap();
+  let mut data = prepare_selected_pages(&pages, &budget, &|| Ok(())).unwrap();
+  let IndexEntries::Sealed(entries) = &mut data.index.entries else { panic!("actual cold index must seal") };
+  let entry = &mut entries[0].1[0];
+  assert_eq!(entry.local, ["a", "m", "z"]);
+  assert_eq!(entry.hops, ["m"]);
+  assert!(entry.has_local("m"));
+  assert!(!entry.has_local("remote"));
+  let with_locals = entry_backing(entry).unwrap();
+  let locals = std::mem::take(&mut entry.local);
+  let local_storage = locals.capacity() * std::mem::size_of::<String>()
+   + locals.iter().map(String::capacity).sum::<usize>();
+  assert_eq!(with_locals - entry_backing(entry).unwrap(), local_storage);
+ }
+
  #[test]
  fn sealed_derived_lookup_keeps_sorted_members_and_authored_entry_order(){
   let root=std::env::current_dir().unwrap().join("derived-sealed-order");
