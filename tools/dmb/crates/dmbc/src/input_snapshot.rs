@@ -171,6 +171,9 @@ mod policy_read;
 pub(crate) use policy_read::FixedLibraryBaseline;
 #[path = "input_map_edits.rs"]
 mod map_edits;
+#[path = "input_workspace_raw_spool.rs"]
+mod workspace_raw_spool;
+pub(crate) use workspace_raw_spool::{WorkspaceRawSpool, WorkspaceRawSpoolBuilder, WorkspaceRawSpoolIdentity};
 pub(crate) use map_edits::PairedDmmStage;
 pub(crate) use policy_directories::PolicyDirectoryStorage;
 pub use policy_directories::{
@@ -1125,6 +1128,10 @@ impl InputSnapshot {
         }
         None
     }
+    pub(crate) fn recorded_canonical_file(&self, path: &Path) -> Option<&FileInput> {
+        self.files.get(path)
+    }
+
     pub fn files(&self) -> impl Iterator<Item = &FileInput> {
         self.files.values()
     }

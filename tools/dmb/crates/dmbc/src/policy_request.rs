@@ -593,6 +593,17 @@ pub(crate) fn workspace_revision(
     recursive_roots: &[PathBuf],
     configuration: &std::path::Path,
 ) -> io::Result<u128> {
+    workspace_revision_with_directories(source, facts, facts.policy_directories(), root, recursive_roots, configuration)
+}
+
+pub(crate) fn workspace_revision_with_directories(
+    source: u128,
+    facts: &crate::input_snapshot::InputSnapshot,
+    directories: &std::collections::BTreeMap<PathBuf, crate::input_snapshot::PolicyDirectoryObservation>,
+    root: &std::path::Path,
+    recursive_roots: &[PathBuf],
+    configuration: &std::path::Path,
+) -> io::Result<u128> {
     struct HashWriter(xxhash_rust::xxh3::Xxh3);
     impl io::Write for HashWriter {
         fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
@@ -617,7 +628,7 @@ pub(crate) fn workspace_revision(
                 folders,
                 negative,
                 generated,
-                facts.policy_directories(),
+                directories,
             ),
         )
         .map_err(io::Error::other);

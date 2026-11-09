@@ -49,13 +49,37 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         &self, path: &Path, limit: usize,
         work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
     ) -> io::Result<FixedLibraryBaseline> {
+        self.read_registered_baseline_using(path, limit, work, None)
+    }
+
+    pub(crate) fn read_registered_baseline_using(
+        &self, path: &Path, limit: usize,
+        work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
+        mut fund_payload: Option<&mut dyn FnMut(usize) -> io::Result<()>>,
+    ) -> io::Result<FixedLibraryBaseline> {
         use FixedLibraryBaseline as Seen;
         if !path.is_absolute() {
             return Err(invalid("baseline observation requires an absolute path"));
         }
         work.checkpoint()?;
+        if fund_payload.is_some() {
+            let path = canonical_path(path);
+            let parent = path.parent().ok_or_else(|| invalid("fixed baseline parent absent"))?;
+            // Joined Derived configuration already observed tools/ci. Do
+            // not enter an unbounded new folder-list allocation in this lane.
+            let current = self.snapshot.lock().map_err(|_| invalid("input capture mutex poisoned"))?;
+            if !current.folders.contains_key(parent) {
+                return Err(invalid("variable baseline grant requires its recorded parent listing"));
+            }
+        }
         #[cfg(not(windows))]
         {
+            if let Some(fund_payload) = fund_payload {
+                return Ok(match self.read_policy_vec_admitted(path, limit, fund_payload)? {
+                    Some(bytes) => Seen::Readable(bytes.into()),
+                    None => Seen::Missing,
+                });
+            }
             // Unix can successfully open a directory and fail its first read.
             // No fixed payload-failure currentness is issued on that host.
             Ok(match self.read_policy_candidate(path, limit)? {
@@ -85,7 +109,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                         Err(invalid("provider requested invalid fixed baseline payload admission"))
                     } else {
                         admitted.set(Some(size));
-                        work.checkpoint()
+                        work.checkpoint().and_then(|()| match fund_payload.as_mut() {
+                            Some(fund) => fund(size),
+                            None => Ok(()),
+                        })
                     };
                     match status {
                         Ok(()) => Ok(()),

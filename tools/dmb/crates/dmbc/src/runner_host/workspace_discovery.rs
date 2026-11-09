@@ -235,6 +235,9 @@ impl DiscoveryReceipt {
         self.facts.policy_directories().get(path).filter(|fact| !fact.follow_root)
             .map(|fact| &fact.listing).ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "joined MapEdits requires its actual no-follow directory observation"))
     }
+    pub(crate) fn policy_directories(&self) -> &std::collections::BTreeMap<PathBuf, crate::input_snapshot::PolicyDirectoryObservation> {
+        self.facts.policy_directories()
+    }
     pub(crate) fn directory_paths(&self) -> impl Iterator<Item = &PathBuf> {
         self.facts.policy_directories().keys()
     }

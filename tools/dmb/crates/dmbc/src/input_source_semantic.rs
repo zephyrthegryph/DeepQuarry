@@ -196,11 +196,19 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                 // original occurrence indices for every real source binding.
                 .filter(|(_,row)|row.non_text_kind().is_none())
                 .map(|(index, row)| (index, &row.path)),
+            true,
         )
     }
     pub(crate) fn diagnostic_source_evidence(
         &self,
         frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+    ) -> io::Result<Arc<SemanticSourceEvidence>> {
+        self.diagnostic_source_evidence_using(frontend, true)
+    }
+    pub(crate) fn diagnostic_source_evidence_using(
+        &self,
+        frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
+        retain_entries: bool,
     ) -> io::Result<Arc<SemanticSourceEvidence>> {
         if !frontend.receipt().authenticates(frontend.tree())
             || !frontend.archive().matches_tree(frontend.tree())
@@ -211,6 +219,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             frontend.mapping(),
             frontend.files(),
             frontend.semantic_includes(),
+            retain_entries,
         )
     }
     fn semantic_source_evidence_parts<'a>(
@@ -218,6 +227,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         mapping: &Arc<SourceExportMapping>,
         files: &[dm_tree::frontend::SourceFile],
         includes: impl Iterator<Item = (usize, &'a Arc<PathBuf>)>,
+        retain_entries: bool,
     ) -> io::Result<Arc<SemanticSourceEvidence>> {
         // Lookup only: this is the compiler's existing source roster, not a model.
         let mut sources: BTreeMap<_, _> = files
@@ -262,6 +272,15 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         }
         let compatibility = SemanticSourceEvidence::evaluate_compatibility(mapping, &entries)
             .map_err(|error| error.to_string());
+        // Only the exact live mapping can consume this immutable conclusion.
+        // Joined policy already owns that mapping, which itself retains every
+        // actual binding and path; the scanned rows add no authority afterward.
+        let entries = if retain_entries {
+            entries.into_boxed_slice()
+        } else {
+            drop(entries);
+            Box::default()
+        };
         static NEXT: AtomicU64 = AtomicU64::new(1);
         Ok(Arc::new(SemanticSourceEvidence {
             key: NEXT
@@ -270,7 +289,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                 })
                 .map_err(|_| invalid("semantic source admission issuance exhausted"))?,
             mapping: Arc::downgrade(mapping),
-            entries: entries.into_boxed_slice(),
+            entries,
             compatibility,
         }))
     }

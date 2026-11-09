@@ -1,103 +1,92 @@
 //! Candidate index only; a selected alias still needs its private receipt.
 use super::*;
 use dm_preprocess::regions::filesystem_comparison_key;
-const COORD: usize = 128 + std::mem::size_of::<(PathBuf, Vec<&Path>)>();
+use std::hash::{Hash, Hasher};
+
 pub(crate) struct AliasIndex<'a> {
-    rows: BTreeMap<PathBuf, Vec<&'a Path>>,
-    charged: usize,
+    rows: Vec<(u64, &'a Path)>,
     #[cfg(test)]
     normalized: std::cell::Cell<usize>,
     #[cfg(test)]
     comparisons: std::cell::Cell<usize>,
 }
+
 impl<'a> AliasIndex<'a> {
-    pub(crate) fn reserve_charge(mut paths: impl Iterator<Item = &'a Path>) -> io::Result<usize> {
-        paths.try_fold(std::mem::size_of::<Self>(), |n, path| {
-            n.checked_add(512)
-                .and_then(|n| {
-                    n.checked_add(path.as_os_str().as_encoded_bytes().len().checked_mul(4)?)
-                })
-                .ok_or_else(|| io::Error::other("workspace alias index reserve overflow"))
-        })
+    fn scratch(path: &Path) -> io::Result<usize> {
+        path.as_os_str().as_encoded_bytes().len().checked_mul(4)
+            .and_then(|bytes| bytes.checked_add(512))
+            .ok_or_else(|| io::Error::other("workspace alias normalization reserve overflow"))
     }
-    pub(crate) fn new(paths: impl Iterator<Item = &'a Path>, budget: usize) -> io::Result<Self> {
+
+    fn row_bytes(count: usize) -> io::Result<usize> {
+        count.checked_mul(std::mem::size_of::<(u64, &Path)>())
+            .and_then(|bytes| bytes.checked_add(std::mem::size_of::<Self>()))
+            .ok_or_else(|| io::Error::other("workspace alias rows reserve overflow"))
+    }
+
+    fn key(path: &Path) -> u64 {
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        // Use Path's equality-compatible hash after the exact existing
+        // comparison normalization. A collision only adds candidate checks.
+        filesystem_comparison_key(path).hash(&mut hash);
+        hash.finish()
+    }
+
+    pub(crate) fn reserve_charge(mut paths: impl ExactSizeIterator<Item = &'a Path>) -> io::Result<usize> {
+        let rows = Self::row_bytes(paths.len())?;
+        let scratch = paths.try_fold(0, |peak, path| Ok::<_, io::Error>(peak.max(Self::scratch(path)?)))?;
+        rows.checked_add(scratch).ok_or_else(|| io::Error::other("workspace alias reserve overflow"))
+    }
+
+    pub(crate) fn new(paths: impl ExactSizeIterator<Item = &'a Path>, budget: usize) -> io::Result<Self> {
+        let count = paths.len();
+        let row_bytes = Self::row_bytes(count)?;
+        let scratch = budget.checked_sub(row_bytes)
+            .ok_or_else(|| io::Error::other("alias rows exceed preallocation admission"))?;
         let mut result = Self {
-            rows: BTreeMap::new(),
-            charged: std::mem::size_of::<Self>(),
+            rows: Vec::new(),
             #[cfg(test)]
             normalized: std::cell::Cell::new(0),
             #[cfg(test)]
             comparisons: std::cell::Cell::new(0),
         };
-        if result.charged > budget {
-            return Err(io::Error::other("alias index metadata admission exhausted"));
+        result.rows.try_reserve_exact(count)
+            .map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
+        if result.rows.capacity() != count {
+            return Err(io::Error::new(io::ErrorKind::OutOfMemory, "alias row capacity differs from admission"));
         }
         for path in paths {
             crate::daemon::control::checkpoint()?;
-            let reserve = 512usize
-                .checked_add(
-                    path.as_os_str()
-                        .as_encoded_bytes()
-                        .len()
-                        .checked_mul(4)
-                        .ok_or_else(|| io::Error::other("alias path reserve overflow"))?,
-                )
-                .ok_or_else(|| io::Error::other("alias index reserve overflow"))?;
-            if result
-                .charged
-                .checked_add(reserve)
-                .is_none_or(|n| n > budget)
-            {
-                return Err(io::Error::other(
-                    "alias index preallocation admission exhausted",
-                ));
+            if Self::scratch(path)? > scratch || result.rows.len() == count {
+                return Err(io::Error::new(io::ErrorKind::OutOfMemory, "alias index exceeds admission"));
             }
-            let key = filesystem_comparison_key(path);
+            result.rows.push((Self::key(path), path));
             #[cfg(test)]
             result.normalized.set(result.normalized.get() + 1);
-            let key_charge = if !result.rows.contains_key(&key) {
-                key.capacity() + COORD
-            } else {
-                0
-            };
-            let values = result.rows.entry(key).or_default();
-            let old = values.capacity();
-            values
-                .try_reserve_exact(1)
-                .map_err(|_| io::Error::other("alias vector allocation failed"))?;
-            let delta = values
-                .capacity()
-                .checked_sub(old)
-                .and_then(|n| n.checked_mul(std::mem::size_of::<&Path>()))
-                .ok_or_else(|| io::Error::other("alias vector overflow"))?;
-            result.charged = result
-                .charged
-                .checked_add(key_charge)
-                .and_then(|n| n.checked_add(delta))
-                .filter(|n| *n <= budget)
-                .ok_or_else(|| io::Error::other("actual alias index capacity exceeds admission"))?;
-            values.push(path);
         }
+        crate::daemon::control::checkpoint()?;
+        result.rows.sort_unstable_by_key(|(hash, _)| *hash);
+        crate::daemon::control::checkpoint()?;
         Ok(result)
     }
+
     pub(crate) fn candidate(&self, path: &Path) -> io::Result<Option<&'a Path>> {
-        let key = filesystem_comparison_key(path);
+        let key = Self::key(path);
         #[cfg(test)]
         self.normalized.set(self.normalized.get() + 1);
+        let start = self.rows.partition_point(|(hash, _)| *hash < key);
         let mut found = None;
-        if let Some(candidates) = self.rows.get(&key) {
-            for &candidate in candidates {
-                #[cfg(test)]
-                self.comparisons.set(self.comparisons.get() + 1);
-                // Keep the old predicate; an index key is never source authority.
-                if relative_filesystem_path(candidate, path)
-                    .is_some_and(|p| p.as_os_str().is_empty())
-                {
-                    if found.replace(candidate).is_some() {
-                        return Err(io::Error::other(
-                            "ambiguous native source acquisition alias",
-                        ));
-                    }
+        for &(hash, candidate) in &self.rows[start..] {
+            if hash != key {
+                break;
+            }
+            crate::daemon::control::checkpoint()?;
+            #[cfg(test)]
+            self.comparisons.set(self.comparisons.get() + 1);
+            // Keep the old predicate; an index key is never source authority.
+            if relative_filesystem_path(candidate, path).is_some_and(|p| p.as_os_str().is_empty()) {
+                if found.replace(candidate).is_some() {
+                    return Err(io::Error::other("ambiguous native source acquisition alias"));
                 }
             }
         }
@@ -185,17 +174,28 @@ mod tests {
             AliasIndex::reserve_charge(known.iter().map(PathBuf::as_path)).unwrap(),
         )
         .unwrap();
+        assert_eq!(index.rows.capacity(), known.len());
         assert_eq!(
-            index.charged,
-            std::mem::size_of_val(&index)
-                + index
-                    .rows
-                    .iter()
-                    .map(|(key, v)| key.capacity()
-                        + COORD
-                        + v.capacity() * std::mem::size_of::<&Path>())
-                    .sum::<usize>()
+            AliasIndex::reserve_charge(known.iter().map(PathBuf::as_path)).unwrap(),
+            AliasIndex::row_bytes(index.rows.capacity()).unwrap()
+                + AliasIndex::scratch(&known[0]).unwrap(),
         );
+    }
+
+    #[test]
+    fn alias_digest_collision_cannot_authorize_a_foreign_path() {
+        let known = [PathBuf::from("root/a.dm"), PathBuf::from("root/b.dm")];
+        let mut index = AliasIndex::new(
+            known.iter().map(PathBuf::as_path),
+            AliasIndex::reserve_charge(known.iter().map(PathBuf::as_path)).unwrap(),
+        ).unwrap();
+        let hash = AliasIndex::key(&known[0]);
+        for row in &mut index.rows {
+            row.0 = hash;
+        }
+        assert_eq!(index.candidate(&known[0]).unwrap(), Some(known[0].as_path()));
+        index.rows.retain(|row| row.1 == known[1].as_path());
+        assert!(index.candidate(&known[0]).unwrap().is_none());
     }
     #[cfg(windows)]
     #[test]

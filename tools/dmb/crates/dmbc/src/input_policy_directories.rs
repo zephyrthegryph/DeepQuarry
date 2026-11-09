@@ -403,6 +403,24 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         files: impl Iterator<Item = &'a Path>,
         directories: impl Iterator<Item = &'b PathBuf>,
     ) -> io::Result<InputSnapshot> {
+        self.policy_workspace_closure_using(files, directories, None)
+    }
+
+    pub(crate) fn policy_workspace_joined_files<'a>(
+        &self,
+        files: impl Iterator<Item = &'a Path>,
+        discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
+    ) -> io::Result<InputSnapshot> {
+        discovery.validate_recording(self)?;
+        self.policy_workspace_closure_using(files, std::iter::empty(), Some(discovery))
+    }
+
+    fn policy_workspace_closure_using<'a, 'b>(
+        &self,
+        files: impl Iterator<Item = &'a Path>,
+        directories: impl Iterator<Item = &'b PathBuf>,
+        discovery: Option<&crate::runner_host::workspace_discovery::DiscoveryReceipt>,
+    ) -> io::Result<InputSnapshot> {
         let current = self
             .snapshot
             .lock()
@@ -420,6 +438,9 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             } else {
                 return Err(invalid("workspace requests an unrecorded file/absence"));
             }
+        }
+        if let Some(discovery) = discovery {
+            discovery.require_current_directories(&current)?;
         }
         for path in directories {
             let observation = current

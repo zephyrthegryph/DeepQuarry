@@ -830,9 +830,12 @@ impl CaptureSource<'_, '_> {
     fn evidence<P: SnapshotProvider>(
         &self,
         inputs: &RecordingInputs<P>,
+        compiled_views: CompiledViews,
     ) -> io::Result<Arc<crate::input_snapshot::SemanticSourceEvidence>> {
         match self {
             Self::Compiled(f) => inputs.semantic_source_evidence(f),
+            Self::Diagnostic(f) if matches!(compiled_views, CompiledViews::CheckerDecoded) =>
+                inputs.diagnostic_source_evidence_using(f, false),
             Self::Diagnostic(f) => inputs.diagnostic_source_evidence(f),
         }
     }
@@ -1081,7 +1084,7 @@ fn capture_source<P: SnapshotProvider>(
     let facts = inputs.snapshot()?;
     let captured = CapturedPolicyInputs {
         analysis_subject: subject.cloned(),
-        semantic_sources: frontend.evidence(inputs)?,
+        semantic_sources: frontend.evidence(inputs, compiled_views)?,
         joined_header_charge: joined.map(|proof| proof.require(&policy)).transpose()?,
         source_aliases,
         policy,

@@ -97,7 +97,7 @@ impl JoinedClosure {
   Ok(Self { files, configuration_missing })
  }
 
- fn require_subset(&self, current: &InputSnapshot, discovery: &DiscoveryReceipt, configuration: &Path) -> io::Result<()> {
+ fn require_subset(&self, current: &InputSnapshot, discovery: &DiscoveryReceipt, configuration: &Path, directories: &BTreeMap<PathBuf, PolicyDirectoryObservation>) -> io::Result<()> {
   for row in &self.files {
    crate::daemon::control::checkpoint()?;
    let path = row.path(discovery, configuration);
@@ -111,7 +111,13 @@ impl JoinedClosure {
     return Err(invalid("Derived actual preflight negative changed"));
    }
   }
-  discovery.require_current_directories(current)
+  for (path, fact) in discovery.policy_directories() {
+   crate::daemon::control::checkpoint()?;
+   if directories.get(path) != Some(fact) {
+    return Err(invalid("Derived actual preflight typed directory changed"));
+   }
+  }
+  Ok(())
  }
 
  fn retained_charge(&self) -> Option<usize> {
@@ -184,14 +190,17 @@ impl DerivedPreflight{
  }
  /// Dynamic resource bound only. The proof remains the sealed recorder owner.
  pub(crate) fn input_retained_charge(&self)->io::Result<usize>{let index=self.index.lock().map_err(|_|invalid("Derived preflight index poisoned during resource census"))?;self.charge.checked_add(match index.as_ref(){Some(data)=>data.retained_charge().ok_or(io::ErrorKind::OutOfMemory)?,None=>0}).ok_or_else(||io::ErrorKind::OutOfMemory.into())}
- fn require_subset(&self,current:&InputSnapshot)->io::Result<()>{
+ fn require_subset(&self,current:&InputSnapshot)->io::Result<()> {
+  self.require_subset_with_directories(current,current.policy_directories())
+ }
+ fn require_subset_with_directories(&self,current:&InputSnapshot,directories:&BTreeMap<PathBuf, PolicyDirectoryObservation>)->io::Result<()>{
   let facts=match &self.facts {
    DerivedClosure::Standalone(facts)=>facts,
-   DerivedClosure::Joined(facts)=>return facts.require_subset(current,&self.discovery,&self.configuration),
+   DerivedClosure::Joined(facts)=>return facts.require_subset(current,&self.discovery,&self.configuration,directories),
   };
   for(p,v)in &facts.files{crate::daemon::control::checkpoint()?;if current.files.get(p)!=Some(v){return Err(invalid("Derived actual preflight file fact changed"))}}
   for p in &facts.negative_files{crate::daemon::control::checkpoint()?;if !current.negative_files.contains(p){return Err(invalid("Derived actual preflight negative changed"))}}
-  for(p,v)in &facts.policy_directories{crate::daemon::control::checkpoint()?;if current.policy_directories.get(p)!=Some(v){return Err(invalid("Derived actual preflight typed directory changed"))}}Ok(())
+  for(p,v)in &facts.policy_directories{crate::daemon::control::checkpoint()?;if directories.get(p)!=Some(v){return Err(invalid("Derived actual preflight typed directory changed"))}}Ok(())
  }
  pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{crate::daemon::control::checkpoint()?;if !Arc::ptr_eq(&self.issuer,&inputs.source_issuer){return Err(invalid("Derived preflight belongs to another actual recorder"))}self.discovery.validate_recording(inputs)?;let current=inputs.snapshot.lock().map_err(|_|invalid("Derived current recording poisoned"))?;self.require_subset(&current)}
  fn bind_subject<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>,subject:&Arc<OriginalAnalysisSubject>)->io::Result<()>{self.require_recording(inputs)?;if inputs.original_analysis_subject().is_none_or(|current|!Arc::ptr_eq(current,subject))||!subject.matches_workspace_root(&self.discovery.contract().root){return Err(invalid("Derived bind is not this recorder's actual full subject"))}pay(&self.budget,Some(2*std::mem::size_of::<usize>()))?;if self.subject_issuer.set(Arc::clone(subject.actual_subject_issuer())).is_err(){return Err(invalid("Derived preflight full subject was already bound"))}Ok(())}
@@ -201,7 +210,7 @@ impl DerivedPreflight{
  fn require_subject(&self,subject:&OriginalAnalysisSubject)->io::Result<()>{if self.subject_issuer.get().is_none_or(|owner|!Arc::ptr_eq(owner,subject.actual_subject_issuer()))||!subject.derived_preflight().is_ok_and(|p|std::ptr::eq(p,self)){return Err(invalid("Derived preflight has no actual issued full subject"))}Ok(())}
  fn require_bound_frame(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<()>{crate::daemon::control::checkpoint()?;workspace.require_scope(scope)?;self.require_subject(subject)?;subject.require_bound_mapping(inputs.mapping())?;workspace.require_analysis_subject(subject)?;if !scope.uses_query_owner(&self.queries)||workspace.root()!=self.discovery.contract().root||!workspace.matches_auxiliary_questions(if self.joined_registry {
   crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_FULL_REGISTRY
- } else { &[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads] }){return Err(invalid("Derived bound mapping/current QueryDb/role/workspace differs"))}self.require_subset(workspace.facts())?;self.budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
+ } else { &[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads] }){return Err(invalid("Derived bound mapping/current QueryDb/role/workspace differs"))}self.require_subset_with_directories(workspace.file_facts(),workspace.policy_directories())?;self.budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))}
  pub(crate) fn require_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs,queries:&crate::query_db::QueryDb)->io::Result<()>{self.require_subject(subject)?;subject.require_bound_mapping(inputs.mapping())?;workspace.require_analysis_subject(subject)?;if !scope.uses_queries(queries)||!self.queries.matches(queries){return Err(invalid("Derived actual current QueryDb owner differs"))}self.require_bound_frame(subject,workspace,scope,inputs)}
  pub(crate) fn take_current(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs,queries:&crate::query_db::QueryDb)->io::Result<Option<UnsealedDerivedIndexData>>{self.require_current(subject,workspace,scope,inputs,queries)?;Ok(self.index.lock().map_err(|_|invalid("Derived preflight index poisoned"))?.take())}
  pub(crate) fn census(self:&Arc<Self>,census:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.derived_preflight";if !census.arc_object(owner,self){return}self.discovery.census(census);match &self.facts{DerivedClosure::Standalone(facts)=>census.workspace_policy_facts(facts),DerivedClosure::Joined(facts)=>{census.vec_payload(owner,&facts.files);},}census.path(owner,&self.configuration);census.arc_object(owner,&self.issuer);census.arc_object(owner,&self.config);if let Some(issuer)=self.subject_issuer.get(){census.arc_object(owner,issuer);}self.queries.visit_storage(|pointer,logical,capacity|{census.exposed_buffer("query_snapshot.derived_query_counter",pointer,logical,capacity);});if let Some(bytes)=&self.configuration_bytes{if census.shared_bytes_owner(owner, bytes){census.vec_payload(owner,bytes.shared_owner().bytes());}}census.unknown(owner,"private raw identifier index BTree nodes, retained source Budget parent chain and interpreted Config backing are not exposed; admission bounds are not reported as heap bytes");}

@@ -199,6 +199,7 @@ pub(crate) enum SourceProof {
     Native(OriginalAcquisitionIdentity),
     Owned(dm_resources::WeakSharedBytes),
     PairedDmm(usize),
+    Spool(crate::input_snapshot::WorkspaceRawSpoolIdentity),
 }
 impl SourceProof {
     fn metadata_charge(&self) -> usize {
@@ -217,6 +218,7 @@ impl SourceProof {
                 n
             }
             Self::PairedDmm(_) => 0,
+            Self::Spool(id) => id.metadata_charge(),
             Self::Owned(_) => {
                 std::mem::size_of::<SharedBytesOwner>() + 2 * std::mem::size_of::<usize>()
             }
@@ -225,6 +227,7 @@ impl SourceProof {
     fn same(&self, b: &Self) -> bool {
         match (self, b) {
             (Self::Native(a), Self::Native(b)) => a.same_live_original(b),
+            (Self::Spool(a), Self::Spool(b)) => a.same_live(b),
             (Self::Owned(a), Self::Owned(b)) => {
                 a.strong_count() != 0 && b.strong_count() != 0 && a.ptr_eq(b)
             }

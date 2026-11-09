@@ -3769,3 +3769,18 @@ reject a foreign recorder and facts added after admission. Both compound
 fixtures passed, and the checkout passed freshness admission before stopping
 on the Checker builtin profile's treatment of an authored client parent.
 These runs produced no real-checkout compound report or installed pair.
+
+The next whole-checkout Selected run completed workspace freshness and all
+364,224 declarations in 186.4 seconds before refusing a 93,249,536-byte
+target-occurrence grouping allocation. It emitted neither a report nor an
+installed pair. The focused probes passed both actual admin-rank condition
+forms. The extracted stack probe completed all seven Checker bodies with no
+diagnostics and emitted a native pair, while its minimal setter stub tripped
+the Analyze setter lint. The three independent compound report fixtures
+passed for Raw, CI, and CBT.
+
+Target grouping now uses one sorted four-byte ordinal per declaration. The
+published compiler and default routes are unchanged. The paired map
+acquisition remains an opt-in Full CI experiment. The full workspace
+reservation still refuses the whole checkout, and whole-checkout parity with
+the pinned Checker has not been established.

@@ -519,7 +519,13 @@ impl QueryDb{
     let _gate = self.raw_policy.gate.lock().unwrap_or_else(|error| error.into_inner());
     let mut ledger = self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|error| error.into_inner());
     ledger.bind_source_arena(&self.raw_policy.admission)?;
-    let available = self.workspace_input_base_headroom_locked(ledger.refresh()?)?;
+    let exact_sources = ledger.refresh()?;
+    let available = self.workspace_input_base_headroom_locked(exact_sources)?;
+    #[cfg(debug_assertions)]
+    if available < 64 * 1024 * 1024 && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+        eprintln!("ORIGINAL_WORKSPACE_CAPTURE_HEADROOM available={available}");
+        ledger.trace_exact_admission_categories(exact_sources);
+    }
     let budget = Budget::new(available).map_err(|message| io::Error::new(io::ErrorKind::OutOfMemory, message))?;
     charge(&budget, NODE)?;
     let mut credits = RawInputCredits { ledger: &mut ledger, budget: &budget, source_nodes: 0, capture_node: true, prepared: false };
