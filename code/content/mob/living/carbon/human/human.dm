@@ -33,20 +33,33 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
 /// Its setup hook (setup() in the human's CAPABILITIES): its DNA, blood and alternate look, once its parents' init is done.
 /mob/living/carbon/human/proc/finish_human_init()
+	var/phase_started = TICK_USAGE_REAL
+	var/dna_ms = 0
+	var/vessel_ms = 0
+	var/alt_ms = 0
 	if(dna)
 		dna.ready_dna(src)
 		dna.real_name = real_name
 		sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 		sync_organ_dna()
+	dna_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 	initialize_vessel()
+	vessel_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
 	var/image/img = image('icons/mob/animal.dmi', src, animal)
 	img.override = TRUE
 	add_alt_appearance("animals", img, displayTo = REGISTRY_MEMBERS(REGISTRY_ALT_FARMANIMALS))
+	alt_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 	if(TYPE_TABLE_GET(src, initial_species_copy))
 		species.produceCopy(species.traits.Copy(),src,null,FALSE)
+	var/copy_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	if(dna_ms + vessel_ms + alt_ms + copy_ms >= JOIN_BODY_SLOW_MS)
+		log_world("JOIN_TIMING_HUMAN: finish_human_init: DNA, traits, organ DNA [round(dna_ms, 0.1)] ms, vessel [round(vessel_ms, 0.1)] ms, farm animal look [round(alt_ms, 0.1)] ms, species copy [round(copy_ms, 0.1)] ms")
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_HUMANS)
 

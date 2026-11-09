@@ -167,6 +167,8 @@ do { \
 #define CLIENT_GLOW_KEEP_CHUNKS 2
 /// The most dropped glow images (and, apart, hide images) one holder keeps to reuse; past it a dropped image is simply let go.
 #define CLIENT_GLOW_POOL_MAX 64
+/// Server milliseconds one step of a client holder's full scan (a login, a teleport) may spend before it leaves the rest of the chunks to the next ticks: nearest the eye first.
+#define CLIENT_GLOW_SCAN_BUDGET_MS 10
 /// Where iconforge writes baked shadow masks before they enter the resource cache.
 #define CLIENT_GLOW_MASK_DIR "data/client_glow_masks/"
 /// Baked shadow masks kept; shapes asked for at once; bakes running at once.

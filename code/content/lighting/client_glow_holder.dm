@@ -17,6 +17,10 @@
 //   - a held light is a glow image, baked to its reach shape once that is ready (client_shadow.dm), and an override image that hides
 //     the real glow from this client, so it is never drawn twice.
 //
+//   - a full scan (a login, a teleport, a drop-all) is spread: chunks are walked nearest the eye first, a client's holder for CLIENT_GLOW_SCAN_BUDGET_MS a tick, and the rest on
+//     the ticks that follow (scan_continue()). The step that finds the light around the eye runs inside the call that asked, so the view is lit when the login cover lifts. A crossing
+//     that arrives while a scan is unfinished starts a full scan over its own boxes (the delta needs a finished scan to start from). Viewers with no client (tests) scan to the end at once.
+//
 // Events only: the eye crossing a chunk or changing view (interest_eye_update()), a light glowing, moving or changing
 // (client_glow_apply()), its mask rebuilding (client_glow_mask_apply()), going out (client_glow_clear()), client lighting
 // switching off and the client leaving.
@@ -47,6 +51,20 @@ GLOBAL_VAR_INIT(client_glow_holder_stands_moved, 0)
 	/// TRUE once a scan has made the held glows match `reach` and `keep_reach`: the next crossing walks only the chunks where that can have changed. False
 	/// after every drop-all, a login wipe and before the first hold, so the crossing after them walks the whole region.
 	var/scanned = FALSE
+	/// A full scan still under way: the chunks left to walk ("gx,gy" texts, nearest the eye first), the position of the next one, and the held keys the walked chunks kept.
+	/// Null `scan_chunks` is no scan pending.
+	var/list/scan_chunks
+	var/scan_at = 0
+	var/list/scan_keep
+	/// What the pending scan has done so far: chunks with lights walked, lights examined, steps taken, server milliseconds spent over all steps.
+	var/scan_walked = 0
+	var/scan_lights = 0
+	var/scan_steps = 0
+	var/scan_ms = 0
+	/// TRUE while a scan_continue() timer is waiting.
+	var/scan_waiting = FALSE
+	/// Server milliseconds one step of a full scan may spend before it hands the rest to the next tick; null: the scan runs to the end in one call (viewers without a client).
+	var/scan_budget_ms
 	/// turf -> TRUE for the turfs the eye saw at its last chunk crossing: decides where a held glow stands.
 	var/list/seen
 	/// The radius of the sight query that made `seen`.
@@ -135,6 +153,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 			return
 		var/datum/client_glow_holder/H = new
 		H.client = C
+		H.scan_budget_ms = CLIENT_GLOW_SCAN_BUDGET_MS
 		rel_set(C, nameof(C.glow_holder), H)
 	var/list/halves = client_glow_view_halves(C.view)
 	C.glow_holder.view_at(at_eye, halves[1], halves[2])
@@ -146,15 +165,18 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		return
 	log_world("client lighting: [C.ckey] login emptied images and screen; [LAZYLEN(C.glow_holder?.held)] held glow(s) and screen state [C.lighting_screen] forgotten")
 	client_glow_screen_forget(C)
-	var/datum/client_glow_holder/H = C.glow_holder
-	if(!H)
-		return
-	H.sig = null
-	H.scanned = FALSE
-	H.held = null
-	H.held_shape = null
-	H.cut_shape = null
-	H.delivering = null
+	C.glow_holder?.forget_images()
+
+/// The client's images are gone whatever this holder's records say: forget them, and the full scan under way (its chunks would go on holding for a client that has none of the glows it
+/// kept). The next eye update starts a full scan again.
+/datum/client_glow_holder/proc/forget_images()
+	sig = null
+	scanned = FALSE
+	scan_cancel()
+	held = null
+	held_shape = null
+	cut_shape = null
+	delivering = null
 
 /// The client left: its held glows go.
 /proc/client_glow_holder_gone(client/C)
@@ -238,7 +260,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/lights = walk_counts[2]
 	if(delta && !chunks)
 		GLOB.client_glow_holder_scans_skipped++
-	scanned = TRUE
+	scanned = !scan_chunks // a full scan with chunks left walks them on the next ticks, and marks the scan done itself
 	var/stands_started = TICK_USAGE_REAL
 	if(delta && old_seen)
 		refresh_stands_near(added, removed)
@@ -257,12 +279,12 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/made = GLOB.client_glow_holder_made - made_before
 	var/dropped = GLOB.client_glow_holder_dropped - dropped_before
 	var/reused = GLOB.client_glow_holder_reused - reused_before
-	log_world("client glow holder: [client?.ckey] entered chunk [new_sig] from eye [eye.type] at [eye.x],[eye.y] (mob [viewer ? "[viewer.type]" : "none"]), holding [LAZYLEN(held)] glow(s), [LAZYLEN(held) - made] kept[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [made] made ([reused] images reused from the pool) and [dropped] dropped this crossing, pool [length(glow_pool)]/[length(hide_pool)], [delta ? (chunks ? "scan delta: [chunks] chunk(s), [lights] light(s), seen +[length(added)]/-[length(removed)] turf(s)" : "scan skipped: no light near the moved edges") : "scan full: [chunks] chunk(s), [lights] light(s)"], [GLOB.client_glow_holder_stands_moved - moved_before] stand(s) moved, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms (sight [round(TICK_DELTA_TO_MS(scan_started - seen_started), 0.01)], scan [round(TICK_DELTA_TO_MS(stands_started - scan_started), 0.01)], stands [round(TICK_DELTA_TO_MS(stands_ended - stands_started), 0.01)]), [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
+	log_world("client glow holder: [client?.ckey] entered chunk [new_sig] from eye [eye.type] at [eye.x],[eye.y] (mob [viewer ? "[viewer.type]" : "none"]), holding [LAZYLEN(held)] glow(s), [LAZYLEN(held) - made] kept[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [made] made ([reused] images reused from the pool) and [dropped] dropped this crossing, pool [length(glow_pool)]/[length(hide_pool)], [delta ? (chunks ? "scan delta: [chunks] chunk(s), [lights] light(s), seen +[length(added)]/-[length(removed)] turf(s)" : "scan skipped: no light near the moved edges") : "scan full: [chunks] chunk(s), [lights] light(s)[scan_chunks ? ", [length(scan_chunks) - scan_at] more chunk(s) on the next ticks" : ""]"], [GLOB.client_glow_holder_stands_moved - moved_before] stand(s) moved, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms (sight [round(TICK_DELTA_TO_MS(scan_started - seen_started), 0.01)], scan [round(TICK_DELTA_TO_MS(stands_started - scan_started), 0.01)], stands [round(TICK_DELTA_TO_MS(stands_ended - stands_started), 0.01)]), [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
 
-/// Walks the lights of chunk (gx, gy) on this level: each is acquired, updated or dropped against the boxes; one that is not held may have its shape sent ahead.
+/// Walks the lights of chunk `chunk_key` ("gx,gy") on this level: each is acquired, updated or dropped against the boxes; one that is not held may have its shape sent ahead.
 /// `keep` (a full scan) collects the held keys. Returns how many lights it examined.
-/datum/client_glow_holder/proc/scan_chunk(gx, gy, list/keep)
-	var/list/members = GLOB.client_glow_chunks["[z],[gx],[gy]"]
+/datum/client_glow_holder/proc/scan_chunk(chunk_key, list/keep)
+	var/list/members = GLOB.client_glow_chunks["[z],[chunk_key]"]
 	if(!members)
 		return 0
 	for(var/datum/light_source/L as anything in members)
@@ -283,19 +305,81 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		deliver(L.glow_mask_key, ahead) // on the client before the crossing that holds it
 
 /// The first crossing, a jump or any crossing after a drop-all: every chunk a reach could overlap the reach box from, and the ring one chunk further out
-/// (those lights are not held, but their shapes are readied for the next crossing). Nothing is held when this runs, so `keep` only guards against a stray entry.
+/// (those lights are not held, but their shapes are readied for the next crossing). The chunks are ordered nearest the eye first and walked a step at a time (scan_run()):
+/// what the eye sees is held by the first step, the ring comes last. `counts` gets the chunks walked and lights examined by the step that ran here.
 /datum/client_glow_holder/proc/scan_all(list/counts)
-	var/list/keep = list()
+	scan_cancel()
 	var/ring = CLIENT_GLOW_MAX_RANGE + CLIENT_GLOW_CHUNK
+	var/list/order = list()
 	for(var/gx in round((reach[1] - ring - 1) / CLIENT_GLOW_CHUNK) to round((reach[3] + ring - 1) / CLIENT_GLOW_CHUNK))
+		var/x0 = gx * CLIENT_GLOW_CHUNK + 1
+		var/dx = max(x0 - eye_x, eye_x - (x0 + CLIENT_GLOW_CHUNK - 1), 0)
 		for(var/gy in round((reach[2] - ring - 1) / CLIENT_GLOW_CHUNK) to round((reach[4] + ring - 1) / CLIENT_GLOW_CHUNK))
-			var/walked = scan_chunk(gx, gy, keep)
-			if(walked)
-				counts[1]++
-				counts[2] += walked
+			var/y0 = gy * CLIENT_GLOW_CHUNK + 1
+			var/dy = max(y0 - eye_y, eye_y - (y0 + CLIENT_GLOW_CHUNK - 1), 0)
+			order["[gx],[gy]"] = dx * dx + dy * dy // the squared distance from the eye to the chunk's nearest turf
+	scan_chunks = sortTim(order, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
+	scan_at = 0
+	scan_keep = list()
+	scan_walked = 0
+	scan_lights = 0
+	scan_steps = 0
+	scan_ms = 0
+	scan_run()
+	counts[1] = scan_walked
+	counts[2] = scan_lights
+
+/// One step of the pending full scan: chunks in order until the budget is spent (always at least one), then the rest is handed to the next tick; the last step closes the scan.
+/datum/client_glow_holder/proc/scan_run()
+	var/started = TICK_USAGE_REAL
+	var/list/chunks = scan_chunks
+	while(scan_at < length(chunks))
+		var/walked = scan_chunk(chunks[++scan_at], scan_keep)
+		if(walked)
+			scan_walked++
+			scan_lights += walked
+		if(!isnull(scan_budget_ms) && scan_at < length(chunks) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= scan_budget_ms)
+			break
+	scan_steps++
+	scan_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(scan_at < length(chunks))
+		if(!scan_waiting)
+			scan_waiting = TRUE
+			after(src, 1 TICKS, PROC_REF(scan_continue))
+		return
+	scan_finish()
+
+/// The timer of a spread full scan: its next step, unless the scan was cancelled (a drop-all, a login wipe) in the meantime.
+/datum/client_glow_holder/proc/scan_continue()
+	scan_waiting = FALSE
+	if(!scan_chunks || !sig)
+		return
+	scan_run()
+
+/// Every chunk is walked: a held glow no walked chunk kept (a stale one from an earlier unfinished scan, or a light that moved after its chunk was walked) stays only if it
+/// still meets the boxes. Then the scan is closed, so the next crossing is a delta.
+/datum/client_glow_holder/proc/scan_finish()
+	var/list/keep = scan_keep
 	for(var/h in LAZYCOPY(held))
-		if(!keep[h])
+		if(keep[h])
+			continue
+		var/datum/light_source/L = handle_get(h)
+		if(!istype(L) || QDELETED(L) || !consider(L))
 			drop_handle(h)
+	var/steps = scan_steps
+	var/spent_ms = scan_ms
+	var/chunks = scan_walked
+	var/lights = scan_lights
+	scan_cancel()
+	scanned = TRUE
+	if(steps > 1) // a one-step scan is the crossing's own log line
+		log_world("client glow holder: [client?.ckey] full scan finished over [steps] steps: [chunks] chunk(s), [lights] light(s), [round(spent_ms, 0.01)] ms in all, holding [LAZYLEN(held)] glow(s)")
+
+/// Forgets the pending full scan (a new one begins, the held glows were dropped or the client's images wiped); a timer already waiting finds nothing to do.
+/datum/client_glow_holder/proc/scan_cancel()
+	scan_chunks = null
+	scan_keep = null
+	scan_at = 0
 
 /// A crossing from the boxes `old_reach`/`old_keep` to the current ones. Light events keep every held glow current against the boxes as they stood, so a
 /// light's status changes only where the boxes moved. The lights that can change have their positions in three strips (a light's reach is at most
@@ -703,6 +787,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 
 /datum/client_glow_holder/proc/drop_all(reason = "unspecified")
 	scanned = FALSE // nothing held matches any box now: the next crossing walks the whole region
+	scan_cancel() // and a scan under way walked boxes that no longer hold
 	if(LAZYLEN(held))
 		log_world("client glow holder: [client?.ckey] dropped all [LAZYLEN(held)] held glow(s): [reason]") // every glow gone at once shows as black with only the darksight circle
 	for(var/h in LAZYCOPY(held))

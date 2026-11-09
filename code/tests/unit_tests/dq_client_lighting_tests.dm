@@ -608,6 +608,183 @@
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
 
+/// The keys of the glows a holder holds, as a sorted text (to compare two holders).
+/datum/unit_test/proc/client_glow_held_keys(datum/client_glow_holder/H)
+	var/list/keys = list()
+	for(var/h in H.held)
+		keys += "[h]"
+	return jointext(sortTim(keys, GLOBAL_PROC_REF(cmp_text_asc)), ",")
+
+/// Runs a spread scan's remaining steps by hand (what its timer does a tick at a time). Returns how many it took.
+/datum/unit_test/proc/client_glow_finish_scan(datum/client_glow_holder/H, limit = 200)
+	var/steps = 0
+	while(H.scan_chunks && steps < limit)
+		H.scan_continue()
+		steps++
+	return steps
+
+/// A full scan with a budget walks the chunks nearest the eye first and finishes on later steps: after the first step the light at the eye is held and a light a chunk away is not,
+/// and once the scan is done the holder holds exactly what a scan in one go holds.
+/datum/unit_test/dq_client_glow_holder_spread_scan_nearest_first
+
+/datum/unit_test/dq_client_glow_holder_spread_scan_nearest_first/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/whole = got[2]
+	var/turf/E = client_glow_test_eye(get_turf(F))
+	var/obj/machinery/light/G = allocate(/obj/machinery/light, E) // in the eye's own chunk
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NOTNULL(G.light?.glow, "the light at the eye glows")
+	var/datum/client_glow_holder/spread = new
+	spread.scan_budget_ms = 0 // a step walks one chunk
+	spread.view_at(E, 7, 7)
+	TEST_ASSERT_NOTNULL(spread.scan_chunks, "the first step leaves chunks for the next ticks")
+	TEST_ASSERT(!spread.scanned, "an unfinished scan is not a scan the next crossing can start from")
+	TEST_ASSERT_NOTNULL(spread.entry_of(G.light), "the step that ran in the call holds the light at the eye")
+	TEST_ASSERT_NULL(spread.entry_of(F.light), "a light a chunk or two away waits for a later step")
+	var/steps = client_glow_finish_scan(spread)
+	TEST_ASSERT(steps > 1, "the rest took several steps ([steps])")
+	TEST_ASSERT_NULL(spread.scan_chunks, "the scan closed")
+	TEST_ASSERT(spread.scanned, "and is a scan the next crossing can start from")
+	TEST_ASSERT_NOTNULL(spread.entry_of(F.light), "the farther light is held once the scan is done")
+	TEST_ASSERT_EQUAL(client_glow_held_keys(spread), client_glow_held_keys(whole), "a spread scan holds what the scan in one go holds")
+	spent(spread)
+	spent(whole)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A crossing while a scan is unfinished, and a teleport, end in the same state a scan in one go gives; a delta crossing after the scan finished is correct too.
+/datum/unit_test/dq_client_glow_holder_crossing_during_spread_scan
+
+/datum/unit_test/dq_client_glow_holder_crossing_during_spread_scan/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/first = got[2]
+	var/turf/LT = get_turf(F)
+	var/turf/A = client_glow_test_eye(LT)
+	var/side = A.x > LT.x ? 1 : -1
+	var/turf/B = locate(A.x + side * CLIENT_GLOW_CHUNK, A.y, A.z) // the next chunk away from the light
+	var/turf/C = locate(A.x - side * CLIENT_GLOW_CHUNK, A.y, A.z) // and the next one toward it
+	TEST_ASSERT(B && C, "the chunks beside the eye exist")
+	var/obj/machinery/light/G = allocate(/obj/machinery/light, B)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NOTNULL(G.light?.glow, "the second light glows")
+	var/datum/client_glow_holder/spread = new
+	spread.scan_budget_ms = 0
+	spread.view_at(A, 7, 7)
+	TEST_ASSERT_NOTNULL(spread.scan_chunks, "unfinished after the first step")
+	spread.view_at(B, 7, 7) // the eye crosses a chunk before the scan is done
+	TEST_ASSERT(!spread.scanned, "a new full scan is under way, not a delta")
+	client_glow_finish_scan(spread)
+	var/datum/client_glow_holder/direct = new
+	direct.view_at(B, 7, 7)
+	TEST_ASSERT_EQUAL(client_glow_held_keys(spread), client_glow_held_keys(direct), "a crossing during a spread scan ends where a scan from there in one go ends")
+	spread.view_at(C, 7, 7) // a delta crossing from the finished scan
+	client_glow_finish_scan(spread)
+	var/datum/client_glow_holder/direct_c = new
+	direct_c.view_at(C, 7, 7)
+	for(var/h in direct_c.held) // a delta crossing also keeps what the keep box still covers, so it holds at least what a scan from there holds
+		TEST_ASSERT(!isnull(LAZYACCESS(spread.held, h)), "a crossing after the scan finished holds every glow a scan from there in one go holds")
+	// A teleport far from the old boxes while a scan is unfinished.
+	var/turf/far = locate(min(world.maxx, A.x + 6 * CLIENT_GLOW_CHUNK), A.y, A.z)
+	var/datum/client_glow_holder/jumper = new
+	jumper.scan_budget_ms = 0
+	jumper.view_at(A, 7, 7)
+	jumper.view_at(far, 7, 7)
+	client_glow_finish_scan(jumper)
+	var/datum/client_glow_holder/direct_far = new
+	direct_far.view_at(far, 7, 7)
+	TEST_ASSERT_EQUAL(client_glow_held_keys(jumper), client_glow_held_keys(direct_far), "a teleport during a spread scan ends where a scan from the new place in one go ends")
+	for(var/datum/client_glow_holder/H as anything in list(first, spread, direct, direct_c, jumper, direct_far))
+		spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A light made or put out while a scan is unfinished is held or dropped at once by its own event, and the scan's end neither loses nor resurrects it.
+/datum/unit_test/dq_client_glow_holder_light_events_during_spread_scan
+
+/datum/unit_test/dq_client_glow_holder_light_events_during_spread_scan/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/first = got[2]
+	var/turf/E = client_glow_test_eye(get_turf(F))
+	var/datum/client_glow_holder/spread = new
+	spread.scan_budget_ms = 0
+	spread.view_at(E, 7, 7)
+	TEST_ASSERT_NOTNULL(spread.scan_chunks, "unfinished after the first step")
+	var/obj/machinery/light/N = allocate(/obj/machinery/light, E)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NOTNULL(spread.entry_of(N.light), "a light that appears mid-scan is held by its own event")
+	var/datum/light_source/gone = F.light
+	qdel(F)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NULL(spread.entry_of(gone), "a light that goes out mid-scan is dropped by its own event")
+	client_glow_finish_scan(spread)
+	TEST_ASSERT_NOTNULL(spread.entry_of(N.light), "the new light is still held once the scan is done")
+	TEST_ASSERT_NULL(spread.entry_of(gone), "the light that went out is not held again by the scan")
+	TEST_ASSERT_EQUAL(client_glow_held_keys(spread), client_glow_held_keys(first), "and the holder matches one that saw the same events")
+	spent(spread)
+	spent(first)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A login wipe or a drop-all ends the scan under way: no later step puts a glow back, and the next eye update starts a whole scan.
+/datum/unit_test/dq_client_glow_holder_wipe_cancels_spread_scan
+
+/datum/unit_test/dq_client_glow_holder_wipe_cancels_spread_scan/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/first = got[2]
+	var/turf/E = client_glow_test_eye(get_turf(F))
+	var/datum/client_glow_holder/spread = new
+	spread.scan_budget_ms = 0
+	spread.view_at(E, 7, 7)
+	TEST_ASSERT_NOTNULL(spread.scan_chunks, "unfinished after the first step")
+	spread.forget_images() // what a login's wipe of client.images does
+	TEST_ASSERT_NULL(spread.scan_chunks, "the wipe ends the scan")
+	TEST_ASSERT_EQUAL(LAZYLEN(spread.held), 0, "and the held glows are forgotten")
+	spread.scan_continue() // a timer that was waiting
+	TEST_ASSERT_EQUAL(LAZYLEN(spread.held), 0, "a waiting step finds nothing to do")
+	spread.view_at(E, 7, 7)
+	TEST_ASSERT_NOTNULL(spread.scan_chunks, "the next eye update starts a scan again")
+	client_glow_finish_scan(spread)
+	TEST_ASSERT_EQUAL(client_glow_held_keys(spread), client_glow_held_keys(first), "and it ends holding what the first scan held")
+	spread.drop_all("test")
+	TEST_ASSERT_NULL(spread.scan_chunks, "a drop-all leaves no scan pending")
+	spent(spread)
+	spent(first)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// The timer finishes a spread scan with no one calling: a few ticks after the first step the scan is done.
+/datum/unit_test/dq_client_glow_holder_spread_scan_timer_finishes
+
+/datum/unit_test/dq_client_glow_holder_spread_scan_timer_finishes/Run()
+	test_driver_begin()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/first = got[2]
+	var/turf/E = client_glow_test_eye(get_turf(F))
+	var/datum/client_glow_holder/spread = new
+	spread.scan_budget_ms = 0
+	spread.view_at(E, 7, 7)
+	TEST_ASSERT_NOTNULL(spread.scan_chunks, "unfinished after the first step")
+	TEST_ASSERT(spread.scan_waiting, "a timer waits for the next step")
+	test_time(5 SECONDS)
+	TEST_ASSERT_NULL(spread.scan_chunks, "the timer's steps finished the scan")
+	TEST_ASSERT(spread.scanned, "and closed it")
+	TEST_ASSERT_EQUAL(client_glow_held_keys(spread), client_glow_held_keys(first), "holding what a scan in one go holds")
+	spent(spread)
+	spent(first)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	test_driver_end()
+
 /// Cleanup: client lighting off, the light deleted and the viewer leaving each leave no image.
 /datum/unit_test/dq_client_glow_holder_cleanup
 
