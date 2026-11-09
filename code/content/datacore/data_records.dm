@@ -21,6 +21,37 @@
 	/// Immutable disposition audit entries. This belongs to the records system;
 	/// contracts are only one consumer of the same authoritative history.
 	var/list/disposition_history
+	/// "[dir]" -> the portrait key whose picture is still rendering for this record's photo in that direction (see request_photos()).
+	var/list/photos_waiting
+
+/// The record's two photos (front: SOUTH, side: WEST) are those of `M` as it looks now. They come from the shared portrait cache
+/// (code/content/appearance/portrait_cache.dm), rendered off the tick: drawing the compound icon of a dressed human on the spot cost about
+/// 300 ms of every join (playtest 2026-11-09, LATEJOIN_REGISTER manifest record 325 ms). The fields hold the no-image picture until each lands.
+/datum/data/record/proc/request_photos(mob/M)
+	for(var/dir in list(SOUTH, WEST))
+		var/datum/portrait/P = portrait_request(M, dir, src, PROC_REF(photo_landed))
+		if(P)
+			apply_photo(dir, P)
+		else
+			LAZYSET(photos_waiting, "[dir]", portrait_key_of(M, dir))
+
+/// A rendering portrait landed: it is the photo of every direction that was waiting on its key.
+/datum/data/record/proc/photo_landed(datum/portrait/P)
+	for(var/dir_text in photos_waiting?.Copy())
+		if(photos_waiting[dir_text] == P.key)
+			LAZYREMOVE(photos_waiting, dir_text)
+			apply_photo(text2num(dir_text), P)
+
+/datum/data/record/proc/apply_photo(dir, datum/portrait/P)
+	if(!P?.b64)
+		return
+	var/shown = "'data:image/png;base64,[P.b64]'"
+	if(dir == WEST)
+		set_fields_at("photo_side", icon(P.picture)) // a copy: the cached picture is shared
+		set_fields_at("photo-west", shown)
+	else
+		set_fields_at("photo_front", icon(P.picture))
+		set_fields_at("photo-south", shown)
 
 // Mostly used for data_core records, but unfortuantely used some other places too.  But mostly here, so lets make a good effort.
 // TODO - Some machines/computers might be holding references to us.  Lets look into that, but at least for now lets make sure that the manifest is cleaned up.

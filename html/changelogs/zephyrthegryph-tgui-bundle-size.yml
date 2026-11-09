@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Join download cut by about 480 KB: the shell and the chat/stat page share one tgui-shared.bundle.js (React, tgui-core, layouts), Font Awesome is subset to the icons the code names (tools/fontawesome/subset.py), the chat page validates with zod/mini, and two unused tgui dependencies are gone"

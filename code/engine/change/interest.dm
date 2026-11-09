@@ -22,7 +22,7 @@
 //   - becoming visible on a view jump (a login, an arrival, a teleport: most of what the client sees is new at once): the client's screen is covered
 //     (a black fullscreen), its owed draws are drawn nearest the eye first over as many ticks as they take, and the cover lifts when none is left;
 //   - becoming visible otherwise (a walker's edge the prefetch has not finished, or a holder that is no client, such as a camera screen): what it
-//     still owes is drawn in that tick, nearest the eye first; a walker's edge past INTEREST_WALKER_NOW_MAX draws that many now and the rest joins the front
+//     still owes is drawn in that tick, nearest the eye first; a walker's edge draws up to INTEREST_WALKER_NOW_MAX real draws now (items needing none do not count; INTEREST_WALKER_INSPECT_MAX bounds the looking) and the rest joins the front
 //     of the prefetch queue, which the drain works down over the following ticks (no cover: the draws are small and the walker is already past them).
 // The drain that works the queues is a keyed timer that exists only while a queue holds something (interest_arrival_drain()).
 
@@ -203,6 +203,8 @@ GLOBAL_VAR_INIT(interest_unperceivable_skipped, 0)
 #define INTEREST_ARRIVAL_MIN_STEP 32
 /// The most owed draws a walker's edge runs in the tick its chunk becomes visible (nearest its eye first); the rest drain over the following ticks (interest_arrive()).
 #define INTEREST_WALKER_NOW_MAX 48
+/// The most owed items a walker's edge looks at in that tick, drawn or not, so a long list of items that need nothing is not itself a hitch (interest_arrive()).
+#define INTEREST_WALKER_INSPECT_MAX 256
 /// Observer key -> handles (handle_of()) of the atoms it owes behind its cover, nearest its eye first. Present only while that observer is covered.
 GLOBAL_ALIST_EMPTY(interest_covered)
 /// Handles of atoms owed in ring chunks (a chunk away from someone's view), nearest the observer first, drawn ahead of the presentation backlog.
@@ -283,21 +285,30 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	var/ran = 0
 	var/started = TICK_USAGE_REAL
 	var/deferred = 0
-	if(!relocated && length(owed) > INTEREST_WALKER_NOW_MAX)
-		var/list/rest = owed.Copy(INTEREST_WALKER_NOW_MAX + 1)
-		owed.Cut(INTEREST_WALKER_NOW_MAX + 1)
+	var/inspected = 0
+	// A walker's edge spends its budget on real draws only: an owed item that needs no draw (already current) costs next to nothing and does not count, but a long clean list
+	// is itself capped (INTEREST_WALKER_INSPECT_MAX items looked at), so it cannot hitch the tick either. What is left, nearest first, joins the front of the drain's queue.
+	var/limited = !relocated
+	var/total = length(owed)
+	for(var/handle in owed)
+		if(limited && (drawn >= INTEREST_WALKER_NOW_MAX || inspected >= INTEREST_WALKER_INSPECT_MAX))
+			break
+		inspected++
+		var/atom/A = handle_get(handle)
+		if(isatom(A) && !QDELETED(A))
+			var/did = interest_draw_now(A)
+			drawn += did
+			if(did)
+				ran++
+	if(limited && inspected < total)
+		var/list/rest = owed.Copy(inspected + 1)
 		deferred = length(rest)
 		GLOB.interest_prefetched.Insert(1, rest)
 		GLOB.interest_walker_deferred += deferred
 		interest_drain_soon()
-	for(var/handle in owed)
-		var/atom/A = handle_get(handle)
-		if(isatom(A) && !QDELETED(A))
-			drawn += interest_draw_now(A)
-			ran++
 	GLOB.interest_at_once_drawn += drawn
 	if(drawn || deferred)
-		log_world("INTEREST: [length(keys)] chunk(s) visible, [ran] owed draw(s) ran now ([drawn] drawn) in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms, [deferred] deferred to the drain[relocated ? "" : " (a walker's edge, no cover)"]")
+		log_world("INTEREST: [length(keys)] chunk(s) visible, [ran] owed draw(s) ran now ([drawn] drawn, [inspected] of [total] inspected) in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms, [deferred] deferred to the drain[relocated ? "" : " (a walker's edge, no cover)"]")
 
 /// Covers `owner`'s screen (a client's mob gets a black fullscreen) while its view is drawn. FALSE when there is no client to cover.
 /proc/interest_cover(owner)

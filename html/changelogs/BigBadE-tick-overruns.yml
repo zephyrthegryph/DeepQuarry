@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Crew records take their photos from the shared portrait cache instead of drawing a four-direction icon in the join tick (about 325 ms per join)."
+  - bugfix: "The native frame delivers at most 8 ms of Rust records a tick and carries the rest over in order, instead of up to 130 ms at once."
+  - bugfix: "The perf CSV header no longer names an air column the rows never had, which shifted every later column."
+  - code_imp: "Added LOG_WORLD_SLOW, PROXIMITY_EYE_SLOW and NATIVE_DELIVERY_DEFERRED traces."

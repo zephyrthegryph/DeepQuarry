@@ -1,7 +1,12 @@
+/// The tgui shell (pooled windows). `tgui-shared.bundle.js` is the code the shell and the tgui-panel page both run
+/// (React, tgui-core, the layouts; rspack.config.ts optimization.splitChunks): both datums list it, the asset cache
+/// registers one item for the two (same name, same hash) and a client is sent it once. It comes first so the deferred
+/// scripts run in the order they download in. A live (development) generation is one unsplit bundle and lists none.
 /datum/asset/simple/tgui
 	keep_local_name = TRUE
 	var/is_tgui_shell = TRUE
 	assets = list(
+		"tgui-shared.bundle.js" = file("tgui/public/tgui-shared.bundle.js"),
 		"tgui.bundle.js" = file("tgui/public/tgui.bundle.js"),
 		"tgui.bundle.css" = file("tgui/public/tgui.bundle.css"),
 	)
@@ -142,6 +147,7 @@
 /datum/asset/simple/tgui_panel
 	keep_local_name = TRUE
 	assets = list(
+		"tgui-shared.bundle.js" = file("tgui/public/tgui-shared.bundle.js"),
 		"tgui-panel.bundle.js" = file("tgui/public/tgui-panel.bundle.js"),
 		"tgui-panel.bundle.css" = file("tgui/public/tgui-panel.bundle.css"),
 	)
