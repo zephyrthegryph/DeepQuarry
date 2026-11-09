@@ -78,10 +78,21 @@ impl RawSourceDriver{
    // Drain every output/notice of the already processed raw token BEFORE
    // requesting another macro/source token. A long closing-brace run can pause
    // at any logical batch boundary without advancing the input frontier.
-   if let Some(event)=self.indent.next_using(a)?{let trace=match &event{NativeIndentEmission::Notice{location,..}|NativeIndentEmission::Punctuation{location,..}|NativeIndentEmission::Keep{location}=>location.trace.clone()};self.delivery=Some(trace);return match event{
-    NativeIndentEmission::Notice{kind,location}=>Ok(DriverEvent::IndentNotice{kind,location:location.origin}),
-    NativeIndentEmission::Punctuation{spelling,location}=>Ok(DriverEvent::Token(LogicalToken::Delimiter{spelling,location:location.origin})),
-    NativeIndentEmission::Keep{location}=>{let token=self.held.take().ok_or(io::ErrorKind::InvalidData)?;if location.origin!=Some(token.origin){return Err(io::ErrorKind::InvalidData.into())}Ok(DriverEvent::Token(LogicalToken::Actual(token)))},
+   if let Some(event)=self.indent.next_using(a)?{return match event{
+    NativeIndentEmission::Notice{kind,location}=>{
+     self.delivery=Some(location.trace);
+     Ok(DriverEvent::IndentNotice{kind,location:location.origin})
+    },
+    NativeIndentEmission::Punctuation{spelling,location}=>{
+     self.delivery=Some(location.trace);
+     Ok(DriverEvent::Token(LogicalToken::Delimiter{spelling,location:location.origin}))
+    },
+    NativeIndentEmission::Keep{location}=>{
+     self.delivery=Some(location.trace);
+     let token=self.held.take().ok_or(io::ErrorKind::InvalidData)?;
+     if location.origin!=Some(token.origin){return Err(io::ErrorKind::InvalidData.into())}
+     Ok(DriverEvent::Token(LogicalToken::Actual(token)))
+    },
    }}
    // Whitespace skipped by the SAME transition is physically retired only
    // after that transition has no remaining output; Keep already moved it.
