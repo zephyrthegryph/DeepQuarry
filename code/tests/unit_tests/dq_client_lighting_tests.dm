@@ -450,8 +450,8 @@
 		TEST_ASSERT(shown_area.client_visible_shown, "client lighting: [shown_area.type] draws the visibility tile")
 		break
 	TEST_ASSERT((GLOB.client_visible_plane_master in screen) && (GLOB.client_glow_normal_relay in screen), "client lighting: the screen holds the visibility plane and the relay")
-	var/atom/movable/screen/plane_master/client_glow/glow_master = GLOB.client_glow_plane_master
-	TEST_ASSERT_EQUAL(length(glow_master.filters), 2, "the glow plane is cut and spread by exactly two filters")
+	var/atom/movable/screen/client_glow_relay/spread/spread_relay = GLOB.client_glow_spread_relay
+	TEST_ASSERT_EQUAL(length(spread_relay.filters), 2, "the spread relay is cut and spread by exactly two filters")
 	var/atom/movable/screen/client_glow_base/B = GLOB.client_glow_base
 	TEST_ASSERT_EQUAL(B.plane, PLANE_LIGHTING, "the base is on the lighting plane")
 	TEST_ASSERT_EQUAL(B.color, "#000000", "the base is black")
