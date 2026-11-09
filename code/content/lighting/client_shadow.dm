@@ -162,6 +162,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/list/mask = list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = steps)
 	return list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = list(list("type" = RUSTG_ICONFORGE_BLEND_ICON, "icon" = mask, "blend_mode" = ICON_MULTIPLY, "x" = 1, "y" = 1)))
 
+/// TRUE when shape `now` reaches a floor tile shape `was` did not (keys "margin|dx,dy,...|blocked").
+/proc/client_glow_shape_grew(was, now)
+	var/list/old_parts = splittext(was, "|")
+	var/list/new_parts = splittext(now, "|")
+	if(length(new_parts) < 2 || !length(new_parts[2]))
+		return FALSE
+	var/list/old_tiles = length(old_parts) > 1 && length(old_parts[2]) ? splittext(old_parts[2], ",") : list()
+	var/list/new_tiles = splittext(new_parts[2], ",")
+	var/list/had = list()
+	for(var/i = 1, i < length(old_tiles), i += 2)
+		had["[old_tiles[i]],[old_tiles[i + 1]]"] = TRUE
+	for(var/i = 1, i < length(new_tiles), i += 2)
+		if(!had["[new_tiles[i]],[new_tiles[i + 1]]"])
+			return TRUE
+	return FALSE
+
 /// The baked mask of this shape, or null while it is not ready (asks for it).
 /proc/client_glow_mask_icon(key)
 	var/found = GLOB.client_glow_baker.icons[key]

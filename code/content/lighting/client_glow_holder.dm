@@ -42,6 +42,10 @@ GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
 	var/list/held_shape
 	/// light source glow_holder_key -> the mask shape its glow image is cut by now. Lazy.
 	var/list/cut_shape
+	/// Baked shape -> its preload image, while this client is being sent the PNG. Lazy.
+	var/list/delivering
+	/// Baked shape -> TRUE once this client has had time to receive its PNG. Lazy.
+	var/list/delivered
 
 /client
 	/// This client's held off-screen glows (client lighting only).
@@ -247,11 +251,15 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(LAZYACCESS(held_shape, h) != shape)
 		LAZYSET(held_shape, h, shape)
 		var/baked = client_glow_mask_icon(shape)
-		if(baked)
+		if(baked && deliver(shape, baked))
 			cut_with(h, glow_image, shape, baked)
 			return
 	var/cut = LAZYACCESS(cut_shape, h)
-	if(!cut || copytext(cut, 1, findtext(cut, "|")) != copytext(shape, 1, findtext(shape, "|"))) // a cut of another sprite size cannot stand in
+	if(cut == shape)
+		return
+	// The old cut may only stand in when the new reach is inside it: a door opening grows the reach, and the old cut would leave the door
+	// tile and the room behind it dark until the new one arrives. The plain sprite is already on the client; the visibility and wall cuts bound it.
+	if(!cut || copytext(cut, 1, findtext(cut, "|")) != copytext(shape, 1, findtext(shape, "|")) || client_glow_shape_grew(cut, shape))
 		LAZYREMOVE(cut_shape, h)
 		show_plain(glow_image, G)
 
@@ -265,8 +273,48 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	glow_image.icon_state = null
 	LAZYSET(cut_shape, h, shape)
 
-/// A shape finished baking: every held glow waiting on it shows it.
+/// TRUE once this client can draw `baked`. An image whose icon the client has not received draws nothing until it arrives, so a new PNG goes
+/// to the client first on a faint preload image, and the held glows swap to it afterwards (client_glow_delivered()).
+/datum/client_glow_holder/proc/deliver(shape, baked)
+	if(!client || LAZYACCESS(delivered, shape))
+		return TRUE
+	if(LAZYACCESS(delivering, shape))
+		return FALSE
+	var/turf/eye = locate(eye_x, eye_y, z)
+	if(!eye)
+		return TRUE
+	var/image/preload = image(baked)
+	preload.alpha = 1
+	preload.plane = PLANE_LIGHTING
+	preload.layer = CLIENT_GLOW_LAYER
+	preload.blend_mode = BLEND_ADD
+	preload.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
+	preload.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	image_anchor(preload, eye)
+	LAZYSET(delivering, shape, preload)
+	client_images_add(client, list(preload))
+	after(src, CLIENT_GLOW_ICON_DELIVERY, PROC_REF(client_glow_delivered), with = list(shape, baked))
+	return FALSE
+
+/datum/client_glow_holder/proc/client_glow_delivered(shape, baked)
+	var/image/preload = LAZYACCESS(delivering, shape)
+	LAZYREMOVE(delivering, shape)
+	if(preload && client)
+		client_images_remove(client, list(preload))
+	LAZYSET(delivered, shape, TRUE)
+	if(length(delivered) > CLIENT_GLOW_MASK_CACHE_MAX)
+		delivered.Cut(1, 2)
+	shape_ready(shape, baked)
+
+/// A shape finished baking: every held glow waiting on it shows it, once this client has the picture.
 /datum/client_glow_holder/proc/shape_ready(shape, baked)
+	var/waited_on = FALSE
+	for(var/h in held_shape)
+		if(held_shape[h] == shape && LAZYACCESS(cut_shape, h) != shape)
+			waited_on = TRUE
+			break
+	if(!waited_on || !deliver(shape, baked))
+		return
 	for(var/h in held_shape)
 		if(held_shape[h] != shape || LAZYACCESS(cut_shape, h) == shape)
 			continue

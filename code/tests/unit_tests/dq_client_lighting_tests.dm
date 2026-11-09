@@ -521,3 +521,9 @@
 		TEST_ASSERT_EQUAL(M.alpha, 255, "[path]: a hidden render target at alpha 0 is empty")
 		qdel(M)
 	return TRUE
+
+/// A door opening grows a light's reach, so its old cut must not stand in; a door closing shrinks it, so the old cut may.
+/datum/unit_test/dq_client_lighting_shape_grew/Run()
+	TEST_ASSERT(client_glow_shape_grew("80|0,0|1,0", "80|0,0,1,0|"), "a newly reached tile is growth")
+	TEST_ASSERT(!client_glow_shape_grew("80|0,0,1,0|", "80|0,0|1,0"), "a lost tile is not growth")
+	TEST_ASSERT(!client_glow_shape_grew("80|0,0|", "80|0,0|"), "the same reach is not growth")

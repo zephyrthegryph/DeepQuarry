@@ -166,6 +166,8 @@ do { \
 #define CLIENT_GLOW_MASK_CACHE_MAX 8192
 #define CLIENT_GLOW_MASK_QUEUE_MAX 512
 #define CLIENT_GLOW_MASK_BAKES_MAX 16
+/// How long a new baked glow PNG is given to reach a client on its preload image before held glows swap to it.
+#define CLIENT_GLOW_ICON_DELIVERY (0.5 SECONDS)
 /// Iconforge's own limit on one sprite's transforms is 128; the mask stays under it.
 #define CLIENT_GLOW_MASK_STEPS_MAX 126
 /// The bloom that carries floor light about a tile onto the walls beside it: its blur, its growth before the blur (pixels), its strength.
