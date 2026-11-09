@@ -177,6 +177,22 @@ impl DerivedPreflight{
  pub(crate) fn census(self:&Arc<Self>,census:&mut crate::heap_census::HeapCensus){let owner="query_snapshot.derived_preflight";if !census.arc_object(owner,self){return}self.discovery.census(census);match &self.facts{DerivedClosure::Standalone(facts)=>census.workspace_policy_facts(facts),DerivedClosure::Joined(facts)=>{census.vec_payload(owner,&facts.files);},}census.path(owner,&self.configuration);census.arc_object(owner,&self.issuer);census.arc_object(owner,&self.config);if let Some(issuer)=self.subject_issuer.get(){census.arc_object(owner,issuer);}self.queries.visit_storage(|pointer,logical,capacity|{census.exposed_buffer("query_snapshot.derived_query_counter",pointer,logical,capacity);});if let Some(bytes)=&self.configuration_bytes{if census.shared_bytes_owner(owner, bytes){census.vec_payload(owner,bytes.shared_owner().bytes());}}census.unknown(owner,"private raw identifier index BTree nodes, retained source Budget parent chain and interpreted Config backing are not exposed; admission bounds are not reported as heap bytes");}
 }
 impl<P:SnapshotProvider> RecordingInputs<P>{
+ fn read_derived_configuration(&self, path: &Path, budget: &Arc<Budget>, joined: bool)
+  -> io::Result<(Option<dm_resources::SharedBytes>, Arc<Config>)>
+ {
+  // The raw read and full TOML parse still need the old peak envelope.
+  let scratch=Budget::scoped_temporaries(budget).map_err(io::Error::other)?;
+  let bytes=self.read_policy_vec_admitted(path,budget.remaining(),&mut|length|
+   pay(&scratch,length.checked_mul(64).and_then(|size|size.checked_add(8192))))?;
+  let config=Config::capture(bytes.as_ref().map_or(Configuration::ProvenMissing,|bytes|
+   Configuration::Captured(bytes.as_slice()))).map_err(io::Error::other)?;
+  let scope_bound=if joined {config.retained_scope_bound()} else {None}
+   .unwrap_or_else(||config.budget_charge());
+  let backing=bytes.as_ref().map_or(0,Vec::capacity);
+  pay(budget,scope_bound.checked_add(backing).and_then(|size|size.checked_add(8192)))?;
+  Ok((bytes.map(dm_resources::SharedBytes::from),Arc::new(config)))
+ }
+
  /// Closed cold purpose. This performs selected raw schema before manifest,
  /// native frontend, Globals or BODY. Later full subject binding is separate.
  pub(crate) fn issue_derived_preflight_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender)->io::Result<Arc<DerivedPreflight>>{
@@ -188,20 +204,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
    }
   };
   let configuration = canonical_path(&workspace.configuration);
-  let (bytes, config) = {
-   // Interpretation can use a much larger temporary envelope than the
-   // completed configuration. Keep only the two actual surviving owners.
-   let scratch = Budget::scoped_temporaries(budget).map_err(io::Error::other)?;
-   let bytes = self.read_policy_vec_admitted(&configuration, budget.remaining(), &mut |length|
-    pay(&scratch, length.checked_mul(64).and_then(|size| size.checked_add(8192))))?;
-   let config = Config::capture(bytes.as_ref().map_or(Configuration::ProvenMissing, |bytes|
-    Configuration::Captured(bytes.as_slice()))).map_err(io::Error::other)?;
-   let backing = bytes.as_ref().map_or(0, Vec::capacity);
-   let retained = config.budget_charge().checked_add(backing)
-    .and_then(|size| size.checked_add(8192));
-   pay(budget, retained)?;
-   (bytes.map(dm_resources::SharedBytes::from), Arc::new(config))
-  };
+  let (bytes, config)=self.read_derived_configuration(&configuration,budget,joined_registry)?;
   mark("configuration", 0);
   let discovery=Arc::new(if joined_registry {
    crate::runner_host::workspace_discovery::discover_full_registry_from_derived(self,
@@ -340,6 +343,28 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let mut changed=inputs.snapshot.lock().unwrap().clone();
   changed.files.get_mut(&owner.configuration).unwrap().stamp.size^=1;
   assert!(owner.require_subset(&changed).unwrap_err().to_string().contains("file fact changed"));
+ }
+ #[test]fn joined_derived_config_keeps_full_preparse_admission_and_settles_surviving_scope(){
+  let root=crate::test_scratch::dir("derived-config-scope-settlement");
+  let path=root.join("lint_scopes.toml");
+  let text=format!("# {}\n[lint.derived_reads]\nexempt_prefixes = [\"code/skip/\"]\n","comment ".repeat(8192));
+  std::fs::write(&path,&text).unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let low=Budget::new(256*1024).unwrap();
+  let error=inputs.read_derived_configuration(&path,&low,true).err().expect("small retained scope cannot bypass full preparse reservation");
+  assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
+  assert!(inputs.recorded_policy_file_observation(&path).is_err(),"denied read cannot publish a positive configuration fact");
+  let high=Budget::new(16*1024*1024).unwrap();
+  let (bytes,config)=inputs.read_derived_configuration(&path,&high,true).unwrap();
+  assert_eq!(bytes.as_ref().unwrap().as_slice(),text.as_bytes());
+  assert!(config.policy_path_exempt("derived_reads","","code/skip/actual.dm"));
+  assert!(!config.policy_path_exempt("derived_reads","","code/actual.dm"));
+  let bound=config.retained_scope_bound().unwrap_or_else(||config.budget_charge());
+  if config.retained_scope_bound().is_some(){
+   assert!(bound<128*1024);
+   assert!(high.used()<config.budget_charge());
+  }
+  assert!(high.used()>=bound+bytes.unwrap().capacity());
  }
  #[test]fn derived_configuration_failure_precedes_any_typed_code_discovery(){let root=crate::test_scratch::dir("derived-real-config-first");std::fs::create_dir_all(root.join("code")).unwrap();std::fs::create_dir_all(root.join("tools/ci")).unwrap();std::fs::write(root.join("tools/ci/lint_scopes.toml"),"[not valid TOML").unwrap();std::fs::write(root.join("code/a.dm"),"/obj/a\n").unwrap();let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let queries=Arc::new(crate::query_db::QueryDb::default());let budget=Budget::new(32*1024*1024).unwrap();assert!(queries.prepare_derived_preflight(&inputs,&intent(&root)).is_err());assert!(inputs.snapshot.lock().unwrap().policy_directories.is_empty(),"config interpretation precedes recursive source discovery");}
 }

@@ -142,6 +142,61 @@ impl Scopes {
     }
 }
 
+// This computes allocation-request bounds, excluding the dropped TOML Value.
+// Audited for Windows x64 rustc 58cf8f9c3 only. All maps below are built by
+// Scopes::parse with no removals. No allocator or undocumented pointer read.
+#[cfg(dq_audited_scope_storage)]
+pub(crate) fn retained_scope_allocation_bound(scopes: &Scopes) -> Option<usize> {
+    use std::mem::size_of;
+
+    fn strings(values: &Vec<String>) -> Option<usize> {
+        values.iter().try_fold(values.capacity().checked_mul(size_of::<String>())?,
+            |bytes, value| bytes.checked_add(value.capacity()))
+    }
+
+    fn hash<K, V>(map: &HashMap<K, V>) -> Option<usize> {
+        if map.capacity() == 0 { return Some(0); }
+        // hashbrown 0.17.1 effective capacity is buckets-1 for small
+        // tables and 7/8 of buckets otherwise. These append-only maps
+        // have no tombstones. Twice the reported capacity therefore
+        // covers all buckets. Each carries a control byte, plus SIMD
+        // group tail and bucket/control alignment (each at most 16 here).
+        map.capacity().checked_mul(2)?.checked_mul(size_of::<(K, V)>().checked_add(1)?)?.checked_add(64)
+    }
+
+    fn btree<K, V>(rows: usize) -> Option<usize> {
+        // std alloc::collections::btree::node B=6. At most one live
+        // node per row, with 11 key/value slots, 12 edge pointers,
+        // parent pointer/index/length, and padding bounded by 64.
+        rows.checked_mul(size_of::<K>().checked_add(size_of::<V>())?.checked_mul(11)?
+            .checked_add(13 * size_of::<usize>() + 64)?)
+    }
+
+    let mut bytes = size_of::<Scopes>().checked_add(2 * size_of::<usize>())?
+        .checked_add(hash(&scopes.lints)?)?.checked_add(strings(&scopes.known_allow)?)?
+        .checked_add(scopes.hash.capacity())?;
+    for (name, scope) in &scopes.lints {
+        bytes = bytes.checked_add(name.capacity())?.checked_add(hash(&scope.lists)?)?
+            .checked_add(hash(&scope.tables)?)?.checked_add(btree::<String, i64>(scope.ceilings.len())?)?;
+        for values in [&scope.exempt_prefixes, &scope.exempt_contains, &scope.exempt_files, &scope.reason_codes] {
+            bytes = bytes.checked_add(strings(values)?)?;
+        }
+        for (key, values) in &scope.lists {
+            bytes = bytes.checked_add(key.capacity())?.checked_add(strings(values)?)?;
+        }
+        for (key, table) in &scope.tables {
+            bytes = bytes.checked_add(key.capacity())?.checked_add(btree::<String, String>(table.len())?)?;
+            for (key, value) in table {
+                bytes = bytes.checked_add(key.capacity())?.checked_add(value.capacity())?;
+            }
+        }
+        for key in scope.ceilings.keys() {
+            bytes = bytes.checked_add(key.capacity())?;
+        }
+    }
+    Some(bytes)
+}
+
 /// The TOML table key for a lint name (`sys/emag` needs quotes).
 fn toml_key(name: &str) -> String {
     if name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {

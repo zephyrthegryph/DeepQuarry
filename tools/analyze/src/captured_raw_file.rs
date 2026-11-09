@@ -389,6 +389,15 @@ impl Config {
     pub fn budget_charge(&self) -> usize {
         self.charge
     }
+    /// Retained interpreted scopes, excluding raw bytes, parse scratch and
+    /// the outer Config owner. Other toolchains use the existing envelope.
+    #[cfg(feature = "native-policy")]
+    pub fn retained_scope_bound(&self) -> Option<usize> {
+        #[cfg(dq_audited_scope_storage)]
+        { crate::scopes::retained_scope_allocation_bound(&self.scopes) }
+        #[cfg(not(dq_audited_scope_storage))]
+        { None }
+    }
     /// Same interpreted scopes as typed adapters; not the raw-only roster.
     pub fn typed_policy_list(&self, name: &str, list: &str) -> Result<Vec<String>, String> {
         let meta = crate::captured_policy_metadata::metadata(name)

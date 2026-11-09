@@ -41,6 +41,20 @@ fn main() {
     println!("cargo:rerun-if-changed=client/src/native_policy_roster.rs");
     println!("cargo:rerun-if-changed=vendor");
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rustc-check-cfg=cfg(dq_audited_scope_storage)");
+    if std::env::var_os("CARGO_FEATURE_NATIVE_POLICY").is_some() {
+        // std's collection layouts are private. Only the reviewed Windows
+        // toolchain may use the narrower retained config admission.
+        println!("cargo:rerun-if-env-changed=RUSTC");
+        if std::env::var("TARGET").as_deref() == Ok("x86_64-pc-windows-msvc")
+            && std::env::var_os("RUSTC").and_then(|rustc|
+                std::process::Command::new(rustc).arg("--version").output().ok()
+            ).is_some_and(|output| output.status.success()
+                && output.stdout.trim_ascii() == b"rustc 1.99.1 (58cf8f9c3 2026-10-13)")
+        {
+            println!("cargo:rustc-cfg=dq_audited_scope_storage");
+        }
+    }
 
     // ---- module discovery -----------------------------------------------------------------
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());

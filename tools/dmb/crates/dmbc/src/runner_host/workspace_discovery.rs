@@ -92,7 +92,7 @@ impl DiscoverySelection{
  }}
 }
 /// Names are issued only by the actual private CheckGrep traversal.
-struct DocConfiguration{path:PathBuf,observation:Option<(crate::input_snapshot::Stamp,u128)>,value:Arc<dq_analyze::captured_raw_file::Config>}
+struct DocConfiguration{path:PathBuf,observation:Option<(crate::input_snapshot::Stamp,u128)>,value:Arc<dq_analyze::captured_raw_file::Config>,scope_bound:usize,scope_prepaid:bool}
 impl DocConfiguration{fn excludes(&self,relative:&str)->bool{self.value.policy_path_exempt("doc_snippets",dq_analyze::doc_snippets_policy::metadata().group,relative)}fn excludes_subtree(&self,relative:&str)->bool{self.value.borrowed_report_scope("doc_snippets",dq_analyze::doc_snippets_policy::metadata().group).is_some_and(|scope|scope.exempt_prefixes.iter().any(|prefix|relative.starts_with(prefix))||scope.exempt_contains.iter().any(|part|relative.contains(part)))}}
 struct CheckGrepNames{dmes:Vec<PathBuf>,jsx:Vec<PathBuf>}
 
@@ -269,7 +269,7 @@ impl DiscoveryReceipt {
         self.retained_charge_with(&mut BTreeSet::new())
     }
     pub(crate) fn retained_charge_with(&self, seen: &mut BTreeSet<usize>) -> io::Result<usize> {
-        let doc=match &self.doc_configuration{None=>0,Some(config)=>config.path.capacity().checked_add(config.value.budget_charge()).and_then(|n|n.checked_add(std::mem::size_of::<DocConfiguration>()+std::mem::size_of::<dq_analyze::captured_raw_file::Config>()+2*std::mem::size_of::<usize>())).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc interpreted configuration metadata overflow"))?};
+        let doc=match &self.doc_configuration{None=>0,Some(config)=>config.path.capacity().checked_add(config.scope_bound).and_then(|n|n.checked_add(std::mem::size_of::<DocConfiguration>()+std::mem::size_of::<dq_analyze::captured_raw_file::Config>()+2*std::mem::size_of::<usize>())).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc interpreted configuration metadata overflow"))?};
         self.facts
             .policy_closure_charge_with(seen)?.checked_add(doc).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc metadata overflow"))?
             .checked_add(
@@ -357,7 +357,8 @@ fn discover_productive_ui_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P>
  if inputs.policy_discovery_metadata_charge()?.checked_add(peak).is_none_or(|n|n>64*1024*1024){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"UI configuration exceeds existing metadata grant before interpretation"))}
  let config=Arc::new(dq_analyze::captured_raw_file::Config::capture(bytes.as_ref().map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,|bytes|dq_analyze::captured_raw_policy::Configuration::Captured(bytes.as_slice()))).map_err(io::Error::other)?);
  let observation=inputs.recorded_policy_file_observation(&path)?;
- let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,observation,value:config}))?;
+ let scope_bound=config.budget_charge();
+ let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,observation,value:config,scope_bound,scope_prepaid:false}))?;
  let mut admit=|_:usize|Ok(());if !receipt.covers_ui_actions(&mut admit)?{return Err(io::Error::new(io::ErrorKind::Unsupported,"UI productive root alias is unissued"))}
  Ok((receipt,bytes))
 }
@@ -417,9 +418,11 @@ fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,
         Ok(())
     }
     let metadata_budget=scratch.cloned().or_else(||lender.as_ref().map(|(budget,_)|Arc::clone(budget)));
-    let mut funded_metadata=0usize;
+    // Joined Derived already paid this exact shared scope owner. Keep it
+    // in the discovery metadata limit, with no second source-family debit.
+    let mut funded_metadata=doc_configuration.as_ref().filter(|config|config.scope_prepaid).map_or(0,|config|config.scope_bound);
     let mut fund_metadata=|bytes:usize|->io::Result<()>{if let Some(budget)=&metadata_budget{let extra=bytes.saturating_sub(funded_metadata);budget.charge(extra).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;}funded_metadata=funded_metadata.max(bytes);Ok(())};
-    if let Some(config)=&doc_configuration{metadata=metadata.checked_add(config.value.budget_charge()).and_then(|n|n.checked_add(config.path.capacity()*8+4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc scope/traversal metadata overflow"))?;}
+    if let Some(config)=&doc_configuration{metadata=metadata.checked_add(config.scope_bound).and_then(|n|n.checked_add(config.path.capacity()*8+4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc scope/traversal metadata overflow"))?;}
     fund_metadata(metadata)?;check(inputs, metadata)?;
     let facets = selection.facets();
     let mut stack = contract
@@ -648,8 +651,9 @@ pub(crate) fn discover_full_registry_from_derived<P: SnapshotProvider>(
     }
     let path = canonical_path(configuration);
     let observation = inputs.recorded_policy_file_observation(&path)?;
+    let scope_bound=config.retained_scope_bound().unwrap_or_else(||config.budget_charge());
     discover_selected_lent(inputs, contract, DiscoverySelection::AuthoredCheckGrepV1,
-        Some(DocConfiguration { path, observation, value: Arc::clone(config) }), Some((budget, lender)))
+        Some(DocConfiguration { path, observation, value: Arc::clone(config), scope_bound, scope_prepaid: true }), Some((budget, lender)))
 }
 
 fn discover_productive_doc_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,configuration:&Path,expected:&[&str],selection:DiscoverySelection)->io::Result<(DiscoveryReceipt,Option<dm_resources::SharedBytes>)>{
@@ -657,7 +661,9 @@ fn discover_productive_doc_domains<P:SnapshotProvider>(inputs:&RecordingInputs<P
  let path=canonical_path(configuration);if !path.is_absolute(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Doc configuration must be absolute"))}
  let bytes=inputs.read_policy_candidate(&path,64*1024*1024)?;let peak=bytes.as_ref().map_or(Some(1024),|bytes|bytes.capacity().checked_mul(64).and_then(|n|n.checked_add(8192+path.capacity()*8))).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;if inputs.policy_discovery_metadata_charge()?.checked_add(peak).is_none_or(|n|n>64*1024*1024){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"Doc configuration exceeds existing metadata grant before interpretation"))}
  let config=Arc::new(dq_analyze::captured_raw_file::Config::capture(bytes.as_ref().map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,|bytes|dq_analyze::captured_raw_policy::Configuration::Captured(bytes.as_slice()))).map_err(io::Error::other)?);
- let observation=inputs.recorded_policy_file_observation(&path)?;let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,observation,value:config}))?;
+ let observation=inputs.recorded_policy_file_observation(&path)?;
+ let scope_bound=config.budget_charge();
+ let receipt=discover_selected_using(inputs,contract,selection,Some(DocConfiguration{path,observation,value:config,scope_bound,scope_prepaid:false}))?;
  if expected.iter().any(|name|!receipt.contract.recursive_roots.contains(&receipt.contract.root.join(name))){return Err(io::Error::new(io::ErrorKind::InvalidInput,"productive Doc root alias changes report namespace"))}Ok((receipt,bytes))
 }
 
