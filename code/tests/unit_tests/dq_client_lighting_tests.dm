@@ -527,3 +527,44 @@
 	TEST_ASSERT(client_glow_shape_grew("80|0,0|1,0", "80|0,0,1,0|"), "a newly reached tile is growth")
 	TEST_ASSERT(!client_glow_shape_grew("80|0,0,1,0|", "80|0,0|1,0"), "a lost tile is not growth")
 	TEST_ASSERT(!client_glow_shape_grew("80|0,0|", "80|0,0|"), "the same reach is not growth")
+
+/// A wide-open bake is the plain sprite, pixel for pixel, so swapping plain for baked cannot move a glow; a stored shape loads without a bake.
+/datum/unit_test/dq_client_lighting_bake_matches_plain
+
+/datum/unit_test/dq_client_lighting_bake_matches_plain/Run()
+	var/list/tiles = list()
+	for(var/dx in -5 to 5)
+		for(var/dy in -5 to 5)
+			tiles += "[dx],[dy]"
+	var/key = "160|[jointext(tiles, ",")]|"
+	var/started = REALTIMEOFDAY
+	for(var/i in 1 to 10)
+		var/timed = client_glow_mask_bake_blocking(key)
+		fdel(timed)
+	log_world("client glow test: one open range 6 bake takes [(REALTIMEOFDAY - started) / 10] ds")
+	var/png = client_glow_mask_bake_blocking(key)
+	TEST_ASSERT_NOTNULL(png, "baked")
+	var/icon/baked = icon(file(png))
+	var/icon/plain = icon(client_glow_icon(352), "light")
+	TEST_ASSERT_EQUAL(baked.Width(), plain.Width(), "same width")
+	TEST_ASSERT_EQUAL(baked.Height(), plain.Height(), "same height")
+	var/worst = 0
+	for(var/x = 4, x <= 352, x += 12)
+		for(var/y = 4, y <= 352, y += 12)
+			var/a = client_lighting_test_alpha(baked.GetPixel(x, y))
+			var/b = client_lighting_test_alpha(plain.GetPixel(x, y))
+			worst = max(worst, abs(a - b))
+	log_world("client glow test: worst bake-against-plain alpha difference [worst]")
+	TEST_ASSERT(worst <= 2, "the bake lines up with the plain sprite (worst alpha difference [worst])")
+	GLOB.client_glow_baker.store_on = TRUE
+	var/store = client_glow_store_path(key)
+	fcopy(png, store)
+	fdel(png)
+	GLOB.client_glow_baker.icons -= key
+	var/loads = GLOB.client_glow_baker.stored_loads
+	TEST_ASSERT_NOTNULL(client_glow_mask_icon(key), "a stored shape is ready at once")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_baker.stored_loads, loads + 1, "it came from the store")
+	TEST_ASSERT(!GLOB.client_glow_baker.pending[key], "nothing was queued")
+	GLOB.client_glow_baker.store_on = FALSE
+	GLOB.client_glow_baker.icons -= key
+	fdel(store)

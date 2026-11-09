@@ -55,6 +55,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/evicted = 0
 	/// Sum of the time from request to baked, deciseconds (real time).
 	var/wait_ds = 0
+	/// Shapes loaded from the disk store instead of baked; shapes written to it.
+	var/stored_loads = 0
+	var/stored_saves = 0
+	/// Shapes asked for ahead of a viewer holding them (the chunks around its reach box).
+	var/prefetched = 0
+	/// FALSE: no disk store (unit tests, where a stored shape would hide the bake under test).
+#if defined(UNIT_TESTS)
+	var/store_on = FALSE
+#else
+	var/store_on = TRUE
+#endif
 
 /// The reached tiles (flat text list dx,dy,...) merged into rectangles: a flat number list x0,y0,x1,y1,... (tile offsets, inclusive).
 /// Horizontal runs per row, then a run identical to the row below's extends that rectangle upward.
@@ -186,10 +197,61 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		return found
 	GLOB.client_glow_baker.misses++
 	client_glow_mask_request(key)
-	return null
+	return GLOB.client_glow_baker.icons[key] // a stored shape loads on the spot
+
+/// The prefix of this build's stored shapes: the recipe version and the contents of every glow sprite, so a changed sprite never serves an old bake.
+/proc/client_glow_store_stamp()
+	var/static/stamp
+	if(!stamp)
+		var/list/parts = list(CLIENT_GLOW_STORE_VERSION)
+		for(var/size in list(32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352))
+			parts += md5(file(resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(size)))))
+		stamp = md5(jointext(parts, "|"))
+	return stamp
+
+/proc/client_glow_store_path(key)
+	return "[CLIENT_GLOW_STORE_DIR][md5("[client_glow_store_stamp()]|[key]")].png"
+
+/// Once per world: the store stays bounded by emptying it when it has grown past its cap.
+/proc/client_glow_store_ready()
+	var/static/checked = FALSE
+	if(checked)
+		return
+	checked = TRUE
+	var/list/files = flist(CLIENT_GLOW_STORE_DIR)
+	if(length(files) > CLIENT_GLOW_STORE_MAX)
+		log_world("client glow store: [length(files)] files past the cap of [CLIENT_GLOW_STORE_MAX], emptied")
+		fdel(CLIENT_GLOW_STORE_DIR)
+
+/// Loads a stored shape into the cache. TRUE if it was on disk.
+/proc/client_glow_store_load(key)
+	if(!GLOB.client_glow_baker.store_on)
+		return FALSE
+	client_glow_store_ready()
+	var/path = client_glow_store_path(key)
+	if(!rustg_file_exists(path))
+		return FALSE
+	GLOB.client_glow_baker.stored_loads++
+	client_glow_mask_cache(key, fcopy_rsc(file(path)))
+	return TRUE
+
+/proc/client_glow_mask_cache(key, res)
+	GLOB.client_glow_baker.icons[key] = res
+	if(length(GLOB.client_glow_baker.icons) > CLIENT_GLOW_MASK_CACHE_MAX)
+		GLOB.client_glow_baker.icons.Cut(1, 2)
+		GLOB.client_glow_baker.evicted++
+
+/// Asks for a shape no viewer holds yet, so it is ready when one walks up.
+/proc/client_glow_mask_prefetch(key)
+	if(GLOB.client_glow_baker.icons[key] || GLOB.client_glow_baker.pending[key])
+		return
+	GLOB.client_glow_baker.prefetched++
+	client_glow_mask_request(key)
 
 /proc/client_glow_mask_request(key)
 	if(GLOB.client_glow_baker.pending[key])
+		return
+	if(client_glow_store_load(key))
 		return
 	if(length(GLOB.client_glow_baker.pending) >= CLIENT_GLOW_MASK_QUEUE_MAX)
 		GLOB.client_glow_baker.refused++ // asked again the next time a viewer considers the light
@@ -246,11 +308,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 /// Takes a baked PNG into the resource cache and gives it to every viewer waiting on the shape.
 /proc/client_glow_mask_store(key, path)
 	var/res = fcopy_rsc(file(path))
+	if(GLOB.client_glow_baker.store_on)
+		client_glow_store_ready()
+		if(fcopy(path, client_glow_store_path(key)))
+			GLOB.client_glow_baker.stored_saves++
 	fdel(path)
-	GLOB.client_glow_baker.icons[key] = res
-	if(length(GLOB.client_glow_baker.icons) > CLIENT_GLOW_MASK_CACHE_MAX)
-		GLOB.client_glow_baker.icons.Cut(1, 2)
-		GLOB.client_glow_baker.evicted++
+	client_glow_mask_cache(key, res)
 	GLOB.client_glow_baker.baked++
 	if(!length(GLOB.client_glow_baker.pending))
 		log_world("client glow masks: queue drained at [time2text(world.realtime, "hh:mm:ss")]; [client_glow_mask_stats()]") // the load-in timeline, with the first hold line
@@ -267,7 +330,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 
 /proc/client_glow_mask_stats()
 	var/baked = GLOB.client_glow_baker.baked
-	return "client glow masks: [length(GLOB.client_glow_baker.icons)] cached, [baked] baked, [GLOB.client_glow_baker.hits] hits, [GLOB.client_glow_baker.misses] misses, [GLOB.client_glow_baker.failed] failed, [GLOB.client_glow_baker.refused] refused, [GLOB.client_glow_baker.evicted] evicted, [length(GLOB.client_glow_baker.pending)] waiting, mean wait [baked ? round(GLOB.client_glow_baker.wait_ds / baked, 0.1) : 0] ds"
+	return "client glow masks: [length(GLOB.client_glow_baker.icons)] cached, [baked] baked, [GLOB.client_glow_baker.hits] hits, [GLOB.client_glow_baker.misses] misses, [GLOB.client_glow_baker.failed] failed, [GLOB.client_glow_baker.refused] refused, [GLOB.client_glow_baker.evicted] evicted, [GLOB.client_glow_baker.stored_loads] loaded from store, [GLOB.client_glow_baker.stored_saves] stored, [GLOB.client_glow_baker.prefetched] prefetched, [length(GLOB.client_glow_baker.pending)] waiting, mean wait [baked ? round(GLOB.client_glow_baker.wait_ds / baked, 0.1) : 0] ds"
 
 /// Recomputes this light's reach after an opacity change and rebuilds the mask only if the reach changed.
 /datum/light_source/proc/client_glow_mask_refresh()

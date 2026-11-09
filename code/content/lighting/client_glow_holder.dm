@@ -152,15 +152,21 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 			seen_keys["[T.x]:[T.y]"] = TRUE
 	// Candidates: lights indexed in the glow chunks a reach could overlap the reach box from.
 	var/list/keep = list()
-	var/c0x = round((reach[1] - CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK)
-	var/c1x = round((reach[3] + CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK)
-	var/c0y = round((reach[2] - CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK)
-	var/c1y = round((reach[4] + CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK)
+	// One chunk further out than a reach can matter: those lights are not held, but their shapes are readied for the next crossing.
+	var/c0x = round((reach[1] - CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) - 1
+	var/c1x = round((reach[3] + CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) + 1
+	var/c0y = round((reach[2] - CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) - 1
+	var/c1y = round((reach[4] + CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) + 1
 	for(var/gx in c0x to c1x)
 		for(var/gy in c0y to c1y)
 			for(var/datum/light_source/L as anything in GLOB.client_glow_chunks["[z],[gx],[gy]"])
 				if(consider(L))
 					keep[L.glow_holder_key()] = TRUE
+				else if(!unlit && !unmasked && L.glow_mask_key && !L.glow_plain)
+					client_glow_mask_prefetch(L.glow_mask_key)
+					var/ahead = GLOB.client_glow_baker.icons[L.glow_mask_key]
+					if(ahead)
+						deliver(L.glow_mask_key, ahead) // on the client before the crossing that holds it
 	for(var/h in LAZYCOPY(held))
 		if(!keep[h])
 			drop_handle(h)
@@ -274,7 +280,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	LAZYSET(cut_shape, h, shape)
 
 /// TRUE once this client can draw `baked`. An image whose icon the client has not received draws nothing until it arrives, so a new PNG goes
-/// to the client first on a faint preload image, and the held glows swap to it afterwards (client_glow_delivered()).
+/// to the client first on a black (invisible under BLEND_ADD) preload image, and the held glows swap to it afterwards (client_glow_delivered()).
 /datum/client_glow_holder/proc/deliver(shape, baked)
 	if(!client || LAZYACCESS(delivered, shape))
 		return TRUE
@@ -284,7 +290,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(!eye)
 		return TRUE
 	var/image/preload = image(baked)
-	preload.alpha = 1
+	preload.color = "#000000" // adds nothing, however many are stacked: a faint copy would show as a patch around the eye
 	preload.plane = PLANE_LIGHTING
 	preload.layer = CLIENT_GLOW_LAYER
 	preload.blend_mode = BLEND_ADD
