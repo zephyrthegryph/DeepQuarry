@@ -946,9 +946,30 @@ impl TraceRuns {
 // A completed group page can retain one central cell per run of equal raw
 // fields, plus the exact output word of each repeated cell. Encounter rank,
 // trace identity and either escape roster remain independent.
+enum RepeatedOutputs {
+    Short(Vec<u8>),
+    Wide(Vec<u16>),
+}
+impl RepeatedOutputs {
+    fn get(&self, ordinal: usize) -> u16 {
+        match self {
+            Self::Short(rows) => u16::from(rows[ordinal]),
+            Self::Wide(rows) => rows[ordinal],
+        }
+    }
+
+    fn storage(&self) -> (usize, usize, usize) {
+        match self {
+            Self::Short(rows) => (rows.as_ptr() as usize, rows.len(), rows.capacity()),
+            Self::Wide(rows) => (rows.as_ptr() as usize, rows.len(),
+                rows.capacity() * std::mem::size_of::<u16>()),
+        }
+    }
+}
+
 struct RepeatedGroupGeometry {
     anchors: Vec<PackedGroup>,
-    outputs: Vec<u16>,
+    outputs: RepeatedOutputs,
     rank: RowGroupRank,
 }
 impl RepeatedGroupGeometry {
@@ -961,10 +982,16 @@ impl RepeatedGroupGeometry {
         dense: &[PackedGroup], a: &SettingAdmission<'_>, funding: &mut PageFunding<'_>,
     ) -> io::Result<Vec<Self>> {
         debug_assert_eq!(dense.len(), ROW_PAGE_LEN);
-        let repeats = dense.windows(2).filter(|pair| Self::repeats(pair[0], pair[1])).count();
+        let mut repeats = 0;
+        let mut short = true;
+        for pair in dense.windows(2).filter(|pair| Self::repeats(pair[0], pair[1])) {
+            repeats += 1;
+            short &= pair[1].0[3] <= u16::from(u8::MAX);
+        }
         let anchors = dense.len() - repeats;
+        let output_width = if short { std::mem::size_of::<u8>() } else { std::mem::size_of::<u16>() };
         let bytes = std::mem::size_of::<Self>() + anchors * std::mem::size_of::<PackedGroup>()
-            + repeats * std::mem::size_of::<u16>();
+            + repeats * output_width;
         if bytes >= std::mem::size_of_val(dense)
             || !funding.work.try_grow_original_origin_storage(funding.credit, bytes)? {
             return Ok(Vec::new());
@@ -972,13 +999,22 @@ impl RepeatedGroupGeometry {
         let result = (|| {
             let mut page = Self {
                 anchors: exact_rows(anchors, a)?,
-                outputs: exact_rows(repeats, a)?,
+                outputs: if short { RepeatedOutputs::Short(exact_rows(repeats, a)?) }
+                    else { RepeatedOutputs::Wide(exact_rows(repeats, a)?) },
                 rank: RowGroupRank::new(),
             };
             for (index, &cell) in dense.iter().enumerate() {
                 let anchor = index == 0 || !Self::repeats(dense[index - 1], cell);
                 page.rank.append(index, page.anchors.len(), anchor);
-                if anchor { page.anchors.push(cell); } else { page.outputs.push(cell.0[3]); }
+                if anchor {
+                    page.anchors.push(cell);
+                } else {
+                    match &mut page.outputs {
+                        RepeatedOutputs::Short(rows) => rows.push(u8::try_from(cell.0[3])
+                            .map_err(|_| io::ErrorKind::InvalidData)?),
+                        RepeatedOutputs::Wide(rows) => rows.push(cell.0[3]),
+                    }
+                }
             }
             let mut owner = exact_rows(1, a)?;
             owner.push(page);
@@ -992,7 +1028,7 @@ impl RepeatedGroupGeometry {
         let rank = self.rank.through(index);
         let mut cell = self.anchors[rank - 1];
         if self.rank.bits[index / TRACE_WORD_BITS] & (1 << (index % TRACE_WORD_BITS)) == 0 {
-            cell.0[3] = self.outputs[index - rank];
+            cell.0[3] = self.outputs.get(index - rank);
         }
         cell
     }
@@ -1001,7 +1037,7 @@ impl RepeatedGroupGeometry {
         let page = owner.pop().expect("issued compact group geometry");
         let bytes = owner.capacity() * std::mem::size_of::<Self>()
             + page.anchors.capacity() * std::mem::size_of::<PackedGroup>()
-            + page.outputs.capacity() * std::mem::size_of::<u16>();
+            + page.outputs.storage().2;
         drop(page);
         drop(owner);
         funding.work.shrink(funding.credit, bytes)
@@ -1012,8 +1048,8 @@ impl RepeatedGroupGeometry {
         visit(owner.as_ptr() as usize, 1, std::mem::size_of::<Self>());
         visit(page.anchors.as_ptr() as usize, page.anchors.len(),
             page.anchors.capacity() * std::mem::size_of::<PackedGroup>());
-        visit(page.outputs.as_ptr() as usize, page.outputs.len(),
-            page.outputs.capacity() * std::mem::size_of::<u16>());
+        let (address, rows, bytes) = page.outputs.storage();
+        visit(address, rows, bytes);
     }
 }
 
@@ -1215,14 +1251,21 @@ impl OriginGroups {
             let mut repeat_bytes = 0usize;
             let mut repeated_rows = 0usize;
             let mut repeat_pages = 0usize;
+            let mut short_output_pages = 0usize;
+            let mut short_output_rows = 0usize;
             for page in self.trace_pages.iter() {
                 if let Some(geometry) = page.repeated_geometry.first() {
                     repeat_pages += 1;
-                    repeated_rows += geometry.outputs.len();
+                    let (_, rows, _) = geometry.outputs.storage();
+                    repeated_rows += rows;
+                    if matches!(&geometry.outputs, RepeatedOutputs::Short(_)) {
+                        short_output_pages += 1;
+                        short_output_rows += rows;
+                    }
                     RepeatedGroupGeometry::visit(&page.repeated_geometry, |_, _, n| repeat_bytes += n);
                 }
             }
-            eprintln!("ORIGINAL_ORIGIN_GROUP_GEOMETRY central_bytes={central} old_side_bytes={old} full_side_bytes={full} repeat_bytes={repeat_bytes} repeat_pages={repeat_pages} repeated_rows={repeated_rows}");
+            eprintln!("ORIGINAL_ORIGIN_GROUP_GEOMETRY central_bytes={central} old_side_bytes={old} full_side_bytes={full} repeat_bytes={repeat_bytes} repeat_pages={repeat_pages} repeated_rows={repeated_rows} short_output_pages={short_output_pages} short_output_rows={short_output_rows}");
         }
         let mut rank_bytes = 0usize;
         self.trace_pages.visit_storage(|_, _, bytes| rank_bytes = rank_bytes.saturating_add(bytes));
@@ -2984,7 +3027,7 @@ impl OriginalRawOrigins{
     work.limit.store(usize::MAX, Ordering::Release);
     groups.push(group(ROW_PAGE_LEN), trace.clone(), &a, &mut funding).unwrap();
     let page = groups.trace_pages.get(0).unwrap().repeated_geometry.first().unwrap();
-    assert_eq!(page.outputs.len(), ROW_PAGE_LEN - 4);
+    assert_eq!(page.outputs.storage().1, ROW_PAGE_LEN - 4);
     assert!(groups.packed.pages[0].is_empty());
     for (index, cell) in expected.iter().enumerate() {
         assert_eq!(&groups.packed_cell(index).unwrap().0, cell);
@@ -3009,6 +3052,51 @@ impl OriginalRawOrigins{
     assert!(groups.packed_cell(0).is_none());
     drop(groups);
     drop(credit);
+    assert_eq!(live.load(Ordering::Acquire), 0);
+ }
+
+ #[test]
+ fn repeated_output_offsets_select_exact_width_and_refund_last_page() {
+    let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+    let admission = SettingAdmission::new(&syntax, root, &|| Ok(()));
+    let live = Arc::new(AtomicUsize::new(0));
+    let work = CappedWork::new(live.clone(), usize::MAX);
+    let mut credit = work.reserve(0).unwrap();
+    let mut funding = PageFunding { work: &work, credit: &mut credit };
+    let mut dense = vec![PackedGroup([1, 0, 0, 0]); ROW_PAGE_LEN];
+    dense[0] = PackedGroup([1, 0, 0, 300]); // A wide anchor does not widen output cells.
+    dense[1] = PackedGroup([1, 0, 0, 255]);
+    dense[63] = PackedGroup::old();
+    dense[64] = PackedGroup::full();
+    let short = RepeatedGroupGeometry::stage(&dense, &admission, &mut funding).unwrap();
+    assert!(matches!(&short[0].outputs, RepeatedOutputs::Short(_)));
+    for (ordinal, original) in dense.iter().enumerate() {
+        assert_eq!(short[0].get(ordinal).0, original.0);
+    }
+    let held = live.load(Ordering::Acquire);
+    let (_, repeated, bytes) = short[0].outputs.storage();
+    assert_eq!(bytes, repeated);
+
+    dense[1] = PackedGroup([1, 0, 0, 256]);
+    work.limit.store(held, Ordering::Release);
+    let refused = RepeatedGroupGeometry::stage(&dense, &admission, &mut funding).unwrap();
+    assert!(refused.is_empty());
+    assert_eq!(live.load(Ordering::Acquire), held);
+
+    work.limit.store(usize::MAX, Ordering::Release);
+    let wide = RepeatedGroupGeometry::stage(&dense, &admission, &mut funding).unwrap();
+    assert!(matches!(&wide[0].outputs, RepeatedOutputs::Wide(_)));
+    let (_, wide_count, wide_bytes) = wide[0].outputs.storage();
+    assert_eq!((wide_count, wide_bytes), (repeated, 2 * repeated));
+    assert_eq!(live.load(Ordering::Acquire), held + held + repeated);
+    for (ordinal, original) in dense.iter().enumerate() {
+        assert_eq!(wide[0].get(ordinal).0, original.0);
+    }
+    RepeatedGroupGeometry::release(wide, &mut funding).unwrap();
+    assert_eq!(live.load(Ordering::Acquire), held);
+    assert_eq!(short[0].get(1).0[3], 255);
+    RepeatedGroupGeometry::release(short, &mut funding).unwrap();
     assert_eq!(live.load(Ordering::Acquire), 0);
  }
 
