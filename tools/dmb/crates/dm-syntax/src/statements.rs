@@ -231,6 +231,8 @@ pub trait SettingSyntaxProvider {
     fn original_statement_block_open(&self, _gap: Span) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// Recognize the exact bare token and pinned terminator from this body.
+    fn original_bare_continue(&self, _header: Span) -> std::io::Result<bool> { Ok(false) }
     fn switch_case_cursor(&self,_item:&Item)->Result<OriginalCaseCursor,&'static str>{Err("original switch block cursor was not issued")}
 }
 
@@ -251,6 +253,7 @@ fn parse_body_items_using_settings(
         source,
         original_compound_complete:true,
         original_compound_seen_statement:false,
+        original_for_continue:false,
         original_terminal_header:items.last().filter(|item|item.children.is_empty()).map(|item|item.header_span),
         original_grammar:&mut result.original_grammar,
     };
@@ -311,6 +314,7 @@ struct BodyOrigins<'a> {
     source: Option<&'a str>,
     original_compound_complete:bool,
     original_compound_seen_statement:bool,
+    original_for_continue:bool,
     original_terminal_header:Option<Span>,
     original_grammar:&'a mut Option<OriginalBodyGrammarOutcome>,
     controls: &'a mut Vec<ControlOrigin>,
@@ -463,7 +467,8 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         if starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch")
             || starts_keyword(header,"for") {
             origins.original_compound_seen_statement=true;
-        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!local_statement&&!initial_setting){
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!local_statement&&!initial_setting
+            && !(header == "continue" && origins.original_for_continue)){
             // The actual Original output can join a keyword directly to
             // punctuation or an interpolation token. Let parse_one's same
             // provider lookup settle this only for the otherwise unknown leaf.
@@ -799,9 +804,12 @@ fn parse_one(
         let mut original_each = false;
         let control = parse_for(item, diagnostics, origins, &mut original_each);
         origins.original_compound_complete &= boundary && original_each;
-        control.map(|control| StatementKind::For {
-            control,
-            body: control_body(item, "for", diagnostics, origins),
+        control.map(|control| {
+            let parent = origins.original_for_continue;
+            origins.original_for_continue = boundary && original_each;
+            let body = control_body(item, "for", diagnostics, origins);
+            origins.original_for_continue = parent;
+            StatementKind::For { control, body }
         })
     } else if starts_keyword(header, "switch") {
         let parsed = parse_switch(item, diagnostics, origins);
@@ -859,6 +867,18 @@ fn parse_one(
     } else if let Some(label) = header.strip_prefix("break ") {
         Some(StatementKind::BreakLabel(label.trim().into()))
     } else if header == "continue" {
+        if origins.original_for_continue && item.children.is_empty() {
+            match origins.settings.map(|provider| provider.original_bare_continue(item.header_span)).transpose() {
+                Ok(actual) => origins.original_compound_complete &= actual == Some(true),
+                Err(actual) => {
+                    origins.original_compound_complete = false;
+                    if let Some(admission) = diagnostics.admission {
+                        admission.record_operational_error(actual);
+                    }
+                    return unsupported(item);
+                }
+            }
+        }
         Some(StatementKind::Continue)
     } else if let Some(label) = header.strip_prefix("continue ") {
         Some(StatementKind::ContinueLabel(label.trim().into()))

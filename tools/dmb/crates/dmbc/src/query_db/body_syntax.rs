@@ -580,6 +580,47 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_admin_notice_consumes_grouped_for_index_and_bare_loop_continue() {
+     let fixture = r#"
+#define REGISTRY_MEMBERS(ID) (GLOB.registry_members[ID])
+#define REGISTRY_MOBS "mob_list"
+/proc/admin_notice(message, rights)
+    for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
+        var/C = M.client
+        if(!C)
+            continue
+        if(!(istype(C, /client)))
+            continue
+        if(check_rights_for(C, rights))
+            to_chat(C, message)
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("continue", "continue named"), false),
+         (fixture.replace("            to_chat(C, message)", "            to_chat(C, message)\n    continue"), false),
+         (fixture.replace("(GLOB.registry_members[ID])", "(GLOB.registry_members?[ID])"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "admin_notice");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original grouped index and ForList continue are available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_assertion_message_body_witness_keeps_typed_template_values_and_children() {
      let fixture = r#"
 /proc/assertion_message(file, line, condition, message)
@@ -644,6 +685,48 @@ mod body_syntax_census_tests;
              if expected {
                  let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
                      panic!("actual Original macro controls are available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_admin_attack_safe_call_consumes_only_absolute_unmodified_path_argument() {
+     let fixture = r#"
+#define R_ADMIN (1<<1)
+#define R_MOD (1<<13)
+#define ATTACK_PREFIX(text) ("<attack>" + text + "</attack>")
+/proc/msg_admin_attack(text)
+    var/rendered = ATTACK_PREFIX("[text]")
+    for(var/client/C in GLOB.admins)
+        if(check_rights_for(C, (R_ADMIN|R_MOD)))
+            if(C.prefs?.read_preference(/datum/preference/toggle/show_attack_logs))
+                var/msg = rendered
+                to_chat(C,
+                        type = "attacklog",
+                        html = msg,
+                        confidential = TRUE)
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("/datum/preference/toggle/show_attack_logs", ".preference/toggle/show_attack_logs"), false),
+         (fixture.replace("/datum/preference/toggle/show_attack_logs", "/datum/preference/toggle/show_attack_logs{enabled=1}"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "msg_admin_attack");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual safe call with absolute prefab path is available");
                  };
                  assert!(proof.belongs_to(&body));
              } else {

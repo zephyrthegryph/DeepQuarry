@@ -1165,6 +1165,25 @@ fn parse_statements_admitted(
             }
             Ok(open)
         }
+        fn original_bare_continue(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let tail = dm_syntax::Span::new(header.start, tokens.current_span().end);
+            let Ok(mut actual) = tokens.tokens(tail) else { return Ok(false); };
+            if !matches!(actual.next(), Some((TokenKind::Ident, span, "continue")) if span == header) {
+                return Ok(false);
+            }
+            for (kind, _, text) in actual {
+                self.admission.checkpoint()?;
+                if matches!(kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) {
+                    continue;
+                }
+                return Ok(kind == TokenKind::Punctuation && matches!(text, ";" | "}"));
+            }
+            Ok(false)
+        }
         fn switch_case_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
             let mut checkpoint=||{self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"native case cursor operation stopped"})};
             let tokens=self.syntax.original_body_tokens(self.body,self.code).map_err(|_|"original case body token owner unavailable")?;tokens.switch_case_cursor_using(item.header_span,item.span,&mut checkpoint)

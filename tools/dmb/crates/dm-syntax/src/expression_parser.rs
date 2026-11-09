@@ -1847,6 +1847,21 @@ fn original_composed_expression(
     match &expr.kind {
         ExprKind::Ident(name) => original_ordinary_call_name(name)
             && matches!(tokens, [only] if simple_term(expr, only)),
+        ExprKind::TypePath(path) => {
+            // Pinned prefab term: only an absolute slash/identifier path.
+            // Exclude relative/upward and edited prefab productions.
+            let Some(path) = path.strip_prefix('/') else { return false };
+            let mut actual = tokens.chunks_exact(2);
+            for component in path.split('/') {
+                let Some([slash, name]) = actual.next() else { return false };
+                if !punctuation(slash, "/") || name.kind != TokenKind::Ident
+                    || !original_ascii_identifier(component) || name.text != component
+                {
+                    return false;
+                }
+            }
+            actual.next().is_none() && actual.remainder().is_empty()
+        }
         ExprKind::Literal(value) => {
             if matches!(tokens, [only] if simple_term(expr, only)) { return true; }
             if let Some(crate::OriginalTokenValue::String(_)) = value.original_value() {
@@ -1898,6 +1913,15 @@ fn original_composed_expression(
         ExprKind::Group(value) => {
             matches!(tokens, [open, body @ .., close] if punctuation(open, "(")
                 && punctuation(close, ")") && original_conditional_child(value, body, true, depth))
+        }
+        ExprKind::Index { object, index } => {
+            let (receiver, tail) = child_prefix(object, tokens);
+            matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. })
+                && original_conditional_child(object, receiver, false, depth)
+                && matches!(tail, [open, key, close] if punctuation(open, "[")
+                    && punctuation(close, "]")
+                    && matches!(&index.kind, ExprKind::Ident(_) | ExprKind::Literal(_))
+                    && original_conditional_child(index, std::slice::from_ref(key), false, depth))
         }
         ExprKind::Call { callee, args } => {
             let (head, rest) = child_prefix(callee, tokens);

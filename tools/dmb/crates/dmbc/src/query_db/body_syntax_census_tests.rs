@@ -2,11 +2,13 @@
 //! The survey never installs its body products or publishes policy reports.
 use super::*;
 use crate::{
-    policy_request::{AnalysisContext, PolicyInputFile, PolicyInputRequest, PolicyInputRole},
+    input_snapshot::{FileSystemInputs, RecordingInputs},
+    policy_request::{AnalysisContext, PolicyInputFile, PolicyInputRequest, PolicyInputRole, WorkspacePolicyRequest},
     request::{BuildOutcome, Command},
     runner_host::BuildHost,
 };
-use dm_tree::frontend::{BodyArchive, CurrentBodySyntax, OriginalBodyDisposition};
+use dm_tree::frontend::{BodyArchive, CurrentBodySyntax, OriginalBodyDisposition,
+    BodySyntaxQueries, FrontendConfig, OriginalAnalysisCompleteness, SettingExpressionQueries};
 use dm_syntax::StatementKind;
 use std::{io, path::Path};
 
@@ -137,12 +139,16 @@ fn inspect(
 }
 
 fn survey(host: &BuildHost, start: usize, count: usize) -> [usize; 4] {
-    assert!((1..=MAX_WINDOW).contains(&count), "invalid survey window size");
     let db = host.query_db();
     let state = host.query_state();
     let guard = state.lock().unwrap();
     let snapshot = guard.snapshot.as_ref().expect("actual Original snapshot");
     let archive = snapshot.original_body_census_archive().unwrap();
+    survey_archive(db, archive, start, count)
+}
+
+fn survey_archive(db: &Arc<QueryDb>, archive: &BodyArchive, start: usize, count: usize) -> [usize; 4] {
+    assert!((1..=MAX_WINDOW).contains(&count), "invalid survey window size");
     assert_eq!(archive.source_mapping().initial_environment(), dm_preprocess::InitialEnvironment::OriginalChecker0290);
     assert!(archive.uses_body_queries(db.as_ref()));
     let total = archive.occurrences().len();
@@ -175,18 +181,57 @@ fn survey(host: &BuildHost, start: usize, count: usize) -> [usize; 4] {
     counts
 }
 
+// Only the ignored checkout probe needs the compact compound frontend.
+// Borrow the same genuine recorder and authenticated body roster as the
+// production compact builder, then stop before report or Strict publication.
+fn compact_checkout_survey(project: &Path, start: usize, count: usize) -> [usize; 4] {
+    let root = project.parent().unwrap();
+    let intent = PolicyInputRequest {
+        analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
+        workspace: Some(WorkspacePolicyRequest {
+            root: root.to_path_buf(),
+            recursive_roots: vec![root.join("code")],
+            configuration: root.join("tools/ci/lint_scopes.toml"),
+        }),
+        ..Default::default()
+    }.admit().unwrap();
+    let mut recorder = RecordingInputs::new(FileSystemInputs, 0)
+        .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+    let subject = recorder.issue_original_analysis_subject(&intent).unwrap();
+    assert!(subject.matches_request_project(project) && !subject.synthetic());
+    let queries = Arc::new(QueryDb::default());
+    let settings = Arc::clone(&queries) as Arc<dyn SettingExpressionQueries>;
+    let provider = recorder.original_batch_view(None);
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let seed = dm_tree::checker_builtins::original_analysis_seed().unwrap();
+    let frontend = dm_tree::frontend::build_for_original_compound_with_callable_anchors_checked(
+        subject.project(), &provider, &Default::default(),
+        FrontendConfig { workers: executor.workers(), engine: Some(seed.frontend_seed()), observer: None },
+        None, &executor, None, &settings, None,
+    ).unwrap().with_body_queries(Arc::clone(&queries) as Arc<dyn BodySyntaxQueries>).unwrap();
+    let view = frontend.source_view().unwrap();
+    assert_eq!(view.original_analysis_completeness(), Some(OriginalAnalysisCompleteness::Complete));
+    subject.bind_frontend(&view).unwrap();
+    recorder.diagnostic_source_evidence(&view).unwrap().check(view.mapping()).unwrap();
+    assert!(view.archive().matches_tree(view.tree()));
+    assert!(Arc::ptr_eq(view.archive().source_mapping(), view.mapping()));
+    survey_archive(&queries, view.archive(), start, count)
+}
+
 #[test]
 fn actual_original_census_classifies_issued_skipped_and_unissued_without_kind4() {
     let root = crate::test_scratch::dir("original-body-census-control");
     let project = root.join("deepquarry.dme");
-    std::fs::write(&project, "#include \"probe.dm\"\n").unwrap();
-    std::fs::write(root.join("probe.dm"), concat!(
+    std::fs::create_dir(root.join("code")).unwrap();
+    std::fs::write(&project, "#include \"code/probe.dm\"\n").unwrap();
+    std::fs::write(root.join("code/probe.dm"), concat!(
         "/proc/available()\n    return 1\n",
         "/proc/skipped(argument)\n    return argument +\n",
         "/proc/unissued(argument)\n    return (1 +)\n",
     )).unwrap();
     let host = prepare(&project);
     assert_eq!(survey(&host, 0, 3), [1, 1, 1, 0]);
+    assert_eq!(compact_checkout_survey(&project, 0, 3), [1, 1, 1, 0]);
     let state = host.query_state();
     let guard = state.lock().unwrap();
     let archive = guard.snapshot.as_ref().unwrap().original_body_census_archive().unwrap();
@@ -212,7 +257,6 @@ fn authenticated_original_checkout_body_syntax_census() {
             use crate::daemon::control::{bind_with_deadline, Cancellation};
             use std::time::{Duration, Instant};
             let _deadline = bind_with_deadline(Cancellation::default(), Instant::now() + Duration::from_secs(300));
-            let host = prepare(&project);
-            survey(&host, start, count);
+            compact_checkout_survey(&project, start, count);
         }).unwrap().join().unwrap();
 }
