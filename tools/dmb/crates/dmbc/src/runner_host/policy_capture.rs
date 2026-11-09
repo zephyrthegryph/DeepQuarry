@@ -692,7 +692,7 @@ pub(crate) fn capture<P: SnapshotProvider>(
         inputs,
         requested,
         search_folders,
-        CompiledViews::AllRaw, None,
+        CompiledViews::AllRaw, None, None,
     )
 }
 pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
@@ -747,7 +747,7 @@ fn capture_diagnostic_using<P: SnapshotProvider>(
         inputs,
         requested,
         search_folders,
-        compiled_views, joined,
+        compiled_views, joined, None,
     )
 }
 /// Configuration-only child for the genuine workspace generator endpoint.
@@ -757,7 +757,7 @@ fn capture_diagnostic_using<P: SnapshotProvider>(
 pub(crate) fn capture_workspace_generator<P: SnapshotProvider>(
     frontend: &ColdFrontend, inputs: &RecordingInputs<P>, configuration: &Path,
 ) -> io::Result<CapturedPolicyInputs> {
-    capture_workspace_child(CaptureSource::Compiled(frontend),inputs,configuration,None)
+    capture_workspace_child(CaptureSource::Compiled(frontend),inputs,configuration,None,None)
 }
 /// A separately selected semantic child over the genuine diagnostic source owner.
 /// This does not grant a workspace role; the snapshot issuer joins actual intent,
@@ -772,9 +772,7 @@ pub(crate) fn capture_analysis_semantic_with_joined_headers<P:SnapshotProvider>(
     // private binding instead of falling back to a path-spelling approximation.
     let subject=inputs.original_analysis_subject();
     if let Some(subject)=subject{subject.require_bound_mapping(frontend.mapping())?;}
-    let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration,joined)?;
-    if let Some(subject)=subject{capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;}
-    Ok(capture)
+    capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration,joined,subject)
 }
 /// Complete diagnostic source data for the separately admitted generation child.
 /// The caller must still bind actual selected names and the retired input closure.
@@ -784,9 +782,15 @@ pub(crate) fn capture_analysis_generator<P:SnapshotProvider>(frontend:&dm_tree::
  if !frontend.receipt().is_clean(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires clean actual source declarations"))}
  if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!frontend.original_plan().defines().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation analysis child lacks actual default context"))}
  let subject=inputs.original_analysis_subject().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation requires actual full Analyze subject"))?;subject.require_bound_mapping(frontend.mapping())?;
- let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration,None)?;capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;Ok(capture)
+ capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration,None,Some(subject))
 }
-fn capture_workspace_child<P:SnapshotProvider>(source:CaptureSource<'_,'_>,inputs:&RecordingInputs<P>,configuration:&Path,joined:Option<&JoinedHeaderCharge>)->io::Result<CapturedPolicyInputs>{
+fn capture_workspace_child<P:SnapshotProvider>(
+    source: CaptureSource<'_, '_>,
+    inputs: &RecordingInputs<P>,
+    configuration: &Path,
+    joined: Option<&JoinedHeaderCharge>,
+    subject: Option<&Arc<crate::input_snapshot::OriginalAnalysisSubject>>,
+) -> io::Result<CapturedPolicyInputs> {
     let intent = crate::policy_request::PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![crate::policy_request::PolicyInputFile {
@@ -797,7 +801,7 @@ fn capture_workspace_child<P:SnapshotProvider>(source:CaptureSource<'_,'_>,input
         search_folders: Vec::new(),
     }.admit()?;
     capture_source(source, inputs,
-        &intent.capture_files(), &[], CompiledViews::GeneratorManifest, joined)?
+        &intent.capture_files(), &[], CompiledViews::GeneratorManifest, joined, subject)?
         .bind_request(&intent)
 }
 #[derive(Clone, Copy)]
@@ -847,6 +851,7 @@ fn capture_source<P: SnapshotProvider>(
     search_folders: &[PathBuf],
     compiled_views: CompiledViews,
     joined: Option<&JoinedHeaderCharge>,
+    subject: Option<&Arc<crate::input_snapshot::OriginalAnalysisSubject>>,
 ) -> io::Result<CapturedPolicyInputs> {
     let original = match &frontend {
         CaptureSource::Diagnostic(view) if view.original_plan().is_original_diagnostic() => Some(*view),
@@ -1075,7 +1080,7 @@ fn capture_source<P: SnapshotProvider>(
     let policy = frontend.capture_policy(extra).map_err(io::Error::other)?;
     let facts = inputs.snapshot()?;
     let captured = CapturedPolicyInputs {
-        analysis_subject:None,
+        analysis_subject: subject.cloned(),
         semantic_sources: frontend.evidence(inputs)?,
         joined_header_charge: joined.map(|proof| proof.require(&policy)).transpose()?,
         source_aliases,
