@@ -95,8 +95,8 @@ impl AllocationHandle {
     fn into_credit(mut self) -> SourceArenaCredit {
         SourceArenaCredit::from_resource_owner(self.0.take().expect("live native allocation"))
     }
-    fn register(mut self, ledger: &mut super::raw_input_credits::Ledger) -> io::Result<SourceArenaCredit> {
-        ledger.register_source_arena(self.arc())?;
+    fn register(mut self, ledger: &mut super::raw_input_credits::Ledger, admitted: usize) -> io::Result<SourceArenaCredit> {
+        ledger.register_source_arena(self.arc(), admitted)?;
         Ok(SourceArenaCredit::from_resource_owner(self.0.take().expect("registered native allocation")))
     }
 }
@@ -271,7 +271,8 @@ fn split_owned_allocations<const N: usize>(
     ledger: &mut super::raw_input_credits::Ledger,
     donor: &Allocation,
     sizes: [usize; N],
-    admit_extra: impl FnOnce(&mut super::raw_input_credits::Ledger, usize) -> io::Result<()>,
+    mut admit_extra: impl FnMut(&mut super::raw_input_credits::Ledger,
+        &dyn Fn(&super::raw_input_credits::Ledger) -> io::Result<usize>) -> io::Result<usize>,
 ) -> io::Result<[AllocationHandle; N]> {
     if donor.origin_parent.is_some() || !ledger.has_source_arena(donor) { return Err(wrong()); }
     let bookkeeping = N.checked_mul(raw_input_credits::NODE).ok_or_else(oom)?;
@@ -280,11 +281,14 @@ fn split_owned_allocations<const N: usize>(
     })?;
     let remaining = donor.reserved_bytes().checked_sub(transfer).ok_or_else(oom)?;
     let extra = N.checked_mul(Allocation::metadata_bytes()).ok_or_else(oom)?;
-    admit_extra(ledger, extra)?;
+    admit_extra(ledger, &|_| Ok(extra))?;
     let children = sizes.map(|bytes| AllocationHandle::new(Arc::new(Allocation {
         bytes: AtomicUsize::new(bytes), domain: donor.domain.clone(), origin_parent:None, read_group:Default::default(),
     })));
-    ledger.partition_source_arena(donor, remaining, children.each_ref().map(AllocationHandle::arc))?;
+    let children_refs=children.each_ref().map(AllocationHandle::arc);
+    let peak=admit_extra(ledger,&|ledger|extra.checked_add(ledger.projected_partition_storage(children_refs)?)
+        .ok_or_else(oom))?;
+    ledger.partition_source_arena(donor,remaining,children_refs,peak.checked_sub(extra).ok_or_else(oom)?)?;
     Ok(children)
 }
 
@@ -347,11 +351,17 @@ impl QueryDb{
   Ok(())
  }
  fn admit_source_arena(&self,ledger:&mut super::raw_input_credits::Ledger,need:usize)->io::Result<()>{
+  self.admit_source_arena_projected(ledger,&|_|Ok(need)).map(|_|())
+ }
+ fn admit_source_arena_projected(&self,ledger:&mut super::raw_input_credits::Ledger,
+  project:&dyn Fn(&super::raw_input_credits::Ledger)->io::Result<usize>)->io::Result<usize>{
   if self.raw_policy.admission.source_arena_needs_census.swap(false,Ordering::AcqRel){ledger.invalidate_upper();}
   let (mut live,was_cached)=ledger.admission_charge()?;
+  let mut need=project(ledger)?;
   let mut available=self.workspace_input_base_headroom_locked(live);
   if was_cached && available.as_ref().map_or(true,|room|need>*room){
    live=ledger.refresh_after_pressure()?;
+   need=project(ledger)?;
    available=self.workspace_input_base_headroom_locked(live);
   }
   if available.as_ref().map_or(true, |&room| need > room) {
@@ -362,7 +372,7 @@ impl QueryDb{
   }
   let available=available.map_err(|_|no_source_room(need,live,None))?;
   if need>available{return Err(no_source_room(need,live,Some(available)))}
-  Ok(())
+  Ok(need)
  }
 }
 impl QueryDb {
@@ -439,7 +449,7 @@ impl QueryDb {
   let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
   ledger.bind_source_arena(&self.raw_policy.admission)?;
   crate::daemon::control::checkpoint()?;
-  let need=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(oom)?;
+  let need=bytes.checked_add(Allocation::metadata_bytes()).ok_or_else(oom)?;
   self.admit_source_arena(&mut ledger,need)?;
   let parent=origin.then(||self.body_charge.shared_reservation().expect("production syntax parent"));
   let grant=parent.map(|parent|parent.provisional(bytes)).transpose().map_err(parent_denied)?;
@@ -449,7 +459,12 @@ impl QueryDb {
   }));
   // The concrete owner now refunds these bytes, even if registration refuses.
   if let Some(grant)=grant{grant.commit();}
-  actual.register(&mut ledger)
+  let peak=if ledger.projected_source_arena_storage(actual.arc())?==0{0}else{
+   self.admit_source_arena_projected(&mut ledger,&|ledger|need.checked_add(
+    ledger.projected_source_arena_storage(actual.arc())?).ok_or_else(oom))?
+    .checked_sub(need).ok_or_else(oom)?
+  };
+  actual.register(&mut ledger,peak)
  }
 }
 impl SourceArenaWork for QueryDb{
@@ -524,7 +539,7 @@ impl SourceArenaWork for QueryDb{
          return Err(wrong());
      }
      let [payload, control] = split_owned_allocations(&mut ledger, actual, [capacity, control],
-         |ledger, extra| self.admit_source_arena(ledger, extra))?;
+         |ledger, project| self.admit_source_arena_projected(ledger, project))?;
      Ok(Some((payload.into_credit(), control.into_credit().into_control())))
  }
 
@@ -600,10 +615,13 @@ impl SourceArenaWork for QueryDb{
   SourceArenaWork::shrink(&own,&mut credit,7).unwrap();assert_eq!(live(&own),held);drop(credit);assert_eq!(live(&own),baseline);
   assert_eq!(SourceArenaWork::reserve(&own,256*1024*1024).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(live(&own),baseline,"denial did not publish a partial reservation or raise the actual family cap");
  }
+ fn arena_table_bytes(db:&QueryDb)->usize{
+  db.raw_policy.workspace.raw_sources.lock().unwrap().source_arena_storage()
+ }
  #[test]fn actual_source_text_payload_and_last_weak_control_are_counted_by_same_native_family(){
   let db=QueryDb::default();let baseline=live(&db);let text=String::from("native arena owner");let pointer=text.as_ptr();let capacity=text.capacity();let metadata=SourceText::source_arena_control_bytes().unwrap();let payload=SourceArenaWork::reserve(&db,capacity).unwrap();let control=SourceArenaWork::reserve(&db,metadata).unwrap().into_control();
   let source=SourceText::from_source_arena(text,payload,control).unwrap();assert_eq!(source.as_str().as_ptr(),pointer);let view=source.checked_view(1..source.len()).unwrap();let weak=source.downgrade();let full=live(&db);drop(source);assert_eq!(live(&db),full);drop(view);assert!(weak.upgrade().is_none());
-  assert_eq!(live(&db),baseline+raw_input_credits::NODE+Allocation::metadata_bytes()+metadata,"physical String reservation ended, real weak-control reservation survived");drop(weak);assert_eq!(live(&db),baseline);
+  assert_eq!(live(&db),baseline+arena_table_bytes(&db)+Allocation::metadata_bytes()+metadata,"physical String reservation ended, real weak-control reservation survived");drop(weak);assert_eq!(live(&db),baseline);
  }
  #[test]fn escaped_source_and_weak_alias_do_not_keep_the_query_db_or_source_payload_alive(){let db=Arc::new(QueryDb::default());let db_weak=Arc::downgrade(&db);let text=String::from("escaped actual arena");let capacity=text.capacity();let source=SourceText::from_source_arena(text,SourceArenaWork::reserve(db.as_ref(),capacity).unwrap(),SourceArenaWork::reserve(db.as_ref(),SourceText::source_arena_control_bytes().unwrap()).unwrap().into_control()).unwrap();let weak=source.downgrade();drop(db);assert!(db_weak.upgrade().is_none(),"resource credit must not retain QueryDb/ledger/model");assert_eq!(source.as_str(),"escaped actual arena");drop(source);assert!(weak.upgrade().is_none());let mut controls=0;weak.visit_derived_resource_storage(|_,bytes|controls+=bytes);assert!(controls>0,"last weak still owns its actual fixed resource metadata, without source content");drop(weak);}
 }
@@ -708,8 +726,14 @@ impl SourceArenaWork for HeldSourceWork<'_>{
      if control != dm_resources::SharedBytes::owner_allocation_bytes() {
          return Err(wrong());
      }
+     let mut previous=0usize;
      let [payload, control] = split_owned_allocations(&mut *state.ledger, actual, [capacity, control],
-         |_, extra| budget.charge(extra).map_err(|_| oom()))?;
+         |ledger, project| {
+             let peak=project(ledger)?;
+             budget.charge(peak.checked_sub(previous).ok_or_else(oom)?).map_err(|_|oom())?;
+             previous=peak;
+             Ok(peak)
+         })?;
      Ok(Some((payload.into_credit(), control.into_credit().into_control())))
  }
 
@@ -725,7 +749,16 @@ impl SourceArenaWork for HeldSourceWork<'_>{
 
  fn original_read_bookkeeping_bytes(&self)->io::Result<usize>{6usize.checked_mul(raw_input_credits::NODE).ok_or_else(oom)}
  fn checkpoint(&self)->io::Result<()>{let state=self.lock()?;if state.budget.denied(){return Err(oom())}drop(state);crate::daemon::control::checkpoint()}
- fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{self.checkpoint()?;let mut state=self.lock()?;let needed=bytes.checked_add(Allocation::metadata_bytes()).and_then(|n|n.checked_add(raw_input_credits::NODE)).ok_or_else(||{state.budget.deny();oom()})?;state.budget.charge(needed).map_err(|_|oom())?;let actual=Arc::new(Allocation{bytes:AtomicUsize::new(bytes),domain:Arc::downgrade(state.domain),origin_parent:None,read_group:Default::default()});AllocationHandle::new(actual).register(state.ledger)}
+ fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{
+  self.checkpoint()?;let mut state=self.lock()?;
+  let needed=bytes.checked_add(Allocation::metadata_bytes()).ok_or_else(||{state.budget.deny();oom()})?;
+  state.budget.charge(needed).map_err(|_|oom())?;
+  let actual=AllocationHandle::new(Arc::new(Allocation{bytes:AtomicUsize::new(bytes),
+   domain:Arc::downgrade(state.domain),origin_parent:None,read_group:Default::default()}));
+  let peak=state.ledger.projected_source_arena_storage(actual.arc())?;
+  state.budget.charge(peak).map_err(|_|oom())?;
+  actual.register(state.ledger,peak)
+ }
  fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>{self.checkpoint()?;let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let next=charge_allocation_growth(actual,state.budget,extra)?;state.ledger.resize_arena(actual,next)}
  fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let next=actual.reserved_bytes().checked_sub(bytes).ok_or_else(wrong)?;state.ledger.resize_arena(actual,next)}
  fn adopt_original_read(&self,credit:&mut SourceArenaCredit,source:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{let mut state=self.lock()?;let actual=Self::actual(&state,credit)?;let reserved=actual.reserved_bytes();state.ledger.adopt_original_read(source,reserved)?;state.ledger.resize_arena(actual,0)}
@@ -760,6 +793,50 @@ fn charge_allocation_growth(actual:&Allocation,budget:&dq_analyze::captured_gene
 #[cfg(test)]
 mod owned_text_partition_tests {
     use super::*;
+
+    #[test]
+    fn typed_arena_partition_funds_actual_overlap_before_changing_donor() {
+        let db = QueryDb::default();
+        let donor = SourceArenaWork::reserve(&db, 4096).unwrap();
+        let other: Vec<_> = (1..32).map(|_| SourceArenaWork::reserve(&db, 1).unwrap()).collect();
+        let owner = allocation(&db, &donor).unwrap();
+        let _gate = db.raw_policy.gate.lock().unwrap();
+        let mut ledger = db.raw_policy.workspace.raw_sources.lock().unwrap();
+        let before = ledger.refresh().unwrap();
+        let old_storage = ledger.source_arena_storage();
+        let child_metadata = 2 * Allocation::metadata_bytes();
+        let mut expected_peak = None;
+        let denied = split_owned_allocations(&mut ledger, owner, [128, 64], |ledger, projection| {
+            let bytes = projection(ledger)?;
+            assert_eq!(ledger.source_arena_storage(), old_storage);
+            assert_eq!(owner.reserved_bytes(), 4096);
+            if bytes == child_metadata { return Ok(bytes); }
+            assert!(bytes > child_metadata);
+            expected_peak = Some(bytes);
+            Err(io::Error::from_raw_os_error(1450))
+        });
+        assert_eq!(denied.err().unwrap().raw_os_error(), Some(1450));
+        assert_eq!(ledger.refresh().unwrap(), before);
+        assert_eq!(ledger.source_arena_storage(), old_storage);
+        assert_eq!(owner.reserved_bytes(), 4096);
+        let children = split_owned_allocations(&mut ledger, owner, [128, 64], |ledger, projection| {
+            let bytes = projection(ledger)?;
+            assert_eq!(ledger.source_arena_storage(), old_storage);
+            assert_eq!(owner.reserved_bytes(), 4096);
+            assert!(bytes == child_metadata || Some(bytes) == expected_peak);
+            Ok(bytes)
+        }).unwrap();
+        for child in &children { assert!(ledger.has_source_arena(child.arc())); }
+        let added = ledger.source_arena_storage() - old_storage;
+        assert_eq!(Some(added + child_metadata), expected_peak);
+        assert_eq!(owner.reserved_bytes(), 4096 - 128 - 64 - 2 * raw_input_credits::NODE);
+        assert_eq!(ledger.refresh().unwrap(), before + added + child_metadata - 2 * raw_input_credits::NODE);
+        drop(children);
+        assert!(ledger.refresh().unwrap() < before + added + child_metadata);
+        drop(ledger);
+        drop(_gate);
+        drop((other, donor));
+    }
 
     #[test]
     fn partition_moves_donor_funding_and_rejects_insufficient_or_foreign_grants() {
