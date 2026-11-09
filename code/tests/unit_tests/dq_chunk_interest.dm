@@ -573,6 +573,44 @@
 	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-walker"]), "no cover came up while it drained")
 	interest_clean(probes)
 
+/// A walker's edge spends its draw budget on real draws only: owed items that need no draw (here, nothing can perceive them) sit nearest the eye and do not use it up,
+/// so the full batch of real draws still runs now behind them, and the real ones past the batch are the ones deferred.
+/datum/unit_test/dq_interest_walker_edge_budget_counts_real_draws
+
+/datum/unit_test/dq_interest_walker_edge_budget_counts_real_draws/Run()
+	interest_isolate()
+	set_global(nameof(GLOB.interest_walker_deferred), GLOB.interest_walker_deferred)
+	var/turf/base = test_floor()
+	var/start_x = round((base.x - 1) / INTEREST_CHUNK) * INTEREST_CHUNK + 1
+	var/turf/home = locate(start_x, base.y, base.z)
+	var/turf/stepped = locate(start_x + 9, base.y, base.z)
+	var/turf/edge = locate(start_x + INTEREST_CHUNK, base.y, base.z)
+	var/turf/far_corner = locate(start_x + 2 * INTEREST_CHUNK - 1, base.y, base.z)
+	TEST_ASSERT(home && stepped && edge && far_corner, "the map has room for two neighbouring chunks")
+	var/list/clean = interest_probes(edge, INTEREST_WALKER_NOW_MAX + 10) // nearest the eye, and none of them can be drawn
+	var/list/real = interest_probes(far_corner, INTEREST_WALKER_NOW_MAX + 2)
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in clean)
+		probe.set_invisibility(INVISIBILITY_ABSTRACT)
+		rx_of(probe).look_key = null
+		probe.refresh_queued = DEP_PARKED
+	for(var/obj/dq_interest_probe/probe as anything in real)
+		refresh_mark(probe, DEP_ALL)
+	GLOB.interest_test_coverable += "dq-test-walker"
+	interest_view_set("dq-test-walker", home, null, world.view)
+	GLOB.interest_covered -= "dq-test-walker"
+	var/raised = GLOB.interest_covers_raised
+	var/deferred_before = GLOB.interest_walker_deferred
+	interest_view_set("dq-test-walker", stepped, null, world.view)
+	TEST_ASSERT_EQUAL(GLOB.interest_covers_raised, raised, "a walker's edge raises no cover")
+	var/owing = 0
+	for(var/obj/dq_interest_probe/probe as anything in real)
+		if(probe.refresh_queued)
+			owing++
+	TEST_ASSERT_EQUAL(owing, length(real) - INTEREST_WALKER_NOW_MAX, "the full batch of real draws ran now, behind the items that needed none")
+	TEST_ASSERT_EQUAL(GLOB.interest_walker_deferred - deferred_before, owing, "only the real draws past the batch were deferred")
+	interest_clean(clean + real)
+
 /// A viewer that cannot be covered (no client: a camera screen) gets everything in view drawn at once: it never sees an owed draw.
 /datum/unit_test/dq_interest_uncoverable_view_draws_at_once
 

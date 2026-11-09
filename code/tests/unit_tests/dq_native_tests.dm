@@ -230,6 +230,31 @@
 	TEST_ASSERT(N.delivery_changed_ms == 0 && N.delivery_notices_ms == 0, "only the crossed kind was timed")
 	TEST_ASSERT(N.last_slowest_ms > 0 ? findtext(N.last_slowest, "CROSSED") : !length(N.last_slowest), "the slowest record, when one was timed, is named by its kind")
 
+/// A paced frame that runs out of delivery budget keeps the rest of its outbox, in order, and the next frame delivers it first; a hand-stepped
+/// frame (not budgeted) delivers all of it.
+/datum/unit_test/dq_native_delivery_defers_past_budget
+
+/datum/unit_test/dq_native_delivery_defers_past_budget/Run()
+	var/datum/system/native/N = native_system()
+	var/saved_budget = N.delivery_budget_ms
+	N.delivery_budget_ms = 0 // every record after the first is over budget
+	var/list/outbox = list(NATIVE_REC_CROSSED, 0, 0, 0, NATIVE_REC_CROSSED, 0, 1, 0, NATIVE_REC_CROSSED, 0, 2, 0)
+	N.deliver(outbox.Copy(), budgeted = FALSE)
+	TEST_ASSERT_EQUAL(N.last_records, 3, "an unbudgeted delivery handed over all three records")
+	TEST_ASSERT_NULL(N.deferred_box, "an unbudgeted delivery left nothing waiting")
+	N.deliver(outbox.Copy(), budgeted = TRUE)
+	TEST_ASSERT_EQUAL(N.last_records, 1, "a budgeted delivery over budget handed over only the first record")
+	TEST_ASSERT_EQUAL(length(N.deferred_box), 8, "the other two records wait")
+	TEST_ASSERT_EQUAL(N.deferred_box[3], 1, "the waiting records start with the second one, in emission order")
+	N.deliver(list(), budgeted = TRUE)
+	TEST_ASSERT_EQUAL(N.last_records, 1, "the next frame delivered the oldest waiting record first")
+	TEST_ASSERT_EQUAL(length(N.deferred_box), 4, "one record still waits")
+	N.delivery_budget_ms = saved_budget
+	N.deliver(list(), budgeted = TRUE)
+	TEST_ASSERT_EQUAL(N.last_records, 1, "the last waiting record was delivered")
+	TEST_ASSERT_NULL(N.deferred_box, "nothing waits any more")
+	TEST_ASSERT_EQUAL(N.deferred_frames, 0, "the streak was closed and traced")
+
 /// A native frame past NATIVE_SLOW_FRAME_MS is reported with the Rust phases that grew: the report counts itself and keeps the counters
 /// the next report diffs against.
 /datum/unit_test/dq_native_slow_frame_is_reported

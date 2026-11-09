@@ -18,5 +18,8 @@
 #define NATIVE_SLOW_FRAME_MS 30
 /// The slow-frame log keeps this many lines per minute (a periodic 50 ms frame would otherwise log every ten seconds); slow_frames counts them all.
 #define NATIVE_SLOW_FRAME_LOG_PER_MINUTE 20
+/// A paced frame delivers records for this long (ms) and leaves the rest of its outbox for the next ticks, in order (deliver() in system.dm). One
+/// frame's outbox was up to 370 APC reports (130 ms at boot, 30-55 ms every ten seconds in play), and a tick that long is shed by the kernel.
+#define NATIVE_DELIVERY_BUDGET_MS 8
 /// A native frame at least this long (ms) is always logged, whatever the rate limit: it is the stall the log exists for.
 #define NATIVE_STALL_FRAME_MS 500
