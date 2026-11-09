@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks)
 	op("scoop", item(/obj/item/material/kitchen/utensil), priority(OP_PRIORITY_PART + 1), label("Scoop up"), then(PROC_REF(scooped)), passes())
 	op("slice", item(/obj/item), priority(OP_PRIORITY_PART), when(PROC_REF(is_cut_by_held)), label("Slice it"), then(PROC_REF(sliced)))
 	op("hide", item(/obj/item), priority(OP_PRIORITY_PART - 1), when(PROC_REF(takes_hidden_item)), label("Hide it inside"),
-		asks(/datum/prompt/yes_no, fields = list("question" = "You can't slice it here. Would you like to hide the thing inside it instead?", "title" = "No Cutting Surface!")), then(PROC_REF(hidden_inside)))
+		asks(/datum/prompt/yes_no, fields = list("question" = "You can't slice it here. Would you like to hide the thing inside it instead?", "title" = "No Cutting Surface!"), ends_on_no = TRUE), then(PROC_REF(hidden_inside)))
 	op("coat", at_target(), priority(OP_PRIORITY_PART), when(PROC_REF(target_has_coating)), label("Dip in it"), then(PROC_REF(dipped_in_coating)))
 	op("pour_out", at_target(), priority(OP_PRIORITY_PART + 1), when(PROC_REF(pours_into_target)), label("Empty it into"),
 		needs(req_reagent_room(because = MSG(reagent_container/full))), costs(RES_REAGENTS, PROC_REF(pour_amount)), consumes(), says(PROC_REF(pour_message)))
