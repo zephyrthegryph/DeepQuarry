@@ -1939,8 +1939,11 @@ fn original_composed_expression(
         | ExprKind::SafeMember { object, selector, via_colon: false } => {
             let (receiver, tail) = child_prefix(object, tokens);
             let separator = if matches!(&expr.kind, ExprKind::SafeMember { .. }) { "?." } else { "." };
+            // Pinned follow() consumes another exact Dot or SafeDot
+            // regardless of the preceding dot's null-safe spelling.
             let ordinary_receiver = matches!(&object.kind,
-                ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. })
+                ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. }
+                    | ExprKind::SafeMember { via_colon: false, .. })
                 || (separator == "." && matches!(&object.kind, ExprKind::Call { callee, args }
                     if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(_))));
             ordinary_receiver
@@ -2117,7 +2120,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
  let original_composed = original_profile
      && (original_literal || matches!(&expr.kind, ExprKind::TypePath(_) | ExprKind::Conditional { .. } | ExprKind::Unary { .. }
          | ExprKind::Call { .. } | ExprKind::Binary { .. } | ExprKind::Group(_)
-         | ExprKind::Member { via_colon: false, .. }))
+         | ExprKind::Member { via_colon: false, .. } | ExprKind::SafeMember { via_colon: false, .. }))
      && original_conditional_child(expr, tokens, true, 32);
  let return_slot = original_profile && matches!((&expr.kind, tokens), (ExprKind::Ident(name), [dot])
      if name == "." && dot.kind == TokenKind::Punctuation && dot.text == "." && dot.span == expr.span);

@@ -583,6 +583,47 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_repeated_safe_dot_fields_consume_each_authored_follow() {
+     let fixture = r#"
+/proc/admin_seed_spawn_advanced_call(mob/actor)
+    return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+/proc/safe_field(mob/actor)
+    return actor?.client?.ckey
+/proc/mixed_field(mob/actor)
+    return actor?.client.ckey
+/proc/safe_colon(mob/actor)
+    return actor?.client?:ckey
+/proc/colon_receiver(mob/actor)
+    return actor?:client?.ckey
+/proc/index_receiver(mob/actor, index)
+    return actor?.client?[index]?.ckey
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     for (name, expected) in [
+         ("admin_seed_spawn_advanced_call", true), ("safe_field", true), ("mixed_field", true),
+         ("safe_colon", false), ("colon_receiver", false), ("index_receiver", false),
+     ] {
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original SafeDot field chain is available: {name}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{name}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_comparison_and_boolean_controls_compose_in_one_body() {
      let fixture = r#"
 /proc/probe(interval, edge)
