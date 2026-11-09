@@ -271,7 +271,37 @@ fn exact_vec<T>(n: usize) -> io::Result<Vec<T>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::runner_host::workspace_discovery::{discover_check_grep, DiscoveryContract};
+    use crate::runner_host::workspace_discovery::{discover_check_grep, discover_doc_snippets, DiscoveryContract};
+
+    #[test]
+    fn sealed_workspace_raw_replays_a_discovery_selected_markdown_page() {
+        let root = crate::test_scratch::dir("workspace-raw-spool-doc-root");
+        for dir in ["code", "doc/rewrite"] {
+            std::fs::create_dir_all(root.join(dir)).unwrap();
+        }
+        let path = root.join("doc/rewrite/probe.md");
+        std::fs::write(&path, b"# Authored\r\n\r\nExample.\r").unwrap();
+        let inputs = RecordingInputs::new(FileSystemInputs, 0);
+        let discovery = Arc::new(discover_doc_snippets(&inputs, DiscoveryContract {
+            root: root.clone(),
+            recursive_roots: [root.join("code"), root.join("doc/rewrite")].to_vec(),
+        }).unwrap());
+        let ordinal = discovery.files().iter().position(|source| source == &path).unwrap();
+        let queries = QueryDb::default();
+        let budget = Budget::new(1 << 20).unwrap();
+        let cache = crate::test_scratch::dir("workspace-raw-spool-doc-scratch");
+        let mut builder = WorkspaceRawSpoolBuilder::new(
+            &inputs, Arc::clone(&discovery), &queries, 1, &budget, &cache,
+        ).unwrap();
+        let fact = builder.append_actual(&inputs, ordinal, &budget).unwrap().unwrap();
+        let spool = builder.seal().unwrap();
+        spool.require_recording(&inputs, &discovery, &queries).unwrap();
+        assert!(spool.facts_in(&inputs.snapshot().unwrap()));
+        assert!(spool.normalized(ordinal, &fact, 16).unwrap().is_none());
+        std::fs::remove_file(&path).unwrap();
+        let page = spool.normalized(ordinal, &fact, 1 << 20).unwrap().unwrap();
+        assert_eq!(page.as_str(), "# Authored\n\nExample.\n");
+    }
 
     #[test]
     fn sealed_workspace_raw_replays_original_without_reopening_and_rejects_foreign_facts() {

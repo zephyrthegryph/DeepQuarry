@@ -1054,6 +1054,9 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
         };
         let retained = capture.retained_charge()?.checked_add(2*std::mem::size_of::<usize>())
             .ok_or_else(|| io::Error::from(io::ErrorKind::OutOfMemory))?;
+        if variable && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+            eprintln!("ORIGINAL_WORKSPACE_SETTLEMENT retained={retained} recorder_growth={recorder_growth} admitted={capture_limit}");
+        }
         if let Some(baseline_funding) = baseline_funding {
             if retained > capture_limit {
                 return Err(io::Error::new(io::ErrorKind::OutOfMemory,
@@ -1214,7 +1217,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             // Capture still authenticates the alias or reread, if needed.
             // Any local closure clone is admitted separately below.
             mapped_scratch = mapped_scratch.max(width);
-        } else if staged && exact.is_none() && spools_authored_ui(path, &discovery.contract().root)
+        } else if staged && exact.is_none() && spools_private_full_page_source(path, &discovery.contract().root)
         {
             // Typed discovery already owns the parent listing. A spooled
             // payload can add one ordinary fact (key and fact path buffers).
@@ -1316,7 +1319,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         let mut rows = 0usize;
         for path in discovery.files() {
             crate::daemon::control::checkpoint()?;
-            if spools_authored_ui(path, discovery.contract().root.as_path()) {
+            if spools_private_full_page_source(path, discovery.contract().root.as_path()) {
                 rows = rows.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
             }
         }
@@ -1365,10 +1368,14 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         }
         let mut capture_discovered = || {
             let spool = raw_builder.as_mut()
-                .filter(|_| spools_authored_ui(path, discovery.contract().root.as_path()))
+                .filter(|_| spools_private_full_page_source(path, discovery.contract().root.as_path()))
                 .map(|builder| (builder, source_index));
             capture_optional_original_using(inputs,mapping,frontend.plan,&discovery,&known,&aliases,
-                path,&mut used,capture_limit,0,spool)?
+                path,&mut used,capture_limit,0,spool).inspect_err(|error| {
+                    if staged && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+                        eprintln!("ORIGINAL_WORKSPACE_SOURCE {}: {error}", path.display());
+                    }
+                })?
                 .ok_or_else(||io::Error::other("discovered source disappeared before capture"))
         };
         let captured = if let Some((dispatcher, acquired, status)) = &mut ui {
@@ -1625,7 +1632,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
                 match (&file.path, &file.original) {
                     (FilePath::Discovered(discovered), Original::Spool(ordinal))
                         if discovered == ordinal && file.path(&discovery).as_path() == path
-                            && spools_authored_ui(path, &discovery.contract().root) =>
+                            && spools_private_full_page_source(path, &discovery.contract().root) =>
                     {
                         raw_builder.as_ref().ok_or_else(|| io::Error::other("raw spool builder absent"))?
                             .require_fact(*ordinal, fact)?;
@@ -1751,13 +1758,42 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     Ok(result)
 }
 
-/// SAME authenticated original selector for discovered files and explicitly
-/// selected optional fixed questions; a missing result never supplies bytes.
-fn spools_authored_ui(path: &Path, root: &Path) -> bool {
-    path.strip_prefix(root).is_ok_and(|path| path.starts_with("tgui/packages/tgui/interfaces"))
-        && matches!(path.extension().and_then(|ext| ext.to_str()), Some("ts" | "tsx"))
+/// Payloads whose Full Registry consumers take bounded pages. The discovery
+/// receipt and ordinary acquisition selector still decide actual membership
+/// and native/fixed/alias precedence before this storage choice can apply.
+fn spools_private_full_page_source(path: &Path, root: &Path) -> bool {
+    let Ok(relative) = path.strip_prefix(root) else { return false; };
+    let Some(name) = relative.file_name().map(|name| name.as_encoded_bytes()) else {
+        return false;
+    };
+    if relative.parent() == Some(Path::new("doc/rewrite"))
+        && !name.starts_with(b".") && !name.contains(&b'\\') && name.ends_with(b".md")
+    {
+        return true;
+    }
+    let typescript = name.ends_with(b".ts") || name.ends_with(b".tsx");
+    typescript && (relative.starts_with("tgui/packages/tgui/interfaces")
+        || dq_analyze::lints::check_grep::native::selects_filesystem_source(relative))
 }
 
+#[cfg(test)]
+#[test]
+fn private_full_spool_selects_only_bounded_page_source_roles() {
+    let root = Path::new("workspace");
+    for name in ["doc/rewrite/guide.md", "tgui/packages/tgui/interfaces/Probe.tsx",
+        "code/Probe.ts", "code/.ts"] {
+        assert!(spools_private_full_page_source(&root.join(name), root), "{name}");
+    }
+    for name in ["doc/rewrite/.hidden.md", "doc/rewrite/child/guide.md", "doc/guide.md",
+        "code/library/capabilities/ui_actions.dm", "code/__defines/verdigris/_bindings.dm",
+        "tools/ci/lint_scopes.toml", "deepquarry.dme", "tgui/Probe.tsx", "external/Probe.tsx"] {
+        assert!(!spools_private_full_page_source(&root.join(name), root), "{name}");
+    }
+    assert!(!spools_private_full_page_source(Path::new("other/doc/rewrite/guide.md"), root));
+}
+
+/// SAME authenticated original selector for discovered files and explicitly
+/// selected optional fixed questions; a missing result never supplies bytes.
 fn capture_optional_original<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mapping:&SourceExportMapping,plan:&dm_tree::frontend::FrontendDirectivePlan,discovery:&DiscoveryReceipt,known:&KnownSources<'_>,aliases:&alias_index::AliasIndex<'_>,path:&Path,used:&mut usize,capture_limit:usize,backing_room:usize)->io::Result<Option<CapturedOriginal>>{
     capture_optional_original_using(inputs,mapping,plan,discovery,known,aliases,path,used,capture_limit,backing_room,None)
 }
