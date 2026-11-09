@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import * as z from 'zod/mini';
 import { chatRenderer } from './renderer';
 
 /**
@@ -35,7 +35,7 @@ export function seenCount(): number {
 }
 
 const messageSchema = z.object({
-  sequence: z.number().int().nonnegative(),
+  sequence: z.int().check(z.nonnegative()),
   content: z.any(),
 });
 

@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import * as z from 'zod/mini';
 import type { ChatPages } from '../chat/types';
 
 const viewSchema = z.object({

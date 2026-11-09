@@ -62,8 +62,9 @@
 /datum/unit_test/dq_join_asset_cost/Run()
 	var/total = 0
 	var/files = 0
+	var/list/counted = list() // the shell and the panel both list tgui-shared.bundle.js; a client is sent it once
 	for(var/asset_type in list(/datum/asset/simple/tgui_panel, /datum/asset/simple/namespaced/fontawesome, /datum/asset/simple/namespaced/tgfont, /datum/asset/simple/tgui, /datum/asset/spritesheet_batched/chat))
-		var/list/sizes = dq_asset_bytes(get_asset_datum(asset_type))
+		var/list/sizes = dq_asset_bytes(get_asset_datum(asset_type), counted)
 		total += sizes[1]
 		files += sizes[2]
 		TEST_NOTICE(src, "JOIN_ASSET_COST [asset_type]: [sizes[2]] files, [sizes[1]] bytes")
@@ -74,12 +75,15 @@
 	TEST_ASSERT(!ability_sheet_wanted(H), "a plain human has no ability that draws from the sheet, so it is not sent the sheet")
 
 /// list(bytes, files) of an asset datum: a simple asset's files, or a sheet's pictures and stylesheet.
-/datum/unit_test/dq_join_asset_cost/proc/dq_asset_bytes(datum/asset/A)
+/datum/unit_test/dq_join_asset_cost/proc/dq_asset_bytes(datum/asset/A, list/counted)
 	var/bytes = 0
 	var/files = 0
 	if(istype(A, /datum/asset/simple))
 		var/datum/asset/simple/S = A
 		for(var/name in S.assets)
+			if(counted?[name])
+				continue
+			LAZYSET(counted, name, TRUE)
 			var/datum/asset_cache_item/item = S.assets[name]
 			files++
 			bytes += istype(item) ? length(item.resource) : 0

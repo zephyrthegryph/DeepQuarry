@@ -248,7 +248,32 @@ export default defineConfig({
     // interface a player actually opens, deduped per client) for a delivery model that
     // cannot half-load. Shared library code (React/tgui-core) still lives once in the
     // always-loaded entry bundle, not duplicated here.
-    splitChunks: false,
+    //
+    // The one split is between the two ENTRIES: the tgui shell (pooled windows) and the
+    // tgui-panel page (chat, stat panel) each used to carry their own copy of React,
+    // tgui-core, jotai and the tgui layouts. `chunks: 'initial'` keeps async interface
+    // chunks out of it; every module both entries use goes to `tgui-shared.bundle.js`,
+    // a plain asset the DM side lists in BOTH entries' asset datums (tgui.dm), so a client
+    // downloads it once. JS only: the stylesheets are one module per entry (load-css), so
+    // splitting them saves little and reorders the cascade. The shared file is deferred in
+    // document order and webpack's startup waits for it, so the entry bundle may arrive
+    // before or after it; a missing file fails through the same retry and fatal-error
+    // path as the entry bundle (helpers.js loadAsset).
+    splitChunks: {
+      chunks: 'initial',
+      cacheGroups: {
+        defaultVendors: false,
+        default: false,
+        shared: {
+          name: 'tgui-shared',
+          test: (module: { type?: string }) =>
+            Boolean(module.type?.startsWith('javascript')),
+          minChunks: 2,
+          enforce: true,
+          priority: 10,
+        },
+      },
+    },
   },
   output: {
     path: path.resolve(dirname, 'public'),
