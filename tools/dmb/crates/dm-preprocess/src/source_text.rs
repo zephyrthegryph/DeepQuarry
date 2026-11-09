@@ -292,7 +292,12 @@ impl SourceText {
             _ => None,
         }
     }
-    #[cfg(test)]
+    pub(crate) fn has_private_transformed_backing(&self, issued_owners: usize) -> bool {
+        matches!(&self.backing.text, TextBacking::Transformed(_))
+            && Arc::weak_count(&self.backing) == 0
+            && Arc::strong_count(&self.backing) == issued_owners
+    }
+
     pub(crate) fn shares_backing(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.backing, &other.backing)
     }

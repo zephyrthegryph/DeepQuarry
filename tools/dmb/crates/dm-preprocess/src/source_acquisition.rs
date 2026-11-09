@@ -297,6 +297,27 @@ impl AcquiredSource {
             receipt,
         )
     }
+    /// One-shot synthetic root. The existing eager lexer is used, but no
+    /// weak lexical interner or reusable prepared artifact owns this root.
+    pub fn synthetic_utf8_unshared<T: Any + Send + Sync>(text: SourceText, receipt: T) -> Self {
+        Self::issue(Arc::new(PreparedSource::from_text(text)), SourceEncoding::SyntheticUtf8, receipt)
+    }
+
+    /// Resource-only retirement proof for a closed literal include header.
+    /// Counts include every actual issued owner and reject even weak aliases,
+    /// so another thread cannot upgrade a detached source after this check.
+    pub fn private_include_header_can_retire(&self) -> bool {
+        let binding=self.lease.0.arc();
+        let original=binding.original.arc();
+        self.encoding()==SourceEncoding::SyntheticUtf8
+            && Arc::weak_count(binding)==0 && Arc::strong_count(binding)==1
+            && Arc::weak_count(original)==0 && Arc::strong_count(original)==1
+            && Arc::weak_count(&binding.receipt)==0 && Arc::strong_count(&binding.receipt)==1
+            && Arc::weak_count(&self.prepared)==0 && Arc::strong_count(&self.prepared)==1
+            && original.source.same_view(self.prepared.original())
+            && self.prepared.include_header_storage_is_unaliased()
+    }
+
     fn issue<T: Any + Send + Sync>(
         prepared: Arc<PreparedSource>,
         encoding: SourceEncoding,
@@ -476,4 +497,28 @@ impl WeakAcquisitionObject{
  #[test]fn actual_resource_views_dedup_only_shared_original_and_never_reissue_or_resurrect_a_source(){
   let first=SourceAcquisitionLease::from_raw_original_bytes(b"source".to_vec(),1usize);let second=first.reissued(2usize);let mut a=Vec::new();let mut b=Vec::new();first.visit_weak_resource_objects(|w|a.push(w));second.visit_weak_resource_objects(|w|b.push(w));assert_eq!(a.len(),3);assert_eq!(b.len(),3);assert_ne!(a[0].resource_key(),b[0].resource_key());assert_eq!(a[1].resource_key(),b[1].resource_key());assert_ne!(a[2].resource_key(),b[2].resource_key());drop(first);assert!(!a[0].is_alive());assert!(a[1].is_alive());assert!(!a[2].is_alive());drop(second);for w in a.iter().chain(&b){assert!(!w.is_alive());let mut live=false;assert!(!w.visit_live_storage(|_|live=true));assert!(!live);let mut capacity=0;w.visit_control_storage(|_,logical,cap|{assert_eq!(logical,0);capacity=cap});assert!(capacity>0,"real weak control stays reserved until the observation drops");}
  }
+}
+
+#[cfg(test)]
+mod private_include_retirement_tests {
+    use super::*;
+
+    #[test]
+    fn actual_unshared_include_retirement_refuses_live_and_weak_backing_aliases() {
+        let source = AcquiredSource::synthetic_utf8_unshared(String::from("#include \"a.dm\"\n").into(), ());
+        assert!(source.private_include_header_can_retire());
+        let cloned = source.lease().source_text().clone();
+        assert!(!source.private_include_header_can_retire());
+        drop(cloned);
+        let weak = source.lease().source_text().downgrade();
+        assert!(!source.private_include_header_can_retire());
+        drop(weak);
+        let lines = Arc::clone(source.prepared().line_starts());
+        assert!(!source.private_include_header_can_retire());
+        drop(lines);
+        let lease = source.lease().clone();
+        assert!(!source.private_include_header_can_retire());
+        drop(lease);
+        assert!(source.private_include_header_can_retire());
+    }
 }

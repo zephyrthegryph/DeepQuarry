@@ -47,6 +47,11 @@ impl Budget {
             denied: AtomicBool::new(false),
         }))
     }
+    pub(crate) fn is_root_or_direct_child(&self, root: &Arc<Self>) -> bool {
+        std::ptr::eq(self, root.as_ref())
+            || self.temporary_parent.as_ref().is_some_and(|parent|Arc::ptr_eq(parent,root))
+    }
+
     /// An Err/panic may carry scratch-owned data beyond the source callback.
     /// Keep the conservative reservation for the rest of that failed operation.
     pub fn keep_failed_scratch(&self) {

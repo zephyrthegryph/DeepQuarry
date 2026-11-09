@@ -56,6 +56,11 @@ impl DirectiveIndex {
             lines: lines.len(),
         }
     }
+    pub(super) fn storage_is_unaliased(&self) -> bool {
+        Arc::weak_count(&self.blocks) == 0 && Arc::strong_count(&self.blocks) == 1
+            && Arc::weak_count(&self.syntax) == 0 && Arc::strong_count(&self.syntax) == 1
+    }
+
     pub(super) fn get(&self, index: usize) -> Option<&DirectiveSyntax> {
         assert!(index < self.lines, "directive line index out of bounds");
         let block = &self.blocks[index / 64];

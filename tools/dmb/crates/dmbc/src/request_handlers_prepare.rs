@@ -16,7 +16,11 @@ pub(super) fn prepare<P:SnapshotProvider+Sync>(inputs:&RecordingInputs<P>,intent
    Failure::Operational(actual)=>actual,
    Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message),
   })?;
-  queries.prepare_selected_handlers_preflight(inputs,intent,&plan,derived)?
+  if joined_staging {
+   queries.prepare_joined_handlers_preflight(inputs,intent,&plan,derived)?
+  } else {
+   queries.prepare_selected_handlers_preflight(inputs,intent,&plan,derived)?
+  }
  }else{queries.prepare_handlers_preflight(inputs,intent)?};
  // Lease the existing host pool using the same controlled worker entry as the
  // normal runner. No private executor/cache/compiler is constructed here.

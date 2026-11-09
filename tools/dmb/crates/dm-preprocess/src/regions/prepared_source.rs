@@ -72,6 +72,28 @@ impl PreparedSource {
         bytes.checked_add(rows)?.checked_add(directive_index::DirectiveIndex::include_header_storage_bound(lines)?)?.checked_add(std::mem::size_of::<Self>()+16*std::mem::size_of::<usize>())?.checked_mul(4)
     }
 
+    pub(crate) fn include_header_storage_is_unaliased(&self) -> bool {
+        let Some(lexical) = self.lexical.get() else { return false; };
+        if Arc::weak_count(&lexical.line_starts) != 0 || Arc::strong_count(&lexical.line_starts) != 1
+            || !lexical.lines.storage_is_unaliased() || !lexical.directives.storage_is_unaliased() {
+            return false;
+        }
+        let lines = lexical.lines.view();
+        for (index, line) in lines.iter().enumerate() {
+            if !line.text.shares_backing(&self.original) {
+                return false;
+            }
+            if !line.text.trim().is_empty() && !lexical.directives.get(index)
+                .is_some_and(|directive| directive.parts(line.text).0 == "include") {
+                return false;
+            }
+        }
+        // Exactly one SourceText per issued line, one PreparedSource
+        // original, and one Original acquisition. No transformed line
+        // owner or nested macro payload can occur in this closed cohort.
+        lines.len().checked_add(2).is_some_and(|count|self.original.has_private_transformed_backing(count))
+    }
+
     /// Storage inspection never causes lexical initialization.
     pub fn resident_lexical_lines(&self) -> Option<(&Arc<[usize]>, PreparedLines<'_>)> {
         let lexical = self.lexical.get()?;

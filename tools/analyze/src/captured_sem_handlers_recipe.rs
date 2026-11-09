@@ -35,7 +35,13 @@ pub fn select_with_demand_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<St
  select_scoped_from_pages(pages,order,extra,None,None,budget,poll)
 }
 pub fn select_scoped_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,extra:&[String],scope:Option<&crate::scopes::LintScope>,manifest:Option<&str>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<SelectionPlan,Failure>{
+ select_scoped_from_pages_retaining_using(pages,order,extra,scope,manifest,budget,budget,poll)
+}
+/// The actual recipe owner can carry a separate refunding grant in the same
+/// operation. All construction and marker scratch remains under the root.
+pub fn select_scoped_from_pages_retaining_using(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,extra:&[String],scope:Option<&crate::scopes::LintScope>,manifest:Option<&str>,budget:&Arc<Budget>,retained_budget:&Budget,poll:&dyn Fn()->io::Result<()>)->Result<SelectionPlan,Failure>{
  let mut control=Native{budget,poll};control.checkpoint()?;
+ if !retained_budget.is_root_or_direct_child(budget){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"handler recipe retention belongs to another operation")))}
  let recipe_funding=Budget::scoped_temporaries(budget).map_err(|message|oom(budget,message))?;
  let mut control=Native{budget:&recipe_funding,poll};let mut selection=Selection::default();let mut previous=String::new();
  let marker_funding = Budget::scoped_temporaries(budget).map_err(|message| oom(budget,message))?;
@@ -63,7 +69,7 @@ pub fn select_scoped_from_pages(pages:&dyn RawPolicyPages,order:&HashMap<String,
  drop(marker_funding);
  let recipe=selection.finish_with_manifest(extra,generated,manifest,&mut control)?;let requires_full=recipe.has_output_base||declared;control.checkpoint()?;
  let retained=recipe.retained_backing().ok_or_else(||oom(budget,"handler recipe retained storage overflow"))?;
- budget.charge(retained).map_err(|message|oom(budget,message))?;
+ retained_budget.charge(retained).map_err(|message|oom(retained_budget,message))?;
  drop(previous);
  drop(recipe_funding);
  Ok(SelectionPlan{recipe,requires_full})
