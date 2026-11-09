@@ -239,7 +239,12 @@ fn real_open_and_payload_fact_families_settle_pregrant_and_preserve_snapshot_ali
   let new_bytes=|next:&std::collections::BTreeMap<usize,usize>,old:&std::collections::BTreeMap<usize,usize>|
    next.iter().filter(|(address,_)|!old.contains_key(*address)).map(|(_,bytes)|*bytes).sum::<usize>();
   let added_open=new_bytes(&next_open,&prior_open);
-  let added_payload=new_bytes(&next_payload,&prior_payload);
+  let added_payload=next_payload.iter().filter(|(address,_)|
+   !prior_payload.contains_key(*address)&&!prior_open.contains_key(*address)&&!next_open.contains_key(*address))
+   .map(|(_,bytes)|*bytes).sum::<usize>();
+  let opened_key=next.opened_reads.keys().find(|key|key.as_os_str()==path.as_os_str()).unwrap();
+  let payload_key=next.original_payloads.keys().find(|key|key.as_os_str()==path.as_os_str()).unwrap();
+  assert!(std::ptr::eq(opened_key,payload_key),"actual receipt and payload share the same funded path owner");
   assert_eq!(work.live.load(Ordering::Acquire)-before,added_open+added_payload);
   assert!(added_open<open_grant);
   assert!(added_payload<payload_grant);

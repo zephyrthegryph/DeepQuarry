@@ -5,6 +5,10 @@ use super::*;
 use dm_preprocess::source_arena_credit::{SourceArenaCredit,SourceArenaControlCredit,SourceArenaWork};
 use std::sync::Arc;
 struct Key{path:PathBuf,_credit:Option<SourceArenaControlCredit>}
+/// Exact admitted key storage lent by the same recorder's opened fact.
+/// This carries only a path allocation and its existing resource credit.
+pub(super) struct SharedOriginalPathKey(Arc<Key>);
+
 struct Node<V:ImmutableFactValue>{left:ImmutablePathFacts<V>,key:Arc<Key>,present:V,right:ImmutablePathFacts<V>,height:usize,len:usize,admitted:bool,_credit:Option<SourceArenaControlCredit>}
 /// Implementations must clone without allocating (bool or aliasing a separately
 /// funded immutable owner), never a hidden String/Vec deep copy.
@@ -74,7 +78,23 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
  pub(crate) fn len(&self)->usize{self.0.as_deref().map_or(0,|n|n.len)}
  pub(crate) fn is_empty(&self)->bool{self.0.is_none()}
  pub(crate) fn get(&self,path:&Path)->Option<V>{self.get_ref(path).cloned()}
- pub(crate) fn get_ref(&self,path:&Path)->Option<&V>{let mut row=self.0.as_deref();while let Some(node)=row{match path.cmp(&node.key.path){std::cmp::Ordering::Less=>row=node.left.0.as_deref(),std::cmp::Ordering::Greater=>row=node.right.0.as_deref(),std::cmp::Ordering::Equal=>return Some(&node.present)}}None}
+ fn find(&self,path:&Path)->Option<&Node<V>>{
+  let mut row=self.0.as_deref();
+  while let Some(node)=row{
+   match path.cmp(&node.key.path){
+    std::cmp::Ordering::Less=>row=node.left.0.as_deref(),
+    std::cmp::Ordering::Greater=>row=node.right.0.as_deref(),
+    std::cmp::Ordering::Equal=>return Some(node),
+   }
+  }
+  None
+ }
+ pub(crate) fn get_ref(&self,path:&Path)->Option<&V>{self.find(path).map(|node|&node.present)}
+ pub(super) fn admitted_original_key(&self,path:&Path)->Option<SharedOriginalPathKey>{
+  let node=self.find(path)?;
+  (node.key._credit.is_some()&&node.key.path.as_os_str()==path.as_os_str())
+   .then(||SharedOriginalPathKey(Arc::clone(&node.key)))
+ }
  pub(crate) fn iter(&self)->Iter<'_,V>{let mut rows=Iter{stack:std::array::from_fn(|_|None),len:0};rows.descend(self.0.as_deref());rows}
  pub(crate) fn keys(&self)->impl Iterator<Item=&PathBuf>{self.iter().map(|(path,_)|path)}
  pub(crate) fn probe_pregrant(&self,path:&Path)->io::Result<usize>{
@@ -117,17 +137,27 @@ impl<V:ImmutableFactValue> ImmutablePathFacts<V>{
  pub(crate) fn recorded_using(&self,path:&Path,present:V,prepaid:SourceArenaCredit,work:&dyn SourceArenaWork)->io::Result<Self>{
   self.recorded_original_using(path,present,prepaid,work,None)
  }
- pub(crate) fn recorded_original_using(&self,path:&Path,present:V,mut prepaid:SourceArenaCredit,work:&dyn SourceArenaWork,bank:Option<&std::sync::Mutex<Option<SourceArenaControlCredit>>>)->io::Result<Self>{
+ pub(crate) fn recorded_original_using(&self,path:&Path,present:V,prepaid:SourceArenaCredit,work:&dyn SourceArenaWork,bank:Option<&std::sync::Mutex<Option<SourceArenaControlCredit>>>)->io::Result<Self>{
+  self.recorded_original_with_key_using(path,present,prepaid,work,bank,None)
+ }
+ /// The only shared-key caller lends the key of the SAME actual opened
+ /// operation. Keep equal-but-differently spelled paths on the owned path.
+ pub(super) fn recorded_original_with_key_using(&self,path:&Path,present:V,mut prepaid:SourceArenaCredit,work:&dyn SourceArenaWork,bank:Option<&std::sync::Mutex<Option<SourceArenaControlCredit>>>,shared:Option<SharedOriginalPathKey>)->io::Result<Self>{
   work.checkpoint()?;
   if let Some(old)=self.get(path){return if old==present{Ok(self.clone())}else{Err(invalid("path presence changed during capture"))}}
   let needed=self.probe_pregrant(path)?;
   if prepaid.reserved_bytes()<needed{let extra=needed-prepaid.reserved_bytes();work.grow(&mut prepaid,extra)?;}
   let credit=prepaid.control();
-  let path=owned_path(path)?;
-  let key_bytes=arc_bytes::<Key>()?.checked_add(path.capacity()).ok_or_else(capacity_error)?;
   let mut funding=InsertFunding{credit:Some(&credit),constructed:0};
-  funding.admit(key_bytes)?;
-  let key=Arc::new(Key{path,_credit:Some(credit.clone())});
+  let (key,key_bytes)=match shared{
+   Some(SharedOriginalPathKey(key)) if key.path.as_os_str()==path.as_os_str()=>(key,0),
+   _=>{
+    let path=owned_path(path)?;
+    let key_bytes=arc_bytes::<Key>()?.checked_add(path.capacity()).ok_or_else(capacity_error)?;
+    funding.admit(key_bytes)?;
+    (Arc::new(Key{path,_credit:Some(credit.clone())}),key_bytes)
+   }
+  };
   let next=self.insert(key,present,&mut funding)?;
   let retained=next.retained_insert_nodes(&credit)?
    .checked_mul(arc_bytes::<Node<V>>()?).and_then(|n|n.checked_add(key_bytes))
