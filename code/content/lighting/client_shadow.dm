@@ -100,30 +100,64 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 					last = x
 		open = next_open
 
-/// The iconforge sprite of a mask of this shape (key "margin|dx,dy,dx,dy,..."): the glow sprite wiped clear, then the reached tiles.
-/// Rings go widest and faintest first over every tile, so a tile's fade can never overwrite a neighbour's solid body.
+/// Adds one draw step per rectangle (client_glow_mask_rects(), tile offsets) to `steps`, each grown `grow` pixels; a null colour clears.
+/proc/client_glow_mask_boxes(list/steps, list/rects, margin, size, grow, color)
+	for(var/i = 1, i < length(rects), i += 4)
+		var/x1 = max(rects[i] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
+		var/y1 = max(rects[i + 1] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
+		var/x2 = min((rects[i + 2] + 1) * WORLD_ICON_SIZE + margin + grow, size)
+		var/y2 = min((rects[i + 3] + 1) * WORLD_ICON_SIZE + margin + grow, size)
+		if(x1 > x2 || y1 > y2)
+			continue
+		var/list/box = list("type" = RUSTG_ICONFORGE_DRAW_BOX, "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2)
+		if(color)
+			box["color"] = color
+		steps += list(box)
+
+/// The iconforge sprite of a mask of this shape (key "margin|dx,dy,...|blocked dx,dy,..."): the glow sprite wiped clear, then the reached
+/// tiles solid. Every step overwrites. An edge against an unreached floor fades INWARD, inside the reached tile; an edge against a blocked
+/// (opaque) tile stays full strength, because a wall is a real edge and floor beside it must not dim. The last steps clear every tile
+/// outside the reach exactly, so the bake holds no light at all on a wall: its near half is on screen from the wall's far side.
 /proc/client_glow_mask_sprite(key)
 	var/list/parts = splittext(key, "|")
 	var/margin = text2num(parts[1])
 	var/list/offsets = length(parts) > 1 && length(parts[2]) ? splittext(parts[2], ",") : list()
+	var/list/blocked_offsets = length(parts) > 2 && length(parts[3]) ? splittext(parts[3], ",") : list()
 	var/size = margin * 2 + WORLD_ICON_SIZE
 	var/list/steps = list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "x1" = 1, "y1" = 1, "x2" = size, "y2" = size))
-	var/static/list/ring_colors = list("#FFFFFF33", "#FFFFFF66", "#FFFFFF99", "#FFFFFFCC", "#FFFFFFFF")
-	var/list/rects = client_glow_mask_rects(offsets)
-	// Iconforge refuses a sprite past CLIENT_GLOW_MASK_STEPS_MAX transforms. Merged rectangles keep a shape under it; a jagged one
-	// gives up its faintest rings, never its solid body, so the fade narrows but the cut stays.
-	var/rect_count = length(rects) / 4
-	var/rings = rect_count ? clamp(round((CLIENT_GLOW_MASK_STEPS_MAX - 1) / rect_count), 1, length(ring_colors)) : 0
-	for(var/ring in (length(ring_colors) - rings + 1) to length(ring_colors))
-		var/grow = (length(ring_colors) - ring) * CLIENT_GLOW_MASK_RING_STEP
-		for(var/i = 1, i < length(rects), i += 4)
-			var/x1 = max(rects[i] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
-			var/y1 = max(rects[i + 1] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
-			var/x2 = min((rects[i + 2] + 1) * WORLD_ICON_SIZE + margin + grow, size)
-			var/y2 = min((rects[i + 3] + 1) * WORLD_ICON_SIZE + margin + grow, size)
-			if(x1 > x2 || y1 > y2)
+	var/list/reached = list()
+	for(var/i = 1, i < length(offsets), i += 2)
+		reached["[offsets[i]],[offsets[i + 1]]"] = TRUE
+	var/list/blocked = list()
+	for(var/i = 1, i < length(blocked_offsets), i += 2)
+		blocked["[blocked_offsets[i]],[blocked_offsets[i + 1]]"] = TRUE
+	// Only the tiles the sprite covers: a reached tile past its edge would spend a step on nothing.
+	var/grid = CEILING(margin / WORLD_ICON_SIZE, 1)
+	var/list/inside = list()
+	var/list/outside = list()
+	var/list/fading = list()
+	for(var/dy in -grid to grid)
+		for(var/dx in -grid to grid)
+			var/tile = "[dx],[dy]"
+			if(reached[tile])
+				inside += list("[dx]", "[dy]")
 				continue
-			steps += list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "color" = ring_colors[ring], "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2))
+			outside += list("[dx]", "[dy]")
+			if(!blocked[tile] && (reached["[dx - 1],[dy]"] || reached["[dx + 1],[dy]"] || reached["[dx],[dy - 1]"] || reached["[dx],[dy + 1]"])) // only a floor edge fades: a tile touching the reach by a corner alone would dim floor beside a wall
+				fading += list("[dx]", "[dy]")
+	var/list/inside_rects = client_glow_mask_rects(inside)
+	var/list/outside_rects = client_glow_mask_rects(outside)
+	var/list/fading_rects = client_glow_mask_rects(fading)
+	client_glow_mask_boxes(steps, inside_rects, margin, size, 0, "#FFFFFFFF")
+	// Iconforge refuses a sprite past CLIENT_GLOW_MASK_STEPS_MAX transforms. The body and the final clear always fit (merged rectangles);
+	// a jagged shape gives up its widest rings first, so the fade narrows but the cut stays exact.
+	var/static/list/ring_colors = list("#FFFFFFCC", "#FFFFFF99", "#FFFFFF66", "#FFFFFF33") // deepest into the reached tile first
+	var/fading_count = length(fading_rects) / 4
+	var/spare = CLIENT_GLOW_MASK_STEPS_MAX - 1 - (length(inside_rects) + length(outside_rects)) / 4
+	var/rings = fading_count ? clamp(round(spare / fading_count), 0, length(ring_colors)) : 0
+	for(var/ring in (length(ring_colors) - rings + 1) to length(ring_colors))
+		client_glow_mask_boxes(steps, fading_rects, margin, size, (length(ring_colors) - ring + 1) * CLIENT_GLOW_MASK_RING_STEP, ring_colors[ring])
+	client_glow_mask_boxes(steps, outside_rects, margin, size, 0, null)
 	var/source = resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(size)))
 	var/list/mask = list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = steps)
 	return list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = list(list("type" = RUSTG_ICONFORGE_BLEND_ICON, "icon" = mask, "blend_mode" = ICON_MULTIPLY, "x" = 1, "y" = 1)))
@@ -234,14 +268,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	// The reach first, as a shape key: an opacity change that leaves this light's reach as it was (most of them) stops here.
 	var/list/seen = sight_view_turfs(source_turf, range)
 	var/list/offsets = list()
+	var/list/blocked = list()
 	var/sx = source_turf.x
 	var/sy = source_turf.y
 	for(var/turf/T as anything in seen)
 		if(T.directional_opacity == ALL_CARDINALS)
+			blocked += T.x - sx
+			blocked += T.y - sy
 			continue // a fully opaque tile (a border object leaves the rest of its tile lit); an opaque tile, the light's own included, is lit from the visible floor beside it, not by this cut
 		offsets += T.x - sx
 		offsets += T.y - sy
-	var/key = "[margin]|[jointext(offsets, ",")]"
+	var/key = "[margin]|[jointext(offsets, ",")]|[jointext(blocked, ",")]"
 	if(key == glow_mask_key && glow_reach_origin == source_turf)
 		return
 	// Lum watches (watched(T, WATCH_LUM)) on turfs this light lit or now lights hear about it.

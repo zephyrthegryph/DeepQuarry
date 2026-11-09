@@ -55,6 +55,10 @@
 
 /// The glow's mask stops at a wall: an opaque blocker east of the light keeps the floor behind it dark, and the mask is
 /// rebuilt when the blocker comes and goes (a door closing and opening), and when the light moves.
+/// The alpha of a GetPixel() colour.
+/proc/client_lighting_test_alpha(color)
+	return length(color) >= 9 ? text2num(copytext(color, 8, 10), 16) : 255
+
 /datum/unit_test/dq_client_lighting_shadows
 
 /datum/unit_test/dq_client_lighting_shadows/Run()
@@ -82,8 +86,33 @@
 	TEST_ASSERT_NOTNULL(baked.GetPixel(margin + 16, margin + 48), "the tile north of the light is open: north is up in the mask")
 	TEST_ASSERT_NULL(baked.GetPixel(margin + 16, margin - 24), "the tile south, not reached, is clear past the fade")
 	TEST_ASSERT_NULL(baked.GetPixel(margin + 56, margin + 16), "the tile east, not reached, is clear past the fade")
-	TEST_ASSERT_NOTNULL(baked.GetPixel(margin + 34, margin + 16), "the reached tile's edge fades outward")
+	TEST_ASSERT_NULL(baked.GetPixel(margin + 34, margin + 16), "nothing spills past a reached tile's edge")
+	TEST_ASSERT(client_lighting_test_alpha(baked.GetPixel(margin + 31, margin + 16)) < client_lighting_test_alpha(baked.GetPixel(margin + 16, margin + 16)), "the fade is inside the reached tile")
 	fdel(png)
+	// A wall is exact: no light anywhere on it, and the floor beside it is not faded.
+	var/wall_png = client_glow_mask_bake_blocking("[margin]|0,0,0,1|0,-1,1,0")
+	TEST_ASSERT_NOTNULL(wall_png, "iconforge baked the walled mask")
+	var/icon/walled = icon(file(wall_png))
+	for(var/px in 1 to WORLD_ICON_SIZE)
+		for(var/py in 1 to WORLD_ICON_SIZE)
+			TEST_ASSERT_NULL(walled.GetPixel(margin + px, margin - WORLD_ICON_SIZE + py), "no light on the wall south of the light")
+	TEST_ASSERT_EQUAL(client_lighting_test_alpha(walled.GetPixel(margin + 24, margin + 1)), client_lighting_test_alpha(walled.GetPixel(margin + 24, margin + 16)), "the floor against the wall is not faded")
+	fdel(wall_png)
+	// The real tube on Southern Cross, when this run has that map (--full-map): through the real path, its wall row and everything past it hold no light.
+	var/obj/machinery/light/real_tube = locate(/obj/machinery/light) in locate(132, 80, 2)
+	if(real_tube?.light?.glow_mask_key)
+		var/real_key = real_tube.light.glow_mask_key
+		var/real_margin = text2num(splittext(real_key, "|")[1])
+		var/real_png = client_glow_mask_bake_blocking(real_key)
+		TEST_ASSERT_NOTNULL(real_png, "iconforge baked the real tube")
+		var/icon/real = icon(file(real_png))
+		var/real_size = real_margin * 2 + WORLD_ICON_SIZE
+		TEST_ASSERT_NOTNULL(real.GetPixel(real_margin + 16, real_margin + 16), "the tube's floor tile is lit")
+		for(var/px in 1 to real_size)
+			for(var/py in 1 to real_margin)
+				TEST_ASSERT_NULL(real.GetPixel(px, py), "no light on the wall row or past it")
+		log_world("client glow test: real tube key [real_key] clear below its own tile")
+		fdel(real_png)
 	TEST_ASSERT(S.glow_reach["2,0"], "the open floor two tiles east is lit")
 	// The largest glow, wide open and then checkered (the most rectangles a shape can need): both must bake, iconforge refuses over 128 steps.
 	var/list/open_tiles = list()
