@@ -996,7 +996,7 @@ fn parse_one(
         let rest = header.strip_prefix("throw").unwrap().trim_start();
         parse_expr(
             rest,
-            item.header_span.start + item.header.find(rest).unwrap_or(0),
+            item.header_span.start + (rest.as_ptr() as usize - item.header.as_ptr() as usize),
             diagnostics,
         )
         .map(StatementKind::Throw)
@@ -1462,21 +1462,20 @@ fn parse_switch(
             continue;
         }
         let clause = control_clause(case, "if", diagnostics)?;
-        let base = case.header_span.start + case.header.find(clause).unwrap_or(0);
+        let base = case.header_span.start + (clause.as_ptr() as usize - case.header.as_ptr() as usize);
+        let offset_of = |part: &str| base + (part.as_ptr() as usize - clause.as_ptr() as usize);
         let mut alternatives = Vec::new();
         let alternatives_source = split_case_alternatives(clause.trim_end().strip_suffix(',').unwrap_or(clause));
         witnessed &= alternatives_source.len() == 1 && !clause.trim_end().ends_with(',');
         for alternative in alternatives_source {
             let alternative = alternative.trim();
-            let offset = base + clause.find(alternative).unwrap_or(0);
+            let offset = offset_of(alternative);
             if let Some((lower, upper)) = split_top_level_keyword(alternative, "to") {
                 witnessed = false;
-                let lower = parse_expr(lower.trim(), offset, diagnostics)?;
-                let upper = parse_expr(
-                    upper.trim(),
-                    offset + alternative.find(upper).unwrap_or(0),
-                    diagnostics,
-                )?;
+                let lower = lower.trim();
+                let upper = upper.trim();
+                let lower = parse_expr(lower, offset_of(lower), diagnostics)?;
+                let upper = parse_expr(upper, offset_of(upper), diagnostics)?;
                 alternatives.push(SwitchAlternative::Range(lower, upper));
             } else {
                 alternatives.push(SwitchAlternative::Exact(parse_expr_observed(
@@ -1623,6 +1622,41 @@ pub fn parse_body_items_with_admitted_literals(
  let mut parsed=parse_body_items_using_settings(items,Some(settings),Some(admission),Some(source),true);
  if !admission.is_stopped(){parsed.pending_bodies=crate::pending_body::pending_bodies(&parsed.statements,source,context);}
  crate::prepare_body_literal_syntax(parsed,cleanup,admission)
+}
+
+#[cfg(test)]
+#[test]
+fn switch_and_throw_spans_keep_their_exact_borrowed_occurrences() {
+    let source = concat!(
+        "/proc/probe(w, x)\n",
+        "    switch(x)\n",
+        "        if(\"x\", x)\n",
+        "            return x\n",
+        "        if(1 to 1)\n",
+        "            throw w\n",
+    );
+    let tree = crate::parse(source);
+    let body = parse_proc_body(&tree.items[0]);
+    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+    let StatementKind::Switch { cases, .. } = &body.statements[0].kind else {
+        panic!("expected switch");
+    };
+    let SwitchAlternative::Exact(value) = &cases[0].alternatives[1] else {
+        panic!("expected exact second alternative");
+    };
+    let value_at = source.find("\"x\", x)").unwrap() + 5;
+    assert_eq!(value.span, Span::new(value_at, value_at + 1));
+    let SwitchAlternative::Range(lower, upper) = &cases[1].alternatives[0] else {
+        panic!("expected range");
+    };
+    let lower_at = source.find("1 to 1").unwrap();
+    assert_eq!(lower.span, Span::new(lower_at, lower_at + 1));
+    assert_eq!(upper.span, Span::new(lower_at + 5, lower_at + 6));
+    let StatementKind::Throw(value) = &cases[1].body[0].kind else {
+        panic!("expected throw");
+    };
+    let thrown_at = source.find("throw w").unwrap() + "throw ".len();
+    assert_eq!(value.span, Span::new(thrown_at, thrown_at + 1));
 }
 
 #[cfg(test)]mod original_catch_parameters{
@@ -2122,4 +2156,43 @@ mod original_for_each_witness_tests {
             assert!(parsed.original_grammar.is_none(), "{code}");
         }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn classic_for_control_spans_keep_repeated_parts_at_their_authored_occurrences() {
+    let source = concat!(
+        "/proc/probe(path, x)\n",
+        "    for(var/datum/T = path; T; T = initial(T.parent_type))\n",
+        "        return T\n",
+        "    for(x = 0; x; x = 0)\n",
+        "        return x\n",
+    );
+    let tree = crate::parse(source);
+    let body = parse_proc_body(&tree.items[0]);
+    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+    let StatementKind::For { control, .. } = &body.statements[0].kind else {
+        panic!("expected material-template for loop");
+    };
+    let ForControl::CStyle { condition: Some(condition), .. } = control else {
+        panic!("expected classic for condition");
+    };
+    let condition_at = source.find("; T;").unwrap() + 2;
+    assert_eq!(condition.span, Span::new(condition_at, condition_at + 1));
+    let StatementKind::For { control, .. } = &body.statements[1].kind else {
+        panic!("expected repeated-expression for loop");
+    };
+    let ForControl::CStyle {
+        initializer: Some(ForInitializer::Expr(initial)),
+        condition: Some(condition),
+        step: Some(step),
+    } = control else {
+        panic!("expected all three classic for expressions");
+    };
+    let initial_at = source.find("x = 0").unwrap();
+    let condition_at = source.find("; x;").unwrap() + 2;
+    let step_at = source.rfind("x = 0").unwrap();
+    assert_eq!(initial.span, Span::new(initial_at, initial_at + 5));
+    assert_eq!(condition.span, Span::new(condition_at, condition_at + 1));
+    assert_eq!(step.span, Span::new(step_at, step_at + 5));
 }

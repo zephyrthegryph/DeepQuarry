@@ -15,7 +15,23 @@ impl QueryDb{
   consume:impl for<'p>FnOnce(&mut dm_query::Ctx<'_>,HandlerBodyAvailability<'archive,'p>,&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>,
  )->Result<T,BodySyntaxFailure>{
   self.with_setting_admission(|admission|archive.with_current_body_checked_in(ordinal,admission,ctx,
-   |ctx,input|super::body_syntax::obtain_product(ctx,input),
+   |ctx,input|super::body_syntax::obtain_product(ctx,input).map_err(|error| {
+    #[cfg(debug_assertions)]
+    if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+     use std::sync::atomic::{AtomicUsize,Ordering};
+     static REMAINING:AtomicUsize=AtomicUsize::new(16);
+     if let Some(occurrence)=archive.occurrences().get(ordinal) {
+      if REMAINING.fetch_update(Ordering::Relaxed,Ordering::Relaxed,|left|left.checked_sub(1)).is_ok() {
+       let source=&occurrence.source;
+       let _=std::io::Write::write_fmt(&mut std::io::stderr().lock(),format_args!(
+        "handlers.body_product_failed ordinal={ordinal} file={} line={} span={:?}\n",
+        source.semantic_path,source.line,occurrence.expanded_span,
+       ));
+      }
+     }
+    }
+    error
+   }),
    |ctx,body|{
     let disposition = body.syntax().original_code_disposition().map_err(|error| {
      if cfg!(debug_assertions) && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {

@@ -1299,6 +1299,25 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_control_clause_does_not_cut_a_matching_keyword_prefix() {
+     let fixture = "/proc/probe(i, f)\n    if(i)\n        return f\n    if(f)\n        return i\n    return 0\n";
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     let input = original_input(&front, "probe");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) =
+             body.original_code_disposition()?
+         else {
+             panic!("both controls must use the actual clause occurrences");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
  fn actual_original_else_if_chain_authenticates_every_link() {
      let fixture = r#"
 /proc/probe(a, b)

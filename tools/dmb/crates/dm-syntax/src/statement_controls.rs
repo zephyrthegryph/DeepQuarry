@@ -92,7 +92,7 @@ pub(super) fn parse_for(
     original_each: &mut bool,
 ) -> Option<ForControl> {
     let (clause, _, lexical, clause_base) = control_clause_origin_tokens(item, "for", diagnostics)?;
-    let base = item.header_span.start + item.header.find(clause).unwrap_or(0);
+    let offset_of = |part: &str| clause_base + (part.as_ptr() as usize - clause.as_ptr() as usize);
     let list_clause = split_top_level_keyword(clause, "in");
     if (clause.starts_with("var/") || starts_keyword(clause, "var"))
         && !clause.contains(['=', ',', ';'])
@@ -161,7 +161,7 @@ pub(super) fn parse_for(
             }
             return parse_expr(
                 iterable,
-                base + clause.find(iterable).unwrap_or(at + 4),
+                offset_of(iterable),
                 diagnostics,
             )
             .map(|iterable| ForControl::Pair {
@@ -176,11 +176,11 @@ pub(super) fn parse_for(
                 start_source,
                 remainder,
                 clause,
-                base,
+                clause_base,
                 diagnostics,
             );
         }
-        let offset = clause_base + (iterable.as_ptr() as usize - clause.as_ptr() as usize);
+        let offset = offset_of(iterable);
         let mut expression_complete = false;
         let mut dotted_original = false;
         let mut grouped_index = false;
@@ -226,7 +226,7 @@ pub(super) fn parse_for(
                 });
                 return None;
             }
-            let (end, step) = parse_range_tail(remainder, clause, base, diagnostics)?;
+            let (end, step) = parse_range_tail(remainder, clause, clause_base, diagnostics)?;
             return Some(ForControl::RangeImplicitArray {
                 binding: begin.trim().into(),
                 end,
@@ -260,7 +260,7 @@ pub(super) fn parse_for(
             begin,
             crate::LocalSourceKind::ForBinding,
         );
-        return parse_range_control(binding, start_source, remainder, clause, base, diagnostics);
+        return parse_range_control(binding, start_source, remainder, clause, clause_base, diagnostics);
     }
     let mut parts = split_for_clauses(clause);
     if parts.len() == 2 {
@@ -282,7 +282,7 @@ pub(super) fn parse_for(
             let value = if let Some(value) = value {
                 Some(parse_expr(
                     value,
-                    clause_base + (value.as_ptr() as usize - clause.as_ptr() as usize),
+                    offset_of(value),
                     diagnostics,
                 )?)
             } else {
@@ -302,7 +302,7 @@ pub(super) fn parse_for(
         } else {
             Some(ForInitializer::Expr(parse_expr(
                 initial,
-                base + clause.find(initial).unwrap_or(0),
+                offset_of(initial),
                 diagnostics,
             )?))
         };
@@ -311,7 +311,7 @@ pub(super) fn parse_for(
         } else {
             Some(parse_expr(
                 parts[1],
-                base + clause.find(parts[1]).unwrap_or(0),
+                offset_of(parts[1]),
                 diagnostics,
             )?)
         };
@@ -320,7 +320,7 @@ pub(super) fn parse_for(
         } else {
             Some(parse_expr(
                 parts[2],
-                base + clause.find(parts[2]).unwrap_or(0),
+                offset_of(parts[2]),
                 diagnostics,
             )?)
         };
@@ -484,14 +484,13 @@ pub(super) fn parse_control_condition_origin(
     diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
 ) -> Option<Expr> {
-    let (clause, opening) = control_clause_origin(item, keyword, diagnostics)?;
+    let (clause, opening, _, start) = control_clause_origin_tokens(item, keyword, diagnostics)?;
     let condition = parse_expr_observed(
         clause,
-        item.header_span.start + item.header.find(clause).unwrap_or(0),
+        start,
         diagnostics,
         &mut |parsed| {
             let issued = parsed.original_simple_expression.is_some_and(|value| value.kind() == crate::expression_parser::OriginalSimpleKind::Complete);
-            let start = item.header_span.start + item.header.find(clause).unwrap_or(0);
             origins.require_original(issued, Span::new(start, start + clause.len()), "control_condition");
         },
     )?;
