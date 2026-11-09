@@ -345,6 +345,10 @@ impl QueryDb {
  pub(crate) fn trace_effect_phase_for_test(&self,label:&str,at:usize,total:usize){let trace=PRESSURE_TRACE.with(|slot|slot.get());if let Some(trace)=trace{eprintln!("effect-10001 phase={label} progress={at}/{total} elapsed_ms={} prepares={} scanned={} retired={} soft_freed={} body_charge={} k4={} k23={} k24={} k25={} k26={} k27={}",trace.started.elapsed().as_millis(),trace.prepares,trace.scanned,trace.retired,trace.soft_freed,self.body_charge.load(Ordering::Acquire),self.db.stats(Kind(4)).computed,self.db.stats(Kind(23)).computed,self.db.stats(Kind(24)).computed,self.db.stats(Kind(25)).computed,self.db.stats(Kind(26)).computed,self.db.stats(Kind(27)).computed);}}
 }
 
+#[cfg(test)]
+#[path = "body_syntax_census_tests.rs"]
+mod body_syntax_census_tests;
+
 #[cfg(test)]mod actual_canonical_product_tests{
  #[test]fn actual_current_original_body_disposition_binds_only_same_product_and_preserves_unissued(){
   use dm_tree::frontend::OriginalBodyDisposition as D;
@@ -541,6 +545,105 @@ impl QueryDb {
              if expected {
                  let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
                      panic!("the control body must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_comparison_and_boolean_controls_compose_in_one_body() {
+     let fixture = r#"
+/proc/probe(interval, edge)
+    if(!(istext(interval) && length(interval)) && (!isnum(interval) || interval <= 0))
+        return null
+    while(change_is_published(interval) && edge != ANY)
+        return interval
+    return edge
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     let input = original_input(&front, "probe");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+             panic!("the real nested control predicates must be available");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_assertion_message_body_witness_keeps_typed_template_values_and_children() {
+     let fixture = r#"
+/proc/assertion_message(file, line, condition, message)
+    if (!isnull(message))
+        message = " - [message]"
+    return "[file]:[line]:Assertion failed: [condition][message]"
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("message = ", "message += "), false),
+         (fixture.replace("[condition][message]", "[condition:member][message]"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "assertion_message");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual plain assignment and return template are available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error)) if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_message_admins_body_witness_composes_macro_rights_and_keyed_statement() {
+     let fixture = r#"
+#define R_ADMIN (1<<1)
+#define R_SERVER (1<<4)
+#define R_MOD (1<<13)
+#define PREFIX(text) ("<prefix>" + text + "</prefix>")
+#define FILTER(text) ("<filter>" + text + "</filter>")
+/proc/message_admins(msg)
+    msg = FILTER(PREFIX("ADMIN LOG:") + "[msg]")
+    for(var/client/C in GLOB.admins)
+        if(check_rights_for(C, (R_ADMIN|R_MOD|R_SERVER)))
+            to_chat(C,
+                    type = "adminlog",
+                    html = msg,
+                    confidential = TRUE)
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("GLOB.admins", "GLOB:admins"), false),
+         (fixture.replace("html = msg", "html = (msg = TRUE)"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "message_admins");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original macro controls are available");
                  };
                  assert!(proof.belongs_to(&body));
              } else {

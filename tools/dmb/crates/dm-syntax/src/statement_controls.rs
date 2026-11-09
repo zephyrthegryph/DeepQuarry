@@ -45,7 +45,7 @@ pub(super) fn split_case_alternatives_with_tokens(
 
 // Exact lexical subset of the existing ForList arm. The selected split
 // tells us which token is the actual top-level separator.
-fn original_for_each_clause(clause: &str, lexical: &crate::SpannedLexed, separator: usize) -> bool {
+fn original_for_each_clause(clause: &str, lexical: &crate::SpannedLexed, separator: usize, dotted: bool) -> bool {
     use crate::TokenKind;
     if !lexical.diagnostics.is_empty() { return false; }
     let mut tokens = lexical.tokens.iter()
@@ -59,9 +59,17 @@ fn original_for_each_clause(clause: &str, lexical: &crate::SpannedLexed, separat
         let Some(next) = tokens.clone().next() else { return false; };
         if next.text(clause) != "/" { break; }
     }
-    tokens.next().is_some_and(|token| token.span.start == separator && token.text(clause) == "in")
-        && tokens.next().is_some_and(identifier)
-        && tokens.next().is_none()
+    if !tokens.next().is_some_and(|token| token.span.start == separator && token.text(clause) == "in")
+        || !tokens.next().is_some_and(identifier)
+    {
+        return false;
+    }
+    while let Some(dot) = tokens.next() {
+        if !dotted || dot.text(clause) != "." || !tokens.next().is_some_and(identifier) {
+            return false;
+        }
+    }
+    true
 }
 
 pub(super) fn parse_for(
@@ -160,14 +168,17 @@ pub(super) fn parse_for(
         }
         let offset = clause_base + (iterable.as_ptr() as usize - clause.as_ptr() as usize);
         let mut expression_complete = false;
+        let mut dotted_original = false;
         let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
             expression_complete = parsed.original_simple_expression.is_some_and(|value| {
                 value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
             });
+            dotted_original = parsed.original_simple_expression.is_some_and(|value| value.is_original())
+                && matches!(parsed.expr.as_ref().map(|value| &value.kind), Some(ExprKind::Member { via_colon: false, .. }));
         })?;
         let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
         *original_each = expression_complete && source_binding.is_some()
-            && original_for_each_clause(clause, &lexical, at);
+            && original_for_each_clause(clause, &lexical, at, dotted_original);
         return Some(ForControl::Each { source_binding, binding: binding.into(), iterable });
     }
     if let Some((begin, remainder)) = split_top_level_keyword(clause, "to") {

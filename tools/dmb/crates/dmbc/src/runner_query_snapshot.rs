@@ -45,6 +45,20 @@ use std::{
 pub(crate) use raw_workspace::RawWorkspaceSnapshot;
 #[path="runner_query_handlers.rs"]mod handlers;
 pub(crate) use handlers::HandlerWorkspaceSnapshot;
+#[cfg(test)]
+impl SourceSnapshot {
+    pub(crate) fn original_body_census_archive(&self) -> std::io::Result<&dm_tree::frontend::BodyArchive> {
+        self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalChecker0290))?;
+        let archive = self.body_archive.as_deref().ok_or_else(|| std::io::Error::other("actual Original BODY archive missing"))?;
+        if !archive.matches_tree(&self.tree)
+            || !self.source_mapping.as_ref().is_some_and(|mapping| Arc::ptr_eq(mapping, archive.source_mapping()))
+        {
+            return Err(std::io::Error::other("census archive differs from actual captured tree and source mapping"));
+        }
+        Ok(archive)
+    }
+}
+
 pub(crate) struct QueryState {
     pub(crate) raw_snapshot:Option<RawWorkspaceSnapshot>,
     pub(crate) handlers_snapshot:Option<HandlerWorkspaceSnapshot>,

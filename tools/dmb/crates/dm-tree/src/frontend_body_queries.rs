@@ -739,7 +739,20 @@ impl OriginalBodyCodeGrant<'_,'_>{
  pub fn statement_span(&self)->Result<Option<dm_syntax::Span>,BodySyntaxFailure>{self.outcome.statement_span().map(|span|self.body.projection.span(span).ok_or_else(||binding_error("genuine original body disposition escapes current source recipe"))).transpose()}
 }
 fn unissued_original_body(message:&'static str)->BodySyntaxFailure{BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,message))}
+#[derive(Debug)]
+struct UnissuedOriginalBodyGrammar;
+impl std::fmt::Display for UnissuedOriginalBodyGrammar {
+ fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+  formatter.write_str("genuine original per-body grammar outcome is not issued for this syntax")
+ }
+}
+impl std::error::Error for UnissuedOriginalBodyGrammar {}
+
 impl<'syntax> CurrentBodySyntax<'syntax>{
+ /// Distinguishes a missing parser witness from other Unsupported errors.
+ pub fn is_unissued_original_grammar(error: &std::io::Error) -> bool {
+  error.get_ref().is_some_and(|cause| cause.is::<UnissuedOriginalBodyGrammar>())
+ }
  /// Initial exact grammar coverage is deliberately closed and falsifiable:
  /// empty, void/simple return and actual simple arithmetic missing-RHS branch.
  /// Remaining grammar is unissued, not inferred available/None from errors.
@@ -755,7 +768,7 @@ impl<'syntax> CurrentBodySyntax<'syntax>{
      ));
     }
    }
-   unissued_original_body("genuine original per-body grammar outcome is not issued for this syntax")
+   BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported, UnissuedOriginalBodyGrammar))
   })?;
   if let Some(roots)=outcome.scope_roots(){
    if roots!=parsed.statements.len()||outcome.prefix_settings()>=roots||outcome.statement_span().is_some()||outcome.kind()!=dm_syntax::OriginalBodyGrammarKind::Available||!parsed.diagnostics.is_empty(){return Err(binding_error("original compound scope differs from the same consuming Native body"))}

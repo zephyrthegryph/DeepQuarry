@@ -459,11 +459,16 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             root_prefix = None;
         }
         // SAME primary consumption; unproved families/children never grant availability.
+        let mut defer_joined_return = false;
         if starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch")
             || starts_keyword(header,"for") {
             origins.original_compound_seen_statement=true;
         }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!local_statement&&!initial_setting){
-            origins.original_compound_complete=false;
+            // The actual Original output can join a keyword directly to
+            // punctuation or an interpolation token. Let parse_one's same
+            // provider lookup settle this only for the otherwise unknown leaf.
+            defer_joined_return = item.children.is_empty() && possible_joined_return(header);
+            origins.original_compound_complete &= defer_joined_return;
         }
         if !item.children.is_empty()
             && (header == "var" || (header.starts_with("var/") && !header.contains('=')))
@@ -621,7 +626,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             index += 1;
             continue;
         }
-        let statement = parse_one(item, diagnostics, origins, original_local_head);
+        let statement = parse_one(item, diagnostics, origins, original_local_head, defer_joined_return);
         if let Some(count) = root_prefix.as_deref_mut() {
             if original_initial_setting(&statement) {
                 *count += 1;
@@ -644,7 +649,7 @@ fn parse_if(
 ) -> Statement {
     let condition = parse_control_condition_origin(item, "if", diagnostics, origins);
     let newly_composed = condition.as_ref().is_some_and(|value| match &value.kind {
-        ExprKind::Unary { .. } => true,
+        ExprKind::Unary { .. } | ExprKind::Binary { .. } | ExprKind::Group(_) => true,
         ExprKind::Call { callee, args } => !args.is_empty()
             || matches!(&callee.kind, ExprKind::Member { .. } | ExprKind::SafeMember { .. }),
         _ => false,
@@ -733,19 +738,23 @@ fn original_indented_block_boundary(item: &Item, origins: &BodyOrigins<'_>) -> b
     gap.contains('\n') && gap.bytes().all(|byte| matches!(byte, b' ' | b'\t' | b'\r' | b'\n'))
 }
 
+fn possible_joined_return(header: &str) -> bool {
+    header.starts_with("return") && !starts_keyword(header, "return")
+}
+
 fn parse_one(
     item: &Item,
     diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
     mut original_local_head: bool,
+    defer_joined_return: bool,
 ) -> Statement {
     let header = item.header.trim();
-    let joined_return = if header != "return" && header.starts_with("return")
-        && !starts_keyword(header, "return")
-    {
+    let joined_return = if possible_joined_return(header) {
         match origins.settings.map(|provider| provider.original_joined_return(item.header_span)).transpose() {
             Ok(value) => value.unwrap_or(false),
             Err(actual) => {
+                origins.original_compound_complete = false;
                 if let Some(admission) = diagnostics.admission {
                     admission.record_operational_error(actual);
                 }
@@ -755,6 +764,9 @@ fn parse_one(
     } else {
         false
     };
+    if defer_joined_return {
+        origins.original_compound_complete &= joined_return;
+    }
     if crate::return_has_block(header, !item.children.is_empty())
         || (joined_return && !item.children.is_empty())
     {
@@ -910,7 +922,8 @@ fn original_ordinary_call_header(header:&str)->bool{
 // expression parser. Its consuming token/AST proof decides acceptance.
 fn original_simple_assignment_candidate(header: &str) -> bool {
     let Some((target, _)) = header.split_once('=') else { return false; };
-    let name = target.trim_end_matches(['+', '-', '*', '/', '%', '|', '&', '^', '<', '>']).trim();
+    let target = target.trim_end_matches(['+', '-', '*', '/', '%', '|', '&', '^', '<', '>']).trim();
+    let name = target.split(['.', '[']).next().unwrap_or(target).trim_end();
     crate::expression_parser::original_ordinary_call_name(name)
         && !matches!(name, "break" | "continue" | "goto")
 }
@@ -1540,6 +1553,33 @@ fn finish_original_setting_prefix(body:&mut ParsedBody, settings: usize){
  #[test]fn malformed_number_and_unissued_setting_shapes_never_gain_original_availability(){for code in["    return 123abc\n","    return 1e3\n","    set SpacemanDMM_return_type=missing_call()\n    return null\n","    return choose(1)\n"]{let syntax=crate::parse(&format!("/proc/probe(x)\n{code}"));let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none(),"unissued {code}");}}
 }
 
+#[cfg(test)]
+#[test]
+fn joined_return_scope_uses_the_existing_provider_once_and_preserves_first_io() {
+    struct Probe(std::cell::Cell<usize>);
+    impl SettingSyntaxProvider for Probe {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> {
+            panic!("joined return never reads settings");
+        }
+        fn original_joined_return(&self, _: Span) -> std::io::Result<bool> {
+            self.0.set(self.0.get() + 1);
+            Err(std::io::Error::from_raw_os_error(1450))
+        }
+    }
+    let source = "/proc/probe(argument)\n    if(argument)\n        return\"value\"\n";
+    let parsed = crate::parse(source);
+    let probe = Probe(std::cell::Cell::new(0));
+    let root = crate::SettingChargeCounter::root_allocation_bytes();
+    let used = crate::SettingChargeCounter::try_new(root).unwrap();
+    let admission = crate::SettingAdmission::new(&used, root, &|| Ok(()));
+    let body = parse_body_items_using_settings(
+        &parsed.items[0].children, Some(&probe), Some(&admission), Some(source), false,
+    );
+    assert_eq!(probe.0.get(), 1);
+    assert!(body.original_grammar.is_none());
+    assert_eq!(admission.take_operational_error().unwrap().raw_os_error(), Some(1450));
+}
+
 #[cfg(test)]mod original_compound_if_witness_tests{
  use super::*;
  fn body(code:&str)->ParsedBody{let syntax=crate::parse(&format!("/proc/probe(argument)\n{code}"));parse_proc_body(&syntax.items[0])}
@@ -1721,10 +1761,31 @@ mod original_simple_assignment_witness_tests {
     }
 
     #[test]
+    fn original_member_index_assignment_requires_an_exact_lvalue_and_operator() {
+        for statement in ["argument.field = value", "argument[index] = value",
+            "argument[42] = value", "argument[\"slot\"] = value", "argument.field[index] = value"] {
+            let parsed = body(&format!("    {statement}\n    return value\n"));
+            assert!(parsed.diagnostics.is_empty(), "{statement}: {:?}", parsed.diagnostics);
+            assert!(matches!(&parsed.statements[0].kind, StatementKind::Assign { target, .. }
+                if matches!(&target.kind, ExprKind::Member { .. } | ExprKind::Index { .. })));
+            assert_eq!(parsed.original_grammar.expect(statement).scope_roots(), Some(2));
+        }
+        let split = body("    argument.field += value\n    return value\n");
+        assert!(split.diagnostics.is_empty());
+        assert!(split.original_grammar.is_none(), "compatibility lexer lacks the indivisible Original operator");
+    }
+
+    #[test]
     fn original_simple_assignment_witness_does_not_certify_other_productions() {
         for code in [
             "    value == argument\n    return value\n",
-            "    value.field = argument\n    return value\n",
+            "    value:field = argument\n    return value\n",
+            "    value?.field = argument\n    return value\n",
+            "    value?[1] = argument\n    return value\n",
+            "    value[field + 1] = argument\n    return value\n",
+            "    value[field][1] = argument\n    return value\n",
+            "    value.field = other = argument\n    return value\n",
+            "    value.field == argument\n    return value\n",
             "    value = other = argument\n    return value\n",
             "    value = choose(argument)\n    return value\n",
             "    value + = argument\n    return value\n",

@@ -410,6 +410,29 @@ fn current_original_simple_assignment_visits_lhs_then_rhs_and_matches_absolute_b
 }
 
 #[test]
+fn current_original_member_and_index_assignments_use_real_indivisible_operators() {
+ use dm_analysis::checker_effects::{ExecutionAdmission, OriginalBodyDiagnostic};
+ fn encode(rows: &[OriginalBodyDiagnostic]) -> Vec<u8> {
+  format!("{:?}", rows.iter().map(|row| (row.phase(), row.location(), row.registration_tag(), row.diagnostic())).collect::<Vec<_>>()).into_bytes()
+ }
+ let mut source = String::from("/datum/probe\n    var/field\n    var/list/values\n/proc/probe(datum/probe/object, list/values, index)\n");
+ for op in ["=", "+=", "-=", "*=", "/="] {
+  source.push_str(&format!("    object.field {op} 2\n    values[index] {op} 2\n    object.values[1] {op} 2\n"));
+ }
+ source.push_str("    return null\n");
+ let (mut host, request, _) = fixture(&source);
+ let db = host.query_db().clone();
+ run(&mut host, &request);
+ current(&host, |snapshot| {
+  let owner = snapshot.original_checker_request_input(&snapshot.tree).unwrap();
+  let input = owner.input();
+  let current = db.original_current_body_bytes_for_test(input, 0, encode).unwrap();
+  let absolute = input.compute_body_checked_controlled(0, snapshot.tree.as_ref(), &ExecutionAdmission::default(), &|| Ok(())).unwrap();
+  assert_eq!(current, absolute.with_original_diagnostics(input, encode).unwrap());
+ });
+}
+
+#[test]
 fn current_original_while_block_visits_condition_body_and_post_loop_in_pinned_order() {
  use dm_analysis::checker_effects::{ExecutionAdmission, OriginalBodyDiagnostic, OriginalDiagnosticPhase};
  fn encode(rows: &[OriginalBodyDiagnostic]) -> Vec<u8> {
