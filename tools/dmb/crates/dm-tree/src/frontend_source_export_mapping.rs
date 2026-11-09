@@ -423,6 +423,26 @@ impl SourceExportMapping {
 mod tests;
 
 // Versioned source join token; exact owner admission above is the authority.
+#[inline]
+fn update_source_origin_digest(
+    hash: &mut xxhash_rust::xxh3::Xxh3,
+    trace: u128,
+    path: &str,
+    geometry: [usize; 6],
+) {
+    let mut prefix = [0; 24];
+    prefix[..16].copy_from_slice(&trace.to_le_bytes());
+    prefix[16..].copy_from_slice(&(path.len() as u64).to_le_bytes());
+    hash.update(&prefix);
+    hash.update(path.as_bytes());
+
+    let mut coordinates = [0; 48];
+    for (encoded, value) in coordinates.chunks_exact_mut(8).zip(geometry) {
+        encoded.copy_from_slice(&(value as u64).to_le_bytes());
+    }
+    hash.update(&coordinates);
+}
+
 fn source_revision(frontend: &ColdFrontend) -> u128 {
     use xxhash_rust::xxh3::Xxh3;
     let mut hash = Xxh3::new();
@@ -459,14 +479,19 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
     let chunk_digest = |range: std::ops::Range<usize>| -> u128 {
         let mut hash = Xxh3::new();
         let mut traces = HashMap::new();
+        let mut current_trace = None;
         let mut current_path = None;
         for index in range {
             let Some(origin) = origins.get(index) else {
                 break;
             };
-            let trace = traces
-                .entry(origin.macro_expansions.owner_address())
-                .or_insert_with(|| {
+            let trace_owner = origin.macro_expansions.owner_address();
+            let trace = if let Some((_, digest)) =
+                current_trace.filter(|(owner, _)| *owner == trace_owner)
+            {
+                digest
+            } else {
+                let digest = *traces.entry(trace_owner).or_insert_with(|| {
                     let mut trace = Xxh3::new();
                     for expansion in origin.macro_expansions.iter() {
                         let update = |hash: &mut Xxh3, value: &[u8]| {
@@ -494,7 +519,9 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
                     }
                     trace.digest128()
                 });
-            hash.update(&trace.to_le_bytes());
+                current_trace = Some((trace_owner, digest));
+                digest
+            };
             // Adjacent emitted tokens borrow the same immutable path owner.
             // Decode its spelling once instead of once per physical token.
             let owner = origin.origin.path;
@@ -502,18 +529,14 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
                 current_path = Some((owner, owner.to_string_lossy()));
             }
             let (_, path) = current_path.as_ref().expect("current physical origin path");
-            hash.update(&(path.len() as u64).to_le_bytes());
-            hash.update(path.as_bytes());
-            for value in [
+            update_source_origin_digest(&mut hash, trace, path, [
                 origin.output_span.start,
                 origin.output_span.end,
                 origin.source_span.start,
                 origin.source_span.end,
                 origin.region,
                 origin.origin.source_line,
-            ] {
-                hash.update(&(value as u64).to_le_bytes());
-            }
+            ]);
         }
         hash.digest128()
     };
@@ -541,6 +564,31 @@ fn source_revision(frontend: &ColdFrontend) -> u128 {
         hash.update(&digest.to_le_bytes());
     }
     hash.digest128()
+}
+
+#[cfg(test)]
+#[test]
+fn batched_source_origin_digest_preserves_existing_byte_framing() {
+    use xxhash_rust::xxh3::Xxh3;
+
+    let mut batched = Xxh3::new();
+    let mut original = Xxh3::new();
+    let long_path = "x".repeat(257);
+    for (trace, path, geometry) in [
+        (0, "", [0; 6]),
+        (0, "code/é.dm", [1, 2, 3, 4, 5, 6]),
+        (u128::MAX, long_path.as_str(), [7, 11, usize::MAX, 13, 17, 19]),
+        (0, "code/é.dm", [23, 29, 31, 37, 41, 43]),
+    ] {
+        update_source_origin_digest(&mut batched, trace, path, geometry);
+        original.update(&trace.to_le_bytes());
+        original.update(&(path.len() as u64).to_le_bytes());
+        original.update(path.as_bytes());
+        for value in geometry {
+            original.update(&(value as u64).to_le_bytes());
+        }
+        assert_eq!(batched.digest128(), original.digest128());
+    }
 }
 
 // Scalar original-coordinate notes from compiler-issued compact layout evidence.
