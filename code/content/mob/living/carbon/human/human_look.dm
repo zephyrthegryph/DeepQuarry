@@ -162,8 +162,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/list/key_result = body_icon_key(look)
 	var/icon_key = "[key_result[1]][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
 	var/template = species.icon_template ? species.icon_template : 'icons/mob/human.dmi'
-	if(can_layer_body(husk, hulk, skeleton))
-		return human_look_icon("layered_body|[template]|[icon_key]", "build_layered_body_look", template)
+	if(can_layer_body(husk, skeleton))
+		return human_look_icon("layered_body|[template]|[icon_key]", "build_layered_body_look", template, hulk, skeleton)
 	return human_look_icon("body|[template]|[icon_key]", "build_body_look", template, key_result[2], husk, hulk, skeleton)
 
 /mob/living/carbon/human/proc/build_body_look(template, wholeicontransparent, husk, hulk, skeleton)
@@ -182,10 +182,10 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	if(eyes)
 		icon_key += "[eyes.eye_rgb()]"
 	else
-		icon_key += "[looks.eyes_color]"
+		icon_key += "[looks.eyes_color]-none"
 	var/obj/item/organ/external/head/head = limb_tagged(BP_HEAD)
 	if(head && !istype(head, /obj/item/organ/external/stump))
-		icon_key += "[head.eye_icon]"
+		icon_key += "[head.eye_icon_location][head.eye_icon][head.eyes_over_markings]"
 
 	var/wholeicontransparent = TRUE
 	for(var/organ_tag in species.has_limbs)
@@ -219,6 +219,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		. += "3"
 	else
 		. += "1"
+	if(part.force_icon) //A prosthetic's sprite is picked by the body's gender.
+		. += "[gender]"
 	if(part.transparent) //For better slime limbs. Avoids using solid var due to limb dropping.
 		. += "_t"
 	if(istype(tail_style, /datum/sprite_accessory/tail/taur) && tail_style.clip_mask)
@@ -336,7 +338,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	if(!headtype?["path"])
 		return
 	head.set_eye_icon(species_head_eye_icon(headtype))
-	head.eye_icon_location = species_head_eye_icon_location(headtype)
+	head.set_eye_icon_location(species_head_eye_icon_location(headtype))
 
 /obj/item/organ/external/head/joined_body(mob/living/M)
 	..()
@@ -453,44 +455,63 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/ears_key = ears_look_key(block_head_hair)
 	.[1] = human_look_icon("hair|[facial_key]|[hair_key]|[ears_key]|[head_organ.transparent]|[head_organ.head_offset]", "build_hair_look", facial_key, hair_key, block_head_hair, head_organ.transparent, head_organ.head_offset)
 
+/// The hair, facial hair and ears as one group of tinted layers (the client draws them over each other), or null when there is none. A cache builder (hair_look()).
 /mob/living/carbon/human/proc/build_hair_look(facial_key, hair_key, block_head_hair, transparent, head_offset)
-	var/icon/face_standing = icon(icon = 'icons/mob/human_face.dmi', icon_state = "bald_s")
+	var/list/face = list()
 	if(length(facial_key))
 		var/datum/sprite_accessory/facial_hair_style = GLOB.facial_hair_styles_list[looks.facial_style]
-		var/icon/facial_s = new/icon("icon" = facial_hair_style.icon, "icon_state" = "[facial_hair_style.icon_state]_s")
-		if(facial_hair_style.do_colouration)
-			facial_s.Blend(looks.facial_color, facial_hair_style.color_blend_mode)
-		face_standing.Blend(facial_s, ICON_OVERLAY)
+		face += human_part(facial_hair_style.icon, "[facial_hair_style.icon_state]_s", facial_hair_style.do_colouration ? looks.facial_color : null, facial_hair_style.color_blend_mode)
 	if(length(hair_key))
-		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[splittext(hair_key, "|")[1]]
-		var/icon/grad_s = null
-		var/icon/hair_s = new/icon("icon" = hair_style.icon, "icon_state" = "[hair_style.icon_state]_s")
-		var/icon/hair_s_add = new/icon("icon" = hair_style.icon_add, "icon_state" = "[hair_style.icon_state]_s")
-		if(hair_style.do_colouration)
-			var/grad_state = hair_gradient_state(looks.grad_style)
-			if(grad_state && grad_state != "none")
-				grad_s = new/icon("icon" = 'icons/mob/hair_gradients.dmi', "icon_state" = grad_state)
-				grad_s.Blend(hair_s, ICON_AND)
-				grad_s.Blend(looks.grad_color, ICON_MULTIPLY)
-			hair_s.Blend(looks.hair_color, ICON_MULTIPLY)
-			hair_s.Blend(hair_s_add, ICON_ADD)
-			if(!isnull(grad_s))
-				hair_s.Blend(grad_s, ICON_OVERLAY)
-		face_standing.Blend(hair_s, ICON_OVERLAY)
+		face += hair_style_parts(GLOB.hair_styles_list[splittext(hair_key, "|")[1]])
+	var/list/shown = transparent ? list(human_part_group(face, alpha = 120)) : face
+	shown += ears_parts(block_head_hair)
+	if(!length(shown))
+		return null
+	return human_part_group(shown, BODY_LAYER + HAIR_LAYER, pixel_y = head_offset)
 
-	var/icon/ears_s = get_ears_overlay(block_head_hair)
-	if(transparent)
-		face_standing += rgb(,,,120)
-	var/image/em_block_ears
-	if(ears_s)
-		if(ears_s.Height() > face_standing.Height()) // Tol ears
-			face_standing.Crop(1, 1, face_standing.Width(), ears_s.Height())
-		face_standing.Blend(ears_s, ICON_OVERLAY)
-		// todo: these should be considered separately, but it'd take a slight refactor to how sprite acc's are rendered (or atleast ears)
-		if(ear_style?.em_block || ear_secondary_style?.em_block)
-			em_block_ears = em_block_image_generic(image(ears_s))
-	var/image/semifinal = image(face_standing, layer = BODY_LAYER + HAIR_LAYER, "pixel_y" = head_offset)
-	return em_block_ears ? look_composed_image(semifinal, list(em_block_ears)) : semifinal
+/// The scalp hair in the human's colour. A style with a shading sheet adds it on (BLEND_ADD); a gradient is drawn only where the hair is (an inset layer of a group of its own).
+/mob/living/carbon/human/proc/hair_style_parts(datum/sprite_accessory/hair/hair_style)
+	var/state = "[hair_style.icon_state]_s"
+	if(!hair_style.do_colouration)
+		return list(human_part(hair_style.icon, state))
+	var/list/parts = list(human_part(hair_style.icon, state, looks.hair_color))
+	if(icon_exists(hair_style.icon_add, state))
+		var/image/shading = human_part(hair_style.icon_add, state)
+		shading.blend_mode = BLEND_ADD
+		parts += shading
+	var/grad_state = hair_gradient_state(looks.grad_style)
+	if(!grad_state || grad_state == "none")
+		return parts
+	var/image/gradient = human_part('icons/mob/hair_gradients.dmi', grad_state, looks.grad_color)
+	gradient.blend_mode = BLEND_INSET_OVERLAY
+	parts += gradient
+	return list(human_part_group(parts, together = TRUE))
+
+/// The chosen ears and secondary ears in their colours, and the emissive blockers of the ears that block light. Nothing when the head item hides them.
+/mob/living/carbon/human/proc/ears_parts(block_head_hair)
+	. = list()
+	if(block_head_hair)
+		return
+	var/list/blockers = list()
+	if(ear_style)
+		. += ear_style_parts(ear_style, list(looks.ears_color, looks.ears_color2, looks.ears_color3), looks.ears_alpha, blockers)
+	if(ear_secondary_style)
+		var/list/colours = list(LAZYACCESS(ear_secondary_colors, 1) || looks.ears_color, LAZYACCESS(ear_secondary_colors, 2) || looks.ears_color2, LAZYACCESS(ear_secondary_colors, 3) || looks.ears_color3) // unset: the first ear's colour
+		. += ear_style_parts(ear_secondary_style, colours, looks.ears_alpha2, blockers)
+	if(ear_style?.em_block || ear_secondary_style?.em_block)
+		. += blockers
+
+/// One ear style's layers: its sprite in the first colour (when it takes colour) and its two extra overlays in the others, faded as one picture. Its blockers go to `blockers`.
+/mob/living/carbon/human/proc/ear_style_parts(datum/sprite_accessory/ears/style, list/colours, alpha, list/blockers)
+	var/list/parts = list(human_part(initial(style.icon), initial(style.icon_state), style.do_colouration ? colours[1] : null, style.color_blend_mode))
+	if(style.extra_overlay)
+		parts += human_part(initial(style.icon), style.extra_overlay, colours[2], style.color_blend_mode)
+	if(style.extra_overlay2)
+		parts += human_part(initial(style.icon), style.extra_overlay2, colours[3], style.color_blend_mode)
+	blockers += human_em_blocks(parts, alpha)
+	if(alpha < 255)
+		return list(human_part_group(parts, alpha = alpha))
+	return parts
 
 /// The text of every input of the ears overlay (get_ears_overlay()).
 /mob/living/carbon/human/proc/ears_look_key(block_head_hair)
@@ -524,17 +545,9 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 			tint = "add|[rgb(128,0,0)]"
 	return human_look_icon("eyes|[head_organ.eye_icon_location]|[head_organ.eye_icon]|[tint]|[head_organ.transparent]|[overlay_flags()]", "build_eyes_look", head_organ.eye_icon_location, head_organ.eye_icon, tint, head_organ.transparent, overlay_flags())
 
+/// The glowing eyes: the head's eye sprite, tinted, on the plane above the lighting. A cache builder (eyes_look()).
 /mob/living/carbon/human/proc/build_eyes_look(location, state, tint, transparent, flags)
-	var/icon/eyes_icon = new/icon(location, state)
-	if(tint)
-		var/list/how = splittext(tint, "|")
-		if(how[1] == "blend")
-			eyes_icon.Blend(how[2])
-		else
-			eyes_icon.Blend(how[2], ICON_ADD)
-	if(transparent)
-		eyes_icon += rgb(,,,180)
-	return human_layer_image(eyes_icon, null, plane = PLANE_LIGHTING_ABOVE, flags = flags)
+	return human_layer_image(location, state, plane = PLANE_LIGHTING_ABOVE, alpha = transparent ? 180 : 255, color = tint ? human_tint(splittext(tint, "|")[2], ICON_ADD) : null, flags = flags)
 
 /mob/living/carbon/human/proc/modifier_look()
 	return body_effect_overlays()
@@ -564,7 +577,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return (dir in tail_lower_dirs()) ? TAIL_LOWER_LAYER : TAIL_UPPER_LAYER
 
 /// The tail: a list of list(layer, image), empty for none. The tail is drawn twice, once on each tail layer, each copy keeping only the frames of
-/// the facings it shows in (icon_keep_dirs()): BYOND picks the frame for the dir, so turning round needs no redraw (the draw reads no dir).
+/// the facings it shows in (tail_part()): BYOND picks the frame for the dir, so turning round needs no redraw (the draw reads no dir).
 /mob/living/carbon/human/proc/tail_look()
 	. = list()
 	if(tail_style?.clip_mask_state)
@@ -591,16 +604,38 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/state = "[species_tail]_s"
 	if(species.get_tail_animation(src))
 		state = (stat == DEAD) ? "[species_tail]_static" : (tail_anim_state || "[species_tail]_idle[tail_idle_variant()]")
+	var/hair_state = species.get_tail_hair(src)
+	var/mode = species.color_mult ? ICON_MULTIPLY : ICON_ADD
+	var/alpha = chest?.transparent ? 180 : 255
 	for(var/tail_layer in list(TAIL_LOWER_LAYER, TAIL_UPPER_LAYER))
 		var/list/dirs = tail_layer == TAIL_LOWER_LAYER ? lower_dirs : upper_dirs
 		if(!length(dirs))
 			continue
-		var/icon/masked = human_look_icon("tail_dirs|[species.get_race_key(src)]|[looks.skin_color]|[looks.hair_color]|[state]|[jointext(dirs, ",")]", "build_species_tail_dirs", state, dirs)
-		. += list(list(tail_layer, human_layer_image(masked, "", BODY_LAYER + tail_layer, alpha = chest?.transparent ? 180 : 255)))
+		. += list(list(tail_layer, human_look_icon("tail_species|[species.get_race_key(src)]|[state]|[hair_state]|[species_tail]|[looks.skin_color]|[looks.hair_color]|[mode]|[alpha]|[tail_layer]|[jointext(dirs, ",")]", "build_species_tail_image", state, hair_state, mode, alpha, tail_layer, dirs)))
 
-/// The species tail in `state`, keeping only the frames of `dirs`.
-/mob/living/carbon/human/proc/build_species_tail_dirs(state, list/dirs)
-	return icon_keep_dirs(icon(get_tail_icon(), state), dirs)
+/// The sheet the species' own tail is drawn from.
+/mob/living/carbon/human/proc/species_tail_file()
+	var/tail_file = species.get_tail_animation(src)
+	if(!tail_file && species.icobase_tail)
+		tail_file = species.icobase // Allow override of file for non-animated tails
+	return tail_file || 'icons/effects/species.dmi'
+
+/// The species tail in `state` (tinted like the skin, with its hair overlay in the hair colour), on `tail_layer`, drawn only facing `dirs`. A cache builder (tail_look()).
+/mob/living/carbon/human/proc/build_species_tail_image(state, hair_state, mode, alpha, tail_layer, list/dirs)
+	var/list/parts = list(tail_part(species_tail_file(), state, dirs, looks.skin_color, mode))
+	if(hair_state)
+		parts += tail_part('icons/effects/species.dmi', "[species.get_tail(src)]_[hair_state]", dirs, looks.hair_color, mode)
+	return human_accessory_image(parts, BODY_LAYER + tail_layer, alpha)
+
+/// One part of a tail: `state` of `file` tinted, drawn only facing `dirs` (every facing when null). A part that shows in some facings only reads a static icon
+/// of those frames (the same for every colour of it, built once per sprite: icon_keep_dirs()); BYOND has no way to hide a layer in some facings but frames.
+/mob/living/carbon/human/proc/tail_part(file, state, list/dirs, colour, mode)
+	if(length(dirs) && length(dirs) < length(GLOB.cardinal))
+		return human_part(human_look_icon("tail_dirs|[file]|[state]|[jointext(dirs, ",")]", "build_tail_dirs", file, state, dirs), "", colour, mode)
+	return human_part(file, state, colour, mode)
+
+/mob/living/carbon/human/proc/build_tail_dirs(file, state, list/dirs)
+	return icon_keep_dirs(icon(file, state), dirs)
 
 /// `I` (one state, any frames) with only its `dirs` facings drawn, the others blank. An overlay made from it shows only while its holder faces one
 /// of `dirs`, so a draw that layers a part by facing needs no redraw when the holder turns.
@@ -615,27 +650,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/tail_idle_variant()
 	return hex2num(copytext(md5("ef[src]"), 1, 3)) % 10
 
-/mob/living/carbon/human/proc/get_tail_icon()
-	return human_look_icon("tail_icon|[species.get_race_key(src)]|[looks.skin_color]|[looks.hair_color]", "build_tail_icon")
-
-/mob/living/carbon/human/proc/build_tail_icon()
-	var/species_tail_anim = species.get_tail_animation(src)
-	if(!species_tail_anim && species.icobase_tail)
-		species_tail_anim = species.icobase //Allow override of file for non-animated tails
-	if(!species_tail_anim)
-		species_tail_anim = 'icons/effects/species.dmi'
-	var/icon/tail_icon = new/icon(species_tail_anim)
-	tail_icon.Blend(looks.skin_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
-	// The following will not work with animated tails.
-	var/use_species_tail = species.get_tail_hair(src)
-	if(use_species_tail)
-		var/icon/hair_icon = icon('icons/effects/species.dmi', "[species.get_tail(src)]_[use_species_tail]")
-		hair_icon.Blend(looks.hair_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)				//Check for species color_mult
-		tail_icon.Blend(hair_icon, ICON_OVERLAY)
-	return tail_icon
-
 /// A custom or prosthetic tail's image at `layer`, or null.
-/// `dirs`: only those facings are drawn (icon_keep_dirs()); null draws every facing.
+/// `dirs`: only those facings are drawn (tail_part()); null draws every facing.
 /mob/living/carbon/human/proc/get_tail_image(layer = FLOAT_LAYER, list/dirs = null)
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!tail_style || (suit && (worn_of(suit).hides & HIDETAIL) && !istaurtail(tail_style)) || tail_hidden)
@@ -644,30 +660,17 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/wag = wagging && tail_style.ani_state
 	return human_look_icon("tail|[tail_style.type]|[loaf]|[wag]|[looks.tail_color]|[looks.tail_color2]|[looks.tail_color3]|[looks.tail_alpha]|[layer]|[dirs ? jointext(dirs, ",") : "all"]", "build_tail_image", loaf, wag, layer, dirs)
 
+/// The tail as tinted parts (the sprite, then the two extra overlays) with their emissive blockers. A cache builder (get_tail_image()).
 /mob/living/carbon/human/proc/build_tail_image(loaf, wag, layer, list/dirs)
 	var/tail_file = loaf ? tail_style.icon_loaf : tail_style.icon
-	var/icon/tail_s = new/icon("icon" = tail_file, "icon_state" = (wag ? tail_style.ani_state : tail_style.icon_state))
-	if(tail_style.do_colouration)
-		tail_s.Blend(looks.tail_color, tail_style.color_blend_mode)
+	var/mode = tail_style.color_blend_mode
+	var/list/parts = list(tail_part(tail_file, wag ? tail_style.ani_state : tail_style.icon_state, dirs, tail_style.do_colouration ? looks.tail_color : null, mode))
 	if(tail_style.extra_overlay)
-		var/icon/overlay = new/icon("icon" = tail_file, "icon_state" = wag ? tail_style.extra_overlay_w : tail_style.extra_overlay)
-		overlay.Blend(looks.tail_color2, tail_style.color_blend_mode)
-		tail_s.Blend(overlay, ICON_OVERLAY)
+		parts += tail_part(tail_file, wag ? tail_style.extra_overlay_w : tail_style.extra_overlay, dirs, looks.tail_color2, mode)
 	if(tail_style.extra_overlay2)
-		var/icon/overlay = new/icon("icon" = tail_file, "icon_state" = wag ? tail_style.extra_overlay2_w : tail_style.extra_overlay2)
-		overlay.Blend(looks.tail_color3, tail_style.color_blend_mode)
-		tail_s.Blend(overlay, ICON_OVERLAY)
-	if(dirs)
-		tail_s = icon_keep_dirs(tail_s, dirs)
-	var/image/working = image(tail_s)
-	if(tail_style.em_block)
-		working = look_composed_image(working, list(em_block_image_generic(working)))
-	if(istaurtail(tail_style) || islongtail(tail_style))
-		working.pixel_x = tail_style.offset_x
-		working.pixel_y = tail_style.offset_y
-	working.alpha = looks.tail_alpha
-	working.layer = layer
-	return working
+		parts += tail_part(tail_file, wag ? tail_style.extra_overlay2_w : tail_style.extra_overlay2, dirs, looks.tail_color3, mode)
+	var/offset = istaurtail(tail_style) || islongtail(tail_style)
+	return human_accessory_image(parts, layer, looks.tail_alpha, offset ? tail_style.offset_x : 0, offset ? tail_style.offset_y : 0, tail_style.em_block)
 
 /// The wings (`under_layer`: the half drawn behind the body, for wings drawn in two halves), or null.
 /mob/living/carbon/human/proc/wing_look(under_layer)
@@ -678,30 +681,20 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/flap = flapping && wing_style.ani_state
 	return human_look_icon("wing|[wing_style.type]|[under_layer]|[flap]|[looks.wing_color]|[looks.wing_color2]|[looks.wing_color3]|[looks.wing_alpha]|[layer]", "build_wing_image", under_layer, flap, layer)
 
+/// The wings as tinted parts with their emissive blockers. A cache builder (wing_look()).
 /mob/living/carbon/human/proc/build_wing_image(under_layer, flap, layer)
 	var/wing_state = flap ? wing_style.ani_state : wing_style.icon_state
 	if(wing_style.multi_dir)
 		wing_state += "_[under_layer ? "back" : "front"]"
-	var/icon/wing_s = new/icon("icon" = wing_style.icon, "icon_state" = wing_state)
-	if(wing_style.do_colouration)
-		wing_s.Blend(looks.wing_color, wing_style.color_blend_mode)
+	var/mode = wing_style.color_blend_mode
+	var/list/parts = list(human_part(wing_style.icon, wing_state, wing_style.do_colouration ? looks.wing_color : null, mode))
 	if(wing_style.extra_overlay)
-		var/icon/overlay = new/icon("icon" = wing_style.icon, "icon_state" = wing_style.extra_overlay)
-		overlay.Blend(looks.wing_color2, wing_style.color_blend_mode)
-		wing_s.Blend(overlay, ICON_OVERLAY)
+		parts += human_part(wing_style.icon, wing_style.extra_overlay, looks.wing_color2, mode)
 	if(wing_style.extra_overlay2)
-		var/icon/overlay = new/icon("icon" = wing_style.icon, "icon_state" = wing_style.ani_state ? wing_style.extra_overlay2_w : wing_style.extra_overlay2)
-		overlay.Blend(looks.wing_color3, wing_style.color_blend_mode)
-		wing_s.Blend(overlay, ICON_OVERLAY)
-	var/image/working = image(wing_s)
-	working.alpha = looks.wing_alpha
-	if(wing_style.em_block)
-		working = look_composed_image(working, list(em_block_image_generic(working)))
-	working.pixel_x -= wing_style.wing_offset
-	working.layer = layer
-	return working
+		parts += human_part(wing_style.icon, wing_style.ani_state ? wing_style.extra_overlay2_w : wing_style.extra_overlay2, looks.wing_color3, mode)
+	return human_accessory_image(parts, layer, looks.wing_alpha, -wing_style.wing_offset, 0, wing_style.em_block, looks.wing_alpha)
 
-/// The ears overlay: the prosthetic's, or the chosen ears and secondary ears in their colours. A cache builder input of build_hair_look().
+/// The ears overlay: the prosthetic's, or the chosen ears and secondary ears in their colours. The voodoo doll draws the ears from it; the human draws them as layers (ears_parts()).
 /mob/living/carbon/human/proc/get_ears_overlay(block_head_hair)
 	var/icon/rendered
 	if(ear_style && !block_head_hair)
@@ -765,15 +758,9 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return human_look_icon("vore_tail|[tail_style.bellies_icon_path]|[state]|[colour]|[multiply]|[tail_style.em_block]|[overlay_flags()]", "build_vore_belly", tail_style.bellies_icon_path, state, colour, multiply, -16, tail_style.em_block, BODY_LAYER + VORE_TAIL_LAYER, overlay_flags())
 
 /mob/living/carbon/human/proc/build_vore_belly(file, state, colour, multiply, offset_x, em_block, layer, flags)
-	var/icon/vorebelly_s = new/icon(icon = file, icon_state = state)
-	vorebelly_s.Blend(colour, multiply ? ICON_MULTIPLY : ICON_ADD)
-	var/image/working = image(vorebelly_s)
-	working.pixel_x = offset_x
-	if(em_block)
-		working = look_composed_image(working, list(em_block_image_generic(working)))
-	working.layer = layer
-	working.appearance_flags = flags
-	return working
+	var/image/belly = human_part(file, state, colour, multiply ? ICON_MULTIPLY : ICON_ADD)
+	belly.appearance_flags = flags
+	return human_accessory_image(list(belly), layer, 255, offset_x, 0, em_block)
 
 // ---- what is worn and held ----
 

@@ -430,7 +430,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 	var/choice = ask.value
 	var/datum/robolimb/robohead = GLOB.all_robolimbs[E.model]
 	if(robohead?.monitor_icon)
-		E.eye_icon_location = robohead.monitor_icon
+		E.set_eye_icon_location(robohead.monitor_icon)
 		E.set_eye_icon(states[choice])
 		E.eye_icon_override = TRUE
 		to_chat(src,span_warning("You set your monitor to display [choice]!"))
@@ -464,7 +464,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 		to_chat(src, span_warning("You don't seem to have a head!"))
 		return
 
-	H.eyes_over_markings = !H.eyes_over_markings
+	H.set_eyes_over_markings(!H.eyes_over_markings)
 
 	if(H.robotic)
 		var/datum/robolimb/robohead = GLOB.all_robolimbs[H.model]

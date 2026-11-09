@@ -128,6 +128,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 			var/image/old_image = layers[i]
 			var/image/tinted = image(old_image)
 			tinted.color = tint_color
+			tinted.appearance_flags |= KEEP_TOGETHER // a layer made of parts (hair, a tail, the body) is tinted as one picture
 			tinted.layer = old_image.layer
 			new_image = tinted
 			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)

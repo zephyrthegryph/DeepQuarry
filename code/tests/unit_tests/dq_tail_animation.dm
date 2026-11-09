@@ -37,9 +37,23 @@
 		seen[md5(jointext(pixels, ","))] = TRUE
 	return length(seen)
 
+/// The sprite of a tail layer: the first picture the layer is made of (its parts after it are the extra overlays and the emissive blockers).
+/datum/unit_test/proc/dq_ta_sprite(image/layer_image)
+	if(!layer_image)
+		return null
+	for(var/part in layer_image.overlays)
+		var/mutable_appearance/MA = new(part)
+		if(MA.plane == FLOAT_PLANE)
+			return MA
+
+/// The tail the human shows facing south (its lower layer).
+/datum/unit_test/proc/dq_ta_south_tail(mob/living/carbon/human/H)
+	refresh_flush()
+	return dq_ta_sprite(H.look_layers()[TAIL_LOWER_LAYER])
+
 /// Asserts the drawn `layer` plays `state` of `file` (a multi-frame state) with every frame the source has. `drawn_state` is the state
 /// the image names: a species tail names its state in the whole sheet, a coloured custom tail is a composed icon of that one state ("").
-/datum/unit_test/proc/dq_ta_assert_animated(image/drawn, file, state, label, drawn_state = state)
+/datum/unit_test/proc/dq_ta_assert_animated(drawn, file, state, label, drawn_state = state)
 	if(!drawn)
 		return Fail("[label]: nothing was drawn", __FILE__, __LINE__)
 	if((drawn.icon_state || "") != drawn_state)
@@ -53,7 +67,7 @@
 		return Fail("[label]: the drawn '[state]' keeps [got] of the source's [source] distinct frames", __FILE__, __LINE__)
 
 /// Asserts the drawn `layer` is the still `state` (one frame in its source).
-/datum/unit_test/proc/dq_ta_assert_still(image/drawn, file, state, label, drawn_state = state)
+/datum/unit_test/proc/dq_ta_assert_still(drawn, file, state, label, drawn_state = state)
 	if(!drawn)
 		return Fail("[label]: nothing was drawn", __FILE__, __LINE__)
 	if((drawn.icon_state || "") != drawn_state)
@@ -71,16 +85,17 @@
 	var/datum/sprite_accessory/tail/style = GLOB.tail_styles_list[/datum/sprite_accessory/tail/rabbit]
 	dq_hd_set(H, "tail_style", style)
 	refresh_flush()
-	var/image/resting = H.tail_look()[2]
+	var/image/resting_layer = H.look_layers()[TAIL_LOWER_LAYER]
+	var/resting = dq_ta_sprite(resting_layer)
 	dq_ta_assert_still(resting, style.icon, style.icon_state, "rabbit tail at rest", "")
 	H.toggle_tail(TRUE)
 	refresh_flush()
-	var/image/wagging = H.tail_look()[2]
-	TEST_ASSERT(wagging != resting, "wagging draws another tail")
-	dq_ta_assert_animated(wagging, style.icon, style.ani_state, "rabbit tail wagging", "")
+	var/image/wagging_layer = H.look_layers()[TAIL_LOWER_LAYER]
+	TEST_ASSERT(wagging_layer != resting_layer, "wagging draws another tail")
+	dq_ta_assert_animated(dq_ta_sprite(wagging_layer), style.icon, style.ani_state, "rabbit tail wagging", "")
 	H.toggle_tail(FALSE)
 	refresh_flush()
-	TEST_ASSERT(H.tail_look()[2] == resting, "a tail that stopped wagging is the resting tail again")
+	TEST_ASSERT(H.look_layers()[TAIL_LOWER_LAYER] == resting_layer, "a tail that stopped wagging is the resting tail again")
 
 /datum/unit_test/dq_tail_animation_species
 
@@ -92,15 +107,14 @@
 	var/file = H.species.get_tail_animation(H)
 	var/tail = H.species.get_tail(H)
 	var/idle = "[tail]_idle[H.tail_idle_variant()]"
-	dq_ta_assert_animated(H.tail_look()[2], file, idle, "unathi tail on its own")
+	dq_ta_assert_animated(dq_ta_south_tail(H), file, idle, "unathi tail on its own", "")
 	H.animate_tail_stop()
 	refresh_flush()
-	dq_ta_assert_still(H.tail_look()[2], file, "[tail]_static", "unathi tail stopped")
+	dq_ta_assert_still(dq_ta_south_tail(H), file, "[tail]_static", "unathi tail stopped", "")
 	H.animate_tail_start()
 	refresh_flush()
-	var/image/slow = H.tail_look()[2]
-	TEST_ASSERT(findtext(slow.icon_state, "[tail]_slow"), "a wagging species tail plays its slow loop, got [slow.icon_state]")
-	dq_ta_assert_animated(slow, file, slow.icon_state, "unathi tail wagging")
+	TEST_ASSERT(findtext(H.tail_anim_state, "[tail]_slow"), "a wagging species tail plays its slow loop, got [H.tail_anim_state]")
+	dq_ta_assert_animated(dq_ta_south_tail(H), file, H.tail_anim_state, "unathi tail wagging", "")
 	H.death()
 	refresh_flush()
-	dq_ta_assert_still(H.tail_look()[2], file, "[tail]_static", "dead unathi tail")
+	dq_ta_assert_still(dq_ta_south_tail(H), file, "[tail]_static", "dead unathi tail", "")

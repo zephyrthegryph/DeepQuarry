@@ -817,7 +817,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			return // don't bother if target mob has no head for whatever reason
 
 		targetHead.set_eye_icon(species_head_eye_icon(base_head))
-		targetHead.eye_icon_location = species_head_eye_icon_location(base_head)
+		targetHead.set_eye_icon_location(species_head_eye_icon_location(base_head))
 	return
 
 /// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.
