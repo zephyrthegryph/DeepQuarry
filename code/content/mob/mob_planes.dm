@@ -129,6 +129,8 @@ CAPABILITIES(/datum/plane_holder)
 			set_alpha(new_alpha)
 
 /atom/movable/screen/plane_master/proc/set_visibility(want = FALSE)
+	if(plane == PLANE_LIGHTING)
+		log_world("lighting plane master: visibility [want], alpha [alpha]") // the darkness blinking for a frame would show here
 	//Invisibility-managed
 	if(invis_toggle)
 		if(want && invisibility)

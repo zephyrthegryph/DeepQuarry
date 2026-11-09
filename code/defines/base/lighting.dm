@@ -169,8 +169,13 @@ do { \
 /// Iconforge's own limit on one sprite's transforms is 128; the mask stays under it.
 #define CLIENT_GLOW_MASK_STEPS_MAX 126
 /// The bloom that carries floor light about a tile onto the walls beside it: its blur, its growth before the blur (pixels), its strength.
-#define CLIENT_GLOW_SPREAD_SIZE 16
-#define CLIENT_GLOW_SPREAD_OFFSET 12
-#define CLIENT_GLOW_SPREAD_ALPHA 255
+#define CLIENT_GLOW_SPREAD_SIZE 20
+#define CLIENT_GLOW_SPREAD_OFFSET 4
+#define CLIENT_GLOW_SPREAD_ALPHA 160
 /// The blur over the whole glow plane that softens every tile-shaped cut, so neighbouring colours blend (one filter per client, none per light).
 #define CLIENT_GLOW_SOFTEN_SIZE 4
+/// A light this short (a wall device, a console) draws at CLIENT_GLOW_SMALL_SCALE of its power.
+#define CLIENT_GLOW_SMALL_RANGE 2
+#define CLIENT_GLOW_SMALL_SCALE 0.5
+/// How long a light must stand on one turf before it goes back from the plain glow to its baked cut.
+#define CLIENT_GLOW_SETTLE_TIME (5 SECONDS)

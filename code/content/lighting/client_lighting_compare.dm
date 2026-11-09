@@ -182,6 +182,7 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	var/want = client_glow_screen_state(C)
 	if(want == C.lighting_screen)
 		return
+	log_world("client lighting screen: [C.ckey] [C.lighting_screen] -> [want]") // a change here while walking would blink the darkness
 	client_screen_remove(C, client_glow_screen_objects())
 	client_screen_add(C, client_glow_screen(want))
 	C.lighting_screen = want

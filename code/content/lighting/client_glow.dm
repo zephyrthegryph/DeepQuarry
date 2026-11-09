@@ -31,6 +31,8 @@ GLOBAL_VAR_INIT(client_glow_bounds, FALSE)
 	var/obj/effect/overlay/client_glow/glow
 	/// TRUE once this light has changed turf while glowing.
 	var/glow_has_moved = FALSE
+	/// "x:y:z" where this light stood when its settle check was scheduled; null while none is pending (client_glow_settle_check()).
+	var/glow_settle_at
 	/// TRUE: viewers draw this light's plain glow, with no baked cut (client_glow_note_moving()).
 	var/glow_plain = FALSE
 
@@ -63,12 +65,14 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	var/pixel_bounds = ((range - 1) * 64) + 32
 	G.set_icon(client_glow_icon(pixel_bounds))
 	var/offset = (pixel_bounds - 32) * 0.5
-	G.set_pixel_x(-offset + (pixel_turf ? (pixel_turf.x - source_turf.x) * WORLD_ICON_SIZE : 0))
-	G.set_pixel_y(-offset + (pixel_turf ? (pixel_turf.y - source_turf.y) * WORLD_ICON_SIZE : 0))
+	// A wall-mounted device's pixel offset rounds its pixel_turf onto the wall: centred there its glow, and an unbaked or uncut glow above all, falls on both sides of the wall.
+	var/turf/centre = pixel_turf && !pixel_turf.directional_opacity ? pixel_turf : source_turf
+	G.set_pixel_x(-offset + (centre.x - source_turf.x) * WORLD_ICON_SIZE)
+	G.set_pixel_y(-offset + (centre.y - source_turf.y) * WORLD_ICON_SIZE)
 	G.set_color(light_color)
 	G.set_plane(client_glow_plane())
 	client_glow_note_moving()
-	G.set_alpha(clamp(round(255 * min(light_power, 1)), 0, 255))
+	G.set_alpha(clamp(round(255 * min(light_power, 1) * (range <= CLIENT_GLOW_SMALL_RANGE ? CLIENT_GLOW_SMALL_SCALE : 1)), 0, 255)) // a device's small glow reads far stronger than the corner lighting's at the same power
 	// Bounds over the reach: BYOND counts the glow as standing on every turf they cover (its locs) and sends it to any client
 	// that sees one of them. The glow is placed, never moved, so no Crossed()/Entered() fires on the covered turfs.
 	var/reach_px = GLOB.client_glow_bounds ? CEILING(range, 1) * WORLD_ICON_SIZE : 0
@@ -88,7 +92,28 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 /datum/light_source/proc/client_glow_note_moving()
 	if(glow_reach_origin && glow_reach_origin != source_turf)
 		glow_has_moved = TRUE
+		if(!glow_settle_at)
+			glow_settle_at = client_glow_settle_key()
+			after(src, CLIENT_GLOW_SETTLE_TIME, PROC_REF(client_glow_settle_check), clock = CLOCK_WORLD)
 	glow_plain = glow_has_moved || top_atom != source_atom || ismob(source_atom)
+
+/datum/light_source/proc/client_glow_settle_key()
+	return source_turf ? "[source_turf.x]:[source_turf.y]:[source_turf.z]" : "none"
+
+/// A light that has stood on one turf for a whole settle period goes back to its baked cut; one still moving checks again.
+/datum/light_source/proc/client_glow_settle_check()
+	var/now = client_glow_settle_key()
+	if(now != glow_settle_at)
+		glow_settle_at = now
+		after(src, CLIENT_GLOW_SETTLE_TIME, PROC_REF(client_glow_settle_check), clock = CLOCK_WORLD)
+		return
+	glow_settle_at = null
+	glow_has_moved = FALSE
+	if(!glow)
+		return
+	client_glow_note_moving()
+	log_world("client glow: light at [now] settled, [glow_plain ? "still carried, stays plain" : "back to its baked cut"]")
+	client_glow_holders_consider(src)
 
 /// This light stops glowing (it went off, moved into nullspace or left client lighting).
 /datum/light_source/proc/client_glow_clear()
