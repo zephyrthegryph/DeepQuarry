@@ -85,7 +85,9 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/brightness_color_ns
 	var/overlay_color = LIGHT_COLOR_INCANDESCENT_TUBE
 	var/flickering = FALSE
-	var/overlay_above_everything = TRUE
+	/// TRUE: the lit glow is drawn on the lighting-above plane, over every mob (an overhead lamp, which hangs above heads). FALSE: it is
+	/// drawn with the fixture on its own plane and layer, so a mob in front of it covers it, with an emissive copy beneath that lets the glow through the dark.
+	var/overlay_above_everything = FALSE
 	/// The area's lights power state the fixture last acted on (so a channel change that changes nothing here does nothing). Null: a fixture
 	/// the map load left unpowered, which has lost no power: its emergency cell stays off until power has reached it and gone again.
 	var/tmp/last_area_power = null
@@ -220,10 +222,12 @@ CAPABILITIES(/obj/machinery/light)
 			if(shows_alerts && current_alert && on)
 				look.state("[base_state]-alert-[current_alert]")
 				look.overlay(light_overlay(FALSE, "[base_state]-alert-[current_alert]"))
+				look.overlay(light_emissive("[base_state]-alert-[current_alert]"), when = !overlay_above_everything)
 			else
 				look.state("[base_state][on]")
 				if(on)
 					look.overlay(light_overlay())
+					look.overlay(light_emissive(), when = !overlay_above_everything)
 		if(LIGHT_EMPTY)
 			look.state("[base_state]-empty")
 		if(LIGHT_BURNED)
@@ -240,10 +244,12 @@ CAPABILITIES(/obj/machinery/light)
 			look.state("flampshade[on]")
 			if(on)
 				look.overlay(light_overlay(TRUE, null, "flampshade"))
+				look.overlay(light_emissive(null, "flampshade"), when = !overlay_above_everything)
 		if(LIGHT_EMPTY, LIGHT_BURNED, LIGHT_BROKEN)
 			look.state("flampshade0")
 
-/// The lit glow over the sprite: tinted by the light's colour, above the lighting or emissive.
+/// The lit glow over the sprite, tinted by the light's colour. An overhead lamp draws it on the lighting-above plane; any other fixture draws it on
+/// its own plane at its own layer, so a mob standing in front of the fixture (a large one reaching over it) covers it like the fixture.
 /obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null)
 	var/image/overlay_layer
 	if(provided_state)
@@ -253,8 +259,14 @@ CAPABILITIES(/obj/machinery/light)
 	overlay_layer.appearance_flags = RESET_COLOR|KEEP_APART
 	if(overlay_color && do_color)
 		overlay_layer.color = overlay_color
-	overlay_layer.plane = overlay_above_everything ? PLANE_LIGHTING_ABOVE : PLANE_EMISSIVE
+	if(overlay_above_everything)
+		overlay_layer.plane = PLANE_LIGHTING_ABOVE
 	return overlay_layer
+
+/// The glow's emissive copy, for a fixture whose glow shares its plane with the mobs: it lets the glow through the dark, and the emissive blocker of
+/// a mob in front of the fixture stops it, as a mob's own glow is stopped by nothing under it.
+/obj/machinery/light/proc/light_emissive(provided_state = null, state_base = null)
+	return emissive_appearance(icon, "[provided_state || state_base || base_state]-overlay")
 
 /// Within two tiles the fixture says what is in it.
 /obj/machinery/light/proc/examine_status(datum/act/op/A)
@@ -1293,9 +1305,6 @@ CAPABILITIES(/obj/item/light)
 	// the power an APC-less area started with). A fixture built later in a dark room has lost its power to its builder: it lights from its cell.
 	last_area_power = (mapload && !on) ? null : !!has_power()
 	refresh_light(0)
-	// ition, so large mobs stop looking stupid in front of lights.
-	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)
-		layer = ABOVE_MOB_LAYER
 
 // Wall tube lights
 /obj/item/light/tube
@@ -1339,7 +1348,6 @@ CAPABILITIES(/obj/item/light)
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	construct_type = /obj/machinery/light_construct/floortube
-	overlay_above_everything = FALSE
 
 /obj/machinery/light/floortube/flicker
 	auto_flicker = TRUE
@@ -1421,11 +1429,8 @@ CAPABILITIES(/obj/item/light)
 	light_type = /obj/item/light/bulb/torch
 	shows_alerts = FALSE
 	anchored = TRUE
-	plane = ABOVE_MOB_PLANE
-	layer = ABOVE_MOB_LAYER
 	construct_type = null
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
-	overlay_above_everything = TRUE
 
 /// A wall torch is no socket to smash or fill.
 CAPABILITIES(/obj/machinery/light/small/torch)
