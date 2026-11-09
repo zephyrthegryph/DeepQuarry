@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting draws glows directly on the lighting plane again, fixing the black world."
