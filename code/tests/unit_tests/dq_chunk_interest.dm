@@ -519,6 +519,60 @@
 	TEST_ASSERT(!length(interest_view_owing("dq-test-walker")), "what the new chunk owed is drawn when it comes into view")
 	interest_clean(probes)
 
+/// A walker's edge owing more than one tick's batch (INTEREST_WALKER_NOW_MAX) draws the nearest of it now, queues the rest at the front of the prefetch queue and
+/// raises no cover; the drain then works the rest down over its passes, nearest first, until nothing in view owes a draw. A small batch (the test above) is all drawn now.
+/datum/unit_test/dq_interest_walker_edge_defers_past_budget
+
+/datum/unit_test/dq_interest_walker_edge_defers_past_budget/Run()
+	interest_isolate()
+	set_global(nameof(GLOB.interest_walker_deferred), GLOB.interest_walker_deferred)
+	var/turf/base = test_floor()
+	var/start_x = round((base.x - 1) / INTEREST_CHUNK) * INTEREST_CHUNK + 1
+	var/turf/home = locate(start_x, base.y, base.z)
+	var/turf/stepped = locate(start_x + 9, base.y, base.z)
+	var/turf/edge = locate(start_x + INTEREST_CHUNK, base.y, base.z)
+	var/turf/far_corner = locate(start_x + 2 * INTEREST_CHUNK - 1, base.y, base.z) // the far end of the new chunk: the farthest from the eye
+	TEST_ASSERT(home && stepped && edge && far_corner, "the map has room for two neighbouring chunks")
+	var/list/near = interest_probes(edge, INTEREST_WALKER_NOW_MAX + 20)
+	var/list/far = interest_probes(far_corner, 5)
+	var/list/probes = near + far
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		refresh_mark(probe, DEP_ALL)
+	GLOB.interest_test_coverable += "dq-test-walker"
+	interest_view_set("dq-test-walker", home, null, world.view)
+	GLOB.interest_covered -= "dq-test-walker" // the first view is a jump; this test is about the step after it
+	var/raised = GLOB.interest_covers_raised
+	var/deferred_before = GLOB.interest_walker_deferred
+	interest_view_set("dq-test-walker", stepped, null, world.view)
+	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-walker"]), "a walker's edge is never covered, however much it owes")
+	TEST_ASSERT_EQUAL(GLOB.interest_covers_raised, raised, "and raises no cover")
+	var/owing = 0
+	var/far_owing = 0
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		if(probe.refresh_queued)
+			owing++
+			if(probe in far)
+				far_owing++
+	TEST_ASSERT_EQUAL(owing, length(probes) - INTEREST_WALKER_NOW_MAX, "only one tick's batch was drawn now")
+	TEST_ASSERT_EQUAL(far_owing, length(far), "nearest the eye first: the farthest ones are the ones left")
+	TEST_ASSERT_EQUAL(GLOB.interest_walker_deferred - deferred_before, owing, "the deferred draws are counted")
+	TEST_ASSERT(length(GLOB.interest_prefetched) >= owing, "and wait in the queue the drain works")
+	set_global(nameof(GLOB.interest_arrival_step_max), 10)
+	var/passes = 0
+	for(var/pass in 1 to 100)
+		if(!length(GLOB.interest_prefetched))
+			break
+		interest_arrival_drain()
+		passes++
+	TEST_ASSERT(passes >= 2, "the drain spread them over passes ([passes])")
+	TEST_ASSERT_EQUAL(length(GLOB.interest_prefetched), 0, "nothing stays queued")
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "every deferred draw ran")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-walker")), "and nothing in view owes a draw")
+	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-walker"]), "no cover came up while it drained")
+	interest_clean(probes)
+
 /// A viewer that cannot be covered (no client: a camera screen) gets everything in view drawn at once: it never sees an owed draw.
 /datum/unit_test/dq_interest_uncoverable_view_draws_at_once
 

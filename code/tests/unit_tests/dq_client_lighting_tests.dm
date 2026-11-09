@@ -234,7 +234,7 @@
 /// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
 /datum/unit_test/proc/client_glow_holder_setup(list/out)
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
-	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes)))
+	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved)))
 		set_global(counter, GLOB.vars[counter]) // teardown restores the counters
 	var/obj/machinery/light/F = allocate(/obj/machinery/light, run_loc_floor_bottom_left)
 	client_lighting_set(TRUE)
@@ -261,7 +261,7 @@
 	var/image/glow_image = entry[1]
 	var/image/hide_image = entry[2]
 	var/turf/A = glow_image.loc
-	TEST_ASSERT(isturf(A) && H.seen_keys["[A.x]:[A.y]"], "the hidden light's glow stands on a turf the eye saw")
+	TEST_ASSERT(isturf(A) && H.seen[A], "the hidden light's glow stands on a turf the eye saw")
 	TEST_ASSERT(max(abs(A.x - LT.x), abs(A.y - LT.y)) <= CEILING(S.light_range, 1), "it stands within the light's range")
 	TEST_ASSERT_EQUAL(A.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "its x offset puts it on the light")
 	TEST_ASSERT_EQUAL(A.y + (glow_image.pixel_y - S.glow.pixel_y) / WORLD_ICON_SIZE, LT.y, "its y offset puts it on the light")
@@ -405,6 +405,202 @@
 			break
 	TEST_ASSERT_NULL(H.entry_of(S), "clear of the keep box the glow is dropped")
 	TEST_ASSERT(GLOB.client_glow_holder_dropped > dropped, "leaving the keep range drops it")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// The eye walks (a turf at a time) from `A` away from the light `LT` until `entry_of(S)` is gone or `limit` chunks were crossed. Returns the turf it ended on, or null.
+/datum/unit_test/proc/client_glow_walk_away(datum/client_glow_holder/H, datum/light_source/S, turf/A, turf/LT, limit = 12)
+	var/step = A.x > LT.x ? 1 : -1
+	var/turf/at = A
+	for(var/i in 1 to limit * CLIENT_GLOW_CHUNK)
+		var/turf/next = locate(at.x + step, at.y, at.z)
+		if(!next)
+			return null
+		at = next
+		H.view_at(at, 7, 7)
+		if(!H.entry_of(S))
+			return at
+	return null
+
+/// Reuse: a glow dropped on the walk away blanks its images into the holder's pool (no loc, picture, plane, colour, alpha or offset left), and the glow
+/// acquired next takes the very same image objects, written afresh whatever was left on them. The keep box is two chunks past the reach box: a walk back
+/// and forth inside it makes and drops nothing at all.
+/datum/unit_test/dq_client_glow_holder_reuses_dropped_images
+
+/datum/unit_test/dq_client_glow_holder_reuses_dropped_images/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	var/turf/A = client_glow_test_eye(LT)
+	var/list/old = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(old, "held from the first chunk")
+	var/image/old_glow = old[1]
+	var/image/old_hide = old[2]
+	TEST_ASSERT_EQUAL(CLIENT_GLOW_KEEP_CHUNKS, 2, "the keep box is two chunks past the reach box")
+	var/step = (A.x > LT.x ? 1 : -1) * CLIENT_GLOW_CHUNK
+	var/made = GLOB.client_glow_holder_made
+	var/dropped = GLOB.client_glow_holder_dropped
+	var/turf/B = locate(A.x + step, A.y, A.z)
+	var/turf/C = locate(A.x + 2 * step, A.y, A.z)
+	TEST_ASSERT(B && C, "the map has two chunks past the eye")
+	for(var/i in 1 to 3)
+		H.view_at(C, 7, 7)
+		H.view_at(B, 7, 7)
+		H.view_at(A, 7, 7)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_made, made, "two chunks out and back makes no glow")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_dropped, dropped, "two chunks out and back drops no glow")
+	TEST_ASSERT_EQUAL(H.entry_of(S)[1], old_glow, "the same glow image all the way")
+	// Out of the keep box: dropped, its images blank in the pool.
+	var/turf/far = client_glow_walk_away(H, S, A, LT)
+	TEST_ASSERT_NOTNULL(far, "walking away drops the glow within a dozen chunks")
+	TEST_ASSERT_EQUAL(H.pool_sizes()[1], 1, "the glow image is pooled")
+	TEST_ASSERT_EQUAL(H.pool_sizes()[2], 1, "the hide image is pooled")
+	TEST_ASSERT_NULL(old_glow.loc, "a pooled glow image is anchored to nothing")
+	TEST_ASSERT_NULL(old_hide.loc, "a pooled hide image is anchored to nothing")
+	TEST_ASSERT_NULL(old_glow.icon, "no picture left")
+	TEST_ASSERT_NULL(old_glow.color, "no colour left")
+	TEST_ASSERT_EQUAL(old_glow.alpha, 255, "no alpha left")
+	TEST_ASSERT_EQUAL(old_glow.pixel_x, 0, "no offset left")
+	TEST_ASSERT_EQUAL(old_glow.pixel_y, 0, "no offset left")
+	TEST_ASSERT(!(old_glow in H.images()), "a pooled image is not held")
+	// Dirty the pooled images as a careless user might: acquiring must overwrite every one of these.
+	old_glow.color = "#12ab34"
+	old_glow.alpha = 17
+	old_glow.pixel_x = 99
+	old_glow.pixel_y = -99
+	old_glow.plane = 3
+	old_glow.icon = 'icons/effects/light_overlays/light_96.dmi'
+	image_anchor(old_glow, LT)
+	var/reused = GLOB.client_glow_holder_reused
+	made = GLOB.client_glow_holder_made
+	H.view_at(A, 7, 7)
+	var/list/entry = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(entry, "acquired again on the way back")
+	TEST_ASSERT_EQUAL(entry[1], old_glow, "the glow image is the pooled one")
+	TEST_ASSERT_EQUAL(entry[2], old_hide, "the hide image is the pooled one")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_reused, reused + 2, "both images count as reused")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_made, made + 1, "and the glow counts as put on the client")
+	TEST_ASSERT_EQUAL(H.pool_sizes()[1], 0, "the pool is empty again")
+	var/image/glow_image = entry[1]
+	var/image/hide_image = entry[2]
+	var/turf/stand = glow_image.loc
+	TEST_ASSERT(isturf(stand) && H.seen[stand], "it stands on a turf the eye saw")
+	TEST_ASSERT_EQUAL(glow_image.plane, S.glow.plane, "no stale plane")
+	TEST_ASSERT_EQUAL(glow_image.color, S.glow.color, "no stale colour")
+	TEST_ASSERT_EQUAL(glow_image.alpha, S.glow.alpha, "no stale alpha")
+	TEST_ASSERT_EQUAL(stand.x + (glow_image.pixel_x - S.glow.pixel_x) / WORLD_ICON_SIZE, LT.x, "its x offset puts it on the light")
+	TEST_ASSERT_EQUAL(stand.y + (glow_image.pixel_y - S.glow.pixel_y) / WORLD_ICON_SIZE, LT.y, "its y offset puts it on the light")
+	TEST_ASSERT(glow_image.icon != 'icons/effects/light_overlays/light_96.dmi' || S.glow.icon == 'icons/effects/light_overlays/light_96.dmi', "no stale picture")
+	TEST_ASSERT_EQUAL(glow_image.blend_mode, BLEND_ADD, "still adds")
+	TEST_ASSERT(hide_image.loc == S.glow && hide_image.override, "the hide image rides the real glow again")
+	spent(H)
+	TEST_ASSERT_EQUAL(H.pool_sizes()[1] + H.pool_sizes()[2], 0, "a holder that is gone keeps no pool")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// The pool is bounded: past CLIENT_GLOW_POOL_MAX a dropped image is let go.
+/datum/unit_test/dq_client_glow_holder_pool_is_bounded
+
+/datum/unit_test/dq_client_glow_holder_pool_is_bounded/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/datum/client_glow_holder/H = got[2]
+	var/obj/effect/overlay/client_glow/G = allocate(/obj/effect/overlay/client_glow, run_loc_floor_bottom_left)
+	var/list/entries = list()
+	for(var/i in 1 to CLIENT_GLOW_POOL_MAX + 5)
+		entries += list(H.acquire_entry(G, TRUE))
+	for(var/list/entry as anything in entries)
+		H.release_entry(entry)
+	TEST_ASSERT_EQUAL(H.pool_sizes()[1], CLIENT_GLOW_POOL_MAX, "the glow pool stops at its cap")
+	TEST_ASSERT_EQUAL(H.pool_sizes()[2], CLIENT_GLOW_POOL_MAX, "the hide pool stops at its cap")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// The delta crossing is the full scan's answer: running straight past a light, turf by turf, it is held whenever it overlaps the reach box, is never held clear
+/// of the keep box, is acquired only by the reach box, and while held keeps one and the same image.
+/datum/unit_test/dq_client_glow_holder_straight_run_matches_boxes
+
+/datum/unit_test/dq_client_glow_holder_straight_run_matches_boxes/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	var/turf/A = client_glow_test_eye(LT)
+	var/step = A.x > LT.x ? 1 : -1 // away from the light
+	var/r = CEILING(S.light_range, 1)
+	var/held_run = 0
+	var/was_held = TRUE
+	var/image/last_image
+	var/reused = GLOB.client_glow_holder_reused
+	for(var/i in 0 to 14 * CLIENT_GLOW_CHUNK)
+		var/turf/at = locate(A.x + step * 30 - step * i, A.y, A.z) // starts well clear of the light and runs toward it and past it
+		if(!at)
+			continue
+		H.view_at(at, 7, 7)
+		var/list/reach = H.reach
+		var/list/keep = H.keep_reach
+		var/in_reach = !(LT.x + r < reach[1] || LT.x - r > reach[3] || LT.y + r < reach[2] || LT.y - r > reach[4])
+		var/in_keep = !(LT.x + r < keep[1] || LT.x - r > keep[3] || LT.y + r < keep[2] || LT.y - r > keep[4])
+		var/list/entry = H.entry_of(S)
+		if(in_reach)
+			TEST_ASSERT_NOTNULL(entry, "a light overlapping the reach box with the eye at [at.x],[at.y] is held")
+		if(!in_keep)
+			TEST_ASSERT_NULL(entry, "a light clear of the keep box with the eye at [at.x],[at.y] is not held")
+		if(entry)
+			held_run++
+			TEST_ASSERT(was_held || in_reach, "a light is acquired only by the reach box (eye at [at.x],[at.y])")
+			if(was_held && last_image)
+				TEST_ASSERT_EQUAL(entry[1], last_image, "the image is never replaced while held (eye at [at.x],[at.y])")
+			last_image = entry[1]
+		else
+			last_image = null
+		was_held = !!entry
+	TEST_ASSERT(held_run > 0, "the run held the light")
+	TEST_ASSERT(GLOB.client_glow_holder_reused > reused, "a glow taken up again after it was dropped reuses its images")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A light made after a crossing that walked no chunk is held at once (by its own event), and one that goes out is dropped without a crossing.
+/datum/unit_test/dq_client_glow_holder_skipped_scan_sees_new_light
+
+/datum/unit_test/dq_client_glow_holder_skipped_scan_sees_new_light/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	var/turf/A = client_glow_test_eye(LT)
+	var/away = (A.x > LT.x ? 1 : -1) * CLIENT_GLOW_CHUNK
+	var/turf/B = locate(A.x + away, A.y, A.z)
+	TEST_ASSERT_NOTNULL(B, "a chunk further from the light exists")
+	var/lights = 0
+	for(var/key in GLOB.client_glow_chunks)
+		lights += length(GLOB.client_glow_chunks[key])
+	var/skipped = GLOB.client_glow_holder_scans_skipped
+	H.view_at(B, 7, 7)
+	if(lights == 1)
+		TEST_ASSERT_EQUAL(GLOB.client_glow_holder_scans_skipped, skipped + 1, "a crossing with no light near its moved edges walks no chunk")
+	TEST_ASSERT_NOTNULL(H.entry_of(S), "the first light is still kept")
+	var/obj/machinery/light/N = allocate(/obj/machinery/light, B)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NOTNULL(N.light?.glow, "the new light glows")
+	var/list/entry = H.entry_of(N.light)
+	TEST_ASSERT_NOTNULL(entry, "a light that appears after a crossing is picked up with no crossing")
+	var/image/new_glow = entry?[1]
+	TEST_ASSERT_EQUAL(new_glow?.loc, B, "it stands on its own turf, which the eye sees")
+	var/datum/light_source/N_light = N.light
+	qdel(N)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NULL(H.entry_of(N_light), "a light that goes out is dropped with no crossing")
 	spent(H)
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)

@@ -160,6 +160,18 @@ do { \
 #define CLIENT_GLOW_CHUNK 8
 /// The longest reach a glow is drawn and indexed for, in turfs.
 #define CLIENT_GLOW_MAX_RANGE 6
+/// How many chunks past the reach box a held glow is kept before it is dropped (the keep box). A glow is acquired by the reach box alone, so this
+/// widens only what is kept: a walk back over this many chunks makes and drops nothing. The held count grows with the keep box's area, which is
+/// (chunk + 2 * view half + 2 * keep + 2 * reach range) squared: for the play log's 15x15 view, 2 chunks is 1.7 times the area of 1 (the 111-133 glows held
+/// at 1 chunk come to about 190-230, under 460 client images) and 3 chunks would be 2.7 times (about 300-360 glows, 720 images), so 2 is the bound chosen.
+#define CLIENT_GLOW_KEEP_CHUNKS 2
+/// The most dropped glow images (and, apart, hide images) one holder keeps to reuse; past it a dropped image is simply let go.
+#define CLIENT_GLOW_POOL_MAX 64
+/// The bits scan_delta() tests per axis (glow_axis_bits()).
+#define GLOW_BIT_RING_OVER 1
+#define GLOW_BIT_RING_INSIDE 2
+#define GLOW_BIT_DROP_OVER 4
+#define GLOW_BIT_DROP_INSIDE 8
 /// Where iconforge writes baked shadow masks before they enter the resource cache.
 #define CLIENT_GLOW_MASK_DIR "data/client_glow_masks/"
 /// Baked shadow masks kept; shapes asked for at once; bakes running at once.

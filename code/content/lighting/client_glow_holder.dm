@@ -4,7 +4,12 @@
 //   - where it stands: on the light's own turf when the eye saw that turf at the crossing, else on the reached turf the eye saw that is
 //     nearest the eye, offset to the light's place. Playtesting showed an image drawn far from where it stands is culled, so the offset stays within the light's range.
 //   - the reach box: the turfs seen from some eye position in the chunk. Every light whose reach overlaps it is held, and stays held until its reach
-//     leaves the keep box (the reach box grown by one chunk), so a walk back and forth over a chunk edge changes no image.
+//     leaves the keep box (the reach box grown by CLIENT_GLOW_KEEP_CHUNKS chunks), so a walk back and forth over that many chunks changes no image.
+//   - a crossing walks only the chunks where a light's status can have changed. Light events (client_glow_apply() and friends) keep every held copy
+//     current against the boxes as they stand, so only the boxes moving can change a status: a chunk is walked when the new reach box now overlaps some
+//     light it indexes that the old one did not (a light to acquire), or the old keep box overlapped it and the new one no longer holds all of it (a light
+//     to drop), or it newly entered the prefetch ring. Every other chunk is skipped, and a crossing with no light in those chunks walks nothing.
+//   - a dropped glow's images go to a small pool (CLIENT_GLOW_POOL_MAX) reset to a blank image, and the next glow acquired takes from it.
 //   - a held light is a glow image, baked to its reach shape once that is ready (client_shadow.dm), and an override image that hides
 //     the real glow from this client, so it is never drawn twice.
 //
@@ -17,6 +22,11 @@ GLOBAL_VAR_INIT(client_glow_holder_made, 0)
 GLOBAL_VAR_INIT(client_glow_holder_updated, 0)
 GLOBAL_VAR_INIT(client_glow_holder_dropped, 0)
 GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
+/// Glows put on a client that took their images from a holder's pool instead of making them.
+GLOBAL_VAR_INIT(client_glow_holder_reused, 0)
+/// Crossings that walked no chunk at all (nothing near the moved edges), and held glows whose standing turf a crossing moved.
+GLOBAL_VAR_INIT(client_glow_holder_scans_skipped, 0)
+GLOBAL_VAR_INIT(client_glow_holder_stands_moved, 0)
 
 /// One viewer's held glows. A client owns one (client.glow_holder); tests and benchmarks make one with no client.
 /datum/client_glow_holder
@@ -27,11 +37,16 @@ GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
 	var/z = 0
 	/// The reach box, inclusive turf coordinates: list(x0, y0, x1, y1).
 	var/list/reach
-	/// The keep box: the reach box grown by one chunk each way. A glow is acquired when its reach overlaps `reach` but kept while it overlaps this,
-	/// so crossing a chunk edge and walking back makes and drops nothing: a chunk step moves the reach box by exactly the margin.
+	/// The keep box: the reach box grown by CLIENT_GLOW_KEEP_CHUNKS chunks each way. A glow is acquired when its reach overlaps `reach` but kept while it
+	/// overlaps this, so crossing a chunk edge and walking back makes and drops nothing: a chunk step moves the reach box by less than the margin.
 	var/list/keep_reach
-	/// "x:y" -> TRUE for the turfs the eye saw at its last chunk crossing: decides where a held glow stands.
-	var/list/seen_keys
+	/// TRUE once a scan has made the held glows match `reach` and `keep_reach`: the next crossing walks only the chunks where that can have changed. False
+	/// after every drop-all, a login wipe and before the first hold, so the crossing after them walks the whole region.
+	var/scanned = FALSE
+	/// turf -> TRUE for the turfs the eye saw at its last chunk crossing: decides where a held glow stands.
+	var/list/seen
+	/// The radius of the sight query that made `seen`.
+	var/seen_range = 0
 	var/eye_x = 0
 	var/eye_y = 0
 	/// TRUE once this viewer's first hold has been logged (the load-in timeline).
@@ -50,6 +65,10 @@ GLOBAL_VAR_INIT(client_glow_holder_recomputes, 0)
 	var/list/delivering
 	/// Baked shape -> TRUE once this client has had time to receive its PNG. Lazy.
 	var/list/delivered
+	/// Blank glow images and blank hide images of dropped glows, up to CLIENT_GLOW_POOL_MAX each, for the next glows acquired. Lazy; borrowed from no one: an
+	/// image here is on no client, anchored to nothing, and carries nothing of the glow it served.
+	var/list/glow_pool
+	var/list/hide_pool
 
 /client
 	/// This client's held off-screen glows (client lighting only).
@@ -86,7 +105,10 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	join_registries()
 
 /datum/client_glow_holder/on_destroy(force)
-	drop_all()
+	drop_all("holder destroyed")
+	glow_pool = null
+	hide_pool = null
+	seen = null
 	client = null
 	..()
 
@@ -124,6 +146,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(!H)
 		return
 	H.sig = null
+	H.scanned = FALSE
 	H.held = null
 	H.held_shape = null
 	H.cut_shape = null
@@ -156,44 +179,55 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		drop_all("darkness sight changed: unlit [unlit]->[now_unlit], unmasked [unmasked]->[now_unmasked]") // the entries have the other shape
 		unlit = now_unlit
 		unmasked = now_unmasked
+	if(z != eye.z)
+		scanned = FALSE // the old boxes are on another level
+		if(LAZYLEN(held))
+			drop_all("z-level changed [z]->[eye.z]")
+		glow_pool = null // blank images could be kept, but a level change is the one moment a holder's reuse is over
+		hide_pool = null
+	var/started = TICK_USAGE_REAL
+	var/delta = scanned
+	var/list/old_reach = reach
+	var/list/old_keep = keep_reach
 	sig = new_sig
 	z = eye.z
 	GLOB.client_glow_holder_recomputes++
-	var/started = REALTIMEOFDAY
 	var/made_before = GLOB.client_glow_holder_made
 	var/dropped_before = GLOB.client_glow_holder_dropped
+	var/reused_before = GLOB.client_glow_holder_reused
+	var/moved_before = GLOB.client_glow_holder_stands_moved
 	var/ex0 = cx * CLIENT_GLOW_CHUNK + 1
 	var/ey0 = cy * CLIENT_GLOW_CHUNK + 1
 	var/ex1 = ex0 + CLIENT_GLOW_CHUNK - 1
 	var/ey1 = ey0 + CLIENT_GLOW_CHUNK - 1
+	var/margin = CLIENT_GLOW_KEEP_CHUNKS * CLIENT_GLOW_CHUNK
 	reach = list(ex0 - hx, ey0 - hy, ex1 + hx, ey1 + hy)
-	keep_reach = list(reach[1] - CLIENT_GLOW_CHUNK, reach[2] - CLIENT_GLOW_CHUNK, reach[3] + CLIENT_GLOW_CHUNK, reach[4] + CLIENT_GLOW_CHUNK)
+	keep_reach = list(reach[1] - margin, reach[2] - margin, reach[3] + margin, reach[4] + margin)
+	if(delta && (old_keep[3] < keep_reach[1] || old_keep[1] > keep_reach[3] || old_keep[4] < keep_reach[2] || old_keep[2] > keep_reach[4]))
+		drop_all("view jumped clear of the old keep box") // a teleport: nothing held can stay, and the images go to the pool for the glows of the new place
+		delta = FALSE
 	eye_x = eye.x
 	eye_y = eye.y
-	seen_keys = list()
+	var/seen_started = TICK_USAGE_REAL
+	seen = list()
+	seen_range = max(hx, hy)
 	if(!unlit)
-		for(var/turf/T as anything in sight_view_turfs(eye, max(hx, hy)))
-			seen_keys["[T.x]:[T.y]"] = TRUE
-	// Candidates: lights indexed in the glow chunks a reach could overlap the reach box from.
-	var/list/keep = list()
-	// One chunk further out than a reach can matter: those lights are not held, but their shapes are readied for the next crossing.
-	var/c0x = round((reach[1] - CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) - 1
-	var/c1x = round((reach[3] + CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) + 1
-	var/c0y = round((reach[2] - CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) - 1
-	var/c1y = round((reach[4] + CLIENT_GLOW_MAX_RANGE - 1) / CLIENT_GLOW_CHUNK) + 1
-	for(var/gx in c0x to c1x)
-		for(var/gy in c0y to c1y)
-			for(var/datum/light_source/L as anything in GLOB.client_glow_chunks["[z],[gx],[gy]"])
-				if(consider(L))
-					keep[L.glow_holder_key()] = TRUE
-				else if(!unlit && !unmasked && L.glow_mask_key && !L.glow_plain)
-					client_glow_mask_prefetch(L.glow_mask_key)
-					var/ahead = GLOB.client_glow_baker.icons[L.glow_mask_key]
-					if(ahead)
-						deliver(L.glow_mask_key, ahead) // on the client before the crossing that holds it
-	for(var/h in LAZYCOPY(held))
-		if(!keep[h])
-			drop_handle(h)
+		for(var/turf/T as anything in sight_view_turfs(eye, seen_range))
+			seen[T] = TRUE
+	var/scan_started = TICK_USAGE_REAL
+	var/list/walk_counts = list(0, 0) // chunks with lights walked, lights examined
+	if(delta)
+		scan_delta(old_reach, old_keep, walk_counts)
+	else
+		scan_all(walk_counts)
+	var/chunks = walk_counts[1]
+	var/lights = walk_counts[2]
+	if(delta && !chunks)
+		GLOB.client_glow_holder_scans_skipped++
+	scanned = TRUE
+	var/stands_started = TICK_USAGE_REAL
+	refresh_stands()
+	var/stands_ended = TICK_USAGE_REAL
 	if(!first_hold_logged && client)
 		first_hold_logged = TRUE
 		log_world("client glow holder: [client.ckey] first hold at [time2text(world.realtime, "hh:mm:ss")], [LAZYLEN(held)] glow(s)") // the load-in timeline
@@ -201,11 +235,115 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		log_world(client_glow_census())
 	if(client && length(client.images) < LAZYLEN(held))
 		log_world("client glow holder: [client.ckey] has [length(client.images)] images for [LAZYLEN(held)] held glows: something took them off the client")
-	// This crossing's cost: the server time it took, and the glows (two client.images each) the client was sent or told to forget. The server time is
-	// server cost; the images are the client's (the map FPS is only on the client, so this is as near as the server can say).
+	// This crossing's cost: the server time it took (a tick_usage delta, so well under a decisecond), and the glows (two client.images each) the client was sent or
+	// told to forget. The server time is server cost; the images are the client's (the map FPS is only on the client, so this is as near as the server can say).
 	var/made = GLOB.client_glow_holder_made - made_before
 	var/dropped = GLOB.client_glow_holder_dropped - dropped_before
-	log_world("client glow holder: [client?.ckey] entered chunk [new_sig] from eye [eye.type] at [eye.x],[eye.y] (mob [viewer ? "[viewer.type]" : "none"]), holding [LAZYLEN(held)] glow(s), [LAZYLEN(held) - made] kept[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [made] made and [dropped] dropped this crossing in [round((REALTIMEOFDAY - started) * 100)] ms, [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
+	var/reused = GLOB.client_glow_holder_reused - reused_before
+	log_world("client glow holder: [client?.ckey] entered chunk [new_sig] from eye [eye.type] at [eye.x],[eye.y] (mob [viewer ? "[viewer.type]" : "none"]), holding [LAZYLEN(held)] glow(s), [LAZYLEN(held) - made] kept[unlit ? " (hidden only, viewer sees no darkness)" : (unmasked ? " (unmasked, ghost)" : "")], [made] made ([reused] images reused from the pool) and [dropped] dropped this crossing, pool [length(glow_pool)]/[length(hide_pool)], [delta ? (chunks ? "scan delta: [chunks] chunk(s), [lights] light(s)" : "scan skipped: no light near the moved edges") : "scan full: [chunks] chunk(s), [lights] light(s)"], [GLOB.client_glow_holder_stands_moved - moved_before] stand(s) moved, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms (sight [round(TICK_DELTA_TO_MS(scan_started - seen_started), 0.01)], scan [round(TICK_DELTA_TO_MS(stands_started - scan_started), 0.01)], stands [round(TICK_DELTA_TO_MS(stands_ended - stands_started), 0.01)]), [GLOB.client_glow_holder_made] made and [GLOB.client_glow_holder_dropped] dropped so far")
+
+/// Walks the lights of chunk (gx, gy) on this level: each is acquired, updated or dropped against the boxes; one that is not held may have its shape sent ahead.
+/// `keep` (a full scan) collects the held keys. Returns how many lights it examined.
+/datum/client_glow_holder/proc/scan_chunk(gx, gy, list/keep)
+	var/list/members = GLOB.client_glow_chunks["[z],[gx],[gy]"]
+	if(!members)
+		return 0
+	for(var/datum/light_source/L as anything in members)
+		if(consider(L))
+			if(keep)
+				keep[L.glow_holder_key] = TRUE
+		else if(!unlit && !unmasked && L.glow_mask_key && !L.glow_plain)
+			client_glow_mask_prefetch(L.glow_mask_key)
+			var/ahead = GLOB.client_glow_baker.icons[L.glow_mask_key]
+			if(ahead)
+				deliver(L.glow_mask_key, ahead) // on the client before the crossing that holds it
+	return length(members)
+
+/// The first crossing, a jump or any crossing after a drop-all: every chunk a reach could overlap the reach box from, and the ring one chunk further out
+/// (those lights are not held, but their shapes are readied for the next crossing). Nothing is held when this runs, so `keep` only guards against a stray entry.
+/datum/client_glow_holder/proc/scan_all(list/counts)
+	var/list/keep = list()
+	var/ring = CLIENT_GLOW_MAX_RANGE + CLIENT_GLOW_CHUNK
+	for(var/gx in round((reach[1] - ring - 1) / CLIENT_GLOW_CHUNK) to round((reach[3] + ring - 1) / CLIENT_GLOW_CHUNK))
+		for(var/gy in round((reach[2] - ring - 1) / CLIENT_GLOW_CHUNK) to round((reach[4] + ring - 1) / CLIENT_GLOW_CHUNK))
+			var/walked = scan_chunk(gx, gy, keep)
+			if(walked)
+				counts[1]++
+				counts[2] += walked
+	for(var/h in LAZYCOPY(held))
+		if(!keep[h])
+			drop_handle(h)
+
+/// A crossing from the boxes `old_reach`/`old_keep` to the current ones. Light events keep every held glow current against the boxes as they stood, so a
+/// light's status changes only where the boxes moved. A chunk's lights have their extents inside its zone (the chunk grown by the longest reach, CLIENT_GLOW_MAX_RANGE),
+/// so a chunk is walked when:
+///   - acquire and ring: its ring zone (the zone one chunk wider, the lights whose shape is readied ahead) meets the new reach box somewhere the old one did not
+///     cover (a light in it may overlap the new box and not the old one, so not be held, or its shape wants sending ahead);
+///   - drop: its zone meets the old keep box somewhere the new one does not cover (a light in it may be held and now clear of the keep box).
+/// The tests run per axis and combine as bits: the part of a zone inside a box is a rectangle, and it lies inside another box when it does on both axes.
+/datum/client_glow_holder/proc/scan_delta(list/old_reach, list/old_keep, list/counts)
+	var/range = CLIENT_GLOW_MAX_RANGE
+	var/chunk = CLIENT_GLOW_CHUNK
+	var/ring = range + chunk
+	var/gx0 = min(round((reach[1] - ring - 1) / chunk), round((old_keep[1] - range - 1) / chunk))
+	var/gx1 = max(round((reach[3] + ring - 1) / chunk), round((old_keep[3] + range - 1) / chunk))
+	var/gy0 = min(round((reach[2] - ring - 1) / chunk), round((old_keep[2] - range - 1) / chunk))
+	var/gy1 = max(round((reach[4] + ring - 1) / chunk), round((old_keep[4] + range - 1) / chunk))
+	var/list/ybits = list()
+	for(var/gy in gy0 to gy1)
+		ybits += glow_axis_bits(gy * chunk + 1 - range, gy * chunk + chunk + range, chunk, reach[2], reach[4], old_reach[2], old_reach[4], old_keep[2], old_keep[4], keep_reach[2], keep_reach[4])
+	for(var/gx in gx0 to gx1)
+		var/xbits = glow_axis_bits(gx * chunk + 1 - range, gx * chunk + chunk + range, chunk, reach[1], reach[3], old_reach[1], old_reach[3], old_keep[1], old_keep[3], keep_reach[1], keep_reach[3])
+		if(!xbits)
+			continue
+		var/gy = gy0
+		for(var/bits in ybits)
+			var/both = xbits & bits
+			if(((both & GLOW_BIT_RING_OVER) && !(both & GLOW_BIT_RING_INSIDE)) || ((both & GLOW_BIT_DROP_OVER) && !(both & GLOW_BIT_DROP_INSIDE)))
+				var/walked = scan_chunk(gx, gy)
+				if(walked)
+					counts[1]++
+					counts[2] += walked
+			gy++
+
+/// Brings every held glow's standing turf in line with what the eye saw at this crossing. A glow stands on its own turf when the eye saw it, else on a seen turf of its
+/// reach: one it already stands on stays valid while that turf is seen, so only a glow whose turf was left unseen (or whose own turf came into sight) is looked at again.
+/// Reads only the images and the real glow they hide (its loc is the light's turf); the light is looked up for the few that need a new turf.
+/datum/client_glow_holder/proc/refresh_stands()
+	for(var/h in held)
+		var/list/entry = held[h]
+		if(length(entry) < 2)
+			continue
+		var/image/glow_image = entry[1]
+		var/image/hide_image = entry[2]
+		var/obj/effect/overlay/client_glow/G = hide_image.loc
+		if(!istype(G))
+			continue
+		var/turf/S = G.loc
+		if(!isturf(S))
+			continue
+		var/turf/at = glow_image.loc
+		if(seen[S] ? (at == S) : (at != S && seen[at]))
+			continue
+		var/datum/light_source/L = handle_get(h)
+		if(!istype(L) || QDELETED(L))
+			continue
+		var/turf/stand_on = stand_turf(L, S, at)
+		if(stand_on != at)
+			restand(glow_image, G, S, stand_on)
+
+/// Puts `glow_image` on `stand_on`, offset so it draws where the real glow (standing on `S`) would. Only a changed value is written: an assignment to an
+/// image the client holds can cost a client update even when nothing differs.
+/datum/client_glow_holder/proc/restand(image/glow_image, obj/effect/overlay/client_glow/G, turf/S, turf/stand_on)
+	var/px = (S.x - stand_on.x) * WORLD_ICON_SIZE + G.pixel_x
+	var/py = (S.y - stand_on.y) * WORLD_ICON_SIZE + G.pixel_y
+	if(glow_image.pixel_x != px)
+		glow_image.pixel_x = px
+	if(glow_image.pixel_y != py)
+		glow_image.pixel_y = py
+	if(glow_image.loc != stand_on)
+		image_anchor(glow_image, stand_on)
+		GLOB.client_glow_holder_stands_moved++
 
 /// Shows, updates or drops this viewer's copy of light `L`. Returns TRUE while it is held.
 /datum/client_glow_holder/proc/consider(datum/light_source/L)
@@ -216,38 +354,28 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(!S || S.z != z)
 		drop(L)
 		return FALSE
-	if(unlit)
-		return consider_unlit(L, S)
-	var/r = CEILING(L.light_range, 1)
-	var/obj/effect/overlay/client_glow/G = L.glow
-	var/h = L.glow_holder_key()
+	var/h = L.glow_holder_key || L.glow_holder_key()
 	var/list/entry = LAZYACCESS(held, h)
-	if(!reach_overlaps(S, r, entry ? keep_reach : reach))
-		drop(L) // not held yet and its reach never comes on screen from this chunk, or held and now clear of the keep box
+	if(unlit)
+		return consider_unlit(L, S, h, entry)
+	var/r = CEILING(L.light_range, 1)
+	var/list/box = entry ? keep_reach : reach
+	if(S.x + r < box[1] || S.x - r > box[3] || S.y + r < box[2] || S.y - r > box[4])
+		if(entry)
+			drop_handle(h) // held and now clear of the keep box; not held and its reach never comes on screen from this chunk
 		return FALSE
-	var/image/glow_image
-	if(!entry)
-		glow_image = image(G.icon, null, G.icon_state)
-		glow_image.layer = G.layer
-		glow_image.blend_mode = BLEND_ADD
-		glow_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
-		glow_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		var/image/hide_image = image(null) // overrides the real glow for this viewer: never drawn twice
-		hide_image.override = TRUE
-		image_anchor(hide_image, G)
-		entry = list(glow_image, hide_image)
-		LAZYSET(held, h, entry)
-		client_images_add(client, entry)
-		GLOB.client_glow_holder_made++
+	var/obj/effect/overlay/client_glow/G = L.glow
+	var/fresh = !entry
+	if(fresh)
+		entry = acquire_entry(G, TRUE)
 	else
-		glow_image = entry[1]
 		GLOB.client_glow_holder_updated++
-	var/turf/stand_on = stand_turf(L, S)
-	if(glow_image.loc != stand_on)
-		image_anchor(glow_image, stand_on)
+	var/image/glow_image = entry[1]
+	var/turf/stand_on = stand_turf(L, S, fresh ? null : glow_image.loc)
 	var/px = (S.x - stand_on.x) * WORLD_ICON_SIZE + G.pixel_x
 	var/py = (S.y - stand_on.y) * WORLD_ICON_SIZE + G.pixel_y
-	// Only a changed value is written: an assignment to an image the client holds can cost a client update even when nothing differs.
+	// Only a changed value is written: an assignment to an image the client holds can cost a client update even when nothing differs. A pooled image
+	// was blanked when it was dropped, so each of these differs from the glow's and is written: nothing of its last glow can remain.
 	if(glow_image.plane != G.plane)
 		glow_image.plane = G.plane
 	if(glow_image.color != G.color)
@@ -259,32 +387,102 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(glow_image.pixel_y != py)
 		glow_image.pixel_y = py
 	apply_shape(L, h, glow_image, G)
+	if(fresh)
+		LAZYSET(held, h, entry)
+		client_images_add(client, entry)
+	if(glow_image.loc != stand_on)
+		image_anchor(glow_image, stand_on)
 	return TRUE
 
-/// TRUE when a light at `S` with reach `r` overlaps `box` (list(x0, y0, x1, y1)).
-/datum/client_glow_holder/proc/reach_overlaps(turf/S, r, list/box)
-	return !(S.x + r < box[1] || S.x - r > box[3] || S.y + r < box[2] || S.y - r > box[4])
+/// A glow image and its hide image for a glow of `G`: from the pool when it has them, else new. Unlit viewers (`with_glow` FALSE) take a hide image only.
+/// Everything that can differ between glows (picture, plane, colour, alpha, offset, loc) is left blank here for the caller to set.
+/datum/client_glow_holder/proc/acquire_entry(obj/effect/overlay/client_glow/G, with_glow)
+	var/image/hide_image
+	if(length(hide_pool))
+		hide_image = hide_pool[length(hide_pool)]
+		hide_pool.len--
+		GLOB.client_glow_holder_reused++
+	else
+		hide_image = image(null) // overrides the real glow for this viewer: never drawn twice
+		hide_image.override = TRUE
+	image_anchor(hide_image, G)
+	if(!with_glow)
+		GLOB.client_glow_holder_made++
+		return list(hide_image)
+	var/image/glow_image
+	if(length(glow_pool))
+		glow_image = glow_pool[length(glow_pool)]
+		glow_pool.len--
+		GLOB.client_glow_holder_reused++
+	else
+		glow_image = image(G.icon, null, G.icon_state)
+		glow_image.blend_mode = BLEND_ADD
+		glow_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
+		glow_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	glow_image.layer = G.layer
+	GLOB.client_glow_holder_made++
+	return list(glow_image, hide_image)
 
-/// Where light `L`'s held glow stands: its own turf if the eye saw it, else the turf of its reach the eye saw that is nearest the eye.
-/datum/client_glow_holder/proc/stand_turf(datum/light_source/L, turf/S)
-	if(seen_keys["[S.x]:[S.y]"] || !L.glow_reach_origin)
+/// Takes a dropped glow's images (already off the client) back to the pool, blank: no picture, plane, colour, alpha, offset or loc of the glow they showed.
+/datum/client_glow_holder/proc/release_entry(list/entry)
+	for(var/image/I as anything in entry)
+		image_anchor(I, null)
+		I.icon = null
+		I.icon_state = null
+		I.plane = initial(I.plane)
+		I.color = null
+		I.alpha = initial(I.alpha)
+		I.pixel_x = 0
+		I.pixel_y = 0
+	if(length(entry) == 2)
+		if(length(glow_pool) < CLIENT_GLOW_POOL_MAX)
+			LAZYADD(glow_pool, entry[1])
+		if(length(hide_pool) < CLIENT_GLOW_POOL_MAX)
+			LAZYADD(hide_pool, entry[2])
+	else if(length(entry) == 1 && length(hide_pool) < CLIENT_GLOW_POOL_MAX)
+		LAZYADD(hide_pool, entry[1])
+
+/// The bits of one axis of the delta test (scan_delta()) for a chunk whose zone spans `lo`..`hi` on it and whose ring zone is one chunk wider each way.
+/proc/glow_axis_bits(lo, hi, chunk, new_reach_lo, new_reach_hi, old_reach_lo, old_reach_hi, old_keep_lo, old_keep_hi, new_keep_lo, new_keep_hi)
+	. = 0
+	var/lo_met = max(lo - chunk, new_reach_lo)
+	var/hi_met = min(hi + chunk, new_reach_hi)
+	if(lo_met <= hi_met)
+		. |= GLOW_BIT_RING_OVER
+		if(lo_met >= old_reach_lo && hi_met <= old_reach_hi)
+			. |= GLOW_BIT_RING_INSIDE
+	lo_met = max(lo, old_keep_lo)
+	hi_met = min(hi, old_keep_hi)
+	if(lo_met <= hi_met)
+		. |= GLOW_BIT_DROP_OVER
+		if(lo_met >= new_keep_lo && hi_met <= new_keep_hi)
+			. |= GLOW_BIT_DROP_INSIDE
+
+/// Where light `L`'s held glow stands: its own turf if the eye saw it; else `current` while the eye still sees it (a glow already standing on a seen turf of its
+/// reach stays); else the turf of its reach the eye saw that is nearest the eye. The search runs over the cells where the light's reach meets what the eye can
+/// see, not over the reach's keys.
+/datum/client_glow_holder/proc/stand_turf(datum/light_source/L, turf/S, turf/current = null)
+	if(seen[S] || !L.glow_reach_origin)
 		return S
+	if(current && current != S && seen[current])
+		return current
 	var/turf/O = L.glow_reach_origin
+	var/list/cells = L.glow_reach
 	var/best_x
 	var/best_y
 	var/best = INFINITY
-	for(var/key in L.glow_reach)
-		var/list/xy = splittext(key, ",")
-		var/x = O.x + text2num(xy[1])
-		var/y = O.y + text2num(xy[2])
-		if(!seen_keys["[x]:[y]"])
-			continue
-		var/dist = abs(x - eye_x) + abs(y - eye_y)
-		if(dist < best)
+	for(var/x in max(O.x - CLIENT_GLOW_MAX_RANGE, eye_x - seen_range, 1) to min(O.x + CLIENT_GLOW_MAX_RANGE, eye_x + seen_range, world.maxx))
+		for(var/y in max(O.y - CLIENT_GLOW_MAX_RANGE, eye_y - seen_range, 1) to min(O.y + CLIENT_GLOW_MAX_RANGE, eye_y + seen_range, world.maxy))
+			var/dist = abs(x - eye_x) + abs(y - eye_y)
+			if(dist >= best)
+				continue
+			var/turf/T = locate(x, y, z)
+			if(!T || !seen[T] || !cells["[x - O.x],[y - O.y]"])
+				continue
 			best = dist
 			best_x = x
 			best_y = y
-	return best == INFINITY ? S : locate(best_x, best_y, S.z)
+	return best == INFINITY ? S : locate(best_x, best_y, z)
 
 /// Gives a held glow the picture it should show: the baked cut of its shape, its previous cut while a new one bakes, or the plain sprite.
 /datum/client_glow_holder/proc/apply_shape(datum/light_source/L, h, image/glow_image, obj/effect/overlay/client_glow/G)
@@ -370,22 +568,18 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 
 /// A viewer that sees no darkness: every light its view can reach is hidden from it with a plain override image, so its client
 /// never draws the glows (a ghost sees through walls, so otherwise all of them, for no visible light).
-/datum/client_glow_holder/proc/consider_unlit(datum/light_source/L, turf/S)
+/datum/client_glow_holder/proc/consider_unlit(datum/light_source/L, turf/S, h, list/entry)
 	var/r = CEILING(L.light_range, 1)
-	var/h = L.glow_holder_key()
-	var/has = !!LAZYACCESS(held, h)
-	if(!reach_overlaps(S, r, has ? keep_reach : reach))
-		drop(L)
+	var/list/box = entry ? keep_reach : reach
+	if(S.x + r < box[1] || S.x - r > box[3] || S.y + r < box[2] || S.y - r > box[4])
+		if(entry)
+			drop_handle(h)
 		return FALSE
-	if(has)
+	if(entry)
 		return TRUE
-	var/image/hide_image = image(null)
-	hide_image.override = TRUE
-	image_anchor(hide_image, L.glow)
-	var/list/entry = list(hide_image)
+	entry = acquire_entry(L.glow, FALSE)
 	LAZYSET(held, h, entry)
 	client_images_add(client, entry)
-	GLOB.client_glow_holder_made++
 	return TRUE
 
 /// This viewer stops holding light `L`.
@@ -400,14 +594,20 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	LAZYREMOVE(held, h)
 	LAZYREMOVE(held_shape, h)
 	LAZYREMOVE(cut_shape, h)
-	client_images_remove(client, entry)
+	client_images_remove(client, entry) // first: the client index reads each image's loc to forget it
+	release_entry(entry)
 	GLOB.client_glow_holder_dropped++
 
 /datum/client_glow_holder/proc/drop_all(reason = "unspecified")
+	scanned = FALSE // nothing held matches any box now: the next crossing walks the whole region
 	if(LAZYLEN(held))
 		log_world("client glow holder: [client?.ckey] dropped all [LAZYLEN(held)] held glow(s): [reason]") // every glow gone at once shows as black with only the darksight circle
 	for(var/h in LAZYCOPY(held))
 		drop_handle(h)
+
+/// Images waiting in this viewer's pools (tests): list(glow images, hide images).
+/datum/client_glow_holder/proc/pool_sizes()
+	return list(length(glow_pool), length(hide_pool))
 
 /// This viewer's copy of light `L` (tests): list(glow image, hide image), or null.
 /datum/client_glow_holder/proc/entry_of(datum/light_source/L)
