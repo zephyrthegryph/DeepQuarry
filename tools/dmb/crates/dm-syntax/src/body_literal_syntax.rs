@@ -15,7 +15,7 @@ impl Drop for PreparedBodyLiteralSyntax{fn drop(&mut self){if let Some(body)=sel
 fn stop(a:&SettingAdmission<'_>,kind:io::ErrorKind,text:&'static str)->io::Error{a.record_operational_error(io::Error::new(kind,text));kind.into()}
 fn add(a:&SettingAdmission<'_>,x:usize,y:usize)->io::Result<usize>{x.checked_add(y).ok_or_else(||stop(a,io::ErrorKind::OutOfMemory,"body literal storage overflow"))}
 fn payload<T>(a:&SettingAdmission<'_>,v:&Vec<T>)->io::Result<usize>{v.capacity().checked_mul(size_of::<T>()).ok_or_else(||stop(a,io::ErrorKind::OutOfMemory,"body literal vector storage overflow"))}
-struct Pending<'a,'op>{body:Option<ParsedBody>,anchor:Option<SharedSettingRetention>,peaks:Option<Worklist<'a,'op,SettingRootLease>>,_cleanup:SettingRootLease}
+struct Pending<'a,'op>{body:Option<ParsedBody>,anchor:Option<SharedSettingRetention>,peaks:Option<Worklist<'a,'op,SettingRootLease>>,cleanup:SettingRootLease}
 impl Drop for Pending<'_,'_>{fn drop(&mut self){if let Some(body)=self.body.take(){drop_body_inner(body,self.anchor.take());}}}
 struct Collected<'a,'op,'body>{roots:Worklist<'a,'op,&'body Expr>,bytes:usize,statements:usize}
 fn collect<'a,'op,'body>(body:&'body ParsedBody,a:&'a SettingAdmission<'op>)->io::Result<Collected<'a,'op,'body>>{
@@ -101,7 +101,7 @@ fn input_peak(root:&Expr,a:&SettingAdmission<'_>)->io::Result<usize>{
 /// Its source-width envelope covers only failure-cleanup coordination, not a
 /// claim that all existing native parser/input allocations are globally capped.
 pub fn prepare_body_literal_syntax<'a,'op>(body:ParsedBody,cleanup:SettingRootLease,a:&'a SettingAdmission<'op>)->io::Result<PreparedBodyLiteralSyntax>{
- let mut guard=Pending{body:Some(body),anchor:None,peaks:None,_cleanup:cleanup};
+ let mut guard=Pending{body:Some(body),anchor:None,peaks:None,cleanup};
  guard.peaks=Some(Worklist::new(a)?);
  let result:io::Result<BodyLiteralAdmission>=(||{
   let collected=collect(guard.body.as_ref().unwrap(),a)?;let mut bytes=collected.bytes;let mut nodes=collected.statements;
@@ -114,7 +114,19 @@ pub fn prepare_body_literal_syntax<'a,'op>(body:ParsedBody,cleanup:SettingRootLe
   // retained with the actual literal buffers, not credited at query return.
   let cleanup_bytes=nodes.checked_mul(4*(size_of::<Expr>()+size_of::<SharedSettingRetention>()+size_of::<Statement>())).ok_or_else(||stop(a,io::ErrorKind::OutOfMemory,"body literal cleanup envelope overflow"))?;
   let retained=add(a,add(a,bytes,cleanup_bytes)?,crate::setting_expression::root_storage_envelope())?;
-  let anchor=SharedSettingRetention::new(a.reserve(retained)?);guard.anchor=Some(anchor.clone());
+  // Both cleanup envelopes protect the same destructive walk. A body
+  // being unwound has its Pending guard; after publication only the final
+  // anchor is needed. The AST payload and other worklists are separate.
+  let reusable=if a.matches_lease_domain(&guard.cleanup){guard.cleanup.bytes().min(cleanup_bytes)}else{0};
+  let lease=if reusable==0{
+   a.reserve(retained)?
+  }else{
+   // Grow before splitting: denial or cancellation must leave the entire
+   // old cleanup allowance alive until Pending has destroyed the body.
+   a.grow(&mut guard.cleanup,retained-reusable)?;
+   a.split(&mut guard.cleanup,retained)?
+  };
+  let anchor=SharedSettingRetention::new(lease);guard.anchor=Some(anchor.clone());
   for root in collected.roots.as_slice(){crate::setting_prepare::attach(root,&anchor,a)?;}
   drop(collected);
   crate::statements::complete_body_literal_normalization(guard.body.as_mut().unwrap(),a)?;

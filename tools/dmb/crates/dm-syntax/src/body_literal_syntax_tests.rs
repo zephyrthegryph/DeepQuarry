@@ -76,6 +76,43 @@ fn body_resource_refusal_is_actual_same_counter_and_fresh_input_retries(){
  let a=SettingAdmission::new(&counter,16*1024*1024,&healthy);drop(prepare(source,&a).unwrap());assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (37));
 }
 
+#[test]
+fn body_failure_cleanup_reuses_only_same_counter_cleanup_bytes() {
+ let source="/proc/p()\n    return value + value\n";
+ let initial=64*1024;
+ let base=crate::SettingChargeCounter::root_allocation_bytes();
+ let counter=crate::SettingChargeCounter::try_new(base).unwrap();
+ let high=std::cell::Cell::new(base);
+ let poll=||{high.set(high.get().max(counter.load(Ordering::Acquire)));Ok(())};
+ let a=SettingAdmission::new(&counter,1<<20,&poll);
+ let prepared=prepare_body_literal_syntax(body(source),a.reserve(initial).unwrap(),&a).unwrap();
+ let (parsed,admission)=prepared.into_parts();
+ let final_bytes=admission.anchor.bytes();
+ assert_eq!(counter.load(Ordering::Acquire),base+final_bytes);
+ let max=high.get();
+ assert!(max<base+initial+final_bytes,"old simultaneous cleanup and final grant would be denied");
+ drop_body_literal_syntax(parsed,Some(admission));
+ assert_eq!(counter.load(Ordering::Acquire),base);
+
+ let healthy=||Ok(());
+ // A checkpoint sample can miss a shorter-lived allocation between polls.
+ // Use a strict bound that demonstrably refuses the old overlap instead.
+ let tight=SettingAdmission::new(&counter,base+initial+final_bytes-1,&healthy);
+ let prepared=prepare_body_literal_syntax(body(source),tight.reserve(initial).unwrap(),&tight).unwrap();
+ let (parsed,admission)=prepared.into_parts();
+ assert_eq!(admission.anchor.bytes(),final_bytes);
+ drop_body_literal_syntax(parsed,Some(admission));
+ assert_eq!(counter.load(Ordering::Acquire),base);
+
+ let foreign=crate::SettingChargeCounter::try_new(base).unwrap();
+ let donor=SettingAdmission::new(&foreign,1<<20,&healthy);
+ let limited=SettingAdmission::new(&counter,base+final_bytes-1,&healthy);
+ let error=prepare_body_literal_syntax(body(source),donor.reserve(initial).unwrap(),&limited).err().unwrap();
+ assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
+ assert_eq!(counter.load(Ordering::Acquire),base);
+ assert_eq!(foreign.load(Ordering::Acquire),base);
+}
+
 struct NoSettings;
 impl crate::SettingSyntaxProvider for NoSettings{
  fn setting(&self,_:&crate::Item)->Result<crate::SettingStatement,crate::Diagnostic>{panic!("fixture contains no setting")}
