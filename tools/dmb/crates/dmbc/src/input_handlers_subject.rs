@@ -154,6 +154,23 @@ impl<P:SnapshotProvider+Sync> dm_preprocess::SourceProvider for HandlerStructura
   self.subject.require_operation(self.inputs)?;if canonical_path(path)==self.producer.captured()?.project{before_decode(dm_preprocess::OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;acquired(self.producer.captured()?.header.lease())?;return Ok(Some(self.producer.captured()?.header.lease().clone()))}
   dm_preprocess::SourceProvider::original_raw_source_admitted(self.inputs,path,max,before_read,before_decode,acquired)
  }
+ fn original_geometry_recorder(&self)->Option<(&Arc<()>,&std::sync::atomic::AtomicUsize)>{
+  Some(self.inputs.original_geometry_recorder())
+ }
+ fn checkpoint_reused_original_geometry_loan(&self)->io::Result<()>{
+  self.subject.require_operation(self.inputs)?;
+  self.producer.captured().map(|_|())
+ }
+ fn original_geometry_byte_loan<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->io::Result<Option<dm_preprocess::OriginalGeometryByteLoan<'a>>>{
+  self.subject.require_operation(self.inputs)?;
+  let root=self.producer.captured()?;
+  if lease.same_binding(root.header.lease()){
+   // The synthetic root belongs only to this actual Handler header, never
+   // to the physical recorder or its epoch.
+   return Ok(Some(dm_preprocess::OriginalGeometryByteLoan::ordinary(root.header.prepared().original().as_bytes())))
+  }
+  self.inputs.original_geometry_byte_loan(lease).map(Some)
+ }
  fn original_source_bytes<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{self.subject.require_operation(self.inputs)?;if lease.same_binding(self.producer.captured()?.header.lease()){return Ok(Some(self.producer.captured()?.header.prepared().original().as_bytes()))}dm_preprocess::SourceProvider::original_source_bytes(self.inputs,lease)}
  fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{self.subject.require_operation(self.inputs).map_err(|e|e.to_string())?;let root=self.producer.captured().map_err(|e|e.to_string())?;if canonical_path(path)==root.project{return Ok(Some(root.header.clone()))}dm_preprocess::SourceProvider::acquired_source(self.inputs,path)}
  fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{if self.subject.require_operation(self.inputs).is_err(){return None}if canonical_path(path)==self.producer.captured.as_ref()?.project{return self.producer.captured.as_ref()?.header.prepared().original().same_view(text).then(||self.producer.captured.as_ref().unwrap().header.clone())}dm_preprocess::SourceProvider::source_acquisition(self.inputs,path,text)}
@@ -651,6 +668,28 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   let wrong=crate::policy_request::PolicyInputRequest{analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")}),..Default::default()}.admit().unwrap();assert!(queries.prepare_handlers_preflight(&inputs,&wrong).is_err());
  }
 
+ #[test]
+ fn actual_handler_geometry_gate_keeps_synthetic_header_unissued_and_refuses_stopped_loans(){
+  use dm_preprocess::SourceProvider;
+  let(_,intent,inputs)=fixture("handlers-real-geometry-gate");
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();
+  let provider=subject.provider(&inputs).unwrap();
+  let producer=subject.producer().unwrap();
+  let header=&producer.captured().unwrap().header;
+  let loan=provider.original_geometry_byte_loan(header.lease()).unwrap().unwrap();
+  assert_eq!(loan.bytes(),header.prepared().original().as_bytes());
+  assert!(!loan.same_current_epoch(),"the synthetic header cannot mint physical geometry");
+  assert!(Arc::ptr_eq(provider.original_geometry_recorder().unwrap().0,&inputs.source_issuer));
+  let token=crate::daemon::control::Cancellation::default();
+  let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(60));
+  token.cancel();
+  assert_eq!(provider.checkpoint_reused_original_geometry_loan().unwrap_err().kind(),
+   provider.original_geometry_byte_loan(header.lease()).err().unwrap().kind());
+  drop(binding);
+  subject.budget.deny();
+  assert_eq!(provider.checkpoint_reused_original_geometry_loan().unwrap_err().kind(),io::ErrorKind::OutOfMemory);
+ }
  #[test]fn actual_partial_provider_delegates_admitted_physical_presence_without_spoofing_synthetic_file(){
   let(root,intent,inputs)=fixture("handlers-real-presence-delegation");let queries=Arc::new(crate::query_db::QueryDb::default());let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();let provider=subject.provider(&inputs).unwrap();assert!(dm_preprocess::SourceProvider::path_presence_admitted(&provider,&root.join("code/candidate.dm"),queries.as_ref()).unwrap());assert!(!dm_preprocess::SourceProvider::path_presence_admitted(&provider,&subject.producer().unwrap().captured().unwrap().project,queries.as_ref()).unwrap(),"captured synthetic source is not a fabricated physical file");assert!(inputs.snapshot.lock().unwrap().path_presence.get(&root.join("code/candidate.dm")).is_some());
  }

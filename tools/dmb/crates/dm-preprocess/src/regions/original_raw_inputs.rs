@@ -135,7 +135,9 @@ impl OriginalRawInputs{
       &&geometry.points.contains_issued_row(saved.raw_len,origin.physical.start,origin.line,saved.row.raw)) {
      // This is the old byte-lender position. An intervening acquisition or
      // mutable/poisoned recorder revokes the certificate before any use.
-     if flag.load(Ordering::SeqCst)==saved.epoch.get() {
+     let current=flag.load(Ordering::SeqCst)==saved.epoch.get();
+     if current { provider.checkpoint_reused_original_geometry_loan().inspect_err(&mut observe_error)?; }
+     if current && flag.load(Ordering::SeqCst)==saved.epoch.get() {
       poll(a).inspect_err(&mut observe_error)?; // known physical line end
       // Minting decoded both row boundaries and both token points with
       // this geometry. Its domain, binding and extents cannot change, and
@@ -208,7 +210,16 @@ impl OriginalRawInputs{
   };
   let geometry=&mut self.geometries.get_mut(at).expect("located source geometry");
   let loan=original_fill_bucket!(Provider,match prior{
-   Some(first) if first.same_current_byte_loan(lease,provider)=>Some(crate::OriginalGeometryByteLoan::ordinary(first.loan.bytes())),
+   Some(first) if first.same_current_byte_loan(lease,provider)=>{
+    provider.checkpoint_reused_original_geometry_loan()?;
+    if first.same_current_byte_loan(lease,provider) {
+     Some(crate::OriginalGeometryByteLoan::ordinary(first.loan.bytes()))
+    } else if definition {
+     provider.original_geometry_byte_loan(lease)?
+    } else {
+     provider.original_source_bytes(lease)?.map(crate::OriginalGeometryByteLoan::ordinary)
+    }
+   },
    Some(_) if !definition=>provider.original_source_bytes(lease)?.map(crate::OriginalGeometryByteLoan::ordinary),
    _=>provider.original_geometry_byte_loan(lease)?,
   }).ok_or(io::ErrorKind::NotConnected)?;
@@ -437,12 +448,18 @@ mod row_tests {
             epoch: &'a std::sync::atomic::AtomicUsize,
             issuer: Arc<()>,
             calls: Cell<usize>,
+            cached_calls: Cell<usize>,
+            cached_error: Cell<Option<i32>>,
         }
         impl SourceProvider for EpochFile<'_> {
             fn read(&self, _: &Path) -> Result<String, String> { panic!("no reopen") }
             fn original_source_bytes<'a>(&'a self, lease: &'a SourceAcquisitionLease) -> io::Result<Option<&'a [u8]>> {
                 self.calls.set(self.calls.get() + 1);
                 self.inner.original_source_bytes(lease)
+            }
+            fn checkpoint_reused_original_geometry_loan(&self) -> io::Result<()> {
+                self.cached_calls.set(self.cached_calls.get() + 1);
+                self.cached_error.get().map_or(Ok(()), |code| Err(io::Error::from_raw_os_error(code)))
             }
             fn original_geometry_recorder(&self) -> Option<(&Arc<()>, &std::sync::atomic::AtomicUsize)> {
                 Some((&self.issuer, self.epoch))
@@ -457,8 +474,8 @@ mod row_tests {
         let bytes = b"actual\n";
         let file = File { bytes: bytes.to_vec(), lease: SourceAcquisitionLease::from_raw_original_bytes(bytes.to_vec(), ()), failure: Cell::new(None) };
         let epoch = std::sync::atomic::AtomicUsize::new(1);
-        let provider = EpochFile { inner: &file, epoch: &epoch, issuer: Arc::new(()), calls: Cell::new(0) };
-        let foreign = EpochFile { inner: &file, epoch: &epoch, issuer: Arc::new(()), calls: Cell::new(0) };
+        let provider = EpochFile { inner: &file, epoch: &epoch, issuer: Arc::new(()), calls: Cell::new(0), cached_calls: Cell::new(0), cached_error: Cell::new(None) };
+        let foreign = EpochFile { inner: &file, epoch: &epoch, issuer: Arc::new(()), calls: Cell::new(0), cached_calls: Cell::new(0), cached_error: Cell::new(None) };
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let polls = Cell::new(0);
         let fail_at = Cell::new(None);
@@ -478,6 +495,16 @@ mod row_tests {
         assert_eq!(same.row.decoded, first.row.decoded);
         assert_eq!(provider.calls.get(), 0);
         assert_eq!(polls.get(), 5);
+        assert_eq!(provider.cached_calls.get(), 1);
+        polls.set(0);
+        provider.cached_error.set(Some(1452));
+        let denied=inputs.observe_physical_row_using(
+            actual.origin,&file.lease,&provider,Some(&first),&a,
+        ).err().unwrap();
+        assert_eq!(denied.raw_os_error(),Some(1452));
+        assert_eq!(polls.get(),1,"provider refusal precedes downstream point checks");
+        assert_eq!(provider.calls.get(),0,"refusal never falls back to another lend");
+        provider.cached_error.set(None);
         file.failure.set(Some(1450));
         let error=inputs.observe_physical_row_using(actual.origin,&file.lease,&foreign,Some(&first),&a).err().unwrap();
         assert_eq!(error.raw_os_error(), Some(1450));
@@ -505,6 +532,19 @@ mod row_tests {
             actual.origin, &file.lease, &provider, None, &a, &mut observation_failed,
         ).unwrap();
         assert!(!observation_failed);
+        provider.calls.set(0);
+        provider.cached_calls.set(0);
+        provider.cached_error.set(Some(1452));
+        polls.set(0);
+        let denied=inputs.definition_geometry_using(
+            actual.origin,&file.lease,&provider,None,&a,&mut observation_failed,
+        ).unwrap_err();
+        assert_eq!(denied.raw_os_error(),Some(1452));
+        assert!(observation_failed);
+        assert_eq!(polls.get(),1);
+        assert_eq!(provider.cached_calls.get(),1);
+        assert_eq!(provider.calls.get(),0);
+        provider.cached_error.set(None);
         for stop in 1..=6 {
             let attempt = SettingAdmission::new(&used, 1 << 20, &checkpoint);
             polls.set(0);

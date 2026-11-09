@@ -195,6 +195,14 @@ pub trait SourceProvider {
         None
     }
 
+    /// Recheck any provider-local operation gate at the old byte-loan site
+    /// when an exact current epoch can supply the same bytes. No source or
+    /// geometry is issued here. Plain recorder views have no additional gate.
+    #[doc(hidden)]
+    fn checkpoint_reused_original_geometry_loan(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+
     /// Optional borrowed attempt observer. This descriptor issues no absence
     /// witness; only a genuine opaque root-failure loan plus recorder facts can.
     fn original_root_open_observer(&self)->Option<&dyn regions::OriginalRootOpenObserver>{None}
