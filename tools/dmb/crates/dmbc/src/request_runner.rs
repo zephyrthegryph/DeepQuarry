@@ -926,9 +926,11 @@ fn run_build_attempt(
                     }
                     let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
                     let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
+                    dm_profile::request_mark("joined.discovery_bound");
                     let joined_header_charge = if preparation_output.needs_combined_checker() && preparation_output.wants_joined_inputs() {
                         Some(crate::runner_host::policy_capture::JoinedHeaderCharge::capture(&view, source_policy_queries.as_ref())?)
                     } else { None };
+                    dm_profile::request_mark("joined.header_funding_bound");
                     let capture_checker_policy = || -> Result<_, Box<dyn std::error::Error>> {
                         use crate::policy_request::{AnalysisContext,PolicyInputFile,PolicyInputRequest,PolicyInputRole,WorkspaceAuxiliaryQuestion as Q};
                         let private_combined = private_authored_doc_ui
@@ -969,6 +971,7 @@ fn run_build_attempt(
                     }else{
                         crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?
                     };
+                    dm_profile::request_mark("joined.workspace_capture_done");
                     let checker=if preparation_output.needs_combined_checker(){
                         let checker_policy = match early_checker {
                             Some(policy) => policy,
@@ -977,7 +980,9 @@ fn run_build_attempt(
                         let checker_frame=crate::runner_host::query_snapshot::CombinedCheckerFrame::stage(&view,Arc::clone(&source_policy_queries),Arc::clone(&checker_policy),&captured)?;
                         Some((checker_frame,checker_policy))
                     }else{None};
+                    dm_profile::request_mark("joined.checker_capture_done");
                     query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture,intent,joined_header_charge.as_ref())?;
+                    dm_profile::request_mark("joined.workspace_policy_staged");
                     let (admission,checker_ready)=if let Some((frame,policy))=checker{
                         let retain_for = preparation_output.wants_joined_inputs().then_some(project.as_path());
                         let (workspace,checker,joined)=runner_freshness::admit_combined_workspace_captured_using(&inputs_capture,&stamped_provider,generated_paths,Arc::clone(&captured),policy,source_policy_queries.as_ref(),retain_for)?;
@@ -988,6 +993,7 @@ fn run_build_attempt(
                     }else{
                         (runner_freshness::admit_generator_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),intent,source_policy_queries.as_ref())?,None)
                     };
+                    dm_profile::request_mark("joined.workspace_freshness_bound");
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     if let Some((frame,proof))=checker_ready{
                         let compact_cache=preparation_output.compact_checker_cache();
