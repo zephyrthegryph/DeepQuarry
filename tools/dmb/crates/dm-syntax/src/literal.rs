@@ -206,6 +206,20 @@ impl LiteralText {
     /// Borrow only producer kind from this SAME already prepared Original owner.
     /// Never populates caches/parses children/rebinds geometry/grants source access.
     pub fn original_template_lexical_shape(&self)->Option<LiteralLexicalShape>{let Backing::Text(state)=&self.0 else{return None};if !state.original_prepared{return None}let Ok(Some(parts))=state.parts.get()?.as_ref()else{return None};parts.lexical.as_ref().ok().copied()}
+    /// Borrow the already issued template AST and typed fragments at the
+    /// exact Pratt geometry. This does not populate an ordinary literal cache
+    /// or treat runtime byte decoding as a grammar outcome.
+    pub(crate) fn original_prepared_body_parts(&self, span: Span) -> Option<&LiteralParts> {
+        let Backing::Text(state) = &self.0 else { return None };
+        if !state.original_prepared || state.retention.get().is_none()
+            || span.start != state.origin || span.end.checked_sub(span.start) != Some(state.raw.len())
+        {
+            return None;
+        }
+        let Ok(Some(parts)) = state.parts.get()?.as_ref() else { return None };
+        parts.lexical.as_ref().ok().filter(|shape| shape.interpolated)?;
+        Some(parts)
+    }
     pub fn original_value(&self)->Option<crate::OriginalTokenValue<&str>>{self.original_data().map(crate::OriginalLiteralData::value)}
     pub fn original_origin(&self)->Option<usize>{match &self.0{Backing::Original{origin,..}=>Some(*origin),_=>None}}
     /// Operation-admitted geometry rebind; never clones source, parts or raw.
@@ -1712,4 +1726,36 @@ pub(crate) fn visit_pinned_resource_bytes<E>(bytes:&[u8],recovering:bool,mut emi
   let unknown=LiteralText::from_original_value_data("@\"looks raw\"".into(),0,OriginalTokenValue::String(r"\n[static]"),&a).unwrap();assert!(unknown.decode_original_static_text().unwrap_err().contains("not yet issued"));
   let number=LiteralText::from_original_value_data("\"looks text\"".into(),0,OriginalTokenValue::Int(7),&a).unwrap();assert_eq!(number.decode_original_static_text().unwrap(),None);
  }
+}
+
+#[cfg(test)]
+#[test]
+fn original_prepared_body_parts_require_issued_template_and_exact_span() {
+    let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+    let counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
+    let admission = crate::SettingAdmission::new(&counter, 1 << 20, &|| Ok(()));
+    let raw = r#""head[]tail""#;
+    let span = Span::new(40, 40 + raw.len());
+    let mut builder = OriginalTemplateBuilder::new(&admission).unwrap();
+    for (range, value) in [
+        (0..6, crate::OriginalTokenValue::InterpBegin("head")),
+        (6..raw.len(), crate::OriginalTokenValue::InterpEnd("tail")),
+    ] {
+        let fragment = crate::OriginalLiteralData::from_value_with_mode_using(
+            raw[range.clone()].to_owned(), value, crate::OriginalStringMode::Normal, &admission,
+        ).unwrap();
+        builder.push(fragment, Span::new(span.start + range.start, span.start + range.end),
+            None, &[], &admission).unwrap();
+    }
+    let literal = builder.finish(raw, span.start, &admission).unwrap();
+    let parts = literal.original_prepared_body_parts(span).unwrap();
+    assert!(std::ptr::eq(parts, literal.prepared_syntax_parts().unwrap().unwrap().unwrap()));
+    assert_eq!(parts.fragments.len(), 2);
+    assert!(literal.original_prepared_body_parts(Span::new(41, span.end + 1)).is_none());
+    assert!(literal.original_prepared_body_parts(Span::new(40, span.end - 1)).is_none());
+    let ordinary = LiteralText::at(raw.to_owned(), span.start);
+    ordinary.syntax_parts().unwrap().unwrap();
+    assert!(ordinary.original_prepared_body_parts(span).is_none());
+    drop(literal);
+    assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire), fixed);
 }

@@ -1186,7 +1186,13 @@ fn parse_var_header(
         let parsed = parse_expr_observed(source, offset, diagnostics, &mut |parsed| {
             if let Some(proof) = original_head.as_deref_mut() {
                 *proof &= parsed.original_simple_expression.is_some_and(|value| {
-                    value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                    use crate::expression_parser::OriginalSimpleKind;
+                    // A named positional call consumes the same complete expression
+                    // here. A witnessed assignment still belongs to its own statement.
+                    matches!(
+                        value.kind(),
+                        OriginalSimpleKind::Complete | OriginalSimpleKind::OrdinaryCallStatement
+                    )
                 });
             }
         })?;
@@ -1599,6 +1605,7 @@ mod original_single_local_witness_tests {
             "    var/value\n",
             "    var/datum/value = argument\n    return value\n",
             "    var/value = argument + 1\n    return value\n",
+            "    var/turf/turf_at_coords = Safe_COORD_Location(argument)\n    return turf_at_coords\n",
             "    if(argument)\n        var/value = argument\n        return value\n",
         ] {
             let parsed = body(code);
@@ -1617,7 +1624,9 @@ mod original_single_local_witness_tests {
             "    var/static/value = 1\n    return value\n",
             "    var/value = 1, other = 2\n    return value\n",
             "    var/value = argument +\n    return value\n",
-            "    var/value = choose(argument)\n    return value\n",
+            "    var/value = choose(key=argument)\n    return value\n",
+            "    var/value = choose(argument,)\n    return value\n",
+            "    var/value = argument = 1\n    return value\n",
             "    var/value = argument in list()\n    return value\n",
         ] {
             let parsed = body(code);

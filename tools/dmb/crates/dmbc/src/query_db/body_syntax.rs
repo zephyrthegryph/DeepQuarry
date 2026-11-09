@@ -467,6 +467,43 @@ impl QueryDb {
   let injected=db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450));let Err(BodySyntaxFailure::Operational(error))=db.syntax_product_checked(&input)else{panic!("actual native Kind4 injected operation must fail")};assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before);drop(injected);
   let result=db.syntax_product_checked(&input).unwrap();assert!(result.parsed().is_some());assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);let again=db.syntax_product_checked(&input).unwrap();assert!(Arc::ptr_eq(&result,&again));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
  }
+ #[test]
+ fn actual_current_nested_admin_coordinate_template_has_complete_original_body() {
+     let text = r#"
+#define ADMIN_JMP(point) "<a href='byond://?X=[point.x];Y=[point.y]'>JMP</a>"
+/proc/Admin_Coordinates_Readable(atom/source, area_name, admin_jump_ref)
+    var/turf/turf_at_coords = Safe_COORD_Location(source)
+    return turf_at_coords ? "[area_name ? "[get_area_name(turf_at_coords, 1)] " : " "]([turf_at_coords.x],[turf_at_coords.y],[turf_at_coords.z])[admin_jump_ref ? " [ADMIN_JMP(turf_at_coords)]" : ""]" : "nonexistent location"
+"#;
+     let db = Arc::new(QueryDb::default());
+     let project = crate::test_scratch::dir("admin-coordinate-original-body").join("project.dme");
+     std::fs::write(&project, text).unwrap();
+     let inputs = crate::input_snapshot::RecordingInputs::new(crate::input_snapshot::FileSystemInputs, 0)
+         .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+     let provider = inputs.original_batch_view(None);
+     let seed = dm_tree::checker_builtins::original_analysis_seed().unwrap();
+     let executor = dm_exec::BuildExecutor::new(1).unwrap();
+     let host = Arc::clone(&db) as Arc<dyn SettingExpressionQueries>;
+     let front = dm_tree::frontend::build_for_original_compound_with_callable_anchors_checked(
+         &project, &provider, &Default::default(),
+         FrontendConfig { workers: 1, engine: Some(seed.frontend_seed()), observer: None },
+         None, &executor, None, &host, None,
+     ).unwrap().with_body_queries(Arc::clone(&db) as Arc<dyn BodySyntaxQueries>).unwrap();
+     let input = original_input(&front, "Admin_Coordinates_Readable");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         assert!(body.canonical_statement_storage().has_native_literal_syntax());
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+             panic!("the consumed local and return productions are available");
+         };
+         assert!(proof.belongs_to(&body));
+         assert_eq!(proof.statement_span()?, None);
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+
  #[test]fn actual_compound_if_disposition_binds_same_primary_product_and_rejects_foreign_and_quota_io(){
   for body in["    if(argument)\n        return 1\n    return 2\n","    if(argument)\n        return 1\n    else\n        return 2\n"]{
    let text=format!("/proc/p(argument)\n{body}");let db=Arc::new(QueryDb::default());
