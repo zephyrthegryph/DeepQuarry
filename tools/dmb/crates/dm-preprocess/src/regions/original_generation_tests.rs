@@ -3,17 +3,27 @@
 use super::*;use dm_syntax::{OriginalDeclarationHeaderObserver,OriginalPrimaryHeader,OriginalHeaderFlow,OriginalPrimaryLiveHeader};
 use crate::{SourceAcquisitionLease,OriginalRawOpenDecision,OriginalRawReadOutcome,OriginalRawAllocationPlan};
 use std::{path::PathBuf,sync::{Mutex,atomic::{AtomicUsize,Ordering}},any::Any};
-struct Memory{files:BTreeMap<PathBuf,SourceAcquisitionLease>,opened:Mutex<Vec<PathBuf>>,probed:Mutex<Vec<PathBuf>>,fail_open:Option<usize>}
-impl Memory{fn new(files:&[(&str,&str)])->Self{Self{files:files.iter().map(|(path,text)|(PathBuf::from(path),SourceAcquisitionLease::from_raw_original_bytes(text.as_bytes().to_vec(),17u64))).collect(),opened:Mutex::new(Vec::new()),probed:Mutex::new(Vec::new()),fail_open:None}}}
+struct Memory{files:BTreeMap<PathBuf,SourceAcquisitionLease>,opened:Mutex<Vec<PathBuf>>,probed:Mutex<Vec<PathBuf>>,fail_open:Option<usize>,fresh_opened:Option<Mutex<Vec<SourceAcquisitionLease>>>}
+impl Memory{fn new(files:&[(&str,&str)])->Self{Self{files:files.iter().map(|(path,text)|(PathBuf::from(path),SourceAcquisitionLease::from_raw_original_bytes(text.as_bytes().to_vec(),17u64))).collect(),opened:Mutex::new(Vec::new()),probed:Mutex::new(Vec::new()),fail_open:None,fresh_opened:None}}}
 impl SourceProvider for Memory{
  fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}
  fn read(&self,_:&Path)->Result<String,String>{panic!("actual Original never requests ordinary preparation")}
  fn path_presence_admitted(&self,path:&Path,_:&dyn SourceArenaWork)->io::Result<bool>{self.probed.lock().unwrap().push(path.to_path_buf());Ok(self.files.contains_key(path))}
  fn original_raw_source_open_admitted(&self,path:&Path,_:usize,_:&dyn SourceArenaWork,after:&mut dyn FnMut()->io::Result<OriginalRawOpenDecision>,_:&mut dyn FnMut(usize)->io::Result<()>,decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&SourceAcquisitionLease)->io::Result<()>)->io::Result<OriginalRawReadOutcome>{
   {let mut opened=self.opened.lock().unwrap();opened.push(path.to_path_buf());if self.fail_open==Some(opened.len()){return Err(io::Error::from_raw_os_error(1450))}}
-  let Some(source)=self.files.get(path)else{return Ok(OriginalRawReadOutcome::SourceOpenFailed(io::ErrorKind::NotFound.into()))};if after()?==OriginalRawOpenDecision::Suppress{return Ok(OriginalRawReadOutcome::Suppressed)}decode(OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;acquired(source)?;Ok(OriginalRawReadOutcome::Acquired(source.clone()))
+  let Some(source)=self.files.get(path)else{return Ok(OriginalRawReadOutcome::SourceOpenFailed(io::ErrorKind::NotFound.into()))};if after()?==OriginalRawOpenDecision::Suppress{return Ok(OriginalRawReadOutcome::Suppressed)}decode(OriginalRawAllocationPlan::new(&[],0,0,0,false,false))?;
+  if let Some(issued)=&self.fresh_opened {
+   let fresh=SourceAcquisitionLease::from_raw_original_bytes(source.source_text().as_bytes().to_vec(),17u64);
+   acquired(&fresh)?;
+   issued.lock().unwrap().push(fresh.clone());
+   return Ok(OriginalRawReadOutcome::Acquired(fresh));
+  }
+  acquired(source)?;Ok(OriginalRawReadOutcome::Acquired(source.clone()))
  }
- fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{if !self.files.values().any(|actual|actual.same_original_acquisition(lease)){return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(lease.source_text().as_bytes()))}
+ fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{let issued=match &self.fresh_opened {
+  Some(rows)=>rows.lock().unwrap().iter().any(|actual|actual.same_binding(lease)),
+  None=>self.files.values().any(|actual|actual.same_original_acquisition(lease)),
+ };if !issued{return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(lease.source_text().as_bytes()))}
 }
 struct Credit{bytes:AtomicUsize,live:Arc<AtomicUsize>}
 impl Drop for Credit{fn drop(&mut self){self.live.fetch_sub(self.bytes.load(Ordering::Acquire),Ordering::AcqRel);}}
@@ -331,6 +341,51 @@ fn actual_nested_macro_resumes_the_same_projected_outer_origin() {
     assert_eq!(*provider.opened.lock().unwrap(), [root.to_path_buf()]);
     drop(product);
     assert_eq!(syntax.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
+    assert_eq!(work.live.load(Ordering::Acquire), 0);
+}
+
+#[test]
+fn emission_lease_distinguishes_reopened_macro_invocations_at_identical_source_coordinates() {
+    let root = "E:/controller/emission-lease.dme";
+    let child = "E:/controller/child.dm";
+    let mut provider = Memory::new(&[
+        (root, r#"#define VALUE 717
+#include "child.dm"
+#include "child.dm"
+/datum/after
+"#),
+        (child, "#pragma multiple
+/datum/child
+    var/value = VALUE
+"),
+    ]);
+    provider.fresh_opened = Some(Mutex::new(Vec::new()));
+    let work = Work { live: Arc::new(AtomicUsize::new(0)) };
+    let fixed = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+    let syntax = dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();
+    let a = SettingAdmission::new(&syntax, 64 << 20, &|| Ok(()));
+    let product = GenerationDirectivePlan::prepare_original_checker_stream_using(
+        Path::new(root), &provider, &BTreeMap::new(), omissions(), 1 << 20, &work, &a, &mut Consumer,
+    ).unwrap();
+    let (plan, expanded, primary, binding) = product.into_diagnostic_parts_using(&a).unwrap();
+    assert_eq!(*provider.opened.lock().unwrap(), [PathBuf::from(root), PathBuf::from(child), PathBuf::from(child)]);
+    let first = plan.source_acquisitions().get(&1).unwrap();
+    let second = plan.source_acquisitions().get(&2).unwrap();
+    assert_eq!(first.source_text().as_str(), second.source_text().as_str());
+    assert!(!first.same_binding(second), "repeat include has its own actual acquisition");
+    let rows = expanded.origins.iter().enumerate()
+        .filter(|(_, row)| expanded.text.as_str().get(row.output_span.range()) == Some("717"))
+        .map(|(index, row)| {
+            assert_eq!(row.macro_expansions.get(0).unwrap().name, "VALUE");
+            assert!(row.macro_expansions.get(0).unwrap().definition.unwrap().path.ends_with("emission-lease.dme"));
+            expanded.origins.original_raw_point_geometry(index).unwrap()
+        }).collect::<Vec<_>>();
+    assert_eq!(rows.len(), 2);
+    assert_eq!((rows[0].0, rows[1].0), (1, 2));
+    assert_eq!(rows[0].1, rows[1].1);
+    assert!(rows[0].2.end <= rows[1].2.start);
+    drop((plan, expanded, primary, binding, provider));
+    assert_eq!(syntax.load(Ordering::Acquire), fixed);
     assert_eq!(work.live.load(Ordering::Acquire), 0);
 }
 

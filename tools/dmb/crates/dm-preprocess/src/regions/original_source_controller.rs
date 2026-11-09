@@ -6,10 +6,14 @@ use dm_syntax::{SettingAdmission,SettingRootLease,Span,SpanToken,NativeIndentNot
 use std::{io,rc::Rc,cell::RefCell,path::{Path,PathBuf},sync::Arc,collections::BTreeMap};
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 struct Included{registered:super::original_file_path::OriginalFilePath,first:Option<Origin>,multiple:bool}
-pub(super) struct State{pub(super) plan:OriginalPlanOwner,pub(super) notices:OriginalRichNotices,pub(super) history:OriginalDefineHistory,pub(super) conditionals:super::original_conditional_history::OriginalConditionalHistory,pub(super) origins:OriginalRawOrigins,pub(super) scripts:Rows<super::original_diagnostic_plan::OriginalScriptInclude>,ordinary:OriginalOrdinaryOutput,includes:PagedRows<Included>,include_ordinals:Rows<usize>,last_line:Option<(usize,usize)>,_control:SettingRootLease}
+pub(super) struct State{
+ // One exact acquisition loan for the most recently emitted occurrence.
+ // The append-only plan remains its authority and funds the source backing.
+ emission_lease:Option<(usize,SourceAcquisitionLease)>,
+ pub(super) plan:OriginalPlanOwner,pub(super) notices:OriginalRichNotices,pub(super) history:OriginalDefineHistory,pub(super) conditionals:super::original_conditional_history::OriginalConditionalHistory,pub(super) origins:OriginalRawOrigins,pub(super) scripts:Rows<super::original_diagnostic_plan::OriginalScriptInclude>,ordinary:OriginalOrdinaryOutput,includes:PagedRows<Included>,include_ordinals:Rows<usize>,last_line:Option<(usize,usize)>,_control:SettingRootLease}
 pub(super) type Shared=Rc<RefCell<State>>;
 impl State{
- pub(super) fn new(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork,history:HistoryPurpose)->io::Result<Shared>{poll(a)?;let control=a.reserve(std::mem::size_of::<RefCell<State>>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Rc::new(RefCell::new(State{plan:OriginalPlanOwner::new(project,provider.initial_environment(),defines,provider.revision(),a)?,notices:OriginalRichNotices::new(a)?,history:OriginalDefineHistory::with_purpose(history,a)?,conditionals:super::original_conditional_history::OriginalConditionalHistory::new(a)?,origins:OriginalRawOrigins::new(a,work)?,scripts:Rows::new(a)?,ordinary:OriginalOrdinaryOutput::new(a)?,includes:PagedRows::new(a)?,include_ordinals:Rows::new(a)?,last_line:None,_control:control})))}
+ pub(super) fn new(project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,a:&SettingAdmission<'_>,work:&dyn SourceArenaWork,history:HistoryPurpose)->io::Result<Shared>{poll(a)?;let control=a.reserve(std::mem::size_of::<RefCell<State>>()+2*std::mem::size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(Rc::new(RefCell::new(State{emission_lease:None,plan:OriginalPlanOwner::new(project,provider.initial_environment(),defines,provider.revision(),a)?,notices:OriginalRichNotices::new(a)?,history:OriginalDefineHistory::with_purpose(history,a)?,conditionals:super::original_conditional_history::OriginalConditionalHistory::new(a)?,origins:OriginalRawOrigins::new(a,work)?,scripts:Rows::new(a)?,ordinary:OriginalOrdinaryOutput::new(a)?,includes:PagedRows::new(a)?,include_ordinals:Rows::new(a)?,last_line:None,_control:control})))}
  /// Seed only after the real root acquisition was registered in this plan.
  /// A registered root is not yet an entry in old include_locations.
  pub(super) fn register_actual_root_semantic_file_using(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{
@@ -160,11 +164,14 @@ impl OriginalStreamControl for Control<'_>{
  #[cfg(feature="original-fill-sample")]
  let _sample=super::original_fill_sample::scope(super::original_fill_sample::Bucket::Emit);
  let mut state=self.shared.borrow_mut();
- let State{plan,origins,..}=&mut *state;
+ let State{plan,origins,emission_lease,..}=&mut *state;
  let occurrence=actual.origin.occurrence;
- let lease=plan.lease(occurrence)?;
- let row=driver.observe_physical_row_using(actual.origin,&lease,provider,None,a)?;
+ if emission_lease.as_ref().is_none_or(|(previous,_)|*previous!=occurrence) {
+  *emission_lease=Some((occurrence,plan.lease(occurrence)?));
+ }
+ let lease=&emission_lease.as_ref().expect("actual emitted occurrence has a lease").1;
+ let row=driver.observe_physical_row_using(actual.origin,lease,provider,None,a)?;
  let region=plan.region_for_emission_using(occurrence,row.row().decoded,a)?;
  let (path,trace)=original_fill_bucket!(Macro,plan.emission_owners_using(occurrence,&saved,driver,provider,Some(&row),a))?;
- origins.append_produced_using(actual,produced,region,path,trace,&lease,provider,driver,Some(&row),a,self.work)}
+ origins.append_produced_using(actual,produced,region,path,trace,lease,provider,driver,Some(&row),a,self.work)}
 }
