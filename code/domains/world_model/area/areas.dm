@@ -65,6 +65,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 /// An area with dynamic lighting is dark of its own (a setup() hook, once its init chain has returned).
 /area/proc/set_ambient_luminosity()
 	luminosity = !(dynamic_lighting)
+	if(GLOB.client_lighting)
+		set_client_visible_shown(TRUE) // an area made after boot joins the visibility plane
 
 /// An area's pass after the map load: its power state and spoiler cover, once its machines exist (area_after_init() is extended by the
 /// away-mission spawns and the turf initializers).
@@ -241,7 +243,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	look.overlay(look_cached_image("spoiler_obfuscation", 'icons/misc/static.dmi', null, null, PLANE_MESONS), when = flag_check(AREA_NO_SPOILERS))
 	// Client lighting: an area outside dynamic lighting stays bright over the lighting plane's black base (client_lighting_compare.dm).
 	look.overlay(client_glow_area_white(src))
-	look.overlay(client_visible_tile()) // the turfs this client sees, for the glow plane's cut (client_lighting_compare.dm)
+	look.overlay(client_visible_tile(), when = client_visible_shown) // the turfs this client sees, for the glow plane's cut (client_lighting_compare.dm)
 
 
 /// An area's channel state flipped (its APC, or the area itself): the things watching the area's power re-check it.

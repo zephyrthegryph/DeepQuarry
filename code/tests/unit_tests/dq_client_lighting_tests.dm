@@ -374,7 +374,7 @@
 /datum/unit_test/dq_client_lighting_compare
 
 /datum/unit_test/dq_client_lighting_compare/Run()
-	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_glow_normal_relay), nameof(GLOB.client_visible_plane_master)))
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_glow_normal_relay), nameof(GLOB.client_visible_plane_master), nameof(GLOB.client_glow_spread_relay)))
 		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the modes off for the next test
 	set_global(nameof(GLOB.client_lighting_compare), FALSE)
@@ -419,7 +419,7 @@
 /datum/unit_test/dq_client_lighting_dark_base
 
 /datum/unit_test/dq_client_lighting_dark_base/Run()
-	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_glow_normal_relay), nameof(GLOB.client_visible_plane_master)))
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_glow_normal_relay), nameof(GLOB.client_visible_plane_master), nameof(GLOB.client_glow_spread_relay)))
 		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
 	TEST_ASSERT_EQUAL(length(client_glow_screen(client_glow_screen_state(null))), 0, "DM lighting: no base on the screen")
@@ -444,6 +444,11 @@
 	dynamic.luminosity = old_luminosity
 	var/list/screen = client_glow_screen(client_glow_screen_state(null))
 	TEST_ASSERT(GLOB.client_glow_base in screen, "client lighting: the screen holds the black base")
+	TEST_ASSERT(GLOB.client_glow_spread_relay in screen, "client lighting: the screen holds the spread relay")
+	TEST_ASSERT(!length(GLOB.client_glow_normal_relay.filters) && length(GLOB.client_glow_spread_relay.filters) == 2 && !length(GLOB.client_glow_plane_master.filters), "client lighting: only the spread relay is filtered, so an empty visibility source cannot blacken the plain relay")
+	for(var/area/shown_area in world)
+		TEST_ASSERT(shown_area.client_visible_shown, "client lighting: [shown_area.type] draws the visibility tile")
+		break
 	TEST_ASSERT((GLOB.client_visible_plane_master in screen) && (GLOB.client_glow_normal_relay in screen), "client lighting: the screen holds the visibility plane and the relay")
 	var/atom/movable/screen/plane_master/client_glow/glow_master = GLOB.client_glow_plane_master
 	TEST_ASSERT_EQUAL(length(glow_master.filters), 2, "the glow plane is cut and spread by exactly two filters")
