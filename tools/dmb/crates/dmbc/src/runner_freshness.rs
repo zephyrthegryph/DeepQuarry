@@ -553,6 +553,8 @@ pub(crate) struct JoinedSelectedInputs {
     project: std::path::PathBuf,
     strict_profile: crate::request::CompoundStrictProfile,
     inputs: InputSnapshot,
+    // Recorder directory accounting is scoped to the original issuer.
+    _recorder_epoch: crate::input_snapshot::JoinedReportEpoch,
     _credit: dm_preprocess::source_arena_credit::SourceArenaCredit,
 }
 impl JoinedSelectedInputs {
@@ -605,6 +607,29 @@ impl JoinedSelectedInputs {
     }
 }
 
+/// An admitted joined ledger stays in the recorder until all consumers have
+/// finished borrowing it. Moving it later must match this exact epoch.
+pub(crate) struct PendingJoinedInputs {
+    project: std::path::PathBuf,
+    epoch: crate::input_snapshot::JoinedReportEpoch,
+    credit: dm_preprocess::source_arena_credit::SourceArenaCredit,
+}
+
+impl PendingJoinedInputs {
+    pub(super) fn finish<P: SnapshotProvider>(
+        self, capture: crate::input_snapshot::RecordingInputs<P>,
+    ) -> std::io::Result<JoinedSelectedInputs> {
+        let inputs = capture.into_joined_report_snapshot(&self.epoch)?;
+        Ok(JoinedSelectedInputs {
+            project: self.project,
+            strict_profile: crate::request::CompoundStrictProfile::Default,
+            inputs,
+            _recorder_epoch: self.epoch,
+            _credit: self.credit,
+        })
+    }
+}
+
 /// Both private consumers must be present in the SAME freshness closure.
 pub(crate) fn admit_combined_workspace_captured_using<P: SnapshotProvider>(
     capture: &crate::input_snapshot::RecordingInputs<P>,
@@ -614,23 +639,34 @@ pub(crate) fn admit_combined_workspace_captured_using<P: SnapshotProvider>(
     checker: std::sync::Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,
     source_work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
     retain_for: Option<&std::path::Path>,
-) -> Result<(WorkspacePolicyAdmission, DiagnosticPolicyAdmission, Option<JoinedSelectedInputs>), Box<dyn Error>> {
-    let (inputs, pending) = if let Some(project) = retain_for {
+) -> Result<(WorkspacePolicyAdmission, DiagnosticPolicyAdmission, Option<PendingJoinedInputs>), Box<dyn Error>> {
+    let require_consumers = |inputs: &InputSnapshot| -> Result<(), Box<dyn Error>> {
+        if !workspace.is_recorded_in(inputs) || !checker.is_recorded_in(inputs) {
+            return Err(std::io::Error::other("one admitted input closure must contain both Original consumer captures").into());
+        }
+        Ok(())
+    };
+    let pending = if let Some(project) = retain_for {
         if !provider.uses_live_filesystem() {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "compound report requires live input facts").into());
         }
-        let (inputs, credit) = capture.snapshot_for_joined_report(project, source_work)?;
-        admit_live(&inputs, generated_outputs)?;
-        (inputs, Some((project.to_owned(), credit)))
+        let ((), epoch) = capture.with_joined_report_snapshot(|inputs| {
+            admit_live(inputs, generated_outputs)?;
+            require_consumers(inputs)
+        })?;
+        // Moving existing maps allocates no second ledger. Fund the new
+        // handoff metadata while the original storage is still live.
+        let bytes = 4096usize.checked_add(project.as_os_str().len())
+            .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
+        let credit = source_work.reserve(bytes)?;
+        Some(PendingJoinedInputs { project: project.to_owned(), epoch, credit })
     } else {
-        (admit_captured_using(capture, None, provider, generated_outputs, source_work)?, None)
+        let inputs = admit_captured_using(capture, None, provider, generated_outputs, source_work)?;
+        require_consumers(&inputs)?;
+        None
     };
-    if !workspace.is_recorded_in(&inputs) || !checker.is_recorded_in(&inputs) {
-        return Err(std::io::Error::other("one admitted input closure must contain both Original consumer captures").into());
-    }
-    let joined = pending.map(|(project, credit)| JoinedSelectedInputs { project, strict_profile: crate::request::CompoundStrictProfile::Default, inputs, _credit: credit });
     Ok((WorkspacePolicyAdmission { capture: workspace, generation_inputs: None },
-        DiagnosticPolicyAdmission { capture: checker }, joined))
+        DiagnosticPolicyAdmission { capture: checker }, pending))
 }
 
 pub(crate) fn admit_diagnostic_captured_using<P: SnapshotProvider>(

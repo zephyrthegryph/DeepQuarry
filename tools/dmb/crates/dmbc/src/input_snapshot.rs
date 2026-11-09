@@ -460,6 +460,11 @@ mod recording_snapshot {
 }
 use recording_snapshot::RecorderSnapshotCell;
 
+pub(crate) struct JoinedReportEpoch {
+    issuer: std::sync::Arc<()>,
+    epoch: usize,
+}
+
 pub struct RecordingInputs<P = FileSystemInputs> {
     original_read_group: dm_preprocess::source_arena_credit::OriginalReadGroupSlot,
     original_path_bank: Mutex<Option<dm_preprocess::source_arena_credit::SourceArenaControlCredit>>,
@@ -529,17 +534,33 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         self.mark(&snapshot);
         Ok(snapshot)
     }
-    /// Fund the actual joined ledger before cloning its recording facts.
-    pub(crate) fn snapshot_for_joined_report(
-        &self, project: &Path, work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork,
-    ) -> io::Result<(InputSnapshot, dm_preprocess::source_arena_credit::SourceArenaCredit)> {
-        let (snapshot, credit) = {
-            let current = self.snapshot.lock().map_err(|_| invalid("input capture mutex poisoned"))?;
-            let credit = work.reserve(current.joined_report_clone_bound(project)?)?;
-            (current.clone(), credit)
-        };
-        self.mark(&snapshot);
-        Ok((snapshot, credit))
+    /// Validate the actual joined ledger in place. The epoch proves that
+    /// final ownership transfer still moves exactly these recorded facts.
+    pub(crate) fn with_joined_report_snapshot<T>(
+        &self,
+        validate: impl FnOnce(&InputSnapshot) -> Result<T, Box<dyn std::error::Error>>,
+    ) -> Result<(T, JoinedReportEpoch), Box<dyn std::error::Error>> {
+        let current = self.snapshot.lock().map_err(|_| invalid("input capture mutex poisoned"))?;
+        let epoch = current.epoch();
+        if epoch == 0 {
+            return Err(invalid("joined report input epoch unavailable").into());
+        }
+        self.mark(&current);
+        Ok((validate(&current)?, JoinedReportEpoch {
+            issuer: std::sync::Arc::clone(&self.source_issuer),
+            epoch,
+        }))
+    }
+
+    pub(crate) fn into_joined_report_snapshot(self, proof: &JoinedReportEpoch) -> io::Result<InputSnapshot> {
+        if !std::sync::Arc::ptr_eq(&self.source_issuer, &proof.issuer) {
+            return Err(invalid("joined report input proof belongs to another recorder"));
+        }
+        if !self.snapshot.accepts_epoch(proof.epoch) {
+            return Err(io::Error::new(io::ErrorKind::Interrupted,
+                "joined report input facts changed after admission"));
+        }
+        self.into_snapshot()
     }
 
     pub fn into_snapshot(self) -> io::Result<InputSnapshot> {
@@ -841,6 +862,38 @@ impl Serialize for InputSnapshot {
 #[cfg(test)]
 mod snapshot_codec_tests {
     use super::*;
+    #[test]
+    fn joined_report_moves_only_the_admitted_recorders_unchanged_ledger() {
+        let root = crate::test_scratch::dir("joined-report-ledger-transfer");
+        let file = root.join("input.dm");
+        std::fs::write(&file, b"/datum/input\n").unwrap();
+
+        let recorder = || RecordingInputs::new(FileSystemInputs, 19);
+        let first = recorder();
+        let other = recorder();
+        first.read_binary(&file).unwrap();
+        other.read_binary(&file).unwrap();
+        let (_, foreign) = first.with_joined_report_snapshot(|_| Ok(())).unwrap();
+        assert!(other.into_joined_report_snapshot(&foreign).is_err());
+
+        let (_, stale) = first.with_joined_report_snapshot(|_| Ok(())).unwrap();
+        let late = root.join("late.dm");
+        std::fs::write(&late, b"/datum/late\n").unwrap();
+        first.read_binary(&late).unwrap();
+        assert_eq!(
+            first.into_joined_report_snapshot(&stale).unwrap_err().kind(),
+            io::ErrorKind::Interrupted,
+        );
+
+        let current = recorder();
+        current.read_binary(&file).unwrap();
+        let (recorded_path, proof) = current.with_joined_report_snapshot(|snapshot| {
+            Ok(snapshot.file_paths().next().unwrap().to_owned())
+        }).unwrap();
+        let moved = current.into_joined_report_snapshot(&proof).unwrap();
+        assert_eq!(moved.file_paths().collect::<Vec<_>>(), [recorded_path.as_path()]);
+    }
+
     fn roundtrip(snapshot: &InputSnapshot) {
         let wire = dm_wire::encode(0x5350_0002, snapshot).unwrap();
         let restored: InputSnapshot = dm_wire::decode(0x5350_0002, &wire, dm_wire::MAX_BYTES).unwrap();
@@ -1542,40 +1595,6 @@ impl InputSnapshot {
             }
         }
         Ok((report, next))
-    }
-
-    /// Conservative metadata admission, including aliased directory payloads.
-    /// Original immutable path trees already carry their physical owner credits.
-    fn joined_report_clone_bound(&self, project: &Path) -> io::Result<usize> {
-        let overflow = || io::Error::from(io::ErrorKind::OutOfMemory);
-        let mut bytes = 4096usize.checked_add(project.as_os_str().len()).ok_or_else(overflow)?;
-        let mut add = |width: usize| -> io::Result<()> {
-            bytes = bytes.checked_add(width).ok_or_else(overflow)?;
-            Ok(())
-        };
-        // Conservative fixed row envelope includes opaque standard B-tree nodes.
-        let path_row = |path: &PathBuf| 2048usize.checked_add(path.capacity()).ok_or_else(overflow);
-        for (path, file) in &self.files {
-            add(path_row(path)?.checked_add(file.path.capacity()).ok_or_else(overflow)?)?;
-        }
-        for path in self.negative_files.iter().chain(&self.generated_outputs) {
-            add(path_row(path)?)?;
-        }
-        for (path, listing) in &self.folders {
-            add(path_row(path)?)?;
-            if let FolderListing::Present(names) = listing {
-                add(names.capacity().checked_mul(std::mem::size_of::<String>()).ok_or_else(overflow)?)?;
-                for name in names { add(name.capacity())?; }
-            }
-        }
-        for (path, observation) in &self.policy_directories {
-            add(path_row(path)?)?;
-            if let PolicyDirectoryListing::Present(entries) = &observation.listing {
-                add(entries.capacity().checked_mul(std::mem::size_of::<PolicyDirectoryEntry>()).ok_or_else(overflow)?)?;
-                for entry in entries.iter() { add(entry.name.capacity())?; }
-            }
-        }
-        Ok(bytes)
     }
 
     /// Compare facts the two profiles actually observed in common. Path

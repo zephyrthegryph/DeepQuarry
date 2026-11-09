@@ -912,6 +912,7 @@ fn run_build_attempt(
                 let prepared=Arc::new(prepared.with_body_queries(Arc::clone(&source_policy_queries) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>)?);
                 let view=prepared.source_view()?;
                 let intent=policy_inputs.as_ref().ok_or("analysis purpose requires its actual admitted request")?;
+                let mut pending_joined = None;
                 if let Some(workspace)=intent.workspace(){
                     let check_grep=intent.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline));
                     if check_grep&&analysis_subject.is_none(){
@@ -978,7 +979,7 @@ fn run_build_attempt(
                     let (admission,checker_ready)=if let Some((frame,policy))=checker{
                         let retain_for = preparation_output.wants_joined_inputs().then_some(project.as_path());
                         let (workspace,checker,joined)=runner_freshness::admit_combined_workspace_captured_using(&inputs_capture,&stamped_provider,generated_paths,Arc::clone(&captured),policy,source_policy_queries.as_ref(),retain_for)?;
-                        preparation_output.record_joined_inputs(joined);
+                        pending_joined = joined;
                         (workspace,Some((frame,checker)))
                     }else if intent.workspace_generators().is_empty(){
                         (runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),source_policy_queries.as_ref())?.1,None)
@@ -1014,6 +1015,9 @@ fn run_build_attempt(
 
                 }
                 let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners};
+                if let Some(joined) = pending_joined {
+                    preparation_output.record_joined_inputs(Some(joined.finish(inputs_capture)?));
+                }
                 query_attempt.finish_analyzed();return Ok(outcome);
             }
             match prepared.try_into_compilable_retained(&mut *semantic_state){
