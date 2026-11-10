@@ -4033,6 +4033,7 @@
 #include "code\content\admin\view_variables\nobody_wants_to_learn_matrix_math.dm"
 #include "code\content\admin\view_variables\particle_editor.dm"
 #include "code\content\admin\view_variables\pickers.dm"
+#include "code\content\admin\view_variables\ref_holders.dm"
 #include "code\content\admin\view_variables\reference_tracking.dm"
 #include "code\content\admin\view_variables\tag_datum.dm"
 #include "code\content\admin\view_variables\topic.dm"

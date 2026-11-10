@@ -1,6 +1,13 @@
-// OPEN: a real boot still leaks about 36 orphan pipes (pipes atmos_init() ends during the map's node setup stay referenced after qdel()), and the
-// tests below, which end pipes the same way in a small world, do not reproduce it. Next diagnostic: log refcount(P) at each phase of the destroy
-// transaction when atmos_init() ends an orphan pipe in a real boot, and see which phase first leaves a holder behind.
+// The orphan pipes of a real boot. A pipe with no neighbour is spent by its own atmos_init() in the node setup, and a full-map boot leaves each one
+// referenced (GC LEAK). What the boot trace established (10 full-map runs; refcount read through the ref text, a plain qdel'd effect reads 2):
+//  - a map-loaded orphan pipe reads 5 or 6 when the node loop ends, 5 when setup_atmos_machinery() returns, 4 after the boot's refresh settle, and stays
+//    4 (two over the control); a pipe made after the map load and ended the same way is freed. A map-loaded /obj/machinery/light ended by qdel() reads the same,
+//    so it is the boot's map atoms, not pipes.
+//  - the one transient reference is the atom's boot bucket (boot_created_hold()) until the settle; it is not the leak.
+//  - ref_holders() (a search of every global, list, alist and non-atom datum var, 465 k containers, 50 k left at its budget) found only the garbage queue's
+//    own entry for such a pipe, as the reference finder did. The other two references are in no DM container: a proc frame still running or a native table.
+//  - the same flow on a small map (a template load, InitializeAtoms() with mapload, the boot hold and settle) leaves nothing over a fresh atom, so it does not reproduce.
+// The sweeps below end pipes the same way in a small world.
 
 // The GC sweep, for pipes the map load ends: a pipe with no neighbour to connect to is spent by its own atmos_init() while SSair's batched
 // node setup runs, and every one of them was still referenced five minutes later (the live log's "GC LEAK ... pipe/simple/hidden/..." lines).
@@ -96,3 +103,25 @@
 	qdel(P)
 	for(var/datum/D as anything in GLOB.refresh_queue)
 		TEST_ASSERT(D != P, "a destroyed datum left an entry in the refresh queue")
+
+// ref_holders() (code/content/admin/view_variables/ref_holders.dm), the whole-world holder search: it finds a holder in a global list, names the path, and
+// reports when it stops short.
+
+/datum/unit_test/dq_ref_holders_finds_a_holder/Run()
+	var/obj/effect/abstract/info/target = new(test_floor())
+	GLOB.refresh_push_queue += target
+	var/list/hits = ref_holders(target, 2 MINUTES)
+	GLOB.refresh_push_queue -= target
+	var/summary = hits[length(hits)]
+	hits.len--
+	var/found = FALSE
+	for(var/path in hits)
+		if(findtext(path, "refresh_push_queue"))
+			found = TRUE
+	TEST_ASSERT(found, "the search names the global list that holds the datum (got: [jointext(hits, "; ")])")
+	TEST_ASSERT(findtext(summary, " 0 left unvisited"), "and it finished within its budget ([summary])")
+	var/list/after = ref_holders(target, 2 MINUTES)
+	after.len--
+	for(var/path in after)
+		TEST_ASSERT(!findtext(path, "refresh_push_queue"), "with the holder gone the search no longer names it (got: [jointext(after, "; ")])")
+	qdel(target)
