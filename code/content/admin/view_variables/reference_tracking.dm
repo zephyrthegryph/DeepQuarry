@@ -129,6 +129,9 @@
 					search_time,\
 					recursion_count + 1,\
 					/*is_special_list = */ is_atom && (varname == "contents" || varname == "vis_contents" || varname == "locs"))
+			else if(istype(variable, /alist))
+				// An alist is not a list to islist(): walk it as its own kind of container.
+				DoSearchVar(variable, "[container_name] [datum_container.ref_search_details()] -> [varname] (alist)", search_time, recursion_count + 1)
 			else if(variable == src)
 				#ifdef REFERENCE_TRACKING_DEBUG
 				if(SSgarbage.references_saved())
@@ -215,6 +218,19 @@
 					// So if it goes wrong we kill it
 					is_special_list = TRUE
 					log_reftracker("Curiosity: [container_name] lead to an error when acessing [element_in_list], what is it?")
+
+	else if(istype(potential_container, /alist))
+		// An alist is not a list to the walk above: its keys and values are looked at here.
+		var/alist/table = potential_container
+		for(var/key, value in table)
+			if(key == src || value == src)
+				log_reftracker("Found [type] [text_ref(src)] in alist [container_name] ([key == src ? "key" : "value"]).")
+				references_to_clear -= 1
+				if(references_to_clear == 0)
+					log_reftracker("All references to [type] [text_ref(src)] found, exiting.")
+					return
+			if(islist(value) || istype(value, /alist) || isdatum(value))
+				DoSearchVar(value, "[container_name]\[[key]\] -> [value]", search_time, recursion_count + 1)
 
 #undef REFSEARCH_RECURSE_LIMIT
 #endif

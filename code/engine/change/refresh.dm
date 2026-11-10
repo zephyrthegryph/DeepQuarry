@@ -364,8 +364,14 @@ GLOBAL_VAR_INIT(refresh_queue_base, 0)
 	if(D.destroy_phase >= LIFECYCLE_PHASE_SLOTS_RELEASED)
 		return // its destroy transaction is over: nothing is left to refresh, and a slot made for it now would hold it for good
 	var/list/Q = GLOB.refresh_queue
-	Q += D
 	var/id = slot_of(D) // keyed by slot: an index keyed by the datum would be a second reference to it, which would be a second holder of it
+	if(id)
+		var/at = GLOB.refresh_queue_at[id]
+		if(!isnull(at))
+			var/pos = at - GLOB.refresh_queue_base
+			if(pos >= 1 && pos <= length(Q) && Q[pos] == D)
+				return // its entry is still ahead of the drain: a second one would be a duplicate refresh_queue_drop() never finds, pinning D after it dies
+	Q += D
 	if(id)
 		GLOB.refresh_queue_at[id] = GLOB.refresh_queue_base + length(Q)
 

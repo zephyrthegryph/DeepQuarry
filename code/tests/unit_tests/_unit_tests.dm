@@ -338,6 +338,7 @@
 #include "dq_focus.dm"
 #include "dq_gc_tests.dm"
 #include "dq_gc_sweep_tests.dm"
+#include "dq_gc_pipe_tests.dm"
 #include "dq_list_leak_tests.dm"
 #include "dq_table_ref_hold_tests.dm"
 #include "dq_hc_bots_behaviour.dm"
