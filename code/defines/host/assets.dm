@@ -19,3 +19,6 @@
 /// Parameters (in order):
 /// icon_file, icon_state, dir, frame, transform, color
 #define uni_icon(I, icon_state, rest...) new /datum/universal_icon(I, icon_state, ##rest)
+
+/// How long an asset flush waits for the client's ack before continuing anyway.
+#define ASSET_FLUSH_TIMEOUT (5 SECONDS)

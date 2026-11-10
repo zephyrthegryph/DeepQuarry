@@ -1031,3 +1031,33 @@
 	TEST_ASSERT_NOTNULL(H.flat_light, "big again: it has one")
 	client_lighting_set(FALSE)
 	TEST_ASSERT_NULL(H.flat_light, "DM lighting: no flat light")
+
+/// A delivery answer that arrives after forget_images() (a login emptied the client's images) belongs to a client state that is gone: it marks nothing
+/// delivered. An answer under the current generation marks the shape.
+/datum/unit_test/dq_client_glow_delivery_stale_after_reset
+
+/datum/unit_test/dq_client_glow_delivery_stale_after_reset/Run()
+	var/datum/client_glow_holder/H = new
+	var/gen = H.delivery_gen
+	H.forget_images()
+	TEST_ASSERT(H.delivery_gen != gen, "forgetting the images starts a new delivery generation")
+	H.client_glow_delivered("stale_shape", null, gen, REALTIMEOFDAY)
+	TEST_ASSERT(!LAZYACCESS(H.delivered, "stale_shape"), "an answer from before the reset marks nothing delivered")
+	H.client_glow_delivered("fresh_shape", null, H.delivery_gen, REALTIMEOFDAY)
+	TEST_ASSERT(LAZYACCESS(H.delivered, "fresh_shape"), "an answer of the current generation marks its shape delivered")
+	spent(H)
+
+/// The delivered record is bounded: past CLIENT_GLOW_MASK_CACHE_MAX it drops its oldest entries in one cut, newest kept.
+/datum/unit_test/dq_client_glow_delivered_bounded
+
+/datum/unit_test/dq_client_glow_delivered_bounded/Run()
+	var/datum/client_glow_holder/H = new
+	for(var/i in 1 to CLIENT_GLOW_MASK_CACHE_MAX)
+		H.note_delivered("shape[i]")
+	TEST_ASSERT_EQUAL(length(H.delivered), CLIENT_GLOW_MASK_CACHE_MAX, "at the limit nothing is dropped")
+	H.note_delivered("newest")
+	TEST_ASSERT(length(H.delivered) <= round(CLIENT_GLOW_MASK_CACHE_MAX * 0.75), "past the limit the record shrinks well below it ([length(H.delivered)])")
+	TEST_ASSERT(LAZYACCESS(H.delivered, "newest"), "the newest entry is kept")
+	TEST_ASSERT(!LAZYACCESS(H.delivered, "shape1"), "the oldest entry is dropped")
+	TEST_ASSERT(LAZYACCESS(H.delivered, "shape[CLIENT_GLOW_MASK_CACHE_MAX]"), "the entry before the newest is kept")
+	spent(H)

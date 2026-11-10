@@ -85,8 +85,10 @@ GLOBAL_VAR_INIT(client_glow_holder_stands_moved, 0)
 	var/list/cut_shape
 	/// Baked shape -> its preload image, while this client is being sent the PNG. Lazy.
 	var/list/delivering
-	/// Baked shape -> TRUE once this client has had time to receive its PNG. Lazy.
+	/// Baked shape -> TRUE once this client confirmed receiving its PNG (or the confirmation timed out). Oldest first; bounded by note_delivered(). Lazy.
 	var/list/delivered
+	/// Bumped whenever the client's images are forgotten: a delivery started under an older value belongs to a client state that is gone, and its answer is ignored.
+	var/delivery_gen = 0
 	/// Blank glow images and blank hide images of dropped glows, up to CLIENT_GLOW_POOL_MAX each, for the next glows acquired. Lazy; borrowed from no one: an
 	/// image here is on no client, anchored to nothing, and carries nothing of the glow it served.
 	var/list/glow_pool
@@ -177,6 +179,8 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	held_shape = null
 	cut_shape = null
 	delivering = null
+	delivery_gen++
+	log_world("client lighting: [client?.ckey] images forgotten; pending glow deliveries now stale (generation [delivery_gen])")
 
 /// The client left: its held glows go.
 /proc/client_glow_holder_gone(client/C)
@@ -724,18 +728,36 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	image_anchor(preload, eye)
 	LAZYSET(delivering, shape, preload)
 	client_images_add(client, list(preload))
-	after(src, CLIENT_GLOW_ICON_DELIVERY, PROC_REF(client_glow_delivered), with = list(shape, baked))
+	// The icon goes into the client's browse queue, then the asset verify page behind it: the queue is FIFO, so the page's ack means the PNG has arrived
+	// (client_session.dm flush_assets()). Until then the held glows keep their previous picture. A client with no session has no ack to wait for.
+	client << browse_rsc(baked)
+	if(client.session)
+		client.session.flush_assets(src, PROC_REF(client_glow_delivered), shape, baked, delivery_gen, REALTIMEOFDAY)
+	else
+		after(src, CLIENT_GLOW_ICON_DELIVERY, PROC_REF(client_glow_delivered), with = list(shape, baked, delivery_gen, REALTIMEOFDAY))
 	return FALSE
 
-/datum/client_glow_holder/proc/client_glow_delivered(shape, baked)
+/// The client's ack for `shape`'s PNG arrived, or the wait ran out (ASSET_FLUSH_TIMEOUT: the glows then swap anyway, as a client that never answers must not keep a
+/// stale glow forever). `gen` is the delivery_gen the send started under; `started` is its REALTIMEOFDAY.
+/datum/client_glow_holder/proc/client_glow_delivered(shape, baked, gen, started)
+	if(gen != delivery_gen)
+		log_world("client lighting: [client?.ckey] ignored a stale glow delivery of a shape (generation [gen], now [delivery_gen])")
+		return
 	var/image/preload = LAZYACCESS(delivering, shape)
 	LAZYREMOVE(delivering, shape)
 	if(preload && client)
 		client_images_remove(client, list(preload))
+	var/waited = REALTIMEOFDAY - started
+	log_world("client lighting: [client?.ckey] glow shape delivery [waited >= ASSET_FLUSH_TIMEOUT ? "TIMED OUT, swapping anyway" : "acknowledged"] after [waited / 10]s")
+	note_delivered(shape)
+	shape_ready(shape, baked)
+
+/// Records `shape` as delivered. Past CLIENT_GLOW_MASK_CACHE_MAX entries the oldest quarter goes in one cut, so the list is bounded without a trim per call.
+/datum/client_glow_holder/proc/note_delivered(shape)
 	LAZYSET(delivered, shape, TRUE)
 	if(length(delivered) > CLIENT_GLOW_MASK_CACHE_MAX)
-		delivered.Cut(1, 2)
-	shape_ready(shape, baked)
+		var/keep = round(CLIENT_GLOW_MASK_CACHE_MAX * 0.75)
+		delivered.Cut(1, length(delivered) - keep + 1)
 
 /// A shape finished baking: every held glow waiting on it shows it, once this client has the picture.
 /datum/client_glow_holder/proc/shape_ready(shape, baked)

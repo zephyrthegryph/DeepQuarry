@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Client light glows now swap to their baked picture only after the client confirms the image arrived, instead of after a fixed half second, so slow connections no longer see lights flicker out"

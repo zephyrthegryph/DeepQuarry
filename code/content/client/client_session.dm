@@ -4,9 +4,6 @@
 // client/Destroy is qdel(session) and nothing is missed. /datum/persistent_client stays per
 // player; the session is per connection.
 
-/// How long an asset flush waits for the client's ack before continuing anyway.
-#define ASSET_FLUSH_TIMEOUT (5 SECONDS)
-
 /client/var/tmp/datum/client_session/session
 
 /datum/client_session
