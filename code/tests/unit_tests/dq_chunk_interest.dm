@@ -42,6 +42,10 @@
 	set_global(nameof(GLOB.interest_drawn_now), GLOB.interest_drawn_now)
 	set_global(nameof(GLOB.interest_covered), alist())
 	set_global(nameof(GLOB.interest_prefetched), list())
+	set_global(nameof(GLOB.interest_scan_pending), alist())
+	set_global(nameof(GLOB.interest_scan_middle), alist())
+	set_global(nameof(GLOB.interest_ring_scans), list())
+	set_global(nameof(GLOB.interest_chunks_entered), GLOB.interest_chunks_entered)
 	set_global(nameof(GLOB.interest_test_coverable), list())
 	set_global(nameof(GLOB.interest_covers_raised), GLOB.interest_covers_raised)
 	var/list/lazy = GLOB.type_look_lazy.Copy()
@@ -491,6 +495,74 @@
 		interest_arrival_drain()
 	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-viewer"]), "the cover lifts once nothing is owed")
 	TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "and nothing in view owes a draw while the viewer can see")
+	interest_clean(probes)
+
+/// A login (a view jump) does only what its first frame needs in the tick it happens: it scans the nearest chunks until the cover is needed and draws one pass's worth,
+/// and leaves the rest of the visible chunks and the whole ring to the drain. The cover stays up until everything in view is drawn, and everything is drawn in the end.
+/datum/unit_test/dq_interest_login_work_is_bounded_and_complete
+
+/datum/unit_test/dq_interest_login_work_is_bounded_and_complete/Run()
+	interest_isolate()
+	var/turf/floor = test_floor()
+	var/turf/centre = locate(round((floor.x - 1) / INTEREST_CHUNK) * INTEREST_CHUNK + INTEREST_CHUNK, floor.y, floor.z) // a chunk's last column: its window spans two chunks
+	TEST_ASSERT_NOTNULL(centre, "the map has that turf")
+	var/list/visible = list()
+	var/list/held = interest_view_keys(centre, world.view, visible)
+	var/centre_chunk = INTEREST_KEY(centre.z, INTEREST_CHUNK_OF(centre.x), INTEREST_CHUNK_OF(centre.y))
+	var/other_key = 0
+	var/ring_key = 0
+	for(var/key in visible)
+		if(key != centre_chunk)
+			other_key = key
+			break
+	for(var/key in held)
+		if(!(key in visible))
+			ring_key = key
+			break
+	TEST_ASSERT(other_key && ring_key, "the view spans two chunks and has a ring beyond them")
+	var/turf/second = locate(round((other_key % 1048576) / 1024) * INTEREST_CHUNK + 8, (other_key % 1024) * INTEREST_CHUNK + 8, centre.z)
+	var/turf/ring = locate(round((ring_key % 1048576) / 1024) * INTEREST_CHUNK + 8, (ring_key % 1024) * INTEREST_CHUNK + 8, centre.z)
+	TEST_ASSERT(second && ring, "the map has those turfs")
+	var/list/near = interest_probes(centre, 40) + interest_probes(second, 40)
+	var/list/ring_probes = interest_probes(ring, 10)
+	var/list/probes = near + ring_probes
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		refresh_mark(probe, DEP_ALL)
+	GLOB.interest_test_coverable += "dq-test-viewer"
+	var/scanned_before = GLOB.interest_chunks_entered
+	interest_view_set("dq-test-viewer", centre, null, world.view)
+	TEST_ASSERT(!isnull(GLOB.interest_covered["dq-test-viewer"]), "the login is covered")
+	TEST_ASSERT(GLOB.interest_chunks_entered - scanned_before <= 2, "the login tick scanned only the nearest chunk(s), not the whole view and ring ([GLOB.interest_chunks_entered - scanned_before])")
+	TEST_ASSERT(length(GLOB.interest_scan_pending["dq-test-viewer"]) > 0, "the rest of the visible chunks wait for the drain")
+	TEST_ASSERT(length(GLOB.interest_ring_scans) > 0, "and so does the ring")
+	var/drawn_now = 0
+	for(var/obj/dq_interest_probe/probe as anything in near)
+		if(!probe.refresh_queued)
+			drawn_now++
+	TEST_ASSERT(drawn_now <= INTEREST_ARRIVAL_MIN_STEP, "the login tick drew no more than one pass ([drawn_now])")
+	for(var/obj/dq_interest_probe/probe as anything in ring_probes)
+		TEST_ASSERT(probe.refresh_queued, "nothing in the ring was touched in the login tick")
+	for(var/pass in 1 to 300)
+		interest_arrival_drain()
+		var/near_owing = 0
+		for(var/obj/dq_interest_probe/probe as anything in near)
+			if(probe.refresh_queued)
+				near_owing++
+		if(isnull(GLOB.interest_covered["dq-test-viewer"]))
+			TEST_ASSERT_EQUAL(near_owing, 0, "the cover lifted with part of the view still undrawn")
+			TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "and nothing in view owes a draw once it lifted")
+			break
+		else if(!near_owing && !length(GLOB.interest_scan_pending["dq-test-viewer"]))
+			TEST_ASSERT(FALSE, "the view is drawn and nothing is left to scan, but the cover stayed")
+	TEST_ASSERT(isnull(GLOB.interest_covered["dq-test-viewer"]), "the cover lifts")
+	for(var/pass in 1 to 300)
+		if(!length(GLOB.interest_prefetched) && !length(GLOB.interest_ring_scans))
+			break
+		interest_arrival_drain()
+	TEST_ASSERT(!length(GLOB.interest_ring_scans) && !length(GLOB.interest_prefetched), "the drain finished the ring")
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "everything was drawn in the end")
 	interest_clean(probes)
 
 /// A walker crossing a chunk edge keeps most of its old view: what the new chunks still owe is drawn at once and the screen is never covered (the black flash
