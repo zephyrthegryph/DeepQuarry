@@ -118,6 +118,7 @@
 	// Destroy() ever runs. Nothing decides that here any more; phase 3 itself
 	// checks that it released them (dq_lifecycle_check_released()).
 	emissive_blocker_detach()
+	client_flat_light_drop(src)
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()

@@ -17,6 +17,8 @@
 	// blocks_emissive (EMISSIVE_BLOCK_NONE, _GENERIC or _UNIQUE) is the movable_motion type trait: motion_of(A).blocks_emissive
 	///Internal holder for emissive blocker object, do not use directly use motion_of(A).blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
+	///The flat light a sprite bigger than a tile carries under client lighting (client_flat_light.dm).
+	var/tmp/atom/movable/client_flat_light/flat_light
 
 
 // Will update the light (duh).
@@ -197,4 +199,5 @@ SETTER(/atom, light_on)
 
 CAPABILITIES_PART(/atom/movable, lighting)
 	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
+	owns_one(nameof(flat_light), /atom/movable/client_flat_light)
 	owns_one(nameof(overlay_light), /datum/overlay_lighting)

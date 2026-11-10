@@ -985,3 +985,49 @@
 	GLOB.client_glow_baker.store_on = FALSE
 	GLOB.client_glow_baker.icons -= key
 	fdel(store)
+
+/// A sprite bigger than a tile is lit as the turf it stands on: under client lighting it carries a flat light whose grey is that
+/// turf's level, a normal-sized atom carries none, the grey follows a light coming and going and the atom moving, and the flat
+/// light goes with the mode, with the size and with the atom.
+/datum/unit_test/dq_client_flat_light_big_mob
+
+/datum/unit_test/dq_client_flat_light_big_mob/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/east = locate(T.x + 12, T.y, T.z)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/small = allocate(/mob/living/carbon/human, T)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	H.resize(2, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
+	small.update_transform(TRUE)
+	TEST_ASSERT_NOTNULL(H.flat_light, "a double-size character has a flat light")
+	TEST_ASSERT_NULL(small.flat_light, "a normal-size character has none")
+	TEST_ASSERT_EQUAL(H.flat_light.plane, PLANE_LIGHTING, "the flat light is on the lighting plane")
+	TEST_ASSERT(H.flat_light.layer > CLIENT_GLOW_LAYER, "it is drawn above every glow")
+	TEST_ASSERT_EQUAL(H.flat_light.render_source, H.render_target, "it copies the atom's own sprite")
+	TEST_ASSERT(registry_has(REGISTRY_CLIENT_FLAT_LIT, H) && !registry_has(REGISTRY_CLIENT_FLAT_LIT, small), "only the big atom is registered")
+	var/dark_level = H.flat_light.lit_level
+	TEST_ASSERT_EQUAL(dark_level, round(T.get_lumcount() * 32), "its grey is the level of its turf")
+	// A light on the turf lifts the grey without anything asking the atom.
+	allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(H.flat_light.lit_level > dark_level, "a light on its turf raises its level ([dark_level] -> [H.flat_light.lit_level])")
+	TEST_ASSERT_EQUAL(H.flat_light.lit_level, round(T.get_lumcount() * 32), "and the level is the turf's again")
+	// Moving to an unlit turf follows the turf.
+	if(east && !east.directional_opacity)
+		H.forceMove(east)
+		client_flat_light_update(H) // the moved notice does this in play; the test clock does not deliver it here
+		TEST_ASSERT_EQUAL(H.flat_light.lit_level, round(east.get_lumcount() * 32), "after a move it takes the new turf's level")
+	var/recolours = GLOB.client_flat_light_recolours
+	client_flat_light_update(H)
+	TEST_ASSERT_EQUAL(GLOB.client_flat_light_recolours, recolours, "an unchanged level rewrites nothing")
+	log_test("CLIENT FLAT LIGHT: [GLOB.client_flat_light_makes] made, [GLOB.client_flat_light_recolours] recolours")
+	// Shrinking it back takes the flat light away.
+	H.resize(1, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
+	TEST_ASSERT_NULL(H.flat_light, "back to normal size: no flat light")
+	TEST_ASSERT(!registry_has(REGISTRY_CLIENT_FLAT_LIT, H), "and it left the registry")
+	H.resize(2, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
+	TEST_ASSERT_NOTNULL(H.flat_light, "big again: it has one")
+	client_lighting_set(FALSE)
+	TEST_ASSERT_NULL(H.flat_light, "DM lighting: no flat light")

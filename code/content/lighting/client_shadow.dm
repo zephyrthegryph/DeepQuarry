@@ -346,6 +346,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		return
 	if(client_glow_mask_apply(glow_mask_range, glow_mask_margin))
 		client_glow_holders_consider(src) // the held copies take the new mask
+		client_flat_lights_refresh(src) // a turf in the reach may have gone dark or lit
 
 /// Recomputes this light's reach and mask shape (client_glow_apply()). `margin` is the glow sprite's: the baked mask is the same size,
 /// so the two line up with no offset. TRUE when the shape changed.

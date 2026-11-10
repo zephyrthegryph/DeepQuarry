@@ -64,6 +64,7 @@
 #define REGISTRY_CABLES "cable_list"
 #define REGISTRY_CAMERAS "cameras"
 #define REGISTRY_CASTERS "allCasters"
+#define REGISTRY_CLIENT_FLAT_LIT "client_flat_lit"
 #define REGISTRY_CLIENT_GLOW_HOLDERS "client_glow_holders"
 #define REGISTRY_CATALOGUERS "all_cataloguers"
 #define REGISTRY_CHEM_IMPLANTS "all_chem_implants"

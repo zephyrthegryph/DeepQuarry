@@ -139,6 +139,8 @@ What is the naming convention for planes or layers?
 /// Client lighting on PLANE_LIGHTING: a white tile, and above it the glows. Ordinary layers, above the black screen base.
 #define CLIENT_GLOW_WHITE_LAYER 5
 #define CLIENT_GLOW_LAYER 6
+/// A big atom's flat silhouette on PLANE_LIGHTING: above every glow, it replaces the light under the sprite with its turf's level (client_flat_light.dm).
+#define CLIENT_GLOW_FLAT_LAYER 7
 	#define LIGHTING_RENDER_TARGET	"LIGHT_PLANE"
 
 #define PLANE_O_LIGHTING_VISUAL	6 //For masking the lighting plane

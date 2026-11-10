@@ -86,6 +86,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	client_glow_mask_apply(CEILING(range, 1), offset) // the shadow mask (client_shadow.dm)
 	applied = TRUE
 	client_glow_holders_consider(src) // viewers holding an off-screen copy follow (client_glow_holder.dm)
+	client_flat_lights_refresh(src) // big sprites near it take the new light of their turf (client_flat_light.dm)
 
 /// A carried light, a mob's own light and anything that has changed turf since it first glowed draw uncut: their shape changes as they go, and
 /// a bake per step would be a storm. The visibility cut on the glow plane still removes what they spill on tiles this client cannot see.
@@ -123,6 +124,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 		var/obj/effect/overlay/client_glow/G = glow
 		rel_clear(src, nameof(glow))
 		spent(G)
+	client_flat_lights_refresh(src)
 
 /// Switches client lighting on or off live: every lighting object goes (on) or comes back (off), and every light redraws.
 /// One pass with no yield (an admin switch): a yield would leave half the map in each mode, and the test clock never resumes it.
@@ -134,6 +136,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 		client_lighting_compare_set(FALSE) // compare mode runs on client lighting
 	GLOB.client_lighting = on
 	client_glow_holders_switched(on)
+	client_flat_lights_switched(on)
 	log_world("client lighting: [on ? "on" : "off"]")
 	client_glow_screens_sync() // the black base on every client's lighting plane (client_lighting_compare.dm)
 	if(!SSlighting.is_initialized())

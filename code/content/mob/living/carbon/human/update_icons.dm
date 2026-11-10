@@ -54,6 +54,7 @@
 	else
 		animate(src, transform = M, time = anim_time)
 	update_icon_special() //May contain transform-altering things
+	client_flat_light_update(src)
 
 //TODO: Carbon procs in my human update_icons??
 /mob/living/carbon/human/update_hud()	//TODO: do away with this if possible

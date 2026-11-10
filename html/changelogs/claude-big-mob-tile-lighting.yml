@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Under client lighting, a sprite bigger than a tile (large or size-scaled characters, big mobs) is lit as the turf it stands on instead of per screen pixel, so its head no longer takes the light of the tile above."

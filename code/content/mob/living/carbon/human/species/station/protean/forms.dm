@@ -251,6 +251,7 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 		transform = M
 	else
 		animate(src, transform = M, time = 3)
+	client_flat_light_update(src)
 
 /// Drop every held mob (micros in holders) the character is carrying anywhere
 /// in its inventory. Doesn't handle containment cycles.

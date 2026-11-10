@@ -48,3 +48,11 @@ DECLARE_SHARED_CACHE(emissive_blocker_generic, GLOBAL_PROC_REF(emissive_blocker_
 	unobserve(source, /datum/notice/qdeleting, src)
 	cut_overlay(source)
 	// A blocker deleted from outside leaves em_block in its destroy's phase 2.
+
+/// The client flat light is the second priority overlay a movable keeps outside the look builder (client_flat_light.dm): it must sit
+/// above every layer a look draws, so its raw overlay writes live here with the blocker.
+/atom/movable/proc/flat_light_overlay_add()
+	add_overlay(list(flat_light), TRUE)
+
+/atom/movable/proc/flat_light_overlay_cut()
+	cut_overlay(flat_light)
