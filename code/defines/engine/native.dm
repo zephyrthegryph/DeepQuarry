@@ -21,5 +21,7 @@
 /// A paced frame delivers records for this long (ms) and leaves the rest of its outbox for the next ticks, in order (deliver() in system.dm). One
 /// frame's outbox was up to 370 APC reports (130 ms at boot, 30-55 ms every ten seconds in play), and a tick that long is shed by the kernel.
 #define NATIVE_DELIVERY_BUDGET_MS 8
+/// The least time between two NATIVE_DELIVERY_DEFERRED lines (REALTIMEOFDAY, ds); the streaks between them are summed into the next one.
+#define NATIVE_DELIVERY_SUMMARY_INTERVAL (30 SECONDS)
 /// A native frame at least this long (ms) is always logged, whatever the rate limit: it is the stall the log exists for.
 #define NATIVE_STALL_FRAME_MS 500

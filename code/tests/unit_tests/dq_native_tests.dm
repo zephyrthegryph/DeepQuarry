@@ -255,6 +255,31 @@
 	TEST_ASSERT_NULL(N.deferred_box, "nothing waits any more")
 	TEST_ASSERT_EQUAL(N.deferred_frames, 0, "the streak was closed and traced")
 
+/// Closed deferral streaks are summed and logged as one line per interval, after the frame, never from inside deliver().
+/datum/unit_test/dq_native_deferral_summary_is_rate_limited
+
+/datum/unit_test/dq_native_deferral_summary_is_rate_limited/Run()
+	var/datum/system/native/N = native_system()
+	var/saved_budget = N.delivery_budget_ms
+	var/saved_at = N.summary_logged_at
+	N.flush_deferral_summary(TRUE) // clear anything earlier tests left
+	N.delivery_budget_ms = 0
+	var/list/outbox = list(NATIVE_REC_CROSSED, 0, 0, 0, NATIVE_REC_CROSSED, 0, 1, 0)
+	for(var/streak in 1 to 3)
+		N.deliver(outbox.Copy(), budgeted = TRUE)
+		N.deliver(list(), budgeted = TRUE)
+	N.delivery_budget_ms = saved_budget
+	TEST_ASSERT_EQUAL(N.summary_streaks, 3, "three closed streaks wait for the next line, none was logged by deliver()")
+	TEST_ASSERT_EQUAL(N.summary_frames, 3, "each streak left records for one later frame")
+	N.summary_logged_at = REALTIMEOFDAY
+	TEST_ASSERT(!N.flush_deferral_summary(), "a line logged just now holds the summary back")
+	TEST_ASSERT_EQUAL(N.summary_streaks, 3, "a held-back summary keeps its streaks")
+	N.summary_logged_at = REALTIMEOFDAY - NATIVE_DELIVERY_SUMMARY_INTERVAL - 1
+	TEST_ASSERT(N.flush_deferral_summary(), "after the interval the summary is logged")
+	TEST_ASSERT_EQUAL(N.summary_streaks, 0, "logging the summary clears it")
+	TEST_ASSERT(!N.flush_deferral_summary(TRUE), "nothing waiting, nothing logged")
+	N.summary_logged_at = saved_at
+
 /// A native frame past NATIVE_SLOW_FRAME_MS is reported with the Rust phases that grew: the report counts itself and keeps the counters
 /// the next report diffs against.
 /datum/unit_test/dq_native_slow_frame_is_reported

@@ -66,6 +66,14 @@
 	var/deferred_frames = 0
 	var/deferred_late = 0
 	var/deferred_peak = 0
+	/// Closed deferral streaks not yet logged: streaks, frames, records delivered late and the most entries waiting at once. One line per
+	/// NATIVE_DELIVERY_SUMMARY_INTERVAL covers them (a streak per line wrote 185 lines a round, and a slow log write stalled the frame it was in).
+	var/summary_streaks = 0
+	var/summary_frames = 0
+	var/summary_late = 0
+	var/summary_peak = 0
+	/// REALTIMEOFDAY of the last NATIVE_DELIVERY_DEFERRED line.
+	var/summary_logged_at = 0
 
 /datum/system/native/initialize()
 	. = ..()
@@ -110,6 +118,7 @@
 		apc_charge_drain() // the APC reports the delivery deferred (code/modules/power/apc.dm): a few a tick
 	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
 	last_vg_ms = TICK_DELTA_TO_MS(vg_done - start)
+	flush_deferral_summary()
 	if(last_frame_ms >= NATIVE_SLOW_FRAME_MS)
 		report_slow_frame(TICK_DELTA_TO_MS(vg_done - start))
 	return TRUE
@@ -220,10 +229,32 @@
 	if(had_deferred)
 		deferred_late += last_records
 	if(!deferred_box && deferred_frames)
-		log_world("NATIVE_DELIVERY_DEFERRED: a paced frame left records for [deferred_frames] later frame(s): [deferred_late] records were delivered by those frames, at most [deferred_peak] list entries waited at once, and a frame delivers for [NATIVE_DELIVERY_BUDGET_MS] ms")
+		summary_streaks++
+		summary_frames += deferred_frames
+		summary_late += deferred_late
+		summary_peak = max(summary_peak, deferred_peak)
 		deferred_frames = 0
 		deferred_late = 0
 		deferred_peak = 0
+
+/// Logs the closed deferral streaks as one NATIVE_DELIVERY_DEFERRED line, at most once per NATIVE_DELIVERY_SUMMARY_INTERVAL (`force`: now).
+/// Called after the frame's time is taken, so the log write is never counted in, or stalls, the delivery it describes.
+/datum/system/native/proc/flush_deferral_summary(force = FALSE)
+	if(!summary_streaks)
+		return FALSE
+	if(!force && summary_logged_at && abs(REALTIMEOFDAY - summary_logged_at) < NATIVE_DELIVERY_SUMMARY_INTERVAL)
+		return FALSE
+	summary_logged_at = REALTIMEOFDAY
+	var/streaks = summary_streaks
+	var/frames_late = summary_frames
+	var/late = summary_late
+	var/peak = summary_peak
+	summary_streaks = 0
+	summary_frames = 0
+	summary_late = 0
+	summary_peak = 0
+	log_world("NATIVE_DELIVERY_DEFERRED: [streaks] paced frame(s) ran out of delivery budget since the last line and left records for [frames_late] later frame(s): [late] records were delivered by those frames, at most [peak] list entries waited at once, and a frame delivers for [delivery_budget_ms] ms")
+	return TRUE
 
 /// CHANGED (`a`, `key`): a world watch's change wake goes to its lane, anything else is a change of the entity's datum.
 /datum/system/native/proc/on_changed(a, key, list/box, p, count)
