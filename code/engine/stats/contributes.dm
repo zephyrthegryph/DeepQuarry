@@ -99,6 +99,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_contrib)
 	/// The contribution that reads this hop when it sits inside a when() block, else null: a reader whose gate is closed is not reached.
 	var/datum/stat_contrib/gated
 
+CAPABILITIES(/datum/stat_hop)
+	ref_one(nameof(gated), /datum/stat_contrib)
+
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 /// Everything the stat layer knows about one entity type, built from its compiled table. Read-only after build.
 /datum/stat_type_info
@@ -625,7 +628,7 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 		hop.skey = stat_id ? "[stat_id]" : null
 		hop.ct = stat_id ? null : contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 		if(contrib && length(contrib.whens))
-			hop.gated = contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
+			rel_set(hop, nameof(/datum/stat_hop::gated), contrib)
 		hop.settle = length(segments) == 1 ? stat_hop_settle(E, hop.rel_var, hop.remote_var) : SETTLE_MARKED
 		// A factors() entry reading its receiver reads the entity that owns it: that entity's sources are few, so the table follows the write at once.
 		if(contrib?.table_kind && length(segments) == 1)
