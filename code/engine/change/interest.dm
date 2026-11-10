@@ -907,7 +907,7 @@ GLOBAL_VAR_INIT(interest_audit_looked, 0)
 	if(A.refresh_queued & DEP_PARKED)
 		if(!interest_ready(A))
 			return
-		if(A.refresh_queued == DEP_PARKED && GLOB.type_look_stamp[A.type] && !A.periodic_cadence && !A.periodic_interval)
+		if(A.refresh_queued == DEP_PARKED && GLOB.type_look_stamp[A.type] && look_verdict_fits(A) && !A.periodic_cadence && !A.periodic_interval)
 			return // held at boot by type (boot_created_hold()): an atom of an empty default look owes nothing, it was released with its type
 		GLOB.interest_audit_parked_in_view++
 		var/msg = "REFRESH PARKED IN VIEW: [A.type] at [A.x],[A.y],[A.z] still owes its draw in a chunk an observer sees"

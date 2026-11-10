@@ -30,7 +30,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 
 /// TRUE when a fresh `D` of a stamped type needs no first refresh (its type's verdict is in and its default look is empty).
 /proc/type_look_stamped(datum/D)
-	if(!GLOB.type_look_stamp[D.type] || D.periodic_cadence || D.periodic_interval || LAZYLEN(D.open_tguis))
+	if(!GLOB.type_look_stamp[D.type] || D.periodic_cadence || D.periodic_interval || LAZYLEN(D.open_tguis) || !look_verdict_fits(D))
 		return FALSE
 	var/flags = GLOB.type_derives_cache[D.type]
 	return !isnull(flags) && !(flags & TYPE_DERIVES_PENDING)
@@ -39,6 +39,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 /proc/type_look_stamp_record(datum/D)
 	if(isnull(GLOB.type_look_stamp[D.type]))
 		GLOB.type_look_stamp[D.type] = type_look_default_empty(D)
+		look_verdicts_learned()
 
 /// Boot (after every system's members are ready): one fresh sample per type still waiting for a verdict is refreshed now, then every
 /// queued fresh instance of a type whose default look is empty leaves the queue. A map load queues every atom before any drain has run
@@ -159,6 +160,7 @@ GLOBAL_LIST_EMPTY(type_look_lazy_why)
 	GLOB.type_look_lazy[A.type] = isnull(why)
 	if(why)
 		GLOB.type_look_lazy_why[A.type] = why
+	look_verdicts_learned()
 
 /// The rule that keeps `A`'s type from deriving nothing but a look, or null when it does.
 /proc/look_lazy_block(atom/A)
@@ -233,7 +235,7 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 
 /// Whether a fresh queued `A` may be parked: its type's verdict is lazy and this instance has nothing the verdict did not see.
 /proc/look_lazy_ok(atom/A)
-	if(!look_lazy_reachable(A) || !GLOB.type_look_lazy[A.type] || A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
+	if(!look_lazy_reachable(A) || !GLOB.type_look_lazy[A.type] || A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis) || !look_verdict_fits(A))
 		return FALSE
 	return !ismob(A)
 
@@ -338,7 +340,7 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 	if(GLOB.boot_created_settled || ismob(A) || A.periodic_cadence || A.periodic_interval || isnull(get_turf(A)) || !materialization_host().frame_running())
 		return FALSE // the cheap tests first: this runs for every atom created at boot
 	look_verdicts_load() // the verdicts a previous boot of this world learned: a known type is neither held nor sampled
-	if(!isnull(GLOB.type_look_stamp[A.type]))
+	if(!isnull(GLOB.type_look_stamp[A.type]) && look_verdict_fits(A))
 		// A known verdict (a previous boot of this world): a lazy type's fresh atom is parked at once when the boot leaves first draws to the clients,
 		// as the park would make of it, without a queue entry; any other is queued as before.
 		if(GLOB.type_look_lazy[A.type] && look_lazy_ok(A) && boot_drain_deferred())
@@ -395,13 +397,18 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 // Deriving the verdicts from the declarations at build time is the analyzer's follow-up (doc/rewrite/proposals/init_plan.md).
 
 #define LOOK_VERDICTS_FILE "data/look_verdicts.json"
+/// The cache's format version: it is part of the key and of the document, so a change to what a verdict means (or how it is stored) discards every older file.
+#define LOOK_VERDICTS_VERSION 2
+/// How long after a verdict is learned (past the boot settle) the cache is written again; verdicts learned meanwhile share the one write.
+#define LOOK_VERDICTS_SAVE_DELAY (30 SECONDS)
 
-/// The identity the cache is valid for: the compiler, the map and a hash of every compiled .dmb and .rsc in the working directory.
+/// The identity the cache is valid for: the format version, the compiler, the map and a hash of every compiled .dmb and .rsc in the working directory.
+/// A map loaded at runtime (expedition, submaps) is not in it; look_verdict_fits() judges each instance against the type's default instead.
 /proc/look_verdicts_key()
 	var/static/key
 	if(!isnull(key))
 		return key
-	var/list/parts = list("[DM_VERSION].[DM_BUILD]", "[world.maxx]x[world.maxy]x[world.maxz]") // the maps are compiled into the .dmb and .rsc hashed below
+	var/list/parts = list("v[LOOK_VERDICTS_VERSION]", "[DM_VERSION].[DM_BUILD]", "[world.maxx]x[world.maxy]x[world.maxz]") // the maps are compiled into the .dmb and .rsc hashed below
 	for(var/file in sortList(flist("./")))
 		var/extension = lowertext(copytext(file, -4))
 		if((extension == ".dmb" || extension == ".rsc") && !findtext(file, ".dyn.rsc"))
@@ -411,6 +418,45 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 
 /// Verdicts loaded from the cache this boot (the bench and the test read it).
 GLOBAL_VAR_INIT(look_verdicts_loaded, 0)
+/// Type path -> TRUE for a type whose verdict came from the cache rather than from a sample of this boot. Only these are judged per instance
+/// (look_verdict_fits()): a sampled verdict has its instance in the world, a cached one has none behind it.
+GLOBAL_LIST_EMPTY(look_verdict_from_file)
+/// Instances a cached verdict was refused for (an edited look var), for the boot log.
+GLOBAL_VAR_INIT(look_verdict_unfit, 0)
+/// Verdict count (stamp plus lazy) at the last write of the cache; the debounced save writes only when the tables have grown past it. -1: not written yet.
+GLOBAL_VAR_INIT(look_verdicts_saved, -1)
+/// TRUE while the debounced save is waiting.
+GLOBAL_VAR_INIT(look_verdicts_save_pending, FALSE)
+
+/// Whether a cached verdict may be applied to `D`. A cached verdict says what the type's default look is; an instance whose look vars were edited (a
+/// map var edit, a runtime-loaded map, a varedit) is not that default, so it is never spared by it and is handled as if no verdict were known.
+/// A verdict this boot sampled is not judged here (cheap exit).
+/proc/look_verdict_fits(datum/D)
+	if(!GLOB.look_verdict_from_file[D.type] || !isatom(D))
+		return TRUE
+	var/atom/A = D
+	if(A.icon_state != initial(A.icon_state) || A.icon != initial(A.icon) || A.color != initial(A.color) || A.alpha != initial(A.alpha) \
+		|| A.dir != initial(A.dir) || A.layer != initial(A.layer) || A.plane != initial(A.plane) || A.invisibility != initial(A.invisibility) \
+		|| A.pixel_x != initial(A.pixel_x) || A.pixel_y != initial(A.pixel_y) || A.opacity != initial(A.opacity) || A.density != initial(A.density) \
+		|| A.blend_mode != initial(A.blend_mode) || A.mouse_opacity != initial(A.mouse_opacity) || A.name != initial(A.name))
+		GLOB.look_verdict_unfit++
+		return FALSE
+	return TRUE
+
+/// The document of a cache file: a list, or null when there is no file, it is not valid JSON (a write cut short, a hand edit) or it is not an object.
+/// A bad file is logged and left for the next save to replace.
+/proc/look_verdicts_read(file = LOOK_VERDICTS_FILE)
+	if(!fexists(file))
+		return null
+	var/text = file2text(file)
+	if(!istext(text) || !rustg_json_is_valid(text))
+		log_world("LOOK VERDICTS: [file] is not valid JSON ([length(text)] bytes); ignored, sampling at boot")
+		return null
+	var/list/doc = json_decode(text)
+	if(!islist(doc))
+		log_world("LOOK VERDICTS: [file] is not an object; ignored, sampling at boot")
+		return null
+	return doc
 
 /// Reads the cached verdicts into the verdict tables when the cache was written by this world. Once per boot, before the map's atoms initialize.
 /proc/look_verdicts_load()
@@ -418,39 +464,68 @@ GLOBAL_VAR_INIT(look_verdicts_loaded, 0)
 	if(done)
 		return
 	done = TRUE
-	if(!fexists(LOOK_VERDICTS_FILE))
+	var/list/doc = look_verdicts_read()
+	if(isnull(doc))
 		return
-	if(!look_verdicts_apply(json_decode(file2text(LOOK_VERDICTS_FILE))))
-		log_world("LOOK VERDICTS: the cache was written by another world; sampling at boot")
+	if(!look_verdicts_apply(doc))
+		log_world("LOOK VERDICTS: the cache was written by another world or format; sampling at boot")
 		return
 	log_world("LOOK VERDICTS: [GLOB.look_verdicts_loaded] type verdict(s) read from the cache")
 
-/// Puts the verdicts of a cache document into the verdict tables when the document was written by this world (its key). FALSE, reading nothing,
-/// for a document of another world: its verdicts would draw this world's atoms wrong.
+/// Puts the verdicts of a cache document into the verdict tables when the document was written by this world and format (its version and key). FALSE,
+/// reading nothing, for any other document: its verdicts would draw this world's atoms wrong.
 /proc/look_verdicts_apply(list/data)
-	if(!islist(data) || data["key"] != look_verdicts_key())
+	if(!islist(data) || data["version"] != LOOK_VERDICTS_VERSION || data["key"] != look_verdicts_key())
 		return FALSE
 	var/list/stamp = data["stamp"]
 	var/list/lazy = data["lazy"]
+	if(!islist(stamp) || !islist(lazy))
+		return FALSE
 	for(var/name in stamp)
 		var/path = text2path(name)
 		if(path && isnull(GLOB.type_look_stamp[path]))
 			GLOB.type_look_stamp[path] = !!stamp[name]
+			GLOB.look_verdict_from_file[path] = TRUE
 			GLOB.look_verdicts_loaded++
 	for(var/name in lazy)
 		var/path = text2path(name)
 		if(path && isnull(GLOB.type_look_lazy[path]))
 			GLOB.type_look_lazy[path] = !!lazy[name]
+			GLOB.look_verdict_from_file[path] = TRUE
 	return TRUE
 
-/// Writes every verdict known now (the boot settle has sampled what was new), for the next boot of this world.
-/proc/look_verdicts_save()
+/// Writes every verdict known now, for the next boot of this world. The document goes to a temporary file first and is read back before it replaces the
+/// cache, so a write cut short never leaves a half file where the cache was. Returns whether the cache was replaced.
+/proc/look_verdicts_save(file = LOOK_VERDICTS_FILE)
 	var/list/stamp = list()
 	var/list/lazy = list()
 	for(var/path in GLOB.type_look_stamp)
 		stamp["[path]"] = GLOB.type_look_stamp[path] ? 1 : 0
 	for(var/path in GLOB.type_look_lazy)
 		lazy["[path]"] = GLOB.type_look_lazy[path] ? 1 : 0
-	fdel(LOOK_VERDICTS_FILE)
-	text2file(json_encode(list("key" = look_verdicts_key(), "stamp" = stamp, "lazy" = lazy)), LOOK_VERDICTS_FILE)
-	log_world("LOOK VERDICTS: [length(stamp)] type verdict(s) written for the next boot")
+	var/temp = "[file].tmp"
+	fdel(temp)
+	text2file(json_encode(list("version" = LOOK_VERDICTS_VERSION, "key" = look_verdicts_key(), "stamp" = stamp, "lazy" = lazy)), temp)
+	if(!look_verdicts_read(temp))
+		log_world("LOOK VERDICTS: the temporary cache [temp] did not write back; the cache [file] is left as it was")
+		fdel(temp)
+		return FALSE
+	fcopy(temp, file) // a copy of a file already known good; BYOND has no rename
+	fdel(temp)
+	GLOB.look_verdicts_saved = length(GLOB.type_look_stamp) + length(GLOB.type_look_lazy)
+	log_world("LOOK VERDICTS: [length(stamp)] type verdict(s) written for the next boot ([GLOB.look_verdict_unfit] instance(s) refused a cached verdict so far)")
+	return TRUE
+
+/// A verdict was just learned (type_look_stamp_record(), look_lazy_record()). Once the boot settle has written the cache, new verdicts are written by one
+/// save a little later, so a type first made mid-round (an expedition map, a spawned item) is kept for the next boot too.
+/proc/look_verdicts_learned()
+	if(GLOB.look_verdicts_saved < 0 || GLOB.look_verdicts_save_pending)
+		return
+	GLOB.look_verdicts_save_pending = TRUE
+	after(null, LOOK_VERDICTS_SAVE_DELAY, GLOBAL_PROC_REF(look_verdicts_flush), clock = CLOCK_WORLD)
+
+/// The debounced save: writes when the tables hold more than the last write did.
+/proc/look_verdicts_flush()
+	GLOB.look_verdicts_save_pending = FALSE
+	if(length(GLOB.type_look_stamp) + length(GLOB.type_look_lazy) > GLOB.look_verdicts_saved)
+		look_verdicts_save()

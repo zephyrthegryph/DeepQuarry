@@ -329,12 +329,13 @@
 /datum/unit_test/dq_refresh_parked_first_draw/Run()
 	interest_isolate()
 	set_global(nameof(GLOB.refresh_parked_woken), GLOB.refresh_parked_woken)
+	set_global(nameof(GLOB.refresh_parked), GLOB.refresh_parked)
 	var/turf/T = test_floor()
 	refresh_flush()
 	set_global(nameof(GLOB.refresh_park_residual), GLOB.refresh_park_residual) // the park below writes it: the framework restores it
 	GLOB.type_look_stamp -= /obj/structure/table // as before the type's verdict is in: fresh instances queue their first draw
 	var/obj/structure/table/near = new(T)
-	var/obj/structure/table/marked = new(T)
+	var/obj/structure/table/marked = new(get_step(T, EAST)) // not on the same turf: a second table there deletes itself and leaves a sheet
 	for(var/obj/structure/table/fresh as anything in list(near, marked)) // caps_init()'s creation mark, as a map load leaves it
 		if(!fresh.refresh_queued)
 			refresh_mark(fresh, DEP_ALL)
@@ -342,8 +343,11 @@
 	TEST_ASSERT(near.refresh_queued & DEP_CREATED, "a fresh table queues its first draw")
 	GLOB.type_look_lazy -= /obj/structure/table
 	// A type with no lazy verdict is never parked; a lazy verdict parks the fresh ones.
-	TEST_ASSERT_EQUAL(refresh_park_backlog(), 0, "no verdict, nothing parked")
+	// (The count is not asserted: another fresh atom in the queue, like the steel a table leaves, may be of a type whose lazy verdict a cache supplied.)
+	refresh_park_backlog()
+	TEST_ASSERT(!(near.refresh_queued & DEP_PARKED) && !(marked.refresh_queued & DEP_PARKED), "no verdict, the fresh tables are not parked")
 	GLOB.type_look_lazy[/obj/structure/table] = TRUE
+	GLOB.look_verdict_from_file -= /obj/structure/table // sampled here, as this boot would: a cached verdict is judged per instance (look_verdict_fits())
 	TEST_ASSERT(refresh_park_backlog() >= 2, "the fresh tables of a lazy type are parked")
 	TEST_ASSERT_EQUAL(near.refresh_queued, DEP_PARKED, "a parked atom owes its first draw and is not queued")
 	TEST_ASSERT(!(near in GLOB.refresh_queue), "and is not in the queue")

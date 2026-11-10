@@ -318,8 +318,10 @@ CAPABILITIES(/obj/dq_setup_marks_probe)
 	TEST_ASSERT(!look_verdicts_apply(doc), "a document of another world is refused")
 	TEST_ASSERT(isnull(GLOB.type_look_stamp[type]) && isnull(GLOB.type_look_lazy[type]), "and none of its verdicts are read")
 	doc["key"] = look_verdicts_key()
+	doc["version"] = LOOK_VERDICTS_VERSION
 	TEST_ASSERT(look_verdicts_apply(doc), "the same document keyed by this world is read")
 	TEST_ASSERT(GLOB.type_look_stamp[type] && GLOB.type_look_lazy[type], "with its verdicts")
+	GLOB.look_verdict_from_file -= type
 	GLOB.type_look_stamp[type] = was_stamp
 	GLOB.type_look_lazy[type] = was_lazy
 	if(isnull(was_stamp))
@@ -353,3 +355,66 @@ CAPABILITIES(/obj/dq_setup_marks_probe)
 	qdel(on_map)
 	qdel(in_nullspace)
 	qdel(hud_piece)
+
+/// A cached verdict is the type's default look: an instance whose look vars were edited (a map var edit, a runtime-loaded map, a varedit) is never spared by it.
+/datum/unit_test/dq_look_verdict_cache_spares_only_default_instances
+
+/datum/unit_test/dq_look_verdict_cache_spares_only_default_instances/Run()
+	var/type = /obj/dq_stamp_plain
+	set_global(nameof(GLOB.look_verdict_unfit), GLOB.look_verdict_unfit)
+	var/was_lazy = GLOB.type_look_lazy[type]
+	var/was_cached = GLOB.look_verdict_from_file[type]
+	GLOB.type_look_lazy[type] = TRUE
+	GLOB.look_verdict_from_file[type] = TRUE // as if the verdict were read from the cache
+	var/obj/plain = allocate(type, test_floor())
+	var/obj/edited = allocate(type, test_floor())
+	TEST_ASSERT(look_verdict_fits(plain), "an instance at its type's default is spared by the cached verdict")
+	TEST_ASSERT(look_lazy_ok(plain), "and may be parked by a cached lazy verdict")
+	edited.set_icon_state("dq_edited_state_that_is_not_the_default")
+	TEST_ASSERT(!look_verdict_fits(edited), "an instance with an edited icon_state is not spared")
+	TEST_ASSERT(!look_lazy_ok(edited), "and is never parked by a cached lazy verdict")
+	TEST_ASSERT(GLOB.look_verdict_unfit > 0, "and the refusal is counted for the boot log")
+	edited.set_icon_state(initial(edited.icon_state))
+	edited.set_color("#ff0000")
+	TEST_ASSERT(!look_verdict_fits(edited), "a colour edit is refused too")
+	GLOB.look_verdict_from_file -= type
+	TEST_ASSERT(look_verdict_fits(edited), "a verdict this boot sampled (not cached) is not judged per instance")
+	GLOB.type_look_lazy[type] = was_lazy
+	if(isnull(was_lazy))
+		GLOB.type_look_lazy -= type
+	if(was_cached)
+		GLOB.look_verdict_from_file[type] = TRUE
+
+/// A cache file that is not valid JSON (a write cut short, a hand edit) is ignored with a log and replaced by the next save; the replacement is whole.
+/datum/unit_test/dq_look_verdict_cache_corrupt_file_ignored
+
+/datum/unit_test/dq_look_verdict_cache_corrupt_file_ignored/Run()
+	var/file = "data/look_verdicts_test_corrupt.json"
+	set_global(nameof(GLOB.look_verdicts_saved), GLOB.look_verdicts_saved)
+	fdel(file)
+	text2file("{\"version\": 2, \"key\": \"cut sho", file)
+	TEST_ASSERT(isnull(look_verdicts_read(file)), "a truncated document reads as nothing")
+	fdel(file)
+	text2file("\[1, 2]", file)
+	TEST_ASSERT(isnull(look_verdicts_read(file)) || !look_verdicts_apply(look_verdicts_read(file)), "a document that is not an object applies nothing")
+	TEST_ASSERT(look_verdicts_save(file), "the next save replaces the corrupt file")
+	var/list/doc = look_verdicts_read(file)
+	TEST_ASSERT(islist(doc) && doc["key"] == look_verdicts_key(), "with a whole document of this world")
+	TEST_ASSERT(!fexists("[file].tmp"), "and leaves no temporary file")
+	fdel(file)
+
+/// A cache of another format version is refused, whatever else it says: the version is in the document and in the key.
+/datum/unit_test/dq_look_verdict_cache_version_mismatch_rejected
+
+/datum/unit_test/dq_look_verdict_cache_version_mismatch_rejected/Run()
+	var/type = /obj/dq_stamp_plain
+	var/was_stamp = GLOB.type_look_stamp[type]
+	GLOB.type_look_stamp -= type
+	TEST_ASSERT(findtext(look_verdicts_key(), "v[LOOK_VERDICTS_VERSION]|") == 1, "the key starts with the format version")
+	var/list/doc = list("version" = LOOK_VERDICTS_VERSION - 1, "key" = look_verdicts_key(), "stamp" = list("[type]" = 1), "lazy" = list())
+	TEST_ASSERT(!look_verdicts_apply(doc), "an older version is refused")
+	doc -= "version"
+	TEST_ASSERT(!look_verdicts_apply(doc), "a document with no version is refused")
+	TEST_ASSERT(isnull(GLOB.type_look_stamp[type]), "and none of its verdicts are read")
+	if(!isnull(was_stamp))
+		GLOB.type_look_stamp[type] = was_stamp
