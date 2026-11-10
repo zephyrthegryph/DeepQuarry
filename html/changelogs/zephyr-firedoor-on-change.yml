@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "An area's power channel flip no longer re-evaluates has_power on every machine in the area, only on the ones drawing on that channel"

@@ -25,6 +25,8 @@ GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
 GLOBAL_VAR_INIT(stat_evals, 0)
+/// Hop reaches skipped because the reading contribution's when() gate was closed on the reader.
+GLOBAL_VAR_INIT(stat_hops_gated, 0)
 /// Settles the init frame queued instead of running (stat_settle_defer), how many it ran when the frame closed or a read needed them, and for how many targets.
 GLOBAL_VAR_INIT(stat_deferred, 0)
 GLOBAL_VAR_INIT(stat_deferred_settles, 0)
@@ -686,8 +688,22 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 	for(var/i in 1 to length(targets) step 2)
 		stat_hop_reach(targets[i], targets[i + 1])
 
+/// TRUE when `reader` is built and the when() gate of `gated` (the contribution that reads the hop) is closed on it.
+/proc/stat_hop_gate_closed(datum/reader, datum/stat_contrib/gated)
+	if(isatom(reader))
+		var/atom/built = reader
+		if(!(built.flags & ATOM_INITIALIZED))
+			return FALSE
+	return !stat_contrib_active(reader, gated)
+
 /// One reader reached through `hop`: settled at once or marked for the next marked drain.
 /proc/stat_hop_reach(datum/reader, datum/stat_hop/hop)
+	// A contribution inside a closed when() adds nothing, whatever the far var did (a machine that does not draw on the area's environment channel
+	// has no use for its flip): the reader is not reached. When the gate opens, its own inputs recompute the stat from the far var as it then is.
+	var/datum/stat_contrib/gated = hop.gated
+	if(gated && stat_hop_gate_closed(reader, gated))
+		GLOB.stat_hops_gated++
+		return
 	var/settle = GLOB.stat_force_settle || hop.settle
 	if(hop.ct)
 		if(settle == SETTLE_INLINE)

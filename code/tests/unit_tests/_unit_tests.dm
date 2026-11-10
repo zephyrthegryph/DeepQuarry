@@ -509,6 +509,7 @@
 #include "dq_grid_behaviour.dm"
 #include "dq_power_door_regression.dm"
 #include "dq_power_wakes_tests.dm"
+#include "dq_firedoor_reaction_count.dm"
 #include "dq_power_tests.dm"
 #include "dq_rust_push_phase_s_tests.dm"
 #include "dq_power_plants_behaviour.dm"
