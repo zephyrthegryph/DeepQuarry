@@ -99,7 +99,7 @@ impl DerefMut for Held {
 
 impl Drop for Held {
     fn drop(&mut self) {
-        if needs_release(self.0 .0.type_) {
+        if needs_release(self.0.0.type_) {
             release(&mut self.0);
         }
     }
@@ -107,7 +107,7 @@ impl Drop for Held {
 
 impl std::fmt::Debug for Held {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Held(type {:#04x})", self.0 .0.type_)
+        write!(f, "Held(type {:#04x})", self.0.0.type_)
     }
 }
 

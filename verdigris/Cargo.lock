@@ -75,6 +75,7 @@ dependencies = [
  "eyre",
  "flume",
  "tracing",
+ "vg-core",
 ]
 
 [[package]]

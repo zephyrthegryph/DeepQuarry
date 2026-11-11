@@ -387,6 +387,7 @@ fn scratch_values_transfer_out_and_back() {
 
 #[test]
 fn a_panicking_task_is_reported_and_the_sim_continues() {
+    vg_core::panic_site::install();
     let (mut builder, keys) = toy_builder(config(2), false);
     let calls = Arc::new(AtomicU32::new(0));
     {
@@ -411,6 +412,11 @@ fn a_panicking_task_is_reported_and_the_sim_continues() {
             .as_deref()
             .unwrap()
             .contains("boom")
+    );
+    let last = sim.metrics().last_panic.clone().unwrap();
+    assert!(
+        last.contains("sim_toy.rs:"),
+        "the panic names its location: {last}"
     );
     assert_eq!(sim.port(keys.heat).read(0).unwrap().energy, 3.0);
     assert!(calls.load(Ordering::Relaxed) >= 3);

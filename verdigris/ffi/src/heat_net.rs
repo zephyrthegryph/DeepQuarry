@@ -365,7 +365,7 @@ fn write_energy(r: Res, joules: f64) {
             }
         }
         Res::Body(e) => {
-            let _ = with_world(|w| {
+            let _ = crate::world::with_world_reported(|w| {
                 if let Some(mut b) = w.read::<HeatBody>(e) {
                     vg_heat::laws::add_body_energy(&mut b, joules);
                     let _ = w.put(e, b);
@@ -375,7 +375,7 @@ fn write_energy(r: Res, joules: f64) {
             });
         }
         Res::Solid(cell) => {
-            let _ = with_world(|w| {
+            let _ = crate::world::with_world_reported(|w| {
                 let field = crate::heat::field()?;
                 let _ = w
                     .sim_mut()

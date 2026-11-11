@@ -8,8 +8,8 @@
 //! call to `::auxcallback::panic_guard::run_guarded` rather than inlining
 //! `catch_unwind`.
 use byondapi::value::ByondValue;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 /// Per-bind call and error counters. `#[auxmacros::bind]` emits one `static`
 /// of this per bind; it registers itself on its first call, so the cost of a
@@ -96,7 +96,10 @@ where
                 .map(|s| (*s).to_string())
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_else(|| "unknown panic".to_string());
-            Err(eyre::eyre!("panic: {msg}"))
+            Err(eyre::eyre!(
+                "panic: {}",
+                vg_core::panic_site::describe(&msg)
+            ))
         }
     };
     result.map_err(|err| err.wrap_err(context.to_string()))

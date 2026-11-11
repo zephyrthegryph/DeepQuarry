@@ -153,13 +153,13 @@ impl World {
             );
         }));
         if let Err(payload) = result {
-            self.panic = Some(
-                payload
-                    .downcast_ref::<&str>()
-                    .map(ToString::to_string)
-                    .or_else(|| payload.downcast_ref::<String>().cloned())
-                    .unwrap_or_else(|| "frame task panicked".to_owned()),
-            );
+            let msg = payload
+                .downcast_ref::<&str>()
+                .map(ToString::to_string)
+                .or_else(|| payload.downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "frame task panicked".to_owned());
+            // The hook ran on this thread (the frame's), so the location is ours to take.
+            self.panic = Some(crate::panic_site::describe(&msg));
         }
         for (domain, (res, publish)) in self.publishers.iter().enumerate() {
             self.prev[domain] = Some(publish(self.resources.erased_mut(*res)));
