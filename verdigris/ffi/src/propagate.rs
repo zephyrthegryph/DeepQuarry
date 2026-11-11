@@ -5,6 +5,7 @@
 //! ([`RadiationLayer`]), not a process static; every call is synchronous.
 //! Coordinates are DM's one-based turf coordinates.
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::GridDims;
 use vg_core::propagate::{RadiationField, emp};
@@ -30,7 +31,7 @@ fn coord(value: &ByondValue) -> Result<u32> {
 }
 
 fn numbers(list: &ByondValue) -> Result<Vec<f32>> {
-    list.get_list_values()?.iter().map(number).collect()
+    list.held_list()?.iter().map(number).collect()
 }
 
 /// Writes radiation transmission for changed turfs. `cells` is a flat list of
@@ -98,9 +99,7 @@ fn radiation_pulse(
         }
     })?;
     let values: Vec<ByondValue> = result.into_iter().map(ByondValue::from).collect();
-    let list = ByondValue::new_list()?;
-    list.write_list(&values)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&values)?)
 }
 
 /// EMP severity around (`x`, `y`, `z`) with the four band radii in `ranges`
@@ -139,7 +138,5 @@ fn emp_falloff(
         values.push(ByondValue::from(v as f32));
     }
     values.extend(f.severity.into_iter().map(ByondValue::from));
-    let list = ByondValue::new_list()?;
-    list.write_list(&values)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&values)?)
 }

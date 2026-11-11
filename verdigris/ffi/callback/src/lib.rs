@@ -3,6 +3,7 @@ use coarsetime::{Duration, Instant};
 use eyre::Result;
 use std::convert::TryFrom;
 
+pub mod held;
 pub mod panic_guard;
 
 type DeferredFunc = Box<dyn FnOnce() -> Result<()> + Send + Sync>;
@@ -43,10 +44,10 @@ fn report_callback_error(e: eyre::Report) {
     let message = format!("{e:?}");
     match ByondValue::try_from(message.clone()) {
         Ok(error_string) => {
-            if let Err(report_err) = byondapi::global_call::call_global_id(
-                byond_string!("byondapi_stack_trace"),
-                &[error_string],
-            ) {
+            // The proc's reply is dropped here, which releases the reference it carries.
+            if let Err(report_err) =
+                held::held_call_global_id(byond_string!("byondapi_stack_trace"), &[error_string])
+            {
                 tracing::error!(
                     original_error = %message,
                     report_error = %report_err,

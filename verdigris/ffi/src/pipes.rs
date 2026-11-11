@@ -43,6 +43,7 @@ use std::collections::HashMap;
 
 use crate::gas::mix::{self, MixRef};
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::component::Component;
 use vg_core::entity::EntityId;
@@ -130,7 +131,7 @@ fn pipe_upsert(
 /// skipped, not an error).
 #[auxmacros::bind("/proc/vg_pipe_upsert_list")]
 fn pipe_upsert_list(triples: ByondValue) -> Result<ByondValue> {
-    let values = triples.get_list_values()?;
+    let values = triples.held_list()?;
     if values.len() % 3 != 0 {
         bail!("triples must be a flat port, mixture_handle, volume list");
     }
@@ -196,7 +197,7 @@ fn pipe_remove(port: ByondValue, mixture_handle: ByondValue) -> Result<ByondValu
 /// topology edit. Zero/null or bad ports are skipped.
 #[auxmacros::bind("/proc/vg_pipe_remove_list")]
 fn pipe_remove_list(pairs: ByondValue) -> Result<ByondValue> {
-    let values = pairs.get_list_values()?;
+    let values = pairs.held_list()?;
     if values.len() % 2 != 0 {
         bail!("pairs must be a flat port, mixture_handle list");
     }
@@ -254,7 +255,7 @@ fn pipe_connect(port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
 /// `port_a, port_b, ...` list `pairs`, in one topology edit.
 #[auxmacros::bind("/proc/vg_pipe_connect_list")]
 fn pipe_connect_list(pairs: ByondValue) -> Result<ByondValue> {
-    let values = pairs.get_list_values()?;
+    let values = pairs.held_list()?;
     if values.len() % 2 != 0 {
         bail!("pairs must be a flat port_a, port_b list");
     }
@@ -420,7 +421,7 @@ fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Re
 /// many succeeded; a bad row is skipped, not an error.
 #[auxmacros::bind("/proc/vg_pipe_device_set_list")]
 fn pipe_device_set_list(triples: ByondValue) -> Result<ByondValue> {
-    let values = triples.get_list_values()?;
+    let values = triples.held_list()?;
     if values.len() % 3 != 0 {
         bail!("triples must be a flat device, port_a, port_b list");
     }

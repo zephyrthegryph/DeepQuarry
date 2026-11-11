@@ -29,6 +29,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use byondapi::prelude::*;
+use crate::held::{HeldList, HeldRead};
 use eyre::{Result, bail};
 use vg_core::thermo::transfer::{self, Books, Edge, EdgeKind, Flow, Reservoirs, State};
 use vg_core::thermo::{Regulator, RegulatorMode};
@@ -834,7 +835,7 @@ fn gas_reaction_apply(mixture: ByondValue, kind: ByondValue, extent: ByondValue,
     #[allow(clippy::cast_possible_truncation)]
     let kind = num(&kind)? as i32;
     let (extent, aux) = (f(&extent)?, if aux.is_num() { f(&aux)? } else { 0.0 });
-    let flat = if deltas.is_list() { deltas.get_list_values()? } else { Vec::new() };
+    let flat = if deltas.is_list() { deltas.held_list()? } else { HeldList::default() };
     let mut pairs = Vec::with_capacity(flat.len() / 2);
     for pair in flat.chunks_exact(2) {
         let raw = num(&pair[0])?;

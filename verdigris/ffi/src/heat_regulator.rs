@@ -93,13 +93,11 @@ fn heat_regulator_step(
         Kelvin::from(num(&other_temp)?),
     );
     let step = regulator.step(controlled, other, num(&dt)?);
-    let list = ByondValue::new_list()?;
-    list.write_list(&[
+    Ok(crate::held::hand_list(&[
         ByondValue::from(step.work),
         ByondValue::from(step.moved),
         ByondValue::from(step.other),
-    ])?;
-    Ok(list)
+    ])?)
 }
 
 /// Just the cooling-side Carnot-bounded COP (`cold`/`hot` in K), for a

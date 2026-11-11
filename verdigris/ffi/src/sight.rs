@@ -3,6 +3,7 @@
 //! (lighting, line of sight) read [`view`] over it. Coordinates are DM's
 //! one-based turf coordinates.
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::{BlockKind, Dir};
 use vg_core::propagate::view::view;
@@ -16,7 +17,7 @@ use crate::world::{num, with_world};
 #[auxmacros::bind("/proc/sight_set_cells")]
 fn sight_set_cells(cells: ByondValue) -> Result<ByondValue> {
     let values: Vec<f32> = cells
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(num)
         .collect::<Result<_>>()?;
@@ -60,7 +61,5 @@ fn sight_view(center: ByondValue, range: ByondValue) -> Result<ByondValue> {
         Ok(view(&grid, BlockKind::Opacity, cell, range as u32))
     })?;
     let items: Vec<ByondValue> = cells.into_iter().map(|c| ByondValue::new_ref(ValueType::Turf, c)).collect();
-    let out = ByondValue::new_list()?;
-    out.write_list(&items)?;
-    Ok(out)
+    Ok(crate::held::hand_list(&items)?)
 }

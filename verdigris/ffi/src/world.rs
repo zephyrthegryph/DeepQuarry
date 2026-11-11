@@ -31,6 +31,7 @@
 use std::cell::RefCell;
 
 use byondapi::prelude::*;
+use crate::held::{HeldList, HeldRead};
 use eyre::{Result, bail, eyre};
 use vg_core::component::FieldId;
 use vg_core::conservation::Tolerance;
@@ -412,9 +413,7 @@ fn kind(w: &World, code: &ByondValue) -> Result<KindId> {
 
 pub(crate) fn list(values: impl IntoIterator<Item = f32>) -> Result<ByondValue> {
     let items: Vec<ByondValue> = values.into_iter().map(ByondValue::from).collect();
-    let list = ByondValue::new_list()?;
-    list.write_list(&items)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&items)?)
 }
 
 fn text_list(values: impl IntoIterator<Item = String>) -> Result<ByondValue> {
@@ -422,9 +421,7 @@ fn text_list(values: impl IntoIterator<Item = String>) -> Result<ByondValue> {
         .into_iter()
         .map(ByondValue::new_str)
         .collect::<Result<Vec<_>, _>>()?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&items)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&items)?)
 }
 
 /// Attaches component `code` to `entity` (0: a new entity), seeded from its
@@ -434,9 +431,9 @@ fn text_list(values: impl IntoIterator<Item = String>) -> Result<ByondValue> {
 fn component_bind(entity: ByondValue, code: ByondValue, init: ByondValue) -> Result<ByondValue> {
     let e = entity::bind_or_reuse(num(&entity)?)?;
     let pairs = if init.is_list() {
-        init.get_list_values()?
+        init.held_list()?
     } else {
-        Vec::new()
+        HeldList::default()
     };
     let mut values = Vec::with_capacity(pairs.len() / 2);
     for pair in pairs.chunks(2) {
@@ -468,14 +465,14 @@ fn component_bind_list(
     rows: ByondValue,
 ) -> Result<ByondValue> {
     let field_ids = fields
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(field)
         .collect::<Result<Vec<_>>>()?;
     if field_ids.is_empty() {
         bail!("fields must name at least one field");
     }
-    let values = rows.get_list_values()?;
+    let values = rows.held_list()?;
     let stride = field_ids.len() + 1;
     if values.len() % stride != 0 {
         bail!("rows must be flat entity, value... records of {stride} values");
@@ -557,7 +554,7 @@ fn component_get_many(
 ) -> Result<ByondValue> {
     let e = entity::decode(num(&entity)?)?;
     let ids = fields
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(field)
         .collect::<Result<Vec<_>>>()?;

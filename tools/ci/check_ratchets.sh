@@ -136,6 +136,14 @@ elif ! bash tools/ci/check_test_scratch.sh; then
 	failed+=("check_test_scratch")
 fi
 
+# Raw Byondapi reference reads (a persistent ref that leaks its DM object) are rejected outside verdigris/ffi/callback/src/held.rs.
+if ! selftest_wanted '^verdigris/.*\.rs$|^tools/ci/check_byond_refs\.py$'; then echo "check_ratchets: check_byond_refs skipped (no verdigris Rust file changed)"
+elif ! "$PY" tools/ci/check_byond_refs.py; then
+	failed+=("check_byond_refs")
+elif ! "$PY" tools/ci/check_byond_refs.py --selftest; then
+	failed+=("check_byond_refs_selftest")
+fi
+
 wait
 for name in "${gen_names[@]}"; do
 	echo "::group::$name"

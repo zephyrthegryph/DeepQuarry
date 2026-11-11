@@ -43,9 +43,7 @@ fn verdigris_allocator_diagnostics() -> Result<ByondValue> {
         .into_iter()
         .map(|value| ByondValue::from(value as f32))
         .collect::<Vec<_>>();
-    let list = ByondValue::new_list()?;
-    list.write_list(&values)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&values)?)
 }
 
 /// One-time global state init and the version handshake. DM calls this in

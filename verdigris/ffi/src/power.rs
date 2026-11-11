@@ -14,6 +14,7 @@
 //! lead to, following DM's explicit z links) is computed here at bind.
 
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::Dir;
 use vg_core::network::RegionId;
@@ -100,8 +101,8 @@ fn cell(x: &ByondValue, y: &ByondValue, z: &ByondValue) -> Result<u32> {
 /// cable has no component of its own). Returns the entity handle.
 #[auxmacros::bind("/proc/vg_power_bind_cable")]
 fn power_bind_cable(entity: ByondValue, shape: ByondValue) -> Result<ByondValue> {
-    let v = shape.get_list_values()?;
-    let [x, y, z, d1, d2, up, down, link] = v.as_slice() else {
+    let v = shape.held_list()?;
+    let [x, y, z, d1, d2, up, down, link] = &v[..] else {
         bail!("shape must be [x, y, z, d1, d2, up, down, link]");
     };
     let e = entity::bind_or_reuse(num(&entity)?)?;
@@ -129,8 +130,8 @@ fn power_bind_cable(entity: ByondValue, shape: ByondValue) -> Result<ByondValue>
 /// order.
 #[auxmacros::bind("/proc/vg_power_bind_cable_list")]
 fn power_bind_cable_list(entities: ByondValue, shapes: ByondValue) -> Result<ByondValue> {
-    let entities = entities.get_list_values()?;
-    let shapes = shapes.get_list_values()?;
+    let entities = entities.held_list()?;
+    let shapes = shapes.held_list()?;
     if shapes.len() != entities.len() * 8 {
         bail!("shapes must hold 8 values per entity");
     }
@@ -160,9 +161,7 @@ fn power_bind_cable_list(entities: ByondValue, shapes: ByondValue) -> Result<Byo
         })
         .map_err(|err| eyre!("{err}"))
     })?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&handles)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&handles)?)
 }
 
 /// Binds (or rebinds) `entity`'s node as a plain machine terminal at
@@ -195,8 +194,8 @@ fn power_bind_machine(
 /// Returns how many nodes were bound.
 #[auxmacros::bind("/proc/vg_power_bind_machine_list")]
 fn power_bind_machine_list(entities: ByondValue, coords: ByondValue) -> Result<ByondValue> {
-    let entities = entities.get_list_values()?;
-    let coords = coords.get_list_values()?;
+    let entities = entities.held_list()?;
+    let coords = coords.held_list()?;
     if coords.len() != entities.len() * 3 {
         bail!("coords must hold 3 values per entity");
     }
@@ -242,7 +241,7 @@ fn power_unbind_node(entity: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/vg_power_unbind_node_list")]
 fn power_unbind_node_list(entities: ByondValue) -> Result<ByondValue> {
     let mut doomed = Vec::new();
-    for v in entities.get_list_values()? {
+    for v in entities.held_list()? {
         // Zero/null or bad handles are skipped (the rest still go).
         if let Ok(e) = num(&v).and_then(entity::decode) {
             doomed.push(e);

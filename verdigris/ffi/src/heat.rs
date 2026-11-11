@@ -22,6 +22,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::field::{FieldKey, Geom};
 use vg_core::grid::Dir;
@@ -318,7 +319,7 @@ pub(crate) fn with_bulk<T>(field: FieldKey<SolidHeat>, f: impl FnOnce() -> Resul
 
 #[auxmacros::bind("/proc/heat_set_turfs_bulk")]
 fn heat_set_turfs_bulk(records: ByondValue) -> Result<ByondValue> {
-    let values = records.get_list_values()?;
+    let values = records.held_list()?;
     let field = field()?;
     with_bulk(field, || set_turfs(field, &values)).map(|set| ByondValue::from(set as f32))
 }
@@ -385,7 +386,7 @@ fn heat_turf_temperature(turf: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/heat_turf_temperatures")]
 fn heat_turf_temperatures(turfs: ByondValue) -> Result<ByondValue> {
     let cells = turfs
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|t| t.get_ref().ok())
         .collect::<Vec<_>>();
@@ -416,9 +417,7 @@ fn heat_turf_temperatures(turfs: ByondValue) -> Result<ByondValue> {
             .map(ByondValue::from)
             .collect::<Vec<_>>())
     })?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&values)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&values)?)
 }
 
 /// The solid temperature of one turf cell as `heat_turf_temperatures` reports it: K, or -1 for a cell with no node in the heat field or a value that is not finite.
@@ -449,12 +448,12 @@ fn solid_kelvin(w: &mut vg_core::world::World, field: &FieldKey<SolidHeat>, cell
 #[auxmacros::bind("/proc/heat_turf_moves")]
 fn heat_turf_moves(turfs: ByondValue, was: ByondValue, epsilon: ByondValue) -> Result<ByondValue> {
     let cells = turfs
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|t| t.get_ref().ok())
         .collect::<Vec<_>>();
     let was = was
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|v| v.get_number().unwrap_or(f32::NAN))
         .collect::<Vec<_>>();
@@ -473,9 +472,7 @@ fn heat_turf_moves(turfs: ByondValue, was: ByondValue, epsilon: ByondValue) -> R
         }
         Ok(moves)
     })?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&moves)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&moves)?)
 }
 
 #[auxmacros::bind("/turf/proc/heat_add_turf")]
@@ -999,9 +996,7 @@ fn heat_body_reserve(n: ByondValue) -> Result<ByondValue> {
         .into_iter()
         .map(|e| ByondValue::from(entity::entity_value(e)))
         .collect();
-    let list = ByondValue::new_list()?;
-    list.write_list(&handles)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&handles)?)
 }
 
 /// Bulk bind, step 2: configures reserved bodies from `args`, flattened 7 per
@@ -1010,7 +1005,7 @@ fn heat_body_reserve(n: ByondValue) -> Result<ByondValue> {
 /// reserved body are skipped. Returns how many were configured.
 #[auxmacros::bind("/proc/heat_body_configure_list")]
 fn heat_body_configure_list(args: ByondValue) -> Result<ByondValue> {
-    let args = args.get_list_values()?;
+    let args = args.held_list()?;
     if args.len() % 7 != 0 {
         bail!("args must hold 7 values per body");
     }
@@ -1311,7 +1306,7 @@ fn release_one(h: &ByondValue) -> Result<()> {
 #[auxmacros::bind("/proc/heat_body_drop_list")]
 fn heat_body_drop_list(bodies: ByondValue) -> Result<ByondValue> {
     RELEASE_NOTES.with_borrow_mut(Vec::clear);
-    for h in bodies.get_list_values()? {
+    for h in bodies.held_list()? {
         release_one(&h)?;
     }
     take_release_notes()

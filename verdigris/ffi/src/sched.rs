@@ -15,6 +15,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::channel::{ChannelId, ChannelInfo, Quantity};
 use vg_core::entity::EntityId;
@@ -383,7 +384,7 @@ fn world_watch_band(
     let chans = channels(whole(&code, "code")?)?;
     let ch_id = channel(&chans, &ch)?;
     let levels = levels
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|v| Ok(v.get_number()?))
         .collect::<Result<Vec<f32>>>()?;

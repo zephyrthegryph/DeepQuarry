@@ -13,6 +13,7 @@ mod chem;
 pub mod entity;
 pub mod frame;
 mod gas;
+pub use auxcallback::held;
 mod heat;
 mod heat_net;
 mod heat_regulator;

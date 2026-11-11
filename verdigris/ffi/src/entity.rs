@@ -4,6 +4,7 @@
 //! an entity's domain slots through the registry (the world's own
 //! components sit behind [`vg_core::entity::WORLD_DOMAIN`]).
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::entity::{ComponentRef, EntityError, EntityId};
 
@@ -118,8 +119,8 @@ fn num(v: &ByondValue) -> Result<f32> {
 /// after every earlier one has been freed.
 #[auxmacros::bind("/proc/entity_unbind_list")]
 fn entity_unbind_list(entities: ByondValue) -> Result<ByondValue> {
-    for entity in entities.get_list_values()? {
-        entity_unbind(entity)?;
+    for entity in &entities.held_list()? {
+        entity_unbind(*entity)?;
     }
     Ok(ByondValue::null())
 }
@@ -239,9 +240,7 @@ fn yes(b: bool) -> ByondValue {
 
 fn list(values: &[f32]) -> Result<ByondValue> {
     let items: Vec<ByondValue> = values.iter().copied().map(ByondValue::from).collect();
-    let list = ByondValue::new_list()?;
-    list.write_list(&items)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&items)?)
 }
 
 /// World reset (`verdigris_init`/`verdigris_cleanup`): every registered

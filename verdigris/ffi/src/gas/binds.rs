@@ -2,6 +2,7 @@
 //! handles (every bind loads, changes and stores through `with_mix*`).
 
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::Result;
 use vg_gas::gas::constants::{GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
 use vg_gas::gas::{self, Mixture, constants, gas_idx_from_string};
@@ -67,8 +68,9 @@ fn register_gasmixture_hook(mut src: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/gas_retain_mixtures")]
 fn gas_retain_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
     let keep: std::collections::HashSet<u32> = mixtures
-        .iter()?
-        .filter_map(|(m, _)| match MixRef::of(&m) {
+        .held_pairs()?
+        .iter()
+        .filter_map(|(m, _)| match MixRef::of(m) {
             Ok(MixRef::Main(slot)) => Some(slot),
             _ => None,
         })
@@ -225,9 +227,7 @@ fn get_gases_hook(src: ByondValue) -> Result<ByondValue> {
             }
             Ok(())
         })?;
-        let list = ByondValue::new_list()?;
-        list.write_list(&flat)?;
-        Ok(list)
+        Ok(crate::held::hand_list(&flat)?)
     })
 }
 
@@ -241,7 +241,7 @@ pub const GAS_READ_HEADER: usize = 5;
 fn mixture_refs(mixtures: &ByondValue) -> Result<Vec<Option<MixRef>>> {
     // get_list_values, not iter(): iter() stops at the first null entry.
     mixtures
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|mix| match MixRef::of_unchecked(mix) {
             Err(_) => Ok(None),
@@ -279,9 +279,7 @@ fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
         }
         values
     };
-    let list = ByondValue::new_list()?;
-    list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
-    Ok(list)
+    Ok(crate::held::hand_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?)
 }
 
 /// Floats before the requested gases in a `read_mixture_levels` row: pressure, temperature, total moles.
@@ -302,7 +300,7 @@ fn levels_row(mix: &Mixture, gases: &[usize], out: &mut Vec<f32>) {
 fn read_mixture_levels(mixtures: ByondValue, gas_ids: ByondValue) -> Result<ByondValue> {
     let refs = mixture_refs(&mixtures)?;
     let gases = gas_ids
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|g| {
             let id = g.get_number()? as usize;
@@ -320,9 +318,7 @@ fn read_mixture_levels(mixtures: ByondValue, gas_ids: ByondValue) -> Result<Byon
             None => values.extend(std::iter::repeat_n(0.0, stride)),
         }
     }
-    let list = ByondValue::new_list()?;
-    list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
-    Ok(list)
+    Ok(crate::held::hand_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?)
 }
 
 /// Batched change counters. Args: (list of gas mixtures). One float per mixture, in order: the mixture's revision (the counter that moves whenever its gas
@@ -331,7 +327,7 @@ fn read_mixture_levels(mixtures: ByondValue, gas_ids: ByondValue) -> Result<Byon
 #[auxmacros::bind("/proc/read_mixture_revisions")]
 fn read_mixture_revisions(mixtures: ByondValue) -> Result<ByondValue> {
     let values = mixtures
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|mix| match MixRef::of_unchecked(mix) {
             // Null or unregistered: reads as zero.
@@ -345,9 +341,7 @@ fn read_mixture_revisions(mixtures: ByondValue) -> Result<ByondValue> {
                 .map_err(|stale| stale.report(mix)),
         })
         .collect::<Result<Vec<_>>>()?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&values)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&values)?)
 }
 
 thread_local! {
@@ -385,7 +379,7 @@ fn index_value(i: usize) -> ByondValue {
 #[auxmacros::bind("/proc/air_watch_new")]
 fn air_watch_new(mixtures: ByondValue) -> Result<ByondValue> {
     let entries = mixtures
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(air_watch_entry)
         .collect::<Result<Vec<_>>>()?;
@@ -409,7 +403,7 @@ fn air_watch_changed(watch: ByondValue, revisions: ByondValue) -> Result<ByondVa
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let id = watch.get_number()? as u32;
     let revs = revisions
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|v| v.get_number().unwrap_or(f32::NAN))
         .collect::<Vec<_>>();
@@ -440,9 +434,7 @@ fn air_watch_changed(watch: ByondValue, revisions: ByondValue) -> Result<ByondVa
     let Some(changed) = changed else {
         return Ok(ByondValue::null());
     };
-    let list = ByondValue::new_list()?;
-    list.write_list(&changed)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&changed)?)
 }
 
 /// Args: (watch id, list of 1-based indices, list of the mixtures now at those indices). Points the watch's entries at the given mixtures (a turf given a new air
@@ -451,9 +443,9 @@ fn air_watch_changed(watch: ByondValue, revisions: ByondValue) -> Result<ByondVa
 fn air_watch_rebind(watch: ByondValue, indices: ByondValue, mixtures: ByondValue) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let id = watch.get_number()? as u32;
-    let indices = indices.get_list_values()?;
+    let indices = indices.held_list()?;
     let fresh = mixtures
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(air_watch_entry)
         .collect::<Result<Vec<_>>>()?;
@@ -694,8 +686,9 @@ fn scrub_into_hook(
         return Ok(false.into());
     }
     let gas_scrub_vec = gas_list
-        .iter()?
-        .filter_map(|(k, _)| gas_idx_from_value(&k).ok())
+        .held_pairs()?
+        .iter()
+        .filter_map(|(k, _)| gas_idx_from_value(k).ok())
         .collect::<Vec<_>>();
     with_mixes_mut(&src, &into, |src_gas, dest_gas| {
         src_gas.transfer_gases_to(ratio, &gas_scrub_vec, dest_gas);
@@ -808,7 +801,7 @@ fn moles_to_pressure(
 #[auxmacros::bind("/proc/auxmos_batch_transfer")]
 fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
     // `values()` walks the numbered positions directly (handle 0 is valid).
-    let values = operations.values()?.collect::<Vec<_>>();
+    let values = operations.held_values()?;
     let parsed = values
         .chunks_exact(BATCH_TRANSFER_STRIDE)
         .map(|operation| {
@@ -843,19 +836,14 @@ fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
             .map(ByondValue::from)
             .collect::<Vec<_>>()
     };
-    let list = ByondValue::new_list()?;
-    list.write_list(&results)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&results)?)
 }
 
 /// Flat operation list: pipe mixture, environment mixture, exposed pipe
 /// volume. Returns one boolean residual per exposed face.
 #[auxmacros::bind("/proc/auxmos_batch_mingle")]
 fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
-    let values = operations
-        .iter()?
-        .map(|(value, _)| value)
-        .collect::<Vec<_>>();
+    let values = operations.held_pairs()?.into_iter().map(|(value, _)| value).collect::<Vec<_>>();
     let parsed = values
         .chunks_exact(3)
         .map(|operation| {
@@ -911,9 +899,7 @@ fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
             .map(|residual| ByondValue::from(f32::from(u8::from(residual))))
             .collect::<Vec<_>>()
     };
-    let list = ByondValue::new_list()?;
-    list.write_list(&results)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&results)?)
 }
 
 /// Args: (mixture, ratio). Transfers `ratio` of `src` to `mixture`.
@@ -982,8 +968,9 @@ fn oxidation_power_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue>
 #[auxmacros::bind("/proc/equalize_all_gases_in_list")]
 fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
     let mut refs = gas_list
-        .iter()?
-        .filter_map(|(value, _)| MixRef::of(&value).ok())
+        .held_pairs()?
+        .iter()
+        .filter_map(|(value, _)| MixRef::of(value).ok())
         .collect::<Vec<_>>();
     refs.sort_unstable_by_key(|r| r.id());
     refs.dedup();
@@ -1106,14 +1093,12 @@ fn filter_transfer(
     let Some(result) = result else {
         return Ok(ByondValue::null());
     };
-    let list = ByondValue::new_list()?;
-    list.write_list(&[
+    Ok(crate::held::hand_list(&[
         ByondValue::from(result.total_transfer_moles),
         ByondValue::from(result.filterable_moles),
         ByondValue::from(result.unfilterable_moles),
         ByondValue::from(result.power_draw),
-    ])?;
-    Ok(list)
+    ])?)
 }
 
 /// A mixer device's entropy-limited power budget
@@ -1141,8 +1126,9 @@ fn mix_transfer(
         .transpose()?;
     let efficiency = efficiency.get_number()?;
     let refs = sources
-        .iter()?
-        .map(|(mix, ratio)| Ok((MixRef::of(&mix)?, ratio.get_number()?)))
+        .held_pairs()?
+        .iter()
+        .map(|(mix, ratio)| Ok((MixRef::of(mix)?, ratio.get_number()?)))
         .collect::<Result<Vec<(MixRef, f32)>>>()?;
     let result = (|| {
         let mixtures = refs
@@ -1172,9 +1158,7 @@ fn mix_transfer(
         ByondValue::from(result.power_draw),
     ];
     flat.extend(result.moles.into_iter().map(ByondValue::from));
-    let list = ByondValue::new_list()?;
-    list.write_list(&flat)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&flat)?)
 }
 
 /// The omni filter's N-way generalization of [`filter_transfer`]
@@ -1206,8 +1190,9 @@ fn filter_transfer_multi(
     let efficiency = efficiency.get_number()?;
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     let refs = outputs
-        .iter()?
-        .map(|(mix, mask)| Ok((MixRef::of(&mix)?, mask.get_number()? as u32)))
+        .held_pairs()?
+        .iter()
+        .map(|(mix, mask)| Ok((MixRef::of(mix)?, mask.get_number()? as u32)))
         .collect::<Result<Vec<(MixRef, u32)>>>()?;
     let result = (|| {
         let source_mix = mix::load_or_err(rs)?;
@@ -1240,9 +1225,7 @@ fn filter_transfer_multi(
         ByondValue::from(result.clean_moles),
     ];
     flat.extend(result.moles.into_iter().map(ByondValue::from));
-    let list = ByondValue::new_list()?;
-    list.write_list(&flat)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&flat)?)
 }
 
 /// An optional number argument (`null` is `None`).
@@ -1307,13 +1290,11 @@ fn pump(
     let Some(plan) = plan else {
         return Ok(ByondValue::null());
     };
-    let list = ByondValue::new_list()?;
-    list.write_list(&[
+    Ok(crate::held::hand_list(&[
         ByondValue::from(plan.moles),
         ByondValue::from(plan.power_draw),
         ByondValue::from(plan.flow_volume),
-    ])?;
-    Ok(list)
+    ])?)
 }
 
 /// One scrubber pass (`scrub_gas()`'s whole maths and movement): moves the
@@ -1359,13 +1340,11 @@ fn scrub(
     let Some(plan) = plan else {
         return Ok(ByondValue::null());
     };
-    let list = ByondValue::new_list()?;
-    list.write_list(&[
+    Ok(crate::held::hand_list(&[
         ByondValue::from(plan.moles),
         ByondValue::from(plan.power_draw),
         ByondValue::from(plan.flow_volume),
-    ])?;
-    Ok(list)
+    ])?)
 }
 
 /// `calculate_specific_power()`: the power (W/mol) to move one mole of

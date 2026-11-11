@@ -104,7 +104,5 @@ fn verdigris_jobs_completed() -> Result<ByondValue> {
         .into_iter()
         .map(id_value)
         .collect::<Result<Vec<_>>>()?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&ids)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&ids)?)
 }

@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Native code now owns every reference it reads from the game (list values, var reads, proc results) and releases it automatically; a lint rejects raw reads"
+  - bugfix: "Gas mixtures, reactions and the other objects native atmos code read from lists no longer stay pinned in memory"

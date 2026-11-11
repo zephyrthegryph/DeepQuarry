@@ -6,6 +6,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use byondapi::prelude::*;
+use crate::held::{HeldList, HeldRead};
 use eyre::{Result, bail};
 use vg_chem::metabolism::{self, Uptake};
 use vg_chem::reaction::{self, Reactant, Step};
@@ -25,7 +26,7 @@ fn chem_reaction_progress(
     min_reaction: ByondValue,
     reactants: ByondValue,
 ) -> Result<ByondValue> {
-    let flat = if reactants.is_list() { reactants.get_list_values()? } else { Vec::new() };
+    let flat = if reactants.is_list() { reactants.held_list()? } else { HeldList::default() };
     if flat.len() % 2 != 0 {
         bail!("reactants must hold 2 values per reactant");
     }
@@ -55,7 +56,7 @@ pub const CHEM_CYCLE_OUT: usize = 5;
 /// `removed, dose, max_dose, overdosing (0/1), overdose_injury`.
 #[auxmacros::bind("/proc/chem_metabolism_cycle")]
 fn chem_metabolism_cycle(args: ByondValue) -> Result<ByondValue> {
-    let flat = args.get_list_values()?;
+    let flat = args.held_list()?;
     if flat.len() % IN != 0 {
         bail!("args must hold {IN} values per reagent");
     }
@@ -79,9 +80,7 @@ fn chem_metabolism_cycle(args: ByondValue) -> Result<ByondValue> {
         out.push(ByondValue::from(if t.overdosing { 1.0f32 } else { 0.0 }));
         out.push(ByondValue::from(t.overdose_injury));
     }
-    let list = ByondValue::new_list()?;
-    list.write_list(&out)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&out)?)
 }
 
 /// The base overdose injury of one uptake (`vg_chem::metabolism::overdose_injury`), for an overdose() called outside a holder's cycle.

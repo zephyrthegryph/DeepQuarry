@@ -116,6 +116,7 @@ pub fn solve(edges: &[(usize, usize, f64)], rhs: &[f64], initial: &[f64]) -> Res
 #[cfg(target_arch = "x86")]
 mod ffi {
     use byondapi::prelude::*;
+    use vg_ffi::held::HeldRead;
     use eyre::{Result, bail};
     use std::collections::{HashMap, HashSet};
     use std::sync::{
@@ -196,7 +197,7 @@ mod ffi {
 
     fn numbers(value: ByondValue) -> Result<Vec<f64>> {
         value
-            .get_list_values()?
+            .held_list()?
             .into_iter()
             .map(|v| {
                 Ok(if v.is_null() {
@@ -235,7 +236,7 @@ mod ffi {
         if id == 0 {
             id = NEXT_ID.fetch_add(1, Ordering::Relaxed).max(1);
         }
-        let flat_topology = topology.get_list_values()?;
+        let flat_topology = topology.held_list()?;
         let parsed_topology = if flat_topology.is_empty() {
             None
         } else {
@@ -293,7 +294,7 @@ mod ffi {
             .map_err(|_| eyre::eyre!("material power result lock poisoned"))?
             .remove(&id);
         let Some(result) = result else {
-            return Ok(ByondValue::new_list()?);
+            return Ok(vg_ffi::held::hand_list(&[])?);
         };
         if let Ok(mut active) = busy().lock() {
             active.remove(&id);
@@ -309,9 +310,7 @@ mod ffi {
                 .into_iter()
                 .map(|value| ByondValue::from(value as f32)),
         );
-        let list = ByondValue::new_list()?;
-        list.write_list(&output)?;
-        Ok(list)
+        Ok(vg_ffi::held::hand_list(&output)?)
     }
 
     #[auxmacros::bind("/proc/solve_material_power_graph")]
@@ -343,9 +342,7 @@ mod ffi {
                 .into_iter()
                 .map(|v| ByondValue::from(v as f32)),
         );
-        let result = ByondValue::new_list()?;
-        result.write_list(&output)?;
-        Ok(result)
+        Ok(vg_ffi::held::hand_list(&output)?)
     }
 }
 

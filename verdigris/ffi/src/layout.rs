@@ -29,9 +29,7 @@ fn generate_automata(
         .iter()
         .map(|&b| ByondValue::from(if b { 1.0f32 } else { 0.0f32 }))
         .collect();
-    let list = ByondValue::new_list()?;
-    list.write_list(&elems)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&elems)?)
 }
 
 #[auxmacros::bind("/proc/verdigris_generate_station_layout")]

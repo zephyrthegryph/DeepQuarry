@@ -18,6 +18,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::channel::Quantity;
 use vg_core::outbox::{Lane, MAX_SUBSCRIBER, Subscriber, WatchId};
@@ -344,7 +345,7 @@ pub fn is_sense_payload(payload: u32) -> bool {
 #[auxmacros::bind("/proc/sense_commit")]
 fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
     let v = commands
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(num)
         .collect::<Result<Vec<f32>>>()?;

@@ -22,6 +22,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use byondapi::prelude::*;
+use crate::held::HeldRead;
 use eyre::{Result, bail, eyre};
 use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::outbox::{Lane, Outbox, Subscriber, Wake, WatchId};
@@ -99,7 +100,7 @@ impl MixRef {
         let n = v.read_number_id(byond_string!("_extools_pointer_gasmixture"))?;
         let r = Self::from_f32(n).ok_or_else(|| eyre!("invalid gas mixture handle {n}"))?;
         let held = v
-            .read_var_id(byond_string!("_extools_generation_gasmixture"))
+            .held_var_id(byond_string!("_extools_generation_gasmixture"))
             .ok()
             .filter(|g| !g.is_null())
             .and_then(|g| g.get_number().ok())
@@ -205,7 +206,7 @@ impl Stale {
     /// generations (BYOND adds the DM stack to a bind's error).
     pub fn report(&self, owner: &ByondValue) -> eyre::Report {
         let label = owner
-            .call_id(byond_string!("handle_owner_label"), &[])
+            .held_call_id(byond_string!("handle_owner_label"), &[])
             .ok()
             .and_then(|v| v.get_string().ok())
             .unwrap_or_else(|| "unknown owner".to_string());

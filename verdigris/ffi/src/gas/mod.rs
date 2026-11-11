@@ -15,6 +15,7 @@ mod parser;
 use std::cell::Cell;
 
 use byondapi::prelude::*;
+use crate::held::{Held, HeldRead};
 use eyre::{Context, Result, bail, eyre};
 use vg_core::field::{FieldConfig, FieldKey, FieldKind, Geom, Side};
 use vg_core::grid::{BlockKind, Dir, Face};
@@ -113,7 +114,7 @@ std::thread_local! {
     /// The DM `/datum/gas_reaction` for each reaction id (the registry,
     /// `vg_gas::gate`, holds only its requirements). Reactions run in DM
     /// (`react_by_id`'s callback), so the live references are FFI state.
-    static REACTION_VALUES: std::cell::RefCell<std::collections::HashMap<u64, ByondValue>> =
+    static REACTION_VALUES: std::cell::RefCell<std::collections::HashMap<u64, Held>> =
         std::cell::RefCell::default();
 }
 
@@ -131,7 +132,8 @@ fn react_by_id(id: u64, src: ByondValue, holder: ByondValue) -> Result<ByondValu
             .get(&id)
             .ok_or_else(|| eyre!("Reaction with invalid id"))?;
         reaction
-            .call_id(byond_string!("react"), &[src, holder])
+            .held_call_id(byond_string!("react"), &[src, holder])
+            .map(Held::leak) // the reply goes straight back to DM, which owns it from here
             .wrap_err("calling byond side react in react_by_id")
     })
 }
@@ -140,13 +142,13 @@ fn react_by_id(id: u64, src: ByondValue, holder: ByondValue) -> Result<ByondValu
 /// first, caching each live reaction reference for [`react_by_id`].
 fn load_reactions() -> Result<()> {
     let gas_reactions = ByondValue::new_global_ref()
-        .read_var_id(byond_string!("SSair"))
+        .held_var_id(byond_string!("SSair"))
         .wrap_err("load_reactions: couldn't read global SSair")?
-        .read_var_id(byond_string!("gas_reactions"))
+        .held_var_id(byond_string!("gas_reactions"))
         .wrap_err("load_reactions: SSair has no gas_reactions var")?;
     let mut table: Vec<(f32, Requirement)> = Vec::new();
-    for (reaction, _) in gas_reactions
-        .iter()
+    for reaction in gas_reactions
+        .held_list()
         .wrap_err("load_reactions: SSair.gas_reactions is not a list")?
     {
         let priority = reaction
@@ -162,16 +164,16 @@ fn load_reactions() -> Result<()> {
             state.finish()
         };
         let Some(reqs) = reaction
-            .read_var_id(byond_string!("min_requirements"))
+            .held_var_id(byond_string!("min_requirements"))
             .ok()
-            .filter(ByondValue::is_list)
+            .filter(|v| v.is_list())
         else {
             return Err(eyre!(
                 "Reaction {string_id} doesn't have a gas requirements list!"
             ));
         };
         let read = |key: &str| {
-            reqs.read_list_index(key)
+            reqs.held_index(key)
                 .ok()
                 .and_then(|v| v.get_number().ok())
         };
@@ -179,7 +181,7 @@ fn load_reactions() -> Result<()> {
             .filter_map(|i| {
                 Some((
                     i,
-                    reqs.read_list_index(gas::gas_path(i)?)
+                    reqs.held_index(gas::gas_path(i)?)
                         .and_then(|v| v.get_number())
                         .ok()?,
                 ))
@@ -218,7 +220,7 @@ fn load_reactions() -> Result<()> {
 /// are Rust's own (`gas/ids.rs`); DM only supplies the data it declares.
 #[auxmacros::bind("/proc/auxtools_atmos_init")]
 fn hook_init(rows: ByondValue) -> Result<ByondValue> {
-    let rows = rows.get_list_values()?;
+    let rows = rows.held_list()?;
     if rows.len() != gas::GAS_COUNT {
         bail!(
             "gas registry needs one row per gas id ({} of {})",
@@ -230,7 +232,7 @@ fn hook_init(rows: ByondValue) -> Result<ByondValue> {
     for (idx, row) in rows.iter().enumerate() {
         let path = vg_gas::gas::ids::GAS_PATHS[idx];
         let values = row
-            .get_list_values()
+            .held_list()
             .map_err(|_| eyre!("{path} has no registry row"))?;
         let number = |i: usize| values.get(i).and_then(|v| v.get_number().ok());
         let specific_heat = number(0).ok_or_else(|| eyre!("{path}: no specific heat"))?;
@@ -519,7 +521,7 @@ pub(crate) fn turf_device_apply(w: &mut World, cell: u32, before: &PipeGas, afte
 fn set_z_links(links: ByondValue) -> Result<ByondValue> {
     // get_list_values, not iter(): iter() indexes the list by each item.
     let links = links
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(|v| v.get_number().unwrap_or(0.0) as u8)
         .collect::<Vec<_>>();
@@ -568,7 +570,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         // turf's own datum is re-stamped, so the turf can register again; a turf
         // whose datum names this cell with an old stamp (a replaced turf's
         // leftover) may not unregister the new owner's cell.
-        let air = src.read_var_id(byond_string!("_air")).ok().filter(|a| !a.is_null());
+        let air = src.held_var_id(byond_string!("_air")).ok().filter(|a| !a.is_null());
         let named = air
             .as_ref()
             .and_then(|a| MixRef::of_unchecked(a).ok())
@@ -588,7 +590,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     if flag < 0 || is_set(src.read_number_id(byond_string!("blocks_air"))) {
         return unregister();
     }
-    let Ok(mut air) = src.read_var_id(byond_string!("_air")) else {
+    let Ok(mut air) = src.held_var_id(byond_string!("_air")) else {
         return Ok(());
     };
     if air.is_null() {
@@ -651,18 +653,18 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
 thread_local! {
     /// The air templates already asked for, by (turf type, initial_gas_mix string id, initial_temperature bits): a lazily
     /// aired turf costs one DM call per distinct template, not one per turf.
-    static AIR_TEMPLATES: std::cell::RefCell<std::collections::HashMap<(u32, u32, u32), ByondValue>> =
+    static AIR_TEMPLATES: std::cell::RefCell<std::collections::HashMap<(u32, u32, u32), Held>> =
         std::cell::RefCell::new(std::collections::HashMap::new());
 }
 
 /// The mixture a turf without an air datum starts its cell from: `turf.air_template()`, cached per template key.
 fn air_template(src: &ByondValue) -> Result<ByondValue> {
     let type_id = src
-        .read_var_id(byond_string!("type"))
+        .held_var_id(byond_string!("type"))
         .map(|t| unsafe { t.0.data.ref_ })
         .unwrap_or(0);
     let gas = src
-        .read_var_id(byond_string!("initial_gas_mix"))
+        .held_var_id(byond_string!("initial_gas_mix"))
         .and_then(|g| g.get_strid())
         .unwrap_or(0);
     let temperature = src
@@ -670,14 +672,17 @@ fn air_template(src: &ByondValue) -> Result<ByondValue> {
         .unwrap_or(0.0)
         .to_bits();
     let k = (type_id, gas, temperature);
-    if let Some(t) = AIR_TEMPLATES.with_borrow(|m| m.get(&k).cloned()) {
+    if let Some(t) = AIR_TEMPLATES.with_borrow(|m| m.get(&k).map(Held::raw)) {
         return Ok(t);
     }
-    let template = src.call_id(byond_string!("air_template"), &[])?;
-    if !template.is_null() {
-        AIR_TEMPLATES.with_borrow_mut(|m| m.insert(k, template.clone()));
+    let template = src.held_call_id(byond_string!("air_template"), &[])?;
+    if template.is_null() {
+        return Ok(template.leak()); // null owns nothing
     }
-    Ok(template)
+    // The cache keeps the one reference per template for the life of the round: it is the owner, the callers borrow.
+    let borrowed = template.raw();
+    AIR_TEMPLATES.with_borrow_mut(|m| m.insert(k, template));
+    Ok(borrowed)
 }
 
 /// Registers a turf that has no air datum: its cell takes the template's gas. The template is DM's (shared by every
@@ -752,10 +757,10 @@ fn hook_register_turf(src: ByondValue, flag: ByondValue, mask: ByondValue) -> Re
 #[auxmacros::bind("/proc/_auxmos_register_turfs_bulk")]
 fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondValue> {
     let flag = flag.get_number()? as i32;
-    let rows = list.iter()?.collect::<Vec<_>>();
+    let rows = list.held_pairs()?;
     with_bulk(|| {
-        for (turf, mask) in rows {
-            register_turf(turf, flag, mask_from_value(&mask))?;
+        for (turf, mask) in &rows {
+            register_turf(**turf, flag, mask_from_value(mask))?;
         }
         Ok(())
     })?;
@@ -788,9 +793,12 @@ fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
     if !is_set(turf.read_number_id(byond_string!("init_air"))) {
         return None;
     }
-    let mut air = turf.read_var_id(byond_string!("_air")).ok()?; // only open turfs carry `_air`
+    // Only the presence of `_air` is read: a turf with no datum yet registers from its air template (register_from_template).
+    let has_air_var = turf.held_var_id(byond_string!("_air")).is_ok(); // only open turfs carry `_air`
+    if !has_air_var {
+        return None;
+    }
     let blocks = is_set(turf.read_number_id(byond_string!("blocks_air")));
-    air.decrement_ref(); // only its presence is read: a turf with no datum yet registers from its air template (register_from_template)
     let mut mask = 0u8;
     if blocks {
         mask = AIR_BLOCK_ALL;
@@ -800,16 +808,15 @@ fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
         if !is_set(turf.read_number_id(byond_string!("air_z_open"))) {
             mask |= FACE_DOWN;
         }
-        if let Ok(mut contents_list) = turf.read_var_id(byond_string!("contents")) {
-            // Every reference a Byondapi call makes is persistent since 516.1674 and byondapi-rs does not release a
-            // ByondValue on drop, so each element read out of the list pins its atom (a map-placed lattice kept one
-            // reference a `new` one did not) until it is released here.
-            let contents = contents_list.get_list_values().unwrap_or_default();
-            for mut thing in contents {
+        // Every element read out of the contents list is a persistent reference the `Held` releases on drop (a
+        // map-placed lattice kept one reference a `new` one did not).
+        if let Ok(contents_list) = turf.held_var_id(byond_string!("contents")) {
+            let contents = contents_list.held_list().unwrap_or_default();
+            for thing in &contents {
                 if mask != AIR_BLOCK_ALL && thing.get_type() == ValueType::Obj as u8 {
                     // Destroyed but not yet collected: it no longer seals anything.
                     let destroyed = thing
-                        .read_var_id(byond_string!("gc_destroyed"))
+                        .held_var_id(byond_string!("gc_destroyed"))
                         .is_ok_and(|g| !g.is_null());
                     if !destroyed {
                         let pass = thing
@@ -825,9 +832,7 @@ fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
                         }
                     }
                 }
-                thing.decrement_ref();
             }
-            contents_list.decrement_ref();
         }
     }
     let immutable = is_set(turf.read_number_id(byond_string!("immutable_atmos")));
@@ -947,9 +952,7 @@ fn register_turf_ids(ids: std::ops::Range<u32>) -> Result<ByondValue> {
         }
         Ok(())
     })?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&asking)?;
-    Ok(list)
+    Ok(crate::held::hand_list(&asking)?)
 }
 
 /// Turf gas rows buffered by a bulk bind ([`with_bulk`]).
@@ -994,12 +997,13 @@ fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
     Ok(((rev & 0x00FF_FFFF) as f32).into())
 }
 
-fn turf_list(cells: Vec<u32>) -> Result<ByondValue> {
+/// A new list of turfs, owned: the caller hands it to DM with `leak()` or writes it into another list and lets it drop.
+fn turf_list(cells: Vec<u32>) -> Result<Held> {
     let items = cells
         .into_iter()
         .map(|c| ByondValue::new_ref(ValueType::Turf, c))
         .collect::<Vec<_>>();
-    let list = ByondValue::new_list()?;
+    let list = Held::new_list()?;
     list.write_list(&items)?;
     Ok(list)
 }
@@ -1008,14 +1012,14 @@ fn turf_list(cells: Vec<u32>) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/atmos_adjacent_turfs")]
 fn atmos_adjacent_turfs(turf: ByondValue) -> Result<ByondValue> {
     let cell = turf.get_ref()?;
-    turf_list(with_world(|w| Ok(open_neighbors(w, turf_key()?, cell)))?)
+    Ok(turf_list(with_world(|w| Ok(open_neighbors(w, turf_key()?, cell)))?)?.leak())
 }
 
 /// Batched form of `atmos_adjacent_turfs`: a list of lists, one per turf.
 #[auxmacros::bind("/proc/atmos_adjacent_turfs_bulk")]
 fn atmos_adjacent_turfs_bulk(turfs: ByondValue) -> Result<ByondValue> {
     let cells = turfs
-        .get_list_values()?
+        .held_list()?
         .iter()
         .map(ByondValue::get_ref)
         .collect::<Result<Vec<_>, _>>()?;
@@ -1026,13 +1030,13 @@ fn atmos_adjacent_turfs_bulk(turfs: ByondValue) -> Result<ByondValue> {
             .map(|&c| open_neighbors(w, key, c))
             .collect::<Vec<_>>())
     })?;
-    let out = lists
+    let inner = lists
         .into_iter()
         .map(turf_list)
         .collect::<Result<Vec<_>>>()?;
-    let list = ByondValue::new_list()?;
-    list.write_list(&out)?;
-    Ok(list)
+    // The outer list takes its own reference to each inner list; ours are released when `inner` drops.
+    let out = inner.iter().map(Held::raw).collect::<Vec<_>>();
+    Ok(crate::held::hand_list(&out)?)
 }
 
 /// Returns: the direction bits (NORTH..DOWN) across which this turf shares air.
@@ -1089,7 +1093,7 @@ fn atmos_turfs_share(first: ByondValue, second: ByondValue) -> Result<ByondValue
 fn topology_matches(src: ByondValue) -> Result<ByondValue> {
     let cell = src.get_ref()?;
     let r = src
-        .read_var_id(byond_string!("_air"))
+        .held_var_id(byond_string!("_air"))
         .ok()
         .filter(|a| !a.is_null())
         .and_then(|a| MixRef::of(&a).ok());
