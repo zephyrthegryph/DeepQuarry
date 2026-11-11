@@ -96,7 +96,10 @@ where
                 .map(|s| (*s).to_string())
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_else(|| "unknown panic".to_string());
-            Err(eyre::eyre!("panic: {msg}"))
+            Err(eyre::eyre!(
+                "panic: {}",
+                vg_core::panic_site::describe(&msg)
+            ))
         }
     };
     result.map_err(|err| err.wrap_err(context.to_string()))

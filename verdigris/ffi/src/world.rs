@@ -262,6 +262,34 @@ pub fn with_world_reported<T>(f: impl FnOnce(&mut World) -> Result<T>) -> Option
     }
 }
 
+thread_local! {
+    /// How many of the sim's `frame_panics` have been reported to DM.
+    static PANICS_REPORTED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// Reports each frame panic the sim caught since the last call to DM, once, with the panic's message and location.
+/// A frame that panicked still published its views (the simulation carries on with a partial frame), so without
+/// this the only trace was the `sim.frame_panics` counter.
+pub fn report_new_frame_panics() {
+    let Ok((count, last)) = with_world(|w| {
+        let m = w.sim().metrics();
+        Ok((m.frame_panics, m.last_panic.clone()))
+    }) else {
+        return;
+    };
+    let seen = PANICS_REPORTED.with(std::cell::Cell::get);
+    // A rebuilt world restarts its counters.
+    let seen = if count < seen { 0 } else { seen };
+    PANICS_REPORTED.with(|c| c.set(count));
+    if count > seen {
+        report_dropped(eyre!(
+            "verdigris frame panicked ({} new, {count} total since the world was built): {}",
+            count - seen,
+            last.as_deref().unwrap_or("no message")
+        ));
+    }
+}
+
 /// Sends a failure nobody can return to DM's error reporting.
 pub fn report_dropped(e: eyre::Report) {
     #[cfg(not(test))]
@@ -701,6 +729,7 @@ pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
         Ok(applied)
     })
     .inspect(|_| {
+        report_new_frame_panics();
         if due {
             // The heat network's edges, over the world time since their last step (exact for any interval).
             if let Ok((now, dt)) = with_world(|w| Ok((w.now(), w.dt().0))) {
