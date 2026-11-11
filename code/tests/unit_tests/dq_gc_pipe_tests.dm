@@ -10,6 +10,8 @@
 //    over the world is not counted (a loop that breaks on the atom keeps it). ref_holders(atoms = TRUE) found nothing: not in the atom's own object graph after
 //    qdel(), not in any var or short list of 154 k atoms (the atom vars' first level). The boot probe: the count rises by 2 in CreateAtoms (one of them the live
 //    atom's own area/loc entries) and by 1 more in the Atmospherics system's init for a lattice. Still open: a native holder, or a datum two levels below an atom.
+//  - CAUSE (11-11): boot_turf() in verdigris/ffi/src/gas/mod.rs read each turf's contents through the Byondapi; since 516.1674 every such read is a persistent
+//    reference and byondapi-rs does not release a ByondValue on drop, so every atom on a turf kept one. It releases them now (dq_map_atom_ends_like_new).
 //  - the same flow on a small map (a template load, InitializeAtoms() with mapload, the boot hold and settle) leaves nothing over a fresh atom, so it does not reproduce.
 // The sweeps below end pipes the same way in a small world.
 
@@ -156,3 +158,30 @@
 	TEST_ASSERT(found, "an /image whose loc is the target is reported (got: [jointext(image_hits, "; ")])")
 	qdel(target)
 	qdel(box)
+
+// A map-placed atom ends like a new one: after qdel() it holds no reference a `new` atom of its type does not.
+
+/datum/unit_test/dq_map_atom_ends_like_new
+
+/// The ref text of the first map-placed lattice (the loop variable is gone when this returns, so no caller local holds it).
+/datum/unit_test/dq_map_atom_ends_like_new/proc/map_lattice_key()
+	for(var/obj/structure/lattice/L in world)
+		return ref(L)
+	return null
+
+/// The references the datum named by `key` holds besides the one this proc and refcount() hold.
+/datum/unit_test/dq_map_atom_ends_like_new/proc/refs_of(key)
+	var/datum/D = locate(key)
+	if(!D)
+		return -1
+	return refcount(D) - 2
+
+/datum/unit_test/dq_map_atom_ends_like_new/Run()
+	var/map_key = map_lattice_key()
+	TEST_ASSERT_NOTNULL(map_key, "the test map has a lattice")
+	var/obj/structure/lattice/fresh = new(test_floor())
+	var/fresh_key = ref(fresh)
+	fresh = null
+	qdel(locate(map_key))
+	qdel(locate(fresh_key))
+	TEST_ASSERT_EQUAL(refs_of(map_key), refs_of(fresh_key), "a map-placed lattice keeps no reference a new one does not")

@@ -788,9 +788,9 @@ fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
     if !is_set(turf.read_number_id(byond_string!("init_air"))) {
         return None;
     }
-    let air = turf.read_var_id(byond_string!("_air")).ok()?; // only open turfs carry `_air`
+    let mut air = turf.read_var_id(byond_string!("_air")).ok()?; // only open turfs carry `_air`
     let blocks = is_set(turf.read_number_id(byond_string!("blocks_air")));
-    let _ = air; // a turf with no datum yet registers from its air template (register_from_template)
+    air.decrement_ref(); // only its presence is read: a turf with no datum yet registers from its air template (register_from_template)
     let mut mask = 0u8;
     if blocks {
         mask = AIR_BLOCK_ALL;
@@ -800,35 +800,34 @@ fn boot_turf(turf: ByondValue, asks: &mut bool) -> Option<BootTurf> {
         if !is_set(turf.read_number_id(byond_string!("air_z_open"))) {
             mask |= FACE_DOWN;
         }
-        if let Ok(contents) = turf
-            .read_var_id(byond_string!("contents"))
-            .and_then(|c| c.get_list_values())
-        {
-            for thing in contents {
-                if thing.get_type() != ValueType::Obj as u8 {
-                    continue;
+        if let Ok(mut contents_list) = turf.read_var_id(byond_string!("contents")) {
+            // Every reference a Byondapi call makes is persistent since 516.1674 and byondapi-rs does not release a
+            // ByondValue on drop, so each element read out of the list pins its atom (a map-placed lattice kept one
+            // reference a `new` one did not) until it is released here.
+            let contents = contents_list.get_list_values().unwrap_or_default();
+            for mut thing in contents {
+                if mask != AIR_BLOCK_ALL && thing.get_type() == ValueType::Obj as u8 {
+                    // Destroyed but not yet collected: it no longer seals anything.
+                    let destroyed = thing
+                        .read_var_id(byond_string!("gc_destroyed"))
+                        .is_ok_and(|g| !g.is_null());
+                    if !destroyed {
+                        let pass = thing
+                            .read_number_id(byond_string!("can_atmos_pass"))
+                            .unwrap_or(1.0);
+                        if pass == ATMOS_PASS_NO
+                            || (pass == ATMOS_PASS_DENSITY
+                                && is_set(thing.read_number_id(byond_string!("density"))))
+                        {
+                            mask = AIR_BLOCK_ALL;
+                        } else if pass == ATMOS_PASS_PROC {
+                            *asks = true;
+                        }
+                    }
                 }
-                // Destroyed but not yet collected: it no longer seals anything.
-                if thing
-                    .read_var_id(byond_string!("gc_destroyed"))
-                    .is_ok_and(|g| !g.is_null())
-                {
-                    continue;
-                }
-                let pass = thing
-                    .read_number_id(byond_string!("can_atmos_pass"))
-                    .unwrap_or(1.0);
-                if pass == ATMOS_PASS_NO
-                    || (pass == ATMOS_PASS_DENSITY
-                        && is_set(thing.read_number_id(byond_string!("density"))))
-                {
-                    mask = AIR_BLOCK_ALL;
-                    break;
-                }
-                if pass == ATMOS_PASS_PROC {
-                    *asks = true;
-                }
+                thing.decrement_ref();
             }
+            contents_list.decrement_ref();
         }
     }
     let immutable = is_set(turf.read_number_id(byond_string!("immutable_atmos")));
