@@ -6,6 +6,10 @@
 //  - the one transient reference is the atom's boot bucket (boot_created_hold()) until the settle; it is not the leak.
 //  - ref_holders() (a search of every global, list, alist and non-atom datum var, 465 k containers, 50 k left at its budget) found only the garbage queue's
 //    own entry for such a pipe, as the reference finder did. The other two references are in no DM container: a proc frame still running or a native table.
+//  - 11-11, small unit-test map: a map-placed /obj/machinery/light or lattice qdel'd keeps one reference a `new` one does not, once a test frame's loop variable
+//    over the world is not counted (a loop that breaks on the atom keeps it). ref_holders(atoms = TRUE) found nothing: not in the atom's own object graph after
+//    qdel(), not in any var or short list of 154 k atoms (the atom vars' first level). The boot probe: the count rises by 2 in CreateAtoms (one of them the live
+//    atom's own area/loc entries) and by 1 more in the Atmospherics system's init for a lattice. Still open: a native holder, or a datum two levels below an atom.
 //  - the same flow on a small map (a template load, InitializeAtoms() with mapload, the boot hold and settle) leaves nothing over a fresh atom, so it does not reproduce.
 // The sweeps below end pipes the same way in a small world.
 
@@ -125,3 +129,30 @@
 	for(var/path in after)
 		TEST_ASSERT(!findtext(path, "refresh_push_queue"), "with the holder gone the search no longer names it (got: [jointext(after, "; ")])")
 	qdel(target)
+
+// ref_holders() with `atoms`: it also opens atoms (an atom's contents, its vars) and finds an /image whose loc is the target, which no list element shows.
+
+/datum/unit_test/dq_ref_holders_opens_atoms/Run()
+	var/obj/effect/abstract/info/box = new(test_floor())
+	var/obj/effect/abstract/info/target = new(test_floor())
+	target.forceMove(box)
+	var/list/hits = ref_holders(target, 20 SECONDS, TRUE, box)
+	hits.len--
+	var/found = FALSE
+	for(var/path in hits)
+		if(findtext(path, "contents"))
+			found = TRUE
+	TEST_ASSERT(found, "with atoms the search names the container's contents as a holder (got: [jointext(hits, "; ")])")
+
+	var/image/picture = new /image(null, target)
+	GLOB.refresh_push_queue += picture
+	var/list/image_hits = ref_holders(target, 20 SECONDS, TRUE)
+	GLOB.refresh_push_queue -= picture
+	image_hits.len--
+	found = FALSE
+	for(var/path in image_hits)
+		if(findtext(path, "/image"))
+			found = TRUE
+	TEST_ASSERT(found, "an /image whose loc is the target is reported (got: [jointext(image_hits, "; ")])")
+	qdel(target)
+	qdel(box)
