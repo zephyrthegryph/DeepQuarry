@@ -1483,7 +1483,7 @@ impl vg_core::registry::DomainRegistry for HeatCells {
     }
 
     fn unwatch(&mut self, _port: u8, id: WatchId) {
-        let _ = with_world(|w| Ok(w.unwatch_cells::<SolidHeat>(id)));
+        let _ = crate::world::with_world_reported(|w| Ok(w.unwatch_cells::<SolidHeat>(id)));
     }
 
     fn add_entry(&mut self, _port: u8, id: WatchId, entry: SetEntry) -> Result<(), String> {
@@ -1495,12 +1495,12 @@ impl vg_core::registry::DomainRegistry for HeatCells {
     }
 
     fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
-        let _ = with_world(|w| Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload)));
+        let _ = crate::world::with_world_reported(|w| Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload)));
     }
 
     /// Cell watch wakes, the source the cell's ref (low 24 bits).
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {
-        let _ = with_world(|w| {
+        let _ = crate::world::with_world_reported(|w| {
             let mut wakes = Vec::new();
             w.drain_field_wakes::<SolidHeat>(&mut wakes);
             out.extend(wakes.into_iter().map(|wk| Wake {

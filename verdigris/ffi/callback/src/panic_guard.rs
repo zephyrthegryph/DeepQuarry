@@ -8,8 +8,8 @@
 //! call to `::auxcallback::panic_guard::run_guarded` rather than inlining
 //! `catch_unwind`.
 use byondapi::value::ByondValue;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 /// Per-bind call and error counters. `#[auxmacros::bind]` emits one `static`
 /// of this per bind; it registers itself on its first call, so the cost of a

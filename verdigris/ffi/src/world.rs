@@ -236,6 +236,40 @@ pub fn with_world<T>(f: impl FnOnce(&mut World) -> Result<T>) -> Result<T> {
     WORLD.with_borrow_mut(|w| f(w.as_mut().expect("built above")))
 }
 
+#[cfg(test)]
+thread_local! {
+    /// Failures [`with_world_reported`] would have sent to DM (tests have no BYOND to call).
+    pub(crate) static REPORTED: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Runs `f` on the world for a caller that has nothing to return the failure to (an unbind, a watch removal, a
+/// best-effort sync). A failure is not dropped: it goes to DM's `/proc/byondapi_stack_trace` (counted, logged, raised
+/// the first time) with the calling site, so DM and Rust cannot drift silently. After shutdown the world is gone on
+/// purpose and nothing is reported.
+#[track_caller]
+pub fn with_world_reported<T>(f: impl FnOnce(&mut World) -> Result<T>) -> Option<T> {
+    let site = std::panic::Location::caller();
+    match with_world(f) {
+        Ok(v) => Some(v),
+        Err(e) => {
+            if !SHUT_DOWN.with(std::cell::Cell::get) {
+                report_dropped(e.wrap_err(format!(
+                    "verdigris best-effort world update failed at {site}"
+                )));
+            }
+            None
+        }
+    }
+}
+
+/// Sends a failure nobody can return to DM's error reporting.
+pub fn report_dropped(e: eyre::Report) {
+    #[cfg(not(test))]
+    auxcallback::report_error(e);
+    #[cfg(test)]
+    REPORTED.with_borrow_mut(|r| r.push(format!("{e:?}")));
+}
+
 /// Entity lifecycle for world components, under [`WORLD_DOMAIN`]: the
 /// generic `entity_unbind` reaches the world through this slot.
 struct WorldEntities;
@@ -247,7 +281,7 @@ fn slot_entity(comp: ComponentRef) -> Option<EntityId> {
 impl DomainRegistry for WorldEntities {
     fn detach(&mut self, comp: ComponentRef) {
         if let Some(e) = slot_entity(comp) {
-            let _ = with_world(|w| Ok(w.detach_all(e)));
+            let _ = crate::world::with_world_reported(|w| Ok(w.detach_all(e)));
         }
     }
 
@@ -353,7 +387,7 @@ impl DomainRegistry for WorldKind {
     }
 
     fn unwatch(&mut self, _port: u8, id: WatchId) {
-        let _ = with_world(|w| Ok(w.unwatch(self.kind, id)));
+        let _ = crate::world::with_world_reported(|w| Ok(w.unwatch(self.kind, id)));
     }
 
     fn add_entry(
@@ -370,13 +404,14 @@ impl DomainRegistry for WorldKind {
     }
 
     fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
-        let _ = with_world(|w| Ok(w.remove_watch_entry(self.kind, id, payload)));
+        let _ =
+            crate::world::with_world_reported(|w| Ok(w.remove_watch_entry(self.kind, id, payload)));
     }
 
     /// This kind's watch wakes, with DM's `vg_entity` value as the source
     /// (the stores report the entity's slot).
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {
-        let _ = with_world(|w| {
+        let _ = crate::world::with_world_reported(|w| {
             let mut wakes = Vec::new();
             w.drain_kind_wakes(self.kind, &mut wakes);
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -834,6 +869,29 @@ mod tests {
             Ok(())
         })
         .expect("a revived world (soft reboot) runs again");
+    }
+
+    #[test]
+    fn a_best_effort_failure_is_reported_with_its_site_and_not_after_shutdown() {
+        REPORTED.with_borrow_mut(Vec::clear);
+        let r: Option<()> = with_world_reported(|_| Err(eyre!("boom")));
+        assert!(r.is_none());
+        let reported = REPORTED.with_borrow(Clone::clone);
+        assert_eq!(reported.len(), 1, "{reported:?}");
+        assert!(
+            reported[0].contains("boom") && reported[0].contains("world.rs"),
+            "{}",
+            reported[0]
+        );
+        assert_eq!(with_world_reported(|_| Ok(5)), Some(5));
+        shutdown();
+        let _ = with_world_reported(|_| Ok(()));
+        assert_eq!(
+            REPORTED.with_borrow(Vec::len),
+            1,
+            "a shut-down world is not an error to report"
+        );
+        revive().unwrap();
     }
 }
 
