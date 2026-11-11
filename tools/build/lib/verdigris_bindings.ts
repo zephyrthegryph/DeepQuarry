@@ -40,6 +40,8 @@ type Bind = {
   name: string;
   path: string;
   args: string[] | null; // null = variadic
+  /** Parameter types and return type, whitespace-normalized: part of the ABI hash, so a changed signature with the same arity is caught. */
+  signature: string;
   docs: string[];
   file: string;
 };
@@ -170,6 +172,10 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
           if (rest[j] === ')') depth--;
         }
         const params = splitTopLevel(rest.slice(start, j - 1));
+        const brace = rest.indexOf('{', j);
+        const ret = /^\s*->\s*([^{]*)/.exec(rest.slice(j, brace < 0 ? undefined : brace));
+        const norm = (t: string) => t.replace(/\s+/g, ' ').trim();
+        const signature = `${params.map((p) => norm(p.split(':').slice(1).join(':'))).join(',')}->${ret ? norm(ret[1]) : '()'}`;
         const features = cfgFeatures(lines, i - 1);
         if (features.length && !rel.startsWith(GAS_CRATE)) {
           throw new Error(`${rel}:${i + 1}: feature-gated binds are only supported in vg-gas`);
@@ -181,6 +187,7 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
           args: m[1] === 'bind_raw_args' ? null : params.map(argName),
           docs: precedingDocs(lines, i - 1),
           file: rel,
+          signature,
         });
         continue;
       }
@@ -939,7 +946,7 @@ function domainEventsCanonical(d: DomainEvents): string {
 
 function abiOf(binds: Bind[], defines: Define[], components: Component[], domainEvents: DomainEvents[]): string {
   const canonical = [
-    ...binds.map((b) => `${b.name}(${b.args === null ? '...' : b.args.length})`),
+    ...binds.map((b) => `${b.name}(${b.args === null ? '...' : b.args.length})${b.signature}`),
     ...defines.map((d) => `${d.name}=${d.value}`),
     ...components.map(componentCanonical),
     ...domainEvents.map(domainEventsCanonical),
