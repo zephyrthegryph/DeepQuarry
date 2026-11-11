@@ -389,7 +389,9 @@ pub fn add_entry(port: u8, id: WatchId, entry: vg_core::watch::SetEntry) -> Resu
 /// Removes an entry of a set watch.
 pub fn remove_entry(port: u8, id: WatchId, payload: u32) {
     if port == 0 {
-        let _ = crate::world::with_world_reported(|w| Ok(w.remove_field_watch_entry::<TurfGas>(id, payload)));
+        let _ = crate::world::with_world_reported(|w| {
+            Ok(w.remove_field_watch_entry::<TurfGas>(id, payload))
+        });
         return;
     }
     with_mixes(|m| {
@@ -962,7 +964,9 @@ fn evaluate(m: &mut Mixes) -> Vec<Wake> {
 /// Removes a watch [`watch`] returned.
 pub fn unwatch(port: u8, id: WatchId) {
     if port == 0 {
-        let _ = crate::world::with_world_reported(|w| w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}")));
+        let _ = crate::world::with_world_reported(|w| {
+            w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}"))
+        });
         return;
     }
     with_mixes(|m| {

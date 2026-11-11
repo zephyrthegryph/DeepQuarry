@@ -11,7 +11,7 @@ use eyre::{Result, bail};
 use vg_chem::metabolism::{self, Uptake};
 use vg_chem::reaction::{self, Reactant, Step};
 
-use crate::world::num;
+use crate::arg::num;
 
 /// How far one step of a reaction goes, in reaction units (`vg_chem::reaction::progress`; DM's `calc_reaction_progress()`).
 /// `reactants` is a flat list `have, ratio, ...`. The caller still takes `min(limit, progress)`.

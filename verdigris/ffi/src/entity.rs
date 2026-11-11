@@ -109,9 +109,7 @@ pub fn resolve(entity_v: f32, domain: usize, kind: u16) -> Result<ComponentRef> 
     })
 }
 
-fn num(v: &ByondValue) -> Result<f32> {
-    Ok(v.get_number()?)
-}
+use crate::arg::num;
 
 /// Batched destroy's one unbind call (`doc/rewrite/init_and_turfs.md` §4.4):
 /// [`entity_unbind`] for every handle in `entities`, a list of `vg_entity`

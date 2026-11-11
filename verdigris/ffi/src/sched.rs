@@ -27,9 +27,10 @@ use vg_core::vg;
 use vg_core::watch::{Cmp, Cond, Edge, Level};
 use vg_core::world::{Subscription, World};
 
+use crate::arg::{num, whole};
 use crate::entity::{decode, entity_value};
 use crate::registry;
-use crate::world::{list, num, whole, with_world};
+use crate::world::{list, with_world};
 
 /// Numbers per wake returned by `vg_world_step`:
 /// `subscriber, lane, reason, source, source_kind`.
