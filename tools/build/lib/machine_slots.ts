@@ -8,8 +8,10 @@
  * - `queue/P-T-PID`: a waiter. P is 0 for a compiler lane (or DQ_SLOT_PRIORITY=0) and 1 for everyone else, T the arrival time (13
  *   digits), so priority 0 jumps the queue and the rest go in arrival order. A waiter takes a slot only when first.
  * - `events.tsv`: one line per release: time, class, slot, worktree, label, waited seconds, held seconds.
- * A holder or waiter is dead when its pid is gone or its heartbeat is older than DQ_SLOTS_STALE_SEC (default 600). A dead slot is
- * removed by the next waiter, so a crashed run never blocks the queue.
+ * A holder or waiter is dead when its pid is gone, when its pid is alive but its recorded `start=` (the process start time from
+ * /proc/<pid>/stat, written where /proc exists) differs, so the pid was reused (the holder rule of tools/lib/dq_lock.sh), or when its
+ * heartbeat is older than DQ_SLOTS_STALE_SEC (default 600). The start time is compared only where this process can read it (/proc on
+ * Linux; a Windows node cannot read an MSYS /proc). A dead slot is removed by the next waiter, so a crashed run never blocks the queue.
  *
  * Counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off): dm_compile DQ_SLOTS_DM_COMPILE=1,
  * test_world DQ_SLOTS_TEST_WORLD=2, cargo DQ_SLOTS_CARGO=1. dm_compile and cargo are never held while waiting for another class.
@@ -154,7 +156,18 @@ function pidAlive(pid: number): boolean {
   }
 }
 
-/** Is the process that wrote this owner or queue file gone, or its heartbeat stale? */
+/** The process start token tools/lib/dq_lock.sh records (field 22 of /proc/<pid>/stat), or '' where there is no readable /proc. */
+export function procStart(pid: number): string {
+  try {
+    const stat = fs.readFileSync(`/proc/${pid}/stat`, 'utf-8');
+    const fields = stat.slice(stat.lastIndexOf(') ') + 2).trim().split(/\s+/);
+    return fields.length >= 20 ? fields[19] : '';
+  } catch {
+    return '';
+  }
+}
+
+/** Is the process that wrote this owner or queue file gone (or its pid reused), or its heartbeat stale? */
 function isDead(file: string): boolean {
   if (!fs.existsSync(file)) return true;
   const f = readFields(file);
@@ -163,7 +176,13 @@ function isDead(file: string): boolean {
   // A bash holder's own pid is an MSYS pid; its winpid is the Windows one this process can signal. A node holder has both equal.
   const pid = Number(f.kind === 'bash' && process.platform === 'win32' ? f.winpid : (f.winpid || f.pid));
   if (!pid) return false;
-  return !pidAlive(pid);
+  if (!pidAlive(pid)) return true;
+  // pid reuse: the recorded start time is checked where /proc is readable (it is the MSYS or Linux pid's own record)
+  if (f.start && f.pid) {
+    const now = procStart(Number(f.pid));
+    if (now && now !== f.start) return true;
+  }
+  return false;
 }
 
 function reap(dir: string, log?: (m: string) => void): void {
@@ -328,7 +347,8 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
   const queued = Math.floor(Date.now() / 1000);
   const name = `${prio}-${String(queued).padStart(13, '0')}-${process.pid}`;
   const queueFile = path.join(dir, 'queue', name);
-  const identity = `kind=node\npid=${process.pid}\nwinpid=${process.pid}\nworktree=${top}\nlabel=${label}\n`;
+  const start = procStart(process.pid);
+  const identity = `kind=node\npid=${process.pid}\n${start ? `start=${start}\n` : ''}winpid=${process.pid}\nworktree=${top}\nlabel=${label}\n`;
   fs.writeFileSync(queueFile, `${identity}queued=${queued}\n${want > 1 ? `group=${want}\n` : ''}`);
   let waited = 0;
   let last = 0;

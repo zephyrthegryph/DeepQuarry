@@ -14,8 +14,8 @@ mod parser;
 
 use std::cell::Cell;
 
-use byondapi::prelude::*;
 use crate::held::{Held, HeldRead};
+use byondapi::prelude::*;
 use eyre::{Context, Result, bail, eyre};
 use vg_core::field::{FieldConfig, FieldKey, FieldKind, Geom, Side};
 use vg_core::grid::{BlockKind, Dir, Face};
@@ -172,11 +172,7 @@ fn load_reactions() -> Result<()> {
                 "Reaction {string_id} doesn't have a gas requirements list!"
             ));
         };
-        let read = |key: &str| {
-            reqs.held_index(key)
-                .ok()
-                .and_then(|v| v.get_number().ok())
-        };
+        let read = |key: &str| reqs.held_index(key).ok().and_then(|v| v.get_number().ok());
         let gases = (0..gas::GAS_COUNT)
             .filter_map(|i| {
                 Some((
@@ -570,7 +566,10 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         // turf's own datum is re-stamped, so the turf can register again; a turf
         // whose datum names this cell with an old stamp (a replaced turf's
         // leftover) may not unregister the new owner's cell.
-        let air = src.held_var_id(byond_string!("_air")).ok().filter(|a| !a.is_null());
+        let air = src
+            .held_var_id(byond_string!("_air"))
+            .ok()
+            .filter(|a| !a.is_null());
         let named = air
             .as_ref()
             .and_then(|a| MixRef::of_unchecked(a).ok())
@@ -688,7 +687,12 @@ fn air_template(src: &ByondValue) -> Result<ByondValue> {
 /// Registers a turf that has no air datum: its cell takes the template's gas. The template is DM's (shared by every
 /// turf of its kind), so nothing is moved or stamped; the turf's own datum, when something reads it, is bound to the
 /// cell then (`hook_bind_turf_air`).
-fn register_from_template(src: ByondValue, cell: u32, key: FieldKey<TurfGas>, mask: Option<u8>) -> Result<()> {
+fn register_from_template(
+    src: ByondValue,
+    cell: u32,
+    key: FieldKey<TurfGas>,
+    mask: Option<u8>,
+) -> Result<()> {
     let template = air_template(&src)?;
     if template.is_null() {
         return Ok(());
@@ -699,7 +703,8 @@ fn register_from_template(src: ByondValue, cell: u32, key: FieldKey<TurfGas>, ma
     };
     mix::bump_turf_generation(cell);
     let mut value = mix::cell_of_mixture(&mix);
-    let immutable = mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos")));
+    let immutable =
+        mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos")));
     let planet = is_set(src.read_number_id(byond_string!("planetary_atmos")));
     if planet && !immutable {
         let gas = src
@@ -873,9 +878,8 @@ fn hook_register_world_turfs(
     max_z: ByondValue,
 ) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let count = (max_x.get_number()? as u32)
-        * (max_y.get_number()? as u32)
-        * (max_z.get_number()? as u32);
+    let count =
+        (max_x.get_number()? as u32) * (max_y.get_number()? as u32) * (max_z.get_number()? as u32);
     register_turf_ids(0..count)
 }
 
@@ -883,9 +887,16 @@ fn hook_register_world_turfs(
 /// atmos core started (`/world/proc/increment_max_z()`), whose turfs skip their own registration while it is made. Args:
 /// (z, max_x, max_y). Returns the turfs DM must ask for air passage.
 #[auxmacros::bind("/proc/_air_register_level_turfs")]
-fn hook_register_level_turfs(z: ByondValue, max_x: ByondValue, max_y: ByondValue) -> Result<ByondValue> {
+fn hook_register_level_turfs(
+    z: ByondValue,
+    max_x: ByondValue,
+    max_y: ByondValue,
+) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let (z, level) = (z.get_number()? as u32, (max_x.get_number()? as u32) * (max_y.get_number()? as u32));
+    let (z, level) = (
+        z.get_number()? as u32,
+        (max_x.get_number()? as u32) * (max_y.get_number()? as u32),
+    );
     register_turf_ids(level * (z.max(1) - 1)..level * z.max(1))
 }
 
@@ -1101,7 +1112,10 @@ fn topology_matches(src: ByondValue) -> Result<ByondValue> {
         let Some((value, geom)) = turf_read(w, turf_key()?, cell) else {
             return Ok(false);
         };
-        Ok((r.is_none() || r == Some(MixRef::Turf(cell)) || value.immutable_in(&geom)) && geom.is_node())
+        Ok(
+            (r.is_none() || r == Some(MixRef::Turf(cell)) || value.immutable_in(&geom))
+                && geom.is_node(),
+        )
     })?;
     Ok(matches.into())
 }

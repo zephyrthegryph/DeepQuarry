@@ -1,14 +1,14 @@
 //! The legacy `/datum/gas_mixture` binds: DM's gas API over [`mix`]'s
 //! handles (every bind loads, changes and stores through `with_mix*`).
 
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::Result;
 use vg_gas::gas::constants::{GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
 use vg_gas::gas::{self, Mixture, constants, gas_idx_from_string};
 use vg_gas::power_budget;
-use vg_heat::components::gas_kind;
 use vg_heat::GasCoupling;
+use vg_heat::components::gas_kind;
 
 use super::mix::{self, MixRef, with_mix, with_mix_mut, with_mixes_mut, with_mixes2};
 use super::parser;
@@ -279,7 +279,9 @@ fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
         }
         values
     };
-    Ok(crate::held::hand_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?)
+    Ok(crate::held::hand_list(
+        &values.into_iter().map(ByondValue::from).collect::<Vec<_>>(),
+    )?)
 }
 
 /// Floats before the requested gases in a `read_mixture_levels` row: pressure, temperature, total moles.
@@ -288,7 +290,11 @@ pub const GAS_LEVELS_HEADER: usize = 3;
 
 /// One `read_mixture_levels` row: pressure (kPa), temperature (K), total moles, then the moles of each of `gases` (gas IDs), in order.
 fn levels_row(mix: &Mixture, gases: &[usize], out: &mut Vec<f32>) {
-    out.extend([mix.return_pressure(), mix.get_temperature(), mix.total_moles()]);
+    out.extend([
+        mix.return_pressure(),
+        mix.get_temperature(),
+        mix.total_moles(),
+    ]);
     out.extend(gases.iter().map(|&gas| mix.get_moles(gas)));
 }
 
@@ -318,7 +324,9 @@ fn read_mixture_levels(mixtures: ByondValue, gas_ids: ByondValue) -> Result<Byon
             None => values.extend(std::iter::repeat_n(0.0, stride)),
         }
     }
-    Ok(crate::held::hand_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?)
+    Ok(crate::held::hand_list(
+        &values.into_iter().map(ByondValue::from).collect::<Vec<_>>(),
+    )?)
 }
 
 /// Batched change counters. Args: (list of gas mixtures). One float per mixture, in order: the mixture's revision (the counter that moves whenever its gas
@@ -440,7 +448,11 @@ fn air_watch_changed(watch: ByondValue, revisions: ByondValue) -> Result<ByondVa
 /// Args: (watch id, list of 1-based indices, list of the mixtures now at those indices). Points the watch's entries at the given mixtures (a turf given a new air
 /// datum). A stale handle is refused with an error.
 #[auxmacros::bind("/proc/air_watch_rebind")]
-fn air_watch_rebind(watch: ByondValue, indices: ByondValue, mixtures: ByondValue) -> Result<ByondValue> {
+fn air_watch_rebind(
+    watch: ByondValue,
+    indices: ByondValue,
+    mixtures: ByondValue,
+) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let id = watch.get_number()? as u32;
     let indices = indices.held_list()?;
@@ -807,7 +819,10 @@ fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
         .map(|operation| {
             let source = mix::checked_ref_value(&operation[0], &operation[1]);
             let sink = mix::checked_ref_value(&operation[2], &operation[3]);
-            (source.ok().zip(sink.ok()), operation[4].get_number().unwrap_or(0.0))
+            (
+                source.ok().zip(sink.ok()),
+                operation[4].get_number().unwrap_or(0.0),
+            )
         })
         .collect::<Vec<_>>();
     let results = {
@@ -843,7 +858,11 @@ fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
 /// volume. Returns one boolean residual per exposed face.
 #[auxmacros::bind("/proc/auxmos_batch_mingle")]
 fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
-    let values = operations.held_pairs()?.into_iter().map(|(value, _)| value).collect::<Vec<_>>();
+    let values = operations
+        .held_pairs()?
+        .into_iter()
+        .map(|(value, _)| value)
+        .collect::<Vec<_>>();
     let parsed = values
         .chunks_exact(3)
         .map(|operation| {
@@ -1422,9 +1441,7 @@ fn thermal_exchange(
             other_temperature.get_number()?,
             other_capacity.get_number()?,
         );
-        let heat = with_mix_mut(&air, |a| {
-            Ok(pipe_contact(a, share, k, t, c))
-        })?;
+        let heat = with_mix_mut(&air, |a| Ok(pipe_contact(a, share, k, t, c)))?;
         return Ok(ByondValue::from(heat));
     }
     let heat = with_mixes_mut(&air, &other_air, |a, b| {
@@ -1470,7 +1487,10 @@ mod pipe_contact_tests {
         let (ca, cb) = (a.heat_capacity(), other.heat_capacity());
         let heat = pipe_contact(&mut a, 2500.0, 0.5, tb, cb);
         let series = ca * cb / (ca + cb);
-        assert!((heat - 0.5 * (ta - tb) * series).abs() < 1.0, "half the difference: {heat}");
+        assert!(
+            (heat - 0.5 * (ta - tb) * series).abs() < 1.0,
+            "half the difference: {heat}"
+        );
         assert!((a.thermal_energy() - (before - heat)).abs() < 1.0);
     }
 

@@ -42,8 +42,8 @@ use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
 use crate::gas::mix::{self, MixRef};
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::component::Component;
 use vg_core::entity::EntityId;
@@ -588,7 +588,10 @@ pub(crate) fn port_mixture(w: &World, port: u32) -> Option<MixRef> {
 /// Who owns a staged side, and what it held when it was read (a side is written back only if the step changed it).
 enum SideOwner {
     /// A pipe region's payload.
-    Region { id: RegionId<Pipes>, before: PipeGas },
+    Region {
+        id: RegionId<Pipes>,
+        before: PipeGas,
+    },
     /// A turf's gas, written back as the difference from `before`.
     Turf { cell: u32, before: PipeGas },
 }
@@ -713,7 +716,9 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
     lap.lap("stage_devices_list");
     let (laws, groups) = device_law_index(w);
     lap.lap("stage_law_index");
-    crate::metrics::registry().counter("stage.devices").add(devices.len() as u64);
+    crate::metrics::registry()
+        .counter("stage.devices")
+        .add(devices.len() as u64);
     // A budget leg's device: its entity and the regions across its edge.
     let mut legs: FxHashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)> =
         FxHashMap::default();
@@ -759,7 +764,9 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
                 _ => None,
             },
             (Endpoint::Cell(cell), node @ Endpoint::Node(_))
-            | (node @ Endpoint::Node(_), Endpoint::Cell(cell)) => resolve(node).map(|r| (Ok(cell), r)),
+            | (node @ Endpoint::Node(_), Endpoint::Cell(cell)) => {
+                resolve(node).map(|r| (Ok(cell), r))
+            }
             _ => None,
         };
         let key = ends.as_ref().and_then(|&(first, region_b)| {
@@ -837,12 +844,22 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
     settled.retain(|_, s| s.seen == pass);
     SETTLED.set(settled);
     STAGED_KEYS.set(keys);
-    crate::metrics::registry().counter("stage.jobs").add(jobs.len() as u64);
-    crate::metrics::registry().counter("stage.skipped").add(skipped);
-    crate::metrics::registry().counter("stage.sides").add(sides.len() as u64);
+    crate::metrics::registry()
+        .counter("stage.jobs")
+        .add(jobs.len() as u64);
+    crate::metrics::registry()
+        .counter("stage.skipped")
+        .add(skipped);
+    crate::metrics::registry()
+        .counter("stage.sides")
+        .add(sides.len() as u64);
     STAGED.with_borrow_mut(|s| *s = owners);
     let set = w
-        .set_global(DeviceJobs { sides, jobs, budgets })
+        .set_global(DeviceJobs {
+            sides,
+            jobs,
+            budgets,
+        })
         .map_err(|e| eyre!("{e}"));
     lap.lap("stage_set_global");
     set

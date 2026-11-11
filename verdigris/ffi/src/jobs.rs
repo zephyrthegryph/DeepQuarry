@@ -102,7 +102,7 @@ fn verdigris_jobs_completed() -> Result<ByondValue> {
     let ids = registry()
         .drain_completed()
         .into_iter()
-        .map(id_value)
-        .collect::<Result<Vec<_>>>()?;
-    Ok(crate::held::hand_list(&ids)?)
+        .map(|id| crate::held::Held::new_str(id.0.to_string()))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(crate::held::hand_owned_list(ids)?)
 }

@@ -33,7 +33,13 @@ fn room(cap: u32) -> Room {
 		geom.set(i, Geom::cell(CAPACITY));
 		cells.set(i, c);
 	}
-	let mut field = FieldState::new(dims, FieldConfig { dt: 1.0, max_substeps: 16 });
+	let mut field = FieldState::new(
+		dims,
+		FieldConfig {
+			dt: 1.0,
+			max_substeps: 16,
+		},
+	);
 	field.set_stride_cap(cap);
 	Room { cells, geom, field }
 }
@@ -61,20 +67,45 @@ fn the_stride_stays_within_the_tolerance_of_the_exact_scheme_and_conserves() {
 		strided.step();
 		for run in [&exact, &strided] {
 			for (a, b) in run.totals().iter().zip(&start) {
-				assert!((a - b).abs() <= 1e-6 * b.abs().max(1.0), "conservation at step {step}: {a} vs {b}");
+				assert!(
+					(a - b).abs() <= 1e-6 * b.abs().max(1.0),
+					"conservation at step {step}: {a} vs {b}"
+				);
 			}
 		}
 		for i in 0..LEN {
-			assert!(strided.moles(i) >= 0.0, "negative moles in cell {i} at step {step}");
+			assert!(
+				strided.moles(i) >= 0.0,
+				"negative moles in cell {i} at step {step}"
+			);
 		}
 	}
-	let worst = (0..LEN).map(|i| (exact.moles(i) - strided.moles(i)).abs() / exact.moles(i).max(1.0)).fold(0.0f32, f32::max);
-	assert!(worst <= 1e-3, "the strided run drifted {worst} (relative) from the exact one");
-	let worst_t = (0..LEN).map(|i| (exact.cells.get(i).unwrap().temperature - strided.cells.get(i).unwrap().temperature).abs()).fold(0.0f32, f32::max);
-	assert!(worst_t <= 0.05, "the strided run's temperature drifted {worst_t} K");
+	let worst = (0..LEN)
+		.map(|i| (exact.moles(i) - strided.moles(i)).abs() / exact.moles(i).max(1.0))
+		.fold(0.0f32, f32::max);
+	assert!(
+		worst <= 1e-3,
+		"the strided run drifted {worst} (relative) from the exact one"
+	);
+	let worst_t = (0..LEN)
+		.map(|i| {
+			(exact.cells.get(i).unwrap().temperature - strided.cells.get(i).unwrap().temperature)
+				.abs()
+		})
+		.fold(0.0f32, f32::max);
+	assert!(
+		worst_t <= 0.05,
+		"the strided run's temperature drifted {worst_t} K"
+	);
 	let stats = strided.field.stats();
-	eprintln!("gas stride: advances {} skipped {} stride {} changes {}", stats.steps, stats.skipped_steps, stats.stride, stats.stride_changes);
-	assert!(stats.skipped_steps > 0, "the idle stride never skipped a step: {stats:?}");
+	eprintln!(
+		"gas stride: advances {} skipped {} stride {} changes {}",
+		stats.steps, stats.skipped_steps, stats.stride, stats.stride_changes
+	);
+	assert!(
+		stats.skipped_steps > 0,
+		"the idle stride never skipped a step: {stats:?}"
+	);
 }
 
 /// The implicit bulk solve gives bit-identical cells for any thread count: a room at three pressures beside a space edge, stepped in
@@ -82,7 +113,10 @@ fn the_stride_stays_within_the_tolerance_of_the_exact_scheme_and_conserves() {
 #[test]
 fn the_implicit_bulk_solve_is_bit_identical_across_thread_counts() {
 	let run = |threads: usize| {
-		let pool = rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap();
+		let pool = rayon::ThreadPoolBuilder::new()
+			.num_threads(threads)
+			.build()
+			.unwrap();
 		pool.install(|| {
 			let mut r = room(1);
 			for i in 0..LEN {
@@ -91,12 +125,21 @@ fn the_implicit_bulk_solve_is_bit_identical_across_thread_counts() {
 				c.refresh_in(CAPACITY);
 				r.cells.set(i, c);
 			}
-			r.geom.set(0, Geom { capacity: CAPACITY, blocked: vg_core::grid::Dir::NONE, reservoir: true });
+			r.geom.set(
+				0,
+				Geom {
+					capacity: CAPACITY,
+					blocked: vg_core::grid::Dir::NONE,
+					reservoir: true,
+				},
+			);
 			r.cells.set(0, GasCell::new([0.0; N], 2.7));
 			for _ in 0..40 {
 				r.step();
 			}
-			(0..LEN).map(|i| r.cells.get(i).unwrap().moles[GAS_OXYGEN].to_bits()).collect::<Vec<_>>()
+			(0..LEN)
+				.map(|i| r.cells.get(i).unwrap().moles[GAS_OXYGEN].to_bits())
+				.collect::<Vec<_>>()
 		})
 	};
 	let one = run(1);

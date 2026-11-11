@@ -15,3 +15,5 @@ flume = { workspace = true }
 coarsetime = { workspace = true }
 eyre = { workspace = true }
 tracing = { workspace = true }
+# The panic hook that records where a caught panic happened (core has no byondapi).
+vg-core = { path = "../../core" }

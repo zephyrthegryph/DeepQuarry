@@ -60,6 +60,7 @@ fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
             dm_abi
         );
     }
+    vg_core::panic_site::install();
     // A soft reboot ran `world/Del()` (vg_world_shutdown) but kept the DLL.
     crate::world::revive()?;
     crate::entity::reset_all()?;

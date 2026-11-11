@@ -4,8 +4,8 @@
 //! The radiation insulation layer is a main-owned global of the world
 //! ([`RadiationLayer`]), not a process static; every call is synchronous.
 //! Coordinates are DM's one-based turf coordinates.
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::GridDims;
 use vg_core::propagate::{RadiationField, emp};

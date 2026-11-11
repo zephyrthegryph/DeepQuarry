@@ -94,17 +94,35 @@ fn early_single_registrations_keep_the_bulk_path() {
 #[test]
 fn a_sealed_station_costs_one_value_per_settled_room_chunk() {
     let table = boot(false, true);
-    let find = |name: &str| table.iter().find(|(n, _)| *n == name).map(|(_, m)| *m).unwrap();
+    let find = |name: &str| {
+        table
+            .iter()
+            .find(|(n, _)| *n == name)
+            .map(|(_, m)| *m)
+            .unwrap()
+    };
     let (gas, geom) = (find("gas").view_chunks, find("gas_geometry").view_chunks);
     // Vacuum chunks (1088 of the 1280 on the map, and every padding chunk of the layout) are never allocated; 192 chunks
     // hold the three decks, of which the 144 interior ones are exactly uniform and sleep as one value. The 48 on the wall ring
     // mix air with unregistered wall cells and stay dense.
-    assert_eq!(gas.dense_but_uniform, 0, "a uniform chunk is stored as a value, not as cells");
+    assert_eq!(
+        gas.dense_but_uniform, 0,
+        "a uniform chunk is stored as a value, not as cells"
+    );
     assert_eq!(gas.default_chunks, gas.chunks - 192);
     assert_eq!((gas.uniform_chunks, gas.dense_chunks), (144, 48), "{gas:?}");
-    assert_eq!(gas.allocations, 49, "one shared room value plus the ring chunks: {gas:?}");
-    assert!(find("gas").view < 2_300_000, "the sealed station's gas is about 2 MB, was 6.7 MB dense");
-    assert!(geom.allocations < 130 && geom.default_chunks > 64_000, "identical geometry is one value per kind: {geom:?}");
+    assert_eq!(
+        gas.allocations, 49,
+        "one shared room value plus the ring chunks: {gas:?}"
+    );
+    assert!(
+        find("gas").view < 2_300_000,
+        "the sealed station's gas is about 2 MB, was 6.7 MB dense"
+    );
+    assert!(
+        geom.allocations < 130 && geom.default_chunks > 64_000,
+        "identical geometry is one value per kind: {geom:?}"
+    );
 }
 
 /// The allocator's counters are process-wide: one boot at a time.
