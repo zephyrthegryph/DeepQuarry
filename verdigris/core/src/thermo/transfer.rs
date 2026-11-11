@@ -51,7 +51,11 @@ pub struct State {
 impl State {
     #[must_use]
     pub const fn new(temperature: f64, capacity: f64) -> Self {
-        Self { temperature, capacity, floor: 0.0 }
+        Self {
+            temperature,
+            capacity,
+            floor: 0.0,
+        }
     }
 
     #[must_use]
@@ -128,8 +132,17 @@ impl Books {
     /// The unexplained energy, when the books do not account for the change.
     pub fn check(&self, before: f64, after: f64) -> Result<(), f64> {
         let unexplained = (after - before) - self.expected_delta();
-        let scale = before.abs().max(after.abs()) + self.transferred + self.work_in + self.work_out + self.external_in + self.external_out;
-        if unexplained.abs() <= 1e-9 * scale + 1e-6 { Ok(()) } else { Err(unexplained) }
+        let scale = before.abs().max(after.abs())
+            + self.transferred
+            + self.work_in
+            + self.work_out
+            + self.external_in
+            + self.external_out;
+        if unexplained.abs() <= 1e-9 * scale + 1e-6 {
+            Ok(())
+        } else {
+            Err(unexplained)
+        }
     }
 
     /// Books the reservoir side of a transfer that crossed the finite set's
@@ -139,10 +152,18 @@ impl Books {
             (false, false) => self.transferred += q.abs(),
             (true, false) => {
                 // From an infinite source into a finite one: +q enters.
-                if q > 0.0 { self.external_in += q } else { self.external_out -= q }
+                if q > 0.0 {
+                    self.external_in += q
+                } else {
+                    self.external_out -= q
+                }
             }
             (false, true) => {
-                if q > 0.0 { self.external_out += q } else { self.external_in -= q }
+                if q > 0.0 {
+                    self.external_out += q
+                } else {
+                    self.external_in -= q
+                }
             }
             (true, true) => {}
         }
@@ -156,12 +177,22 @@ pub fn cap(sa: State, sb: State, q: f64) -> f64 {
     if !q.is_finite() {
         return 0.0;
     }
-    if q > 0.0 { q.min(sa.energy()) } else { q.max(-sb.energy()) }
+    if q > 0.0 {
+        q.min(sa.energy())
+    } else {
+        q.max(-sb.energy())
+    }
 }
 
 /// Moves `q` J from `a` to `b` in one operation (`-q` on `a`, `+q` on `b`),
 /// capped by [`cap`], and books it. Returns the joules actually moved.
-pub fn transfer<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, a: R, b: R, q: f64) -> f64 {
+pub fn transfer<R: Copy>(
+    res: &mut impl Reservoirs<R>,
+    books: &mut Books,
+    a: R,
+    b: R,
+    q: f64,
+) -> f64 {
     let (Some(sa), Some(sb)) = (res.state(a), res.state(b)) else {
         return 0.0;
     };
@@ -192,7 +223,11 @@ pub fn external<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, r: R, 
         return 0.0;
     }
     res.add(r, q);
-    if q > 0.0 { books.external_in += q } else { books.external_out -= q }
+    if q > 0.0 {
+        books.external_in += q
+    } else {
+        books.external_out -= q
+    }
     q
 }
 
@@ -201,7 +236,11 @@ pub fn external<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, r: R, 
 pub enum EdgeKind {
     /// Conduction at `conductance` W/K, plus radiation `εσA(T⁴_a − T⁴_b)`
     /// when `emissivity * area > 0` (`area` m²).
-    Link { conductance: f64, emissivity: f64, area: f64 },
+    Link {
+        conductance: f64,
+        emissivity: f64,
+        area: f64,
+    },
     /// A heat pump driving `a` (the controlled side) toward the regulator's
     /// target, rejecting to or drawing from `b`. Its work is booked in.
     Pump(Regulator),
@@ -238,7 +277,8 @@ pub struct Flow {
 #[must_use]
 pub fn radiative_conductance(emissivity: f64, area: f64, ta: f64, tb: f64) -> f64 {
     let (ta, tb) = (ta.max(0.0), tb.max(0.0));
-    (emissivity.max(0.0) * area.max(0.0) * STEFAN_BOLTZMANN * (ta * ta + tb * tb) * (ta + tb)).max(0.0)
+    (emissivity.max(0.0) * area.max(0.0) * STEFAN_BOLTZMANN * (ta * ta + tb * tb) * (ta + tb))
+        .max(0.0)
 }
 
 /// Joules moved `a` → `b` by conductance `g` over `dt`: the exact pair
@@ -250,7 +290,12 @@ pub fn link_heat(sa: State, sb: State, g: f64, dt: f64) -> f64 {
 
 /// Integrates one edge over `dt` seconds, applying its flows to `res` and
 /// booking them in `books`.
-pub fn step_edge<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, edge: &Edge<R>, dt: f64) -> Flow {
+pub fn step_edge<R: Copy>(
+    res: &mut impl Reservoirs<R>,
+    books: &mut Books,
+    edge: &Edge<R>,
+    dt: f64,
+) -> Flow {
     if dt.is_nan() || dt <= 0.0 {
         return Flow::default();
     }
@@ -258,20 +303,44 @@ pub fn step_edge<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, edge:
         return Flow::default();
     };
     match edge.kind {
-        EdgeKind::Link { conductance, emissivity, area } => {
-            let g = conductance.max(0.0) + radiative_conductance(emissivity, area, sa.temperature, sb.temperature);
+        EdgeKind::Link {
+            conductance,
+            emissivity,
+            area,
+        } => {
+            let g = conductance.max(0.0)
+                + radiative_conductance(emissivity, area, sa.temperature, sb.temperature);
             let q = transfer(res, books, edge.a, edge.b, link_heat(sa, sb, g, dt));
-            Flow { from_a: q, into_b: q, ..Flow::default() }
+            Flow {
+                from_a: q,
+                into_b: q,
+                ..Flow::default()
+            }
         }
         EdgeKind::Pump(reg) => pump(res, books, edge, reg, sa, sb, dt),
-        EdgeKind::Engine { efficiency, conductance } => engine(res, books, edge, efficiency, conductance, sa, sb, dt),
+        EdgeKind::Engine {
+            efficiency,
+            conductance,
+        } => engine(res, books, edge, efficiency, conductance, sa, sb, dt),
     }
 }
 
 #[allow(clippy::cast_possible_truncation)]
-fn pump<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, edge: &Edge<R>, reg: Regulator, sa: State, sb: State, dt: f64) -> Flow {
+fn pump<R: Copy>(
+    res: &mut impl Reservoirs<R>,
+    books: &mut Books,
+    edge: &Edge<R>,
+    reg: Regulator,
+    sa: State,
+    sb: State,
+    dt: f64,
+) -> Flow {
     let step = reg.step(sa.body(), sb.body(), dt as f32);
-    let (mut work, mut moved, mut other) = (f64::from(step.work), f64::from(step.moved), f64::from(step.other));
+    let (mut work, mut moved, mut other) = (
+        f64::from(step.work),
+        f64::from(step.moved),
+        f64::from(step.other),
+    );
     if work <= 0.0 && moved == 0.0 && other == 0.0 {
         return Flow::default();
     }
@@ -297,32 +366,62 @@ fn pump<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, edge: &Edge<R>
     if !sa.is_infinite() {
         res.add(edge.a, moved);
     } else if moved != 0.0 {
-        if moved < 0.0 { books.external_in -= moved } else { books.external_out += moved }
+        if moved < 0.0 {
+            books.external_in -= moved
+        } else {
+            books.external_out += moved
+        }
     }
     if !sb.is_infinite() {
         res.add(edge.b, other);
     } else if other != 0.0 {
-        if other < 0.0 { books.external_in -= other } else { books.external_out += other }
+        if other < 0.0 {
+            books.external_in -= other
+        } else {
+            books.external_out += other
+        }
     }
     books.work_in += work;
     books.transferred += moved.abs().min(other.abs());
-    Flow { from_a: -moved, into_b: other, work_in: work, work_out: 0.0 }
+    Flow {
+        from_a: -moved,
+        into_b: other,
+        work_in: work,
+        work_out: 0.0,
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
-fn engine<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, edge: &Edge<R>, efficiency: f64, conductance: f64, sa: State, sb: State, dt: f64) -> Flow {
+fn engine<R: Copy>(
+    res: &mut impl Reservoirs<R>,
+    books: &mut Books,
+    edge: &Edge<R>,
+    efficiency: f64,
+    conductance: f64,
+    sa: State,
+    sb: State,
+    dt: f64,
+) -> Flow {
     // Heat flows hot → cold through the conductance; `a` may be either side.
     let q = link_heat(sa, sb, conductance.max(0.0), dt);
     if q == 0.0 {
         return Flow::default();
     }
     let (hot, cold) = if q > 0.0 { (sa, sb) } else { (sb, sa) };
-    let carnot = if hot.temperature > 0.0 { (1.0 - cold.temperature / hot.temperature).max(0.0) } else { 0.0 };
+    let carnot = if hot.temperature > 0.0 {
+        (1.0 - cold.temperature / hot.temperature).max(0.0)
+    } else {
+        0.0
+    };
     let eta = efficiency.clamp(0.0, 1.0).min(carnot);
     let taken = cap(hot, cold, q.abs());
     let work = eta * taken;
     let delivered = taken - work;
-    let (hot_r, cold_r) = if q > 0.0 { (edge.a, edge.b) } else { (edge.b, edge.a) };
+    let (hot_r, cold_r) = if q > 0.0 {
+        (edge.a, edge.b)
+    } else {
+        (edge.b, edge.a)
+    };
     if hot.is_infinite() {
         books.external_in += taken;
     } else {
@@ -336,7 +435,12 @@ fn engine<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, edge: &Edge<
     books.work_out += work;
     books.transferred += delivered;
     let sign = q.signum();
-    Flow { from_a: sign * taken, into_b: sign * delivered, work_in: 0.0, work_out: work }
+    Flow {
+        from_a: sign * taken,
+        into_b: sign * delivered,
+        work_in: 0.0,
+        work_out: work,
+    }
 }
 
 /// Plain reservoirs by index: the reference [`Reservoirs`] for tests and
@@ -348,7 +452,11 @@ impl Plain {
     /// The finite reservoirs' total energy.
     #[must_use]
     pub fn total(&self) -> f64 {
-        self.0.iter().filter(|s| !s.is_infinite()).map(|s| s.capacity * s.temperature).sum()
+        self.0
+            .iter()
+            .filter(|s| !s.is_infinite())
+            .map(|s| s.capacity * s.temperature)
+            .sum()
     }
 }
 
@@ -369,13 +477,29 @@ impl Reservoirs<usize> for Plain {
 /// Steps every edge once over `dt` (in order, each applied before the
 /// next reads), returning the frame's books. In debug builds asserts the
 /// books explain the change in the finite total.
-pub fn step_all<R: Copy, T: Reservoirs<R>>(res: &mut T, edges: &[Edge<R>], dt: f64, total: impl Fn(&T) -> f64) -> (Books, Vec<Flow>) {
+pub fn step_all<R: Copy, T: Reservoirs<R>>(
+    res: &mut T,
+    edges: &[Edge<R>],
+    dt: f64,
+    total: impl Fn(&T) -> f64,
+) -> (Books, Vec<Flow>) {
     let mut books = Books::default();
-    let before = if cfg!(debug_assertions) { total(res) } else { 0.0 };
-    let flows = edges.iter().map(|e| step_edge(res, &mut books, e, dt)).collect();
+    let before = if cfg!(debug_assertions) {
+        total(res)
+    } else {
+        0.0
+    };
+    let flows = edges
+        .iter()
+        .map(|e| step_edge(res, &mut books, e, dt))
+        .collect();
     if cfg!(debug_assertions) {
         let after = total(res);
-        debug_assert!(books.check(before, after).is_ok(), "heat books do not balance: {:?} ({before} -> {after})", books.check(before, after));
+        debug_assert!(
+            books.check(before, after).is_ok(),
+            "heat books do not balance: {:?} ({before} -> {after})",
+            books.check(before, after)
+        );
     }
     (books, flows)
 }
@@ -407,7 +531,15 @@ mod tests {
     #[test]
     fn a_link_reaches_the_exact_exponential() {
         let mut p = Plain(vec![st(400.0, 10.0), st(300.0, 30.0)]);
-        let e = Edge { a: 0, b: 1, kind: EdgeKind::Link { conductance: 2.0, emissivity: 0.0, area: 0.0 } };
+        let e = Edge {
+            a: 0,
+            b: 1,
+            kind: EdgeKind::Link {
+                conductance: 2.0,
+                emissivity: 0.0,
+                area: 0.0,
+            },
+        };
         let mut books = Books::default();
         step_edge(&mut p, &mut books, &e, 5.0);
         let inv = 1.0 / 10.0 + 1.0 / 30.0;
@@ -418,7 +550,15 @@ mod tests {
     #[test]
     fn radiation_to_space_cools_but_never_below_the_sky() {
         let mut p = Plain(vec![st(400.0, 100.0), st(2.7, f64::INFINITY)]);
-        let e = Edge { a: 0, b: 1, kind: EdgeKind::Link { conductance: 0.0, emissivity: 0.9, area: 1.0 } };
+        let e = Edge {
+            a: 0,
+            b: 1,
+            kind: EdgeKind::Link {
+                conductance: 0.0,
+                emissivity: 0.9,
+                area: 1.0,
+            },
+        };
         let mut books = Books::default();
         for _ in 0..100 {
             step_edge(&mut p, &mut books, &e, 1e6);
@@ -430,20 +570,39 @@ mod tests {
     #[test]
     fn an_engine_never_beats_carnot_and_books_its_work() {
         let mut p = Plain(vec![st(600.0, 1000.0), st(300.0, 1000.0)]);
-        let e = Edge { a: 0, b: 1, kind: EdgeKind::Engine { efficiency: 0.9, conductance: 50.0 } };
+        let e = Edge {
+            a: 0,
+            b: 1,
+            kind: EdgeKind::Engine {
+                efficiency: 0.9,
+                conductance: 50.0,
+            },
+        };
         let before = p.total();
         let mut books = Books::default();
         let f = step_edge(&mut p, &mut books, &e, 1.0);
         assert!(f.work_out > 0.0);
-        assert!(f.work_out <= 0.5 * f.from_a + 1e-9, "carnot at 600/300 is 0.5");
+        assert!(
+            f.work_out <= 0.5 * f.from_a + 1e-9,
+            "carnot at 600/300 is 0.5"
+        );
         assert!(books.check(before, p.total()).is_ok());
     }
 
     #[test]
     fn a_pump_cools_against_a_hot_side_and_rejects_q_plus_w() {
-        let reg = Regulator { target: 250.0, max_power: 1000.0, mode: RegulatorMode::Cool, ..Regulator::default() };
+        let reg = Regulator {
+            target: 250.0,
+            max_power: 1000.0,
+            mode: RegulatorMode::Cool,
+            ..Regulator::default()
+        };
         let mut p = Plain(vec![st(300.0, 1e4), st(300.0, 1e5)]);
-        let e = Edge { a: 0, b: 1, kind: EdgeKind::Pump(reg) };
+        let e = Edge {
+            a: 0,
+            b: 1,
+            kind: EdgeKind::Pump(reg),
+        };
         let before = p.total();
         let mut books = Books::default();
         let f = step_edge(&mut p, &mut books, &e, 1.0);
@@ -464,31 +623,52 @@ mod tests {
 
     fn edge_kind() -> impl Strategy<Value = EdgeKind> {
         prop_oneof![
-            (0.0..1e4f64, 0.0..1.0f64, 0.0..10.0f64).prop_map(|(g, e, a)| EdgeKind::Link { conductance: g, emissivity: e, area: a }),
-            (1.0..2000.0f32, 0.0..1e5f32, 0..3u8, any::<bool>()).prop_map(|(t, w, m, r)| EdgeKind::Pump(Regulator {
-                target: t,
-                max_power: w,
-                mode: [RegulatorMode::Heat, RegulatorMode::Cool, RegulatorMode::Both][m as usize],
-                resistive_heating: r,
-                ..Regulator::default()
-            })),
-            (0.0..1.0f64, 0.0..1e4f64).prop_map(|(e, g)| EdgeKind::Engine { efficiency: e, conductance: g }),
+            (0.0..1e4f64, 0.0..1.0f64, 0.0..10.0f64).prop_map(|(g, e, a)| EdgeKind::Link {
+                conductance: g,
+                emissivity: e,
+                area: a
+            }),
+            (1.0..2000.0f32, 0.0..1e5f32, 0..3u8, any::<bool>()).prop_map(|(t, w, m, r)| {
+                EdgeKind::Pump(Regulator {
+                    target: t,
+                    max_power: w,
+                    mode: [
+                        RegulatorMode::Heat,
+                        RegulatorMode::Cool,
+                        RegulatorMode::Both,
+                    ][m as usize],
+                    resistive_heating: r,
+                    ..Regulator::default()
+                })
+            }),
+            (0.0..1.0f64, 0.0..1e4f64).prop_map(|(e, g)| EdgeKind::Engine {
+                efficiency: e,
+                conductance: g
+            }),
         ]
     }
 
     fn network() -> impl Strategy<Value = (Vec<State>, Vec<Edge<usize>>, f64)> {
-        (2usize..10)
-            .prop_flat_map(|n| {
-                let states = prop::collection::vec(
-                    prop_oneof![
-                        9 => (1.0..5000.0f64, 1e-2..1e7f64).prop_map(|(t, c)| st(t, c)),
-                        1 => (2.7..1000.0f64).prop_map(|t| st(t, f64::INFINITY)),
-                    ],
-                    n,
-                );
-                let edges = prop::collection::vec((0..n, 0..n, edge_kind()).prop_filter("distinct", |(a, b, _)| a != b).prop_map(|(a, b, kind)| Edge { a, b, kind }), 1..20);
-                (states, edges, prop_oneof![Just(1e-3), Just(0.5), Just(2.0), Just(1e3), Just(1e7)])
-            })
+        (2usize..10).prop_flat_map(|n| {
+            let states = prop::collection::vec(
+                prop_oneof![
+                    9 => (1.0..5000.0f64, 1e-2..1e7f64).prop_map(|(t, c)| st(t, c)),
+                    1 => (2.7..1000.0f64).prop_map(|t| st(t, f64::INFINITY)),
+                ],
+                n,
+            );
+            let edges = prop::collection::vec(
+                (0..n, 0..n, edge_kind())
+                    .prop_filter("distinct", |(a, b, _)| a != b)
+                    .prop_map(|(a, b, kind)| Edge { a, b, kind }),
+                1..20,
+            );
+            (
+                states,
+                edges,
+                prop_oneof![Just(1e-3), Just(0.5), Just(2.0), Just(1e3), Just(1e7)],
+            )
+        })
     }
 
     proptest! {

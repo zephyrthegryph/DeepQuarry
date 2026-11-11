@@ -361,7 +361,13 @@ impl Mixture {
 	/// instead of the old DM quadratic-with-Newton-fallback, so it cannot
 	/// fail to converge. Capped at the moles `self` holds in `mask`.
 	#[must_use]
-	pub fn moles_to_pressure(&self, sink: &Self, target_kpa: f32, mask: u32, sink_volume_mod: f32) -> f32 {
+	pub fn moles_to_pressure(
+		&self,
+		sink: &Self,
+		target_kpa: f32,
+		mask: u32,
+		sink_volume_mod: f32,
+	) -> f32 {
 		let idx = Self::mask_indices(mask);
 		let avail = f64::from(self.masked_moles(mask));
 		let src_cap: f64 = idx
@@ -467,7 +473,11 @@ mod tests {
 		assert!(n > 0.0);
 		let moved = src.transfer_masked_into(&mut sink, 0, n);
 		assert!((moved - n).abs() < 1e-3);
-		assert!((sink.return_pressure() - 300.0).abs() < 0.5, "{}", sink.return_pressure());
+		assert!(
+			(sink.return_pressure() - 300.0).abs() < 0.5,
+			"{}",
+			sink.return_pressure()
+		);
 		// Already at or above target: nothing moves.
 		assert_eq!(src.moles_to_pressure(&sink, 300.0, 0, 0.0), 0.0);
 		// Masked: only gas 1 moves.

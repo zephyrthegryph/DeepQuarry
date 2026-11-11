@@ -483,8 +483,14 @@ impl FieldKind for TurfGas {
 
 	fn relative_change(before: &GasCell, after: &GasCell) -> f32 {
 		let size: f32 = before.moles.iter().sum::<f32>().max(1.0e-3);
-		let moved: f32 = before.moles.iter().zip(&after.moles).map(|(&x, &y)| (x - y).abs()).sum();
-		let energy = (before.energy - after.energy).abs() / before.energy.abs().max(after.energy.abs()).max(1.0);
+		let moved: f32 = before
+			.moles
+			.iter()
+			.zip(&after.moles)
+			.map(|(&x, &y)| (x - y).abs())
+			.sum();
+		let energy = (before.energy - after.energy).abs()
+			/ before.energy.abs().max(after.energy.abs()).max(1.0);
 		(moved / size).max(energy)
 	}
 
@@ -650,11 +656,18 @@ mod tests {
 	fn vacuum_is_the_default_cell_and_immutability_is_the_geometrys() {
 		use vg_core::field::Geom;
 		let space = GasCell::new([0.0; N], TCMB);
-		assert_eq!(space, GasCell::default(), "a registered vacuum cell is the default value");
+		assert_eq!(
+			space,
+			GasCell::default(),
+			"a registered vacuum cell is the default value"
+		);
 		assert!(space.immutable_in(&Geom::reservoir(2500.0)));
 		assert!(!space.immutable_in(&Geom::cell(2500.0)));
 		let mut planet = space;
 		planet.planet = 3;
-		assert!(!planet.immutable_in(&Geom::reservoir(2500.0)), "planet cells are reservoirs DM may disturb");
+		assert!(
+			!planet.immutable_in(&Geom::reservoir(2500.0)),
+			"planet cells are reservoirs DM may disturb"
+		);
 	}
 }

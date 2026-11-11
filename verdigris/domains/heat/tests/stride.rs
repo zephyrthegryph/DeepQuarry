@@ -77,7 +77,12 @@ fn the_stride_stays_within_the_tolerance_of_the_exact_scheme_and_conserves_energ
     assert!(worst <= 0.05, "the strided run drifted {worst} K from the exact one");
     let stats = strided.field.stats();
     assert!(stats.skipped_steps > 0, "the idle stride never skipped a step: {stats:?}");
-    assert!(stats.steps < exact.field.stats().steps / 2, "the strided run advanced {} times, the exact one {}", stats.steps, exact.field.stats().steps);
+    assert!(
+        stats.steps < exact.field.stats().steps / 2,
+        "the strided run advanced {} times, the exact one {}",
+        stats.steps,
+        exact.field.stats().steps
+    );
     assert_eq!(exact.field.stats().skipped_steps, 0);
 }
 
@@ -124,12 +129,19 @@ fn multirate_edges_stay_within_the_tolerance_of_every_edge_every_substep() {
         exact.step();
         multi.step();
         for run in [&exact, &multi] {
-            assert!((run.conserved() - start).abs() <= 1e-5 * start.abs(), "conservation (1e-5, f32 rounding of 16 sub-steps) at step {step}: {} vs {start}", run.conserved());
+            assert!(
+                (run.conserved() - start).abs() <= 1e-5 * start.abs(),
+                "conservation (1e-5, f32 rounding of 16 sub-steps) at step {step}: {} vs {start}",
+                run.conserved()
+            );
         }
     }
     let worst = (0..N).map(|i| (exact.temperature(i) - multi.temperature(i)).abs()).fold(0.0f32, f32::max);
     let (se, sm) = (exact.field.stats(), multi.field.stats());
-    eprintln!("multirate: worst {worst} K, exact substeps {} multi substeps {} slow edges {}/{}", se.substeps, sm.substeps, sm.slow_edges, sm.edges);
+    eprintln!(
+        "multirate: worst {worst} K, exact substeps {} multi substeps {} slow edges {}/{}",
+        se.substeps, sm.substeps, sm.slow_edges, sm.edges
+    );
     assert!(worst <= 0.05, "multi-rate drifted {worst} K from the exact scheme");
     assert!(sm.slow_edges > 0, "no edge ran on the slow cadence: {sm:?}");
     assert_eq!(se.slow_edges, 0);

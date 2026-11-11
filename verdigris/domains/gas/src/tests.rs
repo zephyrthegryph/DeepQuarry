@@ -365,7 +365,12 @@ fn a_slowly_cooled_room_does_not_ring() {
 	for y in 0..SIZE {
 		for x in 0..SIZE {
 			let edge = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
-			r.register(idx(x, y), air(1.0, 293.15), false, if edge { 0b1111 } else { 0 });
+			r.register(
+				idx(x, y),
+				air(1.0, 293.15),
+				false,
+				if edge { 0b1111 } else { 0 },
+			);
 		}
 	}
 	r.run(4);
@@ -420,7 +425,10 @@ fn a_one_face_breach_decompresses_promptly() {
 	for frame in 1..=400u32 {
 		r.run(1);
 		let state = r.key.state;
-		let sub = r.w.sim_mut().with_idle_world(|res| res.get(state).stats().substeps).unwrap();
+		let sub =
+			r.w.sim_mut()
+				.with_idle_world(|res| res.get(state).stats().substeps)
+				.unwrap();
 		max_sub = max_sub.max(sub);
 		let n = r.read(probe).unwrap().total_moles();
 		if half.is_none() && n < start * 0.5 {
@@ -433,8 +441,13 @@ fn a_one_face_breach_decompresses_promptly() {
 	}
 	let after = r.totals();
 	close(&before, &after, 1e-4).unwrap();
-	eprintln!("one-face breach: half at {half:?}, tenth at {tenth:?} frames, max substeps {max_sub}");
-	assert!(tenth.is_some_and(|f| f <= 400), "the room did not decompress: half {half:?} tenth {tenth:?}");
+	eprintln!(
+		"one-face breach: half at {half:?}, tenth at {tenth:?} frames, max substeps {max_sub}"
+	);
+	assert!(
+		tenth.is_some_and(|f| f <= 400),
+		"the room did not decompress: half {half:?} tenth {tenth:?}"
+	);
 }
 
 /// A small gap levels promptly and without ringing: a room whose two halves differ by 1 kPa. Prints the frames until every cell is within
@@ -448,7 +461,12 @@ fn a_one_kpa_gap_levels_without_ringing() {
 	for y in 0..SIZE {
 		for x in 0..SIZE {
 			let edge = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
-			r.register(idx(x, y), air(if x < SIZE / 2 { 1.0 + one_kpa } else { 1.0 }, 293.15), false, if edge { 0b1111 } else { 0 });
+			r.register(
+				idx(x, y),
+				air(if x < SIZE / 2 { 1.0 + one_kpa } else { 1.0 }, 293.15),
+				false,
+				if edge { 0b1111 } else { 0 },
+			);
 		}
 	}
 	let p = |r: &Rig, c: u32| r.read(c).unwrap().pressure_in(2500.0);
@@ -458,11 +476,21 @@ fn a_one_kpa_gap_levels_without_ringing() {
 	let state = r.key.state;
 	for frame in 1..=200u32 {
 		r.run(1);
-		max_sub = max_sub.max(r.w.sim_mut().with_idle_world(|res| res.get(state).stats().substeps).unwrap());
-		let ps: Vec<f32> = (1..SIZE - 1).flat_map(|y| (1..SIZE - 1).map(move |x| (x, y))).map(|(x, y)| p(&r, idx(x, y))).collect();
+		max_sub = max_sub.max(
+			r.w.sim_mut()
+				.with_idle_world(|res| res.get(state).stats().substeps)
+				.unwrap(),
+		);
+		let ps: Vec<f32> = (1..SIZE - 1)
+			.flat_map(|y| (1..SIZE - 1).map(move |x| (x, y)))
+			.map(|(x, y)| p(&r, idx(x, y)))
+			.collect();
 		let mean = ps.iter().sum::<f32>() / ps.len() as f32;
 		let worst = ps.iter().map(|v| (v - mean).abs()).fold(0.0f32, f32::max);
-		assert!(worst <= 1.05, "frame {frame}: a cell is {worst} kPa off the mean (overshoot)");
+		assert!(
+			worst <= 1.05,
+			"frame {frame}: a cell is {worst} kPa off the mean (overshoot)"
+		);
 		if levelled.is_none() && worst < 0.2 {
 			levelled = Some(frame);
 		}
@@ -498,7 +526,8 @@ fn soak_implicit_bulk_memory() {
 		// Keep it busy: refill a cell each frame (a pump).
 		let mut d = [0.0; Q];
 		d[GAS_OXYGEN] = 50.0;
-		let _ = r.w.submit_cell(r.key, idx(SIZE / 2, SIZE / 2), GasCmd::Delta(d));
+		let _ =
+			r.w.submit_cell(r.key, idx(SIZE / 2, SIZE / 2), GasCmd::Delta(d));
 		r.run(1);
 		if frame % 500 == 0 {
 			eprintln!("soak frame {frame}");

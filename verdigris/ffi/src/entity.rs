@@ -3,8 +3,8 @@
 //! [`vg_core::world::World`]'s; this module only encodes handles and walks
 //! an entity's domain slots through the registry (the world's own
 //! components sit behind [`vg_core::entity::WORLD_DOMAIN`]).
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::entity::{ComponentRef, EntityError, EntityId};
 

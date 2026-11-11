@@ -30,8 +30,8 @@
 
 use std::cell::RefCell;
 
-use byondapi::prelude::*;
 use crate::held::{HeldList, HeldRead};
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::component::FieldId;
 use vg_core::conservation::Tolerance;
@@ -125,8 +125,8 @@ fn register(b: &mut WorldBuilder) -> Fields {
     use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
     use vg_power::kind::Cables;
     use vg_power::laws::{
-        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply, SmesInputPlan,
-        SmesOutputApply, SmesOutputPlan,
+        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply,
+        SmesInputPlan, SmesOutputApply, SmesOutputPlan,
     };
     b.add_component::<Producer>();
     b.add_component::<Apc>();
@@ -145,8 +145,14 @@ fn register(b: &mut WorldBuilder) -> Fields {
         .after::<SmesOutputPlan>();
     let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
     let _ = b.add_law::<SmesFlowReset>().after::<PowerReset>();
-    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
-    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
+    let _ = b
+        .add_law::<SmesOutputApply>()
+        .after::<PowerSettle>()
+        .after::<SmesFlowReset>();
+    let _ = b
+        .add_law::<SmesInputApply>()
+        .after::<PowerSettle>()
+        .after::<SmesFlowReset>();
 
     // Pipes (`rust_architecture.md` §6, §8.5, step 5): a main-owned network,
     // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). The devices
@@ -419,9 +425,9 @@ pub(crate) fn list(values: impl IntoIterator<Item = f32>) -> Result<ByondValue> 
 fn text_list(values: impl IntoIterator<Item = String>) -> Result<ByondValue> {
     let items = values
         .into_iter()
-        .map(ByondValue::new_str)
+        .map(crate::held::Held::new_str)
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(crate::held::hand_list(&items)?)
+    Ok(crate::held::hand_owned_list(items)?)
 }
 
 /// Attaches component `code` to `entity` (0: a new entity), seeded from its
@@ -837,5 +843,6 @@ mod tests {
 fn file_size(path: ByondValue) -> Result<ByondValue> {
     let path = path.get_string()?;
     #[allow(clippy::cast_precision_loss)]
-    Ok(std::fs::metadata(&path).map_or_else(|_| ByondValue::null(), |m| ByondValue::from(m.len() as f32)))
+    Ok(std::fs::metadata(&path)
+        .map_or_else(|_| ByondValue::null(), |m| ByondValue::from(m.len() as f32)))
 }

@@ -14,8 +14,8 @@
 // macro's own expansion, which an item-level allow does not reach.
 #![allow(clippy::too_many_arguments)]
 
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::channel::{ChannelId, ChannelInfo, Quantity};
 use vg_core::entity::EntityId;
@@ -90,7 +90,9 @@ fn cmp(v: &ByondValue) -> Result<Cmp> {
         1 => Ok(Cmp::Below),
         2 => Ok(Cmp::AboveStrict),
         3 => Ok(Cmp::BelowStrict),
-        c => Err(eyre!("bad comparison {c} (0 above, 1 below, 2 above strictly, 3 below strictly)")),
+        c => Err(eyre!(
+            "bad comparison {c} (0 above, 1 below, 2 above strictly, 3 below strictly)"
+        )),
     }
 }
 
@@ -237,8 +239,12 @@ pub(crate) fn step(
         // Cumulative, so a bench window's cost per part is the difference of two marks.
         #[allow(clippy::cast_possible_truncation)]
         {
-            metrics.counter("frame.us.sched_evaluate").add((t1 - t0).as_micros() as u64);
-            metrics.counter("frame.us.sched_step").add(t2.elapsed().as_micros() as u64);
+            metrics
+                .counter("frame.us.sched_evaluate")
+                .add((t1 - t0).as_micros() as u64);
+            metrics
+                .counter("frame.us.sched_step")
+                .add(t2.elapsed().as_micros() as u64);
         }
     }
     let mut out = Vec::with_capacity(wakes.len());
@@ -757,7 +763,11 @@ mod tests {
             mix::store(r, from, &after);
             after
         };
-        assert_eq!(step(1).len(), 1, "the registration reports the starting band");
+        assert_eq!(
+            step(1).len(),
+            1,
+            "the registration reports the starting band"
+        );
         assert!(step(2).is_empty(), "no change, no wake");
         // 348 kPa -> 730 kPa: band 1 -> 2.
         let up = set(&tank, 21.0);

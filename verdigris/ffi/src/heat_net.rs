@@ -28,8 +28,8 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use byondapi::prelude::*;
 use crate::held::{HeldList, HeldRead};
+use byondapi::prelude::*;
 use eyre::{Result, bail};
 use vg_core::thermo::transfer::{self, Books, Edge, EdgeKind, Flow, Reservoirs, State};
 use vg_core::thermo::{Regulator, RegulatorMode};
@@ -38,8 +38,8 @@ use vg_heat::components::gas_kind;
 
 use crate::gas::mix::{self, MixRef};
 use crate::heat::{
-    HEAT_TARGET_BODY, HEAT_TARGET_MIXTURE, HEAT_TARGET_NONE, HEAT_TARGET_PIPE_PORT, HEAT_TARGET_SOLID,
-    HEAT_TARGET_TURF_AIR,
+    HEAT_TARGET_BODY, HEAT_TARGET_MIXTURE, HEAT_TARGET_NONE, HEAT_TARGET_PIPE_PORT,
+    HEAT_TARGET_SOLID, HEAT_TARGET_TURF_AIR,
 };
 use crate::world::{list, num, with_world};
 
@@ -165,7 +165,11 @@ impl Res {
             HEAT_TARGET_BODY => Self::Body(crate::entity::decode(num(r)?)?),
             HEAT_TARGET_SOLID => Self::Solid(r.get_ref()?),
             HEAT_TARGET_SPACE => {
-                let t = if r.is_num() { num(r)? } else { vg_heat::consts::TCMB };
+                let t = if r.is_num() {
+                    num(r)?
+                } else {
+                    vg_heat::consts::TCMB
+                };
                 Self::Space(t.max(0.0).to_bits())
             }
             _ => return Err(eyre::eyre!("not a heat reservoir kind: {kind}")),
@@ -255,7 +259,10 @@ impl Reservoirs<Res> for Cache {
         if s.capacity < MIN_CAPACITY {
             return None;
         }
-        Some(State { temperature: s.temperature + delta / s.capacity, ..s })
+        Some(State {
+            temperature: s.temperature + delta / s.capacity,
+            ..s
+        })
     }
 
     fn add(&mut self, r: Res, joules: f64) {
@@ -271,7 +278,9 @@ fn tcmb() -> f64 {
 
 /// A port's current region, as a mixture handle.
 fn port_mix(bits: u32) -> Option<MixRef> {
-    with_world(|w| Ok(crate::heat::probe_mixture(w, gas_kind::PORT_KEY | bits))).ok().flatten()
+    with_world(|w| Ok(crate::heat::probe_mixture(w, gas_kind::PORT_KEY | bits)))
+        .ok()
+        .flatten()
 }
 
 fn mix_state(r: MixRef) -> Option<State> {
@@ -289,29 +298,50 @@ fn read_state(r: Res) -> Option<State> {
         Res::Mix(id) => mix_state(MixRef::from_id(id)?),
         Res::Port(bits) => mix_state(port_mix(bits)?),
         Res::Body(e) => with_world(|w| {
-            let Some(mut b) = w.read::<HeatBody>(e) else { return Ok(None) };
+            let Some(mut b) = w.read::<HeatBody>(e) else {
+                return Ok(None);
+            };
             if b.relax {
                 crate::heat::settle_body_if_relaxing(w, e, &mut b)?;
                 let _ = w.put(e, b.clone());
             }
-            Ok(Some(State { temperature: b.temperature(), capacity: b.capacity, floor: tcmb() }))
+            Ok(Some(State {
+                temperature: b.temperature(),
+                capacity: b.capacity,
+                floor: tcmb(),
+            }))
         })
         .ok()
         .flatten(),
         Res::Solid(cell) => with_world(|w| {
             let field = crate::heat::field()?;
-            let (Some(g), Some(c)) = (w.sim_mut().port(field.geometry).read(cell), w.sim_mut().port(field.cells).read(cell)) else {
+            let (Some(g), Some(c)) = (
+                w.sim_mut().port(field.geometry).read(cell),
+                w.sim_mut().port(field.cells).read(cell),
+            ) else {
                 return Ok(None);
             };
             if !g.is_node() {
                 return Ok(None);
             }
             let t = f64::from(c.temperature_in(g.capacity));
-            Ok(Some(State { temperature: t, capacity: if g.reservoir { f64::INFINITY } else { f64::from(g.capacity) }, floor: 0.0 }))
+            Ok(Some(State {
+                temperature: t,
+                capacity: if g.reservoir {
+                    f64::INFINITY
+                } else {
+                    f64::from(g.capacity)
+                },
+                floor: 0.0,
+            }))
         })
         .ok()
         .flatten(),
-        Res::Space(bits) => Some(State { temperature: f64::from(f32::from_bits(bits)), capacity: f64::INFINITY, floor: 0.0 }),
+        Res::Space(bits) => Some(State {
+            temperature: f64::from(f32::from_bits(bits)),
+            capacity: f64::INFINITY,
+            floor: 0.0,
+        }),
     }
 }
 
@@ -347,7 +377,10 @@ fn write_energy(r: Res, joules: f64) {
         Res::Solid(cell) => {
             let _ = with_world(|w| {
                 let field = crate::heat::field()?;
-                let _ = w.sim_mut().port(field.cells).submit(cell, vg_heat::SolidCmd::Add(joules as f32));
+                let _ = w
+                    .sim_mut()
+                    .port(field.cells)
+                    .submit(cell, vg_heat::SolidCmd::Add(joules as f32));
                 crate::heat::wake_cell_couplings(w, cell);
                 Ok(())
             });
@@ -379,7 +412,11 @@ fn heat_net_advance(seconds: ByondValue) -> Result<ByondValue> {
 /// Steps every edge over `dt` seconds.
 fn step_dt(dt: f64) {
     let edges: Vec<(usize, Edge<Res>)> = NET.with_borrow(|n| {
-        n.slots.iter().enumerate().filter_map(|(i, s)| s.as_ref().map(|s| (i, s.edge))).collect()
+        n.slots
+            .iter()
+            .enumerate()
+            .filter_map(|(i, s)| s.as_ref().map(|s| (i, s.edge)))
+            .collect()
     });
     if edges.is_empty() || dt <= 0.0 {
         return;
@@ -391,10 +428,16 @@ fn step_dt(dt: f64) {
     }
     let before = cache.total();
     let mut books = Books::default();
-    let flows: Vec<(usize, Flow)> = edges.iter().map(|(i, e)| (*i, transfer::step_edge(&mut cache, &mut books, e, dt))).collect();
+    let flows: Vec<(usize, Flow)> = edges
+        .iter()
+        .map(|(i, e)| (*i, transfer::step_edge(&mut cache, &mut books, e, dt)))
+        .collect();
     let after = cache.total();
     let balanced = books.check(before, after);
-    debug_assert!(balanced.is_ok(), "heat network books do not balance by {balanced:?} J ({before} -> {after})");
+    debug_assert!(
+        balanced.is_ok(),
+        "heat network books do not balance by {balanced:?} J ({before} -> {after})"
+    );
     cache.flush();
     NET.with_borrow_mut(|n| {
         for (i, f) in flows {
@@ -421,7 +464,12 @@ pub(crate) fn reset() {
 
 fn insert(edge: Edge<Res>) -> f32 {
     NET.with_borrow_mut(|n| {
-        let slot = Slot { edge, last: Flow::default(), last_dt: 0.0, work_owed: 0.0 };
+        let slot = Slot {
+            edge,
+            last: Flow::default(),
+            last_dt: 0.0,
+            work_owed: 0.0,
+        };
         let i = if let Some(i) = n.free.pop() {
             n.slots[i] = Some(slot);
             i
@@ -464,7 +512,11 @@ fn heat_link_create(
     let edge = Edge {
         a: Res::from_dm(&a_kind, &a_ref)?,
         b: Res::from_dm(&b_kind, &b_ref)?,
-        kind: EdgeKind::Link { conductance: f(&conductance)?.max(0.0), emissivity: f(&emissivity)?.clamp(0.0, 1.0), area: f(&area)?.max(0.0) },
+        kind: EdgeKind::Link {
+            conductance: f(&conductance)?.max(0.0),
+            emissivity: f(&emissivity)?.clamp(0.0, 1.0),
+            area: f(&area)?.max(0.0),
+        },
     };
     Ok(insert(edge).into())
 }
@@ -501,11 +553,23 @@ fn heat_pump_create(
         max_power: num(&watts)?.max(0.0),
         mode: mode_of(&mode)?,
         resistive_heating: num(&resistive)? != 0.0,
-        carnot_fraction: if carnot_fraction.is_num() { num(&carnot_fraction)?.clamp(0.0, 1.0) } else { 0.5 },
-        max_cop: if max_cop.is_num() { num(&max_cop)?.max(1.0) } else { 10.0 },
+        carnot_fraction: if carnot_fraction.is_num() {
+            num(&carnot_fraction)?.clamp(0.0, 1.0)
+        } else {
+            0.5
+        },
+        max_cop: if max_cop.is_num() {
+            num(&max_cop)?.max(1.0)
+        } else {
+            10.0
+        },
         ..Regulator::default()
     };
-    let edge = Edge { a: Res::from_dm(&controlled_kind, &controlled_ref)?, b: Res::from_dm(&other_kind, &other_ref)?, kind: EdgeKind::Pump(reg) };
+    let edge = Edge {
+        a: Res::from_dm(&controlled_kind, &controlled_ref)?,
+        b: Res::from_dm(&other_kind, &other_ref)?,
+        kind: EdgeKind::Pump(reg),
+    };
     Ok(insert(edge).into())
 }
 
@@ -525,7 +589,10 @@ fn heat_engine_create(
     let edge = Edge {
         a: Res::from_dm(&hot_kind, &hot_ref)?,
         b: Res::from_dm(&cold_kind, &cold_ref)?,
-        kind: EdgeKind::Engine { efficiency: f(&efficiency)?.clamp(0.0, 1.0), conductance: f(&conductance)?.max(0.0) },
+        kind: EdgeKind::Engine {
+            efficiency: f(&efficiency)?.clamp(0.0, 1.0),
+            conductance: f(&conductance)?.max(0.0),
+        },
     };
     Ok(insert(edge).into())
 }
@@ -576,12 +643,21 @@ fn heat_edge_set(id: ByondValue, param: ByondValue, value: ByondValue) -> Result
     let v = f(&value)?;
     #[allow(clippy::cast_possible_truncation)]
     let ok = NET.with_borrow_mut(|n| {
-        let Some(Some(s)) = n.slots.get_mut(i) else { return false };
+        let Some(Some(s)) = n.slots.get_mut(i) else {
+            return false;
+        };
         match (&mut s.edge.kind, param) {
-            (EdgeKind::Link { conductance, .. } | EdgeKind::Engine { conductance, .. }, HEAT_PARAM_CONDUCTANCE) => *conductance = v.max(0.0),
-            (EdgeKind::Link { emissivity, .. }, HEAT_PARAM_EMISSIVITY) => *emissivity = v.clamp(0.0, 1.0),
+            (
+                EdgeKind::Link { conductance, .. } | EdgeKind::Engine { conductance, .. },
+                HEAT_PARAM_CONDUCTANCE,
+            ) => *conductance = v.max(0.0),
+            (EdgeKind::Link { emissivity, .. }, HEAT_PARAM_EMISSIVITY) => {
+                *emissivity = v.clamp(0.0, 1.0)
+            }
             (EdgeKind::Link { area, .. }, HEAT_PARAM_AREA) => *area = v.max(0.0),
-            (EdgeKind::Engine { efficiency, .. }, HEAT_PARAM_EFFICIENCY) => *efficiency = v.clamp(0.0, 1.0),
+            (EdgeKind::Engine { efficiency, .. }, HEAT_PARAM_EFFICIENCY) => {
+                *efficiency = v.clamp(0.0, 1.0)
+            }
             (EdgeKind::Pump(r), HEAT_PARAM_WATTS) => r.max_power = (v as f32).max(0.0),
             (EdgeKind::Pump(r), HEAT_PARAM_TARGET) => r.target = (v as f32).max(0.0),
             (EdgeKind::Pump(r), HEAT_PARAM_MODE) => {
@@ -642,15 +718,41 @@ fn heat_edge_info(id: ByondValue) -> Result<ByondValue> {
 #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 fn edge_row(s: &Slot) -> Vec<f32> {
     let (kind, p) = match s.edge.kind {
-        EdgeKind::Link { conductance, emissivity, area } => (HEAT_EDGE_LINK, [conductance as f32, emissivity as f32, area as f32]),
-        EdgeKind::Pump(r) => (HEAT_EDGE_PUMP, [r.max_power, r.target, match r.mode {
-            RegulatorMode::Heat => 0.0,
-            RegulatorMode::Cool => 1.0,
-            RegulatorMode::Both => 2.0,
-        }]),
-        EdgeKind::Engine { efficiency, conductance } => (HEAT_EDGE_ENGINE, [efficiency as f32, conductance as f32, 0.0]),
+        EdgeKind::Link {
+            conductance,
+            emissivity,
+            area,
+        } => (
+            HEAT_EDGE_LINK,
+            [conductance as f32, emissivity as f32, area as f32],
+        ),
+        EdgeKind::Pump(r) => (
+            HEAT_EDGE_PUMP,
+            [
+                r.max_power,
+                r.target,
+                match r.mode {
+                    RegulatorMode::Heat => 0.0,
+                    RegulatorMode::Cool => 1.0,
+                    RegulatorMode::Both => 2.0,
+                },
+            ],
+        ),
+        EdgeKind::Engine {
+            efficiency,
+            conductance,
+        } => (
+            HEAT_EDGE_ENGINE,
+            [efficiency as f32, conductance as f32, 0.0],
+        ),
     };
-    let per = |j: f64| if s.last_dt > 0.0 { (j / s.last_dt) as f32 } else { 0.0 };
+    let per = |j: f64| {
+        if s.last_dt > 0.0 {
+            (j / s.last_dt) as f32
+        } else {
+            0.0
+        }
+    };
     vec![
         kind as f32,
         s.edge.a.kind() as f32,
@@ -676,7 +778,11 @@ fn heat_reservoir_links(kind: ByondValue, r: ByondValue) -> Result<ByondValue> {
         n.slots
             .iter()
             .enumerate()
-            .filter_map(|(i, s)| s.as_ref().filter(|s| s.edge.a == res || s.edge.b == res).map(|_| (i + 1) as f32))
+            .filter_map(|(i, s)| {
+                s.as_ref()
+                    .filter(|s| s.edge.a == res || s.edge.b == res)
+                    .map(|_| (i + 1) as f32)
+            })
             .collect()
     });
     list(ids)
@@ -690,7 +796,15 @@ fn heat_reservoir_links(kind: ByondValue, r: ByondValue) -> Result<ByondValue> {
 fn heat_books() -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
     let row = NET.with_borrow(|n| {
-        let b = |b: &Books| [b.transferred as f32, b.work_in as f32, b.work_out as f32, b.external_in as f32, b.external_out as f32];
+        let b = |b: &Books| {
+            [
+                b.transferred as f32,
+                b.work_in as f32,
+                b.work_out as f32,
+                b.external_in as f32,
+                b.external_out as f32,
+            ]
+        };
         let mut v = vec![n.slots.iter().filter(|s| s.is_some()).count() as f32];
         v.extend(b(&n.last));
         v.extend(b(&n.total));
@@ -751,7 +865,9 @@ fn heat_move(
     source: ByondValue,
 ) -> Result<ByondValue> {
     let q = f(&joules)?;
-    let none = |k: &ByondValue| -> Result<bool> { Ok(k.is_null() || (k.is_num() && num(k)? as i32 == HEAT_TARGET_NONE)) };
+    let none = |k: &ByondValue| -> Result<bool> {
+        Ok(k.is_null() || (k.is_num() && num(k)? as i32 == HEAT_TARGET_NONE))
+    };
     let source = source_index(&source)?;
     let applied = match (none(&from_kind)?, none(&to_kind)?) {
         (true, true) => 0.0,
@@ -768,7 +884,10 @@ fn heat_move(
             a
         }
         (false, false) => {
-            let (from, to) = (Res::from_dm(&from_kind, &from_ref)?, Res::from_dm(&to_kind, &to_ref)?);
+            let (from, to) = (
+                Res::from_dm(&from_kind, &from_ref)?,
+                Res::from_dm(&to_kind, &to_ref)?,
+            );
             one_off(&[from, to], |c, b| transfer::transfer(c, b, from, to, q))
         }
     };
@@ -781,17 +900,40 @@ fn heat_move(
 /// temperature, as if they were one body). Returns the joules moved from
 /// the first to the second.
 #[auxmacros::bind("/proc/heat_equalize")]
-fn heat_equalize(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_ref: ByondValue, fraction: ByondValue) -> Result<ByondValue> {
-    let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);
+fn heat_equalize(
+    a_kind: ByondValue,
+    a_ref: ByondValue,
+    b_kind: ByondValue,
+    b_ref: ByondValue,
+    fraction: ByondValue,
+) -> Result<ByondValue> {
+    let (a, b) = (
+        Res::from_dm(&a_kind, &a_ref)?,
+        Res::from_dm(&b_kind, &b_ref)?,
+    );
     let fraction = f(&fraction)?.clamp(0.0, 1.0);
     let moved = one_off(&[a, b], |c, books| {
-        let (Some(sa), Some(sb)) = (c.state(a), c.state(b)) else { return 0.0 };
-        let inv = |s: State| if s.is_infinite() { 0.0 } else { 1.0 / s.capacity };
+        let (Some(sa), Some(sb)) = (c.state(a), c.state(b)) else {
+            return 0.0;
+        };
+        let inv = |s: State| {
+            if s.is_infinite() {
+                0.0
+            } else {
+                1.0 / s.capacity
+            }
+        };
         let k = inv(sa) + inv(sb);
         if k <= 0.0 {
             return 0.0;
         }
-        transfer::transfer(c, books, a, b, fraction * (sa.temperature - sb.temperature) / k)
+        transfer::transfer(
+            c,
+            books,
+            a,
+            b,
+            fraction * (sa.temperature - sb.temperature) / k,
+        )
     });
     #[allow(clippy::cast_possible_truncation)]
     Ok((moved as f32).into())
@@ -810,13 +952,18 @@ fn heat_conduct(
     conductance: ByondValue,
     seconds: ByondValue,
 ) -> Result<ByondValue> {
-    let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);
+    let (a, b) = (
+        Res::from_dm(&a_kind, &a_ref)?,
+        Res::from_dm(&b_kind, &b_ref)?,
+    );
     let (g, dt) = (f(&conductance)?.max(0.0), f(&seconds)?.max(0.0));
     if g <= 0.0 || dt <= 0.0 {
         return Ok(0.0f32.into());
     }
     let moved = one_off(&[a, b], |c, books| {
-        let (Some(sa), Some(sb)) = (c.state(a), c.state(b)) else { return 0.0 };
+        let (Some(sa), Some(sb)) = (c.state(a), c.state(b)) else {
+            return 0.0;
+        };
         transfer::transfer(c, books, a, b, transfer::link_heat(sa, sb, g, dt))
     });
     #[allow(clippy::cast_possible_truncation)]
@@ -831,17 +978,29 @@ fn heat_conduct(
 /// `HEAT_SOURCE_REACTION`. Returns the joules released (negative: absorbed),
 /// or null for an unknown kind (nothing applied).
 #[auxmacros::bind("/proc/gas_reaction_apply")]
-fn gas_reaction_apply(mixture: ByondValue, kind: ByondValue, extent: ByondValue, aux: ByondValue, deltas: ByondValue) -> Result<ByondValue> {
+fn gas_reaction_apply(
+    mixture: ByondValue,
+    kind: ByondValue,
+    extent: ByondValue,
+    aux: ByondValue,
+    deltas: ByondValue,
+) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation)]
     let kind = num(&kind)? as i32;
     let (extent, aux) = (f(&extent)?, if aux.is_num() { f(&aux)? } else { 0.0 });
-    let flat = if deltas.is_list() { deltas.held_list()? } else { HeldList::default() };
+    let flat = if deltas.is_list() {
+        deltas.held_list()?
+    } else {
+        HeldList::default()
+    };
     let mut pairs = Vec::with_capacity(flat.len() / 2);
     for pair in flat.chunks_exact(2) {
         let raw = num(&pair[0])?;
         pairs.push((vg_gas::gas::gas_idx_from_value(raw)?, num(&pair[1])?));
     }
-    let reacted = mix::with_mix_mut(&mixture, |m| Ok(vg_gas::reaction_energy::react(m, kind, extent, aux, &pairs)))?;
+    let reacted = mix::with_mix_mut(&mixture, |m| {
+        Ok(vg_gas::reaction_energy::react(m, kind, extent, aux, &pairs))
+    })?;
     let Some(r) = reacted else {
         return Ok(ByondValue::null());
     };
@@ -861,24 +1020,36 @@ fn gas_reaction_apply(mixture: ByondValue, kind: ByondValue, extent: ByondValue,
 /// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
 /// temperature) expressed as the joules it takes. Returns the joules added.
 #[auxmacros::bind("/proc/heat_move_to_temperature")]
-fn heat_move_to_temperature(kind: ByondValue, r: ByondValue, temperature: ByondValue, source: ByondValue) -> Result<ByondValue> {
+fn heat_move_to_temperature(
+    kind: ByondValue,
+    r: ByondValue,
+    temperature: ByondValue,
+    source: ByondValue,
+) -> Result<ByondValue> {
     let res = Res::from_dm(&kind, &r)?;
     let t = f(&temperature)?;
     let source = source_index(&source)?;
     // A gas is set the way the gas domain sets a temperature (one read-modify-write of the mixture, through the same path every gas write
     // takes, so pending turf commands compose), and the joules it took are booked. An empty mixture keeps the temperature for gas added later.
     if let Some(m) = gas_mixture(res) {
-        let Some(before) = mix::load(m) else { return Ok(0.0f32.into()) };
+        let Some(before) = mix::load(m) else {
+            return Ok(0.0f32.into());
+        };
         if before.is_immutable() {
             return Ok(0.0f32.into());
         }
         let mut after = before.clone();
         #[allow(clippy::cast_possible_truncation)]
         after.set_temperature((t as f32).max(vg_heat::consts::TCMB));
-        let added = f64::from(after.heat_capacity()) * (f64::from(after.get_temperature()) - f64::from(before.get_temperature()));
+        let added = f64::from(after.heat_capacity())
+            * (f64::from(after.get_temperature()) - f64::from(before.get_temperature()));
         mix::store(m, &before, &after);
         NET.with_borrow_mut(|n| {
-            if added >= 0.0 { n.total.external_in += added } else { n.total.external_out -= added }
+            if added >= 0.0 {
+                n.total.external_in += added
+            } else {
+                n.total.external_out -= added
+            }
         });
         book_source(source, added);
         #[allow(clippy::cast_possible_truncation)]
@@ -901,7 +1072,12 @@ fn heat_move_to_temperature(kind: ByondValue, r: ByondValue, temperature: ByondV
 /// released or consumed `joules - before` (`HEAT_SOURCE_REACTION`). Returns
 /// the joules added.
 #[auxmacros::bind("/proc/heat_set_energy")]
-fn heat_set_energy(kind: ByondValue, r: ByondValue, joules: ByondValue, source: ByondValue) -> Result<ByondValue> {
+fn heat_set_energy(
+    kind: ByondValue,
+    r: ByondValue,
+    joules: ByondValue,
+    source: ByondValue,
+) -> Result<ByondValue> {
     let res = Res::from_dm(&kind, &r)?;
     let target = f(&joules)?;
     let source = source_index(&source)?;
@@ -932,12 +1108,28 @@ fn gas_mixture(r: Res) -> Option<MixRef> {
 /// `efficiency` of it (capped at Carnot, `1 - T_cold/T_hot`) leaves as
 /// electrical work, booked out. Returns the work, J.
 #[auxmacros::bind("/proc/heat_engine_once")]
-fn heat_engine_once(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_ref: ByondValue, efficiency: ByondValue) -> Result<ByondValue> {
-    let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);
+fn heat_engine_once(
+    a_kind: ByondValue,
+    a_ref: ByondValue,
+    b_kind: ByondValue,
+    b_ref: ByondValue,
+    efficiency: ByondValue,
+) -> Result<ByondValue> {
+    let (a, b) = (
+        Res::from_dm(&a_kind, &a_ref)?,
+        Res::from_dm(&b_kind, &b_ref)?,
+    );
     let efficiency = f(&efficiency)?;
     let mut work = 0.0;
     one_off(&[a, b], |c, books| {
-        let edge = Edge { a, b, kind: EdgeKind::Engine { efficiency, conductance: f64::INFINITY } };
+        let edge = Edge {
+            a,
+            b,
+            kind: EdgeKind::Engine {
+                efficiency,
+                conductance: f64::INFINITY,
+            },
+        };
         work = transfer::step_edge(c, books, &edge, 1.0).work_out;
         0.0
     });
@@ -952,7 +1144,14 @@ fn heat_reservoir_state(kind: ByondValue, r: ByondValue) -> Result<ByondValue> {
     let res = Res::from_dm(&kind, &r)?;
     match read_state(res) {
         #[allow(clippy::cast_possible_truncation)]
-        Some(s) => list([s.temperature as f32, if s.is_infinite() { -1.0 } else { s.capacity as f32 }]),
+        Some(s) => list([
+            s.temperature as f32,
+            if s.is_infinite() {
+                -1.0
+            } else {
+                s.capacity as f32
+            },
+        ]),
         None => Ok(ByondValue::null()),
     }
 }
@@ -973,7 +1172,15 @@ mod tests {
     fn a_link_between_two_mixtures_conserves_and_relaxes() {
         reset();
         let (a, b) = (main_mix(400.0, 10.0), main_mix(300.0, 10.0));
-        let e = Edge { a: Res::Mix(a.id()), b: Res::Mix(b.id()), kind: EdgeKind::Link { conductance: 50.0, emissivity: 0.0, area: 0.0 } };
+        let e = Edge {
+            a: Res::Mix(a.id()),
+            b: Res::Mix(b.id()),
+            kind: EdgeKind::Link {
+                conductance: 50.0,
+                emissivity: 0.0,
+                area: 0.0,
+            },
+        };
         insert(e);
         let energy = |r| {
             let s = read_state(Res::Mix(MixRef::id(r))).unwrap();
@@ -983,7 +1190,10 @@ mod tests {
         for k in 1..=200 {
             step(f64::from(k) * 0.5, 0.5);
         }
-        let (ta, tb) = (read_state(Res::Mix(a.id())).unwrap().temperature, read_state(Res::Mix(b.id())).unwrap().temperature);
+        let (ta, tb) = (
+            read_state(Res::Mix(a.id())).unwrap().temperature,
+            read_state(Res::Mix(b.id())).unwrap().temperature,
+        );
         assert!((ta - tb).abs() < 0.5, "{ta} vs {tb}");
         assert!(((energy(a) + energy(b)) - before).abs() / before < 1e-5);
         assert_eq!(NET.with_borrow(|n| n.violations), 0);
@@ -998,12 +1208,16 @@ mod tests {
         let before = sa.capacity * sa.temperature + sb.capacity * sb.temperature;
         let expected = transfer::link_heat(sa, sb, 20.0, 5.0);
         let moved = one_off(&[ra, rb], |c, books| {
-            let (Some(sa), Some(sb)) = (c.state(ra), c.state(rb)) else { return 0.0 };
+            let (Some(sa), Some(sb)) = (c.state(ra), c.state(rb)) else {
+                return 0.0;
+            };
             transfer::transfer(c, books, ra, rb, transfer::link_heat(sa, sb, 20.0, 5.0))
         });
         assert!((moved - expected).abs() < 1e-6 * expected.abs().max(1.0));
         let (ta, tb) = (read_state(ra).unwrap(), read_state(rb).unwrap());
-        assert!(ta.temperature < 500.0 && tb.temperature > 300.0 && ta.temperature > tb.temperature);
+        assert!(
+            ta.temperature < 500.0 && tb.temperature > 300.0 && ta.temperature > tb.temperature
+        );
         let after = ta.capacity * ta.temperature + tb.capacity * tb.temperature;
         assert!((after - before).abs() / before < 1e-5);
     }
@@ -1013,10 +1227,15 @@ mod tests {
         reset();
         let a = main_mix(300.0, 10.0);
         let s0 = read_state(Res::Mix(a.id())).unwrap();
-        let applied = one_off(&[Res::Mix(a.id())], |c, b| transfer::external(c, b, Res::Mix(a.id()), 1000.0));
+        let applied = one_off(&[Res::Mix(a.id())], |c, b| {
+            transfer::external(c, b, Res::Mix(a.id()), 1000.0)
+        });
         book_source(HEAT_SOURCE_REACTION as usize, applied);
         let s1 = read_state(Res::Mix(a.id())).unwrap();
         assert!((s1.capacity * s1.temperature - s0.capacity * s0.temperature - 1000.0).abs() < 1.0);
-        assert!((NET.with_borrow(|n| n.by_source[HEAT_SOURCE_REACTION as usize].0) - 1000.0).abs() < 1e-6);
+        assert!(
+            (NET.with_borrow(|n| n.by_source[HEAT_SOURCE_REACTION as usize].0) - 1000.0).abs()
+                < 1e-6
+        );
     }
 }

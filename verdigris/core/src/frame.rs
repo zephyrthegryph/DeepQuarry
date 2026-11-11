@@ -319,7 +319,9 @@ static TASK_TIMES: std::sync::Mutex<Vec<(String, u64, u64)>> = std::sync::Mutex:
 
 fn note_task_time(name: &str, took: std::time::Duration) {
     let micros = u64::try_from(took.as_micros()).unwrap_or(u64::MAX);
-    let mut times = TASK_TIMES.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut times = TASK_TIMES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(row) = times.iter_mut().find(|r| r.0 == name) {
         row.1 += micros;
         row.2 += 1;
@@ -331,7 +333,10 @@ fn note_task_time(name: &str, took: std::time::Duration) {
 /// `(task name, cumulative microseconds, runs)` for every task that has run.
 #[must_use]
 pub fn task_times() -> Vec<(String, u64, u64)> {
-    TASK_TIMES.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    TASK_TIMES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
 }
 
 /// What a running task can reach: its declared resources, the previous

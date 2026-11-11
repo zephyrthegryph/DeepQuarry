@@ -178,11 +178,7 @@ impl GasCoupling {
     /// port's packed entity id with [`gas_kind::PORT_KEY`] set.
     #[must_use]
     pub fn probe_key(&self) -> u32 {
-        if self.kind == gas_kind::PIPE_PORT {
-            gas_kind::PORT_KEY | self.target
-        } else {
-            self.target
-        }
+        if self.kind == gas_kind::PIPE_PORT { gas_kind::PORT_KEY | self.target } else { self.target }
     }
 
     /// The conductance (W/K) at which a contact between a gas of `gas_capacity` J/K and something of

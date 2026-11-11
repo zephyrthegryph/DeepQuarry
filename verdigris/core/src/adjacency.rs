@@ -56,20 +56,70 @@ struct Step {
 }
 
 const CARDINAL_STEPS: [Step; 4] = [
-    Step { dx: 0, dy: 1, dz: 0, bit: NORTH as u32 },
-    Step { dx: 0, dy: -1, dz: 0, bit: SOUTH as u32 },
-    Step { dx: 1, dy: 0, dz: 0, bit: EAST as u32 },
-    Step { dx: -1, dy: 0, dz: 0, bit: WEST as u32 },
+    Step {
+        dx: 0,
+        dy: 1,
+        dz: 0,
+        bit: NORTH as u32,
+    },
+    Step {
+        dx: 0,
+        dy: -1,
+        dz: 0,
+        bit: SOUTH as u32,
+    },
+    Step {
+        dx: 1,
+        dy: 0,
+        dz: 0,
+        bit: EAST as u32,
+    },
+    Step {
+        dx: -1,
+        dy: 0,
+        dz: 0,
+        bit: WEST as u32,
+    },
 ];
 const DIAGONAL_STEPS: [Step; 4] = [
-    Step { dx: 1, dy: 1, dz: 0, bit: JUNCTION_NE },
-    Step { dx: -1, dy: 1, dz: 0, bit: JUNCTION_NW },
-    Step { dx: 1, dy: -1, dz: 0, bit: JUNCTION_SE },
-    Step { dx: -1, dy: -1, dz: 0, bit: JUNCTION_SW },
+    Step {
+        dx: 1,
+        dy: 1,
+        dz: 0,
+        bit: JUNCTION_NE,
+    },
+    Step {
+        dx: -1,
+        dy: 1,
+        dz: 0,
+        bit: JUNCTION_NW,
+    },
+    Step {
+        dx: 1,
+        dy: -1,
+        dz: 0,
+        bit: JUNCTION_SE,
+    },
+    Step {
+        dx: -1,
+        dy: -1,
+        dz: 0,
+        bit: JUNCTION_SW,
+    },
 ];
 const VERTICAL_STEPS: [Step; 2] = [
-    Step { dx: 0, dy: 0, dz: 1, bit: UP as u32 },
-    Step { dx: 0, dy: 0, dz: -1, bit: DOWN as u32 },
+    Step {
+        dx: 0,
+        dy: 0,
+        dz: 1,
+        bit: UP as u32,
+    },
+    Step {
+        dx: 0,
+        dy: 0,
+        dz: -1,
+        bit: DOWN as u32,
+    },
 ];
 
 /// The opposite junction bit (what a neighbour at `bit` sees this member as).
@@ -91,9 +141,15 @@ pub const fn opposite(bit: u32) -> u32 {
 }
 
 fn steps(dirs: u32) -> impl Iterator<Item = Step> {
-    let cardinal = CARDINAL_STEPS.into_iter().filter(move |s| dirs & s.bit != 0);
-    let diagonal = DIAGONAL_STEPS.into_iter().filter(move |_| dirs & DIR_DIAGONALS != 0);
-    let vertical = VERTICAL_STEPS.into_iter().filter(move |s| dirs & s.bit != 0);
+    let cardinal = CARDINAL_STEPS
+        .into_iter()
+        .filter(move |s| dirs & s.bit != 0);
+    let diagonal = DIAGONAL_STEPS
+        .into_iter()
+        .filter(move |_| dirs & DIR_DIAGONALS != 0);
+    let vertical = VERTICAL_STEPS
+        .into_iter()
+        .filter(move |s| dirs & s.bit != 0);
     cardinal.chain(diagonal).chain(vertical)
 }
 
@@ -152,13 +208,24 @@ impl AdjacencyIndex {
     /// The members of `kind` around `(x, y, z)` on the faces `dirs` asks for,
     /// excluding `except`.
     #[must_use]
-    pub fn neighbours(&self, kind: u16, x: i32, y: i32, z: i32, dirs: u32, except: Option<Handle>) -> Vec<Seen> {
+    pub fn neighbours(
+        &self,
+        kind: u16,
+        x: i32,
+        y: i32,
+        z: i32,
+        dirs: u32,
+        except: Option<Handle>,
+    ) -> Vec<Seen> {
         let mut out = Vec::new();
         for s in steps(dirs) {
             if let Some(list) = self.cells.get(&(kind, x + s.dx, y + s.dy, z + s.dz)) {
                 for &h in list {
                     if Some(h) != except {
-                        out.push(Seen { handle: h, bit: s.bit });
+                        out.push(Seen {
+                            handle: h,
+                            bit: s.bit,
+                        });
                     }
                 }
             }
@@ -169,7 +236,15 @@ impl AdjacencyIndex {
     /// Places `handle` (moving it if it was placed elsewhere). Returns every
     /// member whose neighbour set changed: the member itself first, then the
     /// neighbours at the old and the new place, each once.
-    pub fn place(&mut self, kind: u16, handle: Handle, x: i32, y: i32, z: i32, dirs: u32) -> Vec<Handle> {
+    pub fn place(
+        &mut self,
+        kind: u16,
+        handle: Handle,
+        x: i32,
+        y: i32,
+        z: i32,
+        dirs: u32,
+    ) -> Vec<Handle> {
         let mut changed = vec![handle];
         if let Some(old) = self.placed.get(&(kind, handle)).copied() {
             if old.x == x && old.y == y && old.z == z && old.dirs == dirs {
@@ -177,7 +252,13 @@ impl AdjacencyIndex {
             }
             self.unlink(kind, handle, old, &mut changed);
         }
-        let at = Placed { kind, x, y, z, dirs };
+        let at = Placed {
+            kind,
+            x,
+            y,
+            z,
+            dirs,
+        };
         self.cells.entry((kind, x, y, z)).or_default().push(handle);
         self.placed.insert((kind, handle), at);
         for seen in self.watchers(kind, at, handle) {
@@ -232,14 +313,25 @@ impl AdjacencyIndex {
         let all = DIRS_CARDINAL | DIR_DIAGONALS | u32::from(UP) | u32::from(DOWN);
         let mut out = Vec::new();
         for s in steps(all) {
-            let Some(list) = self.cells.get(&(kind, at.x + s.dx, at.y + s.dy, at.z + s.dz)) else { continue };
+            let Some(list) = self
+                .cells
+                .get(&(kind, at.x + s.dx, at.y + s.dy, at.z + s.dz))
+            else {
+                continue;
+            };
             let back = opposite(s.bit);
             for &h in list {
                 if h == except {
                     continue;
                 }
-                let Some(n) = self.placed.get(&(kind, h)) else { continue };
-                let looks = if back >= JUNCTION_NE { n.dirs & DIR_DIAGONALS != 0 } else { n.dirs & back != 0 };
+                let Some(n) = self.placed.get(&(kind, h)) else {
+                    continue;
+                };
+                let looks = if back >= JUNCTION_NE {
+                    n.dirs & DIR_DIAGONALS != 0
+                } else {
+                    n.dirs & back != 0
+                };
                 if looks && !out.contains(&h) {
                     out.push(h);
                 }
@@ -272,7 +364,10 @@ mod tests {
         idx.place(1, 3, 5, 5, 1, DIRS_CARDINAL);
         assert_eq!(idx.remove(1, 2), vec![1]);
         assert_eq!(idx.junction(1, 1).0, 0);
-        assert!(idx.remove(1, 2).is_empty(), "a second remove changes nothing");
+        assert!(
+            idx.remove(1, 2).is_empty(),
+            "a second remove changes nothing"
+        );
     }
 
     #[test]
@@ -294,7 +389,10 @@ mod tests {
         assert_eq!(changed, vec![2, 1, 3]);
         assert_eq!(idx.junction(1, 1).0, 0);
         assert_eq!(idx.junction(1, 3).0, u32::from(WEST));
-        assert!(idx.place(1, 2, 2, 0, 1, DIRS_CARDINAL).is_empty(), "placing where it is changes nothing");
+        assert!(
+            idx.place(1, 2, 2, 0, 1, DIRS_CARDINAL).is_empty(),
+            "placing where it is changes nothing"
+        );
     }
 
     #[test]
@@ -314,7 +412,11 @@ mod tests {
     fn a_member_that_does_not_look_on_a_face_is_not_told() {
         let mut idx = AdjacencyIndex::new();
         idx.place(1, 1, 0, 0, 1, u32::from(NORTH));
-        assert_eq!(idx.place(1, 2, 1, 0, 1, DIRS_CARDINAL), vec![2], "1 looks only north");
+        assert_eq!(
+            idx.place(1, 2, 1, 0, 1, DIRS_CARDINAL),
+            vec![2],
+            "1 looks only north"
+        );
         assert_eq!(idx.junction(1, 2).0, u32::from(WEST));
         assert_eq!(idx.junction(1, 1).0, 0);
     }
