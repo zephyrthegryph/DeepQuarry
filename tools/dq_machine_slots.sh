@@ -27,8 +27,8 @@
 #                       arrival time, so priority 0 jumps the queue and the rest go in arrival order. A waiter takes a slot only when it is first. Its mtime is refreshed on every poll.
 #   events.tsv          one line per release: time, class, slot, worktree, label, waited seconds, held seconds.
 #   <worktree>/data/slot-waits.log  the same line for that worktree's own releases, kept to its last 2000 lines.
-# A holder or waiter is dead when its pid is gone (a bash pid is checked with kill -0, a node pid through its Windows
-# pid), or when its heartbeat is older than DQ_SLOTS_STALE_SEC (default 600; this covers pid reuse and a frozen holder
+# A holder or waiter is dead when its pid is gone (a bash pid is checked with kill -0 and, when the owner records start=, its
+# start time, so a reused pid is dead: tools/lib/dq_lock.sh; a node pid through its Windows pid), or when its heartbeat is older than DQ_SLOTS_STALE_SEC (default 600; this covers pid reuse and a frozen holder
 # and the one case a pid cannot be checked cheaply). A dead slot is removed by the next waiter, so a crashed run never
 # blocks the queue. The same protocol is implemented in tools/build/lib/machine_slots.ts for the build tool; keep the
 # two in sync (the selftest and tools/build/lib/machine_slots.test.ts check they agree).
@@ -176,6 +176,9 @@ _slots_refuse_light() { # class worktree: a light lane never compiles DM or runs
 	exit 64
 }
 
+. "${BASH_SOURCE[0]%/*}/lib/dq_lock.sh"   # dq_proc_start / dq_owner_alive: the shared holder-liveness rule
+_slots_start() { dq_proc_start "$1"; echo "$DQ_START"; }
+
 _slots_winpid() { local w; if [ -r "/proc/$1/winpid" ] && read -r w <"/proc/$1/winpid" && [ -n "$w" ]; then echo "$w"; else echo "$1"; fi; }
 
 _slots_field() { # file key: the first value of key (everything after "key=" on its line); no sed | head pipeline
@@ -209,7 +212,7 @@ _slots_dead() { # file
 	age=$(( EPOCHSECONDS - $(_slots_mtime "$f") ))
 	if [ "$age" -gt "$stale" ]; then return 0; fi
 	if [ "$kind" = "bash" ] && [ -n "$pid" ]; then
-		kill -0 "$pid" 2>/dev/null && return 1 || return 0
+		dq_owner_alive "$f"; [ "$?" -eq 1 ] && return 0 || return 1   # pid gone, or reused (its start time differs from the recorded one)
 	fi
 	if [ -n "$winpid" ] && command -v tasklist >/dev/null 2>&1; then
 		tasklist //FI "PID eq $winpid" //NH 2>/dev/null | grep -qw "$winpid" && return 1 || return 0
@@ -310,7 +313,7 @@ _slots_acquire() {
 	now="$EPOCHSECONDS"
 	printf -v name '%s-%013d-%s' "$prio" "$now" "$$"
 	SLOTS_QUEUE="$d/queue/$name"
-	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
+	printf 'kind=bash\npid=%s\nstart=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_start "$$")" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
 	SLOTS_T_QUEUED="$now"
 	_slots_mark_waiting
 	while true; do
@@ -318,7 +321,7 @@ _slots_acquire() {
 		if _slots_single_may_go "$d" "$name"; then
 			for ((i = 1; i <= usable; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
-					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$EPOCHSECONDS" "$prio" >"$d/slot.$i/owner"
+					printf 'kind=bash\npid=%s\nstart=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_start "$$")" "$(_slots_winpid "$$")" "$top" "$label" "$EPOCHSECONDS" "$prio" >"$d/slot.$i/owner"
 					_slots_mark_running
 					_slots_clear_waiting
 					SLOTS_HELD="$d/slot.$i"
@@ -474,7 +477,7 @@ _slots_group_acquire() {
 	now="$EPOCHSECONDS"
 	printf -v name '%s-%013d-%s' "$prio" "$now" "$$"
 	SLOTS_QUEUE="$d/queue/$name"
-	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\ngroup=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "$want" >"$SLOTS_QUEUE"
+	printf 'kind=bash\npid=%s\nstart=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\ngroup=%s\n' "$$" "$(_slots_start "$$")" "$(_slots_winpid "$$")" "$top" "$label" "$now" "$want" >"$SLOTS_QUEUE"
 	SLOTS_GROUP_T_QUEUED="$now"
 	_slots_mark_waiting
 	local free take
@@ -491,7 +494,7 @@ _slots_group_acquire() {
 			[ "$take" -lt "$want" ] && want="$take"
 			for ((i = 1; i <= usable && have < want; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
-					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$EPOCHSECONDS" "$prio" >"$d/slot.$i/owner"
+					printf 'kind=bash\npid=%s\nstart=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_start "$$")" "$(_slots_winpid "$$")" "$top" "$label" "$EPOCHSECONDS" "$prio" >"$d/slot.$i/owner"
 					_slots_mark_running
 					dirs+=("$d/slot.$i")
 					owners+=("$d/slot.$i/owner")

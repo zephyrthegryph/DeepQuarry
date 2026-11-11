@@ -13,9 +13,11 @@ export const suspendingAtom = atom(false);
 
 export const backendStateAtom = atom((get) => ({
   config: get(configAtom),
+  // Dynamic data wins over static data on a shared key: it is the fresher
+  // value (static data resends only on open, ready or a full update).
   data: {
-    ...get(gameDataAtom),
     ...get(gameStaticDataAtom),
+    ...get(gameDataAtom),
   },
   debug: {
     debugLayout: get(debugLayoutAtom),
