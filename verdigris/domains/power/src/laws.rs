@@ -455,7 +455,11 @@ mod tests {
     fn the_external_status_shows_a_supply_too_small_for_this_apc() {
         assert_eq!(apc_external_status(true, 0.0, 0.0, false, 100.0), STATUS_NOTCONNECTED, "no supply");
         assert_eq!(apc_external_status(true, 1000.0, 0.0, false, 400.0), STATUS_GOOD, "enough left for this APC");
-        assert_eq!(apc_external_status(true, 1000.0, 800.0, false, 400.0), STATUS_NOENERGY, "the APCs before it took the supply: its cell carries it");
+        assert_eq!(
+            apc_external_status(true, 1000.0, 800.0, false, 400.0),
+            STATUS_NOENERGY,
+            "the APCs before it took the supply: its cell carries it"
+        );
         assert_eq!(apc_external_status(true, 1000.0, 0.0, true, 400.0), STATUS_NOENERGY, "the region overdrew last step");
         assert_eq!(apc_external_status(false, 1000.0, 1000.0, false, 400.0), STATUS_GOOD, "a switched-off APC draws nothing");
     }

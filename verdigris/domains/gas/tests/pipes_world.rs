@@ -184,7 +184,9 @@ fn the_pipe_device_law_steps_staged_jobs_when_the_world_steps() {
 	let mut b = builder();
 	b.add_global(Ownership::Main, DeviceJobs::default());
 	let _ = b.add_law::<PipeDeviceStep>();
-	let mut world = b.build().expect("builds: the law's global and phase are registered");
+	let mut world = b
+		.build()
+		.expect("builds: the law's global and phase are registered");
 
 	let job = DeviceJob {
 		entity: 1.0,
@@ -228,9 +230,16 @@ fn the_pipe_device_law_steps_staged_jobs_when_the_world_steps() {
 
 	let done = world.global::<DeviceJobs>().unwrap().clone();
 	assert_eq!(done.jobs.len(), 1);
-	assert!(done.jobs[0].moved(), "two steps moved gas: {:?}", done.jobs[0].moles);
+	assert!(
+		done.jobs[0].moved(),
+		"two steps moved gas: {:?}",
+		done.jobs[0].moles
+	);
 	assert!(done.sides[1].gas.total() > 0.0, "it landed on side b");
 	let total_after: f64 = done.sides.iter().map(|s| s.gas.total()).sum();
-	assert!((total_after - total_before).abs() < 1e-3, "the pair conserves gas");
+	assert!(
+		(total_after - total_before).abs() < 1e-3,
+		"the pair conserves gas"
+	);
 	assert!(world.violations().is_empty(), "{:?}", world.violations());
 }

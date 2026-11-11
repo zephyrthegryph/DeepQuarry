@@ -804,12 +804,23 @@ mod tests {
         for e in [a, b, c] {
             host.bind_node(e, 0, 0, ()).unwrap();
         }
-        assert!(host.occupants.is_empty(), "no occupancy rows for a kind that never connects by cell");
+        assert!(
+            host.occupants.is_empty(),
+            "no occupancy rows for a kind that never connects by cell"
+        );
         host.commit();
-        assert_ne!(host.region_of(a), host.region_of(b), "same cell, no edge: separate regions");
+        assert_ne!(
+            host.region_of(a),
+            host.region_of(b),
+            "same cell, no edge: separate regions"
+        );
         host.connect_entities(a, b).unwrap();
         host.commit();
-        assert_eq!(host.region_of(a), host.region_of(b), "an explicit edge joins them");
+        assert_eq!(
+            host.region_of(a),
+            host.region_of(b),
+            "an explicit edge joins them"
+        );
         assert_ne!(host.region_of(a), host.region_of(c));
         host.unbind_node(c);
         host.commit();

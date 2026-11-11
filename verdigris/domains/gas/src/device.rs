@@ -258,7 +258,8 @@ impl Flow {
 					target_reached: true,
 					..Default::default()
 				};
-				let Some((from_is_a, mut needed)) = target_need(&target, a, vol_a, b, vol_b, pa, pb)
+				let Some((from_is_a, mut needed)) =
+					target_need(&target, a, vol_a, b, vol_b, pa, pb)
 				else {
 					return reached;
 				};
@@ -700,9 +701,15 @@ mod tests {
 			last = step(&params, &mut turf, 2500.0, &mut network, 100_000.0, 1.0);
 		}
 		let end = network.pressure(100_000.0);
-		assert!((end - 2_000.0).abs() < 2.0, "the network drained to its floor: {end}");
+		assert!(
+			(end - 2_000.0).abs() < 2.0,
+			"the network drained to its floor: {end}"
+		);
 		assert!(last.target_reached, "and the flow halts there");
-		assert!(turf.pressure(2500.0) > 10.0, "what left the network went to the turf");
+		assert!(
+			turf.pressure(2500.0) > 10.0,
+			"what left the network went to the turf"
+		);
 	}
 
 	#[test]
@@ -969,7 +976,15 @@ mod tests {
 		assert!((report.moles - f64::from(0.25 * oxygen_before)).abs() < 1e-6);
 		assert!((sink.moles[GAS_OXYGEN] - src_share(oxygen_before)).abs() < 1e-6);
 		assert_eq!(sink.moles[GAS_CARBON_DIOXIDE], 0.0);
-		let r = row(mask, rate_kind::FRACTION, 0.25, direction::FORCED, stop_side::A, stop_cmp::NONE, 0.0);
+		let r = row(
+			mask,
+			rate_kind::FRACTION,
+			0.25,
+			direction::FORCED,
+			stop_side::A,
+			stop_cmp::NONE,
+			0.0,
+		);
 		assert_eq!(r.flow(), flow);
 	}
 

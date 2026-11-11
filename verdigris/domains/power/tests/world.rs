@@ -13,7 +13,9 @@ use vg_core::entity::EntityId;
 use vg_core::world::{WorldBuilder, WorldConfig};
 use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
 use vg_power::kind::{Cables, PowerNode};
-use vg_power::laws::{ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply, SmesInputPlan, SmesOutputApply, SmesOutputPlan};
+use vg_power::laws::{
+    ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply, SmesInputPlan, SmesOutputApply, SmesOutputPlan,
+};
 
 const NODE_MACHINE: u16 = 1;
 

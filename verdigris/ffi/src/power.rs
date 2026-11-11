@@ -13,8 +13,8 @@
 //! `CellId` `Cables` uses, and a cable's reach (the cells its directions
 //! lead to, following DM's explicit z links) is computed here at bind.
 
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::Dir;
 use vg_core::network::RegionId;

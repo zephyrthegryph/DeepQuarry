@@ -232,7 +232,11 @@ impl<'a, T> ChunkView<'a, T> {
     pub fn get(&self, cell: usize) -> &'a T {
         match self.cells {
             Cells::Uniform(v) => {
-                assert!(cell < self.len, "cell {cell} outside a chunk of {}", self.len);
+                assert!(
+                    cell < self.len,
+                    "cell {cell} outside a chunk of {}",
+                    self.len
+                );
                 v
             }
             Cells::Dense(c) => &c[cell],
@@ -689,7 +693,10 @@ mod tests {
         store.set(4, 2);
         assert!(!store.unchanged_since(&view));
         let other = CowStore::<u32>::new(layout);
-        assert!(!other.unchanged_since(&CowStore::<u32>::new(layout)), "two new stores are not one lineage");
+        assert!(
+            !other.unchanged_since(&CowStore::<u32>::new(layout)),
+            "two new stores are not one lineage"
+        );
     }
 
     #[test]
@@ -735,7 +742,11 @@ mod tests {
         assert!(!a.same_alloc(&store.chunk(2).unwrap()));
         store.set(5, 9);
         assert_eq!(store.get(5), Some(9));
-        assert_eq!(store.get(6), Some(7), "the rest of the densified chunk keeps the value");
+        assert_eq!(
+            store.get(6),
+            Some(7),
+            "the rest of the densified chunk keeps the value"
+        );
         assert_eq!(store.get(15), Some(7));
         assert_eq!(store.get(35), Some(7));
         assert_eq!(store.get(25), Some(1));
@@ -756,28 +767,60 @@ mod tests {
         store.set(3, 8);
         assert_eq!(view.get(3), Some(4));
         assert_eq!(store.get(3), Some(8));
-        assert_eq!(store.chunks_differing_from(&view).collect::<Vec<_>>(), vec![0]);
+        assert_eq!(
+            store.chunks_differing_from(&view).collect::<Vec<_>>(),
+            vec![0]
+        );
         assert!(store.chunk_differs(&view, 0) && !store.chunk_differs(&view, 1));
-        assert_eq!(view.uniform_chunks(), 2, "the snapshot keeps its uniform chunk");
+        assert_eq!(
+            view.uniform_chunks(),
+            2,
+            "the snapshot keeps its uniform chunk"
+        );
         assert!(!store.values_eq(&view));
         store.set(3, 4);
-        assert!(store.values_eq(&view), "equal values, different allocations");
-        assert_eq!(store.compact_chunks(&[0, 1]), 1, "chunk 0 is uniform again; chunk 1 already was");
+        assert!(
+            store.values_eq(&view),
+            "equal values, different allocations"
+        );
+        assert_eq!(
+            store.compact_chunks(&[0, 1]),
+            1,
+            "chunk 0 is uniform again; chunk 1 already was"
+        );
         assert_eq!(store.uniform_chunks(), 2);
-        assert!(!store.chunk_differs(&view, 0), "the canonical value is shared again");
+        assert!(
+            !store.chunk_differs(&view, 0),
+            "the canonical value is shared again"
+        );
     }
 
     #[test]
     fn compaction_is_exact_and_leaves_mixed_chunks() {
         let mut store = CowStore::<f32>::new(ChunkLayout::linear_with_chunk(30, 10));
         for i in 0..30 {
-            store.set(i, if i == 12 { 0.5 } else if i < 10 { 0.0 } else { 2.0 });
+            store.set(
+                i,
+                if i == 12 {
+                    0.5
+                } else if i < 10 {
+                    0.0
+                } else {
+                    2.0
+                },
+            );
         }
         store.set(25, f32::NAN);
         assert_eq!(store.compact_chunks(&[0, 1, 2]), 1);
         assert!(store.chunk(0).is_none(), "all-default chunk is freed");
-        assert!(store.chunk(1).unwrap().uniform().is_none(), "one cell differs");
-        assert!(store.chunk(2).unwrap().uniform().is_none(), "a NaN never compares equal");
+        assert!(
+            store.chunk(1).unwrap().uniform().is_none(),
+            "one cell differs"
+        );
+        assert!(
+            store.chunk(2).unwrap().uniform().is_none(),
+            "a NaN never compares equal"
+        );
         assert_eq!(store.get(12), Some(0.5));
         assert!(store.get(25).unwrap().is_nan());
     }

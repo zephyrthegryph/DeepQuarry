@@ -116,7 +116,6 @@ pub fn solve(edges: &[(usize, usize, f64)], rhs: &[f64], initial: &[f64]) -> Res
 #[cfg(target_arch = "x86")]
 mod ffi {
     use byondapi::prelude::*;
-    use vg_ffi::held::HeldRead;
     use eyre::{Result, bail};
     use std::collections::{HashMap, HashSet};
     use std::sync::{
@@ -124,6 +123,7 @@ mod ffi {
         atomic::{AtomicU32, Ordering},
         mpsc,
     };
+    use vg_ffi::held::HeldRead;
 
     enum WorkerRequest {
         Solve(SolveRequest),

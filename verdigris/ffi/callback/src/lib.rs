@@ -42,12 +42,14 @@ pub fn pending_callbacks() -> usize {
 /// failure is logged with `tracing` and swallowed rather than unwinding into BYOND.
 fn report_callback_error(e: eyre::Report) {
     let message = format!("{e:?}");
-    match ByondValue::try_from(message.clone()) {
+    match held::Held::new_str(message.clone()) {
         Ok(error_string) => {
+            // `error_string` is ours and released when it drops, after the call.
             // The proc's reply is dropped here, which releases the reference it carries.
-            if let Err(report_err) =
-                held::held_call_global_id(byond_string!("byondapi_stack_trace"), &[error_string])
-            {
+            if let Err(report_err) = held::held_call_global_id(
+                byond_string!("byondapi_stack_trace"),
+                &[error_string.raw()],
+            ) {
                 tracing::error!(
                     original_error = %message,
                     report_error = %report_err,
