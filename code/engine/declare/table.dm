@@ -424,7 +424,7 @@ GLOBAL_VAR(declare_report_capture)
 		return ispath(target, /datum/act) || ispath(target, /datum/notice)
 	if(isnum(target))
 		if(target >= TAG_BASE)
-			return TRUE
+			return !!declared_op_tags()["[target]"] // a tag some op carries (the generated registry; analyze gen rejects an extend of any other)
 		for(var/key in T.caps)
 			var/datum/capability/def = T.caps[key]
 			if(def.cap_id == target)
