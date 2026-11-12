@@ -146,3 +146,21 @@ Surveyed, not changed:
    /datum/species `traits`, which turns that list tracked and fails the tracked lint in species.dm/gene.dm.
    Biggest remaining levers are generated: the 8 tracked-list ops for /datum `open_tguis` (~10 MB) and the `set_<var>` setters on /atom;
    both belong to the analyze generator. Most other narrow /atom procs land on /obj, which saves only ~66 KB each.
+
+## Round 6 (perf/overnight-r6-1)
+
+9. **Generated list ops only where named**: `gen tracked_lists` now writes a tracked list's `add_`/`include_`/`remove_`/`set_<v>_at`/`clear_`/
+   `insert_`/`swap_`/`cut_` op only when some source file names it (a call, a `PROC_REF()`, a string; generated output does not count). The
+   version var is still written for every list. Generated ops 2944 -> 494 procs; /datum `open_tguis` keeps `add_`/`remove_` (6 /datum procs
+   gone, ~7 MB), /obj/item 32 -> 2, /obj 16 -> 4, /obj/structure 16 -> 0, /turf 8 -> 0, /area 16 -> 4, /mob 48 -> 8, the rest on leaves
+   (/obj/belly alone 413). Estimated from the pair cost: ~25-30 MB.
+10. **vg_bind_/vg_reconcile_ stubs on /atom/movable**: the 8 per-domain default stubs the verdigris bindings generator wrote on /datum moved
+   to /atom/movable. Their only callers are /atom/movable's `vg_bind()`/`vg_reconcile()`; native code never calls them by name (the Rust
+   side reaches DM through the free `/proc/vg_bind_<row>` rows and the frame outbox). The generator now refuses a per-type bind on a type
+   that is not an /atom/movable. Net ~5 MB (8 x (1.2 - 0.47) MB).
+
+Surveyed, not changed: generated `set_<var>` setters. Only 8 auto-tracked setters sit on /atom (plus 18 hand-written `SETTER(/atom, ...)`),
+all on their declaring type and all called; setters are reached by name (`call(holder, "set_[v]")` in modes.dm, lifecycle.dm, view
+variables), so "emit only if called" is unsafe for them. The one dead one is `/datum/set_open_tguis` (the TRACKED macro writes a setter for
+lists too; ~1.2 MB). Not re-measured on a booted world: master at b1eb979362 does not compile (events.dm `set_bankrupt` undefined, from
+the reads lane), so no boot measurement was taken; the lane compiled with that one line patched locally (not committed) and passed 12 focused tests (boot gate, tracked lists, staleness, ui fixtures, verdigris binds, atmos).

@@ -106,7 +106,7 @@ pub fn cow_names(body: &str) -> Vec<String> {
 }
 
 /// The procs and the version var for one list var. `cow`: the list is a copy_on_write starting list, so each mutator unshares it first.
-pub fn emit(out: &mut GenOut, d: &Decl, cow: bool) {
+pub fn emit(out: &mut GenOut, d: &Decl, cow: bool, used: &dyn Fn(&str) -> bool) {
     let (t, v) = (&d.ty, &d.var);
     let publish = publish(d);
     let unshare = |out: &mut GenOut| {
@@ -123,70 +123,105 @@ pub fn emit(out: &mut GenOut, d: &Decl, cow: bool) {
     };
     out.doc(format!("TRACKED({}, {}) at {}:{}: the list's version, bumped by every change through add_{}, include_{}, remove_{}, set_{}_at, clear_{}, insert_{}, swap_{} and cut_{}.", t, v, d.rel, d.line, v, v, v, v, v, v, v, v));
     out.line(format!("{}/var/{}_version = 0 // ALLOW(base_vars): a tracked list's version counter (TRACKED, tools/analyze/src/gens/tracked_lists.rs)", t, v));
-    out.line(format!("{}/proc/add_{}(x)", t, v));
-    unshare(out);
-    out.line(format!("\tif(isnull({}))", v));
-    out.line(format!("\t\t{} = list()", v));
-    out.line(format!("\t{} += x", v));
-    tail(out);
-    out.line(format!("{}/proc/include_{}(x)", t, v));
-    unshare(out);
-    out.line(format!("\tvar/was_null = isnull({})", v));
-    out.line(format!("\tvar/before = length({})", v));
-    out.line("\tif(was_null)");
-    out.line(format!("\t\t{} = list()", v));
-    out.line(format!("\t{} |= x", v));
-    out.line(format!("\tif(length({}) == before)", v));
-    out.line("\t\tif(was_null)");
-    out.line(format!("\t\t\t{} = null", v));
-    out.line("\t\treturn FALSE");
-    tail(out);
-    out.line(format!("{}/proc/remove_{}(x)", t, v));
-    unshare(out);
-    out.line(format!("\tvar/before = length({})", v));
-    out.line("\tif(!before)");
-    out.line("\t\treturn FALSE");
-    out.line(format!("\t{} -= x", v));
-    out.line(format!("\tif(length({}) == before)", v));
-    out.line("\t\treturn FALSE");
-    tail(out);
-    out.line(format!("{}/proc/set_{}_at(index, x)", t, v));
-    unshare(out);
-    out.line(format!("\tif(isnull({}))", v));
-    out.line(format!("\t\t{} = list()", v));
-    out.line(format!("\tvar/had = isnum(index) || (index in {})", v));
-    out.line(format!("\tif(had && TRACKED_UNCHANGED({}[index], x))", v));
-    out.line("\t\treturn FALSE");
-    out.line(format!("\t{}[index] = x", v));
-    tail(out);
-    out.line(format!("{}/proc/insert_{}(index, x)", t, v));
-    unshare(out);
-    out.line(format!("\tif(isnull({}))", v));
-    out.line(format!("\t\t{} = list()", v));
-    out.line(format!("\t{}.Insert(index, x)", v));
-    tail(out);
-    out.line(format!("{}/proc/swap_{}(a, b)", t, v));
-    unshare(out);
-    out.line(format!("\tif(a == b || !length({}))", v));
-    out.line("\t\treturn FALSE");
-    out.line(format!("\t{}.Swap(a, b)", v));
-    tail(out);
-    out.line(format!("{}/proc/cut_{}(start = 1, end = 0)", t, v));
-    unshare(out);
-    out.line(format!("\tvar/before = length({})", v));
-    out.line("\tif(!before)");
-    out.line("\t\treturn FALSE");
-    out.line(format!("\t{}.Cut(start, end)", v));
-    out.line(format!("\tif(length({}) == before)", v));
-    out.line("\t\treturn FALSE");
-    tail(out);
-    out.line(format!("{}/proc/clear_{}()", t, v));
-    unshare(out);
-    out.line(format!("\tif(!length({}))", v));
-    out.line("\t\treturn FALSE");
-    out.line(format!("\t{}.Cut()", v));
-    tail(out);
+    if used(&format!("add_{v}")) {
+        out.line(format!("{}/proc/add_{}(x)", t, v));
+        unshare(out);
+        out.line(format!("\tif(isnull({}))", v));
+        out.line(format!("\t\t{} = list()", v));
+        out.line(format!("\t{} += x", v));
+        tail(out);
+    }
+    if used(&format!("include_{v}")) {
+        out.line(format!("{}/proc/include_{}(x)", t, v));
+        unshare(out);
+        out.line(format!("\tvar/was_null = isnull({})", v));
+        out.line(format!("\tvar/before = length({})", v));
+        out.line("\tif(was_null)");
+        out.line(format!("\t\t{} = list()", v));
+        out.line(format!("\t{} |= x", v));
+        out.line(format!("\tif(length({}) == before)", v));
+        out.line("\t\tif(was_null)");
+        out.line(format!("\t\t\t{} = null", v));
+        out.line("\t\treturn FALSE");
+        tail(out);
+    }
+    if used(&format!("remove_{v}")) {
+        out.line(format!("{}/proc/remove_{}(x)", t, v));
+        unshare(out);
+        out.line(format!("\tvar/before = length({})", v));
+        out.line("\tif(!before)");
+        out.line("\t\treturn FALSE");
+        out.line(format!("\t{} -= x", v));
+        out.line(format!("\tif(length({}) == before)", v));
+        out.line("\t\treturn FALSE");
+        tail(out);
+    }
+    if used(&format!("set_{v}_at")) {
+        out.line(format!("{}/proc/set_{}_at(index, x)", t, v));
+        unshare(out);
+        out.line(format!("\tif(isnull({}))", v));
+        out.line(format!("\t\t{} = list()", v));
+        out.line(format!("\tvar/had = isnum(index) || (index in {})", v));
+        out.line(format!("\tif(had && TRACKED_UNCHANGED({}[index], x))", v));
+        out.line("\t\treturn FALSE");
+        out.line(format!("\t{}[index] = x", v));
+        tail(out);
+    }
+    if used(&format!("insert_{v}")) {
+        out.line(format!("{}/proc/insert_{}(index, x)", t, v));
+        unshare(out);
+        out.line(format!("\tif(isnull({}))", v));
+        out.line(format!("\t\t{} = list()", v));
+        out.line(format!("\t{}.Insert(index, x)", v));
+        tail(out);
+    }
+    if used(&format!("swap_{v}")) {
+        out.line(format!("{}/proc/swap_{}(a, b)", t, v));
+        unshare(out);
+        out.line(format!("\tif(a == b || !length({}))", v));
+        out.line("\t\treturn FALSE");
+        out.line(format!("\t{}.Swap(a, b)", v));
+        tail(out);
+    }
+    if used(&format!("cut_{v}")) {
+        out.line(format!("{}/proc/cut_{}(start = 1, end = 0)", t, v));
+        unshare(out);
+        out.line(format!("\tvar/before = length({})", v));
+        out.line("\tif(!before)");
+        out.line("\t\treturn FALSE");
+        out.line(format!("\t{}.Cut(start, end)", v));
+        out.line(format!("\tif(length({}) == before)", v));
+        out.line("\t\treturn FALSE");
+        tail(out);
+    }
+    if used(&format!("clear_{v}")) {
+        out.line(format!("{}/proc/clear_{}()", t, v));
+        unshare(out);
+        out.line(format!("\tif(!length({}))", v));
+        out.line("\t\treturn FALSE");
+        out.line(format!("\t{}.Cut()", v));
+        tail(out);
+    }
     out.blank();
+}
+
+/// The names in one file that could name a generated list op (`add_x`, `set_x_at`, ...), wherever they appear: a call, a `PROC_REF()`, a
+/// `call()` string. Generated output is skipped, so an op nothing in the source names is not emitted (round 6 memory work: BYOND keeps a slot
+/// for every (type, inherited proc) pair, so the 8 ops of a /datum list cost ~10 MB whether or not anything calls them).
+pub fn op_names_in(f: &SourceFile) -> Vec<String> {
+    if f.rel.starts_with("code/engine/_generated/") || f.rel.starts_with("code/_generated/") {
+        return Vec::new();
+    }
+    let mut out: Vec<String> = crate::pat!(r"\b((?:add|include|remove|clear|insert|swap|cut)_\w+|set_\w+_at)\b").captures_iter(f.text()).into_iter().map(|c| c.s(1).to_string()).collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Every name any source file uses that could be a generated list op.
+pub fn op_names(tree: &crate::tree::Tree) -> BTreeSet<String> {
+    let files = tree.select(&CODE_DM);
+    crate::incr::facts("tracked-list-op-names", &files, op_names_in).into_iter().flatten().collect()
 }
 
 /// A proc definition whose name looks generated (`add_x`, `set_x_at`, ...), by file: `(line, type if written on the line, name)`.
@@ -255,6 +290,8 @@ impl Generator for TrackedLists {
         let lists = list_vars(&sem, &decls);
         let taken = taken(&sem, cx.tree);
         let cow = cow_vars(cx.tree, &sem);
+        let names = op_names(cx.tree);
+        let used = |n: &str| names.contains(n);
         let test_types = crate::sem::gen::test_only_types(cx.tree);
         let (tests, content): (Vec<_>, Vec<_>) = lists.into_values().partition(|d| crate::sem::gen::test_only(&d.rel) || test_types.contains(&d.ty));
         for d in &content {
@@ -266,13 +303,13 @@ impl Generator for TrackedLists {
                 out.diag(&d.rel, d.line, format!("tracked list `{}`: {} (or a type on its path) already defines the proc `{}` the generator would write; rename that proc", d.var, d.ty, clash));
                 continue;
             }
-            emit(out, d, cow.contains(&(d.ty.clone(), d.var.clone())));
+            emit(out, d, cow.contains(&(d.ty.clone(), d.var.clone())), &used);
         }
         if !tests.is_empty() {
             out.line(crate::sem::gen::TEST_GUARD);
             out.blank();
             for d in &tests {
-                emit(out, d, cow.contains(&(d.ty.clone(), d.var.clone())));
+                emit(out, d, cow.contains(&(d.ty.clone(), d.var.clone())), &used);
             }
             out.line("#endif");
         }
@@ -294,6 +331,14 @@ mod tests {
         // The same text on one line (a marker body can be joined).
         assert_eq!(cow_names(&body.replace('\n', " ")), ["a", "c"]);
         assert!(cow_names("per_type(nameof(a), PROC_REF(x), copy_on_write = FALSE)").is_empty());
+    }
+
+    #[test]
+    fn op_names_are_read_from_source_but_not_generated_output() {
+        let f = SourceFile::from_text("code/x.dm", "/obj/a/proc/go()\n\tadd_items(1)\n\tvar/p = PROC_REF(set_marks_at)\n\tclear(); cut_\n");
+        assert_eq!(op_names_in(&f), vec!["add_items".to_string(), "set_marks_at".to_string()]);
+        let g = SourceFile::from_text("code/engine/_generated/tracked_lists.dm", "/obj/a/proc/add_items(x)\n");
+        assert!(op_names_in(&g).is_empty());
     }
 
     #[test]
