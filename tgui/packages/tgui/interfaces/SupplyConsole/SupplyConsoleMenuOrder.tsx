@@ -58,25 +58,31 @@ export const SupplyConsoleMenuOrder = (props) => {
     <Stack fill>
       <Stack.Item basis="25%">
         <Section title="Categories" fill>
-          <Input
-            fluid
-            placeholder={'Search for category...'}
-            value={searchCategory}
-            onChange={(val) => setSearchCategory(val)}
-          />
-          <Divider />
-          <Section scrollable fill>
-            {filteredCategories.map((category) => (
-              <Button
-                key={category}
+          <Stack vertical fill>
+            <Stack.Item>
+              <Input
                 fluid
-                selected={category === activeCategory}
-                onClick={() => setActiveCategory(category)}
-              >
-                {category}
-              </Button>
-            ))}
-          </Section>
+                placeholder={'Search for category...'}
+                value={searchCategory}
+                onChange={(val) => setSearchCategory(val)}
+              />
+              <Divider />
+            </Stack.Item>
+            <Stack.Item grow>
+              <Section scrollable fill>
+                {filteredCategories.map((category) => (
+                  <Button
+                    key={category}
+                    fluid
+                    selected={category === activeCategory}
+                    onClick={() => setActiveCategory(category)}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </Section>
+            </Stack.Item>
+          </Stack>
         </Section>
       </Stack.Item>
       <Stack.Item grow ml={2}>
@@ -94,60 +100,64 @@ export const SupplyConsoleMenuOrder = (props) => {
           }
           fill
         >
-          <Input
-            fluid
-            placeholder={'Search for pack...'}
-            value={searchContent}
-            onChange={(val) => setSearchContent(val)}
-          />
-          <Divider />
-          <Section scrollable fill>
-            {filteredPack.map((pack) => (
-              <Box key={pack.name}>
-                <Stack align="center" justify="flex-start">
-                  <Stack.Item maxWidth="70%" basis="70%">
-                    <Button
-                      fluid
-                      icon="shopping-cart"
-                      ellipsis
-                      color={pack.cost > availableFunds ? 'red' : undefined}
-                      onClick={() =>
-                        act('request_crate', {
-                          ref: pack.ref,
-                          personal: personalFunding,
-                        })
-                      }
-                    >
-                      {pack.name}
-                    </Button>
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button
-                      color={pack.cost > availableFunds ? 'red' : undefined}
-                      onClick={() =>
-                        act('request_crate_multi', {
-                          ref: pack.ref,
-                          personal: personalFunding,
-                        })
-                      }
-                    >
-                      #
-                    </Button>
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button
-                      color={pack.cost > supply_points ? 'red' : undefined}
-                      onClick={() => act('view_crate', { crate: pack.ref })}
-                    >
-                      Info
-                    </Button>
-                  </Stack.Item>
-                  <Stack.Item grow>{pack.cost} Thalers</Stack.Item>
-                </Stack>
-              </Box>
-            ))}
-            {/* Alternative collapsible style folders */}
-            {/* {viewingPacks.map(pack => (
+          <Stack vertical fill>
+            <Stack.Item>
+              <Input
+                fluid
+                placeholder={'Search for pack...'}
+                value={searchContent}
+                onChange={(val) => setSearchContent(val)}
+              />
+              <Divider />
+            </Stack.Item>
+            <Stack.Item grow>
+              <Section scrollable fill>
+                {filteredPack.map((pack) => (
+                  <Box key={pack.name}>
+                    <Stack align="center" justify="flex-start">
+                      <Stack.Item maxWidth="70%" basis="70%">
+                        <Button
+                          fluid
+                          icon="shopping-cart"
+                          ellipsis
+                          color={pack.cost > availableFunds ? 'red' : undefined}
+                          onClick={() =>
+                            act('request_crate', {
+                              ref: pack.ref,
+                              personal: personalFunding,
+                            })
+                          }
+                        >
+                          {pack.name}
+                        </Button>
+                      </Stack.Item>
+                      <Stack.Item>
+                        <Button
+                          color={pack.cost > availableFunds ? 'red' : undefined}
+                          onClick={() =>
+                            act('request_crate_multi', {
+                              ref: pack.ref,
+                              personal: personalFunding,
+                            })
+                          }
+                        >
+                          #
+                        </Button>
+                      </Stack.Item>
+                      <Stack.Item>
+                        <Button
+                          color={pack.cost > supply_points ? 'red' : undefined}
+                          onClick={() => act('view_crate', { crate: pack.ref })}
+                        >
+                          Info
+                        </Button>
+                      </Stack.Item>
+                      <Stack.Item grow>{pack.cost} Thalers</Stack.Item>
+                    </Stack>
+                  </Box>
+                ))}
+                {/* Alternative collapsible style folders */}
+                {/* {viewingPacks.map(pack => (
               <Collapsible title={pack.name} mb={-0.7}>
                 <center>
                   {pack.manifest.map(item => (
@@ -164,7 +174,9 @@ export const SupplyConsoleMenuOrder = (props) => {
                 </center>
               </Collapsible>
             ))} */}
-          </Section>
+              </Section>
+            </Stack.Item>
+          </Stack>
         </Section>
       </Stack.Item>
     </Stack>

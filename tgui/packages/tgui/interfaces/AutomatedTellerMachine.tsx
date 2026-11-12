@@ -28,7 +28,7 @@ export const AutomatedTellerMachine = (props) => {
   >();
 
   return (
-    <Window width={680} height={550}>
+    <Window width={740} height={550}>
       <Window.Content>
         <Section title={`Automatic Teller Machine - ${data.machine_id}`} fill>
           {data.authenticated_account ? (
@@ -338,7 +338,9 @@ const BalanceMenu = (props: {
           </Button>
         </Stack.Item>
       </Stack>
-      <TransactionLog transactions={data.authenticated_account?.transactions ?? []} />
+      <TransactionLog
+        transactions={data.authenticated_account?.transactions ?? []}
+      />
     </Section>
   );
 };
@@ -523,7 +525,7 @@ const LoginScreen = (props: { machine_id: string; card: string | null }) => {
 
   return (
     <Stack align="flex-start" justify="space-between" fill>
-      <Stack.Item grow height="100%">
+      <Stack.Item grow height="100%" style={{ minWidth: 0 }}>
         <Stack vertical fill>
           <Stack.Item>
             <Button
@@ -585,8 +587,6 @@ const LoginScreen = (props: { machine_id: string; card: string | null }) => {
         </Stack>
       </Stack.Item>
       <Stack.Item
-        ml={-5}
-        mr={-5}
         onClick={() => act('insert_card')}
         style={{ cursor: 'pointer' }}
       >

@@ -93,7 +93,9 @@ export const ConfigurableRecipeRow = (props: {
         canPrint
         action={onSelect}
       />
-      <Label px={1}>{design.materialSlots?.length ?? 0} parts</Label>
+      <Label px={1} nowrap>
+        {design.materialSlots?.length ?? 0} parts
+      </Label>
       <Button
         color={selected ? 'good' : 'transparent'}
         icon="chevron-right"

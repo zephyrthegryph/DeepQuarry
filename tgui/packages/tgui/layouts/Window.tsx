@@ -38,7 +38,7 @@ import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow, traceAlpha } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
-import { CONSOLE_THEME, useConsoleScanlines } from './consoleTheme';
+import { resolveTheme, useConsoleScanlines } from './consoleTheme';
 import { fitOverflow, measureNaturalBottom } from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
@@ -127,7 +127,7 @@ function EmbeddedWindow(props: Props) {
 function NativeWindow(props: Props) {
   const {
     canClose = true,
-    theme = CONSOLE_THEME,
+    theme,
     title,
     children,
     buttons,
@@ -139,7 +139,7 @@ function NativeWindow(props: Props) {
   } = props;
 
   const { config, suspended, debug } = useBackend();
-  useConsoleScanlines(theme);
+  useConsoleScanlines(resolveTheme(theme));
   const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
   const width = requestedWidth ?? defaultGeometry?.width;
   const height = requestedHeight ?? defaultGeometry?.height;

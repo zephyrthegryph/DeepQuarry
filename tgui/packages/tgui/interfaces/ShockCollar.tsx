@@ -15,7 +15,7 @@ import type {
 export const ShockCollar = (props) => {
   const { act, data } = useBackend<ShockCollarData, ShockCollarActions>();
   return (
-    <Window width={260} height={data.target_size ? 215 : 175}>
+    <Window width={340} height={data.target_size ? 215 : 175}>
       <Window.Content fontSize={1.5} textAlign="center">
         <Button
           fluid

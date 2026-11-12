@@ -35,7 +35,7 @@ export const PressureRegulator = (props) => {
   } = data;
 
   return (
-    <Window width={470} height={370}>
+    <Window width={540} height={370}>
       <Window.Content>
         <Section title="Status">
           <LabeledList>

@@ -108,14 +108,19 @@ export const PersonalCrafting = () => {
                 </Button.Checkbox>
               }
             >
-              <Input
-                fluid
-                value={searchText}
-                placeholder="Search recipes..."
-                onChange={setSearchText}
-                mb={1}
-              />
-              <CraftingWorkspace recipes={shown} />
+              <Stack vertical fill>
+                <Stack.Item>
+                  <Input
+                    fluid
+                    value={searchText}
+                    placeholder="Search recipes..."
+                    onChange={setSearchText}
+                  />
+                </Stack.Item>
+                <Stack.Item grow style={{ minHeight: 0 }}>
+                  <CraftingWorkspace recipes={shown} />
+                </Stack.Item>
+              </Stack>
             </Section>
           </Stack.Item>
         </Stack>
@@ -144,7 +149,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
 
   return (
     <Stack fill>
-      <Stack.Item basis="42%" style={{ overflowY: 'auto' }}>
+      <Stack.Item basis="42%" style={{ overflowY: 'auto', minHeight: 0 }}>
         <Stack vertical>
           {visible.map((recipe) => (
             <Stack.Item key={recipe.ref}>

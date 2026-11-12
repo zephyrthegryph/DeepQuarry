@@ -59,7 +59,7 @@ export const APC = (props) => {
   }
 
   return (
-    <Window width={450} height={475}>
+    <Window width={500} height={475}>
       <Window.Content scrollable>{body}</Window.Content>
     </Window>
   );

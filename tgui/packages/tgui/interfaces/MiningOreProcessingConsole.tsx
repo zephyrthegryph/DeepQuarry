@@ -164,7 +164,7 @@ const MOPCOres = (props) => {
               buttons={
                 <Dropdown
                   autoScroll={false}
-                  width="120px"
+                  width="150px"
                   color={
                     (ore.processing === 0 && 'red') ||
                     (ore.processing === 1 && 'green') ||

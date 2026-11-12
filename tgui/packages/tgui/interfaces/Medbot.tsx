@@ -31,7 +31,7 @@ export const Medbot = (props) => {
   } = data;
 
   return (
-    <Window width={400} height={600}>
+    <Window width={470} height={600}>
       <Window.Content scrollable>
         <Section
           title="Automatic Medical Unit v2.0"

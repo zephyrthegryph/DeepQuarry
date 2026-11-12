@@ -2,6 +2,7 @@
 // report_data()). Every medical interface shows the same report: vitals plus
 // findings, with treatment hints when the instrument gives them.
 
+import type { ReactNode } from 'react';
 import {
   Box,
   LabeledList,
@@ -74,11 +75,16 @@ const isSet = <T,>(value: T | null | undefined): value is T =>
 const rangeColor = (value: number, low: number, high: number) =>
   value < low || value > high ? 'bad' : 'good';
 
-export const DiagnosisVitalsList = (props: { vitals: DiagnosisVitals }) => {
-  const { vitals } = props;
+export const DiagnosisVitalsList = (props: {
+  vitals: DiagnosisVitals;
+  /** Items shown first, in the same list so their values share its column. */
+  before?: ReactNode;
+}) => {
+  const { vitals, before } = props;
   const pressure = vitals.bloodPressure;
   return (
     <LabeledList>
+      {before}
       {isSet(vitals.heartRate) ? (
         <LabeledList.Item
           label="Heart Rate"

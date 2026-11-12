@@ -17,6 +17,7 @@ import {
   store,
   suspendedAtom,
 } from '../events/store';
+import { alignmentFindings, markFindings } from './alignment';
 import captured from '../interfaces/__fixtures__/ui_data.json';
 
 const requireInterface = require.context(
@@ -52,14 +53,20 @@ function dataFor(name: string): Record<string, unknown> {
   if (requireWritten.keys().includes(key)) {
     return requireWritten(key);
   }
-  return (captured as unknown as Record<string, Record<string, unknown>>)[name] ?? {};
+  return (
+    (captured as unknown as Record<string, Record<string, unknown>>)[name] ?? {}
+  );
 }
 
 /** Names of every window this bundle can show, for the driver. */
 (window as any).previewWindows = () =>
   requireInterface
     .keys()
-    .map((k: string) => k.replace(/^\.\/(chompstation\/)?/, '').replace(/(\/index)?\.[tj]sx$/, ''));
+    .map((k: string) =>
+      k
+        .replace(/^\.\/(chompstation\/)?/, '')
+        .replace(/(\/index)?\.[tj]sx$/, ''),
+    );
 
 const name = new URLSearchParams(location.search).get('w') ?? '';
 const Routed = findInterface(name);
@@ -69,7 +76,13 @@ store.set(configAtom, {
   title: name,
   status: 2,
   interface: { name, layout: 'default' },
-  window: { key: 'preview', size: [560, 640], fancy: false, locked: false, native_shell: true },
+  window: {
+    key: 'preview',
+    size: [560, 640],
+    fancy: false,
+    locked: false,
+    native_shell: true,
+  },
   user: { name: 'tester', observer: 0 },
 } as any);
 store.set(gameStaticDataAtom, {});
@@ -85,3 +98,25 @@ createRoot(document.getElementById('app')!).render(
   </StrictMode>,
 );
 (window as any).previewReady = true;
+
+// ?check=1: once the window has settled, run the alignment checks and hand the findings to the parent frame;
+// ?mark=1 outlines them (for the per-issue screenshot).
+const params = new URLSearchParams(location.search);
+// ?css=<rules> injects a stylesheet: the checker's self-test breaks the layout on purpose to prove each rule fires.
+const injected = params.get('css');
+if (injected) {
+  const style = document.createElement('style');
+  style.textContent = injected;
+  document.head.appendChild(style);
+}
+if (params.get('check') || params.get('mark')) {
+  setTimeout(async () => {
+    await document.fonts?.ready;
+    const findings = alignmentFindings();
+    if (params.get('mark')) markFindings(findings);
+    parent.postMessage(
+      { name, findings, theme: document.documentElement.className },
+      '*',
+    );
+  }, 800);
+}

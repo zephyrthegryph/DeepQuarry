@@ -28,7 +28,7 @@ export const PlayerEffects = (props) => {
   tabs[5] = <ControlFixes />;
 
   return (
-    <Window width={400} height={600}>
+    <Window width={520} height={600}>
       <Window.Content scrollable>
         <Tabs>
           <Tabs.Tab selected={tab === 0} onClick={() => setTab(0)}>

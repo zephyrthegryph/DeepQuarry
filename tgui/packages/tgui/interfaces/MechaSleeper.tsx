@@ -45,6 +45,23 @@ export const MechaSleeper = () => {
     );
   }
 
+  // One list: the summary rows and the vitals share a value column.
+  const summary = (
+    <>
+      <LabeledList.Item label="Status">
+        <Box color={goodIf(status === 'Conscious')}>{status}</Box>
+      </LabeledList.Item>
+      <LabeledList.Item label="Health">
+        <Box color={goodIf(health_percent > 50)}>{health_percent}%</Box>
+      </LabeledList.Item>
+      <LabeledList.Item label="Core Temp">
+        <Box color={goodIf(body_temp_c > -23)}>
+          {body_temp_c}°C / {body_temp_f}°F
+        </Box>
+      </LabeledList.Item>
+    </>
+  );
+
   return (
     <Window width={440} height={520} title={`${occupant_name} statistics`}>
       <Window.Content scrollable>
@@ -56,20 +73,11 @@ export const MechaSleeper = () => {
             </Button>
           }
         >
-          <LabeledList>
-            <LabeledList.Item label="Status">
-              <Box color={goodIf(status === 'Conscious')}>{status}</Box>
-            </LabeledList.Item>
-            <LabeledList.Item label="Health">
-              <Box color={goodIf(health_percent > 50)}>{health_percent}%</Box>
-            </LabeledList.Item>
-            <LabeledList.Item label="Core Temp">
-              <Box color={goodIf(body_temp_c > -23)}>
-                {body_temp_c}°C / {body_temp_f}°F
-              </Box>
-            </LabeledList.Item>
-          </LabeledList>
-          {diagnosis ? <DiagnosisVitalsList vitals={diagnosis.vitals} /> : null}
+          {diagnosis ? (
+            <DiagnosisVitalsList vitals={diagnosis.vitals} before={summary} />
+          ) : (
+            <LabeledList>{summary}</LabeledList>
+          )}
         </Section>
         {diagnosis ? (
           <DiagnosisFindingsSection findings={diagnosis.findings} />

@@ -36,7 +36,7 @@ export const DeleteBookPanel = () => {
           title={`Administrative Management — ${books.length} books`}
           buttons={
             <>
-              <Button onClick={() => act('order_by_id')} icon="hashtag">
+              <Button compact onClick={() => act('order_by_id')} icon="hashtag">
                 Order by SS13BN
               </Button>{' '}
               <Label inline>Sort by:</Label>{' '}

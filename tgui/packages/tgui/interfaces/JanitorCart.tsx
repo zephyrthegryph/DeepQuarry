@@ -152,19 +152,5 @@ const JanicartIcon = (props: { iconkey: string }) => {
     );
   }
 
-  return (
-    <Icon
-      style={{
-        position: 'absolute',
-        left: '4px',
-        right: '0',
-        top: '20px',
-        bottom: '0',
-        width: '64px',
-        height: '64px',
-      }}
-      fontSize={2}
-      name={iconkeysToIcons[iconkey]}
-    />
-  );
+  return <Icon fontSize={2} name={iconkeysToIcons[iconkey]} />;
 };

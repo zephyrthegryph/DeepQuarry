@@ -13,7 +13,7 @@ export const BorgHypoSearch = (props) => {
       <BorgHypoRecordingBlinker />
       <Stack.Item>
         <Input
-          width="150px"
+          width="180px"
           placeholder={`Search ${uiChemicalsName}...`}
           onChange={(input) =>
             act('set_chemical_search', {

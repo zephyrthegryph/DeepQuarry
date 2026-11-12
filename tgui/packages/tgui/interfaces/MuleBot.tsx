@@ -7,7 +7,7 @@ export const MuleBot = (props) => {
   const { act, data } = useBackend<MuleBotData, MuleBotActions>();
   const { suffix, load, hatch } = data;
   return (
-    <Window width={350} height={500}>
+    <Window width={430} height={500}>
       <Window.Content>
         <Section title="Multiple Utility Load Effector Mk. III">
           <LabeledList>

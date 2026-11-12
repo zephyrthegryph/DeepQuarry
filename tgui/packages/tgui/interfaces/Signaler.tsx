@@ -5,7 +5,7 @@ import type { SignalerActions, SignalerData } from './generated/Signaler';
 
 export const Signaler = () => {
   return (
-    <Window width={280} height={132}>
+    <Window width={360} height={132}>
       <Window.Content>
         <SignalerContent />
       </Window.Content>
@@ -32,7 +32,7 @@ export const SignalerContent = (props) => {
               maxValue={maxFrequency / 10}
               value={frequency / 10}
               format={(value) => value.toFixed(1)}
-              width="80px"
+              width="110px"
               onChange={(value) =>
                 act('freq', {
                   freq: value,
@@ -65,7 +65,7 @@ export const SignalerContent = (props) => {
               minValue={1}
               maxValue={100}
               value={code}
-              width="80px"
+              width="110px"
               onChange={(value) =>
                 act('code', {
                   code: value,

@@ -5,7 +5,7 @@
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type {
   AirlockElectronicsActions,
   AirlockElectronicsData,
@@ -35,21 +35,14 @@ export const AirlockElectronics = () => {
             </Button>
           }
         >
-          {last_configurator ? (
-            <LabeledList>
+          <LabeledList>
+            {last_configurator ? (
               <LabeledList.Item label="Operator">
                 {last_configurator}
               </LabeledList.Item>
-            </LabeledList>
-          ) : null}
-
-          {locked ? (
-            <Label mt={1} italic>
-              Unlock the interface to configure access requirements.
-            </Label>
-          ) : (
-            <Box mt={1}>
-              <LabeledList>
+            ) : null}
+            {locked ? null : (
+              <>
                 <LabeledList.Item label="Requirement">
                   <Button
                     color={one_access ? 'good' : 'bad'}
@@ -66,24 +59,30 @@ export const AirlockElectronics = () => {
                     {all_selected ? 'All (clear selection)' : 'All'}
                   </Button>
                 </LabeledList.Item>
-              </LabeledList>
+              </>
+            )}
+          </LabeledList>
 
-              <Stack vertical mt={2}>
-                {accesses.map((a) => (
-                  <Stack.Item key={a.id}>
-                    <Button
-                      fluid
-                      color={
-                        a.selected ? (one_access ? 'good' : 'bad') : 'default'
-                      }
-                      onClick={() => act('access', { access: a.id })}
-                    >
-                      {a.name}
-                    </Button>
-                  </Stack.Item>
-                ))}
-              </Stack>
-            </Box>
+          {locked ? (
+            <Label mt={1} italic>
+              Unlock the interface to configure access requirements.
+            </Label>
+          ) : (
+            <Stack vertical mt={2}>
+              {accesses.map((a) => (
+                <Stack.Item key={a.id}>
+                  <Button
+                    fluid
+                    color={
+                      a.selected ? (one_access ? 'good' : 'bad') : 'default'
+                    }
+                    onClick={() => act('access', { access: a.id })}
+                  >
+                    {a.name}
+                  </Button>
+                </Stack.Item>
+              ))}
+            </Stack>
           )}
         </Section>
       </Window.Content>
