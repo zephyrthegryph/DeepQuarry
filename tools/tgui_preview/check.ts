@@ -37,8 +37,8 @@ const targets = names.length ? names : all;
 
 const { buildWindowGeometryManifest } = await import(pathToFileURL(path.join(tgui, 'windowGeometryManifest.ts')).href);
 const geometry = buildWindowGeometryManifest(path.join(tgui, 'packages/tgui/interfaces'));
-// A window that states its size as literals is laid out at exactly that; one that computes it reports the size it asked for.
-const jobs = targets.map((n) => ({ name: n, width: geometry[n]?.width ?? 560, height: geometry[n]?.height ?? 640, exact: !!geometry[n]?.exact }));
+// A window is laid out at the size it asks the game for (its Window width/height); the manifest size, read from the source text, is the fallback.
+const jobs = targets.map((n) => ({ name: n, width: geometry[n]?.width ?? 560, height: geometry[n]?.height ?? 640}));
 
 type Row = { name: string; theme: string; findings: unknown[]; size?: [number, number] };
 const results = new Map<string, Row>();
@@ -66,7 +66,8 @@ function run(job) {
   const onMsg = (e) => {
     if (e.source !== f.contentWindow) return;
     if (e.data.sizeRequest) {
-      if (job.exact) return;
+      // 256x256 is the shell's default before a window has stated its own size.
+      if (e.data.sizeRequest[0] === 256 && e.data.sizeRequest[1] === 256) return;
       job.size = e.data.sizeRequest;
       f.style.width = job.size[0] + 'px'; f.style.height = job.size[1] + 'px';
       return;
@@ -114,7 +115,7 @@ server.stop(true);
 const sizes: Record<string, [number, number]> = {};
 for (const job of jobs) {
   const row = results.get(job.name);
-  sizes[job.name] = job.exact ? [job.width, job.height] : (row?.size ?? [job.width, job.height]);
+  sizes[job.name] = row?.size ?? [job.width, job.height];
 }
 writeFileSync(path.join(out, 'sizes.json'), JSON.stringify(sizes));
 const byRule: Record<string, number> = {};
