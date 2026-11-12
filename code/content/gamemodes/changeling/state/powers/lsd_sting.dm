@@ -15,7 +15,7 @@
 	if(!T)
 		return FALSE
 	add_attack_logs(src,T,"Hallucination sting (changeling)")
-	after(T, rand(30 SECONDS, 60 SECONDS), TYPE_PROC_REF(/datum, status_set), with = list(STAT_HALLUCINATING, 400)) //No going ABOVE 400 hallucinations.
+	after(T, rand(30 SECONDS, 60 SECONDS), TYPE_PROC_REF(/mob, status_set), with = list(STAT_HALLUCINATING, 400)) //No going ABOVE 400 hallucinations.
 	feedback_add_details("changeling_powers","HS")
 	return TRUE
 

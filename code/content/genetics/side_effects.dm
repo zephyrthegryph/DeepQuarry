@@ -17,7 +17,7 @@
 	var/datum/genetics/side_effect/S = new tp
 
 	S.start(H)
-	after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(STAT_WEAKENED, 4))
+	after(H, 2 SECONDS, TYPE_PROC_REF(/mob, status_at_least), with = list(STAT_WEAKENED, 4))
 	after(S, S.duration, TYPE_PROC_REF(/datum/genetics/side_effect, complete))
 	//above is doing: Call S.finish() in S.duration (dropped if H, and so S, is deleted first)
 
