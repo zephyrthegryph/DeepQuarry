@@ -25,12 +25,12 @@ CAPABILITIES(/datum/data/pda/app/status_display)
 			var/_answer_k26 = A.step_value("k26")
 			if(isnull(_answer_k26))
 				return
-			message1 = text_or_null(_answer_k26)
+			set_message1(text_or_null(_answer_k26))
 		if("setmsg2")
 			var/_answer_k28 = A.step_value("k28")
 			if(isnull(_answer_k28))
 				return
-			message2 = text_or_null(_answer_k28)
+			set_message2(text_or_null(_answer_k28))
 		else
 			post_status(statdisp)
 	return TRUE
@@ -187,12 +187,12 @@ CAPABILITIES(/datum/data/pda/app/crew_records)
 
 /datum/data/pda/app/crew_records/proc/ui_act_back(datum/act/op/A)
 	rel_clear(src, nameof(/datum/data/pda/app/crew_records::general_records))
-	has_back = 0
+	set_has_back(0)
 	return OP_OK
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
 	rel_set(src, nameof(general_records), R)
-	has_back = 1
+	set_has_back(1)
 
 /datum/data/pda/app/crew_records/medical
 	name = "Medical Records"

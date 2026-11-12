@@ -50,7 +50,7 @@ CAPABILITIES(/obj/item/pda/mime)
 /obj/item/pda/proc/silence_messenger(datum/act/timer/A)
 	var/datum/data/pda/app/M = find_program(/datum/data/pda/app/messenger)
 	if(M)
-		M.notify_silent = TRUE
+		M.set_notify_silent(TRUE)
 
 /obj/item/pda/heads
 	default_cartridge = /obj/item/cartridge/head

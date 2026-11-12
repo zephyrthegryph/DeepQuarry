@@ -1,5 +1,5 @@
 // Captures real window data for the tgui render test (tgui/packages/tgui/interfaces/renderAll.test.tsx). For every /obj type that declares
-// interface(), one fresh instance per window name is spawned and its tgui_data() and tgui_static_data() for a fresh human viewer are written,
+// interface(), one fresh instance per window name is spawned and its tgui_data() and static data (present_tgui_static_data()) for a fresh human viewer are written,
 // keyed by window name, to TGUI_FIXTURES_FILE. Regenerate: `bash tools/dq_focused_test.sh /datum/unit_test/dq_tgui_ui_data_fixtures`, then
 // copy data/tgui_fixtures/ui_data.json to tgui/packages/tgui/interfaces/__fixtures__/ui_data.json. A type that fails to spawn or whose data
 // faults is logged and skipped (the next type with the same window is tried); the windows with no fixture are logged at the end.
@@ -13,7 +13,7 @@
 
 /datum/unit_test/dq_tgui_ui_data_fixtures/proc/window_data(datum/host, mob/user)
 	var/list/data = list()
-	var/list/static_data = host.tgui_static_data(user)
+	var/list/static_data = present_tgui_static_data(host, user)
 	if(islist(static_data))
 		data += static_data
 	var/list/dynamic = host.tgui_data(user)

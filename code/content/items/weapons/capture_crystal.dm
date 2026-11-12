@@ -35,8 +35,8 @@ CAPABILITIES(/obj/item/capture_crystal)
 		then(PROC_REF(interaction_self)))
 	// the old object verbs
 	op("follow", menu(), label("Toggle Follow"), needs(carried()), then(PROC_REF(verb_follow)))
-	op("destroy", menu(), label("Destroy Crystal"), needs(carried()), then(PROC_REF(verb_destroy)))
 	op("release", menu(), label("Release Ownership"), needs(carried()), then(PROC_REF(verb_release)))
+	op("destroy", menu(), label("Destroy Crystal"), needs(carried()), then(PROC_REF(verb_destroy)))
 	op("invite_ghosts", menu(), label("Enhance (Toggle Ghost Join)"), needs(carried()),
 		asks(/datum/prompt/choice, fields = list("title" = "Invite ghosts?", "question" = computed(PROC_REF(ghost_invite_question)), "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), when = PROC_REF(asks_ghost_invite)),
 		then(PROC_REF(invite_ghost_effect)))

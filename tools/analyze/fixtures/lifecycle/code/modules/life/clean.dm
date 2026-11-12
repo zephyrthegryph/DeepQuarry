@@ -1,4 +1,4 @@
-// The clean types: not latent-safe, but they register only in on_materialize().
+// The clean types register only in on_materialize().
 /obj/item/pda/Initialize(mapload)
 	GLOB.pda_list += src
 

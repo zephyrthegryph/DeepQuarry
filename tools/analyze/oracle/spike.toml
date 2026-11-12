@@ -17,9 +17,8 @@
 [handlers]
 # The round status panel and supply console ui pins and the airlock draw pin were dropped when those types were converted to
 # declared reads: no hand-written ui or draw list remains for them (the test names a pin whose list is gone).
-# 1 condition proc (should_run()). The area and light derive_*() pins (lights_nightshift, lights_emergency_off, nightshift_enabled,
+# The condition pin (should_run()) was dropped when should_run() was retired with the cadences. The area and light derive_*() pins (lights_nightshift, lights_emergency_off, nightshift_enabled,
 # area_emergency_off) were dropped when those types were converted to declared reads: no hand-written derive list remains for them.
-"/obj/cap_fixture/dx_deps_laser condition"
 # 3 draw procs
 "/obj/cap_fixture/dx_deps_laser draw"
 "/obj/cap_fixture/dx_deps_watcher draw"

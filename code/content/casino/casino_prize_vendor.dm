@@ -292,22 +292,12 @@ CAPABILITIES(/obj/machinery/casino_prize_dispenser)
 	configure(uses_power(idle = 10))
 	interface("CasinoPrizeDispenser")
 	without("ui_open")
-	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), needs(req_operable(), req_capable()), then(PROC_REF(ui_act_purchase)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
-/obj/machinery/casino_prize_dispenser/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!operable())
-		return FALSE
-	if(user.stat || user.restrained())
-		return FALSE
-	return TRUE
-
 /obj/machinery/casino_prize_dispenser/proc/ui_act_purchase(datum/act/op/A, cat, name_arg, price_arg, restriction)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	. = TRUE
 	var/paid = FALSE
 	var/category = cat
