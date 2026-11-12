@@ -123,7 +123,10 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
 		if(istext(new_state) && length(new_state) <= 64)
 			ui.user?.client?.prefs.write_preference(GLOB.preference_entries[/datum/preference/choiced/tgui_layout], new_state)
 		return FALSE
-	return FALSE // no op, capability or named proc answers `action`
+	// No op, forward, capability or named proc answers `action`: a client sent a name the window does not declare (the ui_actions lint checks
+	// literal act() names; this catches computed ones and stale clients). Logged, never silent.
+	log_world("UI: [ui.user] pressed '[action]' in [src.type]'s window: no ui_act() op, forward or act_ proc answers it")
+	return FALSE
 
 /**
  * public
