@@ -135,3 +135,14 @@ Surveyed, not changed:
 - Supermatter: one profile showed capture_args 2.47 s self over 76 type_every timers, almost all in the profiler's "over" column (time past
   the tick budget); older runs show nothing like it, so it reads as a scheduling artefact of the loaded machine, not code cost. Explosion
   per-turf work is unchanged from round 3 (ChangeTurf 1.9 s / 2356, deal_damage 1.8 s / 2356, ReplaceWithLattice 1.05 s / 919).
+
+## Round 5 (perf/overnight-r5-1)
+
+8. **Filter procs off /datum, dead base procs deleted**: the 8 filter procs (`add_filter` ... `remove_filter`) moved to /atom
+   (code/library/helpers/filters.dm; no image or non-atom caller existed), `get_filter_index` (no caller) deleted; on /atom the dead
+   `InsertedContents`, `containment_blast_exposure` and `flash_lighting_fx` (with its 3 overrides and `mob_light`) deleted, and
+   `get_voidsuit` moved to /mob/living/carbon. Estimated from the pair cost (not re-measured): ~9 MB.
+   Not done: moving `add_traits`/`remove_traits` off /datum makes the generator emit `add_traits`/`remove_traits` for
+   /datum/species `traits`, which turns that list tracked and fails the tracked lint in species.dm/gene.dm.
+   Biggest remaining levers are generated: the 8 tracked-list ops for /datum `open_tguis` (~10 MB) and the `set_<var>` setters on /atom;
+   both belong to the analyze generator. Most other narrow /atom procs land on /obj, which saves only ~66 KB each.

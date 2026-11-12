@@ -10,9 +10,6 @@
 /atom/containment_drop_location()
 	return drop_location()
 
-/atom/containment_blast_exposure(severity)
-	return ex_act(severity)
-
 /atom/containment_armor_share(key, penetration)
 	return dq_armor_average_percent(get_armor().effective(key, penetration)) / 100
 

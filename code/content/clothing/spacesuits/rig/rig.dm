@@ -1071,7 +1071,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	else
 		return null
 
-/atom/proc/get_voidsuit()
+/mob/living/carbon/proc/get_voidsuit()
 	return null
 
 /mob/living/carbon/human/get_voidsuit()
