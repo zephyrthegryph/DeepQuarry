@@ -135,3 +135,32 @@ fn receiver_io_failure_skips_unusable_metadata_in_both_batch_schedules() {
     run(UNITS * (QUEUED + 2));
     executor.scope(|scope| scope.spawn(|_| run(8)));
 }
+
+#[test]
+fn batch_trace_cpu_totals_require_complete_monotonic_samples_and_preserve_work_results() {
+    let mut trace = BatchTrace::default();
+    assert_eq!(trace.complete_cpu_ns(), None);
+    trace.record(std::time::Duration::from_millis(4), Some(10), Some(13));
+    trace.record(std::time::Duration::from_millis(6), Some(20), Some(27));
+    assert_eq!(trace.calls, 2);
+    assert_eq!(trace.elapsed, std::time::Duration::from_millis(10));
+    assert_eq!(trace.cpu_samples, 2);
+    assert_eq!(trace.complete_cpu_ns(), Some(10));
+    for (start, end) in [(None, Some(40)), (Some(30), None), (Some(50), Some(49))] {
+        let mut partial = BatchTrace::default();
+        partial.record(std::time::Duration::from_millis(1), Some(1), Some(2));
+        partial.record(std::time::Duration::from_millis(2), start, end);
+        assert_eq!(partial.calls, 2);
+        assert_eq!(partial.elapsed, std::time::Duration::from_millis(3));
+        assert_eq!(partial.cpu_samples, 1);
+        assert_eq!(partial.cpu_ns, 1);
+        assert_eq!(partial.complete_cpu_ns(), None);
+    }
+    let mut disabled = BatchTrace::default();
+    let error = disabled.measure(false, || Err::<(), _>(io::Error::from_raw_os_error(1450))).unwrap_err();
+    assert_eq!(error.raw_os_error(), Some(1450));
+    assert_eq!(disabled.calls, 0);
+    let error = disabled.measure(true, || Err::<(), _>(io::Error::from_raw_os_error(1450))).unwrap_err();
+    assert_eq!(error.raw_os_error(), Some(1450));
+    assert_eq!(disabled.calls, 1);
+}

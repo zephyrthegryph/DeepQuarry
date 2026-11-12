@@ -9,6 +9,8 @@ const UNITS:usize=8192;const QUEUED:usize=64;
 struct BatchTrace {
     elapsed: std::time::Duration,
     calls: usize,
+    cpu_ns: u128,
+    cpu_samples: usize,
 }
 
 impl BatchTrace {
@@ -17,10 +19,25 @@ impl BatchTrace {
             return work();
         }
         let start = std::time::Instant::now();
+        let cpu_start = dm_profile::sample_thread_cpu_ns();
         let result = work();
-        self.elapsed += start.elapsed();
-        self.calls += 1;
+        let cpu_end = dm_profile::sample_thread_cpu_ns();
+        self.record(start.elapsed(), cpu_start, cpu_end);
         result
+    }
+
+    fn record(&mut self, elapsed: std::time::Duration, cpu_start: Option<u64>, cpu_end: Option<u64>) {
+        self.elapsed += elapsed;
+        self.calls += 1;
+        if let Some(cpu) = cpu_end.zip(cpu_start).and_then(|(end, start)| end.checked_sub(start)) {
+            self.cpu_ns += u128::from(cpu);
+            self.cpu_samples += 1;
+        }
+    }
+
+    // Missing or non-monotonic samples must not masquerade as zero CPU work.
+    fn complete_cpu_ns(&self) -> Option<u128> {
+        (self.calls != 0 && self.cpu_samples == self.calls).then_some(self.cpu_ns)
     }
 }
 
@@ -34,9 +51,11 @@ impl Drop for ProducerTrace {
     fn drop(&mut self) {
         if self.enabled {
             eprintln!(
-                "ORIGINAL_BATCH_TIMING fill_calls={} fill_s={:.3} send_calls={} send_s={:.3}",
+                "ORIGINAL_BATCH_TIMING fill_calls={} fill_s={:.3} send_calls={} send_s={:.3} fill_cpu_ns={:?} fill_cpu_samples={} send_cpu_ns={:?} send_cpu_samples={}",
                 self.fill.calls, self.fill.elapsed.as_secs_f64(),
                 self.send.calls, self.send.elapsed.as_secs_f64(),
+                self.fill.complete_cpu_ns(), self.fill.cpu_samples,
+                self.send.complete_cpu_ns(), self.send.cpu_samples,
             );
         }
     }
@@ -95,7 +114,7 @@ impl<'a,'budget> AsyncSource<'a,'budget>{
 }
 impl Drop for AsyncSource<'_,'_>{fn drop(&mut self){self.signals.cancelled.store(true,Ordering::Release);self.rx.take();
  if self.trace_enabled {
-    eprintln!("ORIGINAL_BATCH_TIMING recv_calls={} recv_s={:.3}",self.receive.calls,self.receive.elapsed.as_secs_f64());
+    eprintln!("ORIGINAL_BATCH_TIMING recv_calls={} recv_s={:.3} recv_cpu_ns={:?} recv_cpu_samples={}",self.receive.calls,self.receive.elapsed.as_secs_f64(),self.receive.complete_cpu_ns(),self.receive.cpu_samples);
  }
 }}
 impl OriginalPreparedTokenSource for AsyncSource<'_,'_>{
