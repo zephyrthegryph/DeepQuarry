@@ -16,6 +16,7 @@
  */
 import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import {
+  memo,
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
@@ -65,6 +66,20 @@ export type GroupDrag = {
 export function outOfPage(x: number, y: number, w: number, h: number) {
   const d = POP_OUT_DISTANCE;
   return x < -d || y < -d || x > w + d || y > h + d;
+}
+
+/** Whether two drag states draw the same list (the boxes are measured once per drag). */
+export function sameDrag(a: GroupDrag | null, b: GroupDrag | null): boolean {
+  return (
+    !!a &&
+    !!b &&
+    a.group === b.group &&
+    a.window === b.window &&
+    a.dy === b.dy &&
+    a.to === b.to &&
+    a.join === b.join &&
+    a.float === b.float
+  );
 }
 
 /** The list index a page y falls at, against the entries' middles. */
@@ -154,6 +169,16 @@ function runDrag(
       // A whole entry floats only when another entry stays: the column is never empty.
       host.state.groups.length > 1;
   let live: GroupDrag | null = null;
+  // What the list was last told: it redraws only when the drag's derived state changed, and at most once a frame.
+  let shown: GroupDrag | null = null;
+  let frame = 0;
+  const publish = () => {
+    frame = 0;
+    if (live && !sameDrag(shown, live)) {
+      shown = live;
+      setDrag(live);
+    }
+  };
   const move = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
     const box = boxes.find((b) => b.id === group);
@@ -172,7 +197,7 @@ function runDrag(
       float,
       boxes,
     };
-    setDrag(live);
+    if (!frame) frame = requestAnimationFrame(publish);
   };
   const end = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
@@ -183,6 +208,8 @@ function runDrag(
       target.releasePointerCapture(pointer);
     }
     const done = live;
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
     setDrag(null);
     if (!done || e.type !== 'pointerup') {
       return;
@@ -284,13 +311,22 @@ function startResize(
   const body = target.parentElement?.getBoundingClientRect();
   const startHeight = body ? Math.round(body.height) : group.height;
   target.setPointerCapture(pointer);
-  const move = (e: PointerEvent) =>
-    host.dispatch({
-      type: 'resize',
-      group: group.id,
-      height: startHeight + e.clientY - startY,
-    });
+  // The whole column redraws on each resize: at most once a frame, and the last height is always applied.
+  let height = startHeight;
+  let frame = 0;
+  const apply = () => {
+    frame = 0;
+    host.dispatch({ type: 'resize', group: group.id, height });
+  };
+  const move = (e: PointerEvent) => {
+    height = startHeight + e.clientY - startY;
+    if (!frame) frame = requestAnimationFrame(apply);
+  };
   const end = () => {
+    if (frame) {
+      cancelAnimationFrame(frame);
+      apply();
+    }
     target.removeEventListener('pointermove', move);
     target.removeEventListener('pointerup', end);
     target.removeEventListener('pointercancel', end);
@@ -304,7 +340,10 @@ function startResize(
 }
 
 /** What one window shows. */
-function WindowBody(props: { host: ColumnHost; win: DockWindow }) {
+const WindowBody = memo(function WindowBody(props: {
+  host: ColumnHost;
+  win: DockWindow;
+}) {
   const { host, win } = props;
   let content: ReactNode = null;
   if (win.kind === 'pending') {
@@ -321,7 +360,7 @@ function WindowBody(props: { host: ColumnHost; win: DockWindow }) {
   return (
     <ReloadBoundary name={win.title || win.iface}>{content}</ReloadBoundary>
   );
-}
+});
 
 function ghostText(drag: GroupDrag | null, group: string) {
   if (drag?.join === group) {
@@ -333,27 +372,48 @@ function ghostText(drag: GroupDrag | null, group: string) {
   return null;
 }
 
-function Group(props: {
-  group: DockGroup;
-  index: number;
-  fill: boolean;
-  /** The height it is drawn at (fitHeights()): its own, or less on a column too short for every entry. */
-  height: number;
-  host: ColumnHost;
-  drag: GroupDrag | null;
-  setDrag: (drag: GroupDrag | null) => void;
-}) {
-  const { group, index, fill, height, host, drag, setDrag } = props;
+/** What a live drag means for one entry: plain values, so an entry the drag does not touch gets the same props and is not redrawn. */
+function dragView(drag: GroupDrag | null, group: string, index: number) {
+  return {
+    dragged: drag?.group === group && !drag.window,
+    floating: drag?.group === group && !drag.window && drag.float,
+    lit: drag?.join === group,
+    insert: !!drag?.window && !drag.float && !drag.join && drag.to === index,
+    offset: groupOffset(drag, group),
+    ghost: ghostText(drag, group),
+  };
+}
+
+const Group = memo(function Group(
+  props: {
+    group: DockGroup;
+    index: number;
+    fill: boolean;
+    /** The height it is drawn at (fitHeights()): its own, or less on a column too short for every entry. */
+    height: number;
+    host: ColumnHost;
+    /** The host's version: an entry redraws for a change of the column, not for a drag that does not touch it. */
+    version: number;
+    setDrag: (drag: GroupDrag | null) => void;
+  } & ReturnType<typeof dragView>,
+) {
+  const {
+    group,
+    fill,
+    height,
+    host,
+    setDrag,
+    dragged,
+    floating,
+    lit,
+    insert,
+    offset,
+    ghost,
+  } = props;
   const { windows } = host.state;
   const active = windows[group.active];
   const title = active?.title || active?.iface || '';
   const stacked = group.windows.length > 1;
-  const dragged = drag?.group === group.id && !drag.window;
-  const lit = drag?.join === group.id;
-  const insert =
-    !!drag?.window && !drag.float && !drag.join && drag.to === index;
-  const offset = groupOffset(drag, group.id);
-  const ghost = ghostText(drag, group.id);
   const foldable = host.mayCollapse(group);
   const collapsed = host.collapsed(group);
   const toggle = () => {
@@ -371,7 +431,7 @@ function Group(props: {
         collapsed && 'column-group--collapsed',
         fill && 'column-group--fill',
         dragged && 'column-group--dragged',
-        dragged && drag?.float && 'column-group--floating',
+        dragged && floating && 'column-group--floating',
         insert && 'column-group--insert',
       ]
         .filter(Boolean)
@@ -477,11 +537,11 @@ function Group(props: {
       )}
     </div>
   );
-}
+});
 
 export function Column() {
   const host = columnHost;
-  useSyncExternalStore(host.subscribe, host.getVersion);
+  const version = useSyncExternalStore(host.subscribe, host.getVersion);
   const [drag, setDrag] = useState<GroupDrag | null>(null);
   const { groups } = host.state;
   // The last expanded entry fills what the others leave.
@@ -510,8 +570,9 @@ export function Column() {
           fill={index === fillAt}
           height={heights[index]}
           host={host}
-          drag={drag}
+          version={version}
           setDrag={setDrag}
+          {...dragView(drag, group.id, index)}
         />
       ))}
       {insertEnd && <div className="column-insert-end" />}
