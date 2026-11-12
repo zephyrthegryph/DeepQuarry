@@ -26,9 +26,9 @@ use vg_core::registry::world_kind_domain;
 use vg_core::watch::{Cmp, Cond, Edge, SetEntry};
 use vg_core::world::ThresholdCrossing;
 
+use crate::arg::num;
 use crate::registry;
 use crate::sched::{channels, hub_unwatch};
-use crate::world::num;
 
 /// The subscriber every sense set is registered under. Its wakes are dropped before they reach the scheduler's lanes.
 pub(crate) const SENSE_HUB: Subscriber = MAX_SUBSCRIBER;
@@ -440,9 +440,9 @@ thread_local! {
 /// The reasons commands were refused since the last call (`key: reason; ...`), empty when none were.
 #[auxmacros::bind("/proc/sense_refused")]
 fn sense_refused() -> Result<ByondValue> {
-    Ok(ByondValue::new_str(
+    Ok(crate::held::Held::new_str(
         LAST_REFUSED.with_borrow_mut(std::mem::take),
-    )?)
+    )?.leak())
 }
 
 /// `list(live sets, live registrations)`.

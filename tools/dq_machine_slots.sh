@@ -177,7 +177,7 @@ _slots_refuse_light() { # class worktree: a light lane never compiles DM or runs
 }
 
 . "${BASH_SOURCE[0]%/*}/lib/dq_lock.sh"   # dq_proc_start / dq_owner_alive: the shared holder-liveness rule
-_slots_start() { dq_proc_start "$1"; echo "$DQ_START"; }
+_slots_start() { dq_proc_start "$1"; echo "$DQL_START"; }
 
 _slots_winpid() { local w; if [ -r "/proc/$1/winpid" ] && read -r w <"/proc/$1/winpid" && [ -n "$w" ]; then echo "$w"; else echo "$1"; fi; }
 

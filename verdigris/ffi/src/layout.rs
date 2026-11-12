@@ -35,7 +35,7 @@ fn generate_automata(
 #[auxmacros::bind("/proc/verdigris_generate_station_layout")]
 fn verdigris_generate_station_layout(payload: ByondValue) -> Result<ByondValue> {
     let response = station_layout::generate_catalog_plan(&payload.get_string()?)?;
-    Ok(ByondValue::new_str(response.into_bytes())?)
+    Ok(crate::held::Held::new_str(response.into_bytes())?.leak())
 }
 
 /// Starts a station-layout planning job and returns its id. Plans for
@@ -71,5 +71,5 @@ fn verdigris_station_layout_section(
             station_layout::plan_section(root, &section, offset, limit)
         })
         .ok_or_else(|| eyre::eyre!("station planning job is not ready"))??;
-    Ok(ByondValue::new_str(serde_json::to_vec(&response)?)?)
+    Ok(crate::held::Held::new_str(serde_json::to_vec(&response)?)?.leak())
 }

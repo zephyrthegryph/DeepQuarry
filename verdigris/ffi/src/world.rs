@@ -30,6 +30,7 @@
 
 use std::cell::RefCell;
 
+use crate::arg::{num, whole};
 use crate::held::{HeldList, HeldRead};
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
@@ -457,19 +458,6 @@ impl DomainRegistry for WorldKind {
 
 // --- Binds -------------------------------------------------------------------------
 
-pub(crate) fn num(v: &ByondValue) -> Result<f32> {
-    Ok(v.get_number()?)
-}
-
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-pub(crate) fn whole(v: &ByondValue, what: &str) -> Result<u32> {
-    let n = num(v)?;
-    if !(n >= 0.0 && n.fract() == 0.0 && n < 16_777_216.0) {
-        bail!("bad {what} {n}");
-    }
-    Ok(n as u32)
-}
-
 fn field(v: &ByondValue) -> Result<FieldId> {
     FieldId::try_from(whole(v, "field id")?).map_err(|_| eyre!("field id out of range"))
 }
@@ -810,19 +798,41 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
     let max_x = whole(&max_x, "max_x")?.max(1);
     let max_y = whole(&max_y, "max_y")?.max(1);
     let max_z = whole(&max_z, "max_z")?.max(1);
+    configure_dims(max_x, max_y, max_z)?;
+    Ok(ByondValue::null())
+}
+
+/// [`configure_world`]'s rules. The first real size builds the world; later calls are fine while they keep the plane
+/// size and stay inside the z capacity it was built with (`increment_max_z`, SSair's re-check). Anything else used to be
+/// a silent no-op that left gas handles or cells missing; it is an error now.
+fn configure_dims(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
+    crate::gas::mix::check_turf_cells(max_x, max_y, max_z)?;
     let dims = GridDims::new(max_x, max_y, z_capacity(max_z))
         .ok_or_else(|| eyre!("grid {max_x}x{max_y}x{max_z} does not fit a u32 index"))?;
-    let placeholder = WORLD.with_borrow(|w| {
-        w.as_ref().is_none_or(|w| {
-            w.grid()
-                .is_ok_and(|g| g.dims() == GridDims::new(2, 2, 2).expect("fits"))
-        })
+    let built = WORLD.with_borrow(|w| {
+        w.as_ref()
+            .and_then(|w| w.grid().ok().map(|g| g.dims()))
+            .filter(|d| *d != GridDims::new(2, 2, 2).expect("fits"))
     });
-    if placeholder {
-        PENDING_DIMS.with(|d| d.set(dims));
-        reset()?;
+    match built {
+        None => {
+            eprintln!(
+                "verdigris: world configured for {max_x}x{max_y}x{max_z} (z capacity {})",
+                dims.max_z()
+            );
+            PENDING_DIMS.with(|d| d.set(dims));
+            reset()
+        }
+        Some(have) if have.max_x() == max_x && have.max_y() == max_y && max_z <= have.max_z() => {
+            Ok(())
+        }
+        Some(have) => Err(eyre!(
+            "vg_configure_world({max_x}, {max_y}, {max_z}) after the world was built for {}x{}x{} (z capacity): the native tables are sized once per world",
+            have.max_x(),
+            have.max_y(),
+            have.max_z()
+        )),
     }
-    Ok(ByondValue::null())
 }
 
 /// Runs `steps` world steps now, each waiting for its worker frame
@@ -898,6 +908,21 @@ mod tests {
             Ok(())
         })
         .expect("a revived world (soft reboot) runs again");
+    }
+
+    #[test]
+    fn configure_refuses_a_map_without_gas_handles_and_a_changed_size() {
+        assert!(
+            configure_dims(4096, 4096, 2).is_err(),
+            "more turfs than gas handles"
+        );
+        reset().unwrap();
+        WORLD.with_borrow_mut(|w| *w = None);
+        configure_dims(20, 20, 3).unwrap();
+        configure_dims(20, 20, 4).expect("growing z inside the capacity is fine");
+        let e = configure_dims(30, 20, 3).unwrap_err().to_string();
+        assert!(e.contains("sized once"), "{e}");
+        assert!(configure_dims(20, 20, 100_000).is_err());
     }
 
     #[test]

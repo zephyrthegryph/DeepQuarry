@@ -36,12 +36,13 @@ use vg_core::thermo::{Regulator, RegulatorMode};
 use vg_heat::HeatBody;
 use vg_heat::components::gas_kind;
 
+use crate::arg::num;
 use crate::gas::mix::{self, MixRef};
 use crate::heat::{
     HEAT_TARGET_BODY, HEAT_TARGET_MIXTURE, HEAT_TARGET_NONE, HEAT_TARGET_PIPE_PORT,
     HEAT_TARGET_SOLID, HEAT_TARGET_TURF_AIR,
 };
-use crate::world::{list, num, with_world};
+use crate::world::{list, with_world};
 
 /// Outer space as a reservoir: the ref is its temperature in K.
 /// @dm-define HEAT_TARGET_SPACE

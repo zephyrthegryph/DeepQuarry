@@ -13,7 +13,8 @@ use byondapi::prelude::*;
 use eyre::{Result, eyre};
 use vg_core::adjacency::AdjacencyIndex;
 
-use crate::world::{list, whole};
+use crate::arg::whole;
+use crate::world::list;
 
 thread_local! {
     static INDEX: RefCell<AdjacencyIndex> = RefCell::new(AdjacencyIndex::new());

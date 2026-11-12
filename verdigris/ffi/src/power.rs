@@ -22,8 +22,9 @@ use vg_core::slot::RawHandle;
 use vg_power::kind::{Cables, PowerNode};
 use vg_power::{Cable, PowerLedger};
 
+use crate::arg::{num, whole};
 use crate::entity;
-use crate::world::{list, num, whole, with_world};
+use crate::world::{list, with_world};
 
 /// Node kinds in the graph (an opaque tag `NetworkHost` stores per node;
 /// power does not read it back, only DM's own bookkeeping might).

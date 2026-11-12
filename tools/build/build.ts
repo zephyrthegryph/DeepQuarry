@@ -129,7 +129,7 @@ const cargoWithIceRetry = (args: string[], options?: any): Promise<void> =>
 
 export const DME_NAME = 'deepquarry';
 
-/** DreamChecker inside `dm` runs only where its verdict is required: DQ_DREAMCHECKER=1 (merge gates, push), CI, or by request. */
+/** DreamChecker inside `dm` runs only where its verdict is required: DQ_DREAMCHECKER=1, CI, or by request. */
 function dreamCheckerWanted(): boolean {
   const explicit = process.env.DQ_DREAMCHECKER;
   if (explicit !== undefined && explicit !== '') return explicit !== '0';
@@ -933,7 +933,7 @@ export const AnalyzeBuildTarget = new Juke.Target({
 // lints DM runs this first. `analyze gen` rewrites only the files whose text changed (so an unchanged
 // tree keeps its mtimes and the .dmb caches hold) and caches its parse per file in data/analyze-cache:
 // about 3 s warm, 18 s cold. It fails on a generator diagnostic (a bad declaration) or a generated
-// file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist).
+// file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist); with no analyze binary the step fails unless DQ_ALLOW_STALE_GEN=1.
 // deepquarry.dme is generated (tools/build/gen_dme.py, from the .dm files on disk and the ordering spec tools/build/dme_spec.txt): every
 // target that compiles or lints DM writes it first, so adding, moving or deleting a file never needs a hand edit of the manifest.
 // The file stays committed (DreamMaker, DreamChecker and CI read it); `gen_dme.py --check` (tools/ci/check_ratchets.sh) fails when the
@@ -1001,11 +1001,19 @@ export const GenTarget = new Juke.Target({
       return;
     }
     if (!fs.existsSync(ANALYZE_BIN)) {
-      if (fs.existsSync('code/engine/_generated/declare.dm')) {
-        Juke.logger.warn(`gen: no analyze binary (${ANALYZE_BIN}); compiling the generated files already on disk, which may be stale`);
+      // The generated reads and declarations on disk may come from another branch: compiling them would build a world whose
+      // generated code disagrees with its source, and that shows up only as odd runtime behaviour. So this is an error unless
+      // the caller opts in by name.
+      const onDisk = fs.existsSync('code/engine/_generated/declare.dm');
+      if (onDisk && process.env.DQ_ALLOW_STALE_GEN === '1') {
+        Juke.logger.warn(`gen: no analyze binary (${ANALYZE_BIN}); DQ_ALLOW_STALE_GEN=1, compiling the generated files already on disk, which may be stale`);
         return;
       }
-      Juke.logger.error('gen: the generated DM is missing and the analyze engine cannot be built (install cargo, see verdigris/README.md)');
+      Juke.logger.error(
+        onDisk
+          ? `gen: no analyze binary (${ANALYZE_BIN}), so code/engine/_generated cannot be regenerated and the copy on disk may be stale. Install cargo (the analyze-build target builds it), or set DQ_ALLOW_STALE_GEN=1 to compile the files on disk anyway.`
+          : 'gen: the generated DM is missing and the analyze engine cannot be built (install cargo, see verdigris/README.md)',
+      );
       throw new Juke.ExitCode(1);
     }
     const started = Date.now();
@@ -1273,7 +1281,7 @@ export const DmTarget = new Juke.Target({
     // and the explicit lint target run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
     const checker = dreamCheckerWanted() ? findDreamChecker() : null;
     if (!dreamCheckerWanted()) {
-      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); the merge gates, CI and `build.sh lint` run it, or set DQ_DREAMCHECKER=1');
+      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); CI and `build.sh lint` run it, or set DQ_DREAMCHECKER=1');
     } else if (!checker) {
       Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }

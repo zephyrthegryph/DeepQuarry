@@ -169,7 +169,7 @@ PROC_SUMMARY(/datum/system/proc/ready) // a lazy system initializes once, on fir
 	return can_fire && initialized && periodic_runlevel_ok()
 
 /// Wakes the system's parked work item for `handler` (a PROC_REF): work that returned STEP_PARK for lack of anything to do
-/// runs again at the next pass. Cheap when the item is not parked.
+/// runs again at the next pass. Cheap when the item is not parked. A fault-parked item stays parked (work_item/reset_fault() revives it).
 /datum/system/proc/wake_work_item(handler)
 	var/datum/work_item/W = kernel().work_by_key["[type]:[handler]"]
 	if(W?.parked)

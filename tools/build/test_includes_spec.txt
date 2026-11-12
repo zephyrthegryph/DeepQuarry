@@ -1,0 +1,31 @@
+# The test tree's include lists (tools/build/gen_test_includes.py): every .dm under code/tests is included from _tests.dm or
+# _unit_tests.dm except what an `exclude` line names. Each rule says why.
+
+# included by deepquarry.dme itself, after the game (tools/build/dme_spec.txt `last` rules)
+exclude code/tests/engine/test_only_defs.dm
+exclude code/tests/unit_tests/_test_build_overrides.dm
+
+
+# benchmarks compile only into a benchmark build (tools/build/build.sh bench)
+guard benchmark if defined(BENCHMARK) || defined(SPACEMAN_DMM)
+in benchmark code/tests/benchmarks/**
+in benchmark code/tests/balance/balance_benchmark.dm
+
+# reference-tracking tests need REFERENCE_TRACKING_DEBUG; don't parse them otherwise
+guard reftrack ifdef REFERENCE_TRACKING_DEBUG
+in reftrack code/tests/unit_tests/find_reference_sanity.dm
+in reftrack code/tests/unit_tests/dq_alist_object_keys.dm
+in reftrack code/tests/unit_tests/dq_verdigris_return_refs.dm
+in reftrack code/tests/unit_tests/dq_fullscreen_no_client.dm
+
+# the test driver and recorder before the fixtures and tests that call them
+first code/tests/driver/**
+# files whose #defines later files use (gen_dme --check reports a macro used before its #define)
+before code/tests/engine/fixtures.dm code/tests/unit_tests/**
+before code/tests/engine/e1_fixtures.dm code/tests/unit_tests/**
+before code/tests/balance/_balance_harness.dm code/tests/balance/balance_scenarios.dm
+before code/tests/unit_tests/unit_test.dm code/tests/unit_tests/unit_test_guard.dm
+before code/tests/unit_tests/unit_test.dm code/tests/unit_tests/dq_sense_tests.dm
+before code/tests/unit_tests/unit_test_guard.dm code/tests/unit_tests/dq_air_guard_tests.dm
+before code/tests/unit_tests/dq_rel_perf_tests.dm code/tests/unit_tests/dq_rel_perf_alist_tests.dm
+before code/tests/unit_tests/dq_xform_pins.dm code/tests/unit_tests/dq_xform_*.dm

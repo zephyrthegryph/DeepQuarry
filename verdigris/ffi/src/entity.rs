@@ -109,9 +109,7 @@ pub fn resolve(entity_v: f32, domain: usize, kind: u16) -> Result<ComponentRef> 
     })
 }
 
-fn num(v: &ByondValue) -> Result<f32> {
-    Ok(v.get_number()?)
-}
+use crate::arg::num;
 
 /// Batched destroy's one unbind call (`doc/rewrite/init_and_turfs.md` §4.4):
 /// [`entity_unbind`] for every handle in `entities`, a list of `vg_entity`
@@ -171,7 +169,7 @@ fn entity_spawn() -> Result<ByondValue> {
 fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
     let v = num(&entity)?;
     if v == 0.0 {
-        return Ok(ByondValue::new_str("(unbound)")?);
+        return Ok(crate::held::Held::new_str("(unbound)")?.leak());
     }
     let id = decode(v)?;
     let slots = with_world(|w| w.entities().components(id).map_err(|e| eyre!("{e}")))?;
@@ -191,7 +189,7 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
             ));
         }
     }
-    Ok(ByondValue::new_str(parts.join("; "))?)
+    Ok(crate::held::Held::new_str(parts.join("; "))?.leak())
 }
 
 /// Per-frame maintenance for hosts not yet on the world's pacer (the world

@@ -1,66 +1,54 @@
-# /tg/station build script
+# DeepQuarry build script
 
-This build script is the recommended way to compile the game, including not only the DM code but also the JavaScript and any other dependencies.
+`tools/build/build.ts` (Juke Build, run by Bun) builds the game: the DM code, the generated DM (`analyze gen`), the manifest,
+icons, tgui, and the verdigris library. Steps whose inputs have not changed since the last run are skipped.
 
-- VSCode:
-  a) Press `Ctrl+Shift+B` to build.
-  b) Press `F5` to build and run with debugger attached.
-- Windows:
-  a) Double-click `BUILD.bat` in the repository root to build (will wait for a key press before it closes).
-  b) Double-click `tools/build/build.bat` to build (will exit as soon as it finishes building).
-- Linux:
-  a) Run `tools/build/build.sh` from the repository root.
+Enter through the wrappers, never `bun build.ts` directly: they pin `DQ_BUILD_ROOT` to their own checkout and turn off Bun's shared
+transpiler cache (`build.ts` refuses to run when its root differs from the invoking worktree's).
 
-The script will skip build steps whose inputs have not changed since the last run.
+- Windows: `bin\build.cmd` (and the other `bin\*.cmd` entry points), or `tools\build\build.bat <target>`.
+- Git Bash / Linux: `tools/build/build.sh <target>`.
+- VSCode: the tasks in `.vscode/tasks.json`.
 
-## Getting list of available targets
-
-You can get a list of all targets that you can build by running the following command:
-
-```
-tools/build/build.sh --help
-```
+`tools/build/build.sh --help` lists the targets. The usual ones and what they do are in `doc/testing.md` (quick reference) and
+`AGENTS.md` section 4.
 
 ## Dependencies
 
-- On Windows, `build.bat` will automatically install a private (vendored) copy of Node.
-- On Linux, install Node using your package manager or from <https://nodejs.org/en/download/>.
-- On Linux, unless using tgs4 or later you will need to compile rust-g on the server and obtain a .so file, for instructions see https://github.com/tgstation/rust-g
+The versions are pinned in `dependencies.sh`.
 
-## Why?
+- BYOND 516.1682 or later (`dependencies.sh`: earlier versions crash at atmos init).
+- Bun: `tools/bootstrap/javascript.sh` / `.bat` install the pinned version privately on first use.
+- Rust (`cargo`): the analyzer (`tools/analyze`), the native DM compiler (`tools/dmb`) and verdigris (`verdigris/`, with the i686
+  targets from `verdigris/rust-toolchain.toml`). Without cargo, a build that needs regenerated DM fails (see below), and
+  verdigris is skipped with a warning (atmospherics and cave generation then fail at runtime).
+- Python 3: `tools/build/gen_dme.py` and the icon repack.
+- git.
 
-We used to include compiled versions of the tgui JavaScript code in the Git repository so that the project could be compiled using BYOND only. These pre-compiled files tended to have merge conflicts for no good reason. Using a build script lets us avoid this problem, while keeping builds convenient for people who are not modifying tgui.
+## Generated DM
 
-This build script is based on [Juke Build](https://github.com/stylemistake/juke-build) - follow the link to read the documentation for the project and understand how it works and how to contribute.
+`deepquarry.dme` and the test tree's include lists (`code/tests/_tests.dm`, `code/tests/unit_tests/_unit_tests.dm`) are generated
+from the files on disk (`gen_dme.py`, `gen_test_includes.py`) and committed. `code/engine/_generated/`, `code/_generated/reads.dm` and
+the tgui interface types are written by `analyze gen` and gitignored. With no analyze binary the gen step fails rather than compile
+generated files that may come from another branch; `DQ_ALLOW_STALE_GEN=1` compiles the copy on disk anyway, `DQ_SKIP_GEN=1` skips the
+step.
 
-## Named byond versions
+## Named BYOND versions
 
-If you have byond installations in non-standard locations or want to use few versions at once for testing you can fill in `dm_versions.json` file in this directory.
-Entries with "default" set to true will be used BEFORE byond installations in standard locations. Otherwise you need to pass `--dm-version={name}` to the build script to choose version you want to use.
-Example dm_versions.json file:
-```
+To use a BYOND installation outside the standard locations, list it in `tools/build/dm_versions.json` (read by `lib/byond.ts`).
+An entry with `"default": true` is used before the standard locations; otherwise pass `--dm-version=<name>`:
+
+```json
 [
-  {
-    "name": "515.1594",
-    "path": "C:\\Repo\\ByondVersions\\515.1594_byond\\byond\\bin\\dm.exe",
-    "default": false
-  },
-  {
-    "name": "funny_version",
-    "path": "D:\\Repo\\ByondVersions\\514.1589_byond\\byond\\bin\\dm.exe",
-    "default": true
-  }
+  { "name": "516.1682", "path": "D:\\byond\\516.1682\\bin\\dm.exe", "default": true }
 ]
 ```
 
 ## DEBUG is off in production builds
 
-`deepquarry.dme` no longer defines `DEBUG`. The production `dm` target (and
-`build`/`server`) compiles without it: runtimes lose their file and line
-numbers, and the world loads ~56 MB smaller (doc/rewrite/init_and_turfs.md
-§0.5). The custom runtime handler in `code/modules/error_handler/` stays on;
-without file and line it dedupes on the error text and proc name.
+`deepquarry.dme` does not define `DEBUG`. The production `dm` target (and `build`/`server`) compiles without it: runtimes lose their
+file and line numbers, and the world loads about 56 MB smaller (doc/rewrite/init_and_turfs.md section 0.5). The custom runtime handler
+in `code/content/error_handler/` stays on; without file and line it dedupes on the error text and proc name.
 
-Test, bench and autowiki builds add `DEBUG` themselves (`TEST_DEFINES` in
-`build.ts`), so test runtimes keep their line numbers. For a local debug
-build of the main .dmb, pass it explicitly: `tools/build/build.sh -DDEBUG`.
+Test, bench and autowiki builds add `DEBUG` themselves (`TEST_DEFINES` in `build.ts`), so test runtimes keep their line numbers. For a
+local debug build of the main .dmb, pass it explicitly: `tools/build/build.sh -DDEBUG`.

@@ -46,6 +46,23 @@ pub const PIPE_BASE: u32 = 2_097_152;
 pub const TURF_BASE: u32 = 4_194_304;
 /// Every handle is below this (exact as an `f32`).
 const ID_LIMIT: u32 = 1 << 24;
+/// Turf cells a gas handle can name (`TURF_BASE + cell < ID_LIMIT`).
+pub const TURF_CELL_LIMIT: u32 = ID_LIMIT - TURF_BASE;
+
+/// Whether a map of `max_x` by `max_y` by `max_z` turfs has a gas handle for every turf cell.
+///
+/// # Errors
+/// Naming the highest z-level the plane size can address.
+pub fn check_turf_cells(max_x: u32, max_y: u32, max_z: u32) -> eyre::Result<()> {
+    let layer = u64::from(max_x) * u64::from(max_y);
+    if layer * u64::from(max_z) > u64::from(TURF_CELL_LIMIT) {
+        eyre::bail!(
+            "a {max_x}x{max_y}x{max_z} map has more turfs than gas mixture handles ({TURF_CELL_LIMIT}): at this plane size only {} z-levels fit",
+            u64::from(TURF_CELL_LIMIT) / layer.max(1)
+        );
+    }
+    Ok(())
+}
 
 /// What a gas handle names.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -389,7 +406,9 @@ pub fn add_entry(port: u8, id: WatchId, entry: vg_core::watch::SetEntry) -> Resu
 /// Removes an entry of a set watch.
 pub fn remove_entry(port: u8, id: WatchId, payload: u32) {
     if port == 0 {
-        let _ = crate::world::with_world_reported(|w| Ok(w.remove_field_watch_entry::<TurfGas>(id, payload)));
+        let _ = crate::world::with_world_reported(|w| {
+            Ok(w.remove_field_watch_entry::<TurfGas>(id, payload))
+        });
         return;
     }
     with_mixes(|m| {
@@ -962,7 +981,9 @@ fn evaluate(m: &mut Mixes) -> Vec<Wake> {
 /// Removes a watch [`watch`] returned.
 pub fn unwatch(port: u8, id: WatchId) {
     if port == 0 {
-        let _ = crate::world::with_world_reported(|w| w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}")));
+        let _ = crate::world::with_world_reported(|w| {
+            w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}"))
+        });
         return;
     }
     with_mixes(|m| {

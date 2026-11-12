@@ -35,8 +35,9 @@ use vg_heat::{
     BodyCoupling, GasCoupling, HeatBody, MobHeat, Regulator, SolidCell, SolidCoupling, SolidHeat,
 };
 
+use crate::arg::num;
 use crate::entity;
-use crate::world::{list, num, with_world};
+use crate::world::{list, with_world};
 
 thread_local! {
     static FIELD: Cell<Option<FieldKey<SolidHeat>>> = const { Cell::new(None) };
@@ -1495,7 +1496,9 @@ impl vg_core::registry::DomainRegistry for HeatCells {
     }
 
     fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
-        let _ = crate::world::with_world_reported(|w| Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload)));
+        let _ = crate::world::with_world_reported(|w| {
+            Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload))
+        });
     }
 
     /// Cell watch wakes, the source the cell's ref (low 24 bits).
@@ -1583,7 +1586,7 @@ fn take_release_notes() -> Result<ByondValue> {
     if notes.is_empty() {
         return Ok(ByondValue::null());
     }
-    Ok(ByondValue::new_str(notes.join("; "))?)
+    Ok(crate::held::Held::new_str(notes.join("; "))?.leak())
 }
 
 /// A turf's gas temperature, heat capacity and whether it is a reservoir, if it has gas.

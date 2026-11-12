@@ -259,22 +259,22 @@ pub fn panel_json(prefixes: &str) -> String {
 /// allocator tag and `alloc.heap.*` for the whole Rust heap.
 #[auxmacros::bind("/proc/verdigris_metrics")]
 fn verdigris_metrics() -> Result<ByondValue> {
-    Ok(ByondValue::new_str(snapshot_json())?)
+    Ok(crate::held::Held::new_str(snapshot_json())?.leak())
 }
 
 /// The MC Health panel's read: the families named in `prefixes` (comma-separated), with the sampled gauges refreshed first.
 #[auxmacros::bind("/proc/verdigris_metrics_panel")]
 fn verdigris_metrics_panel(prefixes: ByondValue) -> Result<ByondValue> {
-    Ok(ByondValue::new_str(panel_json(&prefixes.get_string()?))?)
+    Ok(crate::held::Held::new_str(panel_json(&prefixes.get_string()?))?.leak())
 }
 
 /// The metrics whose names start with `prefix`, as one JSON object, without refreshing the sampled gauges: a cheap read of one family
 /// (the slow-frame report reads `frame.` on every slow frame, when a full snapshot would stall the tick it reports on).
 #[auxmacros::bind("/proc/verdigris_metrics_prefixed")]
 fn verdigris_metrics_prefixed(prefix: ByondValue) -> Result<ByondValue> {
-    Ok(ByondValue::new_str(
+    Ok(crate::held::Held::new_str(
         registry().to_json_prefixed(&prefix.get_string()?),
-    )?)
+    )?.leak())
 }
 
 #[cfg(test)]
