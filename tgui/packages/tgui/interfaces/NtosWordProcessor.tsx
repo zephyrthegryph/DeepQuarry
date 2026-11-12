@@ -96,9 +96,8 @@ export const NtosWordProcessor = (props) => {
                 </Button>
               </Box>
               <Section mt={1}>
-                {/** biome-ignore lint/security/noDangerouslySetInnerHtml: is only ever passed data that has passed through pencode2html
-                 * It should be safe enough to support pencode in this way.*/}
                 <div
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: only pencode2html output reaches it, so pencode is safe enough here
                   dangerouslySetInnerHTML={{
                     __html: sanitizeText(filedata ?? ''),
                   }}
