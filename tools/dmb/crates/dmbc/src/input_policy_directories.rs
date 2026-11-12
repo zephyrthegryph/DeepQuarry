@@ -446,7 +446,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         files: impl Iterator<Item = &'a Path>,
         directories: impl Iterator<Item = &'b PathBuf>,
     ) -> io::Result<InputSnapshot> {
-        self.policy_workspace_closure_using(files, directories, None, None, None, false, |_, _| Ok(false), |facts, _| Ok(facts))
+        self.policy_workspace_closure_using(files, directories, None, None, None, false, |_, _, _| Ok(false), |facts, _| Ok(facts))
     }
 
     pub(crate) fn policy_workspace_joined_files<'a>(
@@ -473,7 +473,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         donor: Option<&super::DerivedPreflight>,
         local_limit: Option<usize>,
     ) -> io::Result<InputSnapshot> {
-        self.policy_workspace_joined_files_finish(files, discovery, donor, local_limit, false, |_, _| Ok(false), |facts, _| Ok(facts))
+        self.policy_workspace_joined_files_finish(files, discovery, donor, local_limit, false, |_, _, _| Ok(false), |facts, _| Ok(facts))
     }
 
     pub(crate) fn policy_workspace_joined_files_hashed(
@@ -485,6 +485,22 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         revision: u128,
         configuration: &Path,
         auxiliary: impl Fn(&Path, &FileInput) -> io::Result<bool>,
+    ) -> io::Result<(InputSnapshot, u128)> {
+        self.policy_workspace_joined_files_hashed_current(
+            selected, discovery, donor, local_limit, revision, configuration,
+            |path, fact, _| auxiliary(path, fact),
+        )
+    }
+
+    pub(crate) fn policy_workspace_joined_files_hashed_current(
+        &self,
+        selected: &[(&Path, usize)],
+        discovery: &crate::runner_host::workspace_discovery::DiscoveryReceipt,
+        donor: &super::DerivedPreflight,
+        local_limit: usize,
+        revision: u128,
+        configuration: &Path,
+        auxiliary: impl Fn(&Path, &FileInput, &InputSnapshot) -> io::Result<bool>,
     ) -> io::Result<(InputSnapshot, u128)> {
         self.policy_workspace_joined_files_finish(
             selected.iter().map(|&(path, _)| path), discovery, Some(donor), Some(local_limit), true, auxiliary,
@@ -505,7 +521,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         donor: Option<&super::DerivedPreflight>,
         local_limit: Option<usize>,
         selected_key_may_differ: bool,
-        auxiliary: impl Fn(&Path, &FileInput) -> io::Result<bool>,
+        auxiliary: impl Fn(&Path, &FileInput, &InputSnapshot) -> io::Result<bool>,
         finish: impl FnOnce(InputSnapshot, &InputSnapshot) -> io::Result<T>,
     ) -> io::Result<T> {
         discovery.validate_recording(self)?;
@@ -526,7 +542,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         donor: Option<&super::DerivedPreflight>,
         mut local_limit: Option<usize>,
         selected_key_may_differ: bool,
-        auxiliary: impl Fn(&Path, &FileInput) -> io::Result<bool>,
+        auxiliary: impl Fn(&Path, &FileInput, &InputSnapshot) -> io::Result<bool>,
         finish: impl FnOnce(InputSnapshot, &InputSnapshot) -> io::Result<T>,
     ) -> io::Result<T> {
         let current = self
@@ -560,10 +576,17 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                     if (!selected_key_may_differ && actual.as_os_str() != path.as_os_str())
                         || file.path.as_os_str() != actual.as_os_str()
                         || &file.stamp != stamp || file.content != content {
-                        return Err(invalid("workspace file donor differs from the recorded selected fact"));
+                        return Err(invalid(&format!(
+                            "workspace file donor differs from the recorded selected fact: selected={path:?}, donor={actual:?}, recorded={:?}, selected_label_differs={}, recorded_label_differs={}, stamp_differs={}, content_differs={}, selected_key_may_differ={selected_key_may_differ}",
+                            file.path,
+                            actual.as_os_str() != path.as_os_str(),
+                            file.path.as_os_str() != actual.as_os_str(),
+                            &file.stamp != stamp,
+                            file.content != content,
+                        )));
                     }
                     borrowed = borrowed.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
-                } else if !auxiliary(path, file)? {
+                } else if !auxiliary(path, file, &current)? {
                     charge_local(path.as_os_str().len().max(file.path.capacity()))?;
                     result.files.insert(path.to_path_buf(), file.clone());
                 }

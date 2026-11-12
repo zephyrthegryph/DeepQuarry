@@ -3820,3 +3820,42 @@ machine, not a controlled performance result. The published compiler, default
 routes, memory limits and baselines remain unchanged. Complete independent
 Checker parity, production cutover and the combined performance targets remain
 unproven.
+
+### Receipt-backed facts and selected-label parity
+
+The later real checkout authenticated 6,752 native primary facts directly from
+its issued source receipts. The workspace retained each borrowed-fact obligation
+and rechecked it against the complete ordinary snapshot and the same live source
+mapping. Missing ordinary rows, changed facts or expired mappings are refused.
+No path-similarity exemption or additional source authority was introduced.
+The checkout completed workspace capture, closure, staging and freshness. Final
+capture metadata was 2,112,181 bytes, with 848,803 bytes of recorder growth, within
+the existing 4,662,786-byte grant.
+
+The public CI control independently compiled 256 additional source files and
+required at least 256 actual receipt-backed loans. Its sealed reports, standalone
+legacy Analyze report, installed native pair and independent DMB/RSC bytes matched.
+The Raw control also passed across edits after sealing its selected labels through
+the existing selected/current serializer. Recorded paths, stamps, content digests
+and donor-selection coverage remain strict. A map reached the raw reader after
+checking its actual non-text role before attempting a text alias acquisition.
+
+The separate Handler subject keeps its distinct partial-source semantics. Its
+adjacent private preparation/capture path now validates provenance, performs final
+physical freshness validation, then publishes the binding and capture. Public split
+callers still revalidate their gap. Joined Checker capture also polls cancellation
+between source requests and around capture/snapshot stages. These changes add no
+second parser, model cache or permanent freshness flag.
+
+The real checkout subsequently reached Checker body rank 316 and refused the
+for-list call in typecacheof. The loop header now reuses the already completed
+Original expression proof for direct ordinary callees. The unmodified typecacheof
+and subtypesof implementations produced a clean report and native pair. Private
+issued-body controls typecheck, but their new cases have not been run in the large
+host unit-test executable.
+
+The affected Raw test, 256-file CI control and both CI/CBT comparison controls all
+passed after these repairs. The next whole-checkout run expired after 307.67 seconds
+during frontend completion on the shared machine, before reaching the repaired
+body. It emitted no report or native pair. This does not establish whole-checkout
+parity, a working default cutover or the combined performance targets.

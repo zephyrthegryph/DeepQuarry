@@ -549,12 +549,58 @@ pub(crate) fn visit_raw_source_backing(lease:&dm_preprocess::SourceAcquisitionLe
 /// Receipt comparison only; no public source constructor or new source grant.
 pub(super) fn recorded_root_lease_matches(lease:&dm_preprocess::SourceAcquisitionLease,issuer:&Arc<()>,path:&Path,exact:bool)->bool{lease.receipt::<RecordedSourceReceipt>().is_some_and(|receipt|Arc::ptr_eq(&receipt.issuer,issuer)&&receipt.path().as_path()==path&&(!exact||receipt.exact_open))}
 
+/// Borrow the actual private exact-open acquisition receipt against an
+/// already admitted/current snapshot. No source bytes, path or FileInput are
+/// synthesized. In particular an ordinary positive row must remain present;
+/// readable Original open/payload observations alone do not substitute for it.
+pub(crate) fn recorded_original_source_fact_in<'a>(
+    mapping: &'a dm_tree::frontend::SourceExportMapping, occurrence: usize, current: &InputSnapshot,
+) -> io::Result<&'a FileInput> {
+    if mapping.initial_environment() != dm_preprocess::InitialEnvironment::OriginalChecker0290 {
+        return Err(invalid("native primary fact requires actual Original mapping"));
+    }
+    let lease = mapping.source_acquisition(occurrence)
+        .ok_or_else(|| invalid("native primary fact acquisition is absent"))?;
+    let receipt = lease.receipt::<RecordedSourceReceipt>()
+        .filter(|receipt| receipt.exact_open && receipt.legacy_path.is_none())
+        .ok_or_else(|| invalid("native primary fact has no actual exact-open receipt"))?;
+    let fact = &receipt.fact;
+    if !RecordingInputs::<FileSystemInputs>::exact_receipt_matches(current, fact.path.as_path(), receipt)
+        || current.files.get(&fact.path).is_none_or(|recorded|
+            recorded.path.as_os_str() != fact.path.as_os_str() || recorded != fact)
+    {
+        return Err(invalid("native primary ordinary fact differs from its actual receipt"));
+    }
+    Ok(fact)
+}
+
 impl<P:SnapshotProvider> RecordingInputs<P>{
  /// A mapping loan authenticates the exact Original acquisition independently
  /// of the unrelated native PreparedSource cache. This returns observation DATA,
  /// never a prepared/compiler input or a current-source/semantic grant.
+ /// The joined closure holds this recorder's snapshot lock already. Use
+ /// that loan directly, preserving exact issuer/receipt/path and ordinary-row
+ /// checks without attempting a recursive snapshot lock.
+ pub(crate) fn mapped_original_source_fact_in<'a>(
+    &self, mapping: &'a dm_tree::frontend::SourceExportMapping, occurrence: usize,
+    path: &Path, current: &InputSnapshot,
+ ) -> io::Result<&'a FileInput> {
+    let fact = recorded_original_source_fact_in(mapping, occurrence, current)?;
+    let receipt = mapping.source_acquisition(occurrence)
+        .and_then(|lease| lease.receipt::<RecordedSourceReceipt>())
+        .ok_or_else(|| invalid("native primary fact receipt is absent"))?;
+    if !Arc::ptr_eq(&receipt.issuer, &self.source_issuer)
+        || fact.path.as_os_str() != path.as_os_str()
+    {
+        return Err(invalid("native primary fact belongs to another recorder or path"));
+    }
+    Ok(fact)
+ }
  pub(crate) fn mapped_recorded_source_fact<'a>(&self,mapping:&'a dm_tree::frontend::SourceExportMapping,occurrence:usize,path:&Path)->io::Result<&'a FileInput>{
-  let lease=mapping.source_acquisition(occurrence).ok_or_else(||invalid("mapped original acquisition absent"))?;
+  let lease=mapping.source_acquisition(occurrence).ok_or_else(||{
+    let indexed=mapping.source_acquisitions().nth(occurrence).map(|(path,_)|path);
+    invalid(&format!("mapped original acquisition absent: occurrence={occurrence} requested={} indexed={indexed:?} slots={}",path.display(),mapping.source_acquisitions().count()))
+  })?;
   let receipt=lease.receipt::<RecordedSourceReceipt>().ok_or_else(||invalid("mapped original has no actual recorder receipt"))?;
   let valid=if receipt.exact_open{mapping.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&self.validate_recorded_source_lease(path,lease)}else{self.validate_source_lease(path,lease)};
   if !valid{return Err(invalid("mapped original belongs to another recorder/open/payload observation"))}Ok(&receipt.fact)

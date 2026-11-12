@@ -351,6 +351,7 @@ pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
 #[path = "input_source_acquisition.rs"]
 mod source_acquisition;
+pub(crate) use source_acquisition::recorded_original_source_fact_in;
 #[path = "input_source_original.rs"]
 mod source_original;
 pub(crate) use source_acquisition::{exact_open_receipt_charge, recorded_source_receipt_storage};

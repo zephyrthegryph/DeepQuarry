@@ -80,6 +80,9 @@ impl LibraryTransport<'_>{
   self.run_program(Path::new(env!("CARGO_BIN_EXE_dmbc")),args,timeout)
  }
  fn run_program(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration)->std::io::Result<std::process::Output>{
+  self.run_program_with_trace(program,args,timeout,false)
+ }
+ fn run_program_with_trace(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration,trace_original:bool)->std::io::Result<std::process::Output>{
   use std::{fs::File,io,process::{Command,Stdio},time::Instant};
   let stdout=self.root.join("transport.stdout");let stderr=self.root.join("transport.stderr");
   let mut command=Command::new(program);
@@ -88,6 +91,7 @@ impl LibraryTransport<'_>{
    .env("DMB_DAEMON_AUTOSTART","1").env("DMB_FORWARDED","1")
    .env("DMB_DAEMON_IDLE_EXIT_SECS","120").env("RAYON_NUM_THREADS","1")
    .env_remove("DMB_UNIFIED_ANALYSIS").env_remove("DQ_ALLOW_USAGE");
+  if trace_original { command.env("DMB_ORIGINAL_TRACE_STAGES","1"); }
   #[cfg(windows)]{use std::os::windows::process::CommandExt;command.creation_flags(0x0800_0000|0x0000_4000);}
   let mut child=command.spawn()?;
   let start=Instant::now();
@@ -1895,7 +1899,22 @@ fn public_full_registry_ci_cbt_compound_keeps_original_defines_empty() {
     exercise_public_full_registry_compound(true, true);
 }
 
+#[cfg(windows)]
+#[test]
+#[ignore = "private dmbc transport and independent legacy Analyze; authenticated native primary fact loans"]
+fn public_full_registry_native_primary_fact_loans_preserve_exact_report_and_pair() {
+    // Runtime coverage of real Native primary fact loans and their retained
+    // freshness obligation; the private small-limit unit proves the old OOM.
+    // This is not a memory benchmark or a claimed fixed four-MiB public limit.
+    const COMPILED_FILES: usize = 256;
+    exercise_public_full_registry_compound_with_native_primary_files(true, false, COMPILED_FILES);
+}
+
 fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
+    exercise_public_full_registry_compound_with_native_primary_files(ci, cbt, 0);
+}
+
+fn exercise_public_full_registry_compound_with_native_primary_files(ci: bool, cbt: bool, native_primary_files: usize) {
     use dmbc::publish::OutputPair;
     use dq_analyze::selected_exclusions_wire::{Frame, Hex128, Seal};
     use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
@@ -1973,6 +1992,20 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
         ("SpacemanDMM.toml", ""),
     ] { put(&root, path, source); }
     put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    if native_primary_files != 0 {
+        assert!(ci && !cbt, "this cause-specific control is one staged Full CI request");
+        let mut dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap();
+        for index in 0..native_primary_files {
+            let relative = format!("code/sourcecopy_limit/copy_{index:04}.dm");
+            // Each tiny file is independently compiled AND selected by actual
+            // CODE discovery. One file with many types cannot exercise this
+            // per-file closure-copy boundary. There are no bodies to inflate
+            // checker work and no resource-limit override or test admission.
+            put(&root, &relative, format!("/datum/sourcecopy_limit/type_{index:04}\n"));
+            dme.push_str(&format!("#include \"{relative}\"\n"));
+        }
+        put(&root, "deepquarry.dme", dme);
+    }
     let baseline = "tools/ci/library_layering_baseline.txt";
     if ci {
         put(&root, "code/library/current.dm", "/proc/local()\n    downstream()\n");
@@ -2008,6 +2041,12 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
     // Exercise the real Windows ordinary/verbatim spelling boundary while
     // keeping the native compiler's non-text include independently typed.
     let policy_root = dm_preprocess::regions::filesystem_comparison_key(&root);
+    #[cfg(windows)]
+    if native_primary_files != 0 {
+        let canonical = std::fs::canonicalize(&root).unwrap();
+        assert_ne!(canonical.as_os_str(), policy_root.as_os_str(),
+            "the public regression must exercise real verbatim/ordinary root spellings");
+    }
     let workspace = intent.workspace.as_mut().unwrap();
     workspace.root = policy_root.clone();
     workspace.configuration = policy_root.join("tools/ci/lint_scopes.toml");
@@ -2024,8 +2063,9 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
         if compact { request["checker_execution"] = serde_json::json!("compact"); }
         if cbt { request["strict_profile"] = serde_json::json!("cbt"); }
         put(&transport, "full-compound.json", serde_json::to_vec(&request).unwrap());
-        daemon.run(&[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(),
-            OsStr::new("--report-batch")], Duration::from_secs(90)).unwrap()
+        daemon.run_program_with_trace(Path::new(env!("CARGO_BIN_EXE_dmbc")),
+            &[OsStr::new("compile-checker-analyze-selected"), request_path.as_os_str(),
+            OsStr::new("--report-batch")], Duration::from_secs(90), native_primary_files != 0).unwrap()
     };
     let run = |name, exclusions| run_mode(name, exclusions, !ci);
     let bad = run("compound-full-excluded", &["-sem/handlers"]);
@@ -2131,6 +2171,18 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
 
     let (first, first_checker, first_analyze) =
         inspect("compound-full-cold", run("compound-full-cold", &[]), "before_edit");
+    if native_primary_files != 0 {
+        let lifecycle=std::fs::read_to_string(transport.join("daemon/lifecycle.log")).unwrap();
+        let borrowed=lifecycle.lines().filter_map(|line|line.strip_prefix("ORIGINAL_WORKSPACE_NATIVE_PRIMARY_FACTS_BORROWED count="))
+            .filter_map(|count|count.parse::<usize>().ok()).max().unwrap_or(0);
+        assert!(borrowed>=native_primary_files,"actual successful closure must authenticate the compiled cohort's primary fact loans: {lifecycle}");
+        // The inspection above includes the independent legacy full report,
+        // both sealed report payloads, and byte-identical independent native
+        // DMB/RSC plus installed pair. Do not multiply this per-file boundary
+        // case by the unrelated edit, CI, CBT and strict-refusal subcases.
+        assert!(!root.join("deepquarry.dmb").exists());
+        return;
+    }
     if !ci {
         let absolute = run_mode("compound-full-absolute", &[], false);
         assert_eq!(absolute.status.code(), Some(1), "{}", String::from_utf8_lossy(&absolute.stderr));

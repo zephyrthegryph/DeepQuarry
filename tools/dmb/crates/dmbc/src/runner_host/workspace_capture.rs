@@ -25,6 +25,9 @@ pub(crate) use alias_index::AliasIndex as WorkspaceAliasIndex;
 // The capture's exact immutable mapping owns these acquisition slots.
 struct Native {
     occurrence: usize,
+    // Set only by actual under-lock receipt comparison during construction.
+    // This field never changes after the capture Arc is published.
+    borrowed_primary: std::sync::atomic::AtomicBool,
 }
 enum Original {
     Native(Native),
@@ -471,13 +474,28 @@ impl WorkspaceCapture {
                         && generated.is_subset(all_generated);
                 });
         });
-        same && self.shared_derived.as_ref().is_none_or(|donor| donor.workspace_files_in(complete))
+        same && self.borrowed_native_primary_facts_in(complete)
+            && self.shared_derived.as_ref().is_none_or(|donor| donor.workspace_files_in(complete))
             && self.raw_spool.as_ref().is_none_or(|spool| spool.facts_in(complete))
             && self.paired_dmm.as_ref().is_none_or(|owner| owner.facts().facts_in(complete))
             && self.facts.original_observations_subset_of(complete) && self
             .policy_directories()
             .iter()
             .all(|(p, f)| complete.policy_directories().get(p) == Some(f))
+    }
+
+    fn borrowed_native_primary_facts_in(&self, complete: &InputSnapshot) -> bool {
+        let mut mapping = None;
+        for file in &self.files {
+            let Original::Native(native) = &file.original else { continue; };
+            if !native.borrowed_primary.load(std::sync::atomic::Ordering::Relaxed) { continue; }
+            if mapping.is_none() { mapping = self.source.upgrade(); }
+            let Some(mapping) = &mapping else { return false; };
+            if crate::input_snapshot::recorded_original_source_fact_in(
+                mapping, native.occurrence, complete,
+            ).is_err() { return false; }
+        }
+        true
     }
 
     pub(crate) fn covers_extended_reactive_raw_domains(
@@ -1683,20 +1701,42 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
     drop(map_facts);
     selected.extend(standalone_map_paths.iter().map(PathBuf::as_path));
     let canonical_configuration = canonical_path(configuration);
+    #[cfg(debug_assertions)]
+    let native_primary_borrowed = std::cell::Cell::new(0usize);
     let (facts, policy_revision) = if staged {
         if !map_directories.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined workspace has directories outside actual discovery"));
         }
-        inputs.policy_workspace_joined_files_hashed(
+        inputs.policy_workspace_joined_files_hashed_current(
             &compact_selected, &discovery, shared_derived.as_deref()
                 .ok_or_else(|| io::Error::other("staged workspace has no actual Derived donor"))?,
             capture_limit.checked_sub(used).ok_or(io::ErrorKind::OutOfMemory)?,
             frontend.revision, &canonical_configuration,
-            |path, fact| {
+            |path, fact, current| {
                 let index = compact_selected.binary_search_by(|(selected, _)| selected.cmp(&path))
                     .map_err(|_| io::Error::other("raw workspace selected key disappeared"))?;
                 let insertion = compact_selected[index].1;
-                let Some(file) = files.get(insertion / 2).filter(|_| insertion % 2 == 0) else { return Ok(false); };
+                let Some(file) = files.get(insertion / 2) else { return Ok(false); };
+                if let Original::Native(native) = &file.original {
+                    let primary = frontend.plan.occurrences().get(native.occurrence)
+                        .ok_or_else(|| io::Error::other("native primary occurrence disappeared"))?;
+                    if primary.path.as_os_str() == path.as_os_str() {
+                        let issued = inputs.mapped_original_source_fact_in(
+                            mapping, native.occurrence, path, current,
+                        )?;
+                        if issued.path.as_os_str() != fact.path.as_os_str() || issued != fact {
+                            return Err(io::Error::other("native primary closure differs from its actual receipt"));
+                        }
+                        #[cfg(debug_assertions)]
+                        if !native.borrowed_primary.load(std::sync::atomic::Ordering::Relaxed) {
+                            native_primary_borrowed.set(native_primary_borrowed.get().checked_add(1)
+                                .ok_or(io::ErrorKind::OutOfMemory)?);
+                        }
+                        native.borrowed_primary.store(true, std::sync::atomic::Ordering::Relaxed);
+                        return Ok(true);
+                    }
+                }
+                if insertion % 2 != 0 { return Ok(false); }
                 match (&file.path, &file.original) {
                     (FilePath::Discovered(discovered), Original::Spool(ordinal))
                         if discovered == ordinal && file.path(&discovery).as_path() == path
@@ -1717,26 +1757,49 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
                 }
             },
         )?
+    } else if let Some(donor) = &shared_derived {
+        if !map_directories.is_empty() {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined workspace has directories outside actual discovery"));
+        }
+        // The ordinary Full Registry keeps the selected BTreeSet spelling.
+        // Hash the same selected keys and actual recorded values under the
+        // existing snapshot lock, rather than substituting the donor's label.
+        // Prepay the reference vector while the source set is still live.
+        let count = selected.len();
+        let bytes = count.checked_mul(std::mem::size_of::<(&Path, usize)>())
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        used = used.checked_add(bytes).filter(|&n| n <= capture_limit)
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        let mut raw_selected = Vec::new();
+        raw_selected.try_reserve_exact(count)
+            .map_err(|error| io::Error::new(io::ErrorKind::OutOfMemory, error))?;
+        if raw_selected.capacity() != count {
+            return Err(io::Error::new(io::ErrorKind::OutOfMemory, "Raw selected fact index exceeds admission"));
+        }
+        for (ordinal, path) in selected.into_iter().enumerate() {
+            crate::daemon::control::checkpoint()?;
+            raw_selected.push((path, ordinal));
+        }
+        inputs.policy_workspace_joined_files_hashed_current(
+            &raw_selected, &discovery, donor,
+            capture_limit.checked_sub(used).ok_or(io::ErrorKind::OutOfMemory)?,
+            frontend.revision, &canonical_configuration,
+            |_, _, _| Ok(false),
+        )?
     } else {
-        let (facts, borrowed_directories) = if shared_derived.is_some() {
-            if !map_directories.is_empty() {
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, "joined workspace has directories outside actual discovery"));
-            }
-            (inputs.policy_workspace_joined_files_using(selected.into_iter(), &discovery, shared_derived.as_deref())?,
-                Some(discovery.policy_directories()))
-        } else {
-            (inputs.policy_workspace_closure_paths(
-                selected.into_iter(), discovery.directory_paths().chain(&map_directories),
-            )?, None)
-        };
+        let facts = inputs.policy_workspace_closure_paths(
+            selected.into_iter(), discovery.directory_paths().chain(&map_directories),
+        )?;
         let revision = crate::policy_request::workspace_revision_with_file_donor(
-            frontend.revision, &facts,
-            borrowed_directories.unwrap_or_else(|| facts.policy_directories()),
-            shared_derived.as_deref(), &discovery.contract().root,
-            &discovery.contract().recursive_roots, &canonical_configuration,
+            frontend.revision, &facts, facts.policy_directories(), None,
+            &discovery.contract().root, &discovery.contract().recursive_roots, &canonical_configuration,
         )?;
         (facts, revision)
     };
+    #[cfg(debug_assertions)]
+    if staged && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+        eprintln!("ORIGINAL_WORKSPACE_NATIVE_PRIMARY_FACTS_BORROWED count={}", native_primary_borrowed.get());
+    }
     dm_profile::request_mark("joined.workspace_facts_closed");
     let policy_revision=if auxiliary.is_empty(){policy_revision}else{let flags=[auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DeadlinePollingAllowlist),auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)];let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-auxiliary-v1");hash.update(&policy_revision.to_le_bytes());hash.update(&[u8::from(flags[0]),u8::from(flags[1])]);hash.digest128()};
     let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-doc-snippets-source-purpose-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
@@ -1871,10 +1934,21 @@ fn capture_optional_original_using<P:SnapshotProvider>(inputs:&RecordingInputs<P
         if !known.contains_key(primary) {
             if let Some(candidate) = aliases.candidate(path)? {
                 let occurrence=*known.get(candidate).ok_or_else(||io::Error::other("alias candidate has no actual mapped occurrence"))?;
-                let proof=inputs.acquire_mapped_source_alias(path,candidate,mapping,occurrence)?.ok_or_else(||io::Error::other("workspace source alias contract unsupported"))?;
-                if proof.primary_path()!=candidate{return Err(io::Error::other("foreign workspace source alias proof"))}
-                alias_fact=Some(proof.requested_fact().clone());
-                primary = candidate;
+                let actual = plan.occurrences().get(occurrence)
+                    .filter(|row| row.path.as_path() == candidate)
+                    .ok_or_else(|| io::Error::other("alias candidate differs from actual include occurrence"))?;
+                // A typed map has no text lease. Its requested spelling takes
+                // the existing selected raw read, just as an exact-path map
+                // does below. An indexed spelling never manufactures a source
+                // alias challenge for this non-text role.
+                let raw_map = actual.non_text_kind() == Some(dm_preprocess::regions::NonTextKind::Map)
+                    && discovery.check_grep_names().is_ok();
+                if !raw_map {
+                    let proof=inputs.acquire_mapped_source_alias(path,candidate,mapping,occurrence)?.ok_or_else(||io::Error::other("workspace source alias contract unsupported"))?;
+                    if proof.primary_path()!=candidate{return Err(io::Error::other("foreign workspace source alias proof"))}
+                    alias_fact=Some(proof.requested_fact().clone());
+                    primary = candidate;
+                }
             }
         }
         let native_index=if let Some(index)=known.get(primary){
@@ -1891,7 +1965,7 @@ fn capture_optional_original_using<P:SnapshotProvider>(inputs:&RecordingInputs<P
             let primary_fact=inputs.mapped_recorded_source_fact(mapping,*index,primary)?;
             crate::input_snapshot::recorded_source_original(lease)?; // prove original-byte representation now
             CapturedOriginal{fact:alias_fact.unwrap_or_else(||primary_fact.clone()),original:Original::Native(Native {
-                occurrence: *index,
+                occurrence: *index, borrowed_primary: std::sync::atomic::AtomicBool::new(false),
             })}
         } else {
             let remaining = capture_limit

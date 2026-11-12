@@ -353,6 +353,140 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
  use super::*;
  pub(super) fn intent(root:&Path)->crate::policy_request::AdmittedPolicyRequest{crate::policy_request::PolicyInputRequest{analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.to_path_buf(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")}),workspace_auxiliary:vec![crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads],..Default::default()}.admit().unwrap()}
  #[test]fn actual_derived_preflight_finishes_raw_before_hostile_manifest_and_has_no_model_or_public_binding(){let root=crate::test_scratch::dir("derived-real-cold-preflight");std::fs::create_dir_all(root.join("code")).unwrap();std::fs::write(root.join("deepquarry.dme"),"#include \"unterminated\n").unwrap();let code=root.join("code/a.dm");std::fs::write(&code,"/datum/probe\n    var/value\n/datum/probe/derived()\n    return list(drawn_from(nameof(value)))\n/datum/probe/broken()\n    ) : \"bad body\n").unwrap();let mut inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);let queries=Arc::new(crate::query_db::QueryDb::default());let budget=Budget::new(32*1024*1024).unwrap();let selected=intent(&root);let owner=queries.prepare_derived_preflight(&inputs,&selected).unwrap();assert!(owner.index.lock().unwrap().is_some());assert!(inputs.original_analysis_subject().is_none());assert!(inputs.source_acquisitions.lock().unwrap().is_empty(),"raw index cannot invoke native PreparedSource or parse bad BODY");assert!(inputs.recorded_file_fact(&code).is_ok());let wrong=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);assert!(owner.require_recording(&wrong).is_err(),"equal root/text cannot replace actual recorder");assert!(inputs.recorded_file_fact(&root.join("deepquarry.dme")).is_err(),"raw model phase must precede even opening the actual project");let subject=inputs.issue_original_analysis_subject_derived(&selected,Arc::clone(&owner)).unwrap();assert!(std::ptr::eq(subject.derived_preflight().unwrap(),owner.as_ref()));assert!(inputs.source_acquisitions.lock().unwrap().is_empty(),"metadata issuance alone prepares no semantic source");}
+
+ #[cfg(windows)]
+ #[test]
+ fn actual_original_verbatim_primary_needs_a_receipt_donor_under_low_local_limit() {
+  use crate::policy_request::{AnalysisContext,PolicyInputRequest,WorkspaceAuxiliaryQuestion as Q,WorkspacePolicyRequest};
+  use dm_tree::frontend::{self,FrontendConfig,SettingExpressionQueries};
+  let root=crate::test_scratch::dir("actual-native-primary-closure-spellings");
+  std::fs::create_dir_all(root.join("code")).unwrap();
+  let discovered=root.join("code/a.dm");
+  std::fs::write(&discovered,br##"/datum/probe
+    var/value=1
+"##).unwrap();
+  let project=root.join("deepquarry.dme");
+  std::fs::write(&project,br##"#include "code/a.dm"
+"##).unwrap();
+  let request=PolicyInputRequest{
+   analysis_context:Some(AnalysisContext::OriginalAnalyze0290),
+   workspace:Some(WorkspacePolicyRequest{
+    root:root.clone(),configuration:root.join("tools/ci/lint_scopes.toml"),
+    recursive_roots:Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY).unwrap().iter().map(|name|root.join(name)).collect(),
+   }),workspace_auxiliary:Q::PRIVATE_FULL_REGISTRY.to_vec(),..Default::default()
+  }.admit_private_authored_doc_ui().unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0)
+   .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let donor=queries.prepare_derived_preflight(&inputs,&request).unwrap();
+  let primary=std::fs::canonicalize(&discovered).unwrap();
+  assert_ne!(primary,discovered,"fixture requires distinct DOS and verbatim Path keys");
+  assert!(dm_preprocess::regions::relative_filesystem_path(&primary,&discovered)
+   .is_some_and(|path|path.as_os_str().is_empty()));
+  // This is a separate real bounded read, as performed by the native
+  // prescan. No forged ordinary fact or opened-source receipt is inserted.
+  inputs.read_policy_candidate(&primary,1<<20).unwrap().unwrap();
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let seed=dm_tree::checker_builtins::original_analysis_seed().unwrap();
+  let host=Arc::clone(&queries) as Arc<dyn SettingExpressionQueries>;
+  let provider=inputs.original_batch_view(None);
+  let front=frontend::build_for_original_analysis_with_state_checked(
+   &std::fs::canonicalize(&project).unwrap(),&provider,&BTreeMap::new(),
+   FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},
+   None,&executor,None,&host,
+  ).unwrap();
+  let view=front.source_view().unwrap();
+  let (occurrence,actual)=view.semantic_includes().find(|(_,path)|path.as_path()==primary).unwrap();
+  assert_eq!(actual.as_os_str(),primary.as_os_str());
+  let fact=inputs.mapped_recorded_source_fact(view.mapping(),occurrence,&primary).unwrap();
+  let ordinary=inputs.recorded_file_fact(&primary).unwrap();
+  assert_eq!(fact.stamp,ordinary.stamp);
+  assert_eq!(fact.content,ordinary.content);
+  assert!(donor.workspace_file(&discovered).is_some());
+  assert!(donor.workspace_file(&primary).is_none());
+  let mut selected=[(discovered.as_path(),0),(primary.as_path(),1),(donor.configuration.as_path(),2)];
+  selected.sort_unstable();
+  let local_limit=2048+8*donor.configuration.as_os_str().len();
+  let failure=inputs.policy_workspace_joined_files_hashed(
+   &selected,&donor.discovery,&donor,local_limit,7,&donor.configuration,|_,_|Ok(false),
+  ).unwrap_err();
+  assert_eq!(failure.kind(),io::ErrorKind::OutOfMemory);
+  let (copied,hash)=inputs.policy_workspace_joined_files_hashed(
+   &selected,&donor.discovery,&donor,1<<20,7,&donor.configuration,|_,_|Ok(false),
+  ).unwrap();
+  assert_eq!(copied.files.len(),1,"only the verbatim primary is duplicated");
+  let legacy=inputs.policy_workspace_joined_files(
+   selected.iter().map(|&(path,_)|path),&donor.discovery,
+  ).unwrap();
+  assert_eq!(hash,crate::policy_request::workspace_revision_with_directories(
+   7,&legacy,donor.discovery.policy_directories(),&root,
+   &donor.discovery.contract().recursive_roots,&donor.configuration,
+  ).unwrap());
+  let borrowed = |path:&Path, fact:&FileInput, current:&InputSnapshot| {
+   if path != primary { return Ok(false); }
+   let issued = inputs.mapped_original_source_fact_in(view.mapping(),occurrence,path,current)?;
+   Ok(issued == fact)
+  };
+  let (loaned,loaned_hash)=inputs.policy_workspace_joined_files_hashed_current(
+   &selected,&donor.discovery,&donor,local_limit,7,&donor.configuration,borrowed,
+  ).unwrap();
+  assert!(loaned.files.is_empty(),"both source facts already have authenticated owners");
+  assert_eq!(loaned_hash,hash,"borrowed serialization keeps the selected keys and actual recorder values");
+  let current=inputs.snapshot().unwrap();
+  assert_eq!(inputs.mapped_original_source_fact_in(view.mapping(),occurrence,&primary,&current).unwrap(),&ordinary);
+  let mut changed=current.clone();
+  changed.files.get_mut(&primary).unwrap().content ^= 1;
+  assert!(inputs.mapped_original_source_fact_in(view.mapping(),occurrence,&primary,&changed).is_err());
+  let mut missing_current=current.clone();
+  missing_current.files.remove(&primary);
+  assert!(crate::input_snapshot::recorded_original_source_fact_in(
+   view.mapping(),occurrence,&missing_current,
+  ).is_err(),"final freshness needs the same actual ordinary fact");
+  let mut missing=[(primary.as_path(),1),(donor.configuration.as_path(),2)];
+  missing.sort_unstable();
+  let omitted=inputs.policy_workspace_joined_files_hashed_current(
+   &missing,&donor.discovery,&donor,local_limit,7,&donor.configuration,borrowed,
+  ).unwrap_err();
+  assert!(omitted.to_string().contains("every donated file fact"),
+   "the native donor cannot replace the missing discovered donor obligation: {omitted}");
+  let foreign=RecordingInputs::new(FileSystemInputs,0)
+   .with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  foreign.read_policy_candidate(&primary,1<<20).unwrap().unwrap();
+  assert!(foreign.mapped_original_source_fact_in(view.mapping(),occurrence,&primary,&current).is_err(),
+   "an equal ordinary file fact cannot transfer the recorder's private opened receipt");
+  let foreign_provider=foreign.original_batch_view(None);
+  let foreign_front=frontend::build_for_original_analysis_with_state_checked(
+   &std::fs::canonicalize(&project).unwrap(),&foreign_provider,&BTreeMap::new(),
+   FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},
+   None,&executor,None,&host,
+  ).unwrap();
+  let foreign_view=foreign_front.source_view().unwrap();
+  let (foreign_occurrence,_)=foreign_view.semantic_includes()
+   .find(|(_,path)|path.as_path()==primary).unwrap();
+  let foreign_current=foreign.snapshot().unwrap();
+  assert_eq!(foreign.mapped_original_source_fact_in(
+   foreign_view.mapping(),foreign_occurrence,&primary,&foreign_current,
+  ).unwrap(),foreign_current.files.get(&primary).unwrap(),
+   "the foreign control must first authenticate its own actual opened receipt");
+  assert!(inputs.mapped_original_source_fact_in(
+   foreign_view.mapping(),foreign_occurrence,&primary,&foreign_current,
+  ).is_err(),"a valid same-config native mapping still belongs to its actual recorder");
+  assert!(inputs.mapped_original_source_fact_in(view.mapping(),usize::MAX,&primary,&current).is_err());
+  let (root_ordinal,_)=view.semantic_includes().find(|(_,path)|path.file_name()==project.file_name()).unwrap();
+  assert!(inputs.mapped_original_source_fact_in(view.mapping(),root_ordinal,&primary,&current).is_err());
+  drop(foreign_view);drop(foreign_front);drop(foreign_provider);drop(foreign);
+  let alias= view.mapping().source_acquisition(occurrence).unwrap().clone();  let mapping=Arc::downgrade(view.mapping());
+  // No retained semantic state or body query was issued in this fixture.
+  // The view and fact loans are borrowed; front owns both ColdFrontend's
+  // mapping and BodyArchive's mapping. The detached receipt owns neither.
+  drop(view);drop(front);drop(provider);
+  assert!(mapping.upgrade().is_none(),"the receipt alias does not keep the mapping alive");
+  assert_eq!(dm_preprocess::SourceProvider::original_source_bytes(&inputs,&alias).unwrap().unwrap(),
+   b"/datum/probe
+    var/value=1
+");
+ }
+
  #[test]fn joined_derived_ordinal_proof_preserves_actual_file_config_and_directory_facts(){
   use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
   let root=crate::test_scratch::dir("derived-real-joined-ordinals");
@@ -395,6 +529,22 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   selected.sort_unstable();
   selected.dedup_by(|later, earlier| later.0 == earlier.0);
   assert!(selected.iter().any(|(path, _)| path.as_os_str()==alternative.as_os_str()));
+  // Raw's current nonhashed donor mode rejects an otherwise unchanged
+  // recorder fact when only the selected key has an equivalent spelling.
+  // Assert each comparison independently: this is not a stale-state or
+  // different-content control, and no donor label is rewritten to pass.
+  let selected_source=selected.iter().find(|(path,_)|*path==canonical_source).unwrap().0;
+  let (donated_path,donated_stamp,donated_content)=owner.workspace_file(selected_source).unwrap();
+  let recorded=inputs.recorded_file_fact(selected_source).unwrap();
+  assert_ne!(selected_source.as_os_str(),donated_path.as_os_str());
+  assert_eq!(recorded.path.as_os_str(),donated_path.as_os_str());
+  assert_eq!(&recorded.stamp,donated_stamp);
+  assert_eq!(recorded.content,donated_content);
+  let raw_key_refusal=inputs.policy_workspace_joined_files_using(
+   selected.iter().map(|&(path,_)|path),&owner.discovery,Some(&owner),
+  ).unwrap_err();
+  assert_eq!(raw_key_refusal.kind(),io::ErrorKind::InvalidData);
+  assert_eq!(raw_key_refusal.to_string(),"workspace file donor differs from the recorded selected fact");
   let legacy = inputs.policy_workspace_joined_files(
    selected.iter().map(|&(path, _)| path), &owner.discovery,
   ).unwrap();
