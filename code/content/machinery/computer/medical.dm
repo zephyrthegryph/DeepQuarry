@@ -39,6 +39,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	ref_one(nameof(active2), /datum/data/record)
 	owns_one(nameof(scan), /obj/item/card/id)
 	interface("MedicalRecords", title = "Medical Records")
+	ui_shape(temp = any, scan = schema_text(), authenticated = bool(), rank = schema_text(), screen = num(), printing = bool(), isAI = bool(), isRobot = bool(), records = list_of(row()), general = any, medical = any, virus = list_of(row()), medbots = any, modal = any)
 	// Keep the existing plain-click ranking: the computer's generic item op wins;
 	// this named insertion is also offered by the context menu.
 	op("insert_scan", inputs(item(/obj/item/card/id), menu()), authority(AUTH_PHYSICAL | AUTH_REMOTE_ACCESS | AUTH_AI), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID card"), when(not(nameof(scan))), needs(req(/obj/item/card/id, because = MSG(records/id_required)), any_of(req(PROC_REF(records_slot_reachable)), all_of(req_actor_kind(/mob/living/silicon), req(PROC_REF(records_remote_slot_allowed)))), req_capable(), req_held_releasable()), then(PROC_REF(insert_scan)))

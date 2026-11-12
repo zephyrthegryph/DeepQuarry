@@ -34,8 +34,8 @@ const BUILTIN_HOSTS: [&str; 2] = ["/datum", "/atom"];
 const VALIDATORS: [&str; 7] = ["ui_number", "ui_text", "ui_choice", "ui_ref", "ui_token", "ui_member", "ui_bool"];
 
 /// Window actions the engine answers for every window: the layout toggle (code/library/ui/tgui/external.dm, tgui_act()) and a modal's
-/// open (OP_UI_MODAL_OPEN, code/engine/parts/inputs.dm).
-const ENGINE_ACTIONS: [&str; 2] = ["change_ui_state", "modal_open"];
+/// open (OP_UI_MODAL_OPEN, code/engine/parts/inputs.dm), answer and close (OP_UI_MODAL_ANSWER / OP_UI_MODAL_CLOSE, tgui_act()).
+const ENGINE_ACTIONS: [&str; 4] = ["change_ui_state", "modal_open", "modal_answer", "modal_close"];
 
 const R_UNSENT: &str = "ui_unsent_param";
 const R_UNVALIDATED: &str = "ui_unvalidated_param";
@@ -1277,12 +1277,12 @@ impl Lint for UiActions {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
         let dm: Vec<&SourceFile> = files.iter().copied().filter(|f| f.ext() == "dm").collect();
-        let Some(dispatcher) = cx.tree.get(DISPATCHER) else { return };
-        let norm = match normaliser_from(dispatcher.text()) {
+        // The act_ dispatcher is retired (window buttons are ui_act() ops); its key normalisation stays fixed for the act_ analysis below, which
+        // finds no act_ procs on master and fails any that come back through the legacy_forms ban.
+        let norm = match normaliser_from(DISPATCHER_FIXTURE) {
             Ok(n) => n,
             Err(msg) => {
                 out.note(msg.clone());
-                out.site_in_msg(R_PROBLEM, DISPATCHER, 1, msg);
                 return;
             }
         };
@@ -1470,15 +1470,7 @@ fn selftest() -> Result<(), String> {
     let want: HashSet<String> = ["user", "src", "usr", "ui", "state", "holder"].iter().map(|s| s.to_string()).collect();
     ensure(norm.reserved == want, || format!("reserved {:?}", norm.reserved))?;
     ensure(normaliser_from("nothing here").is_err(), || "a dispatcher without the regexes must fail".to_string())?;
-    // The live dispatcher must still parse (lint/dispatcher parity), where the source is reachable.
-    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    for cand in [std::path::PathBuf::from(DISPATCHER), manifest.join("../..").join(DISPATCHER)] {
-        if let Ok(text) = std::fs::read_to_string(&cand) {
-            let live = normaliser_from(&text)?;
-            ensure(live.key("bolt-toggle").as_deref() == Some("bolt_toggle"), || "the live ui_action_key() no longer matches".to_string())?;
-            break;
-        }
-    }
+
 
     let calls = tsx_calls(TSX_FIXTURE);
     let strs = |v: &[&str]| Some(v.iter().map(|s| s.to_string()).collect::<Vec<_>>());

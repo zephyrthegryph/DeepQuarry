@@ -243,23 +243,6 @@ CAPABILITIES(/datum/tickets)
 			user.client.cmd_admin_pm(user.client.selected_ticket().initiator(), msg, user.client.selected_ticket())
 	. = TRUE
 
-/datum/tickets/tgui_fallback(payload, user)
-	if(..())
-		return
-
-	if(!ismob(user))
-		return
-	var/mob/actor = user
-	if(QDELETED(actor))
-		return
-	open_request(src, /datum/prompt/choice/ticket_fallback_list, PROC_REF(ticket_fallback_list_answered), answerer = actor)
-
-/datum/tickets/proc/ticket_fallback_list_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	TicketListLegacy(context.request.answerer, context.answer.value)
-	SStgui.update_uis(src)
-
 //
 //TICKET DATUM
 //
@@ -341,12 +324,6 @@ CAPABILITIES(/datum/tickets)
 
 	. = TRUE
 
-/datum/ticket/tgui_fallback(payload, user)
-	if(..())
-		return
-
-	TicketPanelLegacy(user)
-
 /datum/ticket/proc/TicketPanelLegacy(mob/user)
 	var/list/dat = list("<html><head><title>Ticket #[id]</title></head>")
 	var/ref_src = handle_of(src)
@@ -415,12 +392,3 @@ CAPABILITIES(/datum/tickets)
 	choices = list("Active", "Closed", "Resolved")
 	timeout = 0
 
-/datum/prompt/choice/ticket_fallback_list
-	question = "Which tickets do you want to list?"
-	title = "Tickets"
-	choices = list("Active", "Closed", "Resolved")
-	timeout = 0
-
-/datum/prompt/choice/ticket_fallback_list/recheck_extra()
-	var/mob/user = answerer
-	return !istype(user) || QDELETED(user) ? "gone" : null

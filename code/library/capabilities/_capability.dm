@@ -16,10 +16,7 @@
 /// Adds this capability's layers to look (look.state/overlay/gauge/glow). Called before the
 /// holder's own draw() body runs past ..() (DM reserves the name appearance).
 
-/// A capability owns UI actions by defining `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)`:
-/// the dispatcher finds it on the holder's capabilities when the holder has no act_<action> itself. The
-/// actions it logs (action -> LOG_GAME / LOG_ADMIN) are its type table, read through ui_logged():
-/// TYPE_TABLE(/datum/capability/<x>, ui_logged_actions, list("<action>" = LOG_GAME)).
+/// A capability's window buttons are ops in its entries with a ui_act() binding (code/engine/parts/inputs.dm).
 
 /// Adds keys to this capability's own UI list: the holder's tgui_data() carries it as
 /// data["caps"][ui_key()] (caps_ui_data()).

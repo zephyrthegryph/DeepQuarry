@@ -187,6 +187,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	/// whose AI control is cut (to a silicon), or a remote console that does not let the actor in, answers none.
 	section(controls, "The alarm's window and the buttons in it")
 	interface("AirAlarm")
+	ui_shape(locked = bool(), siliconUser = bool(), remoteUser = bool(), environment_data = list_of(row()), danger_level = num(), target_temperature = schema_text(), rcon = num(), atmos_alarm = bool(), fire_alarm = bool(), mode = num(), thresholds = list_of(row()), scrubbers = list_of(row()), vents = list_of(row()), modes = list_of(row()))
 	op("rcon", ui_act("rcon", arg("rcon", enum(list(RCON_NO, RCON_AUTO, RCON_YES)))), then(PROC_REF(ui_set_rcon)))
 	op("temperature", ui_act("temperature"), asks(/datum/prompt/number, fields = list(
 			"title" = "Thermostat Controls",
