@@ -57,6 +57,33 @@ const fixtures: Record<string, Record<string, unknown>> = existsSync(FIXTURES)
   ? JSON.parse(readFileSync(FIXTURES, 'utf8'))
   : {};
 
+/** Hand-written fixtures, one per window (`__fixtures__/windows/<Window>.json`): realistic rows, every ui_shape key set. */
+const WINDOW_FIXTURES = join(ROOT, '__fixtures__', 'windows');
+const windowFixtures: Record<string, Record<string, unknown>> = {};
+if (existsSync(WINDOW_FIXTURES)) {
+  for (const entry of readdirSync(WINDOW_FIXTURES)) {
+    const m = entry.match(/^(.+)\.json$/);
+    if (m)
+      windowFixtures[m[1]] = JSON.parse(
+        readFileSync(join(WINDOW_FIXTURES, entry), 'utf8'),
+      );
+  }
+}
+
+/** The top-level field names of `<Window>Data` in the generated types (`analyze gen ui_types`), or null when the window has no ui_shape. */
+function shapeFields(name: string): string[] | null {
+  const file = join(ROOT, 'generated', `${name}.d.ts`);
+  if (!existsSync(file)) return null;
+  const text = readFileSync(file, 'utf8');
+  const start = text.indexOf(`export type ${name}Data = {`);
+  if (start < 0) return null;
+  const body = text.slice(start, text.indexOf('\n};', start));
+  const fields = [
+    ...body.matchAll(/^ {2}(?:'([^']+)'|([A-Za-z_$][\w$]*)):/gm),
+  ].map((m) => m[1] ?? m[2]);
+  return fields.length ? fields : null;
+}
+
 class Boundary extends Component<
   { onError: (e: unknown) => void; children: ReactNode },
   { failed: boolean }
@@ -143,12 +170,31 @@ describe('every tgui interface renders', () => {
         helpers.push(name);
         return;
       }
-      expect(renderWith(name, Routed, {}), `${name} with {}`).toEqual([]);
+      const written = windowFixtures[name];
+      const fields = written ? shapeFields(name) : null;
+      // A window with a ui_shape always gets every key it declares (the server sends the window nothing before its first data), so
+      // empty data is not a state it can be in: such a window is rendered with its shape-checked fixture instead.
+      if (!fields) {
+        expect(renderWith(name, Routed, {}), `${name} with {}`).toEqual([]);
+      }
       const sample = fixtures[name];
       if (sample) {
         expect(
           renderWith(name, Routed, sample),
           `${name} with fixture`,
+        ).toEqual([]);
+      }
+      if (written) {
+        // A hand-written fixture carries exactly the window's ui_shape keys.
+        if (fields) {
+          expect(
+            Object.keys(written).sort(),
+            `${name}: __fixtures__/windows/${name}.json keys vs ui_shape`,
+          ).toEqual([...fields].sort());
+        }
+        expect(
+          renderWith(name, Routed, written),
+          `${name} with __fixtures__/windows/${name}.json`,
         ).toEqual([]);
       }
     });
