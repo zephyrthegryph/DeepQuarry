@@ -44,19 +44,22 @@ Nothing else in the console has ID requirements.
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.consoles_accessing), src)
 
+MSG_DEF_SELF(rdconsole/locked, "Console is locked, cannot perform further actions.")
+
 CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	setup(PROC_REF(connect_initial_console))
 	owns_one(nameof(t_disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(d_disk), on_destroy = ON_DESTROY_SPILL)
 	interface("Techweb")
 	without("ui_open")
+	extend(TAG_UI, then(PROC_REF(controls_touched), early = TRUE))
 	op("toggleLock", ui_act("toggleLock"), then(PROC_REF(ui_act_togglelock)))
-	op("researchNode", ui_act("researchNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_researchnode)))
-	op("enqueueNode", ui_act("enqueueNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_enqueuenode)))
-	op("dequeueNode", ui_act("dequeueNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_dequeuenode)))
-	op("ejectDisk", ui_act("ejectDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_ejectdisk)))
-	op("uploadDisk", ui_act("uploadDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_uploaddisk)))
-	op("loadTech", ui_act("loadTech"), then(PROC_REF(ui_act_loadtech)))
+	op("researchNode", ui_act("researchNode", arg("node_id", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_researchnode)))
+	op("enqueueNode", ui_act("enqueueNode", arg("node_id", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_enqueuenode)))
+	op("dequeueNode", ui_act("dequeueNode", arg("node_id", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_dequeuenode)))
+	op("ejectDisk", ui_act("ejectDisk", arg("type", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_ejectdisk)))
+	op("uploadDisk", ui_act("uploadDisk", arg("type", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_uploaddisk)))
+	op("loadTech", ui_act("loadTech"), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_loadtech)))
 	op("insert_disk", item(/obj/item/disk), priority(OP_PRIORITY_DEFAULT - 1), label("Insert disk"), then(PROC_REF(interaction_insert_disk)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
@@ -300,19 +303,17 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		"id_cache" = flat_id_cache,
 	)
 
-/obj/machinery/computer/rdconsole_tg/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	var/action = A.window_action()
-	add_fingerprint(user)
-	if (locked && action != "toggleLock")
-		atom_say("Console is locked, cannot perform further actions.")
-		return FALSE
-	return TRUE
+/// A locked console refuses every button but the lock toggle; the user alone is told (it used to announce it aloud to the room).
+/obj/machinery/computer/rdconsole_tg/proc/unlocked_refusal(datum/act/op/A)
+	if(locked)
+		return /datum/msg/rdconsole/locked
+	return null
+
+/obj/machinery/computer/rdconsole_tg/proc/controls_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_togglelock(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(allowed(user))
 		set_locked(!locked)
 	else
@@ -321,34 +322,24 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_researchnode(datum/act/op/A, node_id)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	research_node(node_id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_enqueuenode(datum/act/op/A, node_id)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	enqueue_node(node_id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_dequeuenode(datum/act/op/A, node_id)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	dequeue_node(node_id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_ejectdisk(datum/act/op/A, type)
-	if(!ui_gate(A))
-		return FALSE
 	eject_disk(type)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_uploaddisk(datum/act/op/A, type)
-	if(!ui_gate(A))
-		return FALSE
 	if(type == RND_DESIGN_DISK)
 		if(QDELETED(d_disk))
 			atom_say("No design disk inserted!")
@@ -374,8 +365,6 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 //Tech disk-only action.
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_loadtech(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
 		atom_say("Servers busy!")
 		return

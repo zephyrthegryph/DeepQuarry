@@ -21,8 +21,8 @@ MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 
 CAPABILITIES(/obj/structure/fireaxecabinet)
 	// a multitool on an intact cabinet resets its lock: a locked one opens up, a shut unlocked one locks again
-	op("unlock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 1), label("Reset the lock"), when(PROC_REF(lock_resettable_open)), starts(PROC_REF(reset_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
-	op("lock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 2), label("Reset the lock"), when(PROC_REF(lock_resettable_shut)), starts(PROC_REF(lock_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done2)))
+	op("unlock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 1), label("Disable the lock"), when(PROC_REF(lock_resettable_open)), starts(PROC_REF(reset_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
+	op("lock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 2), label("Enable the lock"), when(PROC_REF(lock_resettable_shut)), starts(PROC_REF(lock_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done2)))
 	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	// a cyborg's module only ever strikes the glass or resets the lock, as if the cabinet were locked
 	op("robot_item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(struck_shut)))

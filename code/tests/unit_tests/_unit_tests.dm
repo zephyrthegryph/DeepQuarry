@@ -1341,6 +1341,7 @@
 #include "round2_mecha_native_tank_pressure.dm"
 #include "round2_chameleon_holder_allocation.dm"
 #include "round2_shield_idle_disposal.dm"
+#include "dq_disposal_controls_refusal.dm"
 #include "round2_viral_trait_generation.dm"
 #include "round2_construct_blocked_spell_cleanup.dm"
 #include "round2_robot_source_retirement.dm"

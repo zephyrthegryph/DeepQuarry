@@ -71,24 +71,34 @@
 		return FALSE
 	return TRUE
 
-/obj/machinery/computer/shuttle_control/proc/ui_gate(datum/act/op/A)
-	return console_gate(A.actor)
+/obj/machinery/computer/shuttle_control/proc/controls_refusal(datum/act/op/A)
+	return console_refusal(A.actor)
 
-/// The console's guard on every button, and on the answer to a question one of them asked: the shuttle is still linked (a print, a warning).
-/obj/machinery/computer/shuttle_control/proc/console_gate(mob/user)
+/// The console's guard on every button, and on the answer to a question one of them asked: null while the shuttle is linked, else the
+/// reason (text the user is told, or a silent refusal). A requirement: it prints nothing; a late answer prints it with console_late_refusal().
+/obj/machinery/computer/shuttle_control/proc/console_refusal(mob/user)
 	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
-	if(skip_act)
-		return FALSE
-	add_fingerprint(user)
 	if(!istype(shuttle))
-		to_chat(user, span_warning("Unable to establish link with the shuttle."))
-		return FALSE
-	return TRUE
+		return "Unable to establish link with the shuttle."
+	return null
+
+/// The guard re-run on a question's answer, which no requirement covers: tells the user why the console refused, and returns the refusal.
+/obj/machinery/computer/shuttle_control/proc/console_late_refusal(mob/user)
+	add_fingerprint(user)
+	. = console_refusal(user)
+	if(istext(.))
+		to_chat(user, span_warning(.))
+
+/obj/machinery/computer/shuttle_control/proc/controls_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
+
+/// A console whose subtype brings its own buttons (skip_act: the web shuttles) leaves the plain move/force/cancel/codes buttons dead.
+/// This used to sit in the shared guard, which refused every button of such a console, its own included.
+/obj/machinery/computer/shuttle_control/proc/plain_buttons_refusal(datum/act/op/A)
+	return skip_act ? /datum/msg/req_silent : null
 
 /obj/machinery/computer/shuttle_control/proc/ui_act_move(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(can_move(shuttle, user))
 		shuttle.launch(src, user)
@@ -96,8 +106,6 @@
 
 /obj/machinery/computer/shuttle_control/proc/ui_act_force(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(can_move(shuttle, user))
 		shuttle.force_launch(src, user)
@@ -105,8 +113,6 @@
 
 /obj/machinery/computer/shuttle_control/proc/ui_act_cancel(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	shuttle.cancel_launch(src, user)
 	return TRUE
@@ -114,8 +120,6 @@
 /obj/machinery/computer/shuttle_control/proc/ui_act_set_codes(datum/act/op/A)
 	var/mob/user = A.actor
 	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
-	if(!ui_gate(A))
-		return FALSE
 	shuttle_codes_stage(ui, user, FALSE)
 
 /obj/machinery/computer/shuttle_control/proc/shuttle_codes_stage(datum/tgui/ui, mob/actor, answered, newcode)
@@ -132,8 +136,8 @@
 		return
 	var/obj/machinery/computer/shuttle_control/console = src_object()
 	// The original virtual guard fingerprints and reports failures; it is an effect.
-	var/allowed = console.console_gate(user)
-	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
+	var/refusal = console.console_late_refusal(user)
+	A.request.captured["late_refusal"] = refusal ? "the console action is unavailable" : null
 	if(request_recheck(A.request))
 		return
 	console.shuttle_codes_stage(src, A.request.answerer, TRUE, A.answer.value)
@@ -162,10 +166,12 @@
 CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	interface("ShuttleControl")
 	without("ui_open")
-	op("move", ui_act("move"), then(PROC_REF(ui_act_move)))
-	op("force", ui_act("force"), then(PROC_REF(ui_act_force)))
-	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
-	op("set_codes", ui_act("set_codes"), then(PROC_REF(ui_act_set_codes)))
+	extend(TAG_UI, needs(req(PROC_REF(controls_refusal))))
+	extend(TAG_UI, then(PROC_REF(controls_touched), early = TRUE))
+	op("move", ui_act("move"), needs(req(PROC_REF(plain_buttons_refusal))), then(PROC_REF(ui_act_move)))
+	op("force", ui_act("force"), needs(req(PROC_REF(plain_buttons_refusal))), then(PROC_REF(ui_act_force)))
+	op("cancel", ui_act("cancel"), needs(req(PROC_REF(plain_buttons_refusal))), then(PROC_REF(ui_act_cancel)))
+	op("set_codes", ui_act("set_codes"), needs(req(PROC_REF(plain_buttons_refusal))), then(PROC_REF(ui_act_set_codes)))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(shuttle_console_ricochet))))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
@@ -197,6 +203,8 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	shuttle_tag = new_shuttle_tag
 	tracked_changed(src, nameof(shuttle_tag))
 	return TRUE
+
+SETTER(/obj/machinery/computer/shuttle_control, shuttle_tag)
 
 /obj/machinery/computer/shuttle_control/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
