@@ -49,7 +49,7 @@ def files() -> list[str]:
                          text=True, check=True).stdout.splitlines()
     keep = []
     for f in out:
-        if f.startswith(("tools/dmb/", "tools/dm-health/", "tools/analyze/vendor/")) or "node_modules" in f:
+        if f.startswith(("tools/dmb/", "tools/dm-health/", "tools/analyze/vendor/")) or "node_modules" in f or f == "tools/ci/gen_env_vars.py":
             continue
         if f.startswith("verdigris/") and not (f.endswith(".sh") and f.count("/") == 1):
             continue
