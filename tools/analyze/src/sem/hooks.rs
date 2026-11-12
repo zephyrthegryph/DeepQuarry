@@ -13,7 +13,7 @@ use super::decls::{matching_paren, split_args, Decls, Marker};
 /// The five context types of section 8.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Ctx {
-    /// The context of a world action's own hooks (instead, adjusts): its typed act, which carries the action's fields.
+    /// The context of a world action's own hooks (instead, adjusts_with): its typed act, which carries the action's fields.
     Action,
     Eval,
     Op,
@@ -106,7 +106,6 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "after", ctx: Ctx::Timer, role: Role::Work },
     HookForm { kw: "delayed", ctx: Ctx::Timer, role: Role::Work },
     HookForm { kw: "instead", ctx: Ctx::Action, role: Role::Effect },
-    HookForm { kw: "adjusts", ctx: Ctx::Action, role: Role::Contribution },
     HookForm { kw: "on_notice", ctx: Ctx::Notice, role: Role::Reaction },
     HookForm { kw: "on_op", ctx: Ctx::Notice, role: Role::Reaction },
     HookForm { kw: "on_change", ctx: Ctx::Notice, role: Role::Reaction },
@@ -294,7 +293,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         let in_asks_when = f.kw == "when"
             && bs == be
             && ranges.iter().any(|&(oidx, s, e)| HOOK_FORMS[oidx].kw == "asks" && s != e && start >= s && start < e);
-        // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change, after_init) runs in that context.
+        // A then() or when() inside a hook that carries its own context (instead, adjusts_with, on_notice, on_op, on_change, after_init) runs in that context.
         let in_op_when = f.kw == "when" && enclosing_op_start(body, start).is_some_and(|op_start| {
             !ranges.iter().any(|&(oidx, s, e)| s > op_start && s != e && start >= s && start < e
                 && matches!(HOOK_FORMS[oidx].kw, "every" | "after" | "delayed" | "contributes" | "contributes_to" | "factors" | "outputs" | "look_layer" | "look_glow"))
@@ -312,7 +311,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             for r in &ranges {
                 let (oidx, s, e) = *r;
                 let kw = HOOK_FORMS[oidx].kw;
-                let carries_context = matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change" | "after_init")
+                let carries_context = matches!(kw, "instead" | "on_notice" | "on_op" | "on_change" | "after_init")
                     || (f.kw == "then" && matches!(kw, "every" | "after" | "delayed"));
                 if carries_context && s != e && start >= s && start < e && outer.map(|o| s >= o.1).unwrap_or(true) {
                     outer = Some(r);
@@ -333,7 +332,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         // Runtime observe is extend(action, parts...) or on_notice(notice, parts...),
         // selected by its trigger. Requirements still receive the operation query.
         if let Some(trigger) = runtime_trigger {
-            if matches!(f.kw, "then" | "when" | "instead" | "adjusts" | "adjusts_with") {
+            if matches!(f.kw, "then" | "when" | "instead" | "adjusts_with") {
                 ctx = if trigger.starts_with("/datum/act/") { Ctx::Action } else { Ctx::Notice };
                 notice = trigger.to_string();
                 if f.kw == "then" { role = Role::Reaction; }

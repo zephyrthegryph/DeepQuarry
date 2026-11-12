@@ -6,8 +6,23 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// The strike of the main fixture: `amount` is the typed field adjusts() changes and ACT_FINAL reads.
+/// The strike of the main fixture: `amount` is the typed field the adjusts_with() handlers change and ACT_FINAL reads.
 ACTION(e4_strike, amount, notice = /datum/notice/e4_struck)
+/// The fixtures' adjusts_with() handlers: each changes the strike's amount in flight.
+/proc/e4_strike_halve(datum/act/e4_strike/A)
+	A.amount *= 0.5
+/proc/e4_strike_plus_1(datum/act/e4_strike/A)
+	A.amount += 1
+/proc/e4_strike_plus_2(datum/act/e4_strike/A)
+	A.amount += 2
+/proc/e4_strike_plus_3(datum/act/e4_strike/A)
+	A.amount += 3
+/proc/e4_strike_plus_4(datum/act/e4_strike/A)
+	A.amount += 4
+/proc/e4_strike_plus_5(datum/act/e4_strike/A)
+	A.amount += 5
+/proc/e4_strike_plus_6(datum/act/e4_strike/A)
+	A.amount += 6
 /// An action nothing hooks.
 ACTION(e4_plain, amount, notice = /datum/notice/e4_plained)
 /// An action only a committed listener hears.
@@ -15,7 +30,7 @@ ACTION(e4_quiet, notice = /datum/notice/e4_hushed)
 /// An action whose takeover starts the same action again (the nested-action cap).
 ACTION(e4_nest, notice = /datum/notice/e4_nested)
 
-/// The target of the main fixture. A shield takes the strike over; the rest of its hooks: an adjusts that halves the amount, and three listeners
+/// The target of the main fixture. A shield takes the strike over; the rest of its hooks: an adjusts_with that halves the amount, and three listeners
 /// (committed, replaced, any).
 /obj/e4_fixture
 	name = "e4 fixture"
@@ -32,7 +47,7 @@ ACTION(e4_nest, notice = /datum/notice/e4_nested)
 /obj/e4_fixture/target
 
 CAPABILITIES(/obj/e4_fixture/target)
-	extend(/datum/act/e4_strike, adjusts("amount", scale = 0.5), instead(when(nameof(shield)), then(PROC_REF(absorb))))
+	extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_halve)), instead(when(nameof(shield)), then(PROC_REF(absorb))))
 	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard)))
 	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED)
 	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_whatever)), outcome = ACT_ANY)
@@ -92,13 +107,13 @@ CAPABILITIES(/obj/e4_fixture/nester)
 /obj/item/e4_fixture/amulet
 
 CAPABILITIES(/obj/item/e4_fixture/amulet)
-	while_slotted("e4_slot", extend(/datum/act/e4_strike, adjusts("amount", by = 1)), on = ON_HOLDER)
+	while_slotted("e4_slot", extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_1))), on = ON_HOLDER)
 
 /// A bed whose occupant gets +2 while buckled in.
 /obj/e4_fixture/bed
 
 CAPABILITIES(/obj/e4_fixture/bed)
-	while_slotted("e4_bed", extend(/datum/act/e4_strike, adjusts("amount", by = 2)), on = ON_CONTENTS)
+	while_slotted("e4_bed", extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_2))), on = ON_CONTENTS)
 
 /// A listener that observes another entity at runtime: observe(source, notice, listener, parts...).
 /obj/e4_fixture/listener

@@ -30,6 +30,9 @@
 	TEST_ASSERT(!act_wanted(H, /datum/act/injure), "releasing the mob ends the hook")
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 20, BP_TORSO, flags = INJURE_SILENT) > 0, "and the injury lands again")
 
+/proc/dq_veto_site_halve_injury(datum/act/injure/A)
+	A.amount *= 0.5
+
 /datum/unit_test/dq_veto_site_injure_amount_in_flight
 
 /datum/unit_test/dq_veto_site_injure_amount_in_flight/Run()
@@ -37,7 +40,7 @@
 	var/datum/dq_site_listener/listener = new
 	var/before = H.injure(INJURY_BLUNT, 10, BP_TORSO, flags = INJURE_SILENT | INJURE_IGNORE_RESISTANCE)
 	TEST_ASSERT(before > 0, "an injury lands")
-	observe(H, /datum/act/injure, listener, adjusts("amount", scale = 0.5))
+	observe(H, /datum/act/injure, listener, adjusts_with(GLOBAL_PROC_REF(dq_veto_site_halve_injury)))
 	var/halved = H.injure(INJURY_BLUNT, 10, BP_TORSO, flags = INJURE_SILENT | INJURE_IGNORE_RESISTANCE)
 	TEST_ASSERT(halved < before, "an adjustment of the act's amount changes what lands ([halved] against [before])")
 	unobserve(H, /datum/act/injure, listener)

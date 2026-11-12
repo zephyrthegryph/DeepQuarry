@@ -166,7 +166,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 	var/rank = A.arg("job")
 	if(read_once(user.job_join_refusal(rank)))
 		return FALSE
-	return read_once(user.spawn_checks_vr(rank, TRUE))
+	return read_once(!length(user.spawn_check_problems(rank)))
 
 /// The spawnpoint the joiner chose.
 /datum/tgui_module/late_choices/proc/late_join_spawnpoint(datum/act/op/A)

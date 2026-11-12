@@ -286,7 +286,7 @@ CAPABILITIES(/obj/machinery/button)
 
 `STATE_GRAPH(graph)` is the same. The entries compile (nothing calls them) so a misspelt part or a bad named argument is a compile or DreamChecker
 error. Differences from the old marker list: `link(A::a, B::b)` is `links(A::a, B::b)`; `configure(CAP_X, param = v)` is
-`configure(constructor(param = v))`; `adjusts(packet.amount, ...)` names the path as text, `adjusts("packet.amount", ...)`; and an `ALLOW(...)`
+`configure(constructor(param = v))`; and an `ALLOW(...)`
 annotation sits on the line above the entry it covers, not above the header. `python tools/dx/codemods/capabilities_block.py` converts a tree still
 written as backslash lists.
 

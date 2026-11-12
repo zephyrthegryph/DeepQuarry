@@ -104,29 +104,39 @@ GLOBAL_VAR(declare_report_capture)
 		empty.caps = list()
 	return empty
 
-/// The compiled table of `type` without an instance in hand (explain tools, tests): a probe instance is made, asked and deleted.
+/// The compiled table of `type` without an instance in hand (explain tools, tests). No instance is made: the generated declared_entries() of the
+/// nearest type that declares a block is called as a plain proc (src null; it reads nothing of src, only nameof() and PROC_REF() names, which are
+/// compile-time text), so nothing of the type runs: no New(), no Initialize(), no registration. Null for a type with no block anywhere above it.
 /proc/table_of_type(type)
 	RETURN_TYPE(/datum/type_table)
+	if(!ispath(type))
+		return null
 	var/datum/type_table/T = type_table_cache()[type]
 	if(T)
 		return T
-	var/datum/probe = isatom(type) ? null : null
-	if(ispath(type, /atom/movable))
-		probe = new type(null)
-	else if(ispath(type, /datum) && !ispath(type, /atom))
-		probe = new type
-	if(!probe)
+	var/declarer = type
+	var/entries_proc = null
+	while(declarer)
+		entries_proc = text2path("[declarer]/proc/declared_entries")
+		if(entries_proc)
+			break
+		declarer = type2parent(declarer)
+	if(!entries_proc)
 		return null
-	T = table_build(probe)
-	qdel(probe) // ALLOW(lifecycle): a probe instance made only to read a type's declarations
-	return T
+	var/list/chain = list(new /datum/entry/skip_built)
+	call(entries_proc)(chain)
+	return table_build_chain(type, chain)
 
 /proc/table_build(datum/D)
 	BOOT_PHASE_BEGIN(bp_chain)
 	var/list/chain = list(new /datum/entry/skip_built)
 	D.declared_entries(chain)
-	var/list/blocks = table_split_blocks(chain)
 	BOOT_PHASE_END(bp_chain, "table_build: declared_entries chain", D)
+	return table_build_chain(D.type, chain)
+
+/// The table of `type` from its declared_entries() chain: each block not yet compiled is compiled on its parent's table, in order.
+/proc/table_build_chain(type, list/chain)
+	var/list/blocks = table_split_blocks(chain)
 	var/datum/type_table/T = null
 	for(var/list/block in blocks)
 		var/datum/entry/block/B = block[1]
@@ -134,16 +144,16 @@ GLOBAL_VAR(declare_report_capture)
 		if(!built)
 			BOOT_PHASE_BEGIN(bp_compile)
 			built = table_compile(B.block_type, T, block[2], entry_origin_text(B.file, B.line), B.file)
-			BOOT_PHASE_END(bp_compile, "table_build: table_compile (block)", D)
+			BOOT_PHASE_END(bp_compile, "table_build: table_compile (block)", null)
 			type_blocks_cache()[B.block_type] = built
 		T = built
 	if(!T)
-		T = table_compile(D.type, null, null, null)
-	else if(T.owner_type != D.type && stat_type_needs_own_table(D.type, T.owner_type))
+		T = table_compile(type, null, null, null)
+	else if(T.owner_type != type && stat_type_needs_own_table(type, T.owner_type))
 		// A type that declares nothing shares its ancestor's table, but a FORMULA stat it declares (STAT lines are not table entries) must be
 		// computed at init: it gets its own table, whose hooks say so.
-		T = table_compile(D.type, T, null, null)
-	type_table_cache()[D.type] = T
+		T = table_compile(type, T, null, null)
+	type_table_cache()[type] = T
 	return T
 
 /// The first item of the chain table_build() asks declared_entries() for: a block whose table is already compiled adds its marker and nothing
@@ -520,6 +530,33 @@ GLOBAL_VAR(declare_report_capture)
 	op_validate_table(T, parent)
 	BOOT_PHASE_END(bp_op, "table_validate: op_validate_table", null)
 	modes_validate_table(T)
+	input_validate_table(T, parent)
+
+/// Is `name` a proc (or verb) of `type` or of one of its ancestors? Read from the type tree, without an instance.
+/proc/type_has_proc(type, name)
+	var/t = type
+	while(t)
+		if(text2path("[t]/proc/[name]") || text2path("[t]/verb/[name]"))
+			return TRUE
+		t = type2parent(t)
+	return FALSE
+
+/// A text handler of an input entry (click_on(), drag_onto(), ...) names a proc of the type or, failing that, an op key: input_dispatch() runs an op
+/// for a name with no proc. A name that is neither (a typo, a renamed proc) would silently do nothing at click time, so it is a build error here.
+/proc/input_validate_table(datum/type_table/T, datum/type_table/parent = null)
+	if(!ispath(T.owner_type))
+		return
+	var/datum/op_index/index = null
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_INPUT))
+		var/datum/entry/E = C.item
+		var/handler = E.args["handler"]
+		if(!istext(handler) || type_has_proc(T.owner_type, handler))
+			continue
+		if(!index)
+			index = op_index_of_table(T, parent)
+		if(index.by_key[handler])
+			continue
+		table_error(T, C.origin, declare_rule(RULE_INPUT_HANDLER), "[E.args["input"]] names \"[handler]\", which is neither a proc of the type nor one of its op keys", "name the handler with PROC_REF(x), or give it the key of an op the type declares")
 
 /// Table-level checks a capability definition makes of its own params (a construction graph's start and via).
 /datum/capability/proc/validate_in(datum/type_table/T, origin)

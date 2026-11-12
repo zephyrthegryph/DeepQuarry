@@ -58,7 +58,7 @@
 	var/halved = deliver(H, DAMAGE_ENTRY_PROJECTILE) // a hook of /datum/act/hit applies to the projectile hit
 	var/halved_direct = deliver(H, 0) // a direct delivery is the generic hit itself
 	TEST_ASSERT(full > 0, "the plain one took damage")
-	TEST_ASSERT_EQUAL(halved, full * 0.5, "adjusts(packet.amounts, scale = 0.5) halved the projectile")
+	TEST_ASSERT_EQUAL(halved, full * 0.5, "adjusts_with(p2_hit_halve) halved the projectile")
 	TEST_ASSERT_EQUAL(halved_direct, full * 0.5, "and the direct hit")
 
 /datum/unit_test/dq_p2_engine/hit_needs_refuses
