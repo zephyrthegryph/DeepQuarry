@@ -11,8 +11,8 @@
 	color = DEAD_PLANT_COLOUR
 
 CAPABILITIES(/obj/effect/dead_plant)
-	op("clear_dead_plant", hand(), label("Interaction clear dead plant"), then(PROC_REF(interaction_clear_dead_plant)))
-	op("clear_dead_plant_item", item(/obj/item), label("Interaction clear dead plant item"), then(PROC_REF(interaction_clear_dead_plant_item)))
+	op("clear_dead_plant", hand(), label("Clear away"), then(PROC_REF(interaction_clear_dead_plant)))
+	op("clear_dead_plant_item", item(/obj/item), label("Clear away"), then(PROC_REF(interaction_clear_dead_plant_item)))
 
 /// Old attack_hand: a touch clears the dead plant away.
 /obj/effect/dead_plant/proc/interaction_clear_dead_plant(datum/act/op/A)

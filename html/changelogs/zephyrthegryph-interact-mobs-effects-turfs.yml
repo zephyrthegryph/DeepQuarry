@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Destroying a microwave no longer spills its circuit parts on the floor, and its parts no longer count as ingredients."
+  - bugfix: "A borer is refused before it starts infesting a brainless target, and no longer gets two start messages past a helmet."
+  - spellcheck: "Clearer menu labels on flux anomalies, dead vines, weaver silk, ant structures and hoist hooks."
