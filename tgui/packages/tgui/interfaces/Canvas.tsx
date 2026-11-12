@@ -159,7 +159,10 @@ class PaintCanvas extends Component<PaintCanvasProps> {
 
   drawCanvas(propSource: PaintCanvasProps) {
     const canvas = this.canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
+    }
     const grid = JSON.parse(JSON.stringify(propSource.value ?? null));
     if (!grid) {
       return;

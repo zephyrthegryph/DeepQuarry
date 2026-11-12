@@ -130,7 +130,7 @@ const StockExchangeFullView = (props) => {
       <b>Actions:</b> + Buy, - Sell, (A)rchives, (H)istory
       <Divider />
       <Table>
-        <Table.Row>
+        <Table.Row header>
           <Table.Cell bold>&nbsp;</Table.Cell>
           <Table.Cell>ID</Table.Cell>
           <Table.Cell>Name</Table.Cell>
@@ -139,7 +139,6 @@ const StockExchangeFullView = (props) => {
           <Table.Cell>Avail</Table.Cell>
           <Table.Cell>Actions</Table.Cell>
         </Table.Row>
-        <Divider />
         {stocks.map((stock) => (
           <Table.Row key={stock.ID}>
             <Table.Cell bold>&nbsp;</Table.Cell>

@@ -72,7 +72,8 @@ function formatKeyboardEvent(
 
 export function KeyComboModal(props) {
   const { act, data } = useBackend<KeyInputData, KeyComboModalActions>();
-  const { init_value, large_buttons, message = '', title, timeout } = data;
+  const { init_value, large_buttons, title, timeout } = data;
+  const message = data.message ?? '';
   const [input, setInput] = useState(init_value);
   const [binding, setBinding] = useState(true);
   const focusRef = useRef<HTMLDivElement | null>(null);
