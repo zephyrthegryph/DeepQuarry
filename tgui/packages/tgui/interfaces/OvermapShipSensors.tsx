@@ -44,7 +44,7 @@ export const OvermapShipSensorsContent = (props) => {
     heat,
     critical_heat,
     status,
-    contacts,
+    contacts = [],
   } = data;
 
   return (

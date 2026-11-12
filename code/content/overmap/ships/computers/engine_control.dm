@@ -62,6 +62,8 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 /// The window data.
 /obj/machinery/computer/ship/engines/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	if(!linked()) // a console with no ship (unlinked, or its ship gone) shows an empty panel
+		return data
 	data["global_state"] = linked().engines_state
 	data["global_limit"] = round(linked().thrust_limit*100)
 	var/total_thrust = 0

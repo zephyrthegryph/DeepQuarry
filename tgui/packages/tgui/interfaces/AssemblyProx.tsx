@@ -21,7 +21,7 @@ type Data = {
 
 export const AssemblyProx = (props) => {
   const { act, data } = useBackend<Data, AssemblyProxActions>();
-  const { timing, time, range, maxRange, scanning } = data;
+  const { timing, time = 0, range = 0, maxRange = 0, scanning } = data;
   return (
     <Window>
       <Window.Content>

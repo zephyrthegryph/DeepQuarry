@@ -25,7 +25,7 @@ type Data = {
 
 export const LanguagesPanel = () => {
   const { data, act } = useBackend<Data, LanguagesPanelActions>();
-  const { has_default, default_name, languages } = data;
+  const { has_default, default_name, languages = [] } = data;
   return (
     <Window width={560} height={620} title="Known Languages">
       <Window.Content scrollable>

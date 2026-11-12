@@ -15,6 +15,10 @@ export const SupplyConsoleShuttleStatus = (props) => {
 
   const { supply_points, shuttle, shuttle_auth } = data;
 
+  if (!shuttle) {
+    return null;
+  }
+
   let shuttle_buttons: React.JSX.Element | string = '';
   let showShuttleForce = false;
 

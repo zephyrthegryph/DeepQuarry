@@ -68,8 +68,8 @@ const TelecommsMultitoolMenuStatus = (props) => {
     network,
     autolinkers,
     shadowlink,
-    linked,
-    filter,
+    linked = [],
+    filter = [],
     multitool,
     multitool_buffer,
   } = data;
@@ -203,7 +203,7 @@ const TelecommsMultitoolMenuPolymorphicOptions = (props: {
     range,
     minRange,
     maxRange,
-  } = props.options;
+  } = props.options ?? ({} as options);
 
   // If absolutely nothing is active, we tell the user there ain't no shit here.
   if (

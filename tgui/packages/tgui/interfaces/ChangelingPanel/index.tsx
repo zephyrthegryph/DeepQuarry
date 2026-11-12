@@ -8,7 +8,7 @@ import type { Data } from './types';
 export const ChangelingPanel = (props) => {
   const { data } = useBackend<Data, ChangelingPanelActions>();
 
-  const { available_points, power_list } = data;
+  const { available_points, power_list = [] } = data;
 
   const purchasedPowers = power_list.filter((entry) => entry.power_purchased);
   const unpurchasedPowers = power_list.filter(

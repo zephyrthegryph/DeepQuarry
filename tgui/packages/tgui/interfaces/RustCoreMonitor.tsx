@@ -31,7 +31,7 @@ type Data = {
 export const RustCoreMonitorContent = (props) => {
   const { act, data } = useBackend<Data, RustCoreMonitorActions>();
 
-  const { cores } = data;
+  const { cores = [] } = data;
 
   return (
     <Section

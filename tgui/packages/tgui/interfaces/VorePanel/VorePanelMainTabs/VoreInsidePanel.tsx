@@ -18,7 +18,7 @@ export const VoreInsidePanel = (props: { inside: InsideData }) => {
     liq_lvl,
     liq_reagent_type,
     liuq_name,
-  } = inside;
+  } = inside ?? ({} as InsideData);
 
   if (!belly_name) {
     return (

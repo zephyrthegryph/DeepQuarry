@@ -9,7 +9,7 @@ type Data = { detail_color: string; color_list: Record<string, string> };
 export const ICDetailer = (props) => {
   const { act, data } = useBackend<Data, ICDetailerActions>();
 
-  const { detail_color, color_list } = data;
+  const { detail_color, color_list = {} } = data;
 
   return (
     <Window width={420} height={254}>

@@ -95,19 +95,15 @@ MSG_DEF_SELF(ship/access_denied, "access denied")
 	return OP_OK
 
 // The buttons every ship console's window has (declared in its CAPABILITIES, code/modules/flight_operations/flight_console.dm).
-/// The guard every button of a ship console asks first (a console type overrides it).
-/obj/machinery/computer/ship/proc/ui_gate(datum/act/op/A)
-	return TRUE
+/// The requirement every button of a ship console holds (a console type overrides it): null to allow, or the refusal.
+/obj/machinery/computer/ship/proc/controls_refusal(datum/act/op/A)
+	return null
 
 /obj/machinery/computer/ship/proc/ui_act_sync(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	sync_linked(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/proc/ui_act_close(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/mob/user = A.actor
 	user.reset_perspective()
 	return TRUE

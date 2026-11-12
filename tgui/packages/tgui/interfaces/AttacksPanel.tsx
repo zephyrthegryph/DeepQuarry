@@ -20,7 +20,7 @@ type Data = {
 
 export const AttacksPanel = () => {
   const { data, act } = useBackend<Data, AttacksPanelActions>();
-  const { default_name, attacks } = data;
+  const { default_name, attacks = [] } = data;
   return (
     <Window width={460} height={400} title="Known Attacks">
       <Window.Content scrollable>

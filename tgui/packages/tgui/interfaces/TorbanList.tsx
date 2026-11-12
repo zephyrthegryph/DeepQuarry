@@ -11,7 +11,7 @@ type Data = {
 
 export const TorbanList = () => {
   const { data } = useBackend<Data>();
-  const { addresses } = data;
+  const { addresses = [] } = data;
   return (
     <Window width={460} height={500} title="Torban">
       <Window.Content scrollable>

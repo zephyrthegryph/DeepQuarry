@@ -166,10 +166,7 @@
 
 /// One step of a cell's periodic self-charge (adapter: the step's name).
 /proc/dq_lo_cell_step(obj/item/cell/C)
-	if(hascall(C, "recharge_step"))
-		call(C, "recharge_step")(null)
-	else
-		call(C, "periodic_step")()
+	call(C, "recharge_step")(null)
 
 /// A self-charging cell drained by use charges itself back over time.
 /datum/unit_test/dq_leftovers/self_charging_cell_recharges

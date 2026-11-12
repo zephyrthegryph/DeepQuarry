@@ -7,8 +7,12 @@ import type { Data } from './types';
 
 export const IconSection = (props) => {
   const { act, data } = useBackend<Data, PaiChooseActions>();
-  const { sprite_datum_class, sprite_datum_size, selected_chassis, pai_color } =
-    data;
+  const {
+    sprite_datum_class,
+    sprite_datum_size,
+    selected_chassis,
+    pai_color = '#ffffff',
+  } = data;
 
   return (
     <Section

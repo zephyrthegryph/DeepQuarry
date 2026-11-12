@@ -102,7 +102,7 @@ const getFilteredTickets = (
 
 export const TicketsPanel = (props) => {
   const { act, data } = useBackend<Data, TicketsPanelActions>();
-  const { tickets, selected_ticket, is_admin } = data;
+  const { tickets = [], selected_ticket, is_admin } = data;
 
   const [stateFilter, setStateFilter] = useState('open');
   const [levelFilter, setLevelFilter] = useState(2);

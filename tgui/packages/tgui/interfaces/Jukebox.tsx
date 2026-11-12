@@ -51,7 +51,7 @@ export const Jukebox = (props) => {
     current_track,
     current_genre,
     percent,
-    tracks,
+    tracks = [],
     admin,
   } = data;
 

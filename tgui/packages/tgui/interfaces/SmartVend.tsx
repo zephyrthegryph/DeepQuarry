@@ -35,7 +35,7 @@ export const SmartVend = (props) => {
   const [sortOrder, setSortOrder] = useState('Alphabetical');
   const [descending, setDescending] = useState(false);
 
-  const { secure, locked, contents } = data;
+  const { secure, locked, contents = [] } = data;
 
   return (
     <Window width={640} height={550}>

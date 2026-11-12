@@ -29,7 +29,7 @@ type Data = {
 export const GyrotronControlContent = (props) => {
   const { act, data } = useBackend<Data, GyrotronControlActions>();
 
-  const { gyros } = data;
+  const { gyros = [] } = data;
 
   return (
     <Section

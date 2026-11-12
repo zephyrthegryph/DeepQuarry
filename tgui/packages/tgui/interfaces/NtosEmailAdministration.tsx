@@ -29,7 +29,7 @@ type account = { login: string; uid: string };
 export const NtosEmailAdministration = (props) => {
   const { data } = useBackend<Data, NtosEmailAdministrationActions>();
 
-  const { error, cur_title, current_account, accounts } = data;
+  const { error, cur_title, current_account, accounts = [] } = data;
 
   let body: React.JSX.Element = <MainMenu accounts={accounts} />;
 

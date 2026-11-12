@@ -75,8 +75,6 @@
 	var/list/cap_wanted = list()
 	/// Membership key -> the items that sweep it (so a member leaving can drop its execution token).
 	var/list/work_by_members = list()
-	/// Cadence type -> its sweep item (datums/om/periodic.dm): periodic work is membership of a cadence.
-	var/list/cadence_items = list()
 
 	// ---- urgent requests (urgent.dm)
 	var/list/urgent_queue = list()
@@ -125,7 +123,6 @@
 		Kernel = new /datum/controller/kernel
 	if(Kernel.registration_open && !Kernel.live_registered)
 		Kernel.live_registered = TRUE
-		kernel_register_cadences(Kernel)
 		kernel_register_sequences(Kernel)
 		kernel_register_sched_pieces(Kernel)
 	return Kernel

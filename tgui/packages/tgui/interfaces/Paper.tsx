@@ -35,7 +35,7 @@ type Data = {
 
 export const Paper = () => {
   const { data, act } = useBackend<Data, PaperActions>();
-  const { view, title, segments, stamps, garbled } = data;
+  const { view, title, segments = [], stamps, garbled } = data;
   const writeMode = view === 'write';
 
   return (

@@ -24,7 +24,7 @@ type Data = {
 
 export const BitfieldInput = () => {
   const { data, act } = useBackend<Data, BitfieldInputActions>();
-  const { title, flags } = data;
+  const { title, flags = [] } = data;
   return (
     <Window width={420} height={520} title={title}>
       <Window.Content scrollable>

@@ -32,31 +32,33 @@ const NukeKeypad = (props) => {
   return (
     <Box width="185px">
       <Table width="1px">
-        {keypadKeys.map((keyColumn) => (
-          <Table.Cell key={keyColumn[0]}>
-            {keyColumn.map((key) => (
-              <Button
-                fluid
-                bold
-                key={key}
-                mb="6px"
-                textAlign="center"
-                fontSize="40px"
-                height="50px"
-                lineHeight={1.25}
-                disabled={
-                  !!emagged ||
-                  (!!l_setshort && 1) ||
-                  (key !== 'R' && !locked) ||
-                  (code === 'ERROR' && key !== 'R' && 1)
-                }
-                onClick={() => act('type', { digit: key })}
-              >
-                {key}
-              </Button>
-            ))}
-          </Table.Cell>
-        ))}
+        <Table.Row>
+          {keypadKeys.map((keyColumn) => (
+            <Table.Cell key={keyColumn[0]}>
+              {keyColumn.map((key) => (
+                <Button
+                  fluid
+                  bold
+                  key={key}
+                  mb="6px"
+                  textAlign="center"
+                  fontSize="40px"
+                  height="50px"
+                  lineHeight={1.25}
+                  disabled={
+                    !!emagged ||
+                    (!!l_setshort && 1) ||
+                    (key !== 'R' && !locked) ||
+                    (code === 'ERROR' && key !== 'R' && 1)
+                  }
+                  onClick={() => act('type', { digit: key })}
+                >
+                  {key}
+                </Button>
+              ))}
+            </Table.Cell>
+          ))}
+        </Table.Row>
       </Table>
     </Box>
   );

@@ -27,7 +27,7 @@ export const ShutoffMonitor = (props) => (
 export const ShutoffMonitorContent = (props) => {
   const { act, data } = useBackend<Data, ShutoffMonitorActions>();
 
-  const { valves } = data;
+  const { valves = [] } = data;
 
   return (
     <Section title="Valves">

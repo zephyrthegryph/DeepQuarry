@@ -9,8 +9,13 @@ import type { Data } from './types';
 
 export const SpaceBattle = (props) => {
   const { data } = useBackend<Data, SpaceBattleActions>();
-  const { ship_sizes, game_state, current_player, player_one, player_two } =
-    data;
+  const {
+    ship_sizes = {},
+    game_state,
+    current_player,
+    player_one,
+    player_two,
+  } = data;
 
   const [playerOnePlaceShip, setPlayerOnePlaceShip] = useState<string>(
     Object.keys(ship_sizes)[0],

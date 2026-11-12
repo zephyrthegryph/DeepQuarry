@@ -33,11 +33,11 @@ export const Canister = (props) => {
   const {
     connected,
     can_relabel,
-    pressure,
-    releasePressure,
+    pressure = 0,
+    releasePressure = 0,
     defaultReleasePressure,
-    minReleasePressure,
-    maxReleasePressure,
+    minReleasePressure = 0,
+    maxReleasePressure = 1,
     valveOpen,
     holding,
   } = data;

@@ -39,10 +39,10 @@ export const NtosNetMonitor = (props) => {
     config_systemcontrol,
     idsalarm,
     idsstatus,
-    ntnetmaxlogs,
-    maxlogs,
-    minlogs,
-    banned_nids,
+    ntnetmaxlogs = 0,
+    maxlogs = 0,
+    minlogs = 0,
+    banned_nids = [],
     ntnetlogs = [],
   } = data;
   return (

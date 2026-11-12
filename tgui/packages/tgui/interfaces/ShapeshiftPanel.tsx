@@ -64,7 +64,7 @@ const CommandRow = (props: { row: Row }) => {
 
 export const ShapeshiftPanel = () => {
   const { data } = useBackend<Data, ShapeshiftPanelActions>();
-  const { name, preview, groups } = data;
+  const { name, preview, groups = [] } = data;
   return (
     <Window width={640} height={560} title="Shapeshift" theme="console">
       <Window.Content scrollable>

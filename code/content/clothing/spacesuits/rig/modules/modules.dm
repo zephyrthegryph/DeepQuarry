@@ -196,8 +196,8 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 	rel_clear(src, nameof(holder))
 	return
 
-// Called by the hardsuit each rig process tick.
-/obj/item/rig_module/periodic_step()
+// Called by the hardsuit each rig tick (rig.dm); returns the power it draws.
+/obj/item/rig_module/proc/module_tick()
 	if(active)
 		return active_power_cost
 	else

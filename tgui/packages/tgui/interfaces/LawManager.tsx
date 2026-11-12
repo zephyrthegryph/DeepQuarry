@@ -93,7 +93,7 @@ const LawManagerContent = (props) => {
     inherent_law,
     supplied_law,
     supplied_law_position,
-    zeroth_laws,
+    zeroth_laws = [],
     has_zeroth_laws,
     ion_laws,
     has_ion_laws,
@@ -105,7 +105,7 @@ const LawManagerContent = (props) => {
     isMalf,
     isAdmin,
     channel,
-    channels,
+    channels = [],
     law_sets,
   } = data;
 
@@ -203,7 +203,7 @@ export const LawManagerLaws = (props: {
     isMalf,
     isAdmin,
     channel,
-    channels,
+    channels = [],
     hasScroll,
     sectionHeight,
   } = props;
