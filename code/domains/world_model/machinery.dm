@@ -395,11 +395,17 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 	if(component_parts)
 		return
 	rel_take_all(src, nameof(component_parts))
+	adopt_internals()
+
+/// Takes every unowned item in CONTAINER_SLOT_INTERNALS as the board (when none is held) or a part. Things put in later (a microwave's
+/// ingredients) arrive after this and stay loose.
+/obj/machinery/proc/adopt_internals()
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
 			continue
 		if(istype(I, /obj/item/circuitboard))
-			rel_set(src, nameof(circuit), I)
+			if(!circuit || ispath(circuit))
+				rel_set(src, nameof(circuit), I)
 		else
 			rel_add(src, nameof(component_parts), I)
 
@@ -541,6 +547,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 /// The board and its default parts were made with the machine (start_circuit()).
 /obj/machinery/proc/default_apply_parts()
 	rel_take_all(src, nameof(component_parts))
+	adopt_internals() // the default parts are the machine's from the start, so loose_contents() never counts them as things put in
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()

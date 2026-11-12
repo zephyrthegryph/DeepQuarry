@@ -27,6 +27,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 	finds(nameof(table), /obj/machinery/optable) // the paired rel_one writes the table's computer
 	started_work(step = PROC_REF(work_step))
 	interface("OperatingComputer", title = "Patient Monitor")
+	ui_shape(verbose = bool(), spo2Alarm = num(), choice = bool(), health = bool(), crit = bool(), healthAlarm = num(), spo2 = bool(), occupant = nullable(row(name = schema_text(), stat = int(), vitality = num(), diagnosis = row(status = enum(list("alive", "critical", "dead")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), vitals = row(heartRate = nullable(num()), bloodPressure = nullable(list_of(num())), oxygenation = nullable(num()), respiratoryRate = nullable(num()), heartRhythm = nullable(enum(list("sinus", "post_arrest", "tachy", "vfib", "asystole"))), temperature = nullable(num()), consciousness = nullable(schema_text()), bloodPercent = nullable(num())), findings = list_of(row(name = schema_text(), kind = enum(list("condition", "sign", "lesion", "wound")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), location = schema_text(), description = nullable(schema_text()), trend = nullable(enum(list("new", "worsening", "improving", "stable"))), hint = nullable(schema_text()))), parts = list_of(row(name = schema_text(), kind = enum(list("external", "internal")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), flags = list_of(schema_text()), implants = nullable(list_of(schema_text())))), hints = list_of(row(tag = schema_text(), label = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical"))))), bloodType = nullable(schema_text()), surgery = nullable(list_of(row(name = schema_text(), currentStage = schema_text(), nextSteps = list_of(schema_text())))))))
 	extend("ui_open", needs(req_operable()), then(PROC_REF(control_fingerprinted)))
 	op("verboseOn", ui_act(), then(PROC_REF(control_used)), then(PROC_REF(verboseOn)))
 	op("verboseOff", ui_act(), then(PROC_REF(control_used)), then(PROC_REF(verboseOff)))
@@ -44,26 +45,26 @@ CAPABILITIES(/obj/machinery/computer/operating)
 
 /obj/machinery/computer/operating/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
-	var/list/data = list("verbose" = verbose, "spo2Alarm" = spo2Alarm, "choice" = choice, "health" = healthAnnounce, "crit" = crit, "healthAlarm" = healthAlarm, "spo2" = spo2)
+	var/list/data = list("verbose" = !!verbose, "spo2Alarm" = spo2Alarm, "choice" = !!choice, "health" = !!healthAnnounce, "crit" = !!crit, "healthAlarm" = healthAlarm, "spo2" = !!spo2)
 	var/mob/living/carbon/human/occupant
 	if(table)
 		occupant = table.victim
-	data["hasOccupant"] = occupant ? 1 : 0
-	var/list/occupantData = list()
+	data["occupant"] = null
 
 	if(occupant)
+		var/list/occupantData = list()
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
-		occupantData["paralysis"] = occupant.status_units(STAT_PARALYZED)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
 		occupantData["diagnosis"] = D.report_data()
 		spent(D)
+		occupantData["bloodType"] = null
+		occupantData["surgery"] = null
 		if(ishuman(occupant) && occupant.dna)
 			occupantData["bloodType"] = occupant.dna.b_type
 			occupantData["surgery"] = build_surgery_list(user)
-
-	data["occupant"] = occupantData
+		data["occupant"] = occupantData
 
 	return data
 

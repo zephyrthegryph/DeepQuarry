@@ -19,7 +19,6 @@ export const CryoContent = (props) => {
   const { act, data } = useBackend<Data, CryoActions>();
   const {
     isOperating,
-    hasOccupant,
     occupant,
     cellTemperature,
     cellTemperatureStatus,
@@ -34,13 +33,13 @@ export const CryoContent = (props) => {
           <Button
             icon="user-slash"
             onClick={() => act('ejectOccupant')}
-            disabled={!hasOccupant}
+            disabled={!occupant}
           >
             Eject
           </Button>
         }
       >
-        {hasOccupant ? (
+        {occupant ? (
           <LabeledList>
             <LabeledList.Item label="Occupant">
               {occupant.name || 'Unknown'}

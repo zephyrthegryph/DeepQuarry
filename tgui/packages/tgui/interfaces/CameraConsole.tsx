@@ -9,20 +9,18 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import { type BooleanLike, classes } from 'tgui-core/react';
+import { classes } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
-import type { CameraConsoleActions } from './generated/CameraConsole';
+import type {
+  CameraConsoleActions,
+  CameraConsoleData,
+} from './generated/CameraConsole';
 
-type activeCamera = { name: string; status: BooleanLike } | null;
+export type Data = CameraConsoleData;
 
-export type camera = { name: string; networks: string[] };
+type activeCamera = Data['activeCamera'];
 
-export type Data = {
-  activeCamera: activeCamera;
-  mapRef: string;
-  cameras: camera[];
-  allNetworks: string[];
-};
+export type camera = Data['cameras'][number];
 
 /**
  * Returns previous and next camera names relative to the currently

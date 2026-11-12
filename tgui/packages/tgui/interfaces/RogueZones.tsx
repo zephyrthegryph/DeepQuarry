@@ -7,22 +7,9 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { RogueZonesActions } from './generated/RogueZones';
+import type { RogueZonesActions, RogueZonesData } from './generated/RogueZones';
 
-type Data = {
-  timeout_percent: number;
-  diffstep: number;
-  difficulty: string;
-  occupied: BooleanLike;
-  scanning: BooleanLike;
-  updated: BooleanLike;
-  debug: BooleanLike;
-  shuttle_location: string;
-  shuttle_at_station: BooleanLike;
-  scan_ready: BooleanLike;
-  can_recall_shuttle: BooleanLike;
-};
+type Data = RogueZonesData;
 
 export const RogueZones = (props) => {
   const { act, data } = useBackend<Data, RogueZonesActions>();

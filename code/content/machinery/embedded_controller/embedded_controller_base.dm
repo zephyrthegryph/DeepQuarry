@@ -16,19 +16,18 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	silicon_ui()
 	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(port), /datum/docking_port, starts = nameof(port))
-	interface("EmbeddedController")
-	// the window's buttons are its commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
-	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	// Each console type opens its own window (interface() in its block); its buttons are its commands, one op per command, each run by
+	// ui_act_program_command() when the type lists it in valid_actions.
 	op("embedded_controller_open_ui", hand(), ungated(), then(PROC_REF(interaction_open_ui_impl)))
 
 
 
 
-/// The controller's actions are its commands, listed per type in valid_actions.
+/// The controller's commands are listed per type in valid_actions: a command op the type inherits but does not list is refused.
 /obj/machinery/embedded_controller/proc/command_listed(datum/act/op/A)
 	return ((A.window_action() in valid_actions)) ? null : MSG(req_failed)
 
-/// A command from the window.
+/// A command from the window: the op's window action is the command.
 /obj/machinery/embedded_controller/proc/ui_act_program_command(datum/act/op/A)
 	add_fingerprint(A.actor)
 	work_start(src)

@@ -82,6 +82,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	on_notice(/datum/notice/pod_left, then(PROC_REF(occupant_left)))
 	section(window, "the cell's window: its occupant takes no part in it (occupant_pod(controls_inside = FALSE)), and it opens unpowered")
 	interface("Cryo", title = "Cryo Cell")
+	ui_shape(isOperating = bool(), occupant = nullable(row(name = schema_text(), stat = int(), vitality = num(), critical = bool(), diagnosis = row(status = enum(list("alive", "critical", "dead")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), vitals = row(heartRate = nullable(num()), bloodPressure = nullable(list_of(num())), oxygenation = nullable(num()), respiratoryRate = nullable(num()), heartRhythm = nullable(enum(list("sinus", "post_arrest", "tachy", "vfib", "asystole"))), temperature = nullable(num()), consciousness = nullable(schema_text()), bloodPercent = nullable(num())), findings = list_of(row(name = schema_text(), kind = enum(list("condition", "sign", "lesion", "wound")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), location = schema_text(), description = nullable(schema_text()), trend = nullable(enum(list("new", "worsening", "improving", "stable"))), hint = nullable(schema_text()))), parts = list_of(row(name = schema_text(), kind = enum(list("external", "internal")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), flags = list_of(schema_text()), implants = nullable(list_of(schema_text())))), hints = list_of(row(tag = schema_text(), label = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical"))))), bodyTemperature = num())), cellTemperature = num(), cellTemperatureStatus = enum(list("good", "average", "bad")), isBeakerLoaded = bool(), beakerLabel = nullable(schema_text()), beakerVolume = num())
 	extend("ui_open", ungated(), needs(req_closed(SPACE_PANEL), req(PROC_REF(actor_outside), silent = TRUE)))
 	extend(TAG_UI, then(PROC_REF(control_touched), early = TRUE))
 	op("switchOn", ui_act("switchOn"), then(PROC_REF(switch_on)))
@@ -218,20 +219,20 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 /obj/machinery/atmospherics/unary/cryo_cell/ui_data(datum/act/eval/A)
 	var/mob/living/carbon/occupant = occupant_of(src)
 	var/list/data = list()
-	data["isOperating"] = cooling
-	data["hasOccupant"] = occupant ? TRUE : FALSE
+	data["isOperating"] = !!cooling
 
-	var/list/occupantData = list()
+	data["occupant"] = null
 	if(occupant)
+		var/list/occupantData = list()
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
-		occupantData["critical"] = occupant.is_critical()
+		occupantData["critical"] = !!occupant.is_critical()
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
 		spent(D)
 		occupantData["bodyTemperature"] = occupant.body_temperature()
-	data["occupant"] = occupantData
+		data["occupant"] = occupantData
 
 	var/air_temperature = air_contents.return_temperature()
 	data["cellTemperature"] = round(air_temperature)

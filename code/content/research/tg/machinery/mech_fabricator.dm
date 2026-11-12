@@ -82,6 +82,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	section(window, "The window: the designs, the queue and its buttons")
 	interface("ExosuitFabricatorTg")
+	ui_shape(designs = map_of(schema_text(), row(name = schema_text(), desc = schema_text(), cost = map_of(schema_text(), num()), id = schema_text(), categories = list_of(schema_text()), icon = schema_text(), constructionTime = num())), SHEET_MATERIAL_AMOUNT = num(), processing = bool(), materials = list_of(row(name = schema_text(), ref = num(), amount = num(), color = schema_text(), sheets = int(), removable = bool())), queue = list_of(row(jobId = int(), designId = schema_text(), processing = bool(), timeLeft = num())))
 	op("build", ui_act(arg("designs", list_of(schema_text(256))), arg("now", bool())), then(PROC_REF(ui_act_build)))
 	op("del_queue_part", ui_act(arg("index", int(1, 1000))), then(PROC_REF(ui_act_del_queue_part)))
 	op("clear_queue", ui_act(), then(PROC_REF(ui_act_clear_queue)))
@@ -405,6 +406,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	data["designs"] = designs
 
+	data["SHEET_MATERIAL_AMOUNT"] = SHEET_MATERIAL_AMOUNT
 	var/list/material_data = present_tgui_static_data(rmat.mat_container(), user)
 	if(material_data)
 		data += material_data
@@ -412,11 +414,9 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	return data
 
 /obj/machinery/mecha_part_fabricator_tg/ui_data(datum/act/eval/A)
-	var/list/data = list("processing" = process_queue)
+	var/list/data = list("processing" = process_queue ? TRUE : FALSE)
 
-	var/list/material_data = rmat.mat_container()?.material_list_data(A.actor)
-	if(material_data)
-		data["materials"] = material_data
+	data["materials"] = rmat.mat_container()?.material_list_data(A.actor) || list()
 	data["queue"] = list()
 
 	if(being_built)

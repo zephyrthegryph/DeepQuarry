@@ -8,54 +8,12 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { StockExchangeActions } from './generated/StockExchange';
+import type {
+  StockExchangeActions,
+  StockExchangeData,
+} from './generated/StockExchange';
 
-type Data = {
-  stationName: string;
-  balance: number;
-  screen: string;
-  viewMode: string | undefined;
-  stocks:
-    | {
-        REF: string;
-        valueChange: number;
-        bankrupt: BooleanLike;
-        ID: string;
-        Name: string;
-        Value: number;
-        Owned: number;
-        Avail: number;
-        Unification: string;
-        Products: string[];
-      }[]
-    | [];
-  logs:
-    | {
-        type: string;
-        time: number;
-        user_name: string;
-        stocks: string[];
-        shareprice: number;
-        money: number;
-        company_name: string;
-      }[]
-    | [];
-  name: string | undefined;
-  events: { current_title: string; current_desc: string }[] | undefined;
-  articles:
-    | {
-        headline: string;
-        subtitle: string;
-        article: string;
-        author: string;
-        spacetime: string;
-        outlet: string;
-      }[]
-    | undefined;
-  maxValue: number | undefined;
-  values: number[][] | undefined;
-};
+type Data = StockExchangeData;
 
 export const StockExchange = (props) => {
   const { data } = useBackend<Data, StockExchangeActions>();
@@ -130,7 +88,7 @@ const StockExchangeFullView = (props) => {
       <b>Actions:</b> + Buy, - Sell, (A)rchives, (H)istory
       <Divider />
       <Table>
-        <Table.Row>
+        <Table.Row header>
           <Table.Cell bold>&nbsp;</Table.Cell>
           <Table.Cell>ID</Table.Cell>
           <Table.Cell>Name</Table.Cell>
@@ -139,7 +97,6 @@ const StockExchangeFullView = (props) => {
           <Table.Cell>Avail</Table.Cell>
           <Table.Cell>Actions</Table.Cell>
         </Table.Row>
-        <Divider />
         {stocks.map((stock) => (
           <Table.Row key={stock.ID}>
             <Table.Cell bold>&nbsp;</Table.Cell>
@@ -189,7 +146,7 @@ const StockExchangeCompactView = (props) => {
       {stocks.map((stock) => (
         <Box key={stock.ID}>
           <span>{stock.Name}</span> <span>{stock.ID}</span>
-          {stock.bankrupt === 1 && <b color="red">BANKRUPT</b>}
+          {stock.bankrupt && <b color="red">BANKRUPT</b>}
           <br />
           <b>Unified shares</b> {stock.Unification} ago.
           <br />
@@ -202,7 +159,7 @@ const StockExchangeCompactView = (props) => {
           <br />
           There are {stock.Avail} purchasable shares on the market currently.
           <br />
-          {stock.bankrupt === 1 ? (
+          {stock.bankrupt ? (
             <span>You cannot buy or sell shares in a bankrupt company!</span>
           ) : (
             <span>
@@ -336,9 +293,9 @@ const StockExchangeGraph = (props) => {
       <Section position="relative" height="100%">
         <Chart.Line
           fillPositionedParent
-          data={values}
+          data={values.map((value, i) => [i, value])}
           rangeX={[0, values.length - 1]}
-          rangeY={[0, maxValue!]}
+          rangeY={[0, maxValue]}
           strokeColor="rgba(0, 181, 173, 1)"
           fillColor="rgba(0, 181, 173, 0.25)"
         />

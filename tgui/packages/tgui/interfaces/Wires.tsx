@@ -3,22 +3,11 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Color } from 'tgui-core/color';
 import { Box, Section, Stack } from 'tgui-core/components';
-import { type BooleanLike, classes } from 'tgui-core/react';
-import type { WiresActions } from './generated/Wires';
+import { classes } from 'tgui-core/react';
+import type { WiresActions, WiresData } from './generated/Wires';
 
-export type Wire = {
-  seen_color: string;
-  color_name: string;
-  color: string;
-  wire: string | null;
-  cut: BooleanLike;
-  attached: BooleanLike;
-};
-
-export type WireData = {
-  wires: Wire[];
-  status: string[];
-};
+export type WireData = WiresData;
+export type Wire = WireData['wires'][number];
 
 export const Wires = (props) => {
   const { data } = useBackend<WireData, WiresActions>();

@@ -264,6 +264,7 @@
 ///TGUI below here
 CAPABILITIES(/datum/trait_state/radiation_effects)
 	interface("RadiationConfig", title = "Radiation Config")
+	ui_shape(glowing = bool(), radiation_color = schema_text(), glowtoggle = bool(), radiation_nutrition = bool(), nutrition_toggle = bool(), radiation_nutrition_cap = num(), current_nutrition = num())
 	op("toggle_color", ui_act("toggle_color"),
 		asks(/datum/prompt/color, fields = list("question" = "Select a color you wish your radioactive glow to be!", "default" = computed(PROC_REF(radiation_color_default)), "title" = "Color Selector", "timeout" = 0), step = "color"),
 		then(PROC_REF(ui_act_toggle_color)))
@@ -309,12 +310,10 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_glow(datum/act/op/A)
 	set_glows(!glows)
-	to_chat(owner, span_info("You are [glows ? "now" : "no longer"] glowing."))
 	return FALSE
 
 /datum/trait_state/radiation_effects/proc/ui_act_toggle_nutrition(datum/act/op/A)
 	set_radiation_nutrition(!radiation_nutrition)
-	to_chat(owner, span_info("You are [radiation_nutrition ? "now" : "no longer"] gaining nutrition from radiation."))
 	return FALSE
 
 /datum/trait_state/radiation_effects/proc/create_toony_glow()

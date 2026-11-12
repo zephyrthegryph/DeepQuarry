@@ -31,6 +31,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 	owns_one(nameof(fabricated_laptop), /obj/item/modular_computer/laptop)
 	owns_one(nameof(fabricated_tablet), /obj/item/modular_computer/tablet)
 	interface("ComputerFabricator")
+	ui_shape(state = int(), devtype = int(), hw_battery = int(), hw_disk = int(), hw_netcard = int(), hw_tesla = int(), hw_nanoprint = int(), hw_card = int(), hw_cpu = int(), totalprice = int())
 	without("ui_open")
 	op("pick_device", ui_act("pick_device", arg("pick", num())), then(PROC_REF(ui_act_pick_device)))
 	op("clean_order", ui_act("clean_order"), then(PROC_REF(ui_act_clean_order)))
@@ -256,17 +257,15 @@ CAPABILITIES(/obj/machinery/lapvend)
 	var/list/data = list()
 
 	data["state"] = state
-	if(state == 1)
-		data["devtype"] = devtype
-		data["hw_battery"] = dev_battery
-		data["hw_disk"] = dev_disk
-		data["hw_netcard"] = dev_netcard
-		data["hw_tesla"] = dev_tesla
-		data["hw_nanoprint"] = dev_nanoprint
-		data["hw_card"] = dev_card
-		data["hw_cpu"] = dev_cpu
-	if(state == 1 || state == 2)
-		data["totalprice"] = total_price
+	data["devtype"] = devtype
+	data["hw_battery"] = dev_battery
+	data["hw_disk"] = dev_disk
+	data["hw_netcard"] = dev_netcard
+	data["hw_tesla"] = dev_tesla
+	data["hw_nanoprint"] = dev_nanoprint
+	data["hw_card"] = dev_card
+	data["hw_cpu"] = dev_cpu
+	data["totalprice"] = total_price
 
 	return data
 

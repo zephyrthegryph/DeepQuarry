@@ -54,6 +54,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	owns_one(nameof(mannequin), /mob/living/carbon/human)
 	owns_many(nameof(cam_plane_masters))
 	interface("AppearanceChanger")
+	ui_shape(species = list_of(row(specimen = schema_text())), hair_styles = list_of(row(name = schema_text(), icon = schema_text(), icon_state = schema_text())), ear_styles = list_of(row(name = schema_text(), instance = schema_text(), color = bool(), second_color = bool(), icon = schema_text(), icon_state = schema_text())), tail_styles = list_of(row(name = schema_text(), instance = schema_text(), color = bool(), second_color = bool(), icon = schema_text(), icon_state = schema_text())), wing_styles = list_of(row(name = schema_text(), instance = schema_text(), color = bool(), second_color = bool(), icon = schema_text(), icon_state = schema_text())), marking_styles = list_of(row(name = schema_text(), icon = schema_text(), icon_state = schema_text())), facial_hair_styles = list_of(row(name = schema_text(), icon = schema_text(), icon_state = schema_text())), hair_grads = list_of(schema_text()), mapRef = schema_text(), is_design_console = bool(), disk = bool(), selected_a_record = bool(), character_records = list_of(row(name = schema_text(), recref = schema_text())), stock_records = list_of(schema_text()), name = schema_text(), specimen = schema_text(), gender = schema_text(), gender_id = schema_text(), genders = list_of(row(gender_name = schema_text(), gender_key = schema_text())), id_genders = list_of(row(gender_name = schema_text(), gender_key = schema_text())), change_race = bool(), change_misc = bool(), change_gender = bool(), change_hair = bool(), change_facial_hair = bool(), change_skin_color = bool(), change_eye_color = bool(), change_hair_color = bool(), change_facial_hair_color = bool(), species_name = nullable(schema_text()), use_custom_icon = bool(), base_icon = nullable(schema_text()), size_scale = schema_text(), scale_appearance = schema_text(), offset_override = schema_text(), weight = num(), digitigrade = bool(), blood_reagent = nullable(schema_text()), blood_color = nullable(schema_text()), species_sound = nullable(schema_text()), flavor_text = map_of(schema_text(), schema_text()), hair_style = nullable(schema_text()), ear_style = nullable(schema_text()), ear_secondary_style = nullable(schema_text()), tail_style = nullable(schema_text()), wing_style = nullable(schema_text()), markings = list_of(row(marking_name = schema_text(), marking_color = schema_text())), facial_hair_style = nullable(schema_text()), skin_color = schema_text(), eye_color = schema_text(), hair_color = schema_text(), hair_color_grad = schema_text(), hair_grad = nullable(schema_text()), ears_color = schema_text(), ears2_color = schema_text(), ear_secondary_colors = list_of(schema_text()), tail_color = schema_text(), tail2_color = schema_text(), tail3_color = schema_text(), wing_color = schema_text(), wing2_color = schema_text(), wing3_color = schema_text(), wing_alpha = num(), tail_alpha = num(), ears_alpha = num(), secondary_ears_alpha = num(), facial_hair_color = schema_text())
 	extend(TAG_UI, needs(req(PROC_REF(ui_cooled))))
 	extend(TAG_UI, then(PROC_REF(ui_start_cooldown), early = TRUE))
 	ref_one(nameof(owner), /mob/living/carbon/human)
@@ -848,6 +849,14 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/ui_static_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = ..()
+	data["species"] = list()
+	data["hair_styles"] = list()
+	data["ear_styles"] = list()
+	data["tail_styles"] = list()
+	data["wing_styles"] = list()
+	data["marking_styles"] = list()
+	data["facial_hair_styles"] = list()
+	data["hair_grads"] = list()
 
 	generate_data(user, owner())
 
@@ -905,6 +914,59 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["selected_a_record"] = FALSE
 	data["character_records"] = list()
 	data["stock_records"] = list()
+	data["name"] = ""
+	data["specimen"] = ""
+	data["gender"] = ""
+	data["gender_id"] = ""
+	data["genders"] = list()
+	data["id_genders"] = list()
+	data["change_race"] = FALSE
+	data["change_misc"] = FALSE
+	data["change_gender"] = FALSE
+	data["change_hair"] = FALSE
+	data["change_facial_hair"] = FALSE
+	data["change_skin_color"] = FALSE
+	data["change_eye_color"] = FALSE
+	data["change_hair_color"] = FALSE
+	data["change_facial_hair_color"] = FALSE
+	data["species_name"] = null
+	data["use_custom_icon"] = FALSE
+	data["base_icon"] = null
+	data["size_scale"] = ""
+	data["scale_appearance"] = ""
+	data["offset_override"] = ""
+	data["weight"] = 0
+	data["digitigrade"] = FALSE
+	data["blood_reagent"] = null
+	data["blood_color"] = null
+	data["species_sound"] = null
+	data["flavor_text"] = list()
+	data["hair_style"] = null
+	data["ear_style"] = null
+	data["ear_secondary_style"] = null
+	data["tail_style"] = null
+	data["wing_style"] = null
+	data["markings"] = list()
+	data["facial_hair_style"] = null
+	data["skin_color"] = ""
+	data["eye_color"] = ""
+	data["hair_color"] = ""
+	data["hair_color_grad"] = ""
+	data["hair_grad"] = null
+	data["ears_color"] = ""
+	data["ears2_color"] = ""
+	data["ear_secondary_colors"] = list()
+	data["tail_color"] = ""
+	data["tail2_color"] = ""
+	data["tail3_color"] = ""
+	data["wing_color"] = ""
+	data["wing2_color"] = ""
+	data["wing3_color"] = ""
+	data["wing_alpha"] = 0
+	data["tail_alpha"] = 0
+	data["ears_alpha"] = 0
+	data["secondary_ears_alpha"] = 0
+	data["facial_hair_color"] = ""
 	// Handle some unique stuff to the body design console
 	var/obj/machinery/computer/transhuman/designer/DC = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
@@ -914,7 +976,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		data["is_design_console"] = TRUE
 		data["disk"] = !isnull(DC.disk)
 		// Monkey is a placeholder, because I am not hackcoding the appearance changer to accept a null owner - Willbird
-		data["selected_a_record"] = DC.selected_record
+		data["selected_a_record"] = !!DC.selected_record
 		if(!DC.selected_record)
 			// Load all records on station that can be printed
 			var/list/bodyrecords_list_ui = list()
@@ -933,7 +995,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			data["stock_records"] = stock_bodyrecords_list_ui
 			data["change_race"] = can_change(owner(), APPEARANCE_RACE)
 			data["change_misc"] = can_change(owner(), APPEARANCE_MISC)
-			data["gender_id"] = can_change(owner(), APPEARANCE_GENDER)
 			data["change_gender"] = can_change(owner(), APPEARANCE_GENDER)
 			data["change_hair"] = can_change(owner(), APPEARANCE_HAIR)
 			data["change_eye_color"] = can_change(owner(), APPEARANCE_EYE_COLOR)
@@ -945,19 +1006,14 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["species_name"] = owner().bio.custom_species
 	data["use_custom_icon"] = (owner().species.selects_bodytype >= SELECTS_BODYTYPE_CUSTOM)
 	data["base_icon"] = owner().species.base_species
-	data["synthetic"] = owner().synthetic ? "Yes" : "No"
 	data["size_scale"] = player_size_name(owner().size_multiplier)
 	data["scale_appearance"] = owner().dna.scale_appearance ? "Fuzzy" : "Sharp"
 	data["offset_override"] = owner().dna.offset_override ? "Odd" : "Even"
 	data["weight"] = STATE_GET(owner(), bodyweight, weight)
-	data["digitigrade"] = owner().looks.digitigrade
+	data["digitigrade"] = !!owner().looks.digitigrade
 	data["blood_reagent"] = owner().dna.blood_reagents
 	data["blood_color"] = owner().dna.blood_color
 	data["species_sound"] = owner().species.species_sounds
-	// Are these needed? It seems to be only used if above is unset??
-	data["species_sounds_gendered"] = owner().species.gender_specific_species_sounds
-	data["species_sounds_female"] = owner().species.species_sounds_female
-	data["species_sounds_male"] = owner().species.species_sounds_male
 	// flavor
 	var/mob/living/carbon/human/flavor_owner = owner()
 	if(!LAZYLEN(flavor_owner.bio.flavor_texts))
@@ -971,7 +1027,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["gender"] = owner().gender
 	data["gender_id"] = owner().identifying_gender //This is saved to your MIND.
 	data["change_race"] = can_change(owner(), APPEARANCE_RACE)
-	data["saveslot_load"] = can_change(owner(), APPEARANCE_ALL_COSMETIC)
 	data["change_misc"] = can_change(owner(), APPEARANCE_MISC)
 
 	data["change_gender"] = can_change(owner(), APPEARANCE_GENDER)
@@ -989,10 +1044,10 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(data["change_hair"])
 		data["hair_style"] = owner().looks.hair_style
 
-		data["ear_style"] = owner().ear_style
+		data["ear_style"] = owner().ear_style?.name
 		data["ear_secondary_style"] = owner().ear_secondary_style?.name
-		data["tail_style"] = owner().tail_style
-		data["wing_style"] = owner().wing_style
+		data["tail_style"] = owner().tail_style?.name
+		data["wing_style"] = owner().wing_style?.name
 		var/list/markings_data[0]
 		set_markings(owner().get_prioritised_markings())
 		for (var/marking in markings)
@@ -1120,7 +1175,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 	if(!LAZYLEN(valid_gradstyles))
 		for(var/key in GLOB.hair_gradients)
-			add_valid_gradstyles(list(list(key)))
+			add_valid_gradstyles(list(key))
 
 /datum/tgui_module/appearance_changer/proc/get_genders(mob/living/carbon/human/target)
 	var/datum/species/S = target.species

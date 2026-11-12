@@ -8,22 +8,14 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { OvermapPanControls } from './common/Overmap';
-import type { OvermapDisperserActions } from './generated/OvermapDisperser';
+import type {
+  OvermapDisperserActions,
+  OvermapDisperserData,
+} from './generated/OvermapDisperser';
 
-type Data = {
-  faillink: BooleanLike;
-  calibration: number[] | null;
-  overmapdir: number | null;
-  cal_accuracy: number;
-  strength: number;
-  range: number;
-  next_shot: number;
-  nopower: BooleanLike;
-  chargeload: string | null;
-};
+type Data = OvermapDisperserData;
 
 export const OvermapDisperser = (props) => {
   return (

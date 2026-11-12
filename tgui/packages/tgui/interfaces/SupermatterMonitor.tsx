@@ -9,26 +9,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
-import type { SupermatterMonitorActions } from './generated/SupermatterMonitor';
+import type {
+  SupermatterMonitorActions,
+  SupermatterMonitorData,
+} from './generated/SupermatterMonitor';
 
-type Data = {
-  active: BooleanLike;
-  SM_area: string;
-  SM_integrity: number;
-  SM_power: number;
-  SM_ambienttemp: number;
-  SM_ambientpressure: number;
-  SM_EPR: number;
-  SM_gas_O2: number;
-  SM_gas_CO2: number;
-  SM_gas_N2: number;
-  SM_gas_PH: number;
-  SM_gas_N2O: number;
-  SM_gas_CH4: number;
-  supermatters: { area_name: string; integrity: number; uid: number }[];
-};
+type Data = SupermatterMonitorData;
 
 // As of 2020-08-06 this isn't actually ever used, but it needs to exist because that's what tgui_modules expect
 export const SupermatterMonitor = (props) => (
@@ -66,7 +53,7 @@ const SupermatterMonitorList = (props) => {
       }
     >
       <Stack wrap="wrap">
-        {supermatters.map((sm, i) => (
+        {(supermatters ?? []).map((sm, i) => (
           <Stack.Item basis="49%" grow={i % 2} key={i}>
             <Section title={`${sm.area_name} (#${sm.uid})`}>
               <LabeledList>
@@ -93,20 +80,19 @@ const SupermatterMonitorList = (props) => {
 const SupermatterMonitorActive = (props) => {
   const { act, data } = useBackend<Data, SupermatterMonitorActions>();
 
-  const {
-    SM_area,
-    SM_integrity,
-    SM_power,
-    SM_ambienttemp,
-    SM_ambientpressure,
-    SM_EPR,
-    SM_gas_O2,
-    SM_gas_CO2,
-    SM_gas_N2,
-    SM_gas_PH,
-    SM_gas_N2O,
-    SM_gas_CH4,
-  } = data;
+  // These keys are only sent while a crystal is selected.
+  const SM_area = data.SM_area ?? '';
+  const SM_integrity = data.SM_integrity ?? 0;
+  const SM_power = data.SM_power ?? 0;
+  const SM_ambienttemp = data.SM_ambienttemp ?? 0;
+  const SM_ambientpressure = data.SM_ambientpressure ?? 0;
+  const SM_EPR = data.SM_EPR ?? 0;
+  const SM_gas_O2 = data.SM_gas_O2 ?? 0;
+  const SM_gas_CO2 = data.SM_gas_CO2 ?? 0;
+  const SM_gas_N2 = data.SM_gas_N2 ?? 0;
+  const SM_gas_PH = data.SM_gas_PH ?? 0;
+  const SM_gas_N2O = data.SM_gas_N2O ?? 0;
+  const SM_gas_CH4 = data.SM_gas_CH4 ?? 0;
 
   return (
     <Section

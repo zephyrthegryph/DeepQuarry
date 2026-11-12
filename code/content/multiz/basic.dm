@@ -1,5 +1,4 @@
-// If you add a more comprehensive system, just untick this file.
-GLOBAL_LIST_EMPTY(z_levels)// Each bit re... haha just kidding this is a list of bools now
+// The level map (which levels join the one above) is the mapping system's z_links_up, read through mapping_z_links_up().
 
 // If the height is more than 1, we mark all contained levels as connected.
 CAPABILITIES(/obj/effect/landmark/map_data)
@@ -13,21 +12,18 @@ CAPABILITIES(/obj/effect/landmark/map_data)
 		return TRUE
 	var/height = MAP_VAR(P, varedits, height)
 	for(var/i = (T.z - height + 1) to (T.z - 1))
-		if(length(GLOB.z_levels) < i)
-			GLOB.z_levels.len = i
-		GLOB.z_levels[i] = TRUE
+		SSmapping.link_level_up(i)
 	return TRUE
 
-// The storage of connections between adjacent levels means some bitwise magic is needed.
 /proc/HasAbove(z)
-	if(z >= world.maxz || z < 1 || z > length(GLOB.z_levels))
-		return 0
-	return GLOB.z_levels[z]
+	if(z >= world.maxz || z < 1)
+		return FALSE
+	return (z in mapping_z_links_up())
 
 /proc/HasBelow(z)
-	if(z > world.maxz || z < 2 || (z-1) > length(GLOB.z_levels))
-		return 0
-	return GLOB.z_levels[z-1]
+	if(z > world.maxz || z < 2)
+		return FALSE
+	return ((z - 1) in mapping_z_links_up())
 
 // Thankfully, no bitwise magic is needed here.
 /proc/GetAbove(atom/atom)

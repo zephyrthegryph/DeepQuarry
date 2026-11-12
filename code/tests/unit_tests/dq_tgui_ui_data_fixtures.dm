@@ -1,5 +1,5 @@
-// Captures real window data for the tgui render test (tgui/packages/tgui/interfaces/renderAll.test.tsx). For every /obj type that declares
-// interface() (then every other /datum type that does, admin panels and client windows included), one fresh instance per window name is spawned and its tgui_data() and static data (present_tgui_static_data()) for a fresh human viewer are written,
+// Captures real window data for the tgui render test (tgui/packages/tgui/interfaces/renderAll.test.tsx). For every /obj, /mob/living and plain
+// datum type (window panels, programs, pAI software; not systems or controllers) that declares interface(), one fresh instance per window name is spawned and its tgui_data() and static data (present_tgui_static_data()) for a fresh human viewer are written,
 // keyed by window name, to TGUI_FIXTURES_FILE. Regenerate: `bash tools/dq_focused_test.sh /datum/unit_test/dq_tgui_ui_data_fixtures`, then
 // copy data/tgui_fixtures/ui_data.json to tgui/packages/tgui/interfaces/__fixtures__/ui_data.json. A type that fails to spawn or whose data
 // faults is logged and skipped (the next type with the same window is tried); the windows with no fixture are logged at the end.
@@ -25,12 +25,11 @@
 
 /datum/unit_test/dq_tgui_ui_data_fixtures/Run()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
-	// Hosts made here touch world state on the way (a zone console makes the rogue-miner controller, a host that faults mid-init leaves
-	// GLOB.atom_initializing set, a gravity host turns the room's gravity off); the test puts each back at the end.
-	var/datum/controller/rogue/prior_rm = GLOB.rm_controller
-	var/prior_initializing = GLOB.atom_initializing
-	var/area/room = get_area(run_loc_floor_bottom_left)
-	var/prior_gravity = room?.has_gravity
+	// World state a host's own spawn sets up (the rogue-zone console makes the rogue controller, a gravity generator's teardown
+	// switches the room's gravity off): put back at the end so later tests see the world they expect.
+	var/datum/controller/rogue/old_rm_controller = GLOB.rm_controller
+	var/area/room = get_area(user)
+	var/old_gravity = room?.has_gravity
 	var/list/fixtures = list()
 	var/list/failed = list()
 	var/list/seen = list()
@@ -38,13 +37,12 @@
 	var/tried = 0
 	// The capture stops at a wall-clock budget so a focused run stays under its cap; what was captured is still written.
 	var/deadline = REALTIMEOFDAY + 3 MINUTES
-	// Objects first (most windows), then the datum hosts outside /atom; a datum whose constructor wants arguments faults and is skipped.
-	// Controllers and systems are world singletons, never made twice.
-	var/list/hosts = typesof(/obj)
+	// Objects first (most windows), then living mobs (bots), then the plain datums that host windows of their own.
+	var/list/candidates = typesof(/obj) + typesof(/mob/living)
 	for(var/type in typesof(/datum))
-		if(!ispath(type, /atom) && !ispath(type, /datum/unit_test) && !ispath(type, /datum/controller) && !ispath(type, /datum/system))
-			hosts += type
-	for(var/type in hosts)
+		if(!ispath(type, /atom) && !ispath(type, /datum/system) && !ispath(type, /datum/controller))
+			candidates += type
+	for(var/type in candidates)
 		if(REALTIMEOFDAY > deadline)
 			log_world("tgui fixtures: time budget reached at [type]; the rest have no fixture this run")
 			break
@@ -98,13 +96,12 @@
 					swept++
 		if(!swept)
 			break
-	if(GLOB.rm_controller != prior_rm)
-		if(!QDELETED(GLOB.rm_controller))
-			qdel(GLOB.rm_controller)
-		GLOB.rm_controller = prior_rm
-	GLOB.atom_initializing = prior_initializing
-	if(room && !isnull(prior_gravity) && room.has_gravity != prior_gravity)
-		room.gravitychange(prior_gravity)
+	if(GLOB.rm_controller != old_rm_controller)
+		log_world("tgui fixtures: a host made the rogue controller; dropping it")
+		GLOB.rm_controller = old_rm_controller
+	if(room && room.has_gravity != old_gravity)
+		log_world("tgui fixtures: a host changed [room]'s gravity; putting it back")
+		room.gravitychange(old_gravity)
 	fdel(TGUI_FIXTURES_FILE)
 	text2file(json_encode(fixtures), TGUI_FIXTURES_FILE)
 	log_world("tgui fixtures: [length(fixtures)] windows from [tried] types, [length(failed)] failed; wrote [TGUI_FIXTURES_FILE]")

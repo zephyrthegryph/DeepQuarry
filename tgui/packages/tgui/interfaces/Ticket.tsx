@@ -12,7 +12,7 @@ import {
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
 import { sanitizeAdminHtml } from '../sanitize';
-import type { TicketActions } from './generated/Ticket';
+import type { TicketActions, TicketData } from './generated/Ticket';
 
 const Level = {
   0: 'Mentorhelp',
@@ -37,21 +37,7 @@ const State = {
   unknown: 'Unknown',
 };
 
-type Data = {
-  id: number;
-  title: string;
-  name: string;
-  ticket_ref: number;
-  state: string;
-  level: number;
-  handler: string;
-  opened_at: number;
-  closed_at: number;
-  opened_at_date: string;
-  closed_at_date: string;
-  actions: string;
-  log: string[];
-};
+type Data = TicketData;
 
 window.addEventListener('keydown', (event) => {
   console.log(event);
@@ -177,14 +163,14 @@ export const Ticket = (props) => {
             <Section scrollable ref={messagesEndRef} fill title="Log">
               <Stack fill direction="column">
                 <Stack.Item grow>
-                  {Object.keys(log)
+                  {Object.keys(log ?? {})
                     .slice(0)
                     .map((L, i) => (
                       <div
                         key={i}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                         dangerouslySetInnerHTML={{
-                          __html: sanitizeAdminHtml(log[L]),
+                          __html: sanitizeAdminHtml(log?.[L] ?? ''),
                         }}
                       />
                     ))}

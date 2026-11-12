@@ -9,38 +9,14 @@ import {
   Section,
 } from 'tgui-core/components';
 import { formatPower, formatSiUnit } from 'tgui-core/format';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { FullscreenNotice } from './common/FullscreenNotice';
-import type { ShieldGeneratorActions } from './generated/ShieldGenerator';
+import type {
+  ShieldGeneratorActions,
+  ShieldGeneratorData,
+} from './generated/ShieldGenerator';
 
-type Data = {
-  locked: BooleanLike;
-  lockedData: {
-    capacitors: capacitor[];
-    active: BooleanLike;
-    failing: BooleanLike;
-    radius: number;
-    max_radius: number;
-    z_range: number;
-    max_z_range: number;
-    average_field_strength: number;
-    target_field_strength: number;
-    max_field_strength: number;
-    shields: number;
-    upkeep: number;
-    strengthen_rate: number;
-    max_strengthen_rate: number;
-    gen_power: number;
-  };
-};
-
-type capacitor = {
-  active: BooleanLike;
-  stored_charge: number;
-  max_charge: number;
-  failing: BooleanLike;
-};
+type Data = ShieldGeneratorData;
 
 export const ShieldGenerator = (props) => {
   const { data } = useBackend<Data, ShieldGeneratorActions>();
@@ -79,6 +55,11 @@ const ShieldGeneratorLocked = (props) => (
 const ShieldGeneratorContent = (props) => {
   const { act, data } = useBackend<Data, ShieldGeneratorActions>();
 
+  const lockedData = data.lockedData;
+  if (!lockedData) {
+    return null;
+  }
+
   const {
     capacitors,
     active,
@@ -95,7 +76,7 @@ const ShieldGeneratorContent = (props) => {
     strengthen_rate,
     max_strengthen_rate,
     gen_power,
-  } = data.lockedData;
+  } = lockedData;
 
   const capacitorLen = (capacitors || []).length;
   return (

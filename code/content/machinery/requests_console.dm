@@ -56,6 +56,7 @@ CAPABILITIES(/obj/machinery/requests_console)
 	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
 	owns_one(nameof(announcement), /datum/announcement, starts = /datum/announcement, starts_args = NO_LOC)
 	interface("RequestConsole")
+	ui_shape(message_log = list_of(list_of(schema_text())), assist_dept = list_of(schema_text()), supply_dept = list_of(schema_text()), info_dept = list_of(schema_text()), department = schema_text(), screen = int(0, 8), newmessagepriority = int(0, 2), silent = bool(), announcementConsole = bool(), message = schema_text(), recipient = schema_text(), priority = int(-1, 2), msgStamped = schema_text(), msgVerified = schema_text(), announceAuth = bool())
 	op("write", ui_act("write", arg("priority", num()), arg("write", schema_text(4096))),
 		asks(/datum/prompt/text, fields = list("title" = "Awaiting Input", "question" = "Write your message:", "default" = "", "timeout" = 0), when = PROC_REF(write_target_ok)),
 		then(PROC_REF(ui_act_write)))

@@ -103,6 +103,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	interface("MechaSleeper", title = "Mounted Sleeper")
+	ui_shape(has_occupant = bool(), occupant_name = schema_text(), status = schema_text(), health_percent = num(), diagnosis = nullable(row(status = enum(list("alive", "critical", "dead")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), vitals = row(heartRate = nullable(num()), bloodPressure = nullable(list_of(num())), oxygenation = nullable(num()), respiratoryRate = nullable(num()), heartRhythm = nullable(enum(list("sinus", "post_arrest", "tachy", "vfib", "asystole"))), temperature = nullable(num()), consciousness = nullable(schema_text()), bloodPercent = nullable(num())), findings = list_of(row(name = schema_text(), kind = enum(list("condition", "sign", "lesion", "wound")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), location = schema_text(), description = nullable(schema_text()), trend = nullable(enum(list("new", "worsening", "improving", "stable"))), hint = nullable(schema_text()))), parts = list_of(row(name = schema_text(), kind = enum(list("external", "internal")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), flags = list_of(schema_text()), implants = nullable(list_of(schema_text())))), hints = list_of(row(tag = schema_text(), label = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")))))), body_temp_c = num(), body_temp_f = num(), reagents = list_of(row(name = schema_text(), volume = num())), injectables = list_of(row(id = schema_text(), name = schema_text())))
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("inject", ui_act("inject", arg("reagent", schema_text(64))), then(PROC_REF(ui_act_inject)))
@@ -182,7 +183,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	if(to_inject && occupant.reagents.get_reagent_amount(R.id) + to_inject > inject_amount*4)
 		occupant_message(span_warning("Sleeper safeties prohibit you from injecting more than [inject_amount*4] units of [R.name]."))
 	else
-		occupant_message(span_notice("Injecting [occupant] with [to_inject] units of [R.name]."))
 		src.mecha_log_message("Injecting [occupant] with [to_inject] units of [R.name].")
 		SG.reagents.remove_reagent(R.id,to_inject)
 		occupant.reagents.add_reagent(R.id,to_inject)

@@ -35,6 +35,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(last_tele_data), /datum/projectile_data)
 	interface("TelesciConsole")
+	ui_shape(noTelepad = bool(), insertedGps = nullable(schema_text()), rotation = num(), currentZ = int(), cooldown = num(), crystalCount = int(), maxCrystals = int(), maxPossibleDistance = num(), maxAllowedDistance = num(), distance = num(), tempMsg = schema_text(), sectorOptions = list_of(int()), lastTeleData = nullable(row(src_x = num(), src_y = num(), distance = num(), time = num())))
 	without("ui_open")
 	op("setrotation", ui_act("setrotation", arg("val", num())), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_setrotation)))
 	op("setdistance", ui_act("setdistance", arg("val", num())), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_setdistance)))
@@ -115,13 +116,26 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 
 /// /obj/machinery/computer/telescience's window data.
 /obj/machinery/computer/telescience/ui_data(datum/act/eval/A)
-	var/list/data = list()
+	var/list/data = list(
+		"noTelepad" = TRUE,
+		"insertedGps" = null,
+		"rotation" = 0,
+		"currentZ" = 0,
+		"cooldown" = 0,
+		"crystalCount" = 0,
+		"maxCrystals" = 0,
+		"maxPossibleDistance" = 0,
+		"maxAllowedDistance" = 0,
+		"distance" = 0,
+		"tempMsg" = "",
+		"sectorOptions" = list(),
+		"lastTeleData" = null,
+	)
 	if(!telepad())
 		set_in_use(0)     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
-		data["noTelepad"] = 1
 	else
-		data["noTelepad"] = 0
-		data["insertedGps"] = inserted_gps
+		data["noTelepad"] = FALSE
+		data["insertedGps"] = inserted_gps?.name
 		data["rotation"] = rotation
 		data["currentZ"] = z_co
 		data["cooldown"] = max(0, min(100, COOLDOWN_TIMELEFT(src, teleport_cooldown) / 10))

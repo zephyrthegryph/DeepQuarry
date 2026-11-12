@@ -58,7 +58,7 @@ const formatDate = (date: string, includeDay = false) =>
 
 export const Changelog = (props) => {
   const { act, data } = useBackend<ChangelogData, ChangelogActions>();
-  const { dates = [] } = data;
+  const dates = data.dates ?? [];
 
   const dateChoices = dates.map((date) => formatDate(date));
 

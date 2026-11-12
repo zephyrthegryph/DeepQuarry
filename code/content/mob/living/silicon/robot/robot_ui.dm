@@ -4,10 +4,11 @@
 
 CAPABILITIES(/datum/tgui_module/robot_ui)
 	interface("Robotact", state = nameof(GLOB.tgui_self_state))
+	ui_shape(modules_static = list_of(row(ref = num(), name = schema_text(), icon = schema_text(), icon_state = schema_text())), emag_modules_static = list_of(row(ref = num(), name = schema_text(), icon = schema_text(), icon_state = schema_text())), module_name = nullable(schema_text()), theme = schema_text(), name = schema_text(), ai = schema_text(), charge = nullable(num()), max_charge = nullable(num()), health = int(), max_health = int(), light_color = schema_text(), weapon_lock = bool(), modules = map_of(schema_text(), int()), emag_modules = map_of(schema_text(), int()), diag_functional = bool(), components = list_of(row(key = int(), name = schema_text(), band = nullable(enum(list("uninjured", "minor", "moderate", "severe", "critical"))), idle_usage = num(), is_powered = bool(), toggled = bool())), faults = list_of(row(name = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), location = schema_text())))
 	op("set_light_col", ui_act("set_light_col", arg("value", schema_text(4096))), then(PROC_REF(ui_act_set_light_col)))
 	op("select_module", ui_act("select_module"), then(PROC_REF(ui_act_select_module)))
 	op("toggle_component", ui_act("toggle_component", arg("component", num())), then(PROC_REF(ui_act_toggle_component)))
-	op("toggle_module", ui_act("toggle_module", arg("ref", schema_text(32))), then(PROC_REF(ui_act_toggle_module)))
+	op("toggle_module", ui_act("toggle_module", arg("ref", schema_text(32))), needs(req(PROC_REF(req_modules_unlocked))), then(PROC_REF(ui_act_toggle_module)))
 	op("activate_module", ui_act("activate_module", arg("ref", schema_text(32))), then(PROC_REF(ui_act_activate_module)))
 	op("quick_action_comm", ui_act("quick_action_comm"), then(PROC_REF(ui_act_quick_action_comm)))
 	op("quick_action_pda", ui_act("quick_action_pda"), then(PROC_REF(ui_act_quick_action_pda)))
@@ -27,11 +28,8 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 
 	var/mob/living/silicon/robot/R = host()
 
-	if(!R.module)
-		return data
-
 	var/list/modules = list()
-	for(var/obj/item/I as anything in R.module.modules)
+	for(var/obj/item/I as anything in R.module?.modules)
 		if(!I)
 			continue
 
@@ -44,7 +42,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	data["modules_static"] = modules
 
 	var/list/emag_modules = list()
-	if(R.emagged || R.emag_items)
+	if(R.module && (R.emagged || R.emag_items))
 		for(var/obj/item/I as anything in R.module.emag)
 			if(!I)
 				continue
@@ -68,9 +66,6 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 
 	data["theme"] = R.get_ui_theme()
 
-	if(!R.module)
-		return data
-
 	data["name"] = R.name
 	data["ai"] = "[R.connected_ai]"
 	data["charge"] = R.cell?.charge
@@ -82,7 +77,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	data["weapon_lock"] = !!after_pending(R, "weapon_lock")
 
 	var/list/modules = list()
-	for(var/obj/item/I as anything in R.module.modules)
+	for(var/obj/item/I as anything in R.module?.modules)
 		if(!I)
 			continue
 
@@ -90,7 +85,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	data["modules"] = modules
 
 	var/list/emag_modules = list()
-	if(R.emagged || R.emag_items)
+	if(R.module && (R.emagged || R.emag_items))
 		for(var/obj/item/I as anything in R.module.emag)
 			if(!I)
 				continue
@@ -99,7 +94,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	data["emag_modules"] = emag_modules
 
 	var/diagnosis_functional = R.is_component_functioning(ROBOT_SLOT_DIAGNOSIS)
-	data["diag_functional"] = diagnosis_functional
+	data["diag_functional"] = !!diagnosis_functional
 
 	var/list/components = list()
 	for(var/datum/robot_component/comp as anything in R.components)
@@ -110,8 +105,8 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 			"name" = "[comp]",
 			"band" = diagnosis_functional ? dq_qualitative_damage_band(comp.get_structural_damage() + comp.get_wiring_damage(), comp.max_damage) : null,
 			"idle_usage" = diagnosis_functional ? comp.idle_usage : -1,
-			"is_powered" = diagnosis_functional ? comp.is_powered() : 0,
-			"toggled" = comp.toggled,
+			"is_powered" = diagnosis_functional ? !!comp.is_powered() : FALSE,
+			"toggled" = !!comp.toggled,
 		))
 	data["components"] = components
 
@@ -140,15 +135,11 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	. = TRUE
 
 /datum/tgui_module/robot_ui/proc/ui_act_toggle_component(datum/act/op/A, component)
-	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = host()
 	var/slot = component
 	var/datum/robot_component/C = R.get_component(slot)
-	if(istype(C) && !C.internal && R.toggle_component(slot))
-		if(C.toggled)
-			to_chat(user, span_notice("You enable [C]."))
-		else
-			to_chat(user, span_warning("You disable [C]."))
+	if(istype(C) && !C.internal)
+		R.toggle_component(slot)
 	. = TRUE
 
 /// The module a handle names: one the window lists (the module's tools, and the emag tools while it shows them), nothing else.
@@ -162,12 +153,14 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 		listed += R.module.emag
 	return ui_member(ref, listed, /obj/item)
 
+/// The modules answer once the weapon lock has lapsed.
+/datum/tgui_module/robot_ui/proc/req_modules_unlocked(datum/act/op/A)
+	return after_pending(host(), "weapon_lock") ? /datum/msg/robot_ui/modules_locked : null
+
+MSG_DEF_SELF(robot_ui/modules_locked, span_danger("Error: Modules locked."))
+
 /datum/tgui_module/robot_ui/proc/ui_act_toggle_module(datum/act/op/A, ref)
-	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = host()
-	if(after_pending(R, "weapon_lock"))
-		to_chat(user, span_danger("Error: Modules locked."))
-		return
 	var/obj/item/module = listed_module(ref)
 	if(module)
 		if(R.activated(module))

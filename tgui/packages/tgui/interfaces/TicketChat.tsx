@@ -11,7 +11,10 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { sanitizeAdminHtml } from '../sanitize';
-import type { TicketChatActions } from './generated/TicketChat';
+import type {
+  TicketChatActions,
+  TicketChatData,
+} from './generated/TicketChat';
 
 const Level = {
   0: 'Mentorhelp',
@@ -36,12 +39,7 @@ const State = {
   unknown: 'Unknown',
 };
 
-type Data = {
-  id: number;
-  level: number;
-  handler: string;
-  log: string[];
-};
+type Data = TicketChatData;
 
 export const TicketChat = (props) => {
   const { act, data } = useBackend<Data, TicketChatActions>();
@@ -90,14 +88,14 @@ export const TicketChat = (props) => {
             <Section fill ref={messagesEndRef} scrollable title="Log">
               <Stack fill direction="column">
                 <Stack.Item grow>
-                  {Object.keys(log)
+                  {Object.keys(log ?? {})
                     .slice(0)
                     .map((L, i) => (
                       <div
                         key={i}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket Chat
                         dangerouslySetInnerHTML={{
-                          __html: sanitizeAdminHtml(log[L]),
+                          __html: sanitizeAdminHtml(log?.[L] ?? ''),
                         }}
                       />
                     ))}

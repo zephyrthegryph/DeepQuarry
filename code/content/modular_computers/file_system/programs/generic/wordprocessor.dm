@@ -75,6 +75,7 @@
 
 CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	interface("NtosWordProcessor")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), error = nullable(schema_text()), browsing = bool(), files = list_of(row(name = schema_text(), size = num())), filedata = nullable(schema_text()), filename = nullable(schema_text()))
 	op("PRG_txtrpeview", ui_act("PRG_txtrpeview"), then(PROC_REF(ui_act_prg_txtrpeview)))
 	op("PRG_taghelp", ui_act("PRG_taghelp"), then(PROC_REF(ui_act_prg_taghelp)))
 	op("PRG_closebrowser", ui_act("PRG_closebrowser"), then(PROC_REF(ui_act_prg_closebrowser)))
@@ -223,20 +224,17 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	var/list/data = get_header_data()
 
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
-	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer().portable_drive
 	data["error"] = null
 	if(error)
 		data["error"] = error
 
-	data["browsing"] = null
+	data["browsing"] = FALSE
 	data["files"] = list()
-	data["usbconnected"] = FALSE
-	data["usbfiles"] = list()
 	data["filedata"] = null
 	data["filename"] = null
 
 	if(browsing)
-		data["browsing"] = browsing
+		data["browsing"] = TRUE
 		if(!computer() || !HDD)
 			data["error"] = "I/O ERROR: Unable to access hard drive."
 		else
@@ -248,17 +246,6 @@ CAPABILITIES(/datum/computer_file/program/wordprocessor)
 						"size" = F.size
 					)))
 			data["files"] = files
-
-			if(RHDD)
-				data["usbconnected"] = 1
-				var/list/usbfiles = list()
-				for(var/datum/computer_file/F in RHDD.stored_files)
-					if(F.filetype == "TXT")
-						usbfiles.Add(list(list(
-							"name" = F.filename,
-							"size" = F.size,
-						)))
-				data["usbfiles"] = usbfiles
 	else if(open_file)
 		data["filedata"] = pencode2html(loaded_data)
 		data["filename"] = is_edited ? "[open_file]*" : open_file

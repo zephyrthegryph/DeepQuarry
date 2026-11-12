@@ -3,8 +3,16 @@
 
 CAPABILITIES(/datum/vore_look/import_panel)
 	interface("VorePanelImport", title = "Vore Import Panel")
+	ui_shape()
 	op("import_soulcatcher", ui_act("import_soulcatcher", arg("data")), asks(/datum/prompt/choice, fields = list("question" = "WARNING: This will override your current soulcatcher settings!", "title" = "Import soulcatcher?", "choices" = list("Yes","Cancel"), "buttons" = TRUE, "timeout" = 0), step = "a1", when = PROC_REF(import_soulcatcher_is_valid)), then(PROC_REF(ui_act_import_soulcatcher)))
 	op("import_bellies", ui_act("import_bellies", arg("data")), then(PROC_REF(ui_act_import_bellies)))
+
+/// The import window shows no panel data: it is only a file reader that sends what it parsed (not the vore panel's data it inherits).
+/datum/vore_look/import_panel/ui_data(datum/act/eval/A)
+	return list()
+
+/datum/vore_look/import_panel/ui_static_data(datum/act/eval/A)
+	return list()
 
 /// The supplied soulcatcher data is a non-empty list and the host has a soulcatcher to overwrite: worth a warning.
 /datum/vore_look/import_panel/proc/import_soulcatcher_is_valid(datum/act/op/A)

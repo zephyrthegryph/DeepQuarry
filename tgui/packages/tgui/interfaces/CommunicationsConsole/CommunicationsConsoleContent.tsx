@@ -26,7 +26,7 @@ export const CommunicationsConsoleContent = (props) => {
   );
 };
 
-const DefaultError = (props: { menu_state: string }) => {
+const DefaultError = (props: { menu_state: number }) => {
   const { menu_state } = props;
 
   return (

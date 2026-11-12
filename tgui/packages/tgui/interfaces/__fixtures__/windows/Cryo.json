@@ -1,0 +1,72 @@
+{
+	"isOperating": 1,
+	"occupant": {
+		"name": "Jo Park",
+		"stat": 1,
+		"vitality": 58,
+		"critical": 0,
+		"bodyTemperature": 152.4,
+		"diagnosis": {
+			"status": "alive",
+			"band": "moderate",
+			"vitals": {
+				"heartRate": 62,
+				"bloodPressure": [104, 68],
+				"oxygenation": 91,
+				"respiratoryRate": 10,
+				"heartRhythm": "sinus",
+				"temperature": -120.7,
+				"consciousness": "Unconscious",
+				"bloodPercent": 88
+			},
+			"findings": [
+				{
+					"name": "Burn",
+					"kind": "wound",
+					"band": "moderate",
+					"location": "torso",
+					"description": "Second-degree burn.",
+					"trend": "improving",
+					"hint": "Burn care."
+				},
+				{
+					"name": "Frostbite",
+					"kind": "condition",
+					"band": "minor",
+					"location": "hands",
+					"description": null,
+					"trend": null,
+					"hint": null
+				}
+			],
+			"parts": [
+				{
+					"name": "torso",
+					"kind": "external",
+					"band": "moderate",
+					"flags": ["burned"],
+					"implants": null
+				},
+				{
+					"name": "lungs",
+					"kind": "internal",
+					"band": "minor",
+					"flags": [],
+					"implants": null
+				}
+			],
+			"hints": [
+				{
+					"tag": "burn_care",
+					"label": "Burn care",
+					"band": "moderate"
+				}
+			]
+		}
+	},
+	"cellTemperature": 98,
+	"cellTemperatureStatus": "good",
+	"isBeakerLoaded": 1,
+	"beakerLabel": "cryoxadone",
+	"beakerVolume": 42
+}

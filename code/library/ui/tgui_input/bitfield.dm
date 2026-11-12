@@ -31,6 +31,7 @@
 
 CAPABILITIES(/datum/tgui_bitfield_input)
 	interface("BitfieldInput", state = nameof(GLOB.tgui_always_state))
+	ui_shape(title = schema_text(), flags = list_of(row(name = schema_text(), bit = int(), checked = bool(), editable = bool())))
 	op("toggle", ui_act("toggle", arg("bit", num())), then(PROC_REF(ui_act_toggle)))
 	op("submit", ui_act("submit"), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
@@ -50,11 +51,11 @@ CAPABILITIES(/datum/tgui_bitfield_input)
 		flags += list(list(
 			"name" = name,
 			"bit" = bit,
-			"checked" = !!(bitset & bit),
-			"editable" = !!(allowed_edit_field & bit),
+			"checked" = (bitset & bit) ? TRUE : FALSE,
+			"editable" = (allowed_edit_field & bit) ? TRUE : FALSE,
 		))
 	return list(
-		"title" = title,
+		"title" = title || "",
 		"flags" = flags,
 	)
 

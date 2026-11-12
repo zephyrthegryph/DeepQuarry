@@ -6,24 +6,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, NoticeBox, Section, Stack } from 'tgui-core/components';
-import type { CommandPanelActions } from './generated/CommandPanel';
+import type {
+  CommandPanelActions,
+  CommandPanelData,
+} from './generated/CommandPanel';
 
-type Command = {
-  id: string;
-  label: string;
-  desc: string;
-};
-
-type Group = {
-  title: string;
-  commands: Command[];
-};
-
-type Data = {
-  title: string;
-  blocked: string | null;
-  groups: Group[];
-};
+type Data = CommandPanelData;
 
 export const CommandPanel = () => {
   const { data, act } = useBackend<Data, CommandPanelActions>();

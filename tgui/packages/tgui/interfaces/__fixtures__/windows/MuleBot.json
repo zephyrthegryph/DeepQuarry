@@ -1,0 +1,11 @@
+{
+	"suffix": "MULE-03",
+	"power": 1,
+	"load": "crate",
+	"locked": 0,
+	"auto_return": 1,
+	"crates_only": 1,
+	"hatch": 0,
+	"safety": 1,
+	"issilicon": 0
+}

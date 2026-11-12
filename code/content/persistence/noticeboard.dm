@@ -15,11 +15,12 @@ CAPABILITIES(/obj/structure/noticeboard)
 	setup(PROC_REF(collect_initial_notices))
 	owns_many(nameof(notices))
 	interface("NoticeBoard")
+	ui_shape(notices = list_of(row(ispaper = bool(), isphoto = bool(), name = schema_text(), ref = int())))
 	without("ui_open")
 	op("read", ui_act("read", arg("ref", schema_text(32))), then(PROC_REF(ui_act_read)))
 	op("look", ui_act("look", arg("ref", schema_text(32))), then(PROC_REF(ui_act_look)))
 	op("remove", ui_act("remove", arg("ref", schema_text(32))), then(PROC_REF(ui_act_remove)))
-	op("write", ui_act("write", arg("ref", schema_text(32))), then(PROC_REF(ui_act_write)))
+	op("write", ui_act("write", arg("ref", schema_text(32))), needs(req(PROC_REF(writer_has_pen))), then(PROC_REF(ui_act_write)))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("noticeboard_silicon_examine", remote(), label("Examine"), then(PROC_REF(noticeboard_silicon_examine)))
@@ -190,6 +191,11 @@ CAPABILITIES(/obj/structure/noticeboard)
 	add_fingerprint(user)
 	. = TRUE
 
+/// Why the person can't write on a notice, or null: they need a pen in hand.
+/obj/structure/noticeboard/proc/writer_has_pen(datum/act/op/A)
+	var/mob/living/M = A.actor
+	return (istype(M) && M.get_type_in_hands(/obj/item/pen)) ? null : msg_reason("You'll need something to write with!")
+
 /obj/structure/noticeboard/proc/ui_act_write(datum/act/op/A, ref)
 	var/mob/user = A.actor
 	if(!in_range(src, user))
@@ -202,9 +208,6 @@ CAPABILITIES(/obj/structure/noticeboard)
 			if(E)
 				add_fingerprint(M)
 				P.attackby(E, user)
-			else
-				to_chat(M, span_notice("You'll need something to write with!"))
-				. = TRUE
 
 /obj/structure/noticeboard/anomaly
 	icon_state = "nboard05"

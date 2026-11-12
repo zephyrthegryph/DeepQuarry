@@ -36,7 +36,6 @@
 	var/tmp/datum/ore/mineral_static
 	var/sand_dug
 	var/mined_ore = 0
-	COOLDOWN_DECLARE(dig_cooldown)
 	var/overlay_detail
 	var/overlay_detail_icon_path = 'icons/turf/flooring/decals.dmi' // Override this on a subtype turf if you want a custom icon
 
@@ -90,11 +89,33 @@ CAPABILITIES(/turf/simulated/mineral)
 	owns_one(nameof(geologic_data), /datum/geosample)
 	owns_many(nameof(finds))
 	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
-	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
-	// The timed parts mineral_item() starts with the held tool: the user stays, keeps the tool and the rock stays in reach.
-	op("mineral_dig_hole", ai(), wait(PROC_REF(dig_hole_time)), then(PROC_REF(dig_hole_done)))
-	op("mineral_measure", ai(), wait(1.5 SECONDS), then(PROC_REF(measure_done)))
-	op("mineral_pick", ai(), wait(PROC_REF(pick_time)), then(PROC_REF(pick_done)))
+	// Each tool is its own op. Sand (not dense): dig a grave, dig a hole, collect fossils, lay a floor tile. Rock (dense): core sample, depth scan,
+	// measure, the xenoarch multitool's scan, the shock maul, the pickaxe. Anything else touches the rock.
+	op("mineral_dig_grave", item(/obj/item/shovel), when(not(nameof(density))), priority(OP_PRIORITY_DEFAULT), label("Dig a grave"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(dig_grave)))
+	op("mineral_dig_hole", inputs(item(/obj/item/shovel), item(/obj/item/pickaxe)), when(not(nameof(density))), priority(OP_PRIORITY_DEFAULT - 1), label("Dig a hole"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy)), req_is(nameof(sand_dug), FALSE, because = MSG(mineral/already_dug)), req(PROC_REF(actor_on_turf), silent = TRUE), req(PROC_REF(held_digs_sand), silent = TRUE)),
+		starts(PROC_REF(dig_hole_started)), wait(PROC_REF(dig_hole_time)), then(PROC_REF(dig_hole_done)))
+	op("mineral_collect_fossil", item(/obj/item/storage/bag/fossils), when(not(nameof(density))), priority(OP_PRIORITY_DEFAULT - 1), label("Collect fossil"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(collect_fossil)))
+	op("mineral_lay_floor", stack(/obj/item/stack/tile/floor, 1), when(not(nameof(density))), priority(OP_PRIORITY_DEFAULT - 1), label("Lay floor"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(lay_floor)))
+	op("mineral_core_sample", item(/obj/item/core_sampler), when(nameof(density)), priority(OP_PRIORITY_DEFAULT - 1), label("Take a core sample"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(core_sample)))
+	op("mineral_depth_scan", item(/obj/item/depth_scanner), when(nameof(density)), priority(OP_PRIORITY_DEFAULT - 1), label("Scan depth"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(depth_scan)))
+	op("mineral_multitool_scan", item(/obj/item/xenoarch_multi_tool), when(nameof(density)), priority(OP_PRIORITY_DEFAULT), label("Scan depth"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(multitool_scan)))
+	op("mineral_measure", inputs(item(/obj/item/measuring_tape), item(/obj/item/xenoarch_multi_tool)), when(nameof(density)), priority(OP_PRIORITY_DEFAULT - 1), label("Measure excavation"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), starts(PROC_REF(measure_started)), wait(1.5 SECONDS), then(PROC_REF(measure_done)))
+	op("mineral_maul", item(/obj/item/melee/shock_maul), when(nameof(density)), priority(OP_PRIORITY_DEFAULT - 1), label("Smash the rock"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy)), req(PROC_REF(actor_on_turf), silent = TRUE), req(PROC_REF(held_maul_wielded), because = MSG(mineral/maul_unwielded))),
+		then(PROC_REF(maul_smash)))
+	op("mineral_pick", item(/obj/item/pickaxe), when(nameof(density)), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy)), req(PROC_REF(actor_on_turf), silent = TRUE)),
+		starts(PROC_REF(pick_started)), wait(PROC_REF(pick_time)), then(PROC_REF(pick_done)))
+	op("mineral_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Touch"),
+		needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(touched_with_item)))
 
 /turf/simulated/mineral/ChangeTurf(turf/N, tell_universe, force_lighting_update, preserve_outdoors)
 	clear_ore_effects()
@@ -320,159 +341,139 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 /turf/simulated/mineral/proc/actor_dexterous_holds(datum/act/op/A)
 	return (!!A.actor.IsAdvancedToolUser()) ? null : MSG(mineral/clumsy)
 
-//Not even going to touch this pile of spaghetti
+MSG_DEF_SELF(mineral/already_dug, span_warning("This area has already been dug."))
+MSG_DEF_SELF(mineral/maul_unwielded, span_warning("It must be wielded in two hands to be used for mining!"))
 
-/// Old attackby: digging, excavation, sampling and scanning; anything else touches the rock.
-/turf/simulated/mineral/proc/mineral_item(datum/act/op/A)
+/// Requirement: the held tool digs sand (a shovel, or a pickaxe that digs sand).
+/turf/simulated/mineral/proc/held_digs_sand(datum/act/op/A)
+	if(istype(A.held, /obj/item/shovel))
+		return null // a shovel in grave mode is taken by the grave op above
+	var/obj/item/pickaxe/P = A.held
+	return (istype(P) && P.sand_dig) ? null : /datum/msg/req_silent
+
+/// Requirement: the actor stands on a turf (not inside a locker or a mech).
+/turf/simulated/mineral/proc/actor_on_turf(datum/act/op/A)
+	return isturf(A.actor.loc) ? null : /datum/msg/req_silent
+
+/// Requirement: the held shock maul is wielded in two hands.
+/turf/simulated/mineral/proc/held_maul_wielded(datum/act/op/A)
+	var/obj/item/melee/shock_maul/S = A.held
+	return (istype(S) && S.wielded) ? null : MSG(mineral/maul_unwielded)
+
+/// A shovel in grave mode digs a grave; otherwise it declines to the hole op below.
+/turf/simulated/mineral/proc/dig_grave(datum/act/op/A)
+	var/obj/item/shovel/S = A.held
+	if(!S.grave_mode)
+		return OP_DECLINE
+	shovel_dig_grave(A.actor, S)
+	return OP_OK
+
+/turf/simulated/mineral/proc/dig_hole_started(datum/act/op/A)
+	to_chat(A.actor, span_notice("You start digging."))
+	play_sfx(A.actor, SFX_EFFECTS_RUSTLE1)
+
+/// A fossil bag in collection mode picks up a fossil lying here; otherwise (or with none here) it declines to touching the rock.
+/turf/simulated/mineral/proc/collect_fossil(datum/act/op/A)
+	var/obj/item/storage/bag/fossils/S = A.held
+	var/obj/item/fossil/F = locate_within(src, /obj/item/fossil)
+	if(!S.collection_mode || !F)
+		return OP_DECLINE
+	F.attackby(S, A.actor)
+	return OP_OK
+
+/turf/simulated/mineral/proc/lay_floor(datum/act/op/A)
+	play_sfx(src, SFX_WEAPONS_GENHIT)
+	ChangeTurf(/turf/simulated/floor)
+	return OP_OK
+
+/// This lets us get a sample of the artifact core... This is JUST used for fluff.
+/turf/simulated/mineral/proc/core_sample(datum/act/op/A)
+	geologic_data.UpdateNearbyArtifactInfo(src)
+	var/obj/item/core_sampler/C = A.held
+	C.sample_item(src, A.actor)
+	return OP_OK
+
+/turf/simulated/mineral/proc/depth_scan(datum/act/op/A)
+	var/obj/item/depth_scanner/C = A.held
+	C.scan_atom(A.actor, src)
+	return OP_OK
+
+/// The xenoarch multitool scans in scanning mode; in measuring mode it declines to the measure op below.
+/turf/simulated/mineral/proc/multitool_scan(datum/act/op/A)
+	var/obj/item/xenoarch_multi_tool/C = A.held
+	if(!C.mode)
+		return OP_DECLINE
+	C.depth_scanner.scan_atom(A.actor, src)
+	return OP_OK
+
+/turf/simulated/mineral/proc/measure_started(datum/act/op/A)
+	if(istype(A.held, /obj/item/xenoarch_multi_tool))
+		act_message(A.actor, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
+			item = A.held)
+		return
+	act_message(A.actor, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends \a [A.held] towards %T%.")), \
+		item = A.held)
+
+/// One maul blow: breaks finds dug too deep, deepens the excavation and drops debris, or mines the rock out.
+/turf/simulated/mineral/proc/maul_smash(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(!density)
-		var/valid_tool = 0
+	var/obj/item/melee/shock_maul/S = A.held
+	var/newDepth = excavation_level + S.excavation_amount // Used commonly below
 
-		if(istype(W, /obj/item/shovel))
-			var/obj/item/shovel/S = W
-			if(S.grave_mode)
-				shovel_dig_grave(user, S)
-				return OP_PASS
-			valid_tool = 1
+	//handle any archaeological finds we might uncover
+	var/fail_message = ""
+	if(finds && finds.len)
+		var/datum/find/F = finds[1]
+		if(newDepth > F.excavation_required) // Digging too deep can break the item. At least you won't summon a Balrog (probably)
+			fail_message = ". <b>[pick("There is a crunching noise","[S] collides with some different rock","Part of the rock face crumbles away","Something breaks under [S]")]</b>"
+			wreckfinds(S.destroy_artefacts)
 
-		if(istype(W, /obj/item/pickaxe))
-			var/obj/item/pickaxe/P = W
-			if(P.sand_dig)
-				valid_tool = 1
-
-		if(valid_tool)
-			if (sand_dug)
-				to_chat(user, span_warning("This area has already been dug."))
-				return OP_PASS
-
-			var/turf/T = user.loc
-			if (!(istype(T)))
-				return OP_PASS
-
-			to_chat(user, span_notice("You start digging."))
-			play_sfx(user, SFX_EFFECTS_RUSTLE1)
-
-			perform_op(user, src, "mineral_dig_hole", W, ORIGIN_SYSTEM)
-
-		else if(istype(W,/obj/item/storage/bag/fossils))
-			var/obj/item/storage/bag/fossils/S = W
-			if(S.collection_mode)
-				for(var/obj/item/fossil/F in contents)
-					F.attackby(W,user)
-					return OP_PASS
-
-		else if(istype(W, /obj/item/stack/tile/floor))
-			var/obj/item/stack/tile/floor/S = W
-			if (S.get_amount() < 1)
-				return OP_PASS
-			play_sfx(src, SFX_WEAPONS_GENHIT)
-			ChangeTurf(/turf/simulated/floor)
-			S.use(1)
-			return OP_PASS
-
-
+	to_chat(user, span_notice("You smash through \the [src][fail_message]."))
+	if(S.status != 0) //We're on. This isn't just a == 1 in case someone adds some weird functionality in the future to give it multiple states.
+		user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
+		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 	else
-		//This lets us get a sample of the artifact core...This is JUST used for fluff.
-		if (istype(W, /obj/item/core_sampler))
-			geologic_data.UpdateNearbyArtifactInfo(src)
-			var/obj/item/core_sampler/C = W
-			C.sample_item(src, user)
-			return OP_PASS
+		user.visible_message(span_warning("\The [src] plows into the rock with a thunk, smashing it to pieces."))
+		playsound(src, get_sfx(SFX_PICKAXE), 35, 1, -1) //Weak. Not on. Just as good as a normal pick.
 
-		if (istype(W, /obj/item/depth_scanner))
-			var/obj/item/depth_scanner/C = W
-			C.scan_atom(user, src)
-			return OP_PASS
+	if(newDepth >= 200) // This means the rock is mined out fully
+		if(S.destroy_artefacts)
+			GetDrilled(0)
+		else
+			excavate_turf()
+		return OP_OK
 
-		if (istype(W, /obj/item/measuring_tape))
-			var/obj/item/measuring_tape/P = W
-			act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), \
-				MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends \a [P] towards %T%.")), \
-				item = P)
-			perform_op(user, src, "mineral_measure", W, ORIGIN_SYSTEM)
-			return OP_PASS
+	set_excavation_level(excavation_level + S.excavation_amount)
+	update_archeo_overlays(S.excavation_amount)
+	rel_set(src, nameof(geologic_data), geosample_of(src))
+	//drop some rocks
+	next_rock += S.excavation_amount
+	while(next_rock > 50)
+		next_rock -= 50
+		var/obj/item/ore/archeology_debris/O = new(src)
+		geologic_data.UpdateNearbyArtifactInfo(src)
+		rel_set(O, nameof(O.geologic_data), geologic_data.copy())
+	return OP_OK
 
-		if(istype(W, /obj/item/xenoarch_multi_tool))
-			var/obj/item/xenoarch_multi_tool/C = W
-			if(C.mode) //Mode means scanning
-				C.depth_scanner.scan_atom(user, src)
-			else
-				act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
-					MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
-					item = C)
-				perform_op(user, src, "mineral_measure", W, ORIGIN_SYSTEM)
-			return OP_PASS
+/// The pick stroke starts: the sound, and finds the stroke will dig past are broken now.
+/turf/simulated/mineral/proc/pick_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/pickaxe/P = A.held
+	playsound(user, P.drill_sound, 20, 1)
+	var/newDepth = excavation_level + P.excavation_amount
+	var/fail_message = ""
+	if(finds && finds.len)
+		var/datum/find/F = finds[1]
+		if(newDepth > F.excavation_required) // Digging too deep can break the item. At least you won't summon a Balrog (probably)
+			fail_message = ". <b>[pick("There is a crunching noise","[P] collides with some different rock","Part of the rock face crumbles away","Something breaks under [P]")]</b>"
+			wreckfinds(P.destroy_artefacts)
+	user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
 
-		if (istype(W, /obj/item/melee/shock_maul))
-			if(!istype(user.loc, /turf))
-				return OP_PASS
-
-			var/obj/item/melee/shock_maul/S = W
-			if(!S.wielded)
-				to_chat(user, span_warning("\The [W] must be wielded in two hands to be used for mining!"))
-				return OP_PASS
-
-			var/newDepth = excavation_level + S.excavation_amount // Used commonly below
-
-			//handle any archaeological finds we might uncover
-			var/fail_message = ""
-			if(finds && finds.len)
-				var/datum/find/F = finds[1]
-				if(newDepth > F.excavation_required) // Digging too deep can break the item. At least you won't summon a Balrog (probably)
-					fail_message = ". <b>[pick("There is a crunching noise","[S] collides with some different rock","Part of the rock face crumbles away","Something breaks under [S]")]</b>"
-					wreckfinds(S.destroy_artefacts)
-
-			to_chat(user, span_notice("You smash through \the [src][fail_message]."))
-			if(S.status != 0) //We're on. This isn't just a == 1 in case someone adds some weird functionality in the future to give it multiple states.
-				user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
-				play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
-			else
-				user.visible_message(span_warning("\The [src] plows into the rock with a thunk, smashing it to pieces."))
-				playsound(src, get_sfx(SFX_PICKAXE), 35, 1, -1) //Weak. Not on. Just as good as a normal pick.
-
-			if(newDepth >= 200) // This means the rock is mined out fully
-				if(S.destroy_artefacts)
-					GetDrilled(0)
-				else
-					excavate_turf()
-				return OP_PASS
-
-			set_excavation_level(excavation_level + S.excavation_amount)
-			update_archeo_overlays(S.excavation_amount)
-			rel_set(src, nameof(geologic_data), geosample_of(src))
-			//drop some rocks
-			next_rock += S.excavation_amount
-			while(next_rock > 50)
-				next_rock -= 50
-				var/obj/item/ore/archeology_debris/O = new(src)
-				geologic_data.UpdateNearbyArtifactInfo(src)
-				rel_set(O, nameof(O.geologic_data), geologic_data.copy())
-
-		if (istype(W, /obj/item/pickaxe))
-			if(!istype(user.loc, /turf))
-				return OP_PASS
-
-			var/obj/item/pickaxe/P = W
-			if(!COOLDOWN_FINISHED(src, dig_cooldown))//prevents message spam
-				return OP_PASS
-			COOLDOWN_START(src, dig_cooldown, P.digspeed)
-
-			playsound(user, P.drill_sound, 20, 1)
-			var/newDepth = excavation_level + P.excavation_amount // Used commonly below
-
-			//handle any archaeological finds we might uncover
-			var/fail_message = ""
-			if(finds && finds.len)
-				var/datum/find/F = finds[1]
-				if(newDepth > F.excavation_required) // Digging too deep can break the item. At least you won't summon a Balrog (probably)
-					fail_message = ". <b>[pick("There is a crunching noise","[W] collides with some different rock","Part of the rock face crumbles away","Something breaks under [W]")]</b>"
-					wreckfinds(P.destroy_artefacts)
-			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
-			perform_op(user, src, "mineral_pick", W, ORIGIN_SYSTEM)
-			return OP_PASS
-
-	return attack_hand(user) ? OP_OK : OP_PASS
+/// Any other item touches the rock, as a bare hand would.
+/turf/simulated/mineral/proc/touched_with_item(datum/act/op/A)
+	return attack_hand(A.actor) ? OP_OK : OP_PASS
 
 /// How long the dig takes: the shovel's or the pickaxe's speed (forty when it is neither).
 /turf/simulated/mineral/proc/dig_hole_time(datum/act/op/A)
@@ -485,8 +486,6 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 	return 40
 
 /turf/simulated/mineral/proc/dig_hole_done(datum/act/op/A)
-	if(sand_dug)
-		return
 	to_chat(A.actor, span_notice("You dug a hole."))
 	GetDrilled()
 

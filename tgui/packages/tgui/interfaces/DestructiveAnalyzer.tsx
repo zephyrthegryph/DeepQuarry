@@ -8,25 +8,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { DestructiveAnalyzerActions } from './generated/DestructiveAnalyzer';
+import type {
+  DestructiveAnalyzerActions,
+  DestructiveAnalyzerData,
+} from './generated/DestructiveAnalyzer';
 
-type Data = {
-  server_connected: BooleanLike;
-  loaded_item: string;
-  item_icon: string;
-  indestructible: BooleanLike;
-  already_deconstructed: BooleanLike;
-  recoverable_points: string;
-  node_data: NodeData[] | null;
-  research_point_id: string;
-};
-
-type NodeData = {
-  node_name: string;
-  node_id: string;
-  node_hidden: BooleanLike;
-};
+type Data = DestructiveAnalyzerData;
 
 export const DestructiveAnalyzer = () => {
   const { act, data } = useBackend<Data, DestructiveAnalyzerActions>();

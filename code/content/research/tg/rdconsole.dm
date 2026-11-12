@@ -47,6 +47,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	owns_one(nameof(t_disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(d_disk), on_destroy = ON_DESTROY_SPILL)
 	interface("Techweb")
+	ui_shape(stored_research = bool(), locked = bool(), nodes = list_of(row(id = schema_text(), is_free = bool(), can_unlock = bool(), have_experiments_done = bool(), tier = num(), enqueued_by_user = bool())), queue_nodes = map_of(schema_text(), schema_text()), experiments = map_of(schema_text(), row(name = schema_text(), description = schema_text(), tag = schema_text(), progress = list_of(list_of(any)), completed = bool(), performance_hint = nullable(schema_text()))), researched_designs = map_of(schema_text(), num()), points = map_of(schema_text(), num()), points_last_tick = map_of(schema_text(), num()), sec_protocols = bool(), t_disk = nullable(row(stored_research = map_of(schema_text(), num()))), d_disk = nullable(row(blueprints = list_of(schema_text()))), static_data = row(node_cache = map_of(schema_text(), row()), design_cache = map_of(schema_text(), list_of(schema_text())), id_cache = list_of(schema_text())), point_types_abbreviations = map_of(schema_text(), schema_text()))
 	without("ui_open")
 	extend(TAG_UI, then(PROC_REF(controls_touched), early = TRUE))
 	op("toggleLock", ui_act("toggleLock"), then(PROC_REF(ui_act_togglelock)))
@@ -158,23 +159,25 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 /// /obj/machinery/computer/rdconsole_tg's window data.
 /obj/machinery/computer/rdconsole_tg/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
-	var/list/data = list()
-	data["stored_research"] = !!stored_research
-	data["locked"] = locked
-	if(!stored_research) //lack of a research node is all we care about.
-		return data
-	data += list(
+	var/list/data = list(
+		"stored_research" = !!stored_research,
+		"locked" = locked ? TRUE : FALSE,
 		"nodes" = list(),
-		"queue_nodes" = stored_research.queue_node_names(),
+		"queue_nodes" = list(),
 		"experiments" = list(),
-		"researched_designs" = (stored_research.researched_designs || list()),
-		"points" = (stored_research.research_points || list()),
-		"points_last_tick" = (stored_research.last_bitcoins || list()),
-		"web_org" = stored_research.organization,
+		"researched_designs" = list(),
+		"points" = list(),
+		"points_last_tick" = list(),
 		"sec_protocols" = FALSE, // !(obj_flags & EMAGGED),
 		"t_disk" = null,
 		"d_disk" = null,
 	)
+	if(!stored_research) //lack of a research node is all we care about.
+		return data
+	data["queue_nodes"] = stored_research.queue_node_names()
+	data["researched_designs"] = stored_research.researched_designs || list()
+	data["points"] = stored_research.research_points || list()
+	data["points_last_tick"] = stored_research.last_bitcoins || list()
 
 	if(t_disk)
 		data["t_disk"] = list (
@@ -199,9 +202,9 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 
 		data["nodes"] += list(list(
 			"id" = n.id,
-			"is_free" = n.is_free(stored_research),
-			"can_unlock" = stored_research.can_unlock_node(n),
-			"have_experiments_done" = stored_research.have_experiments_for_node(n),
+			"is_free" = n.is_free(stored_research) ? TRUE : FALSE,
+			"can_unlock" = stored_research.can_unlock_node(n) ? TRUE : FALSE,
+			"have_experiments_done" = stored_research.have_experiments_for_node(n) ? TRUE : FALSE,
 			"tier" = LAZYACCESS(stored_research.tiers, n.id),
 			"enqueued_by_user" = enqueued_by_user
 		))
@@ -217,7 +220,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 			"description" = ex.description,
 			"tag" = ex.exp_tag,
 			"progress" = ex.check_progress(),
-			"completed" = ex.completed,
+			"completed" = ex.completed ? TRUE : FALSE,
 			"performance_hint" = ex.performance_hint,
 		)
 	return data

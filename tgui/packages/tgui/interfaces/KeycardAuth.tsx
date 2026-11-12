@@ -6,13 +6,9 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { KeycardAuthActions } from './generated/KeycardAuth';
+import type { KeycardAuthActions, KeycardAuthData } from './generated/KeycardAuth';
 
-type Data = {
-  screen: number;
-  event: string;
-  ert_admin_only: number;
-};
+type Data = KeycardAuthData;
 
 const EVENT_LABELS = [
   'Red alert',

@@ -16,32 +16,11 @@ import {
 } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
 import { round, toFixed } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
-import type { JukeboxActions } from './generated/Jukebox';
-
-type Data = {
-  playing: BooleanLike;
-  loop_mode: number;
-  volume: number;
-  current_track_ref: number | null;
-  current_track: track | null;
-  current_genre: string | null;
-  percent: number;
-  tracks: track[];
-  admin: BooleanLike;
-};
-
-type track = {
-  ref: number;
-  title: string;
-  artist: string;
-  genre: string;
-  duration: number;
-};
+import type { JukeboxActions, JukeboxData } from './generated/Jukebox';
 
 export const Jukebox = (props) => {
-  const { act, data } = useBackend<Data, JukeboxActions>();
+  const { act, data } = useBackend<JukeboxData, JukeboxActions>();
 
   const {
     playing,

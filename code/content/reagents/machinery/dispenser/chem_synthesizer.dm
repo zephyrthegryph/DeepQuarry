@@ -91,6 +91,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 		needs(req(PROC_REF(no_catalyst), silent = TRUE), req(PROC_REF(clamp_works)), req(PROC_REF(can_extract_from))),
 		then(PROC_REF(catalyst_set)))
 	interface("ChemSynthesizer", observe = TRUE)
+	ui_shape(busy = bool(), production_mode = bool(), panel_open = bool(), use_catalyst = bool(), drug_substance = int(1, 3), bottle_icon = num(), pill_icon = num(), patch_icon = num(), queue = list_of(row(name = schema_text(), index = int())), recipes = list_of(row(name = schema_text())), rxn_vessel = list_of(row(name = schema_text(), volume = num(), description = schema_text(), id = schema_text())), catalyst = bool(), catalyst_reagents = list_of(row(name = schema_text(), volume = num(), description = schema_text(), id = schema_text())), catalystCurrentVolume = nullable(num()), catalystMaxVolume = nullable(num()), chemicals = list_of(row(title = schema_text(), id = schema_text(), amount = num())), modal = any)
 	extend("ui_observe", needs(req_operable()))
 	op("start_queue", ui_act("start_queue"), then(PROC_REF(ui_act_start_queue)))
 	op("rem_queue", ui_act("rem_queue", arg("q_index", num())), then(PROC_REF(ui_act_rem_queue)))
@@ -304,10 +305,10 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 /// The window's data.
 /obj/machinery/chemical_synthesizer/ui_data(datum/act/eval/A)
 	. = list()
-	.["busy"] = busy
-	.["production_mode"] = production_mode
-	.["panel_open"] = panel_open
-	.["use_catalyst"] = use_catalyst
+	.["busy"] = busy ? TRUE : FALSE
+	.["production_mode"] = production_mode ? TRUE : FALSE
+	.["panel_open"] = panel_open ? TRUE : FALSE
+	.["use_catalyst"] = use_catalyst ? TRUE : FALSE
 	.["drug_substance"] = drug_substance
 	.["bottle_icon"] = bottle_icon
 	.["pill_icon"] = pill_icon
@@ -340,10 +341,10 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		vessel_reagents_list[++vessel_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.description, "id" = R.id)
 
 	// Read data from the catalyst, if present.
-	data["catalyst"] = catalyst ? 1 : 0
+	data["catalyst"] = catalyst ? TRUE : FALSE
+	var/list/catalyst_reagents_list = list()
+	data["catalyst_reagents"] = catalyst_reagents_list
 	if(catalyst)
-		var/list/catalyst_reagents_list = list()
-		data["catalyst_reagents"] = catalyst_reagents_list
 		for(var/datum/reagent/R in catalyst.reagents.reagent_list)
 			catalyst_reagents_list[++catalyst_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.description, "id" = R.id)
 

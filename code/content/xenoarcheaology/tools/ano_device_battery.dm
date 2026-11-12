@@ -68,6 +68,7 @@ CAPABILITIES(/obj/item/anodevice)
 	/// Runs its battery effect while activated.
 	every(2 SECONDS, then(PROC_REF(anodevice_step)), when = nameof(activated))
 	interface("XenoarchHandheldPowerUtilizer", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(inserted_battery = nullable(schema_text()), anomaly = nullable(schema_text()), charge = nullable(num()), capacity = nullable(num()), timeleft = nullable(num()), activated = nullable(bool()), duration = nullable(num()), interval = nullable(num()))
 	without("ui_open")
 	op("changeduration", ui_act("changeduration", arg("duration", num(0, 300))), then(PROC_REF(ui_act_changeduration)))
 	op("changeinterval", ui_act("changeinterval", arg("interval", num(0, 100))), then(PROC_REF(ui_act_changeinterval)))
@@ -106,7 +107,7 @@ CAPABILITIES(/obj/item/anodevice)
 /obj/item/anodevice/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
-	data["inserted_battery"] = inserted_battery()
+	data["inserted_battery"] = inserted_battery()?.name
 	data["anomaly"] = null
 	data["charge"] = null
 	data["capacity"] = null

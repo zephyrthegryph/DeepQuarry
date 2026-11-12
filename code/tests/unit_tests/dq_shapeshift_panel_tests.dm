@@ -24,7 +24,16 @@
 	TEST_ASSERT_EQUAL(ids[SHIFT_HAIR], "Hair", "a granted command is listed under its group")
 	TEST_ASSERT_EQUAL(ids[SHIFT_GENDER], "Body", "each under its own")
 	TEST_ASSERT(!ids[SHIFT_TAIL] && !ids[SHIFT_FORM], "and one that was not granted is not")
-	TEST_ASSERT(istext(panel.ui_data(null)["preview"]), "the window shows a preview of the mob")
+	// The preview is a portrait rendered off the tick (code/content/appearance/portrait_cache.dm): null until it lands, then the picture.
+	test_driver_begin()
+	var/preview = panel.ui_data(null)["preview"]
+	for(var/i in 1 to 40)
+		if(istext(preview))
+			break
+		test_time(0.25 SECONDS)
+		preview = panel.ui_data(null)["preview"]
+	test_driver_end()
+	TEST_ASSERT(istext(preview), "the window shows a preview of the mob once its portrait lands")
 	TEST_ASSERT_EQUAL(dq_panel_ids(abilities)["shapeshift_panel"], "Shapeshift", "the Abilities panel lists the Shapeshift command")
 	TEST_ASSERT(!panel.run_action(other, SHIFT_GENDER), "another mob cannot press the buttons")
 	TEST_ASSERT(!panel.run_action(H, SHIFT_TAIL), "a command that was not granted is refused")

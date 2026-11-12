@@ -122,7 +122,7 @@ export const ShuttleControlConsoleWeb = (props) => {
                   <Button
                     selected={cloaked}
                     icon={cloaked ? 'eye' : 'eye-o'}
-                    onClick={() => act('toggle_cloaked')}
+                    onClick={() => act('toggle_cloaking')}
                   >
                     {cloaked ? 'Enabled' : 'Disabled'}
                   </Button>
@@ -240,16 +240,16 @@ export const ShuttleControlConsoleWeb = (props) => {
                       {sensor.temp}&deg;C
                     </LabeledList.Item>
                     <LabeledList.Item label="Oxygen">
-                      {sensor.oxygen}%
+                      {sensor.o2}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Nitrogen">
-                      {sensor.nitrogen}%
+                      {sensor.n2}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Carbon Dioxide">
-                      {sensor.carbon_dioxide}%
+                      {sensor.co2}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Phoron">
-                      {sensor.phoron}%
+                      {sensor.plasma}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Methane">
                       {sensor.methane}%

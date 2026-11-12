@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Stack } from 'tgui-core/components';
 import { ChemDispenserRecipes } from '../ChemDispenser/ChemDispenserRecipes';
+import type { Recipe } from '../ChemDispenser/types';
 import type { BorgHypoActions } from '../generated/BorgHypo';
 import { BorgHypoRecipeDisplay } from './BorgHypoRecipeDisplay';
 import type { Data } from './types';
@@ -15,7 +16,8 @@ export const BorgHypoRecipes = (props) => {
       <Stack.Item basis="70%">
         <ChemDispenserRecipes
           recipes={recipes}
-          recordingRecipe={recordingRecipe}
+          // the dispenser recipe list takes a missing recording as null at run time
+          recordingRecipe={recordingRecipe as Recipe[]}
           recordAct={() => act('record_recipe')}
           cancelAct={() => act('cancel_recording')}
           saveAct={() => act('save_recording')}

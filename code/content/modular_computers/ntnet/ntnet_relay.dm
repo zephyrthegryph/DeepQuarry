@@ -27,6 +27,7 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	interface("NTNetRelay")
+	ui_shape(enabled = bool(), dos_capacity = int(), dos_overload = int(), dos_crashed = bool())
 	without("ui_open")
 	op("restart", ui_act("restart"), then(PROC_REF(ui_act_restart)))
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))

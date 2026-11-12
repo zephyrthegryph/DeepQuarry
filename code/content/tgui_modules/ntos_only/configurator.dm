@@ -5,6 +5,7 @@
 
 CAPABILITIES(/datum/tgui_module/computer_configurator)
 	interface("Configuration")
+	ui_shape(PC_device_theme = schema_text(), disk_size = int(), disk_used = int(), power_usage = num(), battery_exists = bool(), battery = nullable(row(max = num(), charge = int())), hardware = list_of(row(name = schema_text(), desc = schema_text(), enabled = bool(), critical = bool(), powerusage = num())))
 	op("PC_toggle_component", ui_act("PC_toggle_component", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_toggle_component)))
 	ref_one(nameof(movable))
 
@@ -20,9 +21,6 @@ CAPABILITIES(/datum/tgui_module/computer_configurator)
 	data["disk_used"] = movable().hard_drive.used_capacity
 	data["power_usage"] = movable().last_power_usage
 	data["battery_exists"] = movable().battery_module ? 1 : 0
-	if(movable().battery_module)
-		data["battery_rating"] = movable().battery_module.battery.maxcharge
-		data["battery_percent"] = round(movable().battery_module.battery.percent())
 
 	if(movable().battery_module && movable().battery_module.battery)
 		data["battery"] = list("max" = movable().battery_module.battery.maxcharge, "charge" = round(movable().battery_module.battery.charge))

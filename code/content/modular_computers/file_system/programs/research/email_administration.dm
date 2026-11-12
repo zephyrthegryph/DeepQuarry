@@ -18,6 +18,7 @@
 CAPABILITIES(/datum/computer_file/program/email_administration)
 	ref_one(nameof(current_account), /datum/computer_file/data/email_account)
 	interface("NtosEmailAdministration")
+	ui_shape(error = schema_text(), cur_title = nullable(schema_text()), cur_body = nullable(schema_text()), cur_timestamp = nullable(schema_text()), cur_source = nullable(schema_text()), current_account = nullable(schema_text()), cur_suspended = nullable(bool()), messages = nullable(list_of(row(title = schema_text(), source = schema_text(), timestamp = schema_text(), uid = schema_text()))), accounts = list_of(row(login = schema_text(), uid = schema_text())), PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool())
 	op("back", ui_act("back"), needs(req(PROC_REF(network_admin_access))), then(PROC_REF(ui_act_back)))
 	op("ban", ui_act("ban"), needs(req(PROC_REF(network_admin_access))), then(PROC_REF(ui_act_ban)))
 	op("changepass", ui_act("changepass"), needs(req(PROC_REF(network_admin_access))), needs(req(PROC_REF(has_account))), asks(/datum/prompt/text, fields = list("title" = "Password", "question" = computed(PROC_REF(newpass_question)), "max_len" = 100)), then(PROC_REF(ui_act_changepass)))
@@ -54,7 +55,7 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 				"title" = message.title,
 				"source" = message.source,
 				"timestamp" = message.timestamp,
-				"uid" = message.uid
+				"uid" = handle_text(message.uid)
 			)))
 		data["messages"] = all_messages
 
@@ -64,7 +65,7 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 			continue
 		all_accounts.Add(list(list(
 			"login" = account.login,
-			"uid" = account.uid
+			"uid" = handle_text(account.uid)
 		)))
 	data["accounts"] = all_accounts
 
@@ -121,14 +122,14 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 		return TRUE
 
 	for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
-		if(received_message.uid == viewmail)
+		if(handle_text(received_message.uid) == handle_text(viewmail))
 			rel_set(src, nameof(src.current_message), received_message)
 			break
 	return TRUE
 
 /datum/computer_file/program/email_administration/proc/ui_act_viewaccount(datum/act/op/A, viewaccount)
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
-		if(email_account.uid == viewaccount)
+		if(handle_text(email_account.uid) == handle_text(viewaccount))
 			rel_set(src, nameof(src.current_account), email_account)
 			break
 	return TRUE

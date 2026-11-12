@@ -1,0 +1,17 @@
+{
+	"wire_view": 0,
+	"lighthack": 0,
+	"wires": [
+		{ "name": "Red", "cut": 0 },
+		{ "name": "Blue", "cut": 1 },
+		{ "name": "Green", "cut": 0 }
+	],
+	"auth": 1,
+	"yes_code": 1,
+	"timing": 0,
+	"safety": 1,
+	"anchored": 1,
+	"status_label": "Functional-Safe",
+	"code_display": "*****",
+	"timeleft": 120
+}

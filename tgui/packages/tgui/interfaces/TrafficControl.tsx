@@ -2,35 +2,30 @@
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { TrafficControlActions } from './generated/TrafficControl';
-
-type ServerRow = {
-  id: string;
-  name: string;
-  ref: number;
-};
-
-type Data = {
-  temp: string;
-  network: string;
-  screen: 0 | 1;
-  servers?: ServerRow[];
-  selected_id?: string;
-  autoruncode?: BooleanLike;
-};
+import { Box, Button, NoticeBox, Section, Stack } from 'tgui-core/components';
+import type {
+  TrafficControlActions,
+  TrafficControlData,
+} from './generated/TrafficControl';
 
 export const TrafficControl = () => {
-  const { data, act } = useBackend<Data, TrafficControlActions>();
+  const { data, act } = useBackend<TrafficControlData, TrafficControlActions>();
   const { temp, network, screen, servers, selected_id, autoruncode } = data;
   return (
     <Window width={520} height={520} title="Telecommunications Traffic Control">
       <Window.Content scrollable>
         {temp ? (
-          <Section>
-            <Box color="label">{temp}</Box>
-          </Section>
+          <NoticeBox danger={temp.color === 'bad'}>
+            <Box inline verticalAlign="middle">
+              {temp.text}
+            </Box>
+            <Button
+              icon="times-circle"
+              style={{ float: 'right' }}
+              onClick={() => act('clear_temp')}
+            />
+            <Box style={{ clear: 'both' }} />
+          </NoticeBox>
         ) : null}
         {screen === 0 ? (
           <Section title="Main Menu">
@@ -38,14 +33,14 @@ export const TrafficControl = () => {
               Current Network:{' '}
               <Button onClick={() => act('set_network')}>{network}</Button>
             </Box>
-            {servers && servers.length > 0 ? (
+            {servers.length > 0 ? (
               <>
                 <Box mb="2px" bold>
                   Detected Telecommunication Servers:
                 </Box>
                 <Stack vertical>
                   {servers.map((s) => (
-                    <Stack.Item key={s.ref}>
+                    <Stack.Item key={s.id}>
                       <Button
                         fluid
                         onClick={() => act('view_server', { id: s.id })}

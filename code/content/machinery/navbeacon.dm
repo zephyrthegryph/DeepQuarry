@@ -54,14 +54,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 		MSG_OTHERS(span_notice("%U% [open ? "opens" : "closes"] the beacon's cover.")))
 	return OP_OK
 
-/obj/machinery/navbeacon/proc/togglelock(mob/user)
+/obj/machinery/navbeacon/proc/togglelock(mob/user, quiet = FALSE)
 	if(!open)
 		to_chat(user, span_warning("You must open the cover first!"))
 		return FALSE
 
 	if(allowed(user))
 		set_locked(!locked)
-		to_chat(user, span_notice("Controls are now [locked ? "locked." : "unlocked."]"))
+		if(!quiet) // the window shows the lock
+			to_chat(user, span_notice("Controls are now [locked ? "locked." : "unlocked."]"))
 		return TRUE
 
 	to_chat(user, span_warning("Access denied."))
@@ -72,6 +73,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	setup(PROC_REF(hide_mapped_beacon))
 	silicon_ui()
 	interface("NavBeacon")
+	ui_shape(siliconUser = bool(), locked = bool(), open = bool(), location = nullable(schema_text()), codes = map_of(schema_text(), schema_text()))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 	op("loc_edit", ui_act("loc_edit", arg("new_loc", schema_text(4096))), then(PROC_REF(ui_act_loc_edit)))
 	op("trans_edit_key", ui_act("trans_edit_key", arg("code", schema_text(4096)), arg("new_key", schema_text(4096))), then(PROC_REF(ui_act_trans_edit_key)))
@@ -93,20 +95,22 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	return TRUE
 
 /obj/machinery/navbeacon/ui_data(datum/act/eval/A)
-
+	var/list/code_text = list() // the window edits every value as text; a mapped code can be a number
+	for(var/key, value in codes)
+		code_text["[key]"] = "[value]"
 	return list(
 		"siliconUser" = !!(A.authority & AUTH_REMOTE_ACCESS),
 		"locked" = locked,
 		"open" = open,
 		"location" = location,
-		"codes" = (codes || list()),
+		"codes" = code_text,
 	)
 
 /obj/machinery/navbeacon/proc/ui_act_lock(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!open)
 		return
-	return togglelock(user)
+	return togglelock(user, quiet = TRUE)
 
 /obj/machinery/navbeacon/proc/ui_act_loc_edit(datum/act/op/A, raw_new_loc)
 	if(!open || locked)

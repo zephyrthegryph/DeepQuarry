@@ -1,25 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { pAISecrecordsActions } from './generated/pAISecrecords';
 import type {
-  GeneralRecord,
-  RecordList,
-  SecurityRecord,
-} from './Pda/pda_types';
-
-type Data = {
-  records: RecordList;
-  general: GeneralRecord;
-  security: SecurityRecord;
-  could_not_find: BooleanLike;
-};
+  pAISecrecordsActions,
+  pAISecrecordsData,
+} from './generated/pAISecrecords';
 
 export const pAISecrecords = (props) => {
-  const { act, data } = useBackend<Data, pAISecrecordsActions>();
+  const { act, data } = useBackend<pAISecrecordsData, pAISecrecordsActions>();
 
-  const { records = [], general, security, could_not_find } = data;
+  const { records, general, security, could_not_find } = data;
 
   return (
     <Window width={450} height={600}>
@@ -43,42 +33,42 @@ export const pAISecrecords = (props) => {
               </Box>
             )}
             <LabeledList>
-              <LabeledList.Item label="Name">{general.name}</LabeledList.Item>
+              <LabeledList.Item label="Name">{general?.name}</LabeledList.Item>
               <LabeledList.Item label="Record ID">
-                {general.id}
+                {general?.id}
               </LabeledList.Item>
               <LabeledList.Item label="Entity Classification">
-                {general.brain_type}
+                {general?.brain_type}
               </LabeledList.Item>
-              <LabeledList.Item label="Sex">{general.sex}</LabeledList.Item>
+              <LabeledList.Item label="Sex">{general?.sex}</LabeledList.Item>
               <LabeledList.Item label="Species">
-                {general.species}
+                {general?.species}
               </LabeledList.Item>
-              <LabeledList.Item label="Age">{general.age}</LabeledList.Item>
-              <LabeledList.Item label="Rank">{general.rank}</LabeledList.Item>
+              <LabeledList.Item label="Age">{general?.age}</LabeledList.Item>
+              <LabeledList.Item label="Rank">{general?.rank}</LabeledList.Item>
               <LabeledList.Item label="Fingerprint">
-                {general.fingerprint}
+                {general?.fingerprint}
               </LabeledList.Item>
               <LabeledList.Item label="Physical Status">
-                {general.p_stat}
+                {general?.p_stat}
               </LabeledList.Item>
               <LabeledList.Item label="Mental Status">
-                {general.m_stat}
+                {general?.m_stat}
               </LabeledList.Item>
               <LabeledList.Divider />
               <LabeledList.Item label="Criminal Status">
-                <Box>{security.criminal}</Box>
+                <Box>{security?.criminal}</Box>
               </LabeledList.Item>
               <LabeledList.Item label="Minor Crimes">
-                <Box>{security.mi_crim}</Box>
-                <Box>{security.mi_crim_d}</Box>
+                <Box>{security?.mi_crim}</Box>
+                <Box>{security?.mi_crim_d}</Box>
               </LabeledList.Item>
               <LabeledList.Item label="Major Crimes">
-                <Box>{security.ma_crim}</Box>
-                <Box>{security.ma_crim_d}</Box>
+                <Box>{security?.ma_crim}</Box>
+                <Box>{security?.ma_crim_d}</Box>
               </LabeledList.Item>
               <LabeledList.Item label="Important Notes">
-                {security.notes}
+                {security?.notes}
               </LabeledList.Item>
             </LabeledList>
           </Section>

@@ -81,6 +81,7 @@ CAPABILITIES(/obj/item/dogborg/sleeper)
 	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper, starts = when(nameof(ore_storage), /obj/item/ore_bag/sleeper), starts_args = NO_LOC)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("RobotSleeper", state = nameof(GLOB.tgui_conscious_state))
+	ui_shape(name = schema_text(), theme = schema_text(), chems = nullable(list_of(row(id = schema_text(), name = schema_text()))), our_patient = nullable(row(name = schema_text(), stat = int(), pulse = schema_text(), crit_pulse = bool(), health = int(), max_health = int(), findings = list_of(row(name = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")))), paralysis = num(), braindamage = bool(), clonedamage = bool(), ingested_reagents = list_of(row(name = schema_text(), volume = num())))), eject_port = enum(list("disposal", "ingestion")), cleaning = bool(), medsensor = bool(), delivery = bool(), delivery_tag = schema_text(), delivery_lists = map_of(schema_text(), list_of(schema_text())), compactor = bool(), max_item_count = num(), ore_storage = bool(), current_capacity = num(), max_ore_storage = num(), contents = list_of(schema_text()), deliveryslot_1 = list_of(schema_text()), deliveryslot_2 = list_of(schema_text()), deliveryslot_3 = list_of(schema_text()), items_preserved = list_of(schema_text()), has_destructive_analyzer = bool(), techweb_name = nullable(schema_text()))
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("clean", ui_act("clean"), then(PROC_REF(ui_act_clean)))
@@ -298,6 +299,9 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 /obj/item/dogborg/sleeper/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
+	data["name"] = name
+	data["theme"] = "ntos"
+	data["chems"] = null
 	// The sleeper is a robot's module: its owner (its loc) sets the theme, whoever views it.
 	var/mob/living/silicon/robot/robot_user = loc
 	if(!istype(robot_user))
@@ -308,10 +312,16 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		var/datum/reagent/possible_reagent = SSchemistry.ready().chemical_reagents[re]
 		UNTYPED_LIST_ADD(robot_chems, list("id" = possible_reagent.id, "name" = possible_reagent.name))
 
-	data["name"] = name
 	data["theme"] = robot_user.get_ui_theme()
 	data["chems"] = robot_chems
 	return data
+
+/// The names the window lists for a list of things (it counts them by name).
+/obj/item/dogborg/sleeper/proc/listed_names(list/things)
+	var/list/names = list()
+	for(var/thing in things)
+		names += "[thing]"
+	return names
 
 /// /obj/item/dogborg/sleeper's window data.
 /obj/item/dogborg/sleeper/ui_data(datum/act/eval/A)
@@ -331,7 +341,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		patient_data = list(
 			"name" = patient.name,
 			"stat" = patient.stat,
-			"pulse" = patient.get_pulse(GETPULSE_TOOL),
+			"pulse" = "[patient.get_pulse(GETPULSE_TOOL)]",
 			"crit_pulse" = (patient.pulse == PULSE_NONE || patient.pulse == PULSE_THREADY),
 			// Old +100..-100 readout scale, derived from vitality.
 			"health" = round((2 * patient.vitality() - 1) * 100),
@@ -349,25 +359,28 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	if(ore_storage)
 		current_capacity = ore_bag.current_capacity
 		max_ore_storage = ore_bag.max_storage_space
+	var/list/listed_deliveries = list()
+	for(var/tag in deliverylists)
+		listed_deliveries[tag] = listed_names(deliverylists[tag])
 	var/list/data = list(
 		"our_patient" = patient_data,
 		"eject_port" = eject_port,
-		"cleaning" = cleaning,
-		"medsensor" = medsensor,
-		"delivery" = delivery,
+		"cleaning" = !!cleaning,
+		"medsensor" = !!medsensor,
+		"delivery" = !!delivery,
 		"delivery_tag" = delivery_tag,
-		"delivery_lists" = deliverylists,
-		"compactor" = compactor,
+		"delivery_lists" = listed_deliveries,
+		"compactor" = !!compactor,
 		"max_item_count" = max_item_count,
-		"ore_storage" = ore_storage,
+		"ore_storage" = !!ore_storage,
 		"current_capacity" = current_capacity,
 		"max_ore_storage" = max_ore_storage,
-		"contents" = contents,
-		"deliveryslot_1" = (deliveryslot_1 || list()),
-		"deliveryslot_2" = (deliveryslot_2 || list()),
-		"deliveryslot_3" = (deliveryslot_3 || list()),
-		"items_preserved" = items_preserved || list(),
-		"has_destructive_analyzer" = analyzer,
+		"contents" = listed_names(contents),
+		"deliveryslot_1" = listed_names(deliveryslot_1),
+		"deliveryslot_2" = listed_names(deliveryslot_2),
+		"deliveryslot_3" = listed_names(deliveryslot_3),
+		"items_preserved" = listed_names(items_preserved),
+		"has_destructive_analyzer" = !!analyzer,
 		"techweb_name" = handler?.linked_web() ? "[handler.linked_web().id] / [handler.linked_web().organization]" : null
 	)
 	return data
@@ -466,8 +479,6 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			else if(patient.reagents.get_reagent_amount(chem) + 10 <= 20) //No overdoses for you
 				patient.reagents.add_reagent(chem, inject_amount)
 				drain(SLEEPER_INJECT_COST)
-			var/units = round(patient.reagents.get_reagent_amount(chem))
-			to_chat(hound, span_notice("Injecting [units] unit\s of [SSchemistry.ready().chemical_reagents[chem]] into occupant.")) //If they were immersed, the reagents wouldn't leave with them.
 
 /// The belly light: busy (red) while cleaning, crowded or holding the dead;
 /// green with a living patient. The robot only redraws when it changes.

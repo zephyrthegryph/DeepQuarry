@@ -2,14 +2,13 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, NoticeBox, Stack, Tabs } from 'tgui-core/components';
-import type { RobotactActions } from '../generated/Robotact';
+import type { RobotactActions, RobotactData } from '../generated/Robotact';
 import { ComponentView } from './Diagnostics';
 import { Modules } from './Modules';
 import { StatusScreen } from './StatusScreen';
-import type { Data } from './types';
 
 export const Robotact = (props) => {
-  const { act, data } = useBackend<Data, RobotactActions>();
+  const { data } = useBackend<RobotactData, RobotactActions>();
 
   let content = <NoModuleWarning />;
 
@@ -25,7 +24,7 @@ export const Robotact = (props) => {
 };
 
 const NoModuleWarning = (props) => {
-  const { act } = useBackend();
+  const { act } = useBackend<RobotactData, RobotactActions>();
 
   return (
     <Stack fill align="center" justify="center" vertical>

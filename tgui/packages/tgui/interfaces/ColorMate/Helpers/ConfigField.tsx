@@ -1,10 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Input, LabeledList } from 'tgui-core/components';
-import type { ColorMateActions } from '../../generated/ColorMate';
-import type { Data } from '../types';
+import type {
+  ColorMateActions,
+  ColorMateData,
+} from '../../generated/ColorMate';
 
 export const ConfigField = (props) => {
-  const { act, data } = useBackend<Data, ColorMateActions>();
+  const { act, data } = useBackend<ColorMateData, ColorMateActions>();
   const { matrixcolors } = data;
 
   return (

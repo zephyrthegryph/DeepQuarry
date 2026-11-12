@@ -1,0 +1,15 @@
+{
+	"parts": [
+		{
+			"key": "general",
+			"label": "General",
+			"preview": "A tall figure in a worn jumpsuit..."
+		},
+		{ "key": "face", "label": "Face", "preview": "" },
+		{
+			"key": "body",
+			"label": "Body",
+			"preview": "Broad shoulders and calloused hands."
+		}
+	]
+}

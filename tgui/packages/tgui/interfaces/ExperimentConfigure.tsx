@@ -10,35 +10,23 @@ import {
   Table,
   Tooltip,
 } from 'tgui-core/components';
-import type { ExperimentConfigureActions } from './generated/ExperimentConfigure';
+import type {
+  ExperimentConfigureActions,
+  ExperimentConfigureData,
+} from './generated/ExperimentConfigure';
 
-type Techweb = {
-  all_servers: string[];
-  ref: number;
-  selected: number;
-  web_id: string;
-  web_org: string;
-};
-
-type ExperimentData = {
-  description: string;
-  name: string;
-  performance_hint: string;
+type ExperimentData = Omit<
+  ExperimentConfigureData['experiments'][number],
+  'progress'
+> & {
   progress: Stage[];
-  ref: number;
-  selected: number;
-  tag: string;
 };
 
 // Value type, Description, Value, AltValue
 type Stage = [string, string, number, number];
 
-type Data = {
-  theme?: string;
-  always_active: boolean;
+type Data = Omit<ExperimentConfigureData, 'experiments'> & {
   experiments: ExperimentData[];
-  has_start_callback: boolean;
-  techwebs: Techweb[];
 };
 
 type ExperimentStageRowProps = {

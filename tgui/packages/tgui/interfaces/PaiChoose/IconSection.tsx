@@ -1,18 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Divider, Section, Stack } from 'tgui-core/components';
-import type { PaiChooseActions } from '../generated/PaiChoose';
+import type { PaiChooseActions, PaiChooseData } from '../generated/PaiChoose';
 import { PreferenceEditColor } from '../PreferencesMenu/elements/ColorInput';
 import { PaiPreview } from './PaiPreview';
-import type { Data } from './types';
 
 export const IconSection = (props) => {
-  const { act, data } = useBackend<Data, PaiChooseActions>();
-  const {
-    sprite_datum_class,
-    sprite_datum_size,
-    selected_chassis,
-    pai_color = '#ffffff',
-  } = data;
+  const { act, data } = useBackend<PaiChooseData, PaiChooseActions>();
+  const { sprite_datum_class, sprite_datum_size, selected_chassis, pai_color } =
+    data;
 
   return (
     <Section
@@ -39,8 +34,8 @@ export const IconSection = (props) => {
         </Stack.Item>
         <Divider />
         <PaiPreview
-          icon={sprite_datum_class}
-          size={sprite_datum_size}
+          icon={sprite_datum_class ?? undefined}
+          size={sprite_datum_size ?? undefined}
           color={pai_color}
         />
       </Stack>

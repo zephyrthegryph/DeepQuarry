@@ -142,9 +142,6 @@
 /mob/living/bot/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	if(locked)
-		to_chat(user, span_notice("You need to unlock the controls first."))
-		return OP_OK
 	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
 	playsound(src, sounds_of(tool).use, 50, TRUE)
@@ -161,6 +158,7 @@
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
+MSG_DEF_SELF(bot/controls_locked, "You need to unlock the controls first.")
 MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI."))
 
 /// What the bot's settings window shows: the settings while it is unlocked, or to a viewer whose inputs come over a link (a silicon's:
@@ -742,7 +740,7 @@ CAPABILITIES(/mob/living/bot)
 	op("eject_pai_blocked", tool(TOOL_CROWBAR), when(PROC_REF(pai_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never_allowed), silent = TRUE)))
 	op("eject_pai", tool(TOOL_CROWBAR), label("Remove the pAI"), when(PROC_REF(pai_removable)), begins(MSG(bot/removing_pai)), wait(1 SECOND), then(PROC_REF(remove_pai)))
 	op("bot_item", item(/obj/item), then(PROC_REF(bot_interaction_item)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req_is(nameof(locked), FALSE, because = MSG(bot/controls_locked))), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	owns_one(nameof(paicard), on_destroy = ON_DESTROY_CONTAINED)
 	ref_one(nameof(obstacle))

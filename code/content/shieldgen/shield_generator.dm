@@ -63,6 +63,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
 	on_wire(WIRE_SHIELD_CONTROL, cut = PROC_REF(control_wire_cut))
 	interface("OvermapShieldGenerator")
+	ui_shape(running = int(), overloaded = bool(), mitigation_max = num(), field_radius = num(), target_radius = num(), hacked = bool(), idle_multiplier = num(), idle_valid_values = list_of(num()), spinup_counter = num(), modes = list_of(row(name = schema_text(), desc = schema_text(), flag = int(), status = bool(), hacked = bool(), multiplier = num())), mitigation_physical = num(), mitigation_em = num(), mitigation_heat = num(), field_integrity = num(), max_energy = num(), current_energy = num(), percentage_energy = num(), total_segments = int(), functional_segments = int(), input_cap_kw = num(), upkeep_power_usage = num(), power_usage = num(), offline_for = num())
 	op("begin_shutdown", ui_act("begin_shutdown"),
 		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you wish to do this? It will drain the power inside the internal storage rapidly.", "title" = "Are you sure?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k504", when = PROC_REF(is_running)),
 		then(PROC_REF(ui_act_begin_shutdown)))
@@ -482,11 +483,11 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 /obj/machinery/power/shield_generator/ui_data(datum/act/eval/A)
 	. = list()
 	.["running"] = running
-	.["overloaded"] = overloaded
+	.["overloaded"] = !!overloaded
 	.["mitigation_max"] = mitigation_max
 	.["field_radius"] = field_radius
 	.["target_radius"] = target_radius
-	.["hacked"] = hacked
+	.["hacked"] = !!hacked
 	.["idle_multiplier"] = idle_multiplier
 	.["idle_valid_values"] = idle_valid_values
 	.["spinup_counter"] = spinup_counter
@@ -704,8 +705,8 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 			"name" = SM.mode_name,
 			"desc" = SM.mode_desc,
 			"flag" = SM.mode_flag,
-			"status" = check_flag(SM.mode_flag),
-			"hacked" = SM.hacked_only,
+			"status" = !!check_flag(SM.mode_flag),
+			"hacked" = !!SM.hacked_only,
 			"multiplier" = SM.multiplier
 		)))
 	return all_flags

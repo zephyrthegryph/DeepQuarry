@@ -110,26 +110,27 @@
 		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
 	else
 		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
-	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
+		to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
 
 /// How long entering takes: longer past a helmet.
 /mob/living/simple_mob/animal/borer/proc/infest_wait(datum/act/op/A)
 	var/mob/living/carbon/human/infest_target = A.target
 	return infest_target.check_head_coverage() ? 5.5 SECONDS : 3 SECONDS
 
+/// Refuses entering a target while the borer is not conscious or the target has no brain to bond to (checked before the wait and again at its end;
+/// reach() keeps the target in range).
+/mob/living/simple_mob/animal/borer/proc/infest_refusal(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
+	if(stat)
+		return span_warning("You cannot infest \the [infest_target] in your current state.")
+	if(istype(infest_target) && !infest_target.organ_in(O_BRAIN)) // See section below about replace_brain() being disabled
+		return span_danger("\The [infest_target] has no brain to bond to!")
+	return null
+
 /mob/living/simple_mob/animal/borer/proc/infest_done(datum/act/op/A)
 	var/mob/living/carbon/human/infest_target = A.target
 	var/mob/living/carbon/human/host
 	if(!infest_target || QDELETED(src))
-		return
-	if(stat)
-		to_chat(src, span_warning("You cannot infest \the [infest_target] in your current state."))
-		return
-	if(!(Adjacent(infest_target)))
-		to_chat(src, span_warning("They are no longer in range!"))
-		return
-	if(!infest_target.organ_in(O_BRAIN)) // See section below about replace_brain() being disabled
-		to_chat(src, span_danger("\The [infest_target] has no brain to bond to!"))
 		return
 
 	to_chat(src, span_alien("You wiggle into [infest_target]'s ear."))

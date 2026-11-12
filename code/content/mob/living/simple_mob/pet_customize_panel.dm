@@ -28,6 +28,7 @@ GLOBAL_ALIST_EMPTY(dq_pet_panels)
 CAPABILITIES(/datum/pet_panel)
 	ref_one(nameof(pet), /mob/living/simple_mob)
 	interface("PetCustomize", title = "Customize", state = nameof(GLOB.tgui_always_state))
+	ui_shape(pet_name = schema_text(), settings = list_of(row(id = schema_text(), label = schema_text(), action = schema_text(), desc = schema_text(), value = nullable(schema_text()), swatch = nullable(schema_text()), enabled = bool(), why = nullable(schema_text()))))
 	op("pet_do", ui_act("pet_do", arg("action", schema_text(32))), then(PROC_REF(ui_act_pet_do)))
 
 /datum/pet_panel/ui_prepare(mob/user, datum/tgui/ui)

@@ -7,19 +7,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PhotocopierActions } from './generated/Photocopier';
+import type {
+  PhotocopierActions,
+  PhotocopierData,
+} from './generated/Photocopier';
 
-type Data = {
-  has_item: BooleanLike;
-  isAI: BooleanLike;
-  can_AI_print: BooleanLike;
-  has_toner: BooleanLike;
-  current_toner: number;
-  max_toner: number;
-  num_copies: number;
-  max_copies: number;
-};
+type Data = PhotocopierData;
 
 export const Photocopier = (props) => {
   const { act, data } = useBackend<Data, PhotocopierActions>();

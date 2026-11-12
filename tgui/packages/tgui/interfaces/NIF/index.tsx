@@ -24,7 +24,7 @@ export const NIF = (props) => {
   const [viewingModule, setViewing] = useState<module | null>(null);
 
   return (
-    <Window theme={theme} width={500} height={400}>
+    <Window theme={theme ?? undefined} width={500} height={400}>
       <Window.Content scrollable>
         {!!last_notification && (
           <NoticeBox info>

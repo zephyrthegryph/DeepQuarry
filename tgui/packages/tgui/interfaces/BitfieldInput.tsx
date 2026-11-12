@@ -7,20 +7,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { BitfieldInputActions } from './generated/BitfieldInput';
+import type {
+  BitfieldInputActions,
+  BitfieldInputData,
+} from './generated/BitfieldInput';
 
-type Flag = {
-  name: string;
-  bit: number;
-  checked: BooleanLike;
-  editable: BooleanLike;
-};
-
-type Data = {
-  title: string;
-  flags: Flag[];
-};
+type Data = BitfieldInputData;
 
 export const BitfieldInput = () => {
   const { data, act } = useBackend<Data, BitfieldInputActions>();

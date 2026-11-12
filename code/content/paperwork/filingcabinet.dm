@@ -32,6 +32,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("interaction_tk", tk(), when(nameof(anchored)), then(PROC_REF(interaction_tk)))
 	interface("FileCabinet", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(cabinet_name = schema_text(), contents = list_of(schema_text()), contents_ref = list_of(int()))
 	without("ui_open")
 	op("remove_object", ui_act("remove_object", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_object)))
 	anchor(sfx = SFX_ITEMS_RATCHET, attached = MSG(anchor/wrenched_self), detached = MSG(anchor/unwrenched_self))
@@ -110,7 +111,7 @@ MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 	data["contents_ref"] = list()
 	FOR_REAL_CONTENTS(var/obj/item/content, src)
 		data["contents"] += "[content]"
-		data["contents_ref"] += "[REF(content)]"
+		data["contents_ref"] += handle_of(content)
 
 	return data
 

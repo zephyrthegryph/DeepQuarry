@@ -3,8 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Stack } from 'tgui-core/components';
 import { clamp } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
-import type { CanvasActions } from './generated/Canvas';
+import type { CanvasActions, CanvasData } from './generated/Canvas';
 
 const PX_PER_UNIT = 24;
 
@@ -159,7 +158,10 @@ class PaintCanvas extends Component<PaintCanvasProps> {
 
   drawCanvas(propSource: PaintCanvasProps) {
     const canvas = this.canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
+    }
     const grid = JSON.parse(JSON.stringify(propSource.value ?? null));
     if (!grid) {
       return;
@@ -313,11 +315,7 @@ const getImageSize = (value) => {
   return [width, height];
 };
 
-type Data = {
-  grid: string[][];
-  name: string;
-  finalized: BooleanLike;
-};
+type Data = CanvasData;
 
 enum Tool {
   Paintbrush,

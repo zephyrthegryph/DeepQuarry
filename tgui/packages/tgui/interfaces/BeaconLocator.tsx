@@ -9,15 +9,12 @@ import {
   Section,
 } from 'tgui-core/components';
 import { round, toFixed } from 'tgui-core/math';
-import type { BeaconLocatorActions } from './generated/BeaconLocator';
+import type {
+  BeaconLocatorActions,
+  BeaconLocatorData,
+} from './generated/BeaconLocator';
 
-type Data = {
-  scan_ticks: number;
-  degrees: number | null;
-  rawfreq: number;
-  minFrequency: number;
-  maxFrequency: number;
-};
+type Data = BeaconLocatorData;
 
 export const BeaconLocator = (props) => {
   const { act, data } = useBackend<Data, BeaconLocatorActions>();
@@ -29,7 +26,7 @@ export const BeaconLocator = (props) => {
       <Window.Content>
         <Section title="Beacon Locator">
           {(scan_ticks && <Box color="label">Scanning...</Box>) || null}
-          {(degrees && (
+          {(degrees !== null && (
             <Box textAlign="center">
               <Box textAlign="center">
                 <Icon size={4} name="arrow-up" rotation={degrees} />

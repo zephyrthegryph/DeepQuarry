@@ -1,0 +1,87 @@
+{
+	"verbose": 1,
+	"spo2Alarm": 90,
+	"choice": 0,
+	"health": 1,
+	"crit": 1,
+	"healthAlarm": 50,
+	"spo2": 1,
+	"occupant": {
+		"name": "Jo Park",
+		"stat": 1,
+		"vitality": 72,
+		"diagnosis": {
+			"status": "alive",
+			"band": "moderate",
+			"vitals": {
+				"heartRate": 88,
+				"bloodPressure": [118, 76],
+				"oxygenation": 96,
+				"respiratoryRate": 16,
+				"heartRhythm": "sinus",
+				"temperature": 36.8,
+				"consciousness": "Unconscious",
+				"bloodPercent": 94
+			},
+			"findings": [
+				{
+					"name": "Laceration",
+					"kind": "wound",
+					"band": "moderate",
+					"location": "left arm",
+					"description": "A deep cut.",
+					"trend": "stable",
+					"hint": "Suture or bandage it."
+				},
+				{
+					"name": "Pallor",
+					"kind": "sign",
+					"band": "minor",
+					"location": "head",
+					"description": null,
+					"trend": null,
+					"hint": null
+				}
+			],
+			"parts": [
+				{
+					"name": "left arm",
+					"kind": "external",
+					"band": "moderate",
+					"flags": ["bleeding"],
+					"implants": null
+				},
+				{
+					"name": "heart",
+					"kind": "internal",
+					"band": "uninjured",
+					"flags": [],
+					"implants": ["pacemaker"]
+				}
+			],
+			"hints": [
+				{
+					"tag": "bleeding",
+					"label": "Stop the bleeding",
+					"band": "moderate"
+				}
+			]
+		},
+		"bloodType": "O+",
+		"surgery": [
+			{
+				"name": "left arm",
+				"currentStage": "Incision is open",
+				"nextSteps": [
+					"Clamp bleeders: Hemostat, Cable coil",
+					"Retract skin: Retractor"
+				]
+			},
+			{
+				"name": "chest",
+				"currentStage": "Incision is open",
+				"nextSteps": ["Cauterize incision: Cautery"]
+			}
+		]
+	}
+}

@@ -10,22 +10,12 @@ import {
   Section,
   Slider,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { GasTemperatureSystemActions } from './generated/GasTemperatureSystem';
+import type {
+  GasTemperatureSystemActions,
+  GasTemperatureSystemData,
+} from './generated/GasTemperatureSystem';
 
-type Data = {
-  on: BooleanLike;
-  gasPressure: number;
-  gasTemperature: number;
-  minGasTemperature: number;
-  maxGasTemperature: number;
-  targetGasTemperature: number;
-  powerSetting: number;
-  gasTemperatureClass: string;
-  reagentVolume: number;
-  reagentMaximum: number;
-  reagentPower: number;
-};
+type Data = GasTemperatureSystemData;
 
 export const GasTemperatureSystem = (props) => {
   const { act, data } = useBackend<Data, GasTemperatureSystemActions>();

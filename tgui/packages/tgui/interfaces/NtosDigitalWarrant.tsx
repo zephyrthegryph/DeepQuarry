@@ -7,24 +7,14 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { NtosDigitalWarrantActions } from './generated/NtosDigitalWarrant';
+import type {
+  NtosDigitalWarrantActions,
+  NtosDigitalWarrantData,
+} from './generated/NtosDigitalWarrant';
 
-type Data = {
-  warrantname: string | null;
-  warrantcharges: string | null;
-  warrantauth: BooleanLike;
-  type: string | null;
-  allwarrants: warrant[] | [];
-};
+type Data = NtosDigitalWarrantData;
 
-type warrant = {
-  warrantname: string;
-  charges: string;
-  auth: BooleanLike;
-  id: string;
-  arrestsearch: string;
-};
+type Warrant = NtosDigitalWarrantData['allwarrants'][number];
 
 export const NtosDigitalWarrant = (props) => {
   const { data } = useBackend<Data, NtosDigitalWarrantActions>();
@@ -70,7 +60,7 @@ const WarrantList = (props) => {
   const { allwarrants = [] } = data;
 
   const ourWarrants = allwarrants.filter(
-    (w: warrant) => w.arrestsearch === type,
+    (w: Warrant) => w.arrestsearch === type,
   );
 
   return (

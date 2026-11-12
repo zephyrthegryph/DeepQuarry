@@ -115,6 +115,7 @@
 CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	setup(PROC_REF(prepare_disperser_parts))
 	interface("OvermapDisperser")
+	ui_shape(faillink = bool(), calibration = nullable(list_of(int())), overmapdir = nullable(int()), cal_accuracy = num(), strength = int(), range = int(), next_shot = int(), nopower = bool(), chargeload = nullable(schema_text()))
 	without("ui_open")
 	op("choose", ui_act("choose", arg("dir", num())), then(PROC_REF(ui_act_choose)))
 	op("calibration", ui_act("calibration", arg("calibration", num())), asks(/datum/prompt/number/disperser_setting/calibration, step = "value"), then(PROC_REF(ui_act_calibration)))

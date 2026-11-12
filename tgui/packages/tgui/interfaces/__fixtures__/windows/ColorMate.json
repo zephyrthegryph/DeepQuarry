@@ -1,0 +1,27 @@
+{
+  "activemode": 2,
+  "buildhue": 120,
+  "buildsat": 1,
+  "buildval": 1,
+  "item_name": "red jumpsuit",
+  "item_preview": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "item_sprite": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "matrix_only": 0,
+  "matrixcolors": {
+    "rr": 1,
+    "rg": 0,
+    "rb": 0,
+    "gr": 0,
+    "gg": 1,
+    "gb": 0,
+    "br": 0,
+    "bg": 0,
+    "bb": 1,
+    "cr": 0,
+    "cg": 0,
+    "cb": 0
+  },
+  "message": "",
+  "temp": "Painted Successfully!",
+  "title": "Color Mate"
+}

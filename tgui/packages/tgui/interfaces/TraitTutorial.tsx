@@ -2,16 +2,12 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack, Tabs } from 'tgui-core/components';
 import { sanitizeText } from '../sanitize';
-import type { TraitTutorialActions } from './generated/TraitTutorial';
+import type {
+  TraitTutorialActions,
+  TraitTutorialData,
+} from './generated/TraitTutorial';
 
-type data = {
-  namae: string;
-  names: string[];
-  descriptions: Record<string, string>[];
-  categories: Record<string, string>[];
-  tutorials: Record<string, string>[];
-  selection: string;
-};
+type data = TraitTutorialData;
 
 export const TraitTutorial = (props) => {
   const { act, data } = useBackend<data, TraitTutorialActions>();
@@ -79,7 +75,7 @@ export const TraitDescription = (props) => {
       <div
         // biome-ignore lint/security/noDangerouslySetInnerHtml: Internal trait data
         dangerouslySetInnerHTML={{
-          __html: sanitizeText(tutorials[name] as unknown as string),
+          __html: sanitizeText(tutorials[name] ?? ''),
         }}
       />
     </Section>

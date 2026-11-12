@@ -9,7 +9,8 @@
 
 CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	interface("AdminShuttleController", rights = R_ADMIN|R_EVENT|R_DEBUG)
-	op("adminobserve", ui_act("adminobserve", arg("ref", schema_ref(/datum/shuttle))), then(PROC_REF(ui_act_adminobserve)))
+	ui_shape(shuttles = list_of(row(name = schema_text(), ref = schema_text(), current_location = schema_text(), status = int())), overmap_ships = list_of(row(name = schema_text(), ref = schema_text())))
+	op("adminobserve", ui_act("adminobserve", arg("ref", schema_ref(list(/datum/shuttle, /obj/effect/overmap/visitable)))), then(PROC_REF(ui_act_adminobserve)))
 	op("classicmove", ui_act("classicmove", arg("ref", schema_ref(/datum/shuttle))), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)),
 		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(multi_destinations)), "timeout" = 0, "rights" = R_ADMIN|R_EVENT|R_DEBUG), step = "multi", when = PROC_REF(asks_multi)),
 		asks(/datum/prompt/choice, fields = list("title" = "Shuttle Destination", "question" = "Choose shuttle destination", "choices" = computed(PROC_REF(overmap_destinations)), "timeout" = 0, "rights" = R_ADMIN|R_EVENT|R_DEBUG), step = "overmap", when = PROC_REF(asks_overmap)),

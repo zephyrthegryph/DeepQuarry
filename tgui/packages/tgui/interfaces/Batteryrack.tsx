@@ -10,27 +10,13 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
-import type { BatteryrackActions } from './generated/Batteryrack';
+import type {
+  BatteryrackActions,
+  BatteryrackData,
+} from './generated/Batteryrack';
 
-type Data = {
-  mode: number;
-  transfer_max: number;
-  output_load: number;
-  input_load: number;
-  equalise: BooleanLike;
-  blink_tick: BooleanLike;
-  cells_max: number;
-  cells_cur: number;
-  cells_list: {
-    slot: number;
-    used: BooleanLike;
-    percentage: number | undefined;
-    name: string | undefined;
-    id: number;
-  }[];
-};
+type Data = BatteryrackData;
 
 export const Batteryrack = (props) => {
   const { act, data } = useBackend<Data, BatteryrackActions>();
@@ -103,7 +89,7 @@ export const Batteryrack = (props) => {
                 <Table.Cell collapsing>Cell {cell.slot}</Table.Cell>
                 <Table.Cell>
                   <ProgressBar
-                    value={cell.used ? cell.percentage! : 100}
+                    value={cell.used ? (cell.percentage ?? 100) : 100}
                     minValue={0}
                     maxValue={100}
                     color={cell.used ? 'good' : 'bad'}

@@ -20,9 +20,10 @@
 CAPABILITIES(/obj/machinery/computer/drone_control)
 	ref_one(nameof(dronefab), /obj/machinery/drone_fabricator)
 	interface("DroneConsole")
+	ui_shape(drones = list_of(row(name = schema_text(), active = bool(), charge = num(), maxCharge = num(), loc = schema_text(), ref = num())), fabricator = bool(), fabPower = bool(), areas = list_of(schema_text()), selected_area = schema_text())
 	// An empty hand (or a silicon's interface) opens the console for a credential that fits its req_access, so a refused click says why.
 	extend("ui_open", needs(req_access()), then(PROC_REF(console_fingerprinted)))
-	op("set_dcall_area", ui_act("set_dcall_area", arg("area")), then(PROC_REF(ui_act_set_dcall_area)))
+	op("set_dcall_area", ui_act("set_dcall_area", arg("area", schema_text(4096))), then(PROC_REF(ui_act_set_dcall_area)))
 	op("ping", ui_act("ping"), then(PROC_REF(ui_act_ping)))
 	op("resync", ui_act("resync", arg("ref", schema_text(32))), then(PROC_REF(ui_act_resync)))
 	op("shutdown", ui_act("shutdown", arg("ref", schema_text(32))), then(PROC_REF(ui_act_shutdown)))
@@ -35,7 +36,7 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 
 /obj/machinery/computer/drone_control/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["fabricator"] = dronefab
+	data["fabricator"] = !!dronefab
 	var/list/merged_1 = ui_data_obj_machinery_computer_drone_control(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -62,15 +63,15 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 	for(var/mob/living/silicon/robot/drone/D in listed_drones())
 		drones.Add(list(list(
 			"name" = D.real_name,
-			"active" = D.stat != 2,
-			"charge" = D.cell.charge,
-			"maxCharge" = D.cell.maxcharge,
+			"active" = D.stat != DEAD,
+			"charge" = D.cell?.charge || 0,
+			"maxCharge" = D.cell?.maxcharge || 0,
 			"loc" = "[get_area(D)]",
 			"ref" = handle_of(D),
 		)))
 	data["drones"] = drones
 
-	data["fabPower"] = dronefab?.produce_drones
+	data["fabPower"] = !!dronefab?.produce_drones
 
 	var/list/areas = list()
 	for(var/area in GLOB.tagger_locations)
@@ -81,35 +82,28 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 	return data
 
 /obj/machinery/computer/drone_control/proc/ui_act_set_dcall_area(datum/act/op/A, area)
-	var/mob/user = A.actor
 	var/t_area = area
 	if(!t_area || !(t_area in GLOB.tagger_locations))
 		return
 
 	set_drone_call_area(t_area)
-	to_chat(user, span_notice("You set the area selector to [drone_call_area]."))
 
 /obj/machinery/computer/drone_control/proc/ui_act_ping(datum/act/op/A)
-	var/mob/user = A.actor
-	to_chat(user, span_notice("You issue a maintenance request for all active drones, highlighting [drone_call_area]."))
 	for(var/mob/living/silicon/robot/drone/D in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(D.stat == 0)
+		if(D.stat == CONSCIOUS)
 			to_chat(D, "-- Maintenance drone presence requested in: [drone_call_area].")
 
 /obj/machinery/computer/drone_control/proc/ui_act_resync(datum/act/op/A, ref)
-	var/mob/user = A.actor
 	var/mob/living/silicon/robot/drone/D = ui_member(ref, listed_drones(), /mob/living/silicon/robot/drone)
 
-	if(D && D.stat != 2)
-		to_chat(user, span_danger("You issue a law synchronization directive for the drone."))
+	if(D && D.stat != DEAD)
 		D.law_resync()
 
 /obj/machinery/computer/drone_control/proc/ui_act_shutdown(datum/act/op/A, ref)
 	var/mob/user = A.actor
 	var/mob/living/silicon/robot/drone/D = ui_member(ref, listed_drones(), /mob/living/silicon/robot/drone)
 
-	if(D && D.stat != 2)
-		to_chat(user, span_danger("You issue a kill command for the unfortunate drone."))
+	if(D && D.stat != DEAD)
 		message_admins("[key_name_admin(user)] issued kill order for drone [key_name_admin(D)] from control console.")
 		log_game("[key_name(user)] issued kill order for [key_name(src)] from control console.")
 		D.shut_down()
@@ -124,7 +118,6 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 			continue
 
 		rel_set(src, nameof(/obj/machinery/computer/drone_control::dronefab), fab)
-		to_chat(user, span_notice("Drone fabricator located."))
 		return
 
 	to_chat(user, span_danger("Unable to locate drone fabricator."))
@@ -140,5 +133,4 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 		return
 
 	dronefab.produce_drones = !dronefab.produce_drones
-	to_chat(user, span_notice("You [dronefab.produce_drones ? "enable" : "disable"] drone production in the nearby fabricator."))
 

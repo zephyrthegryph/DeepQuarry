@@ -55,6 +55,7 @@ CAPABILITIES(/obj/machinery/space_heater)
 	// pumping into the station's heat-rejection loop at a Carnot-bounded COP. Its work is paid from the cell (work_step()).
 	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heating_power), nameof(set_temperature), HEAT_PUMP_BOTH, TRUE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop)))
 	interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(temp = num(), minTemp = num(), maxTemp = num(), cell = bool(), power = num())
 	op("temp", ui_act("temp", arg("newtemp", num())), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_temp)))
 	op("cellremove", ui_act("cellremove"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellremove)))
 	op("cellinstall", ui_act("cellinstall"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellinstall)))
@@ -151,19 +152,8 @@ CAPABILITIES(/obj/machinery/space_heater)
 	data["temp"] = set_temperature
 	data["minTemp"] = min_temperature
 	data["maxTemp"] = max_temperature
-	var/list/merged_1 = ui_data_obj_machinery_space_heater(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// /obj/machinery/space_heater's window data.
-/obj/machinery/space_heater/proc/ui_data_obj_machinery_space_heater(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
 	data["cell"] = !!cell
 	data["power"] = round(cell?.percent(), 1)
-
 	return data
 
 /obj/machinery/space_heater/proc/ui_gate(datum/act/op/A)

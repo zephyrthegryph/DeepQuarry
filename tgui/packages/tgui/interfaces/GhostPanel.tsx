@@ -4,48 +4,17 @@
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  NoticeBox,
-  Section,
-  Stack,
-} from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { GhostPanelActions } from './generated/GhostPanel';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type { GhostPanelActions, GhostPanelData } from './generated/GhostPanel';
 
-type Action = {
-  id: string;
-  label: string;
-  desc: string;
-  enabled: BooleanLike;
-  why: string | null;
-};
+type Group = GhostPanelData['groups'][number];
 
-type Group = {
-  title: string;
-  actions: Action[];
-};
+type Action = Group['actions'][number];
 
-type Toggle = {
-  id: string;
-  label: string;
-  desc: string;
-  value: BooleanLike;
-  text: string | null;
-  can: BooleanLike;
-  why: string | null;
-};
-
-type Data = {
-  groups: Group[];
-  toggles: Toggle[];
-  notice: string | null;
-};
+type Toggle = GhostPanelData['toggles'][number];
 
 const ActionButton = (props: { action: Action }) => {
-  const { act } = useBackend<Data, GhostPanelActions>();
+  const { act } = useBackend<GhostPanelData, GhostPanelActions>();
   const { action } = props;
   return (
     <Button
@@ -60,7 +29,7 @@ const ActionButton = (props: { action: Action }) => {
 };
 
 const ToggleRow = (props: { toggle: Toggle }) => {
-  const { act } = useBackend<Data, GhostPanelActions>();
+  const { act } = useBackend<GhostPanelData, GhostPanelActions>();
   const { toggle } = props;
   return (
     <LabeledList.Item label={toggle.label}>
@@ -78,17 +47,12 @@ const ToggleRow = (props: { toggle: Toggle }) => {
 };
 
 export const GhostPanel = () => {
-  const { data } = useBackend<Data, GhostPanelActions>();
-  const { groups = [], toggles = [], notice } = data;
+  const { data } = useBackend<GhostPanelData, GhostPanelActions>();
+  const { groups, toggles } = data;
   return (
     <Window width={520} height={620} title="Ghost Panel" theme="console">
       <Window.Content scrollable>
         <Stack vertical>
-          {!!notice && (
-            <Stack.Item>
-              <NoticeBox>{notice}</NoticeBox>
-            </Stack.Item>
-          )}
           {groups.map((group) => (
             <Stack.Item key={group.title}>
               <Section title={group.title}>

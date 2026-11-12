@@ -1,81 +1,23 @@
 import type { BooleanLike } from 'tgui-core/react';
+import type {
+  AirlockConsoleSimpleActions,
+  AirlockConsoleSimpleData,
+} from '../generated/AirlockConsoleSimple';
 
-export type Data = { internalTemplateName: string };
+/** A door set's state, as the airlock consoles send it. */
+export type status = AirlockConsoleSimpleData['exterior_status'];
 
-export type AirlockConsoleDockingData = {
-  chamber_pressure: number;
-  exterior_status: status;
-  interior_status: status;
-  processing: BooleanLike;
-  docking_status: string;
-  airlock_disabled: BooleanLike;
-  override_enabled: BooleanLike;
-  docking_codes?: string;
-  name?: string;
-  internalTemplateName: string;
-};
-
-export type DockingConsoleSimpleData = {
-  docking_status: string;
-  override_enabled: BooleanLike;
-  exterior_status: status;
-  internalTemplateName: string;
-};
-
-export type EscapePodBerthConsoleData = {
-  docking_status: string;
-  override_enabled: BooleanLike;
-  exterior_status: status;
-  armed: BooleanLike;
-  internalTemplateName: string;
-};
-
-export type DockingConsoleMultiData = {
-  docking_status: string;
-  airlocks: { name: string; override_enabled: BooleanLike }[];
-  internalTemplateName: string;
-};
-
-export type AirlockConsoleAdvancedData = {
-  chamber_pressure: number;
-  external_pressure: number;
-  internal_pressure: number;
-  processing: BooleanLike;
-  purge: BooleanLike;
-  secure: BooleanLike;
-  internalTemplateName: string;
-} & PanelOpenData;
-
-export type AirlockConsoleSimpleData = {
-  chamber_pressure: number;
-  exterior_status: status;
-  interior_status: status;
-  processing: BooleanLike;
-  internalTemplateName: string;
-} & PanelOpenData;
-
-export type DoorAccessConsoleData = {
-  exterior_status: status;
-  interior_status: status;
-  processing: BooleanLike;
-  internalTemplateName: string;
-} & PanelOpenData;
-
-export type EscapePodConsoleData = {
-  docking_status: string;
-  override_enabled: BooleanLike;
-  exterior_status: status;
-  can_force: BooleanLike;
-  armed: BooleanLike;
-  internalTemplateName: string;
-};
-
-export type status = { state: string; lock: string };
-
+/** The maintenance-panel part every airlock console window with a panel sends (the airlock's ui_data()). */
 export type PanelOpenData = {
   panel_open: BooleanLike;
-  tags: Record<string, string> | null;
-  frequency: number;
-  min_freq: number;
-  max_freq: number;
+  tags: Record<string, string | null> | null;
+  frequency: number | null;
+  min_freq: number | null;
+  max_freq: number | null;
 };
+
+/** The panel's buttons, the same ops in every airlock console window. */
+export type PanelOpenActions = Pick<
+  AirlockConsoleSimpleActions,
+  'edit_tag' | 'set_frequency'
+>;

@@ -7,25 +7,10 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { FarmbotActions } from './generated/Farmbot';
-
-type Data = {
-  on: BooleanLike;
-  tank: BooleanLike;
-  tankVolume: number;
-  tankMaxVolume: number;
-  locked: BooleanLike;
-  waters_trays: BooleanLike;
-  refills_water: BooleanLike;
-  uproots_weeds: BooleanLike;
-  replaces_nutriment: BooleanLike;
-  collects_produce: BooleanLike;
-  removes_dead: BooleanLike;
-};
+import type { FarmbotActions, FarmbotData } from './generated/Farmbot';
 
 export const Farmbot = (props) => {
-  const { act, data } = useBackend<Data, FarmbotActions>();
+  const { act, data } = useBackend<FarmbotData, FarmbotActions>();
 
   const {
     on,

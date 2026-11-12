@@ -97,6 +97,7 @@
 
 CAPABILITIES(/datum/tgui_input_number)
 	interface("NumberInputModal")
+	ui_shape(init_value = num(), large_buttons = bool(), max_value = num(), message = schema_text(), min_value = num(), swapped_buttons = bool(), title = schema_text(), round_value = bool(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry", num())), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -112,16 +113,17 @@ CAPABILITIES(/datum/tgui_input_number)
 	data["init_value"] = default // Default is a reserved keyword
 	data["large_buttons"] = TRUE
 	data["max_value"] = max_value
-	data["message"] = message
+	data["message"] = message || ""
 	data["min_value"] = min_value
 	data["swapped_buttons"] = TRUE
-	data["title"] = title
-	data["round_value"] = round_value
+	data["title"] = title || ""
+	data["round_value"] = round_value ? TRUE : FALSE
 	return data
 
 /// /datum/tgui_input_number's window data.
 /datum/tgui_input_number/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data

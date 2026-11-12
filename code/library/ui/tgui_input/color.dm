@@ -77,9 +77,9 @@
 
 CAPABILITIES(/datum/tgui_color_picker)
 	interface("ColorPickerModal")
+	ui_shape(autofocus = bool(), large_buttons = bool(), swapped_buttons = bool(), title = schema_text(), default_color = schema_text(), message = schema_text(), presets = nullable(schema_text()), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry", schema_text(4096))), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
-	op("null", ui_act("null"), then(PROC_REF(ui_act_null)))
 	op("preset", ui_act("preset", arg("color", schema_text(4096)), arg("index", num())), then(PROC_REF(ui_act_preset)))
 
 /datum/tgui_color_picker/ui_opening(mob/user, datum/tgui/ui)
@@ -96,12 +96,12 @@ CAPABILITIES(/datum/tgui_color_picker)
 
 /datum/tgui_color_picker/ui_static_data(datum/act/eval/A)
 	. = list()
-	.["autofocus"] = autofocus
+	.["autofocus"] = autofocus ? TRUE : FALSE
 	.["large_buttons"] = TRUE
 	.["swapped_buttons"] = FALSE
-	.["title"] = title
-	.["default_color"] = default
-	.["message"] = message
+	.["title"] = title || ""
+	.["default_color"] = default || ""
+	.["message"] = message || ""
 
 /datum/tgui_color_picker/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -115,6 +115,7 @@ CAPABILITIES(/datum/tgui_color_picker)
 /// /datum/tgui_color_picker's window data.
 /datum/tgui_color_picker/proc/ui_data_datum_tgui_color_picker(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
+	.["timeout"] = null
 	if(timeout)
 		.["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 
@@ -130,11 +131,6 @@ CAPABILITIES(/datum/tgui_color_picker)
 
 /datum/tgui_color_picker/proc/ui_act_cancel(datum/act/op/A)
 	closed = TRUE
-	SStgui.close_uis(src)
-	return TRUE
-
-/datum/tgui_color_picker/proc/ui_act_null(datum/act/op/A)
-	set_choice(null)
 	SStgui.close_uis(src)
 	return TRUE
 

@@ -1,0 +1,29 @@
+{
+	"locked": 0,
+	"chemImplants": [
+		{
+			"host": "Prisoner 4471",
+			"units": 15,
+			"ref": 5101
+		},
+		{
+			"host": "Prisoner 4472",
+			"units": 5,
+			"ref": 5102
+		}
+	],
+	"trackImplants": [
+		{
+			"host": "Prisoner 4471",
+			"ref": 5201,
+			"id": "4471",
+			"loc": "Security Cells"
+		},
+		{
+			"host": "Prisoner 4472",
+			"ref": 5202,
+			"id": "4472",
+			"loc": "Brig"
+		}
+	]
+}

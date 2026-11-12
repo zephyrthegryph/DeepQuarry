@@ -6,19 +6,9 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { SafeActions } from './generated/Safe';
+import type { SafeActions, SafeData } from './generated/Safe';
 
-type Content = {
-  ref: number;
-  name: string;
-};
-
-type Data = {
-  open: BooleanLike;
-  dial: number;
-  contents: Content[];
-};
+type Data = SafeData;
 
 export const Safe = () => {
   const { data, act } = useBackend<Data, SafeActions>();

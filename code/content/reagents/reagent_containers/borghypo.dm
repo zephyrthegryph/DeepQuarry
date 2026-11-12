@@ -156,6 +156,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	extend("synthesizer.inject", then(PROC_REF(injected)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("BorgHypo")
+	ui_shape(isDispensingDrinks = bool(), minTransferAmount = num(), maxTransferAmount = num(), amount = num(), uiChemicalSearch = schema_text(), recordingRecipe = nullable(list_of(row(id = schema_text(), amount = num()))), isDispensingRecipe = bool(), selectedRecipeId = schema_text(), theme = schema_text(), transferAmounts = list_of(num()), chemicals = list_of(row(name = schema_text(), id = schema_text(), volume = num())), selectedReagentId = schema_text(), recipes = map_of(schema_text(), list_of(row(id = schema_text(), amount = num()))))
 	without("ui_open")
 	op("select_reagent", ui_act("select_reagent", arg("selectedReagentId", schema_text(4096))), then(PROC_REF(ui_act_select_reagent)))
 	op("set_amount", ui_act("set_amount", arg("amount", num())), then(PROC_REF(ui_act_set_amount)))
@@ -236,7 +237,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 
 /obj/item/reagent_containers/borghypo/ui_static_data(datum/act/eval/A)
 	var/list/static_data = list()
-	static_data["isDispensingDrinks"] = is_dispensing_drinks
+	static_data["isDispensingDrinks"] = is_dispensing_drinks ? TRUE : FALSE
 	static_data["minTransferAmount"] = min_transfer_amount
 	static_data["maxTransferAmount"] = max_transfer_amount
 	return static_data
@@ -244,10 +245,10 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 /obj/item/reagent_containers/borghypo/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["amount"] = amount_per_transfer_from_this
-	data["uiChemicalSearch"] = ui_chemical_search
+	data["uiChemicalSearch"] = ui_chemical_search || ""
 	data["recordingRecipe"] = recording_recipe
-	data["isDispensingRecipe"] = is_dispensing_recipe
-	data["selectedRecipeId"] = selected_recipe_id
+	data["isDispensingRecipe"] = is_dispensing_recipe ? TRUE : FALSE
+	data["selectedRecipeId"] = selected_recipe_id || ""
 	var/list/merged_1 = ui_data_obj_item_reagent_containers_borghypo(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -257,6 +258,11 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 /// /obj/item/reagent_containers/borghypo's window data.
 /obj/item/reagent_containers/borghypo/proc/ui_data_obj_item_reagent_containers_borghypo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
+	data["theme"] = ""
+	data["transferAmounts"] = list()
+	data["chemicals"] = list()
+	data["selectedReagentId"] = ""
+	data["recipes"] = list()
 	if(!isrobot(user))
 		return data
 	var/mob/living/silicon/robot/robot_user = user

@@ -1,0 +1,90 @@
+{
+	"has_occupant": 1,
+	"occupant_name": "Jane Doe",
+	"status": "Conscious",
+	"health_percent": 72,
+	"diagnosis": {
+		"status": "alive",
+		"band": "moderate",
+		"vitals": {
+			"heartRate": 88,
+			"bloodPressure": [118, 76],
+			"oxygenation": 96,
+			"respiratoryRate": 16,
+			"heartRhythm": "sinus",
+			"temperature": 36.8,
+			"consciousness": "alert",
+			"bloodPercent": 92
+		},
+		"findings": [
+			{
+				"name": "Laceration",
+				"kind": "wound",
+				"band": "moderate",
+				"location": "left arm",
+				"description": "A deep cut.",
+				"trend": "worsening",
+				"hint": "Apply a bandage."
+			},
+			{
+				"name": "Bruising",
+				"kind": "sign",
+				"band": "minor",
+				"location": "chest",
+				"description": "Discolouration.",
+				"trend": "stable",
+				"hint": "Rest."
+			}
+		],
+		"parts": [
+			{
+				"name": "left arm",
+				"kind": "external",
+				"band": "moderate",
+				"flags": ["bleeding"],
+				"implants": ["tracker"]
+			},
+			{
+				"name": "heart",
+				"kind": "internal",
+				"band": "uninjured",
+				"flags": [],
+				"implants": ["pacemaker"]
+			}
+		],
+		"hints": [
+			{
+				"tag": "bandage_wounds",
+				"label": "Bandage wounds",
+				"band": "moderate"
+			},
+			{
+				"tag": "rest",
+				"label": "Rest",
+				"band": "minor"
+			}
+		]
+	},
+	"body_temp_c": 36.5,
+	"body_temp_f": 97.7,
+	"reagents": [
+		{
+			"name": "Inaprovaline",
+			"volume": 4.5
+		},
+		{
+			"name": "Dexalin",
+			"volume": 10
+		}
+	],
+	"injectables": [
+		{
+			"id": "inaprovaline",
+			"name": "Inaprovaline"
+		},
+		{
+			"id": "dexalin",
+			"name": "Dexalin"
+		}
+	]
+}

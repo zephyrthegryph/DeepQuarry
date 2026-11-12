@@ -1,0 +1,11 @@
+{
+	"topic": "General",
+	"hide_author": 0,
+	"body": "The station is great.\nMore snacks please.",
+	"author_ckey": "janedoe",
+	"author_hashed": "0123456789abcdef0123456789abcdef",
+	"can_be_private": 1,
+	"topics": ["General", "Bug", "Suggestion"],
+	"max_length": 2000,
+	"cooldown_days": 7
+}

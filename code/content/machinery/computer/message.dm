@@ -9,9 +9,9 @@
 	//Server linked to.
 	var/obj/machinery/message_server/linkedServer
 	//Messages - Saves me time if I want to change something.
-	var/noserver = list("text" = "ALERT: No server detected.", "style" = "alert")
+	var/noserver = list("text" = "ALERT: No server detected.", "style" = "danger")
 	var/incorrectkey = list("text" = "ALERT: Incorrect decryption key!", "style" = "warning")
-	var/defaultmsg = list("text" = "Welcome. Please select an option.", "style" = "notice")
+	var/defaultmsg = list("text" = "Welcome. Please select an option.", "style" = "info")
 	var/rebootmsg = list("text" = "%$&(£: Critical %$$@ Error // !RestArting! <lOadiNg backUp iNput ouTput> - ?pLeaSe wAit!", "style" = "warning")
 	//Computer properties
 	var/hacking = 0		// Is it being hacked into by the AI/Cyborg
@@ -67,6 +67,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	extend("disconnect", needs(req(PROC_REF(cool_enough))))
 	after_init(0, then(PROC_REF(link_default_server)))
 	interface("MessageMonitor")
+	ui_shape(customsender = schema_text(), customjob = schema_text(), custommessage = schema_text(), temp = nullable(row(text = schema_text(), style = schema_text())), customrecepient = schema_text(), hacking = bool(), emag = bool(), auth = bool(), linkedServer = nullable(row(active = bool(), broke = bool(), pda_msgs = list_of(row(ref = int(), sender = schema_text(), recipient = schema_text(), message = schema_text())), rc_msgs = list_of(row(ref = int(), sender = schema_text(), recipient = schema_text(), message = schema_text(), stamp = schema_text(), id_auth = schema_text())), spamFilter = list_of(row(index = int(), token = schema_text())))), possibleRecipients = map_of(schema_text(), int()), isMalfAI = bool())
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("auth", ui_act("auth", arg("key", schema_text(4096))), then(PROC_REF(ui_act_auth)))
 	op("deauth", ui_act("deauth"), then(PROC_REF(ui_act_deauth)))
@@ -101,10 +102,12 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	data["hacking"] = !!hacking
 	data["emag"] = !!emag
 	data["auth"] = !!auth
-	data["linkedServer"] = list()
+	data["linkedServer"] = null
+	data["possibleRecipients"] = list()
 	if(linkedServer() && auth)
-		data["linkedServer"]["active"] = linkedServer().active
-		data["linkedServer"]["broke"] = (linkedServer().power_lost() || linkedServer().broken_now())
+		var/list/server_data = list()
+		server_data["active"] = !!linkedServer().active
+		server_data["broke"] = !!(linkedServer().power_lost() || linkedServer().broken_now())
 
 		var/list/pda_msgs = list()
 		for(var/datum/data_pda_msg/pda in linkedServer().pda_msgs)
@@ -114,7 +117,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 				"recipient" = pda.recipient,
 				"message" = pda.message,
 			)))
-		data["linkedServer"]["pda_msgs"] = pda_msgs
+		server_data["pda_msgs"] = pda_msgs
 
 		var/list/rc_msgs = list()
 		for(var/datum/data_rc_msg/rc in linkedServer().rc_msgs)
@@ -125,9 +128,8 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 				"message" = rc.message,
 				"stamp" = rc.stamp,
 				"id_auth" = rc.id_auth,
-				"priority" = rc.priority,
 			)))
-		data["linkedServer"]["rc_msgs"] = rc_msgs
+		server_data["rc_msgs"] = rc_msgs
 
 		var/spamIndex = 0
 		var/list/spamfilter = list()
@@ -137,7 +139,8 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 				"index" = spamIndex,
 				"token" = token,
 			)))
-		data["linkedServer"]["spamFilter"] = spamfilter
+		server_data["spamFilter"] = spamfilter
+		data["linkedServer"] = server_data
 
 		//Get out list of viable PDAs
 		var/list/obj/item/pda/sendPDAs = list()
@@ -149,8 +152,9 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 				continue
 			sendPDAs["[P.name]"] = handle_of(P)
 		data["possibleRecipients"] = sendPDAs
-	var/mob/living/original = user.mind.original_character
-	data["isMalfAI"] = ((A.authority & AUTH_REMOTE_ACCESS) && (user.mind.special_role && (original && original == user)))
+	var/datum/mind/user_mind = user.mind
+	var/mob/living/original = user_mind?.original_character
+	data["isMalfAI"] = !!((A.authority & AUTH_REMOTE_ACCESS) && user_mind?.special_role && original && original == user)
 
 	return data
 

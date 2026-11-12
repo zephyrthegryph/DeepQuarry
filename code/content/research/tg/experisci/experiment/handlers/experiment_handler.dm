@@ -12,6 +12,7 @@ CAPABILITIES(/datum/experiment_handler)
 	op("clear_server", ui_act(), then(PROC_REF(ui_act_clear_server)))
 	op("clear_experiment", ui_act(), then(PROC_REF(ui_act_clear_experiment)))
 	interface("ExperimentConfigure")
+	ui_shape(theme = schema_text(), always_active = bool(), has_start_callback = bool(), techwebs = list_of(row(web_id = schema_text(), web_org = schema_text(), selected = bool(), ref = num(), all_servers = list_of(schema_text()))), experiments = list_of(row(name = schema_text(), description = schema_text(), tag = schema_text(), selected = bool(), progress = list_of(list_of(any)), performance_hint = nullable(schema_text()), ref = num())))
 	op("select_server", ui_act("select_server", arg("ref", schema_ref(/datum/techweb))), then(PROC_REF(ui_act_select_server)))
 	op("select_experiment", ui_act("select_experiment", arg("ref", schema_ref(/datum/experiment))), then(PROC_REF(ui_act_select_experiment)))
 	op("start_experiment_callback", ui_act("start_experiment_callback"), then(PROC_REF(ui_act_start_experiment_callback)))
@@ -372,14 +373,13 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	. = ..()
 	var/atom/movable/parent_atom = owner
 	var/robot_theme = istype(parent_atom) ? robot_holder_theme(parent_atom) : null
-	if(robot_theme)
-		.["theme"] = robot_theme
+	.["theme"] = robot_theme || ""
 
 /// /datum/experiment_handler's window data.
 /datum/experiment_handler/ui_data(datum/act/eval/A)
 	. = list(
-		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),
-		"has_start_callback" = !isnull(start_experiment),
+		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE) ? TRUE : FALSE,
+		"has_start_callback" = isnull(start_experiment) ? FALSE : TRUE,
 	)
 	.["techwebs"] = list()
 	for (var/datum/techweb/techwebs as anything in SSresearch.techwebs)
@@ -392,7 +392,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		var/list/data = list(
 			web_id = techwebs.id,
 			web_org = techwebs.organization,
-			selected = (techwebs == linked_web()),
+			selected = (techwebs == linked_web()) ? TRUE : FALSE,
 			ref = handle_of(techwebs),
 			all_servers = (techwebs.techweb_servers || list()),
 		)
@@ -406,7 +406,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 				name = experiment.name,
 				description = experiment.description,
 				tag = experiment.exp_tag,
-				selected = selected_experiment() == experiment,
+				selected = (selected_experiment() == experiment) ? TRUE : FALSE,
 				progress = experiment.check_progress(),
 				performance_hint = experiment.performance_hint,
 				ref = handle_of(experiment)

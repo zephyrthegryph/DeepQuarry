@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
+import type { ChemSynthesizerActions } from '../../generated/ChemSynthesizer';
 import type { Data } from './types';
 
 export const ChemSynthesizerQueueRecipes = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChemSynthesizerActions>();
   const {
     busy,
     use_catalyst,

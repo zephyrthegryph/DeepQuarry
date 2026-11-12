@@ -1,18 +1,20 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Section, Stack } from 'tgui-core/components';
-import type { RobotSleeperActions } from '../../../generated/RobotSleeper';
+import type {
+  RobotSleeperActions,
+  RobotSleeperData,
+} from '../../../generated/RobotSleeper';
 import { currentLoadToColor, summarizeItems } from '../../functions';
-import type { Data } from '../../types';
 import { SleeperCargoStatus } from './SleeperCargoStatus';
 import { SleeperPatient } from './SleeperPatient';
 import { SleeperSelfClean } from './SleeperSelfClean';
 
 export const SleeperStatusPanel = (props: { name: string }) => {
-  const { data } = useBackend<Data, RobotSleeperActions>();
+  const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();
   const {
     delivery,
     compactor,
-    contents = [],
+    contents,
     max_item_count,
     ore_storage,
     current_capacity,

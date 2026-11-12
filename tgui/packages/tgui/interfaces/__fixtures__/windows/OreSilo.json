@@ -1,0 +1,65 @@
+{
+	"SHEET_MATERIAL_AMOUNT": 100,
+	"materials": [
+		{
+			"name": "iron",
+			"ref": 1201,
+			"amount": 4500,
+			"color": "#8c8c8c",
+			"sheets": 45,
+			"removable": 1
+		},
+		{
+			"name": "glass",
+			"ref": 1202,
+			"amount": 50,
+			"color": "#5be0f4",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "silver",
+			"ref": 1203,
+			"amount": 1200,
+			"color": "#c0c0c0",
+			"sheets": 12,
+			"removable": 1
+		}
+	],
+	"machines": [
+		{
+			"icon": "icons/obj/machines/protolathe.dmi",
+			"icon_state": "protolathe",
+			"name": "protolathe (Research)",
+			"onHold": 0,
+			"location": "Research Lab"
+		},
+		{
+			"icon": "icons/obj/machines/autolathe.dmi",
+			"icon_state": "autolathe",
+			"name": "autolathe",
+			"onHold": 1,
+			"location": "Cargo Bay"
+		}
+	],
+	"logs": [
+		{
+			"rawMaterials": "+4500 iron",
+			"machineName": "ore processor",
+			"areaName": "Mining Processing",
+			"action": "deposited",
+			"amount": 45,
+			"time": "12:34:05",
+			"noun": "sheets"
+		},
+		{
+			"rawMaterials": "-200 glass",
+			"machineName": "autolathe",
+			"areaName": "Cargo Bay",
+			"action": "ejected",
+			"amount": -2,
+			"time": "12:40:11",
+			"noun": "sheets"
+		}
+	]
+}

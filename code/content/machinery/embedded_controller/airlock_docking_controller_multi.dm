@@ -12,6 +12,8 @@
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio/docking_port_multi)
 	setup(PROC_REF(split_child_names))
+	interface("DockingConsoleMulti")
+	ui_shape(docking_status = enum(list("undocked", "docking", "undocking", "docked")), airlocks = list_of(row(name = schema_text(), override_enabled = bool())))
 	ref_many(nameof(child_airlocks), /obj/machinery/embedded_controller/radio/airlock/docking_port_multi, by = nameof(id_tag), target_key = nameof(/obj/machinery/embedded_controller/radio/airlock/docking_port_multi::master_tag))
 
 /obj/machinery/embedded_controller/radio/docking_port_multi/proc/split_child_names()
@@ -33,7 +35,6 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/docking_port_multi)
 	. = list(
 		"docking_status" = port.get_docking_status(),
 		"airlocks" = airlocks,
-		"internalTemplateName" = "DockingConsoleMulti",
 	)
 
 // One airlock of a multi-airlock docking port: an ordinary airlock its master's port docks; its own override leaves it to the crew.
@@ -42,6 +43,11 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/docking_port_multi)
 	var/master_tag	//for mapping
 	tag_secure = 1
 	valid_actions = list("cycle_ext", "cycle_int", "force_ext", "force_int", "abort", "toggle_override")
+
+CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port_multi)
+	interface("AirlockConsoleDocking")
+	ui_shape(chamber_pressure = num(), exterior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), interior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), processing = bool(), docking_status = enum(list("undocked", "docking", "undocking", "docked")), airlock_disabled = bool(), override_enabled = bool(), docking_codes = nullable(schema_text()), name = nullable(schema_text()))
+	op("toggle_override", ui_act("toggle_override"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 
 /obj/machinery/embedded_controller/radio/airlock/docking_port_multi/run_command(command)
 	if(command == "toggle_override")
@@ -59,5 +65,6 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/docking_port_multi)
 		"docking_status" = docked_port ? docked_port.get_docking_status() : "undocked",
 		"airlock_disabled" = dock_locked(),
 		"override_enabled" = override_enabled,
-		"internalTemplateName" = "AirlockConsoleDocking",
+		"docking_codes" = null,
+		"name" = null,
 	)

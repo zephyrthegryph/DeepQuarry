@@ -157,7 +157,7 @@
 		synthpods += list(list(
 			"spod" = handle_of(spod),
 			"name" = sanitize(capitalize(spod.name)),
-			"busy" = spod.busy,
+			"busy" = spod.busy ? TRUE : FALSE,
 			"steel" = spod.stored_material[MAT_STEEL],
 			"glass" = spod.stored_material[MAT_GLASS]
 		))
@@ -173,8 +173,8 @@
 		))
 	data["sleevers"] = resleevers
 
-	data["coredumped"] = our_db().core_dumped
-	data["emergency"] = disk()
+	data["coredumped"] = our_db().core_dumped ? TRUE : FALSE
+	data["emergency"] = disk() ? TRUE : FALSE
 	data["temp"] = temp
 	data["selected_pod"] = handle_of(selected_pod())
 	data["selected_printer"] = handle_of(selected_printer())
@@ -202,7 +202,6 @@
 	var/datum/transhuman/body_record/active_br = current_br
 	if(active_br)
 		data["active_b_rec"] = list(
-			activerecord = handle_of(active_br),
 			realname = sanitize(active_br.mydna.name),
 			species = active_br.speciesname ? active_br.speciesname : active_br.mydna.dna.species,
 			sex = active_br.bodygender,
@@ -216,7 +215,6 @@
 	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(active_mr)
 		data["active_m_rec"] = list(
-			activerecord = handle_of(active_mr),
 			realname = sanitize(active_mr.mindname),
 			obviously_dead = active_mr.dead_state == MR_DEAD ? "Past-due" : "Current",
 			oocnotes = active_mr.mind_ref?.identity?.ooc_notes || "None.",
@@ -702,13 +700,14 @@ CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
 	links(/obj/machinery/computer/transhuman/resleeving::sleevers, /obj/machinery/transhuman/resleever::connected, a_many = TRUE)
 	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)
 	interface("ResleevingConsole", title = "Resleeving Console")
+	ui_shape(menu = int(1, 3), pods = list_of(row(pod = num(), name = schema_text(), biomass = num(), status = schema_text(), progress = num())), spods = list_of(row(spod = num(), name = schema_text(), busy = bool(), steel = num(), glass = num())), sleevers = list_of(row(sleever = num(), name = schema_text(), occupied = bool(), occupant = schema_text())), coredumped = bool(), emergency = bool(), temp = nullable(row(text = schema_text(), style = schema_text())), selected_pod = nullable(num()), selected_printer = nullable(num()), selected_sleever = nullable(num()), bodyrecords = list_of(row(name = schema_text(), recref = num())), mindrecords = list_of(row(name = schema_text(), recref = num())), active_b_rec = nullable(row(realname = schema_text(), species = schema_text(), sex = schema_text(), mind_compat = schema_text(), synthetic = bool(), oocnotes = schema_text(), can_grow_active = bool())), active_m_rec = nullable(row(realname = schema_text(), obviously_dead = schema_text(), oocnotes = schema_text(), can_sleeve_active = bool())))
 	without("ui_open")
-	op("view_b_rec", ui_act("view_b_rec", arg("ref")), then(PROC_REF(ui_act_view_b_rec)))
-	op("view_m_rec", ui_act("view_m_rec", arg("ref")), then(PROC_REF(ui_act_view_m_rec)))
+	op("view_b_rec", ui_act("view_b_rec", arg("ref", num())), then(PROC_REF(ui_act_view_b_rec)))
+	op("view_m_rec", ui_act("view_m_rec", arg("ref", num())), then(PROC_REF(ui_act_view_m_rec)))
 	op("coredump", ui_act("coredump"), then(PROC_REF(ui_act_coredump)))
-	op("selectpod", ui_act("selectpod", arg("ref", schema_text(32))), then(PROC_REF(ui_act_selectpod)))
-	op("selectprinter", ui_act("selectprinter", arg("ref", schema_text(32))), then(PROC_REF(ui_act_selectprinter)))
-	op("selectsleever", ui_act("selectsleever", arg("ref", schema_text(32))), then(PROC_REF(ui_act_selectsleever)))
+	op("selectpod", ui_act("selectpod", arg("ref", num())), then(PROC_REF(ui_act_selectpod)))
+	op("selectprinter", ui_act("selectprinter", arg("ref", num())), then(PROC_REF(ui_act_selectprinter)))
+	op("selectsleever", ui_act("selectsleever", arg("ref", num())), then(PROC_REF(ui_act_selectsleever)))
 	op("menu", ui_act("menu", arg("num", num(1, 3))), then(PROC_REF(ui_act_menu)))
 	op("sleeve", ui_act("sleeve", arg("mode", num())), then(PROC_REF(act_sleeve)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))

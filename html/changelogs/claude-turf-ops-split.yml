@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Building on space and digging rock are now separate actions per tool (lattice, catwalk, plating, ceiling; dig, grave, measure, scan, smash) with their own menu labels."

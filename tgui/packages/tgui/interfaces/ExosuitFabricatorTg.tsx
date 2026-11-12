@@ -8,36 +8,30 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-import { type BooleanLike, classes } from 'tgui-core/react';
+import { classes } from 'tgui-core/react';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import { DesignBrowser } from './Fabrication/DesignBrowser';
 import { MaterialCostSequence } from './Fabrication/MaterialCostSequence';
 import type {
   Design,
-  FabricatorData,
   Material,
   MaterialMap,
 } from './Fabrication/Types';
-import type { ExosuitFabricatorTgActions } from './generated/ExosuitFabricatorTg';
-
-type ExosuitDesign = Design & {
-  constructionTime: number;
-};
+import type {
+  ExosuitFabricatorTgActions,
+  ExosuitFabricatorTgData,
+} from './generated/ExosuitFabricatorTg';
 
 // Extra stuff for the prosfab to not need it's own UI
 type ProsfabData = Partial<{
-  species_types: string;
+  species_types: string[];
   species: string;
-  manufacturer: string;
-  all_manufacturers: string;
+  manufacturer: string | null;
+  all_manufacturers: { id: string; company: string }[];
 }>;
 
-type ExosuitFabricatorData = FabricatorData &
-  ProsfabData & {
-    processing: BooleanLike;
-    designs: Record<string, ExosuitDesign>;
-  };
+type ExosuitFabricatorData = ExosuitFabricatorTgData & ProsfabData;
 
 export const ExosuitFabricatorTg = (props) => {
   const { act, data } = useBackend<

@@ -37,7 +37,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 	data["network"] = null
 	data["autolinkers"] = FALSE
 	data["shadowlink"] = FALSE
-	data["options"] = list()
+	data["options"] = options_blank()
 	data["linked"] = list()
 	data["filter"] = list()
 	data["multitool"] = FALSE
@@ -83,9 +83,28 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 /obj/machinery/proc/get_multitool(mob/user as mob)	//No need to have this being a telecomms specific proc.
 	return user.multitool_for_machine(src)
 
+/// Every setting the window knows, switched off: a machine type turns on and fills in its own.
+/obj/machinery/telecomms/proc/options_blank()
+	var/static/list/blank = list(
+			"use_listening_level" = FALSE,
+			"use_broadcasting" = FALSE,
+			"use_receiving" = FALSE,
+			"listening_level" = FALSE,
+			"broadcasting" = FALSE,
+			"receiving" = FALSE,
+			"use_change_freq" = FALSE,
+			"change_freq" = null,
+			"use_broadcast_range" = FALSE,
+			"use_receive_range" = FALSE,
+			"range" = null,
+			"minRange" = null,
+			"maxRange" = null,
+		)
+	return blank.Copy()
+
 /// The type's own settings in the window (each machine type adds its own; a ranged machine shows its range).
 /obj/machinery/telecomms/proc/Options_Menu()
-	var/list/data = list()
+	var/list/data = options_blank()
 	if(ranged)
 		data[ranged] = TRUE
 		data["range"] = overmap_range
