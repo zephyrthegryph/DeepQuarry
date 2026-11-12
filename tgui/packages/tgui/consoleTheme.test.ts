@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
   CONSOLE_THEME,
+  resolveTheme,
+  WINDOW_THEMES,
   SCANLINES_DISABLED_KEY,
   scanlineOverride,
 } from './layouts/consoleTheme';
@@ -50,6 +52,23 @@ describe('console theme', () => {
     expect(read('styles/interfaces/LobbyMenu.scss')).toContain(
       "@use '../console'",
     );
+  });
+
+  it('lists exactly the themes that have a stylesheet', () => {
+    const files = readdirSync(join(import.meta.dir, 'styles/themes'))
+      .filter((f) => f.endsWith('.scss'))
+      .map((f) => f.replace(/\.scss$/, ''))
+      .sort();
+    expect([...WINDOW_THEMES].sort()).toEqual(files);
+  });
+
+  it('draws a window in the console look unless it names a styled theme', () => {
+    expect(resolveTheme(undefined)).toBe(CONSOLE_THEME);
+    expect(resolveTheme('')).toBe(CONSOLE_THEME);
+    expect(resolveTheme('default')).toBe(CONSOLE_THEME);
+    expect(resolveTheme('pda_retro')).toBe(CONSOLE_THEME);
+    expect(resolveTheme('syndicate')).toBe('syndicate');
+    expect(resolveTheme('ntos')).toBe('ntos');
   });
 
   it('turns scanlines off only when the lobby preference says so', () => {

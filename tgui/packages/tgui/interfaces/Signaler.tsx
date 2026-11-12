@@ -5,7 +5,7 @@ import type { SignalerActions, SignalerData } from './generated/Signaler';
 
 export const Signaler = () => {
   return (
-    <Window width={280} height={132}>
+    <Window width={320} height={132}>
       <Window.Content>
         <SignalerContent />
       </Window.Content>

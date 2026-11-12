@@ -86,11 +86,91 @@
   }
 
   // Tab icons sit tight against the wider monospace text.
-  .Tab .Icon:not(:last-child) {
+  .Tab .Icon {
     margin-right: 0.35em;
   }
 
+  // Tabs keep their label on one line and wrap to a new row, rather than squeezing the text.
+  .Tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  // An icon placed by hand beside a label (a collapsible header) needs the room a button's own icon slot has.
+  .Button:not(.Button--hasIcon) .Icon {
+    margin-right: 0.35em;
+  }
+
+  .Button--compact.Button--hasIcon .Button--icon {
+    margin: 0 0.3em;
+  }
+
+  // The base Icon rule leaves a 3px bottom margin that lifts icons off the centre line of their button.
+  .Button .Icon,
+  .Tab .Icon {
+    margin-bottom: 0;
+  }
+
+  // A button given a height by its window centres its content in it (icon-only slots, swatches).
+  .Button:is([style^='height:'], [style*=';height:'], [style*='; height:']) {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+  }
+
+  // Icon and label share one centre line: baseline alignment leaves a scaled icon a few pixels off.
+  .Button:is([style^='height:'], [style*=';height:'], [style*='; height:']) .Button__content,
+  .Button--hasIcon:not(:has(.Stack)) .Button__content {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    min-height: 1lh;
+  }
+
+  // The button is a flex box too, so its content fills it and centres in the whole height.
+  .Button--hasIcon:not(:has(.Stack)) {
+    display: inline-flex;
+  }
+
+  .Button--hasIcon.Button--fluid:not(:has(.Stack)) {
+    display: flex;
+  }
+
+  .Button--hasIcon:not(:has(.Stack)) .Button__content {
+    align-self: stretch;
+    flex: 1 1 auto;
+  }
+
+  .Button[style*='text-align: left'] .Button__content {
+    justify-content: flex-start;
+  }
+
+  .Button[style*='text-align: right'] .Button__content {
+    justify-content: flex-end;
+  }
+
+  // The base styles leave the last full-width button of a column touching the one above it.
+  .Button--fluid + .Button--fluid {
+    margin-top: var(--space-xs);
+  }
+
+  // A button holding layout (a Stack: a recipe name over its detail) lays its content out like any block and wraps with it.
+  .Button:has(.Stack) {
+    white-space: normal;
+  }
+
+  // The base button's fixed line height would sit a scaled icon or label above the centre.
+  .Button[style*='font-size'] {
+    line-height: 1.5em;
+  }
+
+  // A full-width input takes its width from its cell, not from its character count in the wider font.
+  .Input--fluid {
+    contain: inline-size;
+  }
+
   .Tabs--horizontal {
+    flex-wrap: wrap;
     border-bottom: 2px solid console.$console-border;
   }
 

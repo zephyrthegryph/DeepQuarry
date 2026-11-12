@@ -21,7 +21,7 @@ export const ICDetailer = (props) => {
               key={key}
               ml={0}
               mr={0}
-              mb={-0.4}
+              mb={0}
               mt={0}
               tooltip={toTitleCase(key)}
               tooltipPosition={i % 6 === 5 ? 'left' : 'right'}

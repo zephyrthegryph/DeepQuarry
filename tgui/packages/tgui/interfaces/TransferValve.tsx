@@ -10,7 +10,7 @@ export const TransferValve = (props) => {
   const { act, data } = useBackend<TransferValveData, TransferValveActions>();
   const { tank_one, tank_two, attached_device, valve } = data;
   return (
-    <Window>
+    <Window width={430} height={400}>
       <Window.Content>
         <Section>
           <LabeledList>
@@ -30,7 +30,7 @@ export const TransferValve = (props) => {
           buttons={
             <Button
               textAlign="center"
-              width="150px"
+              width="170px"
               icon="cog"
               disabled={!attached_device}
               onClick={() => act('device')}

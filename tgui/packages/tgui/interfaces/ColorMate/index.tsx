@@ -88,7 +88,7 @@ export const ColorMate = (props) => {
   }
 
   return (
-    <Window title={title} width={980} height={height}>
+    <Window title={title} width={1010} height={height}>
       <Window.Content overflow="auto">
         <Section fill>
           <Stack fill vertical>

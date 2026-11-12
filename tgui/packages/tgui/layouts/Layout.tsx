@@ -9,7 +9,7 @@ import type { Box } from 'tgui-core/components';
 import { addScrollableNode, removeScrollableNode } from 'tgui-core/events';
 import { classes } from 'tgui-core/react';
 import { computeBoxClassName, computeBoxProps } from 'tgui-core/ui';
-import { CONSOLE_THEME } from './consoleTheme';
+import { resolveTheme } from './consoleTheme';
 
 type BoxProps = React.ComponentProps<typeof Box>;
 
@@ -19,9 +19,9 @@ type Props = Partial<{
   BoxProps;
 
 export function Layout(props: Props) {
-  const { className, theme = CONSOLE_THEME, children, ...rest } = props;
+  const { className, theme, children, ...rest } = props;
 
-  const themeClass = `theme-${theme}`;
+  const themeClass = `theme-${resolveTheme(theme)}`;
 
   useEffect(() => {
     document.documentElement.className = themeClass;

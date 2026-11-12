@@ -103,7 +103,7 @@ export const AnalyzerSearchList = (props: {
               mr="10px"
               fluid
               value={searchText}
-              placeholder={`Search for ${title}...`}
+              placeholder={`Search ${title}...`}
               onChange={(value: string) => onSearchText(value)}
             />
           </Stack.Item>

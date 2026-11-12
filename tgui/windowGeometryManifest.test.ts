@@ -17,7 +17,7 @@ describe('window geometry manifest', () => {
   });
 
   test('extracts static dimensions and safely represents dynamic dimensions', () => {
-    expect(manifest.APC).toEqual({ width: 450, height: 475, exact: true });
+    expect(manifest.APC).toEqual({ width: 500, height: 475, exact: true });
     expect(manifest.AirAlarm).toEqual({
       width: 440,
       height: 650,

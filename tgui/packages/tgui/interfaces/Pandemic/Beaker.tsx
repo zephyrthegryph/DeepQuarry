@@ -25,16 +25,7 @@ export const BeakerDisplay = (props) => {
       <NoticeBox>No blood sample found in the loaded container.</NoticeBox>
     );
   } else {
-    content = (
-      <Stack vertical>
-        <Stack.Item>
-          <Info />
-        </Stack.Item>
-        <Stack.Item>
-          <Antibodies />
-        </Stack.Item>
-      </Stack>
-    );
+    content = <Info />;
   }
 
   return (
@@ -95,6 +86,7 @@ const Info = (props) => {
           <LabeledList.Item label="Type">
             {capitalizeFirst(blood.type)}
           </LabeledList.Item>
+          <Antibodies />
         </LabeledList>
       </Stack.Item>
       <Stack.Item grow={2}>
@@ -121,32 +113,32 @@ const Antibodies = (props) => {
   const { act, data } = useBackend<PandemicData, PandemicActions>();
   const { is_ready, resistances = [] } = data;
   if (!resistances) {
-    return <NoticeBox>Nothing detected.</NoticeBox>;
+    return (
+      <LabeledList.Item label="Antibodies">Nothing detected.</LabeledList.Item>
+    );
   }
 
   return (
-    <LabeledList>
-      <LabeledList.Item label="Antibodies">
-        {!resistances.length
-          ? 'None'
-          : resistances.map((resistance) => {
-              return (
-                <Button
-                  key={resistance.name}
-                  icon="eye-dropper"
-                  disabled={!is_ready}
-                  tooltip="Creates a vaccine bottle."
-                  onClick={() =>
-                    act('create_vaccine_bottle', {
-                      index: resistance.id,
-                    })
-                  }
-                >
-                  {`${resistance.name}`}
-                </Button>
-              );
-            })}
-      </LabeledList.Item>
-    </LabeledList>
+    <LabeledList.Item label="Antibodies">
+      {!resistances.length
+        ? 'None'
+        : resistances.map((resistance) => {
+            return (
+              <Button
+                key={resistance.name}
+                icon="eye-dropper"
+                disabled={!is_ready}
+                tooltip="Creates a vaccine bottle."
+                onClick={() =>
+                  act('create_vaccine_bottle', {
+                    index: resistance.id,
+                  })
+                }
+              >
+                {`${resistance.name}`}
+              </Button>
+            );
+          })}
+    </LabeledList.Item>
   );
 };

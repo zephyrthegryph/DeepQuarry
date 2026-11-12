@@ -42,7 +42,7 @@ export const SuitCycler = (props) => {
   }
 
   return (
-    <Window width={320} height={400}>
+    <Window width={360} height={400}>
       <Window.Content>{subTemplate}</Window.Content>
     </Window>
   );
