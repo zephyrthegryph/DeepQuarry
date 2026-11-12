@@ -201,7 +201,7 @@ CAPABILITIES(/obj/machinery/botany)
 	if(seed)
 		data["loaded"] = "[seed.name]"
 	else
-		data["loaded"] = 0
+		data["loaded"] = null
 
 	if(genetics())
 		data["hasGenetics"] = 1
@@ -210,7 +210,7 @@ CAPABILITIES(/obj/machinery/botany)
 			data["sourceName"] += " (variety #[genetics().uid])"
 	else
 		data["hasGenetics"] = 0
-		data["sourceName"] = 0
+		data["sourceName"] = null
 
 	return data
 
@@ -310,6 +310,7 @@ CAPABILITIES(/obj/machinery/botany)
 
 CAPABILITIES(/obj/machinery/botany/editor)
 	interface("BotanyEditor")
+	ui_shape(activity = bool(), degradation = num(), disk = bool(), loaded = nullable(schema_text()), sourceName = nullable(schema_text()), locus = nullable(schema_text()))
 	without("ui_open")
 	op("apply_gene", ui_act("apply_gene"), then(PROC_REF(ui_act_apply_gene)))
 
@@ -335,13 +336,13 @@ CAPABILITIES(/obj/machinery/botany/editor)
 
 	else
 		data["disk"] = 0
-		data["sourceName"] = 0
-		data["locus"] = 0
+		data["sourceName"] = null
+		data["locus"] = null
 
 	if(seed)
 		data["loaded"] = "[seed.name]"
 	else
-		data["loaded"] = 0
+		data["loaded"] = null
 
 	return data
 
@@ -383,6 +384,7 @@ CAPABILITIES(/obj/machinery/botany/editor)
 CAPABILITIES(/obj/machinery/botany/extractor)
 	owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	interface("BotanyIsolator")
+	ui_shape(geneMasks = list_of(row(tag = schema_text(), mask = schema_text())), activity = bool(), degradation = num(), disk = bool(), loaded = nullable(schema_text()), hasGenetics = bool(), sourceName = nullable(schema_text()))
 	without("ui_open")
 	op("scan_genome", ui_act("scan_genome"), then(PROC_REF(ui_act_scan_genome)))
 	op("get_gene", ui_act("get_gene", arg("get_gene", schema_text(4096))), then(PROC_REF(ui_act_get_gene)))

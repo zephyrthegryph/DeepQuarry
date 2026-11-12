@@ -42,7 +42,7 @@ export const GameArea = (props) => {
       if (revealed_fields[key] === 'M') {
         return '💣';
       }
-      return revealed_fields[key];
+      return String(revealed_fields[key]);
     }
 
     if (placed_flags[key]) {

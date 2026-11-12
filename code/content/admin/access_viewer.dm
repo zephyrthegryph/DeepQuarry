@@ -8,6 +8,7 @@
 
 CAPABILITIES(/datum/access_viewer)
 	interface("AccessViewer", title = "Access Viewer", rights = R_DEBUG)
+	ui_shape(access_list = list_of(row(id = num(), name = schema_text(), region = int(), access_type = int())), name = nullable(schema_text()), coords = nullable(schema_text()), req_access = nullable(list_of(num())), req_one_access = nullable(list_of(num())))
 	op("req_all", ui_act("req_all", arg("set_id", num())), then(PROC_REF(ui_act_req_all)))
 	op("req_one", ui_act("req_one", arg("set_id", num())), then(PROC_REF(ui_act_req_one)))
 	ref_one(nameof(focused_obj))

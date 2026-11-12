@@ -460,6 +460,7 @@ CAPABILITIES(/obj/item/changeling_debug)
 CAPABILITIES(/datum/changeling_panel)
 	ref_one(nameof(comp))
 	interface("ChangelingPanel", title = "Changeling Evolution Panel", state = nameof(GLOB.tgui_always_state))
+	ui_shape(available_points = int(), power_list = list_of(row(power_name = schema_text(), power_cost = int(), power_purchased = bool(), power_desc = schema_text())))
 	op("evolve_power", ui_act("evolve_power", arg("val", schema_text(4096))), then(PROC_REF(ui_act_evolve_power)))
 
 /// /datum/changeling_panel's window data.

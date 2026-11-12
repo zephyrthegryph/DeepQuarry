@@ -1,6 +1,7 @@
 CAPABILITIES(/datum/board_game/rpg_dice)
 	op("clear_history", ui_act(), then(PROC_REF(ui_act_clear_history)))
 	interface("RpgDice", state = nameof(GLOB.tgui_board_game_state))
+	ui_shape(last_rolls = list_of(row(player = schema_text(), count = int(), size = int(), results = list_of(row(result = int(), state = int())), mod = num(), apply_to_all = bool(), sum = num())))
 	// The quick dice buttons send only dice_size; the roller panel sends all four.
 	op("roll_dice", ui_act("roll_dice", arg("dice_count", num(), optional = TRUE), arg("dice_mod", num(), optional = TRUE), arg("dice_size", num()), arg("mod_all", bool(), optional = TRUE)), then(PROC_REF(ui_act_roll_dice)))
 	// The text box: "2d6+3", "d20", "4d8-1".

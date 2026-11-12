@@ -17,6 +17,7 @@
 CAPABILITIES(/datum/game_panel)
 	ref_one(nameof(owner_admin))
 	interface("GamePanel", title = "Game Panel", rights = R_ADMIN)
+	ui_shape(master_mode = schema_text(), secret_mode = bool())
 	op("change_mode", ui_act("change_mode"), then(PROC_REF(ui_act_change_mode)))
 	op("force_secret", ui_act("force_secret"), then(PROC_REF(ui_act_force_secret)))
 	op("spawn_panel", ui_act("spawn_panel"), then(PROC_REF(ui_act_spawn_panel)))

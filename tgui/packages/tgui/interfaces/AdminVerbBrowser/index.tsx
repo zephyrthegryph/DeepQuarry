@@ -14,8 +14,10 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { AdminVerbBrowserActions } from '../generated/AdminVerbBrowser';
+import type {
+  AdminVerbBrowserActions,
+  AdminVerbBrowserData,
+} from '../generated/AdminVerbBrowser';
 import {
   categoryCounts,
   filterToggles,
@@ -27,16 +29,7 @@ import {
   type VerbRow,
 } from './logic';
 
-type Data = {
-  verbs: VerbRow[];
-  defaults: string[];
-  pins: string[];
-  recent: string[];
-  toggles: (Omit<ToggleRow, 'value' | 'can'> & {
-    value: BooleanLike;
-    can: BooleanLike;
-  })[];
-};
+type Data = AdminVerbBrowserData;
 
 type Page = 'browse' | 'pinned' | 'recent' | 'settings';
 

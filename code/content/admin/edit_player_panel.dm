@@ -38,6 +38,7 @@ CAPABILITIES(/datum/edit_player_panel)
 	ref_one(nameof(target), /mob)
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("AdminEditPlayer", rights = R_HOLDER)
+	ui_shape(name = schema_text(), key = schema_text(), mob_type = schema_text(), has_client = bool(), is_newplayer = bool(), is_human = bool(), is_ai = bool(), is_carbon = bool(), is_small = bool(), is_corgi = bool(), is_animal = bool(), client_name = nullable(schema_text()), player_age = nullable(schema_text()), account_join_date = nullable(schema_text()), account_age = nullable(schema_text()), inactivity_minutes = int(), rank_names = nullable(schema_text()), editrights_mode = nullable(enum(list("rank", "add"))), muted = int(), can_event = bool(), mute_mask_ic = int(), mute_mask_ooc = int(), mute_mask_looc = int(), mute_mask_pray = int(), mute_mask_adminhelp = int(), mute_mask_deadchat = int(), mute_mask_all = int(), dna_cells = nullable(list_of(row(block = int(), name = nullable(schema_text()), tname = nullable(schema_text()), state = enum(list("active", "blocked", "inactive", "empty"))))), languages = list_of(row(key = schema_text(), known = bool()))) // the client keys are sent only for a mob with a client
 
 	section(admin, "The admin actions of the Edit Player panel: rights, messages, moving, banning, muting")
 	op("editrights", ui_act("editrights", arg("mode", schema_text(4096))), then(PROC_REF(ui_act_editrights)))
@@ -88,7 +89,6 @@ CAPABILITIES(/datum/edit_player_panel)
 	var/list/data = list()
 	if(!target())
 		return data
-	data["ref"] = "[REF(target())]"
 	data["name"] = "[target()]"
 	data["key"] = target().key || ""
 	data["mob_type"] = "[target().type]"
@@ -102,23 +102,19 @@ CAPABILITIES(/datum/edit_player_panel)
 	data["is_animal"] = !!isanimal(target())
 	if(target().client)
 		data["client_name"] = "[target().client]"
-		data["client_ref"] = "[REF(target().client)]"
-		data["client_ckey"] = target().client.ckey
-		data["player_age"] = target().client.player_age
-		data["account_join_date"] = target().client.account_join_date
-		data["account_age"] = target().client.account_age
+		data["player_age"] = "[target().client.player_age]"
+		data["account_join_date"] = "[target().client.account_join_date]"
+		data["account_age"] = "[target().client.account_age]"
 		data["inactivity_minutes"] = round(target().client.inactivity / 600)
 		data["rank_names"] = admin_holder_of(target().client) ? admin_rank_names(target().client) : "Player"
 		data["editrights_mode"] = (GLOB.admin_datums[target().client.ckey] || GLOB.deadmins[target().client.ckey]) ? "rank" : "add"
 		data["muted"] = target().client.prefs.muted
 	else
 		data["client_name"] = null
-		data["client_ref"] = null
 		data["inactivity_minutes"] = -1
 		data["muted"] = 0
 
 	data["can_event"] = !!admin_can(A.actor?.client, R_ADMIN|R_MOD|R_EVENT)
-	data["special_character"] = is_special_character(target())
 
 	// Mute mask constants exposed so the React side doesn't hardcode them.
 	data["mute_mask_ic"] = MUTE_IC
@@ -158,7 +154,6 @@ CAPABILITIES(/datum/edit_player_panel)
 				"state" = cell_state,
 			))
 		data["dna_cells"] = dna_cells
-		data["dna_se_length"] = DNA_SE_LENGTH
 	else
 		data["dna_cells"] = null
 

@@ -46,8 +46,9 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	ref_one(nameof(bloodsamp), /obj/item/forensics/swab)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("DNAForensics", title = "QuikScan DNA Analyzer")
+	ui_shape(scanning = bool(), scan_progress = int(), bloodsamp = schema_text(), bloodsamp_desc = schema_text())
 	without("ui_open")
-	op("scanItem", ui_act("scanItem"), needs(req_is(STAT_HAS_POWER, because = MSG(dnaforensics/unpowered))), then(PROC_REF(ui_act_scanitem)))
+	op("scanItem", ui_act("scanItem"), needs(req_is(STAT_HAS_POWER, because = MSG(dnaforensics/unpowered)), req(PROC_REF(scan_refusal))), then(PROC_REF(ui_act_scanitem)))
 	op("ejectItem", ui_act("ejectItem"), needs(req_is(STAT_HAS_POWER, because = MSG(dnaforensics/unpowered))), then(PROC_REF(ui_act_ejectitem)))
 	op("insert_swab", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert swab"), needs(req_empty(nameof(bloodsamp), because = MSG(dnaforensics/sample_loaded)), req_is(nameof(scanning), FALSE, because = MSG(dnaforensics/scanning)), req_held_releasable()), then(PROC_REF(interaction_insert_swab)))
 	default_parts()
@@ -80,14 +81,17 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	if(scanning)
 		set_scanning(FALSE)
 	else
-		if(bloodsamp())
-			set_scanner_progress(0)
-			set_scanning(TRUE)
-			STAMP(src, last_process_worldtime, CLOCK_WORLD)
-			to_chat(user, span_notice("Scan initiated."))
-		else
-			to_chat(user, span_warning("Insert an item to scan."))
+		set_scanner_progress(0)
+		set_scanning(TRUE)
+		STAMP(src, last_process_worldtime, CLOCK_WORLD)
+		to_chat(user, span_notice("Scan initiated."))
 	. = TRUE
+
+/// Why a scan cannot begin, or null: halting a running scan is always allowed; starting one needs an item to scan.
+/obj/machinery/dnaforensics/proc/scan_refusal(datum/act/op/A)
+	if(scanning || bloodsamp())
+		return null
+	return msg_reason("Insert an item to scan.")
 
 /obj/machinery/dnaforensics/proc/ui_act_ejectitem(datum/act/op/A)
 	. = TRUE

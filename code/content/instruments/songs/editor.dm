@@ -53,7 +53,8 @@
 	data["can_switch_instrument"] = (length(allowed_instrument_ids) > 1)
 	data["possible_instruments"] = list()
 	for(var/instrument in allowed_instrument_ids)
-		UNTYPED_LIST_ADD(data["possible_instruments"], list("name" = SSinstruments.ready().instrument_data[instrument], "id" = instrument))
+		var/datum/instrument/possible = SSinstruments.ready().instrument_data[instrument]
+		UNTYPED_LIST_ADD(data["possible_instruments"], list("name" = possible?.name || instrument, "id" = instrument))
 	data["sustain_modes"] = SSinstruments.ready().note_sustain_modes
 	data["max_repeats"] = max_repeats
 	data["min_volume"] = min_volume

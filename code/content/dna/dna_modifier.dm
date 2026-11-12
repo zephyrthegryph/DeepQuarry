@@ -367,6 +367,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	owns_many(nameof(buffers), /datum/transhuman/body_record)
 	ref_one(nameof(connected), /obj/machinery/dna_scannernew)
 	interface("DNAModifier")
+	ui_shape(selectedMenuKey = schema_text(), isInjectorReady = bool(), radiationIntensity = num(), radiationDuration = num(), irradiating = num(), selectedSEBlock = int(), selectedSESubBlock = int(), locked = bool(), hasOccupant = bool(), hasDisk = bool(), disk = row(data = nullable(list_of(int())), owner = nullable(schema_text()), label = nullable(schema_text()), type = nullable(schema_text()), ue = bool()), buffers = list_of(row(data = nullable(list_of(int())), owner = nullable(schema_text()), label = nullable(schema_text()), type = nullable(schema_text()), ue = bool())), dnaBlockSize = int(), occupant = row(name = nullable(schema_text()), stat = nullable(int()), isViableSubject = nullable(bool()), health = nullable(num()), maxHealth = nullable(num()), uniqueEnzymes = nullable(schema_text()), uniqueIdentity = nullable(schema_text()), structuralEnzymes = nullable(schema_text()), radiationLevel = nullable(num())), isBeakerLoaded = bool(), beakerLabel = nullable(schema_text()), beakerVolume = num(), modal = nullable(row(id = schema_text(), text = schema_text(), args = row(), type = schema_text(), value = nullable(schema_text())))) // modal args are whatever the opening call passed
 	extend("ui_open", needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_the_occupant))))
 	extend(TAG_UI, needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_irradiating))))
 	extend(TAG_UI, then(PROC_REF(window_touched), early = TRUE))
@@ -483,12 +484,8 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	data["radiationIntensity"] = radiation_intensity
 	data["radiationDuration"] = radiation_duration
 	data["irradiating"] = irradiating
-	data["selectedUIBlock"] = selected_ui_block
-	data["selectedUISubBlock"] = selected_ui_subblock
 	data["selectedSEBlock"] = selected_se_block
 	data["selectedSESubBlock"] = selected_se_subblock
-	data["selectedUITarget"] = selected_ui_target
-	data["selectedUITargetHex"] = selected_ui_target_hex
 	if(!connected())
 		return data
 	data["locked"] = src.connected().locked
@@ -527,7 +524,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		occupantData["isViableSubject"] = null
 		occupantData["health"] = null
 		occupantData["maxHealth"] = null
-		occupantData["minHealth"] = null
 		occupantData["uniqueEnzymes"] = null
 		occupantData["uniqueIdentity"] = null
 		occupantData["structuralEnzymes"] = null
@@ -549,7 +545,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		// Vitality is reported as a 0..100 percentage; the UI bar reads health / maxHealth.
 		occupantData["health"] = round(WC.vitality() * 100)
 		occupantData["maxHealth"] = 100
-		occupantData["minHealth"] = 0
 		occupantData["uniqueEnzymes"] = WC.dna.unique_enzymes
 		occupantData["uniqueIdentity"] = WC.dna.GetUniIdentity()
 		occupantData["structuralEnzymes"] = WC.dna.GetStrucEnzymes()

@@ -94,6 +94,7 @@ CAPABILITIES(/obj/item/gps)
 	emp_disable(5 MINUTES)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	interface("Gps", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(theme = nullable(schema_text()), currentArea = schema_text(), power = bool(), tag = schema_text(), localMode = bool(), currentCoords = schema_text(), currentZName = schema_text(), canHide = bool(), isHidden = bool(), signals = list_of(row(ref = num(), gpsTag = schema_text(), areaName = schema_text(), zName = schema_text(), local = bool(), trackingColor = nullable(schema_text()), trackingName = bool(), degrees = nullable(int()), coords = nullable(schema_text()), dist = nullable(num()))))
 	without("ui_open")
 	op("rename", ui_act("rename", arg("value", schema_text(4096))), then(PROC_REF(ui_act_rename)))
 	op("hideSignal", ui_act("hideSignal"), then(PROC_REF(ui_act_hidesignal)))
@@ -250,7 +251,7 @@ CAPABILITIES(/obj/item/gps)
 			"zName" = strip_improper(using_map.get_zlevel_name(gps_turf.z)),
 			"local" = is_local,
 			"trackingColor" = LAZYACCESS(tracking_devices, "[handle_text(handle_of(current_gps))]"),
-			"trackingName" = LAZYACCESS(showing_tracked_names, "[handle_text(handle_of(current_gps))]"),
+			"trackingName" = !!LAZYACCESS(showing_tracked_names, "[handle_text(handle_of(current_gps))]"),
 		)
 
 		if(!is_poi || is_local)

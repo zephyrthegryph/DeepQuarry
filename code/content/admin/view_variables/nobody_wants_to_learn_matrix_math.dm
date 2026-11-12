@@ -22,6 +22,7 @@
 CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
 	ref_one(nameof(target), /atom)
 	interface("MatrixMathTester", rights = R_VAREDIT)
+	ui_shape(matrix_a = num(), matrix_b = num(), matrix_c = num(), matrix_d = num(), matrix_e = num(), matrix_f = num(), pixelated = bool())
 	op("change_var", ui_act("change_var", arg("var_name", schema_text(4096)), arg("var_value", num())), then(PROC_REF(ui_act_change_var)))
 	op("scale", ui_act("scale", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_scale)))
 	op("translate", ui_act("translate", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_translate)))
@@ -38,7 +39,7 @@ CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
 	data["matrix_d"] = testing_matrix.d
 	data["matrix_e"] = testing_matrix.e
 	data["matrix_f"] = testing_matrix.f
-	data["pixelated"] = target().appearance_flags & PIXEL_SCALE
+	data["pixelated"] = !!(target().appearance_flags & PIXEL_SCALE)
 	return data
 
 /datum/nobody_wants_to_learn_matrix_math/proc/ui_act_change_var(datum/act/op/A, var_name, var_value)

@@ -2,12 +2,14 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { LabeledList, ProgressBar, Stack } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-import type { AnomalyHarvesterActions } from '../generated/AnomalyHarvester';
+import type {
+  AnomalyHarvesterActions,
+  AnomalyHarvesterData,
+} from '../generated/AnomalyHarvester';
 import { SampleDisplay } from './Sample';
-import type { Data } from './types';
 
 export const AnomalyHarvester = (props) => {
-  const { act, data } = useBackend<Data, AnomalyHarvesterActions>();
+  const { act, data } = useBackend<AnomalyHarvesterData, AnomalyHarvesterActions>();
   const { points, pointsToGenerate, name } = data;
 
   const progress = (points / pointsToGenerate) * 100;

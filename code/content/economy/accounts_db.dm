@@ -21,6 +21,7 @@
 		return 2
 	else if((ACCESS_HOP in held_card.access) || (ACCESS_CAPTAIN in held_card.access))
 		return 1
+	return 0
 
 /obj/machinery/account_database/proc/accounting_letterhead(report_name)
 	return {"
@@ -36,6 +37,7 @@ CAPABILITIES(/obj/machinery/account_database)
 	climb()
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	interface("AccountsTerminal")
+	ui_shape(machine_id = schema_text(), creating_new_account = bool(), id_inserted = bool(), id_card = schema_text(), access_level = int(0, 2), detailed_account_view = bool(), station_account_number = num(), account_number = nullable(num()), owner_name = nullable(schema_text()), money = nullable(num()), suspended = nullable(bool()), transactions = list_of(row(date = schema_text(), time = schema_text(), target_name = schema_text(), purpose = schema_text(), amount = num(), source_terminal = schema_text())), accounts = list_of(row(account_number = num(), owner_name = schema_text(), suspended = schema_text(), account_index = int())))
 	without("ui_open")
 	op("create_account", ui_act("create_account"), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_create_account)))
 	op("add_funds", ui_act("add_funds"), asks(/datum/prompt/number/account_ui_funds/add, step = "amount", when = PROC_REF(central_access)), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_add_funds)))

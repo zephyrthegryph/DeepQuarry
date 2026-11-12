@@ -2,48 +2,13 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
-import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
-import type { ICCircuitActions } from './generated/ICCircuit';
+import type { ICCircuitActions, ICCircuitData } from './generated/ICCircuit';
 
-type Data = {
-  name: string;
-  desc: string;
-  displayed_name: string;
-  removable: BooleanLike;
-  complexity: number;
-  power_draw_idle: number;
-  power_draw_per_use: number;
-  extended_desc: string | null;
-  inputs: pin[];
-  outputs: pin[];
-  activators: activator[];
-};
-
-type pin = {
-  type: string;
-  name: string;
-  data: string;
-  ref: number;
-  linked: link[];
-};
-
-type activator = {
-  ref: number;
-  name: string;
-  pulse_out: string;
-  linked: link[];
-};
-
-type link = {
-  ref: number;
-  name: string;
-  holder_ref: number;
-  holder_name: string;
-};
+type pin = ICCircuitData['inputs'][number];
 
 export const ICCircuit = (props) => {
-  const { act, data } = useBackend<Data, ICCircuitActions>();
+  const { act, data } = useBackend<ICCircuitData, ICCircuitActions>();
 
   const {
     desc,
@@ -129,7 +94,7 @@ export const ICCircuit = (props) => {
             {activators.map((activator) => (
               <LabeledList.Item key={activator.name} label={activator.name}>
                 <Button onClick={() => act('pin_name', { pin: activator.ref })}>
-                  {activator.pulse_out ? '<PULSE OUT>' : '<PULSE IN>'}
+                  {decodeHtmlEntities(activator.type)}
                 </Button>
                 <ICLinkDisplay pin={activator} />
               </LabeledList.Item>
@@ -142,7 +107,7 @@ export const ICCircuit = (props) => {
 };
 
 const ICIODisplay = (props: { list: pin[] }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<ICCircuitData, ICCircuitActions>();
 
   const { list } = props;
 
@@ -159,8 +124,8 @@ const ICIODisplay = (props: { list: pin[] }) => {
   ));
 };
 
-const ICLinkDisplay = (props: { pin: activator | pin }) => {
-  const { act } = useBackend();
+const ICLinkDisplay = (props: { pin: pin }) => {
+  const { act } = useBackend<ICCircuitData, ICCircuitActions>();
 
   const { pin } = props;
 

@@ -57,6 +57,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	owns_many(nameof(piles), /datum/seed_pile)
 	owns_many(nameof(piles_contra), /datum/seed_pile)
 	interface("SeedStorage")
+	ui_shape(seeds = list_of(row(name = schema_text(), uid = schema_text(), amount = int(), id = int(), traits = map_of(schema_text(), schema_text()))))
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("vend", ui_act("vend", arg("id", num())), then(PROC_REF(ui_act_vend)))
 	op("purge", ui_act("purge", arg("id", num())), then(PROC_REF(ui_act_purge)))
@@ -206,8 +207,6 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	else
 		set_scanner(initial(scanner))
 
-	data["scanner"] = (scanner || list())
-
 	var/list/piles_to_check = piles
 	if(hacked || emagged())
 		piles_to_check = (piles || list()) + piles_contra
@@ -219,22 +218,22 @@ CAPABILITIES(/obj/machinery/seed_storage)
 			continue
 		var/list/seedinfo = list(
 			"name" = seed.seed_name,
-			"uid" = seed.uid,
+			"uid" = "[seed.uid]",
 			"amount" = S.amount,
 			"id" = S.ID,
 		)
 
 		seedinfo["traits"] = list()
 		if("stats" in scanner)
-			seedinfo["traits"]["Endurance"] = seed.get_trait(TRAIT_ENDURANCE)
-			seedinfo["traits"]["Yield"] = seed.get_trait(TRAIT_YIELD)
-			seedinfo["traits"]["Production"] = seed.get_trait(TRAIT_PRODUCTION)
-			seedinfo["traits"]["Potency"] = seed.get_trait(TRAIT_POTENCY)
-			seedinfo["traits"]["Repeat Harvest"] = seed.get_trait(TRAIT_HARVEST_REPEAT)
+			seedinfo["traits"]["Endurance"] = "[seed.get_trait(TRAIT_ENDURANCE)]"
+			seedinfo["traits"]["Yield"] = "[seed.get_trait(TRAIT_YIELD)]"
+			seedinfo["traits"]["Production"] = "[seed.get_trait(TRAIT_PRODUCTION)]"
+			seedinfo["traits"]["Potency"] = "[seed.get_trait(TRAIT_POTENCY)]"
+			seedinfo["traits"]["Repeat Harvest"] = "[seed.get_trait(TRAIT_HARVEST_REPEAT)]"
 		if("temperature" in scanner)
-			seedinfo["traits"]["Ideal Heat"] = seed.get_trait(TRAIT_IDEAL_HEAT)
+			seedinfo["traits"]["Ideal Heat"] = "[seed.get_trait(TRAIT_IDEAL_HEAT)]"
 		if("light" in scanner)
-			seedinfo["traits"]["Ideal Light"] = seed.get_trait(TRAIT_IDEAL_LIGHT)
+			seedinfo["traits"]["Ideal Light"] = "[seed.get_trait(TRAIT_IDEAL_LIGHT)]"
 		if("soil" in scanner)
 			if(seed.get_trait(TRAIT_REQUIRES_NUTRIENTS))
 				if(seed.get_trait(TRAIT_NUTRIENT_CONSUMPTION) < 0.05)

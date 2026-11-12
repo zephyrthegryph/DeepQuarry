@@ -1,11 +1,6 @@
-export type SearchItem = {
-  name: string;
-  path: string;
-  ref: number;
-} & Partial<{
-  icon: string;
-  icon_state: string;
-}>;
+import type { LootPanelData } from '../generated/LootPanel';
+
+export type SearchItem = LootPanelData['contents'][number];
 
 export type SearchGroup = {
   amount: number;

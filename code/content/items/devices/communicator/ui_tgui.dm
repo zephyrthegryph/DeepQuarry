@@ -50,6 +50,7 @@ CAPABILITIES(/obj/item/communicator)
 	owns_many(nameof(voice_mobs))
 	owns_one(nameof(camera), starts = /obj/machinery/camera/communicator)
 	interface("Communicator", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(visible = bool(), targetAddress = schema_text(), targetAddressName = schema_text(), currentTab = int(), ring = bool(), note = schema_text(), flashlight = bool(), selfie_mode = bool(), owner = schema_text(), occupation = schema_text(), connectionStatus = int(), address = schema_text(), knownDevices = list_of(row(name = schema_text(), address = schema_text())), invitesSent = list_of(row(name = schema_text(), address = schema_text(), ref = num())), requestsReceived = list_of(row(name = schema_text(), address = schema_text(), ref = num())), voice_mobs = list_of(row(name = schema_text(), true_name = schema_text(), ref = num())), communicating = list_of(row(name = schema_text(), true_name = schema_text(), address = nullable(schema_text()), ref = num())), video_comm = nullable(num()), phone_video_comm = nullable(num()), imContacts = list_of(row(name = schema_text(), address = schema_text(), ref = num())), imList = list_of(row(address = schema_text(), to_address = schema_text(), im = schema_text())), time = schema_text(), homeScreen = list_of(row(module = schema_text(), icon = schema_text(), number = int())), weather = list_of(row(Planet = schema_text(), Time = schema_text(), Weather = schema_text(), Temperature = num(), High = num(), Low = num(), WindDir = schema_text(), WindSpeed = schema_text(), Forecast = schema_text())), aircontents = list_of(row(entry = schema_text(), val = num(), units = schema_text(), bad_low = num(), poor_low = num(), poor_high = num(), bad_high = num())), feeds = list_of(row(name = schema_text(), censored = bool(), author = schema_text(), messages = list_of(row(author = schema_text(), body = schema_text(), message_type = schema_text(), time_stamp = schema_text(), has_image = bool(), caption = nullable(schema_text()), index = int())), index = int())), latest_news = list_of(row(channel = schema_text(), author = schema_text(), body = schema_text(), message_type = schema_text(), time_stamp = schema_text(), has_image = bool(), caption = nullable(schema_text()), time = num(), index = int())), target_feed = nullable(row(name = schema_text(), censored = bool(), author = schema_text(), messages = list_of(row(author = schema_text(), body = schema_text(), message_type = schema_text(), time_stamp = schema_text(), has_image = bool(), caption = nullable(schema_text()), index = int())), index = int())), manifest = list_of(row(cat = schema_text(), elems = list_of(row(name = schema_text(), rank = schema_text(), active = schema_text())))), mapRef = schema_text())
 	without("ui_open")
 	op("rename", ui_act("rename"), asks(/datum/prompt/text/communicator/name, fields = list("default" = computed(PROC_REF(actor_name))), step = "name"), then(PROC_REF(ui_act_rename)))
 	op("set_ringer_tone", ui_act("set_ringer_tone"), asks(/datum/prompt/text/communicator/ringtone, step = "tone"), then(PROC_REF(ui_act_set_ringer_tone)))
@@ -276,6 +277,7 @@ CAPABILITIES(/obj/item/communicator)
 		voices.Add(list(list(
 			"name" = sanitize("[voice.name]'s communicator"),
 			"true_name" = sanitize(voice.name),
+			"ref" = handle_of(voice),
 		)))
 
 	//Finally, all the communicators linked to this one.
@@ -283,6 +285,7 @@ CAPABILITIES(/obj/item/communicator)
 		connected_communicators.Add(list(list(
 			"name" = sanitize(comm.name),
 			"true_name" = sanitize(comm.name),
+			"address" = comm.exonet?.address,
 			"ref" = handle_of(comm),
 		)))
 
@@ -339,11 +342,10 @@ CAPABILITIES(/obj/item/communicator)
 	for(var/list/R in modules)
 		modules_ui.Add(list(R))
 
-	data["user"] = handle_of(user)	// For receiving input() via topic, because input(usr,...) wasn't working on cartridges
 	data["owner"] = owner ? owner : "Unset"
 	data["occupation"] = occupation ? occupation : "Swipe ID to set."
 	data["connectionStatus"] = get_connection_to_tcomms()
-	data["address"] = exonet.address ? exonet.address : "Unallocated"
+	data["address"] = exonet?.address || "Unallocated"
 	data["knownDevices"] = communicators
 	data["invitesSent"] = invites
 	data["requestsReceived"] = requests

@@ -18,7 +18,7 @@ export const CommunicatorWeatherTab = (props) => {
           {aircontents
             .filter(
               (i: AirContent) =>
-                i.val !== '0' ||
+                i.val !== 0 ||
                 i.entry === 'Pressure' ||
                 i.entry === 'Temperature',
             )

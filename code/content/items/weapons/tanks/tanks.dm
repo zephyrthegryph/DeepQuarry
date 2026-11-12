@@ -50,6 +50,7 @@ CAPABILITIES(/obj/item/tank)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
 	interface("Tank", state = nameof(GLOB.tgui_deep_inventory_state))
+	ui_shape(tankPressure = int(), releasePressure = int(), defaultReleasePressure = int(), minReleasePressure = int(), maxReleasePressure = int(), connected = nullable(bool()), maskConnected = nullable(bool())) // connected and maskConnected are absent when the viewer is not a carbon in or holding the tank
 	without("ui_open")
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))

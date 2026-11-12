@@ -83,6 +83,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 
 CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 	interface("GhostSpawn", state = nameof(GLOB.tgui_observer_state))
+	ui_shape(active_tab = int(), user_z = int(), all_ghost_pods = nullable(list_of(row(pod_type = schema_text(), pod_name = schema_text(), z_level = int(), ref = num(), remains_active = bool()))), all_vore_spawns = nullable(map_of(schema_text(), row(player = schema_text(), soulcatcher = bool(), soulcatcher_vore = bool(), vorespawn = bool()))), all_ghost_join_options = nullable(row(mouse_data = row(disabled = bool(), bad_turf = bool(), respawn_time = schema_text(), found_vents = bool()), drone_data = row(disabled = bool(), days_to_play = nullable(num()), respawn_time = schema_text(), fabricators = map_of(schema_text(), schema_text())), vr_data = row(record_found = bool(), vr_landmarks = map_of(schema_text(), schema_text())), cyborg_banned = bool(), ghost_banned = bool(), may_respawn = bool(), special_role_respawn = schema_text(), existing_ghost_spawnpoints = bool(), remaining_ghost_roles = int())))
 	op("mouse_spawn", ui_act(), then(PROC_REF(ui_act_mouse_spawn)))
 	op("corgi_spawn", ui_act(), then(PROC_REF(ui_act_corgi_spawn)))
 	op("lost_drone_spawn", ui_act(), then(PROC_REF(ui_act_lost_drone_spawn)))

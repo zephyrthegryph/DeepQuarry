@@ -11,18 +11,14 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-import type { CasinoPrizeDispenserActions } from './generated/CasinoPrizeDispenser';
+import type {
+  CasinoPrizeDispenserActions,
+  CasinoPrizeDispenserData,
+} from './generated/CasinoPrizeDispenser';
 
-type Data = {
-  items: Record<string, Sortable[]>;
-};
+type Data = CasinoPrizeDispenserData;
 
-type Sortable = {
-  name: string;
-  affordable: number;
-  price: number;
-  restriction: string;
-};
+type Sortable = Data['items'][string][string];
 
 const sortTypes = {
   Alphabetical: (a: Sortable, b: Sortable) => a.name.localeCompare(b.name),
@@ -153,7 +149,7 @@ const CasinoPrizeDispenserItemsCategory = (props: {
   title: string;
   items: Sortable[];
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, CasinoPrizeDispenserActions>();
   const { title, items, ...rest } = props;
   return (
     <Collapsible open title={title} {...rest}>

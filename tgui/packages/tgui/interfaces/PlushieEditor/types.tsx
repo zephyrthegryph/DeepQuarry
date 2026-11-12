@@ -1,20 +1,10 @@
-export type Data = {
-  name: string;
-  base_color: string;
-  icon: string;
-  preview: string;
-  possible_overlays: PossibleOverlay[];
-  overlays: Overlay[];
-};
+import type { PlushieEditorData } from '../generated/PlushieEditor';
 
-export type Overlay = {
-  icon_state: string;
-  name?: string;
-  color?: string;
-  alpha?: number;
-};
+export type Data = PlushieEditorData;
 
-export type PossibleOverlay = { name: string; icon_state: string };
+export type Overlay = Data['overlays'][number];
+
+export type PossibleOverlay = Data['possible_overlays'][number];
 
 export type PlushieConfig = {
   name: string;

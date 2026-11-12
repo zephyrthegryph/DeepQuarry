@@ -11,12 +11,18 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-import type { PlayerLogViewerActions } from '../generated/PlayerLogViewer';
+import type {
+  PlayerLogViewerActions,
+  PlayerLogViewerData,
+} from '../generated/PlayerLogViewer';
 import { displayTime, stripHtml } from './function';
-import type { Data, ExtendedLogEntry } from './types';
+import type { ExtendedLogEntry } from './types';
 
 export const PlayerLogViewer = (props) => {
-  const { data, act } = useBackend<Data, PlayerLogViewerActions>();
+  const { data, act } = useBackend<
+    PlayerLogViewerData,
+    PlayerLogViewerActions
+  >();
 
   const [activeTab, setActiveTab] = useState('');
   const [search, setSearch] = useState('');
@@ -32,7 +38,7 @@ export const PlayerLogViewer = (props) => {
     ckey,
     special,
     on_cooldown,
-    all_clients = {},
+    all_clients = [],
     view_client,
   } = data;
 
@@ -72,7 +78,7 @@ export const PlayerLogViewer = (props) => {
                       searchInput
                       disabled={!!on_cooldown}
                       selected={view_client ? ckey : undefined}
-                      options={Object.keys(all_clients)}
+                      options={all_clients}
                       onSelected={(value) =>
                         act('select_client', { ckey: value })
                       }

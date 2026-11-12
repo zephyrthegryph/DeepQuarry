@@ -272,6 +272,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	configure(uses_power(idle = 10, active = 100))
 	after_init(0, then(PROC_REF(set_up_storefront)))
 	interface("DepartmentStorefront")
+	ui_shape(department = schema_text(), balance = num(), markup = num(), authorized = bool(), stock = list_of(row(ref = schema_text(), name = schema_text(), desc = schema_text(), suggested = nullable(num()), price = nullable(num()), quantity = int())))
 	without("ui_open")
 	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), needs(req_adjacent()),
 		asks(/datum/prompt/number/storefront_pin, fields = list("question" = "Enter your account PIN", "title" = "Storefront purchase", "price" = computed(PROC_REF(buy_price)), "timeout" = 0), step = "pin", when = PROC_REF(buy_needs_pin)),

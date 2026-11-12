@@ -1,17 +1,9 @@
 import type { BooleanLike } from 'tgui-core/react';
+import type { PublicLibraryWikiData } from '../generated/PublicLibraryWiki';
 
-export type Data = {
-  crash: BooleanLike;
-  errorText: string;
-  searchmode: string;
-  search: string[] | null;
-  title: string;
-  print: string;
-  sub_categories: string[] | null;
-  has_donated: BooleanLike;
-  donated: number;
-  goal: number;
-} & Required<PageData>;
+// The page data (*_data) is each wiki page's own get_data(), typed here.
+export type Data = Omit<PublicLibraryWikiData, keyof PageData> &
+  Required<PageData>;
 
 export type PageData = {
   material_data: MaterialData | null;

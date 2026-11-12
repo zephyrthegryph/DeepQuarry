@@ -4,7 +4,10 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { WebGLCelestialScene } from './FlightOperationsScene';
-import type { FlightOperationsActions } from './generated/FlightOperations';
+import type {
+  FlightOperationsActions,
+  FlightOperationsData,
+} from './generated/FlightOperations';
 
 type Kind =
   | 'system'
@@ -20,17 +23,17 @@ export type FlightDestination = {
   description: string;
   kind: Kind;
   scene_role?: 'celestial' | 'orbital' | 'docked';
-  orbit_parent_id?: string;
-  docked_port_id?: string;
-  docked_host_id?: string;
+  orbit_parent_id?: string | null;
+  docked_port_id?: string | null;
+  docked_host_id?: string | null;
   orbit_radius: number;
   orbit_period: number;
   orbit_phase: number;
   orbit_inclination: number;
   body_radius: number;
   body_color: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   compatible: BooleanLike;
   materialized: BooleanLike;
   is_current: BooleanLike;
@@ -38,33 +41,17 @@ export type FlightDestination = {
 
 export type FlightPlan = {
   id: string;
-  origin_id?: string;
-  destination_id: string;
-  destination: string;
+  origin_id?: string | null;
+  destination_id: string | null;
+  destination: string | null;
   state: number;
   state_name: string;
-  failure?: string;
+  failure?: string | null;
   eta: number;
   departure_at: number;
   arrival_at: number;
   generation_progress: number;
-  generation_stage: string;
-};
-
-type Data = {
-  vessel: string;
-  vessel_destination_id?: string;
-  orbit_parent_id?: string;
-  docked_port_id?: string;
-  server_time: number;
-  destinations: FlightDestination[];
-  plan?: FlightPlan;
-  expedition?: {
-    name: string;
-    objective: string;
-    progress: string;
-    infrastructure?: string;
-  };
+  generation_stage: string | null;
 };
 
 const labelFor = (kind: Kind) =>
@@ -78,7 +65,10 @@ const labelFor = (kind: Kind) =>
   })[kind];
 
 export const FlightOperations = () => {
-  const { act, data } = useBackend<Data, FlightOperationsActions>();
+  const { act, data } = useBackend<
+    FlightOperationsData,
+    FlightOperationsActions
+  >();
   const destinations = data.destinations ?? [];
   const system = destinations.find((body) => body.kind === 'system');
   const [focusId, setFocusId] = useState('system-vir');

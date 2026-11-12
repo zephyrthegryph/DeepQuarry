@@ -8,24 +8,13 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type { CodexReaderActions } from './generated/CodexReader';
+import type {
+  CodexReaderActions,
+  CodexReaderData,
+} from './generated/CodexReader';
 
-type PageLink = {
-  name: string;
-  id: number;
-};
-
-type Data = {
-  page_name?: string;
-  page_html?: string | null;
-  trail?: PageLink[];
-  children?: PageLink[];
-  can_back?: BooleanLike;
-  can_up?: BooleanLike;
-  can_home?: BooleanLike;
-};
+type Data = CodexReaderData;
 
 export const CodexReader = () => {
   const { data, act } = useBackend<Data, CodexReaderActions>();

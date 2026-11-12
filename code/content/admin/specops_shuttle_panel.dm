@@ -14,6 +14,7 @@ CAPABILITIES(/obj/machinery/computer/specops_shuttle)
 	configure(light_glow(color = "#00ffff"))
 	emag(needs(req(PROC_REF(emag_refusal))), powered = FALSE, repeatable = TRUE)
 	interface("SpecopsShuttle", title = "Special Operations Shuttle", state = nameof(GLOB.tgui_default_state))
+	ui_shape(status_message = nullable(schema_text()), state = nullable(enum(list("moving", "at_station", "at_dock"))), timeleft = nullable(num()), destination = nullable(schema_text())) // the state keys are absent while a status message shows
 	without("ui_open")
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))

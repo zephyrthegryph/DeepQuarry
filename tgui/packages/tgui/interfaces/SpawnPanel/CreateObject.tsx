@@ -12,22 +12,13 @@ import {
 import { useFuzzySearch } from 'tgui-core/fuzzysearch';
 
 import { useBackend } from '../../backend';
-import type { SpawnPanelActions } from '../generated/SpawnPanel';
+import type {
+  SpawnPanelActions,
+  SpawnPanelData,
+} from '../generated/SpawnPanel';
 import { CreateObjectSettings, type SpawnArgs } from './CreateObjectSettings';
 import { listNames, listTypes } from './constants';
-import type {
-  AtomData,
-  CreateObjectProps,
-  SpawnPanelPreferences,
-} from './types';
-
-type SpawnPanelData = {
-  icon: string;
-  iconState: string;
-  selected_object?: string;
-  copied_type?: string;
-  preferences?: SpawnPanelPreferences;
-};
+import type { CreateObjectProps } from './types';
 
 export function CreateObject(props: CreateObjectProps) {
   const { act, data } = useBackend<SpawnPanelData, SpawnPanelActions>();
@@ -45,7 +36,6 @@ export function CreateObject(props: CreateObjectProps) {
   const allObjects = objList.atoms;
 
   const currentList = objList;
-  const currentType = allObjects[data.copied_type ?? '']?.type || 'Objects';
 
   const getSearchString = useCallback(
     (key: string) => {
@@ -83,25 +73,6 @@ export function CreateObject(props: CreateObjectProps) {
   }, [data.selected_object]);
 
   useEffect(() => {
-    if (data.copied_type) {
-      setSelectedObj(data.copied_type);
-      setQuery(data.copied_type);
-
-      const copiedAtom: AtomData = objList.atoms[data.copied_type];
-      setSortBy(listTypes[copiedAtom.type]);
-      setSearchBy(true);
-
-      const list = objList.atoms;
-      if (list[data.copied_type]) {
-        props.onIconSettingsChange?.({
-          icon: list[data.copied_type].icon,
-          iconState: list[data.copied_type].icon_state,
-        });
-      }
-    }
-  }, [data.copied_type]);
-
-  useEffect(() => {
     const loadStoredValues = async () => {
       const storedSearchText = await storage.get('spawnpanel-searchText');
       const storedSearchBy = await storage.get('spawnpanel-searchBy');
@@ -133,10 +104,6 @@ export function CreateObject(props: CreateObjectProps) {
   }, []);
 
   useEffect(() => {
-    setSelectedObj(null);
-  }, [currentType]);
-
-  useEffect(() => {
     if (selectedObj !== null) {
       storage.set('spawnpanel-selectedObj', selectedObj);
     }
@@ -145,10 +112,8 @@ export function CreateObject(props: CreateObjectProps) {
   useEffect(() => {
     if (data.selected_object) {
       setSelectedObj(data.selected_object);
-    } else if (data.copied_type) {
-      setSelectedObj(data.copied_type);
     }
-  }, [data.selected_object, data.copied_type]);
+  }, [data.selected_object]);
 
   useEffect(() => {
     if (data.iconState !== undefined) {

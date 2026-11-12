@@ -50,7 +50,7 @@ export const GamePreferencesPage = (props) => {
   const gamePreferences: Record<string, PreferenceChild[]> = {};
 
   for (const [featureId, value] of Object.entries(
-    data.character_preferences.game_preferences,
+    data.character_preferences?.game_preferences ?? {},
   )) {
     const feature = features[featureId];
 

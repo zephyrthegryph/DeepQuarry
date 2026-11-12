@@ -3,28 +3,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { DartgunActions } from './generated/Dartgun';
-
-type Reagent = {
-  name: string;
-  volume: number;
-};
-
-type Beaker = {
-  index: number;
-  reagents: Reagent[];
-  mixing: BooleanLike;
-};
-
-type Data = {
-  beakers: Beaker[];
-  ammo_count: number | null;
-};
+import type { DartgunActions, DartgunData } from './generated/Dartgun';
 
 export const Dartgun = () => {
-  const { data, act } = useBackend<Data, DartgunActions>();
+  const { data, act } = useBackend<DartgunData, DartgunActions>();
   const { beakers = [], ammo_count } = data;
   return (
     <Window width={460} height={460} title="Dartgun mixing control">

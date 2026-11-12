@@ -38,6 +38,7 @@ CAPABILITIES(/obj/item/stack)
 	configure(item_handling(randpixel = 7, center_x = 0, center_y = 0))
 	ref_many(nameof(synths), /datum/matter_synth)
 	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())
+	ui_shape(amount = num(), recipes = map_of(schema_text(), row())) // recipes is a tree: each entry is a recipe (res_amount, max_res_amount, req_amount, ref) or a group of further entries by title
 	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/xform))), then(PROC_REF(ui_act_make)))
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))

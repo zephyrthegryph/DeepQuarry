@@ -12,7 +12,10 @@ import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type { ErrorViewerActions } from './generated/ErrorViewer';
+import type {
+  ErrorViewerActions,
+  ErrorViewerData,
+} from './generated/ErrorViewer';
 
 type Item = {
   ref: string;
@@ -20,23 +23,7 @@ type Item = {
   is_skip_count: BooleanLike;
 };
 
-type Data = {
-  view_kind: 'cache' | 'source' | 'entry' | 'unknown';
-  title: string;
-  back_ref: string | null;
-  linear: BooleanLike;
-  total_runtimes: number;
-  total_skipped: number;
-  // cache | source
-  items?: Item[];
-  // entry
-  desc?: string;
-  usr_ref?: string | null;
-  usr_loc_ref?: string | null;
-  usr_loc_x?: number;
-  usr_loc_y?: number;
-  usr_loc_z?: number;
-};
+type Data = ErrorViewerData;
 
 const Header = (props: { data: Data; act: (a: string, p?: any) => void }) => {
   const { data, act } = props;
@@ -195,7 +182,7 @@ const EntryView = (props: {
 };
 
 export const ErrorViewer = () => {
-  const { data, act } = useBackend<Data, ErrorViewerActions>();
+  const { data, act } = useBackend<ErrorViewerData, ErrorViewerActions>();
   return (
     <Window width={720} height={680} title="Error Viewer">
       <Window.Content scrollable>

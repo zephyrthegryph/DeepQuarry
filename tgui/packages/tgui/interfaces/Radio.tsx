@@ -9,35 +9,10 @@ import {
   Section,
 } from 'tgui-core/components';
 import { round, toFixed } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
-import type { RadioActions } from './generated/Radio';
-
-type Data = {
-  theme?: string;
-  rawfreq: number;
-  listening: BooleanLike;
-  broadcasting: BooleanLike;
-  subspace: BooleanLike;
-  subspaceSwitchable: BooleanLike;
-  loudspeaker: BooleanLike;
-  mic_cut: BooleanLike;
-  spk_cut: BooleanLike;
-  chan_list:
-    | {
-        chan: number;
-        display_name: string;
-        secure_channel: BooleanLike;
-        sec_channel_listen: BooleanLike;
-        freq: number;
-      }[]
-    | null;
-  useSyndMode: BooleanLike;
-  minFrequency: number;
-  maxFrequency: number;
-};
+import type { RadioActions, RadioData } from './generated/Radio';
 
 export const Radio = (props) => {
-  const { act, data } = useBackend<Data, RadioActions>();
+  const { act, data } = useBackend<RadioData, RadioActions>();
   const {
     theme,
     rawfreq,
@@ -72,7 +47,7 @@ export const Radio = (props) => {
     <Window
       width={310}
       height={height}
-      theme={useSyndMode ? 'syndicate' : theme}
+      theme={useSyndMode ? 'syndicate' : (theme ?? undefined)}
     >
       <Window.Content>
         <Section>
@@ -184,7 +159,7 @@ export const Radio = (props) => {
                         </Button>
                       ) : (
                         <Button
-                          selected={channel.chan === rawfreq}
+                          selected={channel.freq === rawfreq}
                           onClick={() =>
                             act('specFreq', {
                               channel: channel.chan,

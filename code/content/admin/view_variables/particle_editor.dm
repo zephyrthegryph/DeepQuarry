@@ -8,6 +8,7 @@
 CAPABILITIES(/datum/particle_editor)
 	ref_one(nameof(target), /atom/movable)
 	interface("ParticleEdit", rights = R_VAREDIT)
+	ui_shape(target_name = schema_text(), particle_data = row()) // open-ended: each particle var is a number, a list or a generator's argument list depending on the particle set; the TSX types it by hand (ParticleEdit/data.ts)
 	op("delete_and_close", ui_act("delete_and_close"), then(PROC_REF(ui_act_delete_and_close)))
 	op("new_type", ui_act("new_type"), asks(/datum/prompt/choice/particle_editor_type, fields = list("choices" = computed(PROC_REF(particle_type_choices))), step = "type"), then(PROC_REF(ui_act_new_type)))
 	op("transform_size", ui_act("transform_size", arg("new_value")), then(PROC_REF(ui_act_transform_size)))

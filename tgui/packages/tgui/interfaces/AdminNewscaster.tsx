@@ -5,46 +5,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { AdminNewscasterActions } from './generated/AdminNewscaster';
+import type {
+  AdminNewscasterActions,
+  AdminNewscasterData,
+} from './generated/AdminNewscaster';
 
-type Channel = {
-  ref: string;
-  name: string;
-  author: string;
-  locked: BooleanLike;
-  censored: BooleanLike;
-  is_admin_channel: BooleanLike;
-};
-
-type Message = {
-  ref: string;
-  title: string;
-  body: string;
-  author: string;
-  time_stamp: string;
-  has_image: BooleanLike;
-};
-
-type WantedIssue = {
-  author: string;
-  body: string;
-  backup_author: string;
-  has_image: BooleanLike;
-};
-
-type Data = {
-  screen: number;
-  signature: string;
-  company_name: string;
-  has_wanted: BooleanLike;
-  channel: Channel | null;
-  message: Message | null;
-  channels: Channel[];
-  channel_messages: Message[];
-  wanted_issue: WantedIssue | null;
-};
+type Data = AdminNewscasterData;
 
 type ActFn = (a: string, p?: Record<string, any>) => void;
 

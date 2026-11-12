@@ -109,6 +109,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	setup(PROC_REF(randomize_characters))
 	interface("ArcadeBattle")
+	ui_shape(temp = schema_text(), enemyAction = schema_text(), enemyName = schema_text(), playerHP = num(), playerMP = num(), enemyHP = num(), gameOver = bool())
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("attack", ui_act("attack"), then(PROC_REF(ui_act_attack)))
 	op(XENO_CHEM_HEAL, ui_act(XENO_CHEM_HEAL), then(PROC_REF(ui_act_heal)))
@@ -117,7 +118,6 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 
 /obj/machinery/computer/arcade/battle/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["name"] = name
 	data["temp"] = temp
 	data["enemyAction"] = enemy_action
 	data["enemyName"] = enemy_name
@@ -1138,6 +1138,7 @@ CAPABILITIES(/obj/item/orion_ship)
 CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	op("clawmachine_card_pin", ai(), needs(req_adjacent(), req_capable()), asks(/datum/prompt/number/claw_pin, fields = list("account" = computed(PROC_REF(pin_account)), "timeout" = 0)), then(PROC_REF(card_pin_entered)))
 	interface("ClawMachine")
+	ui_shape(wintick = int(), instructions = schema_text(), gameStatus = enum(list("CLAWMACHINE_NEW", "CLAWMACHINE_ON", "CLAWMACHINE_END")), winscreen = schema_text())
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
 	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))

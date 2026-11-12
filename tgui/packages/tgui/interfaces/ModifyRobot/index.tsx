@@ -22,6 +22,11 @@ import { ModifyRobotSpecialModules } from './ModifyRobotTabs/ModifyRobotSpecialM
 import { ModifyRobotUpgrades } from './ModifyRobotTabs/ModifyRobotUpgrades';
 import type { Data } from './types';
 
+// The law manager's rows carry a client-side `zero` mark the server does not send.
+// Before the first data push the lists are absent.
+const withZero = <T,>(laws?: T[] | null) =>
+  (laws ?? []).map((law) => ({ ...law, zero: false }));
+
 export const ModifyRobot = (props) => {
   const { act, data } = useBackend<Data, ModifyRobotActions>();
 
@@ -91,21 +96,21 @@ export const ModifyRobot = (props) => {
   tabs[4] = (
     <ModifyRobotComponent
       target={target!}
-      cell={cell}
-      cells={cell_options}
-      cams={camera_options}
-      rads={radio_options}
-      acts={actuator_options}
-      diags={diagnosis_options}
-      comms={comms_options}
-      arms={armour_options}
-      gear={current_gear}
+      cell={cell!}
+      cells={cell_options!}
+      cams={camera_options!}
+      rads={radio_options!}
+      acts={actuator_options!}
+      diags={diagnosis_options!}
+      comms={comms_options!}
+      arms={armour_options!}
+      gear={current_gear!}
     />
   );
   tabs[5] = (
     <ModifyRobotAccess
       target={target!}
-      tab_icon={id_icon}
+      tab_icon={id_icon!}
       all_access={access_options!}
     />
   );
@@ -119,10 +124,10 @@ export const ModifyRobot = (props) => {
       inherent_law={inherent_law}
       supplied_law={supplied_law}
       supplied_law_position={supplied_law_position}
-      zeroth_laws={zeroth_laws}
-      ion_laws={ion_laws}
-      inherent_laws={inherent_laws}
-      supplied_laws={supplied_laws}
+      zeroth_laws={withZero(zeroth_laws)}
+      ion_laws={withZero(ion_laws)}
+      inherent_laws={withZero(inherent_laws)}
+      supplied_laws={withZero(supplied_laws)}
       has_zeroth_laws={has_zeroth_laws}
       has_ion_laws={has_ion_laws}
       has_inherent_laws={has_inherent_laws}
@@ -138,7 +143,16 @@ export const ModifyRobot = (props) => {
       <LawManagerLawSets
         isAdmin
         isMalf={isMalf}
-        law_sets={law_sets}
+        law_sets={(law_sets ?? []).map((set) => ({
+          ...set,
+          laws: {
+            ...set.laws,
+            zeroth_laws: withZero(set.laws.zeroth_laws),
+            ion_laws: withZero(set.laws.ion_laws),
+            inherent_laws: withZero(set.laws.inherent_laws),
+            supplied_laws: withZero(set.laws.supplied_laws),
+          },
+        }))}
         ion_law_nr={ion_law_nr}
         searchLawName={searchLawName}
         onSearchLawName={setSearchLawName}
@@ -147,7 +161,7 @@ export const ModifyRobot = (props) => {
   );
 
   return (
-    <Window width={target?.module ? 900 : 400} height={700} theme={theme}>
+    <Window width={target?.module ? 900 : 400} height={700} theme={theme ?? undefined}>
       <Window.Content>
         <Stack fill vertical>
           <Stack.Item>

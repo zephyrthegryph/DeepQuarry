@@ -26,6 +26,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
 	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(theme = nullable(schema_text()), rawfreq = num(), listening = bool(), broadcasting = bool(), subspace = bool(), subspaceSwitchable = bool(), loudspeaker = bool(), mic_cut = bool(), spk_cut = bool(), chan_list = nullable(list_of(row(chan = schema_text(), display_name = schema_text(), freq = num(), secure_channel = nullable(bool()), sec_channel_listen = nullable(bool())))), useSyndMode = bool(), minFrequency = num(), maxFrequency = num())
 	without("ui_open")
 	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key_holds))), then(PROC_REF(interaction_item)))
 

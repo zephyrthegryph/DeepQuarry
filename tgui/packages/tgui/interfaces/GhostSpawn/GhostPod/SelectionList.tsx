@@ -3,6 +3,10 @@ import { useBackend } from 'tgui/backend';
 import { Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
 
+import type {
+  GhostSpawnActions,
+  GhostSpawnData,
+} from '../../generated/GhostSpawn';
 import type { PodData } from '../types';
 
 export const SelectionList = (props: {
@@ -12,7 +16,7 @@ export const SelectionList = (props: {
   selectedPod: number | null;
   onSelectedPod: React.Dispatch<React.SetStateAction<number | null>>;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<GhostSpawnData, GhostSpawnActions>();
   const { allPods, userZ, selectedType, selectedPod, onSelectedPod } = props;
 
   const [searchText, setSearchText] = useState<string>('');

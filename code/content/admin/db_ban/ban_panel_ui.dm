@@ -29,7 +29,8 @@
 CAPABILITIES(/datum/tgui_ban_panel)
 	ref_one(nameof(admin_datum))
 	interface("BanPanel", title = "Ban Panel", rights = R_BAN)
-	op("confirmBan", ui_act("confirmBan", arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("duration", num()), arg("ip", schema_text(4096)), arg("job", schema_text(4096)), arg("reason", schema_text(4096)), arg("type", num())), then(PROC_REF(ui_act_confirmban)))
+	ui_shape(player_ckey = nullable(schema_text()), admin_ckey = nullable(schema_text()), player_ip = nullable(schema_text()), player_cid = nullable(schema_text()), bantype = nullable(int()), possible_jobs = list_of(schema_text()), database_records = nullable(list_of(row(data_list = list_of(schema_text()), auto = bool()))), min_search = bool())
+	op("confirmBan", ui_act("confirmBan", arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("duration", num()), arg("ip", schema_text(4096)), arg("job", schema_text(4096)), arg("reason", schema_text(4096)), arg("type", num())), needs(req(PROC_REF(req_ban_parameters))), then(PROC_REF(ui_act_confirmban)))
 	op("searchBans", ui_act("searchBans", arg("aCkey", schema_text(4096)), arg("banType", num()), arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("ip", schema_text(4096)), arg("minMatch", num())), then(PROC_REF(ui_act_searchbans)))
 	op("banEdit", ui_act("banEdit", arg("action", schema_text(4096)), arg("banid", num())), then(PROC_REF(ui_act_banedit)))
 	ref_one(nameof(holder))
@@ -59,6 +60,25 @@ CAPABILITIES(/datum/tgui_ban_panel)
 						)
 	return data
 
+/// A ban needs the fields its type requires. Null allows.
+/datum/tgui_ban_panel/proc/req_ban_parameters(datum/act/op/A)
+	var/banckey = ckey(A.args["ckey"])
+	var/banreason = A.args["reason"]
+	switch(A.args["type"])
+		if(BANTYPE_PERMA)
+			if(!banckey || !banreason)
+				return "Not enough parameters (Requires ckey and reason)"
+		if(BANTYPE_TEMP)
+			if(!banckey || !banreason || !A.args["duration"])
+				return "Not enough parameters (Requires ckey, reason and duration)"
+		if(BANTYPE_JOB_PERMA)
+			if(!banckey || !banreason || !A.args["job"])
+				return "Not enough parameters (Requires ckey, reason and job)"
+		if(BANTYPE_JOB_TEMP)
+			if(!banckey || !banreason || !A.args["job"] || !A.args["duration"])
+				return "Not enough parameters (Requires ckey, reason and job)"
+	return null
+
 /datum/tgui_ban_panel/proc/ui_act_confirmban(datum/act/op/A, cid, ckey_arg, duration, ip, job, reason, type)
 	var/mob/user = A.actor
 
@@ -72,25 +92,12 @@ CAPABILITIES(/datum/tgui_ban_panel)
 
 	switch(bantype)
 		if(BANTYPE_PERMA)
-			if(!banckey || !banreason)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
-				return
 			banduration = null
 			banjob = null
 		if(BANTYPE_TEMP)
-			if(!banckey || !banreason || !banduration)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
-				return
 			banjob = null
 		if(BANTYPE_JOB_PERMA)
-			if(!banckey || !banreason || !banjob)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
-				return
 			banduration = null
-		if(BANTYPE_JOB_TEMP)
-			if(!banckey || !banreason || !banjob || !banduration)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
-				return
 
 	var/mob/playermob
 

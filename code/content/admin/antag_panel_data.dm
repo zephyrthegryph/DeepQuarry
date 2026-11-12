@@ -15,7 +15,11 @@
 		var/mob/M = player.current
 		if(!M)
 			members += list(list(
+				"name" = null,
 				"key" = player.key,
+				"ref" = null,
+				"logged_out" = FALSE,
+				"dead" = FALSE,
 				"mob_missing" = TRUE,
 			))
 			continue
@@ -25,6 +29,7 @@
 			"ref" = handle_of(M),
 			"logged_out" = !M.client,
 			"dead" = M.stat == DEAD,
+			"mob_missing" = FALSE,
 		))
 
 	var/list/disks
@@ -40,9 +45,8 @@
 		"role_text" = role_text,
 		"role_text_plural" = role_text_plural,
 		"members" = members,
+		"disks" = disks,
 	)
-	if(disks)
-		.["disks"] = disks
 
 
 // Structured-data counterpart to /datum/antagonist/get_panel_entry.

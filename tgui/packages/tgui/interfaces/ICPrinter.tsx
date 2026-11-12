@@ -9,29 +9,13 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { ICPrinterActions } from './generated/ICPrinter';
+import type { ICPrinterActions, ICPrinterData } from './generated/ICPrinter';
 
-type Data = {
-  categories: category[];
-  metal: number;
-  max_metal: number;
-  metal_per_sheet: number;
-  debug: BooleanLike;
-  upgraded: BooleanLike;
-  can_clone: BooleanLike;
-  assembly_to_clone: string;
-};
+type Data = ICPrinterData;
 
-type category = { name: string; items: item[] };
+type category = Data['categories'][number];
 
-type item = {
-  name: string;
-  desc: string;
-  can_build: BooleanLike;
-  cost: number;
-  path: string;
-};
+type item = category['items'][number];
 
 export const ICPrinter = (props) => {
   const { data, act } = useBackend<Data, ICPrinterActions>();

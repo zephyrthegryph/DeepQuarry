@@ -1,9 +1,11 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Divider, Section, Stack } from 'tgui-core/components';
+import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
 
-import type { PageData } from '../types';
+import type { PublicLibraryWikiActions } from '../../generated/PublicLibraryWiki';
+import type { Data, PageData } from '../types';
 import { WikiSearchList } from '../WikiCommon/WikiSearchList';
 import { WikiCatalogPage } from './WikiSubPages/WIkiCatalogPage';
 import { WikiBotanyPage } from './WikiSubPages/WikiBotanyPage';
@@ -22,11 +24,11 @@ export const WikiSearchPage = (
     updateAds: boolean;
     searchmode: string;
     search: string[];
-    print: string;
+    print: BooleanLike | null;
     subCats: string[] | null;
   } & Required<PageData>,
 ) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, PublicLibraryWikiActions>();
   const [subCatSearchText, setSubCatSearchText] = useState('');
   const [subCatActiveEntry, setSubCatActiveEntry] = useState('');
   const [searchText, setSearchText] = useState('');

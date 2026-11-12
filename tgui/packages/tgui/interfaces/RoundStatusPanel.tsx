@@ -10,47 +10,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { RoundStatusPanelActions } from './generated/RoundStatusPanel';
+import type {
+  RoundStatusPanelActions,
+  RoundStatusPanelData,
+} from './generated/RoundStatusPanel';
 
-type ShuttleState = 'idle' | 'counting_down' | 'arriving' | 'warmup';
-
-type ShuttleData = {
-  state: ShuttleState;
-  time_left_seconds?: number;
-  time_left_display?: string;
-  can_recall?: BooleanLike;
-};
-
-type AntagMember = {
-  name?: string;
-  key: string;
-  ref?: number;
-  logged_out?: BooleanLike;
-  dead?: BooleanLike;
-  mob_missing?: BooleanLike;
-};
-
-type AntagDisk = {
-  name: string;
-  location: string;
-};
-
-type AntagBlock = {
-  role_text: string;
-  role_text_plural: string;
-  members: AntagMember[];
-  disks?: AntagDisk[];
-};
-
-type Data = {
-  mode_name: string;
-  round_duration: string;
-  delay_end: BooleanLike;
-  shuttle: ShuttleData;
-  antag_blocks: AntagBlock[];
-};
+type Data = RoundStatusPanelData;
+type ShuttleData = Data['shuttle'];
+type AntagMember = Data['antag_blocks'][number]['members'][number];
 
 const ShuttleControls = (props: {
   shuttle: ShuttleData;

@@ -3,17 +3,14 @@ import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Image, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { sanitizeText } from '../../sanitize';
-
-type Data = {
-  showing_archived: BooleanLike;
-  article: { title: string; cover: string; content: string } | null;
-  all_articles: { name: string; uid: number; archived: BooleanLike }[];
-};
+import type {
+  StarcasterChActions,
+  StarcasterChData,
+} from '../generated/StarcasterCh';
 
 export const StarcasterCh = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<StarcasterChData, StarcasterChActions>();
 
   const { article } = data;
 
@@ -31,7 +28,7 @@ export const StarcasterCh = (props) => {
 };
 
 const SelectedArticle = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<StarcasterChData, StarcasterChActions>();
 
   const { article } = data;
 
@@ -59,7 +56,7 @@ const SelectedArticle = (props) => {
 };
 
 const ViewArticles = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<StarcasterChData, StarcasterChActions>();
 
   const { showing_archived, all_articles = [] } = data;
 

@@ -95,6 +95,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 CAPABILITIES(/obj/item/radio/electropack)
 	configure(item_worn(slots = SLOT_BACK))
 	interface("Electropack")
+	ui_shape(on = bool(), freq_display = schema_text(), code = int())
 	without("ui_open")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
@@ -107,7 +108,6 @@ CAPABILITIES(/obj/item/radio/electropack)
 /obj/item/radio/electropack/ui_data(datum/act/eval/A)
 	return list(
 		"on" = on,
-		"frequency" = frequency,
 		"freq_display" = format_frequency(frequency),
 		"code" = code,
 	)

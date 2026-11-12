@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
+import type { BodyScannerActions } from '../generated/BodyScanner';
 import { BAND_INFO, BAND_RANK, stats } from './constants';
-import type { DamageBand, occupant } from './types';
+import type { DamageBand, Data, occupant } from './types';
 
 export const BodyScannerMainOccupant = (props: { occupant: occupant }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, BodyScannerActions>();
   const { occupant } = props;
   // Use the worst of (overall health band, worst scanner finding) so a
   // patient with severe brain bleeding still reads as "Critical" even if

@@ -169,6 +169,7 @@
 CAPABILITIES(/obj/item/toy/plushie/customizable)
 	op("clear", ui_act(), then(PROC_REF(ui_act_clear)))
 	interface("PlushieEditor", state = nameof(GLOB.tgui_conscious_state))
+	ui_shape(base_color = schema_text(), name = schema_text(), icon = schema_text(), preview = nullable(schema_text()), possible_overlays = list_of(row(name = schema_text(), icon_state = schema_text())), overlays = list_of(row(icon_state = schema_text(), name = schema_text(), color = schema_text(), alpha = num())))
 	without("ui_open")
 	op("add_overlay", ui_act("add_overlay", arg("new_overlay", schema_text(4096))), then(PROC_REF(ui_act_add_overlay)))
 	op("remove_overlay", ui_act("remove_overlay", arg("removed_overlay", schema_text(4096))), then(PROC_REF(ui_act_remove_overlay)))

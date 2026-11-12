@@ -7,16 +7,15 @@ import {
   Slider,
   Stack,
 } from 'tgui-core/components';
-import type { VolumePanelActions } from './generated/VolumePanel';
-
-type Data = {
-  volume_channels: { key; val: number }[];
-};
+import type {
+  VolumePanelActions,
+  VolumePanelData,
+} from './generated/VolumePanel';
 
 export const VolumePanel = (props) => {
-  const { act, data } = useBackend<Data, VolumePanelActions>();
+  const { act, data } = useBackend<VolumePanelData, VolumePanelActions>();
 
-  const { volume_channels = [] } = data;
+  const { volume_channels = {} } = data;
 
   return (
     <Window width={550} height={600}>

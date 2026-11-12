@@ -7,23 +7,10 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { AICardActions } from './generated/AICard';
-
-type Data = {
-  name: string;
-  has_ai: BooleanLike;
-  integrity: number;
-  backup_capacitor: number;
-  flushing: BooleanLike;
-  has_laws: BooleanLike;
-  laws: string[];
-  wireless: BooleanLike;
-  radio: BooleanLike;
-};
+import type { AICardActions, AICardData } from './generated/AICard';
 
 export const AICard = (props) => {
-  const { act, data } = useBackend<Data, AICardActions>();
+  const { act, data } = useBackend<AICardData, AICardActions>();
 
   const {
     name,
@@ -89,7 +76,8 @@ export const AICard = (props) => {
               </LabeledList>
             </Box>
             <Box color="red">
-              <h2>{flushing === 1 ? 'Wipe of AI in progress...' : ''}</h2>
+              <h2>{flushing ? 'Wipe of AI in progress...' : ''}
+</h2>
             </Box>
           </Section>
 

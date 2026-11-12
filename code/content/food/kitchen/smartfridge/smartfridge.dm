@@ -41,6 +41,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge, starts = /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
 	interface("SmartVend")
+	ui_shape(name = schema_text(), secure = bool(), locked = int(), contents = list_of(row(name = schema_text(), index = int(), amount = int())))
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	// Release takes `amount` out of record `index`; with no amount it asks how many (the old act_ask re-run).
 	op("release", ui_act("Release", arg("amount", num(default = 0)), arg("index", num())),

@@ -11,10 +11,11 @@ import { KEY } from 'tgui-core/keys';
 import { classes } from 'tgui-core/react';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameTooltip, MAX_HISTORY, presetDice } from './constants';
+import type { RpgDiceActions } from '../generated/RpgDice';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, RpgDiceActions>();
   const [diceSize, setDiceSize] = useState(6);
   const [diceCount, setDiceCount] = useState(1);
   const [modifier, setModifier] = useState(0);

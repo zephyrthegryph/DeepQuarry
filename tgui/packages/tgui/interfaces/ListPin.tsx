@@ -4,21 +4,10 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
-import type { ListPinActions } from './generated/ListPin';
-
-type Entry = {
-  pos: number;
-  display: string;
-};
-
-type Data = {
-  name: string;
-  length: number;
-  entries: Entry[];
-};
+import type { ListPinActions, ListPinData } from './generated/ListPin';
 
 export const ListPin = () => {
-  const { data, act } = useBackend<Data, ListPinActions>();
+  const { data, act } = useBackend<ListPinData, ListPinActions>();
   const { name, length, entries = [] } = data;
   return (
     <Window width={520} height={520} title={`List Pin: ${name}`}>

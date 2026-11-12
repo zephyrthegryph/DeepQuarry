@@ -13,40 +13,13 @@ import {
   Tabs,
   TextArea,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { MobSpawnerActions } from './generated/MobSpawner';
-
-type Data = {
-  path: string;
-
-  path_name: string;
-  desc: string;
-  flavor_text: string;
-
-  use_custom_ai: BooleanLike;
-  ai_type: string;
-  faction: string;
-  intent: string;
-
-  max_health: number;
-  health: number;
-  melee_damage_lower: number;
-  melee_damage_upper: number;
-
-  default_speak_emotes: string[];
-
-  loc_lock: BooleanLike;
-  loc_x: number;
-  loc_y: number;
-  loc_z: number;
-
-  initial_x: number;
-  initial_y: number;
-  initial_z: number;
-};
+import type {
+  MobSpawnerActions,
+  MobSpawnerData,
+} from './generated/MobSpawner';
 
 export const MobSpawner = (props) => {
-  const { data } = useBackend<Data, MobSpawnerActions>();
+  const { data } = useBackend<MobSpawnerData, MobSpawnerActions>();
 
   const [tabIndex, setTabIndex] = useState<number>(0);
   const [radius, setRadius] = useState<number>(0);
@@ -157,7 +130,7 @@ const GeneralMobSettings = (props: {
   onSizeMultiplier: React.Dispatch<React.SetStateAction<number>>;
   onAmount: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const { act, data } = useBackend<Data, MobSpawnerActions>();
+  const { act, data } = useBackend<MobSpawnerData, MobSpawnerActions>();
   return (
     <>
       <Section title="General">
@@ -165,7 +138,7 @@ const GeneralMobSettings = (props: {
           <LabeledList.Item label="Mob Name">
             <Input
               fluid
-              value={data.path_name}
+              value={data.path_name ?? ''}
               onChange={(val: string) => props.onName(val)}
             />
           </LabeledList.Item>
@@ -293,7 +266,7 @@ const GeneralMobSettings = (props: {
                         step={1}
                         minValue={-Infinity}
                         maxValue={+Infinity}
-                        value={data.health}
+                        value={data.health ?? 0}
                         onChange={(val: number) => props.onHealth(val)}
                       />
                     </LabeledList.Item>
@@ -322,7 +295,7 @@ const GeneralMobSettings = (props: {
                         step={1}
                         minValue={-Infinity}
                         maxValue={+Infinity}
-                        value={data.melee_damage_upper}
+                        value={data.melee_damage_upper ?? 0}
                         onChange={(val: number) =>
                           props.onMeleeDamageUpper(val)
                         }
@@ -348,7 +321,7 @@ const GeneralMobSettings = (props: {
               fluid
               height={'18rem'}
               onBlur={(val: string) => props.onDesc(val)}
-              value={data.desc}
+              value={data.desc ?? ''}
             />
           </Stack.Item>
           <Stack.Item width="50%">
@@ -357,7 +330,7 @@ const GeneralMobSettings = (props: {
             <TextArea
               fluid
               height={'18rem'}
-              value={data.flavor_text}
+              value={data.flavor_text ?? ''}
               onBlur={(val: string) => props.onFlavor(val)}
             />
           </Stack.Item>
@@ -368,17 +341,17 @@ const GeneralMobSettings = (props: {
         onClick={() =>
           act('start_spawn', {
             amount: props.amount,
-            name: data.path_name,
-            desc: data.desc,
-            max_health: data.max_health,
-            health: data.health,
-            melee_damage_lower: data.melee_damage_lower,
-            melee_damage_upper: data.melee_damage_upper,
-            flavor_text: data.flavor_text,
+            name: data.path_name ?? '',
+            desc: data.desc ?? '',
+            max_health: data.max_health ?? 0,
+            health: data.health ?? 0,
+            melee_damage_lower: data.melee_damage_lower ?? 0,
+            melee_damage_upper: data.melee_damage_upper ?? 0,
+            flavor_text: data.flavor_text ?? '',
             size_multiplier: props.sizeMultiplier * 0.01,
-            x: data.loc_lock ? data.loc_x : props.x,
-            y: data.loc_lock ? data.loc_y : props.y,
-            z: data.loc_lock ? data.loc_z : props.z,
+            x: data.loc_lock ? (data.loc_x ?? props.x) : props.x,
+            y: data.loc_lock ? (data.loc_y ?? props.y) : props.y,
+            z: data.loc_lock ? (data.loc_z ?? props.z) : props.z,
           })
         }
       >

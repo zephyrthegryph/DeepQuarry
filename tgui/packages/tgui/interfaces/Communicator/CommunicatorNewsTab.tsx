@@ -1,5 +1,5 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Image, Section } from 'tgui-core/components';
+import { Box, Button, Section } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
 import type { CommunicatorActions } from '../generated/Communicator';
 import type { Data } from './types';
@@ -33,12 +33,12 @@ export const CommunicatorNewsTab = (props) => {
             }
           >
             {target_feed.messages.map((message) => (
-              <Section key={message.ref}>
+              <Section key={message.index}>
                 - {decodeHtmlEntities(message.body)}
-                {!!message.img && (
+                {!!message.has_image && (
                   <Box>
-                    <Image src={`data:image/png;base64,${message.img}`} />
-                    {decodeHtmlEntities(message.caption) || null}
+                    [image omitted]
+                    {decodeHtmlEntities(message.caption ?? '') || null}
                   </Box>
                 )}
                 <Box color="grey">
@@ -69,7 +69,7 @@ export const CommunicatorNewsTab = (props) => {
                       </Button>
                     </h5>
                     - {decodeHtmlEntities(news.body)}
-                    {!!news.img && (
+                    {!!news.has_image && (
                       <Box>
                         [image omitted, view story for more details]
                         {news.caption || null}

@@ -8,19 +8,9 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { AiRestorerActions } from './generated/AiRestorer';
+import type { AiRestorerActions, AiRestorerData } from './generated/AiRestorer';
 
-type Data = {
-  AI_present: boolean;
-  error: string | null;
-  name: string;
-  laws: string[];
-  isDead: boolean;
-  restoring: BooleanLike;
-  health: number;
-  ejectable: boolean;
-};
+type Data = AiRestorerData;
 
 export const AiRestorer = () => {
   return (
@@ -34,27 +24,13 @@ export const AiRestorer = () => {
 
 export const AiRestorerContent = (props) => {
   const { act, data } = useBackend<Data, AiRestorerActions>();
-  const {
-    AI_present,
-    error,
-    name,
-    laws,
-    isDead,
-    restoring,
-    health,
-    ejectable,
-  } = data;
+  const { AI_present, error, name, laws, isDead, restoring, health } = data;
   return (
     <>
       {error && <NoticeBox textAlign="center">{error}</NoticeBox>}
-      {!!ejectable && (
-        <Box bold textAlign="center">
-          {AI_present ? name : '----------'}
-        </Box>
-      )}
       {!!AI_present && (
         <Section
-          title={ejectable ? 'System Status' : name}
+          title={name}
           buttons={
             <Box inline bold color={isDead ? 'bad' : 'good'}>
               {isDead ? 'Nonfunctional' : 'Functional'}

@@ -130,9 +130,6 @@
 
 /datum/preferences/proc/ui_act_copy(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!isnewplayer(user))
-		to_chat(user, span_userdanger("You can't change your character slot while being in round."))
-		return FALSE
 	if(!IsGuestKey(user.key))
 		open_copy_dialog(user)
 	return TRUE

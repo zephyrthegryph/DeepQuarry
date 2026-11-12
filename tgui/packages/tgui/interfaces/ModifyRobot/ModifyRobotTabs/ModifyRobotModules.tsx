@@ -108,7 +108,7 @@ export const ModifyRobotModules = (props: {
             </Button.Confirm>
             <Divider />
             <SelectionField
-              previewImage={target.sprite}
+              previewImage={target.sprite ?? undefined}
               previewImageSize={target.sprite_size}
               searchText={searchModuleText}
               onSearchText={setSearchModulText}

@@ -1,76 +1,14 @@
 import type { BooleanLike } from 'tgui-core/react';
+import type { ModifyRobotData } from '../generated/ModifyRobot';
 
-export type Data = {
-  source: Source;
-  target: Target | null;
-  all_robots: DropdownEntry[];
-  model_options: string[] | null;
-  cell: InstalledCell;
-  cell_options: Record<string, Cell>;
-  camera_options: Record<string, Comp>;
-  radio_options: Record<string, Comp>;
-  actuator_options: Record<string, Comp>;
-  diagnosis_options: Record<string, Comp>;
-  comms_options: Record<string, Comp>;
-  armour_options: Record<string, Comp>;
-  current_gear: Record<string, string>;
-  id_icon: string;
-  access_options?: Access[];
-  ion_law_nr: string;
-  ion_law: string;
-  zeroth_law: string;
-  inherent_law: string;
-  supplied_law: string;
-  supplied_law_position: number;
-  zeroth_laws: law[];
-  ion_laws: law[];
-  inherent_laws: law[];
-  supplied_laws: law[];
-  has_zeroth_laws: number;
-  has_ion_laws: number;
-  has_inherent_laws: number;
-  has_supplied_laws: number;
-  isAI: BooleanLike;
-  isMalf: BooleanLike;
-  isSlaved: string | null;
-  channel: string;
-  channels: { channel: string }[];
-  law_sets: law_pack[];
-  active_ais: DropdownEntry[];
-  selected_ai: string | null;
-  theme: string;
-};
+export type Data = ModifyRobotData;
 
 export type DropdownEntry = {
   displayText: string;
-  value: string;
+  value: string | number;
 };
 
-export type Target = {
-  name: string;
-  ckey: string;
-  module: string;
-  emagged: BooleanLike;
-  active: BooleanLike;
-  crisis_override: BooleanLike;
-  active_restrictions?: string[];
-  possible_restrictions: string[];
-  sprite?: string;
-  sprite_size?: string | null;
-  modules: Module[];
-  whitelisted_upgrades: Upgrade[];
-  blacklisted_upgrades: Upgrade[];
-  utility_upgrades: Upgrade[];
-  basic_upgrades: Upgrade[];
-  advanced_upgrades: Upgrade[];
-  restricted_upgrades: Upgrade[];
-  radio_channels: string[];
-  availalbe_channels: string[];
-  pka?: PKA;
-  multibelt?: Multibelt[];
-  components: Component[];
-  active_access: Access[];
-};
+export type Target = NonNullable<Data['target']>;
 
 export type Upgrade = {
   name: string;
@@ -78,12 +16,7 @@ export type Upgrade = {
   installed?: number;
 };
 
-export type Source = {
-  model: string;
-  sprite?: string;
-  sprite_size?: string | null;
-  modules: Module[];
-} | null;
+export type Source = Data['source'];
 
 export type Module = { name: string; ref: number; icon: string; desc: string };
 
@@ -151,28 +84,4 @@ export type Lookup = {
   path: string;
   selected?: string;
   active?: string;
-};
-
-type law_pack = {
-  name: string;
-  header: string;
-  ref: number;
-  laws: {
-    zeroth_laws: law[];
-    has_zeroth_laws: number;
-    ion_laws: law[];
-    has_ion_laws: number;
-    inherent_laws: law[];
-    has_inherent_laws: number;
-    supplied_laws: law[];
-    has_supplied_laws: number;
-  };
-};
-
-type law = {
-  law: string;
-  index: number;
-  state: number;
-  ref: number;
-  zero: boolean; // Local UI var
 };

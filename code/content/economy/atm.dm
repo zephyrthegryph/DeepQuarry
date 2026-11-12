@@ -145,7 +145,6 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 /// The window's data.
 /obj/machinery/atm/ui_data(datum/act/eval/A)
 	. = list()
-	.["locked_down"] = ticks_left_locked_down
 	var/list/part = ui_data_part_atm(A)
 	for(var/key in part)
 		.[key] = part[key]
@@ -154,7 +153,8 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 /obj/machinery/atm/proc/ui_data_part_atm(datum/act/eval/A)
 	var/list/data = list()
 
-	data["emagged"] = emagged()
+	data["held_card"] = null
+	data["authenticated_account"] = null
 	if(emagged() > 0)
 		return data
 
@@ -162,11 +162,8 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 	if(ticks_left_locked_down > 0)
 		return data
 
-	data["authenticated_account"] = null
-	data["suspended"] = FALSE
 	if(authenticated_account())
 		if(authenticated_account().suspended)
-			data["suspended"] = TRUE
 			return data
 
 		var/list/transactions = list()
@@ -199,6 +196,7 @@ CAPABILITIES(/obj/machinery/atm)
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	op("logout", ui_act(), then(PROC_REF(ui_act_logout)))
 	interface("AutomatedTellerMachine")
+	ui_shape(machine_id = schema_text(), held_card = nullable(schema_text()), authenticated_account = nullable(row(owner_name = schema_text(), money = num(), security_level = int(0, 2), transactions = list_of(row(date = schema_text(), time = schema_text(), target_name = schema_text(), purpose = schema_text(), amount = num(), source_terminal = schema_text())))))
 	op("balance_statement", ui_act("balance_statement"), then(PROC_REF(ui_act_balance_statement)))
 	op("print_transaction", ui_act("print_transaction"), then(PROC_REF(ui_act_print_transaction)))
 	// lowering the level asks for the PIN again unless the account's own card is in the machine
@@ -206,9 +204,9 @@ CAPABILITIES(/obj/machinery/atm)
 		asks(/datum/prompt/number, fields = list("question" = "Re-enter your account PIN to lower the security level", "title" = "Confirm PIN", "timeout" = 0), step = "k325", when = PROC_REF(lowering_needs_pin)),
 		then(PROC_REF(ui_act_change_security_level)))
 	op("attempt_auth", ui_act("attempt_auth", arg("account_num", num()), arg("account_pin", num())), then(PROC_REF(ui_act_attempt_auth)))
-	op("transfer", ui_act("transfer", arg("funds_amount", num()), arg("purpose"), arg("target_acc_number", num())), then(PROC_REF(ui_act_transfer)))
-	op("e_withdrawal", ui_act("e_withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_e_withdrawal)))
-	op("withdrawal", ui_act("withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_withdrawal)))
+	op("transfer", ui_act("transfer", arg("funds_amount", num()), arg("purpose"), arg("target_acc_number", num())), needs(req(PROC_REF(req_atm_amount_valid)), req(PROC_REF(req_atm_has_funds))), then(PROC_REF(ui_act_transfer)))
+	op("e_withdrawal", ui_act("e_withdrawal", arg("funds_amount", num())), needs(req(PROC_REF(req_atm_amount_valid)), req(PROC_REF(req_atm_has_funds))), then(PROC_REF(ui_act_e_withdrawal)))
+	op("withdrawal", ui_act("withdrawal", arg("funds_amount", num())), needs(req(PROC_REF(req_atm_amount_valid)), req(PROC_REF(req_atm_has_funds))), then(PROC_REF(ui_act_withdrawal)))
 	display_disconnect_op()
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("atm_insert_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Insert card"), then(PROC_REF(atm_insert_card)))
@@ -430,19 +428,13 @@ CAPABILITIES(/obj/machinery/atm)
 		return
 	var/transfer_amount = funds_amount
 	transfer_amount = round(transfer_amount, 0.01)
-	if(transfer_amount <= 0)
-		tgui_alert_async(user, "That is not a valid amount.")
-	else if(transfer_amount <= authenticated_account().money)
-		var/target_account_number = target_acc_number
-		var/transfer_purpose = purpose
-		var/datum/money_account/target_account = get_account(target_account_number)
-		if(transfer_account_funds(authenticated_account(), target_account, transfer_amount, transfer_purpose, machine_id))
-			to_chat(user, "[icon2html(src, user.client)]" + span_info("Funds transfer successful."))
-		else
-			to_chat(user, "[icon2html(src, user.client)]" + span_warning("Funds transfer failed."))
-
+	var/target_account_number = target_acc_number
+	var/transfer_purpose = purpose
+	var/datum/money_account/target_account = get_account(target_account_number)
+	if(transfer_account_funds(authenticated_account(), target_account, transfer_amount, transfer_purpose, machine_id))
+		to_chat(user, "[icon2html(src, user.client)]" + span_info("Funds transfer successful."))
 	else
-		to_chat(user, "[icon2html(src, user.client)]" + span_warning("You don't have enough funds to do that!"))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Funds transfer failed."))
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
@@ -453,9 +445,6 @@ CAPABILITIES(/obj/machinery/atm)
 	var/mob/user = A.actor
 	var/amount = max(funds_amount,0)
 	amount = round(amount, 0.01)
-	if(amount <= 0)
-		tgui_alert_async(user, "That is not a valid amount.")
-		return
 
 	if(!authenticated_account())
 		return
@@ -475,9 +464,6 @@ CAPABILITIES(/obj/machinery/atm)
 	var/mob/user = A.actor
 	var/amount = max(funds_amount,0)
 	amount = round(amount, 0.01)
-	if(amount <= 0)
-		tgui_alert_async(user, "That is not a valid amount.")
-		return
 
 	if(!authenticated_account())
 		return
@@ -492,6 +478,19 @@ CAPABILITIES(/obj/machinery/atm)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
 			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
+
+/// Requirement: the amount asked for is a positive sum.
+/obj/machinery/atm/proc/req_atm_amount_valid(datum/act/op/A)
+	var/amount = round(max(A.args["funds_amount"], 0), 0.01)
+	return (amount > 0) ? null : "That is not a valid amount."
+
+/// Requirement: the authenticated account holds the amount asked for (no account is left to the handler's silent return).
+/obj/machinery/atm/proc/req_atm_has_funds(datum/act/op/A)
+	var/datum/money_account/account = authenticated_account()
+	if(!account)
+		return null
+	var/amount = round(max(A.args["funds_amount"], 0), 0.01)
+	return (amount <= account.money) ? null : "You don't have enough funds to do that!"
 
 /// Requirement: silicons are firewalled out.
 /obj/machinery/atm/proc/not_silicon_user(datum/act/op/A)

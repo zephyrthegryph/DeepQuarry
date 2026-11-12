@@ -1,4 +1,5 @@
 import type { sendAct } from 'tgui/events/act';
+import type { PreferencesMenuData as GeneratedPreferencesMenuData } from '../generated/PreferencesMenu';
 
 export enum GamePreferencesSelectedPage {
   Settings,
@@ -19,17 +20,7 @@ export enum Window {
   Keybindings = 2,
 }
 
-export type PreferencesMenuData = {
-  character_profiles: (string | null)[];
-
-  character_preferences: {
-    game_preferences: Record<string, unknown>;
-  };
-
-  active_slot: number;
-
-  window: Window;
-};
+export type PreferencesMenuData = GeneratedPreferencesMenuData;
 
 export type ServerData = {
   // No shared constant payload; the auto-renderer gets its constants per-editor

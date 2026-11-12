@@ -3,14 +3,20 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Divider, Input, Section, Table } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-import type { AccessViewerActions } from '../generated/AccessViewer';
+import type {
+  AccessViewerActions,
+  AccessViewerData,
+} from '../generated/AccessViewer';
 import { AccessTypeDisplay } from './AccessTypeDisplay';
 import { region_ids } from './constants';
-import type { Access, Data } from './types';
+import type { Access } from './types';
 
 export const AccessViewer = (props) => {
-  const { act, data } = useBackend<Data, AccessViewerActions>();
-  const { access_list = [], name, coords, req_access, req_one_access } = data;
+  const { act, data } = useBackend<
+    AccessViewerData,
+    AccessViewerActions
+  >();
+  const { name, coords, req_access, req_one_access } = data;
   const [searchText, setSearchText] = useState('');
 
   const access_regions: Record<number, Access[]> = {
@@ -28,9 +34,12 @@ export const AccessViewer = (props) => {
     `${entry.id}: ${entry.name}`.toLowerCase(),
   );
 
-  access_list.forEach((entry) => {
-    entry.has_req = req_access?.includes(entry.id);
-    entry.has_req_one = req_one_access?.includes(entry.id);
+  (data.access_list ?? []).forEach((base) => {
+    const entry: Access = {
+      ...base,
+      has_req: !!req_access?.includes(base.id),
+      has_req_one: !!req_one_access?.includes(base.id),
+    };
 
     if (search(entry)) {
       access_regions[entry.region].push(entry);

@@ -3,17 +3,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { SpecopsShuttleActions } from './generated/SpecopsShuttle';
-
-type Data = {
-  status_message?: string;
-  state?: 'moving' | 'at_station' | 'at_dock';
-  timeleft?: number;
-  destination?: string;
-};
+import type {
+  SpecopsShuttleActions,
+  SpecopsShuttleData,
+} from './generated/SpecopsShuttle';
 
 export const SpecopsShuttle = () => {
-  const { data, act } = useBackend<Data, SpecopsShuttleActions>();
+  const { data, act } = useBackend<SpecopsShuttleData, SpecopsShuttleActions>();
   const { status_message, state, timeleft, destination } = data;
   return (
     <Window width={460} height={300} title="Special Operations Shuttle">

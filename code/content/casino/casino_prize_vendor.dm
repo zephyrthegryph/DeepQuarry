@@ -291,6 +291,7 @@ CAPABILITIES(/obj/machinery/casino_prize_dispenser)
 	setup(PROC_REF(power_change)) // the dispenser shows its powered or unpowered face from the start, map-loaded too
 	configure(uses_power(idle = 10))
 	interface("CasinoPrizeDispenser")
+	ui_shape(items = map_of(schema_text(), map_of(schema_text(), row(name = schema_text(), price = num(), restriction = nullable(schema_text())))))
 	without("ui_open")
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), needs(req_operable(), req_capable()), then(PROC_REF(ui_act_purchase)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))

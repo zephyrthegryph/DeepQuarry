@@ -17,6 +17,7 @@
 
 CAPABILITIES(/datum/eventkit/mob_spawner)
 	interface("MobSpawner", title = "EventKit - Mob Spawner", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	ui_shape(initial_x = int(), initial_y = int(), initial_z = int(), loc_lock = bool(), use_custom_ai = bool(), ai_type = schema_text(), faction = schema_text(), intent = schema_text(), loc_x = nullable(int()), loc_y = nullable(int()), loc_z = nullable(int()), path = nullable(schema_path()), path_name = nullable(schema_text()), desc = nullable(schema_text()), flavor_text = nullable(schema_text()), max_health = nullable(num()), health = nullable(num()), melee_damage_lower = nullable(num()), melee_damage_upper = nullable(num()))
 	op("select_path", ui_act("select_path"), asks(/datum/prompt/choice/mob_spawner_setting/path, fields = list("choices" = computed(PROC_REF(mob_paths))), step = "value"), then(PROC_REF(ui_act_select_path)))
 	op("toggle_custom_ai", ui_act("toggle_custom_ai"), then(PROC_REF(ui_act_toggle_custom_ai)))
 	op("set_faction", ui_act("set_faction"), asks(/datum/prompt/text/mob_spawner_faction, fields = list("default" = computed(PROC_REF(faction_default))), step = "value"), then(PROC_REF(ui_act_set_faction)))

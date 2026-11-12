@@ -2,8 +2,9 @@ CAPABILITIES(/datum/whitelist_editor)
 	op("reload_alienwhitelist", ui_act("reload_alienwhitelist"), then(PROC_REF(ui_act_reload_alienwhitelist)))
 	op("reload_jobwhitelist", ui_act("reload_jobwhitelist"), then(PROC_REF(ui_act_reload_jobwhitelist)))
 	interface("WhitelistEdit", rights = R_ADMIN)
-	op("add_alienwhitelist", ui_act("add_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), then(PROC_REF(ui_act_add_alienwhitelist)))
-	op("remove_alienwhitelist", ui_act("remove_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), then(PROC_REF(ui_act_remove_alienwhitelist)))
+	ui_shape(alienwhitelist = map_of(schema_text(), nullable(list_of(schema_text()))), languagewhitelist = map_of(schema_text(), nullable(list_of(schema_text()))), robotwhitelist = map_of(schema_text(), nullable(list_of(schema_text()))), jobwhitelist = map_of(schema_text(), nullable(list_of(schema_text()))), species_with_whitelist = list_of(schema_text()), language_with_whitelist = list_of(schema_text()), robot_with_whitelist = list_of(schema_text()), jobs_with_whitelist = list_of(schema_text()))
+	op("add_alienwhitelist", ui_act("add_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), needs(req(PROC_REF(req_whitelist_request)), req(PROC_REF(req_whitelist_role))), then(PROC_REF(ui_act_add_alienwhitelist)))
+	op("remove_alienwhitelist", ui_act("remove_alienwhitelist", arg("ckey", schema_text(4096)), arg("role", schema_text(4096)), arg("type", schema_text(4096))), needs(req(PROC_REF(req_whitelist_request))), then(PROC_REF(ui_act_remove_alienwhitelist)))
 
 #define WHITELISTFILE "data/whitelist.txt"
 #define VALID_KINDS list("job", "species", "language", "robot")
@@ -53,51 +54,50 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 
 	return data
 
-/datum/whitelist_editor/proc/ui_act_add_alienwhitelist(datum/act/op/A, ckey_arg, role_arg, type)
-	var/mob/user = A.actor
-	if (!CONFIG_GET(flag/sql_enabled))
-		to_chat(user, span_warning("This action is not supported while the database is disabled. Please edit [global.config.directory]/alienwhitelist.txt."))
-		return
-	var/ckey = ckey_arg
+/// Refusals shared by the add and remove ops: no database, a malformed ckey, an unknown kind. Null allows.
+/datum/whitelist_editor/proc/req_whitelist_request(datum/act/op/A)
+	if(!CONFIG_GET(flag/sql_enabled))
+		return "This action is not supported while the database is disabled. Please edit [global.config.directory]/alienwhitelist.txt."
+	var/ckey = A.args["ckey"]
 	if(ckey != ckey(ckey))
-		to_chat(user, span_warning("Error, invalid ckey. Did you enter the key?"))
-		return FALSE
-	var/kind = type
-	if(!(kind in VALID_KINDS))
-		to_chat(user, span_warning("Error, invalid type entered."))
-		return FALSE
-	var/role = role_arg
-	switch(kind)
+		return "Error, invalid ckey. Did you enter the key?"
+	if(!(A.args["type"] in VALID_KINDS))
+		return "Error, invalid type entered."
+	return null
+
+/// The role named must exist and be a whitelisted one of its kind. Null allows.
+/datum/whitelist_editor/proc/req_whitelist_role(datum/act/op/A)
+	var/role = A.args["role"]
+	switch(A.args["type"])
 		if("job")
 			var/datum/job/job = SSjob.get_job(role)
 			if(!job)
-				to_chat(user, span_warning("Error, invalid job entered. Check spelling and capitalization."))
-				return FALSE
+				return "Error, invalid job entered. Check spelling and capitalization."
 			if(!job.whitelist_only)
-				to_chat(user, span_warning("Error, job \"[role]\" is not a whitelist job."))
-				return FALSE
+				return "Error, job \"[role]\" is not a whitelist job."
 		if("species")
 			if(!(role in GLOB.playable_species))
-				to_chat(user, span_warning("Error, invalid species entered. Check spelling and capitalization."))
-				return FALSE
+				return "Error, invalid species entered. Check spelling and capitalization."
 			if(!(role in GLOB.whitelisted_species))
-				to_chat(user, span_warning("Error, species \"[role]\" is not a whitelist species."))
-				return FALSE
+				return "Error, species \"[role]\" is not a whitelist species."
 		if("language")
 			var/datum/language/chosen_language = GLOB.all_languages[role]
 			if(!chosen_language)
-				to_chat(user, span_warning("Error, invalid language entered. Check spelling and capitalization."))
-				return FALSE
+				return "Error, invalid language entered. Check spelling and capitalization."
 			if(!(chosen_language.flags & WHITELISTED))
-				to_chat(user, span_warning("Error, language \"[role]\" is not a whitelist language."))
-				return FALSE
+				return "Error, language \"[role]\" is not a whitelist language."
 		if("robot")
 			if(!(role in GLOB.robot_modules))
-				to_chat(user, span_warning("Error, invalid robot module entered. Check spelling and capitalization."))
-				return FALSE
+				return "Error, invalid robot module entered. Check spelling and capitalization."
 			if(!(role in GLOB.whitelisted_module_types))
-				to_chat(user, span_warning("Error, robot module \"[role]\" is not a whitelist robot module."))
-				return FALSE
+				return "Error, robot module \"[role]\" is not a whitelist robot module."
+	return null
+
+/datum/whitelist_editor/proc/ui_act_add_alienwhitelist(datum/act/op/A, ckey_arg, role_arg, type)
+	var/mob/user = A.actor
+	var/ckey = ckey_arg
+	var/kind = type
+	var/role = role_arg
 	// io_job: the result is reported to the admin when it arrives.
 	io_job(null, /datum/io_backend/sql,
 		"INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)",
@@ -107,17 +107,8 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 
 /datum/whitelist_editor/proc/ui_act_remove_alienwhitelist(datum/act/op/A, ckey_arg, role_arg, type)
 	var/mob/user = A.actor
-	if (!CONFIG_GET(flag/sql_enabled))
-		to_chat(user, "This action is not supported while the database is disabled. Please edit [global.config.directory]/alienwhitelist.txt.")
-		return FALSE
 	var/ckey = ckey_arg
-	if(ckey != ckey(ckey))
-		to_chat(user, span_warning("Error, invalid ckey. Did you enter the key?"))
-		return FALSE
 	var/kind = type
-	if(!(kind in VALID_KINDS))
-		to_chat(user, span_warning("Error, invalid type entered."))
-		return FALSE
 	var/role = role_arg
 	io_job(null, /datum/io_backend/sql,
 		"DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry",

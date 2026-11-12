@@ -129,6 +129,7 @@
 CAPABILITIES(/obj/item/integrated_circuit_printer)
 	ref_one(nameof(queued_assembly), /obj/item/electronic_assembly)
 	interface("ICPrinter", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(categories = list_of(row(name = schema_text(), items = list_of(row(name = schema_text(), desc = schema_text(), can_build = bool(), cost = num(), path = schema_path())))), metal = num(), max_metal = num(), metal_per_sheet = num(), upgraded = bool(), can_clone = bool())
 	without("ui_open")
 	op("import_circuit", ui_act("import_circuit"), then(PROC_REF(ui_act_import_circuit)))
 	op("build", ui_act("build", arg("build", schema_path(/datum))), then(PROC_REF(ui_act_build)))
@@ -185,9 +186,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	data["metal"] = metal
 	data["max_metal"] = max_metal
 	data["metal_per_sheet"] = metal_per_sheet
-	data["debug"] = debug
 	data["upgraded"] = upgraded
-	data["is_printing"] = is_printing
 	var/list/merged_1 = ui_data_obj_item_integrated_circuit_printer(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -199,7 +198,6 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	var/list/data = list()
 
 	data["can_clone"] = can_clone && !is_printing // Can not clone while printing
-	data["print_time_remaining"] = is_printing ? max(0, print_end_time - world.time) : 0
 
 	return data
 

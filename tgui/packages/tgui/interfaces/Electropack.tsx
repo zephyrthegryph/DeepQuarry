@@ -7,18 +7,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { ElectropackActions } from './generated/Electropack';
-
-type Data = {
-  on: BooleanLike;
-  frequency: number;
-  freq_display: string;
-  code: number;
-};
+import type {
+  ElectropackActions,
+  ElectropackData,
+} from './generated/Electropack';
 
 export const Electropack = () => {
-  const { data, act } = useBackend<Data, ElectropackActions>();
+  const { data, act } = useBackend<ElectropackData, ElectropackActions>();
   const { on, freq_display, code } = data;
   return (
     <Window width={360} height={220}>

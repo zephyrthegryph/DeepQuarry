@@ -1,13 +1,5 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { ChangelingPanelData } from '../generated/ChangelingPanel';
 
-export type Data = {
-  available_points: number;
-  power_list: PowerData[];
-};
+export type Data = ChangelingPanelData;
 
-export type PowerData = {
-  power_name: string;
-  power_cost: number;
-  power_purchased: BooleanLike;
-  power_desc: string;
-};
+export type PowerData = Data['power_list'][number];

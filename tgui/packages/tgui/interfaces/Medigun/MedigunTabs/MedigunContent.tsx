@@ -99,7 +99,9 @@ export const MedigunContent = (props: { smodule: SModule }) => {
                 <ProgressBar color="green" value={cell_status} />
               </LabeledList.Item>
             ) : (
-              <Box color="red">Missing Cell</Box>
+              <LabeledList.Item label="Battery Status" color="red">
+                Missing Cell
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>

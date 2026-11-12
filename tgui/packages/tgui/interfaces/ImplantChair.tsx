@@ -3,22 +3,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { ImplantChairActions } from './generated/ImplantChair';
-
-type Data = {
-  has_occupant: BooleanLike;
-  occupant_name?: string;
-  health_text?: string;
-  dead?: BooleanLike;
-  damaged?: BooleanLike;
-  implants_left: number;
-  ready: BooleanLike;
-};
+import type {
+  ImplantChairActions,
+  ImplantChairData,
+} from './generated/ImplantChair';
 
 export const ImplantChair = () => {
-  const { data, act } = useBackend<Data, ImplantChairActions>();
+  const { data, act } = useBackend<ImplantChairData, ImplantChairActions>();
   const {
     has_occupant,
     occupant_name,

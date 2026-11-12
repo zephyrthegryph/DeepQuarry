@@ -24,13 +24,13 @@
 	var/list/last_implants = null
 	var/last_location = null
 
-// TGUI migration. attack_self opens Locator.tsx; Topic
-// frequency/refresh/clear actions move to tgui_act.
+// attack_self opens Locator.tsx.
 CAPABILITIES(/obj/item/locator)
 	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
 	interface("Locator", title = "Persistent Signal Locator")
+	ui_shape(frequency = schema_text(), has_scan = bool(), location = schema_text(), beacons = list_of(row(id = schema_text(), direction = schema_text(), strength = schema_text())), implants = list_of(row(id = num(), direction = schema_text(), strength = schema_text())))
 	without("ui_open")
 	op("freq", ui_act("freq", arg("delta", num())), needs(req_capable(), req(PROC_REF(location_refusal))), then(PROC_REF(ui_act_freq)))
 	op("clear", ui_act("clear"), needs(req_capable(), req(PROC_REF(location_refusal))), then(PROC_REF(ui_act_clear)))

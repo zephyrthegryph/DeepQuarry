@@ -6,22 +6,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { LocatorActions } from './generated/Locator';
-
-type Signal = {
-  id: string;
-  direction: string;
-  strength: string;
-};
-
-type Data = {
-  frequency: string;
-  has_scan: BooleanLike;
-  location: string;
-  beacons: Signal[];
-  implants: Signal[];
-};
+import type { LocatorActions, LocatorData } from './generated/Locator';
 
 const strengthColor = (s: string): string => {
   if (s === 'very strong') return 'good';
@@ -31,7 +16,7 @@ const strengthColor = (s: string): string => {
 };
 
 export const Locator = () => {
-  const { data, act } = useBackend<Data, LocatorActions>();
+  const { data, act } = useBackend<LocatorData, LocatorActions>();
   const { frequency, has_scan, location, beacons, implants } = data;
 
   return (

@@ -34,9 +34,10 @@ CAPABILITIES(/obj/machinery/bomb_tester)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(faketank), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("BombTester")
+	ui_shape(simulating = bool(), mode = nullable(int()), tank1 = nullable(schema_text()), tank1ref = nullable(num()), tank2 = nullable(schema_text()), tank2ref = nullable(num()), canister = nullable(schema_text()), sim_canister_output = nullable(num())) // everything but simulating is absent while a simulation runs
 	op("set_mode", ui_act("set_mode", arg("mode", num(BOMB_TESTER_MODE_SINGLE, BOMB_TESTER_MODE_CANISTER))), then(PROC_REF(ui_act_set_mode)))
 	op("add_tank", ui_act("add_tank", arg("slot", num())), then(PROC_REF(ui_act_add_tank)))
-	op("remove_tank", ui_act("remove_tank", arg("ref", schema_text(32))), then(PROC_REF(ui_act_remove_tank)))
+	op("remove_tank", ui_act("remove_tank", arg("ref", schema_ref(/obj/item/tank))), then(PROC_REF(ui_act_remove_tank)))
 	op("canister_scan", ui_act("canister_scan"), then(PROC_REF(ui_act_canister_scan)))
 	op("set_can_pressure", ui_act("set_can_pressure", arg("pressure", num())), then(PROC_REF(ui_act_set_can_pressure)))
 	op("start_sim", ui_act("start_sim"), then(PROC_REF(ui_act_start_sim)))
@@ -121,11 +122,11 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
 	if(!simulating)
 		data["mode"] = sim_mode
-		data["tank1"] = tank1
+		data["tank1"] = tank1?.name
 		data["tank1ref"] = handle_of(tank1)
-		data["tank2"] = tank2
+		data["tank2"] = tank2?.name
 		data["tank2ref"] = handle_of(tank2)
-		data["canister"] = test_canister()
+		data["canister"] = test_canister()?.name
 		data["sim_canister_output"] = sim_canister_output
 
 	data["simulating"] = simulating
@@ -168,9 +169,8 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	else
 		to_chat(user, span_warning("You must be wielding a tank to insert it!"))
 
-/obj/machinery/bomb_tester/proc/ui_act_remove_tank(datum/act/op/A, raw_ref)
-	var/obj/item/tank/T = ui_member(raw_ref, tank_slots(), /obj/item/tank)
-	if(istype(T))
+/obj/machinery/bomb_tester/proc/ui_act_remove_tank(datum/act/op/A, obj/item/tank/T)
+	if(istype(T) && (T in tank_slots()))
 		if(T == tank1)
 			rel_take(src, nameof(/obj/machinery/bomb_tester::tank1))
 		if(T == tank2)

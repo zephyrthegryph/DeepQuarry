@@ -116,6 +116,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 CAPABILITIES(/datum/permissions_panel)
 	ref_one(nameof(holder))
 	interface("PermissionsPanel", title = "Permissions", rights = R_PERMISSIONS)
+	ui_shape(page = schema_text(), PERMISSIONS_PAGE_PERMISSIONS = schema_text(), PERMISSIONS_PAGE_RANKS = schema_text(), PERMISSIONS_PAGE_LOGGING = schema_text(), PERMISSIONS_PAGE_HOUSEKEEPING = schema_text(), permissions_rows = nullable(list_of(row(ckey = schema_text(), rank = schema_text(), permissions = schema_text(), deadmined = bool()))), ranks_page = nullable(row(rows = list_of(row(name = schema_text(), source = schema_text(), held_by = int(), permissions = schema_text(), denied = schema_text(), editable = schema_text(), can_modify = bool(), can_delete = bool())), can_create = bool())), logging_page = nullable(row(log_target = schema_text(), log_actor = schema_text(), log_operation = schema_text(), log_page = int(), log_count = int(), per_page = int(), action_options = list_of(schema_text()), entries = list_of(row(datetime = schema_text(), round_id = schema_text(), admin_key = schema_text(), operation = schema_text(), ckey_actioned = schema_text(), log = schema_text())))), housekeeping_page = nullable(row(invalid_admins = list_of(row(admin = schema_text(), rank = schema_text())), unused_ranks = list_of(row(name = schema_text(), source = schema_text(), permissions = schema_text(), denied = schema_text(), editable = schema_text(), can_delete = bool()))))) // only the open page's block is sent
 	op("nav_permissions", ui_act("nav_permissions"), then(PROC_REF(ui_act_nav_permissions)))
 	op("nav_ranks", ui_act("nav_ranks"), then(PROC_REF(ui_act_nav_ranks)))
 	op("nav_logging", ui_act("nav_logging"), then(PROC_REF(ui_act_nav_logging)))
@@ -223,7 +224,6 @@ CAPABILITIES(/datum/permissions_panel)
 			"can_delete" = !!can_delete,
 		))
 	data["rows"] = rows
-	data["loading"] = !db_rows || isnull(db_rows["admins"]) || isnull(db_rows["ranks"])
 	data["can_create"] = admin_can(holder().owner(), R_PERMISSIONS) && holder().can_edit_rights_flags() != NONE
 	return data
 
@@ -253,7 +253,6 @@ CAPABILITIES(/datum/permissions_panel)
 			"ckey_actioned" = row[5],
 			"log" = row[6],
 		))
-	data["loading"] = !db_rows || isnull(db_rows["log_search"])
 	data["entries"] = entries
 	return data
 
@@ -273,7 +272,6 @@ CAPABILITIES(/datum/permissions_panel)
 			"exclude_flags" = "[row[3]]",
 			"can_edit_flags" = "[row[4]]",
 		)
-	data["loading"] = !db_rows || isnull(db_rows["admins"]) || isnull(db_rows["ranks"])
 
 	var/list/invalid_admin_rows = list()
 	var/list/invalid_admin_ranks = admins_by_rank - all_db_ranks

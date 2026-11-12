@@ -43,6 +43,7 @@ CAPABILITIES(/obj/item/soulstone)
 	configure(item_worn(slots = SLOT_BELT))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("Soulstone", title = "Soul Stone")
+	ui_shape(has_shade = bool(), shade_name = schema_text())
 	without("ui_open")
 	op("summon", ui_act("summon"), then(PROC_REF(ui_act_summon)))
 

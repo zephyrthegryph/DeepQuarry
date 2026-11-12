@@ -26,7 +26,7 @@ import type { Data } from './types';
 export const Communicator = () => {
   const { act, data } = useBackend<Data, CommunicatorActions>();
 
-  const { theme, currentTab, video_comm } = data;
+  const { currentTab, video_comm } = data;
 
   const tab: React.JSX.Element[] = [];
 
@@ -50,7 +50,7 @@ export const Communicator = () => {
   tab[tabs[9]] = <CommunicatorSettingsTab />;
 
   return (
-    <Window width={475} height={700} theme={theme}>
+    <Window width={475} height={700}>
       <Window.Content>
         {video_comm && (
           <VideoComm

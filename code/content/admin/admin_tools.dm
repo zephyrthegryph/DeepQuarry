@@ -62,6 +62,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 
 CAPABILITIES(/datum/player_log_viwer)
 	interface("PlayerLogViewer", rights = R_ADMIN|R_MOD)
+	ui_shape(entries = map_of(schema_text(), list_of(row(event_id = num(), time = schema_text(), ckey = nullable(schema_text()), name = schema_text(), loc = nullable(schema_text()), color = nullable(schema_text()), message = schema_text()))), name = nullable(schema_text()), ckey = schema_text(), special = nullable(schema_text()), view_client = bool(), on_cooldown = bool(), all_clients = list_of(schema_text()))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("select_client", ui_act("select_client", arg("ckey")), then(PROC_REF(ui_act_select_client)))
 
@@ -78,7 +79,7 @@ CAPABILITIES(/datum/player_log_viwer)
 /datum/player_log_viwer/ui_data(datum/act/eval/A)
 	return list(
 		"on_cooldown" = refresh_cooldown(),
-		"all_clients" = persistent_clients_by_ckey(),
+		"all_clients" = assoc_to_keys(persistent_clients_by_ckey()),
 	)
 
 /datum/player_log_viwer/proc/ui_act_refresh(datum/act/op/A)

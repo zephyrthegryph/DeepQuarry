@@ -31,6 +31,7 @@
 CAPABILITIES(/datum/tgui_shock)
 	owns_one(nameof(window), /datum/tgui_window)
 	interface("ShockConfigurator", title = "Shock Configurator", state = nameof(GLOB.tgui_always_state))
+	ui_shape(port = int(), connected = bool(), intensity = num(), duration = num(), selectedDevice = int(), availableDevices = nullable(list_of(row(name = schema_text(), id = int(), shockers = list_of(row(name = schema_text(), identifier = int()))))), enabledFlags = int())
 	op("connect", ui_act("connect"), then(PROC_REF(ui_act_connect)))
 	op("request_devices", ui_act("request_devices"), then(PROC_REF(ui_act_request_devices)))
 	op("estop", ui_act("estop"), then(PROC_REF(ui_act_estop)))

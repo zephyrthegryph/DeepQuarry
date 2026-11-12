@@ -12,48 +12,12 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { InstrumentEditorActions } from './generated/InstrumentEditor';
+import type {
+  InstrumentEditorActions,
+  InstrumentEditorData,
+} from './generated/InstrumentEditor';
 
-type Data = {
-  id: string;
-  using_instrument: string;
-  note_shift_min: number;
-  note_shift_max: number;
-  note_shift: number;
-  octaves: number;
-  sustain_modes: string[];
-  sustain_mode: string;
-  sustain_mode_button: string;
-  sustain_mode_duration: number;
-  instrument_ready: BooleanLike;
-  volume: number;
-  volume_dropoff_threshold: number;
-  min_volume: number;
-  max_volume: number;
-  sustain_indefinitely: BooleanLike;
-  sustain_mode_min: number;
-  sustain_mode_max: number;
-  playing: BooleanLike;
-  max_repeats: number;
-  repeat: number;
-  bpm: number;
-  lines: LineData[];
-  can_switch_instrument: BooleanLike;
-  possible_instruments: InstrumentData[];
-  max_line_chars: number;
-  max_lines: number;
-};
-
-type InstrumentData = {
-  name: string;
-  id: string;
-};
-
-type LineData = {
-  line_count: number;
-  line_text: string;
-};
+type Data = InstrumentEditorData;
 
 export const InstrumentEditor = (props) => {
   const { data } = useBackend<Data, InstrumentEditorActions>();

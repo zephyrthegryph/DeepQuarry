@@ -44,6 +44,7 @@ CAPABILITIES(/obj/item/integrated_electronics/detailer)
 	configure(item_worn(flags = NOBLUDGEON))
 	op("controls", in_hand(), label("Open assembly detailer"), then(PROC_REF(detailer_controls_requested)))
 	interface("ICDetailer", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(detail_color = schema_text(), color_list = map_of(schema_text(), schema_text()))
 	without("ui_open")
 	op("change_color", ui_act("change_color", arg("color", schema_text(4096))), then(PROC_REF(ui_act_change_color)))
 

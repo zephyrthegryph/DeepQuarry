@@ -401,10 +401,7 @@
 
 /datum/personal_crafting/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["category"] = cur_category
-	data["subcategory"] = cur_subcategory
 	data["display_craftable_only"] = display_craftable_only
-	data["display_compact"] = display_compact
 	var/list/merged_1 = ui_data_datum_personal_crafting(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -497,6 +494,7 @@ CAPABILITIES(/datum/personal_crafting)
 	op("toggle_recipes", ui_act(), then(PROC_REF(ui_act_toggle_recipes)))
 	op("toggle_compact", ui_act(), then(PROC_REF(ui_act_toggle_compact)))
 	interface("PersonalCrafting", state = nameof(GLOB.tgui_not_incapacitated_turf_state))
+	ui_shape(display_craftable_only = bool(), busy = bool(), materialChoices = list_of(row()), craftability = map_of(schema_text(), bool()), crafting_recipes = map_of(schema_text(), schema_any())) // materialChoices are material_choice_tgui() rows (Fabrication/Types MaterialChoice); crafting_recipes holds a category's recipe list, or its subcategories' lists with a has_subcats flag
 	// Crafting takes the recipe's time, standing still; the component is claimed (busy) until it ends.
 	op("make", ui_act("make", arg("materialSlots"), arg("recipe", schema_ref())), claims(), starts(PROC_REF(make_started)), wait(PROC_REF(make_time)), on_interrupt(PROC_REF(make_interrupted)), then(PROC_REF(make_done)))
 	op("set_category", ui_act("set_category", arg("category", schema_text(4096)), arg("subcategory", schema_text(4096))), then(PROC_REF(ui_act_set_category)))

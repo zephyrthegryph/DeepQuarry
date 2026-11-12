@@ -16,16 +16,10 @@ import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
 import { ProductConfigurator } from './Fabrication/SelectableRecipe';
 import type { Design, MaterialChoice, MaterialSlot } from './Fabrication/Types';
-import type { PersonalCraftingActions } from './generated/PersonalCrafting';
-
-type Data = {
-  busy: BooleanLike;
-  display_craftable_only: BooleanLike;
-  display_compact: BooleanLike;
-  craftability: Record<string, number>;
-  crafting_recipes: Record<string, Recipe[]>;
-  materialChoices: MaterialChoice[];
-};
+import type {
+  PersonalCraftingActions,
+  PersonalCraftingData,
+} from './generated/PersonalCrafting';
 
 type Recipe = {
   name: string;
@@ -61,9 +55,14 @@ const getUiEntries = (craftingRecipes: Record<string, Recipe[]>) => {
 };
 
 export const PersonalCrafting = () => {
-  const { act, data } = useBackend<Data, PersonalCraftingActions>();
+  const { act, data } = useBackend<
+    PersonalCraftingData,
+    PersonalCraftingActions
+  >();
   const [searchText, setSearchText] = useState('');
-  const { categories, recipes } = getUiEntries(data.crafting_recipes || {});
+  const { categories, recipes } = getUiEntries(
+    (data.crafting_recipes || {}) as Record<string, Recipe[]>,
+  );
   const [tab, setTab] = useState(categories[0]?.name);
   const search = createSearch<Recipe>(searchText, (recipe) => recipe.name);
   const shown = recipes.filter(
@@ -130,7 +129,10 @@ export const PersonalCrafting = () => {
 };
 
 const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
-  const { act, data } = useBackend<Data, PersonalCraftingActions>();
+  const { act, data } = useBackend<
+    PersonalCraftingData,
+    PersonalCraftingActions
+  >();
   const visible = data.display_craftable_only
     ? recipes.filter((recipe) => data.craftability[recipe.ref])
     : recipes;
@@ -138,7 +140,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
   const selected =
     visible.find((recipe) => recipe.ref === selectedRef) ?? visible[0];
   const available = Object.fromEntries(
-    (data.materialChoices ?? []).map((material) => [
+    ((data.materialChoices ?? []) as MaterialChoice[]).map((material) => [
       material.id,
       material.sheets * 100,
     ]),
@@ -198,7 +200,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
               } satisfies Design
             }
             available={available}
-            materialChoices={data.materialChoices ?? []}
+            materialChoices={(data.materialChoices ?? []) as MaterialChoice[]}
             SHEET_MATERIAL_AMOUNT={100}
             single
             actionLabel="Craft"

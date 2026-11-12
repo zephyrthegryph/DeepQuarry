@@ -75,13 +75,14 @@
 
 CAPABILITIES(/datum/volume_panel)
 	interface("VolumePanel", title = "Volume Panel", state = nameof(GLOB.tgui_always_state))
+	ui_shape(volume_channels = map_of(schema_text(), num()))
 	op("adjust_volume", ui_act("adjust_volume", arg("channel", schema_text(4096)), arg("vol", num())), then(PROC_REF(ui_act_adjust_volume)))
 
 /// /datum/volume_panel's window data.
 /datum/volume_panel/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	if(!user.client || !user.client.prefs)
-		return list("error" = TRUE)
+		return list()
 
 	var/list/data = list()
 	data["volume_channels"] = user.client.prefs.read_preference(/datum/preference/volume_channels)

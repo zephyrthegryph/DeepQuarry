@@ -14,39 +14,15 @@ import {
 } from 'tgui-core/components';
 import { flow } from 'tgui-core/fp';
 import { clamp } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
 import { vecLength, vecSubtract } from 'tgui-core/vector';
-import type { GpsActions } from './generated/Gps';
+import type { GpsActions, GpsData } from './generated/Gps';
 import { PreferenceEditColor } from './PreferencesMenu/elements/ColorInput';
 
 const coordsToVec = (coords: string) => coords.split(', ').map(parseFloat);
 
-type Data = {
-  theme: string | null;
-  currentArea: string;
-  power: BooleanLike;
-  tag: string;
-  currentCoords: string; // "x, y, z"
-  localMode: BooleanLike;
-  currentZName: string;
-  signals: Signal[];
-  canHide: BooleanLike;
-  isHidden: BooleanLike;
-};
-
-type Signal = {
-  ref: number;
-  gpsTag: string;
-  areaName: string;
-  local: BooleanLike;
-  zName: string;
-  trackingColor: string | null;
-  trackingName: BooleanLike;
-  coords?: string;
-  degrees?: number;
-  dist?: number;
-};
+// A signal as the window shows it: the distance is recomputed here, so it is not the server's.
+type Signal = Omit<GpsData['signals'][number], 'dist'> & { dist?: number };
 
 function sortSignal(a: Signal, b: Signal) {
   if (a.dist === undefined && b.dist === undefined) return 0;
@@ -58,7 +34,7 @@ function sortSignal(a: Signal, b: Signal) {
 }
 
 export const Gps = (props) => {
-  const { act, data } = useBackend<Data, GpsActions>();
+  const { act, data } = useBackend<GpsData, GpsActions>();
   const {
     theme,
     currentArea,
@@ -74,12 +50,12 @@ export const Gps = (props) => {
   const [search, setSearch] = useState('');
   const searchName = createSearch<Signal>(search, (gps) => gps.gpsTag);
   const signals: Signal[] = flow([
-    (signals: Signal[]) =>
+    (signals: GpsData['signals']) =>
       signals.map((signal, index) => {
         // Calculate distance to the target. BYOND distance is capped to 127,
         // that's why we roll our own calculations here.
         const dist =
-          signal.dist !== undefined
+          signal.dist != null
             ? Math.round(
                 vecLength(
                   vecSubtract(
@@ -244,7 +220,7 @@ export const Gps = (props) => {
                                 )
                               }
                             >
-                              {signal.degrees !== undefined && (
+                              {signal.degrees != null && (
                                 <Icon
                                   mr={1}
                                   size={1.2}

@@ -1,15 +1,5 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { RpgDiceData } from '../generated/RpgDice';
 
-export type Data = {
-  last_rolls: {
-    player: string;
-    count: number;
-    size?: number;
-    results?: Result[];
-    mod?: number;
-    apply_to_all?: BooleanLike;
-    sum: number;
-  }[];
-};
+export type Data = RpgDiceData;
 
-export type Result = { result: number; state: number };
+export type Result = RpgDiceData['last_rolls'][number]['results'][number];

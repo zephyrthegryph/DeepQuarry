@@ -8,34 +8,13 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
-import type { SeedStorageActions } from './generated/SeedStorage';
-
-type Data = {
-  scanner: string[];
-  seeds: seed[];
-};
-
-type seed = {
-  name: string;
-  uid: string;
-  amount: number;
-  id: number;
-  traits: {
-    Endurance: string;
-    Yield: string;
-    Production: string;
-    Potency: string;
-    'Repeat Harvest': string;
-    'Ideal Heat': string;
-    'Ideal Light': string;
-    'Nutrient Consumption': string;
-    'Water Consumption': string;
-    notes: string;
-  };
-};
+import type {
+  SeedStorageActions,
+  SeedStorageData,
+} from './generated/SeedStorage';
 
 export const SeedStorage = (props) => {
-  const { act, data } = useBackend<Data, SeedStorageActions>();
+  const { act, data } = useBackend<SeedStorageData, SeedStorageActions>();
 
   const { seeds = [] } = data;
 

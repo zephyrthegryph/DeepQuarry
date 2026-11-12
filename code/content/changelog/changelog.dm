@@ -6,6 +6,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/changelog)
 
 CAPABILITIES(/datum/changelog)
 	interface("Changelog", state = nameof(GLOB.tgui_always_state))
+	ui_shape(dates = list_of(schema_text()))
 	op("get_month", ui_act("get_month", arg("date", schema_text(4096))), then(PROC_REF(ui_act_get_month)))
 
 /datum/changelog/ui_prepare(mob/user, datum/tgui/ui)
@@ -27,9 +28,7 @@ CAPABILITIES(/datum/changelog)
 
 /datum/changelog/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
-	data["dates"] = dates
-	data["testmerges"] = testmerges
-	data["discord_url"] = CONFIG_GET(string/discordurl)
+	data["dates"] = dates || get_dates() // dates is filled when the window opens (ui_prepare); a read before that still lists them
 
 	return data
 

@@ -17,7 +17,7 @@ export const GhostSpawn = (props) => {
     active_tab,
   } = data;
 
-  const tabs: (React.JSX.Element | undefined)[] = [];
+  const tabs: (React.JSX.Element | null | undefined)[] = [];
 
   tabs[0] = all_ghost_pods && (
     <GhostPod all_ghost_pods={all_ghost_pods} user_z={user_z} />

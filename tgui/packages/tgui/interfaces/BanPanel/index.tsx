@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
 import type { BanPanelActions } from '../generated/BanPanel';
+import { ban_types } from './constants';
 import { BanningSection } from './Elements/BanningSection';
 import { BanSearchResults } from './Elements/BanSearchResults';
 import { SearchSection } from './Elements/SearchSection';
@@ -33,7 +34,7 @@ export const BanPanel = (props) => {
               searchedAdminCkey={admin_ckey || ''}
               searchedIp={player_ip || ''}
               searchedCid={player_cid || ''}
-              searchedBanType={bantype || ''}
+              searchedBanType={bantype ? (ban_types[bantype - 1] ?? '') : ''}
               minimumMatch={!!min_search}
             />
           </Stack.Item>

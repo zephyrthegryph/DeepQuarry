@@ -10,21 +10,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { EftposActions } from './generated/Eftpos';
-
-type Data = {
-  eftpos_name: string;
-  machine_id: string;
-  transaction_locked: BooleanLike;
-  transaction_paid: BooleanLike;
-  transaction_purpose: string;
-  transaction_amount: number;
-  linked_account_name: string;
-};
+import type { EftposActions, EftposData } from './generated/Eftpos';
 
 export const Eftpos = () => {
-  const { data, act } = useBackend<Data, EftposActions>();
+  const { data, act } = useBackend<EftposData, EftposActions>();
   const {
     eftpos_name,
     machine_id,

@@ -7,20 +7,13 @@ import {
   NoticeBox,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { BotanyEditorActions } from './generated/BotanyEditor';
-
-type Data = {
-  activity: BooleanLike;
-  degradation: number;
-  disk: BooleanLike;
-  loaded: string | number;
-  sourceName: string;
-  locus: string[];
-};
+import type {
+  BotanyEditorActions,
+  BotanyEditorData,
+} from './generated/BotanyEditor';
 
 export const BotanyEditor = (props) => {
-  const { act, data } = useBackend<Data, BotanyEditorActions>();
+  const { act, data } = useBackend<BotanyEditorData, BotanyEditorActions>();
 
   const { activity, degradation, disk, sourceName, locus, loaded } = data;
 

@@ -7,41 +7,18 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type { EditMemoryPanelActions } from './generated/EditMemoryPanel';
-
-type Objective = {
-  ref: number;
-  num: number;
-  text: string;
-  completed: BooleanLike;
-};
-
-type AntagBlock = {
-  id: string;
-  role_text: string;
-  is_antagonist: BooleanLike;
-  has_locations: BooleanLike;
-  extra_html: string;
-};
-
-type Data = {
-  alive: BooleanLike;
-  name?: string;
-  real_name?: string | null;
-  key?: string;
-  synced?: BooleanLike;
-  assigned_role?: string;
-  ambitions?: string;
-  memory?: string;
-  objectives?: Objective[];
-  antag_blocks?: AntagBlock[];
-};
+import type {
+  EditMemoryPanelActions,
+  EditMemoryPanelData,
+} from './generated/EditMemoryPanel';
 
 export const EditMemoryPanel = () => {
-  const { data, act } = useBackend<Data, EditMemoryPanelActions>();
+  const { data, act } = useBackend<
+    EditMemoryPanelData,
+    EditMemoryPanelActions
+  >();
   if (!data.alive) {
     return (
       <Window width={600} height={500} title="Edit Memory">

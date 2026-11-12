@@ -22,6 +22,7 @@
 
 CAPABILITIES(/datum/keybind_editor)
 	interface("KeybindingEditor", state = nameof(GLOB.tgui_always_state))
+	ui_shape(bindings = list_of(row(id = schema_text(), name = schema_text(), category = schema_text(), command = schema_text())), profiles = list_of(row(id = schema_text(), name = schema_text())), right_click_options = list_of(row(id = schema_text(), name = schema_text())), max_keys = int(), profile = schema_text(), keys = map_of(schema_text(), list_of(schema_text())), customised = list_of(schema_text()), right_click = schema_text())
 	op("set_profile", ui_act("set_profile", arg("profile", schema_text(4096))), then(PROC_REF(ui_act_set_profile)))
 	op("set_right_click", ui_act("set_right_click", arg("binding", schema_text(4096))), then(PROC_REF(ui_act_set_right_click)))
 	op("bind", ui_act("bind", arg("id", schema_text(4096)), arg("key", schema_text(4096))), then(PROC_REF(ui_act_bind)))

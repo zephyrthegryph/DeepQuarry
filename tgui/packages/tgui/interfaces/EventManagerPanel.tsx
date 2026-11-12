@@ -7,66 +7,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { EventManagerPanelActions } from './generated/EventManagerPanel';
+import type {
+  EventManagerPanelActions,
+  EventManagerPanelData,
+} from './generated/EventManagerPanel';
 
-type SeverityRow = {
-  ref: number;
-  severity: string;
-  starts_at: string;
-  starts_in_minutes: number;
-  delayed: BooleanLike;
-  delay_modifier: number;
-};
-
-type NextEventRow = {
-  ref: number;
-  severity: string;
-  queued_name: string | null;
-};
-
-type RunningEvent = {
-  ref: number;
-  severity: string;
-  name: string;
-  ends_at: string;
-  ends_in_minutes: number;
-};
-
-type AvailableEvent = {
-  ref: number;
-  name: string;
-  weight: number;
-  min_weight: number;
-  max_weight: number;
-  one_shot: BooleanLike;
-  enabled: BooleanLike;
-  current_weight: number;
-};
-
-type NewEvent = {
-  ref: number;
-  name: string | null;
-  type: string | null;
-  weight: number;
-  one_shot: BooleanLike;
-};
-
-type Data = {
-  events_paused: BooleanLike;
-  report_at_round_end: BooleanLike;
-  selected_severity: string | null;
-  // Overview-mode fields
-  severities?: SeverityRow[];
-  next_events?: NextEventRow[];
-  running_events?: RunningEvent[];
-  // Detail-mode fields
-  selected_time_left_minutes?: number;
-  selected_container_ref?: number;
-  available_events?: AvailableEvent[];
-  new_event?: NewEvent;
-};
+type Data = EventManagerPanelData;
 
 export const EventManagerPanel = () => {
   const { data, act } = useBackend<Data, EventManagerPanelActions>();

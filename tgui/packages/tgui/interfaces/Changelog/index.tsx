@@ -12,7 +12,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
-import type { ChangelogActions } from '../generated/Changelog';
+import type { ChangelogActions, ChangelogData } from '../generated/Changelog';
 
 const icons = {
   add: { icon: 'check-circle', color: 'green' },
@@ -41,8 +41,6 @@ const icons = {
   wip: { icon: 'hammer', color: 'orange' },
 };
 
-type Data = { dates: string[] };
-
 const monthFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',
   timeZone: 'UTC',
@@ -59,7 +57,7 @@ const formatDate = (date: string, includeDay = false) =>
   (includeDay ? dayFormatter : monthFormatter).format(new Date(date));
 
 export const Changelog = (props) => {
-  const { act, data } = useBackend<Data, ChangelogActions>();
+  const { act, data } = useBackend<ChangelogData, ChangelogActions>();
   const { dates = [] } = data;
 
   const dateChoices = dates.map((date) => formatDate(date));

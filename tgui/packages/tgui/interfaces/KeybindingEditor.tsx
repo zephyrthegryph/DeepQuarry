@@ -13,30 +13,12 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { KeybindingEditorActions } from './generated/KeybindingEditor';
+import type {
+  KeybindingEditorActions,
+  KeybindingEditorData,
+} from './generated/KeybindingEditor';
 
-type Binding = {
-  id: string;
-  name: string;
-  category: string;
-  command: string;
-};
-
-type Option = {
-  id: string;
-  name: string;
-};
-
-type Data = {
-  bindings: Binding[];
-  profiles: Option[];
-  right_click_options: Option[];
-  max_keys: number;
-  profile: string;
-  keys: Record<string, string[]>;
-  customised: string[];
-  right_click: string;
-};
+type Data = KeybindingEditorData;
 
 // DOM key names to BYOND macro key names.
 const DOM_TO_BYOND: Record<string, string> = {

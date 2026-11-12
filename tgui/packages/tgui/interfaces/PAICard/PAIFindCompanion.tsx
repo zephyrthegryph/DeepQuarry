@@ -7,7 +7,7 @@ import type { Data, InvitePAIData } from './types';
 export const PAIFindCompanion = (props: { availablePais: InvitePAIData[] }) => {
   const { data, act } = useBackend<Data, PAICardActions>();
 
-  const { waiting_for_response, selected, selected_pai_data } = data;
+  const { waiting_for_response, selected_pai_data } = data;
   const { availablePais } = props;
 
   return (

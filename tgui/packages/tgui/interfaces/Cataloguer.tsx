@@ -7,39 +7,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { CataloguerActions } from './generated/Cataloguer';
-
-type CatalogueItem = {
-  name: string;
-  ref: number;
-  visible: BooleanLike;
-};
-
-type Group = {
-  name: string;
-  items: CatalogueItem[];
-};
-
-type Detail = {
-  name: string;
-  desc: string;
-  value: number;
-  cataloguers: string | null;
-  visible: BooleanLike;
-  ref: number;
-};
-
-type Data = {
-  points_stored: number;
-  debug: BooleanLike;
-  detail: Detail | null;
-  groups?: Group[];
-};
+import type { CataloguerActions, CataloguerData } from './generated/Cataloguer';
 
 export const Cataloguer = () => {
-  const { data, act } = useBackend<Data, CataloguerActions>();
+  const { data, act } = useBackend<CataloguerData, CataloguerActions>();
   const { points_stored, debug, detail, groups } = data;
   return (
     <Window width={520} height={620} title="Cataloguer">

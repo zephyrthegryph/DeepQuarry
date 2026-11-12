@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Stack } from 'tgui-core/components';
+import type {
+  GhostSpawnActions,
+  GhostSpawnData,
+} from '../../generated/GhostSpawn';
 
 export const SpawnElement = (props: {
   title: string;
@@ -8,7 +12,7 @@ export const SpawnElement = (props: {
   tooltip: ReactNode;
   action: string;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<GhostSpawnData, GhostSpawnActions>();
   const { title, disabled, tooltip, action } = props;
 
   return (

@@ -25,6 +25,7 @@ CAPABILITIES(/obj/item/aicard)
 	configure(item_worn(slots = SLOT_BELT))
 	op("view_ai", in_hand(), opens_ui())
 	interface("AICard", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(has_ai = bool(), name = schema_text(), integrity = num(), backup_capacitor = num(), radio = bool(), wireless = bool(), flushing = bool(), laws = list_of(schema_text()), has_laws = bool())
 	without("ui_open")
 	// Transferring an AI in: started by grab_ai() from the AI's own verb, the AI fixer and the rig module, which pass the AI.
 	op("grab_ai", ai(), takes("ai"), wait(10 SECONDS), then(PROC_REF(grab_ai_timed_done)))
@@ -35,7 +36,17 @@ CAPABILITIES(/obj/item/aicard)
 
 /// /obj/item/aicard's window data.
 /obj/item/aicard/ui_data(datum/act/eval/A)
-	var/list/data = list()
+	var/list/data = list(
+		"has_ai" = FALSE,
+		"name" = "",
+		"integrity" = 0,
+		"backup_capacitor" = 0,
+		"radio" = FALSE,
+		"wireless" = FALSE,
+		"flushing" = FALSE,
+		"laws" = list(),
+		"has_laws" = FALSE,
+	)
 
 	data["has_ai"] = carded_ai() != null
 	if(carded_ai())
@@ -44,7 +55,6 @@ CAPABILITIES(/obj/item/aicard)
 		data["backup_capacitor"] = carded_ai().backup_capacitor()
 		data["radio"] = !carded_ai().aiRadio.disabledAi
 		data["wireless"] = !carded_ai().control_disabled
-		data["operational"] = carded_ai().stat != DEAD
 		data["flushing"] = flush
 
 		var/list/laws = list()

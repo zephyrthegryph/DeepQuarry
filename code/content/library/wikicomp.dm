@@ -35,6 +35,7 @@
 
 CAPABILITIES(/obj/machinery/librarywikicomp)
 	interface("PublicLibraryWiki")
+	ui_shape(crash = bool(), errorText = schema_text(), searchmode = nullable(schema_text()), search = nullable(list_of(schema_text())), print = nullable(bool()), sub_categories = nullable(list_of(schema_text())), has_donated = bool(), donated = num(), goal = num(), food_data = nullable(row()), drink_data = nullable(row()), chemistry_data = nullable(row()), botany_data = nullable(row()), material_data = nullable(row()), particle_data = nullable(row()), catalog_data = nullable(row()), ore_data = nullable(row()), virus_data = nullable(row()), gene_data = nullable(row())) // each *_data is the open-ended get_data() of the viewed wiki page; its TS types are PublicLibraryWiki/types.ts
 	without("ui_open")
 	op("closesearch", ui_act("closesearch"), then(PROC_REF(ui_act_closesearch)))
 	op("swapsearch", ui_act("swapsearch", arg("data", schema_text(4096))), then(PROC_REF(ui_act_swapsearch)))

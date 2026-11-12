@@ -159,6 +159,7 @@ GLOBAL_LIST_INIT(admin_verb_default_pin_ids, list(
 CAPABILITIES(/datum/admin_verb_browser)
 	ref_one(nameof(owner_admin))
 	interface("AdminVerbBrowser", title = "Admin Verbs", rights = R_HOLDER)
+	ui_shape(verbs = list_of(row(id = schema_text(), name = schema_text(), desc = schema_text(), cat = schema_text())), defaults = list_of(schema_text()), pins = list_of(schema_text()), recent = list_of(schema_text()), toggles = list_of(row(id = schema_text(), label = schema_text(), group = schema_text(), desc = schema_text(), value = bool(), can = bool())))
 	op("run_verb", ui_act("run_verb", arg("id", schema_text(96))), then(PROC_REF(ui_act_run_verb)))
 	op("toggle_pin", ui_act("toggle_pin", arg("id", schema_text(96))), then(PROC_REF(ui_act_toggle_pin)))
 	op("reset_pins", ui_act("reset_pins"), then(PROC_REF(ui_act_reset_pins)))

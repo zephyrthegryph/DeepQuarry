@@ -9,24 +9,15 @@ import {
   Table,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-import type { IcecreamVatActions } from './generated/IcecreamVat';
+import type {
+  IcecreamVatActions,
+  IcecreamVatData,
+} from './generated/IcecreamVat';
 
-type IceMachineData = {
-  index: number;
-  name: string;
-  amount_left: number;
-  ingredients: string[];
-};
-
-type Data = {
-  current_flavor: string;
-  icecrem_data: IceMachineData[];
-  cone_data: IceMachineData[];
-  reagent_data: { name: string; volume: number; id: string }[];
-};
+type IceMachineData = IcecreamVatData['icecrem_data'][number];
 
 export const IcecreamVat = (props) => {
-  const { data, act } = useBackend<Data, IcecreamVatActions>();
+  const { data, act } = useBackend<IcecreamVatData, IcecreamVatActions>();
 
   const {
     current_flavor,
@@ -126,7 +117,7 @@ const IceCreamEntry = (props: {
   machineData: IceMachineData;
   type: string;
 }) => {
-  const { act } = useBackend<Data, IcecreamVatActions>();
+  const { act } = useBackend<IcecreamVatData, IcecreamVatActions>();
 
   const { selectable, iceIndex, current_flavor, machineData, type } = props;
   const [productionAmount, setProductionAmount] = useState(1);

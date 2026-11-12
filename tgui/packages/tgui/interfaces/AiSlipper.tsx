@@ -6,19 +6,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { AiSlipperActions } from './generated/AiSlipper';
+import type { AiSlipperActions, AiSlipperData } from './generated/AiSlipper';
 
-type Data = {
-  area_name: string;
-  locked: BooleanLike;
-  is_silicon: BooleanLike;
-  disabled: BooleanLike;
-  uses: number;
-  cooldown_on: BooleanLike;
-  cooldown_timeleft: number;
-};
+type Data = AiSlipperData;
 
 export const AiSlipper = () => {
   const { data, act } = useBackend<Data, AiSlipperActions>();

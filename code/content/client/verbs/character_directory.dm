@@ -23,7 +23,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/character_directory)
 
 CAPABILITIES(/datum/character_directory)
 	interface("CharacterDirectory", title = "Character Directory", state = nameof(GLOB.tgui_always_state))
-	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	ui_shape(personalVisibility = bool(), personalTag = schema_text(), personalErpTag = schema_text(), personalEventTag = schema_text(), personalGenderTag = schema_text(), personalSexualityTag = schema_text(), directory = list_of(row(name = schema_text(), species = schema_text(), ooc_notes_favs = nullable(schema_text()), ooc_notes_likes = nullable(schema_text()), ooc_notes_maybes = nullable(schema_text()), ooc_notes_dislikes = nullable(schema_text()), ooc_notes_style = bool(), gendertag = schema_text(), sexualitytag = schema_text(), eventtag = schema_text(), ooc_notes = nullable(schema_text()), tag = schema_text(), erptag = schema_text(), character_ad = nullable(schema_text()), flavor_text = nullable(schema_text()), custom_link = nullable(schema_text()), photo = nullable(schema_text()))))
+	op("refresh", ui_act("refresh"), needs(req(PROC_REF(refresh_refusal))), then(PROC_REF(ui_act_refresh)))
 	op("setTag", ui_act("setTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
 	op("setErpTag", ui_act("setErpTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
 	op("setVisible", ui_act("setVisible", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
@@ -277,13 +278,14 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 	)
 
 
+/// Why the refresh is refused, or null: this is primarily to stop malicious users from trying to lag the server by spamming it.
+/datum/character_directory/proc/refresh_refusal(datum/act/op/A)
+	var/mob/user = A.actor
+	return user.checkMoveCooldown() ? null : msg_reason("Don't spam character directory refresh.")
+
 /datum/character_directory/proc/ui_act_refresh(datum/act/op/A)
 	var/mob/user = A.actor
 	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
-	// This is primarily to stop malicious users from trying to lag the server by spamming this verb
-	if(!user.checkMoveCooldown())
-		to_chat(user, span_warning("Don't spam character directory refresh."))
-		return
 	user.setMoveCooldown(10)
 	update_tgui_static_data(user, ui)
 	return TRUE

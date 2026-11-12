@@ -24,6 +24,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 
 CAPABILITIES(/datum/secrets_menu)
 	interface("Secrets", rights = R_HOLDER)
+	ui_shape(is_debugger = bool(), is_funmin = bool())
 	op("admin_log", ui_act("admin_log"), then(PROC_REF(ui_act_admin_log)))
 	op("dialog_log", ui_act("dialog_log"), then(PROC_REF(ui_act_dialog_log)))
 	op("show_admins", ui_act("show_admins"), then(PROC_REF(ui_act_show_admins)))

@@ -1,31 +1,7 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { UplinkData } from '../generated/Uplink';
 
-export type Data = {
-  telecrystals: number;
-  lockable: BooleanLike;
-  compactMode: BooleanLike;
-  discount_name: string;
-  discount_amount: number;
-  offer_expiry: string;
-  Exploit: Exploit | null;
-  locked_records: { name: string; id: number }[] | null;
-  categories: { name: string; items: Item[] | null }[];
-};
+export type Data = UplinkData;
 
-type Exploit = {
-  nanoui_exploit_record: string;
-  name: string;
-  sex: string;
-  age: string;
-  species: string;
-  rank: string;
-  home_system: string;
-  birthplace: string;
-  citizenship: string;
-  faction: string;
-  religion: string;
-  fingerprint: string;
-  antagfaction: string;
-};
-
-export type Item = { name: string; cost: number; desc: string; ref: number };
+export type Item = NonNullable<
+  UplinkData['categories'][number]['items']
+>[number];

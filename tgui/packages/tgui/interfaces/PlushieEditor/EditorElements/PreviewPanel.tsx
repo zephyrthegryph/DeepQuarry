@@ -54,10 +54,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             }}
           >
             <Box m="auto" minWidth="256px" minHeight="256px">
-              <Image
-                src={`data:image/jpeg;base64,${preview}`}
-                style={{ width: '256px', height: '256px' }}
-              />
+              {!!preview && (
+                <Image
+                  src={`data:image/jpeg;base64,${preview}`}
+                  style={{ width: '256px', height: '256px' }}
+                />
+              )}
             </Box>
           </Box>
         </Stack.Item>

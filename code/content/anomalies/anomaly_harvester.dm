@@ -6,6 +6,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	op("release_all", ui_act(), then(PROC_REF(ui_act_release_all)))
 	interface("AnomalyHarvester", state = nameof(GLOB.tgui_default_state))
+	ui_shape(name = nullable(schema_text()), points = num(), pointsToGenerate = num(), samples = list_of(row(name = schema_text(), icon = schema_text(), icon_state = schema_text(), ref = schema_ref(/obj/item/research_sample))))
 	without("ui_open")
 	op("release_sample", ui_act("release_sample", arg("ref", schema_ref(/obj/item/research_sample))), then(PROC_REF(ui_act_release_sample)))
 	extend("machine_anchor", then(PROC_REF(rewrenched)))
@@ -139,14 +140,14 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	FOR_REAL_CONTENTS(var/obj/item/research_sample/sample, src)
 		UNTYPED_LIST_ADD(sample_data, list(
 			"name" = sample.name,
-			"icon" = sample.icon,
+			"icon" = "[sample.icon]",
 			"icon_state" = sample.icon_state,
 			"ref" = handle_of(sample)
 		))
 
 	var/obj/effect/anomaly/anom = harvested
 	var/list/data = list(
-		"name" = anom,
+		"name" = anom ? "[anom.name]" : null,
 		"points" = points,
 		"pointsToGenerate" = points_to_create,
 		"samples" = sample_data

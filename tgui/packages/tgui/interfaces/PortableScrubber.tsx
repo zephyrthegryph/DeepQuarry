@@ -3,13 +3,12 @@ import { Window } from 'tgui/layouts';
 import { LabeledList, Section, Slider } from 'tgui-core/components';
 
 import { PortableBasicInfo } from './common/PortableAtmos';
-import type { PortableScrubberActions } from './generated/PortableScrubber';
+import type {
+  PortableScrubberActions,
+  PortableScrubberData,
+} from './generated/PortableScrubber';
 
-type Data = {
-  rate: number;
-  minrate: number;
-  maxrate: number;
-};
+type Data = PortableScrubberData;
 
 export const PortableScrubber = (props) => {
   const { act, data } = useBackend<Data, PortableScrubberActions>();

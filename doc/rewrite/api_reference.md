@@ -991,7 +991,7 @@ Notes: membership follows the lifecycle, so nobody adds or removes by hand. `REG
 #### `contents_of(atom, type)`, `locate_within(atom, type)`, `turf_contents_of_type(T, type)`, `locate_on(T, type)`
 Need: read a holder's contents, a tile, or an area without raw `contents` / `loc` reads.
 Defined: `code/engine/refs/containment/spatial.dm:78`, `locate_within` at `code/engine/refs/containment/spatial.dm:92`, `turf_contents_of_type` at `code/engine/refs/containment/spatial.dm:19`
-Example: `for(var/obj/tool in contents_of(mult_belt))`, `code/content/admin/modify_robot.dm:891`
+Example: `for(var/obj/tool in contents_of(mult_belt))`, `code/content/admin/modify_robot.dm:910`
 Replaces / bans: `in X.contents`, `length(contents)`, `locate(...) in` over a raw list (the `spatial` lint, outright ban).
 Notes: a justified raw read carries `// ALLOW(spatial): reason`.
 

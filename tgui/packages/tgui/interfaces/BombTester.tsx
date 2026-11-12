@@ -9,19 +9,9 @@ import {
   Section,
   Slider,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { BombTesterActions } from './generated/BombTester';
+import type { BombTesterActions, BombTesterData } from './generated/BombTester';
 
-type Data = {
-  simulating: BooleanLike;
-  mode: number;
-  tank1: string;
-  tank1ref: string;
-  tank2: string;
-  tank2ref: string;
-  canister: string | null;
-  sim_canister_output: number;
-};
+type Data = BombTesterData;
 
 export const BombTester = (props) => {
   const { act, data } = useBackend<Data, BombTesterActions>();
@@ -114,7 +104,7 @@ export const BombTester = (props) => {
                   <Slider
                     tickWhileDragging
                     minValue={0}
-                    value={sim_canister_output}
+                    value={sim_canister_output ?? 0}
                     maxValue={1013.25}
                     onChange={(e, val: number) =>
                       act('set_can_pressure', { pressure: val })

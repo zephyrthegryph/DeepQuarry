@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section } from 'tgui-core/components';
-import type { AtmosAlertConsoleActions } from './generated/AtmosAlertConsole';
+import type {
+  AtmosAlertConsoleActions,
+  AtmosAlertConsoleData,
+} from './generated/AtmosAlertConsole';
 
-type alarm = { name: string; ref: number };
-
-type Data = { priority_alarms: alarm[]; minor_alarms: alarm[] };
+type Data = AtmosAlertConsoleData;
 
 export const AtmosAlertConsole = (props) => {
   const { act, data } = useBackend<Data, AtmosAlertConsoleActions>();

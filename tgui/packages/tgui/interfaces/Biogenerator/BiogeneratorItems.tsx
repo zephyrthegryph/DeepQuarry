@@ -12,7 +12,7 @@ export const BiogeneratorItems = (props: {
   descending: boolean;
 }) => {
   const { act, data } = useBackend<Data, BiogeneratorActions>();
-  const { points, items = [], build_eff, beaker } = data;
+  const { points, items = {}, build_eff, beaker } = data;
   // Search thingies
   const searcher = createSearch<[string, Sortable]>(
     props.searchText,

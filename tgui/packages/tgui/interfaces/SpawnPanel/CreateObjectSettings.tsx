@@ -12,7 +12,10 @@ import {
 } from 'tgui-core/components';
 
 import { useBackend } from '../../backend';
-import type { SpawnPanelActions } from '../generated/SpawnPanel';
+import type {
+  SpawnPanelActions,
+  SpawnPanelData,
+} from '../generated/SpawnPanel';
 import {
   directionNames,
   directionRotation,
@@ -23,14 +26,6 @@ import type { IconSettings } from './index';
 
 /** The spawn op's arguments (spawn_panel.dm, create-atom-action). */
 export type SpawnArgs = Partial<SpawnPanelActions['create-atom-action']>;
-
-export type SpawnPanelData = {
-  icon: string;
-  iconState: string;
-  iconStates: string[];
-  selected_object?: string;
-  precise_mode: string;
-};
 
 interface CreateObjectSettingsProps {
   onCreateObject?: (args: SpawnArgs) => void;

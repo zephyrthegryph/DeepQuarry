@@ -4,20 +4,10 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
-import type { MoneybagActions } from './generated/Moneybag';
+import type { MoneybagActions, MoneybagData } from './generated/Moneybag';
 
-type Counts = {
-  gold: number;
-  silver: number;
-  iron: number;
-  diamond: number;
-  phoron: number;
-  uranium: number;
-};
-
-type Data = {
-  counts: Counts;
-};
+type Data = MoneybagData;
+type Counts = Data['counts'];
 
 const COIN_LABELS: Array<{ key: keyof Counts; label: string }> = [
   { key: 'gold', label: 'Gold' },

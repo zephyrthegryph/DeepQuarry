@@ -2,16 +2,11 @@ import { useEffect } from 'react';
 import { Button, Dropdown, Slider, Table } from 'tgui-core/components';
 
 import { useBackend } from '../../backend';
-import type { SpawnPanelActions } from '../generated/SpawnPanel';
+import type {
+  SpawnPanelActions,
+  SpawnPanelData,
+} from '../generated/SpawnPanel';
 import type { IconSettings } from './index';
-
-type SpawnPanelData = {
-  icon: string;
-  iconState: string;
-  iconStates: string[];
-  selected_object?: string;
-  apply_icon_override?: boolean;
-};
 
 interface CreateObjectAdvancedSettingsProps {
   iconSettings: IconSettings;

@@ -8,61 +8,13 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { LibraryCompActions } from './generated/LibraryComp';
+import type {
+  LibraryCompActions,
+  LibraryCompData,
+} from './generated/LibraryComp';
 
-type InventoryBook = {
-  ref: number;
-  name: string;
-};
-
-type Checkout = {
-  ref: number;
-  bookname: string;
-  mobname: string;
-  taken_min: number;
-  due_min: number;
-  overdue: BooleanLike;
-};
-
-type InternalBook = {
-  path: string;
-  name: string;
-  author: string;
-  category: string;
-};
-
-type ExternalBook = {
-  id: string;
-  author: string;
-  title: string;
-  category: string;
-};
-
-type ScannerCache = {
-  name: string;
-  author: string;
-};
-
-type Data = {
-  screenstate: number;
-  emagged: BooleanLike;
-  is_admin: BooleanLike;
-  buffer_book: string;
-  buffer_mob: string;
-  checkout_period: number;
-  world_time_min: number;
-  sort_by: string;
-  has_scanner: BooleanLike;
-  scanner_cache: ScannerCache | null;
-  upload_category: string;
-  has_db: BooleanLike;
-  inventory: InventoryBook[];
-  checkouts: Checkout[];
-  internal_archive: InternalBook[];
-  external_archive: ExternalBook[];
-};
+type Data = LibraryCompData;
 
 const ScreenLabel: Record<number, string> = {
   0: 'Main Menu',

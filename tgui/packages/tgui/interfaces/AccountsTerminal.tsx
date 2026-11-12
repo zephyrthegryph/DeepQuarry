@@ -9,39 +9,16 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { AccountsTerminalActions } from './generated/AccountsTerminal';
-
-type Data = {
-  id_inserted: BooleanLike;
-  id_card: string;
-  access_level: number;
-  machine_id: string;
-  creating_new_account: BooleanLike;
-  detailed_account_view: boolean;
-  station_account_number: number;
-  account_number: number | null;
-  owner_name: string | null;
-  money: number | null;
-  suspended: BooleanLike;
-  transactions: {
-    date: string;
-    time: string;
-    target_name: string;
-    purpose: string;
-    amount: number;
-    source_terminal: string;
-  }[];
-  accounts: {
-    account_number: number;
-    owner_name: string;
-    suspended: string;
-    account_index: number;
-  }[];
-};
+import type {
+  AccountsTerminalActions,
+  AccountsTerminalData,
+} from './generated/AccountsTerminal';
 
 export const AccountsTerminal = (props) => {
-  const { act, data } = useBackend<Data, AccountsTerminalActions>();
+  const { act, data } = useBackend<
+    AccountsTerminalData,
+    AccountsTerminalActions
+  >();
 
   const { id_inserted, id_card, access_level, machine_id } = data;
 
@@ -71,7 +48,10 @@ export const AccountsTerminal = (props) => {
 };
 
 const AccountTerminalContent = (props) => {
-  const { act, data } = useBackend<Data, AccountsTerminalActions>();
+  const { act, data } = useBackend<
+    AccountsTerminalData,
+    AccountsTerminalActions
+  >();
 
   const { creating_new_account, detailed_account_view } = data;
 
@@ -107,7 +87,7 @@ const AccountTerminalContent = (props) => {
 };
 
 const NewAccountView = (props) => {
-  const { act } = useBackend<Data, AccountsTerminalActions>();
+  const { act } = useBackend<AccountsTerminalData, AccountsTerminalActions>();
 
   const [holder, setHolder] = useSharedState('holder', '');
   const [newMoney, setMoney] = useSharedState('money', '');
@@ -141,7 +121,10 @@ const NewAccountView = (props) => {
 };
 
 const DetailedView = (props) => {
-  const { act, data } = useBackend<Data, AccountsTerminalActions>();
+  const { act, data } = useBackend<
+    AccountsTerminalData,
+    AccountsTerminalActions
+  >();
 
   const {
     access_level,
@@ -230,7 +213,10 @@ const DetailedView = (props) => {
 };
 
 const ListView = (props) => {
-  const { act, data } = useBackend<Data, AccountsTerminalActions>();
+  const { act, data } = useBackend<
+    AccountsTerminalData,
+    AccountsTerminalActions
+  >();
 
   const { accounts } = data;
 

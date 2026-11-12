@@ -8,18 +8,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { DNAForensicsActions } from './generated/DNAForensics';
-
-type Data = {
-  scan_progress: number;
-  scanning: BooleanLike;
-  bloodsamp: string;
-  bloodsamp_desc: string;
-};
+import type {
+  DNAForensicsActions,
+  DNAForensicsData,
+} from './generated/DNAForensics';
 
 export const DNAForensics = (props) => {
-  const { act, data } = useBackend<Data, DNAForensicsActions>();
+  const { act, data } = useBackend<DNAForensicsData, DNAForensicsActions>();
   const { scan_progress, scanning, bloodsamp, bloodsamp_desc } = data;
   return (
     <Window width={540} height={326}>

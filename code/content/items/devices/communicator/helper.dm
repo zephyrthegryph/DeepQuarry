@@ -43,11 +43,14 @@
 	var/list/news = list()
 
 	// Compile all the newscasts
+	var/channel_index = 0
 	for(var/datum/feed_channel/channel in GLOB.news_network.network_channels)
+		channel_index++ // the same position compile_news() gives the channel in the feeds list
 		if(!channel.censored)
 			for(var/datum/feed_message/FM in channel.messages)
 				var/body = replacetext(FM.body, "\n", "<br>")
 				news[++news.len] = list(
+							"index" = channel_index,
 							"channel" = channel.channel_name,
 							"author" = FM.author,
 							"body" = body,

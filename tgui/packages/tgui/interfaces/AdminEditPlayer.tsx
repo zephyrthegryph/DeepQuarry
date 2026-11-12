@@ -8,57 +8,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Language = { key: string; known: BooleanLike };
-type DnaCell = {
-  block: number;
-  name: string | null;
-  tname: string | null;
-  state: 'active' | 'blocked' | 'inactive' | 'empty';
-};
-
-type Data = {
-  ref: string;
-  name: string;
-  key: string;
-  mob_type: string;
-  has_client: BooleanLike;
-  is_newplayer: BooleanLike;
-  is_human: BooleanLike;
-  is_ai: BooleanLike;
-  is_carbon: BooleanLike;
-  is_small: BooleanLike;
-  is_corgi: BooleanLike;
-  is_animal: BooleanLike;
-  client_name: string | null;
-  client_ref: string | null;
-  player_age?: number;
-  account_join_date?: string;
-  account_age?: number;
-  inactivity_minutes: number;
-  rank_names?: string;
-  editrights_mode?: string;
-  muted: number;
-  can_event: BooleanLike;
-  special_character: number; // 0,1,2
-
-  mute_mask_ic: number;
-  mute_mask_ooc: number;
-  mute_mask_looc: number;
-  mute_mask_pray: number;
-  mute_mask_adminhelp: number;
-  mute_mask_deadchat: number;
-  mute_mask_all: number;
-
-  dna_cells: DnaCell[] | null;
-  dna_se_length?: number;
-
-  languages: Language[];
-};
-
 import type { ActFn } from './common/PanelTypes';
-import type { AdminEditPlayerActions } from './generated/AdminEditPlayer';
+import type {
+  AdminEditPlayerActions,
+  AdminEditPlayerData,
+} from './generated/AdminEditPlayer';
+
+type Data = AdminEditPlayerData;
+type DnaCell = NonNullable<Data['dna_cells']>[number];
 
 const MuteButton = (props: {
   data: Data;

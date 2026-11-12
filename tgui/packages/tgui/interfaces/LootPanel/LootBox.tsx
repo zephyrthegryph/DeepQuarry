@@ -1,15 +1,12 @@
 import type { MouseEvent } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { capitalizeFirst } from 'tgui-core/string';
-import type { LootPanelActions } from '../generated/LootPanel';
+import type { LootPanelActions, LootPanelData } from '../generated/LootPanel';
 import { IconDisplay } from './IconDisplay';
 import type { SearchGroup, SearchItem } from './types';
 
-type Data = {
-  is_blind: BooleanLike;
-};
+type Data = LootPanelData;
 
 type Props =
   | {

@@ -3,34 +3,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { GameModePanelActions } from './generated/GameModePanel';
-
-type AntagTemplate = {
-  id: string;
-  count: number;
-  cur_max: number;
-};
-
-type Data = {
-  alive: BooleanLike;
-  mode_name?: string;
-  config_tag?: string;
-  ert_enabled?: BooleanLike;
-  respawn_allowed?: BooleanLike;
-  shuttle_delay?: number;
-  shuttle_auto_recall?: BooleanLike;
-  event_modifier_moderate?: number;
-  event_modifier_major?: number;
-  autotraitor?: BooleanLike;
-  antag_scaling_coeff?: number;
-  core_antag_tags?: string[];
-  antag_templates?: AntagTemplate[];
-};
+import type {
+  GameModePanelActions,
+  GameModePanelData,
+} from './generated/GameModePanel';
 
 export const GameModePanel = () => {
-  const { data, act } = useBackend<Data, GameModePanelActions>();
+  const { data, act } = useBackend<GameModePanelData, GameModePanelActions>();
   if (!data.alive) {
     return (
       <Window width={540} height={500} title="Edit Game Mode">

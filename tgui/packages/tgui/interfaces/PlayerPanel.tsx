@@ -15,23 +15,13 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PlayerPanelActions } from './generated/PlayerPanel';
+import type {
+  PlayerPanelActions,
+  PlayerPanelData,
+} from './generated/PlayerPanel';
 
-type Player = {
-  name: string;
-  real_name: string;
-  key: string;
-  connected: BooleanLike;
-  job: string;
-  is_antagonist: number;
-  ref: number;
-  ip: string;
-};
-
-type Data = {
-  players: Player[];
-};
+type Data = PlayerPanelData;
+type Player = Data['players'][number];
 
 type SortKey = 'name' | 'real_name' | 'key' | 'job';
 

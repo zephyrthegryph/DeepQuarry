@@ -19,6 +19,7 @@ CAPABILITIES(/datum/flight_operations_ui)
 	ref_one(nameof(host), /datum)
 	ref_one(nameof(forced_vessel), /datum/flight_vessel)
 	interface("FlightOperations", title = "Flight Operations")
+	ui_shape(vessel = schema_text(), vessel_destination_id = nullable(schema_text()), docked_port_id = nullable(schema_text()), server_time = num(), destinations = list_of(row(id = schema_text(), name = schema_text(), description = schema_text(), kind = enum(list("system", "surface", "station", "vessel", "orbit", "expedition")), scene_role = enum(list("celestial", "orbital", "docked")), orbit_parent_id = nullable(schema_text()), docked_port_id = nullable(schema_text()), docked_host_id = nullable(schema_text()), orbit_radius = num(), orbit_period = num(), orbit_phase = num(), orbit_inclination = num(), body_radius = num(), body_color = schema_text(), latitude = nullable(num()), longitude = nullable(num()), compatible = bool(), materialized = bool(), is_current = bool())), plan = nullable(row(id = schema_text(), destination_id = nullable(schema_text()), origin_id = nullable(schema_text()), destination = nullable(schema_text()), state = int(), state_name = schema_text(), failure = nullable(schema_text()), eta = num(), departure_at = num(), arrival_at = num(), generation_progress = num(), generation_stage = nullable(schema_text()))), expedition = nullable(row(name = schema_text(), objective = schema_text(), progress = schema_text(), infrastructure = nullable(schema_text()), materialized = bool())))
 	op("jump", ui_act("jump", arg("destination_id", schema_text(4096))), then(PROC_REF(ui_act_jump)))
 	op("select_destination", ui_act("select_destination", arg("destination_id")), then(PROC_REF(ui_act_select_destination)))
 	op("engage", ui_act("engage"), then(PROC_REF(ui_act_engage)))
@@ -95,17 +96,9 @@ CAPABILITIES(/datum/flight_operations_ui)
 	var/obj/effect/overmap/visitable/ship/ship = vessel?.ship()
 	var/list/data = list(
 		"vessel" = vessel?.name || "Unlinked vessel",
-		"vessel_id" = vessel?.id,
 		"vessel_destination_id" = SSflight?.destination_for_target(ship)?.id,
-		"orbit_parent_id" = vessel?.orbit_parent_id,
 		"docked_port_id" = vessel?.docked_port_id,
-		"capabilities" = vessel?.capabilities || 0,
-		"engines_online" = ship?.engines_state || FALSE,
-		"thrust_limit" = round((ship?.thrust_limit || 0) * 100),
-		"total_thrust" = ship?.get_total_thrust() || 0,
-		"can_burn" = !!ship?.can_burn(),
 		"destinations" = list(),
-		"contacts" = list(),
 		"plan" = null,
 		"expedition" = null,
 		"server_time" = TIME_NOW(CLOCK_WORLD),
@@ -113,14 +106,6 @@ CAPABILITIES(/datum/flight_operations_ui)
 	if(!vessel)
 		return data
 	data["destinations"] = serialize_destinations(vessel)
-	if(ship)
-		var/list/contacts = list()
-		for(var/contact_id in SSflight.vessels)
-			var/datum/flight_vessel/contact_vessel = SSflight.vessels[contact_id]
-			if(contact_vessel == vessel || contact_vessel.orbit_parent_id != vessel.orbit_parent_id)
-				continue
-			contacts += list(list("name" = contact_vessel.name, "ref" = contact_vessel.id))
-		data["contacts"] = contacts
 	var/datum/flight_plan/plan = vessel.active_plan
 	if(plan)
 		data["plan"] = list(
@@ -134,7 +119,6 @@ CAPABILITIES(/datum/flight_operations_ui)
 			"eta" = max(0, plan.estimated_arrival_at - world.time),
 			"departure_at" = plan.departure_at,
 			"arrival_at" = plan.estimated_arrival_at,
-			"generation_state" = plan.generation_state,
 			"generation_progress" = plan.generation_progress,
 			"generation_stage" = plan.generation_stage,
 		)
@@ -145,7 +129,6 @@ CAPABILITIES(/datum/flight_operations_ui)
 			"objective" = active_expedition.mission?.objective_text() || "Reach the surveyed site.",
 			"progress" = active_expedition.mission?.progress_text() || "Awaiting departure",
 			"infrastructure" = active_expedition.generated_station_status_text(),
-			"status" = active_expedition.status,
 			"materialized" = active_expedition.z_level > 0,
 		)
 	return data

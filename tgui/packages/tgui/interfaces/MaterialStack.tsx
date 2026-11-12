@@ -11,9 +11,10 @@ import {
   Table,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-import type { MaterialStackActions } from './generated/MaterialStack';
-
-type Data = { amount: number; recipes: Record<string, recipe>[] };
+import type {
+  MaterialStackActions,
+  MaterialStackData,
+} from './generated/MaterialStack';
 
 type recipe = {
   res_amount: number;
@@ -23,9 +24,11 @@ type recipe = {
 };
 
 export const MaterialStack = (props) => {
-  const { data } = useBackend<Data, MaterialStackActions>();
+  const { data } = useBackend<MaterialStackData, MaterialStackActions>();
 
-  const { amount, recipes = [] } = data;
+  const { amount } = data;
+  // The tree is open-ended (groups nest groups), so the shape is not generated.
+  const recipes = (data.recipes ?? {}) as unknown as Record<string, recipe>[];
   const [searchText, setSearchText] = useState('');
 
   return (
@@ -102,7 +105,7 @@ const buildMultiplier = (recipe: recipe, amount: number) => {
 };
 
 const Multipliers = (props) => {
-  const { act, data } = useBackend();
+  const { act, data } = useBackend<MaterialStackData, MaterialStackActions>();
 
   const { recipe, maxMultiplier } = props;
 
@@ -151,7 +154,10 @@ const Multipliers = (props) => {
 };
 
 const Recipe = (props: { recipe: recipe; title: string }) => {
-  const { act, data } = useBackend<Data, MaterialStackActions>();
+  const { act, data } = useBackend<
+    MaterialStackData,
+    MaterialStackActions
+  >();
 
   const { amount } = data;
 

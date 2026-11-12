@@ -7,6 +7,7 @@
 CAPABILITIES(/datum/filter_editor)
 	ref_one(nameof(target), /atom)
 	interface("Filteriffic", rights = R_VAREDIT)
+	ui_shape(filter_info = map_of(schema_text(), row()), target_name = schema_text(), target_filter_data = map_of(schema_text(), row())) // open-ended: the master filter table and each filter's own parameters differ per filter type; the TSX types them by hand (types.ts)
 	op("add_filter", ui_act("add_filter", arg("name", schema_text(4096)), arg("priority", num()), arg("type")), then(PROC_REF(ui_act_add_filter)))
 	op("remove_filter", ui_act("remove_filter", arg("name", schema_text(4096))), then(PROC_REF(ui_act_remove_filter)))
 	op("rename_filter", ui_act("rename_filter", arg("name", schema_text(4096)), arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_rename_filter)))

@@ -7,20 +7,10 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { round } from 'tgui-core/math';
-import type { ShockCollarActions } from './generated/ShockCollar';
-
-export type ShockCollarData = {
-  on: boolean;
-  frequency: number;
-  code: number;
-  freq_min: number;
-  freq_max: number;
-  code_min: number;
-  code_max: number;
-  target_size?: number | string;
-  target_size_min?: number;
-  target_size_max?: number;
-};
+import type {
+  ShockCollarActions,
+  ShockCollarData,
+} from './generated/ShockCollar';
 
 export const ShockCollar = (props) => {
   const { act, data } = useBackend<ShockCollarData, ShockCollarActions>();
@@ -74,7 +64,7 @@ export const ShockCollar = (props) => {
 };
 
 export const SizeInput = (props: {
-  size?: number | string;
+  size?: unknown;
   min?: number;
   max?: number;
 }) => {

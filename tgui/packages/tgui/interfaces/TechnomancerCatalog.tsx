@@ -7,37 +7,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { TechnomancerCatalogActions } from './generated/TechnomancerCatalog';
+import type {
+  TechnomancerCatalogActions,
+  TechnomancerCatalogData,
+} from './generated/TechnomancerCatalog';
 
-type Spell = {
-  name: string;
-  desc: string;
-  cost: number;
-  spell_power_desc: string;
-  enhancement_desc: string;
-  category: string;
-  hidden: BooleanLike;
-};
+type Data = TechnomancerCatalogData;
 
-type Item = {
-  name: string;
-  desc: string;
-  cost: number;
-};
-
-type Data = {
-  tab: number;
-  spell_tab: string;
-  budget: number;
-  max_budget: number;
-  spells: Spell[];
-  equipment: Item[];
-  consumables: Item[];
-  assistance: Item[];
-  spell_categories: string[];
-};
+type Item = Data['equipment'][number];
 
 const TAB_LABELS = [
   'Functions',

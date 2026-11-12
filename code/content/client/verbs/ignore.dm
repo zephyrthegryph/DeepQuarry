@@ -14,6 +14,7 @@
 CAPABILITIES(/datum/ignore_list_window)
 	ref_one(nameof(viewer))
 	interface("IgnoreList", title = "Ignore List", state = nameof(GLOB.tgui_always_state))
+	ui_shape(ignored = list_of(schema_text()))
 	op("ignore", ui_act("ignore"), needs(req(PROC_REF(req_own_list))), asks(/datum/prompt/text, fields = list("title" = "Ignore a player", "question" = "The ckey of the player whose OOC and deadchat messages should not appear to you.", "max_len" = 64, "timeout" = 0), step = "key"), needs(req_answer(PROC_REF(ignore_refusal), step = "key")), then(PROC_REF(ui_act_ignore)))
 	op("unignore", ui_act("unignore", arg("key", schema_text(64))), needs(req(PROC_REF(req_own_list)), req(PROC_REF(unignore_refusal))), then(PROC_REF(ui_act_unignore)))
 

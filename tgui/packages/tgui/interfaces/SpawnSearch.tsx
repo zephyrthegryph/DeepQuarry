@@ -19,20 +19,14 @@ import {
   KEY_R,
   KEY_UP,
 } from 'tgui-core/keycodes';
-import type { BooleanLike } from 'tgui-core/react';
 import { resolveAsset } from '../assets';
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 import { logger } from '../logging';
-import type { SpawnSearchActions } from './generated/SpawnSearch';
-
-type SpawnSearchData = {
-  initValue: string | null;
-  searchNames: BooleanLike;
-  regexSearch: BooleanLike;
-  fancyTypes: BooleanLike;
-  includeAbstracts: BooleanLike;
-};
+import type {
+  SpawnSearchActions,
+  SpawnSearchData,
+} from './generated/SpawnSearch';
 
 type SpawnAtomData = {
   // Type -> Name

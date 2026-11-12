@@ -3,8 +3,8 @@ import { Button, Section, Table } from 'tgui-core/components';
 import { formatMoney } from 'tgui-core/format';
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
-import type { Item } from './types';
+import type { UplinkActions } from '../generated/Uplink';
+import type { Data, Item } from './types';
 
 export const ItemList = (props: {
   compactMode: BooleanLike;
@@ -12,7 +12,7 @@ export const ItemList = (props: {
   currencySymbol: string;
   items: Item[];
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, UplinkActions>();
 
   const { compactMode, currencyAmount, currencySymbol, items } = props;
 

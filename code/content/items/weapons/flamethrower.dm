@@ -37,6 +37,7 @@ CAPABILITIES(/obj/item/flamethrower)
 	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool, starts_set = list("status" = 0)) // for disassembly
 	every(2 SECONDS, then(PROC_REF(flamethrower_step)), when = nameof(lit))
 	interface("Flamethrower")
+	ui_shape(lit = bool(), constructed = bool(), throw_amount = num(), has_tank = bool(), throw_min = num(), throw_max = num(), fuel_kpa = num())
 	without("ui_open")
 	op("light", ui_act("light"), then(PROC_REF(ui_act_light)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))

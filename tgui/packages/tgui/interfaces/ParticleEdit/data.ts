@@ -1,3 +1,5 @@
+import type { ParticleEditData } from '../generated/ParticleEdit';
+
 export const RandTypes = [
   'UNIFORM_RAND',
   'NORMAL_RAND',
@@ -56,8 +58,7 @@ export const GeneratorTypesNoVectors = [
   'cube',
 ];
 
-export type ParticleUIData = {
-  target_name: string;
+export type ParticleUIData = Omit<ParticleEditData, 'particle_data'> & {
   particle_data: ParticleData;
 };
 

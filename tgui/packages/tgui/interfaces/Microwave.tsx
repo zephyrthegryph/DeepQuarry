@@ -11,35 +11,12 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { classes } from 'tgui-core/react';
 
 import { AnimatedArrows } from './common/AnimatedArrows';
-import type { MicrowaveActions } from './generated/Microwave';
+import type { MicrowaveActions, MicrowaveData } from './generated/Microwave';
 
-type Item = {
-  name: string;
-  amt: number;
-  extra: string;
-  icon: { icon: string; icon_state: string };
-};
-
-type Reagent = {
-  name: string;
-  amt: number;
-  extra: string;
-  color: string;
-};
-
-type Data = {
-  broken: BooleanLike;
-  operating: BooleanLike;
-  dirty: BooleanLike;
-  items: Item[];
-  reagents: Reagent[];
-  recipe: string | null;
-  recipe_name: string | null;
-};
+type Data = MicrowaveData;
 
 export const Microwave = (props) => {
   const { config, data } = useBackend<Data, MicrowaveActions>();

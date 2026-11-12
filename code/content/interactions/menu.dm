@@ -80,6 +80,7 @@ CAPABILITIES(/datum/interaction_menu)
 	ref_one(nameof(target))
 	owns_one(nameof(menu_window), /datum/tgui_window)
 	interface("InteractionMenu", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
+	ui_shape(visible = bool(), control = schema_text(), cursor_params = schema_text(), view_w = int(), view_h = int(), tile_size = int(), revision = int(), target = nullable(schema_text()), role = nullable(schema_text()), distance = nullable(schema_text()), available = nullable(list_of(row(id = schema_text(), name = nullable(schema_text()), desc = nullable(schema_text()), category = nullable(schema_text()), keys = list_of(schema_text())))), blocked = nullable(list_of(row(id = schema_text(), name = nullable(schema_text()), desc = nullable(schema_text()), category = nullable(schema_text()), reason = nullable(schema_text())))), actions = nullable(list_of(row(id = schema_text(), name = schema_text()))), verbs = nullable(list_of(schema_text())), hidden = nullable(list_of(row(id = schema_text(), name = schema_text(), hidden_by = schema_text())))) // everything after target is sent only while a target is set
 	op("run", ui_act("run", arg("id", schema_text(4096))), then(PROC_REF(ui_act_run)))
 	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
 	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))

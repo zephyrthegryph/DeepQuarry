@@ -16,55 +16,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { ListRow, ListRows, TitleBar } from 'tgui/dq';
 import { CONSOLE_THEME } from 'tgui/layouts/consoleTheme';
-import type { BooleanLike } from 'tgui-core/react';
-import type { InteractionMenuActions } from './generated/InteractionMenu';
+import type {
+  InteractionMenuActions,
+  InteractionMenuData,
+} from './generated/InteractionMenu';
 import { cursorInMap, placeMenu } from './InteractionMenuPlacement';
-
-type Available = {
-  id: string;
-  name: string;
-  desc?: string | null;
-  category: string | null;
-  keys: string[];
-};
-
-type Blocked = {
-  id: string;
-  name: string;
-  desc?: string | null;
-  category: string | null;
-  reason: string;
-};
-
-type Hidden = {
-  id: string;
-  name: string;
-  hidden_by: string;
-};
-
-type Action = {
-  id: string;
-  name: string;
-};
-
-type Data = {
-  visible: BooleanLike;
-  control: string;
-  cursor_params: string;
-  view_w: number;
-  view_h: number;
-  tile_size: number;
-  revision: number;
-  target: string | null;
-  role?: string | null;
-  distance?: string | null;
-  available?: Available[];
-  blocked?: Blocked[];
-  actions?: Action[];
-  verbs?: string[];
-  /** Staff only (R_DEBUG or R_ADMIN): the rows left out, with the requirement that left each out. */
-  hidden?: Hidden[] | null;
-};
 
 const MENU_RESET_CSS = `
 html, body, #react-root, .InteractionMenuRoot,
@@ -98,18 +54,16 @@ export const menuSubtitle = (
 export const actionLabel = (name: string): string => name.replace(/ at$/i, '');
 
 export const InteractionMenu = () => {
-  const { act, data } = useBackend<Data, InteractionMenuActions>();
+  const { act, data } = useBackend<
+    InteractionMenuData,
+    InteractionMenuActions
+  >();
   const boxRef = useRef<HTMLDivElement>(null);
-  const {
-    target,
-    role,
-    distance,
-    available = [],
-    blocked = [],
-    actions = [],
-    verbs = [],
-    hidden = null,
-  } = data;
+  const { target, role, distance, hidden = null } = data;
+  const available = data.available ?? [];
+  const blocked = data.blocked ?? [];
+  const actions = data.actions ?? [];
+  const verbs = data.verbs ?? [];
   const [showHidden, setShowHidden] = useState(false);
 
   // Place and show (or hide) the element whenever the server opens or hides us.

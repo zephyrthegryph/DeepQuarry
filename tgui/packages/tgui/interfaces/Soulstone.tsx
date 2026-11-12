@@ -5,17 +5,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { SoulstoneActions } from './generated/Soulstone';
-
-type Data = {
-  has_shade: BooleanLike;
-  shade_name: string;
-};
+import type { SoulstoneActions, SoulstoneData } from './generated/Soulstone';
 
 export const Soulstone = () => {
-  const { data, act } = useBackend<Data, SoulstoneActions>();
+  const { data, act } = useBackend<SoulstoneData, SoulstoneActions>();
   const { has_shade, shade_name } = data;
 
   return (

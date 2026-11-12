@@ -26,6 +26,7 @@
 CAPABILITIES(/datum/board_game/vore_sweeper)
 	ref_one(nameof(dealer), /mob)
 	interface("VoreSweeper", state = nameof(GLOB.tgui_board_game_state))
+	ui_shape(grid_size = int(), mine_count = int(), max_mines = int(), dealer = nullable(schema_text()), placed_mines = nullable(map_of(schema_text(), bool())), revealed_fields = map_of(schema_text(), schema_any()), placed_flags = map_of(schema_text(), bool()), game_state = int(), is_dealer = bool()) // revealed_fields holds a mine count (number) or "M" (text) per revealed tile
 	op("be_dealer", ui_act("be_dealer"), then(PROC_REF(ui_act_be_dealer)))
 	op("clear_dealer", ui_act("clear_dealer"), then(PROC_REF(ui_act_clear_dealer)))
 	op("restart_game", ui_act("restart_game"), then(PROC_REF(ui_act_restart_game)))

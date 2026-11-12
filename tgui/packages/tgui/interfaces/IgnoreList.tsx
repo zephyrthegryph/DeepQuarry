@@ -3,14 +3,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, NoticeBox, Section, Stack } from 'tgui-core/components';
-import type { IgnoreListActions } from './generated/IgnoreList';
-
-type Data = {
-  ignored: string[];
-};
+import type {
+  IgnoreListActions,
+  IgnoreListData,
+} from './generated/IgnoreList';
 
 export const IgnoreList = () => {
-  const { data, act } = useBackend<Data, IgnoreListActions>();
+  const { data, act } = useBackend<IgnoreListData, IgnoreListActions>();
   const { ignored = [] } = data;
   return (
     <Window width={380} height={420} title="Ignore List">

@@ -12,32 +12,14 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { AutomatedTellerMachineActions } from './generated/AutomatedTellerMachine';
+import type {
+  AutomatedTellerMachineActions,
+  AutomatedTellerMachineData,
+} from './generated/AutomatedTellerMachine';
 
-export type Transaction = {
-  date: string;
-  time: number;
-  target_name: string;
-  purpose: string;
-  amount: number;
-  source_terminal: string;
-};
-
-export type Account = {
-  owner_name: string;
-  money: number;
-  security_level: number;
-  transactions: Transaction[];
-};
-
-export type AutomatedTellerMachineData = {
-  machine_id: string;
-  emagged: number;
-  held_card: string | null;
-  locked_down: number;
-  suspended: boolean;
-  authenticated_account: Account;
-};
+type Transaction = NonNullable<
+  AutomatedTellerMachineData['authenticated_account']
+>['transactions'][number];
 
 export const AutomatedTellerMachine = (props) => {
   const { act, data } = useBackend<
@@ -184,7 +166,7 @@ const WithdrawMenu = (props: {
       }
     >
       <Box fontSize={2} mb={1}>
-        Account Balance: ${data.authenticated_account.money}
+        Account Balance: ${data.authenticated_account?.money}
       </Box>
       <Box fontSize={2} mb={4}>
         <Stack align="center">
@@ -286,7 +268,7 @@ const CustomWithdrawal = (props: {
         <Stack.Item>
           <Stack vertical>
             <Stack.Item fontSize={3}>
-              Available: ${data.authenticated_account.money}
+              Available: ${data.authenticated_account?.money}
             </Stack.Item>
             <Stack.Item>
               <Input
@@ -341,7 +323,7 @@ const BalanceMenu = (props: {
       <Stack justify="space-between">
         <Stack.Item>
           <Box fontSize={1.5} mb={1}>
-            Current Funds: ${data.authenticated_account.money}
+            Current Funds: ${data.authenticated_account?.money}
           </Box>
         </Stack.Item>
         <Stack.Item>
@@ -356,7 +338,7 @@ const BalanceMenu = (props: {
           </Button>
         </Stack.Item>
       </Stack>
-      <TransactionLog transactions={data.authenticated_account.transactions} />
+      <TransactionLog transactions={data.authenticated_account?.transactions ?? []} />
     </Section>
   );
 };
@@ -413,7 +395,7 @@ const MoreMenu = (props: {
       <Button
         fluid
         style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-        selected={data.authenticated_account.security_level === 0}
+        selected={data.authenticated_account?.security_level === 0}
         onClick={() => act('change_security_level', { new_security_level: 0 })}
       >
         Zero - Either the account number or card is required to access this
@@ -423,7 +405,7 @@ const MoreMenu = (props: {
       <Button
         fluid
         style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-        selected={data.authenticated_account.security_level === 1}
+        selected={data.authenticated_account?.security_level === 1}
         onClick={() => act('change_security_level', { new_security_level: 1 })}
       >
         One - An account number and pin must be manually entered to access this
@@ -432,7 +414,7 @@ const MoreMenu = (props: {
       <Button
         fluid
         style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-        selected={data.authenticated_account.security_level === 2}
+        selected={data.authenticated_account?.security_level === 2}
         onClick={() => act('change_security_level', { new_security_level: 2 })}
       >
         Two - In addition to account number and pin, a card is required to
@@ -485,7 +467,7 @@ const TransferMenu = (props: {
     >
       <Box fontSize={2}>
         <Box fontSize={3} mb={2}>
-          Available: ${data.authenticated_account.money}
+          Available: ${data.authenticated_account?.money}
         </Box>
 
         <LabeledList>

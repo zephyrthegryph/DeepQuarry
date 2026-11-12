@@ -10,27 +10,16 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { DepartmentStorefrontActions } from './generated/DepartmentStorefront';
-
-type StockItem = {
-  ref: number;
-  name: string;
-  desc: string;
-  suggested: number;
-  price: number;
-  quantity: number;
-};
-
-type Data = {
-  department: string;
-  balance: number;
-  markup: number;
-  authorized: boolean;
-  stock: StockItem[];
-};
+import type {
+  DepartmentStorefrontActions,
+  DepartmentStorefrontData,
+} from './generated/DepartmentStorefront';
 
 export const DepartmentStorefront = (props) => {
-  const { act, data } = useBackend<Data, DepartmentStorefrontActions>();
+  const { act, data } = useBackend<
+    DepartmentStorefrontData,
+    DepartmentStorefrontActions
+  >();
   const { department, balance, markup, authorized, stock = [] } = data;
 
   return (
