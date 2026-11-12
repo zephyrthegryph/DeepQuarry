@@ -35,6 +35,7 @@
 CAPABILITIES(/datum/admin_report)
 	ref_one(nameof(forward_host))
 	interface("AdminReport", rights = R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
+	ui_shape(title = schema_text(), intro_html = schema_text(), body_html = schema_text(), lines = list_of(schema_text()), columns = list_of(schema_text()), rows = list_of(list_of(schema_text())), has_host = bool())
 	op("forward_topic", ui_act("forward_topic", arg("href", schema_text(4096))), then(PROC_REF(ui_act_forward_topic)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 

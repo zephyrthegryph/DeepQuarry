@@ -11,16 +11,11 @@ import {
 } from 'tgui-core/components';
 import { capitalize, createSearch } from 'tgui-core/string';
 
-import type { ReagentData } from './PublicLibraryWiki/types';
+import type { ChemAnalyzerProData } from './generated/ChemAnalyzerPro';
 import { WikiChemistryPage } from './PublicLibraryWiki/WikiPages/WikiSubPages/WikiChemistryPage';
 
-type AnalyzerData = ReagentData & { beakerAmount: number };
-
-type Data = {
-  scannedReagents: AnalyzerData[];
-  beakerTotal: number;
-  beakerMax: number;
-};
+type Data = ChemAnalyzerProData;
+type AnalyzerData = Data['scannedReagents'][number];
 
 export const ChemAnalyzerPro = () => {
   const { data } = useBackend<Data>();

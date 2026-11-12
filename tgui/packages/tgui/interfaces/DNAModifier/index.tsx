@@ -12,7 +12,7 @@ import type { Data } from './types';
 export const DNAModifier = (props) => {
   const { data } = useBackend<Data, DNAModifierActions>();
 
-  const { irradiating, occupant = {} as Data['occupant'] } = data;
+  const { irradiating, occupant } = data;
 
   return (
     <Window width={660} height={870}>

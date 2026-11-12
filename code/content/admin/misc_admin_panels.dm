@@ -80,6 +80,7 @@ CAPABILITIES(/datum/mind_memory_panel)
 CAPABILITIES(/datum/tag_menu_panel)
 	ref_one(nameof(holder))
 	interface("TagMenu", title = "Tag Menu", rights = R_ADMIN)
+	ui_shape(entries = list_of(row(index = int(), ref = num(), name = schema_text(), type = schema_text(), area_coord = schema_text(), health = schema_text(), is_marked = bool())))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("untag", ui_act("untag", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_untag)))
 	op("mark", ui_act("mark", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_mark)))
@@ -230,6 +231,7 @@ CAPABILITIES(/datum/dq_investigate_panel)
 CAPABILITIES(/datum/unban_panel)
 	ref_one(nameof(holder))
 	interface("UnbanPanel", title = "Unban", rights = R_ADMIN)
+	ui_shape(bans = list_of(row(key_id = schema_text(), key = schema_text(), id = schema_text(), ip = schema_text(), reason = schema_text(), by = schema_text(), expiry = schema_text())), count = int())
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("unban", ui_act("unban", arg("key_id", schema_text(4096))), then(PROC_REF(ui_act_unban)))
 	op("edit", ui_act("edit", arg("key_id", schema_text(4096))), then(PROC_REF(ui_act_edit)))
@@ -351,6 +353,7 @@ CAPABILITIES(/datum/jobban_panel)
 	ref_one(nameof(holder))
 	ref_one(nameof(target))
 	interface("JobBanPanel", rights = R_ADMIN|R_MOD)
+	ui_shape(target_name = schema_text(), target_ref = num(), departments = list_of(row(title = schema_text(), color = schema_text(), dept_bantype = nullable(schema_text()), is_dept_banned = bool(), jobs = list_of(row(title = schema_text(), display = nullable(schema_text()), is_banned = bool())))))
 	op("toggle_job", ui_act("toggle_job", arg("title", schema_text(4096))), then(PROC_REF(ui_act_toggle_job)))
 	op("toggle_dept", ui_act("toggle_dept", arg("bantype", schema_text(4096))), then(PROC_REF(ui_act_toggle_dept)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
@@ -409,6 +412,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	for(var/title in get_dept_job_titles(dept_const))
 		jobs += list(list(
 			"title" = title,
+			"display" = null,
 			"is_banned" = !!jobban_isbanned(target(), title),
 		))
 	return list(
@@ -435,6 +439,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	for(var/title in GLOBAL_TABLE_GET(jobban_offmap_job_titles))
 		offmap_block_jobs += list(list(
 			"title" = title,
+			"display" = null,
 			"is_banned" = !!jobban_isbanned(target(), title),
 		))
 	departments += list(list(
@@ -450,6 +455,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	var/list/civ_jobs = civilian["jobs"]
 	civ_jobs += list(list(
 		"title" = JOB_INTERNAL_AFFAIRS_AGENT,
+		"display" = null,
 		"is_banned" = !!jobban_isbanned(target(), JOB_INTERNAL_AFFAIRS_AGENT),
 	))
 	civilian["jobs"] = civ_jobs
@@ -482,6 +488,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	for(var/entry in misc_roles)
 		misc_jobs += list(list(
 			"title" = entry,
+			"display" = null,
 			"is_banned" = !!jobban_isbanned(target(), entry),
 		))
 	departments += list(list(
@@ -571,6 +578,7 @@ CAPABILITIES(/datum/dq_vending_log_panel)
 CAPABILITIES(/datum/dq_delete_book_panel)
 	ref_one(nameof(our_comp))
 	interface("DeleteBookPanel", title = "Delete Book", rights = R_ADMIN)
+	ui_shape(books = list_of(row(id = schema_text(), author = schema_text(), title = schema_text(), category = schema_text())), error = schema_text(), sort_by = schema_text())
 	op("sort", ui_act("sort", arg("by", schema_text(4096))), then(PROC_REF(ui_act_sort)))
 	op("order_by_id", ui_act("order_by_id"), then(PROC_REF(ui_act_order_by_id)))
 	op("delete", ui_act("delete", arg("id", schema_text(4096))), then(PROC_REF(ui_act_delete)))
@@ -618,6 +626,7 @@ CAPABILITIES(/datum/dq_delete_book_panel)
 
 CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	interface("SyndicateBeacon", title = "Ominous Beacon", state = nameof(GLOB.tgui_default_state))
+	ui_shape(temp = schema_text(), selfdestructing = bool(), charges = int(), recognized = bool(), connection_severed = bool(), user_ref = nullable(num()), user_name = schema_text(), honorific = schema_text())
 	without("ui_open")
 	op("transfer_supplies", ui_act("transfer_supplies", arg("mob_ref", schema_ref(/mob))), then(PROC_REF(ui_act_transfer_supplies)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Use"), then(PROC_REF(interaction_use)))
@@ -648,7 +657,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	else
 		data["recognized"] = FALSE
 		data["connection_severed"] = TRUE
-		data["user_ref"] = ""
+		data["user_ref"] = null
 		data["user_name"] = ""
 		data["honorific"] = ""
 	return data

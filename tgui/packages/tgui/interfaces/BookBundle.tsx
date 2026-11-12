@@ -8,21 +8,10 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type { BookBundleActions } from './generated/BookBundle';
-
-type Kind = 'paper' | 'photo' | 'text';
-
-type Data = {
-  page: number;
-  total_pages: number;
-  page_name: string;
-  page_kind: Kind;
-  page_info: string;
-  scribble: string;
-};
+import type { BookBundleActions, BookBundleData } from './generated/BookBundle';
 
 export const BookBundle = () => {
-  const { data, act } = useBackend<Data, BookBundleActions>();
+  const { data, act } = useBackend<BookBundleData, BookBundleActions>();
   const { page, total_pages, page_name, page_kind, page_info, scribble } = data;
   const isFirst = page === 1;
   const isLast = page === total_pages;

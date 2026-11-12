@@ -12,26 +12,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import type { PdaActions } from '../generated/Pda';
-
-type Data = {
-  theme?: string;
-  owner: string;
-  ownjob: string;
-  idInserted: BooleanLike;
-  idLink: string;
-  useRetro: BooleanLike;
-  touch_silent: BooleanLike;
-  cartridge_name: string;
-  stationTime: string;
-  app: {
-    name: string;
-    icon: string;
-    template: string;
-    has_back: BooleanLike;
-    is_home: string | undefined;
-  };
-};
+import type { PdaActions, PdaData } from '../generated/Pda';
 
 const requirePdaInterface = require.context('./pda_screens', false, /\.tsx$/);
 
@@ -66,7 +47,7 @@ function getPdaApp(name: string) {
 }
 
 export const Pda = (props) => {
-  const { data } = useBackend<Data, PdaActions>();
+  const { data } = useBackend<PdaData, PdaActions>();
 
   const { theme, app, owner, useRetro } = data;
 
@@ -74,7 +55,7 @@ export const Pda = (props) => {
 
   if (!owner) {
     return (
-      <Window width={580} height={670} theme={theme}>
+      <Window width={580} height={670} theme={theme ?? undefined}>
         <Window.Content>
           <Section stretchContents>
             Warning: No ID information found! Please swipe ID!
@@ -87,7 +68,11 @@ export const Pda = (props) => {
   const App = getPdaApp(app.template);
 
   return (
-    <Window width={580} height={670} theme={useRetro ? 'pda_retro' : theme}>
+    <Window
+      width={580}
+      height={670}
+      theme={useRetro ? 'pda_retro' : (theme ?? undefined)}
+    >
       <Window.Content scrollable>
         <PDAHeader
           settingsMode={settingsMode}
@@ -117,7 +102,7 @@ const PDAHeader = (props: {
   settingsMode: BooleanLike;
   onSettingsMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { act, data } = useBackend<Data, PdaActions>();
+  const { act, data } = useBackend<PdaData, PdaActions>();
 
   const { idInserted, idLink, stationTime } = data;
 
@@ -152,7 +137,7 @@ const PDAHeader = (props: {
 };
 
 const PDASettings = (props) => {
-  const { act, data } = useBackend<Data, PdaActions>();
+  const { act, data } = useBackend<PdaData, PdaActions>();
 
   const { idInserted, idLink, cartridge_name, touch_silent } = data;
 
@@ -195,7 +180,7 @@ const PDASettings = (props) => {
 const PDAFooter = (props: {
   onSettingsMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { act, data } = useBackend<Data, PdaActions>();
+  const { act, data } = useBackend<PdaData, PdaActions>();
 
   const { app, useRetro } = data;
 

@@ -19,6 +19,11 @@
 	display_name = "Body Markings"
 	pref_keys = list("body_markings")
 
+/// The wire shape of /datum/preference_editor/body_markings's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_body_markings, row(markings = map_of(schema_text(), map_of(schema_text(), one_of(row(color = schema_text(), on = num()), schema_text()))), links = map_of(schema_text(), map_of(schema_text(), schema_text())), species = nullable(schema_text()), incompatible = list_of(schema_text())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_body_markings_static, row(available_styles = map_of(schema_text(), row(name = schema_text(), body_parts = list_of(schema_text()), icon = schema_text(), icon_state = schema_text()))))
+
 /datum/preference_editor/body_markings/build_ui_data(datum/preferences/preferences)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings) || list()
 	var/list/payload = list()

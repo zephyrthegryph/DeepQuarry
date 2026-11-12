@@ -13,7 +13,8 @@
 
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
-import { getEditor } from './editors';
+import type { EditorDataCache, EditorStaticCache } from './editors';
+import { PrefEditor } from './editors/PrefEditor';
 import { LooksPage, looksHasBody } from './LooksPage';
 import { labelForGroup, labelForKey } from './labels';
 import { PrefWidget, resolveWidget } from './PrefWidget';
@@ -34,9 +35,9 @@ import type {
 
 type Props = {
   page: PrefCategory;
-  staticData?: Record<string, Record<string, unknown>>;
+  staticData?: EditorStaticCache;
   values: Record<string, unknown>;
-  editorData: Record<string, Record<string, unknown>>;
+  editorData: EditorDataCache;
   /// When true, this page hosts a full-height editor (e.g. loadout). Skip the
   /// grid layout and let the editor own the container directly.
   fillHeight?: boolean;
@@ -286,9 +287,9 @@ const GroupBlock = ({
 }: {
   category: string;
   group: PrefGroup;
-  staticData?: Record<string, Record<string, unknown>>;
+  staticData?: EditorStaticCache;
   values: Record<string, unknown>;
-  editorData: Record<string, Record<string, unknown>>;
+  editorData: EditorDataCache;
   fillHeight?: boolean;
 }) => {
   const widgets = group.items.filter(
@@ -348,7 +349,10 @@ const GroupBlock = ({
     >
       {group.group === 'flavor' &&
         editors.map((item, idx) => (
-          <Box key={`editor:${item.key}-${idx}`} mb={plain.length > 0 ? 0.5 : 0}>
+          <Box
+            key={`editor:${item.key}-${idx}`}
+            mb={plain.length > 0 ? 0.5 : 0}
+          >
             <EditorBlock
               item={item}
               editorData={editorData}
@@ -366,17 +370,17 @@ const GroupBlock = ({
       )}
       {group.group !== 'flavor' &&
         editors.map((item, idx) => (
-        <Box
-          key={`editor:${item.key}-${idx}`}
-          mt={widgets.length > 0 ? 0.5 : 0}
-        >
-          <EditorBlock
-            item={item}
-            editorData={editorData}
-            staticData={staticData}
-          />
-        </Box>
-      ))}
+          <Box
+            key={`editor:${item.key}-${idx}`}
+            mt={widgets.length > 0 ? 0.5 : 0}
+          >
+            <EditorBlock
+              item={item}
+              editorData={editorData}
+              staticData={staticData}
+            />
+          </Box>
+        ))}
     </Section>
   );
 };
@@ -387,21 +391,21 @@ const EditorBlock = ({
   staticData,
 }: {
   item: PrefGroupItem;
-  editorData: Record<string, Record<string, unknown>>;
-  staticData?: Record<string, Record<string, unknown>>;
+  editorData: EditorDataCache;
+  staticData?: EditorStaticCache;
 }) => {
   const anchor = editorAnchor(item.key);
   const lit = useSearchHighlight(anchor);
   if (item.type !== 'editor') return null;
-  const Editor = getEditor(item.key);
   return (
     <Box
       data-dq-anchor={anchor}
       style={{ height: '100%', ...highlightStyle(lit) }}
     >
-      <Editor
-        data={editorData[item.key] ?? item.data ?? {}}
-        staticData={staticData?.[item.key]}
+      <PrefEditor
+        editorKey={item.key}
+        editorData={editorData}
+        staticData={staticData}
       />
     </Box>
   );

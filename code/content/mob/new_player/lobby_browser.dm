@@ -47,21 +47,13 @@
 	data["display_loading"] = ticker_current_state() == GAME_STATE_STARTUP
 	data["round_start"] = !ticker_mode() || ticker_current_state() <= GAME_STATE_PREGAME
 	data["round_time"] = roundduration2text()
-	data["new_news"] = client?.check_for_new_server_news()
+	data["new_news"] = !!client?.check_for_new_server_news()
 	data["can_submit_feedback"] = SSsqlite.can_submit_feedback(client)
-	data["show_station_news"] = GLOB.news_data.station_newspaper()
+	data["show_station_news"] = !!GLOB.news_data.station_newspaper()
 	data["new_station_news"] = client.prefs.lastlorenews != GLOB.news_data.newsindex
 	data["new_changelog"] = read_preference(/datum/preference/text/lastchangelog) != GLOB.changelog_hash
 	data["can_start_now"] = client.is_localhost() && check_rights_for(client, R_SERVER)
 	data["immediate_start"] = ticker_start_immediately() || ticker_current_state() > GAME_STATE_PREGAME
-
-	return data
-
-/mob/new_player/ui_static_data(datum/act/eval/A)
-	var/list/data = ..()
-
-	data["bg"] = 'icons/misc/loading.dmi'
-	data["bg_state"] = "loading"
 
 	return data
 

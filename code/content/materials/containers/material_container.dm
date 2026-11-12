@@ -748,6 +748,8 @@ CAPABILITIES(/datum/prompt/number/material_insert)
 	data["SHEET_MATERIAL_AMOUNT"] = SHEET_MATERIAL_AMOUNT
 	return data
 
+UI_SCHEMA(lathe_material, row(name = schema_text(), ref = num(), amount = num(), color = schema_text(), sheets = int(), removable = bool()))
+
 /// List format is list(list(name = ..., amount = ..., ref = ..., etc.), list(...))
 /// The stored materials as UI rows (a machine embeds them in its window data).
 /datum/material_container/proc/material_list_data(mob/user, skip_empty = FALSE)

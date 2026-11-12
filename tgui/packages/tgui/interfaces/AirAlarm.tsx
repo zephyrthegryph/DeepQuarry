@@ -6,46 +6,10 @@ import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { Scrubber, Vent } from './common/AtmosControls';
-import type { single_scrubber, single_vent } from './common/CommonTypes';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
-import type { AirAlarmActions } from './generated/AirAlarm';
+import type { AirAlarmActions, AirAlarmData } from './generated/AirAlarm';
 
-type Data = {
-  locked: BooleanLike;
-  siliconUser: BooleanLike;
-  remoteUser: BooleanLike;
-  environment_data: {
-    name: string;
-    value: number;
-    unit: string;
-    danger_level: number;
-  }[];
-  danger_level: number;
-  target_temperature: string;
-  rcon: number;
-  atmos_alarm: BooleanLike;
-  fire_alarm: BooleanLike;
-  emagged: BooleanLike; // Seems unused
-  mode: number;
-  thresholds: thresholds[];
-  scrubbers: single_scrubber[];
-  vents: single_vent[];
-  modes: {
-    name: string;
-    mode: number;
-    selected: BooleanLike;
-    danger: BooleanLike;
-  }[];
-};
-
-type thresholds = {
-  name: string;
-  settings: {
-    env: string;
-    val: number;
-    selected: number;
-  }[];
-};
+type Data = AirAlarmData;
 
 export const AirAlarm = (props) => {
   const { act, data } = useBackend<Data, AirAlarmActions>();
@@ -76,7 +40,7 @@ export const AirAlarm = (props) => {
 const AirAlarmStatus = (props) => {
   const { data } = useBackend<Data, AirAlarmActions>();
 
-  const { environment_data, atmos_alarm, fire_alarm, emagged } = data;
+  const { environment_data, atmos_alarm, fire_alarm } = data;
 
   const entries = (environment_data || []).filter(
     (entry) => entry.value >= 0.01,
@@ -130,11 +94,6 @@ const AirAlarmStatus = (props) => {
         )) || (
           <LabeledList.Item label="Warning" color="bad">
             Cannot obtain air sample for analysis.
-          </LabeledList.Item>
-        )}
-        {!!emagged && (
-          <LabeledList.Item label="Warning" color="bad">
-            Safety measures offline. Device may exhibit abnormal behavior.
           </LabeledList.Item>
         )}
       </LabeledList>

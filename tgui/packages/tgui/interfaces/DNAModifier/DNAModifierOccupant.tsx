@@ -16,7 +16,7 @@ import type { Data } from './types';
 export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
   const { act, data } = useBackend<Data, DNAModifierActions>();
 
-  const { locked, hasOccupant, occupant = {} as Data['occupant'] } = data;
+  const { locked, hasOccupant, occupant } = data;
 
   return (
     <Section

@@ -12,29 +12,8 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { PrefEditorTraitPickerStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
-
-type TraitData = {
-  blood_color: string;
-  traits_cheating: number;
-  starting_trait_points: number;
-  max_traits: number;
-  points_used: number;
-  total_traits: number;
-  pos_traits: string[];
-  neu_traits: string[];
-  neg_traits: string[];
-};
-
-type TraitStatic = {
-  all_traits: Record<
-    string,
-    { name: string; desc: string; cost: number; category: number }
-  >;
-  positive_traits: string[];
-  neutral_traits: string[];
-  negative_traits: string[];
-};
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],
@@ -48,13 +27,14 @@ const COLUMN_COLOR: Record<'pos' | 'neu' | 'neg', string> = {
   neg: 'bad',
 };
 
-export const TraitPicker = ({ data, staticData }: EditorProps) => {
+export const TraitPicker = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'trait_picker'>) => {
   const { act } = useBackend();
-  const d = data as TraitData;
-  const s = (staticData ?? {}) as TraitStatic;
   const [search, setSearch] = useState('');
 
-  if (!s.all_traits) return null;
+  if (!s) return null;
 
   const pointsRemaining = d.starting_trait_points - d.points_used;
   const traitsRemaining = d.max_traits - d.total_traits;
@@ -163,7 +143,7 @@ const TraitColumn = ({
   categoryKey: 'pos' | 'neu' | 'neg';
   available: string[];
   selected: string[];
-  allTraits: TraitStatic['all_traits'];
+  allTraits: PrefEditorTraitPickerStatic['all_traits'];
   search: string;
 }) => {
   const { act } = useBackend();

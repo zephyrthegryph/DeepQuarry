@@ -1,23 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Box } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { LobbyMenuData } from '../generated/LobbyMenu';
 
-export type LobbyData = {
-  display_loading: BooleanLike;
-  server_name: string;
-  map: string;
-  station_time: string;
-  round_start: BooleanLike;
-  round_time: string;
-  ready: BooleanLike;
-  new_news: BooleanLike;
-  can_submit_feedback: BooleanLike;
-  show_station_news: BooleanLike;
-  new_station_news: BooleanLike;
-  new_changelog: BooleanLike;
-  can_start_now: BooleanLike;
-  immediate_start: BooleanLike;
-};
+export type LobbyData = LobbyMenuData;
 
 export type LobbyContextType = {
   animationsDisabled: boolean;

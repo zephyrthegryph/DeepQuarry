@@ -31,11 +31,11 @@ export const BodyScannerMainAbnormalities = (props: { occupant: occupant }) => {
   return (
     <>
       <Section title="Abnormalities">
-        {abnormalities.map((a, i) => {
-          if (occupant[a[0] as string]) {
+        {abnormalities.map(([flag, color, text]) => {
+          if (occupant[flag]) {
             return (
-              <Box key={i} color={a[1] as string} bold={a[1] === 'bad'}>
-                {(a[2] as (occupant: occupant) => string)(occupant)}
+              <Box key={flag} color={color} bold={color === 'bad'}>
+                {text(occupant)}
               </Box>
             );
           }

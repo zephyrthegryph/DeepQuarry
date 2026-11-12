@@ -12,7 +12,7 @@ import {
 } from '../../WikiCommon/WikiQuickElements';
 
 export const WikiChemistryPage = (props: {
-  chems: ReagentData & Partial<{ beakerAmount: number }>;
+  chems: ReagentData;
   beakerFill: number;
 }) => {
   const { beakerFill, chems } = props;

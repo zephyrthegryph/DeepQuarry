@@ -5,11 +5,11 @@ import { Stack, Tabs } from 'tgui-core/components';
 import type { MedigunActions } from '../generated/Medigun';
 import { MedigunContent } from './MedigunTabs/MedigunContent';
 import { MedigunParts } from './MedigunTabs/MedigunParts';
-import type { Data, ExamineData } from './types';
+import type { Data } from './types';
 
 export const Medigun = (props) => {
   const { data } = useBackend<Data, MedigunActions>();
-  const { maintenance, examine_data = {} as ExamineData } = data;
+  const { maintenance, examine_data } = data;
   const [selectedTab, setSelectedTab] = useState(0);
 
   const tab: React.JSX.Element[] = [];

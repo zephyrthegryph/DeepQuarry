@@ -2,25 +2,6 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
-type Faction = {
-  id: string;
-  name: string;
-  short_name: string;
-  acronym: string;
-  description: string;
-  color: string;
-  grid_x: number;
-  grid_y: number;
-};
-
-type Data = {
-  affiliations: Record<string, string>;
-  reputation_total: number;
-  reputation_cap: number;
-};
-
-type Static = { factions: Faction[]; choices: string[] };
-
 const AFFILIATION_COLORS: Record<string, string> = {
   Hostile: '#d94b4b',
   Opposed: '#d8894b',
@@ -32,13 +13,10 @@ const AFFILIATION_COLORS: Record<string, string> = {
 export const FactionAffiliationsEditor = ({
   data,
   staticData,
-}: EditorProps) => {
+}: EditorProps<'faction_affiliations'>) => {
   const { act } = useBackend();
-  const affiliations = ((data as Data).affiliations ?? {}) as Record<
-    string,
-    string
-  >;
-  const { factions = [], choices = [] } = (staticData ?? {}) as Static;
+  const { affiliations } = data;
+  const { factions = [], choices = [] } = staticData ?? {};
 
   const setAffiliation = (faction: string, affiliation: string) =>
     act('dq_editor_action', {

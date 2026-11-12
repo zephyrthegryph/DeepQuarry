@@ -3,22 +3,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { SyndicateBeaconActions } from './generated/SyndicateBeacon';
-
-type Data = {
-  temp: string;
-  selfdestructing: BooleanLike;
-  charges: number;
-  recognized: BooleanLike;
-  connection_severed: BooleanLike;
-  user_ref: number;
-  user_name: string;
-  honorific: string;
-};
+import type {
+  SyndicateBeaconActions,
+  SyndicateBeaconData,
+} from './generated/SyndicateBeacon';
 
 export const SyndicateBeacon = () => {
-  const { data, act } = useBackend<Data, SyndicateBeaconActions>();
+  const { data, act } = useBackend<
+    SyndicateBeaconData,
+    SyndicateBeaconActions
+  >();
   const {
     temp,
     selfdestructing,

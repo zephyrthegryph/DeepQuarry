@@ -143,6 +143,8 @@
 
 // --- TGUI ------------------------------------------------------------------------
 
+UI_SCHEMA(diagnosis_report, row(status = enum(list("alive", "critical", "dead")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), vitals = row(heartRate = nullable(num()), bloodPressure = nullable(list_of(num())), oxygenation = nullable(num()), respiratoryRate = nullable(num()), heartRhythm = nullable(enum(list("sinus", "post_arrest", "tachy", "vfib", "asystole"))), temperature = nullable(num()), consciousness = nullable(schema_text()), bloodPercent = nullable(num())), findings = list_of(row(name = schema_text(), kind = enum(list("condition", "sign", "lesion", "wound")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), location = schema_text(), description = nullable(schema_text()), trend = nullable(enum(list("new", "worsening", "improving", "stable"))), hint = nullable(schema_text()))), parts = list_of(row(name = schema_text(), kind = nullable(enum(list("external", "internal"))), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), flags = list_of(schema_text()), implants = nullable(list_of(schema_text())))), hints = list_of(row(tag = schema_text(), label = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical"))))))
+
 /datum/diagnosis/proc/report_data()
 	var/list/finding_data = list()
 	for(var/datum/diagnosis_finding/F as anything in findings)
@@ -155,6 +157,9 @@
 			"trend" = F.trend,
 			"hint" = F.hint,
 		))
+	var/list/part_data = list()
+	for(var/list/P as anything in parts) // every key the shape names, so a part a producer wrote short still reads whole
+		part_data += list(list("name" = P["name"], "kind" = P["kind"], "band" = P["band"], "flags" = P["flags"] || list(), "implants" = P["implants"]))
 	var/list/hint_data = list()
 	for(var/tag in hints)
 		hint_data += list(list("tag" = tag, "label" = treatment_tag_label(tag), "band" = hints[tag]))
@@ -172,7 +177,7 @@
 			"bloodPercent" = blood_percent,
 		),
 		"findings" = finding_data,
-		"parts" = parts || list(),
+		"parts" = part_data,
 		"hints" = hint_data,
 	)
 

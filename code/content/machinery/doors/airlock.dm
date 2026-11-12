@@ -1326,6 +1326,8 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the slots of the airl
 /datum/cap_data/wires/airlock
 
 CAPABILITIES(/datum/cap_data/wires/airlock)
+	interface("WiresAirlock", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(wires = list_of(row(seen_color = schema_text(), color_name = schema_text(), color = schema_text(), wire = nullable(schema_text()), cut = bool(), attached = bool())), status = list_of(schema_text()), id_tag = nullable(schema_text()), frequency = nullable(num()), min_freq = num(), max_freq = num())
 	op("set_id_tag", ui_act(), needs(req_wires_in_reach()),
 		asks(/datum/prompt/text, fields = list("title" = "ID Tag", "question" = "Enter a new ID tag", "default" = computed(PROC_REF(id_tag_now)), "max_len" = 60)),
 		then(PROC_REF(id_tag_answered)))

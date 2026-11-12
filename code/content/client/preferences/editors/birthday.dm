@@ -13,6 +13,11 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 		"July", "August", "September", "October", "November", "December", \
 	))
 
+/// The wire shape of /datum/preference_editor/birthday's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_birthday, row(month = num(), day = num(), max_day_for_month = num()))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_birthday_static, row(months = list_of(schema_text())))
+
 /datum/preference_editor/birthday/build_ui_data(datum/preferences/preferences)
 	var/month = preferences.read_preference(/datum/preference/numeric/human/bday_month)
 	return list(

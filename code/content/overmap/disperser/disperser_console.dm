@@ -149,7 +149,6 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	data["range"] = 0
 	data["next_shot"] = -1
 	data["nopower"] = TRUE
-	data["skill"] = FALSE
 	data["chargeload"] = null
 
 	if(!link_parts())

@@ -380,6 +380,8 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 
 // ---- the window ----
 
+UI_SCHEMA(fabricator_design, row(name = schema_text(), desc = schema_text(), cost = map_of(schema_text(), num()), id = schema_text(), categories = list_of(schema_text()), icon = schema_text(), materialConfigurable = bool(), materialProfile = nullable(schema_text()), materialSlots = list_of(row(role = schema_text(), label = schema_text(), amount = num(), defaultMaterial = nullable(schema_text()), optional = bool(), description = nullable(schema_text())))))
+
 /// The window row of one design: name, text, cost at `coefficient`, categories, icon and its material slots.
 /proc/fabricator_design_row(datum/design_techweb/D, coefficient)
 	var/datum/asset/spritesheet_batched/research_designs/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)

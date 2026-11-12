@@ -16,19 +16,19 @@ import type {
   MaterialStackData,
 } from './generated/MaterialStack';
 
-type recipe = {
-  res_amount: number;
-  max_res_amount: number;
-  req_amount: number;
-  ref: number;
-};
+type RecipeTree = MaterialStackData['recipes'];
+type Entry = RecipeTree[string];
+type recipe = Exclude<Entry, RecipeTree>;
+
+/** A recipe (it has a ref) rather than a group of further entries. */
+const isRecipe = (entry: Entry): entry is recipe =>
+  typeof entry.ref === 'number';
 
 export const MaterialStack = (props) => {
   const { data } = useBackend<MaterialStackData, MaterialStackActions>();
 
   const { amount } = data;
-  // The tree is open-ended (groups nest groups), so the shape is not generated.
-  const recipes = (data.recipes ?? {}) as unknown as Record<string, recipe>[];
+  const recipes = data.recipes ?? {};
   const [searchText, setSearchText] = useState('');
 
   return (
@@ -54,10 +54,7 @@ export const MaterialStack = (props) => {
   );
 };
 
-const RecipeList = (props: {
-  recipes: Record<string, recipe>[];
-  searchText: string;
-}) => {
+const RecipeList = (props: { recipes: RecipeTree; searchText: string }) => {
   const { recipes, searchText } = props;
 
   const sortedKeys = Object.keys(recipes).sort();
@@ -82,7 +79,7 @@ const RecipeList = (props: {
     //   );
     // }
     const recipe = recipes[title];
-    if (recipe.ref === undefined) {
+    if (!isRecipe(recipe)) {
       return (
         <Collapsible key={index} ml={1} mb={-0.7} color="label" title={title}>
           <Box ml={1}>
@@ -154,10 +151,7 @@ const Multipliers = (props) => {
 };
 
 const Recipe = (props: { recipe: recipe; title: string }) => {
-  const { act, data } = useBackend<
-    MaterialStackData,
-    MaterialStackActions
-  >();
+  const { act, data } = useBackend<MaterialStackData, MaterialStackActions>();
 
   const { amount } = data;
 

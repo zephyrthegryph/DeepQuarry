@@ -9,35 +9,6 @@ import { ColorChoice } from '../colors';
 import { optionBar, SearchableDropdown, Segmented } from '../controls';
 import type { EditorProps } from './index';
 
-type ExternalState = {
-  status: 'normal' | 'amputated' | 'cyborg';
-  model?: string | null;
-  /// A robotic limb's own tint, and the palette slot it follows if any.
-  color?: string | null;
-  link?: string;
-  own_color?: boolean;
-  /// The cybernetic ancestor that rules out Normal for this limb.
-  forced_by?: string | null;
-  /// The amputated ancestor this limb is lost with.
-  lost_via?: string | null;
-};
-type Data = {
-  /// This species' own limbs are robotic: one colour for the whole body.
-  robotic_body?: boolean | number;
-  body_color?: string;
-  body_link?: string;
-  externals: Record<string, ExternalState>;
-  internals: Record<string, string>;
-  external_labels?: Record<string, string>;
-  internal_labels?: Record<string, string>;
-  external_order?: string[];
-  internal_order?: string[];
-};
-
-type Static = {
-  limb_models?: string[];
-};
-
 const EXTERNAL_STATES: Array<{
   key: 'normal' | 'amputated' | 'cyborg';
   label: string;
@@ -87,13 +58,11 @@ const asOptions = (
   states.map((o) => [o.key, o.label, o.color]);
 
 export const OrgansEditor = ({
-  data,
-  staticData,
+  data: d,
+  staticData: s,
   focusLimb,
-}: EditorProps & { focusLimb?: string | null }) => {
+}: EditorProps<'organs'> & { focusLimb?: string | null }) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
 
   const send = (action: string, params: Record<string, unknown>) =>
     act('dq_editor_action', { editor: 'organs', action, params });
@@ -103,7 +72,7 @@ export const OrgansEditor = ({
   const internalLabels = d.internal_labels ?? {};
   const externalOrder = d.external_order ?? Object.keys(d.externals ?? {});
   const internalOrder = d.internal_order ?? Object.keys(d.internals ?? {});
-  const limbModels = s.limb_models ?? [];
+  const limbModels = s?.limb_models ?? [];
   const statusOf = (limb: string) => d.externals?.[limb]?.status ?? 'normal';
   const organOf = (organ: string) => d.internals?.[organ] ?? 'normal';
 

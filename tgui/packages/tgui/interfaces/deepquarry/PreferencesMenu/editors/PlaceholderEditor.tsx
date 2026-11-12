@@ -4,9 +4,8 @@
 // has its component registered.
 
 import { Box, NoticeBox, Section } from 'tgui-core/components';
-import type { EditorProps } from './index';
 
-export const PlaceholderEditor = ({ data }: EditorProps) => (
+export const PlaceholderEditor = ({ data }: { data?: unknown }) => (
   <Section title="Editor missing">
     <NoticeBox danger>
       A composite editor was registered server-side but no React component is

@@ -16,9 +16,10 @@ import {
   PaletteSlots,
 } from './colors';
 import { Switch } from './controls';
-import { getEditor } from './editors';
+import type { EditorDataCache, EditorStaticCache } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
 import { OrgansEditor } from './editors/OrgansEditor';
+import { PrefEditor } from './editors/PrefEditor';
 import { labelForGroup } from './labels';
 import { normalizeChoices, PrefWidget } from './PrefWidget';
 import {
@@ -155,9 +156,9 @@ const isNoStyle = (value: unknown) => {
 
 type Props = {
   page: PrefCategory;
-  staticData?: Record<string, Record<string, unknown>>;
+  staticData?: EditorStaticCache;
   values: Record<string, unknown>;
-  editorData: Record<string, Record<string, unknown>>;
+  editorData: EditorDataCache;
 };
 
 export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
@@ -238,46 +239,46 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             values={values}
             widgets={widgets}
             withValue={withValue}
-            secondEarColors={
-              (editorData.ear_secondary?.colors ?? []) as string[]
-            }
-            secondEarFallback={
-              (editorData.ear_secondary?.fallback ?? []) as string[]
-            }
+            secondEarColors={editorData.ear_secondary?.colors ?? []}
+            secondEarFallback={editorData.ear_secondary?.fallback ?? []}
           />
         );
       case 'markings':
         return (
           <Box key={card} data-dq-anchor={editorAnchor('body_markings')}>
-            <BodyMarkingsEditor
-              data={editorData.body_markings ?? {}}
-              staticData={staticData?.body_markings}
-              zones={zones}
-              zoneLabel={markingZones?.label}
-            />
+            {editorData.body_markings && (
+              <BodyMarkingsEditor
+                data={editorData.body_markings}
+                staticData={staticData?.body_markings}
+                zones={zones}
+                zoneLabel={markingZones?.label}
+              />
+            )}
           </Box>
         );
       case 'organs':
         return (
           <Box key={card} data-dq-anchor={editorAnchor('organs')}>
             <Section title="Limbs & organs">
-              <OrgansEditor
-                data={editorData.organs ?? {}}
-                staticData={staticData?.organs}
-                focusLimb={focusLimb}
-              />
+              {editorData.organs && (
+                <OrgansEditor
+                  data={editorData.organs}
+                  staticData={staticData?.organs}
+                  focusLimb={focusLimb}
+                />
+              )}
             </Section>
           </Box>
         );
       case 'chassis': {
         const key = 'robot_chassis';
-        const Editor = getEditor(key);
         return (
           <Box key={card} data-dq-anchor={editorAnchor(key)}>
             <Section title="Chassis">
-              <Editor
-                data={editorData[key] ?? {}}
-                staticData={staticData?.[key]}
+              <PrefEditor
+                editorKey={key}
+                editorData={editorData}
+                staticData={staticData}
               />
             </Section>
           </Box>
@@ -411,17 +412,15 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                 />
                 {group.items
                   .filter((i) => i.type === 'editor')
-                  .map((i) => {
-                    const Editor = getEditor(i.key);
-                    return (
-                      <Box key={i.key} data-dq-anchor={editorAnchor(i.key)}>
-                        <Editor
-                          data={editorData[i.key] ?? {}}
-                          staticData={staticData?.[i.key]}
-                        />
-                      </Box>
-                    );
-                  })}
+                  .map((i) => (
+                    <Box key={i.key} data-dq-anchor={editorAnchor(i.key)}>
+                      <PrefEditor
+                        editorKey={i.key}
+                        editorData={editorData}
+                        staticData={staticData}
+                      />
+                    </Box>
+                  ))}
               </Section>
             </Box>
           ))}
@@ -433,8 +432,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
   );
 };
 
-const PREVIEW_LABELS: Record<string, string> = {
-};
+const PREVIEW_LABELS: Record<string, string> = {};
 
 const PreviewSwitch = ({ item }: { item: PrefWidgetItem }) => {
   const { act } = useBackend();
