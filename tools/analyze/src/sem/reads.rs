@@ -96,6 +96,60 @@ impl LookupRead {
         format!("lookup_read_{hash:016x}")
     }
 }
+/// One link of a chain rooted at global state: a var (`news_network`), a call with no arguments (`wanted_issue()`), and whether the walk
+/// iterates the list the link names (`network_channels[]`). `watch` is what a call reads on its receiver: a change of one of those re-resolves the
+/// chain past it.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+pub struct GlobalStep {
+    pub name: String,
+    pub call: bool,
+    pub each: bool,
+    pub watch: Vec<String>,
+}
+/// A chain from a global var (`GLOB`, a `var/global`) through vars and calls with declared types: `GLOB.news_network.wanted_issue()`.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+pub struct GlobalChain {
+    pub global: String,
+    pub steps: Vec<GlobalStep>,
+}
+impl GlobalChain {
+    pub fn display(&self) -> String {
+        let mut s = self.global.clone();
+        for st in &self.steps {
+            s.push('.');
+            s.push_str(&st.name);
+            if st.call {
+                s.push_str("()");
+            }
+            if st.each {
+                s.push_str("[]");
+            }
+        }
+        s
+    }
+    fn with(&self, step: GlobalStep) -> GlobalChain {
+        let mut c = self.clone();
+        c.steps.push(step);
+        c
+    }
+}
+/// A var read on a datum reached through a [`GlobalChain`] (`GLOB.news_network.wanted_issue().backup_author`). The runtime binds it like a
+/// lookup read (code/engine/change/lookup_reads.dm): it walks the chain, watches every link and the field, and republishes the read's key on
+/// the reader when one of them changes. `owner` declares `field`: the var is tracked so its writes publish.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+pub struct GlobalRead {
+    pub chain: GlobalChain,
+    pub field: String,
+    pub owner: String,
+}
+impl GlobalRead {
+    pub fn key(&self) -> String {
+        let text = format!("{}.{}", self.chain.display(), self.field);
+        let hash = text.bytes().fold(14695981039346656037u64, |h, b| (h ^ u64::from(b)).wrapping_mul(1099511628211));
+        format!("lookup_read_g{hash:016x}")
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct LookupDeclaration {
     pub registry: String,
@@ -116,6 +170,8 @@ pub enum ReadKind {
     System,
     /// A declared numeric lookup, bound to actual producers by the engine.
     Lookup(Box<LookupRead>),
+    /// A var on a datum reached from global state through declared vars and calls, bound to actual producers by the engine.
+    Global(Box<GlobalRead>),
 }
 
 /// One read: a var (or key) on the entity reached from `root` through `hops`.
@@ -526,7 +582,7 @@ enum Root {
     Lookup(Box<LookupBound>),
     /// Global state: the `GLOB` datum, a real global var, or a datum reached through one (`GLOB.x`, `SSair`). Not an entity the runtime can
     /// subscribe to; a read through it is classified by [`super::globals::GlobalIndex`] (the closed walk only).
-    Global(String),
+    Global(Box<GlobalChain>),
 }
 
 impl Val {
@@ -582,7 +638,7 @@ struct MemoNode {
     trivial: bool,
 }
 
-type MemoKey = (String, String, Root, Option<String>, Vec<(Root, Option<String>)>, bool);
+type MemoKey = (String, String, Root, Option<String>, Vec<(Root, Option<String>)>, bool, bool);
 
 struct Frame<'a> {
     proc: ProcRef<'a>,
@@ -631,6 +687,12 @@ struct Walk<'a, 'e> {
     merged: HashSet<MemoKey>,
     /// (rule, file, line, message) -> position in `out.diags`: a finding is recorded once however many paths reach it.
     diag_ix: HashMap<(&'static str, String, u32, String), usize>,
+    /// Greater than zero inside a proc called with arguments on global state (`GLOB.portrait_cache.portrait_for(key)`): a query, not a chain the
+    /// runtime can re-walk. What it reads of global state is classified as before (an input nothing publishes), never bound.
+    query_depth: u32,
+    /// Greater than zero inside a proc entered on a value a call link of a global chain returned (`SSx.thing().proc()`): the walk only reaches
+    /// it since chains carry declared return types. What it reads of a system's own vars is not newly an error (the read stays where it was).
+    chain_call_depth: u32,
 }
 
 impl<'a> ReadsEngine<'a> {
@@ -743,7 +805,7 @@ impl<'a> ReadsEngine<'a> {
     fn analyze_uncached(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
+        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new(), query_depth: 0, chain_call_depth: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false, blame: None };
         w.run_proc(p, this, &[], true);
         w.finish();
@@ -768,7 +830,7 @@ impl<'a> ReadsEngine<'a> {
     fn analyze_handler_uncached(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
+        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new(), query_depth: 0, chain_call_depth: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false, blame: None };
         w.run_proc(p, this, &[], true);
         w.finish();
@@ -1285,7 +1347,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             && matches!(this.root, Root::Local | Root::Global(_))
             && bind.iter().all(|v| matches!(v.root, Root::Local | Root::Global(_)));
         if context_free {
-            let key: MemoKey = (owner.clone(), p.name().to_string(), this.root.clone(), this.ty.clone(), bind.iter().map(|v| (v.root.clone(), v.ty.clone())).collect(), no_act);
+            let key: MemoKey = (owner.clone(), p.name().to_string(), this.root.clone(), this.ty.clone(), bind.iter().map(|v| (v.root.clone(), v.ty.clone())).collect(), no_act, self.query_depth > 0);
             let outer = self.override_depth > 0 || self.engine_depth > 0;
             let node = self.eng.caches.memo.read().unwrap().get(&key).cloned();
             if let Some(n) = &node {
@@ -1523,7 +1585,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                     None => Val::local(None),
                 };
                 let declared = fl.var_type.as_ref().and_then(type_str);
-                let mut v = if it.tracked() && it.list {
+                let mut v = if let Some(each) = self.global_each(&it, declared.clone()) {
+                    each
+                } else if it.tracked() && it.list {
                     let mut hops = it.hops.clone();
                     if let Some(last) = hops.last_mut() {
                         if !last.ends_with("[]") {
@@ -1851,26 +1915,37 @@ impl<'a, 'e> Walk<'a, 'e> {
             self.diag("untracked_global", &rel, line, name.to_string());
         }
         let ty = (!sig.declared.is_empty()).then(|| sig.declared.clone());
-        if sig.is_object() {
-            Some(Val { ty, root: Root::Global(name.to_string()), hops: Vec::new(), hop_ok: true, list: false, blame: None })
+        if sig.is_object() || sig.is_list() {
+            Some(Val { ty, root: Root::Global(Box::new(GlobalChain { global: name.to_string(), steps: Vec::new() })), hops: Vec::new(), hop_ok: true, list: sig.is_list(), blame: None })
         } else {
             Some(Val::local(ty))
         }
     }
 
     /// `g.name` where `g` is global state: classifies the read. A var of a system that is tracked is a read of that system's state (it
-    /// publishes); a var nothing writes after boot reads like a constant; anything else is an input nothing publishes.
-    fn global_field(&mut self, fr: &mut Frame<'a>, v: Val, path: &str, name: &str) -> Val {
+    /// publishes); a var nothing writes after boot reads like a constant; a var of `GLOB` itself that changes is an input nothing publishes; a
+    /// var of a datum reached through global state is a [`GlobalRead`] the runtime binds (and the var is tracked, so its writes publish).
+    fn global_field(&mut self, fr: &mut Frame<'a>, v: Val, chain: &GlobalChain, name: &str) -> Val {
         let sem = self.eng.sem;
         let rel = fr.rel.clone();
         let line = self.line;
-        let Some(ty) = v.ty.clone() else { return Val::local(None) };
-        let Some(sig) = sem.var_decl(&ty, name) else { return Val::local(None) };
+        let path = chain.display();
+        let child_chain = chain.with(GlobalStep { name: name.to_string(), call: false, each: false, watch: Vec::new() });
+        let child = child_chain.display();
+        let Some(ty) = v.ty.clone() else {
+            self.unresolved_global(&rel, line, format!("{child}: the type of {path} is not declared (give the var a type or the proc `as /type`)"));
+            return Val::local(None);
+        };
+        let Some(sig) = sem.var_decl(&ty, name) else {
+            if name != "len" && !v.list && sem.ty(&ty).is_some() && sem.proc_ref(&ty, name).is_none() && !is_builtin_name(name) {
+                self.unresolved_global(&rel, line, format!("{child}: {ty} has no var `{name}`"));
+            }
+            return Val::local(None);
+        };
         let owner = sem.var_owner(&ty, name).unwrap_or_else(|| ty.clone());
-        let child = if path == "GLOB" { format!("GLOB.{name}") } else { format!("{path}.{name}") };
-        let is_glob = path == "GLOB";
+        let is_glob = chain.global == "GLOB" && chain.steps.is_empty();
         let mut tracked_system = None;
-        if !is_glob && sem.is_subtype(&ty, "/datum/system") && self.eng.is_tracked(&owner, name) {
+        if !is_glob && chain.steps.is_empty() && sem.is_subtype(&ty, "/datum/system") && self.eng.is_tracked(&owner, name) {
             let short = ty.trim_start_matches("/datum/system/").split('/').next().unwrap_or("").to_string();
             tracked_system = Some(short);
         }
@@ -1878,16 +1953,50 @@ impl<'a, 'e> Walk<'a, 'e> {
             let r = Read { root: format!("system:{}", system), hops: Vec::new(), var: name.to_string(), owner: ty.clone(), kind: ReadKind::System, hop_ok: true };
             self.add_read(r, &rel, line);
         } else if self.mute == 0 {
-            let constant = sig.is_const || if is_glob { self.eng.globals().constant_after_init(name) } else { !self.eng.write_index().is_written_on(self.eng.sem, &ty, name) || (self.eng.globals().field_constant_after_init(name) && !self.eng.is_relation(&ty, name)) };
+            // (A relation is written through the relation layer, never by assignment: the write index does not see it. It is constant only when
+            // only boot code fills it.)
+            let constant = sig.is_const || if is_glob { self.eng.globals().constant_after_init(name) } else if self.eng.is_relation(&ty, name) { self.eng.globals().field_constant_after_init(name) } else { !self.eng.write_index().is_written_on(self.eng.sem, &ty, name) || self.eng.globals().field_constant_after_init(name) };
             if !constant && !self.global_internal(fr, name, if is_glob { &sig.declared } else { &ty }, &sig.file) {
-                self.diag("untracked_global", &rel, line, child.clone());
+                if is_glob || self.query_depth > 0 || framework_file(&rel) || framework_file(&sig.file) || owner == "/" || !sem.is_subtype(&owner, "/datum") || (chain.steps.is_empty() && sem.is_subtype(&ty, "/datum/system")) {
+                    // A var of GLOB itself (or a real global): no entity to publish it. A system's own var is read through its tracked
+                    // vars and accessors (SYSTEM_DEF), the system read above.
+                    if self.chain_call_depth == 0 {
+                        self.diag("untracked_global", &rel, line, child.clone());
+                    }
+                } else {
+                    let g = GlobalRead { chain: chain.clone(), field: name.to_string(), owner: owner.clone() };
+                    let r = Read { root: "holder".to_string(), hops: Vec::new(), var: g.key(), owner: String::new(), kind: ReadKind::Global(Box::new(g)), hop_ok: true };
+                    self.add_read(r, &rel, line);
+                }
             }
         }
-        if sig.is_object() && child.matches('.').count() < MAX_HOPS {
-            Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: Root::Global(child), hops: Vec::new(), hop_ok: true, list: false, blame: None }
+        // The chain is followed from GLOB's own vars (the singletons and registries it names) and across declared relations only, as a
+        // holder's hops are: a plain object or list var (a cache's store, a system's work list) is read, and what is behind it is not bound.
+        let follows = self.query_depth > 0 || ((is_glob || self.eng.is_relation(&ty, name) || self.eng.is_relation(&owner, name)) && !framework_file(&rel) && !framework_file(&sig.file));
+        if follows && (sig.is_object() || sig.is_list()) && child_chain.steps.len() < MAX_HOPS && !(sig.is_object() && !sig.declared.is_empty() && self.is_flyweight_type(&sig.declared)) {
+            Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: Root::Global(Box::new(child_chain)), hops: Vec::new(), hop_ok: true, list: sig.is_list(), blame: None }
         } else {
             Val::local((!sig.declared.is_empty()).then(|| sig.declared))
         }
+    }
+
+    /// A chain rooted at global state the walk cannot follow to a declared type: reported (never dropped), in content only.
+    fn unresolved_global(&mut self, rel: &str, line: u32, msg: String) {
+        if self.mute == 0 && self.eng.virtual_dispatch && !framework_file(rel) {
+            self.diag("unresolved_global", rel, line, msg);
+        }
+    }
+
+    /// `g` iterated or indexed where `g` is a global list: each element, reached through the chain.
+    fn global_each(&self, v: &Val, declared: Option<String>) -> Option<Val> {
+        let Root::Global(chain) = &v.root else { return None };
+        if !v.list {
+            return None;
+        }
+        let mut c = (**chain).clone();
+        let last = c.steps.last_mut()?;
+        last.each = true;
+        Some(Val { ty: declared, root: Root::Global(Box::new(c)), hops: Vec::new(), hop_ok: true, list: false, blame: None })
     }
 
     /// `v.name`: a var read on the entity `v` is (when it is tracked), else nothing.
@@ -1895,8 +2004,8 @@ impl<'a, 'e> Walk<'a, 'e> {
         let sem = self.eng.sem;
         let rel = fr.rel.clone();
         let line = self.line;
-        if let Root::Global(path) = v.root.clone() {
-            return self.global_field(fr, v, &path, name);
+        if let Root::Global(chain) = v.root.clone() {
+            return self.global_field(fr, v, &chain, name);
         }
         if name == "vars" && v.tracked() {
             self.diag("dynamic_read", &rel, line, "vars[] reads are not allowed in a handler".to_string());
@@ -2016,6 +2125,9 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     fn index(&mut self, v: Val) -> Val {
+        if let Some(each) = self.global_each(&v, None) {
+            return each;
+        }
         if v.tracked() && v.list {
             let mut hops = v.hops.clone();
             if let Some(l) = hops.last_mut() {
@@ -2070,12 +2182,53 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
             return Val::local(None);
         }
-        if matches!(v.root, Root::Global(_)) {
+        if let Root::Global(chain) = v.root.clone() {
             // A proc on a global singleton (`SSair.x()`, `GLOB.thing.x()`): followed, its reads classified as global reads.
             if self.eng.virtual_dispatch && !p.is_builtin() {
+                let query = !args.is_empty();
+                let via_call = chain.steps.iter().any(|st| st.call || st.each);
+                self.query_depth += query as u32;
+                self.chain_call_depth += via_call as u32;
                 self.run_proc(p, v, &argv, false);
+                self.chain_call_depth -= via_call as u32;
+                self.query_depth -= query as u32;
             }
-            return Val::local(None);
+            // What it returns, by its declared return type: a datum reached through global state (`GLOB.net.wanted_issue().author`). A call
+            // with arguments is not a chain the runtime can re-walk.
+            if !self.eng.virtual_dispatch || p.is_builtin() {
+                return Val::local(None);
+            }
+            let ret = crate::lints::image_dir_after_build::return_type(sem, &ty, name);
+            if !args.is_empty() || self.query_depth > 0 || chain.steps.len() + 1 >= MAX_HOPS {
+                return Val::local(ret);
+            }
+            let watch: Vec<String> = {
+                // What the call reads on its receiver: a change of one re-resolves the chain past it.
+                let mut w: Vec<String> = Vec::new();
+                if let Some(code) = &*p.get().code {
+                    // A var of the receiver the body names (`return wanted_issue_owned`, `src.x`).
+                    crate::sem::ast::walk_block(code, &mut |e, _| {
+                        if let Expression::Base { term, follow } = e {
+                            let n = match (&term.elem, follow.first().map(|f| &f.elem)) {
+                                (Term::Ident(n), _) if n.as_str() != "src" => Some(n.as_str()),
+                                (Term::Ident(s), Some(Follow::Field(_, n))) if s.as_str() == "src" => Some(n.as_str()),
+                                _ => None,
+                            };
+                            if let Some(n) = n {
+                                if sem.var_owner(&ty, n).map(|o| o != "/").unwrap_or(false) {
+                                    w.push(n.to_string());
+                                }
+                            }
+                        }
+                    });
+                }
+                w.sort();
+                w.dedup();
+                w
+            };
+            let child = chain.with(GlobalStep { name: name.to_string(), call: true, each: false, watch });
+            let list = ret.as_deref().map(|t| t == "/list" || t.starts_with("/list/")).unwrap_or(false);
+            return Val { ty: ret, root: Root::Global(Box::new(child)), hops: Vec::new(), hop_ok: true, list, blame: None };
         }
         if p.is_builtin() || !v.tracked() || !v.hop_ok {
             if let (Some(msg), false, true, false, true) = (v.blame.clone(), p.is_builtin(), v.tracked(), framework_file(&rel), self.mute == 0) {
@@ -2596,6 +2749,60 @@ TRACKED(/datum/thing, rating)
         let closed = ReadsEngine::new(&sem, &decls, &ann).closed().analyze("/datum/thing", "probe");
         assert_eq!(closed.keys(), BTreeSet::from(["charge".to_string(), "rating".to_string()]), "the helper's read of its tracked argument is a read of the holder");
         assert!(closed.diags.is_empty(), "{:?}", closed.diags);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_chain_through_glob_and_declared_returns_is_a_global_read_and_an_untyped_link_is_reported() {
+        let macros = "#define TRACKED(T, V)\n#define READS_FROM(A)\n#define PROC_SUMMARY(P, A...)\n#define CAPABILITIES(T) T/proc/__entries()\n#define owns_one(A...) return\n#define owns_many(A...) return\n";
+        let content = "/datum/msg
+	var/author = \"\"
+	var/datum/msg/next
+/datum/net
+	var/datum/msg/wanted_owned
+	var/list/datum/msg/feed
+	var/datum/msg/cache_like
+CAPABILITIES(/datum/net)
+	owns_one(nameof(wanted_owned), /datum/msg)
+	owns_many(nameof(feed), /datum/msg)
+/datum/net/proc/wanted() as /datum/msg
+	return wanted_owned
+/datum/net/proc/untyped()
+	return wanted_owned
+/datum/controller/global_vars
+	var/datum/net/net
+var/datum/controller/global_vars/GLOB
+/proc/edit(datum/msg/M, datum/net/N)
+	M.author = \"x\"
+	M.next = M
+	N.cache_like = M
+/datum/panel/proc/probe()
+	. = GLOB.net.wanted().author
+	for(var/datum/msg/M in GLOB.net.feed)
+		. += M.author
+	. += GLOB.net.untyped().author
+	. += GLOB.net.cache_like.next.author
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", macros), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let set = ReadsEngine::new(&sem, &decls, &ann).closed().analyze("/datum/panel", "probe");
+        let globals: Vec<(String, String, String)> = set.reads.iter().filter_map(|r| match &r.kind {
+            ReadKind::Global(g) => Some((g.chain.display(), g.field.clone(), g.owner.clone())),
+            _ => None,
+        }).collect();
+        let has = |chain: &str, field: &str| globals.iter().any(|(c, f, _)| c == chain && f == field);
+        assert!(has("GLOB.net.wanted()", "author"), "a call with a declared return type is a link of the chain: {:?}", globals);
+        assert!(has("GLOB.net.feed[]", "author"), "iterating a relation list reads each member's field: {:?}", globals);
+        assert!(has("GLOB.net", "feed"), "the relation list itself is read (a member added re-binds): {:?}", globals);
+        assert!(has("GLOB.net", "cache_like"), "a plain object var is read: {:?}", globals);
+        assert!(!globals.iter().any(|(c, _, _)| c.contains("cache_like")), "but not followed: it is no declared relation: {:?}", globals);
+        let wanted = set.reads.iter().find_map(|r| match &r.kind {
+            ReadKind::Global(g) if g.chain.display() == "GLOB.net.wanted()" => Some(g.chain.steps[1].watch.clone()),
+            _ => None,
+        });
+        assert_eq!(wanted, Some(vec!["wanted_owned".to_string()]), "a call link watches what it reads on its receiver");
+        assert!(set.diags.iter().any(|d| d.rule == "unresolved_global" && d.msg.starts_with("GLOB.net.untyped().author")), "a call with no declared type is reported: {:?}", set.diags);
         std::fs::remove_dir_all(root).unwrap();
     }
 

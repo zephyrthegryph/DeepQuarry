@@ -381,7 +381,7 @@ CAPABILITIES(/datum/system/supply)
 		for(var/department in GLOB.department_accounts)
 			var/datum/money_account/budget = GLOB.department_accounts[department]
 			if(budget?.is_department_budget())
-				budget.allocation_configured = FALSE
+				budget.set_allocation_configured(FALSE)
 	return TRUE
 
 /datum/system/supply/proc/record_currency_created(amount, source)
@@ -426,8 +426,8 @@ CAPABILITIES(/datum/system/supply)
 			pay_due[employee] = due
 			total_due += due
 		if(!total_due)
-			budget.last_payroll_due = 0
-			budget.last_payroll_paid = 0
+			budget.set_last_payroll_due(0)
+			budget.set_last_payroll_paid(0)
 			continue
 		// Payroll is the first expenditure after allocation. If the department is
 		// insolvent, distribute every available Thaler proportionally instead of
@@ -449,8 +449,8 @@ CAPABILITIES(/datum/system/supply)
 				to_chat(employee, span_warning("Your [department] paycheck was partially funded: [pay] of [due] Thalers was deposited."))
 			else
 				to_chat(employee, span_notice("Your [department] paycheck of [pay] Thalers has been deposited."))
-		budget.last_payroll_due = total_due
-		budget.last_payroll_paid = delivered
+		budget.set_last_payroll_due(total_due)
+		budget.set_last_payroll_paid(delivered)
 
 /datum/system/supply/stat_entry(msg)
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]

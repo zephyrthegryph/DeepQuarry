@@ -102,7 +102,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 	var/datum/money_account/budget = GLOB.department_accounts[department]
 	if(!budget || !isnum(new_multiplier) || new_multiplier < 0.5 || new_multiplier > 2 || !can_view_department(department))
 		return FALSE
-	budget.wage_multiplier = new_multiplier
+	budget.set_wage_multiplier(new_multiplier)
 	budget.record_transaction(authenticated, "Department wage policy set to x[budget.wage_multiplier]", 0, name)
 	return TRUE
 
@@ -143,12 +143,12 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 		var/effective_percent = other_plan["allocation_percent"]
 		if(other_department != department && !other_budget.allocation_configured)
 			effective_percent *= automatic_scale
-		other_budget.allocation_percent = effective_percent
-		other_budget.allocation_configured = TRUE
+		other_budget.set_allocation_percent(effective_percent)
+		other_budget.set_allocation_configured(TRUE)
 	var/old_percent = budget.allocation_percent
 	var/old_requested = current_departments?[department]?["requested"] || 0
-	budget.allocation_percent = percent
-	budget.allocation_configured = TRUE
+	budget.set_allocation_percent(percent)
+	budget.set_allocation_configured(TRUE)
 	budget.record_transaction(authenticated, "Recurring operating share set to [percent]%", 0, name)
 	if(old_percent != percent)
 		var/list/plan = SSsupply.department_budget_plan()
@@ -195,11 +195,11 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 	var/datum/money_account/budget = GLOB.department_accounts[department]
 	if(!budget?.is_department_budget() || !budget.allocation_configured)
 		return FALSE
-	budget.allocation_configured = FALSE
+	budget.set_allocation_configured(FALSE)
 	var/list/plan = SSsupply.department_budget_plan()
 	var/list/department_plan = plan["departments"]?[department]
 	var/old_requested = budget.monthly_allocation
-	budget.allocation_percent = 0
+	budget.set_allocation_percent(0)
 	budget.monthly_allocation = department_plan?["requested"] || 0
 	budget.record_transaction(authenticated, "Recurring operating share returned to automatic policy", 0, name)
 	emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(

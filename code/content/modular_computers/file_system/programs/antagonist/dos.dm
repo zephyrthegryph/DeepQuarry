@@ -96,7 +96,7 @@ CAPABILITIES(/datum/computer_file/program/ntnet_dos)
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
 			var/obj/item/computer_hardware/network_card/network_card = computer().network_card
 			GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target().uid] detected from device: [network_card.get_network_tag()]")
-			GLOB.ntnet_global.intrusion_detection_alarm = TRUE
+			GLOB.ntnet_global.set_intrusion_detection_alarm(TRUE)
 	return TRUE
 
 /// The target this refers to (a relation view: null once that is deleted).

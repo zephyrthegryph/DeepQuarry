@@ -47,7 +47,7 @@
 	snap("create_channel_screen")
 	var/datum/feed_channel/draft = holder.admincaster_feed_channel()
 	draft.set_channel_name("Dq Pin Channel") // set_channel_name
-	draft.locked = TRUE // set_channel_lock
+	draft.set_locked(TRUE) // set_channel_lock
 	holder.admincaster_resync()
 	snap("channel_draft")
 	GLOB.news_network.CreateFeedChannel(draft.channel_name, holder.admincaster_signature, draft.locked, 1) // submit_new_channel
@@ -77,13 +77,13 @@
 	if(made)
 		made.set_censored(TRUE) // toggle_d_notice
 	if(story)
-		story.backup_author = story.author // censor_story_author
+		story.set_backup_author(story.author) // censor_story_author
 		story.set_author("REDACTED")
 	snap("censored")
 	var/datum/feed_message/wanted = new /datum/feed_message
 	wanted.set_author("Pin Fugitive") // set_wanted_name
 	wanted.set_body("Wanted for pinning.") // set_wanted_desc
-	wanted.backup_author = holder.admincaster_signature
+	wanted.set_backup_author(holder.admincaster_signature)
 	wanted.is_admin_message = 1
 	rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), wanted) // submit_wanted
 	holder.admincaster_screen = 18

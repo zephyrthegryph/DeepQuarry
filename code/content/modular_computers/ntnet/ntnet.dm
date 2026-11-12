@@ -73,13 +73,13 @@ CAPABILITIES(/datum/ntnet)
 	else
 		log_text += "*SYSTEM* - "
 	log_text += log_string
-	LAZYADD(logs, log_text)
+	add_logs(log_text)
 
 	if(length(logs) > setting_maxlogcount)
 		// We have too many logs, remove the oldest entries until we get into the limit
 		for(var/L in logs)
 			if(length(logs) > setting_maxlogcount)
-				LAZYREMOVE(logs, L)
+				remove_logs(L)
 			else
 				break
 
@@ -171,17 +171,17 @@ CAPABILITIES(/datum/ntnet)
 
 // Resets the IDS alarm
 /datum/ntnet/proc/resetIDS()
-	intrusion_detection_alarm = 0
+	set_intrusion_detection_alarm(0)
 	add_log("-!- INTRUSION DETECTION ALARM RESET BY SYSTEM OPERATOR -!-")
 
 /datum/ntnet/proc/toggleIDS()
 	resetIDS()
-	intrusion_detection_enabled = !intrusion_detection_enabled
+	set_intrusion_detection_enabled(!intrusion_detection_enabled)
 	add_log("Configuration Updated. Intrusion Detection [intrusion_detection_enabled ? "enabled" : "disabled"].")
 
 // Removes all logs
 /datum/ntnet/proc/purge_logs()
-	logs = list()
+	set_logs(list())
 	add_log("-!- LOGS DELETED BY SYSTEM OPERATOR -!-")
 
 // Updates maximal amount of stored logs. Use this instead of setting the number, it performs required checks.
@@ -190,7 +190,7 @@ CAPABILITIES(/datum/ntnet)
 		return 0
 	// Trim the value if necessary
 	lognumber = between(MIN_NTNET_LOGS, lognumber, MAX_NTNET_LOGS)
-	setting_maxlogcount = lognumber
+	set_setting_maxlogcount(lognumber)
 	add_log("Configuration Updated. Now keeping [setting_maxlogcount] logs in system memory.")
 
 /datum/ntnet/proc/toggle_function(function)
@@ -199,16 +199,16 @@ CAPABILITIES(/datum/ntnet)
 	function = text2num(function)
 	switch(function)
 		if(NTNET_SOFTWAREDOWNLOAD)
-			setting_softwaredownload = !setting_softwaredownload
+			set_setting_softwaredownload(!setting_softwaredownload)
 			add_log("Configuration Updated. Wireless network firewall now [setting_softwaredownload ? "allows" : "disallows"] connection to software repositories.")
 		if(NTNET_PEERTOPEER)
-			setting_peertopeer = !setting_peertopeer
+			set_setting_peertopeer(!setting_peertopeer)
 			add_log("Configuration Updated. Wireless network firewall now [setting_peertopeer ? "allows" : "disallows"] peer to peer network traffic.")
 		if(NTNET_COMMUNICATION)
-			setting_communication = !setting_communication
+			set_setting_communication(!setting_communication)
 			add_log("Configuration Updated. Wireless network firewall now [setting_communication ? "allows" : "disallows"] instant messaging and similar communication services.")
 		if(NTNET_SYSTEMCONTROL)
-			setting_systemcontrol = !setting_systemcontrol
+			set_setting_systemcontrol(!setting_systemcontrol)
 			add_log("Configuration Updated. Wireless network firewall now [setting_systemcontrol ? "allows" : "disallows"] remote control of station's systems.")
 
 /datum/ntnet/proc/does_email_exist(login)

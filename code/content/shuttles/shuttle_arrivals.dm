@@ -46,7 +46,7 @@
 			if(!check_for_passengers())
 				await_passengers()
 			else // No point arriving with an empty shuttle.
-				warmup_time = initial(warmup_time)
+				set_warmup_time(initial(warmup_time))
 				log_world("Arrivals [src]: passengers aboard at the offsite landmark; launching to the station.")
 				launch()
 				message_passengers("Arriving at [using_map.station_name] in thirty seconds...")
@@ -59,7 +59,7 @@
 					launch_delay--
 				else
 					launch_delay = initial(launch_delay)
-					warmup_time = 0 // Gotta go fast.
+					set_warmup_time(0) // Gotta go fast.
 					log_world("Arrivals [src]: empty at the station; launching back off-station.")
 					launch()
 

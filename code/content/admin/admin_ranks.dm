@@ -110,13 +110,13 @@ GLOBAL_PROTECT(protected_ranks)
 					continue
 		switch(group_count)
 			if(1)
-				rights |= flag
-				include_rights |= flag
+				set_rights(rights | flag)
+				set_include_rights(include_rights | flag)
 			if(2)
-				rights &= ~flag
-				exclude_rights |= flag
+				set_rights(rights & (~flag))
+				set_exclude_rights(exclude_rights | flag)
 			if(3)
-				can_edit_rights |= flag
+				set_can_edit_rights(can_edit_rights | flag)
 
 /datum/admin_rank/proc/pretty_print_source()
 	switch(source)

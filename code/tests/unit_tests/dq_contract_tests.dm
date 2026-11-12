@@ -1375,8 +1375,8 @@
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/department_budget = GLOB.department_accounts[department]
 		department_budget.monthly_allocation = old_allocations[department]
-		department_budget.allocation_percent = old_percents[department]
-		department_budget.allocation_configured = old_configured[department]
+		department_budget.set_allocation_percent(old_percents[department])
+		department_budget.set_allocation_configured(old_configured[department])
 	qdel(command)
 	qdel(management)
 
@@ -1487,8 +1487,8 @@
 	TEST_ASSERT(subsidized_invoice.settled, "closed-period invoice was not finalized")
 	TEST_ASSERT(!SSsupply.refund_service_invoice(subsidized_invoice, provider, "Unit test checkout", refund_operator), "a finalized accounting-period invoice was refunded after contract settlement")
 	provider.set_money(old_provider_money)
-	provider.monthly_expenses = provider_expenses_before
-	provider.total_expenses = provider_total_expenses_before
+	provider.set_monthly_expenses(provider_expenses_before)
+	provider.set_total_expenses(provider_total_expenses_before)
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)

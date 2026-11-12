@@ -25,7 +25,7 @@ use crate::sem::handlers;
 use crate::sem::reads::{Annotations, ReadKind, ReadSet, ReadsEngine, VarClass, WriteIndex};
 
 /// The diagnostics of a reads walk that leave a consumer's inputs incomplete.
-pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "hop_not_relation", "ffi_call"];
+pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "hop_not_relation", "ffi_call", "unresolved_global"];
 
 /// Engine procs a consumer may call whose reads the runtime registers itself, so the opaque crossing hides nothing: the stat and capability-key
 /// readers resolve to inputs the stat layer indexes (stat_value of a literal id is a stat read; cap_key_get a capability key read).
@@ -40,6 +40,10 @@ fn note_reads(set: &ReadSet, reads: &mut BTreeSet<(String, String)>) {
         // reads it, so it publishes (whether the reader hears it is the dependency graph's question, `hop_not_relation`).
         if r.kind == ReadKind::Var && !r.owner.is_empty() {
             reads.insert((r.owner.clone(), r.var.clone()));
+        }
+        // A var of a datum reached through global state (`GLOB.net.wanted_issue().author`): the runtime binds the chain and hears the var.
+        if let ReadKind::Global(g) = &r.kind {
+            reads.insert((g.owner.clone(), g.field.clone()));
         }
     }
 }
@@ -535,6 +539,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             for r in &set.reads {
                 if r.kind == ReadKind::Var && !r.owner.is_empty() && r.owner != "/datum" {
                     reads.insert((r.owner.clone(), r.var.clone()));
+                }
+                if let ReadKind::Global(g) = &r.kind {
+                    reads.insert((g.owner.clone(), g.field.clone()));
                 }
             }
         }

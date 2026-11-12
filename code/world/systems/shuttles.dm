@@ -217,7 +217,7 @@ ACTION(observer_shuttle_added, datum/shuttle/shuttle, FIXED, notice = /datum/not
 			var/datum/shuttle/mothership = shuttles[S.mothershuttle]
 			if(mothership)
 				S.motherdock = S.current_location().landmark_tag
-				mothership.shuttle_area |= S.shuttle_area
+				mothership.include_shuttle_area(S.shuttle_area)
 			else
 				log_world("## ERROR Shuttle [S] was unable to find mothership [mothership]!")
 

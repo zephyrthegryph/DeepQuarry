@@ -159,7 +159,7 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 		return TRUE
 
 	var/datum/computer_file/data/email_account/new_account = new/datum/computer_file/data/email_account()
-	new_account.login = complete_login
+	new_account.set_login(complete_login)
 	new_account.password = GenerateKey()
 	set_error("Email [new_account.login] has been created, with generated password [new_account.password]")
 	return TRUE

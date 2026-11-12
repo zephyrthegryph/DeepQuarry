@@ -300,6 +300,8 @@
 	TEST_ASSERT_EQUAL(SSradiation.periodic_runlevels, RUNLEVELS_DEFAULT, "radiation runs in the lobby")
 	TEST_ASSERT(SSradiation.is_enabled(), "radiation is disabled")
 	TEST_ASSERT(islist(SSradiation.performance_diagnostics()), "performance_diagnostics() must answer a list")
+	// The first flush after a map load carries every insulating turf and yields over budget by design; drain it so the step is idle.
+	TEST_ASSERT(SSradiation.flush_shielding(), "an unbudgeted shielding flush left turfs dirty")
 	TEST_ASSERT_EQUAL(SSradiation.radiation_step(0), STEP_DONE, "an idle radiation step must finish")
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	TEST_ASSERT(SSradiation.irradiate(target, 0), "irradiate() refused a plain target")
