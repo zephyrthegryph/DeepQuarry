@@ -1797,41 +1797,33 @@ CAPABILITIES(/datum/vore_look)
 	switch(attribute)
 		if("rear")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_rear(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_rear, spont_target)
-			if(host().client.prefs_vr)
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_rear, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
 				host().client.prefs_vr.set_spont_belly_rear(vore_spont_name(host(), "rear"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("front")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_front(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_front, spont_target)
-			if(host().client.prefs_vr)
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_front, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
 				host().client.prefs_vr.set_spont_belly_front(vore_spont_name(host(), "front"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("left")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_left(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_left, spont_target)
-			if(host().client.prefs_vr)
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_left, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
 				host().client.prefs_vr.set_spont_belly_left(vore_spont_name(host(), "left"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("right")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_right(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_right, spont_target)
-			if(host().client.prefs_vr)
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_right, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
 				host().client.prefs_vr.set_spont_belly_right(vore_spont_name(host(), "right"))
 			set_unsaved_changes(TRUE)
 			return TRUE

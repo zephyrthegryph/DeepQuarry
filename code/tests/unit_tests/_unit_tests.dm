@@ -685,6 +685,7 @@
 #include "interim_board_game_subactions.dm"
 #include "interim_preference_editor_actions.dm"
 #include "interim_vore_panel_attributes.dm"
+#include "dq_vore_spont_belly_select.dm"
 #include "interim_armor_lifecycle.dm"
 #include "interim_autopsy_actor.dm"
 #include "interim_beam_lifecycle.dm"
