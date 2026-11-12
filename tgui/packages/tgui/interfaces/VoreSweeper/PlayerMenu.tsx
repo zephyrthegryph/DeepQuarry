@@ -18,12 +18,12 @@ export const PlayerMenu = (props) => {
   const { act, data } = useBackend<Data, VoreSweeperActions>();
 
   const {
-    grid_size,
-    mine_count,
-    max_mines,
+    grid_size = 0,
+    mine_count = 0,
+    max_mines = 0,
     dealer,
     placed_mines,
-    placed_flags,
+    placed_flags = {},
     game_state,
     is_dealer,
   } = data;

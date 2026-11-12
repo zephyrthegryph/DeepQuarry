@@ -28,7 +28,11 @@ type battery = {
 export const XenoarchArtifactHarvester = (props) => {
   const { act, data } = useBackend<Data, XenoarchArtifactHarvesterActions>();
 
-  const { no_scanner, harvesting, inserted_battery } = data.info;
+  const {
+    no_scanner,
+    harvesting,
+    inserted_battery = {} as battery,
+  } = data.info ?? ({} as Partial<Data['info']>);
 
   return (
     <Window width={450} height={200}>

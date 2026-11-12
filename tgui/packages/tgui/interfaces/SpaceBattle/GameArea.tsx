@@ -21,8 +21,8 @@ export const GameArea = (props: {
     player_two,
     shots_fired_pone,
     shots_fired_ptwo,
-    destroyed_ships_pone,
-    destroyed_ships_ptwo,
+    destroyed_ships_pone = [],
+    destroyed_ships_ptwo = [],
     ship_count_pone,
     ship_count_ptwo,
   } = data;
@@ -84,7 +84,7 @@ const Playfield = (props: {
   shipCount: Record<string, number>;
 }) => {
   const { data, act } = useBackend<Data, SpaceBattleActions>();
-  const { game_state, ship_sizes, visible_ships } = data;
+  const { game_state, ship_sizes = {}, visible_ships } = data;
   const {
     player,
     isOpponent,

@@ -102,7 +102,7 @@ const CasinoPrizeDispenserItems = (props: {
   descending: boolean;
 }) => {
   const { act, data } = useBackend<Data, CasinoPrizeDispenserActions>();
-  const { items } = data;
+  const { items = {} } = data;
   // Search thingies
   const searcher = createSearch<[string, Sortable]>(
     props.searchText,

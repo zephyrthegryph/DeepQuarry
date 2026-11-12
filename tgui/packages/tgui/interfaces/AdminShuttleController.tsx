@@ -33,7 +33,7 @@ export const AdminShuttleController = () => {
 export const ShuttleList = (props) => {
   const { act, data } = useBackend<Data, AdminShuttleControllerActions>();
 
-  const { shuttles, overmap_ships } = data;
+  const { shuttles = [], overmap_ships = [] } = data;
 
   const sortedShuttles = [...shuttles].sort((a, b) =>
     a.name.localeCompare(b.name),

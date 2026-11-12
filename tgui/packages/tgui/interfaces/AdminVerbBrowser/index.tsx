@@ -149,7 +149,13 @@ const Settings = (props: { toggles: Data['toggles']; query: string }) => {
 
 export const AdminVerbBrowser = () => {
   const { act, data } = useBackend<Data, AdminVerbBrowserActions>();
-  const { verbs, pins, recent, defaults, toggles } = data;
+  const {
+    verbs = [],
+    pins = [],
+    recent = [],
+    defaults = [],
+    toggles = [],
+  } = data;
   const [query, setQuery] = useState('');
   const [page, setPage] = useState<Page>('browse');
   const [category, setCategory] = useState<string | null>(null);

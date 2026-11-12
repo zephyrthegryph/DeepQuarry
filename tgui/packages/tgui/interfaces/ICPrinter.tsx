@@ -106,7 +106,7 @@ function canBuild(item: item, data: Data) {
 const ICPrinterCategories = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { categories } = data;
+  const { categories = [] } = data;
 
   const [categoryTarget, setcategoryTarget] = useSharedState<string>(
     'categoryTarget',

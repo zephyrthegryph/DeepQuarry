@@ -19,7 +19,7 @@ type Data = {
 export const pAISecrecords = (props) => {
   const { act, data } = useBackend<Data, pAISecrecordsActions>();
 
-  const { records, general, security, could_not_find } = data;
+  const { records = [], general, security, could_not_find } = data;
 
   return (
     <Window width={450} height={600}>

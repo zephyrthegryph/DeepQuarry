@@ -52,9 +52,9 @@ export const ICCircuit = (props) => {
     power_draw_idle,
     power_draw_per_use,
     extended_desc,
-    inputs,
-    outputs,
-    activators,
+    inputs = [],
+    outputs = [],
+    activators = [],
   } = data;
 
   return (

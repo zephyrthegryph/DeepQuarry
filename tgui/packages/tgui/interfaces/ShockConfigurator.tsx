@@ -48,10 +48,10 @@ type Data = {
 export const ShockConfigurator = (props) => {
   const { act, data } = useBackend<Data, ShockConfiguratorActions>();
   const {
-    port,
+    port = 0,
     connected,
-    intensity,
-    duration,
+    intensity = 0,
+    duration = 0,
     selectedDevice,
     availableDevices,
     enabledFlags,

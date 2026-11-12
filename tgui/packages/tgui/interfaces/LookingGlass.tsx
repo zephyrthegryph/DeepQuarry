@@ -14,7 +14,7 @@ type Data = {
 export const LookingGlass = (props) => {
   const { act, data } = useBackend<Data, LookingGlassActions>();
 
-  const { supportedPrograms, currentProgram, immersion, gravity } = data;
+  const { supportedPrograms = [], currentProgram, immersion, gravity } = data;
 
   const height = Math.min(180 + supportedPrograms.length * 23, 600);
 

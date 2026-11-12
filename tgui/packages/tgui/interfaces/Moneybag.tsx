@@ -30,7 +30,7 @@ const COIN_LABELS: Array<{ key: keyof Counts; label: string }> = [
 
 export const Moneybag = () => {
   const { data, act } = useBackend<Data, MoneybagActions>();
-  const counts = data.counts;
+  const counts = data.counts || ({} as Counts);
   const hasAny = COIN_LABELS.some((c) => counts[c.key] > 0);
   return (
     <Window width={360} height={300} title="Moneybag">

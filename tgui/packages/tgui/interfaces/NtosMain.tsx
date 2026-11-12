@@ -68,8 +68,12 @@ export const NtosMain = (props) => {
           }
         >
           <Table>
-            <Table.Row>ID Name: {login.IDName}</Table.Row>
-            <Table.Row>Assignment: {login.IDJob}</Table.Row>
+            <Table.Row>
+              <Table.Cell>ID Name: {login.IDName}</Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Assignment: {login.IDJob}</Table.Cell>
+            </Table.Row>
           </Table>
         </Section>
         {!!removable_media.length && (

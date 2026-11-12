@@ -24,7 +24,7 @@ type Data = {
 
 export const PipeDispenser = (props) => {
   const { act, data } = useBackend<Data>();
-  const { disposals, p_layer, pipe_layers, categories = [] } = data;
+  const { disposals, p_layer, pipe_layers = {}, categories = [] } = data;
 
   const [categoryName, setCategoryName] = useState('categoryName');
   const shownCategory =

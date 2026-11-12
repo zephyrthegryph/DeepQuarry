@@ -40,12 +40,12 @@ type MatrixData = {
 export const MatrixMathTester = (props) => {
   const { act, data } = useBackend<MatrixData, MatrixMathTesterActions>();
   const {
-    matrix_a,
-    matrix_b,
-    matrix_c,
-    matrix_d,
-    matrix_e,
-    matrix_f,
+    matrix_a = 0,
+    matrix_b = 0,
+    matrix_c = 0,
+    matrix_d = 0,
+    matrix_e = 0,
+    matrix_f = 0,
     pixelated,
   } = data;
   const [scaleX, setScaleX] = useState(1);

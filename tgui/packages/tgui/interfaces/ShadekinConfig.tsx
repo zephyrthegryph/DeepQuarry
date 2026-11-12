@@ -31,10 +31,10 @@ export const ShadekinConfig = (props) => {
 
   const {
     stun_time,
-    flicker_time,
+    flicker_time = 0,
     flicker_color,
-    flicker_break_chance,
-    flicker_distance,
+    flicker_break_chance = 0,
+    flicker_distance = 0,
     no_retreat,
     savefile_selected,
     extended_kin,
@@ -155,32 +155,36 @@ export const ShadekinConfig = (props) => {
           </Stack.Item>
           <Stack.Item>
             <Section fill title="Phase Settings">
-              <LabeledList.Item label="Hide Voice in Phase">
-                <Button.Checkbox
-                  tooltip="Toggle if your voice should be hidden (showing as 'Something') when phased!"
-                  checked={hide_voice_in_phase}
-                  onClick={() => act('toggle_voice')}
-                />
-              </LabeledList.Item>
+              <LabeledList>
+                <LabeledList.Item label="Hide Voice in Phase">
+                  <Button.Checkbox
+                    tooltip="Toggle if your voice should be hidden (showing as 'Something') when phased!"
+                    checked={hide_voice_in_phase}
+                    onClick={() => act('toggle_voice')}
+                  />
+                </LabeledList.Item>
+              </LabeledList>
             </Section>
           </Stack.Item>
           {!!extended_kin && (
             <Stack.Item>
               <Section fill title="Misc Settings">
-                <LabeledList.Item label="Retreat on Death">
-                  <Button.Checkbox
-                    tooltip="Toggle if you wish to return to the Dark Retreat upon death!"
-                    checked={!no_retreat}
-                    onClick={() => act('toggle_retreat')}
-                  />
-                </LabeledList.Item>
-                <LabeledList.Item label="Nutrition Conversion">
-                  <Button.Checkbox
-                    tooltip="Toggle to have dark energy and nutrition being converted into each other when full!"
-                    checked={nutrition_energy_conversion}
-                    onClick={() => act('toggle_nutrition')}
-                  />
-                </LabeledList.Item>
+                <LabeledList>
+                  <LabeledList.Item label="Retreat on Death">
+                    <Button.Checkbox
+                      tooltip="Toggle if you wish to return to the Dark Retreat upon death!"
+                      checked={!no_retreat}
+                      onClick={() => act('toggle_retreat')}
+                    />
+                  </LabeledList.Item>
+                  <LabeledList.Item label="Nutrition Conversion">
+                    <Button.Checkbox
+                      tooltip="Toggle to have dark energy and nutrition being converted into each other when full!"
+                      checked={nutrition_energy_conversion}
+                      onClick={() => act('toggle_nutrition')}
+                    />
+                  </LabeledList.Item>
+                </LabeledList>
               </Section>
             </Stack.Item>
           )}

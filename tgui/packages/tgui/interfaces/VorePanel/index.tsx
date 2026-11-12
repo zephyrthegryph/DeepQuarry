@@ -145,7 +145,7 @@ export const VorePanel = () => {
                 Bellies
                 <Icon name="list" ml={0.5} />
               </Tabs.Tab>
-              {!!inside.ref && (
+              {!!inside?.ref && (
                 <Tabs.Tab
                   selected={active_tab === 1}
                   onClick={() => act('change_tab', { tab: 1 })}

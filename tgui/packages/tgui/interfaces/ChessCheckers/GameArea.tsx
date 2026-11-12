@@ -13,9 +13,9 @@ export const GameArea = (props) => {
   const {
     game_type,
     game_state,
-    current_board,
-    selected_figure,
-    valid_moves,
+    current_board = [],
+    selected_figure = [],
+    valid_moves = [],
     possible_jumps,
   } = data;
   const [promotionFloating, setPromotionFloating] =

@@ -22,7 +22,7 @@ type Data = {
 
 export const Safe = () => {
   const { data, act } = useBackend<Data, SafeActions>();
-  const { open, dial, contents } = data;
+  const { open, dial = 0, contents = [] } = data;
 
   return (
     <Window width={360} height={360}>

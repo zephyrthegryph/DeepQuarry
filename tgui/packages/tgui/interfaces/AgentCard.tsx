@@ -12,7 +12,7 @@ type Data = {
 export const AgentCard = (props) => {
   const { act, data } = useBackend<Data, AgentCardActions>();
 
-  const { entries, electronic_warfare } = data;
+  const { entries = [], electronic_warfare } = data;
 
   return (
     <Window width={550} height={400} theme="syndicate">

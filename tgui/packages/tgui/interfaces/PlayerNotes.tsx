@@ -13,7 +13,7 @@ type Data = {
 
 export const PlayerNotes = (props) => {
   const { act, data } = useBackend<Data, PlayerNotesActions>();
-  const { device_theme, filter, pages, ckeys } = data;
+  const { device_theme, filter, pages, ckeys = [] } = data;
 
   const [activePage, setActivePage] = useState(1);
 

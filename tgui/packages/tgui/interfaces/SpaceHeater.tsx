@@ -22,7 +22,7 @@ type Data = {
 export const SpaceHeater = (props) => {
   const { act, data } = useBackend<Data, SpaceHeaterActions>();
 
-  const { temp, minTemp, maxTemp, cell, power } = data;
+  const { temp = 0, minTemp = 0, maxTemp = 1, cell, power } = data;
 
   return (
     <Window width={300} height={250}>

@@ -83,8 +83,8 @@ const SuitCyclerContent = (props: {
     helmet,
     departments,
     species,
-    uv_level,
-    max_uv_level,
+    uv_level = 0,
+    max_uv_level = 0,
     can_repair,
     damage,
   } = data;

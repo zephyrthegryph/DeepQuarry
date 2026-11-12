@@ -11,7 +11,7 @@ export const ChemSynthesizerSettings = (props) => {
     busy,
     production_mode,
     panel_open,
-    rxn_vessel,
+    rxn_vessel = [],
     drug_substance,
     bottle_icon,
     pill_icon,

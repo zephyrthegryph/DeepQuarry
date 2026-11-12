@@ -50,9 +50,9 @@ export const MobSpawner = (props) => {
   const [tabIndex, setTabIndex] = useState<number>(0);
   const [radius, setRadius] = useState<number>(0);
   const [forceUpdate, renderData] = useState<any>();
-  const [x, setX] = useState<number>(data.initial_x);
-  const [y, setY] = useState<number>(data.initial_y);
-  const [z, setZ] = useState<number>(data.initial_z);
+  const [x, setX] = useState<number>(data.initial_x ?? 0);
+  const [y, setY] = useState<number>(data.initial_y ?? 0);
+  const [z, setZ] = useState<number>(data.initial_z ?? 0);
   const [sizeMultiplier, setSizeMultiplier] = useState<number>(100);
   const [amount, setAmount] = useState<number>(1);
 
@@ -202,21 +202,21 @@ const GeneralMobSettings = (props: {
                 <LabeledList.Item label="Spawn (X/Y/Z) Coords">
                   <NumberInput
                     step={1}
-                    value={data.loc_lock ? data.loc_x : props.x}
+                    value={data.loc_lock ? (data.loc_x ?? 0) : props.x}
                     minValue={0}
                     maxValue={256}
                     onChange={(val: number) => props.onX(val)}
                   />
                   <NumberInput
                     step={1}
-                    value={data.loc_lock ? data.loc_y : props.y}
+                    value={data.loc_lock ? (data.loc_y ?? 0) : props.y}
                     minValue={0}
                     maxValue={256}
                     onChange={(val: number) => props.onY(val)}
                   />
                   <NumberInput
                     step={1}
-                    value={data.loc_lock ? data.loc_z : props.z}
+                    value={data.loc_lock ? (data.loc_z ?? 0) : props.z}
                     minValue={0}
                     maxValue={256}
                     onChange={(val: number) => props.onZ(val)}
@@ -298,8 +298,11 @@ const GeneralMobSettings = (props: {
                     </LabeledList.Item>
                     <br />
                   </>
-                )) ||
-                  "Note: Only available for '/mob/living'"}
+                )) || (
+                  <LabeledList.Item label="Note">
+                    Only available for '/mob/living'
+                  </LabeledList.Item>
+                )}
                 {(data.melee_damage_lower && (
                   <>
                     <LabeledList.Item label="Melee Damage (Lower)">
@@ -325,8 +328,11 @@ const GeneralMobSettings = (props: {
                       />
                     </LabeledList.Item>
                   </>
-                )) ||
-                  "Note: Only available for '/mob/living/simple_mob'"}
+                )) || (
+                  <LabeledList.Item label="Note">
+                    Only available for '/mob/living/simple_mob'
+                  </LabeledList.Item>
+                )}
               </LabeledList>
             </Section>
           </Stack.Item>

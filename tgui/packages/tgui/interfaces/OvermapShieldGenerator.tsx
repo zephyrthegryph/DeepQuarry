@@ -57,7 +57,7 @@ export const OvermapShieldGenerator = (props) => {
 
 const OvermapShieldGeneratorContent = (props) => {
   const { act, data } = useBackend<Data, OvermapShieldGeneratorActions>();
-  const { modes, offline_for } = data;
+  const { modes = [], offline_for } = data;
 
   if (offline_for) {
     return (
@@ -181,7 +181,7 @@ const OvermapShieldGeneratorStatus = (props) => {
 
 const OvermapShieldGeneratorControls = (props) => {
   const { act, data } = useBackend<Data, OvermapShieldGeneratorActions>();
-  const { running, hacked, idle_multiplier, idle_valid_values } = data;
+  const { running, hacked, idle_multiplier, idle_valid_values = [] } = data;
 
   return (
     <Section

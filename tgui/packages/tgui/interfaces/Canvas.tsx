@@ -160,7 +160,7 @@ class PaintCanvas extends Component<PaintCanvasProps> {
   drawCanvas(propSource: PaintCanvasProps) {
     const canvas = this.canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
-    const grid = JSON.parse(JSON.stringify(propSource.value));
+    const grid = JSON.parse(JSON.stringify(propSource.value ?? null));
     if (!grid) {
       return;
     }
@@ -282,7 +282,13 @@ class PaintCanvas extends Component<PaintCanvasProps> {
   }
 
   render() {
-    const { res = 1, value, dotsize = PX_PER_UNIT, ...rest } = this.props;
+    const {
+      res = 1,
+      value,
+      dotsize = PX_PER_UNIT,
+      onCanvasClick: _onCanvasClick,
+      ...rest
+    } = this.props;
     const [width, height] = getImageSize(value);
     return (
       <canvas
@@ -302,7 +308,7 @@ class PaintCanvas extends Component<PaintCanvasProps> {
 }
 
 const getImageSize = (value) => {
-  const width = value.length;
+  const width = value?.length ?? 0;
   const height = width !== 0 ? value[0].length : 0;
   return [width, height];
 };

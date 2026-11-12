@@ -17,7 +17,13 @@ type Data = {
 export const RecyclerInterface = (props) => {
   const { act, data } = useBackend<Data, RecyclerInterfaceActions>();
 
-  const { heldItemName, heldItemValue, itemIcon, userName, userBalance } = data;
+  const {
+    heldItemName,
+    heldItemValue,
+    itemIcon = '',
+    userName,
+    userBalance,
+  } = data;
 
   return (
     <Window theme="crtsoul" title="Recycler">
@@ -45,7 +51,9 @@ export const RecyclerInterface = (props) => {
             <Stack align="center" direction="Row">
               <Stack.Item>
                 <Box className="recycler-image-container" inline>
-                  <Image src={itemIcon.substring(1, itemIcon.length - 1)} />
+                  {!!itemIcon && (
+                    <Image src={itemIcon.substring(1, itemIcon.length - 1)} />
+                  )}
                 </Box>
               </Stack.Item>
               <Stack.Item>

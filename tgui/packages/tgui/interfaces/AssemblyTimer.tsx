@@ -14,7 +14,7 @@ type Data = { timing: number; time: number };
 
 export const AssemblyTimer = (props) => {
   const { act, data } = useBackend<Data, AssemblyTimerActions>();
-  const { timing, time } = data;
+  const { timing, time = 0 } = data;
   return (
     <Window width={400} height={110}>
       <Window.Content>

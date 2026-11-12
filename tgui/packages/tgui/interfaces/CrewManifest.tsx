@@ -38,7 +38,7 @@ type Data = {
 export const CrewManifestContent = (props) => {
   const { act, data } = useBackend<Data, CrewManifestActions>();
 
-  const { manifest } = data;
+  const { manifest = [] } = data;
 
   if (manifest.length === 0) {
     return <Box color="average">No Manifest Data</Box>;

@@ -14,7 +14,7 @@ type Props = {
 
 export function SubsystemViews(props: Props) {
   const { data } = useBackend<ControllerData, ControllerOverviewActions>();
-  const { subsystems } = data;
+  const { subsystems = [] } = data;
 
   const { filterOpts, setSelected } = props;
   const { ascending, inactive, query, smallValues, sortType } = filterOpts;

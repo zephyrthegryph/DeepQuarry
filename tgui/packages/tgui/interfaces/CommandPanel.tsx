@@ -27,7 +27,7 @@ type Data = {
 
 export const CommandPanel = () => {
   const { data, act } = useBackend<Data, CommandPanelActions>();
-  const { title, blocked, groups } = data;
+  const { title, blocked, groups = [] } = data;
   return (
     <Window width={540} height={600} title={title} theme="console">
       <Window.Content scrollable>

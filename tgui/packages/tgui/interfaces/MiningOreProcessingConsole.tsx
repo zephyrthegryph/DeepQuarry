@@ -144,7 +144,7 @@ const oreSorter = (a, b) => {
 
 const MOPCOres = (props) => {
   const { act, data } = useBackend<Data, MiningOreProcessingConsoleActions>();
-  const { ores, showAllOres } = data;
+  const { ores = [], showAllOres } = data;
   return (
     <Section
       scrollable
@@ -193,9 +193,11 @@ const MOPCOres = (props) => {
               </Box>
             </LabeledList.Item>
           ))) || (
-          <Box color="bad" textAlign="center">
-            No ores in machine.
-          </Box>
+          <LabeledList.Item label="Ores">
+            <Box color="bad" textAlign="center">
+              No ores in machine.
+            </Box>
+          </LabeledList.Item>
         )}
       </LabeledList>
     </Section>

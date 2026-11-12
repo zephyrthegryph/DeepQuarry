@@ -12,7 +12,7 @@ export const SleeperStatusPanel = (props: { name: string }) => {
   const {
     delivery,
     compactor,
-    contents,
+    contents = [],
     max_item_count,
     ore_storage,
     current_capacity,

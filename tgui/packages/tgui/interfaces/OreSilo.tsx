@@ -51,7 +51,7 @@ type Data = {
 
 export const OreSilo = (props) => {
   const { act, data } = useBackend<Data, OreSiloActions>();
-  const { SHEET_MATERIAL_AMOUNT, machines, logs } = data;
+  const { SHEET_MATERIAL_AMOUNT, machines = [], logs = [] } = data;
 
   const [currentTab, setCurrentTab] = useState<Tab>(Tab.Logs);
 

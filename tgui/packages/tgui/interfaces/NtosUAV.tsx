@@ -13,7 +13,7 @@ type Data = {
 export const NtosUAV = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { current_uav, signal_strength, in_use, paired_uavs } = data;
+  const { current_uav, signal_strength, in_use, paired_uavs = [] } = data;
 
   return (
     <NtosWindow width={600} height={500}>

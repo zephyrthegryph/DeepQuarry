@@ -15,7 +15,7 @@ type Data = {
 
 export const VendingLog = () => {
   const { data } = useBackend<Data>();
-  const { machine_name, user_name, entries } = data;
+  const { machine_name, user_name, entries = [] } = data;
   return (
     <Window width={680} height={620} title={`${machine_name} Vending Log`}>
       <Window.Content scrollable>

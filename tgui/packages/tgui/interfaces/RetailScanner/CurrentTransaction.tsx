@@ -13,8 +13,12 @@ import type { Data } from './types';
 
 export const CurrentTransaction = (model) => {
   const { act, data } = useBackend<Data, RetailScannerActions>();
-  const { current_transactioon, cash_locked, locked, subsidized_checkout } =
-    data;
+  const {
+    current_transactioon = {} as Data['current_transactioon'],
+    cash_locked,
+    locked,
+    subsidized_checkout,
+  } = data;
 
   const { items, prices } = current_transactioon;
 

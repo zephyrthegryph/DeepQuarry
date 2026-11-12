@@ -33,8 +33,13 @@ type Circulator = {
 export const TEGenerator = (props) => {
   const { data } = useBackend<Data>();
 
-  const { totalOutput, maxTotalOutput, thermalOutput, primary, secondary } =
-    data;
+  const {
+    totalOutput = 0,
+    maxTotalOutput = 0,
+    thermalOutput = 0,
+    primary,
+    secondary,
+  } = data;
 
   return (
     <Window width={550} height={350}>

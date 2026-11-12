@@ -105,7 +105,9 @@ export const OmniFilter = (props) => {
                 </LabeledList.Item>
               ))
             ) : (
-              <Box color="bad">No Ports Detected</Box>
+              <LabeledList.Item label="Ports">
+                <Box color="bad">No Ports Detected</Box>
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>
