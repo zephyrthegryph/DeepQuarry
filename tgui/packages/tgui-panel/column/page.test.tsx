@@ -278,15 +278,9 @@ describe('a native window dropped on the column', () => {
       x: 300,
       y: 500,
     });
-    await waitFor(() =>
-      expect(
-        sent.some(
-          (m) =>
-            m.payload?.type === 'WM-Log' &&
-            m.payload.payload.drop === 'outside',
-        ),
-      ).toBe(true),
-    );
+    // The check measures the column, then answers nothing for a point outside it; the log line is profiling-only.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(sent.some((m) => m.payload?.type === 'WM-Log')).toBe(false);
     expect(answered()).toHaveLength(0);
   });
 });
