@@ -114,14 +114,6 @@ export const AtmosControlPanel = (props) => {
                         act('move-to-target', { spot: group.jump_to })
                       }
                     />
-                    <Button
-                      icon="eye"
-                      selected={group.should_show}
-                      tooltip="Toggle overlay"
-                      onClick={() =>
-                        act('toggle_show_group', { group: group.group })
-                      }
-                    />
                   </Table.Cell>
                 </Table.Row>
               ))}

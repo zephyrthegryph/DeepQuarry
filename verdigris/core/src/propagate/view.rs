@@ -114,14 +114,31 @@ fn cast(win: &mut Window, q: u8, depth: i64, mut start: Slope, end: Slope) {
         };
         let blocks = wall || seam;
         // A clear cell counts only when its centre is inside the lit interval.
-        let centre = Slope { num: col, den: depth };
+        let centre = Slope {
+            num: col,
+            den: depth,
+        };
         if wall || (!seam && start.le(centre) && centre.le(end)) {
             win.reveal(dx, dy);
         }
         match prev_blocks {
-            Some(true) if !blocks => start = Slope { num: 2 * col - 1, den: 2 * depth },
+            Some(true) if !blocks => {
+                start = Slope {
+                    num: 2 * col - 1,
+                    den: 2 * depth,
+                }
+            }
             Some(false) if blocks => {
-                cast(win, q, depth + 1, start, Slope { num: 2 * col - 1, den: 2 * depth });
+                cast(
+                    win,
+                    q,
+                    depth + 1,
+                    start,
+                    Slope {
+                        num: 2 * col - 1,
+                        den: 2 * depth,
+                    },
+                );
             }
             _ => {}
         }
@@ -156,10 +173,21 @@ pub fn view(grid: &Grid, kind: BlockKind, center: u32, range: u32) -> Vec<u32> {
             }
         }
     }
-    let mut win = Window { r, side, cells, seen: vec![false; (side * side) as usize] };
+    let mut win = Window {
+        r,
+        side,
+        cells,
+        seen: vec![false; (side * side) as usize],
+    };
     win.reveal(0, 0);
     for q in 0..4 {
-        cast(&mut win, q, 1, Slope { num: -1, den: 1 }, Slope { num: 1, den: 1 });
+        cast(
+            &mut win,
+            q,
+            1,
+            Slope { num: -1, den: 1 },
+            Slope { num: 1, den: 1 },
+        );
     }
     // Wall faces: a blocking cell beside a seen clear cell is seen.
     let mut faces = Vec::new();
@@ -169,10 +197,13 @@ pub fn view(grid: &Grid, kind: BlockKind, center: u32, range: u32) -> Vec<u32> {
             if win.seen[i] || !win.cell(dx, dy).is_some_and(|c| c.1) {
                 continue;
             }
-            let beside_seen_floor = [(1, 0), (-1, 0), (0, 1), (0, -1)].into_iter().any(|(ax, ay)| {
-                let (nx, ny) = (dx + ax, dy + ay);
-                win.idx(nx, ny).is_some_and(|j| win.seen[j]) && !win.blocks(nx, ny)
-            });
+            let beside_seen_floor =
+                [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .into_iter()
+                    .any(|(ax, ay)| {
+                        let (nx, ny) = (dx + ax, dy + ay);
+                        win.idx(nx, ny).is_some_and(|j| win.seen[j]) && !win.blocks(nx, ny)
+                    });
             if beside_seen_floor {
                 faces.push(i);
             }
@@ -215,7 +246,9 @@ mod tests {
     }
 
     fn seen(g: &Grid, x: u32, y: u32, r: u32) -> HashSet<u32> {
-        view(g, BlockKind::Opacity, at(g, x, y), r).into_iter().collect()
+        view(g, BlockKind::Opacity, at(g, x, y), r)
+            .into_iter()
+            .collect()
     }
 
     fn blocks(g: &Grid, c: u32) -> bool {
@@ -274,13 +307,21 @@ mod tests {
             let n = 17;
             for r in [2u32, 4, 6] {
                 let views: Vec<Option<HashSet<u32>>> = (0..n * n)
-                    .map(|c| (!blocks(&g, c)).then(|| view(&g, BlockKind::Opacity, c, r).into_iter().collect()))
+                    .map(|c| {
+                        (!blocks(&g, c))
+                            .then(|| view(&g, BlockKind::Opacity, c, r).into_iter().collect())
+                    })
                     .collect();
                 for a in 0..n * n {
-                    let Some(va) = &views[a as usize] else { continue };
+                    let Some(va) = &views[a as usize] else {
+                        continue;
+                    };
                     for &b in va {
                         if let Some(vb) = &views[b as usize] {
-                            assert!(vb.contains(&a), "seed {seed} r {r}: {a} sees {b} but not back");
+                            assert!(
+                                vb.contains(&a),
+                                "seed {seed} r {r}: {a} sees {b} but not back"
+                            );
                         }
                     }
                 }
@@ -314,7 +355,10 @@ mod tests {
                         }
                         let w = dims.index(wx as u32, wy as u32, 0).unwrap();
                         if blocks(&g, w) {
-                            assert!(v.contains(&w), "seed {seed}: wall {w} beside seen floor {f} is dark");
+                            assert!(
+                                v.contains(&w),
+                                "seed {seed}: wall {w} beside seen floor {f} is dark"
+                            );
                         }
                     }
                 }
@@ -329,8 +373,14 @@ mod tests {
         wall(&mut g, 2, 1);
         wall(&mut g, 1, 2);
         let v = seen(&g, 1, 1, 4);
-        assert!(!v.contains(&at(&g, 2, 2)), "the cell beyond the seam is dark");
-        assert!(!v.contains(&at(&g, 3, 3)), "light does not run on along the diagonal");
+        assert!(
+            !v.contains(&at(&g, 2, 2)),
+            "the cell beyond the seam is dark"
+        );
+        assert!(
+            !v.contains(&at(&g, 3, 3)),
+            "light does not run on along the diagonal"
+        );
     }
 
     #[test]
@@ -347,7 +397,10 @@ mod tests {
                     && (i64::from(px) - i64::from(x + 1)).abs() <= 6
                     && (i64::from(py) - 6).abs() <= 6;
                 if in_both {
-                    assert!(py > 10, "cell ({px},{py}) flickered stepping from {x} (only cells behind the pillar may change)");
+                    assert!(
+                        py > 10,
+                        "cell ({px},{py}) flickered stepping from {x} (only cells behind the pillar may change)"
+                    );
                 }
             }
         }
@@ -357,7 +410,10 @@ mod tests {
     fn same_inputs_same_answer() {
         let g = scattered(17, 42, 300);
         for c in 0..17 * 17 {
-            assert_eq!(view(&g, BlockKind::Opacity, c, 6), view(&g, BlockKind::Opacity, c, 6));
+            assert_eq!(
+                view(&g, BlockKind::Opacity, c, 6),
+                view(&g, BlockKind::Opacity, c, 6)
+            );
         }
     }
 }

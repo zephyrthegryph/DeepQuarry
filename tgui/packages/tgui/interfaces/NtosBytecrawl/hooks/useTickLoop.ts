@@ -6,7 +6,6 @@ import {
   type Dispatch as ReactDispatch,
   type SetStateAction,
   useEffect,
-  useRef,
 } from 'react';
 
 import { CPU_UPGRADES, STL_UPGRADES, TICK_MS } from '../constants';
@@ -27,13 +26,7 @@ export function useTickLoop(
   gRef: MutableRefObject<GState>,
   setG: ReactDispatch<SetStateAction<GState>>,
   setLines: ReactDispatch<SetStateAction<Line[]>>,
-  act: (action: string, params?: Record<string, unknown>) => void,
 ): void {
-  const actRef = useRef(act);
-  useEffect(() => {
-    actRef.current = act;
-  }, [act]);
-
   useEffect(() => {
     if (phase !== 'playing') return;
 
@@ -167,23 +160,6 @@ export function useTickLoop(
 
         // ── Persist to DM ───────────────────────────────────────────────────
         const totalWalletDelta = contractPayout + bountyPayout;
-        actRef.current('tick', {
-          trace: burnResult.newTrace,
-          playtime: prev.playtime + 1,
-          contract_amount: contractPayout > 0 ? contractPayout : null,
-          bounty_amount: bountyPayout > 0 ? bountyPayout : null,
-          burned: burnResult.burned ? 1 : null,
-          frag_generated: fragGenerated ? 1 : null,
-          bounty_unlock: justUnlocked ? 1 : null,
-        });
-        for (const sc of stateChanges) {
-          actRef.current('job_update', {
-            id: sc.id,
-            state: sc.state,
-            progress: sc.progress,
-            uptime: sc.uptime ?? null,
-          });
-        }
 
         // ── Build next state ─────────────────────────────────────────────────
         return {

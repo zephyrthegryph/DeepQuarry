@@ -147,7 +147,7 @@ pub const SUPERMATTER: i32 = 22;
 /// temperature, a tenth of `1000..8000` J.
 #[must_use]
 pub fn freon_formation_absorbed(t: f64) -> f64 {
-    (7000.0 / (1.0 + (-0.0015 * (t - 6000.0)).exp()) + 1000.0) * 0.1
+	(7000.0 / (1.0 + (-0.0015 * (t - 6000.0)).exp()) + 1000.0) * 0.1
 }
 
 /// The energy a reaction of `kind` releases (negative: absorbs), J, for its
@@ -156,41 +156,43 @@ pub fn freon_formation_absorbed(t: f64) -> f64 {
 /// `None` for an unknown kind.
 #[must_use]
 pub fn released(kind: i32, extent: f64, t: f64, aux: f64, c_new: f64) -> Option<f64> {
-    Some(match kind {
-        KEEP_TEMPERATURE => 0.0,
-        PLASMA_FIRE => FIRE_PLASMA_ENERGY_RELEASED * extent,
-        HYDROGEN_FIRE => FIRE_HYDROGEN_ENERGY_RELEASED * extent,
-        TRITIUM_FIRE => FIRE_TRITIUM_ENERGY_RELEASED * extent,
-        FREON_FIRE => -FIRE_FREON_ENERGY_CONSUMED * extent,
-        // A temperature rise per mole cleaned: the energy that takes at the new capacity.
-        STERILIZATION => MIASTER_STERILIZATION_ENERGY * extent * c_new,
-        N2O_FORMATION => N2O_FORMATION_ENERGY * extent,
-        N2O_DECOMPOSITION => N2O_DECOMPOSITION_ENERGY * extent,
-        BZ_FORMATION => extent * (BZ_FORMATION_ENERGY + aux * (N2O_DECOMPOSITION_ENERGY - BZ_FORMATION_ENERGY)),
-        PLUOXIUM_FORMATION => PLUOXIUM_FORMATION_ENERGY * extent,
-        NITRIUM_FORMATION => -NITRIUM_FORMATION_ENERGY * extent,
-        NITRIUM_DECOMPOSITION => NITRIUM_DECOMPOSITION_ENERGY * extent,
-        FREON_FORMATION => -freon_formation_absorbed(t) * extent,
-        NOBLIUM_FORMATION => NOBLIUM_FORMATION_ENERGY * extent / aux.max(1.0),
-        HALON_COMBUSTION => -HALON_COMBUSTION_ENERGY * extent,
-        HEALIUM_FORMATION => HEALIUM_FORMATION_ENERGY * extent,
-        ZAUKER_FORMATION => -ZAUKER_FORMATION_ENERGY * extent,
-        ZAUKER_DECOMPOSITION => ZAUKER_DECOMPOSITION_ENERGY * extent,
-        PN_FORMATION => PN_FORMATION_ENERGY * extent,
-        PN_HYDROGEN_RESPONSE => -PN_HYDROGEN_CONVERSION_ENERGY * extent,
-        PN_TRITIUM_RESPONSE => PN_TRITIUM_CONVERSION_ENERGY * extent,
-        PN_BZ_RESPONSE => PN_BZASE_ENERGY * extent,
-        SUPERMATTER => SUPERMATTER_THERMAL_RELEASE * extent,
-        _ => return None,
-    })
+	Some(match kind {
+		KEEP_TEMPERATURE => 0.0,
+		PLASMA_FIRE => FIRE_PLASMA_ENERGY_RELEASED * extent,
+		HYDROGEN_FIRE => FIRE_HYDROGEN_ENERGY_RELEASED * extent,
+		TRITIUM_FIRE => FIRE_TRITIUM_ENERGY_RELEASED * extent,
+		FREON_FIRE => -FIRE_FREON_ENERGY_CONSUMED * extent,
+		// A temperature rise per mole cleaned: the energy that takes at the new capacity.
+		STERILIZATION => MIASTER_STERILIZATION_ENERGY * extent * c_new,
+		N2O_FORMATION => N2O_FORMATION_ENERGY * extent,
+		N2O_DECOMPOSITION => N2O_DECOMPOSITION_ENERGY * extent,
+		BZ_FORMATION => {
+			extent * (BZ_FORMATION_ENERGY + aux * (N2O_DECOMPOSITION_ENERGY - BZ_FORMATION_ENERGY))
+		}
+		PLUOXIUM_FORMATION => PLUOXIUM_FORMATION_ENERGY * extent,
+		NITRIUM_FORMATION => -NITRIUM_FORMATION_ENERGY * extent,
+		NITRIUM_DECOMPOSITION => NITRIUM_DECOMPOSITION_ENERGY * extent,
+		FREON_FORMATION => -freon_formation_absorbed(t) * extent,
+		NOBLIUM_FORMATION => NOBLIUM_FORMATION_ENERGY * extent / aux.max(1.0),
+		HALON_COMBUSTION => -HALON_COMBUSTION_ENERGY * extent,
+		HEALIUM_FORMATION => HEALIUM_FORMATION_ENERGY * extent,
+		ZAUKER_FORMATION => -ZAUKER_FORMATION_ENERGY * extent,
+		ZAUKER_DECOMPOSITION => ZAUKER_DECOMPOSITION_ENERGY * extent,
+		PN_FORMATION => PN_FORMATION_ENERGY * extent,
+		PN_HYDROGEN_RESPONSE => -PN_HYDROGEN_CONVERSION_ENERGY * extent,
+		PN_TRITIUM_RESPONSE => PN_TRITIUM_CONVERSION_ENERGY * extent,
+		PN_BZ_RESPONSE => PN_BZASE_ENERGY * extent,
+		SUPERMATTER => SUPERMATTER_THERMAL_RELEASE * extent,
+		_ => return None,
+	})
 }
 
 /// What [`react`] did: the energy the reaction released (J, negative:
 /// absorbed) and the energy the mixture's thermal energy changed by.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Reacted {
-    pub released: f64,
-    pub applied: f64,
+	pub released: f64,
+	pub applied: f64,
 }
 
 /// Applies a reaction to `mix`: `deltas` (gas, moles; a gas never goes below
@@ -198,73 +200,111 @@ pub struct Reacted {
 /// plus what the reaction released, over its new capacity, never below TCMB.
 /// A mixture left with almost no heat capacity keeps its temperature. `None`
 /// for an unknown kind (nothing is applied).
-pub fn react(mix: &mut Mixture, kind: i32, extent: f64, aux: f64, deltas: &[(GasIDX, f32)]) -> Option<Reacted> {
-    let t = f64::from(mix.get_temperature());
-    released(kind, extent, t, aux, 0.0)?; // a known kind, before anything changes
-    let c_old = f64::from(mix.heat_capacity());
-    let before = t * c_old;
-    // A gas named twice adds up, as two adjust_moles() calls did.
-    for &(g, d) in deltas {
-        mix.set_moles(g, (mix.get_moles(g) + d).max(0.0));
-    }
-    let c_new = f64::from(mix.heat_capacity());
-    let released = released(kind, extent, t, aux, c_new)?;
-    if c_new > f64::from(MINIMUM_HEAT_CAPACITY) {
-        let energy = (before + released).max(c_new * f64::from(TCMB));
-        #[allow(clippy::cast_possible_truncation)]
-        mix.set_temperature((energy / c_new) as f32);
-    }
-    let after = f64::from(mix.get_temperature()) * f64::from(mix.heat_capacity());
-    Some(Reacted { released, applied: after - before })
+pub fn react(
+	mix: &mut Mixture,
+	kind: i32,
+	extent: f64,
+	aux: f64,
+	deltas: &[(GasIDX, f32)],
+) -> Option<Reacted> {
+	let t = f64::from(mix.get_temperature());
+	released(kind, extent, t, aux, 0.0)?; // a known kind, before anything changes
+	let c_old = f64::from(mix.heat_capacity());
+	let before = t * c_old;
+	// A gas named twice adds up, as two adjust_moles() calls did.
+	for &(g, d) in deltas {
+		mix.set_moles(g, (mix.get_moles(g) + d).max(0.0));
+	}
+	let c_new = f64::from(mix.heat_capacity());
+	let released = released(kind, extent, t, aux, c_new)?;
+	if c_new > f64::from(MINIMUM_HEAT_CAPACITY) {
+		let energy = (before + released).max(c_new * f64::from(TCMB));
+		#[allow(clippy::cast_possible_truncation)]
+		mix.set_temperature((energy / c_new) as f32);
+	}
+	let after = f64::from(mix.get_temperature()) * f64::from(mix.heat_capacity());
+	Some(Reacted {
+		released,
+		applied: after - before,
+	})
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::gas::ids::{GAS_CARBON_DIOXIDE as GAS_CO2, GAS_OXYGEN as GAS_O2, GAS_PLASMA, GAS_WATER_VAPOR};
+	use super::*;
+	use crate::gas::ids::{
+		GAS_CARBON_DIOXIDE as GAS_CO2, GAS_OXYGEN as GAS_O2, GAS_PLASMA, GAS_WATER_VAPOR,
+	};
 
-    fn plasma_air(t: f32) -> Mixture {
-        let mut m = Mixture::from_vol(2500.0);
-        m.set_moles(GAS_PLASMA, 100.0);
-        m.set_moles(GAS_O2, 100.0);
-        m.set_temperature(t);
-        m
-    }
+	fn plasma_air(t: f32) -> Mixture {
+		let mut m = Mixture::from_vol(2500.0);
+		m.set_moles(GAS_PLASMA, 100.0);
+		m.set_moles(GAS_O2, 100.0);
+		m.set_temperature(t);
+		m
+	}
 
-    #[test]
-    fn a_fire_releases_its_enthalpy_into_the_mixture() {
-        let mut m = plasma_air(500.0);
-        let c_old = f64::from(m.heat_capacity());
-        let burned = 2.0f32;
-        let r = react(&mut m, PLASMA_FIRE, f64::from(burned), 0.0, &[(GAS_PLASMA, -burned), (GAS_O2, -burned), (GAS_CO2, burned * 0.75), (GAS_WATER_VAPOR, burned * 0.25)]).unwrap();
-        assert!((r.released - FIRE_PLASMA_ENERGY_RELEASED * 2.0).abs() < 1e-6);
-        let expected = (500.0 * c_old + r.released) / f64::from(m.heat_capacity());
-        assert!((f64::from(m.get_temperature()) - expected).abs() < 0.01, "{} vs {expected}", m.get_temperature());
-        assert!((r.applied - r.released).abs() / r.released < 1e-4);
-    }
+	#[test]
+	fn a_fire_releases_its_enthalpy_into_the_mixture() {
+		let mut m = plasma_air(500.0);
+		let c_old = f64::from(m.heat_capacity());
+		let burned = 2.0f32;
+		let r = react(
+			&mut m,
+			PLASMA_FIRE,
+			f64::from(burned),
+			0.0,
+			&[
+				(GAS_PLASMA, -burned),
+				(GAS_O2, -burned),
+				(GAS_CO2, burned * 0.75),
+				(GAS_WATER_VAPOR, burned * 0.25),
+			],
+		)
+		.unwrap();
+		assert!((r.released - FIRE_PLASMA_ENERGY_RELEASED * 2.0).abs() < 1e-6);
+		let expected = (500.0 * c_old + r.released) / f64::from(m.heat_capacity());
+		assert!(
+			(f64::from(m.get_temperature()) - expected).abs() < 0.01,
+			"{} vs {expected}",
+			m.get_temperature()
+		);
+		assert!((r.applied - r.released).abs() / r.released < 1e-4);
+	}
 
-    #[test]
-    fn an_endothermic_reaction_cools_but_never_below_tcmb() {
-        let mut m = plasma_air(10.0);
-        let _ = react(&mut m, FREON_FIRE, 1000.0, 0.0, &[]).unwrap();
-        assert!((m.get_temperature() - TCMB).abs() < 1e-3);
-    }
+	#[test]
+	fn an_endothermic_reaction_cools_but_never_below_tcmb() {
+		let mut m = plasma_air(10.0);
+		let _ = react(&mut m, FREON_FIRE, 1000.0, 0.0, &[]).unwrap();
+		assert!((m.get_temperature() - TCMB).abs() < 1e-3);
+	}
 
-    #[test]
-    fn the_supermatter_exhales_its_device_energy_as_heat() {
-        let mut m = plasma_air(500.0);
-        let c_old = f64::from(m.heat_capacity());
-        let device_energy = 550.0;
-        let r = react(&mut m, SUPERMATTER, device_energy, 0.0, &[(GAS_PLASMA, 0.4), (GAS_O2, 0.05)]).unwrap();
-        assert!((r.released - SUPERMATTER_THERMAL_RELEASE * device_energy).abs() < 1e-6);
-        let expected = (500.0 * c_old + r.released) / f64::from(m.heat_capacity());
-        assert!((f64::from(m.get_temperature()) - expected).abs() < 0.01, "{} vs {expected}", m.get_temperature());
-    }
+	#[test]
+	fn the_supermatter_exhales_its_device_energy_as_heat() {
+		let mut m = plasma_air(500.0);
+		let c_old = f64::from(m.heat_capacity());
+		let device_energy = 550.0;
+		let r = react(
+			&mut m,
+			SUPERMATTER,
+			device_energy,
+			0.0,
+			&[(GAS_PLASMA, 0.4), (GAS_O2, 0.05)],
+		)
+		.unwrap();
+		assert!((r.released - SUPERMATTER_THERMAL_RELEASE * device_energy).abs() < 1e-6);
+		let expected = (500.0 * c_old + r.released) / f64::from(m.heat_capacity());
+		assert!(
+			(f64::from(m.get_temperature()) - expected).abs() < 0.01,
+			"{} vs {expected}",
+			m.get_temperature()
+		);
+	}
 
-    #[test]
-    fn an_unknown_kind_changes_nothing() {
-        let mut m = plasma_air(400.0);
-        assert!(react(&mut m, 999, 1.0, 0.0, &[(GAS_PLASMA, -1.0)]).is_none());
-        assert!((m.get_moles(GAS_PLASMA) - 100.0).abs() < 1e-6);
-    }
+	#[test]
+	fn an_unknown_kind_changes_nothing() {
+		let mut m = plasma_air(400.0);
+		assert!(react(&mut m, 999, 1.0, 0.0, &[(GAS_PLASMA, -1.0)]).is_none());
+		assert!((m.get_moles(GAS_PLASMA) - 100.0).abs() < 1e-6);
+	}
 }

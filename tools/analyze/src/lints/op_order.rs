@@ -65,7 +65,7 @@ impl Lint for OpOrder {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let decls = Decls::get(cx.tree);
-        let model = Model::build(cx, &decls);
+        let model = Model::build(cx.tree, &decls);
         for m in decls.markers_named("CAPABILITIES") {
             if cx.exempt(&m.rel) || m.rel.starts_with("code/engine/_generated/") {
                 continue;
@@ -187,6 +187,29 @@ struct Composition {
     extends: Vec<(Vec<String>, Vec<String>)>,
     /// click_order(input, ranks...): the input, then each rank's patterns.
     chains: Vec<(String, Vec<Vec<String>>)>,
+    /// Every op's argument text as composed (constructor params substituted), bound or not: the window model reads its ui_act() parts
+    /// (crate::sem::ui_windows).
+    raw_ops: Vec<String>,
+}
+
+/// The `op(...)` argument texts each CAPABILITIES block composes, its capabilities' and bundles' included (params substituted): (type,
+/// rel, line, op args).
+pub fn composed_ops(tree: &crate::tree::Tree, decls: &Decls) -> Vec<(String, String, u32, Vec<String>)> {
+    let model = Model::build(tree, decls);
+    let mut out = Vec::new();
+    for m in decls.markers_named("CAPABILITIES") {
+        if m.rel.starts_with("code/engine/_generated/") {
+            continue;
+        }
+        let Some(ty) = m.args.first() else { continue };
+        let mut comp = Composition::default();
+        let mut seen = HashSet::new();
+        for entry in m.args.iter().skip(1) {
+            model.expand(entry, "", &HashMap::new(), &mut comp, &mut seen, 0);
+        }
+        out.push((ty.trim().to_string(), m.rel.clone(), m.line, comp.raw_ops));
+    }
+    out
 }
 
 fn unquote(s: &str) -> Option<String> {
@@ -329,11 +352,11 @@ fn bind_args(params: &[(String, String)], args_text: &str) -> HashMap<String, St
 }
 
 impl Model {
-    fn build(cx: &Cx, decls: &Decls) -> Model {
+    fn build(tree: &crate::tree::Tree, decls: &Decls) -> Model {
         // entries() bodies by datum type, global proc bodies by name
         let mut entries: HashMap<String, String> = HashMap::new();
         let mut procs: HashMap<String, (Vec<String>, String)> = HashMap::new();
-        for f in cx.all_files() {
+        for f in tree.select(&CODE_DM) {
             if f.rel.starts_with("code/engine/_generated/") {
                 continue;
             }
@@ -431,6 +454,7 @@ impl Model {
         for (name, args) in calls(&text) {
             match name.as_str() {
                 "op" => {
+                    comp.raw_ops.push(args.clone());
                     if let Some(op) = self.parse_op(&args, prefix, 0) {
                         if !comp.ops.contains_key(&op.key) {
                             comp.order.push(op.key.clone());

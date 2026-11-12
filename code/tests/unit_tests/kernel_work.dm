@@ -130,7 +130,16 @@
 		now += 10
 	TEST_ASSERT_EQUAL(faulty.faults, KERNEL_FAULT_PARK, "every fault was caught and counted")
 	TEST_ASSERT(faulty.parked, "a streak of faults parks the item")
+	TEST_ASSERT(faulty.fault_parked, "and marks it fault-parked, apart from an idle park")
 	TEST_ASSERT_EQUAL(length(K.fault_log), KERNEL_FAULT_PARK, "and each is in the kernel's fault log")
+	TEST_ASSERT(!faulty.wake(), "an idle wake does not revive a fault-parked item")
+	TEST_ASSERT(faulty.parked && faulty.fault_parked, "the faulted item stays parked after the wake")
+	F.fault = FALSE
+	K.run_item(faulty, WORK_TEST_LIMIT, now + 1000)
+	TEST_ASSERT_EQUAL(faulty.faults, KERNEL_FAULT_PARK, "the fault-parked item did not run after the wake")
+	TEST_ASSERT(faulty.reset_fault("unit test"), "the explicit reset revives it")
+	TEST_ASSERT(!faulty.parked && !faulty.fault_parked && faulty.consecutive_faults == 0, "the reset clears the park and the streak")
+	TEST_ASSERT(!parking.fault_parked, "an idle STEP_PARK is never a fault park")
 
 	// Per-reaction cost accounting.
 	var/list/cost = K.work_cost_of(/datum/test_work_owner)

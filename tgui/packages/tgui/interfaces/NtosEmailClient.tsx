@@ -262,7 +262,7 @@ export const NtosEmailClientViewMessage = (props: {
       title={cur_title}
       buttons={
         administrator ? (
-          <Button icon="times" onClick={() => act('back')} />
+          <Button icon="times" onClick={() => act('cancel')} />
         ) : (
           <Stack>
             <Stack.Item>

@@ -33,6 +33,10 @@ const CAPS_DIR: &str = "code/library/capabilities/";
 const BUILTIN_HOSTS: [&str; 2] = ["/datum", "/atom"];
 const VALIDATORS: [&str; 7] = ["ui_number", "ui_text", "ui_choice", "ui_ref", "ui_token", "ui_member", "ui_bool"];
 
+/// Window actions the engine answers for every window: the layout toggle (code/library/ui/tgui/external.dm, tgui_act()) and a modal's
+/// open (OP_UI_MODAL_OPEN, code/engine/parts/inputs.dm).
+const ENGINE_ACTIONS: [&str; 2] = ["change_ui_state", "modal_open"];
+
 const R_UNSENT: &str = "ui_unsent_param";
 const R_UNVALIDATED: &str = "ui_unvalidated_param";
 const R_PROBLEM: &str = "problem";
@@ -1013,6 +1017,55 @@ impl<'a> Analysis<'a> {
         problems
     }
 
+    /// The hard failures of the op path: an `act('x')` in a window's own sources that no `ui_act()` op of the window's holders, no act_
+    /// proc and no engine action answers. A window whose action set is open (it forwards, or an op answers every action) is not judged.
+    fn check_ops(&self, windows: &BTreeMap<String, crate::sem::ui_windows::WinModel>) -> Vec<(String, usize, String)> {
+        let mut problems = Vec::new();
+        let cap_names: HashSet<&String> = self.hosts.cap_acts.iter().flat_map(|(_, m)| m.keys.iter()).collect();
+        for (name, w) in windows {
+            if w.open.is_some() {
+                continue;
+            }
+            let ops = w.names();
+            let mut named: HashSet<String> = HashSet::new();
+            for h in &w.holders {
+                named.extend(self.hosts.actions_of(h).keys().cloned());
+            }
+            for b in BUILTIN_HOSTS {
+                if let Some(m) = self.hosts.acts.get(b) {
+                    named.extend(m.keys.iter().cloned());
+                }
+            }
+            for call in self.acts.for_interface(Some(name)) {
+                let raw = &call.raw_action;
+                if ops.contains(raw) || ENGINE_ACTIONS.contains(&raw.as_str()) {
+                    continue;
+                }
+                if let Some(k) = &call.nkey {
+                    if named.contains(k) || cap_names.contains(k) {
+                        continue;
+                    }
+                }
+                let mut known: Vec<&String> = ops.iter().collect();
+                known.sort();
+                let near = known.iter().find(|k| k.eq_ignore_ascii_case(raw) || k.replace('_', "") == raw.replace('_', "").to_lowercase());
+                problems.push((
+                    call.rel.clone(),
+                    call.line,
+                    format!(
+                        "act('{}'): no ui_act() op of window {} answers it ({}:{}){}",
+                        raw,
+                        name,
+                        w.rel,
+                        w.line,
+                        near.map(|n| format!("; did you mean '{}'?", n)).unwrap_or_default()
+                    ),
+                ));
+            }
+        }
+        problems
+    }
+
     /// The act_ procs a client can reach: on a UI host's lineage or below it (not legacy), and
     /// every capability's act_ procs.
     fn ui_procs(&self) -> Vec<usize> {
@@ -1274,7 +1327,9 @@ impl Lint for UiActions {
             }
         });
         c2_save(old_len, &c2);
-        let problems = an.check();
+        let mut problems = an.check();
+        let windows = crate::sem::ui_windows::windows(cx.tree, &crate::sem::decls::Decls::get(cx.tree));
+        problems.extend(an.check_ops(&windows));
         for (rel, line) in unsent {
             out.site_in(R_UNSENT, &rel, line);
         }

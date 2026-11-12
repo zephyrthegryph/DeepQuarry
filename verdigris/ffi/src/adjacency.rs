@@ -13,7 +13,8 @@ use byondapi::prelude::*;
 use eyre::{Result, eyre};
 use vg_core::adjacency::AdjacencyIndex;
 
-use crate::world::{list, whole};
+use crate::arg::whole;
+use crate::world::list;
 
 thread_local! {
     static INDEX: RefCell<AdjacencyIndex> = RefCell::new(AdjacencyIndex::new());
@@ -75,14 +76,19 @@ fn adjacency_seen(kind_id: ByondValue, handle: ByondValue) -> Result<ByondValue>
     let k = kind(&kind_id)?;
     let h = whole(&handle, "handle")?;
     let (_, seen) = INDEX.with_borrow(|idx| idx.junction(k, h));
-    list(seen.into_iter().flat_map(|s| [s.handle as f32, s.bit as f32]))
+    list(
+        seen.into_iter()
+            .flat_map(|s| [s.handle as f32, s.bit as f32]),
+    )
 }
 
 /// Members placed, over every kind (diagnostics, tests).
 #[auxmacros::bind("/proc/vg_adjacency_count")]
 #[allow(clippy::cast_precision_loss)]
 fn adjacency_count() -> Result<ByondValue> {
-    Ok(ByondValue::from(INDEX.with_borrow(AdjacencyIndex::len) as f32))
+    Ok(ByondValue::from(
+        INDEX.with_borrow(AdjacencyIndex::len) as f32
+    ))
 }
 
 /// Drops every member (DM's round start).

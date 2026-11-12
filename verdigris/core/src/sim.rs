@@ -153,13 +153,13 @@ impl World {
             );
         }));
         if let Err(payload) = result {
-            self.panic = Some(
-                payload
-                    .downcast_ref::<&str>()
-                    .map(ToString::to_string)
-                    .or_else(|| payload.downcast_ref::<String>().cloned())
-                    .unwrap_or_else(|| "frame task panicked".to_owned()),
-            );
+            let msg = payload
+                .downcast_ref::<&str>()
+                .map(ToString::to_string)
+                .or_else(|| payload.downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "frame task panicked".to_owned());
+            // The hook ran on this thread (the frame's), so the location is ours to take.
+            self.panic = Some(crate::panic_site::describe(&msg));
         }
         for (domain, (res, publish)) in self.publishers.iter().enumerate() {
             self.prev[domain] = Some(publish(self.resources.erased_mut(*res)));
@@ -658,7 +658,9 @@ impl Sim {
         // at idle (frames of about 0.25 ms, 40 a second) the 14 frame threads burned 25-60 % of a core for ~1 % of real work
         // (doc/rewrite/server_bench_20261027.md). A slower frame moves the next one back to the full pool.
         match &self.light_pool {
-            Some(light) if self.metrics.frames_completed > 0 && self.metrics.last_frame < LIGHT_FRAME => {
+            Some(light)
+                if self.metrics.frames_completed > 0 && self.metrics.last_frame < LIGHT_FRAME =>
+            {
                 self.metrics.light_frames += 1;
                 light.spawn(job);
             }

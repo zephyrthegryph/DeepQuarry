@@ -18,26 +18,6 @@ export const HelpfulTab = (props) => {
               Your admin button here, coder!
             </NoticeBox>
           </Stack.Item>
-          <Stack.Item>
-            <Button
-              icon="plus"
-              lineHeight={lineHeightNormal}
-              width={buttonWidthNormal}
-              onClick={() => act('clear_virus')}
-            >
-              Cure all diseases
-            </Button>
-          </Stack.Item>
-          <Stack.Item>
-            <Button
-              icon="biohazard"
-              lineHeight={lineHeightNormal}
-              width={buttonWidthNormal}
-              onClick={() => act('virus')}
-            >
-              Trigger Outbreak
-            </Button>
-          </Stack.Item>
         </Stack>
       </Stack.Item>
       <Stack.Item>
@@ -146,15 +126,7 @@ export const HelpfulTab = (props) => {
         <Stack fill>
           <Stack.Item>
             {/*
-            <Button
-              icon="flag"
-              lineHeight={lineHeightNormal}
-              width={buttonWidthNormal}
-              onClick={() => act('ctfbutton')}
-            >
-              Toggle CTF
-            </Button>
-            */}
+             */}
             <NoticeBox
               mb={-0.5}
               width={buttonWidthNormal}
@@ -165,15 +137,7 @@ export const HelpfulTab = (props) => {
           </Stack.Item>
           <Stack.Item>
             {/*
-            <Button
-              icon="sync-alt"
-              lineHeight={lineHeightNormal}
-              width={buttonWidthNormal}
-              onClick={() => act('tdomereset')}
-            >
-              Reset Thunderdome
-            </Button>
-            */}
+             */}
             <Button
               icon="handcuffs"
               lineHeight={lineHeightNormal}
@@ -198,27 +162,7 @@ export const HelpfulTab = (props) => {
       <Stack.Item>
         <Stack fill>
           {/*
-          <Stack.Item>
-            <Button
-              icon="pencil-alt"
-              lineHeight={lineHeightNormal}
-              width={buttonWidthNormal}
-              onClick={() => act('set_name')}
-            >
-              Rename Station
-            </Button>
-          </Stack.Item>
-          <Stack.Item>
-            <Button
-              icon="eraser"
-              lineHeight={lineHeightNormal}
-              width={buttonWidthNormal}
-              onClick={() => act('reset_name')}
-            >
-              Default Station Name
-            </Button>
-          </Stack.Item>
-          */}
+           */}
           <Stack.Item>
             <Button
               icon="biohazard"

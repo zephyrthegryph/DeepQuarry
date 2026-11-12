@@ -61,8 +61,10 @@ gen_names=(gen_capability_varmap_check gen_dme_check)
 if selftest_wanted '^tools/dx/'; then run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest; gen_names+=(gen_capability_varmap_selftest)
 else echo "check_ratchets: gen_capability_varmap --selftest skipped (tools/dx unchanged)"; fi
 # deepquarry.dme is generated and committed: stale (a file added, moved or deleted without the build running), or a macro used before
-# its #define in the generated order, fails here with the regenerate command (python3 tools/build/gen_dme.py).
+# its #define in the generated order, fails here with the regenerate command (python3 tools/build/gen_dme.py). The same check covers the
+# test tree's generated include lists (code/tests/_tests.dm, code/tests/unit_tests/_unit_tests.dm: tools/build/gen_test_includes.py).
 run_gen gen_dme_check tools/build/gen_dme.py --check
+if selftest_wanted '^tools/build/(gen_test_includes\.py|test_includes_spec\.txt)$'; then run_gen gen_test_includes_selftest tools/build/gen_test_includes.py --selftest; gen_names+=(gen_test_includes_selftest); fi
 if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
 else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
 

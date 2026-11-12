@@ -682,11 +682,16 @@ impl<K: FieldKind> FieldState<K> {
         }
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         {
-            self.stats.outside_ppm = if outside.is_finite() { (outside * 1.0e6).min(4.0e9) as u32 } else { u32::MAX };
+            self.stats.outside_ppm = if outside.is_finite() {
+                (outside * 1.0e6).min(4.0e9) as u32
+            } else {
+                u32::MAX
+            };
         }
         let woke = self.stats.woke_geom + self.stats.woke_grid > 0
             || self.last_cells.is_none()
-            || (self.stats.woke_cells > 0 && (self.stride_cap <= 1 || !(outside <= K::STRIDE_TOLERANCE)));
+            || (self.stats.woke_cells > 0
+                && (self.stride_cap <= 1 || !(outside <= K::STRIDE_TOLERANCE)));
         self.owed += 1;
         if self.stride_cap > 1 && !woke && self.owed < self.stride {
             // Everything awake is slow and nothing was written from outside: this step's time is owed to the advance `stride` steps in.
@@ -710,7 +715,14 @@ impl<K: FieldKind> FieldState<K> {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn advance(&mut self, cells: &mut CowStore<K::Value>, geom: &Geo<'_>, dt: f32, steps: u32, woke: bool) {
+    fn advance(
+        &mut self,
+        cells: &mut CowStore<K::Value>,
+        geom: &Geo<'_>,
+        dt: f32,
+        steps: u32,
+        woke: bool,
+    ) {
         self.stats.steps += 1;
         let mut lap = std::time::Instant::now();
         let take = |lap: &mut std::time::Instant| {
@@ -769,10 +781,15 @@ impl<K: FieldKind> FieldState<K> {
         let (stiffness, mut live_edges) = {
             let this = &*self;
             let cells = &*cells;
-            let per_chunk: Vec<(f32, Vec<LiveEdge>)> =
-                owners.par_iter().map(|&c| this.chunk_stiffness(c, cells, geom)).collect();
+            let per_chunk: Vec<(f32, Vec<LiveEdge>)> = owners
+                .par_iter()
+                .map(|&c| this.chunk_stiffness(c, cells, geom))
+                .collect();
             let stiffness = per_chunk.iter().map(|(s, _)| *s).fold(0.0, f32::max);
-            (stiffness, per_chunk.into_iter().map(|(_, e)| e).collect::<Vec<_>>())
+            (
+                stiffness,
+                per_chunk.into_iter().map(|(_, e)| e).collect::<Vec<_>>(),
+            )
         };
         #[allow(
             clippy::cast_possible_truncation,
@@ -790,7 +807,11 @@ impl<K: FieldKind> FieldState<K> {
         // Multi-rate: the sub-step grid is a power of two, and an edge needing fewer sub-steps than the grid has is computed on a
         // coarser cadence (every `period` sub-steps over that much time), so one stiff edge no longer makes every edge pay for it.
         // Each edge still moves the same flux out of one cell and into the other, so conservation is unchanged.
-        if let Some(worst) = live_edges.iter().flatten().max_by(|x, y| x.stiff.total_cmp(&y.stiff)) {
+        if let Some(worst) = live_edges
+            .iter()
+            .flatten()
+            .max_by(|x, y| x.stiff.total_cmp(&y.stiff))
+        {
             self.stats.stiffest_cell = worst.a;
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
             {
@@ -798,13 +819,24 @@ impl<K: FieldKind> FieldState<K> {
             }
         }
         self.stats.slow_edges = 0;
-        self.stats.edges = u32::try_from(live_edges.iter().map(Vec::len).sum::<usize>()).unwrap_or(u32::MAX);
+        self.stats.edges =
+            u32::try_from(live_edges.iter().map(Vec::len).sum::<usize>()).unwrap_or(u32::MAX);
         let substeps = if self.multirate && substeps > 1 {
-            let grid = substeps.next_power_of_two().min(prev_power_of_two(self.config.max_substeps.max(1)));
-            #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let grid = substeps
+                .next_power_of_two()
+                .min(prev_power_of_two(self.config.max_substeps.max(1)));
+            #[allow(
+                clippy::cast_precision_loss,
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss
+            )]
             let wanted = |stiff: f32| -> u32 {
                 let n = (dt * self.faces * stiff).ceil();
-                if n.is_finite() && n >= 1.0 { (n.min(grid as f32) as u32).next_power_of_two().min(grid) } else { 1 }
+                if n.is_finite() && n >= 1.0 {
+                    (n.min(grid as f32) as u32).next_power_of_two().min(grid)
+                } else {
+                    1
+                }
             };
             live_edges.par_iter_mut().for_each(|edges| {
                 for e in edges {
@@ -863,7 +895,12 @@ impl<K: FieldKind> FieldState<K> {
             // sub-steps only move the few edges on their turn).
             let mut dirty = vec![false; chunks];
             for (&c, f) in owners.iter().zip(&fluxes) {
-                let (own, east, north, up) = (!f.net.sum.is_empty(), !f.east.sum.is_empty(), !f.north.sum.is_empty(), !f.up.sum.is_empty());
+                let (own, east, north, up) = (
+                    !f.net.sum.is_empty(),
+                    !f.east.sum.is_empty(),
+                    !f.north.sum.is_empty(),
+                    !f.up.sum.is_empty(),
+                );
                 if own {
                     dirty[c] = true;
                 }
@@ -970,7 +1007,8 @@ impl<K: FieldKind> FieldState<K> {
             }
         });
         self.times.local += take(&mut lap);
-        self.stats.kept_edges = u32::try_from(next.iter().filter(|&&n| n).count()).unwrap_or(u32::MAX);
+        self.stats.kept_edges =
+            u32::try_from(next.iter().filter(|&&n| n).count()).unwrap_or(u32::MAX);
         let mut kept_local = 0u32;
         for (n, a) in next.iter_mut().zip(&awake) {
             if a.load(Ordering::Relaxed) {
@@ -986,8 +1024,16 @@ impl<K: FieldKind> FieldState<K> {
             } else {
                 self.max_relative_change(cells, &start, &targets) / steps.max(1) as f32
             };
-            let by_rate = if rate > 0.0 { (K::STRIDE_TOLERANCE / rate).floor() } else { f32::INFINITY };
-            #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let by_rate = if rate > 0.0 {
+                (K::STRIDE_TOLERANCE / rate).floor()
+            } else {
+                f32::INFINITY
+            };
+            #[allow(
+                clippy::cast_precision_loss,
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss
+            )]
             let wanted = {
                 let by_cap = (self.config.max_substeps as f32 / base_substeps).floor();
                 by_rate.min(by_cap).min(self.stride_cap as f32).max(1.0) as u32
@@ -1009,8 +1055,17 @@ impl<K: FieldKind> FieldState<K> {
     /// totals are unchanged; what a reservoir receives goes to the ledger. Being implicit it never overshoots (no ringing) and levels a
     /// large gap in one advance instead of one cell per sub-step, so the explicit sub-steps are sized for the rest of the physics alone.
     #[allow(clippy::cast_possible_truncation)]
-    fn implicit_bulk(&mut self, cells: &mut CowStore<K::Value>, live_edges: &[Vec<LiveEdge>], dt: f32) {
-        let mut ids: Vec<u32> = live_edges.iter().flatten().flat_map(|e| [e.a, e.b]).collect();
+    fn implicit_bulk(
+        &mut self,
+        cells: &mut CowStore<K::Value>,
+        live_edges: &[Vec<LiveEdge>],
+        dt: f32,
+    ) {
+        let mut ids: Vec<u32> = live_edges
+            .iter()
+            .flatten()
+            .flat_map(|e| [e.a, e.b])
+            .collect();
         if ids.is_empty() || dt <= 0.0 {
             return;
         }
@@ -1025,7 +1080,9 @@ impl<K: FieldKind> FieldState<K> {
         }
         let (mut p0, mut slope) = (vec![0.0f32; n], vec![0.0f32; n]);
         for (k, &c) in ids.iter().enumerate() {
-            let (p, s) = cells.with(c, |v| K::bulk_potential(side(v, geoms[k], self.faces))).unwrap_or((0.0, 0.0));
+            let (p, s) = cells
+                .with(c, |v| K::bulk_potential(side(v, geoms[k], self.faces)))
+                .unwrap_or((0.0, 0.0));
             p0[k] = p;
             slope[k] = if geoms[k].reservoir { 0.0 } else { s.max(0.0) };
         }
@@ -1053,7 +1110,9 @@ impl<K: FieldKind> FieldState<K> {
                 if c <= 0.0 || adj[k].is_empty() {
                     continue;
                 }
-                let (sum, weight) = adj[k].iter().fold((0.0f32, 0.0f32), |(s, w), &(j, g)| (s + g * p[j as usize], w + g));
+                let (sum, weight) = adj[k].iter().fold((0.0f32, 0.0f32), |(s, w), &(j, g)| {
+                    (s + g * p[j as usize], w + g)
+                });
                 let next = (p0[k] + c * sum) / (1.0 + c * weight);
                 moved = moved.max((next - p[k]).abs() / p[k].abs().max(1.0));
                 p[k] = next;
@@ -1077,18 +1136,36 @@ impl<K: FieldKind> FieldState<K> {
         let held: Vec<f32> = ids
             .iter()
             .enumerate()
-            .map(|(k, &c)| if geoms[k].reservoir { f32::INFINITY } else { cells.with(c, K::bulk_held).unwrap_or(0.0) })
+            .map(|(k, &c)| {
+                if geoms[k].reservoir {
+                    f32::INFINITY
+                } else {
+                    cells.with(c, K::bulk_held).unwrap_or(0.0)
+                }
+            })
             .collect();
         let mut net = vec![K::Flux::default(); n];
         for (e, (&(a, b, _), &m)) in live_edges.iter().flatten().zip(edges.iter().zip(&amounts)) {
             let giver = if m > 0.0 { a } else { b };
-            let scale = if given[giver] > held[giver] && given[giver] > 0.0 { held[giver] / given[giver] } else { 1.0 };
+            let scale = if given[giver] > held[giver] && given[giver] > 0.0 {
+                held[giver] / given[giver]
+            } else {
+                1.0
+            };
             let amount = m * scale;
             if amount == 0.0 || !amount.is_finite() {
                 continue;
             }
             let flux = cells
-                .with(e.a, |va| cells.with(e.b, |vb| K::bulk_move(side(va, e.ga, self.faces), side(vb, e.gb, self.faces), amount)))
+                .with(e.a, |va| {
+                    cells.with(e.b, |vb| {
+                        K::bulk_move(
+                            side(va, e.ga, self.faces),
+                            side(vb, e.gb, self.faces),
+                            amount,
+                        )
+                    })
+                })
                 .flatten()
                 .unwrap_or_default();
             net[a] = net[a] + -flux;
@@ -1111,7 +1188,12 @@ impl<K: FieldKind> FieldState<K> {
     }
 
     /// The largest [`FieldKind::relative_change`] of any cell of the listed chunks between `start` and `cells`.
-    fn max_relative_change(&self, cells: &CowStore<K::Value>, start: &CowStore<K::Value>, targets: &[usize]) -> f32 {
+    fn max_relative_change(
+        &self,
+        cells: &CowStore<K::Value>,
+        start: &CowStore<K::Value>,
+        targets: &[usize],
+    ) -> f32 {
         targets
             .par_iter()
             .map(|&c| match (cells.chunk(c), start.chunk(c)) {
@@ -1119,8 +1201,15 @@ impl<K: FieldKind> FieldState<K> {
                     .iter()
                     .zip(then.iter())
                     .map(|(a, b)| K::relative_change(b, a))
-                    .fold(0.0f32, |m, v| if v.is_nan() { f32::INFINITY } else { m.max(v) }),
-                (Some(_) | None, Some(_) | None) if cells.chunk(c).is_none() == start.chunk(c).is_none() => 0.0,
+                    .fold(
+                        0.0f32,
+                        |m, v| if v.is_nan() { f32::INFINITY } else { m.max(v) },
+                    ),
+                (Some(_) | None, Some(_) | None)
+                    if cells.chunk(c).is_none() == start.chunk(c).is_none() =>
+                {
+                    0.0
+                }
                 _ => f32::INFINITY,
             })
             .reduce(|| 0.0, f32::max)
@@ -1131,7 +1220,11 @@ impl<K: FieldKind> FieldState<K> {
     fn set_stride(&mut self, stride: u32, rate: f32) {
         static LOGGED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let stride = stride.max(1);
-        self.stats.rate_ppm = if rate.is_finite() { (rate * 1.0e6).min(4.0e9) as u32 } else { u32::MAX };
+        self.stats.rate_ppm = if rate.is_finite() {
+            (rate * 1.0e6).min(4.0e9) as u32
+        } else {
+            u32::MAX
+        };
         if stride != self.stride {
             self.stats.stride_changes += 1;
             if LOGGED.fetch_add(1, Ordering::Relaxed) < 64 {
@@ -1208,7 +1301,12 @@ impl<K: FieldKind> FieldState<K> {
     /// The largest stiffness of the chunk's live edges, with the edges themselves: which edges are live depends on the geometry, the
     /// active set and the grid, none of which change during a step, so the sub-steps reuse this list instead of scanning every
     /// cell of the chunk again (16 scans of 4096 cells per chunk per step at idle).
-    fn chunk_stiffness(&self, chunk: usize, cells: &CowStore<K::Value>, geom: &Geo<'_>) -> (f32, Vec<LiveEdge>) {
+    fn chunk_stiffness(
+        &self,
+        chunk: usize,
+        cells: &CowStore<K::Value>,
+        geom: &Geo<'_>,
+    ) -> (f32, Vec<LiveEdge>) {
         let mut max = 0.0f32;
         let mut edges = Vec::new();
         self.for_live_edges(chunk, geom, |i, axis, a, ga, b, gb| {
@@ -1222,7 +1320,16 @@ impl<K: FieldKind> FieldState<K> {
                 .unwrap_or(0.0);
             let s = if s.is_finite() { s.max(0.0) } else { 0.0 };
             max = max.max(s);
-            edges.push(LiveEdge { i, axis, a, ga, b, gb, stiff: s, period: 1 });
+            edges.push(LiveEdge {
+                i,
+                axis,
+                a,
+                ga,
+                b,
+                gb,
+                stiff: s,
+                period: 1,
+            });
         });
         (max, edges)
     }
@@ -1247,7 +1354,17 @@ impl<K: FieldKind> FieldState<K> {
             wake: Vec::new(),
             live: 0,
         };
-        for &LiveEdge { i, axis, a, ga, b, gb, period, .. } in edges {
+        for &LiveEdge {
+            i,
+            axis,
+            a,
+            ga,
+            b,
+            gb,
+            period,
+            ..
+        } in edges
+        {
             let due = step % period == 0;
             let located = self.layout.locate(b);
             let nc = located.map_or(chunk, |(c, _)| c);
@@ -1263,7 +1380,11 @@ impl<K: FieldKind> FieldState<K> {
                     old.with(b, |vb| {
                         let (sa, sb) = (side(va, ga, self.faces), side(vb, gb, self.faces));
                         let settled = (last || boundary) && K::settled(sa, sb);
-                        let flux = if due { K::flux(sa, sb, dt * period as f32) } else { Default::default() };
+                        let flux = if due {
+                            K::flux(sa, sb, dt * period as f32)
+                        } else {
+                            Default::default()
+                        };
                         (flux, settled || !(last || boundary))
                     })
                 })
@@ -1390,7 +1511,12 @@ impl<K: FieldKind> fmt::Debug for FieldKey<K> {
 
 /// Each field's counts after its last step, by field name: (active chunks, live edges, touched chunks). Written by the field's own frame task
 /// as it steps (a few relaxed stores), read by a metrics reader (the MC Health panel) without walking or locking the world.
-static FIELD_COUNTS: std::sync::RwLock<Vec<(&'static str, [std::sync::Arc<std::sync::atomic::AtomicU32>; 3])>> = std::sync::RwLock::new(Vec::new());
+static FIELD_COUNTS: std::sync::RwLock<
+    Vec<(
+        &'static str,
+        [std::sync::Arc<std::sync::atomic::AtomicU32>; 3],
+    )>,
+> = std::sync::RwLock::new(Vec::new());
 
 fn publish_field_counts(name: &'static str, stats: &FieldStats) {
     use std::sync::atomic::Ordering;
@@ -1421,7 +1547,14 @@ pub fn field_counts() -> Vec<(&'static str, u32, u32, u32)> {
         .read()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .iter()
-        .map(|(n, s)| (*n, s[0].load(Ordering::Relaxed), s[1].load(Ordering::Relaxed), s[2].load(Ordering::Relaxed)))
+        .map(|(n, s)| {
+            (
+                *n,
+                s[0].load(Ordering::Relaxed),
+                s[1].load(Ordering::Relaxed),
+                s[2].load(Ordering::Relaxed),
+            )
+        })
         .collect()
 }
 
@@ -1481,11 +1614,21 @@ mod field_count_tests {
 
     #[test]
     fn a_step_publishes_its_counts_for_the_metrics_reader() {
-        let stats = FieldStats { active_chunks: 4, live_edges: 9, touched_chunks: 2, ..FieldStats::default() };
+        let stats = FieldStats {
+            active_chunks: 4,
+            live_edges: 9,
+            touched_chunks: 2,
+            ..FieldStats::default()
+        };
         publish_field_counts("test_field_counts", &stats);
-        let stats = FieldStats { active_chunks: 5, ..stats };
+        let stats = FieldStats {
+            active_chunks: 5,
+            ..stats
+        };
         publish_field_counts("test_field_counts", &stats);
-        let row = field_counts().into_iter().find(|r| r.0 == "test_field_counts");
+        let row = field_counts()
+            .into_iter()
+            .find(|r| r.0 == "test_field_counts");
         assert_eq!(row, Some(("test_field_counts", 5, 9, 2)));
     }
 }

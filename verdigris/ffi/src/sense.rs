@@ -17,8 +17,8 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::channel::Quantity;
 use vg_core::outbox::{Lane, MAX_SUBSCRIBER, Subscriber, WatchId};
@@ -26,9 +26,9 @@ use vg_core::registry::world_kind_domain;
 use vg_core::watch::{Cmp, Cond, Edge, SetEntry};
 use vg_core::world::ThresholdCrossing;
 
+use crate::arg::num;
 use crate::registry;
 use crate::sched::{channels, hub_unwatch};
-use crate::world::num;
 
 /// The subscriber every sense set is registered under. Its wakes are dropped before they reach the scheduler's lanes.
 pub(crate) const SENSE_HUB: Subscriber = MAX_SUBSCRIBER;
@@ -130,8 +130,7 @@ pub fn add(a: &Add) -> Result<()> {
     // Increasing, but a level may stand twice when the first counts at the value and the second only past it: a value on the level is in the
     // band between the two.
     let strict_at = |i: usize| a.strict & (1 << i) != 0;
-    if a
-        .levels
+    if a.levels
         .windows(2)
         .enumerate()
         .any(|(i, w)| w[0] > w[1] || (w[0] == w[1] && !(!strict_at(i) && strict_at(i + 1))))
@@ -151,12 +150,20 @@ pub fn add(a: &Add) -> Result<()> {
             cell: a.cell,
             ch: vg_core::channel::ChannelId(u8::try_from(a.ch)?),
         };
-        let (port, id) =
-            registry::with_domain(world_kind_domain(a.code), |d| d.watch(SENSE_HUB, Lane::Normal, &cond))
-                .ok_or_else(|| eyre!("sense: code {} has no watch port", a.code))?
-                .map_err(|e| eyre!("{e}"))?;
+        let (port, id) = registry::with_domain(world_kind_domain(a.code), |d| {
+            d.watch(SENSE_HUB, Lane::Normal, &cond)
+        })
+        .ok_or_else(|| eyre!("sense: code {} has no watch port", a.code))?
+        .map_err(|e| eyre!("{e}"))?;
         with_table(|t| {
-            t.sets.insert(set_key, SetState { port, id, regs: Vec::new() });
+            t.sets.insert(
+                set_key,
+                SetState {
+                    port,
+                    id,
+                    regs: Vec::new(),
+                },
+            );
         });
         counter("sense.sets_made", 1);
     }
@@ -168,7 +175,11 @@ pub fn add(a: &Add) -> Result<()> {
         (s.port, s.id, reg)
     });
     for (i, &level) in a.levels.iter().enumerate() {
-        let cmp = if a.strict & (1 << i) != 0 { Cmp::AboveStrict } else { Cmp::Above };
+        let cmp = if a.strict & (1 << i) != 0 {
+            Cmp::AboveStrict
+        } else {
+            Cmp::Above
+        };
         let entry = SetEntry {
             payload: payload(reg, i),
             generation: 1,
@@ -178,8 +189,9 @@ pub fn add(a: &Add) -> Result<()> {
             edge: Edge::Both,
             start: (i < a.observed as usize).then_some(true),
         };
-        let done = registry::with_domain(world_kind_domain(a.code), |d| d.add_entry(port, id, entry))
-            .ok_or_else(|| eyre!("sense: code {} has no watch port", a.code))?;
+        let done =
+            registry::with_domain(world_kind_domain(a.code), |d| d.add_entry(port, id, entry))
+                .ok_or_else(|| eyre!("sense: code {} has no watch port", a.code))?;
         if let Err(e) = done {
             with_table(|t| drop_reg(t, reg));
             return Err(eyre!("sense: {e}"));
@@ -188,7 +200,13 @@ pub fn add(a: &Add) -> Result<()> {
     with_table(|t| {
         t.regs.insert(
             reg,
-            Reg { set: set_key, key: a.key, levels: a.levels.len(), held: observed_bits(a.observed, a.levels.len()), reported: a.observed },
+            Reg {
+                set: set_key,
+                key: a.key,
+                levels: a.levels.len(),
+                held: observed_bits(a.observed, a.levels.len()),
+                reported: a.observed,
+            },
         );
         t.by_key.entry(a.key).or_default().push(reg);
     });
@@ -199,7 +217,11 @@ pub fn add(a: &Add) -> Result<()> {
 /// The entries DM's observed band says are held: the first `band` of `levels`.
 fn observed_bits(band: u32, levels: usize) -> u32 {
     let held = (band as usize).min(levels);
-    if held >= 32 { u32::MAX } else { (1_u32 << held) - 1 }
+    if held >= 32 {
+        u32::MAX
+    } else {
+        (1_u32 << held) - 1
+    }
 }
 
 /// Takes registration `reg` off its set and the tables, dropping the set when it was the last.
@@ -307,7 +329,11 @@ pub fn claim(all: Vec<ThresholdCrossing>) -> Vec<ThresholdCrossing> {
             if band != r.reported {
                 let was = r.reported;
                 r.reported = band;
-                t.out.push(Sensed { key: r.key, band, was });
+                t.out.push(Sensed {
+                    key: r.key,
+                    band,
+                    was,
+                });
             }
         }
     });
@@ -354,7 +380,9 @@ fn sense_commit(commands: ByondValue) -> Result<ByondValue> {
     let mut at = 0;
     let mut commands_n = 0_u64;
     let n = |i: usize| -> Result<u32> {
-        let x = *v.get(i).ok_or_else(|| eyre!("sense_commit: truncated batch"))?;
+        let x = *v
+            .get(i)
+            .ok_or_else(|| eyre!("sense_commit: truncated batch"))?;
         if !(x >= 0.0 && x.fract() == 0.0 && x < 16_777_216.0) {
             bail!("sense_commit: bad number {x}");
         }
@@ -412,7 +440,9 @@ thread_local! {
 /// The reasons commands were refused since the last call (`key: reason; ...`), empty when none were.
 #[auxmacros::bind("/proc/sense_refused")]
 fn sense_refused() -> Result<ByondValue> {
-    Ok(ByondValue::new_str(LAST_REFUSED.with_borrow_mut(std::mem::take))?)
+    Ok(crate::held::Held::new_str(
+        LAST_REFUSED.with_borrow_mut(std::mem::take),
+    )?.leak())
 }
 
 /// `list(live sets, live registrations)`.
@@ -471,7 +501,11 @@ mod tests {
         while at + 4 <= page.len() {
             let len = page[at + 3] as usize;
             if page[at] as u32 == REC_SENSED {
-                out.push((page[at + 1] as u32, page[at + 2] as u32, page[at + 4] as u32));
+                out.push((
+                    page[at + 1] as u32,
+                    page[at + 2] as u32,
+                    page[at + 4] as u32,
+                ));
             }
             at += 4 + len;
         }
@@ -485,20 +519,31 @@ mod tests {
     fn crossing_up_and_down_reports_the_band_and_nothing_inside_one() {
         let (r, t) = tank(10.0);
         arm(r, 11, 1, &LEVELS);
-        assert!(frame().is_empty(), "armed on the band DM observed: nothing to say");
+        assert!(
+            frame().is_empty(),
+            "armed on the band DM observed: nothing to say"
+        );
         let up = set_moles(r, &t, 21.0);
         assert_eq!(frame(), vec![(11, 2, 1)], "past the upper level");
         let inside = set_moles(r, &up, 20.0);
         assert!(frame().is_empty(), "a change inside a band says nothing");
         set_moles(r, &inside, 2.0);
-        assert_eq!(frame(), vec![(11, 0, 2)], "straight down through both levels is one record");
+        assert_eq!(
+            frame(),
+            vec![(11, 0, 2)],
+            "straight down through both levels is one record"
+        );
     }
 
     #[test]
     fn a_wrong_observed_band_is_corrected_by_the_first_frame() {
         let (r, _t) = tank(10.0);
         arm(r, 12, 0, &LEVELS);
-        assert_eq!(frame(), vec![(12, 1, 0)], "DM read band 0 but the value is in band 1");
+        assert_eq!(
+            frame(),
+            vec![(12, 1, 0)],
+            "DM read band 0 but the value is in band 1"
+        );
         assert!(frame().is_empty(), "told once");
     }
 
@@ -509,7 +554,10 @@ mod tests {
         // 10 mol is about 348.4 kPa: on the level. A small dip stays inside the hysteresis.
         let _ = frame();
         let dip = set_moles(r, &t, 9.99);
-        assert!(frame().is_empty(), "a dip of a hundredth of a kPa does not leave");
+        assert!(
+            frame().is_empty(),
+            "a dip of a hundredth of a kPa does not leave"
+        );
         set_moles(r, &dip, 9.0);
         assert_eq!(frame(), vec![(13, 0, 1)], "well below it does");
     }
@@ -521,11 +569,19 @@ mod tests {
         arm(r, 22, 1, &[100.0, 200.0, 300.0]);
         arm(r, 23, 0, &[400.0]);
         assert_eq!(live(), (1, 3), "one set, three registrations");
-        assert_eq!(frame(), vec![(22, 3, 1)], "only the watcher whose observed band was wrong is told");
+        assert_eq!(
+            frame(),
+            vec![(22, 3, 1)],
+            "only the watcher whose observed band was wrong is told"
+        );
         set_moles(r, &t, 21.0);
         let mut got = frame();
         got.sort_unstable();
-        assert_eq!(got, vec![(21, 2, 1), (23, 1, 0)], "key 22 stays in its top band");
+        assert_eq!(
+            got,
+            vec![(21, 2, 1), (23, 1, 0)],
+            "key 22 stays in its top band"
+        );
     }
 
     #[test]
@@ -542,12 +598,34 @@ mod tests {
             levels: vec![100.0, 100.0, 500.0],
         };
         add(&base).unwrap();
-        assert_eq!(live(), (1, 1), "plain then strict at one level is kept whole");
-        assert_eq!(frame(), vec![(71, 2, 1)], "348 kPa is over 100 both ways: band 2 of 3");
-        let same = Add { key: 72, strict: 0, ..base.clone() };
-        assert!(add(&same).is_err(), "the same level twice with the same strictness is a mistake");
-        let wrong_order = Add { key: 73, strict: 0b01, ..base };
-        assert!(add(&wrong_order).is_err(), "strict then plain at one level is out of order");
+        assert_eq!(
+            live(),
+            (1, 1),
+            "plain then strict at one level is kept whole"
+        );
+        assert_eq!(
+            frame(),
+            vec![(71, 2, 1)],
+            "348 kPa is over 100 both ways: band 2 of 3"
+        );
+        let same = Add {
+            key: 72,
+            strict: 0,
+            ..base.clone()
+        };
+        assert!(
+            add(&same).is_err(),
+            "the same level twice with the same strictness is a mistake"
+        );
+        let wrong_order = Add {
+            key: 73,
+            strict: 0b01,
+            ..base
+        };
+        assert!(
+            add(&wrong_order).is_err(),
+            "strict then plain at one level is out of order"
+        );
     }
 
     #[test]
@@ -567,9 +645,17 @@ mod tests {
         arm(r, 41, 1, &LEVELS);
         arm(r, 41, 1, &[600.0, 900.0]);
         assert_eq!(live(), (1, 1), "the old registration is gone, not added to");
-        assert_eq!(frame(), vec![(41, 0, 1)], "348 kPa is under the new first level");
+        assert_eq!(
+            frame(),
+            vec![(41, 0, 1)],
+            "348 kPa is under the new first level"
+        );
         set_moles(r, &t, 21.0);
-        assert_eq!(frame(), vec![(41, 1, 0)], "730 kPa is over 600 and under 900");
+        assert_eq!(
+            frame(),
+            vec![(41, 1, 0)],
+            "730 kPa is over 600 and under 900"
+        );
     }
 
     #[test]

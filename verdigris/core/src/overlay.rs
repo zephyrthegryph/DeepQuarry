@@ -80,7 +80,10 @@ impl<V> Overlay<V> {
 
     fn slot(&self, slot: u32) -> Option<&Entry<V>> {
         let slot = slot as usize;
-        self.slab.get(slot / SLAB_CHUNK)?.get(slot % SLAB_CHUNK)?.as_ref()
+        self.slab
+            .get(slot / SLAB_CHUNK)?
+            .get(slot % SLAB_CHUNK)?
+            .as_ref()
     }
 
     fn slot_mut(&mut self, slot: u32) -> &mut Option<Entry<V>> {

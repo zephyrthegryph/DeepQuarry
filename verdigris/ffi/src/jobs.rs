@@ -52,7 +52,7 @@ pub fn parse_id(value: &ByondValue) -> Result<JobId> {
 }
 
 pub fn id_value(id: JobId) -> Result<ByondValue> {
-    Ok(ByondValue::new_str(id.0.to_string().into_bytes())?)
+    Ok(crate::held::Held::new_str(id.0.to_string().into_bytes())?.leak())
 }
 
 /// A job's status: `PENDING`, `READY`, `CANCELLED` or `ERROR:<reason>`
@@ -66,7 +66,7 @@ fn verdigris_job_poll(job_id: ByondValue) -> Result<ByondValue> {
         JobStatus::Failed(error) => format!("ERROR:{error}"),
         JobStatus::Unknown => "ERROR:unknown job".to_owned(),
     };
-    Ok(ByondValue::new_str(status.into_bytes())?)
+    Ok(crate::held::Held::new_str(status.into_bytes())?.leak())
 }
 
 /// A job's progress in 0..1 (1 once it has finished; 0 if unknown).
@@ -102,7 +102,7 @@ fn verdigris_jobs_completed() -> Result<ByondValue> {
     let ids = registry()
         .drain_completed()
         .into_iter()
-        .map(id_value)
-        .collect::<Result<Vec<_>>>()?;
-    Ok(crate::held::hand_list(&ids)?)
+        .map(|id| crate::held::Held::new_str(id.0.to_string()))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(crate::held::hand_owned_list(ids)?)
 }

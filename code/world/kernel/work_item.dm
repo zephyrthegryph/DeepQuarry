@@ -73,7 +73,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 	var/sweep_began = 0
 	/// TRUE when a memberless step returned STEP_YIELD: it resumes next pass ahead of its interval.
 	var/yielded = FALSE
+	/// TRUE while the item is off the schedule: idle (its step returned STEP_PARK or PROCESS_KILL) or fault-parked.
 	var/parked = FALSE
+	/// TRUE when the item was parked for KERNEL_FAULT_PARK runtimes in a row: wake() does not revive it, only reset_fault() does.
+	var/fault_parked = FALSE
+	/// Wakes refused while fault-parked (the first is logged).
+	var/refused_wakes = 0
 	var/runs = 0
 	/// Runs where run_when answered FALSE.
 	var/skips = 0
@@ -181,16 +186,34 @@ CAPABILITIES(/datum/work_item)
 		return spread ? K.run_item_spread(src, owner, limit_abs, now) : K.run_item_members(src, owner, limit_abs, now)
 	return K.run_item_once(src, owner, now)
 
-/// Puts a parked item back on the schedule.
+/// Puts an idle-parked item back on the schedule. A fault-parked item stays parked (logged): only reset_fault() revives it.
+/// Returns TRUE when the item is on the schedule afterwards.
 /datum/work_item/proc/wake()
+	if(fault_parked)
+		refused_wakes++
+		if(refused_wakes == 1) // once per fault park: a dispatch item may be woken many times a tick
+			log_world("Kernel: wake of work item [key] refused: it is fault-parked after [consecutive_faults] faults in a row (reset_fault() revives it).")
+		return FALSE
 	parked = FALSE
 	consecutive_faults = 0
 	next_run = 0
 	kernel().work_due_reset() // its list may be resting on an earlier walk's due date
+	return TRUE
+
+/// The explicit admin/reset path: clears a fault park and puts the item back on the schedule. `by` names who reset it, for the log.
+/datum/work_item/proc/reset_fault(by)
+	var/was_faulted = fault_parked
+	fault_parked = FALSE
+	refused_wakes = 0
+	if(was_faulted)
+		var/msg = "Kernel: work item [key] fault park reset[by ? " by [by]" : ""] after [consecutive_faults] faults in a row."
+		log_world(msg)
+		message_admins(msg)
+	return wake()
 
 /// Telemetry for the profiler (Kernel.metrics()).
 /datum/work_item/proc/metrics()
-	return alist("key" = key, "phase" = phase, "lane" = lane, "interval" = interval, "runs" = runs, "skips" = skips, "faults" = faults, "member_runs" = member_runs, "total_ms" = total_ms, "cost" = cost, "parked" = parked)
+	return alist("key" = key, "phase" = phase, "lane" = lane, "interval" = interval, "runs" = runs, "skips" = skips, "faults" = faults, "member_runs" = member_runs, "total_ms" = total_ms, "cost" = cost, "parked" = parked, "fault_parked" = fault_parked)
 
 // ---- clocks are sources
 

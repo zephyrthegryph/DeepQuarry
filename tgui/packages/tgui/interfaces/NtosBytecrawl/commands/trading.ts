@@ -7,7 +7,7 @@ import type { CommandContext } from './context';
 // ── sell ──────────────────────────────────────────────────────────────────────
 
 export function cmdSell(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   const state = gRef.current;
 
   // ── sell all ──────────────────────────────────────────────────────────────
@@ -37,7 +37,6 @@ export function cmdSell(args: readonly string[], ctx: CommandContext): void {
       cache: [],
       txLog: [...newLog, ...prev.txLog].slice(0, 100),
     }));
-    act('sell_all', { total });
     print(`Total: ${fmtMoney(total)}`, '#33ff33');
     return;
   }
@@ -64,7 +63,6 @@ export function cmdSell(args: readonly string[], ctx: CommandContext): void {
       ...prev.txLog.slice(0, 99),
     ],
   }));
-  act('sell', { id: cid, revenue });
   print(
     `Sold ${cid}: ${item.gb.toFixed(2)}GB ${DATA_FULLNAMES[item.type]} for ${fmtMoney(revenue)}`,
     '#33ff33',

@@ -277,7 +277,12 @@ pub struct BudgetJob {
 }
 
 fn mixture_of(side: &DeviceSide) -> Mixture {
-	Mixture::from_parts(&side.gas.moles_f32(), side.gas.temperature_now(), side.volume as f32, false)
+	Mixture::from_parts(
+		&side.gas.moles_f32(),
+		side.gas.temperature_now(),
+		side.volume as f32,
+		false,
+	)
 }
 
 impl BudgetJob {
@@ -352,7 +357,11 @@ impl BudgetJob {
 
 	fn step_mix(&self, sides: &mut [DeviceSide]) -> (f32, f32) {
 		let mut requested = 0.0_f32;
-		let mixes: Vec<Mixture> = self.legs.iter().map(|l| mixture_of(&sides[l.side])).collect();
+		let mixes: Vec<Mixture> = self
+			.legs
+			.iter()
+			.map(|l| mixture_of(&sides[l.side]))
+			.collect();
 		for (leg, mix) in self.legs.iter().zip(&mixes) {
 			let volume = sides[leg.side].volume as f32;
 			if volume > 0.0 {
@@ -366,7 +375,10 @@ impl BudgetJob {
 			.legs
 			.iter()
 			.zip(&mixes)
-			.map(|(l, mixture)| MixSource { mixture, ratio: l.ratio })
+			.map(|(l, mixture)| MixSource {
+				mixture,
+				ratio: l.ratio,
+			})
 			.collect();
 		let sink = mixture_of(&sides[self.hub]);
 		let Some(plan) = power_budget::mix_transfer(
@@ -664,7 +676,12 @@ mod tests {
 	fn pipe_device_step_accumulates_over_steps_and_an_empty_source_reports_nothing() {
 		let reads = ();
 		let jobs = DeviceJobs {
-			sides: vec![device_side(200.0), device_side(0.0), device_side(0.0), device_side(0.0)],
+			sides: vec![
+				device_side(200.0),
+				device_side(0.0),
+				device_side(0.0),
+				device_side(0.0),
+			],
 			jobs: vec![pump_job(0, 1), pump_job(2, 3)],
 			budgets: vec![],
 		};
@@ -675,8 +692,14 @@ mod tests {
 		let after_one = writes.0.jobs[0].moles;
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
-		assert!(writes.0.jobs[0].moles > after_one, "the report sums over steps");
-		assert!(!writes.0.jobs[1].moved(), "nothing to move: nothing to report");
+		assert!(
+			writes.0.jobs[0].moles > after_one,
+			"the report sums over steps"
+		);
+		assert!(
+			!writes.0.jobs[1].moved(),
+			"nothing to move: nothing to report"
+		);
 	}
 
 	#[test]
@@ -686,7 +709,12 @@ mod tests {
 		// first changed it, so even though it moves nothing itself it did not see the staged gas: not settled.
 		let reads = ();
 		let jobs = DeviceJobs {
-			sides: vec![device_side(200.0), device_side(0.0), device_side(0.0), device_side(0.0)],
+			sides: vec![
+				device_side(200.0),
+				device_side(0.0),
+				device_side(0.0),
+				device_side(0.0),
+			],
 			jobs: vec![pump_job(0, 1), pump_job(2, 3), pump_job(3, 1)],
 			budgets: vec![],
 		};
@@ -725,7 +753,8 @@ mod tests {
 			total_moles(&jobs.sides)
 		);
 		assert!(
-			(jobs.jobs[0].moles + jobs.jobs[1].moles - (10.0 - jobs.sides[0].gas.total())).abs() < 1e-3,
+			(jobs.jobs[0].moles + jobs.jobs[1].moles - (10.0 - jobs.sides[0].gas.total())).abs()
+				< 1e-3,
 			"what the source lost is what the jobs report"
 		);
 	}
@@ -760,14 +789,28 @@ mod tests {
 	fn a_filter_budget_job_sends_the_masked_gas_to_its_leg_and_the_rest_to_clean() {
 		let co2 = 1_u32 << crate::gas::ids::GAS_CARBON_DIOXIDE;
 		let mut writes = Global(DeviceJobs {
-			sides: vec![mixed_side(100.0, 100.0, 200.0), mixed_side(0.0, 0.0, 200.0), mixed_side(0.0, 0.0, 200.0)],
+			sides: vec![
+				mixed_side(100.0, 100.0, 200.0),
+				mixed_side(0.0, 0.0, 200.0),
+				mixed_side(0.0, 0.0, 200.0),
+			],
 			jobs: vec![],
 			budgets: vec![budget(
 				BudgetKind::Filter,
 				0,
 				vec![
-					BudgetLeg { side: 1, mask: co2, clean: false, ratio: 0.0 },
-					BudgetLeg { side: 2, mask: 0, clean: true, ratio: 0.0 },
+					BudgetLeg {
+						side: 1,
+						mask: co2,
+						clean: false,
+						ratio: 0.0,
+					},
+					BudgetLeg {
+						side: 2,
+						mask: 0,
+						clean: true,
+						ratio: 0.0,
+					},
 				],
 			)],
 		});
@@ -776,26 +819,62 @@ mod tests {
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
 		let jobs = &writes.0;
-		assert!(jobs.budgets[0].moved(), "a filter with gas to filter moves some");
-		assert!(jobs.sides[1].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE] > 0.0, "the masked gas went to its leg");
-		assert_eq!(jobs.sides[1].gas.moles[GAS_OXYGEN], 0.0, "and only that gas");
-		assert!(jobs.sides[2].gas.moles[GAS_OXYGEN] > 0.0, "the rest went to the clean leg");
-		assert_eq!(jobs.sides[2].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE], 0.0);
-		assert!((total_moles(&jobs.sides) - 200.0).abs() < 1e-3, "conserved: {}", total_moles(&jobs.sides));
-		assert!((jobs.budgets[0].moles - (200.0 - jobs.sides[0].gas.total())).abs() < 1e-3, "the report is what left the hub");
+		assert!(
+			jobs.budgets[0].moved(),
+			"a filter with gas to filter moves some"
+		);
+		assert!(
+			jobs.sides[1].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE] > 0.0,
+			"the masked gas went to its leg"
+		);
+		assert_eq!(
+			jobs.sides[1].gas.moles[GAS_OXYGEN], 0.0,
+			"and only that gas"
+		);
+		assert!(
+			jobs.sides[2].gas.moles[GAS_OXYGEN] > 0.0,
+			"the rest went to the clean leg"
+		);
+		assert_eq!(
+			jobs.sides[2].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE],
+			0.0
+		);
+		assert!(
+			(total_moles(&jobs.sides) - 200.0).abs() < 1e-3,
+			"conserved: {}",
+			total_moles(&jobs.sides)
+		);
+		assert!(
+			(jobs.budgets[0].moles - (200.0 - jobs.sides[0].gas.total())).abs() < 1e-3,
+			"the report is what left the hub"
+		);
 	}
 
 	#[test]
 	fn a_mix_budget_job_takes_from_its_inputs_by_ratio_into_the_hub() {
 		let mut writes = Global(DeviceJobs {
-			sides: vec![mixed_side(0.0, 0.0, 300.0), mixed_side(100.0, 0.0, 200.0), mixed_side(0.0, 100.0, 200.0)],
+			sides: vec![
+				mixed_side(0.0, 0.0, 300.0),
+				mixed_side(100.0, 0.0, 200.0),
+				mixed_side(0.0, 100.0, 200.0),
+			],
 			jobs: vec![],
 			budgets: vec![budget(
 				BudgetKind::Mix,
 				0,
 				vec![
-					BudgetLeg { side: 1, mask: 0, clean: false, ratio: 0.5 },
-					BudgetLeg { side: 2, mask: 0, clean: false, ratio: 0.5 },
+					BudgetLeg {
+						side: 1,
+						mask: 0,
+						clean: false,
+						ratio: 0.5,
+					},
+					BudgetLeg {
+						side: 2,
+						mask: 0,
+						clean: false,
+						ratio: 0.5,
+					},
 				],
 			)],
 		});
@@ -804,8 +883,14 @@ mod tests {
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
 		let jobs = &writes.0;
-		let (o2, co2) = (jobs.sides[0].gas.moles[GAS_OXYGEN], jobs.sides[0].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE]);
-		assert!(o2 > 0.0 && (o2 - co2).abs() < 1e-3, "equal shares in: {o2} {co2}");
+		let (o2, co2) = (
+			jobs.sides[0].gas.moles[GAS_OXYGEN],
+			jobs.sides[0].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE],
+		);
+		assert!(
+			o2 > 0.0 && (o2 - co2).abs() < 1e-3,
+			"equal shares in: {o2} {co2}"
+		);
 		assert!((total_moles(&jobs.sides) - 200.0).abs() < 1e-3, "conserved");
 		assert!(jobs.budgets[0].moved());
 	}
@@ -813,14 +898,28 @@ mod tests {
 	#[test]
 	fn a_budget_job_with_nothing_to_move_reports_nothing() {
 		let mut writes = Global(DeviceJobs {
-			sides: vec![mixed_side(0.0, 0.0, 200.0), mixed_side(0.0, 0.0, 200.0), mixed_side(0.0, 0.0, 200.0)],
+			sides: vec![
+				mixed_side(0.0, 0.0, 200.0),
+				mixed_side(0.0, 0.0, 200.0),
+				mixed_side(0.0, 0.0, 200.0),
+			],
 			jobs: vec![],
 			budgets: vec![budget(
 				BudgetKind::Filter,
 				0,
 				vec![
-					BudgetLeg { side: 1, mask: 1, clean: false, ratio: 0.0 },
-					BudgetLeg { side: 2, mask: 0, clean: true, ratio: 0.0 },
+					BudgetLeg {
+						side: 1,
+						mask: 1,
+						clean: false,
+						ratio: 0.0,
+					},
+					BudgetLeg {
+						side: 2,
+						mask: 0,
+						clean: true,
+						ratio: 0.0,
+					},
 				],
 			)],
 		});

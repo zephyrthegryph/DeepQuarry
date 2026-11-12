@@ -28,6 +28,7 @@ set -uo pipefail
 # Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dq_below_normal.sh"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib/dq_lock.sh"
 MANIFEST="${DQ_DISK_MANIFEST:-$HERE/ci/disk_budget.toml}"
 CACHE="${DQ_CACHE_ROOT:-E:/dq-cache}"; CACHE="${CACHE%/}"
 WT_ROOT="${DQ_WT_ROOT:-E:/projects/dq-wt}"; WT_ROOT="${WT_ROOT%/}"
@@ -539,13 +540,13 @@ enforce() {
 	mkdir -p "$STATE" 2>/dev/null
 	if [ "$THROTTLE" -gt 0 ] && [ "$FORCE" -eq 0 ] && [ "$AGGR" -eq 0 ] && [ "$DRY" -eq 0 ] && [ -n "$(find "$STATE/enforce.stamp" -mmin -"$THROTTLE" 2>/dev/null)" ]; then return 0; fi
 	if [ "$DRY" -eq 0 ]; then
-		# one enforcement at a time; a lock left by a dead run goes after 30 minutes
-		[ -n "$(find "$STATE/enforce.lock" -maxdepth 0 -mmin +30 2>/dev/null)" ] && rmdir "$STATE/enforce.lock" 2>/dev/null
-		mkdir "$STATE/enforce.lock" 2>/dev/null || { log "dq_disk_budget: another enforcement is running"; return 0; }
+		# one enforcement at a time (tools/lib/dq_lock.sh): a lock whose holder is dead goes at once; one with no owner record (an older copy of
+		# this script took it) after 30 minutes
+		dq_lock_take "$STATE/enforce.lock" 0 1800 || { log "dq_disk_budget: another enforcement is running"; return 0; }
 		: >"$STATE/enforce.stamp"
 	fi
 	SCR="$(mktemp -d)"
-	trap '[ "$DRY" -eq 1 ] || rmdir "$STATE/enforce.lock" 2>/dev/null; rm -rf "$SCR"' EXIT   # backup: the normal path releases both at the end
+	trap '[ "$DRY" -eq 1 ] || dq_lock_drop "$STATE/enforce.lock"; rm -rf "$SCR"' EXIT   # backup: the normal path releases both at the end
 	index_load
 	free_gb; local free_before="$FREE_R" f
 	# below the free-space target (target_free_gb, DQ_DISK_TARGET_GB): squeeze as under the floor, so the floor is never reached
@@ -611,7 +612,7 @@ enforce() {
 	log "  per-worktree growth dirs (all worktrees): $x -> $y MB, $wtn files removed; unknown cache entries removed: $unknown_n ($MB_R MB)"
 	free_gb
 	log "dq_disk_budget: $FREE_R GB free now (was $free_before GB)"
-	[ "$DRY" -eq 1 ] || rmdir "$STATE/enforce.lock" 2>/dev/null
+	[ "$DRY" -eq 1 ] || dq_lock_drop "$STATE/enforce.lock"
 	rm -rf "$SCR"; trap - EXIT
 }
 

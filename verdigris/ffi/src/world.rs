@@ -30,8 +30,9 @@
 
 use std::cell::RefCell;
 
-use byondapi::prelude::*;
+use crate::arg::{num, whole};
 use crate::held::{HeldList, HeldRead};
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::component::FieldId;
 use vg_core::conservation::Tolerance;
@@ -125,8 +126,8 @@ fn register(b: &mut WorldBuilder) -> Fields {
     use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
     use vg_power::kind::Cables;
     use vg_power::laws::{
-        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply, SmesInputPlan,
-        SmesOutputApply, SmesOutputPlan,
+        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply,
+        SmesInputPlan, SmesOutputApply, SmesOutputPlan,
     };
     b.add_component::<Producer>();
     b.add_component::<Apc>();
@@ -145,8 +146,14 @@ fn register(b: &mut WorldBuilder) -> Fields {
         .after::<SmesOutputPlan>();
     let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
     let _ = b.add_law::<SmesFlowReset>().after::<PowerReset>();
-    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
-    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
+    let _ = b
+        .add_law::<SmesOutputApply>()
+        .after::<PowerSettle>()
+        .after::<SmesFlowReset>();
+    let _ = b
+        .add_law::<SmesInputApply>()
+        .after::<PowerSettle>()
+        .after::<SmesFlowReset>();
 
     // Pipes (`rust_architecture.md` §6, §8.5, step 5): a main-owned network,
     // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). The devices
@@ -230,6 +237,68 @@ pub fn with_world<T>(f: impl FnOnce(&mut World) -> Result<T>) -> Result<T> {
     WORLD.with_borrow_mut(|w| f(w.as_mut().expect("built above")))
 }
 
+#[cfg(test)]
+thread_local! {
+    /// Failures [`with_world_reported`] would have sent to DM (tests have no BYOND to call).
+    pub(crate) static REPORTED: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Runs `f` on the world for a caller that has nothing to return the failure to (an unbind, a watch removal, a
+/// best-effort sync). A failure is not dropped: it goes to DM's `/proc/byondapi_stack_trace` (counted, logged, raised
+/// the first time) with the calling site, so DM and Rust cannot drift silently. After shutdown the world is gone on
+/// purpose and nothing is reported.
+#[track_caller]
+pub fn with_world_reported<T>(f: impl FnOnce(&mut World) -> Result<T>) -> Option<T> {
+    let site = std::panic::Location::caller();
+    match with_world(f) {
+        Ok(v) => Some(v),
+        Err(e) => {
+            if !SHUT_DOWN.with(std::cell::Cell::get) {
+                report_dropped(e.wrap_err(format!(
+                    "verdigris best-effort world update failed at {site}"
+                )));
+            }
+            None
+        }
+    }
+}
+
+thread_local! {
+    /// How many of the sim's `frame_panics` have been reported to DM.
+    static PANICS_REPORTED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// Reports each frame panic the sim caught since the last call to DM, once, with the panic's message and location.
+/// A frame that panicked still published its views (the simulation carries on with a partial frame), so without
+/// this the only trace was the `sim.frame_panics` counter.
+pub fn report_new_frame_panics() {
+    let Ok((count, last)) = with_world(|w| {
+        let m = w.sim().metrics();
+        Ok((m.frame_panics, m.last_panic.clone()))
+    }) else {
+        return;
+    };
+    let seen = PANICS_REPORTED.with(std::cell::Cell::get);
+    // A rebuilt world restarts its counters.
+    let seen = if count < seen { 0 } else { seen };
+    PANICS_REPORTED.with(|c| c.set(count));
+    if count > seen {
+        report_dropped(eyre!(
+            "verdigris frame panicked ({} new, {count} total since the world was built): {}",
+            count - seen,
+            last.as_deref().unwrap_or("no message")
+        ));
+    }
+}
+
+/// Sends a failure nobody can return to DM's error reporting.
+pub fn report_dropped(e: eyre::Report) {
+    #[cfg(not(test))]
+    auxcallback::report_error(e);
+    #[cfg(test)]
+    REPORTED.with_borrow_mut(|r| r.push(format!("{e:?}")));
+}
+
 /// Entity lifecycle for world components, under [`WORLD_DOMAIN`]: the
 /// generic `entity_unbind` reaches the world through this slot.
 struct WorldEntities;
@@ -241,7 +310,7 @@ fn slot_entity(comp: ComponentRef) -> Option<EntityId> {
 impl DomainRegistry for WorldEntities {
     fn detach(&mut self, comp: ComponentRef) {
         if let Some(e) = slot_entity(comp) {
-            let _ = with_world(|w| Ok(w.detach_all(e)));
+            let _ = crate::world::with_world_reported(|w| Ok(w.detach_all(e)));
         }
     }
 
@@ -347,7 +416,7 @@ impl DomainRegistry for WorldKind {
     }
 
     fn unwatch(&mut self, _port: u8, id: WatchId) {
-        let _ = with_world(|w| Ok(w.unwatch(self.kind, id)));
+        let _ = crate::world::with_world_reported(|w| Ok(w.unwatch(self.kind, id)));
     }
 
     fn add_entry(
@@ -364,13 +433,14 @@ impl DomainRegistry for WorldKind {
     }
 
     fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
-        let _ = with_world(|w| Ok(w.remove_watch_entry(self.kind, id, payload)));
+        let _ =
+            crate::world::with_world_reported(|w| Ok(w.remove_watch_entry(self.kind, id, payload)));
     }
 
     /// This kind's watch wakes, with DM's `vg_entity` value as the source
     /// (the stores report the entity's slot).
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {
-        let _ = with_world(|w| {
+        let _ = crate::world::with_world_reported(|w| {
             let mut wakes = Vec::new();
             w.drain_kind_wakes(self.kind, &mut wakes);
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -387,19 +457,6 @@ impl DomainRegistry for WorldKind {
 }
 
 // --- Binds -------------------------------------------------------------------------
-
-pub(crate) fn num(v: &ByondValue) -> Result<f32> {
-    Ok(v.get_number()?)
-}
-
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-pub(crate) fn whole(v: &ByondValue, what: &str) -> Result<u32> {
-    let n = num(v)?;
-    if !(n >= 0.0 && n.fract() == 0.0 && n < 16_777_216.0) {
-        bail!("bad {what} {n}");
-    }
-    Ok(n as u32)
-}
 
 fn field(v: &ByondValue) -> Result<FieldId> {
     FieldId::try_from(whole(v, "field id")?).map_err(|_| eyre!("field id out of range"))
@@ -419,9 +476,9 @@ pub(crate) fn list(values: impl IntoIterator<Item = f32>) -> Result<ByondValue> 
 fn text_list(values: impl IntoIterator<Item = String>) -> Result<ByondValue> {
     let items = values
         .into_iter()
-        .map(ByondValue::new_str)
+        .map(crate::held::Held::new_str)
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(crate::held::hand_list(&items)?)
+    Ok(crate::held::hand_owned_list(items)?)
 }
 
 /// Attaches component `code` to `entity` (0: a new entity), seeded from its
@@ -660,6 +717,7 @@ pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
         Ok(applied)
     })
     .inspect(|_| {
+        report_new_frame_panics();
         if due {
             // The heat network's edges, over the world time since their last step (exact for any interval).
             if let Ok((now, dt)) = with_world(|w| Ok((w.now(), w.dt().0))) {
@@ -740,19 +798,41 @@ fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> R
     let max_x = whole(&max_x, "max_x")?.max(1);
     let max_y = whole(&max_y, "max_y")?.max(1);
     let max_z = whole(&max_z, "max_z")?.max(1);
+    configure_dims(max_x, max_y, max_z)?;
+    Ok(ByondValue::null())
+}
+
+/// [`configure_world`]'s rules. The first real size builds the world; later calls are fine while they keep the plane
+/// size and stay inside the z capacity it was built with (`increment_max_z`, SSair's re-check). Anything else used to be
+/// a silent no-op that left gas handles or cells missing; it is an error now.
+fn configure_dims(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
+    crate::gas::mix::check_turf_cells(max_x, max_y, max_z)?;
     let dims = GridDims::new(max_x, max_y, z_capacity(max_z))
         .ok_or_else(|| eyre!("grid {max_x}x{max_y}x{max_z} does not fit a u32 index"))?;
-    let placeholder = WORLD.with_borrow(|w| {
-        w.as_ref().is_none_or(|w| {
-            w.grid()
-                .is_ok_and(|g| g.dims() == GridDims::new(2, 2, 2).expect("fits"))
-        })
+    let built = WORLD.with_borrow(|w| {
+        w.as_ref()
+            .and_then(|w| w.grid().ok().map(|g| g.dims()))
+            .filter(|d| *d != GridDims::new(2, 2, 2).expect("fits"))
     });
-    if placeholder {
-        PENDING_DIMS.with(|d| d.set(dims));
-        reset()?;
+    match built {
+        None => {
+            eprintln!(
+                "verdigris: world configured for {max_x}x{max_y}x{max_z} (z capacity {})",
+                dims.max_z()
+            );
+            PENDING_DIMS.with(|d| d.set(dims));
+            reset()
+        }
+        Some(have) if have.max_x() == max_x && have.max_y() == max_y && max_z <= have.max_z() => {
+            Ok(())
+        }
+        Some(have) => Err(eyre!(
+            "vg_configure_world({max_x}, {max_y}, {max_z}) after the world was built for {}x{}x{} (z capacity): the native tables are sized once per world",
+            have.max_x(),
+            have.max_y(),
+            have.max_z()
+        )),
     }
-    Ok(ByondValue::null())
 }
 
 /// Runs `steps` world steps now, each waiting for its worker frame
@@ -829,6 +909,44 @@ mod tests {
         })
         .expect("a revived world (soft reboot) runs again");
     }
+
+    #[test]
+    fn configure_refuses_a_map_without_gas_handles_and_a_changed_size() {
+        assert!(
+            configure_dims(4096, 4096, 2).is_err(),
+            "more turfs than gas handles"
+        );
+        reset().unwrap();
+        WORLD.with_borrow_mut(|w| *w = None);
+        configure_dims(20, 20, 3).unwrap();
+        configure_dims(20, 20, 4).expect("growing z inside the capacity is fine");
+        let e = configure_dims(30, 20, 3).unwrap_err().to_string();
+        assert!(e.contains("sized once"), "{e}");
+        assert!(configure_dims(20, 20, 100_000).is_err());
+    }
+
+    #[test]
+    fn a_best_effort_failure_is_reported_with_its_site_and_not_after_shutdown() {
+        REPORTED.with_borrow_mut(Vec::clear);
+        let r: Option<()> = with_world_reported(|_| Err(eyre!("boom")));
+        assert!(r.is_none());
+        let reported = REPORTED.with_borrow(Clone::clone);
+        assert_eq!(reported.len(), 1, "{reported:?}");
+        assert!(
+            reported[0].contains("boom") && reported[0].contains("world.rs"),
+            "{}",
+            reported[0]
+        );
+        assert_eq!(with_world_reported(|_| Ok(5)), Some(5));
+        shutdown();
+        let _ = with_world_reported(|_| Ok(()));
+        assert_eq!(
+            REPORTED.with_borrow(Vec::len),
+            1,
+            "a shut-down world is not an error to report"
+        );
+        revive().unwrap();
+    }
 }
 
 /// The size in bytes of a file, from its metadata: no read. Null when the file does not exist. The build-time map template
@@ -837,5 +955,6 @@ mod tests {
 fn file_size(path: ByondValue) -> Result<ByondValue> {
     let path = path.get_string()?;
     #[allow(clippy::cast_precision_loss)]
-    Ok(std::fs::metadata(&path).map_or_else(|_| ByondValue::null(), |m| ByondValue::from(m.len() as f32)))
+    Ok(std::fs::metadata(&path)
+        .map_or_else(|_| ByondValue::null(), |m| ByondValue::from(m.len() as f32)))
 }
