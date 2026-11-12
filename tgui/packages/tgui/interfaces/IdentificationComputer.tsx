@@ -11,45 +11,15 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
 
 import { CrewManifestContent } from './CrewManifest';
-import type { IdentificationComputerActions } from './generated/IdentificationComputer';
+import type {
+  IdentificationComputerActions,
+  IdentificationComputerData,
+} from './generated/IdentificationComputer';
 
-type Data = {
-  manifest: { cat: string; elems: manifestEntry[] }[];
-  station_name: string;
-  mode: BooleanLike;
-  printing: BooleanLike;
-  have_id_slot: BooleanLike;
-  have_printer: BooleanLike;
-  target_name: string | null;
-  target_owner: string | null;
-  target_rank: string;
-  scan_name: string;
-  authenticated: BooleanLike;
-  has_modify: BooleanLike;
-  account_number: number | null;
-  centcom_access: BooleanLike;
-  all_centcom_access: access[];
-  regions: region[] | null;
-  id_rank: string | null;
-  departments: {
-    department_name: string;
-    jobs: { display_name: string; target_rank: string; job: string }[];
-  }[];
-};
-
-type manifestEntry = { name: string; rank: string; active: string };
-
-type region = { name: string; accesses: access[] };
-
-type access = {
-  desc: string;
-  ref: number;
-  allowed: BooleanLike;
-};
+type Data = IdentificationComputerData;
 
 export const IdentificationComputer = () => {
   return (
@@ -69,7 +39,7 @@ export const IdentificationComputerContent = (props) => {
   const { mode, has_modify, printing, have_id_slot, have_printer } = data;
 
   let body: React.JSX.Element = (
-    <IdentificationComputerAccessModification ntos={ntos} />
+    <IdentificationComputerAccessModification />
   );
   if (ntos && !have_id_slot) {
     body = <CrewManifestContent />;
@@ -121,18 +91,13 @@ export const IdentificationComputerPrinting = (props) => {
   return <Section title="Printing">Please wait...</Section>;
 };
 
-export const IdentificationComputerAccessModification = (props: {
-  ntos: boolean;
-}) => {
+export const IdentificationComputerAccessModification = () => {
   const { act, data } = useBackend<Data, IdentificationComputerActions>();
-
-  const { ntos } = props;
 
   const {
     station_name,
     target_name,
     target_owner = '',
-    scan_name,
     authenticated,
     has_modify,
     account_number = '',
@@ -155,13 +120,6 @@ export const IdentificationComputerAccessModification = (props: {
             {target_name}
           </Button>
         </LabeledList.Item>
-        {!ntos && (
-          <LabeledList.Item label="Authorized Identitity">
-            <Button icon="eject" fluid onClick={() => act('scan')}>
-              {scan_name}
-            </Button>
-          </LabeledList.Item>
-        )}
       </LabeledList>
       {!!authenticated && !!has_modify && (
         <>
@@ -226,7 +184,7 @@ export const IdentificationComputerAccessModification = (props: {
                   Special
                 </Table.Cell>
                 <Table.Cell>
-                  <Button onClick={() => act('assign_custom')}>Custom</Button>
+                  <Button onClick={() => act('assign', { assign_target: 'Custom' })}>Custom</Button>
                 </Table.Cell>
               </Table.Row>
             </Table>

@@ -1,24 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
-import type { AdminShuttleControllerActions } from './generated/AdminShuttleController';
+import type {
+  AdminShuttleControllerActions,
+  AdminShuttleControllerData,
+} from './generated/AdminShuttleController';
 
-type Data = {
-  shuttles: Shuttle[];
-  overmap_ships: OvermapShip[];
-};
-
-type Shuttle = {
-  ref: number;
-  name: string;
-  current_location: string;
-  status: number;
-};
-
-type OvermapShip = {
-  ref: number;
-  name: string;
-};
+type Data = AdminShuttleControllerData;
 
 export const AdminShuttleController = () => {
   return (

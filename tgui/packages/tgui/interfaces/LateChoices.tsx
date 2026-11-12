@@ -34,8 +34,8 @@ type Job = {
 };
 
 type Data = {
-  name: string;
-  duration: number;
+  name: string | null;
+  duration: string;
   evac: Evac;
   jobs: Job[];
 };

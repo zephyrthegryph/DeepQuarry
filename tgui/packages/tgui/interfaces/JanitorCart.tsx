@@ -1,17 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Icon, Image, Stack } from 'tgui-core/components';
-import type { JanitorCartActions } from './generated/JanitorCart';
+import type {
+  JanitorCartActions,
+  JanitorCartData,
+} from './generated/JanitorCart';
 
-type Data = {
-  mybag: string | null;
-  mybucket: string | null;
-  mymop: string | null;
-  myspray: string | null;
-  myreplacer: string | null;
-  signs: string | null;
-  icons: Record<string, string>;
-};
+type Data = JanitorCartData;
 
 export const JanitorCart = (props) => {
   const { act, data } = useBackend<Data, JanitorCartActions>();

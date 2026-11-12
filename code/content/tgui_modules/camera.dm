@@ -77,6 +77,7 @@ CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
 CAPABILITIES(/datum/tgui_module/camera)
 	owns_one(nameof(cam_screen_tg), /atom/movable/screen/map_view_tg/camera)
 	interface("CameraConsole")
+	ui_shape(activeCamera = nullable(row(name = schema_text(), status = bool())), mapRef = schema_text(), cameras = list_of(row(name = schema_text(), networks = list_of(schema_text()))), allNetworks = list_of(schema_text()))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	op("switch_camera", ui_act("switch_camera", arg("name", schema_text(4096))), then(PROC_REF(ui_act_switch_camera)))
 	op("pan", ui_act("pan", arg("dir", num())), then(PROC_REF(ui_act_pan)))
@@ -125,7 +126,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 	if(active_camera())
 		data["activeCamera"] = list(
 			name = active_camera().c_tag,
-			status = active_camera().status,
+			status = !!active_camera().status,
 		)
 	return data
 

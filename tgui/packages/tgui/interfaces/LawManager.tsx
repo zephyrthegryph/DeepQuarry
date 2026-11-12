@@ -32,9 +32,9 @@ type Data = {
   has_supplied_laws: number;
   isAI: BooleanLike;
   isMalf: BooleanLike;
-  isSlaved: BooleanLike;
+  isSlaved: string | null;
   isAdmin: BooleanLike;
-  channel: string;
+  channel: string | null;
   channels: { channel: string }[];
   law_sets: LawPack[];
 };
@@ -58,9 +58,9 @@ type LawPack = {
 type Law = {
   law: string;
   index: number;
-  state: number;
+  state: number | null;
   ref: number;
-  zero: boolean; // Local UI var
+  zero?: boolean; // Local UI var
 };
 
 export const LawManager = (props) => {
@@ -178,7 +178,7 @@ export const LawManagerLaws = (props: {
   isAI: BooleanLike;
   isMalf: BooleanLike;
   isAdmin: BooleanLike;
-  channel: string;
+  channel: string | null;
   channels: { channel: string }[];
   hasScroll?: boolean;
   sectionHeight?: string;

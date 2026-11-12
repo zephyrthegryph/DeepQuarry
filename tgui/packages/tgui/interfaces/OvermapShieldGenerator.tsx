@@ -9,41 +9,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { OvermapShieldGeneratorActions } from './generated/OvermapShieldGenerator';
+import type {
+  OvermapShieldGeneratorActions,
+  OvermapShieldGeneratorData,
+} from './generated/OvermapShieldGenerator';
 
-type Data = {
-  running: number;
-  modes: {
-    name: string;
-    desc: string;
-    flag: number;
-    status: BooleanLike;
-    hacked: BooleanLike;
-    multiplier: number;
-  }[];
-  overloaded: BooleanLike;
-  mitigation_max: number;
-  mitigation_physical: number;
-  mitigation_em: number;
-  mitigation_heat: number;
-  field_integrity: number;
-  max_energy: number;
-  current_energy: number;
-  percentage_energy: number;
-  total_segments: number;
-  functional_segments: number;
-  field_radius: number;
-  target_radius: number;
-  input_cap_kw: number;
-  upkeep_power_usage: number;
-  power_usage: number;
-  hacked: BooleanLike;
-  offline_for: number;
-  idle_multiplier: number;
-  idle_valid_values: number[];
-  spinup_counter: number;
-};
+type Data = OvermapShieldGeneratorData;
 
 export const OvermapShieldGenerator = (props) => {
   return (

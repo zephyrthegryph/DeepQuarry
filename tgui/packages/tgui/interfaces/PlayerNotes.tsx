@@ -2,18 +2,16 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack, Table } from 'tgui-core/components';
-import type { PlayerNotesActions } from './generated/PlayerNotes';
+import type {
+  PlayerNotesActions,
+  PlayerNotesData,
+} from './generated/PlayerNotes';
 
-type Data = {
-  device_theme: string;
-  filter: string;
-  pages: number;
-  ckeys: { name: string; desc: string }[];
-};
+type Data = PlayerNotesData;
 
 export const PlayerNotes = (props) => {
   const { act, data } = useBackend<Data, PlayerNotesActions>();
-  const { device_theme, filter, pages, ckeys = [] } = data;
+  const { filter, pages, ckeys = [] } = data;
 
   const [activePage, setActivePage] = useState(1);
 
@@ -22,12 +20,7 @@ export const PlayerNotes = (props) => {
   };
 
   return (
-    <Window
-      title={'Player Notes'}
-      theme={device_theme}
-      width={400}
-      height={500}
-    >
+    <Window title={'Player Notes'} width={400} height={500}>
       <Window.Content>
         <Section fill title="Player notes">
           <Stack fill vertical>

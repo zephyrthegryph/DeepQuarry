@@ -103,15 +103,18 @@
 
 	data["stationName"] = using_map.station_name
 	data["balance"] = balance()
+	data["viewMode"] = vmode ? "Full" : "Compressed"
+	data["stocks"] = list()
+	data["logs"] = list()
+	data["name"] = null
+	data["events"] = list()
+	data["articles"] = list()
+	data["maxValue"] = 100
+	data["values"] = list()
 
 	switch(screen)
 		// Main Stocks List
 		if("stocks")
-			if (vmode)
-				data["viewMode"] = "Full"
-			else
-				data["viewMode"] = "Compressed"
-
 			for (var/datum/stock/S in GLOB.stockExchange.stocks)
 				if (!S.last_read)
 					S.last_read = list()
@@ -120,77 +123,34 @@
 
 			data["stocks"] = list()
 
-			if (vmode)
-				for (var/datum/stock/S in GLOB.stockExchange.stocks)
-					var/mystocks = 0
-					if (logged_in && (logged_in in S.shareholders))
-						mystocks = LAZYACCESS(S.shareholders, logged_in)
+			for (var/datum/stock/S in GLOB.stockExchange.stocks)
+				var/mystocks = 0
+				if (logged_in && (logged_in in S.shareholders))
+					mystocks = LAZYACCESS(S.shareholders, logged_in)
 
-					var/value = 0
-					if (!S.bankrupt)
-						value = S.current_value
+				var/value = 0
+				if (!S.bankrupt)
+					value = S.current_value
 
-					data["stocks"] += list(list(
-						"REF" = handle_of(S),
-						"valueChange" = S.disp_value_change, // > 0 is +, < 0 is -, else its =
-						"bankrupt" = S.bankrupt,
-						"ID" = S.short_name,
-						"Name" = S.name,
-						"Value" = value,
-						"Owned" = mystocks,
-						"Avail" = S.available_shares,
-						"Products" = S.products,
-					))
+				var/unification = "0"
+				if (S.last_unification)
+					unification = DisplayTimeText(world.time - S.last_unification)
 
-					var/news = 0
-					if (logged_in)
-						var/lrt = LAZYACCESS(S.last_read, logged_in)
-						for (var/datum/article/A in S.articles)
-							if (A.ticks > lrt)
-								news = 1
-								break
-						if (!news)
-							for (var/datum/stockEvent/E in S.events)
-								if (E.last_change > lrt && !E.hidden)
-									news = 1
-			else
-				for (var/datum/stock/S in GLOB.stockExchange.stocks)
-					var/mystocks = 0
-					if (logged_in && (logged_in in S.shareholders))
-						mystocks = LAZYACCESS(S.shareholders, logged_in)
-
-					var/unification = 0
-					if (S.last_unification)
-						unification = DisplayTimeText(world.time - S.last_unification)
-
-					data["stocks"] += list(list(
-						"REF" = handle_of(S),
-						"bankrupt" = S.bankrupt,
-						"ID" = S.short_name,
-						"Name" = S.name,
-						"Owned" = mystocks,
-						"Avail" = S.available_shares,
-						"Unification" = unification,
-						"Products" = S.products,
-					))
-
-					var/news = 0
-					if (logged_in)
-						var/lrt = LAZYACCESS(S.last_read, logged_in)
-						for (var/datum/article/A in S.articles)
-							if (A.ticks > lrt)
-								news = 1
-								break
-						if (!news)
-							for (var/datum/stockEvent/E in S.events)
-								if (E.last_change > lrt && !E.hidden)
-									news = 1
-									break
+				data["stocks"] += list(list(
+					"REF" = handle_of(S),
+					"valueChange" = S.disp_value_change, // > 0 is +, < 0 is -, else its =
+					"bankrupt" = !!S.bankrupt,
+					"ID" = S.short_name,
+					"Name" = S.name,
+					"Value" = value,
+					"Owned" = mystocks,
+					"Avail" = S.available_shares,
+					"Unification" = unification,
+					"Products" = S.products,
+				))
 
 		// Stocks Logs Screen
 		if("logs")
-			data["logs"] = list()
-
 			for(var/D in GLOB.stockExchange.logs)
 				var/datum/stock_log/L = D
 
@@ -220,6 +180,7 @@
 							"time" = L.time,
 							"user_name" = L.user_name,
 							"stocks" = L.stocks,
+							"shareprice" = null,
 							"money" = L.money,
 							"company_name" = L.company_name,
 					))
@@ -227,8 +188,6 @@
 		// Archive Screen
 		if("archive")
 			data["name"] = current_stock().name
-			data["events"] = list()
-			data["articles"] = list()
 
 			for (var/datum/stockEvent/E in current_stock().events)
 				if (E.hidden)
@@ -253,7 +212,6 @@
 		// Stock Graph
 		if("graph")
 			data["name"] = current_stock().name
-			data["maxValue"] = 100
 			data["values"] = current_stock().values
 
 	return data
@@ -261,6 +219,7 @@
 CAPABILITIES(/obj/machinery/computer/stockexchange)
 	configure(light_glow(color = LIGHT_COLOR_GREEN))
 	interface("StockExchange")
+	ui_shape(screen = schema_text(), stationName = schema_text(), balance = num(), viewMode = schema_text(), stocks = list_of(row(REF = schema_text(), valueChange = num(), bankrupt = bool(), ID = schema_text(), Name = schema_text(), Value = num(), Owned = num(), Avail = num(), Unification = schema_text(), Products = list_of(schema_text()))), logs = list_of(row(type = schema_text(), time = schema_text(), user_name = schema_text(), stocks = num(), shareprice = nullable(num()), money = num(), company_name = schema_text())), name = nullable(schema_text()), events = list_of(row(current_title = schema_text(), current_desc = schema_text())), articles = list_of(row(headline = schema_text(), subtitle = schema_text(), article = schema_text(), author = schema_text(), spacetime = schema_text(), outlet = schema_text())), maxValue = num(), values = list_of(num()))
 	without("ui_open")
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
 	op("stocks_buy", ui_act("stocks_buy", arg("share", schema_text(32))), then(PROC_REF(ui_act_stocks_buy)))

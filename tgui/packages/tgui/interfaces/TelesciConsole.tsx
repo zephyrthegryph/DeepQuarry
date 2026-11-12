@@ -9,27 +9,12 @@ import {
   NumberInput,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { TelesciConsoleActions } from './generated/TelesciConsole';
+import type {
+  TelesciConsoleActions,
+  TelesciConsoleData,
+} from './generated/TelesciConsole';
 
-type Data = {
-  noTelepad: BooleanLike;
-  insertedGps: string | undefined;
-  rotation: number | undefined;
-  currentZ: number | undefined;
-  cooldown: number | undefined;
-  crystalCount: number | undefined;
-  maxCrystals: number | undefined;
-  maxPossibleDistance: number | undefined;
-  maxAllowedDistance: number | undefined;
-  distance: number | undefined;
-  tempMsg: string | undefined;
-  sectorOptions: string[] | undefined;
-  lastTeleData:
-    | { src_x: number; src_y: number; distance: number; time: number }
-    | undefined
-    | null;
-};
+type Data = TelesciConsoleData;
 
 export const TelesciConsole = (props) => {
   const { data } = useBackend<Data, TelesciConsoleActions>();
@@ -69,13 +54,11 @@ export const TelesciConsoleContent = (props) => {
     maxAllowedDistance = 0,
     distance = 0,
     tempMsg,
-    sectorOptions,
+    sectorOptions = [],
     lastTeleData,
   } = data;
 
-  if (sectorOptions) {
-    sectorOptions.sort();
-  }
+  const sectors = [...sectorOptions].sort((a, b) => a - b);
 
   return (
     <Section
@@ -103,7 +86,7 @@ export const TelesciConsoleContent = (props) => {
           <NumberInput
             fluid
             tickWhileDragging
-            value={rotation!}
+            value={rotation}
             format={(v) => `${v}°`}
             step={1}
             minValue={-900}
@@ -115,21 +98,21 @@ export const TelesciConsoleContent = (props) => {
           <NumberInput
             fluid
             tickWhileDragging
-            value={distance!}
+            value={distance}
             format={(v) => `${v}/${maxAllowedDistance} m`}
             minValue={0}
-            maxValue={maxAllowedDistance!}
+            maxValue={maxAllowedDistance}
             step={1}
             stepPixelSize={4}
             onChange={(val) => act('setdistance', { val: val })}
           />
         </LabeledList.Item>
         <LabeledList.Item label="Sector">
-          {sectorOptions?.map((z) => (
+          {sectors.map((z) => (
             <Button
               key={z}
               icon="check-circle"
-              selected={currentZ === Number(z)}
+              selected={currentZ === z}
               onClick={() => act('setz', { setz: z })}
             >
               {z}

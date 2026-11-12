@@ -3,6 +3,7 @@
 
 CAPABILITIES(/datum/tgui_module/agentcard)
 	interface("AgentCard")
+	ui_shape(entries = list_of(row(name = schema_text(), value = schema_text())), electronic_warfare = bool())
 	op("electronic_warfare", ui_act("electronic_warfare"), then(PROC_REF(ui_act_electronic_warfare)))
 	op("age", ui_act("age"), asks(/datum/prompt/number, fields = list("title" = "Agent Card Age", "question" = "What age would you like to put on this card?", "default" = computed(PROC_REF(age_default)), "timeout" = 0)), then(PROC_REF(ui_act_age)))
 	op("appearance", ui_act("appearance"), asks(/datum/prompt/choice, fields = list("title" = "Agent Card Appearance", "question" = "Select the appearance for this card.", "choices" = computed(PROC_REF(appearance_choices)), "timeout" = 0)), then(PROC_REF(ui_act_appearance)))
@@ -21,10 +22,10 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	if(!istype(S))
-		return list()
+		return list("entries" = list(), "electronic_warfare" = FALSE)
 
 	var/list/entries = list()
-	entries += list(list("name" = "Age", 				"value" = S.age))
+	entries += list(list("name" = "Age", 				"value" = "[S.age]"))
 	entries += list(list("name" = "Appearance",			"value" = "Set"))
 	entries += list(list("name" = "Assignment",			"value" = S.assignment))
 	entries += list(list("name" = "Blood Type",			"value" = S.blood_type))
@@ -37,7 +38,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	entries += list(list("name" = "Factory Reset",		"value" = "Use With Care"))
 	data["entries"] = entries
 
-	data["electronic_warfare"] = S.electronic_warfare
+	data["electronic_warfare"] = !!S.electronic_warfare
 
 	return data
 
@@ -52,7 +53,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 /datum/tgui_module/agentcard/proc/ui_act_electronic_warfare(datum/act/op/A)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	S.electronic_warfare = !S.electronic_warfare
-	to_chat(A.actor, span_notice("Electronic warfare [S.electronic_warfare ? "enabled" : "disabled"]."))
 	return OP_OK
 
 /// What a field's question offers first: the card's own value, or (for the three hashes) the asker's own when the card still has the stock one.
@@ -112,7 +112,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 /datum/tgui_module/agentcard/proc/ui_act_age(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_age = A.step_value("answer")
 	if(!isnull(new_age))
@@ -120,7 +119,6 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 			S.set_age(initial(S.age))
 		else
 			S.set_age(new_age)
-		to_chat(user, span_notice("Age has been set to '[S.age]'."))
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_appearance(datum/act/op/A)
@@ -139,58 +137,48 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 /datum/tgui_module/agentcard/proc/ui_act_assignment(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_job = A.step_value("answer")
 	if(!isnull(new_job))
 		S.set_assignment(new_job)
-		to_chat(user, span_notice("Occupation changed to '[new_job]'."))
 		S.update_name()
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_bloodtype(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_blood_type = A.step_value("answer")
 	if(!isnull(new_blood_type))
 		S.set_blood_type(new_blood_type)
-		to_chat(user, span_notice("Blood type changed to '[new_blood_type]'."))
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_dnahash(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_dna_hash = A.step_value("answer")
 	if(!isnull(new_dna_hash))
 		S.set_dna_hash(new_dna_hash)
-		to_chat(user, span_notice("DNA hash changed to '[new_dna_hash]'."))
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_fingerprinthash(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_fingerprint_hash = A.step_value("answer")
 	if(!isnull(new_fingerprint_hash))
 		S.set_fingerprint_hash(new_fingerprint_hash)
-		to_chat(user, span_notice("Fingerprint hash changed to '[new_fingerprint_hash]'."))
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_name(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_name = sanitizeName(A.answer.value)
 	if(!isnull(new_name))
 		S.set_registered_name(new_name)
 		S.update_name()
-		to_chat(user, span_notice("Name changed to '[new_name]'."))
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_photo(datum/act/op/A)
@@ -202,23 +190,19 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 /datum/tgui_module/agentcard/proc/ui_act_sex(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_sex = A.step_value("answer")
 	if(!isnull(new_sex))
 		S.set_sex(new_sex)
-		to_chat(user, span_notice("Sex changed to '[new_sex]'."))
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_species(datum/act/op/A)
 	if(!A.answer)
 		return OP_OK
-	var/mob/user = A.actor
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_species = A.step_value("answer")
 	if(!isnull(new_species))
 		S.set_species(new_species)
-		to_chat(user, span_notice("Species changed to '[new_species]'."))
 	return OP_OK
 
 /datum/tgui_module/agentcard/proc/ui_act_factoryreset(datum/act/op/A)
