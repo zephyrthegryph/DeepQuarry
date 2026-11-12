@@ -2243,6 +2243,13 @@ banned = [
   "damage_flavour = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/content/atom/damage_flavour.dm)",
   "rule_enter_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/content/atom/damage_flavour.dm)",
   "rule_leave_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/content/atom/damage_flavour.dm)",
+  "ui_named_dispatch = a window button is an op with a ui_act() binding: op(key, ui_act(key, arg(...)), needs(...), then(...)) (code/engine/parts/inputs.dm)",
+  "ui_action_key = a window button is an op with a ui_act() binding; its name is the binding's, matched as written",
+  "ui_logged_actions = a window button is an op; an op is logged by its own run (act_log())",
+  "act_modal_open = a modal opens through the host's op bound to \"modal:<id>\" (asks(..., inline))",
+  "act_modal_answer = the engine window action modal_answer: tgui_modal_window_answer(host, user, id, answer)",
+  "act_modal_close = the engine window action modal_close: tgui_modal_window_close(host)",
+  "tgui_fallback = no client sends a fallback message: a window that cannot render shows its error screen (ReloadBoundary)",
 ]
 
 # Generated scaffolding is derived build output; source dependencies remain checked.

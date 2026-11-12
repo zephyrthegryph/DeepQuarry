@@ -207,7 +207,7 @@
  * commits. A refused or taken-over transfer changes nothing. Returns TRUE when it landed; slot_transfer_reason() answers why it did not.
  *
  * `authority` is an AUTH_* mask; only AUTH_ADMIN forces the transfer: the needs() hooks and both ledger refusals are skipped, the actions, their
- * instead()/adjusts() hooks and notices and the commit bookkeeping still run. There is no other bypass.
+ * instead()/adjusts_with() hooks and notices and the commit bookkeeping still run. There is no other bypass.
  */
 /atom/proc/slot_transfer(atom/movable/thing, atom/new_holder, slot_id, mob/actor, authority = null)
 	return isnull(slot_transfer_reason(thing, new_holder, slot_id, actor, authority))

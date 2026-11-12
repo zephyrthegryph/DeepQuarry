@@ -18,7 +18,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 | A few tests only (use this while developing) | `bash tools/dq_focused_test.sh <name> [...]` (bare names, `/datum/unit_test/` paths or quoted `*` globs; `--repeat=N`) | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
 | Focused tests on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` | |
-| DM lint + TGUI lint and types | `tools/build/build.sh lint` | a few minutes |
+| Analyze lints + TGUI lint and types | `tools/build/build.sh lint` | a few minutes |
 | TGUI tests | `tools/build/build.sh tgui-test` | under a minute |
 | Build everything | `bin/build.cmd` · `tools/build/build.sh` | |
 | Rust extension | `cd verdigris && cargo test --package verdigris` | |
@@ -850,10 +850,9 @@ what it measured.
 
 ## Linting
 
-`tools/build/build.sh lint` runs DreamChecker (SpacemanDMM) and the TGUI Biome and
-TypeScript checks. DreamChecker is skipped with a notice if it is not installed;
-install it with `tools/ci/install_spaceman_dmm.sh dreamchecker`, or put
-`dreamchecker.exe` in `%USERPROFILE%/SpacemanDMM/`.
+`tools/build/build.sh lint` runs the analyze engine and the TGUI Biome and TypeScript checks. It does not run
+DreamChecker (off by the user's decision); the `dream-checker` target still runs it on request. Install it with
+`tools/ci/install_spaceman_dmm.sh dreamchecker`, or put `dreamchecker.exe` in `%USERPROFILE%/SpacemanDMM/`.
 
 ### Shared compile roots, daemon lifetime, cache budget
 
@@ -870,11 +869,11 @@ paths, wall times and miss causes.
 SpacemanDMM's DreamChecker has no incremental or changed-files mode: every run parses and checks the whole tree (2+ minutes on
 every core, in parallel with the compile). It used to run inside every `build.sh dm`, so a local `dm`, `server` or test build paid
 for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1`, a `CI` environment, or when you
-ask for it (`DQ_DREAMCHECKER=1 build.sh dm`). `build.sh lint` always runs it (explicit lint). Whatever runs it does so at
+ask for it (`DQ_DREAMCHECKER=1 build.sh dm`, or the `dream-checker` target). `build.sh lint` does not run it. Whatever runs it does so at
 below-normal priority (`DQ_PRIORITY=normal` opts out). Local builds log one line saying it was skipped. The analyze engine's
 ratchets (`check_ratchets.sh`, incremental per file) still run wherever they ran before.
 
-Who runs it: CI and `build.sh lint` (when it is installed). Agents do not run it while the user has it switched off (AGENTS.md
+Who runs it: CI (when it is installed). Agents do not run it while the user has it switched off (AGENTS.md
 section 3a, last rule); `build.sh dm` without `DQ_DREAMCHECKER=1` never starts it.
 
 CI also runs these scripts, all from the repository root:

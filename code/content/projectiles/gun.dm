@@ -121,8 +121,7 @@ CAPABILITIES(/obj/item/gun)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
 	op("suicide", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(suicide_reconsidered)), then(PROC_REF(suicide_trigger)))
-	op("gun_self", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Operate"), then(PROC_REF(gun_self)))
-	op("gun_self_hurt", in_hand(), stance(I_HURT), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_self", in_hand(), label("Operate"), then(PROC_REF(gun_self)))
 	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_give_dna)))
 	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_remove_dna)))
 	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_allow_dna)))
@@ -802,7 +801,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	return new_mode
 
-/// Old attack_self (the "gun_self" op, "gun_self_hurt" in a hostile stance). `callback` is the projectile gun's re-entry flag (l6_saw). A decline
+/// Old attack_self (the "gun_self" op, in every stance). `callback` is the projectile gun's re-entry flag (l6_saw). A decline
 /// (as the old chain's falsy return) leaves the self-use unhandled. A gun type overrides this and
 /// calls ..() the way the old attack_self chain did.
 /obj/item/gun/proc/gun_self(datum/act/op/A)

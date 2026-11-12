@@ -205,6 +205,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	/// (ui_usable()), and the nightshift setting is the one a locked panel leaves to anyone.
 	section(controls, "The APC's window and the buttons in it")
 	interface("APC")
+	ui_shape(locked = bool(), emagged = bool(), externalPower = int(), powerCellStatus = num(), chargeMode = bool(), chargingStatus = int(), totalLoad = num(), failTime = int(), gridCheck = bool(), coverLocked = bool(), siliconUser = bool(), emergencyLights = bool(), powerChannels = list_of(row()), isOperating = bool(), nightshiftLights = bool(), nightshiftSetting = int())
 	op("breaker", ui_act(), toggles(nameof(operating)), logs(LOG_GAME))
 	op("chargemode", ui_act("charge"), toggles(nameof(chargemode)), then(PROC_REF(chargemode_applied)), logs(LOG_GAME))
 	op("coverlock", ui_act("cover"), toggles(nameof(coverlocked)), logs(LOG_GAME))

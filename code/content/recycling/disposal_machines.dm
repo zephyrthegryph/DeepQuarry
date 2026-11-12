@@ -37,6 +37,9 @@
 	var/stat_tracking = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 
+MSG_DEF_SELF(disposal/controls_inside, "You cannot reach the controls from inside.")
+MSG_DEF_SELF(disposal/controls_unpowered, "The disposal units power is disabled.")
+
 CAPABILITIES(/obj/machinery/disposal)
 	setup(PROC_REF(join_network), mapload = TRUE)
 	on_notice(/datum/notice/disposal_receive, then(PROC_REF(on_disposal_receive)))
@@ -47,10 +50,12 @@ CAPABILITIES(/obj/machinery/disposal)
 	owns_many(nameof(intake_watches), /datum/native_watch/world)
 	interface("DisposalBin")
 	without("ui_open")
-	op("pumpOn", ui_act("pumpOn"), then(PROC_REF(ui_act_pumpon)))
-	op("pumpOff", ui_act("pumpOff"), then(PROC_REF(ui_act_pumpoff)))
-	op("engageHandle", ui_act("engageHandle"), then(PROC_REF(ui_act_engagehandle)))
-	op("disengageHandle", ui_act("disengageHandle"), then(PROC_REF(ui_act_disengagehandle)))
+	extend(TAG_UI, needs(req(PROC_REF(controls_reach_refusal)), req(PROC_REF(controls_idle_refusal), silent = TRUE)))
+	extend(TAG_UI, then(PROC_REF(controls_touched), early = TRUE))
+	op("pumpOn", ui_act("pumpOn"), needs(req(PROC_REF(controls_power_refusal))), then(PROC_REF(ui_act_pumpon)))
+	op("pumpOff", ui_act("pumpOff"), needs(req(PROC_REF(controls_power_refusal))), then(PROC_REF(ui_act_pumpoff)))
+	op("engageHandle", ui_act("engageHandle"), needs(req(PROC_REF(controls_power_refusal))), then(PROC_REF(ui_act_engagehandle)))
+	op("disengageHandle", ui_act("disengageHandle"), needs(req(PROC_REF(controls_power_refusal))), then(PROC_REF(ui_act_disengagehandle)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE, overrides = TRUE)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(multitool_mode_refusal), silent = TRUE), req(PROC_REF(multitool_empty_refusal))), starts(PROC_REF(multitool_started)),
@@ -526,53 +531,48 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	return data
 
-/obj/machinery/disposal/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	var/action = A.window_action()
-	if(user.loc == src)
-		to_chat(user, span_warning("You cannot reach the controls from inside."))
-		return FALSE
-	if(mode == DISPOSALMODE_EJECTONLY && action != "eject") // If the mode is -1, only allow ejection
-		to_chat(user, span_warning("The disposal units power is disabled."))
-		return FALSE
-	if(broken_now())
-		return FALSE
-	add_fingerprint(user)
-	if(flushing)
-		return FALSE
-	return TRUE
+/// The window's controls are out of reach from inside the bin.
+/obj/machinery/disposal/proc/controls_reach_refusal(datum/act/op/A)
+	if(A.actor?.loc == src)
+		return /datum/msg/disposal/controls_inside
+	return null
+
+/// With the power switched off (eject-only mode) only the eject button works.
+/obj/machinery/disposal/proc/controls_power_refusal(datum/act/op/A)
+	if(mode == DISPOSALMODE_EJECTONLY)
+		return /datum/msg/disposal/controls_unpowered
+	return null
+
+/// A broken or flushing bin ignores its controls without a word.
+/obj/machinery/disposal/proc/controls_idle_refusal(datum/act/op/A)
+	if(broken_now() || flushing)
+		return /datum/msg/req_silent
+	return null
+
+/obj/machinery/disposal/proc/controls_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
 
 /obj/machinery/disposal/proc/ui_act_pumpon(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_mode(DISPOSALMODE_CHARGING)
 	wake_for_state_change()
 	return TRUE
 
 /obj/machinery/disposal/proc/ui_act_pumpoff(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_mode(DISPOSALMODE_OFF)
 	wake_for_state_change()
 	return TRUE
 
 /obj/machinery/disposal/proc/ui_act_engagehandle(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_flush(TRUE)
 	wake_for_state_change()
 	return TRUE
 
 /obj/machinery/disposal/proc/ui_act_disengagehandle(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_flush(FALSE)
 	wake_for_state_change()
 	return TRUE
 
 /obj/machinery/disposal/proc/ui_act_eject(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	eject()
 	wake_for_state_change()
 	return TRUE
@@ -684,7 +684,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 // perform a flush
 /obj/machinery/disposal/proc/flush()
-	flushing = TRUE
+	set_flushing(TRUE)
 	flush_animation()
 	//Bit of a nasty way to do this. But sleep()s are nastier.
 	after(src, 1 SECOND, PROC_REF(flush_startup))
@@ -721,7 +721,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			packet_expel(src, flushed_items, air_contents)
 
 	rel_set(src, nameof(air_contents), new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
-	flushing = FALSE
+	set_flushing(FALSE)
 
 	// now reset disposal state
 	flush = FALSE

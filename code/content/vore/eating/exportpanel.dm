@@ -9,13 +9,6 @@ CAPABILITIES(/datum/vore_look/export_panel)
 	interface("VorePanelExport", title = "Vore Export Panel")
 	ui_shape(db_version = schema_text(), db_repo = schema_text(), mob_name = num(), bellies = list_of(), soulcatcher = list_of())
 
-/datum/vore_look/export_panel/tgui_fallback(payload)
-	if(..())
-		return TRUE
-
-
-
-
 /// /datum/vore_look/export_panel's window data.
 /datum/vore_look/export_panel/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

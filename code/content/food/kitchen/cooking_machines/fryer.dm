@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			message += span_warning(" UNDERFILLED")
 		else if(oil_level > 1.05) //A little bit of wiggle room
 			message += span_warning(" OVERFILLED")
-		to_chat(user, message)
+		. += message
 
 /obj/machinery/appliance/cooker/fryer/ui_data(datum/act/eval/A)
 	var/list/data = ..()

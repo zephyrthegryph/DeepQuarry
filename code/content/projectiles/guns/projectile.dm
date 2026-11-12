@@ -197,7 +197,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	if(special_weapon_handling && !callback)
 		return OP_DECLINE
 	if(manual_chamber) // Gun Rework
-		perform_op(user, src, "bolt_work", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("stance" = (A.key == "gun_self_hurt" ? I_HURT : I_HELP))) // Gun Rework
+		perform_op(user, src, "bolt_work", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("stance" = (user.op_input_stance() == I_HURT ? I_HURT : I_HELP))) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else

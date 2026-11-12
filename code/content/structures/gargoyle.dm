@@ -42,7 +42,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	param(nameof(tint_ovr), pos = 5)
 	param(nameof(can_revert), pos = 6)
 	param(nameof(discard_clothes), pos = 7)
-	op("anchor", tool(TOOL_WRENCH), label("Use"), needs(req(PROC_REF(anchor_refusal))), starts(PROC_REF(anchoring_started)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
+	op("anchor", tool(TOOL_WRENCH), label("Wrench"), needs(req(PROC_REF(anchor_refusal))), starts(PROC_REF(anchoring_started)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
 	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	op("item_cyborg", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(interaction_item_cyborg)))
 

@@ -36,7 +36,7 @@ import { Button } from 'tgui-core/components';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { POP_OUT_DISTANCE } from '../layout/model';
 import { Panel } from '../Panel';
-import { type ColumnHost, columnHost, sendPage } from './host';
+import { type ColumnHost, columnHost } from './host';
 import { type DockGroup, type DockWindow, fitHeights } from './model';
 
 /** Presses here keep their own meaning (buttons click, tabs select and re-arrange). */

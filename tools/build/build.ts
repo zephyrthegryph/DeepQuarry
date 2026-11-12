@@ -84,7 +84,6 @@ import { copyWritableRuntimePair } from './lib/runtime_pair_copy';
 import {
   checkVerdigrisProvenance,
   installVerdigrisLibrary,
-  verdigrisInputHash,
 } from './lib/verdigris_provenance';
 import {
   dropVerdigris,
@@ -414,8 +413,8 @@ const VERDIGRIS_RUST_TARGET =
 const VERDIGRIS_PROVENANCE = `${VERDIGRIS_LIB}.provenance.json`;
 // Provenance checking (lib/verdigris_provenance.ts) proves a library was built
 // from this checkout's Rust inputs. It needs the Rust build to embed
-// VERDIGRIS_SOURCE_HASH from DQ_VERDIGRIS_INPUT_HASH, which the crates do not do
-// yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before.
+// VERDIGRIS_SOURCE_HASH (an input hash the build would pass in), which the crates
+// do not do yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before.
 const VERDIGRIS_PROVENANCE_ENFORCED = process.env.DQ_VERDIGRIS_PROVENANCE === '1';
 const verdigrisProvenanceMismatch = (): string | null =>
   VERDIGRIS_PROVENANCE_ENFORCED
@@ -746,10 +745,7 @@ const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.
       return;
     }
     const rustflags = process.env.RUSTFLAGS || '';
-    const cargoOptions = {
-      cwd: 'verdigris',
-      env: { ...process.env, DQ_VERDIGRIS_INPUT_HASH: verdigrisInputHash(process.cwd()) },
-    };
+    const cargoOptions = { cwd: 'verdigris' };
     // Restored source files can retain old timestamps while Cargo keeps newer
     // rlibs. Clean local crates when provenance is stale, preserving cached
     // third-party dependencies.
@@ -1277,11 +1273,11 @@ export const DmTarget = new Juke.Target({
     // DreamChecker lints the same tree while DreamMaker compiles it. Either failing fails the target, and a
     // DreamChecker failure deletes the fresh .dmb so the next run cannot skip this target as up to date.
     // SpacemanDMM's DreamChecker has no incremental mode: it always parses and checks the whole tree (2+ minutes, competing
-    // with the compile for every core). A local dm/server/test build therefore skips it; the merge gates, the push script, CI
-    // and the explicit lint target run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
+    // with the compile for every core). A local dm/server/test build therefore skips it; the merge gates, the push script
+    // and CI run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
     const checker = dreamCheckerWanted() ? findDreamChecker() : null;
     if (!dreamCheckerWanted()) {
-      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); CI and `build.sh lint` run it, or set DQ_DREAMCHECKER=1');
+      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); CI runs it, or set DQ_DREAMCHECKER=1');
     } else if (!checker) {
       Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }
@@ -3902,7 +3898,8 @@ export const TestTarget = new Juke.Target({
 });
 
 export const LintTarget = new Juke.Target({
-  dependsOn: [TguiLintTarget, DreamCheckerTarget, AnalyzeTarget], // DM lint via SpacemanDMM if available; the analyze engine lints
+  // DreamChecker is off by the user's decision: lint runs TGUI and the analyze engine only (the DreamChecker target stays for explicit use)
+  dependsOn: [TguiLintTarget, AnalyzeTarget],
 });
 
 export const BuildTarget = new Juke.Target({

@@ -118,7 +118,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 
 /obj/machinery/computer/roguezones/proc/finish_scan()
 	//Break the shuttle temporarily.
-	shuttle_control().shuttle_tag = null
+	shuttle_control().set_shuttle_tag(null)
 
 	//Build and get a new zone.
 	var/datum/rogue/zonemaster/ZM_target = GLOB.rm_controller.prepare_new_zone()
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	rel_set(S, nameof(S.next_location), S.get_location_waypoint(!S.location))
 
 	//Re-enable shuttle.
-	shuttle_control().shuttle_tag = "Belter"
+	shuttle_control().set_shuttle_tag("Belter")
 
 	//Update rm_previous
 	rel_set(GLOB.rm_controller, nameof(/datum/controller/rogue::previous_zone), GLOB.rm_controller.current_zone())
