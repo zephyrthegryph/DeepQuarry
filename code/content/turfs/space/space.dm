@@ -102,65 +102,62 @@
 
 CAPABILITIES(/turf/space)
 	setup(PROC_REF(space_appearance), early = TRUE) // assigning appearance replaces the whole appearance: before the chain applies the mapper colour
-	op("space_build", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Build"), then(PROC_REF(space_build)))
+	// Rods build a lattice (or upgrade the one here to a catwalk), floor tiles plate a lattice, roofing patches the ceiling above.
+	op("space_build_lattice", stack(/obj/item/stack/rods, 1), when(not(PROC_REF(has_lattice))), priority(OP_PRIORITY_DEFAULT - 2), label("Build lattice"),
+		then(PROC_REF(build_lattice)))
+	op("space_upgrade_lattice", item(/obj/item/stack/rods), when(PROC_REF(has_lattice)), priority(OP_PRIORITY_DEFAULT - 2), label("Build catwalk"),
+		then(PROC_REF(upgrade_lattice))) // item(), not stack(): the lattice's upgrade() spends the rod itself
+	op("space_plate", stack(/obj/item/stack/tile/floor, 1), priority(OP_PRIORITY_DEFAULT - 2), label("Lay plating"),
+		needs(req(PROC_REF(lattice_support), because = MSG(space/needs_support))), then(PROC_REF(plate)))
+	// The ceiling checks read the level map (GLOB.z_levels), which nothing publishes, so they cannot be requirements yet: patch_ceiling() checks them.
+	op("space_patch_ceiling", stack(/obj/item/stack/tile/roofing, 1), priority(OP_PRIORITY_DEFAULT - 2), label("Patch ceiling"), then(PROC_REF(patch_ceiling)))
 
-/// Old attackby: rods build a lattice, tiles plate it, roofing patches the ceiling.
-/turf/space/proc/space_build(datum/act/op/act)
-	var/mob/user = act.actor
-	var/obj/item/C = act.held
+MSG_DEF_SELF(space/needs_support, span_warning("The plating is going to need some support."))
 
-	if(istype(C, /obj/item/stack/rods))
-		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
-		if(L)
-			L.upgrade(C, user)
-			return OP_PASS
-		var/obj/item/stack/rods/R = C
-		if (R.use(1))
-			to_chat(user, span_notice("Constructing support lattice ..."))
-			play_sfx(src, SFX_WEAPONS_GENHIT)
-			ReplaceWithLattice()
-		return OP_PASS
+/// Condition: a lattice is on this turf.
+/turf/space/proc/has_lattice(datum/act/op/A)
+	return !isnull(locate(/obj/structure/lattice, src))
 
-	if(istype(C, /obj/item/stack/tile/floor))
-		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
-		if(L)
-			var/obj/item/stack/tile/floor/S = C
-			if (S.get_amount() < 1)
-				return OP_PASS
-			spent(L, user)
-			play_sfx(src, SFX_WEAPONS_GENHIT)
-			S.use(1)
-			ChangeTurf(/turf/simulated/floor/airless)
-			return OP_PASS
-		else
-			to_chat(user, span_warning("The plating is going to need some support."))
+/// Requirement: plating needs a lattice to rest on.
+/turf/space/proc/lattice_support(datum/act/op/A)
+	return has_lattice(A) ? null : MSG(space/needs_support)
 
-	if(istype(C, /obj/item/stack/tile/roofing))
-		var/turf/T = GetAbove(src)
-		var/obj/item/stack/tile/roofing/R = C
+/turf/space/proc/build_lattice(datum/act/op/A)
+	to_chat(A.actor, span_notice("Constructing support lattice ..."))
+	play_sfx(src, SFX_WEAPONS_GENHIT)
+	ReplaceWithLattice()
+	return OP_OK
 
-		// Patch holes in the ceiling
-		if(T)
-			if(isopenturf(T))
-				// Must be build adjacent to an existing floor/wall, no floating floors
-				var/turf/simulated/A = locate_in_list(T.CardinalTurfs(), /turf/simulated/floor)
-				if(!A)
-					A = locate_in_list(T.CardinalTurfs(), /turf/simulated/wall)
-				if(!A)
-					to_chat(user, span_warning("There's nothing to attach the ceiling to!"))
-					return OP_PASS
+/turf/space/proc/upgrade_lattice(datum/act/op/A)
+	var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
+	L?.upgrade(A.held, A.actor)
+	return OP_OK
 
-				if(R.use(1)) // Cost of roofing tiles is 1:1 with cost to place lattice and plating
-					T.ReplaceWithLattice()
-					T.ChangeTurf(/turf/simulated/floor)
-					play_sfx(src, SFX_WEAPONS_GENHIT)
-					act_message(user, null, MSG_SELF(span_notice("You expand the ceiling.")), MSG_OTHERS(span_notice("%U% expands the ceiling.")))
-			else
-				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
-				return OP_PASS
-		// Space shouldn't have weather of the sort planets with atmospheres do.
-		// If that's changed, then you'll want to swipe the rest of the roofing code from code/game/turfs/simulated/floor_attackby.dm
-	return OP_PASS
+/turf/space/proc/plate(datum/act/op/A)
+	var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
+	spent(L, A.actor)
+	play_sfx(src, SFX_WEAPONS_GENHIT)
+	ChangeTurf(/turf/simulated/floor/airless)
+	return OP_OK
+
+/// Roofing costs 1:1 with a lattice and its plating. Space has no weather of the sort planets with atmospheres do; if that changes, take the rest of the
+/// roofing code from code/content/turfs/simulated/floor_attackby.dm.
+/turf/space/proc/patch_ceiling(datum/act/op/A)
+	var/turf/T = GetAbove(src)
+	if(!T)
+		return OP_DECLINE
+	if(!isopenturf(T))
+		to_chat(A.actor, span_warning("There aren't any holes in the ceiling to patch here."))
+		return OP_DECLINE
+	// Must be built adjacent to an existing floor/wall, no floating floors
+	if(!locate_in_list(T.CardinalTurfs(), /turf/simulated/floor) && !locate_in_list(T.CardinalTurfs(), /turf/simulated/wall))
+		to_chat(A.actor, span_warning("There's nothing to attach the ceiling to!"))
+		return OP_DECLINE
+	T.ReplaceWithLattice()
+	T.ChangeTurf(/turf/simulated/floor)
+	play_sfx(src, SFX_WEAPONS_GENHIT)
+	act_message(A.actor, null, MSG_SELF(span_notice("You expand the ceiling.")), MSG_OTHERS(span_notice("%U% expands the ceiling.")))
+	return OP_OK
 
 /turf/space/Entered(atom/movable/A)
 	. = ..()
