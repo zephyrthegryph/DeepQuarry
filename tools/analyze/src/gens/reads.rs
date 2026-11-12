@@ -548,7 +548,7 @@ TRACKED(/datum/invalid_output, grid_id)
         }
         assert!(out.diags.iter().any(|diagnostic| diagnostic.msg.contains("lookup grid_lookup argument")), "invalid standalone lookup argument must fail generation");
         assert!(!out.diags.iter().any(|diagnostic| diagnostic.msg.contains("unannotated_unrelated_global")), "ordinary unrelated output diagnostics remain outside this generator");
-        super::emit_lookup_methods(&mut out, &rows, &BTreeSet::new());
+        super::emit_lookup_methods(&mut out, &rows, &BTreeSet::new(), &BTreeSet::new());
         assert!(out.text().contains("/datum/fixture/generated_lookup_output_reads()"));
         assert!(out.text().contains("/datum/standalone/generated_lookup_output_reads()"));
         assert!(out.text().contains(". += drawn_from(\"lookup_read_"));

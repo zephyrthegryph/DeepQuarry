@@ -656,15 +656,19 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
   }
   dm += '\n';
 
+  // The per-domain bind/reconcile stubs live on /atom/movable, not /datum: their only
+  // callers are /atom/movable's vg_bind()/vg_reconcile() below, and every per-type
+  // override is an /atom/movable subtype (checked where it is emitted). BYOND keeps a
+  // slot for every (type, inherited proc) pair, so a /datum stub costs ~1.2 MB each.
   for (const domain of byDomain.keys()) {
-    dm += `/// Binds this datum's ${domain} component (if the type declares one) and\n`;
+    dm += `/// Binds this atom's ${domain} component (if the type declares one) and\n`;
     dm += `/// returns the (possibly newly created) entity handle. Overridden per\n`;
     dm += `/// bound type below.\n`;
-    dm += `/datum/proc/vg_bind_${domain}(entity)\n\treturn entity\n\n`;
-    dm += `/// Reconciler (§7): mismatches between this datum's declared inputs and\n`;
+    dm += `/atom/movable/proc/vg_bind_${domain}(entity)\n\treturn entity\n\n`;
+    dm += `/// Reconciler (§7): mismatches between this atom's declared inputs and\n`;
     dm += `/// what Rust has stored for its ${domain} component, repairing as it goes.\n`;
     dm += `/// Overridden per bound type below.\n`;
-    dm += `/datum/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
+    dm += `/atom/movable/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
   }
 
   for (const comp of components) {
@@ -808,6 +812,9 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
       ...configFields.filter((f) => !f.array).map((f) => `${fid(f)}, init_${f.name}`),
       ...inputFields.map((f) => `${fid(f)}, ${lower}_input_${f.name}()`),
     ];
+    if (dmType !== '/atom/movable' && !dmAncestors(dmType).includes('/atom/movable')) {
+      throw new Error(`${comp.file}: #[vg::component] binds per type on \`${dmType}\`, which is not an /atom/movable; the vg_bind_<domain> stubs live on /atom/movable (bind a non-atom through a free-function row)`);
+    }
     dm += `${dmType}/vg_bind_${domain}(entity)\n\treturn vg_component_bind(entity, ${codeDefine}, list(${init.join(', ')}))\n\n`;
 
     if (inputFields.length) {
