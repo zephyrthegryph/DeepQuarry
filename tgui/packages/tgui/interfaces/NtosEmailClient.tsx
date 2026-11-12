@@ -324,9 +324,8 @@ export const NtosEmailClientViewMessage = (props: {
           ''}
         <LabeledList.Item label="Message" verticalAlign="top">
           <Section>
-            {/** biome-ignore lint/security/noDangerouslySetInnerHtml: is only ever passed data that has passed through pencode2html
-             * It should be safe enough to support pencode in this way. */}
             <div
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: only pencode2html output reaches it, so pencode is safe enough here
               dangerouslySetInnerHTML={{ __html: sanitizeText(cur_body ?? '') }}
             />
           </Section>
@@ -449,9 +448,8 @@ const NtosEmailClientNewMessage = (props) => {
           <Stack>
             <Stack.Item grow>
               <Section width="99%" inline>
-                {/** biome-ignore lint/security/noDangerouslySetInnerHtml: is only ever passed data that has passed through pencode2html
-                 * It should be safe enough to support pencode in this way. */}
                 <div
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: only pencode2html output reaches it, so pencode is safe enough here
                   dangerouslySetInnerHTML={{
                     __html: sanitizeText(msg_body ?? ''),
                   }}

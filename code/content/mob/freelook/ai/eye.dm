@@ -58,7 +58,7 @@
 	eyeobj = null
 	reset_perspective(new_eye)
 
-/mob/living/silicon/ai/proc/create_eyeobj(newloc)
+/mob/living/silicon/ai/proc/create_eyeobj(newloc = null)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		destroy_eyeobj()

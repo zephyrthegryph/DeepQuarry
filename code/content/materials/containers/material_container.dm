@@ -743,7 +743,7 @@ CAPABILITIES(/datum/prompt/number/material_insert)
 		return sheet_amt * SHEET_MATERIAL_AMOUNT
 	return FALSE
 
-/datum/material_container/tgui_static_data(mob/user)
+/datum/material_container/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 	data["SHEET_MATERIAL_AMOUNT"] = SHEET_MATERIAL_AMOUNT
 	return data

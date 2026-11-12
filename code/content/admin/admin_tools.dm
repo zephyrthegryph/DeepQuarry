@@ -46,7 +46,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 
 /datum/player_log_viwer/tgui_close(mob/user)
 	. = ..()
-	log_data = null
+	set_log_data(null)
 
 /datum/player_log_viwer/New(list/data, name, ckey, special, is_client)
 	. = ..()
@@ -65,7 +65,7 @@ CAPABILITIES(/datum/player_log_viwer)
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("select_client", ui_act("select_client", arg("ckey")), then(PROC_REF(ui_act_select_client)))
 
-/datum/player_log_viwer/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/player_log_viwer/ui_static_data(datum/act/eval/A)
 	return list(
 		"entries" = log_data,
 		"name" = target_name,
@@ -82,30 +82,26 @@ CAPABILITIES(/datum/player_log_viwer)
 	)
 
 /datum/player_log_viwer/proc/ui_act_refresh(datum/act/op/A)
-	var/mob/user = A.actor
 	if(refresh_cooldown())
 		return FALSE
 	refresh_data()
 	STAMP(src, last_refresh, CLOCK_WORLD)
-	update_tgui_static_data(user)
 	return TRUE
 
 /datum/player_log_viwer/proc/ui_act_select_client(datum/act/op/A, ckey)
-	var/mob/user = A.actor
 	if(refresh_cooldown())
 		return FALSE
 	var/new_ckey = ckey
 	if(!(persistent_client_for(new_ckey)))
 		return FALSE
-	target_ckey = new_ckey
+	set_target_ckey(new_ckey)
 	var/datum/persistent_client/selected = persistent_client_for(new_ckey)
-	log_data = selected.logging
-	target_name = selected.mob()?.name
-	special_role = selected.mob()?.mind?.special_role
-	client_view = TRUE
+	set_log_data(selected.logging)
+	set_target_name(selected.mob()?.name)
+	set_special_role(selected.mob()?.mind?.special_role)
+	set_client_view(TRUE)
 	refresh_data()
 	STAMP(src, last_refresh, CLOCK_WORLD)
-	update_tgui_static_data(user)
 	return TRUE
 
 /datum/player_log_viwer/proc/refresh_cooldown()
@@ -127,8 +123,8 @@ CAPABILITIES(/datum/player_log_viwer)
 			to_chat(ui.user, span_admin("Database query error"))
 		return
 	if(!islist(log_data))
-		log_data = list()
-	log_data.Cut()
+		set_log_data(list())
+	clear_log_data()
 	for(var/list/row as anything in rows)
 		var/list/timestamped_message = list(
 			"event_id" = row[1],
@@ -141,7 +137,6 @@ CAPABILITIES(/datum/player_log_viwer)
 		)
 		var/entry_type = row[7]
 		if(!islist(log_data[entry_type]))
-			log_data[entry_type] = list()
+			set_log_data_at(entry_type, list())
 		UNTYPED_LIST_ADD(log_data[entry_type], timestamped_message)
-	client_view = TRUE
-	update_static_data_for_all_viewers()
+	set_client_view(TRUE)

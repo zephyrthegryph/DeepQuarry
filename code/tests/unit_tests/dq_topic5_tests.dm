@@ -161,7 +161,7 @@
 	var/obj/machinery/alarm/listed = allocate(/obj/machinery/alarm, get_step(T, NORTH))
 	var/obj/machinery/alarm/stray = allocate(/obj/machinery/alarm, get_step(T, SOUTH))
 	rel_add(window, nameof(/datum/tgui_module/atmos_control::monitored_alarms), listed)
-	var/list/static_data = window.tgui_static_data(user)
+	var/list/static_data = present_tgui_static_data(window, user)
 	var/found = FALSE
 	for(var/list/row in static_data["alarms"])
 		if(row["ref"] == handle_of(listed))

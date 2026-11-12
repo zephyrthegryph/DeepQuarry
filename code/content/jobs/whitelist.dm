@@ -32,7 +32,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 
 	return data
 
-/datum/whitelist_editor/tgui_static_data(mob/user)
+/datum/whitelist_editor/ui_static_data(datum/act/eval/A)
 	var/list/whitelist_jobs = list()
 	for(var/datum/job/our_job in job_occupations())
 		if(our_job.whitelist_only)

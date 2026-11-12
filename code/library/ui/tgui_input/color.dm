@@ -94,7 +94,7 @@ CAPABILITIES(/datum/tgui_color_picker)
 /datum/tgui_color_picker/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_color_picker/tgui_static_data(mob/user)
+/datum/tgui_color_picker/ui_static_data(datum/act/eval/A)
 	. = list()
 	.["autofocus"] = autofocus
 	.["large_buttons"] = TRUE

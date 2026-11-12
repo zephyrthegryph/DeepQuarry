@@ -135,7 +135,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 	return data
 
-/obj/machinery/radiocarbon_spectrometer/tgui_static_data(mob/user)
+/obj/machinery/radiocarbon_spectrometer/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	data["IDEAL_RPM"] = IDEAL_RPM

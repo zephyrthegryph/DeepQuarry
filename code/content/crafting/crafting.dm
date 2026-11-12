@@ -414,7 +414,7 @@
 /// /datum/personal_crafting's window data.
 /datum/personal_crafting/proc/ui_data_datum_personal_crafting(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// ANNOYING. We won't know what category will be on top (and thus first selected) in the UI
-	// until we crunch all the resources in tgui_static_data. So it just sets a hint and we
+	// until we crunch all the resources in ui_static_data. So it just sets a hint and we
 	// consume it and set the category on the first UI open
 	if(tgui_category_hint)
 		set_cur_category(tgui_category_hint)
@@ -464,7 +464,8 @@
 	data["craftability"] = craftability
 	return data
 
-/datum/personal_crafting/tgui_static_data(mob/user)
+/datum/personal_crafting/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	var/list/crafting_recipes = list()

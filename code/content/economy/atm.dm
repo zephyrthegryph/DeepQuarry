@@ -34,7 +34,7 @@ log transactions
 
 
 /obj/machinery/atm/proc/assign_machine_id(datum/act/timer/A)
-	machine_id = "[station_name()] RT #[GLOB.num_financial_terminals++]"
+	set_machine_id("[station_name()] RT #[GLOB.num_financial_terminals++]")
 
 
 /// Has mains power (NOPOWER clear); the timers and cash dispensing only run while it does.
@@ -137,7 +137,7 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 	if(issilicon(user))
 		return STATUS_CLOSE
 
-/obj/machinery/atm/tgui_static_data(mob/user)
+/obj/machinery/atm/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 	data["machine_id"] = machine_id
 	return data

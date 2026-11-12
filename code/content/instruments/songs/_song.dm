@@ -217,7 +217,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 			continue
 		// copies the main song info to target songs
 		other_instrument.set_lines(lines.Copy())
-		other_instrument.max_repeats = max_repeats
+		other_instrument.set_max_repeats(max_repeats)
 		other_instrument.set_tempo(tempo)
 		other_instrument.start_playing(other_player)
 

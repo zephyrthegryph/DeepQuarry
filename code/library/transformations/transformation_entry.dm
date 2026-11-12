@@ -440,7 +440,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		for(var/list/row as anything in X.makes)
 			if(row[1] == XCUR_ITEM)
 				X.result = row[2]
-				X.result_amount = row[3]
+				X.set_result_amount(row[3])
 				break
 		X.cooks_in = arguments["cooks_in"] || 0
 		X.cook_time = arguments["cook_time"] || 0
@@ -457,10 +457,10 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		for(var/list/row as anything in X.makes)
 			if(row[1] == XCUR_REAGENT)
 				X.result = row[2]
-				X.result_amount = row[3]
+				X.set_result_amount(row[3])
 				break
 		if(!X.result && !isnull(arguments["made"]))
-			X.result_amount = arguments["made"]
+			X.set_result_amount(arguments["made"])
 	if(X.medium == MEDIUM_GAS)
 		X.gas_takes = xform_assoc(X.takes, XCUR_GAS)
 	for(var/list/row as anything in xform_rows(arguments["takes_ambient"]))

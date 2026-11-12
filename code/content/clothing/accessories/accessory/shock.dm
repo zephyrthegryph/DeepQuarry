@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 	tgui_interact(A.actor)
 	return OP_OK
 
-/obj/item/clothing/accessory/collar/shock/tgui_static_data(mob/user)
+/obj/item/clothing/accessory/collar/shock/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	data["freq_min"] = PUBLIC_LOW_FREQ

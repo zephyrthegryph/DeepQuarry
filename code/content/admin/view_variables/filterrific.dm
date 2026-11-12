@@ -18,7 +18,7 @@ CAPABILITIES(/datum/filter_editor)
 	op("modify_icon_value", ui_act("modify_icon_value", arg("name", schema_text(4096))), then(PROC_REF(ui_act_modify_icon_value)))
 	op("mass_apply", ui_act("mass_apply", arg("path", schema_path(/datum))), then(PROC_REF(ui_act_mass_apply)))
 
-/datum/filter_editor/tgui_static_data(mob/user)
+/datum/filter_editor/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["filter_info"] = GLOB.master_filter_info
 	return data

@@ -48,7 +48,7 @@
 		))
 	return data
 
-/datum/song/tgui_static_data(mob/user)
+/datum/song/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 	data["can_switch_instrument"] = (length(allowed_instrument_ids) > 1)
 	data["possible_instruments"] = list()

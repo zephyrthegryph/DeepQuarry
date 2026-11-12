@@ -13,20 +13,9 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { formatSiUnit } from 'tgui-core/format';
-import type { BooleanLike } from 'tgui-core/react';
-import type { CanisterActions } from './generated/Canister';
+import type { CanisterActions, CanisterData } from './generated/Canister';
 
-type Data = {
-  connected: BooleanLike;
-  can_relabel: BooleanLike;
-  pressure: number;
-  releasePressure: number;
-  defaultReleasePressure: number;
-  minReleasePressure: number;
-  maxReleasePressure: number;
-  valveOpen: BooleanLike;
-  holding: { name: string; pressure: number } | null;
-};
+type Data = CanisterData;
 
 export const Canister = (props) => {
   const { act, data } = useBackend<Data, CanisterActions>();

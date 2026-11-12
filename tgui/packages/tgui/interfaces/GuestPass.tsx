@@ -50,9 +50,9 @@ export const GuestPass = (props) => {
             <Section title="Logs">
               {(log.length &&
                 log.map((l) => (
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: These are internally generated only.
                   <div
                     key={l}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: These are internally generated only.
                     dangerouslySetInnerHTML={{ __html: sanitizeText(l) }}
                   />
                 ))) || <Box>No logs.</Box>}

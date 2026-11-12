@@ -44,7 +44,7 @@
 	rel_add(R.module, nameof(R.module.emag), emag_tool)
 	var/obj/item/tool/crowbar/stray = allocate(/obj/item/tool/crowbar, T)
 	// the readouts: the module's tools by handle, in both the static and the live data
-	var/list/static_data = window.tgui_static_data(R)
+	var/list/static_data = present_tgui_static_data(window, R)
 	var/listed_static = FALSE
 	for(var/list/row in static_data["modules_static"])
 		if(row["ref"] == handle_of(tool))

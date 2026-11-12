@@ -556,7 +556,7 @@
 	else
 		braintype = BORG_BRAINTYPE_CYBORG
 
-/mob/living/silicon/robot/proc/updatename(prefix as text)
+/mob/living/silicon/robot/proc/updatename(prefix = null)
 	if(prefix)
 		modtype = prefix
 
@@ -1033,7 +1033,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	transform_with_anim() //sprite animation
 	uneq_all()
 	hud_used.update_robot_modules_display(TRUE)
-	modtype = initial(modtype)
+	set_modtype(initial(modtype))
 	hud_used?.hands?.icon_state = get_hud_module_icon()
 
 	// Basic upgrades (VTEC, ...) mutate the robot directly (verbs added,
@@ -1595,6 +1595,11 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(module?.ui_theme)
 		return module.ui_theme
 	return ui_theme
+
+/// The window theme of a tool a robot holds (its loc), or null when no robot holds it.
+/proc/robot_holder_theme(atom/movable/thing)
+	var/mob/living/silicon/robot/robot_owner = thing?.loc
+	return istype(robot_owner) ? robot_owner.get_ui_theme() : null
 
 /mob/living/silicon/robot/handle_special_unlocks()
 	if(!module)

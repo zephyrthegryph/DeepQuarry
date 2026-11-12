@@ -475,6 +475,7 @@ impl Generator for Declare {
         lazy_accessors(cx, out);
         static_blocks(cx, out, &caps, &globals, &statics);
         block_types(cx, out);
+        op_tags(cx, out);
         make_procs(cx, out);
         for d in std::mem::take(&mut tests.diags) {
             out.diag(&d.rel, d.line, d.msg);
@@ -542,6 +543,63 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
 
 /// Every type that declares a CAPABILITIES block, so a test can compile every block's table without waiting for an instance of the type
 /// to be made (dq_declare_every_block_compiles). Rows go into numbered part procs of at most 500 rows (DM's proc size limit).
+/// The op tags (TAG_X) some declaration gives an op with `tag(TAG_X)`, plus the ones the engine gives (TAG_UI, TAG_TOPIC). An `extend(TAG_X,
+/// ...)` of a tag no op carries reaches nothing: it is a generation error here, and table_resolves() (code/engine/declare/table.dm) reports it
+/// from `declared_op_tags()` when a table is built.
+fn op_tags(cx: &GenCx, out: &mut GenOut) {
+    const IMPLICIT: &[&str] = &["TAG_UI", "TAG_TOPIC"];
+    let tag_re = crate::pat!(r"\btag\(\s*(TAG_[A-Z0-9_]+)\s*\)");
+    let extend_re = crate::pat!(r"\bextend\(\s*(TAG_[A-Z0-9_]+)\s*,");
+    let mut prod: BTreeSet<String> = IMPLICIT.iter().map(|s| s.to_string()).collect();
+    let mut test: BTreeSet<String> = BTreeSet::new();
+    let mut extends: Vec<(String, u32, String, bool)> = Vec::new();
+    for f in cx.tree.select(&crate::tree::CODE_DM) {
+        if f.rel.starts_with("code/engine/_generated/") {
+            continue;
+        }
+        let test_only = crate::sem::gen::test_only(&f.rel);
+        let text = &f.code().text;
+        if !text.contains("TAG_") {
+            continue;
+        }
+        for (n, line) in text.lines().enumerate() {
+            if line.trim_start().starts_with("#define") {
+                continue;
+            }
+            for c in tag_re.captures_iter(line) {
+                let name = c.s(1).to_string();
+                if test_only { test.insert(name); } else { prod.insert(name); }
+            }
+            for c in extend_re.captures_iter(line) {
+                extends.push((f.rel.clone(), n as u32 + 1, c.s(1).to_string(), test_only));
+            }
+        }
+    }
+    for (rel, line, name, test_only) in &extends {
+        if !prod.contains(name) && !(*test_only && test.contains(name)) {
+            out.diag(rel, *line, format!("extend({}, ...) names a tag no op carries: give the ops it means tag({}), or extend them by key", name, name));
+        }
+    }
+    let test: Vec<&String> = test.iter().filter(|t| !prod.contains(*t)).collect();
+    out.doc("declared_op_tags(): the TAG_X some op carries (tag(TAG_X) in a declaration, or TAG_UI/TAG_TOPIC from the engine) -> TRUE.");
+    out.line("/proc/declared_op_tags()");
+    out.line("\tvar/static/list/tags");
+    out.line("\tif(!tags)");
+    out.line("\t\ttags = list()");
+    for t in &prod {
+        out.line(format!("\t\ttags[\"[{}]\"] = TRUE", t));
+    }
+    if !test.is_empty() {
+        out.line(crate::sem::gen::TEST_GUARD);
+        for t in &test {
+            out.line(format!("\t\ttags[\"[{}]\"] = TRUE", t));
+        }
+        out.line("#endif");
+    }
+    out.line("\treturn tags");
+    out.blank();
+}
+
 fn block_types(cx: &GenCx, out: &mut GenOut) {
     out.doc("declared_block_types(): every type with a CAPABILITIES block, sorted.");
     let all: Vec<&Marker> = cx.markers("CAPABILITIES").collect();

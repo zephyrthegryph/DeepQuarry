@@ -95,7 +95,7 @@ other types of metals and chemistry for reagents).
 			temp_list[M] = amount
 		else
 			temp_list[i] = amount
-	materials = temp_list
+	set_materials(temp_list)
 	initialize_material_slots_from_costs()
 
 /proc/material_application_for_product(build_path, explicit_application = null)
@@ -200,8 +200,8 @@ other types of metals and chemistry for reagents).
 			total += fixed_costs[material]
 		if(total < 1)
 			return
-		material_template = material_template_for_product(build_path, application)
-		material_total = total
+		set_material_template(material_template_for_product(build_path, application))
+		set_material_total(total)
 		if(!material_template)
 			return
 	// Recognized blueprints replace abstract resource costs with the same total
@@ -209,8 +209,8 @@ other types of metals and chemistry for reagents).
 	// Their standard configuration is therefore defined by the blueprint, not
 	// by arbitrary legacy resource ingredients.
 	for(var/key in material_cost_keys)
-		materials -= key
-	material_application = application
+		remove_materials(key)
+	set_material_application(application)
 	standard_material_costs = list()
 	var/datum/material_template/template = material_template_singleton(material_template)
 	var/list/defaults = template.resolve()

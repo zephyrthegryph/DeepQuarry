@@ -125,8 +125,8 @@ export const Ticket = (props) => {
                   <Stack>
                     <Stack.Item>#{id}:</Stack.Item>
                     <Stack.Item>
-                      {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data */}
                       <div
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                         dangerouslySetInnerHTML={{
                           __html: sanitizeAdminHtml(name),
                         }}
@@ -162,8 +162,8 @@ export const Ticket = (props) => {
                   </LabeledList.Item>
                 )}
                 <LabeledList.Item label="Actions">
-                  {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data */}
                   <div
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                     dangerouslySetInnerHTML={{
                       __html: sanitizeAdminHtml(actions),
                     }}

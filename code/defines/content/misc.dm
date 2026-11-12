@@ -661,3 +661,21 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 #define VANTAG_VORE_DE	"vantag_vore_de"
 #define VANTAG_VORE_DD	"vantag_vore_dd"
 #define VANTAG_VORE_DA	"vantag_vore_da"
+
+// Gender choice lists (macros: every file that names them comes after the defines).
+#define all_genders_define_list list(MALE,FEMALE,PLURAL,NEUTER,HERM)
+#define all_genders_text_list list("Male","Female","Plural","Neuter","Herm")
+#define pronoun_set_to_genders list(\
+			"He/Him" = MALE,\
+			"She/Her" = FEMALE,\
+			"It/Its" = NEUTER,\
+			"They/Them" = PLURAL,\
+			"Shi/Hir" = HERM\
+			)
+#define genders_to_pronoun_set list(\
+			MALE = "He/Him",\
+			FEMALE = "She/Her",\
+			NEUTER = "It/Its",\
+			PLURAL = "They/Them",\
+			HERM = "Shi/Hir"\
+			)

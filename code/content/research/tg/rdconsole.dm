@@ -31,10 +31,6 @@ Nothing else in the console has ID requirements.
 	var/obj/item/disk/design_disk/d_disk
 	/// Determines if the console is locked, and consequently if actions can be performed with it
 	locked = FALSE
-	/// Used for compressing data sent to the UI via static_data as payload size is of concern
-	var/list/id_cache
-	/// Sequence var for the id cache
-	var/id_cache_seq = 1
 	/// Cooldown that prevents hanging the MC when tech disks are copied
 	STATIC_COOLDOWN_DECLARE(cooldowncopy)
 
@@ -227,19 +223,20 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	return data
 
 /**
- * Compresses an ID to an integer representation using the id_cache, used for deduplication
- * in sent JSON payloads
+ * Compresses an ID to an integer representation using the payload's id cache, used for deduplication
+ * in sent JSON payloads. The cache is built per payload (ui_static_data() sends it beside the data), so an output never writes the console.
  *
  * Arguments:
  * * id - the ID to compress
+ * * id_cache - the payload's id -> compressed id list
  */
-/obj/machinery/computer/rdconsole_tg/proc/compress_id(id)
-	if (!LAZYACCESS(id_cache, id))
-		LAZYSET(id_cache, id, id_cache_seq)
-		id_cache_seq += 1
-	return LAZYACCESS(id_cache, id)
+/obj/machinery/computer/rdconsole_tg/proc/compress_id(id, list/id_cache)
+	if(!id_cache[id])
+		id_cache[id] = length(id_cache) + 1
+	return id_cache[id]
 
-/obj/machinery/computer/rdconsole_tg/tgui_static_data(mob/user)
+/obj/machinery/computer/rdconsole_tg/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	. = list(
 		"static_data" = list(),
 		"point_types_abbreviations" = SSresearch.point_types,
@@ -249,10 +246,11 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	// Note this looks a bit ugly but its to reduce the size of the JSON payload
 	// by the greatest amount that we can, as larger JSON payloads result in
 	// hanging when the user opens the UI
+	var/list/id_cache = list()
 	var/node_cache = list()
 	for (var/node_id in SSresearch.techweb_nodes)
 		var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id] || SSresearch.error_node
-		var/compressed_id = "[compress_id(node.id)]"
+		var/compressed_id = "[compress_id(node.id, id_cache)]"
 		node_cache[compressed_id] = list(
 			"name" = node.display_name,
 			"description" = node.description
@@ -260,19 +258,19 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		if (LAZYLEN(node.research_costs))
 			node_cache[compressed_id]["costs"] = list()
 			for (var/node_cost in node.research_costs)
-				node_cache[compressed_id]["costs"]["[compress_id(node_cost)]"] = LAZYACCESS(node.research_costs, node_cost)
+				node_cache[compressed_id]["costs"]["[compress_id(node_cost, id_cache)]"] = LAZYACCESS(node.research_costs, node_cost)
 		if (LAZYLEN(node.prereq_ids))
 			node_cache[compressed_id]["prereq_ids"] = list()
 			for (var/prerequisite_node in node.prereq_ids)
-				node_cache[compressed_id]["prereq_ids"] += compress_id(prerequisite_node)
+				node_cache[compressed_id]["prereq_ids"] += compress_id(prerequisite_node, id_cache)
 		if (LAZYLEN(node.design_ids))
 			node_cache[compressed_id]["design_ids"] = list()
 			for (var/unlocked_design in node.design_ids)
-				node_cache[compressed_id]["design_ids"] += compress_id(unlocked_design)
+				node_cache[compressed_id]["design_ids"] += compress_id(unlocked_design, id_cache)
 		if (LAZYLEN(node.unlock_ids))
 			node_cache[compressed_id]["unlock_ids"] = list()
 			for (var/unlocked_node in node.unlock_ids)
-				node_cache[compressed_id]["unlock_ids"] += compress_id(unlocked_node)
+				node_cache[compressed_id]["unlock_ids"] += compress_id(unlocked_node, id_cache)
 		if (LAZYLEN(node.required_experiments))
 			node_cache[compressed_id]["required_experiments"] = node.required_experiments
 		if (LAZYLEN(node.discount_experiments))
@@ -284,7 +282,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	var/size32x32 = "[spritesheet.name]32x32"
 	for (var/design_id in SSresearch.techweb_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_designs[design_id] || SSresearch.error_design
-		var/compressed_id = "[compress_id(design.id)]"
+		var/compressed_id = "[compress_id(design.id, id_cache)]"
 		var/css_id = sanitize_css_class_name(design.id)
 		var/size = spritesheet.icon_size_id(css_id)
 		design_cache[compressed_id] = list(

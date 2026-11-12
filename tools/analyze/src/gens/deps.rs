@@ -525,7 +525,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // every var it reads must publish, or the window never hears a write. The reads count here; nothing is added to the consumer table.
     {
         let mut seen_ui = BTreeSet::new();
-        for d in crate::sem::procs::proc_defs(&sem, &["ui_data", "tgui_data"]) {
+        for d in crate::sem::procs::proc_defs(&sem, &["ui_data", "ui_static_data", "tgui_data"]) {
             if d.owner == "/" || d.owner == "/datum" || d.rel.starts_with("code/engine/") || !seen_ui.insert(format!("{}::{}", d.owner, d.name)) {
                 continue;
             }

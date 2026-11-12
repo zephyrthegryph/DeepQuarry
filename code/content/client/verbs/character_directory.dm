@@ -70,7 +70,7 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 	var/datum/portrait/P = portrait_request(src, SOUTH, GLOB.character_directory, GLOB.character_directory ? TYPE_PROC_REF(/datum/character_directory, portrait_landed) : null)
 	return P?.b64 ? "'data:image/png;base64,[P.b64]'" : null
 
-/datum/character_directory/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/character_directory/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/list/directory_mobs = list()
@@ -79,196 +79,202 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 		if(C?.mob?.mind ? !C.mob.mind.show_in_directory : !C?.prefs?.read_preference(/datum/preference/toggle/human/show_in_directory)) // show_in_directory migrated
 			continue
 
-		// These are the three vars we're trying to find
-		// The approach differs based on the mob the client is controlling
-		var/name = null
-		var/species = null
-		var/ooc_notes = null
-		var/ooc_notes_favs = null
-		var/ooc_notes_likes = null
-		var/ooc_notes_maybes = null
-		var/ooc_notes_dislikes = null
-		var/ooc_notes_style = null
-		var/gendertag = null
-		var/sexualitytag = null
-		var/eventtag = GLOB.vantag_choices_list[VANTAG_NONE]
-		var/flavor_text = null
-		var/custom_link = null
-		var/tag
-		var/erptag
-		var/character_ad
-		var/photo = C.mob?.get_chardirectory_photo()
-		if (C.mob?.mind) //could use ternary for all three but this is more efficient
-			tag = C.mob.mind.directory_tag || "Unset"
-			erptag = C.mob.mind.directory_erptag || "Unset"
-			character_ad = C.mob.mind.directory_ad
-			gendertag = C.mob.mind.directory_gendertag || "Unset"
-			sexualitytag = C.mob.mind.directory_sexualitytag || "Unset"
-			eventtag = GLOB.vantag_choices_list[C.mob.mind.vantag_preference]
-		else
-			// directory_* prefs migrated to /datum/preference
-			tag = C.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
-			erptag = C.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
-			character_ad = C.prefs.read_preference(/datum/preference/text/human/directory_ad)
-			gendertag = "Unset"
-			sexualitytag = "Unset"
-			eventtag = GLOB.vantag_choices_list[C.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
-
-		if(ishuman(C.mob))
-			var/mob/living/carbon/human/H = C.mob
-			var/strangername = H.real_name
-			if(GLOB.data_core && GLOB.data_core.general)
-				if(!find_general_record("name", H.real_name))
-					if(!find_record("name", H.real_name, GLOB.data_core.hidden_general))
-						strangername = "unknown"
-			name = strangername
-			species = "[H.bio.custom_species ? H.bio.custom_species : H.species.name]"
-			ooc_notes = H.identity().ooc_notes
-			if(H.identity().ooc_notes_style && (H.identity().ooc_notes_favs || H.identity().ooc_notes_likes || H.identity().ooc_notes_maybes || H.identity().ooc_notes_dislikes))
-				ooc_notes = H.identity().ooc_notes + "\n\n"
-				ooc_notes_favs = H.identity().ooc_notes_favs
-				ooc_notes_likes = H.identity().ooc_notes_likes
-				ooc_notes_maybes = H.identity().ooc_notes_maybes
-				ooc_notes_dislikes = H.identity().ooc_notes_dislikes
-				ooc_notes_style = H.identity().ooc_notes_style
-			else
-				if(H.identity().ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[H.identity().ooc_notes_favs]"
-				if(H.identity().ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[H.identity().ooc_notes_likes]"
-				if(H.identity().ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[H.identity().ooc_notes_maybes]"
-				if(H.identity().ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[H.identity().ooc_notes_dislikes]"
-			if(LAZYLEN(H.bio.flavor_texts))
-				flavor_text = H.bio.flavor_texts["general"]
-			if(STATE_GET(H, living_misc, custom_link))
-				custom_link = STATE_GET(H, living_misc, custom_link)
-
-		if(isAI(C.mob))
-			var/mob/living/silicon/ai/A = C.mob
-			name = A.name
-			species = "Artificial Intelligence"
-			ooc_notes = A.identity().ooc_notes
-			if(A.identity().ooc_notes_style && (A.identity().ooc_notes_favs || A.identity().ooc_notes_likes || A.identity().ooc_notes_maybes || A.identity().ooc_notes_dislikes))
-				ooc_notes = A.identity().ooc_notes + "\n\n"
-				ooc_notes_favs = A.identity().ooc_notes_favs
-				ooc_notes_likes = A.identity().ooc_notes_likes
-				ooc_notes_maybes = A.identity().ooc_notes_maybes
-				ooc_notes_dislikes = A.identity().ooc_notes_dislikes
-				ooc_notes_style = A.identity().ooc_notes_style
-			else
-				if(A.identity().ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[A.identity().ooc_notes_favs]"
-				if(A.identity().ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[A.identity().ooc_notes_likes]"
-				if(A.identity().ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[A.identity().ooc_notes_maybes]"
-				if(A.identity().ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[A.identity().ooc_notes_dislikes]"
-
-			flavor_text = null // No flavor text for AIs :c
-
-		if(isrobot(C.mob))
-			var/mob/living/silicon/robot/R = C.mob
-			if(R.scrambledcodes || (R.module && R.module.hide_on_manifest))
-				continue
-			name = R.name
-			species = "[R.modtype] [R.braintype]"
-			ooc_notes = R.identity().ooc_notes
-			if(R.identity().ooc_notes_style && (R.identity().ooc_notes_favs || R.identity().ooc_notes_likes || R.identity().ooc_notes_maybes || R.identity().ooc_notes_dislikes))
-				ooc_notes = R.identity().ooc_notes + "\n\n"
-				ooc_notes_favs = R.identity().ooc_notes_favs
-				ooc_notes_likes = R.identity().ooc_notes_likes
-				ooc_notes_maybes = R.identity().ooc_notes_maybes
-				ooc_notes_dislikes = R.identity().ooc_notes_dislikes
-				ooc_notes_style = R.identity().ooc_notes_style
-			else
-				if(R.identity().ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[R.identity().ooc_notes_favs]"
-				if(R.identity().ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[R.identity().ooc_notes_likes]"
-				if(R.identity().ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[R.identity().ooc_notes_maybes]"
-				if(R.identity().ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[R.identity().ooc_notes_dislikes]"
-
-			flavor_text = R.bio.flavor_text
-
-		if(ispAI(C.mob))
-			var/mob/living/silicon/pai/P = C.mob
-			name = P.name
-			species = "pAI"
-			ooc_notes = P.identity().ooc_notes
-			if(P.identity().ooc_notes_style && (P.identity().ooc_notes_favs || P.identity().ooc_notes_likes || P.identity().ooc_notes_maybes || P.identity().ooc_notes_dislikes))
-				ooc_notes = P.identity().ooc_notes + "\n\n"
-				ooc_notes_favs = P.identity().ooc_notes_favs
-				ooc_notes_likes = P.identity().ooc_notes_likes
-				ooc_notes_maybes = P.identity().ooc_notes_maybes
-				ooc_notes_dislikes = P.identity().ooc_notes_dislikes
-				ooc_notes_style = P.identity().ooc_notes_style
-			else
-				if(P.identity().ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[P.identity().ooc_notes_favs]"
-				if(P.identity().ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[P.identity().ooc_notes_likes]"
-				if(P.identity().ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[P.identity().ooc_notes_maybes]"
-				if(P.identity().ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[P.identity().ooc_notes_dislikes]"
-			flavor_text = P.bio.flavor_text
-
-		if(isanimal(C.mob))
-			var/mob/living/simple_mob/S = C.mob
-			name = S.name
-			species = S.character_directory_species()
-			ooc_notes = S.identity().ooc_notes
-			if(S.identity().ooc_notes_style && (S.identity().ooc_notes_favs || S.identity().ooc_notes_likes || S.identity().ooc_notes_maybes || S.identity().ooc_notes_dislikes))
-				ooc_notes = S.identity().ooc_notes + "\n\n"
-				ooc_notes_favs = S.identity().ooc_notes_favs
-				ooc_notes_likes = S.identity().ooc_notes_likes
-				ooc_notes_maybes = S.identity().ooc_notes_maybes
-				ooc_notes_dislikes = S.identity().ooc_notes_dislikes
-				ooc_notes_style = S.identity().ooc_notes_style
-			else
-				if(S.identity().ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[S.identity().ooc_notes_favs]"
-				if(S.identity().ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[S.identity().ooc_notes_likes]"
-				if(S.identity().ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[S.identity().ooc_notes_maybes]"
-				if(S.identity().ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[S.identity().ooc_notes_dislikes]"
-			flavor_text = S.desc
-
-		// It's okay if we fail to find OOC notes and flavor text
-		// But if we can't find the name, they must be using a non-compatible mob type currently.
-		if(!name)
-			continue
-
-		directory_mobs.Add(list(list(
-			"name" = name,
-			"species" = species,
-			"ooc_notes_favs" = ooc_notes_favs,
-			"ooc_notes_likes" = ooc_notes_likes,
-			"ooc_notes_maybes" = ooc_notes_maybes,
-			"ooc_notes_dislikes" = ooc_notes_dislikes,
-			"ooc_notes_style" = ooc_notes_style,
-			"gendertag" = gendertag,
-			"sexualitytag" = sexualitytag,
-			"eventtag" = eventtag,
-			"ooc_notes" = ooc_notes,
-			"tag" = tag,
-			"erptag" = erptag,
-			"character_ad" = character_ad,
-			"flavor_text" = flavor_text,
-			"custom_link" = custom_link,
-			"photo" = photo,
-		)))
+		var/list/entry = directory_entry(C)
+		if(entry)
+			UNTYPED_LIST_ADD(directory_mobs, entry)
 
 	data["directory"] = directory_mobs
 
 	return data
+
+/// One client's character directory row, or null when its mob has no directory form (no name found).
+/datum/character_directory/proc/directory_entry(client/C)
+	// These are the three vars we're trying to find
+	// The approach differs based on the mob the client is controlling
+	var/name = null
+	var/species = null
+	var/ooc_notes = null
+	var/ooc_notes_favs = null
+	var/ooc_notes_likes = null
+	var/ooc_notes_maybes = null
+	var/ooc_notes_dislikes = null
+	var/ooc_notes_style = null
+	var/gendertag = null
+	var/sexualitytag = null
+	var/eventtag = GLOB.vantag_choices_list[VANTAG_NONE]
+	var/flavor_text = null
+	var/custom_link = null
+	var/tag
+	var/erptag
+	var/character_ad
+	var/photo = C.mob?.get_chardirectory_photo()
+	if (C.mob?.mind) //could use ternary for all three but this is more efficient
+		tag = C.mob.mind.directory_tag || "Unset"
+		erptag = C.mob.mind.directory_erptag || "Unset"
+		character_ad = C.mob.mind.directory_ad
+		gendertag = C.mob.mind.directory_gendertag || "Unset"
+		sexualitytag = C.mob.mind.directory_sexualitytag || "Unset"
+		eventtag = GLOB.vantag_choices_list[C.mob.mind.vantag_preference]
+	else
+		// directory_* prefs migrated to /datum/preference
+		tag = C.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
+		erptag = C.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
+		character_ad = C.prefs.read_preference(/datum/preference/text/human/directory_ad)
+		gendertag = "Unset"
+		sexualitytag = "Unset"
+		eventtag = GLOB.vantag_choices_list[C.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
+
+	if(ishuman(C.mob))
+		var/mob/living/carbon/human/H = C.mob
+		var/strangername = H.real_name
+		if(GLOB.data_core && GLOB.data_core.general)
+			if(!find_general_record("name", H.real_name))
+				if(!find_record("name", H.real_name, GLOB.data_core.hidden_general))
+					strangername = "unknown"
+		name = strangername
+		species = "[H.bio.custom_species ? H.bio.custom_species : H.species.name]"
+		ooc_notes = H.identity().ooc_notes
+		if(H.identity().ooc_notes_style && (H.identity().ooc_notes_favs || H.identity().ooc_notes_likes || H.identity().ooc_notes_maybes || H.identity().ooc_notes_dislikes))
+			ooc_notes = H.identity().ooc_notes + "\n\n"
+			ooc_notes_favs = H.identity().ooc_notes_favs
+			ooc_notes_likes = H.identity().ooc_notes_likes
+			ooc_notes_maybes = H.identity().ooc_notes_maybes
+			ooc_notes_dislikes = H.identity().ooc_notes_dislikes
+			ooc_notes_style = H.identity().ooc_notes_style
+		else
+			if(H.identity().ooc_notes_favs)
+				ooc_notes += "\n\nFAVOURITES\n\n[H.identity().ooc_notes_favs]"
+			if(H.identity().ooc_notes_likes)
+				ooc_notes += "\n\nLIKES\n\n[H.identity().ooc_notes_likes]"
+			if(H.identity().ooc_notes_maybes)
+				ooc_notes += "\n\nMAYBES\n\n[H.identity().ooc_notes_maybes]"
+			if(H.identity().ooc_notes_dislikes)
+				ooc_notes += "\n\nDISLIKES\n\n[H.identity().ooc_notes_dislikes]"
+		if(LAZYLEN(H.bio.flavor_texts))
+			flavor_text = H.bio.flavor_texts["general"]
+		if(STATE_GET(H, living_misc, custom_link))
+			custom_link = STATE_GET(H, living_misc, custom_link)
+
+	if(isAI(C.mob))
+		var/mob/living/silicon/ai/A = C.mob
+		name = A.name
+		species = "Artificial Intelligence"
+		ooc_notes = A.identity().ooc_notes
+		if(A.identity().ooc_notes_style && (A.identity().ooc_notes_favs || A.identity().ooc_notes_likes || A.identity().ooc_notes_maybes || A.identity().ooc_notes_dislikes))
+			ooc_notes = A.identity().ooc_notes + "\n\n"
+			ooc_notes_favs = A.identity().ooc_notes_favs
+			ooc_notes_likes = A.identity().ooc_notes_likes
+			ooc_notes_maybes = A.identity().ooc_notes_maybes
+			ooc_notes_dislikes = A.identity().ooc_notes_dislikes
+			ooc_notes_style = A.identity().ooc_notes_style
+		else
+			if(A.identity().ooc_notes_favs)
+				ooc_notes += "\n\nFAVOURITES\n\n[A.identity().ooc_notes_favs]"
+			if(A.identity().ooc_notes_likes)
+				ooc_notes += "\n\nLIKES\n\n[A.identity().ooc_notes_likes]"
+			if(A.identity().ooc_notes_maybes)
+				ooc_notes += "\n\nMAYBES\n\n[A.identity().ooc_notes_maybes]"
+			if(A.identity().ooc_notes_dislikes)
+				ooc_notes += "\n\nDISLIKES\n\n[A.identity().ooc_notes_dislikes]"
+
+		flavor_text = null // No flavor text for AIs :c
+
+	if(isrobot(C.mob))
+		var/mob/living/silicon/robot/R = C.mob
+		if(R.scrambledcodes || (R.module && R.module.hide_on_manifest))
+			return null
+		name = R.name
+		species = "[R.modtype] [R.braintype]"
+		ooc_notes = R.identity().ooc_notes
+		if(R.identity().ooc_notes_style && (R.identity().ooc_notes_favs || R.identity().ooc_notes_likes || R.identity().ooc_notes_maybes || R.identity().ooc_notes_dislikes))
+			ooc_notes = R.identity().ooc_notes + "\n\n"
+			ooc_notes_favs = R.identity().ooc_notes_favs
+			ooc_notes_likes = R.identity().ooc_notes_likes
+			ooc_notes_maybes = R.identity().ooc_notes_maybes
+			ooc_notes_dislikes = R.identity().ooc_notes_dislikes
+			ooc_notes_style = R.identity().ooc_notes_style
+		else
+			if(R.identity().ooc_notes_favs)
+				ooc_notes += "\n\nFAVOURITES\n\n[R.identity().ooc_notes_favs]"
+			if(R.identity().ooc_notes_likes)
+				ooc_notes += "\n\nLIKES\n\n[R.identity().ooc_notes_likes]"
+			if(R.identity().ooc_notes_maybes)
+				ooc_notes += "\n\nMAYBES\n\n[R.identity().ooc_notes_maybes]"
+			if(R.identity().ooc_notes_dislikes)
+				ooc_notes += "\n\nDISLIKES\n\n[R.identity().ooc_notes_dislikes]"
+
+		flavor_text = R.bio.flavor_text
+
+	if(ispAI(C.mob))
+		var/mob/living/silicon/pai/P = C.mob
+		name = P.name
+		species = "pAI"
+		ooc_notes = P.identity().ooc_notes
+		if(P.identity().ooc_notes_style && (P.identity().ooc_notes_favs || P.identity().ooc_notes_likes || P.identity().ooc_notes_maybes || P.identity().ooc_notes_dislikes))
+			ooc_notes = P.identity().ooc_notes + "\n\n"
+			ooc_notes_favs = P.identity().ooc_notes_favs
+			ooc_notes_likes = P.identity().ooc_notes_likes
+			ooc_notes_maybes = P.identity().ooc_notes_maybes
+			ooc_notes_dislikes = P.identity().ooc_notes_dislikes
+			ooc_notes_style = P.identity().ooc_notes_style
+		else
+			if(P.identity().ooc_notes_favs)
+				ooc_notes += "\n\nFAVOURITES\n\n[P.identity().ooc_notes_favs]"
+			if(P.identity().ooc_notes_likes)
+				ooc_notes += "\n\nLIKES\n\n[P.identity().ooc_notes_likes]"
+			if(P.identity().ooc_notes_maybes)
+				ooc_notes += "\n\nMAYBES\n\n[P.identity().ooc_notes_maybes]"
+			if(P.identity().ooc_notes_dislikes)
+				ooc_notes += "\n\nDISLIKES\n\n[P.identity().ooc_notes_dislikes]"
+		flavor_text = P.bio.flavor_text
+
+	if(isanimal(C.mob))
+		var/mob/living/simple_mob/S = C.mob
+		name = S.name
+		species = S.character_directory_species()
+		ooc_notes = S.identity().ooc_notes
+		if(S.identity().ooc_notes_style && (S.identity().ooc_notes_favs || S.identity().ooc_notes_likes || S.identity().ooc_notes_maybes || S.identity().ooc_notes_dislikes))
+			ooc_notes = S.identity().ooc_notes + "\n\n"
+			ooc_notes_favs = S.identity().ooc_notes_favs
+			ooc_notes_likes = S.identity().ooc_notes_likes
+			ooc_notes_maybes = S.identity().ooc_notes_maybes
+			ooc_notes_dislikes = S.identity().ooc_notes_dislikes
+			ooc_notes_style = S.identity().ooc_notes_style
+		else
+			if(S.identity().ooc_notes_favs)
+				ooc_notes += "\n\nFAVOURITES\n\n[S.identity().ooc_notes_favs]"
+			if(S.identity().ooc_notes_likes)
+				ooc_notes += "\n\nLIKES\n\n[S.identity().ooc_notes_likes]"
+			if(S.identity().ooc_notes_maybes)
+				ooc_notes += "\n\nMAYBES\n\n[S.identity().ooc_notes_maybes]"
+			if(S.identity().ooc_notes_dislikes)
+				ooc_notes += "\n\nDISLIKES\n\n[S.identity().ooc_notes_dislikes]"
+		flavor_text = S.desc
+
+	// It's okay if we fail to find OOC notes and flavor text
+	// But if we can't find the name, they must be using a non-compatible mob type currently.
+	if(!name)
+		return null
+
+	return list(
+		"name" = name,
+		"species" = species,
+		"ooc_notes_favs" = ooc_notes_favs,
+		"ooc_notes_likes" = ooc_notes_likes,
+		"ooc_notes_maybes" = ooc_notes_maybes,
+		"ooc_notes_dislikes" = ooc_notes_dislikes,
+		"ooc_notes_style" = ooc_notes_style,
+		"gendertag" = gendertag,
+		"sexualitytag" = sexualitytag,
+		"eventtag" = eventtag,
+		"ooc_notes" = ooc_notes,
+		"tag" = tag,
+		"erptag" = erptag,
+		"character_ad" = character_ad,
+		"flavor_text" = flavor_text,
+		"custom_link" = custom_link,
+		"photo" = photo,
+	)
 
 
 /datum/character_directory/proc/ui_act_refresh(datum/act/op/A)

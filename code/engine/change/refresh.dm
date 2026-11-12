@@ -202,27 +202,14 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 
 /// Whether `path` or an ancestor defines push_to_rust() or on_state_changed() (the generated list of such types). Null while the generated table is not built.
 /proc/type_overrides_side_effects(path)
-	var/static/list/owners
-	if(isnull(owners))
-		if(!islist(GLOB.generated_side_overrides))
-			return null
-		var/list/built = list()
-		for(var/text in GLOB.generated_side_overrides)
-			var/owner = text2path(text)
-			if(owner)
-				built += owner
-		owners = built
-	for(var/owner in owners)
-		if(ispath(path, owner))
-			return TRUE
-	return FALSE
+	return type_in_generated_owners(path, "generated_side_overrides")
 
 /// The outputs of D that would do anything now (DEP_* bits): what its type derives and what the instance has open. A queued mask is judged as
 /// `pending & refresh_live_outputs(D)`; refresh_wanted() is `live != 0` (doc/rewrite/proposals/demand_driven_refresh.md 2.1).
 /proc/refresh_live_outputs(datum/D)
 	. = 0
 	if(LAZYLEN(D.open_tguis))
-		. |= DEP_UI
+		. |= DEP_UI | DEP_UI_STATIC
 	if(isatom(D))
 		var/atom/A = D
 		if(ismob(A))
@@ -494,9 +481,6 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 /atom/proc/draw(datum/look/look)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "draw"))
-		// ALLOW(sys_dx_reactive_write): the derive probe notes the override; it runs only while GLOB.derive_probing
-		GLOB.derive_probe_found |= TYPE_DERIVES_LOOK
 	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_DRAW))
 		C.draw(src, look)
 	look_layers_draw(src, look)
@@ -506,9 +490,6 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 /atom/proc/hidden_verbs()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "hidden_verbs"))
-		// ALLOW(sys_dx_reactive_write): the derive probe notes the override; it runs only while GLOB.derive_probing
-		GLOB.derive_probe_found |= TYPE_DERIVES_VERBS
 	return caps_hidden_verbs(src)
 
 /**
@@ -525,42 +506,17 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 	RETURN_TYPE(/list)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "granted_verbs"))
-		GLOB.derive_probe_found |= TYPE_DERIVES_VERBS
 	. = list()
 	for(var/datum/capability/C as anything in caps_all(src))
 		var/list/native = C.verbs()
 		if(native)
 			. |= native
 
-// ---- what a type derives, decided by its declared overrides (never by one instance's result) ----
-
-/// Set while a type's first refresh probes which derived procs it overrides.
-GLOBAL_VAR_INIT(derive_probing, FALSE)
-/// TYPE_DERIVES_* found by the probe: the base proc was reached through a type's override.
-GLOBAL_VAR_INIT(derive_probe_found, 0)
-
-/// Whether `caller` (the proc that called a base derived proc) is an override of `name`: the base was
-/// reached through a type's own draw()/hidden_verbs() calling ..(), not directly by the engine.
-/proc/derive_called_by_override(callee/caller, name)
-	if(!caller)
-		return FALSE
-	var/path = "[caller.proc]"
-	return copytext(path, -(length(name) + 1)) == "/[name]"
-
 /// Side effects of a state change (a Rust device sync, a network rebuild), coalesced to once per
 /// frame. `bits` are the channels raised since the last refresh. Never call it by hand.
 /datum/proc/on_state_changed(bits)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(GLOB.derive_side_probing && !derive_called_by_override(callee.caller, "on_state_changed"))
-		// The derive probe notes the base was reached directly; it runs only while probing
-		GLOB.derive_side_base_reached = TRUE
 	return
-
-/// Set while a type's first refresh probes whether it overrides push_to_rust() / on_state_changed().
-GLOBAL_VAR_INIT(derive_side_probing, FALSE)
-/// Set by the base push_to_rust() / on_state_changed() when the engine reached it directly (no override in between).
-GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 
 // ---- the drain ----
 
@@ -671,8 +627,6 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		// D as a self-mark.
 		GLOB.refresh_running = outer
 		GLOB.derived_evaluating = 0
-		GLOB.derive_probing = FALSE
-		GLOB.derive_side_probing = FALSE
 		throw e
 	GLOB.refresh_running = outer
 	if(!outer && length(GLOB.look_effects_due))
@@ -684,62 +638,32 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 #endif
 
 /proc/refresh_one_inner(datum/D, bits, mask)
-	var/probing = FALSE
-	var/probe_found = 0
 	if(mask & DEP_VALUES)
 		var/datum/derived_table/T = derived_table_of(D)
 		if(T?.derived_vars)
 			mask = derived_recompute(D, T, mask)
 	if(isatom(D) && (mask & DEP_DRAW))
 		var/atom/A = D
-		// A type known to draw nothing and hide nothing skips both (review 2 H3): capabilities can
-		// draw and hide, and a type not seen yet is tried once and recorded.
+		// A type known to draw nothing and hide nothing skips both (review 2 H3): capabilities can draw and hide; what the type
+		// itself overrides is a generated fact (type_derive_flags()), pending only before the generated tables exist.
 		var/flags = type_derive_flags(A)
 		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.rx?.look_key)
 		// A mob may be granted verbs by its species and traits, which no type flag can know.
 		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.rx?.refresh_hidden_verbs || A.rx?.refresh_granted_verbs || ismob(A)
-		probing = flags & TYPE_DERIVES_PENDING
-		if(probing)
-			GLOB.derive_probing = TRUE
-			GLOB.derive_probe_found = 0
 		if(may_draw)
 			refresh_look(A)
 		if(may_hide)
 			refresh_verbs(A)
 			refresh_granted_verbs(A)
-		if(probing)
-			GLOB.derive_probing = FALSE
-			probe_found = GLOB.derive_probe_found
 		refresh_sweep_track(A)
-	if(mask & DEP_UI)
+	if(mask & DEP_UI_STATIC)
+		refresh_ui_static(D) // a full update carries the data too
+	else if(mask & DEP_UI)
 		refresh_ui(D)
-	// The side effects. While the type is probed, the base procs report whether the engine reached them directly: a type
-	// that overrides either (with or without ..()) is recorded TYPE_DERIVES_SIDE, as is one whose probe skipped them.
-	var/side = FALSE
 	if(mask & DEP_PUSH)
-		if(probing)
-			GLOB.derive_side_probing = TRUE
-			GLOB.derive_side_base_reached = FALSE
 		call_output(D, "push_to_rust", TYPE_PROC_REF(/datum, push_to_rust))
-		if(probing)
-			side = side || !GLOB.derive_side_base_reached
-	else
-		side = TRUE
 	if(mask & DEP_LEGACY)
-		if(probing)
-			GLOB.derive_side_probing = TRUE
-			GLOB.derive_side_base_reached = FALSE
 		D.on_state_changed(bits)
-		if(probing)
-			side = side || !GLOB.derive_side_base_reached
-	else
-		side = TRUE
-	if(probing)
-		GLOB.derive_side_probing = FALSE
-		GLOB.derive_side_base_reached = FALSE // the probe's scratch flag: read above, never left set between refreshes
-		// Type-pure: the type overrides draw()/hidden_verbs()/granted_verbs()/the side effects or it doesn't, whatever
-		// this instance's state drew or hid (review: never record a negative from one result).
-		type_derive_record(D, probe_found & TYPE_DERIVES_LOOK, probe_found & TYPE_DERIVES_VERBS, side)
 
 /// Queues a push of D's open tgui windows: at most one per window per tick, delivered in the kernel's phase R
 /// (code/library/ui/tgui/ui_push.dm; tgui_data() runs inside the push, as an output).
@@ -751,6 +675,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	if(!LAZYLEN(D.open_tguis))
 		return
 	D.presentation_refresh_windows()
+
+/// Resends D's open windows their static data (ui_static_data()) with their data: something ui_static_data() reads changed.
+/proc/refresh_ui_static(datum/D)
+	if(!LAZYLEN(D.open_tguis))
+		return
+	D.presentation_refresh_static()
+
 
 /// Builds A's look and applies it when its key changed. Returns the key.
 /proc/refresh_look(atom/A, apply = TRUE)
@@ -992,6 +923,10 @@ GLOBAL_VAR_INIT(refresh_drift_expected, FALSE)
 	return 0
 
 /datum/proc/presentation_refresh_windows()
+	return 0
+
+/// Resends the open windows' static data with their data (library: code/library/present/ui_transport.dm).
+/datum/proc/presentation_refresh_static()
 	return 0
 
 

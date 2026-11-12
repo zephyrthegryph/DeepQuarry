@@ -42,7 +42,7 @@ CAPABILITIES(/datum/board_game/four_row)
 	op("play_again_swapped", ui_act("play_again_swapped"), then(PROC_REF(ui_act_play_again_swapped)))
 	op("game_action", ui_act("game_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_game_action)))
 
-/datum/board_game/four_row/tgui_static_data(mob/user)
+/datum/board_game/four_row/ui_static_data(datum/act/eval/A)
 	return list(
 		"colors" = possible_colors
 	)

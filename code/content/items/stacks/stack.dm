@@ -107,7 +107,7 @@ CAPABILITIES(/obj/item/stack)
 
 	return data
 
-/obj/item/stack/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/stack/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	data["recipes"] = recursively_build_recipes(recipes)

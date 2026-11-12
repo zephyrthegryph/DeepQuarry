@@ -14,7 +14,7 @@ use crate::util::{py_lstrip, py_rstrip, py_strip};
 use crate::{pat, pat_match};
 
 const REACTIVE_ANY: &[&str] = &["should_run", "hidden_verbs", "tgui_data"];
-const REACTIVE_CAP: &[&str] = &["draw", "gate", "ui_data", "examine", "hidden_verbs"];
+const REACTIVE_CAP: &[&str] = &["draw", "gate", "ui_data", "ui_static_data", "examine", "hidden_verbs"];
 const CONTEXT_ROOTS: &[&str] = &["src", "user", "held", "look", "entry", "data", "ui", "state", "world", "global", "usr", "GLOB", "config", "callee"];
 /// Relation vars whose target marks its owner changed on every write (review 2 M8).
 const MARKING_RELATIONS: &[&str] = &["reagents"];

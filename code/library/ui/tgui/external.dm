@@ -44,23 +44,6 @@
 /**
  * public
  *
- * Static Data to be sent to the UI.
- *
- * Static data differs from normal data in that it's large data that should be
- * sent infrequently. This is implemented optionally for heavy uis that would
- * be sending a lot of redundant data frequently. Gets squished into one
- * object on the frontend side, but the static part is cached.
- *
- * required user mob The mob interacting with the UI.
- *
- * return list Statuic Data to be sent to the UI.
- */
-/datum/proc/tgui_static_data(mob/user)
-	return list()
-
-/**
- * public
- *
  * Forces an update on static data. Should be done manually whenever something
  * happens to change static data.
  *

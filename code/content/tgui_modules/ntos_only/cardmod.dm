@@ -6,7 +6,7 @@
 	var/mod_mode = 1
 	var/is_centcom = 0
 
-/datum/tgui_module/cardmod/tgui_static_data(mob/user)
+/datum/tgui_module/cardmod/ui_static_data(datum/act/eval/A)
 	var/list/data =  ..()
 	if(GLOB.data_core)
 		GLOB.data_core.get_manifest_list()

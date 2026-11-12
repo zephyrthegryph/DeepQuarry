@@ -53,7 +53,7 @@ CAPABILITIES(/datum/board_game/checkers)
 
 GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 
-/datum/board_game/checkers/tgui_static_data(mob/user)
+/datum/board_game/checkers/ui_static_data(datum/act/eval/A)
 	return GLOB.checkers_static_data
 
 /// /datum/board_game/checkers's window data.

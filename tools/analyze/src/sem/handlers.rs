@@ -50,6 +50,10 @@ pub struct Analysis {
     pub cycles: Vec<Vec<String>>,
     /// `READS_AS` accessors: (type, proc, key, reads that are neither tracked nor constant).
     pub accessor_gaps: Vec<AccessorGap>,
+    /// Handlers of a plain-argument entry (`hooks::ARITY_FORMS`) that need more parameters than the engine passes (a handler may leave trailing ones
+    /// off: `x(target)` serving one target needs no parameter):
+    /// (file, line of the declaration, message). DM drops extra arguments and nulls missing ones without a word.
+    pub arity: Vec<(String, u32, String)>,
 }
 
 pub struct AccessorGap {
@@ -64,7 +68,7 @@ pub struct AccessorGap {
 /// The analysis of every declared handler, or `None` when the tree declares none.
 pub fn analyzed(tree: &Tree) -> Option<Arc<Analysis>> {
     let a = tree.memo("sem/handlers", || compute(tree));
-    if a.handlers.is_empty() && a.accessor_gaps.is_empty() {
+    if a.handlers.is_empty() && a.accessor_gaps.is_empty() && a.arity.is_empty() {
         None
     } else {
         Some(a)
@@ -76,11 +80,30 @@ fn compute(tree: &Tree) -> Analysis {
     let decls = Decls::get(tree);
     let refs: Vec<HandlerRef> = hooks::discover(&decls);
     let has_reads_as = decls.markers_named("READS_AS").next().is_some();
-    let mut an = Analysis { handlers: Vec::new(), graph: None, cycles: Vec::new(), accessor_gaps: Vec::new() };
-    if refs.is_empty() && !has_reads_as {
+    let arity_refs = hooks::discover_arity(&decls);
+    let mut an = Analysis { handlers: Vec::new(), graph: None, cycles: Vec::new(), accessor_gaps: Vec::new(), arity: Vec::new() };
+    if refs.is_empty() && !has_reads_as && arity_refs.is_empty() {
         return an;
     }
     let Some(sem) = super::sem_for(tree) else { return an };
+    let mut arity_seen = std::collections::HashSet::new();
+    for r in &arity_refs {
+        if !arity_seen.insert((r.owner.clone(), r.proc.clone(), r.form, r.rel.clone(), r.line)) {
+            continue;
+        }
+        let Some(p) = sem.proc_ref(&r.owner, &r.proc).filter(|p| !p.is_builtin()) else {
+            if sem.ty(&r.owner).is_some() {
+                an.arity.push((r.rel.clone(), r.line, format!("{}() names {}::{}, which does not exist", r.form, r.owner, r.proc)));
+            }
+            continue;
+        };
+        let b = sem.proc_body(p);
+        let total = b.params.len();
+        let required = b.params.iter().rposition(|p| p.default.is_none()).map(|i| i + 1).unwrap_or(0);
+        if required > r.passes {
+            an.arity.push((r.rel.clone(), r.line, format!("{}() handler {}::{} needs {} parameter(s) ({} declared) but the engine calls {}: the rest arrive null", r.form, r.owner, r.proc, required, total, r.call)));
+        }
+    }
     let ann = Annotations::shared(tree, &sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
     let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree);

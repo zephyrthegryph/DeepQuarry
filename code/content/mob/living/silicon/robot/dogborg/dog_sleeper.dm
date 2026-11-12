@@ -296,13 +296,13 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /obj/item/dogborg/sleeper/ui_title(mob/user)
 	return "[name] Console"
 
-/obj/item/dogborg/sleeper/tgui_static_data(mob/user)
+/obj/item/dogborg/sleeper/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
-
-	if(!isrobot(user))
+	// The sleeper is a robot's module: its owner (its loc) sets the theme, whoever views it.
+	var/mob/living/silicon/robot/robot_user = loc
+	if(!istype(robot_user))
 		return data
 
-	var/mob/living/silicon/robot/robot_user = user
 	var/list/robot_chems = list()
 	for(var/re in TYPE_TABLE_GET(src, sleeper_injection_chems))
 		var/datum/reagent/possible_reagent = SSchemistry.ready().chemical_reagents[re]

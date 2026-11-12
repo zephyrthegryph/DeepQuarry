@@ -37,7 +37,7 @@
 	if(length(X.makes))
 		var/list/made = X.makes[1]
 		X.result = made[2]
-		X.result_amount = made[3]
+		X.set_result_amount(made[3])
 
 /// A copy of a list of requirement groups, each group a copy.
 /proc/crafting_copy_reqs(list/reqs)
@@ -58,7 +58,7 @@
 	copy.name = name
 	copy.makes = makes
 	copy.result = result
-	copy.result_amount = result_amount
+	copy.set_result_amount(result_amount)
 	copy.build_time = build_time
 	copy.category = category
 	copy.subcategory = subcategory

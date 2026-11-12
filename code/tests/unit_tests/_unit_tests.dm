@@ -1355,6 +1355,7 @@
 #include "round2_song_append_effect.dm"
 #include "round2_transcore_body_record_retirement.dm"
 #include "round2_mob_spawner_settings_effect.dm"
+#include "dq_mob_spawner_coords.dm"
 #include "round2_owned_soul_link_retirement.dm"
 #include "round2_hotspot_replacement_retirement.dm"
 #include "round2_sun_visual_lazy_lists.dm"

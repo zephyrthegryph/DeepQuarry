@@ -357,7 +357,23 @@ fn ts_type(expr: &str) -> String {
             (Some(_), Some(v)) => format!("Record<string, {}>", ts_type(v)),
             _ => "Record<string, unknown>".into(),
         },
-        "row" => "Record<string, unknown>".into(),
+        // row(name = schema, ...): an object with those fields; row() with no fields is any object.
+        "row" => {
+            let fields: Vec<String> = args
+                .iter()
+                .filter_map(|a| a.split_once('=').filter(|(n, _)| is_ident(n.trim())).map(|(n, v)| format!("{}: {}", n.trim(), ts_type(v.trim()))))
+                .collect();
+            if fields.is_empty() {
+                "Record<string, unknown>".into()
+            } else {
+                format!("{{ {} }}", fields.join("; "))
+            }
+        }
+        // nullable(schema): the field may be null (an optional block of the window's data).
+        "nullable" => match args.first() {
+            Some(inner) => format!("{} | null", paren_union(&ts_type(inner))),
+            None => "unknown".into(),
+        },
         _ => "unknown".into(),
     }
 }
@@ -394,6 +410,9 @@ mod tests {
         assert_eq!(ts_type("enum(list(\"off\", \"on\"))"), "'off' | 'on'");
         assert_eq!(ts_type("list_of(int(0, 3))"), "number[]");
         assert_eq!(ts_type("schema_text(8)"), "string");
+        assert_eq!(ts_type("list_of(row(name = schema_text(), n = int()))"), "{ name: string; n: number }[]");
+        assert_eq!(ts_type("row()"), "Record<string, unknown>");
+        assert_eq!(ts_type("nullable(row(name = schema_text()))"), "{ name: string } | null");
     }
 
     #[test]

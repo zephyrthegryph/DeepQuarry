@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/communicator)
 // Parameters: None
 // Description: This sets up all of the variables above to handle in-UI map windows.
 /obj/item/communicator/proc/setup_tgui_camera()
-	map_name = "communicator_[REF(src)]_map"
+	set_map_name("communicator_[REF(src)]_map")
 
 	// Initialize map objects
 	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
@@ -366,10 +366,10 @@ CAPABILITIES(/obj/item/communicator)
 
 	return data
 
-// Proc: tgui_static_data()
+// Proc: ui_static_data()
 // Parameters: User, UI, State
 // Description: Just like tgui_data, except it only gets called once when the user opens the UI, not every tick.
-/obj/item/communicator/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/communicator/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 	// Update manifest'
 	if(GLOB.data_core)

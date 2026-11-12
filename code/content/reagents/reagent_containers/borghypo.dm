@@ -234,7 +234,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 /obj/item/reagent_containers/borghypo/ui_title(mob/user)
 	return "Integrated [is_dispensing_drinks ? "Drink Dispenser" : "Chemical Hypo"]"
 
-/obj/item/reagent_containers/borghypo/tgui_static_data(mob/user)
+/obj/item/reagent_containers/borghypo/ui_static_data(datum/act/eval/A)
 	var/list/static_data = list()
 	static_data["isDispensingDrinks"] = is_dispensing_drinks
 	static_data["minTransferAmount"] = min_transfer_amount

@@ -14,7 +14,7 @@
 	grid_y_size = GRID_SIZE
 	win_count = GRID_SIZE
 
-/datum/board_game/four_row/tic_tac_toe/tgui_static_data(mob/user)
+/datum/board_game/four_row/tic_tac_toe/ui_static_data(datum/act/eval/A)
 	return list(
 		"colors" = possible_colors - "blue"
 	)

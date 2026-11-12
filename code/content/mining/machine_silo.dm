@@ -102,8 +102,9 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)
 	)
 
-/obj/machinery/ore_silo/tgui_static_data(mob/user)
-	return materials.tgui_static_data(user)
+/obj/machinery/ore_silo/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	return present_tgui_static_data(materials, user)
 
 /// /obj/machinery/ore_silo's window data.
 /obj/machinery/ore_silo/ui_data(datum/act/eval/A)

@@ -114,7 +114,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 	modify?.update_name()
 	return OP_OK
 
-/obj/machinery/computer/card/tgui_static_data(mob/user)
+/obj/machinery/computer/card/ui_static_data(datum/act/eval/A)
 	var/list/data =  ..()
 	if(GLOB.data_core)
 		GLOB.data_core.get_manifest_list()

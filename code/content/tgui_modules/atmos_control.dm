@@ -62,7 +62,8 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 	rel_set(src, nameof(ui_ref), ui)
 	ui.set_autoupdate(TRUE)
 
-/datum/tgui_module/atmos_control/tgui_static_data(mob/user)
+/datum/tgui_module/atmos_control/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	. = ..()
 
 	var/z = get_z(user)
