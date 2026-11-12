@@ -606,6 +606,11 @@ PROC_SUMMARY(/proc/own_list_emptied) // vars[] / call() dispatcher: the walk can
 			OWN_REPORT("[D.type].[var_name] (proto) re-set to a private copy during teardown; deleting it")
 			proto_teardown(D, var_name)
 	for(var/var_name in T.ref_vars)
+		// A null view has nothing to unlink: rel_clear() on it is a no-op for every kind (owned and view clears return on null, a weak one
+		// returns on null, a LIST_STATE one needs a list, and a grant relation of a deleted holder is not re-made). Most of a type's ref vars
+		// are null at scrub, so this skips the kind and list-state lookups that dominated the 35 k calls of a supermatter explosion.
+		if(isnull(D.vars[var_name]))
+			continue
 		rel_clear(D, var_name)
 
 /// Extra runtime ownership can preserve the declared field cleanup order.
