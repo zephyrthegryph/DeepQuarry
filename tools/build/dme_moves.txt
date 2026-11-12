@@ -5069,3 +5069,4 @@ code/library/ui/tgui/modules/shutoff_monitor.dm	code/content/tgui_modules/shutof
 code/library/ui/tgui/modules/supermatter_monitor.dm	code/content/tgui_modules/supermatter_monitor.dm
 code/library/ui/tgui/modules/teleporter.dm	code/content/tgui_modules/teleporter.dm
 code/library/ui/tgui/modules/trait_tutorial_tgui.dm	code/content/tgui_modules/trait_tutorial_tgui.dm
+code/library/helpers/global_lists.dm	code/content/core/global_lists.dm

@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 
+import type { CommunicationsConsoleActions } from '../generated/CommunicationsConsole';
 import type { Data } from './types';
 
 export const CommunicationsConsoleStatusDisplay = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicationsConsoleActions>();
 
   const { stat_display, authenticated } = data;
 

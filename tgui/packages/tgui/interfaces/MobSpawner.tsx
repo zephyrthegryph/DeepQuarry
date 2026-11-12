@@ -14,6 +14,7 @@ import {
   TextArea,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { MobSpawnerActions } from './generated/MobSpawner';
 
 type Data = {
   path: string;
@@ -45,7 +46,7 @@ type Data = {
 };
 
 export const MobSpawner = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MobSpawnerActions>();
 
   const [tabIndex, setTabIndex] = useState<number>(0);
   const [radius, setRadius] = useState<number>(0);
@@ -156,7 +157,7 @@ const GeneralMobSettings = (props: {
   onSizeMultiplier: React.Dispatch<React.SetStateAction<number>>;
   onAmount: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MobSpawnerActions>();
   return (
     <>
       <Section title="General">
@@ -372,7 +373,6 @@ const GeneralMobSettings = (props: {
             x: data.loc_lock ? data.loc_x : props.x,
             y: data.loc_lock ? data.loc_y : props.y,
             z: data.loc_lock ? data.loc_z : props.z,
-            radius: props.radius,
           })
         }
       >

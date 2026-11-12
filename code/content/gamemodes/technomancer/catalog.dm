@@ -46,11 +46,11 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	owns_many(nameof(spell_instances))
 	interface("TechnomancerCatalog", title = "Catalog")
 	without("ui_open")
-	op("tab_choice", ui_act("tab_choice", arg("tab", num())), then(PROC_REF(ui_act_tab_choice)))
-	op("spell_category", ui_act("spell_category", arg("category", schema_text(4096))), then(PROC_REF(ui_act_spell_category)))
-	op("spell_choice", ui_act("spell_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_spell_choice)))
-	op("item_choice", ui_act("item_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_item_choice)))
-	op("refund_functions", ui_act("refund_functions"), then(PROC_REF(ui_act_refund_functions)))
+	op("tab_choice", ui_act("tab_choice", arg("tab", num())), needs(req_capable(), req(PROC_REF(owner_refusal))), then(PROC_REF(ui_act_tab_choice)))
+	op("spell_category", ui_act("spell_category", arg("category", schema_text(4096))), needs(req_capable(), req(PROC_REF(owner_refusal))), then(PROC_REF(ui_act_spell_category)))
+	op("spell_choice", ui_act("spell_choice", arg("name", schema_text(4096))), needs(req_capable(), req(PROC_REF(owner_refusal))), then(PROC_REF(ui_act_spell_choice)))
+	op("item_choice", ui_act("item_choice", arg("name", schema_text(4096))), needs(req_capable(), req(PROC_REF(owner_refusal))), then(PROC_REF(ui_act_item_choice)))
+	op("refund_functions", ui_act("refund_functions"), needs(req_capable(), req(PROC_REF(owner_refusal))), then(PROC_REF(ui_act_refund_functions)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(can_refund_holds))), then(PROC_REF(interaction_item)))
 
@@ -168,19 +168,21 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	data["assistance"] = assistance
 	return data
 
+/// The catalog's window buttons answer only its owner, a human holding it or standing next to it on the floor.
+/obj/item/technomancer_catalog/proc/owner_refusal(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	if(!istype(H))
+		return /datum/msg/req_silent
+	if(H != owner)
+		return "\The [src] won't allow you to do that, as you don't own \the [src]!"
+	if(loc != H && !(in_range(src, H) && isturf(loc)))
+		return /datum/msg/req_silent
+	return null
+
+/// Every window button of the catalog runs this first: the owner is now using it.
 /obj/item/technomancer_catalog/proc/ui_gate(datum/act/op/A)
 	var/mob/user = A.actor
-	var/mob/living/carbon/human/H = user
-	H.set_machine(src)
-	if(H.stat || H.restrained())
-		return FALSE
-	if(!ishuman(H))
-		return FALSE
-	if(H != owner)
-		to_chat(H, "\The [src] won't allow you to do that, as you don't own \the [src]!")
-		return FALSE
-	if(loc != H && !(in_range(src, H) && istype(loc, /turf)))
-		return FALSE
+	user.set_machine(src)
 	return TRUE
 
 /obj/item/technomancer_catalog/proc/ui_act_tab_choice(datum/act/op/A, tab_arg)

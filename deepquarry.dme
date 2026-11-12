@@ -465,7 +465,7 @@
 #include "code\library\helpers\game.dm"
 #include "code\library\helpers\gender.dm"
 #include "code\library\helpers\generators.dm"
-#include "code\library\helpers\global_lists.dm"
+#include "code\content\core\global_lists.dm"
 #include "code\library\helpers\guid.dm"
 #include "code\library\helpers\icons_procs.dm"
 #include "code\library\helpers\json_savefile.dm"

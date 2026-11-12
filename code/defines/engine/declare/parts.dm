@@ -52,6 +52,9 @@
 #define OP_UI_ANY "*"
 #define OP_UI_MODAL_OPEN "modal_open"
 #define OP_UI_MODAL_PREFIX "modal:"
+/// The engine window actions that answer and clear a window's current modal (tgui_act(), code/library/ui/tgui/modal.dm).
+#define OP_UI_MODAL_ANSWER "modal_answer"
+#define OP_UI_MODAL_CLOSE "modal_close"
 #define OP_UI_WINDOW_ACTION "window_action"
 /// The datum whose window forwarded the button to the op's holder (interface(forwards =)): A.window_forwarder().
 #define OP_UI_FORWARDED_BY "window_forwarded_by"

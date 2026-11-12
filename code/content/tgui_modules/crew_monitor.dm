@@ -24,6 +24,7 @@ MSG_DEF_SELF(crew_monitor/out_of_range, "Unable to establish a connection: You'r
 
 CAPABILITIES(/datum/tgui_module/crew_monitor)
 	interface("CrewMonitor")
+	ui_shape(isAI = bool(), map_levels = list_of(num()), crewmembers = list_of(row()))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	extend(TAG_UI, needs(req(PROC_REF(ui_in_range), because = MSG(crew_monitor/out_of_range))))
 	op("track", ui_act("track", arg("track", schema_ref(/mob/living/carbon/human))), needs(req_actor_kind(/mob/living/silicon/ai, because = /datum/msg/req_silent)), then(PROC_REF(ui_act_track)))

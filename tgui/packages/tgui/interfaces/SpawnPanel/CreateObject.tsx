@@ -12,7 +12,8 @@ import {
 import { useFuzzySearch } from 'tgui-core/fuzzysearch';
 
 import { useBackend } from '../../backend';
-import { CreateObjectSettings } from './CreateObjectSettings';
+import type { SpawnPanelActions } from '../generated/SpawnPanel';
+import { CreateObjectSettings, type SpawnArgs } from './CreateObjectSettings';
 import { listNames, listTypes } from './constants';
 import type {
   AtomData,
@@ -28,17 +29,8 @@ type SpawnPanelData = {
   preferences?: SpawnPanelPreferences;
 };
 
-interface SpawnPreferences {
-  hide_icons: boolean;
-  hide_mappings: boolean;
-  sort_by: string;
-  search_text: string;
-  search_by: string;
-  selected_atom?: string;
-}
-
 export function CreateObject(props: CreateObjectProps) {
-  const { act, data } = useBackend<SpawnPanelData>();
+  const { act, data } = useBackend<SpawnPanelData, SpawnPanelActions>();
   const { setAdvancedSettings, iconSettings, objList = { atoms: {} } } = props;
 
   const [tooltipIcon, setTooltipIcon] = useState(false);
@@ -202,33 +194,9 @@ export function CreateObject(props: CreateObjectProps) {
     storage.set('spawnpanel-showPreview', value);
   };
 
-  const sendPreferences = (settings: Partial<SpawnPreferences>) => {
-    const parseOffset = (offsetStr: string): number[] => {
-      if (!offsetStr.trim()) return [0, 0, 0];
-
-      const parts = offsetStr.split(',').map((part) => {
-        return parseInt(part.trim(), 10);
-      });
-
-      while (parts.length < 3) {
-        parts.push(0);
-      }
-
-      return parts.slice(0, 3);
-    };
-
-    const prefsToSend = {
-      hide_icons: showIcons,
-      hide_mappings: hideMapping,
-      sort_by:
-        Object.keys(listTypes).find((key) => listTypes[key] === sortBy) ||
-        'Objects',
-      search_text: query,
-      search_by: searchBy ? 'type' : 'name',
-      ...settings,
-    };
-
-    act('create-atom-action', prefsToSend);
+  // Spawns the selected atom (the server's selected_atom, set by selected-atom-changed) with the settings' arguments, if any.
+  const createObject = (args: SpawnArgs = {}) => {
+    act('create-atom-action', args);
   };
 
   const handleObjectSelect = (obj: string) => {
@@ -257,7 +225,7 @@ export function CreateObject(props: CreateObjectProps) {
       <Stack.Item>
         <Section>
           <CreateObjectSettings
-            onCreateObject={sendPreferences}
+            onCreateObject={createObject}
             setAdvancedSettings={setAdvancedSettings}
             iconSettings={iconSettings}
           />
@@ -445,7 +413,7 @@ export function CreateObject(props: CreateObjectProps) {
                   }}
                   onDoubleClick={() => {
                     if (selectedObj) {
-                      sendPreferences({ selected_atom: selectedObj });
+                      createObject();
                     }
                   }}
                   onClick={() => handleObjectSelect(obj)}

@@ -8,33 +8,26 @@
 // code/controllers/subsystems/tgui.dm.
 
 /**
- * Modal actions: act_<action> procs (doc/rewrite/dx_conventions.md §5). Every host has them; a host's modal opens through its op
- * bound to "modal:<id>" (an asks() question shown inline), and the answer goes to the current modal's delegate.
+ * The two modal actions every window has (engine window actions, answered in tgui_act() beside the layout toggle; a modal opens through the
+ * host's op bound to "modal:<id>", an asks() question shown inline): `modal_answer` answers the current modal and `modal_close` clears it.
  * `id` is the modal's text id, `answer` the modal's answer text after the current modal's preprocess_answer().
  */
-/datum/proc/act_modal_open(mob/user, id, arguments)
+/proc/tgui_modal_window_answer(datum/host, mob/user, id, answer)
 	id = ui_text(id, 64)
 	if(isnull(id))
-		return refuse(user, null)
-	return FALSE // a modal opens through the host's op bound to "modal:<id>" (asks()); nothing else opens one
-
-/datum/proc/act_modal_answer(mob/user, id, answer, arguments)
-	id = ui_text(id, 64)
-	if(isnull(id))
-		return refuse(user, null)
-	answer = tgui_modal_preprocess_answer(src, ui_text(answer, TGUI_MODAL_INPUT_MAX_LENGTH))
+		log_world("UI: [user] answered a modal of [host.type]'s window with no id: refused")
+		return FALSE
+	answer = tgui_modal_preprocess_answer(host, ui_text(answer, TGUI_MODAL_INPUT_MAX_LENGTH))
 	// A current modal whose delegate handled the answer needs nothing more.
-	var/delegated = tgui_modal_answer(src, id, answer)
+	var/delegated = tgui_modal_answer(host, id, answer)
 	// A question of an op (asks(..., inline)) that refused the answer stays open for another try: answered, it is gone already.
-	if(istype(tgui_modal_current(src), /datum/tgui_modal/prompt))
+	if(istype(tgui_modal_current(host), /datum/tgui_modal/prompt))
 		return TRUE
-	tgui_modal_clear(src)
-	if(delegated)
-		return TRUE
-	return FALSE
+	tgui_modal_clear(host)
+	return delegated ? TRUE : FALSE
 
-/datum/proc/act_modal_close(mob/user, id)
-	tgui_modal_clear(src)
+/proc/tgui_modal_window_close(datum/host)
+	tgui_modal_clear(host)
 	return TRUE
 
 /**

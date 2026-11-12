@@ -201,6 +201,7 @@
 #include "dq_command_panel_tests.dm"
 #include "dq_pet_panel_tests.dm"
 #include "dq_shapeshift_panel_tests.dm"
+#include "dq_slime_consume_refusal.dm"
 #include "dq_atmos_tests.dm"
 #include "dq_air_boot_registration_tests.dm"
 #include "dq_bumped_notice_tests.dm"
