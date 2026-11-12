@@ -4,36 +4,22 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack } from 'tgui-core/components';
-import type { RecyclerVendorActions } from '../generated/RecyclerVendor';
+import type {
+  RecyclerVendorActions,
+  RecyclerVendorData,
+} from '../generated/RecyclerVendor';
 import { AdCarousel } from './AdCarousel';
 import { CategoryButton } from './CategorySelection';
 import { VendorLogo } from './RecyclerLogo';
 import { VendorItem } from './RecyclerVendorItem';
 
-type Data = {
-  items: {
-    category: string;
-    name: string;
-    desc: string;
-    cost: number;
-    ad: string;
-    icon: string;
-    index: number;
-  }[];
-  userBalance: number;
-  userName: string;
-};
-
 export const RecyclerVendor = (props) => {
   const [activeCategory, setActiveCategory] = useState('');
-  const { act, data } = useBackend<Data, RecyclerVendorActions>();
+  const { act, data } = useBackend<RecyclerVendorData, RecyclerVendorActions>();
 
-  const { items = [], userName, userBalance } = data;
+  const { items, userName, userBalance } = data;
 
-  const categories: Record<
-    string,
-    { name: string; desc: string; cost: number }[]
-  > = {};
+  const categories: Record<string, typeof items> = {};
 
   for (const item of items) {
     if (item.category in categories) {
@@ -93,29 +79,20 @@ export const RecyclerVendor = (props) => {
                     <Section fill scrollable>
                       {items
                         .filter((item) => item.category === activeCategory)
-                        .map(
-                          (item: {
-                            name: string;
-                            desc: string;
-                            cost: number;
-                            icon: string;
-                            ad: string;
-                            index: number;
-                          }) => (
-                            <VendorItem
-                              key={item.index}
-                              name={item.name}
-                              desc={item.desc}
-                              advert={item.ad}
-                              icon={item.icon}
-                              cost={item.cost}
-                              index={item.index}
-                              action={() =>
-                                act('purchase', { index: item.index })
-                              }
-                            />
-                          ),
-                        )}
+                        .map((item) => (
+                          <VendorItem
+                            key={item.index}
+                            name={item.name}
+                            desc={item.desc}
+                            advert={item.ad}
+                            icon={item.icon}
+                            cost={item.cost}
+                            index={item.index}
+                            action={() =>
+                              act('purchase', { index: item.index })
+                            }
+                          />
+                        ))}
                     </Section>
                   </Stack.Item>
                   <Stack.Item>

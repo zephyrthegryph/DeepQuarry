@@ -10,41 +10,29 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import type { RoboticsControlConsoleActions } from './generated/RoboticsControlConsole';
+import type {
+  RoboticsControlConsoleActions,
+  RoboticsControlConsoleData,
+} from './generated/RoboticsControlConsole';
 
-type Data = {
-  auth: BooleanLike;
-  can_hack: BooleanLike;
-  cyborgs: cyborg[];
-  safety: BooleanLike;
-  show_detonate_all: BooleanLike;
-};
-
-type cyborg = {
-  name: string;
-  ref: number;
-  locked_down: BooleanLike;
-  locstring: string;
-  status: number;
-  health: number;
-  charge: number | null;
-  cell_capacity: number | null;
-  module: string;
-  synchronization: BooleanLike;
-  is_hacked: BooleanLike;
-  emagged: BooleanLike;
-  hackable: BooleanLike;
-};
+type cyborg = RoboticsControlConsoleData['cyborgs'][number];
 
 export const RoboticsControlConsole = (props) => {
-  const { act, data } = useBackend<Data, RoboticsControlConsoleActions>();
-  const { can_hack, safety, show_detonate_all, cyborgs = [], auth } = data;
+  const { act, data } = useBackend<
+    RoboticsControlConsoleData,
+    RoboticsControlConsoleActions
+  >();
+  const { can_hack, safety, show_detonate_all, cyborgs, auth } = data;
   return (
     <Window width={500} height={460}>
       <Window.Content scrollable>
         {!!show_detonate_all && (
           <Section title="Emergency Self Destruct">
-            <Button icon={safety ? 'lock' : 'unlock'} selected={safety}>
+            <Button
+              icon={safety ? 'lock' : 'unlock'}
+              selected={safety}
+              onClick={() => act('arm')}
+            >
               {safety ? 'Disable Safety' : 'Enable Safety'}
             </Button>
             <Button
@@ -69,7 +57,10 @@ const Cyborgs = (props: {
   auth: BooleanLike;
 }) => {
   const { cyborgs, can_hack, auth } = props;
-  const { act } = useBackend();
+  const { act } = useBackend<
+    RoboticsControlConsoleData,
+    RoboticsControlConsoleActions
+  >();
   if (!cyborgs.length) {
     return (
       <NoticeBox>No cyborg units detected within access parameters.</NoticeBox>

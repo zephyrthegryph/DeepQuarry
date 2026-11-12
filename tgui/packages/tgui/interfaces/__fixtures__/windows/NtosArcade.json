@@ -1,0 +1,20 @@
+{
+	"PC_device_theme": "ntos",
+	"PC_batteryicon": "batt_100.gif",
+	"PC_batterypercent": "87 %",
+	"PC_showbatteryicon": 1,
+	"PC_apclinkicon": "charging.gif",
+	"PC_ntneticon": "sig_high.gif",
+	"PC_programheaders": [{ "icon": "hostile.gif" }],
+	"PC_stationtime": "14:32",
+	"PC_hasheader": 1,
+	"PC_showexitprogram": 1,
+	"Hitpoints": 32,
+	"PlayerHitpoints": 24,
+	"PlayerMP": 7,
+	"TicketCount": 2,
+	"GameActive": 1,
+	"PauseState": 0,
+	"Status": "You attack for 4 damage.",
+	"BossID": "boss3.gif"
+}

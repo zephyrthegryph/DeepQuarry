@@ -41,17 +41,23 @@
 
 CAPABILITIES(/datum/computer_file/program/ntnet_dos)
 	interface("NtosNetDos")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), error = schema_text(), target = bool(), speed = num(), overload = num(), capacity = num(), relays = list_of(row(id = int())), focus = nullable(int()))
 	op("PRG_target_relay", ui_act("PRG_target_relay", arg("targid", num())), then(PROC_REF(ui_act_prg_target_relay)))
 	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
 	op("PRG_execute", ui_act("PRG_execute"), then(PROC_REF(ui_act_prg_execute)))
 	ref_one(nameof(target))
 
 /datum/computer_file/program/ntnet_dos/ui_data(datum/act/eval/A)
-	if(!GLOB.ntnet_global)
-		return
-
 	var/list/data = get_header_data()
 	data["error"] = error
+	data["target"] = FALSE
+	data["speed"] = 0
+	data["overload"] = 0
+	data["capacity"] = 0
+	data["relays"] = list()
+	data["focus"] = null
+	if(!GLOB.ntnet_global)
+		return data
 
 	if(target() && executed)
 		data["target"] = TRUE
@@ -60,10 +66,10 @@ CAPABILITIES(/datum/computer_file/program/ntnet_dos)
 		data["overload"] = target().dos_overload
 		data["capacity"] = target().dos_capacity
 	else
-		data["target"] = FALSE
-		data["relays"] = list()
+		var/list/relays = list()
 		for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
-			data["relays"] += list(list("id" = R.uid))
+			relays += list(list("id" = R.uid))
+		data["relays"] = relays
 		data["focus"] = target() ? target().uid : null
 
 	return data

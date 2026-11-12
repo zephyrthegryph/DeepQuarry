@@ -4,26 +4,18 @@ import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Image, Section, Stack } from 'tgui-core/components';
-import type { RecyclerInterfaceActions } from './generated/RecyclerInterface';
-
-type Data = {
-  heldItemName: string | null;
-  heldItemValue: string | null;
-  itemIcon: string;
-  userName: string;
-  userBalance: number;
-};
+import type {
+  RecyclerInterfaceActions,
+  RecyclerInterfaceData,
+} from './generated/RecyclerInterface';
 
 export const RecyclerInterface = (props) => {
-  const { act, data } = useBackend<Data, RecyclerInterfaceActions>();
+  const { act, data } = useBackend<
+    RecyclerInterfaceData,
+    RecyclerInterfaceActions
+  >();
 
-  const {
-    heldItemName,
-    heldItemValue,
-    itemIcon = '',
-    userName,
-    userBalance,
-  } = data;
+  const { heldItemName, heldItemValue, itemIcon, userName, userBalance } = data;
 
   return (
     <Window theme="crtsoul" title="Recycler">
@@ -51,9 +43,7 @@ export const RecyclerInterface = (props) => {
             <Stack align="center" direction="Row">
               <Stack.Item>
                 <Box className="recycler-image-container" inline>
-                  {!!itemIcon && (
-                    <Image src={itemIcon.substring(1, itemIcon.length - 1)} />
-                  )}
+                  {!!itemIcon && <Image src={itemIcon} />}
                 </Box>
               </Stack.Item>
               <Stack.Item>

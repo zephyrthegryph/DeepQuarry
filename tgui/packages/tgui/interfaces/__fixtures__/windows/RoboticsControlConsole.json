@@ -1,0 +1,38 @@
+{
+	"safety": 1,
+	"auth": 1,
+	"can_hack": 1,
+	"cyborgs": [
+		{
+			"name": "Cyborg (Engineering) 4471",
+			"ref": 6001,
+			"locked_down": 0,
+			"locstring": "Engineering (112, 98)",
+			"status": 0,
+			"health": 92.5,
+			"charge": 78,
+			"cell_capacity": 15000,
+			"module": "Engineering",
+			"synchronization": "AI Core",
+			"is_hacked": 0,
+			"emagged": 0,
+			"hackable": 1
+		},
+		{
+			"name": "Cyborg (Janitor) 4472",
+			"ref": 6002,
+			"locked_down": 1,
+			"locstring": "Deck 1 Hallway (60, 71)",
+			"status": 1,
+			"health": 34,
+			"charge": null,
+			"cell_capacity": null,
+			"module": "No Module Detected",
+			"synchronization": null,
+			"is_hacked": 1,
+			"emagged": 1,
+			"hackable": 0
+		}
+	],
+	"show_detonate_all": 1
+}

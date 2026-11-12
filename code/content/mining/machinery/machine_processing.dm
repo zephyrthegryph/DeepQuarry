@@ -36,6 +36,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	// The console's window: an ore's setting, when the button names none, is asked in the op (asks()). A named setting is
 	// PROCESS_NONE .. PROCESS_ALLOY (0..3: the defines are file-local, the declaration compiles elsewhere).
 	interface("MiningOreProcessingConsole")
+	ui_shape(showAllOres = bool(), unclaimedPoints = num(), has_id = bool(), id = nullable(row(name = schema_text(), points = num())), ores = list_of(row(ore = schema_text(), name = schema_text(), amount = num(), processing = int(0, 3))), power = bool(), speed = bool())
 	without("ui_open")
 	op("toggleSmelting", ui_act("toggleSmelting", arg("ore", schema_text(4096)), arg("set", int(0, 3))),
 		asks(/datum/prompt/choice/ore_processing_setting, fields = list("question" = computed(PROC_REF(ore_setting_question)), "title" = "Process Setting", "choices" = list("Smelting", "Compressing", "Alloying", "Nothing")), step = "setting", when = PROC_REF(ore_setting_unnamed)),
@@ -94,6 +95,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 		)
 	else
 		data["has_id"] = FALSE
+		data["id"] = null
 
 	var/list/ores = list()
 	for(var/ore in machine().ores_processing)
@@ -105,8 +107,8 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 		ores.Add(list(list(
 			"ore" = ore,
 			"name" = O.display_name,
-			"amount" = machine().ores_stored[ore],
-			"processing" = LAZYACCESS(machine().ores_processing, ore) ? LAZYACCESS(machine().ores_processing, ore) : 0,
+			"amount" = machine().ores_stored[ore] || 0,
+			"processing" = LAZYACCESS(machine().ores_processing, ore) || 0,
 		)))
 	data["ores"] = ores
 	data["power"] = machine().active

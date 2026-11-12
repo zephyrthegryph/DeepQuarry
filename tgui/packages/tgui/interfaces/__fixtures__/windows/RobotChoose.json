@@ -1,0 +1,17 @@
+{
+	"possible_modules": ["Standard", "Engineering", "Medical", "Security"],
+	"whitelisted_modules": ["Security"],
+	"mind_name": "Unit Seven",
+	"theme": "ntos",
+	"currentName": "Unit Seven",
+	"isDefaultName": 0,
+	"selected_module": "Standard",
+	"possible_sprites": [
+		{ "sprite": "Default", "belly": 0, "type": "def" },
+		{ "sprite": "Hound", "belly": 1, "type": "wide" },
+		{ "sprite": "Tall Hound", "belly": 1, "type": "tall" }
+	],
+	"sprite_datum": "Default",
+	"sprite_datum_class": "robot_default",
+	"sprite_datum_size": "size32x32"
+}

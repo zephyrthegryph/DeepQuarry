@@ -2,29 +2,15 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Tabs } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PipeDispenserActions } from './generated/PipeDispenser';
+import type {
+  PipeDispenserActions,
+  PipeDispenserData,
+} from './generated/PipeDispenser';
 
 import { ICON_BY_CATEGORY_NAME } from './RapidPipeDispenser/constants';
 
-type Data = {
-  disposals: BooleanLike;
-  p_layer: number;
-  pipe_layers: {
-    Regular: number;
-    Supply: number;
-    Scrubber: number;
-    Fuel: number;
-    Aux: number;
-  }[];
-  categories: {
-    cat_name: string;
-    recipes: { pipe_name: string; ref: number; bent: BooleanLike }[];
-  }[];
-};
-
 export const PipeDispenser = (props) => {
-  const { act, data } = useBackend<Data, PipeDispenserActions>();
+  const { act, data } = useBackend<PipeDispenserData, PipeDispenserActions>();
   const { disposals, p_layer, pipe_layers = {}, categories = [] } = data;
 
   const [categoryName, setCategoryName] = useState('categoryName');

@@ -93,6 +93,7 @@
 CAPABILITIES(/mob/living/bot/secbot)
 	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))
 	interface("Secbot")
+	ui_shape(on = bool(), open = bool(), locked = bool(), idcheck = nullable(bool()), check_records = nullable(bool()), check_arrest = nullable(bool()), arrest_type = nullable(bool()), declare_arrests = nullable(bool()), bot_patrolling = nullable(bool()), patrol = nullable(bool()))
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("idcheck", ui_act("idcheck"), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_idcheck)))
 	op("ignorerec", ui_act("ignorerec"), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_ignorerec)))
@@ -114,7 +115,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 	data["arrest_type"] = null
 	data["declare_arrests"] = null
 	data["bot_patrolling"] = null
-	data["will_patrol"] = null
+	data["patrol"] = null
 
 	if(settings_unlocked(A))
 		data["idcheck"] = idcheck

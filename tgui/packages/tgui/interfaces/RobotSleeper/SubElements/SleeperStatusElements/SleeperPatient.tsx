@@ -1,12 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Stack } from 'tgui-core/components';
 import { DIAGNOSIS_BAND } from '../../../common/Diagnosis';
-import type { RobotSleeperActions } from '../../../generated/RobotSleeper';
+import type {
+  RobotSleeperActions,
+  RobotSleeperData,
+} from '../../../generated/RobotSleeper';
 import { STAT_TO_COLOR } from '../../constants';
-import type { Data } from '../../types';
 
 export const SleeperPatient = (props: { name: string }) => {
-  const { data } = useBackend<Data, RobotSleeperActions>();
+  const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();
   const { our_patient } = data;
   const { name } = props;
 

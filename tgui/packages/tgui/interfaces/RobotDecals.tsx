@@ -3,30 +3,26 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-import type { RobotDecalsActions } from './generated/RobotDecals';
-
-type Data = {
-  theme: string;
-  all_decals?: string[] | null;
-  all_animations?: string[] | null;
-  active_decals: string[];
-};
+import type {
+  RobotDecalsActions,
+  RobotDecalsData,
+} from './generated/RobotDecals';
 
 export const RobotDecals = () => {
-  const { act, data } = useBackend<Data, RobotDecalsActions>();
+  const { act, data } = useBackend<RobotDecalsData, RobotDecalsActions>();
   const { theme, all_decals, all_animations, active_decals } = data;
 
   const [decalSearchText, setDecalSearchText] = useState('');
   const [animationSearchText, setAnimationSearchText] = useState('');
 
   const decalSearcher = createSearch<string>(decalSearchText, (decal) => decal);
-  const filteredDecals = all_decals?.filter(decalSearcher) ?? [];
+  const filteredDecals = all_decals.filter(decalSearcher);
 
   const animationSearcher = createSearch<string>(
     animationSearchText,
     (anim) => anim,
   );
-  const filteredAnimations = all_animations?.filter(animationSearcher) ?? [];
+  const filteredAnimations = all_animations.filter(animationSearcher);
 
   return (
     <Window width={350} height={400} theme={theme}>

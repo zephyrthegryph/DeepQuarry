@@ -1,0 +1,30 @@
+{
+	"PC_device_theme": "ntos",
+	"PC_batteryicon": "batt_100.gif",
+	"PC_batterypercent": "87 %",
+	"PC_showbatteryicon": 1,
+	"PC_apclinkicon": "charging.gif",
+	"PC_ntneticon": "sig_high.gif",
+	"PC_programheaders": [{ "icon": "hostile.gif" }],
+	"PC_stationtime": "14:32",
+	"PC_hasheader": 1,
+	"PC_showexitprogram": 1,
+	"error": "",
+	"downloading": 0,
+	"download_size": 8,
+	"download_progress": 3,
+	"download_netspeed": 2,
+	"download_name": "memo.txt",
+	"uploading": 0,
+	"upload_clients": 2,
+	"upload_haspassword": 1,
+	"upload_filename": "notes.txt",
+	"upload_filelist": [
+		{ "uid": 1042, "filename": "notes.txt", "size": 2 },
+		{ "uid": 1044, "filename": "report.txt", "size": 4 }
+	],
+	"servers": [
+		{ "uid": 90112, "filename": "memo.txt", "size": 3, "haspassword": 1 },
+		{ "uid": 90113, "filename": "plans.dat", "size": 9, "haspassword": 0 }
+	]
+}

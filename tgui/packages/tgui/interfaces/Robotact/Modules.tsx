@@ -6,11 +6,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { RobotactActions } from '../generated/Robotact';
-import type { Data, Module as ModuleData } from './types';
+import type { RobotactActions, RobotactData } from '../generated/Robotact';
+import type { Module as ModuleData } from './types';
 
 export const Modules = (props) => {
-  const { act, data } = useBackend<Data, RobotactActions>();
+  const { act, data } = useBackend<RobotactData, RobotactActions>();
 
   return (
     <Stack fill vertical>
@@ -45,7 +45,7 @@ export const Modules = (props) => {
 };
 
 const Module = (props: { mod: ModuleData; activated: number }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<RobotactData, RobotactActions>();
   const { mod, activated } = props;
   return (
     <ImageButton

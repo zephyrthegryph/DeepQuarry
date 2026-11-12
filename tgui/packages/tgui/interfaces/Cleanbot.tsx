@@ -1,27 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { CleanbotActions } from './generated/Cleanbot';
-
-type Data = {
-  on: BooleanLike;
-  open: BooleanLike;
-  locked: BooleanLike;
-  patrol: BooleanLike;
-  vocal: BooleanLike;
-  wet_floors: BooleanLike;
-  spray_blood: BooleanLike;
-  version: string;
-  blood: BooleanLike;
-  rgbpanel: BooleanLike;
-  red_switch: BooleanLike;
-  green_switch: BooleanLike;
-  blue_switch: BooleanLike;
-};
+import type { CleanbotActions, CleanbotData } from './generated/Cleanbot';
 
 export const Cleanbot = (props) => {
-  const { act, data } = useBackend<Data, CleanbotActions>();
+  const { act, data } = useBackend<CleanbotData, CleanbotActions>();
 
   const {
     on,

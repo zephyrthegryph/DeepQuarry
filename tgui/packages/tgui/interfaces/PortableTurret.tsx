@@ -1,27 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, NoticeBox, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PortableTurretActions } from './generated/PortableTurret';
-
-type Data = {
-  locked: BooleanLike;
-  on: BooleanLike;
-  lethal: BooleanLike;
-  lethal_is_configurable: BooleanLike;
-  targetting_is_configurable: BooleanLike;
-  check_weapons: BooleanLike;
-  neutralize_noaccess: BooleanLike;
-  neutralize_norecord: BooleanLike;
-  neutralize_criminals: BooleanLike;
-  neutralize_all: BooleanLike;
-  neutralize_nonsynth: BooleanLike;
-  neutralize_unidentified: BooleanLike;
-  neutralize_down: BooleanLike;
-};
+import type {
+  PortableTurretActions,
+  PortableTurretData,
+} from './generated/PortableTurret';
 
 export const PortableTurret = (props) => {
-  const { act, data } = useBackend<Data, PortableTurretActions>();
+  const { act, data } = useBackend<PortableTurretData, PortableTurretActions>();
   const {
     locked,
     on,

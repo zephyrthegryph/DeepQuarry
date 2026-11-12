@@ -40,7 +40,7 @@ export type HeartRhythm =
 export type DiagnosisVitals = {
   heartRate?: number | null;
   heartRhythm?: HeartRhythm | null;
-  bloodPressure?: [number, number] | null;
+  bloodPressure?: number[] | null;
   oxygenation?: number | null;
   respiratoryRate?: number | null;
   temperature?: number | null;

@@ -9,27 +9,19 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
 
 import { MiningUser } from './common/Mining';
-import type { MiningOreProcessingConsoleActions } from './generated/MiningOreProcessingConsole';
-
-type Data = {
-  unclaimedPoints: number;
-  ores: {
-    ore: string;
-    name: string;
-    amount: number;
-    processing: number;
-  }[];
-  showAllOres: BooleanLike;
-  power: BooleanLike;
-  speed: BooleanLike;
-};
+import type {
+  MiningOreProcessingConsoleActions,
+  MiningOreProcessingConsoleData,
+} from './generated/MiningOreProcessingConsole';
 
 export const MiningOreProcessingConsole = (props) => {
-  const { act, data } = useBackend<Data, MiningOreProcessingConsoleActions>();
+  const { act, data } = useBackend<
+    MiningOreProcessingConsoleData,
+    MiningOreProcessingConsoleActions
+  >();
 
   const { unclaimedPoints, power, speed } = data;
 
@@ -143,8 +135,11 @@ const oreSorter = (a, b) => {
 };
 
 const MOPCOres = (props) => {
-  const { act, data } = useBackend<Data, MiningOreProcessingConsoleActions>();
-  const { ores = [], showAllOres } = data;
+  const { act, data } = useBackend<
+    MiningOreProcessingConsoleData,
+    MiningOreProcessingConsoleActions
+  >();
+  const { ores, showAllOres } = data;
   return (
     <Section
       scrollable

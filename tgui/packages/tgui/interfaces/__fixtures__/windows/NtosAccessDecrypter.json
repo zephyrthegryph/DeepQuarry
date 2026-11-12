@@ -1,0 +1,32 @@
+{
+	"PC_device_theme": "ntos",
+	"PC_batteryicon": "batt_100.gif",
+	"PC_batterypercent": "87 %",
+	"PC_showbatteryicon": 1,
+	"PC_apclinkicon": "charging.gif",
+	"PC_ntneticon": "sig_high.gif",
+	"PC_programheaders": [{ "icon": "hostile.gif" }],
+	"PC_stationtime": "14:32",
+	"PC_hasheader": 1,
+	"PC_showexitprogram": 1,
+	"message": "Successfully decrypted and saved operational key codes.",
+	"running": 1,
+	"rate": 4,
+	"factor": 0.4,
+	"regions": [
+		{
+			"name": "Security",
+			"accesses": [
+				{ "desc": "Armory", "ref": 3, "allowed": 1 },
+				{ "desc": "Brig&nbsp;Cells", "ref": 2, "allowed": 0 }
+			]
+		},
+		{
+			"name": "Engineering",
+			"accesses": [
+				{ "desc": "Engine&nbsp;Room", "ref": 11, "allowed": 0 },
+				{ "desc": "Atmospherics", "ref": 24, "allowed": 1 }
+			]
+		}
+	]
+}

@@ -1,0 +1,12 @@
+{
+	"pai_chassises": [
+		{ "sprite": "Cat", "belly": 1, "type": "def" },
+		{ "sprite": "Rat", "belly": 0, "type": "def" },
+		{ "sprite": "Borgi", "belly": 3, "type": "big" }
+	],
+	"pai_color": "#00ff00",
+	"pai_chassis": "Cat",
+	"selected_chassis": "Cat",
+	"sprite_datum_class": "datumpaispritecat",
+	"sprite_datum_size": "pai_icons120x120"
+}

@@ -215,6 +215,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 	section(controls, "The remote control window (an AI's, a cyborg's, an admin ghost's) and a silicon's gestures over its link")
 	interface("AiAirlock")
+	ui_shape(power = row(main = int(), main_timeleft = num(), backup = int(), backup_timeleft = num()), id_scanner = bool(), lights = bool(), opened = bool(), wires = row(main_1 = bool(), main_2 = bool(), backup_1 = bool(), backup_2 = bool(), shock = bool(), id_scanner = bool(), bolts = bool(), lights = bool(), safe = bool(), timing = bool()), bolted = bool(), electrified = bool(), electrified_left = num(), welded = bool(), emergency = bool(), safe = bool(), speed = bool())
 	extend("ui_open", inputs(remote())) // silicons only: remote() replaces the hand binding
 	without("silicon_hand") // a silicon's plain click opens the window (ui_open), never the hand's Use
 	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
@@ -492,7 +493,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	power["backup_timeleft"] = backup_carries(A) ? 0 : ((backup_power_out && !backup_cables_cut()) ? round(backup_left / 10, 1) : -1)
 	data["power"] = power
 	data["id_scanner"] = !aiDisabledIdScanner
-	data["lights"] = lights
+	data["lights"] = !!lights
 	data["opened"] = !density
 	var/list/wire = list()
 	wire["main_1"] = !wire_is_cut(src, WIRE_MAIN_POWER1)
@@ -506,8 +507,8 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	wire["safe"] = !wire_is_cut(src, WIRE_SAFETY)
 	wire["timing"] = !wire_is_cut(src, WIRE_SPEED)
 	data["wires"] = wire
-	data["bolted"] = bolted
-	data["electrified"] = electrified
+	data["bolted"] = !!bolted
+	data["electrified"] = !!electrified
 	var/shock_left = 0
 	for(var/source in held_by(src, STAT_ELECTRIFIED))
 		var/left = hold_left(src, STAT_ELECTRIFIED, source)
@@ -516,10 +517,10 @@ CAPABILITIES(/obj/machinery/door/airlock)
 			break
 		shock_left = max(shock_left, left)
 	data["electrified_left"] = shock_left > 0 ? round(shock_left / 10, 1) : (electrified ? -1 : 0)
-	data["welded"] = weld_shut_welded(src)
-	data["emergency"] = door_emergency_engaged(src)
+	data["welded"] = !!weld_shut_welded(src)
+	data["emergency"] = !!door_emergency_engaged(src)
 	data["safe"] = !!safe
-	data["speed"] = normalspeed
+	data["speed"] = !!normalspeed
 	return data
 
 // ---- the touch ----

@@ -238,6 +238,7 @@ MSG_DEF_SELF(medbot/has_beaker, "there is already a beaker inside")
 // The hand ops above open the controls (or tip the bot), so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/medbot)
 	interface("Medbot", input = menu())
+	ui_shape(on = bool(), open = bool(), locked = bool(), beaker = bool(), beaker_total = num(), beaker_max = num(), min_urgency = nullable(num()), urgency_bands = list_of(schema_text()), injection_amount_min = num(), injection_amount = nullable(num()), injection_amount_max = num(), use_beaker = nullable(bool()), declare_treatment = nullable(bool()), vocal = nullable(bool()))
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("adj_urgency", ui_act("adj_urgency", arg("val", num())), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_adj_urgency)))
 	op("adj_inject", ui_act("adj_inject", arg("val", num(MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_adj_inject)))
@@ -260,11 +261,9 @@ CAPABILITIES(/mob/living/bot/medbot)
 	data["on"] = on
 	data["open"] = open
 	data["locked"] = locked
-	data["beaker"] = FALSE
-	if(reagent_glass)
-		data["beaker"] = TRUE
-		data["beaker_total"] = reagent_glass.reagents.total_volume
-		data["beaker_max"] = reagent_glass.reagents.maximum_volume
+	data["beaker"] = !!reagent_glass
+	data["beaker_total"] = reagent_glass ? reagent_glass.reagents.total_volume : 0
+	data["beaker_max"] = reagent_glass ? reagent_glass.reagents.maximum_volume : 0
 	data["min_urgency"] = null
 	data["urgency_bands"] = list(DIAG_BAND_MINOR, DIAG_BAND_MODERATE, DIAG_BAND_SEVERE, DIAG_BAND_CRITICAL)
 	data["injection_amount_min"] = MEDBOT_MIN_INJECTION

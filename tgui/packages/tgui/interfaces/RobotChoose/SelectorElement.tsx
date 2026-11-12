@@ -1,5 +1,9 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Icon, Stack, Tooltip } from 'tgui-core/components';
+import type {
+  RobotChooseActions,
+  RobotChooseData,
+} from '../generated/RobotChoose';
 
 export const SelectorElement = (props: {
   option: string;
@@ -9,7 +13,7 @@ export const SelectorElement = (props: {
   iconTooltip?: string;
   iconColor?: string;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<RobotChooseData, RobotChooseActions>();
   const { option, action, selected, icon, iconTooltip, iconColor } = props;
 
   return (

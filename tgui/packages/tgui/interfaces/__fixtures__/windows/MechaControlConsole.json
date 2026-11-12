@@ -1,0 +1,46 @@
+{
+	"beacons": [
+		{
+			"ref": 1048577,
+			"name": "Ripley",
+			"health": 180,
+			"maxHealth": 200,
+			"cell": 1,
+			"cellCharge": 12000,
+			"cellMaxCharge": 15000,
+			"airtank": 101.3,
+			"pilot": "Jane Doe",
+			"location": "Mining Bay",
+			"active": "hydraulic clamp",
+			"cargoUsed": 3,
+			"cargoMax": 10
+		},
+		{
+			"ref": 1048578,
+			"name": "Gygax",
+			"health": 90,
+			"maxHealth": 250,
+			"cell": 0,
+			"cellCharge": 0,
+			"cellMaxCharge": 0,
+			"airtank": 0,
+			"pilot": null,
+			"location": "Robotics",
+			"active": null,
+			"cargoUsed": 0,
+			"cargoMax": 0
+		}
+	],
+	"stored_data": [
+		{
+			"time": "Mon Nov 12 10:04:22",
+			"year": 2561,
+			"message": "Armor plating damaged."
+		},
+		{
+			"time": "Mon Nov 12 10:05:01",
+			"year": 2561,
+			"message": "Internal control restored."
+		}
+	]
+}

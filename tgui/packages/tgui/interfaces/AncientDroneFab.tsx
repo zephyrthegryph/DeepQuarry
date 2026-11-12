@@ -8,16 +8,16 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { AncientDroneFabActions } from './generated/AncientDroneFab';
-
-type Data = {
-  operating: BooleanLike;
-  metal_amount: number;
-};
+import type {
+  AncientDroneFabActions,
+  AncientDroneFabData,
+} from './generated/AncientDroneFab';
 
 export const AncientDroneFab = (props) => {
-  const { act, data } = useBackend<Data, AncientDroneFabActions>();
+  const { act, data } = useBackend<
+    AncientDroneFabData,
+    AncientDroneFabActions
+  >();
 
   const { operating, metal_amount } = data;
 
@@ -95,12 +95,12 @@ export const AncientDroneFab = (props) => {
 };
 
 const ProductionEntry = (props: {
-  action: string;
+  action: keyof AncientDroneFabActions;
   label: string;
   cost: string;
 }) => {
   const { action, label, cost } = props;
-  const { act } = useBackend<Data, AncientDroneFabActions>();
+  const { act } = useBackend<AncientDroneFabData, AncientDroneFabActions>();
 
   return (
     <Stack.Item>

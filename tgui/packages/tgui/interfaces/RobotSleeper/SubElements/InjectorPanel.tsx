@@ -1,10 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { RobotSleeperActions } from '../../generated/RobotSleeper';
-import type { Data, RobotChem } from '../types';
+import type {
+  RobotSleeperActions,
+  RobotSleeperData,
+} from '../../generated/RobotSleeper';
+import type { RobotChem } from '../types';
 
 export const InjectorPanel = (props: { robotChems: RobotChem[] }) => {
-  const { act, data } = useBackend<Data, RobotSleeperActions>();
+  const { act, data } = useBackend<RobotSleeperData, RobotSleeperActions>();
   const { our_patient } = data;
   const { robotChems } = props;
 

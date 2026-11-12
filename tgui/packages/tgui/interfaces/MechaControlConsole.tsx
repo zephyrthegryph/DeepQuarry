@@ -11,31 +11,17 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { decodeHtmlEntities, toTitleCase } from 'tgui-core/string';
-import type { MechaControlConsoleActions } from './generated/MechaControlConsole';
-
-type Data = {
-  beacons: {
-    ref: number;
-    charge: string;
-    name: string;
-    health: number;
-    maxHealth: number;
-    cell: string;
-    cellCharge: number;
-    cellMaxCharge: number;
-    airtank: number;
-    pilot: string;
-    location: string;
-    active: string | null;
-    cargoUsed: number;
-    cargoMax: number;
-  }[];
-  stored_data: { time: string; year: number; message: string }[];
-};
+import type {
+  MechaControlConsoleActions,
+  MechaControlConsoleData,
+} from './generated/MechaControlConsole';
 
 export const MechaControlConsole = (props) => {
-  const { act, data } = useBackend<Data, MechaControlConsoleActions>();
-  const { beacons = [], stored_data = [] } = data;
+  const { act, data } = useBackend<
+    MechaControlConsoleData,
+    MechaControlConsoleActions
+  >();
+  const { beacons, stored_data } = data;
   return (
     <Window width={600} height={600}>
       <Window.Content scrollable>

@@ -3,29 +3,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { LanguagesPanelActions } from './generated/LanguagesPanel';
-
-type LanguageRow = {
-  id: string;
-  name: string;
-  key: string;
-  custom_key: string | null;
-  description: string;
-  can_speak: BooleanLike;
-  is_default: BooleanLike;
-};
-
-type Data = {
-  has_default: BooleanLike;
-  default_name: string | null;
-  languages: LanguageRow[];
-};
+import type {
+  LanguagesPanelActions,
+  LanguagesPanelData,
+} from './generated/LanguagesPanel';
 
 export const LanguagesPanel = () => {
-  const { data, act } = useBackend<Data, LanguagesPanelActions>();
-  const { has_default, default_name, languages = [] } = data;
+  const { data, act } = useBackend<LanguagesPanelData, LanguagesPanelActions>();
+  const { has_default, default_name, languages } = data;
   return (
     <Window width={560} height={620} title="Known Languages">
       <Window.Content scrollable>

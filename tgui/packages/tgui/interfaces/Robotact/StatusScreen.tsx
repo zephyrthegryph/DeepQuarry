@@ -10,14 +10,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { RobotactActions } from '../generated/Robotact';
-import type { Data } from './types';
+import type { RobotactActions, RobotactData } from '../generated/Robotact';
 
 const quick_actions: {
   name: string;
   icon: string;
   icon_state: string;
-  eventName: string;
+  eventName: Extract<keyof RobotactActions, `quick_action_${string}`>;
 }[] = [
   {
     name: 'Communicator',
@@ -94,7 +93,7 @@ const quick_actions: {
 ];
 
 export const StatusScreen = (props) => {
-  const { act } = useBackend<Data, RobotactActions>();
+  const { act } = useBackend<RobotactData, RobotactActions>();
 
   return (
     <Stack vertical fill height="94%">
@@ -149,7 +148,7 @@ export const StatusScreen = (props) => {
 };
 
 const Configuration = (props) => {
-  const { data } = useBackend<Data, RobotactActions>();
+  const { data } = useBackend<RobotactData, RobotactActions>();
 
   const { name, module_name, ai } = data;
   return (
@@ -166,7 +165,7 @@ const Configuration = (props) => {
 };
 
 const Status = (props) => {
-  const { act, data } = useBackend<Data, RobotactActions>();
+  const { act, data } = useBackend<RobotactData, RobotactActions>();
 
   const { charge, max_charge, health, max_health, light_color } = data;
 

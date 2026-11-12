@@ -10,29 +10,17 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { sanitizeText } from '../sanitize';
-import type { NtosNewsBrowserActions } from './generated/NtosNewsBrowser';
-
-type Data = {
-  message: string;
-  showing_archived: BooleanLike;
-  download: {
-    download_progress: number;
-    download_maxprogress: number;
-    download_rate: number;
-  } | null;
-  article: { title: string; cover: string; content: string } | null;
-  all_articles: {
-    name: string;
-    size: number;
-    uid: number;
-    archived: BooleanLike;
-  }[];
-};
+import type {
+  NtosNewsBrowserActions,
+  NtosNewsBrowserData,
+} from './generated/NtosNewsBrowser';
 
 export const NtosNewsBrowser = (props) => {
-  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
   const { article, download, message } = data;
 
@@ -60,7 +48,10 @@ export const NtosNewsBrowser = (props) => {
 };
 
 const SelectedArticle = (props) => {
-  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
   const { article } = data;
 
@@ -97,9 +88,12 @@ const SelectedArticle = (props) => {
 };
 
 const ViewArticles = (props) => {
-  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
-  const { showing_archived, all_articles = [] } = data;
+  const { showing_archived, all_articles } = data;
 
   return (
     <Section
@@ -139,7 +133,10 @@ const ViewArticles = (props) => {
 };
 
 const ArticleDownloading = (props) => {
-  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
   const { download_progress, download_maxprogress, download_rate } =
     data.download!;

@@ -53,6 +53,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	configure(light_glow(color = "#00ffff"))
 	interface("PrisonShuttleConsole", title = "Prison Shuttle")
+	ui_shape(moving = bool(), at_station = bool(), time_left = num(), can_move = bool())
 	extend("ui_open", needs(req(PROC_REF(can_open_console))), then(PROC_REF(record_window_open)))
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
@@ -62,10 +63,10 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 
 /obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["moving"] = GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison
+	data["moving"] = !!(GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
 	data["at_station"] = !!GLOB.prison_shuttle_at_station
 	data["time_left"] = GLOB.prison_shuttle_timeleft
-	data["can_move"] = prison_can_move() && !prison_break
+	data["can_move"] = !!(prison_can_move() && !prison_break)
 	return data
 
 /obj/machinery/computer/prison_shuttle/proc/ui_act_send_to_dock(datum/act/op/A)
@@ -76,7 +77,6 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	if(!GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
 		return TRUE
 	post_signal("prison")
-	to_chat(user, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_prison = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 	set_in_flight(TRUE)
@@ -91,7 +91,6 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	if(GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
 		return TRUE
 	post_signal("prison")
-	to_chat(user, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_station = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 	set_in_flight(TRUE)
