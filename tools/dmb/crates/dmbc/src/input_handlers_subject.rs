@@ -121,7 +121,14 @@ impl HandlerStructuralSubject{
  pub(crate) fn require_current<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{self.require_recording(inputs)?;let current=inputs.snapshot.lock().map_err(|_|fail("handlers current input ledger poisoned"))?;if !current.restat(&inputs.provider)?.unchanged(){return Err(fail("handlers actual input closure changed before publication"))}Ok(())}
  pub(crate) fn provider<'a,P:SnapshotProvider+Sync>(&'a self,inputs:&'a RecordingInputs<P>)->io::Result<HandlerStructuralProvider<'a,P>>{self.require_current(inputs)?;let producer=self.producer()?;producer.captured()?;Ok(HandlerStructuralProvider{subject:self,producer,inputs})}
  pub(crate) fn bind_frontend<P:SnapshotProvider>(&self,frontend:&dm_tree::frontend::DiagnosticFrontend,inputs:&RecordingInputs<P>)->io::Result<()>{
-  self.require_current(inputs)?;let producer=self.producer()?;let root=producer.captured()?;let structural=frontend.handlers_structural_source().map_err(|m|fail(&m))?;let view=structural.view();
+  self.require_current(inputs)?;
+  let binding=self.validate_recorded_frontend(frontend,inputs)?;
+  self.install_recorded_frontend(binding)
+ }
+ // Pure provenance validation: no binding is published until final freshness
+ // has succeeded. The actual mapping's existing Weak keeps its original role.
+ fn validate_recorded_frontend<P:SnapshotProvider>(&self,frontend:&dm_tree::frontend::DiagnosticFrontend,inputs:&RecordingInputs<P>)->io::Result<std::sync::Weak<dm_tree::frontend::SourceExportMapping>>{
+  self.require_recording(inputs)?;let producer=self.producer()?;let root=producer.captured()?;let structural=frontend.handlers_structural_source().map_err(|m|fail(&m))?;let view=structural.view();
   if !view.original_plan().defines().is_empty()||view.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(fail("handlers structural frontend has another caller macro context"))}
   enum Stop{Source(&'static str),Operational(io::Error)}impl From<&'static str>for Stop{fn from(m:&'static str)->Self{Self::Source(m)}}
   let (root_occurrence,entry,path,lease)=view.mapping().original_root_acquisition_using(&mut||crate::daemon::control::checkpoint().map_err(Stop::Operational)).map_err(|f|match f{Stop::Operational(e)=>e,Stop::Source(m)=>fail(m)})?;
@@ -129,7 +136,11 @@ impl HandlerStructuralSubject{
   if entry!=root.project||path!=root.project||receipt.path!=root.project||!Arc::ptr_eq(&receipt.issuer,&self.issuer)||!lease.same_binding(root.header.lease()){return Err(fail("handlers root/path/acquisition belongs to another partial recipe"))}
   for(index,(path,acquired))in view.mapping().source_acquisitions().enumerate(){crate::daemon::control::checkpoint()?;if index==root_occurrence{continue}let physical=acquired.ok_or_else(||fail("handlers included source has no actual acquisition"))?;if physical.same_binding(lease){return Err(fail("handlers partial child cannot use private synthetic root acquisition"))}inputs.mapped_recorded_source_fact(view.mapping(),index,path)?;}
   if self.bound.get().is_some_and(|old|!std::sync::Weak::ptr_eq(old,&Arc::downgrade(view.mapping()))){return Err(fail("handlers partial subject is already bound to another actual native graph"))}
-  let _=self.bound.set(Arc::downgrade(view.mapping()));Ok(())
+  Ok(Arc::downgrade(view.mapping()))
+ }
+ fn install_recorded_frontend(&self,binding:std::sync::Weak<dm_tree::frontend::SourceExportMapping>)->io::Result<()>{
+  if self.bound.get().is_some_and(|old|!std::sync::Weak::ptr_eq(old,&binding)){return Err(fail("handlers partial subject is already bound to another actual native graph"))}
+  let _=self.bound.set(binding);Ok(())
  }
 }
 /// A borrowed purpose wrapper over the SAME actual recorder. Only the generated
@@ -429,9 +440,33 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
  /// Uses the current borrowed executor and SAME QueryDb resource/BODY host.
  /// No private executor, parser, RetainedSemanticTree or model cache is created.
  pub(crate) fn prepare_handlers_structural(&self,subject:Arc<HandlerStructuralSubject>,executor:&dm_exec::BuildExecutor,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<PreparedHandlersStructural>{
+  let prepared=self.prepare_handlers_unbound(subject,executor,queries,joined_staging)?;
+  match &prepared.frontend {
+   Some(frontend)=>prepared.subject.bind_frontend(frontend,self)?,
+   None=>prepared.subject.require_current(self)?,
+  }
+  dm_profile::request_mark("handlers.partial_source_bound");
+  Ok(prepared)
+ }
+ /// No intermediate frontend is published to a caller. The private owner goes
+ /// directly to one final physical validation, then unchanged binding/capture.
+ pub(crate) fn prepare_and_capture_handlers_structural(&self,subject:Arc<HandlerStructuralSubject>,executor:&dm_exec::BuildExecutor,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<Arc<HandlerPreparedCapture>>{
+  let prepared=self.prepare_handlers_unbound(subject,executor,queries,joined_staging)?;
+  self.capture_handlers_unbound(prepared,queries,joined_staging)
+ }
+ fn capture_handlers_unbound(&self,prepared:PreparedHandlersStructural,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<Arc<HandlerPreparedCapture>>{
+  // Validate provenance without publication, then make the complete physical
+  // check last. Deferring provenance errors preserves physical-first ordering.
+  let binding=prepared.frontend.as_ref().map(|frontend|prepared.subject.validate_recorded_frontend(frontend,self));
+  prepared.subject.require_current(self)?;
+  if let Some(binding)=binding { prepared.subject.install_recorded_frontend(binding?)?; }
+  dm_profile::request_mark("handlers.partial_source_bound");
+  self.capture_handlers_validated(prepared,queries,joined_staging)
+ }
+ fn prepare_handlers_unbound(&self,subject:Arc<HandlerStructuralSubject>,executor:&dm_exec::BuildExecutor,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<PreparedHandlersStructural>{
   if joined_staging && !subject.is_selected_full(){return Err(fail("handler joined staging requires its actual selected preparation"))}
   if !subject.has_candidates() {
-   subject.require_current(self)?;
+   subject.require_recording(self)?;
    return Ok(PreparedHandlersStructural{subject,frontend:None});
   }
   let provider=subject.provider(self)?;
@@ -445,8 +480,7 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   let frontend=build(&provider.producer.captured()?.project,&provider,dm_tree::frontend::FrontendConfig{workers:executor.workers(),engine:Some(seed.frontend_seed()),observer:None},None,executor,&host).map_err(|failure|match failure{dm_tree::frontend::FrontendBuildFailure::Operational(actual)=>actual,dm_tree::frontend::FrontendBuildFailure::Diagnostics(errors)=>io::Error::new(io::ErrorKind::Unsupported,HandlerNativeFrontier(errors))})?;
   drop(provider);
   dm_profile::request_mark("handlers.partial_frontend_done");
-  let frontend=Arc::new(frontend.with_body_queries(Arc::clone(queries)as Arc<dyn dm_tree::frontend::BodySyntaxQueries>).map_err(io::Error::other)?);subject.bind_frontend(&frontend,self)?;
-  dm_profile::request_mark("handlers.partial_source_bound");
+  let frontend=Arc::new(frontend.with_body_queries(Arc::clone(queries)as Arc<dyn dm_tree::frontend::BodySyntaxQueries>).map_err(io::Error::other)?);
   Ok(PreparedHandlersStructural{subject,frontend:Some(frontend)})
  }
 }
@@ -668,6 +702,89 @@ impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
   let wrong=crate::policy_request::PolicyInputRequest{analysis_context:Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")}),..Default::default()}.admit().unwrap();assert!(queries.prepare_handlers_preflight(&inputs,&wrong).is_err());
  }
 
+
+ #[test]
+ fn scoped_handler_validation_rejects_mutation_before_capture_without_binding() {
+  let(root,intent,inputs)=fixture("handlers-scoped-final-mutation");
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();
+  let prepared=inputs.prepare_handlers_unbound(Arc::clone(&subject),&executor,&queries,false).unwrap();
+  assert!(subject.bound.get().is_none());
+  std::fs::write(root.join("code/candidate.dm"),"/proc/probe(datum/act/A)\n    return 42\n").unwrap();
+  let error=inputs.capture_handlers_unbound(prepared,&queries,false).err().unwrap();
+  assert_eq!(error.kind(),io::ErrorKind::InvalidInput);
+  assert!(error.to_string().contains("actual input closure changed"));
+  assert!(subject.bound.get().is_none(),"failed final validation cannot publish binding");
+ }
+ #[test]
+ fn scoped_handler_validation_rejects_foreign_recorder_and_root_acquisition() {
+  let(_,intent,inputs)=fixture("handlers-scoped-foreign");
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();
+  let prepared=inputs.prepare_handlers_unbound(Arc::clone(&subject),&executor,&queries,false).unwrap();
+  let other=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let error=other.capture_handlers_unbound(prepared,&queries,false).err().unwrap();
+  assert!(error.to_string().contains("another actual input recorder"));
+  assert!(subject.bound.get().is_none());
+  let mut prepared=inputs.prepare_handlers_unbound(Arc::clone(&subject),&executor,&queries,false).unwrap();
+  let(root,intent,foreign)=fixture("handlers-scoped-foreign-root");
+  let foreign_queries=Arc::new(crate::query_db::QueryDb::default());
+  let foreign_subject=foreign_queries.prepare_handlers_preflight(&foreign,&intent).unwrap();
+  let foreign_prepared=foreign.prepare_handlers_structural(foreign_subject,&executor,&foreign_queries,false).unwrap();
+  assert_ne!(root,subject.root);
+  prepared.frontend=foreign_prepared.frontend;
+  let error=inputs.capture_handlers_unbound(prepared,&queries,false).err().unwrap();
+  assert!(error.to_string().contains("another partial recipe"));
+  assert!(subject.bound.get().is_none());
+  let mut prepared=inputs.prepare_handlers_unbound(Arc::clone(&subject),&executor,&queries,false).unwrap();
+  let foreign_subject=foreign_queries.prepare_handlers_preflight(&foreign,&intent).unwrap();
+  let foreign_prepared=foreign.prepare_handlers_structural(foreign_subject,&executor,&foreign_queries,false).unwrap();
+  prepared.frontend=foreign_prepared.frontend;
+  std::fs::write(subject.root.join("code/candidate.dm"),"/proc/probe(datum/act/A)\n    return 77\n").unwrap();
+  let error=inputs.capture_handlers_unbound(prepared,&queries,false).err().unwrap();
+  assert!(error.to_string().contains("actual input closure changed"),"final physical failure keeps precedence over a foreign root");
+  assert!(subject.bound.get().is_none());
+ }
+ #[test]
+ fn scoped_handler_validation_preserves_capture_and_split_gap_checks() {
+  let(root,intent,inputs)=fixture("handlers-scoped-equivalent");
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();
+  let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries,false).unwrap();
+  let split=inputs.capture_handlers_prepared(prepared,&queries,false).unwrap();
+  let scoped_queries=Arc::new(crate::query_db::QueryDb::default());
+  let scoped_subject=scoped_queries.prepare_handlers_preflight(&inputs,&intent).unwrap();
+  let scoped=inputs.prepare_and_capture_handlers_structural(scoped_subject,&executor,&scoped_queries,false).unwrap();
+  assert!(split.partial_revision().unwrap().is_some());
+  assert!(scoped.partial_revision().unwrap().is_some(),"each actual owner keeps its own reportable source revision");
+  assert_eq!(split.prepared.frontend.as_ref().unwrap().handlers_structural_source().unwrap().view().expanded_text(),scoped.prepared.frontend.as_ref().unwrap().handlers_structural_source().unwrap().view().expanded_text());
+  assert!(split.is_recorded_in(&inputs.snapshot().unwrap()));
+  assert!(scoped.is_recorded_in(&inputs.snapshot().unwrap()));
+  scoped.require_bound().unwrap();
+  let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();
+  let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries,false).unwrap();
+  std::fs::write(root.join("code/candidate.dm"),"/proc/probe(datum/act/A)\n    return 99\n").unwrap();
+  assert!(inputs.capture_handlers_prepared(prepared,&queries,false).is_err(),"public split path must retain its gap revalidation");
+ }
+ #[test]
+ fn scoped_handler_validation_preserves_final_cancellation_before_binding() {
+  let(_,intent,inputs)=fixture("handlers-scoped-cancel-final");
+  let queries=Arc::new(crate::query_db::QueryDb::default());
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let subject=queries.prepare_handlers_preflight(&inputs,&intent).unwrap();
+  let prepared=inputs.prepare_handlers_unbound(Arc::clone(&subject),&executor,&queries,false).unwrap();
+  let token=crate::daemon::control::Cancellation::default();
+  let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(60));
+  token.cancel();
+  let error=inputs.capture_handlers_unbound(prepared,&queries,false).err().unwrap();
+  assert_eq!(error.kind(),io::ErrorKind::Interrupted);
+  assert!(subject.bound.get().is_none());
+  drop(binding);
+ }
+
  #[test]
  fn actual_handler_geometry_gate_keeps_synthetic_header_unissued_and_refuses_stopped_loans(){
   use dm_preprocess::SourceProvider;
@@ -801,7 +918,12 @@ impl HandlerPreparedCapture{
 }
 impl<P:SnapshotProvider+Sync> RecordingInputs<P>{
  pub(crate) fn capture_handlers_prepared(&self,prepared:PreparedHandlersStructural,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<Arc<HandlerPreparedCapture>>{
-  let budget=Arc::clone(&prepared.subject.budget);let budget=&budget;prepared.subject.require_current(self)?;
+  prepared.subject.require_current(self)?;
+  self.capture_handlers_validated(prepared,queries,joined_staging)
+ }
+ // Called only after require_current by one of the two capture entry paths.
+ fn capture_handlers_validated(&self,prepared:PreparedHandlersStructural,queries:&Arc<crate::query_db::QueryDb>,joined_staging:bool)->io::Result<Arc<HandlerPreparedCapture>>{
+  let budget=Arc::clone(&prepared.subject.budget);let budget=&budget;
   if joined_staging && !prepared.subject.is_selected_full(){return Err(fail("handler joined staging requires its actual selected preparation"))}
   let mut revision=None;
   let inputs=match &prepared.frontend{
