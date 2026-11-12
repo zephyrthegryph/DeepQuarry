@@ -33,7 +33,10 @@
 	balloon_alert(user, "console emagged")
 	return OP_OK
 
+MSG_DEF_SELF(rdservercontrol/denied, "Access denied.")
+
 CAPABILITIES(/obj/machinery/computer/rdservercontrol)
+	extend(TAG_UI, needs(req(PROC_REF(controls_access_refusal))))
 	setup(PROC_REF(connect_initial_server_control))
 	interface("ServerControl")
 	without("ui_open")
@@ -69,18 +72,14 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 
 	return data
 
-/obj/machinery/computer/rdservercontrol/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!allowed(user) && !emagged())
-		balloon_alert(user, "access denied!")
-		play_sfx(src, SFX_MACHINES_CLICK, 0.4)
-		return FALSE
-	return TRUE
+/// The window's buttons need the console's access (or an emagged console).
+/obj/machinery/computer/rdservercontrol/proc/controls_access_refusal(datum/act/op/A)
+	if(!allowed(A.actor) && !emagged())
+		return /datum/msg/rdservercontrol/denied
+	return null
 
 /obj/machinery/computer/rdservercontrol/proc/ui_act_lockdown_server(datum/act/op/A, selected_server)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/obj/machinery/rnd/server/server_selected = ui_member(selected_server, ui_source_stored_research_techweb_servers(), /obj/machinery/rnd/server)
 	if(!server_selected)
 		return FALSE
@@ -88,8 +87,6 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 	return TRUE
 
 /obj/machinery/computer/rdservercontrol/proc/ui_act_lock_console(datum/act/op/A, selected_console)
-	if(!ui_gate(A))
-		return FALSE
 	var/obj/machinery/computer/rdconsole_tg/console_selected = ui_member(selected_console, ui_source_stored_research_consoles_accessing(), /obj/machinery/computer/rdconsole_tg)
 	if(!console_selected)
 		return FALSE

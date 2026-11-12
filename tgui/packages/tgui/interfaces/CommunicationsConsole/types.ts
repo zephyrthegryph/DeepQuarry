@@ -11,7 +11,11 @@ export type Data = {
     type: string;
     line_1: string;
     line_2: string;
-    presets: { name: string; label: string; desc: string }[];
+    presets: {
+      name: 'blank' | 'time' | 'shuttle' | 'message';
+      label: string;
+      desc: string;
+    }[];
   };
   security_level: number;
   security_level_color: string;

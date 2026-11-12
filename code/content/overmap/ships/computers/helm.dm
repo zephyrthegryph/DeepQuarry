@@ -179,15 +179,15 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	return data
 
 /// The helm's guard: it works a linked ship.
-/obj/machinery/computer/ship/helm/ui_gate(datum/act/op/A)
-	if(!..())
-		return FALSE
-	return !!linked()
+/obj/machinery/computer/ship/helm/controls_refusal(datum/act/op/A)
+	. = ..()
+	if(.)
+		return
+	if(!linked())
+		return /datum/msg/req_silent
 
 /obj/machinery/computer/ship/helm/proc/ui_act_update_camera_view(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!COOLDOWN_FINISHED(src, map_refresh_cd))
 		to_chat(user, span_warning("You cannot refresh the map so often."))
 		return
@@ -216,8 +216,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 
 /obj/machinery/computer/ship/helm/proc/ui_act_add(datum/act/op/A, add)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(tgui_status(A.actor, tgui_state()) != STATUS_INTERACTIVE) // the answer counts while the console still lets its asker work it
 		return FALSE
 	var/sec_name = A.step_value("name")
@@ -252,8 +250,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	return ui_member(handle, entries, /datum/computer_file/data/waypoint)
 
 /obj/machinery/computer/ship/helm/proc/ui_act_remove(datum/act/op/A, remove)
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/computer_file/data/waypoint/entry = waypoint_of(remove)
 	if(entry && LAZYACCESS(known_sectors, entry.fields["name"]) == entry) // only our own entries
 		rel_add(src, nameof(known_sectors), null, entry.fields["name"]) // disposes of the owned record
@@ -273,8 +269,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	return dy
 
 /obj/machinery/computer/ship/helm/proc/ui_act_setcoord(datum/act/op/A, setx, sety)
-	if(!ui_gate(A))
-		return FALSE
 	if(tgui_status(A.actor, tgui_state()) != STATUS_INTERACTIVE) // the answer counts while the console still lets its asker work it
 		return FALSE
 	var/newx = setx ? A.step_value("x") : null
@@ -287,16 +281,12 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_setds(datum/act/op/A, x, y)
-	if(!ui_gate(A))
-		return FALSE
 	set_dx(x)
 	set_dy(y)
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_reset(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_dx(0)
 	set_dy(0)
 	helm_terminal_feedback(A.actor)
@@ -309,8 +299,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	return accellimit * 1000
 
 /obj/machinery/computer/ship/helm/proc/ui_act_speedlimit(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/newlimit = A.step_value("limit")
 	if(newlimit)
 		set_speedlimit(CLAMP(newlimit/1000, 0, 100))
@@ -318,8 +306,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_accellimit(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/newlimit = A.step_value("limit")
 	if(newlimit)
 		set_accellimit(max(newlimit/1000, 0))
@@ -351,22 +337,16 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	max_value = INFINITY
 
 /obj/machinery/computer/ship/helm/proc/ui_act_move(datum/act/op/A, dir)
-	if(!ui_gate(A))
-		return FALSE
 	linked().relaymove(A.actor, dir, accellimit)
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_brake(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	linked().decelerate()
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_apilot(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	if(autopilot_disabled)
 		set_autopilot(FALSE)
 	else
@@ -375,8 +355,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_apilot_lock(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_autopilot_disabled(!autopilot_disabled)
 	set_autopilot(FALSE)
 	helm_terminal_feedback(A.actor)
@@ -384,8 +362,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 
 /obj/machinery/computer/ship/helm/proc/ui_act_manual(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(get_dist(user, src) > 1 || user.blinded || !linked())
 		return FALSE
 	else if(!viewing_overmap(user) && linked())

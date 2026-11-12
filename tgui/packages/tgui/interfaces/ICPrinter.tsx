@@ -10,6 +10,7 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ICPrinterActions } from './generated/ICPrinter';
 
 type Data = {
   categories: category[];
@@ -33,7 +34,7 @@ type item = {
 };
 
 export const ICPrinter = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ICPrinterActions>();
 
   const { metal, max_metal, metal_per_sheet, upgraded, can_clone } = data;
 
@@ -66,10 +67,7 @@ export const ICPrinter = (props) => {
                       icon="file-import"
                       content="Import Circuit"
                       onClick={() => {
-                        act('import_circuit', {
-                          override_type: false,
-                          custom_type: null,
-                        });
+                        act('import_circuit');
                       }}
                       tooltip="Import a circuit design from a JSON file"
                     />
@@ -104,7 +102,7 @@ function canBuild(item: item, data: Data) {
 }
 
 const ICPrinterCategories = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ICPrinterActions>();
 
   const { categories = [] } = data;
 

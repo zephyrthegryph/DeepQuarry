@@ -568,4 +568,4 @@ are still Python: they regenerate files rather than lint, take about 3 s each, a
 the same fields (a var the tree already declares on that notice type is not declared twice), `make_notice()` on the act, and the registry
 `action_notice_types`; for a FIXED action no act type and `publish_<name>(holder, fields...)`. Past tense: `fall` -> `fell`, `insert` -> `inserted`,
 `equip` -> `equipped`; a name that already reads as past tense (`hit`, `stumbled_into`, `round_started`) is kept. A field named `origin` is declared
-`origin_turf`; any other field every act carries is a diagnostic; the `op` action keeps the op context as its act. The declare generator also rewrites `adjusts(packet.amount, ...)` and `on_change(nameof(a.b), ...)` so the path is text.
+`origin_turf`; any other field every act carries is a diagnostic; the `op` action keeps the op context as its act. The declare generator also rewrites `on_change(nameof(a.b), ...)` so the path is text.

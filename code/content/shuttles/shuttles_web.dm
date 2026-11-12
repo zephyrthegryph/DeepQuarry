@@ -309,29 +309,25 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 	return data
 
-/obj/machinery/computer/shuttle_control/web/console_gate(mob/user)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/shuttle_control/web/console_refusal(mob/user)
+	. = ..()
+	if(.)
+		return
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!istype(WS))
-		message_admins("ERROR: Shuttle computer ([src]) ([shuttle_tag]) could not find their shuttle in the shuttles list.")
-		return FALSE
+		// a requirement is read on every check: the misconfiguration goes to the shuttle log, not to every admin each time
+		log_shuttle("ERROR: Shuttle computer ([src]) ([shuttle_tag]) could not find their shuttle in the shuttles list.")
+		return /datum/msg/req_silent
 	if(WS.moving_status != SHUTTLE_IDLE)
-		to_chat(user, span_blue("[WS.visible_name] is busy moving."))
-		return FALSE
-	return TRUE
+		return "[WS.visible_name] is busy moving."
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_rename_command(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	WS.rename_shuttle(user)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_dock_command(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
 		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
@@ -340,8 +336,6 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_undock_command(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
 		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
@@ -350,8 +344,6 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_toggle_cloaking(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!WS.can_cloak)
 		return
@@ -362,15 +354,11 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		to_chat(user, span_danger("Ship stealth systems have been deactivated. The station will be warned of our arrival."))
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_toggle_autopilot(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	WS.adjust_autopilot(!WS.autopilot)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_traverse(datum/act/op/A, traverse)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 
 	var/index = traverse

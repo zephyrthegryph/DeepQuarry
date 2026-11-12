@@ -1,6 +1,6 @@
 // fw-gaps3 content pins for the tgui modals as in-window questions: the chem master, the chemical synthesizer and the chemical dispenser. Written on
-// the legacy modal handlers first (ui_modal_opened / ui_modal_answered). A modal opens through the engine's op when the host has one for "modal:<id>",
-// else through the legacy act_modal_open(); the client's answer is act_modal_answer() on both.
+// the legacy modal handlers first (ui_modal_opened / ui_modal_answered). A modal opens through the engine's op for "modal:<id>"; the client's answer
+// is the engine's modal_answer window action (tgui_modal_window_answer()).
 
 /datum/unit_test/dq_fwg3_modal
 	abstract_type = /datum/unit_test/dq_fwg3_modal
@@ -24,14 +24,12 @@
 
 /// Opens modal `id` of `host`'s window as the client's modal_open does.
 /proc/fwg3_modal_open(mob/user, datum/host, id, list/arguments)
-	var/datum/op_result/R = test_ui(user, host, OP_UI_MODAL_OPEN, list("id" = id, "arguments" = arguments || list()))
-	if(!R)
-		host.act_modal_open(user, id, arguments || list())
+	test_ui(user, host, OP_UI_MODAL_OPEN, list("id" = id, "arguments" = arguments || list()))
 	return tgui_modal_data(host)
 
 /// Answers the window's modal `id` as the client's modal_answer does.
 /proc/fwg3_modal_answer(mob/user, datum/host, id, answer, list/arguments)
-	host.act_modal_answer(user, id, answer, arguments || list())
+	tgui_modal_window_answer(host, user, id, answer)
 	test_time(1)
 
 /datum/unit_test/dq_fwg3_modal/proc/modal_open(mob/user, datum/host, id, list/arguments)
@@ -76,7 +74,7 @@
 	modal = modal_open(H, M, "analyze", list("idx" = 1, "beaker" = 0))
 	TEST_ASSERT_NOTNULL(modal, "analyze shows a message")
 	TEST_ASSERT_EQUAL(modal["args"]?["analysis"]?["name"], "Water", "with the reagent's analysis")
-	M.act_modal_close(H, "analyze")
+	tgui_modal_window_close(M)
 	var/mode = M.mode
 	hc_ui(H, M, "toggle")
 	TEST_ASSERT(M.mode != mode, "toggle flips the mode")

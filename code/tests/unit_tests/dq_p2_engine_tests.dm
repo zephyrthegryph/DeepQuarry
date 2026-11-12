@@ -46,7 +46,7 @@
 	TEST_ASSERT_EQUAL(plain.get_integrity(), plain.max_integrity - answered_plain, "its integrity went down by what landed")
 
 // ---------------------------------------------------------------------------------------------------------------------
-// adjusts() halves a hit (through the generic hit, for an entry with its own subtype); needs() refuses one.
+// adjusts_with() halves a hit (through the generic hit, for an entry with its own subtype); needs() refuses one.
 // ---------------------------------------------------------------------------------------------------------------------
 
 /datum/unit_test/dq_p2_engine/hit_adjusts_halves

@@ -344,22 +344,29 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(user?.client)
 		client_images_remove(user.client, preview_render)
 
-/obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location)
+/// Whether the shelter fits here. A refusal goes to the user checking before deploying (private), or to the room once the capsule is already shaking on the floor (no user).
+/obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location, mob/user)
 	var/status = template().check_deploy(deploy_location, is_ship)
+	var/refusal
 	switch(status)
 		//Not allowed due to /area technical reasons
 		if(SHELTER_DEPLOY_BAD_AREA)
-			src.loc.visible_message(span_warning("\The [src]'s safety mechanisms prevent it from activating in this area. You'll need to find an area that would be less disruptive to activate it!"))
+			refusal = span_warning("\The [src]'s safety mechanisms prevent it from activating in this area. You'll need to find an area that would be less disruptive to activate it!")
 
 		//Anchored objects or no space
 		if(SHELTER_DEPLOY_BAD_TURFS, SHELTER_DEPLOY_ANCHORED_OBJECTS)
 			var/width = template().width
 			var/height = template().height
-			src.loc.visible_message(span_warning("\The [src] can be activated here, but doesn't have room to deploy! You need to clear a [width]x[height] area!"))
+			refusal = span_warning("\The [src] can be activated here, but doesn't have room to deploy! You need to clear a [width]x[height] area!")
 
 		if(SHELTER_DEPLOY_SHIP_SPACE)
-			src.loc.visible_message(span_warning("\The [src] can only be deployed in space."))
+			refusal = span_warning("\The [src] can only be deployed in space.")
 
+	if(refusal)
+		if(user)
+			to_chat(user, refusal)
+		else
+			loc.visible_message(refusal)
 	if(status != SHELTER_DEPLOY_ALLOWED)
 		return FALSE
 
@@ -426,7 +433,7 @@ CAPABILITIES(/obj/item/survivalcapsule)
 	get_template()
 	if(!used)
 		if(unique_id && (unique_id in GLOB.unique_deployable))
-			loc.visible_message(span_warning("There can only be one [src] deployed at a time."))
+			to_chat(user, span_warning("There can only be one [src] deployed at a time."))
 			return
 		var/turf/deploy_location = get_turf(src)
 		// Warn the user in advance if the capsule can't work from where they're standing.
@@ -434,9 +441,9 @@ CAPABILITIES(/obj/item/survivalcapsule)
 		// If there's no preview render, that means it couldn't get the bottom-left or top-right corner of the shelter template area
 		// So this is prooooobably somewhere outside the map bounds!
 		if(!preview_render)
-			loc.visible_message(span_warning("\The [src] is too close to the edge of this map to deploy!"))
+			to_chat(user, span_warning("\The [src] is too close to the edge of this map to deploy!"))
 			return
-		if(!can_deploy(get_turf(src), GetAbove(deploy_location)))
+		if(!can_deploy(get_turf(src), GetAbove(deploy_location), user))
 			after(src, 1 SECONDS, PROC_REF(remove_preview), with = list(user, preview_render))
 			return
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
@@ -455,12 +462,12 @@ CAPABILITIES(/obj/item/survivalcapsule)
 		return
 	get_template()
 	if(unique_id && (unique_id in GLOB.unique_deployable))
-		loc.visible_message(span_warning("There can only be one [src] deployed at a time."))
+		to_chat(user, span_warning("There can only be one [src] deployed at a time."))
 		remove_preview(user, request.preview_render, 0)
 		return
 	if(A.answer.value == "Yes")
 		// We might have moved since the last check, so we check again!
-		if(!can_deploy(deploy_location, GetAbove(deploy_location)))
+		if(!can_deploy(deploy_location, GetAbove(deploy_location), user))
 			used = FALSE
 			remove_preview(user, request.preview_render, 0)
 			return

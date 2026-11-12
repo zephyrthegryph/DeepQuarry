@@ -9,9 +9,8 @@
 	/// The four facing images (lazy: empty until create_images_from()).
 	VAR_PRIVATE/list/image/dir_images
 
-/obj/effect/fake_attacker/periodic_step()
-	. = ..()
-	// Passive cleanup
+/// Passive cleanup (its every()): an attacker nobody can see any more ends.
+/obj/effect/fake_attacker/proc/fake_attacker_cleanup(datum/act/A)
 	var/live_clients = 0
 	for(var/client/C in clients)
 		live_clients++
@@ -225,4 +224,5 @@ CAPABILITIES(/obj/effect/fake_attacker/human)
 		spent(src)
 
 CAPABILITIES(/obj/effect/fake_attacker)
+	every(2 SECONDS, then(PROC_REF(fake_attacker_cleanup)))
 	ref_many(nameof(clients))

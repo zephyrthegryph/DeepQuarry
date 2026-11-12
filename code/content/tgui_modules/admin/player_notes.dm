@@ -63,12 +63,6 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 	op("clear_player_info_filter", ui_act("clear_player_info_filter"), then(PROC_REF(ui_act_clear_player_info_filter)))
 	op("open_legacy_ui", ui_act("open_legacy_ui"), then(PROC_REF(ui_act_open_legacy_ui)))
 
-/datum/tgui_module/player_notes/tgui_fallback(payload, mob/user)
-	if(..())
-		return TRUE
-
-	open_legacy(user)
-
 /datum/tgui_module/player_notes/proc/ui_act_show_player_info(datum/act/op/A, name)
 	var/mob/user = A.actor
 	var/datum/tgui_module/player_notes_info/A2 = new(src)
@@ -125,13 +119,6 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 	op("cahngekey", ui_act("cahngekey", arg("ckey", schema_text(4096))), then(PROC_REF(ui_act_cahngekey)))
 	op("add_player_info", ui_act("add_player_info", arg("ckey", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Add Player Info", "question" = "Write your comment below.", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT)), then(PROC_REF(ui_act_add_player_info)))
 	op("remove_player_info", ui_act("remove_player_info", arg("ckey", schema_text(4096)), arg("index", num())), then(PROC_REF(ui_act_remove_player_info)))
-
-/datum/tgui_module/player_notes_info/tgui_fallback(payload, mob/user)
-	if(..())
-		return TRUE
-
-	var/datum/admins/A = GLOB.admin_datums[user.ckey]
-	A.show_player_info_legacy(user, key)
 
 /datum/tgui_module/player_notes_info/proc/ui_act_cahngekey(datum/act/op/A, ckey)
 	set_key(sanitize(ckey))

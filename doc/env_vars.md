@@ -219,7 +219,7 @@ its first read (or that line itself). The compiler's own `DMB_*` knobs read only
 | `DQ_TEXT_PROBE` | `tools/analyze/src/tree.rs` |  | env::var_os("DQ_TEXT_PROBE").is_some()) { |
 | `DQ_VERDIGRIS_CACHE` | `tools/build/lib/verdigris_cache.ts` |  | `const env = process.env.DQ_VERDIGRIS_CACHE;` |
 | `DQ_VERDIGRIS_PROFILE` | `tools/build/build.ts` |  | `const want = process.env.DQ_VERDIGRIS_PROFILE;` |
-| `DQ_VERDIGRIS_PROVENANCE` | `tools/build/build.ts` |  | yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before. |
+| `DQ_VERDIGRIS_PROVENANCE` | `tools/build/build.ts` |  | do not do yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before. |
 | `DQ_VG_BINDINGS_CACHE` | `tools/build/build.ts` |  | `const env = process.env.DQ_VG_BINDINGS_CACHE;` |
 | `DQ_VG_BINDINGS_INPROC` | `tools/build/build.ts` |  | `if (process.env.DQ_VG_BINDINGS_INPROC === '1') {` |
 | `DQ_VG_OBJECT_MODEL_SCHEMAS` | `tools/build/lib/verdigris_bindings.ts` |  | Set DQ_VG_OBJECT_MODEL_SCHEMAS=1 to generate it. */ |
