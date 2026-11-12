@@ -122,6 +122,7 @@
 
 .FabricatorRecipe {
   display: flex;
+  align-items: center;
   width: auto;
   border-bottom: var(--border-thickness-tiny) solid hsla(0, 0%, 0%, 0.5);
   position: relative;

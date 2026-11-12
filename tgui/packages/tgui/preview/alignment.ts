@@ -261,6 +261,53 @@ export function alignmentFindings(): Finding[] {
     }
   }
 
+  // 3c. In a flex row, a text item sits on the same centre line as the controls beside it.
+  for (const row of Array.from(root.querySelectorAll('*'))) {
+    if (!inScope(row)) continue;
+    const rs = getComputedStyle(row);
+    if (
+      !rs.display.includes('flex') ||
+      rs.flexDirection !== 'row' ||
+      rs.flexWrap !== 'nowrap'
+    )
+      continue;
+    const kids = Array.from(row.children).filter(visible);
+    const controls = kids.filter((c) =>
+      c.matches('.Button, .Input, .NumberInput, .Dropdown, .Slider'),
+    );
+    if (!controls.length) continue;
+    for (const t of kids) {
+      if (
+        controls.includes(t) ||
+        t.querySelector(
+          '.Button, .Input, .NumberInput, .Dropdown, .Slider, .Stack',
+        )
+      )
+        continue;
+      if (
+        !Array.from(t.childNodes).some(
+          (n) => n.nodeType === 3 && n.textContent?.trim(),
+        )
+      )
+        continue;
+      const tr = textRect(t);
+      if (!tr) continue;
+      const tc = tr.top + tr.height / 2;
+      for (const c of controls) {
+        const cr = c.getBoundingClientRect();
+        if (cr.height > 40 || cr.height < 8) continue;
+        if (Math.abs(tc - (cr.top + cr.height / 2)) > 3.5) {
+          add(
+            'row-centre',
+            t,
+            `text centre ${Math.round(tc)} vs ${path(c)} centre ${Math.round(cr.top + cr.height / 2)}`,
+          );
+          break;
+        }
+      }
+    }
+  }
+
   // 4. LabeledList: label and value columns line up, first lines share a baseline.
   for (const list of Array.from(root.querySelectorAll('.LabeledList'))) {
     if (!inScope(list) || !visible(list)) continue;
