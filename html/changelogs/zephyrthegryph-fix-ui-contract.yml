@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The disperser console's Fire ORB button fires again."
+  - bugfix: "The lobby's Show Station News button opens the station news."
+  - rscdel: "Removed window buttons that no server action answered (secrets panel, cryo storage claim, communicator camera toggle, NTOS flashlight, AI restorer eject, atmos overlay toggle)."

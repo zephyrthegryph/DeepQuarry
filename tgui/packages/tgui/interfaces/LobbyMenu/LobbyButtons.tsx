@@ -109,7 +109,7 @@ export const LobbyButtons = (props: {
         </LobbyButton>
 
         {show_station_news ? (
-          <LobbyButton index={5} onClick={() => act('')} icon="newspaper">
+          <LobbyButton index={5} onClick={() => act('open_station_news')} icon="newspaper">
             Show Station News {new_station_news ? '(NEW!)' : null}
           </LobbyButton>
         ) : null}

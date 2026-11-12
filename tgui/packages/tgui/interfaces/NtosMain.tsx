@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
-import { Button, ColorBox, Section, Table } from 'tgui-core/components';
+import { Button, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 const PROGRAM_ICONS = {
@@ -32,9 +32,6 @@ type Data = {
     running: BooleanLike;
     autorun: BooleanLike;
   }[];
-  has_light: BooleanLike;
-  light_on: BooleanLike;
-  comp_light_color: BooleanLike;
 };
 
 type user = { IDName: string | undefined; IDJob: string | undefined };
@@ -44,9 +41,6 @@ export const NtosMain = (props) => {
   const {
     device_theme,
     programs = [],
-    has_light,
-    light_on,
-    comp_light_color,
     removable_media = [],
     login = {} as user,
   } = data;
@@ -60,22 +54,6 @@ export const NtosMain = (props) => {
       height={500}
     >
       <NtosWindow.Content scrollable>
-        {!!has_light && (
-          <Section>
-            <Button
-              width="144px"
-              icon="lightbulb"
-              selected={light_on}
-              onClick={() => act('PC_toggle_light')}
-            >
-              Flashlight: {light_on ? 'ON' : 'OFF'}
-            </Button>
-            <Button ml={1} onClick={() => act('PC_light_color')}>
-              Color:
-              <ColorBox ml={1} color={comp_light_color} />
-            </Button>
-          </Section>
-        )}
         <Section
           title="User Login"
           buttons={
