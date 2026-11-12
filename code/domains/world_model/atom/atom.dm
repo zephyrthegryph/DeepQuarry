@@ -406,7 +406,7 @@ SETTER(/atom, invisibility)
 	if(istype(M))
 		if (!istype(M.dna, /datum/dna))
 			rel_set(M, nameof(M.dna), new /datum/dna(null))
-			M.dna.real_name = M.real_name
+			M.dna.set_real_name(M.real_name)
 		M.check_dna()
 		dq_set_blood_color(src, M.species.get_blood_colour(M))
 	. = 1

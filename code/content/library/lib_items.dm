@@ -341,7 +341,7 @@ CAPABILITIES(/obj/item/book)
 				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer.'")
 			if(1)
 				rel_set(scanner, nameof(scanner.book), src)
-				scanner.computer().buffer_book = src.name
+				scanner.computer().set_buffer_book(src.name)
 				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book title stored in associated computer buffer.'")
 			if(2)
 				rel_set(scanner, nameof(scanner.book), src)

@@ -167,7 +167,7 @@ CAPABILITIES(/obj/item/aicard)
 
 /obj/item/aicard/proc/clear()
 	if(carded_ai() && istype(carded_ai().loc, /turf))
-		carded_ai().canmove = 0
+		carded_ai().set_canmove(0)
 		carded_ai().carded = 0
 	name = initial(name)
 	rel_clear(src, nameof(carded_ai))

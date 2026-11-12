@@ -193,7 +193,7 @@ CAPABILITIES(/obj/machinery/power/singularity_beacon)
 		var/mob/living/carbon/human/N = M
 		to_chat(N, span_infoplain(span_bold("Access granted, here are the supplies!")))
 		antag_traitors().spawn_uplink(N)
-		N.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
+		N.mind.set_tcrystals(DEFAULT_TELECRYSTAL_AMOUNT)
 		N.mind.accept_tcrystals = 1
 		message_admins("[N]/([N.ckey]) has received an uplink and telecrystals from the syndicate beacon.")
 

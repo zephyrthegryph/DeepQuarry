@@ -120,7 +120,7 @@
 			to_chat(new_voice, span_infoplain(span_bold("If you want to end the call, use the 'Hang Up' verb.  The other person can also hang up at any time.")))
 			to_chat(new_voice, span_infoplain(span_bold("Remember, your character does not know anything you've learned from observing!")))
 			if(new_voice.mind)
-				new_voice.mind.assigned_role = JOB_DISEMBODIED_VOICE
+				new_voice.mind.set_assigned_role(JOB_DISEMBODIED_VOICE)
 			if(user)
 				to_chat(user, span_notice("[icon2html(src,new_voice.client)] Your communicator is now connected to [candidate_name]'s communicator."))
 

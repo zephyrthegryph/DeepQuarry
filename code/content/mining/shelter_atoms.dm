@@ -700,7 +700,7 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 		rel_set(src, nameof(src.door), locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(linked_door())
 		linked_door().glass = !linked_door().glass
-		linked_door().opacity = !linked_door().opacity
+		linked_door().set_opacity(!linked_door().opacity)
 
 //Subtype that actually bolts doors!
 /obj/machinery/button/remote/airlock/survival_pod/bolts
@@ -738,14 +738,14 @@ CAPABILITIES(/obj/machinery/light_switch/survival_pod)
 		var/turf/dT = get_step(src, dir)
 		rel_set(src, nameof(target_light), locate_within(dT, /obj/machinery/light))
 	if(target_light())
-		target_light().on = on
+		target_light().set_on(on)
 		target_light().refresh_light()
 		// I'm so sorry but for some ungodly reason calling update() simply isn't
 		// enough to make the light actually set its lighting.
 		// So I guess we're doing this manually! :')
 		if(target_light().on)
 			set_glow(target_light(), GLOW(target_light().brightness_range, target_light().brightness_power, target_light().brightness_color))
-			target_light().overlay_color = target_light().brightness_color
+			target_light().set_overlay_color(target_light().brightness_color)
 		else
 			set_glow(target_light(), GLOW(0, null, null))
 

@@ -284,12 +284,12 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 
 		if(P.mind)
 			P.mind.loaded_from_ckey = picked_ckey
-			P.mind.loaded_from_slot = picked_slot
+			P.mind.set_loaded_from_slot(picked_slot)
 			var/datum/antagonist/antag_data = SSantag.get_antag_data(P.mind.special_role)
 			if(antag_data)
 				antag_data.add_antagonist(P.mind)
 				antag_data.place_mob(P)
-			P.mind.assigned_role = charjob
+			P.mind.set_assigned_role(charjob)
 			P.mind.role_alt_title = SSjob.get_player_alt_title(P, charjob)
 
 		// Languages come with the character's identity when the mind moves in.

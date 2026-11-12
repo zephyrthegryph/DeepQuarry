@@ -607,7 +607,7 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 					act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 					play_sfx(src, SFX_VOICE_TEPPI_RUMBLE)
 				if(vore_selected_of(src))
-					vore_selected_of(src).digest_mode = DM_DRAIN //People outside can help calm the tumby if you squirm too much
+					vore_selected_of(src).set_digest_mode(DM_DRAIN) //People outside can help calm the tumby if you squirm too much
 			else if(prob(25))
 				act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 				play_sfx(src, SFX_VOICE_TEPPI_CUTE_RUMBLE)
@@ -765,13 +765,13 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 	if(vore_selected_of(src) == friend_zone)
 		return
 	if(resting)
-		vore_selected_of(src).digestchance = 60
-		vore_selected_of(src).digest_brute = 6
-		vore_selected_of(src).digest_burn = 6
+		vore_selected_of(src).set_digestchance(60)
+		vore_selected_of(src).set_digest_brute(6)
+		vore_selected_of(src).set_digest_burn(6)
 	else
-		vore_selected_of(src).digestchance = 5
-		vore_selected_of(src).digest_brute = 0.05
-		vore_selected_of(src).digest_burn = 0.05
+		vore_selected_of(src).set_digestchance(5)
+		vore_selected_of(src).set_digest_brute(0.05)
+		vore_selected_of(src).set_digest_burn(0.05)
 
 /mob/living/simple_mob/vore/alienanimals/teppi/animal_nom(mob/living/T in living_mobs(1))
 	if(vore_active && !voremob_loaded)
@@ -789,9 +789,9 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 		set_vore_selected(src, tumby)
 		return
 	else if(current_affinity <= -50)
-		vore_selected_of(src).digest_mode = DM_DIGEST
+		vore_selected_of(src).set_digest_mode(DM_DIGEST)
 	else
-		vore_selected_of(src).digest_mode = DM_DRAIN
+		vore_selected_of(src).set_digest_mode(DM_DRAIN)
 	..()
 	ai_busy_end()
 
@@ -825,9 +825,9 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 	if(current_affinity >= 50)
 		return friend_zone
 	if(current_affinity <= -50)
-		vore_selected_of(src).digest_mode = DM_DIGEST
+		vore_selected_of(src).set_digest_mode(DM_DIGEST)
 	else
-		vore_selected_of(src).digest_mode = DM_DRAIN
+		vore_selected_of(src).set_digest_mode(DM_DRAIN)
 
 //Instead of copying this everywhere let's just make a proc
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/lets_eat(person)

@@ -153,7 +153,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	if(istype(src.loc, /turf/open/fixed/map))
 		if(!src.invisibility)
 			set_invisibility(INVISIBILITY_ABSTRACT)
-			src.child_om_marker.invisibility = INVISIBILITY_NONE
+			src.child_om_marker.set_invisibility(INVISIBILITY_NONE)
 			//legacy ai_holder wander tuning removed.
 			set_melee_damage_lower(50)
 			set_melee_damage_upper(100)
@@ -163,7 +163,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 	else if(src.invisibility)
 		set_invisibility(INVISIBILITY_NONE)
-		src.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
+		src.child_om_marker.set_invisibility(INVISIBILITY_ABSTRACT)
 		//legacy ai_holder wander tuning removed.
 		set_melee_damage_lower(1)
 		set_melee_damage_upper(5)

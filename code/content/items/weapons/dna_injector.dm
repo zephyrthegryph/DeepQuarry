@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/dnainjector)
 					uses--
 			if (buf.types & DNA2_BUF_SE)
 				if (!block) //isolated block?
-					M.dna.SE = buf.dna.SE.Copy()
+					M.dna.set_SE(buf.dna.SE.Copy())
 					M.dna.UpdateSE()
 				else
 					M.dna.SetSEValue(block,src.GetValue())

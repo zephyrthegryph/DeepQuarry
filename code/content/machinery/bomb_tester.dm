@@ -301,7 +301,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 		simulation_results += "<hr>Final Result: No detonation."
 
 /obj/machinery/bomb_tester/proc/canister_sim()
-	test_canister().anchored = TRUE
+	test_canister().set_anchored(TRUE)
 	faketank.set_volume(tank1.air_contents.return_volume())
 	faketank.copy_from(tank1.air_contents)
 	faketank_integrity = tank1.get_integrity() / 10 // The sim counts the seal in its old 20-point scale.
@@ -342,7 +342,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	set_simulating(0)
 	set_use_power(USE_POWER_IDLE)
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
-		test_canister().anchored = FALSE
+		test_canister().set_anchored(FALSE)
 	if(cancelled)
 		return
 	if(simulation_results == "Error")

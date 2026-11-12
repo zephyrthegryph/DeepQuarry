@@ -666,10 +666,10 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 				// Traitgenes Properly clone records
 				var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 				databuf.init_from_mob(WC)
-				databuf.mydna.types = DNA2_BUF_SE // structurals only
+				databuf.mydna.set_types(DNA2_BUF_SE) // structurals only
 				if(ishuman(WC))
 					var/mob/living/carbon/human/H = WC
-					databuf.mydna.dna.real_name = H.dna.real_name
+					databuf.mydna.dna.set_real_name(H.dna.real_name)
 					databuf.mydna.gender = H.gender
 				rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), databuf, bufferId)
 			return TRUE
@@ -687,7 +687,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			play_sfx(src, SFX_KEYBOARD)
 			var/label = A.step_value("label")
 			if(!isnull(label))
-				buffer.mydna.name = text_or_null(label) // Traitgenes Use bodyrecords
+				buffer.mydna.set_name(text_or_null(label)) // Traitgenes Use bodyrecords
 			return TRUE
 		if("transfer")
 			var/mob/living/carbon/WC = connected()?.get_occupant()
@@ -719,7 +719,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			// Traitgenes Properly clone records
 			var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 			databuf.init_from_br(disk.stored)
-			databuf.mydna.types = DNA2_BUF_SE // structurals only
+			databuf.mydna.set_types(DNA2_BUF_SE) // structurals only
 			rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), databuf, bufferId)
 		if("saveDisk")
 			play_sfx(src, SFX_KEYBOARD)
@@ -729,7 +729,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			// Traitgenes Properly clone records
 			rel_set(disk, nameof(disk.stored), new /datum/transhuman/body_record())
 			disk.stored.init_from_br(buf)
-			disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
+			disk.stored.mydna.set_types(DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE) // DNA disks need to maintain their data
 			disk.name = "Body Design Disk ('[buf.mydna.name]')"
 			return TRUE
 		if("sleeveDisk")
@@ -773,7 +773,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	// Create it
 	var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
 	var/obj/item/dnainjector/I = new()
-	buf.mydna.types = DNA2_BUF_SE // Traitgenes SE only, use the designer for UI and UEs, super broken in this codebase due to years of no one respecting genetics...
+	buf.mydna.set_types(DNA2_BUF_SE) // Traitgenes SE only, use the designer for UI and UEs, super broken in this codebase due to years of no one respecting genetics...
 	I.forceMove(loc)
 	I.name += " ([buf.mydna.name])"
 	if(copy_buffer)
@@ -903,7 +903,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	var/datum/transhuman/body_record/buf = buffers[bufferId] // Traitgenes- Use bodyrecords
 	if(buf.mydna.types & DNA2_BUF_SE)
 		// Apply SEs only to the current occupant!
-		WC.dna.SE = buf.mydna.dna.SE.Copy()
+		WC.dna.set_SE(buf.mydna.dna.SE.Copy())
 		WC.dna.UpdateSE()
 		domutcheck(WC,connected(), MUTCHK_FORCED | MUTCHK_HIDEMSG) // TOO MANY MUTATIONS FOR MESSAGES
 		WC.UpdateAppearance()

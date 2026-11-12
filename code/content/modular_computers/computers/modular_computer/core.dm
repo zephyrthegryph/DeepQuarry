@@ -39,7 +39,7 @@
 	if(active_program())
 		if(active_program().program_state != PROGRAM_STATE_KILLED)
 			active_program().ntnet_status = get_ntnet_status()
-			active_program().computer_emagged = computer_emagged
+			active_program().set_computer_emagged(computer_emagged)
 			active_program().process_tick()
 		else
 			rel_clear(src, nameof(active_program))

@@ -104,8 +104,8 @@
 /datum/species/xenos/handle_post_spawn(mob/living/carbon/human/H)
 
 	if(H.mind)
-		H.mind.assigned_role = JOB_ALIEN
-		H.mind.special_role = JOB_ALIEN
+		H.mind.set_assigned_role(JOB_ALIEN)
+		H.mind.set_special_role(JOB_ALIEN)
 
 	alien_number++ //Keep track of how many aliens we've had so far.
 	H.set_real_name("xenomorph [caste_name] ([alien_number])")

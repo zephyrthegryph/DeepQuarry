@@ -79,7 +79,7 @@
 
 /datum/data/pda/utility/scanmode/start()
 	if(pda().scanmode())
-		pda().scanmode().name = "Enable [pda().scanmode().base_name]"
+		pda().scanmode().set_name("Enable [pda().scanmode().base_name]")
 
 	if(pda().scanmode() == src)
 		rel_clear(pda(), nameof(/obj/item/pda::scanmode))

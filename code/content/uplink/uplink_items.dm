@@ -74,7 +74,7 @@ CAPABILITIES(/datum/uplink)
 		return
 
 	purchase_log(user)
-	user.mind.tcrystals -= cost
+	user.mind.set_tcrystals(user.mind.tcrystals - cost)
 	user.mind.used_TC += cost
 	return goods
 

@@ -66,7 +66,7 @@ MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error
 
 	for(var/datum/language/L in MR.mind_ref.get_identity()?.languages)
 		infomorph.add_language(L.name)
-	MR.mind_ref.active = 1 //Well, it's about to be.
+	MR.mind_ref.set_active(1) //Well, it's about to be.
 	transfer_mind(MR.mind_ref, infomorph, "sleeved into [src]") //Does mind+ckey+client.
 	infomorph.apply_vore_prefs() //Cheap hack for now to give them SOME bellies.
 

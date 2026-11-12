@@ -39,6 +39,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 
 use crate::incr;
+use crate::sem::Sem;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
@@ -273,6 +274,9 @@ struct Pats {
     any: Pat,
     bare: Pat,
     dotted: Pat,
+    /// `<chain>.V op` where the chain ends in a call or a field (`target().V = x`, `GLOB.net.wanted().V = x`, `a.b.V = x`); the
+    /// receiver's type comes from the semantic model (a proc's declared return type, a var's declared type)
+    chained: Pat,
     /// names of procs some `setup(PROC_REF(x))` entry runs: construction, like `Initialize()` (see PRE_LIVE)
     setup: BTreeSet<(String, String)>,
 }
@@ -292,6 +296,7 @@ fn build_pats(tracked: &Tracked) -> Option<Pats> {
             ops = OPS
         )),
         dotted: Pat::new(&format!(r"(?<![\w.])(\w+)\.({names})\s*{ops}|(?:\+\+|--)\s*(\w+)\.({names})\b", names = names, ops = OPS)),
+        chained: Pat::new(&format!(r"(?<=[\w)\]])\.({names})\s*{ops}", names = names, ops = OPS)),
         setup: BTreeSet::new(),
     })
 }
@@ -652,8 +657,101 @@ fn setter_fix(clean: &[&str], raw: &[&str], number: usize, m_start: usize, holde
     })
 }
 
+/// Where the receiver chain that ends at byte `end` of `line` starts: back over identifiers, dots and balanced `(...)` / `[...]`.
+fn chain_start(line: &str, end: usize) -> usize {
+    let b = line.as_bytes();
+    let mut i = end;
+    while i > 0 {
+        let c = b[i - 1];
+        if c == b')' || c == b']' {
+            let (close, open) = if c == b')' { (b')', b'(') } else { (b']', b'[') };
+            let mut depth = 0i32;
+            let mut j = i;
+            while j > 0 {
+                j -= 1;
+                if b[j] == close {
+                    depth += 1;
+                } else if b[j] == open {
+                    depth -= 1;
+                    if depth == 0 {
+                        break;
+                    }
+                }
+            }
+            if depth != 0 {
+                return i;
+            }
+            i = j;
+        } else if c.is_ascii_alphanumeric() || c == b'_' || c == b'.' {
+            i -= 1;
+        } else {
+            break;
+        }
+    }
+    i
+}
+
+/// The top-level `.` segments of a receiver chain as `(name, is_call)`; None when a segment is not `name` or `name(...)`.
+fn chain_segments(chain: &str) -> Option<Vec<(&str, bool)>> {
+    fn seg(s: &str) -> Option<(&str, bool)> {
+        let s = s.trim();
+        let (name, call) = match s.find('(') {
+            Some(k) if s.ends_with(')') => (&s[..k], true),
+            None => (s, false),
+            _ => return None,
+        };
+        if name.is_empty() || !name.chars().all(|c| c.is_alphanumeric() || c == '_') || name.starts_with(|c: char| c.is_ascii_digit()) {
+            return None;
+        }
+        Some((name, call))
+    }
+    let mut out = Vec::new();
+    let (mut depth, mut from) = (0i32, 0usize);
+    for (k, c) in chain.bytes().enumerate() {
+        match c {
+            b'(' | b'[' => depth += 1,
+            b')' | b']' => depth -= 1,
+            b'.' if depth == 0 => {
+                out.push(seg(&chain[from..k])?);
+                from = k + 1;
+            }
+            _ => {}
+        }
+    }
+    out.push(seg(&chain[from..])?);
+    Some(out)
+}
+
+/// The static type of a receiver chain of two or more segments, or of one call. The head is `src`, `GLOB`, a typed local or argument,
+/// a var of the proc's type or a global var, or a call of a proc of the proc's type or a global proc; each later segment is a field (its
+/// declared type) or a call (its declared return type: `as /type` or `RETURN_TYPE(/type)`). None when any link is unknown.
+fn chain_type(sem: &Sem, owner: &str, typed: &HashMap<String, String>, chain: &str) -> Option<String> {
+    let segs = chain_segments(chain)?;
+    if segs.len() < 2 && !segs[0].1 {
+        return None; // a bare holder: the dotted pattern judges it
+    }
+    let field = |ty: &str, n: &str| sem.var_decl(ty, n).map(|v| v.declared).filter(|d| !d.is_empty());
+    let call = |ty: &str, n: &str| crate::lints::image_dir_after_build::return_type(sem, ty, n);
+    let (head, head_call) = segs[0];
+    let mut cur = if head_call {
+        (if owner == "/" { None } else { call(owner, head) }).or_else(|| call("/", head))
+    } else {
+        match head {
+            "src" => Some(owner.to_string()).filter(|o| o != "/"),
+            "GLOB" => Some("/datum/controller/global_vars".to_string()),
+            "usr" => None,
+            _ => typed.get(head).cloned().or_else(|| if owner == "/" { None } else { field(owner, head) }).or_else(|| field("/", head)),
+        }
+    };
+    for (name, is_call) in &segs[1..] {
+        let t = cur?;
+        cur = if *is_call { call(&t, name) } else { field(&t, name) };
+    }
+    cur.map(|c| normalize_type(&c))
+}
+
 /// `scan` for one file: its hits (in order) and the setters it defines `(owner, proc name)`.
-fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&ListPats>, f: &SourceFile, sink: &mut Sink, named_args: &BTreeSet<(usize, usize)>) -> (Vec<Hit>, Vec<(String, String)>) {
+fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&ListPats>, f: &SourceFile, sink: &mut Sink, named_args: &BTreeSet<(usize, usize)>, sem: Option<&Sem>) -> (Vec<Hit>, Vec<(String, String)>) {
     let mut hits = Vec::new();
     let mut setters = Vec::new();
     if !pats.any.is_match(f.text()) {
@@ -745,6 +843,30 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
                     }
                 }
             }
+            if let Some(sem) = sem {
+                // A write through a call chain or a field chain (`target().V = x`, `GLOB.net.wanted().V = x`, `a.b.V = x`).
+                for m in pats.chained.captures_iter(line) {
+                    let var = m.s(1);
+                    let dot = m.start(0);
+                    if pre_live || in_call_args(line, dot) {
+                        continue;
+                    }
+                    let start = chain_start(line, dot);
+                    let holder = &line[start..dot];
+                    if holder.is_empty() || named_args.contains(&(*number, start + 1)) {
+                        continue;
+                    }
+                    let Some(t) = chain_type(sem, &owner, &typed, holder) else { continue };
+                    let Some(base) = tracked_type_of(tracked, var, &t).filter(|b| !b.is_empty()) else { continue };
+                    if !sink.allowed(f, *number, LINT) {
+                        let is_list = tracked_type_of(lists, var, &t).is_some();
+                        let read = format!("{holder}.{var}");
+                        // A call-chain holder must run once: only a rewrite that does not read the old value through it is offered.
+                        let fix = setter_fix(&clean_lines, &raw_lines, *number, start, holder, var, is_list).filter(|fx| !holder.contains('(') || !fx.text.contains(&read));
+                        hits.push(Hit { line: *number, msg: format!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var), rule: RULE_SETTER, fix });
+                    }
+                }
+            }
             if let Some(lp) = lpats {
                 // In-place edits of a tracked list var: the same holder rules as a write, one pattern per form.
                 let raw_line = f.raw().text.split('\n').nth(number - 1).unwrap_or("");
@@ -815,12 +937,12 @@ pub fn collect<'a>(cx: &Cx<'a>, tracked: &Tracked, tests: bool) -> Option<Collec
     let lpats = build_list_pats(&lists);
     let files: Vec<&SourceFile> = if tests { cx.all_files().into_iter().filter(|f| TEST_PREFIXES.iter().any(|p| f.rel.starts_with(p))).collect() } else { cx.files() };
     let semantic = cx.sem();
-    let key = incr::ctx_key(&(tracked, &lists, &pats.setup));
-    let hits: Vec<Vec<StoredHit>> = incr::keyed(if tests { "tracked-tests-judge-3" } else { "tracked-judge-3" }, key, &files, |f| {
+    let key = incr::ctx_key(&(tracked, &lists, &pats.setup, semantic.as_ref().map(|s| s.structure_digest())));
+    let hits: Vec<Vec<StoredHit>> = incr::keyed(if tests { "tracked-tests-judge-4" } else { "tracked-judge-4" }, key, &files, |f| {
         let mut sink = Sink::new();
         sink.cur = f.rel.clone();
         let named = semantic.as_ref().map(|sem| crate::sem::checks::named_argument_positions(sem, &f.rel)).unwrap_or_default();
-        let (hits, _setters) = scan_one(tracked, &pats, &lists, lpats.as_ref(), f, &mut sink, &named);
+        let (hits, _setters) = scan_one(tracked, &pats, &lists, lpats.as_ref(), f, &mut sink, &named, semantic.as_deref());
         for u in sink.allow_used {
             crate::dm::sys::replay_recorded(vec![u]);
         }
@@ -886,7 +1008,7 @@ impl Lint for Tracker {
         for f in &files {
             let mut sink = Sink::new();
             sink.cur = f.rel.clone();
-            let (hits, s) = scan_one(&tracked, &pats, &Tracked::new(), None, f, &mut sink, &BTreeSet::new());
+            let (hits, s) = scan_one(&tracked, &pats, &Tracked::new(), None, f, &mut sink, &BTreeSet::new(), None);
             setters += s.len();
             for h in hits {
                 got.push((f.rel.clone(), h.line, h.msg.split(' ').next().unwrap_or("").to_string()));
@@ -1027,7 +1149,7 @@ mod named_argument_tests {
     fn hits(body: &str) -> Vec<usize> {
         let root = std::env::temp_dir().join(format!("dq-tracked-args-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir_all(root.join("code")).unwrap();
-        let source = format!("/obj/machinery\n\tvar/state = 0\n\tvar/emagged = FALSE\n/obj/machinery/proc/probe()\n{body}\n");
+        let source = format!("/obj/machinery\n\tvar/state = 0\n\tvar/emagged = FALSE\n/obj/machinery/proc/probe()\n{body}\n/obj/machinery/proc/target() as /obj/machinery\n\treturn src\n/obj/machinery/var/obj/machinery/peer\n/proc/global_target()\n\tset SpacemanDMM_return_type = /obj/machinery\n\treturn null\n");
         std::fs::write(root.join("code/fixture.dm"), &source).unwrap();
         let file = SourceFile::from_text("code/fixture.dm", &source);
         let mut tree = crate::tree::Tree::from_files(vec![SourceFile::from_text("code/fixture.dm", &source)]);
@@ -1038,7 +1160,7 @@ mod named_argument_tests {
         tracked.insert("state".into(), BTreeSet::from(["/obj/machinery".into()]));
         tracked.insert("emagged".into(), BTreeSet::from(["/obj/machinery".into()]));
         let pats = build_pats(&tracked).unwrap();
-        let (got, _) = scan_one(&tracked, &pats, &Tracked::new(), None, &file, &mut Sink::new(), &named);
+        let (got, _) = scan_one(&tracked, &pats, &Tracked::new(), None, &file, &mut Sink::new(), &named, Some(&semantic));
         std::fs::remove_dir_all(root).unwrap();
         got.into_iter().map(|hit| hit.line).collect()
     }
@@ -1059,6 +1181,13 @@ mod named_argument_tests {
     fn parenthesized_assignment_inside_list_remains_a_write() {
         assert_eq!(hits("\tvar/row = list((state = 2), emagged = TRUE)"), vec![5]);
     }
+    #[test]
+    fn call_chain_and_field_chain_receivers_are_resolved() {
+        assert_eq!(hits("\ttarget().state = 1\n\tsrc.target().peer.state = 2\n\tpeer.target().emagged = TRUE\n\tglobal_target().state = 3\n"), vec![5, 6, 7, 8]);
+        // an unknown link (no declared return type, a builtin) keeps the conservative answer
+        assert_eq!(hits("\tprobe().state = 1\n\tsrc.loc.state = 1\n"), Vec::<usize>::new());
+    }
+
     #[test]
     fn bare_state_assignment_remains_a_violation() {
         assert_eq!(hits("\tstate = 1"), vec![5]);
@@ -1279,7 +1408,7 @@ mod list_mutation_tests {
         let lists = tracked.clone();
         let pats = build_pats(&tracked).unwrap();
         let lpats = build_list_pats(&lists);
-        let (hits, _) = scan_one(&tracked, &pats, &lists, lpats.as_ref(), &f, &mut Sink::new(), &BTreeSet::new());
+        let (hits, _) = scan_one(&tracked, &pats, &lists, lpats.as_ref(), &f, &mut Sink::new(), &BTreeSet::new(), None);
         let raw: Vec<&str> = source.split('\n').collect();
         hits.into_iter()
             .filter(|h| h.rule == RULE_LIST)
@@ -1358,7 +1487,7 @@ mod setter_fix_tests {
         lists.insert("items".into(), BTreeSet::from(["/obj/box".into()]));
         let pats = build_pats(&tracked).unwrap();
         let lpats = build_list_pats(&lists);
-        let (hits, _) = scan_one(&tracked, &pats, &lists, lpats.as_ref(), &f, &mut Sink::new(), &BTreeSet::new());
+        let (hits, _) = scan_one(&tracked, &pats, &lists, lpats.as_ref(), &f, &mut Sink::new(), &BTreeSet::new(), None);
         if hits.is_empty() {
             return (None, 0);
         }
@@ -1438,7 +1567,7 @@ mod setter_fix_tests {
             tracked.insert("plain".into(), BTreeSet::from(["/obj/box".into(), "/obj/other".into()]));
             let mut pats = build_pats(&tracked).unwrap();
             pats.setup = setup_hook_names(vec![&f]);
-            scan_one(&tracked, &pats, &Tracked::new(), None, &f, &mut Sink::new(), &BTreeSet::new()).0.len()
+            scan_one(&tracked, &pats, &Tracked::new(), None, &f, &mut Sink::new(), &BTreeSet::new(), None).0.len()
         };
         assert_eq!(hits("/obj/box"), 0);
         assert_eq!(hits("/obj/box/sub"), 0);

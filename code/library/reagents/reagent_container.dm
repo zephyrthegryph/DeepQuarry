@@ -119,7 +119,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 	if(!holder.reagents)
 		holder.create_reagents(max_volume)
 	else if(holder.reagents.maximum_volume != max_volume)
-		holder.reagents.maximum_volume = max_volume
+		holder.reagents.set_maximum_volume(max_volume)
 	if(!lid || setting(holder, starts_open, FALSE))
 		cap_key_set(holder, REAGENT_CONTAINER_LID_OPEN, TRUE)
 	var/list/fill = setting(holder, starts, null)

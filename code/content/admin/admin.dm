@@ -915,7 +915,7 @@ ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to
 	var/client/user = ask.answerer.client
 	var/crystals = ask.value
 	if (!isnull(crystals))
-		human_mob.mind.tcrystals = crystals
+		human_mob.mind.set_tcrystals(crystals)
 		var/msg = "[key_name(user)] has modified [human_mob.ckey]'s telecrystals to [crystals]."
 		message_admins(msg)
 
@@ -936,7 +936,7 @@ ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to
 	var/client/user = ask.answerer.client
 	var/crystals = ask.value
 	if (!isnull(crystals))
-		human_mob.mind.tcrystals += crystals
+		human_mob.mind.set_tcrystals(human_mob.mind.tcrystals + crystals)
 		var/msg = "[key_name(user)] has added [crystals] to [human_mob.ckey]'s telecrystals."
 		message_admins(msg)
 
@@ -1125,7 +1125,7 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	var/mob/living/carbon/human/traitor_human = A.request.value
 	var/client/user = A.request.answerer.client
 	antag_traitors().spawn_uplink(traitor_human)
-	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
+	traitor_human.mind.set_tcrystals(DEFAULT_TELECRYSTAL_AMOUNT)
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")
 

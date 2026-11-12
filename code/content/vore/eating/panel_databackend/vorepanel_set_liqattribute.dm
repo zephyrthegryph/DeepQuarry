@@ -1,10 +1,10 @@
 // liquid belly procs
 /datum/vore_look/proc/liq_b_show_liq(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).show_liquids)
-		vore_selected_of(host()).show_liquids = 1
+		vore_selected_of(host()).set_show_liquids(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] now has liquid options."))
 	else
-		vore_selected_of(host()).show_liquids = 0
+		vore_selected_of(host()).set_show_liquids(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has liquid options."))
 	. = TRUE
 	if(.)
@@ -14,17 +14,17 @@
 	var/new_limit = params["val"]
 	if(!isnum(new_limit))
 		return FALSE
-	vore_selected_of(host()).reagent_gen_cost_limit = CLAMP(new_limit, 0, 100)
+	vore_selected_of(host()).set_reagent_gen_cost_limit(CLAMP(new_limit, 0, 100))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_gen(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).reagentbellymode) //liquid container adjustments and interactions.
-		vore_selected_of(host()).reagentbellymode = 1
+		vore_selected_of(host()).set_reagentbellymode(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] now has interactions which can produce liquids."))
 	else //Doesnt produce liquids
-		vore_selected_of(host()).reagentbellymode = 0
+		vore_selected_of(host()).set_reagentbellymode(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] wont produce liquids, liquids already in your [lowertext(vore_selected_of(host()).name)] must be emptied out or removed with purge."))
 	. = TRUE
 	if(.)
@@ -36,7 +36,7 @@
 	if(!(new_reagent in selected_belly.reagent_choices_table()))
 		return FALSE
 
-	vore_selected_of(host()).reagent_chosen = new_reagent
+	vore_selected_of(host()).set_reagent_chosen(new_reagent)
 	selected_belly.ReagentSwitch() // For changing variables when a new reagent is chosen
 	. = TRUE
 	if(.)
@@ -49,7 +49,7 @@
 		tgui_alert_async(user, "Entered name length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
 		return FALSE
 
-	vore_selected_of(host()).reagent_name = new_name
+	vore_selected_of(host()).set_reagent_name(new_name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -61,13 +61,13 @@
 		tgui_alert_async(user, "Entered verb length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
 		return FALSE
 
-	vore_selected_of(host()).reagent_transfer_verb = new_verb
+	vore_selected_of(host()).set_reagent_transfer_verb(new_verb)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_nutri_rate(mob/user, list/params, extra)
-	vore_selected_of(host()).gen_time_display = params["val"]
+	vore_selected_of(host()).set_gen_time_display(params["val"])
 	switch(vore_selected_of(host()).gen_time_display)
 		if("10 minutes")
 			vore_selected_of(host()).gen_time = 0
@@ -91,17 +91,17 @@
 	var/new_custom_vol = params["val"]
 	if(!isnum(new_custom_vol))
 		return FALSE
-	vore_selected_of(host()).custom_max_volume = CLAMP(new_custom_vol, 10, 300)
+	vore_selected_of(host()).set_custom_max_volume(CLAMP(new_custom_vol, 10, 300))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_sloshing(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).vorefootsteps_sounds)
-		vore_selected_of(host()).vorefootsteps_sounds = 1
+		vore_selected_of(host()).set_vorefootsteps_sounds(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] can now make sounds when you walk around depending on how full you are."))
 	else
-		vore_selected_of(host()).vorefootsteps_sounds = 0
+		vore_selected_of(host()).set_vorefootsteps_sounds(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] wont make any liquid sounds no matter how full it is."))
 	. = TRUE
 	if(.)
@@ -112,17 +112,17 @@
 	if(!reagent_toggle_addon)
 		return FALSE
 	var/obj/belly/selected_belly = vore_selected_of(host())
-	vore_selected_of(host()).reagent_mode_flags ^= selected_belly.reagent_mode_flag_list_table()[reagent_toggle_addon]
+	selected_belly.set_reagent_mode_flags(selected_belly.reagent_mode_flags ^ selected_belly.reagent_mode_flag_list_table()[reagent_toggle_addon])
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liquid_overlay(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).liquid_overlay)
-		vore_selected_of(host()).liquid_overlay = 1
+		vore_selected_of(host()).set_liquid_overlay(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] now has liquid overlay enabled."))
 	else
-		vore_selected_of(host()).liquid_overlay = 0
+		vore_selected_of(host()).set_liquid_overlay(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has liquid overlay enabled."))
 	. = TRUE
 	if(.)
@@ -132,7 +132,7 @@
 	var/new_max_liquid_level = params["val"]
 	if(!isnum(new_max_liquid_level))
 		return FALSE
-	vore_selected_of(host()).max_liquid_level = CLAMP(new_max_liquid_level, 0, 100)
+	vore_selected_of(host()).set_max_liquid_level(CLAMP(new_max_liquid_level, 0, 100))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -141,9 +141,9 @@
 /datum/vore_look/proc/liq_b_custom_reagentcolor(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
-		vore_selected_of(host()).custom_reagentcolor = newcolor
+		vore_selected_of(host()).set_custom_reagentcolor(newcolor)
 	else
-		vore_selected_of(host()).custom_reagentcolor = null
+		vore_selected_of(host()).set_custom_reagentcolor(null)
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -154,9 +154,9 @@
 	if(!isnum(newalpha))
 		return FALSE
 	if(newalpha)
-		vore_selected_of(host()).custom_reagentalpha = CLAMP(newalpha, 0, 255)
+		vore_selected_of(host()).set_custom_reagentalpha(CLAMP(newalpha, 0, 255))
 	else
-		vore_selected_of(host()).custom_reagentalpha = null
+		vore_selected_of(host()).set_custom_reagentalpha(null)
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -164,10 +164,10 @@
 
 /datum/vore_look/proc/liq_b_reagent_touches(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).reagent_touches)
-		vore_selected_of(host()).reagent_touches = 1
+		vore_selected_of(host()).set_reagent_touches(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] will now apply reagents to creatures when digesting."))
 	else
-		vore_selected_of(host()).reagent_touches = 0
+		vore_selected_of(host()).set_reagent_touches(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] will no longer apply reagents to creatures when digesting."))
 	. = TRUE
 	if(.)
@@ -175,10 +175,10 @@
 
 /datum/vore_look/proc/liq_b_mush_overlay(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).mush_overlay)
-		vore_selected_of(host()).mush_overlay = 1
+		vore_selected_of(host()).set_mush_overlay(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] now has fullness overlay enabled."))
 	else
-		vore_selected_of(host()).mush_overlay = 0
+		vore_selected_of(host()).set_mush_overlay(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has fullness overlay enabled."))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
@@ -188,7 +188,7 @@
 /datum/vore_look/proc/liq_b_mush_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
-		vore_selected_of(host()).mush_color = newcolor
+		vore_selected_of(host()).set_mush_color(newcolor)
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -198,7 +198,7 @@
 	var/newalpha = params["val"]
 	if(!isnum(newalpha))
 		return FALSE
-	vore_selected_of(host()).mush_alpha = CLAMP(newalpha, 0, 255)
+	vore_selected_of(host()).set_mush_alpha(CLAMP(newalpha, 0, 255))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -208,7 +208,7 @@
 	var/new_max_mush = params["val"]
 	if(!isnum(new_max_mush))
 		return FALSE
-	vore_selected_of(host()).max_mush = CLAMP(new_max_mush, 0, 6000)
+	vore_selected_of(host()).set_max_mush(CLAMP(new_max_mush, 0, 6000))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -218,7 +218,7 @@
 	var/new_min_mush = params["val"]
 	if(!isnum(new_min_mush))
 		return FALSE
-	vore_selected_of(host()).min_mush = CLAMP(new_min_mush, 0, 100)
+	vore_selected_of(host()).set_min_mush(CLAMP(new_min_mush, 0, 100))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -228,7 +228,7 @@
 	var/new_item_mush_val = params["val"]
 	if(!isnum(new_item_mush_val))
 		return FALSE
-	vore_selected_of(host()).item_mush_val = CLAMP(new_item_mush_val, 0, 1000)
+	vore_selected_of(host()).set_item_mush_val(CLAMP(new_item_mush_val, 0, 1000))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -236,10 +236,10 @@
 
 /datum/vore_look/proc/liq_b_metabolism_overlay(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).metabolism_overlay)
-		vore_selected_of(host()).metabolism_overlay = 1
+		vore_selected_of(host()).set_metabolism_overlay(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] now has ingested metabolism overlay enabled."))
 	else
-		vore_selected_of(host()).metabolism_overlay = 0
+		vore_selected_of(host()).set_metabolism_overlay(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has ingested metabolism overlay enabled."))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
@@ -250,7 +250,7 @@
 	var/new_metabolism_mush_ratio = params["val"]
 	if(!isnum(new_metabolism_mush_ratio))
 		return FALSE
-	vore_selected_of(host()).metabolism_mush_ratio = CLAMP(new_metabolism_mush_ratio, 0, 500)
+	vore_selected_of(host()).set_metabolism_mush_ratio(CLAMP(new_metabolism_mush_ratio, 0, 500))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -260,7 +260,7 @@
 	var/new_max_ingested = params["val"]
 	if(!isnum(new_max_ingested))
 		return FALSE
-	vore_selected_of(host()).max_ingested = CLAMP(new_max_ingested, 0, 6000)
+	vore_selected_of(host()).set_max_ingested(CLAMP(new_max_ingested, 0, 6000))
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -269,9 +269,9 @@
 /datum/vore_look/proc/liq_b_custom_ingested_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
-		vore_selected_of(host()).custom_ingested_color = newcolor
+		vore_selected_of(host()).set_custom_ingested_color(newcolor)
 	else
-		vore_selected_of(host()).custom_ingested_color = null
+		vore_selected_of(host()).set_custom_ingested_color(null)
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -281,7 +281,7 @@
 	var/newalpha = params["val"]
 	if(!isnum(newalpha))
 		return FALSE
-	vore_selected_of(host()).custom_ingested_alpha = newalpha
+	vore_selected_of(host()).set_custom_ingested_alpha(newalpha)
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)

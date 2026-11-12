@@ -71,7 +71,7 @@
 	TEST_ASSERT_NULL(B.mind, "a fresh brain mob has no mind")
 	TEST_ASSERT(!B.backup_ping_resolve(), "no mind: no notification")
 	rel_set(B, nameof(B.mind), own(new /datum/mind("dq_p0_no_backup"))) // the test deletes it (see dq_test_give_mind())
-	B.mind.name = "dq p0 nobody"
+	B.mind.set_name("dq p0 nobody")
 	TEST_ASSERT(!B.backup_ping_resolve(), "no backup record: no notification")
 	rel_clear(B, nameof(B.mind))
 

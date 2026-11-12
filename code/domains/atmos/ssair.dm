@@ -637,7 +637,7 @@ CAPABILITIES(/datum/system/air)
 
 /datum/system/air/proc/ui_toggle_user_display(datum/act/op/A)
 	var/mob/user = A.actor
-	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
+	user.hud_used.set_atmos_debug_overlays(!user.hud_used.atmos_debug_overlays)
 	if(user.hud_used.atmos_debug_overlays)
 		client_images_add(user.client, debug_overlay_images())
 	else

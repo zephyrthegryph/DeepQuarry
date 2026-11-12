@@ -723,10 +723,10 @@ MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the in
 	var/datum/prompt/R = A.answer
 	switch(R?.value)
 		if("Add Access")
-			pai.idcard.access |= ID.access
+			pai.idcard.include_access(ID.access)
 			to_chat(user, span_notice("You add the access from the [I] to [src]."))
 		if("Remove Access")
-			pai.idcard.access = list()
+			pai.idcard.set_access(list())
 			to_chat(user, span_notice("You remove the access from [src]."))
 	return OP_OK
 

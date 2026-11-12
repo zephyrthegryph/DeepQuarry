@@ -369,7 +369,7 @@ SYSTEM_DEF(ticker)
 			if(!player.spawn_checks_vr(player.mind.assigned_role))
 				var/datum/job/job_datum = SSjob.get_job(J.title)
 				job_datum.current_positions--
-				player.mind.assigned_role = null
+				player.mind.set_assigned_role(null)
 				continue
 
 			// Snowflakey AI treatment
