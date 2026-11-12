@@ -334,6 +334,8 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
 	configure(reagents(add = list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5)))
+	// A pitcher fruit is never wrapped: its use-in-hand is planting, not the snack's unwrap (both took in_hand at one tier).
+	without("unwrap")
 	op("pitcher_fruit_self", in_hand(), label("Plant"), then(PROC_REF(pitcher_fruit_self)))
 	derives(nameof(seed), PROC_REF(seed_of_pit))
 	owns_one(nameof(pit), starts = VARIANT(/obj/item/seeds/pitcherseed), on_destroy = ON_DESTROY_CONTAINED)

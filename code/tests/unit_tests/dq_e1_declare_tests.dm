@@ -79,7 +79,7 @@
   op "toggle" ()
   ref_many (var=e1_notes, on_other_deleted=1)
   ref_many (var=e1_tags, on_other_deleted=1)
-  extend (target=toggle, part)"}
+  extend (target=toggle, needs)"}
 
 /datum/unit_test/dq_e1/table_golden
 

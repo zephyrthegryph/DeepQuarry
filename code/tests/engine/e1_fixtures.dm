@@ -117,7 +117,7 @@ LIST_STATE(/obj/e1_fixture, e1_tags, kind = KIND_SET)
 	name = "e1 changed fixture"
 
 CAPABILITIES(/obj/e1_fixture/changed)
-	extend("toggle", entry_of("part", "needs"))
+	extend("toggle", needs(req_empty_hand()))
 	configure(e1_widget("a", power = 9))
 	without(CAP_E1_SOLO)
 

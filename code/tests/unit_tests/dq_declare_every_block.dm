@@ -22,6 +22,30 @@
 	log_test("dq_declare_every_block_compiles: compiled [compiled] block types in [(REALTIMEOFDAY - started) / 10] s; not covered: [length(uncovered) ? jointext(uncovered, ", ") : "none"]")
 	for(var/message in reports)
 		TEST_FAIL("declaration error: [message]")
+	TEST_ASSERT(!length(uncovered), "every block type has a table without an instance, uncovered: [jointext(uncovered, ", ")]")
+	// A table built without an instance is the real one: every block type's table has items, and a known type's instance-free chain is the
+	// chain its instance brings (an empty table here once passed this sweep and was cached for every later test in the world).
+	var/list/empty = list()
+	for(var/type in declared_block_types())
+		var/datum/type_table/T = table_of_type(type)
+		if(T && !length(T.items) && !length(T.caps))
+			empty += type
+	TEST_ASSERT(length(empty) < length(declared_block_types()) / 2, "most block types compile to entries, [length(empty)] of [length(declared_block_types())] are empty: [jointext(empty.Copy(1, min(length(empty), 20) + 1), ", ")]")
+	var/datum/type_table/known = table_of_type(/obj/e1_fixture)
+	TEST_ASSERT(length(known?.items), "the e1 fixture's instance-free table has entries")
+	var/list/by_proc = list()
+	var/list/block_procs = list()
+	for(var/at = /obj/e1_fixture; at; at = type2parent(at))
+		if(declared_entries_procs()[at])
+			block_procs.Insert(1, declared_entries_procs()[at])
+	for(var/block_proc in block_procs)
+		call(block_proc)(by_proc)
+	var/obj/e1_fixture/F = new(run_loc_floor_bottom_left)
+	var/list/by_instance = list()
+	F.declared_entries(by_instance)
+	TEST_ASSERT_EQUAL(length(by_proc), length(by_instance), "the instance-free chain is the instance's chain")
+	TEST_ASSERT(table_of(F) == known, "the instance reads the table built without one")
+	qdel(F)
 
 /// A click_on() handler that is neither a proc of the type nor an op key is a build error.
 /datum/unit_test/dq_declare_silent_mistakes_are_loud

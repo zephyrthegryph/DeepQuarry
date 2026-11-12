@@ -600,6 +600,12 @@ fn op_tags(cx: &GenCx, out: &mut GenOut) {
     out.blank();
 }
 
+/// The proc a type's CAPABILITIES block is generated into: a definition unique to the type (`declared_block_obj_item`), called by its
+/// declared_entries() override and, with no instance, by table_of_type().
+fn block_proc_name(ty: &str) -> String {
+    format!("declared_block{}", ty.trim().replace('/', "_"))
+}
+
 fn block_types(cx: &GenCx, out: &mut GenOut) {
     out.doc("declared_block_types(): every type with a CAPABILITIES block, sorted.");
     let all: Vec<&Marker> = cx.markers("CAPABILITIES").collect();
@@ -613,6 +619,9 @@ fn block_types(cx: &GenCx, out: &mut GenOut) {
             row.push(crate::sem::gen::TEST_GUARD.to_string());
         }
         row.push(format!("\tinto += {}", ty.trim()));
+        // The type's own block proc by a typed proc path (a definition, not the declared_entries() override: text2path() of an override's
+        // text finds only the base definition), so table_of_type() can call each block without an instance.
+        row.push(format!("\tprocs?[{0}] = {0}/proc/{1}", ty.trim(), block_proc_name(ty.trim())));
         if test_only {
             row.push("#endif".to_string());
         }
@@ -625,8 +634,19 @@ fn block_types(cx: &GenCx, out: &mut GenOut) {
         out.line(format!("\tdeclared_block_types_part{}(.)", i + 1));
     }
     out.blank();
+    out.doc("declared_entries_procs(): block type -> its declared_entries() override (a typed proc path), for table_of_type().");
+    out.line("/proc/declared_entries_procs()");
+    out.line("\tvar/static/list/procs");
+    out.line("\tif(!procs)");
+    out.line("\t\tprocs = list()");
+    out.line("\t\tvar/list/types = list()");
+    for i in 0..chunks.len() {
+        out.line(format!("\t\tdeclared_block_types_part{}(types, procs)", i + 1));
+    }
+    out.line("\treturn procs");
+    out.blank();
     for (i, chunk) in chunks.iter().enumerate() {
-        out.line(format!("/proc/declared_block_types_part{}(list/into)", i + 1));
+        out.line(format!("/proc/declared_block_types_part{}(list/into, list/procs)", i + 1));
         for row in chunk.iter() {
             for l in row {
                 out.line(l.clone());
@@ -1056,8 +1076,13 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
             let Some(root) = blocks.first().filter(|m| m.part.is_none()).copied() else { continue };
             let ty = ty.as_str();
             out.doc(format!("CAPABILITIES({}) at {}:{}", ty, root.rel, root.line));
+            // The block itself is a proc the type defines (not an override), so it has a typed proc path the native compiler and BYOND both
+            // resolve: table_of_type() calls each ancestor's block proc with no instance (declared_entries_procs()).
             out.line(format!("{}/declared_entries(list/into)", ty));
             out.line("\t..(into)");
+            out.line(format!("\t{}(into)", block_proc_name(ty)));
+            out.blank();
+            out.line(format!("{}/proc/{}(list/into)", ty, block_proc_name(ty)));
             out.line(format!("\tinto += entry_block({}, {}, {})", quote(&root.rel), root.line, ty));
             // table_build() marks the chain it asks for: a block whose table is already compiled is not read, so its constructors are not run again.
             out.line(format!("\tif(declare_block_skipped(into, {}))", ty));
@@ -1405,7 +1430,8 @@ CAPABILITIES(/obj/ripens, \
     #[test]
     fn a_capabilities_list_becomes_declared_entries_with_a_line_per_entry() {
         let (_, decl, _) = gen(vec![("code/a.dm", SRC)]);
-        assert!(decl.contains("/obj/thing/declared_entries(list/into)\n\t..(into)\n\tinto += entry_block(\"code/a.dm\", 11, /obj/thing)"), "{}", decl);
+        assert!(decl.contains("/obj/thing/declared_entries(list/into)\n\t..(into)\n\tdeclared_block_obj_thing(into)"), "{}", decl);
+        assert!(decl.contains("/obj/thing/proc/declared_block_obj_thing(list/into)\n\tinto += entry_block(\"code/a.dm\", 11, /obj/thing)"), "{}", decl);
         assert!(decl.contains("into += entry_line(12)\n\tinto += list(global.widget(\"a\", power = 2))"), "{}", decl);
         assert!(decl.contains("entry_link(\"/obj/thing::partner\", \"/obj/thing::partner\")"), "link is rewritten: {}", decl);
         assert!(decl.contains("configure(global.widget(\"a\", power = 9))"), "configure(CAP_X, ...) is rewritten to the constructor: {}", decl);

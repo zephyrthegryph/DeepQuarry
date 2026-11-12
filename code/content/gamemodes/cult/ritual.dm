@@ -496,6 +496,8 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	occult_tier = 2
 	var/cultistsonly = 1
 CAPABILITIES(/obj/item/book/tome/imbued)
+	// An imbued tome only scribes: its use-in-hand is the rune picker, not the tome's reading menu (both took in_hand at one tier).
+	without("tome")
 	op("imbued", in_hand(), label("Scribe a rune"),
 		asks(/datum/prompt/choice/imbued_rune/pick, fields = list("question" = "Choose a rune to scribe", "choices" = computed(PROC_REF(imbued_rune_choices))), step = "rune", when = PROC_REF(imbued_askable)),
 		asks(/datum/prompt/choice/imbued_rune, fields = list("question" = "Select the last rune", "choices" = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri")), step = "beacon", when = PROC_REF(imbued_needs_beacon)),

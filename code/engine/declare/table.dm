@@ -106,9 +106,12 @@ GLOBAL_VAR(declare_report_capture)
 		empty.caps = list()
 	return empty
 
-/// The compiled table of `type` without an instance in hand (explain tools, tests). No instance is made: the generated declared_entries() of the
-/// nearest type that declares a block is called as a plain proc (src null; it reads nothing of src, only nameof() and PROC_REF() names, which are
+/// The compiled table of `type` without an instance in hand (explain tools, tests). No instance is made: the generated block proc of every ancestor that
+/// declares a block is called as a plain proc (src null; it reads nothing of src, only nameof() and PROC_REF() names, which are
 /// compile-time text), so nothing of the type runs: no New(), no Initialize(), no registration. Null for a type with no block anywhere above it.
+/// Each block is a proc its type defines (generated `declared_block_<type>()`, by typed path in declared_entries_procs()): text2path() of
+/// "/T/proc/declared_entries" names only the base /datum definition for an override, which built and cached every table empty. A chain that brings no block for a type that has one is not
+/// cached: it is reported, and the empty result returned uncached so table_of() later builds the real table from an instance.
 /proc/table_of_type(type)
 	RETURN_TYPE(/datum/type_table)
 	if(!ispath(type))
@@ -116,17 +119,30 @@ GLOBAL_VAR(declare_report_capture)
 	var/datum/type_table/T = type_table_cache()[type]
 	if(T)
 		return T
-	var/declarer = type
-	var/entries_proc = null
-	while(declarer)
-		entries_proc = text2path("[declarer]/proc/declared_entries")
-		if(entries_proc)
-			break
-		declarer = type2parent(declarer)
-	if(!entries_proc)
+	// The chain declared_entries() would bring, parents first: each ancestor's own block proc (a typed definition, generated), called with no src.
+	var/list/procs = declared_entries_procs()
+	var/list/block_procs = list()
+	var/declarer = null
+	for(var/at = type; at; at = type2parent(at))
+		var/block_proc = procs[at]
+		if(block_proc)
+			block_procs.Insert(1, block_proc)
+			declarer ||= at
+	if(!length(block_procs))
 		return null
 	var/list/chain = list(new /datum/entry/skip_built)
-	call(entries_proc)(chain)
+	for(var/block_proc in block_procs)
+		try
+			call(block_proc)(chain)
+		catch(var/exception/E)
+			// A block that reads its instance (a var as an entry argument) cannot be built without one: reported, never cached.
+			log_world("table_of_type([type]): [block_proc] faulted without an instance: [E] at [E.file]:[E.line]; table not cached")
+			declare_report("table_of_type([type]): [block_proc] reads its instance ([E] at [E.file]:[E.line]) -- a declaration takes constants, not instance vars")
+			return null
+	if(!length(table_split_blocks(chain)))
+		log_world("table_of_type([type]): the block procs of [declarer] ([jointext(block_procs, ", ")]) brought no block; table not cached")
+		declare_report("table_of_type([type]): the block procs of [declarer] brought no block -- the generated proc map is stale or the proc path did not resolve")
+		return null
 	return table_build_chain(type, chain)
 
 /proc/table_build(datum/D)

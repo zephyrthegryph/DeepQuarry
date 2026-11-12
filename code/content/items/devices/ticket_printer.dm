@@ -3,13 +3,12 @@
 	desc = "It prints security citations!"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "sec_ticket_printer"
-	var/print_cooldown = 1 MINUTE
 	w_class = ITEMSIZE_SMALL //because something so small, trivial, and used for silly RP should not be practically gigantic.
 
 CAPABILITIES(/obj/item/ticket_printer)
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	op("print", in_hand(), label("Print ticket"), cooldown(print_cooldown), needs(carried()),
+	op("print", in_hand(), label("Print ticket"), cooldown(1 MINUTE), needs(carried()),
 		asks(/datum/prompt/text, keeps = 0, step = "recipient", fields = list("timeout" = 0, "title" = "Name", "question" = "The Name of the person you are issuing the ticket to.", "max_len" = 100)),
 		asks(/datum/prompt/text/ticket_printer_details, fields = list("timeout" = 0), keeps = 0, step = "details", when = PROC_REF(has_recipient)),
 		then(PROC_REF(ticket_printed)))
