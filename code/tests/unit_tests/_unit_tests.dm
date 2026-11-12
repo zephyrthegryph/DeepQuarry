@@ -1170,6 +1170,8 @@
 #include "interim_smart_magazine_emag_original_round.dm"
 #include "interim_monkey_rehydrator_sticky_cube.dm"
 #include "interim_microwave_sticky_produce.dm"
+#include "dq_microwave_keeps_parts.dm"
+#include "dq_bot_panel_locked.dm"
 #include "interim_tape_break_cleanup.dm"
 #include "interim_invisible_soil_terminal_cleanup.dm"
 #include "interim_atm_sticky_id.dm"
