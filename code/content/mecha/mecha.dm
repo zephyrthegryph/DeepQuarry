@@ -480,7 +480,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	..()
 
-/// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
+/// These control what toggleable processes are executed within mecha_step() (MECHA_PROC_*).
 /obj/mecha/var/current_processes = MECHA_PROC_INT_TEMP
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the

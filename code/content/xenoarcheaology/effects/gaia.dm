@@ -76,7 +76,7 @@ CAPABILITIES(/datum/artifact_effect/gaia)
 	for(var/obj/effect/plant/P in view(effectrange,get_turf(holder)))
 		age_plantlife(P)
 
-/datum/artifact_effect/gaia/periodic_step()
+/datum/artifact_effect/gaia/effect_tick()
 	var/atom/holder = get_master_holder()
 	..()
 

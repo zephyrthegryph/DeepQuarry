@@ -1132,7 +1132,6 @@ every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on
 	...
 	E.periodic_pipe = P
 	E.datum_flags |= DF_ISPROCESSING
-	cadence_start(E, P)
 ```
 
 (The world lanes of the survey, `datums/om/world_lanes.dm`, are gone: the world services are systems with `every()` work items, phase 1S.)

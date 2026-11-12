@@ -321,7 +321,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 
 		//do the effect
 		if(inserted_battery().battery_effect)
-			inserted_battery().battery_effect.periodic_step()
+			inserted_battery().battery_effect.effect_tick()
 
 			//if the effect works by touch, activate it on anyone viewing the console
 			if(inserted_battery().battery_effect.effect == EFFECT_TOUCH)

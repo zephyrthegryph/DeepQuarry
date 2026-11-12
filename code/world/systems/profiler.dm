@@ -120,7 +120,6 @@ SYSTEM_DEF(profiler)
 		"gas_wakes" = list("woken" = machine_profile_gas_woken_last()),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = members_total(sequence_def(/datum/sequence/life).parked_key), "deaths_pending" = length(mobs_death_list())))
-	subsystems["periodic"] = periodic_diagnostics()
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()
 	subsystems["radiation"] += SSradiation.performance_diagnostics()

@@ -173,7 +173,6 @@
 #include "mc_boot_dependencies.dm"
 #include "system_boot_dag.dm"
 #include "system_membership.dm"
-#include "kernel_cadence.dm"
 #include "kernel_await.dm"
 #include "kernel_latency.dm"
 #include "kernel_loop.dm"

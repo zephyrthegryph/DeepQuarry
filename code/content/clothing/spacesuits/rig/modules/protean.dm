@@ -54,7 +54,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	else
 		return 0
 
-/obj/item/rig_module/protean/syphon/periodic_step()
+/obj/item/rig_module/protean/syphon/module_tick()
 	if(active)
 		var/mob/living/carbon/human/H = holder.wearer()
 		if(!H)
@@ -170,7 +170,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	else
 		return 0
 
-/obj/item/rig_module/protean/armor/periodic_step()
+/obj/item/rig_module/protean/armor/module_tick()
 	if(active)
 		var/mob/living/carbon/human/H = holder.wearer()
 		if(!H)
@@ -224,7 +224,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 
 /// Wound repair on the host, whatever it is made of, paid for in steel by what
 /// mend() actually repaired. Never touches lesions or dead organs (bug 11).
-/obj/item/rig_module/protean/healing/periodic_step()
+/obj/item/rig_module/protean/healing/module_tick()
 	if(!active)
 		return
 	var/mob/living/carbon/human/H = holder.wearer()

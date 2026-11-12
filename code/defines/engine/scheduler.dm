@@ -184,15 +184,6 @@
 // Named relation reads are typed procs on /datum (code/engine/refs/views.dm):
 // M.buckled_to(), A.buckled_mob_list(), M.pulling_target(), ... E.slot_item(slot).
 
-// ---------------------------------------------------------------- periodic cadences (code/engine/kernel/cadences.dm)
-
-
-/// The source a periodic member holds its cadence membership under (member_join()).
-#define PERIODIC_SOURCE "periodic"
-#define PERIODIC_SLOW /datum/cadence/slow
-#define PERIODIC_SECOND /datum/cadence/second
-#define PERIODIC_FAST /datum/cadence/fast
-
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2

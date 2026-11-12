@@ -253,7 +253,7 @@
 	src.update_pulling()
 
 	FOR_CONTENTS(var/obj/item/grab/G, src)
-		G.periodic_step()
+		G.grab_tick()
 
 /// Busy while pulling or grabbing. Gravity is re-read on Moved and when the ground changes (MOB_KEY_GROUND).
 /mob/living/proc/life_movement_due()

@@ -607,7 +607,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		malfunction()
 
 	for(var/obj/item/rig_module/module in installed_modules)
-		draw_power(module.periodic_step() * 10 / CELLRATE, module, partial = TRUE)
+		draw_power(module.module_tick() * 10 / CELLRATE, module, partial = TRUE)
 
 /obj/item/rig/proc/check_power_cost(mob/living/user, cost, use_unconcious, obj/item/rig_module/mod, user_is_ai)
 
