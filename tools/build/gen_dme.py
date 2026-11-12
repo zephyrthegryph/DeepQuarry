@@ -566,6 +566,11 @@ def main(argv: list[str]) -> int:
     except SpecError as e:
         print(f"gen_dme: {e}", file=sys.stderr)
         return 2
+    tests_rc = 0
+    if "--out" not in argv:
+        # the test tree's include lists (code/tests/_tests.dm, _unit_tests.dm) are generated with the manifest: gen_test_includes.py
+        import gen_test_includes
+        tests_rc = gen_test_includes.main((["--check"] if "--check" in argv else []) + ["--root", root])
     try:
         with open(out_path, encoding="utf-8", newline="") as fh:
             current = fh.read()
@@ -581,9 +586,9 @@ def main(argv: list[str]) -> int:
             print(f"gen_dme: {len(bad)} macro use(s) before the #define: add a `first`/`before` rule to {SPEC} (or `macro-ignore NAME`)",
                   file=sys.stderr)
         if "--check-macros" in argv:
-            return 1 if bad else 0
+            return 1 if bad or tests_rc else 0
         if current == text and not bad:
-            return 0
+            return 1 if tests_rc else 0
         if current == text:
             return 1
         old = set(re.findall(r'^#include "([^"]+)"', current or "", re.M))
@@ -600,7 +605,7 @@ def main(argv: list[str]) -> int:
         with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
         print(f"gen_dme: wrote {os.path.relpath(out_path, ROOT)} ({text.count(chr(10) + '#include')} includes)")
-    return 0
+    return 1 if tests_rc else 0
 
 
 def selftest() -> int:

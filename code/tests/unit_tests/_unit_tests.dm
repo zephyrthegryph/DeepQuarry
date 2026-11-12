@@ -192,8 +192,6 @@
 #include "unit_test_guard.dm"
 #include "vbo_tests.dm"
 #include "vore_tests.dm"
-// DQ fork tests â€” need TEST_ASSERT* macros in scope, which are #undef'd at
-// the bottom of this file.
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_admin_accessors_tests.dm"
 #include "dq_admin_verb_browser_tests.dm"
@@ -766,6 +764,7 @@
 #include "dq_overlay_dir_renders.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
+#include "dq_p2_snack_behaviour.dm"
 #include "dq_mf_smes_behaviour.dm"
 #include "dq_p2_batteryrack_behaviour.dm"
 #include "dq_p2_vending_behaviour.dm"
@@ -1035,6 +1034,7 @@
 #include "interim_mre_wrapper_consumption.dm"
 #include "interim_condiment_food_transfer.dm"
 #include "interim_stock_account_data.dm"
+#include "interim_stock_loan_ownership.dm"
 #include "interim_teppi_mutation_data.dm"
 #include "interim_secrets_prompt_actor.dm"
 #include "interim_media_track_actor.dm"
@@ -1312,7 +1312,6 @@
 #include "interim_forensic_sample_release.dm"
 #include "interim_stamp_choice_metadata.dm"
 #include "interim_admin_reload_request_lifetime.dm"
-
 #include "interim_native_reference_lifetime.dm"
 #include "interim_robot_reclassification_request.dm"
 #include "interim_implantcase_native_label_request.dm"
@@ -1326,90 +1325,27 @@
 #include "interim_handlabeler_native_configuration.dm"
 #include "interim_blob_native_pairs.dm"
 #include "dq_gap_decisions_tests.dm"
-// END_INCLUDE
-
-#if defined(BENCHMARK) || defined(SPACEMAN_DMM)
-#include "../benchmarks/_benchmark.dm"
-#include "../benchmarks/scenarios.dm"
-#include "../benchmarks/pipe_devices.dm"
-#include "../benchmarks/boot_profile.dm"
-#include "../benchmarks/shared_cache.dm"
-#include "../benchmarks/lighting_rebuild.dm"
-#include "../benchmarks/client_lighting_play.dm"
-#include "../benchmarks/life_sweep.dm"
-#include "../benchmarks/life_sweep_adapter.dm"
-#include "../benchmarks/life_sequence.dm"
-#include "../benchmarks/dx_refresh.dm"
-#include "../benchmarks/dx_deps.dm"
-#include "../benchmarks/op_resolve.dm"
-#include "../benchmarks/apc_flip.dm"
-#include "../benchmarks/chat_throughput.dm"
-#include "../benchmarks/ui_census.dm"
-#include "../benchmarks/machine_power_join.dm"
-#include "../benchmarks/machinery_steady.dm"
-#include "../benchmarks/station_explosion.dm"
-#include "../benchmarks/alloc_stall.dm"
-#include "../benchmarks/steady_state.dm"
-#include "../benchmarks/server_phases.dm"
-#include "../benchmarks/memory_report.dm"
-#include "../benchmarks/move_integrity.dm"
-#include "../benchmarks/shuttle_landing.dm"
-#include "../benchmarks/join_cost.dm"
-#include "../benchmarks/map_plan_cost.dm"
-#include "../benchmarks/radio_broadcast.dm"
-#include "../benchmarks/active_play.dm"
-#include "../benchmarks/op_steady.dm"
-#include "../benchmarks/arrival_draws.dm"
-#include "../benchmarks/draw_cost.dm"
-#include "../benchmarks/mob_make_cost.dm"
-#include "../benchmarks/mapload_init.dm"
-#include "../benchmarks/soak.dm"
-#include "../benchmarks/kernel_metrics.dm"
-#include "../balance/balance_benchmark.dm"
-#endif
 #include "find_reference_fixtures.dm"
-#ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
-#include "find_reference_sanity.dm"
-#include "dq_alist_object_keys.dm"
-#include "dq_verdigris_return_refs.dm"
-#include "dq_fullscreen_no_client.dm"
-#endif
-
 #include "interim2_artifact_configured_effect_rejection.dm"
-
 #include "round2_robot_fabricator_consumption.dm"
-
 #include "round2_reactive_shell_core_consumption.dm"
-
 #include "round2_taskmanager_department_native.dm"
-
 #include "round2_eyepatch_native_controls.dm"
-
 #include "round2_rms_material_choice_native.dm"
-
 #include "round2_crayon_native_drawing.dm"
-
 #include "round2_tele_beacon_native_warning.dm"
-
 #include "round2_flashlight_flicker_timing.dm"
-
 #include "round2_mecha_native_tank_pressure.dm"
-
 #include "round2_chameleon_holder_allocation.dm"
-
 #include "round2_shield_idle_disposal.dm"
-
 #include "round2_viral_trait_generation.dm"
-
 #include "round2_construct_blocked_spell_cleanup.dm"
 #include "round2_robot_source_retirement.dm"
 #include "round2_shock_collar_tag_effect.dm"
-
 #include "round2_library_catalogue_effect.dm"
 #include "round2_library_search_effects.dm"
 #include "round2_account_funds_effect.dm"
 #include "round2_lasertag_suicide_projectile_cleanup.dm"
-
 #include "round2_song_append_effect.dm"
 #include "round2_transcore_body_record_retirement.dm"
 #include "round2_mob_spawner_settings_effect.dm"
@@ -1426,61 +1362,37 @@
 #include "round2_disposal_outlet_range_request.dm"
 #include "interim_pda_message_missing_sender.dm"
 #include "round2_gender_change_drug_request.dm"
-
 #include "round2_combat_player_requests.dm"
-
 #include "round2_song_import_requests.dm"
-
 #include "round2_shuttle_docking_codes_request.dm"
-
 #include "round2_multi_shuttle_destination_clientless.dm"
-
 #include "round2_slime_docility_name_request.dm"
-
 #include "lobby_join_op_alive_keep.dm"
 #include "lobby_panel_observe_join.dm"
 #include "pipe_carries_no_has_power.dm"
 #include "round2_helm_limit_requests.dm"
 #include "round2_helm_coordinates_clientless.dm"
-
 #include "round2_spellbook_immediate_speed_upgrade.dm"
 #include "round2_mob_examine_selection.dm"
-
 #include "round2_changeling_sting_continuation.dm"
-
-
 #include "round2_silicon_album_delete.dm"
-
 #include "round2_photocopier_ai_photo.dm"
-
 #include "round2_grenade_timer_configuration.dm"
-
 #include "round2_glass_window_choice.dm"
-
 #include "round2_helm_navigation_entry.dm"
-
 #include "round2_matrix_active_colour.dm"
-
 #include "round2_event_trigger_initial_denial.dm"
-
 #include "round2_resleeving_console_requests.dm"
-
 #include "round2_item_bank_retrieval_null_submit.dm"
-
 #include "interim_permit_reregistration.dm"
 #include "round2_temperature_projectile_bounded_delta.dm"
-
 #include "interim_holobadge_credentials.dm"
 #include "interim_nanotech_permit_reregistration.dm"
-
+#include "interim_native_mining_requests.dm"
 #include "interim_teleport_incantation.dm"
-
 #include "round2_circuit_jointext_empty_delimiter.dm"
-
 #include "round2_circuit_arithmetic_first_input_pull.dm"
-
 #include "round2_telescience_crystal_ejection.dm"
-
 #include "dq_timer_argument_core_tests.dm"
 #include "dq_timer_argument_mob_tests.dm"
 #include "dq_timer_argument_transport_tests.dm"
@@ -1495,7 +1407,6 @@
 #include "dq_ownership_accessor_retirement_tests.dm"
 #include "dq_ownership_policy_retirement_tests.dm"
 #include "dq_ownership_teardown_retirement_tests.dm"
-
 #include "dq_every_options_tests.dm"
 #include "dq_time_foundation_compatibility_tests.dm"
 #include "dq_engine_policy_adapter_tests.dm"
@@ -1504,14 +1415,12 @@
 #include "interim_cell_hand_menu.dm"
 #include "dq_round2_gravity_teardown.dm"
 #include "dq_read_once_menu_tests.dm"
-
 #include "interim_machine_missing_item_menus.dm"
 #include "interim_shuttle_authorize_menu.dm"
 #include "round2_borgupload_empty_selection.dm"
 #include "round2_upload_module_click.dm"
 #include "interim_camera_doppler_menu_parity.dm"
 #include "dq_round2_menu_refusal_restore_tests.dm"
-
 #include "dq_round3_living_action_status_tests.dm"
 #include "dq_round3_frame_construction_tests.dm"
 #include "dq_round3_requests_root.dm"
@@ -1526,34 +1435,27 @@
 #include "dq_small_forms.dm"
 #include "dq_client_render_regressions.dm"
 #include "dq_draw_rest.dm"
-
 #include "dq_machine_click_intent_tests.dm"
-
 #include "dq_machinery_timed_simple_pin.dm"
 #include "dq_machinery_timed_material_pin.dm"
 #include "dq_machinery_timed_occupant_pin.dm"
 #include "dq_machinery_arg_fields_tests.dm"
 #include "dq_machinery_keeps_dead_tests.dm"
 #include "dq_beacon_topic_gate_tests.dm"
-
 #include "dq_machinery_last_kiosk_tests.dm"
 #include "dq_machinery_last_occupant_tests.dm"
 #include "dq_machinery_last_aicore_tests.dm"
-
 #include "dq_vore_consent_refusals.dm"
 #include "dq_requirement_protocol_tests.dm"
 #include "dq_requirement_boundary_pin_tests.dm"
 #include "dq_requirement_machine_selection_tests.dm"
 #include "dq_medical_native_slot_tests.dm"
-
 #include "dq_acceptance_foundation_tests.dm"
 #include "dq_acceptance_tracking_tests.dm"
 #include "dq_review_content_am.dm"
 #include "dq_acceptance_old_grouped_tests.dm"
 #include "dq_native_slot_accepts_tests.dm"
-
 #include "j_transfer_storage_regressions.dm"
-
 #include "j_closet_resident_cost_tests.dm"
 #include "dq_acceptance_final24_old_boundaries.dm"
 #include "dq_acceptance_retirement_old_boundaries.dm"
@@ -1616,6 +1518,55 @@
 #include "dq_a4_initialization_tests.dm"
 #include "dq_a7_initialization_tests.dm"
 #include "dq_a13_initialization_tests.dm"
+// END_INCLUDE
+
+#if defined(BENCHMARK) || defined(SPACEMAN_DMM)
+#include "../benchmarks/_benchmark.dm"
+#include "../benchmarks/scenarios.dm"
+#include "../benchmarks/pipe_devices.dm"
+#include "../benchmarks/boot_profile.dm"
+#include "../benchmarks/shared_cache.dm"
+#include "../benchmarks/lighting_rebuild.dm"
+#include "../benchmarks/client_lighting_play.dm"
+#include "../benchmarks/life_sweep.dm"
+#include "../benchmarks/life_sweep_adapter.dm"
+#include "../benchmarks/life_sequence.dm"
+#include "../benchmarks/dx_refresh.dm"
+#include "../benchmarks/dx_deps.dm"
+#include "../benchmarks/op_resolve.dm"
+#include "../benchmarks/apc_flip.dm"
+#include "../benchmarks/chat_throughput.dm"
+#include "../benchmarks/ui_census.dm"
+#include "../benchmarks/machine_power_join.dm"
+#include "../benchmarks/machinery_steady.dm"
+#include "../benchmarks/station_explosion.dm"
+#include "../benchmarks/alloc_stall.dm"
+#include "../benchmarks/steady_state.dm"
+#include "../benchmarks/server_phases.dm"
+#include "../benchmarks/memory_report.dm"
+#include "../benchmarks/move_integrity.dm"
+#include "../benchmarks/shuttle_landing.dm"
+#include "../benchmarks/join_cost.dm"
+#include "../benchmarks/map_plan_cost.dm"
+#include "../benchmarks/radio_broadcast.dm"
+#include "../benchmarks/active_play.dm"
+#include "../benchmarks/op_steady.dm"
+#include "../benchmarks/arrival_draws.dm"
+#include "../benchmarks/draw_cost.dm"
+#include "../benchmarks/mob_make_cost.dm"
+#include "../benchmarks/mapload_init.dm"
+#include "../benchmarks/soak.dm"
+#include "../benchmarks/kernel_metrics.dm"
+#include "../balance/balance_benchmark.dm"
+#endif
+
+#ifdef REFERENCE_TRACKING_DEBUG
+#include "find_reference_sanity.dm"
+#include "dq_alist_object_keys.dm"
+#include "dq_verdigris_return_refs.dm"
+#include "dq_fullscreen_no_client.dm"
+#endif
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
