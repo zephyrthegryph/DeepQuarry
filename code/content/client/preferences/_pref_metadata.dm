@@ -195,9 +195,9 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 			continue
 		var/list/entry = .[pref_type]
 		if(entry["category"])
-			pref.category = entry["category"]
+			pref.set_category(entry["category"])
 		if(entry["group"])
-			pref.group = entry["group"]
+			pref.set_group(entry["group"])
 		if(entry["widget"])
 			pref.widget = entry["widget"]
 
@@ -216,8 +216,8 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	if(!instance)
 		return
 	if(category)
-		instance.category = category
+		instance.set_category(category)
 	if(group)
-		instance.group = group
+		instance.set_group(group)
 	if(widget)
 		instance.widget = widget

@@ -38,7 +38,7 @@
 	TEST_ASSERT_EQUAL(provider.money, 20, "poor-patient subsidy did not reach Medical")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before - 20, "station subsidy was not conserved")
 	customer.set_money(100)
-	provider.service_subsidy = 0
+	provider.set_service_subsidy(0)
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_MEDICAL, 120), "underfunded service purchase produced a quote")
 	TEST_ASSERT(!charge_department_service(customer, DEPARTMENT_MEDICAL, 120, "Unaffordable care"), "underfunded service purchase was accepted")
 	qdel(provider)
@@ -119,8 +119,8 @@
 	TEST_ASSERT_EQUAL(plan["payroll_funded"] + plan["operating_funded"] + plan["remaining"], plan["available"], "waterfall did not reconcile available funds")
 	TEST_ASSERT_EQUAL(plan["requested"], plan["funded"] + plan["shortfall"], "budget preview did not reconcile requested, funded, and shortfall totals")
 	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
-	engineering_budget.allocation_percent = 25
-	engineering_budget.allocation_configured = TRUE
+	engineering_budget.set_allocation_percent(25)
+	engineering_budget.set_allocation_configured(TRUE)
 	plan = SSsupply.department_budget_plan()
 	departments = plan["departments"]
 	engineering = departments[DEPARTMENT_ENGINEERING]
@@ -191,8 +191,8 @@
 	budget.set_department_id(DEPARTMENT_ENGINEERING)
 	budget.set_is_budget_account(TRUE)
 	budget.set_money(1200)
-	budget.monthly_income = 300
-	budget.monthly_expenses = 100
+	budget.set_monthly_income(300)
+	budget.set_monthly_expenses(100)
 	TEST_ASSERT(budget.roll_budget_period(), "department budget refused rollover")
 	TEST_ASSERT_EQUAL(budget.money, 0, "operating funds survived rollover")
 	TEST_ASSERT_EQUAL(budget.savings, 1200, "unused operating funds did not enter savings")
@@ -324,7 +324,7 @@
 	customer.set_account_number(823456)
 	customer.set_money(120)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
-	service.service_subsidy = 0.25
+	service.set_service_subsidy(0.25)
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_CIVILIAN, 200), "underfunded Service checkout produced a quote")
 	customer.set_money(150)
 	var/list/quote = department_service_quote(customer, DEPARTMENT_CIVILIAN, 200)
@@ -373,7 +373,7 @@
 	staff.set_account_number(834568)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, staff)
-	service.service_subsidy = 0
+	service.set_service_subsidy(0)
 	var/datum/service_invoice/invoice = complete_service_checkout(customer, service, 100, "Adversarial meal", "Destroyed terminal", list("meal" = 1), list("meal" = 100), staff.account_number, staff.owner_name, 20)
 	TEST_ASSERT(invoice, "valid tipped checkout did not create an invoice")
 	TEST_ASSERT_EQUAL(invoice.staff_tip, 10, "staff gratuity split was incorrect")
@@ -402,7 +402,7 @@
 	customer.suspended = FALSE
 	var/funded_service_balance = service.money
 	service.set_money(0)
-	service.savings = 0
+	service.set_savings(0)
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "underfunded provider issued a refund")
 	service.set_money(funded_service_balance)
 	TEST_ASSERT(transfer_account_funds(staff, impostor, staff.money, "Spent gratuity"), "test could not spend the staff gratuity")
@@ -420,12 +420,12 @@
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
 	service.set_money(service_before)
-	service.savings = service_savings_before
-	service.monthly_income = service_income_before
-	service.monthly_expenses = service_expenses_before
-	service.total_revenue = service_revenue_before
-	service.total_expenses = service_total_expenses_before
-	service.service_subsidy = old_subsidy
+	service.set_savings(service_savings_before)
+	service.set_monthly_income(service_income_before)
+	service.set_monthly_expenses(service_expenses_before)
+	service.set_total_revenue(service_revenue_before)
+	service.set_total_expenses(service_total_expenses_before)
+	service.set_service_subsidy(old_subsidy)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, staff)
 	qdel(invoice)
@@ -464,8 +464,8 @@
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
 	service.set_money(service_money_before)
-	service.monthly_expenses = service_expenses_before
-	service.total_expenses = service_total_expenses_before
+	service.set_monthly_expenses(service_expenses_before)
+	service.set_total_expenses(service_total_expenses_before)
 	for(var/obj/item/spacecash/new_cash in turf_contents_of_type(test_turf, /obj/item/spacecash))
 		if(!(new_cash in preexisting_cash))
 			qdel(new_cash)
@@ -776,8 +776,8 @@
 
 	research.set_money(research_before)
 	cargo.set_money(cargo_before)
-	research.monthly_income = research_income_before
-	cargo.monthly_income = cargo_income_before
+	research.set_monthly_income(research_income_before)
+	cargo.set_monthly_income(cargo_income_before)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, producer)
 	qdel(scanner)
 	qdel(customer)
@@ -1716,7 +1716,7 @@
 
 /datum/unit_test/dq_supply_buy_ships_event_queued_orders/Run()
 	var/datum/shuttle/autodock/ferry/supply/unit_test/fake_shuttle = new /datum/shuttle/autodock/ferry/supply/unit_test("Unit Test Supply")
-	fake_shuttle.shuttle_area = list(get_area(run_loc_floor_bottom_left))
+	fake_shuttle.set_shuttle_area(list(get_area(run_loc_floor_bottom_left)))
 	var/datum/shuttle/autodock/ferry/supply/real_shuttle = SSsupply.shuttle
 	SSsupply.shuttle = fake_shuttle
 	var/datum/supply_order/order = new /datum/supply_order()

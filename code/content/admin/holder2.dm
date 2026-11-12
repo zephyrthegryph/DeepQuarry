@@ -248,7 +248,7 @@ CAPABILITIES(/datum/admins)
 		return
 	GLOB.deadmins -= target
 	GLOB.admin_datums[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
-	deadmined = FALSE
+	set_deadmined(FALSE)
 	if (GLOB.directory[target])
 		associate(GLOB.directory[target]) //find the client for a ckey if they are connected and associate them with us
 
@@ -258,7 +258,7 @@ CAPABILITIES(/datum/admins)
 		return
 	GLOB.deadmins[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	GLOB.admin_datums -= target
-	deadmined = TRUE
+	set_deadmined(TRUE)
 
 	var/client/client = owner() || GLOB.directory[target]
 

@@ -84,7 +84,7 @@ CAPABILITIES(/obj/item/champagne)
 
 	// Okay first things first create the shuttle Override to no areas to prevent runtimes, then add them in.
 	var/datum/shuttle/autodock/overmap/shuttle = new /datum/shuttle/autodock/overmap{shuttle_area = list()}(shuttle_name, starting_landmark)
-	LAZYADD(shuttle.shuttle_area, shuttle_area)
+	shuttle.add_shuttle_area(shuttle_area)
 	shuttle.refresh_fuel_ports_list() // We added area, refresh
 	shuttle.set_docking_codes(null)  // It doesn't get to magically know docking codes.
 

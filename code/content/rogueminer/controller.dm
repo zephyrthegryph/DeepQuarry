@@ -136,10 +136,10 @@ CAPABILITIES(/datum/controller/rogue)
 	difficulty = max(difficulty+amt, diffstep_nums[1]) //Can't drop below the lowest level.
 
 	if(difficulty < diffstep_nums[diffstep])
-		diffstep--
+		set_diffstep(diffstep - 1)
 	else if(diffstep < max_diffstep)
 		if(difficulty >= diffstep_nums[diffstep+1])
-			diffstep++
+			set_diffstep(diffstep + 1)
 
 /datum/controller/rogue/proc/get_oldest_zone()
 	var/oldest_time = world.time

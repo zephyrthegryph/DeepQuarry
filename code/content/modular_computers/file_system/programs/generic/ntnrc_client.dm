@@ -81,7 +81,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	var/datum/ntnet_conversation/C = new /datum/ntnet_conversation()
 	C.add_client(src)
 	rel_set(C, nameof(/datum/ntnet_conversation::operator), src)
-	C.title = text_or_null(channel_title)
+	C.set_title(text_or_null(channel_title))
 	set_active_channel(C.id)
 	return TRUE
 
@@ -145,7 +145,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	if(!newname || !channel)
 		return
 	channel.add_status_message("Channel renamed from [channel.title] to [newname] by operator.")
-	channel.title = text_or_null(newname)
+	channel.set_title(text_or_null(newname))
 	return TRUE
 
 /datum/computer_file/program/chatclient/proc/ui_act_prg_deletechannel(datum/act/op/A)

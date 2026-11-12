@@ -80,21 +80,21 @@ CAPABILITIES(/datum/portrait)
 	var/list/animation = (animated && flat && !flattener.unsupported) ? portrait_animation(flat[1], flattener) : null
 	if(!flat || flattener.unsupported)
 		// The exact-match rule: what the translation cannot express is drawn the old way, now, and not cached (no key names it).
-		cache.fallbacks++
+		cache.set_fallbacks(cache.fallbacks + 1)
 		var/datum/portrait/sync = new
 		sync.picture = animated ? getFlatIcon(A, defdir = dir) : getFlatIcon(A, defdir = dir, no_anim = TRUE)
-		sync.b64 = icon2base64(sync.picture)
+		sync.set_b64(icon2base64(sync.picture))
 		log_world("PORTRAIT: [A] ([A.type]) drawn with getFlatIcon ([flattener.unsupported || "nothing to render"]).")
 		return sync
 	var/key = "[dir]:[md5(json_encode(flat[1]))][animation ? ":anim" : ""]"
 	var/datum/portrait/P = cache.portraits?[key]
 	if(P)
-		LAZYSET(cache.by_appearance, appearance_key, key)
-		P.appearances += list(A.appearance)
+		cache.set_by_appearance_at(appearance_key, key)
+		P.add_appearances(list(A.appearance))
 		return portrait_serve(cache, P, asker, callback)
-	cache.renders++
+	cache.set_renders(cache.renders + 1)
 	P = new
-	P.key = key
+	P.set_key(key)
 	P.described = "[A] ([A.type])"
 	P.jobs = list()
 	if(animation)
@@ -104,14 +104,14 @@ CAPABILITIES(/datum/portrait)
 	else
 		P.jobs += list(dq_preview_start_job(flat[1], "portrait"))
 	P.add_waiter(asker, callback)
-	P.appearances = list(A.appearance)
-	LAZYSET(cache.by_appearance, appearance_key, key)
+	P.set_appearances(list(A.appearance))
+	cache.set_by_appearance_at(appearance_key, key)
 	COOLDOWN_START(P, timeout_at, PORTRAIT_RENDER_TIMEOUT)
 	rel_add(cache, nameof(/datum/portrait_cache::portraits), P, key)
-	LAZYADD(cache.use_order, key)
+	cache.add_use_order(key)
 	while(length(cache.use_order) > PORTRAIT_CACHE_MAX)
 		var/oldest = cache.use_order[1]
-		cache.use_order.Cut(1, 2)
+		cache.cut_use_order(1, 2)
 		var/datum/portrait/dropped = cache.portraits[oldest]
 		if(dropped && dropped != P)
 			portrait_forget_appearances(cache, oldest)
@@ -126,10 +126,10 @@ CAPABILITIES(/datum/portrait)
 
 /// `P` from the cache: ready (returned), or still rendering (the asker waits for it; null).
 /proc/portrait_serve(datum/portrait_cache/cache, datum/portrait/P, datum/asker, callback)
-	cache.use_order -= P.key
-	cache.use_order += P.key
+	cache.remove_use_order(P.key)
+	cache.add_use_order(P.key)
 	if(P.b64)
-		cache.hits++
+		cache.set_hits(cache.hits + 1)
 		return P
 	P.add_waiter(asker, callback)
 	return null
@@ -148,7 +148,7 @@ CAPABILITIES(/datum/portrait)
 /proc/portrait_forget_appearances(datum/portrait_cache/cache, key)
 	for(var/appearance_key in cache.by_appearance?.Copy())
 		if(cache.by_appearance[appearance_key] == key)
-			cache.by_appearance -= appearance_key
+			cache.remove_by_appearance(appearance_key)
 
 /// One poll of the render: the picture lands, or the render failed or timed out (the askers then get nothing and ask again later).
 /datum/portrait/proc/poll_step(datum/act/timer/tick)
@@ -169,7 +169,7 @@ CAPABILITIES(/datum/portrait)
 			for(var/path in pngs)
 				fdel(path)
 			var/datum/portrait_cache/cache = GLOB.portrait_cache
-			cache.use_order -= key
+			cache.remove_use_order(key)
 			portrait_forget_appearances(cache, key)
 			own_remove(cache, nameof(/datum/portrait_cache::portraits), src)
 			return
@@ -181,7 +181,7 @@ CAPABILITIES(/datum/portrait)
 		picture = new /icon()
 		for(var/i in 1 to length(pngs))
 			picture.Insert(icon(file(pngs[i])), icon_state = "", frame = i, delay = delays[i])
-	b64 = icon2base64(picture)
+	set_b64(icon2base64(picture))
 	for(var/path in pngs)
 		fdel(path)
 	var/list/called = waiters

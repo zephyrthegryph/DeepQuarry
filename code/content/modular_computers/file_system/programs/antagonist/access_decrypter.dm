@@ -45,7 +45,7 @@
 		RFID.stored_card().include_access(target_access().id)
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
 			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer().network_card.get_network_tag()]  - downloaded access codes for: [target_access().desc].")
-			GLOB.ntnet_global.intrusion_detection_alarm = 1
+			GLOB.ntnet_global.set_intrusion_detection_alarm(1)
 		set_message("Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]")
 		target_access_static = null
 
@@ -80,7 +80,7 @@ CAPABILITIES(/datum/computer_file/program/access_decrypter)
 		return
 	if(GLOB.ntnet_global.intrusion_detection_enabled)
 		GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access attempt to primary keycode database from device: [computer().network_card.get_network_tag()]")
-		GLOB.ntnet_global.intrusion_detection_alarm = TRUE
+		GLOB.ntnet_global.set_intrusion_detection_alarm(TRUE)
 	return TRUE
 
 /datum/computer_file/program/access_decrypter/ui_data(datum/act/eval/A)

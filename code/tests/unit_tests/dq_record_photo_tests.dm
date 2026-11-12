@@ -12,16 +12,16 @@
 	// Stand in for the two renders still in flight: the record waits on one key per direction.
 	G.photos_waiting = list("[SOUTH]" = "south-key", "[WEST]" = "west-key")
 	var/datum/portrait/south = new
-	south.key = "south-key"
-	south.b64 = "SOUTHPNG"
+	south.set_key("south-key")
+	south.set_b64("SOUTHPNG")
 	south.picture = icon('html/images/no_image32.png')
 	G.photo_landed(south)
 	TEST_ASSERT(findtext(G.fields["photo-south"], "SOUTHPNG"), "the south portrait is the front photo once it lands")
 	TEST_ASSERT(!findtext(G.fields["photo-west"], "SOUTHPNG"), "and not the side photo")
 	TEST_ASSERT_EQUAL(length(G.photos_waiting), 1, "the west render is still awaited")
 	var/datum/portrait/west = new
-	west.key = "west-key"
-	west.b64 = "WESTPNG"
+	west.set_key("west-key")
+	west.set_b64("WESTPNG")
 	west.picture = icon('html/images/no_image32.png')
 	G.photo_landed(west)
 	TEST_ASSERT(findtext(G.fields["photo-west"], "WESTPNG"), "the west portrait is the side photo")

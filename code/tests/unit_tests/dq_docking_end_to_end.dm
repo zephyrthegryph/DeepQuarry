@@ -86,8 +86,8 @@
 
 /// A flight of the test takes seconds: the shuttle's warmup and transit times are its configuration, not its code path.
 /datum/unit_test/dq_docking_end_to_end/proc/hurry(datum/shuttle/autodock/S)
-	S.warmup_time = 0
-	S.move_time = 5
+	S.set_warmup_time(0)
+	S.set_move_time(5)
 
 /datum/unit_test/dq_docking_end_to_end/proc/run_flow()
 	return

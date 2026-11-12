@@ -70,12 +70,12 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 
 	// NTNet is disabled. Enabling can be done without user prompt
 	if(GLOB.ntnet_global.setting_disabled)
-		GLOB.ntnet_global.setting_disabled = FALSE
+		GLOB.ntnet_global.set_setting_disabled(FALSE)
 		return TRUE
 
 	var/datum/prompt/P = A.answer
 	if(P?.value)
-		GLOB.ntnet_global.setting_disabled = TRUE
+		GLOB.ntnet_global.set_setting_disabled(TRUE)
 	return TRUE
 
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_purgelogs(datum/act/op/A)
