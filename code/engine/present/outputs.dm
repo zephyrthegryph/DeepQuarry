@@ -143,9 +143,9 @@
 
 /// A type's window data that changes rarely: the output of the standard name ui_static_data(datum/act/eval/A), sent when the window opens and
 /// resent (a full update) when something it reads changes: its reads are found like ui_data()'s and generated as ui_static_from() rows
-/// (doc/rewrite/proposals/ui_static_data.md). A.actor is the viewer. Base: none.
+/// (doc/rewrite/proposals/ui_static_data.md). A.actor is the viewer. Base: an empty list, so an override extends ..().
 /datum/proc/ui_static_data(datum/act/eval/A)
-	return null
+	return list()
 
 /// The static window data of `holder` for `user`: its ui_static_data(A), or null.
 /proc/present_tgui_static_data(datum/holder, mob/user, observer = FALSE)

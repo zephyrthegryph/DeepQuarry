@@ -14,7 +14,7 @@ A window's rarely changing data is the standard output `ui_static_data(datum/act
 
 - `A.actor` is the viewer, `A.holder` the window host, `A.observer` a read-only ghost view: the same context `ui_data(A)` gets
   (`present_eval_context()`).
-- The base `/datum/proc/ui_static_data` returns null. The engine reads it through `present_tgui_static_data(holder, user)`
+- The base `/datum/proc/ui_static_data` returns an empty list (an override extends `..()`). The engine reads it through `present_tgui_static_data(holder, user)`
   (`code/engine/present/outputs.dm`), which the window's payload uses when it carries static data (open, ready, full update).
   Code that wants another holder's static block (a lathe embedding its material container's) calls the same proc.
 - It is an output: it writes nothing (a per-payload cache is a local, as the R&D console's id cache now is).

@@ -185,7 +185,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	var/module_type = GLOB.robot_modules[new_module]
 	if(modtype != new_module || !module)
 		rel_clear(src, nameof(module))
-		modtype = new_module
+		set_modtype(new_module)
 		rel_set(src, nameof(module), new module_type(src))
 		feedback_inc("cyborg_[lowertext(new_module)]",1)
 	updatename()

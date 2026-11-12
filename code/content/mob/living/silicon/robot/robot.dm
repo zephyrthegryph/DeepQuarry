@@ -1033,7 +1033,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	transform_with_anim() //sprite animation
 	uneq_all()
 	hud_used.update_robot_modules_display(TRUE)
-	modtype = initial(modtype)
+	set_modtype(initial(modtype))
 	hud_used?.hands?.icon_state = get_hud_module_icon()
 
 	// Basic upgrades (VTEC, ...) mutate the robot directly (verbs added,
