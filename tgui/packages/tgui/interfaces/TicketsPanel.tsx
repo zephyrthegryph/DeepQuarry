@@ -313,7 +313,7 @@ export const TicketsPanel = (props) => {
                   <Section fill ref={messagesEndRef} scrollable title="Log">
                     <Stack fill direction="column">
                       <Stack.Item grow>
-                        {Object.keys(selected_ticket.log)
+                        {Object.keys(selected_ticket.log ?? {})
                           .slice(0)
                           .map((L, i) => (
                             <div
@@ -321,7 +321,7 @@ export const TicketsPanel = (props) => {
                               // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                               dangerouslySetInnerHTML={{
                                 __html: sanitizeAdminHtml(
-                                  selected_ticket.log[L],
+                                  selected_ticket.log?.[L] ?? '',
                                 ),
                               }}
                             />

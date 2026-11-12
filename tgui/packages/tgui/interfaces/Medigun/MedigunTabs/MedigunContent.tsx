@@ -94,13 +94,15 @@ export const MedigunContent = (props: { smodule: SModule }) => {
             >
               [ {powerToText[generator] || 'Unavailable'} ]
             </LabeledList.Item>
-            <LabeledList.Item label="Battery Status">
-              {cell_status !== null ? (
+            {cell_status !== null ? (
+              <LabeledList.Item label="Battery Status">
                 <ProgressBar color="green" value={cell_status} />
-              ) : (
+              </LabeledList.Item>
+            ) : (
+              <LabeledList.Item label="Battery Status">
                 <Box color="red">Missing Cell</Box>
-              )}
-            </LabeledList.Item>
+              </LabeledList.Item>
+            )}
           </LabeledList>
         </Section>
       </Stack.Item>

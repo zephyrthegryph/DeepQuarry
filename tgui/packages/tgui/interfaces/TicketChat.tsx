@@ -88,14 +88,14 @@ export const TicketChat = (props) => {
             <Section fill ref={messagesEndRef} scrollable title="Log">
               <Stack fill direction="column">
                 <Stack.Item grow>
-                  {Object.keys(log)
+                  {Object.keys(log ?? {})
                     .slice(0)
                     .map((L, i) => (
                       <div
                         key={i}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket Chat
                         dangerouslySetInnerHTML={{
-                          __html: sanitizeAdminHtml(log[L]),
+                          __html: sanitizeAdminHtml(log?.[L] ?? ''),
                         }}
                       />
                     ))}

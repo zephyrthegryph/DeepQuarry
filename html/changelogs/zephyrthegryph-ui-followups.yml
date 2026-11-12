@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Airlock, docking and escape pod consoles each open their own window instead of one shared window that could show a blank error."
+  - bugfix: "The input prompts, changelog, ticket, R&D server control, stock exchange, medigun and canvas windows no longer break when a field is empty."
+  - bugfix: "Wanted notices edited on a newscaster and DoS load on an NTNet relay now refresh open windows."

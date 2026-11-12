@@ -41,7 +41,7 @@ const icons = {
   wip: { icon: 'hammer', color: 'orange' },
 };
 
-type Data = { dates: string[] };
+type Data = { dates: string[] | null };
 
 const monthFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',
@@ -60,7 +60,7 @@ const formatDate = (date: string, includeDay = false) =>
 
 export const Changelog = (props) => {
   const { act, data } = useBackend<Data, ChangelogActions>();
-  const { dates = [] } = data;
+  const dates = data.dates ?? [];
 
   const dateChoices = dates.map((date) => formatDate(date));
 

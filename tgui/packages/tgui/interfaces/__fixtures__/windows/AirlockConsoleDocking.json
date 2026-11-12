@@ -1,0 +1,17 @@
+{
+	"chamber_pressure": 87,
+	"exterior_status": {
+		"state": "closed",
+		"lock": "locked"
+	},
+	"interior_status": {
+		"state": "closed",
+		"lock": "locked"
+	},
+	"processing": true,
+	"docking_status": "docking",
+	"airlock_disabled": true,
+	"override_enabled": false,
+	"docking_codes": "ALPHA-7",
+	"name": "Arrivals Dock (112, 54)"
+}

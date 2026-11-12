@@ -1,9 +1,15 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
-import { StandardControls, StatusDisplay } from './EmbeddedControllerHelpers';
-import { PanelOpen } from './PanelOpen';
-import type { AirlockConsoleSimpleData } from './types';
+import type {
+  AirlockConsoleSimpleActions,
+  AirlockConsoleSimpleData,
+} from './generated/AirlockConsoleSimple';
+import {
+  StandardControls,
+  StatusDisplay,
+} from './EmbeddedController/EmbeddedControllerHelpers';
+import { PanelOpen } from './EmbeddedController/PanelOpen';
 
 /**
  * Simple airlock consoles are the least complicated airlock controller.
@@ -11,10 +17,10 @@ import type { AirlockConsoleSimpleData } from './types';
  * force door buttons. That's it.
  * Replaces simple_airlock_console.tmpl
  */
-export const AirlockConsoleSimple = (props) => {
+const AirlockConsoleSimpleContent = () => {
   const { act, data } = useBackend<
     AirlockConsoleSimpleData,
-    EmbeddedControllerActions
+    AirlockConsoleSimpleActions
   >();
 
   const {
@@ -67,3 +73,11 @@ export const AirlockConsoleSimple = (props) => {
     </>
   );
 };
+
+export const AirlockConsoleSimple = () => (
+  <Window width={500} height={400}>
+    <Window.Content>
+      <AirlockConsoleSimpleContent />
+    </Window.Content>
+  </Window>
+);

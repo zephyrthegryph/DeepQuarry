@@ -88,7 +88,7 @@ const StockExchangeFullView = (props) => {
       <b>Actions:</b> + Buy, - Sell, (A)rchives, (H)istory
       <Divider />
       <Table>
-        <Table.Row>
+        <Table.Row header>
           <Table.Cell bold>&nbsp;</Table.Cell>
           <Table.Cell>ID</Table.Cell>
           <Table.Cell>Name</Table.Cell>

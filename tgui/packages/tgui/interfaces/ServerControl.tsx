@@ -7,16 +7,42 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
-import type {
-  ServerControlActions,
-  ServerControlData,
-} from './generated/ServerControl';
+import type { BooleanLike } from 'tgui-core/react';
+import type { ServerControlActions } from './generated/ServerControl';
 
-type Data = ServerControlData;
+type Data = {
+  server_connected: BooleanLike;
+  servers: ServerData[];
+  consoles: ConsoleData[];
+  /** Absent until the research database has a log entry. */
+  logs?: LogData[];
+};
+
+type ServerData = {
+  server_name: string;
+  server_details: string;
+  server_disabled: string;
+  server_ref: number;
+};
+
+type ConsoleData = {
+  console_name: string;
+  console_location: string;
+  console_locked: string;
+  console_ref: number;
+};
+
+type LogData = {
+  node_name: string;
+  node_cost: string;
+  node_researcher: string;
+  node_research_location: string;
+};
 
 export const ServerControl = (props) => {
   const { act, data } = useBackend<Data, ServerControlActions>();
-  const { server_connected, servers, consoles, logs } = data;
+  const { server_connected, servers, consoles } = data;
+  const logs = data.logs ?? [];
   if (!server_connected) {
     return (
       <Window width={575} height={450}>
@@ -31,7 +57,7 @@ export const ServerControl = (props) => {
   return (
     <Window width={575} height={400}>
       <Window.Content scrollable>
-        {!servers.length ? (
+        {!servers ? (
           <NoticeBox mt={2} info>
             No servers found.
           </NoticeBox>
@@ -43,13 +69,12 @@ export const ServerControl = (props) => {
               </Table.Row>
               {servers.map((server) => (
                 <Table.Row key={server.server_ref} className="candystripe">
-                  <Table.Cell>
-                    {server.server_name}
+                  <Table.Cell>{server.server_name}</Table.Cell>
+                  <Table.Cell collapsing>
                     <Button
                       mt={1}
                       tooltip={server.server_details}
                       color={server.server_disabled ? 'bad' : 'good'}
-                      content={server.server_disabled ? 'Offline' : 'Online'}
                       fluid
                       textAlign="center"
                       onClick={() =>
@@ -57,7 +82,9 @@ export const ServerControl = (props) => {
                           selected_server: server.server_ref,
                         })
                       }
-                    />
+                    >
+                      {server.server_disabled ? 'Offline' : 'Online'}
+                    </Button>
                   </Table.Cell>
                 </Table.Row>
               ))}
@@ -65,7 +92,7 @@ export const ServerControl = (props) => {
           </Section>
         )}
 
-        {!consoles.length ? (
+        {!consoles ? (
           <NoticeBox mt={2} info>
             No consoles found.
           </NoticeBox>
@@ -80,10 +107,11 @@ export const ServerControl = (props) => {
                   <Table.Cell>
                     {console.console_name} - Location:{' '}
                     {console.console_location}
+                  </Table.Cell>
+                  <Table.Cell collapsing>
                     <Button
                       mt={1}
                       color={console.console_locked ? 'bad' : 'good'}
-                      content={console.console_locked ? 'LOCKED' : 'UNLOCKED'}
                       fluid
                       textAlign="center"
                       onClick={() =>
@@ -91,7 +119,9 @@ export const ServerControl = (props) => {
                           selected_console: console.console_ref,
                         })
                       }
-                    />
+                    >
+                      {console.console_locked ? 'LOCKED' : 'UNLOCKED'}
+                    </Button>
                   </Table.Cell>
                 </Table.Row>
               ))}

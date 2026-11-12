@@ -22,16 +22,10 @@ export const removeAllSkiplines = (toSanitize: string) => {
 
 export const TextInputModal = (props) => {
   const { act, data } = useBackend<TextInputData, TextInputModalActions>();
-  const {
-    large_buttons,
-    max_length,
-    message = '',
-    multiline,
-    placeholder = '',
-    timeout,
-    title,
-    spellcheck,
-  } = data;
+  const { large_buttons, max_length, multiline, timeout, title, spellcheck } =
+    data;
+  const message = data.message ?? '';
+  const placeholder = data.placeholder ?? '';
 
   const [input, setInput] = useState(placeholder || '');
 

@@ -1,8 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import { Icon, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
-import { DockStatus } from './EmbeddedControllerHelpers';
-import type { DockingConsoleMultiData } from './types';
+import type {
+  DockingConsoleMultiActions,
+  DockingConsoleMultiData,
+} from './generated/DockingConsoleMulti';
+import { DockStatus } from './EmbeddedController/EmbeddedControllerHelpers';
 
 /**
  * Shockingly, the multi docking console is the simplest docking console.
@@ -10,10 +13,10 @@ import type { DockingConsoleMultiData } from './types';
  * for bigger shuttles.
  * Replaces multi_docking_console.tmpl
  */
-export const DockingConsoleMulti = (props) => {
+const DockingConsoleMultiContent = () => {
   const { data } = useBackend<
     DockingConsoleMultiData,
-    EmbeddedControllerActions
+    DockingConsoleMultiActions
   >();
 
   const { docking_status } = data;
@@ -49,3 +52,11 @@ export const DockingConsoleMulti = (props) => {
     </>
   );
 };
+
+export const DockingConsoleMulti = () => (
+  <Window width={500} height={400}>
+    <Window.Content>
+      <DockingConsoleMultiContent />
+    </Window.Content>
+  </Window>
+);
