@@ -238,8 +238,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	var/list/routes[0]
 	var/datum/shuttle/autodock/web_shuttle/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
-		to_chat(user, span_warning("Unable to establish link with the shuttle."))
-		return
+		return // console_refusal() already logs the missing link
 
 	var/list/R = shuttle.web_master.get_available_routes()
 	for(var/i = 1 to length(R))
@@ -289,11 +288,11 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		"future_location" = future_location,
 		"shuttle_state" = shuttle_state,
 		"routes" = routes,
-		"has_docking" = shuttle.shuttle_docking_controller? 1 : 0,
-		"skip_docking" = shuttle.skip_docking_checks(),
+		"has_docking" = shuttle.shuttle_docking_controller ? TRUE : FALSE,
+		"skip_docking" = !!shuttle.skip_docking_checks(),
 		"is_moving" = shuttle.moving_status != SHUTTLE_IDLE,
 		"docking_status" = shuttle.shuttle_docking_controller? shuttle.shuttle_docking_controller.get_docking_status() : null,
-		"docking_override" = shuttle.shuttle_docking_controller? shuttle.shuttle_docking_controller.override_enabled : null,
+		"docking_override" = shuttle.shuttle_docking_controller ? !!shuttle.shuttle_docking_controller.override_enabled : FALSE,
 		"is_in_transit" = shuttle.has_arrive_time(),
 		"travel_progress" = between(0, percent_finished, 100),
 		"time_left" = round( (total_time - elapsed_time) / 10),
@@ -474,7 +473,7 @@ CAPABILITIES(/obj/machinery/shuttle_sensor)
 	return PROCESS_KILL //nty
 
 /obj/machinery/shuttle_sensor/proc/air_list()
-	. = list("reading" = FALSE)
+	. = list("reading" = FALSE, "pressure" = null, GAS_N2 = null, GAS_O2 = null, GAS_CO2 = null, GAS_PHORON = null, GAS_CH4 = null, "other" = null, "temp" = null)
 	var/turf/T = get_step(src,dir)
 
 	if(isnull(T))

@@ -8,37 +8,20 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  ConfigurationActions,
+  ConfigurationData,
+} from './generated/Configuration';
 
-type Data = {
-  PC_device_theme: string;
-  power_usage: number;
-  battery_exists: BooleanLike;
-  battery_rating: number | undefined;
-  battery_percent: number | undefined;
-  battery: battery | undefined;
-  hardware:
-    | {
-        name: string;
-        desc: string;
-        enabled: BooleanLike;
-        critical: BooleanLike;
-        powerusage: number;
-      }[]
-    | [];
-  disk_size: number;
-  disk_used: number;
-};
-
-type battery = { max: number; charge: number };
+type Data = ConfigurationData;
 
 export const NtosConfiguration = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ConfigurationActions>();
   const {
     PC_device_theme,
     power_usage,
     battery_exists,
-    battery = {} as battery,
+    battery,
     disk_size,
     disk_used,
     hardware = [],
@@ -59,7 +42,7 @@ export const NtosConfiguration = (props) => {
               label="Battery Status"
               color={(!battery_exists && 'average') || undefined}
             >
-              {battery_exists ? (
+              {battery_exists && battery ? (
                 <ProgressBar
                   value={battery.charge}
                   minValue={0}

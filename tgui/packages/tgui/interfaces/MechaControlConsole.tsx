@@ -30,12 +30,13 @@ type Data = {
     cargoUsed: number;
     cargoMax: number;
   }[];
-  stored_data: { time: string; year: number; message: string }[];
+  stored_data: { time: string; year: number; message: string }[] | null;
 };
 
 export const MechaControlConsole = (props) => {
   const { act, data } = useBackend<Data, MechaControlConsoleActions>();
-  const { beacons = [], stored_data = [] } = data;
+  const { beacons = [] } = data;
+  const stored_data = data.stored_data ?? [];
   return (
     <Window width={600} height={600}>
       <Window.Content scrollable>

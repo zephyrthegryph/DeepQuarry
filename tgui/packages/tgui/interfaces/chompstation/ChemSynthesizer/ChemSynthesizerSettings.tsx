@@ -3,10 +3,11 @@ import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
 
+import type { ChemSynthesizerActions } from '../../generated/ChemSynthesizer';
 import type { Data } from './types';
 
 export const ChemSynthesizerSettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChemSynthesizerActions>();
   const {
     busy,
     production_mode,
