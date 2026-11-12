@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { XenoarchSuspensionActions } from './generated/XenoarchSuspension';
 
 type Data = {
   cell: BooleanLike;
@@ -18,7 +19,7 @@ type Data = {
 };
 
 export const XenoarchSuspension = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSuspensionActions>();
 
   const { cell, cellCharge, cellMaxCharge, locked, suspension_field } = data;
 

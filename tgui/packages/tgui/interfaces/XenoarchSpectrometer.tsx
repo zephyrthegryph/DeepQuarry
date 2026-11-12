@@ -15,6 +15,7 @@ import {
 import { scale } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
+import type { XenoarchSpectrometerActions } from './generated/XenoarchSpectrometer';
 
 type Data = {
   scanned_item: string;
@@ -42,7 +43,7 @@ type Data = {
 };
 
 export const XenoarchSpectrometer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
     scanned_item,
@@ -190,7 +191,7 @@ export const Spinner = (props: {
 };
 
 export const LeftPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
     scan_progress,
@@ -233,7 +234,7 @@ export const LeftPanel = (props) => {
   );
 };
 export const RightPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
     radiation,

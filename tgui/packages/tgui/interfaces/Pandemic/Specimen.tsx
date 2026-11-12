@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, NoticeBox, Section, Stack, Tabs } from 'tgui-core/components';
-
+import type { PandemicActions } from '../generated/Pandemic';
 import { SymptomDisplay } from './Symptom';
 import type { Data } from './types';
 import { VirusDisplay } from './Virus';
 
 export const SpecimenDisplay = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PandemicActions>();
   const { is_ready, viruses = [] } = data;
 
   const [tab, setTab] = useState(0);

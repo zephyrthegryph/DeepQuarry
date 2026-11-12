@@ -2,10 +2,11 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Image, LabeledList, Stack } from 'tgui-core/components';
 
 import { doEdit } from '../GeneralRecords/functions';
+import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import type { Data } from './types';
 
 export const MedicalRecordsViewGeneral = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MedicalRecordsActions>();
   const { general } = data;
   if (!general?.fields) {
     return <Box color="bad">General records lost!</Box>;

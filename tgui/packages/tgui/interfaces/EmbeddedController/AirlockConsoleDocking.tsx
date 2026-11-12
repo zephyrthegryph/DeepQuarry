@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import {
   DockStatus,
   StandardControls,
@@ -14,7 +14,10 @@ import type { AirlockConsoleDockingData } from './types';
  * Replaces docking_airlock_console.tmpl
  */
 export const AirlockConsoleDocking = (props) => {
-  const { act, data } = useBackend<AirlockConsoleDockingData>();
+  const { act, data } = useBackend<
+    AirlockConsoleDockingData,
+    EmbeddedControllerActions
+  >();
 
   const {
     interior_status,

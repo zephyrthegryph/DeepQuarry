@@ -9,6 +9,7 @@ import {
 import { formatTime } from 'tgui-core/format';
 import { round } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AssemblyProxActions } from './generated/AssemblyProx';
 
 type Data = {
   timing: number;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 export const AssemblyProx = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AssemblyProxActions>();
   const { timing, time, range, maxRange, scanning } = data;
   return (
     <Window>

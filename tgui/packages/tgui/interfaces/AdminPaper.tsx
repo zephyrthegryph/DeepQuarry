@@ -9,6 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { AdminPaperActions } from './generated/AdminPaper';
 
 type TextSeg = {
   type: 'text';
@@ -35,7 +36,7 @@ type Data = {
 };
 
 export const AdminPaper = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, AdminPaperActions>();
   const {
     title,
     segments,

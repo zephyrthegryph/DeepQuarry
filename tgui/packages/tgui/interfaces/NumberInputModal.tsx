@@ -13,6 +13,7 @@ import type { BooleanLike } from 'tgui-core/react';
 
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type { NumberInputModalActions } from './generated/NumberInputModal';
 
 type Data = {
   init_value: number;
@@ -26,7 +27,7 @@ type Data = {
 };
 
 export function NumberInputModal(props) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NumberInputModalActions>();
   const {
     init_value,
     large_buttons,

@@ -8,10 +8,11 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
+import type { RetailScannerActions } from '../generated/RetailScanner';
 import type { Data } from './types';
 
 export const CurrentTransaction = (model) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RetailScannerActions>();
   const { current_transactioon, cash_locked, locked, subsidized_checkout } =
     data;
 

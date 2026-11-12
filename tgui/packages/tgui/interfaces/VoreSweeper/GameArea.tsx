@@ -2,12 +2,13 @@ import { isNumber } from 'es-toolkit';
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
+import type { VoreSweeperActions } from '../generated/VoreSweeper';
 import { numberToColor } from './constants';
 import { checkDisabled } from './functions';
 import type { Data } from './types';
 
 export const GameArea = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VoreSweeperActions>();
   const [mineHit, setMineHit] = useState('');
 
   const {

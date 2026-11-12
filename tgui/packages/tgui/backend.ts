@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { EmbeddedContext } from './embedded';
 import { sendAct } from './events/act';
 import { backendStateAtom, sharedAtom, store } from './events/store';
-import type { BackendState } from './events/types';
+import type { BackendState, TypedAct } from './events/types';
 
 /**
  * Reactive backend state hook. Please use a type to define what the data is
@@ -17,19 +17,24 @@ import type { BackendState } from './events/types';
  *
  * console.log(data.username); // You'll get type safety here
  * ```
+ *
+ * Pass the window's generated actions type second to check act() against the DM ops:
+ * `useBackend<Data, APCActions>()` (import type { APCActions } from './generated/APC').
  */
 export function useBackend<
   TData extends Record<string, unknown>,
->(): BackendState<TData> {
+  TActions = undefined,
+>(): BackendState<TData, TActions> {
   // Embedded in the right-hand column's page: this window's own store and channel (embedded.ts).
   const embedded = useContext(EmbeddedContext);
   const state = (embedded?.store ?? store).get(backendStateAtom);
 
+  const act: typeof sendAct = embedded
+    ? (action: string, payload: Record<string, unknown> = {}) =>
+        embedded.send(`act/${action}`, payload)
+    : sendAct;
   return {
-    act: embedded
-      ? (action: string, payload: Record<string, unknown> = {}) =>
-          embedded.send(`act/${action}`, payload)
-      : sendAct,
+    act: act as TypedAct<TActions>,
     ...state,
     data: state.data as TData,
   };

@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Icon, Section, Stack, Tooltip } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import type { Data, Reagent } from './types';
 
 export const ChemDispenserChemicals = (props: {
@@ -57,7 +58,7 @@ export const ChemDispenserChemicals = (props: {
 };
 
 export const RecordingBlinker = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ChemDispenserActions>();
   const recording = !!data.recordingRecipe;
 
   const [blink, setBlink] = useState(false);

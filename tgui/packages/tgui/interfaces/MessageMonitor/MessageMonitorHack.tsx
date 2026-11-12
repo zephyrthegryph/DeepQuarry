@@ -2,10 +2,11 @@ import { useBackend } from 'tgui/backend';
 import { Box } from 'tgui-core/components';
 
 import { FullscreenNotice } from '../common/FullscreenNotice';
+import type { MessageMonitorActions } from '../generated/MessageMonitor';
 import type { Data } from './types';
 
 export const MessageMonitorHack = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MessageMonitorActions>();
 
   const { isMalfAI } = data;
 

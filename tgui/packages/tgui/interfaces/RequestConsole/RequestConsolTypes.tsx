@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Section } from 'tgui-core/components';
-
+import type { RequestConsoleActions } from '../generated/RequestConsole';
 import { RequestConsoleSendMenu } from './RequestConsoleSend';
 import type { Data } from './types';
 
 export const RequestConsoleSupplies = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RequestConsoleActions>();
   const { department, supply_dept } = data;
   return (
     <Section title="Supplies">
@@ -15,7 +15,7 @@ export const RequestConsoleSupplies = (props) => {
 };
 
 export const RequestConsoleAssistance = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RequestConsoleActions>();
   const { department, assist_dept } = data;
   return (
     <Section title="Request assistance from another department">
@@ -25,7 +25,7 @@ export const RequestConsoleAssistance = (props) => {
 };
 
 export const RequestConsoleRelay = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RequestConsoleActions>();
   const { department, info_dept } = data;
   return (
     <Section title="Report Anonymous Information">

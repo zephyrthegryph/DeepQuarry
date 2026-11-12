@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input } from 'tgui-core/components';
-
+import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import { selectRecords } from './functions';
 import type { Data, record } from './types';
 
 export const GeneralRecordsList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralRecordsActions>();
 
   const [searchText, setSearchText] = useState<string>('');
 

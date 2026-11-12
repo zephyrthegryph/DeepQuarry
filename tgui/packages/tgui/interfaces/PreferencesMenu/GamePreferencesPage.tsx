@@ -9,7 +9,7 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-
+import type { PreferencesMenuActions } from '../generated/PreferencesMenu';
 import type { PreferencesMenuData } from './data';
 import features from './preferences/features';
 import { FeatureValueInput } from './preferences/features/base';
@@ -42,7 +42,10 @@ const sortByName = (array: [string, PreferenceChild[]][]) =>
   array.map((k, _) => sortPref(k)).sort((a, b) => a[0].localeCompare(b[0]));
 
 export const GamePreferencesPage = (props) => {
-  const { act, data } = useBackend<PreferencesMenuData>();
+  const { act, data } = useBackend<
+    PreferencesMenuData,
+    PreferencesMenuActions
+  >();
 
   const gamePreferences: Record<string, PreferenceChild[]> = {};
 

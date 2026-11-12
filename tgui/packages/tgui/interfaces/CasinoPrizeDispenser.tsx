@@ -11,6 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { CasinoPrizeDispenserActions } from './generated/CasinoPrizeDispenser';
 
 type Data = {
   items: Record<string, Sortable[]>;
@@ -100,7 +101,7 @@ const CasinoPrizeDispenserItems = (props: {
   sortOrder: string;
   descending: boolean;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CasinoPrizeDispenserActions>();
   const { items } = data;
   // Search thingies
   const searcher = createSearch<[string, Sortable]>(

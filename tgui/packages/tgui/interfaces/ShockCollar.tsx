@@ -7,6 +7,7 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { round } from 'tgui-core/math';
+import type { ShockCollarActions } from './generated/ShockCollar';
 
 export type ShockCollarData = {
   on: boolean;
@@ -22,7 +23,7 @@ export type ShockCollarData = {
 };
 
 export const ShockCollar = (props) => {
-  const { act, data } = useBackend<ShockCollarData>();
+  const { act, data } = useBackend<ShockCollarData, ShockCollarActions>();
   return (
     <Window width={260} height={data.target_size ? 215 : 175}>
       <Window.Content fontSize={1.5} textAlign="center">

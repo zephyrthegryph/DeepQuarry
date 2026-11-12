@@ -4,6 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Box } from 'tgui-core/components';
 
 import { CrewManifestContent } from '../CrewManifest';
+import type { CommunicatorActions } from '../generated/Communicator';
 import { CommunicatorContactTab } from './CommunicatorContactTab';
 import {
   CommunicatorFooter,
@@ -23,7 +24,7 @@ import { notFound, tabs } from './constants';
 import type { Data } from './types';
 
 export const Communicator = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { theme, currentTab, video_comm } = data;
 

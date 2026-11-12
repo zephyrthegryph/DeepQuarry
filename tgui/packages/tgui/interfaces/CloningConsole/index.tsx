@@ -5,7 +5,7 @@ import {
 } from 'tgui/interfaces/common/ComplexModal';
 import { Window } from 'tgui/layouts';
 import { Box, Section } from 'tgui-core/components';
-
+import type { CloningConsoleActions } from '../generated/CloningConsole';
 import { viewRecordModalBodyOverride } from './CloningConsoleBodyOverride';
 import { CloningConsoleNavigation } from './CloningConsoleNavigation';
 import {
@@ -19,7 +19,7 @@ import {
 import type { Data } from './types';
 
 export const CloningConsole = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, CloningConsoleActions>();
 
   const { menu } = data;
 

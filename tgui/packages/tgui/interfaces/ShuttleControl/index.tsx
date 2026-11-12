@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-
+import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import {
   ShuttleControlConsoleDefault,
   ShuttleControlConsoleExploration,
@@ -10,7 +10,7 @@ import { ShuttleControlConsoleWeb } from './ShuttleControlConsoleWeb';
 import type { Data } from './types';
 
 export const ShuttleControl = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ShuttleControlActions>();
   const { subtemplate, destination_name } = data;
   return (
     <Window

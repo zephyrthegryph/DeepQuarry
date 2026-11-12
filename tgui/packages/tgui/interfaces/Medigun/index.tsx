@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack, Tabs } from 'tgui-core/components';
+import type { MedigunActions } from '../generated/Medigun';
 import { MedigunContent } from './MedigunTabs/MedigunContent';
 import { MedigunParts } from './MedigunTabs/MedigunParts';
 import type { Data } from './types';
 
 export const Medigun = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MedigunActions>();
   const { maintenance, examine_data } = data;
   const [selectedTab, setSelectedTab] = useState(0);
 

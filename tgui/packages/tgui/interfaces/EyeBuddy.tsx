@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { EyeBuddyActions } from './generated/EyeBuddy';
 
 type Data = {
   channel: string;
@@ -15,7 +16,7 @@ type Data = {
 };
 
 export const EyeBuddy = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, EyeBuddyActions>();
   const { channel, video_on, audio_on, showing_name, frequency } = data;
   return (
     <Window width={440} height={300} title="Eye Buddy">

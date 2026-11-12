@@ -9,7 +9,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
+import type { CrewMonitorActions } from '../generated/CrewMonitor';
 import {
   getConditionInfo,
   getShownCrew,
@@ -50,7 +50,7 @@ const CrewVitals = (props: { cm: Crewmember }) => {
 };
 
 export const CrewMonitorCrew = (props: { crew: Crewmember[] }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CrewMonitorActions>();
 
   const [nameSearch, setNameSearch] = useState<string>('');
   const [livingStatus, setLivingStatus] = useState<boolean>(true);

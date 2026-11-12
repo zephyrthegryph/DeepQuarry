@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section, Tabs } from 'tgui-core/components';
-
+import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import { MedicalRecordsViewGeneral } from './MedicalRecordsViewGeneral';
 import { MedicalRecordsViewMedical } from './MedicalRecordsViewMedical';
 import type { Data } from './types';
@@ -25,7 +25,7 @@ export const MedicalRecordsMaintenance = (props) => {
 };
 
 export const MedicalRecordsView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MedicalRecordsActions>();
   const { medical, printing } = data;
   return (
     <>
@@ -75,7 +75,7 @@ export const MedicalRecordsView = (props) => {
 };
 
 export const MedicalRecordsNavigation = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MedicalRecordsActions>();
   const { screen } = data;
   return (
     <Tabs>

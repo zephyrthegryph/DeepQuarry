@@ -11,6 +11,7 @@ import {
 import type { BooleanLike } from 'tgui-core/react';
 
 import { OvermapPanControls } from './common/Overmap';
+import type { OvermapDisperserActions } from './generated/OvermapDisperser';
 
 type Data = {
   faillink: BooleanLike;
@@ -35,7 +36,7 @@ export const OvermapDisperser = (props) => {
 };
 
 const OvermapDisperserContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapDisperserActions>();
   const {
     faillink,
     calibration,

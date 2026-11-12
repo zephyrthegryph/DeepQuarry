@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Icon, Stack } from 'tgui-core/components';
+import type { BorgHypoActions } from '../generated/BorgHypo';
 import type { Data } from './types';
 
 export const BorgHypoRecordingBlinker = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, BorgHypoActions>();
   const isRecording = !!data.recordingRecipe;
 
   const [blink, setBlink] = useState(false);

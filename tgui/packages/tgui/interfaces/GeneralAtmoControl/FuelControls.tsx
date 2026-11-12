@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
+import type { GeneralAtmoControlActions } from '../generated/GeneralAtmoControl';
 import type { Data } from './types';
 
 export const AtmoControlFuel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralAtmoControlActions>();
 
   const { automation, device_info } = data;
   return (

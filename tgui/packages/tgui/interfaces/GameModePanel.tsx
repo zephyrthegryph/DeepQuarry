@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { GameModePanelActions } from './generated/GameModePanel';
 
 type AntagTemplate = {
   id: string;
@@ -29,7 +30,7 @@ type Data = {
 };
 
 export const GameModePanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, GameModePanelActions>();
   if (!data.alive) {
     return (
       <Window width={540} height={500} title="Edit Game Mode">

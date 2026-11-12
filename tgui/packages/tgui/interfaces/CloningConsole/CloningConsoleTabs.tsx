@@ -10,11 +10,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data } from './types';
 
 export const CloningConsoleMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
   const {
     loading,
     scantemp,
@@ -163,7 +163,7 @@ export const CloningConsoleMain = (props) => {
 };
 
 export const CloningConsoleRecords = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
   const { records } = data;
   if (!records.length) {
     return (

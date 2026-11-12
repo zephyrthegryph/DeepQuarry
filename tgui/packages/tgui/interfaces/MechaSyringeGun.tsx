@@ -6,6 +6,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { MechaSyringeGunActions } from './generated/MechaSyringeGun';
 
 type KnownReagent = {
   id: string;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const MechaSyringeGun = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaSyringeGunActions>();
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const isSelected = (r: KnownReagent): boolean =>
     r.id in pending ? pending[r.id] : !!r.selected;

@@ -10,7 +10,7 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
-
+import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import type { Data, departmentFinance, financeTransaction } from './types';
 
 const wageMultipliers = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -293,7 +293,7 @@ const AllocationControl = (props: {
   department: departmentFinance;
   showAmount?: boolean;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GeneralRecordsActions>();
   const { department } = props;
   return (
     <Stack align="center">
@@ -340,7 +340,7 @@ const AllocationControl = (props: {
 };
 
 const OneTimeTransfer = (props: { department: string }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GeneralRecordsActions>();
   const [amount, setAmount] = useSharedState(
     `oneTimeFunding-${props.department}`,
     1000,
@@ -396,7 +396,7 @@ const DepartmentDetail = (props: {
   canAllocate: boolean;
   nextCycle: string | null;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GeneralRecordsActions>();
   const { department, largestBudget, canAllocate } = props;
   const monthlyNet = department.monthly_income - department.monthly_expenses;
   return (
@@ -616,7 +616,7 @@ const DepartmentDetail = (props: {
 };
 
 export const DepartmentFinances = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralRecordsActions>();
   const {
     can_allocate_station_budget,
     department_finances = [],

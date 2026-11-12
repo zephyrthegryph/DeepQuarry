@@ -11,6 +11,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
+import type { NavBeaconActions } from './generated/NavBeacon';
 
 type Data = {
   siliconUser: BooleanLike;
@@ -21,7 +22,7 @@ type Data = {
 };
 
 export const NavBeacon = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NavBeaconActions>();
   const { locked, open, location, codes } = data;
   const [newKey, setNewKey] = useState('');
   const [newVal, setNewVal] = useState('');

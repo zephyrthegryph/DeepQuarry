@@ -17,6 +17,7 @@ import { classes } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import type { Material } from './Fabrication/Types';
+import type { OreSiloActions } from './generated/OreSilo';
 
 type Machine = {
   name: string;
@@ -49,7 +50,7 @@ type Data = {
 };
 
 export const OreSilo = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OreSiloActions>();
   const { SHEET_MATERIAL_AMOUNT, machines, logs } = data;
 
   const [currentTab, setCurrentTab] = useState<Tab>(Tab.Logs);

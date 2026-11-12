@@ -4,6 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { WebGLCelestialScene } from './FlightOperationsScene';
+import type { FlightOperationsActions } from './generated/FlightOperations';
 
 type Kind =
   | 'system'
@@ -77,7 +78,7 @@ const labelFor = (kind: Kind) =>
   })[kind];
 
 export const FlightOperations = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FlightOperationsActions>();
   const system = data.destinations.find((body) => body.kind === 'system');
   const [focusId, setFocusId] = useState('system-vir');
   const [selectedId, setSelectedId] = useState<string>();

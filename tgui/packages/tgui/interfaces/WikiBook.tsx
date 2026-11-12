@@ -9,6 +9,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { WikiBookActions } from './generated/WikiBook';
 
 type Data = {
   title: string;
@@ -17,7 +18,7 @@ type Data = {
 };
 
 export const WikiBook = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, WikiBookActions>();
   const { title, intro, url } = data;
   return (
     <Window width={520} height={520} title={title}>

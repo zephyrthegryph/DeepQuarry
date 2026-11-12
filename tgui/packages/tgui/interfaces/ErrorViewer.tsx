@@ -12,6 +12,7 @@ import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { ErrorViewerActions } from './generated/ErrorViewer';
 
 type Item = {
   ref: string;
@@ -194,7 +195,7 @@ const EntryView = (props: {
 };
 
 export const ErrorViewer = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ErrorViewerActions>();
   return (
     <Window width={720} height={680} title="Error Viewer">
       <Window.Content scrollable>

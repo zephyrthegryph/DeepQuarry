@@ -6,6 +6,7 @@ import { isEscape, KEY } from 'tgui-core/keys';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { Loader } from './common/Loader';
+import type { AlertModalActions } from './generated/AlertModal';
 
 type Data = {
   autofocus: BooleanLike;
@@ -23,7 +24,7 @@ enum DIRECTION {
 }
 
 export function AlertModal(props) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AlertModalActions>();
   const {
     autofocus,
     buttons = [],
@@ -136,7 +137,7 @@ type ButtonDisplayProps = {
  * Displays a list of buttons ordered by user prefs.
  */
 function HorizontalButtons(props: ButtonDisplayProps) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AlertModalActions>();
   const { buttons = [], large_buttons, swapped_buttons } = data;
   const { selected } = props;
 
@@ -167,7 +168,7 @@ function HorizontalButtons(props: ButtonDisplayProps) {
  * should just be using a list input in that case.
  */
 function VerticalButtons(props: ButtonDisplayProps) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AlertModalActions>();
   const { buttons = [], large_buttons, swapped_buttons } = data;
   const { selected } = props;
 

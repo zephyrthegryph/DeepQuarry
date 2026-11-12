@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Section } from 'tgui-core/components';
-
+import type { UplinkActions } from '../generated/Uplink';
 import { ExploitableInformation } from './ExploitableInformation';
 import { GenericUplink } from './GenericUplink';
 import type { Data } from './types';
 import { UplinkHeader } from './UplinkHeader';
 
 export const Uplink = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, UplinkActions>();
 
   const [screen, setScreen] = useState(0);
 

@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section } from 'tgui-core/components';
-
+import type { CommunicatorActions } from '../generated/Communicator';
 import type { Data } from './types';
 
 export const CommunicatorNoteTab = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { note } = data;
 

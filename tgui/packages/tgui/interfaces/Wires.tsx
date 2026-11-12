@@ -4,6 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Color } from 'tgui-core/color';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { type BooleanLike, classes } from 'tgui-core/react';
+import type { WiresActions } from './generated/Wires';
 
 export type Wire = {
   seen_color: string;
@@ -20,7 +21,7 @@ export type WireData = {
 };
 
 export const Wires = (props) => {
-  const { data } = useBackend<WireData>();
+  const { data } = useBackend<WireData, WiresActions>();
   const { wires = [] } = data;
 
   return (
@@ -51,7 +52,7 @@ export const standardizeColor = (color: string): string => {
 };
 
 export const WiresWires = (props) => {
-  const { data } = useBackend<WireData>();
+  const { data } = useBackend<WireData, WiresActions>();
 
   const { wires = [] } = data;
   return (
@@ -70,7 +71,7 @@ export const WiresWires = (props) => {
 };
 
 export const WiresStatus = (props) => {
-  const { data } = useBackend<WireData>();
+  const { data } = useBackend<WireData, WiresActions>();
   const statuses = data.status || [];
 
   return statuses.length ? (
@@ -85,7 +86,7 @@ export const WiresStatus = (props) => {
 };
 
 export const WireComponent = ({ wire }: { wire: Wire }) => {
-  const { act } = useBackend<WireData>();
+  const { act } = useBackend<WireData, WiresActions>();
   const color = standardizeColor(wire.seen_color);
   const darkened = Color.fromHex(color).darken(30).toString();
 

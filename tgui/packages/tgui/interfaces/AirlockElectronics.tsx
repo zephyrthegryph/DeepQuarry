@@ -7,6 +7,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AirlockElectronicsActions } from './generated/AirlockElectronics';
 
 type AccessOption = {
   id: number;
@@ -23,7 +24,7 @@ type Data = {
 };
 
 export const AirlockElectronics = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, AirlockElectronicsActions>();
   const { locked, one_access, last_configurator, all_selected, accesses } =
     data;
 

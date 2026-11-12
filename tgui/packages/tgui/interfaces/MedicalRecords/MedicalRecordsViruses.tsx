@@ -1,11 +1,11 @@
 import { Fragment } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, NoticeBox } from 'tgui-core/components';
-
+import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import type { Data } from './types';
 
 export const MedicalRecordsViruses = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MedicalRecordsActions>();
   const { virus } = data;
 
   if (!virus?.length) {

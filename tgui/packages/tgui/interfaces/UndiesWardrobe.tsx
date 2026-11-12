@@ -7,6 +7,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type { UndiesWardrobeActions } from './generated/UndiesWardrobe';
 
 type Tweak = {
   ref: number;
@@ -25,7 +26,7 @@ type Data = {
 };
 
 export const UndiesWardrobe = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, UndiesWardrobeActions>();
   const { categories } = data;
 
   return (

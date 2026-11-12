@@ -2,7 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { pAIMedrecordsActions } from './generated/pAIMedrecords';
 import type { GeneralRecord, MedicalRecord, RecordList } from './Pda/pda_types';
 
 type Data = {
@@ -13,7 +13,7 @@ type Data = {
 };
 
 export const pAIMedrecords = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, pAIMedrecordsActions>();
 
   const { records, general, medical, could_not_find } = data;
 

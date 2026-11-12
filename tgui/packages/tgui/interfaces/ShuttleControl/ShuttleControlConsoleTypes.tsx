@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-
+import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { ShuttleControlSharedShuttleControls } from './ShuttleControlSharedShuttleControls';
 import { ShuttleControlSharedShuttleStatus } from './ShuttleControlSharedShuttleStatus';
 import type { Data } from './types';
@@ -17,7 +17,7 @@ export const ShuttleControlConsoleDefault = (props) => {
 export const ShuttleControlConsoleMulti = (props: {
   destination_name: string;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShuttleControlActions>();
   const { can_cloak, can_pick, legit, cloaked } = data;
   return (
     <>
@@ -53,7 +53,7 @@ export const ShuttleControlConsoleMulti = (props: {
 };
 
 export const ShuttleControlConsoleExploration = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShuttleControlActions>();
   const { can_pick, destination_name, fuel_usage, fuel_span, remaining_fuel } =
     data;
   return (

@@ -17,7 +17,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { PreferencesMenuActions } from '../../../generated/PreferencesMenu';
 import { createSetPreference, type PreferencesMenuData } from '../../data';
 import { ServerPreferencesFetcher } from '../../ServerPreferencesFetcher';
 
@@ -217,7 +217,7 @@ export const FeatureValueInput = (props: {
 
   act: typeof sendAct;
 }) => {
-  const { data } = useBackend<PreferencesMenuData>();
+  const { data } = useBackend<PreferencesMenuData, PreferencesMenuActions>();
 
   const feature = props.feature;
 

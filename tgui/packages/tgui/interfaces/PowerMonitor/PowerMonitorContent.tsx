@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Table } from 'tgui-core/components';
-
+import type { PowerMonitorActions } from '../generated/PowerMonitor';
 import { PowerMonitorFocus } from './PowerMonitorFocus';
 import type { Data } from './types';
 
 export const PowerMonitorContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PowerMonitorActions>();
 
   const { all_sensors, focus } = data;
 

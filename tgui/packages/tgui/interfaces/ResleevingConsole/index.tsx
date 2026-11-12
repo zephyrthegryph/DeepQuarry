@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Dimmer, Section, Stack } from 'tgui-core/components';
-
+import type { ResleevingConsoleActions } from '../generated/ResleevingConsole';
 import { BodyRecordModal } from './BodyRecordModal';
 import { MindRecordModal } from './MindRecordModal';
 import {
@@ -17,7 +17,7 @@ import { ResleevingConsoleStatus } from './ResleevingConsoleStatus';
 import type { Data } from './types';
 
 export const ResleevingConsole = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ResleevingConsoleActions>();
   const { coredumped, emergency } = data;
   let body: React.JSX.Element = (
     <Stack fill vertical>

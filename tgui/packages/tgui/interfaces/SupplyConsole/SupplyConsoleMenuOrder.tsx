@@ -9,11 +9,11 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
+import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { Data, SupplyPack } from './types';
 
 export const SupplyConsoleMenuOrder = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupplyConsoleActions>();
 
   const {
     categories,

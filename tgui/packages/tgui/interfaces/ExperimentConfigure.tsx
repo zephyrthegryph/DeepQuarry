@@ -10,6 +10,7 @@ import {
   Table,
   Tooltip,
 } from 'tgui-core/components';
+import type { ExperimentConfigureActions } from './generated/ExperimentConfigure';
 
 type Techweb = {
   all_servers: string[];
@@ -85,7 +86,7 @@ function ExperimentStageRow(props: ExperimentStageRowProps) {
 }
 
 function TechwebServer(props) {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ExperimentConfigureActions>();
   const { techwebs } = props;
 
   return techwebs.map((server, index) => (
@@ -127,7 +128,7 @@ function TechwebServer(props) {
 }
 
 export function Experiment(props) {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ExperimentConfigureActions>();
   const { exp } = props;
   const { name, description, tag, selected, progress, performance_hint, ref } =
     exp;
@@ -175,7 +176,7 @@ export function Experiment(props) {
 }
 
 export function ExperimentConfigure(props) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ExperimentConfigureActions>();
   const { theme, always_active, has_start_callback } = data;
 
   const techwebs = data.techwebs ?? [];

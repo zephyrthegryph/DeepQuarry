@@ -10,6 +10,7 @@ import {
   Slider,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { BombTesterActions } from './generated/BombTester';
 
 type Data = {
   simulating: BooleanLike;
@@ -23,7 +24,7 @@ type Data = {
 };
 
 export const BombTester = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BombTesterActions>();
 
   const {
     simulating,

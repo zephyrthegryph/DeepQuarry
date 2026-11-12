@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ParticleAcceleratorActions } from './generated/ParticleAccelerator';
 
 type Data = {
   assembled: BooleanLike;
@@ -10,7 +11,7 @@ type Data = {
 };
 
 export const ParticleAccelerator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ParticleAcceleratorActions>();
   const { assembled, power, strength } = data;
   return (
     <Window width={350} height={185}>

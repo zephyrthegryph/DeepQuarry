@@ -3,10 +3,11 @@ import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 
 import { modalOpen } from '../../interfaces/common/ComplexModal';
 import { doEdit } from '../GeneralRecords/functions';
+import type { SecurityRecordsActions } from '../generated/SecurityRecords';
 import type { Data } from './types';
 
 export const SecurityRecordsViewSecurity = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecurityRecordsActions>();
   const { security } = data;
   if (!security?.fields) {
     return (

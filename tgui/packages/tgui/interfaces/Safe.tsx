@@ -7,6 +7,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SafeActions } from './generated/Safe';
 
 type Content = {
   ref: number;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const Safe = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, SafeActions>();
   const { open, dial, contents } = data;
 
   return (

@@ -12,6 +12,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { RoundStatusPanelActions } from './generated/RoundStatusPanel';
 
 type ShuttleState = 'idle' | 'counting_down' | 'arriving' | 'warmup';
 
@@ -152,7 +153,7 @@ const AntagMemberRow = (props: {
 };
 
 export const RoundStatusPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, RoundStatusPanelActions>();
   const { mode_name, round_duration, delay_end, shuttle, antag_blocks } = data;
 
   return (

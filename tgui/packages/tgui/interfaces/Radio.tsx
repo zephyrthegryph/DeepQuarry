@@ -10,6 +10,7 @@ import {
 } from 'tgui-core/components';
 import { round, toFixed } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
+import type { RadioActions } from './generated/Radio';
 
 type Data = {
   theme?: string;
@@ -36,7 +37,7 @@ type Data = {
 };
 
 export const Radio = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RadioActions>();
   const {
     theme,
     rawfreq,

@@ -11,7 +11,7 @@ import {
 } from 'tgui-core/components';
 import { formatMoney } from 'tgui-core/format';
 import { createSearch } from 'tgui-core/string';
-
+import type { UplinkActions } from '../generated/Uplink';
 import { MAX_SEARCH_RESULTS } from './constants';
 import { ItemList } from './ItemList';
 import type { Data, Item } from './types';
@@ -20,7 +20,7 @@ export const GenericUplink = (props: {
   currencyAmount: number;
   currencySymbol: string;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, UplinkActions>();
 
   const { currencyAmount = 0, currencySymbol = '₮' } = props;
 

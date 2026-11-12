@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
+import type { AdminShuttleControllerActions } from './generated/AdminShuttleController';
 
 type Data = {
   shuttles: Shuttle[];
@@ -30,7 +31,7 @@ export const AdminShuttleController = () => {
 };
 
 export const ShuttleList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AdminShuttleControllerActions>();
 
   const { shuttles, overmap_ships } = data;
 

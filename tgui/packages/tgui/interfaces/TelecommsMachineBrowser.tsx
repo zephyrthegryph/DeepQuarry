@@ -8,6 +8,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { TelecommsMachineBrowserActions } from './generated/TelecommsMachineBrowser';
 
 type Data = {
   network: string;
@@ -23,7 +24,7 @@ type Data = {
 type machine = { id: string; name: string };
 
 export const TelecommsMachineBrowser = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TelecommsMachineBrowserActions>();
 
   const { network, temp, machinelist, selectedMachine } = data;
 

@@ -13,6 +13,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
+import type { SmartVendActions } from './generated/SmartVend';
 
 type Data = {
   contents: Content[];
@@ -29,7 +30,7 @@ const sortTypes = {
 };
 
 export const SmartVend = (props) => {
-  const { config, data } = useBackend<Data>();
+  const { config, data } = useBackend<Data, SmartVendActions>();
   const [searchText, setSearchText] = useState('');
   const [sortOrder, setSortOrder] = useState('Alphabetical');
   const [descending, setDescending] = useState(false);

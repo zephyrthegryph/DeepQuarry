@@ -1,12 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
+import type { WhitelistEditActions } from '../generated/WhitelistEdit';
 import type { Data } from './types';
 import { WhitelistAddEnttry } from './WhitelistAddEnttry';
 import { WhitelistRemoveEntry } from './WhitelistRemoveEntry';
 
 export const WhitelistEdit = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, WhitelistEditActions>();
   const {
     alienwhitelist,
     languagewhitelist,

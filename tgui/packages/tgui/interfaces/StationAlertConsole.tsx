@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { StationAlertConsoleActions } from './generated/StationAlertConsole';
 
 type Data = {
   categories: {
@@ -35,7 +36,7 @@ export const StationAlertConsole = () => {
 };
 
 export const StationAlertConsoleContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StationAlertConsoleActions>();
   const { categories = [] } = data;
   return categories.map((category) => (
     <Section key={category.category} title={category.category}>

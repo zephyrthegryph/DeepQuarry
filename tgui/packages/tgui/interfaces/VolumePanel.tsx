@@ -7,13 +7,14 @@ import {
   Slider,
   Stack,
 } from 'tgui-core/components';
+import type { VolumePanelActions } from './generated/VolumePanel';
 
 type Data = {
   volume_channels: { key; val: number }[];
 };
 
 export const VolumePanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VolumePanelActions>();
 
   const { volume_channels } = data;
 

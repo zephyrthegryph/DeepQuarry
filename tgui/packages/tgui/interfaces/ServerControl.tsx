@@ -8,6 +8,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ServerControlActions } from './generated/ServerControl';
 
 type Data = {
   server_connected: BooleanLike;
@@ -38,7 +39,7 @@ type LogData = {
 };
 
 export const ServerControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ServerControlActions>();
   const { server_connected, servers, consoles, logs } = data;
   if (!server_connected) {
     return (

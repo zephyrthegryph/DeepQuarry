@@ -7,6 +7,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { LibraryVisitorActions } from './generated/LibraryVisitor';
 
 type Result = {
   author: string;
@@ -26,7 +27,7 @@ type Data = {
 };
 
 export const LibraryVisitor = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryVisitorActions>();
   const { screenstate, title, category, author, has_db, has_query, results } =
     data;
 

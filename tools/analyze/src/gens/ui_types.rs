@@ -41,119 +41,50 @@ impl Generator for UiTypes {
                 }
             }
         }
-        // Entry procs (a global proc returning a list of entries): a CAPABILITIES entry `name()` stands for them.
-        let bundles: BTreeMap<String, Vec<String>> = cx.markers(crate::sem::decls::ENTRY_PROC).filter_map(|m| m.args.first().map(|n| (n.trim().to_string(), m.args[1..].to_vec()))).collect();
+        // The window model (crate::sem::ui_windows): each window's holders and the ui_act() ops they answer, capabilities and bundles included.
+        let model = crate::sem::ui_windows::windows(cx.tree, cx.decls());
         let mut windows: BTreeMap<String, Window> = BTreeMap::new();
-        let mut empty: Vec<(String, u32, String, String)> = Vec::new();
-        for m in cx.markers("CAPABILITIES") {
-            let Some(owner) = m.args.first() else { continue };
-            let mut window_name: Option<String> = None;
-            let mut forwards = false;
-            let mut fields: Vec<(String, Option<String>)> = Vec::new();
-            let mut acts: Vec<Act> = Vec::new();
-            let mut list: Vec<String> = Vec::new();
-            expand_bundles(&m.args[1..], &bundles, &mut list, 0);
-            for raw in list.iter() {
-                let entry = clean(raw);
-                let Some((fname, body)) = call_of(&entry) else { continue };
-                match fname {
-                    "interface" => {
-                        let parts = split_top(body);
-                        // A window named by a var of the host (window_var =, each subtype its own) has no name to type here.
-                        if let Some(first) = parts.first().filter(|f| f.trim().starts_with('"')) {
-                            window_name = Some(first.trim().trim_matches('"').to_string());
-                        }
-                        forwards = parts.iter().skip(1).any(|p| p.trim_start().starts_with("forwards"));
+        for (name, wm) in &model {
+            let mut w = Window { owner: wm.owner.clone(), rel: wm.rel.clone(), line: wm.line, fields: Vec::new(), acts: Vec::new(), open: wm.open.clone() };
+            for (owner, body) in &wm.shapes {
+                for part in split_top(body) {
+                    let (fname, explicit) = if let Some((n, schema)) = part.split_once('=').filter(|(n, _)| is_ident(n.trim())) {
+                        (n.trim().to_string(), Some(schema.trim().to_string()))
+                    } else if is_ident(part.trim()) {
+                        (part.trim().to_string(), None)
+                    } else {
+                        continue;
+                    };
+                    if w.fields.iter().any(|f| f.name == fname) {
+                        continue;
                     }
-                    "ui_shape" => {
-                        for part in split_top(body) {
-                            if let Some((name, schema)) = part.split_once('=').filter(|(n, _)| is_ident(n.trim())) {
-                                fields.push((name.trim().to_string(), Some(schema.trim().to_string())));
-                            } else if is_ident(part.trim()) {
-                                fields.push((part.trim().to_string(), None));
-                            }
-                        }
+                    let schema = explicit.or_else(|| schemas.get(&(owner.clone(), fname.clone())).cloned());
+                    if schema.is_none() {
+                        out.diag(&wm.rel, wm.line, format!("ui_shape({}) of {}: `{}` has no schema (TRACKED_SCHEMA or SCHEMA) to type it from", fname, owner, fname));
                     }
-                    "op" => {
-                        let parts = split_top(body);
-                        let Some(key) = parts.first().map(|k| k.trim().trim_matches('"').to_string()) else { continue };
-                        for p in parts.iter().skip(1) {
-                            if let Some(act) = ui_act_of(p, &key) {
-                                acts.push(act);
-                            }
-                        }
-                    }
-                    _ => {}
+                    w.fields.push(Field { name: fname, schema });
                 }
             }
-            let Some(name) = window_name else { continue };
-            if fields.is_empty() && acts.is_empty() {
-                // A window that forwards its buttons and declares nothing of its own (the sleeper console) shows its target's window, typed there.
-                if forwards {
-                    continue;
-                }
-                // A subtype that declares an inherited window again (its own tgui state) is typed where the window's buttons are; judged after
-                // every block is read.
-                empty.push((m.rel.clone(), m.line, name, owner.clone()));
-                continue;
-            }
-            let w = windows.entry(name.clone()).or_insert_with(|| Window { owner: owner.clone(), rel: m.rel.clone(), line: m.line, fields: Vec::new(), acts: Vec::new() });
-            for (fname, explicit) in fields {
-                if w.fields.iter().any(|f| f.name == fname) {
-                    continue;
-                }
-                let schema = explicit.or_else(|| schemas.get(&(owner.clone(), fname.clone())).cloned());
-                if schema.is_none() {
-                    out.diag(&m.rel, m.line, format!("ui_shape({}) of {}: `{}` has no schema (TRACKED_SCHEMA or SCHEMA) to type it from", fname, owner, fname));
-                }
-                w.fields.push(Field { name: fname, schema });
-            }
-            for act in acts {
-                if w.acts.iter().any(|a| a.name == act.name) {
-                    continue;
+            for wa in &wm.acts {
+                let Some(mut act) = ui_act_of(&wa.part, &wa.name) else { continue };
+                act.name = wa.name.clone();
+                for arg in &mut act.args {
+                    if let Some(from) = arg.from.clone() {
+                        arg.schema = schemas.get(&(wa.owner.clone(), from.clone())).cloned();
+                        if arg.schema.is_none() {
+                            out.diag(&wa.rel, wa.line, format!("arg(\"{}\", from = nameof({})) of {}: `{}` has no schema", arg.name, from, wa.owner, from));
+                        }
+                    }
                 }
                 w.acts.push(act);
             }
-            // Resolve each action argument's `from = nameof(v)` against the owner's schemas.
-            for act in &mut w.acts {
-                for arg in &mut act.args {
-                    if let Some(from) = arg.from.clone() {
-                        arg.schema = schemas.get(&(owner.clone(), from.clone())).cloned();
-                        if arg.schema.is_none() {
-                            out.diag(&m.rel, m.line, format!("arg(\"{}\", from = nameof({})) of {}: `{}` has no schema", arg.name, from, owner, from));
-                        }
-                    }
-                }
-            }
-        }
-        for (rel, line, name, owner) in empty {
-            if !windows.contains_key(&name) {
-                out.diag(&rel, line, format!("interface(\"{}\") of {} declares no ui_shape() and no ui_act() op: nothing to type", name, owner));
-            }
+            windows.insert(name.clone(), w);
         }
         let mut files = Vec::new();
         for (name, w) in &windows {
             files.push((format!("{}/{}.d.ts", UI_TYPES_OUT, name), render_window(name, w)));
         }
         files
-    }
-}
-
-/// The entries with each `name()` of an entry proc replaced by the proc's entries (nested ones too).
-fn expand_bundles(entries: &[String], bundles: &BTreeMap<String, Vec<String>>, out: &mut Vec<String>, depth: usize) {
-    for raw in entries {
-        let entry = clean(raw);
-        if depth < 8 {
-            if let Some((name, body)) = call_of(&entry) {
-                if body.trim().is_empty() {
-                    if let Some(inner) = bundles.get(name) {
-                        expand_bundles(inner, bundles, out, depth + 1);
-                        continue;
-                    }
-                }
-            }
-        }
-        out.push(raw.clone());
     }
 }
 
@@ -179,6 +110,8 @@ struct Window {
     line: u32,
     fields: Vec<Field>,
     acts: Vec<Act>,
+    /// Why the window's action set is not known from the declarations (it forwards, or an op answers every action).
+    open: Option<String>,
 }
 
 fn render_window(name: &str, w: &Window) -> String {
@@ -197,6 +130,10 @@ fn render_window(name: &str, w: &Window) -> String {
     }
     s.push_str("};\n\n");
     s.push_str(&format!("export type {}Actions = {{\n", name));
+    if let Some(why) = &w.open {
+        s.push_str(&format!("  /** Open action set: {} */\n", why));
+        s.push_str("  [action: string]: Record<string, unknown>;\n");
+    }
     for a in &w.acts {
         if a.args.is_empty() {
             s.push_str(&format!("  {}: Record<string, never>;\n", quote_key(&a.name)));
@@ -207,7 +144,7 @@ fn render_window(name: &str, w: &Window) -> String {
             match &arg.schema {
                 Some(schema) => {
                     s.push_str(&format!("    /** {} */\n", describe(schema)));
-                    s.push_str(&format!("    {}: {};\n", arg.name, ts_type(schema)));
+                    s.push_str(&format!("    {}: {};\n", arg.name, boundary_type(&ts_type(schema))));
                 }
                 None => s.push_str(&format!("    {}: unknown;\n", arg.name)),
             }
@@ -218,6 +155,16 @@ fn render_window(name: &str, w: &Window) -> String {
     s
 }
 
+/// An action argument's type as the boundary takes it: schema_check() turns a number sent for a text arg into its text and a text sent for
+/// a number into the number (code/engine/declare/schema.dm), json_decode() makes true/false 1/0, and a null is an absent value.
+fn boundary_type(t: &str) -> String {
+    match t {
+        "string" | "number" => "string | number | boolean | null".to_string(),
+        "boolean" => "boolean | number | null".to_string(),
+        _ => format!("{} | null", t),
+    }
+}
+
 fn quote_key(k: &str) -> String {
     if is_ident(k) {
         k.to_string()
@@ -226,11 +173,6 @@ fn quote_key(k: &str) -> String {
     }
 }
 
-/// A marker argument as one line: the backslash that continued the previous line and the line breaks inside it are not part of the expression.
-fn clean(s: &str) -> String {
-    let joined: String = s.chars().map(|c| if c == '\\' { ' ' } else { c }).collect();
-    joined.split_whitespace().collect::<Vec<_>>().join(" ")
-}
 
 /// The `ui_act(...)` an op part is, if it is one: the window action's name (the first argument when it is text, else the op key) and its args.
 fn ui_act_of(part: &str, key: &str) -> Option<Act> {

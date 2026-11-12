@@ -4,6 +4,7 @@ import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Image, Section, Stack } from 'tgui-core/components';
+import type { RecyclerInterfaceActions } from './generated/RecyclerInterface';
 
 type Data = {
   heldItemName: string | null;
@@ -14,7 +15,7 @@ type Data = {
 };
 
 export const RecyclerInterface = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RecyclerInterfaceActions>();
 
   const { heldItemName, heldItemValue, itemIcon, userName, userBalance } = data;
 

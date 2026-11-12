@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Stack } from 'tgui-core/components';
 import { ChemDispenserRecipes } from '../ChemDispenser/ChemDispenserRecipes';
+import type { BorgHypoActions } from '../generated/BorgHypo';
 import { BorgHypoRecipeDisplay } from './BorgHypoRecipeDisplay';
 import type { Data } from './types';
 
 export const BorgHypoRecipes = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BorgHypoActions>();
   const { recipes, isDispensingRecipe, selectedRecipeId, recordingRecipe } =
     data;
 

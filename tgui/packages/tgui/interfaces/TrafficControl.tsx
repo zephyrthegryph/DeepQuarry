@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TrafficControlActions } from './generated/TrafficControl';
 
 type ServerRow = {
   id: string;
@@ -21,7 +22,7 @@ type Data = {
 };
 
 export const TrafficControl = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TrafficControlActions>();
   const { temp, network, screen, servers, selected_id, autoruncode } = data;
   return (
     <Window width={520} height={520} title="Telecommunications Traffic Control">

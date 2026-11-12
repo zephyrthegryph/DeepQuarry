@@ -15,6 +15,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PetCustomizeActions } from './generated/PetCustomize';
 
 type Setting = {
   id: string;
@@ -33,7 +34,7 @@ type Data = {
 };
 
 const SettingRow = (props: { setting: Setting }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, PetCustomizeActions>();
   const { setting } = props;
   return (
     <LabeledList.Item
@@ -57,7 +58,7 @@ const SettingRow = (props: { setting: Setting }) => {
 };
 
 export const PetCustomize = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PetCustomizeActions>();
   const { pet_name, settings } = data;
   return (
     <Window width={480} height={420} title="Customize" theme="console">

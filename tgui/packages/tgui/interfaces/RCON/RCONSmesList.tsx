@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section, Stack } from 'tgui-core/components';
+import type { RCONActions } from '../generated/RCON';
 import { SMESItem } from './RCONSMESItem';
 import type { Data } from './types';
 
 export const RCONSmesList = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RCONActions>();
   const { smes_info, pages, current_page } = data;
 
   return (

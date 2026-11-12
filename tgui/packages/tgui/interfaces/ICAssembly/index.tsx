@@ -11,7 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
-
+import type { ICAssemblyActions } from '../generated/ICAssembly';
 import { PlaneWrapper } from './Plane';
 import type { Data } from './types';
 
@@ -74,7 +74,7 @@ export const ICAssembly = (props) => {
 };
 
 const CircuitInfo = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ICAssemblyActions>();
 
   const {
     total_parts,

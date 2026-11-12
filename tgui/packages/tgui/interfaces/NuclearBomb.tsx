@@ -11,6 +11,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NuclearBombActions } from './generated/NuclearBomb';
 
 type WireEntry = {
   name: string;
@@ -41,7 +42,7 @@ const KEYPAD: Array<string[]> = [
 ];
 
 export const NuclearBomb = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NuclearBombActions>();
   return (
     <Window width={400} height={540}>
       <Window.Content>
@@ -52,7 +53,7 @@ export const NuclearBomb = () => {
 };
 
 const MainView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, NuclearBombActions>();
   const {
     auth,
     yes_code,
@@ -165,7 +166,7 @@ const MainView = () => {
 };
 
 const WireView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, NuclearBombActions>();
   const { wires, timing, safety, lighthack } = data;
   return (
     <>

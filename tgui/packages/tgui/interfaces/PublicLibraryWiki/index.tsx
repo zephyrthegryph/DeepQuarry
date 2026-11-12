@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, NoticeBox, Section, Stack } from 'tgui-core/components';
-
+import type { PublicLibraryWikiActions } from '../generated/PublicLibraryWiki';
 import {
   WikiAdColors,
   WikiDonationMessages,
@@ -18,7 +18,7 @@ import { WikiMainPage } from './WikiPages/WikiMainPage';
 import { WikiSearchPage } from './WikiPages/WikiSearchPage';
 
 export const PublicLibraryWiki = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PublicLibraryWikiActions>();
   const {
     crash,
     errorText,

@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { DestructiveAnalyzerActions } from './generated/DestructiveAnalyzer';
 
 type Data = {
   server_connected: BooleanLike;
@@ -28,7 +29,7 @@ type NodeData = {
 };
 
 export const DestructiveAnalyzer = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DestructiveAnalyzerActions>();
   const {
     server_connected,
     indestructible,

@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { CleanbotActions } from './generated/Cleanbot';
 
 type Data = {
   on: BooleanLike;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const Cleanbot = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CleanbotActions>();
 
   const {
     on,

@@ -6,6 +6,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, NoticeBox, Section, Stack } from 'tgui-core/components';
+import type { CommandPanelActions } from './generated/CommandPanel';
 
 type Command = {
   id: string;
@@ -25,7 +26,7 @@ type Data = {
 };
 
 export const CommandPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, CommandPanelActions>();
   const { title, blocked, groups } = data;
   return (
     <Window width={540} height={600} title={title} theme="console">

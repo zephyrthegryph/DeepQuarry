@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Modal } from 'tgui-core/components';
+import type { TechwebActions } from '../generated/Techweb';
 import { TechwebContent } from './Content';
 import { TechWebRoute } from './hooks';
 import type { TechWebData } from './types';
 
 export function TechwebStart(props) {
-  const { act, data } = useBackend<TechWebData>();
+  const { act, data } = useBackend<TechWebData, TechwebActions>();
   const { locked, stored_research } = data;
   const techwebState = useState({
     route: '',

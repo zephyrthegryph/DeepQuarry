@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TurboliftActions } from './generated/Turbolift';
 
 type Data = {
   doors_open: BooleanLike;
@@ -20,7 +21,7 @@ type floor = {
 };
 
 export const Turbolift = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TurboliftActions>();
 
   const { floors, doors_open, fire_mode } = data;
 

@@ -8,6 +8,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { Scrubber, Vent } from './common/AtmosControls';
 import type { single_scrubber, single_vent } from './common/CommonTypes';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
+import type { AirAlarmActions } from './generated/AirAlarm';
 
 type Data = {
   locked: BooleanLike;
@@ -47,7 +48,7 @@ type thresholds = {
 };
 
 export const AirAlarm = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
 
   const { locked, siliconUser, remoteUser } = data;
 
@@ -73,7 +74,7 @@ export const AirAlarm = (props) => {
 };
 
 const AirAlarmStatus = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, AirAlarmActions>();
 
   const { environment_data, atmos_alarm, fire_alarm, emagged } = data;
 
@@ -142,7 +143,7 @@ const AirAlarmStatus = (props) => {
 };
 
 const AirAlarmUnlockedControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { target_temperature, rcon } = data;
   return (
     <Section title="Comfort Settings">
@@ -223,7 +224,7 @@ const AirAlarmControl = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlHome = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { mode, atmos_alarm } = data;
   return (
     <>
@@ -270,7 +271,7 @@ const AirAlarmControlHome = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlVents = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, AirAlarmActions>();
   const { vents } = data;
   if (!vents || vents.length === 0) {
     return 'Nothing to show';
@@ -282,7 +283,7 @@ const AirAlarmControlVents = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlScrubbers = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, AirAlarmActions>();
   const { scrubbers } = data;
   if (!scrubbers || scrubbers.length === 0) {
     return 'Nothing to show';
@@ -296,7 +297,7 @@ const AirAlarmControlScrubbers = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlModes = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { modes } = data;
   if (!modes || modes.length === 0) {
     return 'Nothing to show';
@@ -320,7 +321,7 @@ const AirAlarmControlModes = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlThresholds = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { thresholds } = data;
   return (
     <table className="LabeledList" style={{ width: '100%' }}>

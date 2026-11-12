@@ -14,6 +14,7 @@ import type { BooleanLike } from 'tgui-core/react';
 
 import { FullscreenNotice } from './common/FullscreenNotice';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
+import type { APCActions } from './generated/APC';
 
 type Data = {
   gridCheck: BooleanLike;
@@ -45,7 +46,7 @@ type Data = {
 };
 
 export const APC = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, APCActions>();
 
   const { gridCheck, failTime } = data;
 
@@ -115,7 +116,7 @@ const malfMap: Record<
 };
 
 const ApcContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, APCActions>();
 
   const {
     locked,
@@ -363,7 +364,7 @@ const GridCheck = (props) => {
 };
 
 const ApcFailure = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, APCActions>();
 
   const { locked, siliconUser, failTime } = data;
 

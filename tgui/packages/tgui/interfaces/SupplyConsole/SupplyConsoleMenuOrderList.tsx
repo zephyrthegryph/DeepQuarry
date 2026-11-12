@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-
+import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { Data } from './types';
 
 export const SupplyConsoleMenuOrderList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupplyConsoleActions>();
   const { mode } = props;
   const { orders, order_auth } = data;
 

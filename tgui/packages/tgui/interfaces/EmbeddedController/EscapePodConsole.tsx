@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import {
   EscapePodControls,
   EscapePodStatus,
@@ -12,7 +12,10 @@ import type { EscapePodConsoleData } from './types';
  * Replaces escape_pod_console.tmpl
  */
 export const EscapePodConsole = (props) => {
-  const { act, data } = useBackend<EscapePodConsoleData>();
+  const { act, data } = useBackend<
+    EscapePodConsoleData,
+    EmbeddedControllerActions
+  >();
 
   const {
     exterior_status,

@@ -10,6 +10,7 @@ import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { EditMemoryPanelActions } from './generated/EditMemoryPanel';
 
 type Objective = {
   ref: number;
@@ -40,7 +41,7 @@ type Data = {
 };
 
 export const EditMemoryPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, EditMemoryPanelActions>();
   if (!data.alive) {
     return (
       <Window width={600} height={500} title="Edit Memory">

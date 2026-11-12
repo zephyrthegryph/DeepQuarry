@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
+import type { DeleteBookPanelActions } from './generated/DeleteBookPanel';
 
 type Book = {
   id: string;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 export const DeleteBookPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, DeleteBookPanelActions>();
   const { books, error, sort_by } = data;
   if (error) {
     return (

@@ -2,11 +2,12 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Image, LabeledList, Section } from 'tgui-core/components';
 
 import { modalOpen } from '../common/ComplexModal';
+import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import { doEdit } from './functions';
 import type { Data } from './types';
 
 export const GeneralRecordsViewGeneral = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralRecordsActions>();
   const { general } = data;
   if (!general?.fields) {
     return (

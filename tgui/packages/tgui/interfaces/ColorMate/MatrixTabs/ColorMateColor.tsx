@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Slider, Stack } from 'tgui-core/components';
+import type { ColorMateActions } from '../../generated/ColorMate';
 import type { Data } from '../types';
 
 export const ColorMateTint = (props) => {
@@ -13,7 +14,7 @@ export const ColorMateTint = (props) => {
 };
 
 export const ColorMateHSV = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ColorMateActions>();
 
   const { buildhue, buildsat, buildval } = data;
   return (

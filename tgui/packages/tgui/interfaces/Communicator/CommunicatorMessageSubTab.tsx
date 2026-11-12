@@ -1,14 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import type { CommunicatorActions } from '../generated/Communicator';
 import type { Data } from './types';
 
 export const CommunicatorMessageSubTab = (props: {
   clipboardMode: boolean;
   onClipboardMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { clipboardMode, onClipboardMode } = props;
 

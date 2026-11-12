@@ -4,6 +4,7 @@ import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { FullscreenNotice } from './common/FullscreenNotice';
+import type { NTNetRelayActions } from './generated/NTNetRelay';
 
 type Data = {
   enabled: BooleanLike;
@@ -13,7 +14,7 @@ type Data = {
 };
 
 export const NTNetRelay = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NTNetRelayActions>();
 
   const { dos_crashed } = data;
 
@@ -31,7 +32,7 @@ export const NTNetRelay = (props) => {
 };
 
 const NTNetRelayContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NTNetRelayActions>();
 
   const { enabled, dos_overload, dos_capacity } = data;
 

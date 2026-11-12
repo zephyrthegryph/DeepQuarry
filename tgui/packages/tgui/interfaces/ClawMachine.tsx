@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, ProgressBar } from 'tgui-core/components';
+import type { ClawMachineActions } from './generated/ClawMachine';
 
 type Data = {
   wintick: number;
@@ -10,7 +11,7 @@ type Data = {
 };
 
 export const ClawMachine = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ClawMachineActions>();
   const { wintick, instructions, gameStatus, winscreen } = data;
 
   let body;

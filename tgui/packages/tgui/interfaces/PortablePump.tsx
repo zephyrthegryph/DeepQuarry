@@ -4,6 +4,7 @@ import { Button, LabeledList, Section, Slider } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { PortableBasicInfo } from './common/PortableAtmos';
+import type { PortablePumpActions } from './generated/PortablePump';
 
 type Data = {
   direction: BooleanLike;
@@ -14,7 +15,7 @@ type Data = {
 };
 
 export const PortablePump = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PortablePumpActions>();
   const {
     direction,
     target_pressure,

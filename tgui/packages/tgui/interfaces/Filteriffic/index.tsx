@@ -9,12 +9,12 @@ import {
   NoticeBox,
   Section,
 } from 'tgui-core/components';
-
+import type { FilterifficActions } from '../generated/Filteriffic';
 import { FilterEntry } from './FilterEntry';
 import type { Data } from './types';
 
 export const Filteriffic = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FilterifficActions>();
   const name = data.target_name || 'Unknown Object';
   const filters = data.target_filter_data || {};
   const hasFilters = Object.keys(filters).length !== 0;

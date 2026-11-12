@@ -10,6 +10,7 @@ import {
 import type { BooleanLike } from 'tgui-core/react';
 
 import { TemporaryNotice } from './common/TemporaryNotice';
+import type { TelecommsMultitoolMenuActions } from './generated/TelecommsMultitoolMenu';
 
 type Data = {
   temp: { color: string; text: string } | null;
@@ -42,7 +43,7 @@ type options = {
 };
 
 export const TelecommsMultitoolMenu = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, TelecommsMultitoolMenuActions>();
 
   const { options } = data;
 
@@ -58,7 +59,7 @@ export const TelecommsMultitoolMenu = (props) => {
 };
 
 const TelecommsMultitoolMenuStatus = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TelecommsMultitoolMenuActions>();
 
   const {
     // All

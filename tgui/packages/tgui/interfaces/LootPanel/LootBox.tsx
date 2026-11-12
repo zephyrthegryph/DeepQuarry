@@ -3,7 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Button, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { capitalizeFirst } from 'tgui-core/string';
-
+import type { LootPanelActions } from '../generated/LootPanel';
 import { IconDisplay } from './IconDisplay';
 import type { SearchGroup, SearchItem } from './types';
 
@@ -20,7 +20,7 @@ type Props =
     };
 
 export function LootBox(props: Props) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, LootPanelActions>();
   const { is_blind } = data;
 
   let amount = 0;

@@ -1,12 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
-
+import type { ChangelingPanelActions } from '../generated/ChangelingPanel';
 import { ChangeLingSearchableList } from './ChangelingPowerList';
 import type { Data } from './types';
 
 export const ChangelingPanel = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ChangelingPanelActions>();
 
   const { available_points, power_list } = data;
 

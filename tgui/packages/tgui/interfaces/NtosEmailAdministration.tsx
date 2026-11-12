@@ -2,7 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { NtosEmailAdministrationActions } from './generated/NtosEmailAdministration';
 import { NtosEmailClientViewMessage } from './NtosEmailClient';
 
 type Data = {
@@ -27,7 +27,7 @@ type message = {
 type account = { login: string; uid: string };
 
 export const NtosEmailAdministration = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NtosEmailAdministrationActions>();
 
   const { error, cur_title, current_account, accounts } = data;
 
@@ -102,7 +102,7 @@ const ViewEmail = (props) => {
 };
 
 const ViewAccount = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailAdministrationActions>();
   const { current_account, cur_suspended, messages = [] } = data;
   return (
     <Section

@@ -12,6 +12,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
+import type { ChangelogActions } from '../generated/Changelog';
 
 const icons = {
   add: { icon: 'check-circle', color: 'green' },
@@ -58,7 +59,7 @@ const formatDate = (date: string, includeDay = false) =>
   (includeDay ? dayFormatter : monthFormatter).format(new Date(date));
 
 export const Changelog = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChangelogActions>();
   const { dates = [] } = data;
 
   const dateChoices = dates.map((date) => formatDate(date));

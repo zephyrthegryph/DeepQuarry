@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { DestinationTaggerActions } from '../generated/DestinationTagger';
 import type { Data } from './types';
 
 export const DestintationTaggerTags = (props: { tagSearch: string }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DestinationTaggerActions>();
 
   const { currTag, taggerLocs } = data;
   const { tagSearch } = props;

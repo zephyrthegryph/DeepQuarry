@@ -11,6 +11,7 @@ import type { BooleanLike } from 'tgui-core/react';
 
 import { LoginInfo } from './common/LoginInfo';
 import { LoginScreen } from './common/LoginScreen';
+import type { FaxActions } from './generated/Fax';
 
 type Data = {
   scan: string | null;
@@ -26,7 +27,7 @@ type Data = {
 };
 
 export const Fax = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, FaxActions>();
 
   const { authenticated, copyItem } = data;
 
@@ -58,7 +59,7 @@ export const Fax = (props) => {
 };
 
 export const FaxContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FaxActions>();
 
   const { bossName, copyItem, cooldown, destination } = data;
 
@@ -106,7 +107,7 @@ export const FaxContent = (props) => {
 };
 
 const RemoveItem = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FaxActions>();
 
   const { copyItem } = data;
 
@@ -124,7 +125,7 @@ const RemoveItem = (props) => {
 };
 
 const AutomatedStaffRequest = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FaxActions>();
 
   const { adminDepartments, destination, copyItem } = data;
   const staffRequestDepartment: Set<string> = new Set(adminDepartments);

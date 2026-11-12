@@ -11,6 +11,7 @@ import {
 import { fetchRetry } from 'tgui-core/http';
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = {
   active_conversation: string;
@@ -82,7 +83,7 @@ const copyToClipboard = (messages: message[]) => {
 };
 
 export const pda_messenger = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { active_conversation } = data;
 
@@ -93,7 +94,7 @@ export const pda_messenger = (props) => {
 };
 
 const MessengerList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { convopdas = [], pdas = [], charges, silent, toff } = data;
 
@@ -153,7 +154,7 @@ const MessengerList = (props) => {
 };
 
 const PDAList = (props: { pdas: pda[]; title: string; msgAct: string }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { pdas, title, msgAct } = props;
 
@@ -197,7 +198,7 @@ const PDAList = (props: { pdas: pda[]; title: string; msgAct: string }) => {
 };
 
 const ActiveConversation = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
   const { convo_name, convo_job, messages = [], active_conversation } = data;
   const [asciiMode, setAsciiMode] = useState(false);
 
@@ -343,7 +344,7 @@ const ActiveConversationTinder = (props: {
 };
 
 const TinderMessage = (props: { im: message; className: string }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PdaActions>();
   const { enable_message_embeds } = data;
   const { im, className } = props;
 

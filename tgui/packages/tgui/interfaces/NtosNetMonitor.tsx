@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosNetMonitorActions } from './generated/NtosNetMonitor';
 
 type Data = {
   ntnetstatus: BooleanLike;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const NtosNetMonitor = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetMonitorActions>();
   const {
     ntnetrelays,
     ntnetstatus,

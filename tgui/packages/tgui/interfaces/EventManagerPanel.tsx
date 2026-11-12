@@ -9,6 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { EventManagerPanelActions } from './generated/EventManagerPanel';
 
 type SeverityRow = {
   ref: number;
@@ -68,7 +69,7 @@ type Data = {
 };
 
 export const EventManagerPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, EventManagerPanelActions>();
   if (data.selected_severity) {
     return <DetailView data={data} act={act} />;
   }

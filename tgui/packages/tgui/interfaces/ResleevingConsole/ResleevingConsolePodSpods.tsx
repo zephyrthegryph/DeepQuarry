@@ -1,11 +1,11 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Icon, Image, ProgressBar } from 'tgui-core/components';
-
+import type { ResleevingConsoleActions } from '../generated/ResleevingConsole';
 import type { Data } from './types';
 
 export const ResleevingConsolePodSpods = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ResleevingConsoleActions>();
   const { spods, selected_printer } = data;
 
   if (spods?.length) {

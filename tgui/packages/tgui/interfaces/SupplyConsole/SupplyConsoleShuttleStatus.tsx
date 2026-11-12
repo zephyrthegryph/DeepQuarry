@@ -7,11 +7,11 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
-
+import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { Data } from './types';
 
 export const SupplyConsoleShuttleStatus = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupplyConsoleActions>();
 
   const { supply_points, shuttle, shuttle_auth } = data;
 

@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, LabeledList } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = {
   aircontents: aircontent[];
@@ -36,7 +37,7 @@ const getItemColor = (
 };
 
 export const pda_atmos_scan = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { aircontents = [] } = data;
 

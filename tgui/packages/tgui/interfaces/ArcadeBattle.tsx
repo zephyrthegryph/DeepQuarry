@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ArcadeBattleActions } from './generated/ArcadeBattle';
 
 type Data = {
   name: string;
@@ -22,7 +23,7 @@ type Data = {
 };
 
 export const ArcadeBattle = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ArcadeBattleActions>();
 
   const {
     temp,

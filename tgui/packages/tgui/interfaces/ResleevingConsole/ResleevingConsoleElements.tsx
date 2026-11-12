@@ -7,7 +7,7 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-
+import type { ResleevingConsoleActions } from '../generated/ResleevingConsole';
 import { MENU_BODY, MENU_MAIN, MENU_MIND } from './constants';
 import { ResleevingConsolePodGrowers } from './ResleevingConsolePodGrowers';
 import { ResleevingConsolePodSleevers } from './ResleevingConsolePodSleevers';
@@ -16,7 +16,7 @@ import { ResleevingConsoleRecords } from './ResleevingConsoleRecords';
 import type { Data } from './types';
 
 export const ResleevingConsoleBody = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ResleevingConsoleActions>();
   const { menu, bodyrecords, mindrecords } = data;
 
   const body: React.JSX.Element[] = [];
@@ -42,7 +42,7 @@ const ResleevingConsoleMain = (props) => {
 };
 
 export const ResleevingConsoleNavigation = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ResleevingConsoleActions>();
   const { menu } = data;
   return (
     <Tabs>
@@ -84,7 +84,7 @@ export const ResleevingConsoleNavigation = (props) => {
 };
 
 export const ResleevingConsoleTemp = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ResleevingConsoleActions>();
   const { temp } = data;
   if (!temp?.text || temp.text.length <= 0) {
     return;

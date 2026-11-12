@@ -1,14 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
-
+import type { BanPanelActions } from '../generated/BanPanel';
 import { BanningSection } from './Elements/BanningSection';
 import { BanSearchResults } from './Elements/BanSearchResults';
 import { SearchSection } from './Elements/SearchSection';
 import type { Data } from './types';
 
 export const BanPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BanPanelActions>();
   const {
     player_ckey,
     admin_ckey,

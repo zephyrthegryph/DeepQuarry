@@ -8,6 +8,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { FeedbackFormActions } from './generated/FeedbackForm';
 
 type Data = {
   topic: string;
@@ -22,7 +23,7 @@ type Data = {
 };
 
 export const FeedbackForm = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, FeedbackFormActions>();
   const {
     topic,
     body,

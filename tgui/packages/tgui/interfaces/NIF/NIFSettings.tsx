@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Dropdown, LabeledList, Stack } from 'tgui-core/components';
-
+import type { NIFActions } from '../generated/NIF';
 import type { Data } from './types';
 
 export const NIFSettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NIFActions>();
 
   const { valid_themes, theme } = data;
 

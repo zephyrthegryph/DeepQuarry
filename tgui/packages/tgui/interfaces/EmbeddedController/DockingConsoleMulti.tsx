@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Icon, LabeledList, Section, Stack } from 'tgui-core/components';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import { DockStatus } from './EmbeddedControllerHelpers';
 import type { DockingConsoleMultiData } from './types';
 
@@ -11,7 +11,10 @@ import type { DockingConsoleMultiData } from './types';
  * Replaces multi_docking_console.tmpl
  */
 export const DockingConsoleMulti = (props) => {
-  const { data } = useBackend<DockingConsoleMultiData>();
+  const { data } = useBackend<
+    DockingConsoleMultiData,
+    EmbeddedControllerActions
+  >();
 
   const { docking_status } = data;
 

@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
+import type { TicketChatActions } from './generated/TicketChat';
 
 const Level = {
   0: 'Mentorhelp',
@@ -42,7 +43,7 @@ type Data = {
 };
 
 export const TicketChat = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TicketChatActions>();
   const [ticketChat, setTicketChat] = useState('');
   const { id, level, handler, log } = data;
 

@@ -8,6 +8,7 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
+import type { PdaActions } from '../../generated/Pda';
 
 type Contract = {
   id: string;
@@ -119,7 +120,7 @@ const states = [
 ];
 
 export const pda_contracts = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
   const [selectedState, setSelectedState] = useState('offered');
   const contracts = (data.contracts ?? []).filter(
     (contract) => contract.state === selectedState,

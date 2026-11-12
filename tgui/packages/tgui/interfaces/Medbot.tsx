@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { MedbotActions } from './generated/Medbot';
 
 type Data = {
   on: BooleanLike;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const Medbot = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MedbotActions>();
 
   const {
     on,

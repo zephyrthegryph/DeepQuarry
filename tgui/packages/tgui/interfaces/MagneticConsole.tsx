@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { MagneticConsoleActions } from './generated/MagneticConsole';
 
 type Magnet = {
   index: number;
@@ -25,7 +26,7 @@ type Data = {
 };
 
 export const MagneticConsole = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MagneticConsoleActions>();
   const { autolink, frequency, code, speed, path, moving, magnets } = data;
   return (
     <Window width={520} height={520} title="Magnetic Control Console">

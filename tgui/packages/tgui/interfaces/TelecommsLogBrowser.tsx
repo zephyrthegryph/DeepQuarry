@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TelecommsLogBrowserActions } from './generated/TelecommsLogBrowser';
 
 type Data = {
   universal_translate: BooleanLike;
@@ -34,7 +35,7 @@ type log = {
 };
 
 export const TelecommsLogBrowser = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TelecommsLogBrowserActions>();
 
   const { universal_translate, network, temp, servers, selectedServer } = data;
 

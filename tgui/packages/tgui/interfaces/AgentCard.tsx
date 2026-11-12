@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AgentCardActions } from './generated/AgentCard';
 
 type Data = {
   entries: { name: string; value: string }[];
@@ -9,7 +10,7 @@ type Data = {
 };
 
 export const AgentCard = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AgentCardActions>();
 
   const { entries, electronic_warfare } = data;
 

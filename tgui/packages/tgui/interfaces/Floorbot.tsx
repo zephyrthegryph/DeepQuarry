@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { FloorbotActions } from './generated/Floorbot';
 
 type Data = {
   on: BooleanLike;
@@ -23,7 +24,7 @@ type Data = {
 };
 
 export const Floorbot = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FloorbotActions>();
 
   const {
     on,

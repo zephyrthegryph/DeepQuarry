@@ -8,6 +8,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
+import type { SeedStorageActions } from './generated/SeedStorage';
 
 type Data = {
   scanner: string[];
@@ -34,7 +35,7 @@ type seed = {
 };
 
 export const SeedStorage = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SeedStorageActions>();
 
   const { seeds } = data;
 

@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SpellbookActions } from './generated/Spellbook';
 
 type Spell = {
   id: string;
@@ -35,7 +36,7 @@ type Data = {
 };
 
 export const Spellbook = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, SpellbookActions>();
   const { temp, uses, max_uses, can_rememorize, spells, artefacts, noclothes } =
     data;
   if (temp) {

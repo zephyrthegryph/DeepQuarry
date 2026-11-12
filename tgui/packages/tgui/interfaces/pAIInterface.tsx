@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { pAIInterfaceActions } from './generated/pAIInterface';
 
 type Data = {
   bought: { id: string; name: string; on: BooleanLike }[];
@@ -25,7 +26,7 @@ type DropdownEntry = {
 };
 
 export const pAIInterface = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, pAIInterfaceActions>();
 
   const { bought, not_bought, available_ram, emotions, current_emotion } = data;
 

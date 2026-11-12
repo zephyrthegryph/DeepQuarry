@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section } from 'tgui-core/components';
-
+import type { RequestConsoleActions } from '../generated/RequestConsole';
 import type { Data } from './types';
 
 export const RequestConsoleSettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RequestConsoleActions>();
   const { silent } = data;
   return (
     <Section title="Settings">

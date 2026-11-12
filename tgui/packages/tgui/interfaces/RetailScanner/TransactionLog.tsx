@@ -1,10 +1,11 @@
 import { Fragment } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Divider, Section, Stack, Table } from 'tgui-core/components';
+import type { RetailScannerActions } from '../generated/RetailScanner';
 import type { Data } from './types';
 
 export const TransactionLog = (model) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RetailScannerActions>();
   const { transaction_logs, locked, department_checkout } = data;
 
   return (

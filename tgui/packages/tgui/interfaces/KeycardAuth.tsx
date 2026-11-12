@@ -6,6 +6,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
+import type { KeycardAuthActions } from './generated/KeycardAuth';
 
 type Data = {
   screen: number;
@@ -21,7 +22,7 @@ const EVENT_LABELS = [
 ];
 
 export const KeycardAuth = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, KeycardAuthActions>();
   const { screen, event, ert_admin_only } = data;
 
   const events = EVENT_LABELS.filter(

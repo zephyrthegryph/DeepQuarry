@@ -12,6 +12,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosArcadeActions } from './generated/NtosArcade';
 
 type Data = {
   Hitpoints: number;
@@ -25,7 +26,7 @@ type Data = {
 };
 
 export const NtosArcade = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosArcadeActions>();
 
   const {
     PlayerHitpoints,

@@ -15,6 +15,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
 
 import { CrewManifestContent } from './CrewManifest';
+import type { IdentificationComputerActions } from './generated/IdentificationComputer';
 
 type Data = {
   manifest: { cat: string; elems: manifestEntry[] }[];
@@ -61,7 +62,7 @@ export const IdentificationComputer = () => {
 };
 
 export const IdentificationComputerContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, IdentificationComputerActions>();
 
   const { ntos } = props;
 
@@ -123,7 +124,7 @@ export const IdentificationComputerPrinting = (props) => {
 export const IdentificationComputerAccessModification = (props: {
   ntos: boolean;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, IdentificationComputerActions>();
 
   const { ntos } = props;
 
@@ -225,11 +226,7 @@ export const IdentificationComputerAccessModification = (props: {
                   Special
                 </Table.Cell>
                 <Table.Cell>
-                  <Button
-                    onClick={() => act('assign_custom')}
-                  >
-                    Custom
-                  </Button>
+                  <Button onClick={() => act('assign_custom')}>Custom</Button>
                 </Table.Cell>
               </Table.Row>
             </Table>
@@ -265,7 +262,7 @@ export const IdentificationComputerAccessModification = (props: {
 };
 
 export const IdentificationComputerRegions = (props: { actName: string }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, IdentificationComputerActions>();
 
   const { actName } = props;
 

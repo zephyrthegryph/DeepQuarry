@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { RogueZonesActions } from './generated/RogueZones';
 
 type Data = {
   timeout_percent: number;
@@ -24,7 +25,7 @@ type Data = {
 };
 
 export const RogueZones = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RogueZonesActions>();
   const {
     timeout_percent,
     diffstep,

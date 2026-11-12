@@ -11,6 +11,7 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
+import type { TicketActions } from './generated/Ticket';
 
 const Level = {
   0: 'Mentorhelp',
@@ -56,7 +57,7 @@ window.addEventListener('keydown', (event) => {
 });
 
 export const Ticket = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TicketActions>();
   const [ticketChat, setTicketChat] = useState('');
 
   const messagesEndRef: RefObject<HTMLDivElement | null> = useRef(null);

@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PdaActions } from '../../generated/Pda';
 
 type PersonalSupplyOrder = {
   ref: number;
@@ -27,7 +28,7 @@ const statusColor = (status: string) => {
 };
 
 export const pda_supply_orders = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
   const orders = data.personal_supply_orders ?? [];
 
   if (!data.supply_order_account) {

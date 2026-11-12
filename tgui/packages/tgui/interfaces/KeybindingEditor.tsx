@@ -13,6 +13,7 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
+import type { KeybindingEditorActions } from './generated/KeybindingEditor';
 
 type Binding = {
   id: string;
@@ -87,7 +88,7 @@ function byondKeyName(event: React.KeyboardEvent<HTMLDivElement>): string {
 }
 
 export const KeybindingEditor = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, KeybindingEditorActions>();
   const {
     bindings,
     profiles,
@@ -205,8 +206,7 @@ export const KeybindingEditor = (props) => {
           )}
           {capturing && (
             <NoticeBox info>
-              Press a key (with Ctrl, Alt or Shift if you like). Escape
-              cancels.
+              Press a key (with Ctrl, Alt or Shift if you like). Escape cancels.
             </NoticeBox>
           )}
           <Stack vertical mt={1}>

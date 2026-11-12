@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import { round, toFixed } from 'tgui-core/math';
+import type { BeaconLocatorActions } from './generated/BeaconLocator';
 
 type Data = {
   scan_ticks: number;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 export const BeaconLocator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BeaconLocatorActions>();
 
   const { scan_ticks, degrees, rawfreq, minFrequency, maxFrequency } = data;
 

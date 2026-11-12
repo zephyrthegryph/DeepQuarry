@@ -1,11 +1,12 @@
 import { Fragment } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Stack } from 'tgui-core/components';
+import type { RobotSleeperActions } from '../../../generated/RobotSleeper';
 import { filterFuel, summarizeItems } from '../../functions';
 import type { Data } from '../../types';
 
 export const SleeperCargoStatus = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RobotSleeperActions>();
   const { deliveryslot_1, deliveryslot_2, deliveryslot_3, contents } = data;
 
   const cargoSlots = [deliveryslot_1, deliveryslot_2, deliveryslot_3];

@@ -10,6 +10,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { PaperActions } from './generated/Paper';
 
 type TextSeg = {
   type: 'text';
@@ -33,7 +34,7 @@ type Data = {
 };
 
 export const Paper = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PaperActions>();
   const { view, title, segments, stamps, garbled } = data;
   const writeMode = view === 'write';
 

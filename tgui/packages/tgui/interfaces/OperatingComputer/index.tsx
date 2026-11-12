@@ -1,14 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Section, Stack, Tabs } from 'tgui-core/components';
-
+import type { OperatingComputerActions } from '../generated/OperatingComputer';
 import { OperatingComputerOptions } from './OperatingComputerOptions';
 import { OperatingComputerPatient } from './OperatingComputerPatient';
 import { OperatingComputerUnoccupied } from './OperatingComputerUnoccupied';
 import type { Data } from './types';
 
 export const OperatingComputer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OperatingComputerActions>();
   const { hasOccupant, choice, occupant } = data;
   let body;
   if (!choice) {

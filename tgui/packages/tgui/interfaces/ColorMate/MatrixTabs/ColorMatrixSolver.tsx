@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
+import type { ColorMateActions } from '../../generated/ColorMate';
 import { computeMatrixFromPairs, isValidHex } from '../functions';
 import { ColorMatrixColorBox } from '../Helpers/MatrixColorBox';
 import type { ColorPair, ColorUpdate, Data, SelectedId } from '../types';
@@ -11,7 +12,7 @@ export const ColorMateMatrixSolver = (props: {
   onColorPairs: React.Dispatch<React.SetStateAction<ColorPair[]>>;
   onPick: ColorUpdate;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ColorMateActions>();
   const { activeID, onActiveId, colorPairs, onColorPairs, onPick } = props;
 
   function handleColorUpdate(

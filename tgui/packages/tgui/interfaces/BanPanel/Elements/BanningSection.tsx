@@ -11,13 +11,13 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
-
+import type { BanPanelActions } from '../../generated/BanPanel';
 import { ban_types } from '../constants';
 import type { Data } from '../types';
 import { InputHelper } from './Helpers/InputHelper';
 
 export const BanningSection = (props: { possibleJobs: string[] }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, BanPanelActions>();
 
   const { possibleJobs } = props;
 

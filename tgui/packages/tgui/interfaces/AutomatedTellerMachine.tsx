@@ -12,6 +12,7 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
+import type { AutomatedTellerMachineActions } from './generated/AutomatedTellerMachine';
 
 export type Transaction = {
   date: string;
@@ -39,7 +40,10 @@ export type AutomatedTellerMachineData = {
 };
 
 export const AutomatedTellerMachine = (props) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
 
   return (
     <Window width={680} height={550}>
@@ -90,7 +94,10 @@ const MainMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
   const { setMenu } = props;
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
 
   return (
     <Stack fill fontSize={2}>
@@ -139,7 +146,10 @@ const MainMenu = (props: {
 const WithdrawMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { setMenu } = props;
   const [custom, setCustom] = useState(false);
   const [useCard, setUseCard] = useState(false);
@@ -250,7 +260,10 @@ const CustomWithdrawal = (props: {
   setCustom: React.Dispatch<React.SetStateAction<boolean>>;
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { withdrawFunction, useCard, setCustom, setMenu } = props;
   const [money, setMoney] = useState(1000);
   return (
@@ -310,7 +323,10 @@ const CustomWithdrawal = (props: {
 const BalanceMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { setMenu } = props;
   return (
     <Section
@@ -377,7 +393,10 @@ const TransactionLog = (props: { transactions: Transaction[] }) => {
 const MoreMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { setMenu } = props;
   return (
     <Section
@@ -426,7 +445,10 @@ const MoreMenu = (props: {
 const TransferMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const [accountNum, setAccountNum] = useState(100000);
   const updateAccountNum = (val) => {
     const newVal = parseInt(val, 10);

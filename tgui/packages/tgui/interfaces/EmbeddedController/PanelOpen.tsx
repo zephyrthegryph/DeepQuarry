@@ -7,11 +7,11 @@ import {
   Section,
 } from 'tgui-core/components';
 import { round, toFixed } from 'tgui-core/math';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import type { PanelOpenData } from './types';
 
 export const PanelOpen = (props) => {
-  const { act, data } = useBackend<PanelOpenData>();
+  const { act, data } = useBackend<PanelOpenData, EmbeddedControllerActions>();
 
   const { panel_open, tags, frequency, min_freq, max_freq } = data;
 

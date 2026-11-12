@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Section, Stack } from 'tgui-core/components';
+import type { PAICardActions } from '../generated/PAICard';
 import { PAIDataEntry } from './PAIDataEntry';
 import type { Data, InvitePAIData } from './types';
 
 export const PAIFindCompanion = (props: { availablePais: InvitePAIData[] }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PAICardActions>();
 
   const { waiting_for_response, selected, selected_pai_data } = data;
   const { availablePais } = props;

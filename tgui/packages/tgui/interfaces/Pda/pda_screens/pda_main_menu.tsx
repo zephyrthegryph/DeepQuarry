@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = {
   owner: string;
@@ -26,7 +27,7 @@ const specialIconColors = {
 };
 
 export const pda_main_menu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const [showTransition, setShowTransition] = useState('');
 

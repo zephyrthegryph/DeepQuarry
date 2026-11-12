@@ -9,7 +9,7 @@ import {
   NumberInput,
   Stack,
 } from 'tgui-core/components';
-
+import type { ParticleEditActions } from '../generated/ParticleEdit';
 import { ParticleContext } from '.';
 import {
   type EntryGeneratorNumbersListProps,
@@ -23,7 +23,7 @@ import { GeneratorListEntry } from './Generators';
 import { isStringArray } from './helpers';
 
 export const FloatGenerator = (props: FloatGeneratorProps) => {
-  const { act } = useBackend<ParticleUIData>();
+  const { act } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, float } = props;
   return (
@@ -78,7 +78,7 @@ export const FloatGenerator = (props: FloatGeneratorProps) => {
 };
 
 export const FloatGeneratorColor = (props: FloatGeneratorColorProps) => {
-  const { act } = useBackend<ParticleUIData>();
+  const { act } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, float } = props;
   return (
@@ -135,7 +135,7 @@ export const FloatGeneratorColor = (props: FloatGeneratorColorProps) => {
 export const EntryGeneratorNumbersList = (
   props: EntryGeneratorNumbersListProps,
 ) => {
-  const { act } = useBackend<ParticleUIData>();
+  const { act } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, allow_z, input } = props;
   return (

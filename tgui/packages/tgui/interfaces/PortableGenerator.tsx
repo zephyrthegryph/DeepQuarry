@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PortableGeneratorActions } from './generated/PortableGenerator';
 
 type Data = {
   fuel_stored: number;
@@ -29,7 +30,7 @@ type Data = {
 };
 
 export const PortableGenerator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PortableGeneratorActions>();
 
   const {
     fuel_stored,

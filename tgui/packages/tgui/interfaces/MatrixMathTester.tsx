@@ -8,6 +8,7 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
+import type { MatrixMathTesterActions } from './generated/MatrixMathTester';
 
 const MatrixMathTesterInput = (props: { value: number; varName: string }) => {
   const { act } = useBackend();
@@ -37,7 +38,7 @@ type MatrixData = {
 };
 
 export const MatrixMathTester = (props) => {
-  const { act, data } = useBackend<MatrixData>();
+  const { act, data } = useBackend<MatrixData, MatrixMathTesterActions>();
   const {
     matrix_a,
     matrix_b,

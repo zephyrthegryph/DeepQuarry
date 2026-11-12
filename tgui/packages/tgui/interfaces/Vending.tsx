@@ -18,6 +18,7 @@ import { flow } from 'tgui-core/fp';
 import type { BooleanLike } from 'tgui-core/react';
 import { capitalizeAll, createSearch } from 'tgui-core/string';
 import { getLayoutState, LAYOUT, LayoutToggle } from './common/LayoutToggle';
+import type { VendingActions } from './generated/Vending';
 
 type Data = {
   chargesMoney: BooleanLike;
@@ -46,7 +47,7 @@ type Product = {
 };
 
 export const Vending = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VendingActions>();
   const { panel, chargesMoney, user, guestNotice, coin } = data;
 
   return (
@@ -96,7 +97,7 @@ export const Vending = (props) => {
 };
 
 export const VendingMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VendingActions>();
   const { coin, chargesMoney, user, userMoney, guestNotice, products } = data;
 
   const [searchText, setSearchText] = useState<string>('');
@@ -197,7 +198,7 @@ export const VendingProductsList = (props: { products: Product[] }) => {
 };
 
 const VendingRow = (props: { product: Product }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VendingActions>();
   const { actively_vending } = data;
   const { product } = props;
   return (
@@ -256,7 +257,7 @@ const VendingRow = (props: { product: Product }) => {
 };
 
 export const VendingMaintenance = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VendingActions>();
   const { speaker } = data;
 
   return (

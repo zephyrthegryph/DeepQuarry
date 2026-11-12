@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { LanguagesPanelActions } from './generated/LanguagesPanel';
 
 type LanguageRow = {
   id: string;
@@ -23,7 +24,7 @@ type Data = {
 };
 
 export const LanguagesPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LanguagesPanelActions>();
   const { has_default, default_name, languages } = data;
   return (
     <Window width={560} height={620} title="Known Languages">

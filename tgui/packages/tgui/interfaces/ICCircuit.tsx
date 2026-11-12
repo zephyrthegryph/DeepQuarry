@@ -4,6 +4,7 @@ import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
+import type { ICCircuitActions } from './generated/ICCircuit';
 
 type Data = {
   name: string;
@@ -42,7 +43,7 @@ type link = {
 };
 
 export const ICCircuit = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ICCircuitActions>();
 
   const {
     desc,

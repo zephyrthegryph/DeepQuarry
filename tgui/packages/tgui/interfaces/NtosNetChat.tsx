@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, Icon, Input, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosNetChatActions } from './generated/NtosNetChat';
 
 type Data = {
   can_admin: BooleanLike;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const NtosNetChat = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetChatActions>();
   const {
     can_admin,
     adminmode,

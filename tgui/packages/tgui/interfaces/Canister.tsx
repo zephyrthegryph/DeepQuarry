@@ -14,6 +14,7 @@ import {
 } from 'tgui-core/components';
 import { formatSiUnit } from 'tgui-core/format';
 import type { BooleanLike } from 'tgui-core/react';
+import type { CanisterActions } from './generated/Canister';
 
 type Data = {
   connected: BooleanLike;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const Canister = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CanisterActions>();
   const {
     connected,
     can_relabel,

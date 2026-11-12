@@ -6,6 +6,7 @@ import { InfinitePlane } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
 
 import { type Connection, Connections } from '../common/Connections';
+import type { ICAssemblyActions } from '../generated/ICAssembly';
 import { CircuitComponent } from './CircuitComponent';
 import type { PortProps } from './Port';
 import {
@@ -280,7 +281,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
  * act/data as props to the Plane class component.
  */
 export const PlaneWrapper = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ICAssemblyActions>();
   return <Plane act={act} data={data} />;
 };
 
@@ -307,7 +308,7 @@ const Circuit = (
     onPortRightClick,
   } = props;
 
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ICAssemblyActions>();
 
   // Find stored position for this circuit
   const storedPosition = data.component_positions?.find(

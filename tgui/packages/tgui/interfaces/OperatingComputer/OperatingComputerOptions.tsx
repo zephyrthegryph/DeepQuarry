@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Knob, LabeledList } from 'tgui-core/components';
-
+import type { OperatingComputerActions } from '../generated/OperatingComputer';
 import type { Data } from './types';
 
 export const OperatingComputerOptions = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OperatingComputerActions>();
   const { verbose, health, healthAlarm, spo2, spo2Alarm, crit } = data;
   return (
     <LabeledList>

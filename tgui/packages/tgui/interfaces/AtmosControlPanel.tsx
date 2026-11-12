@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AtmosControlPanelActions } from './generated/AtmosControlPanel';
 
 type ExcitedGroup = {
   jump_to: string;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const AtmosControlPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AtmosControlPanelActions>();
   const {
     excited_groups = [],
     active_size,

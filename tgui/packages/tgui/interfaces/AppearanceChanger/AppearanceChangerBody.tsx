@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import type { Data, Species } from './types';
 
 export const AppearanceChangerSpecies = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
   const { species, specimen } = data;
 
   const sortedSpecies = (species || []).sort((a: Species, b: Species) =>
@@ -42,7 +42,7 @@ export const AppearanceChangerSpecies = (props) => {
 };
 
 export const AppearanceChangerGender = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
 
   const { gender, gender_id, genders, id_genders } = data;
 

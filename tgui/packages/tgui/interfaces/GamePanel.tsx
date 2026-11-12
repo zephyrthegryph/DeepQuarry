@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { GamePanelActions } from './generated/GamePanel';
 
 type Data = {
   master_mode: string;
@@ -11,7 +12,7 @@ type Data = {
 };
 
 export const GamePanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, GamePanelActions>();
   const { master_mode, secret_mode } = data;
   return (
     <Window width={360} height={360} title="Game Panel">

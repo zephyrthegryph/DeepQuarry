@@ -9,6 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { ClipboardActions } from './generated/Clipboard';
 
 type Kind = 'paper' | 'photo';
 
@@ -25,7 +26,7 @@ type Data = {
 };
 
 export const Clipboard = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ClipboardActions>();
   const { has_pen, items } = data;
 
   return (

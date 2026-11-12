@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { buildIconData } from '../common/TechWebRecipeIcon';
+import type { TechwebActions } from '../generated/Techweb';
 import type { NodeCache, TechWebData } from './types';
 
 type Cost = {
@@ -80,7 +81,7 @@ function selectRemappedStaticData(data: TechWebData) {
 let remappedStaticData: ReturnType<typeof selectRemappedStaticData>;
 
 export function useRemappedBackend() {
-  const { data, ...rest } = useBackend<TechWebData>();
+  const { data, ...rest } = useBackend<TechWebData, TechwebActions>();
 
   // Only remap the static data once, cache for future use
   if (!remappedStaticData) {

@@ -9,7 +9,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { BanPanelActions } from '../../generated/BanPanel';
 import { ban_types } from '../constants';
 import type { Data } from '../types';
 
@@ -21,7 +21,7 @@ export const SearchSection = (props: {
   searchedBanType: string;
   minimumMatch: boolean;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, BanPanelActions>();
 
   const {
     searchedCkey,

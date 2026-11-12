@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { pAIDoorjackActions } from './generated/pAIDoorjack';
 
 type Data = {
   cable: BooleanLike;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const pAIDoorjack = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, pAIDoorjackActions>();
 
   const { cable, machine, inprogress, progress_a, progress_b, aborted } = data;
 

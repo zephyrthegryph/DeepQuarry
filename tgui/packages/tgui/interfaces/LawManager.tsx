@@ -13,6 +13,7 @@ import {
 import { flow } from 'tgui-core/fp';
 import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
+import type { LawManagerActions } from './generated/LawManager';
 
 type Data = {
   ion_law_nr: string;
@@ -63,7 +64,7 @@ type Law = {
 };
 
 export const LawManager = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LawManagerActions>();
 
   const { isSlaved } = data;
 
@@ -78,7 +79,7 @@ export const LawManager = (props) => {
 };
 
 const LawManagerContent = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LawManagerActions>();
   const [tabIndex, setTabIndex] = useSharedState<number>('lawsTabIndex', 0);
   const [searchLawName, setSearchLawName] = useSharedState<string>(
     'searchLawName',

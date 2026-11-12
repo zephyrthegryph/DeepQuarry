@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
-
+import type { PreferencesMenuActions } from '../generated/PreferencesMenu';
 import { GamePreferencesSelectedPage, type PreferencesMenuData } from './data';
 import { GamePreferencesPage } from './GamePreferencesPage';
 // import { KeybindingsPage } from './KeybindingsPage';
@@ -11,7 +11,10 @@ import { GamePreferencesPage } from './GamePreferencesPage';
 export const GamePreferenceWindow = (props: {
   startingPage?: GamePreferencesSelectedPage;
 }) => {
-  const { act, data } = useBackend<PreferencesMenuData>();
+  const { act, data } = useBackend<
+    PreferencesMenuData,
+    PreferencesMenuActions
+  >();
 
   const [currentPage, setCurrentPage] = useState(
     props.startingPage ?? GamePreferencesSelectedPage.Settings,

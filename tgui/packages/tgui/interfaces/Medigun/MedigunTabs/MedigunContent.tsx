@@ -8,6 +8,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { DIAGNOSIS_BAND, DiagnosisVitalsList } from '../../common/Diagnosis';
+import type { MedigunActions } from '../../generated/Medigun';
 import {
   gridStatusToColor,
   gridStatusToText,
@@ -20,7 +21,7 @@ import { ChargeStatus } from '../MedigunHelpers/ChargeStatus';
 import type { Data, SModule } from '../types';
 
 export const MedigunContent = (props: { smodule: SModule }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MedigunActions>();
 
   const {
     maintenance,

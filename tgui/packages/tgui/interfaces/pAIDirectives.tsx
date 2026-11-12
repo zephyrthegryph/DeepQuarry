@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
+import type { pAIDirectivesActions } from './generated/pAIDirectives';
 
 type Data = {
   master: string;
@@ -10,7 +11,7 @@ type Data = {
 };
 
 export const pAIDirectives = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, pAIDirectivesActions>();
 
   const { master, dna, prime, supplemental } = data;
 

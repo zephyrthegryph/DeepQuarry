@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Dropdown, NumberInput, Stack } from 'tgui-core/components';
+import type { ParticleEditActions } from '../generated/ParticleEdit';
 import {
   type GeneratorProps,
   GeneratorTypes,
@@ -11,7 +12,7 @@ import {
 } from './data';
 
 export const GeneratorListEntry = (props: GeneratorProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { var_name, generator, allow_vectors } = props;
   // omits generators that are not allowed with certain vars
   const allowed_generators = allow_vectors

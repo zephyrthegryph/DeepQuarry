@@ -1,11 +1,12 @@
 // OOC character notes — structured TGUI. Anyone can view; only the owner can edit.
 
 import { useBackend } from 'tgui/backend';
+import { FormattedText } from 'tgui/dq';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import { FormattedText } from 'tgui/dq';
 import { EmptyState } from './common/EmptyState';
+import type { OocNotesActions } from './generated/OocNotes';
 
 type Data = {
   owner: string;
@@ -35,7 +36,7 @@ const SECTIONS: SectionDef[] = [
 ];
 
 export const OocNotes = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, OocNotesActions>();
   const { owner, is_owner, ooc_notes, ooc_style } = data;
   return (
     <Window width={680} height={620} title={`OOC Notes: ${owner}`}>

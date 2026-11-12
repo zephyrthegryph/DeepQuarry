@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import { AirlockConsoleAdvanced } from './AirlockConsoleAdvanced';
 import { AirlockConsoleDocking } from './AirlockConsoleDocking';
 import { AirlockConsoleSimple } from './AirlockConsoleSimple';
@@ -71,7 +71,7 @@ import type { Data } from './types';
  * Entrypoint of the UI. This handles finding the correct route to use.
  */
 export const EmbeddedController = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, EmbeddedControllerActions>();
   const { internalTemplateName } = data;
 
   /** ***************************************************************************\

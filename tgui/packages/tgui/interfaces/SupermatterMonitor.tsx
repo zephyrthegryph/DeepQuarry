@@ -11,6 +11,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
+import type { SupermatterMonitorActions } from './generated/SupermatterMonitor';
 
 type Data = {
   active: BooleanLike;
@@ -39,7 +40,7 @@ export const SupermatterMonitor = (props) => (
 );
 
 export const SupermatterMonitorContent = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SupermatterMonitorActions>();
 
   const { active } = data;
 
@@ -51,7 +52,7 @@ export const SupermatterMonitorContent = (props) => {
 };
 
 const SupermatterMonitorList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupermatterMonitorActions>();
 
   const { supermatters } = data;
 
@@ -90,7 +91,7 @@ const SupermatterMonitorList = (props) => {
 };
 
 const SupermatterMonitorActive = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupermatterMonitorActions>();
 
   const {
     SM_area,

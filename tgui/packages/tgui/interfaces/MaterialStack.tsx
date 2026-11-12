@@ -11,6 +11,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { MaterialStackActions } from './generated/MaterialStack';
 
 type Data = { amount: number; recipes: Record<string, recipe>[] };
 
@@ -22,7 +23,7 @@ type recipe = {
 };
 
 export const MaterialStack = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MaterialStackActions>();
 
   const { amount, recipes } = data;
   const [searchText, setSearchText] = useState('');
@@ -68,8 +69,6 @@ const RecipeList = (props: {
   // We're not using this for now, keeping it here in case someone really hates color coding later.
   // let nonCategories = sortedKeys.filter(item => recipes[item].ref !== undefined);
   // let categories = sortedKeys.filter(item => recipes[item].ref === undefined);
-
-
 
   return filteredKeys.map((title, index) => {
     // if (title === "--DIVIDER--") {
@@ -152,7 +151,7 @@ const Multipliers = (props) => {
 };
 
 const Recipe = (props: { recipe: recipe; title: string }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MaterialStackActions>();
 
   const { amount } = data;
 

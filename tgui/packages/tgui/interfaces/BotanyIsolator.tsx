@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { BotanyIsolatorActions } from './generated/BotanyIsolator';
 
 type Data = {
   geneMasks: { tag: string; mask: string }[];
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const BotanyIsolator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BotanyIsolatorActions>();
 
   const {
     geneMasks,

@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
-
+import type { DNAModifierActions } from '../../generated/DNAModifier';
 import { rejuvenatorsDoses } from '../constants';
 import type { Data } from '../types';
 
 export const DNAModifierMainRejuvenators = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
 
   const { isBeakerLoaded, beakerVolume, beakerLabel, hasOccupant } = data;
 

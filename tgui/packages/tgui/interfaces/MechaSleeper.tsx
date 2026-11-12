@@ -13,6 +13,7 @@ import {
   DiagnosisVitalsList,
 } from './common/Diagnosis';
 import { EmptyState } from './common/EmptyState';
+import type { MechaSleeperActions } from './generated/MechaSleeper';
 
 type Reagent = {
   name: string;
@@ -39,7 +40,7 @@ type Data = {
 const goodIf = (cond: boolean) => (cond ? 'good' : 'bad');
 
 export const MechaSleeper = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaSleeperActions>();
   const {
     has_occupant,
     occupant_name,

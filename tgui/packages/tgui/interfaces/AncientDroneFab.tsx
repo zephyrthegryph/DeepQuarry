@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AncientDroneFabActions } from './generated/AncientDroneFab';
 
 type Data = {
   operating: BooleanLike;
@@ -16,7 +17,7 @@ type Data = {
 };
 
 export const AncientDroneFab = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AncientDroneFabActions>();
 
   const { operating, metal_amount } = data;
 
@@ -99,7 +100,7 @@ const ProductionEntry = (props: {
   cost: string;
 }) => {
   const { action, label, cost } = props;
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, AncientDroneFabActions>();
 
   return (
     <Stack.Item>

@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { ImageButton, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import type { BodyStyle, Data, Styles } from './types';
 
 export const AppearanceChangerParts = (props: {
@@ -12,7 +12,7 @@ export const AppearanceChangerParts = (props: {
   actions: string[];
   canClear?: boolean;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, AppearanceChangerActions>();
   const { sectionNames, possibleStyles, currentStyle, actions, canClear } =
     props;
   const [searchText, setSearchText] = useState<string>('');
@@ -84,7 +84,7 @@ export const AppearanceChangerHair = (props: {
   currentStyle: string[];
   actions: string[];
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, AppearanceChangerActions>();
   const { sectionNames, possibleStyles, currentStyle, actions } = props;
   const [searchText, setSearchText] = useState<string>('');
 

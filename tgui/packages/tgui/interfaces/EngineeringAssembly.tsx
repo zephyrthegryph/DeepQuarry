@@ -9,6 +9,7 @@ import {
 } from 'tgui-core/components';
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
+import type { EngineeringAssemblyActions } from './generated/EngineeringAssembly';
 
 type Data = {
   status: string;
@@ -51,7 +52,7 @@ const measurementFields = [
 ] as const;
 
 export const EngineeringAssembly = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, EngineeringAssemblyActions>();
   return (
     <Window width={620} height={620}>
       <Window.Content scrollable>

@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { FarmbotActions } from './generated/Farmbot';
 
 type Data = {
   on: BooleanLike;
@@ -24,7 +25,7 @@ type Data = {
 };
 
 export const Farmbot = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FarmbotActions>();
 
   const {
     on,

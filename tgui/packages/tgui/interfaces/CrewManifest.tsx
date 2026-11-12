@@ -3,6 +3,7 @@ import { COLORS } from 'tgui/constants';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Table } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
+import type { CrewManifestActions } from './generated/CrewManifest';
 
 /*
  * Shared by the following templates (and used individually too)
@@ -35,7 +36,7 @@ type Data = {
 };
 
 export const CrewManifestContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CrewManifestActions>();
 
   const { manifest } = data;
 

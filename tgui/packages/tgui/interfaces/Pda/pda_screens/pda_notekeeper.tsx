@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Table } from 'tgui-core/components';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = { note: string; notename: string };
 
 export const pda_notekeeper = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { note, notename } = data;
 

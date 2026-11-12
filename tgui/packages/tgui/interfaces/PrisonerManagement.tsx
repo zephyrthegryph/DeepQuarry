@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PrisonerManagementActions } from './generated/PrisonerManagement';
 
 type Data = {
   locked: BooleanLike;
@@ -10,7 +11,7 @@ type Data = {
 };
 
 export const PrisonerManagement = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PrisonerManagementActions>();
   const { locked, chemImplants, trackImplants } = data;
   return (
     <Window width={500} height={400}>

@@ -3,10 +3,11 @@ import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 
 import { modalOpen } from '../common/ComplexModal';
 import { doEdit } from '../GeneralRecords/functions';
+import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import type { Data } from './types';
 
 export const MedicalRecordsViewMedical = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MedicalRecordsActions>();
   const { medical } = data;
   if (!medical?.fields) {
     return (

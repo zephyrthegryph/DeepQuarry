@@ -16,6 +16,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ShapeshiftPanelActions } from './generated/ShapeshiftPanel';
 
 type Row = {
   id: string;
@@ -40,7 +41,7 @@ type Data = {
 };
 
 const CommandRow = (props: { row: Row }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ShapeshiftPanelActions>();
   const { row } = props;
   return (
     <LabeledList.Item
@@ -62,14 +63,12 @@ const CommandRow = (props: { row: Row }) => {
 };
 
 export const ShapeshiftPanel = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ShapeshiftPanelActions>();
   const { name, preview, groups } = data;
   return (
     <Window width={640} height={560} title="Shapeshift" theme="console">
       <Window.Content scrollable>
-        {!groups.length && (
-          <NoticeBox>There is nothing to change.</NoticeBox>
-        )}
+        {!groups.length && <NoticeBox>There is nothing to change.</NoticeBox>}
         {!!groups.length && (
           <Stack>
             <Stack.Item basis="30%">

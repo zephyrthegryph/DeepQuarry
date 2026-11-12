@@ -6,11 +6,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import type { Data } from './types';
 
 export const AppearanceChangerMisc = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
   const { specimen } = data;
   return (
     <Section title="Misc" fill scrollable>

@@ -7,6 +7,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { SoulstoneActions } from './generated/Soulstone';
 
 type Data = {
   has_shade: BooleanLike;
@@ -14,7 +15,7 @@ type Data = {
 };
 
 export const Soulstone = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, SoulstoneActions>();
   const { has_shade, shade_name } = data;
 
   return (

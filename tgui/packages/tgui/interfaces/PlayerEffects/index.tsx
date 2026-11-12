@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { NoticeBox, Tabs } from 'tgui-core/components';
-
+import type { PlayerEffectsActions } from '../generated/PlayerEffects';
 import { ControlAbilities } from './PlayerEffectsTabs/ControlAbilities';
 import { ControlAdmin } from './PlayerEffectsTabs/ControlAdmin';
 import { ControlFixes } from './PlayerEffectsTabs/ControlFixes';
@@ -12,7 +12,7 @@ import { ControlSmites } from './PlayerEffectsTabs/ControlSmites';
 import type { Data } from './types';
 
 export const PlayerEffects = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PlayerEffectsActions>();
 
   const { real_name, player_ckey } = data;
 

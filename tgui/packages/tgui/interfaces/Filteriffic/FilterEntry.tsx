@@ -6,7 +6,7 @@ import {
   NumberInput,
   Section,
 } from 'tgui-core/components';
-
+import type { FilterifficActions } from '../generated/Filteriffic';
 import { FilterDataEntry } from './FilterTypes/FilterDataEntry';
 import type { ActiveFilters, Data } from './types';
 
@@ -14,7 +14,7 @@ export const FilterEntry = (props: {
   readonly name: string;
   readonly filterDataEntry: ActiveFilters;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FilterifficActions>();
   const { name, filterDataEntry } = props;
   const { type, priority, ...restOfProps } = filterDataEntry;
 

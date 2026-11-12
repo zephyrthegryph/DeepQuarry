@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, NoticeBox, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TransferValveActions } from './generated/TransferValve';
 
 type Data = {
   tank_one: string;
@@ -11,7 +12,7 @@ type Data = {
 };
 
 export const TransferValve = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TransferValveActions>();
   const { tank_one, tank_two, attached_device, valve } = data;
   return (
     <Window>

@@ -1,9 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type { ControllerOverviewActions } from '../generated/ControllerOverview';
 import type { ControllerData } from './types';
 
 export function OverviewSection(props) {
-  const { act, data } = useBackend<ControllerData>();
+  const { act, data } = useBackend<ControllerData, ControllerOverviewActions>();
   const {
     fast_update,
     rolling_length,

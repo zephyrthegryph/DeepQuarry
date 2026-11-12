@@ -12,6 +12,7 @@ import {
 } from 'tgui-core/components';
 
 import { useBackend } from '../../backend';
+import type { SpawnPanelActions } from '../generated/SpawnPanel';
 import {
   directionNames,
   directionRotation,
@@ -36,7 +37,7 @@ interface CreateObjectSettingsProps {
 
 export function CreateObjectSettings(props: CreateObjectSettingsProps) {
   const { onCreateObject, setAdvancedSettings, iconSettings } = props;
-  const { act, data } = useBackend<SpawnPanelData>();
+  const { act, data } = useBackend<SpawnPanelData, SpawnPanelActions>();
 
   const [amount, setAmount] = useState(1);
   const [cordsType, setCordsType] = useState(0);

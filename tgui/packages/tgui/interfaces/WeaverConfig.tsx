@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { WeaverConfigActions } from './generated/WeaverConfig';
 
 type Data = {
   silk_reserve: number;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 export const WeaverConfig = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, WeaverConfigActions>();
 
   const {
     silk_reserve,

@@ -2,7 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { pAISecrecordsActions } from './generated/pAISecrecords';
 import type {
   GeneralRecord,
   RecordList,
@@ -17,7 +17,7 @@ type Data = {
 };
 
 export const pAISecrecords = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, pAISecrecordsActions>();
 
   const { records, general, security, could_not_find } = data;
 

@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { XenoarchHandheldPowerUtilizerActions } from './generated/XenoarchHandheldPowerUtilizer';
 
 type Data = {
   inserted_battery: BooleanLike;
@@ -22,7 +23,10 @@ type Data = {
 };
 
 export const XenoarchHandheldPowerUtilizer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    Data,
+    XenoarchHandheldPowerUtilizerActions
+  >();
 
   const {
     inserted_battery,

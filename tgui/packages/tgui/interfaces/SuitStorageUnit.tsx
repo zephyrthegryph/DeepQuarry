@@ -11,6 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SuitStorageUnitActions } from './generated/SuitStorageUnit';
 
 type Data = {
   broken: BooleanLike;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const SuitStorageUnit = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SuitStorageUnitActions>();
   const { panelopen, uv_active, broken } = data;
 
   let subTemplate = <SuitStorageUnitContent />;
@@ -49,7 +50,7 @@ export const SuitStorageUnit = (props) => {
 };
 
 const SuitStorageUnitContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SuitStorageUnitActions>();
   const { locked, open, safeties, occupied, suit, helmet, mask } = data;
 
   return (
@@ -159,7 +160,7 @@ const SuitStorageUnitContent = (props) => {
 };
 
 const SuitStorageUnitPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SuitStorageUnitActions>();
   const { safeties, uv_super } = data;
 
   return (

@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosMainActions } from './generated/NtosMain';
 
 const PROGRAM_ICONS = {
   compconfig: 'cog',
@@ -37,7 +38,7 @@ type Data = {
 type user = { IDName: string | undefined; IDJob: string | undefined };
 
 export const NtosMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosMainActions>();
   const {
     device_theme,
     programs = [],

@@ -8,13 +8,13 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
-
+import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { getDockingStatus } from './functions';
 import type { Data } from './types';
 
 /* Ugh. Just ugh. */
 export const ShuttleControlConsoleWeb = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShuttleControlActions>();
 
   const {
     autopilot,

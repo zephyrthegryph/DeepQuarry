@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { InstrumentEditorActions } from './generated/InstrumentEditor';
 
 type Data = {
   id: string;
@@ -55,7 +56,7 @@ type LineData = {
 };
 
 export const InstrumentEditor = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, InstrumentEditorActions>();
 
   return (
     <Window width={750} height={500}>
@@ -73,7 +74,7 @@ export const InstrumentEditor = (props) => {
 };
 
 const InstrumentSettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, InstrumentEditorActions>();
   const {
     id,
     playing,
@@ -276,7 +277,7 @@ const InstrumentSettings = (props) => {
 };
 
 const EditingSettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, InstrumentEditorActions>();
   const { bpm, lines } = data;
 
   return (
@@ -329,7 +330,7 @@ const EditingSettings = (props) => {
 };
 
 const HelpSection = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, InstrumentEditorActions>();
   const { max_line_chars, max_lines } = data;
 
   return (

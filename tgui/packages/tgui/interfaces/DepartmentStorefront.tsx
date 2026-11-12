@@ -10,6 +10,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { DepartmentStorefrontActions } from './generated/DepartmentStorefront';
 
 type StockItem = {
   ref: number;
@@ -29,7 +30,7 @@ type Data = {
 };
 
 export const DepartmentStorefront = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DepartmentStorefrontActions>();
   const { department, balance, markup, authorized, stock } = data;
 
   return (

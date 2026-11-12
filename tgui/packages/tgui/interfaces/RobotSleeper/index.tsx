@@ -1,13 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
+import type { RobotSleeperActions } from '../generated/RobotSleeper';
 import { CargoCompartment } from './SubElements/CargoCompartment';
 import { InjectorPanel } from './SubElements/InjectorPanel';
 import { SleeperStatus } from './SubElements/SleeperStatus';
 import type { Data } from './types';
 
 export const RobotSleeper = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RobotSleeperActions>();
 
   const { theme, chems, delivery, name } = data;
   return (

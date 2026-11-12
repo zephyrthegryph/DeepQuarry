@@ -9,12 +9,12 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { DNAModifierActions } from '../generated/DNAModifier';
 import { stats } from './constants';
 import type { Data } from './types';
 
 export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
 
   const { locked, hasOccupant, occupant } = data;
 

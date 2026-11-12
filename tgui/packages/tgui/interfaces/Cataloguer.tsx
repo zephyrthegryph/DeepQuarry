@@ -9,6 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { CataloguerActions } from './generated/Cataloguer';
 
 type CatalogueItem = {
   name: string;
@@ -38,7 +39,7 @@ type Data = {
 };
 
 export const Cataloguer = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, CataloguerActions>();
   const { points_stored, debug, detail, groups } = data;
   return (
     <Window width={520} height={620} title="Cataloguer">

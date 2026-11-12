@@ -2,11 +2,12 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 
 import { BeakerContents } from '../common/BeakerContents';
+import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import { removeAmounts } from './constants';
 import type { Data } from './types';
 
 export const ChemDispenserBeaker = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChemDispenserActions>();
   const {
     isBeakerLoaded,
     beakerCurrentVolume,

@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import { PanelOpen } from './PanelOpen';
 import type { DoorAccessConsoleData } from './types';
 
@@ -9,7 +9,10 @@ import type { DoorAccessConsoleData } from './types';
  * Replaces door_access_console.tmpl
  */
 export const DoorAccessConsole = (props) => {
-  const { act, data } = useBackend<DoorAccessConsoleData>();
+  const { act, data } = useBackend<
+    DoorAccessConsoleData,
+    EmbeddedControllerActions
+  >();
 
   const { interior_status, exterior_status, panel_open } = data;
 

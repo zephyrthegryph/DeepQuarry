@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { RoboticsControlConsoleActions } from './generated/RoboticsControlConsole';
 
 type Data = {
   auth: BooleanLike;
@@ -36,7 +37,7 @@ type cyborg = {
 };
 
 export const RoboticsControlConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RoboticsControlConsoleActions>();
   const { can_hack, safety, show_detonate_all, cyborgs = [], auth } = data;
   return (
     <Window width={500} height={460}>

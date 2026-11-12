@@ -11,10 +11,11 @@ import {
 import { toTitleCase } from 'tgui-core/string';
 
 import { DIAGNOSIS_BAND } from '../common/Diagnosis';
+import type { RobotactActions } from '../generated/Robotact';
 import type { Data } from './types';
 
 export const ComponentView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RobotactActions>();
 
   const { diag_functional, components, faults } = data;
 

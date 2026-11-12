@@ -18,6 +18,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { PollBrowserActions } from './generated/PollBrowser';
 
 type PollListEntry = {
   id: number;
@@ -69,7 +70,7 @@ type Data = {
 };
 
 export const PollBrowser = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PollBrowserActions>();
   const { polls, selected } = data;
 
   return (

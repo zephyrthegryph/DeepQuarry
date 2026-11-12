@@ -17,6 +17,7 @@ import { clamp } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
 import { vecLength, vecSubtract } from 'tgui-core/vector';
+import type { GpsActions } from './generated/Gps';
 import { PreferenceEditColor } from './PreferencesMenu/elements/ColorInput';
 
 const coordsToVec = (coords: string) => coords.split(', ').map(parseFloat);
@@ -57,7 +58,7 @@ function sortSignal(a: Signal, b: Signal) {
 }
 
 export const Gps = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GpsActions>();
   const {
     theme,
     currentArea,

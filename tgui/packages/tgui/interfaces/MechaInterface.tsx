@@ -18,6 +18,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { MechaInterfaceActions } from './generated/MechaInterface';
 
 type DamageReport = {
   key: string;
@@ -121,7 +122,7 @@ type Data = {
 };
 
 export const MechaInterface = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   return (
     <Window width={680} height={780} title={data.title}>
       <Window.Content scrollable>
@@ -142,7 +143,7 @@ export const MechaInterface = () => {
 };
 
 const MainView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   return (
     <>
       <DamageBanner />
@@ -166,7 +167,7 @@ const MainView = () => {
 };
 
 const DamageBanner = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   const { damage_reports, high_pressure, integrity_percent } = data;
   const critical = integrity_percent < 30;
   if (damage_reports.length === 0 && !high_pressure && !critical) return null;
@@ -201,7 +202,7 @@ const integrityColor = (pct: number) =>
   pct < 30 ? 'bad' : pct < 70 ? 'average' : 'good';
 
 const StatsPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   const {
     has_armor,
     armor_percent,
@@ -337,7 +338,7 @@ const StatsPanel = () => {
 };
 
 const CommandsPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   const {
     lights,
     radio_mic,
@@ -419,7 +420,7 @@ const CommandsPanel = () => {
 };
 
 const EquipmentPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   const { equipment, slots } = data;
   return (
     <Section title="Equipment">
@@ -494,7 +495,7 @@ const EquipmentPanel = () => {
 };
 
 const LogView = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MechaInterfaceActions>();
   return (
     <Section title="Internal Log">
       {data.log_entries.length === 0 ? (
@@ -514,7 +515,7 @@ const LogView = () => {
 };
 
 const AccessView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   return (
     <>
       <Section title="Operation Keycodes">
@@ -565,7 +566,7 @@ const AccessView = () => {
 };
 
 const MaintView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MechaInterfaceActions>();
   return (
     <Section title="Maintenance Console">
       {data.maint_can_req_access ? (

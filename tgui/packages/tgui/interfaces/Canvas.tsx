@@ -4,6 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Stack } from 'tgui-core/components';
 import { clamp } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
+import type { CanvasActions } from './generated/Canvas';
 
 const PX_PER_UNIT = 24;
 
@@ -319,7 +320,7 @@ enum Tool {
 }
 
 export const Canvas = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CanvasActions>();
 
   const [tool, setTool] = useState<Tool>(Tool.Paintbrush);
 

@@ -8,6 +8,7 @@ import {
 } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TurbineActions } from './generated/Turbine';
 
 type Data = {
   display_power: number;
@@ -16,7 +17,7 @@ type Data = {
 };
 
 export const Turbine = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TurbineActions>();
 
   const { display_power, turbine_rpm, starter } = data;
 

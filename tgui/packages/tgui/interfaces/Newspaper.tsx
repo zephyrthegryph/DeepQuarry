@@ -10,6 +10,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { NewspaperActions } from './generated/Newspaper';
 
 type Message = {
   title: string;
@@ -40,7 +41,7 @@ type Data = {
 };
 
 export const Newspaper = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, NewspaperActions>();
   const { company_name, channels, wanted, scribble, scribble_page, curr_page } =
     data;
 

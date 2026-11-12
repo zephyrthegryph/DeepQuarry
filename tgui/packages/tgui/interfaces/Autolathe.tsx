@@ -26,6 +26,7 @@ import type {
   MaterialChoice,
   MaterialMap,
 } from './Fabrication/Types';
+import type { AutolatheActions } from './generated/Autolathe';
 
 type AutolatheData = {
   materials: Material[];
@@ -38,7 +39,7 @@ type AutolatheData = {
 };
 
 export const Autolathe = (props) => {
-  const { act, data } = useBackend<AutolatheData>();
+  const { act, data } = useBackend<AutolatheData, AutolatheActions>();
   const {
     materialtotal,
     materialsmax,
@@ -167,7 +168,7 @@ type PrintButtonProps = {
 };
 
 const PrintButton = (props: PrintButtonProps) => {
-  const { act } = useBackend<AutolatheData>();
+  const { act } = useBackend<AutolatheData, AutolatheActions>();
   const { design, quantity, availableMaterials, maxmult } = props;
 
   const canPrint = maxmult >= quantity;
@@ -206,7 +207,7 @@ type AutolatheRecipeProps = {
 };
 
 const AutolatheRecipe = (props: AutolatheRecipeProps) => {
-  const { act } = useBackend<AutolatheData>();
+  const { act } = useBackend<AutolatheData, AutolatheActions>();
   const {
     design,
     availableMaterials,

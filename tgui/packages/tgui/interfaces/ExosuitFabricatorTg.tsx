@@ -19,6 +19,7 @@ import type {
   Material,
   MaterialMap,
 } from './Fabrication/Types';
+import type { ExosuitFabricatorTgActions } from './generated/ExosuitFabricatorTg';
 
 type ExosuitDesign = Design & {
   constructionTime: number;
@@ -39,7 +40,10 @@ type ExosuitFabricatorData = FabricatorData &
   };
 
 export const ExosuitFabricatorTg = (props) => {
-  const { act, data } = useBackend<ExosuitFabricatorData>();
+  const { act, data } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
   const { materials = [], SHEET_MATERIAL_AMOUNT = 0, designs } = data;
 
   const availableMaterials: MaterialMap = {};
@@ -114,7 +118,10 @@ type RecipeProps = {
 };
 
 const Recipe = (props: RecipeProps) => {
-  const { act } = useBackend<ExosuitFabricatorData>();
+  const { act } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
   const { design, available, SHEET_MATERIAL_AMOUNT } = props;
 
   const canPrint = !Object.entries(design.cost).some(
@@ -182,7 +189,10 @@ type QueueProps = {
 };
 
 const Queue = (props: QueueProps) => {
-  const { act, data } = useBackend<ExosuitFabricatorData>();
+  const { act, data } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
   const { availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
   const {
     designs,
@@ -294,7 +304,10 @@ type QueueListProps = {
 };
 
 const QueueList = (props: QueueListProps) => {
-  const { act, data } = useBackend<ExosuitFabricatorData>();
+  const { act, data } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
   const { availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
 
   const queue = data.queue || [];

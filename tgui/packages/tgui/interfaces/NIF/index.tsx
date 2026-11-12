@@ -10,13 +10,13 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-
+import type { NIFActions } from '../generated/NIF';
 import { NIFMain } from './NIFMain';
 import { NIFSettings } from './NIFSettings';
 import type { Data, module } from './types';
 
 export const NIF = (props) => {
-  const { act, config, data } = useBackend<Data>();
+  const { act, config, data } = useBackend<Data, NIFActions>();
 
   const { theme, last_notification } = data;
 

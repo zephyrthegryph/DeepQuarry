@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Icon, Stack, Tabs } from 'tgui-core/components';
-
+import type { CrewMonitorActions } from '../generated/CrewMonitor';
 import { CrewMonitorCrew } from './CrewMonitorCrew';
 import { CrewMonitorMapView } from './CrewMonitorMapView';
 import type { Data } from './types';
@@ -11,7 +11,7 @@ export const CrewMonitorContent = (props: {
   onTabIndex: React.Dispatch<React.SetStateAction<number>>;
   onZoom: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, CrewMonitorActions>();
 
   const { crewmembers = [] } = data;
 

@@ -4,6 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
+import type { AreaScrubberControlActions } from './generated/AreaScrubberControl';
 
 type scrubber = {
   id: string;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const AreaScrubberControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AreaScrubberControlActions>();
 
   const [showArea, setShowArea] = useState<boolean>(false);
 

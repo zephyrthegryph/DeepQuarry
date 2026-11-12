@@ -13,6 +13,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import type { Material } from './Fabrication/Types';
+import type { PartsLatheActions } from './generated/PartsLathe';
 
 type Data = {
   panelOpen: BooleanLike;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const PartsLathe = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PartsLatheActions>();
   const {
     copyBoard,
     copyBoardReqComponents,

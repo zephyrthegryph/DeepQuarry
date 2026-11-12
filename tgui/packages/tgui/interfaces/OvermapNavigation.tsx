@@ -4,6 +4,7 @@ import { Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { OvermapFlightData } from './common/Overmap';
+import type { OvermapNavigationActions } from './generated/OvermapNavigation';
 
 export const OvermapNavigation = () => {
   return (
@@ -24,7 +25,7 @@ type Data = {
 };
 
 export const OvermapNavigationContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapNavigationActions>();
   const { sector, s_x, s_y, sector_info, viewing } = data;
   return (
     <>

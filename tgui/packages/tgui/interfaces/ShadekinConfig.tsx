@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ShadekinConfigActions } from './generated/ShadekinConfig';
 import { VorePanelTooltip } from './VorePanel/VorePanelElements/VorePanelTooltip';
 
 type Data = {
@@ -26,7 +27,7 @@ type Data = {
 };
 
 export const ShadekinConfig = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShadekinConfigActions>();
 
   const {
     stun_time,

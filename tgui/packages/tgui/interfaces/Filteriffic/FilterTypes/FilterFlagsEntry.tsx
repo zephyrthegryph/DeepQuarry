@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Button } from 'tgui-core/components';
-
+import type { FilterifficActions } from '../../generated/Filteriffic';
 import type { Data, FilterEntryProps } from '../types';
 
 export const FilterFlagsEntry = (props: FilterEntryProps) => {
   const { name, value, hasValue, filterName, filterType } = props;
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FilterifficActions>();
 
   const filterInfo = data.filter_info;
   const flags: Record<string, number> = filterInfo[filterType].flags;

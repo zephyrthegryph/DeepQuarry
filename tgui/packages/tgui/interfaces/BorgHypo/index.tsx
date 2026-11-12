@@ -1,14 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
-
+import type { BorgHypoActions } from '../generated/BorgHypo';
 import { BorgHypoChemicals } from './BorgHypoChemicals';
 import { BorgHypoRecipes } from './BorgHypoRecipes';
 import { BorgHypoSettings } from './BorgHypoSettings';
 import type { Data } from './types';
 
 export const BorgHypo = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, BorgHypoActions>();
   const { isDispensingDrinks, theme } = data;
   return (
     <Window width={680} height={isDispensingDrinks ? 610 : 540} theme={theme}>

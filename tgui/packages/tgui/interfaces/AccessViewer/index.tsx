@@ -3,12 +3,13 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Divider, Input, Section, Table } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { AccessViewerActions } from '../generated/AccessViewer';
 import { AccessTypeDisplay } from './AccessTypeDisplay';
 import { region_ids } from './constants';
 import type { Access, Data } from './types';
 
 export const AccessViewer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AccessViewerActions>();
   const { access_list, name, coords, req_access, req_one_access } = data;
   const [searchText, setSearchText] = useState('');
 

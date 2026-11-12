@@ -6,6 +6,7 @@ import { isEscape, KEY } from 'tgui-core/keys';
 import type { BooleanLike } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type { TextInputModalActions } from './generated/TextInputModal';
 
 type TextInputData = {
   large_buttons: boolean;
@@ -27,7 +28,7 @@ export const removeAllSkiplines = (toSanitize: string) => {
 };
 
 export const TextInputModal = (props) => {
-  const { act, data } = useBackend<TextInputData>();
+  const { act, data } = useBackend<TextInputData, TextInputModalActions>();
   const {
     large_buttons,
     max_length,

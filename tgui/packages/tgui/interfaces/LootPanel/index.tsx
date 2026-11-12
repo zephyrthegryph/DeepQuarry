@@ -5,7 +5,7 @@ import { Button, Input, Section, Stack } from 'tgui-core/components';
 import { isEscape } from 'tgui-core/keys';
 import { clamp } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { LootPanelActions } from '../generated/LootPanel';
 import { GroupedContents } from './GroupedContents';
 import { RawContents } from './RawContents';
 import type { SearchItem } from './types';
@@ -16,7 +16,7 @@ type Data = {
 };
 
 export function LootPanel(props) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, LootPanelActions>();
   const { contents = [], searching } = data;
 
   // limitations: items with different stack counts, charges etc.

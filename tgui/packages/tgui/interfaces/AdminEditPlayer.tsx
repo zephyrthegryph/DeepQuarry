@@ -58,6 +58,7 @@ type Data = {
 };
 
 import type { ActFn } from './common/PanelTypes';
+import type { AdminEditPlayerActions } from './generated/AdminEditPlayer';
 
 const MuteButton = (props: {
   data: Data;
@@ -547,7 +548,7 @@ const LanguageSection = (props: { data: Data; act: ActFn }) => {
 };
 
 export const AdminEditPlayer = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, AdminEditPlayerActions>();
   return (
     <Window width={820} height={780} title={`Edit Player: ${data.key}`}>
       <Window.Content scrollable>

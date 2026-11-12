@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Icon, RoundGauge, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { DisposalBinActions } from './generated/DisposalBin';
 
 type Data = {
   mode: number;
@@ -13,7 +14,7 @@ type Data = {
 };
 
 export const DisposalBin = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DisposalBinActions>();
   const { mode, pressure, isAI, panel_open, flushing } = data;
   let stateText;
   if (mode === 2) {
@@ -92,7 +93,7 @@ export const DisposalBin = (props) => {
 };
 
 const EjectButton = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DisposalBinActions>();
   const { isAI } = data;
   const [buttonPressed, setButtonPressed] = useState(false);
 
@@ -135,7 +136,7 @@ const EjectButton = (props) => {
 };
 
 const GiantLever = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DisposalBinActions>();
 
   return (
     <Box position="relative" width={5} height={6}>

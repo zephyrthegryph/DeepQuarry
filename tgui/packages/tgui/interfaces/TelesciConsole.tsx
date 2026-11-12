@@ -10,6 +10,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TelesciConsoleActions } from './generated/TelesciConsole';
 
 type Data = {
   noTelepad: BooleanLike;
@@ -31,7 +32,7 @@ type Data = {
 };
 
 export const TelesciConsole = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, TelesciConsoleActions>();
 
   const { noTelepad } = data;
 
@@ -55,7 +56,7 @@ const TelesciNoTelepadError = (props) => {
 };
 
 export const TelesciConsoleContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TelesciConsoleActions>();
 
   const {
     insertedGps,

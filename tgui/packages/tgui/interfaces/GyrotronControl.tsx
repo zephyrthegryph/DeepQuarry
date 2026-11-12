@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Knob, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { GyrotronControlActions } from './generated/GyrotronControl';
 
 export const GyrotronControl = () => (
   <Window width={627} height={700}>
@@ -26,7 +27,7 @@ type Data = {
 };
 
 export const GyrotronControlContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GyrotronControlActions>();
 
   const { gyros } = data;
 

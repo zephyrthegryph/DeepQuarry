@@ -7,12 +7,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import { SPRITE_ACCESSORY_COLOR_CHANNEL_NAMES } from './constants';
 import type { Data } from './types';
 
 export const AppearanceChangerColors = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
 
   const {
     change_eye_color,

@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack, Tabs } from 'tgui-core/components';
+import type { TraitTutorialActions } from './generated/TraitTutorial';
 
 type data = {
   namae: string;
@@ -12,7 +13,7 @@ type data = {
 };
 
 export const TraitTutorial = (props) => {
-  const { act, data } = useBackend<data>();
+  const { act, data } = useBackend<data, TraitTutorialActions>();
   return (
     <Window width={804} height={426}>
       <Window.Content scrollable>
@@ -25,7 +26,7 @@ export const TraitTutorial = (props) => {
 };
 
 export const TraitSelection = (props) => {
-  const { act, data } = useBackend<data>();
+  const { act, data } = useBackend<data, TraitTutorialActions>();
 
   const { names, selection } = data;
 
@@ -58,7 +59,7 @@ export const TraitSelection = (props) => {
 };
 
 export const TraitDescription = (props) => {
-  const { act, data } = useBackend<data>();
+  const { act, data } = useBackend<data, TraitTutorialActions>();
 
   const { name } = props;
   const { descriptions, categories, tutorials } = data;

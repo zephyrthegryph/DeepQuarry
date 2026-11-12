@@ -4,6 +4,7 @@ import { Button, NumberInput, Section, Stack } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
 import { round } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
+import type { BrigTimerActions } from './generated/BrigTimer';
 
 type Data = {
   time_left: number;
@@ -17,7 +18,7 @@ type Data = {
 };
 
 export const BrigTimer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BrigTimerActions>();
 
   const {
     time_left,

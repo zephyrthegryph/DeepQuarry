@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
-
+import type { RapidPipeDispenserActions } from '../generated/RapidPipeDispenser';
 import type { Data } from './types';
 
 export const LayerSection = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RapidPipeDispenserActions>();
   const { category: rootCategoryIndex, piping_layer, pipe_layers } = data;
   const previews = data.preview_rows.flatMap((row) => row.previews);
   return (

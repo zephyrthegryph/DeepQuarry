@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { formatUnits } from '../common/BeakerContents';
+import type { BorgHypoActions } from '../generated/BorgHypo';
 import type { Data } from './types';
 
 export const BorgHypoRecipeDisplay = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BorgHypoActions>();
   const { recordingRecipe } = data;
 
   const recording = !!recordingRecipe;

@@ -8,6 +8,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { AiSlipperActions } from './generated/AiSlipper';
 
 type Data = {
   area_name: string;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const AiSlipper = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, AiSlipperActions>();
   const {
     area_name,
     locked,

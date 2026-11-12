@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import { StandardControls, StatusDisplay } from './EmbeddedControllerHelpers';
 import { PanelOpen } from './PanelOpen';
 import type { AirlockConsoleAdvancedData } from './types';
@@ -12,7 +12,10 @@ import type { AirlockConsoleAdvancedData } from './types';
  * Replaces advanced_airlock_console.tmpl
  */
 export const AirlockConsoleAdvanced = (props) => {
-  const { act, data } = useBackend<AirlockConsoleAdvancedData>();
+  const { act, data } = useBackend<
+    AirlockConsoleAdvancedData,
+    EmbeddedControllerActions
+  >();
 
   const {
     external_pressure,

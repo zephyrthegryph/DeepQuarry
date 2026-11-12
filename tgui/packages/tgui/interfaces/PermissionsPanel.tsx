@@ -20,6 +20,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { PermissionsPanelActions } from './generated/PermissionsPanel';
 
 type AdminRow = {
   ckey: string;
@@ -457,7 +458,7 @@ const HousekeepingPage = (props: {
 };
 
 export const PermissionsPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PermissionsPanelActions>();
   return (
     <Window width={820} height={720} title="Permissions">
       <Window.Content scrollable>

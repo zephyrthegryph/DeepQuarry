@@ -1,14 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
-
+import type { RobotChooseActions } from '../generated/RobotChoose';
 import { IconSection } from './IconSection';
 import { ModuleSection } from './ModuleSection';
 import { SpriteSection } from './SpriteSection';
 import type { Data } from './types';
 
 export const RobotChoose = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RobotChooseActions>();
 
   const {
     possible_modules,

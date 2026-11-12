@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { XenoarchArtifactHarvesterActions } from './generated/XenoarchArtifactHarvester';
 
 type Data = {
   info: {
@@ -25,7 +26,7 @@ type battery = {
 };
 
 export const XenoarchArtifactHarvester = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchArtifactHarvesterActions>();
 
   const { no_scanner, harvesting, inserted_battery } = data.info;
 

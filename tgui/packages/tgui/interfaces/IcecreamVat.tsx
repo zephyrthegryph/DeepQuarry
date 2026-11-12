@@ -9,6 +9,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
+import type { IcecreamVatActions } from './generated/IcecreamVat';
 
 type IceMachineData = {
   index: number;
@@ -25,7 +26,7 @@ type Data = {
 };
 
 export const IcecreamVat = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, IcecreamVatActions>();
 
   const { current_flavor, icecrem_data, cone_data, reagent_data } = data;
 
@@ -120,7 +121,7 @@ const IceCreamEntry = (props: {
   machineData: IceMachineData;
   type: string;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, IcecreamVatActions>();
 
   const { selectable, iceIndex, current_flavor, machineData, type } = props;
   const [productionAmount, setProductionAmount] = useState(1);

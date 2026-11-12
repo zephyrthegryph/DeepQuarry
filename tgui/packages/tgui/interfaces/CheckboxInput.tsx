@@ -14,6 +14,7 @@ import {
 import { createSearch, decodeHtmlEntities } from 'tgui-core/string';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type { CheckboxInputActions } from './generated/CheckboxInput';
 
 type Data = {
   items: string[];
@@ -26,7 +27,7 @@ type Data = {
 
 /** Renders a list of checkboxes per items for input. */
 export const CheckboxInput = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, CheckboxInputActions>();
   const {
     items = [],
     min_checked,

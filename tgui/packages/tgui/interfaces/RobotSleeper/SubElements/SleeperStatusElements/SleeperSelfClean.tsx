@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Stack } from 'tgui-core/components';
+import type { RobotSleeperActions } from '../../../generated/RobotSleeper';
 import { filterFuel } from '../../functions';
 import type { Data } from '../../types';
 
 export const SleeperSelfClean = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RobotSleeperActions>();
   const { cleaning, items_preserved, contents } = data;
 
   const perservedCount = items_preserved.length;

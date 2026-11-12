@@ -16,6 +16,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
 import { ProductConfigurator } from './Fabrication/SelectableRecipe';
 import type { Design, MaterialChoice, MaterialSlot } from './Fabrication/Types';
+import type { PersonalCraftingActions } from './generated/PersonalCrafting';
 
 type Data = {
   busy: BooleanLike;
@@ -60,7 +61,7 @@ const getUiEntries = (craftingRecipes: Record<string, Recipe[]>) => {
 };
 
 export const PersonalCrafting = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PersonalCraftingActions>();
   const [searchText, setSearchText] = useState('');
   const { categories, recipes } = getUiEntries(data.crafting_recipes || {});
   const [tab, setTab] = useState(categories[0]?.name);
@@ -129,7 +130,7 @@ export const PersonalCrafting = () => {
 };
 
 const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PersonalCraftingActions>();
   const visible = data.display_craftable_only
     ? recipes.filter((recipe) => data.craftability[recipe.ref])
     : recipes;

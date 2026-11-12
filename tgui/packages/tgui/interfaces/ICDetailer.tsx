@@ -2,11 +2,12 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
+import type { ICDetailerActions } from './generated/ICDetailer';
 
 type Data = { detail_color: string; color_list: Record<string, string> };
 
 export const ICDetailer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ICDetailerActions>();
 
   const { detail_color, color_list } = data;
 

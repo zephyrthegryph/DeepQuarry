@@ -2,7 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { NtosWordProcessorActions } from './generated/NtosWordProcessor';
 import type { file } from './NtosFileManager';
 
 type Data = {
@@ -17,7 +17,7 @@ type Data = {
 };
 
 export const NtosWordProcessor = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosWordProcessorActions>();
 
   const { PC_device_theme, error, browsing, files, filename, filedata } = data;
 

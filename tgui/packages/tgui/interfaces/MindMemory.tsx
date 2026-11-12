@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { MindMemoryActions } from './generated/MindMemory';
 
 type Objective = { text: string };
 
@@ -16,7 +17,7 @@ type Data = {
 };
 
 export const MindMemory = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, MindMemoryActions>();
   const { name, memory, ambitions, objectives } = data;
   return (
     <Window width={520} height={520} title={`Memory: ${name}`}>

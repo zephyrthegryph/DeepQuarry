@@ -8,6 +8,7 @@ import {
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
+import type { ParticleEditActions } from '../generated/ParticleEdit';
 import type { ParticleUIData } from './data';
 import {
   EntryCoord,
@@ -32,7 +33,7 @@ type ParticleEditContext = {
 export const ParticleContext = createContext({} as ParticleEditContext);
 
 export const ParticleEdit = (props) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const [desc, setDesc] = useState('');
 
   const {

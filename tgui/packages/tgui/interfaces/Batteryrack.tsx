@@ -12,6 +12,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
+import type { BatteryrackActions } from './generated/Batteryrack';
 
 type Data = {
   mode: number;
@@ -32,7 +33,7 @@ type Data = {
 };
 
 export const Batteryrack = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BatteryrackActions>();
 
   const {
     mode,

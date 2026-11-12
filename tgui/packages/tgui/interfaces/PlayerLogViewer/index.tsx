@@ -11,11 +11,12 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
+import type { PlayerLogViewerActions } from '../generated/PlayerLogViewer';
 import { displayTime, stripHtml } from './function';
 import type { Data, ExtendedLogEntry } from './types';
 
 export const PlayerLogViewer = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PlayerLogViewerActions>();
 
   const [activeTab, setActiveTab] = useState('');
   const [search, setSearch] = useState('');

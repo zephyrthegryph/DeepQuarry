@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosNetDosActions } from './generated/NtosNetDos';
 
 type Data = {
   error: string;
@@ -30,7 +31,7 @@ export const NtosNetDos = () => {
 };
 
 export const NtosNetDosContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetDosActions>();
 
   const { relays = [], focus, target, speed, overload, capacity, error } = data;
 

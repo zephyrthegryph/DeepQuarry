@@ -8,6 +8,7 @@ import { Box, Section, Stack, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { AdminReportActions } from './generated/AdminReport';
 
 type Data = {
   title: string;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const AdminReport = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, AdminReportActions>();
   const { title, intro_html, lines, columns, rows, body_html, has_host } = data;
   return (
     <Window width={720} height={620} title={title}>

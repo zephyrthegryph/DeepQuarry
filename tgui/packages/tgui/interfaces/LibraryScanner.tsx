@@ -9,6 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { LibraryScannerActions } from './generated/LibraryScanner';
 
 type Data = {
   has_cache: BooleanLike;
@@ -17,7 +18,7 @@ type Data = {
 };
 
 export const LibraryScanner = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryScannerActions>();
   const { has_cache, cache_name, has_book } = data;
 
   return (

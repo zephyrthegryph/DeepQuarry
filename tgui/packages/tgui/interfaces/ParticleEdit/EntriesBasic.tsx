@@ -10,7 +10,7 @@ import {
   NumberInput,
   Stack,
 } from 'tgui-core/components';
-
+import type { ParticleEditActions } from '../generated/ParticleEdit';
 import { ParticleContext } from '.';
 import {
   type EntryCoordProps,
@@ -30,7 +30,7 @@ import {
 import { editKeyOf, editWeightOf, setGradientSpace } from './helpers';
 
 export const EntryFloat = (props: EntryFloatProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, float } = props;
   return (
@@ -59,7 +59,7 @@ export const EntryFloat = (props: EntryFloatProps) => {
 };
 
 export const EntryCoord = (props: EntryCoordProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, coord } = props;
   return (
@@ -116,7 +116,7 @@ export const EntryCoord = (props: EntryCoordProps) => {
 };
 
 export const EntryGradient = (props: EntryGradientProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, gradient } = props;
   const cleanGradient = gradient?.map((entry) => {
@@ -236,7 +236,7 @@ export const EntryGradient = (props: EntryGradientProps) => {
 };
 
 export const EntryTransform = (props: EntryTransformProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const len = props.transform?.length ? props.transform.length : 0;
   const selected =
@@ -291,7 +291,7 @@ export const EntryTransform = (props: EntryTransformProps) => {
 };
 
 export const EntryIcon = (props: EntryIconStateProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, icon_state } = props;
   return (
@@ -366,7 +366,7 @@ export const EntryIcon = (props: EntryIconStateProps) => {
 };
 
 export const EntryIconState = (props: EntryIconStateProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, icon_state } = props;
   const newValue =

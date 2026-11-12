@@ -8,12 +8,12 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-
+import type { RapidPipeDispenserActions } from '../generated/RapidPipeDispenser';
 import { ICON_BY_CATEGORY_NAME, ROOT_CATEGORIES, TOOLS } from './constants';
 import type { Data } from './types';
 
 export const SelectionSection = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RapidPipeDispenserActions>();
   const {
     category: rootCategoryIndex,
     selected_color,

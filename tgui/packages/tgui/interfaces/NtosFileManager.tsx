@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Button, Section, Stack, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosFileManagerActions } from './generated/NtosFileManager';
 
 type Data = {
   PC_device_theme: string;
@@ -22,7 +23,7 @@ export type file = {
 };
 
 export const NtosFileManager = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosFileManagerActions>();
   const {
     PC_device_theme,
     usbconnected,

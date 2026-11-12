@@ -16,6 +16,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PlayerPanelActions } from './generated/PlayerPanel';
 
 type Player = {
   name: string;
@@ -52,7 +53,7 @@ const compareBy = (a: Player, b: Player, key: SortKey): number => {
 };
 
 export const PlayerPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PlayerPanelActions>();
   const players = data.players ?? [];
   const [filter, setFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('key');

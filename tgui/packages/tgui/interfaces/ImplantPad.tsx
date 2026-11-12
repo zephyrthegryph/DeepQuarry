@@ -9,6 +9,7 @@ import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { ImplantPadActions } from './generated/ImplantPad';
 
 type Data = {
   has_case: BooleanLike;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 export const ImplantPad = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ImplantPadActions>();
   const { has_case, has_implant, implant_info, is_tracking, tracking_id } =
     data;
 

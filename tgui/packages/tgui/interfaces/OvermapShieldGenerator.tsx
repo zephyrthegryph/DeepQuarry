@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { OvermapShieldGeneratorActions } from './generated/OvermapShieldGenerator';
 
 type Data = {
   running: number;
@@ -55,7 +56,7 @@ export const OvermapShieldGenerator = (props) => {
 };
 
 const OvermapShieldGeneratorContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapShieldGeneratorActions>();
   const { modes, offline_for } = data;
 
   if (offline_for) {
@@ -97,7 +98,7 @@ const OvermapShieldGeneratorContent = (props) => {
 };
 
 const OvermapShieldGeneratorStatus = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, OvermapShieldGeneratorActions>();
   const {
     running,
     overloaded,
@@ -179,7 +180,7 @@ const OvermapShieldGeneratorStatus = (props) => {
 };
 
 const OvermapShieldGeneratorControls = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapShieldGeneratorActions>();
   const { running, hacked, idle_multiplier, idle_valid_values } = data;
 
   return (

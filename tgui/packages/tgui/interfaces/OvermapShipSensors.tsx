@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { OvermapShipSensorsActions } from './generated/OvermapShipSensors';
 
 type Data = {
   viewing: BooleanLike;
@@ -33,7 +34,7 @@ export const OvermapShipSensors = (props) => {
 };
 
 export const OvermapShipSensorsContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapShipSensorsActions>();
   const {
     viewing,
     on,

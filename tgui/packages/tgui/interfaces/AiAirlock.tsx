@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AiAirlockActions } from './generated/AiAirlock';
 
 type Data = {
   power: {
@@ -50,7 +51,7 @@ const dangerMap: Record<number, { color: string; localStatusText: string }> = {
 };
 
 export const AiAirlock = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AiAirlockActions>();
   const flat = data;
 
   const {

@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, NoticeBox, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PortableTurretActions } from './generated/PortableTurret';
 
 type Data = {
   locked: BooleanLike;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const PortableTurret = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PortableTurretActions>();
   const {
     locked,
     on,

@@ -1,13 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-
+import type { GeneralAtmoControlActions } from '../generated/GeneralAtmoControl';
 import { AtmoControlFuel } from './FuelControls';
 import { AtmoControlSensors } from './Sensors';
 import { AtmoControlTankCore } from './TankControls';
 import type { Data } from './types';
 
 export const GeneralAtmoControl = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, GeneralAtmoControlActions>();
 
   // While many of these variables are unused, it's helpful to have a consistent
   // list of all possible parameters in the core component of this UI.

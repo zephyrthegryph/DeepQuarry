@@ -1,9 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Dropdown, Section, Stack } from 'tgui-core/components';
+import type { RobotSleeperActions } from '../../generated/RobotSleeper';
 import type { Data } from '../types';
 
 export const CargoCompartment = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RobotSleeperActions>();
   const { delivery_lists, delivery_tag } = data;
 
   return (

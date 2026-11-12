@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AICardActions } from './generated/AICard';
 
 type Data = {
   name: string;
@@ -22,7 +23,7 @@ type Data = {
 };
 
 export const AICard = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AICardActions>();
 
   const {
     name,

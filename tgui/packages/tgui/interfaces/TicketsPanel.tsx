@@ -17,6 +17,7 @@ import {
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TicketsPanelActions } from './generated/TicketsPanel';
 
 const AdminLevel = {
   0: 'Mentor',
@@ -99,7 +100,7 @@ const getFilteredTickets = (
 };
 
 export const TicketsPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TicketsPanelActions>();
   const { tickets, selected_ticket, is_admin } = data;
 
   const [stateFilter, setStateFilter] = useState('open');

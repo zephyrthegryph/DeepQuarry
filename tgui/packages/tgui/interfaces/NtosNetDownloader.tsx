@@ -11,6 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosNetDownloaderActions } from './generated/NtosNetDownloader';
 
 type Data = {
   PC_device_theme: string;
@@ -39,7 +40,7 @@ type program = {
 };
 
 export const NtosNetDownloader = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetDownloaderActions>();
   const {
     PC_device_theme,
     disk_size,
@@ -90,7 +91,7 @@ export const NtosNetDownloader = (props) => {
 
 const Program = (props: { program: program }) => {
   const { program } = props;
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetDownloaderActions>();
   const {
     disk_size,
     disk_used,

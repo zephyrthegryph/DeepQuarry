@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Icon, Image, Stack } from 'tgui-core/components';
+import type { JanitorCartActions } from './generated/JanitorCart';
 
 type Data = {
   mybag: string | null;
@@ -13,7 +14,7 @@ type Data = {
 };
 
 export const JanitorCart = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, JanitorCartActions>();
 
   const { mybag, mybucket, mymop, myspray, myreplacer, signs } = data;
 
@@ -133,7 +134,7 @@ const iconkeysToIcons: Record<string, string> = {
 };
 
 const JanicartIcon = (props: { iconkey: string }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, JanitorCartActions>();
 
   const { iconkey } = props;
 

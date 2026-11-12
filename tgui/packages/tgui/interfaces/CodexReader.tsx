@@ -10,6 +10,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { CodexReaderActions } from './generated/CodexReader';
 
 type PageLink = {
   name: string;
@@ -27,7 +28,7 @@ type Data = {
 };
 
 export const CodexReader = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, CodexReaderActions>();
   const { page_name, page_html, trail = [], children = [] } = data;
   const [query, setQuery] = useState('');
   const search = () => {

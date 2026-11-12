@@ -2,10 +2,11 @@ import type { CSSProperties } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Icon, Section, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
+import type { FourInARowActions } from '../generated/FourInARow';
 import type { Data } from './types';
 
 export const GameArea = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FourInARowActions>();
 
   const {
     grid_x_size,

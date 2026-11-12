@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, NoticeBox, Section, Stack } from 'tgui-core/components';
+import type { LateChoicesActions } from './generated/LateChoices';
 
 enum Evac {
   Gone = 'Gone',
@@ -68,7 +69,7 @@ const splitJobs = (
 };
 
 export const LateChoices = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, LateChoicesActions>();
 
   const { name, duration, evac, jobs } = data;
 

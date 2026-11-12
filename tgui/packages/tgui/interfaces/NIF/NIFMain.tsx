@@ -8,12 +8,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { NIFActions } from '../generated/NIF';
 import { getNifCondition, getNutritionText } from './functions';
 import type { Data } from './types';
 
 export const NIFMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NIFActions>();
 
   const { nif_percent, nif_stat, nutrition, isSynthetic, modules } = data;
 

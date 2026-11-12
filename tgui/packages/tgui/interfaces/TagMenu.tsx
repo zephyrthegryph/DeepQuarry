@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { TagMenuActions } from './generated/TagMenu';
 
 type Entry = {
   index: number;
@@ -21,7 +22,7 @@ type Data = {
 };
 
 export const TagMenu = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TagMenuActions>();
   const { entries } = data;
   return (
     <Window width={620} height={620} title="Tag Menu">

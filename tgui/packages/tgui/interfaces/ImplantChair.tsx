@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { ImplantChairActions } from './generated/ImplantChair';
 
 type Data = {
   has_occupant: BooleanLike;
@@ -17,7 +18,7 @@ type Data = {
 };
 
 export const ImplantChair = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ImplantChairActions>();
   const {
     has_occupant,
     occupant_name,

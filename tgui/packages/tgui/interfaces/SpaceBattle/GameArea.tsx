@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { type BooleanLike, classes } from 'tgui-core/react';
+import type { SpaceBattleActions } from '../generated/SpaceBattle';
 import { numToLetter } from './constants';
 import { generateShipCoordinates, mapDisabled } from './functions';
 import type { Data, Ship } from './types';
@@ -12,7 +13,7 @@ export const GameArea = (props: {
   playerOneOrientation: 'vertical' | 'horizontal';
   playerTwoOrientation: 'vertical' | 'horizontal';
 }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SpaceBattleActions>();
 
   const {
     current_player,
@@ -82,7 +83,7 @@ const Playfield = (props: {
   orientation: 'vertical' | 'horizontal';
   shipCount: Record<string, number>;
 }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, SpaceBattleActions>();
   const { game_state, ship_sizes, visible_ships } = data;
   const {
     player,

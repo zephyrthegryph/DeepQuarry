@@ -11,6 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosNewsBrowserActions } from './generated/NtosNewsBrowser';
 
 type Data = {
   message: string;
@@ -30,7 +31,7 @@ type Data = {
 };
 
 export const NtosNewsBrowser = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
 
   const { article, download, message } = data;
 
@@ -58,7 +59,7 @@ export const NtosNewsBrowser = (props) => {
 };
 
 const SelectedArticle = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
 
   const { article } = data;
 
@@ -95,7 +96,7 @@ const SelectedArticle = (props) => {
 };
 
 const ViewArticles = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
 
   const { showing_archived, all_articles } = data;
 
@@ -137,7 +138,7 @@ const ViewArticles = (props) => {
 };
 
 const ArticleDownloading = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
 
   const { download_progress, download_maxprogress, download_rate } =
     data.download!;

@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PetrificationInterfaceActions } from './generated/PetrificationInterface';
 
 type Data = {
   material: string;
@@ -16,7 +17,7 @@ type Data = {
 };
 
 export const PetrificationInterface = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PetrificationInterfaceActions>();
 
   const {
     material,

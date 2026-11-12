@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { GuestPassActions } from './generated/GuestPass';
 
 type Data = {
   access: number[] | null;
@@ -18,7 +19,7 @@ type Data = {
 type area = { area: string; area_name: string; on: BooleanLike };
 
 export const GuestPass = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GuestPassActions>();
 
   const { area, giver, giveName, reason, duration, mode, log, uid } = data;
 

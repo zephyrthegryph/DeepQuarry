@@ -11,6 +11,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { PlushieEditorActions } from '../../generated/PlushieEditor';
 import type { Data } from '../types';
 
 type PreviewPanelProps = {
@@ -19,7 +20,7 @@ type PreviewPanelProps = {
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   setSelectedOverlay,
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PlushieEditorActions>();
   const { base_color, preview, name } = data;
 
   return (

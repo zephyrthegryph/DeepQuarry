@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PointDefenseControlActions } from './generated/PointDefenseControl';
 
 type Data = {
   id: string;
@@ -16,7 +17,7 @@ type Data = {
 };
 
 export const PointDefenseControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PointDefenseControlActions>();
   const { id, turrets } = data;
   return (
     <Window width={400} height={600}>

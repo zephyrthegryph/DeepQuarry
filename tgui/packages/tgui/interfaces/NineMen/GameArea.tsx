@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
+import type { NineMenActions } from '../generated/NineMen';
 import { nodePositions, textToNine } from './constants';
 import { checkDisabled } from './functions';
 import type { Data } from './types';
 
 export const GameArea = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NineMenActions>();
 
   const {
     game_state,

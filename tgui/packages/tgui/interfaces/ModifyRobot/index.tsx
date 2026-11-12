@@ -11,7 +11,7 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-
+import type { ModifyRobotActions } from '../generated/ModifyRobot';
 import { LawManagerLawSets, LawManagerLaws } from '../LawManager';
 import { ModifyRobotNoModule } from './ModifyRobotNoModule';
 import { ModifyRobotAccess } from './ModifyRobotTabs/ModifyRobotAccess';
@@ -23,7 +23,7 @@ import { ModifyRobotUpgrades } from './ModifyRobotTabs/ModifyRobotUpgrades';
 import type { Data } from './types';
 
 export const ModifyRobot = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ModifyRobotActions>();
 
   const {
     target,

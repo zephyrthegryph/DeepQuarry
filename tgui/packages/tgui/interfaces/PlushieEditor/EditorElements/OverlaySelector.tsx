@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { PlushieEditorActions } from '../../generated/PlushieEditor';
 import { useOverlayMap } from '../function';
 import type { Data, PossibleOverlay } from '../types';
 
@@ -20,7 +21,7 @@ type OverlayModalProps = {
 export const OverlaySelector: React.FC<OverlayModalProps> = ({
   toggleOverlay,
 }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PlushieEditorActions>();
   const [filter, setFilter] = useState('');
   const { possible_overlays, overlays, icon } = data;
 

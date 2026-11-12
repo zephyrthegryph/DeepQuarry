@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PlantAnalyzerActions } from './generated/PlantAnalyzer';
 
 type Data = {
   no_seed: BooleanLike;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 export const PlantAnalyzer = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PlantAnalyzerActions>();
 
   const { seed, reagents } = data;
 
@@ -43,7 +44,7 @@ export const PlantAnalyzer = (props) => {
 };
 
 const PlantAnalyzerContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PlantAnalyzerActions>();
 
   const { no_seed, seed, reagents } = data;
 

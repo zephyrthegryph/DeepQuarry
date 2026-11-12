@@ -10,11 +10,11 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import type { MessageMonitorActions } from '../generated/MessageMonitor';
 import type { Data } from './types';
 
 export const MessageMonitorMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
   const { linkedServer } = data;
 
@@ -142,7 +142,7 @@ export const MessageMonitorLogs = (props: {
 };
 
 export const MessageMonitorAdmin = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
   const {
     possibleRecipients,
@@ -205,7 +205,7 @@ export const MessageMonitorAdmin = (props) => {
 };
 
 export const MessageMonitorSpamFilter = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
   const { linkedServer } = data;
 

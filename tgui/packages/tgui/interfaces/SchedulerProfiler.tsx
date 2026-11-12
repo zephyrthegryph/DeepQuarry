@@ -11,6 +11,7 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SchedulerProfilerActions } from './generated/SchedulerProfiler';
 
 type Behaviour = {
   name: string;
@@ -100,7 +101,7 @@ type Data = {
 type SortKey = 'ms' | 'runs' | 'us_per_run' | 'errors';
 
 export const SchedulerProfiler = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SchedulerProfilerActions>();
   const { elapsed_s, last_run_ms, error_count, behind, shared_bucket } = data;
   const [tab, setTab] = useState(0);
   return (
@@ -156,7 +157,7 @@ export const SchedulerProfiler = (props) => {
 };
 
 const LanesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { lanes = [] } = data;
   return (
     <Section>
@@ -189,7 +190,7 @@ const LanesTab = (props) => {
 };
 
 const BehavioursTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { behaviours = [] } = data;
   const [filter, setFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('ms');
@@ -265,7 +266,7 @@ const BehavioursTab = (props) => {
 };
 
 const StagesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { stages = [] } = data;
   const rows = [...stages].sort((a, b) => b.ms - a.ms);
   if (!rows.length) {
@@ -299,7 +300,7 @@ const StagesTab = (props) => {
 };
 
 const ServicesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { services = [], world_step } = data;
   const rows = [...services].sort((a, b) => b.ms - a.ms);
   return (
@@ -358,7 +359,7 @@ const ServicesTab = (props) => {
 };
 
 const CachesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const caches = [...(data.caches || [])].sort((a, b) => b.kb - a.kb);
   return (
     <Section title="Shared caches (DECLARE_SHARED_CACHE; hits need -DSHARED_CACHE_STATS in release)">

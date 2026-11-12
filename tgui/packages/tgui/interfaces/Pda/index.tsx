@@ -12,6 +12,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PdaActions } from '../generated/Pda';
 
 type Data = {
   theme?: string;
@@ -65,7 +66,7 @@ function getPdaApp(name: string) {
 }
 
 export const Pda = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PdaActions>();
 
   const { theme, app, owner, useRetro } = data;
 
@@ -116,7 +117,7 @@ const PDAHeader = (props: {
   settingsMode: BooleanLike;
   onSettingsMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { idInserted, idLink, stationTime } = data;
 
@@ -151,7 +152,7 @@ const PDAHeader = (props: {
 };
 
 const PDASettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { idInserted, idLink, cartridge_name, touch_silent } = data;
 
@@ -194,7 +195,7 @@ const PDASettings = (props) => {
 const PDAFooter = (props: {
   onSettingsMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { app, useRetro } = data;
 

@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
+import type { FlavorTextActions } from './generated/FlavorText';
 
 type Part = {
   key: string;
@@ -16,7 +17,7 @@ type Data = {
 };
 
 export const FlavorText = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, FlavorTextActions>();
   const { parts } = data;
   return (
     <Window width={560} height={500} title="Update Flavour Text">

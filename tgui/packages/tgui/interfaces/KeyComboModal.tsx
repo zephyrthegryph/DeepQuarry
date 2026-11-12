@@ -6,6 +6,7 @@ import { isEscape, KEY } from 'tgui-core/keys';
 import type { BooleanLike } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type { KeyComboModalActions } from './generated/KeyComboModal';
 
 type KeyInputData = {
   init_value: string;
@@ -70,7 +71,7 @@ function formatKeyboardEvent(
 }
 
 export function KeyComboModal(props) {
-  const { act, data } = useBackend<KeyInputData>();
+  const { act, data } = useBackend<KeyInputData, KeyComboModalActions>();
   const { init_value, large_buttons, message = '', title, timeout } = data;
   const [input, setInput] = useState(init_value);
   const [binding, setBinding] = useState(true);

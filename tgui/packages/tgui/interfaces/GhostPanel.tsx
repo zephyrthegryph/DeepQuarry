@@ -13,6 +13,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { GhostPanelActions } from './generated/GhostPanel';
 
 type Action = {
   id: string;
@@ -44,7 +45,7 @@ type Data = {
 };
 
 const ActionButton = (props: { action: Action }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GhostPanelActions>();
   const { action } = props;
   return (
     <Button
@@ -59,7 +60,7 @@ const ActionButton = (props: { action: Action }) => {
 };
 
 const ToggleRow = (props: { toggle: Toggle }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GhostPanelActions>();
   const { toggle } = props;
   return (
     <LabeledList.Item label={toggle.label}>
@@ -77,7 +78,7 @@ const ToggleRow = (props: { toggle: Toggle }) => {
 };
 
 export const GhostPanel = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, GhostPanelActions>();
   const { groups, toggles, notice } = data;
   return (
     <Window width={520} height={620} title="Ghost Panel" theme="console">

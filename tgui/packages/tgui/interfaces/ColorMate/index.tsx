@@ -10,6 +10,7 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
+import type { ColorMateActions } from '../generated/ColorMate';
 import { ColorPickerCanvas } from './Helpers/ImageCanvas';
 import { ColorMateHSV, ColorMateTint } from './MatrixTabs/ColorMateColor';
 import { ColorMateMatrix } from './MatrixTabs/ColorMateMatrix';
@@ -17,7 +18,7 @@ import { ColorMateMatrixSolver } from './MatrixTabs/ColorMatrixSolver';
 import type { Data } from './types';
 
 export const ColorMate = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ColorMateActions>();
 
   const [colorPairs, setColorPairs] = useState([
     { input: '#ffffff', output: '#ffffff' },

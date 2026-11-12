@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AiRestorerActions } from './generated/AiRestorer';
 
 type Data = {
   AI_present: boolean;
@@ -32,7 +33,7 @@ export const AiRestorer = () => {
 };
 
 export const AiRestorerContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AiRestorerActions>();
   const {
     AI_present,
     error,

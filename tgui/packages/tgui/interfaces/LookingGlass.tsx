@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { LookingGlassActions } from './generated/LookingGlass';
 
 type Data = {
   supportedPrograms: string[];
@@ -11,7 +12,7 @@ type Data = {
 };
 
 export const LookingGlass = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, LookingGlassActions>();
 
   const { supportedPrograms, currentProgram, immersion, gravity } = data;
 

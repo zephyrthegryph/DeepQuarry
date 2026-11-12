@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { DroneConsoleActions } from './generated/DroneConsole';
 
 type Data = {
   drones: {
@@ -26,7 +27,7 @@ type Data = {
 };
 
 export const DroneConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DroneConsoleActions>();
 
   const { drones, areas, selected_area, fabricator, fabPower } = data;
 

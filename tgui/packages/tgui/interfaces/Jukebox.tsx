@@ -18,6 +18,7 @@ import { formatTime } from 'tgui-core/format';
 import { round, toFixed } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
+import type { JukeboxActions } from './generated/Jukebox';
 
 type Data = {
   playing: BooleanLike;
@@ -40,7 +41,7 @@ type track = {
 };
 
 export const Jukebox = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, JukeboxActions>();
 
   const {
     playing,

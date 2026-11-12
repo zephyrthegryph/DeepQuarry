@@ -1,12 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import type { RequestConsoleActions } from '../generated/RequestConsole';
 import { RCS_MAINMENU } from './constants';
 import type { Data } from './types';
 
 export const RequestConsoleViewMessages = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RequestConsoleActions>();
   const { message_log } = data;
   return (
     <Section title="Messages">
@@ -32,7 +32,7 @@ export const RequestConsoleViewMessages = (props) => {
 };
 
 export const RequestConsoleMessageAuth = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RequestConsoleActions>();
   const { message, recipient, priority, msgStamped, msgVerified } = data;
   return (
     <Section title="Message Authentication">
@@ -78,7 +78,7 @@ export const RequestConsoleMessageAuth = (props) => {
 };
 
 export const RequestConsoleAnnounce = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RequestConsoleActions>();
   const { message, announceAuth } = data;
   return (
     <Section title="Send Station-Wide Announcement">

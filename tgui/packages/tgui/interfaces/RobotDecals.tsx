@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { RobotDecalsActions } from './generated/RobotDecals';
 
 type Data = {
   theme: string;
@@ -12,7 +13,7 @@ type Data = {
 };
 
 export const RobotDecals = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RobotDecalsActions>();
   const { theme, all_decals, all_animations, active_decals } = data;
 
   const [decalSearchText, setDecalSearchText] = useState('');

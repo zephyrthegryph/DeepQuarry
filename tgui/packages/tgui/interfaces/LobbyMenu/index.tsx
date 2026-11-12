@@ -6,14 +6,14 @@ import { Window } from 'tgui/layouts';
 import { SCANLINES_DISABLED_KEY } from 'tgui/layouts/consoleTheme';
 import { Box, Modal, Section, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
-
+import type { LobbyMenuActions } from '../generated/LobbyMenu';
 import { LobbyContext } from './constants';
 import { LobbyButtons } from './LobbyButtons';
 import { CustomButton } from './LobbyElements';
 import type { LobbyData } from './types';
 
 export const LobbyMenu = (props) => {
-  const { act, data } = useBackend<LobbyData>();
+  const { act, data } = useBackend<LobbyData, LobbyMenuActions>();
 
   const onLoadPlayer = useRef<HTMLAudioElement>(null);
 

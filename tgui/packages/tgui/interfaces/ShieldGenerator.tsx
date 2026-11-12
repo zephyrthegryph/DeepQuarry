@@ -12,6 +12,7 @@ import { formatPower, formatSiUnit } from 'tgui-core/format';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { FullscreenNotice } from './common/FullscreenNotice';
+import type { ShieldGeneratorActions } from './generated/ShieldGenerator';
 
 type Data = {
   locked: BooleanLike;
@@ -42,7 +43,7 @@ type capacitor = {
 };
 
 export const ShieldGenerator = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ShieldGeneratorActions>();
 
   const { locked } = data;
 
@@ -72,7 +73,7 @@ const ShieldGeneratorLocked = (props) => (
 );
 
 const ShieldGeneratorContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShieldGeneratorActions>();
 
   const {
     capacitors,

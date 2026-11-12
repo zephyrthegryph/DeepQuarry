@@ -13,6 +13,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
 
 import { MiningUser } from './common/Mining';
+import type { MiningOreProcessingConsoleActions } from './generated/MiningOreProcessingConsole';
 
 type Data = {
   unclaimedPoints: number;
@@ -28,7 +29,7 @@ type Data = {
 };
 
 export const MiningOreProcessingConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MiningOreProcessingConsoleActions>();
 
   const { unclaimedPoints, power, speed } = data;
 
@@ -142,7 +143,7 @@ const oreSorter = (a, b) => {
 };
 
 const MOPCOres = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MiningOreProcessingConsoleActions>();
   const { ores, showAllOres } = data;
   return (
     <Section

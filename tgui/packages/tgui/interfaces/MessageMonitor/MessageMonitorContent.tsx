@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Icon, Tabs } from 'tgui-core/components';
-
+import type { MessageMonitorActions } from '../generated/MessageMonitor';
 import {
   MessageMonitorAdmin,
   MessageMonitorLogs,
@@ -11,7 +11,7 @@ import {
 import type { Data } from './types';
 
 export const MessageMonitorContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
   const { linkedServer } = data;
 

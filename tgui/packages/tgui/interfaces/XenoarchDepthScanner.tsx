@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
+import type { XenoarchDepthScannerActions } from './generated/XenoarchDepthScanner';
 
 type Data = {
   theme?: string;
@@ -15,7 +16,7 @@ type Data = {
 };
 
 export const XenoarchDepthScanner = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchDepthScannerActions>();
 
   const { theme, current, positive_locations } = data;
 

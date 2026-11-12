@@ -2,13 +2,14 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 
 import { GameWindow as FishingGame } from './FishingMinigame';
+import type { NtosFishingActions } from './generated/NtosFishing';
 
 type Data = {
   PC_device_theme: string;
 };
 
 export const NtosFishing = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosFishingActions>();
   return (
     <NtosWindow theme={data.PC_device_theme} width={340} height={530}>
       <NtosWindow.Content>

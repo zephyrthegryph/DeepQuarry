@@ -25,6 +25,7 @@ import { useEffect, useRef } from 'react';
 import { useBackend } from 'tgui/backend';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { TooltipActions } from './generated/Tooltip';
 
 const TOOLTIP_RESET_CSS = `
 html, body, #react-root, .TooltipRoot,
@@ -111,7 +112,7 @@ const parseSemiParams = (s: string): Record<string, string> => {
 };
 
 export const Tooltip = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TooltipActions>();
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 
 // The Character window is dispatched through the auto-renderer (DQCharacterSetup).
 import { DQCharacterSetup } from '../deepquarry/PreferencesMenu/DQCharacterSetup';
+import type { PreferencesMenuActions } from '../generated/PreferencesMenu';
 import {
   GamePreferencesSelectedPage,
   type PreferencesMenuData,
@@ -10,7 +11,7 @@ import {
 import { GamePreferenceWindow } from './GamePreferenceWindow';
 
 export const PreferencesMenu = () => {
-  const { data } = useBackend<PreferencesMenuData>();
+  const { data } = useBackend<PreferencesMenuData, PreferencesMenuActions>();
 
   const window = data.window;
 

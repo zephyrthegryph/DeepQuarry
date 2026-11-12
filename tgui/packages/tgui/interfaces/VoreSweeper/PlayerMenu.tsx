@@ -8,13 +8,14 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { VoreSweeperActions } from '../generated/VoreSweeper';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameStateToColor, gameStateToIcon, gameTooltip } from './constants';
 import { getRemainingMines, getScoreColor } from './functions';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VoreSweeperActions>();
 
   const {
     grid_size,

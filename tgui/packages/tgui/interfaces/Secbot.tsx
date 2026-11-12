@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SecbotActions } from './generated/Secbot';
 
 type Data = {
   on: BooleanLike;
@@ -17,7 +18,7 @@ type Data = {
 };
 
 export const Secbot = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecbotActions>();
 
   const {
     on,

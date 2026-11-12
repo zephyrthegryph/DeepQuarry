@@ -9,6 +9,7 @@ import {
 import { LoginInfo } from '../common/LoginInfo';
 import { LoginScreen } from '../common/LoginScreen';
 import { TemporaryNotice } from '../common/TemporaryNotice';
+import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import { MedicalRecordsList } from './MedicalRecordsList';
 import { MedicalRecordsMedbots } from './MedicalRecordsMedbots';
 import {
@@ -21,7 +22,7 @@ import type { Data } from './types';
 import { virusModalBodyOverride } from './virusModalBodyOverride';
 
 export const MedicalRecords = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MedicalRecordsActions>();
   const { authenticated, screen } = data;
   if (!authenticated) {
     return (

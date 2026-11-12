@@ -13,6 +13,7 @@ import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { ViewVariablesActions } from './generated/ViewVariables';
 
 type DropdownEntry = {
   name: string;
@@ -187,7 +188,7 @@ const Variables = (props: { variables: Variable[]; act: ActFn }) => {
 };
 
 export const ViewVariables = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ViewVariablesActions>();
   if (!data.has_target) {
     return (
       <Window width={680} height={400} title="Variables">

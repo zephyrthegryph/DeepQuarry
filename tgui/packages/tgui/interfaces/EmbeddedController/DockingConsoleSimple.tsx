@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
+import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import { DockingStatus, DockStatus } from './EmbeddedControllerHelpers';
 import type { DockingConsoleSimpleData } from './types';
 
@@ -11,7 +11,10 @@ import type { DockingConsoleSimpleData } from './types';
  * Replaces simple_docking_console.tmpl
  */
 export const DockingConsoleSimple = (props) => {
-  const { act, data } = useBackend<DockingConsoleSimpleData>();
+  const { act, data } = useBackend<
+    DockingConsoleSimpleData,
+    EmbeddedControllerActions
+  >();
 
   const { exterior_status, override_enabled, docking_status } = data;
 

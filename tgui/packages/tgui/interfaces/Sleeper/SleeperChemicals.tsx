@@ -7,11 +7,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { SleeperActions } from '../generated/Sleeper';
 import type { Data } from './types';
 
 export const SleeperChemicals = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SleeperActions>();
   const { occupant, chemicals, maxchem, amounts } = data;
   return (
     <Section title="Chemicals" flexGrow>

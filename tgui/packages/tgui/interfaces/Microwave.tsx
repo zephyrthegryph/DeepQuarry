@@ -15,6 +15,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { classes } from 'tgui-core/react';
 
 import { AnimatedArrows } from './common/AnimatedArrows';
+import type { MicrowaveActions } from './generated/Microwave';
 
 type Item = {
   name: string;
@@ -41,7 +42,7 @@ type Data = {
 };
 
 export const Microwave = (props) => {
-  const { config, data } = useBackend<Data>();
+  const { config, data } = useBackend<Data, MicrowaveActions>();
 
   const { broken, operating, dirty, items } = data;
 
@@ -145,7 +146,7 @@ export const Microwave = (props) => {
 };
 
 const MicrowaveContents = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MicrowaveActions>();
 
   const { items, reagents, recipe, recipe_name } = data;
 

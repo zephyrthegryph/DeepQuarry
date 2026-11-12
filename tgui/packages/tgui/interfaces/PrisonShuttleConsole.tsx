@@ -8,6 +8,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PrisonShuttleConsoleActions } from './generated/PrisonShuttleConsole';
 
 type Data = {
   moving: BooleanLike;
@@ -17,7 +18,7 @@ type Data = {
 };
 
 export const PrisonShuttleConsole = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PrisonShuttleConsoleActions>();
   const { moving, at_station, time_left, can_move } = data;
 
   const locationLabel = moving

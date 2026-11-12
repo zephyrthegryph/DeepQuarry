@@ -10,6 +10,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SolarControlActions } from './generated/SolarControl';
 
 type Data = {
   generated: number;
@@ -24,7 +25,7 @@ type Data = {
 };
 
 export const SolarControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SolarControlActions>();
   const {
     generated,
     generated_ratio,

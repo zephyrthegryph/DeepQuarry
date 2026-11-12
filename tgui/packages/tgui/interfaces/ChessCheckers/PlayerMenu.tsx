@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { AnimatedArrows, AnimatedArrowsLeft } from '../common/AnimatedArrows';
+import type { ChessCheckersActions } from '../generated/ChessCheckers';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameTooltip } from './constants';
 import { gameStateToText, stateToColor } from './functions';
@@ -8,7 +9,7 @@ import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChessCheckersActions>();
 
   const {
     game_type,

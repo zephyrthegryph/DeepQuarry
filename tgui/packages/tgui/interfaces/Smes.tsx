@@ -11,6 +11,7 @@ import {
 } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SmesActions } from './generated/Smes';
 
 // Common power multiplier
 const POWER_MUL: number = 1e3;
@@ -36,7 +37,7 @@ export type smes = {
 type Data = smes;
 
 export const Smes = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SmesActions>();
   const {
     capacityPercent,
     capacity,

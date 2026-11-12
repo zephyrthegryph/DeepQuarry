@@ -15,6 +15,7 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { AdminVerbBrowserActions } from '../generated/AdminVerbBrowser';
 import {
   categoryCounts,
   filterToggles,
@@ -40,7 +41,7 @@ type Data = {
 type Page = 'browse' | 'pinned' | 'recent' | 'settings';
 
 const VerbRowView = (props: { verb: VerbRow; pinned: boolean }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, AdminVerbBrowserActions>();
   const { verb, pinned } = props;
   return (
     <Stack align="center" className="AdminVerbBrowser__row">
@@ -110,7 +111,7 @@ const VerbList = (props: {
 };
 
 const Settings = (props: { toggles: Data['toggles']; query: string }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, AdminVerbBrowserActions>();
   const rows: ToggleRow[] = props.toggles.map((toggle) => ({
     ...toggle,
     value: !!toggle.value,
@@ -147,7 +148,7 @@ const Settings = (props: { toggles: Data['toggles']; query: string }) => {
 };
 
 export const AdminVerbBrowser = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AdminVerbBrowserActions>();
   const { verbs, pins, recent, defaults, toggles } = data;
   const [query, setQuery] = useState('');
   const [page, setPage] = useState<Page>('browse');

@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SyndicateBeaconActions } from './generated/SyndicateBeacon';
 
 type Data = {
   temp: string;
@@ -17,7 +18,7 @@ type Data = {
 };
 
 export const SyndicateBeacon = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, SyndicateBeaconActions>();
   const {
     temp,
     selfdestructing,

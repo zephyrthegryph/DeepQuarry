@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { RadiationConfigActions } from './generated/RadiationConfig';
 
 type Data = {
   radiation_color: string | null;
@@ -21,7 +22,7 @@ type Data = {
 };
 
 export const RadiationConfig = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RadiationConfigActions>();
 
   const {
     radiation_color,

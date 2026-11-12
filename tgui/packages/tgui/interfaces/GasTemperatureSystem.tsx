@@ -11,6 +11,7 @@ import {
   Slider,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { GasTemperatureSystemActions } from './generated/GasTemperatureSystem';
 
 type Data = {
   on: BooleanLike;
@@ -27,7 +28,7 @@ type Data = {
 };
 
 export const GasTemperatureSystem = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GasTemperatureSystemActions>();
 
   const {
     on,

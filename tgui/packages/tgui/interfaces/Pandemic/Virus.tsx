@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { capitalizeFirst, decodeHtmlEntities } from 'tgui-core/string';
-
+import type { PandemicActions } from '../generated/Pandemic';
 import { getColor } from './helpers';
 import type { Data } from './types';
 
@@ -33,7 +33,7 @@ export const VirusDisplay = (props) => {
 };
 
 const Info = (props) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, PandemicActions>();
   const {
     virus: { agent, can_rename, cure, description, index, name, spread },
   } = props;

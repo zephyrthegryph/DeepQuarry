@@ -65,7 +65,33 @@ export type DebugState = {
   kitchenSink: boolean;
 };
 
-export type BackendState<TData> = ExtractAtomValue<typeof backendStateAtom> & {
-  act: typeof sendAct;
+/** Window actions the engine answers for every window (code/library/ui/tgui/external.dm, code/engine/parts/inputs.dm). */
+export type EngineActions = {
+  change_ui_state: { new_state?: string };
+  modal_open: { id?: string };
+};
+
+type ActKey<TActions> = keyof (TActions & EngineActions) & string;
+
+/**
+ * act() typed by a window's generated actions (interfaces/generated/<Window>.d.ts, `<Window>Actions`): a literal action must be one the
+ * window's ui_act() ops answer and its payload keys the op's arg() names. An action held in a string variable is not checked. Without a
+ * TActions type, act() takes any action.
+ */
+export type TypedAct<TActions> = [TActions] extends [undefined]
+  ? typeof sendAct
+  : unknown extends TActions // ReturnType<typeof useBackend> instantiates TActions as unknown
+    ? typeof sendAct
+    : <K extends string>(
+        action: string extends K ? K : K & ActKey<TActions>,
+        payload?: string extends K
+          ? Record<string, unknown>
+          : Partial<(TActions & EngineActions)[K & ActKey<TActions>]>,
+      ) => void;
+
+export type BackendState<TData, TActions = undefined> = ExtractAtomValue<
+  typeof backendStateAtom
+> & {
+  act: TypedAct<TActions>;
   data: TData;
 };

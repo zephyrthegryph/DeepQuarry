@@ -12,6 +12,7 @@ import { formatTime } from 'tgui-core/format';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { RankIcon } from './common/RankIcon';
+import type { TimeClockActions } from './generated/TimeClock';
 
 type Data = {
   card: string | null;
@@ -32,7 +33,7 @@ type Data = {
 };
 
 export const TimeClock = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TimeClockActions>();
 
   const {
     department_hours,

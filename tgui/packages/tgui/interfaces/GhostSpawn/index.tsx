@@ -1,14 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack, Tabs } from 'tgui-core/components';
-
+import type { GhostSpawnActions } from '../generated/GhostSpawn';
 import { GhostJoin } from './GhostJoin/GhostJoin';
 import { GhostPod } from './GhostPod/GhostPod';
 import type { Data } from './types';
 import { Vorespawn } from './Vorespawn/Vorespawn';
 
 export const GhostSpawn = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GhostSpawnActions>();
   const {
     all_ghost_pods,
     all_vore_spawns,

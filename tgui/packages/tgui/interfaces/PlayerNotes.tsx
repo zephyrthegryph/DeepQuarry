@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack, Table } from 'tgui-core/components';
+import type { PlayerNotesActions } from './generated/PlayerNotes';
 
 type Data = {
   device_theme: string;
@@ -11,7 +12,7 @@ type Data = {
 };
 
 export const PlayerNotes = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PlayerNotesActions>();
   const { device_theme, filter, pages, ckeys } = data;
 
   const [activePage, setActivePage] = useState(1);

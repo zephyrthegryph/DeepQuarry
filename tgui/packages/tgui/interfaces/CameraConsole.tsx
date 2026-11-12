@@ -11,6 +11,7 @@ import {
 } from 'tgui-core/components';
 import { type BooleanLike, classes } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
+import type { CameraConsoleActions } from './generated/CameraConsole';
 
 type activeCamera = { name: string; status: BooleanLike } | null;
 
@@ -76,7 +77,7 @@ export const selectCameras = (
 };
 
 export const CameraConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CameraConsoleActions>();
   const { mapRef, activeCamera } = data;
 
   const { cameras } = data;
@@ -137,7 +138,7 @@ export const CameraConsole = (props) => {
 };
 
 export const CameraConsoleContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CameraConsoleActions>();
   const [searchText, setSearchText] = useState<string>('');
   const [networkFilter, setNetworkFilter] = useState<string>('');
   const { activeCamera, allNetworks, cameras } = data;

@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { DNAForensicsActions } from './generated/DNAForensics';
 
 type Data = {
   scan_progress: number;
@@ -18,7 +19,7 @@ type Data = {
 };
 
 export const DNAForensics = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAForensicsActions>();
   const { scan_progress, scanning, bloodsamp, bloodsamp_desc } = data;
   return (
     <Window width={540} height={326}>

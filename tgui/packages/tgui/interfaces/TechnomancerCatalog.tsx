@@ -9,6 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { TechnomancerCatalogActions } from './generated/TechnomancerCatalog';
 
 type Spell = {
   name: string;
@@ -47,7 +48,7 @@ const TAB_LABELS = [
 ];
 
 export const TechnomancerCatalog = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TechnomancerCatalogActions>();
   const { tab, budget, max_budget } = data;
 
   return (
@@ -83,7 +84,7 @@ export const TechnomancerCatalog = () => {
 };
 
 const FunctionsTab = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TechnomancerCatalogActions>();
   const { budget, spell_tab, spell_categories, spells } = data;
   const visible = spells.filter(
     (s) => !s.hidden && (spell_tab === 'All' || s.category === spell_tab),
@@ -163,7 +164,7 @@ const FunctionsTab = () => {
 };
 
 const ItemsTab = (props: { items: Item[]; kind: string }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TechnomancerCatalogActions>();
   const { budget } = data;
   const { items } = props;
   return (

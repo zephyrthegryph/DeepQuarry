@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Input, Section, Stack, Tabs } from 'tgui-core/components';
+import type { DestinationTaggerActions } from '../generated/DestinationTagger';
 import { DestinationTaggerLevels } from './DestinationTaggerLevels';
 import { DestintationTaggerTags } from './DestintationTaggerTags';
 import type { Data } from './types';
 
 export const DestinationTagger = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DestinationTaggerActions>();
 
   const [newTag, setNewTag] = useState('');
   const [currentTab, setCurrentTab] = useState(0);

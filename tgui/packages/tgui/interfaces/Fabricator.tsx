@@ -23,9 +23,10 @@ import type {
   Material,
   MaterialMap,
 } from './Fabrication/Types';
+import type { FabricatorActions } from './generated/Fabricator';
 
 export const Fabricator = (props) => {
-  const { act, data } = useBackend<FabricatorData>();
+  const { act, data } = useBackend<FabricatorData, FabricatorActions>();
   const {
     fabName,
     onHold,
@@ -119,7 +120,7 @@ type PrintButtonProps = {
 };
 
 const PrintButton = (props: PrintButtonProps) => {
-  const { act } = useBackend<FabricatorData>();
+  const { act } = useBackend<FabricatorData, FabricatorActions>();
   const { design, quantity, available, SHEET_MATERIAL_AMOUNT } = props;
 
   const canPrint = !Object.entries(design.cost).some(
@@ -198,7 +199,7 @@ type RecipeProps = {
 };
 
 const Recipe = (props: RecipeProps) => {
-  const { act } = useBackend<FabricatorData>();
+  const { act } = useBackend<FabricatorData, FabricatorActions>();
   const { design, available, SHEET_MATERIAL_AMOUNT, onSelect, selected } =
     props;
 

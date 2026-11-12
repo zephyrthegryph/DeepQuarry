@@ -9,6 +9,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
+import type { FolderActions } from './generated/Folder';
 
 type Kind = 'paper' | 'photo' | 'bundle';
 
@@ -30,7 +31,7 @@ const openLabel: Record<Kind, string> = {
 };
 
 export const Folder = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, FolderActions>();
   const { folder_name, items } = data;
 
   return (

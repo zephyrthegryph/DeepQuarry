@@ -11,6 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { decodeHtmlEntities, toTitleCase } from 'tgui-core/string';
+import type { MechaControlConsoleActions } from './generated/MechaControlConsole';
 
 type Data = {
   beacons: {
@@ -33,7 +34,7 @@ type Data = {
 };
 
 export const MechaControlConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MechaControlConsoleActions>();
   const { beacons = [], stored_data = [] } = data;
   return (
     <Window width={600} height={600}>

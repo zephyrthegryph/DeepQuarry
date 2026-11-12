@@ -10,12 +10,12 @@ import {
   Table,
 } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import type { CommunicatorActions } from '../generated/Communicator';
 import { MESSTAB } from './constants';
 import type { Data } from './types';
 
 export const CommunicatorPhoneTab = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { selfie_mode, targetAddress } = data;
 
@@ -163,7 +163,7 @@ export const CommunicatorPhoneTab = (props) => {
 };
 
 const CommunicatorPhoneTabExternal = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { voice_mobs } = data;
 
@@ -196,7 +196,7 @@ const CommunicatorPhoneTabExternal = (props) => {
 };
 
 const CommunicatorPhoneTabInternal = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { communicating, video_comm, phone_video_comm } = data;
 
@@ -256,7 +256,7 @@ const CommunicatorPhoneTabInternal = (props) => {
 };
 
 const CommunicatorPhoneTabRequest = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { requestsReceived } = data;
 
@@ -293,7 +293,7 @@ const CommunicatorPhoneTabRequest = (props) => {
 };
 
 const CommunicatorPhoneTabInvite = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { invitesSent } = data;
 

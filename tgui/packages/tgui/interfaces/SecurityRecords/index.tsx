@@ -6,6 +6,7 @@ import { ComplexModal } from '../common/ComplexModal';
 import { LoginInfo } from '../common/LoginInfo';
 import { LoginScreen } from '../common/LoginScreen';
 import { TemporaryNotice } from '../common/TemporaryNotice';
+import type { SecurityRecordsActions } from '../generated/SecurityRecords';
 import { SecurityRecordsList } from './SecurityRecordsList';
 import {
   SecurityRecordsMaintenance,
@@ -15,7 +16,7 @@ import {
 import type { Data } from './types';
 
 export const SecurityRecords = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SecurityRecordsActions>();
   const { authenticated, screen } = data;
   if (!authenticated) {
     return (

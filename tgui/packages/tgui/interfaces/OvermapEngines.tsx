@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { OvermapEnginesActions } from './generated/OvermapEngines';
 
 type Data = {
   global_state: BooleanLike;
@@ -36,7 +37,7 @@ export const OvermapEngines = (props) => {
 };
 
 export const OvermapEnginesContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapEnginesActions>();
   const {
     global_state, // This indicates all engines being powered up or not
     global_limit, // Global Thrust limit

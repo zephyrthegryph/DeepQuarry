@@ -8,6 +8,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PhotocopierActions } from './generated/Photocopier';
 
 type Data = {
   has_item: BooleanLike;
@@ -21,7 +22,7 @@ type Data = {
 };
 
 export const Photocopier = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PhotocopierActions>();
   const { has_item, num_copies, can_AI_print, isAI } = data;
 
   return (
@@ -98,7 +99,7 @@ export const Photocopier = (props) => {
 };
 
 const Toner = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PhotocopierActions>();
   const { max_toner, current_toner, has_toner } = data;
 
   if (!has_toner) {
@@ -125,7 +126,7 @@ const Toner = (props) => {
 };
 
 const Buttons = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PhotocopierActions>();
   const { num_copies } = data;
   return (
     <Stack justify="center">
@@ -169,7 +170,7 @@ const Buttons = (props) => {
 };
 
 const AIOptions = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PhotocopierActions>();
   const { can_AI_print } = data;
 
   return (

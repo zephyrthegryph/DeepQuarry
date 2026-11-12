@@ -1,12 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
+import type { VoreSweeperActions } from '../generated/VoreSweeper';
 import { GameArea } from './GameArea';
 import { PlayerMenu } from './PlayerMenu';
 import type { Data } from './types';
 
 export const VoreSweeper = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, VoreSweeperActions>();
 
   const { grid_size, is_dealer } = data;
   const added_height = grid_size * 64;

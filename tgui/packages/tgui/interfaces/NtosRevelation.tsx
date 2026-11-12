@@ -2,13 +2,14 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosRevelationActions } from './generated/NtosRevelation';
 
 type Data = {
   armed: BooleanLike;
 };
 
 export const NtosRevelation = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosRevelationActions>();
   const { armed } = data;
   return (
     <NtosWindow width={400} height={250} theme="syndicate">

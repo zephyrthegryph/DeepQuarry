@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack } from 'tgui-core/components';
-
+import type { RecyclerVendorActions } from '../generated/RecyclerVendor';
 import { AdCarousel } from './AdCarousel';
 import { CategoryButton } from './CategorySelection';
 import { VendorLogo } from './RecyclerLogo';
@@ -26,7 +26,7 @@ type Data = {
 
 export const RecyclerVendor = (props) => {
   const [activeCategory, setActiveCategory] = useState('');
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RecyclerVendorActions>();
 
   const { items, userName, userBalance } = data;
 

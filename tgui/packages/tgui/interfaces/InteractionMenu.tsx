@@ -17,6 +17,7 @@ import { useBackend } from 'tgui/backend';
 import { ListRow, ListRows, TitleBar } from 'tgui/dq';
 import { CONSOLE_THEME } from 'tgui/layouts/consoleTheme';
 import type { BooleanLike } from 'tgui-core/react';
+import type { InteractionMenuActions } from './generated/InteractionMenu';
 import { cursorInMap, placeMenu } from './InteractionMenuPlacement';
 
 type Available = {
@@ -97,7 +98,7 @@ export const menuSubtitle = (
 export const actionLabel = (name: string): string => name.replace(/ at$/i, '');
 
 export const InteractionMenu = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, InteractionMenuActions>();
   const boxRef = useRef<HTMLDivElement>(null);
   const {
     target,

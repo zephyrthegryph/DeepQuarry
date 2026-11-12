@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosNetTransferActions } from './generated/NtosNetTransfer';
 
 type Data = {
   error: string;
@@ -36,7 +37,7 @@ type server = {
 type uploadFile = { uid: string; filename: string; size: number };
 
 export const NtosNetTransfer = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NtosNetTransferActions>();
 
   const { error, downloading, uploading, upload_filelist } = data;
 
@@ -60,7 +61,7 @@ export const NtosNetTransfer = (props) => {
 };
 
 const P2PError = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetTransferActions>();
   const { error } = data;
   return (
     <Section
@@ -77,7 +78,7 @@ const P2PError = (props) => {
 };
 
 const P2PDownload = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetTransferActions>();
   const { download_name, download_progress, download_size, download_netspeed } =
     data;
   return (
@@ -105,7 +106,7 @@ const P2PDownload = (props) => {
 };
 
 const P2PUpload = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetTransferActions>();
   const { upload_clients, upload_filename, upload_haspassword } = data;
   return (
     <Section title="Server enabled">
@@ -133,7 +134,7 @@ const P2PUpload = (props) => {
 };
 
 const P2PUploadServer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetTransferActions>();
   const { upload_filelist } = data;
   return (
     <Section
@@ -164,7 +165,7 @@ const P2PUploadServer = (props) => {
 };
 
 const P2PAvailable = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetTransferActions>();
   const { servers } = data;
   return (
     <Section

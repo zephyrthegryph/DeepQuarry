@@ -8,7 +8,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import type { SleeperActions } from '../generated/Sleeper';
 import type { Data } from './types';
 
 export const SleeperDialysisPump = (props: {
@@ -16,7 +16,7 @@ export const SleeperDialysisPump = (props: {
   actToDo: string;
   title: string;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SleeperActions>();
 
   const { active, actToDo, title } = props;
 

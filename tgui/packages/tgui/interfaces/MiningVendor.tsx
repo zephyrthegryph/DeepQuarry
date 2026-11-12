@@ -13,6 +13,7 @@ import {
 import { createSearch } from 'tgui-core/string';
 
 import { MiningUser } from './common/Mining';
+import type { MiningVendorActions } from './generated/MiningVendor';
 
 type Data = {
   has_id: boolean;
@@ -61,7 +62,7 @@ const MiningVendorItems = (props: {
   sortOrder: string;
   descending: boolean;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MiningVendorActions>();
   const { has_id, id, items } = data;
   // Search thingies
   const searcher = createSearch<[string, Sortable]>(
@@ -158,7 +159,7 @@ const MiningVendorItemsCategory = (props: {
   title: string;
   items: Sortable[];
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MiningVendorActions>();
 
   const { has_id, id } = data;
 

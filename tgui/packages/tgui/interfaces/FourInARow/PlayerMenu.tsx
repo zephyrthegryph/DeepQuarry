@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, NumberInput, Section, Stack } from 'tgui-core/components';
+import type { FourInARowActions } from '../generated/FourInARow';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameTooltip } from './constants';
 import { gameStateToText, stateToColor } from './functions';
@@ -7,7 +8,7 @@ import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FourInARowActions>();
 
   const {
     colors,

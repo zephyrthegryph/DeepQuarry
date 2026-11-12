@@ -10,6 +10,7 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { LibraryCompActions } from './generated/LibraryComp';
 
 type InventoryBook = {
   ref: number;
@@ -75,7 +76,7 @@ const ScreenLabel: Record<number, string> = {
 };
 
 export const LibraryComp = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LibraryCompActions>();
   return (
     <Window
       width={620}
@@ -90,7 +91,7 @@ export const LibraryComp = () => {
 };
 
 const BackToMain = () => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, LibraryCompActions>();
   return (
     <Box mt={2}>
       <Button
@@ -104,7 +105,7 @@ const BackToMain = () => {
 };
 
 const Screen = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LibraryCompActions>();
   switch (data.screenstate) {
     case 0:
       return <MainMenu />;
@@ -133,7 +134,7 @@ const Screen = () => {
 };
 
 const MainMenu = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Main Menu">
       <Stack vertical>
@@ -189,7 +190,7 @@ const MainMenu = () => {
 };
 
 const Inventory = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Inventory">
       {data.inventory.length === 0 ? (
@@ -215,7 +216,7 @@ const Inventory = () => {
 };
 
 const CheckedOut = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Checked Out Books">
       {data.checkouts.length === 0 ? (
@@ -249,7 +250,7 @@ const CheckedOut = () => {
 };
 
 const CheckoutForm = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Check Out a Book">
       <LabeledList>
@@ -288,7 +289,7 @@ const CheckoutForm = () => {
 };
 
 const SortHeader = ({ field, children }: { field: string; children: any }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Table.Cell>
       <Button
@@ -303,7 +304,7 @@ const SortHeader = ({ field, children }: { field: string; children: any }) => {
 };
 
 const InternalArchive = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Internal Archive">
       {data.internal_archive.length === 0 ? (
@@ -338,7 +339,7 @@ const InternalArchive = () => {
 };
 
 const Upload = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   const cache = data.scanner_cache;
   return (
     <Section title="Upload a New Title">
@@ -376,7 +377,7 @@ const Upload = () => {
 };
 
 const ForbiddenVault = () => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Forbidden Lore Vault v 1.3">
       <Box mb={1}>
@@ -392,7 +393,7 @@ const ForbiddenVault = () => {
 };
 
 const ExternalArchive = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="External Archive">
       {!data.has_db ? (

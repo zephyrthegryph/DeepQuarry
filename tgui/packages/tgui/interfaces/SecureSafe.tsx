@@ -9,6 +9,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SecureSafeActions } from './generated/SecureSafe';
 
 type Data = {
   locked: BooleanLike;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 const NukeKeypad = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecureSafeActions>();
 
   const keypadKeys: string[][] = [
     ['1', '4', '7', 'R'],
@@ -62,7 +63,7 @@ const NukeKeypad = (props) => {
 };
 
 export const SecureSafe = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecureSafeActions>();
   const { code, l_setshort, l_set, emagged, locked } = data;
 
   const new_code: boolean = !(!!l_set || !!l_setshort);

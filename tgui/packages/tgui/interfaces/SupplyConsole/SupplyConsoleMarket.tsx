@@ -11,14 +11,14 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-
+import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { CargoMarketBid, Data } from './types';
 
 const bidLabel = (bid: CargoMarketBid) =>
   `${bid.counterparty} — ${bid.name} (×${bid.multiplier.toFixed(2)})`;
 
 export const SupplyConsoleMarket = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupplyConsoleActions>();
   const market = data.market;
   const routeOptions = [
     'Spot market',

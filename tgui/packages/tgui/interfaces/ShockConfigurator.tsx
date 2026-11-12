@@ -12,6 +12,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ShockConfiguratorActions } from './generated/ShockConfigurator';
 
 // These are straight from https://docs.pishock.com/multishock/multishock-websocket-api.html
 type MultishockAPIShocker = {
@@ -45,7 +46,7 @@ type Data = {
 };
 
 export const ShockConfigurator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShockConfiguratorActions>();
   const {
     port,
     connected,

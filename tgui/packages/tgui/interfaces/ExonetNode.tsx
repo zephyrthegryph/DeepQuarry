@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ExonetNodeActions } from './generated/ExonetNode';
 
 type Data = {
   on: BooleanLike;
@@ -12,7 +13,7 @@ type Data = {
 };
 
 export const ExonetNode = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ExonetNodeActions>();
 
   const { on, allowPDAs, allowCommunicators, allowNewscasters, logs } = data;
 

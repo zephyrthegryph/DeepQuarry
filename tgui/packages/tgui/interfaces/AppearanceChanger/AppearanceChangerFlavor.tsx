@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import type { Data } from './types';
 
 export const AppearanceChangerFlavor = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
   const { flavor_text } = data;
 
   return (

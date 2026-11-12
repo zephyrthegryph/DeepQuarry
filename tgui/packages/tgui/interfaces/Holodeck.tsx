@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { HolodeckActions } from './generated/Holodeck';
 
 type Data = {
   supportedPrograms: string[];
@@ -14,7 +15,7 @@ type Data = {
 };
 
 export const Holodeck = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, HolodeckActions>();
 
   const {
     supportedPrograms,

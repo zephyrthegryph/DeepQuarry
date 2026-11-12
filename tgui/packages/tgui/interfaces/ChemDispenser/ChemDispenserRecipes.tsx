@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import { handleImportData } from '../PlushieEditor/function';
 import { exportRecipes } from './functions';
 import type { Data, Recipe } from './types';
@@ -25,7 +26,7 @@ export const ChemDispenserRecipes = (props: {
   /** Called when the user attempts to remove a recipe macro. */
   removeAct: (recipe: string) => void;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ChemDispenserActions>();
   const {
     recipes,
     recordingRecipe,

@@ -1,13 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-
+import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { getDockingStatus } from './functions';
 import type { Data } from './types';
 
 export const ShuttleControlSharedShuttleStatus = (props: {
   engineName?: string;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShuttleControlActions>();
   const { engineName = 'Bluespace Drive' } = props;
   const {
     shuttle_status,

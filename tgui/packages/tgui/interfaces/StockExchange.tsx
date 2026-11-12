@@ -9,6 +9,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { StockExchangeActions } from './generated/StockExchange';
 
 type Data = {
   stationName: string;
@@ -57,7 +58,7 @@ type Data = {
 };
 
 export const StockExchange = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, StockExchangeActions>();
 
   const { screen, stationName } = data;
 
@@ -82,7 +83,7 @@ export const StockExchange = (props) => {
 };
 
 const StockExchangeStockList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { balance, stationName, viewMode } = data;
 
@@ -120,7 +121,7 @@ const StockExchangeStockList = (props) => {
 };
 
 const StockExchangeFullView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { stocks = [] } = data;
 
@@ -179,7 +180,7 @@ const StockExchangeFullView = (props) => {
 };
 
 const StockExchangeCompactView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { stocks = [] } = data;
 
@@ -232,7 +233,7 @@ const StockExchangeCompactView = (props) => {
 
 // "<div><a href='byond://?src=[REF(src)];show_logs=1'>Refresh</a></div></br>"
 const StockExchangeLogs = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { logs = [] } = data;
 
@@ -279,7 +280,7 @@ const StockExchangeLogs = (props) => {
 };
 
 const StockExchangeArchive = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { name, events = [], articles = [] } = data;
 
@@ -324,7 +325,7 @@ const StockExchangeArchive = (props) => {
 };
 
 const StockExchangeGraph = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { name, maxValue, values = [] } = data;
 

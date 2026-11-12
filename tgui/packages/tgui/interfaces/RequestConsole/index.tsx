@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Section, Tabs } from 'tgui-core/components';
-
+import type { RequestConsoleActions } from '../generated/RequestConsole';
 import {
   RCS_ANNOUNCE,
   RCS_MAINMENU,
@@ -31,7 +31,7 @@ import {
 import type { Data } from './types';
 
 export const RequestConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RequestConsoleActions>();
   const { screen, newmessagepriority, announcementConsole } = data;
 
   const body: React.JSX.Element[] = [];

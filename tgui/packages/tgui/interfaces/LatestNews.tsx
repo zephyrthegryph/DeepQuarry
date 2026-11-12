@@ -6,6 +6,7 @@ import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { LatestNewsActions } from './generated/LatestNews';
 
 type Data = {
   channel_name: string;
@@ -18,7 +19,7 @@ type Data = {
 };
 
 export const LatestNews = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LatestNewsActions>();
   const { channel_name, page, total, has_messages, title, author, body } = data;
   return (
     <Window width={560} height={620} title="Latest News">

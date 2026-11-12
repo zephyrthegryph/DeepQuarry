@@ -11,11 +11,12 @@ import {
 } from 'tgui-core/components';
 
 import { DiagnosisVitalsList } from '../common/Diagnosis';
+import type { CryoActions } from '../generated/Cryo';
 import { statNames } from './constants';
 import type { Data } from './types';
 
 export const CryoContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CryoActions>();
   const {
     isOperating,
     hasOccupant,
@@ -126,7 +127,7 @@ export const CryoContent = (props) => {
 };
 
 const CryoBeaker = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CryoActions>();
   const { isBeakerLoaded, beakerLabel, beakerVolume } = data;
   if (isBeakerLoaded) {
     return (

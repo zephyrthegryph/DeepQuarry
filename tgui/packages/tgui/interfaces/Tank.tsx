@@ -8,6 +8,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TankActions } from './generated/Tank';
 
 type Data = {
   connected: BooleanLike;
@@ -21,7 +22,7 @@ type Data = {
 };
 
 export const Tank = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TankActions>();
 
   const {
     connected,

@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Divider, Section, Stack } from 'tgui-core/components';
+import type { PaiChooseActions } from '../generated/PaiChoose';
 import { PreferenceEditColor } from '../PreferencesMenu/elements/ColorInput';
 import { PaiPreview } from './PaiPreview';
 import type { Data } from './types';
 
 export const IconSection = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PaiChooseActions>();
   const { sprite_datum_class, sprite_datum_size, selected_chassis, pai_color } =
     data;
 

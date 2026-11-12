@@ -11,6 +11,7 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
+import type { PlayerNotesInfoActions } from './generated/PlayerNotesInfo';
 
 type Data = {
   device_theme?: string;
@@ -20,7 +21,7 @@ type Data = {
 };
 
 export const PlayerNotesInfo = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PlayerNotesInfoActions>();
   const { device_theme, age, ckey, entries } = data;
   return (
     <Window

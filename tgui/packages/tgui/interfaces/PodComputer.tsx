@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PodComputerActions } from './generated/PodComputer';
 
 type Data = {
   connected: BooleanLike;
@@ -18,7 +19,7 @@ type Data = {
 };
 
 export const PodComputer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PodComputerActions>();
 
   const { connected, timing, time, power_level } = data;
 

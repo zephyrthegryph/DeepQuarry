@@ -11,7 +11,7 @@ import {
   Table,
   Tooltip,
 } from 'tgui-core/components';
-
+import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import type { contractClauseOption, Data, managementContract } from './types';
 
 const signed = (value: number, suffix = '') =>
@@ -275,7 +275,7 @@ const lifecycleGroups = [
 ];
 
 export const ManagementContracts = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralRecordsActions>();
   const [selectedStatus, setSelectedStatus] = useState('offers');
   const [selectedDepartment, setSelectedDepartment] = useState('All');
   const [selectedType, setSelectedType] = useState('All');

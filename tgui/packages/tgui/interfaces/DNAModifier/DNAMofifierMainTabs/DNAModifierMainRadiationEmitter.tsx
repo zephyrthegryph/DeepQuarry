@@ -7,11 +7,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { DNAModifierActions } from '../../generated/DNAModifier';
 import type { Data } from '../types';
 
 export const DNAModifierMainRadiationEmitter = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
 
   const { radiationIntensity, radiationDuration, occupant } = data;
 

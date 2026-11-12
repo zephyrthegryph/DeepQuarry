@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { TeleporterActions } from './generated/Teleporter';
 
 type Data = {
   locked_name: string;
@@ -12,7 +13,7 @@ type Data = {
 };
 
 export const Teleporter = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TeleporterActions>();
 
   const {
     locked_name,

@@ -9,6 +9,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { SpaceHeaterActions } from './generated/SpaceHeater';
 
 type Data = {
   temp: number;
@@ -19,7 +20,7 @@ type Data = {
 };
 
 export const SpaceHeater = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SpaceHeaterActions>();
 
   const { temp, minTemp, maxTemp, cell, power } = data;
 

@@ -2,10 +2,11 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Image, LabeledList, Stack } from 'tgui-core/components';
 
 import { doEdit } from '../GeneralRecords/functions';
+import type { SecurityRecordsActions } from '../generated/SecurityRecords';
 import type { Data } from './types';
 
 export const SecurityRecordsViewGeneral = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecurityRecordsActions>();
   const { general } = data;
   if (!general?.fields) {
     return <Box color="bad">General records lost!</Box>;

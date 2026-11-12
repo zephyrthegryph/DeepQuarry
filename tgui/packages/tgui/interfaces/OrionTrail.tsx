@@ -7,6 +7,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type { OrionTrailActions } from './generated/OrionTrail';
 
 type EventAction = {
   action: string | null;
@@ -39,7 +40,7 @@ type Data = {
 };
 
 export const OrionTrail = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, OrionTrailActions>();
   switch (data.screen) {
     case 'gameover':
       return (
@@ -96,7 +97,9 @@ export const OrionTrail = () => {
                         onClick={() =>
                           act(
                             choice.action as string,
-                            choice.arg ? { [choice.arg]: choice.value } : undefined,
+                            choice.arg
+                              ? { [choice.arg]: choice.value }
+                              : undefined,
                           )
                         }
                       >

@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Stack } from 'tgui-core/components';
+import type { ChessCheckersActions } from '../generated/ChessCheckers';
 import { possiblePromotions } from './constants';
 import { getGameIcons } from './functions';
 import type { Data } from './types';
@@ -12,7 +13,7 @@ export const PromotionSelection = (props: {
     React.SetStateAction<React.JSX.Element | null>
   >;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChessCheckersActions>();
   const { x, y, iconText, onPromotionFloating } = props;
   return (
     <Stack fill vertical align="center" justify="center">

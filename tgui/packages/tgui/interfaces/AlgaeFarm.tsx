@@ -11,6 +11,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
+import type { AlgaeFarmActions } from './generated/AlgaeFarm';
 
 type Data = {
   usePower: number;
@@ -33,7 +34,7 @@ type Data = {
 type Gas = { pressure: number; name: string; percent: number; moles: number };
 
 export const AlgaeFarm = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AlgaeFarmActions>();
   const {
     usePower,
     materials,

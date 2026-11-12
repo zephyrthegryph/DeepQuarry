@@ -1,6 +1,7 @@
 import { type Dispatch, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Section, Stack, Table } from 'tgui-core/components';
+import type { ControllerOverviewActions } from '../generated/ControllerOverview';
 import { SORTING_TYPES } from './constants';
 import type { FilterState } from './filters';
 import { SubsystemRow } from './SubsystemRow';
@@ -12,7 +13,7 @@ type Props = {
 };
 
 export function SubsystemViews(props: Props) {
-  const { data } = useBackend<ControllerData>();
+  const { data } = useBackend<ControllerData, ControllerOverviewActions>();
   const { subsystems } = data;
 
   const { filterOpts, setSelected } = props;
