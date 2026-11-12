@@ -228,9 +228,6 @@ GLOBAL_VAR_INIT(air_turfs_registered_alone, 0)
 		GLOB.early_air_reads++
 	return turf_air() || ..()
 
-/turf/open/return_analyzable_air()
-	return return_air()
-
 // /turf/proc/archive + /turf/open/archive removed — turf FDM archiving is Rust-side
 // now (auxmos snapshots inside process_turfs). temperature_archived is still
 // declared on /turf for legacy readers but is no longer maintained by an archive

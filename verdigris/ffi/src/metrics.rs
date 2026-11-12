@@ -92,12 +92,14 @@ pub fn refresh_sampled() {
                 .set(f64::from(s.stepped));
         }
         // Each per-turf field's awake chunks and live edges after its last step (a settled map steps none).
-        let gas = crate::gas::turf_key()
-            .ok()
-            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats_and_times()));
-        let heat = crate::heat::field()
-            .ok()
-            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats_and_times()));
+        let gas = crate::gas::turf_key().ok().and_then(|k| {
+            w.sim_mut()
+                .with_idle_world(|r| r.get_mut(k.state).stats_and_times())
+        });
+        let heat = crate::heat::field().ok().and_then(|k| {
+            w.sim_mut()
+                .with_idle_world(|r| r.get_mut(k.state).stats_and_times())
+        });
         for (name, stats) in [("turf_gas", gas), ("solid_heat", heat)] {
             if let Some((st, times)) = stats {
                 metrics
@@ -126,7 +128,9 @@ pub fn refresh_sampled() {
                     ("outside_chunk", st.outside_chunk),
                     ("outside_ppm", st.outside_ppm),
                 ] {
-                    metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(f64::from(v));
+                    metrics
+                        .gauge(&format!("world.awake.field_{name}_{what}"))
+                        .set(f64::from(v));
                 }
                 #[allow(clippy::cast_precision_loss)]
                 for (what, v) in [
@@ -139,7 +143,9 @@ pub fn refresh_sampled() {
                     ("skipped_steps", st.skipped_steps),
                     ("stride_changes", st.stride_changes),
                 ] {
-                    metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(v as f64);
+                    metrics
+                        .gauge(&format!("world.awake.field_{name}_{what}"))
+                        .set(v as f64);
                 }
             }
         }
@@ -157,7 +163,9 @@ pub fn refresh_sampled() {
                 ("dense_but_uniform", c.dense_but_uniform),
                 ("allocations", c.allocations),
             ] {
-                metrics.gauge(&format!("memory.store.{name}.{what}")).set(v as f64);
+                metrics
+                    .gauge(&format!("memory.store.{name}.{what}"))
+                    .set(v as f64);
             }
         }
         Ok(())
@@ -173,9 +181,13 @@ pub fn refresh_panel() {
     let (current, peak) = crate::allocator::diagnostics();
     #[allow(clippy::cast_precision_loss)]
     {
-        metrics.gauge("alloc.heap.current_bytes").set(current as f64);
+        metrics
+            .gauge("alloc.heap.current_bytes")
+            .set(current as f64);
         metrics.gauge("alloc.heap.peak_bytes").set(peak as f64);
-        metrics.gauge("jobs.pending").set(crate::jobs::registry().pending() as f64);
+        metrics
+            .gauge("jobs.pending")
+            .set(crate::jobs::registry().pending() as f64);
     }
     let (mut calls_total, mut errors_total) = (0_u64, 0_u64);
     for (_, calls, errors) in auxcallback::panic_guard::snapshot() {
@@ -198,16 +210,26 @@ pub fn refresh_panel() {
             metrics.gauge(name).set(v);
         }
         for s in w.law_stats() {
-            metrics.gauge(&format!("world.awake.{}", s.name)).set(f64::from(s.awake));
-            metrics.gauge(&format!("world.stepped.{}", s.name)).set(f64::from(s.stepped));
+            metrics
+                .gauge(&format!("world.awake.{}", s.name))
+                .set(f64::from(s.awake));
+            metrics
+                .gauge(&format!("world.stepped.{}", s.name))
+                .set(f64::from(s.stepped));
         }
         Ok(())
     });
     // Each field's counts as its own step left them (kept by the field task as it runs): no walk of the world.
     for (name, active, edges, touched) in vg_core::field::field_counts() {
-        metrics.gauge(&format!("world.awake.field_{name}_chunks")).set(f64::from(active));
-        metrics.gauge(&format!("world.stepped.field_{name}_edges")).set(f64::from(edges));
-        metrics.gauge(&format!("world.stepped.field_{name}_touched")).set(f64::from(touched));
+        metrics
+            .gauge(&format!("world.awake.field_{name}_chunks"))
+            .set(f64::from(active));
+        metrics
+            .gauge(&format!("world.stepped.field_{name}_edges"))
+            .set(f64::from(edges));
+        metrics
+            .gauge(&format!("world.stepped.field_{name}_touched"))
+            .set(f64::from(touched));
     }
 }
 
@@ -237,20 +259,22 @@ pub fn panel_json(prefixes: &str) -> String {
 /// allocator tag and `alloc.heap.*` for the whole Rust heap.
 #[auxmacros::bind("/proc/verdigris_metrics")]
 fn verdigris_metrics() -> Result<ByondValue> {
-    Ok(ByondValue::new_str(snapshot_json())?)
+    Ok(crate::held::Held::new_str(snapshot_json())?.leak())
 }
 
 /// The MC Health panel's read: the families named in `prefixes` (comma-separated), with the sampled gauges refreshed first.
 #[auxmacros::bind("/proc/verdigris_metrics_panel")]
 fn verdigris_metrics_panel(prefixes: ByondValue) -> Result<ByondValue> {
-    Ok(ByondValue::new_str(panel_json(&prefixes.get_string()?))?)
+    Ok(crate::held::Held::new_str(panel_json(&prefixes.get_string()?))?.leak())
 }
 
 /// The metrics whose names start with `prefix`, as one JSON object, without refreshing the sampled gauges: a cheap read of one family
 /// (the slow-frame report reads `frame.` on every slow frame, when a full snapshot would stall the tick it reports on).
 #[auxmacros::bind("/proc/verdigris_metrics_prefixed")]
 fn verdigris_metrics_prefixed(prefix: ByondValue) -> Result<ByondValue> {
-    Ok(ByondValue::new_str(registry().to_json_prefixed(&prefix.get_string()?))?)
+    Ok(crate::held::Held::new_str(
+        registry().to_json_prefixed(&prefix.get_string()?),
+    )?.leak())
 }
 
 #[cfg(test)]

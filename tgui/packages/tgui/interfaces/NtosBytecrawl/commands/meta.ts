@@ -64,7 +64,7 @@ export function cmdBounty(ctx: CommandContext): void {
 // ── ascend ────────────────────────────────────────────────────────────────────
 
 export function cmdAscend(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   const state = gRef.current;
   const threshold = ASC_THRESHOLDS[state.ascCount] ?? Infinity;
   const newCrack = 1 + (state.ascCount + 1) * 0.08;
@@ -141,7 +141,6 @@ export function cmdAscend(args: readonly string[], ctx: CommandContext): void {
     phase: 'playing',
     handle: state.handle,
   }));
-  act('ascend');
   print(`[ASCENSION ${newAsc}]  Run reset. GHOST bonuses banked.`, '#33ff33');
   print(
     `  Crack ×${newGhost.crack.toFixed(2)}  Market ×${newGhost.market.toFixed(2)}  Trace ×${newGhost.trace.toFixed(2)}${newGhost.slots > 0 ? `  +${newGhost.slots} slot(s)` : ''}`,

@@ -5,13 +5,13 @@
 // the bind macro's expansion, where an item-level allow does not reach (ffi/src/heat_regulator.rs).
 #![allow(clippy::too_many_arguments)]
 
-use byondapi::prelude::*;
 use crate::held::{HeldList, HeldRead};
+use byondapi::prelude::*;
 use eyre::{Result, bail};
 use vg_chem::metabolism::{self, Uptake};
 use vg_chem::reaction::{self, Reactant, Step};
 
-use crate::world::num;
+use crate::arg::num;
 
 /// How far one step of a reaction goes, in reaction units (`vg_chem::reaction::progress`; DM's `calc_reaction_progress()`).
 /// `reactants` is a flat list `have, ratio, ...`. The caller still takes `min(limit, progress)`.
@@ -26,21 +26,40 @@ fn chem_reaction_progress(
     min_reaction: ByondValue,
     reactants: ByondValue,
 ) -> Result<ByondValue> {
-    let flat = if reactants.is_list() { reactants.held_list()? } else { HeldList::default() };
+    let flat = if reactants.is_list() {
+        reactants.held_list()?
+    } else {
+        HeldList::default()
+    };
     if flat.len() % 2 != 0 {
         bail!("reactants must hold 2 values per reactant");
     }
     let mut rs = Vec::with_capacity(flat.len() / 2);
     for pair in flat.chunks_exact(2) {
-        rs.push(Reactant { have: num(&pair[0])?, ratio: num(&pair[1])? });
+        rs.push(Reactant {
+            have: num(&pair[0])?,
+            ratio: num(&pair[1])?,
+        });
     }
     let step = Step {
         limit: num(&limit)?,
         rate: num(&rate)?,
-        multiplier: if multiplier.is_num() { num(&multiplier)? } else { 1.0 },
+        multiplier: if multiplier.is_num() {
+            num(&multiplier)?
+        } else {
+            1.0
+        },
         yield_: num(&yield_)?,
-        result_amount: if result_amount.is_num() { num(&result_amount)? } else { 0.0 },
-        product_have: if product_have.is_num() { num(&product_have)? } else { 0.0 },
+        result_amount: if result_amount.is_num() {
+            num(&result_amount)?
+        } else {
+            0.0
+        },
+        product_have: if product_have.is_num() {
+            num(&product_have)?
+        } else {
+            0.0
+        },
         min_reaction: num(&min_reaction)?,
     };
     Ok(reaction::progress(&step, &rs).into())
@@ -85,7 +104,12 @@ fn chem_metabolism_cycle(args: ByondValue) -> Result<ByondValue> {
 
 /// The base overdose injury of one uptake (`vg_chem::metabolism::overdose_injury`), for an overdose() called outside a holder's cycle.
 #[auxmacros::bind("/proc/chem_overdose_injury")]
-fn chem_overdose_injury(removed: ByondValue, overdose_mod: ByondValue, volume: ByondValue, overdose: ByondValue) -> Result<ByondValue> {
+fn chem_overdose_injury(
+    removed: ByondValue,
+    overdose_mod: ByondValue,
+    volume: ByondValue,
+    overdose: ByondValue,
+) -> Result<ByondValue> {
     let od = num(&overdose)?;
     if od <= 0.0 {
         return Ok(0.0f32.into());

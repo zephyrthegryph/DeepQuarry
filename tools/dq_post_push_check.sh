@@ -21,17 +21,18 @@ now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 free_gb() { awk '/^MemAvailable:/ {a=$2} /^MemFree:/ {f=$2} END {print int((a ? a : f) / 1048576)}' /proc/meminfo 2>/dev/null || echo 999; }
 field() { sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1; }
 
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/dq_lock.sh"
+# One runner at a time (tools/lib/dq_lock.sh: broken only when its holder is dead; an unrecorded lock after a minute). An older copy of this
+# script recorded its pid inside the lock (run.lock/pid): that record is honoured too.
 take_lock() {
 	mkdir -p "$STATE"
-	if ! mkdir "$LOCK" 2>/dev/null; then
-		local p; p="$(cat "$LOCK/pid" 2>/dev/null)"
+	if [ -f "$LOCK/pid" ] && [ ! -f "$LOCK.owner" ]; then
+		local p=""; read -r p <"$LOCK/pid" 2>/dev/null
 		if [ -n "$p" ] && kill -0 "$p" 2>/dev/null; then return 1; fi
-		[ -z "$p" ] && [ -n "$(find "$LOCK" -maxdepth 0 -mmin -1 2>/dev/null)" ] && return 1
 		rm -f "$LOCK/pid"; rmdir "$LOCK" 2>/dev/null
-		mkdir "$LOCK" 2>/dev/null || return 1
 	fi
-	echo "$$" >"$LOCK/pid"
-	trap 'rm -f "$LOCK/pid"; rmdir "$LOCK" 2>/dev/null' EXIT
+	dq_lock_take "$LOCK" 0 60 || return 1
+	trap 'dq_lock_drop "$LOCK"' EXIT
 }
 
 ensure_wt() {

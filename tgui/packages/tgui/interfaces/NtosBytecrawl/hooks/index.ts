@@ -12,8 +12,7 @@ export function useGameLoop(
   gRef: React.RefObject<GState>,
   setG: ReactDispatch<SetStateAction<GState>>,
   setLines: ReactDispatch<SetStateAction<Line[]>>,
-  act: (action: string, params?: Record<string, unknown>) => void,
 ): void {
-  useTickLoop(phase, gRef, setG, setLines, act);
-  useMarketLoop(phase, setG, setLines, act);
+  useTickLoop(phase, gRef, setG, setLines);
+  useMarketLoop(phase, setG, setLines);
 }

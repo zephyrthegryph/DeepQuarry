@@ -38,11 +38,11 @@ fx() { # <section> <pool size>: a scratch origin + repo + pool for one section; 
 	mkdir -p "$b/repo/tools"
 	printf '[user]\n\temail = t@t\n\tname = t\n' >>"$b/repo/.git/config"
 	cp "$here/tools/dq_lane_pool.sh" "$here/tools/dq_git_safe.sh" "$b/repo/tools/"
+	mkdir -p "$b/repo/tools/lib"; cp "$here/tools/lib/dq_lock.sh" "$b/repo/tools/lib/"
 	printf 'deepquarry.dmb\ndeepquarry.rsc\n/data/**/*\n/data\nicons/gen/\nnode_modules\n' >"$b/repo/.gitignore"
 	echo a >"$b/repo/a.txt"; echo m >"$b/repo/deepquarry.dme"
 	git -C "$b/repo" add -A && git -C "$b/repo" commit -q -m init && git -C "$b/repo" push -q origin master 2>/dev/null
 	export DQ_LANE_POOL_DIR="$b/pool" DQ_LANE_POOL_STATE="$b/state" DQ_LANE_POOL_SIZE="$2" DQ_LANE_POOL_REPO="$b/repo" DQ_DMBC_DAEMON_DIR="$b/none"
-	export DQ_LANE_POOL_NO_UPDATE=1
 	export DQ_LANE_POOL_NO_FETCH=1   # tests only: no git fetch per pool call, origin is the local bare repository above
 	export DQ_LANE_POOL_PROCS_CMD="echo no processes"   # never spawn powershell (seconds per call) in the fixtures
 }
@@ -242,8 +242,29 @@ sec_cap() {
 	check "suite cap: DQ_SLOTS_SUITE_MAX_WORLDS=2 always allows 2, =1 always caps" '[ "$(DQ_SLOTS_SUITE_MAX_WORLDS=2 capsize)" = 2 ] && [ "$(DQ_SLOTS_SUITE_MAX_WORLDS=1 capsize)" = 1 ]'
 }
 
+# ---- the pool lock (tools/lib/dq_lock.sh): broken only when its holder is dead ------------------------------------------------------------
+sec_lock() {
+	fx lock 2
+	local L="$b/state/pool.lock" h
+	mkdir -p "$b/state"
+	sleep 30 & h=$!
+	mkdir "$L"; printf 'pid=%s\n' "$h" >"$L.owner"; touch -d "10 minutes ago" "$L"
+	out="$(DQ_LANE_POOL_LOCK_TIMEOUT=1 pool lease lane/a 2>&1)"; rc=$?
+	check "a lock whose holder lives is kept, however old (no double lease mid-checkout)" '[ "$rc" -ne 0 ] && [[ "$out" == *"could not take the pool lock"* ]] && [ -d "$L" ] && [ ! -e "$b/pool/pool-1" ]'
+	kill "$h" 2>/dev/null; wait "$h" 2>/dev/null
+	p1="$(pool lease lane/a 2>/dev/null)"
+	check "a dead holder's lock is broken at once" '[ "$p1" = "$b/pool/pool-1" ] && [ ! -d "$L" ] && [ ! -e "$L.owner" ]'
+	mkdir "$L"; printf 'pid=%s\nstart=1\n' "$$" >"$L.owner"
+	p2="$(pool lease lane/b 2>/dev/null)"
+	check "a reused pid (start time differs) is a dead holder" '[ "$p2" = "$b/pool/pool-2" ] && [ ! -d "$L" ]'
+	pool release lane/b >/dev/null 2>&1
+	mkdir "$L"; touch -d "5 minutes ago" "$L"
+	p2="$(pool lease lane/b 2>/dev/null)"
+	check "a lock with no owner record (an older script) is broken after 120 s" '[ "$p2" = "$b/pool/pool-2" ] && [ ! -d "$L" ]'
+}
+
 # ---- run the sections in parallel; print their output in order ------------------------------------------------------------------------
-sections=(${DQ_TEST_SECTIONS:-lease release reclaim waiter classes stuck cancel cap})   # DQ_TEST_SECTIONS="classes stuck": run only those (profiling)
+sections=(${DQ_TEST_SECTIONS:-lease release reclaim waiter classes stuck cancel cap lock})   # DQ_TEST_SECTIONS="classes stuck": run only those (profiling)
 pids=()
 for s in "${sections[@]}"; do
 	( fail=0; "sec_$s"; exit "$fail" ) >"$tmp/out.$s" 2>"$tmp/err.$s" &

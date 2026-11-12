@@ -3,6 +3,7 @@
 //! - Slots live in fixed 4096-slot chunks; the arena never grows
 //!   geometrically, so capacity is exactly `chunks * 4096`.
 //! - A handle whose generation no longer matches its slot is rejected.
+//! - The free list is FIFO, so a freed slot waits behind every earlier free.
 //! - Generations are 4 bits. Under [`GenerationPolicy::Wrap`] a slot freed
 //!   16 times reuses generation 0, so a handle held across 16 recycles of the
 //!   same slot would alias. [`GenerationPolicy::Retire`] instead takes a slot
@@ -55,7 +56,9 @@ struct Slot<T> {
 
 pub struct Arena<T> {
     chunks: Vec<Vec<Slot<T>>>,
-    free: Vec<u32>,
+    /// Freed slots, oldest first (FIFO): a slot is reused only after every slot freed before it, so a stale handle
+    /// aliases only after its slot has gone round all 16 generations behind the whole free queue each time.
+    free: std::collections::VecDeque<u32>,
     len: usize,
     retired: usize,
     policy: GenerationPolicy,
@@ -77,7 +80,7 @@ impl<T> Arena<T> {
     pub const fn with_policy(policy: GenerationPolicy) -> Self {
         Self {
             chunks: Vec::new(),
-            free: Vec::new(),
+            free: std::collections::VecDeque::new(),
             len: 0,
             retired: 0,
             policy,
@@ -135,7 +138,7 @@ impl<T> Arena<T> {
     /// # Errors
     /// [`ArenaError::Full`] once every one of the 2^20 slots is live or retired.
     pub fn insert(&mut self, value: T) -> Result<Handle<T>, ArenaError> {
-        let index = if let Some(index) = self.free.pop() {
+        let index = if let Some(index) = self.free.pop_front() {
             index
         } else {
             let next = self.slots();
@@ -212,7 +215,7 @@ impl<T> Arena<T> {
             self.retired += 1;
         } else {
             slot.generation = if exhausted { 0 } else { slot.generation + 1 };
-            self.free.push(handle.index());
+            self.free.push_back(handle.index());
         }
         Ok(value)
     }
@@ -415,5 +418,21 @@ mod tests {
             expected.sort_unstable();
             prop_assert_eq!(seen, expected);
         }
+    }
+
+    #[test]
+    fn freed_slots_are_reused_oldest_first() {
+        let mut arena = Arena::new();
+        let a = arena.insert(1).unwrap();
+        let b = arena.insert(2).unwrap();
+        let _keep = arena.insert(3).unwrap();
+        arena.remove(a).unwrap();
+        arena.remove(b).unwrap();
+        // LIFO would hand b's slot back first; FIFO hands back a's, and b's only after.
+        let c = arena.insert(4).unwrap();
+        assert_eq!(c.index(), a.index());
+        let d = arena.insert(5).unwrap();
+        assert_eq!(d.index(), b.index());
+        assert!(arena.get(a).is_err() && arena.get(b).is_err(), "stale handles stay rejected");
     }
 }

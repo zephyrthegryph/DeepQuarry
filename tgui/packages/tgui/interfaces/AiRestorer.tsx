@@ -47,14 +47,9 @@ export const AiRestorerContent = (props) => {
     <>
       {error && <NoticeBox textAlign="center">{error}</NoticeBox>}
       {!!ejectable && (
-        <Button
-          fluid
-          icon="eject"
-          disabled={!AI_present}
-          onClick={() => act('PRG_eject')}
-        >
+        <Box bold textAlign="center">
           {AI_present ? name : '----------'}
-        </Button>
+        </Box>
       )}
       {!!AI_present && (
         <Section

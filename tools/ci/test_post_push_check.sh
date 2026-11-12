@@ -36,7 +36,9 @@ e="$(c five)"; echo 'FOCUSED RESULT: 1 passed, 0 failed' >"$tmp/result"; bash "$
 f="$(c six)"; : >"$tmp/booted"; DQ_HEALTH_MIN_FREE_GB=99999 DQ_HEALTH_RAM_WAITS=1 bash "$t" run
 [ ! -s "$tmp/booted" ] && ok "no check starts under the RAM floor" || bad "RAM"
 mkdir "$tmp/s/run.lock"; sleep 30 & h=$!; echo "$h" >"$tmp/s/run.lock/pid"; bash "$t" run; [ ! -s "$tmp/booted" ] && ok "one runner at a time" || bad "two runners"; kill "$h" 2>/dev/null
-bash "$t" run; [ "$(cat "$tmp/booted")" = "$f" ] && ok "a dead runner's lock is replaced" || bad "dead lock"
+bash "$t" run; [ "$(cat "$tmp/booted")" = "$f" ] && ok "a dead runner's lock is replaced (older pid-inside record)" || bad "dead lock"
+mkdir "$tmp/s/run.lock"; sleep 30 & h=$!; printf 'pid=%s\n' "$h" >"$tmp/s/run.lock.owner"; : >"$tmp/booted"; bash "$t" run; [ ! -s "$tmp/booted" ] && ok "one runner at a time (owner record)" || bad "two runners (owner record)"; kill "$h" 2>/dev/null; wait "$h" 2>/dev/null
+bash "$t" run 2>/dev/null; [ ! -e "$tmp/s/run.lock" ] && [ ! -e "$tmp/s/run.lock.owner" ] && ok "a dead runner's owner record is broken" || bad "dead owner record"
 s=$(date +%s); bash "$t" start; [ $(( $(date +%s) - s )) -lt 10 ] && ok "start returns at once" || bad "start blocks"
 # a boot that regenerated a tracked manifest (stale on master) must not wedge the next switch: settle puts HEAD's content back, staged or not
 git init -q "$tmp/w"; ( cd "$tmp/w" && git config user.email t@t && git config user.name t && echo old >deepquarry.dme && echo keep >other.txt && git add -A && git commit -qm w && git commit -q --allow-empty -m next )

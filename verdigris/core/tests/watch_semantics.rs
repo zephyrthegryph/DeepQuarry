@@ -896,7 +896,11 @@ fn strict_entries_enter_only_past_their_limit() {
     h.state.evaluate(&h.store, &mut h.out);
     let out = h.drain();
     let left: Vec<(u32, f32)> = out.events().iter().map(|e| (e.extra, e.value)).collect();
-    assert_eq!(left, [(2, 0.0)], "back on the limit: the strict entry leaves");
+    assert_eq!(
+        left,
+        [(2, 0.0)],
+        "back on the limit: the strict entry leaves"
+    );
 }
 
 #[test]
@@ -925,5 +929,9 @@ fn an_entry_that_starts_inside_fires_leaving_when_the_value_is_outside() {
     h.state.evaluate(&h.store, &mut h.out);
     let out = h.drain();
     let events: Vec<(u32, f32)> = out.events().iter().map(|e| (e.extra, e.value)).collect();
-    assert_eq!(events, [(1, 0.0)], "believed inside, is outside: told; the unstarted entry says nothing");
+    assert_eq!(
+        events,
+        [(1, 0.0)],
+        "believed inside, is outside: told; the unstarted entry says nothing"
+    );
 }

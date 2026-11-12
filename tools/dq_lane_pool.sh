@@ -101,20 +101,15 @@ lease_get() { # <slot> <key>: sets LG (the first value of that key in the lease 
 }
 
 LOCK="$STATE_DIR/pool.lock"
+. "$_dq_dir/lib/dq_lock.sh"
+# The pool lock (tools/lib/dq_lock.sh): broken only when its recorded holder is dead (pid gone or reused); a lock with no owner record (an
+# older copy of this script took it) after 120 s. The one long section, the first checkout of a slot, also keeps the directory fresh.
 lock_take() {
 	[ -d "$STATE_DIR" ] || mkdir -p "$STATE_DIR"
-	local i=0
-	while ! mkdir "$LOCK" 2>/dev/null; do
-		# A lock older than two minutes belongs to a crashed caller (the critical sections below take seconds, except the
-		# one-time worktree creation, which refreshes the lock's mtime when it starts).
-		if [ -d "$LOCK" ]; then mtv_of "$LOCK"; if [ "$MTV" -gt 0 ] && [ $(( EPOCHSECONDS - MTV )) -gt 120 ]; then rmdir "$LOCK" 2>/dev/null; continue; fi; fi
-		i=$((i + 1))
-		[ "$i" -le 600 ] || die "could not take the pool lock ($LOCK) in 60 s"
-		sleep 0.1
-	done
-	trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+	dq_lock_take "$LOCK" "${DQ_LANE_POOL_LOCK_TIMEOUT:-60}" 120 || die "could not take the pool lock ($LOCK) in ${DQ_LANE_POOL_LOCK_TIMEOUT:-60} s (held by: $(tr '\n' ' ' <"$LOCK.owner" 2>/dev/null || echo 'no owner record'))"
+	trap 'dq_lock_keepalive_stop; dq_lock_drop "$LOCK"' EXIT
 }
-lock_drop() { rmdir "$LOCK" 2>/dev/null; trap - EXIT; }
+lock_drop() { dq_lock_keepalive_stop; dq_lock_drop "$LOCK"; trap - EXIT; }
 
 _wt_clean_full() { # <path>: no tracked change, no untracked non-ignored file, no merge/rebase/cherry-pick in progress
 	local wt="$1" m fd o=""
@@ -703,8 +698,9 @@ lease_once() {
 		[ -z "$(ls -A "$wt" 2>/dev/null)" ] || { lock_drop; die "$wt exists and is not a worktree; move it away"; }
 		say "creating $wt (one-time checkout; later leases are a switch)"
 		[ -d "$POOL_DIR" ] || mkdir -p "$POOL_DIR"
-		touch "$LOCK"
+		dq_lock_keepalive "$LOCK"   # minutes of checkout: keep the lock fresh for older copies of this script, which break it by age
 		git -C "$REPO" worktree add --detach "$wt" "$base" >&2 || { lock_drop; die "git worktree add failed"; }
+		dq_lock_keepalive_stop
 	fi
 	fetch_origin "$wt" 2>/dev/null
 	tip="$base_sha"   # HEAD after the switch: the base for -c and -C, the branch tip when resuming (no rev-parse afterwards)

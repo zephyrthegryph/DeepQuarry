@@ -509,7 +509,10 @@ mod tests {
         assert_eq!(wait(&reg, next), JobStatus::Ready);
         let start = Instant::now();
         while reg.drain_completed() != vec![next] {
-            assert!(start.elapsed() < Duration::from_secs(10), "a job from the last round completed into this one");
+            assert!(
+                start.elapsed() < Duration::from_secs(10),
+                "a job from the last round completed into this one"
+            );
             std::thread::yield_now();
         }
         reg.shutdown();

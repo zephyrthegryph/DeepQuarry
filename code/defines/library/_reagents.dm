@@ -9,11 +9,8 @@
 #define GASNAME_N2 "Nitrogen"
 #define GASNAME_N2O "Nitrous Oxide"
 #define GASNAME_O2 "Oxygen"
-#define GAS_PHORON "phoron"
 #define GASNAME_PHORON "Phoron"
-#define GAS_VOLATILE_FUEL "volatile_fuel"
 #define GASNAME_VOLATILE_FUEL "Volatile Fuel"
-#define GAS_CH4 "methane"
 #define GASNAME_CH4 "Methane"
 
 

@@ -225,6 +225,7 @@
 		report_fault(e, msg)
 		if(W.consecutive_faults >= KERNEL_FAULT_PARK)
 			W.parked = TRUE
+			W.fault_parked = TRUE
 			var/park_msg = "Kernel: work item [W.key] parked after [W.consecutive_faults] faults in a row."
 			log_world(park_msg)
 			message_admins(park_msg)

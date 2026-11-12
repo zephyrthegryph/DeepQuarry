@@ -26,9 +26,7 @@ export const CommunicatorSettingsTab = (props) => {
           </Button>
         </LabeledList.Item>
         <LabeledList.Item label="Camera Mode">
-          <Button fluid onClick={() => act('selfie_mode')}>
-            {selfie_mode ? 'Front-facing Camera' : 'Rear-facing Camera'}
-          </Button>
+          {selfie_mode ? 'Front-facing Camera' : 'Rear-facing Camera'}
         </LabeledList.Item>
         <LabeledList.Item label="Occupation">
           {decodeHtmlEntities(occupation)}

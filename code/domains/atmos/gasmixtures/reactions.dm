@@ -53,8 +53,10 @@ CAPABILITIES(/transformation/gas/water_vapor)
 			// a perf optimisation, not a behavioural requirement, so the missing
 			// branch only costs a redundant overlay tick. Branch removed.
 		if(WATER_VAPOR_DEPOSITION_POINT to WATER_VAPOR_CONDENSATION_POINT)
-			if(!isgroundlessturf(location) && !isnoslipturf(location))
-				location.water_vapor_gas_act()
+			// Condensation slicks a floor: not space, not an openspace hole (no floor to wet).
+			if(istype(location, /turf/simulated) && !istype(location, /turf/simulated/open))
+				var/turf/simulated/wet_turf = location
+				wet_turf.wet_floor()
 			consumed = MOLES_GAS_VISIBLE
 
 	if(consumed)
@@ -630,7 +632,8 @@ CAPABILITIES(/transformation/gas/halon_o2removal)
 	var/obj/effect/effect/foam/foam = locate_within(location, /obj/effect/effect/foam)
 	var/obj/structure/foamedmetal/resin = locate_within(location, /obj/structure/foamedmetal)
 	if(heat_efficiency > HALON_COMBUSTION_MINIMUM_RESIN_MOLES && isopenturf(location) && !foam && !resin) // Don't resin if there is aleady resin or we are not in an open turf.
-		do_foam(amount = HALON_COMBUSTION_RESIN_VOLUME, holder = holder, location = location, foam_type = /datum/effect_system/fluid_spread/foam/metal/resin/halon)
+		for(var/i in 1 to min(HALON_COMBUSTION_RESIN_VOLUME, 10))
+			new /obj/effect/effect/foam(location)
 		. |= VOLATILE_REACTION
 
 	. |= REACTING
@@ -849,9 +852,12 @@ CAPABILITIES(/transformation/gas/proto_nitrate_bz_response)
 		///How many nuclear particles will fire in this reaction.
 		var/nuclear_particle_amount = min(round(consumed_amount / PN_BZASE_NUCLEAR_PARTICLE_DIVISOR), PN_BZASE_NUCLEAR_PARTICLE_MAXIMUM)
 		for(var/i in 1 to nuclear_particle_amount)
-			location.fire_nuclear_particle()
+			SSradiation.irradiate(location, 50)
 		radiation_pulse(location, max_range = min(sqrt(consumed_amount - nuclear_particle_amount * PN_BZASE_NUCLEAR_PARTICLE_RADIATION_ENERGY_CONVERSION) / PN_BZASE_RAD_RANGE_DIVISOR, GAS_REACTION_MAXIMUM_RADIATION_PULSE_RANGE), threshold = PN_BZASE_RAD_THRESHOLD)
-		visible_hallucination_pulse(location, 1, consumed_amount * 2 SECONDS)
+		for(var/mob/living/carbon/human/H in range(1, location))
+			if(H.species && (H.species.flags & (NO_POISON | IS_PLANT | NO_HALLUCINATION)))
+				continue
+			H.status_at_least(STAT_HALLUCINATING, (consumed_amount * 2 SECONDS) || 10)
 
 	. |= REACTING
 

@@ -477,48 +477,54 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 
 /// Whether the joiner may spawn as `rank`; `quiet` checks without telling them why (the join op asks no question of someone who will be refused).
 /mob/new_player/proc/spawn_checks_vr(rank, quiet = FALSE)
+	var/list/problems = spawn_check_problems(rank)
+	if(!length(problems))
+		return TRUE
+	if(!quiet)
+		for(var/problem in problems)
+			to_chat(src, problem)
+		tgui_alert_async(src,"There were problems with spawning your character. Check your message log for details.","Error")
+	return FALSE
+
+/// Why the joiner may not spawn as `rank`: one message per problem, or null when they may. Reads only; the caller tells them.
+/mob/new_player/proc/spawn_check_problems(rank)
+	var/list/problems
 	var/pass = TRUE
 	var/datum/job/J = SSjob.get_job(rank)
 
 	if(!J)
 		NOTICE("Couldn't find job: [rank] for spawn_checks_vr, panic-returning that it's fine to spawn.")
-		return TRUE
+		return null
 
 	//No Flavor Text
 	if (CONFIG_GET(flag/require_flavor) && !(J.mob_type & JOB_SILICON) && (!LAZYACCESS(client?.prefs?.read_preference(/datum/preference/flavor_texts), "general") || length(LAZYACCESS(client.prefs.read_preference(/datum/preference/flavor_texts), "general")) < 30)) // migrated
-		if(!quiet)
-			to_chat(src,span_warning("Please set your general flavor text to give a basic description of your character. Set it using the 'Set Flavor text' button on the 'General' tab in character setup, and choosing 'General' category."))
+		LAZYADD(problems, span_warning("Please set your general flavor text to give a basic description of your character. Set it using the 'Set Flavor text' button on the 'General' tab in character setup, and choosing 'General' category."))
 		pass = FALSE
 
 	//No OOC notes
 	if (CONFIG_GET(flag/allow_metadata) && (!client?.prefs?.read_preference(/datum/preference/text/living/ooc_notes) || length(client.prefs.read_preference(/datum/preference/text/living/ooc_notes)) < 15))
-		if(!quiet)
-			to_chat(src,span_warning("Please set informative OOC notes related to RP/ERP preferences. Set them using the 'OOC Notes' button on the 'General' tab in character setup."))
+		LAZYADD(problems, span_warning("Please set informative OOC notes related to RP/ERP preferences. Set them using the 'OOC Notes' button on the 'General' tab in character setup."))
 		pass = FALSE
 
 	//Are they on the VERBOTEN LIST?
 	if (GLOB.prevent_respawns.Find(client?.prefs?.read_preference(/datum/preference/name/real_name)))
-		if(!quiet)
-			to_chat(src,span_warning("You've already quit the round as this character. You can't go back now that you've free'd your job slot. Play another character, or wait for the next round."))
+		LAZYADD(problems, span_warning("You've already quit the round as this character. You can't go back now that you've free'd your job slot. Play another character, or wait for the next round."))
 		pass = FALSE
 
 	//Do they have their scale properly setup?
 	if(!client?.prefs?.read_preference(/datum/preference/numeric/human/size_multiplier)) // migrated
 		pass = FALSE
-		if(!quiet)
-			to_chat(src,span_warning("You have not set your scale yet. Do this on the VORE tab in character setup."))
+		LAZYADD(problems, span_warning("You have not set your scale yet. Do this on the VORE tab in character setup."))
 
 	//Can they play?
 	if(alien_whitelist_refusal(src.client,GLOB.all_species[client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !admin_require(client, R_ADMIN, "spawn_checks_vr", 0))
 		pass = FALSE
-		if(!quiet)
-			to_chat(src,span_warning("You are not allowed to spawn in as this species."))
+		LAZYADD(problems, span_warning("You are not allowed to spawn in as this species."))
 
 	// Check species job bans... (Only used for shadekin)
 	if(J.is_species_banned(client?.prefs?.read_preference(/datum/preference/choiced/species), client?.prefs?.read_preference(/datum/preference/organ_data)?[O_BRAIN]))
 		pass = FALSE
-		if(!quiet)
-			to_chat(src,span_warning("Your species is not permitted to take this role or job."))
+		LAZYADD(problems, span_warning("Your species is not permitted to take this role or job."))
 
 	//Custom species checks
 	if (client?.prefs?.read_preference(/datum/preference/choiced/species) == SPECIES_CUSTOM)
@@ -526,8 +532,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 		//Didn't name it
 		if(!client?.prefs?.read_preference(/datum/preference/text/human/custom_species)) // migrated
 			pass = FALSE
-			if(!quiet)
-				to_chat(src,span_warning("You have to name your custom species. Do this on the VORE tab in character setup."))
+			LAZYADD(problems, span_warning("You have to name your custom species. Do this on the VORE tab in character setup."))
 
 	//Check traits/costs
 	// migrated traits prefs (typed_list base)
@@ -548,8 +553,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 		//A trait was removed from the game
 		if(isnull(cost))
 			pass = FALSE
-			if(!quiet)
-				to_chat(src,span_warning("Your species is not playable. One or more traits appear to have been removed from the game or renamed. Enter character setup to correct this."))
+			LAZYADD(problems, span_warning("Your species is not playable. One or more traits appear to have been removed from the game or renamed. Enter character setup to correct this."))
 			break
 		else
 			points_left -= GLOB.traits_costs[T]
@@ -557,14 +561,12 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 		var/take_flags = initial(T.can_take)
 		if((pref_synth && !(take_flags & SYNTHETICS)) || (pref_meat && !(take_flags & ORGANICS)))
 			pass = FALSE
-			if(!quiet)
-				to_chat(src,span_warning("Some of your traits are not usable by your character type (synthetic traits on organic, or vice versa)."))
+			LAZYADD(problems, span_warning("Some of your traits are not usable by your character type (synthetic traits on organic, or vice versa)."))
 	// start
 	if(J.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
 		if(SSjob.has_restricted_keys())
 			if(SSjob.is_restricted_key(J.title, client.ckey))
-				if(!quiet)
-					to_chat(src,span_danger("[J.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
+				LAZYADD(problems, span_danger("[J.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))
 				pass = FALSE
 	// end
 
@@ -575,23 +577,19 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 			var/datum/trait/instance = GLOB.all_traits[T]
 			if(client.prefs.read_preference(/datum/preference/choiced/species) in instance.banned_species)
 				pass = FALSE
-				if(!quiet)
-					to_chat(src,span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
+				LAZYADD(problems, span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
 			else if(LAZYLEN(instance.allowed_species) && !(client.prefs.read_preference(/datum/preference/choiced/species) in instance.allowed_species)) //We use else if here, so as to prevent getting two errors for one trait.
 				pass = FALSE
-				if(!quiet)
-					to_chat(src,span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
+				LAZYADD(problems, span_warning("One of your traits, [instance.name], is not available for your species! Please fix this conflict and then try again."))
 	//ition End
 
 	//Went into negatives
 	if(points_left < 0 || traits_left < 0)
 		pass = FALSE
-		if(!quiet)
-			to_chat(src,span_warning("Your species is not playable. Reconfigure your traits on the VORE tab. Trait points: [points_left]. Traits left: [traits_left]."))
+		LAZYADD(problems, span_warning("Your species is not playable. Reconfigure your traits on the VORE tab. Trait points: [points_left]. Traits left: [traits_left]."))
 
-	//Final popup notice
-	if (!pass && !quiet)
-		tgui_alert_async(src,"There were problems with spawning your character. Check your message log for details.","Error")
-	return pass
+	if(!pass && !length(problems))
+		LAZYADD(problems, span_warning("You may not spawn as this character."))
+	return problems
 
 // The window belongs to the client (tgui_window); the lobby only drives it.

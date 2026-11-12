@@ -1,0 +1,22 @@
+# Every reference a Byondapi call returns is persistent (BYOND 516.1674+) and must be released. The raw reads and calls
+# below return one as a Copy `ByondValue` with no Drop, so outside ffi/callback/src/held.rs (the one module allowed to
+# name them) they are refused: read through `HeldRead` (held_var_id, held_list, held_call_id, ...), create through
+# `Held::new_list` / `Held::new_str`. Type-aware, so UFCS (`ByondValue::read_var(&x, ..)`), aliases and closures are
+# caught too; tools/ci/check_byond_refs.py stays as the fast text check.
+disallowed-methods = [
+    { path = "byondapi::value::ByondValue::read_var", reason = "use HeldRead::held_var (releases the reference)" },
+    { path = "byondapi::value::ByondValue::read_var_id", reason = "use HeldRead::held_var_id (releases the reference)" },
+    { path = "byondapi::value::ByondValue::get_list_values", reason = "use HeldRead::held_list (releases each value)" },
+    { path = "byondapi::value::ByondValue::get_list", reason = "use HeldRead::held_list (releases each value)" },
+    { path = "byondapi::value::ByondValue::read_list_index", reason = "use HeldRead::held_index (releases the reference)" },
+    { path = "byondapi::value::ByondValue::iter", reason = "use HeldRead::held_pairs (releases each side)" },
+    { path = "byondapi::value::ByondValue::values", reason = "use HeldRead::held_values (releases each value)" },
+    { path = "byondapi::value::ByondValue::call", reason = "use HeldRead::held_call (releases the result)" },
+    { path = "byondapi::value::ByondValue::call_id", reason = "use HeldRead::held_call_id (releases the result)" },
+    { path = "byondapi::value::ByondValue::new_list", reason = "use Held::new_list (owned until leaked)" },
+    { path = "byondapi::value::ByondValue::new_str", reason = "use Held::new_str (owned until leaked or handed off)" },
+    { path = "byondapi::value::ByondValue::decrement_ref", reason = "only Held releases" },
+    { path = "byondapi::value::ByondValue::increment_ref", reason = "only Held owns references" },
+    { path = "byondapi::global_call::call_global", reason = "use held_call_global_id (releases the result)" },
+    { path = "byondapi::global_call::call_global_id", reason = "use held_call_global_id (releases the result)" },
+]

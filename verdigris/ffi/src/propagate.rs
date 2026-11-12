@@ -4,8 +4,8 @@
 //! The radiation insulation layer is a main-owned global of the world
 //! ([`RadiationLayer`]), not a process static; every call is synchronous.
 //! Coordinates are DM's one-based turf coordinates.
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::GridDims;
 use vg_core::propagate::{RadiationField, emp};
@@ -17,13 +17,11 @@ use crate::world::with_world;
 #[derive(Default)]
 pub struct RadiationLayer(pub Option<RadiationField>);
 
-fn number(value: &ByondValue) -> Result<f32> {
-    Ok(value.get_number()?)
-}
+use crate::arg::{num, whole};
 
 /// One-based DM coordinate to zero-based.
 fn coord(value: &ByondValue) -> Result<u32> {
-    let n = number(value)?;
+    let n = num(value)?;
     if !n.is_finite() || n < 1.0 {
         bail!("invalid turf coordinate {n}");
     }
@@ -31,7 +29,7 @@ fn coord(value: &ByondValue) -> Result<u32> {
 }
 
 fn numbers(list: &ByondValue) -> Result<Vec<f32>> {
-    list.held_list()?.iter().map(number).collect()
+    list.held_list()?.iter().map(num).collect()
 }
 
 /// Writes radiation transmission for changed turfs. `cells` is a flat list of
@@ -43,7 +41,7 @@ fn radiation_set_cells(
     max_y: ByondValue,
     cells: ByondValue,
 ) -> Result<ByondValue> {
-    let Some(dims) = GridDims::planar(number(&max_x)? as u32, number(&max_y)? as u32) else {
+    let Some(dims) = GridDims::planar(whole(&max_x, "max_x")?, whole(&max_y, "max_y")?) else {
         bail!("invalid radiation grid plane");
     };
     let values = numbers(&cells)?;
@@ -81,8 +79,8 @@ fn radiation_pulse(
     targets: ByondValue,
 ) -> Result<ByondValue> {
     let source = (coord(&x)?, coord(&y)?, coord(&z)?);
-    let range = number(&range)?.max(0.0) as u32;
-    let threshold = number(&threshold)?;
+    let range = num(&range)?.max(0.0) as u32;
+    let threshold = num(&threshold)?;
     let flat = numbers(&targets)?;
     let targets: Vec<(u32, u32, u32)> = flat
         .chunks_exact(3)
@@ -118,9 +116,9 @@ fn emp_falloff(
     ranges: ByondValue,
 ) -> Result<ByondValue> {
     let Some(dims) = GridDims::new(
-        number(&max_x)? as u32,
-        number(&max_y)? as u32,
-        number(&max_z)? as u32,
+        whole(&max_x, "max_x")?,
+        whole(&max_y, "max_y")?,
+        whole(&max_z, "max_z")?,
     ) else {
         bail!("invalid emp grid");
     };
