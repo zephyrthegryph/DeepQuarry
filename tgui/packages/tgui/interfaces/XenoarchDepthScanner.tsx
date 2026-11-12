@@ -1,33 +1,22 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { XenoarchDepthScannerActions } from './generated/XenoarchDepthScanner';
+import type {
+  XenoarchDepthScannerActions,
+  XenoarchDepthScannerData,
+} from './generated/XenoarchDepthScanner';
 
-type Data = {
-  theme?: string;
-  current: {
-    index: string;
-    time: string;
-    coords: string;
-    depth: number;
-    material: string;
-  };
-  positive_locations: { index: string; time: string; coords: string }[];
-};
+type Data = XenoarchDepthScannerData;
 
 export const XenoarchDepthScanner = (props) => {
   const { act, data } = useBackend<Data, XenoarchDepthScannerActions>();
 
-  const {
-    theme,
-    current = {} as Data['current'],
-    positive_locations = [],
-  } = data;
+  const { theme, current, positive_locations = [] } = data;
 
   return (
-    <Window width={300} height={500} theme={theme}>
+    <Window width={300} height={500} theme={theme ?? undefined}>
       <Window.Content scrollable>
-        {(Object.keys(current).length && (
+        {(current && (
           <Section
             title="Selected"
             buttons={

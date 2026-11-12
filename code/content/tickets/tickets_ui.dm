@@ -8,6 +8,7 @@ CAPABILITIES(/datum/tickets)
 	owns_one(nameof(cstatclick), /obj/effect/statclick/ticket_list)
 	owns_one(nameof(rstatclick), /obj/effect/statclick/ticket_list)
 	interface("TicketsPanel", title = "Tickets", state = nameof(GLOB.tgui_mentor_state))
+	ui_shape(tickets = list_of(row(id = int(), name = schema_text(), state = schema_text(), level = int(), handler = schema_text(), opened_at = num(), closed_at = num(), opened_at_date = schema_text(), closed_at_date = schema_text(), ishandled = bool())), is_admin = bool(), selected_ticket = nullable(row(id = int(), name = schema_text(), state = schema_text(), level = int(), handler = schema_text(), opened_at = num(), closed_at = num(), opened_at_date = schema_text(), closed_at_date = schema_text(), actions = schema_text(), log = nullable(map_of(schema_text(), schema_text())))))
 	op("legacy", ui_act("legacy"), asks(/datum/prompt/choice/ticket_list_ui, step = "list"), then(PROC_REF(ui_act_legacy)))
 	op("new_ticket", ui_act("new_ticket"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "Please select the ckey of the user.", "title" = "Select CKEY", "choices" = computed(PROC_REF(ticket_ckey_choices))), step = "ckey"), asks(/datum/prompt/text/ticket_create, fields = list("question" = "What should the initial text be?", "title" = "New Ticket"), step = "text"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "Is this ticket Admin-Level or Mentor-Level?", "title" = "Ticket Level", "choices" = list("Admin", "Mentor"), "buttons" = TRUE), step = "level"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "The player already has a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes", "No"), "buttons" = TRUE), step = "duplicate", when = PROC_REF(ticket_player_has_ticket)), then(PROC_REF(ui_act_new_ticket)))
 	op("pick_ticket", ui_act("pick_ticket", arg("ticket_id", num())), then(PROC_REF(ui_act_pick_ticket)))
@@ -101,7 +102,7 @@ CAPABILITIES(/datum/tickets)
 				"closed_at_date" = gameTimestamp(wtime = T.closed_at),
 			)))
 	data["tickets"] = tickets
-	data["is_admin"] = check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD))
+	data["is_admin"] = !!check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD))
 	data["selected_ticket"] = selected_ticket
 
 	return data
@@ -253,7 +254,6 @@ CAPABILITIES(/datum/tickets)
 /datum/ticket/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["id"] = id
-	data["title"] = name
 	data["level"] = level
 	data["handler"] = handler
 	data["log"] = _interactions

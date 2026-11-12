@@ -35,6 +35,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	owns_one(nameof(downloading), /datum/computer_file)
 	owns_one(nameof(msg_attachment), /datum/computer_file)
 	interface("NtosEmailClient")
+	ui_shape(PC_device_theme = schema_text(), accounts = nullable(list_of(row(login = schema_text()))), addressbook = nullable(bool()), cur_attachment_filename = nullable(schema_text()), cur_attachment_size = nullable(num()), cur_body = nullable(schema_text()), cur_hasattachment = nullable(bool()), cur_source = nullable(schema_text()), cur_timestamp = nullable(schema_text()), cur_title = nullable(schema_text()), cur_uid = nullable(schema_text()), current_account = nullable(schema_text()), down_filename = nullable(schema_text()), down_progress = nullable(num()), down_size = nullable(num()), down_speed = nullable(num()), downloading = nullable(bool()), error = nullable(schema_text()), folder = nullable(schema_text()), messagecount = nullable(int()), messages = nullable(list_of(row(title = schema_text(), source = schema_text(), timestamp = schema_text(), uid = schema_text()))), msg_attachment_filename = nullable(schema_text()), msg_attachment_size = nullable(num()), msg_body = nullable(schema_text()), msg_hasattachment = nullable(bool()), msg_recipient = nullable(schema_text()), msg_title = nullable(schema_text()), new_message = nullable(bool()), stored_login = nullable(schema_text()), stored_password = nullable(schema_text()))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	op("set_recipient", ui_act("set_recipient", arg("set_recipient", schema_text(4096))), then(PROC_REF(ui_act_set_recipient)))
 	op("edit_title", ui_act("edit_title", arg("val", schema_text(4096))), then(PROC_REF(ui_act_edit_title)))
@@ -130,9 +131,6 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	data["downloading"] = null
 	data["error"] = null
 	data["folder"] = null
-	data["label_deleted"] = null
-	data["label_inbox"] = null
-	data["label_spam"] = null
 	data["messagecount"] = null
 	data["messages"] = null
 	data["msg_attachment_filename"] = null
@@ -186,9 +184,6 @@ CAPABILITIES(/datum/tgui_module/email_client)
 				data["cur_attachment_filename"] = "[current_message().attachment.filename].[current_message().attachment.filetype]"
 				data["cur_attachment_size"] = current_message().attachment.size
 		else
-			data["label_inbox"] = "Inbox ([length(current_account().inbox)])"
-			data["label_spam"] = "Spam ([length(current_account().spam)])"
-			data["label_deleted"] = "Deleted ([length(current_account().deleted)])"
 			var/list/message_source
 			if(folder == "Inbox")
 				message_source = current_account().inbox
@@ -203,7 +198,6 @@ CAPABILITIES(/datum/tgui_module/email_client)
 				for(var/datum/computer_file/data/email_message/message in message_source)
 					all_messages.Add(list(list(
 						"title" = message.title,
-						"body" = pencode2html(message.stored_data),
 						"source" = message.source,
 						"timestamp" = message.timestamp,
 						"uid" = message.uid

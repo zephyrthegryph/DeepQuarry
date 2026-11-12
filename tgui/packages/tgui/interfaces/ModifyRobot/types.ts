@@ -172,7 +172,7 @@ type law_pack = {
 type law = {
   law: string;
   index: number;
-  state: number;
+  state: number | null;
   ref: number;
-  zero: boolean; // Local UI var
+  zero?: boolean; // Local UI var
 };

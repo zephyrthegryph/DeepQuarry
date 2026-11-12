@@ -11,27 +11,12 @@ import {
   Table,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-import type { AlgaeFarmActions } from './generated/AlgaeFarm';
+import type {
+  AlgaeFarmActions,
+  AlgaeFarmData,
+} from './generated/AlgaeFarm';
 
-type Data = {
-  usePower: number;
-  materials: {
-    name: string;
-    display: string;
-    qty: number;
-    max: number;
-    percent: number;
-  }[];
-  last_flow_rate: number;
-  last_power_draw: number;
-  inputDir: string;
-  outputDir: string;
-  input: Gas;
-  output: Gas;
-  errorText: string | null;
-};
-
-type Gas = { pressure: number; name: string; percent: number; moles: number };
+type Data = AlgaeFarmData;
 
 export const AlgaeFarm = (props) => {
   const { act, data } = useBackend<Data, AlgaeFarmActions>();

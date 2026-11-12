@@ -336,6 +336,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(PROC_REF(sheet_match)),
 		needs(req(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
 	interface("PortableGenerator")
+	ui_shape(anchored = bool(), temperature_current = num(), temperature_max = num(), temperature_overheat = num(), active = bool(), sheet_name = schema_text(), fuel_stored = num(), fuel_capacity = num(), fuel_usage = num(), connected = bool(), ready_to_boot = bool(), power_generated = schema_text(), power_output = schema_text(), unsafe_output = bool(), power_available = schema_text())
 	extend("ui_open", when(nameof(anchored)))
 	extend(TAG_UI, needs(req(PROC_REF(not_broken), because = MSG(pacman/broken))))
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
@@ -348,25 +349,23 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 
 /obj/machinery/power/port_gen/pacman/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["anchored"] = anchored
+	data["anchored"] = anchored ? TRUE : FALSE
 	data["temperature_current"] = core_temperature
 	data["temperature_max"] = max_temperature
 	data["temperature_overheat"] = overheating
-	data["active"] = active
-
-	data["is_ai"] = !A.actor?.Adjacent(src) // worked from afar (a silicon's link): no hands on the hopper
+	data["active"] = active ? TRUE : FALSE
 
 	data["sheet_name"] = capitalize(sheet_name)
 	data["fuel_stored"] = round((sheets * 1000) + (sheet_left * 1000))
 	data["fuel_capacity"] = round(max_sheets * 1000, 0.1)
 	data["fuel_usage"] = active ? round((power_output / time_per_sheet) * 1000) : 0
 
-	data["connected"] = (power_region ? 1 : 0)
-	data["ready_to_boot"] = anchored && HasFuel()
+	data["connected"] = power_region ? TRUE : FALSE
+	data["ready_to_boot"] = (anchored && HasFuel()) ? TRUE : FALSE
 	data["power_generated"] = DisplayPower(power_gen)
 	data["power_output"] = DisplayPower(power_gen * power_output)
-	data["unsafe_output"] = power_output > max_safe_output
-	data["power_available"] = (!power_region ? 0 : DisplayPower(avail()))
+	data["unsafe_output"] = (power_output > max_safe_output) ? TRUE : FALSE
+	data["power_available"] = power_region ? DisplayPower(avail()) : ""
 	// 1 sheet = 1000cm3?
 
 	return data

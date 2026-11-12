@@ -16,6 +16,7 @@
 CAPABILITIES(/datum/tgui_module/cardmod)
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("IdentificationComputer")
+	ui_shape(manifest = list_of(row(cat = schema_text(), elems = list_of(row(name = schema_text(), rank = schema_text(), active = schema_text())))), mode = int(0, 1), centcom_access = bool(), station_name = schema_text(), printing = bool(), have_id_slot = bool(), have_printer = bool(), authenticated = bool(), has_modify = bool(), account_number = nullable(int()), id_rank = nullable(schema_text()), target_owner = nullable(schema_text()), target_name = nullable(schema_text()), departments = list_of(row(department_name = schema_text(), jobs = list_of(row(display_name = schema_text(), target_rank = schema_text(), job = schema_text())))), regions = list_of(row(name = schema_text(), accesses = list_of(row(desc = schema_text(), ref = int(), allowed = int(0, 1))))), all_centcom_access = list_of(row(desc = schema_text(), ref = int(), allowed = int(0, 1))))
 	op("mode", ui_act("mode", arg("mode_target", num(0, 1))), then(PROC_REF(ui_act_mode)))
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
 	op("modify", ui_act("modify"), then(PROC_REF(ui_act_modify)))
@@ -32,21 +33,21 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 		return 0
 	var/list/data = list()
 	data["mode"] = mod_mode
-	data["centcom_access"] = is_centcom
+	data["centcom_access"] = !!is_centcom
 	data["station_name"] = station_name()
 	data["printing"] = FALSE
 	if(program && program.computer())
 		data["have_id_slot"] = !!program.computer().card_slot
 		data["have_printer"] = !!program.computer().nano_printer
-		data["authenticated"] = program.can_run(user)
+		data["authenticated"] = !!program.can_run(user)
 		if(!program.computer().card_slot)
 			set_mod_mode(0) //We can't modify IDs when there is no card reader
 	else
-		data["have_id_slot"] = 0
-		data["have_printer"] = 0
-		data["authenticated"] = 0
+		data["have_id_slot"] = FALSE
+		data["have_printer"] = FALSE
+		data["authenticated"] = FALSE
 
-	data["has_modify"] = null
+	data["has_modify"] = FALSE
 	data["account_number"] = null
 	data["id_rank"] = null
 	data["target_owner"] = null

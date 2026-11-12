@@ -49,6 +49,7 @@ CAPABILITIES(/obj/machinery/disposal)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_many(nameof(intake_watches), /datum/native_watch/world)
 	interface("DisposalBin")
+	ui_shape(flushing = bool(), isAI = bool(), mode = int(), pressure = num())
 	without("ui_open")
 	extend(TAG_UI, needs(req(PROC_REF(controls_reach_refusal)), req(PROC_REF(controls_idle_refusal), silent = TRUE)))
 	extend(TAG_UI, then(PROC_REF(controls_touched), early = TRUE))
@@ -514,7 +515,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["flushing"] = flush
+	data["flushing"] = flush ? TRUE : FALSE
 	var/list/merged_1 = ui_data_obj_machinery_disposal(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -525,7 +526,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/proc/ui_data_obj_machinery_disposal(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["isAI"] = ui_viewer_fact(user, "ai")
+	data["isAI"] = ui_viewer_fact(user, "ai") ? TRUE : FALSE
 	data["mode"] = mode
 	data["pressure"] = round(clamp(100* air_contents.return_pressure() / (SEND_PRESSURE), 0, 100),1)
 

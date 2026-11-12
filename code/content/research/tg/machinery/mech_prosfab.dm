@@ -21,6 +21,7 @@ MSG_DEF(prosfab/uploading, "You begin uploading the modification files from %I%.
 	var/species = "Human"
 
 CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
+	ui_shape(species_types = list_of(schema_text()), species = schema_text(), manufacturer = nullable(schema_text()), all_manufacturers = list_of(row(id = schema_text(), company = schema_text())))
 	op("limb_disk", item(/obj/item/disk/limb), label("Install blueprints"), needs(req(PROC_REF(limb_disk_valid))),
 		wait(5 SECONDS), begins(MSG(prosfab/installing)), then(PROC_REF(limb_disk_done)))
 	op("species_disk", item(/obj/item/disk/species), label("Upload species files"), needs(req(PROC_REF(species_disk_valid))),

@@ -9,18 +9,12 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type { PaperBundleActions } from './generated/PaperBundle';
+import type {
+  PaperBundleActions,
+  PaperBundleData,
+} from './generated/PaperBundle';
 
-type Kind = 'paper' | 'photo';
-
-type Data = {
-  page: number;
-  total_pages: number;
-  page_name: string;
-  page_kind: Kind;
-  page_info: string;
-  scribble: string;
-};
+type Data = PaperBundleData;
 
 export const PaperBundle = () => {
   const { data, act } = useBackend<Data, PaperBundleActions>();

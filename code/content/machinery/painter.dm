@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	setup(PROC_REF(seed_colour_matrix))
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
-	ui_shape(matrixcolors = row(rr = num(), rg = num(), rb = num(), gr = num(), gg = num(), gb = num(), br = num(), bg = num(), bb = num(), cr = num(), cg = num(), cb = num()), temp = nullable(schema_text()), item_name = nullable(schema_text()), item_sprite = nullable(schema_text()), item_preview = nullable(schema_text()), activemode = int(), buildhue = num(), buildsat = num(), buildval = num())
+	ui_shape(message = schema_text(), title = schema_text(), matrix_only = bool(), matrixcolors = row(rr = num(), rg = num(), rb = num(), gr = num(), gg = num(), gb = num(), br = num(), bg = num(), bb = num(), cr = num(), cg = num(), cb = num()), temp = nullable(schema_text()), item_name = nullable(schema_text()), item_sprite = nullable(schema_text()), item_preview = nullable(schema_text()), activemode = int(), buildhue = num(), buildsat = num(), buildval = num())
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
 	op("choose_color", ui_act("choose_color"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color, fields = list("default" = computed(PROC_REF(colour_default)), "title" = "ColorMate colour picking", "question" = "Choose a color: ", "timeout" = 0), when = PROC_REF(colour_item_present)), then(PROC_REF(ui_act_choose_color)))
 	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
@@ -113,6 +113,10 @@ CAPABILITIES(/obj/machinery/gear_painter)
 /obj/machinery/gear_painter/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	. = list()
+	// The colour matrix modal shares this window; the painter has no prompt text and offers every mode.
+	.["message"] = ""
+	.["title"] = name
+	.["matrix_only"] = FALSE
 	.["matrixcolors"] = list(
 		"rr" = color_matrix_last[1],
 		"rg" = color_matrix_last[2],

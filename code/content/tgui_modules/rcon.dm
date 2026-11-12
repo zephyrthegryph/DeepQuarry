@@ -36,6 +36,7 @@ SETTER(/datum/tgui_module/rcon, current_page)
 
 CAPABILITIES(/datum/tgui_module/rcon)
 	interface("RCON")
+	ui_shape(pages = int(), current_page = int(), smes_info = list_of(row(RCON_tag = schema_text(), capacity = num(), capacityPercent = num(), charge = num(), inputAttempt = bool(), inputting = num(), inputLevel = num(), inputLevel_text = schema_text(), inputLevelMax = num(), inputAvailable = num(), outputAttempt = bool(), outputting = num(), outputLevel = num(), outputLevel_text = schema_text(), outputLevelMax = num(), outputUsed = num())), breaker_info = list_of(row(RCON_tag = schema_text(), enabled = bool())))
 	op("set_smes_page", ui_act("set_smes_page", arg("index", num())), then(PROC_REF(ui_act_set_smes_page)))
 	op("smes_in_toggle", ui_act("smes_in_toggle", arg("smes")), then(PROC_REF(ui_act_smes_in_toggle)))
 	op("smes_out_toggle", ui_act("smes_out_toggle", arg("smes")), then(PROC_REF(ui_act_smes_out_toggle)))

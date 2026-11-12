@@ -9,6 +9,7 @@
 
 CAPABILITIES(/datum/tgui_module/power_monitor)
 	interface("PowerMonitor")
+	ui_shape(all_sensors = list_of(row(name = schema_text(), alarm = bool())), focus = nullable(row(name = schema_text(), stored = int(), history = row(supply = list_of(num()), demand = list_of(num())), interval = num(), attached = bool(), areas = list_of(list_of(any)))))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("setsensor", ui_act("setsensor", arg("id", schema_text(4096))), then(PROC_REF(ui_act_setsensor)))

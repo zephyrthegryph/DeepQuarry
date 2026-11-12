@@ -9,20 +9,12 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { SolarControlActions } from './generated/SolarControl';
+import type {
+  SolarControlActions,
+  SolarControlData,
+} from './generated/SolarControl';
 
-type Data = {
-  generated: number;
-  generated_ratio: number;
-  sun_angle: number;
-  array_angle: number;
-  rotation_rate: number;
-  max_rotation_rate: number;
-  tracking_state: number;
-  connected_panels: number;
-  connected_tracker: BooleanLike;
-};
+type Data = SolarControlData;
 
 export const SolarControl = (props) => {
   const { act, data } = useBackend<Data, SolarControlActions>();

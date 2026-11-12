@@ -81,6 +81,7 @@
 
 CAPABILITIES(/datum/tgui_alert)
 	interface("AlertModal")
+	ui_shape(autofocus = bool(), buttons = list_of(schema_text()), message = schema_text(), large_buttons = bool(), swapped_buttons = bool(), title = schema_text(), timeout = nullable(num()))
 	op("choose", ui_act("choose", arg("choice", schema_text(4096))), then(PROC_REF(ui_act_choose)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -93,17 +94,18 @@ CAPABILITIES(/datum/tgui_alert)
 
 /datum/tgui_alert/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
-	data["autofocus"] = autofocus
+	data["autofocus"] = autofocus ? TRUE : FALSE
 	data["buttons"] = buttons
-	data["message"] = message
+	data["message"] = message || ""
 	data["large_buttons"] = TRUE
 	data["swapped_buttons"] = TRUE
-	data["title"] = title
+	data["title"] = title || ""
 	return data
 
 /// /datum/tgui_alert's window data.
 /datum/tgui_alert/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data

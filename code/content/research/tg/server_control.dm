@@ -39,15 +39,16 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 	extend(TAG_UI, needs(req(PROC_REF(controls_access_refusal))))
 	setup(PROC_REF(connect_initial_server_control))
 	interface("ServerControl")
+	ui_shape(server_connected = bool(), logs = list_of(row(node_name = schema_text(), node_cost = num(), node_researcher = schema_text(), node_research_location = schema_text())), servers = list_of(row(server_name = schema_text(), server_details = schema_text(), server_disabled = bool(), server_ref = num())), consoles = list_of(row(console_name = schema_text(), console_location = schema_text(), console_locked = bool(), console_ref = num())))
 	without("ui_open")
-	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_text(32))), then(PROC_REF(ui_act_lockdown_server)))
-	op("lock_console", ui_act("lock_console", arg("selected_console", schema_text(32))), then(PROC_REF(ui_act_lock_console)))
+	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", num())), then(PROC_REF(ui_act_lockdown_server)))
+	op("lock_console", ui_act("lock_console", arg("selected_console", num())), then(PROC_REF(ui_act_lock_console)))
 	op("connect_techweb", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Connect techweb"), then(PROC_REF(interaction_connect_techweb)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /// /obj/machinery/computer/rdservercontrol's window data.
 /obj/machinery/computer/rdservercontrol/ui_data(datum/act/eval/A)
-	var/list/data = list()
+	var/list/data = list("logs" = list(), "servers" = list(), "consoles" = list())
 
 	data["server_connected"] = !!stored_research()
 
@@ -56,17 +57,17 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 
 		for(var/obj/machinery/rnd/server/server as anything in stored_research().techweb_servers)
 			data["servers"] += list(list(
-				"server_name" = server,
+				"server_name" = "[server]",
 				"server_details" = server.get_status_text(),
-				"server_disabled" = server.research_disabled || !server.working,
+				"server_disabled" = (server.research_disabled || !server.working) ? TRUE : FALSE,
 				"server_ref" = handle_of(server),
 			))
 
 		for(var/obj/machinery/computer/rdconsole_tg/console as anything in stored_research().consoles_accessing)
 			data["consoles"] += list(list(
-				"console_name" = console,
-				"console_location" = get_area(console),
-				"console_locked" = console.locked,
+				"console_name" = "[console]",
+				"console_location" = "[get_area(console)]",
+				"console_locked" = console.locked ? TRUE : FALSE,
 				"console_ref" = handle_of(console),
 			))
 

@@ -45,12 +45,12 @@
 	return list(
 		"shuttle_status" = shuttle_status,
 		"shuttle_state" = shuttle_state,
-		"has_docking" = shuttle.shuttle_docking_controller ? 1 : 0,
+		"has_docking" = shuttle.shuttle_docking_controller ? TRUE : FALSE,
 		"docking_status" = shuttle.shuttle_docking_controller?.get_docking_status(),
-		"docking_override" = shuttle.shuttle_docking_controller?.override_enabled,
-		"can_launch" = shuttle.can_launch(),
-		"can_cancel" = shuttle.can_cancel(),
-		"can_force" = shuttle.can_force(),
+		"docking_override" = shuttle.shuttle_docking_controller ? !!shuttle.shuttle_docking_controller.override_enabled : FALSE,
+		"can_launch" = !!shuttle.can_launch(),
+		"can_cancel" = !!shuttle.can_cancel(),
+		"can_force" = !!shuttle.can_force(),
 		"docking_codes" = shuttle.docking_codes,
 		"subtemplate" = tgui_subtemplate,
 	)
@@ -165,6 +165,7 @@
 
 CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	interface("ShuttleControl")
+	ui_shape(shuttle_status = nullable(schema_text()), shuttle_state = nullable(schema_text()), has_docking = bool(), docking_status = nullable(schema_text()), docking_override = bool(), can_launch = bool(), can_cancel = bool(), can_force = bool(), docking_codes = nullable(schema_text()), subtemplate = schema_text(), destination_name = schema_text(), can_pick = bool(), can_cloak = bool(), cloaked = bool(), legit = bool(), fuel_usage = num(), remaining_fuel = num(), fuel_span = schema_text(), can_plot_expedition = bool(), expedition = nullable(row(name = schema_text(), objective = schema_text(), progress = schema_text(), complete = bool())), shuttle_location = schema_text(), future_location = nullable(schema_text()), routes = list_of(row(name = schema_text(), index = int(), travel_time = schema_text())), skip_docking = bool(), is_moving = bool(), is_in_transit = bool(), travel_progress = num(), time_left = num(), can_autopilot = bool(), autopilot = bool(), can_rename = bool(), doors = map_of(schema_text(), row(bolted = bool(), open = bool())), sensors = map_of(schema_text(), row(reading = bool(), pressure = nullable(schema_text()), n2 = nullable(schema_text()), o2 = nullable(schema_text()), co2 = nullable(schema_text()), plasma = nullable(schema_text()), methane = nullable(schema_text()), other = nullable(schema_text()), temp = nullable(schema_text()))))
 	without("ui_open")
 	extend(TAG_UI, needs(req(PROC_REF(controls_refusal))))
 	extend(TAG_UI, then(PROC_REF(controls_touched), early = TRUE))
@@ -191,8 +192,7 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 /obj/machinery/computer/shuttle_control/proc/ui_data_obj_machinery_computer_shuttle_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
-		to_chat(user, span_warning("Unable to establish link with the shuttle."))
-		return
+		return // console_refusal() already says the link is missing
 
 	return shuttlerich_tgui_data(shuttle)
 

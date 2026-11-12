@@ -9,22 +9,15 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
-import type { NumberInputModalActions } from './generated/NumberInputModal';
+import type {
+  NumberInputModalActions,
+  NumberInputModalData,
+} from './generated/NumberInputModal';
 
-type Data = {
-  init_value: number;
-  large_buttons: BooleanLike;
-  max_value: number;
-  message: string;
-  min_value: number;
-  round_value: BooleanLike;
-  timeout: number;
-  title: string;
-};
+type Data = NumberInputModalData;
 
 export function NumberInputModal(props) {
   const { act, data } = useBackend<Data, NumberInputModalActions>();
@@ -61,7 +54,7 @@ export function NumberInputModal(props) {
       width={270}
       height={windowHeight}
     >
-      {timeout && <Loader value={timeout} />}
+      {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
           <Stack fill vertical>

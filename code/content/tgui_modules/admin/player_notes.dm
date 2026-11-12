@@ -57,6 +57,7 @@
 
 CAPABILITIES(/datum/tgui_module/player_notes)
 	interface("PlayerNotes", rights = R_ADMIN|R_MOD|R_EVENT|R_DEBUG)
+	ui_shape(filter = nullable(schema_text()), ckeys = list_of(row(name = schema_text())), pages = int())
 	op("show_player_info", ui_act("show_player_info", arg("name", schema_text(4096))), then(PROC_REF(ui_act_show_player_info)))
 	op("filter_player_notes", ui_act("filter_player_notes"), asks(/datum/prompt/text, fields = list("title" = "Player notes filter", "question" = "Filter string (case-insensitive regex)", "timeout" = 0)), then(PROC_REF(ui_act_filter_player_notes)))
 	op("set_page", ui_act("set_page", arg("index", num())), then(PROC_REF(ui_act_set_page)))
@@ -116,6 +117,7 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 
 CAPABILITIES(/datum/tgui_module/player_notes_info)
 	interface("PlayerNotesInfo", rights = R_ADMIN|R_MOD|R_EVENT|R_DEBUG)
+	ui_shape(ckey = nullable(schema_text()), age = schema_text(), entries = nullable(list_of(row(comment = schema_text(), author = schema_text(), date = schema_text()))))
 	op("cahngekey", ui_act("cahngekey", arg("ckey", schema_text(4096))), then(PROC_REF(ui_act_cahngekey)))
 	op("add_player_info", ui_act("add_player_info", arg("ckey", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Add Player Info", "question" = "Write your comment below.", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT)), then(PROC_REF(ui_act_add_player_info)))
 	op("remove_player_info", ui_act("remove_player_info", arg("ckey", schema_text(4096)), arg("index", num())), then(PROC_REF(ui_act_remove_player_info)))
@@ -144,6 +146,8 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 /datum/tgui_module/player_notes_info/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["ckey"] = key
+	data["age"] = "unknown"
+	data["entries"] = null
 
 	if(!key)
 		return data
@@ -178,7 +182,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 				))
 		if(update_file) info << infos
 
-	data["age"] = p_age
+	data["age"] = "[p_age]"
 
 	return data
 

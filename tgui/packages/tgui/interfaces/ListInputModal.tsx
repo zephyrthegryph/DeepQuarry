@@ -6,16 +6,12 @@ import { isAlphabetic, isNumeric, KEY } from 'tgui-core/keys';
 
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
-import type { ListInputModalActions } from './generated/ListInputModal';
+import type {
+  ListInputModalActions,
+  ListInputModalData,
+} from './generated/ListInputModal';
 
-type ListInputData = {
-  init_value: string;
-  items: string[];
-  large_buttons: boolean;
-  message: string;
-  timeout: number;
-  title: string;
-};
+type ListInputData = ListInputModalData;
 
 export const ListInputModal = (props) => {
   const { act, data } = useBackend<ListInputData, ListInputModalActions>();
@@ -131,7 +127,7 @@ export const ListInputModal = (props) => {
       width={325}
       height={windowHeight}
     >
-      {timeout && <Loader value={timeout} />}
+      {!!timeout && <Loader value={timeout} />}
       <Window.Content
         onKeyDown={(event) => {
           handleKeyDown(event);

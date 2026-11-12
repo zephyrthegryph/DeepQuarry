@@ -13,52 +13,13 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import type { NtosEmailClientActions } from './generated/NtosEmailClient';
+import type {
+  NtosEmailClientActions,
+  NtosEmailClientData,
+} from './generated/NtosEmailClient';
 import { sanitizeText } from '../sanitize';
 
-type Data = {
-  PC_device_theme: string;
-  accounts: account[] | null;
-  addressbook: BooleanLike;
-  cur_attachment_filename: string | null;
-  cur_attachment_size: number | null;
-  cur_body: string | null;
-  cur_hasattachment: BooleanLike;
-  cur_source: string | null;
-  cur_timestamp: string | null;
-  cur_title: string | null;
-  cur_uid: string | null;
-  current_account: account | null;
-  down_filename: string | null;
-  down_progress: number | null;
-  down_size: number | null;
-  down_speed: number | null;
-  downloading: BooleanLike;
-  error: string | null;
-  folder: string | null;
-  label_deleted: string | null;
-  label_inbox: string | null;
-  label_spam: string | null;
-  messagecount: number | null;
-  messages: message[] | null;
-  msg_attachment_filename: string | null;
-  msg_attachment_size: number | null;
-  msg_body: string | null;
-  msg_hasattachment: BooleanLike;
-  msg_recipient: string | null;
-  msg_title: string | null;
-  new_message: BooleanLike;
-  stored_login: string | null;
-  stored_password: string | null;
-};
-
-type message = {
-  title: string;
-  body: string;
-  source: string;
-  timestamp: string;
-  uid: string;
-};
+type Data = NtosEmailClientData;
 
 type account = { login: string };
 
@@ -347,7 +308,7 @@ const NtosEmailClientAddressBook = (props: { accounts: account[] }) => {
         <Button
           color="bad"
           icon="times"
-          onClick={() => act('set_recipient', { set_recipient: null })}
+          onClick={() => act('set_recipient', { set_recipient: '' })}
         />
       }
     >

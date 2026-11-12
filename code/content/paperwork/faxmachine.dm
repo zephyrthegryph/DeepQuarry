@@ -170,6 +170,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	configure(uses_power(idle = 30, active = 200))
 	after_init(0, then(PROC_REF(register_department)))
 	interface("Fax")
+	ui_shape(authenticated = nullable(schema_text()), rank = nullable(schema_text()), copyItem = nullable(schema_text()), cooldown = num(), destination = nullable(schema_text()), scan = nullable(schema_text()), isAI = bool(), isRobot = bool(), adminDepartments = list_of(schema_text()), bossName = schema_text())
 	without("ui_open")
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
@@ -203,10 +204,10 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 
 /// The window data.
 /obj/machinery/photocopier/faxmachine/ui_data(datum/act/eval/A)
-	var/list/data = ..()
+	var/list/data = list()
 	data["authenticated"] = authenticated
 	data["rank"] = rank
-	data["copyItem"] = copyitem
+	data["copyItem"] = copyitem ? copyitem.name : null
 	data["cooldown"] = sendcooldown
 	data["destination"] = destination
 	var/list/computed = ui_data_obj_machinery_photocopier_faxmachine(A.actor, null, null)
@@ -228,8 +229,8 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 /obj/machinery/photocopier/faxmachine/proc/ui_data_obj_machinery_photocopier_faxmachine(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
-	data["isAI"] = ui_viewer_fact(user, "ai")
-	data["isRobot"] = ui_viewer_fact(user, "robot")
+	data["isAI"] = !!ui_viewer_fact(user, "ai")
+	data["isRobot"] = !!ui_viewer_fact(user, "robot")
 	data["adminDepartments"] = GLOB.admin_departments
 
 	data["bossName"] = using_map.boss_name
@@ -282,7 +283,6 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 			return
 		copyitem.forceMove(loc)
 		user.put_in_hands(copyitem)
-		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
 		rel_take(src, nameof(copyitem))
 	return TRUE
 

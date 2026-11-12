@@ -3,20 +3,12 @@ import { useBackend } from 'tgui/backend';
 import { NanoMap } from 'tgui/components';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Icon, Section, Stack, Tabs } from 'tgui-core/components';
-import type { AtmosControlActions } from './generated/AtmosControl';
+import type {
+  AtmosControlActions,
+  AtmosControlData,
+} from './generated/AtmosControl';
 
-type alarm = {
-  name: string;
-  ref: number;
-  danger: number;
-  x: number;
-  y: number;
-  z: number;
-};
-
-type Data = {
-  alarms: alarm[];
-};
+type Data = AtmosControlData;
 
 export const AtmosControl = (props) => {
   return (

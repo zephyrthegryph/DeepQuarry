@@ -41,6 +41,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	configure(uses_power(idle = 250, active = 500))
 	after_init(0, then(PROC_REF(make_controller)))
 	interface("RogueZones")
+	ui_shape(scanning = bool(), debug = int(0, 1), timeout_percent = num(), diffstep = int(), difficulty = schema_text(), occupied = int(0, 1), updated = bool(), shuttle_location = schema_text(), shuttle_at_station = int(0, 1), scan_ready = int(0, 1), can_recall_shuttle = bool())
 	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))
 	op("recall_shuttle", ui_act("recall_shuttle"), then(PROC_REF(ui_act_recall_shuttle)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
@@ -48,7 +49,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 
 /obj/machinery/computer/roguezones/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["scanning"] = scanning
+	data["scanning"] = scanning ? TRUE : FALSE
 	data["debug"] = debug
 	var/list/merged_1 = ui_data_obj_machinery_computer_roguezones(A.actor, null, null)
 	if(islist(merged_1))
@@ -62,11 +63,13 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	var/curZoneOccupied = GLOB.rm_controller.current_zone() ? GLOB.rm_controller.current_zone().is_occupied() : 0
 
 	var/list/data = list()
+	data["shuttle_location"] = "Unknown"
+	data["shuttle_at_station"] = 0
 	data["timeout_percent"] = chargePercent
 	data["diffstep"] = GLOB.rm_controller.diffstep
 	data["difficulty"] = GLOB.rm_controller.diffstep_strs[GLOB.rm_controller.diffstep]
 	data["occupied"] = curZoneOccupied
-	data["updated"] = ELAPSED(GLOB.rm_controller, last_scan, CLOCK_WORLD) < 20 SECONDS //Very recently scanned (20 seconds)
+	data["updated"] = ELAPSED(GLOB.rm_controller, last_scan, CLOCK_WORLD) < 20 SECONDS ? TRUE : FALSE //Very recently scanned (20 seconds)
 
 	if(!shuttle_control())
 		data["shuttle_location"] = "Unknown"
@@ -92,7 +95,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	data["scan_ready"] = can_scan
 
 	// Permit emergency recall of the shuttle if its stranded in a zone with just dead people.
-	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied)
+	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied) ? TRUE : FALSE
 	return data
 
 /obj/machinery/computer/roguezones/proc/ui_act_scan_for_new(datum/act/op/A)

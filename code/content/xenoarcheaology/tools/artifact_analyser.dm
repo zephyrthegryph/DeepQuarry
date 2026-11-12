@@ -28,6 +28,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(scanned_object), /obj)
 	interface("XenoarchArtifactAnalyzer")
+	ui_shape(scan_in_progress = bool(), owned_scanner = bool())
 	without("ui_open")
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("artifact_analyser_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_artifact_analyser_use)))
@@ -64,7 +65,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 /obj/machinery/artifact_analyser/proc/ui_data_obj_machinery_artifact_analyser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["owned_scanner"] = owned_scanner()
+	data["owned_scanner"] = owned_scanner() ? TRUE : FALSE
 
 	return data
 

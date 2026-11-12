@@ -3,37 +3,9 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { SpellbookActions } from './generated/Spellbook';
+import type { SpellbookActions, SpellbookData } from './generated/Spellbook';
 
-type Spell = {
-  id: string;
-  name: string;
-  cooldown: number;
-  desc: string;
-};
-
-type Artefact = {
-  id: string;
-  name: string;
-  desc: string;
-};
-
-type NoClothes = {
-  id: string;
-  name: string;
-  desc: string;
-};
-
-type Data = {
-  temp: string;
-  uses: number;
-  max_uses: number;
-  can_rememorize: BooleanLike;
-  spells: Spell[];
-  artefacts: Artefact[];
-  noclothes: NoClothes;
-};
+type Data = SpellbookData;
 
 export const Spellbook = () => {
   const { data, act } = useBackend<Data, SpellbookActions>();
@@ -86,7 +58,7 @@ export const Spellbook = () => {
               </Stack.Item>
             ))}
             <Stack.Item>
-              <Button onClick={() => act('choose', { id: noclothes?.id })}>
+              <Button onClick={() => act('choose', { id: noclothes.id })}>
                 {noclothes?.name}
               </Button>
               <Box ml={1} italic color="label">

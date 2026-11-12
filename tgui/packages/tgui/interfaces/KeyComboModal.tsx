@@ -3,18 +3,14 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { BooleanLike } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
-import type { KeyComboModalActions } from './generated/KeyComboModal';
+import type {
+  KeyComboModalActions,
+  KeyComboModalData,
+} from './generated/KeyComboModal';
 
-type KeyInputData = {
-  init_value: string;
-  large_buttons: BooleanLike;
-  message: string;
-  timeout: number;
-  title: string;
-};
+type KeyInputData = KeyComboModalData;
 
 function isStandardKey(event: React.KeyboardEvent<HTMLDivElement>): boolean {
   return (
@@ -125,7 +121,7 @@ export function KeyComboModal(props) {
 
   return (
     <Window fitContent title={title} width={240} height={windowHeight}>
-      {timeout && <Loader value={timeout} />}
+      {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
           <div ref={focusRef} tabIndex={-1} />

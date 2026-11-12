@@ -41,19 +41,12 @@ import { clamp } from 'tgui-core/math';
 import { classes } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
-import type { ColorPickerModalActions } from './generated/ColorPickerModal';
+import type {
+  ColorPickerModalActions,
+  ColorPickerModalData,
+} from './generated/ColorPickerModal';
 
-type ColorPickerData = {
-  autofocus: boolean;
-  buttons: string[];
-  message: string;
-  large_buttons: boolean;
-  swapped_buttons: boolean;
-  timeout: number;
-  title: string;
-  default_color: string;
-  presets?: string;
-};
+type ColorPickerData = ColorPickerModalData;
 
 type ColorPickerModalProps = Record<never, never>;
 

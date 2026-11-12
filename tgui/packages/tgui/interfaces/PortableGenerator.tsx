@@ -8,26 +8,12 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PortableGeneratorActions } from './generated/PortableGenerator';
+import type {
+  PortableGeneratorActions,
+  PortableGeneratorData,
+} from './generated/PortableGenerator';
 
-type Data = {
-  fuel_stored: number;
-  fuel_capacity: number;
-  anchored: BooleanLike;
-  active: BooleanLike;
-  ready_to_boot: BooleanLike;
-  sheet_name: string;
-  fuel_usage: number;
-  temperature_current: number;
-  temperature_max: number;
-  temperature_overheat: number;
-  unsafe_output: BooleanLike;
-  power_output: number;
-  power_generated: number;
-  connected: BooleanLike;
-  power_available: number;
-};
+type Data = PortableGeneratorData;
 
 export const PortableGenerator = (props) => {
   const { act, data } = useBackend<Data, PortableGeneratorActions>();

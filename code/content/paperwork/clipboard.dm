@@ -86,6 +86,7 @@ CAPABILITIES(/obj/item/clipboard)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 0))
 	interface("Clipboard", title = "Clipboard")
+	ui_shape(has_pen = bool(), items = list_of(row(ref = int(), name = schema_text(), kind = enum(list("paper", "photo")), is_top = bool())))
 	without("ui_open")
 	op("remove_pen", ui_act("remove_pen"), then(PROC_REF(ui_act_remove_pen)))
 	op("add_pen", ui_act("add_pen"), then(PROC_REF(ui_act_add_pen)))
@@ -156,7 +157,6 @@ CAPABILITIES(/obj/item/clipboard)
 			if(!own_bring_in(src, nameof(/obj/item/clipboard::haspen), W, null, user, TRUE, null, FALSE))
 				return TRUE
 			rel_set(src, nameof(/obj/item/clipboard::haspen), W)
-			to_chat(user, span_notice("You slot the pen into \the [src]."))
 	return TRUE
 
 /obj/item/clipboard/proc/ui_act_write(datum/act/op/A, ref)

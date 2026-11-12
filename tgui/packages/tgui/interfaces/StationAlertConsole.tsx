@@ -1,29 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { StationAlertConsoleActions } from './generated/StationAlertConsole';
+import type {
+  StationAlertConsoleActions,
+  StationAlertConsoleData,
+} from './generated/StationAlertConsole';
 
-type Data = {
-  categories: {
-    category: string;
-    alarms: {
-      name: string;
-      origin_lost: BooleanLike;
-      has_cameras: number;
-      cameras: {
-        name: string;
-        deact: BooleanLike;
-        camera: string;
-        omni: BooleanLike;
-        x: number;
-        y: number;
-        z: number;
-      }[];
-      lost_sources: string;
-    }[];
-  }[];
-};
+type Data = StationAlertConsoleData;
 
 export const StationAlertConsole = () => {
   return (

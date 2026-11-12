@@ -12,7 +12,7 @@ import {
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
 import { sanitizeAdminHtml } from '../sanitize';
-import type { TicketActions } from './generated/Ticket';
+import type { TicketActions, TicketData } from './generated/Ticket';
 
 const Level = {
   0: 'Mentorhelp',
@@ -37,22 +37,7 @@ const State = {
   unknown: 'Unknown',
 };
 
-type Data = {
-  id: number;
-  title: string;
-  name: string;
-  ticket_ref: number;
-  state: string;
-  level: number;
-  handler: string;
-  opened_at: number;
-  closed_at: number;
-  opened_at_date: string;
-  closed_at_date: string;
-  actions: string;
-  /** Null until the ticket has an interaction. */
-  log: Record<string, string> | null;
-};
+type Data = TicketData;
 
 window.addEventListener('keydown', (event) => {
   console.log(event);

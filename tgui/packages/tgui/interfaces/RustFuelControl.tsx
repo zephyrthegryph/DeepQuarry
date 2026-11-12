@@ -1,8 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { RustFuelControlActions } from './generated/RustFuelControl';
+import type {
+  RustFuelControlActions,
+  RustFuelControlData,
+} from './generated/RustFuelControl';
 
 export const RustFuelControl = () => (
   <Window width={627} height={700}>
@@ -12,19 +14,7 @@ export const RustFuelControl = () => (
   </Window>
 );
 
-type Data = {
-  fuels: {
-    name: string;
-    x;
-    y;
-    z;
-    active: BooleanLike;
-    deployed: BooleanLike;
-    ref: number;
-    fuel_amt;
-    fuel_type;
-  }[];
-};
+type Data = RustFuelControlData;
 
 export const RustFuelContent = (props) => {
   const { act, data } = useBackend<Data, RustFuelControlActions>();

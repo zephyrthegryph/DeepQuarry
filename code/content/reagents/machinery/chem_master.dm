@@ -73,11 +73,12 @@ CAPABILITIES(/obj/machinery/chem_master)
 	op("load_pill_bottle", item(/obj/item/storage/pill_bottle), label("Load pill bottle"),
 		needs(req(PROC_REF(chem_master_no_pill_bottle))), then(PROC_REF(pill_bottle_loaded)))
 	interface("ChemMaster")
+	ui_shape(condi = bool(), pillsprite = schema_text(), bottlesprite = schema_text(), printing = bool(), loaded_pill_bottle = bool(), loaded_pill_bottle_name = nullable(schema_text()), loaded_pill_bottle_contents_len = nullable(int()), loaded_pill_bottle_storage_slots = nullable(num()), beaker = bool(), beaker_reagents = list_of(row(name = schema_text(), volume = num(), description = schema_text(), id = schema_text())), buffer_reagents = list_of(row(name = schema_text(), volume = num(), id = schema_text(), description = schema_text())), mode = bool(), modal = any)
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("ejectp", ui_act("ejectp"), then(PROC_REF(ui_act_ejectp)))
 	op("print", ui_act("print", arg("beaker", num(default = 0)), arg("idx", num(default = 0))), then(PROC_REF(ui_act_print)))
 	op("add", ui_act("add", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_add)))
-	op("remove", ui_act("remove", arg("amount", num()), arg("id")), then(PROC_REF(ui_act_remove)))
+	op("remove", ui_act("remove", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("create_condi_bottle", ui_act("create_condi_bottle"), then(PROC_REF(ui_act_create_condi_bottle)))
 	op("analyze", ui_act("modal:analyze", arg("arguments")), then(PROC_REF(modal_analyze)))
@@ -128,10 +129,10 @@ CAPABILITIES(/obj/machinery/chem_master)
 /// The window's data.
 /obj/machinery/chem_master/ui_data(datum/act/eval/A)
 	. = list()
-	.["condi"] = condi
-	.["pillsprite"] = pillsprite
-	.["bottlesprite"] = bottlesprite
-	.["printing"] = printing
+	.["condi"] = condi ? TRUE : FALSE
+	.["pillsprite"] = "[pillsprite]"
+	.["bottlesprite"] = "[bottlesprite]"
+	.["printing"] = printing ? TRUE : FALSE
 	var/list/part = ui_data_part_chem_master(A)
 	for(var/key in part)
 		.[key] = part[key]
@@ -142,24 +143,22 @@ CAPABILITIES(/obj/machinery/chem_master)
 
 
 	data["loaded_pill_bottle"] = !!loaded_pill_bottle
-	if(loaded_pill_bottle)
-		data["loaded_pill_bottle_name"] = loaded_pill_bottle.name
-		data["loaded_pill_bottle_contents_len"] = contents_count(loaded_pill_bottle)
-		data["loaded_pill_bottle_storage_slots"] = loaded_pill_bottle.max_storage_space
+	data["loaded_pill_bottle_name"] = loaded_pill_bottle?.name
+	data["loaded_pill_bottle_contents_len"] = loaded_pill_bottle ? contents_count(loaded_pill_bottle) : null
+	data["loaded_pill_bottle_storage_slots"] = loaded_pill_bottle?.max_storage_space
 
 	data["beaker"] = !!beaker
+	var/list/beaker_reagents_list = list()
+	data["beaker_reagents"] = beaker_reagents_list
+	var/list/buffer_reagents_list = list()
+	data["buffer_reagents"] = buffer_reagents_list
 	if(beaker)
-		var/list/beaker_reagents_list = list()
-		data["beaker_reagents"] = beaker_reagents_list
 		for(var/datum/reagent/R in beaker.reagents?.reagent_list)
 			beaker_reagents_list[++beaker_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.description, "id" = R.id)
-
-		var/list/buffer_reagents_list = list()
-		data["buffer_reagents"] = buffer_reagents_list
 		for(var/datum/reagent/R in reagents.reagent_list)
 			buffer_reagents_list[++buffer_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "id" = R.id, "description" = R.description)
 
-	data["mode"] = mode
+	data["mode"] = mode ? TRUE : FALSE
 
 	// the window's modal (the engine adds it too; the key is always sent, as it was)
 	data["modal"] = tgui_modal_data(src)

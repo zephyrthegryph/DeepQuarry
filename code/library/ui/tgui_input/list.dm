@@ -99,6 +99,7 @@
 
 CAPABILITIES(/datum/tgui_list_input)
 	interface("ListInputModal")
+	ui_shape(init_value = schema_text(), items = list_of(schema_text()), large_buttons = bool(), message = schema_text(), swapped_buttons = bool(), title = schema_text(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry")), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -111,17 +112,18 @@ CAPABILITIES(/datum/tgui_list_input)
 
 /datum/tgui_list_input/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
-	data["init_value"] = default || items[1]
+	data["init_value"] = "[default || items[1]]"
 	data["items"] = items
 	data["large_buttons"] = TRUE
-	data["message"] = message
+	data["message"] = message || ""
 	data["swapped_buttons"] = TRUE
-	data["title"] = title
+	data["title"] = title || ""
 	return data
 
 /// /datum/tgui_list_input's window data.
 /datum/tgui_list_input/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data

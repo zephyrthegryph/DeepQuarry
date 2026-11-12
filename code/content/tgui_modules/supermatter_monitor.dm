@@ -31,6 +31,7 @@
 
 CAPABILITIES(/datum/tgui_module/supermatter_monitor)
 	interface("SupermatterMonitor")
+	ui_shape(active = bool(), SM_area = nullable(schema_text()), SM_integrity = nullable(num()), SM_power = nullable(num()), SM_ambienttemp = nullable(num()), SM_ambientpressure = nullable(num()), SM_EPR = nullable(num()), SM_gas_O2 = nullable(num()), SM_gas_CO2 = nullable(num()), SM_gas_N2 = nullable(num()), SM_gas_PH = nullable(num()), SM_gas_CH4 = nullable(num()), SM_gas_N2O = nullable(num()), supermatters = nullable(list_of(row(area_name = schema_text(), integrity = num(), uid = num()))))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("set", ui_act("set", arg("set", num())), then(PROC_REF(ui_act_set)))
@@ -51,7 +52,7 @@ CAPABILITIES(/datum/tgui_module/supermatter_monitor)
 			return
 
 		data["active"] = 1
-		data["SM_area"] = get_area(active())
+		data["SM_area"] = get_area(active())?.name
 		data["SM_integrity"] = active().get_integrity()
 		data["SM_power"] = active().power
 		var/list/ambient = read_gas_levels(list(air), list(GAS_O2, GAS_CO2, GAS_N2, GAS_PHORON, GAS_CH4, GAS_N2O)) // one call for the whole window

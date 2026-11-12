@@ -91,6 +91,7 @@
 
 CAPABILITIES(/datum/tgui_input_text)
 	interface("TextInputModal")
+	ui_shape(large_buttons = bool(), max_length = nullable(num()), message = schema_text(), multiline = bool(), placeholder = schema_text(), swapped_buttons = bool(), title = schema_text(), spellcheck = bool(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry", schema_text(4096))), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -105,18 +106,19 @@ CAPABILITIES(/datum/tgui_input_text)
 	var/mob/user = A.actor
 	var/list/data = list()
 	data["large_buttons"] = TRUE
-	data["max_length"] = max_length
-	data["message"] = message
-	data["multiline"] = multiline
-	data["placeholder"] = default // Default is a reserved keyword
+	data["max_length"] = max_length || null
+	data["message"] = message || ""
+	data["multiline"] = multiline ? TRUE : FALSE
+	data["placeholder"] = default || "" // Default is a reserved keyword
 	data["swapped_buttons"] = TRUE
-	data["title"] = title
+	data["title"] = title || ""
 	data["spellcheck"] = user.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	return data
 
 /// /datum/tgui_input_text's window data.
 /datum/tgui_input_text/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data
