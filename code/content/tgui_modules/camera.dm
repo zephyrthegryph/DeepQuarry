@@ -129,7 +129,8 @@ CAPABILITIES(/datum/tgui_module/camera)
 		)
 	return data
 
-/datum/tgui_module/camera/tgui_static_data(mob/user)
+/datum/tgui_module/camera/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 	data["mapRef"] = map_name
 	var/list/cameras = get_available_cameras(user)

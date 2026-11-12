@@ -130,7 +130,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 /*
  * Sends data once each time the UI is opened.
  */
-/obj/item/rig/tgui_static_data(mob/user)
+/obj/item/rig/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	data["interface_intro"] = interface_intro

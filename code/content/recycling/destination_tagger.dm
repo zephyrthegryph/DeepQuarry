@@ -8,7 +8,7 @@
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 
-/obj/item/destTagger/tgui_static_data(mob/user)
+/obj/item/destTagger/ui_static_data(datum/act/eval/A)
 	. = ..()
 	.["level_names"] = using_map.zlevels
 

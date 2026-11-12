@@ -193,7 +193,8 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 		channel.remove_client(src)
 	..()
 
-/datum/computer_file/program/chatclient/tgui_static_data(mob/user)
+/datum/computer_file/program/chatclient/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["can_admin"] = can_run(user, FALSE, ACCESS_NETWORK)
 	return data

@@ -105,7 +105,7 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
             } else if let Some((type_path, name, args)) = header(code) {
                 let effect = args.contains("datum/act/op/");
                 let look = matches!(name.as_str(), "draw" | "look_parts") && args.contains("look");
-                let output = look || matches!(name.as_str(), "ui_data" | "tgui_data" | "appearance_overlays" | "appearance_state");
+                let output = look || matches!(name.as_str(), "ui_data" | "ui_static_data" | "tgui_data" | "appearance_overlays" | "appearance_state");
                 ctx = Some(ProcCtx { type_path, name, effect, output, look, told: false, relay_indent: None, cancel_indent: None });
             }
             continue;

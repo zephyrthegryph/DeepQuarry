@@ -30,9 +30,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform_group)
 /// Reads a rule's `chosen` entry into its flyweight.
 /proc/xform_compile_chosen(datum/xform/X, datum/entry/chosen)
 	var/list/arguments = chosen.args
-	X.title = arguments["title"]
+	X.set_title(arguments["title"])
 	X.subject = arguments["subject"]
-	X.max_made = arguments["max_made"] || 1
+	X.set_max_made(arguments["max_made"] || 1)
 	X.build_time = arguments["build_time"] || 0
 	X.one_per_turf = arguments["one_per_turf"] || 0
 	X.on_floor = arguments["on_floor"] || 0
@@ -43,13 +43,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform_group)
 	X.replaces = !!arguments["replaces"]
 	X.drops = arguments["drops"]
 	if(length(X.takes))
-		X.cost = X.takes[1][3]
+		X.set_cost(X.takes[1][3])
 	if(length(X.makes))
 		var/list/made = X.makes[1]
 		X.result = made[2]
-		X.result_amount = made[3]
+		X.set_result_amount(made[3])
 	if(!X.title)
-		X.title = "ERROR"
+		X.set_title("ERROR")
 
 /// This rule's recipe for `material` (null for a stack's own list): a copy with the material's names written into the text.
 /datum/xform/proc/expand_for(datum/material/material)
@@ -61,20 +61,20 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform_group)
 	copy.takes = takes
 	copy.makes = makes
 	copy.subject = subject
-	copy.cost = cost
+	copy.set_cost(cost)
 	copy.result = result
-	copy.result_amount = result_amount
-	copy.max_made = max_made
+	copy.set_result_amount(result_amount)
+	copy.set_max_made(max_made)
 	copy.build_time = build_time
 	copy.one_per_turf = one_per_turf
 	copy.on_floor = on_floor
 	copy.pass_color = pass_color
 	copy.group = group
-	copy.title = title
+	copy.set_title(title)
 	copy.use_material = use_material
 	copy.matter_material = matter_material
 	if(material)
-		copy.title = replacetext(replacetext(title, "{display_name}", material.display_name), "{name}", material.name)
+		copy.set_title(replacetext(replacetext(title, "{display_name}", material.display_name), "{name}", material.name))
 		if(use_material)
 			copy.use_material = replacetext(use_material, "{name}", material.name)
 		if(matter_material)
@@ -110,8 +110,8 @@ GLOBAL_LIST_EMPTY(stack_recipes_of_stack)
 				break
 		if(!found)
 			found = new
-			found.title = title
-			found.recipes = list()
+			found.set_title(title)
+			found.set_recipes(list())
 			into_list += found
 		into_list = found.recipes
 	into_list += recipe

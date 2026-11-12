@@ -16,8 +16,10 @@
 #define DEP_PUSH (1<<3)
 /// on_state_changed(bits). Only a plain state_changed(E) (no var named) raises it.
 #define DEP_LEGACY (1<<4)
+/// Open tgui windows: ui_static_data() is resent (a full update). Read-driven like DEP_UI (ui_static_from()).
+#define DEP_UI_STATIC (1<<19)
 /// Every output a declaration can name.
-#define DEP_OUTPUTS (DEP_RUN | DEP_DRAW | DEP_UI | DEP_PUSH)
+#define DEP_OUTPUTS (DEP_RUN | DEP_DRAW | DEP_UI | DEP_PUSH | DEP_UI_STATIC)
 /// derive() value number i (0-based, declaration order) is bit DEP_VALUE_SHIFT + i.
 #define DEP_VALUE_SHIFT 5
 /// The most derive() values one type can declare.
@@ -44,6 +46,8 @@
 #define DKIND_PUSH 5
 /// reaction_reads(handler, ...): more reads of the on_change() reaction with that handler (generated reads).
 #define DKIND_REACTION 6
+/// ui_static_from(...): what the window's ui_static_data() reads.
+#define DKIND_UI_STATIC 7
 
 // Outputs must not write state: in test builds a tracked write while an output runs is reported.
 #if defined(UNIT_TESTS)

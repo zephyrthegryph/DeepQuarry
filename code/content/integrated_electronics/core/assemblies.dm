@@ -201,8 +201,9 @@ CAPABILITIES(/datum/ic_export_view)
 	var/mob/user = A.actor
 	return assembly()?.tgui_data(user) || list()
 
-/datum/ic_export_view/tgui_static_data(mob/user)
-	return assembly()?.tgui_static_data(user) || list()
+/datum/ic_export_view/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	return present_tgui_static_data(assembly(), user) || list()
 
 // Actual assembly actions
 

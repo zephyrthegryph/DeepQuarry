@@ -29,7 +29,7 @@ CAPABILITIES(/datum/keybind_editor)
 	op("reset", ui_act("reset", arg("id", schema_text(4096))), then(PROC_REF(ui_act_reset)))
 	op("reset_all", ui_act("reset_all"), then(PROC_REF(ui_act_reset_all)))
 
-/datum/keybind_editor/tgui_static_data(mob/user)
+/datum/keybind_editor/ui_static_data(datum/act/eval/A)
 	var/list/bindings = list()
 	var/show_admin = check_rights_for(owner(), R_HOLDER)
 	for(var/id in GLOB.keybindings)

@@ -96,11 +96,11 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/anomaly_scanner/tgui_static_data(mob/user)
+/obj/item/anomaly_scanner/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 /// /obj/item/anomaly_scanner's window data.
 /obj/item/anomaly_scanner/ui_data(datum/act/eval/A)

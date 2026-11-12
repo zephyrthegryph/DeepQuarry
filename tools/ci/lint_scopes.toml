@@ -2228,6 +2228,7 @@ banned = [
   "act_modal_answer = the engine window action modal_answer: tgui_modal_window_answer(host, user, id, answer)",
   "act_modal_close = the engine window action modal_close: tgui_modal_window_close(host)",
   "tgui_fallback = no client sends a fallback message: a window that cannot render shows its error screen (ReloadBoundary)",
+  "tgui_static_data = a window's rarely changing data is the output ui_static_data(datum/act/eval/A); its reads resend it (doc/rewrite/proposals/ui_static_data.md)",
 ]
 
 # Generated scaffolding is derived build output; source dependencies remain checked.

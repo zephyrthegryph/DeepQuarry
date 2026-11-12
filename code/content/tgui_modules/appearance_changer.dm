@@ -845,7 +845,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	..()
 	jiggle_map()
 
-/datum/tgui_module/appearance_changer/tgui_static_data(mob/user)
+/datum/tgui_module/appearance_changer/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 
 	generate_data(user, owner())

@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/book/dq_medical_reference)
 /obj/item/book/dq_medical_reference/ui_data(datum/act/eval/A)
 	return list()
 
-/obj/item/book/dq_medical_reference/tgui_static_data(mob/user)
+/obj/item/book/dq_medical_reference/ui_static_data(datum/act/eval/A)
 	return CACHED_KEY(dq_medical_book_data, "book", src)
 
 /// The whole book (about 550 KB of text, 235 ms to build): every tab's entries.

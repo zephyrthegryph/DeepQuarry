@@ -759,7 +759,7 @@
 	TEST_ASSERT_EQUAL(STATE_PEEK(parts_output, economy, economic_producer_account), producer.account_number, "parts-lathe output discarded producer identity")
 	var/obj/machinery/mecha_part_fabricator_tg/mech_fabricator = new(test_turf)
 	var/datum/design_techweb/test_design = new
-	test_design.build_path = /obj/item
+	test_design.set_build_path(/obj/item)
 	TEST_ASSERT(mech_fabricator.add_to_queue(test_design, producer.account_number), "mech fabricator rejected a valid queued design")
 	TEST_ASSERT_EQUAL(mech_fabricator.queue_producer_accounts[1], producer.account_number, "mech-fabricator queue discarded producer identity")
 	var/turf/fabricator_exit = get_step(test_turf, EAST)

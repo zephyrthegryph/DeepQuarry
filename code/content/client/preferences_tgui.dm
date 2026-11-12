@@ -74,7 +74,8 @@
 
 	return data
 
-/datum/preferences/tgui_static_data(mob/user)
+/datum/preferences/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["character_profiles"] = create_character_profiles()

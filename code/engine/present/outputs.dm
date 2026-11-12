@@ -141,6 +141,20 @@
 /datum/proc/ui_data(datum/act/eval/A)
 	return list()
 
+/// A type's window data that changes rarely: the output of the standard name ui_static_data(datum/act/eval/A), sent when the window opens and
+/// resent (a full update) when something it reads changes: its reads are found like ui_data()'s and generated as ui_static_from() rows
+/// (doc/rewrite/proposals/ui_static_data.md). A.actor is the viewer. Base: none.
+/datum/proc/ui_static_data(datum/act/eval/A)
+	return null
+
+/// The static window data of `holder` for `user`: its ui_static_data(A), or null.
+/proc/present_tgui_static_data(datum/holder, mob/user, observer = FALSE)
+	if(!holder)
+		return null
+	var/datum/act/eval/A = present_eval_context(holder, user, observer)
+	. = holder.ui_static_data(A)
+	A.release()
+
 /// The window data of a holder that declares an interface or overrides ui_data(): the type's ui_data(A) (A.holder the holder, A.actor the viewer)
 /// merged over `data`, and its capabilities' data under data["caps"]. A holder that declares neither adds nothing. A window that forwards
 /// (interface(forwards = nameof(v))) is its unit's panel: the first unit's data comes first and the holder's own goes over it, so the sleeper

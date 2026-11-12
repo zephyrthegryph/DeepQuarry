@@ -56,7 +56,7 @@ CAPABILITIES(/datum/board_game/space_battle)
 	op("remove_ship", ui_act("remove_ship", arg("loc_x", num()), arg("loc_y", num()), arg("player", num())), then(PROC_REF(ui_act_remove_ship)))
 	op("game_action", ui_act("game_action", arg("action", schema_text(4096)), arg("data")), then(PROC_REF(ui_act_game_action)))
 
-/datum/board_game/space_battle/tgui_static_data(mob/user)
+/datum/board_game/space_battle/ui_static_data(datum/act/eval/A)
 	return list(
 		"ship_sizes" = ship_sizes,
 		"total_ships" = total_ships

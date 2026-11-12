@@ -142,8 +142,6 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 		after(src, round((new_time / part_time) * left), PROC_REF(part_finished), key = "exofab_part")
 		part_time = new_time
 
-	update_static_data_for_all_viewers()
-
 /obj/machinery/mecha_part_fabricator_tg/proc/status_text(datum/act/A)
 	return span_notice("The status display reads: Storing up to <b>[rmat.local_size]</b> material units.<br>Material consumption at <b>[component_coeff*100]%</b>.<br>Build time reduced by <b>[100-time_coeff*100]%</b>.")
 
@@ -153,23 +151,21 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 /obj/machinery/mecha_part_fabricator_tg/proc/update_menu_tech()
 	var/previous_design_count = LAZYLEN(available_designs)
 
-	LAZYCLEARLIST(available_designs)
+	clear_available_designs()
 	for(var/v in stored_research().researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
-			LAZYOR(available_designs, design)
+			include_available_designs(design)
 
 	for(var/datum/design_techweb/illegal_disign in illegal_local_designs)
-		LAZYOR(available_designs, illegal_disign)
+		include_available_designs(illegal_disign)
 
 	var/design_delta = LAZYLEN(available_designs) - previous_design_count
 
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
-
-	update_static_data_for_all_viewers()
 
 // ---- the queue ----
 
@@ -380,7 +376,8 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
 
-/obj/machinery/mecha_part_fabricator_tg/tgui_static_data(mob/user)
+/obj/machinery/mecha_part_fabricator_tg/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 
 	var/list/designs = list()
@@ -408,7 +405,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	data["designs"] = designs
 
-	var/list/material_data = rmat.mat_container()?.tgui_static_data(user)
+	var/list/material_data = present_tgui_static_data(rmat.mat_container(), user)
 	if(material_data)
 		data += material_data
 

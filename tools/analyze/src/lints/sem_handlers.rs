@@ -66,7 +66,7 @@ static META: Meta = Meta {
 };
 
 /// Standard outputs: base procs the engine calls by name.
-const STD_OUTPUTS: &[&str] = &["draw", "ui_data", "push_to_rust", "examine"];
+const STD_OUTPUTS: &[&str] = &["draw", "ui_data", "ui_static_data", "push_to_rust", "examine"];
 
 struct SemHandlers;
 
@@ -75,7 +75,7 @@ fn candidate_re() -> &'static Pat {
 }
 
 fn engine_output_re() -> &'static Pat {
-    crate::pat!(r"/proc/(?:draw|ui_data|push_to_rust|examine)\s*\(")
+    crate::pat!(r"/proc/(?:draw|ui_data|ui_static_data|push_to_rust|examine)\s*\(")
 }
 
 impl Lint for SemHandlers {

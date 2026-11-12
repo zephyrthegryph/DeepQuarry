@@ -26,8 +26,8 @@
 
 	attack_self(user)
 
-/obj/item/communicator/integrated/tgui_static_data(mob/user)
+/obj/item/communicator/integrated/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme

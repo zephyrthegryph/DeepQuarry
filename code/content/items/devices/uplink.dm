@@ -158,7 +158,8 @@ CAPABILITIES(/obj/item/uplink)
 
 	return data
 
-/obj/item/uplink/hidden/tgui_static_data(mob/user)
+/obj/item/uplink/hidden/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 
 	data["categories"] = list()
@@ -210,7 +211,7 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	op("view_exploits", ui_act("view_exploits", arg("id", num())), then(PROC_REF(ui_act_view_exploits)))
 
 /obj/item/uplink/hidden/proc/ui_act_select(datum/act/op/A, category)
-	selected_cat = category
+	set_selected_cat(category)
 	return TRUE
 
 /obj/item/uplink/hidden/proc/ui_act_compact_toggle(datum/act/op/A)

@@ -1596,6 +1596,11 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		return module.ui_theme
 	return ui_theme
 
+/// The window theme of a tool a robot holds (its loc), or null when no robot holds it.
+/proc/robot_holder_theme(atom/movable/thing)
+	var/mob/living/silicon/robot/robot_owner = thing?.loc
+	return istype(robot_owner) ? robot_owner.get_ui_theme() : null
+
 /mob/living/silicon/robot/handle_special_unlocks()
 	if(!module)
 		return

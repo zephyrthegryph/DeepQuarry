@@ -9,7 +9,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 	op("toggle_decal", ui_act("toggle_decal", arg("value", schema_text(4096))), then(PROC_REF(ui_act_toggle_decal)))
 	op("flick_animation", ui_act("flick_animation", arg("value", schema_text(4096))), then(PROC_REF(ui_act_flick_animation)))
 
-/datum/tgui_module/robot_ui_decals/tgui_static_data()
+/datum/tgui_module/robot_ui_decals/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/mob/living/silicon/robot/R = host()

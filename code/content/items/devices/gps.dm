@@ -202,13 +202,9 @@ CAPABILITIES(/obj/item/gps)
 
 	tgui_interact(user)
 
-/obj/item/gps/tgui_static_data(mob/user)
+/obj/item/gps/ui_static_data(datum/act/eval/A)
 	. = ..()
-	var/robot_theme
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		robot_theme = robot_owner.get_ui_theme()
-	.["theme"] = theme || robot_theme
+	.["theme"] = theme || robot_holder_theme(src)
 
 // Compiles all the data not available directly from the GPS
 // Like the positions and directions to all other GPS units

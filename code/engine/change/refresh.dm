@@ -247,7 +247,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 	if(D.periodic_cadence || D.periodic_interval)
 		. |= DEP_RUN
 	if(LAZYLEN(D.open_tguis))
-		. |= DEP_UI
+		. |= DEP_UI | DEP_UI_STATIC
 	if(isatom(D))
 		var/atom/A = D
 		if(ismob(A))
@@ -743,7 +743,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			GLOB.derive_probing = FALSE
 			probe_found = GLOB.derive_probe_found
 		refresh_sweep_track(A)
-	if(mask & DEP_UI)
+	if(mask & DEP_UI_STATIC)
+		refresh_ui_static(D) // a full update carries the data too
+	else if(mask & DEP_UI)
 		refresh_ui(D)
 	// The side effects. While the type is probed, the base procs report whether the engine reached them directly: a type
 	// that overrides either (with or without ..()) is recorded TYPE_DERIVES_SIDE, as is one whose probe skipped them.
@@ -783,6 +785,12 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	if(!LAZYLEN(D.open_tguis))
 		return
 	D.presentation_refresh_windows()
+
+/// Resends D's open windows their static data (ui_static_data()) with their data: something ui_static_data() reads changed.
+/proc/refresh_ui_static(datum/D)
+	if(!LAZYLEN(D.open_tguis))
+		return
+	D.presentation_refresh_static()
 
 /proc/refresh_periodic(datum/D)
 	if(D.periodic_interval)
@@ -1041,6 +1049,10 @@ GLOBAL_VAR_INIT(refresh_drift_expected, FALSE)
 	return 0
 
 /datum/proc/presentation_refresh_windows()
+	return 0
+
+/// Resends the open windows' static data with their data (library: code/library/present/ui_transport.dm).
+/datum/proc/presentation_refresh_static()
 	return 0
 
 

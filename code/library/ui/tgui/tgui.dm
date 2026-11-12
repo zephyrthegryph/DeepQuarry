@@ -468,7 +468,7 @@
 	#endif
 	if(data)
 		json_data["data"] = data
-	var/static_data = with_static_data && src_object().tgui_static_data(user)
+	var/static_data = with_static_data && present_tgui_static_data(src_object(), user, tgui_is_observer_view(user, src))
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
 		startup_profile["static_data_ms"] = rustg_time_milliseconds(startup_timer)

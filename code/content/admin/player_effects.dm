@@ -109,7 +109,7 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("stop-orbits", ui_act("stop-orbits"), then(PROC_REF(ui_act_stop_orbits)))
 	op("revert-mob-tf", ui_act("revert-mob-tf"), then(PROC_REF(ui_act_revert_mob_tf)))
 
-/datum/eventkit/player_effects/tgui_static_data(mob/user)
+/datum/eventkit/player_effects/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["real_name"] = target().name;

@@ -31,11 +31,11 @@
 /obj/item/pda/ai/can_use()
 	return 1
 
-/obj/item/pda/ai/tgui_static_data(mob/user)
+/obj/item/pda/ai/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 CAPABILITIES(/obj/item/pda/ai)
 	op("ai_pda_self", in_hand(), then(PROC_REF(ai_pda_self)))

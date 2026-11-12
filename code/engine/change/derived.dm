@@ -88,6 +88,10 @@
 /proc/ui_from(...)
 	return derived_entry(DKIND_UI, null, args.Copy())
 
+/// ui_static_data() reads these: a change resends the open windows' static data (a full update).
+/proc/ui_static_from(...)
+	return derived_entry(DKIND_UI_STATIC, null, args.Copy())
+
 /// push_to_rust() reads these: a change runs it, once per frame however many of them changed.
 /proc/rust_push(...)
 	return derived_entry(DKIND_PUSH, null, args.Copy())
@@ -262,6 +266,8 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 			return "drawn_from"
 		if(DKIND_UI)
 			return "ui_from"
+		if(DKIND_UI_STATIC)
+			return "ui_static_from"
 		if(DKIND_PUSH)
 			return "rust_push"
 	return "derive([E.name])"
@@ -304,6 +310,8 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 				bit = DEP_DRAW
 			if(DKIND_UI)
 				bit = DEP_UI
+			if(DKIND_UI_STATIC)
+				bit = DEP_UI_STATIC
 			if(DKIND_PUSH)
 				bit = DEP_PUSH
 			if(DKIND_DERIVE)
@@ -560,7 +568,7 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 	. = derived_mask_of(E, var_name)
 	// A window opening or closing changes who is shown the host's data, not the data: it never pushes the host's windows.
 	if(var_name == nameof(/datum::open_tguis))
-		. &= ~DEP_UI
+		. &= ~(DEP_UI | DEP_UI_STATIC)
 
 /// derived_mask() before the rule that a change of the window list pushes no window.
 /proc/derived_mask_of(datum/E, var_name)

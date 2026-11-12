@@ -25,7 +25,8 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 	op("loc_lock", ui_act("loc_lock"), then(PROC_REF(ui_act_loc_lock)))
 	op("start_spawn", ui_act("start_spawn", arg("amount", num()), arg("desc", schema_text(4096)), arg("flavor_text", schema_text(4096)), arg("health", num()), arg("max_health", num()), arg("melee_damage_lower", num()), arg("melee_damage_upper", num()), arg("name", schema_text(4096)), arg("size_multiplier", num()), arg("x", schema_text(4096)), arg("y", schema_text(4096)), arg("z", schema_text(4096))), asks(/datum/prompt/choice/mob_spawner_spawn, step = "confirm"), then(PROC_REF(ui_act_start_spawn)))
 
-/datum/eventkit/mob_spawner/tgui_static_data(mob/user)
+/datum/eventkit/mob_spawner/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["initial_x"] = user.x;

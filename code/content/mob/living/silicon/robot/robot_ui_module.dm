@@ -32,7 +32,17 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 		our_assets += GLOB.robot_sprite_sheets[entry]
 	return our_assets
 
-/datum/tgui_module/robot_ui_module/tgui_static_data()
+/// The crisis notice goes to the robot when the picker opens (an output says nothing).
+/datum/tgui_module/robot_ui_module/ui_opened(mob/user, datum/tgui/ui)
+	. = ..()
+	var/mob/living/silicon/robot/R = host()
+	if(!istype(R) || R.module || LAZYLEN(R.restrict_modules_to))
+		return
+	var/red = R.shell ? GLOB.security_level == SEC_LEVEL_RED : GLOB.security_level >= SEC_LEVEL_RED
+	if(R.crisis || red || R.crisis_override)
+		to_chat(R, span_red("Crisis mode active. Combat module available."))
+
+/datum/tgui_module/robot_ui_module/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/mob/living/silicon/robot/R = host()
@@ -41,7 +51,6 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	var/list/whitelisted = list()
 	if(R.module)
 		modules = list(R.modtype)
-		set_selected_module(R.modtype)
 	else
 		if(LAZYLEN(R.restrict_modules_to))
 			modules += R.restrict_modules_to
@@ -49,12 +58,10 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 			modules += GLOB.shell_module_types
 			// crisis mode for shells
 			if(R.crisis || GLOB.security_level == SEC_LEVEL_RED || R.crisis_override)
-				to_chat(R, span_red("Crisis mode active. Combat module available."))
 				modules |= GLOB.emergency_module_types
 		else
 			modules += GLOB.robot_module_types
 			if(R.crisis || GLOB.security_level >= SEC_LEVEL_RED || R.crisis_override)
-				to_chat(R, span_red("Crisis mode active. Combat module available."))
 				modules |= GLOB.emergency_module_types
 			for(var/module_name in GLOB.whitelisted_module_types)
 				if(is_borg_whitelisted(R, module_name))
@@ -76,15 +83,17 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	data["currentName"] = new_name ? new_name : R.name
 	data["isDefaultName"] = !new_name
 
-	if(selected_module)
-		data["selected_module"]  = selected_module
+	// A robot with a module shows it before anything is picked.
+	var/shown_module = selected_module || (R.module ? R.modtype : null)
+	if(shown_module)
+		data["selected_module"]  = shown_module
 		if(!SSrobot_sprites)
 			log_world("robot_ui_module: robot sprites are not initialized yet, but [R] has a module selected")
 			return
 
-		var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
+		var/list/module_sprites = SSrobot_sprites.get_module_sprites(shown_module, R)
 		if(!module_sprites || !module_sprites.len)
-			log_world("robot_ui_module: module [selected_module] has no sprite options for [R]")
+			log_world("robot_ui_module: module [shown_module] has no sprite options for [R]")
 			return
 		var/list/available_sprites = list()
 		for(var/datum/robot_sprite/S in module_sprites)
@@ -100,7 +109,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 		data["sprite_datum_class"] = null
 		data["sprite_datum_size"] = null
 		if(sprite_datum)
-			var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[selected_module]
+			var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[shown_module]
 			data["sprite_datum_class"] = sanitize_css_class_name("[sprite_datum.type]")
 			data["sprite_datum_size"] = spritesheet.icon_size_id(data["sprite_datum_class"] + "S") // just get the south icon's size, the rest will be the same
 

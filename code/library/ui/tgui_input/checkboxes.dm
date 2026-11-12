@@ -59,7 +59,7 @@ CAPABILITIES(/datum/tgui_checkbox_input)
 
 	return data
 
-/datum/tgui_checkbox_input/tgui_static_data(mob/user)
+/datum/tgui_checkbox_input/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["items"] = items

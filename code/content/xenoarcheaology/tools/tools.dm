@@ -169,11 +169,11 @@ CAPABILITIES(/obj/item/depth_scanner)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
-/obj/item/depth_scanner/tgui_static_data(mob/user)
+/obj/item/depth_scanner/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 /// /obj/item/depth_scanner's window data.
 /obj/item/depth_scanner/ui_data(datum/act/eval/A)

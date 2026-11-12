@@ -207,7 +207,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		data["loaded_item"] = null
 	return data
 
-/obj/machinery/rnd/destructive_analyzer/tgui_static_data(mob/user)
+/obj/machinery/rnd/destructive_analyzer/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["research_point_id"] = DESTRUCTIVE_ANALYZER_DESTROY_POINTS
 	return data

@@ -343,7 +343,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	data["uv_level"] = radiation_level
 	return data
 
-/obj/machinery/suit_cycler/tgui_static_data(mob/user)
+/obj/machinery/suit_cycler/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 
 	// tgui gets angy if you pass values too
