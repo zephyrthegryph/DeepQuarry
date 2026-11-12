@@ -109,7 +109,7 @@ CAPABILITIES(/datum/tgui_list_input)
 /datum/tgui_list_input/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_list_input/tgui_static_data(mob/user)
+/datum/tgui_list_input/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["init_value"] = default || items[1]
 	data["items"] = items

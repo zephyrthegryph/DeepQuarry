@@ -1,5 +1,5 @@
 import { sortBy } from 'es-toolkit';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { useSharedState } from 'tgui/backend';
 import {
   Dimmer,
@@ -225,14 +225,18 @@ export const DesignBrowser = <T extends Design = Design>(
   const selectedDesign =
     designs.find((design) => design.id === selectedDesignId) ?? designs[0];
 
-  const recipeElement = (design: T) =>
-    buildRecipeElement(
-      design,
-      availableMaterials || {},
-      onPrintDesign || NOOP,
-      (selected) => setSelectedDesignId(selected.id),
-      selectedDesign?.id === design.id,
-    );
+  // Keyed here: the caller's element is one of a list.
+  const recipeElement = (design: T) => (
+    <Fragment key={design.id}>
+      {buildRecipeElement(
+        design,
+        availableMaterials || {},
+        onPrintDesign || NOOP,
+        (selected) => setSelectedDesignId(selected.id),
+        selectedDesign?.id === design.id,
+      )}
+    </Fragment>
+  );
 
   return (
     <Stack fill>

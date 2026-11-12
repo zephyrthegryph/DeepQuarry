@@ -89,7 +89,9 @@ export const OmniMixer = (props) => {
                 <PortRow key={port.dir} port={port} config={config} />
               ))
             ) : (
-              <Box color="bad">No Ports Detected</Box>
+              <Table.Row>
+                <Table.Cell color="bad">No Ports Detected</Table.Cell>
+              </Table.Row>
             )}
           </Table>
         </Section>

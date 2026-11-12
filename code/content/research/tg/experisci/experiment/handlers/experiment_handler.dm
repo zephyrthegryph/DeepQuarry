@@ -368,12 +368,12 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	var/atom/parent_atom = owner
 	return "[parent_atom ? "[parent_atom.name] | " : ""]Experiment Configuration"
 
-/datum/experiment_handler/tgui_static_data(mob/user)
+/datum/experiment_handler/ui_static_data(datum/act/eval/A)
 	. = ..()
-	var/atom/parent_atom = owner
-	if(isrobot(parent_atom?.loc))
-		var/mob/living/silicon/robot/owner_robot = parent_atom.loc
-		.["theme"] = owner_robot.get_ui_theme()
+	var/atom/movable/parent_atom = owner
+	var/robot_theme = istype(parent_atom) ? robot_holder_theme(parent_atom) : null
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 /// /datum/experiment_handler's window data.
 /datum/experiment_handler/ui_data(datum/act/eval/A)

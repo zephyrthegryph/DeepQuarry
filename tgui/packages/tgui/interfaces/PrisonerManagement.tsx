@@ -12,7 +12,7 @@ type Data = {
 
 export const PrisonerManagement = (props) => {
   const { act, data } = useBackend<Data, PrisonerManagementActions>();
-  const { locked, chemImplants, trackImplants } = data;
+  const { locked, chemImplants = [], trackImplants = [] } = data;
   return (
     <Window width={500} height={400}>
       <Window.Content scrollable>

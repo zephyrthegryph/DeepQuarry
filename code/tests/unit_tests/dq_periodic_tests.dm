@@ -1,108 +1,7 @@
-// Park/wake tests for the pollers moved onto engine pipelines (roadmap S3-S5,
-// code/engine/periodic.dm, code/game/machinery/machine_pipeline.dm): periodic work runs only
+// Park/wake tests for the pollers moved onto every() and started work: periodic work runs only
 // between its start and its end, parks in between, and the missed-wake audit finds nothing.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-
-/// A periodic user with `work` frames left to do.
-/datum/dq_periodic_probe
-	var/work = 0
-	var/steps = 0
-	var/last_delta
-
-/datum/dq_periodic_probe/periodic_step(delta)
-	steps++
-	last_delta = delta
-	if(--work <= 0)
-		return PROCESS_KILL
-
-/// cadence_start() puts the entity on a cadence and the kernel steps it until periodic_step() returns
-/// PROCESS_KILL; the entity then leaves the cadence (it costs nothing), cadence_start() starts it again,
-/// cadence_stop() ends the work early, and moving to another cadence leaves the first.
-/datum/unit_test/dq_periodic_park_wake
-
-/datum/unit_test/dq_periodic_park_wake/Run()
-	var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
-	var/P = PERIODIC_SLOW
-	D.work = 2
-	cadence_start(D, P)
-	TEST_ASSERT(member_is(P, D), "cadence_start() did not put it on the cadence")
-	TEST_ASSERT((!isnull(D.periodic_pipe)) && (D.datum_flags & DF_ISPROCESSING), "a started entity is not marked running")
-	for(var/i in 1 to 2)
-		TEST_ASSERT(periodic_run_now(D, P), "a started entity could not be stepped")
-	TEST_ASSERT_EQUAL(D.steps, 2, "it did not step once per frame while it had work")
-	TEST_ASSERT_EQUAL(D.last_delta, 20, "the slow lane passes the old SSobj delta")
-	TEST_ASSERT(!(!isnull(D.periodic_pipe)), "PROCESS_KILL did not end the work")
-	TEST_ASSERT(!member_is(P, D), "an entity with no work stayed on the cadence")
-	for(var/i in 1 to 3)
-		TEST_ASSERT(!periodic_run_now(D, P), "an entity with no work could be stepped")
-	TEST_ASSERT_EQUAL(D.steps, 2, "it stepped with no work")
-
-	D.work = 5
-	cadence_start(D, P)
-	TEST_ASSERT(member_is(P, D), "cadence_start() did not put it back on the cadence")
-	TEST_ASSERT(periodic_run_now(D, P), "a restarted entity did not step")
-	TEST_ASSERT_EQUAL(D.steps, 3, "a restarted entity did not step")
-	cadence_stop(D)
-	var/stopped_at = D.steps
-	for(var/i in 1 to 3)
-		periodic_run_now(D, P)
-	TEST_ASSERT_EQUAL(D.steps, stopped_at, "cadence_stop() did not end the work")
-	TEST_ASSERT(!member_is(P, D), "a stopped entity stayed on the cadence")
-
-	// Moving to another lane leaves the first one, not double-stepped.
-	D.work = 5
-	cadence_start(D, P)
-	cadence_start(D, PERIODIC_FAST)
-	TEST_ASSERT(!member_is(P, D), "moving to another lane left the entity on the first")
-	TEST_ASSERT(member_is(PERIODIC_FAST, D), "moving to another lane did not join the new one")
-	TEST_ASSERT(!periodic_run_now(D, P), "the old lane kept stepping after a move")
-	TEST_ASSERT(periodic_run_now(D, PERIODIC_FAST), "the new lane did not step")
-	TEST_ASSERT_EQUAL(D.last_delta, 2, "the fast lane passes the old SSfastprocess delta")
-	cadence_stop(D)
-
-	// The kernel sweeps the cadence: a started member steps on its own, every 0.2 s on the fast lane, until it stops.
-	D.work = 1000
-	var/steps_before = D.steps
-	cadence_start(D, PERIODIC_FAST)
-	sleep(1 SECONDS)
-	TEST_ASSERT(D.steps >= steps_before + 3, "the kernel did not step a fast-lane member: [D.steps - steps_before] steps in a second")
-	TEST_ASSERT(D.steps <= steps_before + 8, "the kernel stepped a fast-lane member too often: [D.steps - steps_before] steps in a second")
-	cadence_stop(D)
-	var/after_stop = D.steps
-	sleep(1 SECONDS)
-	TEST_ASSERT_EQUAL(D.steps, after_stop, "a stopped member kept being stepped by the kernel")
-	TEST_ASSERT(!length(pipeline_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
-
-/// A member that stops itself during its sweep does not make the member swapped into its slot miss the sweep.
-/datum/unit_test/dq_periodic_sweep_survives_leaving_members
-
-/datum/unit_test/dq_periodic_sweep_survives_leaving_members/Run()
-	var/list/probes = list()
-	for(var/i in 1 to 5)
-		var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
-		D.work = (i == 2 || i == 3) ? 1 : 100 // the second and third stop at their first step
-		probes += D
-		cadence_start(D, PERIODIC_SLOW)
-	var/datum/controller/kernel/K = kernel()
-	var/datum/work_item/W = K.cadence_items[PERIODIC_SLOW]
-	W.next_run = 0
-	W.cursor = 0 // a fresh sweep
-	var/saved = K.expect_errors
-	// The sweep is spread across the interval (run_item_spread()): drive passes until it closes.
-	var/now = world.time + 1000
-	var/runs_before = W.runs
-	for(var/pass in 1 to 1000)
-		K.run_item(W, TICK_USAGE + 100, now) // a whole tick of budget from here: the test's tick may already be spent
-		if(W.runs > runs_before)
-			break
-		now += W.interval
-	K.expect_errors = saved
-	TEST_ASSERT(W.runs > runs_before && !W.cursor, "the sweep closed")
-	for(var/datum/dq_periodic_probe/D as anything in probes)
-		TEST_ASSERT_EQUAL(D.steps, 1, "every member is stepped once in a sweep, even when others leave it")
-	for(var/datum/dq_periodic_probe/D as anything in probes)
-		cadence_stop(D)
 
 /// A machine with explicitly started work (started_work(), code/library/machine/started_work.dm).
 /obj/machinery/dq_step_probe
@@ -312,10 +211,8 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /datum/unit_test/dq_idle_items_sleep/Run()
 	var/obj/structure/tanning_rack/rack = allocate(/obj/structure/tanning_rack, test_floor())
-	TEST_ASSERT_NULL(rack.periodic_pipe, "an empty tanning rack kept stepping")
 	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
 	T.set_enabled(FALSE)
-	TEST_ASSERT_NULL(T.periodic_pipe, "a switched-off computer kept stepping")
 	TEST_ASSERT(length(T.rx?.every_parked), "a switched-off computer's every() work is not parked")
 	T.enable_computer()
 	T.set_enabled(FALSE)
@@ -331,7 +228,6 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	var/turf/T = test_floor()
 	var/mob/living/M = allocate(/mob/living, T)
 	var/obj/item/holder/H = new(T, M)
-	TEST_ASSERT(!H.periodic_pipe, "a holder polls on a lane")
 	for(var/i in 1 to 40)
 		dq_test_ticks(1)
 		if(QDELETED(H))
@@ -351,7 +247,6 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	test_driver_begin()
 	var/datum/event_meta/EM = new(EVENT_LEVEL_MUNDANE, "Lane test", /datum/event/nothing, 0, add_to_queue = FALSE)
 	var/datum/event/E = new /datum/event/nothing(EM)
-	TEST_ASSERT(isnull(E.periodic_pipe), "a new event steps from its every(), not from a legacy lane")
 	E.kill()
 	test_time(3 SECONDS) // the event_active gate fell: the every() parks at its next interval
 	TEST_ASSERT(!every_running(E), "a killed event kept its every()")
@@ -361,17 +256,6 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 		var/datum/event_container/EC = SSevents.event_containers[i]
 		TEST_ASSERT(EC.clock_running, "event container [i] is not keeping its clock")
 	test_driver_end()
-
-/// Shuttles (was SSshuttles' fire loop): a shuttle with work is on the slow lane, an idle one is not.
-/datum/unit_test/dq_shuttles_on_lanes
-
-/datum/unit_test/dq_shuttles_on_lanes/Run()
-	for(var/name in SSshuttles.shuttles)
-		var/datum/shuttle/S = SSshuttles.shuttles[name]
-		if(!(S.shuttle_flags & SHUTTLE_FLAGS_PROCESS))
-			continue
-		var/working = S.always_process || S.process_state != IDLE_STATE
-		TEST_ASSERT_EQUAL(!!S.periodic_pipe, working, "shuttle [name]: lane [S.periodic_pipe] but working [working]")
 
 #endif
 
@@ -439,59 +323,10 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /datum/unit_test/dq_items_run_only_when_they_can_act/Run()
 	var/turf/T = locate(world.maxx - 2, world.maxy - 2, test_floor().z)
-	// Start and stop conditions.
-	var/obj/item/chainsaw/saw = allocate(/obj/item/chainsaw, test_floor())
-	TEST_ASSERT(!saw.periodic_pipe, "a chainsaw that is off runs")
-	var/obj/item/gun/launcher/spikethrower/spikes = allocate(/obj/item/gun/launcher/spikethrower, test_floor())
-	TEST_ASSERT(!spikes.periodic_pipe, "a full spikethrower runs")
-	var/obj/item/ghost_trap/trap = allocate(/obj/item/ghost_trap, test_floor())
-	TEST_ASSERT(!trap.periodic_pipe, "an empty ghost trap runs")
 	var/obj/effect/map_effect/interval/effect = allocate(/obj/effect/map_effect/interval, T)
 	TEST_ASSERT_EQUAL(stat_value(effect, STAT_RELEVANCE), RELEVANCE_NONE, "an interval effect with nobody near is relevant")
 
-	// One timer instead of a countdown.
-	var/obj/structure/timer_door/door = allocate(/obj/structure/timer_door, test_floor())
-	TEST_ASSERT(!door.periodic_pipe, "a timer door polls")
 	var/obj/effect/spider/eggcluster/eggs = allocate(/obj/effect/spider/eggcluster, test_floor())
-	TEST_ASSERT(!eggs.periodic_pipe, "an egg cluster polls its growth")
 	TEST_ASSERT(length(eggs.sched_rec?.timers), "an egg cluster has no hatch timer")
 
 #endif
-
-/// A spread cadence sweep keeps each member's phase: one pass runs only the share of members due by then, a later pass
-/// the rest, and a pass that fell behind catches up by a bounded share.
-/datum/unit_test/dq_periodic_sweep_is_spread
-
-/datum/unit_test/dq_periodic_sweep_is_spread/Run()
-	var/datum/controller/kernel/K = kernel()
-	var/datum/work_item/W = K.cadence_items[PERIODIC_SLOW]
-	TEST_ASSERT(W.spread, "a cadence slower than the tick spreads its sweep")
-	var/list/probes = list()
-	for(var/i in 1 to 40)
-		var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
-		D.work = 100
-		probes += D
-		cadence_start(D, PERIODIC_SLOW)
-	var/total = members_total(PERIODIC_SLOW)
-	W.next_run = 0
-	W.cursor = 0
-	var/now = world.time + 1000
-	K.run_item(W, TICK_USAGE + 100, now)
-	var/stepped = 0
-	for(var/datum/dq_periodic_probe/D as anything in probes)
-		stepped += D.steps
-	TEST_ASSERT(W.cursor, "one pass leaves the sweep open")
-	TEST_ASSERT(W.cursor - 1 <= CEILING(total * world.tick_lag / W.interval, 1), "the first pass ran only its share ([W.cursor - 1] of [total])")
-	// A long stall: the next pass is far behind, but catches up by a bounded share.
-	var/before = W.cursor
-	K.run_item(W, TICK_USAGE + 100, now + W.interval * 10)
-	TEST_ASSERT(W.cursor == 0 || W.cursor - before <= CEILING(total * world.tick_lag / W.interval, 1) * KERNEL_SPREAD_CATCHUP, "catch-up is bounded ([W.cursor - before])")
-	for(var/pass in 1 to 1000)
-		if(!W.cursor)
-			break
-		now += W.interval
-		K.run_item(W, TICK_USAGE + 100, now)
-	TEST_ASSERT(!W.cursor, "the sweep closes")
-	for(var/datum/dq_periodic_probe/D as anything in probes)
-		TEST_ASSERT_EQUAL(D.steps, 1, "every member stepped once in the sweep")
-		cadence_stop(D)

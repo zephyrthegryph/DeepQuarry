@@ -39,19 +39,19 @@ type Data = smes;
 export const Smes = (props) => {
   const { act, data } = useBackend<Data, SmesActions>();
   const {
-    capacityPercent,
-    capacity,
-    charge,
+    capacityPercent = 0,
+    capacity = 0,
+    charge = 0,
     inputAttempt,
     inputting,
-    inputLevel,
-    inputLevelMax,
-    inputAvailable,
+    inputLevel = 0,
+    inputLevelMax = 0,
+    inputAvailable = 0,
     outputAttempt,
     outputting,
-    outputLevel,
-    outputLevelMax,
-    outputUsed,
+    outputLevel = 0,
+    outputLevelMax = 0,
+    outputUsed = 0,
   } = data;
   const inputState =
     (capacityPercent >= 100 && 'good') || (inputting && 'average') || 'bad';

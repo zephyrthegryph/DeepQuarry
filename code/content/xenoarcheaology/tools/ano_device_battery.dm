@@ -210,7 +210,7 @@ CAPABILITIES(/obj/item/anodevice)
 				STAMP(src, last_activation, CLOCK_WORLD)
 
 			//process the effect
-			inserted_battery().battery_effect.periodic_step()
+			inserted_battery().battery_effect.effect_tick()
 
 			//work out if we need to shutdown
 			if(inserted_battery().stored_charge <= 0)

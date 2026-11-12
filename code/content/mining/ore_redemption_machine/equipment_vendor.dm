@@ -18,7 +18,6 @@
 	var/list/prize_list // per_type(): one table per vendor type, built by build_prize_list()
 	/// Entries an admin added to this one vendor (new_prize()): name -> /datum/data/mining_equipment, shown under "Extra".
 	var/list/extra_prizes
-	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
 
 
@@ -197,7 +196,7 @@
 	var/datum/money_account/account = get_account(target.associated_account_number)
 	return account?.debit(amt, name, "Equipment purchase", name)
 
-/obj/machinery/mineral/equipment_vendor/tgui_static_data(mob/user)
+/obj/machinery/mineral/equipment_vendor/ui_static_data(datum/act/eval/A)
 	var/list/static_data[0]
 
 	// Available items - in static data because we don't wanna compute this list every time! It hardly changes.
@@ -214,12 +213,6 @@
 		static_data["items"][cat] = cat_items
 
 	return static_data
-
-/obj/machinery/mineral/equipment_vendor/vv_edit_var(var_name, var_value)
-	// Gotta update the static data in case an admin VV's the items for some reason..!
-	if(var_name == "prize_list")
-		dirty_items = TRUE
-	return ..()
 
 CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
@@ -242,13 +235,6 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vendor_blast_sparks)))
 	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
-
-/obj/machinery/mineral/equipment_vendor/ui_prepare(mob/user, datum/tgui/ui)
-	// Update static data if need be
-	if(dirty_items)
-		update_tgui_static_data(user, ui)
-		dirty_items = FALSE
-	return TRUE
 
 /obj/machinery/mineral/equipment_vendor/proc/ui_act_logoff(datum/act/op/A)
 	var/mob/user = A.actor
@@ -402,7 +388,6 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 		name = "Generic Entry"
 	// prize_list is the type's shared per_type() table: this vendor's own entries go in extra_prizes, shown under "Extra".
 	rel_add(src, nameof(extra_prizes), new /datum/data/mining_equipment(name, path, cost), key = name) // a name already listed is replaced
-	dirty_items = TRUE
 
 /// The prizes of `category` this vendor offers: its type's table, and its own extra entries under "Extra".
 /obj/machinery/mineral/equipment_vendor/proc/prizes_in(category)

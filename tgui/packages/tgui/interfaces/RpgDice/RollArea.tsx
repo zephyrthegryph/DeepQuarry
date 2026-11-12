@@ -7,7 +7,7 @@ import type { Data, Result } from './types';
 export const RollArea = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { last_rolls } = data;
+  const { last_rolls = [] } = data;
 
   const messagesEndRef: RefObject<HTMLDivElement | null> = useRef(null);
 

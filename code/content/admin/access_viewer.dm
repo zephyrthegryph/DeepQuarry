@@ -50,7 +50,7 @@ CAPABILITIES(/datum/access_viewer)
 		req_thing.add_req_one_access(set_id)
 	return TRUE
 
-/datum/access_viewer/tgui_static_data(mob/user)
+/datum/access_viewer/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/access_list = list()
 	for(var/datum/access/dat as anything in subtypesof(/datum/access))

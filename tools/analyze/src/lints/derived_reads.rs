@@ -70,6 +70,7 @@ fn proc_kind(name: &str) -> Option<&'static str> {
         "should_run" => Some("runs"),
         "draw" | "hidden_verbs" => Some("drawn"),
         "tgui_data" | "ui_data" => Some("ui"),
+        "ui_static_data" => Some("ui_static"),
         "push_to_rust" => Some("push"),
         _ => None,
     }
@@ -80,6 +81,7 @@ fn entry_kind(call: &str) -> &'static str {
         "runs_while" => "runs",
         "drawn_from" => "drawn",
         "ui_from" => "ui",
+        "ui_static_from" => "ui_static",
         "rust_push" => "push",
         _ => "derive",
     }
@@ -90,6 +92,7 @@ fn kind_call(kind: &str) -> Option<&'static str> {
         "runs" => Some("runs_while"),
         "drawn" => Some("drawn_from"),
         "ui" => Some("ui_from"),
+        "ui_static" => Some("ui_static_from"),
         "push" => Some("rust_push"),
         _ => None,
     }
@@ -371,7 +374,7 @@ fn parse_entries(proc: &Proc) -> Vec<Entry> {
     let mut entries = Vec::new();
     let mut pos = 0usize;
     loop {
-        let Some(m) = pat!(r"(?<![\w.])(runs_while|drawn_from|ui_from|rust_push|derive)\s*\(").captures_at(&text, pos) else { break };
+        let Some(m) = pat!(r"(?<![\w.])(runs_while|drawn_from|ui_from|ui_static_from|rust_push|derive)\s*\(").captures_at(&text, pos) else { break };
         let (inner, end) = paren_args(&text, m.end(0) - 1);
         pos = end;
         let kind = entry_kind(m.s(1));
@@ -610,6 +613,7 @@ fn intern_kind(kind: &str) -> &'static str {
         "runs" => "runs",
         "drawn" => "drawn",
         "ui" => "ui",
+        "ui_static" => "ui_static",
         "push" => "push",
         _ => "derive",
     }
@@ -835,8 +839,8 @@ fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) 
             continue;
         }
         let known = model.union(&model.vars, &proc.owner);
-        if proc.name == "ui_data" {
-            // A window host's ui_data(A) is an output: every var of the host it reads must publish its writes, or nothing
+        if proc.name == "ui_data" || proc.name == "ui_static_data" {
+            // A window host's ui_data(A) (and its ui_static_data(A)) is an output: every var of the host it reads must publish its writes, or nothing
             // re-runs it. Global, no exemption list.
             let tracked = model.union(&model.tracked, &proc.owner);
             let relations = model.union(&model.relations, &proc.owner);
@@ -852,13 +856,13 @@ fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) 
                     owner: proc.owner.clone(),
                     proc: proc.name.clone(),
                     var: Some(name),
-                    kind: Some("ui".to_string()),
+                    kind: Some(if proc.name == "ui_static_data" { "ui_static" } else { "ui" }.to_string()),
                 });
             }
         }
         // The reads generator writes a window host's ui_from() from its ui_data() body whether or not the type also keeps a hand derived()
         // (`gens/reads.rs`): a hand list for a window would only repeat it.
-        if generated_covers && (proc.name == "ui_data" || !model.exact(&proc.owner)) {
+        if generated_covers && (proc.name == "ui_data" || proc.name == "ui_static_data" || !model.exact(&proc.owner)) {
             continue;
         }
         let (allowed_reads, label, wanted_kind): (HashSet<String>, String, &str) = if let Some(value) = value {
@@ -1197,7 +1201,7 @@ fn generated_text(model: &Model, test_types: &BTreeSet<String>) -> String {
             continue;
         }
         // A system's window (SSair's) reads the system's own vars: the system boundary lint owns that, not the generated reads.
-        if proc.name == "ui_data" && proc.owner.starts_with("/datum/system") {
+        if (proc.name == "ui_data" || proc.name == "ui_static_data") && proc.owner.starts_with("/datum/system") {
             continue;
         }
         let mut kind = proc_kind(&proc.name).map(|k| k.to_string());

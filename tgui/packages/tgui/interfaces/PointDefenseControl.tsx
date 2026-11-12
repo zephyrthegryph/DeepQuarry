@@ -18,7 +18,7 @@ type Data = {
 
 export const PointDefenseControl = (props) => {
   const { act, data } = useBackend<Data, PointDefenseControlActions>();
-  const { id, turrets } = data;
+  const { id, turrets = [] } = data;
   return (
     <Window width={400} height={600}>
       <Window.Content scrollable>

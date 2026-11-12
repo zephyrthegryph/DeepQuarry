@@ -91,7 +91,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 /datum/tgui_input_colormatrix/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_input_colormatrix/tgui_static_data(mob/user)
+/datum/tgui_input_colormatrix/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["message"] = message
 	data["title"] = title

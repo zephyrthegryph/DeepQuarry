@@ -86,7 +86,7 @@
 	var/list/static_data
 	started = TICK_USAGE_REAL
 	try
-		static_data = holder.tgui_static_data(user)
+		static_data = present_tgui_static_data(holder, user)
 	catch(var/exception/e2)
 		log_world("UI_CENSUS [window] ([holder.type]): static data failed ([e2])")
 	var/static_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)

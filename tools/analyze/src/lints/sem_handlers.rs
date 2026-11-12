@@ -12,6 +12,8 @@
 //!   `A.dt` in a requirement).
 //! * `impure`: a requirement, condition, output or contribution (or any body it follows) that
 //!   writes a tracked var, or calls a setter, hold, release, grant, revoke, `rel_*` or a message.
+//! * `arity`: a handler of a plain-argument entry (setup, param apply/default, preset, rolls, derives, per_type, variants, keeps_if,
+//!   adjacency, on_ending, tooltip, radio_listen; `sem::hooks::ARITY_FORMS`) that needs more parameters (without a default) than the engine passes it; they would arrive null.
 //! * `requirement_return`: a requirement that returns a boolean, or a condition/req_bool callback that returns a non-boolean
 //!   other than TRUE/FALSE (it would read as TRUE and silently allow the op).
 //!
@@ -37,6 +39,7 @@ use crate::tree::CODE_DM;
 const H_UNRESOLVED: &str = "name a proc the type declares, or fix the declaration";
 const H_SIG: &str = "every handler is x(datum/act/A): one parameter of a datum/act type, A.holder always set";
 const H_FIELD: &str = "read only the fields the context type carries (doc/rewrite/final_api.html section 8): use a requirement for A.actor, an output for A.dt";
+const H_ARITY: &str = "declare at most the arguments the entry's engine passes (sem::hooks::ARITY_FORMS names the call), or give the rest a default: DM passes null for a missing one silently";
 const H_IMPURE: &str = "requirements, conditions, outputs and contributions are pure: move the write into an effect (then()) or a setter called from one";
 const H_RETURN: &str = "req callbacks return null to allow or text/a refusal datum to refuse; conditions and transitional req_bool callbacks return TRUE/FALSE";
 const H_PAIR: &str = "act_done(F) or act_cancel(F) on every path after ACT_ATTEMPT (a branch that tests ACT_REFUSED_BY(F), null or ACT_PASS needs neither)";
@@ -55,6 +58,7 @@ static META: Meta = Meta {
         RuleMeta { name: "handler_unresolved", hint: H_UNRESOLVED },
         RuleMeta { name: "signature", hint: H_SIG },
         RuleMeta { name: "context_field", hint: H_FIELD },
+        RuleMeta { name: "arity", hint: H_ARITY },
         RuleMeta { name: "impure", hint: H_IMPURE },
         RuleMeta { name: "requirement_return", hint: H_RETURN },
         RuleMeta { name: "act_try_unpaired", hint: H_PAIR },
@@ -66,7 +70,7 @@ static META: Meta = Meta {
 };
 
 /// Standard outputs: base procs the engine calls by name.
-const STD_OUTPUTS: &[&str] = &["draw", "ui_data", "push_to_rust", "examine"];
+const STD_OUTPUTS: &[&str] = &["draw", "ui_data", "ui_static_data", "push_to_rust", "examine"];
 
 struct SemHandlers;
 
@@ -75,7 +79,7 @@ fn candidate_re() -> &'static Pat {
 }
 
 fn engine_output_re() -> &'static Pat {
-    crate::pat!(r"/proc/(?:draw|ui_data|push_to_rust|examine)\s*\(")
+    crate::pat!(r"/proc/(?:draw|ui_data|ui_static_data|push_to_rust|examine)\s*\(")
 }
 
 impl Lint for SemHandlers {
@@ -187,6 +191,9 @@ impl Lint for SemHandlers {
         }
         let Some(an) = handlers::analyzed(cx.tree) else { return };
         let (sites_before, allow_before) = (out.sites.len(), out.allow_used.len());
+        for (rel, line, msg) in &an.arity {
+            put(out, "arity", rel, *line, msg.clone());
+        }
         for a in &an.handlers {
             let h = &a.h;
             let who = format!("{}::{} ({}())", a.on, h.proc, h.form);

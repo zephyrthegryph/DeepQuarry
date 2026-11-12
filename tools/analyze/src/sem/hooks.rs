@@ -650,3 +650,145 @@ mod context_tests {
     }
 
 }
+
+/// Which argument of an entry constructor holds a handler: a position, or a named argument (`apply = PROC_REF(x)`) that may also be written
+/// at its position.
+#[derive(Clone, Copy, Debug)]
+pub enum ArityArg {
+    Pos(usize),
+    Named(&'static str, Option<usize>),
+}
+
+/// A lifecycle entry whose handler the engine calls with plain arguments (not a datum/act context): how many it passes.
+pub struct ArityForm {
+    pub kw: &'static str,
+    pub arg: ArityArg,
+    pub passes: usize,
+    /// What the engine passes, for the message.
+    pub call: &'static str,
+}
+
+/// Every entry form whose handler takes plain arguments, with the call the engine makes (code/engine/lifeforms/*.dm). `setup()` is listed
+/// with 0 and read as 1 when the entry says `mapload = TRUE` (setup.dm: `x(mapload)`).
+pub const ARITY_FORMS: &[ArityForm] = &[
+    ArityForm { kw: "setup", arg: ArityArg::Pos(0), passes: 0, call: "x() (x(mapload) with mapload = TRUE), setup.dm" },
+    ArityForm { kw: "name_prefix", arg: ArityArg::Pos(0), passes: 0, call: "x(), setup.dm" },
+    ArityForm { kw: "param", arg: ArityArg::Named("apply", Some(5)), passes: 1, call: "apply(value), params.dm" },
+    ArityForm { kw: "param", arg: ArityArg::Named("default", Some(2)), passes: 0, call: "default(), params.dm" },
+    ArityForm { kw: "preset", arg: ArityArg::Pos(1), passes: 1, call: "x(target), preset.dm" },
+    ArityForm { kw: "rolls", arg: ArityArg::Pos(1), passes: 2, call: "x(roller, target), rolls.dm" },
+    ArityForm { kw: "derives", arg: ArityArg::Pos(1), passes: 1, call: "x(target), derives.dm" },
+    ArityForm { kw: "per_type", arg: ArityArg::Pos(1), passes: 1, call: "build(var_name), per_type.dm" },
+    ArityForm { kw: "variants", arg: ArityArg::Pos(1), passes: 0, call: "table(), variants.dm" },
+    ArityForm { kw: "keeps_if", arg: ArityArg::Pos(0), passes: 0, call: "cond(), keeps_if.dm" },
+    ArityForm { kw: "keeps_if", arg: ArityArg::Named("instead", Some(2)), passes: 0, call: "instead(), keeps_if.dm" },
+    ArityForm { kw: "adjacency", arg: ArityArg::Named("connects", Some(2)), passes: 2, call: "connects(other, bit), adjacency.dm" },
+    ArityForm { kw: "adjacency", arg: ArityArg::Named("changed", Some(5)), passes: 1, call: "changed(mask), adjacency.dm" },
+    ArityForm { kw: "on_ending", arg: ArityArg::Pos(0), passes: 2, call: "x(cause, by), lifetimes.dm" },
+    ArityForm { kw: "tooltip", arg: ArityArg::Pos(0), passes: 1, call: "x(user), input.dm" },
+    ArityForm { kw: "radio_listen", arg: ArityArg::Named("filter", Some(1)), passes: 0, call: "filter(), registry.dm" },
+    ArityForm { kw: "radio_listen", arg: ArityArg::Named("via", Some(2)), passes: 1, call: "via(freq), registry.dm" },
+];
+
+/// A handler of an [`ARITY_FORMS`] entry.
+#[derive(Clone, Debug)]
+pub struct ArityRef {
+    pub owner: String,
+    pub proc: String,
+    pub form: &'static str,
+    pub passes: usize,
+    pub call: &'static str,
+    pub rel: String,
+    pub line: u32,
+}
+
+/// `PROC_REF(x)` / `TYPE_PROC_REF(/t, x)` in `arg`: (type or "" for the holder, proc).
+fn arity_proc(arg: &str) -> Option<(String, String)> {
+    let a = arg.trim();
+    let (typed, inner) = if let Some(r) = a.strip_prefix("TYPE_PROC_REF") {
+        (true, r.trim_start())
+    } else if let Some(r) = a.strip_prefix("PROC_REF") {
+        (false, r.trim_start())
+    } else {
+        return None;
+    };
+    let inner = inner.strip_prefix('(')?.strip_suffix(')')?;
+    let parts = split_args(inner);
+    let (ty, proc) = if typed { (parts.first()?.clone(), parts.get(1)?.clone()) } else { (String::new(), parts.first()?.clone()) };
+    if proc.is_empty() || !proc.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return None;
+    }
+    Some((ty, proc))
+}
+
+/// `name = value` of an argument (not `==`): (name, value).
+fn named_arg(a: &str) -> Option<(&str, &str)> {
+    let (k, v) = a.split_once('=')?;
+    if v.starts_with('=') || k.ends_with('!') || k.ends_with('<') || k.ends_with('>') {
+        return None;
+    }
+    let k = k.trim();
+    (!k.is_empty() && k.chars().all(|c| c.is_alphanumeric() || c == '_')).then(|| (k, v.trim()))
+}
+
+/// Every handler of an [`ARITY_FORMS`] entry in a `CAPABILITIES` block (the holder type is known there).
+pub fn discover_arity(decls: &Decls) -> Vec<ArityRef> {
+    let mut out = Vec::new();
+    for m in &decls.markers {
+        if m.name != "CAPABILITIES" {
+            continue;
+        }
+        let owner = m.args.first().cloned().unwrap_or_default();
+        if owner.is_empty() {
+            continue;
+        }
+        let body = &m.body;
+        let b = body.as_bytes();
+        let mut i = 0;
+        let mut in_str = false;
+        while i < b.len() {
+            let c = b[i];
+            if c == b'"' {
+                in_str = !in_str;
+                i += 1;
+                continue;
+            }
+            if in_str || !(c.is_ascii_alphabetic() || c == b'_') {
+                i += 1;
+                continue;
+            }
+            let start = i;
+            while i < b.len() && is_word(b[i]) {
+                i += 1;
+            }
+            if start > 0 && (is_word(b[start - 1]) || b[start - 1] == b'.' || b[start - 1] == b'/') {
+                continue;
+            }
+            let word = &body[start..i];
+            if !ARITY_FORMS.iter().any(|f| f.kw == word) {
+                continue;
+            }
+            let rest = &body[i..];
+            let skip = rest.len() - rest.trim_start().len();
+            if !rest.trim_start().starts_with('(') {
+                continue;
+            }
+            let open = i + skip;
+            let Some(close) = matching_paren(body, open) else { continue };
+            let args = split_args(&body[open + 1..close]);
+            let named = |name: &str| -> Option<String> { args.iter().find_map(|a| named_arg(a).filter(|(k, _)| *k == name).map(|(_, v)| v.to_string())) };
+            let positional: Vec<&String> = args.iter().filter(|a| named_arg(a).is_none()).collect();
+            let mapload = named("mapload").is_some_and(|v| v == "TRUE" || v == "1");
+            for f in ARITY_FORMS.iter().filter(|f| f.kw == word) {
+                let arg = match f.arg {
+                    ArityArg::Pos(n) => positional.get(n).map(|s| s.to_string()),
+                    ArityArg::Named(name, pos) => named(name).or_else(|| pos.and_then(|n| positional.get(n).map(|s| s.to_string()))),
+                };
+                let Some((ty, proc)) = arg.as_deref().and_then(arity_proc) else { continue };
+                let passes = if f.kw == "setup" && mapload { 1 } else { f.passes };
+                out.push(ArityRef { owner: if ty.is_empty() { owner.clone() } else { ty }, proc, form: f.kw, passes, call: f.call, rel: m.rel.clone(), line: m.line_at(start) });
+            }
+        }
+    }
+    out
+}

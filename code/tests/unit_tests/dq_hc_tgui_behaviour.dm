@@ -552,7 +552,7 @@
 	TEST_ASSERT(!QDELETED(T), "the target is still there")
 	TEST_ASSERT(!p2cl_has_question(H), "no question is asked of a player")
 	TEST_ASSERT_EQUAL(E.target(), T, "the target is unchanged")
-	var/list/data = E.tgui_static_data(H)
+	var/list/data = present_tgui_static_data(E, H)
 	TEST_ASSERT_EQUAL(data["real_name"], T.name, "the static data names the target")
 
 /datum/unit_test/dq_hc_tgui/modify_robot_buttons

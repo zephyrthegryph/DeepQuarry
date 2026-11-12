@@ -6,7 +6,7 @@ import type { Data } from '../../types';
 
 export const SleeperSelfClean = (props) => {
   const { data } = useBackend<Data, RobotSleeperActions>();
-  const { cleaning, items_preserved, contents } = data;
+  const { cleaning, items_preserved = [], contents = [] } = data;
 
   const perservedCount = items_preserved.length;
   const cleanableCount = filterFuel(contents, items_preserved).length;

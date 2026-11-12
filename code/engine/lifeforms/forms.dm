@@ -104,7 +104,7 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 /proc/lifeform_plan_build(datum/type_table/T, datum/D)
 	var/datum/lifeform_plan/P = new
 	P.owner_type = T.owner_type
-	var/list/by_target = list()
+	// One entry per key: the table already replaced an earlier declaration of a key in place (table_add_item()).
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
 		if(!istype(E))
@@ -115,18 +115,11 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 		var/list_name = lifeform_kinds()[E.kind]
 		if(!list_name)
 			continue
-		var/target = E.key
-		if(target)
-			var/datum/centry/old = by_target[target]
-			if(old)
-				P.vars[list_name] -= old
 		var/list/into = P.vars[list_name]
 		if(!into)
 			into = list()
 			P.vars[list_name] = into // ALLOW(api): the plan's lists are filled by kind name from one table walk
 		into += C
-		if(target)
-			by_target[target] = C
 	lifeform_plan_finish(P, D)
 	return P
 

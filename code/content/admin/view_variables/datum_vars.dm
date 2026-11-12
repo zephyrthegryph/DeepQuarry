@@ -92,5 +92,5 @@
 	if(("name" in vars) && !isatom(src))
 		. += span_bold("[vars["name"]]") + "<br>"
 
-/datum/proc/on_reagent_change(changetype)
+/datum/proc/on_reagent_change(changetype = null)
 	return

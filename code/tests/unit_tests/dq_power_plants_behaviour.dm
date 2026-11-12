@@ -8,11 +8,9 @@
 // Numbers are recomputed in the test from the documented formula, independently of the code under test. Where a number changes on purpose,
 // doc/rewrite/intended_changes.md ("Power plants") records it and the pin is edited in the same commit.
 
-/// One step of a plant's periodic work: the converted step proc named `step` when the plant has it, else its periodic_step().
+/// One step of a plant's periodic work: its every() step proc named `step`.
 /proc/pp_step(datum/D, step)
-	if(step && hascall(D, step))
-		return call(D, step)(null)
-	return D.periodic_step()
+	return call(D, step)(null)
 
 /// Locks or unlocks the actual emitter controls through its lock() capability's key.
 /proc/pp_set_lock(obj/machinery/power/emitter/M, value)

@@ -290,7 +290,7 @@ function updateData(payload: UpdatePayload): void {
   }
 
   // Contract (DM side: /datum/tgui/proc/get_payload): a `data` block is the
-  // whole of ui_data, and a `static_data` block the whole of tgui_static_data.
+  // whole of ui_data, and a `static_data` block the whole of ui_static_data.
   // Each replaces what the window held, so a key the server stops sending
   // disappears. A payload without the block (a slim push, or a viewer below
   // STATUS_UPDATE) keeps the previous one. There is no partial-data message.

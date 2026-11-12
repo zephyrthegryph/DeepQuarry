@@ -21,13 +21,6 @@ CAPABILITIES(/obj/belly/special/teleporter)
 		return
 	after(src, teleport_delay, PROC_REF(try_tele), with = list(thing))
 
-/obj/belly/special/teleporter/periodic_step(wait)
-	if(istype(target(), /atom/movable))
-		return ..()
-	for(var/atom/movable/AM in contents)
-		try_tele(AM)
-	. = ..()
-
 /obj/belly/special/teleporter/proc/try_tele(atom/movable/thing)
 	if(!thing || !istype(target(), /atom/movable))
 		return

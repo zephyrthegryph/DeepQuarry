@@ -98,7 +98,14 @@ export const Vending = (props) => {
 
 export const VendingMain = (props) => {
   const { act, data } = useBackend<Data, VendingActions>();
-  const { coin, chargesMoney, user, userMoney, guestNotice, products } = data;
+  const {
+    coin,
+    chargesMoney,
+    user,
+    userMoney,
+    guestNotice,
+    products = [],
+  } = data;
 
   const [searchText, setSearchText] = useState<string>('');
   const [toggleLayout, setToggleLayout] = useState(getLayoutState());

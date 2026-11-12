@@ -133,15 +133,15 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	var/obj/item/organ/external/affecting = limb_aimed(A)
 	return (isnull(affecting) || affecting.robotic != ORGAN_ROBOT) ? null : /datum/msg/dose/limb_robotic
 
-/// Whatever covers the limb lets it through (a patch may pierce material, if it says so). The thick hide of some species is a roll made when it goes on.
+/// Whatever covers the limb aimed at (inject_refusal() reads the actor's zone) lets it through (a patch may pierce material, if it says so). The thick hide of some species is a roll made when it goes on.
 /datum/capability/lib/dose/proc/limb_open(datum/act/op/A)
-	var/mob/living/carbon/human/target = A.target
+	var/mob/living/target = A.target
 	var/mob/user = A.actor
 	var/atom/holder = A.holder
 	var/pierce = pierces
 	if(istext(pierce))
 		pierce = holder.vars[pierce]
-	return (!!target.can_inject(user, FALSE, hud_of(user)?.zone_sel?.selecting, pierce, INJECT_METHOD_NEEDLE, FALSE)) ? null : /datum/msg/dose/limb_covered
+	return isnull(target.inject_refusal(user, null, pierce, INJECT_METHOD_NEEDLE, FALSE)) ? null : /datum/msg/dose/limb_covered
 
 /// The roll of a thick hide, for the limb aimed at: TRUE when the thing is turned away.
 /datum/capability/lib/dose/proc/hide_turns_it_away(datum/act/op/A)

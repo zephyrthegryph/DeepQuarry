@@ -20,7 +20,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	var/flags = GLOB.type_derives_cache[A.type]
 	if(isnull(flags) || (flags & (TYPE_DERIVES_PENDING | TYPE_DERIVES_SIDE | TYPE_DERIVES_DEPS)))
 		return FALSE
-	if(A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
+	if(LAZYLEN(A.open_tguis))
 		return FALSE
 	if(A.rx && (!isnull(A.rx.look_key) || A.rx.refresh_hidden_verbs || A.rx.refresh_granted_verbs))
 		return FALSE
@@ -30,7 +30,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 
 /// TRUE when a fresh `D` of a stamped type needs no first refresh (its type's verdict is in and its default look is empty).
 /proc/type_look_stamped(datum/D)
-	if(!GLOB.type_look_stamp[D.type] || D.periodic_cadence || D.periodic_interval || LAZYLEN(D.open_tguis) || !look_verdict_fits(D))
+	if(!GLOB.type_look_stamp[D.type] || LAZYLEN(D.open_tguis) || !look_verdict_fits(D))
 		return FALSE
 	var/flags = GLOB.type_derives_cache[D.type]
 	return !isnull(flags) && !(flags & TYPE_DERIVES_PENDING)
@@ -175,8 +175,6 @@ GLOBAL_LIST_EMPTY(type_look_lazy_why)
 		return "derives: side effects"
 	if(flags & TYPE_DERIVES_DEPS)
 		return "derives: values (deps)"
-	if(A.periodic_cadence || A.periodic_interval)
-		return "periodic work"
 	if(LAZYLEN(A.open_tguis))
 		return "open window"
 	if(A.rx && (A.rx.refresh_hidden_verbs || A.rx.refresh_granted_verbs))
@@ -223,9 +221,9 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 			values++
 		if(live & (DEP_PUSH | DEP_LEGACY))
 			effects++
-		if(live & (DEP_UI | DEP_RUN))
+		if(live & DEP_UI)
 			windows++
-	return "[entries] entries ([datums] datums): look [look], values [values], effects [effects], ui/run [windows], nothing live [dead]"
+	return "[entries] entries ([datums] datums): look [look], values [values], effects [effects], ui [windows], nothing live [dead]"
 
 /// Whether a client can come near `A`: only an atom standing somewhere interest can reach is ever drawn on a viewer's approach (interest_enter() walks the
 /// contents of chunks). An area has no place and an atom in nullspace has none either, so a parked draw of theirs would never be asked for: they are never
@@ -235,7 +233,7 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 
 /// Whether a fresh queued `A` may be parked: its type's verdict is lazy and this instance has nothing the verdict did not see.
 /proc/look_lazy_ok(atom/A)
-	if(!look_lazy_reachable(A) || !GLOB.type_look_lazy[A.type] || A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis) || !look_verdict_fits(A))
+	if(!look_lazy_reachable(A) || !GLOB.type_look_lazy[A.type] || LAZYLEN(A.open_tguis) || !look_verdict_fits(A))
 		return FALSE
 	return !ismob(A)
 
@@ -337,7 +335,7 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 /// the way a turf's contents are, so it stayed undrawn and the player kept a grey screen. (`mapload` cannot tell them apart: INITIALIZE_IMMEDIATE
 /// types, the HUD's among them, always initialize as a map load.)
 /proc/boot_created_hold(atom/A)
-	if(GLOB.boot_created_settled || ismob(A) || A.periodic_cadence || A.periodic_interval || isnull(get_turf(A)) || !materialization_host().frame_running())
+	if(GLOB.boot_created_settled || ismob(A) || isnull(get_turf(A)) || !materialization_host().frame_running())
 		return FALSE // the cheap tests first: this runs for every atom created at boot
 	look_verdicts_load() // the verdicts a previous boot of this world learned: a known type is neither held nor sampled
 	if(!isnull(GLOB.type_look_stamp[A.type]) && look_verdict_fits(A))

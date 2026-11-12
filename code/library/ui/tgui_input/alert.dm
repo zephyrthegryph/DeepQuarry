@@ -91,7 +91,7 @@ CAPABILITIES(/datum/tgui_alert)
 /datum/tgui_alert/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_alert/tgui_static_data(mob/user)
+/datum/tgui_alert/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["autofocus"] = autofocus
 	data["buttons"] = buttons

@@ -328,7 +328,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 		get_asset_datum(/datum/asset/simple/microwave)
 	)
 
-/obj/machinery/microwave/tgui_static_data(mob/user)
+/obj/machinery/microwave/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/datum/xform/recipe = cooking_select(appliancetype, src)

@@ -11,24 +11,21 @@
 
 TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!", "I'M A TERRORIST!", "ALL SECURITY TO SHOOT ME ON SIGHT!", "I HAVE A BOMB!", "CAPTAIN IS A COMDOM!", "GLORY TO ALMACH!"))
 
-/obj/item/megaphone/proc/can_broadcast(mob/living/user)
-	if(user.client)
-		if(user.client.prefs.muted & MUTE_IC)
-			to_chat(user, span_warning("You cannot speak in IC (muted)."))
-			return FALSE
+/// Why `user` cannot shout through the megaphone now, or null when they can. It never prints: shout_entered() shows the reason once.
+/obj/item/megaphone/proc/broadcast_refusal(mob/living/user)
+	if(user.client?.prefs.muted & MUTE_IC)
+		return "You cannot speak in IC (muted)."
 	if(!(ishuman(user) || HAS_SYNTHETIC_BIOLOGY(user)))
-		to_chat(user, span_warning("You don't know how to use this!"))
-		return FALSE
+		return "You don't know how to use this!"
 	if(user.has_status(STAT_MUTED))
-		return FALSE
+		return "You can't speak!"
 	if(!COOLDOWN_FINISHED(src, spamcheck))
-		to_chat(user, span_warning("[src] needs to recharge!"))
-		return FALSE
+		return "[src] needs to recharge!"
 	if(loc != user)
-		return FALSE
+		return "You need to hold [src] to use it."
 	if(user.stat != CONSCIOUS)
-		return FALSE
-	return TRUE
+		return "You can't use [src] right now."
+	return null
 
 /obj/item/megaphone/proc/do_broadcast(mob/living/user, message)
 	if(emagged)
@@ -48,7 +45,9 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 		return OP_OK
 	var/message = capitalize(A.answer.value)
 
-	if(!can_broadcast(user))
+	var/refusal = broadcast_refusal(user)
+	if(refusal)
+		to_chat(user, span_warning(refusal))
 		return OP_OK
 
 	COOLDOWN_START(src, spamcheck, 2 SECONDS)

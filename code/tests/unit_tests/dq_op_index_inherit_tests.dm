@@ -33,3 +33,33 @@
 	TEST_ASSERT(tables > 100, "tables checked ([tables])")
 	TEST_ASSERT(GLOB.op_plans_inherited > 0, "no plan was shared from a parent table")
 	log_world("dq_op_index_inherit_parity: [tables] tables; plans built [GLOB.op_plans_built], inherited [GLOB.op_plans_inherited]")
+
+/// The one override rule (table_add_item()): a later declaration of a key replaces the earlier entry at its position, a new key appends. A
+/// subtype's re-declared op keeps its parent's place in the op index (the menu and click order), and a re-declared relation keeps its place
+/// among the relations. Real types this moved when the rule became one: the /robot tgui modules' ui_open now sits where /datum/tgui_module
+/// declares it.
+/datum/unit_test/dq_table_override_keeps_position
+
+/datum/unit_test/dq_table_override_keeps_position/Run()
+	var/list/old_capture = GLOB.declare_report_capture
+	GLOB.declare_report_capture = list()
+	var/datum/type_table/parent = table_compile(/obj/e1_fixture, null, list(entry_of("op", "first"), entry_of("op", "middle"), entry_of("op", "last"), ref_one("rel_a"), ref_one("rel_b")), "parent.dm:1")
+	var/datum/type_table/child = table_compile(/obj/e1_fixture, parent, list(entry_of("op", "middle"), entry_of("op", "added"), ref_one("rel_a", on_other_deleted = OTHER_DELETE_ME)), "child.dm:1")
+	GLOB.declare_report_capture = old_capture
+	var/list/keys = list()
+	for(var/datum/op_plan/P as anything in op_index_of_table(child).ordered)
+		keys += P.key
+	TEST_ASSERT_EQUAL(jointext(keys, ","), "first,middle,last,added", "a re-declared op keeps the parent's position, a new one appends")
+	var/datum/op_plan/middle = op_index_of_table(child).by_key["middle"]
+	TEST_ASSERT_EQUAL(middle?.origin, "child.dm:1", "the re-declaration is the one kept")
+	var/list/rels = list()
+	var/ops = 0
+	for(var/datum/centry/C as anything in child.items)
+		var/datum/entry/E = C.item
+		if(E.kind == ENTRY_REF_ONE)
+			rels += "[E.args["var"]]@[C.origin]"
+		if(E.kind == "op")
+			ops++
+	TEST_ASSERT_EQUAL(jointext(rels, ","), "rel_a@child.dm:1,rel_b@parent.dm:1", "a re-declared relation keeps its position")
+	TEST_ASSERT_EQUAL(ops, 4, "the table holds one entry per op key")
+	TEST_ASSERT_EQUAL(length(parent.items), 5, "the parent's table is unchanged")

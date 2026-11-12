@@ -44,7 +44,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 	return TRUE
 
-/datum/log_holder/tgui_static_data(mob/user)
+/datum/log_holder/ui_static_data(datum/act/eval/A)
 	var/list/data = list(
 		"round_id" = GLOB.round_id,
 		"logging_start_timestamp" = logging_start_timestamp,
@@ -104,9 +104,9 @@ CAPABILITIES(/datum/log_holder)
 		CRASH("Attempted to call init_logging twice!")
 
 	round_id = GLOB.round_id
-	logging_start_timestamp = rustg_unix_timestamp()
+	set_logging_start_timestamp(rustg_unix_timestamp())
 	set_log_categories(list())
-	disabled_categories = list()
+	set_disabled_categories(list())
 
 	human_readable_enabled = CONFIG_GET(flag/log_as_human_readable)
 
@@ -118,13 +118,13 @@ CAPABILITIES(/datum/log_holder)
 		for(var/datum/log_category/sub_category as anything in sub_categories)
 			config_flag = initial(sub_category.config_flag)
 			if(config_flag && !config.Get(config_flag))
-				disabled_categories[initial(sub_category.category)] = TRUE
+				set_disabled_categories_at(initial(sub_category.category), TRUE)
 				sub_categories -= sub_category
 				continue
 
 		config_flag = initial(master_category.config_flag)
 		if(config_flag && !config.Get(config_flag))
-			disabled_categories[initial(master_category.category)] = TRUE
+			set_disabled_categories_at(initial(master_category.category), TRUE)
 			if(!length(sub_categories))
 				continue
 		// enabled, or any of the sub categories are enabled

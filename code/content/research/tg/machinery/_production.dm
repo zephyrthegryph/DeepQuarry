@@ -103,16 +103,15 @@ CAPABILITIES(/obj/machinery/rnd/production)
 /obj/machinery/rnd/production/proc/update_designs()
 	PROTECTED_PROC(TRUE)
 	var/previous_design_count = LAZYLEN(available_designs)
-	LAZYCLEARLIST(available_designs)
+	clear_available_designs()
 	for(var/design_id in stored_research.researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
 		if(design.build_type & allowed_buildtypes)
-			LAZYOR(available_designs, design)
+			include_available_designs(design)
 	var/design_delta = LAZYLEN(available_designs) - previous_design_count
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
-	update_static_data_for_all_viewers()
 
 /// Designs come and go in bursts: one refresh two seconds after the first of them.
 /obj/machinery/rnd/production/proc/on_techweb_update(datum/act/notice/A)
@@ -188,7 +187,6 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	var/total_storage = get_part_rating(/obj/item/stock_parts/matter_bin) * 37.5 * SHEET_MATERIAL_AMOUNT
 	materials.set_local_size(total_storage)
 	set_efficiency_coeff(compute_efficiency())
-	update_static_data_for_all_viewers()
 
 ///Computes this machines cost efficiency based on the available parts
 /obj/machinery/rnd/production/proc/compute_efficiency()
@@ -203,7 +201,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
 
-/obj/machinery/rnd/production/tgui_static_data(mob/user)
+/obj/machinery/rnd/production/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 	var/list/designs = list()
 	for(var/datum/design_techweb/design in available_designs)
@@ -211,7 +210,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 			designs[design.id] = fabricator_design_row(design, efficiency_coeff)
 	data["designs"] = designs
 	data["fabName"] = name
-	var/list/material_data = materials.mat_container()?.tgui_static_data(user)
+	var/list/material_data = present_tgui_static_data(materials.mat_container(), user)
 	if(material_data)
 		data += material_data
 	return data

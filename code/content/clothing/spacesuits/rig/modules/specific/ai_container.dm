@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 	ref_one(nameof(integrated_ai), /mob)
 	owns_one(nameof(ai_card), on_destroy = ON_DESTROY_CONTAINED)
 
-/obj/item/rig_module/ai_container/periodic_step()
+/obj/item/rig_module/ai_container/module_tick()
 	if(integrated_ai())
 		var/obj/item/rig/rig = get_rig()
 		if(rig && rig.ai_override_enabled)

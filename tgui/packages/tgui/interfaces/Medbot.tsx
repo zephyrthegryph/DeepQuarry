@@ -39,10 +39,10 @@ export const Medbot = (props) => {
     beaker_max,
     locked,
     min_urgency,
-    urgency_bands,
-    injection_amount_min,
+    urgency_bands = [],
+    injection_amount_min = 0,
     injection_amount,
-    injection_amount_max,
+    injection_amount_max = 0,
     use_beaker,
     declare_treatment,
     vocal,
@@ -113,7 +113,7 @@ export const Medbot = (props) => {
                   step={1}
                   minValue={injection_amount_min}
                   maxValue={injection_amount_max}
-                  value={injection_amount!}
+                  value={injection_amount ?? 0}
                   onChange={(val: number) => act('adj_inject', { val: val })}
                 />
               </LabeledList.Item>

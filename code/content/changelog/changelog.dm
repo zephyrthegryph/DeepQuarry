@@ -25,7 +25,7 @@ CAPABILITIES(/datum/changelog)
 		changelog_items[date] = changelog_item
 	return ui.send_asset(changelog_item)
 
-/datum/changelog/tgui_static_data()
+/datum/changelog/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["dates"] = dates
 	data["testmerges"] = testmerges

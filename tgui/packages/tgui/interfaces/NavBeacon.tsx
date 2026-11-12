@@ -23,7 +23,7 @@ type Data = {
 
 export const NavBeacon = (props) => {
   const { act, data } = useBackend<Data, NavBeaconActions>();
-  const { locked, open, location, codes } = data;
+  const { locked, open, location, codes = {} } = data;
   const [newKey, setNewKey] = useState('');
   const [newVal, setNewVal] = useState('');
 

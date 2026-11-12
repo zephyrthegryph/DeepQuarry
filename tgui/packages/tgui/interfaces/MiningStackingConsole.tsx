@@ -18,7 +18,7 @@ type Data = {
 export const MiningStackingConsole = (props) => {
   const { act, data } = useBackend<Data, MiningStackingConsoleActions>();
 
-  const { stacktypes, stackingAmt } = data;
+  const { stacktypes = [], stackingAmt = 1 } = data;
 
   return (
     <Window width={400} height={500}>

@@ -21,7 +21,7 @@ fn repo_root() -> PathBuf {
 fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     let root = repo_root();
     let cfg = SpikeConfig::parse(&std::fs::read_to_string(root.join("tools/analyze/oracle/spike.toml")).expect("spike.toml"));
-    assert_eq!(cfg.handlers.len(), 7, "the spike pins 7 handlers");
+    assert_eq!(cfg.handlers.len(), 6, "the spike pins 6 handlers");
 
     // Parsing the whole tree holds every proc body as a syntax tree (most of this test's memory); this test reads a few bodies, so hold
     // them encoded: the gate dies of out-of-memory when the machine is loaded, and the assertions below do not change.

@@ -58,7 +58,7 @@ CAPABILITIES(/datum/board_game/chess)
 
 GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 
-/datum/board_game/chess/tgui_static_data(mob/user)
+/datum/board_game/chess/ui_static_data(datum/act/eval/A)
 	return GLOB.chess_static_data
 
 /// /datum/board_game/chess's window data.

@@ -46,7 +46,7 @@ type Data = {
 export const TicketChat = (props) => {
   const { act, data } = useBackend<Data, TicketChatActions>();
   const [ticketChat, setTicketChat] = useState('');
-  const { id, level, handler, log } = data;
+  const { id, level, handler, log = [] } = data;
 
   const messagesEndRef: RefObject<HTMLDivElement | null> = useRef(null);
   const inputRef: RefObject<HTMLInputElement | null> = useRef(null);

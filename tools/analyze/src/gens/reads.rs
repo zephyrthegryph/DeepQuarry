@@ -210,7 +210,7 @@ impl Generator for Reads {
 /// Ordinary output reads/diagnostics stay with their existing generators; only declared
 /// lookup descriptors and structured lookup-contract failures are handled here.
 fn extend_lookup_outputs(rows: &mut BTreeMap<String, Vec<Row>>, sem: &crate::sem::Sem, eng: &ReadsEngine<'_>, out: &mut GenOut) {
-    let outputs = crate::sem::procs::proc_defs(sem, &["draw", "ui_data", "tgui_data", "hidden_verbs", "push_to_rust", "should_run"]);
+    let outputs = crate::sem::procs::proc_defs(sem, &["draw", "ui_data", "ui_static_data", "tgui_data", "hidden_verbs", "push_to_rust", "should_run"]);
     let mut seen = BTreeSet::new();
     for output in outputs {
         if output.owner == "/" || ENGINE_DIRS.iter().any(|prefix| output.rel.starts_with(prefix)) { continue; }
@@ -275,6 +275,7 @@ fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test
             let call = match name.as_str() {
                 "draw" | "hidden_verbs" => Some("drawn_from"),
                 "ui_data" | "tgui_data" => Some("ui_from"),
+                "ui_static_data" => Some("ui_static_from"),
                 "push_to_rust" => Some("rust_push"),
                 "should_run" => Some("runs_while"),
                 _ => None,

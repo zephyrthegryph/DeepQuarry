@@ -31,7 +31,7 @@ type Data = {
 
 export const DepartmentStorefront = (props) => {
   const { act, data } = useBackend<Data, DepartmentStorefrontActions>();
-  const { department, balance, markup, authorized, stock } = data;
+  const { department, balance, markup, authorized, stock = [] } = data;
 
   return (
     <Window width={620} height={560} title={`${department} Storefront`}>

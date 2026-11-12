@@ -15,7 +15,7 @@ CAPABILITIES(/datum/tgui_module/pai_chassis)
 		get_asset_datum(/datum/asset/spritesheet_batched/pai_icons),
 	)
 
-/datum/tgui_module/pai_chassis/tgui_static_data(mob/user)
+/datum/tgui_module/pai_chassis/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 	var/list/available_sprites = list()
 	var/mob/living/silicon/pai/pai_host = host()

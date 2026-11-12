@@ -25,8 +25,8 @@
 
 
 
-// START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work runs on engine
-// pipelines, cadence_start()/cadence_stop() (code/engine/kernel/cadences.dm).
+// START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work is every()
+// (code/engine/actions/reactions.dm).
 
 /// Returns true if the kernel is initialized and running.
 /// Optional argument init_stage controls what stage the mc must have initialized to count as initialized. Defaults to INITSTAGE_MAX if not specified.

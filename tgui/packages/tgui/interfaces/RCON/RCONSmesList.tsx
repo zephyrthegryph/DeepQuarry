@@ -6,7 +6,7 @@ import type { Data } from './types';
 
 export const RCONSmesList = () => {
   const { act, data } = useBackend<Data, RCONActions>();
-  const { smes_info, pages, current_page } = data;
+  const { smes_info = [], pages, current_page } = data;
 
   return (
     <Section fill title={`SMESs (Page ${current_page})`}>

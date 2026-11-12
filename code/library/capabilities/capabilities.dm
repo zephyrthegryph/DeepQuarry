@@ -107,10 +107,10 @@
 		enrols = rx_type_enrols(holder)
 	if(enrols)
 		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
-	if(flags || holder.periodic_cadence || holder.periodic_interval)
+	if(flags)
 		// A stamped type derives nothing: its stamp was recorded by a refresh that left nothing, this boot or a previous boot of this world
 		// (look_verdicts_load()), so a pending derive verdict does not make its fresh atom owe a first refresh.
-		if(!holder.refresh_queued && GLOB.type_look_stamp[holder.type] && look_verdict_fits(holder) && !holder.periodic_cadence && !holder.periodic_interval && !LAZYLEN(holder.open_tguis))
+		if(!holder.refresh_queued && GLOB.type_look_stamp[holder.type] && look_verdict_fits(holder) && !LAZYLEN(holder.open_tguis))
 			return // the type's default look is empty: the stamp is the mapped appearance it already has (look_stamp.dm)
 		// Draw on first view (look_stamp.dm, boot_created_hold()): during a map load, a type whose look verdict is not known yet queues its first
 		// instance as the sample and holds the rest out of the queue, parked by type, until the settle has the sample's verdict.
@@ -165,31 +165,6 @@
 		caps[C.ui_key()] = mine
 	if(caps)
 		data["caps"] = caps
-
-// ---- periodic work from capabilities (cadence / cap_should_run / cap_periodic_step) ----
-
-/// Any capability with periodic work that wants to run keeps the holder stepping.
-/atom/should_run()
-	. = ..()
-	if(. || !(type_derive_flags(src) & TYPE_DERIVES_CAPS))
-		return
-	for(var/datum/capability/C as anything in caps_all(src))
-		if(C.cadence && C.cap_should_run(src))
-			return TRUE
-	return FALSE
-
-/// Steps every capability whose periodic work wants to run. A type with its own periodic_step()
-/// calls ..() to keep its capabilities stepping.
-/atom/periodic_step(delta)
-	if(!(type_derive_flags(src) & TYPE_DERIVES_CAPS))
-		return PROCESS_KILL
-	var/stepped = FALSE
-	for(var/datum/capability/C as anything in caps_all(src))
-		if(C.cadence && C.cap_should_run(src))
-			C.cap_periodic_step(src, delta)
-			stepped = TRUE
-	if(!stepped)
-		return PROCESS_KILL
 
 /// The type's capability declarations: its CAPABILITY() lines (parents first). type_list()'s builder: built once per
 /// type, interned by caps_intern_list().

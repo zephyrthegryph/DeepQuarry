@@ -246,7 +246,7 @@
 
 // Preview rebuild runs synchronously so pref changes feel instant; only
 // the static_data PUSH to tgui viewers is deferred. The push is what was hitting
-// BYOND's recursion limit on size_multiplier — send_full_update + tgui_static_data
+// BYOND's recursion limit on size_multiplier — send_full_update + ui_static_data
 // + middleware.get_ui_static_data walks every editor catalog AND every pref via
 // compile_character_preferences. Combined with the apply pipeline depth from
 // /mob/living/carbon/human/update_transform on a size change, it tipped over.

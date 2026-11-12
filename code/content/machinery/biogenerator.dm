@@ -95,7 +95,7 @@
 		BIOGEN_ITEM("Winter Coat", /obj/item/clothing/suit/storage/hooded/wintercoat, 1, 500),
 	)
 
-/obj/machinery/biogenerator/tgui_static_data(mob/user)
+/obj/machinery/biogenerator/ui_static_data(datum/act/eval/A)
 	var/list/static_data = list()
 
 	// Available items - in static data because we don't wanna compute this list every time! It hardly changes.

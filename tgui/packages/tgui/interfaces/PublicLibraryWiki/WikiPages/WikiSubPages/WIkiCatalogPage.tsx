@@ -10,8 +10,8 @@ export const WikiCatalogPage = (props: { catalog: CatalogData }) => {
     <Section fill scrollable title={capitalize(catalog.name)}>
       <Stack vertical fill>
         <Stack.Item grow>
-          {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Internal catalog pages */}
           <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: Internal catalog pages
             dangerouslySetInnerHTML={{ __html: sanitizeText(catalog.desc) }}
           />
         </Stack.Item>

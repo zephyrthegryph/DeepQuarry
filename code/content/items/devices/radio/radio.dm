@@ -223,11 +223,11 @@ CAPABILITIES(/obj/item/radio)
 
 	return tgui_interact(user)
 
-/obj/item/radio/tgui_static_data(mob/user)
+/obj/item/radio/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 /obj/item/radio/ui_data(datum/act/eval/A)
 	var/list/data = list()

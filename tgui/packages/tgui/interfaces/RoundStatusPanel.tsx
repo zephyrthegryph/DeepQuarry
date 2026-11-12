@@ -57,7 +57,7 @@ const ShuttleControls = (props: {
   act: (action: string) => void;
 }) => {
   const { shuttle, act } = props;
-  switch (shuttle.state) {
+  switch (shuttle?.state) {
     case 'idle':
       return (
         <Button icon="rocket" color="bad" onClick={() => act('call_shuttle')}>
@@ -154,7 +154,13 @@ const AntagMemberRow = (props: {
 
 export const RoundStatusPanel = () => {
   const { data, act } = useBackend<Data, RoundStatusPanelActions>();
-  const { mode_name, round_duration, delay_end, shuttle, antag_blocks } = data;
+  const {
+    mode_name,
+    round_duration,
+    delay_end,
+    shuttle,
+    antag_blocks = [],
+  } = data;
 
   return (
     <Window width={620} height={700} title="Round Status">

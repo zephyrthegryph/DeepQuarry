@@ -13,7 +13,6 @@
 	var/upgraded = FALSE		// When hit with an upgrade disk, will turn true, allowing it to print the higher tier circuits.
 	var/illegal_upgraded = FALSE // When hit with an illegal upgrade disk, will turn true, allowing it to print the illegal circuits.
 	var/can_clone = FALSE		// Same for above, but will allow the printer to duplicate a specific assembly.
-	var/dirty_items = FALSE
 
 	// Printing state variables
 	var/is_printing = FALSE		// If true, printer is busy cloning.
@@ -98,7 +97,6 @@
 			return TRUE
 		to_chat(user, span_notice("You install \the [O] into  \the [src]."))
 		set_upgraded(TRUE)
-		dirty_items = TRUE
 		attack_self(user)
 		return TRUE
 
@@ -107,8 +105,7 @@
 			to_chat(user, span_warning("\The [src] already has this upgrade."))
 			return TRUE
 		to_chat(user, span_notice("You install \the [O] into  \the [src]."))
-		illegal_upgraded = TRUE
-		dirty_items = TRUE
+		set_illegal_upgraded(TRUE)
 		attack_self(user)
 		return TRUE
 
@@ -122,12 +119,6 @@
 		return TRUE
 
 	return OP_DECLINE
-
-/obj/item/integrated_circuit_printer/vv_edit_var(var_name, var_value)
-	// Gotta update the static data in case an admin VV's the upgraded var for some reason..!
-	if(var_name == "upgraded")
-		dirty_items = TRUE
-	return ..()
 
 /// Old attack_self.
 /obj/item/integrated_circuit_printer/proc/interaction_self(datum/act/op/A)
@@ -145,14 +136,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("circuit_printer_robot_open", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Open"), then(PROC_REF(circuit_printer_robot_open)))
 
-/obj/item/integrated_circuit_printer/ui_prepare(mob/user, datum/tgui/ui)
-	// Update static data if need be
-	if(dirty_items)
-		update_tgui_static_data(user, ui)
-		dirty_items = FALSE
-	return TRUE
-
-/obj/item/integrated_circuit_printer/tgui_static_data(mob/user)
+/obj/item/integrated_circuit_printer/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/list/categories = list()

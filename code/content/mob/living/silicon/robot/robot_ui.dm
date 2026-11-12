@@ -22,7 +22,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	op("quick_action_sensors", ui_act("quick_action_sensors"), then(PROC_REF(ui_act_quick_action_sensors)))
 	op("quick_action_sparks", ui_act("quick_action_sparks"), then(PROC_REF(ui_act_quick_action_sparks)))
 
-/datum/tgui_module/robot_ui/tgui_static_data()
+/datum/tgui_module/robot_ui/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/mob/living/silicon/robot/R = host()

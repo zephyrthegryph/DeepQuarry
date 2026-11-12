@@ -27,7 +27,7 @@ type Data = {
 
 export const UndiesWardrobe = () => {
   const { data, act } = useBackend<Data, UndiesWardrobeActions>();
-  const { categories } = data;
+  const { categories = [] } = data;
 
   return (
     <Window width={520} height={420}>

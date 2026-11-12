@@ -168,7 +168,8 @@ CAPABILITIES(/datum/admin_verb_browser)
 	SStgui.close_uis(src)
 
 /// The verbs and the default pins this admin can use: sent once when the window opens.
-/datum/admin_verb_browser/tgui_static_data(mob/user)
+/datum/admin_verb_browser/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/client/C = user?.client
 	var/list/listed = admin_verbs_listed_for(C)
 	var/list/rows = list()

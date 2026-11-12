@@ -16,11 +16,11 @@ export const SupplyConsoleMenuOrder = (props) => {
   const { act, data } = useBackend<Data, SupplyConsoleActions>();
 
   const {
-    categories,
-    supply_packs,
+    categories = [],
+    supply_packs = [],
     contraband,
-    supply_points,
-    personal_balance,
+    supply_points = 0,
+    personal_balance = 0,
     can_personal_order,
   } = data;
 

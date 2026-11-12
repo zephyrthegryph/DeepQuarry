@@ -28,10 +28,10 @@ export const ShieldCapacitor = (props) => {
   const {
     active,
     time_since_fail,
-    stored_charge,
-    max_charge,
-    charge_rate,
-    max_charge_rate,
+    stored_charge = 0,
+    max_charge = 1,
+    charge_rate = 0,
+    max_charge_rate = 0,
   } = data;
 
   return (

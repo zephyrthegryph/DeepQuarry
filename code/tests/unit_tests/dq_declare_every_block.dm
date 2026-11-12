@@ -37,4 +37,12 @@
 	GLOB.declare_report_capture = list()
 	table_compile(/obj/e1_fixture, null, list(entry_of("op", "toggle"), click_on("toggle"), click_on("examine")), "inputfile.dm:6")
 	TEST_ASSERT_EQUAL(length(GLOB.declare_report_capture), 0, "an op key or a proc is a valid handler, got [json_encode(GLOB.declare_report_capture)]")
+	// extend() of a tag: one some op carries resolves, any other number past TAG_BASE is a declaration error (the generated tag registry).
+	GLOB.declare_report_capture = list()
+	table_compile(/obj/e1_fixture, null, list(extend(TAG_CONTROL, needs(req_empty_hand())), extend(TAG_UI, needs(req_empty_hand()))), "inputfile.dm:7")
+	TEST_ASSERT_EQUAL(length(GLOB.declare_report_capture), 0, "a declared tag resolves, got [json_encode(GLOB.declare_report_capture)]")
+	GLOB.declare_report_capture = list()
+	table_compile(/obj/e1_fixture, null, list(extend(TAG_BASE + 900, needs(req_empty_hand()))), "inputfile.dm:8")
+	TEST_ASSERT_EQUAL(length(GLOB.declare_report_capture), 1, "a tag no op carries is one error, got [json_encode(GLOB.declare_report_capture)]")
+	TEST_ASSERT(declared_op_tags()["[TAG_POD_ENTER]"], "the registry lists a tag a library op carries")
 	GLOB.declare_report_capture = old_capture

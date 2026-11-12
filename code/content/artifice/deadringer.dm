@@ -13,7 +13,7 @@
 /obj/item/deadringer/var/activated = FALSE
 /// Cooldown steps left after triggering.
 /obj/item/deadringer/var/timer = 0
-/// Armed or cooling down: periodic_step() runs (its every()).
+/// Armed or cooling down: deadringer_step() runs (its every()).
 CAPABILITIES(/obj/item/deadringer)
 	ref_one(nameof(corpse), /mob/living/carbon/human)
 	ref_one(nameof(watchowner), /mob/living/carbon/human)

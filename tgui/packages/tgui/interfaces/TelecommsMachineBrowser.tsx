@@ -26,7 +26,7 @@ type machine = { id: string; name: string };
 export const TelecommsMachineBrowser = (props) => {
   const { act, data } = useBackend<Data, TelecommsMachineBrowserActions>();
 
-  const { network, temp, machinelist, selectedMachine } = data;
+  const { network, temp, machinelist = [], selectedMachine } = data;
 
   return (
     <Window width={575} height={450}>

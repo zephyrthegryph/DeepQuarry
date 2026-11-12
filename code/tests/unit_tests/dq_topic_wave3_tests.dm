@@ -127,7 +127,7 @@
 	for(var/list/row in data["receipts"])
 		receipt_tokens += row["ref"]
 	TEST_ASSERT(handle_of(receipt) in receipt_tokens, "and the receipt")
-	var/list/static_data = console.tgui_static_data(user)
+	var/list/static_data = present_tgui_static_data(console, user)
 	var/found_pack = FALSE
 	for(var/list/row in static_data["supply_packs"])
 		if(row["ref"] == handle_of(pack))

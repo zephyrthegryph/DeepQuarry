@@ -25,7 +25,7 @@
 	var/data_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
 	started = TICK_USAGE_REAL
 	for(var/i in 1 to n)
-		static_data = holder.tgui_static_data(user)
+		static_data = present_tgui_static_data(holder, user)
 	var/static_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) / n
 	started = TICK_USAGE_REAL
 	var/text

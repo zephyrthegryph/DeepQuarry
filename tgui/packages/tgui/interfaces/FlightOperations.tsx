@@ -79,11 +79,12 @@ const labelFor = (kind: Kind) =>
 
 export const FlightOperations = () => {
   const { act, data } = useBackend<Data, FlightOperationsActions>();
-  const system = data.destinations.find((body) => body.kind === 'system');
+  const destinations = data.destinations ?? [];
+  const system = destinations.find((body) => body.kind === 'system');
   const [focusId, setFocusId] = useState('system-vir');
   const [selectedId, setSelectedId] = useState<string>();
-  const focus = data.destinations.find((body) => body.id === focusId);
-  const selected = data.destinations.find((body) => body.id === selectedId);
+  const focus = destinations.find((body) => body.id === focusId);
+  const selected = destinations.find((body) => body.id === selectedId);
 
   return (
     <Window
@@ -95,7 +96,7 @@ export const FlightOperations = () => {
         <Stack fill>
           <Stack.Item grow position="relative">
             <WebGLCelestialScene
-              bodies={data.destinations}
+              bodies={destinations}
               focusId={focusId}
               selectedId={selectedId}
               vesselDestinationId={data.vessel_destination_id}

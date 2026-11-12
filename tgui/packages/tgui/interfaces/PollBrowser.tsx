@@ -71,7 +71,7 @@ type Data = {
 
 export const PollBrowser = () => {
   const { data, act } = useBackend<Data, PollBrowserActions>();
-  const { polls, selected } = data;
+  const { polls = [], selected } = data;
 
   return (
     <Window width={560} height={560} title="Player Polls">

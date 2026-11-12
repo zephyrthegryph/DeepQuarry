@@ -37,7 +37,7 @@ type seed = {
 export const SeedStorage = (props) => {
   const { act, data } = useBackend<Data, SeedStorageActions>();
 
-  const { seeds } = data;
+  const { seeds = [] } = data;
 
   seeds.sort((a, b) =>
     a.name.toLowerCase().localeCompare(b.name.toLowerCase()),

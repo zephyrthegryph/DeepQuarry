@@ -28,11 +28,11 @@ export const Tank = (props) => {
     connected,
     showToggle = true,
     maskConnected,
-    tankPressure,
-    releasePressure,
+    tankPressure = 0,
+    releasePressure = 0,
     defaultReleasePressure,
-    minReleasePressure,
-    maxReleasePressure,
+    minReleasePressure = 0,
+    maxReleasePressure = 0,
   } = data;
 
   return (

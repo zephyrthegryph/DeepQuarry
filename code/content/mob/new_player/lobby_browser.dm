@@ -57,7 +57,7 @@
 
 	return data
 
-/mob/new_player/tgui_static_data(mob/user)
+/mob/new_player/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	data["bg"] = 'icons/misc/loading.dmi'

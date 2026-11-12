@@ -10,7 +10,7 @@ export const GameArea = () => {
 
   const {
     game_state,
-    current_board,
+    current_board = [],
     selected_node,
     valid_moves,
     valid_removes,

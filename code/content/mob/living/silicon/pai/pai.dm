@@ -164,7 +164,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	P.name = P.owner + " (" + P.ownjob + ")"
 	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 	if(M)
-		M.toff = FALSE
+		M.set_toff(FALSE)
 	return P
 
 /// Its card and the card's radio, and its chassis when a subtype overrides the default (setup()).

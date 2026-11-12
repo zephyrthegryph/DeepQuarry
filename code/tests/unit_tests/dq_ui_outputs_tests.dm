@@ -255,3 +255,54 @@ CAPABILITIES(/datum/dq_ui_swept_host)
 	dq_ui_frame()
 	TEST_ASSERT_EQUAL(probe.pushes, 1, "a frequency write pushes the open window")
 	host.remove_open_tguis(probe)
+
+/// A window host with static data: what its ui_static_data() reads resends the static block, nothing else does.
+/datum/dq_ui_static_host
+	var/catalog = 0
+	var/live = 0
+
+/datum/dq_ui_static_host/ui_data(datum/act/eval/A)
+	return list("live" = live)
+
+/datum/dq_ui_static_host/ui_static_data(datum/act/eval/A)
+	return list("catalog" = catalog)
+
+// Test types get no generated reads (unit_tests are skipped): the fixture declares what the generator writes for content.
+/datum/dq_ui_static_host/derived()
+	. = ..()
+	. += ui_from(nameof(live))
+	. += ui_static_from(nameof(catalog))
+
+/datum/tgui/dq_ui_static_counter
+	var/full_sends = 0
+
+/datum/tgui/dq_ui_static_counter/New()
+	return
+
+/datum/tgui/dq_ui_static_counter/ui_participants_alive()
+	return !QDELETED(user) && !QDELETED(src_object())
+
+/datum/tgui/dq_ui_static_counter/send_full_update(custom_data, force)
+	full_sends++
+
+/datum/tgui/dq_ui_static_counter/send_update(custom_data, force)
+	return
+
+/datum/unit_test/dq_ui_outputs_static_reads_resend
+
+/datum/unit_test/dq_ui_outputs_static_reads_resend/Run()
+	var/datum/dq_ui_static_host/host = new
+	var/datum/tgui/dq_ui_static_counter/window = allocate(/datum/tgui/dq_ui_static_counter)
+	host.add_open_tguis(window)
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(window.full_sends, 0, "nothing changed: no full update")
+	host.set_live(1)
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(window.full_sends, 0, "a dynamic read is a data push, not a full update")
+	host.set_catalog(1)
+	host.set_catalog(2)
+	dq_ui_frame()
+	TEST_ASSERT_EQUAL(window.full_sends, 1, "a static read resends once per frame")
+	var/list/shown = present_tgui_static_data(host, null)
+	TEST_ASSERT_EQUAL(shown["catalog"], 2, "and ui_static_data() is what it sends")
+	host.remove_open_tguis(window)

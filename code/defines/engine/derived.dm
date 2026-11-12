@@ -1,13 +1,12 @@
 // Declared dependencies (doc/rewrite/dx_conventions.md, "Declared dependencies").
 // Runtime: code/engine/change/derived.dm and refresh.dm.
 //
-// should_run(), draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state. A
+// draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state. A
 // type lists what each one reads in derived(); a change to one of those reads re-derives only that
 // output, once per frame.
 
 // ---- outputs: the bits of a queued entity's refresh_queued ----
-/// should_run(): wake or park the periodic cadence.
-#define DEP_RUN (1<<0)
+/// Bit 0 is free (it was should_run(), the cadence gate, gone with the cadences).
 /// draw() and hidden_verbs(): the look and the verb hides.
 #define DEP_DRAW (1<<1)
 /// Open tgui windows: tgui_data() is pushed.
@@ -16,8 +15,11 @@
 #define DEP_PUSH (1<<3)
 /// on_state_changed(bits). Only a plain state_changed(E) (no var named) raises it.
 #define DEP_LEGACY (1<<4)
+/// Open tgui windows: ui_static_data() is resent (a full update). Only a declared ui_static_from() read raises it: it is not in DEP_ALL, so a
+/// plain mark pushes data and never resends the static block.
+#define DEP_UI_STATIC (1<<19)
 /// Every output a declaration can name.
-#define DEP_OUTPUTS (DEP_RUN | DEP_DRAW | DEP_UI | DEP_PUSH)
+#define DEP_OUTPUTS (DEP_DRAW | DEP_UI | DEP_PUSH)
 /// derive() value number i (0-based, declaration order) is bit DEP_VALUE_SHIFT + i.
 #define DEP_VALUE_SHIFT 5
 /// The most derive() values one type can declare.
@@ -37,13 +39,14 @@
 #define REFRESH_IDLE(E) (!((E).refresh_queued & ~DEP_PARKED))
 
 // ---- derived() entry kinds ----
-#define DKIND_RUNS 1
 #define DKIND_DRAWN 2
 #define DKIND_UI 3
 #define DKIND_DERIVE 4
 #define DKIND_PUSH 5
 /// reaction_reads(handler, ...): more reads of the on_change() reaction with that handler (generated reads).
 #define DKIND_REACTION 6
+/// ui_static_from(...): what the window's ui_static_data() reads.
+#define DKIND_UI_STATIC 7
 
 // Outputs must not write state: in test builds a tracked write while an output runs is reported.
 #if defined(UNIT_TESTS)

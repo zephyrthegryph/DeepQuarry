@@ -67,7 +67,7 @@ function Examine({ lines }: { lines: string[] }) {
             <span
               key={partIndex}
               className={partIndex % 2 ? 'spoiler' : undefined}
-              // Server-built markup, as in chat.
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: server-built markup, as in chat
               dangerouslySetInnerHTML={{ __html: part }}
             />
           ))}

@@ -198,12 +198,16 @@
 	if(!host)
 		return
 	if(injection_choice == "Revive Dead Host")
-		if(!can_use_power_in_host())
+		var/revive_refusal = power_in_host_refusal()
+		if(revive_refusal)
+			tell_power_refusal(revive_refusal)
 			return
 		if(controlling)
 			to_chat(src, span_warning("You cannot do that while in full control of a host."))
 			return
-		if(!can_use_power_docile())
+		revive_refusal = power_docile_refusal()
+		if(revive_refusal)
+			tell_power_refusal(revive_refusal)
 			return
 		if(host.stat != DEAD)
 			to_chat(src, span_danger("Your host must be dead!"))
@@ -222,9 +226,9 @@
 		return
 
 	// Is this even legal to do still? We had to wait for a selection...
-	if(!can_use_power_in_host())
-		return
-	if(!can_use_power_docile())
+	var/refusal = power_in_host_refusal() || power_docile_refusal()
+	if(refusal)
+		tell_power_refusal(refusal)
 		return
 	if(controlling)
 		to_chat(src, span_warning("You cannot do that while in full control of a host."))

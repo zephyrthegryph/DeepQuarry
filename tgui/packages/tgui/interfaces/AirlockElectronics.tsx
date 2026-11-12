@@ -25,8 +25,13 @@ type Data = {
 
 export const AirlockElectronics = () => {
   const { data, act } = useBackend<Data, AirlockElectronicsActions>();
-  const { locked, one_access, last_configurator, all_selected, accesses } =
-    data;
+  const {
+    locked,
+    one_access,
+    last_configurator,
+    all_selected,
+    accesses = [],
+  } = data;
 
   return (
     <Window width={440} height={520}>

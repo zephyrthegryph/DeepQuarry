@@ -22,7 +22,7 @@ type area = { area: string; area_name: string; on: BooleanLike };
 export const GuestPass = (props) => {
   const { act, data } = useBackend<Data, GuestPassActions>();
 
-  const { area, giver, giveName, reason, duration, mode, log, uid } = data;
+  const { area = [], giver, giveName, reason, duration, mode, log, uid } = data;
 
   const sortedArea = [...area].sort((a, b) =>
     a.area_name.localeCompare(b.area_name),
@@ -50,9 +50,9 @@ export const GuestPass = (props) => {
             <Section title="Logs">
               {(log.length &&
                 log.map((l) => (
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: These are internally generated only.
                   <div
                     key={l}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: These are internally generated only.
                     dangerouslySetInnerHTML={{ __html: sanitizeText(l) }}
                   />
                 ))) || <Box>No logs.</Box>}

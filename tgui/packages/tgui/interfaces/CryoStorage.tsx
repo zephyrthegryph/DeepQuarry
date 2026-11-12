@@ -46,7 +46,7 @@ export const CryoStorage = (props) => {
 export const CryoStorageCrew = (props) => {
   const { data } = useBackend<Data>();
 
-  const { crew } = data;
+  const { crew = [] } = data;
 
   return (
     <Section title="Stored Crew">
@@ -63,7 +63,7 @@ export const CryoStorageCrew = (props) => {
 export const CryoStorageItems = (props) => {
   const { data } = useBackend<Data>();
 
-  const { items } = data;
+  const { items = [] } = data;
 
   return (
     <Section title="Stored Items">

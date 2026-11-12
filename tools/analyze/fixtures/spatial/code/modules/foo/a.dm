@@ -34,8 +34,8 @@
 	locate(/obj/item) in X.contents
 	locate(/obj/item) in slot_contents(X)
 	locate(/obj/item) in X.slot_contents(Y)
-	locate(/obj/item) in latent_entries(X)
-	locate(/obj/item) in latent_materialize_all(X)
+	locate(/obj/item) in area_contents_of_type(X)
+	locate(/obj/item) in contents_of(X)
 	locate(/obj/item) in get_all_contents(X)
 	locate(/obj/item) in turf_contents_of_type(X)
 	locate(/obj/item) in area_contents_of_type(X)

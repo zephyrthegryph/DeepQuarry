@@ -137,8 +137,8 @@ CAPABILITIES(/obj/machinery/autolathe)
 			continue
 		. += list(fabricator_design_row(design, creation_efficiency))
 
-/obj/machinery/autolathe/tgui_static_data(mob/user)
-	var/list/data = materials.tgui_static_data()
+/obj/machinery/autolathe/ui_static_data(datum/act/eval/A)
+	var/list/data = present_tgui_static_data(materials, null)
 	data["designs"] = handle_designs(stored_research().researched_designs)
 	data["designs"] += handle_designs(imported_designs)
 	return data
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 			if(!blueprint || LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)
-				LAZYSET(imported_designs, blueprint.id, TRUE)
+				set_imported_designs_at(blueprint.id, TRUE)
 				design_count++
 			else
 				LAZYADD(not_imported, blueprint.name)
@@ -201,13 +201,12 @@ CAPABILITIES(/obj/machinery/autolathe)
 				continue
 			// failed designs are not named: a tech disk can hold a whole web
 			if(blueprint.build_type & AUTOLATHE)
-				LAZYSET(imported_designs, blueprint.id, TRUE)
+				set_imported_designs_at(blueprint.id, TRUE)
 				design_count++
 	if(design_count)
 		to_chat(user, span_notice("[design_count] design\s imported."))
 	if(not_imported)
 		to_chat(user, span_warning("The following design[length(not_imported) > 1 ? "s" : ""] couldn't be imported: [english_list(not_imported)]"))
-	update_static_data_for_all_viewers()
 	return OP_OK
 
 // ---- the look ----

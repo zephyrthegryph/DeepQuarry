@@ -52,7 +52,7 @@ CAPABILITIES(/datum/tgui_input_keycombo)
 /datum/tgui_input_keycombo/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_input_keycombo/tgui_static_data(mob/user)
+/datum/tgui_input_keycombo/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["init_value"] = default // Default is a reserved keyword
 	data["large_buttons"] = TRUE

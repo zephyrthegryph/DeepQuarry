@@ -110,23 +110,15 @@
 #define TYPE_DERIVES_CAPS (1<<0)
 #define TYPE_DERIVES_LOOK (1<<1)
 #define TYPE_DERIVES_VERBS (1<<2)
-/// Not yet known: the type's first refresh fills in LOOK and VERBS.
+/// Not yet known: the generated override tables are not built yet (very early boot); every output counts as possible.
 #define TYPE_DERIVES_PENDING (1<<3)
 /// type_verbs() lists something.
 #define TYPE_DERIVES_TYPE_VERBS (1<<4)
 /// The type declares its dependencies (derived()): its instances join the relation index at init.
 #define TYPE_DERIVES_DEPS (1<<5)
-/// The type overrides a refresh side effect (on_state_changed() or push_to_rust()), or its probe could not rule it out:
+/// The type overrides a refresh side effect (on_state_changed() or push_to_rust()), per the generated table:
 /// a refresh of it does work even when it draws and hides nothing, so its refreshes are never skipped.
 #define TYPE_DERIVES_SIDE (1<<6)
-
-// ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
-/// Every 2 seconds.
-#define CADENCE_SLOW /datum/cadence/slow
-/// Every second.
-#define CADENCE_SECOND /datum/cadence/second
-/// Every 0.2 seconds (continuous lanes need a reason).
-#define CADENCE_FAST /datum/cadence/fast
 
 // ---- power_channels() / powered_by() / cell_bay() / cap_wall_mount() ----
 /// power_channels(): channel indices (Rust's channel order).
@@ -144,6 +136,3 @@
 #define INTEGRITY_KEY_BROKEN "integrity_broken"
 /// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.
 #define CELL_BAY_LOW_PERCENT 15
-/// cap_wall_mount(): pixels from the turf centre into the wall.
-/// Every minute.
-#define CADENCE_MINUTE /datum/cadence/minute

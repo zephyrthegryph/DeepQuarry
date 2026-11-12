@@ -185,8 +185,10 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 			balloon_alert(user, "\the [H] is missing that limb!")
 			return OP_REFUSED
 
-	if(M.can_inject(user, 1, ignore_thickness = bypass_protection))
-
+	var/refusal = M.inject_refusal(user, ignore_thickness = bypass_protection)
+	if(refusal)
+		to_chat(user, span_warning(refusal))
+	else
 		if(M.reagents)
 			var/reagent_id = TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]
 			var/amount_to_add = min(amount_per_transfer_from_this, reagent_volumes[reagent_id])
@@ -232,7 +234,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 /obj/item/reagent_containers/borghypo/ui_title(mob/user)
 	return "Integrated [is_dispensing_drinks ? "Drink Dispenser" : "Chemical Hypo"]"
 
-/obj/item/reagent_containers/borghypo/tgui_static_data(mob/user)
+/obj/item/reagent_containers/borghypo/ui_static_data(datum/act/eval/A)
 	var/list/static_data = list()
 	static_data["isDispensingDrinks"] = is_dispensing_drinks
 	static_data["minTransferAmount"] = min_transfer_amount

@@ -101,7 +101,8 @@ CAPABILITIES(/datum/tgui_input_text)
 /datum/tgui_input_text/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_input_text/tgui_static_data(mob/user)
+/datum/tgui_input_text/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["large_buttons"] = TRUE
 	data["max_length"] = max_length

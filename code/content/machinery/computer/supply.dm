@@ -214,7 +214,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	data["modal"] = tgui_modal_data(src)
 	return data
 
-/obj/machinery/computer/supplycomp/tgui_static_data(mob/user)
+/obj/machinery/computer/supplycomp/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/list/pack_list = list()

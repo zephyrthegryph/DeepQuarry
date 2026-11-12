@@ -226,7 +226,8 @@ CAPABILITIES(/datum/vore_look)
 		if(.)
 			nom_icons[key] = .
 
-/datum/vore_look/tgui_static_data(mob/user)
+/datum/vore_look/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 
 	data["vore_words"] = list(

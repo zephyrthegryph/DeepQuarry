@@ -335,7 +335,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 */
 		if(L.reagents) //Seemingly broken. Would probably be really annoying anyways, so probably for the best that it doesn't work. -Azel
 			var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
-			if(L.can_inject(src, null, target_zone))
+			if(!L.inject_refusal(src, target_zone))
 				if(prob(poison_chance))
 					to_chat(L, span_warning("You feel a strange substance on you."))
 					L.reagents.add_reagent(poison_type, poison_per_bite)
