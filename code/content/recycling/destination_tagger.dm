@@ -14,7 +14,7 @@
 
 /obj/item/destTagger/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["currTag"] = currTag
+	data["currTag"] = istext(currTag) ? currTag : ""
 	var/list/merged_1 = ui_data_obj_item_destTagger(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -34,6 +34,7 @@ CAPABILITIES(/obj/item/destTagger)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("DestinationTagger", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(level_names = map_of(schema_text(), schema_text()), currTag = schema_text(), taggerLocs = map_of(schema_text(), nullable(list_of(int()))))
 	op("set_tag", ui_act("set_tag", arg("tag", schema_text(4096))), then(PROC_REF(ui_act_set_tag)))
 	op("new_tag", ui_act("new_tag", arg("tag", schema_text(4096))), then(PROC_REF(ui_act_new_tag)))
 

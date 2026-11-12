@@ -1,5 +1,3 @@
-export type Data = {
-  currTag: string;
-  level_names: Record<string, string>;
-  taggerLocs: Record<string, number[] | null>;
-};
+import type { DestinationTaggerData } from '../generated/DestinationTagger';
+
+export type Data = DestinationTaggerData;

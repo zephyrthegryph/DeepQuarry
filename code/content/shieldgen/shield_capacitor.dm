@@ -27,9 +27,10 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	links(/obj/machinery/shield_capacitor::owned_gen, /obj/machinery/shield_gen::capacitors, b_many = TRUE)
 	climb()
 	interface("ShieldCapacitor")
+	ui_shape(time_since_fail = num(), stored_charge = num(), max_charge = num(), charge_rate = num(), max_charge_rate = num(), active = bool())
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	without("ui_open")
-	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("toggle", ui_act("toggle"), needs(req(PROC_REF(secured_to_switch_on))), then(PROC_REF(ui_act_toggle)))
 	op("charge_rate", ui_act("charge_rate", arg("rate", num())), then(PROC_REF(ui_act_charge_rate)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("id_swipe", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
@@ -106,7 +107,7 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 /obj/machinery/shield_capacitor/proc/ui_data_obj_machinery_shield_capacitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["active"] = active
+	data["active"] = active ? TRUE : FALSE
 
 	return data
 
@@ -135,11 +136,13 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 		set_stored_charge(max_charge)
 		return PROCESS_KILL
 
+MSG_DEF_SELF(shield_capacitor/unsecured, "The capacitor needs to be firmly secured to the floor first.")
+
+/// Switching it on needs it bolted down.
+/obj/machinery/shield_capacitor/proc/secured_to_switch_on(datum/act/op/A)
+	return (active || anchored) ? null : MSG(shield_capacitor/unsecured)
+
 /obj/machinery/shield_capacitor/proc/ui_act_toggle(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!active && !anchored)
-		to_chat(user, span_red("The [src] needs to be firmly secured to the floor first."))
-		return
 	set_active(!active)
 	. = TRUE
 

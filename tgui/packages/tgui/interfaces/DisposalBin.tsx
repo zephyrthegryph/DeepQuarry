@@ -2,20 +2,13 @@ import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Icon, RoundGauge, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { DisposalBinActions } from './generated/DisposalBin';
+import type { DisposalBinActions, DisposalBinData } from './generated/DisposalBin';
 
-type Data = {
-  mode: number;
-  pressure: number;
-  isAI: BooleanLike;
-  panel_open: BooleanLike;
-  flushing: BooleanLike;
-};
+type Data = DisposalBinData;
 
 export const DisposalBin = (props) => {
   const { act, data } = useBackend<Data, DisposalBinActions>();
-  const { mode, pressure, isAI, panel_open, flushing } = data;
+  const { mode, pressure, isAI, flushing } = data;
   let stateText;
   if (mode === 2) {
     stateText = 'Ready';
