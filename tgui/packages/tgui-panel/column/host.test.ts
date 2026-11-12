@@ -239,6 +239,7 @@ describe('what the column keeps', () => {
     wid: string,
     iface: string,
     floatable = true,
+    closable = floatable,
   ) => {
     host.receive('col/open', { wid, kind: 'tgui' });
     host.receive('col/msg', {
@@ -248,7 +249,7 @@ describe('what the column keeps', () => {
         config: {
           interface: { name: iface },
           title: iface,
-          window: { floatable },
+          window: { floatable, collapsible: floatable, closable },
         },
         data: {},
       },
@@ -260,13 +261,16 @@ describe('what the column keeps', () => {
   it('never floats or closes the stat panel', () => {
     const host = new ColumnHost();
     open(host, 'col-stat', 'StatPanel', false);
-    open(host, 'col-chat', 'Chat');
+    open(host, 'col-chat', 'Chat', true, false);
+    expect(host.mayCollapse({ windows: ['col-stat'] })).toBe(false);
     expect(host.mayLeave('col-stat')).toBe(false);
     host.float('col-stat', { x: 5, y: 5 });
     host.close('col-stat');
     expect(floats()).toEqual([]);
     expect(closes()).toEqual([]);
     expect(host.mayLeave('col-chat')).toBe(true);
+    // The chat may float but offers no buttons and no drag out (the server keeps it open).
+    expect(host.hasWindowButtons('col-chat')).toBe(false);
   });
 
   it('never floats or closes its last window', () => {

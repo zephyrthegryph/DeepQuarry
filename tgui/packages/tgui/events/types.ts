@@ -36,6 +36,10 @@ type TguiWindow = {
   float_at?: string | null;
   /** Docked: whether the column offers float for it (never for the stat panel). */
   floatable?: boolean;
+  /** Docked: whether an entry holding it can fold to its header (never the stat panel). */
+  collapsible?: boolean;
+  /** Docked: whether the column offers close and float buttons and a drag out for it (never the stat panel or the chat). */
+  closable?: boolean;
 };
 
 type User = {

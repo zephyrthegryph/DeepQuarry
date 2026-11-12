@@ -24,6 +24,7 @@ let dragging = false;
 let resizing = false;
 let screenOffset: Point = [0, 0];
 let screenOffsetPromise: Promise<Point> | undefined;
+let screenOffsetKnown = false;
 let dragPointOffset: Point;
 let resizeMatrix: Point;
 let initialSize: Point;
@@ -170,6 +171,15 @@ const MAX_WINDOW_SIDE = 8000;
 // Get screen position
 function getScreenPosition(): Point {
   return [0 - screenOffset[0], 0 - screenOffset[1]];
+}
+
+/** The top-left of the screen this window is on (its available area), in the pixels window.screenLeft uses. */
+function getScreenOrigin(): Point {
+  const screen = window.screen as Screen & {
+    availLeft?: number;
+    availTop?: number;
+  };
+  return [(screen.availLeft ?? 0) * pixelRatio, (screen.availTop ?? 0) * pixelRatio];
 }
 
 // Get screen size
@@ -335,21 +345,29 @@ export function setupDrag(): Promise<Point> {
   // Calculate screen offset caused by the windows taskbar
   const windowPosition = getWindowPosition();
 
-  const offsetQuery = Byond.winget(Byond.windowId, 'pos')
-    .then(
-      (pos): Point => [pos.x - windowPosition[0], pos.y - windowPosition[1]],
-    )
-    .catch((error): Point => {
-      logger.error('failed to query screen offset', error);
-      return [0, 0];
-    })
-    .then((offset) => offset);
+  const offsetQuery = Byond.winget(Byond.windowId, 'pos').then(
+    (pos): Point => {
+      screenOffset = [pos.x - windowPosition[0], pos.y - windowPosition[1]];
+      screenOffsetKnown = true;
+      logger.debug('screen offset', screenOffset);
+      return screenOffset;
+    },
+  );
   const timeout = new Promise<Point>((resolve) => {
-    setTimeout(() => resolve([0, 0]), 500);
+    setTimeout(() => resolve(screenOffset), 500);
   });
-  screenOffsetPromise = Promise.race([offsetQuery, timeout]).then((offset) => {
-    screenOffset = offset;
-    logger.debug('screen offset', screenOffset);
+  screenOffsetPromise = Promise.race([
+    offsetQuery.catch((error): Point => {
+      logger.error('failed to query screen offset', error);
+      return screenOffset;
+    }),
+    timeout,
+  ]).then((offset) => {
+    if (!screenOffsetKnown) {
+      // A slow or failed query is not a measurement: the zero offset stands in
+      // for now, and the query is asked again on the next use.
+      screenOffsetPromise = undefined;
+    }
     return offset;
   });
   return screenOffsetPromise;
@@ -434,7 +452,9 @@ function dragMoveHandler(event: MouseEvent): void {
         dragPointOffset,
       ) as Point,
       getWindowSize(),
-      [window.screen.width * pixelRatio, window.screen.height * pixelRatio],
+      getScreenSize(),
+      undefined,
+      getScreenOrigin(),
     ),
   );
 }

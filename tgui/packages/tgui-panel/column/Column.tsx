@@ -89,9 +89,9 @@ export function groupOffset(drag: GroupDrag | null, group: string): number {
   return liveSlide(drag.boxes, from, drag.to, at);
 }
 
-/** Whether a window can leave the page as a native window (host.mayLeave(): not the stat panel, never the last window). */
+/** Whether a window can be dragged out of the page to float: the same rule as its float and close buttons (host.hasWindowButtons()). */
 export const canFloat = (host: ColumnHost, id?: string) =>
-  !!id && host.mayLeave(id);
+  !!id && host.hasWindowButtons(id);
 
 function measure(): OrderBox[] {
   return Array.from(

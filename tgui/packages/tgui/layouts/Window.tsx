@@ -36,7 +36,7 @@ import { suspendStart } from '../events/handlers/suspense';
 import { createLogger } from '../logging';
 import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
-import { claimReveal, revealWindow, traceAlpha } from '../reveal';
+import { claimReveal, isProfiling, revealWindow, traceAlpha } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
 import { resolveTheme, useConsoleScanlines } from './consoleTheme';
 import { fitOverflow, measureNaturalBottom } from './fitWindow';
@@ -200,7 +200,7 @@ function NativeWindow(props: Props) {
         // windows, so a fresh window would otherwise stay invisible forever.
         let geometry: ResolvedWindowGeometry | undefined;
         try {
-          if (!fitted && !config.window?.docked) {
+          if (!fitted) {
             geometry = await recallWindowGeometry(
               options,
               parsePreappliedGeometry(config.window?.preapplied_geometry),
@@ -221,27 +221,22 @@ function NativeWindow(props: Props) {
           logger.log('floated from the dock under the pointer', under);
         }
         profileStartup('geometry_finished', config.interface?.name);
-        // Every floating reveal is traced, not only a pull-out: a saved floating window at login comes this way too.
-        const traced = !config.window?.docked;
-        if (traced) {
-          floatTrace('reveal-start', {
-            iface: config.interface?.name,
-            at: float,
-            under,
-            geometry,
-            screen: [window.screen.width, window.screen.height],
-            dpr: window.devicePixelRatio,
-          });
-        }
+        // Every floating reveal is traced (while profiling), not only a pull-out: a saved floating window at login comes this way too.
+        floatTrace('reveal-start', {
+          iface: config.interface?.name,
+          at: float,
+          under,
+          geometry,
+          screen: [window.screen.width, window.screen.height],
+          dpr: window.devicePixelRatio,
+        });
         const revealed = await revealWindow(
           config.window?.generation,
           geometry,
         );
-        if (traced) {
-          floatTrace('reveal-done', { revealed });
-          void floatTraceNative();
-        }
-        if (float && !config.window?.docked) {
+        floatTrace('reveal-done', { revealed });
+        void floatTraceNative();
+        if (float) {
           pendingFloat.current = null;
         }
         if (under) {
@@ -268,7 +263,6 @@ function NativeWindow(props: Props) {
     config.window?.generation,
     config.window?.key,
     config.window?.locked,
-    config.window?.docked,
     fitted,
     height,
     isReadyToRender,
@@ -280,7 +274,7 @@ function NativeWindow(props: Props) {
   const restRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const rest = restRef.current;
-    if (!fitContent || !rest || suspended || config.window?.docked) {
+    if (!fitContent || !rest || suspended) {
       return;
     }
     const fit = () => {
@@ -298,11 +292,9 @@ function NativeWindow(props: Props) {
       observer.observe(child);
     }
     return () => observer.disconnect();
-  }, [fitContent, suspended, isReadyToRender, config.window?.docked]);
+  }, [fitContent, suspended, isReadyToRender]);
 
   const fancy = config.window?.fancy;
-  // Docked in the stat panel (doc/rewrite/proposals/window_system.md): the panel draws the titlebar and frame.
-  const docked = !!config.window?.docked;
   const dockable = !!config.window?.dockable;
 
   // Determine when to show dimmer
@@ -321,7 +313,7 @@ function NativeWindow(props: Props) {
       className={classes(['Window', readOnly && 'Window--readonly'])}
       theme={theme}
     >
-      {!fitted && !docked && (
+      {!fitted && (
         <TitleBar
           className="Window__titleBar"
           title={title || decodeHtmlEntities(config.title)}
@@ -347,14 +339,14 @@ function NativeWindow(props: Props) {
         ref={restRef}
         className={classes([
           'Window__rest',
-          !fitted && !docked && 'Window__restwithTitlebar',
+          !fitted && 'Window__restwithTitlebar',
           debug.debugLayout && 'debug-layout',
         ])}
       >
         {!suspended && children}
         {showDimmer && <div className="Window__dimmer" />}
       </div>
-      {fancy && scrollbars && !docked && (
+      {fancy && scrollbars && (
         <>
           <div
             className="Window__resizeHandle__e"
@@ -431,6 +423,7 @@ Window.Content = WindowContent;
  */
 /** One step of a float's reveal, in the server's tgui log: a float that never shows is diagnosed from these. */
 function floatTrace(step: string, detail: Record<string, unknown>): void {
+  if (!isProfiling()) return;
   Byond.sendMessage('wm/log', {
     float: step,
     window: Byond.windowId,
@@ -440,6 +433,7 @@ function floatTrace(step: string, detail: Record<string, unknown>): void {
 
 /** What the client says the window is after the reveal, sampled so a later change shows (trace only: nothing acts on it). */
 async function floatTraceNative(): Promise<void> {
+  if (!isProfiling()) return;
   let elapsed = 0;
   for (const at of [0, 50, 500, 2000]) {
     await new Promise((resolve) => setTimeout(resolve, at - elapsed));
