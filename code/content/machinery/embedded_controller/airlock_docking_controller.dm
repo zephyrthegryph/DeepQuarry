@@ -10,6 +10,9 @@
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 	setup(PROC_REF(name_port))
+	interface("AirlockConsoleDocking")
+	ui_shape(chamber_pressure = num(), exterior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), interior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), processing = bool(), docking_status = enum(list("undocked", "docking", "undocking", "docked")), airlock_disabled = bool(), override_enabled = bool(), docking_codes = nullable(schema_text()), name = nullable(schema_text()))
+	op("toggle_override", ui_act("toggle_override"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 
 /obj/machinery/embedded_controller/radio/airlock/docking_port/proc/name_port()
@@ -39,5 +42,4 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 		"override_enabled" = port.override_enabled,
 		"docking_codes" = port.docking_codes,
 		"name" = port.get_name(),
-		"internalTemplateName" = "AirlockConsoleDocking",
 	)

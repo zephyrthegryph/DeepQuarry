@@ -1,17 +1,20 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
-import { PanelOpen } from './PanelOpen';
-import type { DoorAccessConsoleData } from './types';
+import type {
+  DoorAccessConsoleActions,
+  DoorAccessConsoleData,
+} from './generated/DoorAccessConsole';
+import { PanelOpen } from './EmbeddedController/PanelOpen';
 
 /**
  * Airlock but without anything other than doors. Separates clean rooms.
  * Replaces door_access_console.tmpl
  */
-export const DoorAccessConsole = (props) => {
+const DoorAccessConsoleContent = () => {
   const { act, data } = useBackend<
     DoorAccessConsoleData,
-    EmbeddedControllerActions
+    DoorAccessConsoleActions
   >();
 
   const { interior_status, exterior_status, panel_open } = data;
@@ -65,3 +68,11 @@ export const DoorAccessConsole = (props) => {
     </>
   );
 };
+
+export const DoorAccessConsole = () => (
+  <Window width={500} height={400}>
+    <Window.Content>
+      <DoorAccessConsoleContent />
+    </Window.Content>
+  </Window>
+);

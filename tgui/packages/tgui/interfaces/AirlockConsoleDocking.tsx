@@ -1,22 +1,25 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
+import type {
+  AirlockConsoleDockingActions,
+  AirlockConsoleDockingData,
+} from './generated/AirlockConsoleDocking';
 import {
   DockStatus,
   StandardControls,
   StatusDisplay,
-} from './EmbeddedControllerHelpers';
-import type { AirlockConsoleDockingData } from './types';
+} from './EmbeddedController/EmbeddedControllerHelpers';
 
 /**
  * This is a mix airlock & docking console. It lets you control the dock status
  * as well as the attached airlock.
  * Replaces docking_airlock_console.tmpl
  */
-export const AirlockConsoleDocking = (props) => {
+const AirlockConsoleDockingContent = () => {
   const { act, data } = useBackend<
     AirlockConsoleDockingData,
-    EmbeddedControllerActions
+    AirlockConsoleDockingActions
   >();
 
   const {
@@ -86,3 +89,11 @@ export const AirlockConsoleDocking = (props) => {
     </>
   );
 };
+
+export const AirlockConsoleDocking = () => (
+  <Window width={500} height={400}>
+    <Window.Content>
+      <AirlockConsoleDockingContent />
+    </Window.Content>
+  </Window>
+);

@@ -1,0 +1,17 @@
+{
+	"panel_open": false,
+	"tags": null,
+	"frequency": null,
+	"min_freq": null,
+	"max_freq": null,
+	"chamber_pressure": 101,
+	"exterior_status": {
+		"state": "closed",
+		"lock": "locked"
+	},
+	"interior_status": {
+		"state": "open",
+		"lock": "unlocked"
+	},
+	"processing": false
+}
