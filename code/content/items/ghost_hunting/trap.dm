@@ -26,7 +26,7 @@ CAPABILITIES(/obj/item/ghost_trap)
 	op("deactivate", hand(), priority(OP_PRIORITY_PART), label("Deactivate"), when(req(PROC_REF(can_deactivate))), begins(MSG(ghost_trap/deactivating)), plays(SFX_MACHINES_CLICK, at_start = TRUE), wait(6 SECONDS), then(PROC_REF(trap_deactivated)))
 	op("deploy", in_hand(), priority(OP_PRIORITY_PART), label("Deploy"), when(req(PROC_REF(can_deploy))), begins(MSG(ghost_trap/deploying)), wait(6 SECONDS), then(PROC_REF(trap_deployed)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
-	op("release_occupant_effect", menu(), label("Relase Entity"), needs(req_adjacent(), req_capable()), then(PROC_REF(release_occupant_effect)))
+	op("release_occupant_effect", menu(), label("Release Entity"), needs(req_adjacent(), req_capable()), then(PROC_REF(release_occupant_effect)))
 	op("ghost_trap_hidden_vore_effect", menu(), label("Eat Entity"), needs(req_adjacent(), req_capable()), then(PROC_REF(ghost_trap_hidden_vore_effect)))
 
 ///The entity we currently have captured (a relation view).

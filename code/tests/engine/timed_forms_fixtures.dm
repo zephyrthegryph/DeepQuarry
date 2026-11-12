@@ -65,13 +65,4 @@ CAPABILITIES(/obj/tf_site)
 /obj/tf_site/proc/hold_ended()
 	ended++
 
-/// Periodic work on a cadence: counts its steps.
-/obj/tf_periodic
-	name = "timed forms periodic"
-	var/steps = 0
-
-/obj/tf_periodic/periodic_step(delta)
-	steps++
-	return null
-
 #endif

@@ -90,9 +90,9 @@ function byondKeyName(event: React.KeyboardEvent<HTMLDivElement>): string {
 export const KeybindingEditor = (props) => {
   const { act, data } = useBackend<Data, KeybindingEditorActions>();
   const {
-    bindings,
-    profiles,
-    right_click_options,
+    bindings = [],
+    profiles = [],
+    right_click_options = [],
     max_keys,
     profile,
     keys,

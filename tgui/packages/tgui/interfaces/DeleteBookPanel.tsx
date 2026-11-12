@@ -21,7 +21,7 @@ type Data = {
 
 export const DeleteBookPanel = () => {
   const { data, act } = useBackend<Data, DeleteBookPanelActions>();
-  const { books, error, sort_by } = data;
+  const { books = [], error, sort_by } = data;
   if (error) {
     return (
       <Window width={520} height={260} title="Delete Book">

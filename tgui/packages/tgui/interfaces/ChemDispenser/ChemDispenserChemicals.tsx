@@ -16,7 +16,7 @@ export const ChemDispenserChemicals = (props: {
   buttons: ReactNode;
 }) => {
   const {
-    chemicals,
+    chemicals = [],
     sectionTitle,
     dispenseAct,
     chemicalButtonSelect,

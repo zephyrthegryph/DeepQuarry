@@ -219,3 +219,9 @@ CAPABILITIES(/mob/living)
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
 	drag_onto(PROC_REF(drop_input))
 	links(LINK_END(/mob/living, LK_AUTOFIRE_GUN), LINK_END(/obj/item/gun, LK_AUTOFIRE_USERS), sparse = TRUE, b_many = TRUE) // the gun a held trigger fires (autofire_gun())
+
+/// P2-S9: why `user` cannot inject this mob at `target_zone` by `method` (INJECT_METHOD_*), or null when it can.
+/// Every injector calls this one proc; overrides honour armour and hide. It never prints: the one player action that asked shows the reason.
+/// `roll` = FALSE leaves out a thick hide's chance roll (only a human has one).
+/mob/living/proc/inject_refusal(mob/user, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
+	return null

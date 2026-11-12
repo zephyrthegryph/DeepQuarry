@@ -23,7 +23,7 @@ type floor = {
 export const Turbolift = (props) => {
   const { act, data } = useBackend<Data, TurboliftActions>();
 
-  const { floors, doors_open, fire_mode } = data;
+  const { floors = [], doors_open, fire_mode } = data;
 
   return (
     <Window width={480} height={fire_mode ? 285 : 260}>

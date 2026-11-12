@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Button, Dropdown, Slider, Table } from 'tgui-core/components';
 
 import { useBackend } from '../../backend';
+import type { SpawnPanelActions } from '../generated/SpawnPanel';
 import type { IconSettings } from './index';
 
 type SpawnPanelData = {
@@ -20,7 +21,7 @@ interface CreateObjectAdvancedSettingsProps {
 export function CreateObjectAdvancedSettings(
   props: CreateObjectAdvancedSettingsProps,
 ) {
-  const { act, data } = useBackend<SpawnPanelData>();
+  const { act, data } = useBackend<SpawnPanelData, SpawnPanelActions>();
   const { iconSettings, onIconSettingsChange } = props;
 
   const sendUpdatedSettings = (
@@ -78,7 +79,6 @@ export function CreateObjectAdvancedSettings(
             onSelected={(value) => {
               act('select-new-icon-state', {
                 new_state: value,
-                current_icon: data.icon || iconSettings.icon,
               });
               onIconSettingsChange({ iconState: value });
               sendUpdatedSettings({ selected_atom_icon_state: value });

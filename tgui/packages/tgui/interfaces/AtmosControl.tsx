@@ -31,7 +31,7 @@ export const AtmosControl = (props) => {
 export const AtmosControlContent = (props) => {
   const { act, data, config } = useBackend<Data, AtmosControlActions>();
 
-  const { alarms } = data;
+  const { alarms = [] } = data;
   alarms.sort((a, b) => a.name.localeCompare(b.name));
 
   const [tabIndex, setTabIndex] = useState(0);

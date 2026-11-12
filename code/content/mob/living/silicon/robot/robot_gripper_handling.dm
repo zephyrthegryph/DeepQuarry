@@ -1,17 +1,11 @@
-//This is used to check if the gripper is currently being used.
-//If it is, we don't allow any other actions to be performed.
-//Returns TRUE if we're in use explaining how.
-/obj/item/gripper/proc/is_in_use(mob/user, visible = TRUE)
+/// Why the gripper cannot take another action now (it is busy on something, or its pocket ring holds it), or null when it is free.
+/// It never prints: each player use that is refused shows the reason once.
+/obj/item/gripper/proc/in_use_refusal()
 	if(gripper_in_use)
-		if(visible)
-			to_chat(user, span_danger("You are currently using the gripper on something!"))
-		return TRUE
-
+		return "You are currently using the gripper on something!"
 	if(op_claimed(src)) // the pocket ring (op "pocket_menu") holds the gripper while it is open
-		if(visible)
-			to_chat(user, span_danger("You are currently in the radial menu! Close it to use the gripper."))
-		return TRUE
-	return FALSE
+		return "You are currently in the radial menu! Close it to use the gripper."
+	return null
 
 /// The item the gripper shows (a mirror of held_item, tracked so the look follows it).
 /obj/item/gripper/var/obj/item/shown_item
@@ -85,7 +79,7 @@
 	return null
 
 /// The pocket ring's requirement: not mid-use of the gripper and not holding a special-handling item (which answers its own self-use). A second ring on the
-/// same gripper is the engine's: the ring claims the gripper (claims(CLAIM_TARGET)), and is_in_use() reads that claim for every other use.
+/// same gripper is the engine's: the ring claims the gripper (claims(CLAIM_TARGET)), and in_use_refusal() reads that claim for every other use.
 /obj/item/gripper/proc/pocket_menu_holds(datum/act/op/A)
 	return read_once(!special_handling && !gripper_in_use) ? null : pocket_menu_refusal(A)
 
@@ -141,7 +135,9 @@
 /obj/item/gripper/proc/interaction_item(datum/act/op/A, stance)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
-	if(is_in_use(user))
+	var/busy = in_use_refusal()
+	if(busy)
+		to_chat(user, span_danger(busy))
 		return OP_PASS
 
 	var/obj/item/wrapped = get_wrapped_item()
@@ -179,7 +175,9 @@
 	if(!proximity)
 		return // This will prevent them using guns at range but adminbuse can add them directly to modules, so eh.
 
-	if(is_in_use(user))
+	var/busy = in_use_refusal()
+	if(busy)
+		to_chat(user, span_danger(busy))
 		return
 
 	var/obj/item/wrapped = get_wrapped_item()
@@ -322,7 +320,9 @@
 		to_chat(user, span_warning("You have nothing to drop!"))
 		return
 
-	if(is_in_use(user))
+	var/busy = in_use_refusal()
+	if(busy)
+		to_chat(user, span_danger(busy))
 		return
 
 	if((item_left_gripper(wrapped)))
@@ -351,7 +351,9 @@
 	generate_icons()
 
 /obj/item/gripper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(is_in_use(user))
+	var/busy = in_use_refusal()
+	if(busy)
+		to_chat(user, span_danger(busy))
 		return ITEM_INTERACT_FAILURE
 
 	var/obj/item/wrapped = get_wrapped_item()
@@ -427,7 +429,7 @@
 
 /// Can the gripper take `thing` into a pocket now: not busy, a free pocket, and its CONSTRAINT_HOLD allows it.
 /obj/item/gripper/can_carry(obj/item/thing, mob/actor)
-	if(is_in_use(actor, FALSE) || !find_empty_pocket())
+	if(in_use_refusal() || !find_empty_pocket())
 		return FALSE
 	return !dq_constraint_refusal(src, CONSTRAINT_HOLD, thing, actor)
 

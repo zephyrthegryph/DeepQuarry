@@ -151,6 +151,7 @@ CAPABILITIES(/obj/machinery/vending)
 
 	section(window, "The vendor's window and the buttons in it")
 	interface("Vending")
+	ui_shape(chargesMoney = bool(), products = list_of(row()), coin = any, actively_vending = schema_text(), panel = bool(), speaker = bool(), guestNotice = schema_text(), userMoney = num(), user = any)
 	extend("ui_open", when(PROC_REF(bare_touch)), needs(req_on_authority(AUTH_PHYSICAL), req_operable()), then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
 	extend(TAG_UI, needs(req_operable(), req(PROC_REF(customer_capable))))
 	op("vend", ui_act(arg("vend")),

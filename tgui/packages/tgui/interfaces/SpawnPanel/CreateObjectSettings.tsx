@@ -21,6 +21,9 @@ import {
 } from './constants';
 import type { IconSettings } from './index';
 
+/** The spawn op's arguments (spawn_panel.dm, create-atom-action). */
+export type SpawnArgs = Partial<SpawnPanelActions['create-atom-action']>;
+
 export type SpawnPanelData = {
   icon: string;
   iconState: string;
@@ -30,7 +33,7 @@ export type SpawnPanelData = {
 };
 
 interface CreateObjectSettingsProps {
-  onCreateObject?: (obj: Record<string, unknown>) => void;
+  onCreateObject?: (args: SpawnArgs) => void;
   setAdvancedSettings: (value: boolean) => void;
   iconSettings: IconSettings;
 }
@@ -234,11 +237,22 @@ export function CreateObjectSettings(props: CreateObjectSettingsProps) {
 
     act('update-settings', currentSettings);
 
+    // The spawn op's own arguments (spawn_panel.dm, create-atom-action): the direction is `dir` there.
+    const spawnArgs: SpawnArgs = {
+      atom_amount: amount,
+      offset_type: currentSettings.offset_type,
+      where_target_type: spawnLocation,
+      dir: currentSettings.atom_dir,
+      offset: currentSettings.offset,
+      atom_name: objectName,
+      atom_icon_size: iconSettings.iconSize,
+    };
+
     if (!isTargetMode) {
       if (onCreateObject) {
-        onCreateObject(currentSettings);
+        onCreateObject(spawnArgs);
       } else {
-        act('create-atom-action', currentSettings);
+        act('create-atom-action', spawnArgs);
       }
     } else {
       if (isPreciseModeActive) {

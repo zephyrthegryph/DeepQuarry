@@ -69,6 +69,8 @@ export type DebugState = {
 export type EngineActions = {
   change_ui_state: { new_state?: string };
   modal_open: { id?: string };
+  modal_answer: { id?: string; answer?: string };
+  modal_close: { id?: string };
 };
 
 type ActKey<TActions> = keyof (TActions & EngineActions) & string;

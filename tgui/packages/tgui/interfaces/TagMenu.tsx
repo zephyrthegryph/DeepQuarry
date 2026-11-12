@@ -23,7 +23,7 @@ type Data = {
 
 export const TagMenu = () => {
   const { data, act } = useBackend<Data, TagMenuActions>();
-  const { entries } = data;
+  const { entries = [] } = data;
   return (
     <Window width={620} height={620} title="Tag Menu">
       <Window.Content scrollable>

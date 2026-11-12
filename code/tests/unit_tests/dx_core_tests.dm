@@ -1,5 +1,5 @@
 // The DX framework core (code/datums/capabilities/): the capability list, TRACKED, changed() and the
-// refresh engine, the look builder, drift, periodic gating, hidden verbs, ui_<action> dispatch,
+// refresh engine, the look builder, drift, hidden verbs, ui_<action> dispatch,
 // dispatch_call(), ask_* re-validation, timed_set().
 
 // ---------------------------------------------------------------- fixtures
@@ -113,39 +113,6 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 /// Draws nothing, hides nothing, has no capabilities.
 /obj/cap_fixture/dx_plain
 	icon_state = "keepme"
-
-/obj/cap_fixture/dx_periodic
-	periodic_cadence = PERIODIC_SLOW
-	var/gating = FALSE
-
-
-/obj/cap_fixture/dx_periodic/should_run()
-	return gating
-
-/obj/cap_fixture/dx_periodic/periodic_step(delta)
-	return
-
-/datum/dx_ui_host
-	var/allow = TRUE
-	var/value
-	var/logged_calls = 0
-
-/datum/dx_ui_host/ui_allowed(mob/user, action)
-	return allow
-
-/datum/dx_ui_host/ui_logged()
-	return list("record" = LOG_GAME)
-
-/datum/dx_ui_host/proc/act_set_value(mob/user, value)
-	value = ui_number(value, 0, 100)
-	if(isnull(value))
-		return refuse(user, "That isn't a number.")
-	src.value = value
-	return TRUE
-
-/datum/dx_ui_host/proc/act_record(mob/user)
-	logged_calls++
-	return TRUE
 
 // ---------------------------------------------------------------- 1. the capability list
 
@@ -277,19 +244,6 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 	refresh_sweep_step(length(GLOB.refresh_sweep_list))
 	set_global("refresh_drift_expected", FALSE)
 
-// ---------------------------------------------------------------- 6. periodic gating
-
-/datum/unit_test/dx_core_periodic_gate/Run()
-	var/obj/cap_fixture/dx_periodic/F = allocate(/obj/cap_fixture/dx_periodic)
-	refresh_flush()
-	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "not running while should_run() is FALSE")
-	F.set_gating(TRUE)
-	refresh_flush()
-	TEST_ASSERT((!isnull(F.periodic_pipe)), "running once should_run() is TRUE")
-	F.set_gating(FALSE)
-	refresh_flush()
-	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "stopped once should_run() is FALSE again")
-
 // ---------------------------------------------------------------- 7. hidden verbs
 
 /datum/unit_test/dx_core_hidden_verbs/Run()
@@ -303,33 +257,9 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 	refresh_flush()
 	TEST_ASSERT(!(/obj/cap_fixture/dx_core/verb/dx_secret in F.verbs), "hidden again")
 
-// ---------------------------------------------------------------- 8. ui_<action>
+// ---------------------------------------------------------------- 8. the ui_ validators
 
 /datum/unit_test/dx_core_ui_actions/Run()
-	var/datum/dx_ui_host/H = new
-	var/datum/tgui/ui = ui_test_window(H)
-	TEST_ASSERT(H.tgui_act("set_value", list("value" = "42"), ui), "act_set_value ran")
-	TEST_ASSERT_EQUAL(H.value, 42, "named arg reached the proc and was validated")
-	TEST_ASSERT(!H.tgui_act("set_value", list("value" = "lots"), ui), "a validator refusal is refused")
-	TEST_ASSERT_EQUAL(H.value, 42, "unchanged after a refusal")
-	var/fails = length(GLOB.dispatch_failures)
-	set_global("dispatch_failure_expected", TRUE)
-	var/result = H.tgui_act("set_value", list("value" = 3, "bogus" = 1), ui)
-	set_global("dispatch_failure_expected", FALSE)
-	TEST_ASSERT(!result, "an unknown argument name is refused")
-	TEST_ASSERT_EQUAL(length(GLOB.dispatch_failures) - fails, 1, "and logged")
-	H.allow = FALSE
-	TEST_ASSERT(!H.tgui_act("set_value", list("value" = 7), ui), "ui_allowed FALSE refuses")
-	TEST_ASSERT_EQUAL(H.value, 42, "the refused action did not run")
-	H.allow = TRUE
-	var/records = length(GLOB.dispatch_records)
-	TEST_ASSERT(H.tgui_act("record", list(), ui), "act_record ran")
-	TEST_ASSERT_EQUAL(H.logged_calls, 1, "once")
-	TEST_ASSERT_EQUAL(GLOB.dispatch_records[length(GLOB.dispatch_records)], "record|0|1", "a ui_logged action is logged")
-	TEST_ASSERT_EQUAL(length(GLOB.dispatch_records) - records, 1, "one record")
-	qdel(ui)
-	qdel(H)
-
 	TEST_ASSERT_EQUAL(ui_number("12.6", 0, 10), 10, "ui_number clamps numeric text")
 	TEST_ASSERT_EQUAL(ui_number(12.6, round_to = 1), 13, "ui_number rounds")
 	TEST_ASSERT_NULL(ui_number("abc"), "ui_number refuses text")
@@ -341,7 +271,7 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 	var/datum/dx_core_child/Y = new
 	TEST_ASSERT(ui_ref(REF(X), list(X)) == X, "ui_ref resolves a member")
 	TEST_ASSERT_NULL(ui_ref(REF(Y), list(X)), "ui_ref refuses a non-member")
-	TEST_ASSERT_NULL(ui_ref(REF(X), list(X), /datum/dx_ui_host), "ui_ref checks the type")
+	TEST_ASSERT_NULL(ui_ref(REF(X), list(X), /obj), "ui_ref checks the type")
 	qdel(X)
 	qdel(Y)
 

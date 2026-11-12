@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
+import { Box } from 'tgui-core/components';
 import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
 import { AirlockConsoleAdvanced } from './AirlockConsoleAdvanced';
 import { AirlockConsoleDocking } from './AirlockConsoleDocking';
@@ -91,8 +92,14 @@ export const EmbeddedController = (props) => {
 
   const Component: React.JSX.Element = primaryRoutes[internalTemplateName];
   if (!Component) {
-    throw Error(
-      `Unable to find Component for template name: ${internalTemplateName}`,
+    return (
+      <Window width={500} height={400}>
+        <Window.Content>
+          <Box color="bad">
+            Unable to find Component for template name: {internalTemplateName}
+          </Box>
+        </Window.Content>
+      </Window>
     );
   }
 

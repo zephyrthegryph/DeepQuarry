@@ -44,7 +44,7 @@ type Data = {
 export const Microwave = (props) => {
   const { config, data } = useBackend<Data, MicrowaveActions>();
 
-  const { broken, operating, dirty, items } = data;
+  const { broken, operating, dirty, items = [] } = data;
 
   let inner;
 
@@ -148,7 +148,7 @@ export const Microwave = (props) => {
 const MicrowaveContents = (props) => {
   const { act, data } = useBackend<Data, MicrowaveActions>();
 
-  const { items, reagents, recipe, recipe_name } = data;
+  const { items = [], reagents, recipe, recipe_name } = data;
 
   return (
     <Section

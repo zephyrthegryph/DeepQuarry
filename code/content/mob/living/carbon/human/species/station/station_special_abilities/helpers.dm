@@ -409,42 +409,38 @@
 	STATE_SET(C, vore_fx, drain_finalized, !STATE_GET(C, vore_fx, drain_finalized))
 	to_chat(C, span_notice("You will [STATE_GET(C, vore_fx, drain_finalized)?"now":"not"] finalize draining/feeding."))
 
-//Test to see if we can shred a mob. Some child override needs to pass us a target. We'll return it if you can.
-/mob/living/proc/can_shred(mob/living/carbon/human/target)
-	if(isnull(target) && shred_picks_target())
-		shred_pick_target()
-		return FALSE
+/// Why this mob cannot shred `target` now, or null when it can. It never prints and opens nothing: the shredding steps show the reason.
+/mob/living/proc/shred_refusal(mob/living/carbon/human/target)
 	//Needs to have organs to be able to shred them.
 	if(!istype(target))
-		to_chat(src,span_warning("You can't shred that type of creature."))
-		return FALSE
+		return "You can't shred that type of creature."
 	//Needs to be capable (replace with incapacitated call?)
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
-		to_chat(src,span_warning("You cannot do that in your current state!"))
-		return FALSE
+		return "You cannot do that in your current state!"
 	//Needs to be adjacent, at the very least.
 	if(!Adjacent(target))
-		to_chat(src,span_warning("You must be next to your target."))
-		return FALSE
+		return "You must be next to your target."
 	//Cooldown on abilities
 	if(!COOLDOWN_FINISHED(cooldowns_view(src), last_special))
-		to_chat(src,span_warning("You can't perform an ability again so soon!"))
-		return FALSE
+		return "You can't perform an ability again so soon!"
+	return null
 
-	return target
+/// Who the shred verb aims at when this mob does not pick from those nearby: nobody, unless it holds someone (a person's neck grab).
+/mob/living/proc/shred_default_target()
+	return null
 
-//Human test for shreddability, returns the mob if they can be shredded.
-/mob/living/carbon/human/can_shred()
-	//Humans need a grab
+/mob/living/carbon/human/shred_default_target()
 	var/obj/item/grab/G = get_active_hand()
-	if(!istype(G))
-		to_chat(src,span_warning("You have to have a very strong grip on someone first!"))
-		return FALSE
-	if(G.state != GRAB_NECK)
-		to_chat(src,span_warning("You must have a tighter grip to severely damage this creature!"))
-		return FALSE
+	return istype(G) ? G.grab_target() : null
 
-	return ..(G?.grab_target())
+//Humans need a neck grab on the one they shred.
+/mob/living/carbon/human/shred_refusal(mob/living/carbon/human/target)
+	var/obj/item/grab/G = get_active_hand()
+	if(!istype(G) || (target && G.grab_target() != target))
+		return "You have to have a very strong grip on someone first!"
+	if(G.state != GRAB_NECK)
+		return "You must have a tighter grip to severely damage this creature!"
+	return ..()
 
 //PAIs, borgs, and animals don't need a grab or anything: they pick someone next to them.
 /mob/living/proc/shred_picks_target()
@@ -473,18 +469,24 @@
 	if(!A.answer)
 		return
 	var/mob/living/carbon/human/T = A.answer.value
-	if(can_shred(T) == T)
-		shred_limb_begin(T)
+	var/refusal = shred_refusal(T)
+	if(refusal)
+		to_chat(src, span_warning(refusal))
+		return
+	shred_limb_begin(T)
 
 /mob/living/proc/shred_limb()
 	set name = "Damage/Remove Prey's Organ"
 	set desc = "Severely damages prey's organ. If the limb is already severely damaged, it will be torn off."
 
-	//can_shred() will return a mob we can shred, if we can shred any.
-	var/mob/living/carbon/human/T = can_shred()
-	if(!istype(T))
-		return //Silent, because can_shred does messages.
-
+	if(shred_picks_target())
+		shred_pick_target()
+		return
+	var/mob/living/carbon/human/T = shred_default_target()
+	var/refusal = shred_refusal(T)
+	if(refusal)
+		to_chat(src, span_warning(refusal))
+		return
 	shred_limb_begin(T)
 
 /// Asks which organs to shred (and where to swallow them), then starts on T.
@@ -615,7 +617,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	retire()
 
 /mob/living/proc/shred_limb_answered(mob/living/carbon/human/T, obj/item/organ/external/T_ext, obj/item/organ/internal/T_int, obj/belly/B)
-	if(can_shred(T) != T || T_ext.owner != T || (T_int && T_int.owner != T) || (B && B.owner != src))
+	if(shred_refusal(T) || T_ext.owner != T || (T_int && T_int.owner != T) || (B && B.owner != src))
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 
@@ -635,7 +637,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	var/obj/belly/B = A.arg("belly")
 	if(QDELETED(T) || QDELETED(T_ext))
 		return
-	if(can_shred(T) != T)
+	if(shred_refusal(T))
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 

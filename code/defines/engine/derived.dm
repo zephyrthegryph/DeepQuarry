@@ -1,13 +1,12 @@
 // Declared dependencies (doc/rewrite/dx_conventions.md, "Declared dependencies").
 // Runtime: code/engine/change/derived.dm and refresh.dm.
 //
-// should_run(), draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state. A
+// draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state. A
 // type lists what each one reads in derived(); a change to one of those reads re-derives only that
 // output, once per frame.
 
 // ---- outputs: the bits of a queued entity's refresh_queued ----
-/// should_run(): wake or park the periodic cadence.
-#define DEP_RUN (1<<0)
+/// Bit 0 is free (it was should_run(), the cadence gate, gone with the cadences).
 /// draw() and hidden_verbs(): the look and the verb hides.
 #define DEP_DRAW (1<<1)
 /// Open tgui windows: tgui_data() is pushed.
@@ -17,7 +16,7 @@
 /// on_state_changed(bits). Only a plain state_changed(E) (no var named) raises it.
 #define DEP_LEGACY (1<<4)
 /// Every output a declaration can name.
-#define DEP_OUTPUTS (DEP_RUN | DEP_DRAW | DEP_UI | DEP_PUSH)
+#define DEP_OUTPUTS (DEP_DRAW | DEP_UI | DEP_PUSH)
 /// derive() value number i (0-based, declaration order) is bit DEP_VALUE_SHIFT + i.
 #define DEP_VALUE_SHIFT 5
 /// The most derive() values one type can declare.
@@ -37,7 +36,6 @@
 #define REFRESH_IDLE(E) (!((E).refresh_queued & ~DEP_PARKED))
 
 // ---- derived() entry kinds ----
-#define DKIND_RUNS 1
 #define DKIND_DRAWN 2
 #define DKIND_UI 3
 #define DKIND_DERIVE 4

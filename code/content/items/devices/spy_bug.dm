@@ -218,7 +218,9 @@ CAPABILITIES(/obj/item/bug_monitor)
 	if(cameras.len == 1 && user.is_remote_viewing())
 		user.reset_perspective()
 		return
-	if(!can_use_cam(user))
+	var/refusal = cam_refusal()
+	if(refusal)
+		to_chat(user, span_warning(refusal))
 		return
 
 	if(cameras.len == 1)
@@ -257,12 +259,11 @@ CAPABILITIES(/obj/item/bug_monitor)
 		return
 	user.begin_remote_view(/datum/remote_view/item_zoom, selected_camera(), null, /datum/remote_view_config/camera_standard, src, 0, TRUE)
 
-/obj/item/bug_monitor/proc/can_use_cam(mob/user)
+/// Why the monitor cannot show a camera, or null when it can. Never prints: the view action shows it.
+/obj/item/bug_monitor/proc/cam_refusal()
 	if(!length(paired_cameras()))
-		to_chat(user, span_warning("No paired cameras detected!"))
-		to_chat(user, span_warning("Bring a camera in contact with this device to pair the camera."))
-		return FALSE
-	return TRUE
+		return "No paired cameras detected! Bring a camera in contact with this device to pair the camera."
+	return null
 
 /obj/item/bug_monitor/spy
 	name = "\improper PDA"

@@ -29,7 +29,7 @@ type Data = {
 export const RustFuelContent = (props) => {
   const { act, data } = useBackend<Data, RustFuelControlActions>();
 
-  const { fuels } = data;
+  const { fuels = [] } = data;
 
   return (
     <Section

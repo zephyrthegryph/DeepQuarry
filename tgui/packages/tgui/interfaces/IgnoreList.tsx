@@ -11,7 +11,7 @@ type Data = {
 
 export const IgnoreList = () => {
   const { data, act } = useBackend<Data, IgnoreListActions>();
-  const { ignored } = data;
+  const { ignored = [] } = data;
   return (
     <Window width={380} height={420} title="Ignore List">
       <Window.Content scrollable>

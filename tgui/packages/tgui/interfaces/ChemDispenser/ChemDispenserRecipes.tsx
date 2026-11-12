@@ -28,7 +28,7 @@ export const ChemDispenserRecipes = (props: {
 }) => {
   const { act } = useBackend<Data, ChemDispenserActions>();
   const {
-    recipes,
+    recipes = {},
     recordingRecipe,
     recordAct,
     cancelAct,

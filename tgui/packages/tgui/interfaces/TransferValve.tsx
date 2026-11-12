@@ -56,7 +56,9 @@ export const TransferValve = (props) => {
                 </Button>
               </LabeledList.Item>
             ) : (
-              <NoticeBox textAlign="center">Attach Assembly</NoticeBox>
+              <LabeledList.Item label="Attachment">
+                <NoticeBox textAlign="center">Attach Assembly</NoticeBox>
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>
@@ -73,7 +75,9 @@ export const TransferValve = (props) => {
                 </Button>
               </LabeledList.Item>
             ) : (
-              <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              <LabeledList.Item label="Attachment">
+                <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>
@@ -90,7 +94,9 @@ export const TransferValve = (props) => {
                 </Button>
               </LabeledList.Item>
             ) : (
-              <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              <LabeledList.Item label="Attachment">
+                <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>

@@ -33,11 +33,11 @@ export const PartsLathe = (props) => {
   const {
     copyBoard,
     copyBoardReqComponents,
-    queue,
+    queue = [],
     building,
     buildPercent,
     error,
-    recipies,
+    recipies = [],
     SHEET_MATERIAL_AMOUNT,
   } = data;
   return (

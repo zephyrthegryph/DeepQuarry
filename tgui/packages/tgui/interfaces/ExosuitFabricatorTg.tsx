@@ -44,7 +44,7 @@ export const ExosuitFabricatorTg = (props) => {
     ExosuitFabricatorData,
     ExosuitFabricatorTgActions
   >();
-  const { materials = [], SHEET_MATERIAL_AMOUNT = 0, designs } = data;
+  const { materials = [], SHEET_MATERIAL_AMOUNT = 0, designs = {} } = data;
 
   const availableMaterials: MaterialMap = {};
 
@@ -195,7 +195,7 @@ const Queue = (props: QueueProps) => {
   >();
   const { availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
   const {
-    designs,
+    designs = {},
     processing,
     species,
     species_types,
@@ -311,7 +311,7 @@ const QueueList = (props: QueueListProps) => {
   const { availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
 
   const queue = data.queue || [];
-  const designs = data.designs;
+  const designs = data.designs || {};
 
   if (!queue.length) {
     return null;

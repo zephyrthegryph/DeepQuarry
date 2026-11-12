@@ -14,14 +14,13 @@
 			// "engines_charging" = ((shuttle.last_move + (shuttle.cooldown SECONDS)) > world.time), // Replaced by longer warmup_time
 		)
 
-/obj/machinery/computer/shuttle_control/multi/console_gate(mob/user)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/shuttle_control/multi/console_refusal(mob/user)
+	. = ..()
+	if(.)
+		return
 	var/datum/shuttle/autodock/multi/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
-		to_chat(user, span_warning("Unable to establish link with the shuttle."))
-		return FALSE
-	return TRUE
+		return "Unable to establish link with the shuttle."
 
 CAPABILITIES(/obj/machinery/computer/shuttle_control/multi)
 	op("pick", ui_act("pick"), then(PROC_REF(ui_act_pick)))
@@ -29,8 +28,6 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/multi)
 /obj/machinery/computer/shuttle_control/multi/proc/ui_act_pick(datum/act/op/A)
 	var/mob/user = A.actor
 	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
-	if(!ui_gate(A))
-		return FALSE
 	shuttle_destination_stage(ui, FALSE)
 
 /obj/machinery/computer/shuttle_control/multi/proc/shuttle_destination_stage(datum/tgui/ui, answered, dest_key, datum/request/request)
@@ -56,8 +53,8 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/multi)
 	if(!A.answer || isnull(A.answer.value))
 		return
 	var/obj/machinery/computer/shuttle_control/multi/console = src_object()
-	var/allowed = console.console_gate(user)
-	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
+	var/refusal = console.console_late_refusal(user)
+	A.request.captured["late_refusal"] = refusal ? "the console action is unavailable" : null
 	if(request_recheck(A.request))
 		return
 	console.shuttle_destination_stage(src, TRUE, A.answer.value, A.request)
@@ -81,8 +78,6 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/multi)
 
 /obj/machinery/computer/shuttle_control/multi/proc/ui_act_toggle_cloaked(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/multi/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!shuttle.can_cloak)
 		return TRUE

@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Tabs } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { PipeDispenserActions } from './generated/PipeDispenser';
 
 import { ICON_BY_CATEGORY_NAME } from './RapidPipeDispenser/constants';
 
@@ -23,8 +24,8 @@ type Data = {
 };
 
 export const PipeDispenser = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { disposals, p_layer, pipe_layers, categories = [] } = data;
+  const { act, data } = useBackend<Data, PipeDispenserActions>();
+  const { disposals, p_layer, pipe_layers = {}, categories = [] } = data;
 
   const [categoryName, setCategoryName] = useState('categoryName');
   const shownCategory =
@@ -75,7 +76,6 @@ export const PipeDispenser = (props) => {
                 act('dispense_pipe', {
                   ref: recipe.ref,
                   bent: recipe.bent,
-                  category: shownCategory.cat_name,
                 })
               }
             >

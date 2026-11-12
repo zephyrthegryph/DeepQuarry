@@ -25,7 +25,7 @@ export const PlayerMenu = (props: {
   const { act, data } = useBackend<Data, SpaceBattleActions>();
 
   const {
-    ship_sizes,
+    ship_sizes = {},
     player_one,
     player_two,
     all_placed,

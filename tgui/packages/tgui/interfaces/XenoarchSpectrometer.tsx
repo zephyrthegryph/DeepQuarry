@@ -48,22 +48,22 @@ export const XenoarchSpectrometer = (props) => {
   const {
     scanned_item,
     scanned_item_desc,
-    last_scan_data,
+    last_scan_data = '',
     scanning,
-    scan_progress,
-    scanner_rpm,
-    scanner_rpm_delta,
-    radiation,
-    heat,
-    coolant,
-    IDEAL_RPM,
-    RPM_MAX_DELTA,
-    RPM_MAX,
-    TARGET_RADIATION,
-    RADIATION_MAX,
-    HEAT_FAILURE_THRESHOLD,
-    HEAT_MAX,
-    COOLANT_MAX,
+    scan_progress = 0,
+    scanner_rpm = 0,
+    scanner_rpm_delta = 0,
+    radiation = 0,
+    heat = 0,
+    coolant = 0,
+    IDEAL_RPM = 1,
+    RPM_MAX_DELTA = 1,
+    RPM_MAX = 1,
+    TARGET_RADIATION = 1,
+    RADIATION_MAX = 1,
+    HEAT_FAILURE_THRESHOLD = 1,
+    HEAT_MAX = 1,
+    COOLANT_MAX = 1,
   } = data;
 
   return (
@@ -194,11 +194,11 @@ export const LeftPanel = (props) => {
   const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
-    scan_progress,
-    scanner_rpm,
-    scanner_rpm_delta,
-    RPM_MAX_DELTA,
-    RPM_MAX,
+    scan_progress = 0,
+    scanner_rpm = 0,
+    scanner_rpm_delta = 0,
+    RPM_MAX_DELTA = 1,
+    RPM_MAX = 1,
   } = data;
 
   return (
@@ -237,13 +237,13 @@ export const RightPanel = (props) => {
   const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
-    radiation,
-    heat,
-    coolant,
-    RADIATION_MAX,
-    HEAT_FAILURE_THRESHOLD,
-    HEAT_MAX,
-    COOLANT_MAX,
+    radiation = 0,
+    heat = 0,
+    coolant = 0,
+    RADIATION_MAX = 1,
+    HEAT_FAILURE_THRESHOLD = 1,
+    HEAT_MAX = 1,
+    COOLANT_MAX = 1,
   } = data;
 
   return (

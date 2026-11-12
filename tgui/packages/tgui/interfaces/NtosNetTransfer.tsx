@@ -39,7 +39,7 @@ type uploadFile = { uid: string; filename: string; size: number };
 export const NtosNetTransfer = (props) => {
   const { data } = useBackend<Data, NtosNetTransferActions>();
 
-  const { error, downloading, uploading, upload_filelist } = data;
+  const { error, downloading, uploading, upload_filelist = [] } = data;
 
   let body = <P2PAvailable />;
 
@@ -135,7 +135,7 @@ const P2PUpload = (props) => {
 
 const P2PUploadServer = (props) => {
   const { act, data } = useBackend<Data, NtosNetTransferActions>();
-  const { upload_filelist } = data;
+  const { upload_filelist = [] } = data;
   return (
     <Section
       title="File transfer server ready."
@@ -166,7 +166,7 @@ const P2PUploadServer = (props) => {
 
 const P2PAvailable = (props) => {
   const { act, data } = useBackend<Data, NtosNetTransferActions>();
-  const { servers } = data;
+  const { servers = [] } = data;
   return (
     <Section
       title="Available Files"

@@ -43,7 +43,7 @@ export const EntryFloat = (props: EntryFloatProps) => {
       <NumberInput
         animated
         tickWhileDragging
-        value={float}
+        value={float ?? 0}
         minValue={0}
         maxValue={Infinity}
         step={1}

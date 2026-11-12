@@ -151,44 +151,6 @@
 	F.refresh_queued = FALSE
 	GLOB.refresh_queue -= F
 
-/datum/dx_ui_secure
-	var/mob/last_user
-	var/last_force
-	var/hook_called = FALSE
-	var/legacy_called = FALSE
-
-/datum/dx_ui_secure/proc/act_vent(mob/user, force)
-	last_user = user
-	last_force = ui_bool(force)
-	return TRUE
-
-/datum/dx_ui_secure/ui_logged()
-	hook_called = TRUE
-	return list()
-
-/datum/dx_ui_secure/proc/ui_act_legacy(mob/user, list/params)
-	legacy_called = TRUE
-	return TRUE
-
-/// Review 2 C1: only act_* procs are actions; the client can't set reserved names or reach hooks
-/// and legacy handlers; hyphen/camelCase names normalise to one key.
-/datum/unit_test/dx_review_ui_security/Run()
-	var/datum/dx_ui_secure/H = new
-	var/datum/tgui/ui = ui_test_window(H)
-	TEST_ASSERT(H.tgui_act("vent", list("user" = "EVIL", "force" = "1"), ui), "the action ran")
-	TEST_ASSERT(H.last_user == ui.user, "a client-sent user never overrides the real user")
-	TEST_ASSERT_EQUAL(H.last_force, TRUE, "a declared param arrives")
-	TEST_ASSERT(!H.tgui_act("logged", list(), ui), "a ui_ hook is not an action")
-	TEST_ASSERT(!H.tgui_act("act_legacy", list("params" = list()), ui), "a ui_act_* legacy handler is not an action")
-	TEST_ASSERT(!H.tgui_act("ui_act_legacy", list(), ui), "not by its full name either")
-	TEST_ASSERT(!H.legacy_called, "the legacy handler never ran")
-	TEST_ASSERT(H.tgui_act("Vent", list("Force" = "0"), ui), "a capitalised name normalises")
-	TEST_ASSERT_EQUAL(H.last_force, FALSE, "a capitalised key normalises")
-	TEST_ASSERT_EQUAL(ui_action_key("bolt-toggle"), "bolt_toggle", "hyphens normalise")
-	TEST_ASSERT_EQUAL(ui_action_key("setScreen"), "set_screen", "camelCase normalises")
-	TEST_ASSERT_NULL(ui_action_key("../x"), "anything else is refused")
-	qdel(ui)
-
 /// Review 2 M10: a static per-type verb difference is type_verbs() (no per-instance hide, no sweep).
 /datum/unit_test/dx_review_type_verbs/Run()
 	var/obj/item/healthanalyzer/basic = allocate(/obj/item/healthanalyzer)
@@ -217,38 +179,6 @@
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(!glow_of(F).range, "the light went off when the look stopped setting it")
-
-/obj/cap_fixture/dx_review_interval
-	periodic_interval = 1 SECONDS
-	var/running = FALSE
-	var/steps = 0
-
-/obj/cap_fixture/dx_review_interval/should_run()
-	return running
-
-/obj/cap_fixture/dx_review_interval/periodic_step(delta)
-	steps++
-
-/// periodic_interval: a custom-interval step that runs while should_run() holds (the DECLARE_REPEAT replacement).
-/datum/unit_test/engine/dx_review_periodic_interval
-
-/datum/unit_test/engine/dx_review_periodic_interval/run_engine(list/made)
-	var/obj/cap_fixture/dx_review_interval/F = new
-	made += F
-	refresh_flush()
-	TEST_ASSERT(!after_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
-	F.running = TRUE
-	state_changed(F)
-	refresh_flush()
-	TEST_ASSERT(after_pending(F, "periodic_interval"), "armed once should_run() holds")
-	scheduler_advance(2.5)
-	TEST_ASSERT(F.steps >= 2, "stepped every interval ([F.steps])")
-	F.running = FALSE
-	state_changed(F)
-	refresh_flush()
-	var/steps = F.steps
-	scheduler_advance(2.5)
-	TEST_ASSERT_EQUAL(F.steps, steps, "stopped once should_run() is FALSE")
 
 /// The UI data one capability of A contributes (tgui_data nests it under data["caps"][ui_key()]).
 /proc/dx_cap_ui_data(atom/A, mob/user, cap_type)

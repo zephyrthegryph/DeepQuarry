@@ -22,7 +22,7 @@ type Data = {
 
 export const SignalerContent = (props) => {
   const { act, data } = useBackend<Data, SignalerActions>();
-  const { code, frequency, minFrequency, maxFrequency } = data;
+  const { code = 0, frequency = 0, minFrequency = 0, maxFrequency = 0 } = data;
   return (
     <Section>
       <Table>

@@ -120,14 +120,6 @@
 /// a refresh of it does work even when it draws and hides nothing, so its refreshes are never skipped.
 #define TYPE_DERIVES_SIDE (1<<6)
 
-// ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
-/// Every 2 seconds.
-#define CADENCE_SLOW /datum/cadence/slow
-/// Every second.
-#define CADENCE_SECOND /datum/cadence/second
-/// Every 0.2 seconds (continuous lanes need a reason).
-#define CADENCE_FAST /datum/cadence/fast
-
 // ---- power_channels() / powered_by() / cell_bay() / cap_wall_mount() ----
 /// power_channels(): channel indices (Rust's channel order).
 #define POWER_CHANNEL_EQUIPMENT 0
@@ -144,6 +136,3 @@
 #define INTEGRITY_KEY_BROKEN "integrity_broken"
 /// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.
 #define CELL_BAY_LOW_PERCENT 15
-/// cap_wall_mount(): pixels from the turf centre into the wall.
-/// Every minute.
-#define CADENCE_MINUTE /datum/cadence/minute

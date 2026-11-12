@@ -25,7 +25,7 @@ type Data = {
 
 export const Dartgun = () => {
   const { data, act } = useBackend<Data, DartgunActions>();
-  const { beakers, ammo_count } = data;
+  const { beakers = [], ammo_count } = data;
   return (
     <Window width={460} height={460} title="Dartgun mixing control">
       <Window.Content scrollable>

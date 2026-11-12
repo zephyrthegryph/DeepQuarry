@@ -16,10 +16,7 @@
 /// Adds this capability's layers to look (look.state/overlay/gauge/glow). Called before the
 /// holder's own draw() body runs past ..() (DM reserves the name appearance).
 
-/// A capability owns UI actions by defining `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)`:
-/// the dispatcher finds it on the holder's capabilities when the holder has no act_<action> itself. The
-/// actions it logs (action -> LOG_GAME / LOG_ADMIN) are its type table, read through ui_logged():
-/// TYPE_TABLE(/datum/capability/<x>, ui_logged_actions, list("<action>" = LOG_GAME)).
+/// A capability's window buttons are ops in its entries with a ui_act() binding (code/engine/parts/inputs.dm).
 
 /// Adds keys to this capability's own UI list: the holder's tgui_data() carries it as
 /// data["caps"][ui_key()] (caps_ui_data()).
@@ -46,18 +43,3 @@
 /datum/capability/proc/legacy_holder_destroy(atom/holder)
 	return
 
-// ---- periodic work (until the core's systems() hook lands) ----
-
-/datum/capability
-	/// The periodic pipeline (PERIODIC_*) this capability steps on, or null for none. The holder
-	/// takes it as its periodic_cadence at init when it declares none of its own.
-	var/cadence
-
-/// TRUE while this capability has periodic work on holder. Pure: re-evaluated on change through
-/// the holder's should_run().
-/datum/capability/proc/cap_should_run(atom/holder)
-	return FALSE
-
-/// One periodic step on holder (delta: the pipeline's step, as periodic_step() gets it).
-/datum/capability/proc/cap_periodic_step(atom/holder, delta)
-	return

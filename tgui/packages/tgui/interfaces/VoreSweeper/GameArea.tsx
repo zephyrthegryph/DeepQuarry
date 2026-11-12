@@ -12,9 +12,9 @@ export const GameArea = (props) => {
   const [mineHit, setMineHit] = useState('');
 
   const {
-    grid_size,
-    revealed_fields,
-    placed_flags,
+    grid_size = 0,
+    revealed_fields = {},
+    placed_flags = {},
     game_state,
     placed_mines,
     is_dealer,

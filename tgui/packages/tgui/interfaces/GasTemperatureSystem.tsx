@@ -33,15 +33,15 @@ export const GasTemperatureSystem = (props) => {
   const {
     on,
     gasPressure,
-    gasTemperature,
+    gasTemperature = 0,
     minGasTemperature,
     maxGasTemperature,
     targetGasTemperature,
     gasTemperatureClass,
-    powerSetting,
+    powerSetting = 0,
     reagentPower,
-    reagentMaximum,
-    reagentVolume,
+    reagentMaximum = 1,
+    reagentVolume = 0,
   } = data;
 
   return (

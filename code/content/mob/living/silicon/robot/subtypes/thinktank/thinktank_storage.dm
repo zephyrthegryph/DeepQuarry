@@ -19,50 +19,38 @@
 
 	. = ..()
 
-/mob/living/silicon/robot/platform/proc/can_store_atom(atom/movable/storing, mob/user)
-
+/// Why `user` cannot load `storing` into this platform's cargo, or null when they can. It never prints: the drag check
+/// (cargo_loadable) reads it silently and the finished load (platform_loaded) shows it once.
+/mob/living/silicon/robot/platform/proc/store_refusal(atom/movable/storing, mob/user)
+	var/self = (user == src)
 	if(!istype(storing))
-		var/storing_target = (user == src) ? "yourself" : "\the [src]"
-		to_chat(user, span_warning("You cannot store that inside [storing_target]."))
-		return FALSE
-
+		return "You cannot store that inside [self ? "yourself" : "\the [src]"]."
 	if(!isturf(storing.loc))
-		return FALSE
-
+		return "\The [storing] has to be on the floor to load it."
 	if(storing.anchored || !atom_rules_of(storing).simulated)
-		to_chat(user, span_warning("\The [storing] won't budge!"))
-		return FALSE
-
+		return "\The [storing] won't budge!"
 	if(storing == src)
-		var/storing_target = (user == src) ? "yourself" : "\the [src]"
-		to_chat(user, span_warning("You cannot store [storing_target] inside [storing_target]!"))
-		return FALSE
-
+		var/storing_target = self ? "yourself" : "\the [src]"
+		return "You cannot store [storing_target] inside [storing_target]!"
 	if(length(stored_atoms) >= max_stored_atoms)
-		var/storing_target = (user == src) ? "Your" : "\The [src]'s"
-		to_chat(user, span_warning("[storing_target] cargo compartment is full."))
-		return FALSE
-
+		return "[self ? "Your" : "\The [src]'s"] cargo compartment is full."
 	if(ismob(storing))
 		var/mob/M = storing
 		if(M.mob_size >= mob_size)
-			var/storing_target = (user == src) ? "your storage compartment" : "\the [src]"
-			to_chat(user, span_warning("\The [storing] is too big for [storing_target]."))
-			return FALSE
-
+			return "\The [storing] is too big for [self ? "your storage compartment" : "\the [src]"]."
+	var/allowed = FALSE
 	for(var/store_type in can_store_types)
 		if(istype(storing, store_type))
-			. = TRUE
+			allowed = TRUE
 			break
-
-	if(.)
+	if(allowed)
 		for(var/store_type in cannot_store_types)
 			if(istype(storing, store_type))
-				. = FALSE
+				allowed = FALSE
 				break
-	if(!.)
-		var/storing_target = (user == src) ? "yourself" : "\the [src]"
-		to_chat(user, span_warning("You cannot store \the [storing] inside [storing_target]."))
+	if(!allowed)
+		return "You cannot store \the [storing] inside [self ? "yourself" : "\the [src]"]."
+	return null
 
 /mob/living/silicon/robot/platform/proc/store_atom(atom/movable/storing, mob/user)
 	if(istype(storing))
@@ -129,28 +117,11 @@ CAPABILITY_DEF(platform_cargo, CAP_PLATFORM_CARGO, key = NONE)
 	return OP_OK
 
 /// Old MouseDrop_T: a drop that can be stored starts the loading. A refused drop still falls to the cyborg's drag block, as the old override never reached
-/// the base drag-buckle. This is the silent form of can_store_atom().
+/// the base drag-buckle. It reads store_refusal() and prints nothing.
 /mob/living/silicon/robot/platform/proc/cargo_loadable(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/atom/movable/dropping = A.held
-	return read_once(istype(user) && istype(dropping) && !user.incapacitated() && can_mouse_drop(dropping, user) && can_store_quiet(dropping))
-
-/mob/living/silicon/robot/platform/proc/can_store_quiet(atom/movable/storing)
-	if(!istype(storing) || !isturf(storing.loc) || storing.anchored || !atom_rules_of(storing).simulated || storing == src)
-		return FALSE
-	if(length(stored_atoms) >= max_stored_atoms)
-		return FALSE
-	if(ismob(storing))
-		var/mob/M = storing
-		if(M.mob_size >= mob_size)
-			return FALSE
-	for(var/store_type in can_store_types)
-		if(istype(storing, store_type))
-			for(var/refused_type in cannot_store_types)
-				if(istype(storing, refused_type))
-					return FALSE
-			return TRUE
-	return FALSE
+	return read_once(istype(user) && istype(dropping) && !user.incapacitated() && can_mouse_drop(dropping, user) && isnull(store_refusal(dropping, user)))
 
 /// What the others see when the loading starts.
 /mob/living/silicon/robot/platform/proc/cargo_loading_text(datum/act/op/A)
@@ -161,7 +132,11 @@ CAPABILITY_DEF(platform_cargo, CAP_PLATFORM_CARGO, key = NONE)
 /mob/living/silicon/robot/platform/proc/platform_loaded(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/atom/movable/dropping = A.held
-	if(!(can_mouse_drop(dropping, user) && can_store_atom(dropping, user)))
+	if(!can_mouse_drop(dropping, user))
+		return OP_FAILED
+	var/refusal = store_refusal(dropping, user)
+	if(refusal)
+		to_chat(user, span_warning(refusal))
 		return OP_FAILED
 	store_atom(dropping, user)
 	return OP_OK

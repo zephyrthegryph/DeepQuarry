@@ -30,6 +30,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp/control)
 
 CAPABILITIES(/obj/machinery/computer/supplycomp)
 	interface("SupplyConsole")
+	ui_shape(shuttle_auth = bool(), order_auth = bool(), shuttle = any, supply_points = num(), personal_balance = num(), can_personal_order = bool(), orders = list_of(row()), receipts = list_of(row()), contraband = bool(), market_auth = bool(), market = any, modal = any, supply_packs = list_of(row()), categories = list_of(schema_text()))
 	// Opening the window takes the console's access; its buttons take the supply system being up.
 	extend("ui_open", needs(req(PROC_REF(lets_in))))
 	extend(TAG_UI, needs(req(PROC_REF(supply_ready), silent = TRUE)))

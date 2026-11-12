@@ -4,14 +4,14 @@
 
 /obj/machinery/dx_bench_drawer
 	name = "refresh benchmark machine"
-	periodic_cadence = CADENCE_SECOND
 	var/bench_level = 0
 
-/obj/machinery/dx_bench_drawer/should_run()
-	return TRUE
-
-/obj/machinery/dx_bench_drawer/periodic_step(delta)
+/// One step a second while the benchmark runs: a timer the benchmark starts (the bench build compiles this file, the declaration build does not).
+/obj/machinery/dx_bench_drawer/proc/bench_step()
+	if(QDELETED(src))
+		return
 	bench_level = (bench_level + 1) % 20   // a plain var: the step marks the machine, draw() re-runs
+	after(src, 1 SECOND, PROC_REF(bench_step))
 
 /obj/machinery/dx_bench_drawer/draw(datum/look/look)
 	..()
@@ -28,6 +28,8 @@
 	var/turf/origin = locate(10, 10, 1)
 	for(var/i in 1 to count)
 		made += new /obj/machinery/dx_bench_drawer(locate(origin.x + (i % 60), origin.y + round(i / 60) % 60, origin.z))
+	for(var/obj/machinery/dx_bench_drawer/M as anything in made)
+		M.bench_step()
 	refresh_flush()
 	begin_window()
 	var/drains_before = GLOB.refresh_bench_drained

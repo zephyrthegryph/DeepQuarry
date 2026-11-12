@@ -159,7 +159,10 @@ CAPABILITIES(/obj/item/pen/reagent)
 /obj/item/pen/reagent/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()
 
-	if(M.can_inject(user,1))
+	var/refusal = M.inject_refusal(user)
+	if(refusal)
+		to_chat(user, span_warning(refusal))
+	else
 		if(reagents.total_volume)
 			if(M.reagents)
 				var/contained = reagents.get_reagents()

@@ -13,6 +13,7 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { NtosEmailClientActions } from './generated/NtosEmailClient';
 import { sanitizeText } from '../sanitize';
 
 type Data = {
@@ -62,7 +63,7 @@ type message = {
 type account = { login: string };
 
 export const NtosEmailClient = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NtosEmailClientActions>();
 
   const { PC_device_theme, error, downloading, current_account } = data;
 
@@ -84,7 +85,7 @@ export const NtosEmailClient = (props) => {
 };
 
 const NtosEmailClientDownloading = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NtosEmailClientActions>();
 
   const { down_filename, down_progress, down_size, down_speed } = data;
 
@@ -117,7 +118,7 @@ const NtosEmailClientDownloading = (props) => {
 };
 
 const NtosEmailClientContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const { current_account, addressbook, new_message, cur_title, accounts } =
     data;
@@ -170,7 +171,7 @@ const NtosEmailClientContent = (props) => {
 };
 
 const NtosEmailClientInbox = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const { folder, messagecount, messages } = data;
 
@@ -240,7 +241,7 @@ const NtosEmailClientInbox = (props) => {
 export const NtosEmailClientViewMessage = (props: {
   administrator?: BooleanLike;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   // This is used to let NtosEmailAdministration use the same code for spying on emails
   // Administrators don't have access to attachments or the message UID, so we need to avoid
@@ -305,7 +306,7 @@ export const NtosEmailClientViewMessage = (props: {
                 icon="times"
                 tooltip="Close"
                 tooltipPosition="left"
-                onClick={() => act('cancel', { cancel: cur_uid })}
+                onClick={() => act('cancel')}
               />
             </Stack.Item>
           </Stack>
@@ -336,7 +337,7 @@ export const NtosEmailClientViewMessage = (props: {
 };
 
 const NtosEmailClientAddressBook = (props: { accounts: account[] }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, NtosEmailClientActions>();
 
   const { accounts } = props;
 
@@ -365,7 +366,7 @@ const NtosEmailClientAddressBook = (props: { accounts: account[] }) => {
 };
 
 const NtosEmailClientNewMessage = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const {
     msg_title = '',
@@ -474,7 +475,7 @@ const NtosEmailClientNewMessage = (props) => {
 };
 
 const NtosEmailClientError = (props: { error: string }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, NtosEmailClientActions>();
   const { error } = props;
   return (
     <Section
@@ -491,7 +492,7 @@ const NtosEmailClientError = (props: { error: string }) => {
 };
 
 const NtosEmailClientLogin = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const { stored_login = '', stored_password = '' } = data;
 

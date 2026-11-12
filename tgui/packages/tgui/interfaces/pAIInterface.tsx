@@ -28,7 +28,13 @@ type DropdownEntry = {
 export const pAIInterface = (props) => {
   const { act, data } = useBackend<Data, pAIInterfaceActions>();
 
-  const { bought, not_bought, available_ram, emotions, current_emotion } = data;
+  const {
+    bought = [],
+    not_bought = [],
+    available_ram,
+    emotions = [],
+    current_emotion,
+  } = data;
 
   return (
     <Window width={450} height={600}>
@@ -41,7 +47,7 @@ export const pAIInterface = (props) => {
                   <Dropdown
                     onSelected={(value) => act('image', { image: value })}
                     options={emotions}
-                    selected={emotions[current_emotion - 1].displayText}
+                    selected={emotions[current_emotion - 1]?.displayText}
                   />
                 </LabeledList.Item>
               </LabeledList>

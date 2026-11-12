@@ -26,7 +26,7 @@ export const SidebarPanel: React.FC<SidebarPanelProps> = ({
   setSelectedOverlay,
 }) => {
   const { act, data } = useBackend<Data, PlushieEditorActions>();
-  const { base_color, icon, name, overlays } = data;
+  const { base_color, icon, name, overlays = [] } = data;
   const overlayMap = useOverlayMap(overlays);
 
   function toggleOverlay(icon_state: string) {

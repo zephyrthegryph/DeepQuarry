@@ -32,7 +32,7 @@ const openLabel: Record<Kind, string> = {
 
 export const Folder = () => {
   const { data, act } = useBackend<Data, FolderActions>();
-  const { folder_name, items } = data;
+  const { folder_name, items = [] } = data;
 
   return (
     <Window width={460} height={420} title={folder_name}>

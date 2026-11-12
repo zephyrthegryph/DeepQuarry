@@ -11,7 +11,7 @@ export const CrewMonitorMapView = (props: {
 }) => {
   const { config, data } = useBackend<Data, CrewMonitorActions>();
 
-  const { crewmembers } = data;
+  const { crewmembers = [] } = data;
 
   return (
     <Box height="526px" mb="0.5rem" overflow="hidden">

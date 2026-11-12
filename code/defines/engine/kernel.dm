@@ -8,15 +8,14 @@
 #define LATENCY_L2 2
 #define LATENCY_L3 3
 
-// ---- the step protocol: what periodic_step(dt) and a world service step return. None equals PROCESS_KILL.
-/// The step is finished; stay on the cadence.
+// ---- the step protocol: what a system's every() handler returns. None equals PROCESS_KILL.
+/// The step is finished; keep running.
 #define STEP_DONE 2
-/// The step ran out of budget: the kernel resumes it on the next tick, ahead of the next cadence frame.
+/// The step ran out of budget: the kernel resumes it on the next tick, ahead of the next interval.
 #define STEP_YIELD 27
-/// Leave the cadence until wake_periodic() (or a change that makes should_run() true) puts it back.
+/// Park the work until its when condition wakes it.
 #define STEP_PARK 28
 
-// ---- cadences: CADENCE_* are the periodic pipelines (__defines/capabilities.dm).
 
 // ---- latency and shedding (code/world/kernel/latency.dm)
 /// Consecutive overrun ticks (tick usage over 100) before L3 work is shed.

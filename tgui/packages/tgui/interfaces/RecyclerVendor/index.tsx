@@ -28,14 +28,14 @@ export const RecyclerVendor = (props) => {
   const [activeCategory, setActiveCategory] = useState('');
   const { act, data } = useBackend<Data, RecyclerVendorActions>();
 
-  const { items, userName, userBalance } = data;
+  const { items = [], userName, userBalance } = data;
 
   const categories: Record<
     string,
     { name: string; desc: string; cost: number }[]
   > = {};
 
-  for (const item of data.items) {
+  for (const item of items) {
     if (item.category in categories) {
       categories[item.category].push(item);
     } else {

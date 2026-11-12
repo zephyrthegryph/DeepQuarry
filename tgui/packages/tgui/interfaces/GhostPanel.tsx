@@ -79,7 +79,7 @@ const ToggleRow = (props: { toggle: Toggle }) => {
 
 export const GhostPanel = () => {
   const { data } = useBackend<Data, GhostPanelActions>();
-  const { groups, toggles, notice } = data;
+  const { groups = [], toggles = [], notice } = data;
   return (
     <Window width={520} height={620} title="Ghost Panel" theme="console">
       <Window.Content scrollable>

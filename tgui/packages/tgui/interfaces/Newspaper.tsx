@@ -42,8 +42,14 @@ type Data = {
 
 export const Newspaper = () => {
   const { data, act } = useBackend<Data, NewspaperActions>();
-  const { company_name, channels, wanted, scribble, scribble_page, curr_page } =
-    data;
+  const {
+    company_name,
+    channels = [],
+    wanted,
+    scribble,
+    scribble_page,
+    curr_page,
+  } = data;
 
   const pages = channels.length;
   const totalPages = 1 + pages + 1; // cover + channels + wanted

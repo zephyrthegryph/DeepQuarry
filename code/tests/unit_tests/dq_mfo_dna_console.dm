@@ -1,6 +1,6 @@
 // Behaviour pins for rewrite/missing-forms: the DNA modifier console's window. Its buttons (the old UI_ACT rows) and its two modals (the buffer
 // label and the block injector's block) are driven the way the client drives them: a button through the window (hc_ui), a modal's answer
-// through act_modal_answer(). Written against DECLARE_UI/UI_ACT and tgui_modal_input/tgui_modal_choice, and pinned green on them before the
+// through the modal_answer window action (tgui_modal_window_answer()). Written against DECLARE_UI/UI_ACT and tgui_modal_input/tgui_modal_choice, and pinned green on them before the
 // window moved onto interface(), ops and asks().
 
 /datum/unit_test/dq_mfo_dna
@@ -30,7 +30,7 @@
 	test_time(1)
 
 /datum/unit_test/dq_mfo_dna/proc/answer(id, value, list/arguments)
-	console.act_modal_answer(user, id, value, arguments || list())
+	tgui_modal_window_answer(console, user, id, value)
 	test_time(1)
 
 /datum/unit_test/dq_mfo_dna/proc/injectors_here()

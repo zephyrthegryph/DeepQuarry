@@ -111,7 +111,7 @@ export const PortableGenerator = (props) => {
                 maxValue={temperature_max + 30}
                 color={temperature_overheat ? 'bad' : 'good'}
               >
-                {temperature_current.toFixed()}&deg;C
+                {(temperature_current ?? 0).toFixed()}&deg;C
               </ProgressBar>
             </LabeledList.Item>
           </LabeledList>

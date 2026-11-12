@@ -65,7 +65,6 @@
 /proc/kernel_members_ready()
 	for(var/datum/system/S as anything in kernel_systems())
 		S.kernel_members_ready()
-	kernel_start_periodic()
 
 /// The registered systems, in registry order. Systems already created only: nothing here instantiates.
 /proc/kernel_pure_systems()

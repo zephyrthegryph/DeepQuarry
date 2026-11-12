@@ -11,7 +11,7 @@ export const PlayerMenu = (props) => {
   const { act, data } = useBackend<Data, FourInARowActions>();
 
   const {
-    colors,
+    colors = [],
     player_one,
     player_two,
     game_state,

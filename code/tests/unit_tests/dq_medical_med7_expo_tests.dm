@@ -148,14 +148,14 @@
 	respiro.affect_blood(H, null, REM)
 	TEST_ASSERT_EQUAL(H.losebreath(), 3, "with its partner present, respirodaxon clashes")
 
-/// P2-S9: can_inject takes the delivery method; a hypo still asks the same question.
+/// P2-S9: inject_refusal takes the delivery method; a hypo still asks the same question.
 /datum/unit_test/dq_med7_p2s9_one_can_inject
 
 /datum/unit_test/dq_med7_p2s9_one_can_inject/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	TEST_ASSERT(H.can_inject(null, FALSE, BP_TORSO, TRUE, INJECT_METHOD_NEEDLE), "bare skin takes a needle")
-	TEST_ASSERT(H.can_inject(null, FALSE, BP_TORSO, TRUE, INJECT_METHOD_HYPO), "bare skin takes a hypo")
-	TEST_ASSERT(!H.can_inject(null, FALSE, "no_such_zone", TRUE, INJECT_METHOD_HYPO), "a hypo is refused where there is no limb")
+	TEST_ASSERT(isnull(H.inject_refusal(null, BP_TORSO, TRUE, INJECT_METHOD_NEEDLE)), "bare skin takes a needle")
+	TEST_ASSERT(isnull(H.inject_refusal(null, BP_TORSO, TRUE, INJECT_METHOD_HYPO)), "bare skin takes a hypo")
+	TEST_ASSERT(H.inject_refusal(null, "no_such_zone", TRUE, INJECT_METHOD_HYPO), "a hypo is refused where there is no limb")
 
 /// P2-S12: radiation goes in and out through one set of writers that clamp and move the
 /// acute dose into the accumulated dose.

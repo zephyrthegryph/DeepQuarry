@@ -27,7 +27,9 @@
 		return
 	if(!B.host_brain)
 		return
-	if(!B.can_use_power_docile())
+	var/refusal = B.power_docile_refusal()
+	if(refusal)
+		B.tell_power_refusal(refusal)
 		return
 	if(!B.use_chems(BORER_POWER_COST_TORTURE))
 		return
@@ -47,9 +49,11 @@
 	set desc = "Spawn several young."
 
 	var/mob/living/simple_mob/animal/borer/B = has_brain_worms()
-	if(!B || !B.can_use_power_controlling_host())
+	if(!B)
 		return
-	if(!B.can_use_power_docile())
+	var/refusal = B.power_controlling_host_refusal() || B.power_docile_refusal()
+	if(refusal)
+		B.tell_power_refusal(refusal)
 		return
 	if(!B.antag)
 		to_chat(src, span_warning("You cannot reproduce, you are infertile!"))

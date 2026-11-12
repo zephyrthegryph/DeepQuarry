@@ -47,7 +47,11 @@ const DNAModifierMainBuffersElement = (props: {
 }) => {
   const { act, data } = useBackend<Data, DNAModifierActions>();
   const { id, name, buffer } = props;
-  const { isInjectorReady, hasOccupant, occupant } = data;
+  const {
+    isInjectorReady,
+    hasOccupant,
+    occupant = {} as Data['occupant'],
+  } = data;
   const realName: string = name + (buffer.data ? ` - ${buffer.label}` : '');
   return (
     <Section

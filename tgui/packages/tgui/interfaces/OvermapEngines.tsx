@@ -41,7 +41,7 @@ export const OvermapEnginesContent = (props) => {
   const {
     global_state, // This indicates all engines being powered up or not
     global_limit, // Global Thrust limit
-    engines_info, // Array of engines
+    engines_info = [], // Array of engines
     total_thrust, // Total thrust of all engines together
   } = data;
   return (

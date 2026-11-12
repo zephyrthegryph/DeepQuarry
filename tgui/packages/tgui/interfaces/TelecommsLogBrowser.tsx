@@ -37,7 +37,13 @@ type log = {
 export const TelecommsLogBrowser = (props) => {
   const { act, data } = useBackend<Data, TelecommsLogBrowserActions>();
 
-  const { universal_translate, network, temp, servers, selectedServer } = data;
+  const {
+    universal_translate,
+    network,
+    temp,
+    servers = [],
+    selectedServer,
+  } = data;
 
   return (
     <Window width={575} height={450}>

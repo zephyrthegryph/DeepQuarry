@@ -1,0 +1,47 @@
+/// The injection check answers why and never prints: mobs' AI asks it every sting, and only the player's injector shows the reason.
+/datum/unit_test/dq_inject_refusal_silent/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, T)
+	var/mob/living/silicon/robot/borg = allocate(/mob/living/silicon/robot, T)
+	test_chat_clear()
+	TEST_ASSERT_NULL(patient.inject_refusal(user, BP_TORSO, FALSE, INJECT_METHOD_NEEDLE, FALSE), "a bare torso takes the needle")
+	TEST_ASSERT(istext(patient.inject_refusal(user, "no_such_zone")), "a missing limb is refused with a reason")
+	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
+	TEST_ASSERT(patient.equip_to_slot_if_possible(vest, SLOT_ID_SUIT), "the patient wears thick armour")
+	TEST_ASSERT(istext(patient.inject_refusal(user, BP_TORSO, FALSE, INJECT_METHOD_NEEDLE, FALSE)), "the armour refuses the needle with a reason")
+	TEST_ASSERT_NULL(patient.inject_refusal(user, BP_TORSO, TRUE, INJECT_METHOD_NEEDLE, FALSE), "a piercing needle ignores the armour")
+	TEST_ASSERT(istext(borg.inject_refusal(user)), "a borg's plating refuses with a reason")
+	TEST_ASSERT_EQUAL(length(test_chat_of(user)), 0, "the probe printed nothing to the injector: [jointext(test_chat_of(user), " | ")]")
+	TEST_ASSERT_EQUAL(length(test_chat_of(patient)), 0, "the probe printed nothing to the patient")
+
+/// The eating checks answer why and never print; the fork that asked shows the reason once.
+/datum/unit_test/dq_eat_refusal_silent/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/feeder = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/eater = allocate(/mob/living/carbon/human, T)
+	test_chat_clear()
+	TEST_ASSERT_NULL(eater.eat_refusal(null), "a bare mouth can eat")
+	TEST_ASSERT_NULL(eater.force_feed_refusal(feeder, null), "a bare mouth can be fed")
+	var/obj/item/clothing/mask/gas/mask = allocate(/obj/item/clothing/mask/gas)
+	TEST_ASSERT(eater.equip_to_slot_if_possible(mask, SLOT_ID_MASK), "the eater wears a gas mask")
+	TEST_ASSERT_NOTNULL(eater.check_mouth_coverage(), "the gas mask covers the mouth")
+	TEST_ASSERT(istext(eater.eat_refusal(null)), "the mask refuses eating with a reason")
+	TEST_ASSERT(istext(eater.force_feed_refusal(feeder, null)), "the mask refuses feeding with a reason")
+	TEST_ASSERT_EQUAL(length(test_chat_of(eater)), 0, "the probe printed nothing to the eater")
+	TEST_ASSERT_EQUAL(length(test_chat_of(feeder)), 0, "the probe printed nothing to the feeder")
+
+/// The other item and mob checks that used to print answer why instead; probing them says nothing to anyone.
+/datum/unit_test/dq_item_mob_refusals_silent/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	var/obj/item/megaphone/mega = allocate(/obj/item/megaphone, T)
+	var/obj/item/uav/drone = allocate(/obj/item/uav, T)
+	var/obj/item/bug_monitor/monitor = allocate(/obj/item/bug_monitor, T)
+	test_chat_clear()
+	TEST_ASSERT(istext(mega.broadcast_refusal(user)), "a megaphone on the floor is refused with a reason")
+	TEST_ASSERT(istext(drone.transition_refusal(drone.state)), "a drone cannot go to the state it is already in")
+	TEST_ASSERT(istext(monitor.cam_refusal()), "an unpaired monitor is refused with a reason")
+	TEST_ASSERT(istext(user.shred_refusal(other)), "shredding without a neck grab is refused with a reason")
+	TEST_ASSERT_EQUAL(length(test_chat_of(user)), 0, "the probes printed nothing: [jointext(test_chat_of(user), " | ")]")
