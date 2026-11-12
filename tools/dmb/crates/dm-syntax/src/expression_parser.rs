@@ -1893,6 +1893,32 @@ fn original_binary_binding(op: &str) -> Option<u8> {
 /// Check the exact token runs already consumed by the Original Pratt parser.
 /// This cohort has no dynamic follows, keyed arguments, or bare ternary
 /// chains. A group, argument, or typed interpolation starts a new expression.
+// The entire membership production permits a name or one ordinary dot field
+// on the left and one name on the right. The parser already consumed In at its
+// pinned lowest precedence. Ranges, boolean/conditional children, split
+// spellings and trailing tokens have no witness here.
+fn original_plain_membership(expr: &Expr, tokens: &[Token]) -> bool {
+    let ExprKind::Binary { op, lhs, rhs } = &expr.kind else { return false; };
+    let at = tokens.partition_point(|token| token.span.end <= lhs.span.end);
+    let (left, tail) = tokens.split_at(at);
+    let [operator, right] = tail else { return false; };
+    let Some(first) = left.first() else { return false; };
+    let term = |value: &Expr, token: &Token| {
+        matches!(&value.kind, ExprKind::Ident(name)
+            if name != "in" && (name == "list" || original_ordinary_call_name(name)))
+            && simple_term(value, token)
+    };
+    let receiver = match left {
+        [only] => term(lhs, only),
+        [_, _, _] => matches!(&lhs.kind, ExprKind::Member { via_colon: false, .. })
+            && original_assignment_receiver(lhs, left),
+        _ => false,
+    };
+    op == "in" && operator.kind == TokenKind::Ident && operator.text == "in"
+        && expr.span == Span::new(first.span.start, right.span.end)
+        && receiver && term(rhs, right)
+}
+
 fn original_conditional_child(expr: &Expr, tokens: &[Token], conditional: bool, depth: usize) -> bool {
     original_composed_expression(expr, tokens, conditional, depth, false)
 }
@@ -1931,7 +1957,9 @@ fn original_plain_index(
         && bracket(open, "[") && bracket(close, "]")
         && expr.span == Span::new(first.span.start, close.span.end)
         && (original_assignment_receiver(index, key)
-            || (matches!(&index.kind, ExprKind::Ident(_) | ExprKind::Literal(_))
+            || ((matches!(&index.kind, ExprKind::Ident(_) | ExprKind::Literal(_))
+                || matches!(&index.kind, ExprKind::Member { object, via_colon: false, .. }
+                    if matches!(&object.kind, ExprKind::Ident(name) if matches!(name.as_str(), "input" | "list"))))
                 && original_conditional_child(index, key, false, depth)))
 }
 
@@ -1973,9 +2001,9 @@ fn original_composed_expression(
     }
 
     match &expr.kind {
-        // Pinned list without an argument list is a bare identifier.
-        // Keep list(...) on the separate constructor path below.
-        ExprKind::Ident(name) => (name == "list" || original_ordinary_call_name(name))
+        // Pinned list/input without an argument list are bare identifiers.
+        // Their call productions still have their own syntax.
+        ExprKind::Ident(name) => (matches!(name.as_str(), "list" | "input") || original_ordinary_call_name(name))
             && matches!(tokens, [only] if simple_term(expr, only)),
         ExprKind::TypePath(path) => {
             // Pinned prefab term: only an absolute slash/identifier path.
@@ -2051,15 +2079,24 @@ fn original_composed_expression(
         }
         ExprKind::Unary { op, value } if matches!(op.as_str(), "!" | "-") => {
             matches!(tokens, [prefix, child @ ..] if punctuation(prefix, op)
-                && matches!(&value.kind, ExprKind::Ident(_) | ExprKind::Group(_)
+                && (matches!(&value.kind, ExprKind::Ident(_) | ExprKind::Group(_)
                     | ExprKind::Call { .. } | ExprKind::Member { via_colon: false, .. }
                     | ExprKind::SafeMember { via_colon: false, .. }
                     | ExprKind::Unary { .. } | ExprKind::Literal(_))
+                    // Pinned unary() collects ! before term()/follow() consumes
+                    // the complete bracket operand. Reuse the exact bounded
+                    // index production, including its receiver/key token spans.
+                    || (op == "!" && matches!(&value.kind, ExprKind::Index { object, index }
+                        if original_plain_index(value, object, index, child, depth))))
                 && original_conditional_child(value, child, false, depth))
         }
         ExprKind::Group(value) => {
-            matches!(tokens, [open, body @ .., close] if punctuation(open, "(")
-                && punctuation(close, ")") && original_conditional_child(value, body, true, depth))
+            let [open, body @ .., close] = tokens else { return false; };
+            if !punctuation(open, "(") || !punctuation(close, ")") { return false; }
+            if matches!(&value.kind, ExprKind::Binary { op, .. } if op == "in") {
+                return depth != 0 && original_plain_membership(value, body);
+            }
+            original_conditional_child(value, body, true, depth)
         }
         ExprKind::Index { object, index } => {
             if original_plain_index(expr, object, index, tokens, depth) { return true; }
@@ -2131,6 +2168,12 @@ fn original_composed_expression(
             // ordinary call. Keep this proof to three positional arguments.
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "locate") {
                 return args.len() == 3 && matches!(head, [name] if simple_term(callee, name))
+                    && arguments_match(args, body, false, false);
+            }
+            // Pinned pick has its own choice grammar. Witness one ordinary,
+            // unweighted choice without changing its parser or effect role.
+            if matches!(&callee.kind, ExprKind::Ident(name) if name == "pick") {
+                return args.len() == 1 && matches!(head, [keyword] if simple_term(callee, keyword))
                     && arguments_match(args, body, false, false);
             }
             // Pinned NewImplicit has a separate parenthesized argument list.
@@ -2229,6 +2272,23 @@ fn original_plain_assignment(expr: &Expr, tokens: &[Token]) -> bool {
         && original_conditional_child(rhs, value, true, 32)
 }
 
+fn original_grouped_field_assignment(expr: &Expr, tokens: &[Token]) -> bool {
+    let ExprKind::Group(inner) = &expr.kind else { return false; };
+    let ExprKind::Binary { op, lhs, rhs } = &inner.kind else { return false; };
+    let [open, body @ .., close] = tokens else { return false; };
+    let target_end = body.partition_point(|token| token.span.end <= lhs.span.end);
+    let (target, remainder) = body.split_at(target_end);
+    let [equals, value @ ..] = remainder else { return false; };
+    op == "=" && matches!(&lhs.kind, ExprKind::Member { via_colon: false, .. })
+        && open.kind == TokenKind::Punctuation && open.text == "("
+        && close.kind == TokenKind::Punctuation && close.text == ")"
+        && equals.kind == TokenKind::Operator && equals.text == "="
+        && expr.span == Span::new(open.span.start, close.span.end)
+        && inner.span == Span::new(lhs.span.start, rhs.span.end)
+        && original_assignment_receiver(lhs, target)
+        && original_conditional_child(rhs, value, true, 32)
+}
+
 fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->Option<OriginalSimpleExpression>{
  let complete=match tokens{
   [only]=>simple_term(expr,only),
@@ -2236,7 +2296,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
   [name,open,arg,close]=>original_simple_string_index(expr,tokens,original_profile)||matches!(&expr.kind,ExprKind::Call{callee,args}if name.kind==TokenKind::Ident&&name.text=="list"&&simple_term(callee,name)&&open.text=="("&&close.text==")"&&matches!(args.as_slice(),[item]if simple_term(item,arg))),
   [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3],original_profile)),
   _=>false,
- };
+ } || (original_profile && original_plain_membership(expr, tokens));
  let original_literal = matches!(&expr.kind, ExprKind::Literal(literal)
      if literal.original_prepared_body_parts(expr.span).is_some()
          || matches!(literal.original_value(), Some(crate::OriginalTokenValue::Int(_)
@@ -2251,7 +2311,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
      if original_plain_index(expr, object, index, tokens, 32));
  let return_slot = original_profile && matches!((&expr.kind, tokens), (ExprKind::Ident(name), [dot])
      if name == "." && dot.kind == TokenKind::Punctuation && dot.text == "." && dot.span == expr.span);
- let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile{original_post_update(expr,tokens)?}else{return None};
+ let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile)||(original_profile&&original_grouped_field_assignment(expr,tokens)){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile{original_post_update(expr,tokens)?}else{return None};
  Some(OriginalSimpleExpression{kind,span:expr.span,operator:None,original_profile})
 }
 
@@ -2327,6 +2387,32 @@ fn original_external_dispatch_witness_requires_two_complete_call_lists() {
             expected.then_some(OriginalSimpleKind::Complete),
             "{source}",
         );
+    }
+}
+
+
+#[cfg(test)]
+#[test]
+fn original_plain_index_key_keeps_bare_primitive_field_tokens() {
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+    let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+    for (source, expected) in [
+        ("input[input.len]", true),
+        ("input[input.key]", true),
+        ("list[list.len]", true),
+        ("ordinary[ordinary.len]", true),
+        ("input[input?.len]", false),
+        ("input[input:len]", false),
+        ("input[input.len.extra]", false),
+        ("input[length(input)]", false),
+        ("input[input.len][1]", false),
+    ] {
+        let tokens = lex(source).tokens.into_iter()
+            .map(|token| SpanToken { kind: token.kind, span: token.span }).collect::<Vec<_>>();
+        let parsed = parse_expression_original_token_view(source, &tokens, 0, &admission, None);
+        if expected { assert!(parsed.diagnostics.is_empty(), "{source}: {:?}", parsed.diagnostics); }
+        assert_eq!(parsed.original_simple_expression.map(OriginalSimpleExpression::kind),
+            expected.then_some(OriginalSimpleKind::Complete), "{source}");
     }
 }
 
@@ -2644,7 +2730,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
  impl Feed{fn new(rows:&[(TokenKind,&'static str,Option<bool>)])->Self{let mut at=0;Self{rows:rows.iter().map(|&(kind,text,close)|{let span=Span::new(at,at+text.len());at=span.end;(Token{kind,span,text:text.into()},close)}).collect(),at:0,fail_close:false}}}
  impl NativeExpressionTokenDemand for Feed{
   fn next_token(&mut self)->std::io::Result<Option<Token>>{let row=self.rows.get(self.at);self.at+=1;Ok(row.map(|(t,_)|t.clone()))}
-  fn original_value(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{let(t,_)=self.rows.get(o.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;if t.span!=o.span(){return Err(std::io::ErrorKind::InvalidInput.into())}Ok(Some(if t.kind==TokenKind::Ident{crate::OriginalTokenValue::Ident{spelling:&t.text,whitespace:false}}else{crate::OriginalTokenValue::Punct(match t.text.as_str(){":"=>":","?"=>"?","("=>"(",")"=>")","||"=>"||","&&"=>"&&","&"=>"&","!"=>"!","=="=>"==","<="=>"<=",">"=>">",">>"=>">>","+"=>"+","*"=>"*","-"=>"-",_=>return Err(std::io::ErrorKind::InvalidInput.into())})}))}
+  fn original_value(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{let(t,_)=self.rows.get(o.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;if t.span!=o.span(){return Err(std::io::ErrorKind::InvalidInput.into())}Ok(Some(if t.kind==TokenKind::Ident&&t.text=="in"{crate::OriginalTokenValue::Punct("in")}else if t.kind==TokenKind::Ident{crate::OriginalTokenValue::Ident{spelling:&t.text,whitespace:false}}else{crate::OriginalTokenValue::Punct(match t.text.as_str(){":"=>":","?"=>"?","("=>"(",")"=>")","||"=>"||","&&"=>"&&","&"=>"&","!"=>"!","."=>".","?."=>"?.","=="=>"==","!="=>"!=","["=>"[","]"=>"]","<="=>"<=",">"=>">",">>"=>">>","+"=>"+","*"=>"*","-"=>"-",_=>return Err(std::io::ErrorKind::InvalidInput.into())})}))}
   fn original_close_colon(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<bool>>{if self.fail_close{return Err(std::io::Error::from_raw_os_error(1450))}let(t,close)=self.rows.get(o.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;if t.span!=o.span(){return Err(std::io::ErrorKind::InvalidInput.into())}Ok(*close)}
   fn requires_original_values(&self)->bool{true}
  }
@@ -2684,6 +2770,131 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
    assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }
   assert!(parse_expression("a ? (b ? c : d) : e").original_simple_expression.is_none());
+ }
+ #[test]
+ fn actual_original_membership_accepts_one_lhs_dot_field_with_an_exact_name_container() {
+     use TokenKind::Ident;
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     let name = |text| (Ident, text, None);
+     let punct = |text| (crate::original_scalar_transport::original_punctuation_native_kind(text), text, None);
+     let field = [name("rank"), punct("."), name("name"), name("in"), name("rank_names")];
+     let negated = [punct("!"), punct("("), name("rank"), punct("."), name("name"),
+         name("in"), name("rank_names"), punct(")")];
+     let deeper = [name("rank"), punct("."), name("group"), punct("."), name("name"), name("in"), name("rank_names")];
+     let safe = [name("rank"), punct("?."), name("name"), name("in"), name("rank_names")];
+     let index = [name("rank"), punct("["), name("name"), punct("]"), name("in"), name("rank_names")];
+     let rhs_field = [name("rank"), punct("."), name("name"), name("in"), name("container"), punct("."), name("rank_names")];
+     let boolean_rhs = [name("rank"), punct("."), name("name"), name("in"), name("rank_names"), punct("&&"), name("flag")];
+     let range = [name("rank"), punct("."), name("name"), name("in"), name("first"), name("to"), name("last")];
+     for (tokens, expected) in [
+         (&field[..], true), (&negated[..], true), (&deeper[..], false), (&safe[..], false),
+         (&index[..], false), (&rhs_field[..], false), (&boolean_rhs[..], false), (&range[..], false),
+     ] {
+         let mut feed = Feed::new(tokens);
+         let output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind),
+             expected.then_some(OriginalSimpleKind::Complete), "{tokens:?}");
+         if std::ptr::eq(tokens.as_ptr(), field.as_ptr()) {
+             assert!(output.parsed().diagnostics.is_empty());
+             assert!(matches!(output.parsed().expr.as_ref().map(|expr| &expr.kind),
+                 Some(ExprKind::Binary { op, lhs, rhs }) if op == "in"
+                     && matches!(&lhs.kind, ExprKind::Member { object, selector, via_colon: false }
+                         if selector == "name" && matches!(&object.kind, ExprKind::Ident(name) if name == "rank"))
+                     && matches!(&rhs.kind, ExprKind::Ident(name) if name == "rank_names")));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+ }
+ #[test]
+ fn actual_original_bare_membership_is_an_entire_condition_without_low_precedence_tails() {
+     use TokenKind::Ident;
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     let name = |text| (Ident, text, None);
+     let punct = |text| (crate::original_scalar_transport::original_punctuation_native_kind(text), text, None);
+     let plain_list = [name("index"), name("in"), name("list")];
+     let plain_name = [name("index"), name("in"), name("entries")];
+     let grouped_list = [punct("!"), punct("("), name("index"), name("in"), name("list"), punct(")")];
+     let boolean_lhs = [name("index"), punct("&&"), name("flag"), name("in"), name("entries")];
+     let boolean_rhs = [name("index"), name("in"), name("entries"), punct("&&"), name("flag")];
+     let range = [name("index"), name("in"), name("first"), name("to"), name("last")];
+     let conditional = [name("index"), name("in"), name("flag"), punct("?"), name("first"),
+         (TokenKind::Punctuation, ":", Some(false)), name("second")];
+     let trailing = [name("index"), name("in"), name("entries"), name("tail")];
+     let split = [name("index"), name("i"), name("n"), name("entries")];
+     for (tokens, expected) in [
+         (&plain_list[..], true), (&plain_name[..], true), (&grouped_list[..], true),
+         (&boolean_lhs[..], false), (&boolean_rhs[..], false), (&range[..], false),
+         (&conditional[..], false), (&trailing[..], false), (&split[..], false),
+     ] {
+         let mut feed = Feed::new(tokens);
+         let outcome = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(outcome.parsed().original_simple_expression.map(OriginalSimpleExpression::kind),
+             expected.then_some(OriginalSimpleKind::Complete), "{tokens:?}");
+         if expected {
+             assert!(outcome.parsed().diagnostics.is_empty());
+         } else if std::ptr::eq(tokens.as_ptr(), boolean_lhs.as_ptr()) {
+             assert!(matches!(outcome.parsed().expr.as_ref().map(|expr| &expr.kind),
+                 Some(ExprKind::Binary { op, lhs, .. }) if op == "in"
+                     && matches!(&lhs.kind, ExprKind::Binary { op, .. } if op == "&&")));
+         } else if std::ptr::eq(tokens.as_ptr(), boolean_rhs.as_ptr()) {
+             assert!(matches!(outcome.parsed().expr.as_ref().map(|expr| &expr.kind),
+                 Some(ExprKind::Binary { op, rhs, .. }) if op == "in"
+                     && matches!(&rhs.kind, ExprKind::Binary { op, .. } if op == "&&")));
+         }
+         drop(outcome);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+     assert!(parse_expression("index in list").original_simple_expression.is_none());
+ }
+ #[test]
+ fn actual_original_grouped_membership_witness_preserves_outer_boolean_binding() {
+     use TokenKind::Ident;
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     let name = |text| (Ident, text, None);
+     let punct = |text| (crate::original_scalar_transport::original_punctuation_native_kind(text), text, None);
+     let negated = [punct("!"), punct("("), name("e"), name("in"), name("result"), punct(")"),
+         punct("&&"), punct("!"), punct("("), name("e"), name("in"), name("second"), punct(")")];
+     let indexed = [punct("!"), punct("("), name("entry"), name("in"), name("second"), punct(")"),
+         punct("||"), punct("("), name("first"), punct("["), name("entry"), punct("]"),
+         punct("!="), name("second"), punct("["), name("entry"), punct("]"), punct(")")];
+     let ungrouped = [name("e"), name("in"), name("result"), punct("&&"), name("second")];
+     let inner_boolean = [punct("("), name("e"), name("in"), name("result"), punct("&&"), name("second"), punct(")")];
+     let range = [punct("("), name("e"), name("in"), name("first"), name("to"), name("second"), punct(")")];
+     let split_in = [punct("("), name("e"), name("i"), name("n"), name("result"), punct(")")];
+     for (tokens, expected) in [
+         (&negated[..], Some("&&")), (&indexed[..], Some("||")),
+         (&ungrouped[..], None), (&inner_boolean[..], None), (&range[..], None), (&split_in[..], None),
+     ] {
+         let mut feed = Feed::new(tokens);
+         let output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         let parsed = output.parsed();
+         assert_eq!(parsed.original_simple_expression.map(OriginalSimpleExpression::kind),
+             expected.map(|_| OriginalSimpleKind::Complete), "{tokens:?}");
+         if let Some(expected) = expected {
+             assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+             let Some(ExprKind::Binary { op, lhs, rhs }) = parsed.expr.as_ref().map(|expr| &expr.kind)
+                 else { panic!("missing outer boolean"); };
+             assert_eq!(op, expected);
+             let membership = |expr: &Expr| matches!(&expr.kind, ExprKind::Unary { op, value }
+                 if op == "!" && matches!(&value.kind, ExprKind::Group(inner)
+                     if matches!(&inner.kind, ExprKind::Binary { op, .. } if op == "in")));
+             assert!(membership(lhs));
+             if expected == "&&" {
+                 assert!(membership(rhs));
+             } else {
+                 assert!(matches!(&rhs.kind, ExprKind::Group(inner)
+                     if matches!(&inner.kind, ExprKind::Binary { op, lhs, rhs }
+                         if op == "!=" && matches!(&lhs.kind, ExprKind::Index { .. })
+                             && matches!(&rhs.kind, ExprKind::Index { .. }))));
+             }
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
  }
  #[test]
  fn actual_original_comparison_witness_requires_single_operators_and_pinned_binding() {

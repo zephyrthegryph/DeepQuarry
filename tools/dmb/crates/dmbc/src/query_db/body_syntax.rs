@@ -1515,6 +1515,52 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_bare_input_and_unweighted_pick_keep_distinct_primitive_syntax() {
+     let fixture = r#"
+/proc/input_value(list/input)
+    return length(input) + input.len
+/proc/pick_list(list/list)
+    return pick(list)
+/proc/pick_listfrom(list/listfrom)
+    var/picked = pick(listfrom)
+    return picked
+/proc/pick_weighted(list/list)
+    return pick(2;list)
+/proc/pick_multiple(list/list)
+    return pick(list, 1)
+/proc/pick_trailing(list/list)
+    return pick(list,)
+/proc/pick_keyword(list/list)
+    return pick(choice = list)
+/proc/input_primitive()
+    return input() as text
+"#;
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, fixture);
+     for (name, expected) in [
+         ("input_value", true), ("pick_list", true), ("pick_listfrom", true),
+         ("pick_weighted", false), ("pick_multiple", false), ("pick_trailing", false),
+         ("pick_keyword", false), ("input_primitive", false),
+     ] {
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original input/pick proof is available: {name}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{name}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
  #[test]
  fn actual_original_implicit_constructor_consumes_exact_positional_children() {
      let fixture = r#"
@@ -1637,7 +1683,20 @@ mod body_syntax_census_tests;
          (fixture.replace("1, i <= LAZYLEN(keys),", "1; i <= LAZYLEN(keys);"), true),
          (fixture.replace("1, i <=", "1; i <="), false),
          (fixture.replace(", i++)", ", i = i + 1)"), false),
-         (fixture.replace("for(i = 1", "for(var/i = 1"), false),
+         (fixture.replace("for(i = 1", "for(var/i = 1"), true),
+         (fixture.replace("for(i = 1", "for(var/num/i = 1"), false),
+         (fixture.replace("i++)", "++i)"), true),
+         (fixture.replace("i++)", "--i)"), false),
+         (fixture.replace("i++)", "++i.field)"), false),
+         ("/proc/probe(list/L)
+    for(var/i=1; i<L.len; i++)
+        L.Swap(i, rand(i,L.len))
+    return L
+".to_owned(), true),
+         ("/proc/probe(list/L)
+    for(var/i=1, i<L.len, ++i)
+        L.Swap(i,rand(i,L.len))
+".to_owned(), true),
          (fixture.replace("i++)\n        return i", "i++) return i"), false),
      ] {
          let db = Arc::new(QueryDb::default());
@@ -1834,6 +1893,182 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_typecache_exclusion_not_consumes_one_plain_index_operand() {
+     let fixture = r#"
+/proc/probe(list/atoms, list/typecache_include, list/typecache_exclude)
+    . = list()
+    for(var/atom/A as anything in atoms)
+        if(typecache_include[A.type] && !typecache_exclude[A.type])
+            . += A
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("!typecache_exclude[A.type]", "!typecache_exclude[A]"), true),
+         (fixture.replace("!typecache_exclude[A.type]", "-typecache_exclude[A.type]"), false),
+         (fixture.replace("!typecache_exclude[A.type]", "!typecache_exclude[A:type]"), false),
+         (fixture.replace("!typecache_exclude[A.type]", "!typecache_exclude[lookup(A)]"), false),
+         (fixture.replace("!typecache_exclude[A.type]", "!typecache_exclude[A.type][A]"), false),
+         (fixture.replace("!typecache_exclude[A.type]", "!typecache_exclude[++A]"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original typecache exclusion must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let dm_syntax::StatementKind::For { body, .. } = &parsed.statements[1].kind
+                     else { panic!("actual authored atom loop"); };
+                 let dm_syntax::StatementKind::If { condition, .. } = &body[0].kind
+                     else { panic!("actual authored filter condition"); };
+                 assert!(matches!(&condition.kind, dm_syntax::ExprKind::Binary { op, lhs, rhs }
+                     if op == "&&" && matches!(&lhs.kind, dm_syntax::ExprKind::Index { .. })
+                         && matches!(&rhs.kind, dm_syntax::ExprKind::Unary { op, value }
+                             if op == "!" && matches!(&value.kind, dm_syntax::ExprKind::Index { .. }))));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_as_anything_keeps_the_authored_atom_or_list_binding() {
+     let fixture = r#"
+/proc/probe(list/atoms, list/typecache)
+    . = list()
+    for(var/atom/A as anything in atoms)
+        if(typecache[A.type])
+            . += A
+    for(var/list/row as anything in atoms)
+        if(row)
+            . += row
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("var/atom/A", "var/datum/A"), true),
+         (fixture.replace("var/atom/A", "var/atom/movable/A"), true),
+         (fixture.replace("A as anything", "A as obj"), false),
+         (fixture.replace("anything in atoms", "anything in atoms.values"), true),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original atom and list bindings are available");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let entries = parsed.local_variables.entries().unwrap();
+                 assert_eq!(entries.iter().filter(|entry|
+                     entry.source_kind == dm_syntax::LocalSourceKind::ForBinding).count(), 2);
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+
+ #[test]
+ fn actual_original_typed_anything_for_keeps_real_local_type_and_name_spans() {
+     let fixture = "\
+/var/datum/controller/global_vars/GLOB\n\
+/datum/controller/global_vars/var/list/admin_ranks\n\
+/datum/admin_rank/var/name\n\
+/proc/probe(list/ranks)\n\
+    for(var/datum/admin_rank/rank as anything in GLOB.admin_ranks)\n\
+        ranks += rank\n\
+    return ranks\n";
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("datum/admin_rank/rank", "atom/movable/rank"), true),
+         (fixture.replace("datum/admin_rank/rank", "datum/rank"), true),
+         (fixture.replace("GLOB.admin_ranks", "ranks"), true),
+         (fixture.replace("var/datum/admin_rank/rank", "var/static/datum/admin_rank/rank"), false),
+         (fixture.replace("var/datum/admin_rank/rank", "var/tmp/datum/admin_rank/rank"), false),
+         (fixture.replace("var/datum/admin_rank/rank", "var/SpacemanDMM_private/datum/admin_rank/rank"), false),
+         (fixture.replace("rank as anything", "rank[] as anything"), false),
+         (fixture.replace("rank as anything", "rank as obj"), false),
+         (fixture.replace("GLOB.admin_ranks)", "GLOB?.admin_ranks)"), false),
+         (fixture.replace("GLOB.admin_ranks)", "GLOB:admin_ranks)"), false),
+         (fixture.replace("GLOB.admin_ranks)", "GLOB.admin_ranks.extra)"), false),
+         (fixture.replace("GLOB.admin_ranks)", "get_ranks())"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+                     panic!("typed Original as-anything binding must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let storage = product.parsed().unwrap().statement_storage();
+                 let entry = storage.parsed().local_variables.entries().unwrap().iter().find(|entry|
+                     entry.source_kind == dm_syntax::LocalSourceKind::ForBinding).unwrap();
+                 let view = front.source_view().unwrap();
+                 let source = view.expanded_text();
+                 let name = body.projection().span(entry.name).unwrap();
+                 assert_eq!(&source[name.range()], "rank");
+                 let types = entry.type_components.iter().map(|span| {
+                     let span = body.projection().span(*span).unwrap();
+                     &source[span.range()]
+                 }).collect::<Vec<_>>();
+                 let expected_path = text.split_once("    for(var/").unwrap().1.split_once("/rank as anything").unwrap().0;
+                 assert_eq!(types.join("/"), expected_path);
+                 assert_eq!(entry.source_modifiers, 0);
+                 assert!(!entry.array_suffix);
+             } else {
+                 assert!(matches!(body.original_code_disposition(), Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_admin_ranks_function_has_typed_anything_body_receipt() {
+     let authored = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/content/admin/admin_ranks.dm"));
+     let authored = authored.replace("\r\n", "\n");
+     let start = authored.find("/proc/ranks_from_rank_name(rank_name)\n").unwrap();
+     let tail = &authored[start..];
+     let end = tail.find("\n/proc/join_admin_ranks(").unwrap();
+     let source = format!("/var/datum/controller/global_vars/GLOB\n/datum/controller/global_vars/var/list/admin_ranks\n/datum/admin_rank/var/name\n{}", &tail[..end]);
+     assert!(source.contains("for (var/datum/admin_rank/rank as anything in GLOB.admin_ranks)"));
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, &source);
+     let input = original_input(&front, "ranks_from_rank_name");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+             panic!("actual admin-rank function must have complete native body receipt");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
  fn actual_original_list_as_anything_and_nested_bare_break_authenticate_own_loops() {
      let fixture = r#"
 /proc/probe(list/rank_rows, list/admin_ranks)
@@ -1915,6 +2150,137 @@ mod body_syntax_census_tests;
              } else {
                  assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
                      if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_cooldown_macro_group_retains_its_statement_assignment() {
+     let fixture = r#"
+#define SECONDS *10
+#define CLOCK_WORLD 0
+#define TIME_NOW(clock, owner...) ((clock) ? own_clock_now(owner) : world.time)
+#define COOLDOWN_START(cd_source, cd_index, cd_time) (cd_source.cd_index = TIME_NOW(CLOCK_WORLD) + (cd_time))
+#define APC_REPORT_LOG_INTERVAL (30 SECONDS)
+/obj/machinery/power/apc/proc/probe()
+    COOLDOWN_START(src, report_log_cooldown, APC_REPORT_LOG_INTERVAL)
+    return 0
+"#;
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("    COOLDOWN_START(", "    return COOLDOWN_START("), false),
+         (fixture.replace("cd_source.cd_index =", "cd_source.cd_index +="), false),
+         (fixture.replace("cd_source.cd_index =", "cd_source:cd_index ="), false),
+         (fixture.replace("cd_source.cd_index =", "cd_source.cd_index[1] ="), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original cooldown group is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let statements = product.parsed().unwrap().statement_storage().parsed();
+                 assert!(matches!(&statements.statements[0].kind,
+                     dm_syntax::StatementKind::Expression(value) if matches!(&value.kind, dm_syntax::ExprKind::Group(_))));
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_length_input_switch_authenticates_inline_returns() {
+     let fixture = "/proc/probe(list/input)\n    switch(length(input))\n        if(0) return 0\n        if(1) return 1\n        else return 2\n";
+     for (text, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("length(input)", "rand(0, 1)"), false),
+         (fixture.replace("if(0)", "if(0, 1)"), false),
+         (fixture.replace("return 0", "return"), false),
+         (fixture.replace("length(input)", "input"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original inline switch is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let dm_syntax::StatementKind::Switch { cases, else_branch, .. } =
+                     &parsed.statements[0].kind else { panic!("actual inline switch"); };
+                 for statement in cases.iter().flat_map(|case| case.body.iter()).chain(else_branch) {
+                     assert_eq!(statement.span.start, statement.header_span.start);
+                     assert!(statement.raw_header.starts_with("return "));
+                 }
+             } else {
+                 assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
+                     if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+
+ #[test]
+ fn actual_original_english_list_keeps_all_interpolation_children_and_primitive_index_key() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm"));
+     let file = file.replace("\r\n", "\n");
+     let start = file.find("/proc/english_list(").unwrap();
+     let tail = &file[start..];
+     let end = tail.find("\n// Determiner constants").unwrap();
+     let authored = &tail[..end];
+     assert!(authored.contains("[jointext(input, comma_text, 1, -1)][final_comma_text][and_text][input[input.len]]"));
+     for (source, expected) in [
+         (authored.to_owned(), true),
+         (authored.replace("input[input.len]", "input[input?.len]"), false),
+         (authored.replace("input[input.len]", "input[input.len.extra]"), false),
+         (authored.replace("input[input.len]", "input[length(input)]"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "english_list");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("the actual english_list interpolation must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let storage = product.parsed().unwrap().statement_storage();
+                 let dm_syntax::StatementKind::Switch { else_branch, .. } = &storage.parsed().statements[0].kind
+                     else { panic!("actual length switch"); };
+                 let dm_syntax::StatementKind::Return(Some(expression)) = &else_branch[0].kind
+                     else { panic!("actual default return"); };
+                 let dm_syntax::ExprKind::Literal(literal) = &expression.kind
+                     else { panic!("actual interpolation owner"); };
+                 let parts = literal.prepared_syntax_parts().unwrap().unwrap().unwrap();
+                 assert_eq!(parts.expressions.len(), 4);
+                 let dm_syntax::ExprKind::Index { object, index } = &parts.expressions[3].kind
+                     else { panic!("same last interpolation index"); };
+                 assert!(matches!(&object.kind, dm_syntax::ExprKind::Ident(name) if name == "input"));
+                 assert!(matches!(&index.kind, dm_syntax::ExprKind::Member { object, selector, via_colon: false }
+                     if selector == "len" && matches!(&object.kind, dm_syntax::ExprKind::Ident(name) if name == "input")));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
              }
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();

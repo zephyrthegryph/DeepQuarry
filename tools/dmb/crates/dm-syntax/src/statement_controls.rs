@@ -224,7 +224,7 @@ pub(super) fn parse_for(
         let mut grouped_index = false;
         let mut call_member = false;
         let mut subtraction = false;
-        let mut simple_original = false;
+        let mut anything_iterable = false;
         let mut bare_string_index = false;
         let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
             expression_complete = parsed.original_simple_expression.is_some_and(|value| {
@@ -232,7 +232,13 @@ pub(super) fn parse_for(
             });
             let actual_original = parsed.original_simple_expression.is_some_and(|value| value.is_original());
             let kind = parsed.expr.as_ref().map(|value| &value.kind);
-            simple_original = actual_original && matches!(kind, Some(ExprKind::Ident(_)));
+            anything_iterable = actual_original && match kind {
+                Some(ExprKind::Ident(_)) => true,
+                Some(ExprKind::Member { object, via_colon: false, .. }) => {
+                    matches!(&object.kind, ExprKind::Ident(_))
+                }
+                _ => false,
+            };
             dotted_original = actual_original && matches!(kind, Some(ExprKind::Member { via_colon: false, .. }));
             grouped_index = actual_original && matches!(kind,
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
@@ -248,13 +254,18 @@ pub(super) fn parse_for(
         let mut declaration = binding;
         if let Some((before_hint, _)) = split_top_level_keyword(binding, "as")
             .filter(|(_, hint)| hint.trim() == "anything")
-            .filter(|_| !*original_control && expression_complete && simple_original)
+            .filter(|_| !*original_control && expression_complete && anything_iterable)
         {
             if let Some(name) = source_binding {
                 let prefix = Span::new(offset_of(binding), iterable.span.start);
-                match origins.settings.map(|provider| {
-                    provider.original_for_each_anything_prefix(prefix, name.name())
-                }).transpose() {
+                let typed = origins.locals.entries().ok().and_then(|rows| rows.iter().find(|row| {
+                    row.source_kind == crate::LocalSourceKind::ForBinding
+                        && row.name == name.name() && row.source_modifiers == 0
+                        && !row.array_suffix && !row.type_components.is_empty()
+                }));
+                match typed.and_then(|row| origins.settings.map(|provider| {
+                    provider.original_for_each_anything_prefix(prefix, row.name, &row.type_components)
+                })).transpose() {
                     Ok(Some(true)) => {
                         *original_control = true;
                         // The source hint governs iteration, not the local's name.
@@ -365,10 +376,15 @@ pub(super) fn parse_for(
                         (initial[..at].trim(), Some(initial[at + 1..].trim()))
                     });
             let value = if let Some(value) = value {
-                Some(parse_expr(
+                Some(parse_expr_observed(
                     value,
                     offset_of(value),
                     diagnostics,
+                    &mut |parsed| {
+                        initial_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
+                            proof.is_original() && proof.kind() == OriginalSimpleKind::Complete
+                        });
+                    },
                 )?)
             } else {
                 None
@@ -424,19 +440,43 @@ pub(super) fn parse_for(
                 },
             )?)
         };
-        if initial_witnessed && test_witnessed && step_witnessed {
-            if let (Some(ForInitializer::Expr(initial)), Some(test), Some(step)) =
-                (&initializer, &condition, &step)
-            {
-                let first = Span::new(initial.span.end, test.span.start);
-                let second = Span::new(test.span.end, step.span.start);
-                match origins.settings.map(|provider| {
-                    provider.original_classic_for_separators(first, second)
-                }).transpose() {
-                    Ok(value) => *original_control = value == Some(true),
-                    Err(actual) => {
-                        if let Some(admission) = origins.admission {
-                            admission.record_operational_error(actual);
+        if initial_witnessed && test_witnessed {
+            if let (Some(initial), Some(test), Some(step)) = (&initializer, &condition, &step) {
+                let initial_end = match initial {
+                    ForInitializer::Expr(initial) => Some(initial.span.end),
+                    ForInitializer::Declare { value: Some(value), .. } => {
+                        let start = offset_of(parts[0]);
+                        origins.locals.entries().ok().and_then(|rows| rows.last()).filter(|row|
+                            row.source_kind == crate::LocalSourceKind::ForInitializer
+                                && start <= row.name.start && row.name.end <= value.span.start
+                        ).and_then(|row| {
+                            original_classic_tokens(origins, Span::new(start, value.span.start), row.name, true)
+                                .then_some(value.span.end)
+                        })
+                    }
+                    ForInitializer::Declare { value: None, .. } => None,
+                };
+                if let Some(initial_end) = initial_end {
+                    if !step_witnessed {
+                        if let ExprKind::Unary { op, value } = &step.kind {
+                            step_witnessed = op == "pre++"
+                                && matches!(&value.kind, ExprKind::Ident(name)
+                                    if crate::expression_parser::original_ascii_identifier(name))
+                                && original_classic_tokens(origins, step.span, value.span, false);
+                        }
+                    }
+                    if step_witnessed {
+                        let first = Span::new(initial_end, test.span.start);
+                        let second = Span::new(test.span.end, step.span.start);
+                        match origins.settings.map(|provider| {
+                            provider.original_classic_for_separators(first, second)
+                        }).transpose() {
+                            Ok(value) => *original_control = value == Some(true),
+                            Err(actual) => {
+                                if let Some(admission) = origins.admission {
+                                    admission.record_operational_error(actual);
+                                }
+                            }
                         }
                     }
                 }
@@ -454,6 +494,18 @@ pub(super) fn parse_for(
         message: "unsupported for control".into(),
     });
     None
+}
+
+fn original_classic_tokens(origins: &BodyOrigins<'_>, span: Span, name: Span, declaration: bool) -> bool {
+    match origins.settings.map(|provider| provider.original_classic_for_tokens(span, name, declaration)).transpose() {
+        Ok(value) => value == Some(true),
+        Err(actual) => {
+            if let Some(admission) = origins.admission {
+                admission.record_operational_error(actual);
+            }
+            false
+        }
+    }
 }
 
 fn original_declared_range_header(

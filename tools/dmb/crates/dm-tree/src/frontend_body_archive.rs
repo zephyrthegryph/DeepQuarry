@@ -1208,26 +1208,60 @@ fn parse_statements_admitted(
         }
         fn original_for_each_anything_prefix(
             &self, prefix: dm_syntax::Span, name: dm_syntax::Span,
+            type_components: &[dm_syntax::Span],
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            if type_components.is_empty() { return Ok(false); }
             let Ok(prefix) = tokens.tokens(prefix) else { return Ok(false); };
             let mut index = 0;
+            let mut component = 0;
             for (kind, span, spelling) in prefix {
                 self.admission.checkpoint()?;
                 match (index, kind, spelling) {
                     (_, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
-                    (0, TokenKind::Ident, "var") | (2, TokenKind::Ident, "list")
-                    | (5, TokenKind::Ident, "as") | (6, TokenKind::Ident, "anything")
-                    | (7, TokenKind::Ident, "in")
-                    | (1 | 3, TokenKind::Operator | TokenKind::Punctuation, "/") => index += 1,
-                    (4, TokenKind::Ident, _) if span == name => index += 1,
+                    (0, TokenKind::Ident, "var")
+                    | (1, TokenKind::Operator | TokenKind::Punctuation, "/")
+                    | (5, TokenKind::Ident, "as")
+                    | (6, TokenKind::Ident, "anything")
+                    | (7, TokenKind::Ident, "in") => index += 1,
+                    (2, TokenKind::Ident, _) if type_components.get(component) == Some(&span) => {
+                        component += 1;
+                        index = 3;
+                    }
+                    (3, TokenKind::Operator | TokenKind::Punctuation, "/") => {
+                        index = if component == type_components.len() { 4 } else { 2 };
+                    }
+                    (4, TokenKind::Ident, _) if span == name => index = 5,
                     _ => return Ok(false),
                 }
             }
-            Ok(index == 8)
+            Ok(index == 8 && component == type_components.len())
+        }
+        fn original_classic_for_tokens(
+            &self, span: dm_syntax::Span, name: dm_syntax::Span, declaration: bool,
+        ) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(tokens) = tokens.tokens(span) else { return Ok(false); };
+            let mut index = 0;
+            for (kind, span, spelling) in tokens {
+                self.admission.checkpoint()?;
+                match (declaration, index, kind, spelling) {
+                    (_, _, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (true, 0, TokenKind::Ident, "var")
+                    | (true, 1, TokenKind::Operator | TokenKind::Punctuation, "/")
+                    | (true, 3, TokenKind::Operator | TokenKind::Punctuation, "=")
+                    | (false, 0, TokenKind::Operator | TokenKind::Punctuation, "++") => index += 1,
+                    (true, 2, TokenKind::Ident, _) | (false, 1, TokenKind::Ident, _) if span == name => index += 1,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(index == if declaration { 4 } else { 2 })
         }
         fn original_classic_for_separators(
             &self, first: dm_syntax::Span, second: dm_syntax::Span,

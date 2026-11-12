@@ -243,8 +243,15 @@ pub trait SettingSyntaxProvider {
     ) -> std::io::Result<bool> {
         Ok(false)
     }
-    /// Authenticate the list binding's exact as-anything prefix.
-    fn original_for_each_anything_prefix(&self, _prefix: Span, _name: Span) -> std::io::Result<bool> {
+    /// Authenticate the exact unmodified type path and as-anything prefix.
+    /// Components and name belong to this body's existing local ledger.
+    fn original_for_each_anything_prefix(
+        &self, _prefix: Span, _name: Span, _type_components: &[Span],
+    ) -> std::io::Result<bool> {
+        Ok(false)
+    }
+    /// Authenticate the declaration prefix or prefix step at its actual span.
+    fn original_classic_for_tokens(&self, _span: Span, _name: Span, _declaration: bool) -> std::io::Result<bool> {
         Ok(false)
     }
     /// Authenticate both classic-loop separators in the same Original body.
@@ -1146,6 +1153,9 @@ fn original_post_increment_candidate(header: &str) -> bool {
 }
 
 fn original_simple_assignment_candidate(header: &str) -> bool {
+    // Macro expansions may leave a single enclosing expression group.
+    let header = header.strip_prefix('(').and_then(|inner| inner.strip_suffix(')'))
+        .map_or(header, str::trim);
     let Some((target, _)) = header.split_once('=') else { return false; };
     let target = target.trim_end_matches(['+', '-', '*', '/', '%', '|', '&', '^', '<', '>']).trim();
     if target == "." { return true; }
@@ -1466,10 +1476,16 @@ fn parse_switch(
     let header = item.header.trim();
     let mut witnessed = header.ends_with(')') && control_inline(item, "switch").is_none()
         && original_indented_block_boundary(item, origins);
+    let mut inline_decimal_returns = false;
     let selector = parse_control_condition_observed(item, "switch", diagnostics, &mut |parsed| {
+        inline_decimal_returns = matches!(parsed.expr.as_ref().map(|value| &value.kind),
+            Some(ExprKind::Call { callee, args })
+                if matches!(&callee.kind, ExprKind::Ident(name) if name == "length")
+                    && matches!(args.as_slice(), [arg] if matches!(&arg.kind, ExprKind::Ident(name) if name == "input")));
         witnessed &= parsed.original_simple_expression.is_some_and(|value| {
             value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
-        }) && matches!(parsed.expr.as_ref().map(|value| &value.kind), Some(ExprKind::Ident(_)));
+        }) && (inline_decimal_returns
+            || matches!(parsed.expr.as_ref().map(|value| &value.kind), Some(ExprKind::Ident(_))));
     })?;
     let mut cases = Vec::new();
     let mut else_branch = Vec::new();
@@ -1480,8 +1496,7 @@ fn parse_switch(
         let case=&item.children[index];
         let header = case.header.trim();
         if starts_keyword(header, "else") {
-            witnessed &= header == "else" && index + 1 == item.children.len()
-                && original_indented_block_boundary(case, origins);
+            witnessed &= index + 1 == item.children.len();
             default_present=true;
             if index + 1 != item.children.len() {
                 diagnostics.push(Diagnostic {
@@ -1501,8 +1516,15 @@ fn parse_switch(
             } else {
                 let mut nested = case.clone();
                 nested.header = inline.into();
-                nested.header_span.start += case.header.find(inline).unwrap_or(0);
+                nested.header_span.start += inline.as_ptr() as usize - case.header.as_ptr() as usize;
+                nested.span.start = nested.header_span.start;
                 parse_sequence(&[nested], diagnostics, origins)
+            };
+            witnessed &= if inline.is_empty() {
+                header == "else" && original_indented_block_boundary(case, origins)
+            } else {
+                inline_decimal_returns && case.children.is_empty()
+                    && matches!(else_branch.as_slice(), [statement] if matches!(&statement.kind, StatementKind::Return(Some(_))))
             };
             index+=1;
             continue;
@@ -1549,14 +1571,19 @@ fn parse_switch(
         // Borrow following else/catch/while rows rather than cloning a roster.
         let mut next=index+1;
         let inline=control_inline(case,"if");
-        witnessed &= header.ends_with(')') && inline.is_none()
-            && original_indented_block_boundary(case, origins);
+        if inline.is_none() {
+            witnessed &= header.ends_with(')') && original_indented_block_boundary(case, origins);
+        }
         if let Some(inline)=inline{
             if starts_keyword(inline,"if"){while let Some(other)=item.children.get(next).filter(|next|starts_keyword(next.header.trim(),"else")){if origins.admission.is_some_and(|admission|admission.checkpoint().is_err()){return None}let continuation=other.header.trim().strip_prefix("else").unwrap_or("").trim_start();next+=1;if !starts_keyword(continuation,"if"){break}}}
             else if inline=="try"&&item.children.get(next).is_some_and(|next|starts_keyword(next.header.trim(),"catch")){next+=1;}
             else if inline=="do"&&item.children.get(next).is_some_and(|next|starts_keyword(next.header.trim(),"while")&&next.children.is_empty()){next+=1;}
         }
         let body=if let Some(inline)=inline{let mut nested=case.clone();nested.header=inline.into();nested.header_span.start+=inline.as_ptr() as usize-case.header.as_ptr() as usize;nested.span.start=nested.header_span.start;parse_sequence_first(&item.children[index..next],Some(&nested),diagnostics,origins,None)}else{control_body_from_inline(case,None,diagnostics,origins)};
+        if inline.is_some() {
+            witnessed &= inline_decimal_returns && next == index + 1 && case.children.is_empty()
+                && matches!(body.as_slice(), [statement] if matches!(&statement.kind, StatementKind::Return(Some(_))));
+        }
         cases.push(SwitchCase {
             original_site:OriginalCaseSite{
                 header:case.header_span,body:case.span,
