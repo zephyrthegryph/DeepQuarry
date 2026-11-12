@@ -14,7 +14,7 @@
 //!   `declared_entries()`: the entries of its `CAPABILITIES(T, ...)` list, copied as written. The proc is defined on `T`, so `nameof(var)`
 //!   and `PROC_REF(x)` resolve against the type, and each entry carries its own line for the explain tools.
 //!
-//! The entry text is copied except for these rewrites (E4 adds `adjusts(a.b, ...)` and `on_change(nameof(a.b), ...)`, whose paths become text): `link(A::a, B::b)` (DM's `link` is a keyword) becomes `entry_link("A::a", "B::b")`,
+//! The entry text is copied except for these rewrites (E4 adds `on_change(nameof(a.b), ...)`, whose path becomes text): `link(A::a, B::b)` (DM's `link` is a keyword) becomes `entry_link("A::a", "B::b")`,
 //! and `configure(CAP_X, "selector", param = value)` becomes `configure(<constructor of CAP_X>("selector", param = value))`.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -405,13 +405,6 @@ fn entry_text(raw: &str, caps: &[Cap], globals: &BTreeSet<String>) -> String {
             format!("entry_link({})", parts.join(", "))
         });
     }
-    // adjusts(packet.amount, ...): the field path is text (DM has no value for `packet.amount` outside the action's own context).
-    t = rewrite_calls(&t, "adjusts", &|a| {
-        let Some(first) = a.first() else { return "adjusts()".to_string() };
-        let mut parts = vec![if first.starts_with('"') { first.clone() } else { quote(first) }];
-        parts.extend(a.iter().skip(1).cloned());
-        format!("adjusts({})", parts.join(", "))
-    });
     // on_change(nameof(terminal.charge), ANY, ...): nameof() of a path gives only the last name, so the whole path is text.
     t = rewrite_calls(&t, "on_change", &|a| {
         let Some(first) = a.first() else { return "on_change()".to_string() };
@@ -481,6 +474,7 @@ impl Generator for Declare {
         weak_accessors(cx, out);
         lazy_accessors(cx, out);
         static_blocks(cx, out, &caps, &globals, &statics);
+        block_types(cx, out);
         make_procs(cx, out);
         for d in std::mem::take(&mut tests.diags) {
             out.diag(&d.rel, d.line, d.msg);
@@ -537,6 +531,44 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
     out.blank();
     for (i, chunk) in chunks.iter().enumerate() {
         out.line(format!("/proc/declared_static_blocks_part{}(list/into)", i + 1));
+        for row in chunk.iter() {
+            for l in row {
+                out.line(l.clone());
+            }
+        }
+        out.blank();
+    }
+}
+
+/// Every type that declares a CAPABILITIES block, so a test can compile every block's table without waiting for an instance of the type
+/// to be made (dq_declare_every_block_compiles). Rows go into numbered part procs of at most 500 rows (DM's proc size limit).
+fn block_types(cx: &GenCx, out: &mut GenOut) {
+    out.doc("declared_block_types(): every type with a CAPABILITIES block, sorted.");
+    let all: Vec<&Marker> = cx.markers("CAPABILITIES").collect();
+    let (groups, _) = type_blocks(&all);
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    for (ty, blocks) in groups {
+        let Some(m) = blocks.first().filter(|m| m.part.is_none()).copied() else { continue };
+        let test_only = crate::sem::gen::test_only(&m.rel);
+        let mut row: Vec<String> = Vec::new();
+        if test_only {
+            row.push(crate::sem::gen::TEST_GUARD.to_string());
+        }
+        row.push(format!("\tinto += {}", ty.trim()));
+        if test_only {
+            row.push("#endif".to_string());
+        }
+        rows.push(row);
+    }
+    let chunks: Vec<&[Vec<String>]> = rows.chunks(500).collect();
+    out.line("/proc/declared_block_types()");
+    out.line("\t. = list()");
+    for i in 0..chunks.len() {
+        out.line(format!("\tdeclared_block_types_part{}(.)", i + 1));
+    }
+    out.blank();
+    for (i, chunk) in chunks.iter().enumerate() {
+        out.line(format!("/proc/declared_block_types_part{}(list/into)", i + 1));
         for row in chunk.iter() {
             for l in row {
                 out.line(l.clone());
@@ -1450,14 +1482,12 @@ CAPABILITIES(/obj/ripens, \
     }
 
     #[test]
-    fn adjusts_and_on_change_paths_become_text() {
+    fn on_change_paths_become_text() {
         let (_, decl, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing, \
-	extend(/datum/act/hit, adjusts(packet.amount, scale = 0.5)), \
 	on_change(nameof(terminal.charge), ANY, then(PROC_REF(x))), \
 	on_change(nameof(on), ENTER, then(PROC_REF(y))))
 ")]);
         assert!(diags.is_empty(), "{:?}", diags);
-        assert!(decl.contains("adjusts(\"packet.amount\", scale = 0.5)"), "{}", decl);
         assert!(decl.contains("on_change(\"terminal.charge\", ANY"), "{}", decl);
         assert!(decl.contains("on_change(nameof(on), ENTER"), "a plain nameof stays: {}", decl);
     }

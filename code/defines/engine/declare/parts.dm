@@ -77,6 +77,7 @@
 #define RULE_OP_CLASH "op_clash"
 #define RULE_OP_ORDER "op_order"
 #define RULE_OP_PART "op_part"
+#define RULE_INPUT_HANDLER "input_handler"
 
 /// What a part's combine rule is.
 
