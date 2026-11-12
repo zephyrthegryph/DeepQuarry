@@ -145,11 +145,18 @@
 		var/datum/entry_engine/type_trait/engine = entry_engine_for(engine_type::kind)
 		if(!engine)
 			continue
-		var/list/fast = type_trait_table_build(by_type, engine.kind, engine.trait_type)
+		var/list/fast_by_table = type_trait_table_build(by_type, engine.kind, engine.trait_type)
 		var/list/slow = type_trait_table_scan(by_type, engine.kind, engine.trait_type)
-		var/list/live = GLOB.type_trait_tables[engine.kind]
+		var/list/fast = list() // the per-table build read per type, as type_trait_of() reads it
+		var/live_types = 0
+		for(var/type in by_type)
+			var/datum/type_trait/made = fast_by_table[by_type[type]]
+			if(made)
+				fast[type] = made
+			if(type_trait_shared(type, engine.kind))
+				live_types++
 		TEST_ASSERT_EQUAL(length(fast), length(slow), "[engine.kind]: the same number of types")
-		TEST_ASSERT_EQUAL(length(live), length(slow), "[engine.kind]: the boot table has the same number of types")
+		TEST_ASSERT_EQUAL(live_types, length(slow), "[engine.kind]: the boot table has the same number of types")
 		var/list/first_fast = list()
 		var/list/first_slow = list()
 		for(var/type in slow)

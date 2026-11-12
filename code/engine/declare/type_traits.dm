@@ -64,47 +64,41 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 			merged[name] = changes.args[name]
 	return entry_make(kind, null, merged)
 
-/// One shared trait per declaring table, indexed by every type under it.
+/// One shared trait per declaring table, indexed by the table (a type reads it through its table).
 /datum/entry_engine/type_trait/static_built(list/by_type)
 	GLOB.type_trait_tables[kind] = type_trait_table_build(by_type, kind, trait_type)
 
-/// type -> the shared trait of `kind` for every type in `by_type` whose table declares one. Each table is visited once (not each type: the grouping
-/// of types by table and the first entry of each kind per table come from static_table_groups(), built once at setup), and one trait is built per
-/// distinct declaring entry, shared by the types whose tables hold it, so the cost is the tables plus the types that get a trait. The equality test
-/// (dq_table_cache_tests.dm) compares it with the scanning original, including which types share a trait object.
+/// table -> the shared trait of `kind` for every table of `by_type` that declares one. Each table is visited once (the grouping of types by table
+/// and the first entry of each kind per table come from static_table_groups(), built once at setup), and one trait is built per distinct declaring
+/// entry, shared by the tables that hold it. Keyed by table, not by type: a type reads its table first (type_trait_of()), so the build writes one row
+/// per table instead of one per type (25 kinds over 22 k types was 220 k rows and most of the build's 1.2 s). The equality test
+/// (dq_table_cache_tests.dm) compares it, read per type, with the scanning original, including which types share a trait object.
 /proc/type_trait_table_build(list/by_type, kind, trait_type)
-	var/list/types_by_table
 	var/list/first_by_kind
-	if(by_type == SSstatic_entries.tables_by_type && SSstatic_entries.types_by_table)
-		types_by_table = SSstatic_entries.types_by_table
+	if(by_type == SSstatic_entries.tables_by_type && SSstatic_entries.first_by_kind)
 		first_by_kind = SSstatic_entries.first_by_kind
 	else
-		var/list/groups = static_table_groups(by_type)
-		types_by_table = groups[1]
-		first_by_kind = groups[2]
+		first_by_kind = static_table_groups(by_type)[2]
 	var/list/table = list()
 	// Entries are interned, so a subtype table that inherits its declaration unchanged holds the very entry its parent's does: one trait per
 	// distinct entry, not per table (5100 tables of atom_rules came down to a few hundred distinct entries; each trait was an apply_args walk).
 	var/list/built_of_entry = list()
-	var/tables_declaring = 0
-	for(var/datum/type_table/T as anything in types_by_table)
+	for(var/datum/type_table/T as anything in first_by_kind)
 		var/datum/centry/C = first_by_kind[T][kind]
 		var/datum/entry/E = C?.item
 		if(!E)
 			continue
-		tables_declaring++
 		var/datum/type_trait/made = built_of_entry[E]
 		if(!made)
 			made = new trait_type
 			made.kind = kind
 			made.apply_args(E.args)
 			built_of_entry[E] = made
-		for(var/type in types_by_table[T])
-			table[type] = made
-	log_world("TYPE_TRAIT_TABLE: [kind] built [length(built_of_entry)] traits for [tables_declaring] tables, [length(table)] types")
+		table[T] = made
+	log_world("TYPE_TRAIT_TABLE: [kind] built [length(built_of_entry)] traits for [length(table)] tables")
 	return table
 
-/// kind -> type -> the shared /datum/type_trait (built once at setup by the kinds' engines).
+/// kind -> type table -> the shared /datum/type_trait (built once at setup by the kinds' engines); a type reads it through SSstatic_entries.tables_by_type.
 GLOBAL_LIST_EMPTY(type_trait_tables)
 
 /// kind -> the trait a type with no declaration reads (the datum's defaults).
@@ -122,7 +116,9 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 			return own
 	if(!SSstatic_entries.ready)
 		static_entries_ensure("type_trait_of([holder.type], [kind])")
-	var/datum/type_trait/shared = GLOB.type_trait_tables[kind]?[holder.type]
+	var/datum/type_table/T = SSstatic_entries.tables_by_type[holder.type] // type_trait_shared(), inlined: this read runs on every trait read
+	var/list/by_table = T && GLOB.type_trait_tables[kind]
+	var/datum/type_trait/shared = by_table?[T]
 	if(shared)
 		return shared
 	return type_trait_default(kind)
@@ -133,7 +129,16 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 	RETURN_TYPE(/datum/type_trait)
 	if(!SSstatic_entries.ready)
 		static_entries_ensure("type_trait_of_type([type], [kind])")
-	return GLOB.type_trait_tables[kind]?[type] || type_trait_default(kind)
+	return type_trait_shared(type, kind) || type_trait_default(kind)
+
+/// The shared trait of `kind` that `type`'s table declares, or null. Setup must have run.
+/proc/type_trait_shared(type, kind)
+	RETURN_TYPE(/datum/type_trait)
+	var/datum/type_table/T = SSstatic_entries.tables_by_type[type]
+	if(!T)
+		return null
+	var/list/by_table = GLOB.type_trait_tables[kind]
+	return by_table?[T]
 
 /// The kind's defaults (a type under no declaration).
 /proc/type_trait_default(kind)
