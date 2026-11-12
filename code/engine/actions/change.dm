@@ -298,25 +298,44 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		ALAZYSET(GLOB.hook_change_pending, handle, per)
 	per[H] = TRUE
 
+/// Type-level on_change baselines hooks_change_baseline() did not take (ANY on a plain var): a boot-cost counter for tests and profiling.
+GLOBAL_VAR_INIT(change_baselines_skipped, 0)
+
+/// Whether hook H on E needs the value at init to compare later: every edge hook, published conditions aside, and an ANY hook whose condition is
+/// not a plain var holding a non-list (a proc, a path, a stat, a list var whose ops publish without the list changing identity).
+/proc/change_needs_baseline(datum/E, datum/hook/H)
+	var/cond = H.entry.args["cond"]
+	if(H.entry.args["edge"] != ANY || !istext(cond) || findtext(cond, ".") || !(cond in E.vars))
+		return TRUE
+	return islist(E.vars[cond])
+
 /// Takes the baseline of E's type-level on_change hooks (called when the holder initializes), silently.
 /proc/hooks_change_baseline(datum/E)
 	var/index = change_index_of(E)
 	if(!index)
 		return
-	var/datum/rx_state/S = rx_of(E)
-	if(!S.change_last)
-		S.change_last = list()
-	var/list/last = S.change_last
-	// One eval context for every proc condition of the holder's hooks (a pooled take and release per hook was most of the baseline's cost).
-	var/datum/act/eval/shared = change_eval_context(E)
+	// An ANY hook on a plain (non-list) var needs no baseline: its key is published only by the var's setter, which publishes only a new value, and
+	// hook_change_eval() runs an ANY hook that has no last value. Most holders (every floor's seven redraw hooks) then allocate no rx_state at all.
+	var/list/last
+	var/datum/act/eval/shared
 	try
 		for(var/key in index)
 			for(var/datum/hook/H as anything in index[key])
+				if(!change_needs_baseline(E, H))
+					GLOB.change_baselines_skipped++
+					continue
+				if(!last)
+					var/datum/rx_state/S = rx_of(E)
+					if(!S.change_last)
+						S.change_last = list()
+					last = S.change_last
+					// One eval context for every proc condition of the holder's hooks (a pooled take and release per hook was most of the baseline's cost).
+					shared = change_eval_context(E)
 				last["[H.serial]"] = change_value(E, H, shared)
 	catch(var/exception/fault)
-		shared.release()
+		shared?.release()
 		throw fault
-	shared.release()
+	shared?.release()
 	// What the init's own writes marked is moot: the baseline is the value now, so nothing is owed a first run.
 	if(GLOB.hook_change_pending)
 		GLOB.hook_change_pending -= handle_of(E)
