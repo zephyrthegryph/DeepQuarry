@@ -1,8 +1,14 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
-import { DockingStatus, DockStatus } from './EmbeddedControllerHelpers';
-import type { DockingConsoleSimpleData } from './types';
+import type {
+  DockingConsoleSimpleActions,
+  DockingConsoleSimpleData,
+} from './generated/DockingConsoleSimple';
+import {
+  DockingStatus,
+  DockStatus,
+} from './EmbeddedController/EmbeddedControllerHelpers';
 
 /**
  * Simple docking consoles do not allow you to cycle the airlock. They can
@@ -10,10 +16,10 @@ import type { DockingConsoleSimpleData } from './types';
  * They're primarily just there to display the status of the dock.
  * Replaces simple_docking_console.tmpl
  */
-export const DockingConsoleSimple = (props) => {
+const DockingConsoleSimpleContent = () => {
   const { act, data } = useBackend<
     DockingConsoleSimpleData,
-    EmbeddedControllerActions
+    DockingConsoleSimpleActions
   >();
 
   const { exterior_status, override_enabled, docking_status } = data;
@@ -56,3 +62,11 @@ export const DockingConsoleSimple = (props) => {
     </Section>
   );
 };
+
+export const DockingConsoleSimple = () => (
+  <Window width={500} height={400}>
+    <Window.Content>
+      <DockingConsoleSimpleContent />
+    </Window.Content>
+  </Window>
+);

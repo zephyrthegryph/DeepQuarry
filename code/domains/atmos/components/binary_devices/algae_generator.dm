@@ -40,6 +40,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	configure(uses_power(channel = EQUIP, idle = 100, active = 5000))
 	owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("AlgaeFarm")
+	ui_shape(usePower = int(), materials = list_of(row(name = schema_text(), display = schema_text(), qty = num(), max = num(), percent = num())), last_flow_rate = num(), last_power_draw = num(), inputDir = schema_text(), outputDir = schema_text(), input = nullable(row(pressure = num(), name = schema_text(), percent = num(), moles = num())), output = nullable(row(pressure = num(), name = schema_text(), percent = num(), moles = num())), errorText = nullable(schema_text()))
 	part_replacement()
 	gas_watch(air = nameof(air1), changed = PROC_REF(gas_changed), mask = GAS_DEPENDENCY_COMPOSITION)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(farm_step)), when = nameof(working))
@@ -180,7 +181,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 /obj/machinery/atmospherics/binary/algae_farm/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["panelOpen"] = panel_open
 	data["last_flow_rate"] = last_flow_rate
 	data["last_power_draw"] = last_power_draw
 	data["usePower"] = use_power
@@ -207,6 +207,8 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	data["inputDir"] = dir2text(GLOB.reverse_dir[dir])
 	data["outputDir"] = dir2text(dir)
 
+	data["input"] = null
+	data["output"] = null
 	if(air1 && network1 && node1)
 		data["input"] = list(
 			"pressure" = air1.return_pressure(),

@@ -42,7 +42,7 @@ MSG_DEF_SELF(card_console/slots_full, "Both card slots are full.")
 CAPABILITIES(/obj/machinery/computer/card)
 	configure(light_glow(color = "#0099ff"))
 	interface("IdentificationComputer")
-	ui_shape(manifest = list_of(row(cat = schema_text(), elems = list_of(row(name = schema_text(), rank = schema_text(), active = schema_text())))), printing = bool(), station_name = schema_text(), mode = int(), target_name = schema_text(), target_owner = schema_text(), scan_name = schema_text(), authenticated = bool(), has_modify = bool(), account_number = nullable(int()), centcom_access = bool(), all_centcom_access = list_of(row(desc = schema_text(), ref = int(), allowed = bool())), regions = list_of(row(name = schema_text(), accesses = list_of(row(desc = schema_text(), ref = int(), allowed = bool())))), id_rank = schema_text(), departments = list_of(row(department_name = schema_text(), jobs = list_of(row(display_name = schema_text(), job = schema_text())))))
+	ui_shape(manifest = list_of(row(cat = schema_text(), elems = list_of(row(name = schema_text(), rank = schema_text(), active = schema_text())))), printing = bool(), have_id_slot = bool(), have_printer = bool(), station_name = schema_text(), mode = int(), target_name = schema_text(), target_owner = schema_text(), scan_name = schema_text(), authenticated = bool(), has_modify = bool(), account_number = nullable(int()), centcom_access = bool(), all_centcom_access = list_of(row(desc = schema_text(), ref = int(), allowed = bool())), regions = list_of(row(name = schema_text(), accesses = list_of(row(desc = schema_text(), ref = int(), allowed = bool())))), id_rank = schema_text(), departments = list_of(row(department_name = schema_text(), jobs = list_of(row(display_name = schema_text(), job = schema_text())))))
 	op("insert_id", item(/obj/item/card/id), needs(req(PROC_REF(has_free_slot))), then(PROC_REF(card_inserted)), opens_ui())
 	op("eject", menu(), label("Eject ID Card"), needs(req(PROC_REF(has_a_card))), says(MSG(card_console/ejected)), then(PROC_REF(eject_first_card)))
 	extend(TAG_UI, then(PROC_REF(refresh_card_name)))
@@ -120,6 +120,9 @@ CAPABILITIES(/obj/machinery/computer/card)
 
 /obj/machinery/computer/card/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	// The console has its own ID slot and printer (the NTOS program reports its computer's).
+	data["have_id_slot"] = TRUE
+	data["have_printer"] = TRUE
 	data["printing"] = printing
 
 	data["station_name"] = station_name()

@@ -8,20 +8,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { OvermapShipSensorsActions } from './generated/OvermapShipSensors';
+import type {
+  OvermapShipSensorsActions,
+  OvermapShipSensorsData,
+} from './generated/OvermapShipSensors';
 
-type Data = {
-  viewing: BooleanLike;
-  on: BooleanLike;
-  range: string | number;
-  health: number;
-  max_health: number;
-  heat: number;
-  critical_heat: number;
-  status: string;
-  contacts: { name: string; ref: number; bearing: number }[];
-};
+type Data = OvermapShipSensorsData;
 
 export const OvermapShipSensors = (props) => {
   return (
@@ -78,7 +70,7 @@ export const OvermapShipSensorsContent = (props) => {
           <LabeledList.Item label="Status">{status}</LabeledList.Item>
           <LabeledList.Item label="Range">
             <Button icon="signal" onClick={() => act('range')}>
-              {range}
+              {range ?? 'N/A'}
             </Button>
           </LabeledList.Item>
           <LabeledList.Item label="Integrity">

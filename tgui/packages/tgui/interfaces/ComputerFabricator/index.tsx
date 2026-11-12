@@ -17,7 +17,7 @@ export const ComputerFabricator = (props) => {
 
   tab[0] = <CfStep1 />;
   tab[1] = <CfStep2 />;
-  tab[2] = <CfStep3 totalprice={totalprice!} />;
+  tab[2] = <CfStep3 totalprice={totalprice} />;
   tab[3] = <CfStep4 />;
 
   return (

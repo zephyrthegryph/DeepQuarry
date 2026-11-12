@@ -1,117 +1,119 @@
 {
-	"manifest": [
-		{
-			"cat": "Command",
-			"elems": [
-				{
-					"name": "Alex Reyes",
-					"rank": "Captain",
-					"active": "Active"
-				},
-				{
-					"name": "Sam Ito",
-					"rank": "Head of Personnel",
-					"active": "Active"
-				}
-			]
-		},
-		{
-			"cat": "Engineering",
-			"elems": [
-				{
-					"name": "Jo Park",
-					"rank": "Station Engineer",
-					"active": "Active"
-				},
-				{
-					"name": "Lee Wu",
-					"rank": "Atmospheric Technician",
-					"active": "Inactive"
-				}
-			]
-		}
-	],
-	"printing": 0,
-	"station_name": "Southern Cross",
-	"mode": 0,
-	"target_name": "Jo Park's ID Card (Station Engineer)",
-	"target_owner": "Jo Park",
-	"scan_name": "Alex Reyes's ID Card (Captain)",
-	"authenticated": 1,
-	"has_modify": 1,
-	"account_number": 482913,
-	"centcom_access": 0,
-	"all_centcom_access": [
-		{
-			"desc": "CentCom&nbsp;General",
-			"ref": 101,
-			"allowed": 1
-		},
-		{
-			"desc": "CentCom&nbsp;Captain",
-			"ref": 109,
-			"allowed": 0
-		}
-	],
-	"regions": [
-		{
-			"name": "Security",
-			"accesses": [
-				{
-					"desc": "Security&nbsp;Equipment",
-					"ref": 3,
-					"allowed": 1
-				},
-				{
-					"desc": "Armory",
-					"ref": 4,
-					"allowed": 0
-				}
-			]
-		},
-		{
-			"name": "Engineering",
-			"accesses": [
-				{
-					"desc": "Engine&nbsp;Room",
-					"ref": 10,
-					"allowed": 1
-				},
-				{
-					"desc": "Atmospherics",
-					"ref": 24,
-					"allowed": 0
-				}
-			]
-		}
-	],
-	"id_rank": "Station Engineer",
-	"departments": [
-		{
-			"department_name": "Engineering",
-			"jobs": [
-				{
-					"display_name": "Station&nbsp;Engineer",
-					"job": "Station Engineer"
-				},
-				{
-					"display_name": "Atmospheric&nbsp;Technician",
-					"job": "Atmospheric Technician"
-				}
-			]
-		},
-		{
-			"department_name": "Security",
-			"jobs": [
-				{
-					"display_name": "Security&nbsp;Officer",
-					"job": "Security Officer"
-				},
-				{
-					"display_name": "Detective",
-					"job": "Detective"
-				}
-			]
-		}
-	]
+  "account_number": 482913,
+  "all_centcom_access": [
+    {
+      "desc": "CentCom&nbsp;General",
+      "ref": 101,
+      "allowed": 1
+    },
+    {
+      "desc": "CentCom&nbsp;Captain",
+      "ref": 109,
+      "allowed": 0
+    }
+  ],
+  "authenticated": 1,
+  "centcom_access": 0,
+  "departments": [
+    {
+      "department_name": "Engineering",
+      "jobs": [
+        {
+          "display_name": "Station&nbsp;Engineer",
+          "job": "Station Engineer"
+        },
+        {
+          "display_name": "Atmospheric&nbsp;Technician",
+          "job": "Atmospheric Technician"
+        }
+      ]
+    },
+    {
+      "department_name": "Security",
+      "jobs": [
+        {
+          "display_name": "Security&nbsp;Officer",
+          "job": "Security Officer"
+        },
+        {
+          "display_name": "Detective",
+          "job": "Detective"
+        }
+      ]
+    }
+  ],
+  "has_modify": 1,
+  "have_id_slot": 1,
+  "have_printer": 1,
+  "id_rank": "Station Engineer",
+  "manifest": [
+    {
+      "cat": "Command",
+      "elems": [
+        {
+          "name": "Alex Reyes",
+          "rank": "Captain",
+          "active": "Active"
+        },
+        {
+          "name": "Sam Ito",
+          "rank": "Head of Personnel",
+          "active": "Active"
+        }
+      ]
+    },
+    {
+      "cat": "Engineering",
+      "elems": [
+        {
+          "name": "Jo Park",
+          "rank": "Station Engineer",
+          "active": "Active"
+        },
+        {
+          "name": "Lee Wu",
+          "rank": "Atmospheric Technician",
+          "active": "Inactive"
+        }
+      ]
+    }
+  ],
+  "mode": 0,
+  "printing": 0,
+  "regions": [
+    {
+      "name": "Security",
+      "accesses": [
+        {
+          "desc": "Security&nbsp;Equipment",
+          "ref": 3,
+          "allowed": 1
+        },
+        {
+          "desc": "Armory",
+          "ref": 4,
+          "allowed": 0
+        }
+      ]
+    },
+    {
+      "name": "Engineering",
+      "accesses": [
+        {
+          "desc": "Engine&nbsp;Room",
+          "ref": 10,
+          "allowed": 1
+        },
+        {
+          "desc": "Atmospherics",
+          "ref": 24,
+          "allowed": 0
+        }
+      ]
+    }
+  ],
+  "scan_name": "Alex Reyes's ID Card (Captain)",
+  "station_name": "Southern Cross",
+  "target_name": "Jo Park's ID Card (Station Engineer)",
+  "target_owner": "Jo Park"
 }

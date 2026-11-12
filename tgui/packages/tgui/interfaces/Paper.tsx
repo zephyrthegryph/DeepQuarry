@@ -10,28 +10,9 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type { PaperActions } from './generated/Paper';
+import type { PaperActions, PaperData } from './generated/Paper';
 
-type TextSeg = {
-  type: 'text';
-  text: string;
-};
-
-type FieldSeg = {
-  type: 'field';
-  id: number;
-  text: string;
-};
-
-type Segment = TextSeg | FieldSeg;
-
-type Data = {
-  view: 'read' | 'write';
-  title: string;
-  segments: Segment[];
-  stamps: string;
-  garbled: boolean;
-};
+type Data = PaperData;
 
 export const Paper = () => {
   const { data, act } = useBackend<Data, PaperActions>();

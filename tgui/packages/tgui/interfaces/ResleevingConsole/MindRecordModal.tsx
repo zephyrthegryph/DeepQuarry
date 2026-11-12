@@ -6,7 +6,6 @@ import type { modalMindData as ActiveMindRecordData } from './types';
 export const MindRecordModal = (props: { data: ActiveMindRecordData }) => {
   const { act } = useBackend();
   const {
-    activerecord,
     realname,
     obviously_dead,
     oocnotes,
@@ -30,7 +29,6 @@ export const MindRecordModal = (props: { data: ActiveMindRecordData }) => {
             icon="user-plus"
             onClick={() =>
               act('sleeve', {
-                ref: activerecord,
                 mode: 1,
               })
             }
@@ -41,7 +39,6 @@ export const MindRecordModal = (props: { data: ActiveMindRecordData }) => {
             icon="user-plus"
             onClick={() =>
               act('sleeve', {
-                ref: activerecord,
                 mode: 2,
               })
             }

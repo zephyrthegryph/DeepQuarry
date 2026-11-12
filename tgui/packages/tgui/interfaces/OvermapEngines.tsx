@@ -9,22 +9,15 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { OvermapEnginesActions } from './generated/OvermapEngines';
+import type {
+  OvermapEnginesActions,
+  OvermapEnginesData,
+} from './generated/OvermapEngines';
 
-type Data = {
-  global_state: BooleanLike;
-  global_limit: number;
-  engines_info: {
-    eng_type: string;
-    eng_on: BooleanLike;
-    eng_thrust: number;
-    eng_thrust_limiter: number;
-    eng_status: string[];
-    eng_reference: string;
-  }[];
-  total_thrust: number;
-};
+type Data = OvermapEnginesData;
+
+// A plain line, or a line and its color.
+type EngineStatus = string | [string, string];
 
 export const OvermapEngines = (props) => {
   return (
@@ -115,17 +108,19 @@ export const OvermapEnginesContent = (props) => {
                             : 'Booting'
                           : 'Offline'}
                       </Box>
-                      {engine.eng_status.map((status, index) => {
-                        if (Array.isArray(status)) {
-                          return (
-                            <Box key={index} color={status[1]}>
-                              {status[0]}
-                            </Box>
-                          );
-                        } else {
-                          return <Box key={index}>{status}</Box>;
-                        }
-                      })}
+                      {(engine.eng_status as EngineStatus[]).map(
+                        (status, index) => {
+                          if (Array.isArray(status)) {
+                            return (
+                              <Box key={index} color={status[1]}>
+                                {status[0]}
+                              </Box>
+                            );
+                          } else {
+                            return <Box key={index}>{status}</Box>;
+                          }
+                        },
+                      )}
                     </LabeledList.Item>
                     <LabeledList.Item label="Current Thrust">
                       {engine.eng_thrust}

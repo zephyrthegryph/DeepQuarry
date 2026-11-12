@@ -19,6 +19,7 @@ Frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 
 CAPABILITIES(/datum/tgui_module/trait_tutorial_tgui)
 	interface("TraitTutorial", state = nameof(GLOB.tgui_always_state))
+	ui_shape(names = list_of(schema_text()), descriptions = map_of(schema_text(), schema_text()), categories = map_of(schema_text(), schema_text()), tutorials = map_of(schema_text(), schema_text()), selection = schema_text())
 	op("select_trait", ui_act("select_trait", arg("name", schema_text(4096))), then(PROC_REF(ui_act_select_trait)))
 
 /datum/tgui_module/trait_tutorial_tgui/ui_data(datum/act/eval/A)

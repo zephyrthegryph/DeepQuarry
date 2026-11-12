@@ -10,17 +10,12 @@ import {
 } from 'tgui-core/components';
 import { formatPower, formatSiUnit } from 'tgui-core/format';
 import { round, toFixed } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
-import type { ShieldCapacitorActions } from './generated/ShieldCapacitor';
+import type {
+  ShieldCapacitorActions,
+  ShieldCapacitorData,
+} from './generated/ShieldCapacitor';
 
-type Data = {
-  active: BooleanLike;
-  time_since_fail: number;
-  stored_charge: number;
-  max_charge: number;
-  charge_rate: number;
-  max_charge_rate: number;
-};
+type Data = ShieldCapacitorData;
 
 export const ShieldCapacitor = (props) => {
   const { act, data } = useBackend<Data, ShieldCapacitorActions>();

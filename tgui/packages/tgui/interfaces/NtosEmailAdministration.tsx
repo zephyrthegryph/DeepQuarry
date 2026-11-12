@@ -1,28 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { NtosEmailAdministrationActions } from './generated/NtosEmailAdministration';
+import type {
+  NtosEmailAdministrationActions,
+  NtosEmailAdministrationData,
+} from './generated/NtosEmailAdministration';
 import { NtosEmailClientViewMessage } from './NtosEmailClient';
 
-type Data = {
-  error: string;
-  cur_title: string | null;
-  cur_body: string | null;
-  cur_timestamp: string | null;
-  cur_source: string | null;
-  current_account: string | null;
-  cur_suspended: BooleanLike;
-  messages: message[] | null;
-  accounts: account[] | [];
-};
-
-type message = {
-  title: string;
-  source: string;
-  timestamp: string;
-  uid: string;
-};
+type Data = NtosEmailAdministrationData;
 
 type account = { login: string; uid: string };
 

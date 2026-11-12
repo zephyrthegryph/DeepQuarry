@@ -1,9 +1,15 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
-import { StandardControls, StatusDisplay } from './EmbeddedControllerHelpers';
-import { PanelOpen } from './PanelOpen';
-import type { AirlockConsoleAdvancedData } from './types';
+import type {
+  AirlockConsoleAdvancedActions,
+  AirlockConsoleAdvancedData,
+} from './generated/AirlockConsoleAdvanced';
+import {
+  StandardControls,
+  StatusDisplay,
+} from './EmbeddedController/EmbeddedControllerHelpers';
+import { PanelOpen } from './EmbeddedController/PanelOpen';
 
 /**
  * Advanced airlock consoles display the external pressure,
@@ -11,10 +17,10 @@ import type { AirlockConsoleAdvancedData } from './types';
  * They also have a PURGE and SECURE option for safety.
  * Replaces advanced_airlock_console.tmpl
  */
-export const AirlockConsoleAdvanced = (props) => {
+const AirlockConsoleAdvancedContent = () => {
   const { act, data } = useBackend<
     AirlockConsoleAdvancedData,
-    EmbeddedControllerActions
+    AirlockConsoleAdvancedActions
   >();
 
   const {
@@ -97,3 +103,11 @@ export const AirlockConsoleAdvanced = (props) => {
     </>
   );
 };
+
+export const AirlockConsoleAdvanced = () => (
+  <Window width={500} height={400}>
+    <Window.Content>
+      <AirlockConsoleAdvancedContent />
+    </Window.Content>
+  </Window>
+);

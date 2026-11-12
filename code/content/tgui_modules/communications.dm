@@ -43,6 +43,7 @@
 CAPABILITIES(/datum/tgui_module/communications)
 	owns_one(nameof(crew_announcement), /datum/announcement/priority, starts = PROC_REF(make_announcement))
 	interface("CommunicationsConsole")
+	ui_shape(emagged = bool(), message_current_id = nullable(int()), message_current = nullable(row(id = int(), title = schema_text(), contents = schema_text())), is_ai = bool(), menu_state = int(), authenticated = int(), authmax = bool(), boss_short = schema_text(), stat_display = row(type = schema_text(), line_1 = schema_text(), line_2 = schema_text(), presets = list_of(row(name = enum(list("blank", "time", "shuttle", "message")), label = schema_text(), desc = schema_text()))), security_level = int(), security_level_color = schema_text(), str_security_level = schema_text(), levels = list_of(row(id = int(), name = schema_text(), icon = schema_text())), messages = list_of(row(id = int(), title = schema_text(), contents = schema_text())), message_deletion_allowed = bool(), msg_cooldown = num(), cc_cooldown = num(), esc_callable = bool(), esc_recallable = bool(), esc_status = schema_text())
 	// The console works only near the station; after login, every button but the login one needs a login.
 	extend(TAG_UI, needs(req(PROC_REF(ui_in_contact))))
 	op("auth", ui_act("auth"), needs(req(PROC_REF(ui_is_human))), then(PROC_REF(ui_act_auth)))
@@ -185,7 +186,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 /datum/tgui_module/communications/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()
-	data["emagged"] = routing_scrambled()
+	data["emagged"] = !!routing_scrambled()
 	data["message_current_id"] = current_viewing_message_id
 	data["message_current"] = current_viewing_message
 	data["is_ai"]         = !!(A.authority & AUTH_REMOTE_ACCESS)
@@ -243,7 +244,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 
 	data["esc_callable"] = SSemergency_shuttle.location() && !SSemergency_shuttle.online() ? TRUE : FALSE
 	data["esc_recallable"] = SSemergency_shuttle.location() && SSemergency_shuttle.online() ? TRUE : FALSE
-	data["esc_status"] = FALSE
+	data["esc_status"] = ""
 	if(SSemergency_shuttle.has_eta())
 		var/timeleft = SSemergency_shuttle.estimate_arrival_time()
 		data["esc_status"] = SSemergency_shuttle.online() ? "ETA:" : "RECALLING:"

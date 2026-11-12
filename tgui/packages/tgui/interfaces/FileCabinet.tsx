@@ -1,13 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { FileCabinetActions } from './generated/FileCabinet';
+import type {
+  FileCabinetActions,
+  FileCabinetData,
+} from './generated/FileCabinet';
 
-type Data = {
-  cabinet_name: string;
-  contents: string[];
-  contents_ref: string[];
-};
+type Data = FileCabinetData;
 
 export const FileCabinet = (props) => {
   const { act, data } = useBackend<Data, FileCabinetActions>();

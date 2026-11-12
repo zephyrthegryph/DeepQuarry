@@ -7,6 +7,7 @@
 
 CAPABILITIES(/datum/tgui_module/teleport_control)
 	interface("Teleporter")
+	ui_shape(locked_name = schema_text(), station_connected = bool(), hub_connected = bool(), calibrated = bool(), teleporter_on = bool())
 	op("select_target", ui_act("select_target"), asks(/datum/prompt/choice, fields = list("title" = "Locking Menu", "question" = "Please select a location to lock in.", "choices" = computed(PROC_REF(target_choices)), "timeout" = 0)), then(PROC_REF(ui_act_select_target)))
 	op("test_fire", ui_act("test_fire"), then(PROC_REF(ui_act_test_fire)))
 	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
@@ -20,8 +21,8 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 	data["locked_name"] = locked_name || "No Target"
 	data["station_connected"] = !!station()
 	data["hub_connected"] = !!hub()
-	data["calibrated"] = hub()?.accurate
-	data["teleporter_on"] = station()?.engaged
+	data["calibrated"] = !!hub()?.accurate
+	data["teleporter_on"] = !!station()?.engaged
 
 	return data
 

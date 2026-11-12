@@ -1,16 +1,9 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { TeleporterActions } from './generated/Teleporter';
+import type { TeleporterActions, TeleporterData } from './generated/Teleporter';
 
-type Data = {
-  locked_name: string;
-  station_connected: BooleanLike;
-  hub_connected: BooleanLike;
-  calibrated: BooleanLike;
-  teleporter_on: BooleanLike;
-};
+type Data = TeleporterData;
 
 export const Teleporter = (props) => {
   const { act, data } = useBackend<Data, TeleporterActions>();

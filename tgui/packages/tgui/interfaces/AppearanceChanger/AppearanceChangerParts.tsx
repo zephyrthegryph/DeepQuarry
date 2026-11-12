@@ -8,7 +8,7 @@ import type { BodyStyle, Data, Styles } from './types';
 export const AppearanceChangerParts = (props: {
   sectionNames: string[];
   possibleStyles: Styles[][];
-  currentStyle: string[];
+  currentStyle: (string | null)[];
   actions: string[];
   canClear?: boolean;
 }) => {
@@ -81,7 +81,7 @@ export const AppearanceChangerParts = (props: {
 export const AppearanceChangerHair = (props: {
   sectionNames: string[];
   possibleStyles: BodyStyle[][];
-  currentStyle: string[];
+  currentStyle: (string | null)[];
   actions: string[];
 }) => {
   const { act } = useBackend<Data, AppearanceChangerActions>();
@@ -89,7 +89,7 @@ export const AppearanceChangerHair = (props: {
   const [searchText, setSearchText] = useState<string>('');
 
   const selectableStyles = possibleStyles.map((styles: BodyStyle[]) => {
-    const searcher = createSearch<Styles>(searchText, (style) => {
+    const searcher = createSearch<BodyStyle>(searchText, (style) => {
       return style.name;
     });
 

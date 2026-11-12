@@ -13,14 +13,17 @@
 /// The field it projects while active (activate() .. deactivate()).
 /obj/machinery/suspension_gen/var/obj/effect/suspension_field/suspension_field
 
+MSG_DEF_SELF(suspension_gen/unsecured, "you are unable to activate it until it is properly secured on the ground")
+
 CAPABILITIES(/obj/machinery/suspension_gen)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_PANEL))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(suspension_field), wakes_on = list(nameof(suspension_field)))
 	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
 	ref_one(nameof(auth_card), /obj/item/card/id)
 	interface("XenoarchSuspension")
+	ui_shape(cell = bool(), suspension_field = bool(), cellCharge = num(), cellMaxCharge = num(), locked = bool())
 	without("ui_open")
-	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))
+	op("toggle_field", ui_act("toggle_field"), needs(any_of(req_full(nameof(suspension_field), because = MSG(suspension_gen/unsecured)), req_is(nameof(anchored), TRUE, because = MSG(suspension_gen/unsecured)))), then(PROC_REF(ui_act_toggle_field)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
@@ -67,8 +70,8 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 
 /obj/machinery/suspension_gen/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["cell"] = cell
-	data["suspension_field"] = suspension_field
+	data["cell"] = cell ? TRUE : FALSE
+	data["suspension_field"] = suspension_field ? TRUE : FALSE
 	var/list/merged_1 = ui_data_obj_machinery_suspension_gen(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -79,23 +82,19 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 /obj/machinery/suspension_gen/proc/ui_data_obj_machinery_suspension_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["cellCharge"] = cell?.charge
-	data["cellMaxCharge"] = cell?.maxcharge
+	data["cellCharge"] = cell ? cell.charge : 0
+	data["cellMaxCharge"] = cell ? cell.maxcharge : 0
 
-	data["locked"] = locked
+	data["locked"] = locked ? TRUE : FALSE
 
 	return data
 
 /obj/machinery/suspension_gen/proc/ui_act_toggle_field(datum/act/op/A)
-	var/mob/user = A.actor
 	if(locked)
 		return
 	if(!suspension_field)
-		if(cell.charge > 0)
-			if(anchored)
-				activate()
-			else
-				to_chat(user, span_warning("You are unable to activate [src] until it is properly secured on the ground."))
+		if(cell && cell.charge > 0 && anchored)
+			activate()
 	else
 		deactivate()
 	return TRUE

@@ -3,6 +3,7 @@
 
 CAPABILITIES(/datum/tgui_module/shutoff_monitor)
 	interface("ShutoffMonitor")
+	ui_shape(valves = list_of(row(name = schema_text(), enabled = bool(), open = bool(), x = int(), y = int(), z = int(), ref = num())))
 	op("toggle_enable", ui_act("toggle_enable", arg("valve", schema_text(32))), then(PROC_REF(ui_act_toggle_enable)))
 	op("toggle_open", ui_act("toggle_open", arg("valve", schema_text(32))), then(PROC_REF(ui_act_toggle_open)))
 

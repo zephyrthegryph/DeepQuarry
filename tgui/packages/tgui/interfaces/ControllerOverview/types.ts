@@ -1,33 +1,7 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { ControllerOverviewData } from '../generated/ControllerOverview';
 
-export type SubsystemData = {
-  can_fire: BooleanLike;
-  cost_ms: number;
-  wall_cost_last_ms: number;
-  cpu_cost_ms: number;
-  cpu_cost_last_ms: number;
-  suspended_cost_last_ms: number;
-  run_slices_last: number;
-  doesnt_fire: BooleanLike;
-  init_order: number;
-  initialization_failure_message: string | undefined;
-  initialized: BooleanLike;
-  last_fire: number;
-  name: string;
-  next_fire: number;
-  ref: number;
-  tick_overrun: number;
-  tick_usage: number;
-  usage_per_tick: number;
-};
-
-export type ControllerData = {
-  world_time: number;
-  fast_update: BooleanLike;
-  rolling_length: number;
-  map_cpu: number;
-  subsystems: SubsystemData[];
-};
+export type ControllerData = ControllerOverviewData;
+export type SubsystemData = ControllerData['subsystems'][number];
 
 export enum SortType {
   Name,

@@ -6,7 +6,6 @@ import type { ActiveBodyRecordData } from './types';
 export const BodyRecordModal = (props: { data: ActiveBodyRecordData }) => {
   const { act } = useBackend();
   const {
-    activerecord,
     realname,
     species,
     sex,
@@ -38,11 +37,7 @@ export const BodyRecordModal = (props: { data: ActiveBodyRecordData }) => {
           <Button
             disabled={!can_grow_active}
             icon="user-plus"
-            onClick={() =>
-              act('create', {
-                ref: activerecord,
-              })
-            }
+            onClick={() => act('create')}
           >
             {synthetic ? 'Build' : 'Grow'}
           </Button>
@@ -50,11 +45,7 @@ export const BodyRecordModal = (props: { data: ActiveBodyRecordData }) => {
           {!synthetic ? (
             <Button
               icon="syringe"
-              onClick={() =>
-                act('genereset', {
-                  ref: activerecord,
-                })
-              }
+              onClick={() => act('genereset')}
             >
               DNA Reset Injector
             </Button>

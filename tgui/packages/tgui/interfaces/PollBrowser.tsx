@@ -16,57 +16,27 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { PollBrowserActions } from './generated/PollBrowser';
+import type {
+  PollBrowserActions,
+  PollBrowserData,
+} from './generated/PollBrowser';
 
-type PollListEntry = {
-  id: number;
-  question: string;
-};
+type Data = PollBrowserData;
 
-type PollOption = {
-  id: number;
-  text: string;
-};
+type PollListEntry = Data['polls'][number];
 
-type NumvalScalePoint = {
-  value: string;
-  label: string;
-};
+type Selected = NonNullable<Data['selected']>;
 
+type PollOption = Selected['options'][number];
+
+// A rating poll's option carries its scale; the other polls' options do not.
 type NumvalOption = {
   id: number;
   text: string;
   min: number;
   max: number;
-  scale: NumvalScalePoint[];
-};
-
-type VotedRating = {
-  text: string;
-  rating: string;
-};
-
-type Selected = {
-  id: number;
-  error: string | null;
-  voted: BooleanLike;
-  start_time?: string;
-  end_time?: string;
-  question?: string;
-  poll_type?: 'OPTION' | 'TEXT' | 'NUMVAL' | 'MULTICHOICE';
-  multi_max?: number;
-  options?: PollOption[] | NumvalOption[];
-  voted_option_id?: number | null;
-  voted_options?: number[];
-  vote_text?: string;
-  voted_ratings?: VotedRating[];
-};
-
-type Data = {
-  polls: PollListEntry[];
-  selected: Selected | null;
+  scale: { value: string; label: string }[];
 };
 
 export const PollBrowser = () => {
@@ -180,7 +150,7 @@ const OptionPoll = (props: {
   act: (action: string, params?: Record<string, unknown>) => void;
 }) => {
   const { selected, act } = props;
-  const options = (selected.options as PollOption[]) ?? [];
+  const options: PollOption[] = selected.options;
   const [pick, setPick] = useState<number | null>(null);
 
   if (selected.voted) {
@@ -238,12 +208,12 @@ const MultiChoicePoll = (props: {
   act: (action: string, params?: Record<string, unknown>) => void;
 }) => {
   const { selected, act } = props;
-  const options = (selected.options as PollOption[]) ?? [];
-  const max = selected.multi_max ?? 1;
+  const options: PollOption[] = selected.options;
+  const max = selected.multi_max || 1;
   const [picks, setPicks] = useState<number[]>([]);
 
   if (selected.voted) {
-    const votedFor = selected.voted_options ?? [];
+    const votedFor = selected.voted_options;
     return (
       <Stack vertical>
         {options.map((o) => (
@@ -363,7 +333,7 @@ const NumvalPoll = (props: {
   const [ratings, setRatings] = useState<Record<string, string>>({});
 
   if (selected.voted) {
-    const votedRatings = selected.voted_ratings ?? [];
+    const votedRatings = selected.voted_ratings;
     return (
       <Stack vertical>
         {votedRatings.map((r, i) => (
@@ -377,7 +347,7 @@ const NumvalPoll = (props: {
     );
   }
 
-  const options = (selected.options as NumvalOption[]) ?? [];
+  const options = selected.options as NumvalOption[];
 
   return (
     <>

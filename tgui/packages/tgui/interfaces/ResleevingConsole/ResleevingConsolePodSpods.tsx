@@ -1,6 +1,6 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Icon, Image, ProgressBar } from 'tgui-core/components';
+import { Box, Button, Icon, Image } from 'tgui-core/components';
 import type { ResleevingConsoleActions } from '../generated/ResleevingConsole';
 import type { Data } from './types';
 
@@ -10,45 +10,20 @@ export const ResleevingConsolePodSpods = (props) => {
 
   if (spods?.length) {
     return spods.map((pod, i) => {
-      let podAction: React.JSX.Element;
-      if (pod.status === 'cloning') {
-        podAction = (
-          <ProgressBar
-            minValue={0}
-            maxValue={1}
-            value={pod.progress / 100}
-            ranges={{
-              good: [0.75, Infinity],
-              average: [0.25, 0.75],
-              bad: [-Infinity, 0.25],
-            }}
-            mt="0.5rem"
-          >
-            <Box textAlign="center">{`${pod.progress.toFixed()}%`}</Box>
-          </ProgressBar>
-        );
-      } else if (pod.status === 'mess') {
-        podAction = (
-          <Box bold color="bad" mt="0.5rem">
-            ERROR
-          </Box>
-        );
-      } else {
-        podAction = (
-          <Button
-            selected={selected_printer === pod.spod}
-            icon={selected_printer === pod.spod && 'check'}
-            mt="0.5rem"
-            onClick={() =>
-              act('selectprinter', {
-                ref: pod.spod,
-              })
-            }
-          >
-            Select
-          </Button>
-        );
-      }
+      const podAction = (
+        <Button
+          selected={selected_printer === pod.spod}
+          icon={selected_printer === pod.spod && 'check'}
+          mt="0.5rem"
+          onClick={() =>
+            act('selectprinter', {
+              ref: pod.spod,
+            })
+          }
+        >
+          Select
+        </Button>
+      );
 
       return (
         <Box key={i} width="64px" textAlign="center" inline mr="0.5rem">

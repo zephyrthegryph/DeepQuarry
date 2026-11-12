@@ -93,6 +93,7 @@ CAPABILITIES(/datum/tgui_module/alarm_monitor/security/glasses)
 
 CAPABILITIES(/datum/tgui_module/alarm_monitor)
 	interface("StationAlertConsole")
+	ui_shape(categories = list_of(row(category = schema_text(), alarms = list_of(row(name = schema_text(), origin_lost = bool(), has_cameras = int(), cameras = list_of(row(name = schema_text(), deact = bool(), camera = schema_text(), omni = bool(), x = int(), y = int(), z = int())), lost_sources = schema_text())))))
 	op("switchTo", ui_act("switchTo", arg("camera", schema_ref(/obj/machinery/camera))), needs(req_actor_kind(/mob/living/silicon/ai, because = /datum/msg/req_silent)), then(PROC_REF(ui_act_switchto)))
 
 /datum/tgui_module/alarm_monitor/proc/ui_act_switchto(datum/act/op/A, camera)

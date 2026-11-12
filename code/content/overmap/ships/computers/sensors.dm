@@ -43,6 +43,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	configure(light_glow(color = "#77fff8"))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("OvermapShipSensors")
+	ui_shape(viewing = bool(), on = bool(), range = nullable(num()), health = num(), max_health = num(), heat = num(), critical_heat = num(), status = schema_text(), contacts = list_of(row(name = schema_text(), ref = int(), bearing = num())))
 	without("ui_open")
 	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
 	op("link", ui_act("link"), then(PROC_REF(ui_act_link)))
@@ -68,9 +69,9 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	var/mob/user = A.actor
 	var/list/data = list()
 
-	data["viewing"] = viewing_overmap(user)
+	data["viewing"] = !!viewing_overmap(user)
 	data["on"] = 0
-	data["range"] = "N/A"
+	data["range"] = null
 	data["health"] = 0
 	data["max_health"] = 0
 	data["heat"] = 0
@@ -79,7 +80,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	data["contacts"] = list()
 
 	if(sensors())
-		data["on"] = sensors().use_power
+		data["on"] = !!sensors().use_power
 		data["range"] = sensors().range
 		data["health"] = sensors().get_integrity()
 		data["max_health"] = sensors().max_integrity

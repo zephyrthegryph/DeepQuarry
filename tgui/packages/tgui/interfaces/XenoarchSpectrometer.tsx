@@ -13,34 +13,13 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { scale } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
-import type { XenoarchSpectrometerActions } from './generated/XenoarchSpectrometer';
+import type {
+  XenoarchSpectrometerActions,
+  XenoarchSpectrometerData,
+} from './generated/XenoarchSpectrometer';
 
-type Data = {
-  scanned_item: string;
-  scanned_item_desc: string;
-  last_scan_data: string;
-  scanning: BooleanLike;
-
-  // Mechanics
-  scan_progress: number;
-  scanner_rpm: number;
-  scanner_rpm_delta: number;
-  radiation: number;
-  heat: number;
-  coolant: number;
-
-  // Constants
-  IDEAL_RPM: number;
-  RPM_MAX_DELTA: number;
-  RPM_MAX: number;
-  TARGET_RADIATION: number;
-  RADIATION_MAX: number;
-  HEAT_FAILURE_THRESHOLD: number;
-  HEAT_MAX: number;
-  COOLANT_MAX: number;
-};
+type Data = XenoarchSpectrometerData;
 
 export const XenoarchSpectrometer = (props) => {
   const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();

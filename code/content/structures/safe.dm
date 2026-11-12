@@ -69,9 +69,10 @@ FLOOR SAFES
 CAPABILITIES(/obj/structure/safe)
 	after_init(0, then(PROC_REF(take_loose_items)))
 	interface("Safe")
+	ui_shape(dial = int(), open = bool(), contents = list_of(row(ref = schema_text(), name = schema_text())))
 	// the old attackby: put an item in the open safe, or a stethoscope hint while closed
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
+	op("open", ui_act("open"), needs(req(PROC_REF(lock_released))), then(PROC_REF(ui_act_open)))
 	op("decrement", ui_act("decrement"), then(PROC_REF(ui_act_decrement)))
 	op("increment", ui_act("increment"), then(PROC_REF(ui_act_increment)))
 	op("retrieve", ui_act("retrieve", arg("ref", schema_text(32))), then(PROC_REF(ui_act_retrieve)))
@@ -82,6 +83,11 @@ CAPABILITIES(/obj/structure/safe)
 	rolls(nameof(tumbler_2_open), range_of(0, 72))
 
 MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
+MSG_DEF_SELF(safe/locked, "The lock is engaged!")
+
+/// Only a safe whose tumblers line up opens or closes.
+/obj/structure/safe/proc/lock_released(datum/act/op/A)
+	return (tumbler_1_pos == tumbler_1_open && tumbler_2_pos == tumbler_2_open) ? null : MSG(safe/locked)
 
 /// Only a human works the dial.
 /obj/structure/safe/proc/user_is_human(datum/act/op/A)
@@ -98,12 +104,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	return data
 
 /obj/structure/safe/proc/ui_act_open(datum/act/op/A)
-	var/mob/living/carbon/human/human_user = A.actor
-	if(check_unlocked())
-		to_chat(human_user, span_notice("You [open ? "close" : "open"] [src]."))
-		set_open(!open)
-	else
-		to_chat(human_user, span_notice("You can't [open ? "close" : "open"] [src], the lock is engaged!"))
+	set_open(!open)
 	return TRUE
 
 /obj/structure/safe/proc/ui_act_decrement(datum/act/op/A)

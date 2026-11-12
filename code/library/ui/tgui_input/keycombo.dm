@@ -42,6 +42,7 @@
 
 CAPABILITIES(/datum/tgui_input_keycombo)
 	interface("KeyComboModal")
+	ui_shape(init_value = schema_text(), large_buttons = bool(), message = schema_text(), swapped_buttons = bool(), title = schema_text(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry", schema_text(4096))), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -54,16 +55,17 @@ CAPABILITIES(/datum/tgui_input_keycombo)
 
 /datum/tgui_input_keycombo/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
-	data["init_value"] = default // Default is a reserved keyword
+	data["init_value"] = default || "" // Default is a reserved keyword
 	data["large_buttons"] = TRUE
-	data["message"] = message
+	data["message"] = message || ""
 	data["swapped_buttons"] = FALSE
-	data["title"] = title
+	data["title"] = title || ""
 	return data
 
 /// /datum/tgui_input_keycombo's window data.
 /datum/tgui_input_keycombo/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data

@@ -1,32 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { AtmosControlPanelActions } from './generated/AtmosControlPanel';
+import type {
+  AtmosControlPanelActions,
+  AtmosControlPanelData,
+} from './generated/AtmosControlPanel';
 
-type ExcitedGroup = {
-  jump_to: string;
-  group: string;
-  area: string;
-  breakdown: number;
-  dismantle: number;
-  size: number;
-  should_show: BooleanLike;
-  max_share: number;
-};
-
-type Data = {
-  excited_groups: ExcitedGroup[];
-  active_size: number;
-  hotspots_size: number;
-  excited_size: number;
-  conducting_size: number;
-  frozen: BooleanLike;
-  show_all: BooleanLike;
-  fire_count: number;
-  display_max: BooleanLike;
-  showing_user: BooleanLike;
-};
+type Data = AtmosControlPanelData;
 
 export const AtmosControlPanel = (props) => {
   const { act, data } = useBackend<Data, AtmosControlPanelActions>();

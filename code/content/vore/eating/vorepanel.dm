@@ -68,6 +68,7 @@
 
 CAPABILITIES(/datum/vore_look)
 	interface("VorePanel", title = "Vore Panel", state = nameof(GLOB.tgui_vorepanel_state))
+	ui_shape(vore_words = map_of(schema_text(), list_of(schema_text())), min_belly_name = int(), max_belly_name = int(), unsaved_changes = bool(), active_tab = int(), presets = schema_text(), persist_edit_mode = bool(), inside = row(), host_mobtype = nullable(row(is_cyborg = bool(), is_vore_simple_mob = bool())), show_pictures = nullable(bool()), icon_overflow = nullable(bool()), prey_abilities = nullable(list_of(row())), intent_data = nullable(row()), our_bellies = nullable(list_of(row())), selected = nullable(row()), soulcatcher = nullable(row()), abilities = nullable(row()), prefs = nullable(row()), general_pref_data = nullable(row()), active_vore_tab = nullable(int()))
 	op("set_attribute", ui_act("set_attribute", arg("attribute", schema_text(4096)), arg("val"), arg("msgtype")), then(PROC_REF(ui_act_set_attribute)))
 	op("liq_set_attribute", ui_act("liq_set_attribute", arg("attribute", schema_text(4096)), arg("val"), arg("msgtype")), then(PROC_REF(ui_act_liq_set_attribute)))
 	op("change_tab", ui_act("change_tab", arg("tab", num())), then(PROC_REF(ui_act_change_tab)))
@@ -252,7 +253,7 @@ CAPABILITIES(/datum/vore_look)
 	var/list/data = list()
 	data["unsaved_changes"] = unsaved_changes
 	data["active_tab"] = active_tab
-	data["presets"] = preset_colors
+	data["presets"] = preset_colors || ""
 	var/list/merged_1 = ui_data_datum_vore_look(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)

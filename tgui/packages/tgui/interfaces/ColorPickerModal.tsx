@@ -41,32 +41,20 @@ import { clamp } from 'tgui-core/math';
 import { classes } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
-import type { ColorPickerModalActions } from './generated/ColorPickerModal';
+import type {
+  ColorPickerModalActions,
+  ColorPickerModalData,
+} from './generated/ColorPickerModal';
 
-type ColorPickerData = {
-  autofocus: boolean;
-  buttons: string[];
-  message: string;
-  large_buttons: boolean;
-  swapped_buttons: boolean;
-  timeout: number;
-  title: string;
-  default_color: string;
-  presets?: string;
-};
+type ColorPickerData = ColorPickerModalData;
 
 type ColorPickerModalProps = Record<never, never>;
 
 export const ColorPickerModal: React.FC<ColorPickerModalProps> = () => {
   const { act, data } = useBackend<ColorPickerData, ColorPickerModalActions>();
-  const {
-    timeout,
-    message,
-    autofocus,
-    default_color = '#000000',
-    presets,
-  } = data;
+  const { timeout, message, autofocus, presets } = data;
   let { title } = data;
+  const default_color = data.default_color ?? '#000000';
 
   const [selectedColor, setSelectedColor] = useState<HsvaColor>(
     hexToHsva(default_color),

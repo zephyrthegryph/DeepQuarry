@@ -13,6 +13,7 @@
 
 CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 	interface("NtosNetMonitor")
+	ui_shape(ntnetstatus = bool(), ntnetrelays = int(), idsstatus = bool(), idsalarm = bool(), config_softwaredownload = bool(), config_peertopeer = bool(), config_communication = bool(), config_systemcontrol = bool(), ntnetlogs = list_of(row(entry = schema_text())), minlogs = int(), maxlogs = int(), banned_nids = list_of(num()), ntnetmaxlogs = int(), PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool())
 	op("resetIDS", ui_act("resetIDS"), then(PROC_REF(ui_act_resetids)))
 	op("toggleIDS", ui_act("toggleIDS"), then(PROC_REF(ui_act_toggleids)))
 	op("toggleWireless", ui_act("toggleWireless"), asks(/datum/prompt/yes_no, fields = list("title" = "NTNet shutdown", "question" = "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices."), when = PROC_REF(wireless_enabled)), then(PROC_REF(ui_act_togglewireless)))
@@ -41,7 +42,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 	data["minlogs"] = MIN_NTNET_LOGS
 	data["maxlogs"] = MAX_NTNET_LOGS
 
-	data["banned_nids"] = list(GLOB.ntnet_global.banned_nids || list())
+	data["banned_nids"] = GLOB.ntnet_global.banned_nids ? GLOB.ntnet_global.banned_nids.Copy() : list()
 
 	for(var/i in GLOB.ntnet_global.logs)
 		data["ntnetlogs"] += list(list("entry" = i))

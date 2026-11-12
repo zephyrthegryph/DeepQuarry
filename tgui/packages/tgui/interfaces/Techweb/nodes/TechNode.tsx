@@ -30,7 +30,7 @@ export function TechNode(props: Props) {
     points = [],
     nodes,
     point_types_abbreviations = [],
-    queue_nodes = [],
+    queue_nodes = {},
   } = data;
   const { node, nodetails, nocontrols } = props;
   const {
@@ -101,10 +101,10 @@ export function TechNode(props: Props) {
           <Stack>
             <Stack.Item>
               {tier > 0 &&
-                (can_unlock && (is_free || queue_nodes.length === 0) ? (
+                (can_unlock && (is_free || Object.keys(queue_nodes).length === 0) ? (
                   <Button
                     icon="lightbulb"
-                    disabled={!can_unlock || tier > 1 || queue_nodes.length > 0}
+                    disabled={!can_unlock || tier > 1 || Object.keys(queue_nodes).length > 0}
                     onClick={() => act('researchNode', { node_id: id })}
                   >
                     Research

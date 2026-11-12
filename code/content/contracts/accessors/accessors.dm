@@ -87,6 +87,8 @@ SYSTEM_ACCESSOR(machines, machines_power_material_overlays, nameof(power_materia
 SYSTEM_ACCESSOR(mapping, mapping_map_templates, nameof(map_templates))
 SYSTEM_ACCESSOR(mapping, mapping_max_plane_offset, nameof(max_plane_offset))
 SYSTEM_ACCESSOR(mapping, mapping_multiz_levels, nameof(multiz_levels))
+/// The levels joined to the level above them (HasAbove()/HasBelow(), the space ceiling patch's requirement).
+SYSTEM_ACCESSOR(mapping, mapping_z_links_up, nameof(z_links_up))
 SYSTEM_ACCESSOR(mapping, mapping_shelter_templates, nameof(shelter_templates))
 SYSTEM_ACCESSOR(media_tracks, media_tracks_jukebox_tracks, nameof(jukebox_tracks))
 SYSTEM_ACCESSOR(media_tracks, media_tracks_lobby_tracks, nameof(lobby_tracks))

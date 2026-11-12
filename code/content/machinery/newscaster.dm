@@ -677,11 +677,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		if(GLOB.news_network.wanted_issue() && GLOB.news_network.wanted_issue().is_admin_message)
 			tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
 			return
-		GLOB.news_network.wanted_issue().author = channel_name
-		GLOB.news_network.wanted_issue().body = msg
-		GLOB.news_network.wanted_issue().backup_author = scanned_user
+		var/datum/feed_message/wanted = GLOB.news_network.wanted_issue()
+		wanted.set_author(channel_name)
+		wanted.set_body(msg)
+		wanted.backup_author = scanned_user
 		if(photo_data)
-			GLOB.news_network.wanted_issue().img = photo_data.photo().img
+			wanted.set_img(photo_data.photo().img)
 		show_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
 		SStgui.update_uis(src)
 		return

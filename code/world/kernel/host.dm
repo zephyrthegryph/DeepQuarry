@@ -144,7 +144,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 /datum/controller/kernel/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["fast_update"] = overview_fast_update
+	data["fast_update"] = overview_fast_update ? TRUE : FALSE
 	data["rolling_length"] = rolling_usage_length
 	var/list/merged_1 = ui_data_datum_controller_kernel(A.actor, null, null)
 	if(islist(merged_1))
@@ -165,8 +165,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"init_order" = 0,
 			"last_fire" = system.last_fire,
 			"next_fire" = 0,
-			"can_fire" = system.can_fire,
-			"doesnt_fire" = !system.times_fired,
+			"can_fire" = system.can_fire ? TRUE : FALSE,
+			"doesnt_fire" = system.times_fired ? FALSE : TRUE,
 			"cost_ms" = system.fire_cost,
 			"wall_cost_last_ms" = system.fire_cost,
 			"cpu_cost_ms" = system.fire_cost,
@@ -176,7 +176,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"tick_usage" = 0,
 			"usage_per_tick" = 0,
 			"tick_overrun" = system.tick_overrun,
-			"initialized" = system.initialized,
+			"initialized" = system.initialized ? TRUE : FALSE,
 			"initialization_failure_message" = null,
 		))
 	data["subsystems"] = system_data
@@ -204,6 +204,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"[key_name(user)] tried to view kernel variables while having improper rights, \
 			this is potentially a malicious exploit and worth noting."
 		)
+		return FALSE
 
 	var/datum/system/system = ref
 	if(isnull(system))

@@ -126,6 +126,7 @@ CAPABILITIES(/obj/item/folder)
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "k98"),
 		then(PROC_REF(folder_label)))
 	interface("Folder")
+	ui_shape(folder_name = schema_text(), items = list_of(row(ref = int(), name = schema_text(), kind = enum(list("paper", "photo", "bundle")))))
 	without("ui_open")
 	op("remove", ui_act("remove", arg("ref", schema_text(32))), then(PROC_REF(ui_act_remove)))
 	op("rename", ui_act("rename", arg("ref", schema_text(32))), then(PROC_REF(ui_act_rename)))

@@ -33,6 +33,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	owns_many(nameof(field))
 	climb()
 	interface("ShieldGenerator")
+	ui_shape(locked = bool(), lockedData = nullable(row(capacitors = list_of(row(active = bool(), stored_charge = num(), max_charge = num(), failing = bool())), active = bool(), failing = bool(), radius = num(), max_radius = num(), z_range = num(), max_z_range = num(), average_field_strength = num(), target_field_strength = num(), max_field_strength = num(), shields = int(), upkeep = num(), strengthen_rate = num(), max_strengthen_rate = num(), gen_power = num())))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	without("ui_open")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
@@ -123,9 +124,10 @@ CAPABILITIES(/obj/machinery/shield_gen)
 
 /// /obj/machinery/shield_gen's window data.
 /obj/machinery/shield_gen/ui_data(datum/act/eval/A)
-	var/list/lockedData = list()
+	var/list/lockedData = null
 
 	if(!locked)
+		lockedData = list()
 		var/list/caps = list()
 		for(var/obj/machinery/shield_capacitor/C in capacitors)
 			caps.Add(list(list(

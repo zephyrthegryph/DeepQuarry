@@ -1,20 +1,23 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
+import type {
+  EscapePodConsoleActions,
+  EscapePodConsoleData,
+} from './generated/EscapePodConsole';
 import {
   EscapePodControls,
   EscapePodStatus,
-} from './EmbeddedControllerHelpers';
-import type { EscapePodConsoleData } from './types';
+} from './EmbeddedController/EmbeddedControllerHelpers';
 
 /**
  * These are the least airlock-like UIs here, but they're "close enough".
  * Replaces escape_pod_console.tmpl
  */
-export const EscapePodConsole = (props) => {
+const EscapePodConsoleContent = () => {
   const { act, data } = useBackend<
     EscapePodConsoleData,
-    EmbeddedControllerActions
+    EscapePodConsoleActions
   >();
 
   const {
@@ -59,3 +62,11 @@ export const EscapePodConsole = (props) => {
     </>
   );
 };
+
+export const EscapePodConsole = () => (
+  <Window width={500} height={400}>
+    <Window.Content>
+      <EscapePodConsoleContent />
+    </Window.Content>
+  </Window>
+);
