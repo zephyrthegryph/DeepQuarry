@@ -16,5 +16,5 @@ const all = pngs(afterDir).map((f) => `<figure><figcaption>${name(f)}</figcaptio
 writeFileSync(path.join(outDir, 'index.html'), `<!doctype html><html><head><meta charset="utf-8"><title>Console theme preview</title>
 <style>body{background:#111;color:#cde;font:14px monospace;margin:16px}h1,h2{color:#8bf}figure{margin:0;display:inline-block;vertical-align:top}
 figcaption{color:#9ab;margin:4px 0}img{max-width:100%;border:1px solid #384e68}.pair>div{display:flex;gap:16px;flex-wrap:wrap}.grid{display:flex;gap:16px;flex-wrap:wrap}</style></head><body>
-<h1>Console theme preview</h1><p>Rendered from the renderAll fixtures (tools/tgui_preview). Game sprite images (dm icon) are not available in this harness.</p>
+<h1>Console theme preview</h1><p>Rendered from the renderAll fixtures (tools/tgui_preview). Each window is shown at the size the game opens it; game sprite images (dm icon) are not available in this harness.</p>
 <h2>Before / after</h2>${pairs}<h2>Contact sheet (${pngs(afterDir).length} windows)</h2><div class="grid">${all}</div></body></html>`);

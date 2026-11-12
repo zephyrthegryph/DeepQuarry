@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Windows in the console look no longer clip, overlap or wrap their buttons, tabs and values; several windows are wider to fit the console font."
