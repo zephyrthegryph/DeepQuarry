@@ -144,7 +144,7 @@ pub(crate) struct WorkspaceCapture {
     issuance: u64,
     discovery: Arc<DiscoveryReceipt>,
     shared_derived: Option<Arc<crate::input_snapshot::DerivedPreflight>>,
-    files: Box<[File]>,
+    files: Vec<File>,
     configuration: PathBuf,
     config: Option<SharedBytes>,
     auxiliary: Vec<crate::policy_request::WorkspaceAuxiliaryQuestion>,
@@ -332,7 +332,7 @@ impl WorkspaceCapture {
         if !census.arc_object(owner, self) {
             return;
         }
-        census.slice(owner, self.files.as_ref(), true);
+        census.vec_payload(owner, &self.files);
         census.path(owner, &self.configuration);
         if let Some(spool) = &self.raw_spool {
             spool.visit_storage(|pointer, payload, capacity| { census.exposed_buffer(owner, pointer, payload, capacity); });
@@ -805,7 +805,8 @@ impl WorkspaceCapture {
     // the active current SourceSnapshot guard and are not retained by this input.
     pub(crate) fn retained_charge(&self) -> io::Result<usize> {
         let mut count = std::mem::size_of_val(self)
-            .checked_add(std::mem::size_of_val(self.files.as_ref()))
+            .checked_add(self.files.capacity().checked_mul(std::mem::size_of::<File>())
+                .ok_or(io::ErrorKind::OutOfMemory)?)
             .ok_or_else(|| io::Error::other("workspace metadata overflow"))?;
         let mut seen = std::collections::BTreeSet::new();
         if let Some(owner)=&self.shared_derived{owner.account_shared_capture_aliases(&mut seen)?;}
@@ -990,8 +991,14 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
     queries.with_semantic_workspace_capture_inputs(|budget, credits| {
         let variable = raw_spool_cache.is_some();
         let recorder_before = if variable {
-            Some((inputs.late_workspace_recorder_owner()?, inputs.late_workspace_recorder_charge()?))
+            Some((inputs.late_workspace_recorder_owner()?, inputs.late_workspace_recorder_charge()?, budget.remaining()))
         } else { None };
+        if let Some((owner, _, maximum)) = &recorder_before {
+            // Validate cleanup publication before any baseline can mutate the
+            // recorder. This also proves the bounded failure upper cannot
+            // overflow the existing lifetime-owned metadata row.
+            credits.require_late_recorder_growth(owner, *maximum)?;
+        }
         let baseline_funding = if variable {
             Some(Budget::scoped_temporaries(budget).map_err(map_edits_quota)?)
         } else {
@@ -1012,11 +1019,17 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
             Some(ordinary)
         };
         let full_ci_baselines = if full_ci {
-            Some(Box::new(credits.with_held_source_work(queries, |work| {
+            let observed = credits.with_held_source_work(queries, |work| {
                 FullCiBaselines::observe_using(
                     inputs, &discovery.contract().root, budget, work, baseline_funding.as_deref(),
                 )
-            })?))
+            });
+            match observed {
+                Ok(baselines) => Some(Box::new(baselines)),
+                Err(first) => return Err(retain_early_baseline_error(
+                    inputs, credits, budget, recorder_before.as_ref(), baseline_funding.as_ref(), first,
+                )),
+            }
         } else {
             None
         };
@@ -1028,7 +1041,13 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
         } else { 0 };
         let ordinary = match fixed_window {
             Some(ordinary) => ordinary,
-            None => Budget::reserve_window(budget, EXTRA_BUDGET - baseline_paid).map_err(map_edits_quota)?,
+            None => match Budget::reserve_window(budget, EXTRA_BUDGET - baseline_paid) {
+                Ok(window) => window,
+                Err(message) => return Err(retain_early_baseline_error(
+                    inputs, credits, budget, recorder_before.as_ref(), baseline_funding.as_ref(),
+                    map_edits_quota(message),
+                )),
+            },
         };
         let capture_limit = ordinary.capacity() + baseline_paid;
         let pending = capture_original(
@@ -1038,7 +1057,7 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
         );
         // Recorder facts can outlive either a successful capture or a failed
         // provider read. Publish their growth before releasing the window.
-        let recorder_growth = if let Some((owner, before)) = recorder_before {
+        let recorder_growth = if let Some((owner, before, _)) = recorder_before {
             match inputs.late_workspace_recorder_charge().and_then(|after| {
                 let growth = after.saturating_sub(before);
                 credits.retain_late_recorder_growth(&owner, growth)?;
@@ -1081,6 +1100,37 @@ fn capture_analysis_map_edits_using<P: SnapshotProvider>(
         credits.retain_capture_metadata(&capture, retained)?;
         Ok(capture)
     })
+}
+
+/// Error cleanup only. The caller validated the exact kind-251 owner before
+/// mutation. Publish the still-live recorder delta before refundable baseline
+/// buffers unwind. Allocation/cancellation cleanup never replaces first IO.
+fn retain_early_baseline_error<P: SnapshotProvider>(
+    inputs: &RecordingInputs<P>, credits: &mut crate::query_db::RawInputCredits<'_>,
+    budget: &Arc<dq_analyze::captured_generator_budget::Budget>,
+    before: Option<&(Arc<()>, usize, usize)>,
+    baseline_funding: Option<&Arc<dq_analyze::captured_generator_budget::Budget>>,
+    first: io::Error,
+) -> io::Error {
+    let (Some((owner, before, maximum)), Some(funding)) = (before, baseline_funding) else {
+        return first;
+    };
+    let growth = match inputs.late_workspace_recorder_charge() {
+        Ok(after) => after.saturating_sub(*before),
+        Err(_) => {
+            // The exact census is unavailable. Every baseline path, row and
+            // payload was charged here before allocation, so this paid bound
+            // covers the surviving recorder subset as well.
+            budget.deny();
+            funding.used()
+        }
+    };
+    // This is the same held raw gate and strongly retained snapshot token
+    // checked before baseline allocation. No node may disappear or be replaced.
+    // Publish the bounded recorder amount before the child refunds its scratch.
+    credits.retain_prechecked_late_recorder_growth(owner, growth, *maximum);
+    let _ = budget.charge(growth);
+    first
 }
 
 fn map_edits_quota(message: String) -> io::Error {
@@ -1229,7 +1279,13 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
             // payload can add one ordinary fact (key and fact path buffers).
             // Its durable spool entry is funded by the builder below.
             spool_rows += 1;
-            let fact = path.capacity().checked_mul(8)
+            // One canonical map key and one owned path in the fact. The
+            // normalization itself uses the shared temporary envelope.
+            if used.checked_add(width).is_none_or(|peak| peak > capture_limit) {
+                return Err(io::ErrorKind::OutOfMemory.into());
+            }
+            let canonical = canonical_path(path);
+            let fact = canonical.capacity().checked_add(canonical.clone().capacity())
                 .and_then(|n| n.checked_add(128 + std::mem::size_of::<FileInput>()))
                 .ok_or(io::ErrorKind::OutOfMemory)?;
             used = used.checked_add(fact).ok_or(io::ErrorKind::OutOfMemory)?;
@@ -1363,8 +1419,18 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
                     if actual.non_text_kind() != Some(dm_preprocess::regions::NonTextKind::Map) {
                         return Err(io::Error::new(io::ErrorKind::Unsupported, "paired DMM cannot replace a compiled acquisition"));
                     }
-                } else if aliases.candidate(path)?.is_some() {
-                    return Err(io::Error::new(io::ErrorKind::Unsupported, "paired DMM cannot replace a compiled alias"));
+                } else if let Some(candidate) = aliases.candidate(path)? {
+                    let index = *known.get(candidate)
+                        .ok_or_else(|| io::Error::other("paired DMM alias has no actual occurrence"))?;
+                    let actual = frontend.plan.occurrences().get(index)
+                        .filter(|row| row.path.as_path() == candidate)
+                        .ok_or_else(|| io::Error::other("paired DMM alias occurrence differs"))?;
+                    // A non-text include has no compiled payload to replace.
+                    // The staged map still proves its own discovered path and
+                    // recorder fact below, without issuing a source alias.
+                    if actual.non_text_kind() != Some(dm_preprocess::regions::NonTextKind::Map) {
+                        return Err(io::Error::new(io::ErrorKind::Unsupported, "paired DMM cannot replace a compiled alias"));
+                    }
                 }
                 let mut stage = owner.stage.lock().map_err(|_| io::Error::other("paired DMM stage poisoned"))?;
                 stage.replay_capture_error(source_index)?;
@@ -1552,12 +1618,6 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         compact_selected.sort_unstable();
         compact_selected.dedup_by(|left, right| left.0 == right.0);
     }
-    if staged && files.capacity() != files.len() {
-        let overlap = files.len().checked_mul(std::mem::size_of::<File>())
-            .ok_or(io::ErrorKind::OutOfMemory)?;
-        used = used.checked_add(overlap).filter(|n| *n <= capture_limit)
-            .ok_or(io::ErrorKind::OutOfMemory)?;
-    }
     let mut map_edits = None;
     let map_directories = if let Some(owner) = &paired_dmm {
         let mut stage = owner.stage.lock().map_err(|_| io::Error::other("paired MapEdits stage poisoned"))?;
@@ -1744,7 +1804,7 @@ fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inp
         issuance,
         discovery,
         shared_derived,
-        files: files.into_boxed_slice(),
+        files: if staged { files } else { files.into_boxed_slice().into_vec() },
         configuration: canonical_configuration,
         config,
         auxiliary,
@@ -2183,7 +2243,7 @@ fn capture_raw_only_funded<P:SnapshotProvider>(inputs:&RecordingInputs<P>,intent
  let ui_dispatcher=prepared_ui.map(|prepared|UiDispatcherCapture{index:ui_dispatcher_index,prepared});
  let config_width=workspace.configuration.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(1024)).ok_or(io::ErrorKind::OutOfMemory)?;used=used.checked_add(config_width).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;let configuration=canonical_path(&workspace.configuration);if discovery.files().contains(&configuration){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw configuration cannot also be selected source"))}let config=match &engine{Some(proof)=>{if configuration!=proof.preflight().configuration().0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine configuration path differs"))}proof.preflight().configuration_bytes().cloned()},None=>match doc_config{Some(bytes)=>bytes,None=>inputs.read_policy_candidate(&configuration,EXTRA_BUDGET-used)?}};used=used.checked_add(config.as_ref().map_or(0,SharedBytes::capacity)).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;selected.push(configuration.clone());
  let selected=selected.into_iter().collect::<std::collections::BTreeSet<_>>();let facts=inputs.policy_workspace_closure(&selected,discovery.directory_paths())?;let revision=crate::policy_request::workspace_revision(0,&facts,&workspace.root,&workspace.recursive_roots,&configuration)?;let owner=Arc::new(RawSourceIdentity{revision,queries:Arc::downgrade(queries),purpose});let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"original-source-only-not-semantic-v1");hash.update(purpose.name().as_bytes());hash.update(&revision.to_le_bytes());let policy_revision=hash.digest128();
- let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,shared_derived:None,files:files.into_boxed_slice(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,library_baseline:None,full_ci_baselines:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,paired_dmm:None,raw_spool:None,facts});
+ let capture=Arc::new(WorkspaceCapture{source:Weak::new(),raw_source:Some(Arc::downgrade(&owner)),engine_no_model:engine,ui_dispatcher,source_revision:revision,policy_revision,issuance:next_issuance()?,discovery,shared_derived:None,files:files.into_boxed_slice().into_vec(),configuration,config,auxiliary:vec![purpose.question()],deadline:None,library_baseline:None,full_ci_baselines:None,check_grep:None,keys_manifest:op_order_manifest,base_vars_configuration:None,map_edits:None,paired_dmm:None,raw_spool:None,facts});
  if used>EXTRA_BUDGET||capture.retained_charge()?>EXTRA_BUDGET{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"raw Doc retained source exceeds existing capture allowance"))}capture.discovery.validate_recording(inputs)?;let metadata=capture.retained_charge()?;budget.charge(metadata).map_err(quota)?;credits.retain_capture_metadata(&capture,metadata)?;drop(metadata_peak);dm_profile::detail_mark("raw_capture.settled", capture_started);Ok((capture,owner))
 }
 
@@ -2232,6 +2292,53 @@ impl WorkspaceCapture{
 mod full_ci_baseline_observation_tests {
     use super::*;
     use crate::input_snapshot::FileSystemInputs;
+
+    #[test]
+    fn early_baseline_error_publishes_recorder_bound_before_refund_and_keeps_first_io() {
+        use dq_analyze::captured_generator_budget::Budget;
+        for unavailable in [false, true] {
+            let root = crate::test_scratch::dir("early-baseline-recorder-settlement");
+            let inputs = RecordingInputs::new(FileSystemInputs, 0);
+            let queries = crate::query_db::QueryDb::default();
+            let baseline = queries.raw_source_input_charge_locked().unwrap();
+            let retained = std::cell::Cell::new(0);
+            let actual = match queries.with_semantic_workspace_capture_inputs(|budget, credits| {
+                inputs.capture_policy_directory_lent(&root, true, 0, budget, credits)?;
+                let before = (inputs.late_workspace_recorder_owner()?,
+                    inputs.late_workspace_recorder_charge()?, budget.remaining());
+                credits.require_late_recorder_growth(&before.0, before.2)?;
+                let funding = Budget::scoped_temporaries(budget).unwrap();
+                funding.charge(8192).unwrap();
+                assert!(inputs.read_policy_candidate(&root.join("observed-missing.txt"), budget.remaining())?.is_none());
+                let first = std::fs::File::open(root.join("first-error.txt")).unwrap_err();
+                let expected = first.raw_os_error();
+                retained.set(if unavailable { funding.used() }
+                    else { inputs.late_workspace_recorder_charge()?.saturating_sub(before.1) });
+                if unavailable {
+                    inputs.poison_late_workspace_census_for_test();
+                } else {
+                    // Reproduce an ordinary-window denial after the successful
+                    // baseline observations and before the cleanup handoff.
+                    budget.deny();
+                    assert!(Budget::reserve_window(budget, 1).is_err());
+                }
+                let first = retain_early_baseline_error(
+                    &inputs, credits, budget, Some(&before), Some(&funding), first,
+                );
+                assert_eq!(first.raw_os_error(), expected);
+                drop(funding);
+                Err::<Arc<WorkspaceCapture>, io::Error>(first)
+            }) { Err(actual) => actual, Ok(_) => panic!("failure cannot publish a workspace") };
+            assert_eq!(actual.kind(), io::ErrorKind::NotFound);
+            assert!(retained.get() > 0);
+            let after = queries.raw_source_input_charge_locked().unwrap();
+            assert!(after >= baseline + retained.get(),
+                "cleanup must retain the published amount after the operation root is gone");
+            drop(inputs);
+            assert_eq!(queries.raw_source_input_charge_locked().unwrap(), baseline,
+                "dropping the real recorder releases the bounded failed observation");
+        }
+    }
 
     #[test]
     fn joined_workspace_revision_borrows_the_same_actual_directory_facts() {

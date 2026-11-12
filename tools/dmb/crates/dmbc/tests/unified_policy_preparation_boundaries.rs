@@ -1935,6 +1935,7 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
             "#include \"code/content/handler_bitfield_base.dm\"\n",
             "#include \"code/engine/present/protocols.dm\"\n",
             "#include \"interface/visible.dm\"\n",
+            "#include \"maps/included.dmm\"\n",
             "#ifdef SPACEMAN_DMM\n#include \"code/derived.dm\"\n",
             "#include \"code/_generated/reads.dm\"\n#endif\n",
         )),
@@ -1953,6 +1954,7 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
         ("modular_chomp/visible.dm", "/datum/full_registry_modular\n"),
         ("maps/stale.dm", "/proc/stale()\n    return // ALLOW(scheduler): full registry fixture leaves an annotation unused\n"),
         ("maps/probe.dmm", "\"a\" = (/datum/full_registry_interface{missing_map_var = 1})\n"),
+        ("maps/included.dmm", "\"a\" = (/turf, /area)\n(1,1,1) = {\"\na\n\"}\n"),
         ("tgui/standalone.jsx", "CheckGrep observes this filename rather than its content\n"),
         ("tgui/packages/tgui/interfaces/Probe.tsx", "export const bruteLoss = 1;\n"),
         ("code/_generated/reads.dm", "// deliberately stale actual file\n"),
@@ -2003,9 +2005,15 @@ fn exercise_public_full_registry_compound(ci: bool, cbt: bool) {
     build.progress_enabled = cbt;
     let intent = build.policy_inputs.as_mut().unwrap();
     intent.workspace_auxiliary.clear(); // Only the compound host may issue the private registry profile.
-    intent.workspace.as_mut().unwrap().recursive_roots =
+    // Exercise the real Windows ordinary/verbatim spelling boundary while
+    // keeping the native compiler's non-text include independently typed.
+    let policy_root = dm_preprocess::regions::filesystem_comparison_key(&root);
+    let workspace = intent.workspace.as_mut().unwrap();
+    workspace.root = policy_root.clone();
+    workspace.configuration = policy_root.join("tools/ci/lint_scopes.toml");
+    workspace.recursive_roots =
         ["code", "doc/rewrite", "interface", "maps", "modular_chomp", "tgui"]
-            .map(|name| root.join(name)).to_vec();
+            .map(|name| policy_root.join(name)).to_vec();
     let request_path = transport.join("full-compound.json");
     let run_mode = |name: &str, exclusions: &[&str], compact: bool| {
         let mut request = serde_json::json!({

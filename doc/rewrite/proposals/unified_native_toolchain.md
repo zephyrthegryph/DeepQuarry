@@ -3784,3 +3784,39 @@ published compiler and default routes are unchanged. The paired map
 acquisition remains an opt-in Full CI experiment. The full workspace
 reservation still refuses the whole checkout, and whole-checkout parity with
 the pinned Checker has not been established.
+
+### November 12: actual list helpers and bounded workspace capture
+
+The actual Original body probes now cover English-list formatting, the one-choice
+pick helper, typecache exclusion, list membership, classic shuffle clauses, the
+APC cooldown assignment, and typed admin-rank iteration. Each probe produced its
+report and native output pair. Four focused token and span controls passed, and
+both independent Full CI and CBT fixtures preserved the reference report and
+native pair, including an authored map included through the alternative Windows
+path spelling. These are scoped checks, not whole-checkout parity.
+
+The staged capture retains its admitted vector capacity instead of allocating a
+second file array to shrink it. Metadata accounting uses that actual capacity.
+The baseline failure path publishes surviving recorder metadata into its checked
+lifetime owner before temporary credits unwind, while preserving the first I/O
+error. Its filesystem and recorder regression typechecks; that new regression
+has not been executed in the large host unit-test executable.
+
+The checkout passed the previous document-buffer and map-alias failures under the
+unchanged allowance. Its metadata preflight was 2,524,459 bytes within a 4,677,414
+byte grant. A subsequent run acquired all workspace files, then refused local
+file-fact copying at 265.55 seconds. It emitted neither a combined report nor an
+installed native pair. The next accounting audit concerns native primary facts
+already authenticated by the compiled-source owner; no fact may be omitted on
+path resemblance alone.
+
+Two attempts also expired during the frontend or Checker capture. Aggregate
+thread CPU measurements now accompany the existing phase wall totals. Ten
+focused batch-protocol tests passed. Removing the private test driver's fixed
+processor pair, while retaining below-normal priority and two workers, reduced
+the observed main producer from 120.727 wall seconds to 92.377 seconds; the latter
+used 91.266 CPU seconds. This is diagnosis from verification runs on a shared
+machine, not a controlled performance result. The published compiler, default
+routes, memory limits and baselines remain unchanged. Complete independent
+Checker parity, production cutover and the combined performance targets remain
+unproven.

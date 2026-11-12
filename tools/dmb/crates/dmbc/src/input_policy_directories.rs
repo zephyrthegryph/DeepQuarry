@@ -304,6 +304,14 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         Ok(path.parent().is_some_and(|parent| current.folders.contains_key(parent))
             && current.files.contains_key(path))
     }
+    #[cfg(test)]
+    pub(crate) fn poison_late_workspace_census_for_test(&self) {
+        let failed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = self.snapshot.lock().unwrap();
+            panic!("intentional recorder census poison");
+        }));
+        assert!(failed.is_err());
+    }
     pub(crate) fn late_workspace_recorder_charge(&self) -> io::Result<usize> {
         let current = self.snapshot.lock().map_err(|_| invalid("input mutex poisoned"))?;
         let mut bytes = current.policy_closure_charge()?;

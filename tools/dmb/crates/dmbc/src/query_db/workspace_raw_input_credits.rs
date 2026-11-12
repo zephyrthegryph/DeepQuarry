@@ -443,6 +443,42 @@ fn charge(b:&Budget,n:usize)->io::Result<()>{b.charge(n).map_err(|m|io::Error::n
 /// Operation-local funding only; the ledger carries weak storage, never source data or answers.
 pub(crate) struct RawInputCredits<'a>{ledger:&'a mut Ledger,budget:&'a Arc<Budget>,source_nodes:usize,capture_node:bool,prepared:bool}
 impl RawInputCredits<'_> {
+ pub(crate) fn require_late_recorder_growth(&self, owner: &Arc<()>, maximum: usize) -> io::Result<()> {
+  let key = (251, Arc::as_ptr(owner) as usize);
+  let old = self.ledger.rows.get(&key)
+   .ok_or_else(|| io::Error::other("staged recorder metadata owner absent"))?;
+  match &old.owner {
+   Observation::RecorderMetadata(held, _) if held.ptr_eq(&Arc::downgrade(owner))
+    && held.strong_count() != 0 => {},
+   _ => return Err(io::Error::other("staged recorder metadata owner differs")),
+  }
+  old.bytes.checked_add(maximum).ok_or_else(oom)?;
+  Ok(())
+ }
+ /// Cleanup for a previously checked amount under this SAME held raw gate.
+ /// Baseline source work cannot replace the recorder row, and the caller
+ /// retains its strong token. The baseline reader's held SourceArenaWork
+ /// changes only arena/acquisition rows. It cannot enter the directory
+ /// lender or replace kind 251. The checked old_bytes + maximum therefore
+ /// bounds this same unchanged row when growth <= maximum.
+ /// This updates an existing node without allocation.
+ pub(crate) fn retain_prechecked_late_recorder_growth(
+  &mut self, owner:&Arc<()>, growth:usize, maximum:usize,
+ ) {
+  assert!(growth<=maximum,"late recorder growth exceeded its prepaid maximum");
+  let key=(251,Arc::as_ptr(owner)as usize);
+  let row=self.ledger.rows.get_mut(&key).expect("prechecked live recorder row");
+  let Observation::RecorderMetadata(held,amount)=&mut row.owner else {
+   unreachable!("prechecked recorder row cannot change resource family")
+  };
+  assert!(held.ptr_eq(&Arc::downgrade(owner)) && held.strong_count()!=0,
+   "prechecked recorder lifetime cannot change under the raw gate");
+  debug_assert_eq!(*amount,row.bytes);
+  let next=row.bytes.checked_add(growth).expect("prechecked recorder maximum");
+  *amount=next;
+  row.bytes=next;
+  self.ledger.invalidate_upper();
+ }
  pub(crate) fn retain_late_recorder_growth(&mut self,owner:&Arc<()>,growth:usize)->io::Result<()>{
   let key=(251,Arc::as_ptr(owner) as usize);
   let old=self.ledger.rows.get(&key).ok_or_else(||io::Error::other("staged recorder metadata owner absent"))?;
