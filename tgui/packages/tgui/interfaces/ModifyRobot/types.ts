@@ -1,4 +1,3 @@
-import type { BooleanLike } from 'tgui-core/react';
 import type { ModifyRobotData } from '../generated/ModifyRobot';
 
 export type Data = ModifyRobotData;
@@ -10,75 +9,27 @@ export type DropdownEntry = {
 
 export type Target = NonNullable<Data['target']>;
 
-export type Upgrade = {
-  name: string;
-  path: string;
+export type Upgrade = Target['whitelisted_upgrades'][number] & {
   installed?: number;
 };
 
 export type Source = Data['source'];
 
-export type Module = { name: string; ref: number; icon: string; desc: string };
+export type Module = Target['modules'][number];
 
-export type Component = {
-  name: string;
-  ref: number;
-  brute_damage: number;
-  electronics_damage: number;
-  max_damage: number;
-  idle_usage: number;
-  active_usage: number;
-  installed: number;
-  exists: BooleanLike;
-};
+export type Component = Target['components'][number];
 
-export type PKA = {
-  name: string;
-  modkits: {
-    name: string;
-    path: string;
-    costs: number;
-    denied: BooleanLike;
-    denied_by: string;
-  }[];
-  installed_modkits: { name: string; ref: number; costs: number }[];
-  capacity: number;
-  max_capacity: number;
-};
+export type PKA = NonNullable<Target['pka']>;
 
-export type Multibelt = {
-  name: string;
-  tools: {
-    name: string;
-    path: string;
-  }[];
-  ref: number;
-  integrated_tools: { name: string; ref: number }[];
-};
+export type Multibelt = Target['multibelt'][number];
 
-export type InstalledCell = {
-  name: string | null;
-  charge: number | null;
-  maxcharge: number | null;
-};
+export type InstalledCell = NonNullable<Data['cell']>;
 
-export type Cell = {
-  path: string;
-  charge: number;
-  max_charge: number;
-  charge_amount: number;
-  self_charge: BooleanLike;
-  max_damage: number;
-};
+export type Cell = NonNullable<Data['cell_options']>[string];
 
-export type Comp = {
-  path: string;
-  max_damage: number;
-  idle_usage: number;
-  active_usage: number;
-} | null;
+export type Comp = NonNullable<Data['camera_options']>[string];
 
-export type Access = { id: number; name: string };
+export type Access = Target['active_access'][number];
 
 export type Lookup = {
   path: string;

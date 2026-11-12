@@ -20,6 +20,11 @@
 		"player_alt_titles",
 	)
 
+/// The wire shape of /datum/preference_editor/occupation's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_occupation, row(job_priority = map_of(schema_text(), enum(list("off", "low", "med", "high"))), availability = map_of(schema_text(), schema_text()), alternate_option = num(), alt_titles = map_of(schema_text(), schema_text()), counts = row(high = num(), med = num(), low = num())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_occupation_static, row(departments = map_of(schema_text(), row(label = schema_text(), color = schema_text(), sort = num(), jobs = list_of(row(title = schema_text(), desc = schema_text(), supervisors = nullable(schema_text()), selection_color = schema_text(), sorting_order = num(), whitelist_only = bool(), min_age = num(), total_positions = num(), current_positions = num())))), alt_options = list_of(row(value = num(), label = schema_text())), alt_titles_by_job = map_of(schema_text(), list_of(schema_text()))))
+
 /datum/preference_editor/occupation/build_ui_data(datum/preferences/preferences)
 	var/list/jobs_state = list()
 	var/list/availability = list()

@@ -12,8 +12,8 @@ export const BodyScannerMainOccupant = (props: { occupant: occupant }) => {
   // patient with severe brain bleeding still reads as "Critical" even if
   // their gross health % is fine. Triage cares about the worst thing on
   // the scan, not the average.
-  const healthBand = (occupant.healthBand as DamageBand) ?? 'uninjured';
-  const worstFinding = (occupant.worstFinding as DamageBand) ?? 'uninjured';
+  const healthBand = occupant.healthBand ?? 'uninjured';
+  const worstFinding = occupant.worstFinding ?? 'uninjured';
   const band: DamageBand =
     BAND_RANK[worstFinding] > BAND_RANK[healthBand] ? worstFinding : healthBand;
   const info = BAND_INFO[band];

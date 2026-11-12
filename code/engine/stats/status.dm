@@ -3,7 +3,7 @@
 // A stat declared with `units =` is a status: its value is the intensity (the strongest hold's), its holds last `units` times the amount asked on the
 // mob's biology clock, and its companion boolean ANY stat (STAT_<NAME>_IMMUNE, made by the same STAT line, contributed to by immune_to()) zeroes it
 // while TRUE. The verbs below are the sugar the design names status_at_least/status_set/status_adjust/status_end/status_remaining/has_status; until
-// the ~700 callers of the legacy /datum/proc/status_* family migrate (phase 3) these carry the `stat_` prefix, because an unqualified call inside a
+// the ~700 callers of the legacy /mob/proc/status_* family migrate (phase 3) these carry the `stat_` prefix, because an unqualified call inside a
 // datum proc would resolve to the legacy proc of the same name. The renaming is one sed over the callers when they move.
 
 /// The deciseconds one unit of status `def` lasts.

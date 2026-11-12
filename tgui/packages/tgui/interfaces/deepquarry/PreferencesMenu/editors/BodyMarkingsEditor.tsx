@@ -12,6 +12,10 @@ import { useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { getIconFromRefMap } from 'tgui/events/handlers/assets';
 import { Box, Button, Input, Section } from 'tgui-core/components';
+import type {
+  PrefEditorBodyMarkings,
+  PrefEditorBodyMarkingsStatic,
+} from '../../../generated/_schemas';
 import { ColorChoice } from '../colors';
 import { Switch } from '../controls';
 import { ColorizedImage, getImage } from '../helper_components';
@@ -23,25 +27,11 @@ import {
   markingSubgroup,
 } from './markingCategories';
 
-type ZoneState = { color: string; on: number };
-type MarkingState = Record<string, ZoneState | string>;
-type MarkingsData = {
-  /// Marking -> zone (or "color") -> the palette slot it links to.
-  links?: Record<string, Record<string, string>>;
-  markings: Record<string, MarkingState>;
-  /// Marking names the current species cannot wear (the picker hides them by default).
-  incompatible?: string[];
-  species?: string;
-};
-type MarkingStyleMeta = {
-  name: string;
-  body_parts: string[];
-  icon?: string;
-  icon_state?: string;
-};
-type MarkingStatic = {
-  available_styles: Record<string, MarkingStyleMeta>;
-};
+type MarkingsData = PrefEditorBodyMarkings;
+type MarkingState = MarkingsData['markings'][string];
+type ZoneState = Extract<MarkingState[string], { on: number }>;
+type MarkingStyleMeta =
+  PrefEditorBodyMarkingsStatic['available_styles'][string];
 
 const ZONE_LABELS: Record<string, string> = {
   head: 'Head',
@@ -103,14 +93,13 @@ const normalizeStyles = (raw: Record<string, MarkingStyleMeta>) => {
 };
 
 export const BodyMarkingsEditor = ({
-  data,
+  data: d,
   staticData,
   zones,
   zoneLabel,
-}: EditorProps & { zones?: string[]; zoneLabel?: string }) => {
+}: EditorProps<'body_markings'> & { zones?: string[]; zoneLabel?: string }) => {
   const { act } = useBackend();
-  const d = data as MarkingsData;
-  const rawStyles = ((staticData ?? {}) as MarkingStatic).available_styles;
+  const rawStyles = staticData?.available_styles;
   const styles = useMemo(() => normalizeStyles(rawStyles ?? {}), [rawStyles]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -154,7 +143,7 @@ export const BodyMarkingsEditor = ({
         styles={styles}
         layers={layers}
         incompatible={d.incompatible ?? []}
-        species={d.species}
+        species={d.species ?? undefined}
         zones={zones}
         onAdd={(key) => send(act, 'add', { marking: key })}
       />

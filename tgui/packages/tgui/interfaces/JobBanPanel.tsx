@@ -7,28 +7,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { JobBanPanelActions } from './generated/JobBanPanel';
+import type {
+  JobBanPanelActions,
+  JobBanPanelData,
+} from './generated/JobBanPanel';
 
-type Job = {
-  title: string;
-  display?: string;
-  is_banned: BooleanLike;
-};
-
-type Dept = {
-  title: string;
-  color: string;
-  dept_bantype: string | null;
-  is_dept_banned: BooleanLike;
-  jobs: Job[];
-};
-
-type Data = {
-  target_name: string;
-  target_ref: number;
-  departments: Dept[];
-};
+type Job = JobBanPanelData['departments'][number]['jobs'][number];
 
 const JobButton = (props: { job: Job; onClick: (title: string) => void }) => {
   const { job, onClick } = props;
@@ -44,7 +28,7 @@ const JobButton = (props: { job: Job; onClick: (title: string) => void }) => {
 };
 
 export const JobBanPanel = () => {
-  const { data, act } = useBackend<Data, JobBanPanelActions>();
+  const { data, act } = useBackend<JobBanPanelData, JobBanPanelActions>();
   const { target_name, departments = [] } = data;
 
   return (

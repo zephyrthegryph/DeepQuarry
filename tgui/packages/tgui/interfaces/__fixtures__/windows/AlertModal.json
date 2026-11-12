@@ -1,0 +1,9 @@
+{
+	"autofocus": true,
+	"buttons": ["Yes", "No"],
+	"message": "Are you sure you want to leave the cryo bay?",
+	"large_buttons": false,
+	"swapped_buttons": false,
+	"title": "Confirm",
+	"timeout": 30
+}

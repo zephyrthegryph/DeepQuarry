@@ -6,6 +6,11 @@
 	display_name = "Faction affiliations"
 	pref_keys = list("faction_affiliations")
 
+/// The wire shape of /datum/preference_editor/faction_affiliations's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_faction_affiliations, row(affiliations = map_of(schema_text(), schema_text()), reputation_total = num(), reputation_cap = num()))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_faction_affiliations_static, row(factions = list_of(row(id = schema_text(), name = schema_text(), short_name = schema_text(), acronym = schema_text(), description = schema_text(), color = schema_text(), grid_x = num(), grid_y = num())), choices = list_of(schema_text())))
+
 /datum/preference_editor/faction_affiliations/build_ui_data(datum/preferences/preferences)
 	var/list/affiliations = preferences.read_preference(/datum/preference/faction_affiliations)
 	return list(

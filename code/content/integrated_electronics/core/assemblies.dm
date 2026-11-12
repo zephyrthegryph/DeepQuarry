@@ -36,6 +36,7 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	op("assembly_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(assembly_robot_use)))
 	op("assembly_rename", menu(), label("Rename Circuit"), needs(carried()), then(PROC_REF(assembly_rename_op)))
 	interface("ICAssembly", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(max_components = int(), max_complexity = int(), assembly_name = schema_text(), total_parts = int(), total_complexity = int(), battery_charge = num(), battery_max = num(), net_power = num(), circuits = list_of(row(name = schema_text(), desc = schema_text(), displayed_name = schema_text(), removable = bool(), complexity = num(), power_draw_idle = num(), power_draw_per_use = num(), extended_desc = schema_text(), ref = num(), inputs = list_of(ic_pin()), outputs = list_of(ic_pin()), activators = list_of(ic_pin()))), component_positions = list_of(row(ref = num(), x = num(), y = num())))
 	without("ui_open")
 	op("export_circuit", ui_act("export_circuit"), then(PROC_REF(ui_act_export_circuit)))
 	op("rename", ui_act("rename"), then(PROC_REF(ui_act_rename)))
@@ -149,9 +150,6 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	data["battery_charge"] = round(battery?.charge, 0.1)
 	data["battery_max"] = round(battery?.maxcharge, 0.1)
 	data["net_power"] = net_power / CELLRATE
-
-	// Include export data - the UI component will handle displaying it if needed
-	data["export_data"] = serialize_electronic_assembly()
 
 	var/list/circuits = list()
 	FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/circuit, src)

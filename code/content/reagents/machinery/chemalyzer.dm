@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/chemical_analyzer)
 	op("analyze", item(/obj/item/reagent_containers), label("Analyze"), begins(MSG(chemical_analyzer/analyzing)), wait(2 SECONDS), claims(),
 		on_interrupt(PROC_REF(scan_failed)), then(PROC_REF(scan_done)))
 	interface("ChemAnalyzerPro")
-	ui_shape(scannedReagents = list_of(row()), beakerTotal = num(), beakerMax = num())
+	ui_shape(scannedReagents = list_of(wiki_reagent()), beakerTotal = num(), beakerMax = num())
 	default_parts()
 
 /obj/machinery/chemical_analyzer/ui_data(datum/act/eval/A)

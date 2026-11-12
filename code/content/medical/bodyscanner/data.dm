@@ -16,7 +16,7 @@
 	data["occupied"] = occupant ? TRUE : FALSE
 
 	if(!(occupant && ishuman(occupant)))
-		data["occupant"] = list()
+		data["occupant"] = null
 		return data
 
 	var/mob/living/carbon/human/H = occupant

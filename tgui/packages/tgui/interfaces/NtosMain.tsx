@@ -1,8 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { NtosMainActions } from './generated/NtosMain';
+import type { NtosMainActions, NtosMainData } from './generated/NtosMain';
 
 const PROGRAM_ICONS = {
   compconfig: 'cog',
@@ -22,28 +21,13 @@ const PROGRAM_ICONS = {
   shipping: 'tags',
 };
 
-type Data = {
-  device_theme: string;
-  login: user;
-  removable_media: string[];
-  programs: {
-    name: string;
-    desc: string;
-    icon: string;
-    running: BooleanLike;
-    autorun: BooleanLike;
-  }[];
-};
-
-type user = { IDName: string | undefined; IDJob: string | undefined };
-
 export const NtosMain = (props) => {
-  const { act, data } = useBackend<Data, NtosMainActions>();
+  const { act, data } = useBackend<NtosMainData, NtosMainActions>();
   const {
-    device_theme,
-    programs = [],
-    removable_media = [],
-    login = {} as user,
+    PC_device_theme: device_theme,
+    programs,
+    removable_media,
+    login,
   } = data;
   return (
     <NtosWindow

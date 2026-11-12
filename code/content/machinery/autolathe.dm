@@ -79,7 +79,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 
 	section(window, "The window: its designs, its materials and the print button (fabricator())")
 	interface("Autolathe")
-	ui_shape(materialtotal = num(), materialsmax = num(), active = bool(), materials = list_of(row()), materialChoices = list_of(row()))
+	ui_shape(materialtotal = num(), materialsmax = num(), active = bool(), materials = list_of(lathe_material()), materialChoices = list_of(lathe_material_choice()), SHEET_MATERIAL_AMOUNT = num(), designs = list_of(fabricator_design()))
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage))))
 	extend(TAG_UI, needs(req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage))))
 

@@ -66,7 +66,7 @@
 	if(H)
 		var/datum/robolimb/company = H.robolimb_model()
 		if(company)
-			return dq_get_blood_color(company)
+			return company.blood_color
 		else
 			return blood_color
 

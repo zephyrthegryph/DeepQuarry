@@ -5,21 +5,12 @@ import { useBackend } from 'tgui/backend';
 import { Dropdown, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
-type Data = {
-  month: number;
-  day: number;
-  max_day_for_month: number;
-};
-
-type Static = {
-  months: string[];
-};
-
-export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
+export const BirthdayEditor = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'birthday'>) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
-  const months = s.months ?? [];
+  const months = s?.months ?? [];
 
   const monthOptions = months.map((name, i) => ({
     value: String(i + 1),

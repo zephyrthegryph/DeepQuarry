@@ -488,13 +488,15 @@
 	data["crafting_recipes"] = crafting_recipes
 	return data
 
+UI_SCHEMA(crafting_recipe, row(name = schema_text(), ref = num(), req_text = schema_text(), catalyst_text = schema_text(), tool_text = schema_text(), material_slots = list_of(row(role = schema_text(), label = schema_text(), amount = num(), defaultMaterial = nullable(schema_text()), optional = bool(), description = nullable(schema_text())))))
+
 CAPABILITIES(/datum/personal_crafting)
 	per_type(nameof(categories), PROC_REF(build_categories), copy_on_write = TRUE)
 	ref_one(nameof(owner), /mob)
 	op("toggle_recipes", ui_act(), then(PROC_REF(ui_act_toggle_recipes)))
 	op("toggle_compact", ui_act(), then(PROC_REF(ui_act_toggle_compact)))
 	interface("PersonalCrafting", state = nameof(GLOB.tgui_not_incapacitated_turf_state))
-	ui_shape(display_craftable_only = bool(), busy = bool(), materialChoices = list_of(row()), craftability = map_of(schema_text(), bool()), crafting_recipes = map_of(schema_text(), schema_any())) // materialChoices are material_choice_tgui() rows (Fabrication/Types MaterialChoice); crafting_recipes holds a category's recipe list, or its subcategories' lists with a has_subcats flag
+	ui_shape(display_craftable_only = bool(), busy = bool(), materialChoices = list_of(lathe_material_choice()), craftability = map_of(schema_text(), bool()), crafting_recipes = map_of(schema_text(), one_of(list_of(crafting_recipe()), map_of(schema_text(), one_of(list_of(crafting_recipe()), num()))))) // a category holds its recipe list, or its subcategories' lists beside a has_subcats flag
 	// Crafting takes the recipe's time, standing still; the component is claimed (busy) until it ends.
 	op("make", ui_act("make", arg("materialSlots"), arg("recipe", schema_ref())), claims(), starts(PROC_REF(make_started)), wait(PROC_REF(make_time)), on_interrupt(PROC_REF(make_interrupted)), then(PROC_REF(make_done)))
 	op("set_category", ui_act("set_category", arg("category", schema_text(4096)), arg("subcategory", schema_text(4096))), then(PROC_REF(ui_act_set_category)))

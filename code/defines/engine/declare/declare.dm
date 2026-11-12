@@ -90,6 +90,9 @@
 /// A write the schema refused (the setter's value after schema_write()).
 /// ui_shape(field | field = schema, ...): the window's data fields; read from source by `analyze gen ui_types`, an empty entry at runtime (part.dm).
 #define ui_shape(fields...) entry_make("ui_shape", null)
+/// UI_SCHEMA(name, schema): a nested window shape several windows share, written `name()` inside a ui_shape(); `analyze gen ui_types` also
+/// exports it as a TypeScript type (generated/_schemas.d.ts, `name` in PascalCase). Nothing at runtime.
+#define UI_SCHEMA(name, schema)
 #define SCHEMA_REJECT "\[schema rejected]"
 
 // ---- Messages (section 13) ----

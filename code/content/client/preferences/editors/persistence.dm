@@ -10,6 +10,11 @@
 	display_name = "Persistence"
 	pref_keys = list("persistence_settings")
 
+/// The wire shape of /datum/preference_editor/persistence's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_persistence, row(flags = map_of(schema_text(), bool())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_persistence_static, row(labels = map_of(schema_text(), schema_text())))
+
 /datum/preference_editor/persistence/build_ui_data(datum/preferences/preferences)
 	var/value = preferences.read_preference(/datum/preference/numeric/human/persistence_settings)
 	return list(

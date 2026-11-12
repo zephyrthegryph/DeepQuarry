@@ -5,6 +5,7 @@ const meta = (name: string, restricted = false, desc = '') => ({
   name,
   desc,
   restricted,
+  default_key: '',
 });
 const entries: [string, ReturnType<typeof meta>][] = [
   ['Galcom', meta('Galcom', false, 'Common tongue')],

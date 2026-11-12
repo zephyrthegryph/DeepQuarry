@@ -552,3 +552,38 @@ ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/no
 		. += objectives
 	if(shared_objectives)
 		. += shared_objectives
+
+// MIND GENDER (a mind answers for its body; with no body, as an object would)
+
+/datum/mind/proc/p_they(temp_gender)
+	return current?.p_they(temp_gender) || "it"
+
+/datum/mind/proc/p_their(temp_gender)
+	return current?.p_their(temp_gender) || "its"
+
+/datum/mind/proc/p_theirs(temp_gender)
+	return current?.p_theirs(temp_gender) || "its"
+
+/datum/mind/proc/p_them(capitalized, temp_gender)
+	return current?.p_them(capitalized, temp_gender) || "it"
+
+/datum/mind/proc/p_have(temp_gender)
+	return current?.p_have(temp_gender) || "has"
+
+/datum/mind/proc/p_are(temp_gender)
+	return current?.p_are(temp_gender) || "is"
+
+/datum/mind/proc/p_were(temp_gender)
+	return current?.p_were(temp_gender) || "was"
+
+/datum/mind/proc/p_do(temp_gender)
+	return current?.p_do(temp_gender) || "does"
+
+/datum/mind/proc/p_s(temp_gender)
+	return current?.p_s(temp_gender) || "s"
+
+/datum/mind/proc/p_es(temp_gender)
+	return current?.p_es(temp_gender) || "es"
+
+/datum/mind/proc/p_themselves(temp_gender)
+	return current?.p_themselves(temp_gender) || "itself"

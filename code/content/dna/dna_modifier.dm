@@ -486,10 +486,9 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	data["irradiating"] = irradiating
 	data["selectedSEBlock"] = selected_se_block
 	data["selectedSESubBlock"] = selected_se_subblock
-	if(!connected())
-		return data
-	data["locked"] = src.connected().locked
-	data["hasOccupant"] = connected().get_occupant() ? 1 : 0
+	// No scanner linked: the same keys, empty, so the window draws its empty state.
+	data["locked"] = connected()?.locked || FALSE
+	data["hasOccupant"] = connected()?.get_occupant() ? 1 : 0
 
 	data["hasDisk"] = disk ? 1 : 0
 
@@ -551,10 +550,10 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		occupantData["radiationLevel"] = WC.radiation
 	data["occupant"] = occupantData;
 
-	data["isBeakerLoaded"] = connected().beaker ? 1 : 0
+	data["isBeakerLoaded"] = connected()?.beaker ? 1 : 0
 	data["beakerLabel"] = null
 	data["beakerVolume"] = 0
-	if(connected().beaker)
+	if(connected()?.beaker)
 		data["beakerLabel"] = connected().beaker.label_text ? connected().beaker.label_text : null
 		if(connected().beaker.reagents && connected().beaker.reagents.reagent_list.len)
 			for(var/datum/reagent/R in connected().beaker.reagents.reagent_list)

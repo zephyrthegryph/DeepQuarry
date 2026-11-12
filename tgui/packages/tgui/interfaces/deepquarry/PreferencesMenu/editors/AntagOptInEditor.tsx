@@ -4,14 +4,12 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
-type Data = { flags: Record<string, boolean> };
-type Static = { labels: Record<string, string> };
-
-export const AntagOptInEditor = ({ data, staticData }: EditorProps) => {
+export const AntagOptInEditor = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'antag_optin'>) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
-  const labels = s.labels ?? {};
+  const labels = s?.labels ?? {};
   const keys = Object.keys(labels);
   return (
     <Box

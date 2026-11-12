@@ -12,43 +12,40 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
 import { ProductConfigurator } from './Fabrication/SelectableRecipe';
-import type { Design, MaterialChoice, MaterialSlot } from './Fabrication/Types';
+import type { Design } from './Fabrication/Types';
 import type {
   PersonalCraftingActions,
   PersonalCraftingData,
 } from './generated/PersonalCrafting';
 
-type Recipe = {
-  name: string;
-  ref: number;
-  req_text: string;
-  catalyst_text: string;
-  tool_text: string;
-  has_subcats: BooleanLike;
-  material_slots: MaterialSlot[];
-};
+type Recipe = Extract<
+  PersonalCraftingData['crafting_recipes'][string],
+  unknown[]
+>[number];
 
 type UiCategory = { name: string; category: string; subcategory?: string };
-type UiRecipe = Required<Recipe & { category: string }>;
+type UiRecipe = Recipe & { category: string };
 
-const getUiEntries = (craftingRecipes: Record<string, Recipe[]>) => {
+const getUiEntries = (
+  craftingRecipes: PersonalCraftingData['crafting_recipes'],
+) => {
   const categories: UiCategory[] = [];
   const recipes: UiRecipe[] = [];
   for (const category of Object.keys(craftingRecipes)) {
     const entries = craftingRecipes[category];
-    if ('has_subcats' in entries) {
-      for (const subcategory of Object.keys(entries)) {
-        if (subcategory === 'has_subcats') continue;
-        categories.push({ name: subcategory, category, subcategory });
-        for (const recipe of entries[subcategory])
-          recipes.push({ ...recipe, category: subcategory });
-      }
-    } else {
+    if (Array.isArray(entries)) {
       categories.push({ name: category, category });
       for (const recipe of entries) recipes.push({ ...recipe, category });
+    } else {
+      for (const subcategory of Object.keys(entries)) {
+        const subRecipes = entries[subcategory];
+        if (!Array.isArray(subRecipes)) continue;
+        categories.push({ name: subcategory, category, subcategory });
+        for (const recipe of subRecipes)
+          recipes.push({ ...recipe, category: subcategory });
+      }
     }
   }
   return { categories, recipes };
@@ -60,9 +57,7 @@ export const PersonalCrafting = () => {
     PersonalCraftingActions
   >();
   const [searchText, setSearchText] = useState('');
-  const { categories, recipes } = getUiEntries(
-    (data.crafting_recipes || {}) as Record<string, Recipe[]>,
-  );
+  const { categories, recipes } = getUiEntries(data.crafting_recipes ?? {});
   const [tab, setTab] = useState(categories[0]?.name);
   const search = createSearch<Recipe>(searchText, (recipe) => recipe.name);
   const shown = recipes.filter(
@@ -140,7 +135,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
   const selected =
     visible.find((recipe) => recipe.ref === selectedRef) ?? visible[0];
   const available = Object.fromEntries(
-    ((data.materialChoices ?? []) as MaterialChoice[]).map((material) => [
+    (data.materialChoices ?? []).map((material) => [
       material.id,
       material.sheets * 100,
     ]),
@@ -200,7 +195,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
               } satisfies Design
             }
             available={available}
-            materialChoices={(data.materialChoices ?? []) as MaterialChoice[]}
+            materialChoices={data.materialChoices ?? []}
             SHEET_MATERIAL_AMOUNT={100}
             single
             actionLabel="Craft"

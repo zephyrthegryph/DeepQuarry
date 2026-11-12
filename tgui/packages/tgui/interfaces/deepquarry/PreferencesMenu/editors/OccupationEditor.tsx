@@ -14,42 +14,17 @@
 
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Dropdown, Stack, Tooltip } from 'tgui-core/components';
+import type {
+  PrefEditorOccupation,
+  PrefEditorOccupationStatic,
+} from '../../../generated/_schemas';
 import type { EditorProps } from './index';
 
+type Data = PrefEditorOccupation;
+type Department = PrefEditorOccupationStatic['departments'][string];
+type JobEntry = Department['jobs'][number];
+
 type Priority = 'off' | 'low' | 'med' | 'high';
-
-type JobEntry = {
-  title: string;
-  desc: string;
-  supervisors: string | null;
-  selection_color: string;
-  sorting_order: number;
-  whitelist_only: boolean;
-  min_age: number;
-  total_positions: number;
-  current_positions: number;
-};
-
-type Department = {
-  label: string;
-  color: string;
-  sort: number;
-  jobs: JobEntry[];
-};
-
-type Data = {
-  job_priority: Record<string, Priority>;
-  availability: Record<string, string>;
-  alternate_option: number;
-  alt_titles: Record<string, string>;
-  counts: { high: number; med: number; low: number };
-};
-
-type Static = {
-  departments: Record<string, Department>;
-  alt_options: Array<{ value: number; label: string }>;
-  alt_titles_by_job: Record<string, string[]>;
-};
 
 const PRIORITY_ORDER: Priority[] = ['off', 'low', 'med', 'high'];
 const PRIORITY_LABEL: Record<Priority, string> = {
@@ -79,11 +54,12 @@ const send = (
   params: Record<string, unknown>,
 ) => act('dq_editor_action', { editor: 'occupation', action, params });
 
-export const OccupationEditor = ({ data, staticData }: EditorProps) => {
+export const OccupationEditor = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'occupation'>) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
-  const altOptions = s.alt_options ?? [];
+  const altOptions = s?.alt_options ?? [];
   const altOpts = altOptions.map((o) => ({
     value: String(o.value),
     displayText: o.label,
@@ -94,7 +70,7 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
     altOpts.find((o) => o.value === altVal)?.displayText ?? altVal;
 
   // Sort departments by their sorting_order (Command first, then Security, …).
-  const depts = Object.values(s.departments ?? {}).sort(
+  const depts = Object.values(s?.departments ?? {}).sort(
     (a, b) => (b.sort ?? 0) - (a.sort ?? 0),
   );
 
@@ -167,7 +143,7 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
               key={dept.label}
               dept={dept}
               d={d}
-              altTitlesByJob={s.alt_titles_by_job}
+              altTitlesByJob={s?.alt_titles_by_job ?? {}}
             />
           ))}
         </Stack.Item>
@@ -177,7 +153,7 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
               key={dept.label}
               dept={dept}
               d={d}
-              altTitlesByJob={s.alt_titles_by_job}
+              altTitlesByJob={s?.alt_titles_by_job ?? {}}
             />
           ))}
         </Stack.Item>

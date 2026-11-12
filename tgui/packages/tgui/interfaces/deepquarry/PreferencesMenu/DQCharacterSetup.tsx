@@ -18,6 +18,7 @@ import {
   type SlotName,
   slotColors,
 } from './colors';
+import type { EditorDataCache, EditorStaticCache } from './editors';
 import { labelForCategory } from './labels';
 import {
   buildSearchIndex,
@@ -34,9 +35,9 @@ import type {
 let catalogOwner = '';
 let cachedStructureVersion = 0;
 const categoryCache: Record<string, PrefCategory> = {};
-const editorStaticCache: Record<string, Record<string, unknown>> = {};
+const editorStaticCache: EditorStaticCache = {};
 const editorStaticVersions: Record<string, number | string> = {};
-const editorDataCache: Record<string, Record<string, unknown>> = {};
+const editorDataCache: EditorDataCache = {};
 /// Widget values and preview frames persist across updates: the server sends values for
 /// the categories it is answering for, and the preview only when it changed.
 const valuesCache: Record<string, unknown> = {};
@@ -44,6 +45,12 @@ const colorLinksCache: Record<string, string> = {};
 let previewCache: CharacterPreviewAssets = {};
 /// The owner (prefs + slot) whose every-tab prefetch has been requested.
 let prefetchedOwner = '';
+
+/// The entries of a per-editor payload that the server answered (not null).
+const answered = <T extends object>(payload: T | null | undefined) =>
+  Object.fromEntries(
+    Object.entries(payload ?? {}).filter(([, value]) => value != null),
+  ) as { [K in keyof T]?: NonNullable<T[K]> };
 
 const clearRecord = (record: Record<string, unknown>) => {
   for (const key of Object.keys(record)) delete record[key];
@@ -183,13 +190,13 @@ export const DQCharacterSetup = () => {
     categoryCache[category.category] = category;
   }
   Object.assign(categoryCache, data.dq_category_patch ?? {});
-  const staticPatch =
-    data.dq_editor_static_patch ?? data.dq_editor_static ?? {};
+  // The server sends null for an editor it did not answer for: the window keeps what it has.
+  const staticPatch = answered(data.dq_editor_static_patch);
   Object.assign(editorStaticCache, staticPatch);
   for (const key of Object.keys(staticPatch)) {
     editorStaticVersions[key] = data.dq_editor_versions?.[key] ?? 1;
   }
-  Object.assign(editorDataCache, data.dq_editor_data ?? {});
+  Object.assign(editorDataCache, answered(data.dq_editor_data));
   Object.assign(valuesCache, data.dq_values ?? {});
   Object.assign(colorLinksCache, data.dq_color_links ?? {});
   if (data.character_preview_assets) {

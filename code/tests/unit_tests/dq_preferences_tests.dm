@@ -452,6 +452,7 @@
 	P.copy_to(H)
 	hand = H.organs_by_name[BP_L_HAND]
 	TEST_ASSERT_EQUAL(lowertext(hand.synth_rgb), "#111111", "and can follow the arm again")
+	own_turf_contents(run_loc_floor_bottom_left) // copy_to's kit with no free slot lands on the test floor
 	fdel(P.path)
 	TEST_ASSERT(dq_species_robotic_body(SPECIES_PROTEAN), "a Protean is robotic by species")
 	TEST_ASSERT(!dq_species_robotic_body(SPECIES_HUMAN), "a Human is not")

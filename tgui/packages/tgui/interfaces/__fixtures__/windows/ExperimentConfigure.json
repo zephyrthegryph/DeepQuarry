@@ -1,0 +1,48 @@
+{
+	"theme": "default",
+	"always_active": false,
+	"has_start_callback": true,
+	"techwebs": [
+		{
+			"web_id": "NT-RD",
+			"web_org": "Nanotrasen",
+			"selected": true,
+			"ref": 2001,
+			"all_servers": ["R&D Server 1", "R&D Server 2"]
+		},
+		{
+			"web_id": "XENO",
+			"web_org": "Xenobiology",
+			"selected": false,
+			"ref": 2002,
+			"all_servers": ["Xeno Server"]
+		}
+	],
+	"experiments": [
+		{
+			"name": "Dermal Scan Calibration",
+			"description": "Scan specimens for dermal anomalies.",
+			"tag": "scan",
+			"selected": false,
+			"progress": [
+				["integer", "Scan 3 unique specimens", 1, 3],
+				["bool", "Calibrate the scanner", 1, 0],
+				["float", "Analysis complete", 0.5, 0]
+			],
+			"performance_hint": "Rewards 2 research points per scan.",
+			"ref": 3001
+		},
+		{
+			"name": "Plasma Burn Test",
+			"description": "Ignite a plasma sample.",
+			"tag": "burn",
+			"selected": true,
+			"progress": [
+				["bool", "Ignite sample", 0, 0],
+				["detail", "Use a contained burn chamber", 0, 0]
+			],
+			"performance_hint": null,
+			"ref": 3002
+		}
+	]
+}

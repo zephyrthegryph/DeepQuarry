@@ -17,34 +17,24 @@ import {
 import { ColorizedImage } from '../helper_components';
 import type { EditorProps } from './index';
 
-type Data = {
-  module: string;
-  chassis: string;
-};
-
-type Static = {
-  all_modules: string[];
-  chassis_by_module: Record<string, string[]>;
-  chassis_thumbs: Record<string, { icon: string; icon_state: string }>;
-};
-
 const send = (
   act: ReturnType<typeof useBackend>['act'],
   action: string,
   params: Record<string, unknown>,
 ) => act('dq_editor_action', { editor: 'robot_chassis', action, params });
 
-export const RobotChassisPicker = ({ data, staticData }: EditorProps) => {
+export const RobotChassisPicker = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'robot_chassis'>) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
   const [open, setOpen] = useState(false);
 
-  const allModules = s.all_modules ?? [];
+  const allModules = s?.all_modules ?? [];
   const chassisOptions: string[] = d.module
-    ? (s.chassis_by_module?.[d.module] ?? [])
+    ? (s?.chassis_by_module?.[d.module] ?? [])
     : [];
-  const thumbs = s.chassis_thumbs ?? {};
+  const thumbs = s?.chassis_thumbs ?? {};
   const currentThumb = d.chassis ? thumbs[d.chassis] : undefined;
 
   const moduleOpts = [
@@ -53,7 +43,8 @@ export const RobotChassisPicker = ({ data, staticData }: EditorProps) => {
   ];
   const currentModuleLabel =
     moduleOpts.find((o) => o.value === (d.module ?? ''))?.displayText ??
-    d.module;
+    d.module ??
+    '';
 
   return (
     <>

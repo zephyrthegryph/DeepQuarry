@@ -10,7 +10,7 @@ export const ChemDispenserRecipes = (props: {
   /** Associated list of saved recipe macros. */
   recipes: Record<string, Recipe[]>;
   /** The current recipe macro that's being recorded, if any. We assume we aren't recording a recipe if this is undefined! */
-  recordingRecipe: Recipe[];
+  recordingRecipe: Recipe[] | null;
   /** Called when the user attempts to start a recipe recording. */
   recordAct: () => void;
   /** Called when the user attempts to cancel a recipe recording. */

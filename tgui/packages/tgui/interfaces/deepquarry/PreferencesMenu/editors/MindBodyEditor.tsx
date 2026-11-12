@@ -23,74 +23,19 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
+import type {
+  PrefEditorMindBody,
+  PrefEditorMindBodyStatic,
+} from '../../../generated/_schemas';
 import type { EditorProps } from './index';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────────
 
-type CategoryType = 'body' | 'mind';
-type PerkKind = 'body' | 'mind';
-
-type CategoryMeta = {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  icon: string | null;
-  type: CategoryType;
-};
-
-type TreeMeta = {
-  id: string;
-  name: string;
-  description: string;
-  color: string | null;
-  icon: string | null;
-  category: string;
-  perks: string[];
-};
-
-type PerkMeta = {
-  name: string;
-  desc: string;
-  icon: string;
-  cost: number;
-  perk_kind: PerkKind;
-  category: string;
-  tree: string;
-  requires: string[];
-  /// Lower comes first. Used to sort perks within a tier — chain-head perks can
-  /// claim position 10/20/30 to land left-to-right ahead of standalones.
-  sort_priority: number;
-  /// Optional explicit column position. When set, the React layout places the
-  /// perk at exactly this column instead of computing one from the subtree
-  /// algorithm. Null means "auto".
-  tree_x: number | null;
-  /// Optional explicit tier (row) position. Null means "auto-derive from requires".
-  tree_y: number | null;
-};
-
-type MindBodyData = {
-  age: number;
-  /// Global Body pool — covers Strength + Vigor + Speed + Endurance combined.
-  body_pool: number;
-  body_spent: number;
-  /// Global Mind pool — covers all 7 departments combined.
-  mind_pool: number;
-  mind_spent: number;
-  /// Per-category spent count, for the informational chip badges. Map of
-  /// category id → number of points spent in that category.
-  spent_by_cat: Record<string, number>;
-  body_perks: string[];
-  mind_perks: string[];
-};
-
-type MindBodyStatic = {
-  categories: Record<string, CategoryMeta>;
-  trees: Record<string, TreeMeta>;
-  perks: Record<string, PerkMeta>;
-  base_per_cat: number;
-  max_mind_per_cat: number;
-};
+type MindBodyData = PrefEditorMindBody;
+type MindBodyStatic = PrefEditorMindBodyStatic;
+type CategoryMeta = MindBodyStatic['categories'][string];
+type TreeMeta = MindBodyStatic['trees'][string];
+type PerkMeta = MindBodyStatic['perks'][string];
 
 const BODY_ACCENT = '#C0392B';
 const MIND_ACCENT = '#3498DB';
@@ -105,28 +50,25 @@ const send = (act: Act, action: string, params: Record<string, unknown>) =>
 
 // ─── Root ──────────────────────────────────────────────────────────────────────────
 
-export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
+export const MindBodyEditor = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'mind_body'>) => {
   const { act } = useBackend();
-  // Defensive default: if the first poll lands before the server has assembled
-  // the editor's data slice, treat both data and staticData as empty objects
-  // rather than crashing on `d.age` / `s.categories[…]` of undefined. The
-  // early-return below catches the static-data-missing case explicitly.
-  const d = (data ?? {}) as MindBodyData;
-  const s = (staticData ?? {}) as MindBodyStatic;
 
   const bodyCats = useMemo(
     () =>
-      Object.values(s.categories ?? {})
+      Object.values(s?.categories ?? {})
         .filter((c) => c.type === 'body')
         .map((c) => c.id),
-    [s.categories],
+    [s?.categories],
   );
   const mindCats = useMemo(
     () =>
-      Object.values(s.categories ?? {})
+      Object.values(s?.categories ?? {})
         .filter((c) => c.type === 'mind')
         .map((c) => c.id),
-    [s.categories],
+    [s?.categories],
   );
 
   // Pick-tally per category, used for tab badges + default-active selection.
@@ -135,11 +77,11 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
   const picksByCat = useMemo(() => {
     const out: Record<string, number> = {};
     for (const path of [...(d.body_perks ?? []), ...(d.mind_perks ?? [])]) {
-      const p = s.perks?.[path];
+      const p = s?.perks[path];
       if (p) out[p.category] = (out[p.category] ?? 0) + 1;
     }
     return out;
-  }, [d.body_perks, d.mind_perks, s.perks]);
+  }, [d.body_perks, d.mind_perks, s?.perks]);
 
   // Top-level Body vs Mind toggle. Only one side renders at a time so the tree
   // can use the entire left-pane width (~700px) without horizontal scrolling.
@@ -161,7 +103,7 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
     }
   }, [activeMindCat, mindCats, picksByCat]);
 
-  if (!s.categories || !s.trees || !s.perks) return null;
+  if (!s) return null;
 
   return (
     <Box style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

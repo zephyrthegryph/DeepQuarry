@@ -33,9 +33,25 @@
 /obj/machinery/librarywikicomp/allow_pai_interaction()
 	return TRUE
 
+// The wiki pages' get_data() tables (code/world/systems/internal_wiki.dm), one shape per page type; a page sends every key of its shape.
+UI_SCHEMA(wiki_icon, row(icon = schema_text(), state = schema_text(), color = schema_text()))
+UI_SCHEMA(wiki_grinding, row(ore = nullable(list_of(schema_text())), plant = nullable(list_of(schema_text())), material = nullable(list_of(schema_text()))))
+UI_SCHEMA(wiki_instant_reaction, row(is_slime = nullable(schema_text()), required = list_of(schema_text()), inhibitor = list_of(schema_text()), catalysts = list_of(schema_text())))
+UI_SCHEMA(wiki_distilled_reaction, row(is_slime = nullable(schema_text()), required = list_of(schema_text()), inhibitor = list_of(schema_text()), catalysts = list_of(schema_text()), temp_min = nullable(num()), temp_max = nullable(num()), xgm_min = nullable(num()), xgm_max = nullable(num()), require_xgm_gas = nullable(schema_text()), rejects_xgm_gas = nullable(schema_text())))
+UI_SCHEMA(wiki_recipe, row(supply_points = num(), market_price = num(), appliance = schema_text(), has_coating = num(), coating = nullable(one_of(schema_text(), num())), ingredients = nullable(map_of(schema_text(), num())), fruits = nullable(map_of(schema_text(), num())), reagents = nullable(map_of(schema_text(), num())), catalysts = nullable(map_of(schema_text(), num()))))
+UI_SCHEMA(wiki_food, row(title = schema_text(), description = nullable(schema_text()), flavor = nullable(schema_text()), allergen = nullable(list_of(schema_text())), icon_data = wiki_icon(), recipe = nullable(wiki_recipe()), grinding = nullable(wiki_grinding()), instant_reactions = nullable(list_of(wiki_instant_reaction())), distilled_reactions = nullable(list_of(wiki_distilled_reaction())), fluid = nullable(list_of(schema_text())), produces = nullable(list_of(schema_text()))))
+UI_SCHEMA(wiki_reagent, row(title = schema_text(), description = nullable(schema_text()), addictive = num(), industrial_use = nullable(schema_text()), supply_points = num(), market_price = num(), sintering = nullable(schema_text()), cooling_mod = num(), overdose = num(), flavor = nullable(schema_text()), allergen = nullable(list_of(schema_text())), beakerAmount = num(), icon_data = wiki_icon(), grinding = nullable(wiki_grinding()), instant_reactions = nullable(list_of(wiki_instant_reaction())), distilled_reactions = nullable(list_of(wiki_distilled_reaction())), fluid = nullable(list_of(schema_text())), produces = nullable(list_of(schema_text()))))
+UI_SCHEMA(wiki_botany, row(title = schema_text(), feeding = nullable(num()), watering = nullable(num()), lighting = nullable(num()), crop_yield = nullable(num()), traits = list_of(schema_text()), mob_product = nullable(schema_text()), chem_breakdown = nullable(list_of(schema_text())), gas_consumed = nullable(map_of(schema_text(), num())), gas_exuded = nullable(map_of(schema_text(), num())), mutations = nullable(list_of(schema_text())), icon_data = wiki_icon()))
+UI_SCHEMA(wiki_ore, row(title = schema_text(), smelting = nullable(schema_text()), compressing = nullable(schema_text()), alloys = nullable(list_of(schema_text())), pump_reagent = nullable(schema_text()), grind_reagents = nullable(map_of(schema_text(), schema_text())), icon_data = wiki_icon()))
+UI_SCHEMA(wiki_material, row(title = schema_text(), integrity = num(), hardness = num(), weight = num(), stack_size = num(), supply_points = num(), market_price = num(), opacity = num(), conductive = num(), protectiveness = num(), explosion_resistance = num(), radioactivity = num(), reflectivity = num(), melting_point = num(), ignition_point = num(), grind_reagents = nullable(map_of(schema_text(), schema_text())), recipies = nullable(list_of(schema_text())), icon_data = wiki_icon()))
+UI_SCHEMA(wiki_particle, row(title = schema_text(), req_mat = nullable(schema_text()), target_items = nullable(list_of(schema_text())), required_energy_min = num(), required_energy_max = num(), required_atmos_temp_min = num(), required_atmos_temp_max = num(), inducers = nullable(map_of(schema_text(), num())), result = schema_text(), probability = num(), icon_data = wiki_icon()))
+UI_SCHEMA(wiki_catalog, row(name = schema_text(), desc = schema_text()))
+UI_SCHEMA(wiki_virus, row(title = schema_text(), description = nullable(schema_text()), form = schema_text(), agent = schema_text(), danger = schema_text(), infectivity = schema_text(), resiliance = schema_text(), max_stages = num(), discovery = schema_text(), spread = schema_text(), all_cures = num(), aggressive = num(), curable = num(), resistable = num(), carriable = num(), spread_dead = num(), infect_synth = num()))
+UI_SCHEMA(wiki_gene, row(title = schema_text(), description = nullable(schema_text()), trait_type = schema_text(), blockers = nullable(list_of(schema_text())), bounds_off_min = schema_text(), bounds_off_max = schema_text(), bounds_on_min = schema_text(), bounds_on_max = schema_text()))
+
 CAPABILITIES(/obj/machinery/librarywikicomp)
 	interface("PublicLibraryWiki")
-	ui_shape(crash = bool(), errorText = schema_text(), searchmode = nullable(schema_text()), search = nullable(list_of(schema_text())), print = nullable(bool()), sub_categories = nullable(list_of(schema_text())), has_donated = bool(), donated = num(), goal = num(), food_data = nullable(row()), drink_data = nullable(row()), chemistry_data = nullable(row()), botany_data = nullable(row()), material_data = nullable(row()), particle_data = nullable(row()), catalog_data = nullable(row()), ore_data = nullable(row()), virus_data = nullable(row()), gene_data = nullable(row())) // each *_data is the open-ended get_data() of the viewed wiki page; its TS types are PublicLibraryWiki/types.ts
+	ui_shape(crash = bool(), errorText = schema_text(), searchmode = nullable(schema_text()), search = nullable(list_of(schema_text())), print = nullable(bool()), sub_categories = nullable(list_of(schema_text())), has_donated = bool(), donated = num(), goal = num(), food_data = nullable(wiki_food()), drink_data = nullable(wiki_food()), chemistry_data = nullable(wiki_reagent()), botany_data = nullable(wiki_botany()), material_data = nullable(wiki_material()), particle_data = nullable(wiki_particle()), catalog_data = nullable(wiki_catalog()), ore_data = nullable(wiki_ore()), virus_data = nullable(wiki_virus()), gene_data = nullable(wiki_gene()))
 	without("ui_open")
 	op("closesearch", ui_act("closesearch"), then(PROC_REF(ui_act_closesearch)))
 	op("swapsearch", ui_act("swapsearch", arg("data", schema_text(4096))), then(PROC_REF(ui_act_swapsearch)))
@@ -60,8 +76,20 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 /// /obj/machinery/librarywikicomp's window data.
 /obj/machinery/librarywikicomp/ui_data(datum/act/eval/A)
 	var/data = list()
+	// every key is always sent (null when the viewed page is another kind), so the window's types need no optional fields
+	data["crash"] = crash
+	data["errorText"] = ""
+	data["searchmode"] = null
+	data["search"] = null
+	data["print"] = null
+	data["sub_categories"] = null
+	data["donated"] = 0
+	data["goal"] = 0
+	data["has_donated"] = just_donated
+	data["food_data"] = null
+	data["drink_data"] = null
+	data["chemistry_data"] = null
 	if(SSinternal_wiki)
-		data["crash"] = crash
 		data["botany_data"] = null
 		data["material_data"] = null
 		data["particle_data"] = null

@@ -1,0 +1,44 @@
+{
+	"filter_info": {
+		"blur": {
+			"defaults": {
+				"size": 1
+			}
+		},
+		"outline": {
+			"defaults": {
+				"size": 1,
+				"color": "#000000",
+				"flags": 0
+			},
+			"flags": {
+				"OUTLINE_SHARP": 1,
+				"OUTLINE_SQUARE": 2
+			}
+		},
+		"drop_shadow": {
+			"defaults": {
+				"x": 1,
+				"y": -1,
+				"size": 1,
+				"offset": 0,
+				"color": "#000000"
+			}
+		}
+	},
+	"target_name": "airlock (Engineering)",
+	"target_filter_data": {
+		"glow": {
+			"type": "outline",
+			"priority": 1,
+			"size": 2,
+			"color": "#ffcc00",
+			"flags": 0
+		},
+		"soften": {
+			"type": "blur",
+			"priority": 2,
+			"size": 1.5
+		}
+	}
+}

@@ -11,35 +11,15 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
+import type { PrefEditorLanguageStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
 
-type LangData = {
-  alternate_languages: string[];
-  /// Language name -> the prefix that speaks it for this character.
-  language_keys: Record<string, string>;
-  known_languages: string[];
-  preferred_language: string | null;
-  extra_languages: number;
-  max_alternate_languages: number;
-  /// The languages this character may pick (server rule); undefined while an old payload is cached.
-  pickable_languages?: string[];
-};
-
-type LangStatic = {
-  all_languages: Record<string, LangMeta>;
-};
+type LangMeta = PrefEditorLanguageStatic['all_languages'][string];
 
 type Act = ReturnType<typeof useBackend>['act'];
 
 const send = (act: Act, action: string, params: Record<string, unknown>) =>
   act('dq_editor_action', { editor: 'language', action, params });
-
-type LangMeta = {
-  name: string;
-  desc: string;
-  restricted: boolean;
-  default_key?: string;
-};
 
 /// Why `key` (a whole prefix) cannot speak `language`, or null when it can: the rule of language_prefix_problem and language_key_problem.
 export const languageKeyProblem = (
@@ -86,12 +66,13 @@ export const filterLanguages = (
     });
 };
 
-export const LanguagePicker = ({ data, staticData }: EditorProps) => {
+export const LanguagePicker = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'language'>) => {
   const { act } = useBackend();
-  const d = (data ?? {}) as LangData;
-  const s = (staticData ?? {}) as LangStatic;
 
-  const all = s.all_languages ?? {};
+  const all = s?.all_languages ?? {};
   const selected = new Set(d.alternate_languages ?? []);
   const known = new Set(d.known_languages ?? []);
   const max = d.max_alternate_languages ?? 0;
