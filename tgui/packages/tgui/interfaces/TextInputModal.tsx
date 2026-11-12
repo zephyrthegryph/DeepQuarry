@@ -3,21 +3,14 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack, TextArea } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { BooleanLike } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
-import type { TextInputModalActions } from './generated/TextInputModal';
+import type {
+  TextInputModalActions,
+  TextInputModalData,
+} from './generated/TextInputModal';
 
-type TextInputData = {
-  large_buttons: boolean;
-  max_length: number;
-  message: string;
-  multiline: boolean;
-  placeholder: string;
-  timeout: number;
-  title: string;
-  spellcheck: BooleanLike;
-};
+type TextInputData = TextInputModalData;
 
 export const sanitizeMultiline = (toSanitize: string) => {
   return toSanitize.replace(/(\n|\r\n){3,}/, '\n\n');
@@ -81,7 +74,7 @@ export const TextInputModal = (props) => {
       width={325}
       height={windowHeight}
     >
-      {timeout && <Loader value={timeout} />}
+      {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
           <Stack fill vertical>
@@ -96,7 +89,7 @@ export const TextInputModal = (props) => {
                 spellcheck={!!spellcheck}
                 userMarkup={{ u: '_', i: '|', b: '+' }}
                 height={multiline || input.length >= 30 ? '100%' : '1.8rem'}
-                maxLength={max_length}
+                maxLength={max_length ?? undefined}
                 onEscape={() => act('cancel')}
                 onChange={onType}
                 placeholder="Type something..."

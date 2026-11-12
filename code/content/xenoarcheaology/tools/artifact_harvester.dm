@@ -24,6 +24,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	ref_one(nameof(inserted_battery), /obj/item/anobattery)
 	ref_one(nameof(cur_artifact), /obj)
 	interface("XenoarchArtifactHarvester")
+	ui_shape(info = row(no_scanner = bool(), harvesting = int(), inserted_battery = nullable(row(name = schema_text(), stored_charge = num(), capacity = num(), artifact_id = schema_text()))))
 	op("harvest", ui_act("harvest"), then(PROC_REF(ui_act_harvest)))
 	op("stopharvest", ui_act("stopharvest"), then(PROC_REF(ui_act_stopharvest)))
 	op("ejectbattery", ui_act("ejectbattery"), then(PROC_REF(ui_act_ejectbattery)))
@@ -96,24 +97,26 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 
 	data["info"] = list(
 		"no_scanner" = TRUE,
+		"harvesting" = 0,
+		"inserted_battery" = null,
 	)
 	if(owned_scanner())
+		var/list/battery_data = null
+		var/obj/item/anobattery/battery = inserted_battery()
+		if(battery)
+			battery_data = list(
+				"name" = battery.name,
+				"stored_charge" = battery.stored_charge,
+				"capacity" = battery.capacity,
+				"artifact_id" = "N/A",
+			)
+			if(battery.battery_effect)
+				battery_data["artifact_id"] = battery.battery_effect.artifact_id || "???"
 		data["info"] = list(
 			"no_scanner" = FALSE,
 			"harvesting" = harvesting,
-			"inserted_battery" = list(),
+			"inserted_battery" = battery_data,
 		)
-		if(inserted_battery())
-			data["info"]["inserted_battery"] = list(
-				"name" = inserted_battery().name,
-				"stored_charge" = inserted_battery().stored_charge,
-				"capacity" = inserted_battery().capacity,
-				"artifact_id" = null
-			)
-			if(inserted_battery().battery_effect)
-				data["info"]["inserted_battery"]["artifact_id"] = inserted_battery().battery_effect.artifact_id || "???"
-			else
-				data["info"]["inserted_battery"]["artifact_id"] = "N/A"
 	return data
 
 /obj/machinery/artifact_harvester/proc/ui_act_harvest(datum/act/op/A)

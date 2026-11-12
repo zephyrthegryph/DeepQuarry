@@ -10,7 +10,7 @@ export type Data = {
   item_preview: string | null;
   message?: string;
   title?: string;
-  matrix_only?: number;
+  matrix_only?: boolean;
 };
 
 export type MatrixColors = {

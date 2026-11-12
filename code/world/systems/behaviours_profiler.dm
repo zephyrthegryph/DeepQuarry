@@ -9,6 +9,7 @@
 
 CAPABILITIES(/datum/system/behaviours)
 	interface("SchedulerProfiler", title = "Scheduler Profiler", rights = R_DEBUG)
+	ui_shape(elapsed_s = num(), last_run_ms = num(), error_count = int(), behind = bool(), shared_bucket = bool(), behaviours = list_of(row(name = schema_text(), type = schema_text(), lane = schema_text(), runs = num(), ms = num(), ms_per_s = num(), us_per_run = num(), call_max_ms = num(), late_max = num(), deferrals = num(), breaches = num(), errors = num(), wakes = num(), parks = num(), population = num(), parked = num())), lanes = list_of(row(name = schema_text(), share = num(), behaviours = int(), runs = num(), ms = num(), ms_per_s = num(), wake_queue = num(), world_queue = num())), stages = list_of(row(key = schema_text(), calls = num(), ms = num(), us_per_call = num())), services = list_of(row(name = schema_text(), type = schema_text(), initialized = bool(), on_demand = bool(), parked = bool(), resuming = bool(), steps = num(), ms = num(), ms_per_s = num(), avg_ms = num(), status = schema_text())), caches = list_of(row(name = schema_text(), hits = nullable(num()), misses = num(), hit_rate = num(), entries = num(), max_entries = num(), evictions = num(), invalidations = num(), kb = num(), policy = schema_text())), world_step = nullable(row(step_ms = num(), total_wakes = num(), last_wakes = num(), dropped = num())))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 
 /// /datum/system/behaviours's window data.
@@ -21,7 +22,7 @@ CAPABILITIES(/datum/system/behaviours)
 	data["elapsed_s"] = round(elapsed, 0.1)
 	data["last_run_ms"] = sched ? round(sched.last_run_ms, 0.001) : 0
 	data["error_count"] = sched ? length(sched.errors) : 0
-	data["behind"] = !last_done
+	data["behind"] = last_done ? FALSE : TRUE
 	var/list/behaviours = list()
 	var/list/lane_ms = new /list(LANE_COUNT)
 	var/list/lane_runs = new /list(LANE_COUNT)
@@ -102,6 +103,7 @@ CAPABILITIES(/datum/system/behaviours)
 	// The world services are systems now (their cost is in the systems section); the key stays for the panel.
 	data["services"] = list()
 	data["caches"] = shared_cache_stats()
+	data["world_step"] = null
 	if(world_diag)
 		data["world_step"] = list(
 			"step_ms" = round(world_diag["step_ms"], 0.001),

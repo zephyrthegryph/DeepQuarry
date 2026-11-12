@@ -117,6 +117,7 @@ CAPABILITIES(/obj/item/depth_scanner)
 	owns_many(nameof(positive_locations))
 	op("view_depth_scans", in_hand(), opens_ui())
 	interface("XenoarchDepthScanner", state = nameof(GLOB.tgui_deep_inventory_state))
+	ui_shape(theme = nullable(schema_text()), current = nullable(row(time = schema_text(), coords = schema_text(), depth = schema_text(), index = int(), material = schema_text())), positive_locations = list_of(row(index = int(), time = schema_text(), coords = schema_text())))
 	without("ui_open")
 	op("select", ui_act("select", arg("select", num())), then(PROC_REF(ui_act_select)))
 	op("clear", ui_act("clear", arg("index", num(), optional = TRUE)), then(PROC_REF(ui_act_clear)))
@@ -163,7 +164,7 @@ CAPABILITIES(/obj/item/depth_scanner)
 			D.record_index = length(positive_locations) + 1
 
 			//these values are arbitrary
-			D.depth = rand(150, 200)
+			D.depth = "[rand(150, 200)]"
 
 			rel_add(src, nameof(positive_locations), D)
 
@@ -171,26 +172,25 @@ CAPABILITIES(/obj/item/depth_scanner)
 
 /obj/item/depth_scanner/ui_static_data(datum/act/eval/A)
 	. = ..()
-	var/robot_theme = robot_holder_theme(src)
-	if(robot_theme)
-		.["theme"] = robot_theme
+	.["theme"] = robot_holder_theme(src)
 
 /// /obj/item/depth_scanner's window data.
 /obj/item/depth_scanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
-	data["current"] = list()
+	data["current"] = null
 	if(current())
+		var/material_name = "Unknown"
+		var/index = GLOB.responsive_carriers.Find(current().material)
+		if(index > 0 && index <= LAZYLEN(GLOB.finds_as_strings))
+			material_name = GLOB.finds_as_strings[index]
 		data["current"] = list(
 			"time" = current().time,
 			"coords" = current().coords,
 			"depth" = current().depth,
 			"index" = current().record_index,
+			"material" = material_name,
 		)
-		data["current"]["material"] = "Unknown"
-		var/index = GLOB.responsive_carriers.Find(current().material)
-		if(index > 0 && index <= LAZYLEN(GLOB.finds_as_strings))
-			data["current"]["material"] = GLOB.finds_as_strings[index]
 
 	var/list/plocs = list()
 	data["positive_locations"] = plocs
@@ -281,6 +281,7 @@ CAPABILITIES(/obj/item/beacon_locator)
 	every(2 SECONDS, then(PROC_REF(beacon_locator_step)))
 	op("interaction_open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
 	interface("BeaconLocator", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(scan_ticks = int(), rawfreq = num(), degrees = nullable(int()), minFrequency = num(), maxFrequency = num())
 	op("reset_tracking", ui_act("reset_tracking"), then(PROC_REF(ui_act_reset_tracking)))
 	op("setFrequency", ui_act("setFrequency", arg("freq", num())), then(PROC_REF(ui_act_setfrequency)))
 

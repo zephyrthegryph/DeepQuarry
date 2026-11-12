@@ -3,20 +3,14 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Autofocus, Box, Button, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { Loader } from './common/Loader';
-import type { AlertModalActions } from './generated/AlertModal';
+import type {
+  AlertModalActions,
+  AlertModalData,
+} from './generated/AlertModal';
 
-type Data = {
-  autofocus: BooleanLike;
-  buttons: string[];
-  large_buttons: BooleanLike;
-  message: string;
-  swapped_buttons: BooleanLike;
-  timeout: number;
-  title: string;
-};
+type Data = AlertModalData;
 
 enum DIRECTION {
   Increment = 1,
@@ -39,7 +33,10 @@ export function AlertModal(props) {
     // default font height is 12 in tgui
     font = `${fontsize}x ${font}`;
     const c = document.createElement('canvas');
-    const ctx = c.getContext('2d') as CanvasRenderingContext2D;
+    const ctx = c.getContext('2d');
+    if (!ctx) {
+      return text.length * fontsize;
+    }
     ctx.font = font;
     return ctx.measureText(text).width;
   }

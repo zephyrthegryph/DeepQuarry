@@ -49,6 +49,7 @@ GLOBAL_ALIST_EMPTY(command_panels)
 CAPABILITIES(/datum/command_panel)
 	ref_one(nameof(owner), /mob)
 	interface("CommandPanel", title = "Commands", state = nameof(GLOB.tgui_always_state))
+	ui_shape(title = schema_text(), blocked = nullable(schema_text()), groups = list_of(row(title = schema_text(), commands = list_of(row(id = schema_text(), label = schema_text(), desc = schema_text())))))
 	op("run_command", ui_act("run_command", arg("id", schema_text(160))), then(PROC_REF(ui_act_run_command)))
 
 /datum/command_panel/ui_prepare(mob/user, datum/tgui/ui)

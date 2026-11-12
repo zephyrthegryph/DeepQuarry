@@ -449,6 +449,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	ref_one(nameof(owner)) // the record's back view of its holder, which owns the record through its wires activation
 	owns_many(nameof(assemblies))
 	interface("Wires", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(wires = list_of(row(seen_color = schema_text(), color_name = schema_text(), color = schema_text(), wire = nullable(schema_text()), cut = bool(), attached = bool())), status = list_of(schema_text()))
 	op("cut", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
 		req(PROC_REF(holds_cutters))), then(PROC_REF(cut_pressed)))
 	op("pulse", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
@@ -714,8 +715,8 @@ CAPABILITIES(/datum/cap_data/wires)
 			"color_name" = color_name,
 			"color" = color,
 			"wire" = see_names && !wire_is_dud(colors[color]) ? colors[color] : null,
-			"cut" = is_cut(colors[color]),
-			"attached" = !!LAZYACCESS(assemblies, color)))
+			"cut" = is_cut(colors[color]) ? TRUE : FALSE,
+			"attached" = LAZYACCESS(assemblies, color) ? TRUE : FALSE))
 	var/list/status = status_lines()
 	if(replace_colors)
 		for(var/i in 1 to length(status))

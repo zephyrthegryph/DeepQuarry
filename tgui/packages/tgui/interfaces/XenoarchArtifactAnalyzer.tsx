@@ -1,8 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { XenoarchArtifactAnalyzerActions } from './generated/XenoarchArtifactAnalyzer';
+import type {
+  XenoarchArtifactAnalyzerActions,
+  XenoarchArtifactAnalyzerData,
+} from './generated/XenoarchArtifactAnalyzer';
 
 export const XenoarchArtifactAnalyzer = () => {
   return (
@@ -14,10 +16,7 @@ export const XenoarchArtifactAnalyzer = () => {
   );
 };
 
-type Data = {
-  owned_scanner: BooleanLike;
-  scan_in_progress: BooleanLike;
-};
+type Data = XenoarchArtifactAnalyzerData;
 
 const XenoarchArtifactAnalyzerContent = (props) => {
   const { act, data } = useBackend<Data, XenoarchArtifactAnalyzerActions>();

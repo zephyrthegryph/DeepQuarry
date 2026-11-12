@@ -42,6 +42,7 @@
 	var/heat = 0
 
 MSG_DEF_SELF(radiocarbon_spectrometer/scanning, "you can't do that while it's scanning")
+MSG_DEF_SELF(radiocarbon_spectrometer/no_item, "insert an item to scan")
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(datum/act/op/A)
 	return insert_scan_item(A.actor, A.held)
@@ -96,7 +97,8 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	reagents(100) // COOLANT_MAX (a file-local define the generated table cannot see)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("XenoarchSpectrometer")
-	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
+	ui_shape(last_scan_data = schema_text(), scanning = bool(), scan_progress = num(), scanner_rpm = num(), scanner_rpm_delta = num(), radiation = num(), heat = num(), scanned_item = schema_text(), scanned_item_desc = schema_text(), coolant = num(), IDEAL_RPM = num(), RPM_MAX_DELTA = num(), RPM_MAX = num(), TARGET_RADIATION = num(), RADIATION_MAX = num(), HEAT_FAILURE_THRESHOLD = num(), HEAT_MAX = num(), COOLANT_MAX = num())
+	op("scanItem", ui_act("scanItem"), needs(any_of(req_is(nameof(scanning), TRUE, because = MSG(radiocarbon_spectrometer/no_item)), req_full(nameof(scanned_item), because = MSG(radiocarbon_spectrometer/no_item)))), then(PROC_REF(ui_act_scanitem)))
 	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
 	op("set_scanner_rpm_delta", ui_act("set_scanner_rpm_delta", arg("delta", num())), then(PROC_REF(ui_act_set_scanner_rpm_delta)))
 	op("inject_radiation", ui_act("inject_radiation"), then(PROC_REF(ui_act_inject_radiation)))
@@ -152,16 +154,11 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	return data
 
 /obj/machinery/radiocarbon_spectrometer/proc/ui_act_scanitem(datum/act/op/A)
-	var/mob/user = A.actor
 	add_fingerprint(A.actor)
 	if(scanning)
 		stop_scanning()
 		return
-	if(!scanned_item())
-		to_chat(user, span_warning("Insert an item to scan."))
-		return
 	start_scanning()
-	to_chat(user, span_notice("Scan initiated."))
 	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/proc/ui_act_ejectitem(datum/act/op/A)
