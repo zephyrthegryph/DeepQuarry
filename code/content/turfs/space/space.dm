@@ -8,6 +8,9 @@
 	name = "\proper space"
 	icon_state = "default"
 	dynamic_lighting = 0
+	// Shown without dynamic lighting: the value turf_instance_setup() would write. The skybox's space appearances carry it too (skybox_service.dm),
+	// so a space turf that takes one in space_appearance() needs no set_luminosity() call at init.
+	luminosity = 1
 	plane = SPACE_PLANE
 	flags = TURF_ACID_IMMUNE
 	initial_temperature = T20C

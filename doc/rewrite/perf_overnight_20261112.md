@@ -103,3 +103,35 @@ Surveyed, not changed:
 - Idle (60 s): 5.6 % tick average; native_step 6.9 ms/s dominates (Rust frame). DM side ~1.3 ms per tick of kernel bookkeeping, no hot
   proc above 0.4 s. The largest avoidable-looking item, `set_times_fired()` publishing on every system run (5.8 k state_changed per minute,
   0.3 s), is tracked because the MC health panel's ui_data reads it, so it stays.
+
+## Round 4 (perf/overnight-r4-1, base b145ff4465)
+
+Same bench command (`boot_profile,memory_report,major_events --arg=events=supermatter --profile`), one run before and after; the machine
+ran at 45-100 % CPU from other lanes, so timings swing by more than a third between runs (Atoms 27.5 s before, 41.6 s after with fewer calls).
+Memory and call counts are the reliable measures here.
+
+Memory. The memory_report early notes put DreamDaemon at 1121 MB before the first global initializes: the .dmb load, before any DM proc
+runs. init_and_turfs.md §0.5 found the cause: BYOND keeps a slot for every (type, inherited proc) pair, about 23.5 bytes each. A census
+on the unit-test build (`typesof(/x/proc)`): /datum 217 procs over 53 k types, /atom 451 over 22 k, /atom/movable 200 over 20.8 k, /obj 190
+over 19.2 k, /obj/item 272 over 12.9 k, /mob 997 over 1.3 k: about 31 M pairs, ~730 MB. A /datum proc costs ~1.2 MB, an /atom proc ~0.5 MB.
+
+6. **Mob statuses and pronouns off /datum**: the 19 `status_*`/`has_status` procs (mob statuses, code/library/mob/statuses.dm) moved to
+   /mob, and the 20 pronoun procs (`p_they` ..., `REPLACE_PRONOUNS`) to /atom; /client and /datum/mind define their own (the mind's moved to
+   code/content/mob/mind.dm). /datum 217 -> 178 procs. Memory at the first global 1121 -> 1076 MB, booted 1485 -> 1395 MB (one run each;
+   the booted figure includes noise from boot transients). Three unarmed-attack messages called the attack datum's pronouns ("presses its
+   ...") and now use the attacker's or target's.
+7. **Space appearances carry luminosity 1**: luminosity is part of the appearance, so `appearance = dust` in space_appearance() reset each
+   space turf to 0 and turf_instance_setup() wrote it back to 1: 184 k set_luminosity() calls and appearance changes per minitest boot. The
+   skybox's base space appearance now has luminosity 1 (and /turf/space the type default).
+
+Surveyed, not changed:
+
+- Remaining proc-table cost: the biggest levers are leaf type count (data-only leaves into variants, another lane) and /atom's 471 procs
+  (52 generated `set_<var>` setters of TRACKED atom vars alone are ~26 MB). Other /datum procs used by one family (space_* ledger, standing_*,
+  graph_refund, acceptance_*) are engine hooks by design; each would be ~1 MB.
+- Atoms init per atom (boot_phase timers, `--arg=boot_phase_timers=1`): the timers inflate nested phases several-fold (Atoms 62 s), so their
+  per-phase costs (power_area attach 2.7 ms, flooring rel attach 0.24 ms) do not survive the plain profile (stat_relation_changed 0.19 s
+  total, install_flooring 1.07 s over 6.8 k floors). No per-type-cacheable step stood out beyond what ctor plans already cache.
+- Supermatter: one profile showed capture_args 2.47 s self over 76 type_every timers, almost all in the profiler's "over" column (time past
+  the tick budget); older runs show nothing like it, so it reads as a scheduling artefact of the loaded machine, not code cost. Explosion
+  per-turf work is unchanged from round 3 (ChangeTurf 1.9 s / 2356, deal_damage 1.8 s / 2356, ReplaceWithLattice 1.05 s / 919).
