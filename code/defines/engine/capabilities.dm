@@ -110,13 +110,13 @@
 #define TYPE_DERIVES_CAPS (1<<0)
 #define TYPE_DERIVES_LOOK (1<<1)
 #define TYPE_DERIVES_VERBS (1<<2)
-/// Not yet known: the type's first refresh fills in LOOK and VERBS.
+/// Not yet known: the generated override tables are not built yet (very early boot); every output counts as possible.
 #define TYPE_DERIVES_PENDING (1<<3)
 /// type_verbs() lists something.
 #define TYPE_DERIVES_TYPE_VERBS (1<<4)
 /// The type declares its dependencies (derived()): its instances join the relation index at init.
 #define TYPE_DERIVES_DEPS (1<<5)
-/// The type overrides a refresh side effect (on_state_changed() or push_to_rust()), or its probe could not rule it out:
+/// The type overrides a refresh side effect (on_state_changed() or push_to_rust()), per the generated table:
 /// a refresh of it does work even when it draws and hides nothing, so its refreshes are never skipped.
 #define TYPE_DERIVES_SIDE (1<<6)
 

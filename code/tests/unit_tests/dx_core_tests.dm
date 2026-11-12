@@ -239,6 +239,23 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 	TEST_ASSERT(!isnull(GLOB.type_derives_cache[P.type]), "type_derives is cached per type")
 	TEST_ASSERT(type_derives(F), "type_derives: TRUE for a type that draws")
 
+/// What a type derives comes from its declared overrides (the generated override tables), never from running a refresh: dx_core overrides
+/// draw(), hidden_verbs() and on_state_changed(); dx_plain overrides none. Decided before any instance exists.
+/datum/unit_test/dx_core_derive_flags_static/Run()
+	GLOB.type_derives_cache -= /obj/cap_fixture/dx_core/child/grand
+	GLOB.type_derives_cache -= /obj/cap_fixture/dx_plain
+	var/obj/cap_fixture/dx_core/child/grand/G = allocate(/obj/cap_fixture/dx_core/child/grand)
+	var/flags = type_derive_flags(G)
+	TEST_ASSERT(!(flags & TYPE_DERIVES_PENDING), "the generated override tables are built by the time tests run")
+	TEST_ASSERT(flags & TYPE_DERIVES_LOOK, "a subtype of a draw() override derives a look")
+	TEST_ASSERT(flags & TYPE_DERIVES_VERBS, "a subtype of a hidden_verbs() override derives verbs")
+	TEST_ASSERT(flags & TYPE_DERIVES_SIDE, "a subtype of an on_state_changed() override has side effects")
+	var/obj/cap_fixture/dx_plain/P = allocate(/obj/cap_fixture/dx_plain)
+	var/plain = type_derive_flags(P)
+	TEST_ASSERT(!(plain & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_SIDE | TYPE_DERIVES_PENDING)), "a type overriding none derives none of them: [plain]")
+	TEST_ASSERT(type_in_generated_owners(/obj/cap_fixture/dx_core, "generated_look_overrides"), "dx_core is listed as a draw() owner")
+	TEST_ASSERT(!type_in_generated_owners(/obj/cap_fixture/dx_plain, "generated_verb_overrides"), "dx_plain is not listed as a verb owner")
+
 // ---------------------------------------------------------------- 5. drift
 
 /datum/unit_test/dx_core_refresh_drift/Run()

@@ -189,6 +189,25 @@ impl Generator for Plans {
         }
         let rows: Vec<(String, String)> = side.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
         emit_table(out, "generated_side_overrides", &rows);
+        // What an atom type derives, from its declared overrides: draw() (TYPE_DERIVES_LOOK) and hidden_verbs()/granted_verbs()
+        // (TYPE_DERIVES_VERBS). type_derive_flags() (code/engine/change/type_derive.dm) reads these instead of probing a first refresh.
+        for (table, names, what) in [
+            ("generated_look_overrides", &["draw"][..], "draw()"),
+            ("generated_verb_overrides", &["hidden_verbs", "granted_verbs"][..], "hidden_verbs() or granted_verbs()"),
+        ] {
+            let mut owners: BTreeSet<String> = BTreeSet::new();
+            if let Some(sem) = cx.sem() {
+                for d in crate::sem::procs::proc_defs(&sem, names) {
+                    if d.owner.starts_with("/atom/") || d.owner.starts_with("/obj/") || d.owner.starts_with("/mob/") || d.owner.starts_with("/turf/") || d.owner.starts_with("/area/") || d.owner == "/obj" || d.owner == "/mob" || d.owner == "/turf" || d.owner == "/area" {
+                        owners.insert(d.owner.clone());
+                    }
+                }
+            }
+            out.blank();
+            out.doc(format!("\"<type>\" -> TRUE: an atom type that defines {} with a body (subtypes inherit).", what));
+            let rows: Vec<(String, String)> = owners.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
+            emit_table(out, table, &rows);
+        }
         // The stat layer's input names (step 3 of the change graph, the stats fold): over-inclusive by design. Every nameof() and every
         // `reads = list(...)` item of a declaration block can feed a contribution (entry-building procs such as heat_pump() take them as
         // arguments, which no static rule can follow), so all of them are inputs; the runtime adds the holder reads of the generated handler
