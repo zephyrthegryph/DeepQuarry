@@ -35,6 +35,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_table)
 	var/list/caps
 	/// The reports made while building it.
 	var/list/errors
+	/// "kind|key" -> the centry a later declaration of the same key replaces in place (table_add_item()). Copied from the parent table.
+	var/list/keyed
 	/// var names of the rel_grants() entries (relation-scoped grants), or null.
 	var/list/rel_grant_vars
 	/// TRUE when the type declares a while_slotted() entry: the ledger asks before it spends anything on a slot move (scopes.dm).
@@ -185,6 +187,7 @@ GLOBAL_VAR(declare_report_capture)
 	T.items = parent ? parent.items.Copy() : list()
 	T.caps = parent ? parent.caps.Copy() : list()
 	T.errors = parent?.errors ? parent.errors.Copy() : null
+	T.keyed = parent?.keyed ? parent.keyed.Copy() : null
 	var/origin_now = origin
 	BOOT_PHASE_BEGIN(bp_apply)
 	for(var/item in entry_flatten(entries))
@@ -293,6 +296,11 @@ GLOBAL_VAR(declare_report_capture)
 	table_add_item(T, E, origin, owner, whens, E.key)
 
 /// Adds a centry. `eff_key` is what extend/configure/without address it by.
+///
+/// The one override rule: an entry of a keyed kind (table_keyed_kind(): an op, a relation, a lifecycle form) whose key the table already has
+/// replaces that entry at its position; a new key appends. So a subtype's re-declaration of its parent's op keeps the parent's place in the
+/// menu and the click order, and a later entry of the same block replaces an earlier one the same way. Every consumer (the op index, the
+/// lifeform plan, the relation tables) reads the items once each and never sees two entries of one key.
 /proc/table_add_item(datum/type_table/T, datum/item, origin, owner, list/whens, eff_key)
 	var/datum/centry/C = new
 	C.item = item // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
@@ -300,9 +308,31 @@ GLOBAL_VAR(declare_report_capture)
 	C.owner = owner
 	C.whens = whens
 	C.eff_key = eff_key
+	var/slot_key = table_keyed_kind(item, eff_key)
+	if(slot_key)
+		var/datum/centry/old = T.keyed?[slot_key]
+		var/at = old ? T.items.Find(old) : 0
+		LAZYSET(T.keyed, slot_key, C) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		if(at)
+			T.items[at] = C // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			return C
 	T.items += C // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 	return C
 
+/// The replacement key of an item (see table_add_item()), or null for an item that accumulates (extend, on_change, every, ...). A relation is
+/// keyed by its var, whatever its kind (table_add_relation() checks the kinds agree); an op by its effective key; a lifecycle form by its key.
+/proc/table_keyed_kind(datum/item, eff_key)
+	var/datum/entry/E = item
+	if(!istype(E))
+		return null
+	switch(E.kind)
+		if(ENTRY_REF_ONE, ENTRY_REF_MANY, ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)
+			return "relation|[E.args["var"]]"
+		if(ENTRY_OP)
+			return isnull(eff_key) ? null : "op|[eff_key]"
+	if(isnull(E.key) || !lifeform_kinds()[E.kind])
+		return null
+	return "lifeform|[E.key]"
 
 /proc/declare_rule(rule)
 	return "\[[rule]]"
@@ -370,11 +400,9 @@ GLOBAL_VAR(declare_report_capture)
 /// A relation entry: replaces an earlier one for the same var of the same kind family; a different kind for a var is an error.
 /proc/table_add_relation(datum/type_table/T, datum/entry/E, origin, owner, list/whens)
 	var/var_name = E.args["var"]
-	for(var/i in 1 to length(T.items))
-		var/datum/centry/old = T.items[i]
-		var/datum/entry/OE = old.item
-		if(!istype(OE) || !(OE.kind in list(ENTRY_REF_ONE, ENTRY_REF_MANY, ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)) || OE.args["var"] != var_name)
-			continue
+	var/datum/centry/old = T.keyed?["relation|[var_name]"]
+	var/datum/entry/OE = old?.item
+	if(istype(OE) && (old in T.items))
 		if(OE == E)
 			return
 		var/old_owns = (OE.kind == ENTRY_OWNS_ONE || OE.kind == ENTRY_OWNS_MANY)
@@ -382,9 +410,7 @@ GLOBAL_VAR(declare_report_capture)
 		if(old_owns != new_owns)
 			table_error(T, origin, declare_rule(RULE_RELATION_KIND), "var '[var_name]' is declared [OE.kind] at [old.origin] and [E.kind] here", "one kind per var across the hierarchy: a subtype may change an option, never the kind")
 			return
-		T.items.Cut(i, i + 1)
-		break
-	table_add_item(T, E, origin, owner, whens, E.key)
+	table_add_item(T, E, origin, owner, whens, E.key) // replaces the earlier declaration of the var in place
 
 /// Does an extend()/without() target name something the table has? Text: an entry key. A number: a capability id the table has, or a tag. A
 /// path: an action type. A list of keys (extend(list("a", "b"), ...)): every one of them.
