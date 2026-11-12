@@ -242,7 +242,9 @@ def parse_file(args):
 
 def analyse(root):
     """Scans root/code; returns {type path: T}."""
-    from multiprocessing import Pool
+    # A worker that dies (a full temp drive once made every Windows worker fail at start) raises BrokenProcessPool here;
+    # multiprocessing.Pool waited forever on it instead.
+    from concurrent.futures import ProcessPoolExecutor
     jobs = []
     for dp, dn, fn in os.walk(os.path.join(root, "code")):
         dn.sort()
@@ -253,8 +255,8 @@ def analyse(root):
                 if not rel.startswith(SKIP_DIRS):
                     jobs.append((full, rel))
     types = {}
-    with Pool(max(1, min(8, os.cpu_count() or 2))) as pool:
-        for part in pool.imap(parse_file, jobs, chunksize=64):
+    with ProcessPoolExecutor(max(1, min(8, os.cpu_count() or 2))) as pool:
+        for part in pool.map(parse_file, jobs, chunksize=64):
             for p, (procs, caps, newvars, overrides, files) in part.items():
                 t = types.get(p)
                 if t is None:
