@@ -6,6 +6,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 	ref_one(nameof(host), /mob/living/silicon/robot)
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("RobotDecals", state = nameof(GLOB.tgui_self_state))
+	ui_shape(all_decals = list_of(schema_text()), all_animations = list_of(schema_text()), active_decals = list_of(schema_text()), theme = schema_text())
 	op("toggle_decal", ui_act("toggle_decal", arg("value", schema_text(4096))), then(PROC_REF(ui_act_toggle_decal)))
 	op("flick_animation", ui_act("flick_animation", arg("value", schema_text(4096))), then(PROC_REF(ui_act_flick_animation)))
 
@@ -14,11 +15,8 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 
 	var/mob/living/silicon/robot/R = host()
 
-	if(!R.sprite_datum)
-		return data
-
-	data["all_decals"] = (R.sprite_datum.sprite_decals || list())
-	data["all_animations"] = (R.sprite_datum.sprite_animations || list())
+	data["all_decals"] = (R.sprite_datum?.sprite_decals || list())
+	data["all_animations"] = (R.sprite_datum?.sprite_animations || list())
 
 	return data
 
@@ -39,7 +37,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 
 /datum/tgui_module/robot_ui_decals/proc/ui_act_toggle_decal(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()
-	if(!LAZYLEN(R.sprite_datum.sprite_decals))
+	if(!LAZYLEN(R.sprite_datum?.sprite_decals))
 		return FALSE
 	var/decal_to_toggle = lowertext(value)
 	if(!(decal_to_toggle in R.sprite_datum.sprite_decals))
@@ -54,7 +52,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 
 /datum/tgui_module/robot_ui_decals/proc/ui_act_flick_animation(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()
-	if(!LAZYLEN(R.sprite_datum.sprite_animations))
+	if(!LAZYLEN(R.sprite_datum?.sprite_animations))
 		return FALSE
 	var/animation_to_flick = lowertext(value)
 	if(!(animation_to_flick in R.sprite_datum.sprite_animations))

@@ -10,15 +10,18 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
-import type { ColorMateActions } from '../generated/ColorMate';
+import type { ColorMateActions, ColorMateData } from '../generated/ColorMate';
 import { ColorPickerCanvas } from './Helpers/ImageCanvas';
 import { ColorMateHSV, ColorMateTint } from './MatrixTabs/ColorMateColor';
 import { ColorMateMatrix } from './MatrixTabs/ColorMateMatrix';
 import { ColorMateMatrixSolver } from './MatrixTabs/ColorMatrixSolver';
-import type { Data } from './types';
+import type { ColorMatePromptData } from './types';
 
 export const ColorMate = (props) => {
-  const { act, data } = useBackend<Data, ColorMateActions>();
+  const { act, data } = useBackend<
+    ColorMateData & ColorMatePromptData,
+    ColorMateActions
+  >();
 
   const [colorPairs, setColorPairs] = useState([
     { input: '#ffffff', output: '#ffffff' },
@@ -102,38 +105,40 @@ export const ColorMate = (props) => {
                 <Stack vertical fill>
                   <Stack.Item>
                     <Table>
-                      <Table.Cell width="50%">
-                        <Section fill>
-                          <Stack fill vertical>
-                            <Stack.Item align="center">Item:</Stack.Item>
-                            <Stack.Item>
-                              <ColorPickerCanvas
-                                imageData={item_sprite}
-                                onPick={handleColorUpdate}
-                                isMatrix={
-                                  activemode === 4 && activeID.id !== null
-                                }
-                              />
-                            </Stack.Item>
-                          </Stack>
-                        </Section>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Section fill>
-                          <Stack fill vertical>
-                            <Stack.Item align="center">Preview:</Stack.Item>
-                            <Stack.Item>
-                              <ColorPickerCanvas
-                                imageData={item_preview}
-                                onPick={handleColorUpdate}
-                                isMatrix={
-                                  activemode === 4 && activeID.id !== null
-                                }
-                              />
-                            </Stack.Item>
-                          </Stack>
-                        </Section>
-                      </Table.Cell>
+                      <Table.Row>
+                        <Table.Cell width="50%">
+                          <Section fill>
+                            <Stack fill vertical>
+                              <Stack.Item align="center">Item:</Stack.Item>
+                              <Stack.Item>
+                                <ColorPickerCanvas
+                                  imageData={item_sprite}
+                                  onPick={handleColorUpdate}
+                                  isMatrix={
+                                    activemode === 4 && activeID.id !== null
+                                  }
+                                />
+                              </Stack.Item>
+                            </Stack>
+                          </Section>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Section fill>
+                            <Stack fill vertical>
+                              <Stack.Item align="center">Preview:</Stack.Item>
+                              <Stack.Item>
+                                <ColorPickerCanvas
+                                  imageData={item_preview}
+                                  onPick={handleColorUpdate}
+                                  isMatrix={
+                                    activemode === 4 && activeID.id !== null
+                                  }
+                                />
+                              </Stack.Item>
+                            </Stack>
+                          </Section>
+                        </Table.Cell>
+                      </Table.Row>
                     </Table>
                   </Stack.Item>
                   <Stack.Item>

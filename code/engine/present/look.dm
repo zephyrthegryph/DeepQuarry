@@ -75,7 +75,7 @@
 
 /datum/capability
 	/// def_look_layer_rows(): the plan's look_layer() rows, made on first use (a definition and its plan never change once interned).
-	var/list/look_layer_rows
+	var/tmp/list/look_layer_rows
 
 /// Reads one look_layer() row into `names` and returns the glow so far (this row's when it holds and gives one).
 /proc/look_layer_row_read(datum/holder, datum/entry/E, datum/capability/def, datum/activation/act, list/whens, list/names, list/glow)

@@ -6,6 +6,7 @@
 
 CAPABILITIES(/datum/pai_software/door_jack)
 	interface("pAIDoorjack", title = "Door Jack", state = nameof(GLOB.tgui_always_state))
+	ui_shape(cable = bool(), machine = bool(), inprogress = bool(), progress_a = int(), progress_b = int(), aborted = bool())
 	op("jack", ui_act("jack"), then(PROC_REF(ui_act_jack)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 	op("cable", ui_act("cable"), then(PROC_REF(ui_act_cable)))

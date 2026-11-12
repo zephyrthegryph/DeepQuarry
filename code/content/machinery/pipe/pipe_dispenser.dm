@@ -26,8 +26,9 @@
 CAPABILITIES(/obj/machinery/pipedispenser)
 	configure(movable_motion(unacidable = TRUE))
 	interface("PipeDispenser")
+	ui_shape(disposals = bool(), p_layer = int(), pipe_layers = map_of(schema_text(), int()), categories = list_of(row(cat_name = schema_text(), recipes = list_of(row(pipe_name = schema_text(), ref = int(), bent = bool())))))
 	op("p_layer", ui_act("p_layer", arg("p_layer", num())), then(PROC_REF(ui_act_p_layer)))
-	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref", schema_text(32))), then(PROC_REF(ui_act_dispense_pipe)))
+	op("dispense_pipe", ui_act("dispense_pipe", arg("bent", bool()), arg("ref", schema_text(32))), then(PROC_REF(ui_act_dispense_pipe)))
 	extend(TAG_UI, needs(req(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
 	op("put_back", item(/obj/item/pipe), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
 	op("put_back_meter", item(/obj/item/pipe_meter), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
@@ -49,6 +50,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 		"disposals" = disposals,
 		"p_layer" = p_layer,
 		"pipe_layers" = pipe_layers,
+		"categories" = list(),
 	)
 
 	var/list/recipes
@@ -62,7 +64,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 		var/list/r = list()
 		for(var/i in 1 to cat.len)
 			var/datum/pipe_recipe/info = cat[i]
-			r += list(list("pipe_name" = info.name, "ref" = handle_of(info)))
+			r += list(list("pipe_name" = info.name, "ref" = handle_of(info), "bent" = FALSE))
 			// Stationary pipe dispensers don't allow you to pre-select pipe directions.
 			// This makes it impossble to spawn bent versions of bendable pipes.
 			// We add a "Bent" pipe type with a special param to work around it.

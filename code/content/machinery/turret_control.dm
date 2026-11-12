@@ -67,6 +67,7 @@ CAPABILITIES(/obj/machinery/turretid)
 
 	section(window, "The panel's window and its buttons")
 	interface("PortableTurret")
+	ui_shape(locked = bool(), on = bool(), targetting_is_configurable = bool(), lethal = bool(), lethal_is_configurable = bool(), check_weapons = bool(), neutralize_noaccess = bool(), neutralize_norecord = bool(), neutralize_criminals = bool(), neutralize_all = bool(), neutralize_nonsynth = bool(), neutralize_unidentified = bool(), neutralize_down = bool())
 	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))))
 	extend(TAG_UI, then(PROC_REF(push_settings)))
 	op("power", ui_act(), toggles(nameof(enabled)))
@@ -122,9 +123,6 @@ CAPABILITIES(/obj/machinery/turretid)
 		"lethal_is_configurable" = lethal_is_configurable,
 		"check_weapons" = check_weapons,
 		"neutralize_noaccess" = check_access,
-		"one_access" = FALSE,
-		"selectedAccess" = list(),
-		"access_is_configurable" = FALSE,
 		"neutralize_norecord" = check_records,
 		"neutralize_criminals" = check_arrest,
 		"neutralize_nonsynth" = check_synth,

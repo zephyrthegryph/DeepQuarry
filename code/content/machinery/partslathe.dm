@@ -211,6 +211,8 @@
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)
 	)
 
+MSG_DEF_SELF(partslathe/busy, "The parts lathe is busy. Please wait for completion of the previous operation.")
+
 CAPABILITIES(/obj/machinery/partslathe)
 	per_type(nameof(storage_capacity), PROC_REF(build_storage_capacity), copy_on_write = TRUE)
 	per_type(nameof(materials), PROC_REF(build_materials), copy_on_write = TRUE)
@@ -220,11 +222,12 @@ CAPABILITIES(/obj/machinery/partslathe)
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("PartsLathe")
+	ui_shape(materials = list_of(row(name = schema_text(), ref = int(), amount = num(), color = schema_text())), SHEET_MATERIAL_AMOUNT = int(), copyBoard = nullable(schema_text()), copyBoardReqComponents = nullable(list_of(row(name = schema_text(), qty = int()))), queue = list_of(schema_text()), building = nullable(schema_text()), buildPercent = nullable(num()), error = nullable(schema_text()), recipies = list_of(row(name = schema_text(), type = schema_text())))
 	op("queue", ui_act("queue", arg("queue")), then(PROC_REF(ui_act_queue)))
 	op("queueBoard", ui_act("queueBoard"), then(PROC_REF(ui_act_queueboard)))
 	op("cancel", ui_act("cancel", arg("cancel", num())), then(PROC_REF(ui_act_cancel)))
-	op("ejectBoard", ui_act("ejectBoard"), then(PROC_REF(ui_act_ejectboard)))
-	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
+	op("ejectBoard", ui_act("ejectBoard"), needs(req_is(nameof(busy), FALSE, because = MSG(partslathe/busy))), then(PROC_REF(ui_act_ejectboard)))
+	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), needs(req_is(nameof(busy), FALSE, because = MSG(partslathe/busy))), then(PROC_REF(ui_act_remove_mat)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use item"), needs(req(PROC_REF(can_load_item))), then(PROC_REF(interaction_attackby)))
 	owns_one(nameof(copy_board), on_destroy = ON_DESTROY_CONTAINED)
@@ -239,11 +242,12 @@ CAPABILITIES(/obj/machinery/partslathe)
 
 	var/list/materials_ui = list()
 	for(var/M in materials)
+		var/datum/material/mat = get_material_by_name(M)
 		materials_ui.Add(list(list(
 			"name" = M,
+			"ref" = mat ? handle_of(mat) : 0,
 			"amount" = materials[M],
-			"sheets" = round(materials[M] / SHEET_MATERIAL_AMOUNT),
-			"removable" = materials[M] >= SHEET_MATERIAL_AMOUNT,
+			"color" = mat?.icon_colour || "",
 		)))
 	data["materials"] = materials_ui
 	data["SHEET_MATERIAL_AMOUNT"] = SHEET_MATERIAL_AMOUNT
@@ -280,7 +284,6 @@ CAPABILITIES(/obj/machinery/partslathe)
 		recipies_ui.Add(list(list("name" = R.name, "type" = "[T]")))
 	data["recipies"] = recipies_ui
 
-	data["panelOpen"] = panel_open
 	return data
 
 /obj/machinery/partslathe/proc/ui_act_queue(datum/act/op/A, queue)
@@ -320,10 +323,6 @@ CAPABILITIES(/obj/machinery/partslathe)
 	return TRUE
 
 /obj/machinery/partslathe/proc/ui_act_ejectboard(datum/act/op/A)
-	var/mob/user = A.actor
-	if(busy)
-		to_chat(user, span_notice("[src] is busy. Please wait for completion of previous operation."))
-		return
 	if(copy_board)
 		visible_message(span_notice("[copy_board] is ejected from [src]'s circuit reader."))
 		copy_board.forceMove(src.loc)
@@ -331,10 +330,6 @@ CAPABILITIES(/obj/machinery/partslathe)
 	return TRUE
 
 /obj/machinery/partslathe/proc/ui_act_remove_mat(datum/act/op/A, raw_amount, id)
-	var/mob/user = A.actor
-	if(busy)
-		to_chat(user, span_notice("[src] is busy. Please wait for completion of previous operation."))
-		return
 	// Remove a material from the fab
 	var/mat_id = id
 	var/amount = raw_amount

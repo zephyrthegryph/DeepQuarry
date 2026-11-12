@@ -1,21 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { pAIMedrecordsActions } from './generated/pAIMedrecords';
-import type { GeneralRecord, MedicalRecord, RecordList } from './Pda/pda_types';
-
-type Data = {
-  records: RecordList;
-  general: GeneralRecord;
-  medical: MedicalRecord;
-  could_not_find: BooleanLike;
-};
+import type {
+  pAIMedrecordsActions,
+  pAIMedrecordsData,
+} from './generated/pAIMedrecords';
 
 export const pAIMedrecords = (props) => {
-  const { act, data } = useBackend<Data, pAIMedrecordsActions>();
+  const { act, data } = useBackend<pAIMedrecordsData, pAIMedrecordsActions>();
 
-  const { records = [], general, medical, could_not_find } = data;
+  const { records, general, medical, could_not_find } = data;
 
   return (
     <Window width={450} height={600}>
@@ -39,50 +33,50 @@ export const pAIMedrecords = (props) => {
               </Box>
             )}
             <LabeledList>
-              <LabeledList.Item label="Name">{general.name}</LabeledList.Item>
+              <LabeledList.Item label="Name">{general?.name}</LabeledList.Item>
               <LabeledList.Item label="Record ID">
-                {general.id}
+                {general?.id}
               </LabeledList.Item>
               <LabeledList.Item label="Entity Classification">
-                {general.brain_type}
+                {general?.brain_type}
               </LabeledList.Item>
-              <LabeledList.Item label="Sex">{general.sex}</LabeledList.Item>
+              <LabeledList.Item label="Sex">{general?.sex}</LabeledList.Item>
               <LabeledList.Item label="Species">
-                {general.species}
+                {general?.species}
               </LabeledList.Item>
-              <LabeledList.Item label="Age">{general.age}</LabeledList.Item>
-              <LabeledList.Item label="Rank">{general.rank}</LabeledList.Item>
+              <LabeledList.Item label="Age">{general?.age}</LabeledList.Item>
+              <LabeledList.Item label="Rank">{general?.rank}</LabeledList.Item>
               <LabeledList.Item label="Fingerprint">
-                {general.fingerprint}
+                {general?.fingerprint}
               </LabeledList.Item>
               <LabeledList.Item label="Physical Status">
-                {general.p_stat}
+                {general?.p_stat}
               </LabeledList.Item>
               <LabeledList.Item label="Mental Status">
-                {general.m_stat}
+                {general?.m_stat}
               </LabeledList.Item>
               <LabeledList.Divider />
               <LabeledList.Item label="Blood Type">
-                {medical.b_type}
+                {medical?.b_type}
               </LabeledList.Item>
               <LabeledList.Item label="Minor Disabilities">
-                <Box>{medical.mi_dis}</Box>
-                <Box>{medical.mi_dis_d}</Box>
+                <Box>{medical?.mi_dis}</Box>
+                <Box>{medical?.mi_dis_d}</Box>
               </LabeledList.Item>
               <LabeledList.Item label="Major Disabilities">
-                <Box>{medical.ma_dis}</Box>
-                <Box>{medical.ma_dis_d}</Box>
+                <Box>{medical?.ma_dis}</Box>
+                <Box>{medical?.ma_dis_d}</Box>
               </LabeledList.Item>
               <LabeledList.Item label="Allergies">
-                <Box>{medical.alg}</Box>
-                <Box>{medical.alg_d}</Box>
+                <Box>{medical?.alg}</Box>
+                <Box>{medical?.alg_d}</Box>
               </LabeledList.Item>
               <LabeledList.Item label="Current Diseases">
-                <Box>{medical.cdi}</Box>
-                <Box>{medical.cdi_d}</Box>
+                <Box>{medical?.cdi}</Box>
+                <Box>{medical?.cdi_d}</Box>
               </LabeledList.Item>
               <LabeledList.Item label="Important Notes">
-                {medical.notes}
+                {medical?.notes}
               </LabeledList.Item>
             </LabeledList>
           </Section>

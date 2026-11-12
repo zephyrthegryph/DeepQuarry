@@ -1,0 +1,16 @@
+{
+	"panel_open": false,
+	"tags": null,
+	"frequency": null,
+	"min_freq": null,
+	"max_freq": null,
+	"exterior_status": {
+		"state": "closed",
+		"lock": "locked"
+	},
+	"interior_status": {
+		"state": "open",
+		"lock": "unlocked"
+	},
+	"processing": false
+}

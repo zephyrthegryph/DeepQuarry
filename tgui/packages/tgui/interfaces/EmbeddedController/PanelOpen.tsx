@@ -7,15 +7,21 @@ import {
   Section,
 } from 'tgui-core/components';
 import { round, toFixed } from 'tgui-core/math';
-import type { EmbeddedControllerActions } from '../generated/EmbeddedController';
-import type { PanelOpenData } from './types';
+import type { PanelOpenActions, PanelOpenData } from './types';
 
 export const PanelOpen = (props) => {
-  const { act, data } = useBackend<PanelOpenData, EmbeddedControllerActions>();
+  const { act, data } = useBackend<PanelOpenData, PanelOpenActions>();
 
   const { panel_open, tags, frequency, min_freq, max_freq } = data;
 
-  if (!panel_open || !tags) {
+  // The settings are sent only while the panel is open.
+  if (
+    !panel_open ||
+    !tags ||
+    frequency === null ||
+    min_freq === null ||
+    max_freq === null
+  ) {
     return null;
   }
 

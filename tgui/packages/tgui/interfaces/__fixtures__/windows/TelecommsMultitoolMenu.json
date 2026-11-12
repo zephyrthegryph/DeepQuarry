@@ -1,0 +1,55 @@
+{
+	"temp": {
+		"color": "good",
+		"text": "-% New network tag assigned: \"tcommsat\" %-"
+	},
+	"on": 1,
+	"id": "relay-1",
+	"network": "tcommsat",
+	"autolinkers": 1,
+	"shadowlink": 0,
+	"options": {
+		"use_listening_level": 1,
+		"use_broadcasting": 1,
+		"use_receiving": 1,
+		"listening_level": 1,
+		"broadcasting": 1,
+		"receiving": 0,
+		"use_change_freq": 1,
+		"change_freq": 1459,
+		"use_broadcast_range": 1,
+		"use_receive_range": 0,
+		"range": 2,
+		"minRange": 0,
+		"maxRange": 4
+	},
+	"linked": [
+		{
+			"ref": 1048577,
+			"name": "Telecommunication Hub",
+			"id": "hub-1",
+			"index": 1
+		},
+		{
+			"ref": 1048578,
+			"name": "Bus Mainframe",
+			"id": "bus-1",
+			"index": 2
+		}
+	],
+	"filter": [
+		{
+			"name": "145.9",
+			"freq": 1459
+		},
+		{
+			"name": "135.3",
+			"freq": 1353
+		}
+	],
+	"multitool": 1,
+	"multitool_buffer": {
+		"name": "Telecommunication Hub",
+		"id": "hub-1"
+	}
+}

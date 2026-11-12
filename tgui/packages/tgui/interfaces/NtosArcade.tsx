@@ -11,22 +11,10 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { NtosArcadeActions } from './generated/NtosArcade';
-
-type Data = {
-  Hitpoints: number;
-  PlayerHitpoints: number;
-  PlayerMP: number;
-  TicketCount: number;
-  GameActive: BooleanLike;
-  PauseState: BooleanLike;
-  Status: string;
-  BossID: string;
-};
+import type { NtosArcadeActions, NtosArcadeData } from './generated/NtosArcade';
 
 export const NtosArcade = (props) => {
-  const { act, data } = useBackend<Data, NtosArcadeActions>();
+  const { act, data } = useBackend<NtosArcadeData, NtosArcadeActions>();
 
   const {
     PlayerHitpoints,
@@ -80,9 +68,7 @@ export const NtosArcade = (props) => {
                     </LabeledList.Item>
                   </LabeledList>
                   <Box my={1} mx={4} />
-                  <Section
-                    backgroundColor={PauseState === 1 ? '#1b3622' : '#471915'}
-                  >
+                  <Section backgroundColor={PauseState ? '#1b3622' : '#471915'}>
                     {Status}
                   </Section>
                 </Table.Cell>
@@ -112,7 +98,7 @@ export const NtosArcade = (props) => {
               icon="fist-raised"
               tooltip="Go in for the kill!"
               tooltipPosition="top"
-              disabled={GameActive === 0 || PauseState === 1}
+              disabled={!GameActive || PauseState}
               onClick={() => act('Attack')}
             >
               Attack!
@@ -121,7 +107,7 @@ export const NtosArcade = (props) => {
               icon="band-aid"
               tooltip="Heal yourself!"
               tooltipPosition="top"
-              disabled={GameActive === 0 || PauseState === 1}
+              disabled={!GameActive || PauseState}
               onClick={() => act('Heal')}
             >
               Heal!
@@ -130,7 +116,7 @@ export const NtosArcade = (props) => {
               icon="magic"
               tooltip="Recharge your magic!"
               tooltipPosition="top"
-              disabled={GameActive === 0 || PauseState === 1}
+              disabled={!GameActive || PauseState}
               onClick={() => act('Recharge_Power')}
             >
               Recharge!
@@ -141,7 +127,7 @@ export const NtosArcade = (props) => {
               icon="sync-alt"
               tooltip="One more game couldn't hurt."
               tooltipPosition="top"
-              disabled={GameActive === 1}
+              disabled={GameActive}
               onClick={() => act('Start_Game')}
             >
               Begin Game
@@ -150,7 +136,7 @@ export const NtosArcade = (props) => {
               icon="ticket-alt"
               tooltip="Claim at your local Arcade Computer for Prizes!"
               tooltipPosition="top"
-              disabled={GameActive === 1}
+              disabled={GameActive}
               onClick={() => act('Dispense_Tickets')}
             >
               Claim Tickets

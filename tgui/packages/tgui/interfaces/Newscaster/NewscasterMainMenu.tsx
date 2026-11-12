@@ -1,6 +1,9 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section } from 'tgui-core/components';
-import type { NewscasterActions } from '../generated/Newscaster';
+import type {
+  NewscasterActions,
+  NewscasterData,
+} from '../generated/Newscaster';
 import {
   NEWSCASTER_SCREEN_NEWCHANNEL,
   NEWSCASTER_SCREEN_NEWSTORY,
@@ -9,12 +12,11 @@ import {
   NEWSCASTER_SCREEN_VIEWLIST,
   NEWSCASTER_SCREEN_VIEWWANTED,
 } from './constants';
-import type { Data } from './types';
 
 export const NewscasterMainMenu = (props: {
   setScreen: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-  const { data } = useBackend<Data, NewscasterActions>();
+  const { data } = useBackend<NewscasterData, NewscasterActions>();
 
   const { securityCaster, wanted_issue } = data;
 

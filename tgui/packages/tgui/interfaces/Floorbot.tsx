@@ -7,24 +7,10 @@ import {
   LabeledList,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { FloorbotActions } from './generated/Floorbot';
-
-type Data = {
-  on: BooleanLike;
-  open: BooleanLike;
-  locked: BooleanLike;
-  vocal: BooleanLike;
-  amount: number;
-  possible_bmode: string[];
-  improvefloors: BooleanLike;
-  eattiles: BooleanLike;
-  maketiles: BooleanLike;
-  bmode: string | null;
-};
+import type { FloorbotActions, FloorbotData } from './generated/Floorbot';
 
 export const Floorbot = (props) => {
-  const { act, data } = useBackend<Data, FloorbotActions>();
+  const { act, data } = useBackend<FloorbotData, FloorbotActions>();
 
   const {
     on,

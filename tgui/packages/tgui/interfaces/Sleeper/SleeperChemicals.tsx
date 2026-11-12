@@ -7,11 +7,10 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { SleeperActions } from '../generated/Sleeper';
-import type { Data } from './types';
+import type { SleeperActions, SleeperData } from '../generated/Sleeper';
 
 export const SleeperChemicals = (props) => {
-  const { act, data } = useBackend<Data, SleeperActions>();
+  const { act, data } = useBackend<SleeperData, SleeperActions>();
   const { occupant, chemicals, maxchem, amounts } = data;
   return (
     <Section title="Chemicals" flexGrow>
@@ -59,7 +58,7 @@ export const SleeperChemicals = (props) => {
                     disabled={
                       !chem.injectable ||
                       chem.occ_amount + a > maxchem ||
-                      occupant.stat === 2
+                      occupant?.stat === 2
                     }
                     icon="syringe"
                     mb="0"

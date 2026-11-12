@@ -8,26 +8,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { DroneConsoleActions } from './generated/DroneConsole';
-
-type Data = {
-  drones: {
-    name: string;
-    active: BooleanLike;
-    charge: number;
-    maxCharge: number;
-    loc: string;
-    ref: number;
-  }[];
-  fabricator: string;
-  fabPower: BooleanLike;
-  areas: string[];
-  selected_area: string;
-};
+import type {
+  DroneConsoleActions,
+  DroneConsoleData,
+} from './generated/DroneConsole';
 
 export const DroneConsole = (props) => {
-  const { act, data } = useBackend<Data, DroneConsoleActions>();
+  const { act, data } = useBackend<DroneConsoleData, DroneConsoleActions>();
 
   const { drones, areas, selected_area, fabricator, fabPower } = data;
 
@@ -61,7 +48,7 @@ export const DroneConsole = (props) => {
         <Section title="Request Drone">
           <Dropdown
             autoScroll={false}
-            options={areas ? areas.sort() : []}
+            options={[...areas].sort()}
             selected={selected_area}
             width="100%"
             onSelected={(val) => act('set_dcall_area', { area: val })}
@@ -71,7 +58,7 @@ export const DroneConsole = (props) => {
           </Button>
         </Section>
         <Section title="Maintenance Units">
-          {drones?.length ? (
+          {drones.length ? (
             <LabeledList>
               {drones.map((drone) => (
                 <LabeledList.Item

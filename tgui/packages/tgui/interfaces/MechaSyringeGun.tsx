@@ -4,32 +4,19 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { MechaSyringeGunActions } from './generated/MechaSyringeGun';
+import type {
+  MechaSyringeGunActions,
+  MechaSyringeGunData,
+} from './generated/MechaSyringeGun';
 
-type KnownReagent = {
-  id: string;
-  name: string;
-  selected: BooleanLike;
-};
-
-type CurrentReagent = {
-  id: string;
-  name: string;
-  volume: number;
-};
-
-type Data = {
-  total_volume: number;
-  max_volume: number;
-  synth_speed: number;
-  known_reagents: KnownReagent[];
-  current_reagents: CurrentReagent[];
-};
+type KnownReagent = MechaSyringeGunData['known_reagents'][number];
 
 export const MechaSyringeGun = () => {
-  const { data, act } = useBackend<Data, MechaSyringeGunActions>();
+  const { data, act } = useBackend<
+    MechaSyringeGunData,
+    MechaSyringeGunActions
+  >();
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const isSelected = (r: KnownReagent): boolean =>
     r.id in pending ? pending[r.id] : !!r.selected;
@@ -37,12 +24,12 @@ export const MechaSyringeGun = () => {
     <Window width={460} height={520} title="Reagent Synthesizer">
       <Window.Content scrollable>
         <Section title="Current reagents">
-          {(data.current_reagents ?? []).length === 0 ? (
+          {data.current_reagents.length === 0 ? (
             <EmptyState>None.</EmptyState>
           ) : (
             <>
               <Stack vertical>
-                {(data.current_reagents ?? []).map((r) => (
+                {data.current_reagents.map((r) => (
                   <Stack.Item key={r.id}>
                     <Button
                       color="bad"
@@ -72,7 +59,7 @@ export const MechaSyringeGun = () => {
             <Button
               color="good"
               onClick={() => {
-                const selected = (data.known_reagents ?? [])
+                const selected = data.known_reagents
                   .filter(isSelected)
                   .map((r) => r.id);
                 act('select_reagents', { reagents: selected });
@@ -82,11 +69,11 @@ export const MechaSyringeGun = () => {
             </Button>
           }
         >
-          {(data.known_reagents ?? []).length === 0 ? (
+          {data.known_reagents.length === 0 ? (
             <EmptyState>No known reagents.</EmptyState>
           ) : (
             <Stack vertical>
-              {(data.known_reagents ?? []).map((r) => {
+              {data.known_reagents.map((r) => {
                 const on = isSelected(r);
                 return (
                   <Stack.Item key={r.id}>

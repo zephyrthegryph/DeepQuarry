@@ -8,39 +8,19 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import {
-  type Diagnosis,
   DiagnosisFindingsSection,
   DiagnosisVitalsList,
 } from './common/Diagnosis';
 import { EmptyState } from './common/EmptyState';
-import type { MechaSleeperActions } from './generated/MechaSleeper';
-
-type Reagent = {
-  name: string;
-  volume: number;
-};
-
-type Injectable = {
-  id: string;
-  name: string;
-};
-
-type Data = {
-  has_occupant: number;
-  occupant_name: string;
-  status: string;
-  health_percent: number;
-  diagnosis: Diagnosis | null;
-  body_temp_c: number;
-  body_temp_f: number;
-  reagents: Reagent[];
-  injectables: Injectable[];
-};
+import type {
+  MechaSleeperActions,
+  MechaSleeperData,
+} from './generated/MechaSleeper';
 
 const goodIf = (cond: boolean) => (cond ? 'good' : 'bad');
 
 export const MechaSleeper = () => {
-  const { data, act } = useBackend<Data, MechaSleeperActions>();
+  const { data, act } = useBackend<MechaSleeperData, MechaSleeperActions>();
   const {
     has_occupant,
     occupant_name,

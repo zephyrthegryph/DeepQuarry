@@ -8,19 +8,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { WeaverConfigActions } from './generated/WeaverConfig';
-
-type Data = {
-  silk_reserve: number;
-  silk_max_reserve: number;
-  silk_color: string | null;
-  silk_production: number;
-  savefile_selected: BooleanLike;
-};
+import type {
+  WeaverConfigActions,
+  WeaverConfigData,
+} from './generated/WeaverConfig';
 
 export const WeaverConfig = (props) => {
-  const { act, data } = useBackend<Data, WeaverConfigActions>();
+  const { act, data } = useBackend<WeaverConfigData, WeaverConfigActions>();
 
   const {
     silk_reserve,
@@ -64,7 +58,7 @@ export const WeaverConfig = (props) => {
                       </Button>
                     </Stack.Item>
                     <Stack.Item>
-                      <ColorBox color={silk_color || '#FFFFFF'} />
+                      <ColorBox color={silk_color} />
                     </Stack.Item>
                   </Stack>
                 </LabeledList.Item>

@@ -26,6 +26,7 @@ MSG_DEF(airlock_electronics/emagged, "You remove the access restrictions on %T%!
 
 CAPABILITIES(/obj/item/airlock_electronics)
 	interface("AirlockElectronics", title = "Airlock Electronics", input = in_hand())
+	ui_shape(locked = bool(), one_access = bool(), last_configurator = schema_text(), all_selected = bool(), accesses = list_of(row(id = int(), name = schema_text(), selected = bool())))
 	emag(list(needs(req(PROC_REF(not_hardened))), then(PROC_REF(emag_effect))), say = MSG(airlock_electronics/emagged))
 	op("login", ui_act("login"), then(PROC_REF(ui_login)))
 	op("logout", ui_act("logout"), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_logout)))
@@ -57,14 +58,14 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	data["locked"] = !!locked
 	data["one_access"] = !!one_access
 	data["last_configurator"] = last_configurator || ""
-	data["all_selected"] = (conf_access == null)
+	data["all_selected"] = isnull(conf_access)
 	var/list/access_list = list()
 	var/list/avail = get_available_accesses(user)
 	for(var/acc in avail)
 		access_list += list(list(
 			"id" = acc,
 			"name" = SSaccess.get_access_desc(acc),
-			"selected" = conf_access && (acc in conf_access),
+			"selected" = !!(conf_access && (acc in conf_access)),
 		))
 	data["accesses"] = access_list
 	return data

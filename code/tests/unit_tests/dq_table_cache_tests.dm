@@ -112,6 +112,7 @@
 /// The original of type_trait_table_build(): `T in built_of_table` scans the keys, so it is quadratic in the tables. Reference for the equality test.
 /proc/type_trait_table_scan(list/by_type, kind, trait_type)
 	var/list/built_of_table = list()
+	var/list/built_of_entry = list()
 	var/list/table = list()
 	for(var/type in by_type)
 		var/datum/type_table/T = by_type[type]
@@ -120,9 +121,12 @@
 			var/datum/entry/E = C?.item
 			var/datum/type_trait/made = null
 			if(E)
-				made = new trait_type
-				made.kind = kind
-				made.apply_args(E.args)
+				made = built_of_entry[E]
+				if(!made)
+					made = new trait_type
+					made.kind = kind
+					made.apply_args(E.args)
+					built_of_entry[E] = made
 			built_of_table[T] = made
 		var/datum/type_trait/known = built_of_table[T]
 		if(known)
@@ -130,7 +134,7 @@
 	return table
 
 /// Per static kind, the table built by the lookup version equals the scanning original: the same types, equal traits, and the same sharing
-/// (types under one declaring table read one trait object in both).
+/// (types whose tables hold one interned declaring entry read one trait object in both).
 /datum/unit_test/dq_type_trait_tables_equal_scan
 
 /datum/unit_test/dq_type_trait_tables_equal_scan/Run()

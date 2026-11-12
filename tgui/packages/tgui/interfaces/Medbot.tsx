@@ -8,28 +8,10 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { MedbotActions } from './generated/Medbot';
-
-type Data = {
-  on: BooleanLike;
-  open: BooleanLike;
-  beaker: BooleanLike;
-  beaker_total: number;
-  beaker_max: number;
-  locked: BooleanLike;
-  min_urgency: number | null;
-  urgency_bands: string[];
-  injection_amount_min: number;
-  injection_amount: number | null;
-  injection_amount_max: number;
-  use_beaker: BooleanLike;
-  declare_treatment: BooleanLike;
-  vocal: BooleanLike;
-};
+import type { MedbotActions, MedbotData } from './generated/Medbot';
 
 export const Medbot = (props) => {
-  const { act, data } = useBackend<Data, MedbotActions>();
+  const { act, data } = useBackend<MedbotData, MedbotActions>();
 
   const {
     on,
@@ -39,10 +21,10 @@ export const Medbot = (props) => {
     beaker_max,
     locked,
     min_urgency,
-    urgency_bands = [],
-    injection_amount_min = 0,
+    urgency_bands,
+    injection_amount_min,
     injection_amount,
-    injection_amount_max = 0,
+    injection_amount_max,
     use_beaker,
     declare_treatment,
     vocal,

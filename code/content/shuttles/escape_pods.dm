@@ -60,13 +60,14 @@
 		"docking_status" = port.get_docking_status(),
 		"override_enabled" = port.override_enabled,
 		"exterior_status" =	port.hatch_status(),								// TGUI DATA fails silently when there's no linked pod, leading to UI crashes
-		"can_force" = pod()?.can_force() || (SSemergency_shuttle.departed && pod()?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
-		"armed" = pod()?.arming_controller().armed,
-		"internalTemplateName" = "EscapePodConsole",
+		"can_force" = !!pod()?.can_force() || (SSemergency_shuttle.departed && pod()?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
+		"armed" = !!pod()?.arming_controller()?.armed,
 	)
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod)
 	configure(movable_motion(unacidable = TRUE))
+	interface("EscapePodConsole")
+	ui_shape(docking_status = enum(list("undocked", "docking", "undocking", "docked")), override_enabled = bool(), exterior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), can_force = bool(), armed = bool())
 	op("manual_arm", ui_act("manual_arm"), then(PROC_REF(ui_act_manual_arm)))
 	op("force_launch", ui_act("force_launch"), then(PROC_REF(ui_act_force_launch)))
 	ref_one(nameof(pod))
@@ -95,11 +96,12 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 		"docking_status" = port.get_docking_status(),
 		"override_enabled" = port.override_enabled,
 		"exterior_status" =	port.hatch_status(),
-		"armed" = istype(berth) ? berth.armed : null,
-		"internalTemplateName" = "EscapePodBerthConsole",
+		"armed" = istype(berth) ? !!berth.armed : FALSE,
 	)
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth)
+	interface("EscapePodBerthConsole")
+	ui_shape(docking_status = enum(list("undocked", "docking", "undocking", "docked")), override_enabled = bool(), exterior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), armed = bool())
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/on_emag(datum/act/op/A)

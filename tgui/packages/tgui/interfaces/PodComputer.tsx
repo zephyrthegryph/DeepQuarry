@@ -8,18 +8,13 @@ import {
   Slider,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PodComputerActions } from './generated/PodComputer';
-
-type Data = {
-  connected: BooleanLike;
-  timing: BooleanLike;
-  time: number;
-  power_level: number | null;
-};
+import type {
+  PodComputerActions,
+  PodComputerData,
+} from './generated/PodComputer';
 
 export const PodComputer = (props) => {
-  const { act, data } = useBackend<Data, PodComputerActions>();
+  const { act, data } = useBackend<PodComputerData, PodComputerActions>();
 
   const { connected, timing, time, power_level } = data;
 

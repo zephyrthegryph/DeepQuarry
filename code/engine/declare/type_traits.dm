@@ -70,7 +70,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 
 /// type -> the shared trait of `kind` for every type in `by_type` whose table declares one. Each table is visited once (not each type: the grouping
 /// of types by table and the first entry of each kind per table come from static_table_groups(), built once at setup), and one trait is built per
-/// declaring table, shared by the types under it, so the cost is the tables plus the types that get a trait. The equality test
+/// distinct declaring entry, shared by the types whose tables hold it, so the cost is the tables plus the types that get a trait. The equality test
 /// (dq_table_cache_tests.dm) compares it with the scanning original, including which types share a trait object.
 /proc/type_trait_table_build(list/by_type, kind, trait_type)
 	var/list/types_by_table
@@ -83,19 +83,25 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 		types_by_table = groups[1]
 		first_by_kind = groups[2]
 	var/list/table = list()
-	var/tables_built = 0
+	// Entries are interned, so a subtype table that inherits its declaration unchanged holds the very entry its parent's does: one trait per
+	// distinct entry, not per table (5100 tables of atom_rules came down to a few hundred distinct entries; each trait was an apply_args walk).
+	var/list/built_of_entry = list()
+	var/tables_declaring = 0
 	for(var/datum/type_table/T as anything in types_by_table)
 		var/datum/centry/C = first_by_kind[T][kind]
 		var/datum/entry/E = C?.item
 		if(!E)
 			continue
-		var/datum/type_trait/made = new trait_type
-		made.kind = kind
-		made.apply_args(E.args)
-		tables_built++
+		tables_declaring++
+		var/datum/type_trait/made = built_of_entry[E]
+		if(!made)
+			made = new trait_type
+			made.kind = kind
+			made.apply_args(E.args)
+			built_of_entry[E] = made
 		for(var/type in types_by_table[T])
 			table[type] = made
-	log_world("TYPE_TRAIT_TABLE: [kind] built [tables_built] traits for [length(table)] types")
+	log_world("TYPE_TRAIT_TABLE: [kind] built [length(built_of_entry)] traits for [tables_declaring] tables, [length(table)] types")
 	return table
 
 /// kind -> type -> the shared /datum/type_trait (built once at setup by the kinds' engines).

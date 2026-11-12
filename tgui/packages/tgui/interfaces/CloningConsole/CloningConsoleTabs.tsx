@@ -68,7 +68,7 @@ export const CloningConsoleMain = (props) => {
                 &nbsp; Scanning...
               </Box>
             ) : (
-              <Box color={scantemp.color}>{scantemp.text}</Box>
+              <Box color={scantemp?.color}>{scantemp?.text}</Box>
             )}
           </LabeledList.Item>
           {!!can_brainscan && (

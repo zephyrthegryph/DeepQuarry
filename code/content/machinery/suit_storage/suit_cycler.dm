@@ -289,6 +289,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	op("cycler_leave", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Cycler"), needs(req_adjacent(), req_capable(), req(PROC_REF(cycler_actor_can_act), because = MSG(suit_cycler/cannot_leave))), then(PROC_REF(interaction_leave)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cycler_has_work), wakes_on = list(nameof(active), nameof(irradiating)), gate_waits = TRUE)
 	interface("SuitCycler", state = nameof(GLOB.tgui_notcontained_state))
+	ui_shape(userHasAccess = bool(), locked = bool(), active = bool(), uv_active = bool(), max_uv_level = int(), helmet = nullable(schema_text()), suit = nullable(schema_text()), damage = nullable(num()), occupied = bool(), model_text = schema_text(), can_repair = bool(), safeties = bool(), uv_level = int(), departments = list_of(schema_text()), species = list_of(schema_text()))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Suit storage unit", count = 3, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
@@ -325,13 +326,8 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		data["helmet"] = helmet.name
 	else
 		data["helmet"] = null
-	if(suit)
-		data["suit"] = suit.name
-		if(istype(suit) && can_repair)
-			data["damage"] = suit.damage
-	else
-		data["suit"] = null
-		data["damage"] = null
+	data["suit"] = suit?.name
+	data["damage"] = suit && can_repair ? suit.damage : null
 	if(occupant)
 		data["occupied"] = TRUE
 	else
@@ -415,7 +411,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	var/mob/user = A.actor
 	if(allowed(user))
 		set_locked(!locked)
-		to_chat(user, "You [locked ? "" : "un"]lock \the [src].")
 	else
 		to_chat(user, span_danger("Access denied."))
 	. = TRUE

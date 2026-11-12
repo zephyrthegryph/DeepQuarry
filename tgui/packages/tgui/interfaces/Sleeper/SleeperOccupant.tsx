@@ -7,13 +7,15 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { SleeperActions } from '../generated/Sleeper';
+import type { SleeperActions, SleeperData } from '../generated/Sleeper';
 import { stats, tempColors } from './constants';
-import type { Data } from './types';
 
 export const SleeperOccupant = (props) => {
-  const { act, data } = useBackend<Data, SleeperActions>();
+  const { act, data } = useBackend<SleeperData, SleeperActions>();
   const { occupant, auto_eject_dead, stasis } = data;
+  if (!occupant) {
+    return null;
+  }
   return (
     <Section
       title="Occupant"

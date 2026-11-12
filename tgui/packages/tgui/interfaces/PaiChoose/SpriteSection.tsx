@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Input, Section, Stack } from 'tgui-core/components';
-import type { PaiChooseActions } from '../generated/PaiChoose';
+import type { PaiChooseActions, PaiChooseData } from '../generated/PaiChoose';
 import { SelectorElement } from '../RobotChoose/SelectorElement';
 import { paiSpriteSearcher } from './functions';
-import type { Data } from './types';
 
 export const SpriteSection = (props) => {
-  const { data } = useBackend<Data, PaiChooseActions>();
+  const { data } = useBackend<PaiChooseData, PaiChooseActions>();
   const { pai_chassises, pai_chassis, selected_chassis } = data;
 
   const [searchText, setSearchText] = useState<string>('');

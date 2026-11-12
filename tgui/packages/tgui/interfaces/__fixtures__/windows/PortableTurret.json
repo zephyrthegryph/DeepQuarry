@@ -1,0 +1,15 @@
+{
+	"locked": 0,
+	"on": 1,
+	"targetting_is_configurable": 1,
+	"lethal": 0,
+	"lethal_is_configurable": 1,
+	"check_weapons": 1,
+	"neutralize_noaccess": 1,
+	"neutralize_norecord": 0,
+	"neutralize_criminals": 1,
+	"neutralize_all": 0,
+	"neutralize_nonsynth": 0,
+	"neutralize_unidentified": 1,
+	"neutralize_down": 0
+}

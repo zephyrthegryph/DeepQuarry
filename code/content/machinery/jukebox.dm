@@ -33,6 +33,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
 	climb()
 	interface("Jukebox", title = "RetroBox - Space Style")
+	ui_shape(playing = bool(), loop_mode = int(), volume = num(0, 1), current_track_ref = nullable(int()), current_track = nullable(row(ref = int(), title = schema_text(), artist = schema_text(), genre = schema_text(), duration = num())), current_genre = nullable(schema_text()), percent = num(0, 1), tracks = list_of(row(ref = int(), title = schema_text(), artist = schema_text(), genre = schema_text(), duration = num())), admin = bool())
 	op("change_track", ui_act("change_track", arg("change_track")), then(PROC_REF(ui_act_change_track)))
 	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
 	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
@@ -197,7 +198,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 		data["current_track_ref"] = handle_of(current_track())  // Convenient shortcut
 		data["current_track"] = current_track().toTguiList()
 		data["current_genre"] = current_track().genre
-	data["percent"] = playing ? min(100, round(world.time - media_start_time) / current_track().duration) : 0;
+	data["percent"] = (playing && current_track()) ? min(1, (world.time - media_start_time) / current_track().duration) : 0
 
 	var/list/tgui_tracks = list()
 	for(var/datum/track/T in getTracksList())
@@ -233,7 +234,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	return OP_OK
 
 /obj/machinery/media/jukebox/proc/ui_act_play(datum/act/op/A)
-	var/mob/user = A.actor
 	if(emagged())
 		play_sfx(src, SFX_ITEMS_AIRHORN)
 		for(var/mob/living/carbon/M in ohearers(6, src))
@@ -251,9 +251,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 				M.status_adjust(STAT_JITTERY, 500)
 		if(!after_pending(src, "jukebox_emag_explosion"))
 			after(src, 1.5 SECONDS, PROC_REF(explode), key = "jukebox_emag_explosion")
-	else if(current_track() == null)
-		to_chat(user, "No track selected.")
-	else
+	else if(current_track())
 		StartPlaying()
 	return TRUE
 

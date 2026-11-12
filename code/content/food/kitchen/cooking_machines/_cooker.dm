@@ -12,6 +12,7 @@
 	return cooking || !has_condition() || !isnull(heat_body)
 
 /obj/machinery/appliance/cooker
+	abstract_type = /obj/machinery/appliance/cooker
 	var/min_temp = 80 + T0C	//Minimum temperature to do any cooking
 	var/optimal_temp = 200 + T0C	//Temperature at which we have 100% efficiency. efficiency is lowered on either side of this
 	var/optimal_power = 0.6 //cooking power at 100% - This variable determines the MAXIMUM increase in do_cooking_ticks, once math goes through. If you want ticks of 0.5, set it to 0.5, etc.

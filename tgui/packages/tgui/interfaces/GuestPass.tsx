@@ -1,28 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { sanitizeText } from '../sanitize';
-import type { GuestPassActions } from './generated/GuestPass';
-
-type Data = {
-  access: number[] | null;
-  area: area[];
-  giver: string | null;
-  giveName: string;
-  reason: string;
-  duration: number;
-  mode: BooleanLike;
-  log: string[];
-  uid: number;
-};
-
-type area = { area: string; area_name: string; on: BooleanLike };
+import type { GuestPassActions, GuestPassData } from './generated/GuestPass';
 
 export const GuestPass = (props) => {
-  const { act, data } = useBackend<Data, GuestPassActions>();
+  const { act, data } = useBackend<GuestPassData, GuestPassActions>();
 
-  const { area = [], giver, giveName, reason, duration, mode, log, uid } = data;
+  const { area, giver, giveName, reason, duration, mode, log, uid } = data;
 
   const sortedArea = [...area].sort((a, b) =>
     a.area_name.localeCompare(b.area_name),

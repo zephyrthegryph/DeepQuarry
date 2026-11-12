@@ -114,8 +114,8 @@
 	var/datum/op_result/touched = test_menu(H, D, "ui_open")
 	TEST_ASSERT(!touched || touched.outcome == ACT_REFUSED, "a human cannot open the remote window")
 
-/// Every airlock-family controller's window names the console it draws (EmbeddedController/index.tsx throws without internalTemplateName)
-/// with the program state that console reads, and its program buttons reach the program.
+/// Every airlock-family controller opens its own console window with the program state that console reads, and its program buttons
+/// reach the program.
 /datum/unit_test/dq_ops_menu_airlock_controller_window
 
 /datum/unit_test/dq_ops_menu_airlock_controller_window/Run()
@@ -131,14 +131,16 @@
 		var/obj/machinery/embedded_controller/C = allocate(path, T)
 		var/list/data = hc_data(C, H)
 		var/list/wanted = expect[path]
-		TEST_ASSERT_EQUAL(data["internalTemplateName"], wanted[1], "[path] names its console: [json_encode(data)]")
+		TEST_ASSERT_EQUAL(C.ui_interface(H), wanted[1], "[path] opens its console's window")
 		for(var/i in 2 to length(wanted))
 			TEST_ASSERT(wanted[i] in data, "[path] window has [wanted[i]]: [json_encode(data)]")
-	// every concrete controller subtype under the airlock family names a console the window knows
-	for(var/path in subtypesof(/obj/machinery/embedded_controller/radio/airlock))
+	// every concrete controller subtype opens one of the console windows
+	for(var/path in subtypesof(/obj/machinery/embedded_controller/radio))
+		if(is_abstract(path))
+			continue
 		var/obj/machinery/embedded_controller/C = allocate(path, T)
-		var/name = hc_data(C, H)["internalTemplateName"]
-		TEST_ASSERT(name in known, "[path] names a console EmbeddedController knows ([name || "none"])")
+		var/name = C.ui_interface(H)
+		TEST_ASSERT(name in known, "[path] opens a console window ([name || "none"])")
 	// a program button reaches the program: abort clears a cycle in progress
 	var/obj/machinery/embedded_controller/radio/airlock/airlock_controller/simple = allocate(/obj/machinery/embedded_controller/radio/airlock/airlock_controller, T)
 	var/datum/op_result/pressed = hc_ui(H, simple, "cycle_ext")

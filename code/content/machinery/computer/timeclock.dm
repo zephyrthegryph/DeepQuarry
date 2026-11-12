@@ -51,8 +51,9 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 	configure(machine_usage(interface_sound = TRAIT_NONE))
 	configure(light_glow(color = "#0099ff"))
 	interface("TimeClock")
+	ui_shape(department_hours = map_of(schema_text(), num()), user_name = schema_text(), card = nullable(schema_text()), assignment = nullable(schema_text()), card_cooldown = num(), job_datum = nullable(row(title = schema_text(), departments = schema_text(), selection_color = schema_text(), economic_modifier = num(), timeoff_factor = num(), pto_department = schema_text())), allow_change_job = bool(), job_choices = nullable(map_of(schema_text(), list_of(schema_text()))))
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
-	op("switch-to-onduty-rank", ui_act("switch-to-onduty-rank", arg("assignment"), arg("rank")), then(PROC_REF(ui_act_switch_to_onduty_rank)))
+	op("switch-to-onduty-rank", ui_act("switch-to-onduty-rank", arg("assignment", schema_text(4096)), arg("rank", schema_text(4096))), then(PROC_REF(ui_act_switch_to_onduty_rank)))
 	op("switch-to-offduty", ui_act("switch-to-offduty"), then(PROC_REF(ui_act_switch_to_offduty)))
 	extend(TAG_UI, then(PROC_REF(ui_touched), early = TRUE))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
@@ -64,16 +65,16 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 	var/list/data = list()
 
 	// Okay, data for showing the user's OWN PTO stuff
-	if(user.client)
-		data["department_hours"] = SANITIZE_LIST(user.client.department_hours)
+	data["department_hours"] = user.client ? SANITIZE_LIST(user.client.department_hours) : list()
 	data["user_name"] = "[user]"
 
 	// Data about the card that we put into it.
 	data["card"] = null
 	data["assignment"] = null
 	data["job_datum"] = null
-	data["allow_change_job"] = null
+	data["allow_change_job"] = FALSE
 	data["job_choices"] = null
+	data["card_cooldown"] = 0
 	if(card)
 		data["card"] = "[card]"
 		data["assignment"] = card.assignment

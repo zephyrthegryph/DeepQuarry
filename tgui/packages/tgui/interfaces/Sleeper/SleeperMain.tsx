@@ -1,13 +1,12 @@
 import { useBackend } from 'tgui/backend';
-import type { SleeperActions } from '../generated/Sleeper';
+import type { SleeperActions, SleeperData } from '../generated/Sleeper';
 import { SleeperChemicals } from './SleeperChemicals';
 import { SleeperDiagnosis } from './SleeperDiagnosis';
 import { SleeperDialysisPump } from './SleeperDialysisPump';
 import { SleeperOccupant } from './SleeperOccupant';
-import type { Data } from './types';
 
 export const SleeperMain = (props) => {
-  const { data } = useBackend<Data, SleeperActions>();
+  const { data } = useBackend<SleeperData, SleeperActions>();
   const { dialysis, stomachpumping } = data;
   return (
     <>

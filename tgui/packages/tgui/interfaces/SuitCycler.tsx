@@ -10,29 +10,10 @@ import {
   NumberInput,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { SuitCyclerActions } from './generated/SuitCycler';
-
-type Data = {
-  model_text: string;
-  can_repair: BooleanLike;
-  userHasAccess: BooleanLike;
-  locked: BooleanLike;
-  active: BooleanLike;
-  safeties: BooleanLike;
-  uv_active: BooleanLike;
-  uv_level: number;
-  max_uv_level: number;
-  helmet: string | null;
-  suit: string | null;
-  damage: number | null;
-  occupied: BooleanLike;
-  departments: string[];
-  species: string[];
-};
+import type { SuitCyclerActions, SuitCyclerData } from './generated/SuitCycler';
 
 export const SuitCycler = (props) => {
-  const { data } = useBackend<Data, SuitCyclerActions>();
+  const { data } = useBackend<SuitCyclerData, SuitCyclerActions>();
   const { active, locked, uv_active, species, departments } = data;
 
   const [selectedDepartment, setSelectedDepartment] = useState<
@@ -75,7 +56,7 @@ const SuitCyclerContent = (props: {
   >;
   onSelectedSpecies: React.Dispatch<React.SetStateAction<string | undefined>>;
 }) => {
-  const { act, data } = useBackend<Data, SuitCyclerActions>();
+  const { act, data } = useBackend<SuitCyclerData, SuitCyclerActions>();
   const {
     safeties,
     occupied,
@@ -220,7 +201,7 @@ const SuitCyclerUV = (props) => {
 };
 
 const SuitCyclerLocked = (props) => {
-  const { act, data } = useBackend<Data, SuitCyclerActions>();
+  const { act, data } = useBackend<SuitCyclerData, SuitCyclerActions>();
 
   const { model_text, userHasAccess } = data;
 

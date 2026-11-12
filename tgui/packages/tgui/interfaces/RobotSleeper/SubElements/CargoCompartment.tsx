@@ -1,10 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Dropdown, Section, Stack } from 'tgui-core/components';
-import type { RobotSleeperActions } from '../../generated/RobotSleeper';
-import type { Data } from '../types';
+import type {
+  RobotSleeperActions,
+  RobotSleeperData,
+} from '../../generated/RobotSleeper';
 
 export const CargoCompartment = (props) => {
-  const { act, data } = useBackend<Data, RobotSleeperActions>();
+  const { act, data } = useBackend<RobotSleeperData, RobotSleeperActions>();
   const { delivery_lists, delivery_tag } = data;
 
   return (
@@ -21,7 +23,7 @@ export const CargoCompartment = (props) => {
         </Stack.Item>
         <Stack.Item>
           <Button
-            disabled={!delivery_lists[delivery_tag]}
+            disabled={!delivery_lists[delivery_tag]?.length}
             onClick={() => act('slot_eject')}
           >
             Eject Slot
