@@ -25,7 +25,7 @@
 		if(3)
 			set_dos_speed(NTNETSPEED_ETHERNET * NTNETSPEED_DOS_AMPLIFICATION)
 	if(target() && executed)
-		target().dos_overload += dos_speed
+		target().set_dos_overload(target().dos_overload + dos_speed)
 		if(!target().operable())
 			rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 			rel_clear(src, nameof(target))
