@@ -41,6 +41,7 @@
 		)
 
 CAPABILITIES(/obj/machinery/appliance/cooker/oven)
+	ui_shape(is_open = bool(), state_prefix = schema_text())
 	click_order(BIND_HAND, "toggle_door_alt", "toggle_door_alt_no_touch")
 	configure(uses_power(active = 6 KILOWATTS, idle = 2 KILOWATTS))
 	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))

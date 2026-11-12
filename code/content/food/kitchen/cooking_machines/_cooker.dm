@@ -33,6 +33,7 @@
 	tgui_id = "CookingAppliance"
 
 CAPABILITIES(/obj/machinery/appliance/cooker)
+	ui_shape(temperature = num(), optimalTemp = num(), temperatureEnough = bool(), efficiency = num())
 	setup(PROC_REF(prepare_cooker_state))
 	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
 	owns_one(nameof(thermostat_watch), /datum/sense_sub/heat)

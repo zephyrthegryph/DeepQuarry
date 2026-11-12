@@ -289,7 +289,7 @@ CAPABILITIES(/datum/inventory_panel)
 	)))
 	data["slots"] = slots
 
-	data["hud_used?.internals"] = hud_of(host)?.internals
+	data["internals"] = hud_of(host)?.internals
 	data["internalsValid"] = istype(host.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) && istype(host.get_equipped_item(SLOT_ID_BACK), /obj/item/tank)
 
 	return data
@@ -306,6 +306,7 @@ CAPABILITIES(/datum/inventory_panel)
 	return ..() // Let our parent assign the host.
 
 CAPABILITIES(/datum/inventory_panel/human)
+	ui_shape(specialSlots = list_of(), sensors = bool(), handcuffed = bool(), handcuffedParams = any, legcuffed = bool(), legcuffedParams = any, accessory = bool())
 	op("targetSlot", ui_act("targetSlot", arg("slot", schema_text(4096))), then(PROC_REF(ui_act_targetslot)))
 /datum/inventory_panel/human/proc/ui_act_targetslot(datum/act/op/A, slot)
 	var/mob/user = A.actor
@@ -368,7 +369,7 @@ CAPABILITIES(/datum/inventory_panel/human)
 		))
 	data["specialSlots"] = specialSlots
 
-	data["hud_used?.internals"] = hud_of(H)?.internals
+	data["internals"] = hud_of(H)?.internals
 	data["internalsValid"] = (istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) || istype(H.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)) && (istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_BELT), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank))
 
 	data["sensors"] = FALSE
@@ -376,11 +377,13 @@ CAPABILITIES(/datum/inventory_panel/human)
 		data["sensors"] = TRUE
 
 	data["handcuffed"] = FALSE
+	data["handcuffedParams"] = null
 	if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		data["handcuffed"] = TRUE
 		data["handcuffedParams"] = list("slot" = SLOT_ID_HANDCUFFED)
 
 	data["legcuffed"] = FALSE
+	data["legcuffedParams"] = null
 	if(H.get_equipped_item(SLOT_ID_LEGCUFFED))
 		data["legcuffed"] = TRUE
 		data["legcuffedParams"] = list("slot" = SLOT_ID_LEGCUFFED)

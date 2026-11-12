@@ -35,6 +35,7 @@
 	var/optimal_oil = 2500 //25 litres of cooking oil
 
 CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
+	ui_shape(reagents = any)
 	configure(uses_power(active = 12 KILOWATTS, idle = 3.6 KILOWATTS))
 	hose_sockets(list(/datum/hose_connector/input/fryer))
 	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer, starts = /datum/looping_sound/deep_fryer)

@@ -11,7 +11,8 @@ type Data = {
 export const InventoryPanel = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { slots, internalsValid } = data;
+  // No op answers a non-human panel's actions (stripping is human-only); the Set Internals button that sent one is gone.
+  const { slots } = data;
 
   return (
     <Window width={400} height={200}>
@@ -32,18 +33,6 @@ export const InventoryPanel = (props) => {
               ))}
           </LabeledList>
         </Section>
-        {(internalsValid && (
-          /* Remove if more actions are added */
-          <Section title="Actions">
-            {(internalsValid && (
-              <Button fluid icon="lungs" onClick={() => act('internals')}>
-                Set Internals
-              </Button>
-            )) ||
-              null}
-          </Section>
-        )) ||
-          null}
       </Window.Content>
     </Window>
   );

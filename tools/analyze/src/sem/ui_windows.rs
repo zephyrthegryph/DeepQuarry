@@ -48,7 +48,9 @@ struct Block {
     owner: String,
     rel: String,
     line: u32,
-    window: Option<Result<String, ()>>,
+    /// Ok: a literal window name. Err(Some(var)): named by a var of the host (`window_var = nameof(var)`), resolved per type below.
+    /// Err(None): an expression this model cannot read.
+    window: Option<Result<String, Option<String>>>,
     forwards: bool,
     open: Option<String>,
     acts: Vec<WinAct>,
@@ -122,13 +124,36 @@ pub fn windows(tree: &Tree, decls: &Decls) -> BTreeMap<String, WinModel> {
         blocks.push(b);
     }
     // The window each type declares itself.
-    let mut declared: HashMap<String, Result<String, ()>> = HashMap::new();
+    let mut declared: HashMap<String, Result<String, Option<String>>> = HashMap::new();
     for b in &blocks {
         if let Some(w) = &b.window {
             declared.insert(b.owner.clone(), w.clone());
         }
     }
-    let window_of = |t: &str| -> Option<Result<String, ()>> { lineage(t).iter().find_map(|a| declared.get(a).cloned()) };
+    // A window named by a var of the host (`window_var = nameof(tgui_id)`): the window each type at or below the declaring one opens, by the
+    // var's value on that type (a finite set: each subtype sets its own text).
+    let mut by_var: BTreeMap<String, (String, usize)> = BTreeMap::new();
+    if declared.values().any(|w| matches!(w, Err(Some(_)))) {
+        if let Some(sem) = crate::sem::sem_for(tree) {
+            for (i, b) in blocks.iter().enumerate() {
+                if let Some(Err(Some(var))) = &b.window {
+                    for (t, name) in resolve_window_var(&sem, &b.owner, var) {
+                        // The nearest declaring block wins (a subtype that declares its own interface()).
+                        if lineage(&t).iter().find(|a| declared.contains_key(a.as_str())).map(|a| a.as_str()) == Some(b.owner.as_str()) {
+                            by_var.insert(t, (name, i));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let window_of = |t: &str| -> Option<Result<String, Option<String>>> {
+        let found = lineage(t).iter().find_map(|a| declared.get(a).cloned())?;
+        Some(match found {
+            Err(Some(var)) => by_var.get(t).map(|(n, _)| Ok(n.clone())).unwrap_or(Err(Some(var))),
+            w => w,
+        })
+    };
     let mut out: BTreeMap<String, WinModel> = BTreeMap::new();
     for b in &blocks {
         if let Some(Ok(name)) = &b.window {
@@ -138,6 +163,32 @@ pub fn windows(tree: &Tree, decls: &Decls) -> BTreeMap<String, WinModel> {
             }
             if b.forwards && w.open.is_none() {
                 w.open = Some(format!("{} forwards its window actions (interface(forwards =))", b.owner));
+            }
+        }
+    }
+    // Each type a var-named window resolves on: the window's shape is every ui_shape() in that type's lineage (a subtype whose data adds fields
+    // declares them), and a type with none is unshaped like a literal host.
+    for (t, (name, i)) in &by_var {
+        let b = &blocks[*i];
+        let w = out.entry(name.clone()).or_insert_with(|| WinModel { owner: t.clone(), rel: b.rel.clone(), line: b.line, acts: Vec::new(), open: None, shapes: Vec::new(), holders: Vec::new(), unshaped: Vec::new() });
+        if b.forwards && w.open.is_none() {
+            w.open = Some(format!("{} forwards its window actions (interface(forwards =))", b.owner));
+        }
+        if b.rel.starts_with("code/tests/") {
+            continue;
+        }
+        // Every ui_shape() in the type's lineage, nearest first: a subtype states only the fields it adds (the generator keeps the first of a name).
+        let shaping: Vec<&Block> = lineage(t).iter().filter_map(|a| blocks.iter().find(|x| x.owner == *a && !x.shapes.is_empty())).collect();
+        if shaping.is_empty() {
+            if !w.unshaped.iter().any(|(_, rel, line)| *rel == b.rel && *line == b.line) {
+                w.unshaped.push((t.clone(), b.rel.clone(), b.line));
+            }
+        }
+        for sb in shaping {
+            if !w.shapes.iter().any(|(o, _)| *o == sb.owner) {
+                for s in &sb.shapes {
+                    w.shapes.push((sb.owner.clone(), s.clone()));
+                }
             }
         }
     }
@@ -157,8 +208,14 @@ pub fn windows(tree: &Tree, decls: &Decls) -> BTreeMap<String, WinModel> {
         }
     }
     // Every holder type that opens a window: the declaring types and their subtypes with blocks.
-    let holders: Vec<(String, String)> =
+    let mut holders: Vec<(String, String)> =
         blocks.iter().filter_map(|b| match window_of(&b.owner) { Some(Ok(w)) => Some((b.owner.clone(), w)), _ => None }).collect();
+    // Each type a var-named window resolves on holds it too, block or not.
+    for (t, (name, _)) in &by_var {
+        if !holders.iter().any(|(h, _)| h == t) {
+            holders.push((t.clone(), name.clone()));
+        }
+    }
     for (h, w) in &holders {
         if let Some(m) = out.get_mut(w) {
             if !m.holders.contains(h) {
@@ -205,7 +262,8 @@ fn read_entry(entry: &str, b: &mut Block, defines: &HashMap<String, String>, ops
             let parts = split_top(body);
             b.window = Some(match parts.first().and_then(|f| text_of(f, defines)) {
                 Some(n) => Ok(n),
-                None => Err(()), // named by a var of the host (window_var =)
+                // Named by a var of the host (`window_var = nameof(tgui_id)`): each subtype sets its own value.
+                None => Err(parts.iter().skip(1).find_map(|p| window_var_of(p))),
             });
             b.forwards = parts.iter().skip(1).any(|p| p.trim_start().starts_with("forwards"));
         }
@@ -243,6 +301,47 @@ fn read_entry(entry: &str, b: &mut Block, defines: &HashMap<String, String>, ops
             }
         }
     }
+}
+
+/// `window_var = nameof(x)` -> `x`.
+fn window_var_of(part: &str) -> Option<String> {
+    let (name, value) = part.split_once('=')?;
+    if name.trim() != "window_var" {
+        return None;
+    }
+    let (f, body) = call_of(value.trim())?;
+    let var = body.trim().rsplit('.').next()?.trim();
+    (f == "nameof" && is_ident(var)).then(|| var.to_string())
+}
+
+/// Every type at or below `owner` whose `var` has a text value (its own or an ancestor's): the window each opens. A type whose value is null
+/// opens nothing (an abstract base such as the bare appliance).
+fn resolve_window_var(sem: &crate::sem::Sem, owner: &str, var: &str) -> Vec<(String, String)> {
+    use dreammaker::constants::Constant;
+    let mut out = Vec::new();
+    for t in sem.objtree.iter_types() {
+        let path = t.get().path.clone();
+        if path.is_empty() || !sem.is_subtype(&path, owner) {
+            continue;
+        }
+        let mut cur = Some(t);
+        let mut value = None;
+        while let Some(c) = cur {
+            if let Some(v) = c.get().vars.get(var) {
+                value = Some(match &v.value.constant {
+                    Some(Constant::String(s)) => Some(s.to_string()),
+                    _ => None,
+                });
+                break;
+            }
+            cur = c.parent_type();
+        }
+        if let Some(Some(name)) = value {
+            out.push((path, name));
+        }
+    }
+    out.sort();
+    out
 }
 
 /// The `ui_act(...)` call an op part is or wraps (`inputs(hand(), ui_act(...))`).

@@ -1,0 +1,31 @@
+{
+	"slots": [
+		{
+			"name": "Head (Mask)",
+			"item": "gas mask",
+			"act": "mask"
+		},
+		{
+			"name": "Left Hand",
+			"item": null,
+			"act": "l_hand"
+		},
+		{
+			"name": "Right Hand",
+			"item": "wrench",
+			"act": "r_hand"
+		},
+		{
+			"name": "Back",
+			"item": "oxygen tank",
+			"act": "back"
+		},
+		{
+			"name": "Pockets",
+			"item": "Empty Pockets",
+			"act": "pockets"
+		}
+	],
+	"internals": null,
+	"internalsValid": 1
+}
