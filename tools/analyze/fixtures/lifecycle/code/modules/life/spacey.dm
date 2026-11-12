@@ -1,7 +1,7 @@
 /datum/life/spacey
     var/a
 
-/datum/life/spacey/Initialize(mapload)
+/obj/item/card/id/guest/Initialize(mapload)
     GLOB.spaced += 1
     if(a)
         START_PROCESSING(SSobj, src)
