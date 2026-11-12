@@ -149,6 +149,13 @@
     justify-content: flex-end;
   }
 
+  // Short readouts (a bar's label, a column header) stay on one line.
+  .ProgressBar__content,
+  .Table__row--header .Table__cell,
+  .Table__cell--header {
+    white-space: nowrap;
+  }
+
   // The base styles leave the last full-width button of a column touching the one above it.
   .Button--fluid + .Button--fluid {
     margin-top: var(--space-xs);

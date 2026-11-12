@@ -319,6 +319,40 @@ export function alignmentFindings(): Finding[] {
     if (tops.size > 1) add('tabs-wrap', bar, `${tops.size} rows of tabs`);
   }
 
+  // 3e. A nested section stays inside the section around it (the parent clips what runs past its bottom edge).
+  for (const sec of Array.from(root.querySelectorAll('.Section'))) {
+    if (!inScope(sec) || !visible(sec)) continue;
+    const outer = sec.parentElement?.closest('.Section');
+    if (!outer || !visible(outer)) continue;
+    const a = sec.getBoundingClientRect();
+    const b = outer.getBoundingClientRect();
+    // Content inside a scrolling section (or a window that scrolls) is scrolled, not spilled.
+    const scroller = sec.parentElement?.closest('.Section--scrollable');
+    if (scroller && (scroller === outer || outer.contains(scroller))) continue;
+    if (scroller?.contains(outer)) continue;
+    if (a.bottom > b.bottom + 1) {
+      add(
+        'section-overflow',
+        sec,
+        `section runs ${Math.round(a.bottom - b.bottom)}px past the bottom of the one around it`,
+      );
+    }
+  }
+
+  // 3f. A short label stays on one line.
+  for (const el of Array.from(root.querySelectorAll('*'))) {
+    if (!inScope(el) || !visible(el)) continue;
+    const own = Array.from(el.childNodes)
+      .filter((n) => n.nodeType === 3)
+      .map((n) => n.textContent ?? '')
+      .join('')
+      .trim();
+    if (own.length < 3 || own.length > 14 || !own.includes(' ')) continue;
+    if (el.closest('.Button, .Tab, .Tooltip, .LabeledControls')) continue;
+    if (textLineCount(el) > 1)
+      add('short-wrap', el, `"${own}" wraps onto ${textLineCount(el)} lines`);
+  }
+
   // 4. LabeledList: label and value columns line up, first lines share a baseline.
   for (const list of Array.from(root.querySelectorAll('.LabeledList'))) {
     if (!inScope(list) || !visible(list)) continue;

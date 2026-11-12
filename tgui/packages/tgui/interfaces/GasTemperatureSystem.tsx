@@ -35,7 +35,7 @@ export const GasTemperatureSystem = (props) => {
   } = data;
 
   return (
-    <Window width={270} height={270}>
+    <Window width={420} height={270}>
       <Window.Content>
         <Section
           title="Controls"

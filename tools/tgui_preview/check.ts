@@ -37,7 +37,8 @@ const targets = names.length ? names : all;
 
 const { buildWindowGeometryManifest } = await import(pathToFileURL(path.join(tgui, 'windowGeometryManifest.ts')).href);
 const geometry = buildWindowGeometryManifest(path.join(tgui, 'packages/tgui/interfaces'));
-const jobs = targets.map((n) => ({ name: n, width: geometry[n]?.width ?? 560, height: geometry[n]?.height ?? 640 }));
+// A window that states its size as literals is laid out at exactly that; one that computes it reports the size it asked for.
+const jobs = targets.map((n) => ({ name: n, width: geometry[n]?.width ?? 560, height: geometry[n]?.height ?? 640, exact: !!geometry[n]?.exact }));
 
 type Row = { name: string; theme: string; findings: unknown[]; size?: [number, number] };
 const results = new Map<string, Row>();
@@ -65,6 +66,7 @@ function run(job) {
   const onMsg = (e) => {
     if (e.source !== f.contentWindow) return;
     if (e.data.sizeRequest) {
+      if (job.exact) return;
       job.size = e.data.sizeRequest;
       f.style.width = job.size[0] + 'px'; f.style.height = job.size[1] + 'px';
       return;
@@ -110,7 +112,10 @@ server.stop(true);
 
 // The size each window asked for, for the screenshots (shoot.ts --sizes).
 const sizes: Record<string, [number, number]> = {};
-for (const row of results.values()) if (row.size) sizes[row.name] = row.size;
+for (const job of jobs) {
+  const row = results.get(job.name);
+  sizes[job.name] = job.exact ? [job.width, job.height] : (row?.size ?? [job.width, job.height]);
+}
 writeFileSync(path.join(out, 'sizes.json'), JSON.stringify(sizes));
 const byRule: Record<string, number> = {};
 const windows: Record<string, unknown[]> = {};
