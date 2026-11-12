@@ -22,6 +22,10 @@ fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
     for (number, line) in f.raw().numbered() {
         let stripped = pat!(r#""(?:[^"\\]|\\.)*""#).replace_all(line, "\"\"");
         let code = before_slashes(&stripped);
+        // A window's ui_shape(verbs = list_of(...)) names a data field, not the mob's verbs list.
+        if code.trim_start().starts_with("ui_shape(") {
+            continue;
+        }
         if pat!(
             r"\badd_verb\s*\(|\bremove_verb\s*\(|\bverbs\s*(\+|-|\||&|\^)=|\bverbs\s*=(?!=)|\bverbs\s*\.\s*(Add|Remove|Cut|Insert|Swap|Splice)\s*\(|\bverbs\s*\[[^\]]*\]\s*=(?!=)|\bnew\s*/[\w/]*/(proc|verb)/\w+\s*\("
         )
