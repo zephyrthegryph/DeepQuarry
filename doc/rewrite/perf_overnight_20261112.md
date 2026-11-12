@@ -164,3 +164,29 @@ all on their declaring type and all called; setters are reached by name (`call(h
 variables), so "emit only if called" is unsafe for them. The one dead one is `/datum/set_open_tguis` (the TRACKED macro writes a setter for
 lists too; ~1.2 MB). Not re-measured on a booted world: master at b1eb979362 does not compile (events.dm `set_bankrupt` undefined, from
 the reads lane), so no boot measurement was taken; the lane compiled with that one line patched locally (not committed) and passed 12 focused tests (boot gate, tracked lists, staleness, ui fixtures, verdigris binds, atmos).
+
+## Round 7 (perf/overnight-r7-*)
+
+Same bench (`boot_profile,major_events --arg=events=supermatter --profile`), one before run and two after runs (boot_profile only); the machine
+was shared. Item 0 (9f42258efc): the vore panel's "Current Selected" cleared spont bellies through the state's own setter (it existed, the
+generated TRACKED_STATE one, so no runtime) and bypassed the lazy-state drop; it now uses STATE_SET, and `host().client?.prefs_vr` no longer
+runtimes for a clientless host (`dq_vore_spont_belly_select`).
+
+11. **No init baseline for ANY on_change hooks on plain vars** (5ff7ffa3c5). A census of live datums after boot (throwaway test, minitest)
+   put /datum/entry 23 k, /datum/rx_state 18 k, /datum/centry 15 k, turf gas mixtures 8.8 k, type tables 7.7 k first. hooks_change_baseline
+   evaluated every type-level on_change hook of each of 13.9 k holders at init (every floor's 7 redraw hooks). An ANY hook on a plain non-list
+   var needs no baseline: its key is published only by the setter on a new value, and hook_change_eval() already runs an ANY hook with no last
+   value. change_value at boot 79.4 k -> 14.3 k calls; hooks_change_baseline 1.26 s -> 0.82 / 0.84 s total (profiled). init_seconds 36.8 ->
+   35.4 / 36.2 s and Atoms 23.4 -> 22.9 s are inside the noise. rx_state count is unchanged (other paths make it). `GLOB.change_baselines_skipped`
+   counts the skips; test `dq_change_baseline_skip`. Behaviour change: a var written A -> B -> A before one drain now runs its ANY hook once.
+
+Surveyed, not changed:
+
+- Boot census, other categories: 4.1 k /datum/gear_tweak (5 stateless tweaks per loadout entry, 818 entries) could be 5 shared singletons,
+  but _gear.dm deliberately made the list owned (owns_many) rather than mixing singletons with per-entry tweaks; a design call, left.
+  1040 /obj/effect/overlay/gas exist at boot (not investigated).
+- Supermatter explosion (one profiled run): step_epoch 3.55 s over 5166 turfs, worst tick 108 %. Per-turf work is still flat: ChangeTurf 1.60 s
+  (2346; replaced_by -> destroy_transaction 1.16 s), deal_damage 1.17 s (2344), ReplaceWithLattice 0.92 s (953, of which ChangeTurf ~0.65 s,
+  the lattice's own init and neighbour redraw timers ~0.27 s). The identifiable pieces are small: the old floor's own gas mixture goes through
+  a full destroy transaction (2268, ~0.3 s; already QDEL_HINT_IWILLGC), and a floor blast runs two hit actions, react_to_entry() then
+  deal_damage()'s generic hit (~0.1 s; merging them changes refusal and zero-damage semantics). Neither changed.
