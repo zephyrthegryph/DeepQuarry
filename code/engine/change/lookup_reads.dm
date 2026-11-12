@@ -25,7 +25,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 
 /datum/lookup_read_scope/proc/ensure(datum/reader, datum/root, list/spec)
 	READS_FROM()
-	var/key = "[handle_text(handle_of(reader))]|[spec["key"]]|[root ? handle_of(root) : "literal"]"
+	var/key = "[handle_text(handle_of(reader))]|[spec["key"]]|[root ? handle_text(handle_of(root)) : "literal"]"
 	var/datum/lookup_read_binding/existing = bindings?[key]
 	if(existing)
 		return existing

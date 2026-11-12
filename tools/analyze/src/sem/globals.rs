@@ -39,6 +39,58 @@ const LIST_MUTATORS: &[&str] = &["Add", "Cut", "Remove", "Insert", "Swap", "Spli
 /// Calls that change their first argument in place.
 const ARG_MUTATORS: &[&str] = &["sortTim", "shuffle", "reverse_range"];
 
+/// The relation layer's mutators (code/engine/declare/relations.dm) and which of their arguments name a var they write: `rel_add(E, nameof(E.v), x)`
+/// changes `v` as an assignment would, so a relation list filled at run time is not constant after init (sem/reads.rs `global_field`).
+const REL_MUTATORS: &[(&str, &[usize])] = &[
+    ("rel_set", &[1]),
+    ("rel_add", &[1]),
+    ("rel_remove", &[1]),
+    ("rel_clear", &[1]),
+    ("rel_take", &[1]),
+    ("rel_take_all", &[1]),
+    ("rel_move", &[1, 3]),
+    ("rel_link", &[1]),
+    ("rel_unlink", &[1]),
+];
+
+/// The vars a relation mutator call writes: (the index of the holder argument, the var name, the type a `nameof(/type::v)` names).
+pub(crate) fn rel_mutator_vars(name: &str, args: &[Expression]) -> Vec<(usize, String, Option<String>)> {
+    let Some((_, slots)) = REL_MUTATORS.iter().find(|(m, _)| *m == name) else { return Vec::new() };
+    slots.iter().filter_map(|&k| args.get(k).and_then(rel_var_arg).map(|(v, at)| (k - 1, v, at))).collect()
+}
+
+/// The var a relation mutator's name argument names: `nameof(v)`, `nameof(x.v)`, `nameof(/type::v)` (with the type) or a string literal.
+fn rel_var_arg(e: &Expression) -> Option<(String, Option<String>)> {
+    let Expression::Base { term, follow } = e else { return None };
+    if !follow.is_empty() {
+        return None;
+    }
+    match &term.elem {
+        Term::String(s) => Some((s.clone(), None)),
+        Term::Call(n, args) if n.as_str() == "nameof" => {
+            let Some(Expression::Base { term: t, follow: fo }) = args.first() else { return None };
+            if let Some(f) = fo.last() {
+                return match &f.elem {
+                    Follow::Field(_, n) => Some((n.as_str().to_string(), None)),
+                    Follow::StaticField(n) => {
+                        let at = match &t.elem {
+                            Term::Prefab(p) if fo.len() == 1 => Some(p.path.iter().map(|(_, s)| format!("/{s}")).collect::<String>()),
+                            _ => None,
+                        };
+                        Some((n.as_str().to_string(), at))
+                    }
+                    _ => None,
+                };
+            }
+            match &t.elem {
+                Term::Ident(n) => Some((n.clone(), None)),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
 /// The per-tick procs of objects: what a machine, mob or processing object runs every tick it is processed.
 const TICK_PROCS: &[&str] = &["process", "Life", "life_tick", "handle_life", "process_atmos", "process_cell"];
 
@@ -300,6 +352,13 @@ fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashS
                             }
                         }
                     }
+                    // A tracked setter writes its var (`set_v(x)` on src).
+                    if let Some(v) = n.as_str().strip_prefix("set_").filter(|v| !v.is_empty()) {
+                        f.field_writes.insert(v.to_string());
+                    }
+                    for (_, v, _) in rel_mutator_vars(n.as_str(), args) {
+                        f.field_writes.insert(v);
+                    }
                     if ARG_MUTATORS.contains(&n.as_str()) {
                         if let Some(Expression::Base { term: t, follow: fo }) = args.first() {
                             note_field(t, fo, &locals, f);
@@ -321,6 +380,10 @@ fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashS
                 for fo in follow.iter() {
                     if let Follow::Call(_, name, _) = &fo.elem {
                         f.calls.insert(name.as_str().to_string());
+                        // `x.set_v(..)`: a tracked setter writes `v` on the receiver.
+                        if let Some(v) = name.as_str().strip_prefix("set_").filter(|v| !v.is_empty()) {
+                            f.field_writes.insert(v.to_string());
+                        }
                         if LIST_MUTATORS.contains(&name.as_str()) {
                             note_field(term, &follow[..i], &locals, f);
                             if let Some((g, skip)) = global_of(term, &follow[..i], globals, glob_fields, &locals) {

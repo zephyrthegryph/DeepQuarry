@@ -544,6 +544,20 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
             }
         }
     }
+    // A declared relation var (owns_one / ref_many / links ...) publishes its writes: every relation mutator (rel_set / rel_add / rel_remove /
+    // rel_clear, code/engine/declare/relations.dm) ends in own_field_changed() or state_changed() on the holder, as a tracked setter does.
+    {
+        let decls = crate::sem::decls::Decls::get(tree);
+        for vars in decls.relations.values() {
+            ctx.tracked.extend(vars.iter().cloned());
+        }
+        if let Some(sem) = crate::sem::sem_for(tree) {
+            let ann = crate::sem::reads::Annotations::shared(tree, &sem, &decls);
+            for vars in ann.relations.values() {
+                ctx.tracked.extend(vars.iter().cloned());
+            }
+        }
+    }
     // `dir` is a tracked read of every drawn atom: /atom/set_dir() publishes its change (code/domains/world_model/atom/atom.dm), so a draw
     // reading `dir` (its own or a watched neighbour's) redraws.
     ctx.tracked.insert("dir".to_string());

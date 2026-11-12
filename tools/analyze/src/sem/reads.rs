@@ -1085,7 +1085,51 @@ pub fn typed_writes(sem: &Sem, p: ProcRef) -> Vec<(String, String)> {
             }
         }
     });
+    // Writes that are calls: a tracked setter (`x.set_v(..)`, `set_v(..)`) and a relation mutator (`rel_add(E, nameof(E.v), ..)`) write `v` as an
+    // assignment does. Without them a var whose every write went through its setter or the relation layer reads as never written (constant).
+    super::ast::walk_block(code, &mut |e, _| {
+        let Expression::Base { term, follow } = e else { return };
+        if let Term::Call(n, args) = &term.elem {
+            if let Some(v) = n.as_str().strip_prefix("set_") {
+                if let Some(d) = sem.var_owner(&owner, v) {
+                    out.insert((d, v.to_string()));
+                }
+            }
+            for (k, v, at) in super::globals::rel_mutator_vars(n.as_str(), args) {
+                let recv = match args.get(k) {
+                    Some(Expression::Base { term: t, follow: fo }) => call_receiver_type(sem, &owner, &locals, t, fo),
+                    _ => None,
+                };
+                match declaring(sem, at.or(recv), &v) {
+                    Receiver::Typed(d) => out.insert((d, v)),
+                    _ => out.insert((UNTYPED_WRITE.to_string(), v)),
+                };
+            }
+        }
+        for (i, fo) in follow.iter().enumerate() {
+            let Follow::Call(_, name, _) = &fo.elem else { continue };
+            let Some(v) = name.as_str().strip_prefix("set_") else { continue };
+            if v.is_empty() {
+                continue;
+            }
+            if let Some(t) = call_receiver_type(sem, &owner, &locals, term, &follow[..i]) {
+                if let Some(d) = sem.var_owner(&t, v) {
+                    out.insert((d, v.to_string()));
+                }
+            }
+        }
+    });
     out.into_iter().collect()
+}
+
+/// [`receiver_type`], and the declared return type of a proc call receiver (`company().set_bankrupt(1)`, `as /datum/stock`).
+fn call_receiver_type(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>>, term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<String> {
+    if follow.is_empty() {
+        if let Term::Call(n, _) = &term.elem {
+            return crate::lints::image_dir_after_build::return_type(sem, owner, n.as_str());
+        }
+    }
+    receiver_type(sem, owner, locals, term, follow)
 }
 
 enum Receiver {
@@ -1945,7 +1989,10 @@ impl<'a, 'e> Walk<'a, 'e> {
         let owner = sem.var_owner(&ty, name).unwrap_or_else(|| ty.clone());
         let is_glob = chain.global == "GLOB" && chain.steps.is_empty();
         let mut tracked_system = None;
-        if !is_glob && chain.steps.is_empty() && sem.is_subtype(&ty, "/datum/system") && self.eng.is_tracked(&owner, name) {
+        // A declared relation of a datum publishes its writes as a tracked var does: every relation mutator (rel_set / rel_add / rel_remove /
+        // rel_clear, code/engine/declare/relations.dm) ends in own_field_changed() or state_changed() on the holder, which reaches its readers.
+        let relation = self.eng.is_relation(&ty, name) || self.eng.is_relation(&owner, name);
+        if !is_glob && chain.steps.is_empty() && sem.is_subtype(&ty, "/datum/system") && (self.eng.is_tracked(&owner, name) || relation) {
             let short = ty.trim_start_matches("/datum/system/").split('/').next().unwrap_or("").to_string();
             tracked_system = Some(short);
         }
@@ -1957,7 +2004,10 @@ impl<'a, 'e> Walk<'a, 'e> {
             // only boot code fills it.)
             let constant = sig.is_const || if is_glob { self.eng.globals().constant_after_init(name) } else if self.eng.is_relation(&ty, name) { self.eng.globals().field_constant_after_init(name) } else { !self.eng.write_index().is_written_on(self.eng.sem, &ty, name) || self.eng.globals().field_constant_after_init(name) };
             if !constant && !self.global_internal(fr, name, if is_glob { &sig.declared } else { &ty }, &sig.file) {
-                if is_glob || self.query_depth > 0 || framework_file(&rel) || framework_file(&sig.file) || owner == "/" || !sem.is_subtype(&owner, "/datum") || (chain.steps.is_empty() && sem.is_subtype(&ty, "/datum/system")) {
+                // A relation of a datum the chain reaches with no call or iteration (`GLOB.x.rel` read inside a query `GLOB.x.f(arg)`): the chain
+                // is static whatever the query's arguments are, so the runtime binds it as it binds one read outside a query.
+                let static_relation = relation && !chain.steps.iter().any(|st| st.call || st.each);
+                if is_glob || (self.query_depth > 0 && !static_relation) || framework_file(&rel) || framework_file(&sig.file) || owner == "/" || !sem.is_subtype(&owner, "/datum") || (chain.steps.is_empty() && sem.is_subtype(&ty, "/datum/system")) {
                     // A var of GLOB itself (or a real global): no entity to publish it. A system's own var is read through its tracked
                     // vars and accessors (SYSTEM_DEF), the system read above.
                     if self.chain_call_depth == 0 {
@@ -2866,6 +2916,36 @@ TRACKED(/datum/thing, charge)
         let globals = closed.globals();
         assert!(globals.field_constant_after_init("boot_only"), "written only by load(), which only initialize() calls (a unit test's write does not count)");
         assert!(!globals.field_constant_after_init("runtime"), "poke() is not boot-only");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_relation_mutator_is_a_write_of_the_var_it_names() {
+        let content = "/datum/system/fill
+	var/list/boot_rel
+	var/list/added
+	var/list/taken
+	var/list/moved
+/datum/system/fill/proc/initialize()
+	rel_add(src, nameof(boot_rel), null)
+/datum/system/fill/proc/poke(datum/x)
+	rel_add(src, nameof(src.added), x)
+	rel_take(src, nameof(/datum/system/fill::taken), member = x)
+	rel_move(src, \"boot_rel\", src, nameof(moved), x)
+/datum/thing
+	var/charge = 0
+TRACKED(/datum/thing, charge)
+/datum/thing/proc/probe()
+	return charge
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/globals.dm", GLOBALS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let globals = closed.globals();
+        for v in ["added", "taken", "moved", "boot_rel"] {
+            assert!(!globals.field_constant_after_init(v), "{v}: a relation mutator outside boot writes it");
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 
