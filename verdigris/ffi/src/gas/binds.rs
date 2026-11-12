@@ -309,7 +309,7 @@ fn read_mixture_levels(mixtures: ByondValue, gas_ids: ByondValue) -> Result<Byon
         .held_list()?
         .iter()
         .map(|g| {
-            let id = crate::arg::index(&g, "gas id")?;
+            let id = crate::arg::index(g, "gas id")?;
             if id >= gas::GAS_COUNT {
                 eyre::bail!("read_mixture_levels: no gas {id}");
             }

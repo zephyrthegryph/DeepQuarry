@@ -1586,7 +1586,7 @@ fn take_release_notes() -> Result<ByondValue> {
     if notes.is_empty() {
         return Ok(ByondValue::null());
     }
-    Ok(ByondValue::new_str(notes.join("; "))?)
+    Ok(crate::held::Held::new_str(notes.join("; "))?.leak())
 }
 
 /// A turf's gas temperature, heat capacity and whether it is a reservoir, if it has gas.

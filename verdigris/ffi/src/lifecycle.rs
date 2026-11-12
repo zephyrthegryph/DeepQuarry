@@ -28,12 +28,12 @@ const VERSION_STRING: &str = const_format!(
 // DreamDaemon.
 #[auxmacros::bind("/proc/verdigris_version")]
 fn verdigris_version() -> Result<ByondValue> {
-    Ok(ByondValue::new_str(VERSION_STRING)?)
+    Ok(crate::held::Held::new_str(VERSION_STRING)?.leak())
 }
 
 #[auxmacros::bind("/proc/verdigris_features")]
 fn verdigris_features() -> Result<ByondValue> {
-    Ok(ByondValue::new_str(CRATE_FEATURES)?)
+    Ok(crate::held::Held::new_str(CRATE_FEATURES)?.leak())
 }
 
 #[auxmacros::bind("/proc/verdigris_allocator_diagnostics")]
@@ -65,7 +65,7 @@ fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
     crate::world::revive()?;
     crate::entity::reset_all()?;
     crate::adjacency::reset();
-    Ok(ByondValue::new_str(crate::abi::ABI)?)
+    Ok(crate::held::Held::new_str(crate::abi::ABI)?.leak())
 }
 
 /// Drop transient Rust-side state for a clean `/world/New()`
