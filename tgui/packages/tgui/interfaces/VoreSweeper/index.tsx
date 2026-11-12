@@ -9,7 +9,7 @@ import type { Data } from './types';
 export const VoreSweeper = (props) => {
   const { data } = useBackend<Data, VoreSweeperActions>();
 
-  const { grid_size, is_dealer } = data;
+  const { grid_size = 0, is_dealer } = data;
   const added_height = grid_size * 64;
   const added_width = grid_size * 66;
   return (

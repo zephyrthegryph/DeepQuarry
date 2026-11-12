@@ -551,7 +551,7 @@ export const DQMedicalBook = () => {
           <Stack.Item grow>
             {tab === 'conditions' && (
               <ConditionTab
-                conditions={data.conditions}
+                conditions={data.conditions ?? []}
                 query={query}
                 selectedId={condSel}
                 onSelect={setCondSel}
@@ -564,7 +564,7 @@ export const DQMedicalBook = () => {
             )}
             {tab === 'symptoms' && (
               <SymptomTab
-                symptoms={data.symptoms}
+                symptoms={data.symptoms ?? []}
                 query={query}
                 selectedId={symSel}
                 onSelect={setSymSel}
@@ -573,7 +573,7 @@ export const DQMedicalBook = () => {
             )}
             {tab === 'reagents' && (
               <ReagentTab
-                reagents={data.reagents}
+                reagents={data.reagents ?? []}
                 query={query}
                 selectedId={regSel}
                 onSelect={setRegSel}
@@ -583,7 +583,7 @@ export const DQMedicalBook = () => {
             )}
             {tab === 'causes' && (
               <CauseTab
-                causes={data.causes}
+                causes={data.causes ?? []}
                 query={query}
                 selectedId={causeSel}
                 onSelect={setCauseSel}
@@ -592,7 +592,7 @@ export const DQMedicalBook = () => {
             )}
             {tab === 'surgeries' && (
               <SurgeryTab
-                surgeries={data.surgeries}
+                surgeries={data.surgeries ?? []}
                 query={query}
                 selectedId={surgerySel}
                 onSelect={setSurgerySel}

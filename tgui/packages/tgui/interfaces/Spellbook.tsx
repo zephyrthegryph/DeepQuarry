@@ -37,8 +37,15 @@ type Data = {
 
 export const Spellbook = () => {
   const { data, act } = useBackend<Data, SpellbookActions>();
-  const { temp, uses, max_uses, can_rememorize, spells, artefacts, noclothes } =
-    data;
+  const {
+    temp,
+    uses,
+    max_uses,
+    can_rememorize,
+    spells = [],
+    artefacts = [],
+    noclothes,
+  } = data;
   if (temp) {
     return (
       <Window width={520} height={260} title="The Book of Spells">
@@ -79,11 +86,11 @@ export const Spellbook = () => {
               </Stack.Item>
             ))}
             <Stack.Item>
-              <Button onClick={() => act('choose', { id: noclothes.id })}>
-                {noclothes.name}
+              <Button onClick={() => act('choose', { id: noclothes?.id })}>
+                {noclothes?.name}
               </Button>
               <Box ml={1} italic color="label">
-                {noclothes.desc}
+                {noclothes?.desc}
               </Box>
             </Stack.Item>
           </Stack>

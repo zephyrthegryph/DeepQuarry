@@ -8,5 +8,5 @@
 	var/mob/living/simple_mob/slime/xenobio/other = allocate(/mob/living/simple_mob/slime/xenobio, T)
 	TEST_ASSERT(istext(slime.consume_refusal(other)), "a slime cannot feed on another slime")
 	TEST_ASSERT_NULL(slime.consume_refusal(victim), "an adjacent unarmoured human can be fed on")
-	slime.harmless = TRUE
+	slime.set_harmless(TRUE)
 	TEST_ASSERT(istext(slime.consume_refusal(victim)), "a pacified slime refuses to feed")

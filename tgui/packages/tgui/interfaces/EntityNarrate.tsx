@@ -61,7 +61,7 @@ export const EntityNarrate = (props) => {
 // Clicking the tab again removes it
 export const EntitySelection = (props) => {
   const { act, data } = useBackend<data>();
-  const { selection_mode, multi_id_selection, entity_names } = data;
+  const { selection_mode, multi_id_selection, entity_names = [] } = data;
   return (
     <Section
       title="Choose!"

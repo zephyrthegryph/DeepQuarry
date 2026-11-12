@@ -27,7 +27,7 @@ type Data = {
 
 export const Clipboard = () => {
   const { data, act } = useBackend<Data, ClipboardActions>();
-  const { has_pen, items } = data;
+  const { has_pen, items = [] } = data;
 
   return (
     <Window width={480} height={440} title="Clipboard">

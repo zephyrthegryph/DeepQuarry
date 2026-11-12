@@ -27,6 +27,7 @@ Window.Content = Content;
 
 mock.module('../layouts', () => ({
   Window,
+  NtosWindow: Window,
   Layout: Window,
   Pane: Window,
 }));

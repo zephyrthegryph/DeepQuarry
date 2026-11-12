@@ -28,7 +28,7 @@ export const SortButton = (props: {
       >
         {children}
         {sortId === ourId && (
-          <Icon name={sortOrder ? 'sort-up' : 'sort-down'} ml="0.25rem;" />
+          <Icon name={sortOrder ? 'sort-up' : 'sort-down'} ml="0.25rem" />
         )}
       </Button>
     </Table.Cell>

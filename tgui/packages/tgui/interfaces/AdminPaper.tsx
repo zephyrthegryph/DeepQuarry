@@ -39,7 +39,7 @@ export const AdminPaper = () => {
   const { data, act } = useBackend<Data, AdminPaperActions>();
   const {
     title,
-    segments,
+    segments = [],
     stamps,
     header_html,
     footer_html,

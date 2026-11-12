@@ -29,7 +29,7 @@ export const TraitTutorial = (props) => {
 export const TraitSelection = (props) => {
   const { act, data } = useBackend<data, TraitTutorialActions>();
 
-  const { names, selection } = data;
+  const { names = [], selection } = data;
 
   return (
     <Stack>

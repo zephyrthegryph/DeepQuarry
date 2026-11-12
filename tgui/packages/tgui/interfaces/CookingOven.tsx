@@ -15,7 +15,7 @@ import { ApplianceStatus, type Data } from './Appliance';
 export const CookingOven = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { our_contents, is_open, state_prefix = 'oven' } = data;
+  const { our_contents = [], is_open, state_prefix = 'oven' } = data;
 
   return (
     <Window width={600} height={600}>

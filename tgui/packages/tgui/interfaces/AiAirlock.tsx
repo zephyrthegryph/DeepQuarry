@@ -55,8 +55,8 @@ export const AiAirlock = (props) => {
   const flat = data;
 
   const {
-    power,
-    wires,
+    power = {} as Data['power'],
+    wires = {} as Data['wires'],
     electrified,
     electrified_left,
     emergency,

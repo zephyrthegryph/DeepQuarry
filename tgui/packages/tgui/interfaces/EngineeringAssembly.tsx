@@ -125,7 +125,7 @@ export const EngineeringAssembly = () => {
         )}
         <Section title="Installed parts">
           <LabeledList>
-            {data.parts.map((part) => (
+            {(data.parts ?? []).map((part) => (
               <LabeledList.Item key={part.role} label={part.role}>
                 {part.material}
                 <Box inline ml={1} color="label">

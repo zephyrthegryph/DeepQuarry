@@ -69,7 +69,7 @@ export const ClawMachine = (props) => {
   }
   return (
     <Window>
-      <center>{body}</center>
+      <Box textAlign="center">{body}</Box>
     </Window>
   );
 };

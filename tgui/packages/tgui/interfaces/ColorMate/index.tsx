@@ -235,7 +235,7 @@ export const ColorMate = (props) => {
                   </Stack.Item>
                 </Stack>
               ) : (
-                <center>No item inserted.</center>
+                <Box textAlign="center">No item inserted.</Box>
               )}
             </Stack.Item>
           </Stack>

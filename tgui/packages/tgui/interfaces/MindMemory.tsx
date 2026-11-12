@@ -18,7 +18,7 @@ type Data = {
 
 export const MindMemory = () => {
   const { data, act } = useBackend<Data, MindMemoryActions>();
-  const { name, memory, ambitions, objectives } = data;
+  const { name, memory, ambitions, objectives = [] } = data;
   return (
     <Window width={520} height={520} title={`Memory: ${name}`}>
       <Window.Content scrollable>

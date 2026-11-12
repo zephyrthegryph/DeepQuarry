@@ -21,7 +21,13 @@ type Data = {
 export const AtmosFilter = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { on, rate, max_rate, last_flow_rate, filter_types = [] } = data;
+  const {
+    on,
+    rate = 0,
+    max_rate,
+    last_flow_rate = 0,
+    filter_types = [],
+  } = data;
 
   return (
     <Window width={390} height={187}>

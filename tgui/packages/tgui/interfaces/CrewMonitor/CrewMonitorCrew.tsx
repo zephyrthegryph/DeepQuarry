@@ -57,9 +57,9 @@ export const CrewMonitorCrew = (props: { crew: Crewmember[] }) => {
   const [unconsciousStatus, setUnconsciousStatus] = useState<boolean>(true);
   const [deceasedStatus, setDeceasedStatus] = useState<boolean>(true);
 
-  const { crew } = props;
+  const { crew = [] } = props;
 
-  const { isAI, map_levels } = data;
+  const { isAI, map_levels = [] } = data;
 
   const our_levels: number[] = [-1, ...map_levels];
 

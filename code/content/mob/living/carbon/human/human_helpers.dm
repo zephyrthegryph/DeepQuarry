@@ -1,36 +1,20 @@
-#define HUMAN_EATING_NO_ISSUE		0
-#define HUMAN_EATING_NO_MOUTH		1
-#define HUMAN_EATING_BLOCKED_MOUTH	2
-
-/mob/living/carbon/human/can_eat(food, feedback = 1)
-	var/list/status = can_eat_status()
-	if(status[1] == HUMAN_EATING_NO_ISSUE)
-		return 1
-	if(feedback)
-		if(status[1] == HUMAN_EATING_NO_MOUTH)
-			balloon_alert(src, "you don't have a mouth!")
-		else if(status[1] == HUMAN_EATING_BLOCKED_MOUTH)
-			balloon_alert(src, "\the [status[2]] is in the way!")
-	return 0
-
-/mob/living/carbon/human/can_force_feed(feeder, food, feedback = 1)
-	var/list/status = can_eat_status()
-	if(status[1] == HUMAN_EATING_NO_ISSUE)
-		return 1
-	if(feedback)
-		if(status[1] == HUMAN_EATING_NO_MOUTH)
-			balloon_alert(src, "\the [src] doesn't have a mouth!")
-		else if(status[1] == HUMAN_EATING_BLOCKED_MOUTH)
-			balloon_alert(feeder, "\the [status[2]] is in the way!")
-	return 0
-
-/mob/living/carbon/human/proc/can_eat_status()
+/// Why this person cannot eat `food` themselves, or null when they can. It never prints: the player action that asked shows the reason.
+/mob/living/carbon/human/eat_refusal(food)
 	if(!check_has_mouth())
-		return list(HUMAN_EATING_NO_MOUTH)
+		return "you don't have a mouth!"
 	var/obj/item/blocked = check_mouth_coverage()
 	if(blocked)
-		return list(HUMAN_EATING_BLOCKED_MOUTH, blocked)
-	return list(HUMAN_EATING_NO_ISSUE)
+		return "\the [blocked] is in the way!"
+	return null
+
+/// Why `feeder` cannot feed this person `food`, or null when they can. It never prints.
+/mob/living/carbon/human/force_feed_refusal(feeder, food)
+	if(!check_has_mouth())
+		return "\the [src] doesn't have a mouth!"
+	var/obj/item/blocked = check_mouth_coverage()
+	if(blocked)
+		return "\the [blocked] is in the way!"
+	return null
 
 /mob/living/carbon/human/proc/get_coverage()
 	var/list/coverage = list()
@@ -247,9 +231,6 @@
 
 	return FALSE
 
-#undef HUMAN_EATING_NO_ISSUE
-#undef HUMAN_EATING_NO_MOUTH
-#undef HUMAN_EATING_BLOCKED_MOUTH
 
 
 GLOBAL_DATUM_INIT(ingame_hud_vr, /icon, icon('icons/mob/hud_vr.dmi'))

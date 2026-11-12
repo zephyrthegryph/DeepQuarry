@@ -15,7 +15,7 @@ import type { Data } from './types';
 export const NIFMain = (props) => {
   const { act, data } = useBackend<Data, NIFActions>();
 
-  const { nif_percent, nif_stat, nutrition, isSynthetic, modules } = data;
+  const { nif_percent, nif_stat, nutrition, isSynthetic, modules = [] } = data;
 
   const { setViewing } = props;
 

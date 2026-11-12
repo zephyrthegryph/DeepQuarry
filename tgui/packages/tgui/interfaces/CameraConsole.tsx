@@ -80,7 +80,7 @@ export const CameraConsole = (props) => {
   const { act, data } = useBackend<Data, CameraConsoleActions>();
   const { mapRef, activeCamera } = data;
 
-  const { cameras } = data;
+  const { cameras = [] } = data;
 
   const selected_cameras: camera[] = selectCameras(cameras);
   const [prevCameraName, nextCameraName]: string[] = prevNextCamera(
@@ -141,7 +141,7 @@ export const CameraConsoleContent = (props) => {
   const { act, data } = useBackend<Data, CameraConsoleActions>();
   const [searchText, setSearchText] = useState<string>('');
   const [networkFilter, setNetworkFilter] = useState<string>('');
-  const { activeCamera, allNetworks, cameras } = data;
+  const { activeCamera, allNetworks = [], cameras = [] } = data;
   allNetworks.sort();
   const selected_cameras: camera[] = selectCameras(
     cameras,

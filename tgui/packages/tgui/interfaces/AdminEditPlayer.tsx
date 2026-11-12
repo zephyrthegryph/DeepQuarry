@@ -531,7 +531,7 @@ const LanguageSection = (props: { data: Data; act: ActFn }) => {
   return (
     <Section title="Languages">
       <Stack wrap>
-        {data.languages.map((l) => (
+        {(data.languages ?? []).map((l) => (
           <Stack.Item key={l.key}>
             <Button
               compact

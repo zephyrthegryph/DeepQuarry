@@ -16,7 +16,7 @@ type Data = {
 export const NtosAccessDecrypter = (props) => {
   const { act, data } = useBackend<Data, NtosAccessDecrypterActions>();
 
-  const { message, running, rate, factor, regions } = data;
+  const { message, running, rate, factor, regions = [] } = data;
 
   const generate10String = (length: number) => {
     let outString = '';

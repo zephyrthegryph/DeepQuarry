@@ -60,14 +60,14 @@ export const TelesciConsoleContent = (props) => {
 
   const {
     insertedGps,
-    rotation,
+    rotation = 0,
     currentZ,
-    cooldown,
+    cooldown = 0,
     crystalCount,
     maxCrystals,
     maxPossibleDistance,
-    maxAllowedDistance,
-    distance,
+    maxAllowedDistance = 0,
+    distance = 0,
     tempMsg,
     sectorOptions,
     lastTeleData,

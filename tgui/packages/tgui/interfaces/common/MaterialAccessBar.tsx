@@ -54,7 +54,11 @@ export type MaterialAccessBarProps = {
 const LABEL_FORMAT = (value: number) => formatSiUnit(value, 0);
 
 export const MaterialAccessBar = (props: MaterialAccessBarProps) => {
-  const { availableMaterials, SHEET_MATERIAL_AMOUNT, onEjectRequested } = props;
+  const {
+    availableMaterials = [],
+    SHEET_MATERIAL_AMOUNT,
+    onEjectRequested,
+  } = props;
 
   return (
     <Stack wrap>

@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 		if(throwingdatum?.speed >= 10 && isliving(hit_atom))
 			var/mob/living/L = hit_atom
 			//unfortuately we don't know where the dart will actually hit, since that's done by the parent.
-			if(L.can_inject() && syringe().reagents)
+			if(!L.inject_refusal() && syringe().reagents)
 				var/contained = syringe().reagents.get_reagents()
 				var/trans = syringe().reagents.trans_to_mob(L, 15, CHEM_BLOOD)
 				var/mob/thrower = throwingdatum?.get_thrower()

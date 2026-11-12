@@ -16,7 +16,7 @@ type Data = {
 export const VolumePanel = (props) => {
   const { act, data } = useBackend<Data, VolumePanelActions>();
 
-  const { volume_channels } = data;
+  const { volume_channels = [] } = data;
 
   return (
     <Window width={550} height={600}>

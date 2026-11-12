@@ -37,7 +37,7 @@ export const AlgaeFarm = (props) => {
   const { act, data } = useBackend<Data, AlgaeFarmActions>();
   const {
     usePower,
-    materials,
+    materials = [],
     last_flow_rate,
     last_power_draw,
     inputDir,

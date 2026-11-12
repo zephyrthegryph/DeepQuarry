@@ -16,7 +16,7 @@ type Data = {
 export const NoticeBoard = (props) => {
   const { act, data } = useBackend<Data, NoticeBoardActions>();
 
-  const { notices } = data;
+  const { notices = [] } = data;
 
   return (
     <Window width={330} height={300}>

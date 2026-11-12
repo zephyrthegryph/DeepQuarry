@@ -30,7 +30,7 @@ export const Fabricator = (props) => {
   const {
     fabName,
     onHold,
-    designs,
+    designs = {},
     busy,
     SHEET_MATERIAL_AMOUNT = 0,
     materials = [],

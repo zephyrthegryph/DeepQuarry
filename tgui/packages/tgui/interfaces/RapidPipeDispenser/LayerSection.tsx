@@ -6,8 +6,8 @@ import type { Data } from './types';
 
 export const LayerSection = (props) => {
   const { act, data } = useBackend<Data, RapidPipeDispenserActions>();
-  const { category: rootCategoryIndex, piping_layer, pipe_layers } = data;
-  const previews = data.preview_rows.flatMap((row) => row.previews);
+  const { category: rootCategoryIndex, piping_layer, pipe_layers = {} } = data;
+  const previews = (data.preview_rows ?? []).flatMap((row) => row.previews);
   return (
     <Section fill width="100px">
       {rootCategoryIndex === 0 && (

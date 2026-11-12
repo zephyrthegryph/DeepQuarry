@@ -54,7 +54,7 @@ export const SupermatterMonitorContent = (props) => {
 const SupermatterMonitorList = (props) => {
   const { act, data } = useBackend<Data, SupermatterMonitorActions>();
 
-  const { supermatters } = data;
+  const { supermatters = [] } = data;
 
   return (
     <Section

@@ -18,7 +18,7 @@ type Data = {
 
 export const FlavorText = () => {
   const { data, act } = useBackend<Data, FlavorTextActions>();
-  const { parts } = data;
+  const { parts = [] } = data;
   return (
     <Window width={560} height={500} title="Update Flavour Text">
       <Window.Content scrollable>

@@ -7,7 +7,7 @@ import type { Data } from './types';
 export const DestintationTaggerTags = (props: { tagSearch: string }) => {
   const { act, data } = useBackend<Data, DestinationTaggerActions>();
 
-  const { currTag, taggerLocs } = data;
+  const { currTag, taggerLocs = {} } = data;
   const { tagSearch } = props;
 
   const tagSearcher = createSearch<string>(tagSearch, (tag) => tag);

@@ -67,7 +67,7 @@
 /// Species unharmed by prion-laden brain matter.
 #define REAGENT_PRION_IMMUNE_SPECIES (SPECIES_TAG_BIT(IS_CHIMERA) | SPECIES_TAG_BIT(IS_SLIME) | SPECIES_TAG_BIT(IS_DIONA) | SPECIES_TAG_BIT(IS_SHADEKIN))
 
-// Injection routes for /mob/living/proc/can_inject() (P2-S9): every injector
+// Injection routes for /mob/living/proc/inject_refusal() (P2-S9): every injector
 // asks the same question and names how it delivers.
 /// A needle (syringe, syringe gun dart): pierces flesh, not plating.
 #define INJECT_METHOD_NEEDLE 1

@@ -12,7 +12,7 @@ type Data = {
 export const XenoarchReplicatorClothing = (props) => {
   const { act, data } = useBackend<Data, XenoarchReplicatorClothingActions>();
 
-  const { tgui_construction } = data;
+  const { tgui_construction = [] } = data;
 
   return (
     <Window theme="abductor" width={400} height={400}>

@@ -99,7 +99,7 @@ const SelectedArticle = (props) => {
 const ViewArticles = (props) => {
   const { act, data } = useBackend<Data, NtosNewsBrowserActions>();
 
-  const { showing_archived, all_articles } = data;
+  const { showing_archived, all_articles = [] } = data;
 
   return (
     <Section

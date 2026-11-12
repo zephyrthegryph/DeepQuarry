@@ -15,7 +15,13 @@ type Data = {
 export const ExonetNode = (props) => {
   const { act, data } = useBackend<Data, ExonetNodeActions>();
 
-  const { on, allowPDAs, allowCommunicators, allowNewscasters, logs } = data;
+  const {
+    on,
+    allowPDAs,
+    allowCommunicators,
+    allowNewscasters,
+    logs = [],
+  } = data;
 
   return (
     <Window width={400} height={400}>

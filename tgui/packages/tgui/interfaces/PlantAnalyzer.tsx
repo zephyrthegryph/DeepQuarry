@@ -22,11 +22,11 @@ type Data = {
 export const PlantAnalyzer = (props) => {
   const { data } = useBackend<Data, PlantAnalyzerActions>();
 
-  const { seed, reagents } = data;
+  const { seed, reagents = [] } = data;
 
   let calculatedHeight = 250;
   if (seed) {
-    calculatedHeight += 18 * seed.trait_info.length;
+    calculatedHeight += 18 * (seed.trait_info?.length ?? 0);
   }
   if (reagents?.length) {
     calculatedHeight += 55;
@@ -46,9 +46,9 @@ export const PlantAnalyzer = (props) => {
 const PlantAnalyzerContent = (props) => {
   const { act, data } = useBackend<Data, PlantAnalyzerActions>();
 
-  const { no_seed, seed, reagents } = data;
+  const { no_seed, seed, reagents = [] } = data;
 
-  if (no_seed) {
+  if (no_seed || !seed) {
     return (
       <Section title="Analyzer Unused">
         You should go scan a plant! There is no data currently loaded.
@@ -105,7 +105,7 @@ const PlantAnalyzerContent = (props) => {
       )) ||
         null}
       <Section title="Other Data">
-        {seed.trait_info.map((trait) => (
+        {(seed.trait_info ?? []).map((trait) => (
           <Box color="label" key={trait} mb={0.4}>
             {trait}
           </Box>
