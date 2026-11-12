@@ -67,6 +67,9 @@ impl Generator for Reads {
         let mut rows: BTreeMap<String, Vec<Row>> = BTreeMap::new();
         let mut ranks: BTreeMap<String, u32> = BTreeMap::new();
         let mut capability_keys = BTreeSet::new();
+        // The var names a per-tick path writes (crate::sem::globals TICK_PROCS, a system's procs) among the links and fields of global chains: a
+        // draw does not bind a chain through one (every instance would redraw every tick).
+        let mut per_tick: BTreeSet<String> = BTreeSet::new();
         let defines = Decls::get(cx.tree).defines.iter().cloned().collect();
         if !handlers.is_empty() || cx.markers("READ_LOOKUP").next().is_some() {
             if let Some(sem) = cx.sem() {
@@ -133,6 +136,17 @@ impl Generator for Reads {
                     rows.insert(id, v);
                 }
                 extend_lookup_outputs(&mut rows, &sem, &eng, out);
+                for reads in rows.values() {
+                    for r in reads {
+                        if let ReadKind::Global(g) = &r.1 {
+                            for name in g.chain.steps.iter().filter(|st| !st.call).map(|st| &st.name).chain(std::iter::once(&g.field)) {
+                                if eng.globals().field_written_per_tick(name) {
+                                    per_tick.insert(name.clone());
+                                }
+                            }
+                        }
+                    }
+                }
                 let graph = DepGraph::from_derives(&sem, &eng);
                 match graph.ranks() {
                     Ok(r) => ranks = r,
@@ -202,7 +216,7 @@ impl Generator for Reads {
         out.blank();
         out.doc("Chunked read rows; one global initializer assembles the complete table.");
         out.line(read_table_initializer(&entries));
-        emit_lookup_methods(out, &rows, &crate::sem::gen::test_only_types(cx.tree));
+        emit_lookup_methods(out, &rows, &crate::sem::gen::test_only_types(cx.tree), &per_tick);
     }
 }
 
@@ -244,22 +258,45 @@ fn lookup_descriptor(read: &LookupRead) -> String {
 }
 /// A read through a chain rooted at global state, as the runtime binds it (code/engine/change/lookup_reads.dm `rebind_global()`): the global var,
 /// each link (name, is a call, iterates a list, what a call reads on its receiver) and the field.
-fn global_descriptor(read: &GlobalRead) -> String {
+///
+/// `bound_by_holder`: the read sits in a draw (or hidden_verbs()): the runtime binds it in the holder's own scope from the holder's attach, as a
+/// window binds it under its scope while open (code/engine/change/lookup_reads.dm `lookup_reads_for()`, the `static` flag).
+fn global_descriptor(read: &GlobalRead, bound_by_holder: bool) -> String {
     let steps: Vec<String> = read.chain.steps.iter().map(|st| format!("list({}, {}, {}, list({}))", dm_text(&st.name), if st.call { "TRUE" } else { "FALSE" }, if st.each { "TRUE" } else { "FALSE" }, st.watch.iter().map(|w| dm_text(w)).collect::<Vec<_>>().join(", "))).collect();
-    format!("list(\"key\" = {}, \"root\" = \"holder\", \"is_literal\" = TRUE, \"global\" = {}, \"chain\" = list({}), \"field\" = {})", dm_text(&read.key()), dm_text(&read.chain.global), steps.join(", "), dm_text(&read.field))
+    format!("list(\"key\" = {}, \"root\" = \"holder\", \"is_literal\" = TRUE, \"global\" = {}, \"chain\" = list({}), \"field\" = {}{})", dm_text(&read.key()), dm_text(&read.chain.global), steps.join(", "), dm_text(&read.field), if bound_by_holder { ", \"static\" = TRUE" } else { "" })
 }
-fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test_types: &BTreeSet<String>) {
+
+/// A global chain read in a draw scope binds on the holder unless a link or the field is written on a per-tick path.
+fn draw_binds(read: &GlobalRead, per_tick: &BTreeSet<String>) -> bool {
+    !per_tick.contains(&read.field) && !read.chain.steps.iter().any(|st| !st.call && per_tick.contains(&st.name))
+}
+fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test_types: &BTreeSet<String>, per_tick: &BTreeSet<String>) {
     let mut owners: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
+    let (mut draw_bound, mut draw_tick) = (0usize, BTreeSet::new());
     for (id, reads) in rows {
         let Some((owner, name)) = id.rsplit_once("::") else { continue };
+        let draw = matches!(name, "draw" | "hidden_verbs");
         let descriptors: Vec<_> = reads.iter().filter_map(|r| match &r.1 {
             ReadKind::Lookup(read) => Some(lookup_descriptor(read)),
-            ReadKind::Global(read) => Some(global_descriptor(read)),
+            ReadKind::Global(read) => {
+                let binds = draw && draw_binds(read, per_tick);
+                if draw && binds {
+                    draw_bound += 1;
+                } else if draw {
+                    draw_tick.insert(format!("{}.{}", read.chain.display(), read.field));
+                }
+                Some(global_descriptor(read, binds))
+            }
             _ => None,
         }).collect();
         if !descriptors.is_empty() {
             owners.entry(owner.to_string()).or_default().insert(name.to_string(), descriptors);
         }
+    }
+    // The count is part of the generated file, so a run shows what draws bind and which chains the per-tick guard leaves unbound.
+    out.line(format!("// Global chain reads in draws bound on their holder: {draw_bound}; left unbound (a link or field written per tick): {}", draw_tick.len()));
+    for chain in &draw_tick {
+        out.line(format!("//   per tick: {chain}"));
     }
     for (owner, methods) in owners {
         let test_only = test_types.contains(&owner);

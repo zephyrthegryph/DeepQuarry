@@ -80,8 +80,9 @@ CAPABILITIES(/datum/lookup_read_scope)
 	var/list/definitions = holder.generated_lookup_reads(proc_name)
 	for(var/list/spec as anything in definitions)
 		// A read through global state (a GlobalRead) is bound only for a consumer that owns a scope (an open window, a pending op): every instance
-		// of a type whose window reads a chain would otherwise bind it from its creation, window or not.
-		var/contextual = spec["global"] || (spec["root"] in list("actor", "target", "held", "authority"))
+		// of a type whose window reads a chain would otherwise bind it from its creation, window or not. A draw's chain (`static`, written by
+		// tools/analyze/src/gens/reads.rs only where no link or field is written per tick) is the holder's own: it binds from the holder's attach.
+		var/contextual = (spec["global"] && !spec["static"]) || (spec["root"] in list("actor", "target", "held", "authority"))
 		if(contextual && !A)
 			continue
 		var/datum/root = lookup_read_root(holder, A, spec["root"])

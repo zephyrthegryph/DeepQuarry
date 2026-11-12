@@ -39,3 +39,34 @@
 
 	panel.remove_open_tguis(probe)
 	own_clear(network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
+
+/// A draw that reads a global chain (the human's draw reads `GLOB.all_species[].race_key` for its icon key) binds it on the holder itself when the
+/// holder attaches, with no window or op scope: a write of the field from anywhere redraws the holder. A chain through a var written per tick
+/// (`GLOB.hair_styles_list[].flags`) is not bound for a draw (tools/analyze/src/gens/reads.rs draw_binds()), so no instance redraws each tick.
+/datum/unit_test/dq_global_read_draw_binds_on_holder
+
+/datum/unit_test/dq_global_read_draw_binds_on_holder/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/list/bound = list()
+	var/list/unbound = list()
+	for(var/list/spec as anything in H.generated_lookup_reads("draw"))
+		if(!spec["global"])
+			continue
+		if(spec["static"])
+			bound += list(spec)
+		else
+			unbound += list(spec)
+	TEST_ASSERT(length(bound), "the human's draw reads a global chain the generator marks as bound on the holder")
+	var/datum/lookup_read_scope/scope = lookup_static_scope(H)
+	for(var/list/spec as anything in bound)
+		var/key = "[handle_text(handle_of(H))]|[spec["key"]]|[handle_of(H)]" // root "holder": the holder itself (lookup_read_scope/ensure())
+		var/datum/lookup_read_binding/binding = scope.bindings?[key]
+		TEST_ASSERT_NOTNULL(binding, "[spec["field"]] through [spec["global"]]: bound in the human's own scope from its attach, no window open")
+		if(!binding)
+			continue
+		var/datum/species/S = GLOB.all_species[H.species.name]
+		if(spec["field"] == "race_key" && S)
+			var/list/readers = GLOB.lookup_read_index["[REF(S)]|race_key"]
+			TEST_ASSERT(binding in readers, "the binding watches the registered species' race_key: a write of it redraws the human")
+	for(var/list/spec as anything in unbound)
+		TEST_ASSERT_NOTEQUAL(spec["field"], "race_key", "race_key is written by no per-tick path: it is bound")

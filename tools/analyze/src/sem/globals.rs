@@ -39,6 +39,9 @@ const LIST_MUTATORS: &[&str] = &["Add", "Cut", "Remove", "Insert", "Swap", "Spli
 /// Calls that change their first argument in place.
 const ARG_MUTATORS: &[&str] = &["sortTim", "shuffle", "reverse_range"];
 
+/// The per-tick procs of objects: what a machine, mob or processing object runs every tick it is processed.
+const TICK_PROCS: &[&str] = &["process", "Life", "life_tick", "handle_life", "process_atmos", "process_cell"];
+
 /// The names a `PROC_REF` family macro takes.
 const REF_MACROS: &[&str] = &["PROC_REF", "TYPE_PROC_REF", "GLOBAL_PROC_REF"];
 
@@ -53,6 +56,11 @@ pub struct GlobalIndex {
     /// Var names (of any object) written by a proc that is not boot-only: the name-based test for a var of a global singleton (`SSjob.x`,
     /// `using_map.x`). Test code is compiled out of production and does not count.
     runtime_field_written: HashSet<String>,
+    /// Var names (of any object) written on a per-tick path: a system's own procs (its every() handlers run each kernel tick) and the per-tick
+    /// procs of objects (TICK_PROCS). Name-based like `runtime_field_written`. A draw does not bind a global chain ending at one of these: every
+    /// instance would redraw every tick (gens/reads.rs, the draw scope of a GlobalRead).
+    #[serde(default)]
+    tick_field_written: HashSet<String>,
     /// How many procs the boot set holds (for the report).
     pub boot_procs: usize,
 }
@@ -61,7 +69,7 @@ impl GlobalIndex {
     /// A digest of the index (`walk_cache`).
     pub fn digest(&self) -> u128 {
         let mut h = blake3::Hasher::new();
-        for set in [&self.runtime_written, &self.written, &self.runtime_field_written] {
+        for set in [&self.runtime_written, &self.written, &self.runtime_field_written, &self.tick_field_written] {
             let mut v: Vec<&String> = set.iter().collect();
             v.sort();
             for x in v {
@@ -83,6 +91,11 @@ impl GlobalIndex {
     /// like a constant. Name-based, so it over-approximates who writes (a same-named var elsewhere keeps it dynamic).
     pub fn field_constant_after_init(&self, var: &str) -> bool {
         !self.runtime_field_written.contains(var)
+    }
+
+    /// True when a per-tick path (a system's procs, an object's process()/Life()) writes a var of this name.
+    pub fn field_written_per_tick(&self, var: &str) -> bool {
+        self.tick_field_written.contains(var)
     }
 
     pub fn is_written(&self, var: &str) -> bool {
@@ -207,6 +220,10 @@ impl GlobalIndex {
                 }
                 if !boot[i] {
                     out.runtime_field_written.extend(f.field_writes.iter().cloned());
+                    let (ty, name) = &nodes[i].0;
+                    if TICK_PROCS.contains(&name.as_str()) || sem.is_subtype(ty, "/datum/system") {
+                        out.tick_field_written.extend(f.field_writes.iter().cloned());
+                    }
                 }
             }
             out
