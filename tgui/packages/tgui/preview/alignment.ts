@@ -401,6 +401,48 @@ export function alignmentFindings(): Finding[] {
       );
   }
 
+  // 3j. A wrapped value never leaves a stub of a word on its last line.
+  for (const el of Array.from(root.querySelectorAll('*'))) {
+    if (!inScope(el) || !visible(el)) continue;
+    if (
+      !Array.from(el.childNodes).some(
+        (n) => n.nodeType === 3 && n.textContent?.trim(),
+      )
+    )
+      continue;
+    if (el.closest('.Button, .Tab, .Tooltip')) continue;
+    // Short text (a value, a title) is meant to sit on one line; a long paragraph may end on any word.
+    if ((el.textContent ?? '').trim().length > 40 || el.querySelector('br'))
+      continue;
+    // Text that carries its own line breaks (a pre-wrapped list) is laid out by them.
+    if (
+      getComputedStyle(el).whiteSpace.startsWith('pre') ||
+      /\n/.test(el.textContent ?? '')
+    )
+      continue;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const rects = Array.from(range.getClientRects()).filter(
+      (r) => r.width >= 1 && r.height >= 1,
+    );
+    if (rects.length < 2) continue;
+    const lastTop = Math.max(...rects.map((r) => r.top));
+    const last = rects.filter((r) => Math.abs(r.top - lastTop) < 3);
+    const firstTop = Math.min(...rects.map((r) => r.top));
+    const lastWidth = last.reduce((w, r) => w + r.width, 0);
+    if (
+      lastTop - firstTop > 6 &&
+      lastWidth < 34 &&
+      !/^(Window|Layout)/.test(el.className)
+    ) {
+      add(
+        'orphan-wrap',
+        el,
+        `last line of wrapped text is only ${Math.round(lastWidth)}px wide`,
+      );
+    }
+  }
+
   // 3f. A short label stays on one line.
   for (const el of Array.from(root.querySelectorAll('*'))) {
     if (!inScope(el) || !visible(el)) continue;
