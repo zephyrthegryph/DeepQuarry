@@ -53,6 +53,7 @@
 /datum/unit_test/dq_init_plan_parity/Run()
 	var/list/types = dq_init_plan_types()
 	var/turf/at = run_loc_floor_bottom_left
+	var/list/failures = list()
 	for(var/type in types)
 		if(!ispath(type))
 			continue
@@ -65,7 +66,10 @@
 		for(var/key in with_plan | recorded)
 			if(dq_golden_text(with_plan[key]) != dq_golden_text(recorded[key]))
 				diffs += "[key]: plan [with_plan[key]] / recorded [recorded[key]]"
-		TEST_ASSERT(!length(diffs), "[type] differs from the state the discovery path left (recorded): [jointext(diffs, "; ")]")
+		if(length(diffs))
+			failures += "[type] differs from the state the discovery path left (recorded): [jointext(diffs, "; ")]"
+	// Every type's differences in one report, so a re-recording sees them all at once.
+	TEST_ASSERT(!length(failures), jointext(failures, "\n"))
 
 /// The engine-visible state of a fresh `type` made with the plan on or off: primitive vars, and the engine records it was given.
 /proc/init_plan_snapshot(type, turf/at)
@@ -89,7 +93,21 @@
 	.["setup_pending"] = !!setup_pending?[A]
 	var/datum/rx_state/rx = A.rx
 	.["change_last"] = rx ? LAZYLEN(rx.change_last) : 0
-	.["change_values"] = rx?.change_last ? json_encode(rx.change_last) : "" // the on_change baselines themselves, not only how many
+	// The on_change baselines themselves, not only how many. A baseline is keyed by its hook's serial, which moves whenever a hook is declared
+	// anywhere, so the snapshot names each by the key it watches and its place among that key's hooks.
+	var/list/baselines
+	var/list/index = change_index_of(A)
+	if(rx?.change_last && islist(index))
+		for(var/key in index)
+			var/key_id = isnum(key) ? key : text2num("[key]")
+			var/key_name = (key_id && change_key_name(key_id)) || "[key]"
+			var/n = 0
+			for(var/datum/hook/H as anything in index[key])
+				n++
+				var/serial = "[H.serial]"
+				if(serial in rx.change_last)
+					LAZYSET(baselines, "[key_name]#[n]", rx.change_last[serial])
+	.["change_values"] = baselines ? json_encode(baselines) : ""
 	.["every_parked"] = rx ? LAZYLEN(rx.every_parked) : 0
 	.["activations"] = rx ? LAZYLEN(rx.activations) : 0
 	.["verbs"] = length(A.verbs)
