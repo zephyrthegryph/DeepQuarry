@@ -604,6 +604,7 @@
 #include "dq_w6_critical_tests.dm"
 #include "dq_core_tests.dm"
 #include "dq_tgui_client_tests.dm"
+#include "dq_tgui_ui_data_fixtures.dm"
 #include "dq_nonblocking_ui_tests.dm"
 #include "dq_portrait_cache_tests.dm"
 #include "dq_portrait_parity_tests.dm"
