@@ -6,15 +6,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PartyAlarmActions } from './generated/PartyAlarm';
-
-type Data = {
-  party_on: BooleanLike;
-  timing: BooleanLike;
-  time: number;
-  scrambled: BooleanLike;
-};
+import type { PartyAlarmActions, PartyAlarmData } from './generated/PartyAlarm';
 
 const scramble = (label: string, scrambled: boolean): string =>
   scrambled
@@ -25,7 +17,7 @@ const scramble = (label: string, scrambled: boolean): string =>
     : label;
 
 export const PartyAlarm = () => {
-  const { data, act } = useBackend<Data, PartyAlarmActions>();
+  const { data, act } = useBackend<PartyAlarmData, PartyAlarmActions>();
   const { party_on, timing, time, scrambled } = data;
   const sc = !!scrambled;
 

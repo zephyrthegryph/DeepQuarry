@@ -9,32 +9,21 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { ShadekinConfigActions } from './generated/ShadekinConfig';
+import type {
+  ShadekinConfigActions,
+  ShadekinConfigData,
+} from './generated/ShadekinConfig';
 import { VorePanelTooltip } from './VorePanel/VorePanelElements/VorePanelTooltip';
 
-type Data = {
-  stun_time: number;
-  flicker_time: number;
-  flicker_color: string | null;
-  flicker_break_chance: number;
-  flicker_distance: number;
-  no_retreat: BooleanLike;
-  extended_kin: BooleanLike;
-  savefile_selected: BooleanLike;
-  nutrition_energy_conversion: number;
-  hide_voice_in_phase: BooleanLike;
-};
-
 export const ShadekinConfig = (props) => {
-  const { act, data } = useBackend<Data, ShadekinConfigActions>();
+  const { act, data } = useBackend<ShadekinConfigData, ShadekinConfigActions>();
 
   const {
     stun_time,
-    flicker_time = 0,
+    flicker_time,
     flicker_color,
-    flicker_break_chance = 0,
-    flicker_distance = 0,
+    flicker_break_chance,
+    flicker_distance,
     no_retreat,
     savefile_selected,
     extended_kin,
@@ -85,7 +74,7 @@ export const ShadekinConfig = (props) => {
                     </Stack.Item>
                     <Stack.Item>
                       <VorePanelTooltip
-                        tooltip="Adjust how long lights flicker when you phase in! (Min 10 Max 20 times!)"
+                        tooltip="Adjust how long lights flicker when you phase in! (Min 2 Max 20 times!)"
                         displayText="?"
                       />
                     </Stack.Item>

@@ -37,7 +37,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/vaccine)
 
 /obj/machinery/computer/pandemic/proc/ui_act_create_vaccine_bottle(datum/act/op/A, index)
 	if(wait)
-		atom_say("The replicator is not ready yet.")
 		return FALSE
 	create_vaccine_bottle(index)
 	return TRUE
@@ -95,6 +94,7 @@ CAPABILITIES(/obj/machinery/computer/pandemic)
 	configure(uses_power(idle = 20))
 	op("insert_beaker", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert beaker"), when(any_of(req_on_origin(ORIGIN_MENU), req(PROC_REF(is_beaker_or_syringe)))), needs(req(PROC_REF(is_beaker_or_syringe), because = MSG(pandemic/not_beaker)), req(PROC_REF(empty_slot_holds)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_beaker)))
 	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
+	ui_shape(is_ready = bool(), has_beaker = bool(), has_blood = bool(), beaker = nullable(row(volume = num(), capacity = num())), blood = nullable(row(dna = schema_text(), type = schema_text())), viruses = list_of(row(name = schema_text(), can_rename = bool(), is_adv = bool(), symptoms = list_of(row(name = schema_text(), desc = schema_text(), stealth = num(), resistance = num(), stage_speed = num(), transmission = num(), neutered = bool(), level = num(), threshold_desc = map_of(schema_text(), schema_text()))), resistance = num(), stealth = num(), stage_speed = num(), transmission = num(), severity = num(), index = int(), agent = schema_text(), description = schema_text(), spread = schema_text(), cure = schema_text())), resistances = list_of(row(id = schema_text(), name = schema_text())))
 	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
 	op("create_vaccine_bottle", ui_act("create_vaccine_bottle", arg("index", schema_text(4096))), then(PROC_REF(ui_act_create_vaccine_bottle)))
 	op("eject_beaker", inputs(ui_act("eject_beaker"), menu()), label("Eject Beaker"), then(PROC_REF(ui_act_eject_beaker)))
@@ -125,6 +125,10 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 /obj/machinery/computer/pandemic/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["is_ready"] = !wait
+	data["beaker"] = null
+	data["blood"] = null
+	data["viruses"] = list()
+	data["resistances"] = list()
 	if(!beaker)
 		data["has_beaker"] = FALSE
 		data["has_blood"] = FALSE
@@ -140,9 +144,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 		return data
 
 	data["has_blood"] = TRUE
-	data["blood"] = list()
-	data["blood"]["dna"] = blood.data["blood_DNA"] || "none"
-	data["blood"]["type"] = blood.data["blood_type"] || "none"
+	data["blood"] = list("dna" = blood.data["blood_DNA"] || "none", "type" = blood.data["blood_type"] || "none")
 	data["viruses"] = get_viruses_data(blood)
 	data["resistances"] = get_resistance_data(blood)
 
@@ -265,26 +267,31 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 
 		var/list/traits = list()
 		traits["name"] = disease.name
+		traits["can_rename"] = FALSE
+		traits["is_adv"] = FALSE
+		traits["symptoms"] = list()
+		traits["resistance"] = 0
+		traits["stealth"] = 0
+		traits["stage_speed"] = 0
+		traits["transmission"] = 0
+		traits["severity"] = 0
 		if(istype(disease, /datum/affliction/contagion/engineered))
 			var/datum/affliction/contagion/engineered/adv_disease = disease
 			traits["can_rename"] = TRUE // Allow for all diseases to change currently. Mutable trait maybe?
-			traits["name"] = disease.name
 			traits["is_adv"] = TRUE
-			traits["symptoms"] = list()
 			for(var/datum/viral_trait/symptom as anything in adv_disease.symptoms)
 				traits["symptoms"] += list(symptom.get_symptom_data())
-			traits["resistance"] = adv_disease.resistance
-			traits["stealth"] = adv_disease.stealth
-			traits["stage_speed"] = adv_disease.stage_rate
-			traits["transmission"] = adv_disease.transmission
-			traits["severity"] = adv_disease.threat
+			traits["resistance"] = adv_disease.resistance || 0
+			traits["stealth"] = adv_disease.stealth || 0
+			traits["stage_speed"] = adv_disease.stage_rate || 0
+			traits["transmission"] = adv_disease.transmission || 0
+			traits["severity"] = adv_disease.threat || 0
 
 		traits["index"] = index++
 		traits["agent"] = disease.agent
 		traits["description"] = disease.desc || "none"
 		traits["spread"] = disease.spread_text || "none"
 		traits["cure"] = disease.cure_text || "none"
-		traits["danger"] = disease.danger || "none"
 
 		. += list(traits)
 
@@ -299,7 +306,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 		if(disease)
 			resistance["id"] = id
 			resistance["name"] = disease.name
-		data += list(resistance)
+			data += list(resistance)
 	return data
 
 /obj/machinery/computer/pandemic/proc/get_by_index(thing, index)
@@ -316,15 +323,19 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 		return FALSE
 	return disease.GetDiseaseID()
 
-/obj/machinery/computer/pandemic/proc/create_vaccine_bottle(index)
-	use_power(power_of(src).active)
-	var/id = get_virus_id_by_index(text2num(index))
+/// A vaccine bottle against the antibody `id` the window names (a resistance of the beaker's blood).
+/obj/machinery/computer/pandemic/proc/create_vaccine_bottle(id)
 	var/datum/affliction/contagion/disease = GLOB.archive_diseases[id]
-	if(!disease)
+	if(!disease || !beaker?.reagents)
 		return FALSE
+	var/datum/reagent/blood/blood = locate_in_list(beaker.reagents.reagent_list, /datum/reagent/blood)
+	var/list/resistances = blood?.data["resistances"]
+	if(!islist(resistances) || !(id in resistances))
+		return FALSE
+	use_power(power_of(src).active)
 	var/obj/item/reagent_containers/glass/beaker/vial/vaccine/bottle = new(drop_location())
 	bottle.name = "[disease.name] vaccine"
-	bottle.reagents.add_reagent(REAGENT_ID_VACCINE, 15, list(get_by_index("resistances", id)))
+	bottle.reagents.add_reagent(REAGENT_ID_VACCINE, 15, list(id))
 	beaker.reagents.remove_reagent(REAGENT_ID_BLOOD, 5)
 	set_wait(TRUE)
 	after(src, 20 SECONDS, PROC_REF(reset_replicator_cooldown))

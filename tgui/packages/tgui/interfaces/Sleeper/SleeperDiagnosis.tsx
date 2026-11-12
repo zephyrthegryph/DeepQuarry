@@ -4,13 +4,15 @@ import {
   DiagnosisFindingsSection,
   DiagnosisHintsSection,
 } from '../common/Diagnosis';
-import type { SleeperActions } from '../generated/Sleeper';
-import type { Data } from './types';
+import type { SleeperActions, SleeperData } from '../generated/Sleeper';
 
 // The sleeper's own triage sensors: findings and what they respond to.
 export const SleeperDiagnosis = (props) => {
-  const { data } = useBackend<Data, SleeperActions>();
-  const { diagnosis } = data.occupant;
+  const { data } = useBackend<SleeperData, SleeperActions>();
+  const diagnosis = data.occupant?.diagnosis;
+  if (!diagnosis) {
+    return null;
+  }
   return (
     <>
       <DiagnosisFindingsSection findings={diagnosis.findings} />

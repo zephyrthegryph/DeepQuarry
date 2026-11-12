@@ -2,26 +2,13 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, Icon, Input, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import type { NtosNetChatActions } from './generated/NtosNetChat';
-
-type Data = {
-  can_admin: BooleanLike;
-  all_channels: {
-    chan: string;
-    id: string | null;
-  }[];
-  active_channel: string | null;
-  username: string;
-  adminmode: BooleanLike;
-  title: string | undefined;
-  authed: BooleanLike;
-  clients: { name: string }[] | [];
-  messages: { msg: string }[] | [];
-  is_operator: BooleanLike;
-};
+import type {
+  NtosNetChatActions,
+  NtosNetChatData,
+} from './generated/NtosNetChat';
 
 export const NtosNetChat = (props) => {
-  const { act, data } = useBackend<Data, NtosNetChatActions>();
+  const { act, data } = useBackend<NtosNetChatData, NtosNetChatActions>();
   const {
     can_admin,
     adminmode,
@@ -29,9 +16,9 @@ export const NtosNetChat = (props) => {
     username,
     active_channel,
     is_operator,
-    all_channels = [],
-    clients = [],
-    messages = [],
+    all_channels,
+    clients,
+    messages,
   } = data;
   const in_channel: boolean = active_channel !== null;
   const authorized: BooleanLike = authed || adminmode;

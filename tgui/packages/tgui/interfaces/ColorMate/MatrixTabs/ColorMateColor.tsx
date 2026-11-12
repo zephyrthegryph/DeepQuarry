@@ -1,10 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Slider, Stack } from 'tgui-core/components';
-import type { ColorMateActions } from '../../generated/ColorMate';
-import type { Data } from '../types';
+import type {
+  ColorMateActions,
+  ColorMateData,
+} from '../../generated/ColorMate';
 
 export const ColorMateTint = (props) => {
-  const { act } = useBackend();
+  const { act } = useBackend<ColorMateData, ColorMateActions>();
 
   return (
     <Button fluid icon="paint-brush" onClick={() => act('choose_color')}>
@@ -14,7 +16,7 @@ export const ColorMateTint = (props) => {
 };
 
 export const ColorMateHSV = (props) => {
-  const { act, data } = useBackend<Data, ColorMateActions>();
+  const { act, data } = useBackend<ColorMateData, ColorMateActions>();
 
   const { buildhue, buildsat, buildval } = data;
   return (

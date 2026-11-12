@@ -7,18 +7,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PrisonShuttleConsoleActions } from './generated/PrisonShuttleConsole';
-
-type Data = {
-  moving: BooleanLike;
-  at_station: BooleanLike;
-  time_left: number;
-  can_move: BooleanLike;
-};
+import type {
+  PrisonShuttleConsoleActions,
+  PrisonShuttleConsoleData,
+} from './generated/PrisonShuttleConsole';
 
 export const PrisonShuttleConsole = () => {
-  const { data, act } = useBackend<Data, PrisonShuttleConsoleActions>();
+  const { data, act } = useBackend<
+    PrisonShuttleConsoleData,
+    PrisonShuttleConsoleActions
+  >();
   const { moving, at_station, time_left, can_move } = data;
 
   const locationLabel = moving

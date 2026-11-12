@@ -7,22 +7,10 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { TankActions } from './generated/Tank';
-
-type Data = {
-  connected: BooleanLike;
-  showToggle: BooleanLike;
-  maskConnected: BooleanLike;
-  tankPressure: number;
-  releasePressure: number;
-  defaultReleasePressure: number;
-  minReleasePressure: number;
-  maxReleasePressure: number;
-};
+import type { TankActions, TankData } from './generated/Tank';
 
 export const Tank = (props) => {
-  const { act, data } = useBackend<Data, TankActions>();
+  const { act, data } = useBackend<TankData, TankActions>();
 
   const {
     connected,

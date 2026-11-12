@@ -1,19 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { ExonetNodeActions } from './generated/ExonetNode';
-
-type Data = {
-  on: BooleanLike;
-  allowPDAs: BooleanLike;
-  allowCommunicators: BooleanLike;
-  allowNewscasters: BooleanLike;
-  logs: string[];
-};
+import type { ExonetNodeActions, ExonetNodeData } from './generated/ExonetNode';
 
 export const ExonetNode = (props) => {
-  const { act, data } = useBackend<Data, ExonetNodeActions>();
+  const { act, data } = useBackend<ExonetNodeData, ExonetNodeActions>();
 
   const {
     on,

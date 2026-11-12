@@ -1,23 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { MuleBotActions } from './generated/MuleBot';
-
-type Data = {
-  suffix: string;
-  power: BooleanLike;
-  load: string;
-  locked: BooleanLike;
-  issilicon: BooleanLike;
-  auto_return: BooleanLike;
-  crates_only: BooleanLike;
-  hatch: BooleanLike;
-  safety: BooleanLike;
-};
+import type { MuleBotActions, MuleBotData } from './generated/MuleBot';
 
 export const MuleBot = (props) => {
-  const { act, data } = useBackend<Data, MuleBotActions>();
+  const { act, data } = useBackend<MuleBotData, MuleBotActions>();
   const { suffix, load, hatch } = data;
   return (
     <Window width={350} height={500}>
@@ -48,7 +35,7 @@ export const MuleBot = (props) => {
 };
 
 const MuleBotClosed = (props) => {
-  const { act, data } = useBackend<Data, MuleBotActions>();
+  const { act, data } = useBackend<MuleBotData, MuleBotActions>();
   const { power, locked, issilicon, auto_return, crates_only } = data;
 
   return (
@@ -111,7 +98,7 @@ const MuleBotClosed = (props) => {
 };
 
 const MuleBotOpen = (props) => {
-  const { act, data } = useBackend<Data, MuleBotActions>();
+  const { act, data } = useBackend<MuleBotData, MuleBotActions>();
   const { safety } = data;
 
   return (

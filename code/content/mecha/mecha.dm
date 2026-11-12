@@ -225,6 +225,7 @@ CAPABILITIES(/obj/mecha)
 	owns_one(nameof(cloak_action), /datum/action/innate/mecha/mech_toggle_cloaking, starts = /datum/action/innate/mecha/mech_toggle_cloaking)
 	owns_one(nameof(smoke_system), /datum/effect/effect/system/smoke_spread, starts = /datum/effect/effect/system/smoke_spread)
 	interface("MechaInterface", autoupdate = TRUE)
+	ui_shape(view = enum(list("main", "log", "access", "maint")), title = schema_text(), main = nullable(row(damage_reports = list_of(row(key = schema_text(), label = schema_text(), has_repair = bool())), high_pressure = bool(), has_armor = bool(), armor_percent = num(), has_hull = bool(), hull_percent = num(), integrity_percent = num(), cell_percent = nullable(num()), use_internal_tank = bool(), tank_pressure = nullable(num()), tank_temp_k = nullable(num()), tank_temp_c = nullable(num()), cabin_pressure = num(), cabin_temp_k = num(), cabin_temp_c = num(), lights = bool(), dna_lock = schema_text(), defence_mode_possible = bool(), defence_mode = bool(), overload_possible = bool(), overload = bool(), smoke_possible = bool(), smoke_reserve = num(), thrusters_possible = bool(), thrusters = bool(), cargo = list_of(row(id = num(), name = schema_text())), radio_mic = bool(), radio_spk = bool(), radio_freq = schema_text(), airtank_disconnect = bool(), airtank_connect = bool(), id_upload_locked = bool(), maint_access = bool(), equipment = list_of(row(id = num(), name = schema_text(), kind = schema_text(), ready = bool(), selected = bool(), info_lines = list_of(schema_text()), controls = list_of(row(key = schema_text(), label = schema_text(), value = nullable(num()))))), commands = list_of(row(key = schema_text(), label = schema_text())), slots = list_of(row(label = schema_text(), used = int(), max = int())), can_eject = bool())), log_entries = nullable(list_of(row(time = schema_text(), year = int(), message = schema_text()))), access = nullable(row(current = list_of(row(id = num(), name = nullable(schema_text()))), available = list_of(row(id = num(), name = schema_text())))), maint = nullable(row(can_req_access = bool(), can_maint_access = bool(), can_set_air = bool(), can_remove_passenger = bool())))
 	without("ui_open")
 	op("rfreq", ui_act("rfreq", arg("delta", num())), then(PROC_REF(ui_act_rfreq)))
 	op("drop_from_cargo", ui_act("drop_from_cargo", arg("id", schema_text(32))), then(PROC_REF(ui_act_drop_from_cargo)))
@@ -2003,34 +2004,27 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	/// Relation view: the id card the open access/maintenance dialog acts for.
 	var/obj/item/card/id/active_id_card
 
+/// The window's data: the title and the view shown, and the data of that view alone (the other three read null).
 /obj/mecha/ui_data(datum/act/eval/A)
-	var/list/data = list()
-	data["view"] = tgui_subview
-	data["smoke_reserve"] = smoke_reserve
-	var/list/merged_1 = ui_data_obj_mecha(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// /obj/mecha's window data.
-/obj/mecha/proc/ui_data_obj_mecha(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
-	var/list/data = list()
-	data["title"] = "[name]"
+	var/list/data = list("view" = tgui_subview, "title" = "[name]", "main" = null, "log_entries" = null, "access" = null, "maint" = null)
 	switch(tgui_subview)
 		if("log")
 			data["log_entries"] = get_log_tgui()
-			return data
 		if("access")
-			ui_data_access(data)
-			return data
+			var/list/access = list()
+			ui_data_access(access)
+			data["access"] = access
 		if("maint")
-			ui_data_maint(data)
-			return data
-	ui_data_status(data)
-	ui_data_cabin(data)
-	ui_data_cargo_and_radio(data)
-	ui_data_equipment(data)
+			var/list/maint = list()
+			ui_data_maint(maint)
+			data["maint"] = maint
+		else
+			var/list/main = list("smoke_reserve" = smoke_reserve)
+			ui_data_status(main)
+			ui_data_cabin(main)
+			ui_data_cargo_and_radio(main)
+			ui_data_equipment(main)
+			data["main"] = main
 	return data
 
 /// The access view: the access the exosuit asks for, and what the open id card could add.
@@ -2039,7 +2033,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/list/cur = list()
 	for(var/a in operation_req_access)
 		cur += list(list("id" = a, "name" = SSaccess.get_access_desc(a)))
-	data["access_current"] = cur
+	data["current"] = cur
 	var/list/avail = list()
 	if(id_card)
 		for(var/a in id_card.GetAccess())
@@ -2049,14 +2043,14 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			if(!aname)
 				continue
 			avail += list(list("id" = a, "name" = aname))
-	data["access_available"] = avail
+	data["available"] = avail
 
 /// The maintenance view: what the maintenance panel allows right now.
 /obj/mecha/proc/ui_data_maint(list/data)
-	data["maint_can_req_access"] = !!add_req_access
-	data["maint_can_maint_access"] = !!maint_access
-	data["maint_can_set_air"] = (state > 0)
-	data["maint_can_remove_passenger"] = (state > 0) && !!locate_within(src, /obj/item/mecha_parts/mecha_equipment/tool/passenger)
+	data["can_req_access"] = !!add_req_access
+	data["can_maint_access"] = !!maint_access
+	data["can_set_air"] = (state > 0)
+	data["can_remove_passenger"] = (state > 0) && !!locate_within(src, /obj/item/mecha_parts/mecha_equipment/tool/passenger)
 
 /// The main view's status: the damage banner, integrity and the cell.
 /obj/mecha/proc/ui_data_status(list/data)
@@ -2084,10 +2078,10 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /// The main view's cabin: the tank, the cabin air and the exosuit's switches.
 /obj/mecha/proc/ui_data_cabin(list/data)
 	data["use_internal_tank"] = !!use_internal_tank
-	data["tank_pressure"] = internal_tank ? round(internal_tank.return_pressure(), 0.01) : "None"
+	data["tank_pressure"] = internal_tank ? round(internal_tank.return_pressure(), 0.01) : null
 	var/tt = internal_tank?.air_contents?.return_temperature()
-	data["tank_temp_k"] = tt == null ? "Unknown" : round(tt, 0.1)
-	data["tank_temp_c"] = tt == null ? "Unknown" : round(tt - T0C, 0.1)
+	data["tank_temp_k"] = isnull(tt) ? null : round(tt, 0.1)
+	data["tank_temp_c"] = isnull(tt) ? null : round(tt - T0C, 0.1)
 	data["cabin_pressure"] = round(return_pressure(), 0.01)
 	data["cabin_temp_k"] = round(get_interior_temperature(), 0.1)
 	data["cabin_temp_c"] = round(get_interior_temperature() - T0C, 0.1)

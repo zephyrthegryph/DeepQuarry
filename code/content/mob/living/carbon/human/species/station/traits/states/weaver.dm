@@ -42,11 +42,11 @@
 //TGUI Weaver Panel
 CAPABILITIES(/datum/trait_state/weaver)
 	interface("WeaverConfig", title = "Weaver Config")
+	ui_shape(silk_reserve = num(), silk_max_reserve = num(), silk_color = schema_text(), silk_production = bool(), savefile_selected = bool())
 	op("new_silk_color", ui_act("new_silk_color"),
 		asks(/datum/prompt/color, fields = list("question" = "Select a color you wish your silk to be!", "default" = computed(PROC_REF(silk_color_default)), "title" = "Color Selector", "timeout" = 0), step = "color"),
 		then(PROC_REF(ui_act_new_silk_color)))
 	op("toggle_silk_production", ui_act("toggle_silk_production"), then(PROC_REF(ui_act_toggle_silk_production)))
-	op("check_silk_amount", ui_act("check_silk_amount"), then(PROC_REF(ui_act_check_silk_amount)))
 	op("weave_binding", ui_act("weave_binding"), needs(req(PROC_REF(weave_silk_binding)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
 	op("weave_floor", ui_act("weave_floor"), needs(req(PROC_REF(weave_silk_floor)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
 	op("weave_wall", ui_act("weave_wall"), needs(req(PROC_REF(weave_silk_wall)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
@@ -85,9 +85,7 @@ CAPABILITIES(/datum/trait_state/weaver)
 	. = ..()
 
 /datum/trait_state/weaver/proc/correct_savefile_selected()
-	if(owner.client.prefs.default_slot == owner.mind.loaded_from_slot)
-		return TRUE
-	return FALSE
+	return owner.client?.prefs?.default_slot == owner.mind?.loaded_from_slot
 
 /// The colour the question was answered with becomes the silk's.
 /datum/trait_state/weaver/proc/ui_act_new_silk_color(datum/act/op/A)
@@ -99,11 +97,6 @@ CAPABILITIES(/datum/trait_state/weaver)
 
 /datum/trait_state/weaver/proc/ui_act_toggle_silk_production(datum/act/op/A)
 	set_silk_production(!(silk_production))
-	to_chat(owner, span_info("You are [silk_production ? "now" : "no longer"] producing silk."))
-	return FALSE
-
-/datum/trait_state/weaver/proc/ui_act_check_silk_amount(datum/act/op/A)
-	to_chat(owner, span_info("Your silk reserves are at [silk_reserve]/[silk_max_reserve]."))
 	return FALSE
 
 /// What each weave button costs in silk and makes, by op key.

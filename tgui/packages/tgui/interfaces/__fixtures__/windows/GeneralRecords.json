@@ -1,0 +1,480 @@
+{
+	"temp": {
+		"text": "Employment record created.",
+		"style": "success"
+	},
+	"scan": "Alex Reyes's ID Card (Captain)",
+	"authenticated": "Alex Reyes",
+	"rank": "Captain",
+	"screen": 4,
+	"printing": 0,
+	"isAI": 0,
+	"isRobot": 0,
+	"can_allocate_station_budget": 1,
+	"station_balance": 18250,
+	"station_monthly_income": 6200,
+	"station_monthly_expenses": 5100,
+	"station_income_sources": [
+		{
+			"source": "NanoTrasen grant",
+			"amount": 4000
+		},
+		{
+			"source": "Vendor sales",
+			"amount": 2200
+		}
+	],
+	"nt_salary_support": 0.75,
+	"allocation_policy": "Balanced",
+	"next_budget_cycle": "12 minutes",
+	"budget_plan": {
+		"projected_payroll": 3400,
+		"nt_grant": 4000,
+		"available": 6200,
+		"operating_pool": 2800,
+		"operating_requested": 2500,
+		"operating_funded": 2500,
+		"payroll_funded": 3400,
+		"unallocated_operating": 300,
+		"requested": 5900,
+		"funded": 5900,
+		"remaining": 300,
+		"shortfall": 0
+	},
+	"department_finances": [
+		{
+			"department": "Engineering",
+			"balance": 1200,
+			"savings": 300,
+			"monthly_allocation": 900,
+			"automatic_allocation": 800,
+			"funded_allocation": 900,
+			"allocation_shortfall": 0,
+			"allocation_overridden": 1,
+			"allocation_percent": 18,
+			"employee_count": 5,
+			"operating_allocation": 400,
+			"operating_funded": 400,
+			"payroll_funded": 500,
+			"monthly_income": 1000,
+			"monthly_expenses": 850,
+			"last_month_income": 950,
+			"last_month_expenses": 900,
+			"projected_payroll": 500,
+			"payroll_resources": 2400,
+			"payroll_coverage": 1,
+			"last_payroll_due": 500,
+			"last_payroll_paid": 500,
+			"last_payroll_shortfall": 0,
+			"revenue": 5200,
+			"expenses": 4300,
+			"wage_multiplier": 1,
+			"service_subsidy": 0,
+			"service_invoices": {
+				"invoice_count": 4,
+				"refund_count": 1,
+				"gross_billed": 320,
+				"refunded_total": 40,
+				"net_billed": 280,
+				"account_sales": 200,
+				"cash_sales": 80,
+				"ewallet_sales": 40,
+				"tips": 25,
+				"staff_tips": 15,
+				"service_tips": 10
+			},
+			"income_sources": [
+				{
+					"source": "Repairs",
+					"amount": 600
+				},
+				{
+					"source": "Grant",
+					"amount": 400
+				}
+			],
+			"transactions": [
+				{
+					"date": "12 Nov 2563",
+					"time": "12:04",
+					"target": "Engineering",
+					"purpose": "Wage payment",
+					"amount": 120,
+					"terminal": "Payroll"
+				},
+				{
+					"date": "12 Nov 2563",
+					"time": "12:10",
+					"target": "Cargo",
+					"purpose": "Parts",
+					"amount": -45,
+					"terminal": "Cargo console"
+				}
+			]
+		},
+		{
+			"department": "Medical",
+			"balance": 800,
+			"savings": 0,
+			"monthly_allocation": 700,
+			"automatic_allocation": 700,
+			"funded_allocation": 650,
+			"allocation_shortfall": 50,
+			"allocation_overridden": 0,
+			"allocation_percent": 14,
+			"employee_count": 4,
+			"operating_allocation": 300,
+			"operating_funded": 250,
+			"payroll_funded": 400,
+			"monthly_income": 600,
+			"monthly_expenses": 700,
+			"last_month_income": 580,
+			"last_month_expenses": 690,
+			"projected_payroll": 400,
+			"payroll_resources": 1450,
+			"payroll_coverage": 1,
+			"last_payroll_due": 400,
+			"last_payroll_paid": 380,
+			"last_payroll_shortfall": 20,
+			"revenue": 3100,
+			"expenses": 3300,
+			"wage_multiplier": 1.25,
+			"service_subsidy": 0.5,
+			"service_invoices": {
+				"invoice_count": 0,
+				"refund_count": 0,
+				"gross_billed": 0,
+				"refunded_total": 0,
+				"net_billed": 0,
+				"account_sales": 0,
+				"cash_sales": 0,
+				"ewallet_sales": 0,
+				"tips": 0,
+				"staff_tips": 0,
+				"service_tips": 0
+			},
+			"income_sources": [
+				{
+					"source": "Treatment fees",
+					"amount": 600
+				}
+			],
+			"transactions": [
+				{
+					"date": "12 Nov 2563",
+					"time": "11:50",
+					"target": "Medical",
+					"purpose": "Supplies",
+					"amount": -80,
+					"terminal": "Medical console"
+				}
+			]
+		}
+	],
+	"station_transactions": [
+		{
+			"date": "12 Nov 2563",
+			"time": "12:00",
+			"target": "Station",
+			"purpose": "NT grant",
+			"amount": 4000,
+			"terminal": "NanoTrasen"
+		},
+		{
+			"date": "12 Nov 2563",
+			"time": "12:01",
+			"target": "Engineering",
+			"purpose": "One-time Command funding",
+			"amount": -500,
+			"terminal": "Command"
+		}
+	],
+	"contract_departments": ["Engineering", "Medical"],
+	"contract_faction_standings": [
+		{
+			"name": "NanoTrasen",
+			"acronym": "NT",
+			"color": "#4b8fcc",
+			"tier": "Friendly",
+			"department_tiers": {
+				"Engineering": "Friendly",
+				"Medical": "Neutral"
+			}
+		},
+		{
+			"name": "Free Traders",
+			"acronym": "FTL",
+			"color": "#c79a3a",
+			"tier": "Neutral",
+			"department_tiers": {
+				"Engineering": "Neutral",
+				"Medical": "Neutral"
+			}
+		}
+	],
+	"contracts": [
+		{
+			"id": "C-0101",
+			"title": "Low-Loss Power Assembly",
+			"description": "Demonstrate a power assembly sustaining a useful load.",
+			"scope": "department",
+			"state": "offered",
+			"issuer": "NanoTrasen Engineering Assurance",
+			"issuer_faction": "NanoTrasen",
+			"issuer_acronym": "NT",
+			"issuer_color": "#4b8fcc",
+			"department": "Engineering",
+			"reward": 4000,
+			"paid_reward": 0,
+			"reward_distribution": {
+				"station": 1000,
+				"department": 2000,
+				"staff": 1000
+			},
+			"reputation_distribution": {
+				"station": 5,
+				"department": 10,
+				"staff": 2
+			},
+			"secondary_reputation": [
+				{
+					"faction": "Free Traders",
+					"acronym": "FTL",
+					"color": "#c79a3a",
+					"amount": -2
+				}
+			],
+			"standing_score": 12,
+			"standing_tier": "Friendly",
+			"standing_reward_modifier": 1.1,
+			"term_class": "short",
+			"negotiation_locked": 0,
+			"negotiation_clauses": [
+				{
+					"id": "payout",
+					"title": "Payout",
+					"description": "How the reward is paid.",
+					"selected": "standard",
+					"options": [
+						{
+							"id": "standard",
+							"title": "Standard",
+							"description": "Paid on completion.",
+							"station_money": 0,
+							"department_money": 0,
+							"staff_money": 0,
+							"station_reputation": 0,
+							"department_reputation": 0,
+							"staff_reputation": 0,
+							"deadline_minutes": 0,
+							"other_reputation": []
+						},
+						{
+							"id": "rush",
+							"title": "Rush",
+							"description": "Paid more, due sooner.",
+							"station_money": 200,
+							"department_money": 300,
+							"staff_money": 100,
+							"station_reputation": 1,
+							"department_reputation": 1,
+							"staff_reputation": 0,
+							"deadline_minutes": -30,
+							"other_reputation": [
+								{
+									"faction": "Free Traders",
+									"acronym": "FTL",
+									"color": "#c79a3a",
+									"amount": -1
+								}
+							]
+						}
+					]
+				}
+			],
+			"deadline": 0,
+			"offer_expires_at": 36000,
+			"offer_time_remaining": "12 minutes",
+			"accepted_at": 0,
+			"deadline_remaining": null,
+			"can_accept": 1,
+			"can_decline": 1,
+			"offer_kind": "standing",
+			"closure_code": null,
+			"grace_time_remaining": null,
+			"requirements": [
+				{
+					"id": 7001,
+					"name": "Sustain load",
+					"description": "Sustain 3500 W.",
+					"state": "pending",
+					"required": 1,
+					"progress": 0,
+					"target": 1,
+					"progress_text": "Operating qualification awaiting evidence",
+					"stages": [
+						{
+							"index": 1,
+							"label": "Operating qualification",
+							"threshold": 3500,
+							"unit": "W delivered",
+							"duration": "45 seconds",
+							"status": "Waiting"
+						}
+					]
+				}
+			],
+			"contributor_count": 0,
+			"details": {
+				"kind": "social_outcome",
+				"grade": "none",
+				"projected_grade": "Success",
+				"projected_reward": 4000,
+				"earned_reward": 0,
+				"score": 40,
+				"outcome_stages": [
+					{
+						"label": "Minimum",
+						"target": 25,
+						"reward": 1000,
+						"reached": 1,
+						"earned": 0
+					},
+					{
+						"label": "Success",
+						"target": 75,
+						"reward": 4000,
+						"reached": 0,
+						"earned": 0
+					}
+				],
+				"minimum_percent": 25,
+				"success_percent": 75,
+				"exceptional_percent": 100,
+				"can_finalize": 0,
+				"stakeholders_ready": 0,
+				"stakeholder_required": 2,
+				"stakeholder_qualified": 1,
+				"stakeholder_summary": "1 of 2 stakeholders ready",
+				"roles": [
+					{
+						"id": "lead",
+						"title": "Lead engineer",
+						"description": "Runs the test.",
+						"departments": ["Engineering"],
+						"minimum": 1,
+						"authored_minimum": 1,
+						"maximum": 2,
+						"approved": 1,
+						"qualified": 1,
+						"minimum_contribution": 10,
+						"viewer_eligible": 1,
+						"viewer_has_other_role": 0,
+						"proposals": [
+							{
+								"account": 482913,
+								"name": "Jo Park",
+								"department": "Engineering",
+								"weight": 60,
+								"approved_weight": 60,
+								"status": "Approved",
+								"contribution": 40,
+								"qualified": 1,
+								"online": 1
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "C-0102",
+			"title": "Clinical Case Report",
+			"description": "Report a treated case.",
+			"scope": "department",
+			"state": "active",
+			"issuer": "NanoTrasen Medical",
+			"issuer_faction": "NanoTrasen",
+			"issuer_acronym": "NT",
+			"issuer_color": "#4b8fcc",
+			"department": "Medical",
+			"reward": 1500,
+			"paid_reward": 0,
+			"reward_distribution": {
+				"station": 300,
+				"department": 900,
+				"staff": 300
+			},
+			"reputation_distribution": {
+				"station": 2,
+				"department": 4,
+				"staff": 1
+			},
+			"secondary_reputation": [],
+			"standing_score": 5,
+			"standing_tier": "Neutral",
+			"standing_reward_modifier": 1,
+			"term_class": "long",
+			"negotiation_locked": 1,
+			"negotiation_clauses": [],
+			"deadline": 72000,
+			"offer_expires_at": 0,
+			"offer_time_remaining": null,
+			"accepted_at": 36000,
+			"deadline_remaining": "30 minutes",
+			"can_accept": 0,
+			"can_decline": 0,
+			"offer_kind": "standing",
+			"closure_code": null,
+			"grace_time_remaining": null,
+			"requirements": [],
+			"contributor_count": 1,
+			"details": {
+				"kind": "medical_case_report",
+				"patient": "Lee Wu",
+				"condition": "Fractured arm",
+				"consented": 1
+			}
+		}
+	],
+	"records": null,
+	"general": {
+		"fields": [
+			{
+				"field": "Name",
+				"value": "Jo Park",
+				"edit": "name"
+			},
+			{
+				"field": "ID",
+				"value": "4471",
+				"edit": "id"
+			},
+			{
+				"field": "Age",
+				"value": "34",
+				"edit": "age"
+			},
+			{
+				"field": "Physical Status",
+				"value": "Active",
+				"edit": null
+			}
+		],
+		"photos": ["'data:image/png;base64,AAAA'", "'data:image/png;base64,BBBB'"],
+		"has_photos": 1,
+		"skills": "Experienced station engineer.",
+		"comments": [
+			{
+				"header": "Made by Alex Reyes (Captain) at 12:05",
+				"text": "Promoted to senior engineer."
+			},
+			{
+				"header": "Made by Sam Ito (Head of Personnel) at 12:30",
+				"text": "Training completed."
+			}
+		],
+		"empty": 0
+	},
+	"modal": null
+}

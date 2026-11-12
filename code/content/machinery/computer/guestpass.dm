@@ -169,6 +169,7 @@ CAPABILITIES(/obj/item/card/id/guest)
 
 CAPABILITIES(/obj/machinery/computer/guestpass)
 	interface("GuestPass")
+	ui_shape(giver = nullable(schema_text()), giveName = schema_text(), reason = schema_text(), duration = num(), uid = int(), area = list_of(row(area = int(), area_name = schema_text(), on = bool())), mode = int(), log = list_of(schema_text()))
 	op("mode", ui_act("mode", arg("mode", num())), then(PROC_REF(ui_act_mode)))
 	op("giv_name", ui_act("giv_name"), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Person pass is issued to", "default" = nameof(giv_name))), then(PROC_REF(ui_act_giv_name)))
 	op("reason", ui_act("reason"), asks(/datum/prompt/text, fields = list("title" = "Reason", "question" = "Reason why pass is issued", "default" = nameof(reason))), then(PROC_REF(ui_act_reason)))
@@ -185,7 +186,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 
 /obj/machinery/computer/guestpass/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["giver"] = giver
+	data["giver"] = giver?.name
 	data["giveName"] = giv_name
 	data["reason"] = reason
 	data["duration"] = duration
@@ -193,14 +194,12 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 
 	var/list/area_list = list()
 
-	data["access"] = null
 	if(giver && giver.GetAccess())
-		data["access"] = giver.GetAccess()
 		for (var/acc in giver.GetAccess())
 			if(acc in accesses)
-				area_list.Add(list(list("area" = acc, "area_name" = SSaccess.get_access_desc(acc), "on" = 1)))
+				area_list.Add(list(list("area" = acc, "area_name" = SSaccess.get_access_desc(acc), "on" = TRUE)))
 			else
-				area_list.Add(list(list("area" = acc, "area_name" = SSaccess.get_access_desc(acc), "on" = null)))
+				area_list.Add(list(list("area" = acc, "area_name" = SSaccess.get_access_desc(acc), "on" = FALSE)))
 	data["area"] = area_list
 
 	data["mode"] = mode

@@ -1,0 +1,13 @@
+{
+	"helmet": "engineering voidsuit helmet",
+	"suit": "engineering voidsuit",
+	"mask": "breath mask",
+	"occupied": 0,
+	"broken": 0,
+	"panelopen": 0,
+	"locked": 0,
+	"open": 1,
+	"safeties": 1,
+	"uv_active": 0,
+	"uv_super": 0
+}

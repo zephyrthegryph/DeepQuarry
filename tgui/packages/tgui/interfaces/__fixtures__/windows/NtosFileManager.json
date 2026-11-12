@@ -1,0 +1,55 @@
+{
+	"PC_device_theme": "ntos",
+	"PC_batteryicon": "batt_100.gif",
+	"PC_batterypercent": "87 %",
+	"PC_showbatteryicon": 1,
+	"PC_apclinkicon": "charging.gif",
+	"PC_ntneticon": "sig_high.gif",
+	"PC_programheaders": [{ "icon": "hostile.gif" }],
+	"PC_stationtime": "14:32",
+	"PC_hasheader": 1,
+	"PC_showexitprogram": 1,
+	"error": "I/O error: File already exists.",
+	"filedata": null,
+	"filename": null,
+	"files": [
+		{
+			"name": "notes",
+			"type": "txt",
+			"uid": 1042,
+			"size": 2,
+			"undeletable": 0
+		},
+		{
+			"name": "filemanager",
+			"type": "prg",
+			"uid": 1043,
+			"size": 8,
+			"undeletable": 1
+		},
+		{
+			"name": "report",
+			"type": "txt",
+			"uid": 1044,
+			"size": 4,
+			"undeletable": 0
+		}
+	],
+	"usbconnected": 1,
+	"usbfiles": [
+		{
+			"name": "backup",
+			"type": "txt",
+			"uid": 2001,
+			"size": 3,
+			"undeletable": 0
+		},
+		{
+			"name": "photos",
+			"type": "dat",
+			"uid": 2002,
+			"size": 12,
+			"undeletable": 0
+		}
+	]
+}

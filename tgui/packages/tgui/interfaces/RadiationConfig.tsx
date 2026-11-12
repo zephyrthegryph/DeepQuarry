@@ -8,21 +8,16 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { RadiationConfigActions } from './generated/RadiationConfig';
-
-type Data = {
-  radiation_color: string | null;
-  glowing: number;
-  glowtoggle: BooleanLike;
-  radiation_nutrition: BooleanLike;
-  radiation_nutrition_cap: number;
-  nutrition_toggle: BooleanLike;
-  current_nutrition: number;
-};
+import type {
+  RadiationConfigActions,
+  RadiationConfigData,
+} from './generated/RadiationConfig';
 
 export const RadiationConfig = (props) => {
-  const { act, data } = useBackend<Data, RadiationConfigActions>();
+  const { act, data } = useBackend<
+    RadiationConfigData,
+    RadiationConfigActions
+  >();
 
   const {
     radiation_color,
@@ -56,7 +51,7 @@ export const RadiationConfig = (props) => {
                         </Button>
                       </Stack.Item>
                       <Stack.Item>
-                        <ColorBox color={radiation_color || '#FFFFFF'} />
+                        <ColorBox color={radiation_color} />
                       </Stack.Item>
                     </Stack>
                   </LabeledList.Item>

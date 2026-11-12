@@ -1,0 +1,50 @@
+{
+	"servers": [
+		{
+			"id": "server-1",
+			"name": "Common Server"
+		},
+		{
+			"id": "server-2",
+			"name": "Command Server"
+		}
+	],
+	"selectedServer": {
+		"id": "server-1",
+		"totalTraffic": 2048,
+		"logs": [
+			{
+				"input_type": "Speech File",
+				"id": 1,
+				"parameters": {
+					"uspeech": 1,
+					"intelligible": 1,
+					"message": "Hello, station.",
+					"name": "John Smith",
+					"race": "Human",
+					"job": "Engineer",
+					"timecode": "12:04:33"
+				}
+			},
+			{
+				"input_type": "Execution Error",
+				"id": 2,
+				"parameters": {
+					"uspeech": 0,
+					"intelligible": 0,
+					"message": "Syntax error.",
+					"name": "Unknown",
+					"race": "Unknown",
+					"job": "Unknown",
+					"timecode": "12:05:10"
+				}
+			}
+		]
+	},
+	"universal_translate": 0,
+	"network": "tcommsat",
+	"temp": {
+		"color": "good",
+		"text": "2 ENTITIES LOCATED & BUFFERED"
+	}
+}

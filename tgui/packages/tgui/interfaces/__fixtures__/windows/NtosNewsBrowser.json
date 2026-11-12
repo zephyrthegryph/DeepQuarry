@@ -1,0 +1,26 @@
+{
+	"PC_device_theme": "ntos",
+	"PC_batteryicon": "batt_100.gif",
+	"PC_batterypercent": "87 %",
+	"PC_showbatteryicon": 1,
+	"PC_apclinkicon": "charging.gif",
+	"PC_ntneticon": "sig_high.gif",
+	"PC_programheaders": [{ "icon": "hostile.gif" }],
+	"PC_stationtime": "14:32",
+	"PC_hasheader": 1,
+	"PC_showexitprogram": 1,
+	"message": "",
+	"showing_archived": 0,
+	"download": null,
+	"article": null,
+	"all_articles": [
+		{ "name": "Mining quotas raised", "size": 4, "uid": 3001, "archived": 0 },
+		{
+			"name": "Engine maintenance schedule",
+			"size": 6,
+			"uid": 3002,
+			"archived": 0
+		},
+		{ "name": "Old gossip", "size": 2, "uid": 3003, "archived": 1 }
+	]
+}

@@ -7,6 +7,7 @@
 
 CAPABILITIES(/datum/pai_software/directives)
 	interface("pAIDirectives", state = nameof(GLOB.tgui_always_state))
+	ui_shape(master = nullable(schema_text()), dna = nullable(schema_text()), prime = schema_text(), supplemental = nullable(schema_text()))
 	op("getdna", ui_act("getdna"), needs(req(PROC_REF(dna_refusal))), asks(/datum/prompt/yes_no, fields = list("title" = computed(PROC_REF(dna_title)), "question" = computed(PROC_REF(dna_question)), "timeout" = 0), step = "dna", answerer = PROC_REF(dna_asked), when = PROC_REF(dna_has_carrier)), then(PROC_REF(ui_act_getdna)))
 
 /datum/pai_software/directives/ui_data(datum/act/eval/A)

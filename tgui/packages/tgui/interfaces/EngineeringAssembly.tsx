@@ -9,36 +9,11 @@ import {
 } from 'tgui-core/components';
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
-import type { EngineeringAssemblyActions } from './generated/EngineeringAssembly';
+import type {
+  EngineeringAssemblyActions,
+  EngineeringAssemblyData,
+} from './generated/EngineeringAssembly';
 
-type Data = {
-  status: string;
-  temperature: number;
-  buffer: number;
-  input: number;
-  output: number;
-  lossEnergy: number;
-  limiting?: string;
-  configuration: number;
-  liner: number;
-  shell: number;
-  fatigue: number;
-  monitoring: boolean;
-  parts: {
-    role: string;
-    material: string;
-    meltingPoint: number;
-    corrosion: number;
-    purpose: string;
-  }[];
-  reading?: Record<string, string | number>;
-  emitter?: {
-    output: number;
-    cadence: number;
-    stored: number;
-    active: boolean;
-  };
-};
 const number = (value: number) => Math.round(value).toLocaleString();
 const measurementFields = [
   ['name', 'Assembly', ''],
@@ -52,7 +27,10 @@ const measurementFields = [
 ] as const;
 
 export const EngineeringAssembly = () => {
-  const { data, act } = useBackend<Data, EngineeringAssemblyActions>();
+  const { data, act } = useBackend<
+    EngineeringAssemblyData,
+    EngineeringAssemblyActions
+  >();
   return (
     <Window width={620} height={620}>
       <Window.Content scrollable>
@@ -125,7 +103,7 @@ export const EngineeringAssembly = () => {
         )}
         <Section title="Installed parts">
           <LabeledList>
-            {(data.parts ?? []).map((part) => (
+            {data.parts.map((part) => (
               <LabeledList.Item key={part.role} label={part.role}>
                 {part.material}
                 <Box inline ml={1} color="label">
@@ -151,6 +129,7 @@ export const EngineeringAssembly = () => {
                 const value = data.reading?.[key];
                 if (
                   value === undefined ||
+                  value === null ||
                   (key.startsWith('minimum_') && value === 0)
                 ) {
                   return null;

@@ -9,27 +9,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import type { Material } from './Fabrication/Types';
-import type { PartsLatheActions } from './generated/PartsLathe';
-
-type Data = {
-  panelOpen: BooleanLike;
-  materials: Material[];
-  SHEET_MATERIAL_AMOUNT: number;
-  copyBoard: string | null;
-  copyBoardReqComponents: { name: string; qty: number }[] | null;
-  queue: string[];
-  building: string | null;
-  buildPercent: number | null;
-  error: string | null;
-  recipies: { name: string; type: string }[];
-};
+import type { PartsLatheActions, PartsLatheData } from './generated/PartsLathe';
 
 export const PartsLathe = (props) => {
-  const { act, data } = useBackend<Data, PartsLatheActions>();
+  const { act, data } = useBackend<PartsLatheData, PartsLatheActions>();
   const {
     copyBoard,
     copyBoardReqComponents,

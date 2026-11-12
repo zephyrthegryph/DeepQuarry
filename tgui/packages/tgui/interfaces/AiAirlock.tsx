@@ -1,39 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { AiAirlockActions } from './generated/AiAirlock';
-
-type Data = {
-  power: {
-    main: number;
-    main_timeleft: number;
-    backup: number;
-    backup_timeleft: number;
-  };
-  wires: {
-    main_1: BooleanLike;
-    main_2: BooleanLike;
-    backup_1: BooleanLike;
-    backup_2: BooleanLike;
-    shock: BooleanLike;
-    id_scanner: BooleanLike;
-    bolts: BooleanLike;
-    lights: BooleanLike;
-    safe: BooleanLike;
-    timing: BooleanLike;
-  };
-  electrified: BooleanLike;
-  electrified_left: number;
-  emergency: BooleanLike;
-  id_scanner: BooleanLike;
-  lights: BooleanLike;
-  bolted: BooleanLike;
-  safe: BooleanLike;
-  speed: BooleanLike;
-  opened: BooleanLike;
-  welded: BooleanLike;
-};
+import type { AiAirlockActions, AiAirlockData } from './generated/AiAirlock';
 
 const dangerMap: Record<number, { color: string; localStatusText: string }> = {
   2: {
@@ -51,12 +19,10 @@ const dangerMap: Record<number, { color: string; localStatusText: string }> = {
 };
 
 export const AiAirlock = (props) => {
-  const { act, data } = useBackend<Data, AiAirlockActions>();
-  const flat = data;
-
+  const { act, data } = useBackend<AiAirlockData, AiAirlockActions>();
   const {
-    power = {} as Data['power'],
-    wires = {} as Data['wires'],
+    power,
+    wires,
     electrified,
     electrified_left,
     emergency,
@@ -67,10 +33,10 @@ export const AiAirlock = (props) => {
     speed,
     opened,
     welded,
-  } = flat;
+  } = data;
 
-  const statusMain = dangerMap[power?.main] || dangerMap[0];
-  const statusBackup = dangerMap[power?.backup] || dangerMap[0];
+  const statusMain = dangerMap[power.main] || dangerMap[0];
+  const statusBackup = dangerMap[power.backup] || dangerMap[0];
   const shock = electrified ? 0 : 2;
   const statusElectrify = dangerMap[shock];
   return (

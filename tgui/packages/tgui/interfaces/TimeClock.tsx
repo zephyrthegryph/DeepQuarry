@@ -9,31 +9,12 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { RankIcon } from './common/RankIcon';
-import type { TimeClockActions } from './generated/TimeClock';
-
-type Data = {
-  card: string | null;
-  department_hours: Record<string, number> | undefined;
-  user_name: string;
-  assignment: string | null;
-  card_cooldown: number;
-  job_datum: {
-    title: string;
-    departments: string;
-    selection_color: string;
-    economic_modifier: number;
-    timeoff_factor: number;
-    pto_department: string;
-  } | null;
-  allow_change_job: BooleanLike;
-  job_choices: Record<string, string[]> | null;
-};
+import type { TimeClockActions, TimeClockData } from './generated/TimeClock';
 
 export const TimeClock = (props) => {
-  const { act, data } = useBackend<Data, TimeClockActions>();
+  const { act, data } = useBackend<TimeClockData, TimeClockActions>();
 
   const {
     department_hours,

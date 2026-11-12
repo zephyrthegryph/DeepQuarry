@@ -18,6 +18,7 @@ GLOBAL_ALIST_EMPTY(dq_attacks_panels)
 CAPABILITIES(/datum/attacks_panel)
 	ref_one(nameof(host), /mob/living/carbon/human)
 	interface("AttacksPanel", title = "Known Attacks", state = nameof(GLOB.tgui_always_state))
+	ui_shape(default_name = nullable(schema_text()), attacks = list_of(row(ref = num(), name = schema_text(), is_default = bool())))
 	op("set_default", ui_act("set_default", arg("ref", schema_ref(/datum/unarmed_attack))), then(PROC_REF(ui_act_set_default)))
 	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))
 
@@ -28,7 +29,7 @@ CAPABILITIES(/datum/attacks_panel)
 
 /// /datum/attacks_panel's window data.
 /datum/attacks_panel/ui_data(datum/act/eval/A)
-	var/list/data = list()
+	var/list/data = list("default_name" = null, "attacks" = list())
 	if(!host || !host.species)
 		return data
 	data["default_name"] = host.default_attack()?.attack_name
@@ -37,7 +38,7 @@ CAPABILITIES(/datum/attacks_panel)
 		rows += list(list(
 			"ref" = handle_of(u_attack),
 			"name" = u_attack.attack_name,
-			"is_default" = (u_attack == host.default_attack()),
+			"is_default" = (u_attack == host.default_attack()) ? TRUE : FALSE,
 		))
 	data["attacks"] = rows
 	return data

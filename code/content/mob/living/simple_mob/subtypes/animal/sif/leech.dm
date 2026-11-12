@@ -107,7 +107,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	ref_one(nameof(host), /mob/living/carbon)
 	after_init(0, then(PROC_REF(leech_pest_ready)))
 	immune_to_incapacitation()
-	op("infest", ai(), reach(REACH_RANGE(1)), wait(0.2 SECONDS), then(PROC_REF(do_infest_leech_done)), on_interrupt(PROC_REF(do_infest_leech_failed)))
+	op("infest", ai(), reach(REACH_RANGE(1)), needs(req_conscious()), wait(0.2 SECONDS), then(PROC_REF(do_infest_leech_done)), on_interrupt(PROC_REF(do_infest_leech_failed)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
@@ -292,10 +292,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 	var/mob/living/carbon/M = A.target
 
 	if(!M || !src)
-		return
-
-	if(src.stat)
-		to_chat(user, span_warning("We cannot infest a target in your current state."))
 		return
 
 	if(M in view(1, src))

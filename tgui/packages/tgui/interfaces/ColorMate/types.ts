@@ -1,33 +1,11 @@
-export type Data = {
-  activemode: number;
-  matrixcolors: MatrixColors;
-  buildhue: number;
-  buildsat: number;
-  buildval: number;
-  temp: string | null;
-  item_name: string | null;
-  item_sprite: string | null;
-  item_preview: string | null;
+import type { BooleanLike } from 'tgui-core/react';
+
+/** What the colour-matrix prompt window sends beyond the machine's own data (code/library/ui/tgui_input/matrix.dm). */
+export type ColorMatePromptData = {
   message?: string;
   title?: string;
-  matrix_only?: number;
+  matrix_only?: BooleanLike;
 };
-
-export type MatrixColors = {
-  rr: number;
-  rg: number;
-  rb: number;
-  gr: number;
-  gg: number;
-  gb: number;
-  br: number;
-  bg: number;
-  bb: number;
-  cr: number;
-  cg: number;
-  cb: number;
-};
-
 export type ColorPair = { input: string; output: string };
 export type SelectedId = { id: number | null; type: 'input' | 'output' | null };
 

@@ -4,27 +4,13 @@ import { useBackend } from 'tgui/backend';
 import { FormattedText } from 'tgui/dq';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { OocNotesActions } from './generated/OocNotes';
-
-type Data = {
-  owner: string;
-  is_owner: BooleanLike;
-  ooc_notes: string;
-  ooc_likes: string;
-  ooc_dislikes: string;
-  ooc_favs: string;
-  ooc_maybes: string;
-  ooc_style: BooleanLike;
-  /// The chat's emphasis markers (GLOB.speech_toppings).
-  markers?: Record<string, string>;
-};
+import type { OocNotesActions, OocNotesData } from './generated/OocNotes';
 
 type SectionDef = {
   title: string;
-  field: keyof Data;
-  edit_action: string;
+  field: 'ooc_favs' | 'ooc_likes' | 'ooc_maybes' | 'ooc_dislikes';
+  edit_action: 'edit_favs' | 'edit_likes' | 'edit_maybes' | 'edit_dislikes';
   color?: string;
 };
 
@@ -36,7 +22,7 @@ const SECTIONS: SectionDef[] = [
 ];
 
 export const OocNotes = () => {
-  const { data, act } = useBackend<Data, OocNotesActions>();
+  const { data, act } = useBackend<OocNotesData, OocNotesActions>();
   const { owner, is_owner, ooc_notes, ooc_style } = data;
   return (
     <Window width={680} height={620} title={`OOC Notes: ${owner}`}>
@@ -69,7 +55,7 @@ export const OocNotes = () => {
         >
           {ooc_notes ? (
             <Box>
-              <FormattedText text={ooc_notes} markers={data.markers ?? {}} />
+              <FormattedText text={ooc_notes} markers={data.markers} />
             </Box>
           ) : (
             <EmptyState>(none)</EmptyState>
@@ -81,7 +67,7 @@ export const OocNotes = () => {
           // when in "fields" mode (ooc_style=true) lay out the sections in a row.
         >
           {SECTIONS.map((s) => {
-            const text = data[s.field] as string;
+            const text = data[s.field];
             if (!text && !is_owner) {
               return null;
             }
@@ -103,7 +89,7 @@ export const OocNotes = () => {
                 >
                   {text ? (
                     <Box>
-                      <FormattedText text={text} markers={data.markers ?? {}} />
+                      <FormattedText text={text} markers={data.markers} />
                     </Box>
                   ) : (
                     <EmptyState>(none)</EmptyState>

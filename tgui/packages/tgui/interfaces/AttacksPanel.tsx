@@ -3,24 +3,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { AttacksPanelActions } from './generated/AttacksPanel';
-
-type Attack = {
-  ref: number;
-  name: string;
-  is_default: BooleanLike;
-};
-
-type Data = {
-  default_name: string | null;
-  attacks: Attack[];
-};
+import type {
+  AttacksPanelActions,
+  AttacksPanelData,
+} from './generated/AttacksPanel';
 
 export const AttacksPanel = () => {
-  const { data, act } = useBackend<Data, AttacksPanelActions>();
-  const { default_name, attacks = [] } = data;
+  const { data, act } = useBackend<AttacksPanelData, AttacksPanelActions>();
+  const { default_name, attacks } = data;
   return (
     <Window width={460} height={400} title="Known Attacks">
       <Window.Content scrollable>

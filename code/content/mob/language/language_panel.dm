@@ -28,13 +28,14 @@ GLOBAL_ALIST_EMPTY(dq_languages_panels)
 CAPABILITIES(/datum/languages_panel)
 	ref_one(nameof(host), /mob)
 	interface("LanguagesPanel", title = "Known Languages", state = nameof(GLOB.tgui_always_state))
+	ui_shape(has_default = bool(), default_name = nullable(schema_text()), languages = list_of(row(id = schema_text(), name = schema_text(), key = schema_text(), custom_key = nullable(schema_text()), description = schema_text(), can_speak = bool(), is_default = bool())))
 	op("set_default", ui_act("set_default", arg("language", schema_text(64))), needs(req(PROC_REF(req_own_languages)), req(PROC_REF(req_known_language))), then(PROC_REF(ui_act_set_default)))
 	op("reset_default", ui_act("reset_default"), needs(req(PROC_REF(req_own_languages))), then(PROC_REF(ui_act_reset_default)))
 	op("edit_key", ui_act("edit_key", arg("language", schema_text(64))), needs(req(PROC_REF(req_own_languages)), req(PROC_REF(req_known_language))), asks(/datum/prompt/text/language_key, fields = list("language" = computed(PROC_REF(arg_language))), step = "key"), then(PROC_REF(ui_act_edit_key)))
 
 /// /datum/languages_panel's window data.
 /datum/languages_panel/ui_data(datum/act/eval/A)
-	var/list/data = list()
+	var/list/data = list("has_default" = FALSE, "default_name" = null, "languages" = list())
 	if(!host)
 		return data
 	var/mob/living/L = host
@@ -56,7 +57,7 @@ CAPABILITIES(/datum/languages_panel)
 			"custom_key" = lang_key,
 			"description" = lang.desc,
 			"can_speak" = !!can_speak_lang,
-			"is_default" = (lang == default_lang),
+			"is_default" = (lang == default_lang) ? TRUE : FALSE,
 		))
 	data["languages"] = rows
 	return data

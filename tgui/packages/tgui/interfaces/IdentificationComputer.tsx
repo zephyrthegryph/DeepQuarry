@@ -15,40 +15,15 @@ import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
 
 import { CrewManifestContent } from './CrewManifest';
-import type { IdentificationComputerActions } from './generated/IdentificationComputer';
+import type {
+  IdentificationComputerActions,
+  IdentificationComputerData,
+} from './generated/IdentificationComputer';
 
-type Data = {
-  manifest: { cat: string; elems: manifestEntry[] }[];
-  station_name: string;
-  mode: BooleanLike;
-  printing: BooleanLike;
-  have_id_slot: BooleanLike;
-  have_printer: BooleanLike;
-  target_name: string | null;
-  target_owner: string | null;
-  target_rank: string;
-  scan_name: string;
-  authenticated: BooleanLike;
-  has_modify: BooleanLike;
-  account_number: number | null;
-  centcom_access: BooleanLike;
-  all_centcom_access: access[];
-  regions: region[] | null;
-  id_rank: string | null;
-  departments: {
-    department_name: string;
-    jobs: { display_name: string; target_rank: string; job: string }[];
-  }[];
-};
-
-type manifestEntry = { name: string; rank: string; active: string };
-
-type region = { name: string; accesses: access[] };
-
-type access = {
-  desc: string;
-  ref: number;
-  allowed: BooleanLike;
+// have_id_slot and have_printer come from the NTOS program's data only (code/content/tgui_modules/ntos_only/cardmod.dm).
+type Data = IdentificationComputerData & {
+  have_id_slot?: BooleanLike;
+  have_printer?: BooleanLike;
 };
 
 export const IdentificationComputer = () => {
@@ -98,19 +73,18 @@ export const IdentificationComputerContent = (props) => {
         >
           Crew Manifest
         </Tabs.Tab>
-        {!ntos ||
-          (!!have_printer && (
-            <Tabs.Tab
-              style={{
-                float: 'right',
-              }}
-              icon="print"
-              onClick={() => (mode || has_modify) && act('print')}
-              color={!mode && !has_modify ? 'transparent' : ''}
-            >
-              Print
-            </Tabs.Tab>
-          ))}
+        {(!ntos || !!have_printer) && (
+          <Tabs.Tab
+            style={{
+              float: 'right',
+            }}
+            icon="print"
+            onClick={() => (mode || has_modify) && act('print')}
+            color={!mode && !has_modify ? 'transparent' : ''}
+          >
+            Print
+          </Tabs.Tab>
+        )}
       </Tabs>
       {body}
     </>
@@ -131,11 +105,11 @@ export const IdentificationComputerAccessModification = (props: {
   const {
     station_name,
     target_name,
-    target_owner = '',
+    target_owner,
     scan_name,
     authenticated,
     has_modify,
-    account_number = '',
+    account_number,
     centcom_access,
     all_centcom_access,
     id_rank,
@@ -169,7 +143,7 @@ export const IdentificationComputerAccessModification = (props: {
             <LabeledList>
               <LabeledList.Item label="Registered Name">
                 <Input
-                  value={target_owner!}
+                  value={target_owner}
                   fluid
                   onChange={(val) => act('reg', { reg: val })}
                 />
@@ -217,8 +191,6 @@ export const IdentificationComputerAccessModification = (props: {
                       ))}
                     </Table.Cell>
                   </Table.Row>
-                  <Box mt={-1}>&nbsp;</Box>{' '}
-                  {/* Hacky little thing to add spacing */}
                 </Fragment>
               ))}
               <Table.Row>

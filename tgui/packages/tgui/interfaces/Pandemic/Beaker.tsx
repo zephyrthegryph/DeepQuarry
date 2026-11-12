@@ -8,11 +8,10 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { capitalizeFirst } from 'tgui-core/string';
-import type { PandemicActions } from '../generated/Pandemic';
-import type { Data } from './types';
+import type { PandemicActions, PandemicData } from '../generated/Pandemic';
 
 export const BeakerDisplay = (props) => {
-  const { act, data } = useBackend<Data, PandemicActions>();
+  const { act, data } = useBackend<PandemicData, PandemicActions>();
   const { has_beaker, beaker, has_blood } = data;
   const cant_empty = !has_beaker || !beaker?.volume;
   let content;
@@ -80,7 +79,7 @@ export const BeakerDisplay = (props) => {
 };
 
 const Info = (props) => {
-  const { data } = useBackend<Data, PandemicActions>();
+  const { data } = useBackend<PandemicData, PandemicActions>();
   const { beaker, blood } = data;
   if (!beaker || !blood) {
     return <NoticeBox>No container loaded</NoticeBox>;
@@ -120,7 +119,7 @@ const Info = (props) => {
 };
 
 const Antibodies = (props) => {
-  const { act, data } = useBackend<Data, PandemicActions>();
+  const { act, data } = useBackend<PandemicData, PandemicActions>();
   const { is_ready, resistances = [] } = data;
   if (!resistances) {
     return <NoticeBox>Nothing detected.</NoticeBox>;

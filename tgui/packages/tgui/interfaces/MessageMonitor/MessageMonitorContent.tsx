@@ -13,7 +13,7 @@ import type { Data } from './types';
 export const MessageMonitorContent = (props) => {
   const { act, data } = useBackend<Data, MessageMonitorActions>();
 
-  const { linkedServer } = data;
+  const linkedServer = data.linkedServer!; // only rendered when a server is linked
 
   const [tabIndex, setTabIndex] = useState<number>(0);
 

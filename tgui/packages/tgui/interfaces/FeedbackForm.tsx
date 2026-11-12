@@ -6,24 +6,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { FeedbackFormActions } from './generated/FeedbackForm';
-
-type Data = {
-  topic: string;
-  body: string;
-  hide_author: BooleanLike;
-  author_ckey: string;
-  author_hashed: string;
-  can_be_private: BooleanLike;
-  topics: string[];
-  max_length: number;
-  cooldown_days: number;
-};
+import type {
+  FeedbackFormActions,
+  FeedbackFormData,
+} from './generated/FeedbackForm';
 
 export const FeedbackForm = () => {
-  const { data, act } = useBackend<Data, FeedbackFormActions>();
+  const { data, act } = useBackend<FeedbackFormData, FeedbackFormActions>();
   const {
     topic,
     body,
@@ -35,7 +25,7 @@ export const FeedbackForm = () => {
     max_length,
     cooldown_days,
   } = data;
-  const length = body?.length ?? 0;
+  const length = body.length;
 
   return (
     <Window width={520} height={560} title="Server Feedback">
@@ -77,7 +67,7 @@ export const FeedbackForm = () => {
               )}
             </LabeledList.Item>
             <LabeledList.Item label="Topic">
-              {topics && topics.length > 1 ? (
+              {topics.length > 1 ? (
                 <Button onClick={() => act('choose_topic')}>{topic}</Button>
               ) : (
                 topic

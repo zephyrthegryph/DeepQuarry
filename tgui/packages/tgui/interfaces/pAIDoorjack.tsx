@@ -8,20 +8,13 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { pAIDoorjackActions } from './generated/pAIDoorjack';
-
-type Data = {
-  cable: BooleanLike;
-  machine: BooleanLike;
-  inprogress: BooleanLike;
-  progress_a: number;
-  progress_b: number;
-  aborted: BooleanLike;
-};
+import type {
+  pAIDoorjackActions,
+  pAIDoorjackData,
+} from './generated/pAIDoorjack';
 
 export const pAIDoorjack = (props) => {
-  const { act, data } = useBackend<Data, pAIDoorjackActions>();
+  const { act, data } = useBackend<pAIDoorjackData, pAIDoorjackActions>();
 
   const { cable, machine, inprogress, progress_a, progress_b, aborted } = data;
 

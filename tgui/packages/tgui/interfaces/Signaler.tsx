@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, NumberInput, Section, Table } from 'tgui-core/components';
-import type { SignalerActions } from './generated/Signaler';
+import type { SignalerActions, SignalerData } from './generated/Signaler';
 
 export const Signaler = () => {
   return (
@@ -13,16 +13,9 @@ export const Signaler = () => {
   );
 };
 
-type Data = {
-  code: number;
-  frequency: number;
-  minFrequency: number;
-  maxFrequency: number;
-};
-
 export const SignalerContent = (props) => {
-  const { act, data } = useBackend<Data, SignalerActions>();
-  const { code = 0, frequency = 0, minFrequency = 0, maxFrequency = 0 } = data;
+  const { act, data } = useBackend<SignalerData, SignalerActions>();
+  const { code, frequency, minFrequency, maxFrequency } = data;
   return (
     <Section>
       <Table>
