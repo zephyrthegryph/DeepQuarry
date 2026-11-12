@@ -28,9 +28,8 @@
 		return
 	updateOverlays()
 	for (var/dir in GLOB.cardinal)
-		var/obj/structure/lattice/L
-		if(locate(/obj/structure/lattice, get_step(src, dir)))
-			L = locate(/obj/structure/lattice, get_step(src, dir))
+		var/obj/structure/lattice/L = locate(/obj/structure/lattice, get_step(src, dir))
+		if(L)
 			L.updateOverlays()
 
 // neighbour lattices redraw and what it held up falls.
@@ -72,8 +71,12 @@ CAPABILITIES(/obj/structure/lattice)
 		replace_with(src, /obj/item/stack/rods, 1)
 	return OP_OK
 
-/// Redraws next tick; requests before then share the one pending redraw.
+/// Redraws next tick; requests before then share the one pending redraw. While an explosion resolves, the redraw waits for the end of the
+/// resolve instead (SSexplosions.defer_lattice_redraw()): a crater makes hundreds of lattices that ask for each other's redraw.
 /obj/structure/lattice/proc/updateOverlays()
+	if(SSexplosions?.is_bulk_resolving())
+		SSexplosions.defer_lattice_redraw(src)
+		return
 	if(after_pending(src, "overlays"))
 		return
 	after(src, 0.1 SECONDS, PROC_REF(update_overlays_now), key = "overlays")

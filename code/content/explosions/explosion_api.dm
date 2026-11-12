@@ -116,6 +116,43 @@
 	for(var/turf/neighbor as anything in RANGE_TURFS(1, T))
 		deferred_appearance_updates[neighbor] = TRUE
 
+/// A lattice asks for a redraw while the epoch resolves: it is queued once and drawn when the resolve flushes (flush_deferred_lattices()), so a
+/// crater's hundreds of new lattices and their neighbours cost one set entry each, not a timer per request.
+/datum/system/explosions/proc/defer_lattice_redraw(obj/structure/lattice/L)
+	epoch_lattice_redraws_asked++
+	var/handle = handle_of(L)
+	if(isnull(handle))
+		return
+	if(deferred_lattices[handle])
+		epoch_lattice_redraws_coalesced++
+		return
+	deferred_lattices[handle] = TRUE
+
+/// Draws the queued lattices (one redraw each, skipping any deleted since), resumable under the tick budget. TRUE once none are left.
+/datum/system/explosions/proc/flush_deferred_lattices(tick_checked = TRUE)
+	if(deferred_lattice_index > length(deferred_lattice_run) && length(deferred_lattices))
+		deferred_lattice_run.Cut()
+		deferred_lattice_index = 1
+		for(var/handle in deferred_lattices)
+			deferred_lattice_run += handle
+		deferred_lattices.Cut()
+	var/drawn = 0
+	while(deferred_lattice_index <= length(deferred_lattice_run))
+		var/obj/structure/lattice/L = handle_get(deferred_lattice_run[deferred_lattice_index++])
+		if(istype(L) && !QDELETED(L))
+			L.update_overlays_now()
+			drawn++
+		if(tick_checked && TICK_CHECK)
+			epoch_lattices_drawn += drawn
+			return FALSE
+	epoch_lattices_drawn += drawn
+	if(epoch_lattices_drawn)
+		log_world("EXPLOSION_LATTICE: drew [epoch_lattices_drawn] deferred lattice(s) for [epoch_lattice_redraws_asked] redraw request(s) ([epoch_lattice_redraws_coalesced] coalesced)")
+	deferred_lattice_run.Cut()
+	deferred_lattice_index = 1
+	epoch_lattices_drawn = 0
+	return length(deferred_lattices) == 0
+
 /datum/system/explosions/proc/wake_and_defer_subsystem_updates()
 	// Even a small blast can destroy a cell, cable, or pipe.  Keep one
 	// transaction open for the complete nested explosion epoch: every cable
@@ -152,6 +189,11 @@
 	deferred_turf_update_index = 1
 	deferred_appearance_updates.Cut()
 	deferred_appearance_update_index = 1
+	deferred_lattices.Cut()
+	deferred_lattice_run.Cut()
+	deferred_lattice_index = 1
+	epoch_lattice_redraws_asked = 0
+	epoch_lattice_redraws_coalesced = 0
 	current_signal_keys = null
 	current_signal_index = 1
 	wakeup()
@@ -191,6 +233,8 @@
 		"epoch_batched_destroys" = epoch_batched_destroys,
 		"epoch_atom_collect_ms" = epoch_atom_collect_ms,
 		"epoch_atom_resolve_ms" = epoch_atom_resolve_ms,
+		"lattice_redraws_asked" = epoch_lattice_redraws_asked,
+		"lattice_redraws_coalesced" = epoch_lattice_redraws_coalesced,
 		"deferred_turf_updates" = max(0, length(deferred_turf_updates) - deferred_turf_update_index + 1),
 		"deferred_appearance_updates" = max(0, length(deferred_appearance_updates) - deferred_appearance_update_index + 1),
 		"last_epoch_wall_ms" = last_epoch_ms,

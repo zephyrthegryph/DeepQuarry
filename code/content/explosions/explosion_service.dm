@@ -59,6 +59,15 @@ SYSTEM_DEF(explosions)
 	/// Atoms this epoch destroyed through batched destroy.
 	var/epoch_batched_destroys = 0
 	VAR_PRIVATE/deferred_appearance_update_index = 1
+	/// Lattices that asked for a redraw while the epoch resolved (handle_of(lattice) -> TRUE): each is drawn once when the resolve flushes, instead of
+	/// one timer per request (code/content/structures/lattice.dm). A flush moves them into `deferred_lattice_run` (handles, in request order).
+	VAR_PRIVATE/alist/deferred_lattices = alist()
+	VAR_PRIVATE/list/deferred_lattice_run = list()
+	VAR_PRIVATE/deferred_lattice_index = 1
+	/// Redraw requests the epoch took, and how many of them named a lattice that was already queued (diagnostics).
+	var/epoch_lattice_redraws_asked = 0
+	var/epoch_lattice_redraws_coalesced = 0
+	VAR_PRIVATE/epoch_lattices_drawn = 0
 	VAR_PRIVATE/bulk_resolution_active = FALSE
 	VAR_PRIVATE/list/explosion_resistance_cache = list()
 	VAR_PRIVATE/epoch_atom_collect_ms = 0
@@ -438,6 +447,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 	resolve_explosions = FALSE
 	bulk_resolution_active = FALSE
 	adjacency_hold_drain(FALSE) // normally drained by flush_deferred_turf_updates(); never leave a hold open past the resolve
+	flush_deferred_lattices(FALSE) // likewise: a redraw asked after the flush (or an aborted resolve) never waits for a resolve that is over
 
 /datum/system/explosions/proc/flush_deferred_turf_updates()
 	while(deferred_turf_update_index <= length(deferred_turf_updates))
@@ -456,6 +466,8 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 			return FALSE
 	deferred_appearance_updates.Cut()
 	deferred_appearance_update_index = 1
+	if(!flush_deferred_lattices())
+		return FALSE
 	// Last: the turf updates above may ask neighbours to recompute too, and each held member recomputes once with the crater final.
 	if(!adjacency_hold_drain())
 		return FALSE

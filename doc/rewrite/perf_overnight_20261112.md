@@ -205,3 +205,30 @@ reliable measure, round 7's profile above is the before).
 Surveyed, not changed: `settle_integrity_crossings` (0.79 s total over 2324 calls, self 0.006 s) is the object's real destruction
 (atom_destruction -> qdel), not settlement overhead, so there is nothing to skip; `ReplaceWithLattice` (1.25 s over 956) is ChangeTurf plus the
 lattice's own init and neighbour redraw timers, with no per-type cacheable step beyond the existing ctor plans. EXPLOSION_SLOW tracing is untouched.
+
+## Round 8 (perf/explosion-batch, base 31eb029fbf)
+
+Same bench (`major_events --arg=events=supermatter --profile`), a real before run on the base, then one run with the change (the machine was
+shared at 65 % CPU; call counts are the reliable measure, timings carry the usual noise). Epoch: 5166 turfs, 2346 ChangeTurf.
+
+13. **Lattice redraws coalesce per epoch.** Each new lattice drew itself and its four neighbours through `updateOverlays()`, one `after()` timer
+   per request (1752 requests for 955 lattices). While `SSexplosions.is_bulk_resolving()` the request now goes into a handle-keyed set
+   (`defer_lattice_redraw()`), and `flush_deferred_lattices()` (tick-checked, called from `flush_deferred_turf_updates()` and from `end_resolve()`)
+   draws each live lattice once from the final layout. Log line `EXPLOSION_LATTICE:` per flush; counters in `performance_diagnostics()`.
+   Before -> after: `after` 2236 -> 751 calls (0.29 -> 0.06 s), timer `on_deadline` 2168 -> 689 calls (0.82 -> 0.55 s), `ReplaceWithLattice`
+   1.54 -> 1.17 s (955), `step_epoch` 5.93 -> 5.33 s, 797 of 1752 requests coalesced. Worst tick 223.6 % (before run, one slow outlier) -> 148.8 %
+   (earlier runs on the base: 93-108 %; the worst tick is noise-dominated). Test `dq_explosion_lattice_redraw_deferred`.
+
+Tried, no win (not landed):
+
+- **own_clear skip for slots a type cannot hold.** `own_teardown()` already skips null vars; the 11.2 k `own_clear` calls are not its loop. They come
+  from `rel_clear()`/`rel_set()` (ChangeTurf restores five lighting relations per turf, 11.5 k `rel_clear`), and `own_dispose` (2265 calls, 0.48 s) is
+  the real work: the old turf's air mixture. Skipping `contents` when empty in `own_teardown()` left the call count at 11245 (was 11200) and
+  `own_clear` at 0.55 s (0.59 s): self time is 0.03-0.04 s, so there is nothing to cut. Reverted.
+- **One destroy transaction per batch.** The destroyed datums that matter are the old turf (2346) and its air mixture (2265). Turfs are not movables
+  and the collecting scope (`dq_destroy_collect_*`) defers movables only; the batch's gains are the Rust unbinds, registry leaves and merged effects,
+  and a mixture has almost none (`lifecycle_unbind` of a mixture: 0.014 s over 2253). What is left per destroy is generic phase overhead spread thin
+  (`engine_forget` 0.21 s, `rx_teardown` 0.22 s, `own_teardown` 0.35 s, `pool_release` 0.24 s over 4795 destroys; each piece 0.04 s or less
+  self), and each of those keeps behaviour that tests pin. No batch form would remove it.
+- Pre-existing failure seen on the base tree: `dq_lifecycle_diag_aborted_plain_teardown` fails ("the record is marked torn down"): the aborted
+  path runs `own_teardown()` first, which disposes the scheduler record before `entity_teardown_rest()` can mark it torn down.
