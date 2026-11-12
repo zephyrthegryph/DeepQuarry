@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Unarmed attack messages use the attacker's or target's pronouns instead of saying 'its'."

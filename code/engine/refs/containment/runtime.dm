@@ -3,8 +3,6 @@
 	return FALSE
 /atom/proc/containment_drop_location()
 	return get_turf(src)
-/atom/proc/containment_blast_exposure(severity)
-	return
 /atom/proc/containment_armor_share(key, penetration)
 	return 0
 /atom/proc/containment_bay_share(datum/relation_definition/slot/def, effect)

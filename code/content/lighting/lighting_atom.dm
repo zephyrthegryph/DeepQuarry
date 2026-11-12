@@ -80,30 +80,6 @@ SETTER(/atom, opacity)
 		return
 	recalculate_directional_opacity()
 
-/atom/proc/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	return
-
-
-/turf/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	if(!_duration)
-		stack_trace("Lighting FX obj created on a turf without a duration")
-	new /obj/effect/dummy/lighting_obj (src, _range, _power, _color, _duration)
-
-
-/obj/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	if(!_duration)
-		stack_trace("Lighting FX obj created on a obj without a duration")
-	new /obj/effect/dummy/lighting_obj (get_turf(src), _range, _power, _color, _duration)
-
-
-/mob/living/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	mob_light(_range, _power, _color, _duration)
-
-
-/mob/living/proc/mob_light(_range, _power, _color, _duration)
-	var/obj/effect/dummy/lighting_obj/moblight/mob_light_obj = new (src, _range, _power, _color, _duration)
-	return mob_light_obj
-
 /// Whether `A` casts light now: its switch is on and its glow has a range and a power. The one definition update_light() and the tests use.
 /proc/atom_casts_light(atom/A)
 	if(!A.light_on)
