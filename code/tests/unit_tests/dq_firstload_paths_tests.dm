@@ -55,10 +55,8 @@
 	test_driver_begin()
 	var/z = dq_firstload_paths_z()
 	// Open space needs a level below it: link this level to the one under it for the test.
-	var/list/levels_before = GLOB.z_levels.Copy()
-	while(length(GLOB.z_levels) < z - 1)
-		GLOB.z_levels += FALSE
-	GLOB.z_levels[z - 1] = TRUE
+	var/list/levels_before = LAZYCOPY(mapping_z_links_up())
+	SSmapping.link_level_up(z - 1)
 	var/list/open_types = list()
 	for(var/x in 60 to 62)
 		for(var/y in 60 to 62)
@@ -76,8 +74,7 @@
 	TEST_ASSERT(roofed > 0, "open turfs were roofed")
 	TEST_ASSERT_EQUAL(GLOB.place_turfs_load_count - loads_before, 1, "the roof was placed as one load")
 	TEST_ASSERT(!istype(locate(61, 61, z), /turf/simulated/shuttle/floor/voidcraft), "a solid turf is not roofed")
-	GLOB.z_levels.Cut()
-	GLOB.z_levels += levels_before
+	SSmapping.set_level_links_up(levels_before)
 	test_driver_end()
 
 /// A clearing landmark replaces the dense turfs around it with their base turf in one load, and leaves open turfs alone.
@@ -189,10 +186,8 @@ GLOBAL_LIST_EMPTY(dq_nested_placed)
 	var/z = dq_firstload_paths_z()
 	var/z_above = dq_firstload_paths_z()
 	TEST_ASSERT_EQUAL(z_above, z + 1, "the test world gave two consecutive levels")
-	var/list/levels_before = GLOB.z_levels.Copy()
-	while(length(GLOB.z_levels) < z_above - 1)
-		GLOB.z_levels += FALSE
-	GLOB.z_levels[z] = TRUE
+	var/list/levels_before = LAZYCOPY(mapping_z_links_up())
+	SSmapping.link_level_up(z)
 	var/loads_before = GLOB.place_turfs_load_count
 	var/list/varedits = list("depth" = 2, "areas_to_use" = list(/area/turbolift/port_deck_one, /area/turbolift/port_deck_two))
 	turbolift_build(locate(20, 20, z), /obj/turbolift_map_holder, varedits)
@@ -202,6 +197,5 @@ GLOBAL_LIST_EMPTY(dq_nested_placed)
 	TEST_ASSERT(inside.flags & ATOM_INITIALIZED, "the lift floor is initialized")
 	TEST_ASSERT(isopenspace(locate(21, 21, z_above)), "the shaft is open space above")
 	TEST_ASSERT(locate(/obj/structure/lift/panel) in locate(21, 21, z) || locate(/obj/structure/lift/panel) in range(2, inside), "the lift has its panel")
-	GLOB.z_levels.Cut()
-	GLOB.z_levels += levels_before
+	SSmapping.set_level_links_up(levels_before)
 	test_driver_end()

@@ -41,7 +41,7 @@ Two registered face neighbours share air when neither blocks the shared face.
 ### Multi-z
 
 `SSair.build_multiz_atmos_levels()` bridges the movement-multiz connectivity
-(`GLOB.z_levels`, populated by `/obj/effect/landmark/map_data`) into
+(`SSmapping.z_links_up`, populated by `/obj/effect/landmark/map_data`) into
 `SSmapping.multiz_levels` and sends Rust one `UP|DOWN` link mask per z-level
 (`push_z_links()`). Rust links turfs vertically only across linked levels, and
 only where neither turf blocks the face: a solid floor blocks its `DOWN` face, so

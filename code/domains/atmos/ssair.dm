@@ -360,7 +360,7 @@ SYSTEM_DEF(air)
 		T.update_air_ref(0, T.air_block_mask())
 	LAZYCLEARLIST(queued_for_activation)
 
-/// Bridge the movement-multiz connection data (GLOB.z_levels, populated by
+/// Bridge the movement-multiz connection data (SSmapping.z_links_up, populated by
 /// /obj/effect/landmark/map_data during mapload) into SSmapping.multiz_levels and
 /// on to Rust, which only links turfs vertically across linked z-levels.
 /// No-op on single-z maps, where HasAbove/HasBelow return 0 for every z.

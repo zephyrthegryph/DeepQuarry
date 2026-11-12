@@ -100,6 +100,36 @@
 	qdel(F)
 	now.ChangeTurf(/turf/space)
 
+/// Roofing on space is refused when the level map joins no level above; once a level above is joined, and the hole there sits beside a floor,
+/// the patch commits and floors the hole.
+/datum/unit_test/dq_turf_ops/space_patch_ceiling_needs_a_level_above/run_ops()
+	var/z = dq_firstload_paths_z()
+	var/z_above = dq_firstload_paths_z()
+	TEST_ASSERT_EQUAL(z_above, z + 1, "the test world gave two consecutive levels")
+	var/list/links_before = LAZYCOPY(mapping_z_links_up())
+	var/turf/space/S = locate(40, 40, z)
+	S = S.ChangeTurf(/turf/space)
+	locate(40, 40, z_above).ChangeTurf(/turf/space)
+	locate(41, 40, z_above).ChangeTurf(/turf/simulated/floor)
+	stat_drain_point()
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, S)
+	var/obj/item/stack/tile/roofing/R = allocate(/obj/item/stack/tile/roofing, S)
+	R.set_amount(5)
+	var/datum/op_result/refused = click_with(user, S, R)
+	TEST_ASSERT_EQUAL(refused?.key, "space_patch_ceiling", "roofing on space picks the ceiling patch")
+	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "with no level above it is refused")
+	TEST_ASSERT_EQUAL(refused?.reason, /datum/msg/space/no_level_above, "for want of a level above")
+	TEST_ASSERT_EQUAL(R.get_amount(), 5, "and no roofing is spent")
+	SSmapping.link_level_up(z)
+	stat_drain_point()
+	var/datum/op_result/patched = click_with(user, S, R)
+	TEST_ASSERT_EQUAL(patched?.outcome, ACT_COMMITTED, "with a level above the patch commits")
+	TEST_ASSERT(istype(locate(40, 40, z_above), /turf/simulated/floor), "the hole above is floored: [locate(40, 40, z_above).type]")
+	TEST_ASSERT_EQUAL(R.get_amount(), 4, "one roofing tile is spent")
+	SSmapping.set_level_links_up(links_before)
+	qdel(user)
+	qdel(R)
+
 // ---- mineral ----
 
 /// A pickaxe on rock waits its dig speed, then mines the rock out to sand.
