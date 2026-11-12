@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The GM mob spawner now spawns at the typed coordinates instead of on the admin."
+  - code_imp: "Window static data is a declared output that resends itself when what it shows changes."
