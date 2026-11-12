@@ -159,7 +159,7 @@
 		host.say("*[pick(list("blink","blink_r","choke","aflap","drool","twitch","twitch_v","gasp"))]")
 
 /// Why this borer cannot use a power from inside a host right now, or null. The one place the reason is written; the menu ops require it
-/// and can_use_power_in_host() tells the borer (or the host it controls) the same text.
+/// and the player powers show it with tell_power_refusal().
 /mob/living/simple_mob/animal/borer/proc/power_in_host_refusal()
 	var/mob/living/carbon/human/host = src?.borer_host()
 	if(QDELETED(src))
@@ -170,36 +170,27 @@
 		return span_warning("You cannot that that in your current state.")
 	return null
 
-/mob/living/simple_mob/animal/borer/proc/can_use_power_in_host()
-	var/mob/living/carbon/human/host = src?.borer_host()
+/// Why this borer cannot use a power that needs full control of its host, or null. Never prints.
+/mob/living/simple_mob/animal/borer/proc/power_controlling_host_refusal()
 	var/refusal = power_in_host_refusal()
-	if(isnull(refusal))
-		return TRUE
-	if(!QDELETED(src))
-		to_chat(controlling && host ? host : src, refusal)
-	return FALSE
-
-/mob/living/simple_mob/animal/borer/proc/can_use_power_controlling_host()
-	var/mob/living/carbon/human/host = src?.borer_host()
-	if(!can_use_power_in_host())
-		return FALSE
+	if(refusal)
+		return refusal
 	if(!controlling)
-		to_chat(controlling ? host : src, span_warning("You need to be in complete control to do this."))
-		return FALSE
+		return span_warning("You need to be in complete control to do this.")
+	var/mob/living/carbon/human/host = borer_host()
 	if(host.stat)
-		to_chat(controlling ? host : src, span_warning("Your host is in no condition to do that."))
-		return FALSE
-	return TRUE
+		return span_warning("Your host is in no condition to do that.")
+	return null
 
 /mob/living/simple_mob/animal/borer/proc/power_docile_refusal()
 	return docile ? span_info("You are feeling far too docile to do that.") : null
 
-/mob/living/simple_mob/animal/borer/proc/can_use_power_docile()
-	var/mob/living/carbon/human/host = src?.borer_host()
-	var/refusal = power_docile_refusal()
-	if(refusal)
-		to_chat(controlling ? host : src, refusal)
-	return !docile
+/// Shows a power's refusal once, to whoever the borer acts as (the host it controls, else itself). The player power that asked calls it.
+/mob/living/simple_mob/animal/borer/proc/tell_power_refusal(refusal)
+	if(QDELETED(src) || refusal == MSG(req_silent))
+		return
+	var/mob/living/carbon/human/host = borer_host()
+	to_chat(controlling && host ? host : src, refusal)
 
 /mob/living/simple_mob/animal/borer/proc/use_chems(amount)
 	var/mob/living/carbon/human/host = src?.borer_host()
