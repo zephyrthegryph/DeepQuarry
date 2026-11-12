@@ -107,6 +107,22 @@ CAPABILITIES(/datum/own_test_child)
 	TEST_ASSERT(length(capture) && findtext(capture[1], "re-set during teardown"), "and reports it: [json_encode(capture)]")
 	qdel(H)
 
+/// own_scrub() skips a null ref var and still unlinks one that was re-set during teardown.
+/datum/unit_test/ownership_scrub_ref_views
+
+/datum/unit_test/ownership_scrub_ref_views/Run()
+	var/datum/own_test_holder/H = new
+	var/datum/own_test_child/seen = new
+	own_scrub(H) // every ref var null: nothing to do, and no runtime
+	TEST_ASSERT_NULL(H.view, "a null ref var stays null")
+	rel_set(H, nameof(H.view), seen)
+	TEST_ASSERT_EQUAL(H.view, seen, "the view is linked")
+	own_scrub(H)
+	TEST_ASSERT_NULL(H.view, "a ref var set at scrub time is unlinked")
+	TEST_ASSERT(!QDELETED(seen), "unlinking a view does not delete the target")
+	qdel(seen)
+	qdel(H)
+
 /datum/unit_test/ownership_orphan_audit
 
 /datum/unit_test/ownership_orphan_audit/Run()

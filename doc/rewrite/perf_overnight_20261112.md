@@ -190,3 +190,18 @@ Surveyed, not changed:
   the lattice's own init and neighbour redraw timers ~0.27 s). The identifiable pieces are small: the old floor's own gas mixture goes through
   a full destroy transaction (2268, ~0.3 s; already QDEL_HINT_IWILLGC), and a floor blast runs two hit actions, react_to_entry() then
   deal_damage()'s generic hit (~0.1 s; merging them changes refusal and zero-damage semantics). Neither changed.
+
+### Round 7, explosion lane (perf/explosion-turf, base 891744c505)
+
+Same bench (`major_events --arg=events=supermatter --profile`), one run with the change (the machine was shared; call counts are the
+reliable measure, round 7's profile above is the before).
+
+12. **Phase 8 scrub skips null ref vars**: `own_scrub()` called `rel_clear()` on every `ref_vars` entry of every destroyed datum. On a null var
+   `rel_clear()` is a no-op for every kind (owned, weak, view and LIST_STATE clears all return on null; a grant relation of a deleted holder
+   is not re-made), so the call only paid `rel_kind()`, `list_state_of()` and the view lookups. `rel_clear` 35 k -> 11.4 k calls over the
+   supermatter epoch (the remainder is real disposal: own_clear 11.1 k, 0.52 s), `own_scrub` 0.04 s total over 4782 destroys,
+   `destroy_transaction` 1.81 s total (was ~2.3 s implied by round 7's per-turf figures; timings noisy). Test `ownership_scrub_ref_views`.
+
+Surveyed, not changed: `settle_integrity_crossings` (0.79 s total over 2324 calls, self 0.006 s) is the object's real destruction
+(atom_destruction -> qdel), not settlement overhead, so there is nothing to skip; `ReplaceWithLattice` (1.25 s over 956) is ChangeTurf plus the
+lattice's own init and neighbour redraw timers, with no per-type cacheable step beyond the existing ctor plans. EXPLOSION_SLOW tracing is untouched.
