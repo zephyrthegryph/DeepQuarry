@@ -556,7 +556,7 @@
 	else
 		braintype = BORG_BRAINTYPE_CYBORG
 
-/mob/living/silicon/robot/proc/updatename(prefix as text)
+/mob/living/silicon/robot/proc/updatename(prefix = null)
 	if(prefix)
 		modtype = prefix
 

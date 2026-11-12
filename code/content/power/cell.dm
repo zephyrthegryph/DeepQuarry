@@ -174,7 +174,7 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 		look.overlay("[initial(icon_state)]_[charge_step]")
 
 /// Keeps charge_step on the quarter step of the stored charge (it changes, and the cell redraws, only when the step does) and charged on whether any is stored.
-/obj/item/cell/proc/update_charge_step(datum/act/A)
+/obj/item/cell/proc/update_charge_step(datum/act/A = null)
 	var/step = clamp(round(percent() * 4 / 100, 1), 0, 4) * 25
 	if(step != charge_step)
 		set_charge_step(step)
