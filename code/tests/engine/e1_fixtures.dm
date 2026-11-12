@@ -198,9 +198,6 @@ TRACKED_SCHEMA(/obj/e1_schema, mode, enum(list("off", "on", "syphon")))
 TRACKED_SCHEMA(/obj/e1_schema, label, schema_text(8))
 SCHEMA(/obj/e1_schema, count, int(1, 9))
 
-#ifndef MAX_PUMP_PRESSURE
-#define MAX_PUMP_PRESSURE 15000
-#endif
 
 // ---- the state graph of section 12 (proof 9): a door assembly with two paths to finished ----
 
