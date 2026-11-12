@@ -625,10 +625,8 @@
 		if("setSharedState")
 			if(status != STATUS_INTERACTIVE)
 				return
-			var/datum/shared_state_owner = src_object()
-			LAZYINITLIST(shared_state_owner.tgui_shared_states)
-			shared_state_owner.tgui_shared_states[href_list["key"]] = href_list["value"]
-			SStgui.update_uis(src_object())
+			if(set_shared_state(href_list["key"], href_list["value"]))
+				SStgui.update_uis(src_object())
 		if("fallback")
 			#ifdef TGUI_DEBUGGING
 			log_tgui(user, "Fallback Triggered: [href_list["payload"]], Window: [window().id], Source: [src_object()]")
@@ -650,6 +648,37 @@
 			// A window with a protocol of its own (the stat panel): its host handles what tgui does not.
 			if(type && src_object()?.ui_raw_message(user, type, payload))
 				return TRUE
+
+/**
+ * Stores one client-sent shared state (useSharedState) on the host datum, bounded: the key and value must be text, the key at most
+ * TGUI_SHARED_STATE_MAX_KEY_LEN and the value at most TGUI_SHARED_STATE_MAX_VALUE_LEN characters, and a new key is refused once the host
+ * holds TGUI_SHARED_STATE_MAX_KEYS. Every refusal is logged. Returns TRUE when the value was stored.
+ */
+/datum/tgui/proc/set_shared_state(key, value)
+	var/datum/shared_state_owner = src_object()
+	var/reason = shared_state_refusal(shared_state_owner, key, value)
+	if(reason)
+		log_tgui(user, "Refused setSharedState: [reason].", window = window(), src_object = shared_state_owner)
+		return FALSE
+	LAZYINITLIST(shared_state_owner.tgui_shared_states)
+	shared_state_owner.tgui_shared_states[key] = value
+	return TRUE
+
+/// Why a client's shared state may not be stored on `owner`, or null when it may.
+/datum/tgui/proc/shared_state_refusal(datum/owner, key, value)
+	if(!owner)
+		return "no host"
+	if(!istext(key) || !length(key))
+		return "key is not text"
+	if(!istext(value))
+		return "value for [copytext(key, 1, 33)] is not text"
+	if(length(key) > TGUI_SHARED_STATE_MAX_KEY_LEN)
+		return "key of [length(key)] characters over [TGUI_SHARED_STATE_MAX_KEY_LEN]"
+	if(length(value) > TGUI_SHARED_STATE_MAX_VALUE_LEN)
+		return "value for [key] of [length(value)] characters over [TGUI_SHARED_STATE_MAX_VALUE_LEN]"
+	if(!(key in owner.tgui_shared_states) && LAZYLEN(owner.tgui_shared_states) >= TGUI_SHARED_STATE_MAX_KEYS)
+		return "new key [key] past the [TGUI_SHARED_STATE_MAX_KEYS] key limit"
+	return null
 
 /// Wrapper for behavior to potentially wait until the next tick if the server is overloaded
 /datum/tgui/proc/on_act_message(act_type, payload, state)

@@ -617,6 +617,7 @@
 #include "dq_spritesheet_loader_tests.dm"
 #include "dq_ui_push_cost_tests.dm"
 #include "dq_tgui_status_tests.dm"
+#include "dq_tgui_shared_state_tests.dm"
 #include "dq_window_dock_tests.dm"
 #include "dq_shared_cache_tests.dm"
 #include "dq_material_tree_tests.dm"
