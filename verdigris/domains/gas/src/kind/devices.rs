@@ -327,7 +327,7 @@ impl OutletInjector {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::kind::device::{DeviceFlow, direction, rate_kind, stop_cmp, stop_side};
+	use crate::kind::device::{direction, rate_kind, stop_cmp, stop_side, DeviceFlow};
 
 	/// The `DeviceFlow` row DM pushed for a flow (`rust_set_device_flow()`): the oracle every law here must equal.
 	#[allow(clippy::too_many_arguments)]
@@ -531,7 +531,14 @@ mod tests {
 	#[test]
 	fn a_vent_matches_the_old_rows_for_every_check_set() {
 		let volume = |stop, limit| {
-			row(0, rate_kind::VOLUME, 10_000.0, direction::FORCED, stop, limit)
+			row(
+				0,
+				rate_kind::VOLUME,
+				10_000.0,
+				direction::FORCED,
+				stop,
+				limit,
+			)
 		};
 		let both = VENT_CHECK_EXTERNAL | VENT_CHECK_INTERNAL;
 		assert_eq!(

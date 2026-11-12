@@ -21,8 +21,8 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::field::{FieldKey, Geom};
 use vg_core::grid::Dir;
@@ -35,8 +35,9 @@ use vg_heat::{
     BodyCoupling, GasCoupling, HeatBody, MobHeat, Regulator, SolidCell, SolidCoupling, SolidHeat,
 };
 
+use crate::arg::num;
 use crate::entity;
-use crate::world::{list, num, with_world};
+use crate::world::{list, with_world};
 
 thread_local! {
     static FIELD: Cell<Option<FieldKey<SolidHeat>>> = const { Cell::new(None) };
@@ -421,7 +422,11 @@ fn heat_turf_temperatures(turfs: ByondValue) -> Result<ByondValue> {
 }
 
 /// The solid temperature of one turf cell as `heat_turf_temperatures` reports it: K, or -1 for a cell with no node in the heat field or a value that is not finite.
-fn solid_kelvin(w: &mut vg_core::world::World, field: &FieldKey<SolidHeat>, cell: Option<u32>) -> f32 {
+fn solid_kelvin(
+    w: &mut vg_core::world::World,
+    field: &FieldKey<SolidHeat>,
+    cell: Option<u32>,
+) -> f32 {
     let Some(cell) = cell else {
         return -1.0;
     };
@@ -551,8 +556,12 @@ fn heat_turf_properties(turf: ByondValue) -> Result<ByondValue> {
 
 fn coupling_kind_for(target_kind: i32) -> Result<i32> {
     match target_kind {
-        HEAT_TARGET_NONE | HEAT_TARGET_SOLID | HEAT_TARGET_TURF_AIR | HEAT_TARGET_MIXTURE
-        | HEAT_TARGET_BODY | HEAT_TARGET_PIPE_PORT => Ok(target_kind),
+        HEAT_TARGET_NONE
+        | HEAT_TARGET_SOLID
+        | HEAT_TARGET_TURF_AIR
+        | HEAT_TARGET_MIXTURE
+        | HEAT_TARGET_BODY
+        | HEAT_TARGET_PIPE_PORT => Ok(target_kind),
         other => Err(eyre!("bad heat target kind {other}")),
     }
 }
@@ -1055,7 +1064,10 @@ fn heat_body_temperature(h: ByondValue) -> Result<ByondValue> {
     let Some(e) = body(&h)? else {
         return Ok(ByondValue::null());
     };
-    let t = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| body_temperature_now(w, e, &b))))?;
+    let t = with_world(|w| {
+        Ok(w.read::<HeatBody>(e)
+            .map(|b| body_temperature_now(w, e, &b)))
+    })?;
     Ok(t.map_or_else(ByondValue::null, |t| ByondValue::from(t as f32)))
 }
 
@@ -1063,11 +1075,16 @@ fn heat_body_temperature(h: ByondValue) -> Result<ByondValue> {
 /// model's anchor (the coupling law sleeps until the model is due, up to
 /// `RELAX_MAX_INTERVAL` later), so its temperature is the model's value at
 /// the world's time, read without settling it.
-fn body_temperature_now(w: &vg_core::world::World, e: vg_core::entity::EntityId, body: &HeatBody) -> f64 {
+fn body_temperature_now(
+    w: &vg_core::world::World,
+    e: vg_core::entity::EntityId,
+    body: &HeatBody,
+) -> f64 {
     if !body.relax {
         return body.temperature();
     }
-    let Some((kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied()) else {
+    let Some((kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied())
+    else {
         return body.temperature();
     };
     let conductance = match kind {
@@ -1076,7 +1093,10 @@ fn body_temperature_now(w: &vg_core::world::World, e: vg_core::entity::EntityId,
         2 => w.read::<BodyCoupling>(coupling_e).map(|c| c.conductance),
         _ => None,
     };
-    conductance.map_or_else(|| body.temperature(), |g| vg_heat::laws::relax_temperature_at(body, g, w.now()))
+    conductance.map_or_else(
+        || body.temperature(),
+        |g| vg_heat::laws::relax_temperature_at(body, g, w.now()),
+    )
 }
 
 #[auxmacros::bind("/proc/heat_body_add")]
@@ -1354,9 +1374,8 @@ fn drop_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> Res
     };
     if let Some(t) = env_t {
         #[allow(clippy::cast_possible_truncation)]
-        let baseline = f64::from(
-            vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0),
-        );
+        let baseline =
+            f64::from(vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0));
         let excess = b.energy - baseline;
         note_release(
             &format!(
@@ -1465,7 +1484,7 @@ impl vg_core::registry::DomainRegistry for HeatCells {
     }
 
     fn unwatch(&mut self, _port: u8, id: WatchId) {
-        let _ = with_world(|w| Ok(w.unwatch_cells::<SolidHeat>(id)));
+        let _ = crate::world::with_world_reported(|w| Ok(w.unwatch_cells::<SolidHeat>(id)));
     }
 
     fn add_entry(&mut self, _port: u8, id: WatchId, entry: SetEntry) -> Result<(), String> {
@@ -1477,12 +1496,14 @@ impl vg_core::registry::DomainRegistry for HeatCells {
     }
 
     fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
-        let _ = with_world(|w| Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload)));
+        let _ = crate::world::with_world_reported(|w| {
+            Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload))
+        });
     }
 
     /// Cell watch wakes, the source the cell's ref (low 24 bits).
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {
-        let _ = with_world(|w| {
+        let _ = crate::world::with_world_reported(|w| {
             let mut wakes = Vec::new();
             w.drain_field_wakes::<SolidHeat>(&mut wakes);
             out.extend(wakes.into_iter().map(|wk| Wake {
@@ -1596,7 +1617,10 @@ fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
 
 /// The mixture a [`GasCoupling::probe_key`] names: an arena mixture by id, or the pipe region a port (a packed entity id with
 /// [`gas_kind::PORT_KEY`] set) is in now.
-pub(crate) fn probe_mixture(w: &vg_core::world::World, key: u32) -> Option<crate::gas::mix::MixRef> {
+pub(crate) fn probe_mixture(
+    w: &vg_core::world::World,
+    key: u32,
+) -> Option<crate::gas::mix::MixRef> {
     if key & gas_kind::PORT_KEY == 0 {
         return crate::gas::mix::MixRef::from_id(key);
     }
@@ -1622,7 +1646,12 @@ pub(crate) fn mixture_probes() -> vg_heat::laws::MixtureProbes {
         .into_iter()
         .filter_map(|(key, mixture)| {
             let m = crate::gas::mix::load(mixture?)?;
-            Some((key, m.get_temperature(), m.heat_capacity(), m.is_immutable()))
+            Some((
+                key,
+                m.get_temperature(),
+                m.heat_capacity(),
+                m.is_immutable(),
+            ))
         })
         .collect();
     probes.sort_unstable_by_key(|p| p.0);
@@ -1636,7 +1665,9 @@ pub(crate) fn apply_mixture_heat(events: &vg_core::event::EventSink) {
     for (_, e) in events.decoded::<vg_heat::laws::HeatEvent>() {
         let (key, joules) = match e {
             vg_heat::laws::HeatEvent::MixtureHeat { target, joules } => (target, joules),
-            vg_heat::laws::HeatEvent::PortHeat { port, joules } => (gas_kind::PORT_KEY | port, joules),
+            vg_heat::laws::HeatEvent::PortHeat { port, joules } => {
+                (gas_kind::PORT_KEY | port, joules)
+            }
             vg_heat::laws::HeatEvent::Settled => continue,
         };
         if let Some(r) = with_world(|w| Ok(probe_mixture(w, key))).ok().flatten() {
@@ -1701,8 +1732,13 @@ mod tests {
         })
         .unwrap();
         let key = gas_kind::PORT_KEY | a.bits();
-        let resolve = |e: vg_core::entity::EntityId| with_world(|w| Ok(probe_mixture(w, gas_kind::PORT_KEY | e.bits()))).unwrap();
-        let apart = (resolve(a).expect("a is in a region"), resolve(b).expect("b is in a region"));
+        let resolve = |e: vg_core::entity::EntityId| {
+            with_world(|w| Ok(probe_mixture(w, gas_kind::PORT_KEY | e.bits()))).unwrap()
+        };
+        let apart = (
+            resolve(a).expect("a is in a region"),
+            resolve(b).expect("b is in a region"),
+        );
         assert_ne!(apart.0, apart.1, "two ports, two pipelines");
 
         // Merge: the coupling resolves to the one surviving region, the same as the other port's.
@@ -1713,8 +1749,15 @@ mod tests {
             Ok(())
         })
         .unwrap();
-        assert_eq!(resolve(a), resolve(b), "merged: the coupling follows the surviving region");
-        assert!(mix::load(resolve(a).unwrap()).unwrap().total_moles() > 49.0, "and its gas is the merged pipeline's");
+        assert_eq!(
+            resolve(a),
+            resolve(b),
+            "merged: the coupling follows the surviving region"
+        );
+        assert!(
+            mix::load(resolve(a).unwrap()).unwrap().total_moles() > 49.0,
+            "and its gas is the merged pipeline's"
+        );
 
         // Split: the coupling stays with the port's side; the other port is alone again.
         with_world(|w| {
@@ -1730,7 +1773,10 @@ mod tests {
         let before = mix::load(resolve(a).unwrap()).unwrap().get_temperature();
         for _ in 0..10 {
             let probes = mixture_probes();
-            assert!(probes.0.iter().any(|p| p.0 == key), "the port's coupling is probed under its key");
+            assert!(
+                probes.0.iter().any(|p| p.0 == key),
+                "the port's coupling is probed under its key"
+            );
             let events = with_world(|w| {
                 w.set_global(probes).map_err(|e| eyre!("{e}"))?;
                 w.step_blocking();
@@ -1740,7 +1786,10 @@ mod tests {
             apply_mixture_heat(&events);
         }
         let after = mix::load(resolve(a).unwrap()).unwrap().get_temperature();
-        assert!(after > before + 1.0, "the hot body warmed the pipeline: {before} -> {after}");
+        assert!(
+            after > before + 1.0,
+            "the hot body warmed the pipeline: {before} -> {after}"
+        );
         let _ = body;
     }
 

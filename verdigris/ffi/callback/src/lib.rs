@@ -1,7 +1,6 @@
 use byondapi::prelude::*;
 use coarsetime::{Duration, Instant};
 use eyre::Result;
-use std::convert::TryFrom;
 
 pub mod held;
 pub mod panic_guard;
@@ -40,14 +39,16 @@ pub fn pending_callbacks() -> usize {
 /// This already runs from inside an error path, so it must never itself panic or
 /// propagate a further error: if the string conversion or the global call fails, the
 /// failure is logged with `tracing` and swallowed rather than unwinding into BYOND.
-fn report_callback_error(e: eyre::Report) {
+pub fn report_error(e: eyre::Report) {
     let message = format!("{e:?}");
-    match ByondValue::try_from(message.clone()) {
+    match held::Held::new_str(message.clone()) {
         Ok(error_string) => {
+            // `error_string` is ours and released when it drops, after the call.
             // The proc's reply is dropped here, which releases the reference it carries.
-            if let Err(report_err) =
-                held::held_call_global_id(byond_string!("byondapi_stack_trace"), &[error_string])
-            {
+            if let Err(report_err) = held::held_call_global_id(
+                byond_string!("byondapi_stack_trace"),
+                &[error_string.raw()],
+            ) {
                 tracing::error!(
                     original_error = %message,
                     report_error = %report_err,
@@ -71,7 +72,7 @@ fn process_callbacks() {
         receiver
             .try_iter()
             .filter_map(|cb| cb().err())
-            .for_each(report_callback_error)
+            .for_each(report_error)
     })
 }
 
@@ -81,7 +82,7 @@ fn process_callbacks_for(duration: Duration) -> bool {
     with_callback_receiver(|receiver| {
         for callback in receiver.try_iter() {
             if let Err(e) = callback() {
-                report_callback_error(e);
+                report_error(e);
             }
             if timer.elapsed() >= duration {
                 return true;

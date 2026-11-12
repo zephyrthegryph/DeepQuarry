@@ -1,7 +1,7 @@
 //! The pump component: the reference for `#[vg::component]` (`rust_architecture.md` §5).
 use vg_core::vg;
 
-use crate::device::{Direction, Flow, Rate, Side, Target, Cmp};
+use crate::device::{Cmp, Direction, Flow, Rate, Side, Target};
 
 #[vg::component(domain = gas, kind = 1, dm = "/obj/machinery/atmospherics/binary/pump")]
 pub struct Pump {
@@ -69,7 +69,11 @@ mod tests {
 				gases: 0,
 				rate: Rate::Power(7500.0),
 				direction: Direction::Forced,
-				stop: Some(Target { side: Side::B, cmp: Cmp::AtLeast, kpa: 101.325 }),
+				stop: Some(Target {
+					side: Side::B,
+					cmp: Cmp::AtLeast,
+					kpa: 101.325
+				}),
 				limit: None,
 			})
 		);
@@ -77,7 +81,7 @@ mod tests {
 
 	#[test]
 	fn the_pump_flow_equals_the_device_flow_row_dm_used_to_forward() {
-		use crate::kind::device::{DeviceFlow, direction, rate_kind, stop_cmp, stop_side};
+		use crate::kind::device::{direction, rate_kind, stop_cmp, stop_side, DeviceFlow};
 		let row = DeviceFlow {
 			rate_kind: rate_kind::POWER,
 			rate: 7500.0,

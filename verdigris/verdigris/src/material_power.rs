@@ -116,7 +116,6 @@ pub fn solve(edges: &[(usize, usize, f64)], rhs: &[f64], initial: &[f64]) -> Res
 #[cfg(target_arch = "x86")]
 mod ffi {
     use byondapi::prelude::*;
-    use vg_ffi::held::HeldRead;
     use eyre::{Result, bail};
     use std::collections::{HashMap, HashSet};
     use std::sync::{
@@ -124,6 +123,7 @@ mod ffi {
         atomic::{AtomicU32, Ordering},
         mpsc,
     };
+    use vg_ffi::held::HeldRead;
 
     enum WorkerRequest {
         Solve(SolveRequest),
@@ -232,7 +232,7 @@ mod ffi {
         warm: ByondValue,
         generation: ByondValue,
     ) -> Result<ByondValue> {
-        let mut id = handle.get_number()? as u32;
+        let mut id = vg_ffi::arg::whole(&handle, "material power handle")?;
         if id == 0 {
             id = NEXT_ID.fetch_add(1, Ordering::Relaxed).max(1);
         }
@@ -254,7 +254,7 @@ mod ffi {
         }
         let request = SolveRequest {
             id,
-            generation: generation.get_number()? as u32,
+            generation: vg_ffi::arg::whole(&generation, "generation")?,
             topology: parsed_topology,
             rhs,
             initial,
@@ -270,7 +270,7 @@ mod ffi {
 
     #[auxmacros::bind("/proc/drop_material_power_graph")]
     fn drop_material_power_graph(handle: ByondValue) -> Result<ByondValue> {
-        let id = handle.get_number()? as u32;
+        let id = vg_ffi::arg::whole(&handle, "material power handle")?;
         if id == 0 {
             return Ok(ByondValue::from(0.0));
         }
@@ -288,7 +288,7 @@ mod ffi {
 
     #[auxmacros::bind("/proc/poll_material_power_graph")]
     fn poll_material_power_graph(handle: ByondValue) -> Result<ByondValue> {
-        let id = handle.get_number()? as u32;
+        let id = vg_ffi::arg::whole(&handle, "material power handle")?;
         let result = results()
             .lock()
             .map_err(|_| eyre::eyre!("material power result lock poisoned"))?

@@ -13,8 +13,8 @@
 //! `CellId` `Cables` uses, and a cable's reach (the cells its directions
 //! lead to, following DM's explicit z links) is computed here at bind.
 
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::Dir;
 use vg_core::network::RegionId;
@@ -22,8 +22,9 @@ use vg_core::slot::RawHandle;
 use vg_power::kind::{Cables, PowerNode};
 use vg_power::{Cable, PowerLedger};
 
+use crate::arg::{num, whole};
 use crate::entity;
-use crate::world::{list, num, whole, with_world};
+use crate::world::{list, with_world};
 
 /// Node kinds in the graph (an opaque tag `NetworkHost` stores per node;
 /// power does not read it back, only DM's own bookkeeping might).

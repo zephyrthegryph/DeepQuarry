@@ -8,6 +8,7 @@
 mod abi;
 mod adjacency;
 pub mod allocator;
+pub mod arg;
 mod bulk;
 mod chem;
 pub mod entity;

@@ -3,8 +3,8 @@
 //! [`vg_core::world::World`]'s; this module only encodes handles and walks
 //! an entity's domain slots through the registry (the world's own
 //! components sit behind [`vg_core::entity::WORLD_DOMAIN`]).
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::entity::{ComponentRef, EntityError, EntityId};
 
@@ -65,7 +65,7 @@ pub fn attach(entity: EntityId, domain: usize, comp: ComponentRef) -> Result<(),
 /// domain's [`registry::DomainRegistry::detach`]: the caller is the domain,
 /// and has already dropped its own row.
 pub fn release(entity: EntityId) {
-    let _ = with_world(|w| {
+    let _ = crate::world::with_world_reported(|w| {
         let t = w.entities_mut();
         let Ok(slots) = t.components(entity) else {
             return Ok(());
@@ -109,9 +109,7 @@ pub fn resolve(entity_v: f32, domain: usize, kind: u16) -> Result<ComponentRef> 
     })
 }
 
-fn num(v: &ByondValue) -> Result<f32> {
-    Ok(v.get_number()?)
-}
+use crate::arg::num;
 
 /// Batched destroy's one unbind call (`doc/rewrite/init_and_turfs.md` §4.4):
 /// [`entity_unbind`] for every handle in `entities`, a list of `vg_entity`

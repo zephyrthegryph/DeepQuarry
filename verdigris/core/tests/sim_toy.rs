@@ -190,7 +190,10 @@ fn replay_reproduces_views_bit_for_bit() {
     sim.settle();
     assert!(sim.metrics().frames_completed > 10);
     // Toy frames are light: after the first, they run on the one-thread light pool, and replay on the frame pool matches them.
-    assert!(sim.metrics().light_frames > 0, "light frames run on the light pool");
+    assert!(
+        sim.metrics().light_frames > 0,
+        "light frames run on the light pool"
+    );
     let heat = Arc::clone(sim.port(keys.heat).pinned());
     let tally = Arc::clone(sim.port(keys.tally).pinned());
     let log = sim.take_log().unwrap();
@@ -384,6 +387,7 @@ fn scratch_values_transfer_out_and_back() {
 
 #[test]
 fn a_panicking_task_is_reported_and_the_sim_continues() {
+    vg_core::panic_site::install();
     let (mut builder, keys) = toy_builder(config(2), false);
     let calls = Arc::new(AtomicU32::new(0));
     {
@@ -408,6 +412,11 @@ fn a_panicking_task_is_reported_and_the_sim_continues() {
             .as_deref()
             .unwrap()
             .contains("boom")
+    );
+    let last = sim.metrics().last_panic.clone().unwrap();
+    assert!(
+        last.contains("sim_toy.rs:"),
+        "the panic names its location: {last}"
     );
     assert_eq!(sim.port(keys.heat).read(0).unwrap().energy, 3.0);
     assert!(calls.load(Ordering::Relaxed) >= 3);

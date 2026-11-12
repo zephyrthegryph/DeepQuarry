@@ -34,9 +34,7 @@ pub const MODE_COOL: i32 = 1;
 /// @dm-define REGULATOR_MODE_BOTH
 pub const MODE_BOTH: i32 = 2;
 
-fn num(v: &ByondValue) -> Result<f32> {
-    Ok(v.get_number()?)
-}
+use crate::arg::num;
 
 fn mode_of(v: f32) -> RegulatorMode {
     match v as i32 {

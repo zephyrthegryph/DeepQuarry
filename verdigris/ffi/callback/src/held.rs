@@ -62,6 +62,12 @@ impl Held {
         ByondValue::new_list().map(Held)
     }
 
+    /// A newly created DM string, owned (released on drop unless it leaves through [`Held::leak`]). Strings are
+    /// refcounted references like any object.
+    pub fn new_str<T: Into<Vec<u8>>>(text: T) -> Result<Held, byondapi::Error> {
+        ByondValue::new_str(text).map(Held)
+    }
+
     /// Gives up ownership without releasing. The caller (or DM, for a bind's return value) now owns the reference.
     #[must_use]
     pub fn leak(self) -> ByondValue {
@@ -179,6 +185,21 @@ pub fn hand_list(values: &[ByondValue]) -> Result<ByondValue, byondapi::Error> {
     Ok(list.leak())
 }
 
+/// A new DM list holding owned `values`, handed to DM as a bind's return value. The list takes its own reference to
+/// each element, so ours are released once the list is written (on success or failure): a string or object built in
+/// Rust and placed in a returned list is not pinned forever.
+pub fn hand_owned_list(values: Vec<Held>) -> Result<ByondValue, byondapi::Error> {
+    let raws: Vec<ByondValue> = values.iter().map(Held::raw).collect();
+    let result = hand_list(&raws);
+    release_all(values);
+    result
+}
+
+/// Releases each owned element (split out so the release count is testable without BYOND).
+fn release_all(values: Vec<Held>) {
+    drop(values);
+}
+
 /// Reads that return references, handing each one back owned. Implemented for every `ByondValue`, so it also applies
 /// through a [`Held`].
 pub trait HeldRead {
@@ -208,7 +229,8 @@ impl HeldRead for ByondValue {
         self.values().map(|it| HeldList::adopt_all(it.collect()))
     }
     fn held_pairs(&self) -> Result<Vec<(Held, Held)>, byondapi::Error> {
-        self.iter().map(|it| it.map(|(k, v)| (Held(k), Held(v))).collect())
+        self.iter()
+            .map(|it| it.map(|(k, v)| (Held(k), Held(v))).collect())
     }
     fn held_var_id(&self, name: u32) -> Result<Held, byondapi::Error> {
         self.read_var_id(name).map(Held)
@@ -242,7 +264,15 @@ mod tests {
 
     #[test]
     fn refcounted_kinds_release_and_the_rest_do_not() {
-        for t in [ValueType::Obj, ValueType::Mob, ValueType::Datum, ValueType::List, ValueType::TurfContents, ValueType::String, ValueType::Client] {
+        for t in [
+            ValueType::Obj,
+            ValueType::Mob,
+            ValueType::Datum,
+            ValueType::List,
+            ValueType::TurfContents,
+            ValueType::String,
+            ValueType::Client,
+        ] {
             assert!(needs_release(t as u8), "{:?} is refcounted", t);
         }
         for t in [ValueType::Null, ValueType::Number, ValueType::Turf] {
@@ -292,13 +322,28 @@ mod tests {
     #[test]
     fn consuming_a_list_releases_each_element_once() {
         let before = released();
-        let list = HeldList::adopt_all(vec![ByondValue::new_ref(ValueType::Obj, 1), ByondValue::new_ref(ValueType::Obj, 2)]);
+        let list = HeldList::adopt_all(vec![
+            ByondValue::new_ref(ValueType::Obj, 1),
+            ByondValue::new_ref(ValueType::Obj, 2),
+        ]);
         let mut seen = 0;
         for held in list {
             assert!(held.raw().0.type_ == ValueType::Obj as u8);
             seen += 1;
         }
         assert_eq!(seen, 2);
+        assert_eq!(released() - before, 2);
+    }
+
+    #[test]
+    fn owned_list_elements_release_after_the_hand_off() {
+        let before = released();
+        let values = vec![
+            Held::adopt(ByondValue::new_ref(ValueType::String, 1)),
+            Held::adopt(ByondValue::new_num(2.0)),
+            Held::adopt(ByondValue::new_ref(ValueType::String, 3)),
+        ];
+        release_all(values);
         assert_eq!(released() - before, 2);
     }
 

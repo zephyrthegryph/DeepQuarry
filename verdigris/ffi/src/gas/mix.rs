@@ -21,14 +21,14 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use byondapi::prelude::*;
 use crate::held::HeldRead;
+use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::cow::{ChunkLayout, CowStore};
 use vg_core::outbox::{Lane, Outbox, Subscriber, Wake, WatchId};
-use vg_core::world::ThresholdCrossing;
 use vg_core::watch::revision::Counter;
 use vg_core::watch::{Cond, WatchPort, WatchState};
+use vg_core::world::ThresholdCrossing;
 use vg_gas::cell::{GasCell, GasCmd, N, Q, TurfGas, gas_ch, heat_capacity};
 use vg_gas::gas::Mixture;
 use vg_gas::gas::constants::{CELL_VOLUME, MINIMUM_HEAT_CAPACITY, TCMB};
@@ -145,8 +145,14 @@ impl MixRef {
     /// # Errors
     /// If the vars cannot be written.
     pub fn clear(v: &mut ByondValue) -> Result<()> {
-        v.write_var_id(byond_string!("_extools_pointer_gasmixture"), &ByondValue::null())?;
-        v.write_var_id(byond_string!("_extools_generation_gasmixture"), &ByondValue::null())?;
+        v.write_var_id(
+            byond_string!("_extools_pointer_gasmixture"),
+            &ByondValue::null(),
+        )?;
+        v.write_var_id(
+            byond_string!("_extools_generation_gasmixture"),
+            &ByondValue::null(),
+        )?;
         Ok(())
     }
 }
@@ -164,7 +170,11 @@ pub const fn next_generation(g: u32) -> u32 {
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn generation_from_f32(v: f32) -> u32 {
-    if v >= 0.0 { (v as u32) & GENERATION_MASK } else { u32::MAX }
+    if v >= 0.0 {
+        (v as u32) & GENERATION_MASK
+    } else {
+        u32::MAX
+    }
 }
 
 thread_local! {
@@ -234,7 +244,11 @@ pub fn check_generation(r: MixRef, held: Option<u32>) -> std::result::Result<(),
     if held == Some(current) {
         Ok(())
     } else {
-        Err(Stale { handle: r, held, current })
+        Err(Stale {
+            handle: r,
+            held,
+            current,
+        })
     }
 }
 
@@ -375,7 +389,9 @@ pub fn add_entry(port: u8, id: WatchId, entry: vg_core::watch::SetEntry) -> Resu
 /// Removes an entry of a set watch.
 pub fn remove_entry(port: u8, id: WatchId, payload: u32) {
     if port == 0 {
-        let _ = with_world(|w| Ok(w.remove_field_watch_entry::<TurfGas>(id, payload)));
+        let _ = crate::world::with_world_reported(|w| {
+            Ok(w.remove_field_watch_entry::<TurfGas>(id, payload))
+        });
         return;
     }
     with_mixes(|m| {
@@ -598,7 +614,7 @@ fn turf_read(cell: u32) -> Option<(GasCell, vg_core::field::Geom)> {
 }
 
 fn turf_submit(cell: u32, cmd: GasCmd) {
-    let _ = with_world(|w| {
+    let _ = crate::world::with_world_reported(|w| {
         super::submit_turf(w, super::turf_key()?, cell, cmd);
         Ok(())
     });
@@ -618,7 +634,7 @@ fn pipe_apply(slot: u32, gas: PipeGas) {
     let Some(region) = super::region_of_slot(slot) else {
         return;
     };
-    let _ = with_world(|w| {
+    let _ = crate::world::with_world_reported(|w| {
         w.edit_network::<Pipes>(move |host| {
             let _ = host.set_payload(region, gas);
         })
@@ -948,7 +964,9 @@ fn evaluate(m: &mut Mixes) -> Vec<Wake> {
 /// Removes a watch [`watch`] returned.
 pub fn unwatch(port: u8, id: WatchId) {
     if port == 0 {
-        let _ = with_world(|w| w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}")));
+        let _ = crate::world::with_world_reported(|w| {
+            w.unwatch_cells::<TurfGas>(id).map_err(|e| eyre!("{e}"))
+        });
         return;
     }
     with_mixes(|m| {
@@ -969,7 +987,7 @@ pub fn unwatch(port: u8, id: WatchId) {
 /// cell's gas handle) and the mixtures' (source: the handle).
 fn take_wakes() -> Vec<Wake> {
     let mut turf = Vec::new();
-    let _ = with_world(|w| {
+    let _ = crate::world::with_world_reported(|w| {
         w.drain_field_wakes::<TurfGas>(&mut turf);
         Ok(())
     });
@@ -1176,7 +1194,9 @@ mod tests {
             Ok(node)
         })
         .unwrap();
-        let r = with_world(|w| Ok(crate::pipes::port_mixture(w, node.bits()))).unwrap().expect("a region");
+        let r = with_world(|w| Ok(crate::pipes::port_mixture(w, node.bits())))
+            .unwrap()
+            .expect("a region");
         let before = load(r).unwrap();
         let cond = Cond::Changed {
             cell: r.id(),
@@ -1202,9 +1222,16 @@ mod tests {
         })
         .unwrap();
         let after = load(r).unwrap();
-        assert!(after.get_temperature() > before.get_temperature() + 10.0, "the write-back heated the region");
+        assert!(
+            after.get_temperature() > before.get_temperature() + 10.0,
+            "the write-back heated the region"
+        );
         reactor_wakes(&mut out);
-        assert_eq!(out.len(), 1, "the temperature watch heard the region: {out:?}");
+        assert_eq!(
+            out.len(),
+            1,
+            "the temperature watch heard the region: {out:?}"
+        );
         assert_eq!(out[0].subscriber, 301);
         assert_eq!(out[0].source, r.id());
     }
@@ -1223,7 +1250,10 @@ mod tests {
         assert_eq!(refused.held, Some(stamped));
         assert_ne!(refused.current, stamped);
         // The new owner is stamped with the slot's current generation and passes.
-        assert_eq!(check_generation(MixRef::Main(b), Some(generation(MixRef::Main(b)))), Ok(()));
+        assert_eq!(
+            check_generation(MixRef::Main(b), Some(generation(MixRef::Main(b)))),
+            Ok(())
+        );
         // A datum with no generation never passes.
         assert!(check_generation(MixRef::Main(b), None).is_err());
         free(b);
@@ -1238,7 +1268,10 @@ mod tests {
         let successor = bump_turf_generation(cell);
         assert_ne!(successor, stamped);
         assert!(check_generation(MixRef::Turf(cell), Some(stamped)).is_err());
-        assert_eq!(check_generation(MixRef::Turf(cell), Some(successor)), Ok(()));
+        assert_eq!(
+            check_generation(MixRef::Turf(cell), Some(successor)),
+            Ok(())
+        );
         // Unregistering the cell also strands every earlier datum.
         bump_turf_generation(cell);
         assert!(check_generation(MixRef::Turf(cell), Some(successor)).is_err());
