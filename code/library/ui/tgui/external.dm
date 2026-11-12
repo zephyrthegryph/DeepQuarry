@@ -112,10 +112,11 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
 	var/datum/op_result/button = present_ui_act(src, ui.user, action, params, ui)
 	if(button)
 		return TRUE
-	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).
-	var/list/named = ui_named_dispatch(src, action, params, ui)
-	if(named)
-		return named[2]
+	// The modal actions every window has (ComplexModal): the answer to, or the close of, the window's current modal (code/library/ui/tgui/modal.dm).
+	if(action == OP_UI_MODAL_ANSWER)
+		return tgui_modal_window_answer(src, ui.user, params?["id"], params?["answer"])
+	if(action == OP_UI_MODAL_CLOSE)
+		return tgui_modal_window_close(src)
 	// The one action every window has: the layout toggle (tgui LayoutToggle) writes the viewer's layout preference
 	// (write_preference() validates the value).
 	if(action == "change_ui_state")
@@ -123,20 +124,10 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
 		if(istext(new_state) && length(new_state) <= 64)
 			ui.user?.client?.prefs.write_preference(GLOB.preference_entries[/datum/preference/choiced/tgui_layout], new_state)
 		return FALSE
-	// No op, forward, capability or named proc answers `action`: a client sent a name the window does not declare (the ui_actions lint checks
+	// No op or forward answers `action`: a client sent a name the window does not declare (the ui_actions lint checks
 	// literal act() names; this catches computed ones and stale clients). Logged, never silent.
-	log_world("UI: [ui.user] pressed '[action]' in [src.type]'s window: no ui_act() op, forward or act_ proc answers it")
+	log_world("UI: [ui.user] pressed '[action]' in [src.type]'s window: no ui_act() op or forward answers it")
 	return FALSE
-
-/**
- * public
- *
- * Called on a UI when the UI crashed.
- *
- * required payload list A list of the payload supposed to be set on the regular UI.
- */
-/datum/proc/tgui_fallback(list/payload, mob/user)
-	SHOULD_CALL_PARENT(TRUE)
 
 /**
  * public
