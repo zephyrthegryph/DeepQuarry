@@ -46,7 +46,9 @@
 /mob/living/simple_mob/metroid/juvenile/proc/start_consuming(mob/living/L)
 	if(!is_juvenile)
 		return
-	if(!can_consume(L))
+	var/refusal = consume_refusal(L)
+	if(refusal)
+		to_chat(src, refusal)
 		return
 	if(!Adjacent(L))
 		return
@@ -78,43 +80,35 @@
 	set_consuming(FALSE)
 	after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
 
-/mob/living/simple_mob/metroid/juvenile/proc/can_consume(mob/living/L)
+/// Why this mob cannot feed on L now, or null when it can. Silent: the AI asks it every attack and consume() every bite; start_consuming() tells the player.
+/mob/living/simple_mob/metroid/juvenile/proc/consume_refusal(mob/living/L)
 	if(!L || !istype(L))
-		to_chat(src, "This subject is incomparable...")
-		return FALSE
+		return "This subject is incomparable..."
 	if(harmless)
-		to_chat(src, "I am pacified... I cannot eat...")
-		return FALSE
+		return "I am pacified... I cannot eat..."
 	if(kind_of(L).mob_class & MOB_CLASS_SLIME)
-		to_chat(src, "I cannot feed on other slimes...")
-		return FALSE
+		return "I cannot feed on other slimes..."
 	if(HAS_SYNTHETIC_BIOLOGY(L))
-		to_chat(src, "This subject is not biological...")
-		return FALSE
+		return "This subject is not biological..."
 	if(L.injury_armor(INJURY_TOXIN, null) >= 75)
-		to_chat(src, "I cannot reach this subject's biological matter...")
-		return FALSE
+		return "I cannot reach this subject's biological matter..."
 	if(!Adjacent(L))
-		to_chat(src, "This subject is too far away...")
-		return FALSE
+		return "This subject is too far away..."
 	var/datum/affliction/dissolution = L.find_affliction(/datum/affliction/venom/slime_dissolution)
 	if(dissolution && dissolution.severity >= AFFLICTION_SEVERITY_TERMINAL)
-		to_chat(src, "This subject does not have an edible life energy...")
-		return FALSE
+		return "This subject does not have an edible life energy..."
 	// TODO: Reassess this consumption logic.
 	if(istype(L, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = L
 		if(H.species.flags & NO_DNA)
-			to_chat(src, "This subject's life energy is beyond my reach...")
-			return FALSE
+			return "This subject's life energy is beyond my reach..."
 	// ition end
 	if(L.has_buckled_mobs())
 		for(var/A in L?.buckled_mob_list())
 			if(istype(A, /mob/living/simple_mob/slime/xenobio))
 				if(A != src)
-					to_chat(src, "\The [A] is already feeding on this subject...")
-					return FALSE
-	return TRUE
+					return "\The [A] is already feeding on this subject..."
+	return null
 
 // This does the actual damage, as well as give nutrition and heals.
 // Assuming no bio armor, calling consume(10) will result in;
@@ -124,7 +118,7 @@
 // 2 points of damage healed on the slime (as a result of the nutrition).
 // 50% of giving +1 charge to the slime (same as above).
 /mob/living/simple_mob/metroid/juvenile/proc/consume(mob/living/victim, amount)
-	if(can_consume(victim))
+	if(!consume_refusal(victim))
 		var/armor_modifier = abs((victim.injury_armor(INJURY_TOXIN, null) / 100) - 1)
 		var/damage_done = amount * armor_modifier
 		if(damage_done > 0)

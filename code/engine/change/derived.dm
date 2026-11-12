@@ -1,12 +1,11 @@
 // Declared dependencies (doc/rewrite/dx_conventions.md, "Declared dependencies"; defines in
 // code/defines/engine/derived.dm).
 //
-// should_run(), draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state.
+// draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state.
 // A type lists what each reads in derived(), a per-type block built once, like capabilities():
 //
 //	/obj/item/laser_pointer/derived()
 //		. = ..()
-//		. += runs_while(nameof(energy))     // should_run(): re-checked when energy changes
 //		. += drawn_from(nameof(pointing))   // draw() and hidden_verbs()
 //		. += ui_from(nameof(energy))        // tgui_data()
 //		. += derive(nameof(power_state), nameof(stat), rel(nameof(power_area), nameof(/area::equip_on)))
@@ -15,8 +14,8 @@
 // A read is a var name, a hop through a declared relation (rel(link, remote_var) for a REL / OWN view,
 // rel_each(list_link, remote_var) for a REL_LIST / OWN list). derive(var, reads...)
 // keeps a cached var, recomputed by derive_<var>() (pure) only when a read changed; it is tracked, so
-// other entries can read it. A capability contributes the reads of its own draw / ui_data /
-// cap_should_run through derived_reads(holder); the holder declares only what its own code reads.
+// other entries can read it. A capability contributes the reads of its own draw / ui_data
+// through derived_reads(holder); the holder declares only what its own code reads.
 //
 // A tracked write (a TRACKED setter, timed_set, an ownership accessor) names its var:
 // state_changed(E, channel, var). A type that declares anything is EXACT: such a change re-derives only the
@@ -76,10 +75,6 @@
 /proc/derived_entry_implicit(datum/derived_entry/E)
 	return E.implicit ? E : derived_entry(E.kind, E.name, E.reads, TRUE)
 
-/// should_run() reads these: a change re-checks it and wakes or parks the cadence.
-/proc/runs_while(...)
-	return derived_entry(DKIND_RUNS, null, args.Copy())
-
 /// draw() and hidden_verbs() read these: a change re-draws.
 /proc/drawn_from(...)
 	return derived_entry(DKIND_DRAWN, null, args.Copy())
@@ -124,13 +119,13 @@
 	return H
 
 /// What this type's derived procs read (see the header). Built once per type like capabilities() and
-/// shared: `. = ..()` then `. += runs_while(...)` and so on. Pure: read no instance state.
+/// shared: `. = ..()` then `. += drawn_from(...)` and so on. Pure: read no instance state.
 /datum/proc/derived()
 	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return list()
 
-/// Capabilities carry their own reads: what each contributes (its draw / ui_data / cap_should_run
+/// Capabilities carry their own reads: what each contributes (its draw / ui_data
 /// read on the holder) is merged in, so a holder declares only what its own code reads.
 /atom/derived()
 	. = ..()
@@ -140,8 +135,8 @@
 			. += derived_entry_implicit(E)
 	. += present_derived(src) // the reads of the layers and window data the engine's capabilities declare (code/engine/present/outputs.dm)
 
-/// The entries a capability contributes to its holder's derived(): drawn_from / ui_from / runs_while
-/// of the holder vars its draw(), ui_data() and cap_should_run() read. Pure.
+/// The entries a capability contributes to its holder's derived(): drawn_from / ui_from
+/// of the holder vars its draw() and ui_data() read. Pure.
 /datum/capability/proc/derived_reads(atom/holder)
 	return null
 
@@ -260,8 +255,6 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 
 /proc/derived_entry_label(datum/derived_entry/E)
 	switch(E.kind)
-		if(DKIND_RUNS)
-			return "runs_while"
 		if(DKIND_DRAWN)
 			return "drawn_from"
 		if(DKIND_UI)
@@ -304,8 +297,6 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		var/bit
 		var/datum/derived_var/V
 		switch(E.kind)
-			if(DKIND_RUNS)
-				bit = DEP_RUN
 			if(DKIND_DRAWN)
 				bit = DEP_DRAW
 			if(DKIND_UI)
@@ -639,7 +630,7 @@ GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
 		return " (its type declares its dependencies: a read missing from derived(), or a var written without its setter)"
 	return ""
 
-/// An output (draw, should_run, hidden_verbs, a derive_<var>, push_to_rust, a window's data) threw: the evaluation context goes back to the depth it
+/// An output (draw, hidden_verbs, a derive_<var>, push_to_rust, a window's data) threw: the evaluation context goes back to the depth it
 /// had before the output ran (the caller then rethrows), so the engine is not left "inside an output" (every later write, message and publication would be reported as a purity
 /// violation), and the runtime is logged with the type and the output before it goes on to whoever catches it.
 /proc/output_failed(datum/D, output_name, exception/fault, depth)

@@ -3,7 +3,7 @@
 // destroyed; the framework clears the view or owned var and raises the field's channel through
 // own_field_changed(), which re-evaluates the declaration. No body guard or ALLOW is involved.
 
-/// Technomancer core: a should_run() cadence on the `wearer` relation view.
+/// Technomancer core: an every() gated on the `wearer` relation view.
 /datum/unit_test/periodic_autoclear_technomancer_wearer
 
 /datum/unit_test/periodic_autoclear_technomancer_wearer/Run()

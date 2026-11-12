@@ -366,7 +366,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	if(current_runlevel < 1)
 		current_runlevel = old_runlevel
 		CRASH("Attempted to set invalid runlevel: [new_runlevel]")
-	kernel_runlevel_changed()
 
 /// Starts the kernel's host loop (kernel/loop.dm start_loop()): the kernel owns the loop, this is the name it had.
 /datum/controller/kernel/proc/StartProcessing(delay)

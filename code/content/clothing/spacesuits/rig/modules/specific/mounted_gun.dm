@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/rig_module/mounted)
 
 	gun_type = /obj/item/gun/energy/crossbow/ninja
 
-/obj/item/rig_module/mounted/energy_blade/periodic_step()
+/obj/item/rig_module/mounted/energy_blade/module_tick()
 
 	if(holder && holder.wearer())
 		if(!(locate_in_list(holder.wearer(), /obj/item/melee/energy/blade)))
@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/rig_module/mounted)
 
 	gun_type = /obj/item/gun/energy/temperature/mounted
 
-/obj/item/rig_module/mounted/mop/periodic_step()
+/obj/item/rig_module/mounted/mop/module_tick()
 
 	if(holder && holder.wearer())
 		if(!(locate_in_list(holder.wearer(), /obj/item/mop_deploy)))

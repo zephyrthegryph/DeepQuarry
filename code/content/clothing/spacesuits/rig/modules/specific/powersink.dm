@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/rig_module/power_sink)
 		return 1
 	return 0
 
-/obj/item/rig_module/power_sink/periodic_step()
+/obj/item/rig_module/power_sink/module_tick()
 
 	if(!interfaced_with())
 		return ..()

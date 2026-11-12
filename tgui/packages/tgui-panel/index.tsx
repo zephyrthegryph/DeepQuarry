@@ -18,7 +18,6 @@ import {
 } from 'tgui/errors';
 import { sendPage } from './column/host';
 import { bus } from './events/listeners';
-import { store } from './events/store';
 import { fitChatBrowser } from './layout/geometry';
 import { setupPanelFocusHacks } from './panelFocus';
 

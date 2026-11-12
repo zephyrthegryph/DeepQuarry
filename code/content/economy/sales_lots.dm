@@ -314,8 +314,6 @@ CAPABILITIES(/obj/machinery/department_storefront)
 		"stock" = stock,
 	)
 
-/obj/machinery/department_storefront/proc/ui_gate(datum/act/op/A)
-	return TRUE
 
 /// The PIN is asked only when the purchase would get as far as charging an account that is PIN-protected.
 /obj/machinery/department_storefront/proc/buy_needs_pin(datum/act/op/A)
@@ -347,8 +345,6 @@ CAPABILITIES(/obj/machinery/department_storefront)
 
 /obj/machinery/department_storefront/proc/ui_act_buy(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
 	if(isnull(ref))
@@ -359,8 +355,6 @@ CAPABILITIES(/obj/machinery/department_storefront)
 
 /obj/machinery/department_storefront/proc/ui_act_withdraw(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
 	var/obj/item/item = ref
@@ -373,8 +367,6 @@ CAPABILITIES(/obj/machinery/department_storefront)
 
 /obj/machinery/department_storefront/proc/ui_act_set_price(datum/act/op/A, price, ref)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
 	var/obj/item/item = ref
@@ -393,8 +385,6 @@ CAPABILITIES(/obj/machinery/department_storefront)
 
 /obj/machinery/department_storefront/proc/ui_act_set_markup(datum/act/op/A, markup)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!storefront_staff_authorized(user))
 		return FALSE
 	var/new_markup = markup

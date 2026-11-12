@@ -407,8 +407,8 @@ CAPABILITIES(/obj/item/book/bundle)
 	op("read_bundle", in_hand(), label("Read"), then(PROC_REF(interaction_read_bundle)))
 	interface("BookBundle")
 	without("ui_open")
-	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
-	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
+	op("next_page", ui_act("next_page"), needs(carried()), then(PROC_REF(ui_act_next_page)))
+	op("prev_page", ui_act("prev_page"), needs(carried()), then(PROC_REF(ui_act_prev_page)))
 
 /// Old attack_self.
 /obj/item/book/bundle/proc/interaction_read_bundle(datum/act/op/A)
@@ -460,12 +460,9 @@ CAPABILITIES(/obj/item/book/bundle)
 	return data
 
 /obj/item/book/bundle/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
 	if(!..())
 		return FALSE
-	if(!((is_in_holder(src, user)) || (istype(src.loc, /obj/item/folder) && (is_in_holder(src.loc, user)))))
-		to_chat(user, span_notice("You need to hold it in your hands!"))
-		return FALSE
+	var/mob/user = A.actor
 	user.set_machine(src)
 	return TRUE
 

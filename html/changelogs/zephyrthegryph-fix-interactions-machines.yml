@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Web shuttle consoles answer their own buttons again."
+  - bugfix: "A locked R&D console tells only you it is locked instead of announcing it to the room."
+  - qol: "Fire axe cabinet multitool options say whether they enable or disable the lock."

@@ -127,7 +127,7 @@ exempt_files = ["code/defines/host/tgs.dm"]
 # one. Engine lifecycle state whose writes are on the qdel and bridge hot paths and which reactive code reads only through QDELETED() and
 # its siblings; the destroy itself publishes through on_destroy().
 exclude = ["gc_destroyed", "vg_entity", "datum_flags", "/datum/km_hist::count", "/datum/km_depth_hist::count"]
-# (datum_flags: lifecycle bits the engine sets inside a refresh (cadence_start) and during destroy; a setter would mark the holder from its own refresh.)
+# (datum_flags: lifecycle bits the engine sets inside a refresh and during destroy; a setter would mark the holder from its own refresh.)
 # (km_hist/km_depth_hist count: the kernel meter bumps it for every sample of every system each tick, ~11k writes in 133 s idle; only the report reads it, so a tracked write was pure overhead.)
 # Vars the inference tracks although no reactive code reads them in a way it can see, or no `set_v()` call is typed to their type: their callers reach the
 # machine through an accessor the call scan cannot type (`connected().set_locked(...)`, `machine().set_active(...)`) while another type owns a
@@ -270,7 +270,7 @@ api_files = ["code/defines/engine/containment.dm"]
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
 exempt_prefixes = ["code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/unit_tests/", "code/tests/unit_tests/"]
-exempt_files = ["code/library/ui/tgui/tgui.dm", "code/world/systems/dbcore.dm", "code/engine/kernel/cadences.dm"]
+exempt_files = ["code/library/ui/tgui/tgui.dm", "code/world/systems/dbcore.dm", "code/engine/kernel/process.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
 # file (the exempt ones above included) is checked.
@@ -1133,6 +1133,28 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "periodic_cadence = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "periodic_interval = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "periodic_step = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "periodic_pipe = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "cadence_start = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "cadence_stop = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "member_cadence = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "member_step = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "member_should_run = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "wake_periodic = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "park_periodic = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "runs_while = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "cap_should_run = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "cap_periodic_step = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "PERIODIC_SLOW = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "PERIODIC_SECOND = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "PERIODIC_FAST = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "CADENCE_SLOW = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "CADENCE_SECOND = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "CADENCE_FAST = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "CADENCE_MINUTE = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
+  "DEP_RUN = periodic work is every(interval, then(PROC_REF(x_step)), when = ...) in the type CAPABILITIES block (code/engine/actions/reactions.dm); the cadences and their should_run()/periodic_step() hooks are deleted (doc/rewrite/final_api.html section 3)",
   "relation_edge = the slot ledger is the only record of a slot membership: a slot definition's on_link()/on_unlink() hooks run from the ledger (entity_slot_entered/entity_slot_left), a relation is a declared view or link (doc/rewrite/final_api.html section 6)",
   "relation_link = the slot ledger is the only record of a slot membership: a slot definition's on_link()/on_unlink() hooks run from the ledger (entity_slot_entered/entity_slot_left), a relation is a declared view or link (doc/rewrite/final_api.html section 6)",
   "relation_unlink = the slot ledger is the only record of a slot membership: a slot definition's on_link()/on_unlink() hooks run from the ledger (entity_slot_entered/entity_slot_left), a relation is a declared view or link (doc/rewrite/final_api.html section 6)",

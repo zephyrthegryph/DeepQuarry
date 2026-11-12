@@ -180,38 +180,6 @@
 	refresh_flush()
 	TEST_ASSERT(!glow_of(F).range, "the light went off when the look stopped setting it")
 
-/obj/cap_fixture/dx_review_interval
-	periodic_interval = 1 SECONDS
-	var/running = FALSE
-	var/steps = 0
-
-/obj/cap_fixture/dx_review_interval/should_run()
-	return running
-
-/obj/cap_fixture/dx_review_interval/periodic_step(delta)
-	steps++
-
-/// periodic_interval: a custom-interval step that runs while should_run() holds (the DECLARE_REPEAT replacement).
-/datum/unit_test/engine/dx_review_periodic_interval
-
-/datum/unit_test/engine/dx_review_periodic_interval/run_engine(list/made)
-	var/obj/cap_fixture/dx_review_interval/F = new
-	made += F
-	refresh_flush()
-	TEST_ASSERT(!after_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
-	F.running = TRUE
-	state_changed(F)
-	refresh_flush()
-	TEST_ASSERT(after_pending(F, "periodic_interval"), "armed once should_run() holds")
-	scheduler_advance(2.5)
-	TEST_ASSERT(F.steps >= 2, "stepped every interval ([F.steps])")
-	F.running = FALSE
-	state_changed(F)
-	refresh_flush()
-	var/steps = F.steps
-	scheduler_advance(2.5)
-	TEST_ASSERT_EQUAL(F.steps, steps, "stopped once should_run() is FALSE")
-
 /// The UI data one capability of A contributes (tgui_data nests it under data["caps"][ui_key()]).
 /proc/dx_cap_ui_data(atom/A, mob/user, cap_type)
 	var/list/data = list()

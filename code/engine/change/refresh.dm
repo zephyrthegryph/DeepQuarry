@@ -1,6 +1,6 @@
 // state_changed() and the refresh engine (doc/rewrite/dx_conventions.md §1, §3, §4).
 //
-// Derived things are plain procs: draw(look), should_run(), hidden_verbs(), tgui_data(),
+// Derived things are plain procs: draw(look), hidden_verbs(), tgui_data(),
 // push_to_rust(), on_state_changed(). state_changed(E) queues E, and everything that owns it up the owner
 // chain, for one refresh at the end of the frame (the presentation lane). Dispatchers call state_changed()
 // for you after every handler, timer, periodic step, prompt answer and ownership transfer; TRACKED
@@ -16,7 +16,7 @@
 // as a stale look instead of being masked. In a test build the audit is always on: the strict staleness
 // checker (staleness.dm) runs it on every entity it checks (everything that appeared during a test, every
 // served draw and a rotating slice of the rest), so a test that makes a thing whose hidden verbs, granted
-// verbs, periodic gate or derive() values follow state nothing published fails at its end.
+// verbs or derive() values follow state nothing published fails at its end.
 
 /datum
 	/// The outputs queued for a refresh this frame (DEP_* bits), 0 when not queued.
@@ -26,29 +26,6 @@
 	/// The refresh_drain() pass that last ran this entity's outputs (GLOB.refresh_drain_pass): an entity runs at most once per pass, and a mark that lands
 	/// during its own run waits for the next pass.
 	var/tmp/refresh_pass = 0
-
-/// The periodic pipeline should_run() gates, or null for no periodic work. A type var.
-/datum/var/periodic_cadence = null
-/// A custom interval (deciseconds) for periodic_step() instead of a shared cadence (the old
-/// DECLARE_REPEAT delay): runs every interval while should_run() holds. A type var.
-/datum/var/periodic_interval = null
-
-/// Starts or stops D's custom-interval step to match should_run().
-/proc/periodic_interval_update(datum/D)
-	var/want = !!call_output(D, "should_run", TYPE_PROC_REF(/datum, should_run))
-	var/pending = after_pending(D, "periodic_interval")
-	if(want && !pending)
-		after(D, D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), key = "periodic_interval", with = list(D))
-	else if(!want && pending)
-		cancel_after(D, "periodic_interval")
-
-/// One custom-interval step; re-arms while should_run() holds (the framework's timer, not game code).
-/proc/periodic_interval_fire(datum/D)
-	if(QDELETED(D) || !D.periodic_interval)
-		return
-	if(D.periodic_step(D.periodic_interval) == PROCESS_KILL || !D.should_run())
-		return
-	after(D, D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), key = "periodic_interval", with = list(D))
 
 /// The atom whose Initialize() is running: state_changed() treats its writes as a not-yet-initialized atom's.
 GLOBAL_DATUM(atom_initializing, /atom)
@@ -133,10 +110,10 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 		GLOB.refresh_self_marks += msg
 		if(!GLOB.refresh_self_mark_expected)
 			stack_trace(msg)
-	// Outputs must not write state: a tracked write while should_run, draw, hidden_verbs, tgui_data or a
+	// Outputs must not write state: a tracked write while draw, hidden_verbs, tgui_data or a
 	// derive_<var> runs is reported.
 	if(var_name && GLOB.derived_evaluating)
-		var/write_msg = "OUTPUT WROTE STATE: [E.type].[var_name] was written while an output (should_run, draw, hidden_verbs, tgui_data, derive_<var>) was running"
+		var/write_msg = "OUTPUT WROTE STATE: [E.type].[var_name] was written while an output (draw, hidden_verbs, tgui_data, derive_<var>) was running"
 		GLOB.derived_write_violations += write_msg
 		if(!GLOB.derived_write_expected)
 			stack_trace(write_msg)
@@ -177,11 +154,11 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 		rel_notify_watchers(E)
 
 /// FALSE when a refresh of E could not do anything: an atom (not a mob, which its species and traits can grant verbs)
-/// whose type is known to derive nothing (no look, verbs, capabilities, type verbs or declared dependencies), with no
-/// periodic work and no open window. The same rule entity_raise_change() applies, so a setter on such an atom costs no
+/// whose type is known to derive nothing (no look, verbs, capabilities, type verbs or declared dependencies), with
+/// no open window. The same rule entity_raise_change() applies, so a setter on such an atom costs no
 /// queue entry and no refresh.
 /proc/refresh_wanted(datum/E)
-	if(E.refresh_queued || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+	if(E.refresh_queued || LAZYLEN(E.open_tguis))
 		return TRUE
 	if(!isatom(E))
 		return datum_refresh_wanted(E)
@@ -191,7 +168,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 
 /// refresh_wanted() for an entity already in the queue (its refresh_queued is set, so it is not a reason to run).
 /proc/refresh_wanted_queued(datum/E)
-	if(E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+	if(LAZYLEN(E.open_tguis))
 		return TRUE
 	if(!isatom(E))
 		return datum_refresh_wanted(E)
@@ -200,7 +177,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 	return GLOB.type_derives_cache[E.type] != 0
 
 /// A refresh of a datum that is not an atom has no look and no verbs: it re-derives its derived() values (TYPE_DERIVES_DEPS) and runs the side
-/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE), and its windows and periodic gate, which refresh_wanted()
+/// effects (push_to_rust(), on_state_changed()) a type overrides (TYPE_DERIVES_SIDE), and its windows, which refresh_wanted()
 /// checks per instance. A type with none of them (a kernel histogram counting every tick, a system's bookkeeping, an rx_state, a vending product row)
 /// has no live output: it costs no queue entry and no refresh for its tracked writes (doc/rewrite/proposals/demand_driven_refresh.md 2.1).
 /proc/datum_refresh_wanted(datum/D)
@@ -244,15 +221,13 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 /// `pending & refresh_live_outputs(D)`; refresh_wanted() is `live != 0` (doc/rewrite/proposals/demand_driven_refresh.md 2.1).
 /proc/refresh_live_outputs(datum/D)
 	. = 0
-	if(D.periodic_cadence || D.periodic_interval)
-		. |= DEP_RUN
 	if(LAZYLEN(D.open_tguis))
 		. |= DEP_UI | DEP_UI_STATIC
 	if(isatom(D))
 		var/atom/A = D
 		if(ismob(A))
 			return . | DEP_ALL // a mob's species and traits grant verbs no type flag knows
-		if(GLOB.type_look_lazy[A.type] && !A.periodic_cadence && !A.periodic_interval && !LAZYLEN(A.open_tguis))
+		if(GLOB.type_look_lazy[A.type] && !LAZYLEN(A.open_tguis))
 			return . | DEP_DRAW // a lazy verdict is a declaration-level finding: the type derives nothing but its look (look_lazy_block())
 		var/flags = type_derive_flags(A)
 		if(flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
@@ -285,7 +260,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 /// `spare_draw` (a timer's fire): the look and verbs of an atom (not a mob) are not re-run. Every var a draw or a verb output reads is
 /// TRACKED (declared, or added by read-driven tracking, auto_tracked.dm), and a timer that wrote one already marked exactly that through
 /// its setter; a plain var the call wrote is read by no draw. A redraw after every fire repainted turrets, power monitors and sensors
-/// on each interval at idle (doc/rewrite/server_bench_20261027.md). The other outputs (values, periodic gate, windows, the Rust push,
+/// on each interval at idle (doc/rewrite/server_bench_20261027.md). The other outputs (values, windows, the Rust push,
 /// on_state_changed) still re-run.
 /proc/refresh_dispatched(datum/E, spare_draw = FALSE)
 	if(!E || QDELING(E) || E == GLOB.refresh_applying)
@@ -340,7 +315,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 			D.refresh_queued = (D.refresh_queued & ~(construction ? DEP_PARKED : (DEP_CREATED | DEP_PARKED))) | mask | (owed ? DEP_ALL : 0)
 			if(owed)
 				GLOB.refresh_parked_woken++
-		// A selective mark reaches an owner only through the look (an owner never reads a child's should_run).
+		// A selective mark reaches an owner only through the look (an owner never reads a child's window data).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
 			break
 		// H2: the owner is marked only when one of its capabilities draws this child (a slot with
@@ -527,11 +502,6 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 	look_layers_draw(src, look)
 	present_draw(src, look) // the layers and draws the engine's capabilities declare (code/engine/present/outputs.dm)
 
-/// TRUE while periodic_step(dt) should run on `periodic_cadence`. Re-evaluated on change.
-/datum/proc/should_run()
-	SHOULD_NOT_SLEEP(TRUE)
-	return FALSE
-
 /// The verbs to hide right now. Call ..() (capabilities hide theirs). Re-evaluated on change.
 /atom/proc/hidden_verbs()
 	SHOULD_CALL_PARENT(TRUE)
@@ -689,8 +659,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		refresh_one(A, 0, DEP_DRAW)
 		A.ImmediateOverlayUpdate()
 
-/// One entity's refresh of the outputs in `mask` (DEP_*; everything by default): derive values, periodic
-/// gate, look and hidden verbs, open windows, the Rust push, then on_state_changed.
+/// One entity's refresh of the outputs in `mask` (DEP_*; everything by default): derive values,
+/// look and hidden verbs, open windows, the Rust push, then on_state_changed.
 /proc/refresh_one(datum/D, bits, mask = DEP_ALL)
 	var/datum/outer = GLOB.refresh_running
 	GLOB.refresh_running = D
@@ -720,8 +690,6 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		var/datum/derived_table/T = derived_table_of(D)
 		if(T?.derived_vars)
 			mask = derived_recompute(D, T, mask)
-	if(mask & DEP_RUN)
-		refresh_periodic(D)
 	if(isatom(D) && (mask & DEP_DRAW))
 		var/atom/A = D
 		// A type known to draw nothing and hide nothing skips both (review 2 H3): capabilities can
@@ -792,18 +760,6 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		return
 	D.presentation_refresh_static()
 
-/proc/refresh_periodic(datum/D)
-	if(D.periodic_interval)
-		periodic_interval_update(D)
-		return
-	if(!D.periodic_cadence)
-		return
-	var/want = !!call_output(D, "should_run", TYPE_PROC_REF(/datum, should_run))
-	var/running = (!isnull(D.periodic_pipe))
-	if(want && !running)
-		cadence_start(D, D.periodic_cadence)
-	else if(!want && running)
-		cadence_stop(D)
 
 /// Builds A's look and applies it when its key changed. Returns the key.
 /proc/refresh_look(atom/A, apply = TRUE)
@@ -887,7 +843,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 
 // ---- the background sweep ----
 
-/// Atoms with something derived (a look, hidden verbs, periodic work), as ref text -> TRUE. Refs,
+/// Atoms with something derived (a look, hidden verbs), as ref text -> TRUE. Refs,
 /// not the atoms: the sweep list never keeps a deleted atom alive (it would hard-delete every drawn
 /// atom); a ref that no longer names a swept atom is dropped when the sweep reaches it.
 GLOBAL_LIST_EMPTY(refresh_sweep_list)
@@ -949,7 +905,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 /proc/refresh_sweep_track(atom/A)
 	if(A.rx?.refresh_swept)
 		return
-	if(isnull(A.rx?.look_key) && !A.rx?.refresh_hidden_verbs && !A.rx?.refresh_granted_verbs && !A.periodic_cadence && !derived_is_exact(A))
+	if(isnull(A.rx?.look_key) && !A.rx?.refresh_hidden_verbs && !A.rx?.refresh_granted_verbs && !derived_is_exact(A))
 		return
 	rx_of(A).refresh_swept = TRUE
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
@@ -1015,10 +971,6 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/list/was_granted = A.rx?.refresh_granted_verbs || list()
 	if(length(granted ^ was_granted))
 		drift += "granted_verbs()"
-	if(A.periodic_cadence)
-		var/wants = !!call_output(A, "should_run", TYPE_PROC_REF(/datum, should_run))
-		if(wants != (!isnull(A.periodic_pipe)))
-			drift += "should_run()"
 	// A derive() value that no longer matches what its reads give.
 	var/datum/derived_table/T = derived_table_of(A)
 	for(var/datum/derived_var/V as anything in T?.derived_vars)

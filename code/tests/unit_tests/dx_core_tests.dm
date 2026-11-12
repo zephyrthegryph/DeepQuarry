@@ -1,5 +1,5 @@
 // The DX framework core (code/datums/capabilities/): the capability list, TRACKED, changed() and the
-// refresh engine, the look builder, drift, periodic gating, hidden verbs, ui_<action> dispatch,
+// refresh engine, the look builder, drift, hidden verbs, ui_<action> dispatch,
 // dispatch_call(), ask_* re-validation, timed_set().
 
 // ---------------------------------------------------------------- fixtures
@@ -114,17 +114,6 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 /obj/cap_fixture/dx_plain
 	icon_state = "keepme"
 
-/obj/cap_fixture/dx_periodic
-	periodic_cadence = PERIODIC_SLOW
-	var/gating = FALSE
-
-
-/obj/cap_fixture/dx_periodic/should_run()
-	return gating
-
-/obj/cap_fixture/dx_periodic/periodic_step(delta)
-	return
-
 // ---------------------------------------------------------------- 1. the capability list
 
 /datum/unit_test/dx_core_capabilities_list/Run()
@@ -237,19 +226,6 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 	set_global("refresh_drift_expected", TRUE)
 	refresh_sweep_step(length(GLOB.refresh_sweep_list))
 	set_global("refresh_drift_expected", FALSE)
-
-// ---------------------------------------------------------------- 6. periodic gating
-
-/datum/unit_test/dx_core_periodic_gate/Run()
-	var/obj/cap_fixture/dx_periodic/F = allocate(/obj/cap_fixture/dx_periodic)
-	refresh_flush()
-	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "not running while should_run() is FALSE")
-	F.set_gating(TRUE)
-	refresh_flush()
-	TEST_ASSERT((!isnull(F.periodic_pipe)), "running once should_run() is TRUE")
-	F.set_gating(FALSE)
-	refresh_flush()
-	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "stopped once should_run() is FALSE again")
 
 // ---------------------------------------------------------------- 7. hidden verbs
 

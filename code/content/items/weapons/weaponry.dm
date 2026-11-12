@@ -171,9 +171,12 @@ CAPABILITIES(/obj/effect/energy_net)
 
 	var/size_increment = 0.01
 
-/obj/effect/energy_net/shrink/periodic_step()
-	..()
-	for(var/A in src?.buckled_mob_list())
-		if(istype(A, /mob/living))
-			var/mob/living/L = A
+// The net shrinks whoever it holds every 2 seconds (SSobj's old step, lost with the cadences).
+CAPABILITIES(/obj/effect/energy_net/shrink)
+	every(2 SECONDS, then(PROC_REF(shrink_step)))
+
+/obj/effect/energy_net/shrink/proc/shrink_step(datum/act/A)
+	for(var/M in src?.buckled_mob_list())
+		if(istype(M, /mob/living))
+			var/mob/living/L = M
 			L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)

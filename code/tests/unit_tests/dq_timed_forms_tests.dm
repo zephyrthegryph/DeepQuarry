@@ -164,14 +164,6 @@
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(S.done, 0, "putting a mask on during the wait ended it")
 
-/datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time
-/datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time/run_forms()
-	var/obj/tf_periodic/P = allocate(/obj/tf_periodic, run_loc_floor_bottom_left)
-	cadence_start(P, PERIODIC_SLOW)
-	test_time(30 SECONDS)
-	TEST_ASSERT(P.steps >= 1, "a member of PERIODIC_SLOW stepped (stepped [P.steps] times)")
-	cadence_stop(P)
-
 /datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing
 /datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing/run_forms()
 	var/mob/living/carbon/human/H = person()

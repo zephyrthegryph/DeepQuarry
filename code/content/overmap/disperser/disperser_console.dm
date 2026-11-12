@@ -173,38 +173,32 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	return data
 
 /// The console's guard: it works a linked ship.
-/obj/machinery/computer/ship/disperser/ui_gate(datum/act/op/A)
-	if(!..())
-		return FALSE
-	return !!linked()
+/obj/machinery/computer/ship/disperser/controls_refusal(datum/act/op/A)
+	. = ..()
+	if(.)
+		return
+	if(!linked())
+		return /datum/msg/req_silent
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_choose(datum/act/op/A, dir)
-	if(!ui_gate(A))
-		return FALSE
 	set_overmapdir(sanitize_integer(dir, 0, 9, 0))
 	reset_calibration()
 	terminal_typed(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_calibration(datum/act/op/A, calibration_index)
-	if(!ui_gate(A))
-		return FALSE
 	var/calnum = sanitize_integer(calibration_index, 0, caldigit)
 	set_calibration_at(calnum + 1, sanitize_integer(A.step_value("value"), 0, 9, 0))
 	terminal_typed(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_skill_calibration(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	for(var/i = 1 to 2)
 		set_calibration_at(i, calexpected[i])
 	terminal_typed(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_strength(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/value = A.step_value("value")
 	if(value)
 		set_strength(sanitize_integer(value, 1, 5, 1))
@@ -213,8 +207,6 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_range(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/value = A.step_value("value")
 	if(value)
 		set_range(sanitize_integer(value, 1, 5, 1))
@@ -223,8 +215,6 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_burn(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	fire(A.actor)
 	terminal_typed(A.actor)
 	return TRUE

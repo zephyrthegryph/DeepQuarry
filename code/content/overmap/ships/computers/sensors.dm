@@ -108,10 +108,12 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	return data
 
 /// The console's guard: it works a linked ship.
-/obj/machinery/computer/ship/sensors/ui_gate(datum/act/op/A)
-	if(!..())
-		return FALSE
-	return !!linked()
+/obj/machinery/computer/ship/sensors/controls_refusal(datum/act/op/A)
+	. = ..()
+	if(.)
+		return
+	if(!linked())
+		return /datum/msg/req_silent
 
 /obj/machinery/computer/ship/sensors/proc/sensor_range_default(datum/act/op/A)
 	return sensors()?.range
@@ -121,8 +123,6 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 
 /obj/machinery/computer/ship/sensors/proc/ui_act_viewing(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!(A.authority & AUTH_REMOTE_ACCESS)) // a silicon views over its link, from anywhere it can work the console
 		if(get_dist(user, src) > 1 || user.blinded || !linked())
 			. = FALSE
@@ -134,15 +134,11 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	return TRUE
 
 /obj/machinery/computer/ship/sensors/proc/ui_act_link(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	find_sensors()
 	terminal_typed(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/sensors/proc/ui_act_scan(datum/act/op/A, obj/effect/overmap/scan)
-	if(!ui_gate(A))
-		return FALSE
 	if(istype(scan) && !QDELETED(scan) && (scan in view(7,linked())))
 		new/obj/item/paper/(get_turf(src), scan.get_scan_data(A.actor), "paper (Sensor Scan - [scan])")
 		playsound(src, "sound/machines/printer.ogg", 30, 1)
@@ -150,7 +146,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	return TRUE
 
 /obj/machinery/computer/ship/sensors/proc/ui_act_range(datum/act/op/A)
-	if(!ui_gate(A) || !sensors())
+	if(!sensors())
 		return FALSE
 	var/nrange = A.step_value("range")
 	if(nrange)
@@ -159,7 +155,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	return TRUE
 
 /obj/machinery/computer/ship/sensors/proc/ui_act_toggle_sensor(datum/act/op/A)
-	if(!ui_gate(A) || !sensors())
+	if(!sensors())
 		return FALSE
 	sensors().toggle()
 	terminal_typed(A.actor)
