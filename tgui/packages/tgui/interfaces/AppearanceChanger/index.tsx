@@ -301,7 +301,7 @@ export const AppearanceChanger = (props) => {
                   </Stack.Item>
                 </Stack>
               </Section>
-              <Tabs>
+              <Tabs vertical>
                 {change_race ? (
                   <Tabs.Tab
                     selected={tabIndex === TAB_RACE}

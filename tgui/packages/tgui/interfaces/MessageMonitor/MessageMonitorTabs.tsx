@@ -45,25 +45,27 @@ export const MessageMonitorMain = (props) => {
           <Box color="good">Good</Box>
         </LabeledList.Item>
       </LabeledList>
-      <Button mt={1} icon="key" onClick={() => act('pass')}>
-        Set Custom Key
-      </Button>
-      <Button.Confirm
-        color="red"
-        confirmIcon="exclamation-triangle"
-        icon="exclamation-triangle"
-        onClick={() => act('del_pda')}
-      >
-        Clear Message Logs
-      </Button.Confirm>
-      <Button.Confirm
-        color="red"
-        confirmIcon="exclamation-triangle"
-        icon="exclamation-triangle"
-        onClick={() => act('del_rc')}
-      >
-        Clear Request Logs
-      </Button.Confirm>
+      <Box mt={1}>
+        <Button icon="key" onClick={() => act('pass')}>
+          Set Custom Key
+        </Button>
+        <Button.Confirm
+          color="red"
+          confirmIcon="exclamation-triangle"
+          icon="exclamation-triangle"
+          onClick={() => act('del_pda')}
+        >
+          Clear Message Logs
+        </Button.Confirm>
+        <Button.Confirm
+          color="red"
+          confirmIcon="exclamation-triangle"
+          icon="exclamation-triangle"
+          onClick={() => act('del_rc')}
+        >
+          Clear Request Logs
+        </Button.Confirm>
+      </Box>
     </Section>
   );
 };

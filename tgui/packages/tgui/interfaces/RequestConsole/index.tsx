@@ -49,7 +49,7 @@ export const RequestConsole = (props) => {
   body[RCS_ANNOUNCE] = <RequestConsoleAnnounce />;
 
   return (
-    <Window width={520} height={410}>
+    <Window width={620} height={410}>
       <Window.Content scrollable>
         <Tabs>
           <Tabs.Tab

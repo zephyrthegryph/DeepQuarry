@@ -26,7 +26,7 @@ export const MessageMonitor = (props) => {
   }
 
   return (
-    <Window width={670} height={450}>
+    <Window width={740} height={450}>
       <Window.Content scrollable>
         <TemporaryNotice />
         {body}

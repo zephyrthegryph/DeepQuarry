@@ -123,7 +123,7 @@ export const KeybindingEditor = (props) => {
     right_click;
 
   return (
-    <Window title="Keybindings" width={560} height={640}>
+    <Window title="Keybindings" width={720} height={640}>
       <Window.Content onKeyDown={handleKeyDown} scrollable>
         <Section title="Mouse">
           <LabeledList>

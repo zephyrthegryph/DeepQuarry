@@ -308,6 +308,17 @@ export function alignmentFindings(): Finding[] {
     }
   }
 
+  // 3d. A horizontal tab bar fits on one row.
+  for (const bar of Array.from(root.querySelectorAll('.Tabs--horizontal'))) {
+    if (!inScope(bar) || !visible(bar)) continue;
+    const tops = new Set(
+      Array.from(bar.querySelectorAll(':scope > .Tab'))
+        .filter(visible)
+        .map((t) => Math.round(t.getBoundingClientRect().top / 4)),
+    );
+    if (tops.size > 1) add('tabs-wrap', bar, `${tops.size} rows of tabs`);
+  }
+
   // 4. LabeledList: label and value columns line up, first lines share a baseline.
   for (const list of Array.from(root.querySelectorAll('.LabeledList'))) {
     if (!inScope(list) || !visible(list)) continue;
