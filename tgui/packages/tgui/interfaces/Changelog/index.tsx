@@ -98,6 +98,11 @@ export const Changelog = (props) => {
             setChangelogData(yaml.load(result, { schema: yaml.CORE_SCHEMA }));
           });
         }
+      }).catch(() => {
+        // The asset is not served yet (or the request was refused): retry like a "Cannot find" answer.
+        setTimeout(() => {
+          getData(date, attemptNumber + 1);
+        }, 50 + attemptNumber * 50);
       });
     },
     [act],
