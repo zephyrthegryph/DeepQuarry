@@ -5,7 +5,7 @@
 // samples one fresh instance per type at boot (refresh_settle_created()) and drops the fresh atoms of types whose default look is empty;
 // after the verdict, a fresh atom of such a type is not queued at all.
 
-/// A type like a space turf: it has capabilities (an op), so it may derive something, and its draw shows nothing.
+/// A type like a space turf: it may derive a look (a draw() override), and its draw shows nothing.
 /obj/dq_stamp_plain
 	name = "stamp plain"
 	icon = 'icons/turf/space.dmi'
@@ -16,6 +16,10 @@ CAPABILITIES(/obj/dq_stamp_plain)
 
 /obj/dq_stamp_plain/proc/poke(datum/act/op/act)
 	return OP_PASS
+
+/// It overrides draw() (so its type may derive a look, TYPE_DERIVES_LOOK) and draws nothing: only a first refresh can tell its default look is empty.
+/obj/dq_stamp_plain/draw(datum/look/look)
+	..()
 
 /datum/unit_test/dq_draw_queue_default_look
 

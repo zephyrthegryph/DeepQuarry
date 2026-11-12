@@ -175,9 +175,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 		var/datum/op_plan/P = op_plan_build(T, C, E, extends, seq, report)
 		if(!P)
 			continue
-		if(index.by_key[P.key])
-			// A later declaration of a key replaces the earlier one at the same level (a subtype's own op beats its parent's).
-			index.ordered -= index.by_key[P.key]
+		// One plan per key: the table already replaced an earlier declaration of the key in place (table_add_item()).
 		index.by_key[P.key] = P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 		index.ordered += P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 		if(base)

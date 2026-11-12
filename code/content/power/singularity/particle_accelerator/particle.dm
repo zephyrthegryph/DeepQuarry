@@ -76,7 +76,7 @@ CAPABILITIES(/obj/effect/accelerated_particle)
 	M.apply_effect((radiation*3),IRRADIATE,0)
 
 
-/obj/effect/accelerated_particle/proc/move(datum/act/timer/A)
+/obj/effect/accelerated_particle/proc/move(datum/act/timer/A = null)
 	if(target())
 		if(movetotarget)
 			if(!step_towards(src,target()) && !particle_force_step(get_step(src, get_dir(src,target()))))
