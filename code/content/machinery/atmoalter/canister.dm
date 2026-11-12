@@ -71,6 +71,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	/// The canister's window and the buttons in it.
 	section(controls, "The canister's window and the buttons in it")
 	interface("Canister", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(can_relabel = int(0, 1), connected = int(0, 1), pressure = num(), releasePressure = num(), defaultReleasePressure = num(), minReleasePressure = num(), maxReleasePressure = num(), valveOpen = int(0, 1), holding = nullable(row(name = schema_text(), pressure = num())))
 	extend("ui_open", needs(req(PROC_REF(not_destroyed), because = MSG(portable/wrecked))))
 	op("relabel", ui_act("relabel"), needs(req(PROC_REF(can_relabel), because = MSG(canister/not_empty))),
 		asks(/datum/prompt/choice, fields = list("title" = "Gas canister", "question" = "Choose canister label", "choices" = computed(PROC_REF(label_choices)))),
