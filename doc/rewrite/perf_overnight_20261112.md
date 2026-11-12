@@ -70,3 +70,36 @@ remaining overruns are per-turf cost, not missing yields. Per-turf cost is flat:
 Not done: asset_cache_build_key (a cheaper key needs the .rsc to be content-addressed by the dmb; unverified for the native compiler, and the
 cost is cold-cache only), type_trait_table_build (1.2 s self: 25 kinds x every type written into per-kind type maps; could key by table
 instead), vg_hook_register_world_turfs (1.1 s in one Rust call), memory (no per-type duplication found in the time).
+
+## Round 3 (perf/overnight-r3-1, base a33050d936)
+
+Same bench command (`boot_profile,idle,major_events --arg=events=supermatter --profile`), plus `memory_report` (settle 10 s, idle 0).
+
+Fixes:
+
+4. **Type trait tables keyed by type table** (8e54e292a7): the build wrote one row per type for each of 25 kinds (about 220 k rows);
+   it now writes one row per declaring table, and `type_trait_of()` reads the type's table first (one more list read per call, inlined).
+   Boot profile: type_trait_table_build 1.2 s self (round 2) -> 0.19 s self / 0.25 s total. `dq_type_trait_tables_equal_scan` compares
+   the per-table build, read per type, with the scanning original.
+5. **Explosions hold adjacency recomputes** (9b93c42906): each changed crater turf recomputed its 4-8 neighbours at once, so most members
+   recomputed several times per epoch. `adjacency_hold_begin()` (at start_resolve) queues them, deduplicated by slot, and
+   `adjacency_hold_drain()` runs each once, tick-checked, after the deferred turf updates (`ADJACENCY_HOLD:` log line per drain). Supermatter:
+   adjacency_recompute 14.4 k -> 4.9 k calls (0.51 -> 0.14 s), edges_changed 13.1 k -> 3.8 k, step_epoch 4.28 -> 3.78 s total, worst tick
+   129 % -> 93 % (one run each; the call counts are deterministic, the timings carry the usual noise). Test: `dq_lifeform_adjacency_hold`.
+
+Surveyed, not changed:
+
+- Explosion per-turf cost after fix 5 (0.65 ms per turf in the profile): ChangeTurf 1.7 s (replaced_by -> destroy_transaction 1.2 s,
+  of which rel_clear 35 k calls 0.58 s, own_clear 0.35 s: real disposal of the old turf's relations), integrity damage 1.25 s
+  (settle_integrity_crossings 0.62 s), ReplaceWithLattice 0.98 s (a new lattice InitAtom each). rel_clear on an already-null var is cheap
+  (rel_kind + list_state_of + rel_view_clear total ~0.15 s), so a null fast path would save little.
+- vg_hook_register_world_turfs: 0.82 s for 262 k turfs, about 3 us per turf: ~10 byondapi var reads plus a held copy of `contents` per
+  turf (verdigris/ffi/src/gas/mod.rs boot_turf()). Reading the per-type vars once per type would break map-edited turfs; skipping the
+  contents copy for empty turfs needs a list-length read in the byondapi wrapper. Not done (Rust build and ABI check; small gain).
+- Memory (memory_report, minitest): 1426 MB private, of which the DM model estimate is 109 MB and Rust 26 MB; the rest is BYOND's own
+  (262 k turfs, appearances, resource cache, code). Largest DM owners: /turf/space 184 k instances (stored vars: flags, _air, luminosity,
+  refresh_queued DEP_PARKED on 87 % by the lazy draw design), type tables 500 k list entries (~10 MB), entries 311 k (~10 MB), globals 12 MB
+  (type_trait_tables 2.5 MB before fix 4). No per-instance list that should be lazy shows up among the top owners.
+- Idle (60 s): 5.6 % tick average; native_step 6.9 ms/s dominates (Rust frame). DM side ~1.3 ms per tick of kernel bookkeeping, no hot
+  proc above 0.4 s. The largest avoidable-looking item, `set_times_fired()` publishing on every system run (5.8 k state_changed per minute,
+  0.3 s), is tracked because the MC health panel's ui_data reads it, so it stays.
