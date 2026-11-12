@@ -287,9 +287,11 @@ pub fn called_here(tree: &Tree, sem: &crate::sem::Sem, defs: &HashMap<String, Ve
     // A call whose receiver has a static type speaks for that type only: `locked` is declared on forty types, and a typed
     // `door.set_locked()` says nothing about the other thirty-nine.
     let typed = typed_set_calls(tree);
-    let typed_for: Vec<&BTreeSet<String>> = names.iter().filter_map(|n| typed.get(n)).collect();
+    // A receiver the scan could not type (`company().set_v()`, UNTYPED) is not a typed call: counting it here would make the var's only call
+    // (the one `analyze fix` wrote through a call chain) speak for no type, drop the var and its setter, and leave the call not compiling.
+    let typed_for: Vec<&BTreeSet<String>> = names.iter().filter_map(|n| typed.get(n)).filter(|types| types.iter().any(|t| t != UNTYPED)).collect();
     if !typed_for.is_empty() {
-        return typed_for.iter().any(|types| types.iter().any(related));
+        return typed_for.iter().any(|types| types.iter().filter(|t| *t != UNTYPED).any(related));
     }
     // Only calls whose receiver could not be typed name it: the name is enough when no unrelated type owns a hand-written proc of it.
     names.iter().all(|n| defs.get(n).is_none_or(|types| types.iter().all(related)))

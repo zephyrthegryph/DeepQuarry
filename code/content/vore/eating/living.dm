@@ -320,10 +320,10 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_export(vore_prefs, P)
-	P.spont_belly_rear = vore_spont_name(src, "rear")
-	P.spont_belly_left = vore_spont_name(src, "left")
-	P.spont_belly_front = vore_spont_name(src, "front")
-	P.spont_belly_right = vore_spont_name(src, "right")
+	P.set_spont_belly_rear(vore_spont_name(src, "rear"))
+	P.set_spont_belly_left(vore_spont_name(src, "left"))
+	P.set_spont_belly_front(vore_spont_name(src, "front"))
+	P.set_spont_belly_right(vore_spont_name(src, "right"))
 	P.autotransferable = !!STATE_PEEK(src, movable_misc, autotransferable)
 
 	var/list/serialized = list()

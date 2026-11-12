@@ -1802,7 +1802,7 @@ CAPABILITIES(/datum/vore_look)
 			else
 				STATE_SET(host(), spont_belly, spont_belly_rear, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_rear = vore_spont_name(host(), "rear")
+				host().client.prefs_vr.set_spont_belly_rear(vore_spont_name(host(), "rear"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("front")
@@ -1812,7 +1812,7 @@ CAPABILITIES(/datum/vore_look)
 			else
 				STATE_SET(host(), spont_belly, spont_belly_front, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_front = vore_spont_name(host(), "front")
+				host().client.prefs_vr.set_spont_belly_front(vore_spont_name(host(), "front"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("left")
@@ -1822,7 +1822,7 @@ CAPABILITIES(/datum/vore_look)
 			else
 				STATE_SET(host(), spont_belly, spont_belly_left, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_left = vore_spont_name(host(), "left")
+				host().client.prefs_vr.set_spont_belly_left(vore_spont_name(host(), "left"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("right")
@@ -1832,7 +1832,7 @@ CAPABILITIES(/datum/vore_look)
 			else
 				STATE_SET(host(), spont_belly, spont_belly_right, spont_target)
 			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_right = vore_spont_name(host(), "right")
+				host().client.prefs_vr.set_spont_belly_right(vore_spont_name(host(), "right"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 	return FALSE

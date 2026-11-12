@@ -202,10 +202,10 @@
 	slip_vore = json_from_file["slip_vore"]
 	food_vore = json_from_file["food_vore"]
 	throw_vore = json_from_file["throw_vore"]
-	spont_belly_rear = json_from_file["spont_belly_rear"]
-	spont_belly_left = json_from_file["spont_belly_left"]
-	spont_belly_front = json_from_file["spont_belly_front"]
-	spont_belly_right = json_from_file["spont_belly_right"]
+	set_spont_belly_rear(json_from_file["spont_belly_rear"])
+	set_spont_belly_left(json_from_file["spont_belly_left"])
+	set_spont_belly_front(json_from_file["spont_belly_front"])
+	set_spont_belly_right(json_from_file["spont_belly_right"])
 	consume_liquid_belly = json_from_file["consume_liquid_belly"]
 	stumble_vore = json_from_file["stumble_vore"]
 	digest_pain = json_from_file["digest_pain"]
