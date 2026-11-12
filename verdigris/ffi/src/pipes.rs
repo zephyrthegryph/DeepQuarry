@@ -60,9 +60,10 @@ use vg_gas::kind::pump::Pump;
 use vg_gas::laws::{BudgetJob, BudgetKind, BudgetLeg, DeviceJob, DeviceJobs, DeviceSide};
 use vg_gas::pipes::{PipeGas, Pipes};
 
+use crate::arg::num;
 use crate::entity;
 use crate::gas::REGION_SLOTS;
-use crate::world::{list, num, with_world};
+use crate::world::{list, with_world};
 
 thread_local! {
     /// A removed port's gas goes here if DM named a target mixture

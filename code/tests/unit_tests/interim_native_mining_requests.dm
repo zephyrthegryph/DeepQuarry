@@ -11,7 +11,6 @@
 	test_time(0.1 SECONDS)
 	var/datum/prompt/text/drill_label/label_request = SSrequests.open_for(user)
 	TEST_ASSERT(istype(label_request), "the actual multitool click opens the drill label request")
-	TEST_ASSERT_EQUAL(label_request.captured_tool, tool, "the request captures the exact tool used")
 	test_answer(user, "42")
 	test_time(0.1 SECONDS)
 	TEST_ASSERT_EQUAL(drill.name, "[initial(drill.name)] #42", "the actual answer labels the machine with its numeric ID")

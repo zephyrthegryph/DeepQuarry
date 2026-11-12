@@ -39,7 +39,8 @@ use byondapi::prelude::*;
 use eyre::{Result, bail};
 use vg_core::timer::Tick;
 
-use crate::world::{list, num, whole};
+use crate::arg::{num, whole};
+use crate::world::list;
 use crate::{entity, gas, heat, sched, sense, world};
 
 /// Record kind: something changed (`entity`, `key`).

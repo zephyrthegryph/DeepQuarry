@@ -8,7 +8,8 @@ use eyre::{Result, bail, eyre};
 use vg_core::grid::{BlockKind, Dir};
 use vg_core::propagate::view::view;
 
-use crate::world::{num, with_world};
+use crate::arg::num;
+use crate::world::with_world;
 
 /// Writes the opacity of changed turfs: `cells` is a flat list of
 /// `x, y, z, mask` (`mask` is BYOND directions, `ALL_CARDINALS` for a fully

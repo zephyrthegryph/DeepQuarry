@@ -30,6 +30,7 @@
 
 use std::cell::RefCell;
 
+use crate::arg::{num, whole};
 use crate::held::{HeldList, HeldRead};
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
@@ -456,19 +457,6 @@ impl DomainRegistry for WorldKind {
 }
 
 // --- Binds -------------------------------------------------------------------------
-
-pub(crate) fn num(v: &ByondValue) -> Result<f32> {
-    Ok(v.get_number()?)
-}
-
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-pub(crate) fn whole(v: &ByondValue, what: &str) -> Result<u32> {
-    let n = num(v)?;
-    if !(n >= 0.0 && n.fract() == 0.0 && n < 16_777_216.0) {
-        bail!("bad {what} {n}");
-    }
-    Ok(n as u32)
-}
 
 fn field(v: &ByondValue) -> Result<FieldId> {
     FieldId::try_from(whole(v, "field id")?).map_err(|_| eyre!("field id out of range"))

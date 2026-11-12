@@ -1,7 +1,7 @@
-import { reportUiError } from '../../errors';
 import { perf } from 'common/perf';
 import { installChunkPublicPath } from '../../chunkPublicPath';
 import { prepareWindowGeometry, setupDrag } from '../../drag';
+import { reportUiError } from '../../errors';
 import { prepareRequestedInterface } from '../../interfacePreparation';
 import { logger } from '../../logging';
 import { profileStartup, profileUpdate } from '../../profiling/hooks';
@@ -289,18 +289,17 @@ function updateData(payload: UpdatePayload): void {
     }));
   }
 
+  // Contract (DM side: /datum/tgui/proc/get_payload): a `data` block is the
+  // whole of ui_data, and a `static_data` block the whole of tgui_static_data.
+  // Each replaces what the window held, so a key the server stops sending
+  // disappears. A payload without the block (a slim push, or a viewer below
+  // STATUS_UPDATE) keeps the previous one. There is no partial-data message.
   if (payload.static_data) {
-    store.set(gameStaticDataAtom, (prev) => ({
-      ...prev,
-      ...payload.static_data,
-    }));
+    store.set(gameStaticDataAtom, { ...payload.static_data });
   }
 
   if (payload.data) {
-    store.set(gameDataAtom, (prev) => ({
-      ...prev,
-      ...payload.data,
-    }));
+    store.set(gameDataAtom, { ...payload.data });
   }
 
   if (payload.shared) {

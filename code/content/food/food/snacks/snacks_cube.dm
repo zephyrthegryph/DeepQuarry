@@ -9,7 +9,7 @@
 	bitesize = 12
 	filling_color = "#ADAC7F"
 
-	var/food_type = "/obj/item/reagent_containers/food/snacks/proteinslab"
+	var/food_type = /obj/item/reagent_containers/food/snacks/proteinslab
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cube)
 	configure(item_handling(center_x = 16, center_y = 14))
@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/cube/protein)
 	name = "Nutriment cube"
 	desc = "A colony of plant cells, Just add water!"
 	icon_state = "nutrimentcube"
-	food_type = "/obj/item/reagent_containers/food/snacks/nutrimentslab"
+	food_type = /obj/item/reagent_containers/food/snacks/nutrimentslab
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/cube/nutriment)
 	configure(reagents(add = list(REAGENT_ID_PLANTCOLONY = 5)))

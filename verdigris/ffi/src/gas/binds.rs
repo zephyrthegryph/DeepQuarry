@@ -309,7 +309,7 @@ fn read_mixture_levels(mixtures: ByondValue, gas_ids: ByondValue) -> Result<Byon
         .held_list()?
         .iter()
         .map(|g| {
-            let id = g.get_number()? as usize;
+            let id = crate::arg::index(&g, "gas id")?;
             if id >= gas::GAS_COUNT {
                 eyre::bail!("read_mixture_levels: no gas {id}");
             }
@@ -409,7 +409,7 @@ fn air_watch_new(mixtures: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/air_watch_changed")]
 fn air_watch_changed(watch: ByondValue, revisions: ByondValue) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let id = watch.get_number()? as u32;
+    let id = crate::arg::whole(&watch, "watch id")?;
     let revs = revisions
         .held_list()?
         .iter()
@@ -454,7 +454,7 @@ fn air_watch_rebind(
     mixtures: ByondValue,
 ) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let id = watch.get_number()? as u32;
+    let id = crate::arg::whole(&watch, "watch id")?;
     let indices = indices.held_list()?;
     let fresh = mixtures
         .held_list()?
@@ -467,7 +467,7 @@ fn air_watch_rebind(
         };
         for (idx, entry) in indices.iter().zip(fresh) {
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let i = idx.get_number()? as usize;
+            let i = crate::arg::index(&idx, "gas index")?;
             if let Some(slot) = i.checked_sub(1).and_then(|i| entries.get_mut(i)) {
                 *slot = entry;
             }
@@ -694,7 +694,7 @@ fn scrub_into_hook(
     if !gas_list.is_list() {
         return Err(eyre::eyre!("Non-list gas_list passed to scrub_into!"));
     }
-    if gas_list.builtin_length()?.get_number()? as u32 == 0 {
+    if crate::arg::whole(&gas_list.builtin_length()?, "gas list length")? == 0 {
         return Ok(false.into());
     }
     let gas_scrub_vec = gas_list
@@ -1086,7 +1086,7 @@ fn filter_transfer(
         MixRef::of(&sink_clean)?,
     );
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    let filtering = filtering.get_number()? as u32;
+    let filtering = crate::arg::whole(&filtering, "filter mask")?;
     let requested = (!requested.is_null())
         .then(|| requested.get_number())
         .transpose()?;
@@ -1211,7 +1211,7 @@ fn filter_transfer_multi(
     let refs = outputs
         .held_pairs()?
         .iter()
-        .map(|(mix, mask)| Ok((MixRef::of(mix)?, mask.get_number()? as u32)))
+        .map(|(mix, mask)| Ok((MixRef::of(mix)?, crate::arg::whole(&mask, "gas mask")?)))
         .collect::<Result<Vec<(MixRef, u32)>>>()?;
     let result = (|| {
         let source_mix = mix::load_or_err(rs)?;
@@ -1288,7 +1288,7 @@ fn pump(
     let available_power = opt_number(&available_power)?;
     let efficiency = efficiency.get_number()?;
     #[allow(clippy::cast_possible_truncation)]
-    let mode = mode.get_number()? as i32;
+    let mode = crate::arg::signed(&mode, "mode")?;
     let passive = mode == PUMP_PASSIVE;
     let plan_only = mode == PUMP_PLAN;
     let plan = with_mixes_mut(&source, &sink, |from, to| {
@@ -1335,7 +1335,7 @@ fn scrub(
     let available_power = opt_number(&available_power)?;
     let efficiency = efficiency.get_number()?;
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    let mask = mask.get_number()? as u32;
+    let mask = crate::arg::whole(&mask, "gas mask")?;
     let plan = with_mixes_mut(&source, &sink, |from, to| {
         let (plan, trace) = power_budget::scrub_plan(
             from,
