@@ -535,17 +535,17 @@ Notes: handler `x(datum/act/input/A)` with `A.actor`, `A.over`, `A.entered`, `A.
 
 #### `ACTION(name, fields..., FIXED, notice =)` and `ACT_ATTEMPT(E, token, args)`, `act_done(A)`, `act_cancel(A)`
 Need: a typed world event that others may refuse, take over or modify.
-Defined: `ACTION` at `code/defines/engine/declare/markers.dm:54`, `ACT_ATTEMPT` at `code/defines/engine/declare/actions.dm:10`, `act_done` at `code/engine/actions/act.dm:260`
+Defined: `ACTION` at `code/defines/engine/declare/markers.dm:54`, `ACT_ATTEMPT` at `code/defines/engine/declare/actions.dm:10`, `act_done` at `code/engine/actions/act.dm:229`
 Example: `var/datum/act/attack_self/use = ACT_ATTEMPT(src, attack_self, user)` then `if(ACT_REFUSED_BY(use)) return TRUE` then `act_done(use)`, `code/content/click/item_attack.dm:33`
 Replaces / bans: `intercept()`, `OM_EMIT`, `DAMAGE_REACTION`, `om_hook`, `TOPIC_ACTION`.
 Notes: `ACT_ATTEMPT` returns an act, `ACT_PASS` (nothing hooked) or a refusal. `ACTION(name, FIXED, notice = /datum/notice/x)` is an event nothing can refuse (`code/library/input/input_notices.dm:5`).
 
-#### `extend(/datum/act/x, needs(...) | instead(...) | adjusts(...))`
+#### `extend(/datum/act/x, needs(...) | instead(...) | adjusts_with(...))`
 Need: refuse, take over or modify another type's action or op from your own block.
-Defined: `extend` at `code/engine/declare/entries.dm:250`, `instead` at `code/engine/actions/hooks.dm:66`, `adjusts` at `code/engine/actions/hooks.dm:71`
+Defined: `extend` at `code/engine/declare/entries.dm:250`, `instead` at `code/engine/actions/hooks.dm:66`, `adjusts_with` at `code/engine/actions/hooks.dm:72`
 Example: `extend(/datum/act/hit, instead(then(PROC_REF(mousetrap_thrown_trigger))))`, `code/content/assembly/mousetrap.dm:70`
 Replaces / bans: `intercept()` and `acceptance()` (banned outside the engine).
-Notes: an `instead()` with no `then` takes nothing. `adjusts_with(PROC_REF)` is the code form of `adjusts`.
+Notes: an `instead()` with no `then` takes nothing. `adjusts_with(PROC_REF(x))` modifies the act in flight: `x(A)` writes its fields (the constant `adjusts(field, by =, scale =)` form had no content caller and is gone).
 
 #### `on_notice(/datum/notice/x, then(...))` and `observe(source, trigger, listener, parts...)`
 Need: react after an event, on the type (`on_notice`) or on one source (`observe`).

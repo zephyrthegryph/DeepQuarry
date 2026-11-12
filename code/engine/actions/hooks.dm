@@ -1,10 +1,10 @@
 // Hooks (doc/rewrite/final_api.html, section 10 "Hooks and events"; section 19 "E4, actions and hooks").
 //
-// Two forms. A BEFORE hook is an extend() of an action: needs (refuse), instead (take over), adjusts (modify one typed field). An AFTER hook is
+// Two forms. A BEFORE hook is an extend() of an action: needs (refuse), instead (take over), adjusts_with (modify the action in flight). An AFTER hook is
 // on_notice / on_op (react to a past-tense notice) or on_change (react to a state edge, change.dm). Nothing else is a hook.
 //
 //	extend(/datum/act/hit/projectile, instead(when(PROC_REF(mirror_ready)), chance(30), then(PROC_REF(reflect))))
-//	extend(/datum/act/hit/projectile, adjusts(packet.amount, scale = 0.67, when = PROC_REF(shield_up)))
+//	extend(/datum/act/hit/projectile, adjusts_with(PROC_REF(soften), when = PROC_REF(shield_up)))
 //	on_notice(/datum/notice/fell, then(PROC_REF(on_fell)), outcome = ACT_REPLACED)
 //	on_op("cover.open", then(PROC_REF(cover_opened)))
 //
@@ -65,11 +65,6 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 
 /proc/instead(ENTRY_SLOTS, order = ORDER_NORMAL)
 	return entry_make(ENTRY_INSTEAD, null, list("order" = order), entry_flatten(ENTRY_SLOT_LIST))
-
-/// adjusts(packet.amount, by =, scale =, when =): modifies one typed field of the action before it reaches its sink. `field` is text (the
-/// generator rewrites the path a declaration writes); scale applies before by.
-/proc/adjusts(field, by = null, scale = null, when = null)
-	return entry_make(ENTRY_ADJUSTS, null, list("field" = field, "by" = by, "scale" = scale, "when" = when))
 
 /// adjusts_with(PROC_REF(x), when =): modifies the action in flight with code, for what a constant by/scale cannot say (a flag a listener ORs in, an amount
 /// a listener splits). x(datum/act/A) runs on the hook's holder (on the listener for an observe()), may write the act's typed fields and does not take the

@@ -39,7 +39,7 @@ MSG_DEF_SELF(s1/not_the_steward, "Only the steward may do that.")
 	name = "side"
 
 CAPABILITIES(/obj/s1_fixture/rack)
-	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts("amount", by = 4)), on = ON_CONTENTS)
+	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_4))), on = ON_CONTENTS)
 	extend(/datum/act/remove, needs(req(PROC_REF(not_welded))))
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
@@ -118,7 +118,7 @@ SETTER(/obj/s1_fixture/picky, welded)
 
 CAPABILITIES(/obj/item/s1_fixture/gizmo)
 	configure(item_worn(slots = SLOT_BELT))
-	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts("amount", by = 1)), on = ON_HOLDER)
+	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_1))), on = ON_HOLDER)
 
 /// Not a gizmo.
 /obj/item/s1_fixture/trinket
@@ -130,20 +130,20 @@ CAPABILITIES(/obj/item/s1_fixture/gizmo)
 
 CAPABILITIES(/obj/item/s1_fixture/charm)
 	configure(item_worn(slots = SLOT_BELT))
-	while_slotted(SLOT_ANY_WORN, extend(/datum/act/e4_strike, adjusts("amount", by = 2)), on = ON_HOLDER)
+	while_slotted(SLOT_ANY_WORN, extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_2))), on = ON_HOLDER)
 
 /// Held gear: +3 on a strike to whoever holds it in a hand.
 /obj/item/s1_fixture/torch
 	name = "s1 torch"
 
 CAPABILITIES(/obj/item/s1_fixture/torch)
-	while_slotted(SLOT_ANY_HELD, extend(/datum/act/e4_strike, adjusts("amount", by = 3)), on = ON_HOLDER)
+	while_slotted(SLOT_ANY_HELD, extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_3))), on = ON_HOLDER)
 
 /// A belly whose prey get +5 on a strike while they are inside it.
 /obj/belly/s1_test
 
 CAPABILITIES(/obj/belly/s1_test)
-	while_slotted(BELLY_SLOT_INTERIOR, extend(/datum/act/e4_strike, adjusts("amount", by = 5)), on = ON_CONTENTS)
+	while_slotted(BELLY_SLOT_INTERIOR, extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_5))), on = ON_CONTENTS)
 
 // ---- providers ----
 
@@ -174,7 +174,7 @@ CAPABILITIES(/obj/item/s1_fixture/gauntlet)
 
 CAPABILITIES(/datum/s1_species/brawler)
 	hands()
-	extend(/datum/act/e4_strike, adjusts("amount", by = 6))
+	extend(/datum/act/e4_strike, adjusts_with(GLOBAL_PROC_REF(e4_strike_plus_6)))
 
 /// Nothing at all.
 /datum/s1_species/blob

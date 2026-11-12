@@ -6,7 +6,7 @@
 //   1. act_wanted(): nothing hooks the action and nothing listens for its notice, for any outcome -> ACT_PASS (nothing allocated).
 //   2. act_begin(): nested actions stop at depth ACT_MAX_DEPTH (a ninth nested action ends ACT_REFUSED, "too deeply nested", logged chain,
 //      and fails a test build); otherwise the pooled act is taken and its holder and target set.
-//   3. act_resolve(): needs refuse, the first instead in order takes over (ACT_REPLACED), every adjusts applies in order. What comes back
+//   3. act_resolve(): needs refuse, the first instead in order takes over (ACT_REPLACED), every adjusts_with applies in order. What comes back
 //      is the final act (the caller reads its fields with ACT_FINAL and ends it with act_done()), or null when it was refused or taken over.
 //
 // act_done(A) ends it ACT_COMMITTED, delivers the past-tense notice to the listeners that asked for that outcome, and releases the context;
@@ -43,7 +43,7 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 
 /// Who does the next action and under what authority: a caller that starts a world action for an actor (slot_transfer()) sets these just
 /// before ACT_ATTEMPT() and clears them after; act_begin() consumes them, so only that one action carries them (a nested action starts clean).
-/// An action begun under AUTH_ADMIN skips its needs() hooks (the forced transfer): its instead() and adjusts() still run.
+/// An action begun under AUTH_ADMIN skips its needs() hooks (the forced transfer): its instead() and adjusts_with() still run.
 GLOBAL_DATUM(act_next_actor, /datum)
 GLOBAL_VAR(act_next_authority)
 
@@ -194,43 +194,12 @@ GLOBAL_VAR(act_next_authority)
 			return FALSE
 	return TRUE
 
-/// One adjusts(): scale first, then by, on the named field of the act ("packet.amount" walks through the packet).
+/// One adjusts_with(): the handler writes the act's fields itself, when its gate holds.
 /proc/act_apply_adjust(datum/act/A, datum/hook/H)
 	var/list/opts = H.entry.args
 	if(opts["when"] && !hook_gate(H, A, opts["when"]))
 		return
-	if(opts["with"])
-		hook_call(H, opts["with"], A) // adjusts_with(): the handler writes the act's fields itself
-		return
-	var/list/path = splittext(opts["field"], ".")
-	var/datum/walk = A
-	for(var/i in 1 to length(path) - 1)
-		walk = walk.vars[path[i]]
-		if(!walk)
-			return
-	var/field = path[length(path)]
-	var/current = walk.vars[field]
-	if(islist(current))
-		// A list of amounts (packet.amounts): scale and by apply to every positive entry, which never goes below zero.
-		var/list/amounts = current
-		for(var/i in 1 to length(amounts))
-			var/entry = amounts[i]
-			if(!isnum(entry) || entry <= 0)
-				continue
-			if(!isnull(opts["scale"]))
-				entry *= opts["scale"]
-			if(!isnull(opts["by"]))
-				entry += opts["by"]
-			amounts[i] = max(0, entry)
-		return
-	if(!isnum(current))
-		declare_report("adjusts([opts["field"]]) on [A.type]: the field is not a number ([current])")
-		return
-	if(!isnull(opts["scale"]))
-		current *= opts["scale"]
-	if(!isnull(opts["by"]))
-		current += opts["by"]
-	walk.vars[field] = current // ALLOW(api): adjusts() names a typed field of the action by its declared path
+	hook_call(H, opts["with"], A)
 
 /// ACT_TAKEN_OVER(R): was the ACT_ATTEMPT result R taken over by a hook?
 /proc/act_refusal_taken_over(R)
