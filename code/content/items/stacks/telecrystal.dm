@@ -26,6 +26,6 @@ CAPABILITIES(/obj/item/stack/telecrystal)
 	var/mob/user = A.actor
 	if(user.mind && user.mind.accept_tcrystals) //Checks to see if antag type allows for tcrystals
 		to_chat(user, span_notice("You use \the [src], adding [src.amount] to your balance."))
-		user.mind.tcrystals += amount
+		user.mind.set_tcrystals(user.mind.tcrystals + amount)
 		use(amount)
 	return OP_OK

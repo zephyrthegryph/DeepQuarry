@@ -32,7 +32,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	rel_clear(stored_mind(), nameof(/datum/mind::current))
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
-	stored_mind().active = TRUE
+	stored_mind().set_active(TRUE)
 	transfer_mind(stored_mind(), M, "sleevemate upload")
 	M.vore_prefs.soulcatcher_pref_flags = soulcatcher_pref_flags
 	clear_mind()

@@ -186,7 +186,7 @@
 		var/obj/item/nif/protean/new_nif = new()
 		new_nif.quick_implant(H)
 	else
-		H.nif.durability = 25
+		H.nif.set_durability(25)
 	new /obj/item/rig/protean(H, H)
 
 /datum/species/protean/hug(mob/living/carbon/human/H, mob/living/target)

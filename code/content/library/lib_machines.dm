@@ -685,7 +685,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 			set_buffer_mob(value)
 		if("setauthor")
 			if(value && scanner()?.cache())
-				scanner().cache().author = value
+				scanner().cache().set_author(value)
 		if("setcategory")
 			if(value)
 				set_upload_category(value)

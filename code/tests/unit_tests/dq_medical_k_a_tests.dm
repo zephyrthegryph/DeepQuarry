@@ -23,11 +23,11 @@
 	TEST_ASSERT(!H.pain_immunity, "a plain human has no pain immunity")
 	var/old_flags = H.species.flags
 	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
-	H.species.flags |= NO_PAIN
+	H.species.set_flags(H.species.flags | NO_PAIN)
 	H.body.sync_species_factors()
 	var/immune = H.pain_immunity
 	var/feels = H.can_feel_pain()
-	H.species.flags = old_flags
+	H.species.set_flags(old_flags)
 	H.body.sync_species_factors()
 	TEST_ASSERT(immune, "a NO_PAIN species grants STAT_PAIN_IMMUNITY")
 	TEST_ASSERT(!feels, "a NO_PAIN species can't feel pain")

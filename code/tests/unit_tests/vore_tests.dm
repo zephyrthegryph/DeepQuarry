@@ -89,7 +89,7 @@
 
 	TEST_ASSERT(prey.loc == vore_selected_of(pred), "Prey not inside predator belly")
 
-	vore_selected_of(pred).digest_mode = DM_DIGEST
+	vore_selected_of(pred).set_digest_mode(DM_DIGEST)
 
 	var/start_damage = _vore_test_total_injury(prey)
 	_vore_test_run_cycles(pred, prey, 10)

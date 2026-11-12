@@ -175,7 +175,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		STAMP(card, last_job_switch, CLOCK_WORLD)
 		newjob.current_positions++
 		var/mob/living/carbon/human/H = user
-		H.mind.assigned_role = card.rank
+		H.mind.set_assigned_role(card.rank)
 		H.mind.role_alt_title = card.assignment
 		announce.autosay("[card.registered_name] has moved On-Duty as [card.assignment].", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
 	return
@@ -199,7 +199,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		GLOB.data_core.manifest_modify(card.registered_name, card.assignment, card.rank)
 		STAMP(card, last_job_switch, CLOCK_WORLD)
 		var/mob/living/carbon/human/H = user
-		H.mind.assigned_role = ptojob.title
+		H.mind.set_assigned_role(ptojob.title)
 		H.mind.role_alt_title = ptojob.title
 		foundjob.current_positions--
 		announce.autosay("[card.registered_name], [oldtitle], has moved Off-Duty.", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))

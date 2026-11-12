@@ -173,7 +173,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 		if(ACCESS_MINING_STATION in inserted_id.GetAccess())
 			var/datum/money_account/account = get_account(inserted_id.associated_account_number)
 			if(account?.credit(machine().points, name, "Processed ore proceeds", name))
-				machine().points = 0
+				machine().set_points(0)
 		else
 			to_chat(A.actor, span_warning("Required access not found."))
 	return TRUE

@@ -298,16 +298,16 @@ CAPABILITIES(/atom/movable/screen)
 					if(C.get_equipped_item(SLOT_ID_LEGCUFFED))
 						to_chat(C, span_notice("You are legcuffed! You cannot run until you get [C.get_equipped_item(SLOT_ID_LEGCUFFED)] removed!"))
 						C.set_m_intent(I_WALK)	//Just incase
-						C.hud_used.move_intent.icon_state = "walking"
+						C.hud_used.move_intent.set_icon_state("walking")
 						return 1
 				var/mob/living/L = user
 				switch(L.m_intent)
 					if(I_RUN)
 						L.set_m_intent(I_WALK)
-						L.hud_used.move_intent.icon_state = "walking"
+						L.hud_used.move_intent.set_icon_state("walking")
 					if(I_WALK)
 						L.set_m_intent(I_RUN)
-						L.hud_used.move_intent.icon_state = "running"
+						L.hud_used.move_intent.set_icon_state("running")
 		if("m_intent")
 			if(!STATE_GET(user, mob_misc, m_int))
 				switch(user.m_intent)

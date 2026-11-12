@@ -233,9 +233,9 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 /// The vector overlay points along the heading while under way, and rests (pointing south) when still.
 /obj/effect/overmap/visitable/ship/proc/look_effect_vector(heading)
 	if(isnull(heading))
-		vector_overlay().dir = SOUTH
+		vector_overlay().set_dir(SOUTH)
 		return
-	vector_overlay().dir = NORTH
+	vector_overlay().set_dir(NORTH)
 	vector_overlay().transform = matrix().Turn(heading)
 
 /// The look is the one writer of the heading: set_dir() keeps every other caller facing north.

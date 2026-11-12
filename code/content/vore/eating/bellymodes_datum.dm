@@ -258,21 +258,21 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 				B.egg_path = GLOB.tf_vore_egg_types[B.egg_type]
 			rel_set(B, nameof(B.ownegg), new B.egg_path(B))
 			if(B.ownegg() && B.egg_name)
-				B.ownegg().egg_name = B.egg_name
+				B.ownegg().set_egg_name(B.egg_name)
 				B.ownegg().name = B.egg_name
 		var/scale_clamp = 1
 		for(var/atom/movable/C in egg_contents)
 			if(isitem(C) && egg_contents.len == 1) //Only egging one item
 				var/obj/item/I = C
 				B.ownegg().set_w_class(I.w_class)
-				B.ownegg().max_storage_space = B.ownegg().w_class
+				B.ownegg().set_max_storage_space(B.ownegg().w_class)
 				B.slot_remove(I, B.ownegg())
 				if(B.egg_size)
-					B.ownegg().icon_scale_x = B.egg_size
-					B.ownegg().icon_scale_y = B.egg_size
+					B.ownegg().set_icon_scale_x(B.egg_size)
+					B.ownegg().set_icon_scale_y(B.egg_size)
 				else
-					B.ownegg().icon_scale_x = 0.2 * B.ownegg().w_class
-					B.ownegg().icon_scale_y = 0.2 * B.ownegg().w_class
+					B.ownegg().set_icon_scale_x(0.2 * B.ownegg().w_class)
+					B.ownegg().set_icon_scale_y(0.2 * B.ownegg().w_class)
 				B.ownegg().update_transform()
 				egg_contents -= I
 				rel_clear(B, nameof(B.ownegg))
@@ -288,17 +288,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 				if(M.size_multiplier > scale_clamp)
 					scale_clamp = M.size_multiplier
 				var/obj/item/holder/H = new mob_holder_type(B.ownegg(), M)
-				B.ownegg().max_storage_space = H.w_class
+				B.ownegg().set_max_storage_space(H.w_class)
 				egg_contents -= M
 		B.ownegg().calibrate_size()
 		B.ownegg().orient2hud()
 		B.ownegg().set_w_class(clamp(B.ownegg().w_class * 0.25, 1, 8)) //A total w_class of 16 will result in a backpack sized egg.
 		if(B.egg_size)
-			B.ownegg().icon_scale_x = B.egg_size
-			B.ownegg().icon_scale_y = B.egg_size
+			B.ownegg().set_icon_scale_x(B.egg_size)
+			B.ownegg().set_icon_scale_y(B.egg_size)
 		else
-			B.ownegg().icon_scale_x = clamp(0.25 * B.ownegg().w_class, 0.25, scale_clamp)
-			B.ownegg().icon_scale_y = clamp(0.25 * B.ownegg().w_class, 0.25, scale_clamp)
+			B.ownegg().set_icon_scale_x(clamp(0.25 * B.ownegg().w_class, 0.25, scale_clamp))
+			B.ownegg().set_icon_scale_y(clamp(0.25 * B.ownegg().w_class, 0.25, scale_clamp))
 		B.ownegg().update_transform()
 		if(B.ownegg().w_class > 4)
 			B.ownegg().set_worn_factor(STAT_ITEM_ENCUMBRANCE, 4)

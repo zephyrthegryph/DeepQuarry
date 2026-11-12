@@ -22,7 +22,7 @@ CAPABILITIES(/datum/data/pda/app/main_menu)
 	data["notifying"] = notifying
 
 /datum/data/pda/app/main_menu/proc/ui_act_updateinfo(datum/act/op/A)
-	pda().ownjob = pda().id.assignment
+	pda().set_ownjob(pda().id.assignment)
 	pda().ownrank = pda().id.rank
 	pda().name = "PDA-[pda().owner] ([pda().ownjob])"
 	return OP_OK
@@ -452,15 +452,15 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 				return
 	if(newjob)
 		newjob.register_shift_key(user.client.ckey)
-		pda().id.access = newjob.get_access()
-		pda().id.rank = newjob.title
-		pda().id.assignment = newassignment
+		pda().id.set_access(newjob.get_access())
+		pda().id.set_rank(newjob.title)
+		pda().id.set_assignment(newassignment)
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
 		STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
 		newjob.current_positions++
-		user.mind.assigned_role = text_or_null(pda().id.rank)
+		user.mind.set_assigned_role(text_or_null(pda().id.rank))
 		user.mind.role_alt_title = text_or_null(pda().id.assignment)
 		announce.autosay("[pda().id.registered_name] has moved On-Duty as [pda().id.assignment].", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
 	return
@@ -481,14 +481,14 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 			break
 	if(ptojob)
 		var/oldtitle = pda().id.assignment
-		pda().id.access = ptojob.get_access()
-		pda().id.rank = ptojob.title
-		pda().id.assignment = ptojob.title
+		pda().id.set_access(ptojob.get_access())
+		pda().id.set_rank(ptojob.title)
+		pda().id.set_assignment(ptojob.title)
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
 		STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
-		user.mind.assigned_role = ptojob.title
+		user.mind.set_assigned_role(ptojob.title)
 		user.mind.role_alt_title = ptojob.title
 		foundjob.current_positions--
 		announce.autosay("[pda().id.registered_name], [oldtitle], has moved Off-Duty.", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))

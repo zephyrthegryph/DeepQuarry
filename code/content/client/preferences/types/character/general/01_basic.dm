@@ -107,7 +107,7 @@
 	can_randomize = FALSE
 
 /datum/preference/text/living/ooc_notes/apply_to_living(mob/living/target, value)
-	target.identity().ooc_notes = text_or_null(value)
+	target.identity().set_ooc_notes(text_or_null(value))
 	return
 
 /datum/preference/text/living/ooc_notes_likes

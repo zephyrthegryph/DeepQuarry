@@ -87,13 +87,13 @@ CAPABILITIES(/obj/structure/morgue)
 	rel_set(src, nameof(connected), new /obj/structure/m_tray( src.loc ))
 	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, src.dir)
-	src.connected.layer = OBJ_LAYER
+	src.connected.set_layer(OBJ_LAYER)
 	var/turf/T = get_step(src, src.dir)
 	if (T.contents.Find(src.connected))
 		set_icon_state("morgue0")
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
-		src.connected.icon_state = "morguet"
+		src.connected.set_icon_state("morguet")
 		src.connected.set_dir(src.dir)
 	else
 		rel_clear(src, nameof(connected))
@@ -227,13 +227,13 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 		rel_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
 		rel_set(connected, nameof(connected.connected), src)
 		step(src.connected, dir)
-		src.connected.layer = OBJ_LAYER
+		src.connected.set_layer(OBJ_LAYER)
 		var/turf/T = get_step(src, dir)
 		if (T.contents.Find(src.connected))
 			set_icon_state("crema0")
 			for(var/atom/movable/AM as mob|obj in contents_of(src))
 				AM.forceMove(src.connected.loc)
-			src.connected.icon_state = "cremat"
+			src.connected.set_icon_state("cremat")
 		else
 			rel_clear(src, nameof(connected))
 	src.add_fingerprint(user)
@@ -258,13 +258,13 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 	rel_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
 	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, EAST)
-	src.connected.layer = OBJ_LAYER
+	src.connected.set_layer(OBJ_LAYER)
 	var/turf/T = get_step(src, EAST)
 	if (T.contents.Find(src.connected))
 		set_icon_state("crema0")
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
-		src.connected.icon_state = "cremat"
+		src.connected.set_icon_state("cremat")
 	else
 		rel_clear(src, nameof(connected))
 	return

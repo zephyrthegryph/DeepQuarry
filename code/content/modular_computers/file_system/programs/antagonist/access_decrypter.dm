@@ -42,7 +42,7 @@
 	set_progress(progress + CPU.max_idle_programs)
 	if(progress >= target_progress)
 		reset()
-		RFID.stored_card().access |= target_access().id
+		RFID.stored_card().include_access(target_access().id)
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
 			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer().network_card.get_network_tag()]  - downloaded access codes for: [target_access().desc].")
 			GLOB.ntnet_global.intrusion_detection_alarm = 1

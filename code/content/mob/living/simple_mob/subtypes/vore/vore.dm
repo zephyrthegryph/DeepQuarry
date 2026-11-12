@@ -13,7 +13,7 @@
 
 /mob/living/proc/login_prefs()
 
-	identity().ooc_notes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes))
+	identity().set_ooc_notes(text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes)))
 	identity().ooc_notes_likes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes))
 	identity().ooc_notes_dislikes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes))
 	identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))

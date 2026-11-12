@@ -249,7 +249,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	var/mob/living/carbon/human/scanner_occupant = scanner()?.get_occupant()
 	if(isnull(scanner()) || !scanner_occupant) //No locking an open scanner.
 		return
-	scanner().locked = !scanner().locked
+	scanner().set_locked(!scanner().locked)
 	add_fingerprint(A.actor)
 
 /// The record in this console's own list that a handle names.

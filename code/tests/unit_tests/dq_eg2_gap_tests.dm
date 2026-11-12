@@ -152,7 +152,7 @@
 /datum/unit_test/dq_eg2/bible_chaplain_chooses_a_skin/run_gate()
 	var/mob/living/carbon/human/H = person()
 	H.mind_initialize()
-	H.mind.assigned_role = JOB_CHAPLAIN
+	H.mind.set_assigned_role(JOB_CHAPLAIN)
 	rel_set(H.mind, nameof(/datum/mind::my_religion), new /datum/religion("Testism", "Tester", "Bible", "bible", "bible", JOB_CHAPLAIN))
 	var/obj/item/storage/bible/B = allocate(/obj/item/storage/bible, run_loc_floor_bottom_left)
 	H.put_in_active_hand(B)

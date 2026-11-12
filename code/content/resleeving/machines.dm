@@ -475,7 +475,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 		occupant.ghostize()
 
 	// The mind brings its identity (languages, OOC notes) by reference.
-	MR.mind_ref.active = 1 //Well, it's about to be.
+	MR.mind_ref.set_active(1) //Well, it's about to be.
 	transfer_mind(MR.mind_ref, occupant, "resleeved") //Does mind+ckey+client.
 	occupant.set_identifying_gender(MR.id_gender)
 
@@ -495,7 +495,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	if(!STATE_GET(occupant, human_misc, original_player))
 		occupant.set_real_name(occupant.mind.name)
 		occupant.name = occupant.real_name
-		occupant.dna.real_name = occupant.real_name
+		occupant.dna.set_real_name(occupant.real_name)
 
 	//Give them a backup implant
 	var/obj/item/implant/backup/new_imp = new()

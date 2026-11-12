@@ -259,7 +259,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 
 	if(new_character.mind)
 		new_character.mind.loaded_from_ckey = picked_ckey
-		new_character.mind.loaded_from_slot = picked_slot
+		new_character.mind.set_loaded_from_slot(picked_slot)
 		var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
 		if(antag_data)
 			antag_data.add_antagonist(new_character.mind)
@@ -288,7 +288,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	if(equip_body)
 		if(charjob)
 			SSjob.equip_rank(new_character, charjob, 1)
-			new_character.mind.assigned_role = charjob
+			new_character.mind.set_assigned_role(charjob)
 			new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 
 	//A redraw for good measure

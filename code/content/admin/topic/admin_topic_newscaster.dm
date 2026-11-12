@@ -34,7 +34,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /datum/admins/proc/topic_ac_set_channel_name(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_channel().channel_name = text_or_null(sanitizeSafe(A.step_value("answer")))
+	admincaster_feed_channel().set_channel_name(text_or_null(sanitizeSafe(A.step_value("answer"))))
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_channel_lock(datum/act/op/A)
@@ -72,7 +72,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /datum/admins/proc/topic_ac_set_channel_receiving(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_channel().channel_name = text_or_null(A.step_value("answer"))
+	admincaster_feed_channel().set_channel_name(text_or_null(A.step_value("answer")))
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_new_title(datum/act/op/A)

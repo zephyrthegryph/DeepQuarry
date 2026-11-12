@@ -194,7 +194,7 @@ CAPABILITIES(/datum/system/job)
 			position_limit = job.spawn_positions
 		if((job.current_positions < position_limit) || position_limit == -1)
 			job_debug_message("Player: [player] is now Rank: [rank], JCP:[job.current_positions], JPL:[position_limit]")
-			player.mind.assigned_role = rank
+			player.mind.set_assigned_role(rank)
 			player.mind.role_alt_title = get_player_alt_title(player, rank)
 			rel_remove(src, nameof(unassigned), player)
 			job.current_positions++
@@ -287,8 +287,8 @@ CAPABILITIES(/datum/system/job)
 /datum/system/job/proc/reset_occupations()
 	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((player) && (player.mind))
-			player.mind.assigned_role = null
-			player.mind.special_role = null
+			player.mind.set_assigned_role(null)
+			player.mind.set_special_role(null)
 	setup_occupations()
 	rel_clear(src, nameof(unassigned))
 	return
@@ -627,7 +627,7 @@ CAPABILITIES(/datum/system/job)
 
 	var/alt_title = null
 	if(human_mob.mind)
-		human_mob.mind.assigned_role = rank
+		human_mob.mind.set_assigned_role(rank)
 		alt_title = human_mob.mind.role_alt_title
 
 		// If we're a silicon, we may be done at this point

@@ -69,7 +69,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	if(using_map.use_overmap)
 		var/obj/effect/overmap/visitable/location = get_overmap_sector(z)
 		if(location && location.docking_codes && use_docking_codes && docking_controller())
-			docking_controller().docking_codes = location.docking_codes
+			docking_controller().set_docking_codes(location.docking_codes)
 
 /obj/effect/shuttle_landmark/forceMove(atom/destination, direction, movetime)
 	var/obj/effect/overmap/visitable/map_origin = get_overmap_sector(z)

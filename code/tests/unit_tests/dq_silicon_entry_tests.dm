@@ -31,7 +31,7 @@
 	if(!R.module)
 		rel_set(R, nameof(R.module), new /obj/item/robot_module/robot/standard(R))
 	if(R.idcard && !isnull(access))
-		R.idcard.access = access.Copy()
+		R.idcard.set_access(access.Copy())
 	return R
 
 /// A module of `type` given to the cyborg, activated and selected: the borg's held item.
@@ -149,7 +149,7 @@
 	TEST_ASSERT(!D.density, "its shift-click opens it")
 	gesture(R, D, "left=1;shift=1")
 	TEST_ASSERT(D.density, "and closes it")
-	R.idcard.access = list()
+	R.idcard.set_access(list())
 	gesture(R, D, "left=1;ctrl=1")
 	TEST_ASSERT(!p2_door_bolted(D), "without the access it cannot bolt")
 	gesture(R, D, "left=1;shift=1")
@@ -176,7 +176,7 @@
 	var/mob/living/silicon/robot/drone/drone = allocate(/mob/living/silicon/robot/drone, tile(3, 2))
 	drone.enable_godmode()
 	if(drone.idcard)
-		drone.idcard.access = list(ACCESS_ENGINE)
+		drone.idcard.set_access(list(ACCESS_ENGINE))
 	gesture(drone, D, "left=1;ctrl=1")
 	TEST_ASSERT(p2_door_bolted(D), "a maintenance drone works the door's remote controls like any cyborg")
 

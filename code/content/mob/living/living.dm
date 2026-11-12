@@ -1467,5 +1467,5 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/update_hand_hud()
 	if(!hud_used?.l_hand_hud_object || !hud_used.r_hand_hud_object)
 		return
-	hud_used.l_hand_hud_object.icon_state = (!isnull(hand) && hand) ? "l_hand_active" : "l_hand_inactive"
-	hud_used.r_hand_hud_object.icon_state = (!isnull(hand) && !hand) ? "r_hand_active" : "r_hand_inactive"
+	hud_used.l_hand_hud_object.set_icon_state((!isnull(hand) && hand) ? "l_hand_active" : "l_hand_inactive")
+	hud_used.r_hand_hud_object.set_icon_state((!isnull(hand) && !hand) ? "r_hand_active" : "r_hand_inactive")

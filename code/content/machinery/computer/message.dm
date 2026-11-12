@@ -438,12 +438,12 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	else if(length(newkey) > 16)
 		show_temp("NOTICE: Decryption key too long!", "average")
 	else if(newkey && newkey != "")
-		linkedServer().decryptkey = newkey
+		linkedServer().set_decryptkey(newkey)
 	show_temp("NOTICE: Decryption key set.", "average")
 
 /obj/machinery/computer/message_monitor/proc/token_entered(datum/act/op/A)
 	if(A.answer && linkedServer())
-		linkedServer().spamfilter += A.answer.value
+		linkedServer().add_spamfilter(A.answer.value)
 
 /obj/machinery/computer/message_monitor/proc/show_temp(text = "", style = "info", update_now = FALSE)
 	set_temp(list(text = text, style = style))

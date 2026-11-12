@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/electronic_assembly/clothing)
 /// The worn clothing shows the assembly's sprite state. The mob sprite is not updated since it won't (and shouldn't) change.
 /obj/item/electronic_assembly/clothing/proc/sync_clothing_state(shown)
 	if(clothing())
-		clothing().icon_state = shown
+		clothing().set_icon_state(shown)
 
 // This is 'small' relative to the size of regular clothing assemblies.
 /obj/item/electronic_assembly/clothing/small

@@ -223,7 +223,7 @@ CAPABILITIES(/obj/machinery/teleport/station)
 		return
 
 	if(com())
-		com().icon_state = "tele1"
+		com().set_icon_state("tele1")
 		use_power(5000)
 		set_use_power(USE_POWER_ACTIVE)
 		com().set_use_power(USE_POWER_ACTIVE)
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/machinery/teleport/station)
 		return
 
 	if(com())
-		com().icon_state = "tele0"
+		com().set_icon_state("tele0")
 		com().accurate = 0
 		com().set_use_power(USE_POWER_IDLE)
 		set_use_power(USE_POWER_IDLE)
@@ -267,7 +267,7 @@ CAPABILITIES(/obj/machinery/teleport/station)
 		set_icon_state("controller-p")
 
 		if(com())
-			com().icon_state = "tele0"
+			com().set_icon_state("tele0")
 	else
 		set_icon_state("controller")
 

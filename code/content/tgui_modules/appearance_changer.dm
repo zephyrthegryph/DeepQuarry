@@ -251,7 +251,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_gender_id(datum/act/op/A, gender_id)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_GENDER) && (gender_id in all_genders_define_list))
-		owner().identifying_gender = gender_id
+		owner().set_identifying_gender(gender_id)
 		changed_hook(APPEARANCECHANGER_CHANGED_GENDER_ID, user)
 		return 1
 	return FALSE
@@ -514,7 +514,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(owner() && !isnull(raw_name) && can_change(owner(), APPEARANCE_RACE))
 		var/new_name = sanitize_name(raw_name, owner().species, FALSE) // can't edit synths
 		if(new_name)
-			owner().dna.real_name = new_name
+			owner().dna.set_real_name(new_name)
 			owner().set_real_name(new_name)
 			owner().name = new_name
 			return TRUE
@@ -532,7 +532,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(designer_console() && !isnull(new_name) && can_change(owner(), APPEARANCE_RACE)) // new name can be empty, it uses base species if so
 		owner().name = new_name
 		owner().set_real_name(owner().name)
-		owner().dna.real_name = owner().name
+		owner().dna.set_real_name(owner().name)
 		return TRUE
 	return FALSE
 
@@ -632,7 +632,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_offset_override(datum/act/op/A)
 	if(can_change(owner(), APPEARANCE_MISC))
 		owner().dna.offset_override = !owner().dna.offset_override
-		owner().offset_override = owner().dna.offset_override
+		owner().set_offset_override(owner().dna.offset_override)
 		owner().set_dir(owner().dir) // Causes a visual update for fuzzy/offset
 		return TRUE
 	return FALSE
@@ -723,7 +723,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		rel_set(src, nameof(src.owner), mannequin)
 		owner().set_real_name("Stock [S.name] Body")
 		owner().name = owner().real_name
-		owner().dna.real_name = owner().real_name
+		owner().dna.set_real_name(owner().real_name)
 		owner().dna.base_species = S.base_species
 		STATE_SET(owner(), human_misc, resleeve_lock, FALSE)
 		owner().bio.custom_species = "Custom Sleeve" // Custom name
@@ -1351,7 +1351,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	rel_set(src, nameof(owner), mannequin)
 	owner().set_species(SPECIES_LLEILL)
 	owner().species.produceCopy(owner().species.traits.Copy(),owner(),null,FALSE)
-	owner().invisibility = INVISIBILITY_ABSTRACT
+	owner().set_invisibility(INVISIBILITY_ABSTRACT)
 	// Add listeners back
 	dq_add_recursive_move(owner())
 	observe(owner(), /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))
@@ -1367,7 +1367,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	owner().dna.blood_reagents = current_project.mydna.dna.blood_reagents
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
 	owner().resize(current_project.sizemult, FALSE)
-	owner().appearance_flags = current_project.aflags
+	owner().set_appearance_flags(current_project.aflags)
 	STATE_SET(owner(), bodyweight, weight, current_project.weight)
 	if(current_project.speciesname)
 		owner().bio.custom_species = current_project.speciesname

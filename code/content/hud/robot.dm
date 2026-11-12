@@ -222,7 +222,7 @@
 				using.set_icon_state("speed_2")
 			rel_set(HUD, nameof(HUD.control_vtec), using)
 			set_m_intent(I_RUN)
-			HUD.move_intent.icon_state = "running"
+			HUD.move_intent.set_icon_state("running")
 			client_screen_add(client, HUD.control_vtec)
 
 /datum/hud/proc/toggle_vtec_control()
@@ -246,7 +246,7 @@
 		else if(R.speed == -1)
 			control_vtec.icon_state = "speed_2"
 		R.set_m_intent(I_RUN)
-		R.hud_used.move_intent.icon_state = "running"
+		R.hud_used.move_intent.set_icon_state("running")
 		client_screen_add(R.client, control_vtec)
 	else
 		client_screen_remove(R.client, control_vtec)

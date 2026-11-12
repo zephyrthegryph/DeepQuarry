@@ -67,7 +67,7 @@ GLOBAL_LIST_INIT(shibari_modes, list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, S
 				if(user.m_intent != I_WALK)
 					user.set_m_intent(I_WALK)
 					if(user.hud_used && user.hud_used.move_intent)
-						user.hud_used.move_intent.icon_state = "walking"
+						user.hud_used.move_intent.set_icon_state("walking")
 
 /obj/item/clothing/suit/shibari/dropped(mob/user, equipping, slot)
 	..()

@@ -366,9 +366,9 @@
 
 	if(src.pai_fold_display)
 		if(src.loc == src.card)
-			src.pai_fold_display.icon_state = "folded"
+			src.pai_fold_display.set_icon_state("folded")
 		else
-			src.pai_fold_display.icon_state = "unfolded"
+			src.pai_fold_display.set_icon_state("unfolded")
 
 /mob/living/silicon/pai/life_hud_health_icons()
 	. = ..()

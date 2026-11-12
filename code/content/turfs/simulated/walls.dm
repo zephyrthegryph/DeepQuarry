@@ -969,13 +969,13 @@ CAPABILITIES(/turf/simulated/wall)
 			to_chat(user, span_notice("You build an airlock."))
 			var/obj/machinery/door/airlock/A = new the_rcd.airlock_type(src)
 			rel_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
-			A.electronics.req_access = null
-			A.electronics.req_one_access = null
-			A.electronics.one_access = null
+			A.electronics.set_req_access(null)
+			A.electronics.set_req_one_access(null)
+			A.electronics.set_one_access(null)
 			if(the_rcd.conf_access)
 				if(the_rcd.use_one_access)
-					A.electronics.one_access = the_rcd.use_one_access
-					A.electronics.req_one_access = the_rcd.conf_access.Copy()
+					A.electronics.set_one_access(the_rcd.use_one_access)
+					A.electronics.set_req_one_access(the_rcd.conf_access.Copy())
 					A.set_req_one_access(the_rcd.conf_access.Copy())
 				else
 					A.electronics.set_conf_access(the_rcd.conf_access.Copy())
@@ -1150,13 +1150,13 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 		A.set_max_integrity(300)
 		A.update_integrity(A.max_integrity)
 	rel_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
-	A.electronics.req_access = null
-	A.electronics.req_one_access = null
-	A.electronics.one_access = null
+	A.electronics.set_req_access(null)
+	A.electronics.set_req_one_access(null)
+	A.electronics.set_one_access(null)
 	if(rcd.conf_access)
 		if(rcd.use_one_access)
-			A.electronics.one_access = rcd.use_one_access
-			A.electronics.req_one_access = rcd.conf_access.Copy()
+			A.electronics.set_one_access(rcd.use_one_access)
+			A.electronics.set_req_one_access(rcd.conf_access.Copy())
 			A.set_req_one_access(rcd.conf_access.Copy())
 		else
 			A.electronics.set_conf_access(rcd.conf_access.Copy())

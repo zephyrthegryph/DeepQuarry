@@ -97,7 +97,7 @@
 /datum/unit_test/dq_p2_door/mfo_bot_opens_with_its_card/run_gate()
 	var/obj/machinery/door/airlock/D = make_door(/obj/machinery/door/airlock, list(ACCESS_ENGINE))
 	var/mob/living/bot/cleanbot/B = allocate(/mob/living/bot/cleanbot, tile(3, 2))
-	B.botcard.access = list(ACCESS_ENGINE)
+	B.botcard.set_access(list(ACCESS_ENGINE))
 	mfo_walk_into(B, D)
 	settle()
 	TEST_ASSERT(!D.density, "the bot's card opened it")
