@@ -430,12 +430,14 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = TRUE
 	bulk_resolution_active = TRUE
+	adjacency_hold_begin() // neighbour joins recompute once per member when the resolve flushes (flush_deferred_turf_updates())
 
 /datum/system/explosions/proc/end_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = FALSE
 	bulk_resolution_active = FALSE
+	adjacency_hold_drain(FALSE) // normally drained by flush_deferred_turf_updates(); never leave a hold open past the resolve
 
 /datum/system/explosions/proc/flush_deferred_turf_updates()
 	while(deferred_turf_update_index <= length(deferred_turf_updates))
@@ -454,6 +456,9 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 			return FALSE
 	deferred_appearance_updates.Cut()
 	deferred_appearance_update_index = 1
+	// Last: the turf updates above may ask neighbours to recompute too, and each held member recomputes once with the crater final.
+	if(!adjacency_hold_drain())
+		return FALSE
 	return TRUE
 
 /datum/system/explosions/proc/suspend_and_invoke_deferred_subsystems()

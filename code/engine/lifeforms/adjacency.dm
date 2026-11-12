@@ -146,11 +146,60 @@ GLOBAL_LIST(adjacency_pending)
 	adjacency_write(holder, C, 0)
 	DQ_ADJACENCY_TRACE(holder, "mask cleared")
 
+/// While a bulk change holds the recomputes (adjacency_hold_begin()): the member slots, in the order first asked, and slot -> TRUE (a slot is a number,
+/// so the set is an alist beside the ordered list). Each member recomputes once when
+/// the hold drains (adjacency_hold_drain()), instead of once per neighbour that changed: an explosion crater changes most turfs next to each other,
+/// and every changed turf asked its 4-8 neighbours again (14 k recomputes for 2.3 k changed turfs in the supermatter bench).
+GLOBAL_LIST(adjacency_held)
+GLOBAL_ALIST(adjacency_held_seen)
+/// Where adjacency_hold_drain() resumes in the held list.
+GLOBAL_VAR_INIT(adjacency_held_index, 1)
+/// Recomputes held and members recomputed by drains since boot (diagnostics: their ratio is the work the hold saved).
+GLOBAL_VAR_INIT(adjacency_held_asks, 0)
+GLOBAL_VAR_INIT(adjacency_held_runs, 0)
+
+/// Starts holding neighbour recomputes for a bulk change (an explosion's resolve). The holder calls adjacency_hold_drain() until it returns TRUE.
+/proc/adjacency_hold_begin()
+	if(!GLOB.adjacency_held)
+		GLOB.adjacency_held = list()
+		GLOB.adjacency_held_seen = alist()
+		GLOB.adjacency_held_index = 1
+
+/// Recomputes each held member once, oldest first; a recompute asked while draining joins the list. With `tick_checked`, stops when the tick is
+/// over budget and returns FALSE (call again); returns TRUE when the hold is drained and closed.
+/proc/adjacency_hold_drain(tick_checked = TRUE)
+	var/list/held = GLOB.adjacency_held
+	if(!held)
+		return TRUE
+	while(GLOB.adjacency_held_index <= length(held))
+		var/atom/member = slot_datum(held[GLOB.adjacency_held_index++])
+		if(member && !QDELETED(member) && member.adj_handle)
+			GLOB.adjacency_held_runs++
+			var/datum/lifeform_plan/MP = lifeform_plan_of(member)
+			for(var/datum/centry/MC as anything in MP.adjacencies)
+				adjacency_recompute(member, MC)
+		if(tick_checked && TICK_CHECK)
+			return FALSE
+	log_world("ADJACENCY_HOLD: drained [length(held)] member(s); [GLOB.adjacency_held_asks] recompute(s) held, [GLOB.adjacency_held_runs] run since boot")
+	GLOB.adjacency_held = null
+	GLOB.adjacency_held_seen = null
+	GLOB.adjacency_held_index = 1
+	return TRUE
+
 /proc/adjacency_recompute_handles(list/changed, kind)
 	var/list/waiting = GLOB.adjacency_pending?[kind]
+	var/list/held = GLOB.adjacency_held
 	for(var/h in changed)
 		if(waiting)
 			waiting -= h // recomputed here, with the successor in place
+		if(held)
+			var/member_slot = GLOB.adjacency_members[h]
+			if(member_slot)
+				GLOB.adjacency_held_asks++
+				if(!GLOB.adjacency_held_seen[member_slot])
+					GLOB.adjacency_held_seen[member_slot] = TRUE
+					held += member_slot
+			continue
 		var/atom/member = slot_datum(GLOB.adjacency_members[h])
 		if(!member || QDELETED(member))
 			continue
