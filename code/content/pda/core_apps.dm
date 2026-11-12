@@ -81,8 +81,8 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 
 		// display greeting!
 		greeted = TRUE
-		note = "Thank you for choosing the [pda().model_name]!"
-		notetitle = "Congratulations!"
+		set_note("Thank you for choosing the [pda().model_name]!")
+		set_notetitle("Congratulations!")
 
 /datum/data/pda/app/notekeeper/update_ui(mob/user, list/data)
 	data["note"] = note									// current pda notes
@@ -94,9 +94,9 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	if(isnull(n))
 		return
 	if(pda().loc == user)
-		note = adminscrub(n)
+		set_note(adminscrub(n))
 		notehtml = html_decode(note)
-		note = replacetext(note, "\n", "<br>")
+		set_note(replacetext(note, "\n", "<br>"))
 	else
 		pda().close(user)
 	return TRUE
@@ -107,7 +107,7 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	if(isnull(n))
 		return
 	if(pda().loc == user)
-		notetitle = adminscrub(n)
+		set_notetitle(adminscrub(n))
 	else
 		pda().close(user)
 	return TRUE
@@ -238,15 +238,15 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	set_storednotes_at(currentnote, note)
 	set_storedtitles_at(currentnote, notetitle)
 
-	currentnote = noteindex
+	set_currentnote(noteindex)
 
-	note = storednotes[currentnote]
-	notetitle = storedtitles[currentnote]
+	set_note(storednotes[currentnote])
+	set_notetitle(storedtitles[currentnote])
 
 	// update text on keeper, silly swapping!
-	note = replacetext(note, "<br>", "\n")
+	set_note(replacetext(note, "<br>", "\n"))
 	notehtml = html_decode(note)
-	note = replacetext(note, "\n", "<br>")
+	set_note(replacetext(note, "\n", "<br>"))
 
 /datum/data/pda/app/manifest
 	name = "Crew Manifest"
@@ -288,7 +288,7 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 CAPABILITIES(/datum/data/pda/app/news)
 	op("newsfeed", ui_act("newsfeed", arg("newsfeed", num())), then(PROC_REF(ui_act_newsfeed)))
 /datum/data/pda/app/news/proc/ui_act_newsfeed(datum/act/op/A, newsfeed)
-	newsfeed_channel = newsfeed
+	set_newsfeed_channel(newsfeed)
 
 /datum/data/pda/app/news/proc/compile_news()
 	var/list/feeds = list()

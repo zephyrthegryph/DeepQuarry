@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/pda_multicaster/prebuilt)
 	for(var/obj/item/pda/pda in contents)
 		var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger/multicast)
 		if(M)
-			M.toff = turn_off
+			M.set_toff(turn_off)
 
 /obj/machinery/pda_multicaster/proc/update_power()
 	if(toggle)
