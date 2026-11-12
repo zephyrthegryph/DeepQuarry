@@ -122,7 +122,6 @@ export const ListInputModal = (props) => {
   return (
     <Window
       fitContent
-      theme="console"
       title={title}
       width={325}
       height={windowHeight}

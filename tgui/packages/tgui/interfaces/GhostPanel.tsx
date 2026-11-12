@@ -50,7 +50,7 @@ export const GhostPanel = () => {
   const { data } = useBackend<GhostPanelData, GhostPanelActions>();
   const { groups, toggles } = data;
   return (
-    <Window width={520} height={620} title="Ghost Panel" theme="console">
+    <Window width={520} height={620} title="Ghost Panel">
       <Window.Content scrollable>
         <Stack vertical>
           {groups.map((group) => (

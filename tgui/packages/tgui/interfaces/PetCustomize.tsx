@@ -49,7 +49,7 @@ export const PetCustomize = () => {
   const { data } = useBackend<PetCustomizeData, PetCustomizeActions>();
   const { pet_name, settings } = data;
   return (
-    <Window width={480} height={420} title="Customize" theme="console">
+    <Window width={480} height={420} title="Customize">
       <Window.Content scrollable>
         {!settings.length && (
           <NoticeBox>There is nothing to customize.</NoticeBox>

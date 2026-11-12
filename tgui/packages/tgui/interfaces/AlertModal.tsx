@@ -97,7 +97,6 @@ export function AlertModal(props) {
   return (
     <Window
       fitContent
-      theme="console"
       height={windowHeight}
       title={title}
       width={windowWidth}
