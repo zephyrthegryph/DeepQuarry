@@ -98,6 +98,7 @@
 
 CAPABILITIES(/datum/tgui_module/ship/nav)
 	interface("OvermapNavigation")
+	ui_shape(mapRef = nullable(schema_text()), sector = schema_text(), sector_info = schema_text(), s_x = int(), s_y = int(), speed = num(), accel = num(), heading = num(), viewing = bool(), ETAnext = schema_text())
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
 
@@ -164,6 +165,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 	op("toggle_sensor", ui_act("toggle_sensor"), then(PROC_REF(ui_act_toggle_sensor)))
 	owns_many(nameof(known_sectors))
 	interface("OvermapFull", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	ui_shape(mapRef = nullable(schema_text()), d_x = nullable(int()), d_y = nullable(int()), autopilot_disabled = bool(), autopilot = int(0, 1), sector = schema_text(), sector_info = schema_text(), landed = schema_text(), s_x = int(), s_y = int(), dest = bool(), speedlimit = schema_text(), accel = num(), heading = num(), manual_control = bool(), canburn = bool(), accellimit = num(), speed = num(), speed_color = nullable(schema_text()), ETAnext = schema_text(), locations = list_of(row(name = schema_text(), x = int(), y = int(), reference = num())), global_state = bool(), global_limit = int(), engines_info = list_of(row(eng_type = schema_text(), eng_on = int(-1, 1), eng_thrust = num(), eng_thrust_limiter = int(), eng_status = list_of(any), eng_reference = num())), total_thrust = num(), viewing = bool(), on = int(), range = schema_text(), health = num(), max_health = num(), heat = num(), critical_heat = num(), status = schema_text(), contacts = list_of(row(name = schema_text(), ref = num(), bearing = num())))
 	op("add", ui_act("add", arg("add", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "New navigation entry", "question" = "Input navigation entry name", "default" = computed(PROC_REF(add_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE), step = "name"), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new entry x coordinate", "default" = computed(PROC_REF(add_x_default)), "max_value" = world.maxx, "min_value" = 1), step = "x", when = PROC_REF(add_is_new)), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new entry y coordinate", "default" = computed(PROC_REF(add_y_default)), "max_value" = world.maxy, "min_value" = 1), step = "y", when = PROC_REF(add_is_new)), then(PROC_REF(ui_act_add)))
 	op("remove", ui_act("remove", arg("remove", schema_ref(/datum/computer_file/data/waypoint))), then(PROC_REF(ui_act_remove)))
 	op("setcoord", ui_act("setcoord", arg("setx", bool()), arg("sety", bool())), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation x coordinate", "default" = computed(PROC_REF(setcoord_x_default)), "max_value" = world.maxx, "min_value" = 1), step = "x", when = PROC_REF(setcoord_x)), asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation y coordinate", "default" = computed(PROC_REF(setcoord_y_default)), "max_value" = world.maxy, "min_value" = 1), step = "y", when = PROC_REF(setcoord_y)), then(PROC_REF(ui_act_setcoord)))
@@ -234,8 +236,8 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 	data["landed"] = linked().get_landed_info()
 	data["s_x"] = linked().x
 	data["s_y"] = linked().y
-	data["dest"] = dy && dx
-	data["speedlimit"] = speedlimit ? speedlimit*1000 : "Halted"
+	data["dest"] = !!(dy && dx)
+	data["speedlimit"] = speedlimit ? "[speedlimit*1000]" : "Halted"
 	data["accel"] = min(round(linked().get_acceleration()*1000, 0.01),accellimit*1000)
 	data["heading"] = linked().get_heading_degrees()
 	data["manual_control"] = viewing_overmap(user)
@@ -305,7 +307,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 
 	if(sensors())
 		data["on"] = sensors().use_power
-		data["range"] = sensors().range
+		data["range"] = "[sensors().range]"
 		data["health"] = sensors().get_integrity()
 		data["max_health"] = sensors().max_integrity
 		data["heat"] = sensors().heat

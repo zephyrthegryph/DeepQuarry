@@ -1,8 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Knob, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { RustCoreMonitorActions } from './generated/RustCoreMonitor';
+import type {
+  RustCoreMonitorActions,
+  RustCoreMonitorData,
+} from './generated/RustCoreMonitor';
 
 export const RustCoreMonitor = () => (
   <Window width={627} height={700}>
@@ -12,21 +14,7 @@ export const RustCoreMonitor = () => (
   </Window>
 );
 
-type Data = {
-  cores: {
-    name: string;
-    x: number;
-    y: number;
-    z: number;
-    has_field: BooleanLike;
-    core_operational: BooleanLike;
-    ref: number;
-    reactant_dump: BooleanLike;
-    field_instability: number;
-    field_temperature: number;
-    target_field_strength: number;
-  }[];
-};
+type Data = RustCoreMonitorData;
 
 export const RustCoreMonitorContent = (props) => {
   const { act, data } = useBackend<Data, RustCoreMonitorActions>();

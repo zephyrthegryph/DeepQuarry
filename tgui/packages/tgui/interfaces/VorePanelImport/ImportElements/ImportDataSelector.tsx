@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { VorePanelImportActions } from '../../generated/VorePanelImport';
 import type { DesiredData } from '../types';
 
 export const ImportDataSelector = (props: {
@@ -11,7 +12,7 @@ export const ImportDataSelector = (props: {
   onSelectedBellies: React.Dispatch<React.SetStateAction<Set<string>>>;
   activeTab: string;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Record<string, never>, VorePanelImportActions>();
   const {
     characterData,
     selectedCharacters,

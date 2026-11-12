@@ -8,19 +8,12 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { XenoarchHandheldPowerUtilizerActions } from './generated/XenoarchHandheldPowerUtilizer';
+import type {
+  XenoarchHandheldPowerUtilizerActions,
+  XenoarchHandheldPowerUtilizerData,
+} from './generated/XenoarchHandheldPowerUtilizer';
 
-type Data = {
-  inserted_battery: BooleanLike;
-  anomaly: string | null;
-  charge: number | null;
-  capacity: number | null;
-  timeleft: number | null;
-  activated: BooleanLike;
-  duration: number | null;
-  interval: number | null;
-};
+type Data = XenoarchHandheldPowerUtilizerData;
 
 export const XenoarchHandheldPowerUtilizer = (props) => {
   const { act, data } = useBackend<
@@ -71,7 +64,11 @@ export const XenoarchHandheldPowerUtilizer = (props) => {
                 {timeleft}
               </LabeledList.Item>
               <LabeledList.Item label="Power">
-                <Button fluid icon="power-off" onClick={() => act('startup')}>
+                <Button
+                  fluid
+                  icon="power-off"
+                  onClick={() => act(activated ? 'shutdown' : 'startup')}
+                >
                   {activated ? 'Activated' : 'Deactivated'}
                 </Button>
               </LabeledList.Item>

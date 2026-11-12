@@ -11,7 +11,10 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { sanitizeAdminHtml } from '../sanitize';
-import type { TicketChatActions } from './generated/TicketChat';
+import type {
+  TicketChatActions,
+  TicketChatData,
+} from './generated/TicketChat';
 
 const Level = {
   0: 'Mentorhelp',
@@ -36,12 +39,7 @@ const State = {
   unknown: 'Unknown',
 };
 
-type Data = {
-  id: number;
-  level: number;
-  handler: string;
-  log: string[];
-};
+type Data = TicketChatData;
 
 export const TicketChat = (props) => {
   const { act, data } = useBackend<Data, TicketChatActions>();

@@ -7,6 +7,7 @@
 
 CAPABILITIES(/datum/ticket_chat)
 	interface("TicketChat", state = nameof(GLOB.tgui_ticket_state))
+	ui_shape(id = int(), level = int(), handler = schema_text(), log = list_of(schema_text()))
 	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096))), then(PROC_REF(ui_act_send_msg)))
 	ref_one(nameof(T))
 

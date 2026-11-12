@@ -1,10 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { OvermapFlightData } from './common/Overmap';
-import type { OvermapNavigationActions } from './generated/OvermapNavigation';
+import type {
+  OvermapNavigationActions,
+  OvermapNavigationData,
+} from './generated/OvermapNavigation';
 
 export const OvermapNavigation = () => {
   return (
@@ -16,13 +18,7 @@ export const OvermapNavigation = () => {
   );
 };
 
-type Data = {
-  sector: string;
-  s_x: number;
-  s_y: number;
-  sector_info: string;
-  viewing: BooleanLike;
-};
+type Data = OvermapNavigationData;
 
 export const OvermapNavigationContent = (props) => {
   const { act, data } = useBackend<Data, OvermapNavigationActions>();

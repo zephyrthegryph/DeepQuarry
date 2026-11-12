@@ -150,6 +150,7 @@
 
 CAPABILITIES(/datum/vote)
 	interface("VotePanel", title = "Vote Panel", state = nameof(GLOB.tgui_always_state))
+	ui_shape(question = schema_text(), remaining = num(), user_vote = nullable(schema_text()), choices = list_of(schema_text()), show_counts = bool(), counts = map_of(schema_text(), int()))
 	op("vote", ui_act("vote", arg("target", schema_text(4096))), then(PROC_REF(ui_act_vote)))
 	op("vote_open", topic("vote=open"), then(PROC_REF(topic_open)))
 

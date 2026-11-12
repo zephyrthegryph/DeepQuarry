@@ -5,6 +5,7 @@
 
 CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	interface("RustCoreMonitor")
+	ui_shape(cores = list_of(row(name = schema_text(), has_field = bool(), reactant_dump = bool(), core_operational = bool(), field_instability = schema_text(), field_temperature = schema_text(), target_field_strength = num(), x = int(), y = int(), z = int(), ref = num())))
 	op("toggle_active", ui_act("toggle_active", arg("core", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
 	op("toggle_reactantdump", ui_act("toggle_reactantdump", arg("core", schema_text(32))), then(PROC_REF(ui_act_toggle_reactantdump)))
 	op("set_tag", ui_act("set_tag"), asks(/datum/prompt/text, fields = list("title" = "Core Control", "question" = "Enter a new ident tag.", "default" = nameof(core_tag), "timeout" = 0)), then(PROC_REF(ui_act_set_tag)))
@@ -55,15 +56,6 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	for(var/obj/machinery/power/fusion_core/C in registry_all(REGISTRY_FUSION_CORES, core_tag))
 		if(C.id_tag == core_tag)
 
-			var/list/reactants = list()
-
-			if(C.owned_field)
-				for(var/reagent in C.owned_field.dormant_reactant_quantities)
-					reactants.Add(list(list(
-						"name" = reagent,
-						"amount" = C.owned_field.dormant_reactant_quantities[reagent]
-						)))
-
 			cores.Add(list(list(
 				"name" = C.name,
 				"has_field" = C.owned_field ? TRUE : FALSE,
@@ -71,7 +63,6 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 				"core_operational" = C.check_core_status(),
 				"field_instability" = (C.owned_field ? "[C.owned_field.percent_unstable * 100]%" : "ERROR"),
 				"field_temperature" = (C.owned_field ? "[C.owned_field.plasma_temperature + 295]K" : "ERROR"),
-				"field_strength" = C.field_strength,
 				"target_field_strength" = C.target_field_strength,
 				"x" = C.x,
 				"y" = C.y,

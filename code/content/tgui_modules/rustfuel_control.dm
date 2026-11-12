@@ -5,6 +5,7 @@
 
 CAPABILITIES(/datum/tgui_module/rustfuel_control)
 	interface("RustFuelControl")
+	ui_shape(fuels = list_of(row(name = schema_text(), active = bool(), fuel_type = schema_text(), fuel_amt = schema_text(), deployed = bool(), x = int(), y = int(), z = int(), ref = num())))
 	op("toggle_active", ui_act("toggle_active", arg("fuel", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
 	op("set_tag", ui_act("set_tag"), asks(/datum/prompt/text, fields = list("title" = "Gyrotron Control", "question" = "Enter a new ident tag.", "default" = nameof(fuel_tag), "timeout" = 0)), then(PROC_REF(ui_act_set_tag)))
 
