@@ -41,6 +41,7 @@
 	var/visible_action = "turns on"
 	var/audible_action = null
 
+MSG_DEF_SELF(microwave/running, "it is running")
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
@@ -54,8 +55,8 @@ CAPABILITIES(/obj/machinery/microwave)
 	every(PROC_REF(loop_delay), then(PROC_REF(cook_loop_step)), when = nameof(loop_running))
 	interface("Microwave")
 	without("ui_open")
-	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
-	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
+	op("cook", ui_act("cook"), needs(req_is(nameof(operating), FALSE, because = MSG(microwave/running))), then(PROC_REF(ui_act_cook)))
+	op("dispose", ui_act("dispose"), needs(req_is(nameof(operating), FALSE, because = MSG(microwave/running))), then(PROC_REF(ui_act_dispose)))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), when(not(nameof(panel_open))), begins(PROC_REF(secure_begins)), wait(PROC_REF(secure_time)), on_interrupt(PROC_REF(secure_interrupted)), then(PROC_REF(secure_done)))
 	op("clean", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Clean"), when(req(PROC_REF(can_clean))), begins(MSG(microwave/clean_begins)), wait(2 SECONDS), then(PROC_REF(clean_done)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), label("Fix"), when(PROC_REF(kinda_broken)), starts(PROC_REF(repair_started)), begins(PROC_REF(repair_begins)), wait(2 SECONDS), then(PROC_REF(fully_repaired)))
@@ -394,21 +395,12 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 
 	return data
 
-/obj/machinery/microwave/proc/ui_gate(datum/act/op/A)
-	if(operating)
-		return FALSE
-	return TRUE
-
 /obj/machinery/microwave/proc/ui_act_cook(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	cook()
 	return TRUE
 
 /obj/machinery/microwave/proc/ui_act_dispose(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	dispose(user = user)
 	return TRUE
 

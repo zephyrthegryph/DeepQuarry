@@ -47,8 +47,8 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("DNAForensics", title = "QuikScan DNA Analyzer")
 	without("ui_open")
-	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
-	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
+	op("scanItem", ui_act("scanItem"), needs(req_is(STAT_HAS_POWER, because = MSG(dnaforensics/unpowered))), then(PROC_REF(ui_act_scanitem)))
+	op("ejectItem", ui_act("ejectItem"), needs(req_is(STAT_HAS_POWER, because = MSG(dnaforensics/unpowered))), then(PROC_REF(ui_act_ejectitem)))
 	op("insert_swab", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert swab"), needs(req_empty(nameof(bloodsamp), because = MSG(dnaforensics/sample_loaded)), req_is(nameof(scanning), FALSE, because = MSG(dnaforensics/scanning)), req_held_releasable()), then(PROC_REF(interaction_insert_swab)))
 	default_parts()
 
@@ -74,15 +74,8 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	data["bloodsamp_desc"] = (bloodsamp() ? (bloodsamp().desc ? bloodsamp().desc : "No information on record.") : "")
 	return data
 
-/obj/machinery/dnaforensics/proc/ui_gate(datum/act/op/A)
-	if(power_lost())
-		return FALSE
-	return TRUE
-
 /obj/machinery/dnaforensics/proc/ui_act_scanitem(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	. = TRUE
 	if(scanning)
 		set_scanning(FALSE)
@@ -97,8 +90,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	. = TRUE
 
 /obj/machinery/dnaforensics/proc/ui_act_ejectitem(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	. = TRUE
 	if(bloodsamp())
 		bloodsamp().forceMove(loc)
@@ -142,6 +133,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 
 MSG_DEF_SELF(dnaforensics/sample_loaded, "there is a sample in the machine")
 MSG_DEF_SELF(dnaforensics/scanning, "it is busy scanning right now")
+MSG_DEF_SELF(dnaforensics/unpowered, "it has no power")
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/dnaforensics/draw(datum/look/look)

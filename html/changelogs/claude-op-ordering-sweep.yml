@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The microwave, telescience console, accounts terminal, forensic DNA scanner and casino prize dispenser now say why a button is refused."
+  - qol: "Bottle and capture crystal menus list Smash/Destroy after the other choices."

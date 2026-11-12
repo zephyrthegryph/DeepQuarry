@@ -470,6 +470,7 @@
 #include "dq_limb_variant_tests.dm"
 #include "dq_hair_gradient_tests.dm"
 #include "dq_ui_capture.dm"
+#include "dq_ui_gate_requirements.dm"
 #include "dq_shuttle_tests.dm"
 #include "dq_docking_controller_work.dm"
 #include "dq_airlock_cycle_end_to_end.dm"
