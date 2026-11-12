@@ -1,0 +1,33 @@
+{
+	"doors_open": false,
+	"fire_mode": false,
+	"floors": [
+		{
+			"id": 3,
+			"ref": 1301,
+			"queued": false,
+			"target": false,
+			"current": false,
+			"label": "3",
+			"name": "Deck 3"
+		},
+		{
+			"id": 2,
+			"ref": 1302,
+			"queued": true,
+			"target": true,
+			"current": false,
+			"label": "2",
+			"name": "Deck 2"
+		},
+		{
+			"id": 1,
+			"ref": 1303,
+			"queued": false,
+			"target": false,
+			"current": true,
+			"label": null,
+			"name": null
+		}
+	]
+}

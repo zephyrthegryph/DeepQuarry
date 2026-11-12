@@ -1,0 +1,25 @@
+{
+	"original_path": "maps/submaps/example/derelict.dmm",
+	"crashed": false,
+	"loadable": false,
+	"bad_paths": [
+		{
+			"path": "/obj/item/gun/old_laser",
+			"keys": ["aaa", "aab"]
+		},
+		{
+			"path": "/turf/simulated/floor/missing",
+			"keys": ["abc"]
+		}
+	],
+	"bad_keys": [
+		{
+			"key": "aac",
+			"messages": ["Unknown turf path"]
+		},
+		{
+			"key": "aad",
+			"messages": ["Duplicate area", "Missing turf"]
+		}
+	]
+}

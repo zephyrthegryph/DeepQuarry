@@ -1,0 +1,39 @@
+{
+	"name": "Jo Park",
+	"duration": "01:12",
+	"evac": "None",
+	"jobs": [
+		{
+			"title": "Security Officer",
+			"priority": 0,
+			"departments": ["Security"],
+			"current_positions": 2,
+			"active": 2,
+			"offmap": false
+		},
+		{
+			"title": "Medical Doctor",
+			"priority": 1,
+			"departments": ["Medical"],
+			"current_positions": 1,
+			"active": 1,
+			"offmap": false
+		},
+		{
+			"title": "Engineer",
+			"priority": 0,
+			"departments": ["Engineering"],
+			"current_positions": 3,
+			"active": 3,
+			"offmap": false
+		},
+		{
+			"title": "Explorer",
+			"priority": 0,
+			"departments": ["Exploration"],
+			"current_positions": 0,
+			"active": 0,
+			"offmap": true
+		}
+	]
+}

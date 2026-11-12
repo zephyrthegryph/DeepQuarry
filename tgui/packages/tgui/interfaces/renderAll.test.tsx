@@ -171,9 +171,17 @@ describe('every tgui interface renders', () => {
         return;
       }
       const written = windowFixtures[name];
-      const fields = written ? shapeFields(name) : null;
+      // A window the game opens (a DM interface(), so it has generated types) renders with real data: a captured fixture or a
+      // hand-written one. Coverage cannot regress: a new window, or one the capture stops reaching, needs __fixtures__/windows/<Name>.json.
+      if (existsSync(join(ROOT, 'generated', `${name}.d.ts`))) {
+        expect(
+          Boolean(fixtures[name] || written),
+          `${name}: a DM window with no fixture (capture it, or add __fixtures__/windows/${name}.json)`,
+        ).toBe(true);
+      }
+      const fields = shapeFields(name);
       // A window with a ui_shape always gets every key it declares (the server sends the window nothing before its first data), so
-      // empty data is not a state it can be in: such a window is rendered with its shape-checked fixture instead.
+      // empty data is not a state it can be in: such a window is rendered with its fixture (required above) instead.
       if (!fields) {
         expect(renderWith(name, Routed, {}), `${name} with {}`).toEqual([]);
       }

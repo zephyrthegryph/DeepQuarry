@@ -1,0 +1,27 @@
+{
+	"page_name": "Atmospherics",
+	"page_html": "<p>Atmospherics keeps the station breathable. See <b>Pipes</b> and <b>Canisters</b>.</p>",
+	"trail": [
+		{
+			"name": "Codex",
+			"id": 1
+		},
+		{
+			"name": "Engineering",
+			"id": 4
+		}
+	],
+	"children": [
+		{
+			"name": "Pipes",
+			"id": 12
+		},
+		{
+			"name": "Canisters",
+			"id": 13
+		}
+	],
+	"can_back": true,
+	"can_up": true,
+	"can_home": true
+}

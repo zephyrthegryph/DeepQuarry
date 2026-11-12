@@ -1,0 +1,42 @@
+{
+	"player_ckey": "jopark",
+	"admin_ckey": "zephyr",
+	"player_ip": "203.0.113.24",
+	"player_cid": "1234567890",
+	"bantype": 2,
+	"possible_jobs": [
+		"Captain",
+		"Head of Personnel",
+		"Security Officer",
+		"Medical Doctor",
+		"Engineer",
+		"Cargo Technician"
+	],
+	"database_records": [
+		{
+			"data_list": [
+				"1042",
+				"2026-09-14 18:22:10",
+				"Job Ban",
+				"Security Officer",
+				"Brig abuse",
+				"zephyr",
+				"Permanent"
+			],
+			"auto": false
+		},
+		{
+			"data_list": [
+				"1077",
+				"2026-10-02 21:05:44",
+				"Temp Ban",
+				"Server",
+				"Griefing the engine",
+				"zephyr",
+				"1440 minutes"
+			],
+			"auto": true
+		}
+	],
+	"min_search": false
+}
