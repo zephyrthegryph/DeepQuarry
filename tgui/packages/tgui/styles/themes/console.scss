@@ -80,6 +80,11 @@
     border: 2px solid console.$console-border;
   }
 
+  // Bold monospace is wider than the default face; keep table columns apart.
+  .Table__cell {
+    padding-right: 0.5em;
+  }
+
   .Tabs--horizontal {
     border-bottom: 2px solid console.$console-border;
   }

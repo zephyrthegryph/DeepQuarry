@@ -63,7 +63,6 @@ export const TextInputModal = (props) => {
   return (
     <Window
       fitContent
-      theme="console"
       title={title}
       width={325}
       height={windowHeight}

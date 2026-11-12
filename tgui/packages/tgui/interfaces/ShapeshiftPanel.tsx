@@ -50,7 +50,7 @@ export const ShapeshiftPanel = () => {
   const { data } = useBackend<ShapeshiftPanelData, ShapeshiftPanelActions>();
   const { name, preview, groups } = data;
   return (
-    <Window width={640} height={560} title="Shapeshift" theme="console">
+    <Window width={640} height={560} title="Shapeshift">
       <Window.Content scrollable>
         {!groups.length && <NoticeBox>There is nothing to change.</NoticeBox>}
         {!!groups.length && (

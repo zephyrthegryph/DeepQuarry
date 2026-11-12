@@ -49,7 +49,6 @@ export function NumberInputModal(props) {
   return (
     <Window
       fitContent
-      theme="console"
       title={title}
       width={270}
       height={windowHeight}

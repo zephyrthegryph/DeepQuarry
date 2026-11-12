@@ -168,7 +168,7 @@ export const AdminVerbBrowser = () => {
   };
 
   return (
-    <Window width={860} height={640} title="Admin Verbs" theme="console">
+    <Window width={860} height={640} title="Admin Verbs">
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item>
