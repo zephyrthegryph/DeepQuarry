@@ -1,17 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  Icon,
-  LabeledList,
-  ProgressBar,
-  Section,
-} from 'tgui-core/components';
+import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
 import type {
   NtosNetTransferActions,
   NtosNetTransferData,
 } from './generated/NtosNetTransfer';
+import { StatBar } from 'tgui/components/StatBar';
 
 type server = NtosNetTransferData['servers'][number];
 
@@ -74,14 +68,13 @@ const P2PDownload = (props) => {
         <LabeledList.Item label="Downloaded File">
           {download_name}
         </LabeledList.Item>
-        <LabeledList.Item label="Progress">
-          <ProgressBar
-            value={download_progress ?? 0}
-            maxValue={download_size ?? undefined}
-          >
-            {download_progress} / {download_size} GQ
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Progress"
+          value={download_progress ?? 0}
+          maxValue={download_size ?? undefined}
+        >
+          {download_progress} / {download_size} GQ
+        </StatBar>
         <LabeledList.Item label="Transfer Speed">
           {download_netspeed} GQ/s
         </LabeledList.Item>

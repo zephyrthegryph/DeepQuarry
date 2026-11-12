@@ -5,13 +5,13 @@ import {
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
 import type {
   PortableGeneratorActions,
   PortableGeneratorData,
 } from './generated/PortableGenerator';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = PortableGeneratorData;
 
@@ -76,30 +76,28 @@ export const PortableGenerator = (props) => {
                 {fuel_stored}cm&sup3; {sheet_name}
               </Box>
             </LabeledList.Item>
-            <LabeledList.Item label="Current fuel level">
-              <ProgressBar
-                value={fuel_stored / fuel_capacity}
-                ranges={{
-                  good: [0.5, Infinity],
-                  average: [0.15, 0.5],
-                  bad: [-Infinity, 0.15],
-                }}
-              >
-                {fuel_stored}cm&sup3; / {fuel_capacity}cm&sup3;
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Current fuel level"
+              value={fuel_stored / fuel_capacity}
+              ranges={{
+                good: [0.5, Infinity],
+                average: [0.15, 0.5],
+                bad: [-Infinity, 0.15],
+              }}
+            >
+              {fuel_stored}cm&sup3; / {fuel_capacity}cm&sup3;
+            </StatBar>
             <LabeledList.Item label="Fuel Usage">
               {fuel_usage} cm&sup3;/s
             </LabeledList.Item>
-            <LabeledList.Item label="Temperature">
-              <ProgressBar
-                value={temperature_current}
-                maxValue={temperature_max + 30}
-                color={temperature_overheat ? 'bad' : 'good'}
-              >
-                {(temperature_current ?? 0).toFixed()}&deg;C
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Temperature"
+              value={temperature_current}
+              maxValue={temperature_max + 30}
+              color={temperature_overheat ? 'bad' : 'good'}
+            >
+              {(temperature_current ?? 0).toFixed()}&deg;C
+            </StatBar>
           </LabeledList>
         </Section>
         <Section title="Output">

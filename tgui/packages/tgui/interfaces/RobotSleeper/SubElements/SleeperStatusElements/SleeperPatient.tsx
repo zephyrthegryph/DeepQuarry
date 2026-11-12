@@ -6,6 +6,7 @@ import type {
   RobotSleeperData,
 } from '../../../generated/RobotSleeper';
 import { STAT_TO_COLOR } from '../../constants';
+import { Label } from 'tgui/components/Label';
 
 export const SleeperPatient = (props: { name: string }) => {
   const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();
@@ -72,9 +73,9 @@ export const SleeperPatient = (props: { name: string }) => {
       {!!our_patient.ingested_reagents &&
         our_patient.ingested_reagents.map((reagent) => (
           <Stack.Item key={reagent.name}>
-            <Box inline preserveWhitespace color="label">
+            <Label inline preserveWhitespace>
               {`${reagent.name}: `}
-            </Box>
+            </Label>
             <Box inline>{Math.round(reagent.volume * 10) / 10} units</Box>
           </Stack.Item>
         ))}

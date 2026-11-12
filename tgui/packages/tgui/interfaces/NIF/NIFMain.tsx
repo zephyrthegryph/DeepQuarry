@@ -4,13 +4,13 @@ import {
   Box,
   Button,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import type { NIFActions } from '../generated/NIF';
 import { getNifCondition, getNutritionText } from './functions';
 import type { Data } from './types';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const NIFMain = (props) => {
   const { act, data } = useBackend<Data, NIFActions>();
@@ -22,36 +22,34 @@ export const NIFMain = (props) => {
   return (
     <Box>
       <LabeledList>
-        <LabeledList.Item label="NIF Condition">
-          <ProgressBar
-            value={nif_percent}
-            minValue={0}
-            maxValue={100}
-            ranges={{
-              good: [50, Infinity],
-              average: [25, 50],
-              bad: [-Infinity, 0],
-            }}
-          >
-            {getNifCondition(nif_stat, nif_percent)} (
-            <AnimatedNumber value={nif_percent} />
-            %)
-          </ProgressBar>
-        </LabeledList.Item>
-        <LabeledList.Item label={'NIF Power'}>
-          <ProgressBar
-            value={nutrition}
-            minValue={0}
-            maxValue={700}
-            ranges={{
-              good: [250, Infinity],
-              average: [150, 250],
-              bad: [0, 150],
-            }}
-          >
-            {getNutritionText(nutrition, isSynthetic)}
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="NIF Condition"
+          value={nif_percent}
+          minValue={0}
+          maxValue={100}
+          ranges={{
+            good: [50, Infinity],
+            average: [25, 50],
+            bad: [-Infinity, 0],
+          }}
+        >
+          {getNifCondition(nif_stat, nif_percent)} (
+          <AnimatedNumber value={nif_percent} />
+          %)
+        </StatBar>
+        <StatBar
+          label={'NIF Power'}
+          value={nutrition}
+          minValue={0}
+          maxValue={700}
+          ranges={{
+            good: [250, Infinity],
+            average: [150, 250],
+            bad: [0, 150],
+          }}
+        >
+          {getNutritionText(nutrition, isSynthetic)}
+        </StatBar>
       </LabeledList>
       <Section title="NIFSoft Modules" mt={1}>
         <LabeledList>

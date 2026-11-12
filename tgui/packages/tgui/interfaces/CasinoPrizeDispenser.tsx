@@ -15,6 +15,7 @@ import type {
   CasinoPrizeDispenserActions,
   CasinoPrizeDispenserData,
 } from './generated/CasinoPrizeDispenser';
+import { Label } from 'tgui/components/Label';
 
 type Data = CasinoPrizeDispenserData;
 
@@ -137,7 +138,7 @@ const CasinoPrizeDispenserItems = (props: {
         {has_contents ? (
           contents
         ) : (
-          <Box color="label">No items matching your criteria was found!</Box>
+          <Label>No items matching your criteria was found!</Label>
         )}
       </Section>
     </Stack.Item>

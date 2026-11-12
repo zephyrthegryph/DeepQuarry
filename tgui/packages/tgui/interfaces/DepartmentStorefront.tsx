@@ -1,7 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   Button,
   Flex,
   Input,
@@ -14,6 +13,7 @@ import type {
   DepartmentStorefrontActions,
   DepartmentStorefrontData,
 } from './generated/DepartmentStorefront';
+import { Label } from 'tgui/components/Label';
 
 export const DepartmentStorefront = (props) => {
   const { act, data } = useBackend<
@@ -53,9 +53,9 @@ export const DepartmentStorefront = (props) => {
         </Section>
         <Section title="Available goods">
           {!stock.length && (
-            <Box color="label" textAlign="center" py={4}>
+            <Label textAlign="center" py={4}>
               No goods are currently stocked.
-            </Box>
+            </Label>
           )}
           <Stack vertical>
             {stock.map((item) => (
@@ -72,9 +72,7 @@ export const DepartmentStorefront = (props) => {
                     </Button>
                   }
                 >
-                  <Box color="label" mb={1}>
-                    {item.desc}
-                  </Box>
+                  <Label mb={1}>{item.desc}</Label>
                   <Flex align="center">
                     <Flex.Item grow>
                       Suggested market price: {item.suggested} Th

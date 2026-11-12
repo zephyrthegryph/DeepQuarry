@@ -8,6 +8,7 @@ import { currentLoadToColor, summarizeItems } from '../../functions';
 import { SleeperCargoStatus } from './SleeperCargoStatus';
 import { SleeperPatient } from './SleeperPatient';
 import { SleeperSelfClean } from './SleeperSelfClean';
+import { Label } from 'tgui/components/Label';
 
 export const SleeperStatusPanel = (props: { name: string }) => {
   const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();
@@ -30,9 +31,7 @@ export const SleeperStatusPanel = (props: { name: string }) => {
         {!!has_destructive_analyzer && (
           <>
             <Stack.Item>
-              <Box color="label" inline>
-                Tech Web:
-              </Box>
+              <Label inline>Tech Web:</Label>
               <Box inline preserveWhitespace color={!techweb_name && 'red'}>
                 {` ${techweb_name || 'Disconnected'}`}
               </Box>
@@ -58,7 +57,7 @@ export const SleeperStatusPanel = (props: { name: string }) => {
               <SleeperCargoStatus />
             ) : (
               <Stack.Item>
-                <Box color="label">{summarizeItems(contents)}</Box>
+                <Label>{summarizeItems(contents)}</Label>
               </Stack.Item>
             )}
             <Stack.Divider />

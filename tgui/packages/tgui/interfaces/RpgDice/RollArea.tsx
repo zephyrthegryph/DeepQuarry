@@ -4,6 +4,7 @@ import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { stateToColor } from './constants';
 import type { RpgDiceActions } from '../generated/RpgDice';
 import type { Data, Result } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const RollArea = (props) => {
   const { act, data } = useBackend<Data, RpgDiceActions>();
@@ -38,9 +39,7 @@ export const RollArea = (props) => {
       <Stack vertical fill>
         {last_rolls.map((roll, index) => (
           <Stack.Item key={index}>
-            <Box inline color="label">
-              {roll.player}:
-            </Box>
+            <Label inline>{roll.player}:</Label>
             <Box inline bold>
               {roll.count}
             </Box>

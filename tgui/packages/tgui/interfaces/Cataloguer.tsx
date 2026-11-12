@@ -9,6 +9,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { CataloguerActions, CataloguerData } from './generated/Cataloguer';
+import { Label } from 'tgui/components/Label';
 
 export const Cataloguer = () => {
   const { data, act } = useBackend<CataloguerData, CataloguerActions>();
@@ -57,9 +58,7 @@ export const Cataloguer = () => {
               {detail.cataloguers ? (
                 <b>{detail.cataloguers}</b>
               ) : (
-                <Box inline color="label">
-                  Catalogued by nobody.
-                </Box>
+                <Label inline>Catalogued by nobody.</Label>
               )}
             </Box>
             <Box>

@@ -11,6 +11,7 @@ import type {
   FeedbackFormActions,
   FeedbackFormData,
 } from './generated/FeedbackForm';
+import { Label } from 'tgui/components/Label';
 
 export const FeedbackForm = () => {
   const { data, act } = useBackend<FeedbackFormData, FeedbackFormActions>();
@@ -34,9 +35,9 @@ export const FeedbackForm = () => {
           <Box mb={1}>
             Write some feedback for the server. HTML is not supported.
           </Box>
-          <Box mb={1} color="label">
+          <Label mb={1}>
             Your feedback is currently {length}/{max_length} characters long.
-          </Box>
+          </Label>
         </Section>
 
         <Section title="Preview">
@@ -56,11 +57,7 @@ export const FeedbackForm = () => {
                   >
                     Hashed
                   </Button>
-                  {hide_author ? (
-                    <Box mt="2px" color="label">
-                      {author_hashed}
-                    </Box>
-                  ) : null}
+                  {hide_author ? <Label mt="2px">{author_hashed}</Label> : null}
                 </>
               ) : (
                 author_ckey
@@ -86,11 +83,11 @@ export const FeedbackForm = () => {
 
         <Section>
           {cooldown_days ? (
-            <Box mb={1} italic color="label">
+            <Label mb={1} italic>
               Please note that you will have to wait {cooldown_days} day
               {cooldown_days === 1 ? '' : 's'} before being able to write more
               feedback after submitting.
-            </Box>
+            </Label>
           ) : null}
           <Button color="good" disabled={!length} onClick={() => act('submit')}>
             Submit

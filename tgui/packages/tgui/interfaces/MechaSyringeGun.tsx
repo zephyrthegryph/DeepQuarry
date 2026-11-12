@@ -9,6 +9,7 @@ import type {
   MechaSyringeGunActions,
   MechaSyringeGunData,
 } from './generated/MechaSyringeGun';
+import { Label } from 'tgui/components/Label';
 
 type KnownReagent = MechaSyringeGunData['known_reagents'][number];
 
@@ -89,10 +90,10 @@ export const MechaSyringeGun = () => {
               })}
             </Stack>
           )}
-          <Box mt={1} italic color="label" fontSize="0.85em">
+          <Label mt={1} italic fontSize="0.85em">
             Only the first {data.synth_speed} selected reagents will be added to
             production.
-          </Box>
+          </Label>
         </Section>
       </Window.Content>
     </Window>

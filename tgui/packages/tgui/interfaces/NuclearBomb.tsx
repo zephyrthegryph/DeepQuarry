@@ -14,6 +14,7 @@ import type {
   NuclearBombActions,
   NuclearBombData,
 } from './generated/NuclearBomb';
+import { YesNo } from 'tgui/components/YesNo';
 
 const KEYPAD: Array<string[]> = [
   ['1', '2', '3'],
@@ -182,9 +183,7 @@ const WireView = () => {
             </Box>
           </LabeledList.Item>
           <LabeledList.Item label="Sound">
-            <Box color={safety ? 'good' : 'bad'}>
-              {safety ? 'quiet' : 'whirring'}
-            </Box>
+            <YesNo value={safety} yes="quiet" no="whirring" />
           </LabeledList.Item>
           <LabeledList.Item label="Lights">
             <Box color={lighthack ? 'bad' : 'good'}>

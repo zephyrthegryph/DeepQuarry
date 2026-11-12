@@ -5,7 +5,6 @@ import {
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
@@ -14,6 +13,7 @@ import type {
   RoboticsControlConsoleActions,
   RoboticsControlConsoleData,
 } from './generated/RoboticsControlConsole';
+import { StatBar } from 'tgui/components/StatBar';
 
 type cyborg = RoboticsControlConsoleData['cyborgs'][number];
 
@@ -136,20 +136,18 @@ const Cyborgs = (props: {
           <LabeledList.Item label="Location">
             <Box>{cyborg.locstring}</Box>
           </LabeledList.Item>
-          <LabeledList.Item label="Integrity">
-            <ProgressBar
-              color={cyborg.health > 50 ? 'good' : 'bad'}
-              value={cyborg.health / 100}
-            />
-          </LabeledList.Item>
+          <StatBar
+            label="Integrity"
+            color={cyborg.health > 50 ? 'good' : 'bad'}
+            value={cyborg.health / 100}
+          />
           {(typeof cyborg.charge === 'number' && (
             <>
-              <LabeledList.Item label="Cell Charge">
-                <ProgressBar
-                  color={cyborg.charge > 30 ? 'good' : 'bad'}
-                  value={cyborg.charge / 100}
-                />
-              </LabeledList.Item>
+              <StatBar
+                label="Cell Charge"
+                color={cyborg.charge > 30 ? 'good' : 'bad'}
+                value={cyborg.charge / 100}
+              />
               <LabeledList.Item label="Cell Capacity">
                 <Box color={cyborg.cell_capacity! < 30000 ? 'average' : 'good'}>
                   {cyborg.cell_capacity}

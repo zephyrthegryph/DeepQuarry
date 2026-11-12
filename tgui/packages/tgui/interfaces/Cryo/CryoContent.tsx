@@ -5,7 +5,6 @@ import {
   Button,
   Icon,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
@@ -14,6 +13,7 @@ import { DiagnosisVitalsList } from '../common/Diagnosis';
 import type { CryoActions } from '../generated/Cryo';
 import { statNames } from './constants';
 import type { Data } from './types';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const CryoContent = (props) => {
   const { act, data } = useBackend<Data, CryoActions>();
@@ -44,19 +44,18 @@ export const CryoContent = (props) => {
             <LabeledList.Item label="Occupant">
               {occupant.name || 'Unknown'}
             </LabeledList.Item>
-            <LabeledList.Item label="Health">
-              <ProgressBar
-                minValue={0}
-                maxValue={1}
-                value={occupant.vitality / 100}
-                color={occupant.critical ? 'average' : 'good'}
-              >
-                <AnimatedNumber
-                  value={occupant.vitality}
-                  format={(value) => `${value.toFixed()}%`}
-                />
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Health"
+              minValue={0}
+              maxValue={1}
+              value={occupant.vitality / 100}
+              color={occupant.critical ? 'average' : 'good'}
+            >
+              <AnimatedNumber
+                value={occupant.vitality}
+                format={(value) => `${value.toFixed()}%`}
+              />
+            </StatBar>
             <LabeledList.Item
               label="Status"
               color={statNames[occupant.stat][0]}

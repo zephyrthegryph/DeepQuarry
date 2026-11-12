@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Dropdown, Stack } from 'tgui-core/components';
+import { Button, Dropdown, Stack } from 'tgui-core/components';
 import type {
   RobotSleeperActions,
   RobotSleeperData,
 } from '../../../generated/RobotSleeper';
 import { EJECTION_OPTIONS } from '../../constants';
+import { Label } from 'tgui/components/Label';
 
 export const SleeperButtons = (props) => {
   const { act, data } = useBackend<RobotSleeperData, RobotSleeperActions>();
@@ -15,7 +16,7 @@ export const SleeperButtons = (props) => {
       <Stack.Item>
         <Stack align="center">
           <Stack.Item>
-            <Box color="label">Eject Port:</Box>
+            <Label>Eject Port:</Label>
           </Stack.Item>
           <Stack.Item>
             <Dropdown

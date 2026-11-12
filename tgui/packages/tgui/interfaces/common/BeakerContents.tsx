@@ -1,4 +1,5 @@
 import { Box, Stack } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 export const formatUnits = (a) => `${a} unit${a === 1 ? '' : 's'}`;
 
@@ -10,10 +11,8 @@ export const BeakerContents = (props) => {
   const { beakerLoaded, beakerContents = [], buttons } = props;
   return (
     <Box>
-      {(!beakerLoaded && <Box color="label">No beaker loaded.</Box>) ||
-        (beakerContents.length === 0 && (
-          <Box color="label">Beaker is empty.</Box>
-        ))}
+      {(!beakerLoaded && <Label>No beaker loaded.</Label>) ||
+        (beakerContents.length === 0 && <Label>Beaker is empty.</Label>)}
       {beakerContents.map((chemical, i) => (
         <Box key={i} width="100%">
           <Stack align="center" justify="space-between">

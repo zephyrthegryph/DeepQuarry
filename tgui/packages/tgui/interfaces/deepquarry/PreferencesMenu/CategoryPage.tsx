@@ -32,6 +32,7 @@ import type {
   PrefGroupItem,
   PrefWidgetItem,
 } from './types';
+import { Label } from 'tgui/components/Label';
 
 type Props = {
   page: PrefCategory;
@@ -253,8 +254,7 @@ const WidgetRow = ({
         display: 'contents',
       }}
     >
-      <Box
-        color="label"
+      <Label
         style={{
           maxWidth: '14em',
           overflowWrap: 'anywhere',
@@ -262,7 +262,7 @@ const WidgetRow = ({
         }}
       >
         {labelForKey(item.key, item.label)}:
-      </Box>
+      </Label>
       <Box style={{ minWidth: 0, ...highlightStyle(lit) }}>
         <PrefWidget
           item={{

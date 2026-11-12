@@ -14,6 +14,7 @@ import {
 } from 'tgui-core/components';
 import type { PrefEditorTraitPickerStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],
@@ -174,9 +175,9 @@ const TraitColumn = ({
           Selected
         </Box>
         {selected.length === 0 && (
-          <Box italic mb={0.5} fontSize="0.85em" color="label">
+          <Label italic mb={0.5} fontSize="0.85em">
             None
-          </Box>
+          </Label>
         )}
         {selected.map((path) => {
           const meta = allTraits[path];
@@ -274,15 +275,13 @@ const TraitRow = ({
           >
             {meta.name}
           </Box>
-          <Box color="label" style={{ flex: '0 0 auto' }}>
-            ({costStr})
-          </Box>
+          <Label style={{ flex: '0 0 auto' }}>({costStr})</Label>
         </Box>
       </Box>
       {open && (
-        <Box color="label" fontSize="0.85em" pl={3} pr={1}>
+        <Label fontSize="0.85em" pl={3} pr={1}>
           {meta.desc}
-        </Box>
+        </Label>
       )}
     </Box>
   );

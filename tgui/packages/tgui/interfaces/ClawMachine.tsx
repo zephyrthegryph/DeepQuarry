@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, LabeledList, ProgressBar } from 'tgui-core/components';
+import { Box, Button, LabeledList } from 'tgui-core/components';
 import type {
   ClawMachineActions,
   ClawMachineData,
 } from './generated/ClawMachine';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = ClawMachineData;
 
@@ -38,18 +39,17 @@ export const ClawMachine = (props) => {
     body = (
       <Window.Content>
         <LabeledList>
-          <LabeledList.Item label="Progress">
-            <ProgressBar
-              ranges={{
-                bad: [-Infinity, 0],
-                average: [1, 7],
-                good: [8, Infinity],
-              }}
-              value={wintick}
-              minValue={0}
-              maxValue={10}
-            />
-          </LabeledList.Item>
+          <StatBar
+            label="Progress"
+            ranges={{
+              bad: [-Infinity, 0],
+              average: [1, 7],
+              good: [8, Infinity],
+            }}
+            value={wintick}
+            minValue={0}
+            maxValue={10}
+          />
         </LabeledList>
         <Box align="center">
           <br /> <hr /> <br />

@@ -1,4 +1,4 @@
-import { Box, LabeledList, Stack } from 'tgui-core/components';
+import { LabeledList, Stack } from 'tgui-core/components';
 
 import { reagentToColor } from '../../constants';
 import type { LiqInteractData } from '../../types';
@@ -7,6 +7,7 @@ import { VorePanelEditDropdown } from '../../VorePanelElements/VorePanelEditDrop
 import { VorePanelEditNumber } from '../../VorePanelElements/VorePanelEditNumber';
 import { VorePanelEditSwitch } from '../../VorePanelElements/VorePanelEditSwitch';
 import { VorePanelEditText } from '../../VorePanelElements/VorePanelEditText';
+import { Label } from 'tgui/components/Label';
 
 export const LiquidOptionsLeft = (props: {
   editMode: boolean;
@@ -121,7 +122,7 @@ export const LiquidOptionsLeft = (props: {
           />
           {!custom_reagentalpha && (
             <Stack.Item>
-              <Box color="label">(Default)</Box>
+              <Label>(Default)</Label>
             </Stack.Item>
           )}
         </Stack>

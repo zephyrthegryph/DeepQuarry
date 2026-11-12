@@ -28,6 +28,7 @@ import {
   type ToggleRow,
   type VerbRow,
 } from './logic';
+import { Label } from 'tgui/components/Label';
 
 type Data = AdminVerbBrowserData;
 
@@ -128,9 +129,9 @@ const Settings = (props: { toggles: Data['toggles']; query: string }) => {
                 {toggle.label}
               </Button.Checkbox>
               {toggle.desc ? (
-                <Box inline color="label" ml={1}>
+                <Label inline ml={1}>
                   {toggle.desc}
-                </Box>
+                </Label>
               ) : null}
             </Box>
           ))}

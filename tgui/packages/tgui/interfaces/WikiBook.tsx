@@ -10,6 +10,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
 import type { WikiBookActions } from './generated/WikiBook';
+import { Label } from 'tgui/components/Label';
 
 type Data = {
   title: string;
@@ -39,9 +40,9 @@ export const WikiBook = () => {
               <Button icon="external-link-alt" onClick={() => act('open_wiki')}>
                 Open Wiki Page
               </Button>
-              <Box mt={1} color="label" italic>
+              <Label mt={1} italic>
                 {url}
-              </Box>
+              </Label>
             </Box>
           ) : (
             <Box italic color="bad">

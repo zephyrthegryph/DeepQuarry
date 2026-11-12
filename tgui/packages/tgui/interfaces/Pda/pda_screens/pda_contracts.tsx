@@ -9,6 +9,7 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { PdaActions } from '../../generated/Pda';
+import { Label } from 'tgui/components/Label';
 
 type Contract = {
   id: string;
@@ -157,12 +158,12 @@ export const pda_contracts = () => {
       {selectedState === 'agency' && (
         <Box>
           <Section title="Faction agency">
-            <Box mb={1} color="label">
+            <Label mb={1}>
               Agency is exclusive for the round. Eligibility opens a vetting
               relationship; an authenticated trade grants accreditation, and
               successful commissions can earn trusted status. Agency grants no
               legal immunity or special access.
-            </Box>
+            </Label>
             <Box
               style={{
                 display: 'grid',
@@ -193,9 +194,7 @@ export const pda_contracts = () => {
                     )
                   }
                 >
-                  <Box mb={1} color="label">
-                    {faction.description}
-                  </Box>
+                  <Label mb={1}>{faction.description}</Label>
                   <Box bold>
                     Standing: {faction.standing_tier} ({faction.standing})
                   </Box>
@@ -228,10 +227,10 @@ export const pda_contracts = () => {
                         maxValue={100}
                         color={faction.exposure >= 40 ? 'bad' : 'average'}
                       />
-                      <Box mt={0.5} color="label">
+                      <Label mt={0.5}>
                         Contacts are negotiated per commission using the
                         physical freight agreement issued on acceptance.
-                      </Box>
+                      </Label>
                     </Box>
                   )}
                 </Section>
@@ -243,10 +242,10 @@ export const pda_contracts = () => {
       {selectedState !== 'agency' && (
         <Box>
           {!contracts.length && (
-            <Box p={3} textAlign="center" color="label">
+            <Label p={3} textAlign="center">
               No {selectedState} personal contracts or stakeholder
               opportunities.
-            </Box>
+            </Label>
           )}
           {contracts.map((contract) => (
             <Section
@@ -283,16 +282,16 @@ export const pda_contracts = () => {
               }
               style={{ borderLeft: `4px solid ${contract.issuer_color}` }}
             >
-              <Box color="label">
+              <Label>
                 {contract.issuer} · {contract.reward} Thalers ·{' '}
                 {contract.offer_kind === 'standing'
                   ? 'standing offer'
                   : 'limited opportunity'}
-              </Box>
-              <Box color="label">
+              </Label>
+              <Label>
                 Sponsor standing: {contract.standing_tier} (
                 {contract.standing_score})
-              </Box>
+              </Label>
               {contract.offer_time_remaining && (
                 <Box color="average">
                   Offer expires in {contract.offer_time_remaining}
@@ -317,13 +316,13 @@ export const pda_contracts = () => {
                     {contract.details.notice}
                   </Box>
                   {!!contract.details.requires_contact && (
-                    <Box mt={0.5} color="label">
+                    <Label mt={0.5}>
                       Recruit an eligible stakeholder face-to-face. The agent
                       must sign the physical operating charter and the contact
                       must choose a compensation and liability line. For freight
                       work, place the signed contact agreement inside the
                       outbound crate.
-                    </Box>
+                    </Label>
                   )}
                   <Box mt={0.5}>
                     Operation: {contract.details.operation_kind ?? 'pending'} ·{' '}
@@ -332,10 +331,10 @@ export const pda_contracts = () => {
                     {contract.details.discovery_name}
                   </Box>
                   {!!contract.details.stakeholder_departments?.length && (
-                    <Box mt={0.5} color="label">
+                    <Label mt={0.5}>
                       Stakeholder departments:{' '}
                       {contract.details.stakeholder_departments.join(', ')}
-                    </Box>
+                    </Label>
                   )}
                   {!!contract.details.contact && (
                     <Box mt={0.5} bold>
@@ -350,16 +349,16 @@ export const pda_contracts = () => {
                       and forfeited their faction settlement.
                     </Box>
                   )}
-                  <Box mt={0.5} color="label">
+                  <Label mt={0.5}>
                     Authenticated performers can collectively earn up to 25% of
                     the staff award; the remainder belongs to the agent after
                     the contact&apos;s negotiated cut.
-                  </Box>
+                  </Label>
                   {!!contract.details.required_endorsements && (
-                    <Box mt={0.5} color="label">
+                    <Label mt={0.5}>
                       Physical head endorsements required:{' '}
                       {contract.details.required_endorsements}
-                    </Box>
+                    </Label>
                   )}
                 </Section>
               )}
@@ -380,16 +379,16 @@ export const pda_contracts = () => {
                   mt={1}
                   title={`Project participation — ${contract.details.stakeholder_summary}`}
                 >
-                  <Box mb={1} color="label">
+                  <Label mb={1}>
                     Current graded specification: {contract.details.score}% ·{' '}
                     {contract.details.projected_grade} · projected award{' '}
                     {contract.details.projected_reward} Thalers
-                  </Box>
-                  <Box mb={1} color="label">
+                  </Label>
+                  <Label mb={1}>
                     Join a role directly. Attributable work qualifies your
                     participation and determines your share of the fixed staff
                     award.
-                  </Box>
+                  </Label>
                   {(contract.details.roles ?? []).map((role) => {
                     const ownProposal = role.proposals.find(
                       (proposal) => proposal.account === data.contract_account,
@@ -409,12 +408,12 @@ export const pda_contracts = () => {
                       >
                         <Box mb={0.5}>{role.description}</Box>
                         {ownProposal && (
-                          <Box mb={0.5} color="label">
+                          <Label mb={0.5}>
                             Participating · contribution{' '}
                             {ownProposal.contribution}/
                             {role.minimum_contribution}
                             {ownProposal.qualified && ' · qualified'}
-                          </Box>
+                          </Label>
                         )}
                         {ownProposal && ownProposal.status === 'approved' && (
                           <Button
@@ -445,9 +444,9 @@ export const pda_contracts = () => {
                           </Button>
                         )}
                         {!!role.viewer_has_other_role && !ownProposal && (
-                          <Box color="label">
+                          <Label>
                             You already hold another role on this project.
-                          </Box>
+                          </Label>
                         )}
                       </Section>
                     );

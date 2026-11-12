@@ -13,6 +13,7 @@ import type {
   AdminEditPlayerActions,
   AdminEditPlayerData,
 } from './generated/AdminEditPlayer';
+import { Label } from 'tgui/components/Label';
 
 type Data = AdminEditPlayerData;
 type DnaCell = NonNullable<Data['dna_cells']>[number];
@@ -326,9 +327,7 @@ const DnaSection = (props: { data: Data; act: ActFn }) => {
         {rows.map((row, rowIdx) => (
           <Stack key={rowIdx}>
             <Stack.Item basis="38px">
-              <Box color="label" textAlign="right">
-                {rowIdx * 5}
-              </Box>
+              <Label textAlign="right">{rowIdx * 5}</Label>
             </Stack.Item>
             {row.map((c) => (
               <Stack.Item key={c.block} basis="120px">
@@ -344,9 +343,7 @@ const DnaSection = (props: { data: Data; act: ActFn }) => {
                     <sub>{c.block}</sub>
                   </Button>
                 ) : (
-                  <Box color="label" textAlign="center">
-                    {c.block}
-                  </Box>
+                  <Label textAlign="center">{c.block}</Label>
                 )}
               </Stack.Item>
             ))}
@@ -367,19 +364,17 @@ const RudimentaryTransformationSection = (props: {
   }
   return (
     <Section title="Rudimentary Transformation">
-      <Box italic color="label" mb={1}>
+      <Label italic mb={1}>
         These transformations create a new mob type and copy stuff over — they
         don't account for MMIs and similar mob-specific things. Prefer the
         buttons in Transformation when possible.
-      </Box>
+      </Label>
       <Box mb="2px">
         <SimpleMakeButton act={act} kind="observer" label="Observer" />
       </Box>
       {RUDIMENTARY_GROUPS.map((group) => (
         <Box key={group.title} mt={1}>
-          <Box mb="2px" color="label">
-            {group.title}:
-          </Box>
+          <Label mb="2px">{group.title}:</Label>
           {group.rows.map((row, i) => (
             <Box key={i} mb="2px">
               {row.map((entry, j) => (

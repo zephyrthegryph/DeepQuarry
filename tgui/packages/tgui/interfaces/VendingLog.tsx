@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
+import { Label } from 'tgui/components/Label';
 
 type Entry = string[]; // [time, action, registered_name, stationtime, item_name]
 
@@ -36,10 +37,7 @@ export const VendingLog = () => {
                     <Box inline color={e[1] === 'vend' ? 'good' : 'average'}>
                       {e[1]}
                     </Box>{' '}
-                    — <Box inline>{e[4]}</Box>{' '}
-                    <Box inline color="label">
-                      @ {e[3]}
-                    </Box>
+                    — <Box inline>{e[4]}</Box> <Label inline>@ {e[3]}</Label>
                   </Box>
                 </Stack.Item>
               ))}

@@ -13,6 +13,7 @@ import type {
   EngineeringAssemblyActions,
   EngineeringAssemblyData,
 } from './generated/EngineeringAssembly';
+import { Label } from 'tgui/components/Label';
 
 const number = (value: number) => Math.round(value).toLocaleString();
 const measurementFields = [
@@ -95,10 +96,10 @@ export const EngineeringAssembly = () => {
                 {number(data.emitter.stored)} J
               </LabeledList.Item>
             </LabeledList>
-            <Box color="label" mt={1}>
+            <Label mt={1}>
               Output is limited by supplied power, installed parts, and
               temperature. Pulses wait until sufficient energy is stored.
-            </Box>
+            </Label>
           </Section>
         )}
         <Section title="Installed parts">
@@ -106,13 +107,11 @@ export const EngineeringAssembly = () => {
             {data.parts.map((part) => (
               <LabeledList.Item key={part.role} label={part.role}>
                 {part.material}
-                <Box inline ml={1} color="label">
+                <Label inline ml={1}>
                   {number(part.meltingPoint)} K melt · {number(part.corrosion)}{' '}
                   corrosion resistance
-                </Box>
-                <Box color="label" mt={0.5}>
-                  {part.purpose}
-                </Box>
+                </Label>
+                <Label mt={0.5}>{part.purpose}</Label>
               </LabeledList.Item>
             ))}
           </LabeledList>

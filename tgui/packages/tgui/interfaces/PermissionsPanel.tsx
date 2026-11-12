@@ -23,6 +23,7 @@ import type {
   PermissionsPanelActions,
   PermissionsPanelData,
 } from './generated/PermissionsPanel';
+import { Label } from 'tgui/components/Label';
 
 type Data = PermissionsPanelData;
 type AdminRow = NonNullable<Data['permissions_rows']>[number];
@@ -193,9 +194,9 @@ const RanksPage = (props: { data: RanksPageData; act: ActFn }) => {
                 </Button>
               ) : null}
             </Box>
-            <Box ml={1} color="label">
+            <Label ml={1}>
               Source: {r.source} · Held by {r.held_by}
-            </Box>
+            </Label>
             <Box ml={1} style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>
               <Box>Permissions: {r.permissions}</Box>
               {r.denied ? <Box>Denied: {r.denied}</Box> : null}
@@ -378,9 +379,7 @@ const HousekeepingPage = (props: {
                     </Button>
                   ) : null}
                 </Box>
-                <Box ml={1} color="label">
-                  Source: {r.source}
-                </Box>
+                <Label ml={1}>Source: {r.source}</Label>
                 <Box
                   ml={1}
                   style={{ fontFamily: 'monospace', fontSize: '0.85em' }}

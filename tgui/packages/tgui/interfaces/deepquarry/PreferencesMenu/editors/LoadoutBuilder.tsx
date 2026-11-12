@@ -44,6 +44,7 @@ import type {
 import { ColorChoice, isSlotName } from '../colors';
 import { ColorizedImage, ColorizedImageButton } from '../helper_components';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 type LoadoutData = PrefEditorLoadout;
 type LoadoutStatic = PrefEditorLoadoutStatic;
@@ -320,10 +321,10 @@ export const LoadoutBuilder = ({
       </Stack>
 
       {d.preview_job && (
-        <Box mb={0.5} color="label" fontSize="0.85em">
+        <Label mb={0.5} fontSize="0.85em">
           Grey labels = <b>{d.preview_job}</b>'s default kit. Your picks replace
           them.
-        </Box>
+        </Label>
       )}
 
       {/* Two-column body. flex: 1 + minHeight: 0 lets the catalog Stack.Item below
@@ -444,10 +445,10 @@ export const LoadoutBuilder = ({
                 }}
               >
                 {filteredLabel}
-                <Box inline ml={0.5} color="label" fontSize="0.85em">
+                <Label inline ml={0.5} fontSize="0.85em">
                   ({visibleItems.length}{' '}
                   {visibleItems.length === 1 ? 'item' : 'items'})
-                </Box>
+                </Label>
               </Box>
             </Stack.Item>
             <Stack.Item grow style={{ minHeight: 0 }}>
@@ -832,9 +833,9 @@ const TweakRow = ({
     case 'textarea': {
       return (
         <Box mb={0.25}>
-          <Box color="label" fontSize="0.85em" mb={0.25}>
+          <Label fontSize="0.85em" mb={0.25}>
             {tweak.label}
-          </Box>
+          </Label>
           <TextArea
             fluid
             height="4em"
@@ -1023,11 +1024,7 @@ const UnderwearCatalog = ({
 }) => {
   const categories = Object.entries(uws.categories ?? {});
   if (categories.length === 0) {
-    return (
-      <Box italic color="label">
-        Your species has no underwear categories.
-      </Box>
-    );
+    return <Label italic>Your species has no underwear categories.</Label>;
   }
   return (
     <Stack vertical>
@@ -1146,9 +1143,7 @@ const CatalogScrollList = ({
       }}
     >
       {visibleItems.length === 0 ? (
-        <Box italic color="label">
-          No items fit this slot.
-        </Box>
+        <Label italic>No items fit this slot.</Label>
       ) : (
         <Stack vertical>
           {visibleItems.map((item) => (
@@ -1253,20 +1248,16 @@ const CatalogRow = ({
           <Box bold>
             {item.name}{' '}
             {item.cost > 0 ? (
-              <Box inline color="label" fontSize="0.85em">
+              <Label inline fontSize="0.85em">
                 · {item.cost}p
-              </Box>
+              </Label>
             ) : (
               <Box inline color="good" fontSize="0.85em">
                 · free
               </Box>
             )}
           </Box>
-          {item.desc && (
-            <Box color="label" fontSize="0.85em">
-              {item.desc}
-            </Box>
-          )}
+          {item.desc && <Label fontSize="0.85em">{item.desc}</Label>}
           {!!item.show_roles && !!item.allowed_roles?.length && (
             <Box color="grey" fontSize="0.8em">
               Roles: {item.allowed_roles.join(', ')}

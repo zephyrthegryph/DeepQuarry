@@ -31,6 +31,7 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 // --- Band tables ---------------------------------------------------------
 //
@@ -407,8 +408,7 @@ const CategorizedIndex = <T extends IndexEntry>(props: {
         });
         return (
           <Box key={cat} mb={1}>
-            <Box
-              color="label"
+            <Label
               bold
               fontSize="0.85em"
               style={{
@@ -418,7 +418,7 @@ const CategorizedIndex = <T extends IndexEntry>(props: {
               }}
             >
               {cat}
-            </Box>
+            </Label>
             {subs.map((sub) => (
               <Box key={sub} ml={sub ? 1 : 0} mb={sub ? '2px' : 0}>
                 {sub ? (
@@ -687,9 +687,9 @@ const ConditionDetail = (props: {
                   {row.chems.map((r, ci) => (
                     <Box inline key={r.id}>
                       {ci > 0 ? (
-                        <Box inline color="label" mx={0.5}>
+                        <Label inline mx={0.5}>
                           +
-                        </Box>
+                        </Label>
                       ) : null}
                       <Button compact onClick={() => props.goToReagent(r.id)}>
                         {r.name}
@@ -739,9 +739,7 @@ const ConditionDetail = (props: {
                 emptyMessage=""
               />
               {stage.effects?.map((line) => (
-                <Box key={line} color="label">
-                  {line}
-                </Box>
+                <Label key={line}>{line}</Label>
               ))}
             </Section>
           ) : null,
@@ -773,18 +771,12 @@ const ConditionDetail = (props: {
         <Section title="Treatment mechanisms" mt={1}>
           {c.mechanisms?.map((m) => (
             <Box key={m.name} color="good">
-              {m.name}{' '}
-              <Box as="span" color="label">
-                ({m.band})
-              </Box>
+              {m.name} <Label as="span">({m.band})</Label>
             </Box>
           ))}
           {c.harmful_mechanisms?.map((m) => (
             <Box key={m.name} color="bad">
-              Avoid: {m.name}{' '}
-              <Box as="span" color="label">
-                ({m.band})
-              </Box>
+              Avoid: {m.name} <Label as="span">({m.band})</Label>
             </Box>
           ))}
         </Section>
@@ -888,9 +880,7 @@ const ConditionDetail = (props: {
                         {g.cause_name}
                       </Button>
                     ) : (
-                      <Box inline color="label">
-                        {g.cause_name}
-                      </Box>
+                      <Label inline>{g.cause_name}</Label>
                     )}
                   </Box>,
                   <Box
@@ -1142,9 +1132,9 @@ const ReagentDetail = (props: {
                   {o.name}
                 </Button>
               ))}
-              <Box color="label" inline mx={1}>
+              <Label inline mx={1}>
                 →
-              </Box>
+              </Label>
               <Button compact onClick={() => props.goToCondition(x.id)}>
                 {x.name}
               </Button>
@@ -1167,9 +1157,7 @@ const ReagentDetail = (props: {
                 {r.overdose.condition_name}
               </Button>
             ) : (
-              <Box color="label" inline>
-                harmful overdose effects.
-              </Box>
+              <Label inline>harmful overdose effects.</Label>
             )}
           </Box>
           {r.overdose.drains?.length ? (
@@ -1191,9 +1179,9 @@ const ReagentDetail = (props: {
           ) : null}
           {r.overdose.effects?.length ? (
             <Box>
-              <Box color="label" bold inline mr={1}>
+              <Label bold inline mr={1}>
                 Overdose effects:
-              </Box>
+              </Label>
               {r.overdose.effects.map((line) => (
                 <Box key={line}>{line}</Box>
               ))}
@@ -1210,9 +1198,9 @@ const ReagentDetail = (props: {
               {rcp.required.map((ing, j) => (
                 <Fragment key={ing.id}>
                   {j > 0 ? (
-                    <Box color="label" inline mx={1}>
+                    <Label inline mx={1}>
                       +
-                    </Box>
+                    </Label>
                   ) : null}
                   <Box bold inline>
                     {ing.amount}u
@@ -1224,9 +1212,9 @@ const ReagentDetail = (props: {
                   </Box>
                 </Fragment>
               ))}
-              <Box color="label" inline mx={1}>
+              <Label inline mx={1}>
                 →
-              </Box>
+              </Label>
               <Box bold inline color="good">
                 {rcp.result_amount}u {r.name}
               </Box>
@@ -1425,9 +1413,9 @@ const CauseDetail = (props: {
 
   return (
     <Section title={c.name} fill scrollable>
-      <Box color="label" italic mb={1}>
+      <Label italic mb={1}>
         {c.kind}
-      </Box>
+      </Label>
       {c.description ? <Box mb={1}>{c.description}</Box> : null}
       <Section title="Produces">
         {decorated.length ? (
@@ -1573,9 +1561,7 @@ const SurgeryDetail = (props: {
       {s.tools.length ? (
         <Section title="Tools" mt={1}>
           {s.tools.map((t) => (
-            <Box key={t} color="label">
-              {t}
-            </Box>
+            <Label key={t}>{t}</Label>
           ))}
         </Section>
       ) : null}

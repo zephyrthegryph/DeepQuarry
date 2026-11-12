@@ -18,6 +18,7 @@ import {
   getStatText,
 } from './functions';
 import type { Crewmember, Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 // Suit-sensor vitals: a coarse condition plus pulse, SpO2 and temperature.
 const CrewVitals = (props: { cm: Crewmember }) => {
@@ -40,11 +41,7 @@ const CrewVitals = (props: { cm: Crewmember }) => {
           {condition.label}
         </Box>
       ) : null}
-      {readings.length ? (
-        <Box inline color="label">
-          ({readings.join(' | ')})
-        </Box>
-      ) : null}
+      {readings.length ? <Label inline>({readings.join(' | ')})</Label> : null}
     </Box>
   );
 };

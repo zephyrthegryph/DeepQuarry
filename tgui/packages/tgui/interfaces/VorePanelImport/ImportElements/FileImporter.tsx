@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Button, Dropdown, Section, Stack } from 'tgui-core/components';
 import { handleImportData } from '../function';
 import type { DesiredData } from '../types';
+import { Label } from 'tgui/components/Label';
 
 export const FileImport = (props: {
   characterData: DesiredData;
@@ -90,7 +91,7 @@ export const FileImport = (props: {
           />
         </Stack.Item>
         <Stack.Item>
-          <Box color="label">Loaded Characters:</Box>
+          <Label>Loaded Characters:</Label>
         </Stack.Item>
         <Stack.Item>
           <Box>{ourCharacters.length}</Box>

@@ -13,6 +13,7 @@ import type {
   LibraryCompActions,
   LibraryCompData,
 } from './generated/LibraryComp';
+import { Label } from 'tgui/components/Label';
 
 type Data = LibraryCompData;
 
@@ -179,7 +180,7 @@ const CheckedOut = () => {
             <Stack.Item key={b.ref}>
               <Box bold>"{b.bookname}"</Box>
               <Box>Checked out to: {b.mobname}</Box>
-              <Box color="label">
+              <Label>
                 Taken: {b.taken_min} min ago, Due: in{' '}
                 {b.overdue ? (
                   <Box inline color="bad" bold>
@@ -188,7 +189,7 @@ const CheckedOut = () => {
                 ) : (
                   <Box inline>{b.due_min} min</Box>
                 )}
-              </Box>
+              </Label>
               <Button onClick={() => act('checkin', { ref: b.ref })}>
                 Check In
               </Button>

@@ -7,6 +7,7 @@ import type {
   SpecopsShuttleActions,
   SpecopsShuttleData,
 } from './generated/SpecopsShuttle';
+import { Label } from 'tgui/components/Label';
 
 export const SpecopsShuttle = () => {
   const { data, act } = useBackend<SpecopsShuttleData, SpecopsShuttleActions>();
@@ -24,9 +25,9 @@ export const SpecopsShuttle = () => {
                   Departing for {destination} in {timeleft} seconds.
                 </LabeledList.Item>
               </LabeledList>
-              <Box mt={1} italic color="label">
+              <Label mt={1} italic>
                 The Special Ops. shuttle is already leaving.
-              </Box>
+              </Label>
             </>
           ) : state === 'at_station' ? (
             <>

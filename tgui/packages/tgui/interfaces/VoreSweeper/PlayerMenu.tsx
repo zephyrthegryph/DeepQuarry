@@ -13,6 +13,7 @@ import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelToolti
 import { gameStateToColor, gameStateToIcon, gameTooltip } from './constants';
 import { getRemainingMines, getScoreColor } from './functions';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const PlayerMenu = (props) => {
   const { act, data } = useBackend<Data, VoreSweeperActions>();
@@ -166,9 +167,9 @@ export const PlayerMenu = (props) => {
         <Stack.Item>
           <Stack fill>
             <Stack.Item grow>
-              <Box preserveWhitespace inline color="label">
+              <Label preserveWhitespace inline>
                 {`Remaining Mines: `}
-              </Box>
+              </Label>
               <Box
                 fontSize={2}
                 inline

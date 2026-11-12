@@ -13,6 +13,7 @@ import type {
   PaperBundleActions,
   PaperBundleData,
 } from './generated/PaperBundle';
+import { Label } from 'tgui/components/Label';
 
 type Data = PaperBundleData;
 
@@ -36,9 +37,9 @@ export const PaperBundle = () => {
             <Button icon="arrow-right" onClick={() => act('next_page')}>
               {isLast ? 'Back' : 'Next Page'}
             </Button>
-            <Box inline color="label" ml={2}>
+            <Label inline ml={2}>
               Page {page} of {total_pages}
-            </Box>
+            </Label>
           </Box>
         </Section>
         <Section title={page_name}>
@@ -46,9 +47,9 @@ export const PaperBundle = () => {
             <HtmlRenderer html={page_info} />
           ) : (
             <>
-              <Box italic color="label" mb={1}>
+              <Label italic mb={1}>
                 Photo: {page_name}
-              </Box>
+              </Label>
               {scribble ? (
                 <Box>
                   Written on the back:{' '}

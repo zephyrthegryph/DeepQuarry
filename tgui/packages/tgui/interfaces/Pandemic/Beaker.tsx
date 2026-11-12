@@ -3,12 +3,12 @@ import {
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import { capitalizeFirst } from 'tgui-core/string';
 import type { PandemicActions, PandemicData } from '../generated/Pandemic';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const BeakerDisplay = (props) => {
   const { act, data } = useBackend<PandemicData, PandemicActions>();
@@ -99,19 +99,18 @@ const Info = (props) => {
       </Stack.Item>
       <Stack.Item grow={2}>
         <LabeledList>
-          <LabeledList.Item label="Container">
-            <ProgressBar
-              color="darkred"
-              value={beaker.volume}
-              minValue={0}
-              maxValue={beaker.capacity}
-              ranges={{
-                good: [beaker.capacity * 0.85, beaker.capacity],
-                average: [beaker.capacity * 0.25, beaker.capacity * 0.85],
-                bad: [0, beaker.capacity * 0.25],
-              }}
-            />
-          </LabeledList.Item>
+          <StatBar
+            label="Container"
+            color="darkred"
+            value={beaker.volume}
+            minValue={0}
+            maxValue={beaker.capacity}
+            ranges={{
+              good: [beaker.capacity * 0.85, beaker.capacity],
+              average: [beaker.capacity * 0.25, beaker.capacity * 0.85],
+              bad: [0, beaker.capacity * 0.25],
+            }}
+          />
         </LabeledList>
       </Stack.Item>
     </Stack>

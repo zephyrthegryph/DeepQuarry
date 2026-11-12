@@ -9,6 +9,7 @@ import {
 } from 'tgui-core/components';
 import type { DNAModifierActions } from '../generated/DNAModifier';
 import type { buffData, Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const DNAModifierMainBuffers = (props) => {
   const { data } = useBackend<Data, DNAModifierActions>();
@@ -210,11 +211,7 @@ const DNAModifierMainBuffersElement = (props: {
             </>
           )}
         </LabeledList>
-        {!buffer.data && (
-          <Box color="label" mt="0.5rem">
-            This buffer is empty.
-          </Box>
-        )}
+        {!buffer.data && <Label mt="0.5rem">This buffer is empty.</Label>}
       </Box>
     </Section>
   );
@@ -265,14 +262,14 @@ const DNAModifierMainBuffersDisk = (props) => {
             </LabeledList.Item>
           </LabeledList>
         ) : (
-          <Box color="label">Disk is blank.</Box>
+          <Label>Disk is blank.</Label>
         )
       ) : (
-        <Box color="label" textAlign="center" my="1rem">
+        <Label textAlign="center" my="1rem">
           <Icon name="save-o" size={4} />
           <br />
           No disk inserted.
-        </Box>
+        </Label>
       )}
     </Section>
   );

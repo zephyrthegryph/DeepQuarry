@@ -7,6 +7,7 @@ import { gameTooltip, phastToText } from './constants';
 import { gameStateToText, stateToColor } from './functions';
 import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const PlayerMenu = (props) => {
   const { act, data } = useBackend<Data, NineMenActions>();
@@ -104,7 +105,7 @@ export const PlayerMenu = (props) => {
         <Stack.Item basis="33%">
           <Stack vertical textAlign="center">
             <Stack.Item>
-              <Box color="label">Status:</Box>
+              <Label>Status:</Label>
             </Stack.Item>
             <Stack.Item>
               <Box color={stateToColor(game_state, !!has_won)}>

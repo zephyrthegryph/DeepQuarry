@@ -6,12 +6,13 @@
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, Section, Stack, Table } from 'tgui-core/components';
+import { Button, Section, Stack, Table } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type {
   EventManagerPanelActions,
   EventManagerPanelData,
 } from './generated/EventManagerPanel';
+import { Label } from 'tgui/components/Label';
 
 type Data = EventManagerPanelData;
 
@@ -62,10 +63,10 @@ const OverviewView = (props: {
           title="Event Manager"
           buttons={<HeaderButtons data={data} act={act} />}
         >
-          <Box color="label" mb={1}>
+          <Label mb={1}>
             Configure when events fire, queue the next event per severity, or
             stop a running event.
-          </Box>
+          </Label>
         </Section>
 
         <Section title="Event Start">
@@ -237,10 +238,10 @@ const DetailView = (props: {
             </>
           }
         >
-          <Box color="label" mb={1}>
+          <Label mb={1}>
             Time till next event in this severity:{' '}
             {data.selected_time_left_minutes} min
-          </Box>
+          </Label>
           {events.length === 0 ? (
             <EmptyState>No events configured at this severity.</EmptyState>
           ) : (

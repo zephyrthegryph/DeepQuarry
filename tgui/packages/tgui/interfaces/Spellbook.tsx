@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { SpellbookActions, SpellbookData } from './generated/Spellbook';
+import { Label } from 'tgui/components/Label';
 
 type Data = SpellbookData;
 
@@ -41,9 +42,9 @@ export const Spellbook = () => {
               {uses} / {max_uses}
             </LabeledList.Item>
           </LabeledList>
-          <Box mt={1} italic color="label">
+          <Label mt={1} italic>
             The number after the spell name is the cooldown time.
-          </Box>
+          </Label>
         </Section>
         <Section title="Memorize a Spell">
           <Stack vertical>
@@ -52,36 +53,36 @@ export const Spellbook = () => {
                 <Button onClick={() => act('choose', { id: s.id })}>
                   {s.name} ({s.cooldown})
                 </Button>
-                <Box ml={1} italic color="label">
+                <Label ml={1} italic>
                   {s.desc}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
             <Stack.Item>
               <Button onClick={() => act('choose', { id: noclothes.id })}>
                 {noclothes?.name}
               </Button>
-              <Box ml={1} italic color="label">
+              <Label ml={1} italic>
                 {noclothes?.desc}
-              </Box>
+              </Label>
             </Stack.Item>
           </Stack>
         </Section>
         <Section title="Artefacts">
-          <Box italic color="label" mb={1}>
+          <Label italic mb={1}>
             Powerful items imbued with eldritch magics. Summoning one counts
             towards your maximum number of spells. Only experienced wizards
             should attempt to wield them.
-          </Box>
+          </Label>
           <Stack vertical>
             {artefacts.map((a) => (
               <Stack.Item key={a.id}>
                 <Button onClick={() => act('choose', { id: a.id })}>
                   {a.name}
                 </Button>
-                <Box ml={1} italic color="label">
+                <Label ml={1} italic>
                   {a.desc}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
           </Stack>

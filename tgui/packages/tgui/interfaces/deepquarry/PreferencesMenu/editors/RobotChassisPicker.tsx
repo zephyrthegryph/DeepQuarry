@@ -16,6 +16,7 @@ import {
 } from 'tgui-core/components';
 import { ColorizedImage } from '../helper_components';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],
@@ -270,9 +271,7 @@ const ChassisCard = ({
           size={64}
         />
       ) : (
-        <Box color="label" fontSize="0.8em">
-          (default)
-        </Box>
+        <Label fontSize="0.8em">(default)</Label>
       )}
     </Box>
     <Box

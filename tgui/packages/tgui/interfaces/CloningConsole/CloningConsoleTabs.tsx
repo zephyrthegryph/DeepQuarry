@@ -12,6 +12,7 @@ import {
 } from 'tgui-core/components';
 import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const CloningConsoleMain = (props) => {
   const { act, data } = useBackend<Data, CloningConsoleActions>();
@@ -34,9 +35,7 @@ export const CloningConsoleMain = (props) => {
         buttons={
           <Stack>
             <Stack.Item>
-              <Box inline color="label">
-                Scanner Lock:&nbsp;
-              </Box>
+              <Label inline>Scanner Lock:&nbsp;</Label>
             </Stack.Item>
             <Stack.Item>
               <Button
@@ -144,7 +143,7 @@ export const CloningConsoleMain = (props) => {
                     width: '100%',
                   }}
                 />
-                <Box color="label">Pod #{i + 1}</Box>
+                <Label>Pod #{i + 1}</Label>
                 <Box bold color={pod.biomass >= 150 ? 'good' : 'bad'} inline>
                   <Icon name={pod.biomass >= 150 ? 'circle' : 'circle-o'} />
                   &nbsp;

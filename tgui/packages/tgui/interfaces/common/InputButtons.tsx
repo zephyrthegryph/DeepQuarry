@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Stack } from 'tgui-core/components';
+import { Button, Stack } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 type InputButtonsData = {
   large_buttons: boolean;
@@ -84,9 +85,7 @@ export const InputButtons = (props: InputButtonsProps) => {
       )}
       {!large_buttons && message && (
         <Stack.Item>
-          <Box color="label" textAlign="center">
-            {message}
-          </Box>
+          <Label textAlign="center">{message}</Label>
         </Stack.Item>
       )}
       {large_buttons ? (

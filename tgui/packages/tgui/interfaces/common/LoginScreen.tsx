@@ -3,6 +3,7 @@ import { Box, Button, Icon } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { FullscreenNotice } from './FullscreenNotice';
+import { Label } from 'tgui/components/Label';
 
 type machine = { machineType?: string };
 type Data = { scan: BooleanLike; isAI: BooleanLike; isRobot: BooleanLike };
@@ -40,12 +41,12 @@ export const LoginScreen = (props: machine) => {
         <Icon name="user-circle" verticalAlign="middle" size={3} mr="1rem" />
         Guest
       </Box>
-      <Box color="label" my="1rem">
+      <Label my="1rem">
         ID:
         <Button icon="id-card" ml="0.5rem" onClick={() => act('scan')}>
           {scan ? scan : '----------'}
         </Button>
-      </Box>
+      </Label>
       <Button
         icon="sign-in-alt"
         disabled={!scan}

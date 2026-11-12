@@ -5,6 +5,7 @@ import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import { handleImportData } from '../PlushieEditor/function';
 import { exportRecipes } from './functions';
 import type { Data, Recipe } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const ChemDispenserRecipes = (props: {
   /** Associated list of saved recipe macros. */
@@ -108,14 +109,14 @@ export const ChemDispenserRecipes = (props: {
           <Box color="green" fontSize={1.2} bold>
             Recording In Progress...
           </Box>
-          <Box color="label">
+          <Label>
             Press dispenser buttons in the order you wish for them to be
             repeated, then click{' '}
             <Box color="good" inline>
               Save
             </Box>
             .
-          </Box>
+          </Label>
           <Box color="average" mb={1}>
             Alternatively, if you mess up the recipe and want to discard this
             recording, click{' '}

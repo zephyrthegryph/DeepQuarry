@@ -13,6 +13,7 @@ import type {
   BeaconLocatorActions,
   BeaconLocatorData,
 } from './generated/BeaconLocator';
+import { Label } from 'tgui/components/Label';
 
 type Data = BeaconLocatorData;
 
@@ -25,7 +26,7 @@ export const BeaconLocator = (props) => {
     <Window width={300} height={220}>
       <Window.Content>
         <Section title="Beacon Locator">
-          {(scan_ticks && <Box color="label">Scanning...</Box>) || null}
+          {(scan_ticks && <Label>Scanning...</Label>) || null}
           {(degrees !== null && (
             <Box textAlign="center">
               <Box textAlign="center">

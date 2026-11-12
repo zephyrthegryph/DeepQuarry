@@ -6,6 +6,7 @@ import type {
   RobotSleeperData,
 } from '../../../generated/RobotSleeper';
 import { filterFuel, summarizeItems } from '../../functions';
+import { Label } from 'tgui/components/Label';
 
 export const SleeperCargoStatus = (props) => {
   const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();
@@ -18,10 +19,10 @@ export const SleeperCargoStatus = (props) => {
       {cargoSlots.map((slot, index) => (
         <Fragment key={index}>
           <Stack.Item>
-            <Box color="label">Cargo compartment slot: Cargo {index}.</Box>
+            <Label>Cargo compartment slot: Cargo {index}.</Label>
           </Stack.Item>
           <Stack.Item>
-            <Box color="label">{summarizeItems(slot)}</Box>
+            <Label>{summarizeItems(slot)}</Label>
           </Stack.Item>
         </Fragment>
       ))}

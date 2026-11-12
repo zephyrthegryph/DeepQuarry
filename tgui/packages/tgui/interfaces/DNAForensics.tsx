@@ -1,17 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type {
   DNAForensicsActions,
   DNAForensicsData,
 } from './generated/DNAForensics';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 export const DNAForensics = (props) => {
   const { act, data } = useBackend<DNAForensicsData, DNAForensicsActions>();
@@ -46,23 +41,22 @@ export const DNAForensics = (props) => {
           }
         >
           <LabeledList>
-            <LabeledList.Item label="Scan Progress">
-              <ProgressBar
-                ranges={{
-                  good: [99, Infinity],
-                  violet: [-Infinity, 99],
-                }}
-                value={scan_progress}
-                maxValue={100}
-              />
-            </LabeledList.Item>
+            <StatBar
+              label="Scan Progress"
+              ranges={{
+                good: [99, Infinity],
+                violet: [-Infinity, 99],
+              }}
+              value={scan_progress}
+              maxValue={100}
+            />
           </LabeledList>
         </Section>
         <Section title="Blood Sample">
           {(bloodsamp && (
             <Box>
               {bloodsamp}
-              <Box color="label">{bloodsamp_desc}</Box>
+              <Label>{bloodsamp_desc}</Label>
             </Box>
           )) || <Box color="bad">No blood sample inserted.</Box>}
         </Section>

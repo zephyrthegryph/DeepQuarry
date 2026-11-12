@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import type { PdaActions } from '../../generated/Pda';
+import { Label } from 'tgui/components/Label';
 
 type PersonalSupplyOrder = {
   ref: number;
@@ -41,9 +42,9 @@ export const pda_supply_orders = () => {
 
   if (!orders.length) {
     return (
-      <Box p={3} textAlign="center" color="label">
+      <Label p={3} textAlign="center">
         No personal Cargo orders are associated with this account.
-      </Box>
+      </Label>
     );
   }
 

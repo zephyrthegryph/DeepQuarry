@@ -8,6 +8,7 @@ import { Box, Button } from 'tgui-core/components';
 import { ColorChoice } from '../colors';
 import { optionBar, SearchableDropdown, Segmented } from '../controls';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 const EXTERNAL_STATES: Array<{
   key: 'normal' | 'amputated' | 'cyborg';
@@ -87,9 +88,9 @@ export const OrgansEditor = ({
     >
       {!!d.robotic_body && (
         <Box style={{ flex: '1 1 100%' }}>
-          <Box bold color="label" mb={0.2}>
+          <Label bold mb={0.2}>
             Body colour
-          </Box>
+          </Label>
           <ColorChoice
             color={d.body_color ?? '#ffffff'}
             link={d.body_link}
@@ -105,9 +106,9 @@ export const OrgansEditor = ({
         </Box>
       )}
       <Box style={LIST_STYLE}>
-        <Box bold color="label" mb={0.2}>
+        <Label bold mb={0.2}>
           Limbs
-        </Box>
+        </Label>
         {externalOrder.map((limb) => {
           const state = d.externals?.[limb] ?? { status: 'normal' };
           const lostVia = state.lost_via;
@@ -130,11 +131,11 @@ export const OrgansEditor = ({
                   value="amputated"
                   onSelect={() => {}}
                 />
-                <Box color="label">
+                <Label>
                   Lost with {externalLabels[lostVia] ?? lostVia}
                   {state.status !== 'normal' &&
                     ` (saved ${saved?.label ?? state.status}, not applied)`}
-                </Box>
+                </Label>
               </Box>
             );
           }
@@ -197,9 +198,9 @@ export const OrgansEditor = ({
         })}
       </Box>
       <Box style={LIST_STYLE}>
-        <Box bold color="label" mb={0.2}>
+        <Label bold mb={0.2}>
           Organs
-        </Box>
+        </Label>
         {internalOrder.map((organ) => (
           <Box
             key={organ}

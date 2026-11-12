@@ -5,6 +5,7 @@ import { modalOpen } from '../common/ComplexModal';
 import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import { doEdit } from './functions';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const GeneralRecordsViewGeneral = (props) => {
   const { act, data } = useBackend<Data, GeneralRecordsActions>();
@@ -49,13 +50,11 @@ export const GeneralRecordsViewGeneral = (props) => {
         </Section>
         <Section title="Comments/Log">
           {general.comments && general.comments.length === 0 ? (
-            <Box color="label">No comments found.</Box>
+            <Label>No comments found.</Label>
           ) : (
             general.comments?.map((comment, i) => (
               <Box key={i}>
-                <Box color="label" inline>
-                  {comment.header}
-                </Box>
+                <Label inline>{comment.header}</Label>
                 <br />
                 {comment.text}
                 <Button
@@ -88,7 +87,7 @@ export const GeneralRecordsViewGeneral = (props) => {
       >
         {!!general.has_photos &&
           general.photos!.map((p, i) => (
-            <Box key={i} inline textAlign="center" color="label">
+            <Label key={i} inline textAlign="center">
               <Image
                 src={p.substring(1, p.length - 1)}
                 style={{
@@ -98,7 +97,7 @@ export const GeneralRecordsViewGeneral = (props) => {
               />
               <br />
               Photo #{i + 1}
-            </Box>
+            </Label>
           ))}
       </Box>
     </>

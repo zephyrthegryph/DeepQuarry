@@ -85,6 +85,11 @@
     padding-right: 0.5em;
   }
 
+  // Tab icons sit tight against the wider monospace text.
+  .Tab .Icon:not(:last-child) {
+    margin-right: 0.35em;
+  }
+
   .Tabs--horizontal {
     border-bottom: 2px solid console.$console-border;
   }

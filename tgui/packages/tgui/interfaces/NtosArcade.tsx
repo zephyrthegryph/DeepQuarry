@@ -12,6 +12,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { NtosArcadeActions, NtosArcadeData } from './generated/NtosArcade';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const NtosArcade = (props) => {
   const { act, data } = useBackend<NtosArcadeData, NtosArcadeActions>();
@@ -37,35 +38,33 @@ export const NtosArcade = (props) => {
                 <Table.Cell>
                   <Box m={1} />
                   <LabeledList>
-                    <LabeledList.Item label="Player Health">
-                      <ProgressBar
-                        value={PlayerHitpoints}
-                        minValue={0}
-                        maxValue={30}
-                        ranges={{
-                          olive: [31, Infinity],
-                          good: [20, 31],
-                          average: [10, 20],
-                          bad: [-Infinity, 10],
-                        }}
-                      >
-                        {PlayerHitpoints}HP
-                      </ProgressBar>
-                    </LabeledList.Item>
-                    <LabeledList.Item label="Player Magic">
-                      <ProgressBar
-                        value={PlayerMP}
-                        minValue={0}
-                        maxValue={10}
-                        ranges={{
-                          purple: [11, Infinity],
-                          violet: [3, 11],
-                          bad: [-Infinity, 3],
-                        }}
-                      >
-                        {PlayerMP}MP
-                      </ProgressBar>
-                    </LabeledList.Item>
+                    <StatBar
+                      label="Player Health"
+                      value={PlayerHitpoints}
+                      minValue={0}
+                      maxValue={30}
+                      ranges={{
+                        olive: [31, Infinity],
+                        good: [20, 31],
+                        average: [10, 20],
+                        bad: [-Infinity, 10],
+                      }}
+                    >
+                      {PlayerHitpoints}HP
+                    </StatBar>
+                    <StatBar
+                      label="Player Magic"
+                      value={PlayerMP}
+                      minValue={0}
+                      maxValue={10}
+                      ranges={{
+                        purple: [11, Infinity],
+                        violet: [3, 11],
+                        bad: [-Infinity, 3],
+                      }}
+                    >
+                      {PlayerMP}MP
+                    </StatBar>
                   </LabeledList>
                   <Box my={1} mx={4} />
                   <Section backgroundColor={PauseState ? '#1b3622' : '#471915'}>

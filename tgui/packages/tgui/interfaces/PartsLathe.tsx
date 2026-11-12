@@ -5,7 +5,6 @@ import {
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
@@ -13,6 +12,8 @@ import { toTitleCase } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import type { Material } from './Fabrication/Types';
 import type { PartsLatheActions, PartsLatheData } from './generated/PartsLathe';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 export const PartsLathe = (props) => {
   const { act, data } = useBackend<PartsLatheData, PartsLatheActions>();
@@ -59,13 +60,12 @@ export const PartsLathe = (props) => {
                           <LabeledList.Item label="Name">
                             {toTitleCase(building)}
                           </LabeledList.Item>
-                          <LabeledList.Item label="Progress">
-                            <ProgressBar
-                              color="good"
-                              value={buildPercent!}
-                              maxValue={100}
-                            />
-                          </LabeledList.Item>
+                          <StatBar
+                            label="Progress"
+                            color="good"
+                            value={buildPercent!}
+                            maxValue={100}
+                          />
                         </LabeledList>
                       </Section>
                     </Stack.Item>
@@ -114,7 +114,7 @@ export const PartsLathe = (props) => {
                     <Section title="Queue" fill>
                       {(queue.length &&
                         queue.map((item, i) => (
-                          <Box key={item} color="label">
+                          <Label key={item}>
                             #{i + 1}: {toTitleCase(item)}
                             {((i > 0 || !building) && (
                               <Button
@@ -126,7 +126,7 @@ export const PartsLathe = (props) => {
                               </Button>
                             )) ||
                               ''}
-                          </Box>
+                          </Label>
                         ))) || <NoticeBox info>Queue Empty</NoticeBox>}
                     </Section>
                   </Stack.Item>

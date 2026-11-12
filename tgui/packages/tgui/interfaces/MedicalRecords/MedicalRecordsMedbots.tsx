@@ -2,12 +2,13 @@ import { useBackend } from 'tgui/backend';
 import { Box, Collapsible, LabeledList } from 'tgui-core/components';
 import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const MedicalRecordsMedbots = (props) => {
   const { data } = useBackend<Data, MedicalRecordsActions>();
   const { medbots } = data;
   if (!medbots || medbots.length === 0) {
-    return <Box color="label">There are no Medbots.</Box>;
+    return <Label>There are no Medbots.</Label>;
   }
   return medbots.map((medbot, i) => (
     <Collapsible key={i} open title={medbot.name}>

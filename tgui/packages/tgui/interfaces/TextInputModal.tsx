@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Section, Stack, TextArea } from 'tgui-core/components';
+import { Section, Stack, TextArea } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
@@ -9,6 +9,7 @@ import type {
   TextInputModalActions,
   TextInputModalData,
 } from './generated/TextInputModal';
+import { Label } from 'tgui/components/Label';
 
 type TextInputData = TextInputModalData;
 
@@ -61,18 +62,13 @@ export const TextInputModal = (props) => {
   const char_length = [...input].length;
 
   return (
-    <Window
-      fitContent
-      title={title}
-      width={325}
-      height={windowHeight}
-    >
+    <Window fitContent title={title} width={325} height={windowHeight}>
       {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
           <Stack fill vertical>
             <Stack.Item>
-              <Box color="label">{message}</Box>
+              <Label>{message}</Label>
             </Stack.Item>
             <Stack.Item grow>
               <TextArea

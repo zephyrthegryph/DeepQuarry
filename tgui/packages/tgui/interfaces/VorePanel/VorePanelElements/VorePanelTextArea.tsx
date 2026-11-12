@@ -18,6 +18,7 @@ import {
 
 import { SYNTAX_COLOR, SYNTAX_REGEX } from '../constants';
 import { calcLineHeight } from '../functions';
+import { Label } from 'tgui/components/Label';
 
 const DescriptionSyntaxHighlighting = (props: { desc: string }) => {
   const { desc } = props;
@@ -211,7 +212,7 @@ export const VorePanelEditTextArea = (
     <Stack fill vertical>
       {!!tooltip && (
         <Stack.Item>
-          <Box color="label">{tooltip}</Box>
+          <Label>{tooltip}</Label>
         </Stack.Item>
       )}
       {!disableLegacyInput && Array.isArray(entry) && (
@@ -222,11 +223,11 @@ export const VorePanelEditTextArea = (
             content={
               <Stack fill vertical>
                 <Stack.Item>
-                  <Box color="label">
+                  <Label>
                     {
                       'Copy paste the fields as legacy block text. Use "Enter" to apply. "Shift + Enter" for new lines.'
                     }
-                  </Box>
+                  </Label>
                 </Stack.Item>
                 <Stack.Item grow>
                   <TextArea

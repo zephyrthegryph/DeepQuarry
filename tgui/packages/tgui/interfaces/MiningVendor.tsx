@@ -17,6 +17,7 @@ import type {
   MiningVendorActions,
   MiningVendorData,
 } from './generated/MiningVendor';
+import { Label } from 'tgui/components/Label';
 
 type Item = MiningVendorData['items'][string][string];
 
@@ -103,7 +104,7 @@ const MiningVendorItems = (props: {
         {has_contents ? (
           contents
         ) : (
-          <Box color="label">No items matching your criteria was found!</Box>
+          <Label>No items matching your criteria was found!</Label>
         )}
       </Section>
     </Stack.Item>

@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 
 import { BeakerContents } from '../common/BeakerContents';
 import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import { removeAmounts } from './constants';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const ChemDispenserBeaker = (props) => {
   const { act, data } = useBackend<Data, ChemDispenserActions>();
@@ -35,9 +36,9 @@ export const ChemDispenserBeaker = (props) => {
         <Stack>
           <Stack.Item>
             {!!isBeakerLoaded && (
-              <Box inline color="label" mr={2}>
+              <Label inline mr={2}>
                 {beakerCurrentVolume} / {beakerMaxVolume} units
-              </Box>
+              </Label>
             )}
           </Stack.Item>
           <Stack.Item>

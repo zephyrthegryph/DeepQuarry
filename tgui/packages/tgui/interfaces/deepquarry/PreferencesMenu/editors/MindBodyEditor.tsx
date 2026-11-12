@@ -28,6 +28,7 @@ import type {
   PrefEditorMindBodyStatic,
 } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────────
 
@@ -585,9 +586,9 @@ const CategoryChip = ({
             {cat.name}
           </Box>
           <Box fontSize="0.85em">{cat.description}</Box>
-          <Box fontSize="0.85em" color="label" mt={0.5}>
+          <Label fontSize="0.85em" mt={0.5}>
             {spentHere} pt{spentHere === 1 ? '' : 's'} spent here
-          </Box>
+          </Label>
         </Box>
       }
     >
@@ -739,26 +740,18 @@ const PoolFillBar = ({
     <Box>
       <Stack align="center" mb={0.25}>
         <Stack.Item grow>
-          <Box fontSize="0.78em" color="label">
-            {label}
-          </Box>
+          <Label fontSize="0.78em">{label}</Label>
         </Stack.Item>
         <Stack.Item>
           <Box fontSize="0.78em">
             <Box inline bold style={{ color: accent }}>
               {spent}
             </Box>
-            <Box inline color="label">
-              {' '}
-              / {pool} ·{' '}
-            </Box>
+            <Label inline> / {pool} · </Label>
             <Box inline bold style={{ color: '#fff' }}>
               <AnimatedNumber value={remaining} />
             </Box>
-            <Box inline color="label">
-              {' '}
-              free
-            </Box>
+            <Label inline> free</Label>
           </Box>
         </Stack.Item>
       </Stack>

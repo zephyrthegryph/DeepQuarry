@@ -5,10 +5,10 @@ import {
   Button,
   LabeledControls,
   LabeledList,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = {
   on: BooleanLike;
@@ -44,18 +44,15 @@ export const GasPump = (props) => {
                 format={(value) => `${value.toFixed(1)} L/s`}
               />
             </LabeledList.Item>
-            <LabeledList.Item label="Load">
-              <ProgressBar
-                value={last_power_draw}
-                minValue={0}
-                maxValue={max_power_draw}
-                color={
-                  last_power_draw < max_power_draw - 5 ? 'good' : 'average'
-                }
-              >
-                {`${last_power_draw} W`}
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Load"
+              value={last_power_draw}
+              minValue={0}
+              maxValue={max_power_draw}
+              color={last_power_draw < max_power_draw - 5 ? 'good' : 'average'}
+            >
+              {`${last_power_draw} W`}
+            </StatBar>
           </LabeledList>
         </Section>
         <Section

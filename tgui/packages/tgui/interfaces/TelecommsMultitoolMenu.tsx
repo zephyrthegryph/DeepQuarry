@@ -12,6 +12,7 @@ import type {
   TelecommsMultitoolMenuActions,
   TelecommsMultitoolMenuData,
 } from './generated/TelecommsMultitoolMenu';
+import { Label } from 'tgui/components/Label';
 
 type Options = TelecommsMultitoolMenuData['options'];
 
@@ -175,11 +176,7 @@ const TelecommsMultitoolMenuStatus = (props) => {
             {`${f.name} GHz`}
           </Button.Confirm>
         ))}
-        {!filter || filter.length === 0 ? (
-          <Box color="label">No filters.</Box>
-        ) : (
-          ''
-        )}
+        {!filter || filter.length === 0 ? <Label>No filters.</Label> : ''}
       </Section>
     </Section>
   );

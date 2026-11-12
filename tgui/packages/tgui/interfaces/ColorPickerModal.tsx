@@ -45,6 +45,7 @@ import type {
   ColorPickerModalActions,
   ColorPickerModalData,
 } from './generated/ColorPickerModal';
+import { Label } from 'tgui/components/Label';
 
 type ColorPickerData = ColorPickerModalData;
 
@@ -134,9 +135,7 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = () => {
           {message && (
             <Stack.Item m={1}>
               <Section fill>
-                <Box color="label" overflow="hidden">
-                  {message}
-                </Box>
+                <Label overflow="hidden">{message}</Label>
               </Section>
             </Stack.Item>
           )}

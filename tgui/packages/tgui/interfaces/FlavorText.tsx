@@ -2,9 +2,10 @@
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { FlavorTextActions, FlavorTextData } from './generated/FlavorText';
+import { Label } from 'tgui/components/Label';
 
 export const FlavorText = () => {
   const { data, act } = useBackend<FlavorTextData, FlavorTextActions>();
@@ -35,7 +36,7 @@ export const FlavorText = () => {
                   </Stack.Item>
                   <Stack.Item grow>
                     {p.preview ? (
-                      <Box color="label">{p.preview}</Box>
+                      <Label>{p.preview}</Label>
                     ) : (
                       <EmptyState>(not set)</EmptyState>
                     )}

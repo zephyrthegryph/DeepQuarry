@@ -26,6 +26,7 @@ import {
   markingCategory,
   markingSubgroup,
 } from './markingCategories';
+import { Label } from 'tgui/components/Label';
 
 type MarkingsData = PrefEditorBodyMarkings;
 type MarkingState = MarkingsData['markings'][string];
@@ -111,15 +112,15 @@ export const BodyMarkingsEditor = ({
 
   return (
     <Section title={zoneLabel ? `Markings: ${zoneLabel}` : 'Markings'}>
-      <Box bold color="label" mb={0.2}>
+      <Label bold mb={0.2}>
         On this character ({layers.length})
-      </Box>
+      </Label>
       {shown.length === 0 && (
-        <Box italic color="label" mb={0.3}>
+        <Label italic mb={0.3}>
           {layers.length && zones
             ? `No markings on the ${zoneLabel?.toLowerCase() ?? 'region'}; ${layers.length} elsewhere.`
             : 'No markings yet. Pick one from the list below.'}
-        </Box>
+        </Label>
       )}
       <Box
         mb={0.6}
@@ -489,9 +490,9 @@ const MarkingPicker = ({
           onMouseLeave={() => setHovered(null)}
         >
           {shown.length === 0 && (
-            <Box italic color="label" p={0.3}>
+            <Label italic p={0.3}>
               No markings match.
-            </Box>
+            </Label>
           )}
           {shown.map(({ key, meta, group }) => {
             const header = !lc && group && group !== lastGroup ? group : null;
@@ -500,9 +501,9 @@ const MarkingPicker = ({
             return (
               <Box key={key}>
                 {header && (
-                  <Box bold color="label" mt={0.3} mb={0.1}>
+                  <Label bold mt={0.3} mb={0.1}>
                     {header}
-                  </Box>
+                  </Label>
                 )}
                 <Button
                   fluid
@@ -539,12 +540,12 @@ const MarkingPicker = ({
                     >
                       {meta.name}
                     </Box>
-                    <Box color="label" fontSize="0.85em">
+                    <Label fontSize="0.85em">
                       {parts === 1
                         ? (ZONE_LABELS[meta.body_parts[0]] ??
                           meta.body_parts[0])
                         : `${parts} parts`}
-                    </Box>
+                    </Label>
                   </Box>
                 </Button>
               </Box>
@@ -557,11 +558,11 @@ const MarkingPicker = ({
             styles={styles}
             candidate={previewKey}
           />
-          <Box color="label" fontSize="0.85em" style={{ maxWidth: '10.7em' }}>
+          <Label fontSize="0.85em" style={{ maxWidth: '10.7em' }}>
             {previewKey
               ? styles[previewKey].name
               : 'Point at a marking to try it on'}
-          </Box>
+          </Label>
         </Box>
       </Box>
     </Box>

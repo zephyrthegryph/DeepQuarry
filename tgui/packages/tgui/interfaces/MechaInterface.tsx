@@ -21,6 +21,9 @@ import type {
   MechaInterfaceActions,
   MechaInterfaceData,
 } from './generated/MechaInterface';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
+import { YesNo } from 'tgui/components/YesNo';
 
 type Main = NonNullable<MechaInterfaceData['main']>;
 
@@ -153,20 +156,19 @@ const StatsPanel = (props: { main: Main }) => {
             <Box color="bad">HULL MISSING</Box>
           )}
         </LabeledList.Item>
-        <LabeledList.Item label="Chassis">
-          <ProgressBar
-            value={integrity_percent}
-            minValue={0}
-            maxValue={100}
-            ranges={{
-              bad: [-Infinity, 30],
-              average: [30, 70],
-              good: [70, Infinity],
-            }}
-          >
-            {integrity_percent}%
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Chassis"
+          value={integrity_percent}
+          minValue={0}
+          maxValue={100}
+          ranges={{
+            bad: [-Infinity, 30],
+            average: [30, 70],
+            good: [70, Infinity],
+          }}
+        >
+          {integrity_percent}%
+        </StatBar>
         <LabeledList.Item label="Powercell">
           {cell_percent === null ? (
             <Box color="bad">No powercell installed</Box>
@@ -358,13 +360,9 @@ const EquipmentPanel = (props: { main: Main }) => {
                   </>
                 }
               >
-                <Box color={e.ready ? 'good' : 'bad'}>
-                  {e.ready ? 'Ready' : 'Not ready'}
-                </Box>
+                <YesNo value={e.ready} yes="Ready" no="Not ready" />
                 {e.info_lines.map((line, i) => (
-                  <Box key={i} color="label">
-                    {line}
-                  </Box>
+                  <Label key={i}>{line}</Label>
                 ))}
                 {e.controls.length > 0 ? (
                   <Box mt={0.5}>

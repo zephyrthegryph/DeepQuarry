@@ -15,6 +15,7 @@ import type {
   RoundStatusPanelActions,
   RoundStatusPanelData,
 } from './generated/RoundStatusPanel';
+import { Label } from 'tgui/components/Label';
 
 type Data = RoundStatusPanelData;
 type ShuttleData = Data['shuttle'];
@@ -82,9 +83,9 @@ const AntagMemberRow = (props: {
         <Box>
           {member.name}/{member.key}
           {member.logged_out ? (
-            <Box inline italic color="label" ml={1}>
+            <Label inline italic ml={1}>
               (logged out)
-            </Box>
+            </Label>
           ) : null}
           {member.dead ? (
             <Box inline bold color="bad" ml={1}>
@@ -171,9 +172,9 @@ export const RoundStatusPanel = () => {
                       Nuclear disk(s)
                     </Box>
                     {block.disks.map((d, k) => (
-                      <Box key={d.name + k} color="label">
+                      <Label key={d.name + k}>
                         <b>{d.name}</b>, {d.location}
-                      </Box>
+                      </Label>
                     ))}
                   </Box>
                 ) : null}

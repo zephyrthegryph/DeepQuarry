@@ -8,6 +8,7 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import { Box, Button, Input } from 'tgui-core/components';
 import { labelForCategory, labelForGroup, labelForKey } from './labels';
 import type { PrefCategory } from './types';
+import { Label } from 'tgui/components/Label';
 
 /// Extra words an editor answers to (its display name and key are always searched).
 const EDITOR_KEYWORDS: Record<string, string> = {
@@ -206,9 +207,9 @@ export const SettingsSearch = ({
           }}
         >
           {results.length === 0 && (
-            <Box color="label" italic p={0.5}>
+            <Label italic p={0.5}>
               No setting matches “{query.trim()}”.
-            </Box>
+            </Label>
           )}
           {results.map((hit) => (
             <Button
@@ -235,8 +236,7 @@ export const SettingsSearch = ({
                 >
                   {hit.label}
                 </Box>
-                <Box
-                  color="label"
+                <Label
                   style={{
                     marginLeft: 'auto',
                     fontSize: '0.85em',
@@ -244,7 +244,7 @@ export const SettingsSearch = ({
                   }}
                 >
                   {hit.where}
-                </Box>
+                </Label>
               </Box>
             </Button>
           ))}

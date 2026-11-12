@@ -5,6 +5,7 @@ import type {
   AtmosControlPanelActions,
   AtmosControlPanelData,
 } from './generated/AtmosControlPanel';
+import { Label } from 'tgui/components/Label';
 
 type Data = AtmosControlPanelData;
 
@@ -67,7 +68,7 @@ export const AtmosControlPanel = (props) => {
         </Section>
         <Section title="Excited groups">
           {excited_groups.length === 0 ? (
-            <Box color="label">No excited groups.</Box>
+            <Label>No excited groups.</Label>
           ) : (
             <Table>
               <Table.Row header>

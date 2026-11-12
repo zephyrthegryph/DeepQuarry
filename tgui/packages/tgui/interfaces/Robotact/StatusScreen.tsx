@@ -11,6 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { RobotactActions, RobotactData } from '../generated/Robotact';
+import { StatBar } from 'tgui/components/StatBar';
 
 const quick_actions: {
   name: string;
@@ -189,17 +190,16 @@ const Status = (props) => {
             <NoticeBox danger>NO CELL INSTALLED</NoticeBox>
           )}
         </LabeledList.Item>
-        <LabeledList.Item label="Chassis Integrity">
-          <ProgressBar
-            value={health}
-            maxValue={max_health}
-            ranges={{
-              good: [max_health * 0.75, Number.POSITIVE_INFINITY],
-              average: [max_health * 0.3, max_health * 0.75],
-              bad: [Number.NEGATIVE_INFINITY, max_health * 0.3],
-            }}
-          />
-        </LabeledList.Item>
+        <StatBar
+          label="Chassis Integrity"
+          value={health}
+          maxValue={max_health}
+          ranges={{
+            good: [max_health * 0.75, Number.POSITIVE_INFINITY],
+            average: [max_health * 0.3, max_health * 0.75],
+            bad: [Number.NEGATIVE_INFINITY, max_health * 0.3],
+          }}
+        />
         <LabeledList.Item label="Light color">
           <Box inline>
             <ColorBox mr={1} color={light_color} />

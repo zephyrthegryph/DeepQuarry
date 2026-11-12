@@ -5,6 +5,7 @@ import {
   reagentToColor,
 } from '../constants';
 import type { InsideData } from '../types';
+import { Label } from 'tgui/components/Label';
 
 export const VoreInsidePanel = (props: { inside: InsideData }) => {
   const { inside } = props;
@@ -65,7 +66,7 @@ export const VoreInsidePanel = (props: { inside: InsideData }) => {
           </Box>
           &nbsp;
           <Stack.Item>
-            <Box color="label">{desc}</Box>
+            <Label>{desc}</Label>
           </Stack.Item>
         </Stack.Item>
       </Stack>

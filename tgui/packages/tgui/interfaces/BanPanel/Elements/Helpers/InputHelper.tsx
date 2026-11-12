@@ -1,4 +1,5 @@
 import { Box, Stack } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 export const InputHelper = (props: {
   banType: string;
@@ -85,7 +86,7 @@ export const InputError = (props: {
       <Stack.Item>
         <Stack>
           <Stack.Item>
-            <Box color="label">Missing:</Box>
+            <Label>Missing:</Label>
           </Stack.Item>
           <Stack.Item>
             <Box>{formatter.format(allMisisng)}</Box>

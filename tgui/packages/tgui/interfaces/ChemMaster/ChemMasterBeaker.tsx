@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { BeakerContents } from 'tgui/interfaces/common/BeakerContents';
 import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { transferAmounts } from './constants';
 import type { reagent } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const ChemMasterBeaker = (props: {
   beaker: BooleanLike;
@@ -94,7 +95,7 @@ export const ChemMasterBeaker = (props: {
           )}
         />
       ) : (
-        <Box color="label">No beaker loaded.</Box>
+        <Label>No beaker loaded.</Label>
       )}
     </Section>
   );

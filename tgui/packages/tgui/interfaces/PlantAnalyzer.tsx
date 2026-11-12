@@ -1,8 +1,9 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import type { PlantAnalyzerActions } from './generated/PlantAnalyzer';
+import { Label } from 'tgui/components/Label';
 
 type Data = {
   no_seed: BooleanLike;
@@ -106,9 +107,9 @@ const PlantAnalyzerContent = (props) => {
         null}
       <Section title="Other Data">
         {(seed.trait_info ?? []).map((trait) => (
-          <Box color="label" key={trait} mb={0.4}>
+          <Label key={trait} mb={0.4}>
             {trait}
-          </Box>
+          </Label>
         ))}
       </Section>
     </Section>

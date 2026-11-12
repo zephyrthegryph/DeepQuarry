@@ -12,6 +12,7 @@ import type {
   TechnomancerCatalogActions,
   TechnomancerCatalogData,
 } from './generated/TechnomancerCatalog';
+import { Label } from 'tgui/components/Label';
 
 type Data = TechnomancerCatalogData;
 
@@ -114,9 +115,9 @@ const FunctionsTab = () => {
                 )
               }
             >
-              <Box italic color="label" mb={1}>
+              <Label italic mb={1}>
                 {s.desc}
-              </Box>
+              </Label>
               {s.spell_power_desc ? (
                 <Box color="purple">
                   <Box inline bold>

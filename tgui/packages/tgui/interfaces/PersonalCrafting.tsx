@@ -19,6 +19,7 @@ import type {
   PersonalCraftingActions,
   PersonalCraftingData,
 } from './generated/PersonalCrafting';
+import { Label } from 'tgui/components/Label';
 
 type Recipe = Extract<
   PersonalCraftingData['crafting_recipes'][string],
@@ -156,9 +157,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
                 <Stack align="center">
                   <Stack.Item grow>
                     <Box bold>{recipe.name}</Box>
-                    <Box color="label" fontSize="11px">
-                      {recipe.req_text}
-                    </Box>
+                    <Label fontSize="11px">{recipe.req_text}</Label>
                   </Stack.Item>
                   <Stack.Item>
                     <Icon name="chevron-right" />
@@ -172,7 +171,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
       <Stack.Item grow>
         {!selected ? (
           <Section fill>
-            <Box color="label">No recipes in this category.</Box>
+            <Label>No recipes in this category.</Label>
           </Section>
         ) : selected.material_slots?.length ? (
           <ProductConfigurator

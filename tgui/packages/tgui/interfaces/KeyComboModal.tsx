@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
@@ -9,6 +9,7 @@ import type {
   KeyComboModalActions,
   KeyComboModalData,
 } from './generated/KeyComboModal';
+import { Label } from 'tgui/components/Label';
 
 type KeyInputData = KeyComboModalData;
 
@@ -127,7 +128,7 @@ export function KeyComboModal(props) {
           <div ref={focusRef} tabIndex={-1} />
           <Stack fill vertical>
             <Stack.Item grow>
-              <Box color="label">{message}</Box>
+              <Label>{message}</Label>
             </Stack.Item>
             <Stack.Item>
               <Button

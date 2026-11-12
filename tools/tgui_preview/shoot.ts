@@ -8,7 +8,7 @@
  * default theme (Layout and Window default to 'nanotrasen'), for before/after pairs; the two files are restored after.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -24,6 +24,12 @@ const SPREAD = [
   'MiningOreProcessingConsole', 'OreSilo', 'AtmosControlPanel', 'AirlockConsoleAdvanced', 'RadiationConfig',
   'EngineeringAssembly', 'NtosFileManager', 'NtosNetDownloader', 'NtosWordProcessor', 'Jukebox', 'TimeClock',
   'Turbolift', 'Newscaster', 'Signaler', 'MuleBot', 'LawManager',
+  'ChemMaster', 'ChemDispenser', 'ChemAnalyzerPro', 'MedicalRecords', 'SecurityRecords', 'BodyScanner', 'DNAModifier',
+  'Biogenerator', 'Autolathe', 'SupplyConsole', 'APC', 'AirAlarm', 'Smes', 'PowerMonitor', 'SupermatterMonitor',
+  'Techweb', 'ExosuitFabricatorTg', 'Fabricator', 'ResleevingConsole', 'CrewMonitor', 'CameraConsole', 'Vending',
+  'Teleporter', 'ShuttleControl', 'SeedStorage', 'PlantAnalyzer', 'Microwave', 'StationAlertConsole', 'TelesciConsole',
+  'Photocopier', 'Fax', 'AccountsTerminal', 'StockExchange', 'Spellbook', 'OvermapNavigation', 'PersonalCrafting',
+  'Wires', 'Safe',
 ];
 
 const args = process.argv.slice(2);
@@ -59,19 +65,30 @@ try {
   for (const [p, text] of patched) writeFileSync(p, text);
 }
 
+// Icon fonts: the game's Font Awesome (html/font-awesome), linked from the page.
+cpSync(path.join(root, 'html', 'font-awesome'), path.join(bundle, 'font-awesome'), { recursive: true });
+// The game's stylesheet names its fonts beside itself (the asset cache serves them flat).
+cpSync(path.join(bundle, 'font-awesome', 'webfonts'), path.join(bundle, 'font-awesome', 'css'), { recursive: true });
+
 const { buildWindowGeometryManifest } = await import(pathToFileURL(path.join(tgui, 'windowGeometryManifest.ts')).href);
 const geometry = buildWindowGeometryManifest(path.join(tgui, 'packages/tgui/interfaces'));
-const page = pathToFileURL(path.join(bundle, 'index.html')).href;
+// Served over http: Chrome will not load web fonts (Font Awesome) from file:// pages.
+const server = Bun.serve({ port: 0, fetch: (req) => {
+  const file = Bun.file(path.join(bundle, decodeURIComponent(new URL(req.url).pathname)));
+  return file.size ? new Response(file) : new Response('not found', { status: 404 });
+} });
+const page = `http://localhost:${server.port}/index.html`;
 for (const name of windows) {
   const g = geometry[name] ?? { width: 560, height: 640 };
   const shot = path.join(out, `${name}.png`);
-  const r = spawnSync(
-    CHROME,
-    ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--window-size=${Math.max(g.width, 500)},${g.height}`,
+  const proc = Bun.spawn(
+    [CHROME, '--headless=new', '--disable-gpu', '--hide-scrollbars', `--window-size=${Math.max(g.width, 500)},${g.height}`,
       '--virtual-time-budget=4000', `--screenshot=${shot}`, `${page}?w=${name}`],
-    { stdio: 'ignore' },
+    { stdout: 'ignore', stderr: 'ignore' },
   );
+  const r = { status: await proc.exited };
   console.log(r.status === 0 ? `shot ${name} ${Math.max(g.width, 500)}x${g.height}` : `FAILED ${name}`);
 }
 
 // Headless Chrome will not make a window narrower than 500px, so narrower windows are shot at 500.
+server.stop(true);

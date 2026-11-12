@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { BeakerContents } from 'tgui/interfaces/common/BeakerContents';
 import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { transferAmounts } from './constants';
 import type { reagent } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const ChemMasterBuffer = (props: {
   mode: BooleanLike;
@@ -19,7 +20,7 @@ export const ChemMasterBuffer = (props: {
       buttons={
         <Stack>
           <Stack.Item>
-            <Box color="label">Transferring to</Box>
+            <Label>Transferring to</Label>
           </Stack.Item>
           <Stack.Item>
             <Button
@@ -96,7 +97,7 @@ export const ChemMasterBuffer = (props: {
           )}
         />
       ) : (
-        <Box color="label">Buffer is empty.</Box>
+        <Label>Buffer is empty.</Label>
       )}
     </Section>
   );

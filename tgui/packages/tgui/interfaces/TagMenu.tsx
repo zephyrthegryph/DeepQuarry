@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { TagMenuActions, TagMenuData } from './generated/TagMenu';
+import { Label } from 'tgui/components/Label';
 
 export const TagMenu = () => {
   const { data, act } = useBackend<TagMenuData, TagMenuActions>();
@@ -30,15 +31,13 @@ export const TagMenu = () => {
                     <Box bold inline>
                       #{e.index}: {e.name}
                     </Box>{' '}
-                    <Box color="label" inline>
-                      ({e.type})
-                    </Box>
+                    <Label inline>({e.type})</Label>
                   </Box>
                   {e.area_coord ? (
-                    <Box ml={1} color="label">
+                    <Label ml={1}>
                       {e.area_coord}
                       {e.health ? ` — ${e.health}` : ''}
-                    </Box>
+                    </Label>
                   ) : null}
                   <Box mt="2px">
                     <Button compact onClick={() => act('vv', { ref: e.ref })}>

@@ -6,6 +6,7 @@ import { gameTooltip } from './constants';
 import { gameStateToText, stateToColor } from './functions';
 import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const PlayerMenu = (props) => {
   const { act, data } = useBackend<Data, FourInARowActions>();
@@ -112,7 +113,7 @@ export const PlayerMenu = (props) => {
             <Stack.Item>
               <Stack justify="center">
                 <Stack.Item>
-                  <Box color="label">Size:</Box>
+                  <Label>Size:</Label>
                 </Stack.Item>
                 <Stack.Item>
                   {game_state === 0 && isFourRow ? (
@@ -130,7 +131,7 @@ export const PlayerMenu = (props) => {
                 </Stack.Item>
                 <Stack.Item basis="10%" />
                 <Stack.Item>
-                  <Box color="label">Win Con.:</Box>
+                  <Label>Win Con.:</Label>
                 </Stack.Item>
                 <Stack.Item>
                   {game_state === 0 && isFourRow ? (
@@ -148,7 +149,7 @@ export const PlayerMenu = (props) => {
               </Stack>
             </Stack.Item>
             <Stack.Item>
-              <Box color="label">Status:</Box>
+              <Label>Status:</Label>
             </Stack.Item>
             <Stack.Item>
               <Box

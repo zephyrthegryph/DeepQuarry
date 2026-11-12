@@ -1,14 +1,12 @@
 import { type KeyboardEvent, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Autofocus, Box, Button, Section, Stack } from 'tgui-core/components';
+import { Autofocus, Button, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
 
 import { Loader } from './common/Loader';
-import type {
-  AlertModalActions,
-  AlertModalData,
-} from './generated/AlertModal';
+import type { AlertModalActions, AlertModalData } from './generated/AlertModal';
+import { Label } from 'tgui/components/Label';
 
 type Data = AlertModalData;
 
@@ -95,20 +93,13 @@ export function AlertModal(props) {
   }
 
   return (
-    <Window
-      fitContent
-      height={windowHeight}
-      title={title}
-      width={windowWidth}
-    >
+    <Window fitContent height={windowHeight} title={title} width={windowWidth}>
       {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={keyDownHandler}>
         <Section fill>
           <Stack fill vertical>
             <Stack.Item grow>
-              <Box color="label" p={1}>
-                {message}
-              </Box>
+              <Label p={1}>{message}</Label>
             </Stack.Item>
             <Stack.Item grow>
               {!!autofocus && <Autofocus />}

@@ -3,6 +3,7 @@ import { Box, LabeledList } from 'tgui-core/components';
 import type { RedipeData } from '../types';
 import { SupplyEntry } from '../WikiCommon/WikiQuickElements';
 import { WikiSpoileredList } from './WikiListElements';
+import { Label } from 'tgui/components/Label';
 
 export const RecipeList = (props: { title: string; recipe: RedipeData }) => {
   const { title, recipe } = props;
@@ -57,7 +58,7 @@ export const RecipeList = (props: { title: string; recipe: RedipeData }) => {
 
 function getCoating(has_coating: boolean, coating: number | string | null) {
   if (!has_coating) {
-    return <Box color="label">N/A, no coatable items</Box>;
+    return <Label>N/A, no coatable items</Label>;
   }
 
   if (!coating) {

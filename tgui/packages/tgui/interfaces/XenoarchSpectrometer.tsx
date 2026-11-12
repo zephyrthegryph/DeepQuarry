@@ -18,6 +18,7 @@ import type {
   XenoarchSpectrometerActions,
   XenoarchSpectrometerData,
 } from './generated/XenoarchSpectrometer';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = XenoarchSpectrometerData;
 
@@ -188,9 +189,12 @@ export const LeftPanel = (props) => {
         </Stack.Item>
       </Stack>
       <LabeledList>
-        <LabeledList.Item label="Completion">
-          <ProgressBar value={scan_progress} minValue={0} maxValue={100} />
-        </LabeledList.Item>
+        <StatBar
+          label="Completion"
+          value={scan_progress}
+          minValue={0}
+          maxValue={100}
+        />
         <LabeledList.Item
           label="RPM"
           buttons={

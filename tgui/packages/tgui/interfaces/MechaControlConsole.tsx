@@ -15,6 +15,8 @@ import type {
   MechaControlConsoleActions,
   MechaControlConsoleData,
 } from './generated/MechaControlConsole';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 export const MechaControlConsole = (props) => {
   const { act, data } = useBackend<
@@ -37,9 +39,9 @@ export const MechaControlConsole = (props) => {
             >
               {stored_data.map((data) => (
                 <Box key={data.time}>
-                  <Box color="label">
+                  <Label>
                     ({data.time}) ({data.year})
-                  </Box>
+                  </Label>
                   <Box>{decodeHtmlEntities(data.message)}</Box>
                 </Box>
               ))}
@@ -84,20 +86,16 @@ export const MechaControlConsole = (props) => {
               }
             >
               <LabeledList>
-                <LabeledList.Item label="Health">
-                  <ProgressBar
-                    ranges={{
-                      good: [beacon.maxHealth * 0.75, Infinity],
-                      average: [
-                        beacon.maxHealth * 0.5,
-                        beacon.maxHealth * 0.75,
-                      ],
-                      bad: [-Infinity, beacon.maxHealth * 0.5],
-                    }}
-                    value={beacon.health}
-                    maxValue={beacon.maxHealth}
-                  />
-                </LabeledList.Item>
+                <StatBar
+                  label="Health"
+                  ranges={{
+                    good: [beacon.maxHealth * 0.75, Infinity],
+                    average: [beacon.maxHealth * 0.5, beacon.maxHealth * 0.75],
+                    bad: [-Infinity, beacon.maxHealth * 0.5],
+                  }}
+                  value={beacon.health}
+                  maxValue={beacon.maxHealth}
+                />
                 <LabeledList.Item label="Cell Charge">
                   {(beacon.cell && (
                     <ProgressBar
@@ -127,20 +125,16 @@ export const MechaControlConsole = (props) => {
                   {beacon.active || 'None'}
                 </LabeledList.Item>
                 {beacon.cargoMax ? (
-                  <LabeledList.Item label="Cargo Space">
-                    <ProgressBar
-                      ranges={{
-                        bad: [beacon.cargoMax * 0.75, Infinity],
-                        average: [
-                          beacon.cargoMax * 0.5,
-                          beacon.cargoMax * 0.75,
-                        ],
-                        good: [-Infinity, beacon.cargoMax * 0.5],
-                      }}
-                      value={beacon.cargoUsed}
-                      maxValue={beacon.cargoMax}
-                    />
-                  </LabeledList.Item>
+                  <StatBar
+                    label="Cargo Space"
+                    ranges={{
+                      bad: [beacon.cargoMax * 0.75, Infinity],
+                      average: [beacon.cargoMax * 0.5, beacon.cargoMax * 0.75],
+                      good: [-Infinity, beacon.cargoMax * 0.5],
+                    }}
+                    value={beacon.cargoUsed}
+                    maxValue={beacon.cargoMax}
+                  />
                 ) : (
                   ''
                 )}

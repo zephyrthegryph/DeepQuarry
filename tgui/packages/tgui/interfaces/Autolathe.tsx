@@ -22,6 +22,7 @@ import {
 } from './Fabrication/SelectableRecipe';
 import type { Design, MaterialMap } from './Fabrication/Types';
 import type { AutolatheActions, AutolatheData } from './generated/Autolathe';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const Autolathe = (props) => {
   const { act, data } = useBackend<AutolatheData, AutolatheActions>();
@@ -49,23 +50,22 @@ export const Autolathe = (props) => {
           <Stack.Item>
             <Section title="Total Materials">
               <LabeledList>
-                <LabeledList.Item label="Total Materials">
-                  <ProgressBar
-                    value={materialtotal}
-                    minValue={0}
-                    maxValue={materialsmax}
-                    ranges={{
-                      good: [materialsmax * 0.85, materialsmax],
-                      average: [materialsmax * 0.25, materialsmax * 0.85],
-                      bad: [0, materialsmax * 0.25],
-                    }}
-                  >
-                    {materialtotal / SHEET_MATERIAL_AMOUNT +
-                      '/' +
-                      materialsmax / SHEET_MATERIAL_AMOUNT +
-                      ' sheets'}
-                  </ProgressBar>
-                </LabeledList.Item>
+                <StatBar
+                  label="Total Materials"
+                  value={materialtotal}
+                  minValue={0}
+                  maxValue={materialsmax}
+                  ranges={{
+                    good: [materialsmax * 0.85, materialsmax],
+                    average: [materialsmax * 0.25, materialsmax * 0.85],
+                    bad: [0, materialsmax * 0.25],
+                  }}
+                >
+                  {materialtotal / SHEET_MATERIAL_AMOUNT +
+                    '/' +
+                    materialsmax / SHEET_MATERIAL_AMOUNT +
+                    ' sheets'}
+                </StatBar>
                 <LabeledList.Item>
                   {filteredMaterials.length > 0 && (
                     <Collapsible title="Materials">

@@ -15,6 +15,7 @@ import type {
   ShieldGeneratorActions,
   ShieldGeneratorData,
 } from './generated/ShieldGenerator';
+import { Label } from 'tgui/components/Label';
 
 type Data = ShieldGeneratorData;
 
@@ -46,9 +47,7 @@ const ShieldGeneratorLocked = (props) => (
         mr="1rem"
       />
     </Box>
-    <Box color="label" my="1rem">
-      Swipe your ID to begin.
-    </Box>
+    <Label my="1rem">Swipe your ID to begin.</Label>
   </FullscreenNotice>
 );
 

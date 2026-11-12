@@ -1,17 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type {
   OvermapShipSensorsActions,
   OvermapShipSensorsData,
 } from './generated/OvermapShipSensors';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = OvermapShipSensorsData;
 
@@ -73,39 +67,37 @@ export const OvermapShipSensorsContent = (props) => {
               {range ?? 'N/A'}
             </Button>
           </LabeledList.Item>
-          <LabeledList.Item label="Integrity">
-            <ProgressBar
-              ranges={{
-                good: [max_health * 0.75, Infinity],
-                average: [max_health * 0.25, max_health * 0.75],
-                bad: [-Infinity, max_health * 0.25],
-              }}
-              value={health}
-              maxValue={max_health}
-            >
-              {health} / {max_health}
-            </ProgressBar>
-          </LabeledList.Item>
-          <LabeledList.Item label="Temperature">
-            <ProgressBar
-              ranges={{
-                bad: [critical_heat * 0.75, Infinity],
-                average: [critical_heat * 0.5, critical_heat * 0.75],
-                good: [-Infinity, critical_heat * 0.5],
-              }}
-              value={heat}
-              maxValue={critical_heat}
-            >
-              {(heat < critical_heat * 0.5 && <Box>Temperature low.</Box>) ||
-                (heat < critical_heat * 0.75 && (
-                  <Box>Sensor temperature high!</Box>
-                )) || (
-                  <Box>
-                    TEMPERATURE CRITICAL: Disable or reduce power immediately!
-                  </Box>
-                )}
-            </ProgressBar>
-          </LabeledList.Item>
+          <StatBar
+            label="Integrity"
+            ranges={{
+              good: [max_health * 0.75, Infinity],
+              average: [max_health * 0.25, max_health * 0.75],
+              bad: [-Infinity, max_health * 0.25],
+            }}
+            value={health}
+            maxValue={max_health}
+          >
+            {health} / {max_health}
+          </StatBar>
+          <StatBar
+            label="Temperature"
+            ranges={{
+              bad: [critical_heat * 0.75, Infinity],
+              average: [critical_heat * 0.5, critical_heat * 0.75],
+              good: [-Infinity, critical_heat * 0.5],
+            }}
+            value={heat}
+            maxValue={critical_heat}
+          >
+            {(heat < critical_heat * 0.5 && <Box>Temperature low.</Box>) ||
+              (heat < critical_heat * 0.75 && (
+                <Box>Sensor temperature high!</Box>
+              )) || (
+                <Box>
+                  TEMPERATURE CRITICAL: Disable or reduce power immediately!
+                </Box>
+              )}
+          </StatBar>
         </LabeledList>
       </Section>
       <Section title="Contacts">

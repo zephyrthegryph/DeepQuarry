@@ -5,6 +5,7 @@ import { modalOpen } from '../../interfaces/common/ComplexModal';
 import { doEdit } from '../GeneralRecords/functions';
 import type { SecurityRecordsActions } from '../generated/SecurityRecords';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const SecurityRecordsViewSecurity = (props) => {
   const { act, data } = useBackend<Data, SecurityRecordsActions>();
@@ -47,13 +48,11 @@ export const SecurityRecordsViewSecurity = (props) => {
       </LabeledList>
       <Section title="Comments/Log">
         {security.comments && security.comments.length === 0 ? (
-          <Box color="label">No comments found.</Box>
+          <Label>No comments found.</Label>
         ) : (
           security.comments?.map((comment, i) => (
             <Box key={i}>
-              <Box color="label" inline>
-                {comment.header}
-              </Box>
+              <Label inline>{comment.header}</Label>
               <br />
               {comment.text}
               <Button

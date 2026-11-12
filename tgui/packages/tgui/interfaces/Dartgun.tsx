@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { DartgunActions, DartgunData } from './generated/Dartgun';
+import { Label } from 'tgui/components/Label';
 
 export const Dartgun = () => {
   const { data, act } = useBackend<DartgunData, DartgunActions>();
@@ -21,16 +22,14 @@ export const Dartgun = () => {
                 <Stack.Item key={b.index}>
                   <Box bold>Beaker {b.index}</Box>
                   {b.reagents.length === 0 ? (
-                    <Box color="label" italic>
-                      empty
-                    </Box>
+                    <Label italic>empty</Label>
                   ) : (
                     <>
-                      <Box ml={1} color="label">
+                      <Label ml={1}>
                         {b.reagents
                           .map((r) => `${r.volume}u ${r.name}`)
                           .join(', ')}
-                      </Box>
+                      </Label>
                       <Box mt="2px">
                         <Button
                           compact

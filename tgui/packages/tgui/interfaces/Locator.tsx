@@ -7,6 +7,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { LocatorActions, LocatorData } from './generated/Locator';
+import { Label } from 'tgui/components/Label';
 
 const strengthColor = (s: string): string => {
   if (s === 'very strong') return 'good';
@@ -48,9 +49,7 @@ export const Locator = () => {
             title="Last Scan"
             buttons={<Button onClick={() => act('clear')}>Clear</Button>}
           >
-            <Box mb={1} color="label">
-              Position: {location}
-            </Box>
+            <Label mb={1}>Position: {location}</Label>
             <Box bold>Located Beacons</Box>
             {beacons.length > 0 ? (
               <Stack vertical>
@@ -59,9 +58,7 @@ export const Locator = () => {
                     <Box inline bold>
                       {b.id}
                     </Box>{' '}
-                    <Box inline color="label">
-                      {b.direction}
-                    </Box>{' '}
+                    <Label inline>{b.direction}</Label>{' '}
                     <Box inline color={strengthColor(b.strength)}>
                       {b.strength}
                     </Box>
@@ -69,9 +66,7 @@ export const Locator = () => {
                 ))}
               </Stack>
             ) : (
-              <Box color="label" italic>
-                None
-              </Box>
+              <Label italic>None</Label>
             )}
             <Box bold mt={1}>
               Extraneous Signals
@@ -83,9 +78,7 @@ export const Locator = () => {
                     <Box inline bold>
                       {b.id}
                     </Box>{' '}
-                    <Box inline color="label">
-                      {b.direction}
-                    </Box>{' '}
+                    <Label inline>{b.direction}</Label>{' '}
                     <Box inline color={strengthColor(b.strength)}>
                       {b.strength}
                     </Box>
@@ -93,9 +86,7 @@ export const Locator = () => {
                 ))}
               </Stack>
             ) : (
-              <Box color="label" italic>
-                None
-              </Box>
+              <Label italic>None</Label>
             )}
           </Section>
         ) : null}

@@ -8,6 +8,7 @@ import type {
   DeleteBookPanelActions,
   DeleteBookPanelData,
 } from './generated/DeleteBookPanel';
+import { Label } from 'tgui/components/Label';
 
 export const DeleteBookPanel = () => {
   const { data, act } = useBackend<
@@ -38,9 +39,7 @@ export const DeleteBookPanel = () => {
               <Button onClick={() => act('order_by_id')} icon="hashtag">
                 Order by SS13BN
               </Button>{' '}
-              <Box inline color="label">
-                Sort by:
-              </Box>{' '}
+              <Label inline>Sort by:</Label>{' '}
               <Button
                 compact
                 selected={sort_by === 'author'}
@@ -72,9 +71,9 @@ export const DeleteBookPanel = () => {
               {books.map((b) => (
                 <Stack.Item key={b.id}>
                   <Box bold>{b.title}</Box>
-                  <Box ml={1} color="label">
+                  <Label ml={1}>
                     {b.author} — {b.category}
-                  </Box>
+                  </Label>
                   <Box ml={1}>
                     <Button
                       compact

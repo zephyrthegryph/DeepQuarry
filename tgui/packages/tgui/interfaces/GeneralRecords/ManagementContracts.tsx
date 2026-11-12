@@ -13,6 +13,7 @@ import {
 } from 'tgui-core/components';
 import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import type { contractClauseOption, Data, managementContract } from './types';
+import { Label } from 'tgui/components/Label';
 
 const signed = (value: number, suffix = '') =>
   `${value > 0 ? '+' : ''}${value}${suffix}`;
@@ -78,9 +79,9 @@ const TermTooltip = ({
       <Box mb={0.75}>{option.description}</Box>
       {!!visibleEffects.length && (
         <Box p={0.5} mb={0.5} backgroundColor="rgba(255, 255, 255, 0.055)">
-          <Box bold mb={0.5} color="label">
+          <Label bold mb={0.5}>
             Changes
-          </Box>
+          </Label>
           <Table>
             {visibleEffects.map(([label, money, reputation]) => (
               <Table.Row key={label}>
@@ -126,12 +127,12 @@ const TermTooltip = ({
         </Box>
       )}
       {!!option.deadline_minutes && (
-        <Box color="label" nowrap>
+        <Label nowrap>
           Deadline adjustment:{' '}
           <Box inline bold color={option.deadline_minutes < 0 ? 'bad' : 'good'}>
             {signed(option.deadline_minutes, ' min')}
           </Box>
-        </Box>
+        </Label>
       )}
     </Box>
   );
@@ -172,9 +173,7 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
               textAlign="center"
               backgroundColor="rgba(255, 255, 255, 0.055)"
             >
-              <Box color="label" mb={0.25}>
-                {label}
-              </Box>
+              <Label mb={0.25}>{label}</Label>
               <Box inline bold>
                 {money.toLocaleString()} th
               </Box>
@@ -242,9 +241,9 @@ const OutcomeStages = ({ contract }: { contract: managementContract }) => {
               <Box bold>
                 {index + 1}. {stage.label}
               </Box>
-              <Box color="label">
+              <Label>
                 {stage.target}% · {stage.reward.toLocaleString()} th
-              </Box>
+              </Label>
               <Box
                 color={
                   stage.earned ? 'good' : stage.reached ? 'average' : 'label'
@@ -396,21 +395,21 @@ export const ManagementContracts = () => {
                 <Box inline bold color={faction.color} mr={0.5}>
                   {faction.acronym}
                 </Box>
-                <Box inline color="label">
+                <Label inline>
                   {reputationDepartment
                     ? (faction.department_tiers?.[reputationDepartment] ??
                       faction.tier)
                     : faction.tier}
-                </Box>
+                </Label>
               </Box>
             </Tooltip>
           </Stack.Item>
         ))}
       </Stack>
       {!contracts.length && (
-        <Box p={4} textAlign="center" color="label">
+        <Label p={4} textAlign="center">
           No contracts match this view.
-        </Box>
+        </Label>
       )}
       {contracts.map((contract, index) => {
         const expanded = !!expandedContracts[contract.id];
@@ -540,7 +539,7 @@ export const ManagementContracts = () => {
                       buttons={
                         contract.negotiation_locked && (
                           <Tooltip content="Terms were locked when this contract was accepted.">
-                            <Box color="label">Locked</Box>
+                            <Label>Locked</Label>
                           </Tooltip>
                         )
                       }
@@ -631,7 +630,7 @@ export const ManagementContracts = () => {
                             <Box bold>
                               {requirement.name} — {requirement.progress_text}
                             </Box>
-                            <Box color="label">{requirement.description}</Box>
+                            <Label>{requirement.description}</Label>
                             <ProgressBar
                               value={requirement.progress}
                               minValue={0}
@@ -653,11 +652,11 @@ export const ManagementContracts = () => {
                                       <Box bold>
                                         {stage.index}. {stage.label}
                                       </Box>
-                                      <Box color="label">
+                                      <Label>
                                         {stage.threshold}
                                         {stage.unit && ` ${stage.unit}`} · hold{' '}
                                         {stage.duration}
-                                      </Box>
+                                      </Label>
                                       <Box
                                         color={
                                           stage.status === 'Complete'
@@ -749,7 +748,7 @@ export const ManagementContracts = () => {
                               good: [contract.details.success_percent, 100],
                             }}
                           />
-                          <Box mt={0.5} color="label">
+                          <Label mt={0.5}>
                             Minimum settlement begins at{' '}
                             {contract.details.minimum_percent}
                             %; certified at {contract.details.success_percent}
@@ -757,19 +756,19 @@ export const ManagementContracts = () => {
                             {contract.details.exceptional_percent}%. Every
                             required dimension and stakeholder role must meet
                             its negotiated minimum.
-                          </Box>
-                          <Box mt={0.5} color="label">
+                          </Label>
+                          <Label mt={0.5}>
                             Eligible crew join roles directly. Attributable work
                             qualifies participation and divides the fixed staff
                             award by contribution.
-                          </Box>
+                          </Label>
                           {contract.details.roles.map((role) => (
                             <Section
                               key={`${contract.id}-${role.id}`}
                               mt={1}
                               title={`${role.title} — ${role.qualified}/${role.minimum} qualified · ${role.approved} participating`}
                             >
-                              <Box mb={0.5} color="label">
+                              <Label mb={0.5}>
                                 {role.description}
                                 {role.authored_minimum > role.minimum && (
                                   <>
@@ -779,11 +778,9 @@ export const ManagementContracts = () => {
                                     Remaining appointments are optional.
                                   </>
                                 )}
-                              </Box>
+                              </Label>
                               {!role.proposals.length && (
-                                <Box color="label">
-                                  No participants have joined.
-                                </Box>
+                                <Label>No participants have joined.</Label>
                               )}
                               {role.proposals.map((proposal) => (
                                 <Stack
@@ -793,7 +790,7 @@ export const ManagementContracts = () => {
                                 >
                                   <Stack.Item grow>
                                     <Box bold>{proposal.name}</Box>
-                                    <Box color="label">
+                                    <Label>
                                       {proposal.department || 'Independent'} ·
                                       {proposal.online ? 'online' : 'offline'} ·
                                       contribution {proposal.contribution}/
@@ -801,7 +798,7 @@ export const ManagementContracts = () => {
                                       {proposal.qualified
                                         ? 'qualified'
                                         : 'participating'}
-                                    </Box>
+                                    </Label>
                                   </Stack.Item>
                                 </Stack>
                               ))}
@@ -870,9 +867,9 @@ export const ManagementContracts = () => {
                         </LabeledList.Item>
                       </LabeledList>
                       {!contract.details.subjects.length && (
-                        <Box mt={1} color="label">
+                        <Label mt={1}>
                           No signed consent records have been registered.
-                        </Box>
+                        </Label>
                       )}
                       {contract.details.subjects.map((subject) => (
                         <Section
@@ -882,7 +879,7 @@ export const ManagementContracts = () => {
                           buttons={
                             <Stack align="center">
                               <Stack.Item>
-                                <Box color="label">{subject.status}</Box>
+                                <Label>{subject.status}</Label>
                               </Stack.Item>
                               {!!subject.can_reissue && (
                                 <Stack.Item>

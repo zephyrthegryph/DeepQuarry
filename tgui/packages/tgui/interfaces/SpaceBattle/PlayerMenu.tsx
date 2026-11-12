@@ -7,6 +7,7 @@ import { gameStateToText, gameTooltip } from './constants';
 import { stateToColor } from './functions';
 import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const PlayerMenu = (props: {
   playerOnePlaceShip: string;
@@ -145,7 +146,7 @@ export const PlayerMenu = (props: {
         <Stack.Item basis="33%">
           <Stack vertical textAlign="center">
             <Stack.Item>
-              <Box color="label">Status:</Box>
+              <Label>Status:</Label>
             </Stack.Item>
             <Stack.Item>
               <Box color={stateToColor(game_state, !!has_won)}>

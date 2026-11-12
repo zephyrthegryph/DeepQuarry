@@ -16,6 +16,7 @@ import type {
   ErrorViewerActions,
   ErrorViewerData,
 } from './generated/ErrorViewer';
+import { Label } from 'tgui/components/Label';
 
 type Item = {
   ref: string;
@@ -43,10 +44,10 @@ const Header = (props: { data: Data; act: (a: string, p?: any) => void }) => {
           </Button>
         </Stack.Item>
         <Stack.Item grow textAlign="right">
-          <Box color="label">
+          <Label>
             <b>{data.total_runtimes}</b> runtimes, <b>{data.total_skipped}</b>{' '}
             skipped
-          </Box>
+          </Label>
         </Stack.Item>
       </Stack>
     </Section>
@@ -66,9 +67,9 @@ const ItemList = (props: {
       {items.map((it) => (
         <Stack.Item key={it.ref}>
           {it.is_skip_count ? (
-            <Box color="label">
+            <Label>
               <HtmlRenderer html={it.name} />
-            </Box>
+            </Label>
           ) : (
             <Button onClick={() => onSelect(it.ref)}>
               <HtmlRenderer html={it.name} />

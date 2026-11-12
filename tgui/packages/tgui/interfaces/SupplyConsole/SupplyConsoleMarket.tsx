@@ -13,6 +13,7 @@ import {
 } from 'tgui-core/components';
 import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { CargoMarketBid, Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 const bidLabel = (bid: CargoMarketBid) =>
   `${bid.counterparty} — ${bid.name} (×${bid.multiplier.toFixed(2)})`;
@@ -50,7 +51,7 @@ export const SupplyConsoleMarket = () => {
           <Stack.Item basis="50%">
             <Section fill scrollable title="External sellers">
               {!market.listings.length && (
-                <Box color="label">No seller listings are available.</Box>
+                <Label>No seller listings are available.</Label>
               )}
               {market.listings.map((listing) => (
                 <Section
@@ -105,10 +106,10 @@ export const SupplyConsoleMarket = () => {
                     </Stack>
                   }
                 >
-                  <Box color="label">
+                  <Label>
                     {listing.counterparty} · {listing.group} · {listing.stock}{' '}
                     in stock · {listing.expires}
-                  </Box>
+                  </Label>
                   {!!listing.contraband && (
                     <Box color="bad" bold>
                       Restricted listing
@@ -129,14 +130,14 @@ export const SupplyConsoleMarket = () => {
           <Stack.Item basis="50%">
             <Section fill scrollable title="External buyers">
               {!market.bids.length && (
-                <Box color="label">No active purchase bids are available.</Box>
+                <Label>No active purchase bids are available.</Label>
               )}
               {market.bids.map((bid) => (
                 <Section key={bid.id} title={bid.name}>
-                  <Box color="label">
+                  <Label>
                     {bid.counterparty} · pays ×{bid.multiplier.toFixed(2)} ·{' '}
                     {bid.expires}
-                  </Box>
+                  </Label>
                   <Box mb={0.5}>{bid.description}</Box>
                   <ProgressBar value={bid.fulfilled} maxValue={bid.target}>
                     {bid.fulfilled} / {bid.target} units
@@ -162,9 +163,7 @@ export const SupplyConsoleMarket = () => {
             </NoticeBox>
           )}
           {!market.outbound_crates.length && (
-            <Box color="label">
-              No movable crates are on the supply shuttle.
-            </Box>
+            <Label>No movable crates are on the supply shuttle.</Label>
           )}
           {market.outbound_crates.map((crate) => (
             <LabeledList key={crate.ref}>
@@ -214,7 +213,7 @@ export const SupplyConsoleMarket = () => {
         </Collapsible>
         <Collapsible title="Recent market settlements">
           {!market.transactions.length && (
-            <Box color="label">No market trades have settled this cycle.</Box>
+            <Label>No market trades have settled this cycle.</Label>
           )}
           {market.transactions.map((transaction, index) => (
             <Section

@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import type { DiagnosisReport as DiagnosisShape } from '../generated/_schemas';
+import { Label } from 'tgui/components/Label';
 
 /** The report's type comes from its DM shape (UI_SCHEMA diagnosis_report, generated/_schemas). */
 export type Diagnosis = DiagnosisShape;
@@ -165,9 +166,9 @@ const FindingRow = (props: { finding: DiagnosisFinding }) => {
   return (
     <Box mb="2px">
       {finding.kind === 'sign' ? (
-        <Box inline mr={1} color="label" fontSize="0.85em">
+        <Label inline mr={1} fontSize="0.85em">
           SIGN
-        </Box>
+        </Label>
       ) : (
         <Box
           inline
@@ -197,9 +198,9 @@ const FindingRow = (props: { finding: DiagnosisFinding }) => {
         <Box inline>{finding.name}</Box>
       )}
       {finding.hint ? (
-        <Box color="label" fontSize="0.85em" ml={2}>
+        <Label fontSize="0.85em" ml={2}>
           {finding.hint}
-        </Box>
+        </Label>
       ) : null}
     </Box>
   );

@@ -5,6 +5,7 @@ import { modalOpen } from '../common/ComplexModal';
 import { doEdit } from '../GeneralRecords/functions';
 import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const MedicalRecordsViewMedical = (props) => {
   const { act, data } = useBackend<Data, MedicalRecordsActions>();
@@ -46,13 +47,11 @@ export const MedicalRecordsViewMedical = (props) => {
       </LabeledList>
       <Section title="Comments/Log">
         {medical.comments && medical.comments.length === 0 ? (
-          <Box color="label">No comments found.</Box>
+          <Label>No comments found.</Label>
         ) : (
           medical.comments?.map((comment, i) => (
             <Box key={i}>
-              <Box color="label" inline>
-                {comment.header}
-              </Box>
+              <Label inline>{comment.header}</Label>
               <br />
               {comment.text}
               <Button

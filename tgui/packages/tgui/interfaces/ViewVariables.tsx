@@ -16,6 +16,7 @@ import type {
   ViewVariablesActions,
   ViewVariablesData,
 } from './generated/ViewVariables';
+import { Label } from 'tgui/components/Label';
 
 type Data = ViewVariablesData;
 type Variable = Data['variables'][number];
@@ -31,9 +32,7 @@ const Header = (props: { data: Data; act: ActFn }) => {
           <Box bold inline>
             {data.type}
           </Box>{' '}
-          <Box inline color="label">
-            {data.ref_for_paste}
-          </Box>
+          <Label inline>{data.ref_for_paste}</Label>
         </Box>
       }
       buttons={
@@ -70,9 +69,9 @@ const Header = (props: { data: Data; act: ActFn }) => {
         ) : null}
       </Box>
       {data.coords ? (
-        <Box mt={1} color="label">
+        <Label mt={1}>
           x: {data.coords.x} y: {data.coords.y} z: {data.coords.z}
-        </Box>
+        </Label>
       ) : null}
     </Section>
   );
@@ -109,7 +108,7 @@ const DropdownSection = (props: { data: Data; act: ActFn }) => {
 
 const VariableLegend = () => (
   <Section>
-    <Box color="label" italic style={{ fontSize: '0.85em' }}>
+    <Label italic style={{ fontSize: '0.85em' }}>
       <Box>
         <b>E</b> — Edit, tries to determine the variable type by itself.
       </Box>
@@ -120,7 +119,7 @@ const VariableLegend = () => (
         <b>M</b> — Mass modify: changes this variable for all objects of this
         type.
       </Box>
-    </Box>
+    </Label>
   </Section>
 );
 

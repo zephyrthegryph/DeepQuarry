@@ -1,13 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   LabeledList,
   ProgressBar,
   Section,
   Stack,
   Table,
 } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 type LedgerRow = { name: string; amount: number };
 type DepartmentRow = {
@@ -80,7 +80,7 @@ const money = (value = 0) => `${value.toLocaleString()} Th`;
 
 const Ledger = (props: { rows: LedgerRow[]; empty: string }) => {
   const sorted = [...props.rows].sort((a, b) => b.amount - a.amount);
-  if (!sorted.length) return <Box color="label">{props.empty}</Box>;
+  if (!sorted.length) return <Label>{props.empty}</Label>;
   return (
     <Table>
       {sorted.map((row) => (

@@ -4,10 +4,10 @@ import {
   Box,
   Button,
   LabeledList,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = {
   connected: BooleanLike;
@@ -55,20 +55,19 @@ export const PortableBasicInfo = (props) => {
             {connected ? 'Connected' : 'Not Connected'}
           </LabeledList.Item>
           <LabeledList.Item label="Load">{powerDraw} W</LabeledList.Item>
-          <LabeledList.Item label="Cell Charge">
-            <ProgressBar
-              value={cellCharge}
-              minValue={0}
-              maxValue={cellMaxCharge}
-              ranges={{
-                good: [cellMaxCharge * 0.5, Infinity],
-                average: [cellMaxCharge * 0.25, cellMaxCharge * 0.5],
-                bad: [-Infinity, cellMaxCharge * 0.25],
-              }}
-            >
-              {cellCharge} W
-            </ProgressBar>
-          </LabeledList.Item>
+          <StatBar
+            label="Cell Charge"
+            value={cellCharge}
+            minValue={0}
+            maxValue={cellMaxCharge}
+            ranges={{
+              good: [cellMaxCharge * 0.5, Infinity],
+              average: [cellMaxCharge * 0.25, cellMaxCharge * 0.5],
+              bad: [-Infinity, cellMaxCharge * 0.25],
+            }}
+          >
+            {cellCharge} W
+          </StatBar>
         </LabeledList>
       </Section>
       <Section

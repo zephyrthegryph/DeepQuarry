@@ -12,6 +12,7 @@ import type {
   TelecommsMachineBrowserActions,
   TelecommsMachineBrowserData,
 } from './generated/TelecommsMachineBrowser';
+import { Label } from 'tgui/components/Label';
 
 type Machine = TelecommsMachineBrowserData['machinelist'][number];
 
@@ -140,9 +141,9 @@ const TelecommsBrowser = (props: {
         )
       }
     >
-      <Box color="label">
+      <Label>
         <u>Linked entities</u>
-      </Box>
+      </Label>
       <LabeledList>
         {list.length ? (
           list.map((machine) => (

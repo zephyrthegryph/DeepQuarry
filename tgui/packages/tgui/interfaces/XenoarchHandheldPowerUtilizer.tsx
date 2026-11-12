@@ -5,13 +5,13 @@ import {
   Button,
   LabeledList,
   NumberInput,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
 import type {
   XenoarchHandheldPowerUtilizerActions,
   XenoarchHandheldPowerUtilizerData,
 } from './generated/XenoarchHandheldPowerUtilizer';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = XenoarchHandheldPowerUtilizerData;
 
@@ -55,11 +55,9 @@ export const XenoarchHandheldPowerUtilizer = (props) => {
               <LabeledList.Item label="Anomalies Detected">
                 {anomaly || 'N/A'}
               </LabeledList.Item>
-              <LabeledList.Item label="Charge">
-                <ProgressBar value={charge!} maxValue={capacity!}>
-                  {charge} / {capacity}
-                </ProgressBar>
-              </LabeledList.Item>
+              <StatBar label="Charge" value={charge!} maxValue={capacity!}>
+                {charge} / {capacity}
+              </StatBar>
               <LabeledList.Item label="Time Left Activated">
                 {timeleft}
               </LabeledList.Item>

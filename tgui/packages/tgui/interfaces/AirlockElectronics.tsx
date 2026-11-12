@@ -10,6 +10,7 @@ import type {
   AirlockElectronicsActions,
   AirlockElectronicsData,
 } from './generated/AirlockElectronics';
+import { Label } from 'tgui/components/Label';
 
 export const AirlockElectronics = () => {
   const { data, act } = useBackend<
@@ -43,9 +44,9 @@ export const AirlockElectronics = () => {
           ) : null}
 
           {locked ? (
-            <Box mt={1} italic color="label">
+            <Label mt={1} italic>
               Unlock the interface to configure access requirements.
-            </Box>
+            </Label>
           ) : (
             <Box mt={1}>
               <LabeledList>

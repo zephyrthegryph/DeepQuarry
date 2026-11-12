@@ -6,7 +6,6 @@ import {
   Button,
   Input,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
   Table,
@@ -18,6 +17,7 @@ import type {
   NtosEmailClientData,
 } from './generated/NtosEmailClient';
 import { sanitizeText } from '../sanitize';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = NtosEmailClientData;
 
@@ -59,20 +59,19 @@ const NtosEmailClientDownloading = (props) => {
         <LabeledList.Item label="Speed">
           <AnimatedNumber value={down_speed!} /> GQ/s
         </LabeledList.Item>
-        <LabeledList.Item label="Progress">
-          <ProgressBar
-            color="good"
-            value={down_progress!}
-            maxValue={down_size!}
-          >
-            {down_progress +
-              '/' +
-              down_size +
-              ' (' +
-              ((down_progress! / down_size!) * 100).toFixed(1) +
-              '%)'}
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Progress"
+          color="good"
+          value={down_progress!}
+          maxValue={down_size!}
+        >
+          {down_progress +
+            '/' +
+            down_size +
+            ' (' +
+            ((down_progress! / down_size!) * 100).toFixed(1) +
+            '%)'}
+        </StatBar>
       </LabeledList>
     </Section>
   );

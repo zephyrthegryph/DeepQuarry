@@ -2,9 +2,10 @@
 // area beside it, and the text as examine prints it below.
 
 import { useBackend } from 'tgui/backend';
-import { Box, Button } from 'tgui-core/components';
+import { Button } from 'tgui-core/components';
 import { type SwitcherEntry, TextSwitcher } from '../TextSwitcher';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],
@@ -23,9 +24,9 @@ export const FlavorTextEditor = ({
 
   if (mode === 'pai') {
     return (
-      <Box color="label" italic>
+      <Label italic>
         pAIs use the card details under the Game tab — no body flavor needed.
-      </Box>
+      </Label>
     );
   }
 

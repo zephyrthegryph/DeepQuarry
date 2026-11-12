@@ -13,6 +13,7 @@ import type {
   ExperimentConfigureActions,
   ExperimentConfigureData,
 } from './generated/ExperimentConfigure';
+import { Label } from 'tgui/components/Label';
 
 type ExperimentData = Omit<
   ExperimentConfigureData['experiments'][number],
@@ -197,11 +198,11 @@ export function ExperimentConfigure(props) {
     <Window width={600} height={735} theme={theme}>
       <Window.Content scrollable>
         <Section title="Servers">
-          <Box color="label">
+          <Label>
             {webs.size > 0
               ? 'Please select a techweb to connect to...'
               : 'Found no servers connected to a techweb!'}
-          </Box>
+          </Label>
           {webs.size > 0 &&
             Array.from(webs, ([techweb, techwebs]) => (
               <TechwebServer key={techweb} techwebs={techwebs} />
@@ -215,9 +216,7 @@ export function ExperimentConfigure(props) {
                 className="ExperimentConfigure__ExperimentsContainer"
                 fill
               >
-                <Box mb={1} color="label">
-                  {textContent}
-                </Box>
+                <Label mb={1}>{textContent}</Label>
                 {experiments.map((exp, i) => (
                   <Experiment key={i} exp={exp} />
                 ))}

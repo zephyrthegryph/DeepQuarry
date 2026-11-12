@@ -8,6 +8,7 @@ import { VorePanelEditCheckboxes } from '../VorePanelElements/VorePanelEditCheck
 import { VorePanelEditSwitch } from '../VorePanelElements/VorePanelEditSwitch';
 import { LiquidOptionsLeft } from './LiquidTab/LiquidOptionsLeft';
 import { LiquidOptionsRight } from './LiquidTab/LiquidOptionsRight';
+import { Label } from 'tgui/components/Label';
 
 export const VoreSelectedBellyLiquidOptions = (props: {
   editMode: boolean;
@@ -103,7 +104,7 @@ export const VoreSelectedBellyLiquidOptions = (props: {
           buttons={
             <Stack>
               <Stack.Item>
-                <Box color="label">{`Nutrition / Power: ${liq_gen_resources.toFixed()} %`}</Box>
+                <Label>{`Nutrition / Power: ${liq_gen_resources.toFixed()} %`}</Label>
               </Stack.Item>
             </Stack>
           }

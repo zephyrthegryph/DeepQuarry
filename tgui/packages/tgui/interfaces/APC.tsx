@@ -6,7 +6,6 @@ import {
   Dimmer,
   Icon,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
@@ -15,6 +14,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { FullscreenNotice } from './common/FullscreenNotice';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
 import type { APCActions } from './generated/APC';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = {
   gridCheck: BooleanLike;
@@ -172,9 +172,7 @@ const ApcContent = (props) => {
           >
             [ {externalPowerStatus.externalPowerText} ]
           </LabeledList.Item>
-          <LabeledList.Item label="Power Cell">
-            <ProgressBar color="good" value={adjustedCellChange} />
-          </LabeledList.Item>
+          <StatBar label="Power Cell" color="good" value={adjustedCellChange} />
           <LabeledList.Item
             label="Charge Mode"
             color={chargingPowerStatus.color}

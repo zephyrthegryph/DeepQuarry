@@ -4,7 +4,6 @@ import {
   Button,
   Icon,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
@@ -12,6 +11,8 @@ import type { BooleanLike } from 'tgui-core/react';
 import type { DNAModifierActions } from '../generated/DNAModifier';
 import { stats } from './constants';
 import type { Data } from './types';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
   const { act, data } = useBackend<Data, DNAModifierActions>();
@@ -24,9 +25,9 @@ export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
       buttons={
         <Stack>
           <Stack.Item>
-            <Box color="label" inline mr="0.5rem">
+            <Label inline mr="0.5rem">
               Door Lock:
-            </Box>
+            </Label>
           </Stack.Item>
           <Stack.Item>
             <Button
@@ -55,18 +56,17 @@ export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
           <Box>
             <LabeledList>
               <LabeledList.Item label="Name">{occupant.name}</LabeledList.Item>
-              <LabeledList.Item label="Health">
-                <ProgressBar
-                  minValue={0}
-                  maxValue={1}
-                  value={occupant.health! / occupant.maxHealth!}
-                  ranges={{
-                    good: [0.5, Infinity],
-                    average: [0, 0.5],
-                    bad: [-Infinity, 0],
-                  }}
-                />
-              </LabeledList.Item>
+              <StatBar
+                label="Health"
+                minValue={0}
+                maxValue={1}
+                value={occupant.health! / occupant.maxHealth!}
+                ranges={{
+                  good: [0.5, Infinity],
+                  average: [0, 0.5],
+                  bad: [-Infinity, 0],
+                }}
+              />
               <LabeledList.Item label="Status" color={stats[occupant.stat!][0]}>
                 {stats[occupant.stat!][1]}
               </LabeledList.Item>
@@ -81,14 +81,13 @@ export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
             </Box>
           ) : (
             <LabeledList>
-              <LabeledList.Item label="Radiation">
-                <ProgressBar
-                  minValue={0}
-                  maxValue={1}
-                  value={occupant.radiationLevel! / 100}
-                  color="average"
-                />
-              </LabeledList.Item>
+              <StatBar
+                label="Radiation"
+                minValue={0}
+                maxValue={1}
+                value={occupant.radiationLevel! / 100}
+                color="average"
+              />
               <LabeledList.Item label="Unique Enzymes">
                 {data.occupant.uniqueEnzymes ? (
                   data.occupant.uniqueEnzymes.toUpperCase()
@@ -103,7 +102,7 @@ export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
           )}
         </>
       ) : (
-        <Box color="label">Cell unoccupied.</Box>
+        <Label>Cell unoccupied.</Label>
       )}
     </Section>
   );

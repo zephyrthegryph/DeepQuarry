@@ -1,16 +1,10 @@
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
 import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { getDockingStatus } from './functions';
 import type { Data } from './types';
+import { StatBar } from 'tgui/components/StatBar';
 
 /* Ugh. Just ugh. */
 export const ShuttleControlConsoleWeb = (props) => {
@@ -171,16 +165,15 @@ export const ShuttleControlConsoleWeb = (props) => {
       {(is_in_transit && (
         <Section title="Transit ETA">
           <LabeledList>
-            <LabeledList.Item label="Distance from target">
-              <ProgressBar
-                color="good"
-                minValue={0}
-                maxValue={100}
-                value={travel_progress!}
-              >
-                {time_left}s
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Distance from target"
+              color="good"
+              minValue={0}
+              maxValue={100}
+              value={travel_progress!}
+            >
+              {time_left}s
+            </StatBar>
           </LabeledList>
         </Section>
       )) ||

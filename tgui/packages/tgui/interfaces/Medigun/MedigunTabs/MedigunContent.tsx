@@ -19,6 +19,7 @@ import {
 } from '../constants';
 import { ChargeStatus } from '../MedigunHelpers/ChargeStatus';
 import type { Data, SModule } from '../types';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const MedigunContent = (props: { smodule: SModule }) => {
   const { act, data } = useBackend<Data, MedigunActions>();
@@ -95,9 +96,11 @@ export const MedigunContent = (props: { smodule: SModule }) => {
               [ {powerToText[generator] || 'Unavailable'} ]
             </LabeledList.Item>
             {cell_status !== null ? (
-              <LabeledList.Item label="Battery Status">
-                <ProgressBar color="green" value={cell_status} />
-              </LabeledList.Item>
+              <StatBar
+                label="Battery Status"
+                color="green"
+                value={cell_status}
+              />
             ) : (
               <LabeledList.Item label="Battery Status">
                 <Box color="red">Missing Cell</Box>
@@ -159,42 +162,41 @@ export const MedigunContent = (props: { smodule: SModule }) => {
                     </LabeledList.Item>
                     {!!data.patient_name && (
                       <>
-                        <LabeledList.Item label="Total Health">
-                          <ProgressBar
-                            ranges={{
-                              good: [0.5, Infinity],
-                              average: [0.25, 0.5],
-                              bad: [-Infinity, 0.25],
-                            }}
-                            value={patient_health}
-                          >
-                            <Stack>
-                              {moduleLevel >= 2 && (
-                                <>
-                                  <Stack.Item grow />
-                                  {!!organ_damage && (
-                                    <Stack.Item>
-                                      <Box bold>Organ Damage!</Box>
-                                    </Stack.Item>
-                                  )}
-                                  {!!patient_status && (
-                                    <Stack.Item>
-                                      <Box
-                                        bold
-                                        color={statToColor[patient_status]}
-                                      >
-                                        {statToString[patient_status]}
-                                      </Box>
-                                    </Stack.Item>
-                                  )}
-                                </>
-                              )}
-                              <Stack.Item>
-                                {`${((patient_health ?? 0) * 100).toFixed()}%`}
-                              </Stack.Item>
-                            </Stack>
-                          </ProgressBar>
-                        </LabeledList.Item>
+                        <StatBar
+                          label="Total Health"
+                          ranges={{
+                            good: [0.5, Infinity],
+                            average: [0.25, 0.5],
+                            bad: [-Infinity, 0.25],
+                          }}
+                          value={patient_health}
+                        >
+                          <Stack>
+                            {moduleLevel >= 2 && (
+                              <>
+                                <Stack.Item grow />
+                                {!!organ_damage && (
+                                  <Stack.Item>
+                                    <Box bold>Organ Damage!</Box>
+                                  </Stack.Item>
+                                )}
+                                {!!patient_status && (
+                                  <Stack.Item>
+                                    <Box
+                                      bold
+                                      color={statToColor[patient_status]}
+                                    >
+                                      {statToString[patient_status]}
+                                    </Box>
+                                  </Stack.Item>
+                                )}
+                              </>
+                            )}
+                            <Stack.Item>
+                              {`${((patient_health ?? 0) * 100).toFixed()}%`}
+                            </Stack.Item>
+                          </Stack>
+                        </StatBar>
                         {moduleLevel >= 2 && (
                           <LabeledList.Item label="Blood Volume">
                             {blood_status ? (

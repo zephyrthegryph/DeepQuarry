@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
+import { Label } from 'tgui/components/Label';
 
 type Data = {
   addresses: string[];
@@ -22,10 +23,7 @@ export const TorbanList = () => {
             <Stack vertical>
               {addresses.map((a, i) => (
                 <Stack.Item key={i}>
-                  <Box color="label" inline>
-                    #{i + 1}
-                  </Box>{' '}
-                  <Box inline>{a}</Box>
+                  <Label inline>#{i + 1}</Label> <Box inline>{a}</Box>
                 </Stack.Item>
               ))}
             </Stack>

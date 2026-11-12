@@ -24,7 +24,7 @@ export default defineConfig({
     new rspack.DefinePlugin({ __TGUI_WINDOW_GEOMETRY_MANIFEST__: '{}' }),
     new rspack.HtmlRspackPlugin({
       templateContent:
-        '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0"><div id="app"></div></body></html>',
+        '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="font-awesome/css/all.min.css"></head><body style="margin:0"><div id="app"></div></body></html>',
       filename: 'index.html',
       inject: 'head',
       scriptLoading: 'defer',

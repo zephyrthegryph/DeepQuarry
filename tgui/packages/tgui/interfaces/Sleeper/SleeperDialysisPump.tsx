@@ -1,14 +1,9 @@
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import type { SleeperActions, SleeperData } from '../generated/Sleeper';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 export const SleeperDialysisPump = (props: {
   active: BooleanLike;
@@ -51,23 +46,22 @@ export const SleeperDialysisPump = (props: {
     >
       {isBeakerLoaded ? (
         <LabeledList>
-          <LabeledList.Item label="Remaining Space">
-            <ProgressBar
-              minValue={0}
-              maxValue={1}
-              value={beakerFreeSpace / beakerMaxSpace}
-              ranges={{
-                good: [0.5, Infinity],
-                average: [0.25, 0.5],
-                bad: [-Infinity, 0.25],
-              }}
-            >
-              {beakerFreeSpace}u
-            </ProgressBar>
-          </LabeledList.Item>
+          <StatBar
+            label="Remaining Space"
+            minValue={0}
+            maxValue={1}
+            value={beakerFreeSpace / beakerMaxSpace}
+            ranges={{
+              good: [0.5, Infinity],
+              average: [0.25, 0.5],
+              bad: [-Infinity, 0.25],
+            }}
+          >
+            {beakerFreeSpace}u
+          </StatBar>
         </LabeledList>
       ) : (
-        <Box color="label">No beaker loaded.</Box>
+        <Label>No beaker loaded.</Label>
       )}
     </Section>
   );

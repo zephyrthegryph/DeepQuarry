@@ -8,6 +8,7 @@ import type {
   GameModePanelActions,
   GameModePanelData,
 } from './generated/GameModePanel';
+import { Label } from 'tgui/components/Label';
 
 export const GameModePanel = () => {
   const { data, act } = useBackend<GameModePanelData, GameModePanelActions>();
@@ -156,9 +157,9 @@ export const GameModePanel = () => {
                       <Button onClick={() => act('debug_antag', { id: a.id })}>
                         {a.id}
                       </Button>{' '}
-                      <Box inline color="label">
+                      <Label inline>
                         ({a.count}/{a.cur_max})
-                      </Box>
+                      </Label>
                     </Stack.Item>
                     <Stack.Item>
                       <Button

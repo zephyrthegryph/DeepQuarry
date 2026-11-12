@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, NoticeBox, Section, Tabs } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { Label } from 'tgui/components/Label';
 
 export type Data = {
   real_name: string;
@@ -50,12 +51,9 @@ export const CryoStorageCrew = (props) => {
 
   return (
     <Section title="Stored Crew">
-      {(crew.length &&
-        crew.map((c) => (
-          <Box key={c} color="label">
-            {c}
-          </Box>
-        ))) || <Box color="good">No crew currently stored.</Box>}
+      {(crew.length && crew.map((c) => <Label key={c}>{c}</Label>)) || (
+        <Box color="good">No crew currently stored.</Box>
+      )}
     </Section>
   );
 };
@@ -68,11 +66,9 @@ export const CryoStorageItems = (props) => {
   return (
     <Section title="Stored Items">
       {(items.length &&
-        items.map((item) => (
-          <Box color="label" key={item}>
-            {item}
-          </Box>
-        ))) || <Box color="average">No items stored.</Box>}
+        items.map((item) => <Label key={item}>{item}</Label>)) || (
+        <Box color="average">No items stored.</Box>
+      )}
     </Section>
   );
 };

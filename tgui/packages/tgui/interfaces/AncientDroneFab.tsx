@@ -1,7 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   Button,
   NoticeBox,
   ProgressBar,
@@ -12,6 +11,7 @@ import type {
   AncientDroneFabActions,
   AncientDroneFabData,
 } from './generated/AncientDroneFab';
+import { Label } from 'tgui/components/Label';
 
 export const AncientDroneFab = (props) => {
   const { act, data } = useBackend<
@@ -109,9 +109,7 @@ const ProductionEntry = (props: {
           <Button onClick={() => act(action)}>{label}</Button>
         </Stack.Item>
         <Stack.Item>
-          <Box inline color="label">
-            ({cost} cc metal)
-          </Box>
+          <Label inline>({cost} cc metal)</Label>
         </Stack.Item>
       </Stack>
     </Stack.Item>

@@ -11,6 +11,7 @@ import type {
   XenoarchArtifactHarvesterActions,
   XenoarchArtifactHarvesterData,
 } from './generated/XenoarchArtifactHarvester';
+import { Label } from 'tgui/components/Label';
 
 type Data = XenoarchArtifactHarvesterData;
 
@@ -19,7 +20,11 @@ type battery = NonNullable<Data['info']['inserted_battery']>;
 export const XenoarchArtifactHarvester = (props) => {
   const { act, data } = useBackend<Data, XenoarchArtifactHarvesterActions>();
 
-  const { no_scanner, harvesting, inserted_battery } = data.info ?? { no_scanner: true, harvesting: 0, inserted_battery: null };
+  const { no_scanner, harvesting, inserted_battery } = data.info ?? {
+    no_scanner: true,
+    harvesting: 0,
+    inserted_battery: null,
+  };
 
   return (
     <Window width={450} height={200}>
@@ -30,9 +35,9 @@ export const XenoarchArtifactHarvester = (props) => {
           <Section>
             {(harvesting > 0 && (
               <Box>
-                <Box color="label" textAlign="center" mb={1}>
+                <Label textAlign="center" mb={1}>
                   Please wait. Harvesting in progress.
-                </Box>
+                </Label>
                 <ArtHarvestBatteryProgress
                   inserted_battery={inserted_battery}
                 />
@@ -48,9 +53,9 @@ export const XenoarchArtifactHarvester = (props) => {
             )) ||
               (harvesting < 0 && (
                 <Box>
-                  <Box color="label" textAlign="center" mb={1}>
+                  <Label textAlign="center" mb={1}>
                     Please wait. Energy dump in progress.
-                  </Box>
+                  </Label>
                   <ArtHarvestBatteryProgress
                     inserted_battery={inserted_battery}
                   />

@@ -6,11 +6,12 @@ import {
   Box,
   Icon,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import { formatPower, formatSiUnit } from 'tgui-core/format';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 type Data = {
   totalOutput: number;
@@ -46,11 +47,13 @@ export const TEGenerator = (props) => {
       <Window.Content>
         <Section title="Status">
           <LabeledList>
-            <LabeledList.Item label="Total Output">
-              <ProgressBar value={totalOutput} maxValue={maxTotalOutput}>
-                {formatPower(totalOutput)}
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Total Output"
+              value={totalOutput}
+              maxValue={maxTotalOutput}
+            >
+              {formatPower(totalOutput)}
+            </StatBar>
             <LabeledList.Item label="Thermal Output">
               {formatPower(thermalOutput)}
             </LabeledList.Item>
@@ -98,9 +101,7 @@ const TEGCirculator = (props: { name: string; values: Circulator }) => {
               <CirculatorFanSpinner value={flowCapacity} />
             </Stack.Item>
             <Stack.Item>
-              <Box color="label" fontSize={1.2}>
-                Flow Capacity
-              </Box>
+              <Label fontSize={1.2}>Flow Capacity</Label>
               <Box>
                 <AnimatedNumber
                   value={flowCapacity}

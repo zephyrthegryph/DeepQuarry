@@ -1,13 +1,8 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-} from 'tgui-core/components';
+import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { AICardActions, AICardData } from './generated/AICard';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const AICard = (props) => {
   const { act, data } = useBackend<AICardData, AICardActions>();
@@ -64,20 +59,20 @@ export const AICard = (props) => {
             </Box>
             <Box>
               <LabeledList>
-                <LabeledList.Item label="Integrity">
-                  <ProgressBar color={integrityColor} value={integrity / 100} />
-                </LabeledList.Item>
-                <LabeledList.Item label="Power">
-                  <ProgressBar
-                    color={powerColor}
-                    value={backup_capacitor / 100}
-                  />
-                </LabeledList.Item>
+                <StatBar
+                  label="Integrity"
+                  color={integrityColor}
+                  value={integrity / 100}
+                />
+                <StatBar
+                  label="Power"
+                  color={powerColor}
+                  value={backup_capacitor / 100}
+                />
               </LabeledList>
             </Box>
             <Box color="red">
-              <h2>{flushing ? 'Wipe of AI in progress...' : ''}
-</h2>
+              <h2>{flushing ? 'Wipe of AI in progress...' : ''}</h2>
             </Box>
           </Section>
 

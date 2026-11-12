@@ -17,6 +17,7 @@ import { Box, Button, Floating, Input } from 'tgui-core/components';
 import { Hue, SaturationValue } from '../../ColorPickerModal';
 import { SliderBox } from './controls';
 import { highlightStyle, prefAnchor, useSearchHighlight } from './search';
+import { Label } from 'tgui/components/Label';
 
 export type SlotName =
   | 'primary'
@@ -283,9 +284,9 @@ export const ColorSwatch = ({
               {label}
             </Box>
           )}
-          <Box color="label" fontSize="0.85em" mb={0.2}>
+          <Label fontSize="0.85em" mb={0.2}>
             Palette
-          </Box>
+          </Label>
           <Box
             style={{
               display: 'flex',
@@ -549,9 +550,9 @@ export const ColorStrip = ({
               flex: compact ? '1 1 9em' : '1 1 14em',
             }}
           >
-            <Box color="label" fontSize="0.85em" style={{ flex: '0 0 auto' }}>
+            <Label fontSize="0.85em" style={{ flex: '0 0 auto' }}>
               {a.label}
-            </Box>
+            </Label>
             <Box style={{ flex: 1, minWidth: '6em', fontSize: '1.15em' }}>
               <SliderBox
                 serverValue={Number(values[a.key] ?? 255)}

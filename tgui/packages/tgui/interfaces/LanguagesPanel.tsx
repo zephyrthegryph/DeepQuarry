@@ -8,6 +8,7 @@ import type {
   LanguagesPanelActions,
   LanguagesPanelData,
 } from './generated/LanguagesPanel';
+import { Label } from 'tgui/components/Label';
 
 export const LanguagesPanel = () => {
   const { data, act } = useBackend<LanguagesPanelData, LanguagesPanelActions>();
@@ -40,9 +41,7 @@ export const LanguagesPanel = () => {
                   <Box inline bold>
                     {l.name}
                   </Box>{' '}
-                  <Box inline color="label">
-                    ({l.custom_key || l.key})
-                  </Box>{' '}
+                  <Label inline>({l.custom_key || l.key})</Label>{' '}
                   <Button
                     compact
                     onClick={() => act('edit_key', { language: l.id })}
@@ -66,9 +65,9 @@ export const LanguagesPanel = () => {
                     </Box>
                   )}
                 </Box>
-                <Box ml={1} mt="2px" italic color="label">
+                <Label ml={1} mt="2px" italic>
                   {l.description}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
           </Stack>

@@ -4,12 +4,12 @@ import {
   Box,
   Button,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
   Tabs,
 } from 'tgui-core/components';
 import type { ICPrinterActions, ICPrinterData } from './generated/ICPrinter';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = ICPrinterData;
 
@@ -31,12 +31,10 @@ export const ICPrinter = (props) => {
               <Stack vertical>
                 <Stack.Item>
                   <LabeledList>
-                    <LabeledList.Item label="Metal">
-                      <ProgressBar value={metal} maxValue={max_metal}>
-                        {metal / metal_per_sheet} /{' '}
-                        {max_metal / metal_per_sheet} sheets
-                      </ProgressBar>
-                    </LabeledList.Item>
+                    <StatBar label="Metal" value={metal} maxValue={max_metal}>
+                      {metal / metal_per_sheet} / {max_metal / metal_per_sheet}{' '}
+                      sheets
+                    </StatBar>
                     <LabeledList.Item label="Circuits Available">
                       {upgraded ? 'Advanced' : 'Regular'}
                     </LabeledList.Item>

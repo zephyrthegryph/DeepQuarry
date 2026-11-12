@@ -1,13 +1,7 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  RestrictedInput,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Button, RestrictedInput, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
 
 import { InputButtons } from './common/InputButtons';
@@ -16,6 +10,7 @@ import type {
   NumberInputModalActions,
   NumberInputModalData,
 } from './generated/NumberInputModal';
+import { Label } from 'tgui/components/Label';
 
 type Data = NumberInputModalData;
 
@@ -47,18 +42,13 @@ export function NumberInputModal(props) {
   }
 
   return (
-    <Window
-      fitContent
-      title={title}
-      width={270}
-      height={windowHeight}
-    >
+    <Window fitContent title={title} width={270} height={windowHeight}>
       {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
           <Stack fill vertical>
             <Stack.Item grow>
-              <Box color="label">{message}</Box>
+              <Label>{message}</Label>
             </Stack.Item>
             <Stack.Item>
               <Stack fill>

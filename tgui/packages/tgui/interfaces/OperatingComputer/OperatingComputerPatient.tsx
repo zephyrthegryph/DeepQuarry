@@ -1,4 +1,4 @@
-import { Box, LabeledList, ProgressBar, Section } from 'tgui-core/components';
+import { LabeledList, Section } from 'tgui-core/components';
 
 import {
   DiagnosisFindingsSection,
@@ -6,6 +6,8 @@ import {
 } from '../common/Diagnosis';
 import { stats } from './constants';
 import type { occupant } from './types';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 export const OperatingComputerPatient = (props: { occupant: occupant }) => {
   const { occupant } = props;
@@ -17,18 +19,17 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
           <LabeledList.Item label="Status" color={stats[occupant.stat][0]}>
             {stats[occupant.stat][1]}
           </LabeledList.Item>
-          <LabeledList.Item label="Vitality">
-            <ProgressBar
-              minValue={0}
-              maxValue={1}
-              value={occupant.vitality / 100}
-              ranges={{
-                good: [0.5, Infinity],
-                average: [0, 0.5],
-                bad: [-Infinity, 0],
-              }}
-            />
-          </LabeledList.Item>
+          <StatBar
+            label="Vitality"
+            minValue={0}
+            maxValue={1}
+            value={occupant.vitality / 100}
+            ranges={{
+              good: [0.5, Infinity],
+              average: [0, 0.5],
+              bad: [-Infinity, 0],
+            }}
+          />
           {occupant.bloodType ? (
             <LabeledList.Item label="Blood Type">
               {occupant.bloodType}
@@ -57,7 +58,7 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
             ))}
           </LabeledList>
         ) : (
-          <Box color="label">No procedure ongoing.</Box>
+          <Label>No procedure ongoing.</Label>
         )}
       </Section>
     </>

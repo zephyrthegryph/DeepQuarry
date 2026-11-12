@@ -18,6 +18,7 @@ import type {
   MaterialMap,
   MaterialSlot,
 } from './Types';
+import { Label } from 'tgui/components/Label';
 
 type Props = {
   design: Design;
@@ -92,9 +93,7 @@ export const ConfigurableRecipeRow = (props: {
         canPrint
         action={onSelect}
       />
-      <Box color="label" px={1}>
-        {design.materialSlots?.length ?? 0} parts
-      </Box>
+      <Label px={1}>{design.materialSlots?.length ?? 0} parts</Label>
       <Button
         color={selected ? 'good' : 'transparent'}
         icon="chevron-right"
@@ -165,9 +164,7 @@ export const ProductConfigurator = (props: Props) => {
 
   return (
     <Section fill scrollable title={design.name}>
-      <Box color="label" mb={1}>
-        {design.desc}
-      </Box>
+      <Label mb={1}>{design.desc}</Label>
       <Stack mb={1}>
         <Stack.Item grow>
           <Button
@@ -207,9 +204,7 @@ export const ProductConfigurator = (props: Props) => {
                   <Stack align="center">
                     <Stack.Item grow>
                       <Box bold>{slot.label}</Box>
-                      <Box color="label" fontSize="11px">
-                        {slot.description}
-                      </Box>
+                      <Label fontSize="11px">{slot.description}</Label>
                     </Stack.Item>
                     <Stack.Item>
                       {material ? (
@@ -301,9 +296,9 @@ export const ProductConfigurator = (props: Props) => {
                         <Stack.Item color="label">Standard</Stack.Item>
                       )}
                     </Stack>
-                    <Box color="label" mt={0.5}>
+                    <Label mt={0.5}>
                       {partProperties(material, activeSlot.role)}
-                    </Box>
+                    </Label>
                   </Button>
                 </Stack.Item>
               );
@@ -329,11 +324,11 @@ export const ProductConfigurator = (props: Props) => {
             );
           })}
         </LabeledList>
-        <Box color="label" mt={1}>
+        <Label mt={1}>
           Reference properties at room temperature. Geometry, operating
           temperature, current, and wear determine the finished assembly's
           limits; measure it under load with a multitool.
-        </Box>
+        </Label>
       </Section>
       {!complete && (
         <NoticeBox danger>Choose every required component.</NoticeBox>
@@ -372,13 +367,13 @@ export const ProductConfigurator = (props: Props) => {
           </Button>
         </Stack.Item>
       </Stack>
-      <Box color="label" mt={0.5} textAlign="right">
+      <Label mt={0.5} textAlign="right">
         {single
           ? effectiveMaximum
             ? 'Ready to craft'
             : 'Missing materials'
           : `Up to ${effectiveMaximum} available`}
-      </Box>
+      </Label>
     </Section>
   );
 };

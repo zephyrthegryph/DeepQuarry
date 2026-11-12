@@ -18,6 +18,7 @@ import { Box, Button, Input, Stack } from 'tgui-core/components';
 import { HtmlRenderer } from '../../../common/HtmlRenderer';
 import type { PrefEditorSpeciesPickerStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 type SpeciesMeta = PrefEditorSpeciesPickerStatic['all_species'][string];
 
@@ -62,9 +63,7 @@ export const SpeciesPicker = ({
         <Stack.Item grow style={{ minWidth: 0 }}>
           <Box bold>{currentMeta?.name ?? d.current_species}</Box>
           {currentMeta?.pitch && (
-            <Box color="label" fontSize="0.85em">
-              {currentMeta.pitch}
-            </Box>
+            <Label fontSize="0.85em">{currentMeta.pitch}</Label>
           )}
         </Stack.Item>
         <Stack.Item>
@@ -74,9 +73,9 @@ export const SpeciesPicker = ({
         </Stack.Item>
       </Stack>
       <Box mt={0.5}>
-        <Box fontSize="0.78em" color="label" mb={0.25}>
+        <Label fontSize="0.78em" mb={0.25}>
           Display name (optional — shown to others in place of the species name)
-        </Box>
+        </Label>
         <Input
           fluid
           placeholder={currentMeta?.name ?? ''}
@@ -255,25 +254,20 @@ const SpeciesCard = ({
           <Box bold fontSize="1em">
             {meta.name}
             {isSynthetic && (
-              <Box
+              <Label
                 inline
-                color="label"
                 fontSize="0.7em"
                 ml={0.5}
                 style={{ verticalAlign: 'middle' }}
               >
                 (synthetic)
-              </Box>
+              </Label>
             )}
           </Box>
           {meta.pitch && (
-            <Box
-              color="label"
-              fontSize="0.8em"
-              style={{ marginTop: '0.167em' }}
-            >
+            <Label fontSize="0.8em" style={{ marginTop: '0.167em' }}>
               {meta.pitch}
-            </Box>
+            </Label>
           )}
         </Box>
       </Box>

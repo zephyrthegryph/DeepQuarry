@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Icon, Image } from 'tgui-core/components';
 import type { ResleevingConsoleActions } from '../generated/ResleevingConsole';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const ResleevingConsolePodSpods = (props) => {
   const { act, data } = useBackend<Data, ResleevingConsoleActions>();
@@ -33,7 +34,7 @@ export const ResleevingConsolePodSpods = (props) => {
               width: '100%',
             }}
           />
-          <Box color="label">{pod.name}</Box>
+          <Label>{pod.name}</Label>
           <Box bold color={pod.steel >= 15000 ? 'good' : 'bad'} inline>
             <Icon name={pod.steel >= 15000 ? 'circle' : 'circle-o'} />
             &nbsp;

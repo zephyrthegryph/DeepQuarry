@@ -14,6 +14,8 @@ import type {
   NtosNetDownloaderActions,
   NtosNetDownloaderData,
 } from './generated/NtosNetDownloader';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 type program = NtosNetDownloaderData['downloadable_programs'][number];
 
@@ -42,11 +44,14 @@ export const NtosNetDownloader = (props) => {
         )}
         <Section>
           <LabeledList>
-            <LabeledList.Item label="Disk usage">
-              <ProgressBar value={disk_used} minValue={0} maxValue={disk_size}>
-                {`${disk_used} GQ / ${disk_size} GQ`}
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Disk usage"
+              value={disk_used}
+              minValue={0}
+              maxValue={disk_size}
+            >
+              {`${disk_used} GQ / ${disk_size} GQ`}
+            </StatBar>
           </LabeledList>
         </Section>
         <Section>
@@ -151,9 +156,9 @@ const Program = (props: { program: program }) => {
           Not enough disk space!
         </Box>
       )}
-      <Box mt={1} italic color="label" fontSize="12px">
+      <Label mt={1} italic fontSize="12px">
         {program.fileinfo}
-      </Box>
+      </Label>
     </Box>
   );
 };

@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Box, Button, LabeledList, Section } from 'tgui-core/components';
+import { Button, LabeledList, Section } from 'tgui-core/components';
 import type {
   ParticleAcceleratorActions,
   ParticleAcceleratorData,
 } from './generated/ParticleAccelerator';
+import { YesNo } from 'tgui/components/YesNo';
 
 type Data = ParticleAcceleratorData;
 
@@ -24,11 +25,11 @@ export const ParticleAccelerator = (props) => {
                 </Button>
               }
             >
-              <Box color={assembled ? 'good' : 'bad'}>
-                {assembled
-                  ? 'Ready - All parts in place'
-                  : 'Unable to detect all parts'}
-              </Box>
+              <YesNo
+                value={assembled}
+                yes="Ready - All parts in place"
+                no="Unable to detect all parts"
+              />
             </LabeledList.Item>
           </LabeledList>
         </Section>

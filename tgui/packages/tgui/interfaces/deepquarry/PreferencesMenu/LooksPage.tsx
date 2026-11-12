@@ -31,6 +31,7 @@ import {
   useSearchHighlight,
 } from './search';
 import type { PrefCategory, PrefThumbnail, PrefWidgetItem } from './types';
+import { Label } from 'tgui/components/Label';
 
 export type Region = 'body' | 'organs';
 
@@ -695,14 +696,13 @@ const BodyTable = ({
           }}
         >
           {header.map(([h, centred]) => (
-            <Box
+            <Label
               key={h}
               bold
-              color="label"
               style={{ textAlign: centred ? 'center' : undefined }}
             >
               {h}
-            </Box>
+            </Label>
           ))}
           {PART_ROWS.filter(
             (row) =>
@@ -727,13 +727,12 @@ const BodyTable = ({
                   data-dq-anchor={groupAnchor('appearance', row.group)}
                 >
                   <Box style={cellStyle}>{row.label}</Box>
-                  <Box
+                  <Label
                     className="dq-tail-under-taur"
-                    color="label"
                     style={{ ...cellStyle, gridColumn: '2 / -1', opacity: 0.5 }}
                   >
                     <span title="Hidden by the taur body">{keptLabel}</span>
-                  </Box>
+                  </Label>
                 </Box>
               );
             }
@@ -926,9 +925,9 @@ const BodyDiagram = ({
         onHover={setHover}
         onPick={onPick}
       />
-      <Box textAlign="center" color="label" mt={0.2}>
+      <Label textAlign="center" mt={0.2}>
         {hover ? (zoneGroup(hover)?.label ?? hover) : caption}
-      </Box>
+      </Label>
     </Box>
   );
 };

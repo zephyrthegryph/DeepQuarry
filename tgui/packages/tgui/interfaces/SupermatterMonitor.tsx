@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
@@ -14,6 +13,7 @@ import type {
   SupermatterMonitorActions,
   SupermatterMonitorData,
 } from './generated/SupermatterMonitor';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = SupermatterMonitorData;
 
@@ -104,18 +104,17 @@ const SupermatterMonitorActive = (props) => {
       }
     >
       <LabeledList>
-        <LabeledList.Item label="Core Integrity">
-          <ProgressBar
-            value={SM_integrity}
-            minValue={0}
-            maxValue={100}
-            ranges={{
-              good: [100, 100],
-              average: [50, 100],
-              bad: [-Infinity, 50],
-            }}
-          />
-        </LabeledList.Item>
+        <StatBar
+          label="Core Integrity"
+          value={SM_integrity}
+          minValue={0}
+          maxValue={100}
+          ranges={{
+            good: [100, 100],
+            average: [50, 100],
+            bad: [-Infinity, 50],
+          }}
+        />
         <LabeledList.Item label="Relative EER">
           <Box
             color={

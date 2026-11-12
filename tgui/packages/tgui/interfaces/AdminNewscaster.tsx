@@ -10,6 +10,7 @@ import type {
   AdminNewscasterActions,
   AdminNewscasterData,
 } from './generated/AdminNewscaster';
+import { Label } from 'tgui/components/Label';
 
 type Data = AdminNewscasterData;
 
@@ -276,11 +277,7 @@ const ChannelMessages = (props: {
   return (
     <Section
       title={data.channel?.name ?? '(no channel)'}
-      buttons={
-        <Box color="label" italic>
-          created by {data.channel?.author}
-        </Box>
-      }
+      buttons={<Label italic>created by {data.channel?.author}</Label>}
     >
       {data.channel?.censored ? (
         <Box color="bad" bold mb={1}>
@@ -298,13 +295,13 @@ const ChannelMessages = (props: {
               <Box bold>{m.title || `Story #${i + 1}`}</Box>
               <Box ml={1}>{m.body}</Box>
               {m.has_image ? (
-                <Box ml={1} italic color="label">
+                <Label ml={1} italic>
                   (photo attached)
-                </Box>
+                </Label>
               ) : null}
-              <Box ml={1} color="label" italic mt="2px">
+              <Label ml={1} italic mt="2px">
                 Story by {m.author} — {m.time_stamp}
-              </Box>
+              </Label>
             </Stack.Item>
           ))}
         </Stack>
@@ -340,9 +337,9 @@ const ChannelPicker = (props: {
       }
     >
       {description ? (
-        <Box color="label" mb={1} italic>
+        <Label mb={1} italic>
           {description}
-        </Box>
+        </Label>
       ) : null}
       {data.channels.length === 0 ? (
         <EmptyState>No feed channels found active…</EmptyState>
@@ -404,9 +401,9 @@ const Screen12 = (props: { data: Data; act: ActFn }) => {
           {data.channel_messages.map((m) => (
             <Stack.Item key={m.ref}>
               <Box>{m.body}</Box>
-              <Box ml={1} color="label" italic>
+              <Label ml={1} italic>
                 Story by {m.author}
-              </Box>
+              </Label>
               <Box ml={1} mt="2px">
                 <Button
                   compact
@@ -473,9 +470,9 @@ const Screen13 = (props: { data: Data; act: ActFn }) => {
           {data.channel_messages.map((m) => (
             <Stack.Item key={m.ref}>
               <Box>{m.body}</Box>
-              <Box ml={1} color="label" italic>
+              <Label ml={1} italic>
                 Story by {m.author}
-              </Box>
+              </Label>
             </Stack.Item>
           ))}
         </Stack>
@@ -491,10 +488,10 @@ const Screen14 = (props: { data: Data; act: ActFn }) => {
   return (
     <Section title="Wanted Issue Handler" buttons={<BackButton act={act} />}>
       {wanted_already ? (
-        <Box italic color="label" mb={1}>
+        <Label italic mb={1}>
           A wanted issue is already in Feed Circulation. You can edit or cancel
           it below.
-        </Box>
+        </Label>
       ) : null}
       <LabeledList>
         <LabeledList.Item label="Criminal Name">
@@ -543,9 +540,9 @@ const Screen18 = (props: { data: Data; act: ActFn }) => {
         <EmptyState>No wanted issue.</EmptyState>
       ) : (
         <>
-          <Box italic color="label" mb={1}>
+          <Label italic mb={1}>
             Submitted by {W.backup_author}
-          </Box>
+          </Label>
           <LabeledList>
             <LabeledList.Item label="Criminal">{W.author}</LabeledList.Item>
             <LabeledList.Item label="Description">{W.body}</LabeledList.Item>

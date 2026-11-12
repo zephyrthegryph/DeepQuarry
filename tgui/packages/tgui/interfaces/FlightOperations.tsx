@@ -8,6 +8,7 @@ import type {
   FlightOperationsActions,
   FlightOperationsData,
 } from './generated/FlightOperations';
+import { Label } from 'tgui/components/Label';
 
 type Kind =
   | 'system'
@@ -109,10 +110,10 @@ export const FlightOperations = () => {
                 </Button>
               )}
             </Box>
-            <Box position="absolute" bottom="10px" left="12px" color="label">
+            <Label position="absolute" bottom="10px" left="12px">
               Left drag to orbit · right drag to pan · wheel to zoom · click
               planets to inspect
-            </Box>
+            </Label>
           </Stack.Item>
           <Stack.Item basis="335px">
             <Section title="Navigation" fill scrollable>
@@ -130,7 +131,7 @@ export const FlightOperations = () => {
               </LabeledList>
               {selected ? (
                 <Section mt={2} title={selected.name}>
-                  <Box color="label">{labelFor(selected.kind)}</Box>
+                  <Label>{labelFor(selected.kind)}</Label>
                   <Box mt={1}>{selected.description}</Box>
                   {selected.kind === 'expedition' && (
                     <Box mt={1}>
@@ -163,9 +164,9 @@ export const FlightOperations = () => {
                   )}
                 </Section>
               ) : (
-                <Box mt={2} color="label">
+                <Label mt={2}>
                   Select a planet, station, vessel, or surface site.
-                </Box>
+                </Label>
               )}
               {data.plan && (
                 <Section mt={2} title="Active Jump">
@@ -198,7 +199,7 @@ export const FlightOperations = () => {
                 <Section mt={2} title="Surface Contract">
                   <Box bold>{data.expedition.name}</Box>
                   <Box mt={1}>{data.expedition.objective}</Box>
-                  <Box color="label">{data.expedition.progress}</Box>
+                  <Label>{data.expedition.progress}</Label>
                   {data.expedition.infrastructure && (
                     <Box mt={1} color="average">
                       {data.expedition.infrastructure}

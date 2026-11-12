@@ -1,9 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { BeakerContents } from 'tgui/interfaces/common/BeakerContents';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 
 import type { ChemSynthesizerActions } from '../../generated/ChemSynthesizer';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const ChemSynthesizerChemicals = (props) => {
   const { act, data } = useBackend<Data, ChemSynthesizerActions>();
@@ -47,7 +48,7 @@ export const ChemSynthesizerChemicals = (props) => {
         {rxn_vessel.length > 0 ? (
           <BeakerContents beakerLoaded beakerContents={rxn_vessel} />
         ) : (
-          <Box color="label">Vessel is empty.</Box>
+          <Label>Vessel is empty.</Label>
         )}
       </Section>
       <Section
@@ -57,9 +58,9 @@ export const ChemSynthesizerChemicals = (props) => {
           <Stack>
             {!!catalyst && (
               <Stack.Item>
-                <Box inline color="label" mr={2}>
+                <Label inline mr={2}>
                   {catalystCurrentVolume} / {catalystMaxVolume} units
-                </Box>
+                </Label>
               </Stack.Item>
             )}
             <Stack.Item>

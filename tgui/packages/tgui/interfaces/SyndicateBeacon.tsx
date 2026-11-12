@@ -7,6 +7,7 @@ import type {
   SyndicateBeaconActions,
   SyndicateBeaconData,
 } from './generated/SyndicateBeacon';
+import { Label } from 'tgui/components/Label';
 
 export const SyndicateBeacon = () => {
   const { data, act } = useBackend<
@@ -55,9 +56,9 @@ export const SyndicateBeacon = () => {
             </>
           )}
           {temp ? (
-            <Box italic color="label" mt={2}>
+            <Label italic mt={2}>
               {temp}
-            </Box>
+            </Label>
           ) : null}
         </Section>
       </Window.Content>

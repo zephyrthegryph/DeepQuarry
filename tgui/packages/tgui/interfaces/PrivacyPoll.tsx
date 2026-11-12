@@ -8,6 +8,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { PrivacyPollActions } from './generated/PrivacyPoll';
+import { Label } from 'tgui/components/Label';
 
 type Choice = {
   key: string;
@@ -72,9 +73,9 @@ export const PrivacyPoll = () => {
                 <Button fluid onClick={() => act('vote', { choice: c.key })}>
                   {c.label}
                 </Button>
-                <Box mt={1} mb={1} color="label">
+                <Label mt={1} mb={1}>
                   {c.desc}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
           </Stack>

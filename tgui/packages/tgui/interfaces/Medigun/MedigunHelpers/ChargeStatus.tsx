@@ -1,4 +1,5 @@
 import { Box, LabeledList, ProgressBar, Stack } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 export const ChargeStatus = (props: {
   name: string;
@@ -22,7 +23,7 @@ export const ChargeStatus = (props: {
           )}
         </Stack.Item>
         <Stack.Item>
-          <Box color="label">Reserve:</Box>
+          <Label>Reserve:</Label>
         </Stack.Item>
         <Stack.Item basis="10%">
           {volume != null ? (

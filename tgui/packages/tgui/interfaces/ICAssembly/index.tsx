@@ -14,6 +14,7 @@ import { formatPower } from 'tgui-core/format';
 import type { ICAssemblyActions } from '../generated/ICAssembly';
 import { PlaneWrapper } from './Plane';
 import type { Data } from './types';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const ICAssembly = (props) => {
   const [showInfo, setShowInfo] = useState(false);
@@ -98,42 +99,40 @@ const CircuitInfo = (props) => {
       title="Circuit Info"
     >
       <LabeledList>
-        <LabeledList.Item label="Space in Assembly">
-          <ProgressBar
-            ranges={{
-              good: [0, 0.25],
-              average: [0.5, 0.75],
-              bad: [0.75, 1],
-            }}
-            value={total_parts / max_components}
-            maxValue={1}
-          >
-            {total_parts +
-              ' / ' +
-              max_components +
-              ' (' +
-              ((total_parts / max_components) * 100).toFixed(1) +
-              '%)'}
-          </ProgressBar>
-        </LabeledList.Item>
-        <LabeledList.Item label="Complexity">
-          <ProgressBar
-            ranges={{
-              good: [0, 0.25],
-              average: [0.5, 0.75],
-              bad: [0.75, 1],
-            }}
-            value={total_complexity / max_complexity}
-            maxValue={1}
-          >
-            {total_complexity +
-              ' / ' +
-              max_complexity +
-              ' (' +
-              ((total_complexity / max_complexity) * 100).toFixed(1) +
-              '%)'}
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Space in Assembly"
+          ranges={{
+            good: [0, 0.25],
+            average: [0.5, 0.75],
+            bad: [0.75, 1],
+          }}
+          value={total_parts / max_components}
+          maxValue={1}
+        >
+          {total_parts +
+            ' / ' +
+            max_components +
+            ' (' +
+            ((total_parts / max_components) * 100).toFixed(1) +
+            '%)'}
+        </StatBar>
+        <StatBar
+          label="Complexity"
+          ranges={{
+            good: [0, 0.25],
+            average: [0.5, 0.75],
+            bad: [0.75, 1],
+          }}
+          value={total_complexity / max_complexity}
+          maxValue={1}
+        >
+          {total_complexity +
+            ' / ' +
+            max_complexity +
+            ' (' +
+            ((total_complexity / max_complexity) * 100).toFixed(1) +
+            '%)'}
+        </StatBar>
         <LabeledList.Item
           label="Cell Charge"
           buttons={

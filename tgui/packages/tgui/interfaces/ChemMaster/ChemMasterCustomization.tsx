@@ -1,7 +1,8 @@
 import { useBackend } from 'tgui/backend';
 import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { Label } from 'tgui/components/Label';
 
 export const ChemMasterCustomization = (props: {
   loaded_pill_bottle: BooleanLike;
@@ -21,7 +22,7 @@ export const ChemMasterCustomization = (props: {
   if (!loaded_pill_bottle) {
     return (
       <Section title="Pill Bottle Customization">
-        <Box color="label">None loaded.</Box>
+        <Label>None loaded.</Label>
       </Section>
     );
   }

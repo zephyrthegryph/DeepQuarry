@@ -10,6 +10,7 @@ import {
   Slider,
 } from 'tgui-core/components';
 import type { BombTesterActions, BombTesterData } from './generated/BombTester';
+import { Label } from 'tgui/components/Label';
 
 type Data = BombTesterData;
 
@@ -95,7 +96,7 @@ export const BombTester = (props) => {
                   </Button>
                 }
               >
-                {(canister && <Box color="label">{canister}</Box>) || (
+                {(canister && <Label>{canister}</Label>) || (
                   <Box color="bad">No tank connected.</Box>
                 )}
               </LabeledList.Item>

@@ -2,6 +2,7 @@ import { Box, Section } from 'tgui-core/components';
 
 import { abnormalities } from './constants';
 import type { occupant } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const BodyScannerMainAbnormalities = (props: { occupant: occupant }) => {
   const { occupant } = props;
@@ -23,7 +24,7 @@ export const BodyScannerMainAbnormalities = (props: { occupant: occupant }) => {
   if (!hasAbnormalities) {
     return (
       <Section title="Abnormalities">
-        <Box color="label">No abnormalities found.</Box>
+        <Label>No abnormalities found.</Label>
       </Section>
     );
   }

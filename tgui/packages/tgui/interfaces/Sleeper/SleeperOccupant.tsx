@@ -1,14 +1,9 @@
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { SleeperActions, SleeperData } from '../generated/Sleeper';
 import { stats, tempColors } from './constants';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 export const SleeperOccupant = (props) => {
   const { act, data } = useBackend<SleeperData, SleeperActions>();
@@ -22,9 +17,7 @@ export const SleeperOccupant = (props) => {
       buttons={
         <Stack>
           <Stack.Item>
-            <Box color="label" inline>
-              Auto-eject if dead:&nbsp;
-            </Box>
+            <Label inline>Auto-eject if dead:&nbsp;</Label>
           </Stack.Item>
           <Stack.Item>
             <Button
@@ -50,52 +43,49 @@ export const SleeperOccupant = (props) => {
     >
       <LabeledList>
         <LabeledList.Item label="Name">{occupant.name}</LabeledList.Item>
-        <LabeledList.Item label="Health">
-          <ProgressBar
-            minValue={0}
-            maxValue={1}
-            value={occupant.vitality / 100}
-            color={
-              occupant.critical
-                ? 'bad'
-                : occupant.vitality >= 50
-                  ? 'good'
-                  : 'average'
-            }
-          >
-            {occupant.vitality.toFixed()}%
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Health"
+          minValue={0}
+          maxValue={1}
+          value={occupant.vitality / 100}
+          color={
+            occupant.critical
+              ? 'bad'
+              : occupant.vitality >= 50
+                ? 'good'
+                : 'average'
+          }
+        >
+          {occupant.vitality.toFixed()}%
+        </StatBar>
         <LabeledList.Item label="Status" color={stats[occupant.stat][0]}>
           {stats[occupant.stat][1]}
         </LabeledList.Item>
-        <LabeledList.Item label="Temperature">
-          <ProgressBar
-            minValue={0}
-            maxValue={1}
-            value={occupant.bodyTemperature / occupant.maxTemp}
-            color={tempColors[occupant.temperatureSuitability + 3]}
-          >
-            {occupant.btCelsius.toFixed()}&deg;C,
-            {occupant.btFaren.toFixed()}&deg;F
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Temperature"
+          minValue={0}
+          maxValue={1}
+          value={occupant.bodyTemperature / occupant.maxTemp}
+          color={tempColors[occupant.temperatureSuitability + 3]}
+        >
+          {occupant.btCelsius.toFixed()}&deg;C,
+          {occupant.btFaren.toFixed()}&deg;F
+        </StatBar>
         {!!occupant.hasBlood && (
           <>
-            <LabeledList.Item label="Blood Level">
-              <ProgressBar
-                minValue={0}
-                maxValue={1}
-                value={occupant.bloodLevel! / occupant.bloodMax!}
-                ranges={{
-                  bad: [-Infinity, 0.6],
-                  average: [0.6, 0.9],
-                  good: [0.6, Infinity],
-                }}
-              >
-                {occupant.bloodPercent}%, {occupant.bloodLevel}cl
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Blood Level"
+              minValue={0}
+              maxValue={1}
+              value={occupant.bloodLevel! / occupant.bloodMax!}
+              ranges={{
+                bad: [-Infinity, 0.6],
+                average: [0.6, 0.9],
+                good: [0.6, Infinity],
+              }}
+            >
+              {occupant.bloodPercent}%, {occupant.bloodLevel}cl
+            </StatBar>
             <LabeledList.Item label="Pulse" verticalAlign="middle">
               {occupant.pulse} BPM
             </LabeledList.Item>

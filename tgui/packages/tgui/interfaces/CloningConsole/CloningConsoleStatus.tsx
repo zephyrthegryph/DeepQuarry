@@ -9,6 +9,7 @@ import {
 } from 'tgui-core/components';
 import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data } from './types';
+import { Label } from 'tgui/components/Label';
 
 export const CloningConsoleTemp = (props) => {
   const { act, data } = useBackend<Data, CloningConsoleActions>();
@@ -50,9 +51,7 @@ export const CloningConsoleStatus = (props) => {
           {!!autoallowed && (
             <>
               <Stack.Item>
-                <Box inline color="label">
-                  Auto-processing:&nbsp;
-                </Box>
+                <Label inline>Auto-processing:&nbsp;</Label>
               </Stack.Item>
               <Stack.Item>
                 <Button

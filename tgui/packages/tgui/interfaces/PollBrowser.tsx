@@ -21,6 +21,7 @@ import type {
   PollBrowserActions,
   PollBrowserData,
 } from './generated/PollBrowser';
+import { Label } from 'tgui/components/Label';
 
 type Data = PollBrowserData;
 
@@ -129,9 +130,9 @@ const PollDetail = (props: {
         <Box color="bad">{error}</Box>
       ) : (
         <>
-          <Box mb={1} color="label">
+          <Label mb={1}>
             Runs from <b>{start_time}</b> until <b>{end_time}</b>.
-          </Box>
+          </Label>
           <PollBody selected={selected} act={act} />
 
           {voted ? (
@@ -238,9 +239,7 @@ const MultiChoicePoll = (props: {
 
   return (
     <>
-      <Box mb={1} color="label">
-        Select up to {max} options.
-      </Box>
+      <Label mb={1}>Select up to {max} options.</Label>
       <Stack vertical>
         {options.map((o) => (
           <Stack.Item key={o.id}>
@@ -289,10 +288,10 @@ const TextPoll = (props: {
 
   return (
     <>
-      <Box mb={1} color="label">
+      <Label mb={1}>
         Provide feedback below. English letters, numbers and the symbols . , ! ?
         : ; - are accepted.
-      </Box>
+      </Label>
       <TextArea
         height="180px"
         width="100%"

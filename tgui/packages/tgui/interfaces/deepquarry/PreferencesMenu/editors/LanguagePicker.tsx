@@ -13,6 +13,7 @@ import {
 } from 'tgui-core/components';
 import type { PrefEditorLanguageStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 type LangMeta = PrefEditorLanguageStatic['all_languages'][string];
 
@@ -116,7 +117,7 @@ export const LanguagePicker = ({
             </Stack>
           }
         >
-          <Box mb={1} fontSize="0.85em" color="label">
+          <Label mb={1} fontSize="0.85em">
             Pick up to{' '}
             <Box inline bold color="white">
               {max}
@@ -124,7 +125,7 @@ export const LanguagePicker = ({
             alternate languages your character knows on top of their species
             default. Green languages are known. To speak another in chat, type
             its prefix.
-          </Box>
+          </Label>
           <Input
             fluid
             mb={0.5}
@@ -134,9 +135,7 @@ export const LanguagePicker = ({
           />
           <Box style={{ maxHeight: '20em', overflowY: 'auto' }}>
             {sortedLanguageEntries.length === 0 && (
-              <Box color="label" italic>
-                No language matches.
-              </Box>
+              <Label italic>No language matches.</Label>
             )}
             {sortedLanguageEntries.map(([key, meta]) => (
               <LanguageRow
@@ -300,9 +299,9 @@ const LanguageKeyInput = ({
           {problem}
         </Box>
       )}
-      <Box inline color="label" mr={0.25}>
+      <Label inline mr={0.25}>
         Prefix
-      </Box>
+      </Label>
       <Input
         width="3.5em"
         maxLength={4}

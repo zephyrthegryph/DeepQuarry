@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Floating, Input, Slider } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 /// An on/off switch: a pill with a knob, and the state written beside it.
 export const Switch = ({
@@ -194,9 +195,9 @@ export const SearchableDropdown = ({
           />
           <Box mt={0.3} style={{ maxHeight: '18em', overflowY: 'auto' }}>
             {shown.length === 0 && (
-              <Box color="label" italic p={0.3}>
+              <Label italic p={0.3}>
                 No matches.
-              </Box>
+              </Label>
             )}
             {shown.map(([val, label]) => (
               <Button

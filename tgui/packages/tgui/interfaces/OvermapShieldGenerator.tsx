@@ -13,6 +13,8 @@ import type {
   OvermapShieldGeneratorActions,
   OvermapShieldGeneratorData,
 } from './generated/OvermapShieldGenerator';
+import { StatBar } from 'tgui/components/StatBar';
+import { Label } from 'tgui/components/Label';
 
 type Data = OvermapShieldGeneratorData;
 
@@ -59,7 +61,7 @@ const OvermapShieldGeneratorContent = (props) => {
               </Button>
             }
           >
-            <Box color="label">{mode.desc}</Box>
+            <Label>{mode.desc}</Label>
             <Box mt={0.5}>Multiplier: {mode.multiplier}</Box>
           </Section>
         ))}
@@ -110,11 +112,13 @@ const OvermapShieldGeneratorStatus = (props) => {
         <LabeledList.Item label="Generator is">
           {tab[running] || <Box color="bad">Offline</Box>}
         </LabeledList.Item>
-        <LabeledList.Item label="Energy Storage">
-          <ProgressBar value={current_energy} maxValue={max_energy}>
-            {current_energy} / {max_energy} MJ ({percentage_energy}%)
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Energy Storage"
+          value={current_energy}
+          maxValue={max_energy}
+        >
+          {current_energy} / {max_energy} MJ ({percentage_energy}%)
+        </StatBar>
         <LabeledList.Item label="Shield Integrity">
           <AnimatedNumber value={field_integrity} />%
         </LabeledList.Item>

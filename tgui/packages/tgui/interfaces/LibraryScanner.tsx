@@ -12,6 +12,7 @@ import type {
   LibraryScannerActions,
   LibraryScannerData,
 } from './generated/LibraryScanner';
+import { Label } from 'tgui/components/Label';
 
 type Data = LibraryScannerData;
 
@@ -25,12 +26,12 @@ export const LibraryScanner = () => {
         <Section>
           <Box mb={1}>
             {has_cache ? (
-              <Box color="label">
+              <Label>
                 Data stored in memory:{' '}
                 <Box inline bold>
                   {cache_name}
                 </Box>
-              </Box>
+              </Label>
             ) : (
               <EmptyState>No data stored in memory.</EmptyState>
             )}

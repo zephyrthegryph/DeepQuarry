@@ -19,6 +19,7 @@ import type {
   PrefEditorOccupationStatic,
 } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 type Data = PrefEditorOccupation;
 type Department = PrefEditorOccupationStatic['departments'][string];
@@ -108,22 +109,18 @@ export const OccupationEditor = ({
         <Box inline color="green" bold>
           HIGH {d.counts?.high ?? 0}
         </Box>
-        <Box inline color="label">
-          ·
-        </Box>
+        <Label inline>·</Label>
         <Box inline color="yellow" bold>
           MED {d.counts?.med ?? 0}
         </Box>
-        <Box inline color="label">
-          ·
-        </Box>
+        <Label inline>·</Label>
         <Box inline color="orange" bold>
           LOW {d.counts?.low ?? 0}
         </Box>
         <Box style={{ flex: '1 1 auto' }} />
-        <Box inline color="label" fontSize="0.85em">
+        <Label inline fontSize="0.85em">
           If none available:
-        </Box>
+        </Label>
         <Dropdown
           width="18.333em"
           selected={altVal}
@@ -303,10 +300,9 @@ const JobRow = ({
         </Tooltip>
       )}
       {job.total_positions > 0 && (
-        <Box
+        <Label
           inline
           ml={0.5}
-          color="label"
           fontSize="0.78em"
           style={{
             flex: '0 0 auto',
@@ -315,7 +311,7 @@ const JobRow = ({
           }}
         >
           {job.current_positions}/{job.total_positions}
-        </Box>
+        </Label>
       )}
       {blockReason && (
         <Box

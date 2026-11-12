@@ -4,6 +4,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { Label } from 'tgui/components/Label';
 
 type BadPath = { path: string; keys: string[] };
 type BadKey = { key: string; messages: string[] };
@@ -53,9 +54,9 @@ export const MapReport = () => {
                   <Box>
                     <b>{p.path}</b>
                   </Box>
-                  <Box ml={1} color="label">
+                  <Label ml={1}>
                     used in {p.keys.length}: {p.keys.join(', ')}
-                  </Box>
+                  </Label>
                 </Stack.Item>
               ))}
             </Stack>
@@ -70,15 +71,11 @@ export const MapReport = () => {
                     <b>{k.key}</b>
                   </Box>
                   {k.messages.length === 1 ? (
-                    <Box ml={1} color="label">
-                      {k.messages[0]}
-                    </Box>
+                    <Label ml={1}>{k.messages[0]}</Label>
                   ) : (
                     <Box ml={1}>
                       {k.messages.map((m, i) => (
-                        <Box key={i} color="label">
-                          • {m}
-                        </Box>
+                        <Label key={i}>• {m}</Label>
                       ))}
                     </Box>
                   )}

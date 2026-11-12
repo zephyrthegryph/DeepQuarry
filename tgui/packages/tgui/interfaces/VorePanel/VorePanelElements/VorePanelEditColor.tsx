@@ -12,6 +12,7 @@ import { Box, Floating, Stack } from 'tgui-core/components';
 import { VorePanelColorBox } from './VorePanelCommonElements';
 import { VorePanelEditNumber } from './VorePanelEditNumber';
 import { VorePanelTooltip } from './VorePanelTooltip';
+import { Label } from 'tgui/components/Label';
 
 export const VorePanelEditColor = (
   props: {
@@ -160,7 +161,7 @@ export const VorePanelEditColor = (
     <>
       {!!name_of && (
         <Stack.Item>
-          <Box color="label">{name_of}</Box>
+          <Label>{name_of}</Label>
         </Stack.Item>
       )}
       <Stack.Item shrink>

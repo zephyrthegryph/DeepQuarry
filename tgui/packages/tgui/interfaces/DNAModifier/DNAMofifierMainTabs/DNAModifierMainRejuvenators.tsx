@@ -3,6 +3,7 @@ import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
 import type { DNAModifierActions } from '../../generated/DNAModifier';
 import { rejuvenatorsDoses } from '../constants';
 import type { Data } from '../types';
+import { Label } from 'tgui/components/Label';
 
 export const DNAModifierMainRejuvenators = (props) => {
   const { act, data } = useBackend<Data, DNAModifierActions>();
@@ -64,11 +65,11 @@ export const DNAModifierMainRejuvenators = (props) => {
           </LabeledList.Item>
         </LabeledList>
       ) : (
-        <Box color="label" textAlign="center" my="25%">
+        <Label textAlign="center" my="25%">
           <Icon name="exclamation-triangle" size={4} />
           <br />
           No beaker loaded.
-        </Box>
+        </Label>
       )}
     </Section>
   );

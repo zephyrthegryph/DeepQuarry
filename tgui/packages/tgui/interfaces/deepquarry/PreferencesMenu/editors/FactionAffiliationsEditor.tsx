@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
+import { Label } from 'tgui/components/Label';
 
 const AFFILIATION_COLORS: Record<string, string> = {
   Hostile: '#d94b4b',
@@ -26,11 +27,7 @@ export const FactionAffiliationsEditor = ({
     });
 
   if (!factions.length) {
-    return (
-      <Box p={2} color="label">
-        Loading faction registry...
-      </Box>
-    );
+    return <Label p={2}>Loading faction registry...</Label>;
   }
 
   return (
@@ -103,14 +100,9 @@ export const FactionAffiliationsEditor = ({
                     >
                       {faction.name}
                     </Box>
-                    <Box
-                      color="label"
-                      fontSize="1em"
-                      lineHeight={1.3}
-                      textAlign="center"
-                    >
+                    <Label fontSize="1em" lineHeight={1.3} textAlign="center">
                       {faction.description}
-                    </Box>
+                    </Label>
                   </Stack.Item>
                 </Stack>
               </Stack.Item>

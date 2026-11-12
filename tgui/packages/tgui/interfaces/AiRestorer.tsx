@@ -5,10 +5,10 @@ import {
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
 import type { AiRestorerActions, AiRestorerData } from './generated/AiRestorer';
+import { StatBar } from 'tgui/components/StatBar';
 
 type Data = AiRestorerData;
 
@@ -38,18 +38,17 @@ export const AiRestorerContent = (props) => {
           }
         >
           <LabeledList>
-            <LabeledList.Item label="Integrity">
-              <ProgressBar
-                value={health}
-                minValue={0}
-                maxValue={100}
-                ranges={{
-                  good: [70, Infinity],
-                  average: [50, 70],
-                  bad: [-Infinity, 50],
-                }}
-              />
-            </LabeledList.Item>
+            <StatBar
+              label="Integrity"
+              value={health}
+              minValue={0}
+              maxValue={100}
+              ranges={{
+                good: [70, Infinity],
+                average: [50, 70],
+                bad: [-Infinity, 50],
+              }}
+            />
           </LabeledList>
           {!!restoring && (
             <Box bold textAlign="center" fontSize="20px" color="good" mt={1}>

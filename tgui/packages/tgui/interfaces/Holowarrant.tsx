@@ -5,6 +5,7 @@ import { Window } from 'tgui/layouts';
 import { Box, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import { Label } from 'tgui/components/Label';
 
 type Data = {
   loaded: BooleanLike;
@@ -39,22 +40,22 @@ export const Holowarrant = () => {
     >
       <Window.Content scrollable>
         <Section title="Sol Central Government — Colonial Marshal Bureau">
-          <Box color="label">
+          <Label>
             in the jurisdiction of the {jurisdiction} in {station}
-          </Box>
+          </Label>
           <Box mt={1} bold textAlign="center">
             {isSearch ? 'SEARCH WARRANT' : 'ARREST WARRANT'}
           </Box>
         </Section>
         {isSearch ? (
           <Section>
-            <Box italic color="label" mb={1}>
+            <Label italic mb={1}>
               The Security Officer(s) bearing this Warrant are hereby authorized
               by the Issuer to conduct a one-time lawful search of the Suspect's
               person, belongings, premises, and/or Department for any items and
               materials that could be connected to the suspected criminal act
               described below, pending an investigation in progress.
-            </Box>
+            </Label>
             <LabeledList>
               <LabeledList.Item label="Suspect/Location">
                 {name}
@@ -72,9 +73,9 @@ export const Holowarrant = () => {
               This document serves as authorization and notice for the arrest of{' '}
               <b>{name}</b> for the crime(s) of:
             </Box>
-            <Box italic color="label" preserveWhitespace mb={2}>
+            <Label italic preserveWhitespace mb={2}>
               {charges}
-            </Box>
+            </Label>
             <LabeledList>
               <LabeledList.Item label="Vessel/Habitat">
                 {station}

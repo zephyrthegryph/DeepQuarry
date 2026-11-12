@@ -4,10 +4,10 @@ import {
   Button,
   LabeledList,
   NumberInput,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
 import type { TankActions, TankData } from './generated/Tank';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const Tank = (props) => {
   const { act, data } = useBackend<TankData, TankActions>();
@@ -46,18 +46,17 @@ export const Tank = (props) => {
         </Section>
         <Section>
           <LabeledList>
-            <LabeledList.Item label="Pressure">
-              <ProgressBar
-                value={tankPressure / 1013}
-                ranges={{
-                  good: [0.35, Infinity],
-                  average: [0.15, 0.35],
-                  bad: [-Infinity, 0.15],
-                }}
-              >
-                {`${data.tankPressure} kPa`}
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Pressure"
+              value={tankPressure / 1013}
+              ranges={{
+                good: [0.35, Infinity],
+                average: [0.15, 0.35],
+                bad: [-Infinity, 0.15],
+              }}
+            >
+              {`${data.tankPressure} kPa`}
+            </StatBar>
             <LabeledList.Item label="Pressure Regulator">
               <Button
                 icon="fast-backward"

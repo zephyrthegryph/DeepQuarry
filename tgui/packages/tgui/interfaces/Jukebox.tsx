@@ -9,7 +9,6 @@ import {
   Input,
   LabeledList,
   NumberInput,
-  ProgressBar,
   Section,
   Slider,
   Stack,
@@ -18,6 +17,7 @@ import { formatTime } from 'tgui-core/format';
 import { round, toFixed } from 'tgui-core/math';
 import { capitalize } from 'tgui-core/string';
 import type { JukeboxActions, JukeboxData } from './generated/Jukebox';
+import { StatBar } from 'tgui/components/StatBar';
 
 export const Jukebox = (props) => {
   const { act, data } = useBackend<JukeboxData, JukeboxActions>();
@@ -121,9 +121,12 @@ export const Jukebox = (props) => {
                 Once
               </Button>
             </LabeledList.Item>
-            <LabeledList.Item label="Progress">
-              <ProgressBar value={percent} maxValue={1} color="good" />
-            </LabeledList.Item>
+            <StatBar
+              label="Progress"
+              value={percent}
+              maxValue={1}
+              color="good"
+            />
             <LabeledList.Item label="Volume">
               <Slider
                 minValue={0}

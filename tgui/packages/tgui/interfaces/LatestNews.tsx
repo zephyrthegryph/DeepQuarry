@@ -6,6 +6,7 @@ import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
 import type { LatestNewsActions, LatestNewsData } from './generated/LatestNews';
+import { Label } from 'tgui/components/Label';
 
 export const LatestNews = () => {
   const { data, act } = useBackend<LatestNewsData, LatestNewsActions>();
@@ -26,9 +27,9 @@ export const LatestNews = () => {
               <Box mb={1}>
                 <HtmlRenderer html={body} />
               </Box>
-              <Box italic color="label" mb={2}>
+              <Label italic mb={2}>
                 — {author}
-              </Box>
+              </Label>
               <Stack>
                 <Stack.Item>
                   <Button

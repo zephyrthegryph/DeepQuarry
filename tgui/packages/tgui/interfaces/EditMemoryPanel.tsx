@@ -13,6 +13,7 @@ import type {
   EditMemoryPanelActions,
   EditMemoryPanelData,
 } from './generated/EditMemoryPanel';
+import { Label } from 'tgui/components/Label';
 
 export const EditMemoryPanel = () => {
   const { data, act } = useBackend<
@@ -48,7 +49,7 @@ export const EditMemoryPanel = () => {
       <Window.Content scrollable>
         <Section title={name}>
           {real_name ? (
-            <Box color="label">(currently controlling {real_name})</Box>
+            <Label>(currently controlling {real_name})</Label>
           ) : null}
           <LabeledList>
             <LabeledList.Item label="Key">
@@ -66,9 +67,9 @@ export const EditMemoryPanel = () => {
             <LabeledList.Item label="Memory">
               <Box mr={1} preserveWhitespace>
                 {memory || (
-                  <Box inline italic color="label">
+                  <Label inline italic>
                     (none)
-                  </Box>
+                  </Label>
                 )}
               </Box>
               <Button compact onClick={() => act('edit_memory')}>
@@ -78,9 +79,9 @@ export const EditMemoryPanel = () => {
             <LabeledList.Item label="Ambitions">
               <Box mr={1} preserveWhitespace>
                 {ambitions || (
-                  <Box inline italic color="label">
+                  <Label inline italic>
                     (none)
-                  </Box>
+                  </Label>
                 )}
               </Box>
               <Button compact onClick={() => act('edit_ambitions')}>
