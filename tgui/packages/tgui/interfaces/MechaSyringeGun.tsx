@@ -37,12 +37,12 @@ export const MechaSyringeGun = () => {
     <Window width={460} height={520} title="Reagent Synthesizer">
       <Window.Content scrollable>
         <Section title="Current reagents">
-          {data.current_reagents.length === 0 ? (
+          {(data.current_reagents ?? []).length === 0 ? (
             <EmptyState>None.</EmptyState>
           ) : (
             <>
               <Stack vertical>
-                {data.current_reagents.map((r) => (
+                {(data.current_reagents ?? []).map((r) => (
                   <Stack.Item key={r.id}>
                     <Button
                       color="bad"
@@ -72,7 +72,7 @@ export const MechaSyringeGun = () => {
             <Button
               color="good"
               onClick={() => {
-                const selected = data.known_reagents
+                const selected = (data.known_reagents ?? [])
                   .filter(isSelected)
                   .map((r) => r.id);
                 act('select_reagents', { reagents: selected });
@@ -82,11 +82,11 @@ export const MechaSyringeGun = () => {
             </Button>
           }
         >
-          {data.known_reagents.length === 0 ? (
+          {(data.known_reagents ?? []).length === 0 ? (
             <EmptyState>No known reagents.</EmptyState>
           ) : (
             <Stack vertical>
-              {data.known_reagents.map((r) => {
+              {(data.known_reagents ?? []).map((r) => {
                 const on = isSelected(r);
                 return (
                   <Stack.Item key={r.id}>

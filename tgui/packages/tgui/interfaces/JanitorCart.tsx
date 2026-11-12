@@ -138,7 +138,7 @@ const JanicartIcon = (props: { iconkey: string }) => {
 
   const { iconkey } = props;
 
-  const { icons } = data;
+  const { icons = {} } = data;
 
   if (iconkey in icons) {
     return (

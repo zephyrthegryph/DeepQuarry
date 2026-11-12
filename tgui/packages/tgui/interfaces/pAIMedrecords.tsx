@@ -15,7 +15,7 @@ type Data = {
 export const pAIMedrecords = (props) => {
   const { act, data } = useBackend<Data, pAIMedrecordsActions>();
 
-  const { records, general, medical, could_not_find } = data;
+  const { records = [], general, medical, could_not_find } = data;
 
   return (
     <Window width={450} height={600}>

@@ -76,7 +76,7 @@ export const Ticket = (props) => {
     opened_at_date,
     closed_at_date,
     actions,
-    log,
+    log = [],
   } = data;
 
   useEffect(() => {

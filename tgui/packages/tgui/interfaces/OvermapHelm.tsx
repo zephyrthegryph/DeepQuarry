@@ -242,7 +242,7 @@ const OvermapMapView = (props) => {
 const OvermapNavComputer = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { sector, s_x, s_y, sector_info, landed, locations } = data;
+  const { sector, s_x, s_y, sector_info, landed, locations = [] } = data;
 
   return (
     <Section title="Navigation Data" m={0.3} mt={1}>

@@ -185,8 +185,10 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 			balloon_alert(user, "\the [H] is missing that limb!")
 			return OP_REFUSED
 
-	if(M.can_inject(user, 1, ignore_thickness = bypass_protection))
-
+	var/refusal = M.inject_refusal(user, ignore_thickness = bypass_protection)
+	if(refusal)
+		to_chat(user, span_warning(refusal))
+	else
 		if(M.reagents)
 			var/reagent_id = TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]
 			var/amount_to_add = min(amount_per_transfer_from_this, reagent_volumes[reagent_id])

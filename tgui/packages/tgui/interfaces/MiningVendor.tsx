@@ -63,7 +63,7 @@ const MiningVendorItems = (props: {
   descending: boolean;
 }) => {
   const { act, data } = useBackend<Data, MiningVendorActions>();
-  const { has_id, id, items } = data;
+  const { has_id, id, items = {} } = data;
   // Search thingies
   const searcher = createSearch<[string, Sortable]>(
     props.searchText,

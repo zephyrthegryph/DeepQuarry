@@ -42,7 +42,7 @@ export const Batteryrack = (props) => {
     input_load,
     equalise,
     blink_tick,
-    cells_list,
+    cells_list = [],
   } = data;
 
   return (

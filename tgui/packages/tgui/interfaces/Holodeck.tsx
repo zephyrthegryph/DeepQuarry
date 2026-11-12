@@ -18,8 +18,8 @@ export const Holodeck = (props) => {
   const { act, data } = useBackend<Data, HolodeckActions>();
 
   const {
-    supportedPrograms,
-    restrictedPrograms,
+    supportedPrograms = [],
+    restrictedPrograms = [],
     currentProgram,
     isSilicon,
     safetyDisabled,

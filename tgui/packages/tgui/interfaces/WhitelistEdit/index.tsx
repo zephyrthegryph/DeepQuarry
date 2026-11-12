@@ -9,14 +9,14 @@ import { WhitelistRemoveEntry } from './WhitelistRemoveEntry';
 export const WhitelistEdit = () => {
   const { data, act } = useBackend<Data, WhitelistEditActions>();
   const {
-    alienwhitelist,
-    languagewhitelist,
-    robotwhitelist,
-    jobwhitelist,
-    species_with_whitelist,
-    language_with_whitelist,
-    robot_with_whitelist,
-    jobs_with_whitelist,
+    alienwhitelist = {},
+    languagewhitelist = {},
+    robotwhitelist = {},
+    jobwhitelist = {},
+    species_with_whitelist = [],
+    language_with_whitelist = [],
+    robot_with_whitelist = [],
+    jobs_with_whitelist = [],
   } = data;
 
   const possibleAdds = {

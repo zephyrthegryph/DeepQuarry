@@ -7,7 +7,12 @@ import type { Data } from '../../types';
 
 export const SleeperCargoStatus = (props) => {
   const { data } = useBackend<Data, RobotSleeperActions>();
-  const { deliveryslot_1, deliveryslot_2, deliveryslot_3, contents } = data;
+  const {
+    deliveryslot_1,
+    deliveryslot_2,
+    deliveryslot_3,
+    contents = [],
+  } = data;
 
   const cargoSlots = [deliveryslot_1, deliveryslot_2, deliveryslot_3];
 

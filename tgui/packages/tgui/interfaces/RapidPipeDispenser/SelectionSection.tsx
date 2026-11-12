@@ -18,7 +18,7 @@ export const SelectionSection = (props) => {
     category: rootCategoryIndex,
     selected_color,
     mode,
-    paint_colors,
+    paint_colors = {},
   } = data;
   return (
     <Section>
@@ -57,7 +57,7 @@ export const SelectionSection = (props) => {
         </LabeledList.Item>
         <LabeledList.Item label="Color">
           <Box inline width="64px" color={paint_colors[selected_color]}>
-            {capitalize(selected_color)}
+            {capitalize(selected_color ?? '')}
           </Box>
           {Object.keys(paint_colors).map((colorName) => (
             <ColorBox

@@ -197,10 +197,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	. += show_malf_ai()
 
 //can't inject synths
-/mob/living/silicon/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
-	if(error_msg)
-		to_chat(user, span_warning("The armoured plating is too tough."))
-	return 0
+/mob/living/silicon/inject_refusal(mob/user, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
+	return "The armoured plating is too tough."
 
 //Silicon mob language procs
 

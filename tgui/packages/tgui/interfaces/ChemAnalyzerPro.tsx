@@ -24,7 +24,7 @@ type Data = {
 
 export const ChemAnalyzerPro = () => {
   const { data } = useBackend<Data>();
-  const { scannedReagents, beakerTotal, beakerMax } = data;
+  const { scannedReagents = [], beakerTotal, beakerMax } = data;
 
   const [selectedReagent, setSelectedReagent] = useState<AnalyzerData | null>(
     null,

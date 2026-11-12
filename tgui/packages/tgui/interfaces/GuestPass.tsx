@@ -22,7 +22,7 @@ type area = { area: string; area_name: string; on: BooleanLike };
 export const GuestPass = (props) => {
   const { act, data } = useBackend<Data, GuestPassActions>();
 
-  const { area, giver, giveName, reason, duration, mode, log, uid } = data;
+  const { area = [], giver, giveName, reason, duration, mode, log, uid } = data;
 
   const sortedArea = [...area].sort((a, b) =>
     a.area_name.localeCompare(b.area_name),

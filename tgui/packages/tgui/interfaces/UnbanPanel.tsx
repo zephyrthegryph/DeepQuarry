@@ -23,7 +23,7 @@ type Data = {
 
 export const UnbanPanel = () => {
   const { data, act } = useBackend<Data, UnbanPanelActions>();
-  const { bans, count } = data;
+  const { bans = [], count } = data;
   return (
     <Window width={760} height={620} title={`Unban (${count})`}>
       <Window.Content scrollable>

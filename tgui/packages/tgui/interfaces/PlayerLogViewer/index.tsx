@@ -27,12 +27,12 @@ export const PlayerLogViewer = (props) => {
   }
 
   const {
-    entries,
+    entries = {},
     name,
     ckey,
     special,
     on_cooldown,
-    all_clients,
+    all_clients = {},
     view_client,
   } = data;
 

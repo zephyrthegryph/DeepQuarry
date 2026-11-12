@@ -1587,9 +1587,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	return clamp(70 - round(affecting.get_trauma() + affecting.get_burn() / 2), 0, 100)
 
 /// `roll` = FALSE leaves out the thick-hide roll of some species (the one who asks makes it later, with thick_skin_holds()).
-/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
-	. = 1
-
+/mob/living/carbon/human/inject_refusal(mob/user, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
 	if(!target_zone)
 		if(!user)
 			target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
@@ -1597,31 +1595,20 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 			target_zone = hud_of(user)?.zone_sel?.selecting
 
 	var/obj/item/organ/external/affecting = get_organ(target_zone)
-	var/fail_msg
 	if(!affecting)
-		. = 0
-		fail_msg = "They are missing that limb."
-	else if (affecting.robotic == ORGAN_ROBOT && method == INJECT_METHOD_NEEDLE)
-		. = 0
-		fail_msg = "That limb is robotic."
-	else if (affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
-		. = 0
-		fail_msg = "Your needle refuses to penetrate more than a short distance..."
-	else if(roll && thick_skin_holds(affecting))	// Allows transplanted limbs with thick skin to maintain their resistance.
-		. = 0
-		fail_msg = "Your needle fails to penetrate \the [affecting]'s thick hide..."
-	else
-		switch(target_zone)
-			if(BP_HEAD)
-				if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & THICKMATERIAL) && !ignore_thickness)
-					. = 0
-			else
-				if(get_equipped_item(SLOT_ID_SUIT) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).flags & THICKMATERIAL) && !ignore_thickness)
-					. = 0
-	if(!. && error_msg && user)
-		if(!fail_msg)
-			fail_msg = "There is no exposed flesh or thin material [target_zone == BP_HEAD ? "on their head" : "on their body"] to inject into."
-		to_chat(user, span_warning("[fail_msg]"))
+		return "They are missing that limb."
+	if(affecting.robotic == ORGAN_ROBOT && method == INJECT_METHOD_NEEDLE)
+		return "That limb is robotic."
+	if(affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
+		return "Your needle refuses to penetrate more than a short distance..."
+	if(roll && thick_skin_holds(affecting))	// Allows transplanted limbs with thick skin to maintain their resistance.
+		return "Your needle fails to penetrate \the [affecting]'s thick hide..."
+	if(ignore_thickness)
+		return null
+	var/obj/item/cover = get_equipped_item(target_zone == BP_HEAD ? SLOT_ID_HEAD : SLOT_ID_SUIT)
+	if(cover && (worn_of(cover).flags & THICKMATERIAL))
+		return "There is no exposed flesh or thin material [target_zone == BP_HEAD ? "on their head" : "on their body"] to inject into."
+	return null
 
 /// Which flavor entries show on this body right now. General always does. Face hides while gear covers or hides it. Body describes the general
 /// look and coloration, so it hides only under head-to-toe gear: everything worn together covers every part of the body.

@@ -59,7 +59,7 @@ const SettingRow = (props: { setting: Setting }) => {
 
 export const PetCustomize = () => {
   const { data } = useBackend<Data, PetCustomizeActions>();
-  const { pet_name, settings } = data;
+  const { pet_name, settings = [] } = data;
   return (
     <Window width={480} height={420} title="Customize" theme="console">
       <Window.Content scrollable>

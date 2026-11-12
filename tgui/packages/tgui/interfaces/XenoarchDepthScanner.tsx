@@ -18,7 +18,11 @@ type Data = {
 export const XenoarchDepthScanner = (props) => {
   const { act, data } = useBackend<Data, XenoarchDepthScannerActions>();
 
-  const { theme, current, positive_locations } = data;
+  const {
+    theme,
+    current = {} as Data['current'],
+    positive_locations = [],
+  } = data;
 
   return (
     <Window width={300} height={500} theme={theme}>

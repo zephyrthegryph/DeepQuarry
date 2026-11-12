@@ -249,12 +249,12 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	var/obj/item/organ/external/affected = limb_aimed(A)
 	return (isnull(affected) || affected.robotic < ORGAN_LIFELIKE || affected.robotic == ORGAN_ROBOT) ? null : /datum/msg/needle/limb_lifelike
 
-/// The needle can get into this one: a living thing that is not a person next to the injector says by its own can_inject() (armour, an armoured plating).
+/// The needle can get into this one: a living thing that is not a person next to the injector says by its own inject_refusal() (armour, an armoured plating).
 /datum/capability/lib/needle/proc/skin_open(datum/act/op/A)
 	var/mob/living/target = A.target
 	if(ishuman(target) || target == A.actor)
 		return null
-	return (!!target.can_inject(null, 0)) ? null : /datum/msg/needle/too_tough
+	return isnull(target.inject_refusal(null)) ? null : /datum/msg/needle/too_tough
 
 // ---- waits ----
 

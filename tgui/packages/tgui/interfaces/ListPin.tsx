@@ -19,7 +19,7 @@ type Data = {
 
 export const ListPin = () => {
   const { data, act } = useBackend<Data, ListPinActions>();
-  const { name, length, entries } = data;
+  const { name, length, entries = [] } = data;
   return (
     <Window width={520} height={520} title={`List Pin: ${name}`}>
       <Window.Content scrollable>

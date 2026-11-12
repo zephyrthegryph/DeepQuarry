@@ -50,13 +50,16 @@
 	data["cartridge_name"] = cartridge ? cartridge.name : ""
 	data["stationTime"] = stationtime2text() //worldtime2stationtime(world.time) // Aaa which fucking one is canonical there's SO MANY
 
+	var/datum/data/pda/app/app = current_app()
+	if(!app) // a PDA with no app open (a multicaster before its apps are made) shows the home frame
+		return data
 	data["app"] = list(
-		"name" = current_app().title,
-		"icon" = current_app().icon,
-		"template" = current_app().template,
-		"has_back" = current_app().has_back)
+		"name" = app.title,
+		"icon" = app.icon,
+		"template" = app.template,
+		"has_back" = app.has_back)
 
-	current_app().update_ui(user, data)
+	app.update_ui(user, data)
 
 	return data
 

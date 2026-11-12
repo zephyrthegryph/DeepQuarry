@@ -122,16 +122,25 @@ CAPABILITIES(/obj/item/uav)
 				to_chat(user,span_warning("Turn [nickname] off or pack it first!"))
 		// Can disasemble or reassemble from packed or off (and this one takes time)
 		if("(Dis)Assemble")
-			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
+			var/refusal = transition_refusal(state == UAV_PACKED ? UAV_OFF : UAV_PACKED)
+			if(refusal)
+				to_chat(user, span_warning(refusal))
+			else
 				act_message(user, src, MSG_SELF(span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src].")))
 				perform_op(user, src, "repack", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		// Can toggle power from on and off
 		if("Toggle Power")
-			if(can_transition_to(state == UAV_ON ? UAV_OFF : UAV_ON, user))
+			var/refusal = transition_refusal(state == UAV_ON ? UAV_OFF : UAV_ON)
+			if(refusal)
+				to_chat(user, span_warning(refusal))
+			else
 				toggle_power(user)
 		// Can pair when off
 		if("Pairing Mode")
-			if(can_transition_to(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING, user))
+			var/refusal = transition_refusal(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING)
+			if(refusal)
+				to_chat(user, span_warning(refusal))
+			else
 				toggle_pairing(user)
 	return OP_OK
 
@@ -193,25 +202,22 @@ CAPABILITIES(/obj/item/uav)
 	cell.forceMove(get_turf(src))
 	rel_take(src, nameof(cell))
 
-/obj/item/uav/proc/can_transition_to(new_state, mob/user)
+/// Why the drone cannot go from its state to `new_state`, or null when it can. Never prints: the menu choice that asked shows it.
+/obj/item/uav/proc/transition_refusal(new_state)
 	switch(state) //Current one
 		if(UAV_ON)
 			if(new_state == UAV_OFF || new_state == UAV_PACKED)
-				. = TRUE
+				return null
 		if(UAV_OFF)
 			if(new_state == UAV_ON || new_state == UAV_PACKED || new_state == UAV_PAIRING)
-				. = TRUE
+				return null
 		if(UAV_PAIRING)
 			if(new_state == UAV_OFF)
-				. = TRUE
+				return null
 		if(UAV_PACKED)
 			if(new_state == UAV_OFF)
-				. = TRUE
-
-	if(!.)
-		if(user)
-			to_chat(user, span_warning("You can't do that while [nickname] is in this state."))
-		return FALSE
+				return null
+	return "You can't do that while [nickname] is in this state."
 
 /obj/item/uav/proc/appearance_uav_suffix()
 	switch(state)

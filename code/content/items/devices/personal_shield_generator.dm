@@ -394,18 +394,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 /obj/item/gun/energy/gun/generator/proc/link_generator_cell()
 	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
-/obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
-	if(!check_charge(charge_cost))
-		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-		return 0
-	if(!wielded && !isrobot(user))
-		to_chat(user, span_warning("You need to wield the gun with both hands before you can use it on someone!"))
-		return 0
-	if(cooldown)
-		to_chat(user, span_warning("\The [src] are re-energizing!"))
-		return 0
-	return 1
-
 /obj/item/gun/energy/gun/generator/dropped(mob/user, equipping, slot)
 	..() //update twohanding
 	if(shield_generator())

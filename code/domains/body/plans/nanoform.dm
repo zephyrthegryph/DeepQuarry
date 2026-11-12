@@ -321,7 +321,9 @@
 			playsound(site, sounds_of(W).use, 50, 1)
 		if(DORMANCY_PASTED)
 			var/obj/item/shockpaddles/paddles = W
-			if(!paddles.can_use(user))
+			var/refusal = paddles.use_refusal(user)
+			if(refusal)
+				to_chat(user, span_warning(refusal))
 				return
 			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
 			perform_op(user, src, "paddles_charge", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site))

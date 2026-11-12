@@ -78,7 +78,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/plasma_cyber_horror)
 		var/mob/living/L = A
 		if(L.reagents)
 			var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
-			if(L.can_inject(src, null, target_zone))
+			if(!L.inject_refusal(src, target_zone))
 				inject_poison(L, target_zone)
 
 // Does actual poison injection, after all checks passed.
@@ -360,7 +360,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/cat_cyber_horror)
 		var/mob/living/L = A
 		if(L.reagents)
 			var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
-			if(L.can_inject(src, null, target_zone))
+			if(!L.inject_refusal(src, target_zone))
 				inject_poison(L, target_zone)
 
 // Does actual poison injection, after all checks passed.

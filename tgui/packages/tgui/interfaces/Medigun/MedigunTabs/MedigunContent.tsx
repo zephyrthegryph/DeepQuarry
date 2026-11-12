@@ -188,7 +188,7 @@ export const MedigunContent = (props: { smodule: SModule }) => {
                                 </>
                               )}
                               <Stack.Item>
-                                {`${(patient_health * 100).toFixed()}%`}
+                                {`${((patient_health ?? 0) * 100).toFixed()}%`}
                               </Stack.Item>
                             </Stack>
                           </ProgressBar>

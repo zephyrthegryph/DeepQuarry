@@ -7,10 +7,10 @@ export function OverviewSection(props) {
   const { act, data } = useBackend<ControllerData, ControllerOverviewActions>();
   const {
     fast_update,
-    rolling_length,
-    map_cpu,
+    rolling_length = 0,
+    map_cpu = 0,
     subsystems = [],
-    world_time,
+    world_time = 0,
   } = data;
 
   let avgUsage = 0;

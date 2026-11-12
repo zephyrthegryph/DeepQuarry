@@ -76,7 +76,7 @@ type Data = {
   departments: DepartmentRow[];
 };
 
-const money = (value: number) => `${value.toLocaleString()} Th`;
+const money = (value = 0) => `${value.toLocaleString()} Th`;
 
 const Ledger = (props: { rows: LedgerRow[]; empty: string }) => {
   const sorted = [...props.rows].sort((a, b) => b.amount - a.amount);
@@ -288,7 +288,7 @@ export const EconomyDashboard = () => {
           <Stack.Item grow basis="50%">
             <Section title="Currency Sources">
               <Ledger
-                rows={data.currency_sources}
+                rows={data.currency_sources ?? []}
                 empty="No creation recorded."
               />
             </Section>
@@ -296,7 +296,7 @@ export const EconomyDashboard = () => {
           <Stack.Item grow basis="50%">
             <Section title="Currency Sinks">
               <Ledger
-                rows={data.currency_sinks}
+                rows={data.currency_sinks ?? []}
                 empty="No destruction recorded."
               />
             </Section>
@@ -313,7 +313,7 @@ export const EconomyDashboard = () => {
               <Table.Cell textAlign="right">Projected Payroll</Table.Cell>
               <Table.Cell>Last Coverage</Table.Cell>
             </Table.Row>
-            {data.departments.map((department) => {
+            {(data.departments ?? []).map((department) => {
               const coverage = department.last_payroll_due
                 ? department.last_payroll_paid / department.last_payroll_due
                 : 1;

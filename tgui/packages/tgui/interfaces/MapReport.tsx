@@ -18,7 +18,13 @@ type Data = {
 
 export const MapReport = () => {
   const { data } = useBackend<Data>();
-  const { original_path, crashed, loadable, bad_paths, bad_keys } = data;
+  const {
+    original_path,
+    crashed,
+    loadable,
+    bad_paths = [],
+    bad_keys = [],
+  } = data;
   return (
     <Window width={680} height={560} title={`Map Report: ${original_path}`}>
       <Window.Content scrollable>

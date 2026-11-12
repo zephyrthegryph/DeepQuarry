@@ -11,7 +11,7 @@ type Data = {
 
 export const FileCabinet = (props) => {
   const { act, data } = useBackend<Data, FileCabinetActions>();
-  const { cabinet_name, contents, contents_ref } = data;
+  const { cabinet_name, contents = [], contents_ref } = data;
   return (
     <Window title={cabinet_name || 'Filing Cabinet'} width={350} height={300}>
       <Window.Content backgroundColor="#B88F3D" scrollable>

@@ -14,7 +14,14 @@ type Data = {
 
 export const VotePanel = (props, context) => {
   const { act, data } = useBackend<Data, VotePanelActions>();
-  const { remaining, question, choices, user_vote, counts, show_counts } = data;
+  const {
+    remaining = 0,
+    question,
+    choices = [],
+    user_vote,
+    counts,
+    show_counts,
+  } = data;
 
   return (
     <Window width={400} height={360}>

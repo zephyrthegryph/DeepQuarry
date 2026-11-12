@@ -40,10 +40,10 @@ export const ShockCollar = (props) => {
               animated
               fluid
               unit="kHz"
-              minValue={data.freq_min}
-              maxValue={data.freq_max}
+              minValue={data.freq_min ?? 0}
+              maxValue={data.freq_max ?? 0}
               step={1}
-              value={data.frequency}
+              value={data.frequency ?? 0}
               format={(val) => (val / 10).toFixed(1)}
               onChange={(val) => act('freq', { freq: val })}
             />
@@ -52,10 +52,10 @@ export const ShockCollar = (props) => {
             <NumberInput
               animated
               fluid
-              minValue={data.code_min}
-              maxValue={data.code_max}
+              minValue={data.code_min ?? 0}
+              maxValue={data.code_max ?? 0}
               step={1}
-              value={data.code}
+              value={data.code ?? 0}
               onChange={(val) => act('code', { code: val })}
             />
           </LabeledList.Item>

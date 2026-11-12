@@ -23,7 +23,7 @@ export const OverlaySelector: React.FC<OverlayModalProps> = ({
 }) => {
   const { data } = useBackend<Data, PlushieEditorActions>();
   const [filter, setFilter] = useState('');
-  const { possible_overlays, overlays, icon } = data;
+  const { possible_overlays = [], overlays = [], icon } = data;
 
   const searcher = createSearch<PossibleOverlay>(filter, (ov) => ov.name);
 

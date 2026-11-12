@@ -10,7 +10,7 @@ import type { Access, Data } from './types';
 
 export const AccessViewer = (props) => {
   const { act, data } = useBackend<Data, AccessViewerActions>();
-  const { access_list, name, coords, req_access, req_one_access } = data;
+  const { access_list = [], name, coords, req_access, req_one_access } = data;
   const [searchText, setSearchText] = useState('');
 
   const access_regions: Record<number, Access[]> = {

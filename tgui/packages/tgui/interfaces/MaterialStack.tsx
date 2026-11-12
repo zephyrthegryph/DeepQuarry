@@ -25,7 +25,7 @@ type recipe = {
 export const MaterialStack = (props) => {
   const { data } = useBackend<Data, MaterialStackActions>();
 
-  const { amount, recipes } = data;
+  const { amount, recipes = [] } = data;
   const [searchText, setSearchText] = useState('');
 
   return (

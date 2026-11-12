@@ -85,7 +85,11 @@ export const ChemSynthesizerQueueRecipes = (props) => {
                     </Button>
                   </LabeledList.Item>
                 );
-              })) || <Box m={1}>Queue Empty.</Box>}
+              })) || (
+              <LabeledList.Item>
+                <Box m={1}>Queue Empty.</Box>
+              </LabeledList.Item>
+            )}
           </LabeledList>
         </Section>
       </Stack.Item>
@@ -138,7 +142,11 @@ export const ChemSynthesizerQueueRecipes = (props) => {
                     />
                   </LabeledList.Item>
                 );
-              })) || <Box m={1}>No recipes found.</Box>}
+              })) || (
+              <LabeledList.Item>
+                <Box m={1}>No recipes found.</Box>
+              </LabeledList.Item>
+            )}
           </LabeledList>
         </Section>
       </Stack.Item>

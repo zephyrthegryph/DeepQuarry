@@ -71,7 +71,7 @@ const splitJobs = (
 export const LateChoices = (props) => {
   const { act, data } = useBackend<Data, LateChoicesActions>();
 
-  const { name, duration, evac, jobs } = data;
+  const { name, duration, evac, jobs = [] } = data;
 
   const { favorites, departments } = splitJobs(jobs);
 

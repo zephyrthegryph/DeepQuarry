@@ -555,6 +555,24 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 //Herm Gender
 #define HERM "herm"
 
+// Gender choice lists (used by record computers, appearance changer)
+#define all_genders_define_list list(MALE,FEMALE,PLURAL,NEUTER,HERM)
+#define all_genders_text_list list("Male","Female","Plural","Neuter","Herm")
+#define pronoun_set_to_genders list(\
+			"He/Him" = MALE,\
+			"She/Her" = FEMALE,\
+			"It/Its" = NEUTER,\
+			"They/Them" = PLURAL,\
+			"Shi/Hir" = HERM\
+			)
+#define genders_to_pronoun_set list(\
+			MALE = "He/Him",\
+			FEMALE = "She/Her",\
+			NEUTER = "It/Its",\
+			PLURAL = "They/Them",\
+			HERM = "Shi/Hir"\
+			)
+
 // Bluespace shelter deploy checks
 #define SHELTER_DEPLOY_ALLOWED "allowed"
 #define SHELTER_DEPLOY_BAD_TURFS "bad turfs"

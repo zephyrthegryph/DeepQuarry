@@ -28,7 +28,12 @@ type Data = {
 export const IcecreamVat = (props) => {
   const { data, act } = useBackend<Data, IcecreamVatActions>();
 
-  const { current_flavor, icecrem_data, cone_data, reagent_data } = data;
+  const {
+    current_flavor,
+    icecrem_data = [],
+    cone_data = [],
+    reagent_data = [],
+  } = data;
 
   return (
     <Window width={630} height={420}>

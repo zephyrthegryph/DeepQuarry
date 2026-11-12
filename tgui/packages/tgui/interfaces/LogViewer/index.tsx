@@ -39,7 +39,7 @@ export const LogViewer = (_: any) => {
         <Stack vertical fill>
           <Stack.Item>
             <CategoryBar
-              options={data.tree.enabled}
+              options={data.tree?.enabled ?? []}
               active={activeCategory}
               setActive={setActiveCategory}
             />

@@ -184,7 +184,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
 
     const connections: Connection[] = [];
 
-    for (const circuit of data.circuits) {
+    for (const circuit of data.circuits ?? []) {
       if (circuit.inputs) {
         for (const input of circuit.inputs) {
           connectionloop: for (const output of input.linked) {
@@ -258,7 +258,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
         initialLeft={50}
         initialTop={50}
       >
-        {data.circuits.map((circuit) => (
+        {(data.circuits ?? []).map((circuit) => (
           <Circuit
             act={act}
             circuit={circuit}

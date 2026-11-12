@@ -45,7 +45,7 @@ const JobButton = (props: { job: Job; onClick: (title: string) => void }) => {
 
 export const JobBanPanel = () => {
   const { data, act } = useBackend<Data, JobBanPanelActions>();
-  const { target_name, departments } = data;
+  const { target_name, departments = [] } = data;
 
   return (
     <Window width={760} height={680} title={`Job-Ban Panel: ${target_name}`}>

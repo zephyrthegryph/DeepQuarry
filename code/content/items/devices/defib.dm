@@ -195,19 +195,17 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 	if(cooldown)
 		look.state("[stem][wielded]_cooldown")
 
-/obj/item/shockpaddles/proc/can_use(mob/user, mob/M)
+/// Why `user` cannot use the paddles now, or null when they can. It never prints: the attack that asked shows the reason once.
+/obj/item/shockpaddles/proc/use_refusal(mob/user)
 	if(op_claimed(src))
-		return 0
+		return "\The [src] are already in use."
 	if(!check_charge(chargecost))
-		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-		return 0
+		return "\The [src] doesn't have enough charge left to do that."
 	if(!wielded && !isrobot(user))
-		to_chat(user, span_warning("You need to wield the paddles with both hands before you can use them on someone!"))
-		return 0
+		return "You need to wield the paddles with both hands before you can use them on someone!"
 	if(cooldown)
-		to_chat(user, span_warning("\The [src] are re-energizing!"))
-		return 0
-	return 1
+		return "\The [src] are re-energizing!"
+	return null
 
 //Checks for various conditions to see if the mob is revivable
 /obj/item/shockpaddles/proc/can_defib(mob/living/carbon/human/H) //This is checked before doing the defib operation
@@ -327,14 +325,21 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 	if(!istype(H) || stance == I_HURT)
 		return ..() //Do a regular attack. Harm intent shocking happens as a hit effect
 
-	if(can_use(user, H))
+	var/refusal = use_refusal(user)
+	if(refusal)
+		to_chat(user, span_warning(refusal))
+	else
 		do_revive(H, user)
 
 	return ITEM_INTERACT_SUCCESS
 
 //Since harm-intent now skips the delay for deliberate placement, you have to be able to hit them in combat in order to shock people.
 /obj/item/shockpaddles/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	if(ishuman(target) && can_use(user, target))
+	if(ishuman(target))
+		var/refusal = use_refusal(user)
+		if(refusal)
+			to_chat(user, span_warning(refusal))
+			return ..()
 		do_electrocute(target, user, hit_zone)
 
 		return 1
