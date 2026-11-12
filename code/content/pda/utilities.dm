@@ -102,7 +102,14 @@
 	icon = "tachometer-alt"
 
 /datum/data/pda/utility/scanmode/gas/scan_atom(atom/A, mob/user)
-	analyze_gases(A, user) // was pda.analyze_gases; LINDA exposes it as a free proc
+	if(!A || !user)
+		return
+	var/datum/gas_mixture/air = isturf(A) ? A.return_air() : (A.loc?.return_air())
+	if(!air)
+		to_chat(user, span_warning("No atmospheric readings available."))
+		return
+	for(var/line in atmosanalyzer_scan(A, air, user))
+		to_chat(user, line)
 
 /datum/data/pda/utility/scanmode/notes
 	base_name = "Note Scanner"
