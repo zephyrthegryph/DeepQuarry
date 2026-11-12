@@ -2776,6 +2776,7 @@ var/datum/controller/global_vars/GLOB
 	M.author = \"x\"
 	M.next = M
 	N.cache_like = M
+	N.feed = list(M)
 /datum/panel/proc/probe()
 	. = GLOB.net.wanted().author
 	for(var/datum/msg/M in GLOB.net.feed)
