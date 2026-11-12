@@ -109,10 +109,17 @@ CAPABILITIES(/turf/space)
 		then(PROC_REF(upgrade_lattice))) // item(), not stack(): the lattice's upgrade() spends the rod itself
 	op("space_plate", stack(/obj/item/stack/tile/floor, 1), priority(OP_PRIORITY_DEFAULT - 2), label("Lay plating"),
 		needs(req(PROC_REF(lattice_support), because = MSG(space/needs_support))), then(PROC_REF(plate)))
-	// The ceiling checks read the level map (GLOB.z_levels), which nothing publishes, so they cannot be requirements yet: patch_ceiling() checks them.
-	op("space_patch_ceiling", stack(/obj/item/stack/tile/roofing, 1), priority(OP_PRIORITY_DEFAULT - 2), label("Patch ceiling"), then(PROC_REF(patch_ceiling)))
+	// The level above comes from the level map (the mapping system's z_links_up, tracked), so its checks are requirements.
+	op("space_patch_ceiling", stack(/obj/item/stack/tile/roofing, 1), priority(OP_PRIORITY_DEFAULT - 2), label("Patch ceiling"),
+		needs(req(PROC_REF(ceiling_level_above), because = MSG(space/no_level_above)),
+			req(PROC_REF(ceiling_hole_above), because = MSG(space/no_ceiling_hole)),
+			req(PROC_REF(ceiling_anchor_above), because = MSG(space/no_ceiling_anchor))),
+		then(PROC_REF(patch_ceiling)))
 
 MSG_DEF_SELF(space/needs_support, span_warning("The plating is going to need some support."))
+MSG_DEF_SELF(space/no_level_above, span_warning("There is no ceiling above to patch."))
+MSG_DEF_SELF(space/no_ceiling_hole, span_warning("There aren't any holes in the ceiling to patch here."))
+MSG_DEF_SELF(space/no_ceiling_anchor, span_warning("There's nothing to attach the ceiling to!"))
 
 /// Condition: a lattice is on this turf.
 /turf/space/proc/has_lattice(datum/act/op/A)
@@ -140,19 +147,25 @@ MSG_DEF_SELF(space/needs_support, span_warning("The plating is going to need som
 	ChangeTurf(/turf/simulated/floor/airless)
 	return OP_OK
 
+/// Requirement: the level map joins this level to one above.
+/turf/space/proc/ceiling_level_above(datum/act/op/A)
+	return HasAbove(z) ? null : MSG(space/no_level_above)
+
+/// Requirement: the turf above is open (a hole to patch).
+/turf/space/proc/ceiling_hole_above(datum/act/op/A)
+	return isopenturf(GetAbove(src)) ? null : MSG(space/no_ceiling_hole)
+
+/// Requirement: the patch attaches to a floor or wall beside the hole; no floating floors.
+/turf/space/proc/ceiling_anchor_above(datum/act/op/A)
+	var/turf/T = GetAbove(src)
+	if(T && (locate_in_list(T.CardinalTurfs(), /turf/simulated/floor) || locate_in_list(T.CardinalTurfs(), /turf/simulated/wall)))
+		return null
+	return MSG(space/no_ceiling_anchor)
+
 /// Roofing costs 1:1 with a lattice and its plating. Space has no weather of the sort planets with atmospheres do; if that changes, take the rest of the
 /// roofing code from code/content/turfs/simulated/floor_attackby.dm.
 /turf/space/proc/patch_ceiling(datum/act/op/A)
 	var/turf/T = GetAbove(src)
-	if(!T)
-		return OP_DECLINE
-	if(!isopenturf(T))
-		to_chat(A.actor, span_warning("There aren't any holes in the ceiling to patch here."))
-		return OP_DECLINE
-	// Must be built adjacent to an existing floor/wall, no floating floors
-	if(!locate_in_list(T.CardinalTurfs(), /turf/simulated/floor) && !locate_in_list(T.CardinalTurfs(), /turf/simulated/wall))
-		to_chat(A.actor, span_warning("There's nothing to attach the ceiling to!"))
-		return OP_DECLINE
 	T.ReplaceWithLattice()
 	T.ChangeTurf(/turf/simulated/floor)
 	play_sfx(src, SFX_WEAPONS_GENHIT)

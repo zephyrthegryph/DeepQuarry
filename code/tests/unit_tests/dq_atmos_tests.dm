@@ -1793,7 +1793,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /// Multi-z spread: gas in an open turf propagates DOWN to the floor directly
 /// below it when the two z-levels are vertically connected. Exercises the full
 /// production multi-z atmos path:
-///   - build_multiz_atmos_levels() bridges GLOB.z_levels (the movement-multiz
+///   - build_multiz_atmos_levels() bridges SSmapping.z_links_up (the movement-multiz
 ///     connectivity that /obj/effect/landmark/map_data populates) into
 ///     SSmapping.multiz_levels (the atmos vertical-adjacency table that the
 ///     init fast-path reads but nothing else ever filled);
@@ -1821,21 +1821,18 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Connect the two scratch levels the way a height-2 map_data landmark would,
 	// then run the production bridge that feeds atmos vertical adjacency.
-	var/old_z_levels_len = length(GLOB.z_levels)
-	if(length(GLOB.z_levels) < lower_z)
-		GLOB.z_levels.len = lower_z
-	var/old_connected = GLOB.z_levels[lower_z]
+	var/old_connected = HasAbove(lower_z)
 	// Teardown even when an assert below returns early: a leftover connected scratch
 	// pair would stay wired into multi-z atmos for every later test.
-	defer_cleanup(src, PROC_REF(teardown_scratch_column), lower_z, upper_z, cx, cy, old_connected, old_z_levels_len)
-	GLOB.z_levels[lower_z] = TRUE
+	defer_cleanup(src, PROC_REF(teardown_scratch_column), lower_z, upper_z, cx, cy, old_connected)
+	SSmapping.link_level_up(lower_z)
 
 	SSair.build_multiz_atmos_levels()
 
 	// The bridge must register the vertical traits — this is the wiring fix.
 	var/list/upper_traits = (length(SSmapping.multiz_levels) >= upper_z) ? SSmapping.multiz_levels[upper_z] : null
 	TEST_ASSERT_NOTNULL(upper_traits, "build_multiz_atmos_levels left multiz_levels for z=[upper_z] null")
-	TEST_ASSERT(upper_traits[Z_LEVEL_DOWN], "build_multiz_atmos_levels didn't mark the upper z DOWN-connected from GLOB.z_levels")
+	TEST_ASSERT(upper_traits[Z_LEVEL_DOWN], "build_multiz_atmos_levels didn't mark the upper z DOWN-connected from the level map")
 
 	// Build the open-over-floor column with real turf types and air. ChangeTurf
 	// returns the freshly-created turf of the requested type.
@@ -1895,7 +1892,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /// Takes the scratch column down: reverts its turfs to space and restores the
 /// connectivity table. (world.maxz can't shrink; the spare levels are left as
 /// inert space, which no later test's floor/open searches match.)
-/datum/unit_test/dq_multiz_spread_through_open_turf/proc/teardown_scratch_column(lower_z, upper_z, cx, cy, old_connected, old_z_levels_len)
+/datum/unit_test/dq_multiz_spread_through_open_turf/proc/teardown_scratch_column(lower_z, upper_z, cx, cy, old_connected)
 	for(var/z in list(lower_z, upper_z))
 		var/turf/center = locate(cx, cy, z)
 		if(!center)
@@ -1906,10 +1903,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		for(var/turf/T in column)
 			if(!istype(T, /turf/space))
 				T.ChangeTurf(/turf/space)
-	if(length(GLOB.z_levels) >= lower_z)
-		GLOB.z_levels[lower_z] = old_connected
-	if(old_z_levels_len < length(GLOB.z_levels))
-		GLOB.z_levels.len = old_z_levels_len
+	SSmapping.link_level_up(lower_z, old_connected)
 	SSair.build_multiz_atmos_levels()
 
 

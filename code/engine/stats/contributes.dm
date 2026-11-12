@@ -200,9 +200,12 @@ PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cann
 	I.hops = list()
 	I.has_var = list()
 	I.consts = list()
-	for(var/id in GLOB.stat_defs)
+	// Only the stats declared on E's type or an ancestor (most types declare none): asking every stat of the registry was ~600 k
+	// stat_declared_on() calls at boot. The registry order is kept.
+	var/list/declared_here = stat_defs_declared_under(E.type)
+	for(var/id in (length(declared_here) ? GLOB.stat_defs : null))
 		var/datum/stat_def/def = GLOB.stat_defs[id]
-		if(!stat_declared_on(E.type, def))
+		if(!declared_here[def])
 			continue
 		I.defs += def // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 		I.has_var[def.skey] = (def.name in E.vars) ? TRUE : FALSE

@@ -40,3 +40,33 @@ Tried and dropped: naming interned children by a serial in entry signatures (sho
 - Explosion epochs not split under the tick budget (416 % tick).
 - First closet of each type pays 100-190 ms in after_init (create_spawn_contents: first instances of their item types).
 - asset_cache_build_key hashes the whole .rsc on a cold file cache (3.1 s).
+
+## Round 2 (perf/overnight-r2-1, base 7c37894f7c)
+
+Same bench command, two sequential runs (before / after), machine CPU ~65 % from other lanes.
+
+| | before | after |
+|---|---|---|
+| entry_signature self / total | 2.9 / 3.3 s (round-1 4.0 s self) | 1.25 / 1.6 s |
+| stat_type_build total (2641 calls) | 2.05 s | 1.36 s (stat_declared_on 589 k -> 5.7 k calls) |
+| Static entries init | 6.4 s | 5.5 s |
+| init_seconds | 52.8 s | 51.0 s |
+| booted private memory | 1489 MB | 1443 MB (noise band) |
+| Atoms init | 32.2 s | 33.9 s (noise; no change aimed at it) |
+
+Fixes:
+
+2. **entry_signature joins once**: the signature was built by `+=` per argument, each step a new long string interned by BYOND; it now
+   collects parts and joins them once.
+3. **stat_type_build asks only declaring types**: `stat_defs_declared_under()` indexes declaring type -> defs; a type with no stats skips the
+   registry walk. This is part of the "first locker per type" cost (first instance of each item type builds its stat view).
+
+Explosion (lead 1): the epoch already yields per turf under the tick budget (TICK_CHECK after each turf, atom batches and deferred flushes).
+The 416 % tick did not reproduce in two runs (worst 168 % / 178 %, kernel tick log). New EXPLOSION_SLOW tracing logs any single step or work
+item over 15 ms: the worst single items were one turf at 23 ms (plating at the map edge, space at 49,16,4); steps run 15-29 ms. So the
+remaining overruns are per-turf cost, not missing yields. Per-turf cost is flat: ChangeTurf 1.2 ms (2345), destroy_transaction 0.4 ms
+(4807), deal_damage 0.8 ms (2348), ReplaceWithLattice 1.6 ms (949); no proc dominates. Not changed this round.
+
+Not done: asset_cache_build_key (a cheaper key needs the .rsc to be content-addressed by the dmb; unverified for the native compiler, and the
+cost is cold-cache only), type_trait_table_build (1.2 s self: 25 kinds x every type written into per-kind type maps; could key by table
+instead), vg_hook_register_world_turfs (1.1 s in one Rust call), memory (no per-type duplication found in the time).

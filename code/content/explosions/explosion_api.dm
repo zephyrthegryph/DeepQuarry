@@ -136,6 +136,7 @@
 	epoch_turfs_resolved = 0
 	epoch_submissions = 0
 	epoch_visuals = 0
+	epoch_slow_logged = 0
 	epoch_atoms_resolved = 0
 	epoch_atoms_deduplicated = 0
 	epoch_batched_destroys = 0
