@@ -43,7 +43,6 @@ fx() { # <section> <pool size>: a scratch origin + repo + pool for one section; 
 	echo a >"$b/repo/a.txt"; echo m >"$b/repo/deepquarry.dme"
 	git -C "$b/repo" add -A && git -C "$b/repo" commit -q -m init && git -C "$b/repo" push -q origin master 2>/dev/null
 	export DQ_LANE_POOL_DIR="$b/pool" DQ_LANE_POOL_STATE="$b/state" DQ_LANE_POOL_SIZE="$2" DQ_LANE_POOL_REPO="$b/repo" DQ_DMBC_DAEMON_DIR="$b/none"
-	export DQ_LANE_POOL_NO_UPDATE=1
 	export DQ_LANE_POOL_NO_FETCH=1   # tests only: no git fetch per pool call, origin is the local bare repository above
 	export DQ_LANE_POOL_PROCS_CMD="echo no processes"   # never spawn powershell (seconds per call) in the fixtures
 }

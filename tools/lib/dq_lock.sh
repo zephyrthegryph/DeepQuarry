@@ -16,23 +16,23 @@
 # (tools/dq_machine_slots.sh, tools/build/lib/machine_slots.ts): see dq_owner_alive.
 #
 # Functions:
-#   dq_proc_start <pid>            sets DQ_START to the process's start token ("" when the platform has no /proc)
+#   dq_proc_start <pid>            sets DQL_START to the process's start token ("" when the platform has no /proc)
 #   dq_owner_fields                prints the pid=/winpid=/start= lines for this shell ($$)
 #   dq_owner_alive <file>          0 alive, 1 dead, 2 no pid recorded (the caller decides by age)
 #   dq_lock_take <dir> <timeout_s> <grace_s>   0 taken, 1 timed out (timeout 0: one try)
 #   dq_lock_drop <dir>             frees the lock if this shell holds it
-#   dq_lock_keepalive <dir>        starts a background loop that touches the lock every 30 s while this shell lives; sets DQ_LOCK_KA_PID
+#   dq_lock_keepalive <dir>        starts a background loop that touches the lock every 30 s while this shell lives; sets DQL_KA_PID
 #   dq_lock_keepalive_stop
 
 dq_proc_start() { # <pid>: field 22 of /proc/<pid>/stat (start time in ticks since boot); the comm field may hold spaces, so cut after ')'
-	DQ_START=""
+	DQL_START=""
 	local s
 	[ -r "/proc/$1/stat" ] || return 0
 	read -r s <"/proc/$1/stat" 2>/dev/null || return 0
 	s="${s##*) }"
 	# after "comm) " the fields are 3..: state ppid pgrp session tty tpgid flags minflt cminflt majflt cmajflt utime stime cutime cstime priority nice threads itreal starttime
 	set -- $s
-	[ "$#" -ge 20 ] && DQ_START="${20}"
+	[ "$#" -ge 20 ] && DQL_START="${20}"
 	return 0
 }
 
@@ -40,7 +40,7 @@ dq_owner_fields() {
 	local w=""
 	[ -r "/proc/$$/winpid" ] && read -r w <"/proc/$$/winpid" 2>/dev/null
 	dq_proc_start "$$"
-	printf 'pid=%s\nwinpid=%s\nstart=%s\n' "$$" "${w:-$$}" "$DQ_START"
+	printf 'pid=%s\nwinpid=%s\nstart=%s\n' "$$" "${w:-$$}" "$DQL_START"
 }
 
 dq_owner_alive() { # <file>
@@ -53,15 +53,15 @@ dq_owner_alive() { # <file>
 	kill -0 "$pid" 2>/dev/null || return 1
 	if [ -n "$start" ]; then
 		dq_proc_start "$pid"
-		[ -n "$DQ_START" ] && [ "$DQ_START" != "$start" ] && return 1   # the pid was reused by a later process
+		[ -n "$DQL_START" ] && [ "$DQL_START" != "$start" ] && return 1   # the pid was reused by a later process
 	fi
 	return 0
 }
 
-_dq_lock_age() { # <path>: sets DQ_AGE (seconds since mtime; 0 when absent)
+_dq_lock_age() { # <path>: sets DQL_AGE (seconds since mtime; 0 when absent)
 	local m
 	m="$(stat -c %Y "$1" 2>/dev/null)" || m=""
-	if [ -z "$m" ]; then DQ_AGE=0; else DQ_AGE=$(( ${EPOCHSECONDS:-$(date +%s)} - m )); fi
+	if [ -z "$m" ]; then DQL_AGE=0; else DQL_AGE=$(( ${EPOCHSECONDS:-$(date +%s)} - m )); fi
 }
 
 _dq_lock_is_stale() { # <dir> <grace_s>
@@ -72,12 +72,12 @@ _dq_lock_is_stale() { # <dir> <grace_s>
 		1) return 0 ;;
 	esac
 	_dq_lock_age "$1"
-	[ "$DQ_AGE" -gt "$2" ]
+	[ "$DQL_AGE" -gt "$2" ]
 }
 
 _dq_lock_break() { # <dir> <grace_s>: removes a stale lock under <dir>.break; the break lock itself is stale after 10 s
 	if ! mkdir "$1.break" 2>/dev/null; then
-		_dq_lock_age "$1.break"; [ "$DQ_AGE" -gt 10 ] && rmdir "$1.break" 2>/dev/null
+		_dq_lock_age "$1.break"; [ "$DQL_AGE" -gt 10 ] && rmdir "$1.break" 2>/dev/null
 		return 0
 	fi
 	if [ -d "$1" ] && _dq_lock_is_stale "$1" "$2"; then
@@ -114,6 +114,6 @@ dq_lock_drop() { # <dir>
 dq_lock_keepalive() { # <dir>
 	local parent="$$"
 	( while kill -0 "$parent" 2>/dev/null && [ -d "$1" ]; do touch "$1" 2>/dev/null; sleep 30; done ) >/dev/null 2>&1 &
-	DQ_LOCK_KA_PID=$!
+	DQL_KA_PID=$!
 }
-dq_lock_keepalive_stop() { [ -n "${DQ_LOCK_KA_PID:-}" ] && kill "$DQ_LOCK_KA_PID" 2>/dev/null; DQ_LOCK_KA_PID=""; return 0; }
+dq_lock_keepalive_stop() { [ -n "${DQL_KA_PID:-}" ] && kill "$DQL_KA_PID" 2>/dev/null; DQL_KA_PID=""; return 0; }
