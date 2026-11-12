@@ -69,6 +69,19 @@ SYSTEM_DEF(explosions)
 	VAR_PRIVATE/atom_profile_stride = 16
 	VAR_PRIVATE/list/atom_profile_cost = list()
 	VAR_PRIVATE/list/atom_profile_calls = list()
+	/// EXPLOSION_SLOW lines logged this epoch (single work items over EXPLOSION_SLOW_ITEM_MS), capped per epoch.
+	VAR_PRIVATE/epoch_slow_logged = 0
+
+#define EXPLOSION_SLOW_ITEM_MS 15
+#define EXPLOSION_SLOW_LOG_CAP 40
+
+/// Logs one work item of an epoch that alone cost more than EXPLOSION_SLOW_ITEM_MS: a single item no tick check can split.
+/datum/system/explosions/proc/trace_slow_item(what, started)
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(ms < EXPLOSION_SLOW_ITEM_MS || epoch_slow_logged >= EXPLOSION_SLOW_LOG_CAP)
+		return
+	epoch_slow_logged++
+	log_runtime("EXPLOSION_SLOW [round(ms, 0.1)] ms: [what]")
 
 /datum/system/explosions/proc/has_work()
 	return awake
@@ -94,7 +107,9 @@ SYSTEM_DEF(explosions)
 
 /// One kernel run of an epoch: yields when a phase ran over budget (it resumes next tick), parks once the epoch is done.
 /datum/system/explosions/proc/explosion_step(dt)
+	var/step_started = TICK_USAGE_REAL
 	var/done = step_epoch(epoch_resuming)
+	trace_slow_item("whole step (resolve=[resolve_explosions], turf [currentrun_index]/[LAZYLEN(currentrun_keys)], done=[done])", step_started)
 	epoch_resuming = !done
 	if(!done)
 		return STEP_YIELD
@@ -134,6 +149,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		// data, use the data, than discard it from the list using the key!
 		var/key = currentrun_keys[currentrun_index]
 		var/entry_complete = TRUE
+		var/item_started = TICK_USAGE_REAL
 		if(resolve_explosions)
 			entry_complete = fire_resolve_explosions(currentrun[key])
 			if(entry_complete)
@@ -141,6 +157,8 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		else
 			fire_prepare_explosions(currentrun[key])
 			epoch_turfs_prepared++
+		var/turf/traced_turf = key
+		trace_slow_item("[resolve_explosions ? "resolve" : "prepare"] turf [traced_turf] ([traced_turf.type]) at [traced_turf.x],[traced_turf.y],[traced_turf.z]", item_started)
 		if(entry_complete)
 			currentrun_index++
 		else
@@ -191,7 +209,9 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		var/heavy_impact_range 	= time_dat[5]
 		var/light_impact_range 	= time_dat[6]
 		var/took 				= (world.time - time_dat[7]) / (1 SECOND) // Horrifyingly, this has always been server performance dependant. Should really only be used for cosmetic stuff.
+		var/publish_started = TICK_USAGE_REAL
 		PUBLISH(WORLD_NOTICE_BUS, world_explosion, epicenter = epicenter, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range, took = took)
+		trace_slow_item("world_explosion notice", publish_started)
 		if(TICK_CHECK)
 			return FALSE
 	currentsignals.Cut()
@@ -365,7 +385,9 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 				atom_profile_cost[atom_type] += TICK_DELTA_TO_MS(TICK_USAGE - atom_started) * atom_profile_stride
 				atom_profile_calls[atom_type] += atom_profile_stride
 			else
+				var/atom_started = TICK_USAGE_REAL
 				AM.ex_act(severity)
+				trace_slow_item("atom [AM.type] severity [severity]", atom_started)
 		// Later atoms of this type (spilled contents) open a fresh batch.
 		var/batch_type = batch[1]
 		if(blast_batches[batch_type] == batch)
@@ -418,7 +440,9 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 /datum/system/explosions/proc/flush_deferred_turf_updates()
 	while(deferred_turf_update_index <= length(deferred_turf_updates))
 		var/turf/T = deferred_turf_updates[deferred_turf_update_index++]
+		var/change_started = TICK_USAGE_REAL
 		T?.finalize_explosion_deferred_change(FALSE)
+		trace_slow_item("deferred change [T?.type]", change_started)
 		if(TICK_CHECK)
 			return FALSE
 	deferred_turf_updates.Cut()
