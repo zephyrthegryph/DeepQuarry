@@ -55,18 +55,18 @@
 	if(site.flight_destination_id && destinations?[site.flight_destination_id])
 		return destinations?[site.flight_destination_id]
 	var/datum/flight_destination/destination = new
-	destination.id = make_id("expedition", site.name)
-	destination.name = site.name
-	destination.description = site.mission?.desc || "A procedurally surveyed expedition site."
-	destination.kind = FLIGHT_DEST_EXPEDITION
+	destination.set_id(make_id("expedition", site.name))
+	destination.set_name(site.name)
+	destination.set_description(site.mission?.desc || "A procedurally surveyed expedition site.")
+	destination.set_kind(FLIGHT_DEST_EXPEDITION)
 	rel_set(destination, nameof(destination.expedition), site)
 	rel_set(destination, nameof(destination.target), site.overmap_sector())
-	destination.required_capabilities = FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND
-	destination.orbit_parent_id = site.parent_destination_id || first_planet_id()
-	destination.body_radius = 0.45
-	destination.body_color = "#ffc45c"
-	destination.surface_latitude = rand(-75, 75)
-	destination.surface_longitude = rand(-180, 180)
+	destination.set_required_capabilities(FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND)
+	destination.set_orbit_parent_id(site.parent_destination_id || first_planet_id())
+	destination.set_body_radius(0.45)
+	destination.set_body_color("#ffc45c")
+	destination.set_surface_latitude(rand(-75, 75))
+	destination.set_surface_longitude(rand(-180, 180))
 	rel_add(src, nameof(destinations), destination, destination.id)
 	index_destination_target(destination)
 	site.flight_destination_id = destination.id

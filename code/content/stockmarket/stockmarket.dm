@@ -98,24 +98,24 @@ CAPABILITIES(/datum/stockMarket)
 					if (3)
 						sname = "[pname]"
 		S.set_name(sname)
-		S.short_name = generateDesignation(S.name)
-		S.current_value = rand(10, 125)
+		S.set_short_name(generateDesignation(S.name))
+		S.set_current_value(rand(10, 125))
 		var/dv = rand(10, 40) / 10
 		S.fluctuational_coefficient = prob(50) ? (1 / dv) : dv
 		S.average_optimism = rand(-10, 10) / 100
 		S.optimism = S.average_optimism + (rand(-40, 40) / 100)
 		S.current_trend = rand(-200, 200) / 10
 		S.last_trend = S.current_trend
-		S.disp_value_change = rand(-1, 1)
+		S.set_disp_value_change(rand(-1, 1))
 		S.speculation = rand(-20, 20)
 		S.average_shares = round(rand(500, 10000) / 10)
 		S.outside_shareholders = rand(1000, 30000)
-		S.available_shares = rand(200000, 800000)
+		S.set_available_shares(rand(200000, 800000))
 		S.fluctuation_rate = rand(6, 20)
 		S.generateIndustry()
 		S.generateEvents()
 		rel_add(src, nameof(stocks), S)
-		S.last_read = list()
+		S.set_last_read(list())
 
 /datum/stockMarket/proc/market_tick()
 	for (var/stock in stocks)
@@ -125,12 +125,12 @@ CAPABILITIES(/datum/stockMarket)
 
 /datum/stockMarket/proc/add_log(log_type, user, company_name, stocks, shareprice, money)
 	var/datum/stock_log/L = new log_type
-	L.user_name = user
-	L.company_name = company_name
-	L.stocks = stocks
-	L.shareprice = shareprice
-	L.money = money
-	L.time = time2text(world.timeofday, "hh:mm")
+	L.set_user_name(user)
+	L.set_company_name(company_name)
+	L.set_stocks(stocks)
+	L.set_shareprice(shareprice)
+	L.set_money(money)
+	L.set_time(time2text(world.timeofday, "hh:mm"))
 	rel_add(src, nameof(logs), L)
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)

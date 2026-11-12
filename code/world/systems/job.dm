@@ -713,7 +713,7 @@ CAPABILITIES(/datum/system/job)
 	else
 		var/datum/computer_file/data/email_account/user_mail_acc = new/datum/computer_file/data/email_account()
 		user_mail_acc.password = GenerateKey()
-		user_mail_acc.login = 	complete_login
+		user_mail_acc.set_login(complete_login)
 		to_chat(human_mob, span_filter_notice("Your email account address is " + span_bold("[user_mail_acc.login]") + " and the password is " + span_bold("[user_mail_acc.password]") + ". This information has also been placed into your notes."))
 		human_mob.mind.store_memory("Your email account address is [user_mail_acc.login] and the password is [user_mail_acc.password].")
 	// END EMAIL GENERATION

@@ -79,7 +79,9 @@ CAPABILITIES(/datum/lookup_read_scope)
 		return
 	var/list/definitions = holder.generated_lookup_reads(proc_name)
 	for(var/list/spec as anything in definitions)
-		var/contextual = (spec["root"] in list("actor", "target", "held", "authority"))
+		// A read through global state (a GlobalRead) is bound only for a consumer that owns a scope (an open window, a pending op): every instance
+		// of a type whose window reads a chain would otherwise bind it from its creation, window or not.
+		var/contextual = spec["global"] || (spec["root"] in list("actor", "target", "held", "authority"))
 		if(contextual && !A)
 			continue
 		var/datum/root = lookup_read_root(holder, A, spec["root"])
@@ -168,6 +170,10 @@ CAPABILITIES(/datum/lookup_read_scope)
 	if(!reader || QDELING(reader))
 		rebinding = FALSE
 		return
+	if(spec["global"])
+		rebind_global()
+		rebinding = FALSE
+		return
 	var/argument = spec["literal"]
 	var/resolved = TRUE
 	if(!spec["is_literal"])
@@ -194,6 +200,48 @@ CAPABILITIES(/datum/lookup_read_scope)
 	if(selected && !QDELING(selected))
 		add_read(selected, spec["field"])
 	rebinding = FALSE
+
+/// A read through a chain rooted at global state (`GLOB.news_network.wanted_issue().backup_author`, written by `analyze gen reads` from the
+/// reader's own body: tools/analyze/src/sem/reads.rs GlobalRead). Walks the chain from the global var, watching each var link, what each call link
+/// reads on its receiver and, on every datum the chain ends at, the field: a change of any of them republishes the read's key on the reader and
+/// walks the chain again (a new wanted issue, a channel added).
+/datum/lookup_read_binding/proc/rebind_global()
+	READS_FROM()
+	var/list/at = list(global.vars[spec["global"]])
+	for(var/list/step as anything in spec["chain"])
+		var/name = step[1]
+		var/list/next = list()
+		for(var/datum/D as anything in at)
+			if(!istype(D) || QDELING(D))
+				continue
+			var/value
+			if(step[2])
+				for(var/watched in step[4])
+					add_read(D, watched)
+				if(!hascall(D, name))
+					CRASH("global read [spec["key"]]: [D.type] has no proc [name]()")
+				value = call(D, name)()
+			else
+				if(!(name in D.vars))
+					CRASH("global read [spec["key"]]: [D.type] has no var [name]")
+				add_read(D, name)
+				value = D.vars[name]
+			if(step[3])
+				if(islist(value))
+					var/list/members = value
+					for(var/item in members)
+						if(isdatum(item))
+							next += item
+						else if(istext(item) && isdatum(members[item]))
+							next += members[item] // a keyed relation list: key -> member
+			else if(isdatum(value))
+				next += value
+		at = next
+		if(!length(at))
+			return // the chain ends short (no wanted issue): its links are watched, so a new one rebinds
+	for(var/datum/D as anything in at)
+		if(!QDELING(D) && (spec["field"] in D.vars))
+			add_read(D, spec["field"])
 
 /datum/lookup_read_binding/proc/changed()
 	READS_FROM()

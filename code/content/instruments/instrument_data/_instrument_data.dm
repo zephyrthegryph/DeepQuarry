@@ -74,7 +74,7 @@ CAPABILITIES(/datum/instrument)
 
 // songs using it drop it; leaves SSinstruments.ready().
 /datum/instrument/on_destroy(force)
-	SSinstruments.ready().instrument_data -= id
+	SSinstruments.ready().remove_instrument_data(id)
 	for(var/datum/song/S as anything in songs_using?.Copy())
 		S.set_instrument(null)
 	..()

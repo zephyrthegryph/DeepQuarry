@@ -24,7 +24,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::sem::decls::Decls;
 use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::sem::graph::DepGraph;
-use crate::sem::reads::{Annotations, LookupArgument, LookupRead, ReadKind, ReadsEngine};
+use crate::sem::reads::{Annotations, GlobalRead, LookupArgument, LookupRead, ReadKind, ReadsEngine};
 
 use crate::sem::reads::ENGINE_DIRS;
 
@@ -165,7 +165,7 @@ impl Generator for Reads {
                     ReadKind::Accessor => 1,
                     ReadKind::Native => 2,
                     ReadKind::System => 3,
-                    ReadKind::Lookup(_) => 4,
+                    ReadKind::Lookup(_) | ReadKind::Global(_) => 4,
                 };
                 let mut parts = vec![roots.id(root).to_string(), kind_id.to_string(), names.id(&canonical_read_key(kind, var, &capability_keys, &defines)).to_string()];
                 for h in hops {
@@ -221,7 +221,7 @@ fn extend_lookup_outputs(rows: &mut BTreeMap<String, Vec<Row>>, sem: &crate::sem
             out.diag(&diagnostic.rel, diagnostic.line, format!("{}: {}", diagnostic.rule, diagnostic.msg));
         }
         let mut lookups: Vec<Row> = set.reads.iter()
-            .filter(|read| matches!(&read.kind, ReadKind::Lookup(_)))
+            .filter(|read| matches!(&read.kind, ReadKind::Lookup(_) | ReadKind::Global(_)))
             .map(|read| (read.root.clone(), read.kind.clone(), read.var.clone(), read.hops.clone(), read.owner.clone()))
             .collect();
         if lookups.is_empty() { continue; }
@@ -242,12 +242,19 @@ fn lookup_descriptor(read: &LookupRead) -> String {
         dm_text(&read.key()), read.binding.registry, read.binding.identity_key, read.binding.lookup,
         dm_text(&root), path.iter().map(|p| dm_text(p)).collect::<Vec<_>>().join(", "), literal, is_literal, dm_text(&read.field))
 }
+/// A read through a chain rooted at global state, as the runtime binds it (code/engine/change/lookup_reads.dm `rebind_global()`): the global var,
+/// each link (name, is a call, iterates a list, what a call reads on its receiver) and the field.
+fn global_descriptor(read: &GlobalRead) -> String {
+    let steps: Vec<String> = read.chain.steps.iter().map(|st| format!("list({}, {}, {}, list({}))", dm_text(&st.name), if st.call { "TRUE" } else { "FALSE" }, if st.each { "TRUE" } else { "FALSE" }, st.watch.iter().map(|w| dm_text(w)).collect::<Vec<_>>().join(", "))).collect();
+    format!("list(\"key\" = {}, \"root\" = \"holder\", \"is_literal\" = TRUE, \"global\" = {}, \"chain\" = list({}), \"field\" = {})", dm_text(&read.key()), dm_text(&read.chain.global), steps.join(", "), dm_text(&read.field))
+}
 fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test_types: &BTreeSet<String>) {
     let mut owners: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
     for (id, reads) in rows {
         let Some((owner, name)) = id.rsplit_once("::") else { continue };
         let descriptors: Vec<_> = reads.iter().filter_map(|r| match &r.1 {
             ReadKind::Lookup(read) => Some(lookup_descriptor(read)),
+            ReadKind::Global(read) => Some(global_descriptor(read)),
             _ => None,
         }).collect();
         if !descriptors.is_empty() {
@@ -261,13 +268,22 @@ fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test
         out.line(format!("{owner}/generated_lookup_reads(proc_name = null)"));
         out.line("\tif(isnull(proc_name))");
         out.line("\t\t. = ..()");
-        let all: Vec<_> = methods.values().flatten().cloned().collect();
-        out.line(format!("\t\t. += list({})", all.join(", ")));
+        // One descriptor per line: a type whose outputs read many chains would otherwise make a line past the preprocessor's column limit.
+        let mut all: Vec<String> = methods.values().flatten().cloned().collect();
+        all.sort();
+        all.dedup();
+        for d in &all {
+            out.line(format!("\t\t. += list({})", d));
+        }
         out.line("\t\treturn");
         out.line("\tswitch(proc_name)");
         for (name, descriptors) in &methods {
             out.line(format!("\t\tif({})", dm_text(&name)));
-            out.line(format!("\t\t\treturn list({})", descriptors.join(", ")));
+            out.line("\t\t\t. = list()");
+            for d in descriptors {
+                out.line(format!("\t\t\t. += list({})", d));
+            }
+            out.line("\t\t\treturn");
         }
         out.line("\treturn ..()");
         let mut output_entries = Vec::new();
@@ -281,10 +297,18 @@ fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test
                 _ => None,
             };
             if let Some(call) = call {
-                let keys: Vec<_> = rows[&format!("{owner}::{name}")].iter().filter_map(|r| match &r.1 { ReadKind::Lookup(read) => Some(dm_text(&read.key())), _ => None }).collect();
-                output_entries.push(format!("\t. += {call}({})", keys.join(", ")));
+                let keys: Vec<_> = rows[&format!("{owner}::{name}")].iter().filter_map(|r| match &r.1 { ReadKind::Lookup(read) => Some(dm_text(&read.key())), ReadKind::Global(read) => Some(dm_text(&read.key())), _ => None }).collect();
+                let mut keys = keys;
+                keys.sort();
+                keys.dedup();
+                for chunk in keys.chunks(200) {
+                    output_entries.push(format!("\t. += {call}({})", chunk.join(", ")));
+                }
             } else if let Some(var) = name.strip_prefix("derive_") {
-                let keys: Vec<_> = rows[&format!("{owner}::{name}")].iter().filter_map(|r| match &r.1 { ReadKind::Lookup(read) => Some(dm_text(&read.key())), _ => None }).collect();
+                let keys: Vec<_> = rows[&format!("{owner}::{name}")].iter().filter_map(|r| match &r.1 { ReadKind::Lookup(read) => Some(dm_text(&read.key())), ReadKind::Global(read) => Some(dm_text(&read.key())), _ => None }).collect();
+                let mut keys = keys;
+                keys.sort();
+                keys.dedup();
                 output_entries.push(format!("\t. += derive(nameof({var}), {})", keys.join(", ")));
             }
             let _ = descriptors;

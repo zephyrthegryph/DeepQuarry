@@ -117,9 +117,9 @@
 		if("stocks")
 			for (var/datum/stock/S in GLOB.stockExchange.stocks)
 				if (!S.last_read)
-					S.last_read = list()
+					S.set_last_read(list())
 				if (!(logged_in in S.last_read))
-					S.last_read[logged_in] = 0
+					S.set_last_read_at(logged_in, 0)
 
 			data["stocks"] = list()
 

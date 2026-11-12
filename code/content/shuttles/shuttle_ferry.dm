@@ -30,17 +30,17 @@
 	return landmark_offsite()
 
 /datum/shuttle/autodock/ferry/short_jump(destination)
-	direction = !location // Heading away from where we currently are
+	set_direction(!location) // Heading away from where we currently are
 	. = ..()
 
 /datum/shuttle/autodock/ferry/long_jump(destination, obj/effect/shuttle_landmark/interim, travel_time)
-	direction = !location // Heading away from where we currently are
+	set_direction(!location) // Heading away from where we currently are
 	. = ..()
 
 /datum/shuttle/autodock/ferry/perform_shuttle_move()
 	..()
-	if (current_location() == landmark_station()) location = FERRY_LOCATION_STATION
-	if (current_location() == landmark_offsite()) location = FERRY_LOCATION_OFFSITE
+	if (current_location() == landmark_station()) set_location(FERRY_LOCATION_STATION)
+	if (current_location() == landmark_offsite()) set_location(FERRY_LOCATION_OFFSITE)
 
 // Once we have arrived where we are going, plot a course back!
 /datum/shuttle/autodock/ferry/process_arrived()

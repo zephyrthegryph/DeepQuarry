@@ -7,7 +7,7 @@
 /datum/unit_test/interim_event_queue_actor/proc/check_queue()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/event_container/container = allocate(/datum/event_container)
-	container.severity = EVENT_LEVEL_MUNDANE
+	container.set_severity(EVENT_LEVEL_MUNDANE)
 	var/datum/event_meta/first = allocate(/datum/event_meta, EVENT_LEVEL_MUNDANE, "First actual queue fixture", /datum/event/nothing, 1)
 	var/datum/event_meta/second = allocate(/datum/event_meta, EVENT_LEVEL_MUNDANE, "Second actual queue fixture", /datum/event/nothing, 1)
 	rel_add(container, nameof(container.event_pool), first)
@@ -47,7 +47,7 @@
 /datum/unit_test/interim_event_queue_stale_choice/proc/check_queue()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/event_container/container = allocate(/datum/event_container)
-	container.severity = EVENT_LEVEL_MUNDANE
+	container.set_severity(EVENT_LEVEL_MUNDANE)
 	var/datum/event_meta/event = allocate(/datum/event_meta, EVENT_LEVEL_MUNDANE, "Actual stale queue fixture", /datum/event/nothing, 1)
 	rel_add(container, nameof(container.event_pool), event)
 	rel_add(container, nameof(container.available_events), event)

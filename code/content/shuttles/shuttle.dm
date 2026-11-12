@@ -465,9 +465,9 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 		var/datum/shuttle/MS = shuttles_shuttles()[mothershuttle]
 		if(MS)
 			if(current_location().landmark_tag == motherdock)
-				MS.shuttle_area |= shuttle_area // We are now on mothershuttle! Bring us along!
+				MS.include_shuttle_area(shuttle_area) // We are now on mothershuttle! Bring us along!
 			else
-				MS.shuttle_area -= shuttle_area // We have left mothershuttle! Don't bring us along!
+				MS.remove_shuttle_area(shuttle_area) // We have left mothershuttle! Don't bring us along!
 
 	return
 

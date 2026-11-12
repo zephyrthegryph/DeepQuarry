@@ -94,7 +94,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 	var/obj/item/disk/limb/D = A.held
 	add_fingerprint(A.actor)
 	var/datum/robolimb/R = GLOB.all_robolimbs[D.company]
-	R.unavailable_to_build = 0
+	R.set_unavailable_to_build(0)
 	to_chat(A.actor, span_notice("Installed [D.company] blueprints!"))
 	consume(D, A.actor)
 	return OP_OK

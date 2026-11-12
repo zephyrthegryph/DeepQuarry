@@ -7,7 +7,7 @@ use std::time::Instant;
 use crate::run::{Engine, Options};
 
 use super::decls::Decls;
-use super::reads::{Annotations, ReadsEngine};
+use super::reads::{Annotations, ReadKind, ReadsEngine};
 
 /// Engine-internal directories the reads walk does not enter (dispatchers that read `vars[]` by design).
 pub const DEFAULT_OPAQUE: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
@@ -41,10 +41,14 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             };
             debug_proc(&sem, ty, name);
             let t = Instant::now();
-            let set = eng.analyze(ty, name);
+            // The closed walk (what the generated reads come from): engine bodies, virtual calls and global state are followed.
+            let set = if args.iter().any(|a| a == "--open") { eng.analyze(ty, name) } else { ReadsEngine::new(&sem, &decls, &ann).closed().analyze(ty, name) };
             eprintln!("analysis: {:.2?}", t.elapsed());
             for r in &set.reads {
-                println!("{}\t{:?}\t{}", r.key(), r.kind, r.owner);
+                match &r.kind {
+                    ReadKind::Global(g) => println!("{}\tGlobal\t{}.{}\t{}", r.key(), g.chain.display(), g.field, g.owner),
+                    _ => println!("{}\t{:?}\t{}", r.key(), r.kind, r.owner),
+                }
             }
             for d in &set.diags {
                 println!("DIAG {} {}:{} {}", d.rule, d.rel, d.line, d.msg);

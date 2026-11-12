@@ -39,7 +39,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /datum/admins/proc/topic_ac_set_channel_lock(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_feed_channel().locked = !admincaster_feed_channel().locked
+	admincaster_feed_channel().set_locked(!admincaster_feed_channel().locked)
 	admincaster_refresh(user)
 
 /// A new channel can be created when it has a name no other channel has.
@@ -148,7 +148,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 			var/datum/feed_message/WANTED = new /datum/feed_message
 			WANTED.set_author(admincaster_feed_message.author)               //Wanted name
 			WANTED.set_body(admincaster_feed_message.body)                   //Wanted desc
-			WANTED.backup_author = admincaster_signature                  //Submitted by
+			WANTED.set_backup_author(admincaster_signature)                  //Submitted by
 			WANTED.is_admin_message = 1
 			rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
@@ -159,7 +159,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 			if(wanted)
 				wanted.set_author(admincaster_feed_message.author)
 				wanted.set_body(admincaster_feed_message.body)
-				wanted.backup_author = admincaster_feed_message.backup_author
+				wanted.set_backup_author(admincaster_feed_message.backup_author)
 			set_admincaster_screen(19)
 		log_admin("[key_name_admin(user)] issued a Station-wide Wanted Notification for [admincaster_feed_message.author]!")
 	admincaster_refresh(user)
@@ -185,7 +185,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 	var/mob/user = A.actor
 	var/datum/feed_message/MSG = href_ac_censor_channel_story_author
 	if(MSG.author != span_bold("\[REDACTED\]"))
-		MSG.backup_author = MSG.author
+		MSG.set_backup_author(MSG.author)
 		MSG.set_author(span_bold("\[REDACTED\]"))
 	else
 		MSG.set_author(MSG.backup_author)

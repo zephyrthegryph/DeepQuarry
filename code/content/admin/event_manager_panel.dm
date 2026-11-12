@@ -175,10 +175,10 @@ CAPABILITIES(/datum/event_manager_panel)
 		return
 	var/change = 60 * (10 ** clamp(round(amount), 0, 2))
 	if(action == "inc_timer")
-		EC.next_event_time += change
+		EC.set_next_event_time(EC.next_event_time + change)
 		log_and_message_admins("increased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
 	else
-		EC.next_event_time -= change
+		EC.set_next_event_time(EC.next_event_time - change)
 		log_and_message_admins("decreased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
 	return TRUE
 
@@ -284,7 +284,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/name = A.step_value("name")
 	if(!name)
 		return
-	EM.name = text_or_null(name)
+	EM.set_name(text_or_null(name))
 	return TRUE
 
 /datum/event_manager_panel/proc/ui_act_set_type(datum/act/op/A, ref)
@@ -314,7 +314,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/weight = A.step_value("weight")
 	if(!isnum(weight) || weight <= 0)
 		return
-	EM.weight = num_or_null(weight)
+	EM.set_weight(num_or_null(weight))
 	if(EM != service.new_event)
 		log_and_message_admins("has changed the weight of the [GLOB.severity_to_string[EM.severity]] event '[EM.name]' to [EM.weight].", user)
 	return TRUE
@@ -329,7 +329,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
-	EM.one_shot = !EM.one_shot
+	EM.set_one_shot(!EM.one_shot)
 	if(EM != service.new_event)
 		log_and_message_admins("has [EM.one_shot ? "set" : "unset"] the oneshot flag for the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
@@ -343,7 +343,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
-	EM.enabled = !EM.enabled
+	EM.set_enabled(!EM.enabled)
 	log_and_message_admins("has [EM.enabled ? "enabled" : "disabled"] the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
 

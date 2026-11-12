@@ -226,6 +226,7 @@
 #include "dq_idle_cost2_tests.dm"
 #include "dq_idle_cost3_tests.dm"
 #include "dq_global_guard_tests.dm"
+#include "dq_global_read_tests.dm"
 #include "dq_init_plan_golden.dm"
 #include "dq_init_plan_tests.dm"
 #include "dq_join_construction_tests.dm"

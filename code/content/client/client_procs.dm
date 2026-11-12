@@ -597,11 +597,11 @@ GLOBAL_VAR_INIT(login_seq, 0)
 		login_admit()
 		return
 	var/sql_id = 0
-	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
+	set_player_age(0)	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
 	if(length(player_rows))
 		var/list/player_row = player_rows[1]
 		sql_id = player_row[1]
-		player_age = text2num(player_row[2])
+		set_player_age(text2num(player_row[2]))
 
 	login_http_ask("http://byond.com/members/[ckey]?format=text", PROC_REF(login_join_date_answered), sql_id)
 

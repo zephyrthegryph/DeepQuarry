@@ -172,7 +172,7 @@
 	var/profile_id = agent_red_profile(context?["agent_faction"])
 	context["profile_id"] = profile_id
 	..()
-	contract.red_contract = TRUE
+	contract.set_red_contract(TRUE)
 	contract.personal_reputation_reward = 60
 	contract.deadline_duration = 35 MINUTES
 	contract.offer_context["profile_id"] = profile_id
