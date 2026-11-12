@@ -1,13 +1,17 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
+import type {
+  RequestConsoleActions,
+  RequestConsoleData,
+} from '../generated/RequestConsole';
 import { RCS_MAINMENU } from './constants';
 
 export const RequestConsoleSendMenu = (props: {
   dept_list: string[];
   department: string;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<RequestConsoleData, RequestConsoleActions>();
   const { dept_list, department } = props;
   return (
     <LabeledList>
@@ -45,7 +49,7 @@ export const RequestConsoleSendMenu = (props: {
 };
 
 export const RequestConsoleSendPass = (props) => {
-  const { act, data } = useBackend();
+  const { act } = useBackend<RequestConsoleData, RequestConsoleActions>();
   return (
     <Section>
       <Box fontSize={2} color="good">
@@ -64,7 +68,7 @@ export const RequestConsoleSendPass = (props) => {
 };
 
 export const RequestConsoleSendFail = (props) => {
-  const { act, data } = useBackend();
+  const { act } = useBackend<RequestConsoleData, RequestConsoleActions>();
   return (
     <Section>
       <Box fontSize={1.5} bold color="bad">

@@ -12,6 +12,7 @@ CAPABILITIES(/datum/computer_file/program/fishing)
 	op("lose", ui_act(), then(PROC_REF(ui_act_lose)))
 	op("win", ui_act(), then(PROC_REF(ui_act_win)))
 	interface("NtosFishing")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool())
 
 /datum/computer_file/program/fishing/ui_data(datum/act/eval/A)
 	return get_header_data()

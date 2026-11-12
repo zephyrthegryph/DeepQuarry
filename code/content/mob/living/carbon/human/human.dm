@@ -1832,13 +1832,19 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/proc/toggle_underwear_choices(datum/act/op/A)
 	return GLOB.global_underwear.categories
 
+/// Refuses the chosen underwear category when nothing of it is worn.
+/mob/living/carbon/human/proc/toggle_underwear_refusal(datum/act/op/A)
+	var/datum/category_group/underwear/UWC = A.step_value("category")
+	if(!UWC)
+		return null // unanswered: the asks() step holds it
+	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
+	if(!UWI || UWI.name == "None")
+		return span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"].")
+	return null
+
 /mob/living/carbon/human/proc/toggle_underwear_op(datum/act/op/A)
 	var/datum/category_group/underwear/UWC = A.step_value("category")
 	if(!UWC)
-		return
-	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
-	if(!UWI || UWI.name == "None")
-		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
 	set_hide_underwear_at(UWC.name, !hide_underwear[UWC.name])
 	underwear_edited()
@@ -2168,7 +2174,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 //Formally used from a paper, gave this to everyone.
 /mob/living/carbon/human/proc/create_area_ready(datum/act/op/A)
-	return stat ? span_warning("You recently tried to create an area. Wait a while before using it again.") : null
+	return stat ? span_warning("You can't do that in your current state.") : null
 
 /mob/living/carbon/human/proc/create_area_op(datum/act/op/A)
 	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.

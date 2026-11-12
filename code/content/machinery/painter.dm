@@ -56,6 +56,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	setup(PROC_REF(seed_colour_matrix))
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
+	ui_shape(message = schema_text(), title = schema_text(), matrix_only = bool(), matrixcolors = row(rr = num(), rg = num(), rb = num(), gr = num(), gg = num(), gb = num(), br = num(), bg = num(), bb = num(), cr = num(), cg = num(), cb = num()), temp = nullable(schema_text()), item_name = nullable(schema_text()), item_sprite = nullable(schema_text()), item_preview = nullable(schema_text()), activemode = int(), buildhue = num(), buildsat = num(), buildval = num())
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
 	op("choose_color", ui_act("choose_color"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color, fields = list("default" = computed(PROC_REF(colour_default)), "title" = "ColorMate colour picking", "question" = "Choose a color: ", "timeout" = 0), when = PROC_REF(colour_item_present)), then(PROC_REF(ui_act_choose_color)))
 	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
@@ -96,12 +97,13 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	drop_item(user)
 	return OP_DECLINE
 
-/obj/machinery/gear_painter/proc/drop_item(mob/user)
+/obj/machinery/gear_painter/proc/drop_item(mob/user, quiet = FALSE)
 	if(!oview(1,src))
 		return
 	if(!inserted)
 		return
-	to_chat(user, span_notice("You remove [inserted] from [src]"))
+	if(!quiet) // the window shows the item gone
+		to_chat(user, span_notice("You remove [inserted] from [src]"))
 	inserted.forceMove(drop_location())
 	if(isliving(user))
 		user.put_in_hands(inserted)
@@ -111,6 +113,10 @@ CAPABILITIES(/obj/machinery/gear_painter)
 /obj/machinery/gear_painter/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	. = list()
+	// The colour matrix modal shares this window; the painter has no prompt text and offers every mode.
+	.["message"] = ""
+	.["title"] = name
+	.["matrix_only"] = FALSE
 	.["matrixcolors"] = list(
 		"rr" = color_matrix_last[1],
 		"rg" = color_matrix_last[2],
@@ -125,8 +131,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		"cg" = color_matrix_last[11],
 		"cb" = color_matrix_last[12],
 	)
-	if(temp)
-		.["temp"] = temp
+	.["temp"] = temp || null
 	if(inserted)
 		.["item_name"] = inserted.name
 		// The shared portrait cache renders it off the tick (null until it lands; item_sprite_landed pushes the window then).
@@ -174,7 +179,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	if(!(inserted))
 		return
 	set_temp("")
-	drop_item(user)
+	drop_item(user, quiet = TRUE)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_clear(datum/act/op/A)
@@ -312,7 +317,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		COLORTEST("FFFFFF", cm)
 #undef COLORTEST
 		if(passed < minimum_matrix_tests)
-			temp = "Matrix is too dark. (passed [passed] out of [minimum_matrix_tests] required tests. Minimum lightness: [minimum_matrix_lightness])."
+			set_temp("Matrix is too dark. (passed [passed] out of [minimum_matrix_tests] required tests. Minimum lightness: [minimum_matrix_lightness]).")
 			return FALSE
 		return TRUE
 

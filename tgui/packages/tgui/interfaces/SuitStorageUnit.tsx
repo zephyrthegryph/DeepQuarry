@@ -10,26 +10,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { SuitStorageUnitActions } from './generated/SuitStorageUnit';
-
-type Data = {
-  broken: BooleanLike;
-  panelopen: BooleanLike;
-  locked: BooleanLike;
-  open: BooleanLike;
-  safeties: BooleanLike;
-  uv_active: BooleanLike;
-  uv_super: number;
-  helmet: string | null;
-  suit: string | null;
-  mask: string | null;
-  storage: null;
-  occupied: BooleanLike;
-};
+import type {
+  SuitStorageUnitActions,
+  SuitStorageUnitData,
+} from './generated/SuitStorageUnit';
 
 export const SuitStorageUnit = (props) => {
-  const { data } = useBackend<Data, SuitStorageUnitActions>();
+  const { data } = useBackend<SuitStorageUnitData, SuitStorageUnitActions>();
   const { panelopen, uv_active, broken } = data;
 
   let subTemplate = <SuitStorageUnitContent />;
@@ -50,7 +37,10 @@ export const SuitStorageUnit = (props) => {
 };
 
 const SuitStorageUnitContent = (props) => {
-  const { act, data } = useBackend<Data, SuitStorageUnitActions>();
+  const { act, data } = useBackend<
+    SuitStorageUnitData,
+    SuitStorageUnitActions
+  >();
   const { locked, open, safeties, occupied, suit, helmet, mask } = data;
 
   return (
@@ -160,7 +150,10 @@ const SuitStorageUnitContent = (props) => {
 };
 
 const SuitStorageUnitPanel = (props) => {
-  const { act, data } = useBackend<Data, SuitStorageUnitActions>();
+  const { act, data } = useBackend<
+    SuitStorageUnitData,
+    SuitStorageUnitActions
+  >();
   const { safeties, uv_super } = data;
 
   return (

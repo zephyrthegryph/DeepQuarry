@@ -8,11 +8,12 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { capitalizeFirst, decodeHtmlEntities } from 'tgui-core/string';
-import type { PandemicActions } from '../generated/Pandemic';
+import type { PandemicActions, PandemicData } from '../generated/Pandemic';
 import { getColor } from './helpers';
-import type { Data } from './types';
 
-export const VirusDisplay = (props) => {
+type VirusRow = PandemicData['viruses'][number];
+
+export const VirusDisplay = (props: { virus: VirusRow }) => {
   const { virus } = props;
 
   return (
@@ -32,8 +33,8 @@ export const VirusDisplay = (props) => {
   );
 };
 
-const Info = (props) => {
-  const { act } = useBackend<Data, PandemicActions>();
+const Info = (props: { virus: VirusRow }) => {
+  const { act } = useBackend<PandemicData, PandemicActions>();
   const {
     virus: { agent, can_rename, cure, description, index, name, spread },
   } = props;
@@ -66,7 +67,7 @@ const Info = (props) => {
   );
 };
 
-const Traits = (props) => {
+const Traits = (props: { virus: VirusRow }) => {
   const {
     virus: { resistance, stage_speed, stealth, transmission, severity },
   } = props;

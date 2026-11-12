@@ -1,0 +1,50 @@
+{
+	"name": "Hound Sleeper",
+	"theme": "ntos",
+	"chems": [
+		{ "id": "inaprovaline", "name": "Inaprovaline" },
+		{ "id": "bicaridine", "name": "Bicaridine" },
+		{ "id": "kelotane", "name": "Kelotane" }
+	],
+	"our_patient": {
+		"name": "Jane Doe",
+		"stat": 1,
+		"pulse": "72",
+		"crit_pulse": 0,
+		"health": 55,
+		"max_health": 100,
+		"findings": [
+			{ "name": "bruised ribs", "band": "minor" },
+			{ "name": "deep laceration", "band": "severe" }
+		],
+		"paralysis": 8,
+		"braindamage": 0,
+		"clonedamage": 1,
+		"ingested_reagents": [
+			{ "name": "Inaprovaline", "volume": 5.5 },
+			{ "name": "Water", "volume": 10 }
+		]
+	},
+	"eject_port": "ingestion",
+	"cleaning": 1,
+	"medsensor": 1,
+	"delivery": 1,
+	"delivery_tag": "Fuel",
+	"delivery_lists": {
+		"Fuel": ["metal sheet", "glass shard"],
+		"Cargo 1": ["crate"],
+		"Cargo 2": []
+	},
+	"compactor": 0,
+	"max_item_count": 8,
+	"ore_storage": 1,
+	"current_capacity": 12,
+	"max_ore_storage": 50,
+	"contents": ["metal sheet", "glass shard", "crate", "crate", "Jane Doe"],
+	"deliveryslot_1": ["crate", "crate"],
+	"deliveryslot_2": [],
+	"deliveryslot_3": [],
+	"items_preserved": ["crate"],
+	"has_destructive_analyzer": 1,
+	"techweb_name": "main / Nanotrasen"
+}

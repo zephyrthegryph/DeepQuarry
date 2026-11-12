@@ -1,0 +1,54 @@
+{
+	"user": "Jane Doe (Journalist)",
+	"wanted_issue": {
+		"author": "Security Officer Smith",
+		"criminal": "John Roe",
+		"desc": "Wanted for theft of a toolbox.",
+		"img": null
+	},
+	"securityCaster": 1,
+	"channels": [
+		{ "admin": 1, "ref": 201, "name": "Station Announcements", "censored": 0 },
+		{ "admin": 0, "ref": 202, "name": "Cargo Gossip", "censored": 0 },
+		{ "admin": 0, "ref": 203, "name": "Banned Channel", "censored": 1 }
+	],
+	"photo_data": 0,
+	"total_num": 3,
+	"active_num": 2,
+	"message_num": 2,
+	"viewing_channel": {
+		"name": "Cargo Gossip",
+		"author": "Jane Doe",
+		"censored": 0,
+		"messages": [
+			{
+				"title": "Crates lost",
+				"body": "Three crates went missing from the bay.",
+				"img": null,
+				"type": "Story",
+				"caption": null,
+				"author": "Jane Doe",
+				"timestamp": "12:30",
+				"ref": 301
+			},
+			{
+				"title": null,
+				"body": "Shipment arrives on schedule.",
+				"img": null,
+				"type": "Story",
+				"caption": null,
+				"author": "Jane Doe",
+				"timestamp": "13:05",
+				"ref": 302
+			}
+		],
+		"ref": 202
+	},
+	"company": "NanoTrasen",
+	"temp": { "text": "Feed message created successfully.", "style": "success" },
+	"channel_name": "Cargo Gossip",
+	"c_locked": 0,
+	"msg": "Draft story text.",
+	"title": "Draft title",
+	"paper_remaining": 15
+}

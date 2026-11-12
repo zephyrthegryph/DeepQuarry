@@ -9,13 +9,16 @@
 	var/screen = 0
 	var/list/stored_data
 
-/// The window data.
+/// The window data: the beacons that sit in an exosuit and the log being read.
 /obj/machinery/computer/mecha/ui_data(datum/act/eval/A)
 	var/list/data = ..()
-	data["stored_data"] = stored_data
-	var/list/computed = ui_data_obj_machinery_computer_mecha(A.actor, null, null)
-	for(var/key in computed)
-		data[key] = computed[key]
+	data["stored_data"] = stored_data || list()
+	var/list/beacons = list()
+	for(var/obj/item/mecha_parts/mecha_tracking/TR in listed_beacons())
+		var/list/tr_data = TR.tgui_data(A.actor)
+		if(tr_data)
+			beacons.Add(list(tr_data))
+	data["beacons"] = beacons
 	return data
 
 /// The beacons the window lists: every tracking beacon that sits in an exosuit.
@@ -28,25 +31,11 @@
 			listed += TR
 	return listed
 
-/// The computed part of the console's window data (ui_data())
-/obj/machinery/computer/mecha/proc/ui_data_obj_machinery_computer_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
-	var/list/beacons = list()
-	for(var/obj/item/mecha_parts/mecha_tracking/TR in listed_beacons())
-		var/list/tr_data = TR.tgui_data(user)
-		if(tr_data)
-			beacons.Add(list(tr_data))
-	data["beacons"] = beacons
-
-	LAZYINITLIST(stored_data)
-
-	return data
-
 // The console's window: a beacon's message is asked in the op (asks()), its handler sends the answer.
 CAPABILITIES(/obj/machinery/computer/mecha)
 	configure(light_glow(color = "#a97faa"))
 	interface("MechaControlConsole")
+	ui_shape(beacons = list_of(row(ref = num(), name = schema_text(), health = num(), maxHealth = num(), cell = bool(), cellCharge = num(), cellMaxCharge = num(), airtank = num(), pilot = nullable(schema_text()), location = schema_text(), active = nullable(schema_text()), cargoUsed = num(), cargoMax = num())), stored_data = list_of(row(time = schema_text(), year = int(), message = schema_text())))
 	without("ui_open")
 	op("send_message", ui_act("send_message", arg("mt", schema_text(32))), needs(req(PROC_REF(beacon_named), silent = TRUE)),
 		asks(/datum/prompt/text/mecha_tracker_message, step = "message"), then(PROC_REF(ui_act_send_message)))
@@ -108,18 +97,18 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 
 	var/obj/mecha/M = loc
 	data["ref"] = handle_of(src)
-	data["charge"] = M.get_charge()
 	data["name"] = M.name
 	data["health"] = M.get_integrity()
 	data["maxHealth"] = M.max_integrity
-	data["cell"] = M.cell
-	if(M.cell)
-		data["cellCharge"] = M.cell.charge
-		data["cellMaxCharge"] = M.cell.maxcharge
+	data["cell"] = !!M.cell
+	data["cellCharge"] = M.cell ? M.cell.charge : 0
+	data["cellMaxCharge"] = M.cell ? M.cell.maxcharge : 0
 	data["airtank"] = M.return_pressure()
-	data["pilot"] = M?.slot_item_real(MECHA_SLOT_PILOT)
-	data["location"] = get_area(M)
-	data["active"] = M.selected
+	data["pilot"] = M.slot_item_real(MECHA_SLOT_PILOT)?.name
+	data["location"] = "[get_area(M)]"
+	data["active"] = M.selected?.name
+	data["cargoUsed"] = 0
+	data["cargoMax"] = 0
 	if(istype(M, /obj/mecha/working/ripley))
 		var/obj/mecha/working/ripley/RM = M
 		data["cargoUsed"] = length(RM.cargo)

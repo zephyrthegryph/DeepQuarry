@@ -15,33 +15,17 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { ShapeshiftPanelActions } from './generated/ShapeshiftPanel';
+import type {
+  ShapeshiftPanelActions,
+  ShapeshiftPanelData,
+} from './generated/ShapeshiftPanel';
 
-type Row = {
-  id: string;
-  label: string;
-  desc: string;
-  action: string;
-  value: string | null;
-  swatch: string | null;
-  enabled: BooleanLike;
-  why: string | null;
-};
+type Group = ShapeshiftPanelData['groups'][number];
 
-type Group = {
-  title: string;
-  rows: Row[];
-};
-
-type Data = {
-  name: string;
-  preview: string | null;
-  groups: Group[];
-};
+type Row = Group['rows'][number];
 
 const CommandRow = (props: { row: Row }) => {
-  const { act } = useBackend<Data, ShapeshiftPanelActions>();
+  const { act } = useBackend<ShapeshiftPanelData, ShapeshiftPanelActions>();
   const { row } = props;
   return (
     <LabeledList.Item
@@ -63,8 +47,8 @@ const CommandRow = (props: { row: Row }) => {
 };
 
 export const ShapeshiftPanel = () => {
-  const { data } = useBackend<Data, ShapeshiftPanelActions>();
-  const { name, preview, groups = [] } = data;
+  const { data } = useBackend<ShapeshiftPanelData, ShapeshiftPanelActions>();
+  const { name, preview, groups } = data;
   return (
     <Window width={640} height={560} title="Shapeshift" theme="console">
       <Window.Content scrollable>

@@ -59,6 +59,7 @@ MSG_DEF_SELF(robot_fabricator/metal, "The fabricator does not have enough metal.
 CAPABILITIES(/obj/machinery/robotic_fabricator)
 	configure(uses_power(idle = 40, active = 10000))
 	interface("AncientDroneFab")
+	ui_shape(operating = bool(), metal_amount = int(0, 150000))
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 1), needs(req_operable()))
 	op("build_l_arm", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_l_arm)))
 	op("build_r_arm", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_r_arm)))

@@ -1,0 +1,17 @@
+{
+	"available_ram": 60,
+	"bought": [
+		{ "name": "Crew Manifest", "id": "crew_manifest", "on": 0 },
+		{ "name": "Door Jack", "id": "door_jack", "on": 1 }
+	],
+	"not_bought": [
+		{ "name": "Atmosphere Sensor", "id": "atmosphere_sensor", "ram": 15 },
+		{ "name": "Signaler", "id": "signaler", "ram": 5 }
+	],
+	"emotions": [
+		{ "displayText": "Happy", "value": 1 },
+		{ "displayText": "Cat", "value": 2 },
+		{ "displayText": "Extremely Happy", "value": 3 }
+	],
+	"current_emotion": 2
+}

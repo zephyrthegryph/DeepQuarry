@@ -1,0 +1,27 @@
+{
+	"disposals": 0,
+	"p_layer": 3,
+	"pipe_layers": {
+		"Regular": 3,
+		"Supply": 2,
+		"Scrubber": 1,
+		"Fuel": 4,
+		"Aux": 5
+	},
+	"categories": [
+		{
+			"cat_name": "Pipes",
+			"recipes": [
+				{ "pipe_name": "Pipe", "ref": 501, "bent": 0 },
+				{ "pipe_name": "Bent Pipe", "ref": 501, "bent": 1 }
+			]
+		},
+		{
+			"cat_name": "Devices",
+			"recipes": [
+				{ "pipe_name": "Manual Valve", "ref": 502, "bent": 0 },
+				{ "pipe_name": "Pipe Meter", "ref": 503, "bent": 0 }
+			]
+		}
+	]
+}

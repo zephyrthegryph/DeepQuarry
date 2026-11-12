@@ -13,15 +13,16 @@ import {
 import { createSearch } from 'tgui-core/string';
 
 import { MiningUser } from './common/Mining';
-import type { MiningVendorActions } from './generated/MiningVendor';
+import type {
+  MiningVendorActions,
+  MiningVendorData,
+} from './generated/MiningVendor';
 
-type Data = {
-  has_id: boolean;
-  id: { id: string; points: number };
-  items: Record<string, Sortable[]>;
+type Item = MiningVendorData['items'][string][string];
+
+type Sortable = Item & {
+  affordable: number;
 };
-
-type Sortable = { name: string; affordable: number; price: number };
 
 const sortTypes = {
   Alphabetical: (a: Sortable, b: Sortable) => a.name.localeCompare(b.name),
@@ -62,24 +63,23 @@ const MiningVendorItems = (props: {
   sortOrder: string;
   descending: boolean;
 }) => {
-  const { act, data } = useBackend<Data, MiningVendorActions>();
-  const { has_id, id, items = {} } = data;
+  const { act, data } = useBackend<MiningVendorData, MiningVendorActions>();
+  const { has_id, id, items } = data;
   // Search thingies
-  const searcher = createSearch<[string, Sortable]>(
-    props.searchText,
-    (item) => {
-      return item[0];
-    },
-  );
+  const searcher = createSearch<[string, Item]>(props.searchText, (item) => {
+    return item[0];
+  });
 
   let has_contents = false;
   const contents = Object.entries(items).map((kv, _i) => {
     let items_in_cat = Object.entries(kv[1])
       .filter(searcher)
-      .map((kv2) => {
-        kv2[1].affordable = +(has_id && id.points >= kv2[1].price);
-        return kv2[1];
-      })
+      .map(
+        ([, item]): Sortable => ({
+          ...item,
+          affordable: +!!(has_id && id && id.points >= item.price),
+        }),
+      )
       .sort(sortTypes[props.sortOrder]);
     if (items_in_cat.length === 0) {
       return undefined;
@@ -159,7 +159,7 @@ const MiningVendorItemsCategory = (props: {
   title: string;
   items: Sortable[];
 }) => {
-  const { act, data } = useBackend<Data, MiningVendorActions>();
+  const { act, data } = useBackend<MiningVendorData, MiningVendorActions>();
 
   const { has_id, id } = data;
 
@@ -179,7 +179,7 @@ const MiningVendorItemsCategory = (props: {
             {item.name}
           </Box>
           <Button
-            disabled={!has_id || id.points < item.price}
+            disabled={!has_id || !id || id.points < item.price}
             width="15%"
             textAlign="center"
             style={{

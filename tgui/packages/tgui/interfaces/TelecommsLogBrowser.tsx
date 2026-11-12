@@ -9,33 +9,21 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import type { TelecommsLogBrowserActions } from './generated/TelecommsLogBrowser';
+import type {
+  TelecommsLogBrowserActions,
+  TelecommsLogBrowserData,
+} from './generated/TelecommsLogBrowser';
 
-type Data = {
-  universal_translate: BooleanLike;
-  network: string;
-  temp: { color: string; text: string } | null;
-  servers: server[];
-  selectedServer: selectedServer | null;
-};
-
-type server = { id: string; name: string };
-
-type selectedServer = {
-  id: string;
-  totalTraffic: number;
-  logs: log[] | [];
-};
-
-type log = {
-  name: string;
-  input_type: string;
-  id: number;
-  parameters: Record<string, string>;
-};
+type LogBrowserData = TelecommsLogBrowserData;
+type Server = LogBrowserData['servers'][number];
+type SelectedServer = NonNullable<LogBrowserData['selectedServer']>;
+type Log = SelectedServer['logs'][number];
 
 export const TelecommsLogBrowser = (props) => {
-  const { act, data } = useBackend<Data, TelecommsLogBrowserActions>();
+  const { act, data } = useBackend<
+    TelecommsLogBrowserData,
+    TelecommsLogBrowserActions
+  >();
 
   const {
     universal_translate,
@@ -133,9 +121,12 @@ export const TelecommsLogBrowser = (props) => {
 
 const TelecommsServerSelection = (props: {
   network: string;
-  servers: server[];
+  servers: Server[];
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<
+    TelecommsLogBrowserData,
+    TelecommsLogBrowserActions
+  >();
   const { network, servers } = props;
 
   if (!servers?.length) {
@@ -169,10 +160,13 @@ const TelecommsServerSelection = (props: {
 
 const TelecommsSelectedServer = (props: {
   network: string;
-  server: selectedServer;
+  server: SelectedServer;
   universal_translate: BooleanLike;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<
+    TelecommsLogBrowserData,
+    TelecommsLogBrowserActions
+  >();
   const { network, server, universal_translate } = props;
 
   return (
@@ -247,12 +241,15 @@ const TelecommsSelectedServer = (props: {
   );
 };
 
-const TelecommsLog = (props: { log?: log; error?: BooleanLike }) => {
+const TelecommsLog = (props: { log?: Log; error?: BooleanLike }) => {
   const { log, error } = props;
 
-  const { timecode, name, race, job, message } = log?.parameters || {
-    none: 'none',
-  };
+  const params = log?.parameters;
+  const timecode = params?.timecode;
+  const name = params?.name;
+  const race = params?.race;
+  const job = params?.job;
+  const message = params?.message;
 
   if (error) {
     return (

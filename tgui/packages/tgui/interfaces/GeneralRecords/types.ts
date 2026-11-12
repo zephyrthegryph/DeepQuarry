@@ -1,139 +1,38 @@
 import type { BooleanLike } from 'tgui-core/react';
 
-export type Data = {
-  temp: { color: string; text: string } | null;
-  scan: string | null;
-  authenticated: BooleanLike;
-  rank: string | null;
-  screen: number | null;
-  printing: BooleanLike;
-  isAI: BooleanLike;
-  isRobot: BooleanLike;
-  can_allocate_station_budget: BooleanLike;
-  station_balance: number | null;
-  station_monthly_income: number | null;
-  station_monthly_expenses: number | null;
-  station_income_sources: financeIncomeSource[];
-  nt_salary_support: number | null;
-  allocation_policy: string | null;
-  next_budget_cycle: string | null;
-  budget_plan: budgetPlan | null;
-  department_finances: departmentFinance[];
-  contract_departments: string[];
-  contract_faction_standings: factionStanding[];
-  station_transactions: financeTransaction[];
+import type { GeneralRecordsData } from '../generated/GeneralRecords';
+
+type RawContract = GeneralRecordsData['contracts'][number];
+
+// ui_details() of a contract is a different shape per contract kind, so the generated type leaves it an open row: the kinds the window renders are typed here.
+export type managementContract = Omit<RawContract, 'details'> & {
+  details: contractDetails | null;
+};
+
+export type Data = Omit<GeneralRecordsData, 'contracts'> & {
   contracts: managementContract[];
-  records: record[] | undefined;
-  general:
-    | {
-        fields: field[] | undefined;
-        photos: string[] | undefined;
-        has_photos: BooleanLike;
-        skills: string[] | undefined;
-        comments: { header: string; text: string }[] | undefined;
-        empty: BooleanLike;
-      }
-    | undefined;
 };
 
-export type factionStanding = {
-  name: string;
-  acronym: string;
-  color: string;
-  tier: string;
-  department_tiers: Record<string, string>;
-};
+export type factionStanding = Data['contract_faction_standings'][number];
 
-export type contractRequirement = {
-  name: string;
-  description: string;
-  state: string;
-  required: boolean;
-  progress: number;
-  target: number;
-  progress_text: string;
-  stages: contractRequirementStage[];
-};
+export type contractRequirement = managementContract['requirements'][number];
 
-export type contractRequirementStage = {
-  index: number;
-  label: string;
-  threshold: number;
-  unit: string;
-  duration: string;
-  status: string;
-};
+export type contractRequirementStage = contractRequirement['stages'][number];
 
-export type managementContract = {
-  id: string;
-  title: string;
-  description: string;
-  scope: string;
-  state: string;
-  issuer: string;
-  issuer_faction: string;
-  issuer_acronym: string;
-  issuer_color: string;
-  department?: string;
-  reward: number;
-  paid_reward: number;
-  standing_score: number;
-  standing_tier: string;
-  standing_reward_modifier: number;
-  term_class: string;
-  reward_distribution: contractDistribution;
-  reputation_distribution: contractDistribution;
-  secondary_reputation: factionReputationChange[];
-  negotiation_locked: BooleanLike;
-  negotiation_clauses: contractNegotiationClause[];
-  can_accept: boolean;
-  can_decline: boolean;
-  offer_kind: string;
-  closure_code?: string;
-  offer_time_remaining?: string;
-  deadline_remaining?: string;
-  grace_time_remaining?: string;
-  requirements: contractRequirement[];
-  details?:
-    | medicalTrialDetails
-    | medicalCaseReportDetails
-    | socialOutcomeDetails;
-};
+export type contractDistribution = managementContract['reward_distribution'];
 
-export type contractDistribution = {
-  station: number;
-  department: number;
-  staff: number;
-};
+export type contractNegotiationClause =
+  managementContract['negotiation_clauses'][number];
 
-export type contractClauseOption = {
-  id: string;
-  title: string;
-  description: string;
-  station_money: number;
-  department_money: number;
-  staff_money: number;
-  station_reputation: number;
-  department_reputation: number;
-  staff_reputation: number;
-  deadline_minutes: number;
-  other_reputation: factionReputationChange[];
-};
+export type contractClauseOption = contractNegotiationClause['options'][number];
 
-export type factionReputationChange = {
-  faction: string;
-  acronym: string;
-  color: string;
-  amount: number;
-};
+export type factionReputationChange =
+  managementContract['secondary_reputation'][number];
 
-export type contractNegotiationClause = {
-  id: string;
-  title: string;
-  description: string;
-  selected: string;
-  options: contractClauseOption[];
-};
+export type contractDetails =
+  | medicalTrialDetails
+  | medicalCaseReportDetails
+  | socialOutcomeDetails;
 
 export type medicalTrialSubject = {
   name: string;
@@ -221,86 +120,16 @@ export type contractOutcomeStage = {
   earned: BooleanLike;
 };
 
-export type financeTransaction = {
-  date: string;
-  time: string;
-  target: string;
-  purpose: string;
-  amount: string | number;
-  terminal: string;
-};
+export type financeTransaction = Data['station_transactions'][number];
 
-export type financeIncomeSource = {
-  source: string;
-  amount: number;
-};
+export type financeIncomeSource = Data['station_income_sources'][number];
 
-export type departmentFinance = {
-  department: string;
-  balance: number;
-  savings: number;
-  monthly_allocation: number;
-  automatic_allocation: number;
-  funded_allocation: number;
-  allocation_shortfall: number;
-  allocation_overridden: BooleanLike;
-  allocation_percent: number;
-  employee_count: number;
-  operating_allocation: number;
-  operating_funded: number;
-  payroll_funded: number;
-  monthly_income: number;
-  monthly_expenses: number;
-  last_month_income: number;
-  last_month_expenses: number;
-  projected_payroll: number;
-  payroll_resources: number;
-  payroll_coverage: number;
-  last_payroll_due: number;
-  last_payroll_paid: number;
-  last_payroll_shortfall: number;
-  revenue: number;
-  expenses: number;
-  wage_multiplier: number;
-  service_subsidy: number;
-  service_invoices: serviceInvoiceSummary;
-  income_sources: financeIncomeSource[];
-  transactions: financeTransaction[];
-};
+export type departmentFinance = Data['department_finances'][number];
 
-export type budgetPlan = {
-  projected_payroll: number;
-  nt_grant: number;
-  available: number;
-  operating_pool: number;
-  operating_requested: number;
-  operating_funded: number;
-  payroll_funded: number;
-  unallocated_operating: number;
-  requested: number;
-  funded: number;
-  remaining: number;
-  shortfall: number;
-};
+export type budgetPlan = NonNullable<Data['budget_plan']>;
 
-export type serviceInvoiceSummary = {
-  invoice_count: number;
-  refund_count: number;
-  gross_billed: number;
-  refunded_total: number;
-  net_billed: number;
-  account_sales: number;
-  cash_sales: number;
-  ewallet_sales: number;
-  tips: number;
-  staff_tips: number;
-  service_tips: number;
-};
+export type serviceInvoiceSummary = departmentFinance['service_invoices'];
 
-export type record = { ref: number; id: string; name: string; b_dna: string };
+export type record = NonNullable<Data['records']>[number];
 
-export type field = {
-  field: string;
-  value: string | number;
-  edit: string | null;
-};
+export type field = NonNullable<NonNullable<Data['general']>['fields']>[number];

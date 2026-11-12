@@ -47,6 +47,7 @@ CAPABILITIES(/obj/machinery/sleep_console)
 	space(SPACE_PANEL, door = nameof(panel_open))
 	// The console's window is its sleeper's panel: every button goes to the sleeper, and it shows the sleeper's data.
 	interface("Sleeper", title = "Sleeper", forwards = nameof(sleeper))
+	ui_shape(amounts = list_of(int()), maxchem = num(), dialysis = bool(), stomachpumping = bool(), auto_eject_dead = bool(), hasOccupant = bool(), occupant = nullable(row(name = schema_text(), stat = int(), vitality = num(), critical = bool(), diagnosis = row(status = enum(list("alive", "critical", "dead")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), vitals = row(heartRate = nullable(num()), bloodPressure = nullable(list_of(num())), oxygenation = nullable(num()), respiratoryRate = nullable(num()), heartRhythm = nullable(enum(list("sinus", "post_arrest", "tachy", "vfib", "asystole"))), temperature = nullable(num()), consciousness = nullable(schema_text()), bloodPercent = nullable(num())), findings = list_of(row(name = schema_text(), kind = enum(list("condition", "sign", "lesion", "wound")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), location = schema_text(), description = nullable(schema_text()), trend = nullable(enum(list("new", "worsening", "improving", "stable"))), hint = nullable(schema_text()))), parts = list_of(row(name = schema_text(), kind = enum(list("external", "internal")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), flags = list_of(schema_text()), implants = nullable(list_of(schema_text())))), hints = list_of(row(tag = schema_text(), label = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical"))))), hasBlood = bool(), bodyTemperature = num(), maxTemp = num(), temperatureSuitability = int(), btCelsius = num(), btFaren = num(), pulse = nullable(num()), bloodLevel = nullable(num()), bloodMax = nullable(num()), bloodPercent = nullable(num()))), isBeakerLoaded = bool(), beakerMaxSpace = num(), beakerFreeSpace = num(), stasis = schema_text(), chemicals = list_of(row(title = schema_text(), id = schema_text(), occ_amount = num(), pretty_amount = num(), injectable = bool(), overdosing = bool(), od_warning = bool())))
 	extend("ui_open", binds(item(/obj/item)), needs(req_paired(nameof(sleeper)), req_closed(SPACE_PANEL)))
 
 /// Dark while it has no power.
@@ -105,6 +106,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 	on_change(nameof(beaker), ANY, then(PROC_REF(beaker_changed)))
 	section(window, "the sleeper's panel: its console forwards every button here; an open panel refuses them all")
 	interface("Sleeper", title = "Sleeper")
+	ui_shape(amounts = list_of(int()), maxchem = num(), dialysis = bool(), stomachpumping = bool(), auto_eject_dead = bool(), hasOccupant = bool(), occupant = nullable(row(name = schema_text(), stat = int(), vitality = num(), critical = bool(), diagnosis = row(status = enum(list("alive", "critical", "dead")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), vitals = row(heartRate = nullable(num()), bloodPressure = nullable(list_of(num())), oxygenation = nullable(num()), respiratoryRate = nullable(num()), heartRhythm = nullable(enum(list("sinus", "post_arrest", "tachy", "vfib", "asystole"))), temperature = nullable(num()), consciousness = nullable(schema_text()), bloodPercent = nullable(num())), findings = list_of(row(name = schema_text(), kind = enum(list("condition", "sign", "lesion", "wound")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), location = schema_text(), description = nullable(schema_text()), trend = nullable(enum(list("new", "worsening", "improving", "stable"))), hint = nullable(schema_text()))), parts = list_of(row(name = schema_text(), kind = enum(list("external", "internal")), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")), flags = list_of(schema_text()), implants = nullable(list_of(schema_text())))), hints = list_of(row(tag = schema_text(), label = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical"))))), hasBlood = bool(), bodyTemperature = num(), maxTemp = num(), temperatureSuitability = int(), btCelsius = num(), btFaren = num(), pulse = nullable(num()), bloodLevel = nullable(num()), bloodMax = nullable(num()), bloodPercent = nullable(num()))), isBeakerLoaded = bool(), beakerMaxSpace = num(), beakerFreeSpace = num(), stasis = schema_text(), chemicals = list_of(row(title = schema_text(), id = schema_text(), occ_amount = num(), pretty_amount = num(), injectable = bool(), overdosing = bool(), od_warning = bool())))
 	extend("ui_open", inputs(remote()))
 	op("controls", inside(), label("Controls"), when(nameof(controls_inside)), opens_ui())
 	extend(TAG_UI, needs(req_closed(SPACE_PANEL)), then(PROC_REF(control_touched), early = TRUE))
@@ -315,6 +317,10 @@ CAPABILITIES(/obj/machinery/sleeper)
 	data["hasOccupant"] = occupant ? 1 : 0
 	var/list/occupantData = list()
 	if(occupant)
+		occupantData["pulse"] = null
+		occupantData["bloodLevel"] = null
+		occupantData["bloodMax"] = null
+		occupantData["bloodPercent"] = null
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
@@ -322,7 +328,6 @@ CAPABILITIES(/obj/machinery/sleeper)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
 		spent(D)
-		occupantData["paralysis"] = occupant.status_units(STAT_PARALYZED)
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.body_temperature()
 		occupantData["maxTemp"] = SLEEPER_TEMPERATURE_BAR_MAX
@@ -364,9 +369,8 @@ CAPABILITIES(/obj/machinery/sleeper)
 			occupantData["bloodMax"] = occupant.species.blood_volume
 			occupantData["bloodPercent"] = round(100*(blood_volume/occupant.species.blood_volume), 0.01) //copy pasta ends here
 
-			occupantData["bloodType"] = occupant.dna.b_type
 
-	data["occupant"] = occupantData
+	data["occupant"] = occupant ? occupantData : null
 	if(beaker)
 		data["isBeakerLoaded"] = 1
 		if(beaker.reagents)
@@ -405,7 +409,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 
 			pretty_amount = round(reagent_amount, 0.05)
 
-			chemicals.Add(list(list("title" = temp.name, "id" = temp.id, "commands" = list("chemical" = temp.id), "occ_amount" = reagent_amount, "pretty_amount" = pretty_amount, "injectable" = injectable, "overdosing" = overdosing, "od_warning" = caution)))
+			chemicals.Add(list(list("title" = temp.name, "id" = temp.id, "occ_amount" = reagent_amount, "pretty_amount" = pretty_amount, "injectable" = injectable, "overdosing" = overdosing, "od_warning" = caution)))
 	data["chemicals"] = chemicals
 	return data
 

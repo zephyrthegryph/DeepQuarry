@@ -1,23 +1,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { PetrificationInterfaceActions } from './generated/PetrificationInterface';
-
-type Data = {
-  material: string;
-  identifier: string;
-  adjective: string;
-  tint: string;
-  t: BooleanLike;
-  target: string;
-  able_to_unpetrify: BooleanLike;
-  discard_clothes: BooleanLike;
-  can_remote: BooleanLike;
-};
+import type {
+  PetrificationInterfaceActions,
+  PetrificationInterfaceData,
+} from './generated/PetrificationInterface';
 
 export const PetrificationInterface = (props) => {
-  const { act, data } = useBackend<Data, PetrificationInterfaceActions>();
+  const { act, data } = useBackend<
+    PetrificationInterfaceData,
+    PetrificationInterfaceActions
+  >();
 
   const {
     material,

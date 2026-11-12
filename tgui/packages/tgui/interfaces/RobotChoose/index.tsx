@@ -1,14 +1,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
-import type { RobotChooseActions } from '../generated/RobotChoose';
+import type {
+  RobotChooseActions,
+  RobotChooseData,
+} from '../generated/RobotChoose';
 import { IconSection } from './IconSection';
 import { ModuleSection } from './ModuleSection';
 import { SpriteSection } from './SpriteSection';
-import type { Data } from './types';
 
 export const RobotChoose = (props) => {
-  const { data } = useBackend<Data, RobotChooseActions>();
+  const { data } = useBackend<RobotChooseData, RobotChooseActions>();
 
   const {
     possible_modules,
@@ -25,7 +27,7 @@ export const RobotChoose = (props) => {
   } = data;
 
   return (
-    <Window width={800} height={605} theme={theme}>
+    <Window width={800} height={605} theme={theme ?? undefined}>
       <Window.Content>
         <Stack fill>
           <Stack.Item basis="30%">
@@ -33,7 +35,7 @@ export const RobotChoose = (props) => {
               title="Modules"
               sortable={possible_modules}
               highlighted={whitelisted_modules}
-              selected={selected_module}
+              selected={selected_module ?? undefined}
             />
           </Stack.Item>
           <Stack.Item basis="30%">

@@ -6,7 +6,11 @@
 #define GENERAL_RECORD_FINANCES 5
 #define GENERAL_RECORD_CONTRACTS 6
 
-#define FIELD(N, V, E) list(field = N, value = V, edit = E)
+#define FIELD(N, V, E) skills_field_row(N, V, E)
+
+/// One labelled line of a general record in the window: the value as text (an age is a number in the record), `edit` the field it edits, or null for a read-only line.
+/proc/skills_field_row(label, value, edit)
+	return list(field = label, value = "[value]", edit = edit)
 
 /obj/machinery/computer/skills//TODO:SANITY //[TO DO] Change name to PCU and update mapdata to include replacement computers
 	name = "department management console"
@@ -173,7 +177,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 	if(!transfer_account_funds(GLOB.station_account, budget, amount, "One-time Command funding", name))
 		to_chat(user, span_warning("The station account cannot fund that transfer."))
 		return FALSE
-	to_chat(user, span_notice("Transferred [amount] Thalers to [department]."))
 	// Money actually moved, so this counts as settled aid.
 	emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
 		"department" = DEPARTMENT_COMMAND,
@@ -239,6 +242,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active1), /datum/data/record)
 	interface("GeneralRecords", title = "Department Management")
+	ui_shape(temp = nullable(row(text = schema_text(), style = schema_text())), scan = nullable(schema_text()), authenticated = nullable(schema_text()), rank = nullable(schema_text()), screen = nullable(int()), printing = bool(), isAI = bool(), isRobot = bool(), can_allocate_station_budget = bool(), station_balance = nullable(num()), station_monthly_income = nullable(num()), station_monthly_expenses = nullable(num()), station_income_sources = list_of(row(source = schema_text(), amount = num())), nt_salary_support = nullable(num()), allocation_policy = nullable(schema_text()), next_budget_cycle = nullable(schema_text()), budget_plan = nullable(row(projected_payroll = num(), nt_grant = num(), available = num(), operating_pool = num(), operating_requested = num(), operating_funded = num(), payroll_funded = num(), unallocated_operating = num(), requested = num(), funded = num(), remaining = num(), shortfall = num())), department_finances = list_of(row(department = schema_text(), balance = num(), savings = num(), monthly_allocation = num(), automatic_allocation = num(), funded_allocation = num(), allocation_shortfall = num(), allocation_overridden = bool(), allocation_percent = num(), employee_count = num(), operating_allocation = num(), operating_funded = num(), payroll_funded = num(), monthly_income = num(), monthly_expenses = num(), last_month_income = num(), last_month_expenses = num(), projected_payroll = num(), payroll_resources = num(), payroll_coverage = num(), last_payroll_due = num(), last_payroll_paid = num(), last_payroll_shortfall = num(), revenue = num(), expenses = num(), wage_multiplier = num(), service_subsidy = num(), service_invoices = row(invoice_count = num(), refund_count = num(), gross_billed = num(), refunded_total = num(), net_billed = num(), account_sales = num(), cash_sales = num(), ewallet_sales = num(), tips = num(), staff_tips = num(), service_tips = num()), income_sources = list_of(row(source = schema_text(), amount = num())), transactions = list_of(row(date = schema_text(), time = schema_text(), target = schema_text(), purpose = schema_text(), amount = num(), terminal = schema_text())))), station_transactions = list_of(row(date = schema_text(), time = schema_text(), target = schema_text(), purpose = schema_text(), amount = num(), terminal = schema_text())), contract_departments = list_of(schema_text()), contract_faction_standings = list_of(row(name = schema_text(), acronym = schema_text(), color = schema_text(), tier = schema_text(), department_tiers = map_of(schema_text(), schema_text()))), contracts = list_of(row(id = schema_text(), title = schema_text(), description = schema_text(), scope = schema_text(), state = schema_text(), issuer = schema_text(), issuer_faction = schema_text(), issuer_acronym = schema_text(), issuer_color = schema_text(), department = nullable(schema_text()), reward = num(), paid_reward = num(), reward_distribution = row(station = num(), department = num(), staff = num()), reputation_distribution = row(station = num(), department = num(), staff = num()), secondary_reputation = list_of(row(faction = schema_text(), acronym = schema_text(), color = schema_text(), amount = num())), standing_score = num(), standing_tier = schema_text(), standing_reward_modifier = num(), term_class = schema_text(), negotiation_locked = bool(), negotiation_clauses = list_of(row(id = schema_text(), title = schema_text(), description = schema_text(), selected = nullable(schema_text()), options = list_of(row(id = schema_text(), title = schema_text(), description = schema_text(), station_money = num(), department_money = num(), staff_money = num(), station_reputation = num(), department_reputation = num(), staff_reputation = num(), deadline_minutes = num(), other_reputation = list_of(row(faction = schema_text(), acronym = schema_text(), color = schema_text(), amount = num())))))), deadline = nullable(num()), offer_expires_at = nullable(num()), offer_time_remaining = nullable(schema_text()), accepted_at = nullable(num()), deadline_remaining = nullable(schema_text()), can_accept = bool(), can_decline = bool(), offer_kind = schema_text(), closure_code = nullable(schema_text()), grace_time_remaining = nullable(schema_text()), requirements = list_of(row(id = int(), name = schema_text(), description = schema_text(), state = schema_text(), required = bool(), progress = num(), target = num(), progress_text = schema_text(), stages = list_of(row(index = int(), label = schema_text(), threshold = num(), unit = schema_text(), duration = schema_text(), status = schema_text())))), contributor_count = int(), details = nullable(row()))), records = nullable(list_of(row(ref = int(), id = schema_text(), name = schema_text(), b_dna = schema_text()))), general = nullable(row(fields = nullable(list_of(row(field = schema_text(), value = schema_text(), edit = nullable(schema_text())))), photos = list_of(schema_text()), has_photos = bool(), skills = nullable(schema_text()), comments = list_of(row(header = schema_text(), text = schema_text())), empty = bool())), modal = nullable(row()))
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 2), needs(req(PROC_REF(within_contact_range))))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
@@ -289,14 +293,30 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	data["authenticated"] = authenticated
 	data["rank"] = rank
 	data["screen"] = screen
-	data["printing"] = printing
+	data["printing"] = !!printing
 	data["scan"] = scan ? scan.name : null
 	data["isAI"] = user?.records_login_kind() == LOGIN_TYPE_AI
 	data["isRobot"] = user?.records_login_kind() == LOGIN_TYPE_ROBOT
+	data["can_allocate_station_budget"] = FALSE
+	data["station_balance"] = null
+	data["station_monthly_income"] = null
+	data["station_monthly_expenses"] = null
+	data["station_income_sources"] = list()
+	data["nt_salary_support"] = null
+	data["allocation_policy"] = null
+	data["next_budget_cycle"] = null
+	data["budget_plan"] = null
+	data["department_finances"] = list()
+	data["station_transactions"] = list()
+	data["contract_departments"] = list()
+	data["contract_faction_standings"] = list()
+	data["contracts"] = list()
+	data["records"] = null
+	data["general"] = null
 	if(authenticated)
 		var/list/budget_plan = SSsupply.department_budget_plan()
 		var/list/planned_departments = budget_plan["departments"]
-		data["can_allocate_station_budget"] = can_allocate_station_budget()
+		data["can_allocate_station_budget"] = !!can_allocate_station_budget()
 		data["station_balance"] = can_allocate_station_budget() ? GLOB.station_account.money : null
 		data["station_monthly_income"] = can_allocate_station_budget() ? GLOB.station_account.monthly_income : null
 		data["station_monthly_expenses"] = can_allocate_station_budget() ? GLOB.station_account.monthly_expenses : null
@@ -407,7 +427,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 							"name" = R.fields["name"],
 							"b_dna" = R.fields["b_dna"])
 			if(GENERAL_RECORD_DATA)
-				var/list/general = list()
+				var/list/general = list("fields" = null, "photos" = list(), "has_photos" = FALSE, "skills" = null, "comments" = list(), "empty" = TRUE)
 				data["general"] = general
 				if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 					var/list/fields = list()
@@ -428,16 +448,14 @@ CAPABILITIES(/obj/machinery/computer/skills)
 					fields[++fields.len] = FIELD("Mental Status", active1().fields["m_stat"], null)
 					var/list/photos = list()
 					general["photos"] = photos
-					photos[++photos.len] = active1().fields["photo-south"]
-					photos[++photos.len] = active1().fields["photo-west"]
-					general["has_photos"] = (active1().fields["photo-south"] || active1().fields["photo-west"] ? 1 : 0)
+					photos[++photos.len] = "[active1().fields["photo-south"]]"
+					photos[++photos.len] = "[active1().fields["photo-west"]]"
+					general["has_photos"] = !!(active1().fields["photo-south"] || active1().fields["photo-west"])
 					if(!active1().fields["comments"] || !islist(active1().fields["comments"]))
 						active1().fields["comments"] = list()
 					general["skills"] = active1().fields["notes"]
 					general["comments"] = active1().fields["comments"]
-					general["empty"] = 0
-				else
-					general["empty"] = 1
+					general["empty"] = FALSE
 
 	data["modal"] = tgui_modal_data(src)
 	return data

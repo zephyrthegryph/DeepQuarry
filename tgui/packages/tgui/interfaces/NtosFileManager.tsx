@@ -3,36 +3,26 @@ import { NtosWindow } from 'tgui/layouts';
 import { Button, Section, Stack, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { sanitizeText } from '../sanitize';
-import type { NtosFileManagerActions } from './generated/NtosFileManager';
+import type {
+  NtosFileManagerActions,
+  NtosFileManagerData,
+} from './generated/NtosFileManager';
 
-type Data = {
-  PC_device_theme: string;
-  error: string | null;
-  filedata: string | null;
-  filename: string | null;
-  files: file[];
-  usbconnected: BooleanLike;
-  usbfiles: file[];
-};
-
-export type file = {
-  name: string;
-  type: string;
-  uid: string;
-  size: number;
-  undeletable: BooleanLike;
-};
+export type file = NtosFileManagerData['files'][number];
 
 export const NtosFileManager = (props) => {
-  const { act, data } = useBackend<Data, NtosFileManagerActions>();
+  const { act, data } = useBackend<
+    NtosFileManagerData,
+    NtosFileManagerActions
+  >();
   const {
     PC_device_theme,
     usbconnected,
     filename,
     filedata,
     error,
-    files = [],
-    usbfiles = [],
+    files,
+    usbfiles,
   } = data;
   return (
     <NtosWindow resizable theme={PC_device_theme}>
@@ -73,18 +63,18 @@ export const NtosFileManager = (props) => {
               <FileTable
                 files={files}
                 usbconnected={usbconnected}
-                onUpload={(file: string) => act('PRG_copytousb', { uid: file })}
-                onDelete={(file: string) =>
+                onUpload={(file: number) => act('PRG_copytousb', { uid: file })}
+                onDelete={(file: number) =>
                   act('PRG_deletefile', { uid: file })
                 }
-                onOpen={(file: string) => act('PRG_openfile', { uid: file })}
-                onRename={(file: string, newName: string) =>
+                onOpen={(file: number) => act('PRG_openfile', { uid: file })}
+                onRename={(file: number, newName: string) =>
                   act('PRG_rename', {
                     uid: file,
                     new_name: newName,
                   })
                 }
-                onDuplicate={(file: string) => act('PRG_clone', { uid: file })}
+                onDuplicate={(file: number) => act('PRG_clone', { uid: file })}
               />
             </Section>
             {(usbconnected && (
@@ -93,20 +83,20 @@ export const NtosFileManager = (props) => {
                   usbmode
                   files={usbfiles}
                   usbconnected={usbconnected}
-                  onUpload={(file: string) =>
+                  onUpload={(file: number) =>
                     act('PRG_copyfromusb', { uid: file })
                   }
-                  onDelete={(file: string) =>
+                  onDelete={(file: number) =>
                     act('PRG_deletefile', { uid: file })
                   }
-                  onOpen={(file: string) => act('PRG_openfile', { uid: file })}
-                  onRename={(file: string, newName: string) =>
+                  onOpen={(file: number) => act('PRG_openfile', { uid: file })}
+                  onRename={(file: number, newName: string) =>
                     act('PRG_rename', {
                       uid: file,
                       new_name: newName,
                     })
                   }
-                  onDuplicate={(file: string) =>
+                  onDuplicate={(file: number) =>
                     act('PRG_clone', { uid: file })
                   }
                 />
@@ -146,14 +136,14 @@ const FileTable = (props: {
   files: file[];
   usbconnected: BooleanLike;
   usbmode?: boolean;
-  onUpload: (file: string) => void;
-  onDelete: (file: string) => void;
-  onRename: (file: string, newName: string) => void;
-  onOpen: (file: string) => void;
-  onDuplicate: (file: string) => void;
+  onUpload: (file: number) => void;
+  onDelete: (file: number) => void;
+  onRename: (file: number, newName: string) => void;
+  onOpen: (file: number) => void;
+  onDuplicate: (file: number) => void;
 }) => {
   const {
-    files = [],
+    files,
     usbconnected,
     usbmode,
     onUpload,

@@ -1,0 +1,68 @@
+{
+	"menu": 1,
+	"loading": 0,
+	"autoprocess": 1,
+	"scan_mode": 1,
+	"temp": {
+		"text": "Successfully saved to disk.",
+		"style": "success"
+	},
+	"scantemp": {
+		"text": "Subject successfully scanned.",
+		"color": "good"
+	},
+	"disk": 1,
+	"scanner": "DNA scanner",
+	"numberofpods": 3,
+	"pods": [
+		{
+			"pod": 1042,
+			"name": "Cloning pod",
+			"biomass": 240,
+			"status": "idle",
+			"progress": 0
+		},
+		{
+			"pod": 1043,
+			"name": "Cloning pod",
+			"biomass": 90,
+			"status": "cloning",
+			"progress": 46.5
+		},
+		{
+			"pod": 1044,
+			"name": "Cloning pod",
+			"biomass": 0,
+			"status": "mess",
+			"progress": 0
+		}
+	],
+	"can_brainscan": 1,
+	"autoallowed": 1,
+	"occupant": 1,
+	"locked": 0,
+	"selected_pod": 1042,
+	"records": [
+		{
+			"record": 2001,
+			"realname": "Jo Park"
+		},
+		{
+			"record": 2002,
+			"realname": "Lee Wu"
+		}
+	],
+	"podready": 1,
+	"modal": {
+		"id": "view_rec",
+		"text": "",
+		"type": "message",
+		"args": {
+			"activerecord": 2001,
+			"realname": "Jo Park",
+			"health": "12 - 3 - 0 - 8",
+			"unidentity": "4A5B6C7D8E9F",
+			"strucenzymes": "A1B2C3D4E5F6"
+		}
+	}
+}

@@ -11,12 +11,12 @@ import {
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
 import type { MessageMonitorActions } from '../generated/MessageMonitor';
-import type { Data } from './types';
+import type { Data, LinkedServer } from './types';
 
 export const MessageMonitorMain = (props) => {
   const { act, data } = useBackend<Data, MessageMonitorActions>();
 
-  const { linkedServer } = data;
+  const linkedServer = data.linkedServer!; // only rendered when a server is linked
 
   return (
     <Section
@@ -52,6 +52,7 @@ export const MessageMonitorMain = (props) => {
         color="red"
         confirmIcon="exclamation-triangle"
         icon="exclamation-triangle"
+        onClick={() => act('del_pda')}
       >
         Clear Message Logs
       </Button.Confirm>
@@ -59,6 +60,7 @@ export const MessageMonitorMain = (props) => {
         color="red"
         confirmIcon="exclamation-triangle"
         icon="exclamation-triangle"
+        onClick={() => act('del_rc')}
       >
         Clear Request Logs
       </Button.Confirm>
@@ -67,19 +69,11 @@ export const MessageMonitorMain = (props) => {
 };
 
 export const MessageMonitorLogs = (props: {
-  logs: {
-    ref: number;
-    sender: string;
-    recipient: string;
-    message: string;
-    stamp?: string;
-    id_auth?: string;
-    priority?: string;
-  }[];
+  logs: (LinkedServer['pda_msgs'][number] | LinkedServer['rc_msgs'][number])[];
   pda?: BooleanLike;
   rc?: BooleanLike;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, MessageMonitorActions>();
 
   const { logs, pda, rc } = props;
 
@@ -124,11 +118,19 @@ export const MessageMonitorLogs = (props: {
                   </LabeledList.Item>
                   <LabeledList.Item
                     label="Verification"
-                    color={log.id_auth === 'Unauthenticated' ? 'bad' : 'good'}
+                    color={
+                      'id_auth' in log && log.id_auth === 'Unauthenticated'
+                        ? 'bad'
+                        : 'good'
+                    }
                   >
-                    {!!log.id_auth && decodeHtmlEntities(log.id_auth)}
+                    {'id_auth' in log &&
+                      !!log.id_auth &&
+                      decodeHtmlEntities(log.id_auth)}
                   </LabeledList.Item>
-                  <LabeledList.Item label="Stamp">{log.stamp}</LabeledList.Item>
+                  <LabeledList.Item label="Stamp">
+                    {'stamp' in log && log.stamp}
+                  </LabeledList.Item>
                 </LabeledList>
               ) : (
                 log.message
@@ -207,7 +209,7 @@ export const MessageMonitorAdmin = (props) => {
 export const MessageMonitorSpamFilter = (props) => {
   const { act, data } = useBackend<Data, MessageMonitorActions>();
 
-  const { linkedServer } = data;
+  const linkedServer = data.linkedServer!; // only rendered when a server is linked
 
   return (
     <Section title="Spam Filtering">

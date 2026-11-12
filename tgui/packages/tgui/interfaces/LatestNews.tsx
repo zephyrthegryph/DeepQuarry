@@ -3,23 +3,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type { LatestNewsActions } from './generated/LatestNews';
-
-type Data = {
-  channel_name: string;
-  page: number;
-  total: number;
-  has_messages: BooleanLike;
-  title?: string;
-  author?: string;
-  body?: string;
-};
+import type { LatestNewsActions, LatestNewsData } from './generated/LatestNews';
 
 export const LatestNews = () => {
-  const { data, act } = useBackend<Data, LatestNewsActions>();
+  const { data, act } = useBackend<LatestNewsData, LatestNewsActions>();
   const { channel_name, page, total, has_messages, title, author, body } = data;
   return (
     <Window width={560} height={620} title="Latest News">
@@ -35,7 +24,7 @@ export const LatestNews = () => {
                 {title}
               </Box>
               <Box mb={1}>
-                <HtmlRenderer html={body ?? ''} />
+                <HtmlRenderer html={body} />
               </Box>
               <Box italic color="label" mb={2}>
                 — {author}

@@ -3,22 +3,10 @@ import { Window } from 'tgui/layouts';
 import { Button, NumberInput, Section, Stack } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
 import { round } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
-import type { BrigTimerActions } from './generated/BrigTimer';
-
-type Data = {
-  time_left: number;
-  max_time_left: number;
-  timing: BooleanLike;
-  flash_found: BooleanLike;
-  flash_charging: BooleanLike;
-  preset_short: number;
-  preset_medium: number;
-  preset_long: number;
-};
+import type { BrigTimerActions, BrigTimerData } from './generated/BrigTimer';
 
 export const BrigTimer = (props) => {
-  const { act, data } = useBackend<Data, BrigTimerActions>();
+  const { act, data } = useBackend<BrigTimerData, BrigTimerActions>();
 
   const {
     time_left,

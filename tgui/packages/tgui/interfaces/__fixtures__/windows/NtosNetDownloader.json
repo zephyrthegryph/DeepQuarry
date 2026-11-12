@@ -1,0 +1,67 @@
+{
+	"PC_device_theme": "ntos",
+	"PC_batteryicon": "batt_100.gif",
+	"PC_batterypercent": "87 %",
+	"PC_showbatteryicon": 1,
+	"PC_apclinkicon": "charging.gif",
+	"PC_ntneticon": "sig_high.gif",
+	"PC_programheaders": [{ "icon": "hostile.gif" }],
+	"PC_stationtime": "14:32",
+	"PC_hasheader": 1,
+	"PC_showexitprogram": 1,
+	"downloading": 1,
+	"error": null,
+	"downloadname": "nttransfer",
+	"downloaddesc": "NTNet P2P Transfer Client",
+	"downloadsize": 8,
+	"downloadspeed": 2,
+	"downloadcompletion": 3.2,
+	"disk_size": 128,
+	"disk_used": 40,
+	"hackedavailable": 1,
+	"hacked_programs": [
+		{
+			"filename": "nt_accrypt",
+			"filedesc": "NTNet Access Decrypter",
+			"fileinfo": "Decrypts access codes.",
+			"compatibility": "Compatible",
+			"size": 34,
+			"icon": "unlocked"
+		},
+		{
+			"filename": "ntn_dos",
+			"filedesc": "DoS Traffic Generator",
+			"fileinfo": "Floods relays.",
+			"compatibility": "Incompatible!",
+			"size": 20,
+			"icon": "arrow-4-diag"
+		}
+	],
+	"downloadable_programs": [
+		{
+			"filename": "nttransfer",
+			"filedesc": "NTNet P2P Transfer Client",
+			"fileinfo": "Transfers files.",
+			"compatibility": "Compatible",
+			"size": 8,
+			"icon": "arrowthickstop-1-s"
+		},
+		{
+			"filename": "wordprocessor",
+			"filedesc": "NTNet Word Processor",
+			"fileinfo": "Edit documents.",
+			"compatibility": "Compatible",
+			"size": 4,
+			"icon": "pencil"
+		},
+		{
+			"filename": "newsbrowser",
+			"filedesc": "NTNet News Browser",
+			"fileinfo": "Read news.",
+			"compatibility": "Compatible",
+			"size": 4,
+			"icon": "contact"
+		}
+	],
+	"downloads_queue": ["wordprocessor"]
+}

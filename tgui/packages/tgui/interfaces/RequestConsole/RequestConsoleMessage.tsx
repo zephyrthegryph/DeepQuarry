@@ -1,38 +1,43 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-import type { RequestConsoleActions } from '../generated/RequestConsole';
+import type {
+  RequestConsoleActions,
+  RequestConsoleData,
+} from '../generated/RequestConsole';
 import { RCS_MAINMENU } from './constants';
-import type { Data } from './types';
 
 export const RequestConsoleViewMessages = (props) => {
-  const { act, data } = useBackend<Data, RequestConsoleActions>();
+  const { act, data } = useBackend<RequestConsoleData, RequestConsoleActions>();
   const { message_log } = data;
   return (
     <Section title="Messages">
-      {(message_log.length &&
-        message_log.map((msg, i) => (
-          <LabeledList.Item
-            label={decodeHtmlEntities(msg[0])}
-            key={i}
-            buttons={
-              <Button
-                icon="print"
-                onClick={() => act('print', { print: i + 1 })}
-              >
-                Print
-              </Button>
-            }
-          >
-            {decodeHtmlEntities(msg[1])}
-          </LabeledList.Item>
-        ))) || <Box>No messages.</Box>}
+      {(message_log.length && (
+        <LabeledList>
+          {message_log.map((msg, i) => (
+            <LabeledList.Item
+              label={decodeHtmlEntities(msg[0])}
+              key={i}
+              buttons={
+                <Button
+                  icon="print"
+                  onClick={() => act('print', { print: i + 1 })}
+                >
+                  Print
+                </Button>
+              }
+            >
+              {decodeHtmlEntities(msg[1])}
+            </LabeledList.Item>
+          ))}
+        </LabeledList>
+      )) || <Box>No messages.</Box>}
     </Section>
   );
 };
 
 export const RequestConsoleMessageAuth = (props) => {
-  const { act, data } = useBackend<Data, RequestConsoleActions>();
+  const { act, data } = useBackend<RequestConsoleData, RequestConsoleActions>();
   const { message, recipient, priority, msgStamped, msgVerified } = data;
   return (
     <Section title="Message Authentication">
@@ -78,7 +83,7 @@ export const RequestConsoleMessageAuth = (props) => {
 };
 
 export const RequestConsoleAnnounce = (props) => {
-  const { act, data } = useBackend<Data, RequestConsoleActions>();
+  const { act, data } = useBackend<RequestConsoleData, RequestConsoleActions>();
   const { message, announceAuth } = data;
   return (
     <Section title="Send Station-Wide Announcement">

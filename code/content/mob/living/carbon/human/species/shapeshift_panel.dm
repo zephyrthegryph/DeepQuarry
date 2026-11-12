@@ -44,6 +44,7 @@ GLOBAL_ALIST_EMPTY(dq_shapeshift_panels)
 CAPABILITIES(/datum/shapeshift_panel)
 	ref_one(nameof(shifter), /mob/living)
 	interface("ShapeshiftPanel", title = "Shapeshift", state = nameof(GLOB.tgui_always_state))
+	ui_shape(name = schema_text(), preview = nullable(schema_text()), groups = list_of(row(title = schema_text(), rows = list_of(row(id = schema_text(), label = schema_text(), action = schema_text(), desc = schema_text(), value = nullable(schema_text()), swatch = nullable(schema_text()), enabled = bool(), why = nullable(schema_text()))))))
 	op("shift_do", ui_act("shift_do", arg("action", schema_text(32))), then(PROC_REF(ui_act_shift_do)))
 
 /datum/shapeshift_panel/ui_prepare(mob/user, datum/tgui/ui)

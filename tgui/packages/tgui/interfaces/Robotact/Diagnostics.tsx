@@ -11,16 +11,15 @@ import {
 import { toTitleCase } from 'tgui-core/string';
 
 import { DIAGNOSIS_BAND } from '../common/Diagnosis';
-import type { RobotactActions } from '../generated/Robotact';
-import type { Data } from './types';
+import type { RobotactActions, RobotactData } from '../generated/Robotact';
 
 export const ComponentView = (props) => {
-  const { act, data } = useBackend<Data, RobotactActions>();
+  const { act, data } = useBackend<RobotactData, RobotactActions>();
 
   const { diag_functional, components, faults } = data;
 
   if (components.length) {
-    components.sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = [...components].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
       <Stack wrap align="flex-start" justify="space-between">
@@ -40,7 +39,7 @@ export const ComponentView = (props) => {
             </Section>
           </Stack.Item>
         )}
-        {components.map((mod) => (
+        {sorted.map((mod) => (
           <Stack.Item key={mod.key} basis="24%" grow ml={1}>
             <Section
               title={

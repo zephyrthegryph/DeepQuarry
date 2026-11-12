@@ -46,6 +46,7 @@ GLOBAL_ALIST_EMPTY(dq_ghost_panels)
 CAPABILITIES(/datum/ghost_panel)
 	ref_one(nameof(ghost), /mob/observer/dead)
 	interface("GhostPanel", title = "Ghost Panel", state = nameof(GLOB.tgui_always_state))
+	ui_shape(groups = list_of(row(title = schema_text(), actions = list_of(row(id = schema_text(), label = schema_text(), desc = schema_text(), enabled = bool(), why = nullable(schema_text()))))), toggles = list_of(row(id = schema_text(), label = schema_text(), desc = schema_text(), value = bool(), can = bool(), why = nullable(schema_text()), text = nullable(schema_text()))))
 	op("ghost_do", ui_act("ghost_do", arg("action", schema_text(32))), then(PROC_REF(ui_act_ghost_do)))
 
 /datum/ghost_panel/ui_prepare(mob/user, datum/tgui/ui)
@@ -84,14 +85,13 @@ GLOBAL_LIST_INIT(ghost_panel_actions, list(
 
 /// One toggle of the panel as the window reads it.
 /datum/ghost_panel/proc/toggle_row(id, label, desc, value, can = TRUE, why = null, text = null)
-	return list("id" = id, "label" = label, "desc" = desc, "value" = value, "can" = can, "why" = why, "text" = text)
+	return list("id" = id, "label" = label, "desc" = desc, "value" = !!value, "can" = !!can, "why" = why, "text" = text)
 
 /// /datum/ghost_panel's window data.
 /datum/ghost_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["groups"] = list()
 	data["toggles"] = list()
-	data["notice"] = null
 	if(!ghost)
 		return data
 	var/list/groups = list()

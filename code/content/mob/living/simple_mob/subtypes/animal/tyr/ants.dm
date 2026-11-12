@@ -387,7 +387,7 @@ TYPE_TABLE(/obj/structure/mob_spawner/ant_hill, mob_spawner_types, list( \
 
 CAPABILITIES(/obj/effect/ant_structure)
 	configure(atom_rules(uses_integrity = TRUE))
-	op("hit_ant_structure", item(/obj/item), label("Interaction hit ant structure"), then(PROC_REF(interaction_hit_ant_structure)))
+	op("hit_ant_structure", item(/obj/item), label("Hit"), then(PROC_REF(interaction_hit_ant_structure)))
 
 /// Old attackby: any item hits the structure, welders burn it (afterattack still follows, as before).
 /obj/effect/ant_structure/proc/interaction_hit_ant_structure(datum/act/op/A)

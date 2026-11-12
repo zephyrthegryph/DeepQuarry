@@ -11,6 +11,7 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
+import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
 
 import { CrewManifestContent } from './CrewManifest';
@@ -19,7 +20,11 @@ import type {
   IdentificationComputerData,
 } from './generated/IdentificationComputer';
 
-type Data = IdentificationComputerData;
+// have_id_slot and have_printer come from the NTOS program's data only (code/content/tgui_modules/ntos_only/cardmod.dm).
+type Data = IdentificationComputerData & {
+  have_id_slot?: BooleanLike;
+  have_printer?: BooleanLike;
+};
 
 export const IdentificationComputer = () => {
   return (
@@ -39,7 +44,7 @@ export const IdentificationComputerContent = (props) => {
   const { mode, has_modify, printing, have_id_slot, have_printer } = data;
 
   let body: React.JSX.Element = (
-    <IdentificationComputerAccessModification />
+    <IdentificationComputerAccessModification ntos={ntos} />
   );
   if (ntos && !have_id_slot) {
     body = <CrewManifestContent />;
@@ -68,19 +73,18 @@ export const IdentificationComputerContent = (props) => {
         >
           Crew Manifest
         </Tabs.Tab>
-        {!ntos ||
-          (!!have_printer && (
-            <Tabs.Tab
-              style={{
-                float: 'right',
-              }}
-              icon="print"
-              onClick={() => (mode || has_modify) && act('print')}
-              color={!mode && !has_modify ? 'transparent' : ''}
-            >
-              Print
-            </Tabs.Tab>
-          ))}
+        {(!ntos || !!have_printer) && (
+          <Tabs.Tab
+            style={{
+              float: 'right',
+            }}
+            icon="print"
+            onClick={() => (mode || has_modify) && act('print')}
+            color={!mode && !has_modify ? 'transparent' : ''}
+          >
+            Print
+          </Tabs.Tab>
+        )}
       </Tabs>
       {body}
     </>
@@ -91,16 +95,21 @@ export const IdentificationComputerPrinting = (props) => {
   return <Section title="Printing">Please wait...</Section>;
 };
 
-export const IdentificationComputerAccessModification = () => {
+export const IdentificationComputerAccessModification = (props: {
+  ntos: boolean;
+}) => {
   const { act, data } = useBackend<Data, IdentificationComputerActions>();
+
+  const { ntos } = props;
 
   const {
     station_name,
     target_name,
-    target_owner = '',
+    target_owner,
+    scan_name,
     authenticated,
     has_modify,
-    account_number = '',
+    account_number,
     centcom_access,
     all_centcom_access,
     id_rank,
@@ -120,6 +129,13 @@ export const IdentificationComputerAccessModification = () => {
             {target_name}
           </Button>
         </LabeledList.Item>
+        {!ntos && (
+          <LabeledList.Item label="Authorized Identitity">
+            <Button icon="eject" fluid onClick={() => act('scan')}>
+              {scan_name}
+            </Button>
+          </LabeledList.Item>
+        )}
       </LabeledList>
       {!!authenticated && !!has_modify && (
         <>
@@ -127,7 +143,7 @@ export const IdentificationComputerAccessModification = () => {
             <LabeledList>
               <LabeledList.Item label="Registered Name">
                 <Input
-                  value={target_owner!}
+                  value={target_owner}
                   fluid
                   onChange={(val) => act('reg', { reg: val })}
                 />
@@ -175,8 +191,6 @@ export const IdentificationComputerAccessModification = () => {
                       ))}
                     </Table.Cell>
                   </Table.Row>
-                  <Box mt={-1}>&nbsp;</Box>{' '}
-                  {/* Hacky little thing to add spacing */}
                 </Fragment>
               ))}
               <Table.Row>
@@ -184,7 +198,7 @@ export const IdentificationComputerAccessModification = () => {
                   Special
                 </Table.Cell>
                 <Table.Cell>
-                  <Button onClick={() => act('assign', { assign_target: 'Custom' })}>Custom</Button>
+                  <Button onClick={() => act('assign_custom')}>Custom</Button>
                 </Table.Cell>
               </Table.Row>
             </Table>

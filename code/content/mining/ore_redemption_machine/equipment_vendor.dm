@@ -183,6 +183,7 @@
 		data["id"]["points"] = get_points(inserted_id)
 	else
 		data["has_id"] = FALSE
+		data["id"] = null
 
 	return data
 
@@ -219,6 +220,7 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	per_type(nameof(prize_list), PROC_REF(build_prize_list))
 	owns_many(nameof(extra_prizes))
 	interface("MiningVendor")
+	ui_shape(has_id = bool(), id = nullable(row(name = schema_text(), points = num())), items = map_of(schema_text(), map_of(schema_text(), row(name = schema_text(), price = num()))))
 	without("ui_open")
 	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))

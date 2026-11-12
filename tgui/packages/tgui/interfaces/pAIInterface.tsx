@@ -9,32 +9,15 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { pAIInterfaceActions } from './generated/pAIInterface';
-
-type Data = {
-  bought: { id: string; name: string; on: BooleanLike }[];
-  not_bought: { id: string; name: string; ram: number }[];
-  available_ram: number;
-  emotions: DropdownEntry[];
-  current_emotion: number;
-};
-
-type DropdownEntry = {
-  displayText: string;
-  value: string;
-};
+import type {
+  pAIInterfaceActions,
+  pAIInterfaceData,
+} from './generated/pAIInterface';
 
 export const pAIInterface = (props) => {
-  const { act, data } = useBackend<Data, pAIInterfaceActions>();
+  const { act, data } = useBackend<pAIInterfaceData, pAIInterfaceActions>();
 
-  const {
-    bought = [],
-    not_bought = [],
-    available_ram,
-    emotions = [],
-    current_emotion,
-  } = data;
+  const { bought, not_bought, available_ram, emotions, current_emotion } = data;
 
   return (
     <Window width={450} height={600}>

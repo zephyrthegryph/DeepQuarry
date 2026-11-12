@@ -1,0 +1,28 @@
+{
+	"PC_device_theme": "ntos",
+	"PC_batteryicon": "batt_100.gif",
+	"PC_batterypercent": "87 %",
+	"PC_showbatteryicon": 1,
+	"PC_apclinkicon": "charging.gif",
+	"PC_ntneticon": "sig_high.gif",
+	"PC_programheaders": [{ "icon": "hostile.gif" }],
+	"PC_stationtime": "14:32",
+	"PC_hasheader": 1,
+	"PC_showexitprogram": 1,
+	"can_admin": 1,
+	"active_channel": 1201,
+	"username": "DefaultUser512",
+	"adminmode": 0,
+	"all_channels": [
+		{ "chan": "General", "id": 1201 },
+		{ "chan": "Engineering", "id": 1202 }
+	],
+	"title": "General",
+	"authed": 1,
+	"clients": [{ "name": "DefaultUser512" }, { "name": "Chief_Eng" }],
+	"messages": [
+		{ "msg": "14:30 Chief_Eng: shift report in 10" },
+		{ "msg": "14:31 DefaultUser512: ack" }
+	],
+	"is_operator": 1
+}

@@ -1,0 +1,11 @@
+{
+	"owner": "Jane Doe",
+	"is_owner": 1,
+	"ooc_notes": "Likes +quiet+ scenes.\nPlease ask first.",
+	"ooc_likes": "Slow burn\nCooking",
+	"ooc_dislikes": "Gore\nTimers",
+	"ooc_favs": "Tea\nCats",
+	"ooc_maybes": "Heists",
+	"ooc_style": 0,
+	"markers": { "|": "i", "+": "b", "_": "u" }
+}

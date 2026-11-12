@@ -1,0 +1,32 @@
+{
+	"records": [
+		{ "name": "Jane Doe", "ref": 4101 },
+		{ "name": "John Smith", "ref": 4102 },
+		{ "name": "Rex Robot", "ref": 4103 }
+	],
+	"general": {
+		"name": "Jane Doe",
+		"id": "A1B2C3",
+		"brain_type": "Biological",
+		"sex": "Female",
+		"species": "Human",
+		"age": 31,
+		"rank": "Engineer",
+		"fingerprint": "deadbeef",
+		"p_stat": "Active",
+		"m_stat": "Stable"
+	},
+	"medical": {
+		"b_type": "O+",
+		"mi_dis": "None",
+		"mi_dis_d": "No minor disabilities.",
+		"ma_dis": "None",
+		"ma_dis_d": "No major disabilities.",
+		"alg": "Penicillin",
+		"alg_d": "Rash.",
+		"cdi": "None",
+		"cdi_d": "No diseases.",
+		"notes": "Routine."
+	},
+	"could_not_find": 0
+}

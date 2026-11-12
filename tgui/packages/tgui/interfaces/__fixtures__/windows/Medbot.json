@@ -1,0 +1,16 @@
+{
+	"on": 1,
+	"open": 0,
+	"locked": 0,
+	"beaker": 1,
+	"beaker_total": 40,
+	"beaker_max": 60,
+	"min_urgency": 2,
+	"urgency_bands": ["Minor", "Moderate", "Severe", "Critical"],
+	"injection_amount_min": 5,
+	"injection_amount": 15,
+	"injection_amount_max": 30,
+	"use_beaker": 1,
+	"declare_treatment": 0,
+	"vocal": 1
+}

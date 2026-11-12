@@ -1,0 +1,31 @@
+{
+	"machinelist": [
+		{
+			"id": "relay-1",
+			"name": "Telecommunication Relay"
+		},
+		{
+			"id": "hub-1",
+			"name": "Telecommunication Hub"
+		}
+	],
+	"selectedMachine": {
+		"id": "hub-1",
+		"name": "Telecommunication Hub",
+		"links": [
+			{
+				"id": "relay-1",
+				"name": "Telecommunication Relay"
+			},
+			{
+				"id": "bus-1",
+				"name": "Bus Mainframe"
+			}
+		]
+	},
+	"network": "tcommsat",
+	"temp": {
+		"color": "average",
+		"text": "2 ENTITIES LOCATED & BUFFERED"
+	}
+}

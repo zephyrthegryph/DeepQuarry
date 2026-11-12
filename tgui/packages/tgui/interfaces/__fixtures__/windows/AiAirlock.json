@@ -1,0 +1,30 @@
+{
+	"power": {
+		"main": 2,
+		"main_timeleft": 0,
+		"backup": 2,
+		"backup_timeleft": -1
+	},
+	"id_scanner": 1,
+	"lights": 1,
+	"opened": 0,
+	"wires": {
+		"main_1": 1,
+		"main_2": 1,
+		"backup_1": 1,
+		"backup_2": 0,
+		"shock": 1,
+		"id_scanner": 1,
+		"bolts": 1,
+		"lights": 1,
+		"safe": 1,
+		"timing": 1
+	},
+	"bolted": 0,
+	"electrified": 1,
+	"electrified_left": 28,
+	"welded": 0,
+	"emergency": 0,
+	"safe": 1,
+	"speed": 1
+}

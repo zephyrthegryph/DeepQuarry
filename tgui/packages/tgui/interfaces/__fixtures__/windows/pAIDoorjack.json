@@ -1,0 +1,8 @@
+{
+	"cable": 1,
+	"machine": 1,
+	"inprogress": 1,
+	"progress_a": 42,
+	"progress_b": 7,
+	"aborted": 0
+}

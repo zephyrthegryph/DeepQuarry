@@ -152,6 +152,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 	section(window, "The turret's window, its buttons, and who may use them")
 	interface("PortableTurret")
+	ui_shape(locked = bool(), on = bool(), targetting_is_configurable = bool(), lethal = bool(), lethal_is_configurable = bool(), check_weapons = bool(), neutralize_noaccess = bool(), neutralize_norecord = bool(), neutralize_criminals = bool(), neutralize_all = bool(), neutralize_nonsynth = bool(), neutralize_unidentified = bool(), neutralize_down = bool())
 	extend("ui_open", needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_is(nameof(anchored), because = MSG(porta_turret/unsecured))))
 	extend(TAG_UI, needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(porta_turret/firewall))))
 	op("power", ui_act(), toggles(nameof(enabled)))
@@ -692,17 +693,6 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 			if(tag_suit.lasertag_health > 0)
 				return TURRET_PRIORITY_TARGET
 		return TURRET_NOT_TARGET
-
-/// A lasertag turret's window shows only the settings it has (the parent's list of targets does not apply to it).
-/obj/machinery/porta_turret/lasertag/ui_data(datum/act/eval/A)
-	var/list/data = list(
-		"locked" = lock_locked(src),
-		"on" = enabled, // is turret turned on?
-		"lethal" = lethal,
-		"lethal_is_configurable" = lethal_is_configurable
-	)
-	return data
-
 
 /obj/machinery/porta_turret/proc/setup()
 	var/obj/item/gun/energy/E = installation	//All energy-based weapons are applicable

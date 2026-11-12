@@ -1,14 +1,16 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Image, LabeledList, Section } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-import type { NewscasterActions } from '../generated/Newscaster';
+import type {
+  NewscasterActions,
+  NewscasterData,
+} from '../generated/Newscaster';
 import { NEWSCASTER_SCREEN_MAIN } from './constants';
-import type { Data } from './types';
 
 export const NewscasterViewWanted = (props: {
   setScreen: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-  const { data } = useBackend<Data, NewscasterActions>();
+  const { data } = useBackend<NewscasterData, NewscasterActions>();
 
   const { wanted_issue } = data;
 
@@ -52,7 +54,10 @@ export const NewscasterViewWanted = (props: {
             {decodeHtmlEntities(wanted_issue.desc)}
           </LabeledList.Item>
           <LabeledList.Item label="Photo">
-            {(wanted_issue.img && <Image src={wanted_issue.img} />) || 'None'}
+            {(wanted_issue.img && (
+              <Image src={`data:image/png;base64,${wanted_issue.img}`} />
+            )) ||
+              'None'}
           </LabeledList.Item>
         </LabeledList>
       </Box>

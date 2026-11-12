@@ -6,6 +6,7 @@
 
 CAPABILITIES(/datum/tgui_module/pai_chassis)
 	interface("PaiChoose", state = nameof(GLOB.tgui_self_state))
+	ui_shape(pai_chassises = list_of(row(sprite = schema_text(), belly = int(), type = enum(list("def", "big")))), pai_color = schema_text(), pai_chassis = nullable(schema_text()), selected_chassis = nullable(schema_text()), sprite_datum_class = nullable(schema_text()), sprite_datum_size = nullable(schema_text()))
 	op("pick_icon", ui_act("pick_icon", arg("value", schema_text(4096))), then(PROC_REF(ui_act_pick_icon)))
 	op("confirm", ui_act("confirm"), then(PROC_REF(ui_act_confirm)))
 	op("change_color", ui_act("change_color", arg("color", schema_text(4096))), then(PROC_REF(ui_act_change_color)))
@@ -36,12 +37,15 @@ CAPABILITIES(/datum/tgui_module/pai_chassis)
 
 	var/mob/living/silicon/pai/pai_host = host()
 	data["pai_color"] = selected_color ? selected_color : pai_host.eye_color
+	data["pai_chassis"] = null
+	data["selected_chassis"] = selected_chassis
+	data["sprite_datum_class"] = null
+	data["sprite_datum_size"] = null
 
 	var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(selected_chassis || pai_host.chassis_name)
 	if(sprite_datum)
 		var/datum/asset/spritesheet_batched/pai_icons/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/pai_icons)
 		data["pai_chassis"] = sprite_datum.name
-		data["selected_chassis"] = selected_chassis
 		data["sprite_datum_class"] = sanitize_css_class_name("[sprite_datum.type]")
 		data["sprite_datum_size"] = spritesheet.icon_size_id(data["sprite_datum_class"] + "S") // just get the south icon's size, the rest will be the same
 

@@ -32,6 +32,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
 	owns_many(nameof(records))
 	interface("CloningConsole", title = "Cloning Console")
+	ui_shape(menu = int(), loading = bool(), autoprocess = bool(), scan_mode = bool(), temp = nullable(row(text = schema_text(), style = schema_text())), scantemp = nullable(row(text = schema_text(), color = schema_text())), disk = bool(), scanner = schema_text(), numberofpods = int(), pods = list_of(row(pod = int(), name = schema_text(), biomass = num(), status = enum(list("idle", "mess", "cloning")), progress = num())), can_brainscan = bool(), autoallowed = bool(), occupant = bool(), locked = bool(), selected_pod = nullable(int()), records = list_of(row(record = int(), realname = schema_text())), podready = bool(), modal = nullable(row(id = schema_text(), text = schema_text(), type = schema_text(), args = row(activerecord = int(), realname = schema_text(), health = schema_text(), unidentity = schema_text(), strucenzymes = schema_text()))))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("autoprocess", ui_act("autoprocess", arg("on", num())), then(PROC_REF(ui_act_autoprocess)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
@@ -178,32 +179,30 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	data["scan_mode"] = scan_mode
 	data["temp"] = temp
 	data["scantemp"] = scantemp
-	data["disk"] = diskette
+	data["disk"] = !!diskette
 	data["scanner"] = sanitize("[scanner()]")
+	data["numberofpods"] = length(pods)
 
 	var/canpodautoprocess = 0
-	if(length(pods))
-		data["numberofpods"] = length(pods)
+	var/list/tempods = list()
+	for(var/obj/machinery/clonepod/pod in pods)
+		if(pod.efficiency > 5)
+			canpodautoprocess = 1
 
-		var/list/tempods = list()
-		for(var/obj/machinery/clonepod/pod in pods)
-			if(pod.efficiency > 5)
-				canpodautoprocess = 1
-
-			var/mob/living/occupant = pod.get_occupant()
-			var/status = "idle"
-			if(pod.mess)
-				status = "mess"
-			else if(occupant && !pod.power_lost())
-				status = "cloning"
-			tempods.Add(list(list(
-				"pod" = handle_of(pod),
-				"name" = sanitize(capitalize(pod.name)),
-				"biomass" = pod.get_biomass(),
-				"status" = status,
-				"progress" = (occupant && occupant.stat != DEAD) ? pod.get_completion() : 0
-			)))
-			data["pods"] = tempods
+		var/mob/living/occupant = pod.get_occupant()
+		var/status = "idle"
+		if(pod.mess)
+			status = "mess"
+		else if(occupant && !pod.power_lost())
+			status = "cloning"
+		tempods.Add(list(list(
+			"pod" = handle_of(pod),
+			"name" = sanitize(capitalize(pod.name)),
+			"biomass" = pod.get_biomass(),
+			"status" = status,
+			"progress" = (occupant && occupant.stat != DEAD) ? pod.get_completion() : 0
+		)))
+	data["pods"] = tempods
 
 	data["can_brainscan"] = can_brainscan() // You'll need tier 4s for this
 
@@ -211,9 +210,8 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		data["autoallowed"] = 1
 	else
 		data["autoallowed"] = 0
-	if(scanner())
-		data["occupant"] = scanner().get_occupant()
-		data["locked"] = scanner().locked
+	data["occupant"] = !!scanner()?.get_occupant()
+	data["locked"] = !!scanner()?.locked
 	data["selected_pod"] = handle_of(selected_pod())
 	var/list/temprecords = list()
 	for(var/datum/transhuman/body_record/BR in records)

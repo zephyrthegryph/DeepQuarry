@@ -9,10 +9,10 @@ import type { Data } from './types';
 
 export const OperatingComputer = (props) => {
   const { act, data } = useBackend<Data, OperatingComputerActions>();
-  const { hasOccupant, choice, occupant } = data;
+  const { choice, occupant } = data;
   let body;
   if (!choice) {
-    body = hasOccupant ? (
+    body = occupant ? (
       <OperatingComputerPatient occupant={occupant} />
     ) : (
       <OperatingComputerUnoccupied />

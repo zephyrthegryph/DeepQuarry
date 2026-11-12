@@ -1,15 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-import type { NtosRevelationActions } from './generated/NtosRevelation';
-
-type Data = {
-  armed: BooleanLike;
-};
+import type {
+  NtosRevelationActions,
+  NtosRevelationData,
+} from './generated/NtosRevelation';
 
 export const NtosRevelation = (props) => {
-  const { act, data } = useBackend<Data, NtosRevelationActions>();
+  const { act, data } = useBackend<NtosRevelationData, NtosRevelationActions>();
   const { armed } = data;
   return (
     <NtosWindow width={400} height={250} theme="syndicate">
@@ -38,7 +36,14 @@ export const NtosRevelation = (props) => {
               }
             />
           </LabeledList>
-          <Button fluid bold textAlign="center" color="bad" disabled={!armed}>
+          <Button
+            fluid
+            bold
+            textAlign="center"
+            color="bad"
+            disabled={!armed}
+            onClick={() => act('PRG_activate')}
+          >
             ACTIVATE
           </Button>
         </Section>

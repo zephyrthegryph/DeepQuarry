@@ -1,0 +1,71 @@
+{
+	"is_ready": 1,
+	"has_beaker": 1,
+	"has_blood": 1,
+	"beaker": { "volume": 40, "capacity": 60 },
+	"blood": { "dna": "a1b2c3d4e5f6", "type": "O-" },
+	"viruses": [
+		{
+			"name": "Unknown",
+			"can_rename": 1,
+			"is_adv": 1,
+			"symptoms": [
+				{
+					"name": "Cough",
+					"desc": "Causes coughing.",
+					"stealth": -1,
+					"resistance": 1,
+					"stage_speed": 0,
+					"transmission": 2,
+					"neutered": 0,
+					"level": 1,
+					"threshold_desc": {
+						"Resistance 11": "Cough is stronger.",
+						"Speed 7": "Cough spreads faster."
+					}
+				},
+				{
+					"name": "Sneeze",
+					"desc": "Causes sneezing.",
+					"stealth": 0,
+					"resistance": 0,
+					"stage_speed": 1,
+					"transmission": 1,
+					"neutered": 0,
+					"level": 2,
+					"threshold_desc": {}
+				}
+			],
+			"resistance": 3,
+			"stealth": 1,
+			"stage_speed": 2,
+			"transmission": 4,
+			"severity": 5,
+			"index": 1,
+			"agent": "some microbes",
+			"description": "A mild respiratory illness.",
+			"spread": "Respiratory droplets",
+			"cure": "Spaceacillin"
+		},
+		{
+			"name": "Space Flu",
+			"can_rename": 0,
+			"is_adv": 0,
+			"symptoms": [],
+			"resistance": 0,
+			"stealth": 0,
+			"stage_speed": 0,
+			"transmission": 0,
+			"severity": 0,
+			"index": 2,
+			"agent": "flu virion",
+			"description": "none",
+			"spread": "Airborne",
+			"cure": "Rest"
+		}
+	],
+	"resistances": [
+		{ "id": "abc123", "name": "Space Flu" },
+		{ "id": "def456", "name": "Cold" }
+	]
+}

@@ -1,0 +1,13 @@
+{
+	"showAllOres": 0,
+	"unclaimedPoints": 1250,
+	"has_id": 1,
+	"id": { "name": "Rex Miner", "points": 3400 },
+	"ores": [
+		{ "ore": "hematite", "name": "hematite", "amount": 42, "processing": 1 },
+		{ "ore": "gold", "name": "gold", "amount": 7, "processing": 0 },
+		{ "ore": "sand", "name": "sand", "amount": 19, "processing": 2 }
+	],
+	"power": 1,
+	"speed": 0
+}

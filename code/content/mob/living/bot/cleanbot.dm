@@ -211,6 +211,7 @@
 CAPABILITIES(/mob/living/bot/cleanbot)
 	after_init(0, then(PROC_REF(cleanbot_targets_ready)))
 	interface("Cleanbot")
+	ui_shape(on = bool(), open = bool(), locked = bool(), blood = bool(), vocal = bool(), wet_floors = bool(), spray_blood = bool(), version = schema_text(), rgbpanel = bool(), red_switch = bool(), green_switch = bool(), blue_switch = bool())
 	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
 	op("blood", ui_act("blood"), then(PROC_REF(ui_act_blood)))
 	op("patrol", ui_act("patrol"), then(PROC_REF(ui_act_patrol)))
@@ -225,11 +226,15 @@ CAPABILITIES(/mob/living/bot/cleanbot)
 	data["open"] = open
 	data["locked"] = locked
 	data["blood"] = blood
-	data["patrol"] = will_patrol
 	data["vocal"] = vocal
 	data["wet_floors"] = wet_floors
 	data["spray_blood"] = spray_blood
 	data["version"] = "v2.0"
+	// The ED-CLN's switch panel (it sets these over the base values); the plain cleanbot has none.
+	data["rgbpanel"] = FALSE
+	data["red_switch"] = FALSE
+	data["green_switch"] = FALSE
+	data["blue_switch"] = FALSE
 	return data
 
 /mob/living/bot/cleanbot/proc/ui_act_start(datum/act/op/A)
@@ -254,12 +259,10 @@ CAPABILITIES(/mob/living/bot/cleanbot)
 
 /mob/living/bot/cleanbot/proc/ui_act_wet_floors(datum/act/op/A)
 	set_wet_floors(!wet_floors)
-	to_chat(A.actor, span_notice("You twiddle the screw."))
 	. = TRUE
 
 /mob/living/bot/cleanbot/proc/ui_act_spray_blood(datum/act/op/A)
 	set_spray_blood(!spray_blood)
-	to_chat(A.actor, span_notice("You press the weird button."))
 	. = TRUE
 
 /mob/living/bot/cleanbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)

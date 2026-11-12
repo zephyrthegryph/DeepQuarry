@@ -52,6 +52,7 @@
 CAPABILITIES(/datum/computer_file/program/access_decrypter)
 	op("PRG_reset", ui_act(), then(PROC_REF(ui_act_prg_reset)))
 	interface("NtosAccessDecrypter")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), message = nullable(schema_text()), running = bool(), rate = num(), factor = num(), regions = list_of(row(name = schema_text(), accesses = list_of(row(desc = schema_text(), ref = int(), allowed = bool())))))
 	op("PRG_execute", ui_act("PRG_execute", arg("access_target", schema_text(4096)), arg("allowed", num())), then(PROC_REF(ui_act_prg_execute)))
 
 /datum/computer_file/program/access_decrypter/proc/ui_act_prg_reset(datum/act/op/A)
@@ -83,17 +84,19 @@ CAPABILITIES(/datum/computer_file/program/access_decrypter)
 	return TRUE
 
 /datum/computer_file/program/access_decrypter/ui_data(datum/act/eval/A)
-	if(!GLOB.ntnet_global)
-		return
 	var/list/data = get_header_data()
 
 	var/list/regions = list()
 	data["message"] = null
 	data["running"] = running
+	data["rate"] = 0
+	data["factor"] = 0
+	if(!GLOB.ntnet_global)
+		data["regions"] = regions
+		return data
 	if(message)
 		data["message"] = message
 	else if(running)
-		data["running"] = 1
 		data["rate"] = computer().processor_unit.max_idle_programs
 		data["factor"] = (progress / target_progress)
 	else if(computer()?.card_slot?.stored_card())
