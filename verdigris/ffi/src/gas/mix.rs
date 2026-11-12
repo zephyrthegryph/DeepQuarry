@@ -46,6 +46,23 @@ pub const PIPE_BASE: u32 = 2_097_152;
 pub const TURF_BASE: u32 = 4_194_304;
 /// Every handle is below this (exact as an `f32`).
 const ID_LIMIT: u32 = 1 << 24;
+/// Turf cells a gas handle can name (`TURF_BASE + cell < ID_LIMIT`).
+pub const TURF_CELL_LIMIT: u32 = ID_LIMIT - TURF_BASE;
+
+/// Whether a map of `max_x` by `max_y` by `max_z` turfs has a gas handle for every turf cell.
+///
+/// # Errors
+/// Naming the highest z-level the plane size can address.
+pub fn check_turf_cells(max_x: u32, max_y: u32, max_z: u32) -> eyre::Result<()> {
+    let layer = u64::from(max_x) * u64::from(max_y);
+    if layer * u64::from(max_z) > u64::from(TURF_CELL_LIMIT) {
+        eyre::bail!(
+            "a {max_x}x{max_y}x{max_z} map has more turfs than gas mixture handles ({TURF_CELL_LIMIT}): at this plane size only {} z-levels fit",
+            u64::from(TURF_CELL_LIMIT) / layer.max(1)
+        );
+    }
+    Ok(())
+}
 
 /// What a gas handle names.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

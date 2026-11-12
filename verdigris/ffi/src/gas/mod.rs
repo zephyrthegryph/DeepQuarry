@@ -579,7 +579,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         }
         mix::bump_turf_generation(cell);
         if let Some(mut a) = air.filter(|_| named.is_some()) {
-            MixRef::Turf(cell).store(&mut a)?;
+            MixRef::Turf(cell).store(&mut a.raw())?;
         }
         with_world(|w| {
             unregister_cell(w, key, cell);
@@ -645,7 +645,7 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     if let MixRef::Main(slot) = r {
         mix::free_into_turf(slot);
     }
-    MixRef::Turf(cell).store(&mut air)?;
+    MixRef::Turf(cell).store(&mut air.raw())?;
     Ok(())
 }
 

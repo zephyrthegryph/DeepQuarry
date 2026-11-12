@@ -5,7 +5,7 @@
 //! with no `Drop`, so forgetting the release silently pins the DM object forever: a map atom read out of a turf's
 //! contents kept one reference a `new` one did not and showed up as a GC LEAK. [`Held`] makes the release automatic.
 //!
-//! Rules (checked by `tools/ci/check_byond_refs.sh`, wired into `check_ratchets.sh`):
+//! Rules (checked by verdigris/clippy.toml `disallowed-methods` and `tools/ci/check_byond_refs.py`):
 //! - Outside this module the API's reading methods (`read_var`, `read_var_id`, `get_list_values`, `get_list`,
 //!   `read_list_index`, `call`, `call_id`, `call_global*`, `read_list`, ...) are not called. Use the [`HeldRead`]
 //!   methods, which return a [`Held`] / [`HeldList`] that releases on drop.
@@ -15,8 +15,10 @@
 //!
 //! Numbers, null and turfs are not refcounted ([`needs_release`]); releasing a [`Held`] of those kinds does nothing.
 
+#![allow(clippy::disallowed_methods)] // The one module that names the raw Byondapi reads (verdigris/clippy.toml).
+
 use std::convert::TryInto;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use byondapi::prelude::*;
 use byondapi::value::types::ValueType;
@@ -87,13 +89,6 @@ impl Deref for Held {
     type Target = ByondValue;
     fn deref(&self) -> &ByondValue {
         &self.0
-    }
-}
-
-/// For writes through the reference (`write_var_id`); never assign a different value through it.
-impl DerefMut for Held {
-    fn deref_mut(&mut self) -> &mut ByondValue {
-        &mut self.0
     }
 }
 

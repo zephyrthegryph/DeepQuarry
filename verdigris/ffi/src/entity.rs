@@ -169,7 +169,7 @@ fn entity_spawn() -> Result<ByondValue> {
 fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
     let v = num(&entity)?;
     if v == 0.0 {
-        return Ok(ByondValue::new_str("(unbound)")?);
+        return Ok(crate::held::Held::new_str("(unbound)")?.leak());
     }
     let id = decode(v)?;
     let slots = with_world(|w| w.entities().components(id).map_err(|e| eyre!("{e}")))?;
@@ -189,7 +189,7 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
             ));
         }
     }
-    Ok(ByondValue::new_str(parts.join("; "))?)
+    Ok(crate::held::Held::new_str(parts.join("; "))?.leak())
 }
 
 /// Per-frame maintenance for hosts not yet on the world's pacer (the world
