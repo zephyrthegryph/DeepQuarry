@@ -94,6 +94,11 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 			return ..()
 
 	if (loaded && reagents.total_volume > 0)
+		// The mouth is checked before anything goes in; the refusal is shown once, here.
+		var/refused = (M == user) ? M.eat_refusal(loaded) : M.force_feed_refusal(user, loaded)
+		if(refused)
+			balloon_alert(user, refused)
+			return ITEM_INTERACT_FAILURE
 		reagents.trans_to_mob(M, reagents.total_volume, CHEM_INGEST)
 		if(food_inserted_micros && food_inserted_micros.len)
 			for(var/mob/living/F in food_inserted_micros)
@@ -103,13 +108,9 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 				else
 					vore_selected_of(M).nom_atom(F)
 		if(M == user)
-			if(!M.can_eat(loaded))
-				return ITEM_INTERACT_FAILURE
 			act_message(user, M, others = span_bold("%U%") + " eats some of [loaded] with \the [src].")
 		else
 			act_message(user, M, others = span_warning("%U% begins to feed %T%!"))
-			if(!M.can_force_feed(user, loaded))
-				return ITEM_INTERACT_FAILURE
 			perform_op(user, src, "force_feed", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = M))
 			return ITEM_INTERACT_SUCCESS
 		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))

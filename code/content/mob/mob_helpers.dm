@@ -515,11 +515,13 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 /mob/proc/is_client_active(active = 1)
 	return client && client.inactivity < active MINUTES
 
-/mob/proc/can_eat()
-	return 1
+/// Why this mob cannot eat `food` itself, or null when it can (overrides check the mouth). Never prints.
+/mob/proc/eat_refusal(food)
+	return null
 
-/mob/proc/can_force_feed()
-	return 1
+/// Why `feeder` cannot feed this mob `food`, or null when it can. Never prints.
+/mob/proc/force_feed_refusal(feeder, food)
+	return null
 
 #define SAFE_PERP -50
 /mob/living/proc/assess_perp(obj/access_obj, check_access, auth_weapons, check_records, check_arrest)

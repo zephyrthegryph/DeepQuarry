@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/integrated_circuit/reagent/injector)
 
 /// The injection, 3 seconds after do_work() announced it.
 /obj/item/integrated_circuit/reagent/injector/proc/inject_mob(mob/living/L)
-	if(!L || !L.can_inject(null, 0)) // No error message on second check
+	if(!L || L.inject_refusal(null)) // No error message on second check
 		activate_pin(3)
 		return
 	var/contained = reagents.get_reagents()
@@ -149,7 +149,7 @@ CAPABILITIES(/obj/item/integrated_circuit/reagent/injector)
 		// Handle injections using the helper, same as the syringe.
 		if(isliving(AM))
 			var/mob/living/L = AM
-			if(!L.can_inject(null, 1)) // error_msg = 1 to show errors
+			if(L.inject_refusal(null)) // error_msg = 1 to show errors
 				activate_pin(3)
 				return
 			var/turf/T = get_turf(AM)
