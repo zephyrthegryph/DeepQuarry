@@ -314,7 +314,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 	to_chat(view, span_infoplain(span_bold("As a synthetic intelligence, you are designed with organic values in mind.")))
 	to_chat(view, span_infoplain(span_bold("However, unless placed in a lawed chassis, you are not obligated to obey any individual crew member."))) //it's not like they can hurt anyone
 	if(view.mind)
-		view.mind.assigned_role = JOB_SYNTHETIC_BRAIN
+		view.mind.set_assigned_role(JOB_SYNTHETIC_BRAIN)
 
 	var/turf/T = get_turf_or_move(src.loc)
 	for (var/mob/M in viewers(T))
@@ -341,7 +341,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 	. = ..()
 	var/mob/living/carbon/brain/view = .
 	if(view.mind)
-		view.mind.assigned_role = JOB_ROBOTIC_INTELLIGENCE
+		view.mind.set_assigned_role(JOB_ROBOTIC_INTELLIGENCE)
 	to_chat(view, span_notify("You feel slightly disoriented. That's normal when you're little more than a complex circuit."))
 
 /obj/item/mmi/digital/posibrain
@@ -360,7 +360,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 	. = ..()
 	var/mob/living/carbon/brain/view = .
 	if(view.mind)
-		view.mind.assigned_role = JOB_POSITRONIC_BRAIN
+		view.mind.set_assigned_role(JOB_POSITRONIC_BRAIN)
 	to_chat(view, span_notify("You feel slightly disoriented. That's normal when you're just a metal cube."))
 	set_icon_state("posibrain-occupied")
 

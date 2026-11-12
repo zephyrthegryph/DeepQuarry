@@ -6,7 +6,14 @@ export const stats: string[][] = [
   ['bad', 'DEAD'],
 ];
 
-export const abnormalities: (string | ((occupant: occupant) => string))[][] = [
+/** One abnormality line: the occupant flag that shows it, its colour, its text. */
+export type Abnormality = [
+  keyof occupant,
+  'bad' | 'average',
+  (occupant: occupant) => string,
+];
+
+export const abnormalities: Abnormality[] = [
   [
     'hasBorer',
     'bad',

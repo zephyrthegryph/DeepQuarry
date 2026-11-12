@@ -515,7 +515,7 @@
 		I.name += " ([active_br.mydna.name] - Resequencer)"
 		I.desc = "Resequences structural enzymes to match the body record this was created from."
 		rel_set(I, nameof(I.buf), active_br.mydna.copy())
-		I.buf.types = DNA2_BUF_SE
+		I.buf.set_types(DNA2_BUF_SE)
 		I.has_radiation = FALSE // SAFE!
 		atom_say("Beginning injector synthesis.")
 		after(src, 10 SECONDS, PROC_REF(dispense_injector), with = list(I), keeps_dead = TRUE)

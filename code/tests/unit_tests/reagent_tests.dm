@@ -124,7 +124,7 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 
 	// need to test for instant reactions blocking distillation!
 	rel_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker())
-	instant_beaker.reagents.maximum_volume = 5000
+	instant_beaker.reagents.set_maximum_volume(5000)
 	observe(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 
 	//actual test
@@ -143,7 +143,7 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 				continue
 			var/obj/item/slime_extract/E = new CR.subject_type()
 			QDEL_SWAP(fake_beaker, E)
-			fake_beaker.reagents.maximum_volume = 5000
+			fake_beaker.reagents.set_maximum_volume(5000)
 		else if(CR.regime == REGIME_DISTILLING)
 			// distilling
 			var/obj/distilling_tester/D = new()
@@ -151,7 +151,7 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		else
 			// regular beaker
 			QDEL_SWAP(fake_beaker, new /obj/item/reagent_containers/glass/beaker())
-			fake_beaker.reagents.maximum_volume = 5000
+			fake_beaker.reagents.set_maximum_volume(5000)
 
 		// Perform test! If it fails once, it will perform a deeper check trying to use the inhibitors of anything in the beaker
 		observe(fake_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))

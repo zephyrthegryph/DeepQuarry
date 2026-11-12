@@ -23,7 +23,7 @@ CAPABILITIES(/obj/item/electronic_assembly/implant)
 /// The implant shows the assembly's sprite state.
 /obj/item/electronic_assembly/implant/proc/sync_implant_state(shown)
 	if(implant())
-		implant().icon_state = shown
+		implant().set_icon_state(shown)
 
 /// The implant this refers to (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/implant/proc/implant() as /obj/item/implant/integrated_circuit

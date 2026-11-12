@@ -1,0 +1,50 @@
+{
+	"valid_themes": ["Default", "Pink", "Gold"],
+	"last_notification": "Nanite regen module installed.",
+	"nif_stat": 1,
+	"theme": "Default",
+	"nutrition": 350,
+	"isSynthetic": false,
+	"nif_percent": 87,
+	"modules": [
+		{
+			"name": "Medichines",
+			"desc": "Repairs minor damage.",
+			"p_drain": 0,
+			"a_drain": 10,
+			"illegal": false,
+			"wear": 1,
+			"cost": 500,
+			"activates": true,
+			"active": false,
+			"stat_text": "Inactive",
+			"ref": 4001
+		},
+		{
+			"name": "Night Vision",
+			"desc": "Enhances low-light sight.",
+			"p_drain": 1,
+			"a_drain": 5,
+			"illegal": false,
+			"wear": 2,
+			"cost": 300,
+			"activates": true,
+			"active": true,
+			"stat_text": "Active",
+			"ref": 4002
+		},
+		{
+			"name": "Spare Breath",
+			"desc": "Stores an emergency oxygen reserve.",
+			"p_drain": 0,
+			"a_drain": 0,
+			"illegal": true,
+			"wear": 1,
+			"cost": 400,
+			"activates": false,
+			"active": false,
+			"stat_text": "",
+			"ref": 4003
+		}
+	]
+}

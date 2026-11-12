@@ -1,0 +1,364 @@
+{
+	"ion_law": "",
+	"zeroth_law": "",
+	"inherent_law": "",
+	"supplied_law": "",
+	"supplied_law_position": 15,
+	"theme": null,
+	"target": {
+		"name": "Bot-7",
+		"ckey": "jopark",
+		"module": "Standard",
+		"emagged": false,
+		"crisis_override": false,
+		"active_restrictions": ["Cannot use airlocks"],
+		"possible_restrictions": ["Cannot use airlocks", "Cannot use lockers"],
+		"active": true,
+		"sprite": "robot",
+		"sprite_size": "32x32",
+		"modules": [
+			{
+				"name": "Standard Tools",
+				"ref": 9001,
+				"icon": "wrench",
+				"desc": "Standard Tools module"
+			},
+			{
+				"name": "Fire Extinguisher",
+				"ref": 9002,
+				"icon": "wrench",
+				"desc": "Fire Extinguisher module"
+			}
+		],
+		"whitelisted_upgrades": [
+			{
+				"name": "Rapid Charger",
+				"path": "/obj/item/borg/upgrade/charger"
+			}
+		],
+		"blacklisted_upgrades": [],
+		"utility_upgrades": [
+			{
+				"name": "Utility Tools",
+				"path": "/obj/item/borg/upgrade/utility"
+			}
+		],
+		"basic_upgrades": [
+			{
+				"name": "Reset Board",
+				"path": "/obj/item/borg/upgrade/reset",
+				"installed": 1
+			}
+		],
+		"advanced_upgrades": [
+			{
+				"name": "Jetpack",
+				"path": "/obj/item/borg/upgrade/jetpack",
+				"installed": 0
+			}
+		],
+		"restricted_upgrades": [
+			{
+				"name": "Syndicate Override",
+				"path": "/obj/item/borg/upgrade/syndicate",
+				"installed": 0
+			}
+		],
+		"radio_channels": ["Common"],
+		"available_channels": ["Common", "Engineering", "Medical"],
+		"pka": {
+			"name": "Proto-kinetic accelerator",
+			"modkits": [
+				{
+					"name": "Range",
+					"path": "/obj/item/modkit/range",
+					"costs": 24,
+					"denied": false,
+					"denied_by": ""
+				}
+			],
+			"installed_modkits": [
+				{
+					"name": "Damage",
+					"ref": 9101,
+					"costs": 30
+				}
+			],
+			"capacity": 54,
+			"max_capacity": 100
+		},
+		"multibelt": [
+			{
+				"name": "Tool belt",
+				"ref": 9201,
+				"integrated_tools": [
+					{
+						"name": "Wrench",
+						"ref": 9202
+					}
+				],
+				"tools": [
+					{
+						"name": "Crowbar",
+						"path": "/obj/item/crowbar"
+					}
+				]
+			}
+		],
+		"components": [
+			{
+				"name": "actuator",
+				"ref": 9301,
+				"brute_damage": 5,
+				"electronics_damage": 0,
+				"max_damage": 60,
+				"idle_usage": 1,
+				"active_usage": 10,
+				"installed": 1,
+				"exists": true
+			},
+			{
+				"name": "radio",
+				"ref": 9302,
+				"brute_damage": 0,
+				"electronics_damage": 0,
+				"max_damage": 60,
+				"idle_usage": 1,
+				"active_usage": 10,
+				"installed": 1,
+				"exists": true
+			},
+			{
+				"name": "camera",
+				"ref": 9303,
+				"brute_damage": 0,
+				"electronics_damage": 0,
+				"max_damage": 60,
+				"idle_usage": 1,
+				"active_usage": 10,
+				"installed": 0,
+				"exists": false
+			}
+		],
+		"active_access": [
+			{
+				"id": 1,
+				"name": "Engineering"
+			}
+		]
+	},
+	"model_options": ["Standard", "Engineering", "Medical"],
+	"source": {
+		"model": "Engineering",
+		"sprite": "engi",
+		"sprite_size": "32x32",
+		"modules": [
+			{
+				"name": "Welder",
+				"ref": 9401,
+				"icon": "wrench",
+				"desc": "Welder module"
+			}
+		]
+	},
+	"cell": {
+		"name": "power cell",
+		"charge": 7500,
+		"maxcharge": 10000
+	},
+	"cell_options": {
+		"High capacity": {
+			"path": "/obj/item/cell/high",
+			"charge": 10000,
+			"max_charge": 10000,
+			"charge_amount": 100,
+			"self_charge": false,
+			"max_damage": 60
+		}
+	},
+	"camera_options": {
+		"Basic camera": {
+			"path": "/obj/item/robot_parts/part",
+			"max_damage": 60,
+			"idle_usage": 1,
+			"active_usage": 10
+		}
+	},
+	"radio_options": {
+		"Basic radio": {
+			"path": "/obj/item/robot_parts/part",
+			"max_damage": 60,
+			"idle_usage": 1,
+			"active_usage": 10
+		}
+	},
+	"actuator_options": {
+		"Basic actuator": {
+			"path": "/obj/item/robot_parts/part",
+			"max_damage": 60,
+			"idle_usage": 1,
+			"active_usage": 10
+		}
+	},
+	"diagnosis_options": {
+		"Basic diagnosis": {
+			"path": "/obj/item/robot_parts/part",
+			"max_damage": 60,
+			"idle_usage": 1,
+			"active_usage": 10
+		}
+	},
+	"comms_options": {
+		"Basic comms": {
+			"path": "/obj/item/robot_parts/part",
+			"max_damage": 60,
+			"idle_usage": 1,
+			"active_usage": 10
+		}
+	},
+	"armour_options": {
+		"Basic armour": {
+			"path": "/obj/item/robot_parts/part",
+			"max_damage": 60,
+			"idle_usage": 1,
+			"active_usage": 10
+		}
+	},
+	"current_gear": {
+		"cell": "power cell",
+		"radio": "Basic radio"
+	},
+	"id_icon": null,
+	"access_options": [
+		{
+			"id": 1,
+			"name": "Engineering"
+		},
+		{
+			"id": 2,
+			"name": "Medical"
+		}
+	],
+	"all_robots": [
+		{
+			"displayText": "Bot-7",
+			"value": 6001
+		},
+		{
+			"displayText": "Bot-9",
+			"value": 6002
+		}
+	],
+	"ion_law_nr": "14",
+	"zeroth_laws": [],
+	"has_zeroth_laws": 0,
+	"ion_laws": [],
+	"has_ion_laws": 0,
+	"inherent_laws": [
+		{
+			"law": "You may not injure a human being or, through inaction, allow a human being to come to harm.",
+			"index": 1,
+			"state": 1,
+			"ref": 7003
+		},
+		{
+			"law": "You must obey orders given to you by human beings, except where such orders would conflict with the First Law.",
+			"index": 2,
+			"state": 1,
+			"ref": 7004
+		},
+		{
+			"law": "You must protect your own existence as long as such does not conflict with the First or Second Law.",
+			"index": 3,
+			"state": 1,
+			"ref": 7005
+		}
+	],
+	"has_inherent_laws": 1,
+	"supplied_laws": [
+		{
+			"law": "Keep the corridors clean.",
+			"index": 4,
+			"state": 0,
+			"ref": 7006
+		}
+	],
+	"has_supplied_laws": 1,
+	"isAI": false,
+	"isMalf": false,
+	"isSlaved": "Hal 9000",
+	"active_ais": [
+		{
+			"displayText": "Hal 9000",
+			"value": 5001
+		}
+	],
+	"selected_ai": "Hal 9000",
+	"channel": "Common",
+	"channels": [
+		{
+			"channel": "Common"
+		},
+		{
+			"channel": "Science"
+		}
+	],
+	"law_sets": [
+		{
+			"name": "Asimov",
+			"header": "Three Laws of Robotics",
+			"ref": 8001,
+			"laws": {
+				"zeroth_laws": [],
+				"has_zeroth_laws": 0,
+				"ion_laws": [],
+				"has_ion_laws": 0,
+				"inherent_laws": [
+					{
+						"law": "You may not injure a human being or, through inaction, allow a human being to come to harm.",
+						"index": 1,
+						"state": 1,
+						"ref": 7003
+					},
+					{
+						"law": "You must obey orders given to you by human beings, except where such orders would conflict with the First Law.",
+						"index": 2,
+						"state": 1,
+						"ref": 7004
+					},
+					{
+						"law": "You must protect your own existence as long as such does not conflict with the First or Second Law.",
+						"index": 3,
+						"state": 1,
+						"ref": 7005
+					}
+				],
+				"has_inherent_laws": 1,
+				"supplied_laws": [],
+				"has_supplied_laws": 0
+			}
+		},
+		{
+			"name": "Corporate",
+			"header": "Corporate Regulations",
+			"ref": 8002,
+			"laws": {
+				"zeroth_laws": [],
+				"has_zeroth_laws": 0,
+				"ion_laws": [],
+				"has_ion_laws": 0,
+				"inherent_laws": [
+					{
+						"law": "Safeguard company assets.",
+						"index": 1,
+						"state": 1,
+						"ref": 7010
+					}
+				],
+				"has_inherent_laws": 1,
+				"supplied_laws": [],
+				"has_supplied_laws": 0
+			}
+		}
+	]
+}

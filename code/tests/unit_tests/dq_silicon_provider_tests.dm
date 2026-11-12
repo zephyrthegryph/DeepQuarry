@@ -165,7 +165,7 @@
 	test_time(6 SECONDS)
 	TEST_ASSERT_EQUAL(replacer.uses, 6, "the reserves answer fabricates one light after the wait")
 	TEST_ASSERT_EQUAL(replacer.glass.energy, 875, "from the matter reserves")
-	replacer.glass.energy = 10
+	replacer.glass.set_energy(10)
 	test_click(R, replacer, replacer, GESTURE_SELF)
 	test_answer(R, "Reserves")
 	test_time(6 SECONDS)

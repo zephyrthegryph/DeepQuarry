@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Icon,
-  LabeledList,
   Section,
   Stack,
   Table,
@@ -105,11 +104,11 @@ function TechwebServer(props) {
         <span>
           Connectivity to this web is maintained by the following servers...
         </span>
-        <LabeledList>
+        <Box>
           {server.all_servers.map((individual_servers, new_index) => (
             <Box key={new_index}>{individual_servers}</Box>
           ))}
-        </LabeledList>
+        </Box>
       </Box>
     </Box>
   ));

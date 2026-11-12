@@ -297,7 +297,7 @@
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_money_before + 200, "internal escrow payout did not reach its recipient")
 	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_created_before, "internal escrow payout was counted as newly created currency")
 	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, currency_destroyed_before, "completed internal escrow was counted as destroyed currency")
-	GLOB.station_account.money = station_money_before
+	GLOB.station_account.set_money(station_money_before)
 	qdel(completed_contract)
 	var/datum/money_account/contributor = new
 	contributor.set_owner_name("Suspended contributor")
@@ -428,7 +428,7 @@
 	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_VEYMED) - station_rep_before, 5, "negotiated station reputation reward was incorrect")
 	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_MEDICAL, REPUTATION_FACTION_VEYMED) - department_rep_before, 3, "negotiated department reputation reward was incorrect")
 	TEST_ASSERT_EQUAL(contributor.get_faction_reputation(REPUTATION_FACTION_VEYMED) - personal_rep_before, 8, "negotiated personal reputation reward was incorrect")
-	GLOB.station_account.money = station_before
+	GLOB.station_account.set_money(station_before)
 	medical_account.set_money(medical_before)
 	contributor_account.set_money(personal_before)
 	GLOB.station_faction_relations.set_reputation(REPUTATION_FACTION_VEYMED, station_rep_before)
@@ -1419,14 +1419,14 @@
 /datum/unit_test/dq_contract_budget_acceptance_feasibility/Run()
 	var/station_money = GLOB.station_account.money
 	var/old_salary_support = SSsupply.nt_salary_support
-	GLOB.station_account.money = 2500
+	GLOB.station_account.set_money(2500)
 	SSsupply.nt_salary_support = 0
 	var/datum/contract_definition/outcome/command_budget_mandate/definition = SScontracts.definitions["command_budget_mandate"]
 	var/datum/contract/outcome/contract = definition.create_contract(list("allocation_target" = 20000, "department_target" = 5, "minimum_allocation" = 2000))
 	var/prepared = definition.prepare_accept(contract, null, null, null)
 	var/scaled_total = contract.primary_target
 	var/scaled_departments = contract.secondary_target
-	GLOB.station_account.money = station_money
+	GLOB.station_account.set_money(station_money)
 	SSsupply.nt_salary_support = old_salary_support
 	TEST_ASSERT(prepared, "fundable low-budget mandate was rejected instead of scaled")
 	TEST_ASSERT(scaled_total <= 2500, "budget mandate exceeded authoritative next-cycle funding")

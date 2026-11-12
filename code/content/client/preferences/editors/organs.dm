@@ -62,6 +62,11 @@ GLOBAL_LIST_INIT(dq_limb_parents, list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_AR
 		up = GLOB.dq_limb_parents[up]
 	return null
 
+/// The wire shape of /datum/preference_editor/organs's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_organs, row(robotic_body = bool(), body_color = nullable(schema_text()), body_link = schema_text(), externals = map_of(schema_text(), row(status = enum(list("normal", "amputated", "cyborg")), model = nullable(schema_text()), color = nullable(schema_text()), own_color = bool(), forced_by = nullable(schema_text()), lost_via = nullable(schema_text()), link = schema_text())), internals = map_of(schema_text(), schema_text()), external_labels = map_of(schema_text(), schema_text()), internal_labels = map_of(schema_text(), schema_text()), external_order = list_of(schema_text()), internal_order = list_of(schema_text())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_organs_static, row(limb_models = list_of(schema_text()), doll_regions = list_of(list_of(schema_any()))))
+
 /datum/preference_editor/organs/build_ui_data(datum/preferences/preferences)
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()

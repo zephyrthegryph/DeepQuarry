@@ -3,26 +3,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { TagMenuActions } from './generated/TagMenu';
-
-type Entry = {
-  index: number;
-  ref: number;
-  name: string;
-  type: string;
-  area_coord: string;
-  health: string;
-  is_marked: BooleanLike;
-};
-
-type Data = {
-  entries: Entry[];
-};
+import type { TagMenuActions, TagMenuData } from './generated/TagMenu';
 
 export const TagMenu = () => {
-  const { data, act } = useBackend<Data, TagMenuActions>();
+  const { data, act } = useBackend<TagMenuData, TagMenuActions>();
   const { entries = [] } = data;
   return (
     <Window width={620} height={620} title="Tag Menu">

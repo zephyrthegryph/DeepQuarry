@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { Fragment, useContext } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
@@ -61,7 +61,8 @@ export const EntryFloat = (props: EntryFloatProps) => {
 export const EntryCoord = (props: EntryCoordProps) => {
   const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
-  const { name, var_name, coord } = props;
+  const { name, var_name } = props;
+  const coord = Array.isArray(props.coord) ? props.coord : undefined;
   return (
     <LabeledList.Item label={name}>
       <Button
@@ -180,7 +181,7 @@ export const EntryGradient = (props: EntryGradientProps) => {
         <Stack.Item>
           {cleanGradient?.map((entry, index) =>
             entry === 'loop' || entry === 'space' ? null : (
-              <>
+              <Fragment key={index}>
                 {typeof entry === 'string' ? (
                   <ColorBox mr={0.4} color={entry} />
                 ) : null}
@@ -213,7 +214,7 @@ export const EntryGradient = (props: EntryGradientProps) => {
                     })
                   }
                 />
-              </>
+              </Fragment>
             ),
           )}
         </Stack.Item>
@@ -305,9 +306,9 @@ export const EntryIcon = (props: EntryIconStateProps) => {
           />
         </Stack.Item>
         {typeof icon_state === 'object' && icon_state !== null ? (
-          Object.keys(icon_state).map((icon_name, i) => (
-            <>
-              <Stack.Item key={i}>{icon_name}</Stack.Item>
+          Object.keys(icon_state).map((icon_name) => (
+            <Fragment key={icon_name}>
+              <Stack.Item>{icon_name}</Stack.Item>
               <Stack.Item>
                 <Box> = </Box>
               </Stack.Item>
@@ -338,7 +339,7 @@ export const EntryIcon = (props: EntryIconStateProps) => {
                   })
                 }
               />
-            </>
+            </Fragment>
           ))
         ) : (
           <>
@@ -387,7 +388,7 @@ export const EntryIconState = (props: EntryIconStateProps) => {
           // this can get big enough to go off the edge of the screen and scrollableHorizontal isnt working
           // so if someone inputs like 10 icon states at once its #notmyproblem
           Object.keys(icon_state).map((iconstate, index) => (
-            <>
+            <Fragment key={iconstate}>
               <Stack.Item>
                 <Input
                   width={'70px'}
@@ -434,7 +435,7 @@ export const EntryIconState = (props: EntryIconStateProps) => {
                   }
                 />
               </Stack.Item>
-            </>
+            </Fragment>
           ))
         ) : (
           <>

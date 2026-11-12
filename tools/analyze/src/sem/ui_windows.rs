@@ -33,6 +33,9 @@ pub struct WinModel {
     pub shapes: Vec<(String, String)>,
     /// Every type with a CAPABILITIES block that opens this window.
     pub holders: Vec<String>,
+    /// The blocks that declare this window with no `ui_shape()` in their own lineage: (type, file, line). Each host carries a shape, so
+    /// the data check (dq_tgui_ui_data_fixtures) holds every host's ui_data to it, not only the first one's.
+    pub unshaped: Vec<(String, String, u32)>,
 }
 
 impl WinModel {
@@ -129,12 +132,27 @@ pub fn windows(tree: &Tree, decls: &Decls) -> BTreeMap<String, WinModel> {
     let mut out: BTreeMap<String, WinModel> = BTreeMap::new();
     for b in &blocks {
         if let Some(Ok(name)) = &b.window {
-            let w = out.entry(name.clone()).or_insert_with(|| WinModel { owner: b.owner.clone(), rel: b.rel.clone(), line: b.line, acts: Vec::new(), open: None, shapes: Vec::new(), holders: Vec::new() });
+            let w = out.entry(name.clone()).or_insert_with(|| WinModel { owner: b.owner.clone(), rel: b.rel.clone(), line: b.line, acts: Vec::new(), open: None, shapes: Vec::new(), holders: Vec::new(), unshaped: Vec::new() });
             for s in &b.shapes {
                 w.shapes.push((b.owner.clone(), s.clone()));
             }
             if b.forwards && w.open.is_none() {
                 w.open = Some(format!("{} forwards its window actions (interface(forwards =))", b.owner));
+            }
+        }
+    }
+    // A declaring block whose lineage has no ui_shape(): the window's data is unchecked on that host.
+    let shaped: BTreeSet<String> = blocks.iter().filter(|b| !b.shapes.is_empty()).map(|b| b.owner.clone()).collect();
+    for b in &blocks {
+        // The engine's own test hosts (code/tests/) exercise the window machinery, not a player's window.
+        if b.rel.starts_with("code/tests/") {
+            continue;
+        }
+        if let Some(Ok(name)) = &b.window {
+            if !lineage(&b.owner).iter().any(|a| shaped.contains(a.as_str())) {
+                if let Some(w) = out.get_mut(name) {
+                    w.unshaped.push((b.owner.clone(), b.rel.clone(), b.line));
+                }
             }
         }
     }

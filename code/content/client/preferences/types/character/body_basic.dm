@@ -16,7 +16,7 @@
 
 /datum/preference/text/human/b_type/apply_to_human(mob/living/carbon/human/target, value)
 	if(target.dna)
-		target.dna.b_type = text_or_null(value)
+		target.dna.set_b_type(text_or_null(value))
 
 
 

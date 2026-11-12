@@ -45,7 +45,7 @@ fn is_image(sem: &Sem, ty: &str) -> bool {
 }
 
 /// A proc's declared return type: `as /type`, else a `RETURN_TYPE(/type)` (`set SpacemanDMM_return_type = /type`) in its body.
-fn return_type(sem: &Sem, ty: &str, name: &str) -> Option<String> {
+pub(crate) fn return_type(sem: &Sem, ty: &str, name: &str) -> Option<String> {
     let t = sem.ty(ty)?;
     if let Some(d) = t.get_proc_declaration(name) {
         if let ProcReturnType::TypePath(p) = &d.return_type {

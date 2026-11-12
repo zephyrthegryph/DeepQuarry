@@ -31,6 +31,11 @@
 	display_name = "Species"
 	pref_keys = list("species", "custom_species", "custom_base", "play_mode")
 
+/// The wire shape of /datum/preference_editor/species_picker's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_species_picker, row(current_species = schema_text(), custom_species = schema_text()))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_species_picker_static, row(all_species = map_of(schema_text(), row(name = schema_text(), pitch = schema_text(), blurb = schema_text(), thumb_b64 = nullable(schema_text())))))
+
 /datum/preference_editor/species_picker/build_ui_data(datum/preferences/preferences)
 	var/play_mode = preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
 	var/current_species

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Vore panel export keeps reagent touch messages; the DNA console window opens with no scanner linked."
+  - code_imp: "Every tgui window declares its data shape; nested data is typed end to end."

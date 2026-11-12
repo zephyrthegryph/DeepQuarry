@@ -284,7 +284,7 @@
 	TEST_ASSERT(topic_dispatch(H, viewer, list("flavor_more" = "1")), "the More link answers")
 	var/list/said = test_chat_of(viewer)
 	TEST_ASSERT(length(said) && findtext(said[length(said)], "loud") && !findtext(said[length(said)], "+loud+"), "More prints it formatted: [jointext(said, " | ")]")
-	H.identity().ooc_notes = "Likes +cats+"
+	H.identity().set_ooc_notes("Likes +cats+")
 	H.print_ooc_notes_chat(viewer)
 	said = test_chat_of(viewer)
 	TEST_ASSERT(length(said) && findtext(said[length(said)], "cats") && !findtext(said[length(said)], "+cats+"), "OOC notes in chat are formatted: [jointext(said, " | ")]")

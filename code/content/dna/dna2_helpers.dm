@@ -128,7 +128,7 @@
 /mob/living/carbon/human/UpdateAppearance(list/UI=null)
 	// Rebuild off UI arg if not null
 	if(UI!=null)
-		src.dna.UI=UI
+		src.dna.set_UI(UI)
 		src.dna.UpdateUI()
 
 	// Setup dna

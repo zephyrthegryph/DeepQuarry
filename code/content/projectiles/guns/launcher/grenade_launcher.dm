@@ -102,7 +102,7 @@ CAPABILITIES(/obj/item/gun/launcher/grenade)
 
 /obj/item/gun/launcher/grenade/consume_next_projectile()
 	if(chambered())
-		chambered().det_time = 10
+		chambered().set_det_time(10)
 		chambered().activate(null)
 	return chambered()
 

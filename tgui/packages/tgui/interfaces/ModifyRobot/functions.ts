@@ -1,4 +1,3 @@
-import { flow } from 'tgui-core/fp';
 import { createSearch } from 'tgui-core/string';
 
 import type { Module } from './types';
@@ -16,16 +15,8 @@ export function prepareSearch<T extends SearchObject>(
       return object.name;
     }
   });
-  return flow([
-    (objects: T[]) => {
-      // Optional search term
-      if (!searchText) {
-        return objects as any;
-      } else {
-        return objects.filter(testSearch) as any;
-      }
-    },
-  ])(objects);
+  // Optional search term
+  return searchText ? objects.filter(testSearch) : objects;
 }
 
 export function getModuleIcon(modules: Module[], name: string) {

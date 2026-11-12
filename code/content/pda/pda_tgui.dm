@@ -1,5 +1,10 @@
 // Self contained file for all things TGUI
 
+/// The window theme: none for a PDA in the open (a silicon's PDA takes its chassis theme, /obj/item/pda/ai).
+/obj/item/pda/ui_static_data(datum/act/eval/A)
+	. = ..()
+	.["theme"] = null
+
 /obj/item/pda/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["owner"] = owner
@@ -57,7 +62,8 @@
 		"name" = app.title,
 		"icon" = app.icon,
 		"template" = app.template,
-		"has_back" = app.has_back)
+		"has_back" = app.has_back,
+		"is_home" = FALSE)
 
 	app.update_ui(user, data)
 

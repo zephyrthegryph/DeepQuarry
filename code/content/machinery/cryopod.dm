@@ -431,11 +431,11 @@ CAPABILITIES(/obj/machinery/cryopod)
 		//Handle job slot/tater cleanup.
 		var/job = to_despawn.mind.assigned_role
 		SSjob.free_role(job)
-		to_despawn.mind.assigned_role = null
+		to_despawn.mind.set_assigned_role(null)
 
 		if(to_despawn.mind.objectives.len)
 			rel_clear(to_despawn.mind, nameof(/datum/mind::objectives))
-			to_despawn.mind.special_role = null
+			to_despawn.mind.set_special_role(null)
 
 		// Delete them from datacore.
 

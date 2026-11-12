@@ -1,0 +1,210 @@
+{
+	"species": [
+		{
+			"specimen": "Human"
+		},
+		{
+			"specimen": "Skrell"
+		},
+		{
+			"specimen": "Tajaran"
+		}
+	],
+	"hair_styles": [
+		{
+			"name": "Bald",
+			"icon": "icons/mob/human_face.dmi",
+			"icon_state": "bald"
+		},
+		{
+			"name": "Short Hair",
+			"icon": "icons/mob/human_face.dmi",
+			"icon_state": "short_hair"
+		},
+		{
+			"name": "Long Hair",
+			"icon": "icons/mob/human_face.dmi",
+			"icon_state": "long_hair"
+		}
+	],
+	"ear_styles": [
+		{
+			"name": "None",
+			"instance": "/datum/sprite_accessory/ears/none",
+			"color": false,
+			"second_color": false,
+			"icon": "icons/mob/vore/ears.dmi",
+			"icon_state": "none"
+		},
+		{
+			"name": "Cat Ears",
+			"instance": "/datum/sprite_accessory/ears/cat",
+			"color": true,
+			"second_color": true,
+			"icon": "icons/mob/vore/ears.dmi",
+			"icon_state": "cat_ears"
+		}
+	],
+	"tail_styles": [
+		{
+			"name": "None",
+			"instance": "/datum/sprite_accessory/tail/none",
+			"color": false,
+			"second_color": false,
+			"icon": "icons/mob/vore/ears.dmi",
+			"icon_state": "none"
+		},
+		{
+			"name": "Cat Tail",
+			"instance": "/datum/sprite_accessory/tail/cat",
+			"color": true,
+			"second_color": false,
+			"icon": "icons/mob/vore/ears.dmi",
+			"icon_state": "cat_tail"
+		}
+	],
+	"wing_styles": [
+		{
+			"name": "None",
+			"instance": "/datum/sprite_accessory/wing/none",
+			"color": false,
+			"second_color": false,
+			"icon": "icons/mob/vore/ears.dmi",
+			"icon_state": "none"
+		},
+		{
+			"name": "Angel Wings",
+			"instance": "/datum/sprite_accessory/wing/angel",
+			"color": true,
+			"second_color": true,
+			"icon": "icons/mob/vore/ears.dmi",
+			"icon_state": "angel_wings"
+		}
+	],
+	"marking_styles": [
+		{
+			"name": "Tiger Stripes",
+			"icon": "icons/mob/human_face.dmi",
+			"icon_state": "tiger_stripes"
+		},
+		{
+			"name": "Belly Fur",
+			"icon": "icons/mob/human_face.dmi",
+			"icon_state": "belly_fur"
+		}
+	],
+	"facial_hair_styles": [
+		{
+			"name": "Shaved",
+			"icon": "icons/mob/human_face.dmi",
+			"icon_state": "shaved"
+		},
+		{
+			"name": "Goatee",
+			"icon": "icons/mob/human_face.dmi",
+			"icon_state": "goatee"
+		}
+	],
+	"hair_grads": ["None", "Fade (Up)", "Fade (Down)"],
+	"mapRef": "appearance_changer_map",
+	"is_design_console": false,
+	"disk": false,
+	"selected_a_record": false,
+	"character_records": [
+		{
+			"name": "Jo Park",
+			"recref": "[0x2000123]"
+		}
+	],
+	"stock_records": ["Generic Human"],
+	"name": "Jo Park",
+	"specimen": "Human",
+	"gender": "female",
+	"gender_id": "female",
+	"genders": [
+		{
+			"gender_name": "Male",
+			"gender_key": "male"
+		},
+		{
+			"gender_name": "Female",
+			"gender_key": "female"
+		},
+		{
+			"gender_name": "Plural",
+			"gender_key": "plural"
+		}
+	],
+	"id_genders": [
+		{
+			"gender_name": "Male",
+			"gender_key": "male"
+		},
+		{
+			"gender_name": "Female",
+			"gender_key": "female"
+		}
+	],
+	"change_race": true,
+	"change_misc": true,
+	"change_gender": true,
+	"change_hair": true,
+	"change_facial_hair": true,
+	"change_skin_color": true,
+	"change_eye_color": true,
+	"change_hair_color": true,
+	"change_facial_hair_color": true,
+	"species_name": "Human",
+	"use_custom_icon": false,
+	"base_icon": null,
+	"size_scale": "100",
+	"scale_appearance": "100",
+	"offset_override": "0",
+	"weight": 135,
+	"digitigrade": false,
+	"blood_reagent": "Blood",
+	"blood_color": "#a10808",
+	"species_sound": "Human",
+	"flavor_text": {
+		"general": "Tall, tired, and smells faintly of solder.",
+		"head": "",
+		"face": "",
+		"eyes": "",
+		"torso": "",
+		"arms": "",
+		"hands": "",
+		"legs": "",
+		"feet": ""
+	},
+	"hair_style": "Short Hair",
+	"ear_style": "Cat Ears",
+	"ear_secondary_style": null,
+	"tail_style": "Cat Tail",
+	"wing_style": null,
+	"markings": [
+		{
+			"marking_name": "Tiger Stripes",
+			"marking_color": "#222222"
+		}
+	],
+	"facial_hair_style": "Shaved",
+	"skin_color": "#e0b090",
+	"eye_color": "#3366aa",
+	"hair_color": "#442211",
+	"hair_color_grad": "#000000",
+	"hair_grad": "None",
+	"ears_color": "#442211",
+	"ears2_color": "#ffaaaa",
+	"ear_secondary_colors": ["#442211"],
+	"tail_color": "#442211",
+	"tail2_color": "#000000",
+	"tail3_color": "#000000",
+	"wing_color": "#ffffff",
+	"wing2_color": "#ffffff",
+	"wing3_color": "#ffffff",
+	"wing_alpha": 255,
+	"tail_alpha": 255,
+	"ears_alpha": 255,
+	"secondary_ears_alpha": 255,
+	"facial_hair_color": "#442211"
+}

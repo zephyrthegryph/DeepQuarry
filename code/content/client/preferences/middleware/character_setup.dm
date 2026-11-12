@@ -554,6 +554,13 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	if(!islist(prefs_datum.dq_window_editor_versions[window_id]))
 		prefs_datum.dq_window_editor_versions[window_id] = list()
 	var/list/window_editor_versions = prefs_datum.dq_window_editor_versions[window_id]
+	// Every shown editor has a key in both payloads (null = not sent this time: the window keeps what it has), so the wire shape has no optional field.
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		editor_data[editor.key] = null
+		editor_static_patch[editor.key] = null
+	var/static_patch_sent = FALSE
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 		if(editor.hidden || !(editor.category in categories_to_send))
 			continue
@@ -563,10 +570,11 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		if(window_editor_versions[editor.key] == editor_version || !force_catalogs)
 			continue
 		editor_static_patch[editor.key] = dq_editor_static_payload(editor)
+		static_patch_sent = TRUE
 		window_editor_versions[editor.key] = editor_version
 	data["dq_editor_data"] = editor_data
 	data["dq_editor_versions"] = editor_versions
-	if(length(editor_static_patch))
+	if(static_patch_sent)
 		data["dq_editor_static_patch"] = editor_static_patch
 	data["dq_catalog_build_ms"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - catalog_started)
 

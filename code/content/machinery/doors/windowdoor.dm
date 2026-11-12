@@ -257,7 +257,7 @@ CAPABILITIES(/obj/machinery/door/window)
 			assembly.electronics.set_conf_access(req_access)
 		else if(LAZYLEN(req_one_access))
 			assembly.electronics.set_conf_access(req_one_access)
-			assembly.electronics.one_access = TRUE
+			assembly.electronics.set_one_access(TRUE)
 	else
 		var/obj/item/airlock_electronics/door_electronics = electronics
 		door_electronics.forceMove(assembly)

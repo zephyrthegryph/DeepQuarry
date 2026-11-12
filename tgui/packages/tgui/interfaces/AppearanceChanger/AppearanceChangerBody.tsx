@@ -32,9 +32,7 @@ export const AppearanceChangerSpecies = (props) => {
                 {data.name}
               </Button>
             </LabeledList.Item>
-          ) : (
-            ''
-          )}
+          ) : null}
         </LabeledList>
       </Section>
     </Section>

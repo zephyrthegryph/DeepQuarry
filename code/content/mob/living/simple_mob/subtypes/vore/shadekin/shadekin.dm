@@ -205,7 +205,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 	//Convert spare nutrition into energy at a certain ratio
 	if(. && nutrition_of(src) > starting_nutrition() && src.shadekin.dark_energy < 100)
 		src.set_nutrition(max(0, nutrition_of(src)-5))
-		src.shadekin.dark_energy = min(100,src.shadekin.dark_energy+1)
+		src.shadekin.set_dark_energy(min(100,src.shadekin.dark_energy+1))
 	if(!src.client && src.check_for_observer && src.check_timer++ > 5)
 		src.check_timer = 0
 		var/non_kin_count = 0

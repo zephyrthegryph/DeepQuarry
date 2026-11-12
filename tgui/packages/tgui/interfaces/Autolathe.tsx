@@ -8,7 +8,7 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-import { type BooleanLike, classes } from 'tgui-core/react';
+import { classes } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
 
 import { useBackend } from '../backend';
@@ -20,31 +20,16 @@ import {
   ConfigurableRecipeRow,
   ProductConfigurator,
 } from './Fabrication/SelectableRecipe';
-import type {
-  Design,
-  Material,
-  MaterialChoice,
-  MaterialMap,
-} from './Fabrication/Types';
-import type { AutolatheActions } from './generated/Autolathe';
-
-type AutolatheData = {
-  materials: Material[];
-  materialtotal: number;
-  materialsmax: number;
-  SHEET_MATERIAL_AMOUNT: number;
-  designs: Design[];
-  materialChoices?: MaterialChoice[];
-  active: BooleanLike;
-};
+import type { Design, MaterialMap } from './Fabrication/Types';
+import type { AutolatheActions, AutolatheData } from './generated/Autolathe';
 
 export const Autolathe = (props) => {
   const { act, data } = useBackend<AutolatheData, AutolatheActions>();
   const {
     materialtotal,
     materialsmax,
-    materials = [],
-    designs = [],
+    materials,
+    designs,
     active,
     SHEET_MATERIAL_AMOUNT,
   } = data;
@@ -139,7 +124,7 @@ export const Autolathe = (props) => {
                     key={design.id}
                     design={design}
                     available={availableMaterials}
-                    materialChoices={data.materialChoices ?? []}
+                    materialChoices={data.materialChoices}
                     SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
                     onBuild={(materialSlots, quantity) =>
                       act('make', {

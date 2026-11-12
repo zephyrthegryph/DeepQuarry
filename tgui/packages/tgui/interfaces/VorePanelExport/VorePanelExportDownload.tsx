@@ -5,7 +5,8 @@ import { generateSoulcatcherString } from './VorePanelExportSoulcatcherString';
 import { getCurrentTimestamp } from './VorePanelExportTimestamp';
 
 export const downloadPrefs = (extension: string, data: Data) => {
-  const { db_version, db_repo, mob_name, bellies, soulcatcher } = data;
+  const { db_version, db_repo, bellies, soulcatcher } = data;
+  const mob_name = data.mob_name ?? 'Unknown';
 
   if (!bellies) {
     return;
@@ -72,7 +73,7 @@ export const downloadPrefs = (extension: string, data: Data) => {
       version: db_version,
       repo: db_repo,
       bellies: validBellies,
-      soulcatcher: soulcatcher,
+      soulcatcher: soulcatcher ?? undefined,
     },
   };
 

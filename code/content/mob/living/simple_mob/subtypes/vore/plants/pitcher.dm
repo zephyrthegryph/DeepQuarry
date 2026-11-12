@@ -253,17 +253,17 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.set_nutrition(0) //No stuffing monkeys with protein shakes for massive nutrition.
 			if(!L.vore_prefs.digestable)
-				vore_selected_of(src).digest_mode = DM_DRAIN
+				vore_selected_of(src).set_digest_mode(DM_DRAIN)
 				N = 1
 				hasindigestable = 1
 				continue
 			else
-				vore_selected_of(src).digest_mode = DM_DIGEST
+				vore_selected_of(src).set_digest_mode(DM_DIGEST)
 				N = 1
 				hasdigestable = 1
 				continue
 		if(hasdigestable && hasindigestable)
-			vore_selected_of(src).digest_mode = DM_DIGEST //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
+			vore_selected_of(src).set_digest_mode(DM_DIGEST) //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
 		if(!N)
 			vore_selected_of(src).release_all_contents() //If there's no prey, spit out everything.
 

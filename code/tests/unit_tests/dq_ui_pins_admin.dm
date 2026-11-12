@@ -59,8 +59,8 @@
 		if(FC.channel_name == "Dq Pin Channel")
 			made = FC
 	holder.admincaster_screen = 3 // create_story
-	holder.admincaster_feed_message.title = "Pin Story" // set_new_title
-	holder.admincaster_feed_message.body = "Pin story body." // set_new_message
+	holder.admincaster_feed_message.set_title("Pin Story") // set_new_title
+	holder.admincaster_feed_message.set_body("Pin story body.") // set_new_message
 	snap("story_draft")
 	GLOB.news_network.SubmitArticle(holder.admincaster_feed_message.body, holder.admincaster_signature, "Dq Pin Channel", null, 1, "", holder.admincaster_feed_message.title) // submit_new_message
 	holder.admincaster_screen = 4

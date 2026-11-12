@@ -1,0 +1,23 @@
+{
+	"available_points": 5,
+	"power_list": [
+		{
+			"power_name": "Transform Sting",
+			"power_cost": 3,
+			"power_purchased": true,
+			"power_desc": "Injects the target with a DNA sample, transforming them."
+		},
+		{
+			"power_name": "Hallucination Sting",
+			"power_cost": 2,
+			"power_purchased": false,
+			"power_desc": "Causes vivid hallucinations in the target."
+		},
+		{
+			"power_name": "Armblade",
+			"power_cost": 1,
+			"power_purchased": false,
+			"power_desc": "Reshapes an arm into a deadly blade."
+		}
+	]
+}

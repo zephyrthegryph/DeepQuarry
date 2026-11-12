@@ -15,13 +15,13 @@
 		if("control_vtec")
 			if(R.speed == 0 && R.vtec_active)
 				R.speed = -0.5
-				R.hud_used.control_vtec.icon_state = "speed_1"
+				R.hud_used.control_vtec.set_icon_state("speed_1")
 			else if(R.speed == -0.5 && R.vtec_active)
 				R.speed = -1
-				R.hud_used.control_vtec.icon_state = "speed_2"
+				R.hud_used.control_vtec.set_icon_state("speed_2")
 			else
 				R.speed = 0
-				R.hud_used.control_vtec.icon_state = "speed_0"
+				R.hud_used.control_vtec.set_icon_state("speed_0")
 			return TRUE
 		if("module")
 			R.pick_module()

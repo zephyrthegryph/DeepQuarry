@@ -796,7 +796,7 @@ CAPABILITIES(/datum/respawn_review)
 
 	if(new_character.mind)
 		new_character.mind.loaded_from_ckey = picked_ckey
-		new_character.mind.loaded_from_slot = picked_slot
+		new_character.mind.set_loaded_from_slot(picked_slot)
 
 	for(var/lang in picked_client.prefs.read_preference(/datum/preference/alternate_languages)) // migrated language pref
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
@@ -811,7 +811,7 @@ CAPABILITIES(/datum/respawn_review)
 		if(charjob)
 			SSjob.equip_rank(new_character, charjob, 1)
 			if(new_character.mind)
-				new_character.mind.assigned_role = text_or_null(charjob)
+				new_character.mind.set_assigned_role(text_or_null(charjob))
 				new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 			equip_custom_items(new_character) // readded to enable custom_item.txt
 
@@ -824,7 +824,7 @@ CAPABILITIES(/datum/respawn_review)
 		for(var/obj/item/pda/player_pda in contents_of(new_character))
 			player_pda.name = "PDA-[character_name] ([custom_job_title])"
 			player_pda.set_ownjob(custom_job_title)
-		new_character.mind.assigned_role = custom_job_title
+		new_character.mind.set_assigned_role(custom_job_title)
 		new_character.mind.role_alt_title = custom_job_title
 		to_chat(new_character, "Your job title has been changed to [custom_job_title].")
 

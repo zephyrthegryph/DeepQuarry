@@ -359,7 +359,7 @@ MSG_DEF_SELF(clonepod/container_full, "the pod has too many containers loaded")
 	if(!message)
 		return 0
 
-	connected().temp = "[name] : [message]"
+	connected().set_temp("[name] : [message]")
 	return 1
 
 /obj/machinery/clonepod/RefreshParts()

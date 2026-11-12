@@ -62,13 +62,13 @@ export const ModifyRobotComponent = (props: {
   const [selectedComm, setSelectedComm] = useState<string>(gear[COMMS] || '');
   const [selectedArm, setSelectedArm] = useState<string>(gear[ARMOUR] || '');
   const [tab, setTab] = useState<number>(0);
-  const cell_options = Object.keys(cells) as Array<string>;
-  const cam_options = Object.keys(cams) as Array<string>;
-  const rad_options = Object.keys(rads) as Array<string>;
-  const act_options = Object.keys(acts) as Array<string>;
-  const diag_options = Object.keys(diags) as Array<string>;
-  const comm_options = Object.keys(comms) as Array<string>;
-  const arm_options = Object.keys(arms) as Array<string>;
+  const cell_options = Object.keys(cells);
+  const cam_options = Object.keys(cams);
+  const rad_options = Object.keys(rads);
+  const act_options = Object.keys(acts);
+  const diag_options = Object.keys(diags);
+  const comm_options = Object.keys(comms);
+  const arm_options = Object.keys(arms);
 
   const tabs: React.JSX.Element[] = [];
 

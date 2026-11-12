@@ -45,24 +45,10 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	return TRUE
 
 /datum/log_holder/ui_static_data(datum/act/eval/A)
-	var/list/data = list(
-		"round_id" = GLOB.round_id,
-		"logging_start_timestamp" = logging_start_timestamp,
-	)
-
-	var/list/tree = list()
-	data["tree"] = tree
 	var/list/enabled_categories = list()
 	for(var/enabled in log_categories)
 		enabled_categories += enabled
-	tree["enabled"] = enabled_categories
-
-	var/list/disabled_categories = list()
-	for(var/disabled in src.disabled_categories)
-		disabled_categories += disabled
-	tree["disabled"] = disabled_categories
-
-	return data
+	return list("tree" = list("enabled" = enabled_categories))
 
 /// /datum/log_holder's window data.
 /datum/log_holder/ui_data(datum/act/eval/A)
@@ -85,13 +71,12 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	STAMP(src, last_data_update, CLOCK_WORLD)
 
 	set_data_cache_at("categories", category_map)
-	set_data_cache_at("last_data_update", last_data_update)
 
 CAPABILITIES(/datum/log_holder)
 	owns_many(nameof(verified_log_files), /datum/verified_log_file)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
 	interface("LogViewer", title = "Log Viewer", rights = R_ADMIN|R_MOD|R_DEBUG)
-	ui_shape()
+	ui_shape(tree = row(enabled = list_of(schema_text())), categories = map_of(schema_text(), row(entry_count = int(), entries = list_of(row(id = int(), message = schema_text(), timestamp = schema_text(), data = nullable(list_of(any)), semver = nullable(map_of(schema_text(), schema_text())))))))
 
 /datum/log_holder/proc/ui_act_log_refresh(datum/act/op/A)
 	cache_ui_data()

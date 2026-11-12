@@ -187,7 +187,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	/// whose AI control is cut (to a silicon), or a remote console that does not let the actor in, answers none.
 	section(controls, "The alarm's window and the buttons in it")
 	interface("AirAlarm")
-	ui_shape(locked = bool(), siliconUser = bool(), remoteUser = bool(), environment_data = list_of(row()), danger_level = num(), target_temperature = schema_text(), rcon = num(), atmos_alarm = bool(), fire_alarm = bool(), mode = num(), thresholds = list_of(row()), scrubbers = list_of(row()), vents = list_of(row()), modes = list_of(row()))
+	ui_shape(locked = bool(), siliconUser = bool(), remoteUser = bool(), environment_data = list_of(row(name = schema_text(), value = num(), unit = schema_text(), danger_level = num())), danger_level = num(), target_temperature = schema_text(), rcon = num(), atmos_alarm = num(), fire_alarm = num(), mode = nullable(num()), thresholds = list_of(row(name = schema_text(), settings = list_of(row(env = schema_text(), val = num(), selected = num())))), scrubbers = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), scrubbing = num(), panic = num(), filters = list_of(row(name = schema_text(), command = schema_text(), val = num())))), vents = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), checks = num(), excheck = num(), incheck = num(), direction = schema_text(), external = num(), internal = num(), extdefault = num(), intdefault = num())), modes = list_of(row(name = schema_text(), mode = num(), selected = num(), danger = num())))
 	op("rcon", ui_act("rcon", arg("rcon", enum(list(RCON_NO, RCON_AUTO, RCON_YES)))), then(PROC_REF(ui_set_rcon)))
 	op("temperature", ui_act("temperature"), asks(/datum/prompt/number, fields = list(
 			"title" = "Thermostat Controls",
@@ -732,8 +732,13 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 		"danger_level" = danger_level,
 		"target_temperature" = "[target_temperature - T0C]C",
 		"rcon" = rcon_setting,
-		"atmos_alarm" = alarm_area?.atmosalm,
-		"fire_alarm" = alarm_area?.fire,
+		"atmos_alarm" = alarm_area?.atmosalm || 0,
+		"fire_alarm" = alarm_area?.fire || 0,
+		"mode" = null,
+		"vents" = list(),
+		"scrubbers" = list(),
+		"modes" = list(),
+		"thresholds" = list(),
 	)
 	var/list/list/environment_data = list()
 	data["environment_data"] = environment_data
@@ -968,6 +973,7 @@ CAPABILITIES(/datum/air_alarm_remote)
 	ref_one(nameof(alarm), /obj/machinery/alarm)
 	ref_one(nameof(console), /datum/tgui_module/atmos_control)
 	interface("AirAlarm", forwards = nameof(alarm))
+	ui_shape(locked = bool(), siliconUser = bool(), remoteUser = bool(), environment_data = list_of(row(name = schema_text(), value = num(), unit = schema_text(), danger_level = num())), danger_level = num(), target_temperature = schema_text(), rcon = num(), atmos_alarm = num(), fire_alarm = num(), mode = nullable(num()), thresholds = list_of(row(name = schema_text(), settings = list_of(row(env = schema_text(), val = num(), selected = num())))), scrubbers = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), scrubbing = num(), panic = num(), filters = list_of(row(name = schema_text(), command = schema_text(), val = num())))), vents = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), checks = num(), excheck = num(), incheck = num(), direction = schema_text(), external = num(), internal = num(), extdefault = num(), intdefault = num())), modes = list_of(row(name = schema_text(), mode = num(), selected = num(), danger = num())))
 
 /datum/air_alarm_remote/New(datum/tgui_module/atmos_control/console, obj/machinery/alarm/alarm)
 	..()

@@ -381,7 +381,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	step_ms["mind transfer, verbs"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
 	step_started = TICK_USAGE_REAL
 	new_character.dna.ready_dna(new_character)
-	new_character.dna.b_type = text_or_null(client.prefs.read_preference(/datum/preference/text/human/b_type)) // migrated pref
+	new_character.dna.set_b_type(text_or_null(client.prefs.read_preference(/datum/preference/text/human/b_type))) // migrated pref
 	new_character.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
 	new_character.sync_organ_dna()
 	new_character.sync_addictions() // Handle round-start addictions

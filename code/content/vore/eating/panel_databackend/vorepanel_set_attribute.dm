@@ -27,25 +27,25 @@
 	var/new_name = html_encode(params["val"])
 	if(length(new_name) > BELLIES_NAME_MAX)
 		return FALSE
-	vore_selected_of(host()).display_name = new_name
+	vore_selected_of(host()).set_display_name(new_name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_message_mode(mob/user, list/params, extra)
-	vore_selected_of(host()).message_mode = !vore_selected_of(host()).message_mode
+	vore_selected_of(host()).set_message_mode(!vore_selected_of(host()).message_mode)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_wetness(mob/user, list/params, extra)
-	vore_selected_of(host()).is_wet = !vore_selected_of(host()).is_wet
+	vore_selected_of(host()).set_is_wet(!vore_selected_of(host()).is_wet)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_wetloop(mob/user, list/params, extra)
-	vore_selected_of(host()).wet_loop = !vore_selected_of(host()).wet_loop
+	vore_selected_of(host()).set_wet_loop(!vore_selected_of(host()).wet_loop)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -56,7 +56,7 @@
 	if(!(new_mode in selected_belly.digest_modes_table()))
 		return FALSE
 
-	vore_selected_of(host()).digest_mode = new_mode
+	vore_selected_of(host()).set_digest_mode(new_mode)
 	vore_selected_of(host()).updateVRPanels()
 	. = TRUE
 	if(.)
@@ -67,7 +67,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(toggle_addon in selected_belly.mode_flag_list_table()))
 		return FALSE
-	vore_selected_of(host()).mode_flags ^= selected_belly.mode_flag_list_table()[toggle_addon]
+	selected_belly.set_mode_flags(selected_belly.mode_flags ^ (selected_belly.mode_flag_list_table()[toggle_addon]))
 	vore_selected_of(host()).items_preserved = null //Re-evaltuate all items in belly on
 	vore_selected_of(host()).slow_digestion = FALSE
 	if(vore_selected_of(host()).mode_flags & DM_FLAG_SLOWBODY)
@@ -89,14 +89,14 @@
 	if(!(new_mode in selected_belly.item_digest_modes_table()))
 		return FALSE
 
-	vore_selected_of(host()).item_digest_mode = new_mode
+	vore_selected_of(host()).set_item_digest_mode(new_mode)
 	vore_selected_of(host()).items_preserved = null //Re-evaltuate all items in belly on belly-mode change
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_contaminates(mob/user, list/params, extra)
-	vore_selected_of(host()).contaminates = !vore_selected_of(host()).contaminates
+	vore_selected_of(host()).set_contaminates(!vore_selected_of(host()).contaminates)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -105,7 +105,7 @@
 	var/new_flavor = params["val"]
 	if(!(new_flavor in GLOB.contamination_flavors))
 		return FALSE
-	vore_selected_of(host()).contamination_flavor = new_flavor
+	vore_selected_of(host()).set_contamination_flavor(new_flavor)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -114,7 +114,7 @@
 	var/new_color = params["val"]
 	if(!(new_color in GLOB.contamination_colors))
 		return FALSE
-	vore_selected_of(host()).contamination_color = new_color
+	vore_selected_of(host()).set_contamination_color(new_color)
 	vore_selected_of(host()).items_preserved = null //To re-contaminate for new color
 	. = TRUE
 	if(.)
@@ -124,7 +124,7 @@
 	var/new_egg_type = params["val"]
 	if(!(new_egg_type in GLOB.global_vore_egg_types))
 		return FALSE
-	vore_selected_of(host()).egg_type = new_egg_type
+	vore_selected_of(host()).set_egg_type(new_egg_type)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -132,9 +132,9 @@
 /datum/vore_look/proc/attr_b_egg_name(mob/user, list/params, extra)
 	var/new_egg_name = sanitize(params["val"], BELLIES_NAME_MAX, FALSE, TRUE, FALSE)
 	if(!new_egg_name)
-		vore_selected_of(host()).egg_name = null
+		vore_selected_of(host()).set_egg_name(null)
 	else
-		vore_selected_of(host()).egg_name = new_egg_name
+		vore_selected_of(host()).set_egg_name(new_egg_name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -144,23 +144,23 @@
 	if(!isnum(new_egg_size))
 		return FALSE
 	if(new_egg_size == 0) //Disable.
-		vore_selected_of(host()).egg_size = 0
+		vore_selected_of(host()).set_egg_size(0)
 		to_chat(user,span_notice("Eggs will automatically calculate size depending on contents."))
 	else
 		new_egg_size = CLAMP(new_egg_size, 25, 200)
-		vore_selected_of(host()).egg_size = (new_egg_size/100)
+		vore_selected_of(host()).set_egg_size((new_egg_size/100))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_recycling(mob/user, list/params, extra)
-	vore_selected_of(host()).recycling = !vore_selected_of(host()).recycling
+	vore_selected_of(host()).set_recycling(!vore_selected_of(host()).recycling)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_storing_nutrition(mob/user, list/params, extra)
-	vore_selected_of(host()).storing_nutrition = !vore_selected_of(host()).storing_nutrition
+	vore_selected_of(host()).set_storing_nutrition(!vore_selected_of(host()).storing_nutrition)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -186,7 +186,7 @@
 		if(length(new_desc) > BELLIES_DESC_MAX)
 			tgui_alert_async(user, "Entered belly desc too long. [BELLIES_DESC_MAX] character limit.","Error")
 			return FALSE
-		vore_selected_of(host()).absorbed_desc = new_desc
+		vore_selected_of(host()).set_absorbed_desc(new_desc)
 		. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -391,7 +391,7 @@
 		tgui_alert_async(user, "Entered verb length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
 		return FALSE
 
-	vore_selected_of(host()).vore_verb = new_verb
+	vore_selected_of(host()).set_vore_verb(new_verb)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -403,7 +403,7 @@
 		tgui_alert_async(user, "Entered verb length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
 		return FALSE
 
-	vore_selected_of(host()).release_verb = new_release_verb
+	vore_selected_of(host()).set_release_verb(new_release_verb)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -412,7 +412,7 @@
 	var/privacy_choice = params["val"]
 	if(!(privacy_choice in list("default", "subtle", "loud")))
 		return FALSE
-	vore_selected_of(host()).eating_privacy_local = privacy_choice
+	vore_selected_of(host()).set_eating_privacy_local(privacy_choice)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -441,9 +441,9 @@
 	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_OVERALL, displayed_max = 5, default = vore_selected_of(host()).belly_overall_mult, question = "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.", title = "Set minimum prey amount")
 
 /datum/vore_look/proc/attr_b_fancy_sound(mob/user, list/params, extra)
-	vore_selected_of(host()).fancy_vore = !vore_selected_of(host()).fancy_vore
-	vore_selected_of(host()).vore_sound = "Gulp"
-	vore_selected_of(host()).release_sound = "Splatter"
+	vore_selected_of(host()).set_fancy_vore(!vore_selected_of(host()).fancy_vore)
+	vore_selected_of(host()).set_vore_sound("Gulp")
+	vore_selected_of(host()).set_release_sound("Splatter")
 	// defaults as to avoid potential bugs
 	. = TRUE
 	if(.)
@@ -456,7 +456,7 @@
 			return FALSE
 	else if (!(choice in GLOB.classic_release_sounds))
 		return FALSE
-	vore_selected_of(host()).release_sound = choice
+	vore_selected_of(host()).set_release_sound(choice)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -484,7 +484,7 @@
 			return FALSE
 	else if (!(choice in GLOB.classic_vore_sounds))
 		return FALSE
-	vore_selected_of(host()).vore_sound = choice
+	vore_selected_of(host()).set_vore_sound(choice)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -508,7 +508,7 @@
 	var/sound_volume_input = params["val"]
 	if(!isnum(sound_volume_input))
 		return FALSE
-	vore_selected_of(host()).sound_volume = sanitize_integer(sound_volume_input, 0, 100, initial(vore_selected_of(host()).sound_volume))
+	vore_selected_of(host()).set_sound_volume(sanitize_integer(sound_volume_input, 0, 100, initial(vore_selected_of(host()).sound_volume)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -519,31 +519,31 @@
 		return FALSE
 	if(choice == 0)
 		choice = rand(MIN_VOICE_FREQ, MAX_VOICE_FREQ)
-	vore_selected_of(host()).noise_freq = CLAMP(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ)
+	vore_selected_of(host()).set_noise_freq(CLAMP(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_tastes(mob/user, list/params, extra)
-	vore_selected_of(host()).can_taste = !vore_selected_of(host()).can_taste
+	vore_selected_of(host()).set_can_taste(!vore_selected_of(host()).can_taste)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_feedable(mob/user, list/params, extra)
-	vore_selected_of(host()).is_feedable = !vore_selected_of(host()).is_feedable
+	vore_selected_of(host()).set_is_feedable(!vore_selected_of(host()).is_feedable)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_entrance_logs(mob/user, list/params, extra)
-	vore_selected_of(host()).entrance_logs = !vore_selected_of(host()).entrance_logs
+	vore_selected_of(host()).set_entrance_logs(!vore_selected_of(host()).entrance_logs)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_item_digest_logs(mob/user, list/params, extra)
-	vore_selected_of(host()).item_digest_logs = !vore_selected_of(host()).item_digest_logs
+	vore_selected_of(host()).set_item_digest_logs(!vore_selected_of(host()).item_digest_logs)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -553,17 +553,17 @@
 	if(!isnum(new_bulge))
 		return FALSE
 	if(new_bulge == 0) //Disable.
-		vore_selected_of(host()).bulge_size = 0
+		vore_selected_of(host()).set_bulge_size(0)
 		to_chat(user,span_notice("Your stomach will not be seen on examine."))
 	else if(new_bulge)
 		new_bulge = CLAMP(new_bulge, 25, 200)
-		vore_selected_of(host()).bulge_size = (new_bulge/100)
+		vore_selected_of(host()).set_bulge_size((new_bulge/100))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_display_absorbed_examine(mob/user, list/params, extra)
-	vore_selected_of(host()).display_absorbed_examine = !vore_selected_of(host()).display_absorbed_examine
+	vore_selected_of(host()).set_display_absorbed_examine(!vore_selected_of(host()).display_absorbed_examine)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -584,7 +584,7 @@
 	var/new_grow = params["val"]
 	if (!isnum(new_grow))
 		return
-	vore_selected_of(host()).shrink_grow_size = CLAMP(new_grow, 25, 200) * 0.01
+	vore_selected_of(host()).set_shrink_grow_size(CLAMP(new_grow, 25, 200) * 0.01)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -593,7 +593,7 @@
 	var/new_nutrition = params["val"]
 	if(!isnum(new_nutrition))
 		return FALSE
-	vore_selected_of(host()).nutrition_percent = CLAMP(new_nutrition, 0.01, 100)
+	vore_selected_of(host()).set_nutrition_percent(CLAMP(new_nutrition, 0.01, 100))
 	. = TRUE
 	// modified these to be flexible rather than maxing at 6/6/12/6/6
 	if(.)
@@ -603,7 +603,7 @@
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
-	vore_selected_of(host()).digest_burn = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_burn) // sanity check following tgui input
+	vore_selected_of(host()).set_digest_burn(CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_burn)) // sanity check following tgui input
 	vore_selected_of(host()).items_preserved = null
 	. = TRUE
 	if(.)
@@ -613,7 +613,7 @@
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
-	vore_selected_of(host()).digest_brute = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_brute)
+	vore_selected_of(host()).set_digest_brute(CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_brute))
 	vore_selected_of(host()).items_preserved = null
 	. = TRUE
 	if(.)
@@ -623,7 +623,7 @@
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
-	vore_selected_of(host()).digest_oxy = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_oxy)
+	vore_selected_of(host()).set_digest_oxy(CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_oxy))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -632,7 +632,7 @@
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
-	vore_selected_of(host()).digest_tox = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_tox)
+	vore_selected_of(host()).set_digest_tox(CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_tox))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -641,7 +641,7 @@
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
-	vore_selected_of(host()).digest_clone = CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_clone)
+	vore_selected_of(host()).set_digest_clone(CLAMP(new_damage, 0, vore_selected_of(host()).get_unused_digestion_damage() + vore_selected_of(host()).digest_clone))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -651,13 +651,13 @@
 	if(!isnum(new_temp))
 		return FALSE
 	new_temp = new_temp + T0C
-	vore_selected_of(host()).bellytemperature = CLAMP(new_temp, T0C, 473.15)
+	vore_selected_of(host()).set_bellytemperature(CLAMP(new_temp, T0C, 473.15))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_temperature_damage(mob/user, list/params, extra)
-	vore_selected_of(host()).temperature_damage = !vore_selected_of(host()).temperature_damage
+	vore_selected_of(host()).set_temperature_damage(!vore_selected_of(host()).temperature_damage)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -673,7 +673,7 @@
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_emoteactive(mob/user, list/params, extra)
-	vore_selected_of(host()).emote_active = !vore_selected_of(host()).emote_active
+	vore_selected_of(host()).set_emote_active(!vore_selected_of(host()).emote_active)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -682,9 +682,9 @@
 	var/new_mode = params["val"]
 	switch(new_mode)
 		if(DM_DIGEST)
-			vore_selected_of(host()).selective_preference = DM_DIGEST
+			vore_selected_of(host()).set_selective_preference(DM_DIGEST)
 		if(DM_ABSORB)
-			vore_selected_of(host()).selective_preference = DM_ABSORB
+			vore_selected_of(host()).set_selective_preference(DM_ABSORB)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -693,7 +693,7 @@
 	var/new_time = params["val"]
 	if(!isnum(new_time))
 		return FALSE
-	vore_selected_of(host()).emote_time = CLAMP(new_time, 60, 600)
+	vore_selected_of(host()).set_emote_time(CLAMP(new_time, 60, 600))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -702,13 +702,13 @@
 	var/new_mode = params["val"]
 	switch(new_mode)
 		if(B_ESCAPABLE_NONE) //Never escapable.
-			vore_selected_of(host()).escapable = B_ESCAPABLE_NONE
+			vore_selected_of(host()).set_escapable(B_ESCAPABLE_NONE)
 			to_chat(user,span_warning("Prey will not be able to have special interactions with your [lowertext(vore_selected_of(host()).name)]."))
 		if(B_ESCAPABLE_DEFAULT) //Possibly escapable and special interactions.
-			vore_selected_of(host()).escapable = B_ESCAPABLE_DEFAULT
+			vore_selected_of(host()).set_escapable(B_ESCAPABLE_DEFAULT)
 			to_chat(user,span_warning("Prey now have special interactions with your [lowertext(vore_selected_of(host()).name)] depending on your settings."))
 		if(B_ESCAPABLE_INTENT) //Possibly escapable and special intent based interactions.
-			vore_selected_of(host()).escapable = B_ESCAPABLE_INTENT
+			vore_selected_of(host()).set_escapable(B_ESCAPABLE_INTENT)
 			to_chat(user,span_warning("Prey now have special interactions with your [lowertext(vore_selected_of(host()).name)] depending on your settings and their intent."))
 	. = TRUE
 	if(.)
@@ -718,7 +718,7 @@
 	var/escape_chance_input = params["val"]
 	if(!isnum(escape_chance_input))
 		return FALSE
-	vore_selected_of(host()).escapechance = sanitize_integer(escape_chance_input, 0, 100, initial(vore_selected_of(host()).escapechance))
+	vore_selected_of(host()).set_escapechance(sanitize_integer(escape_chance_input, 0, 100, initial(vore_selected_of(host()).escapechance)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -727,7 +727,7 @@
 	var/belch_chance_input = params["val"]
 	if(!isnum(belch_chance_input))
 		return FALSE
-	vore_selected_of(host()).belchchance = sanitize_integer(belch_chance_input, 0, 100, initial(vore_selected_of(host()).belchchance))
+	vore_selected_of(host()).set_belchchance(sanitize_integer(belch_chance_input, 0, 100, initial(vore_selected_of(host()).belchchance)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -736,7 +736,7 @@
 	var/escape_absorbed_chance_input = params["val"]
 	if(!isnum(escape_absorbed_chance_input))
 		return FALSE
-	vore_selected_of(host()).escapechance_absorbed = sanitize_integer(escape_absorbed_chance_input, 0, 100, initial(vore_selected_of(host()).escapechance_absorbed))
+	vore_selected_of(host()).set_escapechance_absorbed(sanitize_integer(escape_absorbed_chance_input, 0, 100, initial(vore_selected_of(host()).escapechance_absorbed)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -745,7 +745,7 @@
 	var/escape_time_input = params["val"]
 	if(!isnum(escape_time_input))
 		return FALSE
-	vore_selected_of(host()).escapetime = sanitize_integer(escape_time_input*10, 10, 600, initial(vore_selected_of(host()).escapetime))
+	vore_selected_of(host()).set_escapetime(sanitize_integer(escape_time_input*10, 10, 600, initial(vore_selected_of(host()).escapetime)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -754,7 +754,7 @@
 	var/transfer_chance_input = params["val"]
 	if(!isnum(transfer_chance_input))
 		return FALSE
-	vore_selected_of(host()).transferchance = sanitize_integer(transfer_chance_input, 0, 100, initial(vore_selected_of(host()).transferchance))
+	vore_selected_of(host()).set_transferchance(sanitize_integer(transfer_chance_input, 0, 100, initial(vore_selected_of(host()).transferchance)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -763,9 +763,9 @@
 	var/obj/belly/choice = params["val"]
 
 	if(!istype(choice))
-		vore_selected_of(host()).transferlocation = null
+		vore_selected_of(host()).set_transferlocation(null)
 	else
-		vore_selected_of(host()).transferlocation = choice.name
+		vore_selected_of(host()).set_transferlocation(choice.name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -774,7 +774,7 @@
 	var/transfer_secondary_chance_input = params["val"]
 	if(!isnum(transfer_secondary_chance_input))
 		return FALSE
-	vore_selected_of(host()).transferchance_secondary = sanitize_integer(transfer_secondary_chance_input, 0, 100, initial(vore_selected_of(host()).transferchance_secondary))
+	vore_selected_of(host()).set_transferchance_secondary(sanitize_integer(transfer_secondary_chance_input, 0, 100, initial(vore_selected_of(host()).transferchance_secondary)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -783,9 +783,9 @@
 	var/obj/belly/choice_secondary = params["val"]
 
 	if(!istype(choice_secondary))
-		vore_selected_of(host()).transferlocation_secondary = null
+		vore_selected_of(host()).set_transferlocation_secondary(null)
 	else
-		vore_selected_of(host()).transferlocation_secondary = choice_secondary.name
+		vore_selected_of(host()).set_transferlocation_secondary(choice_secondary.name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -794,7 +794,7 @@
 	var/absorb_chance_input = params["val"]
 	if(!isnum(absorb_chance_input))
 		return FALSE
-	vore_selected_of(host()).absorbchance = sanitize_integer(absorb_chance_input, 0, 100, initial(vore_selected_of(host()).absorbchance))
+	vore_selected_of(host()).set_absorbchance(sanitize_integer(absorb_chance_input, 0, 100, initial(vore_selected_of(host()).absorbchance)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -803,7 +803,7 @@
 	var/digest_chance_input = params["val"]
 	if(!isnum(digest_chance_input))
 		return FALSE
-	vore_selected_of(host()).digestchance = sanitize_integer(digest_chance_input, 0, 100, initial(vore_selected_of(host()).digestchance))
+	vore_selected_of(host()).set_digestchance(sanitize_integer(digest_chance_input, 0, 100, initial(vore_selected_of(host()).digestchance)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -812,7 +812,7 @@
 	var/autotransferchance_input = params["val"]
 	if(!isnum(autotransferchance_input))
 		return FALSE
-	vore_selected_of(host()).autotransferchance = sanitize_integer(autotransferchance_input, 0, 100, initial(vore_selected_of(host()).autotransferchance))
+	vore_selected_of(host()).set_autotransferchance(sanitize_integer(autotransferchance_input, 0, 100, initial(vore_selected_of(host()).autotransferchance)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -821,7 +821,7 @@
 	var/autotransferwait_input = params["val"]
 	if(!isnum(autotransferwait_input))
 		return FALSE
-	vore_selected_of(host()).autotransferwait = sanitize_integer(autotransferwait_input*10, 10, 18000, initial(vore_selected_of(host()).autotransferwait))
+	vore_selected_of(host()).set_autotransferwait(sanitize_integer(autotransferwait_input*10, 10, 18000, initial(vore_selected_of(host()).autotransferwait)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -830,9 +830,9 @@
 	var/obj/belly/choice = params["val"]
 
 	if(!istype(choice))
-		vore_selected_of(host()).autotransferlocation = null
+		vore_selected_of(host()).set_autotransferlocation(null)
 	else
-		vore_selected_of(host()).autotransferlocation = choice.name
+		vore_selected_of(host()).set_autotransferlocation(choice.name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -842,9 +842,9 @@
 	if(!istype(choice))
 		return FALSE
 	else if(choice.name in vore_selected_of(host()).autotransferextralocation)
-		vore_selected_of(host()).autotransferextralocation = vore_selected_of(host()).autotransferextralocation - choice.name // Replace: the list may be shared
+		vore_selected_of(host()).set_autotransferextralocation(vore_selected_of(host()).autotransferextralocation - choice.name) // Replace: the list may be shared
 	else
-		vore_selected_of(host()).autotransferextralocation = vore_selected_of(host()).autotransferextralocation + choice.name
+		vore_selected_of(host()).set_autotransferextralocation(vore_selected_of(host()).autotransferextralocation + choice.name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -853,7 +853,7 @@
 	var/autotransferchance_secondary_input = params["val"]
 	if(!isnum(autotransferchance_secondary_input))
 		return FALSE
-	vore_selected_of(host()).autotransferchance_secondary = sanitize_integer(autotransferchance_secondary_input, 0, 100, initial(vore_selected_of(host()).autotransferchance_secondary))
+	vore_selected_of(host()).set_autotransferchance_secondary(sanitize_integer(autotransferchance_secondary_input, 0, 100, initial(vore_selected_of(host()).autotransferchance_secondary)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -862,9 +862,9 @@
 	var/obj/belly/choice = params["val"]
 
 	if(!choice)
-		vore_selected_of(host()).autotransferlocation_secondary = null
+		vore_selected_of(host()).set_autotransferlocation_secondary(null)
 	else
-		vore_selected_of(host()).autotransferlocation_secondary = choice.name
+		vore_selected_of(host()).set_autotransferlocation_secondary(choice.name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -874,9 +874,9 @@
 	if(!istype(choice)) //They cancelled, no changes
 		return FALSE
 	else if(choice.name in vore_selected_of(host()).autotransferextralocation_secondary)
-		vore_selected_of(host()).autotransferextralocation_secondary = vore_selected_of(host()).autotransferextralocation_secondary - choice.name // Replace: the list may be shared
+		vore_selected_of(host()).set_autotransferextralocation_secondary(vore_selected_of(host()).autotransferextralocation_secondary - choice.name) // Replace: the list may be shared
 	else
-		vore_selected_of(host()).autotransferextralocation_secondary = vore_selected_of(host()).autotransferextralocation_secondary + choice.name
+		vore_selected_of(host()).set_autotransferextralocation_secondary(vore_selected_of(host()).autotransferextralocation_secondary + choice.name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -886,7 +886,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_whitelist ^= selected_belly.autotransfer_flags_list_table()[toggle_addon]
+	selected_belly.set_autotransfer_whitelist(selected_belly.autotransfer_whitelist ^ (selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -896,7 +896,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_blacklist ^= selected_belly.autotransfer_flags_list_table()[toggle_addon]
+	selected_belly.set_autotransfer_blacklist(selected_belly.autotransfer_blacklist ^ (selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -906,7 +906,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_whitelist ^= selected_belly.autotransfer_flags_list_table()[toggle_addon]
+	selected_belly.set_autotransfer_secondary_whitelist(selected_belly.autotransfer_secondary_whitelist ^ (selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -916,7 +916,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_blacklist ^= selected_belly.autotransfer_flags_list_table()[toggle_addon]
+	selected_belly.set_autotransfer_secondary_blacklist(selected_belly.autotransfer_secondary_blacklist ^ (selected_belly.autotransfer_flags_list_table()[toggle_addon]))
 	. = TRUE
 	. = TRUE
 	if(.)
@@ -927,7 +927,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_whitelist_items ^= selected_belly.autotransfer_flags_list_items_table()[toggle_addon]
+	selected_belly.set_autotransfer_whitelist_items(selected_belly.autotransfer_whitelist_items ^ (selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -937,7 +937,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_blacklist_items ^= selected_belly.autotransfer_flags_list_items_table()[toggle_addon]
+	selected_belly.set_autotransfer_blacklist_items(selected_belly.autotransfer_blacklist_items ^ (selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -947,7 +947,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_whitelist_items ^= selected_belly.autotransfer_flags_list_items_table()[toggle_addon]
+	selected_belly.set_autotransfer_secondary_whitelist_items(selected_belly.autotransfer_secondary_whitelist_items ^ (selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -957,7 +957,7 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_blacklist_items ^= selected_belly.autotransfer_flags_list_items_table()[toggle_addon]
+	selected_belly.set_autotransfer_secondary_blacklist_items(selected_belly.autotransfer_secondary_blacklist_items ^ (selected_belly.autotransfer_flags_list_items_table()[toggle_addon]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -966,7 +966,7 @@
 	var/autotransfer_min_amount_input = params["val"]
 	if(!isnum(autotransfer_min_amount_input))
 		return FALSE
-	vore_selected_of(host()).autotransfer_min_amount = sanitize_integer(autotransfer_min_amount_input, 0, 100, initial(vore_selected_of(host()).autotransfer_min_amount))
+	vore_selected_of(host()).set_autotransfer_min_amount(sanitize_integer(autotransfer_min_amount_input, 0, 100, initial(vore_selected_of(host()).autotransfer_min_amount)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -975,33 +975,33 @@
 	var/autotransfer_max_amount_input = params["val"]
 	if(!isnum(autotransfer_max_amount_input))
 		return FALSE
-	vore_selected_of(host()).autotransfer_max_amount = sanitize_integer(autotransfer_max_amount_input, 0, 100, initial(vore_selected_of(host()).autotransfer_max_amount))
+	vore_selected_of(host()).set_autotransfer_max_amount(sanitize_integer(autotransfer_max_amount_input, 0, 100, initial(vore_selected_of(host()).autotransfer_max_amount)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_enabled(mob/user, list/params, extra)
-	vore_selected_of(host()).autotransfer_enabled = !vore_selected_of(host()).autotransfer_enabled
+	vore_selected_of(host()).set_autotransfer_enabled(!vore_selected_of(host()).autotransfer_enabled)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_fullscreen(mob/user, list/params, extra)
-	vore_selected_of(host()).belly_fullscreen = params["val"]
+	vore_selected_of(host()).set_belly_fullscreen(params["val"])
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_disable_hud(mob/user, list/params, extra)
-	vore_selected_of(host()).disable_hud = !vore_selected_of(host()).disable_hud
+	vore_selected_of(host()).set_disable_hud(!vore_selected_of(host()).disable_hud)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_colorization_enabled(mob/user, list/params, extra)
-	vore_selected_of(host()).colorization_enabled = !vore_selected_of(host()).colorization_enabled
-	vore_selected_of(host()).belly_fullscreen = "dark" //This prevents you from selecting a belly that is not meant to be colored and then turning colorization on.
+	vore_selected_of(host()).set_colorization_enabled(!vore_selected_of(host()).colorization_enabled)
+	vore_selected_of(host()).set_belly_fullscreen("dark") //This prevents you from selecting a belly that is not meant to be colored and then turning colorization on.
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1021,7 +1021,7 @@
 /datum/vore_look/proc/attr_b_fullscreen_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
-		vore_selected_of(host()).belly_fullscreen_color = newcolor
+		vore_selected_of(host()).set_belly_fullscreen_color(newcolor)
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -1030,7 +1030,7 @@
 /datum/vore_look/proc/attr_b_fullscreen_color2(mob/user, list/params, extra)
 	var/newcolor2 = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor2)
-		vore_selected_of(host()).belly_fullscreen_color2 = newcolor2
+		vore_selected_of(host()).set_belly_fullscreen_color2(newcolor2)
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -1039,7 +1039,7 @@
 /datum/vore_look/proc/attr_b_fullscreen_color3(mob/user, list/params, extra)
 	var/newcolor3 = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor3)
-		vore_selected_of(host()).belly_fullscreen_color3 = newcolor3
+		vore_selected_of(host()).set_belly_fullscreen_color3(newcolor3)
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -1048,7 +1048,7 @@
 /datum/vore_look/proc/attr_b_fullscreen_color4(mob/user, list/params, extra)
 	var/newcolor4 = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor4)
-		vore_selected_of(host()).belly_fullscreen_color4 = newcolor4
+		vore_selected_of(host()).set_belly_fullscreen_color4(newcolor4)
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
@@ -1058,14 +1058,14 @@
 	var/newalpha = params["val"]
 	if(!isnum(newalpha))
 		return FALSE
-	vore_selected_of(host()).belly_fullscreen_alpha = newalpha
+	vore_selected_of(host()).set_belly_fullscreen_alpha(newalpha)
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_save_digest_mode(mob/user, list/params, extra)
-	vore_selected_of(host()).save_digest_mode = !vore_selected_of(host()).save_digest_mode
+	vore_selected_of(host()).set_save_digest_mode(!vore_selected_of(host()).save_digest_mode)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1075,13 +1075,13 @@
 	open_request(ui, /datum/prompt/choice/vore_delete_belly, TYPE_PROC_REF(/datum/tgui, vore_delete_belly_answered), answerer = user, question = "Are you sure you want to delete your [lowertext(vore_selected_of(host()).name)]?", title = "Confirmation", choices = list("Cancel", "Delete"), buttons = TRUE)
 
 /datum/vore_look/proc/attr_b_private_struggle(mob/user, list/params, extra)
-	vore_selected_of(host()).private_struggle = !vore_selected_of(host()).private_struggle
+	vore_selected_of(host()).set_private_struggle(!vore_selected_of(host()).private_struggle)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_absorbedrename_enabled(mob/user, list/params, extra)
-	vore_selected_of(host()).absorbedrename_enabled = !vore_selected_of(host()).absorbedrename_enabled
+	vore_selected_of(host()).set_absorbedrename_enabled(!vore_selected_of(host()).absorbedrename_enabled)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1089,13 +1089,13 @@
 /datum/vore_look/proc/attr_b_absorbedrename_name(mob/user, list/params, extra)
 	var/new_absorbedrename_name = sanitize(params["val"], MAX_MESSAGE_LEN, FALSE, TRUE, FALSE)
 	if(new_absorbedrename_name)
-		vore_selected_of(host()).absorbedrename_name = new_absorbedrename_name
+		vore_selected_of(host()).set_absorbedrename_name(new_absorbedrename_name)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_vorespawn_blacklist(mob/user, list/params, extra)
-	vore_selected_of(host()).vorespawn_blacklist = !vore_selected_of(host()).vorespawn_blacklist
+	vore_selected_of(host()).set_vorespawn_blacklist(!vore_selected_of(host()).vorespawn_blacklist)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1103,23 +1103,24 @@
 /datum/vore_look/proc/attr_b_vorespawn_whitelist(mob/user, list/params, extra)
 	var/new_vorespawn_whitelist = sanitize(params["val"], MAX_MESSAGE_LEN, FALSE, TRUE, FALSE)
 	if(new_vorespawn_whitelist)
-		vore_selected_of(host()).vorespawn_whitelist = splittext(lowertext(new_vorespawn_whitelist),"\n")
+		vore_selected_of(host()).set_vorespawn_whitelist(splittext(lowertext(new_vorespawn_whitelist),"\n"))
 	else
-		vore_selected_of(host()).vorespawn_whitelist = list()
+		vore_selected_of(host()).set_vorespawn_whitelist(list())
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_vorespawn_absorbed(mob/user, list/params, extra)
 	var/current_number = params["val"]
+	var/obj/belly/selected_belly = vore_selected_of(host())
 	switch(current_number)
 		if("Yes")
-			vore_selected_of(host()).vorespawn_absorbed |= VS_FLAG_ABSORB_YES
+			selected_belly.set_vorespawn_absorbed(selected_belly.vorespawn_absorbed | (VS_FLAG_ABSORB_YES))
 		if("Prey Choice")
-			vore_selected_of(host()).vorespawn_absorbed |= VS_FLAG_ABSORB_PREY
+			selected_belly.set_vorespawn_absorbed(selected_belly.vorespawn_absorbed | (VS_FLAG_ABSORB_PREY))
 		if("No")
-			vore_selected_of(host()).vorespawn_absorbed &= ~(VS_FLAG_ABSORB_YES)
-			vore_selected_of(host()).vorespawn_absorbed &= ~(VS_FLAG_ABSORB_PREY)
+			selected_belly.set_vorespawn_absorbed(selected_belly.vorespawn_absorbed & (~(VS_FLAG_ABSORB_YES)))
+			selected_belly.set_vorespawn_absorbed(selected_belly.vorespawn_absorbed & (~(VS_FLAG_ABSORB_PREY)))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1128,21 +1129,21 @@
 	var/belly_choice = params["val"]
 	if(!(belly_choice in living_rules_of(host()).vore_icon_bellies))
 		return FALSE
-	vore_selected_of(host()).belly_sprite_to_affect = belly_choice
+	vore_selected_of(host()).set_belly_sprite_to_affect(belly_choice)
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_affects_vore_sprites(mob/user, list/params, extra)
-	vore_selected_of(host()).affects_vore_sprites = !vore_selected_of(host()).affects_vore_sprites
+	vore_selected_of(host()).set_affects_vore_sprites(!vore_selected_of(host()).affects_vore_sprites)
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_count_absorbed_prey_for_sprites(mob/user, list/params, extra)
-	vore_selected_of(host()).count_absorbed_prey_for_sprite = !vore_selected_of(host()).count_absorbed_prey_for_sprite
+	vore_selected_of(host()).set_count_absorbed_prey_for_sprite(!vore_selected_of(host()).count_absorbed_prey_for_sprite)
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
@@ -1152,14 +1153,14 @@
 	var/absorbed_multiplier_input = params["val"]
 	if(!isnum(absorbed_multiplier_input))
 		return FALSE
-	vore_selected_of(host()).absorbed_multiplier = CLAMP(absorbed_multiplier_input, 0.1, 3)
+	vore_selected_of(host()).set_absorbed_multiplier(CLAMP(absorbed_multiplier_input, 0.1, 3))
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_count_items_for_sprites(mob/user, list/params, extra)
-	vore_selected_of(host()).count_items_for_sprite = !vore_selected_of(host()).count_items_for_sprite
+	vore_selected_of(host()).set_count_items_for_sprite(!vore_selected_of(host()).count_items_for_sprite)
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
@@ -1169,21 +1170,21 @@
 	var/item_multiplier_input = params["val"]
 	if(!isnum(item_multiplier_input))
 		return FALSE
-	vore_selected_of(host()).item_multiplier = CLAMP(item_multiplier_input, 0.1, 10)
+	vore_selected_of(host()).set_item_multiplier(CLAMP(item_multiplier_input, 0.1, 10))
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_health_impacts_size(mob/user, list/params, extra)
-	vore_selected_of(host()).health_impacts_size = !vore_selected_of(host()).health_impacts_size
+	vore_selected_of(host()).set_health_impacts_size(!vore_selected_of(host()).health_impacts_size)
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_resist_animation(mob/user, list/params, extra)
-	vore_selected_of(host()).resist_triggers_animation = !vore_selected_of(host()).resist_triggers_animation
+	vore_selected_of(host()).set_resist_triggers_animation(!vore_selected_of(host()).resist_triggers_animation)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1192,7 +1193,7 @@
 	var/size_factor_input = params["val"]
 	if(!isnum(size_factor_input))
 		return FALSE
-	vore_selected_of(host()).size_factor_for_sprite = CLAMP(size_factor_input, 0.1, 3)
+	vore_selected_of(host()).set_size_factor_for_sprite(CLAMP(size_factor_input, 0.1, 3))
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
@@ -1203,13 +1204,13 @@
 	var/obj/belly/selected_belly = vore_selected_of(host())
 	if(!(toggle_vs_flag in selected_belly.vore_sprite_flag_list_table()))
 		return FALSE
-	vore_selected_of(host()).vore_sprite_flags ^= selected_belly.vore_sprite_flag_list_table()[toggle_vs_flag]
+	selected_belly.set_vore_sprite_flags(selected_belly.vore_sprite_flags ^ (selected_belly.vore_sprite_flag_list_table()[toggle_vs_flag]))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_count_liquid_for_sprites(mob/user, list/params, extra)
-	vore_selected_of(host()).count_liquid_for_sprite = !vore_selected_of(host()).count_liquid_for_sprite
+	vore_selected_of(host()).set_count_liquid_for_sprite(!vore_selected_of(host()).count_liquid_for_sprite)
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
@@ -1219,7 +1220,7 @@
 	var/liquid_multiplier_input = params["val"]
 	if(!isnum(liquid_multiplier_input))
 		return FALSE
-	vore_selected_of(host()).liquid_multiplier = CLAMP(liquid_multiplier_input, 0.1, 10)
+	vore_selected_of(host()).set_liquid_multiplier(CLAMP(liquid_multiplier_input, 0.1, 10))
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
@@ -1229,7 +1230,7 @@
 	var/new_undergarment = params["val"]
 	if(!(GLOB.global_underwear.categories_by_name[new_undergarment]))
 		return FALSE
-	vore_selected_of(host()).undergarment_chosen = new_undergarment
+	vore_selected_of(host()).set_undergarment_chosen(new_undergarment)
 	PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
@@ -1241,7 +1242,7 @@
 	if(!selected_underwear) //They cancelled, no changes
 		return FALSE
 
-	vore_selected_of(host()).undergarment_if_none = selected_underwear
+	vore_selected_of(host()).set_undergarment_if_none(selected_underwear)
 	PUBLISH(host(), belly_change)
 	host().updateVRPanel()
 	if(.)
@@ -1250,7 +1251,7 @@
 /datum/vore_look/proc/attr_b_undergarment_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
-		vore_selected_of(host()).undergarment_color = newcolor
+		vore_selected_of(host()).set_undergarment_color(newcolor)
 		PUBLISH(host(), belly_change)
 	. = TRUE
 	if(.)
@@ -1291,41 +1292,41 @@
 
 /datum/vore_look/proc/attr_b_show_liq_fullness(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).show_fullness_messages)
-		vore_selected_of(host()).show_fullness_messages = 1
+		vore_selected_of(host()).set_show_fullness_messages(1)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] now has liquid examination options."))
 	else
-		vore_selected_of(host()).show_fullness_messages = 0
+		vore_selected_of(host()).set_show_fullness_messages(0)
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has liquid examination options."))
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle1(mob/user, list/params, extra)
-	vore_selected_of(host()).liquid_fullness1_messages = !vore_selected_of(host()).liquid_fullness1_messages
+	vore_selected_of(host()).set_liquid_fullness1_messages(!vore_selected_of(host()).liquid_fullness1_messages)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle2(mob/user, list/params, extra)
-	vore_selected_of(host()).liquid_fullness2_messages = !vore_selected_of(host()).liquid_fullness2_messages
+	vore_selected_of(host()).set_liquid_fullness2_messages(!vore_selected_of(host()).liquid_fullness2_messages)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle3(mob/user, list/params, extra)
-	vore_selected_of(host()).liquid_fullness3_messages = !vore_selected_of(host()).liquid_fullness3_messages
+	vore_selected_of(host()).set_liquid_fullness3_messages(!vore_selected_of(host()).liquid_fullness3_messages)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle4(mob/user, list/params, extra)
-	vore_selected_of(host()).liquid_fullness4_messages = !vore_selected_of(host()).liquid_fullness4_messages
+	vore_selected_of(host()).set_liquid_fullness4_messages(!vore_selected_of(host()).liquid_fullness4_messages)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_liq_msg_toggle5(mob/user, list/params, extra)
-	vore_selected_of(host()).liquid_fullness5_messages = !vore_selected_of(host()).liquid_fullness5_messages
+	vore_selected_of(host()).set_liquid_fullness5_messages(!vore_selected_of(host()).liquid_fullness5_messages)
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1397,55 +1398,55 @@
 		return
 	var/datum/vore_look/panel = src_object()
 	if(A.answer.value == "DELETE")
-		vore_selected_of(panel.host()).digest_messages_prey = vore_selected_of(panel.host()).belly_shared_list("digest_messages_prey")
-		vore_selected_of(panel.host()).digest_messages_owner = vore_selected_of(panel.host()).belly_shared_list("digest_messages_owner")
-		vore_selected_of(panel.host()).absorb_messages_prey = vore_selected_of(panel.host()).belly_shared_list("absorb_messages_prey")
-		vore_selected_of(panel.host()).absorb_messages_owner = vore_selected_of(panel.host()).belly_shared_list("absorb_messages_owner")
-		vore_selected_of(panel.host()).unabsorb_messages_prey = vore_selected_of(panel.host()).belly_shared_list("unabsorb_messages_prey")
-		vore_selected_of(panel.host()).unabsorb_messages_owner = vore_selected_of(panel.host()).belly_shared_list("unabsorb_messages_owner")
-		vore_selected_of(panel.host()).struggle_messages_outside = vore_selected_of(panel.host()).belly_shared_list("struggle_messages_outside")
-		vore_selected_of(panel.host()).struggle_messages_inside = vore_selected_of(panel.host()).belly_shared_list("struggle_messages_inside")
-		vore_selected_of(panel.host()).absorbed_struggle_messages_outside = vore_selected_of(panel.host()).belly_shared_list("absorbed_struggle_messages_outside")
-		vore_selected_of(panel.host()).absorbed_struggle_messages_inside = vore_selected_of(panel.host()).belly_shared_list("absorbed_struggle_messages_inside")
-		vore_selected_of(panel.host()).escape_attempt_messages_owner = vore_selected_of(panel.host()).belly_shared_list("escape_attempt_messages_owner")
-		vore_selected_of(panel.host()).escape_attempt_messages_prey = vore_selected_of(panel.host()).belly_shared_list("escape_attempt_messages_prey")
-		vore_selected_of(panel.host()).escape_messages_owner = vore_selected_of(panel.host()).belly_shared_list("escape_messages_owner")
-		vore_selected_of(panel.host()).escape_messages_prey = vore_selected_of(panel.host()).belly_shared_list("escape_messages_prey")
-		vore_selected_of(panel.host()).escape_messages_outside = vore_selected_of(panel.host()).belly_shared_list("escape_messages_outside")
-		vore_selected_of(panel.host()).escape_item_messages_owner = vore_selected_of(panel.host()).belly_shared_list("escape_item_messages_owner")
-		vore_selected_of(panel.host()).escape_item_messages_prey = vore_selected_of(panel.host()).belly_shared_list("escape_item_messages_prey")
-		vore_selected_of(panel.host()).escape_item_messages_outside = vore_selected_of(panel.host()).belly_shared_list("escape_item_messages_outside")
-		vore_selected_of(panel.host()).escape_fail_messages_owner = vore_selected_of(panel.host()).belly_shared_list("escape_fail_messages_owner")
-		vore_selected_of(panel.host()).escape_fail_messages_prey = vore_selected_of(panel.host()).belly_shared_list("escape_fail_messages_prey")
-		vore_selected_of(panel.host()).escape_attempt_absorbed_messages_owner = vore_selected_of(panel.host()).belly_shared_list("escape_attempt_absorbed_messages_owner")
-		vore_selected_of(panel.host()).escape_attempt_absorbed_messages_prey = vore_selected_of(panel.host()).belly_shared_list("escape_attempt_absorbed_messages_prey")
-		vore_selected_of(panel.host()).escape_absorbed_messages_owner = vore_selected_of(panel.host()).belly_shared_list("escape_absorbed_messages_owner")
-		vore_selected_of(panel.host()).escape_absorbed_messages_prey = vore_selected_of(panel.host()).belly_shared_list("escape_absorbed_messages_prey")
-		vore_selected_of(panel.host()).escape_absorbed_messages_outside = vore_selected_of(panel.host()).belly_shared_list("escape_absorbed_messages_outside")
-		vore_selected_of(panel.host()).escape_fail_absorbed_messages_owner = vore_selected_of(panel.host()).belly_shared_list("escape_fail_absorbed_messages_owner")
-		vore_selected_of(panel.host()).escape_fail_absorbed_messages_prey = vore_selected_of(panel.host()).belly_shared_list("escape_fail_absorbed_messages_prey")
-		vore_selected_of(panel.host()).primary_transfer_messages_owner = vore_selected_of(panel.host()).belly_shared_list("primary_transfer_messages_owner")
-		vore_selected_of(panel.host()).primary_transfer_messages_prey = vore_selected_of(panel.host()).belly_shared_list("primary_transfer_messages_prey")
-		vore_selected_of(panel.host()).secondary_transfer_messages_owner = vore_selected_of(panel.host()).belly_shared_list("secondary_transfer_messages_owner")
-		vore_selected_of(panel.host()).secondary_transfer_messages_prey = vore_selected_of(panel.host()).belly_shared_list("secondary_transfer_messages_prey")
-		vore_selected_of(panel.host()).primary_autotransfer_messages_owner = vore_selected_of(panel.host()).belly_shared_list("primary_autotransfer_messages_owner")
-		vore_selected_of(panel.host()).primary_autotransfer_messages_prey = vore_selected_of(panel.host()).belly_shared_list("primary_autotransfer_messages_prey")
-		vore_selected_of(panel.host()).secondary_autotransfer_messages_owner = vore_selected_of(panel.host()).belly_shared_list("secondary_autotransfer_messages_owner")
-		vore_selected_of(panel.host()).secondary_autotransfer_messages_prey = vore_selected_of(panel.host()).belly_shared_list("secondary_autotransfer_messages_prey")
-		vore_selected_of(panel.host()).digest_chance_messages_owner = vore_selected_of(panel.host()).belly_shared_list("digest_chance_messages_owner")
-		vore_selected_of(panel.host()).digest_chance_messages_prey = vore_selected_of(panel.host()).belly_shared_list("digest_chance_messages_prey")
-		vore_selected_of(panel.host()).absorb_chance_messages_owner = vore_selected_of(panel.host()).belly_shared_list("absorb_chance_messages_owner")
-		vore_selected_of(panel.host()).absorb_chance_messages_prey = vore_selected_of(panel.host()).belly_shared_list("absorb_chance_messages_prey")
-		vore_selected_of(panel.host()).examine_messages = vore_selected_of(panel.host()).belly_shared_list("examine_messages")
-		vore_selected_of(panel.host()).examine_messages_absorbed = vore_selected_of(panel.host()).belly_shared_list("examine_messages_absorbed")
-		vore_selected_of(panel.host()).emote_lists = vore_selected_of(panel.host()).belly_shared_list("emote_lists")
-		vore_selected_of(panel.host()).trash_eater_in = vore_selected_of(panel.host()).belly_shared_list("trash_eater_in")
-		vore_selected_of(panel.host()).trash_eater_out = vore_selected_of(panel.host()).belly_shared_list("trash_eater_out")
-		vore_selected_of(panel.host()).fullness1_messages = vore_selected_of(panel.host()).belly_shared_list("fullness1_messages")
-		vore_selected_of(panel.host()).fullness2_messages = vore_selected_of(panel.host()).belly_shared_list("fullness2_messages")
-		vore_selected_of(panel.host()).fullness3_messages = vore_selected_of(panel.host()).belly_shared_list("fullness3_messages")
-		vore_selected_of(panel.host()).fullness4_messages = vore_selected_of(panel.host()).belly_shared_list("fullness4_messages")
-		vore_selected_of(panel.host()).fullness5_messages = vore_selected_of(panel.host()).belly_shared_list("fullness5_messages")
+		vore_selected_of(panel.host()).set_digest_messages_prey(vore_selected_of(panel.host()).belly_shared_list("digest_messages_prey"))
+		vore_selected_of(panel.host()).set_digest_messages_owner(vore_selected_of(panel.host()).belly_shared_list("digest_messages_owner"))
+		vore_selected_of(panel.host()).set_absorb_messages_prey(vore_selected_of(panel.host()).belly_shared_list("absorb_messages_prey"))
+		vore_selected_of(panel.host()).set_absorb_messages_owner(vore_selected_of(panel.host()).belly_shared_list("absorb_messages_owner"))
+		vore_selected_of(panel.host()).set_unabsorb_messages_prey(vore_selected_of(panel.host()).belly_shared_list("unabsorb_messages_prey"))
+		vore_selected_of(panel.host()).set_unabsorb_messages_owner(vore_selected_of(panel.host()).belly_shared_list("unabsorb_messages_owner"))
+		vore_selected_of(panel.host()).set_struggle_messages_outside(vore_selected_of(panel.host()).belly_shared_list("struggle_messages_outside"))
+		vore_selected_of(panel.host()).set_struggle_messages_inside(vore_selected_of(panel.host()).belly_shared_list("struggle_messages_inside"))
+		vore_selected_of(panel.host()).set_absorbed_struggle_messages_outside(vore_selected_of(panel.host()).belly_shared_list("absorbed_struggle_messages_outside"))
+		vore_selected_of(panel.host()).set_absorbed_struggle_messages_inside(vore_selected_of(panel.host()).belly_shared_list("absorbed_struggle_messages_inside"))
+		vore_selected_of(panel.host()).set_escape_attempt_messages_owner(vore_selected_of(panel.host()).belly_shared_list("escape_attempt_messages_owner"))
+		vore_selected_of(panel.host()).set_escape_attempt_messages_prey(vore_selected_of(panel.host()).belly_shared_list("escape_attempt_messages_prey"))
+		vore_selected_of(panel.host()).set_escape_messages_owner(vore_selected_of(panel.host()).belly_shared_list("escape_messages_owner"))
+		vore_selected_of(panel.host()).set_escape_messages_prey(vore_selected_of(panel.host()).belly_shared_list("escape_messages_prey"))
+		vore_selected_of(panel.host()).set_escape_messages_outside(vore_selected_of(panel.host()).belly_shared_list("escape_messages_outside"))
+		vore_selected_of(panel.host()).set_escape_item_messages_owner(vore_selected_of(panel.host()).belly_shared_list("escape_item_messages_owner"))
+		vore_selected_of(panel.host()).set_escape_item_messages_prey(vore_selected_of(panel.host()).belly_shared_list("escape_item_messages_prey"))
+		vore_selected_of(panel.host()).set_escape_item_messages_outside(vore_selected_of(panel.host()).belly_shared_list("escape_item_messages_outside"))
+		vore_selected_of(panel.host()).set_escape_fail_messages_owner(vore_selected_of(panel.host()).belly_shared_list("escape_fail_messages_owner"))
+		vore_selected_of(panel.host()).set_escape_fail_messages_prey(vore_selected_of(panel.host()).belly_shared_list("escape_fail_messages_prey"))
+		vore_selected_of(panel.host()).set_escape_attempt_absorbed_messages_owner(vore_selected_of(panel.host()).belly_shared_list("escape_attempt_absorbed_messages_owner"))
+		vore_selected_of(panel.host()).set_escape_attempt_absorbed_messages_prey(vore_selected_of(panel.host()).belly_shared_list("escape_attempt_absorbed_messages_prey"))
+		vore_selected_of(panel.host()).set_escape_absorbed_messages_owner(vore_selected_of(panel.host()).belly_shared_list("escape_absorbed_messages_owner"))
+		vore_selected_of(panel.host()).set_escape_absorbed_messages_prey(vore_selected_of(panel.host()).belly_shared_list("escape_absorbed_messages_prey"))
+		vore_selected_of(panel.host()).set_escape_absorbed_messages_outside(vore_selected_of(panel.host()).belly_shared_list("escape_absorbed_messages_outside"))
+		vore_selected_of(panel.host()).set_escape_fail_absorbed_messages_owner(vore_selected_of(panel.host()).belly_shared_list("escape_fail_absorbed_messages_owner"))
+		vore_selected_of(panel.host()).set_escape_fail_absorbed_messages_prey(vore_selected_of(panel.host()).belly_shared_list("escape_fail_absorbed_messages_prey"))
+		vore_selected_of(panel.host()).set_primary_transfer_messages_owner(vore_selected_of(panel.host()).belly_shared_list("primary_transfer_messages_owner"))
+		vore_selected_of(panel.host()).set_primary_transfer_messages_prey(vore_selected_of(panel.host()).belly_shared_list("primary_transfer_messages_prey"))
+		vore_selected_of(panel.host()).set_secondary_transfer_messages_owner(vore_selected_of(panel.host()).belly_shared_list("secondary_transfer_messages_owner"))
+		vore_selected_of(panel.host()).set_secondary_transfer_messages_prey(vore_selected_of(panel.host()).belly_shared_list("secondary_transfer_messages_prey"))
+		vore_selected_of(panel.host()).set_primary_autotransfer_messages_owner(vore_selected_of(panel.host()).belly_shared_list("primary_autotransfer_messages_owner"))
+		vore_selected_of(panel.host()).set_primary_autotransfer_messages_prey(vore_selected_of(panel.host()).belly_shared_list("primary_autotransfer_messages_prey"))
+		vore_selected_of(panel.host()).set_secondary_autotransfer_messages_owner(vore_selected_of(panel.host()).belly_shared_list("secondary_autotransfer_messages_owner"))
+		vore_selected_of(panel.host()).set_secondary_autotransfer_messages_prey(vore_selected_of(panel.host()).belly_shared_list("secondary_autotransfer_messages_prey"))
+		vore_selected_of(panel.host()).set_digest_chance_messages_owner(vore_selected_of(panel.host()).belly_shared_list("digest_chance_messages_owner"))
+		vore_selected_of(panel.host()).set_digest_chance_messages_prey(vore_selected_of(panel.host()).belly_shared_list("digest_chance_messages_prey"))
+		vore_selected_of(panel.host()).set_absorb_chance_messages_owner(vore_selected_of(panel.host()).belly_shared_list("absorb_chance_messages_owner"))
+		vore_selected_of(panel.host()).set_absorb_chance_messages_prey(vore_selected_of(panel.host()).belly_shared_list("absorb_chance_messages_prey"))
+		vore_selected_of(panel.host()).set_examine_messages(vore_selected_of(panel.host()).belly_shared_list("examine_messages"))
+		vore_selected_of(panel.host()).set_examine_messages_absorbed(vore_selected_of(panel.host()).belly_shared_list("examine_messages_absorbed"))
+		vore_selected_of(panel.host()).set_emote_lists(vore_selected_of(panel.host()).belly_shared_list("emote_lists"))
+		vore_selected_of(panel.host()).set_trash_eater_in(vore_selected_of(panel.host()).belly_shared_list("trash_eater_in"))
+		vore_selected_of(panel.host()).set_trash_eater_out(vore_selected_of(panel.host()).belly_shared_list("trash_eater_out"))
+		vore_selected_of(panel.host()).set_fullness1_messages(vore_selected_of(panel.host()).belly_shared_list("fullness1_messages"))
+		vore_selected_of(panel.host()).set_fullness2_messages(vore_selected_of(panel.host()).belly_shared_list("fullness2_messages"))
+		vore_selected_of(panel.host()).set_fullness3_messages(vore_selected_of(panel.host()).belly_shared_list("fullness3_messages"))
+		vore_selected_of(panel.host()).set_fullness4_messages(vore_selected_of(panel.host()).belly_shared_list("fullness4_messages"))
+		vore_selected_of(panel.host()).set_fullness5_messages(vore_selected_of(panel.host()).belly_shared_list("fullness5_messages"))
 		panel.set_unsaved_changes(TRUE)
 
 /datum/prompt/choice/vore_delete_belly

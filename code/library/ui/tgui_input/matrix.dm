@@ -304,10 +304,10 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 					return flat_picture(target())
 
 		var/cur_color = target().color
-		target().color = null
-		target().color = (active_mode == COLORMATE_TINT ? activecolor : cm)
+		target().set_color(null)
+		target().set_color((active_mode == COLORMATE_TINT ? activecolor : cm))
 		var/icon/preview = flat_picture(target())
-		target().color = cur_color
+		target().set_color(cur_color)
 		set_temp("")
 
 		. = preview

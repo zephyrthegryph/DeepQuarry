@@ -1,0 +1,55 @@
+{
+	"visible": true,
+	"control": "mapwindow.map",
+	"cursor_params": "icon-x=16;icon-y=16;left=1;screen-loc=8:16,8:16",
+	"view_w": 15,
+	"view_h": 15,
+	"tile_size": 32,
+	"revision": 7,
+	"target": "Jo Park",
+	"role": "human",
+	"distance": "adjacent",
+	"available": [
+		{
+			"id": "hug",
+			"name": "Hug",
+			"desc": "Give them a hug.",
+			"category": "Friendly",
+			"keys": ["h"]
+		},
+		{
+			"id": "shake",
+			"name": "Shake hands",
+			"desc": "Offer a handshake.",
+			"category": "Friendly",
+			"keys": []
+		}
+	],
+	"blocked": [
+		{
+			"id": "pat",
+			"name": "Pat head",
+			"desc": "Pat their head.",
+			"category": "Friendly",
+			"reason": "Your hands are full."
+		}
+	],
+	"actions": [
+		{
+			"id": "examine",
+			"name": "Examine"
+		},
+		{
+			"id": "pull",
+			"name": "Pull"
+		}
+	],
+	"verbs": ["Point", "Whisper"],
+	"hidden": [
+		{
+			"id": "strip",
+			"name": "Strip",
+			"hidden_by": "Target is wearing riot armor"
+		}
+	]
+}

@@ -10,7 +10,7 @@
 	set_name(fon ? "Disable Flashlight" : "Enable Flashlight")
 	pda().update_shortcuts()
 	set_glow(pda(), GLOW(fon ? f_lum : 0, null, null))
-	pda().flashlight_lit = fon
+	pda().set_flashlight_lit(fon)
 
 /datum/data/pda/utility/honk
 	name = "Honk Synthesizer"
@@ -153,11 +153,12 @@
 		// Anything that is left in the page. just tack it on to the end as is
 		formatted_scan = formatted_scan + raw_scan
 		// If there is something in there already, pad it out.
-		if(length(notes().note) > 0)
-			notes().note += "<br><br>"
+		var/datum/data/pda/app/notekeeper/keeper = notes()
+		if(length(keeper.note) > 0)
+			keeper.set_note(keeper.note + "<br><br>")
 		// Store the scanned document to the notes
-		notes().note += formatted_scan
-		notes().notetitle = sanitize_simple(P.name, list("\n" = "", "\t" = "", "ÿ" = ""))
+		keeper.set_note(keeper.note + formatted_scan)
+		notes().set_notetitle(sanitize_simple(P.name, list("\n" = "", "\t" = "", "ÿ" = "")))
 		// update the saved note too incase we kept the pda open, this is really silly due to how the notehtml is actually what's passed to the editor's text.
 		// If I don't update it here, it loses the data when you edit it!
 		notes().storednotes[notes().currentnote] = notes().note

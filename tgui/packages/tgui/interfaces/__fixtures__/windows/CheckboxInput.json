@@ -1,0 +1,10 @@
+{
+	"items": ["Engineering", "Medical", "Security", "Science"],
+	"min_checked": 1,
+	"max_checked": 3,
+	"large_buttons": false,
+	"message": "Which departments should receive the report?",
+	"swapped_buttons": false,
+	"title": "Select departments",
+	"timeout": null
+}

@@ -6,29 +6,19 @@ import { Box, Button } from 'tgui-core/components';
 import { type SwitcherEntry, TextSwitcher } from '../TextSwitcher';
 import type { EditorProps } from './index';
 
-type FlavorData = {
-  flavor_texts: Record<string, string>;
-  flavour_texts_robot: Record<string, string>;
-  play_mode: 'human' | 'robot' | 'pai';
-};
-
-type FlavorStatic = {
-  flavor_zones: string[];
-  robot_modules: string[];
-};
-
 const send = (
   act: ReturnType<typeof useBackend>['act'],
   action: string,
   params: Record<string, unknown>,
 ) => act('dq_editor_action', { editor: 'flavor', action, params });
 
-export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
+export const FlavorTextEditor = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'flavor'>) => {
   const { act } = useBackend();
-  const d = data as FlavorData;
-  const s = (staticData ?? {}) as FlavorStatic;
-  const zones = s.flavor_zones ?? [];
-  const robotZones = ['Default', ...(s.robot_modules ?? [])];
+  const zones = s?.flavor_zones ?? [];
+  const robotZones = ['Default', ...(s?.robot_modules ?? [])];
   const mode = d.play_mode ?? 'human';
 
   if (mode === 'pai') {

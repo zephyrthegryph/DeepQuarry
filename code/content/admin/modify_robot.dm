@@ -254,7 +254,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_rename(datum/act/op/A, new_name)
 	target().name = new_name
-	target().custom_name = new_name
+	target().set_custom_name(new_name)
 	target().set_real_name(new_name)
 	return TRUE
 
@@ -348,7 +348,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	target().uneq_all()
 	target().hud_used?.update_robot_modules_display(TRUE)
 	rel_clear(target(), nameof(/mob/living/silicon/robot::module))
-	target().modtype = mod_type
+	target().set_modtype(mod_type)
 	module_type = GLOB.robot_modules[mod_type]
 	target().transform_with_anim()
 	new module_type(target())
@@ -475,11 +475,11 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(selected_radio_channel == CHANNEL_RAIDER)
 		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/raider(target())
-		target().radio.syndie = 1
+		target().radio.set_syndie(1)
 	if(selected_radio_channel == CHANNEL_MERCENARY)
 		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/syndicate(target())
-		target().radio.syndie = 1
+		target().radio.set_syndie(1)
 	target().module.channels += list("[selected_radio_channel]" = 1)
 	target().radio.channels[selected_radio_channel] = LAZYACCESS(target().module.channels, selected_radio_channel)
 	rel_add(target().radio, nameof(/obj/item/radio::secure_radio_connections), SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT), selected_radio_channel)
@@ -494,8 +494,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(LAZYACCESS(target().module.channels, CHANNEL_RAIDER) || LAZYACCESS(target().module.channels, CHANNEL_MERCENARY)))
 		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = null
-		target().radio.syndie = 0
-	target().radio.channels = list()
+		target().radio.set_syndie(0)
+	target().radio.set_channels(list())
 	for(var/n_chan in target().module.channels)
 		target().radio.channels[n_chan] = LAZYACCESS(target().module.channels, n_chan)
 	SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
@@ -557,29 +557,29 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_add_access(datum/act/op/A, access)
-	target().idcard.access += access
+	target().idcard.add_access(access)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_access(datum/act/op/A, access)
-	target().idcard.access -= access
+	target().idcard.remove_access(access)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_add_centcom(datum/act/op/A)
-	target().idcard.access |= SSaccess.get_all_centcom_access()
+	target().idcard.include_access(SSaccess.get_all_centcom_access())
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_centcom(datum/act/op/A)
-	target().idcard.access -= SSaccess.get_all_centcom_access()
+	target().idcard.remove_access(SSaccess.get_all_centcom_access())
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_station(datum/act/op/A)
-	target().idcard.access |= SSaccess.get_all_station_access()
-	target().idcard.access |= ACCESS_SYNTH
+	target().idcard.include_access(SSaccess.get_all_station_access())
+	target().idcard.include_access(ACCESS_SYNTH)
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_station(datum/act/op/A)
-	target().idcard.access -= SSaccess.get_all_station_access()
-	target().idcard.access -= ACCESS_SYNTH
+	target().idcard.remove_access(SSaccess.get_all_station_access())
+	target().idcard.remove_access(ACCESS_SYNTH)
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_law_channel(datum/act/op/A, law_channel)

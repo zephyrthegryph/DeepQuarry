@@ -14,16 +14,16 @@
 
 /datum/unit_test/dq_medical_dirty_domains_wake_exactly/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
+	H.body.set_dirty(H.body.dirty & (~BODY_DIRTY_CONDITIONS))
 	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "test human has no heart")
 	H.injure(INJURY_BLUNT, 1, heart, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_ORGANS, "organ damage did not invalidate organ conditions")
-	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
+	H.body.set_dirty(H.body.dirty & (~BODY_DIRTY_CONDITIONS))
 	H.bloodstr.add_reagent(REAGENT_ID_INAPROVALINE, 1)
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_CHEMS, "bloodstream mutation did not invalidate chem conditions")
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_TREATMENT, "bloodstream mutation did not invalidate the treatment snapshot")
-	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
+	H.body.set_dirty(H.body.dirty & (~BODY_DIRTY_CONDITIONS))
 	STATE_SET(H, dq_vitals, dq_last_bodytemperature, -1)
 	H.dq_refresh_metric_dirty_state()
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_METRICS, "metric signature change did not invalidate metric conditions")

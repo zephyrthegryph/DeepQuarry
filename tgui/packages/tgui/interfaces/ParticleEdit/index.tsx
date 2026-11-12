@@ -63,7 +63,7 @@ export const ParticleEdit = (props) => {
     friction,
 
     drift,
-  } = data.particle_data ?? ({} as ParticleUIData['particle_data']);
+  } = data.particle_data;
 
   return (
     <ParticleContext.Provider value={{ desc, setDesc }}>

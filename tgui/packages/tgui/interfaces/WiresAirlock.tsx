@@ -10,17 +10,14 @@ import {
 } from 'tgui-core/components';
 import { round } from 'tgui-core/math';
 
-import { type WireData, WiresStatus, WiresWires } from './Wires';
-
-type WiresAirlockData = WireData & {
-  id_tag: string;
-  frequency: number | null;
-  min_freq: number;
-  max_freq: number;
-};
+import type {
+  WiresAirlockActions,
+  WiresAirlockData,
+} from './generated/WiresAirlock';
+import { WiresStatus, WiresWires } from './Wires';
 
 export const WiresAirlock = (props) => {
-  const { act, data } = useBackend<WiresAirlockData>();
+  const { act, data } = useBackend<WiresAirlockData, WiresAirlockActions>();
   const { wires = [], id_tag, frequency, min_freq, max_freq } = data;
 
   return (

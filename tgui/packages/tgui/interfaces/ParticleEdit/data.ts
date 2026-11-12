@@ -58,38 +58,9 @@ export const GeneratorTypesNoVectors = [
   'cube',
 ];
 
-export type ParticleUIData = Omit<ParticleEditData, 'particle_data'> & {
-  particle_data: ParticleData;
-};
+export type ParticleUIData = ParticleEditData;
 
-type ParticleData = {
-  width: number;
-  height: number;
-  count: number;
-  spawning: number;
-  bound1: number[];
-  bound2: number[];
-  gravity?: number[];
-  gradient?: (string | number | { space: number })[];
-  transform?: number[];
-
-  icon?: string | { [key: string]: number };
-  icon_state?: string | { [key: string]: number };
-  lifespan?: number | string[];
-  fade?: number | string[];
-  fadein?: number | string[];
-  color?: number | string | string[];
-  color_change?: number | string[];
-  position?: number[] | string[];
-  velocity?: number[] | string[];
-  scale?: number | number[] | string[];
-  grow?: number | number[] | string[];
-  rotation?: number | string[];
-  spin?: number | string[];
-  friction?: number | string[];
-
-  drift?: number[] | string[];
-};
+export type ParticleData = ParticleEditData['particle_data'];
 
 export type EntryFloatProps = {
   name: string;
@@ -100,7 +71,7 @@ export type EntryFloatProps = {
 export type EntryCoordProps = {
   name: string;
   var_name: string;
-  coord?: number[];
+  coord?: number | number[];
 };
 
 export type EntryGradientProps = {
@@ -112,13 +83,13 @@ export type EntryGradientProps = {
 export type EntryTransformProps = {
   name: string;
   var_name: string;
-  transform?: number[];
+  transform?: number[] | null;
 };
 
 export type EntryIconStateProps = {
   name: string;
   var_name: string;
-  icon_state?: string | { [key: string]: number };
+  icon_state?: string | { [key: string]: number } | null;
 };
 
 export type FloatGeneratorProps = {

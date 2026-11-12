@@ -67,7 +67,8 @@ CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
 	set_transform()
 
 /datum/nobody_wants_to_learn_matrix_math/proc/ui_act_toggle_pixel(datum/act/op/A)
-	target().appearance_flags ^= PIXEL_SCALE
+	var/atom/T = target()
+	T.set_appearance_flags(T.appearance_flags ^ PIXEL_SCALE)
 
 /datum/nobody_wants_to_learn_matrix_math/proc/set_transform()
 	animate(target(), transform = testing_matrix, time = 0.5 SECONDS)

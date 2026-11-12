@@ -221,7 +221,7 @@
 		subject = new subject_type(T)
 	else
 		subject = new /obj/item/reagent_containers/glass/beaker(T)
-	subject.reagents.maximum_volume = DQ_XFORM_VOLUME
+	subject.reagents.set_maximum_volume(DQ_XFORM_VOLUME)
 	return subject
 
 // ---- the outcome pin ----
@@ -385,7 +385,7 @@
 	log_chemical_reaction(test_floor(), K, 1)
 	TEST_ASSERT_EQUAL(length(GLOB.chemical_reaction_logs), before + 1, "the chemistry log takes the rule's entry")
 	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker, test_floor())
-	B.reagents.maximum_volume = 1000
+	B.reagents.set_maximum_volume(1000)
 	var/emitted = dq_xform_contract_emissions()
 	B.reagents.add_reagent(REAGENT_ID_SILICON, 5)
 	B.reagents.add_reagent(REAGENT_ID_CARBON, 5)

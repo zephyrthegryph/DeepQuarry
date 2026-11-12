@@ -155,7 +155,7 @@ CAPABILITIES(/obj/structure/hoist)
 	if(ismob(hoistee()))
 		source_hook.unbuckle_mob(hoistee())
 	else
-		hoistee().anchored = FALSE
+		hoistee().set_anchored(FALSE)
 	rel_clear(src, nameof(hoistee))
 	set_layer(NORMAL_LAYER)
 

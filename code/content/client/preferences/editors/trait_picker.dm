@@ -15,6 +15,11 @@
 	display_name = "Traits"
 	pref_keys = list("pos_traits", "neu_traits", "neg_traits", "blood_color", "traits_cheating", "starting_trait_points", "max_traits")
 
+/// The wire shape of /datum/preference_editor/trait_picker's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_trait_picker, row(blood_color = schema_text(), traits_cheating = num(), starting_trait_points = num(), max_traits = num(), points_used = num(), total_traits = num(), pos_traits = list_of(schema_text()), neu_traits = list_of(schema_text()), neg_traits = list_of(schema_text())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_trait_picker_static, row(all_traits = map_of(schema_text(), row(name = schema_text(), desc = schema_text(), cost = num(), category = num())), positive_traits = list_of(schema_text()), neutral_traits = list_of(schema_text()), negative_traits = list_of(schema_text())))
+
 /datum/preference_editor/trait_picker/build_ui_data(datum/preferences/preferences)
 	var/list/pos_traits = preferences.read_preference(/datum/preference/typed_list/traits/pos_traits) || list()
 	var/list/neu_traits = preferences.read_preference(/datum/preference/typed_list/traits/neu_traits) || list()

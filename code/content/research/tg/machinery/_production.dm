@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	examine_line(PROC_REF(build_time_text))
 	interface("Fabricator")
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
-	ui_shape(busy = bool(), materials = list_of(row()), materialChoices = list_of(row()), onHold = bool(), materialMaximum = num(), queue = list_of(row()))
+	ui_shape(busy = bool(), materials = list_of(lathe_material()), materialChoices = list_of(lathe_material_choice()), onHold = bool(), SHEET_MATERIAL_AMOUNT = num(), designs = map_of(schema_text(), fabricator_design()), fabName = schema_text())
 
 /// Its link to the ore silo (owns_one(starts =)): only a machine the map places links to the silo.
 /obj/machinery/rnd/production/proc/make_remote_materials(current, mapload)
@@ -210,6 +210,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 			designs[design.id] = fabricator_design_row(design, efficiency_coeff)
 	data["designs"] = designs
 	data["fabName"] = name
+	data["SHEET_MATERIAL_AMOUNT"] = SHEET_MATERIAL_AMOUNT
 	var/list/material_data = present_tgui_static_data(materials.mat_container(), user)
 	if(material_data)
 		data += material_data
@@ -221,12 +222,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		// Loaded materials offered in the per-design material picker (selectable designs).
 		"materialChoices" = lathe_material_choice_list(materials?.mat_container()),
 		"onHold" = FALSE,
-		"materialMaximum" = materials.local_size,
-		"queue" = list(),
 	)
-	var/list/material_data = materials.mat_container()?.material_list_data(A.actor)
-	if(material_data)
-		data["materials"] = material_data
+	data["materials"] = materials.mat_container()?.material_list_data(A.actor) || list()
 	return data
 
 // Shared: loaded materials (>= 1 sheet) offered in a lathe's per-design material
@@ -241,6 +238,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 			continue
 		out += list(material_choice_tgui(mat, amount))
 	return out
+
+UI_SCHEMA(lathe_material_choice, row(id = schema_text(), label = schema_text(), sheets = int(), color = schema_text(), layers = list_of(row(role = schema_text(), name = schema_text(), share = num())), responses = list_of(schema_text()), hardness = num(), density = num(), integrity = num(), elasticity = num(), brittleness = num(), toughness = num(), conductivity = num(), heatResistance = num(), thermalInsulation = num(), corrosionResistance = num(), pressureLimit = num(), resistivity = num(), criticalTemperature = num(), criticalCurrentDensity = num(), specificHeat = num(), phaseCapacity = num(), phaseTemperature = num(), dielectricStrength = num(), meltingPoint = num()))
 
 /// One canonical material presentation for lathes and hand crafting.
 /proc/material_choice_tgui(datum/material/mat, amount)

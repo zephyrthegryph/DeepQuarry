@@ -233,7 +233,7 @@ CAPABILITIES(/obj/item/flashlight)
 	var/datum/overlay_lighting/OL = overlay_light //BEWARE, ESOTERIC BULLSHIT HERE.
 	if(flicker_color && glow_of(src).color != flicker_color)
 		set_light_color(flicker_color)
-		OL.directional_atom.color = flicker_color
+		OL.directional_atom.set_color(flicker_color)
 	do_flicker(amount, flicker_color, original_color, original_on, OL, 1)
 
 /// Args:

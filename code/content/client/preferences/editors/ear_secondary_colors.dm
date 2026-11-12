@@ -8,6 +8,9 @@
 	display_name = "Second ear colours"
 	pref_keys = list("ear_secondary_colors")
 
+/// The wire shape of /datum/preference_editor/ear_secondary's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_ear_secondary, row(colors = list_of(schema_text()), fallback = list_of(schema_text())))
+
 /datum/preference_editor/ear_secondary/build_ui_data(datum/preferences/preferences)
 	return list(
 		"colors" = preferences.read_preference(/datum/preference/ear_secondary_colors) || list(),
