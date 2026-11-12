@@ -25,6 +25,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 30, active = 200, channel = EQUIP))
 	interface("Photocopier")
+	ui_shape(current_toner = num(), num_copies = int(), has_item = bool(), isAI = bool(), can_AI_print = bool(), has_toner = bool(), max_toner = int())
 	without("ui_open")
 	op("make_copy", ui_act(), then(PROC_REF(ui_act_make_copy)))
 	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
@@ -45,7 +46,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/list/data = ..()
 	data["current_toner"] = toner
 	data["num_copies"] = copies
-	data["max_copies"] = maxcopies
 	var/list/computed = ui_data_obj_machinery_photocopier(A.actor, null, null)
 	for(var/key in computed)
 		data[key] = computed[key]
@@ -55,8 +55,8 @@ CAPABILITIES(/obj/machinery/photocopier)
 /obj/machinery/photocopier/proc/ui_data_obj_machinery_photocopier(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["has_item"] = copyitem || has_buckled_mobs() // Ass copying
-	data["isAI"] = ui_viewer_fact(user, "silicon")
+	data["has_item"] = !!(copyitem || has_buckled_mobs()) // Ass copying
+	data["isAI"] = !!ui_viewer_fact(user, "silicon")
 	data["can_AI_print"] = (toner >= 5)
 	data["has_toner"] =	!!toner
 	data["max_toner"] = 40
@@ -72,7 +72,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 	if(copyitem)
 		copyitem.forceMove(user.loc)
 		user.put_in_hands(copyitem)
-		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
 		rel_take(src, nameof(copyitem))
 	else if(has_buckled_mobs())
 		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.

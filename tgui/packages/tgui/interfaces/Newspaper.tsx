@@ -8,37 +8,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import type { NewspaperActions } from './generated/Newspaper';
+import type { NewspaperActions, NewspaperData } from './generated/Newspaper';
 
-type Message = {
-  title: string;
-  body: string;
-  author: string;
-  message_type: string;
-};
-
-type Channel = {
-  name: string;
-  author: string;
-  censored: BooleanLike;
-  messages: Message[];
-};
-
-type Wanted = {
-  author: string;
-  body: string;
-} | null;
-
-type Data = {
-  company_name: string;
-  channels: Channel[];
-  wanted: Wanted;
-  scribble: string;
-  scribble_page: number;
-  curr_page: number;
-};
+type Data = NewspaperData;
 
 export const Newspaper = () => {
   const { data, act } = useBackend<Data, NewspaperActions>();

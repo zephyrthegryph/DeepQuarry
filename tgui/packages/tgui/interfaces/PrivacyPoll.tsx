@@ -7,6 +7,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
+import type { PrivacyPollActions } from './generated/PrivacyPoll';
 
 type Choice = {
   key: string;
@@ -43,7 +44,7 @@ const CHOICES: Choice[] = [
 ];
 
 export const PrivacyPoll = () => {
-  const { act } = useBackend();
+  const { act } = useBackend<Record<string, never>, PrivacyPollActions>();
   return (
     <Window width={520} height={520} title="Player Poll — Privacy">
       <Window.Content scrollable>

@@ -71,6 +71,7 @@ CAPABILITIES(/obj/item/paper)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	owns_one(nameof(contract_document), /datum/contract_document)
 	interface("Paper")
+	ui_shape(title = schema_text(), view = enum(list("read", "write")), segments = list_of(row(type = enum(list("text", "field")), text = schema_text(), id = nullable(int()))), stamps = schema_text(), garbled = bool())
 	without("ui_open")
 	op("write_field", ui_act("write_field", arg("id", schema_text(4096))), then(PROC_REF(ui_act_write_field)))
 	op("write_end", ui_act("write_end"), then(PROC_REF(ui_act_write_end)))
@@ -243,14 +244,14 @@ CAPABILITIES(/obj/item/paper/card)
 	while(cursor <= total)
 		var/istart = findtext(info, marker, cursor)
 		if(!istart)
-			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
+			segs += list(list("type" = "text", "text" = copytext(info, cursor), "id" = null))
 			break
 		if(istart > cursor)
-			segs += list(list("type" = "text", "text" = copytext(info, cursor, istart)))
+			segs += list(list("type" = "text", "text" = copytext(info, cursor, istart), "id" = null))
 		var/iend = findtext(info, close, istart)
 		if(!iend)
 			// Malformed; treat the rest as text.
-			segs += list(list("type" = "text", "text" = copytext(info, cursor)))
+			segs += list(list("type" = "text", "text" = copytext(info, cursor), "id" = null))
 			break
 		field_number++
 		var/content_start = istart + marker_len
