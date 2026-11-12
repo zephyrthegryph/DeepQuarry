@@ -121,10 +121,10 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	return (ishuman(A.actor)) ? null : MSG(communications/access_denied)
 
 /datum/tgui_module/communications/proc/ui_logged_in(datum/act/op/A)
-	return (is_authenticated(A.actor, FALSE)) ? null : MSG(communications/access_denied)
+	return (is_authenticated(A.actor)) ? null : MSG(communications/access_denied)
 
 /datum/tgui_module/communications/proc/ui_captain(datum/act/op/A)
-	return (is_authenticated(A.actor, FALSE) == COMM_AUTHENTICATION_MAX) ? null : /datum/msg/req_silent
+	return (is_authenticated(A.actor) == COMM_AUTHENTICATION_MAX) ? null : /datum/msg/req_silent
 
 /datum/tgui_module/communications/proc/ui_captain_emagged(datum/act/op/A)
 	return routing_scrambled() ? ui_captain(A) : /datum/msg/req_silent
@@ -148,13 +148,10 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	return ..()
 
 /// How far `user` is logged in: an admin ghost as the captain; anyone else as far as their own login went.
-/datum/tgui_module/communications/proc/is_authenticated(mob/user, message = TRUE)
+/datum/tgui_module/communications/proc/is_authenticated(mob/user)
 	if(is_admin_ghost(user))
 		return COMM_AUTHENTICATION_MAX
-	var/level = LAZYACCESS(logins, REF(user)) || COMM_AUTHENTICATION_NONE
-	if(!level && message)
-		to_chat(user, span_warning("Access denied."))
-	return level
+	return LAZYACCESS(logins, REF(user)) || COMM_AUTHENTICATION_NONE
 
 /datum/tgui_module/communications/proc/change_security_level(mob/user, new_level)
 	if(!COOLDOWN_FINISHED(src, level_change_cooldown))
@@ -193,7 +190,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	data["message_current"] = current_viewing_message
 	data["is_ai"]         = !!(A.authority & AUTH_REMOTE_ACCESS)
 	data["menu_state"]    = data["is_ai"] ? ai_menu_state : menu_state
-	data["authenticated"] = is_authenticated(user, 0)
+	data["authenticated"] = is_authenticated(user)
 	data["authmax"] = data["authenticated"] == COMM_AUTHENTICATION_MAX ? TRUE : FALSE
 	data["boss_short"] = using_map.boss_short
 
