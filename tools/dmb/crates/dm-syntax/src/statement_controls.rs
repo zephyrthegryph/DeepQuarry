@@ -47,7 +47,7 @@ pub(super) fn split_case_alternatives_with_tokens(
 // tells us which token is the actual top-level separator.
 fn original_for_each_clause(
     clause: &str, lexical: &crate::SpannedLexed, separator: usize,
-    dotted: bool, grouped_index: bool, call_member: bool, subtraction: bool,
+    dotted: bool, grouped_index: bool, call_member: bool, direct_call: bool, subtraction: bool,
     bare_string_index: bool,
 ) -> bool {
     use crate::TokenKind;
@@ -70,7 +70,10 @@ fn original_for_each_clause(
     // actual Original expression proof below, including both delimiters.
     if grouped_index { return tokens.next().is_some_and(|token| token.text(clause) == "("); }
     if !tokens.next().is_some_and(identifier) { return false; }
-    if call_member { return tokens.next().is_some_and(|token| token.text(clause) == "("); }
+    if call_member || direct_call {
+        return tokens.next().is_some_and(|token| token.kind == TokenKind::Punctuation
+            && token.text(clause) == "(");
+    }
     if subtraction { return true; } // exact remainder consumed by the Original expression witness
     if bare_string_index {
         return tokens.next().is_some_and(|token| token.text(clause) == "[")
@@ -223,6 +226,7 @@ pub(super) fn parse_for(
         let mut dotted_original = false;
         let mut grouped_index = false;
         let mut call_member = false;
+        let mut direct_call = false;
         let mut subtraction = false;
         let mut anything_iterable = false;
         let mut bare_string_index = false;
@@ -243,13 +247,21 @@ pub(super) fn parse_for(
             grouped_index = actual_original && matches!(kind,
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
             call_member = actual_original && parsed.expr.as_ref().is_some_and(original_call_member_iterable);
+            // Pinned for_list takes an entire expression as its iterable.
+            // Reuse the exact completed Original call proof, but restrict
+            // this control addition to a direct ordinary callee. Member calls,
+            // primitives, assignments and dynamic follows keep their gates.
+            direct_call = actual_original && matches!(kind,
+                Some(ExprKind::Call { callee, .. })
+                    if matches!(&callee.kind, ExprKind::Ident(name)
+                        if crate::expression_parser::original_ordinary_call_name(name)));
             subtraction = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_subtraction);
             bare_string_index = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_bare_string_index);
         })?;
         let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
         *original_control = expression_complete && source_binding.is_some()
             && original_for_each_clause(
-                clause, &lexical, at, dotted_original, grouped_index, call_member, subtraction, bare_string_index,
+                clause, &lexical, at, dotted_original, grouped_index, call_member, direct_call, subtraction, bare_string_index,
             );
         let mut declaration = binding;
         if let Some((before_hint, _)) = split_top_level_keyword(binding, "as")

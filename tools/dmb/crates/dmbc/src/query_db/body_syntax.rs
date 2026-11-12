@@ -1224,6 +1224,55 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_for_list_direct_call_reuses_only_its_completed_ordinary_iterable() {
+     let fixture = "/proc/probe(path, other)\n    for(var/T in subtypesof(path))\n        return T\n";
+     for (source, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("subtypesof(path)", "typesof(path)"), true),
+         (fixture.replace("subtypesof(path)", "lookup()"), true),
+         (fixture.replace("subtypesof(path)", "lookup(path, other)"), true),
+         (fixture.replace("subtypesof(path)", "lookup(path,)"), true),
+         (fixture.replace("subtypesof(path)", "object.lookup(path)"), false),
+         (fixture.replace("subtypesof(path)", "object:lookup(path)"), false),
+         (fixture.replace("subtypesof(path)", "object?.lookup(path)"), false),
+         (fixture.replace("subtypesof(path)", "subtypesof(path).items"), false),
+         (fixture.replace("subtypesof(path)", "lookup(choice = path)"), false),
+         (fixture.replace("subtypesof(path)", "new /datum/probe(path)"), false),
+         (fixture.replace("subtypesof(path)", "pick(path)"), false),
+         (fixture.replace("subtypesof(path)", "lookup(path) + other"), false),
+         (fixture.replace("subtypesof(path)", "(lookup(path))"), false),
+         (fixture.replace("subtypesof(path)", "lookup(path) = other"), false),
+         (fixture.replace("subtypesof(path)", "lookup(path) tail"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual direct Call iterable must be available: {source}");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let dm_syntax::StatementKind::For { control, body, .. } =
+                     &parsed.statements[0].kind else { panic!("actual for-list"); };
+                 let dm_syntax::ForControl::Each { iterable, .. } = control
+                     else { panic!("actual list control"); };
+                 assert!(matches!(&iterable.kind, dm_syntax::ExprKind::Call { callee, .. }
+                     if matches!(&callee.kind, dm_syntax::ExprKind::Ident(_))));
+                 assert!(matches!(body[0].kind, dm_syntax::StatementKind::Return(_)));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_for_list_owns_zero_argument_call_and_member_iterable() {
      let fixture = r#"
 /proc/probe(M)
@@ -2237,6 +2286,69 @@ mod body_syntax_census_tests;
      }
  }
 
+
+ #[test]
+ fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {
+     let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
+     fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {
+         let head=format!("/proc/{name}(");
+         let start=file.find(&head).unwrap();
+         let tail=&file[start..];
+         let end=tail.find("\n/proc/").unwrap_or(tail.len());
+         &tail[..end]
+     }
+     // These are the three consecutive authored typecache helpers. The one
+     // call dependency is also its real implementation, never a test stub.
+     let names=["typecache_filter_list","typecache_filter_multi_list_exclusion","typecacheof","subtypesof"];
+     let mut source=String::from("#define TRUE 1\n#define FALSE 0\n");
+     for name in names { source.push_str(actual_proc(&file,name)); source.push('\n'); }
+     assert!(source.contains("types = ignore_root_path ? subtypesof(path) : typesof(path)"));
+     assert!(source.contains("for(var/T in subtypesof(P))"));
+     assert!(source.contains("for(var/T in typesof(P))"));
+     let db=Arc::new(QueryDb::default());
+     let front=issued_original_fixture(&db,&source);
+     for (name,expected_loops,expected_calls) in [
+         ("typecache_filter_list",1,0),
+         ("typecache_filter_multi_list_exclusion",1,0),
+         ("typecacheof",5,2),
+         ("subtypesof",0,0),
+     ] {
+         let input=original_input(&front,name);
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()? else {
+                 panic!("actual authored helper {name} must have Original grammar");
+             };
+             assert!(proof.belongs_to(&body));
+             let parsed=product.parsed().unwrap().statement_storage().parsed();
+             assert!(parsed.diagnostics.is_empty());
+             let mut pending=parsed.statements.iter().collect::<Vec<_>>();
+             let (mut loops,mut calls)=(0,0);
+             while let Some(statement)=pending.pop() {
+                 match &statement.kind {
+                     dm_syntax::StatementKind::If{then_branch,else_branch,..}=>{
+                         pending.extend(then_branch); pending.extend(else_branch);
+                     },
+                     dm_syntax::StatementKind::For{control:dm_syntax::ForControl::Each{source_binding,iterable,..},body}=>{
+                         loops+=1;
+                         assert!(source_binding.is_some(),"actual for variable declaration remains source-authenticated");
+                         if let dm_syntax::ExprKind::Call{callee,args}=&iterable.kind {
+                             calls+=1;
+                             assert!(matches!(&callee.kind,dm_syntax::ExprKind::Ident(name)if matches!(name.as_str(),"subtypesof"|"typesof")));
+                             assert!(matches!(args.as_slice(),[argument]if matches!(&argument.kind,dm_syntax::ExprKind::Ident(name)if name=="P")));
+                         }
+                         pending.extend(body);
+                     },
+                     _=>(),
+                 }
+             }
+             assert_eq!(loops,expected_loops,"{name}");
+             assert_eq!(calls,expected_calls,"{name}");
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
 
  #[test]
  fn actual_original_english_list_keeps_all_interpolation_children_and_primitive_index_key() {
