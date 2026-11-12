@@ -54,7 +54,6 @@ export const DOCK_SAVE_MAX = 8000;
 export type DockAction =
   | { type: 'open'; window: DockWindow }
   | { type: 'close'; id: string }
-  | { type: 'float'; id: string }
   | { type: 'title'; id: string; title: string }
   | { type: 'activate'; id: string }
   | { type: 'collapse'; group: string; collapsed: boolean }
@@ -108,13 +107,16 @@ function detach(groups: DockGroup[], id: string): DockGroup[] {
   return out;
 }
 
-/** Records every docked window's placement in `saved`. */
+/** Column window ids (col-1, col-2, ...) the server hands out: never an interface name, so never a key of `saved`. */
+export const isPartId = (name: string): boolean => /^col-\d+$/.test(name);
+
+/** Records every docked window's placement in `saved`; a window whose interface is not yet known (a placeholder) has none. */
 export function snapshot(state: DockState): DockState {
   const saved = { ...state.saved };
   state.groups.forEach((group, order) => {
     group.windows.forEach((id, tab) => {
       const win = state.windows[id];
-      if (!win) {
+      if (!win || !win.iface) {
         return;
       }
       saved[win.iface] = {
@@ -215,17 +217,6 @@ function reduce(state: DockState, action: DockAction): DockState {
       return open(state, action.window);
     case 'close':
       return forget(state, action.id);
-    case 'float': {
-      const win = state.windows[action.id];
-      const next = forget(state, action.id);
-      if (win && next.saved[win.iface]) {
-        next.saved = {
-          ...next.saved,
-          [win.iface]: { ...next.saved[win.iface], dock: false },
-        };
-      }
-      return next;
-    }
     case 'title': {
       const win = state.windows[action.id];
       return win
@@ -362,7 +353,14 @@ function reduce(state: DockState, action: DockAction): DockState {
       return { ...state, groups };
     }
     case 'load':
-      return { ...state, saved: { ...action.saved, ...state.saved } };
+      return {
+        ...state,
+        saved: Object.fromEntries(
+          Object.entries({ ...action.saved, ...state.saved }).filter(
+            ([iface]) => !isPartId(iface),
+          ),
+        ),
+      };
   }
   return state;
 }
@@ -412,7 +410,7 @@ export function parseSaved(text: unknown): Record<string, Placement> {
     return out;
   }
   for (const [iface, value] of Object.entries(raw as object)) {
-    if (!isPlacement(value)) {
+    if (isPartId(iface) || !isPlacement(value)) {
       continue;
     }
     out[iface] = {

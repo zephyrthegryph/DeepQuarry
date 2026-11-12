@@ -144,10 +144,10 @@ export class ColumnHost {
     );
     this.backends.set(wid, backend);
     const at = typeof payload?.at === 'number' ? payload.at : undefined;
-    // Its interface and title come with its first update; until then it is placed by its id.
+    // Its interface and title come with its first update; until then it has no interface, so the saved layout does not hear of it.
     this.dispatch({
       type: 'open',
-      window: { id: wid, iface: wid, title: '', kind: 'tgui', at },
+      window: { id: wid, iface: '', title: '', kind: 'tgui', at },
     });
     sendFor(wid, 'ready');
   }
