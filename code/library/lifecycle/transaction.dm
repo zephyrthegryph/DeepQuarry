@@ -59,6 +59,10 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		// A fault before phase 4 leaves ordinary owned fields intact, not re-set.
 		// Dispose them by their declared policies before the leftover-state scrub.
 		if(D.destroy_phase <= LIFECYCLE_PHASE_LINKS)
+			// The scheduler record is an owned value: let it go through the engine teardown first (as dq_lifecycle_clear_links() does), or
+			// own_teardown() disposes of it unmarked and its timers and behaviours are never stopped.
+			if(D.sched_rec)
+				entity_teardown_rest(D)
 			own_teardown(D)
 		dq_lifecycle_scrub(D)
 		// Leave the registries and the live world (phase 7 may never have run).
