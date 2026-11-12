@@ -409,6 +409,7 @@
 #include "dq_firstload_paths_tests.dm"
 #include "dq_turf_damage_tests.dm"
 #include "dq_turf_edges_tests.dm"
+#include "dq_turf_ops_behaviour.dm"
 #include "dq_tracked_null_tests.dm"
 #include "dq_tracked_list_tests.dm"
 #include "dq_cow_list_tests.dm"
