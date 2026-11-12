@@ -5,7 +5,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 `tools/build/build.sh`. Both take the same targets and `-D` defines.
 
 
-**What to run before landing is your judgement.** Nothing gates master (`bash tools/dq_land.sh`, `doc/rewrite/agent_workflow.md` section 29): run the focused tests that fit the change, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. A UI or docs fix may need neither a compile nor a world. Mentions below of gates, stamps and lane-ready describe tools no longer on the landing path.
+**What to run before landing is your judgement.** Nothing gates master (`bash tools/dq_land.sh`, `doc/rewrite/agent_workflow.md` section 29): run the focused tests that fit the change, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. A UI or docs fix may need neither a compile nor a world. The merge gates, push stamps and the batch train are gone (agent_workflow.md section 29).
 
 ## Quick reference
 
@@ -151,7 +151,7 @@ them can hide a failure in the full suite, which still does all of them:
 A test sets `boot_needs = list(BOOT_NEED_...)` (`code/defines/engine/_boot_needs.dm`) to name the boot work it reads. The default,
 null, means "needs all of it". A focused world skips a piece of work only when **every** selected test declared a list that
 leaves it out (`unit_test_boot_skips()`), and logs `BOOT DEFERRED: ...` to `runtime.log` and `tests.log` for each skip. The
-full suite, the merge gates and production never skip any of it. A test that starts needing one of these adds it to its list.
+full suite and production never skip any of it. A test that starts needing one of these adds it to its list.
 
 | Token | Skipped work | If a test needs it |
 |---|---|---|
@@ -247,7 +247,7 @@ machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), a
 (5400) is stopped. Do not wrap the tool in `timeout`; the built-in cap replaces it. A native compile the resident compiler cannot admit
 (exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
 instead of failing (`tools/ci/test_admission_retry.sh`).
-A focused run compiles only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
+A focused run compiles only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile is not part of it. CI runs the production compile (and DreamChecker, "DreamChecker policy" below).
 Nothing gates master any more (`bash tools/dq_land.sh` merges and pushes); a run's cap is `DQ_FOCUSED_MAX_MIN`, and the exhaustive refusal is unchanged. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
 (held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests the caps against a fake world.
 
@@ -598,7 +598,7 @@ Fresh worktrees should not pay cold build costs:
   (`doc/rewrite/agent_workflow.md` section 10), so concurrent builds queue instead of competing.
 - **Analyzer profile.** `DQ_ANALYZE_PROFILE` picks the cargo profile. Locally the default is `dev-fast`
   (`tools/analyze/Cargo.toml`: opt-level 2, no LTO, 256 codegen units, incremental; binary at
-  `target/dev-fast/analyze`). CI (`CI` set) uses `release`; the gates and the push script use the local default (the findings of
+  `target/dev-fast/analyze`). CI (`CI` set) uses `release`; local runs use the default (the findings of
   the two are identical: checked on the whole tree). Measured on
   this machine with 9-16 cargo/rustc/dm processes from other lanes running (noisy), cargo rebuild of
   `analyze` after an edit under `tools/analyze/src`, and a cold `analyze check --no-cache` of the whole
@@ -873,6 +873,9 @@ for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAM
 ask for it (`DQ_DREAMCHECKER=1 build.sh dm`). `build.sh lint` always runs it (explicit lint). Whatever runs it does so at
 below-normal priority (`DQ_PRIORITY=normal` opts out). Local builds log one line saying it was skipped. The analyze engine's
 ratchets (`check_ratchets.sh`, incremental per file) still run wherever they ran before.
+
+Who runs it: CI and `build.sh lint` (when it is installed). Agents do not run it while the user has it switched off (AGENTS.md
+section 3a, last rule); `build.sh dm` without `DQ_DREAMCHECKER=1` never starts it.
 
 CI also runs these scripts, all from the repository root:
 

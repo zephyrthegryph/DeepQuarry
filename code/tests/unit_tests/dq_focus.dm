@@ -1,6 +1,6 @@
 // Scratch focus file for fast local/CI iteration — KEEP EMPTY IN COMMITS.
 //
-// To run only specific tests (skipping the ~40-minute full suite), add lines
+// To run only specific tests (skipping the full suite), add lines
 // like the following and rebuild; RunUnitTests() then runs only focused tests:
 //
 //     TEST_FOCUS(/datum/unit_test/dq_expedition_generates_site)
