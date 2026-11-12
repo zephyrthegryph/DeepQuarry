@@ -104,9 +104,6 @@ export const SpecialMachineInteraction = (props: machine) => {
   } else if (machineType === 'Fax') {
     return (
       <Button
-        position="relative"
-        bottom="152px"
-        left="188px"
         icon="share-square"
         onClick={() => act('send_automated_staff_request')}
         tooltip={

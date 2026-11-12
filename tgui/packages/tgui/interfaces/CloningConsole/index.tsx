@@ -30,7 +30,7 @@ export const CloningConsole = (props) => {
 
   modalRegisterBodyOverride('view_rec', viewRecordModalBodyOverride);
   return (
-    <Window>
+    <Window width={460} height={600}>
       <ComplexModal maxWidth="75%" maxHeight="75%" />
       <Window.Content className="Layout__content--flexColumn">
         <CloningConsoleTemp />

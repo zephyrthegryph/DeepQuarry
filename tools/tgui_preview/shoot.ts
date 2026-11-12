@@ -82,22 +82,27 @@ const { buildWindowGeometryManifest } = await import(pathToFileURL(path.join(tgu
 const geometry = buildWindowGeometryManifest(path.join(tgui, 'packages/tgui/interfaces'));
 // Served over http: Chrome will not load web fonts (Font Awesome) from file:// pages.
 const server = Bun.serve({ port: 0, fetch: (req) => {
+  const url = new URL(req.url);
+  // Headless Chrome will not open a window narrower than 500px, so each shot is the window's own iframe at its true size.
+  if (url.pathname === '/frame.html') {
+    const q = url.searchParams;
+    return new Response(`<!doctype html><body style="margin:0;background:#000"><iframe style="border:0;display:block;width:${q.get('width')}px;height:${q.get('height')}px" src="/index.html?${q.get('q')}"></iframe>`, { headers: { 'content-type': 'text/html' } });
+  }
   const file = Bun.file(path.join(bundle, decodeURIComponent(new URL(req.url).pathname)));
   return file.size ? new Response(file) : new Response('not found', { status: 404 });
 } });
-const page = `http://localhost:${server.port}/index.html`;
+const page = `http://localhost:${server.port}/frame.html`;
 for (const name of windows) {
   const g = requested[name] ? { width: requested[name][0], height: requested[name][1] } : (geometry[name] ?? { width: 560, height: 640 });
   const shot = path.join(out, `${name}.png`);
   const query = flag('--mark') ? `w=${name}&mark=1` : `w=${name}`;
   const proc = Bun.spawn(
     [CHROME, '--headless=new', '--disable-gpu', '--hide-scrollbars', `--window-size=${Math.max(g.width, 500)},${g.height}`,
-      '--virtual-time-budget=4000', `--screenshot=${shot}`, `${page}?${query}`],
+      '--virtual-time-budget=4000', `--screenshot=${shot}`, `${page}?width=${g.width}&height=${g.height}&q=${encodeURIComponent(query)}`],
     { stdout: 'ignore', stderr: 'ignore' },
   );
   const r = { status: await proc.exited };
   console.log(r.status === 0 ? `shot ${name} ${Math.max(g.width, 500)}x${g.height}` : `FAILED ${name}`);
 }
 
-// Headless Chrome will not make a window narrower than 500px, so narrower windows are shot at 500.
 server.stop(true);

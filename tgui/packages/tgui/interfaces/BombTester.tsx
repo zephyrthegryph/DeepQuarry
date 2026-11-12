@@ -29,7 +29,7 @@ export const BombTester = (props) => {
   } = data;
 
   return (
-    <Window width={450} height={400}>
+    <Window width={500} height={400}>
       <Window.Content>
         {(simulating && <BombTesterSimulation />) || (
           <Section title="Virtual Explosive Simulator v2.01">

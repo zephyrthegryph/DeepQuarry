@@ -339,6 +339,68 @@ export function alignmentFindings(): Finding[] {
     }
   }
 
+  // 3g. Controls in a section's title bar stay inside the section's frame.
+  for (const buttons of Array.from(
+    root.querySelectorAll('.Section__buttons'),
+  )) {
+    const sec = buttons.closest('.Section');
+    if (!sec || !inScope(buttons) || !visible(buttons)) continue;
+    const sr = sec.getBoundingClientRect();
+    for (const c of Array.from(
+      buttons.querySelectorAll('.Button, .Input, .Dropdown, .NumberInput'),
+    ).filter(visible)) {
+      const r = c.getBoundingClientRect();
+      if (r.right > sr.right - 2 || r.left < sr.left + 2 || r.top < sr.top) {
+        add(
+          'title-control-outside',
+          c,
+          `title-bar control x ${Math.round(r.left)}..${Math.round(r.right)} in section ${Math.round(sr.left)}..${Math.round(sr.right)}`,
+        );
+      }
+    }
+  }
+
+  // 3h. A small group of buttons (a cell's actions) stays on one row.
+  for (const group of Array.from(
+    root.querySelectorAll('td, .Table__cell, .Section__buttons'),
+  )) {
+    if (!inScope(group) || !visible(group)) continue;
+    const kids = Array.from(group.children).filter(visible);
+    const btns = kids.filter(
+      (c) =>
+        c.matches('.Button') &&
+        getComputedStyle(c).display.startsWith('inline'),
+    );
+    if (btns.length < 2 || btns.length > 5 || btns.length !== kids.length)
+      continue;
+    // Breaks put there on purpose, and a plain column of buttons, are layouts, not wraps.
+    if (group.querySelector(':scope > br')) continue;
+    const lefts = btns.map((b) => b.getBoundingClientRect().left);
+    if (Math.max(...lefts) - Math.min(...lefts) < 2) continue;
+    const tops = btns.map((b) => b.getBoundingClientRect().top);
+    if (Math.max(...tops) - Math.min(...tops) > 8)
+      add(
+        'buttons-split',
+        group,
+        `${btns.length} buttons wrapped onto more than one row`,
+      );
+  }
+
+  // 3i. A number field shows its value and unit on one line.
+  for (const field of Array.from(
+    root.querySelectorAll(
+      '.NumberInput, .ProgressBar, .Dropdown__selected-text',
+    ),
+  )) {
+    if (!inScope(field) || !visible(field)) continue;
+    if (textLineCount(field) > 1)
+      add(
+        'field-wrap',
+        field,
+        `value wraps onto ${textLineCount(field)} lines`,
+      );
+  }
+
   // 3f. A short label stays on one line.
   for (const el of Array.from(root.querySelectorAll('*'))) {
     if (!inScope(el) || !visible(el)) continue;

@@ -25,7 +25,7 @@ export const TelecommsMultitoolMenu = (props) => {
   const { options } = data;
 
   return (
-    <Window width={520} height={540}>
+    <Window width={600} height={540}>
       <Window.Content scrollable>
         <TelecommsStatusLine />
         <TelecommsMultitoolMenuStatus />
