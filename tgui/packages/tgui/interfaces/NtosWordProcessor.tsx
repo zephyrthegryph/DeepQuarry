@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, Section, Table } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { sanitizeText } from '../sanitize';
 import type { NtosWordProcessorActions } from './generated/NtosWordProcessor';
 import type { file } from './NtosFileManager';
 
@@ -97,7 +98,11 @@ export const NtosWordProcessor = (props) => {
               <Section mt={1}>
                 {/** biome-ignore lint/security/noDangerouslySetInnerHtml: is only ever passed data that has passed through pencode2html
                  * It should be safe enough to support pencode in this way.*/}
-                <div dangerouslySetInnerHTML={{ __html: filedata! }} />
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeText(filedata ?? ''),
+                  }}
+                />
               </Section>
             </Section>
           )}

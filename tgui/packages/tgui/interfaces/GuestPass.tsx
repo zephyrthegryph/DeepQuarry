@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { sanitizeText } from '../sanitize';
 import type { GuestPassActions } from './generated/GuestPass';
 
 type Data = {
@@ -50,7 +51,10 @@ export const GuestPass = (props) => {
               {(log.length &&
                 log.map((l) => (
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: These are internally generated only.
-                  <div key={l} dangerouslySetInnerHTML={{ __html: l }} />
+                  <div
+                    key={l}
+                    dangerouslySetInnerHTML={{ __html: sanitizeText(l) }}
+                  />
                 ))) || <Box>No logs.</Box>}
             </Section>
           </Section>

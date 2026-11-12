@@ -11,6 +11,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { sanitizeText } from '../sanitize';
 import type { NtosNewsBrowserActions } from './generated/NtosNewsBrowser';
 
 type Data = {
@@ -90,7 +91,7 @@ const SelectedArticle = (props) => {
       {!!cover && <Image src={resolveAsset(cover)} />}
       {/** biome-ignore lint/security/noDangerouslySetInnerHtml: News articles are written in premade .html files and cannot be edited by players, so it should be
        * safe enough to use dangerouslySetInnerHTML here. */}
-      <div dangerouslySetInnerHTML={{ __html: content }} />
+      <div dangerouslySetInnerHTML={{ __html: sanitizeText(content) }} />
     </Section>
   );
 };

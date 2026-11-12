@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack, Tabs } from 'tgui-core/components';
+import { sanitizeText } from '../sanitize';
 import type { TraitTutorialActions } from './generated/TraitTutorial';
 
 type data = {
@@ -78,7 +79,7 @@ export const TraitDescription = (props) => {
       <div
         // biome-ignore lint/security/noDangerouslySetInnerHtml: Internal trait data
         dangerouslySetInnerHTML={{
-          __html: tutorials[name] as unknown as string,
+          __html: sanitizeText(tutorials[name] as unknown as string),
         }}
       />
     </Section>

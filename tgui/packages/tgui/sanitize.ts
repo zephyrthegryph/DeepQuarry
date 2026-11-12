@@ -80,3 +80,13 @@ export function sanitizeText(
     FORBID_ATTR: forbidAttr,
   });
 }
+
+/**
+ * Server-built HTML shown only in staff windows (admin tickets): the default tags plus links (a ticket's action links), with
+ * class and style kept for the log's colours. DOMPurify still removes scripts, event handlers and javascript: URLs.
+ */
+export function sanitizeAdminHtml(input: string) {
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: [...defTag, 'a'],
+  });
+}

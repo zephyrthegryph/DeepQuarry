@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
+import { sanitizeAdminHtml } from '../sanitize';
 import type { TicketChatActions } from './generated/TicketChat';
 
 const Level = {
@@ -95,7 +96,9 @@ export const TicketChat = (props) => {
                       <div
                         key={i}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket Chat
-                        dangerouslySetInnerHTML={{ __html: log[L] }}
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeAdminHtml(log[L]),
+                        }}
                       />
                     ))}
                 </Stack.Item>

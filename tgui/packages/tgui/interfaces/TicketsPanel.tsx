@@ -17,6 +17,7 @@ import {
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
 import type { BooleanLike } from 'tgui-core/react';
+import { sanitizeAdminHtml } from '../sanitize';
 import type { TicketsPanelActions } from './generated/TicketsPanel';
 
 const AdminLevel = {
@@ -267,7 +268,7 @@ export const TicketsPanel = (props) => {
                             <div
                               // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                               dangerouslySetInnerHTML={{
-                                __html: selected_ticket.name,
+                                __html: sanitizeAdminHtml(selected_ticket.name),
                               }}
                             />
                           </Stack.Item>
@@ -320,7 +321,7 @@ export const TicketsPanel = (props) => {
                         <div
                           // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                           dangerouslySetInnerHTML={{
-                            __html: selected_ticket.actions,
+                            __html: sanitizeAdminHtml(selected_ticket.actions),
                           }}
                         />
                       </LabeledList.Item>
@@ -339,7 +340,9 @@ export const TicketsPanel = (props) => {
                               key={i}
                               // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                               dangerouslySetInnerHTML={{
-                                __html: selected_ticket.log[L],
+                                __html: sanitizeAdminHtml(
+                                  selected_ticket.log[L],
+                                ),
                               }}
                             />
                           ))}

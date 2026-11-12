@@ -11,6 +11,7 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
+import { sanitizeAdminHtml } from '../sanitize';
 import type { TicketActions } from './generated/Ticket';
 
 const Level = {
@@ -125,7 +126,11 @@ export const Ticket = (props) => {
                     <Stack.Item>#{id}:</Stack.Item>
                     <Stack.Item>
                       {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data */}
-                      <div dangerouslySetInnerHTML={{ __html: name }} />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeAdminHtml(name),
+                        }}
+                      />
                     </Stack.Item>
                   </Stack>
                 </LabeledList.Item>
@@ -158,7 +163,11 @@ export const Ticket = (props) => {
                 )}
                 <LabeledList.Item label="Actions">
                   {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data */}
-                  <div dangerouslySetInnerHTML={{ __html: actions }} />
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeAdminHtml(actions),
+                    }}
+                  />
                 </LabeledList.Item>
               </LabeledList>
             </Section>
@@ -174,7 +183,9 @@ export const Ticket = (props) => {
                       <div
                         key={i}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
-                        dangerouslySetInnerHTML={{ __html: log[L] }}
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeAdminHtml(log[L]),
+                        }}
                       />
                     ))}
                 </Stack.Item>
