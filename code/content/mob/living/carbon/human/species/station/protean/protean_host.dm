@@ -26,7 +26,13 @@ CAPABILITIES(/datum/protean_power/hardsuit)
 /datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
 	var/datum/forms/protean/F = A.arg("forms")
-	if(!QDELETED(F) && can_use(H, F) && F.form_control_check())
+	if(QDELETED(F))
+		return
+	var/refusal = use_refusal(H, F)
+	if(refusal)
+		to_chat(H, span_warning(refusal))
+		return
+	if(F.form_control_check())
 		F.enter_rig()
 
 /datum/protean_power/hardsuit/proc/activate_hardsuit_failed(datum/act/op/A)
@@ -80,7 +86,11 @@ CAPABILITIES(/datum/protean_power/latch_host)
 	var/datum/forms/protean/F = A.arg("forms")
 	var/obj/item/grab/G = A.arg("grab")
 	var/mob/living/carbon/human/target = A.arg("host")
-	if(QDELETED(G) || QDELETED(F) || QDELETED(target) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
+	if(QDELETED(G) || QDELETED(F) || QDELETED(target) || G.loc != H || G.state < GRAB_AGGRESSIVE)
+		return
+	var/refusal = use_refusal(H, F)
+	if(refusal)
+		to_chat(H, span_warning(refusal))
 		return
 	if(target.get_equipped_item(SLOT_ID_BACK))
 		target.drop_from_inventory(target.get_equipped_item(SLOT_ID_BACK))

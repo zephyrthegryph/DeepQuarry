@@ -30,3 +30,18 @@
 	TEST_ASSERT(istext(eater.force_feed_refusal(feeder, null)), "the mask refuses feeding with a reason")
 	TEST_ASSERT_EQUAL(length(test_chat_of(eater)), 0, "the probe printed nothing to the eater")
 	TEST_ASSERT_EQUAL(length(test_chat_of(feeder)), 0, "the probe printed nothing to the feeder")
+
+/// The other item and mob checks that used to print answer why instead; probing them says nothing to anyone.
+/datum/unit_test/dq_item_mob_refusals_silent/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	var/obj/item/megaphone/mega = allocate(/obj/item/megaphone, T)
+	var/obj/item/uav/drone = allocate(/obj/item/uav, T)
+	var/obj/item/bug_monitor/monitor = allocate(/obj/item/bug_monitor, T)
+	test_chat_clear()
+	TEST_ASSERT(istext(mega.broadcast_refusal(user)), "a megaphone on the floor is refused with a reason")
+	TEST_ASSERT(istext(drone.transition_refusal(drone.state)), "a drone cannot go to the state it is already in")
+	TEST_ASSERT(istext(monitor.cam_refusal()), "an unpaired monitor is refused with a reason")
+	TEST_ASSERT(istext(user.shred_refusal(other)), "shredding without a neck grab is refused with a reason")
+	TEST_ASSERT_EQUAL(length(test_chat_of(user)), 0, "the probes printed nothing: [jointext(test_chat_of(user), " | ")]")

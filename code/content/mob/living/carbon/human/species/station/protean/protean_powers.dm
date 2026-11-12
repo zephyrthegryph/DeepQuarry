@@ -67,32 +67,29 @@ CAPABILITIES(/datum/protean_power)
 	if(!F)
 		to_chat(H, span_warning("You don't have a nanite swarm to do that with."))
 		return FALSE
-	if(!can_use(H, F))
+	var/refusal = use_refusal(H, F)
+	if(refusal)
+		to_chat(H, span_warning(refusal))
 		return FALSE
 	activate(H, F)
 	return TRUE
 
-/datum/protean_power/proc/can_use(mob/living/carbon/human/H, datum/forms/protean/F)
+/// Why `H` cannot use this power in form `F` now, or null when they can. It never prints: the player action that asked shows the reason.
+/datum/protean_power/proc/use_refusal(mob/living/carbon/human/H, datum/forms/protean/F)
 	if(F.is_dormant())
-		to_chat(H, span_warning("You need to be repaired first before you can act!"))
-		return FALSE
+		return "You need to be repaired first before you can act!"
 	if(needs_conscious && H.stat)
-		to_chat(H, span_warning("You must be awake to do that!"))
-		return FALSE
+		return "You must be awake to do that!"
 	var/folded = F.in_rig()
 	if(rig_only && !folded)
-		to_chat(H, span_warning("You need to be folded into your control cluster to do that."))
-		return FALSE
+		return "You need to be folded into your control cluster to do that."
 	if(folded && !usable_in_rig)
-		to_chat(H, span_warning("You can't do that while folded into your control cluster."))
-		return FALSE
+		return "You can't do that while folded into your control cluster."
 	if(!(F.current.form_flag & allowed_forms))
-		to_chat(H, span_warning("You can't do that in your current form."))
-		return FALSE
+		return "You can't do that in your current form."
 	if(needs_turf && !isturf(H.loc))
-		to_chat(H, span_warning("You need more space to perform this action!"))
-		return FALSE
-	return TRUE
+		return "You need more space to perform this action!"
+	return null
 
 /datum/protean_power/proc/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	return
@@ -274,7 +271,9 @@ CAPABILITIES(/datum/prompt/choice/protean_power)
 	. = ..()
 	if(.)
 		return
-	return !QDELETED(power) && !QDELETED(form) && power.can_use(answerer, form) ? null : "can't use"
+	if(QDELETED(power) || QDELETED(form))
+		return "can't use"
+	return power.use_refusal(answerer, form)
 
 /datum/prompt/yes_no/protean_power
 	timeout = 0
@@ -299,7 +298,9 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	. = ..()
 	if(.)
 		return
-	return !QDELETED(power) && !QDELETED(form) && power.can_use(answerer, form) ? null : "can't use"
+	if(QDELETED(power) || QDELETED(form))
+		return "can't use"
+	return power.use_refusal(answerer, form)
 
 /datum/protean_power/reform_limb/proc/limb_chosen(datum/act/request/context)
 	var/datum/prompt/choice/protean_power/ask = context.request
