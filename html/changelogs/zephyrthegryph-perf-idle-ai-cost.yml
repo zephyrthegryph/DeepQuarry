@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A calm AI mob nobody sees now wanders and speaks in one run of its action loop instead of two (instant behaviours), skips rebuilding an unchanged behaviour list, builds no trace text or op name strings unless they are used, and makes no footstep work for steps in chunks no observer holds"
+  - code_imp: "has_buckled_mobs() counts the link instead of building the mob list on every Moved()"

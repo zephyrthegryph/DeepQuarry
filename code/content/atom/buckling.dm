@@ -51,7 +51,7 @@
 	return OP_DECLINE
 
 /atom/movable/proc/has_buckled_mobs()
-	return LAZYLEN(src?.buckled_mob_list())
+	return link_count(src, LK_BUCKLED_MOBS) // a count: buckled_mob_list() builds a list, and every Moved() asks
 
 
 
