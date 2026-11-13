@@ -72,14 +72,14 @@ CAPABILITIES(/obj/drainb_node)
 	TEST_ASSERT(drains > 3, "the cascade took several drains: [drains]")
 	TEST_ASSERT(!GLOB.hook_change_pending, "nothing is left marked")
 	TEST_ASSERT_EQUAL(json_encode(GLOB.drainb_order.Copy(1, 4)), json_encode(expect.Copy(1, 4)), "the first drain took the head of the marks")
-	// Each node ran once; the one that changed again ran a second time; the one flipped back before it ran saw no change (its value is read when it
-	// runs), so it did not run at all.
+	// Each node ran once; the one that changed again ran a second time. The one flipped back before it ran is one mark, not two, so it ran once: an ANY
+	// hook on a plain var takes no init baseline (change_needs_baseline), so its first drain runs it whatever value it reads then.
 	for(var/serial in expect)
 		var/ran = 0
 		for(var/entry in GLOB.drainb_order)
 			if(entry == serial)
 				ran++
-		var/want = (serial == waiting.serial) ? 0 : ((serial == again.serial) ? 2 : 1)
+		var/want = (serial == again.serial) ? 2 : 1
 		TEST_ASSERT_EQUAL(ran, want, "node [serial] delivered [want] time(s): [json_encode(GLOB.drainb_order)]")
 
 /datum/unit_test/dq_change_drain_budget/kernel_drain_point_resumes_the_carried_hooks/Run()
