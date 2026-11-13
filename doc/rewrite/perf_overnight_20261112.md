@@ -232,3 +232,30 @@ Tried, no win (not landed):
   self), and each of those keeps behaviour that tests pin. No batch form would remove it.
 - Pre-existing failure seen on the base tree: `dq_lifecycle_diag_aborted_plain_teardown` fails ("the record is marked torn down"): the aborted
   path runs `own_teardown()` first, which disposes the scheduler record before `entity_teardown_rest()` can mark it torn down.
+
+## Round 9 (client lighting, perf/client-lighting-fixes, base 834a6b7a59)
+
+Client lighting reviewed against a real test-server log (one player): every one-chunk crossing walked 46-51 chunks (319-404 lights; a full scan is 49),
+median 11 ms, worst 146 ms. Landed in one commit (1d0551b24a): the chunk index holds a light under **every chunk its reach box overlaps** (so a crossing's
+strips need no range growth), stored glow shapes load on a budgeted pump instead of inside a request, flat-light refreshes are local, opacity changes are
+folded to one redraw per light per lighting step, held glows follow the eye's sight between crossings, and per-event diagnostics sit behind the
+`lighting_trace` config flag. Counters in `client_lighting_play` (crossing walk) and `major_events --arg=client_lighting=1` (121 lights, 320 walls, two
+viewers on the 64x64 fixture; the old fixture had no lights, so client lighting was idle in it). Before = the base with only the counters and bench added.
+
+`client_lighting_play` (one run each; the before ran with other lanes' cargo and benches on the machine, so timings carry that; counts are the reliable measure):
+
+| metric | before | after |
+|---|---|---|
+| chunk visits per one-chunk crossing | 53 | 27 |
+| crossing, ms each (ds-resolution clock, 160 crossings) | 4.19 | 1.90 |
+| mask rebuilds (doors + moves) | 2880 | 2120 |
+| opacity redraws (lights redrawn per door flip) | 4640 | 1960 |
+| client play ms / light-move ms | 2780 / 754 | 1101 / 303 |
+
+`major_events --arg=events=supermatter --arg=client_lighting=1` (the opacity batch, viewers' copies): mask builds 206 -> 109, light redraws 226 -> 114,
+held-glow image updates 91 -> 35, ticks p99 637 % -> 96 %, worst tick 7520 % -> 2165 % (the worst tick is dominated by fixture build and noise; the
+before ran on a loaded machine). Profile after: `client_glow_reconsider_flush` 0.059 s over 1182 steps, `sight_refresh` 115 calls 0.023 s.
+
+Not done: a delta crossing is still unbudgeted (the disk read, the dominant sync cost, is out of it; image creation for newly acquired lights is not),
+and a crossing still visits about half a full scan's chunks because a chunk step is 8 turfs against a box 22 turfs wide: the strips are the minimum
+the boxes allow with this chunk size.
