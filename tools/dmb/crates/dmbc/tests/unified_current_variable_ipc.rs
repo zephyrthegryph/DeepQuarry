@@ -104,3 +104,29 @@ fn run_smoke(case: &str) {
     );
     print!("{}", String::from_utf8_lossy(&output.stdout));
 }
+
+/// Real full checkout, no synthetic partial Handler TU or Analyze preflight.
+#[test]
+#[ignore = "whole native Checker checkout; run outside cargo slot after other probes end"]
+fn original_ordered_checker_actual_checkout_bounded() {
+    let scratch = test_scratch::dir("unified-original-checker-checkout");
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let repository = crate_root.join("../../../..");
+    let binary = std::env::var_os("DQ_NATIVE_CHECKER_BINARY")
+        .unwrap_or_else(|| env!("CARGO_BIN_EXE_dmbc").into());
+    let bash = std::env::var_os("DQ_BASH").unwrap_or_else(|| "bash".into());
+    let python = std::env::var_os("DQ_PYTHON").unwrap_or_else(|| "python".into());
+    let output = Command::new(bash)
+        .arg(slash(repository.join("tools/dq_machine_slots.sh")))
+        .args(["run", "dm_compile", "--label", "native-checker-checkout", "--"])
+        .arg(slash(Path::new(&python)))
+        .arg(slash(crate_root.join("../../scripts/unified_original_checkout_checker.py")))
+        .arg("--binary").arg(slash(Path::new(&binary)))
+        .arg("--scratch-root").arg(slash(&scratch))
+        .arg("--repository").arg(slash(&repository))
+        .env("DQ_PRIORITY", "low").env("PYTHONDONTWRITEBYTECODE", "1")
+        .output().expect("run bounded actual native Checker checkout");
+    assert!(output.status.success(), "actual native Checker checkout failed; evidence at {}\nstdout:{}\nstderr:{}",
+        scratch.display(), String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+    print!("{}", String::from_utf8_lossy(&output.stdout));
+}

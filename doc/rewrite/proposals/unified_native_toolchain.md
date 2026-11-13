@@ -3859,3 +3859,21 @@ passed after these repairs. The next whole-checkout run expired after 307.67 sec
 during frontend completion on the shared machine, before reaching the repaired
 body. It emitted no report or native pair. This does not establish whole-checkout
 parity, a working default cutover or the combined performance targets.
+
+
+### Bounded actual-checkout diagnostic routes
+
+An opt-in native ordered-Checker driver uses the existing public prepare/query
+protocol with exact source, semantic and policy pins. It never reports full
+Checker parity and never installs a compiled pair. On this checkout the
+noncompact preparation exceeded the unchanged 128 MiB syntax allowance during
+an include-occurrence vector replacement, before Checker execution. The Python
+driver reached that real failure; its new ignored Rust wrapper has not been run.
+
+A separate private verification using the already supported compact
+WithSemanticReads roster reached the actual listclearnulls body in 144.69 seconds.
+That scope contains six Analyze policies and the native Checker; it is neither
+the Full registry nor a Checker-only result. Its first missing witness was
+null-membership. Extracted unmodified helpers separately reproduced member
+post-decrement, postfix-update index reads and two-level ordinary index reads.
+Those are grouped repairs awaiting the next source build and verification.
