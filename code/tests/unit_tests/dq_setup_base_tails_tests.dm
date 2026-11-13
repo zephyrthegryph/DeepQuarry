@@ -13,7 +13,8 @@
 	var/obj/item/pen/P = allocate(/obj/item/pen, T)
 	var/datum/type_trait/item_combat/combat = combat_of(P)
 	var/expected = max(5, round(combat.force / (combat.sharp ? P.w_class : P.w_class * 3)))
-	TEST_ASSERT_EQUAL(combat_of(P).embed_chance, expected, "an item left on the default embed chance takes it from its weight and edge")
+	TEST_ASSERT_EQUAL(P.embed_chance_now(), expected, "an item left on the default embed chance takes it from its weight and edge")
+	TEST_ASSERT_EQUAL(combat_of(P).embed_chance, -1, "and is not written at construction (no private combat trait copy per item)")
 
 	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, T)
 	var/obj/item/tool/crowbar/other = allocate(/obj/item/tool/crowbar, T)

@@ -42,7 +42,7 @@
 	TEST_ASSERT(term.invisibility >= INVISIBILITY_ABSTRACT, "the terminal hides under the tiles")
 	rx_of(term).look_key = null
 	term.set_icon_state("term")
-	term.refresh_queued = DEP_PARKED // owes its first draw, as the cover leaves it
+	interest_test_park(term) // owes its first draw, as the cover leaves it
 	var/obj/item/t_scanner/scanner = allocate(/obj/item/t_scanner, floor)
 	GLOB.overlay_cache -= handle_of(term)
 	var/image/I = scanner.get_overlay(term)

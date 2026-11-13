@@ -73,13 +73,13 @@
 	for(var/path in item_rules_of(src).actions_types)
 		add_item_action(path)
 
-/// An item left on the default embed chance (-1) takes it from its weight and edge.
-/obj/item/proc/roll_embed_chance()
-	if(combat_of(src).embed_chance < 0)
-		if(combat_of(src).sharp)
-			set_embed_chance(max(5, round(combat_of(src).force/w_class)))
-		else
-			set_embed_chance(max(5, round(combat_of(src).force/(w_class*3))))
+/// The chance (0-100) this item lodges in a body it hits: the one its type declares, or, left on the size default (-1), the one its weight and edge give. Worked out
+/// when asked: an item made once and never swung would otherwise take a private copy of its combat trait at construction just to hold this number.
+/obj/item/proc/embed_chance_now()
+	var/datum/type_trait/item_combat/combat = combat_of(src)
+	if(combat.embed_chance >= 0)
+		return combat.embed_chance
+	return max(5, round(combat.force / (combat.sharp ? w_class : w_class * 3)))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -1223,7 +1223,6 @@ CAPABILITIES(/obj/item)
 	item_handling(center_x = 16, center_y = 16, randpixel = 6, preserve = 0, no_attack_log = 0, no_random_knockdown = FALSE, cavity_implantable = TRUE) // how it is placed and handled: a type trait (code/game/objects/items/item_handling.dm)
 	setup(PROC_REF(share_tool_qualities))
 	setup(PROC_REF(make_declared_actions))
-	setup(PROC_REF(roll_embed_chance))
 	setup(PROC_REF(note_worn_factor_default))
 	hover(PROC_REF(item_hovered))
 	// The thing this one is attached to (an assembly's valve, a gun's attachment, an electric chair's kit): a sparse link, not a var on /obj/item (item_master()).

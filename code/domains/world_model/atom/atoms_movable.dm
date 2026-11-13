@@ -51,11 +51,10 @@
 		start_blocking_light()
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || STATE_PEEK(src, movable_misc, icon_rotation) != DEFAULT_ICON_ROTATION)
 		update_transform()
-	switch(atom_rules_of(src).light_system)
-		if(MOVABLE_LIGHT)
-			add_overlay_lighting(src, starts_on = light_on)
-		if(MOVABLE_LIGHT_DIRECTIONAL)
-			add_overlay_lighting(src, is_directional = TRUE, starts_on = light_on)
+	// A movable light that is dark now (a hat with no lamp, a flashlight switched off) makes no overlay light: light_changed() makes it when the light first casts.
+	// The overlay light is up to three more atoms and eight observers, and most head items and flashlights are never lit.
+	if(atom_casts_light(src))
+		add_movable_light()
 
 /// World registration moved out of Initialize() (L2): radiation shielding,
 /// static lighting and recursive listening reach outside the object.
@@ -312,7 +311,8 @@
 	// BYOND turns a mover natively on Move(), bypassing set_dir(): publish the dir a drawn atom now shows, only when it changed.
 	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
 		rx_of(src).look_seen_dir = dir
-		tracked_changed(src, nameof(dir))
+		if(!interest_parked_quiet(src)) // a parked atom's owed draw shows the dir it has when it runs: no per-move publish
+			tracked_changed(src, nameof(dir))
 	MOVE_COST_BEGIN(notices_started)
 	if(STATE_PEEK(src, movable_misc, blocks_light))
 		light_blocking_moved(old_loc)
@@ -346,6 +346,8 @@
 	if(proximity_tracked)
 		SSproximity.member_update(src)
 	MOVE_COST_BEGIN(interest_started)
+	if(refresh_queued)
+		interest_owed_moved(src, old_loc) // a draw owed: its entry in the owed index follows it to its new chunk (engine/change/interest.dm)
 	if(refresh_queued & DEP_PARKED)
 		interest_parked_moved(src) // a draw owed and a chunk now held: it draws (engine/change/interest.dm)
 	if(length(GLOB.interest_anchors))
@@ -558,6 +560,8 @@ ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bum
 /// write takes: the stat layer re-attaches the thing to its new container's readers (stat_hop_attach), derived() entries and on_change() hooks that
 /// read it re-evaluate, a pending operation re-resolves its watched pairs. Nothing runs while nothing reads `loc`.
 /atom/movable/proc/loc_changed(atom/old_loc)
+	if(interest_parked_quiet(src))
+		return // parked and unseen: it owes its whole draw, which reads where it stands when it runs; nothing about its place is published meanwhile
 	MOVE_COST_BEGIN(reads_started)
 	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))

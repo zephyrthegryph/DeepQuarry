@@ -230,6 +230,7 @@ CAPABILITIES(/obj/item/flashlight)
 	set_flickering(TRUE)
 	var/original_color = glow_of(src).color
 	var/original_on = on
+	add_movable_light() // a flashlight that is off has no overlay light yet (light_changed() makes it when the light first casts)
 	var/datum/overlay_lighting/OL = overlay_light //BEWARE, ESOTERIC BULLSHIT HERE.
 	if(flicker_color && glow_of(src).color != flicker_color)
 		set_light_color(flicker_color)

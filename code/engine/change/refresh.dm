@@ -134,7 +134,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 	// so two entities watching each other (two railings that draw each other) stop after one round.
 	// An atom already parked that this mark would park again (interest.dm) has been through its first mark: its watchers heard then, and two atoms
 	// that watch each other would otherwise pass the notice back and forth for ever, neither ever becoming non-idle.
-	var/first_mark = E.rel_watchers && REFRESH_IDLE(E) && !((E.refresh_queued & DEP_PARKED) && GLOB.interest_defer_marks && interest_defers(E))
+	var/first_mark = E.rel_watchers && REFRESH_IDLE(E) && !((E.refresh_queued & DEP_PARKED) && GLOB.interest_defer_marks && interest_parked_stays(E))
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
@@ -149,7 +149,9 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 		if(!refresh_wanted(E))
 			refresh_mark_owner(E, mask, channel)
 		else
+			GLOB.refresh_mark_var = var_name // the wake census (interest_woken_note()) names the write that woke a parked atom
 			refresh_mark(E, mask, channel)
+			GLOB.refresh_mark_var = null
 	if(first_mark)
 		rel_notify_watchers(E)
 
@@ -278,7 +280,7 @@ GLOBAL_VAR_INIT(refresh_marks_raised, 0)
 		// A parked atom (DEP_PARKED) is out of the queue and owes its whole first refresh: the real mark queues it and the owed draw rides with it.
 		var/owed = D.refresh_queued & DEP_PARKED
 		var/idle = !(D.refresh_queued & ~DEP_PARKED)
-		if(idle && GLOB.interest_defer_marks && ((mask & DEP_DRAW) || owed) && interest_defers(D))
+		if(idle && GLOB.interest_defer_marks && ((mask & DEP_DRAW) || owed) && (owed ? interest_parked_stays(D) : interest_defers(D)))
 			// Unobserved presentation (interest.dm): no client, camera or screen holds the chunk it stands in. It owes the draw and costs nothing until
 			// a chunk it stands in is entered or it moves into one that is held.
 			if(owed)
@@ -287,11 +289,15 @@ GLOBAL_VAR_INIT(refresh_marks_raised, 0)
 				GLOB.refresh_deferred++
 			D.refresh_queued = DEP_PARKED
 			D.refresh_bits = 0
+			if(!owed && isatom(D))
+				interest_owed_note(D)
 		else
 			if(mask & DEP_LEGACY)
 				D.refresh_bits |= channel
 			if(idle)
 				refresh_queue_push(D)
+				if(isatom(D))
+					interest_owed_note(D)
 			// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
 			// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
 			// Only a type that defines push_to_rust() or on_state_changed() (the generated list) has a push to run early: for any other type the entry would be
@@ -306,6 +312,7 @@ GLOBAL_VAR_INIT(refresh_marks_raised, 0)
 			D.refresh_queued = (D.refresh_queued & ~(construction ? DEP_PARKED : (DEP_CREATED | DEP_PARKED))) | mask | (owed ? DEP_ALL : 0)
 			if(owed)
 				GLOB.refresh_parked_woken++
+				interest_woken_note(D)
 		// A selective mark reaches an owner only through the look (an owner never reads a child's window data).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
 			break
@@ -396,6 +403,8 @@ GLOBAL_VAR_INIT(refresh_forget_scan_max, 0)
 	refresh_queue_drop(D)
 	if(D.refresh_queued == DEP_PARKED)
 		boot_created_forget(D)
+	if(D.refresh_queued && ismovable(D))
+		interest_owed_drop(D)
 	D.refresh_queued = 0
 	D.refresh_bits = 0
 /// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
@@ -550,6 +559,8 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 		if(pending == DEP_PARKED)
 			continue // a stale entry of an atom parked since (refresh_park_backlog()): it keeps owing its first draw
 		D.refresh_queued = 0
+		if(isatom(D))
+			interest_owed_drop(D)
 		if(QDELETED(D))
 			D.refresh_bits = 0
 			continue
@@ -819,7 +830,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]; [interest_stats_text()]"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]; [interest_stats_text()]; [interest_woken_text()]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text
@@ -1099,12 +1110,16 @@ GLOBAL_VAR_INIT(silent_construction, TRUE)
 /// Writes noted under construction, and the vars their births published (the boot bench reads both).
 GLOBAL_VAR_INIT(construction_writes_noted, 0)
 GLOBAL_VAR_INIT(construction_writes_published, 0)
+/// Writes an atom under construction made while it was parked for a lazy type: each would have woken it into the queue, and none needs to (construction_note()).
+GLOBAL_VAR_INIT(construction_parked_absorbed, 0)
 
 /// state_changed() of an atom under construction: its first refresh is queued if it is not (a held or parked atom owes everything again), and a var
 /// some reader may follow is noted once for the birth.
 /proc/construction_note(atom/A, var_name)
 	GLOB.construction_writes_noted++
-	if(!A.refresh_queued || A.refresh_queued == DEP_PARKED)
+	if(A.refresh_queued == DEP_PARKED && GLOB.interest_defer_marks && interest_parked_stays(A))
+		GLOB.construction_parked_absorbed++ // it owes its whole first draw already, which will show what these writes made; birth settles it (construction_birth())
+	else if(!A.refresh_queued || A.refresh_queued == DEP_PARKED)
 		refresh_mark(A, DEP_ALL)
 	if(!var_name || !plan_reader_bits(var_name, A.type))
 		return

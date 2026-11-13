@@ -1545,3 +1545,24 @@
 	TEST_ASSERT_EQUAL(GLOB.client_glow_reconsiders, reconsiders + 2, "both were redrawn")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
+
+/// The darksight overlay (a radial additive glow centred on the player) eases in by how dark the player's turf is. Under client lighting that is the light the floor
+/// is drawn with, not the gameplay light level (which read a lit corridor dark and gave the player's own character a halo); with the mode off it is the gameplay level.
+/datum/unit_test/dq_client_darksight_follows_drawn_light
+
+/datum/unit_test/dq_client_darksight_follows_drawn_light/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	set_global(nameof(GLOB.client_light_level_reads), GLOB.client_light_level_reads) // the drawn-light read counts itself; teardown restores the counter
+	client_glow_counters_restore()
+	var/turf/T = run_loc_floor_bottom_left
+	TEST_ASSERT_EQUAL(client_darksight_brightness(T), T.get_lumcount(), "with client lighting off the gameplay light level decides")
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	var/list/rgb = client_flat_light_rgb(T)
+	var/drawn = max(rgb[1], rgb[2], rgb[3])
+	TEST_ASSERT(drawn > 0, "a light on the turf draws light on its floor")
+	TEST_ASSERT_EQUAL(client_darksight_brightness(T), drawn, "under client lighting the drawn light decides, not the gameplay level ([T.get_lumcount()])")
+	log_test("CLIENT DARKSIGHT: drawn [drawn] against gameplay level [T.get_lumcount()]")
+	client_lighting_set(FALSE)

@@ -157,7 +157,8 @@ CAPABILITIES(/datum/reagents)
 	if(!isnum(amount) || amount <= 0)
 		return 0
 
-	update_total()
+	if(length(reagent_list)) // an empty holder has nothing to settle: its total, tint and master are already those of nothing (a container filled at construction starts empty)
+		update_total()
 	amount = min(amount, get_free_space())
 
 	// O(1) lookup: check if this reagent already exists in the holder
