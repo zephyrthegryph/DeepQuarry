@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Glow scan, baker turns, I/O polls and interest drains stay inside their tick share; door twins only for held lights; the glow disk store is removed"

@@ -174,10 +174,8 @@ do { \
 #define CLIENT_GLOW_KEEP_CHUNKS 2
 /// The most dropped glow images (and, apart, hide images) one holder keeps to reuse; past it a dropped image is simply let go.
 #define CLIENT_GLOW_POOL_MAX 64
-/// Server milliseconds one step of the stored-shape loader (disk reads) may spend before it leaves the rest of its queue to the next tick.
-#define CLIENT_GLOW_STORE_BUDGET_MS 4
-/// A store step (one shape read, or one warm-up step) at least this long is logged, whatever the lighting trace says.
-#define CLIENT_GLOW_STORE_SLOW_MS 5
+/// Server milliseconds one turn of the glow baker (telling viewers of arrived shapes, starting bakes, working out door twins) may spend before it leaves the rest to the next tick.
+#define CLIENT_GLOW_TURN_BUDGET_MS 4
 /// Server milliseconds one step of a client holder's acquire queue (the glow images a delta crossing makes for lights newly in reach) may spend before it leaves the rest to the next tick.
 #define CLIENT_GLOW_ACQUIRE_BUDGET_MS 4
 /// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
@@ -197,11 +195,6 @@ do { \
 /// Lights redrawn for an opacity change in a chunk some viewer holds per lighting step, whatever the tick budget says: a door beside a viewer never waits behind the budget.
 #define CLIENT_GLOW_NEAR_REDRAW_MAX 16
 #define CLIENT_GLOW_MASK_BAKES_MAX 16
-/// Baked glows kept on disk across rounds, by shape (bounded: past CLIENT_GLOW_STORE_MAX files the directory is emptied at first use).
-#define CLIENT_GLOW_STORE_DIR "data/client_glow_store/"
-#define CLIENT_GLOW_STORE_MAX 4096
-/// Raise when the bake recipe (client_glow_mask_sprite()) changes: the stored shapes are named by it and by the glow sprites' contents.
-#define CLIENT_GLOW_STORE_VERSION "1"
 /// How long a client with no session (so no asset ack to wait for) is given to receive a new baked glow PNG before held glows swap to it.
 #define CLIENT_GLOW_ICON_DELIVERY (0.5 SECONDS)
 /// Iconforge's own limit on one sprite's transforms is 128; the mask stays under it.

@@ -1044,28 +1044,8 @@
 			worst = max(worst, abs(a - b))
 	log_world("client glow test: worst bake-against-plain alpha difference [worst]")
 	TEST_ASSERT(worst <= 2, "the bake lines up with the plain sprite (worst alpha difference [worst])")
-	GLOB.client_glow_baker.store_on = TRUE
-	var/store = client_glow_store_path(key)
-	fcopy(png, store)
+	GLOB.client_glow_baker.icons -= key
 	fdel(png)
-	GLOB.client_glow_baker.icons -= key
-	var/loads = GLOB.client_glow_baker.stored_loads
-	var/datum/client_glow_holder/waiting_viewer = new
-	var/image/waiting_glow = image(null)
-	LAZYSET(waiting_viewer.held, "waiting", list(waiting_glow, image(null)))
-	LAZYSET(waiting_viewer.held_shape, "waiting", key)
-	TEST_ASSERT_NULL(client_glow_mask_icon(key), "a stored shape is not read inside the request that asks for it")
-	TEST_ASSERT_EQUAL(GLOB.client_glow_baker.stored_loads, loads, "the request read no file")
-	TEST_ASSERT(GLOB.client_glow_baker.pending[key], "the shape waits for the store's turn")
-	client_glow_store_pump()
-	TEST_ASSERT_NOTNULL(GLOB.client_glow_baker.icons[key], "the store's turn loaded the shape")
-	TEST_ASSERT_EQUAL(GLOB.client_glow_baker.stored_loads, loads + 1, "it came from the store")
-	TEST_ASSERT(!GLOB.client_glow_baker.pending[key], "nothing is left queued")
-	TEST_ASSERT_EQUAL(LAZYACCESS(waiting_viewer.cut_shape, "waiting"), key, "the viewer waiting on the shape shows it once it has loaded")
-	spent(waiting_viewer)
-	GLOB.client_glow_baker.store_on = FALSE
-	GLOB.client_glow_baker.icons -= key
-	fdel(store)
 
 /// A sprite bigger than a tile is lit as the turf it stands on: under client lighting it carries a flat light whose grey is that
 /// turf's level, a normal-sized atom carries none, the grey follows a light coming and going and the atom moving, and the flat
@@ -1145,39 +1125,6 @@
 	TEST_ASSERT(!LAZYACCESS(H.delivered, "shape1"), "the oldest entry is dropped")
 	TEST_ASSERT(LAZYACCESS(H.delivered, "shape[CLIENT_GLOW_MASK_CACHE_MAX]"), "the entry before the newest is kept")
 	spent(H)
-
-/// The store's turn is bounded: with a budget spent at once, one shape is read per turn and the rest waits for the next, in the order asked.
-/datum/unit_test/dq_client_glow_store_pump_respects_budget
-
-/datum/unit_test/dq_client_glow_store_pump_respects_budget/Run()
-	client_glow_counters_restore()
-	var/list/keys = list()
-	for(var/i in 1 to 3)
-		var/key = "160|0,0,[i],0|"
-		var/png = client_glow_mask_bake_blocking(key)
-		TEST_ASSERT_NOTNULL(png, "baked a shape to store")
-		GLOB.client_glow_baker.store_on = TRUE
-		fcopy(png, client_glow_store_path(key))
-		fdel(png)
-		GLOB.client_glow_baker.icons -= key
-		keys += key
-	for(var/key in keys)
-		client_glow_mask_request(key)
-	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 3, "all three shapes wait for the store")
-	client_glow_store_pump(-1) // a budget already spent: at least one is read
-	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 2, "a turn with no budget reads exactly one shape")
-	TEST_ASSERT_NOTNULL(GLOB.client_glow_baker.icons[keys[1]], "the first asked is the first loaded")
-	TEST_ASSERT_NULL(GLOB.client_glow_baker.icons[keys[2]], "the second waits for the next turn")
-	for(var/turn in 1 to 5)
-		if(!length(GLOB.client_glow_baker.store_queue))
-			break
-		client_glow_store_pump()
-	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 0, "a few more turns read the rest")
-	for(var/key in keys)
-		TEST_ASSERT(GLOB.client_glow_baker.icons[key], "every stored shape loaded")
-		GLOB.client_glow_baker.icons -= key
-		fdel(client_glow_store_path(key))
-	GLOB.client_glow_baker.store_on = FALSE
 
 // ---- the reach index, crossings that walk only their edges, batched opacity, sight between crossings, tracing
 

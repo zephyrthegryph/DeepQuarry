@@ -237,6 +237,11 @@ GLOBAL_VAR_INIT(interest_covers_raised, 0)
 GLOBAL_VAR_INIT(interest_walker_deferred, 0)
 /// The most owed draws one drain pass runs (0: the tick's budget decides). Tests set it to see the spread a busy tick makes.
 GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
+/// Server milliseconds a timer-run drain pass (no cap) may spend once it has drawn something, whatever the tick's limit says: a pass is at least INTEREST_ARRIVAL_MIN_STEP draws
+/// otherwise, and 10 to 75 ms were seen in one call (SLOW_TICK 2026-11-13). The pass that stopped for it is counted and traced.
+#define INTEREST_ARRIVAL_PASS_MS 6
+GLOBAL_VAR_INIT(interest_pass_started, 0)
+GLOBAL_VAR_INIT(interest_pass_cut, 0)
 /// Observer keys that tests treat as coverable without a client (a client is what a cover is shown on).
 GLOBAL_LIST_EMPTY(interest_test_coverable)
 
@@ -484,6 +489,7 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	. = 0
 	var/budget_hit = FALSE
 	var/scans = 0
+	GLOB.interest_pass_started = TICK_USAGE_REAL
 	for(var/owner in GLOB.interest_covered)
 		var/list/Q = GLOB.interest_covered[owner]
 		var/list/pending = GLOB.interest_scan_pending[owner]
@@ -542,6 +548,11 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		return TRUE
 	if(GLOB.interest_arrival_step_max)
 		return drawn >= GLOB.interest_arrival_step_max
+	if(!cap && drawn && TICK_DELTA_TO_MS(TICK_USAGE_REAL - GLOB.interest_pass_started) >= INTEREST_ARRIVAL_PASS_MS)
+		GLOB.interest_pass_cut++
+		if(!(GLOB.interest_pass_cut % 64))
+			log_world("INTEREST: [GLOB.interest_pass_cut] drain pass(es) stopped for their [INTEREST_ARRIVAL_PASS_MS] ms (last: [drawn] draw(s))")
+		return TRUE
 	return drawn >= INTEREST_ARRIVAL_MIN_STEP && KERNEL_OVER_BUDGET
 
 /// The atoms in `owner`'s visible chunks that still owe a draw while it can see them (not covered): must always be empty (the rule the tests hold).
