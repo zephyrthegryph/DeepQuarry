@@ -1,5 +1,6 @@
 // The right-hand column's window manager (column/Column.tsx, doc/rewrite/proposals/window_system.md section 12): one list of
-// entries, each a header (title or stacked tabs) over a body, in the console look. One 3px gap everywhere.
+// entries, each a header (title or stacked tabs) over a body, in the console look. Neighbouring entries share one border: each entry
+// after the first overlaps the one above by a border width (COLUMN_GAP in model.ts), so a seam is 3px, not two frames and a gap.
 @use '~tgui/styles/console';
 
 .column {
@@ -10,7 +11,7 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
   padding: 3px;
   box-sizing: border-box;
   // Many entries on a short column (fitHeights() cannot cut them under their least): the list scrolls instead of hiding the rest.
@@ -28,6 +29,11 @@
   background-color: console.$console-panel;
   border: console.$console-border-width solid console.$console-border;
   box-sizing: border-box;
+
+  // The seam: this entry's top border lies over the previous entry's bottom border.
+  & + & {
+    margin-top: -(console.$console-border-width);
+  }
 
   &--fill {
     flex: 1 1 0;

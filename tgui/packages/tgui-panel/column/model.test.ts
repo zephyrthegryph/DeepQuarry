@@ -304,6 +304,15 @@ describe('fitting the entries to the column', () => {
     expect(groups[0].height).toBe(300);
   });
 
+  it('collapses the border between neighbouring entries: the seam is an overlap of one border width', () => {
+    expect(COLUMN_GAP).toBe(-3);
+    const groups = [group('a', 300), group('b', 300), group('chat', 260)];
+    // Two seams give two border widths back to the entries: the budget is 416, not 410.
+    const [a, b] = fitHeights(groups, 2, 600);
+    expect(a + b).toBeGreaterThan(410);
+    expect(a + b).toBeLessThanOrEqual(416);
+  });
+
   it('never cuts an entry under its least: 25 entries on a minimal column scroll instead', () => {
     const groups = Array.from({ length: 25 }, (_, i) => group(`g${i}`, 260));
     const heights = fitHeights(groups, 24, 200);
