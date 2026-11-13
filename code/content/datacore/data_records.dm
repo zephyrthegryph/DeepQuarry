@@ -27,10 +27,10 @@
 /// The record's two photos (front: SOUTH, side: WEST) are those of `M` as it looks now. They come from the shared portrait cache
 /// (code/content/appearance/portrait_cache.dm), rendered off the tick: drawing the compound icon of a dressed human on the spot cost about
 /// 300 ms of every join (playtest 2026-11-09, LATEJOIN_REGISTER manifest record 325 ms). The fields hold the no-image picture until each lands.
-/datum/data/record/proc/request_photos(mob/M, only_dir = null)
+/datum/data/record/proc/request_photos(mob/M)
 	if(QDELETED(M))
 		return
-	for(var/dir in (isnull(only_dir) ? list(SOUTH, WEST) : list(only_dir)))
+	for(var/dir in list(SOUTH, WEST))
 		var/datum/portrait/P = portrait_request(M, dir, src, PROC_REF(photo_landed))
 		if(P)
 			apply_photo(dir, P)
@@ -40,7 +40,7 @@
 /// A rendering portrait landed: it is the photo of every direction that was waiting on its key.
 /datum/data/record/proc/photo_landed(datum/portrait/P)
 	for(var/dir_text in photos_waiting?.Copy())
-		if(photos_waiting[dir_text] == P.key)
+		if(P.answers(photos_waiting[dir_text]))
 			LAZYREMOVE(photos_waiting, dir_text)
 			apply_photo(text2num(dir_text), P)
 

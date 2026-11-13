@@ -333,7 +333,7 @@ CAPABILITIES(/datum/photo_render)
 /// An atom's picture landed.
 /datum/photo_render/proc/landed(datum/portrait/P)
 	for(var/list/entry as anything in entries + tops)
-		if(entry[2] == P.key && !entry[1])
+		if(P.answers(entry[2]) && !entry[1])
 			entry[1] = P.picture
 			pending--
 	if(pending <= 0)

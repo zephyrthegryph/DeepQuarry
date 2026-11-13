@@ -658,7 +658,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	var/list/pictures = holo_compound[1]
 	var/list/waiting = holo_compound[2]
 	for(var/dir in waiting.Copy())
-		if(waiting[dir] == P.key)
+		if(P.answers(waiting[dir]))
 			pictures[dir] = P.picture
 			waiting -= dir
 	if(!length(waiting))
