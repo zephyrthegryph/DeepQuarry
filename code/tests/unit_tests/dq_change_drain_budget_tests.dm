@@ -134,3 +134,58 @@ CAPABILITIES(/obj/drainb_node)
 	test_budget(LANE_SIMULATION, null)
 	TEST_ASSERT(!GLOB.hook_change_pending, "nothing stranded")
 	TEST_ASSERT_EQUAL(json_encode(GLOB.drainb_order), json_encode(expect), "the deleted holder's carried hook did not run; the others did, once")
+
+/// Milliseconds the `drains` drain points take while the lane's budget is already spent and `count` holders are marked: a drain that cannot run
+/// anything must cost what it carries, not what is marked.
+/datum/unit_test/dq_change_drain_budget/proc/spent_drain_ms(count, drains)
+	var/list/nodes = make_nodes(count)
+	for(var/obj/drainb_node/N as anything in nodes)
+		N.set_armed(TRUE)
+	test_budget(LANE_SIMULATION, 1)
+	GLOB.stat_tick_spent = 1000000
+	var/stamp = TICK_USAGE_REAL
+	for(var/i in 1 to drains)
+		stat_drain_point()
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+	test_budget(LANE_SIMULATION, null)
+	TEST_ASSERT(GLOB.hook_change_pending, "the marks are still carried")
+	return ms
+
+/datum/unit_test/dq_change_drain_budget/spent_drain_costs_nothing_for_the_backlog/Run()
+	var/small = spent_drain_ms(200, 200)
+	var/big = spent_drain_ms(4000, 200)
+	log_test("DRAIN_COST: 200 spent drains over 200 marked holders [round(small, 0.01)] ms, over 4000 marked [round(big, 0.01)] ms")
+	TEST_ASSERT(big < small * 3 + 5, "a spent drain over 4000 marked holders took [round(big, 0.01)] ms against [round(small, 0.01)] ms over 200: its cost follows the backlog")
+
+/// Milliseconds `ticks` ticks of drain points take while `count` holders are marked and each tick's budget lets a few hooks run.
+/datum/unit_test/dq_change_drain_budget/proc/progress_drain_ms(count, ticks)
+	var/list/nodes = make_nodes(count)
+	for(var/obj/drainb_node/N as anything in nodes)
+		N.set_armed(TRUE)
+	test_budget(LANE_SIMULATION, 3 * TEST_EVAL_COST)
+	var/stamp = TICK_USAGE_REAL
+	for(var/i in 1 to ticks)
+		stat_tick_begin()
+		stat_drain_point()
+		stat_drain_point()
+		stat_drain_point()
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+	test_budget(LANE_SIMULATION, null)
+	TEST_ASSERT(GLOB.hook_change_pending, "the marks are still carried")
+	return ms
+
+/datum/unit_test/dq_change_drain_budget/progressing_drain_costs_what_it_runs/Run()
+	var/small = progress_drain_ms(200, 50)
+	var/big = progress_drain_ms(4000, 50)
+	log_test("DRAIN_COST: 50 ticks of 3 drain points, 3 hooks each, over 200 marked holders [round(small, 0.01)] ms, over 4000 marked [round(big, 0.01)] ms")
+	TEST_ASSERT(big < small * 3 + 5, "50 progressing ticks over 4000 marked holders took [round(big, 0.01)] ms against [round(small, 0.01)] ms over 200: a drain that makes progress walks the whole backlog")
+
+/datum/unit_test/dq_change_drain_budget/empty_drain_point_is_constant/Run()
+	make_nodes(1)
+	GLOB.stat_tick_spent = 0
+	var/stamp = TICK_USAGE_REAL
+	for(var/i in 1 to 2000)
+		stat_drain_point()
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+	log_test("DRAIN_COST: 2000 empty drain points [round(ms, 0.01)] ms")
+	TEST_ASSERT(ms < 40, "2000 empty drain points took [round(ms, 0.01)] ms: an empty drain costs a few length checks")

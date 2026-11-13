@@ -7,8 +7,10 @@
 // gets a new one. An appearance the translation cannot express exactly is drawn with getFlatIcon at once (the exact-match fallback rule): it
 // never looks different from before.
 //
-// portrait_request() answers at once when the picture is cached; otherwise it starts the render (one per key, however many ask) and calls each
-// asker back with the picture when it lands. Askers show a placeholder until then. Nothing waits; the render is polled four times a second.
+// portrait_request() answers at once when the picture is cached; otherwise it only enqueues: the appearance is translated by a kernel job one
+// layer per step (/datum/portrait_translation), then the render starts (one per key, however many ask) and each asker is called back with the
+// picture when it lands. Askers show a placeholder until then. Nothing waits; the render is polled four times a second. No translation, hash
+// or drawing runs inside the request, whoever asks (the late-join manifest photos, the examine portrait, a closet's owner).
 
 /// How many pictures are kept (least recently used dropped first).
 #define PORTRAIT_CACHE_MAX 256
@@ -28,13 +30,18 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/portrait_cache)
 	var/list/use_order
 	/// Photos whose picture is being drawn (/datum/photo_render): owned here until each finishes, whichever photos or copies are left.
 	var/list/photo_renders
+	/// "[dir]:[the appearance's ref]" -> the /datum/portrait_translation of an appearance being translated (one per appearance, however many ask). Owned.
+	var/list/translations
 	/// Counters for the tests and the trace: pictures served from the cache, renders started, getFlatIcon fallbacks.
 	var/hits = 0
 	var/renders = 0
 	var/fallbacks = 0
+	/// Translations finished (the tests and the trace).
+	var/translated = 0
 
 CAPABILITIES(/datum/portrait_cache)
 	owns_many(nameof(portraits))
+	owns_many(nameof(translations))
 	owns_many(nameof(photo_renders))
 
 /// One picture: its key, the picture once it landed (base 64 PNG and the /icon), and who is waiting for it while it renders.
@@ -54,6 +61,8 @@ CAPABILITIES(/datum/portrait_cache)
 	var/described
 	/// The appearances that map to this picture (held, so their refs stay theirs while the cache names them).
 	var/list/appearances
+	/// The tokens (portrait_key_of() before the translation finished) of the requests this picture answers, besides its own key.
+	var/list/asked_as
 
 CAPABILITIES(/datum/portrait)
 	every(0.25 SECONDS, then(PROC_REF(poll_step)), when = nameof(polling))
@@ -74,38 +83,123 @@ CAPABILITIES(/datum/portrait)
 	var/datum/portrait/known = known_key ? cache.portraits?[known_key] : null
 	if(known)
 		return portrait_serve(cache, known, asker, callback)
-	var/datum/dq_preview_flattener/flattener = new
-	var/list/flat = flattener.flatten(A, dir)
-	// An animated picture (getFlatIcon without no_anim): every frame is rendered, when every animated state in it has the same frames.
-	var/list/animation = (animated && flat && !flattener.unsupported) ? portrait_animation(flat[1], flattener) : null
+	var/datum/portrait_translation/T = cache.translations?[appearance_key]
+	if(!T)
+		T = new
+		T.appearance = A.appearance
+		T.dir = dir
+		T.animated = animated
+		T.token = appearance_key
+		T.described = "[A] ([A.type])"
+		rel_add(cache, nameof(/datum/portrait_cache::translations), T, appearance_key)
+		job(T, TYPE_PROC_REF(/datum/portrait_translation, translate_step), then = TYPE_PROC_REF(/datum/portrait_translation, translation_done))
+	T.add_waiter(asker, callback)
+	return null
+
+/// One appearance being translated, a layer per job step, then rendered: the work portrait_request() does not do on the asker's tick.
+/datum/portrait_translation
+	/// The look being translated (an immutable appearance: the mob it came from may already be gone).
+	var/image/appearance
+	var/dir = SOUTH
+	var/animated = FALSE
+	/// What portrait_key_of() answers until this lands, and what the finished picture answers to (datum/portrait/asked_as).
+	var/token
+	var/described
+	/// list(list(handle of the asker, proc name)) called back with the portrait this becomes.
+	var/list/waiters
+	var/datum/dq_preview_flattener/flattener
+	var/datum/dq_flatten_frame/frame
+	var/steps = 0
+
+CAPABILITIES(/datum/portrait_translation)
+	owns_one(nameof(flattener))
+	owns_one(nameof(frame))
+
+/datum/portrait_translation/New()
+	..()
+	lifecycle_decls_init(src) // a non-atom has no materialize
+
+/datum/portrait_translation/proc/add_waiter(datum/asker, callback)
+	if(!asker || !callback)
+		return
+	var/handle = handle_of(asker)
+	for(var/list/waiter as anything in waiters)
+		if(waiter[1] == handle && waiter[2] == callback)
+			return
+	LAZYADD(waiters, list(list(handle, callback)))
+
+/// One job step: opens the translation, then draws one layer of the appearance per step.
+/datum/portrait_translation/proc/translate_step(datum/act/timer/A)
+	steps++
+	if(!frame)
+		rel_set(src, nameof(flattener), new /datum/dq_preview_flattener)
+		rel_set(src, nameof(frame), flattener.flatten_open(appearance, dir))
+	else
+		flattener.flatten_step(frame)
+	return frame.done ? JOB_DONE : JOB_MORE
+
+/// The translation is done: the picture is served from the cache, rendered (a job of its own), or (what the translation cannot express) drawn
+/// the old way, and every asker is called back (now, or when the render lands).
+/datum/portrait_translation/proc/translation_done(datum/act/timer/A)
+	var/datum/portrait_cache/cache = GLOB.portrait_cache
+	cache.set_translated(cache.translated + 1)
+	var/list/asked = waiters
+	waiters = null
+	var/list/flat = frame.result
+	var/datum/portrait/P
 	if(!flat || flattener.unsupported)
-		// The exact-match rule: what the translation cannot express is drawn the old way, now, and not cached (no key names it).
-		cache.set_fallbacks(cache.fallbacks + 1)
-		var/datum/portrait/sync = new
-		sync.picture = animated ? getFlatIcon(A, defdir = dir) : getFlatIcon(A, defdir = dir, no_anim = TRUE)
-		sync.set_b64(icon2base64(sync.picture))
-		log_world("PORTRAIT: [A] ([A.type]) drawn with getFlatIcon ([flattener.unsupported || "nothing to render"]).")
-		return sync
+		P = fallback_portrait(cache, flattener.unsupported || "nothing to render")
+	else
+		P = portrait_for_translation(cache, flat)
+	LAZYADD(P.asked_as, token)
+	if(P.key)
+		cache.set_by_appearance_at(token, P.key)
+	for(var/list/waiter as anything in asked)
+		if(P.b64)
+			var/datum/asker = handle_get(waiter[1])
+			if(asker && !QDELETED(asker))
+				call(asker, waiter[2])(P)
+		else
+			P.add_waiter_entry(waiter)
+	own_remove(cache, nameof(/datum/portrait_cache::translations), src)
+
+/// What the translation cannot express is drawn the old way (the exact-match rule), and not cached (no key names it). It is drawn here, in a job
+/// step of its own, never inside the request.
+/datum/portrait_translation/proc/fallback_portrait(datum/portrait_cache/cache, why)
+	cache.set_fallbacks(cache.fallbacks + 1)
+	var/datum/portrait/P = new
+	P.picture = animated ? getFlatIcon(appearance, defdir = dir) : getFlatIcon(appearance, defdir = dir, no_anim = TRUE)
+	P.set_b64(icon2base64(P.picture))
+	log_world("PORTRAIT: [described] drawn with getFlatIcon ([why]) after [steps] steps.")
+	return P
+
+/// The portrait of a finished translation: the cached one of its look, or a new one rendering off the tick.
+/datum/portrait_translation/proc/portrait_for_translation(datum/portrait_cache/cache, list/flat)
+	// An animated picture (getFlatIcon without no_anim): every frame is rendered, when every animated state in it has the same frames.
+	var/list/animation = animated ? portrait_animation(flat[1], flattener) : null
+	if(flattener.unsupported)
+		return fallback_portrait(cache, flattener.unsupported)
 	var/key = "[dir]:[md5(json_encode(flat[1]))][animation ? ":anim" : ""]"
 	var/datum/portrait/P = cache.portraits?[key]
 	if(P)
-		cache.set_by_appearance_at(appearance_key, key)
-		P.add_appearances(list(A.appearance))
-		return portrait_serve(cache, P, asker, callback)
+		P.add_appearances(list(appearance))
+		cache.remove_use_order(key)
+		cache.add_use_order(key)
+		if(P.b64)
+			cache.set_hits(cache.hits + 1)
+		return P
 	cache.set_renders(cache.renders + 1)
 	P = new
 	P.set_key(key)
-	P.described = "[A] ([A.type])"
+	P.described = described
 	P.jobs = list()
 	if(animation)
 		P.delays = animation
-		for(var/frame in 1 to length(animation))
-			P.jobs += list(dq_preview_start_job(portrait_frame_tree(flat[1], frame), "portrait"))
+		for(var/frame_number in 1 to length(animation))
+			P.jobs += list(dq_preview_start_job(portrait_frame_tree(flat[1], frame_number), "portrait"))
 	else
 		P.jobs += list(dq_preview_start_job(flat[1], "portrait"))
-	P.add_waiter(asker, callback)
-	P.set_appearances(list(A.appearance))
-	cache.set_by_appearance_at(appearance_key, key)
+	P.set_appearances(list(appearance))
 	COOLDOWN_START(P, timeout_at, PORTRAIT_RENDER_TIMEOUT)
 	rel_add(cache, nameof(/datum/portrait_cache::portraits), P, key)
 	cache.add_use_order(key)
@@ -117,12 +211,13 @@ CAPABILITIES(/datum/portrait)
 			portrait_forget_appearances(cache, oldest)
 			own_remove(cache, nameof(/datum/portrait_cache::portraits), dropped)
 	P.set_polling(TRUE)
-	return null
+	return P
 
-/// The key of the picture `A`'s current look renders to (or has), once it was asked for; null before.
+/// The key of the picture `A`'s current look renders to (or has), once it was asked for; the request's token while it is still being translated; null before.
 /proc/portrait_key_of(atom/A, dir = SOUTH, animated = FALSE)
 	var/appearance_key = "[dir]:[animated ? "a:" : ""][ref(A.appearance)]"
-	return GLOB.portrait_cache.by_appearance?[appearance_key]
+	// Until the translation lands the key is not known: the token stands for it (datum/portrait/proc/answers()).
+	return GLOB.portrait_cache.by_appearance?[appearance_key] || (GLOB.portrait_cache.translations?[appearance_key] ? appearance_key : null)
 
 /// `P` from the cache: ready (returned), or still rendering (the asker waits for it; null).
 /proc/portrait_serve(datum/portrait_cache/cache, datum/portrait/P, datum/asker, callback)
@@ -143,6 +238,17 @@ CAPABILITIES(/datum/portrait)
 		if(waiter[1] == handle && waiter[2] == callback)
 			return
 	LAZYADD(waiters, list(list(handle, callback)))
+
+/// A waiter entry from a translation, kept once per asker and proc.
+/datum/portrait/proc/add_waiter_entry(list/waiter)
+	for(var/list/known as anything in waiters)
+		if(known[1] == waiter[1] && known[2] == waiter[2])
+			return
+	LAZYADD(waiters, list(waiter))
+
+/// Is `asked` (a key or a portrait_key_of() token) this picture?
+/datum/portrait/proc/answers(asked)
+	return !isnull(asked) && (asked == key || (asked in asked_as))
 
 /// Drops the appearance shortcuts to the picture `key` (it left the cache).
 /proc/portrait_forget_appearances(datum/portrait_cache/cache, key)
