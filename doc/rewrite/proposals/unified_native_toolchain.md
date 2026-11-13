@@ -3987,3 +3987,26 @@ The compact checkout passed these sites and stopped after 169.83 seconds at
 ++fromIndex in moveElement. A prefix-update statement needs its distinct
 statement receipt; expression and loop-step roles remain separate. No complete
 whole-checkout combined report or default cutover has been established.
+
+### Distinct prefix statements, positional postfix values and loop-tail closure
+
+Prefix updates now have distinct statement-only receipt kinds. Exact ordinary
+name targets and pre++/pre-- spans are checked without lending that proof to
+read, return, initializer or C-for roles. Ordinary positional calls separately
+accept exact ordinary-name postfix values; primitive constructors and the shared
+write/index helpers retain their previous rules. The existing checker keeps its
+actual pre/post operator semantics. Indented for tails can contribute their
+verified close count before an outer else, requiring the existing block-open,
+control/body and exact close/else receipts; while tails remain excluded.
+
+Four focused syntax controls passed. Host libraries and test definitions checked
+clean in 5m21s, including a local fallback after a shared-cache read error; these
+host tests were typechecked, not executed as a monolithic test binary. The private
+build passed in 3m24s. Complete authored moveElement, moveRange and reverse_range
+procedures produced clean combined reports and installed pairs in 1.47, 1.56 and
+1.67 seconds; a separately labelled authentic Swap-line diagnostic passed too.
+
+The compact six-policy checkout passed those bodies and stopped after 174.29s
+at deepCopyList's istype(.[i], /list), rank 349 / ordinal 639. That return-slot
+index needs a separate witness. No complete whole-checkout report, full registry
+parity or default cutover has been established.

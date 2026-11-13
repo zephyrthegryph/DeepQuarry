@@ -924,7 +924,12 @@ fn original_linked_leaf_block(
         let indented_else_if = header.strip_prefix("else").map(str::trim_start)
             .is_some_and(|tail| starts_keyword(tail, "if") && tail.ends_with(')')
                 && control_inline_header(tail, "if").is_none());
-        if !(indented_if || indented_else_if || header == "else")
+        // A for tail still needs its own checked control and body proof.
+        // Here authenticate only its real opening and count its close before
+        // the outer else, never an indentation-only inferred loop.
+        let indented_for = starts_keyword(header, "for") && header.ends_with(')')
+            && control_inline(last, "for").is_none();
+        if !(indented_if || indented_else_if || header == "else" || indented_for)
             || !original_indented_block_boundary(last, origins)
         {
             return false;
@@ -1114,7 +1119,8 @@ fn parse_one(
                 let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
                     OriginalSimpleKind::OrdinaryCallStatement=>ordinary_call,
                     OriginalSimpleKind::SimpleAssignmentStatement | OriginalSimpleKind::PlainAssignment=>assignment,
-                    OriginalSimpleKind::PostIncrementStatement | OriginalSimpleKind::PostDecrementStatement=>increment,
+                    OriginalSimpleKind::PostIncrementStatement | OriginalSimpleKind::PostDecrementStatement
+                    | OriginalSimpleKind::PrefixIncrementStatement | OriginalSimpleKind::PrefixDecrementStatement=>increment,
                     OriginalSimpleKind::CrashStatement=>crash,
                     OriginalSimpleKind::Complete => ordinary_call && parsed.expr.as_ref().is_some_and(|expr| {
                         let ExprKind::Call { callee, .. } = &expr.kind else { return false; };
@@ -1173,6 +1179,9 @@ fn original_crash_statement_candidate(header: &str) -> bool {
 }
 
 fn original_post_increment_candidate(header: &str) -> bool {
+    if let Some(target) = header.strip_prefix("++").or_else(|| header.strip_prefix("--")) {
+        return crate::expression_parser::original_ordinary_call_name(target.trim());
+    }
     header.strip_suffix("++").or_else(|| header.strip_suffix("--"))
         .is_some_and(|target| {
             let target = target.trim_end();
@@ -1816,7 +1825,7 @@ impl OriginalBodyGrammarOutcome{
   let shift=|span:Span|Some(Span::new(span.start.checked_add(offset)?,span.end.checked_add(offset)?));
   let expression=shift(actual.span())?;let operator=match actual.operator(){Some(span)=>Some(shift(span)?),None=>None};
   if expression.start<statement.start||expression.end>statement.end{return None}
-  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete|crate::expression_parser::OriginalSimpleKind::PlainAssignment=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::PostDecrementStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
+  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete|crate::expression_parser::OriginalSimpleKind::PlainAssignment=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::PostDecrementStatement|crate::expression_parser::OriginalSimpleKind::PrefixIncrementStatement|crate::expression_parser::OriginalSimpleKind::PrefixDecrementStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
  }
  pub fn prefix_settings(self)->usize{self.prefix_settings}
  pub fn kind(self)->OriginalBodyGrammarKind{self.kind}
@@ -2391,4 +2400,14 @@ fn original_inline_assignment_head_first_io_stops_before_the_child_without_autho
     assert_eq!(probe.children.get(),0);
     assert!(body.original_grammar.is_none());
     assert_eq!(admission.take_operational_error().unwrap().raw_os_error(),Some(1450));
+}
+
+#[cfg(test)]
+#[test]
+fn original_prefix_update_statement_classifier_requires_only_the_supported_bare_target() {
+    for (source, expected) in [("++fromIndex", true), ("-- fromIndex", true),
+        ("++object.field", false), ("++L[i]", false), ("++lookup()", false),
+        ("value = ++i", false), ("return ++i", false)] {
+        assert_eq!(original_post_increment_candidate(source), expected, "{source}");
+    }
 }

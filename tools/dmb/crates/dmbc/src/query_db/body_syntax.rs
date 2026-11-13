@@ -1872,7 +1872,8 @@ mod body_syntax_census_tests;
          (fixture.replace("pixel_x +=", "pixel_x *="), false),
          (fixture.replace("pixel_x +=", "return pixel_x +="), false),
          (fixture.replace("new_y--", "return new_y--"), false),
-         (fixture.replace("new_y--", "--new_y"), false),
+         (fixture.replace("new_y--", "--new_y"), true),
+         (fixture.replace("new_y--", "return --new_y"), false),
          (fixture.replace("new_y--", "new_y.field--"), true),
          (fixture.replace("new_y--", "new_y.nested.field--"), false),
      ] {
@@ -2623,6 +2624,76 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_move_element_keeps_prefix_update_only_as_its_real_statement() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/moveElement(").unwrap();
+     let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+     let source = &file[start..end];
+     assert!(source.contains("++fromIndex"));
+     for (text, expected) in [
+         (source.to_owned(), true),
+         (source.replace("++fromIndex", "--fromIndex"), true),
+         (source.replace("++fromIndex", "return ++fromIndex"), false),
+         (source.replace("++fromIndex", "fromIndex = ++toIndex"), false),
+         (source.replace("++fromIndex", "++fromIndex.field"), false),
+         (source.replace("++fromIndex", "L[++fromIndex]"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "moveElement");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual moveElement prefix statement must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_reverse_range_keeps_postfix_argument_values_and_refuses_root_value_roles() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/reverse_range(").unwrap();
+     let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+     let source = &file[start..end];
+     assert!(source.contains("inserted_list.Swap(start++, end--)"));
+     for (text, expected) in [
+         (source.to_owned(), true),
+         (source.replace("Swap(start++, end--)", "Swap(++start, end--)"), false),
+         (source.replace("Swap(start++, end--)", "Swap(start++, --end)"), false),
+         (source.replace("Swap(start++, end--)", "Swap(start++, inserted_list.end--)"), false),
+         (source.replace("inserted_list.Swap(start++, end--)", "return start++"), false),
+         (source.replace("inserted_list.Swap(start++, end--)", "start = end--"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "reverse_range");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual reverse_range must be available with prefix companion packet");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {
      let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
      fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {
@@ -2850,6 +2921,39 @@ mod body_syntax_census_tests;
              } else {
                  assert!(matches!(disposition, Err(BodySyntaxFailure::Operational(error))
                      if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_move_range_links_its_real_for_tail_to_outer_else() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/moveRange(").unwrap();
+     let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+     let source = &file[start..end];
+     assert!(source.contains("for(var/i=0, i<distance, ++i)"));
+     for (text, expected) in [
+         (source.to_owned(), true),
+         (source.replace("for(var/i=0, i<distance, ++i)", "for(var/i=0, i<distance, ++i);"), false),
+         (source.replace("for(var/i=0, i<distance, ++i)", "for(var/i=0, i<distance, ++i) L.Insert(fromIndex, null)"), false),
+         (source.replace("\telse\n", "\telse L.Insert(toIndex, null)\n"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "moveRange");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual moveRange for tail must link to the outer else");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
              }
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();

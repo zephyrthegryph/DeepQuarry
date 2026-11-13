@@ -1584,7 +1584,7 @@ pub(crate) fn parse_expression_with_primary_tokens(source:&str,admission:Option<
 /// Source-neutral private grammar provenance. A caller cannot construct this
 /// from diagnostics, an empty parse, a source hash or a semantic-model option.
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) struct OriginalSimpleExpression{kind:OriginalSimpleKind,span:Span,operator:Option<Span>,original_profile:bool}
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalSimpleKind{Complete,OrdinaryCallStatement,SimpleAssignmentStatement,PlainAssignment,PostIncrementStatement,PostDecrementStatement,CrashStatement,MissingArithmeticOperand}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalSimpleKind{Complete,OrdinaryCallStatement,SimpleAssignmentStatement,PlainAssignment,PostIncrementStatement,PostDecrementStatement,PrefixIncrementStatement,PrefixDecrementStatement,CrashStatement,MissingArithmeticOperand}
 impl OriginalSimpleExpression{
  pub(crate) fn kind(self)->OriginalSimpleKind{self.kind}
  pub(crate) fn span(self)->Span{self.span}
@@ -2047,6 +2047,16 @@ fn original_nested_string_index(expr: &Expr) -> bool {
     layers >= 2 && matches!(&current.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
 }
 
+// Read-valued postfix updates only in an ordinary positional call argument.
+// Reuse the exact issued postfix operator/value proof without changing its
+// root statement kind, index/lvalue helper, or C-for step admission.
+fn original_postfix_call_argument(expr: &Expr, tokens: &[Token]) -> bool {
+    matches!(&expr.kind, ExprKind::Unary { value, .. }
+        if matches!(&value.kind, ExprKind::Ident(name) if original_ordinary_call_name(name)
+            && !matches!(name.as_str(), "null" | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__")))
+        && original_post_update(expr, tokens).is_some()
+}
+
 fn original_composed_expression(
     expr: &Expr, tokens: &[Token], conditional: bool, depth: usize, keyword_call: bool,
 ) -> bool {
@@ -2185,7 +2195,7 @@ fn original_composed_expression(
             if !punctuation(open, "(") || !punctuation(close, ")") { return false; }
             let list_constructor = matches!(&callee.kind, ExprKind::Ident(name)
                 if matches!(name.as_str(), "list" | "alist"));
-            let arguments_match = |args: &[Expr], body: &[Token], keyword_call, trailing| {
+            let arguments_match = |args: &[Expr], body: &[Token], keyword_call, trailing, postfix| {
                 let mut remaining = body;
                 for (index, argument) in args.iter().enumerate() {
                     if index != 0 {
@@ -2210,7 +2220,8 @@ fn original_composed_expression(
                         }
                         _ => false,
                     };
-                    if !keyword && !original_conditional_child(argument, run, true, depth) { return false; }
+                    let post_argument = postfix && original_postfix_call_argument(argument, run);
+                    if !keyword && !post_argument && !original_conditional_child(argument, run, true, depth) { return false; }
                     remaining = rest;
                 }
                 // Pinned separated() consumes a trailing comma without
@@ -2226,32 +2237,32 @@ fn original_composed_expression(
                     return callee.span == Span::new(name.span.start, target_close.span.end)
                         && simple_term(primitive, name)
                         && punctuation(target_open, "(") && punctuation(target_close, ")")
-                        && arguments_match(targets, target_body, false, false)
-                        && arguments_match(args, body, false, false);
+                        && arguments_match(targets, target_body, false, false, false)
+                        && arguments_match(args, body, false, false, false);
                 }
             }
             // Pinned coordinate locate is a distinct primitive, not an
             // ordinary call. Keep this proof to three positional arguments.
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "locate") {
                 return args.len() == 3 && matches!(head, [name] if simple_term(callee, name))
-                    && arguments_match(args, body, false, false);
+                    && arguments_match(args, body, false, false, false);
             }
             // Pinned pick has its own choice grammar. Witness one ordinary,
             // unweighted choice without changing its parser or effect role.
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "pick") {
                 return args.len() == 1 && matches!(head, [keyword] if simple_term(callee, keyword))
-                    && arguments_match(args, body, false, false);
+                    && arguments_match(args, body, false, false, false);
             }
             // Pinned NewImplicit has a separate parenthesized argument list.
             // Require exact positional children and both delimiters.
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "new") {
                 return args.len() <= 16 && matches!(head, [keyword] if simple_term(callee, keyword))
-                    && arguments_match(args, body, false, false);
+                    && arguments_match(args, body, false, false, false);
             }
             // Pinned list and alist share the same constructor argument grammar.
             if list_constructor {
                 return matches!(head, [name] if simple_term(callee, name))
-                    && arguments_match(args, body, true, true);
+                    && arguments_match(args, body, true, true, false);
             }
             // The same Original follower already authenticated CloseColon
             // against this actual occurrence before emitting via_colon=true.
@@ -2274,7 +2285,7 @@ fn original_composed_expression(
                 _ => false,
             };
             ordinary && original_conditional_child(callee, head, false, depth)
-                && arguments_match(args, body, keyword_call, true)
+                && arguments_match(args, body, keyword_call, true, true)
         }
         ExprKind::Binary { op, lhs, rhs } => {
             let Some(binding) = original_binary_binding(op) else { return false };
@@ -2305,6 +2316,25 @@ fn original_composed_expression(
                 && original_conditional_child(else_value, no, false, depth)
         }
         _ => false,
+    }
+}
+
+// Statement-only prefix updates. Do not pass these kinds to read/callee or
+// shared lvalue proofs; C-for retains its separate exact step production.
+fn original_prefix_update(expr: &Expr, tokens: &[Token]) -> Option<OriginalSimpleKind> {
+    let [operator, target] = tokens else { return None; };
+    let ExprKind::Unary { op, value } = &expr.kind else { return None; };
+    if operator.kind != TokenKind::Operator
+        || !matches!(&value.kind, ExprKind::Ident(name) if original_ordinary_call_name(name)
+            && !matches!(name.as_str(), "null" | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__"))
+        || !simple_term(value, target)
+        || expr.span != Span::new(operator.span.start, target.span.end) {
+        return None;
+    }
+    match (op.as_str(), operator.text.as_str()) {
+        ("pre++", "++") => Some(OriginalSimpleKind::PrefixIncrementStatement),
+        ("pre--", "--") => Some(OriginalSimpleKind::PrefixDecrementStatement),
+        _ => None,
     }
 }
 
@@ -2409,7 +2439,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
          || original_nested_ordinary_read_index(expr, tokens, 32));
  let return_slot = original_profile && matches!((&expr.kind, tokens), (ExprKind::Ident(name), [dot])
      if name == "." && dot.kind == TokenKind::Punctuation && dot.text == "." && dot.span == expr.span);
- let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile)||(original_profile&&original_grouped_field_assignment(expr,tokens)){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile{original_post_update(expr,tokens)?}else{return None};
+ let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile)||(original_profile&&original_grouped_field_assignment(expr,tokens)){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile{original_post_update(expr,tokens).or_else(||original_prefix_update(expr,tokens))?}else{return None};
  Some(OriginalSimpleExpression{kind,span:expr.span,operator:None,original_profile})
 }
 
@@ -3242,6 +3272,79 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
              assert!(matches!(&expr.kind, ExprKind::Unary { op, value } if op == "new"
                  && matches!(&value.kind, ExprKind::Call { callee, args }
                      if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == "path"))));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+ }
+ #[test]
+ fn actual_original_prefix_update_is_an_exact_statement_kind_not_a_read_or_postfix_value() {
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (source, expected) in [
+         ("++ fromIndex", Some(OriginalSimpleKind::PrefixIncrementStatement)),
+         ("-- fromIndex", Some(OriginalSimpleKind::PrefixDecrementStatement)),
+         ("++ global", Some(OriginalSimpleKind::PrefixIncrementStatement)),
+         ("++ null", None), ("++ __TYPE__", None),
+         ("++ object . field", None), ("++ object : field", None),
+         ("++ object ?. field", None), ("++ L [ i ]", None),
+         ("L [ ++ i ]", None), ("lookup ( ++ i )", None),
+         ("value = ++ i", None), ("++ i = value", None),
+     ] {
+         let rows: Vec<_> = source.split_whitespace().map(|text| {
+             let kind = if original_ascii_identifier(text) { TokenKind::Ident }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, (text == ":").then_some(true))
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let mut output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind), expected, "{source}");
+         if let Some(kind) = expected {
+             assert!(output.parsed().diagnostics.is_empty(), "{source}");
+             let expr = output.parsed.expr.as_mut().unwrap();
+             assert_eq!(original_prefix_update(expr, &output.tokens), Some(kind));
+             assert!(original_post_update(expr, &output.tokens).is_none());
+             let old = expr.span;
+             expr.span.end += 1;
+             assert!(original_prefix_update(expr, &output.tokens).is_none());
+             expr.span = old;
+             assert!(matches!(&expr.kind, ExprKind::Unary { op, value }
+                 if matches!(op.as_str(), "pre++" | "pre--") && matches!(&value.kind, ExprKind::Ident(_))));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+ }
+ #[test]
+ fn actual_original_postfix_argument_preserves_old_value_and_only_ordinary_positional_role() {
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (source, expected) in [
+         ("inserted_list . Swap ( start ++ , end -- )", Some(OriginalSimpleKind::Complete)),
+         ("consume ( i ++ )", Some(OriginalSimpleKind::Complete)),
+         ("i ++", Some(OriginalSimpleKind::PostIncrementStatement)),
+         ("value = i ++", None), ("consume ( ++ i )", None),
+         ("consume ( object . i ++ )", None), ("consume ( L [ i ] ++ )", None),
+         ("consume ( key = i ++ )", None), ("consume ( i ++ + j )", None),
+         ("list ( i ++ )", None), ("new ( i ++ )", None),
+         ("pick ( i ++ )", None), ("consume ( __TYPE__ ++ )", None),
+         ("consume ( i ++ ) = value", None),
+     ] {
+         let rows: Vec<_> = source.split_whitespace().map(|text| {
+             let kind = if original_ascii_identifier(text) { TokenKind::Ident }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, None)
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind), expected, "{source}");
+         if expected.is_some() { assert!(output.parsed().diagnostics.is_empty(), "{source}"); }
+         if source == "inserted_list . Swap ( start ++ , end -- )" {
+             let ExprKind::Call { args, .. } = &output.parsed().expr.as_ref().unwrap().kind else { panic!("actual call"); };
+             assert!(matches!(&args[0].kind, ExprKind::Unary { op, value } if op == "post++"
+                 && matches!(&value.kind, ExprKind::Ident(name) if name == "start")));
+             assert!(matches!(&args[1].kind, ExprKind::Unary { op, value } if op == "post--"
+                 && matches!(&value.kind, ExprKind::Ident(name) if name == "end")));
          }
          drop(output);
          assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
