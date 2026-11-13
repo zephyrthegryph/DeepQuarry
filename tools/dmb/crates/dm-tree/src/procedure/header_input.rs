@@ -252,6 +252,46 @@ impl OriginalInitializerCoordinates {
             )?,
         })
     }
+    /// This inventory is now complete and still uniquely owned before the
+    /// header Arc is published. Move the SAME coordinates into exact buffers;
+    /// fund old+new first, then destroy old storage before its credit retires.
+    fn finish_exact(&mut self,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+        original_checkpoint(a)?;
+        if !a.matches_lease_domain(&self.lease)
+            || self.buffer_credit.as_ref().is_some_and(|credit|!a.matches_lease_domain(credit))
+            || self.wide_end_credit.as_ref().is_some_and(|credit|!a.matches_lease_domain(credit)){
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"initializer coordinate finish uses another admission"));
+        }
+        fn column<T>(rows:&mut Vec<T>,credit:&mut Option<dm_syntax::SettingRootLease>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+            let bytes=rows.capacity().checked_mul(std::mem::size_of::<T>()).ok_or(std::io::ErrorKind::OutOfMemory)?;
+            if bytes!=0&&credit.as_ref().is_none_or(|credit|credit.bytes()!=bytes){
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"initializer finish lacks exact actual buffer credit"));
+            }
+            if rows.len()==rows.capacity(){return Ok(())}
+            if rows.is_empty(){
+                drop(std::mem::take(rows));
+                drop(credit.take());
+                return Ok(())
+            }
+            let (mut exact,exact_credit)=super::original_primary_signatures::allocate_funded_rows(rows.len(),a)?;
+            // allocate_funded_rows gives the SAME exact Global Vec geometry,
+            // retaining both actual allocations until the move completes.
+            exact.append(rows);
+            drop(std::mem::replace(rows,exact));
+            // Assignment destroys the previous lease only AFTER its Vec died.
+            *credit=Some(exact_credit);
+            Ok(())
+        }
+        match &mut self.spans{
+            InitializerCoordinateSpans::Narrow{rows,wide_ends}=>{
+                column(rows,&mut self.buffer_credit,a)?;
+                column(wide_ends,&mut self.wide_end_credit,a)?;
+            },
+            InitializerCoordinateSpans::Wide(rows)=>column(rows,&mut self.buffer_credit,a)?,
+        }
+        original_checkpoint(a)
+    }
+
     fn push(&mut self, span: Span, a: &dm_syntax::SettingAdmission<'_>) -> std::io::Result<()> {
         original_checkpoint(a)?;
         if !a.matches_lease_domain(&self.lease) {
@@ -517,6 +557,7 @@ impl OriginalProcedureHeaders {
             if !coordinates.spans.sort_and_check() {
                 return Err("original declaration header coordinates overlap".into());
             }
+            if let Some(a)=admission{coordinates.finish_exact(a)?;}
             #[cfg(debug_assertions)]
             if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
                 let (_, logical, physical) = coordinates.spans.storage();
@@ -2033,6 +2074,116 @@ mod initializer_coordinate_tests {
         drop(owner);
         assert_eq!(counter.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
+    #[test]
+    fn initializer_exact_finish_preserves_narrow_escapes_wide_and_empty_columns(){
+        use std::sync::atomic::Ordering;
+        for wide in [false,true]{
+            let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+            let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let peak=std::cell::Cell::new(0);
+            let poll=||{peak.set(peak.get().max(used.load(Ordering::Acquire)));Ok(())};
+            let a=dm_syntax::SettingAdmission::new(&used,1<<20,&poll);
+            let source_len=if wide{u32::MAX as usize+1}else{1<<20};
+            let mut coordinates=OriginalInitializerCoordinates::new(source_len,&a).unwrap();
+            let expected=[Span::new(0,1),Span::new(10,65_546),Span::new(70_000,70_001),Span::new(80_000,150_000),Span::new(160_000,160_001)];
+            for span in expected{coordinates.push(span,&a).unwrap();}
+            assert!(coordinates.spans.sort_and_check());
+            let fixed=coordinates.lease.bytes();let (_,logical,old)=coordinates.spans.storage();let old_side=coordinates.spans.wide_end_storage().map_or(0,|row|row.2);
+            let side_logical=coordinates.spans.wide_end_storage().map_or(0,|row|row.1);
+            assert!(old>logical);peak.set(0);
+            coordinates.finish_exact(&a).unwrap();
+            assert_eq!(coordinates.spans.storage().2,logical);
+            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(),logical);
+            assert_eq!(coordinates.spans.wide_end_storage().map_or(0,|row|row.2),side_logical);
+            if side_logical!=0{assert_eq!(coordinates.wide_end_credit.as_ref().unwrap().bytes(),side_logical);}
+            assert!(coordinates.spans.iter().eq(expected));
+            for(index,span)in expected.into_iter().enumerate(){assert_eq!(coordinates.spans.find_start(span.start),Some(index));assert_eq!(coordinates.spans.get(index),Some(span));}
+            assert!(peak.get()>=root+fixed+old+old_side+logical,"old and exact new main-column allocations overlap");
+            assert_eq!(used.load(Ordering::Acquire),root+fixed+logical+side_logical);
+            // A repeat finish has no replacement allocation or changed credit.
+            let before=used.load(Ordering::Acquire);coordinates.finish_exact(&a).unwrap();assert_eq!(used.load(Ordering::Acquire),before);
+            drop(coordinates);assert_eq!(used.load(Ordering::Acquire),root);
+        }
+        let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let mut empty=OriginalInitializerCoordinates::new(1024,&a).unwrap();let fixed=empty.lease.bytes();
+        empty.finish_exact(&a).unwrap();assert_eq!(empty.spans.len(),0);assert!(empty.buffer_credit.is_none());assert!(empty.wide_end_credit.is_none());assert_eq!(used.load(Ordering::Acquire),root+fixed);
+        // Storage-only empty-but-capacious columns may retire real storage;
+        // they certify no source inventory and retain no coordinate payload.
+        empty.push(Span::new(0,65_535),&a).unwrap();
+        if let InitializerCoordinateSpans::Narrow{rows,wide_ends}=&mut empty.spans{rows.clear();wide_ends.clear();}else{unreachable!()}
+        empty.finish_exact(&a).unwrap();assert_eq!(empty.spans.storage().2,0);assert!(empty.spans.wide_end_storage().is_none());assert!(empty.buffer_credit.is_none());assert!(empty.wide_end_credit.is_none());assert_eq!(used.load(Ordering::Acquire),root+fixed);
+        drop(empty);assert_eq!(used.load(Ordering::Acquire),root);
+        let mut empty_wide=OriginalInitializerCoordinates::new(u32::MAX as usize+1,&a).unwrap();let fixed=empty_wide.lease.bytes();
+        empty_wide.finish_exact(&a).unwrap();assert_eq!(empty_wide.spans.len(),0);assert_eq!(empty_wide.spans.storage().2,0);assert!(empty_wide.buffer_credit.is_none());assert!(empty_wide.wide_end_credit.is_none());assert_eq!(used.load(Ordering::Acquire),root+fixed);
+        drop(empty_wide);assert_eq!(used.load(Ordering::Acquire),root);
+    }
+    #[test]
+    fn initializer_exact_finish_denies_old_new_peak_and_preserves_foreign_inventory(){
+        let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut rows=OriginalInitializerCoordinates::new(1024,&a).unwrap();
+        let expected=[Span::new(0,1),Span::new(2,3),Span::new(4,5)];for span in expected{rows.push(span,&a).unwrap();}
+        assert!(rows.spans.sort_and_check());let before=used.load(Ordering::Acquire);let old=rows.spans.storage();let new_bytes=old.1;
+        let limited=dm_syntax::SettingAdmission::new(&used,before+new_bytes-1,&||Ok(()));
+        assert_eq!(rows.finish_exact(&limited).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);
+        assert_eq!(rows.spans.storage(),old);assert!(rows.spans.iter().eq(expected));assert_eq!(used.load(Ordering::Acquire),before);
+        let foreign_used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let foreign=dm_syntax::SettingAdmission::new(&foreign_used,1<<20,&||Ok(()));
+        assert_eq!(rows.finish_exact(&foreign).unwrap_err().kind(),std::io::ErrorKind::InvalidInput);
+        assert_eq!(rows.spans.storage(),old);assert!(rows.spans.iter().eq(expected));assert_eq!(used.load(Ordering::Acquire),before);assert_eq!(foreign_used.load(Ordering::Acquire),root);
+        // The stopped limited admission cannot prevent cleanup or mutate the
+        // healthy same-domain owner. A fresh operation can finish it normally.
+        rows.finish_exact(&a).unwrap();assert_eq!(rows.spans.storage().2,new_bytes);
+        drop(rows);assert_eq!(used.load(Ordering::Acquire),root);
+    }
+    #[test]
+    fn initializer_exact_finish_first_io_keeps_owned_rows_credit_and_real_error(){
+        for stop in 1..=4{
+            let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+            let calls=std::cell::Cell::new(0);let armed=std::cell::Cell::new(false);
+            let poll=||{if armed.get(){let n=calls.get()+1;calls.set(n);if n==stop{return Err(std::io::Error::from_raw_os_error(1450));}}Ok(())};
+            let a=dm_syntax::SettingAdmission::new(&used,1<<20,&poll);let mut coordinates=OriginalInitializerCoordinates::new(1024,&a).unwrap();
+            let expected=[Span::new(0,1),Span::new(2,3),Span::new(4,5)];for span in expected{coordinates.push(span,&a).unwrap();}
+            assert!(coordinates.spans.sort_and_check());let before=used.load(Ordering::Acquire);let old=coordinates.spans.storage();let fixed=coordinates.lease.bytes();
+            armed.set(true);let actual=coordinates.finish_exact(&a).unwrap_err();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(calls.get(),stop);
+            assert!(coordinates.spans.iter().eq(expected));
+            if stop<4{assert_eq!(coordinates.spans.storage(),old);assert_eq!(used.load(Ordering::Acquire),before);}else{assert_eq!(coordinates.spans.storage().2,old.1);assert_eq!(used.load(Ordering::Acquire),root+fixed+old.1);}
+            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(),coordinates.spans.storage().2);
+            drop(coordinates);assert_eq!(used.load(Ordering::Acquire),root);
+        }
+    }
+    #[test]
+    fn initializer_exact_finish_side_column_refusal_keeps_finished_main_and_old_side_owned(){
+        let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut coordinates=OriginalInitializerCoordinates::new(1<<20,&a).unwrap();
+        let expected:Vec<_>=(0..7).map(|n|Span::new(n*65_536,n*65_536+65_535)).collect();for span in &expected{coordinates.push(*span,&a).unwrap();}
+        assert!(coordinates.spans.sort_and_check());let before=used.load(Ordering::Acquire);let old=coordinates.spans.storage();let old_side=coordinates.spans.wide_end_storage().unwrap();
+        // Main replacement fits exactly. Its genuine six-byte slack refund
+        // still leaves less than the subsequent side-column replacement peak.
+        let limited=dm_syntax::SettingAdmission::new(&used,before+old.1,&||Ok(()));
+        assert_eq!(coordinates.finish_exact(&limited).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);
+        assert!(coordinates.spans.iter().eq(expected.iter().copied()));assert_eq!(coordinates.spans.storage().2,old.1);assert_eq!(coordinates.spans.wide_end_storage().unwrap(),old_side);
+        assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(),old.1);assert_eq!(coordinates.wide_end_credit.as_ref().unwrap().bytes(),old_side.2);
+        assert_eq!(used.load(Ordering::Acquire),before-(old.2-old.1));
+        coordinates.finish_exact(&a).unwrap();assert_eq!(coordinates.spans.wide_end_storage().unwrap().2,old_side.1);assert!(coordinates.spans.iter().eq(expected));
+        drop(coordinates);assert_eq!(used.load(Ordering::Acquire),root);
+    }
+    #[test]
+    fn initializer_exact_finish_side_column_io_never_loses_either_owner(){
+        for stop in 4..=6{
+            let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+            let armed=std::cell::Cell::new(false);let calls=std::cell::Cell::new(0);
+            let poll=||{if armed.get(){let n=calls.get()+1;calls.set(n);if n==stop{return Err(std::io::Error::from_raw_os_error(1450));}}Ok(())};
+            let a=dm_syntax::SettingAdmission::new(&used,1<<20,&poll);let mut coordinates=OriginalInitializerCoordinates::new(1<<20,&a).unwrap();
+            let expected:Vec<_>=(0..7).map(|n|Span::new(n*65_536,n*65_536+65_535)).collect();for span in &expected{coordinates.push(*span,&a).unwrap();}
+            assert!(coordinates.spans.sort_and_check());let main=coordinates.spans.storage();let side=coordinates.spans.wide_end_storage().unwrap();let fixed=coordinates.lease.bytes();
+            armed.set(true);let actual=coordinates.finish_exact(&a).unwrap_err();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(calls.get(),stop);
+            assert!(coordinates.spans.iter().eq(expected));assert_eq!(coordinates.spans.storage().2,main.1);
+            let expected_side=if stop<6{side.2}else{side.1};assert_eq!(coordinates.spans.wide_end_storage().unwrap().2,expected_side);
+            assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(),main.1);assert_eq!(coordinates.wide_end_credit.as_ref().unwrap().bytes(),expected_side);
+            assert_eq!(used.load(Ordering::Acquire),root+fixed+main.1+expected_side);
+            drop(coordinates);assert_eq!(used.load(Ordering::Acquire),root);
+        }
+    }
+
 }
 
 #[cfg(test)]
@@ -2223,7 +2374,7 @@ impl<'source> OriginalBodyTokens<'source>{
  }
 }
 
-#[derive(Clone,Copy,Eq,PartialEq)]enum OriginalCaseContinuation{Block,If,Try,Do}
+#[derive(Clone,Copy,Eq,PartialEq)]enum OriginalCaseContinuation{Block,If,Try,Do,StatementTerminator}
 impl OriginalBodyTokens<'_>{
 
  // Project only layout delimiters from the retained primary tokens. This is the
@@ -2233,6 +2384,12 @@ impl OriginalBodyTokens<'_>{
  fn original_case_block_cursor_using<E:From<&'static str>>(&self,after:usize,continuation_mode:OriginalCaseContinuation,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<dm_syntax::OriginalCaseCursor>,E>{
   let mut current:Option<(usize,usize)>=None;let mut spaces:Option<usize>=None;let mut parentheses=0usize;let mut eol:Option<Span>=None;let active=std::cell::Cell::new(false);let mut depth=0usize;let decided=std::cell::Cell::new(false);let waiting=std::cell::Cell::new(false);let else_mode=std::cell::Cell::new(0u8);let else_parens=std::cell::Cell::new(0usize);let else_if=std::cell::Cell::new(false);let final_else=std::cell::Cell::new(false);let continuation=std::cell::Cell::new(0u8);let continuation_depth=std::cell::Cell::new(0usize);
   let mut emit=|text:&str,at:Span,terminal:bool|->Result<Option<dm_syntax::OriginalCaseCursor>,E>{
+   if continuation_mode==OriginalCaseContinuation::StatementTerminator{
+    if at.start<after&&!(terminal&&at.end>=after){return Ok(None)}
+    if !matches!(text,";"|"}"){return Err("do-while actual statement terminator unavailable".into())}
+    return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("do-while terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}
+     else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}));
+   }
    match continuation.get(){
     10=>{if text==";"{return Ok(None)}if text!="catch"{return Err("inline try continuation lacks actual catch".into())}continuation.set(11);return Ok(None)},
     11=>{if text=="("{continuation.set(12);continuation_depth.set(1);return Ok(None)}if text=="{"{continuation.set(13);active.set(true);depth=1;return Ok(None)}if !matches!(text,";"|"}"){return Err("inline catch simple statement continuation unavailable".into())}},
@@ -2259,9 +2416,41 @@ impl OriginalBodyTokens<'_>{
    match text{"{"=>current=Some(match current{None=>(1,1),Some((unit,count))=>(unit,count.checked_add(1).ok_or("case layout indentation overflow")?)}),"}"=>current=match current{None=>return Err("case original unmatched right brace".into()),Some((_,1))=>None,Some((unit,count))=>Some((unit,count-1))},"("=>parentheses=parentheses.checked_add(1).ok_or("case parentheses overflow")?,")"=>parentheses=parentheses.saturating_sub(1),_=>()}
    eol=None;if documentation{continue}if let Some(point)=emit(text,token.span,false)?{return Ok(Some(point))}if decided.get()&&!active.get(){return Ok(None)}
   }
+  if continuation_mode==OriginalCaseContinuation::StatementTerminator{
+   if current.is_some_and(|(_,count)|count>0){let at=eol.unwrap_or(last);checkpoint()?;return emit("}",at,true)}
+   return Err("do-while source end has no actual enclosing layout close".into())
+  }
   if active.get(){if let Some((_,count))=current{let at=eol.unwrap_or(last);for _ in 0..count{checkpoint()?;if let Some(point)=emit("}",at,true)?{return Ok(Some(point))}}}if waiting.get(){let at=eol.unwrap_or(last);return Ok(Some(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}))}return Err("case original block close unavailable".into())}Ok(None)
  }
 
+ // Consume only the real WHILE close and then ask the SAME owned
+ // indentation/brace cursor for the pinned ';' or enclosing '}' role.
+ // This returns diagnostic token/end DATA, never source/model EOF authority.
+ pub(crate) fn do_while_terminator_cursor_using<E:From<&'static str>>(
+  &self,header:Span,checkpoint:&mut impl FnMut()->Result<(),E>,
+ )->Result<dm_syntax::OriginalCaseCursor,E>{
+  checkpoint()?;
+  let current=self.current_span();
+  if header.start>=header.end||header.start<current.start||header.end>current.end{return Err("do-while header escapes its current body".into())}
+  let mut stage=0usize;let mut depth=0usize;let mut closed=false;
+  for(kind,at,text)in self.tokens(header).map_err(E::from)?{
+   checkpoint()?;
+   if matches!(kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){continue}
+   if closed{return Err("do-while header continues after actual condition close".into())}
+   if stage==0{if kind!=TokenKind::Ident||text!="while"||at.start!=header.start{return Err("do-while actual WHILE token unavailable".into())}stage=1;continue}
+   if stage==1{if kind!=TokenKind::Punctuation||text!="("{return Err("do-while actual opening parenthesis unavailable".into())}depth=1;stage=2;continue}
+   if matches!(kind,TokenKind::Punctuation|TokenKind::Operator){match text{
+    "("=>depth=depth.checked_add(1).ok_or("do-while condition depth overflow")?,
+    ")"=>{depth=depth.checked_sub(1).ok_or("do-while condition close underflow")?;if depth==0{
+     if at.end!=header.end{return Err("do-while header end differs from actual condition close".into())}closed=true;
+    }},_=>(),
+   }}
+  }
+  if !closed{return Err("do-while actual condition close unavailable".into())}
+  let after=header.end.checked_sub(self.offset).ok_or("do-while close before source projection")?;
+  self.original_case_block_cursor_using(after,OriginalCaseContinuation::StatementTerminator,checkpoint)?
+   .ok_or_else(||E::from("do-while owned statement terminator unavailable"))
+ }
  pub(crate) fn switch_case_cursor_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<dm_syntax::OriginalCaseCursor,E>{
   checkpoint()?;let start=header.start.checked_sub(self.offset).ok_or("case header before current source")?;let end=header.end.checked_sub(self.offset).ok_or("case header end before current source")?;let case_end=case.end.checked_sub(self.offset).ok_or("case body before current source")?;if start<self.body.start||start>=end||end>case_end||case_end>self.body.end||case_end>self.owner.source.len(){return Err("case cursor escapes original body/header".into())}
   let tokens=self.owner.tokens.window();let source=self.owner.source.as_str();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
@@ -2412,4 +2601,44 @@ mod original_token_window_tests {
         let foreign_owner = HeaderView::original_window(&owner.source, foreign.window(), actual.span()).unwrap();
         assert!(owner.dimension_tokens_view(foreign_owner, None, &symbols).is_err());
     }
+}
+
+#[cfg(test)]
+mod original_do_while_terminator_cursor_tests{
+ use super::*;
+ fn fixture(source:&str,offset:usize)->(Arc<OriginalProcedureHeaders>,Span,Span){
+  let ast=dm_syntax::parse(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);let procedure=&ast.items[0];let header=procedure.children.iter().find(|item|item.header.trim_start().starts_with("while(")||item.header.trim_start().starts_with("while (")).unwrap().header_span;
+  let body=procedure.span;
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();
+  (owner,body,Span::new(header.start+offset,header.end+offset))
+ }
+ #[test]
+ fn actual_owned_do_while_terminator_cursor_handles_terminal_indent_and_real_delimiters(){
+  for(source,end)in[
+   ("/proc/probe(x)\n    do\n        x *= 2\n    while(x < 8)\n",true),
+   ("/proc/probe(x)\n    do\n        x *= 2\n    while(x < 8)",true),
+   ("/proc/probe(x)\n    do\n        x *= 2\n    while(x < 8)\n    return x\n",false),
+   ("/proc/probe(x) { do {x *= 2;} while(x < 8); }\n",false),
+   ("/proc/probe(x) { do {x *= 2;} while(x < 8)}\n",false),
+  ]{for offset in [0,37]{
+   let(owner,body,header)=fixture(source,offset);let tokens=owner.body_tokens(body,offset).unwrap();
+   let cursor=tokens.do_while_terminator_cursor_using(header,&mut||Ok::<(),&'static str>(())).unwrap();
+   match(cursor,end){(dm_syntax::OriginalCaseCursor::SourceEnd{offset:actual,fallback},true)=>{assert_eq!(actual,source.len()+offset);assert!(fallback.start>=offset&&fallback.end<=source.len()+offset);},
+    (dm_syntax::OriginalCaseCursor::Token(at),false)=>{let text=&source[at.start-offset..at.end-offset];assert!(matches!(text,";"|"}"|"\n"),"{source}: {text:?}");},_=>panic!("wrong actual cursor kind: {cursor:?} source={source}")}
+  }}
+ }
+ #[test]
+ fn actual_owned_do_while_terminator_denies_foreign_head_and_hidden_tail_and_keeps_first_io(){
+  let source="/proc/probe(x)\n    do\n        x *= 2\n    while(x < 8)\n";let(owner,body,header)=fixture(source,0);let tokens=owner.body_tokens(body,0).unwrap();
+  for wrong in [Span::new(header.start+1,header.end),Span::new(header.start,header.end-1),Span::new(body.end+1,body.end+2)]{
+   assert!(tokens.do_while_terminator_cursor_using(wrong,&mut||Ok::<(),&'static str>(())).is_err());
+  }
+  let source="/proc/probe(x) { do {x*=2;} while(x<8) return x; }\n";let(owner,body,_)=fixture(source,0);let tokens=owner.body_tokens(body,0).unwrap();let start=source.find("while").unwrap();let close=start+source[start..].find(')').unwrap()+1;
+  assert!(tokens.do_while_terminator_cursor_using(Span::new(start,close),&mut||Ok::<(),&'static str>(())).is_err(),"actual significant return before a delimiter is not a terminator");
+  #[derive(Debug)]enum Failure{Invalid(&'static str),Io(std::io::Error)}impl From<&'static str>for Failure{fn from(value:&'static str)->Self{Self::Invalid(value)}}
+  let(owner,body,header)=fixture("/proc/probe(x)\n    do\n        x*=2\n    while(x<8)\n",0);let tokens=owner.body_tokens(body,0).unwrap();
+  for stop in [1,3,9]{let mut calls=0;let result=tokens.do_while_terminator_cursor_using(header,&mut||{calls+=1;if calls==stop{Err(Failure::Io(std::io::Error::from_raw_os_error(1450)))}else{Ok(())}});
+   match result{Err(Failure::Io(actual))=>assert_eq!(actual.raw_os_error(),Some(1450)),Err(Failure::Invalid(why))=>panic!("source error replaced real IO: {why}"),Ok(_)=>panic!("actual fault site not reached")};assert_eq!(calls,stop);
+  }
+ }
 }

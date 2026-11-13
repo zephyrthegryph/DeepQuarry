@@ -20,6 +20,18 @@ pub struct LocalVariableLedger {
     source_ordered: bool,
 }
 impl LocalVariableLedger {
+    // Private ownership replacement only. It grants no Original receipt,
+    // grows no ledger Vec, and cannot change another local/dimension slot.
+    pub(crate) fn replace_single_array_dimension(&mut self,name:Span,expected:Span,expression:Expr)->Result<Expr,Expr>{
+        let Some(row)=self.entries.last_mut().filter(|row|row.name==name
+            &&row.source_kind==LocalSourceKind::Statement&&row.source_modifiers==0&&row.array_suffix)
+            else{return Err(expression)};
+        let Some(array)=row.array_syntax.as_mut().filter(|array|!array.explicit_initializer
+            &&array.root.brackets.len()==1&&array.root.dimension_slots.as_ref()==[Some(0)]
+            &&array.root.dimensions.len()==1)else{return Err(expression)};
+        if array.root.dimensions[0].span!=expected||expression.span!=expected{return Err(expression)}
+        Ok(std::mem::replace(&mut array.root.dimensions[0],expression))
+    }
     pub(crate) fn drop_dimension_expressions(self,mut drop:impl FnMut(Expr)){
         for mut entry in self.entries{if let Some(array)=entry.array_syntax.take(){for expression in array.root.dimensions.into_vec(){drop(expression);}}}
     }

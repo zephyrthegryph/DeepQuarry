@@ -4276,3 +4276,47 @@ cases include static locals, dimensioned local lists, output statements,
 string-keyed call arguments, inline prefix statements and other exact grammar
 shapes. This is a bounded body survey, not full-registry qualification or
 independent Checker parity. Default routing and publication remain pending.
+
+
+### Actual-source grammar cohort and coordinate storage (2026-11-13)
+
+The wider unchanged-budget survey reached rank 511 with 494 Available and
+17 Unissued bodies before a genuine startup-cleanup allocation refusal. The
+4,339,200-byte request overlapped 130,349,681 retained bytes under the same
+134,217,728-byte limit. The conservative source-width cleanup allowance was
+not lowered: its early-failure and late-alias destruction obligations still
+need real storage ownership, not a smaller unexplained multiplier.
+
+The demonstrated grammar gaps now use the existing native expression and
+statement producers: exact SelfCall arguments, one-argument Locate alongside
+its coordinate form, string-named icon arguments, output statement roles,
+list-constructor iterables, composed member-store values, logical negation of
+the implicit return value, inline prefix statements, inline literal/name
+switch returns, global/static local storage, and one uninitialized list-array
+dimension. Every new source-head loan retains independently consumed children;
+DATA classifiers do not grant body availability. The array ledger now stores
+its actual consumed dimension, with the earlier compatibility DATA root safely
+retired. Existing zero-argument Locate remains supported; an incorrect new
+negative test was corrected instead of restricting that pre-existing path.
+
+Final do-while termination is proved by a narrow role in the existing owned
+indentation/brace cursor. It accepts the actual statement separator or enclosing
+close after an exact while header; hidden significant continuations refuse.
+It does not infer a source-EOF certificate from equal numeric span endpoints.
+
+The complete initializer-coordinate inventory now finishes its actual vectors
+exactly before publication and adaptation, funding the full old/new overlap.
+Its 364,072 rows previously retained 961,296 bytes of spare capacity. No row,
+lookup, provenance relationship or quota credit is discarded early. Side-column
+failure can leave the main column compacted but still valid and fully funded;
+publication refuses and both owners clean up normally. Debug-only scalar
+container measurements distinguish real allocation spare from AST payloads.
+
+Twenty unique focused syntax controls and sixteen unique dm-tree controls
+passed across the repair batches. Host and test definitions also passed cargo
+check; no monolithic dmbc test executable was built. Test transport repairs
+preserve typed Colon identity and final LShift punctuation rather than widening
+production to treat split raw bytes as the same receipt. The dmbc actual-helper
+control definitions compile, but their execution and fresh whole-source coverage
+with this cohort are still pending the private host rebuild. These passes do
+not qualify full-registry parity or the default cutover.

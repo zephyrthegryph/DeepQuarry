@@ -235,6 +235,32 @@ impl SettingExpressionSlots {
             })
             .unwrap_or(false)
     }
+    /// Debug-only actual Vec container geometry, never AST payload or quota.
+    /// Rows are (nonempty allocation count, logical bytes, capacity bytes):
+    /// page directory, root leaves, dimension directory, dimension leaves.
+    #[cfg(debug_assertions)]
+    pub fn container_geometry_for_trace(&self) -> Option<[(usize, usize, usize); 4]> {
+        fn add<T>(row: &mut (usize, usize, usize), values: &Vec<T>) -> Option<()> {
+            if values.capacity() == 0 { return Some(()); }
+            row.0 = row.0.checked_add(1)?;
+            row.1 = row.1.checked_add(values.len().checked_mul(size_of::<T>())?)?;
+            row.2 = row.2.checked_add(values.capacity().checked_mul(size_of::<T>())?)?;
+            Some(())
+        }
+        let guard = self.state.lock().ok()?;
+        let mut rows = [(0, 0, 0); 4];
+        if let Some(storage) = guard.as_ref() {
+            add(&mut rows[0], &storage.roots)?;
+            for page in &storage.roots { add(&mut rows[1], &page.roots)?; }
+            if let Some(dimensions) = &storage.dimensions {
+                add(&mut rows[2], &dimensions.groups)?;
+                for group in dimensions.groups.iter().flatten() {
+                    add(&mut rows[3], &group.roots)?;
+                }
+            }
+        }
+        Some(rows)
+    }
     /// Actual backing storage and quota counter only. Root/anchor/Expr/literal
     /// allocations are forwarded by borrowed references into the caller's SAME
     /// pointer-deduplicating census; charged admission != exact allocator/RSS.
@@ -292,6 +318,37 @@ mod tests {
         crate::prepare_setting_expression(text, &input.tokens, crate::Span::new(0, text.len()), a)
     }
 
+    #[test]
+    #[cfg(debug_assertions)]
+    fn initializer_slot_container_trace_is_scalar_only_and_does_not_poll_or_charge() {
+        let fixed = crate::SettingChargeCounter::root_allocation_bytes();
+        let counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
+        let polls = Cell::new(0usize);
+        let poll = || { polls.set(polls.get() + 1); Ok(()) };
+        let a = SettingAdmission::new(&counter, 1024 * 1024, &poll);
+        let slots = SettingExpressionSlots::default();
+        assert_eq!(slots.container_geometry_for_trace(), Some([(0, 0, 0); 4]));
+        let value = prepare(&a, "1").unwrap();
+        for ordinal in [0, 1, 2, 512] {
+            slots.obtain(ordinal, 513, &a, || Ok(value.clone())).unwrap();
+        }
+        slots.obtain_dimension(2, 513, 0, 2, crate::Span::new(0, 1), &a, || Ok(value.clone())).unwrap();
+        let before = counter.load(Ordering::Acquire);
+        let poll_count = polls.get();
+        let geometry = slots.container_geometry_for_trace().unwrap();
+        assert_eq!(geometry[0], (1, 3 * size_of::<RootPage>(), 3 * size_of::<RootPage>()));
+        assert_eq!(geometry[1], (2, 4 * size_of::<SettingExpression>(), 5 * size_of::<SettingExpression>()));
+        assert_eq!((geometry[2].0, geometry[2].1), (1, 513 * size_of::<Option<DimensionGroup>>()));
+        assert!(geometry[2].2 >= geometry[2].1);
+        assert_eq!((geometry[3].0, geometry[3].1), (1, 2 * size_of::<Option<(crate::Span, SettingExpression)>>()));
+        assert!(geometry[3].2 >= geometry[3].1);
+        assert_eq!(counter.load(Ordering::Acquire), before);
+        assert_eq!(polls.get(), poll_count);
+        assert!(slots.contains_original(512, &value));
+        assert!(slots.contains_dimension(2, 0, crate::Span::new(0, 1), &value));
+        drop(slots); drop(value);
+        assert_eq!(counter.load(Ordering::Acquire), fixed);
+    }
     #[test]
     fn sparse_initializer_slots_fund_only_occupied_pages_and_keep_high_ordinals() {
         let fixed = crate::SettingChargeCounter::root_allocation_bytes();

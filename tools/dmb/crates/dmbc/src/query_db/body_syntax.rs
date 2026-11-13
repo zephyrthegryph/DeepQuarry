@@ -802,6 +802,33 @@ pub(super) mod body_syntax_census_tests;
      }
  }
 
+
+ #[test]
+ fn actual_original_terminal_do_while_requires_owned_statement_terminator(){
+  let fixture="/proc/probe(x)\n    do\n        x *= 2\n    while(x < 8)\n";
+  for(text,expected)in[(fixture.to_owned(),true),(fixture.replace("    while(x < 8)","    while(x < 8);"),true),
+   (fixture.replace("    do\n","    do;\n"),false),(fixture.replace("while(x < 8)","while(x < 8) return x"),false)]{
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let result=body.original_code_disposition();
+    if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=result?else{panic!("actual terminal do-while remains unissued")};assert!(proof.belongs_to(&body));}
+    else{assert!(matches!(result,Err(BodySyntaxFailure::Operational(error))if error.kind()==std::io::ErrorKind::Unsupported));}Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }
+ }
+ #[test]
+ fn actual_original_stoplag_production_body_uses_exact_macro_definitions_and_terminal_cursor(){
+  let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..");let actual=std::fs::read_to_string(root.join("code/host/helpers/time.dm")).unwrap();
+  let start=actual.find("#define DELTA_CALC ").unwrap();let end=start+actual[start..].find("#undef DELTA_CALC").unwrap()+"#undef DELTA_CALC".len();let mut source=String::new();
+  for(path,prefix)in[("code/defines/host/math.dm","#define CEILING("),("code/defines/engine/time.dm","#define DS2TICKS("),("code/defines/engine/_tick.dm","#define TICK_USAGE "),("code/defines/engine/_tick.dm","#define TICK_LIMIT_TO_RUN "),("code/defines/engine/kernel_timing.dm","#define INITSTAGE_MAX ")]{
+   let text=std::fs::read_to_string(root.join(path)).unwrap();let line=text.lines().find(|line|line.starts_with(prefix)).unwrap();source.push_str(line);source.push('\n');
+  }
+  source.push_str(&actual[start..end]);source.push('\n');
+  let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&source);let input=original_input(&front,"stoplag");let product=db.syntax_product_checked(&input).unwrap();
+  setting_syntax::with_setting_admission(&db.body_charge,|admission|{let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()?else{panic!("whole actual production stoplag remains unissued")};assert!(proof.belongs_to(&body));
+   assert!(product.parsed().unwrap().statement_storage().parsed().statements.iter().any(|statement|matches!(statement.kind,dm_syntax::StatementKind::DoWhile{..})),"the UNIT_TESTS alternate body was not substituted");Ok::<(),BodySyntaxFailure>(())
+  }).unwrap();
+ }
+
  #[test]
  fn actual_original_gaussian_else_and_do_while_keep_exact_block_links() {
      let fixture = r#"
@@ -1969,6 +1996,86 @@ pub(super) mod body_syntax_census_tests;
      }
  }
 
+
+ #[test]
+ fn actual_original_read_rgb_inline_prefix_uses_own_condition_close_and_statement_receipt(){
+  let actual=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../code/host/helpers/icons.dm")).unwrap();
+  let line=actual.lines().find(|line|line.trim_start().starts_with("if(text2ascii(rgb) == 35) ++start")).expect("actual ReadRGB opening-hash skip").trim();
+  assert!(line.ends_with("// skip opening #"));
+  // Exact actual statement subtree, not a claim that the whole RGB helper's
+  // other independent grammar frontiers are all currently witnessed.
+  let fixture=format!("/proc/probe(rgb,start)\n    {line}\n    return start\n");
+  for(text,expected)in[
+   (fixture.clone(),true),(fixture.replace("++start","-- start"),true),
+   (fixture.replace("++start","++start.name"),false),(fixture.replace("++start","++L[start]"),false),
+   (fixture.replace("++start","++lookup()"),false),(fixture.replace("++start","++(start)"),false),
+   (fixture.replace("++start","start++"),false),(fixture.replace("++start","++start + 1"),false),
+   (fixture.replace("++start","++null"),false),(fixture.replace("++start","++__TYPE__"),false),
+   (fixture.replace(") ++start",") ; ++start"),false),
+   (fixture.replace(") ++start",") {;} ++start"),false),
+   (fixture.replace("++start","+ +start"),false),
+   (fixture.replace("++start","(++start)"),false),
+  ]{
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+    let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
+    if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("same actual inline prefix leaf must be witnessed: {text}")};assert!(proof.belongs_to(&body));}
+    else{assert!(matches!(disposition,Err(BodySyntaxFailure::Operational(error))if error.kind()==std::io::ErrorKind::Unsupported),"{text}");}
+    Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }
+ }
+
+
+ #[test]
+ fn actual_original_global_local_heads_preserve_static_source_modifiers_and_independent_values(){
+  let fixture="/proc/probe()\n    var/global/time_offset=0\n    return time_offset\n";
+  for(text,expected)in[(fixture.to_owned(),true),(fixture.replace("global/","static/"),true),
+   (fixture.replace("global/","tmp/"),false),(fixture.replace("global/","global/global/"),false),
+   (fixture.replace("time_offset=0","time_offset[1]=list()"),false),
+   (fixture.replace("time_offset=0","time_offset=(time_offset += 1)"),false)]{
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+    let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
+    if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("same actual storage-local head must be witnessed: {text}")};assert!(proof.belongs_to(&body));
+     let entries=product.parsed().unwrap().statement_storage().parsed().local_variables.entries().unwrap();assert_eq!(entries[0].source_modifiers,1);
+    }else{assert!(matches!(disposition,Err(BodySyntaxFailure::Operational(error))if error.kind()==std::io::ErrorKind::Unsupported),"{text}");}
+    Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }
+ }
+ #[test]
+ fn actual_original_single_list_dimension_owns_the_consumed_complete_child(){
+  let fixture="/proc/probe(n)\n    var/list/chars_to_add[max(n+1,0)]\n    return chars_to_add\n";
+  for(text,expected)in[(fixture.to_owned(),true),(fixture.replace("max(n+1,0)","(n+1)"),true),
+   (fixture.replace("var/list/","var/"),false),(fixture.replace("var/list/","var/static/list/"),false),
+   (fixture.replace("[max(n+1,0)]","[]"),false),(fixture.replace("[max(n+1,0)]","[n][1]"),false),
+   (fixture.replace("[max(n+1,0)]","[n]=list()"),false),(fixture.replace("max(n+1,0)","n++"),false),
+   (fixture.replace("max(n+1,0)","(n=1)"),false),(fixture.replace("chars_to_add[","chars_to_add;["),false)]{
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+    let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
+    if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("same exact array shape and actual child must be witnessed: {text}")};assert!(proof.belongs_to(&body));
+     let entry=&product.parsed().unwrap().statement_storage().parsed().local_variables.entries().unwrap()[0];let initializer=entry.implicit_list_initializer().unwrap();assert_eq!(initializer.dimension_slots.as_ref(),[Some(0)]);assert_eq!(initializer.dimensions.len(),1);
+     if text.contains("max("){let dm_syntax::ExprKind::Call{args,..}=&initializer.dimensions[0].kind else{panic!("actual max dimension")};let dm_syntax::ExprKind::Literal(value)=&args[1].kind else{panic!("actual scalar zero")};assert!(matches!(value.original_value(),Some(dm_syntax::OriginalTokenValue::Int(0))),"the ledger uses actual typed child, not compatibility AST");}
+    }else{assert!(matches!(disposition,Err(BodySyntaxFailure::Operational(error))if error.kind()==std::io::ErrorKind::Unsupported),"{text}");}
+    Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }
+ }
+ #[test]
+ fn actual_original_time_and_padding_helpers_use_authored_storage_and_array_declarations(){
+  let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..");
+  let time=std::fs::read_to_string(root.join("code/host/helpers/time.dm")).unwrap();let start=time.find("/proc/get_game_time()").unwrap();let end=time[start..].find("GLOBAL_VAR_INIT(roundstart_hour").unwrap()+start;
+  let tick=std::fs::read_to_string(root.join("code/defines/engine/_tick.dm")).unwrap();let define=tick.lines().find(|line|line.starts_with("#define TICK_USAGE ")).unwrap();
+  let mut fixtures=vec![("get_game_time".to_owned(),format!("{define}\n{}",&time[start..end]))];
+  let text=std::fs::read_to_string(root.join("code/host/helpers/text.dm")).unwrap();
+  for name in ["add_leading","add_trailing"]{let start=text.find(&format!("/proc/{name}(")).unwrap();let tail=&text[start..];let end=tail[1..].find("\n/proc/").map_or(tail.len(),|at|at+1);let source=tail[..end].to_owned();assert!(source.contains("var/list/chars_to_add[max(charcount + 1, 0)]"));fixtures.push((name.to_owned(),source));}
+  for(name,text)in fixtures{let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,&name);let product=db.syntax_product_checked(&input).unwrap();setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+   let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()?else{panic!("whole authored helper remains unissued: {name}")};assert!(proof.belongs_to(&body));Ok::<(),BodySyntaxFailure>(())
+  }).unwrap();}
+ }
+
  #[test]
  fn actual_original_classic_for_uses_matching_separators_and_authored_parts() {
      let fixture = r#"
@@ -2503,15 +2610,42 @@ pub(super) mod body_syntax_census_tests;
      }
  }
 
+
+ #[test]
+ fn actual_original_inline_switch_value_returns_have_exact_heads_and_case_cursors(){
+  let fixture="/proc/probe(value)\n    switch(value)\n        if(1.0) return 1\n        if(\"NORTH\") return \"north\"\n        else return 0\n";
+  for(text,expected)in[(fixture.to_owned(),true),(fixture.replace("switch(value)","switch(uppertext(value))"),true),
+   (fixture.replace("if(1.0)","if(1,2)"),false),(fixture.replace("if(1.0)","if(1 to 2)"),false),
+   (fixture.replace("return 1","return"),false),(fixture.replace("return 1","return lookup(value)"),false),
+   (fixture.replace("return 1","return value=1"),false),(fixture.replace("if(1.0) return","if(1.0); return"),false),
+   (fixture.replace("else return","else; return"),false),(fixture.replace("else return 0","else value=0"),false)]{
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+    let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
+    if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("exact inline value return remains unissued: {text}")};assert!(proof.belongs_to(&body));let parsed=product.parsed().unwrap().statement_storage().parsed();let dm_syntax::StatementKind::Switch{cases,..}=&parsed.statements[0].kind else{panic!("actual switch")};assert!(cases.iter().all(|case|case.original_site.cursor.is_ok()));}
+    else{assert!(matches!(disposition,Err(BodySyntaxFailure::Operational(error))if error.kind()==std::io::ErrorKind::Unsupported),"{text}");}Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }
+ }
+ #[test]
+ fn actual_original_direction_and_blend_helpers_keep_authored_inline_returns(){
+  let actual=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../code/host/helpers/type2type.dm")).unwrap();
+  for name in ["num2dir","dir2text","text2dir","blendMode2iconMode"]{
+   let start=actual.find(&format!("/proc/{name}(")).unwrap();let tail=&actual[start..];let end=tail[1..].find("\n/proc/").map_or(tail.len(),|at|at+1);let source=&tail[..end];
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,source);let input=original_input(&front,name);let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()?else{panic!("whole authored helper remains unissued: {name}")};assert!(proof.belongs_to(&body));Ok::<(),BodySyntaxFailure>(())}).unwrap();
+  }
+ }
+
  #[test]
  fn actual_original_length_input_switch_authenticates_inline_returns() {
      let fixture = "/proc/probe(list/input)\n    switch(length(input))\n        if(0) return 0\n        if(1) return 1\n        else return 2\n";
      for (text, expected) in [
          (fixture.to_owned(), true),
-         (fixture.replace("length(input)", "rand(0, 1)"), false),
+         (fixture.replace("length(input)", "rand(0, 1)"), true),
          (fixture.replace("if(0)", "if(0, 1)"), false),
          (fixture.replace("return 0", "return"), false),
-         (fixture.replace("length(input)", "input"), false),
+         (fixture.replace("length(input)", "input"), true),
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &text);

@@ -99,6 +99,16 @@ fn original_for_each_clause(
     true
 }
 
+// Called only after the iterable's independent Original expression receipt.
+// list/alist have a dedicated complete argument production, not an ordinary
+// call name; they still use the same pinned ForList control and exact In.
+fn original_direct_for_iterable(expression:&Expr)->bool{
+ matches!(&expression.kind,ExprKind::Call{callee,..}
+  if matches!(&callee.kind,ExprKind::Ident(name)
+   if crate::expression_parser::original_ordinary_call_name(name)
+    || matches!(name.as_str(),"list"|"alist")))
+}
+
 fn original_call_member_iterable(expression: &Expr) -> bool {
     let ExprKind::Member { object, via_colon: false, .. } = &expression.kind else { return false };
     let mut receiver = object.as_ref();
@@ -258,13 +268,10 @@ pub(super) fn parse_for(
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
             call_member = actual_original && parsed.expr.as_ref().is_some_and(original_call_member_iterable);
             // Pinned for_list takes an entire expression as its iterable.
-            // Reuse the exact completed Original call proof, but restrict
-            // this control addition to a direct ordinary callee. Member calls,
-            // primitives, assignments and dynamic follows keep their gates.
-            direct_call = actual_original && matches!(kind,
-                Some(ExprKind::Call { callee, .. })
-                    if matches!(&callee.kind, ExprKind::Ident(name)
-                        if crate::expression_parser::original_ordinary_call_name(name)));
+            // Reuse a completed Original direct call or list/alist constructor
+            // proof. Member calls, other primitives, assignments and dynamic
+            // follows keep their independent gates.
+            direct_call = actual_original && parsed.expr.as_ref().is_some_and(original_direct_for_iterable);
             subtraction = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_subtraction);
             bare_string_index = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_bare_string_index);
         })?;
@@ -1100,4 +1107,26 @@ mod original_classic_step_typed_demand_controls {
             assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
         }
     }
+}
+
+#[cfg(test)]mod original_for_constructor_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn for_constructor_requires_its_complete_child_and_exact_separator(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  for (source,wanted) in [("list(1,2,3)",true),("alist(key=value)",true),("list(list(1),2)",true),("choose()",true),("list(key=)",false),("owner.list()",false),("call(target)()",false)]{
+   let tokens=crate::lex_spans(source).tokens;
+   let child=crate::expression_parser::parse_expression_original_token_view(source,&tokens,0,&a,None);
+   let issued=child.original_simple_expression.is_some_and(|proof|proof.is_original()&&proof.kind()==crate::expression_parser::OriginalSimpleKind::Complete)
+    &&child.expr.as_ref().is_some_and(original_direct_for_iterable);
+   assert_eq!(issued,wanted,"{source}: {:?}",child.diagnostics);
+   if issued{
+    let clause=format!("var/bad_name in {source}");let lexical=crate::lex_spans(&clause);
+    let at=lexical.tokens.iter().find(|token|token.text(&clause)=="in").unwrap().span.start;
+    assert!(original_for_each_clause(&clause,&lexical,at,false,false,false,true,false,false));
+    assert!(!original_for_each_clause(&clause,&lexical,at+1,false,false,false,true,false,false));
+   }
+   drop(child);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
 }

@@ -1210,6 +1210,28 @@ fn parse_statements_admitted(
             }
             Ok(significant == 2)
         }
+        fn original_inline_if_prefix_head(
+            &self,boundary:dm_syntax::Span,operator:&'static str,name:dm_syntax::Span,
+        )->std::io::Result<bool>{
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            if !matches!(operator,"++"|"--")||boundary.end!=name.end{return Ok(false)}
+            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+                .map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
+            let Ok(boundary)=tokens.tokens(boundary)else{return Ok(false)};
+            let mut significant=0;
+            for(kind,at,spelling)in boundary{
+                self.admission.checkpoint()?;
+                match(kind,spelling,significant){
+                    (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_,_)=>(),
+                    (TokenKind::Punctuation,")",0)=>significant+=1,
+                    (TokenKind::Operator|TokenKind::Punctuation,actual,1)if actual==operator=>significant+=1,
+                    (TokenKind::Ident,_,2)if at==name=>significant+=1,
+                    _=>return Ok(false),
+                }
+            }
+            Ok(significant==3)
+        }
         fn original_inline_for_assignment_head(
             &self, boundary: dm_syntax::Span, name: dm_syntax::Span,
         ) -> std::io::Result<bool> {
@@ -1426,15 +1448,14 @@ fn parse_statements_admitted(
                         || !matches!(header.next(), Some((TokenKind::Punctuation, _, "("))) {
                         return Ok(false);
                     }
-                    let suffix = dm_syntax::Span::new(next.end, tokens.current_span().end);
-                    let Ok(suffix) = tokens.tokens(suffix) else { return Ok(false); };
-                    for token in suffix {
-                        self.admission.checkpoint()?;
-                        if significant(&token) {
-                            return Ok(matches!(token, (TokenKind::Punctuation, _, ";" | "}")));
-                        }
+                    let mut checkpoint=||self.admission.checkpoint().map_err(|actual|{
+                        self.admission.record_operational_error(actual);
+                        "native do-while terminator cursor operation stopped"
+                    });
+                    match tokens.do_while_terminator_cursor_using(next,&mut checkpoint){
+                        Ok(_)=>Ok(true),
+                        Err(_)=>match self.admission.take_operational_error(){Some(actual)=>Err(actual),None=>Ok(false)},
                     }
-                    Ok(false)
                 }
             }
         }
@@ -1487,13 +1508,11 @@ fn parse_statements_admitted(
             let Ok(tokens) = tokens.tokens(header) else { return Ok(false); };
             let mut tokens = tokens.filter(|(kind, _, _)| !matches!(
                 kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment));
-            for (kind, text) in [(TokenKind::Ident, "var"), (TokenKind::Operator, "/"),
-                (TokenKind::Ident, "static"), (TokenKind::Operator, "/")]
-            {
-                let Some((actual, _, spelling)) = tokens.next() else { return Ok(false); };
-                if spelling != text || !(actual == kind || (text == "/" && actual == TokenKind::Punctuation)) {
-                    return Ok(false);
-                }
+            for (index,(kind,text)) in [(TokenKind::Ident,"var"),(TokenKind::Operator,"/"),
+                (TokenKind::Ident,"static"),(TokenKind::Operator,"/")].into_iter().enumerate(){
+                let Some((actual,_,spelling))=tokens.next()else{return Ok(false)};
+                let same_spelling=if index==2{matches!(spelling,"static"|"global")}else{spelling==text};
+                if !same_spelling||!(actual==kind||(text=="/"&&actual==TokenKind::Punctuation)){return Ok(false)}
             }
             // The remaining exact slash path is a name, optionally
             // preceded by type components. Other storage modifiers, array
@@ -1514,6 +1533,58 @@ fn parse_statements_admitted(
                 }
             }
             Ok(false)
+        }
+        fn original_array_local_head(
+            &self,prefix:dm_syntax::Span,name:dm_syntax::Span,suffix:dm_syntax::Span,
+        )->std::io::Result<bool>{
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            if prefix.end>=suffix.start{return Ok(false)}
+            let owner=self.syntax.original_body_tokens(self.body,self.code)
+                .map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
+            let(Ok(prefix),Ok(suffix))=(owner.tokens(prefix),owner.tokens(suffix))else{return Ok(false)};
+            let mut index=0;
+            for(kind,at,text)in prefix{
+                self.admission.checkpoint()?;
+                match(kind,text,index){
+                    (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_,_)=>(),
+                    (TokenKind::Ident,"var",0)|(TokenKind::Ident,"list",2)
+                        |(TokenKind::Operator|TokenKind::Punctuation,"/",1|3)
+                        |(TokenKind::Punctuation,"[",5)=>index+=1,
+                    (TokenKind::Ident,_,4)if at==name=>index+=1,
+                    _=>return Ok(false),
+                }
+            }
+            if index!=6{return Ok(false)}
+            let mut closed=false;
+            for(kind,_,text)in suffix{
+                self.admission.checkpoint()?;
+                match(kind,text){
+                    (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
+                    (TokenKind::Punctuation,"]")if !closed=>closed=true,
+                    _=>return Ok(false),
+                }
+            }
+            Ok(closed)
+        }
+        fn original_inline_switch_return_head(&self,head:dm_syntax::Span,default:bool)->std::io::Result<bool>{
+            // A case close is only an immutable punctuation/keyword loan; it
+            // does not borrow IF grammar. Default has a different exact head.
+            if !default{return self.original_inline_if_leaf(head,"return")}
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+                .map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
+            let Ok(tokens)=tokens.tokens(head)else{return Ok(false)};let mut significant=0;
+            for(kind,_,text)in tokens{
+                self.admission.checkpoint()?;
+                match(kind,text,significant){
+                    (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_,_)=>(),
+                    (TokenKind::Ident,"else",0)|(TokenKind::Ident,"return",1)=>significant+=1,
+                    _=>return Ok(false),
+                }
+            }
+            Ok(significant==2)
         }
         fn original_plain_comma_local_head(&self, head: dm_syntax::Span, first: bool) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;

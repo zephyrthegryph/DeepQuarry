@@ -94,6 +94,10 @@ impl CurrentOriginalDeclarations{
    }
   }
   let items=self.items.view(&self.source)?;
+  #[cfg(debug_assertions)]
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+   eprintln!("ORIGINAL_INITIALIZER_SLOT_CONTAINERS stage=before_adapt offset={} classes={:?}", self.offset, self.headers.initializer_slots().container_geometry_for_trace());
+  }
   let progress=crate::adapter::from_original_primary_progress_checked(items,&self.diagnostics,symbols,FileId(0),0,0,expanded,&self.headers,self.offset,admission,skip_constants,&mut self.prepared)?;
   if let Some(error) = progress.errors().first() {
    let at = error.span.start as usize;
@@ -103,6 +107,10 @@ impl CurrentOriginalDeclarations{
     "Original primary adapter outcome is not issued at expanded line {line:?}, byte {at} near {excerpt:?}: {}",
     error.message
    )));
+  }
+  #[cfg(debug_assertions)]
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
+   eprintln!("ORIGINAL_INITIALIZER_SLOT_CONTAINERS stage=after_adapt offset={} classes={:?}", self.offset, self.headers.initializer_slots().container_geometry_for_trace());
   }
   Ok(progress)
  }
