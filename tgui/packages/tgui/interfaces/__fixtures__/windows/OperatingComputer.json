@@ -72,6 +72,7 @@
 			{
 				"name": "left arm",
 				"currentStage": "Incision is open",
+				"findings": [],
 				"nextSteps": [
 					"Clamp bleeders: Hemostat, Cable coil",
 					"Retract skin: Retractor"
@@ -80,6 +81,7 @@
 			{
 				"name": "chest",
 				"currentStage": "Incision is open",
+				"findings": ["Bleeding vessels: clamp them"],
 				"nextSteps": ["Cauterize incision: Cautery"]
 			}
 		]
