@@ -1,5 +1,5 @@
 // DQ Medical Reference — TGUI book documenting the cascading-condition
-// system. Five tabs:
+// system. Six tabs:
 //
 //   Conditions — each condition's clinical picture, cures, what causes
 //                it (mixed: causes + upstream conditions), and what it
@@ -11,6 +11,8 @@
 //   Triggers   — every /datum/affliction_trigger (injury events, organ
 //                integrity thresholds, blood loss, infection thresholds,
 //                metrics) and what each produces.
+//   Purity     — the four grades and their purity bands, every contaminant, and
+//                the recipes that ask for a minimum grade.
 //   Surgeries  — every procedure, its steps, tools, the conditions it
 //                treats, and (where applicable) which organs it repairs.
 //
@@ -34,7 +36,7 @@ CAPABILITIES(/obj/item/book/dq_medical_reference)
 	op("read_reference", in_hand(), label("Read"), opens_ui())
 	interface("DQMedicalBook", state = nameof(GLOB.tgui_physical_state))
 	without("ui_open")
-	ui_shape(conditions = any, symptoms = any, reagents = any, causes = any, surgeries = any)
+	ui_shape(conditions = any, symptoms = any, reagents = any, causes = any, surgeries = any, purity = any)
 
 /// /obj/item/book/dq_medical_reference's window data: none that changes. The book's text is the same for every reader and every copy for the
 /// life of the world (it is built from the condition prototypes), so it is sent once per open as static data, built once per world.
@@ -54,4 +56,5 @@ DECLARE_SHARED_CACHE(dq_medical_book_data, GLOBAL_PROC_REF(build_dq_medical_book
 	data["reagents"]   = book._dq_book_reagents()
 	data["causes"]     = book._dq_book_causes()
 	data["surgeries"]  = book._dq_book_surgeries()
+	data["purity"]     = book._dq_book_purity()
 	return data

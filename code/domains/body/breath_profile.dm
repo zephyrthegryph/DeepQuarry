@@ -104,6 +104,9 @@ SETTER(/mob/living/carbon, does_not_breathe)
 	var/SA_pp = (n2o / breath_moles) * breath_pressure
 	if(SA_pp > BREATH_N2O_GIGGLE)
 		set_breath_hazard(TRUE)
+		// The anaesthetic: it numbs pain and dulls the mind through the body's analgesia and sedation stats, which is what surgery reads
+		// (patient_mult() in code/content/surgery/surgery.dm). It lingers a few seconds after the last breath.
+		apply_body_effect(/datum/body_effect/n2o_anesthesia, 10 SECONDS)
 	// Enough to make us paralysed for a bit
 	if(SA_pp > SA_para_min)
 		// 3 gives them one second to wake up and run away a bit!

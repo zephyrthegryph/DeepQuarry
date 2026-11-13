@@ -130,9 +130,9 @@
 	TEST_ASSERT(before_cure > 0, "severity must rise above 0 before testing cure")
 
 	// Inject a strong dose of cure reagent into the bloodstream and tick.
-	// bicaridaze cures internal_hemorrhage at 1.4/tick — more than the
+	// bicaridine cures internal_hemorrhage at 1.4/tick — more than the
 	// 0.25/tick passive rise. Severity should fall.
-	H.bloodstr.add_reagent(REAGENT_ID_BICARIDAZE, 50)
+	H.bloodstr.add_reagent(REAGENT_ID_BICARIDINE, 50)
 	for(var/i in 1 to 5)
 		C.tick()
 	TEST_ASSERT(C.severity < before_cure, "cure reagent did not lower severity ([before_cure] -> [C.severity])")
@@ -159,8 +159,8 @@
 
 	// Put the chem in the gut — that's where it lands when a player
 	// swallows a pill. Bloodstr is empty.
-	H.ingested.add_reagent(REAGENT_ID_BICARIDAZE, 50)
-	TEST_ASSERT(!H.bloodstr.has_reagent(REAGENT_ID_BICARIDAZE), "bloodstr should be empty pre-tick (chem is in gut)")
+	H.ingested.add_reagent(REAGENT_ID_BICARIDINE, 50)
+	TEST_ASSERT(!H.bloodstr.has_reagent(REAGENT_ID_BICARIDINE), "bloodstr should be empty pre-tick (chem is in gut)")
 	for(var/i in 1 to 5)
 		C.tick()
 	TEST_ASSERT(C.severity < before_cure, "swallowed cure should lower severity ([before_cure] -> [C.severity])")

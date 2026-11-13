@@ -141,6 +141,8 @@ type Condition = {
   caused_by_reagents: { chems: { id: string; name: string }[] }[];
   complications: ComplicationGroup[];
   surgeries: { id: string; name: string }[];
+  // The seizure condition: reagents that raise (or lower) the chance of one.
+  raised_by?: { id: string; name: string; value: number; raises: boolean }[];
   // Cause-driven conditions ("stabilising") re-spawn while their cause
   // is active; their cured_by reagents suppress symptoms but don't fix
   // the underlying problem. One-shot conditions ("curative") are
@@ -177,13 +179,17 @@ type RecipeIngredient = {
   id: string;
   name: string;
   amount: number;
+  // The minimum grade the ingredient must be ("Pharma"), when the recipe
+  // is graded, and the purity band that grade covers.
+  grade?: string;
+  grade_band?: string;
 };
 
 type RecipeEntry = {
   distilling: 0 | 1;
   result_amount: number;
   required: RecipeIngredient[];
-  catalysts: { id: string; name: string }[];
+  catalysts: { id: string; name: string; grade?: string }[];
   inhibitors: { id: string; name: string }[];
   temp_min?: number;
   temp_max?: number;
@@ -195,6 +201,8 @@ type SideEffectRef = {
   threshold: number;
   cause_name: string;
   description: string;
+  // nausea / seizure / symptom: what the drug adds.
+  kind?: string;
 };
 
 type InteractionRef = {
@@ -204,6 +212,12 @@ type InteractionRef = {
   other_chems: { id: string; name: string; amount: number }[];
   cause_name: string;
   description: string;
+  // What it does to a drug's treatment: "weakens X (40% strength)".
+  shifts?: { id: string; name: string; kind: string; text: string }[];
+  // Two drugs weakening each other.
+  conflict?: boolean;
+  // Body-factor effects while both drugs are present.
+  effects?: string[];
 };
 
 type OverdoseInfo = {
@@ -236,6 +250,14 @@ type ReagentEntry = {
   overdose: OverdoseInfo | null;
   // The reagent's body factors at a standard dose, one line each.
   effects: string[];
+  // The mechanisms it provides, and the one-line "what it treats".
+  tags?: { name: string; band: string }[];
+  treats_text?: string;
+  // Drawbacks: organ strains, readings it hides, how it moves seizures.
+  strains?: { organ: string; band: string; text: string }[];
+  hides?: string[];
+  drawbacks?: string[];
+  seizure_proneness?: number;
   side_effects: SideEffectRef[];
   interactions: InteractionRef[];
 };
@@ -271,15 +293,38 @@ type SurgeryEntry = {
   treats: { id: string; name: string }[];
 };
 
+type PurityData = {
+  grades: { id: number; name: string; band: string }[];
+  contaminants: {
+    id: string;
+    name: string;
+    role: string;
+    description: string;
+    effect: string;
+  }[];
+  graded_recipes: {
+    id: string;
+    name: string;
+    needs: { id: string; name: string; grade: string }[];
+  }[];
+};
+
 type Data = {
   conditions: Condition[];
   symptoms: Symptom[];
   reagents: ReagentEntry[];
   causes: CauseEntry[];
   surgeries: SurgeryEntry[];
+  purity: PurityData;
 };
 
-type Tab = 'conditions' | 'symptoms' | 'reagents' | 'causes' | 'surgeries';
+type Tab =
+  | 'conditions'
+  | 'symptoms'
+  | 'reagents'
+  | 'causes'
+  | 'surgeries'
+  | 'purity';
 
 // --- BandedList ---------------------------------------------------------
 //
@@ -538,6 +583,12 @@ export const DQMedicalBook = () => {
               >
                 Surgery
               </Tabs.Tab>
+              <Tabs.Tab
+                selected={tab === 'purity'}
+                onClick={() => switchTab('purity')}
+              >
+                Purity
+              </Tabs.Tab>
             </Tabs>
           </Stack.Item>
           <Stack.Item>
@@ -598,6 +649,9 @@ export const DQMedicalBook = () => {
                 onSelect={setSurgerySel}
                 goToCondition={goToCondition}
               />
+            )}
+            {tab === 'purity' && (
+              <PurityTab purity={data.purity} goToReagent={goToReagent} />
             )}
           </Stack.Item>
         </Stack>
@@ -763,6 +817,21 @@ const ConditionDetail = (props: {
         <Section title="Effects" mt={1}>
           {c.stages[0].effects.map((line) => (
             <Box key={line}>{line}</Box>
+          ))}
+        </Section>
+      ) : null}
+
+      {c.raised_by?.length ? (
+        <Section title="Seizure proneness" mt={1}>
+          {c.raised_by.map((x) => (
+            <Box key={x.id} mb="2px">
+              <Box color={x.raises ? 'bad' : 'good'} bold inline mr={1}>
+                {x.raises ? 'Raises' : 'Lowers'} by {Math.abs(x.value)}
+              </Box>
+              <Button compact onClick={() => props.goToReagent(x.id)}>
+                {x.name}
+              </Button>
+            </Box>
           ))}
         </Section>
       ) : null}
@@ -1066,8 +1135,18 @@ const ReagentDetail = (props: {
     <Section title={r.name} fill scrollable>
       {r.description ? <Box mb={1}>{r.description}</Box> : null}
 
+      {r.tags?.length ? (
+        <Section title="Mechanisms">
+          {r.tags.map((t) => (
+            <Box key={t.name} color="good">
+              {t.name} <Label as="span">({t.band})</Label>
+            </Box>
+          ))}
+        </Section>
+      ) : null}
+
       {r.cures.length ? (
-        <Section title="Treats">
+        <Section title="Treats" mt={r.tags?.length ? 1 : 0}>
           <BandedList
             entries={r.cures.map((c) => ({
               id: c.id,
@@ -1104,9 +1183,43 @@ const ReagentDetail = (props: {
         </Section>
       ) : null}
 
-      {r.side_effects?.length ? (
-        <Section title="Side effects" mt={1}>
-          {r.side_effects.map((s, i) => (
+      {r.strains?.length ? (
+        <Section title="Strains" mt={1}>
+          {r.strains.map((st) => (
+            <Box key={st.organ} color={st.band === 'heavy' ? 'bad' : 'average'}>
+              {st.text}
+            </Box>
+          ))}
+        </Section>
+      ) : null}
+
+      {r.hides?.length ? (
+        <Section title="Hides" mt={1}>
+          {r.hides.map((h) => (
+            <Box key={h}>Masks {h} on instruments while in the blood.</Box>
+          ))}
+        </Section>
+      ) : null}
+
+      {r.drawbacks?.length ? (
+        <Section title="Drawbacks" mt={1}>
+          {r.drawbacks.map((line) => (
+            <Box key={line} color="average" mb="2px">
+              {line}
+            </Box>
+          ))}
+        </Section>
+      ) : null}
+
+      {r.side_effects?.length || r.seizure_proneness ? (
+        <Section title="Adds" mt={1}>
+          {r.seizure_proneness ? (
+            <Box color={r.seizure_proneness > 0 ? 'bad' : 'good'} mb="2px">
+              {r.seizure_proneness > 0 ? 'Raises' : 'Lowers'} seizure proneness
+              by {Math.abs(r.seizure_proneness)}.
+            </Box>
+          ) : null}
+          {r.side_effects?.map((s, i) => (
             <Box key={i} mb="2px">
               <Box color="average" bold inline mr={1}>
                 ≥ {s.threshold}u →
@@ -1114,6 +1227,11 @@ const ReagentDetail = (props: {
               <Button compact onClick={() => props.goToCondition(s.id)}>
                 {s.name}
               </Button>
+              {s.kind && s.kind !== 'symptom' ? (
+                <Label inline ml={1}>
+                  ({s.kind})
+                </Label>
+              ) : null}
             </Box>
           ))}
         </Section>
@@ -1138,6 +1256,25 @@ const ReagentDetail = (props: {
               <Button compact onClick={() => props.goToCondition(x.id)}>
                 {x.name}
               </Button>
+              {x.conflict ? (
+                <Box color="bad" inline ml={1}>
+                  Conflict
+                </Box>
+              ) : null}
+              {x.shifts?.map((sh) => (
+                <Box
+                  key={sh.id}
+                  color={sh.kind === 'potentiates' ? 'good' : 'average'}
+                  ml={2}
+                >
+                  {sh.text}
+                </Box>
+              ))}
+              {x.effects?.map((line) => (
+                <Box key={line} ml={2}>
+                  {line}
+                </Box>
+              ))}
             </Box>
           ))}
         </Section>
@@ -1209,6 +1346,11 @@ const ReagentDetail = (props: {
                     <Button compact onClick={() => props.goToReagent(ing.id)}>
                       {ing.name}
                     </Button>
+                    {ing.grade ? (
+                      <Label inline ml="2px">
+                        ({ing.grade} grade or better)
+                      </Label>
+                    ) : null}
                   </Box>
                 </Fragment>
               ))}
@@ -1234,6 +1376,7 @@ const ReagentDetail = (props: {
                       onClick={() => props.goToReagent(c.id)}
                     >
                       {c.name}
+                      {c.grade ? ` (${c.grade} grade)` : ''}
                       {k < rcp.catalysts.length - 1 ? ',' : ''}
                     </Button>
                   ))}
@@ -1274,6 +1417,67 @@ const ReagentDetail = (props: {
             ))}
         </Section>
       ) : null}
+    </Section>
+  );
+};
+
+// --- Purity tab ---------------------------------------------------------
+
+const PurityTab = (props: {
+  purity?: PurityData;
+  goToReagent: (id: string) => void;
+}) => {
+  const purity = props.purity;
+  if (!purity) {
+    return (
+      <Section fill>
+        <Box color="average">No purity data.</Box>
+      </Section>
+    );
+  }
+  return (
+    <Section title="Grades and contaminants" fill scrollable>
+      <Box mb={1}>
+        Every reagent carries a purity: one minus the contaminants it holds.
+        Impurities dilute the dose and act on the patient as listed below. Some
+        recipes ask for a minimum grade of an ingredient.
+      </Box>
+      <Section title="Grades">
+        <LabeledList>
+          {purity.grades.map((g) => (
+            <LabeledList.Item key={g.id} label={g.name}>
+              {g.band}
+            </LabeledList.Item>
+          ))}
+        </LabeledList>
+      </Section>
+      <Section title="Contaminants" mt={1}>
+        {purity.contaminants.map((c) => (
+          <Box key={c.id} mb={1}>
+            <Box bold>
+              {c.name} <Label as="span">({c.role})</Label>
+            </Box>
+            <Box>{c.description}</Box>
+            <Box color="average">{c.effect}</Box>
+          </Box>
+        ))}
+      </Section>
+      <Section title="Graded recipes" mt={1}>
+        {purity.graded_recipes.length ? (
+          purity.graded_recipes.map((r, i) => (
+            <Box key={`${r.id}-${i}`} mb="2px">
+              <Button compact onClick={() => props.goToReagent(r.id)}>
+                {r.name}
+              </Button>
+              <Label inline ml={1}>
+                needs {r.needs.map((n) => `${n.name} (${n.grade})`).join(', ')}
+              </Label>
+            </Box>
+          ))
+        ) : (
+          <Box color="grey">No recipe asks for a minimum grade.</Box>
+        )}
+      </Section>
     </Section>
   );
 };

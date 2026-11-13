@@ -7,9 +7,9 @@
 /datum/unit_test/dq_med7_b1_topicals_on_skin/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT_NOTNULL(H.touching, "setup: a human has a touch holder")
-	H.touching.add_reagent(REAGENT_ID_BICARIDAZE, 10)
+	H.touching.add_reagent(REAGENT_ID_BICARIDINE, 10)
 	H.body.invalidate(BODY_DIRTY_TREATMENT)
-	TEST_ASSERT(H.body.reagent_volume(REAGENT_ID_BICARIDAZE) > 0, "the skin holder's volume is counted")
+	TEST_ASSERT(H.body.reagent_volume(REAGENT_ID_BICARIDINE) > 0, "the skin holder's volume is counted")
 	TEST_ASSERT(H.body.treatment_levels()?[TREAT_HEMOSTATIC] > 0, "a salve on the skin treats")
 
 /// B2: a medical allergy (and death) gates a reagent's tags and factors like on_mob_life.

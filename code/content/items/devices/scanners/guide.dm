@@ -15,9 +15,9 @@
 /proc/analyzer_guidance_line(tag)
 	var/static/list/advice = list(
 		TREAT_HEMOSTATIC = "Bleeding - Apply bandages or administer Bicaridine. Internal bleeds need coagulants such as Myelamine or vein repair surgery.",
-		TREAT_TISSUE_REPAIR = "Physical trauma - Bandage the wounded body part. Administer Bicaridine or Vermicetol depending on the severity.",
+		TREAT_TISSUE_REPAIR = "Physical trauma - Bandage the wounded body part. Administer Bicaridine.",
 		TREAT_BURN_CARE = "Burns - Salve the wound in ointment. Administer Kelotane or Dermaline. Check for infections.",
-		TREAT_BONE_REPAIR = "Bone fracture - Splint the area. Treat with bone repair surgery or Osteodaxon.",
+		TREAT_BONE_REPAIR = "Bone fracture - Splint the area and set the bone with bone repair surgery. Osteodaxon on an unset fracture knits the bone crooked.",
 		TREAT_ANTIMICROBIAL = "Infection - Administer Spaceacillin. If severe, use Corophizine and monitor until well.",
 		TREAT_ANTITOXIN = "Toxins - Inject Dylovene or Carthatoline. Monitor the liver and kidneys.",
 		TREAT_OXYGENATION = "Poor oxygenation - Administer Dexalin or Dexalin Plus. Check the airway, heart and lungs.",

@@ -673,7 +673,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 	switch(reagent)
 		if(REAGENT_ID_PHORON)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/phoron
-		if(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_TRICORLIDAZE)
+		if(REAGENT_ID_TRICORDRAZINE)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/tricord
 		if(REAGENT_ID_TRAMADOL)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/tramadol
@@ -681,9 +681,9 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/dylovene
 		if(REAGENT_ID_CITALOPRAM)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/citalopram
-		if(REAGENT_ID_BICARIDINE, REAGENT_ID_BICARIDAZE)
+		if(REAGENT_ID_BICARIDINE)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/bicaridine
-		if(REAGENT_ID_DERMALINE, REAGENT_ID_DERMALAZE)
+		if(REAGENT_ID_DERMALINE)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/dermaline
 		if(REAGENT_ID_KELOTANE)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/kelotane
@@ -693,7 +693,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/hyperzine
 		if(REAGENT_ID_SPACEACILLIN)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/spaceacillin
-		if(REAGENT_ID_INAPROVALINE, REAGENT_ID_INAPROVALAZE)
+		if(REAGENT_ID_INAPROVALINE)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/inaprovaline
 		if(REAGENT_ID_BLISS)
 			newpath = /obj/item/organ/internal/malignant/engineered/chemorgan/bliss

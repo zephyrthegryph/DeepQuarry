@@ -365,11 +365,14 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		var/datum/job/J = SSjob.get_job(H.mind.assigned_role)
 		hidden = J?.offmap_spawn
 
+		var/stage_started = TICK_USAGE_REAL
 		H.ImmediateOverlayUpdate()
+		var/overlay_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_started)
 
 		var/id = generate_record_id()
 		//General Record
-		var/datum/data/record/G = CreateGeneralRecord(H, id, hidden)
+		stage_started = TICK_USAGE_REAL
+		var/datum/data/record/G = CreateGeneralRecord(H, id, hidden, staged_photos = TRUE)
 		G.set_fields_at("name", H.real_name)
 		G.set_fields_at("real_rank", H.mind.assigned_role)
 		G.set_fields_at("rank", assignment)
@@ -395,6 +398,8 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		if(H.bio.gen_record && !jobban_isbanned(H, "Records"))
 			G.set_fields_at("notes", H.bio.gen_record)
 
+		var/general_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_started)
+		stage_started = TICK_USAGE_REAL
 		//Medical Record
 		var/datum/data/record/M = CreateMedicalRecord(H.real_name, id, hidden)
 		if(H.species.name == SPECIES_HANNER)
@@ -461,17 +466,23 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		else
 			L.set_fields_at("exploit_record", "No additional information acquired.")
 		rel_add(src, nameof(locked), L) // the data core made this record and holds it
+		log_world("MANIFEST_RECORD: [H.real_name]: overlays [round(overlay_ms, 0.1)] ms, general record [round(general_ms, 0.1)] ms (its photos are asked for on the next two ticks), medical, security and locked records [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_started), 0.1)] ms")
 	return
 
 /proc/generate_record_id()
 	return add_zero(num2hex(rand(1, 65535), 5), 4)	//no point generating higher numbers because of the limitations of num2hex
 
-/datum/datacore/proc/CreateGeneralRecord(mob/living/carbon/human/H, id, hidden)
+/// `staged_photos`: the person's portraits are asked for on the next two ticks, one direction each (a portrait's translation of a dressed human is its own few ms
+/// to tens of ms), not inside this call.
+/datum/datacore/proc/CreateGeneralRecord(mob/living/carbon/human/H, id, hidden, staged_photos = FALSE)
 	ResetPDAManifest()
 	// Sending null things through browse_rsc() makes a runtime and breaks the console trying to view the record: the no-image picture stands
 	// until the person's own portraits land (request_photos()).
+	var/static/no_image_b64
 	var/icon/front = icon('html/images/no_image32.png')
 	var/icon/side = icon('html/images/no_image32.png')
+	if(!no_image_b64)
+		no_image_b64 = "'data:image/png;base64,[icon2base64(front)]'"
 
 	if(!id)
 		id = text("[]", add_zero(num2hex(rand(1, 65536), 5), 4))
@@ -496,10 +507,13 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	G.set_fields_at("religion", "Unknown")
 	G.set_fields_at("photo_front", front)
 	G.set_fields_at("photo_side", side)
-	G.set_fields_at("photo-south", "'data:image/png;base64,[icon2base64(front)]'")
-	G.set_fields_at("photo-west", "'data:image/png;base64,[icon2base64(side)]'")
+	G.set_fields_at("photo-south", no_image_b64)
+	G.set_fields_at("photo-west", no_image_b64)
 	G.set_fields_at("notes", "No notes found.")
-	if(H)
+	if(H && staged_photos)
+		after(G, 1 TICKS, TYPE_PROC_REF(/datum/data/record, request_photos), with = list(H, SOUTH))
+		after(G, 2 TICKS, TYPE_PROC_REF(/datum/data/record, request_photos), with = list(H, WEST))
+	else if(H)
 		G.request_photos(H)
 	if(hidden)
 		rel_add(src, nameof(hidden_general), G)

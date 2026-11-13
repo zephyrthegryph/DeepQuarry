@@ -4,11 +4,13 @@
 	// The station's resuscitation stabiliser (and the AllergyPen's payload):
 	// a weaker vasopressor on top of circulatory support.
 	treatment_tags = list(TREAT_CIRCULATORY = 1.0, TREAT_VASOPRESSOR = 0.5)
-	factors = alist(STAT_ANALGESIA = 10, STAT_STABILIZATION = 15, STAT_ALLERGY = -5)
+	// Dampens pain (and hides where it hurts), slows a dying patient's decline (stabilisation), holds a withdrawal crisis off (and hides it from scans).
+	factors = alist(STAT_ANALGESIA = 10, STAT_STABILIZATION = 15, STAT_ALLERGY = -5, STAT_WITHDRAWAL = -1.5)
+	hides = list(HIDE_PAIN_LOCATION, HIDE_SYMPTOM_SUPPRESSION)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_INAPROVALINE
 	id = REAGENT_ID_INAPROVALINE
-	description = REAGENT_INAPROVALINE + " is a synaptic stimulant and cardiostimulant. Commonly used to stabilize patients. Also counteracts allergic reactions."
+	description = REAGENT_INAPROVALINE + " is a synaptic stimulant and cardiostimulant. Commonly used to stabilize patients: it supports the circulation, dampens pain, slows the decline of a dying patient, suppresses withdrawal and counteracts allergic reactions. Scans lose track of where it hurts and of the signs of withdrawal while it is in the blood."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	color = "#00BFFF"
@@ -19,34 +21,13 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/inaprovaline/topical
-	factors = alist(STAT_ANALGESIA = 12, STAT_STABILIZATION = 20, STAT_ALLERGY = -5)
-	name = REAGENT_INAPROVALAZE
-	id = REAGENT_ID_INAPROVALAZE
-	description = REAGENT_INAPROVALAZE + " is a topical variant of Inaprovaline."
-	taste_description = "bitterness"
-	reagent_state = LIQUID
-	color = "#00BFFF"
-	overdose = REAGENTS_OVERDOSE * 2
-	metabolism = REM * 0.2
-	scannable = SCANNABLE_BENEFICIAL
-	touch_met = REM * 0.3
-	can_overdose_touch = TRUE
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
-
-/datum/reagent/inaprovaline/topical
-	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
-
-/datum/reagent/inaprovaline/topical/affect_blood(mob/living/carbon/M, alien, removed)
-	M.injure(INJURY_TOXIN, 2 * removed, source = src)
-
 /datum/reagent/calciumcarbonate
+	treatment_tags = list(TREAT_ANTIEMETIC = 1.0)
 	factors = alist(STAT_ANTIEMETIC = 3)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_CALCIUMCARBONATE
 	id = REAGENT_ID_CALCIUMCARBONATE
-	description = "Calcium carbonate is a calcium salt commonly used as an antacid."
+	description = "Calcium carbonate is a calcium salt commonly used as an antacid: it settles nausea and stops vomiting. It binds Dylovene in the blood and weakens it, and injecting it poisons the patient."
 	taste_description = "chalk"
 	reagent_state = SOLID
 	dermal_absorption = 0 //Solids don't penetrate.
@@ -64,10 +45,13 @@
 	M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/kelotane
+	// Burn care for degrees 1 to 3 (moderate, large and severe burns); deep and carbonised burns (4 and 5) need dermaline (TREAT_BURN_DEEP).
 	treatment_tags = list(TREAT_BURN_CARE = 0.6)
+	// Slows the natural healing of the other wounds (cuts, bruises) on a limb where it is healing burns, only there.
+	slows_other = alist(TREAT_BURN_CARE = 0.85)
 	name = REAGENT_KELOTANE
 	id = REAGENT_ID_KELOTANE
-	description = REAGENT_KELOTANE + " is a drug used to treat burns."
+	description = REAGENT_KELOTANE + " is a drug used to treat burns of the first to third degree (it barely reaches deep burns, which need dermaline). On a limb where it is healing burns it slows the natural healing of that limb's other wounds, and an overdose upsets the stomach."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
@@ -81,10 +65,13 @@
 	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BLUNT = 2))
 
 /datum/reagent/dermaline
-	treatment_tags = list(TREAT_BURN_CARE = 1.0, TREAT_THERMOREGULATION = 0.2)
+	// Deep burns (degrees 4 and 5), burnt airways and the swelling they cause; a minor share of ordinary burn care.
+	treatment_tags = list(TREAT_BURN_DEEP = 1.0, TREAT_BURN_CARE = 0.3, TREAT_ANTIEDEMA = 0.8, TREAT_THERMOREGULATION = 0.2)
+	strains = alist(O_KIDNEYS = DRUG_STRAIN_MODERATE)
+	drains_blood = 2
 	id = REAGENT_ID_DERMALINE
 	name = REAGENT_DERMALINE
-	description = REAGENT_DERMALINE + " is the next step in burn medication. Works twice as good as kelotane and enables the body to restore even the direst heat-damaged tissue."
+	description = REAGENT_DERMALINE + " is the next step in burn medication: it restores the direst heat damage (fourth and fifth degree burns), heals burnt airways and shrinks the airway swelling that comes with them. It drains blood from the patient (watch the blood volume) and strains the kidneys."
 	taste_description = "bitterness"
 	taste_mult = 1.5
 	reagent_state = LIQUID
@@ -96,54 +83,17 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_KELOTANE
 
-/datum/reagent/dermaline/topical
-	// Dermalaze: stronger topical burn care (a distinct profile, so it treats).
-	treatment_tags = list(TREAT_BURN_CARE = 1.3, TREAT_THERMOREGULATION = 0.2)
-	name = REAGENT_DERMALAZE
-	id = REAGENT_ID_DERMALAZE
-	description = REAGENT_DERMALAZE + " is a topical variant of the chemical Dermaline."
-	taste_description = "bitterness"
-	taste_mult = 1.5
-	reagent_state = LIQUID
-	color = "#FF8000"
-	overdose = REAGENTS_OVERDOSE * 0.4
-	scannable = SCANNABLE_BENEFICIAL
-	touch_met = REM * 0.75
-	can_overdose_touch = TRUE
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
-	medallergen_type = MEDALLERGEN_KELOTANE
-
-/datum/reagent/dermaline/topical
-	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
-
-/datum/reagent/dermaline/topical/affect_blood(mob/living/carbon/M, alien, removed)
-	M.injure(INJURY_TOXIN, 2 * removed, source = src)
-
-/datum/reagent/ryetalyn
-	treatment_tags = list(TREAT_GENETIC_REPAIR = 0.5)
-	name = REAGENT_RYETALYN
-	id = REAGENT_ID_RYETALYN
-	description = REAGENT_RYETALYN + " can cure DNA, Cloning, and genetic damage via a catalytic process."
-	taste_description = "acid"
-	reagent_state = SOLID
-	dermal_absorption = 0
-	scannable = SCANNABLE_BENEFICIAL
-	color = "#004000"
-	overdose = REAGENTS_OVERDOSE
-	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
-	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
-
 /datum/reagent/hyronalin
-	treatment_tags = list(TREAT_ANTIRADIATION = 0.5)
+	// Weak and slow: mild radiation only.
+	treatment_tags = list(TREAT_ANTIRADIATION = 0.25)
 	name = REAGENT_HYRONALIN
 	id = REAGENT_ID_HYRONALIN
-	description = REAGENT_HYRONALIN + " is a medicinal drug used to counter the effect of radiation poisoning."
+	description = REAGENT_HYRONALIN + " is a mild, slow-acting drug used against radiation poisoning: weak, but it clears from the body only slowly. Arithrazine is the stronger choice for severe radiation."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
 	color = "#408000"
-	metabolism = REM * 0.25
+	metabolism = REM * 0.1
 	overdose = REAGENTS_OVERDOSE
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
@@ -159,7 +109,7 @@
 	treatment_tags = list(TREAT_THERMOREGULATION = 1.0)
 	name = REAGENT_LEPORAZINE
 	id = REAGENT_ID_LEPORAZINE
-	description = "Leporazine can be use to stabilize an individuals body temperature."
+	description = "Leporazine drives the body temperature back toward normal, whether the patient is too cold or too hot (hypothermia, heatstroke). An overdose reverses it: the temperature is pushed further away from normal."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
@@ -169,6 +119,14 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
 	coolant_modifier = 0.5 // Okay substitute coolant
+
+/// Overdosed, the regulation flips: the body is pushed further from normal (hot goes hotter, cold goes colder) on top of the poisoning.
+/datum/reagent/leporazine/overdose(mob/living/carbon/M, alien, removed)
+	..()
+	var/direction = M.body_temperature() >= BODYTEMP_NORMAL ? 1 : -1
+	var/moved = warm_body(M, direction * LEPORAZINE_OVERDOSE_KELVIN_PER_REM, removed)
+	if(GLOB.chem_trace)
+		log_world("CHEM: leporazine overdose pushes [M] by [moved] K (direction [direction], removed [removed])")
 
 // This exists to cut the number of chemicals a merc borg has to juggle on their hypo.
 /datum/reagent/healing_nanites
@@ -217,42 +175,14 @@
 	color = "#afeb17"
 	metabolism = 0.05
 	dermal_absorption = 0.2
-	description = "A well respected drug used for treatment of schizophrenia in specific."
+	description = "A well respected antipsychotic used for the treatment of schizophrenia in specific: it quiets hallucinations and shortens the hallucination episodes of the schizophrenic trait. Leaves the patient mildly drowsy."
 	overdose = REAGENTS_OVERDOSE * 2
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/alizene
-	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.5)
-	name = REAGENT_ALIZENE
-	id = REAGENT_ID_ALIZENE
-	description = "A derivative from bicaridine enhanced by serazine to more effectively mend flesh, but is ineffective against internal hemorrhage."
-	taste_description = "bittersweet"
-	taste_mult = 3
-	reagent_state = LIQUID
-	color = "#b37979"
-	overdose = REAGENTS_OVERDOSE
-	scannable = 1
-	dermal_absorption = 0.2
-	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
-	industrial_use = REFINERYEXPORT_REASON_DRUG
+/datum/reagent/tercozolam/affect_blood(mob/living/carbon/M, alien, removed)
+	M.status_adjust(STAT_HALLUCINATING, -(6 * removed))
 
-/datum/reagent/vermicetol
-	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.3)
-	name = REAGENT_VERMICETOL
-	id = REAGENT_ID_VERMICETOL
-	description = "A potent chemical that treats physical damage at an exceptional rate."
-	taste_description = "sparkles"
-	taste_mult = 3
-	reagent_state = LIQUID
-	dermal_absorption = 0.2
-	color = "#750404"
-	overdose = REAGENTS_OVERDOSE * 0.5
-	scannable = SCANNABLE_BENEFICIAL
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_DRUG
-
-// Vermicetol's trauma repair is its treatment_tags profile.
 
 /*
 /datum/reagent/sleevingcure
@@ -290,106 +220,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	metabolized_traits = list(TRAIT_HALT_RADIATION_EFFECTS)
-
-//Chemist expansion
-//deathblood
-/datum/reagent/cleansingagent
-	treatment_tags = list(TREAT_ANTITOXIN = 0.8, TREAT_ANTIRADIATION = 0.5)
-	name = REAGENT_CLEANSINGAGENT
-	id = REAGENT_ID_CLEANSINGAGENT
-	description = "An agent that purges one's body of toxins."
-	reagent_state = LIQUID
-	color = "#225722"
-	scannable = 1
-	dermal_absorption = 0.2
-	overdose = REAGENTS_OVERDOSE
-	overdose_mod = 0
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_MEDSCI
-
-/datum/reagent/cleansingagent
-	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
-
-/datum/reagent/cleansingagent/affect_blood(mob/living/carbon/M, alien, removed)
-	// Antitoxin action is the treatment_tags profile.
-	M.status_at_least(STAT_DRUGGED, 5)
-
-/datum/reagent/purifyingagent
-	treatment_tags = list(TREAT_ANTITOXIN = 0.8, TREAT_ANTIRADIATION = 0.5)
-	name = REAGENT_PURIFYINGAGENT
-	id = REAGENT_ID_PURIFYINGAGENT
-	description = "An agent that purges one's body of rads and toxins."
-	reagent_state = LIQUID
-	color = "#225722"
-	scannable = 1
-	dermal_absorption = 0.2
-	overdose = REAGENTS_OVERDOSE
-	overdose_mod = 0
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_MEDSCI
-
-//neoliquidfire
-/datum/reagent/neotane
-	treatment_tags = list(TREAT_BURN_CARE = 1.5)
-	name = REAGENT_NEOTANE
-	id = REAGENT_ID_NEOTANE
-	description = "An advancement of kelotane that scars and breaks apart the user's flesh to remove the burnt tissue."
-	taste_description = "bitterness"
-	reagent_state = LIQUID
-	color = "#FF6600"
-	overdose = REAGENTS_OVERDOSE * 0.2
-	dermal_absorption = 0.2
-	scannable = 1
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_MEDSCI
-
-/datum/reagent/neotane
-	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
-	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BLUNT = 3))
-
-/datum/reagent/neotane/affect_blood(mob/living/carbon/M, alien, removed)
-	// Burn care is the treatment_tags profile; the side effects stay here.
-	M.injure(INJURY_BLUNT, 1 * removed, source = src)
-
-/datum/reagent/bloodsealer
-	factors = alist(STAT_STABILIZATION = 25)
-	species_factors = alist(IS_DIONA = null)
-	name = REAGENT_BLOODSEALER
-	id = REAGENT_ID_BLOODSEALER
-	description = "A strange chemical that will stablize bloodflow by burning the subject"
-	taste_description = "bitterness"
-	reagent_state = LIQUID
-	dermal_absorption = 0.2
-	color = "#00BFFF"
-	overdose = REAGENTS_OVERDOSE
-	scannable = 1
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_MEDSCI
-
-/datum/reagent/bloodsealer
-	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
-
-/datum/reagent/bloodsealer/affect_blood(mob/living/carbon/M, alien, removed)
-	M.injure(INJURY_BURN, 1 * removed, source = src) // the legacy negative burn-heal: a burn
-
-/datum/reagent/quadcord
-	treatment_tags = list(
-		TREAT_TISSUE_REPAIR = 0.2,
-		TREAT_BURN_CARE = 0.2,
-		TREAT_OXYGENATION = 0.1,
-		TREAT_ANTITOXIN = 0.1,
-		TREAT_NEURAL_REPAIR = 0.3,
-	)
-	name = REAGENT_QUADCORD
-	id = REAGENT_ID_QUADCORD
-	description = "An experimental drug that is meant to further enhance tricord"
-	taste_description = "bitterness"
-	reagent_state = LIQUID
-	color = "#FF3399"
-	scannable = 1
-	overdose = REAGENTS_OVERDOSE * 2
-	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
-	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 //tier 3
 /datum/reagent/modapplying/liquidhealer

@@ -13,6 +13,16 @@
 
 	var/spawn_reagent = null
 	var/label = ""
+	/// The grade of the stock this cartridge comes filled with (GRADE_*): Standard from the chemical supply, Pharma for the medicine cartridges.
+	var/source_grade = GRADE_STANDARD
+	/// Names the source in chem_source_profile(): cartridges with the same key and reagent hold the same per-round impurities.
+	var/source_key = "chemical supply"
+
+/// The starting stock takes its source's contaminant profile for the round (nothing for a reagent that cannot carry impurities).
+/obj/item/reagent_containers/chem_disp_cartridge/proc/stamp_source_contaminants()
+	if(!spawn_reagent || !reagents)
+		return
+	chem_stamp_source(reagents, spawn_reagent, source_key, source_grade)
 
 /obj/item/reagent_containers/chem_disp_cartridge/proc/label_initial_chemical()
 	if(spawn_reagent)
@@ -39,6 +49,7 @@ CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(label_initial_chemical))
 	configure(reagents(starts_from = list(nameof(spawn_reagent) = nameof(volume))))
+	setup(PROC_REF(stamp_source_contaminants))
 	reagent_container(
 		volume = nameof(volume),
 		lid = TRUE,

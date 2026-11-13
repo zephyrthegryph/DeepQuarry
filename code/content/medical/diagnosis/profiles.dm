@@ -19,6 +19,7 @@
 //   scanner_machine  a medbay machine (GM afflictions show only when the GM
 //                allows scanners to see them)
 //   sees_fake_death  reads through feigned death
+//   sees_masked      reads through drug masking (hides = list(HIDE_*), code/content/reagents/drug_profile.dm)
 
 /datum/diagnostic_profile
 	var/name = "unknown instrument"
@@ -33,6 +34,8 @@
 	var/scan_level = SCANNABLE_BENEFICIAL
 	var/scanner_machine = FALSE
 	var/sees_fake_death = FALSE
+	/// Reads through the readings a drug masks (HIDE_*): admin scans.
+	var/sees_masked = FALSE
 
 /// Profile type -> its registered singleton (created on first use).
 GLOBAL_LIST_EMPTY(diagnostic_profiles)
@@ -196,3 +199,4 @@ REGISTRY_TYPE(/datum/diagnostic_profile, GLOBAL_PROC_REF(registry_diagnostic_pro
 	hints = TRUE
 	scan_level = SCANNABLE_UNSCANNABLE
 	sees_fake_death = TRUE
+	sees_masked = TRUE

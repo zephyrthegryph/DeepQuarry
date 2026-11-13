@@ -3,6 +3,8 @@
 
 /datum/unit_test/dq_mc_health_data
 /datum/unit_test/dq_mc_health_data/Run()
+	for(var/n in 2 to length(GLOB.mc_health_slow_groups)) // one slow group is built a send: the panel is whole after as many sends as there are groups
+		mc_health_data()
 	var/started = TICK_USAGE_REAL
 	var/list/data = mc_health_data()
 	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)

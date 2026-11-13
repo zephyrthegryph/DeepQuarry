@@ -13,6 +13,7 @@
 /datum/affliction_symptom/sharp_pain
 	name = "sharp pain"
 	category = "Observable"
+	subcategory = SYMPTOM_SUBCATEGORY_PAIN
 	clinical_description = "Sudden, localized pain at the site of injury; intensifies with motion."
 	examine_line = "They wince whenever they shift their weight."
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC
@@ -30,6 +31,7 @@ TYPE_TABLE(/datum/affliction_symptom/sharp_pain, get_public_emotes, list("winces
 /datum/affliction_symptom/throbbing_pain
 	name = "throbbing pain"
 	category = "Subjective"
+	subcategory = SYMPTOM_SUBCATEGORY_PAIN
 	clinical_description = "Deep, rhythmic pain synchronised with the cardiac cycle."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 5
@@ -43,6 +45,7 @@ TYPE_TABLE(/datum/affliction_symptom/throbbing_pain, get_patient_messages, list(
 /datum/affliction_symptom/chest_pain_crushing
 	name = "crushing chest pain"
 	category = "Observable"
+	subcategory = SYMPTOM_SUBCATEGORY_PAIN
 	clinical_description = "Severe substernal pressure, often radiating; a hallmark of cardiac distress."
 	examine_line = "They are clutching their chest in obvious distress."
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC
@@ -60,6 +63,7 @@ TYPE_TABLE(/datum/affliction_symptom/chest_pain_crushing, get_public_emotes, lis
 /datum/affliction_symptom/sharp_chest_pain
 	name = "sharp chest pain"
 	category = "Observable"
+	subcategory = SYMPTOM_SUBCATEGORY_PAIN
 	clinical_description = "Pleuritic chest pain worsened by inspiration; suggestive of pneumothorax or rib fracture."
 	examine_line = "They wince sharply each time they inhale."
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC

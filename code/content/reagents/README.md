@@ -56,8 +56,11 @@ About the Holder:
     handle_reactions()
     	Checks reagents and triggers any reactions that happen. Usually called automatically.
 
-    add_reagent(var/id, var/amount, var/data = null, var/safety = 0)
+    add_reagent(var/id, var/amount, var/data = null, var/safety = 0, ..., list/contaminants = null)
     	Adds [amount] units of [id] reagent. [data] will be passed to reagent's mix_data() or initialize_data(). If [safety] is 0, handle_reactions() will be called. Returns 1 if successful, 0 otherwise.
+    	[contaminants] (contaminant id -> fraction of the added volume, see domains/world_model/reagents/contaminants.dm) is blended into the reagent already
+    	there by volume (the old volume weights the old fractions); a new reagent takes a copy. Every holder-to-holder move (trans_to_holder, trans_id_to,
+    	trans_type_to, ingest -> blood) passes the source reagent's `contaminants`. A reagent's purity() is 1 minus their sum, computed, never stored.
 
     remove_reagent(var/id, var/amount, var/safety = 0)
     	Ditto, but removes reagent. Returns 1 if successful, 0 otherwise.

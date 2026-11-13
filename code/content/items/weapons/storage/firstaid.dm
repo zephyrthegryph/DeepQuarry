@@ -299,7 +299,7 @@ MSG_DEF_SELF(pill_bottle/label_too_long, "The label can be at most 50 characters
 
 /obj/item/storage/firstaid/combat
 	starts_with = list(
-		/obj/item/storage/pill_bottle/vermicetol,
+		/obj/item/storage/pill_bottle/bicaridine,
 		/obj/item/storage/pill_bottle/dermaline,
 		/obj/item/storage/pill_bottle/dexalin_plus,
 		/obj/item/storage/pill_bottle/carthatoline,
@@ -447,12 +447,6 @@ MSG_DEF_SELF(pill_bottle/label_too_long, "The label can be at most 50 characters
 	starts_with = list(/obj/item/reagent_containers/pill/corophizine = 14)
 	wrapper_color = COLOR_PALE_GREEN_GRAY
 
-/obj/item/storage/pill_bottle/vermicetol
-	name = "pill bottle (" + REAGENT_VERMICETOL + ")"
-	desc = "Contains pills used to stabilize the extremely injured."
-	starts_with = list(/obj/item/reagent_containers/pill/vermicetol = 14)
-	wrapper_color = COLOR_MAROON
-
 /obj/item/storage/pill_bottle/healing_nanites
 	name = "pill bottle (" + REAGENT_HEALINGNANITES + ")"
 	desc = "Miniature medical robots that swiftly restore bodily damage."
@@ -529,32 +523,14 @@ CAPABILITIES(/obj/item/storage/mrebag/pill)
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "expirmentalaid"
 	starts_with = list(
-		/obj/item/storage/pill_bottle/neotane,
-		/obj/item/storage/pill_bottle/burncard,
-		/obj/item/storage/pill_bottle/flamecure,
+		/obj/item/storage/pill_bottle/kelotane,
+		/obj/item/storage/pill_bottle/bicaridine,
+		/obj/item/storage/pill_bottle/dermaline,
 		/obj/item/storage/pill_bottle/juggernog,
-		/obj/item/storage/pill_bottle/curea,
+		/obj/item/storage/pill_bottle/dylovene,
 		/obj/item/storage/pill_bottle/souldew,
-		/obj/item/storage/pill_bottle/purifyingagent)
+		/obj/item/storage/pill_bottle/carthatoline)
 
-
-/obj/item/storage/pill_bottle/neotane
-	name = "pill bottle (" + REAGENT_NEOTANE + ")"
-	desc = "Contains experimental pills, good for soothing burns but tends to mangle the flesh."
-	starts_with = list(/obj/item/reagent_containers/pill/neotane = 12)
-	wrapper_color = COLOR_ORANGE
-
-/obj/item/storage/pill_bottle/burncard
-	name = "pill bottle (" + REAGENT_BURNCARD + ")"
-	desc = "Contains experimental pills, good for sealing cuts and bruises but is quite searing."
-	starts_with = list(/obj/item/reagent_containers/pill/burncard = 12)
-	wrapper_color = COLOR_RED
-
-/obj/item/storage/pill_bottle/flamecure
-	name = "pill bottle (" + REAGENT_FLAMECURE + ")"
-	desc = "Contains experimental pills, good for searing shut internal wounds."
-	starts_with = list(/obj/item/reagent_containers/pill/flamecure = 12)
-	wrapper_color = COLOR_ORANGE
 
 /obj/item/storage/pill_bottle/juggernog
 	name = "pill bottle (" + REAGENT_JUGGERNOG + ")"
@@ -562,22 +538,10 @@ CAPABILITIES(/obj/item/storage/mrebag/pill)
 	starts_with = list(/obj/item/reagent_containers/pill/juggernog = 12)
 	wrapper_color = COLOR_RED
 
-/obj/item/storage/pill_bottle/curea
-	name = "pill bottle (" + REAGENT_CUREA + ")"
-	desc = "Contains experimental pills, very effective for frostfly and poisonfly hunting."
-	starts_with = list(/obj/item/reagent_containers/pill/curea = 12)
-	wrapper_color = COLOR_BLUE
-
 /obj/item/storage/pill_bottle/souldew
 	name = "pill bottle (" + REAGENT_SOULDEW + ")"
 	desc = "Contains experimental pills, for feeding the dead."
 	starts_with = list(/obj/item/reagent_containers/pill/souldew = 12)
-	wrapper_color = COLOR_GREEN
-
-/obj/item/storage/pill_bottle/purifyingagent
-	name = "pill bottle (" + REAGENT_PURIFYINGAGENT + ")"
-	desc = "Contains experimental pills, having application as an anti-toxin."
-	starts_with = list(/obj/item/reagent_containers/pill/purifyingagent = 12)
 	wrapper_color = COLOR_GREEN
 
 /obj/item/storage/pill_bottle/methylphenidate
@@ -605,31 +569,6 @@ CAPABILITIES(/obj/item/storage/mrebag/pill)
 	wrapper_color = COLOR_PINK
 
 //Pills
-/obj/item/reagent_containers/pill/neotane
-	name = REAGENT_NEOTANE + " (10u)"
-	desc = "An experimental pill."
-
-	icon_state = "pill2"
-
-CAPABILITIES(/obj/item/reagent_containers/pill/neotane)
-	configure(reagents(add = list(REAGENT_ID_NEOTANE = 5), tint = TRUE))
-
-/obj/item/reagent_containers/pill/burncard
-	name = REAGENT_BURNCARD + " (10u)"
-	desc = "An experimental pill."
-	icon_state = "pill2"
-
-CAPABILITIES(/obj/item/reagent_containers/pill/burncard)
-	configure(reagents(add = list(REAGENT_ID_BURNCARD = 5), tint = TRUE))
-
-/obj/item/reagent_containers/pill/flamecure
-	name = REAGENT_FLAMECURE + " (5u)"
-	desc = "An experimental pill."
-	icon_state = "pill2"
-
-CAPABILITIES(/obj/item/reagent_containers/pill/flamecure)
-	configure(reagents(add = list(REAGENT_ID_FLAMECURE = 5), tint = TRUE))
-
 /obj/item/reagent_containers/pill/juggernog
 	name = REAGENT_JUGGERNOG + " (5u)"
 	desc = "An experimental pill."
@@ -638,14 +577,6 @@ CAPABILITIES(/obj/item/reagent_containers/pill/flamecure)
 CAPABILITIES(/obj/item/reagent_containers/pill/juggernog)
 	configure(reagents(add = list(REAGENT_ID_JUGGERNOG = 5), tint = TRUE))
 
-/obj/item/reagent_containers/pill/curea
-	name = REAGENT_CUREA + " (10u)"
-	desc = "An experimental pill."
-	icon_state = "pill2"
-
-CAPABILITIES(/obj/item/reagent_containers/pill/curea)
-	configure(reagents(add = list(REAGENT_ID_CUREA = 10), tint = TRUE))
-
 /obj/item/reagent_containers/pill/souldew
 	name = REAGENT_SOULDEW + " (10u)"
 	desc = "An experimental pill."
@@ -653,15 +584,6 @@ CAPABILITIES(/obj/item/reagent_containers/pill/curea)
 
 CAPABILITIES(/obj/item/reagent_containers/pill/souldew)
 	configure(reagents(add = list(REAGENT_ID_SOULDEW = 10), tint = TRUE))
-
-/obj/item/reagent_containers/pill/purifyingagent
-	name = REAGENT_PURIFYINGAGENT + " (10u)"
-
-	desc = "An expirmental pill."
-	icon_state = "pill2"
-
-CAPABILITIES(/obj/item/reagent_containers/pill/purifyingagent)
-	configure(reagents(add = list(REAGENT_ID_PURIFYINGAGENT = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/paroxetine
 	name = REAGENT_PAROXETINE + " (10u)"

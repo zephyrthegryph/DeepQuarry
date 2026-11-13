@@ -42,11 +42,13 @@
 	return 1
 
 /datum/reagent/epinephrine
-	factors = alist(STAT_ANALGESIA = 60, STAT_SLOWDOWN = -3, STAT_PENALTY_SCALE = 0.5)
+	// Anaphylaxis: the allergic reaction is blunted. Open wounds bleed half again as fast while it drives the pulse up.
+	factors = alist(STAT_ANALGESIA = 60, STAT_SLOWDOWN = -3, STAT_PENALTY_SCALE = 0.5, STAT_ALLERGY = -15, STAT_BLEEDING = 1.5)
+	strains = alist(O_HEART = DRUG_STRAIN_MODERATE)
 	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_EPINEPHRINE
 	id = REAGENT_ID_EPINEPHRINE
-	description = "A chemically naturally produced by the body while in fight-or-flight mode. Greatly increases one's strength."
+	description = "Adrenaline: a vasopressor for cardiac arrest (it coaxes asystole toward a shockable rhythm during chest compressions), for anaphylaxis and for shock. It makes open wounds bleed faster and strains the heart, and it must never be given with synaptizine."
 	reagent_state = LIQUID
 	color = "#C8A5DC"
 	metabolism = REM * 2
@@ -55,7 +57,7 @@
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
 /datum/reagent/epinephrine
-	treatment_tags = list(TREAT_ANALGESIC = 2.0, TREAT_STIMULANT = 1.0, TREAT_VASOPRESSOR = 1.0)
+	treatment_tags = list(TREAT_ANALGESIC = 2.0, TREAT_STIMULANT = 1.0, TREAT_VASOPRESSOR = 1.0, TREAT_CIRCULATORY = 0.5)
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/epinephrine/affect_blood(mob/living/carbon/M, alien, removed)

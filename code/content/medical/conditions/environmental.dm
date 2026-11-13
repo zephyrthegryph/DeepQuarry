@@ -203,10 +203,9 @@ TYPE_TABLE(/datum/affliction/acute_radiation, affliction_stages, list( \
 /datum/affliction/genetic_damage
 	name = "genetic damage"
 	category = "Genetic"
-	clinical_description = "Damage at the cellular level — DNA strands disrupted by radiation, cloning errors, or other catalytic insult. Outwardly subtle; treated with ryetalyn."
+	clinical_description = "Damage at the cellular level — DNA strands disrupted by radiation, cloning errors, or other catalytic insult. Outwardly subtle; treated with rezadone."
 	progression_rate = 0
-	// Rezadone is the strong cellular-repair chem; ryetalyn is the
-	// older genetic-only fix and still works but more slowly.
+	// Rezadone is the cellular-repair chem.
 	treated_by = list(TREAT_GENETIC_REPAIR = 1.2)
 	symptom_pool = list(
 		/datum/affliction_symptom/fatigue              = 60,

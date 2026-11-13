@@ -1,8 +1,11 @@
 /datum/reagent/carthatoline
 	treatment_tags = list(TREAT_ANTITOXIN = 1.0, TREAT_HEPATORENAL = 0.4)
+	// It slows the refill of blood (the stat's floor is no refill at all).
+	factors = alist(STAT_BLOOD_REGEN = -0.05)
+	purges_stomach = TRUE
 	name = REAGENT_CARTHATOLINE
 	id = REAGENT_ID_CARTHATOLINE
-	description = REAGENT_CARTHATOLINE + " is strong evacuant used to treat severe poisoning."
+	description = REAGENT_CARTHATOLINE + " is a strong evacuant used to treat severe poisoning: heavy metals, phoron and other deep toxins, with a mild repair of the liver and kidneys. It empties the stomach (swallowed drugs are lost), slows the body's refill of blood and leaves the patient profoundly sick."
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
 	color = "#225722"

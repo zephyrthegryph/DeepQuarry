@@ -184,8 +184,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 		occupant_message(span_warning("Sleeper safeties prohibit you from injecting more than [inject_amount*4] units of [R.name]."))
 	else
 		src.mecha_log_message("Injecting [occupant] with [to_inject] units of [R.name].")
+		occupant.reagents.add_reagent(R.id, to_inject, contaminants = R.contaminants) // before the syringe's volume drops: R is the syringe's own volume
 		SG.reagents.remove_reagent(R.id,to_inject)
-		occupant.reagents.add_reagent(R.id,to_inject)
 		update_equip_info()
 	return
 

@@ -103,14 +103,21 @@ CAPABILITIES(/obj/structure/closet)
 	trait(TRAIT_ALT_CLICK_BLOCKER)
 
 
-/// Declares what it starts with and takes in the loose items on its turf, once the map around it exists.
+/// Declares what it starts with and takes in the loose items on its turf, once the map around it exists. A closet loaded with the map while the kernel runs
+/// (the map's atoms initialize over ticks) does not make its spawn list in this call: a closet's spawn list is ten items or more at 4 ms each, and a hundred
+/// closets of one tick's timers were calls of 140-230 ms. It joins the fill queue (code/content/structures/crates_lockers/closet_fill.dm), which makes one item
+/// at a time inside a budget.
 /obj/structure/closet/proc/closet_after_init(datum/act/timer/A)
+	if(A?.mapload && length(starts_with) && closet_fill_enqueue(src))
+		return
 	// starts_with is the spawn list: its contents are made now.
 	create_spawn_contents(starts_with)
 	set_starts_with(null)
+	closet_collect_loose(A?.mapload)
 
-	// A closed closet takes in the loose items on its turf; a body bag unfolded in play (collects_in_play FALSE) leaves the floor alone.
-	if(!opened && (collects_in_play || A?.mapload))
+/// A closed closet takes in the loose items on its turf; a body bag unfolded in play (collects_in_play FALSE) leaves the floor alone. After its contents exist.
+/obj/structure/closet/proc/closet_collect_loose(mapload)
+	if(!opened && (collects_in_play || mapload))
 		if(isliving(loc)) return
 		var/list/loose = list()
 		for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))

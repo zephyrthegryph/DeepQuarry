@@ -18,7 +18,7 @@
 	injury_category = INJURY_CATEGORY_TOXIC
 	progression_rate = 0
 	pain_at_max = 60
-	treated_by = list(TREAT_ANTIMICROBIAL = 1.0, TREAT_ANTITOXIN = 0.6)
+	treated_by = list(TREAT_ANTIMICROBIAL = 1.0, TREAT_ANTITOXIN = 0.6, TREAT_DIGESTIVE = 0.8)
 	symptom_pool = list(
 		/datum/affliction_symptom/abdominal_tenderness = 95,
 		/datum/affliction_symptom/nausea               = 80,
