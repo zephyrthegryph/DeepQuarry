@@ -158,6 +158,43 @@
 	TEST_ASSERT(km_ledger_test_near(outside["map_avg_ms"], 1.5), "and the map send is the mean over ticks")
 	qdel(L, force = TRUE)
 
+/// The window since the last read is what ran outside the kernel's iteration lately, where the report's own mean is since boot.
+/datum/unit_test/dq_km_ledger_outside_since_mark
+
+/datum/unit_test/dq_km_ledger_outside_since_mark/Run()
+	var/datum/km_ledger/L = new
+	for(var/n in 1 to 10)
+		L.note_outside(100, 0, TRUE) // a round start holding every tick
+	var/list/first = L.outside_since_mark()
+	TEST_ASSERT(km_ledger_test_near(first["post_recent_ms"], 100), "the first window is the ticks so far ([first["post_recent_ms"]] ms)")
+	for(var/n in 1 to 10)
+		L.note_outside(1, 0, TRUE) // then a quiet stretch
+	var/list/second = L.outside_since_mark()
+	TEST_ASSERT_EQUAL(second["recent_ticks"], 10, "the second window is the ten ticks since")
+	TEST_ASSERT(km_ledger_test_near(second["post_recent_ms"], 1), "and shows the quiet stretch, not the mean since boot ([second["post_recent_ms"]] ms)")
+	TEST_ASSERT(L.report()["outside"]["post_avg_ms"] > 40, "while the report's mean since boot still carries the busy start")
+	qdel(L, force = TRUE)
+
+/// A report built in slices is the report built at once.
+/datum/unit_test/dq_km_ledger_walk_matches_report
+
+/datum/unit_test/dq_km_ledger_walk_matches_report/Run()
+	var/datum/km_ledger/L = new
+	for(var/n in 1 to 5)
+		L.begin(5)
+		var/t = L.enter(KM_CAT_SYSTEM, null, "/datum/system/x:run", 15)
+		L.leave(t, 40)
+		L.finish(45, 50)
+	var/list/whole = L.report(3)
+	var/datum/km_ledger_walk/W = L.walk_begin(3)
+	var/slices = 1
+	while(!L.walk_step(W, 0))
+		slices++
+		TEST_ASSERT(slices <= KM_CAT_COUNT, "the walk ends")
+	TEST_ASSERT(slices > 1, "a spent budget leaves the rest for the next turn ([slices] turns)")
+	TEST_ASSERT_EQUAL(json_encode(L.walk_result(W)), json_encode(whole), "the slices add up to the report")
+	qdel(L, force = TRUE)
+
 /datum/unit_test/dq_km_ledger_item_categories
 
 /datum/unit_test/dq_km_ledger_item_categories/Run()

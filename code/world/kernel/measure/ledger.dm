@@ -67,6 +67,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/km_ledger)
 	var/map_ema = 0
 	/// REALTIMEOFDAY (ds) of the first window, for per-second rates.
 	var/started_real = 0
+	/// Where outside_since_mark() last read: BYOND ticks, ms after the kernel's iteration, ms of ticks the kernel did not close.
+	var/mark_world_ticks = 0
+	var/mark_post = 0
+	var/mark_idle = 0
 
 GLOBAL_DATUM_INIT(km_ledger, /datum/km_ledger, new)
 /// The kernel phases' names as ledger rows, by KERNEL_PHASE_*.
@@ -127,6 +131,9 @@ GLOBAL_LIST_INIT(km_phase_labels, list("phase K", "phase S", "phase N", "phase U
 	map_hi = 0
 	map_ema = 0
 	started_real = 0
+	mark_world_ticks = 0
+	mark_post = 0
+	mark_idle = 0
 
 // ---------------------------------------------------------------- the timeline
 
@@ -391,22 +398,50 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 /// The ledger as data for the MC Health panel, the Tick Report and PERF_PROFILE: per category its moving average, its mean per tick since boot,
 /// its total and the heaviest `top_n` names; what BYOND spent outside the window; the kernel's phases. `windows` adds up to `window_avg_ms`.
 /datum/km_ledger/proc/report(top_n = KM_LEDGER_TOP)
+	var/datum/km_ledger_walk/W = walk_begin(top_n)
+	walk_step(W, INFINITY)
+	return walk_result(W)
+
+/// A report() being built a category at a time: the profiler builds one a minute, and ranking every category's rows held one tick for tens of ms.
+/// The categories' numbers are read as each is reached (a window closing between two of them is the same smear the panel's own reads have).
+/datum/km_ledger_walk
+	var/top_n = KM_LEDGER_TOP
+	var/at = 1
+	var/sum = 0
+	var/list/cats = list()
+
+/datum/km_ledger/proc/walk_begin(top_n = KM_LEDGER_TOP)
+	var/datum/km_ledger_walk/W = new
+	W.top_n = top_n
+	return W
+
+/// Ranks categories for `budget_ms` (at least one). TRUE when every category is in.
+/datum/km_ledger/proc/walk_step(datum/km_ledger_walk/W, budget_ms)
 	var/list/names = km_ledger_names()
 	var/n = max(ticks, 1)
-	var/list/cats = list()
-	var/sum = 0
-	for(var/i in 1 to KM_CAT_COUNT)
+	var/started = TICK_USAGE_REAL
+	while(W.at <= KM_CAT_COUNT)
+		var/i = W.at++
 		var/total = lo[i] + hi[i]
-		sum += total
-		cats += list(list(
+		W.sum += total
+		W.cats += list(list(
 			"key" = names[i][1],
 			"label" = names[i][2],
 			"ema_ms" = round(ema[i], 0.001),
 			"avg_ms" = round(total / n, 0.001),
 			"total_ms" = round(total, 0.01),
 			"count" = counts[i],
-			"top" = (i == KM_CAT_UNATTRIBUTED || i == KM_CAT_BYOND_PRE) ? list() : top_of(i, top_n),
+			"top" = (i == KM_CAT_UNATTRIBUTED || i == KM_CAT_BYOND_PRE) ? list() : top_of(i, W.top_n),
 		))
+		if(W.at <= KM_CAT_COUNT && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			return FALSE
+	return TRUE
+
+/// The finished walk as report() returns it.
+/datum/km_ledger/proc/walk_result(datum/km_ledger_walk/W)
+	var/n = max(ticks, 1)
+	var/list/cats = W.cats
+	var/sum = W.sum
 	var/window_total = window_lo + window_hi
 	var/list/phases = list()
 	var/kernel_ticks = max(Kernel.ticks, 1)
@@ -438,6 +473,21 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 		"phases" = phases,
 		"categories" = cats,
 	)
+
+/// What ran outside the kernel's iteration per BYOND tick since the last call (the profile's own window), where "outside" in report() is the mean since boot: a
+/// round start that held every tick for minutes (a login, a spawn) kept that mean at 17 ms a tick for the rest of a quiet round. Only the profiler calls it.
+/datum/km_ledger/proc/outside_since_mark()
+	var/post = post_lo + post_hi
+	var/idle = idle_lo + idle_hi
+	var/ticks_since = max(world_ticks - mark_world_ticks, 1)
+	. = list(
+		"recent_ticks" = world_ticks - mark_world_ticks,
+		"post_recent_ms" = round((post - mark_post) / ticks_since, 0.001),
+		"idle_recent_ms" = round((idle - mark_idle) / ticks_since, 0.001),
+	)
+	mark_world_ticks = world_ticks
+	mark_post = post
+	mark_idle = idle
 
 /// The ledger as the lines of an HTML table (the Tick Report).
 /datum/km_ledger/proc/report_html()
