@@ -111,6 +111,9 @@ GLOBAL_VAR_INIT(client_glow_holder_sight_refreshes, 0)
 	var/list/delivering
 	/// Baked shape -> TRUE once this client confirmed receiving its PNG (or the confirmation timed out). Oldest first; bounded by note_delivered(). Lazy.
 	var/list/delivered
+	/// Door twin shapes (datum/light_source glow_twins) of held lights this client has not been sent yet -> TRUE; sent CLIENT_GLOW_TWIN_PER_TICK a tick once baked. Lazy.
+	var/list/twin_queue
+	var/twin_waiting = FALSE
 	/// Bumped whenever the client's images are forgotten: a delivery started under an older value belongs to a client state that is gone, and its answer is ignored.
 	var/delivery_gen = 0
 	/// Blank glow images and blank hide images of dropped glows, up to CLIENT_GLOW_POOL_MAX each, for the next glows acquired. Lazy; borrowed from no one: an
@@ -204,6 +207,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	held_shape = null
 	cut_shape = null
 	delivering = null
+	twin_queue = null
 	sight_dirty = FALSE
 	sight_to_x = 0
 	delivery_gen++
@@ -389,6 +393,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(unlit || unmasked || !L.glow_mask_key || L.glow_plain)
 		return
 	client_glow_mask_prefetch(L.glow_mask_key)
+	L.client_glow_twins_ready() // its door states are baked ahead too
 	var/ahead = GLOB.client_glow_baker.icons[L.glow_mask_key]
 	if(ahead)
 		deliver(L.glow_mask_key, ahead) // on the client before the crossing that holds it
@@ -830,6 +835,8 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/shape = L.glow_mask_key
 	if(LAZYACCESS(held_shape, h) != shape)
 		LAZYSET(held_shape, h, shape)
+		L.client_glow_twins_ready()
+		queue_twins(L) // the shapes a door of its reach gives it are sent ahead, so a door moving swaps a shape the client has
 		var/baked = client_glow_mask_icon(shape)
 		if(baked && deliver(shape, baked))
 			cut_with(h, glow_image, shape, baked)
@@ -907,6 +914,9 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 
 /// A shape finished baking: every held glow waiting on it shows it, once this client has the picture.
 /datum/client_glow_holder/proc/shape_ready(shape, baked)
+	if(LAZYACCESS(twin_queue, shape)) // a door twin of a held light, baked: sent now
+		LAZYREMOVE(twin_queue, shape)
+		deliver(shape, baked)
 	var/waited_on = FALSE
 	for(var/h in held_shape)
 		if(held_shape[h] == shape && LAZYACCESS(cut_shape, h) != shape)
@@ -920,6 +930,38 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		var/list/entry = LAZYACCESS(held, h)
 		if(length(entry) == 2)
 			cut_with(h, entry[1], shape, baked)
+
+/// Light `L`'s door twin shapes are to be sent to this client (and nothing else is sent for them): queued, then delivered a few a tick once baked (twin_continue()).
+/datum/client_glow_holder/proc/queue_twins(datum/light_source/L)
+	for(var/key in L.glow_twins)
+		if(LAZYACCESS(delivered, key) || LAZYACCESS(delivering, key) || LAZYACCESS(twin_queue, key) || LAZYLEN(twin_queue) >= CLIENT_GLOW_MASK_CACHE_MAX)
+			continue
+		LAZYSET(twin_queue, key, TRUE)
+	if(LAZYLEN(twin_queue) && !twin_waiting)
+		twin_waiting = TRUE
+		after(src, 1 TICKS, PROC_REF(twin_continue))
+
+/// The timer of the twin queue: the baked shapes in it are sent, CLIENT_GLOW_TWIN_PER_TICK of them; one still baking is sent when it arrives (shape_ready()).
+/datum/client_glow_holder/proc/twin_continue()
+	twin_waiting = FALSE
+	if(!sig || !LAZYLEN(twin_queue))
+		twin_queue = null
+		return
+	var/sent = 0
+	var/list/waiting = twin_queue.Copy()
+	for(var/key in waiting)
+		var/baked = GLOB.client_glow_baker.icons[key]
+		if(!baked)
+			continue
+		LAZYREMOVE(twin_queue, key)
+		deliver(key, baked)
+		if(++sent >= CLIENT_GLOW_TWIN_PER_TICK)
+			break
+	for(var/key in twin_queue)
+		if(GLOB.client_glow_baker.icons[key])
+			twin_waiting = TRUE
+			after(src, 1 TICKS, PROC_REF(twin_continue))
+			break
 
 /// A viewer that sees no darkness: every light its view can reach is hidden from it with a plain override image, so its client
 /// never draws the glows (a ghost sees through walls, so otherwise all of them, for no visible light).
