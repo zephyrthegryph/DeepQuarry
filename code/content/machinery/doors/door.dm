@@ -56,6 +56,9 @@ MSG_DEF(door/reinforced, "You finish reinforcing %T%.", "%U% finishes reinforcin
 MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %T%.")
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
+/// Every door, so a light can find the doors in its reach and ready the shape it takes with one open or shut (client_shadow.dm).
+REGISTRY_MEMBERSHIP(/obj/machinery/door, REGISTRY_DOORS)
+
 CAPABILITIES(/obj/machinery/door)
 	configure(atom_rules(integrity_failure = 0.25))
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(on_broken)))

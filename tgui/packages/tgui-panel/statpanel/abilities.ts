@@ -115,5 +115,8 @@ export function resourceFill(resource: Resource): number {
 
 /** Does the tab have anything to show? A mob with no abilities and no resources has no tab. */
 export function hasAbilities(data: AbilitiesData | null): boolean {
-  return !!data && (data.abilities.length > 0 || data.resources.length > 0);
+  return (
+    !!data &&
+    ((data.abilities?.length ?? 0) > 0 || (data.resources?.length ?? 0) > 0)
+  );
 }

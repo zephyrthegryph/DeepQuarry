@@ -178,7 +178,9 @@ SYSTEM_DEF(statpanels)
 /datum/system/statpanels/proc/set_MC_tab(client/target)
 	var/turf/eye_turf = get_turf(target.eye)
 	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 1 SECONDS)
+		var/mc_build_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: build the panel data") // the ledger names the build apart from the send
 		mc_metrics = mc_health_data()
+		km_ledger_leave(mc_build_ledger)
 		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	// Only the sections this client has not got: a slow section (mc_health_slow()) is the same list object until it is built again, so an
 	// unchanged one is skipped without encoding it. A client that opens the panel or reloads its page gets everything (mc_health_forget()).
@@ -195,11 +197,13 @@ SYSTEM_DEF(statpanels)
 			sent[section] = value
 	if(length(changed) == length(mc_metrics))
 		log_tgui(target, "Server health: whole send of [length(changed)] section(s), window [target.stat_panel.id], ready=[target.stat_panel.is_ready() ? 1 : 0].", context = "stat_panel")
+	var/mc_send_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: encode and send") // the JSON of the changed sections goes out here
 	target.stat_panel.send_message("update_mc", list(
 		"mc_metrics" = changed,
 		"partial" = length(changed) != length(mc_metrics),
 		"coord_entry" = COORD(eye_turf),
 	))
+	km_ledger_leave(mc_send_ledger)
 
 /// The client's panel holds none of the MC Health sections any more (it was opened again or its page reloaded): the next send is whole.
 /datum/system/statpanels/proc/mc_health_forget(client/target)

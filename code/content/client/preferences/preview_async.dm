@@ -149,12 +149,52 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 	var/list/transforms = sprite["transform"]
 	transforms += list(list("type" = RUSTG_ICONFORGE_BLEND_COLOR, "color" = rgb(255, 255, 255, alpha), "blend_mode" = ICON_MULTIPLY))
 
+/// The state of one flatten() between its layers: flatten_open() sets it up, each flatten_step() draws one layer of the appearance into it, and
+/// when `done` its `result` is what flatten() returns. The portrait cache steps it one layer per job step (portrait_cache.dm), so a dressed human
+/// is translated over a few ticks instead of in one call.
+/datum/dq_flatten_frame
+	var/done = FALSE
+	var/list/result
+	var/image/appearance
+	/// The layers in draw order (the keys of getFlatIcon's `layers`), and the next one to draw.
+	var/list/layers
+	var/next_layer = 1
+	var/image/copy
+	var/curicon
+	var/curstate
+	var/curdir
+	var/curblend
+	var/icon_key
+	var/base_icon_dir
+	var/list/flat
+	var/list/flat_transforms
+	var/flatX1 = 1
+	var/flatX2
+	var/flatY1 = 1
+	var/flatY2
+
+SCHEMA(/datum/dq_flatten_frame, icon_key, schema_text())
+
+/datum/dq_flatten_frame/proc/finish(list/with_result)
+	result = with_result
+	done = TRUE
+
 /**
  * Mirror of getFlatIcon(appearance, defdir, ..., no_anim = TRUE).
  * Returns list(sprite, width, height), or null when getFlatIcon would return null.
  * Check `unsupported` afterwards: when set, the result must not be used.
  */
 /datum/dq_preview_flattener/proc/flatten(image/appearance, defdir, deficon, defstate, defblend, start = TRUE)
+	var/datum/dq_flatten_frame/F = flatten_open(appearance, defdir, deficon, defstate, defblend, start)
+	while(!F.done)
+		flatten_step(F)
+	return F.result
+
+/// The first part of flatten(): everything up to drawing the layers. The frame is `done` when the appearance needed none.
+/datum/dq_preview_flattener/proc/flatten_open(image/appearance, defdir, deficon, defstate, defblend, start = TRUE)
+	RETURN_TYPE(/datum/dq_flatten_frame)
+	var/datum/dq_flatten_frame/F = new
+	F.appearance = appearance
 	// Same layer sort as getFlatIcon's PROCESS_OVERLAYS_OR_UNDERLAYS.
 	#define DQ_SORT_LAYERS(process, base_layer) \
 		for (var/i in 1 to process.len) { \
@@ -168,7 +208,8 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 			var/current_layer = current.layer; \
 			if (current_layer < 0) { \
 				if (current_layer <= -1000) { \
-					return blank(); \
+					F.finish(blank()); \
+					return F; \
 				} \
 				current_layer = base_layer + appearance.layer + current_layer / 1000; \
 			} \
@@ -183,9 +224,11 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 		}
 
 	if(unsupported)
-		return null
+		F.finish(null)
+		return F
 	if(!appearance || appearance.alpha <= 0)
-		return blank()
+		F.finish(blank())
+		return F
 	if(start)
 		if(!defdir)
 			defdir = appearance.dir
@@ -205,7 +248,8 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 	if(render_icon)
 		icon_key = icon_key_for(curicon)
 		if(unsupported)
-			return null
+			F.finish(null)
+			return F
 		if(!icon_exists(icon_key, curstate))
 			if(icon_exists(icon_key, ""))
 				curstate = ""
@@ -216,7 +260,8 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 	if(render_icon && curdir != SOUTH)
 		var/dir_count = state_dir_count(icon_key, curstate)
 		if(unsupported)
-			return null
+			F.finish(null)
+			return F
 		if(dir_count == 1)
 			base_icon_dir = SOUTH
 	if(!base_icon_dir)
@@ -227,7 +272,6 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 	if(length(appearance.overlays) || length(appearance.underlays))
 		var/list/blank_result = blank()
 		var/list/flat = blank_result[1]
-		var/list/flat_transforms = flat["transform"]
 		var/list/layers = list()
 		var/image/copy
 		if(render_icon)
@@ -239,58 +283,21 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 		DQ_SORT_LAYERS(appearance.underlays, 0)
 		DQ_SORT_LAYERS(appearance.overlays, 1)
 
-		var/flatX1 = 1
-		var/flatX2 = blank_result[2]
-		var/flatY1 = 1
-		var/flatY2 = blank_result[3]
-
-		for(var/image/layer_image as anything in layers)
-			if(layer_image.alpha == 0)
-				continue
-			var/list/add
-			if(layer_image == copy)
-				curblend = BLEND_OVERLAY
-				var/list/dims = get_icon_dimensions(icon_key)
-				add = list(make_sprite(icon_key, curstate, base_icon_dir), dims["width"], dims["height"])
-			else
-				add = flatten(layer_image, curdir, curicon, curstate, curblend, FALSE)
-			if(unsupported)
-				return null
-			if(!add)
-				continue
-
-			var/addX1 = min(flatX1, layer_image.pixel_x + 1)
-			var/addX2 = max(flatX2, layer_image.pixel_x + add[2])
-			var/addY1 = min(flatY1, layer_image.pixel_y + 1)
-			var/addY2 = max(flatY2, layer_image.pixel_y + add[3])
-			if(addX1 != flatX1 || addX2 != flatX2 || addY1 != flatY1 || addY2 != flatY2)
-				flat_transforms += list(list(
-					"type" = RUSTG_ICONFORGE_CROP,
-					"x1" = addX1 - flatX1 + 1,
-					"y1" = addY1 - flatY1 + 1,
-					"x2" = addX2 - flatX1 + 1,
-					"y2" = addY2 - flatY1 + 1,
-				))
-				flatX1 = addX1
-				flatX2 = addX2
-				flatY1 = addY1
-				flatY2 = addY2
-
-			flat_transforms += list(list(
-				"type" = RUSTG_ICONFORGE_BLEND_ICON,
-				"icon" = add[1],
-				"blend_mode" = blendMode2iconMode(curblend),
-				"x" = layer_image.pixel_x + 2 - flatX1,
-				"y" = layer_image.pixel_y + 2 - flatY1,
-			))
-
-		if(appearance.color)
-			apply_color(flat, appearance.color)
-		if(appearance.alpha < 255)
-			apply_alpha(flat, appearance.alpha)
-		if(unsupported)
-			return null
-		return list(flat, flatX2 - flatX1 + 1, flatY2 - flatY1 + 1)
+		F.flat = flat
+		F.flat_transforms = flat["transform"]
+		F.flatX2 = blank_result[2]
+		F.flatY2 = blank_result[3]
+		F.layers = layers
+		F.copy = copy
+		F.curicon = curicon
+		F.curstate = curstate
+		F.curdir = curdir
+		F.curblend = curblend
+		F.icon_key = icon_key
+		F.base_icon_dir = base_icon_dir
+		if(!length(layers))
+			flatten_close(F)
+		return F
 
 	if(render_icon)
 		var/list/dims = get_icon_dimensions(icon_key)
@@ -300,11 +307,72 @@ GLOBAL_LIST_EMPTY(dq_preview_runtime_icon_paths)
 		if(appearance.color)
 			apply_color(final_sprite, appearance.color)
 		if(unsupported)
-			return null
-		return list(final_sprite, dims["width"], dims["height"])
+			F.finish(null)
+			return F
+		F.finish(list(final_sprite, dims["width"], dims["height"]))
+		return F
 
-	return null
+	F.finish(null)
+	return F
 	#undef DQ_SORT_LAYERS
+
+/// Draws the next layer of `F` (one overlay, with everything under it) into its flat sprite.
+/datum/dq_preview_flattener/proc/flatten_step(datum/dq_flatten_frame/F)
+	if(F.done)
+		return
+	if(F.next_layer > length(F.layers))
+		flatten_close(F)
+		return
+	var/image/layer_image = F.layers[F.next_layer++]
+	if(layer_image.alpha != 0)
+		var/list/add
+		if(layer_image == F.copy)
+			F.curblend = BLEND_OVERLAY
+			var/list/dims = get_icon_dimensions(F.icon_key)
+			add = list(make_sprite(F.icon_key, F.curstate, F.base_icon_dir), dims["width"], dims["height"])
+		else
+			add = flatten(layer_image, F.curdir, F.curicon, F.curstate, F.curblend, FALSE)
+		if(unsupported)
+			F.finish(null)
+			return
+		if(add)
+			var/addX1 = min(F.flatX1, layer_image.pixel_x + 1)
+			var/addX2 = max(F.flatX2, layer_image.pixel_x + add[2])
+			var/addY1 = min(F.flatY1, layer_image.pixel_y + 1)
+			var/addY2 = max(F.flatY2, layer_image.pixel_y + add[3])
+			if(addX1 != F.flatX1 || addX2 != F.flatX2 || addY1 != F.flatY1 || addY2 != F.flatY2)
+				F.flat_transforms += list(list(
+					"type" = RUSTG_ICONFORGE_CROP,
+					"x1" = addX1 - F.flatX1 + 1,
+					"y1" = addY1 - F.flatY1 + 1,
+					"x2" = addX2 - F.flatX1 + 1,
+					"y2" = addY2 - F.flatY1 + 1,
+				))
+				F.flatX1 = addX1
+				F.flatX2 = addX2
+				F.flatY1 = addY1
+				F.flatY2 = addY2
+
+			F.flat_transforms += list(list(
+				"type" = RUSTG_ICONFORGE_BLEND_ICON,
+				"icon" = add[1],
+				"blend_mode" = blendMode2iconMode(F.curblend),
+				"x" = layer_image.pixel_x + 2 - F.flatX1,
+				"y" = layer_image.pixel_y + 2 - F.flatY1,
+			))
+	if(F.next_layer > length(F.layers))
+		flatten_close(F)
+
+/// Every layer is drawn: the appearance's own colour and alpha go on, and the frame is done.
+/datum/dq_preview_flattener/proc/flatten_close(datum/dq_flatten_frame/F)
+	if(F.appearance.color)
+		apply_color(F.flat, F.appearance.color)
+	if(F.appearance.alpha < 255)
+		apply_alpha(F.flat, F.appearance.alpha)
+	if(unsupported)
+		F.finish(null)
+		return
+	F.finish(list(F.flat, F.flatX2 - F.flatX1 + 1, F.flatY2 - F.flatY1 + 1))
 
 /// Scales a flattened preview by the size slider (exactly as before Q4) and base-64 encodes it.
 /proc/dq_preview_icon_to_b64(icon/flat, scale_x, scale_y)

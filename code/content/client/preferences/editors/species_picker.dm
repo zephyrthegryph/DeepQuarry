@@ -147,10 +147,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_species_preview_waiter)
 
 /// The thumbnail landed: filed, and every player's species picker catalog is rebuilt and pushed (the placeholder is replaced in place).
 /datum/dq_species_preview_waiter/proc/landed(datum/portrait/P)
-	var/species_name = GLOB.dq_species_preview_keys[P.key]
+	var/asked_as
+	for(var/asked in GLOB.dq_species_preview_keys)
+		if(P.answers(asked))
+			asked_as = asked
+			break
+	var/species_name = asked_as ? GLOB.dq_species_preview_keys[asked_as] : null
 	if(!species_name)
 		return
-	GLOB.dq_species_preview_keys -= P.key
+	GLOB.dq_species_preview_keys -= asked_as
 	GLOB.dq_species_preview_waits -= species_name
 	GLOB.dq_species_preview_cache[species_name] = P.b64
 	var/datum/preference_editor/editor = GLOB.preference_editors_by_key["species_picker"]
