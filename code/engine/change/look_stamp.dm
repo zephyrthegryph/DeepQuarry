@@ -503,8 +503,13 @@ GLOBAL_VAR_INIT(look_verdicts_save_pending, FALSE)
 		lazy["[path]"] = GLOB.type_look_lazy[path] ? 1 : 0
 	var/temp = "[file].tmp"
 	fdel(temp)
-	text2file(json_encode(list("version" = LOOK_VERDICTS_VERSION, "key" = look_verdicts_key(), "stamp" = stamp, "lazy" = lazy)), temp)
-	if(!look_verdicts_read(temp))
+	var/document = json_encode(list("version" = LOOK_VERDICTS_VERSION, "key" = look_verdicts_key(), "stamp" = stamp, "lazy" = lazy))
+	text2file(document, temp)
+	// Read back and compared with what was written, then checked as JSON: a write cut short fails either test. It is not decoded again (a second
+	// json_decode of the whole document was most of this proc's 60 ms, a hitch in the tick that wrote it).
+	var/written = file2text(temp)
+	// text2file() ends the line, so the file is the document and a newline.
+	if(length(written) < length(document) || copytext(written, 1, length(document) + 1) != document || !rustg_json_is_valid(written))
 		log_world("LOOK VERDICTS: the temporary cache [temp] did not write back; the cache [file] is left as it was")
 		fdel(temp)
 		return FALSE

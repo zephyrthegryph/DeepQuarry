@@ -725,6 +725,7 @@
 #include "interim_smokable_lifecycle.dm"
 #include "interim_storage_lifecycle.dm"
 #include "interim_wrapped_present_lifecycle.dm"
+#include "dq_kernel_ledger_tests.dm"
 #include "dq_kernel_measure_tests.dm"
 #include "dq_e0_proofs_tests.dm"
 #include "dq_e1_declare_tests.dm"

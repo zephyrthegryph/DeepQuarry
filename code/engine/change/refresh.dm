@@ -569,6 +569,7 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 		D.refresh_bits = 0
 		GLOB.refresh_bench_drained++
 		var/attr_start = TICK_USAGE
+		var/draw_ledger = km_ledger_enter(KM_CAT_DRAW, D.type, km_attr_reason(pending | fresh))
 		try
 			refresh_one(D, bits, pending)
 			if(fresh)
@@ -578,6 +579,7 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
 			else
 				dq_report_caught(e, "refresh of [D.type]")
+		km_ledger_leave(draw_ledger)
 		attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)

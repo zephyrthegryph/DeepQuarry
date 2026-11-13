@@ -153,6 +153,8 @@ CAPABILITIES(/datum/controller/kernel)
 		if (!watchdog || (watchdog.processing_interval > 0 && (watchdog.lasttick+(watchdog.processing_interval*5)) < world.time)) // ALLOW(sys_world_time_expiry): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
 			start_watchdog() // (re)start the watchdog
 
+		// The tick ledger's window opens here: everything before the loop resumed this tick is BYOND's (measure/ledger.dm).
+		GLOB.km_ledger.begin(starting_tick_usage)
 		//now do the actual stuff: a laggy map update ahead (skip_ticks) runs only the input phase this tick
 		tick(Kernel.current_ticklimit, init_stage, light = !!Kernel.skip_ticks)
 
@@ -183,7 +185,9 @@ CAPABILITIES(/datum/controller/kernel)
 				Kernel.current_ticklimit -= (TICK_LIMIT_RUNNING * 0.25) //reserve the tail 1/4 of the next tick for the loop if we plan on running next tick
 
 		var/fast_update_start = TICK_USAGE
+		var/fast_update_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", "fast update")
 		Kernel.check_and_perform_fast_update()
+		km_ledger_leave(fast_update_ledger)
 		var/fast_update_ms = TICK_USAGE_TO_MS(fast_update_start)
 		if(fast_update_ms >= KM_SLOW_SPAN_MIN_MS)
 			km_meter().slow.span(KM_SPAN_LOOP, "fast update", fast_update_ms)

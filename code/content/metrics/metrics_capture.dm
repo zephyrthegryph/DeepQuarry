@@ -199,6 +199,9 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 		before = usage
 	pre += before
 	post += after
+	// The tick ledger's outside-the-window record: the time after the kernel's iteration (or the whole tick when it did not close one) and the map send.
+	var/kernel_ran = Kernel?.perf_tick_end_time == world.time
+	GLOB.km_ledger.note_outside(TICK_DELTA_TO_MS(kernel_ran ? after : usage), TICK_DELTA_TO_MS(world.map_cpu), kernel_ran)
 	// Boot (map load, MC init) runs outside the MC loop in ticks hundreds of times over budget: those are
 	// not overruns of a running server, and would crowd every real one out of the first flush.
 	if(Kernel?.init_stage_completed < INITSTAGE_MAX || Kernel.perf_tick_end_time < 0)

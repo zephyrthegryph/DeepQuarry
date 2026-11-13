@@ -1173,10 +1173,12 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 				rec.marked -= def ? def.skey : ct.row_key
 			var/started = stat_charge_begin()
 			var/eval_started = TICK_USAGE
+			var/eval_ledger = km_ledger_enter(KM_CAT_STAT_EVAL, E.type, def ? def.name : "contributes_to")
 			if(ct)
 				stat_ct_update(E, ct)
 			else
 				stat_settle_def(E, def)
+			km_ledger_leave(eval_ledger)
 			KM_SLOW_INNER(eval_started, "stat [E.type] [def ? def.name : "contributes_to"]")
 			.++
 			spent += stat_charge_end(started)

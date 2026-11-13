@@ -11,6 +11,7 @@ import {
   count,
   framePhases,
   histogramPercentile,
+  ledgerRows,
   type McHealthData,
   nativeMemoryByArea,
   nativeWork,
@@ -264,6 +265,79 @@ function Uses({ data }: { data: McHealthData }) {
           {all ? 'Show the top 6' : `Show all ${parts.length}`}
         </button>
       )}
+    </Card>
+  );
+}
+
+/**
+ * Where the kernel iteration went, by kind of work, as the server tick ledger keeps it: every ms belongs to one category (nested work takes its
+ * time out of the work around it), so the rows add up to the iteration and Not attributed is only what no marked region covers. A row opens to its
+ * heaviest names.
+ */
+function Ledger({ data }: { data: McHealthData }) {
+  const ledger = data.ledger;
+  const [expanded, setExpanded] = useState<string | null>(null);
+  if (!ledger)
+    return (
+      <Card id="ledger" title="Where the tick goes">
+        <div className="stat-empty">No ledger yet.</div>
+      </Card>
+    );
+  const rows = ledgerRows(ledger);
+  const biggest = Math.max(...rows.map((row) => row.ms), 0.001);
+  const unknown = rows.find((row) => row.unknown);
+  const budget = data.tick_budget_ms || ledger.budget_ms || 1;
+  return (
+    <Card
+      id="ledger"
+      title="Where the tick goes"
+      summary={`${ledger.window_ema_ms.toFixed(1)} ms of ${budget.toFixed(0)}, ${unknown ? unknown.ms.toFixed(2) : '0'} unattributed`}
+    >
+      {rows.map((row) => {
+        const isOpen = expanded === row.key;
+        return (
+          <div
+            key={row.key}
+            className={row.top.length ? 'mch-row--expandable' : undefined}
+            onClick={() =>
+              row.top.length && setExpanded(isOpen ? null : row.key)
+            }
+          >
+            <div
+              className={`mch-part${row.unknown ? ' mch-part--unknown' : ''}`}
+              title={`${row.label}: ${row.mean.toFixed(2)} ms per tick since boot`}
+            >
+              <div
+                className="mch-part__fill"
+                style={{ width: `${(row.ms / biggest) * 100}%` }}
+              />
+              <span className="mch-part__name">{row.label}</span>
+              <span className="mch-part__ms">{row.ms.toFixed(2)} ms</span>
+            </div>
+            {isOpen &&
+              row.top.map(([source, n, totalMs, maxMs]) => (
+                <div key={source} className="mch-behind" title={source}>
+                  <span>{source}</span>
+                  <span>
+                    {count(n)}x · {totalMs.toFixed(1)} ms · max{' '}
+                    {maxMs.toFixed(1)} ms
+                  </span>
+                </div>
+              ))}
+          </div>
+        );
+      })}
+      <div className="mch-facts">
+        Phases, mean ms per tick:{' '}
+        {ledger.phases
+          .map((phase) => `${phase.phase} ${phase.avg_ms.toFixed(2)}`)
+          .join(', ')}
+      </div>
+      <div className="mch-facts">
+        Bars are the last ~10 seconds; hover a row for its mean since boot (
+        {count(ledger.ticks)} ticks, whole iteration{' '}
+        {ledger.window_avg_ms.toFixed(1)} ms).
+      </div>
     </Card>
   );
 }
@@ -595,6 +669,7 @@ function useSlices(
   }, deps);
 }
 
+const LedgerMemo = memo(Ledger);
 const UsesMemo = memo(Uses);
 const OverrunsMemo = memo(Overruns);
 const MemoryMemo = memo(Memory);
@@ -631,6 +706,7 @@ export function McHealthPanel(props: {
   location?: string;
 }) {
   const { data } = props;
+  const ledger = useSlices(data, ['ledger', 'tick_budget_ms']);
   const uses = useSlices(data, [
     'kernel',
     'attribution',
@@ -651,6 +727,7 @@ export function McHealthPanel(props: {
   const advanced = useSlices(data, ['runtime', 'kernel', 'maptick']);
   if (
     !data ||
+    !ledger ||
     !uses ||
     !overruns ||
     !memory ||
@@ -665,6 +742,7 @@ export function McHealthPanel(props: {
     <div className="mch">
       <PanelFps />
       <Health data={data} />
+      <LedgerMemo data={ledger} />
       <UsesMemo data={uses} />
       <OverrunsMemo data={overruns} />
       <Ticks data={data} />

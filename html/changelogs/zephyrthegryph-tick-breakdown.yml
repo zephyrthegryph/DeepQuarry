@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "The MC Health panel has a new 'Where the tick goes' section: every millisecond of the kernel's iteration belongs to one category (input, kernel walking, system work, timers, stat drain and evaluations, on_change hooks, notices, reactions, redraws, native frame and delivery, lighting, movement, garbage, scheduler passes), with the BYOND time outside it, and each row opens to its heaviest names. What no marked region covers is the one 'Not attributed' row. The Tick Report verb and the PERF_PROFILE log line carry the same table."
+  - code_imp: "Tick ledger (code/world/kernel/measure/ledger.dm): one exclusive timeline per tick, so the categories plus the residual add up to the tick by construction; cumulative totals and a moving average, no string built per region."
+  - bugfix: "Calm AI mobs that no player can see wake their action loop a third as often; those loops were the largest chronic cost inside sched_core."
+  - bugfix: "Saving the look verdict cache checks the file it wrote without decoding the whole document a second time, about a fifth faster per write."

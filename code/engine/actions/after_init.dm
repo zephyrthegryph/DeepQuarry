@@ -77,10 +77,14 @@
 	if(!isnull(C.owner))
 		T.cap = table_of(holder).caps?[C.owner]
 	var/depth = GLOB.act_depth
+	// Inside a timer callback the timer's own bracket already charges it (timers.dm); a fire made at once charges itself.
+	var/after_init_ledger = isnull(attr_start) ? null : km_ledger_enter(KM_CAT_TIMER, holder.type, E)
 	try
 		hook_run_parts(null, T, E.children)
 	catch(var/exception/fault)
 		dq_report_caught(fault, "after_init() on [holder.type]")
+	if(!isnull(after_init_ledger))
+		km_ledger_leave(after_init_ledger)
 	GLOB.act_depth = depth
 	T.release()
 	if(!isnull(attr_start))
