@@ -1619,3 +1619,39 @@
 	TEST_ASSERT_EQUAL(client_darksight_brightness(T), drawn, "under client lighting the drawn light decides, not the gameplay level ([T.get_lumcount()])")
 	log_test("CLIENT DARKSIGHT: drawn [drawn] against gameplay level [T.get_lumcount()]")
 	client_lighting_set(FALSE)
+
+/// Night vision is none for a mob with no darksight, grows with see_in_dark, reaches no further than the view, adds at most DARKSIGHT_MAX_ALPHA and
+/// fades out as the floor gets lighter.
+/datum/unit_test/dq_darksight_night_vision_curve
+
+/datum/unit_test/dq_darksight_night_vision_curve/Run()
+	TEST_ASSERT_EQUAL(darksight_alpha(0, 1), 0, "no darksight, no night vision")
+	TEST_ASSERT_EQUAL(darksight_alpha(DARKSIGHT_MIN_SIGHT, 1), 0, "the human default of 2 gets none")
+	var/weak = darksight_alpha(4, 1)
+	var/strong = darksight_alpha(7, 1)
+	TEST_ASSERT(weak > 0 && strong > weak, "more see_in_dark is stronger ([weak] < [strong])")
+	TEST_ASSERT(darksight_alpha(DARKSIGHT_FULL_SIGHT, 1) <= DARKSIGHT_MAX_ALPHA, "never over the cap")
+	TEST_ASSERT_EQUAL(darksight_alpha(25, 1), DARKSIGHT_MAX_ALPHA, "a hyena's 25 is capped at full")
+	TEST_ASSERT(DARKSIGHT_MAX_ALPHA <= 0.4, "dim: at most about 40%")
+	TEST_ASSERT_EQUAL(darksight_alpha(8, 0), 0, "none in a lit area")
+	TEST_ASSERT(darksight_alpha(8, 0.5) < darksight_alpha(8, 1), "it eases in with the dark")
+	TEST_ASSERT_EQUAL(darksight_view_radius("15x15"), 7.5, "a text view is read as its half width")
+	TEST_ASSERT_EQUAL(darksight_view_radius(7), 7.5, "a number view is a radius around the player")
+	TEST_ASSERT(darksight_scale(4, 7.5) < darksight_scale(8, 7.5), "more sight, a wider disc")
+	TEST_ASSERT_EQUAL(darksight_scale(25, 7.5), 1, "the disc stops at the view")
+	TEST_ASSERT_EQUAL(darksight_radius(25, 7.5), 7.5, "never past the view")
+	TEST_ASSERT(darksight_scale(5, 15) > darksight_scale(5, 7.5) || darksight_scale(5, 15) == darksight_scale(5, 7.5), "a bigger view never narrows it")
+
+/// The overlay icon is a flat disc: no hot spot at the centre, and its tint is a grey rather than white.
+/datum/unit_test/dq_darksight_overlay_is_flat_and_grey
+
+/datum/unit_test/dq_darksight_overlay_is_flat_and_grey/Run()
+	var/list/tint = rgb2num(DARKSIGHT_TINT)
+	TEST_ASSERT(max(tint[1], tint[2], tint[3]) - min(tint[1], tint[2], tint[3]) <= 40, "the tint is desaturated")
+	TEST_ASSERT(min(tint[1], tint[2], tint[3]) >= 100, "and not dark")
+	var/icon/I = icon('icons/mob/darksight.dmi')
+	TEST_ASSERT_EQUAL(I.Width(), 480, "the icon is 15 tiles wide")
+	var/centre = I.GetPixel(240, 240)
+	var/near = I.GetPixel(240, 240 + 100)
+	TEST_ASSERT_EQUAL(centre, near, "a flat centre: no peak at the player's own tile")
+	TEST_ASSERT(isnull(I.GetPixel(2, 2)) || I.GetPixel(2, 2) != centre, "the corner fades out")
