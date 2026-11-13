@@ -2451,6 +2451,48 @@ impl OriginalBodyTokens<'_>{
   self.original_case_block_cursor_using(after,OriginalCaseContinuation::StatementTerminator,checkpoint)?
    .ok_or_else(||E::from("do-while owned statement terminator unavailable"))
  }
+ // These loans reuse the actual owner, native expression and typed Colon
+ // facts. Unknown label names remain grammar; no resolver/label cache exists.
+ pub(crate) fn label_head_using(&self,head:Span,name:Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+  a.checkpoint()?;
+  let Some(facts)=self.owner.original_literal_facts()?else{return Ok(false)};
+  if !facts.admitted_by(a){return Err(std::io::ErrorKind::InvalidInput.into())}
+  let Ok(tokens)=self.tokens(head)else{return Ok(false)};
+  let mut stage=0;let mut colon=None;
+  for(kind,at,text)in tokens{a.checkpoint()?;match(kind,text,stage){
+   (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_,_)=>(),
+   (TokenKind::Ident,_,0)if at==name&&at.start==head.start=>{stage=1;},
+   (TokenKind::Punctuation,":",1)if at.end==head.end=>{colon=Some(at);stage=2;},
+   _=>return Ok(false),
+  }}
+  let Some(colon)=colon else{return Ok(false)};
+  if stage!=2{return Ok(false)}
+  let(rows,origin)=facts.raw_colons();
+  let shift=|point:usize|point.checked_sub(self.offset).and_then(|n|n.checked_add(origin)).ok_or(std::io::ErrorKind::InvalidInput);
+  let at=Span::new(shift(colon.start)?,shift(colon.end)?);
+  let position=rows.partition_point(|(span,_)|span.start<at.start);
+  if rows.get(position)!=Some((at,false)){return Ok(false)}
+  Ok(true)
+ }
+ pub(crate) fn named_loop_control_using(&self,head:Span,keyword:&'static str,name:Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+  a.checkpoint()?;
+  if !matches!(keyword,"break"|"continue")||head.end!=name.end{return Ok(false)}
+  let Some(facts)=self.owner.original_literal_facts()?else{return Ok(false)};
+  if !facts.admitted_by(a){return Err(std::io::ErrorKind::InvalidInput.into())}
+  let Ok(tokens)=self.tokens(head)else{return Ok(false)};let mut stage=0;
+  for(kind,at,text)in tokens{a.checkpoint()?;match(kind,text,stage){
+   (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_,_)=>(),
+   (TokenKind::Ident,actual,0)if actual==keyword&&at.start==head.start=>stage=1,
+   (TokenKind::Ident,_,1)if at==name=>stage=2,
+   _=>return Ok(false),
+  }}
+  if stage!=2{return Ok(false)}
+  let after=head.end.checked_sub(self.offset).ok_or(std::io::ErrorKind::InvalidInput)?;
+  let mut poll=||a.checkpoint().map_err(|actual|{a.record_operational_error(actual);"named control actual terminator walk stopped"});
+  let result=self.original_case_block_cursor_using(after,OriginalCaseContinuation::StatementTerminator,&mut poll);
+  if let Some(error)=a.take_operational_error(){return Err(error)}
+  Ok(matches!(result,Ok(Some(_))))
+ }
  pub(crate) fn switch_case_cursor_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<dm_syntax::OriginalCaseCursor,E>{
   checkpoint()?;let start=header.start.checked_sub(self.offset).ok_or("case header before current source")?;let end=header.end.checked_sub(self.offset).ok_or("case header end before current source")?;let case_end=case.end.checked_sub(self.offset).ok_or("case body before current source")?;if start<self.body.start||start>=end||end>case_end||case_end>self.body.end||case_end>self.owner.source.len(){return Err("case cursor escapes original body/header".into())}
   let tokens=self.owner.tokens.window();let source=self.owner.source.as_str();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
@@ -2666,5 +2708,19 @@ mod original_do_while_terminator_cursor_tests{
     let physical=Span::new(at.start-offset,at.end-offset);assert_eq!(&source[physical.range()],"\n");assert!(physical.start>=case.header_span.end);assert!(physical.end<=ast.items[1].header_span.start);
    }
   }
+ }
+}
+
+#[cfg(test)]mod original_label_token_loan_controls{
+ use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]fn compatibility_label_owner_has_no_colon_receipt_and_first_actual_poll_error_survives(){
+  let source="/proc/probe()\n    outer:\n        continue outer\n";let syntax=dm_syntax::parse(source);let procedure=&syntax.items[0];
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&syntax.items,0,syntax.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();
+  let label=&procedure.children[0];let flow=&label.children[0];let name_start=source.find("outer:").unwrap();let name=Span::new(name_start,name_start+5);let target_start=source.rfind("outer").unwrap();let target=Span::new(target_start,target_start+5);
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let tokens=owner.body_tokens(procedure.span,0).unwrap();
+  assert!(!tokens.label_head_using(label.header_span,name,&a).unwrap());assert!(!tokens.named_loop_control_using(flow.header_span,"continue",target,&a).unwrap());
+  let polls=AtomicUsize::new(0);let stop=||{polls.fetch_add(1,Ordering::Relaxed);Err(std::io::Error::from_raw_os_error(1450))};
+  let a=dm_syntax::SettingAdmission::new(&used,1<<20,&stop);let status=tokens.label_head_using(label.header_span,name,&a).unwrap_err();assert_eq!(a.take_operational_error().unwrap_or(status).raw_os_error(),Some(1450));assert_eq!(polls.load(Ordering::Relaxed),1);
+  let _=a.take_operational_error();assert_eq!(used.load(Ordering::Acquire),root);
  }
 }

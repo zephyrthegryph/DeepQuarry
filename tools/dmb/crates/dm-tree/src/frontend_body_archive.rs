@@ -1255,6 +1255,8 @@ fn parse_statements_admitted(
                 match (index, kind, spelling) {
                     (_, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
                     (0, TokenKind::Ident, "var") | (1, TokenKind::Operator | TokenKind::Punctuation, "/") => index += 1,
+                    // Existing bare binding, not a declaration or an assignment.
+                    (0, TokenKind::Ident, _) if !initialized && span == name => index = 3,
                     (3, TokenKind::Ident, "in") if !initialized => index += 1,
                     (3, TokenKind::Operator | TokenKind::Punctuation, "=") if initialized => index += 1,
                     (2, TokenKind::Ident, _) if span == name => index += 1,
@@ -1539,7 +1541,7 @@ fn parse_statements_admitted(
         )->std::io::Result<bool>{
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            if prefix.end>=suffix.start{return Ok(false)}
+            if prefix.end>suffix.start{return Ok(false)}
             let owner=self.syntax.original_body_tokens(self.body,self.code)
                 .map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
             let(Ok(prefix),Ok(suffix))=(owner.tokens(prefix),owner.tokens(suffix))else{return Ok(false)};
@@ -1548,10 +1550,11 @@ fn parse_statements_admitted(
                 self.admission.checkpoint()?;
                 match(kind,text,index){
                     (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_,_)=>(),
-                    (TokenKind::Ident,"var",0)|(TokenKind::Ident,"list",2)
+                    (TokenKind::Ident,"var",0)
                         |(TokenKind::Operator|TokenKind::Punctuation,"/",1|3)
                         |(TokenKind::Punctuation,"[",5)=>index+=1,
-                    (TokenKind::Ident,_,4)if at==name=>index+=1,
+                    (TokenKind::Ident,_,2|4)if at==name=>index=5,
+                    (TokenKind::Ident,"list",2)=>index=3,
                     _=>return Ok(false),
                 }
             }
@@ -1613,6 +1616,18 @@ fn parse_statements_admitted(
                 && !matches!(name, "static" | "global" | "const" | "tmp" | "final"
                     | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__" | "null")
                 && actual.next().is_none())
+        }
+        fn original_label_head(&self,head:dm_syntax::Span,name:dm_syntax::Span)->std::io::Result<bool>{
+            self.admission.checkpoint()?;
+            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+                .map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            tokens.label_head_using(head,name,self.admission)
+        }
+        fn original_named_loop_control(&self,head:dm_syntax::Span,keyword:&'static str,name:dm_syntax::Span)->std::io::Result<bool>{
+            self.admission.checkpoint()?;
+            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+                .map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            tokens.named_loop_control_using(head,keyword,name,self.admission)
         }
         fn original_bare_loop_control(&self, header: dm_syntax::Span, keyword: &'static str) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;

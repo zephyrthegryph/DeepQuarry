@@ -1631,6 +1631,25 @@ fn original_positional_statement_call(expr:&Expr,tokens:&[Token])->bool{
     })
 }
 
+// Closed ordinary-dot follower chain. Every node and each actual field token
+// keeps its consumed span. This supplies no call/safe/colon/grouped lvalue.
+fn original_plain_member_chain(expr:&Expr,tokens:&[Token],mut depth:usize)->bool{
+    let mut value=expr;let mut actual=tokens;
+    while let ExprKind::Member{object,selector,via_colon:false}=&value.kind{
+        let Some(next)=depth.checked_sub(1)else{return false};depth=next;
+        let [receiver@..,dot,member]=actual else{return false};let(Some(first),Some(last))=(receiver.first(),receiver.last())else{return false};
+        if dot.kind!=TokenKind::Punctuation||dot.text!="."||member.kind!=TokenKind::Ident
+            ||dot.span.end.checked_sub(dot.span.start)!=Some(1)||dot.span.start<last.span.end||dot.span.end>member.span.start
+            ||member.span.end.checked_sub(member.span.start)!=Some(selector.len())
+            ||member.text!=*selector||!original_ascii_identifier(selector)
+            ||value.span!=Span::new(first.span.start,member.span.end)
+            ||object.span!=Span::new(first.span.start,last.span.end){return false}
+        value=object;actual=receiver;
+    }
+    matches!((&value.kind,actual),(ExprKind::Ident(name),[only])
+        if original_ordinary_call_name(name)&&simple_term(value,only))
+}
+
 fn original_assignment_receiver(expr: &Expr, tokens: &[Token]) -> bool {
     match tokens {
         [name] => matches!(&expr.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
@@ -1659,7 +1678,9 @@ fn original_assignment_target(expr: &Expr, tokens: &[Token], original_profile: b
             && simple_term(expr, only)) {
         return true;
     }
-    if original_assignment_receiver(expr, tokens) {
+    if original_assignment_receiver(expr, tokens)
+        || (original_profile&&matches!(&expr.kind,ExprKind::Member{via_colon:false,..})
+            &&original_plain_member_chain(expr,tokens,32)) {
         return true;
     }
     let ExprKind::Index { object, index } = &expr.kind else { return false; };
@@ -1704,6 +1725,25 @@ fn original_index_write_target(expr: &Expr, tokens: &[Token], augmented: bool) -
     plain_index(object, receiver) && plain_index(index, key)
 }
 
+fn original_augmented_rhs_value(expr:&Expr,tokens:&[Token],depth:usize)->bool{
+    let Some(depth)=depth.checked_sub(1)else{return false};
+    if original_conditional_child(expr,tokens,true,depth)||original_postfix_call_argument(expr,tokens){return true}
+    let(Some(first),Some(last))=(tokens.first(),tokens.last())else{return false};
+    if expr.span!=Span::new(first.span.start,last.span.end){return false}
+    match &expr.kind{
+        ExprKind::Group(inner)=>{let[open,body@..,close]=tokens else{return false};
+            open.kind==TokenKind::Punctuation&&open.text=="("&&close.kind==TokenKind::Punctuation&&close.text==")"
+                &&original_augmented_rhs_value(inner,body,depth)},
+        ExprKind::Binary{op,lhs,rhs}=>{let Some(binding)=original_binary_binding(op)else{return false};
+            let split=tokens.partition_point(|token|token.span.end<=lhs.span.end);let(left,tail)=tokens.split_at(split);let Some((operator,right))=tail.split_first()else{return false};
+            let binding_ok=|child:&Expr,minimum|match &child.kind{ExprKind::Binary{op,..}=>original_binary_binding(op).is_some_and(|at|at>=minimum),_=>true};
+            matches!(operator.kind,TokenKind::Punctuation|TokenKind::Operator)&&operator.text==*op
+                &&binding_ok(lhs,binding)&&binding_ok(rhs,binding+1)
+                &&original_augmented_rhs_value(lhs,left,depth)&&original_augmented_rhs_value(rhs,right,depth)},
+        _=>false,
+    }
+}
+
 fn original_simple_assignment(expr: &Expr, tokens: &[Token], original_profile: bool) -> bool {
     let ExprKind::Binary { op, lhs, rhs } = &expr.kind else { return false; };
     let target_end = tokens.partition_point(|token| token.span.end <= lhs.span.end);
@@ -1711,6 +1751,7 @@ fn original_simple_assignment(expr: &Expr, tokens: &[Token], original_profile: b
     let [assignment, value @ ..] = tail else { return false; };
     let Some(first) = target.first() else { return false; };
     let plain = target.len() == 1;
+    let member_write=original_profile&&matches!(&lhs.kind,ExprKind::Member{via_colon:false,..});
     let indexed_write = original_profile && matches!(op.as_str(), "=" | "+=")
         && matches!(&rhs.kind, ExprKind::Index { object, index }
             if original_plain_index(rhs, object, index, value, 32))
@@ -1720,7 +1761,7 @@ fn original_simple_assignment(expr: &Expr, tokens: &[Token], original_profile: b
             && dot.text == "." && dot.span == lhs.span)
         && matches!(&lhs.kind, ExprKind::Ident(name) if name == ".");
     if !(matches!(op.as_str(), "=" | "+=" | "-=" | "*=" | "/=")
-        || (plain && matches!(op.as_str(), "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=")))
+        || ((plain||member_write) && matches!(op.as_str(), "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=")))
         || !matches!(assignment.kind, TokenKind::Punctuation | TokenKind::Operator)
         || assignment.text.as_str() != op.as_str()
         || (!return_slot && !indexed_write && !original_assignment_target(lhs, target, original_profile, op == "="))
@@ -1755,19 +1796,19 @@ fn original_simple_assignment(expr: &Expr, tokens: &[Token], original_profile: b
     if original_profile && matches!(op.as_str(), "=" | "+=")
         && matches!(&lhs.kind, ExprKind::Index { .. })
     {
-        return original_conditional_child(rhs, value, true, 32);
+        return original_conditional_child(rhs, value, true, 32)
+            ||(op=="="&&original_plain_assignment(rhs,value));
     }
     // Statement root only: the preceding SAME target proof already admits
     // exactly one ordinary dot field. Reuse the actual RHS composition;
     // do not turn the assignment into a Complete read/value expression.
-    if original_profile && matches!(op.as_str(), "=" | "+=" | "-=" | "*=" | "/=")
-        && matches!(&lhs.kind, ExprKind::Member { via_colon: false, .. }) {
+    if member_write && matches!(op.as_str(), "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=") {
         return original_conditional_child(rhs, value, true, 32);
     }
     if original_profile && plain && matches!(op.as_str(), "+=" | "-=" | "*=" | "/=" | "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=")
         && matches!(&lhs.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
     {
-        return original_conditional_child(rhs, value, true, 32);
+        return original_augmented_rhs_value(rhs, value, 32);
     }
     if original_profile && op == "=" && matches!(&lhs.kind, ExprKind::Index { .. })
         && matches!(&rhs.kind, ExprKind::Index { .. })
@@ -1935,7 +1976,7 @@ fn original_plain_membership(expr: &Expr, tokens: &[Token]) -> bool {
     let ExprKind::Binary { op, lhs, rhs } = &expr.kind else { return false; };
     let at = tokens.partition_point(|token| token.span.end <= lhs.span.end);
     let (left, tail) = tokens.split_at(at);
-    let [operator, right] = tail else { return false; };
+    let [operator, right@..] = tail else { return false; };
     let Some(first) = left.first() else { return false; };
     let term = |value: &Expr, token: &Token| {
         matches!(&value.kind, ExprKind::Ident(name)
@@ -1950,8 +1991,9 @@ fn original_plain_membership(expr: &Expr, tokens: &[Token]) -> bool {
         _ => false,
     };
     op == "in" && operator.kind == TokenKind::Ident && operator.text == "in"
-        && expr.span == Span::new(first.span.start, right.span.end)
-        && receiver && term(rhs, right)
+        &&right.last().is_some_and(|last|expr.span==Span::new(first.span.start,last.span.end))
+        &&receiver&&(matches!(right,[only]if term(rhs,only))
+            ||(matches!(&rhs.kind,ExprKind::Member{via_colon:false,..})&&original_plain_member_chain(rhs,right,32)))
 }
 
 // Pinned NewImplicit with absent arguments. The actual term parser already
@@ -1968,6 +2010,13 @@ fn original_bare_new(expr: &Expr, tokens: &[Token]) -> bool {
 // Pinned NewMiniExpr: a direct ordinary runtime target, explicitly empty
 // argument list. This is not NewImplicit and must not issue an implicit hint.
 fn original_direct_dynamic_new(expr: &Expr, tokens: &[Token]) -> bool {
+    if let [keyword,target]=tokens{
+        return keyword.kind==TokenKind::Ident&&keyword.text=="new"
+            &&matches!(&expr.kind,ExprKind::Unary{op,value}if op=="new"
+                &&matches!(&value.kind,ExprKind::Ident(name)if original_ordinary_call_name(name)
+                    &&!matches!(name.as_str(),"null"|"__PROC__"|"__TYPE__"|"__IMPLIED_TYPE__"))
+                &&simple_term(value,target)&&expr.span==Span::new(keyword.span.start,target.span.end))
+    }
     let [keyword, target, open, close] = tokens else { return false; };
     let ExprKind::Unary { op, value } = &expr.kind else { return false; };
     let ExprKind::Call { callee, args } = &value.kind else { return false; };
@@ -2158,6 +2207,13 @@ fn original_postfix_call_argument(expr: &Expr, tokens: &[Token]) -> bool {
 }
 
 
+// Exact implicit return-slot scalar DATA, shared with its standalone Original
+// receipt. Positional argument use does not make Dot an ordinary name/callee.
+fn original_return_slot_read(expr: &Expr, tokens: &[Token]) -> bool {
+    matches!((&expr.kind,tokens),(ExprKind::Ident(name),[dot])
+        if name=="."&&dot.kind==TokenKind::Punctuation&&dot.text=="."&&dot.span==expr.span)
+}
+
 fn original_return_slot_index(expr: &Expr, tokens: &[Token]) -> bool {
     let [dot, open, key, close] = tokens else { return false; };
     let ExprKind::Index { object, index } = &expr.kind else { return false; };
@@ -2165,8 +2221,11 @@ fn original_return_slot_index(expr: &Expr, tokens: &[Token]) -> bool {
         && dot.kind == TokenKind::Punctuation && dot.text == "."
         && open.kind == TokenKind::Punctuation && open.text == "["
         && close.kind == TokenKind::Punctuation && close.text == "]"
-        && matches!(&index.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
-        && simple_term(index, key)
+        &&(matches!(&index.kind,ExprKind::Ident(name)if original_ordinary_call_name(name))
+            ||matches!(&index.kind,ExprKind::Literal(value)if matches!(value.original_value(),Some(crate::OriginalTokenValue::String(_)))))
+        &&(simple_term(index,key)||(key.kind==TokenKind::String&&key.span==index.span
+            &&matches!(&index.kind,ExprKind::Literal(value)if value.as_str()==key.text
+                &&matches!(value.original_value(),Some(crate::OriginalTokenValue::String(_))))))
         && expr.span == Span::new(dot.span.start, close.span.end)
 }
 
@@ -2285,7 +2344,8 @@ fn original_composed_expression(
                     | ExprKind::SafeMember { via_colon: false, .. })
                 || (separator == "." && matches!(&object.kind, ExprKind::Call { callee, args }
                     if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(_)
-                        | ExprKind::Member { via_colon: false, .. })));
+                        | ExprKind::Member { via_colon: false, .. })))
+                ||matches!(&object.kind,ExprKind::Group(inner)if matches!(&inner.kind,ExprKind::Ident(_)));
             ordinary_receiver
                 && original_conditional_child(object, receiver, false, depth)
                 && matches!(tail, [dot, name] if punctuation(dot, separator) && name.kind == TokenKind::Ident
@@ -2392,7 +2452,8 @@ fn original_composed_expression(
                         _ => false,
                     };
                     let post_argument = postfix && original_postfix_call_argument(argument, run);
-                    if !keyword && !post_argument && !original_conditional_child(argument, run, true, depth) { return false; }
+                    if !keyword && !post_argument && !original_return_slot_read(argument, run)
+                        && !original_conditional_child(argument, run, true, depth) { return false; }
                     remaining = rest;
                 }
                 // Pinned separated() consumes a trailing comma without
@@ -2443,15 +2504,23 @@ fn original_composed_expression(
                 return matches!(args.len(), 1 | 3) && matches!(head, [name] if simple_term(callee, name))
                     && arguments_match(args, body, false, false, false);
             }
-            // Pinned pick has its own choice grammar. Its actual parser and
-            // resource admission already bound this arm Vec; do not add a new
-            // arbitrary width ceiling. Weights/assignment arms remain unissued.
-            if matches!(&callee.kind, ExprKind::Ident(name) if name == "pick") {
-                return !args.is_empty()
-                    && args.iter().all(|argument| !matches!(&argument.kind,
-                        ExprKind::Binary { op, .. } if matches!(op.as_str(), ";" | "=")))
-                    && matches!(head, [keyword] if simple_term(callee, keyword))
-                    && arguments_match(args, body, false, false, false);
+            // Pick's existing primary AST owns each optional weight/value.
+            // Recheck only actual comma/semicolon runs and independent children.
+            if matches!(&callee.kind,ExprKind::Ident(name)if name=="pick"){
+                if args.is_empty()||!matches!(head,[keyword]if simple_term(callee,keyword)){return false}
+                let mut remaining=body;
+                for(index,argument)in args.iter().enumerate(){
+                    if index!=0{let Some((comma,rest))=remaining.split_first()else{return false};if !punctuation(comma,","){return false}remaining=rest;}
+                    let(run,rest)=child_prefix(argument,remaining);
+                    let valid=if let ExprKind::Binary{op,lhs,rhs}=&argument.kind{if op==";"{
+                        let(weight,tail)=child_prefix(lhs,run);
+                        tail.split_first().is_some_and(|(semicolon,value)|punctuation(semicolon,";")
+                            &&argument.span==Span::new(lhs.span.start,rhs.span.end)
+                            &&original_conditional_child(lhs,weight,true,depth)&&original_conditional_child(rhs,value,true,depth))
+                    }else{original_conditional_child(argument,run,true,depth)}}else{original_conditional_child(argument,run,true,depth)};
+                    if !valid{return false}remaining=rest;
+                }
+                return remaining.is_empty()||matches!(remaining,[comma]if punctuation(comma,","));
             }
             // Pinned NewImplicit has a separate parenthesized argument list.
             // Require exact positional children and both delimiters.
@@ -2521,8 +2590,8 @@ fn original_composed_expression(
     }
 }
 
-// Statement-only prefix updates. Do not pass these kinds to read/callee or
-// shared lvalue proofs; C-for retains its separate exact step production.
+// Exact root prefix-statement receipt, also inspected by the separate bare
+// updated read-key role. No generic scalar/callee or shared lvalue admission.
 fn original_prefix_update(expr: &Expr, tokens: &[Token]) -> Option<OriginalSimpleKind> {
     let [operator, target] = tokens else { return None; };
     let ExprKind::Unary { op, value } = &expr.kind else { return None; };
@@ -2570,7 +2639,7 @@ fn original_post_update(expr: &Expr, tokens: &[Token]) -> Option<OriginalSimpleK
     }
 }
 
-/// A read's key may be the pinned postfix update of one ordinary name. This
+/// A read's key may be the pinned pre/post update of one ordinary name. This
 /// deliberately stays outside original_plain_index, also used for write targets.
 fn original_updated_key_index(expr: &Expr, object: &Expr, index: &Expr, tokens: &[Token]) -> bool {
     let receiver_end = tokens.partition_point(|token| token.span.end <= object.span.end);
@@ -2580,7 +2649,7 @@ fn original_updated_key_index(expr: &Expr, object: &Expr, index: &Expr, tokens: 
     let ExprKind::Unary { value, .. } = &index.kind else { return false; };
     original_assignment_receiver(object, receiver)
         && matches!(&value.kind, ExprKind::Ident(_))
-        && original_post_update(index, key).is_some()
+        && (original_post_update(index, key).is_some() || original_prefix_update(index, key).is_some())
         && matches!(open.kind, TokenKind::Punctuation | TokenKind::Operator) && open.text == "["
         && matches!(close.kind, TokenKind::Punctuation | TokenKind::Operator) && close.text == "]"
         && expr.span == Span::new(first.span.start, close.span.end)
@@ -2696,8 +2765,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
          || original_updated_key_index(expr, object, index, tokens)
          || original_nested_ordinary_read_index(expr, tokens, 32)
          || original_offset_read_index(expr, tokens));
- let return_slot = original_profile && matches!((&expr.kind, tokens), (ExprKind::Ident(name), [dot])
-     if name == "." && dot.kind == TokenKind::Punctuation && dot.text == "." && dot.span == expr.span);
+ let return_slot = original_profile && original_return_slot_read(expr,tokens);
  let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||read_index||dot_index||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile)||(original_profile&&(original_grouped_field_assignment(expr,tokens)||original_grouped_name_add_assignment(expr,tokens)||original_return_slot_index_assignment(expr,tokens))){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile&&original_indexed_update_statement(expr,tokens){OriginalSimpleKind::IndexedUpdateStatement}else if original_profile{original_post_update(expr,tokens).or_else(||original_prefix_update(expr,tokens))?}else{return None};
  Some(OriginalSimpleExpression{kind,span:expr.span,operator:None,original_profile})
 }
@@ -3342,7 +3410,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          ("object . nested . len --", None),
          ("object ( ) . len --", None),
          ("L [ i ] --", Some(IndexedUpdateStatement)),
-         ("L [ ++ Li ]", None),
+         ("L [ ++ Li ]", Some(Complete)),
          ("L [ object . Li ++ ]", None),
          ("L [ R [ Li ] ++ ]", None),
          ("L [ Li ++ ] = value", None),
@@ -3502,7 +3570,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
      for (source, expected) in [
          ("new path ( )", Some(OriginalSimpleKind::Complete)),
          ("L += new path ( )", Some(OriginalSimpleKind::SimpleAssignmentStatement)),
-         ("new path", None),
+         ("new path", Some(OriginalSimpleKind::Complete)),
          ("new path ( value )", None),
          ("new object . type ( )", None),
          ("new object : type ( )", None),
@@ -3913,10 +3981,10 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
    ("r ^= choose ( value )",Some(SimpleAssignmentStatement)),
    ("consume ( r |= r << 4 )",None),
    ("consume ( owner . count += 1 * 2 )",None),
-   ("owner . nested . count += 1 * 2",None),
-   ("owner . count += 1 *",None),("owner . count %= a + b",None),
+   ("owner . nested . count += 1 * 2",Some(SimpleAssignmentStatement)),
+   ("owner . count += 1 *",None),("owner . count %= a + b",Some(SimpleAssignmentStatement)),
    ("! .",Some(Complete)),("! ! .",Some(Complete)),
-   ("- .",None),("consume ( . )",None),(". field",None),
+   ("- .",None),("consume ( . )",Some(Complete)),(". field",None),
   ]{
    let rows:Vec<_>=source.split_whitespace().map(|text|{
     let kind=if original_ascii_identifier(text){TokenKind::Ident}else if original_decimal(text){TokenKind::Number}
@@ -3986,6 +4054,85 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
      }
  }
 
+ struct ExpandedFeed(ScalarMembershipFeed);
+ impl NativeExpressionTokenDemand for ExpandedFeed{
+  fn next_token(&mut self)->std::io::Result<Option<Token>>{self.0.next_token()}
+  fn original_value(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{let(t,_)=self.0.0.rows.get(o.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;if t.span!=o.span(){return Err(std::io::ErrorKind::InvalidInput.into())}
+   if t.kind==TokenKind::String{let raw=t.text.strip_prefix('"').and_then(|v|v.strip_suffix('"')).ok_or(std::io::ErrorKind::InvalidInput)?;if raw.contains(['\\','[',']']){return Err(std::io::ErrorKind::InvalidInput.into())}return Ok(Some(crate::OriginalTokenValue::String(raw)))}self.0.original_value(o)}
+  fn original_close_colon(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<bool>>{self.0.original_close_colon(o)}
+  fn requires_original_values(&self)->bool{true}
+ }
+ fn expanded_feed(source:&str)->ExpandedFeed{let rows:Vec<_>=source.split_whitespace().map(|text|{let kind=if text.starts_with('"')&&text.ends_with('"'){TokenKind::String}else if original_decimal(text){TokenKind::Number}else if original_ascii_identifier(text){TokenKind::Ident}else{crate::original_scalar_transport::original_punctuation_native_kind(text)};(kind,text,(text==":").then_some(false))}).collect();ExpandedFeed(ScalarMembershipFeed(Feed::new(&rows)))}
+ fn expanded_expect(source:&str,expected:Option<OriginalSimpleKind>){let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut feed=expanded_feed(source);let output=parse_original_expression_demanded(&mut feed,&a).unwrap_or_else(|e|panic!("{source}: {e}"));assert_eq!(output.parsed().original_simple_expression.map(|p|{assert!(p.is_original());p.kind()}),expected,"{source}");if expected.is_some(){assert!(output.parsed().diagnostics.is_empty(),"{source}");}drop(output);assert_eq!(used.load(Ordering::Acquire),root);}
+ #[test]fn actual_original_plain_member_chains_and_grouped_reads_keep_exact_native_extents(){use OriginalSimpleKind::{Complete,SimpleAssignmentStatement};
+  for(source,wanted)in[("GLOB . dview_mob . loc = center",Some(SimpleAssignmentStatement)),("GLOB . holder . current . loc",Some(Complete)),("GLOB . holder . current . loc = value",Some(SimpleAssignmentStatement)),("img . appearance_flags |= 512",Some(SimpleAssignmentStatement)),("obj . state &= mask",Some(SimpleAssignmentStatement)),("( center ) . x - dist",Some(Complete)),("block ( ( center ) . x - dist , ( center ) . z )",Some(Complete)),("GLOB . holder ?. loc = value",None),("GLOB . holder : loc = value",None),("GLOB . holder ( ) . loc = value",None),("GLOB . holder . loc = target = value",None)]{expanded_expect(source,wanted);}
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut feed=expanded_feed("GLOB . dview_mob . loc = center");let mut output=parse_original_expression_demanded(&mut feed,&a).unwrap();let root=output.parsed.expr.as_mut().unwrap();assert!(original_simple_assignment(root,&output.tokens,true));let dot=output.tokens.iter().position(|t|t.text==".").unwrap();output.tokens[dot].kind=TokenKind::Ident;assert!(!original_simple_assignment(root,&output.tokens,true));output.tokens[dot].kind=TokenKind::Punctuation;let span=output.tokens[dot].span;output.tokens[dot].span.end+=1;assert!(!original_simple_assignment(root,&output.tokens,true));output.tokens[dot].span=span;
+ }
+ #[test]fn actual_original_compound_rhs_post_updates_are_contextual_not_general_values(){use OriginalSimpleKind::SimpleAssignmentStatement;
+  for(source,wanted)in[("p += 4 * x ++ + 6",Some(SimpleAssignmentStatement)),("p -= ( x -- + 6 )",Some(SimpleAssignmentStatement)),("p |= x ++ << 4",Some(SimpleAssignmentStatement)),("p = x ++",None),("consume ( p += x ++ )",None),("p += other = x ++",None),("p += 4 * owner . x ++ + 6",None),("p += 4 * L [ x ] ++ + 6",None),("p += 4 * + + x + 6",None)]{expanded_expect(source,wanted);}
+ }
+ #[test]fn actual_original_pick_weights_and_trailing_comma_keep_actual_arg_roster(){use OriginalSimpleKind::Complete;
+  for(source,wanted)in[("pick ( 100 ; 1 , 90 ; 3 , 85 ; 4 )",Some(Complete)),("pick ( 100 ; 31 , 25 ; 30 , 5 ; 9 , )",Some(Complete)),("pick ( 1 , 2 , )",Some(Complete)),("pick ( weight ; value )",Some(Complete)),("pick ( , 1 )",None),("pick ( 1 , , 2 )",None),("pick ( weight ; )",None),("pick ( weight ; value = other )",None),("pick ( key = value )",None)]{expanded_expect(source,wanted);}
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut feed=expanded_feed("pick ( 100 ; 1 , 90 ; 3 , )");let mut output=parse_original_expression_demanded(&mut feed,&a).unwrap();let root=output.parsed.expr.as_mut().unwrap();let form=crate::native_special_forms::pick(root).unwrap();assert_eq!(form.choices().filter(|v|v.weight.is_some()).count(),2);let semicolon=output.tokens.iter().position(|t|t.text==";").unwrap();output.tokens[semicolon].text=",".into();assert!(!original_composed_expression(root,&output.tokens,true,32,false));
+ }
+ #[test]fn actual_original_member_membership_and_bare_dynamic_new_remain_closed_roles(){use OriginalSimpleKind::Complete;
+  for(source,wanted)in[("frequency in GLOB . antag_frequencies",Some(Complete)),("frequency in holder . tables . allowed",Some(Complete)),("frequency in GLOB . antag_frequencies && flag",None),("frequency in get_entries ( )",None),("frequency in GLOB ?. antag_frequencies",None),("new _bitfield",Some(Complete)),("new path ( )",Some(Complete)),("new path . type",None),("new path ( value )",None),("new __TYPE__",None)]{expanded_expect(source,wanted);}
+ }
+ #[test]fn actual_original_index_chain_and_static_return_slot_keys_are_exact_root_forms(){use OriginalSimpleKind::{Complete,SimpleAssignmentStatement};
+  for(source,wanted)in[("bicon_cache [ icon_md5 ] = icon_base64 = icon2base64 ( target_icon )",Some(SimpleAssignmentStatement)),("L [ i ] = name = value",Some(SimpleAssignmentStatement)),("L [ i ] = name = other = value",None),("L [ i ] += name = value",None),("consume ( L [ i ] = name = value )",None),(". [ \"x\" ] = x",Some(SimpleAssignmentStatement)),(". [ \"color\" ]",Some(Complete)),(". [ key ++ ] = value",None),(". [ \"x\" ] = name = value",None)]{expanded_expect(source,wanted);}
+ }
+ #[test]fn actual_original_output_and_external_expression_receipts_do_not_supply_statement_routes(){use OriginalSimpleKind::Complete;
+  for(source,wanted)in[("world . log << text",Some(Complete)),("call_ext ( ( library || detect ( ) ) , \"log_write\" ) ( log , message )",Some(Complete)),("call_ext ( ( library || detect ( ) ) , \"log_write\" ) ( perf_log , . )",Some(Complete)),("world . log << ( text = value )",None),("call_ext ( library = value , \"log_write\" ) ( message )",None),("call_ext ( library , \"log_write\" , extra ) ( message )",None)]{expanded_expect(source,wanted);}
+ }
+ #[test]fn actual_original_expanded_cohort_keeps_first_io_and_zero_headroom_denial(){
+  struct Stop{feed:ExpandedFeed,pulls:usize,stop:usize}impl NativeExpressionTokenDemand for Stop{fn next_token(&mut self)->std::io::Result<Option<Token>>{self.pulls+=1;if self.pulls==self.stop{return Err(std::io::Error::from_raw_os_error(1450))}self.feed.next_token()}fn original_value(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{self.feed.original_value(o)}fn requires_original_values(&self)->bool{true}}
+  for source in ["GLOB . dview_mob . loc = center","p += 4 * x ++ + 6","pick ( 100 ; 1 , )","frequency in GLOB . antag_frequencies","new _bitfield","L [ i ] = name = value",". [ \"x\" ] = x","world . log << text","call_ext ( ( library || detect ( ) ) , \"log_write\" ) ( log , message )"]{
+   for stop in [1,3]{let base=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(base).unwrap();let a=crate::SettingAdmission::new(&counter,8<<20,&||Ok(()));let mut feed=Stop{feed:expanded_feed(source),pulls:0,stop};assert_eq!(parse_original_expression_demanded(&mut feed,&a).err().unwrap().raw_os_error(),Some(1450));assert_eq!(feed.pulls,stop);assert_eq!(counter.load(Ordering::Acquire),base);}
+   let base=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(base).unwrap();let a=crate::SettingAdmission::new(&counter,base,&||Ok(()));let mut feed=expanded_feed(source);assert_eq!(parse_original_expression_demanded(&mut feed,&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),base);
+  }
+ }
+
+ #[test]
+ fn actual_original_prefix_read_key_keeps_pre_and_post_value_roles_and_exact_tokens(){
+  let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  for(source,expected)in[("L [ ++ i ]",true),("L [ -- i ]",true),("L [ i ++ ]",true),("L [ i -- ]",true),
+   ("L [ ++ i . field ]",false),("L [ ++ L [ i ] ]",false),("L [ ++ ( i ) ]",false),("L [ + + i ]",false),
+   ("L [ ++ i ] = value",false),("consume ( L [ ++ i ] = value )",false),("value = ++ i",false),("L [ ++ null ]",false),("L [ ++ __TYPE__ ]",false)]{
+   let rows:Vec<_>=source.split_whitespace().map(|text|{let kind=if original_ascii_identifier(text){TokenKind::Ident}else{crate::original_scalar_transport::original_punctuation_native_kind(text)};(kind,text,None)}).collect();
+   let mut feed=ScalarMembershipFeed(Feed::new(&rows));let mut output=parse_original_expression_demanded(&mut feed,&a).unwrap();
+   assert_eq!(output.parsed().original_simple_expression.is_some_and(|proof|proof.is_original()&&proof.kind()==OriginalSimpleKind::Complete),expected,"{source}");
+   if expected{let expression=output.parsed.expr.as_mut().unwrap();let ExprKind::Index{object,index}=&expression.kind else{panic!("actual read index")};assert!(original_updated_key_index(expression,object,index,&output.tokens));
+    let ExprKind::Unary{op,..}=&index.kind else{panic!("actual update key")};let wanted=if source.contains("[ ++"){"pre++"}else if source.contains("[ --"){"pre--"}else if source.contains("i ++"){"post++"}else{"post--"};assert_eq!(op,wanted);
+    let operator=output.tokens.iter().position(|token|matches!(token.text.as_str(),"++"|"--")).unwrap();let saved=output.tokens[operator].text.clone();output.tokens[operator].text=if saved=="++"{"--"}else{"++"}.into();assert!(!original_updated_key_index(expression,object,index,&output.tokens));output.tokens[operator].text=saved;
+   }
+   drop(output);assert_eq!(used.load(Ordering::Acquire),root);
+  }
+ }
+ #[test]
+ fn actual_original_positional_return_slot_is_the_exact_existing_dot_receipt(){
+  let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+  for(source,expected)in[("consume ( . )",true),("text ( format , . )",true),("text ( format , . [ i ] )",true),
+   ("consume ( . = value )",false),("consume ( . + value )",false),("consume ( .. )",false),(". + value",false)]{
+   let rows:Vec<_>=source.split_whitespace().map(|text|{let kind=if original_ascii_identifier(text){TokenKind::Ident}else{crate::original_scalar_transport::original_punctuation_native_kind(text)};(kind,text,None)}).collect();let mut feed=ScalarMembershipFeed(Feed::new(&rows));let mut output=parse_original_expression_demanded(&mut feed,&a).unwrap();
+   assert_eq!(output.parsed().original_simple_expression.is_some_and(|proof|proof.is_original()&&proof.kind()==OriginalSimpleKind::Complete),expected,"{source}");
+   if source=="consume ( . )"{let expression=output.parsed.expr.as_mut().unwrap();let ExprKind::Call{args,..}=&expression.kind else{panic!("actual call")};let child=&args[0];let dot=output.tokens.iter().position(|token|token.text==".").unwrap();assert!(original_return_slot_read(child,&output.tokens[dot..dot+1]));
+    output.tokens[dot].kind=TokenKind::Ident;assert!(!original_return_slot_read(child,&output.tokens[dot..dot+1]));assert!(!original_composed_expression(expression,&output.tokens,true,32,false));output.tokens[dot].kind=TokenKind::Punctuation;
+    let saved=output.tokens[dot].span;output.tokens[dot].span.start+=1;assert!(!original_return_slot_read(child,&output.tokens[dot..dot+1]));output.tokens[dot].span=saved;
+   }drop(output);assert_eq!(used.load(Ordering::Acquire),root);
+  }
+  assert!(!parse_expression("consume(.)").original_simple_expression.is_some_and(|proof|proof.is_original()));
+ }
+ #[test]
+ fn actual_original_prefix_key_and_dot_argument_keep_first_source_io_and_refund(){
+  struct Stop{feed:ScalarMembershipFeed,pulls:usize,stop:usize}
+  impl NativeExpressionTokenDemand for Stop{fn next_token(&mut self)->std::io::Result<Option<Token>>{self.pulls+=1;if self.pulls==self.stop{return Err(std::io::Error::from_raw_os_error(1450))}self.feed.next_token()}
+   fn original_value(&self,o:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{self.feed.original_value(o)}fn requires_original_values(&self)->bool{true}}
+  let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();
+  for(source,stops)in[("L [ ++ i ]",[1,3,6]),("consume ( . )",[1,3,5])]{let rows:Vec<_>=source.split_whitespace().map(|text|{let kind=if original_ascii_identifier(text){TokenKind::Ident}else{crate::original_scalar_transport::original_punctuation_native_kind(text)};(kind,text,None)}).collect();
+   for stop in stops{let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut feed=Stop{feed:ScalarMembershipFeed(Feed::new(&rows)),pulls:0,stop};assert_eq!(parse_original_expression_demanded(&mut feed,&a).err().unwrap().raw_os_error(),Some(1450));assert_eq!(feed.pulls,stop);assert_eq!(used.load(Ordering::Acquire),root);}
+  }
+ }
+
  #[test]
  fn actual_original_prefix_update_is_an_exact_statement_kind_not_a_read_or_postfix_value() {
      let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
@@ -3997,7 +4144,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          ("++ null", None), ("++ __TYPE__", None),
          ("++ object . field", None), ("++ object : field", None),
          ("++ object ?. field", None), ("++ L [ i ]", None),
-         ("L [ ++ i ]", None), ("lookup ( ++ i )", None),
+         ("L [ ++ i . field ]", None), ("lookup ( ++ i )", None),
          ("value = ++ i", None), ("++ i = value", None),
      ] {
          let rows: Vec<_> = source.split_whitespace().map(|text| {
@@ -4168,7 +4315,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          ("lookup ( result [ gap + i ] )", Some(OriginalSimpleKind::Complete)),
          ("img . layer = result [ gap + i ]", Some(OriginalSimpleKind::SimpleAssignmentStatement)),
          ("img : layer = value", None), ("img ?. layer = value", None),
-         ("img . nested . layer = lookup ( value )", None),
+         ("img . nested . layer = lookup ( value )", Some(OriginalSimpleKind::SimpleAssignmentStatement)),
          ("value = img . layer = other", None),
          ("lookup ( img . layer = value )", None),
          ("result [ gap + i ] = value", None),
@@ -4214,9 +4361,9 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          ("pick ( 1 , 2 )".into(),Some(OriginalSimpleKind::Complete)),
          ("consume ( pick ( 1 , 2 ) )".into(),Some(OriginalSimpleKind::Complete)),
          ("result = pick ( 1 , 2 )".into(),Some(OriginalSimpleKind::PlainAssignment)),
-         ("pick ( 1 , 2 , )".into(),None),
+         ("pick ( 1 , 2 , )".into(),Some(OriginalSimpleKind::Complete)),
          ("pick ( , 1 )".into(),None), ("pick ( 1 , , 2 )".into(),None),
-         ("pick ( 1 ; 2 , 3 )".into(),None),
+         ("pick ( 1 ; 2 , 3 )".into(),Some(OriginalSimpleKind::Complete)),
          ("pick ( key = 1 , key = 2 )".into(),None),
          ("pick ( i ++ , 2 )".into(),None),
          ("pick ( 1 , 2 ) = value".into(),None),
@@ -4271,7 +4418,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
      let range = [name("rank"), punct("."), name("name"), name("in"), name("first"), name("to"), name("last")];
      for (tokens, expected) in [
          (&field[..], true), (&negated[..], true), (&deeper[..], false), (&safe[..], false),
-         (&index[..], false), (&rhs_field[..], false), (&boolean_rhs[..], false), (&range[..], false),
+         (&index[..], false), (&rhs_field[..], true), (&boolean_rhs[..], false), (&range[..], false),
      ] {
          let mut feed = Feed::new(tokens);
          let output = parse_original_expression_demanded(&mut feed, &admission).unwrap();

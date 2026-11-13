@@ -48,7 +48,7 @@ pub(super) fn split_case_alternatives_with_tokens(
 fn original_for_each_clause(
     clause: &str, lexical: &crate::SpannedLexed, separator: usize,
     dotted: bool, grouped_index: bool, call_member: bool, direct_call: bool, subtraction: bool,
-    bare_string_index: bool,
+    bare_string_index: bool, composed_iterable:bool,
 ) -> bool {
     use crate::TokenKind;
     if !lexical.diagnostics.is_empty() { return false; }
@@ -76,6 +76,7 @@ fn original_for_each_clause(
     if !tokens.next().is_some_and(|token| token.span.start == separator && token.text(clause) == "in") {
         return false;
     }
+    if composed_iterable { return true; } // complete actual child covers this entire tail
     // For this route the exact entire tail is already covered by the
     // actual Original expression proof below, including both delimiters.
     if grouped_index { return tokens.next().is_some_and(|token| token.text(clause) == "("); }
@@ -250,19 +251,19 @@ pub(super) fn parse_for(
         let mut subtraction = false;
         let mut anything_iterable = false;
         let mut bare_string_index = false;
+        let mut composed_iterable = false;
         let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
             expression_complete = parsed.original_simple_expression.is_some_and(|value| {
                 value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
             });
             let actual_original = parsed.original_simple_expression.is_some_and(|value| value.is_original());
             let kind = parsed.expr.as_ref().map(|value| &value.kind);
-            anything_iterable = actual_original && match kind {
-                Some(ExprKind::Ident(_)) => true,
-                Some(ExprKind::Member { object, via_colon: false, .. }) => {
-                    matches!(&object.kind, ExprKind::Ident(_))
-                }
-                _ => false,
-            };
+            // The pinned `as anything` clause consumes an expression; its
+            // type/name/as/in head remains separately authenticated below.
+            anything_iterable = actual_original && expression_complete;
+            composed_iterable = actual_original && expression_complete && (matches!(kind,Some(ExprKind::Member{via_colon:false,..}|ExprKind::SafeMember{via_colon:false,..}
+                    |ExprKind::Index{..}|ExprKind::SafeIndex{..}))
+                || matches!(kind,Some(ExprKind::Call{callee,..})if matches!(&callee.kind,ExprKind::Member{via_colon:false,..})));
             dotted_original = actual_original && matches!(kind, Some(ExprKind::Member { via_colon: false, .. }));
             grouped_index = actual_original && matches!(kind,
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
@@ -278,7 +279,7 @@ pub(super) fn parse_for(
         let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
         *original_control = expression_complete && source_binding.is_some()
             && original_for_each_clause(
-                clause, &lexical, at, dotted_original, grouped_index, call_member, direct_call, subtraction, bare_string_index,
+                clause, &lexical, at, dotted_original, grouped_index, call_member, direct_call, subtraction, bare_string_index, composed_iterable,
             );
         let mut declaration = binding;
         if let Some((before_hint, _)) = split_top_level_keyword(binding, "as")
@@ -436,7 +437,11 @@ pub(super) fn parse_for(
                 diagnostics,
                 &mut |parsed| {
                     initial_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
-                        proof.is_original() && proof.kind() == OriginalSimpleKind::PlainAssignment
+                        proof.is_original() && (proof.kind() == OriginalSimpleKind::PlainAssignment
+                            || (proof.kind()==OriginalSimpleKind::Complete&&parsed.expr.as_ref().is_some_and(|value|
+                                matches!(&value.kind,ExprKind::Ident(name)
+                                    if crate::expression_parser::original_ordinary_call_name(name)
+                                        &&!matches!(name.as_str(),"null"|"__PROC__"|"__TYPE__"|"__IMPLIED_TYPE__")))))
                     });
                 },
             )?))
@@ -910,9 +915,9 @@ mod original_existing_for_each_controls {
             let lexical = crate::lex_spans(clause);
             let separator = lexical.tokens.iter().find(|token| token.text(clause) == "in").unwrap().span.start;
             assert_eq!(original_for_each_clause(clause, &lexical, separator,
-                false, false, false, false, false, false), expected, "{clause}");
+                false, false, false, false, false, false, false), expected, "{clause}");
             assert!(!original_for_each_clause(clause, &lexical, separator + 1,
-                false, false, false, false, false, false), "wrong separator: {clause}");
+                false, false, false, false, false, false, false), "wrong separator: {clause}");
         }
     }
     #[test]
@@ -1123,10 +1128,29 @@ mod original_classic_step_typed_demand_controls {
    if issued{
     let clause=format!("var/bad_name in {source}");let lexical=crate::lex_spans(&clause);
     let at=lexical.tokens.iter().find(|token|token.text(&clause)=="in").unwrap().span.start;
-    assert!(original_for_each_clause(&clause,&lexical,at,false,false,false,true,false,false));
-    assert!(!original_for_each_clause(&clause,&lexical,at+1,false,false,false,true,false,false));
+    assert!(original_for_each_clause(&clause,&lexical,at,false,false,false,true,false,false,false));
+    assert!(!original_for_each_clause(&clause,&lexical,at+1,false,false,false,true,false,false,false));
    }
    drop(child);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }
+ }
+}
+
+#[cfg(test)]
+#[test]
+fn composed_iterable_data_route_preserves_the_selected_binding_and_in_separator(){
+ for clause in ["var/item in owner.items[key]","item in owner?.items","var/item in owner.items()"]{
+  let lexical=crate::lex_spans(clause);let at=lexical.tokens.iter().find(|token|token.text(clause)=="in").unwrap().span.start;
+  assert!(original_for_each_clause(clause,&lexical,at,false,false,false,false,false,false,true));
+  assert!(!original_for_each_clause(clause,&lexical,at+1,false,false,false,false,false,false,true));
+ }
+ for clause in ["owner.item in owner.items[key]","var/item = other in owner.items[key]","var/item as anything in owner.items[key]"]{
+  let lexical=crate::lex_spans(clause);let at=lexical.tokens.iter().find(|token|token.text(clause)=="in").unwrap().span.start;
+  assert!(!original_for_each_clause(clause,&lexical,at,false,false,false,false,false,false,true),"{clause}");
+ }
+ // These are routing DATA only: a compatibility tree is not issued Original.
+ for leaf in ["for(var/item in owner.items[key]) return item","for(var/item as anything in owner.items()) return item","for(item,item,item=item.loc); return item"]{
+  let syntax=crate::parse(&format!("/proc/probe(owner,key,item)\n    {leaf}\n"));
+  assert!(crate::parse_proc_body(&syntax.items[0]).original_grammar.is_none());
  }
 }

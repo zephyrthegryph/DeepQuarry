@@ -709,3 +709,15 @@ mod array_tests {
         assert!(empty.local_variables.entries().unwrap()[0].array_suffix);
     }
 }
+
+#[cfg(test)]
+#[test]
+fn explicit_empty_local_array_keeps_its_marker_and_no_synthetic_dimension(){
+ let source="var/line[ ] = list(locate(px,py,M.z))";let lexical=crate::lex_spans(source);
+ let fact=issue_local_variable(source,&lexical.tokens,true).unwrap();
+ assert_eq!(&source[fact.name.range()],"line");assert!(fact.type_components.is_empty());
+ let array=fact.array_syntax.as_ref().unwrap();assert!(array.explicit_initializer);
+ assert_eq!(&source[array.root.brackets[0].range()],"[ ]");
+ assert_eq!(array.root.dimension_slots.as_ref(),&[None]);assert!(array.root.dimensions.is_empty());
+ assert!(fact.implicit_list_initializer().is_none());
+}

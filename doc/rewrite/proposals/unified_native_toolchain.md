@@ -4346,3 +4346,36 @@ results cover cleanup/quota/first-I/O failures, argument provenance, actual
 forward delimiters and existing cursor behavior. Fresh private-host execution,
 whole-registry completion, independent oracle parity and default routing are
 still pending; no public compiler was replaced.
+
+
+### Repeated expression and statement forms (2026-11-13)
+
+The post-handoff source survey completed its full first1,024 procedures:
+883 Available,141 Unissued, zero NativeRejected and zero unmeasured OOM.
+The former rank511 allocation failure no longer occurs. Only32 first-leaf
+reasons were logged; the other109 bodies must not be attributed to those
+reasons without fresh evidence. Full-registry qualification remains separate.
+
+The next cohort adds closed native productions for ordinary member chains,
+grouped reads, contextual compound-update values, weighted pick arms,
+member-container membership, dynamic new, chained indexed stores, prefix
+read keys and exact positional implicit-return reads. Statement dispatch now
+routes actual member output and chained external calls to their existing
+independent expression proofs; quoted implicit-return keys also need their
+own DATA route, including keys containing an equals sign.
+
+Loop and local declaration proofs preserve actual bindings, separators,
+array markers and independently admitted children. Final inline ELSE RETURN
+and trailing WHILE blocks reuse actual block-open/close observations. Labels
+borrow the original Colon(false) occurrence; named break/continue borrow the
+actual keyword, target and terminator. Unknown label spelling is not a new
+syntax refusal: existing Checker flow semantics are unchanged. Label-name
+observation checks snippet-local coordinates before the returned expression
+is checked in global coordinates. No spelling-only route grants a body proof.
+
+Thirty-six focused syntax tests and two dm-tree controls passed across the
+initial batch and failure-only repairs. Three initial failures were obsolete
+expectations for newly supported forms and missing typed colon test input;
+those corrections were test-only. Current host and test definitions also pass
+cargo check. Whole-source execution with this extended cohort, independent
+Checker/Analyze parity, default cutover and publication are still pending.

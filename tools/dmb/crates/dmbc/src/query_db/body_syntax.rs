@@ -2938,6 +2938,34 @@ pub(super) mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_list2text_prefix_read_key_and_positional_dot_have_authentic_children(){
+  for fixture in [
+   r#"/proc/probe(list/L,i)
+    return L[++i]
+"#,
+   r#"/proc/probe(list/L,i)
+    . = "[L[++i]]"
+"#,
+   r#"/proc/probe(list/L,i,sep)
+    . = text("[][][]", ., sep, L[++i])
+"#,
+  ]{for(text,expected)in[(fixture.to_owned(),true),(fixture.replace("++i","++i.field"),false)]{
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
+    if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("actual source child remains unissued: {text}")};assert!(proof.belongs_to(&body));}
+    else{assert!(!matches!(disposition,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))),"{text}");}Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }}
+ }
+ #[test]
+ fn actual_original_whole_list2text_keeps_its_real_local_macros_and_both_arms(){
+  let file=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../code/host/helpers/type2type.dm")).unwrap();let start=file.find("/proc/list2text(").unwrap();let end=start+file[start..].find("// Converts a string into a list").unwrap();let source=&file[start..end];
+  assert_eq!(source.matches("#define S1  ").count(),2);assert!(source.contains("ls[++i]"));assert!(source.contains(r#"text("[][][]", ., S1)"#));
+  let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,source);let input=original_input(&front,"list2text");let product=db.syntax_product_checked(&input).unwrap();
+  setting_syntax::with_setting_admission(&db.body_charge,|admission|{let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()?else{panic!("whole authored list2text remains unissued")};assert!(proof.belongs_to(&body));Ok::<(),BodySyntaxFailure>(())}).unwrap();
+ }
+
+ #[test]
  fn actual_original_move_element_keeps_prefix_update_only_as_its_real_statement() {
      let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
      let start = file.find("/proc/moveElement(").unwrap();
@@ -2972,6 +3000,135 @@ pub(super) mod body_syntax_census_tests;
      }
  }
 
+
+ fn assert_statement_control_source_has_original_body(source:&str,name:&str,expected:bool){
+  let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,source);let input=original_input(&front,name);let product=db.syntax_product_checked(&input).unwrap();
+  setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+   let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
+   if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("actual statement/control source remains unissued: {source}")};assert!(proof.belongs_to(&body));}
+   else{assert!(!matches!(disposition,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))),"{source}");}
+   Ok::<(),BodySyntaxFailure>(())
+  }).unwrap();
+ }
+ #[test]
+ fn actual_original_final_else_return_and_empty_array_initializer_keep_independent_children(){
+  for(leaf,expected)in[
+   ("if(value == 1) return value\n    else if(value == 2) return other\n    else return value",true),
+   ("var/line[] = list(locate(px,py,M.z))\n    return line",true),
+   ("var/list/line[ ] = list(value)\n    return line",true),
+   ("var/line[4] = list(value)\n    return line",false),
+   ("var/line[][] = list(value)\n    return line",false),
+   ("var/other/line[] = list(value)\n    return line",false),
+   ("if(value == 1) return value\n    else ++other",false),
+  ]{let source=format!("/proc/probe(value,other,px,py,atom/M)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",expected);}
+ }
+ #[test]
+ fn actual_original_range_dynamic_each_and_anything_children_reuse_owned_header_roles(){
+  for(leaf,expected)in[
+   ("for(x in x to center.x+radius)\n        return x",true),
+   ("for(var/item in owner?.items)\n        return item",true),
+   ("for(var/item in owner.items[key])\n        return item",true),
+   ("for(var/item in owner.items())\n        return item",true),
+   ("for(var/datum/item as anything in contents_of(owner))\n        return item",true),
+   ("for(var/list/item as anything in metadata[\"states\"])\n        return item",true),
+   ("for(var/datum/item as anything in (owner.items[key]))\n        return item",true),
+   ("for(owner.x in x to last)\n        return x",false),
+   ("for(x in x to last step delta)\n        return x",false),
+   ("for(var/item in (x = owner.items))\n        return item",false),
+  ]{let source=format!("/proc/probe(x,center,radius,owner,key,metadata,last,delta)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",expected);}
+ }
+ #[test]
+ fn actual_original_comma_for_reuses_real_bare_initializer_and_separators(){
+  for(leaf,expected)in[
+   ("for(A,A && !istype(A,holder_type),A=A.loc);\n    return A",true),
+   ("for(A;A && !istype(A,holder_type);A=A.loc);\n    return A",true),
+   ("for(A,A && !istype(A,holder_type);A=A.loc);\n    return A",false),
+   ("for(A.loc,A,A=A.loc);\n    return A",false),
+  ]{let source=format!("/proc/probe(atom/A,holder_type)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",expected);}
+ }
+ #[test]
+ fn actual_original_member_output_and_external_dispatch_statements_keep_source_children(){
+  for leaf in ["world.log << text","owner.log.stream << text","call_ext((library || loader()),\"log_write\")(destination,text)"]{
+   let source=format!("/proc/probe(owner,text,library,destination)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",true);
+  }
+ }
+ #[test]
+ fn actual_original_whole_zones_keeps_final_else_return_and_real_bodypart_macros(){
+  let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..");
+  let zones=std::fs::read_to_string(root.join("code/host/helpers/zones.dm")).unwrap();
+  let defines=std::fs::read_to_string(root.join("code/defines/base/mobs.dm")).unwrap();
+  let mut zone_source=String::new();for line in defines.lines(){if ["BP_L_FOOT","BP_R_FOOT","BP_L_LEG","BP_R_LEG","BP_L_HAND","BP_R_HAND","BP_L_ARM","BP_R_ARM"].iter().any(|name|line.strip_prefix("#define ").is_some_and(|tail|tail.starts_with(*name)&&tail.as_bytes().get(name.len()).is_some_and(u8::is_ascii_whitespace))){zone_source.push_str(line);zone_source.push('\n');}}
+  zone_source.push_str(&zones);assert_statement_control_source_has_original_body(&zone_source,"parse_zone",true);
+ }
+ #[test]
+ fn actual_original_whole_getline_keeps_explicit_unsized_array_and_real_sign_macro(){
+  let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..");
+  let geometry=std::fs::read_to_string(root.join("code/host/helpers/geometry.dm")).unwrap();let start=geometry.find("/proc/getline(").unwrap();let end=start+1+geometry[start+1..].find("/proc/").unwrap();
+  let math=std::fs::read_to_string(root.join("code/defines/host/math.dm")).unwrap();let sign=math.lines().find(|line|line.starts_with("#define SIGN(")).unwrap();
+  assert_statement_control_source_has_original_body(&format!("{sign}\n{}",&geometry[start..end]),"getline",true);
+ }
+ #[test]
+ fn actual_original_whole_spiral_range_keeps_each_rebound_range_and_owned_body(){
+  let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..");
+  let range=std::fs::read_to_string(root.join("code/host/helpers/view_range.dm")).unwrap();let start=range.find("/proc/spiral_range(").unwrap();let end=range[start+1..].find("/proc/").map_or(range.len(),|at|start+1+at);
+  assert_statement_control_source_has_original_body(&range[start..end],"spiral_range",true);
+ }
+
+ #[test]
+ fn actual_original_labels_and_named_loop_control_keep_native_blocks_and_unknown_names(){
+  for leaf in [
+   "outer:\n        for(var/value in values)\n            if(value)\n                continue outer\n    return 0",
+   "outer:\n        while(value)\n            inner:\n                while(value)\n                    break inner\n            continue outer\n    return value",
+   "outer: { return value; }",
+   "continue missing",
+   "break missing",
+   "if(value) continue missing\n    return value",
+  ]{let source=format!("/proc/probe(value,values)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",true);}
+  for leaf in ["outer.member:\n        return value","outer:{ return value; }","continue outer.member","break outer extra"]{
+   let source=format!("/proc/probe(value)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",false);
+  }
+ }
+ #[test]
+ fn actual_original_label_disposition_never_transfers_to_another_bound_body_owner(){
+  let db=Arc::new(QueryDb::default());let source="/proc/probe(value)\n    outer:\n        while(value)\n            continue outer\n    return value\n";
+  let first=issued_original_fixture(&db,source);let second=issued_original_fixture(&db,&format!("\n{source}"));
+  let first=original_input(&first,"probe");let second=original_input(&second,"probe");
+  let p=db.syntax_product_checked(&first).unwrap();let q=db.syntax_product_checked(&second).unwrap();
+  setting_syntax::with_setting_admission(&db.body_charge,|a|{let body=first.bind_original_product_checked(p.parsed().unwrap(),a)?;let other=second.bind_original_product_checked(q.parsed().unwrap(),a)?;
+   let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()?else{panic!("actual label source")};
+   assert!(proof.belongs_to(&body));assert!(!proof.belongs_to(&other));Ok::<(),BodySyntaxFailure>(())
+  }).unwrap();
+ }
+ #[test]
+ fn actual_original_whole_station_area_helper_retains_its_authored_label_and_nested_loops(){
+  let file=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../code/library/helpers/events.dm")).unwrap();
+  let start=file.find("/proc/get_station_areas(").unwrap();let end=start+1+file[start+1..].find("/proc/").unwrap();let source=&file[start..end];
+  assert!(source.contains("looping_station_areas:"));assert!(source.contains("continue looping_station_areas"));
+  assert_statement_control_source_has_original_body(source,"get_station_areas",true);
+ }
+
+ #[test]
+ fn actual_original_else_after_trailing_while_keeps_each_owned_open_and_close(){
+  for(source,expected)in[
+   ("/proc/probe(value)\n    if(value)\n        while(value)\n            value -= 1\n    else\n        return value\n    return value\n",true),
+   ("/proc/probe(value) { if(value) { while(value) { value -= 1; } } else { return value; } return value; }\n",true),
+   ("/proc/probe(value)\n    if(value)\n        while(value);\n            value -= 1\n    else\n        return value\n    return value\n",false),
+  ]{assert_statement_control_source_has_original_body(source,"probe",expected);}
+ }
+
+ #[test]
+ fn actual_original_static_return_slot_key_assignments_route_whole_alpha_filter(){
+  let file=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../code/library/helpers/filters.dm")).unwrap();
+  let start=file.find("/proc/alpha_mask_filter(").unwrap();let end=start+1+file[start+1..].find("/proc/").unwrap();let source=&file[start..end];
+  assert!(source.contains(".[\"x\"] = x"));
+  for(text,expected)in[(source.to_owned(),true),
+   (source.replace(".[\"x\"] = x",".[\"[x]\"] = x"),false),
+   (source.replace(".[\"x\"] = x",".[\"x\" + \"suffix\"] = x"),false)]{
+   assert_statement_control_source_has_original_body(&text,"alpha_mask_filter",expected);
+  }
+  let source="/proc/probe(value)\n    . = list()\n    .[\"a=b\"] = value\n    return .\n";
+  assert_statement_control_source_has_original_body(source,"probe",true);
+ }
  #[test]
  fn actual_original_reverse_range_keeps_postfix_argument_values_and_refuses_root_value_roles() {
      let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
