@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { waitFor } from '@testing-library/react';
 import { gameDataAtom } from 'tgui/events/store';
+import { canFloat } from './Column';
 import { CHAT_PENDING, ColumnHost } from './host';
 import { DOCK_SAVE_MAX, serializeSaved } from './model';
 
@@ -269,8 +270,10 @@ describe('what the column keeps', () => {
     expect(floats()).toEqual([]);
     expect(closes()).toEqual([]);
     expect(host.mayLeave('col-chat')).toBe(true);
-    // The chat may float but offers no buttons and no drag out (the server keeps it open).
+    // The chat offers no buttons (the server keeps it open) but is dragged out like any window; the stat panel never is.
     expect(host.hasWindowButtons('col-chat')).toBe(false);
+    expect(canFloat(host, 'col-chat')).toBe(true);
+    expect(canFloat(host, 'col-stat')).toBe(false);
   });
 
   it('never floats or closes its last window', () => {

@@ -104,9 +104,9 @@ export function groupOffset(drag: GroupDrag | null, group: string): number {
   return liveSlide(drag.boxes, from, drag.to, at);
 }
 
-/** Whether a window can be dragged out of the page to float: the same rule as its float and close buttons (host.hasWindowButtons()). */
+/** Whether a window can be dragged out of the page to float: the server's floatable word and the column never being empty (host.mayLeave()), whatever buttons its header shows. */
 export const canFloat = (host: ColumnHost, id?: string) =>
-  !!id && host.hasWindowButtons(id);
+  !!id && host.mayLeave(id);
 
 function measure(): OrderBox[] {
   return Array.from(
