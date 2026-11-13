@@ -28,7 +28,7 @@ look, stats, actions, systems, I/O, loot, atmos, construction, tests, helpers), 
 
 | Path | Purpose |
 |---|---|
-| `code/` | All DM code, in the tree of §3c (plus `code/__defines/verdigris/`, the generated Verdigris bindings). The old `code/game`, `code/modules`, `code/datums` hold no `.dm` files. |
+| `code/` | All DM code, in the tree of §3c (plus `code/__defines/verdigris/`, the generated Verdigris bindings). The old `code/game` (deleted) and `code/datums` (deleted) are gone; `code/modules` holds no `.dm` files. |
 | `maps/` | `maps/southern_cross/` is the live map (station only: 3 decks, CentCom, Transit). `maps/virgo_minitest/` is the unit-test map (`-DCITESTING`). `maps/submaps/`, `maps/common*/`, `maps/overmap/`, `maps/~turfpacks/` hold dynamic content; `maps/expedition/` is the blank substrate the expedition generator carves. Other map dirs are dormant. |
 | `icons/` | Edit `*.png` + `*.dmi.toml`; the build repacks into `icons/gen/`. Never hand-edit `icons/gen/`. |
 | `sound/`, `interface/`, `html/`, `strings/` | Assets, skin, browser assets, lookup text. |
