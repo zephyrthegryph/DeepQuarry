@@ -172,6 +172,9 @@ describe('a page reload in the middle of a drag', () => {
         clientY: 60,
       });
     });
+    // The drag left the page, so the window floated at once, under the pointer (once).
+    expect(sent.filter((m) => m.payload?.type === 'wm/float')).toHaveLength(1);
+    sent = [];
     // The page reloads its layout and the dragged window closes while the pointer is still down.
     act(() => {
       columnHost.receive('col/init', { saved: '' });
@@ -186,7 +189,7 @@ describe('a page reload in the middle of a drag', () => {
       });
     });
     expect(errors).toEqual([]);
-    // Nothing floats a window that is gone.
+    // The release floats nothing again, and nothing floats a window that is gone.
     expect(sent.filter((m) => m.payload?.type === 'wm/float')).toEqual([]);
     consistent(columnHost);
   });

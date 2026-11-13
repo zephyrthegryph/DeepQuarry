@@ -72,6 +72,9 @@
   border-bottom: 2px solid console.$console-border;
   cursor: grab;
   user-select: none;
+  // The page scrolls vertically (.column), so without this the browser takes a vertical drag of the header as a pan and cancels it:
+  // an entry then moved sideways only.
+  touch-action: none;
 
   &--lit {
     outline: 2px dashed #8dc0ff;

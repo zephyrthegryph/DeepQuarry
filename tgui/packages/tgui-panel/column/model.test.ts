@@ -172,7 +172,11 @@ describe('window dock layout', () => {
 
   it('scrubs column window ids from a loaded layout', () => {
     const place = { dock: true, group: 'g1', order: 0, tab: 0 };
-    const text = JSON.stringify({ 'col-1': place, 'col-12': place, Pda: place });
+    const text = JSON.stringify({
+      'col-1': place,
+      'col-12': place,
+      Pda: place,
+    });
     expect(Object.keys(parseSaved(text))).toEqual(['Pda']);
     const loaded = dockReduce(emptyDock(), {
       type: 'load',

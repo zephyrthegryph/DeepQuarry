@@ -90,6 +90,8 @@ CAPABILITIES(/datum/window_dock)
 			drop_answer(payload)
 		if("WM-Save")
 			arrange(payload?["layout"])
+		if("WM-FloatDone")
+			float_done(payload?["window"])
 
 /// Keeps the saved layout.
 /datum/window_dock/proc/save(text)
@@ -221,6 +223,17 @@ CAPABILITIES(/datum/window_dock)
 	reopen(ui)
 	return TRUE
 
+/// A window the column floated with the button still down is released: its page keeps the place the drag left it at.
+/datum/window_dock/proc/float_done(window_id)
+	var/client/player = owner()
+	if(!istext(window_id) || !player?.session)
+		return
+	var/datum/tgui_window/window = player.session.tgui_windows[window_id]
+	if(!window || window.status == TGUI_WINDOW_CLOSED || istype(window, /datum/tgui_window/column_part))
+		return
+	log_tgui(player, "Window dock: live float drag of [window_id] released.", window = window)
+	window.send_message("floatdone")
+
 /// A native window was dropped (its titlebar drag ended at screen point `point`): the column page judges whether that is over it.
 /datum/window_dock/proc/dropped(datum/tgui/ui, list/point)
 	var/client/player = owner()
@@ -297,7 +310,12 @@ CAPABILITIES(/datum/window_dock)
 			dock?.dock(src)
 		if("wm/float")
 			// The float button (or a drag out) on a docked window in the column; `at` is the screen point it was dragged to.
-			dock?.undock(src, dock_point_text(payload?["at"]))
+			dock?.undock(src, dock_point_text(payload?["at"], payload?["size"]))
+		if("wm/floated")
+			// A window floated out of the column is up: the column page may be moving it with the pointer (a drag that left with the button down).
+			var/client/player = user?.client
+			if(player?.tgui_panel?.window && istext(payload?["window"]))
+				player.tgui_panel.window.send_message("col/floated", list("window" = payload["window"]))
 		if("wm/dropped")
 			// A native window's titlebar drag ended at screen point `pointer`: maybe over the column.
 			dock?.dropped(src, payload?["pointer"])
