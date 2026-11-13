@@ -20,8 +20,13 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /mob/living/proc/disable_footsteps()
 	revoke(src, /datum/capability/footstep, src)
 
+/// Steps taken in a chunk no observer holds (no client's view window or its ring reaches it) make no sound anyone could hear, so they are not counted or
+/// prepared at all: the step counter, the turf sound lookup and the playsound are work for a listener. The count restarts when an observer arrives.
 /datum/capability/footstep/proc/footstep_moved(datum/act/A)
 	var/mob/living/source = A.holder
+	var/turf/where = source.loc
+	if(isturf(where) && !interest_covers(where))
+		return
 	if(ishuman(source))
 		play_humanstep(source)
 	else

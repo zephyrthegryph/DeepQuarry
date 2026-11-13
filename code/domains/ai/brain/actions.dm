@@ -24,10 +24,13 @@ GLOBAL_VAR_INIT(ai_trace_all, FALSE)
 	var/datum/op_result/result = perform_op(actor, target, key, held, ORIGIN_AI, AUTH_AI)
 	if(stance)
 		actor.set_use_stance(old_stance)
+	var/tracing = traced || GLOB.ai_trace_all // the text is built only for a traced brain: a step is made at most every run of the loop
 	if(result?.outcome == ACT_COMMITTED)
-		trace("op [key] on [target] committed")
+		if(tracing)
+			trace("op [key] on [target] committed")
 		return TRUE
-	trace("op [key] on [target] refused: [result ? reason_text(result.reason) : "no result"]")
+	if(tracing)
+		trace("op [key] on [target] refused: [result ? reason_text(result.reason) : "no result"]")
 	return FALSE
 
 /// One step to `where` (a turf or atom) through the "mob_attacks.step" op. TRUE when the mob ended up somewhere else.
