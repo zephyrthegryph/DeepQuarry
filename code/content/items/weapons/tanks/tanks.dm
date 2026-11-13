@@ -60,15 +60,17 @@ CAPABILITIES(/obj/item/tank)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("tank_item", item(/obj/item), label("Tank item"), then(PROC_REF(tank_item)))
 
-/obj/item/tank/proc/init_proxy()
-	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
-	rel_set(proxy, nameof(proxy.tank), src)
-	rel_set(src, nameof(proxyassembly), proxy)
+/// The tank's assembly proxy, made on first need: only a tank an assembly is taped to (a tank bomb) has one, so an ordinary tank makes no second object. Reads that
+/// only ask whether an assembly is attached use `proxyassembly?.assembly`.
+/obj/item/tank/proc/proxy()
+	if(!proxyassembly)
+		var/obj/item/tankassemblyproxy/made = new /obj/item/tankassemblyproxy(src)
+		rel_set(made, nameof(made.tank), src)
+		rel_set(src, nameof(proxyassembly), made)
+	return proxyassembly
 
 /obj/item/tank/proc/start_up()
 	apply_blueprint_effects()
-
-	src.init_proxy()
 	update_gauge()
 
 DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
@@ -145,8 +147,8 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 				descriptive = "bitterly cold"
 		. += span_notice("\The [src] feels [descriptive].")
 
-	if(src.proxyassembly.assembly || wired)
-		. += span_warning("It seems to have [wired? "some wires ": ""][wired && src.proxyassembly.assembly? "and ":""][src.proxyassembly.assembly ? "some sort of assembly ":""]attached to it.")
+	if(proxyassembly?.assembly || wired)
+		. += span_warning("It seems to have [wired? "some wires ": ""][wired && proxyassembly?.assembly? "and ":""][proxyassembly?.assembly ? "some sort of assembly ":""]attached to it.")
 	if(src.valve_welded)
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
 
@@ -189,19 +191,19 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 
 /// The wires clipped with a device on them take ten careful seconds, bare wires one.
 /obj/item/tank/proc/wirecutter_time(datum/act/op/A)
-	if(wired && src.proxyassembly.assembly)
+	if(wired && proxyassembly?.assembly)
 		return 10 SECONDS
 	return wired ? 1 SECOND : 0
 
 /obj/item/tank/proc/wirecutter_started(datum/act/op/A)
-	if(wired && src.proxyassembly.assembly)
+	if(wired && proxyassembly?.assembly)
 		to_chat(A.actor, span_notice("You carefully begin clipping the wires that attach to the tank."))
 
 /obj/item/tank/proc/wirecutter_used(datum/act/op/A)
 	if(!wired)
 		to_chat(A.actor, span_notice("There are no wires to cut!"))
 		return OP_OK
-	if(src.proxyassembly.assembly)
+	if(proxyassembly?.assembly)
 		wirecutter_act_timed_done(A.actor)
 	else
 		wirecutter_act_timed_done2(A.actor)
@@ -209,27 +211,27 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 
 /// Interrupted while clipping a live assembly: a slip bumps the igniter.
 /obj/item/tank/proc/wire_clip_slipped(datum/act/op/A)
-	if(!(wired && src.proxyassembly.assembly))
+	if(!(wired && proxyassembly?.assembly))
 		return
 	to_chat(A.actor, span_danger("You slip and bump the igniter!"))
 	if(prob(85))
-		src.proxyassembly?.receive_signal()
+		proxyassembly?.receive_signal()
 
 /obj/item/tank/proc/wirecutter_act_timed_done(mob/user)
 	set_wired(0)
 	to_chat(user, span_notice("You cut the wire and remove the device."))
 
-	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
+	var/obj/item/assembly_holder/assy = proxyassembly?.assembly
 	if(assy.a_left && assy.a_right)
 		assy.dropInto(user.loc)
 		set_item_master(assy, null)
-		rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
+		rel_clear(proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	else
-		if(!src.proxyassembly.assembly.a_left)
+		if(!proxyassembly?.assembly.a_left)
 			assy.a_right.dropInto(user.loc)
 			rel_clear(assy.a_right, nameof(/obj/item/assembly::holder))
 			rel_take(assy, nameof(assy.a_right))
-			rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
+			rel_clear(proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 			destroyed(assy, user)
 	set_last_gauge_pressure(0)
 	update_gauge()
@@ -281,8 +283,8 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	tgui_interact(user)
 
 	// There's GOT to be a better way to do this
-	if (src.proxyassembly.assembly)
-		src.proxyassembly.assembly.attack_self(user)
+	if (proxyassembly?.assembly)
+		proxyassembly?.assembly.attack_self(user)
 	return TRUE
 
 /// /obj/item/tank's window data.
@@ -407,7 +409,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	..()
 	if(wired)
 		look.overlay("bomb_assembly")
-		look.watch(proxyassembly)
+		look.watch(proxy())
 		var/obj/item/assembly_holder/assembly = proxyassembly?.assembly
 		if(assembly)
 			look.watch_look(assembly)
@@ -613,8 +615,8 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	set_wired(1)
 
 	var/obj/item/assembly_holder/H = new(src)
-	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), H)
-	set_item_master(H, src.proxyassembly)
+	rel_set(proxy(), nameof(/obj/item/integrated_circuit::assembly), H)
+	set_item_master(H, proxyassembly)
 
 CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
 	setup(PROC_REF(assemble_initial_bomb))
@@ -680,15 +682,15 @@ CAPABILITIES(/obj/item/tankassemblyproxy)
 	M.remove_from_mob(src)	//Remove the tank from your character,in case you were holding it
 	M.put_in_hands(src)		//Equips the bomb if possible, or puts it on the floor.
 
-	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), S) //Tell the bomb about its assembly part
-	set_item_master(S, src.proxyassembly) //Tell the assembly about its new owner
+	rel_set(proxy(), nameof(/obj/item/integrated_circuit::assembly), S) //Tell the bomb about its assembly part
+	set_item_master(S, proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
 
 	return
 
 /obj/item/tank/proc/ignite()	//This happens when a bomb is told to explode
 
-	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
+	var/obj/item/assembly_holder/assy = proxyassembly?.assembly
 	var/ign = assy.a_right
 	var/obj/item/other = assy.a_left
 
@@ -699,7 +701,7 @@ CAPABILITIES(/obj/item/tankassemblyproxy)
 	other.dropInto(get_turf(src))
 	destroyed(ign)
 	set_item_master(assy, null)
-	rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
+	rel_clear(proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	destroyed(assy)
 	src.update_gauge()
 

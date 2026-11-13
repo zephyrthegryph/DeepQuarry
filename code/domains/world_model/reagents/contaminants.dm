@@ -142,6 +142,8 @@ GLOBAL_TABLE(contaminant_defs_table, GLOBAL_PROC_REF(build_contaminant_defs))
 
 /// Replaces the contaminants with a copy of `fractions` (fractions below CONTAMINANT_EPSILON dropped; null when nothing is left).
 /datum/reagent/proc/set_contaminants(list/fractions)
+	if(!length(fractions) && !contaminants) // a pure reagent made pure: nothing changes, nothing is marked (every reagent made into a container comes through here)
+		return
 	var/list/kept
 	for(var/contaminant_id in fractions)
 		var/fraction = fractions[contaminant_id]

@@ -99,6 +99,20 @@ CAPABILITIES(/datum/client_session)
 	var/list/waiter_args = waiter[3]
 	call(target, waiter[2])(arglist(waiter_args || list())) // the continuation of an asset flush, run from the ack topic or the timeout
 
+/// The ack of job `job` arrived: its waiter runs, and so do the waiters of every earlier job still pending. Every verify page goes to the same
+/// browser window, so a page sent before the previous one has loaded replaces it and the earlier job's ack is never sent, though the browse queue is FIFO
+/// and the later ack proves every resource sent before it has arrived. Without this, a burst of glow shape deliveries (one job each) answered only its last
+/// job and the rest waited out ASSET_FLUSH_TIMEOUT, then swapped their glows to an icon the client may not have had: the glows blinked while walking.
+/datum/client_session/proc/asset_jobs_finished_through(job)
+	var/list/earlier = list()
+	for(var/key in asset_waiters)
+		if(text2num(key) < job)
+			earlier += text2num(key)
+	sortTim(earlier, GLOBAL_PROC_REF(cmp_numeric_asc))
+	for(var/earlier_job in earlier)
+		asset_job_finished(earlier_job)
+	asset_job_finished(job)
+
 /// Process asset cache client topic calls for `"asset_cache_confirm_arrival=[INT]"`.
 /// Returns null for a valid arrival (handled), else the job id (or TRUE) for the caller to reject.
 /datum/client_session/proc/confirm_asset_arrival(job_id)
@@ -108,6 +122,6 @@ CAPABILITIES(/datum/client_session)
 	if(asset_cache_job > 0 && asset_cache_job <= last_asset_job && !LAZYACCESS(completed_asset_jobs, "[asset_cache_job]"))
 		LAZYSET(completed_asset_jobs, "[asset_cache_job]", TRUE)
 		last_completed_asset_job = max(last_completed_asset_job, asset_cache_job)
-		asset_job_finished(asset_cache_job)
+		asset_jobs_finished_through(asset_cache_job)
 		return null
 	return asset_cache_job || TRUE

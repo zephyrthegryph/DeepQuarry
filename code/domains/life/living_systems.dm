@@ -499,20 +499,22 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 
 	if(isturf(src.loc))
 		var/turf/T = src.loc //Will be true 99% of the time, thus avoiding the whole elif chain
-		brightness = T.get_lumcount()
+		brightness = client_darksight_brightness(T)
 
 	//Snowflake treatment of potential locations
 	else if(istype(src.loc,/obj/mecha)) //I imagine there's like displays and junk in there. Use the lights!
 		brightness = 1
 	else if(istype(src.loc,/obj/item/holder)) //Poor carried teshari and whatnot should adjust appropriately
 		var/turf/T = get_turf(src)
-		brightness = T.get_lumcount()
+		brightness = client_darksight_brightness(T)
 
 	var/darkness = 1-brightness					//Silly, I know, but 'alpha' and 'darkness' go the same direction on a number line
 	var/adjust_to = min(darkness,darksightedness)//Capped by how darksighted they are
 	var/distance = abs(current-adjust_to)		//Used for how long to animate for
 	if(distance < 0.01) return					//We're already all set
 
+	if(client_glow_trace_line())
+		log_world("client lighting: darksight of [src] eases from alpha [round(current * 255)] to [round(adjust_to * 255)] (turf brightness [round(brightness, 0.01)], darksight ratio [round(darksightedness, 0.01)])")
 	animate(dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
 
 /// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Only the sight reaction runs it (life_vision_pass()).
