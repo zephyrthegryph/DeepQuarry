@@ -55,9 +55,9 @@ GLOBAL_TABLE(surgical_steps_answering_table, GLOBAL_PROC_REF(build_surgical_step
 	entry["body_region"] = "Any limb"
 	entry["steps"] = list(
 		"Cut through the skin with a scalpel.",
-		"Retract the skin. Opening a limb this far shows what is in it: the surgical survey on the patient's menu, the operating computer and your own report list every finding and the steps that answer to it.",
+		"Retract the skin. Opening a limb this far shows what is in it: inspect the limb hands-on (grab the patient, target the limb, grab-click) or read the operating computer, and every finding is listed with the steps that answer to it.",
 		"Where the limb is encased (the chest, the head), saw through and retract the bone to reach the organs inside.",
-		"Answer each finding in any order, with the step that fits it.",
+		"Answer each finding in any order by using the matching tool on the targeted limb. When several findings answer to the same tool, the most urgent goes first: bleeders, then the worst-off organ, a finding organ before a healthy one.",
 		"Set the bone layer, then cauterize the incision closed. A prosthesis is opened and closed through its maintenance hatch instead.",
 	)
 	var/list/tools = list()

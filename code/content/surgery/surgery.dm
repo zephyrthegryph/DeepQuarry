@@ -222,6 +222,45 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 		if(location_needs_treatment(target, I))
 			.[I.name] = I
 
+/// How urgent `location` is for this step: the worst severity of the afflictions there that its treatments answer to.
+/datum/surgical_step/proc/target_urgency(mob/living/carbon/human/target, atom/location)
+	. = 0
+	for(var/datum/affliction/A as anything in target.body.afflictions_at(location))
+		if(istype(A, /datum/affliction/surgical_incision))
+			continue
+		for(var/tag in treatments)
+			if(A.treatment_rate(tag))
+				. = max(., A.severity)
+				break
+
+/// Is this location one of the step's findings (what the limb lists as the problem, rather than just a place the step can work)?
+/datum/surgical_step/proc/target_is_finding(mob/living/carbon/human/target, obj/item/organ/external/part, atom/location)
+	for(var/list/row as anything in findings(target, part, TRUE))
+		if(row["where"] == location)
+			return TRUE
+	return FALSE
+
+/// `target_choices()` in the order the step works through them: finding organs first, then by severity, then by name. The
+/// first is what a tool use lands on; nobody is asked.
+/datum/surgical_step/proc/ordered_target_choices(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+	var/list/choices = target_choices(user, target, part, tool)
+	if(length(choices) < 2)
+		return choices
+	var/list/names = list()
+	var/list/rank = list()
+	for(var/name in choices)
+		var/atom/location = choices[name]
+		names += name
+		rank[name] = (target_is_finding(target, part, location) ? 1000 : 0) + target_urgency(target, location)
+	for(var/i in 2 to length(names))
+		var/j = i
+		while(j > 1 && (rank[names[j]] > rank[names[j - 1]] || (rank[names[j]] == rank[names[j - 1]] && names[j] < names[j - 1])))
+			names.Swap(j, j - 1)
+			j--
+	. = list()
+	for(var/name in names)
+		.[name] = choices[name]
+
 /// Is the chosen target still valid after the step's delay?
 /datum/surgical_step/proc/target_still_valid(mob/living/carbon/human/target, obj/item/organ/external/part, atom/work_target)
 	if(QDELETED(part) || part.owner != target)

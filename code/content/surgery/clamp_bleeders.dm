@@ -6,7 +6,8 @@
 	book_category = "Vascular"
 	about = "Clamping the cut vessels at the edge of the incision. An open site bleeds until it is clamped, and faster in a patient whose blood does not clot."
 	phase = SURGERY_PHASE_ACCESS
-	priority = 1
+	// Bleeders outrank every other step a tool can do: a bleeding site is answered first.
+	priority = 5
 	allowed_tools = list(
 		/obj/item/surgical/hemostat = 100,
 		/obj/item/stack/cable_coil = 75,
