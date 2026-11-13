@@ -11,6 +11,7 @@ import { mainBounds, measureColumn } from 'tgui-panel/layout/geometry';
 import type { Rect } from 'tgui-panel/layout/model';
 import { rectContains } from 'tgui-panel/layout/model';
 import { configAtom, store } from './events/store';
+import { dragFrame } from './floatPlacement';
 import { createLogger } from './logging';
 import { snapToScreen } from './snap';
 
@@ -21,7 +22,11 @@ type GeometryPayload = Partial<{
 }>;
 
 const logger = createLogger('drag');
-const pixelRatio = window.devicePixelRatio ?? 1;
+/**
+ * The page's pixel density now. It changes when the window is dragged onto a monitor of another scale; a value read once at load made
+ * every later position and size wrong by that factor, so a window was resized by dragging.
+ */
+const ratioNow = () => window.devicePixelRatio || 1;
 let windowKey = Byond.windowId;
 let dragging = false;
 let resizing = false;
@@ -31,6 +36,10 @@ let screenOffsetKnown = false;
 let dragPointOffset: Point;
 let resizeMatrix: Point;
 let initialSize: Point;
+/** The size the window had when the drag began (the page's measure), and the native size winget gave for it: a drag keeps both. */
+let heldSize: Point = [0, 0];
+let heldNative: string | undefined;
+let driftLogged = false;
 let size: Point;
 
 export type ResolvedWindowGeometry = Partial<{
@@ -126,7 +135,7 @@ export function setWindowKey(key: string): void {
 
 // Get window position
 export function getWindowPosition(): Point {
-  return [window.screenLeft * pixelRatio, window.screenTop * pixelRatio];
+  return [window.screenLeft * ratioNow(), window.screenTop * ratioNow()];
 }
 
 /** Native-coordinate position observable without a BYOND winget round trip. */
@@ -136,15 +145,15 @@ export function getNativeWindowPosition(): Point {
 
 // Get window size
 export function getWindowSize(): Point {
-  return [window.innerWidth * pixelRatio, window.innerHeight * pixelRatio];
+  return [window.innerWidth * ratioNow(), window.innerHeight * ratioNow()];
 }
 
 /** Grow the window by `deltaCss` CSS pixels of height, keeping its width. */
 export function growWindowHeight(deltaCss: number): void {
   const [width, height] = getWindowSize();
-  const next = Math.round(height + deltaCss * pixelRatio);
+  const next = Math.round(height + deltaCss * ratioNow());
   logger.log(
-    `fit: growing window ${height} -> ${next} (native px, ratio ${pixelRatio})`,
+    `fit: growing window ${height} -> ${next} (native px, ratio ${ratioNow()})`,
   );
   setWindowSizeBatched([width, next]);
 }
@@ -182,14 +191,17 @@ function getScreenOrigin(): Point {
     availLeft?: number;
     availTop?: number;
   };
-  return [(screen.availLeft ?? 0) * pixelRatio, (screen.availTop ?? 0) * pixelRatio];
+  return [
+    (screen.availLeft ?? 0) * ratioNow(),
+    (screen.availTop ?? 0) * ratioNow(),
+  ];
 }
 
 // Get screen size
 function getScreenSize(): Point {
   return [
-    window.screen.availWidth * pixelRatio,
-    window.screen.availHeight * pixelRatio,
+    window.screen.availWidth * ratioNow(),
+    window.screen.availHeight * ratioNow(),
   ];
 }
 
@@ -287,7 +299,7 @@ export async function recallWindowGeometry(
   let size = geometry?.size || options.size;
   // Convert size from css-pixels to display-pixels
   if (!geometry?.size && options.scale && size) {
-    size = [size[0] * pixelRatio, size[1] * pixelRatio];
+    size = [size[0] * ratioNow(), size[1] * ratioNow()];
   }
 
   if (!options.scale) {
@@ -348,14 +360,12 @@ export function setupDrag(): Promise<Point> {
   // Calculate screen offset caused by the windows taskbar
   const windowPosition = getWindowPosition();
 
-  const offsetQuery = Byond.winget(Byond.windowId, 'pos').then(
-    (pos): Point => {
-      screenOffset = [pos.x - windowPosition[0], pos.y - windowPosition[1]];
-      screenOffsetKnown = true;
-      logger.debug('screen offset', screenOffset);
-      return screenOffset;
-    },
-  );
+  const offsetQuery = Byond.winget(Byond.windowId, 'pos').then((pos): Point => {
+    screenOffset = [pos.x - windowPosition[0], pos.y - windowPosition[1]];
+    screenOffsetKnown = true;
+    logger.debug('screen offset', screenOffset);
+    return screenOffset;
+  });
   const timeout = new Promise<Point>((resolve) => {
     setTimeout(() => resolve(screenOffset), 500);
   });
@@ -402,10 +412,27 @@ function constraintPosition(pos: Point, size: Point): [boolean, Point] {
 
 // Start dragging the window
 export function dragStartHandler(event): void {
-  logger.log('drag start');
+  heldSize = getWindowSize();
+  heldNative = undefined;
+  driftLogged = false;
+  // A new drag starts from what the window is now, not from what an earlier one sent.
+  lastSentWinset = {};
+  logger.log('drag start', {
+    size: heldSize,
+    pos: getWindowPosition(),
+    ratio: ratioNow(),
+  });
+  Byond.winget(Byond.windowId, 'size')
+    .then((got) => {
+      if (dragging && got && Number.isFinite(got.x) && Number.isFinite(got.y)) {
+        heldNative = `${got.x}x${got.y}`;
+        logger.log('drag holds native size', heldNative);
+      }
+    })
+    .catch(() => undefined);
   dragging = true;
   dragPointOffset = vecSubtract(
-    [event.screenX * pixelRatio, event.screenY * pixelRatio],
+    [event.screenX * ratioNow(), event.screenY * ratioNow()],
     getWindowPosition(),
   ) as Point;
   // Focus click target
@@ -417,14 +444,18 @@ export function dragStartHandler(event): void {
 
 // End dragging the window
 function dragEndHandler(event): void {
-  logger.log('drag end');
+  logger.log('drag end', {
+    size: getWindowSize(),
+    held: heldSize,
+    ratio: ratioNow(),
+  });
   dragMoveHandler(event);
   flushWinsetNow();
   document.removeEventListener('mousemove', dragMoveHandler);
   document.removeEventListener('mouseup', dragEndHandler);
   dragging = false;
   storeWindowGeometry();
-  dockIfOverPanel([event.screenX * pixelRatio, event.screenY * pixelRatio]);
+  dockIfOverPanel([event.screenX * ratioNow(), event.screenY * ratioNow()]);
 }
 
 /**
@@ -466,18 +497,34 @@ function dragMoveHandler(event: MouseEvent): void {
     return;
   }
   event.preventDefault();
-  setWindowPositionBatched(
-    snapToScreen(
-      vecSubtract(
-        [event.screenX * pixelRatio, event.screenY * pixelRatio],
-        dragPointOffset,
-      ) as Point,
-      getWindowSize(),
-      getScreenSize(),
-      undefined,
-      getScreenOrigin(),
-    ),
+  const pos = snapToScreen(
+    vecSubtract(
+      [event.screenX * ratioNow(), event.screenY * ratioNow()],
+      dragPointOffset,
+    ) as Point,
+    heldSize,
+    getScreenSize(),
+    undefined,
+    getScreenOrigin(),
   );
+  // Only the place moves. When the window no longer has the size the drag began with (the system rescaled it on a monitor of another
+  // density), its size is put back in the same transaction.
+  const frame = dragFrame(pos, heldSize, getWindowSize());
+  setWindowPositionBatched(pos);
+  if (frame.drift) {
+    if (!driftLogged) {
+      driftLogged = true;
+      logger.log('drag: size drifted, restoring', {
+        held: heldSize,
+        now: getWindowSize(),
+        ratio: ratioNow(),
+      });
+    }
+    pendingWinset.size = heldNative ?? frame.size;
+    // The window no longer matches what was last sent, so the size goes out even if it equals that.
+    lastSentWinset = { ...lastSentWinset, size: undefined };
+    scheduleWinset();
+  }
 }
 
 // Start resizing the window
@@ -488,7 +535,7 @@ export const resizeStartHandler =
     logger.log('resize start', resizeMatrix);
     resizing = true;
     dragPointOffset = vecSubtract(
-      [event.screenX * pixelRatio, event.screenY * pixelRatio],
+      [event.screenX * ratioNow(), event.screenY * ratioNow()],
       getWindowPosition(),
     ) as Point;
     initialSize = getWindowSize();
@@ -517,7 +564,7 @@ function resizeMoveHandler(event: MouseEvent): void {
   }
   event.preventDefault();
   const currentOffset = vecSubtract(
-    [event.screenX * pixelRatio, event.screenY * pixelRatio],
+    [event.screenX * ratioNow(), event.screenY * ratioNow()],
     getWindowPosition(),
   );
   const delta = vecSubtract(currentOffset, dragPointOffset);
@@ -527,7 +574,7 @@ function resizeMoveHandler(event: MouseEvent): void {
     number,
   ];
   // Sane window size values
-  size[0] = Math.max(size[0], 150 * pixelRatio);
-  size[1] = Math.max(size[1], 50 * pixelRatio);
+  size[0] = Math.max(size[0], 150 * ratioNow());
+  size[1] = Math.max(size[1], 50 * ratioNow());
   setWindowSizeBatched(size);
 }
