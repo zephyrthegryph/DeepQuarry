@@ -256,6 +256,7 @@ type ReagentEntry = {
   // Drawbacks: organ strains, readings it hides, how it moves seizures.
   strains?: { organ: string; band: string; text: string }[];
   hides?: string[];
+  drawbacks?: string[];
   seizure_proneness?: number;
   side_effects: SideEffectRef[];
   interactions: InteractionRef[];
@@ -1196,6 +1197,16 @@ const ReagentDetail = (props: {
         <Section title="Hides" mt={1}>
           {r.hides.map((h) => (
             <Box key={h}>Masks {h} on instruments while in the blood.</Box>
+          ))}
+        </Section>
+      ) : null}
+
+      {r.drawbacks?.length ? (
+        <Section title="Drawbacks" mt={1}>
+          {r.drawbacks.map((line) => (
+            <Box key={line} color="average" mb="2px">
+              {line}
+            </Box>
           ))}
         </Section>
       ) : null}

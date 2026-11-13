@@ -27,20 +27,20 @@ distilling/drinks/coffee + distilling/drinks/decaftea => fired=-; end=coffee:15.
 distilling/drinks/coffee + distilling/drinks/hot_coco => fired=-; end=coco:3.0116 coffee:15.0578 coffeepowder:0.9884 hot_coco:4.9422; spawned=-
 distilling/drinks/coffee + distilling/drinks/hot_ramen => fired=-; end=coffee:18.2974 coffeepowder:0.3405 dry_ramen:6.8922 hot_ramen:5.1078; spawned=-
 distilling/drinks/coffee + distilling/drinks/tea => fired=-; end=coffee:15.0578 coffeepowder:0.9884 tea:4.9422 teapowder:3.0116; spawned=-
-distilling/drinks/coffee + distilling/hydrogen => fired=-; end=coffee:15.0578 coffeepowder:0.9884 hydrogen:9.8845 platinum:1; spawned=-
-distilling/drinks/coffee + distilling/oxygen => fired=-; end=coffee:15.0578 coffeepowder:0.9884 hydrogen:9.8845 platinum:1; spawned=-
+distilling/drinks/coffee + distilling/hydrogen => fired=-; end=coffee:14.7138 coffeepowder:1.0572 hydrogen:10.5723 platinum:1; spawned=-
+distilling/drinks/coffee + distilling/oxygen => fired=-; end=coffee:14.7138 coffeepowder:1.0572 hydrogen:10.5723 platinum:1; spawned=-
 distilling/drinks/decaftea + distilling/drinks/hot_coco => fired=-; end=coco:3.0116 decafteapowder:0.9884 hot_coco:4.9422 teadecaf:15.0578; spawned=-
 distilling/drinks/decaftea + distilling/drinks/hot_ramen => fired=-; end=decafteapowder:0.3405 dry_ramen:6.8922 hot_ramen:5.1078 teadecaf:18.2974; spawned=-
 distilling/drinks/decaftea + distilling/drinks/tea => fired=-; end=decafteapowder:3.0116 tea:15.0578 teadecaf:4.9422 teapowder:0.9884; spawned=-
-distilling/drinks/decaftea + distilling/hydrogen => fired=-; end=decafteapowder:0.9884 hydrogen:9.8845 platinum:1 teadecaf:15.0578; spawned=-
-distilling/drinks/decaftea + distilling/oxygen => fired=-; end=decafteapowder:0.9884 hydrogen:9.8845 platinum:1 teadecaf:15.0578; spawned=-
+distilling/drinks/decaftea + distilling/hydrogen => fired=-; end=decafteapowder:1.0572 hydrogen:10.5723 platinum:1 teadecaf:14.7138; spawned=-
+distilling/drinks/decaftea + distilling/oxygen => fired=-; end=decafteapowder:1.0572 hydrogen:10.5723 platinum:1 teadecaf:14.7138; spawned=-
 distilling/drinks/hot_coco + distilling/drinks/hot_ramen => fired=-; end=coco:0.3405 dry_ramen:6.8922 hot_coco:18.2974 hot_ramen:5.1078; spawned=-
 distilling/drinks/hot_coco + distilling/drinks/tea => fired=-; end=coco:3.0116 hot_coco:4.9422 tea:15.0578 teapowder:0.9884; spawned=-
-distilling/drinks/hot_coco + distilling/hydrogen => fired=-; end=coco:0.9884 hot_coco:15.0578 hydrogen:9.8845 platinum:1; spawned=-
-distilling/drinks/hot_coco + distilling/oxygen => fired=-; end=coco:0.9884 hot_coco:15.0578 hydrogen:9.8845 platinum:1; spawned=-
+distilling/drinks/hot_coco + distilling/hydrogen => fired=-; end=coco:1.0572 hot_coco:14.7138 hydrogen:10.5723 platinum:1; spawned=-
+distilling/drinks/hot_coco + distilling/oxygen => fired=-; end=coco:1.0572 hot_coco:14.7138 hydrogen:10.5723 platinum:1; spawned=-
 distilling/drinks/hot_ramen + distilling/drinks/tea => fired=-; end=dry_ramen:6.8922 hot_ramen:5.1078 tea:18.2974 teapowder:0.3405; spawned=-
-distilling/drinks/hot_ramen + distilling/hydrogen => fired=-; end=dry_ramen:2.9653 hot_ramen:9.0347 hydrogen:1.9769 platinum:1; spawned=-
-distilling/drinks/hot_ramen + distilling/oxygen => fired=-; end=dry_ramen:2.9653 hot_ramen:9.0347 hydrogen:1.9769 platinum:1; spawned=-
+distilling/drinks/hot_ramen + distilling/hydrogen => fired=-; end=dry_ramen:9.0347 hot_ramen:2.9653 hydrogen:6.0231 platinum:1; spawned=-
+distilling/drinks/hot_ramen + distilling/oxygen => fired=-; end=dry_ramen:9.0347 hot_ramen:2.9653 hydrogen:6.0231 platinum:1; spawned=-
 distilling/drinks/lemontea + distilling/drinks/limetea => fired=-; end=lemonjuice:0.9884 lemontea:18.0693 limejuice:3.0116 limetea:5.9307; spawned=-
 distilling/drinks/lemontea + distilling/drinks/minttea => fired=-; end=lemonjuice:3.0116 lemontea:5.9307 mint:0.9884 minttea:18.0693; spawned=-
 distilling/drinks/lemontea + distilling/drinks/orangetea => fired=-; end=lemonjuice:0.9884 lemontea:18.0693 orangejuice:3.0116 orangetea:5.9307; spawned=-
@@ -58,8 +58,8 @@ distilling/drinks/minttea + distilling/drinks/orangetea => fired=-; end=mint:0.9
 distilling/drinks/minttea + distilling/drinks/watermelontea => fired=-; end=mint:0.9884 minttea:18.0693 watermelonjuice:3.0116 watermelontea:5.9307; spawned=-
 distilling/drinks/minttea_decaf + distilling/drinks/orangetea_decaf => fired=-; end=mint:0.9884 mintteadecaf:18.0693 orangejuice:3.0116 orangeteadecaf:5.9307; spawned=-
 distilling/drinks/orangetea + distilling/drinks/watermelontea => fired=-; end=orangejuice:0.9884 orangetea:18.0693 watermelonjuice:3.0116 watermelontea:5.9307; spawned=-
-distilling/drinks/tea + distilling/hydrogen => fired=-; end=hydrogen:9.8845 platinum:1 tea:15.0578 teapowder:0.9884; spawned=-
-distilling/drinks/tea + distilling/oxygen => fired=-; end=hydrogen:9.8845 platinum:1 tea:15.0578 teapowder:0.9884; spawned=-
+distilling/drinks/tea + distilling/hydrogen => fired=-; end=hydrogen:10.5723 platinum:1 tea:14.7138 teapowder:1.0572; spawned=-
+distilling/drinks/tea + distilling/oxygen => fired=-; end=hydrogen:10.5723 platinum:1 tea:14.7138 teapowder:1.0572; spawned=-
 distilling/eznutrient + distilling/leftforzed => fired=-; end=calcium:4 eznutrient:4 radium:8; spawned=-
 distilling/eznutrient + distilling/robustharvest => fired=-; end=bicaridine:4 eznutrient:4; spawned=-
 distilling/hydrogen + distilling/oxygen => fired=-; end=hydrogen:8 platinum:1; spawned=-
@@ -135,6 +135,11 @@ instant/androrovir + instant/gynorovir => fired=instant/androrovir; end=androrov
 instant/androrovir + instant/gynorovir_bootleg => fired=instant/androrovir; end=androrovir:4 soymilk:40 sugar:40; spawned=-
 instant/androrovir_bootleg + instant/gynorovir => fired=instant/gynorovir; end=capsaicin:40 gynorovir:4 protein:40; spawned=-
 instant/androrovir_bootleg + instant/gynorovir_bootleg => fired=instant/androrovir_bootleg; end=androrovir:4 soymilk:40 sugar:40; spawned=-
+instant/anticonvulsant + instant/carthatoline => fired=instant/carthatoline; end=carthatoline:8 phoron:0.6 sodium:4 sugar:4; spawned=-
+instant/anticonvulsant + instant/dyloteane => fired=instant/anticonvulsant; end=anticonvulsant:12 tea:4; spawned=-
+instant/anticonvulsant + instant/dyloteane/super => fired=instant/anticonvulsant; end=anticonvulsant:12 tea:4; spawned=-
+instant/anticonvulsant + instant/neutralize_neurotoxic_protein => fired=instant/anticonvulsant; end=anticonvulsant:12 neurotoxic_protein:8; spawned=-
+instant/anticonvulsant + instant/tercozolam => fired=instant/anticonvulsant; end=anticonvulsant:12 ethanol:4 lithium:4; spawned=-
 instant/aphrodisiac + instant/imidazoline => fired=instant/imidazoline,instant/aphrodisiac; end=aphrodisiac:12 imidazoline:8 oxygen:4 water:2; spawned=-
 instant/aphrodisiac + instant/prussian_blue => fired=instant/aphrodisiac,instant/prussian_blue; end=aphrodisiac:24 iron:2.6667 nitrogen:8 prussian_blue:9.3333; spawned=-
 instant/artificial_sustenance + instant/drinks/moonshine => fired=instant/drinks/moonshine; end=enzyme:5 moonshine:40 mutagen:4 phoron:4; spawned=-
@@ -409,6 +414,7 @@ instant/condensedcapsaicin + instant/drinks/mauna_loa => fired=instant/drinks/ma
 instant/condensedcapsaicin + instant/food/hell_ramen => fired=instant/food/hell_ramen,instant/condensedcapsaicin; end=condensedcapsaicin:2 hell_ramen:24 phoron:5; spawned=-
 instant/cordradaxon + instant/zombiepowder/alt => fired=instant/cordradaxon,instant/zombiepowder/alt; end=chloralhydrate:4 cordradaxon:8 mercury:4 phoron:5 stoxin:4 zombiepowder:6.4; spawned=-
 instant/corophizine + instant/falter_virus => fired=instant/corophizine; end=blood:1 corophizine:8 phoron:4.6; spawned=-
+instant/corophizine + instant/panacillin => fired=instant/panacillin; end=carbon:4 panacillin:8 phoron:5; spawned=-
 instant/cryoxadone + instant/dexalinp => fired=instant/dexalinp; end=dexalinp:12 oxygen:4 water:4; spawned=-
 instant/dermaline + instant/dexalin => fired=instant/dexalin; end=dexalin:4 kelotane:4 phoron:0.6 phosphorus:4; spawned=-
 instant/dermaline + instant/ethylredoxrazine => fired=instant/dermaline; end=anti_toxin:4 carbon:4 dermaline:12; spawned=-
@@ -430,6 +436,7 @@ instant/drinks/aloe + instant/drinks/peanutmilkshake => fired=instant/drinks/alo
 instant/drinks/aloe + instant/drinks/vienna => fired=instant/drinks/vienna; end=vienna:12 watermelonjuice:4 whiskey:4; spawned=-
 instant/drinks/aloe + instant/food/butter => fired=instant/drinks/aloe,instant/food/butter; end=aloe:12 sodiumchloride:0.2; spawned=/obj/item/reagent_containers/food/snacks/spreads/butter+3
 instant/drinks/amasec + instant/ironfoam => fired=instant/drinks/amasec,instant/ironfoam; end=amasec:40 foaming_agent:1.3333 pacid:1.3333; spawned=/obj/effect/effect/foam+1
+instant/drinks/amasec + instant/ironsaline => fired=instant/drinks/amasec; end=amasec:40 sodiumchloride:4 water:8; spawned=-
 instant/drinks/americano + instant/drinks/applejuice => fired=instant/drinks/applejuice; end=applejuice:12 long_black:8; spawned=-
 instant/drinks/americano + instant/drinks/grapejuice => fired=instant/drinks/grapejuice; end=grapejuice:12 long_black:8; spawned=-
 instant/drinks/americano + instant/drinks/long_black => fired=instant/drinks/americano; end=americano:12 coffee:4; spawned=-
@@ -1103,6 +1110,7 @@ instant/explosion_potassium + instant/firefightingfoam => fired=instant/explosio
 instant/explosion_potassium + instant/firefightingfoamqol => fired=instant/explosion_potassium; end=-; spawned=/obj/effect/effect/sparks+2
 instant/explosion_potassium + instant/lube => fired=instant/lube; end=lube:16 potassium:4; spawned=-
 instant/explosion_potassium + instant/virus_food => fired=instant/virus_food; end=potassium:4 virusfood:20; spawned=-
+instant/falter_virus + instant/panacillin => fired=instant/panacillin; end=blood:1 panacillin:8; spawned=-
 instant/firefightingfoam + instant/firefightingfoamqol => fired=instant/firefightingfoam; end=firefoam:9 fluorine:10; spawned=-
 instant/firefightingfoam + instant/lube => fired=instant/lube; end=fluorine:10 lube:16; spawned=-
 instant/firefightingfoam + instant/virus_food => fired=instant/virus_food; end=fluorine:10 virusfood:20; spawned=-
@@ -1206,6 +1214,7 @@ instant/hyronalin + instant/mutagen => fired=instant/mutagen; end=anti_toxin:4 m
 instant/ickypak + instant/performancepeaker => fired=instant/ickypak; end=ickypak:20 inaprovaline:4 liquidlife:4; spawned=-
 instant/imidazoline + instant/prussian_blue => fired=instant/imidazoline,instant/prussian_blue; end=imidazoline:8 iron:1.3333 nitrogen:4 prussian_blue:18.6667; spawned=-
 instant/inaprovaline + instant/water => fired=instant/inaprovaline; end=hydrogen:8 inaprovaline:12; spawned=-
+instant/ironfoam + instant/ironsaline => fired=instant/ironsaline,instant/ironfoam; end=foaming_agent:1.3333 ironsaline:16 pacid:1.3333; spawned=/obj/effect/effect/foam+1
 instant/kelotane + instant/leporazine => fired=instant/kelotane; end=copper:4 kelotane:8 phoron:5; spawned=-
 instant/kelotane + instant/mindbreaker => fired=instant/kelotane; end=anti_toxin:4 hydrogen:4 kelotane:8; spawned=-
 instant/lemon_juice_metal_paint + instant/lime_juice_metal_paint => fired=instant/lime_juice_metal_paint; end=lemonjuice:20 paint:20; spawned=-
@@ -1258,6 +1267,10 @@ instant/lime_juice_paint + instant/watermelon_juice_paint => fired=instant/lime_
 instant/lime_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=limejuice:20 paint:20; spawned=-
 instant/lipostipo + instant/lipozilase => fired=instant/lipozilase; end=fluorine:4 lipozilase:8 nutriment:4; spawned=-
 instant/lipozine + instant/potassium_chloride => fired=instant/potassium_chloride; end=ethanol:4 potassium_chloride:8 radium:4; spawned=-
+instant/liquidhealer + instant/myelamine => fired=instant/myelamine; end=carpotoxin:4 cryptobiolin:4 kelotane:4 liquidlife:4 myelamine:8 tricordrazine:4; spawned=-
+instant/liquidhealer + instant/myelamine_sap => fired=instant/myelamine_sap; end=carpotoxin:4 cryptobiolin:4 liquidlife:4 myelamine:4 tricordrazine:4; spawned=-
+instant/liquidhealer + instant/osteodaxon => fired=instant/osteodaxon; end=cryptobiolin:4 kelotane:4 liquidlife:4 osteodaxon:8 phoron:4.6 tricordrazine:4; spawned=-
+instant/liquidhealer + instant/peridaxon => fired=instant/peridaxon; end=carpotoxin:4 cryptobiolin:4 kelotane:4 liquidlife:4 peridaxon:8 phoron:5 tricordrazine:4; spawned=-
 instant/lube + instant/virus_food => fired=instant/lube; end=lube:16 milk:4; spawned=-
 instant/lye + instant/sizeoxadone => fired=instant/lye; end=lye:12 phoron:5 tramadol:4; spawned=-
 instant/lye + instant/sodiumchloride => fired=instant/lye; end=chlorine:4 lye:12; spawned=-
@@ -1387,9 +1400,9 @@ instant/rezadone + instant/zombiepowder => fired=instant/zombiepowder; end=crypt
 instant/robustharvest + instant/space_cleaner => fired=instant/robustharvest; end=robustharvest:12 water:4; spawned=-
 instant/silicate + instant/thermite => fired=instant/silicate; end=iron:4 silicate:12; spawned=-
 instant/sizeoxadone + instant/sodiumchloride => fired=instant/sodiumchloride; end=phoron:5 sodiumchloride:8 tramadol:4; spawned=-
-instant/slime/green_emitter + instant/slime/nuclear_emitter => fired=instant/slime/green_emitter; end=-; spawned=/obj/item/slime_irradiator+1
-instant/slime/green_radium + instant/slime/nuclear_radium => fired=instant/slime/green_radium; end=radium:120; spawned=-
-instant/slime/green_uranium + instant/slime/nuclear_uranium => fired=instant/slime/green_uranium; end=-; spawned=/obj/item/stack/material/uranium+1
+instant/slime/green_emitter + instant/slime/nuclear_emitter => fired=instant/slime/nuclear_emitter; end=-; spawned=/obj/item/slime_irradiator+1
+instant/slime/green_radium + instant/slime/nuclear_radium => fired=instant/slime/nuclear_radium; end=radium:120; spawned=-
+instant/slime/green_uranium + instant/slime/nuclear_uranium => fired=instant/slime/nuclear_uranium; end=-; spawned=/obj/item/stack/material/uranium+1
 instant/slimeify + instant/virus_food_phoron => fired=instant/slimeify; end=advmutationtoxin:4 virusfood:4; spawned=-
 instant/slimeify + instant/virus_food_uranium_stable => fired=instant/slimeify; end=advmutationtoxin:4 silver:20 uranium:20; spawned=-
 instant/slimeify + instant/virus_food_uranium_stable_alt => fired=instant/slimeify; end=advmutationtoxin:4 gold:20 uranium:20; spawned=-

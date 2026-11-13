@@ -230,6 +230,7 @@
 		if(CHEM_BLOOD)
 			apply_species_injuries(M, species_injuries_blood, removed)
 			apply_strains(M, removed)
+			apply_drawbacks(M, removed)
 			apply_contaminants(M, removed)
 		if(CHEM_INGEST)
 			apply_species_injuries(M, species_injuries_ingest, removed * ingest_abs_mult)

@@ -100,6 +100,33 @@
 	TEST_ASSERT(found, "panacillin lists its nausea among what it adds")
 
 
+/// The drawbacks line list comes from the reagent data: one line per declared drawback, and the bone-repair drugs say what they do to an unset fracture.
+/datum/unit_test/dq_book_shows_declared_drawbacks
+
+/datum/unit_test/dq_book_shows_declared_drawbacks/Run()
+	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
+	var/list/reagents = book._dq_book_reagents()
+	for(var/list/entry in reagents)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[entry["id"]]
+		if(!R)
+			continue
+		var/expected = (R.drains_blood ? 1 : 0) + (R.purges_stomach ? 1 : 0) + length(R.slows_other) + (R.clot_risk ? 1 : 0)
+		var/datum/affliction/untreated_fracture/fracture = dq_proto(/datum/affliction/untreated_fracture)
+		if(R.treatment_tags?[TREAT_BONE_REPAIR] >= fracture.knit_min_level)
+			expected++
+		TEST_ASSERT_EQUAL(length(entry["drawbacks"]), expected, "[R.id]: one drawbacks line per declared drawback")
+	var/list/osteodaxon = _book_reagent_entry(reagents, REAGENT_ID_OSTEODAXON)
+	var/datum/affliction/malunion/proto = dq_proto(/datum/affliction/malunion)
+	var/found = FALSE
+	for(var/line in osteodaxon["drawbacks"])
+		if(findtext(line, proto.name))
+			found = TRUE
+	TEST_ASSERT(found, "osteodaxon lists the crooked knit of an unset fracture, naming [proto.name]")
+	for(var/reagent_id in list(REAGENT_ID_DERMALINE, REAGENT_ID_CARTHATOLINE, REAGENT_ID_KELOTANE, REAGENT_ID_MYELAMINE))
+		var/list/entry = _book_reagent_entry(reagents, reagent_id)
+		TEST_ASSERT(length(entry["drawbacks"]), "[reagent_id] lists its declared drawbacks in the book")
+
+
 /// The purity section lists every contaminant of the registry and the four grades with their bands.
 /datum/unit_test/dq_book_purity_section
 

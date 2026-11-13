@@ -47,11 +47,11 @@
 /datum/reagent/kelotane
 	// Burn care for degrees 1 to 3 (moderate, large and severe burns); deep and carbonised burns (4 and 5) need dermaline (TREAT_BURN_DEEP).
 	treatment_tags = list(TREAT_BURN_CARE = 0.6)
-	// Slows the body's own healing of everything else (wounds, bruises), body-wide.
-	factors = alist(STAT_HEALING = 0.85)
+	// Slows the natural healing of the other wounds (cuts, bruises) on a limb where it is healing burns, only there.
+	slows_other = alist(TREAT_BURN_CARE = 0.85)
 	name = REAGENT_KELOTANE
 	id = REAGENT_ID_KELOTANE
-	description = REAGENT_KELOTANE + " is a drug used to treat burns of the first to third degree (it barely reaches deep burns, which need dermaline). It slows the body's natural healing of other wounds, and an overdose upsets the stomach."
+	description = REAGENT_KELOTANE + " is a drug used to treat burns of the first to third degree (it barely reaches deep burns, which need dermaline). On a limb where it is healing burns it slows the natural healing of that limb's other wounds, and an overdose upsets the stomach."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
@@ -68,6 +68,7 @@
 	// Deep burns (degrees 4 and 5), burnt airways and the swelling they cause; a minor share of ordinary burn care.
 	treatment_tags = list(TREAT_BURN_DEEP = 1.0, TREAT_BURN_CARE = 0.3, TREAT_ANTIEDEMA = 0.8, TREAT_THERMOREGULATION = 0.2)
 	strains = alist(O_KIDNEYS = DRUG_STRAIN_MODERATE)
+	drains_blood = 2
 	id = REAGENT_ID_DERMALINE
 	name = REAGENT_DERMALINE
 	description = REAGENT_DERMALINE + " is the next step in burn medication: it restores the direst heat damage (fourth and fifth degree burns), heals burnt airways and shrinks the airway swelling that comes with them. It drains blood from the patient (watch the blood volume) and strains the kidneys."
@@ -81,16 +82,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_KELOTANE
-	/// Blood lost per unit metabolised in the blood.
-	var/blood_loss_per_unit = 2
-
-/datum/reagent/dermaline/affect_blood(mob/living/carbon/M, alien, removed)
-	if(!ishuman(M))
-		return
-	var/mob/living/carbon/human/H = M
-	var/lost = H.remove_blood(blood_loss_per_unit * removed)
-	if(lost && GLOB.chem_trace)
-		log_world("CHEM: dermaline drains [lost] blood from [H] (removed [removed])")
 
 /datum/reagent/hyronalin
 	// Weak and slow: mild radiation only.

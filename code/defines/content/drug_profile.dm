@@ -20,6 +20,12 @@
 #define DRUG_STRAIN_MODERATE 0.05
 #define DRUG_STRAIN_HEAVY 0.12
 
+/// A clot risk (`clot_risk`) applies while the heart's damage is at least this share of its maximum, or the systolic pressure is under DRUG_CLOT_LOW_SYSTOLIC (mmHg).
+#define DRUG_CLOT_HEART_DAMAGE_FRACTION 0.25
+#define DRUG_CLOT_LOW_SYSTOLIC 90
+/// Ischemic damage one clot leaves on the brain or the heart.
+#define DRUG_CLOT_ISCHEMIC_DAMAGE 12
+
 /// Blindness a flash adds per point that STAT_FLASH_VULNERABILITY is above 1 (a standard flash blinds for 5).
 #define FLASH_VULNERABILITY_BLIND 5
 

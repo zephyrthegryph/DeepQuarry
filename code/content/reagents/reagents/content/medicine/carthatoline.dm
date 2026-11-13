@@ -2,6 +2,7 @@
 	treatment_tags = list(TREAT_ANTITOXIN = 1.0, TREAT_HEPATORENAL = 0.4)
 	// It slows the refill of blood (the stat's floor is no refill at all).
 	factors = alist(STAT_BLOOD_REGEN = -0.05)
+	purges_stomach = TRUE
 	name = REAGENT_CARTHATOLINE
 	id = REAGENT_ID_CARTHATOLINE
 	description = REAGENT_CARTHATOLINE + " is a strong evacuant used to treat severe poisoning: heavy metals, phoron and other deep toxins, with a mild repair of the liver and kidneys. It empties the stomach (swallowed drugs are lost), slows the body's refill of blood and leaves the patient profoundly sick."
@@ -18,14 +19,6 @@
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/carthatoline/affect_blood(mob/living/carbon/M, alien, removed)
-	// Purges the stomach: whatever else was swallowed and not yet absorbed is flushed out (not carthatoline itself, which is still on its way in).
-	if(M.ingested?.total_volume)
-		for(var/datum/reagent/R as anything in M.ingested.reagent_list.Copy())
-			if(R.id == id)
-				continue
-			if(GLOB.chem_trace)
-				log_world("CHEM: carthatoline purges [R.volume]u of [R.id] from the stomach of [M]")
-			M.ingested.del_reagent(R.id)
 	if(M.injury_load(INJURY_CATEGORY_TOXIC) && prob(10))
 		M.vomit(1)
 	if(ishuman(M))
