@@ -49,6 +49,11 @@
 			for(var/id in proto.caused_by_chems)
 				LAZYINITLIST(by_id[id])
 
+	// Every drug the book groups by clinical category is listed, whether or not a condition names it
+	// (sterilizine, a stimulant or a topical may treat no catalogued condition).
+	for(var/drug_id in dq_reagent_category_table())
+		LAZYINITLIST(by_id[drug_id])
+
 	// Second pass: transitive closure BACKWARD through the recipe graph
 	// only. A reagent counts as medical if it appears as ingredient,
 	// catalyst, or inhibitor of any chain whose end product is itself
@@ -118,6 +123,7 @@
 		// The reagent's own body factors, documented straight from its table.
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents?[id]
 		entry["effects"]         = body_factor_describe(R?.factors, " at a standard dose")
+		_dq_reagent_profile_entry(entry, R)
 		out += list(entry)
 	return out
 
@@ -182,18 +188,28 @@
 	entry["result_amount"] = CR.result_amount
 	var/list/reqs = list()
 	for(var/RQ in CR.reagent_takes)
-		reqs += list(list(
+		var/list/ingredient = list(
 			"id"     = RQ,
 			"name"   = dq_reagent_display_name(RQ),
 			"amount" = LAZYACCESS(CR.reagent_takes, RQ),
-		))
+		)
+		// The minimum grade a graded ingredient needs (`needs_grade`), by name.
+		var/min_grade = LAZYACCESS(CR.needs_grade, RQ)
+		if(min_grade)
+			ingredient["grade"] = grade_name(min_grade)
+			ingredient["grade_band"] = purity_band_text(min_grade)
+		reqs += list(ingredient)
 	entry["required"] = reqs
 	var/list/catal = list()
 	for(var/CL in CR.reagent_catalysts)
-		catal += list(list(
+		var/list/catalyst = list(
 			"id"   = CL,
 			"name" = dq_reagent_display_name(CL),
-		))
+		)
+		var/catalyst_grade = LAZYACCESS(CR.needs_grade, CL)
+		if(catalyst_grade)
+			catalyst["grade"] = grade_name(catalyst_grade)
+		catal += list(catalyst)
 	entry["catalysts"] = catal
 	var/list/inhib = list()
 	for(var/IH in CR.reagent_blocked)
@@ -276,6 +292,7 @@
 			"name"         = proto.name,
 			"threshold"    = proto.caused_by_chems[reagent_id],
 			"description"  = proto.clinical_description,
+			"kind"         = ispath(proto.type, /datum/affliction/nausea) ? "nausea" : (ispath(proto.type, /datum/affliction/seizure) ? "seizure" : "symptom"),
 		))
 	return out
 
@@ -299,62 +316,126 @@
 				"name"   = dq_reagent_display_name(other_id),
 				"amount" = proto.caused_by_chems[other_id],
 			))
+		// What the interaction does to a drug's treatment (`interferes_with`: weakens, potentiates, cancels). Two drugs weakening
+		// each other is a conflict.
+		var/list/shifts = list()
+		var/weakened = 0
+		for(var/target_id in proto.interferes_with)
+			var/multiplier = proto.interferes_with[target_id]
+			if(multiplier < 1)
+				weakened++
+			var/target_name = dq_reagent_display_name(target_id)
+			shifts += list(list(
+				"id"   = target_id,
+				"name" = target_name,
+				"kind" = dq_describe_interference(multiplier),
+				"text" = "[dq_describe_interference(multiplier)] [target_name] ([dq_describe_interference_strength(multiplier)])",
+			))
 		out += list(list(
 			"id"           = "[proto.type]",
 			"name"         = proto.name,
 			"threshold"    = proto.caused_by_chems[reagent_id],
 			"other_chems"  = others,
 			"description"  = proto.clinical_description,
+			"shifts"       = shifts,
+			"conflict"     = weakened >= 2 && (reagent_id in proto.interferes_with),
+			"effects"      = body_factor_describe(proto.factors, " while both are present"),
 		))
 	return out
 
 
+/// The drug-profile half of a reagent's entry, read straight from the reagent: the mechanisms it provides (the conditions those reach are
+/// `cures`), its strains, what it hides from instruments and how it moves seizure proneness.
+/proc/_dq_reagent_profile_entry(list/entry, datum/reagent/R)
+	var/list/tags = list()
+	var/list/tag_names = list()
+	for(var/tag in R?.treatment_tags)
+		var/tag_name = dq_treatment_tag_name(tag)
+		tags += list(list("name" = tag_name, "band" = dq_describe_cure_strength(R.treatment_tags[tag])))
+		tag_names += tag_name
+	entry["tags"] = tags
+	// The one-line "what it treats": the mechanisms it provides, else what the reagent says it does.
+	entry["treats_text"] = length(tag_names) ? english_list(tag_names) : (R?.description || "Nothing in the catalogue.")
+	var/list/strain_rows = list()
+	for(var/organ_tag in R?.strains)
+		var/rate = R.strains[organ_tag]
+		strain_rows += list(list(
+			"organ" = "[organ_tag]",
+			"band" = dq_describe_strain(rate),
+			"text" = "[dq_describe_strain(rate)] strain on the [organ_tag]",
+		))
+	entry["strains"] = strain_rows
+	var/list/hide_rows = list()
+	for(var/key in R?.hides)
+		hide_rows += dq_hide_label(key)
+	entry["hides"] = hide_rows
+	var/proneness = R?.factors ? R.factors[STAT_SEIZURE_PRONENESS] : null
+	if(proneness)
+		entry["seizure_proneness"] = proneness
+
+
 /// Reference-book category for a reagent id.
 /proc/dq_reagent_category(reagent_id)
-	var/static/list/cat
-	if(!cat)
-		cat = list(
-			// --- Trauma & wound management ---
-			REAGENT_ID_BICARIDINE     = "Trauma",
-			REAGENT_ID_BICARIDAZE     = "Trauma",
-			REAGENT_ID_KELOTANE       = "Trauma",
-			REAGENT_ID_DERMALINE      = "Trauma",
-			REAGENT_ID_OSTEODAXON     = "Trauma",
-			// --- Organ repair (the *-daxon family) ---
-			REAGENT_ID_PERIDAXON         = "Organ repair",
-			REAGENT_ID_CORDRADAXON       = "Organ repair",
-			REAGENT_ID_RESPIRODAXON      = "Organ repair",
-			REAGENT_ID_HEPANEPHRODAXON   = "Organ repair",
-			REAGENT_ID_GASTIRODAXON      = "Organ repair",
-			REAGENT_ID_ALKYSINE          = "Organ repair",
-			REAGENT_ID_SYNAPTIZINE       = "Organ repair",
-			REAGENT_ID_IMIDAZOLINE       = "Organ repair",
-			REAGENT_ID_REZADONE          = "Organ repair",
-			REAGENT_ID_NECROXADONE       = "Organ repair",
-			// --- Anti-infective ---
-			REAGENT_ID_SPACEACILLIN   = "Anti-infective",
-			REAGENT_ID_COROPHIZINE    = "Anti-infective",
-			// --- Toxicology ---
-			REAGENT_ID_ANTITOXIN      = "Toxicology",
-			REAGENT_ID_CARTHATOLINE   = "Toxicology",
-			// --- Environmental ---
-			REAGENT_ID_LEPORAZINE     = "Environmental",
-			REAGENT_ID_HYRONALIN      = "Environmental",
-			REAGENT_ID_ARITHRAZINE    = "Environmental",
-			REAGENT_ID_RYETALYN       = "Environmental",
-			// --- Respiratory support ---
-			REAGENT_ID_DEXALIN        = "Respiratory support",
-			REAGENT_ID_DEXALINP       = "Respiratory support",
-			// --- Cardiac / vital stabilisers ---
-			REAGENT_ID_INAPROVALINE   = "Vital stabiliser",
-			REAGENT_ID_TRICORDRAZINE  = "Vital stabiliser",
-			REAGENT_ID_NUTRIMENT      = "Vital stabiliser",
-			REAGENT_ID_IRON           = "Vital stabiliser",
-			// --- Analgesia ---
-			REAGENT_ID_PARACETAMOL    = "Analgesic",
-			REAGENT_ID_TRAMADOL       = "Analgesic",
-			REAGENT_ID_OXYCODONE      = "Analgesic",
-			// --- Stimulants (rarely indicated medically; contraindicated for most conditions) ---
-			REAGENT_ID_HYPERZINE      = "Stimulant",
-		)
-	return cat[reagent_id] || "Other"
+	return dq_reagent_category_table()[reagent_id] || "Other"
+
+
+/// reagent id -> clinical category: the drugs the book lists, whether or not a condition names them.
+GLOBAL_LIST_INIT(dq_reagent_category_by_id, list(
+		// --- Trauma & wound management ---
+		REAGENT_ID_BICARIDINE     = "Trauma",
+		REAGENT_ID_KELOTANE       = "Trauma",
+		REAGENT_ID_DERMALINE      = "Trauma",
+		REAGENT_ID_OSTEODAXON     = "Trauma",
+		REAGENT_ID_MYELAMINE      = "Trauma",
+		// --- Organ repair (the *-daxon family) ---
+		REAGENT_ID_PERIDAXON         = "Organ repair",
+		REAGENT_ID_CORDRADAXON       = "Organ repair",
+		REAGENT_ID_RESPIRODAXON      = "Organ repair",
+		REAGENT_ID_HEPANEPHRODAXON   = "Organ repair",
+		REAGENT_ID_GASTIRODAXON      = "Organ repair",
+		REAGENT_ID_ALKYSINE          = "Organ repair",
+		REAGENT_ID_SYNAPTIZINE       = "Organ repair",
+		REAGENT_ID_IMIDAZOLINE       = "Organ repair",
+		REAGENT_ID_REZADONE          = "Organ repair",
+		REAGENT_ID_NECROXADONE       = "Organ repair",
+		// --- Anti-infective ---
+		REAGENT_ID_SPACEACILLIN   = "Anti-infective",
+		REAGENT_ID_PANACILLIN     = "Anti-infective",
+		REAGENT_ID_COROPHIZINE    = "Anti-infective",
+		REAGENT_ID_STERILIZINE    = "Anti-infective",
+		// --- Toxicology ---
+		REAGENT_ID_ANTITOXIN      = "Toxicology",
+		REAGENT_ID_CARTHATOLINE   = "Toxicology",
+		REAGENT_ID_ETHYLREDOXRAZINE = "Toxicology",
+		// --- Environmental ---
+		REAGENT_ID_LEPORAZINE     = "Environmental",
+		REAGENT_ID_HYRONALIN      = "Environmental",
+		REAGENT_ID_ARITHRAZINE    = "Environmental",
+		REAGENT_ID_TERCOZOLAM     = "Environmental",
+		// --- Respiratory support ---
+		REAGENT_ID_DEXALIN        = "Respiratory support",
+		REAGENT_ID_DEXALINP       = "Respiratory support",
+		// --- Cardiac / vital stabilisers ---
+		REAGENT_ID_INAPROVALINE   = "Vital stabiliser",
+		REAGENT_ID_TRICORDRAZINE  = "Vital stabiliser",
+		REAGENT_ID_NUTRIMENT      = "Vital stabiliser",
+		REAGENT_ID_IRON           = "Vital stabiliser",
+		REAGENT_ID_IRONSALINE     = "Vital stabiliser",
+		REAGENT_ID_EPINEPHRINE    = "Vital stabiliser",
+		REAGENT_ID_NOREPINEPHRINE = "Vital stabiliser",
+		// --- Analgesia ---
+		REAGENT_ID_PARACETAMOL    = "Analgesic",
+		REAGENT_ID_TRAMADOL       = "Analgesic",
+		REAGENT_ID_OXYCODONE      = "Analgesic",
+		REAGENT_ID_ANTICONVULSANT = "Neurological",
+		REAGENT_ID_CALCIUMCARBONATE = "Gastrointestinal",
+		REAGENT_ID_ADRANOL        = "Neurological",
+		// --- Combat stimulants (code/content/reagents/reagents/content/combat_stims/; not medicine) ---
+		REAGENT_ID_HYPERZINE          = "Combat stimulants",
+		REAGENT_ID_CLARIDYL           = "Combat stimulants",
+		REAGENT_ID_BLOODSEALER        = "Combat stimulants",
+		REAGENT_ID_PERFORMANCEPEAKER  = "Combat stimulants",
+))
+
+/proc/dq_reagent_category_table()
+	return GLOB.dq_reagent_category_by_id

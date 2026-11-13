@@ -149,32 +149,21 @@
 	// with a one-line reason any time the audit fails on a reagent that
 	// genuinely shouldn't have a clinical OD presentation.
 	var/list/od_opt_out = list(
-		REAGENT_ID_SPACOMYCAZE  = "topical antibiotic gel; no systemic OD pathway",
 		REAGENT_ID_SKRELLIMMUNO = "Skrell-only species drug; no general OD pathway",
 		// Healing via treatment tags pulled these into the medical set; their
 		// ODs are recreational, niche or admin/xeno chems with no clinical
 		// presentation worth authoring yet.
 		"ambrosia_extract" = "botanical extract; recreational OD",
 		"bullvalene" = "combat stim; OD presentation TBD",
-		"livingagent" = "xenochemical; no clinical OD pathway",
-		"quadcord" = "niche multi-healer; OD presentation TBD",
 		"fakesynxchem" = "synx novelty chem",
 		"clownsynxchem" = "synx novelty chem",
 		"xeyakinblood" = "species-specific blood; no clinical OD pathway",
-		"eden" = "herbal tonic; mild recreational OD",
 		"prussian_blue" = "trace chelator; OD presentation TBD",
-		"cleansingagent" = "xenochemical cleanser; no clinical OD pathway",
-		"purifyingagent" = "xenochemical cleanser; no clinical OD pathway",
 		"nukie_mega_heart" = "energy drink; recreational OD",
 		"nukie_one" = "energy drink; recreational OD",
 		"soy_latte" = "drink; caffeine OD is handled generically",
 		"cafe_latte" = "drink; caffeine OD is handled generically",
 		"claridyl" = "novelty chem; OD threshold unreachable in play",
-		"dermalaze" = "topical burn gel; no systemic OD pathway",
-		"neotane" = "topical burn chem; OD presentation TBD",
-		"alizene" = "trauma chem variant; OD presentation TBD",
-		"vermicetol" = "trauma chem variant; OD presentation TBD",
-		"burncard" = "trauma chem variant; OD presentation TBD",
 	)
 
 	TEST_ASSERT_NOTNULL(SSchemistry.ready().chemical_reagents, "chemistry service / reagent list not initialized")

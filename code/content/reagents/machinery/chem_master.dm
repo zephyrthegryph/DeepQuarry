@@ -154,9 +154,9 @@ CAPABILITIES(/obj/machinery/chem_master)
 	data["buffer_reagents"] = buffer_reagents_list
 	if(beaker)
 		for(var/datum/reagent/R in beaker.reagents?.reagent_list)
-			beaker_reagents_list[++beaker_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.description, "id" = R.id)
+			beaker_reagents_list[++beaker_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.contaminants ? "[R.description] [R.scan_text()]" : R.description, "id" = R.id)
 		for(var/datum/reagent/R in reagents.reagent_list)
-			buffer_reagents_list[++buffer_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "id" = R.id, "description" = R.description)
+			buffer_reagents_list[++buffer_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "id" = R.id, "description" = R.contaminants ? "[R.description] [R.scan_text()]" : R.description)
 
 	data["mode"] = mode ? TRUE : FALSE
 

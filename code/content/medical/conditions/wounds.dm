@@ -486,9 +486,13 @@
 	stages = list("ripped severe burn" = 35, "severe burn" = 30, "healing severe burn" = 10, "burn scar" = 0)
 
 /datum/affliction/wound/burn/deep
+	// Degree 4: kelotane-grade burn care barely reaches it; dermaline (TREAT_BURN_DEEP) does.
+	treated_by = list(TREAT_BURN_DEEP = 1, TREAT_BURN_CARE = 0.3)
 	stages = list("ripped deep burn" = 45, "deep burn" = 40, "healing deep burn" = 15,  "large burn scar" = 0)
 
 /datum/affliction/wound/burn/carbonised
+	// Degree 5: as the deep burn.
+	treated_by = list(TREAT_BURN_DEEP = 1, TREAT_BURN_CARE = 0.3)
 	stages = list("carbonised area" = 50, "healing carbonised area" = 20, "massive burn scar" = 0)
 
 // --- Internal bleeding -------------------------------------------------------------------

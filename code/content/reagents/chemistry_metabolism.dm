@@ -90,6 +90,7 @@
 	var/ingest_rem_mult = 1
 	var/ingest_abs_mult = 1
 	var/metabolism = M.metabolism_mult
+	ingest_abs_mult *= M.ingest_absorption // a drug in the blood that binds oral drugs (dylovene) lowers the share that is absorbed
 	removed += metabolism
 	ingest_rem_mult *= metabolism
 	removed += metabolism_speed

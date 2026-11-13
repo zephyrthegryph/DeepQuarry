@@ -335,7 +335,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel the life drain from your body.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/// Only running out kills: curing or removing the doom (curea) lifts it.
+/// Only running out kills: removing the doom lifts it.
 /datum/body_effect/doomed/on_end(mob/living/L, expired)
 	if(expired && L.stat != DEAD)
 		act_message(L, null, others = span_alien("%U% collapses, the life draining from their body."))

@@ -78,7 +78,7 @@ CAPABILITIES(/obj/effect/effect/foam)
 			F.create_reagents(10)
 			if(reagents)
 				for(var/datum/reagent/R in reagents.reagent_list)
-					F.reagents.add_reagent(R.id, 1, safety = 1) //added safety check since reagents in the foam have already had a chance to react
+					F.reagents.add_reagent(R.id, 1, safety = 1, contaminants = R.contaminants) //added safety check since reagents in the foam have already had a chance to react
 
 /// Heat behaviour rule: foam dissolves when heated, except metal foam.
 /obj/effect/effect/foam/proc/rule_dissolve(datum/rule/rule)

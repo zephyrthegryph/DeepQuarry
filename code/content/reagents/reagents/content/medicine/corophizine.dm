@@ -1,9 +1,12 @@
 /datum/reagent/corophizine
 	treatment_tags = list(TREAT_ANTIMICROBIAL = 1.3)
-	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_SUPER)
+	// Strong enough for sepsis and septic shock; it also thins the clotting (wounds bleed 30% faster) and strains the kidneys.
+	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_SUPER, STAT_BLEEDING = 1.3)
+	strains = alist(O_KIDNEYS = DRUG_STRAIN_MODERATE)
+	hides = list(HIDE_FEVER)
 	name = REAGENT_COROPHIZINE
 	id = REAGENT_ID_COROPHIZINE
-	description = "A wide-spectrum antibiotic drug. Powerful and uncomfortable in equal doses."
+	description = "A wide-spectrum antibiotic for sepsis and septic shock. Powerful and uncomfortable in equal doses: it interferes with clotting so wounds bleed more, strains the kidneys, upsets the gut, and hides a fever from instruments."
 	taste_description = "burnt toast"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

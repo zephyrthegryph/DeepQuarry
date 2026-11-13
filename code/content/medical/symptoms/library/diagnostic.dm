@@ -43,6 +43,7 @@ TYPE_TABLE(/datum/affliction_symptom/palpitations, get_patient_messages, list( \
 /datum/affliction_symptom/abdominal_tenderness
 	name = "abdominal tenderness"
 	category = "Diagnosable"
+	subcategory = SYMPTOM_SUBCATEGORY_PAIN
 	clinical_description = "Pain on palpation of the abdomen; suggests inflammation or internal hemorrhage."
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_SCANNER
 	patient_message_chance = 3

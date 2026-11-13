@@ -151,7 +151,9 @@ CAPABILITIES(/datum/reagents)
 
 /* Holder-to-chemical */
 
-/datum/reagents/proc/add_reagent(id, amount, data = null, safety = 0, was_from_belly, can_dialysis = TRUE)
+/// Adds `amount` units of `id`. `contaminants` (contaminant id -> fraction of the added volume, see contaminants.dm) is blended into the volume already
+/// here by volume (the old volume weights the old fractions, before it is raised); a new reagent takes a copy. Null: the added units are pure.
+/datum/reagents/proc/add_reagent(id, amount, data = null, safety = 0, was_from_belly, can_dialysis = TRUE, list/contaminants = null)
 	if(!isnum(amount) || amount <= 0)
 		return 0
 
@@ -170,6 +172,7 @@ CAPABILITIES(/datum/reagents)
 		if(was_from_belly)
 			current.from_belly = was_from_belly
 		current.dialysis_returnable = can_dialysis
+		current.blend_contaminants(contaminants, amount) // before the volume rises: the old volume weights the old fractions
 		current.set_volume(current.volume + amount)
 		if(!isnull(data)) // For all we know, it could be zero or empty string and meaningful
 			current.mix_data(data, amount)
@@ -193,6 +196,7 @@ CAPABILITIES(/datum/reagents)
 		rel_set(R, nameof(R.holder), src)
 		R.set_volume(amount)
 		R.initialize_data(data)
+		R.set_contaminants(contaminants)
 		SetViruses(R,data)
 		if(was_from_belly)
 			R.from_belly = was_from_belly
@@ -354,7 +358,7 @@ CAPABILITIES(/datum/reagents)
 	for(var/datum/reagent/current in reagent_list)
 		var/amount_to_transfer = current.volume * part
 		if(current.dialysis_returnable || (!current.dialysis_returnable && ismob(target))) //Prevents duplication of reagents.
-			target.add_reagent(current.id, amount_to_transfer * multiplier, current.get_data(), safety = 1, was_from_belly = (current.from_belly || target_is_belly), can_dialysis = can_dialysis) // We don't react until everything is in place
+			target.add_reagent(current.id, amount_to_transfer * multiplier, current.get_data(), safety = 1, was_from_belly = (current.from_belly || target_is_belly), can_dialysis = can_dialysis, contaminants = current.contaminants) // We don't react until everything is in place
 		if(!copy)
 			remove_reagent(current.id, amount_to_transfer, 1)
 
@@ -412,7 +416,7 @@ CAPABILITIES(/datum/reagents)
 
 	var/datum/reagents/F = new /datum/reagents(amount)
 	var/tmpdata = get_data(rtype)
-	F.add_reagent(rtype, amount, tmpdata)
+	F.add_reagent(rtype, amount, tmpdata, contaminants = transfering_reagent.contaminants)
 	remove_reagent(rtype, amount)
 
 	if (istype(target, /atom))
@@ -431,7 +435,7 @@ CAPABILITIES(/datum/reagents)
 
 	var/datum/reagents/F = new /datum/reagents(amount)
 	var/tmpdata = get_data(id)
-	F.add_reagent(id, amount, tmpdata)
+	F.add_reagent(id, amount, tmpdata, contaminants = get_reagent(id)?.contaminants)
 	remove_reagent(id, amount)
 
 	return F.trans_to(target, amount, force_open_container = force_open_container) // Let this proc check the atom's type

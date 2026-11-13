@@ -2852,8 +2852,6 @@
 	spawn_reagent = REAGENT_ID_ROYROGERS
 /obj/item/reagent_containers/chem_disp_cartridge/rum
 	spawn_reagent = REAGENT_ID_RUM
-/obj/item/reagent_containers/chem_disp_cartridge/ryetalyn
-	spawn_reagent = REAGENT_ID_RYETALYN
 /obj/item/reagent_containers/chem_disp_cartridge/sacid
 	spawn_reagent = REAGENT_ID_SACID
 /obj/item/reagent_containers/chem_disp_cartridge/sake

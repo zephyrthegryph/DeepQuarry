@@ -115,7 +115,7 @@
 	name = "sweetbreeze"
 	seed_name = "sweet breeze"
 	display_name = "sweet breeze"
-	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_SERAZINE = list(1,10))
+	chems = list(REAGENT_ID_NUTRIMENT = list(1,10), REAGENT_ID_ANTITOXIN = list(1,10))
 	mutants = null
 
 /datum/seed/flower/lavender/sweetbreeze/default_traits()
