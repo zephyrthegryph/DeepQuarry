@@ -4010,3 +4010,48 @@ The compact six-policy checkout passed those bodies and stopped after 174.29s
 at deepCopyList's istype(.[i], /list), rank 349 / ordinal 639. That return-slot
 index needs a separate witness. No complete whole-checkout report, full registry
 parity or default cutover has been established.
+
+### List reads, return-slot recursion and a bounded grammar survey
+
+The next list-helper cohort now distinguishes read-only subtraction offsets,
+root-only list accumulation, and indexed postfix mutation statements. Shared
+write-target, callee, argument and return rules retain their previous limits.
+Return-slot indexing and its exact self-call have separate token/span witnesses;
+the checker continues to invoke the actual archived current procedure identity.
+The statement router handles the captured dot/bracket whitespace without issuing
+an expression witness itself.
+
+The focused parser module passed using 20 initial passes plus a failure-only
+root-read repair; a separate routing test passed. Host libraries and test
+definitions checked clean before the diagnostic exposure. Complete authored
+uniqueList, get_cross_shift_list, avoid_assoc_duplicate_keys and assoc_to_keys
+produced reports and installed pairs; deepCopyList with the actual islist macro
+passed after the routing repair in 1.59 seconds. Host-library regression tests
+were typechecked, not run as a monolithic library-test executable.
+
+The existing private grammar census can now be explicitly invoked as
+`dmbc --original-grammar-census <absolute.dme> <start> <count>` (count 1..1024).
+It shares the existing authenticated capture and survey implementation, retains
+its 300-second worker deadline and admission budgets, and continues only for
+nominal unissued grammar. Operational failures remain fatal. It neither installs
+body-query products nor computes policy reports or publishes compiler artifacts;
+its output describes a captured archive, never successful Checker qualification.
+The existing ignored library-test entry remains available.
+
+Runtime integration controls verified bounds before I/O, actual three-body
+Available/Skipped/Unissued classification, no report/artifacts/daemon, and a real
+provider InvalidInput when the project path is a directory. Missing nested
+includes intentionally become Original notices and were not used as operational
+I/O failures. Those source semantics remain unchanged.
+
+Two incremental Rust host builds failed with Windows STATUS_IN_PAGE_ERROR and
+zero Rust source errors. Dependency reads succeeded and memory/disk had room;
+the fault's cause was not established. A private nonincremental host build passed
+in 7m28s while retaining the old cache. The integration-fixture repair then built
+in 34.55s and its failure-only rerun passed. No shared compiler was published.
+
+The actual bounded checkout survey of checker ranks 349..477 completed with
+85 available bodies, 43 unissued bodies, zero native rejections and zero
+unmeasured OOM cases. It exposes several adjacent grammar families for the next
+batch. It is not a complete whole-checkout combined report, full-registry parity
+proof or default cutover.

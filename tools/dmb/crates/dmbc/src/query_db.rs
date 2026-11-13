@@ -18,6 +18,7 @@ mod answer_value_owner;
 #[cfg(test)]
 mod answer_value_owner_tests;
 mod body_syntax;
+pub(crate) use body_syntax::body_syntax_census_tests::run_current_cli as run_original_grammar_census;
 mod setting_syntax;
 mod source_answers;
 mod source_question_roster;

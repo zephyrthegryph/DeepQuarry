@@ -47,6 +47,17 @@ fn main_inner() {
             std::process::exit(2);
         }
     };
+    if arguments.first().map(String::as_str) == Some("--original-grammar-census") {
+        if compile_result.is_some() {
+            eprintln!("--original-grammar-census accepts no compile result");
+            std::process::exit(2);
+        }
+        if let Err(error) = dmbc::cli::run_original_grammar_census(&arguments) {
+            eprintln!("Original grammar census: {error}");
+            std::process::exit(2);
+        }
+        return;
+    }
     if arguments.first().map(String::as_str) == Some("--daemon-endpoint-json") {
         if arguments.len() != 1 || compile_result.is_some() {
             eprintln!("--daemon-endpoint-json accepts no other arguments");

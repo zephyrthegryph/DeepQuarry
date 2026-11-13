@@ -13,7 +13,7 @@ use dm_analysis::checker_effects::Storage;
 const BODY: Kind = Kind(17);
 const PLAN: Kind = Kind(18);
 const SCC: Kind = Kind(19);
-const REPORT: Kind = Kind(20);
+pub(super) const REPORT: Kind = Kind(20);
 const RESOLVER: Kind = Kind(21);
 const SLEEP_REPORT: Kind = Kind(22);
 const BUDGET: usize = 64 * 1024 * 1024;
@@ -1382,7 +1382,6 @@ pub(super) mod pages;
 
 #[path="purity_graph_work.rs"]mod graph_work;
 
-#[cfg(test)]
 impl QueryDb {
     pub(super) fn checker_order_window_for_census(
         &self,

@@ -345,9 +345,8 @@ impl QueryDb {
  pub(crate) fn trace_effect_phase_for_test(&self,label:&str,at:usize,total:usize){let trace=PRESSURE_TRACE.with(|slot|slot.get());if let Some(trace)=trace{eprintln!("effect-10001 phase={label} progress={at}/{total} elapsed_ms={} prepares={} scanned={} retired={} soft_freed={} body_charge={} k4={} k23={} k24={} k25={} k26={} k27={}",trace.started.elapsed().as_millis(),trace.prepares,trace.scanned,trace.retired,trace.soft_freed,self.body_charge.load(Ordering::Acquire),self.db.stats(Kind(4)).computed,self.db.stats(Kind(23)).computed,self.db.stats(Kind(24)).computed,self.db.stats(Kind(25)).computed,self.db.stats(Kind(26)).computed,self.db.stats(Kind(27)).computed);}}
 }
 
-#[cfg(test)]
 #[path = "body_syntax_census_tests.rs"]
-mod body_syntax_census_tests;
+pub(super) mod body_syntax_census_tests;
 
 #[cfg(test)]mod actual_canonical_product_tests{
  #[test]fn actual_current_original_body_disposition_binds_only_same_product_and_preserves_unissued(){
@@ -2887,6 +2886,83 @@ mod body_syntax_census_tests;
      }
  }
 
+
+ #[test]
+ fn actual_original_deep_copy_uses_the_return_slot_and_exact_current_procedure_call() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/deepCopyList(").unwrap();
+     let tail = &file[start..];
+     let end = tail.find("\n/proc/uniqueList(").unwrap();
+     let source = &tail[..end];
+     assert!(source.contains(".[i] = .(.[i])"));
+     for (text, expected) in [
+         (source.to_owned(), true),
+         (source.replace(".[i] = .(.[i])", "return .(.[i])"), true),
+         (source.replace(".[i] = .(.[i])", ".[i] += .(.[i])"), false),
+         (source.replace(".[i] = .(.[i])", ".[i] = .(i)"), false),
+         (source.replace(".[i] = .(.[i])", ".[i] = .(.[i], i)"), false),
+         (source.replace(".[i] = .(.[i])", ".[i] = ..(.[i])"), false),
+         (source.replace(".[i] = .(.[i])", ".[i][i] = .(.[i])"), false),
+         (source.replace("islist(.[i])", "islist(.?[i])"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "deepCopyList");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual Original return-slot recursion is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_duplicate_key_update_is_only_an_indexed_statement() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/avoid_assoc_duplicate_keys(").unwrap();
+     let tail = &file[start..];
+     let end = tail.find("\n// Generic listoflist").unwrap();
+     let source = &tail[..end];
+     assert!(source.contains("used_key_list[input_key]++"));
+     for (text, expected) in [
+         (source.to_owned(), true),
+         (source.replace("used_key_list[input_key]++", "used_key_list[input_key]--"), true),
+         (source.replace("used_key_list[input_key]++", "return used_key_list[input_key]++"), false),
+         (source.replace("used_key_list[input_key]++", "var/value = used_key_list[input_key]++"), false),
+         (source.replace("used_key_list[input_key]++", "consume(used_key_list[input_key]++)"), false),
+         (source.replace("used_key_list[input_key]++", "++used_key_list[input_key]"), false),
+         (source.replace("used_key_list[input_key]++", "used_key_list?[input_key]++"), false),
+         (source.replace("used_key_list[input_key]++", "used_key_list[input_key][1]++"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "avoid_assoc_duplicate_keys");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual indexed postfix statement is available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
  #[test]
  fn actual_original_else_if_chain_authenticates_every_link() {
      let fixture = r#"
@@ -2957,6 +3033,46 @@ mod body_syntax_census_tests;
              }
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_unique_and_assoc_keys_keep_root_assignment_roles() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let extract = |name: &str| {
+         let start = file.find(&format!("/proc/{name}(")).unwrap();
+         let tail = &file[start + 1..];
+         let end = [tail.find("\n/proc/"), tail.find("\n#define ")]
+             .into_iter().flatten().min().map(|at| start + 1 + at).unwrap_or(file.len());
+         &file[start..end]
+     };
+     let macros = ["LIST_VALUE_WRAP_LISTS", "UNTYPED_LIST_ADD"].into_iter().map(|name| {
+         file.lines().find(|line| line.starts_with(&format!("#define {name}("))).unwrap()
+     }).collect::<Vec<_>>().join("\n");
+     for (name, source, needle, refusal) in [
+         ("uniqueList", extract("uniqueList").to_owned(), ". |= i", "return . |= i"),
+         ("assoc_to_keys", format!("{macros}\n{}", extract("assoc_to_keys")), "UNTYPED_LIST_ADD(keys, key)", "return UNTYPED_LIST_ADD(keys, key)"),
+     ] {
+         assert!(source.contains(needle));
+         for (text, expected) in [(source.to_owned(), true), (source.replace(needle, refusal), false)] {
+             let db = Arc::new(QueryDb::default());
+             let front = issued_original_fixture(&db, &text);
+             let input = original_input(&front, name);
+             let product = db.syntax_product_checked(&input).unwrap();
+             setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+                 let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+                 let disposition = body.original_code_disposition();
+                 if expected {
+                     let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                         panic!("actual {name} root assignment must be available");
+                     };
+                     assert!(proof.belongs_to(&body));
+                 } else {
+                     assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+                 }
+                 Ok::<(), BodySyntaxFailure>(())
+             }).unwrap();
+         }
      }
  }
 

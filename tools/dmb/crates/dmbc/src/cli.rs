@@ -273,3 +273,28 @@ fn define(
 #[cfg(test)]
 #[path = "cli_tests.rs"]
 mod tests;
+
+// Deliberately absent from normal help, BuildRequest and daemon/query authority.
+// This opt-in diagnostic shares the exact existing private census implementation.
+fn original_grammar_census_arguments(arguments: &[String]) -> Result<(PathBuf, usize, usize), String> {
+    if arguments.len() != 4 || arguments[0] != "--original-grammar-census" {
+        return Err("usage: dmbc --original-grammar-census <absolute.dme> <start> <count:1..1024>".into());
+    }
+    let project = PathBuf::from(&arguments[1]);
+    let decimal = |text: &str| !text.is_empty() && text.bytes().all(|byte| byte.is_ascii_digit());
+    if !project.is_absolute() || !decimal(&arguments[2]) || !decimal(&arguments[3]) {
+        return Err("Original grammar census requires an absolute project and unsigned decimal bounds".into());
+    }
+    let start = arguments[2].parse::<usize>().map_err(|_| "Original grammar census start is out of range")?;
+    let count = arguments[3].parse::<usize>().map_err(|_| "Original grammar census count is out of range")?;
+    if !(1..=1024).contains(&count) || start.checked_add(count).is_none() {
+        return Err("Original grammar census count must be 1..1024 and start+count must not overflow".into());
+    }
+    Ok((project, start, count))
+}
+
+#[doc(hidden)]
+pub fn run_original_grammar_census(arguments: &[String]) -> Result<(), String> {
+    let (project, start, count) = original_grammar_census_arguments(arguments)?;
+    crate::query_db::run_original_grammar_census(project, start, count)
+}

@@ -1,12 +1,15 @@
 //! Opt-in survey of the existing Original parser, after one actual host capture.
 //! The survey never installs its body products or publishes policy reports.
 use super::*;
+use super::super::purity::REPORT;
 use crate::{
     input_snapshot::{FileSystemInputs, RecordingInputs},
-    policy_request::{AnalysisContext, PolicyInputFile, PolicyInputRequest, PolicyInputRole, WorkspacePolicyRequest},
-    request::{BuildOutcome, Command},
-    runner_host::BuildHost,
+    policy_request::{AnalysisContext, PolicyInputRequest, WorkspacePolicyRequest},
+
+
 };
+#[cfg(test)]
+use crate::{policy_request::{PolicyInputFile, PolicyInputRole}, request::{BuildOutcome, Command}, runner_host::BuildHost};
 use dm_tree::frontend::{BodyArchive, CurrentBodySyntax, OriginalBodyDisposition,
     BodySyntaxQueries, FrontendConfig, OriginalAnalysisCompleteness, SettingExpressionQueries};
 use dm_syntax::StatementKind;
@@ -16,11 +19,19 @@ const MAX_WINDOW: usize = 1024;
 const MAX_EXAMPLES: usize = 32;
 
 #[derive(Clone, Copy)]
-enum Order { Archive, Checker }
+enum Order {
+    #[cfg(test)]
+    Archive,
+    Checker,
+}
 
 impl Order {
     fn label(self) -> &'static str {
-        match self { Self::Archive => "archive_ordinal", Self::Checker => "checker_rank" }
+        match self {
+            #[cfg(test)]
+            Self::Archive => "archive_ordinal",
+            Self::Checker => "checker_rank",
+        }
     }
 }
 
@@ -90,6 +101,7 @@ fn invalid(message: &str) -> BodySyntaxFailure {
     BodySyntaxFailure::Operational(io::Error::new(io::ErrorKind::InvalidData, message))
 }
 
+#[cfg(test)]
 fn prepare(project: &Path) -> BuildHost {
     let root = project.parent().unwrap();
     let args = ["prepare-query".to_owned(), project.to_str().unwrap().to_owned()];
@@ -175,6 +187,7 @@ fn inspect(
     })
 }
 
+#[cfg(test)]
 fn survey(host: &BuildHost, start: usize, count: usize) -> [usize; 4] {
     let db = host.query_db();
     let state = host.query_state();
@@ -195,9 +208,11 @@ fn survey_archive(
     let end = start.checked_add(count).unwrap().min(total);
     assert!(start < end, "window starts beyond actual callable roster");
     let before = db.db.stats(BODY_SYNTAX).computed;
+    let report_before = db.db.stats(REPORT).computed;
     let mut ordinals = [0; MAX_WINDOW];
     let ordinals = &mut ordinals[..end - start];
     match order {
+        #[cfg(test)]
         Order::Archive => ordinals.iter_mut().zip(start..end).for_each(|(slot, ordinal)| *slot = ordinal),
         Order::Checker => db.checker_order_window_for_census(archive, start, ordinals).unwrap(),
     }
@@ -208,7 +223,11 @@ fn survey_archive(
     let syntax = db.policy_syntax_counter();
     use std::sync::atomic::Ordering;
     for (index, &ordinal) in ordinals.iter().enumerate() {
-        let rank = match order { Order::Archive => None, Order::Checker => Some(start + index) };
+        let rank = match order {
+            #[cfg(test)]
+            Order::Archive => None,
+            Order::Checker => Some(start + index),
+        };
         let retained_before = syntax.load(Ordering::Acquire);
         let disposition = match inspect(db.as_ref(), archive, ordinal, rank, &mut examples) {
             Ok(disposition) => disposition,
@@ -240,6 +259,7 @@ fn survey_archive(
         }
     }
     assert_eq!(db.db.stats(BODY_SYNTAX).computed, before, "survey must not install Kind4 products");
+    assert_eq!(db.db.stats(REPORT).computed, report_before, "survey must not compute reports");
     assert_eq!(counts.iter().sum::<usize>() + unmeasured_oom, ordinals.len());
     eprintln!("original.census coordinate={} range={start}..{end} total={total} available={} skipped={} unissued={} native_rejected={} unmeasured_oom={unmeasured_oom}",
         order.label(), counts[0], counts[1], counts[2], counts[3]);
@@ -249,7 +269,7 @@ fn survey_archive(
     counts
 }
 
-// Only the ignored checkout probe needs the compact compound frontend.
+// Only explicit diagnostic surveys use this compact compound frontend.
 // Borrow the same genuine recorder and authenticated body roster as the
 // production compact builder, then stop before report or Strict publication.
 fn compact_checkout_survey(
@@ -349,4 +369,26 @@ fn authenticated_original_checkout_body_syntax_census() {
             let _deadline = bind_with_deadline(Cancellation::default(), Instant::now() + Duration::from_secs(300));
             compact_checkout_survey(&project, start, count, order, continue_after_oom);
         }).unwrap().join().unwrap();
+}
+
+/// Hidden diagnostic only. Uses the exact same source-authenticated survey as
+/// the existing ignored test, never a report, graph or publication operation.
+pub(crate) fn run_current_cli(project: std::path::PathBuf, start: usize, count: usize) -> Result<(), String> {
+    if !project.is_absolute() || !(1..=MAX_WINDOW).contains(&count) || start.checked_add(count).is_none() {
+        return Err("invalid bounded Original grammar census request".into());
+    }
+    let worker = std::thread::Builder::new().name("original-grammar-census".into())
+        .stack_size(dm_exec::COMPILER_STACK_BYTES).spawn(move || {
+            use crate::daemon::control::{bind_with_deadline, Cancellation};
+            use std::time::{Duration, Instant};
+            let _deadline = bind_with_deadline(Cancellation::default(), Instant::now() + Duration::from_secs(300));
+            // No CLI or environment opt-out for operational errors. This shared
+            // implementation classifies only the nominal missing-witness cause.
+            compact_checkout_survey(&project, start, count, Order::Checker, false);
+        }).map_err(|error| error.to_string())?;
+    worker.join().map_err(|cause| {
+        if let Some(message) = cause.downcast_ref::<String>() { message.clone() }
+        else if let Some(message) = cause.downcast_ref::<&str>() { (*message).to_owned() }
+        else { "Original grammar census failed; no report or publication produced".into() }
+    })
 }

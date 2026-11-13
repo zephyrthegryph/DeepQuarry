@@ -3858,3 +3858,76 @@ fn selected_ui_actions_joins_productive_dispatcher_with_complete_dm_allow_scope(
         build, &exclusions, &mut diagnostics, &mut output).is_err());
     assert!(diagnostics.is_empty() && output.is_empty());
 }
+
+
+#[test]
+fn hidden_original_grammar_census_rejects_bounds_before_reading_a_project() {
+    let root = test_scratch::dir("original-grammar-census-cli-bounds");
+    let transport = LibraryTransport { root: &root, namespace: format!("census-bounds-{}", std::process::id()) };
+    let missing = root.join("missing.dme");
+    let missing = missing.to_str().unwrap();
+    let max = usize::MAX.to_string();
+    for args in [
+        vec!["--original-grammar-census", missing, "0", "0"],
+        vec!["--original-grammar-census", missing, "0", "1025"],
+        vec!["--original-grammar-census", missing, &max, "1"],
+        vec!["--original-grammar-census", missing, "-1", "1"],
+        vec!["--original-grammar-census", "relative.dme", "0", "1"],
+        vec!["--original-grammar-census", missing, "0", "1", "--continue-after-oom"],
+    ] {
+        let values: Vec<_> = args.iter().map(std::ffi::OsStr::new).collect();
+        let result = transport.run(&values, std::time::Duration::from_secs(15)).unwrap();
+        assert_eq!(result.status.code(), Some(2), "{args:?}");
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(stderr.contains("Original grammar census") || stderr.contains("usage:"), "{stderr}");
+        assert!(!stderr.contains("original.census coordinate="), "must reject before preparation");
+        assert!(!stderr.contains("No such file") && !stderr.contains("os error 2"), "{stderr}");
+    }
+}
+
+#[test]
+fn hidden_original_grammar_census_surveys_actual_receipts_without_publication() {
+    let root = test_scratch::dir("original-grammar-census-cli");
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "tools/ci/lint_scopes.toml", "");
+    put(&root, "code/probe.dm", concat!(
+        "/proc/available()\n    return 1\n",
+        "/proc/skipped(argument)\n    return argument +\n",
+        "/proc/unissued(argument)\n    return (1 +)\n",
+    ));
+    let transport = LibraryTransport { root: &root, namespace: format!("census-fixture-{}", std::process::id()) };
+    let project = root.join("deepquarry.dme");
+    let result = transport.run(&[std::ffi::OsStr::new("--original-grammar-census"), project.as_os_str(),
+        std::ffi::OsStr::new("0"), std::ffi::OsStr::new("3")], std::time::Duration::from_secs(30)).unwrap();
+    assert!(result.status.success(), "{}", String::from_utf8_lossy(&result.stderr));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("coordinate=checker_rank range=0..3 total=3 available=1 skipped=1 unissued=1 native_rejected=0 unmeasured_oom=0"), "{stderr}");
+    assert!(result.stdout.is_empty(), "diagnostic census must not emit a policy report");
+    assert!(!root.join("deepquarry.dmb").exists() && !root.join("deepquarry.rsc").exists());
+    assert!(!root.join("daemon").exists(), "diagnostic census must not start a daemon");
+    // A missing nested include is an authored Original error notice, not an
+    // operational IO failure. Exercise the real fixed-policy open contract:
+    // an existing directory at the DME path is typed InvalidInput before any
+    // synthetic subject or empty-roster fallback can run.
+    let bad_root = root.join("actual-provider-failure");
+    put(&bad_root, "tools/ci/lint_scopes.toml", "");
+    put(&bad_root, "code/probe.dm", std::fs::read(root.join("code/probe.dm")).unwrap());
+    let bad_project = bad_root.join("deepquarry.dme");
+    std::fs::create_dir(&bad_project).unwrap();
+    use dmbc::input_snapshot::{FileSystemInputs, SnapshotProvider};
+    let actual = FileSystemInputs.read_policy_bounded(&bad_project, 1024).err()
+        .expect("actual policy provider rejects a directory instead of certifying absence");
+    assert_eq!(actual.kind(), std::io::ErrorKind::InvalidInput);
+    assert_eq!(actual.to_string(), "candidate is not a regular file");
+    let failed = transport.run(&[std::ffi::OsStr::new("--original-grammar-census"), bad_project.as_os_str(),
+        std::ffi::OsStr::new("0"), std::ffi::OsStr::new("3")], std::time::Duration::from_secs(30)).unwrap();
+    assert!(!failed.status.success());
+    let failed_stderr = String::from_utf8_lossy(&failed.stderr);
+    assert!(failed_stderr.contains("InvalidInput") && failed_stderr.contains("candidate is not a regular file"), "{failed_stderr}");
+    assert!(!failed_stderr.contains("window starts beyond actual callable roster"), "{failed_stderr}");
+    assert!(!failed_stderr.contains("original.census coordinate="));
+    assert!(failed.stdout.is_empty());
+    for target in [&root, &bad_root] {
+        assert!(!target.join("deepquarry.dmb").exists() && !target.join("deepquarry.rsc").exists());
+    }
+}
