@@ -11,7 +11,7 @@ It is a **hard fork**: no upstream is tracked or merged. There are no edit marke
 treat it as ordinary code and remove it when you touch the file. Edit or delete any file
 freely. When you remove a file, delete it; the build regenerates `deepquarry.dme` (§2); git history is the record.
 
-**The codebase is mid-migration to the final design.** Read §3 before writing code; the short version is: write what exists on master today.
+**The form migration to the final design is complete** (`bash tools/ci/legacy_form_counts.sh` reports every legacy form at 0). Read §3 before writing code; the short version is: write what exists on master today.
 
 **The API reference is the catalogue of what to use.** `doc/rewrite/api_reference.md` names, for every need (declaring types, state, relations, timers, input, UI,
 look, stats, actions, systems, I/O, loot, atmos, construction, tests, helpers), the one form or system to use, its file, an example and what it replaces or bans.
@@ -28,7 +28,7 @@ look, stats, actions, systems, I/O, loot, atmos, construction, tests, helpers), 
 
 | Path | Purpose |
 |---|---|
-| `code/` | All DM code. Being reorganised into a new tree (§3c); the old directories are the remaining work. |
+| `code/` | All DM code, in the tree of §3c (plus `code/__defines/verdigris/`, the generated Verdigris bindings). The old `code/game`, `code/modules`, `code/datums` hold no `.dm` files. |
 | `maps/` | `maps/southern_cross/` is the live map (station only: 3 decks, CentCom, Transit). `maps/virgo_minitest/` is the unit-test map (`-DCITESTING`). `maps/submaps/`, `maps/common*/`, `maps/overmap/`, `maps/~turfpacks/` hold dynamic content; `maps/expedition/` is the blank substrate the expedition generator carves. Other map dirs are dormant. |
 | `icons/` | Edit `*.png` + `*.dmi.toml`; the build repacks into `icons/gen/`. Never hand-edit `icons/gen/`. |
 | `sound/`, `interface/`, `html/`, `strings/` | Assets, skin, browser assets, lookup text. |
@@ -62,14 +62,12 @@ The approved design is `doc/rewrite/final_api.html` ("the doc"). It replaces the
 are the doc's. Section 17 maps **every** old form to its replacement.
 
 **The rule: write what exists on master today.** Most of the doc's forms are on master now (doc §19
-"Where master stands"); a few are still open.
+"Where master stands"); a few are marked **new**.
 
-- Where a replacement has landed, write it. Where it has not, the legacy form is what you write.
-  Don't stub, fake or invent a new form; `git grep` for its definition first. A form marked
-  **new** below is not usable yet.
-- A legacy form becomes banned only when its replacement has landed **and** its lint is
-  switched on as a hard ban. The commit that does that also converts the callers. Until then
-  the form is not deprecated for you.
+- Write the replacement form. Don't stub, fake or invent a new form; `git grep` for its definition
+  first. A form marked **new** below is not usable yet.
+- A legacy form is banned when its replacement has landed **and** its lint is switched on as a
+  hard ban; the commit that does that also converts the callers.
 - What binds today: the "hold under both" rules in §3a and every ratchet that is already on
   (§3d). A ratchet with a baseline rejects a new site of what it counts. If your change needs
   a site a live ratchet rejects, don't annotate it or touch the baseline; report it, because
@@ -134,7 +132,7 @@ Rules that hold under both old and new forms:
 - Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.
 - DreamChecker is off for now, per the user (the compiler's own diagnostics gate; do not run or edit it). When it returns: run it before pushing.
 
-### 3b. Legacy forms (what is left)
+### 3b. Legacy forms (all gone)
 
 Most of the old layer is gone and hard-banned (`[lint.legacy_forms.lists] banned` in
 `tools/ci/lint_scopes.toml`, baseline empty): `om_after`, `om_hook`, `om_ask`, `om_grant`, `OM_EMIT`,
@@ -144,15 +142,14 @@ engine, `DAMAGE_REACTION`, the `OWN`/`REL` macros, the `relations()`/`ownership(
 table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` look forms and the
 `CHANGE_*` channels outside the engine. Don't write them; the lint rejects them.
 
-What is still open, and still correct to write where a file already uses it:
+What was open and is now done:
 
 - The `BF_*` body factors themselves are done: they are stats on `/mob/living`. A `factors = alist(...)` var on a flyweight or prototype (a body effect, affliction, reagent, trait, perk or form type) is final data read by its type's one reader, not open work (`doc/rewrite/proposals/stat_layer.md` §8, end); `factors_converted` is only for types that move the table into the entry itself.
 - `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/content/admin/view_variables/pickers.dm`).
 - The init, raw-overlay, untyped, escape_hatches and `base_vars` lints are hard bans (no baseline; `base_vars` keeps only the `base_var_home_hot` rows in `lint_scopes.toml`).
-- File moves into the new tree (§3c).
+- Every file is in the new tree (§3c); no `.dm` file remains in an old directory.
 
-Run `bash tools/ci/legacy_form_counts.sh` for the current census. If you touch a file that still
-uses an open form, leave it in place unless you are converting that file in a wave (§3c). The docs
+What remains is the `library_layering` baseline (`tools/ci/library_layering_baseline.txt`, about 1300 rows: library files that name content types; it only shrinks) and DreamChecker being off. Run `bash tools/ci/legacy_form_counts.sh` for the form census. The docs
 under `doc/rewrite/archive/` describe the old forms; they are history now, not a guide to master.
 
 The old `/datum/req` flyweights (`req.dm`, `op_ctx.dm`, `/datum/requirement`, `requirement_composer()`) are retired and hard-banned (`legacy_forms`): a requirement is a native
@@ -164,7 +161,7 @@ Corrections to older notes: there is no `om_changed()`, `changed()` channels or 
 any more; state is tracked setters and generated reads. `SSbehaviours` no longer fires; its work
 was folded into the kernel (`code/world/kernel/kernel.dm`).
 
-### 3c. Source layout and the migration rule
+### 3c. Source layout
 
 Target tree (doc §22):
 
@@ -182,11 +179,8 @@ Target tree (doc §22):
 Layering: host and engine may not reference library or content; library may not reference content;
 nothing in the new tree may use an old form.
 
-**A file moves into the new tree only when it is fully migrated** (zero old forms). The old
-directories (`code/game` (deleted), `code/modules` (deleted), `code/datums` (deleted), ...) were the remaining-work list; they are gone now, and the files still outside the new tree are what is left.
-Each wave: convert the files, prove them (per-file ratchet, tests, construction round-trip,
-bench), move them in a pure `git mv` commit with no edits, merge. Old APIs are deleted in the
-commit their last caller goes. Plan, phases and gates: doc §19.
+A new file goes in the tree above; a move is a pure `git mv` commit with no edits. Old APIs are
+deleted in the commit their last caller goes. Plan and gates: doc §19.
 
 ### 3d. Ratchets and justified keeps
 
@@ -493,8 +487,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 
 ## TL;DR
 
-> The codebase is mid-migration to the design in `doc/rewrite/final_api.html`. Write the forms
-> that exist on master today (a legacy form stays correct until its replacement has landed and
-> its lint is on; a form marked **new** is not usable yet), obey the ratchets that are already
-> on, and move a file into the new tree only when it is fully migrated. Commit the regenerated `deepquarry.dme`, run only the
+> The design in `doc/rewrite/final_api.html` is on master. Write the forms that exist on master
+> today (a form marked **new** is not usable yet), obey the ratchets that are already on, and put
+> a file in its place in the new tree. Commit the regenerated `deepquarry.dme`, run only the
 > tests you touch, keep debug tracing, drop a changelog, and squash before merge.
