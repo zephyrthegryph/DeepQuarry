@@ -132,3 +132,39 @@
 /// SETTLE: summaries are logged this long and KA_SETTLE_SECOND after init complete (deciseconds); work past the first counts as "late".
 #define KA_SETTLE_FIRST (2 MINUTES)
 #define KA_SETTLE_SECOND (10 MINUTES)
+
+// The tick ledger (code/world/kernel/measure/ledger.dm): every ms of a tick, up to the end of the kernel's iteration, belongs to exactly one category.
+/// Categories. KM_CAT_KERNEL is the kernel loop's own walking (a phase's list walk, deadline wheel and slot bookkeeping); KM_CAT_UNATTRIBUTED is the
+/// residual, the time inside the kernel iteration that no marked region covers.
+#define KM_CAT_UNATTRIBUTED 1
+#define KM_CAT_BYOND_PRE 2
+#define KM_CAT_INPUT 3
+#define KM_CAT_KERNEL 4
+#define KM_CAT_SYSTEM 5
+#define KM_CAT_TIMER 6
+#define KM_CAT_STAT_DRAIN 7
+#define KM_CAT_STAT_EVAL 8
+#define KM_CAT_ON_CHANGE 9
+#define KM_CAT_NOTICE 10
+#define KM_CAT_REACTION 11
+#define KM_CAT_DRAW 12
+#define KM_CAT_NATIVE 13
+#define KM_CAT_NATIVE_DELIVERY 14
+#define KM_CAT_LIGHTING 15
+#define KM_CAT_MOVEMENT 16
+#define KM_CAT_GARBAGE 17
+#define KM_CAT_SCHED 18
+#define KM_CAT_COUNT 18
+/// Nesting the ledger follows; a deeper enter is counted and ignored.
+#define KM_LEDGER_DEPTH 24
+/// Names kept per category (owner type -> proc rows); the cheaper half is dropped at the end of a tick that finds a category past it.
+#define KM_LEDGER_ROWS 320
+/// Weight of the newest tick in each category's moving average (about 10 s at 20 ticks a second).
+#define KM_LEDGER_EMA 0.005
+/// Names a category's drill-down lists in the panel and in PERF_PROFILE.
+#define KM_LEDGER_TOP 8
+// A name row's fields.
+#define KL_COUNT 1
+#define KL_MS 2
+#define KL_MS_HI 3
+#define KL_MAX 4

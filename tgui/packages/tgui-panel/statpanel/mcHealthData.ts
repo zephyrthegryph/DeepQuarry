@@ -95,8 +95,91 @@ export type McHealthData = {
   attribution?: Record<string, [string, string, number, number, number][]>;
   /** The same for the systems ranked 5 to 8 (built on another send). */
   attribution_rest?: Record<string, [string, string, number, number, number][]>;
+  /** Every ms of the kernel iteration by category, from the server tick ledger. */
+  ledger?: Ledger | null;
   runtime: Record<string, number>;
 };
+
+/** One category of the tick ledger: the moving average (now), the mean per tick since boot, and the heaviest names inside it. */
+export type LedgerCategory = {
+  key: string;
+  label: string;
+  ema_ms: number;
+  avg_ms: number;
+  total_ms: number;
+  count: number;
+  /** [source, times, total ms, max ms], heaviest first. */
+  top: [string, number, number, number][];
+};
+
+export type Ledger = {
+  ticks: number;
+  world_ticks: number;
+  budget_ms: number;
+  window_ema_ms: number;
+  window_avg_ms: number;
+  categories: LedgerCategory[];
+  outside: {
+    post_ema_ms: number;
+    post_avg_ms: number;
+    idle_ema_ms: number;
+    idle_avg_ms: number;
+    map_ema_ms: number;
+    map_avg_ms: number;
+  };
+  /** The kernel phases (K S N U D P R G): mean ms per tick. */
+  phases: { phase: string; avg_ms: number; last_ms: number }[];
+};
+
+export type LedgerRow = {
+  key: string;
+  label: string;
+  ms: number;
+  mean: number;
+  count: number;
+  top: LedgerCategory['top'];
+  unknown?: boolean;
+};
+
+/**
+ * The ledger categories as rows, biggest first. The categories already add up to the whole kernel iteration (the server keeps one exclusive
+ * timeline), so nothing is derived here: the residual is the server own unattributed category, shown as the unknown part. The BYOND time
+ * outside the iteration is appended as rows without a drill-down.
+ */
+export function ledgerRows(ledger: Ledger): LedgerRow[] {
+  const rows: LedgerRow[] = ledger.categories
+    .filter((c) => c.ema_ms >= 0.005 || c.avg_ms >= 0.005)
+    .map((c) => ({
+      key: c.key,
+      label: c.label,
+      ms: c.ema_ms,
+      mean: c.avg_ms,
+      count: c.count,
+      top: c.top,
+      unknown: c.key === 'unattributed',
+    }));
+  const out = ledger.outside;
+  const extra: [string, string, number, number][] = [
+    [
+      'after_kernel',
+      'After the kernel in the same tick (resumed procs, /world/Tick)',
+      out.post_ema_ms,
+      out.post_avg_ms,
+    ],
+    [
+      'no_kernel',
+      'Ticks the kernel did not close',
+      out.idle_ema_ms,
+      out.idle_avg_ms,
+    ],
+    ['map_send', 'Map send (BYOND maptick)', out.map_ema_ms, out.map_avg_ms],
+  ];
+  for (const [key, label, ms, mean] of extra) {
+    if (ms >= 0.005 || mean >= 0.005)
+      rows.push({ key, label, ms, mean, count: 0, top: [] });
+  }
+  return rows.sort((a, b) => b.ms - a.ms);
+}
 
 export type Census = {
   objects: number;

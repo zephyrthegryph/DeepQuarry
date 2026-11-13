@@ -111,11 +111,17 @@
 	var/start = TICK_USAGE_REAL
 	frames++
 	read_cache = null
+	var/frame_ledger = km_ledger_enter(KM_CAT_NATIVE, "native frame", "bookkeeping")
+	var/step_ledger = km_ledger_enter(KM_CAT_NATIVE, "native frame", "vg_frame")
 	var/list/box = vg_frame(elapsed, budget)
+	km_ledger_leave(step_ledger)
 	var/vg_done = TICK_USAGE_REAL
 	deliver(box, budgeted = elapsed > 0)
 	if(length(GLOB.apc_charge_backlog))
+		var/apc_ledger = km_ledger_enter(KM_CAT_NATIVE_DELIVERY, "native delivery", "apc charge drain")
 		apc_charge_drain() // the APC reports the delivery deferred (code/modules/power/apc.dm): a few a tick
+		km_ledger_leave(apc_ledger)
+	km_ledger_leave(frame_ledger)
 	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
 	last_vg_ms = TICK_DELTA_TO_MS(vg_done - start)
 	flush_deferral_summary()
@@ -200,6 +206,7 @@
 		i = p + count
 		last_records++
 		var/record_start = TICK_USAGE_REAL
+		var/record_ledger = km_ledger_enter(KM_CAT_NATIVE_DELIVERY, "native delivery", kind == NATIVE_REC_CHANGED ? "changed" : (kind == NATIVE_REC_NOTICE ? "notice" : "crossed or sensed"))
 		switch(kind)
 			if(NATIVE_REC_CHANGED)
 				last_changed++
@@ -213,6 +220,7 @@
 			if(NATIVE_REC_SENSED)
 				last_crossed++
 				SSsense.heard(a, b, box[p])
+		km_ledger_leave(record_ledger)
 		var/record_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - record_start)
 		switch(kind)
 			if(NATIVE_REC_CHANGED)

@@ -48,6 +48,7 @@ before code/content/projectiles/guns/projectile/** code/content/projectiles/guns
 before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/content/area/away_mission_areas.dm code/content/turfs/initialization/init.dm   # /area/area_after_init()
 before code/content/mob/living/living_movement.dm code/content/vore/eating/stumblevore.dm   # /mob/living/Bump(), Crossed()
+before code/domains/world_model/atom/atoms_movable.dm code/world/kernel/measure/movement.dm   # /atom/movable/Move(): the tick ledger bracket wraps the definition
 before code/content/mob/living/simple_mob/defense.dm code/content/vore/eating/simple_animal.dm   # /mob/living/simple_mob/hit_with_item()
 before code/content/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm code/domains/ai/ports/slime_mob_overrides.dm   # xenobio slime examine(), update_mood()
 before code/content/projectiles/gun.dm code/content/projectiles/targeting/targeting_gun.dm   # /obj/item/gun/dropped(), equipped()

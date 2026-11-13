@@ -182,6 +182,7 @@
 		var/turf/at = locate(x, home.y, home.z)
 		interest_view_set("dq-test-viewer", at, null, world.view)
 		if(lane_drains)
+			interest_arrival_drain() // the drain's own timer: the ring is listed by the step and scanned here (interest_ring_scan())
 			refresh_drain(null)
 		for(var/obj/dq_interest_probe/probe as anything in probes)
 			var/turf/where = probe.loc

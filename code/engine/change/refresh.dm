@@ -264,9 +264,13 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 		return
 	refresh_mark(E, mask, CHANGE_EXPLICIT)
 
+/// Marks raised over all time; the MOVE_COST trace (code/domains/world_model/atom/move_cost.dm) diffs it over a step.
+GLOBAL_VAR_INIT(refresh_marks_raised, 0)
+
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
 /proc/refresh_mark(datum/E, mask, channel = 0)
+	GLOB.refresh_marks_raised++ // the MOVE_COST trace diffs it over a step
 	if(GLOB.refresh_mark_probe_type && istype(E, GLOB.refresh_mark_probe_type))
 		refresh_mark_probe_note(mask)
 	var/datum/D = E
@@ -569,6 +573,7 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 		D.refresh_bits = 0
 		GLOB.refresh_bench_drained++
 		var/attr_start = TICK_USAGE
+		var/draw_ledger = km_ledger_enter(KM_CAT_DRAW, D.type, km_attr_reason(pending | fresh))
 		try
 			refresh_one(D, bits, pending)
 			if(fresh)
@@ -578,6 +583,7 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
 			else
 				dq_report_caught(e, "refresh of [D.type]")
+		km_ledger_leave(draw_ledger)
 		attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)

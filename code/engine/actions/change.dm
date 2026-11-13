@@ -379,6 +379,7 @@ GLOBAL_VAR_INIT(change_baselines_skipped, 0)
 					return
 				var/charge_started = stat_charge_begin()
 				var/hook_started = TICK_USAGE
+				var/hook_ledger = km_ledger_enter(KM_CAT_ON_CHANGE, E.type, H.entry || H.type)
 				try
 					if(hook_conditions_hold(H, E))
 						hook_change_eval(E, H)
@@ -386,6 +387,7 @@ GLOBAL_VAR_INIT(change_baselines_skipped, 0)
 					// A throwing condition or value read must not abort the drain and strand the rest of the batch.
 					dq_report_caught(fault, "on_change drain of [E.type]")
 					act_unwind(depth, chain_len, "on_change drain", fault)
+				km_ledger_leave(hook_ledger)
 				KM_SLOW_INNER(hook_started, "on_change [E.type] [H.entry ? copytext(H.entry.sig, 1, 100) : H.type]")
 				GLOB.stat_tick_spent = spent + stat_charge_end(charge_started)
 	if(GLOB.hook_change_pending)

@@ -41,6 +41,10 @@
 		to_chat(user, span_warning("You find [E.get_wounds_desc()]"))
 	else
 		to_chat(user, span_notice("You find no visible wounds."))
+	var/list/open_lines = surgical_inspection_lines(H, E)
+	if(length(open_lines))
+		to_chat(user, span_notice(jointext(open_lines, "<br>")))
+		log_game("SURGERY: [key_name(user)] inspected the open [E] of [key_name(H)]: [length(open_lines) - 1] lines")
 	inspect_bones(H, user, target_zone, E)
 
 /obj/item/grab/proc/inspect_bones(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)

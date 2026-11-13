@@ -2,7 +2,7 @@
 //
 // Every /datum/surgical_step is one op on the patient, "surgery_<step>": the surgeon's held tool, a help-style stance, and
 // the step's own state checks over the limb (depth, biology, coverage, something to treat) as the op's match. The op asks
-// which organ when several need the step, asks for confirmation on a drastic one (amputation, a cavity implant), claims the
+// the most urgent organ when several need the step, asks for confirmation on a drastic one (amputation, a cavity implant), claims the
 // patient while it waits, and on completion rolls the step's chance: perform() on success, complicate() on a slip. The step
 // datums stay the data (tools, depths, treatments, texts); this file is how a person does them.
 
@@ -34,16 +34,12 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 			priority(SURGERY_OP_PRIORITY + initial(S.priority) * 100 - order),
 			when(TYPE_PROC_REF(/mob/living/carbon/human, surgery_offered)),
 			needs(req(TYPE_PROC_REF(/mob/living/carbon/human, surgery_hands_steady), because = MSG(surgery/unsteady))),
-			asks(/datum/prompt/choice, fields = list("question" = "Which organ do you want to work on?", "title" = initial(S.name), "choices" = computed(TYPE_PROC_REF(/mob/living/carbon/human, surgery_target_names)), "timeout" = 0),
-				step = "target", when = TYPE_PROC_REF(/mob/living/carbon/human, surgery_target_asked)),
 			surgery_confirms(),
 			claims(),
 			begins(TYPE_PROC_REF(/mob/living/carbon/human, surgery_begins)),
 			wait(TYPE_PROC_REF(/mob/living/carbon/human, surgery_wait)),
 			on_interrupt(TYPE_PROC_REF(/mob/living/carbon/human, surgery_interrupted)),
 			then(TYPE_PROC_REF(/mob/living/carbon/human, surgery_done)))
-	// Reading what an opened limb shows (findings.dm): any limb the surgeon can see into.
-	. += op("surgery_survey", menu(desc = "Look over what the open surgical site shows and which steps answer to it."), label("Survey Surgical Site"), needs(req_adjacent(), req_capable(), req(TYPE_PROC_REF(/mob/living/carbon/human, surgery_survey_ready), fails = FAILS_HIDDEN)), then(TYPE_PROC_REF(/mob/living/carbon/human, surgery_survey_done)))
 
 /// The drastic steps' confirmation: a yes/no whose "no" ends the op, asked only when the step has a question.
 /proc/surgery_confirms()
@@ -91,22 +87,18 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 
 // --- The questions ------------------------------------------------------------------------------
 
-/// What the step can work on in the selected limb: name -> organ, or null when it works on the limb itself.
-/mob/living/carbon/human/proc/surgery_target_choices(datum/act/op/A)
+/// What the step works on in the selected limb: the organ its tool use lands on, or null when it works on the limb itself. The
+/// surgeon is never asked: the most urgent finding goes first (`ordered_target_choices()`), and the choice is logged.
+/mob/living/carbon/human/proc/surgery_target_pick(datum/act/op/A, obj/item/organ/external/part)
 	var/datum/surgical_step/S = surgery_step_for_key(A.key)
-	var/obj/item/organ/external/part = get_organ(surgery_zone(A.actor))
 	if(!S || !part)
 		return null
-	return S.target_choices(A.actor, src, part, A.held)
-
-/mob/living/carbon/human/proc/surgery_target_names(datum/act/op/A)
-	var/list/choices = surgery_target_choices(A)
-	. = list()
-	for(var/name in choices)
-		. += name
-
-/mob/living/carbon/human/proc/surgery_target_asked(datum/act/op/A)
-	return length(surgery_target_choices(A)) > 1
+	var/list/choices = S.ordered_target_choices(A.actor, src, part, A.held)
+	if(!length(choices))
+		return null
+	var/picked = choices[1]
+	log_game("SURGERY: [key_name(A.actor)] [S.name] on [key_name(src)] [part] works on [picked] first (of [english_list(choices)])")
+	return choices[picked]
 
 /mob/living/carbon/human/proc/surgery_confirm_text(datum/act/op/A)
 	var/datum/surgical_step/S = surgery_step_for_key(A.key)
@@ -126,10 +118,9 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 	var/zone = surgery_zone(user)
 	var/obj/item/organ/external/part = get_organ(zone)
 	var/atom/work_target = part
-	var/list/choices = part ? S.target_choices(user, src, part, tool) : null
-	if(length(choices))
-		var/picked = A.step_value("target")
-		work_target = choices[picked || choices[1]]
+	var/atom/picked = surgery_target_pick(A, part)
+	if(picked)
+		work_target = picked
 	var/cleanliness = clamp(get_surgery_cleanliness(user) + material_build_view(tool).surgery_cleanliness_bonus, 0, 100)
 	if(user == src)
 		to_chat(user, span_critical("You focus on attempting to perform surgery upon yourself."))

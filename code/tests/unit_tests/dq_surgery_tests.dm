@@ -1002,6 +1002,53 @@
 		_surgery_perform(/datum/surgical_step/cauterize, surgeon, H, BP_L_ARM)
 		TEST_ASSERT_NULL(arm.get_incision(), "closing works once the findings are answered")
 
+/// Inspecting an opened limb lists its findings with the steps that answer to them; a closed limb adds nothing.
+/datum/unit_test/dq_surgery_inspection_lists_findings
+
+/datum/unit_test/dq_surgery_inspection_lists_findings/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.fracture()
+	TEST_ASSERT_EQUAL(length(surgical_inspection_lines(H, arm)), 0, "a closed limb adds nothing to the inspection")
+	arm.open_surgical_site(FLESH_RETRACTED, 100)
+	var/text = jointext(surgical_inspection_lines(H, arm), "\n")
+	TEST_ASSERT(findtext(text, "Set Bone"), "the open limb's inspection names the step that answers to the fracture: [text]")
+	TEST_ASSERT(findtext(text, "Clamp Bleeders"), "the open limb's inspection names the step that answers to the bleeders: [text]")
+
+/// Bleeders outrank every other step, so a tool that does several things clamps first; the survey op and the organ question are gone.
+/datum/unit_test/dq_surgery_bleeders_first
+
+/datum/unit_test/dq_surgery_bleeders_first/Run()
+	var/datum/surgical_step/clamp = surgical_step(/datum/surgical_step/clamp_bleeders)
+	for(var/datum/surgical_step/S as anything in surgical_steps())
+		if(S != clamp)
+			TEST_ASSERT(clamp.priority > S.priority, "[S.type] must not outrank clamping bleeders")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.fracture()
+	arm.open_surgical_site(FLESH_RETRACTED, 100)
+	var/list/rows = surgical_findings(H, arm)
+	var/list/first_steps = rows[1]["steps"]
+	TEST_ASSERT(clamp in first_steps, "the bleeders are listed first")
+
+/// Several organs answer to one tool: the finding organ goes first, never a healthy one, with nobody asked.
+/datum/unit_test/dq_surgery_target_finding_organ_first
+
+/datum/unit_test/dq_surgery_target_finding_organ_first/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/groin = H.get_organ(BP_GROIN)
+	var/obj/item/organ/internal/appendix/appendix = H.organ_in(O_APPENDIX)
+	if(!appendix)
+		TEST_FAIL("the test patient has no appendix")
+		return
+	appendix.inflamed = TRUE
+	groin.open_surgical_site(groin.surgical_full_access(), 100)
+	var/datum/surgical_step/organ/extract/extract = surgical_step(/datum/surgical_step/organ/extract)
+	var/list/choices = extract.ordered_target_choices(surgeon, H, groin, null)
+	TEST_ASSERT(length(choices) > 1, "several organs answer to extraction")
+	TEST_ASSERT_EQUAL(choices[choices[1]], appendix, "the inflamed appendix is worked on first")
+
 /// An open site bleeds as the patient's blood clots: an anticoagulant makes it bleed more.
 /datum/unit_test/dq_surgery_anticoagulant_raises_open_bleeding
 

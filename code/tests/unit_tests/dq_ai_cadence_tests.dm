@@ -24,6 +24,25 @@
 	TEST_ASSERT_EQUAL(walk.interval_for(B), DQ_ACTION_TICK * DQ_IDLE_STRETCH, "follow_leader did not stretch x3 below RELEVANCE_VISIBLE")
 	release(S, STAT_RELEVANCE, observer)
 
+/// A calm brain nobody sees waits DQ_CALM_UNSEEN_STRETCH times the calm tick; a watched one, and any brain with a threat, does not.
+/datum/unit_test/dq_ai_cadence_calm_unseen_stretch
+
+/datum/unit_test/dq_ai_cadence_calm_unseen_stretch/Run()
+	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/combat_ai_tactics_subject, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, locate(run_loc_floor_bottom_left.x + 8, run_loc_floor_bottom_left.y, run_loc_floor_bottom_left.z))
+	var/datum/ai_brain/B = S.ai_brain
+	var/datum/observer = allocate(/datum)
+	hold(S, STAT_RELEVANCE, RELEVANCE_NEAR, observer)
+	TEST_ASSERT_EQUAL(S.ai_action_interval(null), DQ_CALM_TICK * DQ_CALM_UNSEEN_STRETCH, "a calm brain below RELEVANCE_VISIBLE did not stretch its calm tick")
+	release(S, STAT_RELEVANCE, observer)
+	hold(S, STAT_RELEVANCE, RELEVANCE_VISIBLE, observer)
+	TEST_ASSERT_EQUAL(S.ai_action_interval(null), DQ_CALM_TICK, "a watched calm brain stretched its calm tick")
+	release(S, STAT_RELEVANCE, observer)
+	hold(S, STAT_RELEVANCE, RELEVANCE_NEAR, observer)
+	B.give_target(H, TRUE)
+	TEST_ASSERT(S.ai_action_interval(null) <= DQ_ACTION_TICK, "a brain with a threat was slowed because nobody sees it")
+	release(S, STAT_RELEVANCE, observer)
+
 /// The action loop's interval is the active behaviour's.
 /datum/unit_test/dq_ai_cadence_loop_follows_active
 

@@ -62,9 +62,14 @@ CAPABILITY_TYPE(ai_tactical, CAP_AI_TACTICAL, /datum/capability/ai_loop/tactical
 /mob/living/proc/ai_action_interval(datum/act/timer/A)
 	return ai_brain?.action_interval() || DQ_ACTION_TICK
 
-/// Deciseconds to the loop's next run: the active behaviour's interval_for(), else the combat rate with a target (it is re-selecting) and the calm rate without.
+/// Deciseconds to the loop's next run: the active behaviour's interval_for(), else the combat rate with a target (it is re-selecting) and the calm rate without
+/// (stretched DQ_CALM_UNSEEN_STRETCH times while no player sees the mob).
 /datum/ai_brain/proc/action_interval()
 	var/interval = primary_threat ? DQ_ACTION_TICK : DQ_CALM_TICK
+	// A calm brain nobody can see decides at a third of the rate: on a live round most of them are mice and the like far from the only player, and each
+	// run is a full selection pass plus a step through the op pipeline (the sched_core cost the tick breakdown ranks first).
+	if(!primary_threat && holder && stat_value(holder, STAT_RELEVANCE) < RELEVANCE_VISIBLE)
+		interval *= DQ_CALM_UNSEEN_STRETCH
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		interval = B.interval_for(src)

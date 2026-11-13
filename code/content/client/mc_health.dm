@@ -79,6 +79,7 @@ GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution_top", "c
 				"outliers" = Kernel.perf_outliers.Copy(),
 				"subsystems" = mc_health_subsystems(),
 				"kernel" = km_panel_data(),
+				"ledger" = GLOB.km_ledger.report(KM_LEDGER_TOP),
 				"runtime" = list(
 					"cpu" = world.cpu,
 					"clients" = length(GLOB.clients),

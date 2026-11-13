@@ -315,8 +315,10 @@ GLOBAL_LIST_EMPTY(notice_unheard)
 				return
 			var/charge_started = stat_charge_begin()
 			var/late_started = TICK_USAGE
-			notice_late_deliver(holder, row)
 			var/datum/notice/late_notice = row[2]
+			var/late_ledger = km_ledger_enter(KM_CAT_NOTICE, holder.type, late_notice?.type)
+			notice_late_deliver(holder, row)
+			km_ledger_leave(late_ledger)
 			KM_SLOW_INNER(late_started, "late notice [late_notice?.type] on [holder.type]")
 			GLOB.stat_tick_spent = spent + stat_charge_end(charge_started)
 	if(length(GLOB.notice_late_queue))

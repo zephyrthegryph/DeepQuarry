@@ -146,6 +146,8 @@ SYSTEM_DEF(profiler)
 		"rust_metrics" = rust_metrics,
 		// Inside sched_core / appearance_drain: top 20 callbacks, top 20 redrawn types, and the post-init settle table (attribution.dm).
 		"attribution" = km_meter().attr.report(20),
+		// Every ms of the kernel's iteration by category with its heaviest names, and what BYOND spent outside it (measure/ledger.dm).
+		"ledger" = GLOB.km_ledger.report(KM_LEDGER_TOP),
 	)
 	var/built_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start)
 	log_runtime("PERF_PROFILE [json_encode(profile)]")

@@ -7,6 +7,7 @@
 	if(!W.handler && !istype(W, /datum/work_item/stage))
 		CRASH("kernel_register_work: a work item for [owner_type] has no handler")
 	W.name ||= "[W.handler]"
+	W.ledger_cat = km_ledger_item_category(owner_type)
 	W.set_key(W.item_key(owner_type))
 	if(istype(W, /datum/work_item/stage))
 		var/datum/work_item/stage/S = W
@@ -107,7 +108,9 @@
 	var/list/head = list()
 	var/list/rest = list()
 	for(var/datum/work_item/W as anything in ordered)
-		if(W.first)
+		// The input items (the inbox drain, then the held keys that move every player) lead phase K with the scheduler's pieces: the lighting step, tgui, the
+		// database and the ticker take whatever budget the tick has left, so none of them can spend it before a step is taken or a click is served.
+		if(W.first || (W.phase == KERNEL_PHASE_K && istype(W.owner(), /datum/system/input)))
 			head += W
 		else
 			rest += W
@@ -209,6 +212,8 @@
 		limit_abs = min(limit_abs, TICK_USAGE + W.budget)
 	var/started = TICK_USAGE
 	var/done = TRUE
+	// The ledger charges the item's own time to its category, by its key; what it runs inside (timer callbacks, drains, moves) takes its own out.
+	var/item_ledger = km_ledger_enter(W.ledger_cat, null, W.key)
 	// A fire() body (system.dm fire_step) and CHECK_TICK read the tick budget from here.
 	var/saved_ticklimit = Kernel.current_ticklimit
 	Kernel.current_ticklimit = limit_abs
@@ -230,6 +235,7 @@
 			log_world(park_msg)
 			message_admins(park_msg)
 	Kernel.current_ticklimit = saved_ticklimit
+	km_ledger_leave(item_ledger)
 	var/ms = TICK_USAGE_TO_MS(started)
 	if(W.system_owned)
 		// What the tick's slow-tick record shows per system (the breakdown names who took the tick).

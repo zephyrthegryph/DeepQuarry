@@ -7,8 +7,8 @@
 //
 // A finding is never stored. Each step says what it answers to in a limb (`findings()` in surgery.dm, overridden where the
 // finding is not an affliction that lists the step's treatment tag), and `surgical_findings()` collects the rows, merging the
-// steps that answer to the same thing. The surgeon reads them from the survey entry on the patient's menu, the report that
-// retracting prints, and the operating computer; the medical book lists the same steps from the same data.
+// steps that answer to the same thing. The surgeon reads them by inspecting the opened limb (the grab inspection) and on the operating
+// computer; the medical book lists the same steps from the same data.
 
 /// One finding row: its name, where it is (the limb or an organ), the thing itself (an affliction, an object or an organ) and
 /// the steps that answer to it (the list grows as steps that answer to the same source are merged in).
@@ -43,12 +43,14 @@
 		step_names += S.name
 	return "[capitalize(row["name"])] ([location]): [english_list(step_names)]"
 
-/// The surgical report of one limb, one line each: the state of the site, then its findings.
-/proc/surgical_findings_report(mob/living/carbon/human/target, obj/item/organ/external/part)
-	. = list("[capitalize(part.name)]: [part.surgery_state_text()]")
-	if(part.surgical_depth() < FLESH_RETRACTED)
-		. += "Open the site further to see inside."
+/// What a hands-on inspection of an opened limb adds to what it finds (the grab inspection, mob_grab_specials.dm): the state
+/// of the site, then each finding with the steps that answer to it, most urgent first. Empty while the limb is not open far
+/// enough to see into.
+/proc/surgical_inspection_lines(mob/living/carbon/human/target, obj/item/organ/external/part)
+	. = list()
+	if(!istype(target) || QDELETED(part) || part.surgical_depth() < FLESH_RETRACTED)
 		return
+	. += "The open site in the [part.name]: [part.surgery_state_text()]."
 	var/list/rows = surgical_findings(target, part)
 	if(!length(rows))
 		. += "Nothing in here needs surgery."
@@ -56,34 +58,9 @@
 	for(var/list/row as anything in rows)
 		. += surgical_finding_text(row)
 
-/// A site has just been opened far enough to see inside: the surgeon is told what is there, and it is logged.
+/// A site has just been opened far enough to see inside: what is there is logged. The surgeon reads it by inspecting the limb.
 /mob/living/carbon/human/proc/reveal_surgical_findings(mob/living/user, obj/item/organ/external/part)
-	var/list/rows = surgical_findings(src, part)
 	var/list/names = list()
-	for(var/list/row as anything in rows)
+	for(var/list/row as anything in surgical_findings(src, part))
 		names += "[row["name"]] ([row["where"]])"
 	log_game("SURGERY: findings revealed on [key_name(src)] [part] for [key_name(user)]: [length(names) ? english_list(names) : "nothing"]")
-	if(!user)
-		return
-	to_chat(user, span_notice(jointext(surgical_findings_report(src, part), "<br>")))
-
-// --- The survey entry on the patient's menu ---------------------------------------------------
-
-/// Any limb the surgeon can see into.
-/mob/living/carbon/human/proc/surgery_open_parts()
-	. = list()
-	for(var/obj/item/organ/external/part as anything in organs)
-		if(part.surgical_depth() >= FLESH_RETRACTED)
-			. += part
-
-/// The survey entry shows on a patient with a limb open far enough to see into.
-/mob/living/carbon/human/proc/surgery_survey_ready(datum/act/op/A)
-	return length(surgery_open_parts()) ? null : MSG(req_silent)
-
-/// Reads out every open limb's findings.
-/mob/living/carbon/human/proc/surgery_survey_done(datum/act/op/A)
-	var/mob/living/user = A.actor
-	for(var/obj/item/organ/external/part as anything in surgery_open_parts())
-		to_chat(user, span_notice(jointext(surgical_findings_report(src, part), "<br>")))
-	log_game("SURGERY: [key_name(user)] surveyed the open sites of [key_name(src)]")
-	return OP_OK
