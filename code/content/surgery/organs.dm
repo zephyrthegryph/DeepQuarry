@@ -16,6 +16,9 @@
 
 /datum/surgical_step/organ/extract
 	name = "Remove Organ"
+	finds = TRUE
+	book_category = "Organs"
+	about = "Taking an organ out: a malignant growth, an inflamed appendix, or any organ that has to be replaced."
 	allowed_tools = list(
 		/obj/item/surgical/hemostat = 100,
 		/obj/item/surgical/scalpel/ripper = 100,
@@ -39,6 +42,21 @@
 	for(var/obj/item/organ/internal/I as anything in part.held_organs())
 		if(I.owner == target)
 			.[I.name] = I
+
+/// Growths and an inflamed appendix are findings: the organs that are the problem and have to come out.
+/datum/surgical_step/organ/extract/findings(mob/living/carbon/human/target, obj/item/organ/external/part, full)
+	. = list()
+	if(!full)
+		return
+	for(var/obj/item/organ/internal/I as anything in part.held_organs())
+		if(I.owner != target)
+			continue
+		if(istype(I, /obj/item/organ/internal/malignant))
+			. += list(surgical_finding_row("malignant growth", I, I, src))
+		else if(istype(I, /obj/item/organ/internal/appendix))
+			var/obj/item/organ/internal/appendix/A = I
+			if(A.inflamed)
+				. += list(surgical_finding_row("inflamed appendix", I, I, src))
 
 /datum/surgical_step/organ/extract/target_choices(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	return removable_organs(target, part)

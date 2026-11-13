@@ -350,15 +350,17 @@
 	O.set_status(O.status | ORGAN_ASSISTED)
 	TEST_ASSERT_NULL(bodyscanner_organ_kind(O), "a status bit with the same value is not a prosthesis")
 
-/// D8: resection and retinal repair can reach inside bone.
+/// D8: organ repair and resection reach inside bone: the organ steps need the limb open to its organs, and the saw and pry steps
+/// open an encased limb that far.
 /datum/unit_test/dq_p1_d8_encased_access_steps
 
 /datum/unit_test/dq_p1_d8_encased_access_steps/Run()
-	for(var/path in list(/datum/dq_surgery/retinal_repair, /datum/dq_surgery/organ_resection))
-		var/datum/dq_surgery/S = new path
-		TEST_ASSERT(/datum/surgical_step/access/saw in S.procedure, "[path] needs a saw step")
-		TEST_ASSERT(/datum/surgical_step/access/pry_bone in S.procedure, "[path] needs a pry step")
-		qdel(S)
+	for(var/path in list(/datum/surgical_step/treat/organ/suture, /datum/surgical_step/treat/organ/resection))
+		var/datum/surgical_step/S = surgical_step(path)
+		TEST_ASSERT(S.needs_full_access, "[path] works on organs, which sit behind the bone of an encased limb")
+	var/datum/surgical_step/access/saw = surgical_step(/datum/surgical_step/access/saw)
+	var/datum/surgical_step/access/pry = surgical_step(/datum/surgical_step/access/pry_bone)
+	TEST_ASSERT(saw.encased_only && pry.encased_only, "the saw and pry steps open encased limbs")
 
 /// D9: a refreshing scanner UI doesn't move the device's trend baseline.
 /datum/unit_test/dq_p1_d9_trend_baseline_per_device

@@ -42,6 +42,8 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 			wait(TYPE_PROC_REF(/mob/living/carbon/human, surgery_wait)),
 			on_interrupt(TYPE_PROC_REF(/mob/living/carbon/human, surgery_interrupted)),
 			then(TYPE_PROC_REF(/mob/living/carbon/human, surgery_done)))
+	// Reading what an opened limb shows (findings.dm): any limb the surgeon can see into.
+	. += op("surgery_survey", menu(desc = "Look over what the open surgical site shows and which steps answer to it."), label("Survey Surgical Site"), needs(req_adjacent(), req_capable(), req(TYPE_PROC_REF(/mob/living/carbon/human, surgery_survey_ready), fails = FAILS_HIDDEN)), then(TYPE_PROC_REF(/mob/living/carbon/human, surgery_survey_done)))
 
 /// The drastic steps' confirmation: a yes/no whose "no" ends the op, asked only when the step has a question.
 /proc/surgery_confirms()
@@ -176,4 +178,6 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 	var/atom/work_target = handle_get(record[3])
 	if(part && !S.target_still_valid(src, part, work_target))
 		return
-	surgical_step_ended(prob(record[4]), A.held, S, user, zone, record[2], part, work_target, record[4])
+	// The patient's state is checked as the step lands: a patient who still feels it flinches (felt_pain()), whatever the roll.
+	var/felt = part ? S.felt_pain(src, part) : 0
+	surgical_step_ended(prob(record[4]), A.held, S, user, zone, record[2], part, work_target, record[4], felt)

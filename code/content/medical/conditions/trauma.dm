@@ -256,6 +256,22 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 				region = " arm"
 	_apply_stage("[(istype(E) && E.splinted) ? "Splinted" : "Unset"][region]")
 
+/// A fracture that knitted crooked. The bone is no longer loose, so it can't be set: a surgeon has to open the limb, break it
+/// again (`surgical_step/rebreak_bone`) and set it straight. Nothing a drug does reaches it.
+/datum/affliction/malunion
+	name = "crooked fracture"
+	category = "Bone"
+	clinical_description = "A broken bone that healed crooked. It can't be set while it is healed over: the surgeon has to break it again, and then set it straight."
+	progression_rate = 0
+	initial_severity = 40
+	symptom_pool = list(
+		/datum/affliction_symptom/throbbing_pain = 60,
+		/datum/affliction_symptom/limb_weakness  = 50,
+	)
+	min_symptoms = 1
+	max_symptoms = 2
+	factors = alist(STAT_PAIN = 10, STAT_ACCURACY = -5)
+
 /datum/affliction/untreated_fracture/damage_scaling()
 	. = 1.0
 	if(location)

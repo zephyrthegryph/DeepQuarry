@@ -2,6 +2,9 @@
 
 /datum/surgical_step/clamp_bleeders
 	name = "Clamp Bleeders"
+	finds = TRUE
+	book_category = "Vascular"
+	about = "Clamping the cut vessels at the edge of the incision. An open site bleeds until it is clamped, and faster in a patient whose blood does not clot."
 	phase = SURGERY_PHASE_ACCESS
 	priority = 1
 	allowed_tools = list(
@@ -25,3 +28,10 @@
 /datum/surgical_step/clamp_bleeders/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/datum/affliction/surgical_incision/I = part.get_incision()
 	return I?.needs_clamp()
+
+/// The open site's own bleeders are a finding: the incision is the source.
+/datum/surgical_step/clamp_bleeders/findings(mob/living/carbon/human/target, obj/item/organ/external/part, full)
+	. = list()
+	var/datum/affliction/surgical_incision/I = part.get_incision()
+	if(I?.needs_clamp())
+		. += list(surgical_finding_row("unclamped bleeders", part, I, src))

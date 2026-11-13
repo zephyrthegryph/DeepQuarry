@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Opening a limb (incision, then retraction) now shows what is actually in it: bleeders, foreign bodies, fractures, crooked bones, severed tendons, dead tissue, organ lesions, growths and an inflamed appendix. The new Survey Surgical Site entry on the patient's menu, the report printed when you retract, and the operating computer list each finding and the steps that answer to it."
+  - rscadd: "Surgery is no longer a fixed list of procedures. Opening and closing are the only fixed steps; between them you answer each finding with the step that fits it, in any order."
+  - rscadd: "Crooked fractures can be fixed: break the bone again with a bone setter, then set it."
+  - balance: "A patient who can feel a surgical step now flinches and the step goes wrong, instead of a pain penalty on a dice roll. Anaesthesia, sleep, sedation or enough painkiller keep the patient still."
+  - balance: "An open surgical site bleeds in proportion to how badly the patient's blood clots, so anticoagulants make operating far bloodier. Cutting with bare hands or into unscrubbed skin leaves the site less sterile and the patient more likely to get an infection."
+  - code_imp: "The medical book's Surgeries tab is generated from the surgical steps and the conditions they answer to, replacing the hand-written procedure records."
