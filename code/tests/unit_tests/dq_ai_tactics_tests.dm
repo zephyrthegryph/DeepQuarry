@@ -309,7 +309,8 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 	B.give_target(H, TRUE)
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/idle_wander), "idle_wander scored with a threat")
 	var/datum/ai_behavior/idle_wander/W = dq_get_behavior(/datum/ai_behavior/idle_wander)
-	TEST_ASSERT_EQUAL(W.tick(B, S, null), DQ_BEHAVIOR_DONE, "idle_wander is a single-tick action")
+	TEST_ASSERT(W.instant, "idle_wander is an instant action")
+	TEST_ASSERT_EQUAL(W.start(B, S, null), DQ_BEHAVIOR_DONE, "idle_wander does its one action in start()")
 
 /datum/unit_test/dq_ai_tactic_idle_speak
 

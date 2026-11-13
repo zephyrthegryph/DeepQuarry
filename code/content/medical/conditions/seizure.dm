@@ -3,8 +3,8 @@
 // Who seizes is the body stat STAT_SEIZURE_PRONENESS (SUM, 0 by default; a drug that lowers the threshold gives
 // `factors = alist(STAT_SEIZURE_PRONENESS = 5)` mild / 10 strong). The threshold a shock must reach is
 // SEIZURE_BASE_THRESHOLD - proneness * SEIZURE_PRONENESS_SCALE (/mob/living/proc/seizure_threshold()), so a body with no proneness
-// never seizes from a shock. A shock (an INJURY_ELECTRIC injury that lands) at or above the threshold seizes the patient with a
-// chance of proneness * SEIZURE_CHANCE_PER_PRONENESS percent.
+// never seizes from a shock. A shock (an INJURY_ELECTRIC injury that lands, or a stun: the amount of a stun the body takes) at or above the
+// threshold seizes the patient with a chance of proneness * SEIZURE_CHANCE_PER_PRONENESS percent.
 //
 // Drugs make it a side effect by subtyping, like the overdoses (the base type has no caused_by_chems, so nothing spawns it on its own):
 //   /datum/affliction/seizure/<drug>
@@ -63,6 +63,7 @@
 
 CAPABILITIES_PART(/mob/living/carbon, seizure)
 	on_notice(/datum/notice/living_injured, then(PROC_REF(seizure_notice_injured)))
+	on_notice(/datum/notice/living_status_stun, then(PROC_REF(seizure_notice_stunned)))
 
 /// An injury landed: a shock may seize a prone body.
 /mob/living/carbon/proc/seizure_notice_injured(datum/act/notice/A)
@@ -70,3 +71,10 @@ CAPABILITIES_PART(/mob/living/carbon, seizure)
 	if(event.kind != INJURY_ELECTRIC || event.applied <= 0)
 		return
 	seizure_from_shock(event.applied)
+
+/// A stun is about to land (its notice is announced before it applies): a stun is a shock too, and may seize a prone body.
+/mob/living/carbon/proc/seizure_notice_stunned(datum/act/notice/A)
+	var/datum/notice/living_status_stun/event = A
+	if(event.amount <= 0)
+		return
+	seizure_from_shock(event.amount)

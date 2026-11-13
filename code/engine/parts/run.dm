@@ -271,9 +271,12 @@ SETTER(/datum/act/op, key)
 	A.oplan = C.oplan // ALLOW(ownership): a pooled transient: reset on release
 	A.binding = C.binding // ALLOW(ownership): a pooled transient: reset on release
 	A.result = result // ALLOW(ownership): a pooled transient: reset on release
-	A.held_name = R.held ? "[R.held]" : null
-	A.target_name = A.target ? "[A.target]" : null
-	A.actor_name = actor ? "[actor]" : null
+	// The names are a snapshot for what outlives this call (a wait, a delayed() part) and for a logged op; an op that runs to its end here has its
+	// log line built from the live atoms (op_log()), so a plain step builds three strings for nothing.
+	if(C.oplan.log_type || length(C.oplan.steps) || length(C.oplan.delayed))
+		A.held_name = R.held ? "[R.held]" : null
+		A.target_name = A.target ? "[A.target]" : null
+		A.actor_name = actor ? "[actor]" : null
 	// UI and topic arguments cross the schema boundary before anything else.
 	if(!isnull(arg_values))
 		A.args = arg_values
@@ -1620,7 +1623,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			return
 	if(!committed && !(A.started || P.log_type))
 		return
-	var/text = "[A.actor_name || "something"] [op_label(P)] [A.target_name || "it"]"
+	var/text = "[A.actor_name || A.actor || "something"] [op_label(P)] [A.target_name || A.target || "it"]"
 	if(!committed)
 		text += " ([outcome == ACT_REPLACED ? "replaced" : "refused"]: [reason_text(reason)])"
 	else if(!A.rolled)

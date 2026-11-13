@@ -372,6 +372,30 @@
 	var/proneness = R?.factors ? R.factors[STAT_SEIZURE_PRONENESS] : null
 	if(proneness)
 		entry["seizure_proneness"] = proneness
+	entry["drawbacks"] = _dq_reagent_drawbacks(R)
+
+
+/// The drawbacks a reagent declares as data beyond strains, masks and seizures, as lines of text: blood drain, stomach purge, slowed healing, clot risk, and
+/// what it does to an unset fracture (the fracture's `knits_crooked_by`).
+/proc/_dq_reagent_drawbacks(datum/reagent/R)
+	var/list/out = list()
+	if(!R)
+		return out
+	if(R.drains_blood)
+		out += "Drains blood: [R.drains_blood] unit[R.drains_blood == 1 ? "" : "s"] for every unit metabolised."
+	if(R.purges_stomach)
+		out += "Flushes everything else out of the stomach while it works."
+	for(var/tag in R.slows_other)
+		out += "On a limb where it is giving [lowertext(dq_treatment_tag_name(tag))], the limb's other wounds heal [round((1 - R.slows_other[tag]) * 100)]% slower."
+	if(R.clot_risk)
+		out += "Risks an ischemic event in the brain or heart (a lodged clot) while the heart is damaged or the blood pressure is low."
+	var/datum/affliction/untreated_fracture/fracture = dq_proto(/datum/affliction/untreated_fracture)
+	var/datum/affliction/crooked = dq_proto(fracture.crooked_into)
+	for(var/tag in R.treatment_tags)
+		if((tag in fracture.knits_crooked_by) && R.treatment_tags[tag] >= fracture.knit_min_level)
+			out += "On an unset fracture the bone knits crooked ([crooked.name]); set the bone first."
+			break
+	return out
 
 
 /// Reference-book category for a reagent id.

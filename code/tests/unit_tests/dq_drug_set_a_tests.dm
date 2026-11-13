@@ -98,7 +98,7 @@
 	R = _set_a_reagent(REAGENT_ID_KELOTANE)
 	_set_a_tags(R, list(TREAT_BURN_CARE))
 	TEST_ASSERT(!R.treatment_tags?[TREAT_BURN_DEEP], "kelotane has no deep burn care")
-	TEST_ASSERT(R.factors?[STAT_HEALING] < 1, "kelotane slows the healing of other wounds")
+	TEST_ASSERT(R.slows_other?[TREAT_BURN_CARE] < 1, "kelotane slows the healing of other wounds where it treats burns")
 
 	R = _set_a_reagent(REAGENT_ID_DERMALINE)
 	_set_a_tags(R, list(TREAT_BURN_DEEP, TREAT_ANTIEDEMA))
