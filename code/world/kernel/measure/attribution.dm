@@ -317,45 +317,86 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 /// The sections of PERF_PROFILE: top callbacks (timers and reactions by total ms), top redrawn types (count, total ms, max ms; the dominant
 /// reason), the post-init settle table and the table's own health.
 /datum/km_attr/proc/report(top = 20)
-	// One walk of the table feeds all three sections (the profiler writes this every minute: three walks and a text per row cost ~75 ms of one tick).
-	var/list/call_best = list()
-	var/list/call_value = list()
-	var/list/post_best = list()
-	var/list/post_value = list()
-	var/list/folded = list()
-	for(var/a in rows)
+	var/datum/km_attr_walk/W = walk_begin(top)
+	walk_step(W, INFINITY)
+	return walk_result(W)
+
+/// A report() being walked a few rows at a time: the profiler builds one a minute, and the whole walk (4096 rows) held one tick for 60-170 ms (debug.log
+/// PROFILER SAMPLE, 2026-11-13). The table's keys are fixed at the start; a row that is pruned meanwhile is skipped.
+/datum/km_attr_walk
+	var/top = 20
+	var/list/keys
+	var/at = 1
+	var/overflow_done = FALSE
+	var/list/call_best
+	var/list/call_value
+	var/list/post_best
+	var/list/post_value
+	var/list/folded
+	/// Rows visited, for the profile's own trace line.
+	var/visited = 0
+
+/datum/km_attr/proc/walk_begin(top = 20)
+	var/datum/km_attr_walk/W = new
+	W.top = top
+	W.keys = rows.Copy()
+	W.call_best = list()
+	W.call_value = list()
+	W.post_best = list()
+	W.post_value = list()
+	W.folded = list()
+	return W
+
+/// Walks rows for `budget_ms` (at least one owner type's worth). TRUE when the table has been walked to its end.
+/// One walk of the table feeds all three sections (three walks and a text per row cost ~75 ms of one tick).
+/datum/km_attr/proc/walk_step(datum/km_attr_walk/W, budget_ms)
+	var/started = TICK_USAGE_REAL
+	var/list/keys = W.keys
+	var/top = W.top
+	while(W.at <= length(keys))
+		var/a = keys[W.at++]
 		var/list/by_a = rows[a]
 		var/list/entry = null
 		for(var/b in by_a)
 			var/list/row = by_a[b]
-			consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, call_best, call_value)
+			W.visited++
+			consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, W.call_best, W.call_value)
 			if(row[KA_POST_COUNT])
-				consider(row, KA_BY_POST, 0, 0, top, post_best, post_value)
+				consider(row, KA_BY_POST, 0, 0, top, W.post_best, W.post_value)
 			if(row[KA_KIND] != KA_KIND_DRAW)
 				continue
 			var/ms = row[KA_MS] + row[KA_MS_HI]
 			if(!entry)
 				entry = list("type" = a, "count" = 0, "total_ms" = 0, "max_ms" = 0, "reason" = row[KA_B], "reason_ms" = -1)
-				folded[a] = entry
+				W.folded[a] = entry
 			entry["count"] += row[KA_COUNT]
 			entry["total_ms"] += ms
 			entry["max_ms"] = max(entry["max_ms"], row[KA_MAX])
 			if(ms > entry["reason_ms"])
 				entry["reason"] = row[KA_B]
 				entry["reason_ms"] = ms
-	for(var/list/row as anything in overflow)
-		consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, call_best, call_value)
-		if(row[KA_POST_COUNT])
-			consider(row, KA_BY_POST, 0, 0, top, post_best, post_value)
+		if(W.at <= length(keys) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			return FALSE
+	if(!W.overflow_done)
+		W.overflow_done = TRUE
+		for(var/list/row as anything in overflow)
+			consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, W.call_best, W.call_value)
+			if(row[KA_POST_COUNT])
+				consider(row, KA_BY_POST, 0, 0, top, W.post_best, W.post_value)
+	return TRUE
+
+/// The finished walk as report() returns it.
+/datum/km_attr/proc/walk_result(datum/km_attr_walk/W)
+	var/top = W.top
 	var/list/callbacks = list()
-	for(var/list/row as anything in call_best)
+	for(var/list/row as anything in W.call_best)
 		callbacks += list(row_data(row))
 	var/list/settle = list()
-	for(var/list/row as anything in post_best)
+	for(var/list/row as anything in W.post_best)
 		settle += list(row_data(row))
 	return list(
 		"callbacks" = callbacks,
-		"redrawn_types" = type_rows_of(folded, top),
+		"redrawn_types" = type_rows_of(W.folded, top),
 		"settle" = settle,
 		"init_complete_seconds_ago" = init_real ? round((REALTIMEOFDAY - init_real) * 0.1, 0.1) : null,
 		"rows" = n_rows,

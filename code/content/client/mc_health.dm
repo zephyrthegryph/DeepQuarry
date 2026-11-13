@@ -28,6 +28,8 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 /proc/mc_health_fast()
 	var/list/history = Kernel.perf_tick_usage
 	return list(
+		// The tick graph is the first section built and sent: it is on the panel from the first send, before any slow group.
+		"ticks" = mc_health_recent_ticks(),
 		"header" = list(
 			"tick_budget_ms" = world.tick_lag * 100,
 			"target_tps" = world.fps,
@@ -36,7 +38,6 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 			"tidi" = time_track_time_dilation_current(),
 		),
 		"window_5s" = Kernel.performance_window(5),
-		"ticks" = mc_health_recent_ticks(),
 		"stalls" = km_meter().stalls || list(),
 	)
 

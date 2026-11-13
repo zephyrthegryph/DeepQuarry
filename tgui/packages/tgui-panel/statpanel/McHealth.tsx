@@ -92,7 +92,8 @@ function Health({ data }: { data: McHealthData }) {
       </div>
       <div className="mch-facts">
         {w.tps.toFixed(1)}/{data.target_tps} tps · slowdown {pct(data.tidi, 1)}{' '}
-        · {count(data.window_5m.overruns)} overruns in 5 min
+        {data.window_5m &&
+          ` · ${count(data.window_5m.overruns)} overruns in 5 min`}
       </div>
     </div>
   );
@@ -662,7 +663,8 @@ function useSlices(
 ): McHealthData | null {
   const deps = keys.map((key) => data?.[key]);
   return useMemo(() => {
-    if (!data) return null;
+    // A slice whose slow group is not built yet (the server fills them in over its first sends) is not drawn yet.
+    if (!data || keys.some((key) => data[key] === undefined)) return null;
     const out: Record<string, unknown> = {};
     for (const key of keys) out[key] = data[key];
     return out as McHealthData;
@@ -725,36 +727,29 @@ export function McHealthPanel(props: {
   const entities = useSlices(data, ['entities', 'churn']);
   const native = useSlices(data, ['rust']);
   const advanced = useSlices(data, ['runtime', 'kernel', 'maptick']);
-  if (
-    !data ||
-    !ledger ||
-    !uses ||
-    !overruns ||
-    !memory ||
-    !entities ||
-    !native ||
-    !advanced
-  )
+  if (!data)
     return (
       <div className="stat-empty">Waiting for the server's numbers...</div>
     );
   return (
     <div className="mch">
+      <Ticks data={data} />
       <PanelFps />
       <Health data={data} />
-      <LedgerMemo data={ledger} />
-      <UsesMemo data={uses} />
-      <OverrunsMemo data={overruns} />
-      <Ticks data={data} />
-      <Distribution data={data} />
-      <MemoryMemo data={memory} />
-      <EntitiesMemo data={entities} />
-      <NativeMemo data={native} />
-      <AdvancedMemo
-        data={advanced}
-        token={props.token}
-        location={props.location}
-      />
+      {ledger && <LedgerMemo data={ledger} />}
+      {uses && <UsesMemo data={uses} />}
+      {overruns && <OverrunsMemo data={overruns} />}
+      {data.window_30s && data.window_5m && <Distribution data={data} />}
+      {memory && <MemoryMemo data={memory} />}
+      {entities && <EntitiesMemo data={entities} />}
+      {native && <NativeMemo data={native} />}
+      {advanced && (
+        <AdvancedMemo
+          data={advanced}
+          token={props.token}
+          location={props.location}
+        />
+      )}
     </div>
   );
 }

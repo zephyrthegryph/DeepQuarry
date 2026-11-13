@@ -230,7 +230,7 @@
 
 /// Marks every client lighting counter a test may move, so teardown restores them.
 /datum/unit_test/proc/client_glow_counters_restore()
-	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved), nameof(GLOB.client_glow_holder_chunk_visits), nameof(GLOB.client_glow_holder_sight_refreshes), nameof(GLOB.client_glow_trace_lines), nameof(GLOB.client_glow_flushes), nameof(GLOB.client_glow_flush_changes), nameof(GLOB.client_glow_reconsiders), nameof(GLOB.client_glow_mask_builds), nameof(GLOB.client_flat_light_refreshes), nameof(GLOB.client_flat_light_recolours), nameof(GLOB.client_flat_light_makes)))
+	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved), nameof(GLOB.client_glow_holder_chunk_visits), nameof(GLOB.client_glow_holder_sight_refreshes), nameof(GLOB.client_glow_trace_lines), nameof(GLOB.client_glow_flushes), nameof(GLOB.client_glow_flush_changes), nameof(GLOB.client_glow_reconsiders), nameof(GLOB.client_glow_mask_builds), nameof(GLOB.client_flat_light_refreshes), nameof(GLOB.client_flat_light_recolours), nameof(GLOB.client_flat_light_makes), nameof(GLOB.client_glow_twins_made), nameof(GLOB.client_glow_twin_hits)))
 		set_global(counter, GLOB.vars[counter])
 
 /// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
@@ -1091,18 +1091,18 @@
 	TEST_ASSERT(H.flat_light.layer > CLIENT_GLOW_LAYER, "it is drawn above every glow")
 	TEST_ASSERT_EQUAL(H.flat_light.render_source, H.render_target, "it copies the atom's own sprite")
 	TEST_ASSERT(registry_has(REGISTRY_CLIENT_FLAT_LIT, H) && !registry_has(REGISTRY_CLIENT_FLAT_LIT, small), "only the big atom is registered")
-	var/dark_level = H.flat_light.lit_level
-	TEST_ASSERT_EQUAL(dark_level, round(T.get_lumcount() * 32), "its grey is the level of its turf")
-	// A light on the turf lifts the grey without anything asking the atom.
+	var/dark_key = H.flat_light.lit_key
+	TEST_ASSERT_EQUAL(dark_key, client_flat_light_key(client_flat_light_rgb(T)), "its colour is the light its turf is drawn with")
+	// A light on the turf lifts the colour without anything asking the atom.
 	allocate(/obj/machinery/light, T)
 	SSlighting.light_step(0, TRUE)
-	TEST_ASSERT(H.flat_light.lit_level > dark_level, "a light on its turf raises its level ([dark_level] -> [H.flat_light.lit_level])")
-	TEST_ASSERT_EQUAL(H.flat_light.lit_level, round(T.get_lumcount() * 32), "and the level is the turf's again")
+	TEST_ASSERT(H.flat_light.lit_key > dark_key, "a light on its turf raises its colour ([dark_key] -> [H.flat_light.lit_key])")
+	TEST_ASSERT_EQUAL(H.flat_light.lit_key, client_flat_light_key(client_flat_light_rgb(T)), "and the colour is the turf's again")
 	// Moving to an unlit turf follows the turf.
 	if(east && !east.directional_opacity)
 		H.forceMove(east)
 		client_flat_light_update(H) // the moved notice does this in play; the test clock does not deliver it here
-		TEST_ASSERT_EQUAL(H.flat_light.lit_level, round(east.get_lumcount() * 32), "after a move it takes the new turf's level")
+		TEST_ASSERT_EQUAL(H.flat_light.lit_key, client_flat_light_key(client_flat_light_rgb(east)), "after a move it takes the new turf's light")
 	var/recolours = GLOB.client_flat_light_recolours
 	client_flat_light_update(H)
 	TEST_ASSERT_EQUAL(GLOB.client_flat_light_recolours, recolours, "an unchanged level rewrites nothing")
@@ -1410,6 +1410,212 @@
 	allocate(/obj/machinery/light, T)
 	SSlighting.light_step(0, TRUE)
 	TEST_ASSERT(GLOB.client_flat_light_refreshes > refreshes, "a light on its turf redoes it")
-	TEST_ASSERT_EQUAL(H.flat_light.lit_level, round(T.get_lumcount() * 32), "and its grey is its turf's level")
+	TEST_ASSERT_EQUAL(H.flat_light.lit_key, client_flat_light_key(client_flat_light_rgb(T)), "and its colour is its turf's drawn light")
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
+
+/// The sprite's falloff the flat light models is the falloff the glow icons really have: the profile table against the pixels of the shipped sprites.
+/datum/unit_test/dq_client_flat_light_profile
+
+/datum/unit_test/dq_client_flat_light_profile/Run()
+	for(var/size in list(96, 224, 352))
+		var/icon/I = icon(client_glow_icon(size), "light")
+		var/centre = (size - 1) / 2
+		for(var/step in 0 to 19) // the last sample is the rim pixel itself, which the model rounds to nothing
+			var/f = step / 20
+			var/px = clamp(round(centre + f * (size / 2 - 1)) + 1, 1, size)
+			var/real = client_lighting_test_alpha(I.GetPixel(px, round(centre) + 1)) / 255
+			var/model = client_flat_light_profile(f)
+			TEST_ASSERT(abs(real - model) <= 0.07, "the [size] px glow at [f] of its half width draws [real], the model says [model]")
+	TEST_ASSERT_EQUAL(client_flat_light_profile(1), 0, "nothing at the rim")
+	TEST_ASSERT_EQUAL(client_flat_light_profile(0), 1, "full at the centre")
+
+/// The plane and blend chain that lights a character, as the screen is built: the flat light replaces the glows (same plane, above them), the glow plane is a hidden
+/// target the lighting master ADDS over its black base, and what the silhouette holds is what the floor of its tile is drawn with, in colour, for a big sprite;
+/// a normal sprite has none because the floor's own per-pixel light is already exact. A character in the dark is dark, in a light is lit, never brighter than the floor.
+/datum/unit_test/dq_client_flat_light_chain
+
+/datum/unit_test/dq_client_flat_light_chain/Run()
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_walls_plane_master), nameof(GLOB.client_spread_plane_master), nameof(GLOB.client_visible_plane_master), nameof(GLOB.client_glow_spread_relay)))
+		set_global(screen_var, GLOB.vars[screen_var])
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	client_glow_counters_restore()
+	// The chain: glow plane master -> hidden target -> added by the lighting master over the base -> multiplied over the world.
+	var/list/screen = client_glow_screen_objects()
+	var/atom/movable/screen/plane_master/client_glow/glow_master = screen[1]
+	TEST_ASSERT_EQUAL(glow_master.plane, PLANE_CLIENT_GLOW, "the glow plane master is the glow plane")
+	TEST_ASSERT(glow_master.appearance_flags & PLANE_MASTER, "it is a plane master")
+	TEST_ASSERT_EQUAL(glow_master.render_target, CLIENT_GLOW_RENDER_TARGET, "it renders only to a hidden target")
+	var/atom/movable/screen/plane_master/lighting/lit_master = new
+	client_glow_master_compose(lit_master)
+	var/list/added = lit_master.filter_data?["client_glow_add"]
+	TEST_ASSERT_NOTNULL(added, "the lighting master adds the glow plane")
+	TEST_ASSERT_EQUAL(added["render_source"], CLIENT_GLOW_RENDER_TARGET, "the filter reads the glow target")
+	TEST_ASSERT_EQUAL(added["blend_mode"], BLEND_ADD, "the glow plane is added over the black base, not overlaid or multiplied")
+	QDEL_NULL(lit_master)
+	var/atom/movable/screen/client_glow_base/base = GLOB.client_glow_base
+	TEST_ASSERT_EQUAL(base.color, "#000000", "the base the glow plane is added to is black")
+	var/obj/effect/overlay/client_glow/sample_glow = new
+	TEST_ASSERT_EQUAL(sample_glow.blend_mode, BLEND_ADD, "a glow adds")
+	TEST_ASSERT_EQUAL(sample_glow.layer, CLIENT_GLOW_LAYER, "a glow draws at the glow layer")
+	qdel(sample_glow)
+	// The characters.
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/big = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/small = allocate(/mob/living/carbon/human, T)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	big.resize(2, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
+	small.update_transform(TRUE)
+	TEST_ASSERT_NULL(small.flat_light, "a normal-size character has no flat light: it is lit by the per-pixel light under it, which is the floor's light exactly")
+	var/atom/movable/client_flat_light/F = big.flat_light
+	TEST_ASSERT_NOTNULL(F, "a big character has a flat light")
+	TEST_ASSERT_EQUAL(F.plane, glow_master.plane, "the silhouette is on the glow plane with the glows it replaces")
+	TEST_ASSERT(F.layer > CLIENT_GLOW_LAYER, "and above every glow")
+	TEST_ASSERT(F.appearance_flags & RESET_COLOR, "the character's own colour does not tint it")
+	TEST_ASSERT(F.appearance_flags & RESET_TRANSFORM, "nor its transform")
+	TEST_ASSERT_EQUAL(F.mouse_opacity, MOUSE_OPACITY_TRANSPARENT, "it takes no clicks")
+	// Dark: the dark floor is black and so is the character.
+	var/list/dark = client_flat_light_rgb(T)
+	TEST_ASSERT_EQUAL(dark[1] + dark[2] + dark[3], 0, "an unlit floor draws black")
+	TEST_ASSERT_EQUAL(F.lit_key, 0, "so the big character in the dark is black: it does not glow")
+	var/list/dark_matrix = client_flat_light_color(F.lit_key)
+	TEST_ASSERT_EQUAL(dark_matrix[10] + dark_matrix[11] + dark_matrix[12], 0, "its colour matrix adds nothing")
+	// A light: the floor under the character is drawn as the glow's sprite times its alpha, and the silhouette is that colour.
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	var/datum/light_source/S = L.light
+	var/obj/effect/overlay/client_glow/G = S?.glow
+	TEST_ASSERT_NOTNULL(G, "the light glows")
+	var/list/lit = client_flat_light_rgb(T)
+	var/expect = min(1, client_flat_light_profile(0) * G.alpha / 255)
+	var/list/tint = rgb2num(G.color)
+	TEST_ASSERT(abs(lit[1] - min(1, expect * tint[1] / 255)) < 0.001 && abs(lit[3] - min(1, expect * tint[3] / 255)) < 0.001, "on the light's own tile the floor is drawn at the glow's alpha, in its colour ([lit[1]],[lit[2]],[lit[3]])")
+	TEST_ASSERT(lit[1] > 0, "a lit floor is lit")
+	TEST_ASSERT_EQUAL(F.lit_key, client_flat_light_key(lit), "the silhouette is the floor's light")
+	TEST_ASSERT(lit[1] <= 1 && lit[2] <= 1 && lit[3] <= 1, "never brighter than white")
+	// Further from the light the floor, and the character with it, is dimmer; past the reach it is dark.
+	var/turf/two = locate(T.x + 2, T.y, T.z)
+	if(two && S.glow_reach["2,0"])
+		var/list/farther = client_flat_light_rgb(two)
+		TEST_ASSERT(farther[1] <= lit[1], "two tiles from the light is no brighter than under it")
+	// A coloured light is a coloured floor, so a coloured silhouette.
+	L.set_light_color("#FF0000")
+	SSlighting.light_step(0, TRUE)
+	var/list/red = client_flat_light_rgb(T)
+	TEST_ASSERT(red[1] > 0 && red[2] == 0 && red[3] == 0, "a red light draws a red floor ([red[1]],[red[2]],[red[3]])")
+	TEST_ASSERT_EQUAL(big.flat_light.lit_key, client_flat_light_key(red), "and the character takes the red")
+	// Outside dynamic lighting the floor is a white tile: full light.
+	for(var/turf/F2 as anything in block(locate(1, 1, T.z), locate(world.maxx, world.maxy, T.z)))
+		if(!F2.has_dynamic_lighting())
+			var/list/white = client_flat_light_rgb(F2)
+			TEST_ASSERT_EQUAL(white[1] + white[2] + white[3], 3, "a floor outside dynamic lighting is fully lit")
+			break
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+
+/// A door beside a light: its other state is readied ahead (baked and sent to the viewer holding the light), and when the door opens with a viewer near, the light is
+/// marked near, redrawn in the very next lighting step, and the viewer's glow takes the open shape in that same step, with no bake to wait for.
+/datum/unit_test/dq_client_glow_door_opens_in_one_step
+
+/datum/unit_test/dq_client_glow_door_opens_in_one_step/Run()
+	interest_isolate()
+	for(var/counter in list(nameof(GLOB.client_glow_twins_made), nameof(GLOB.client_glow_twin_hits)))
+		set_global(counter, GLOB.vars[counter])
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/east1 = locate(T.x + 1, T.y, T.z)
+	var/turf/east2 = locate(T.x + 2, T.y, T.z)
+	TEST_ASSERT(east1 && east2 && !east1.directional_opacity && !east2.directional_opacity, "the test floor has clear turfs east")
+	var/obj/machinery/door/airlock/D = allocate(/obj/machinery/door/airlock, east1)
+	TEST_ASSERT(D.opacity, "the airlock starts shut and opaque")
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	interest_view_set("dq-test-viewer", T, null, world.view)
+	SSlighting.light_step(0, TRUE)
+	var/datum/light_source/S = F.light
+	var/h = S.glow_holder_key()
+	TEST_ASSERT(!S.glow_reach["2,0"], "shut, the door keeps the floor behind it in shadow")
+	var/shut_key = S.glow_mask_key
+	// The other state is readied: one twin shape for the one door, a different shape from the shut one, with the floor behind the door in it.
+	S.client_glow_twins_ready()
+	TEST_ASSERT_EQUAL(length(S.glow_twins), 1, "the light readied the one shape its door can give it")
+	var/open_key = S.glow_twins[1]
+	TEST_ASSERT(open_key != shut_key, "the open shape differs from the shut one")
+	TEST_ASSERT(client_glow_shape_grew(shut_key, open_key), "and reaches floor the shut one does not")
+	TEST_ASSERT(GLOB.client_glow_twins_made > 0, "the twin was counted")
+	TEST_ASSERT(GLOB.client_glow_baker.pending[open_key] || GLOB.client_glow_baker.icons[open_key], "and asked of the bakers ahead")
+	if(!GLOB.client_glow_baker.icons[open_key]) // a unit-test world bakes on the spot instead of waiting on iconforge's thread
+		var/png = client_glow_mask_bake_blocking(open_key)
+		TEST_ASSERT_NOTNULL(png, "iconforge baked the open shape")
+		client_glow_mask_cache(open_key, fcopy_rsc(file(png)))
+		fdel(png)
+	// Open it.
+	var/hits = GLOB.client_glow_twin_hits
+	var/reconsiders = GLOB.client_glow_reconsiders
+	D.set_opacity(0)
+	TEST_ASSERT(!D.opacity, "the door is open and clear")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_dirty_lights[h], CLIENT_GLOW_DIRTY_NEAR, "a light in a chunk a viewer holds is marked near")
+	client_glow_reconsider_flush()
+	TEST_ASSERT_EQUAL(GLOB.client_glow_reconsiders, reconsiders + 1, "the very next step redrew the light")
+	TEST_ASSERT(S.glow_reach["2,0"], "the floor behind the open door is lit")
+	TEST_ASSERT_EQUAL(S.glow_mask_key, open_key, "the light's shape is the one readied ahead")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_twin_hits, hits + 1, "and it was found baked")
+	TEST_ASSERT_EQUAL(LAZYACCESS(H.cut_shape, h), open_key, "the viewer's glow is cut to the open shape in the same step, with no bake to wait for")
+	// Shut again: the shape it came from is the twin now, and the glow goes back the same way.
+	S.client_glow_twins_ready()
+	TEST_ASSERT(shut_key in S.glow_twins, "the shut shape is the open one's twin")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	spent(H)
+
+/// A light far from every viewer is marked far: it redraws after the ones near a viewer.
+/datum/unit_test/dq_client_glow_opacity_marks_near_first
+
+/datum/unit_test/dq_client_glow_opacity_marks_near_first/Run()
+	interest_isolate()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	client_glow_counters_restore()
+	var/turf/home = test_floor()
+	var/turf/far = interest_far_from(home)
+	TEST_ASSERT(home && far, "the map has room")
+	var/turf/home_east = locate(home.x + 1, home.y, home.z)
+	var/turf/far_east = locate(far.x + 1, far.y, far.z)
+	TEST_ASSERT(home_east && far_east && !home_east.directional_opacity && !far_east.directional_opacity, "clear turfs beside both lights")
+	var/obj/machinery/light/near_light = allocate(/obj/machinery/light, home)
+	var/obj/machinery/light/far_light = allocate(/obj/machinery/light, far)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	interest_view_set("dq-test-viewer", home, null, world.view)
+	allocate(/obj/structure/sight_test_blocker, far_east)
+	allocate(/obj/structure/sight_test_blocker, home_east)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_dirty_lights[near_light.light.glow_holder_key()], CLIENT_GLOW_DIRTY_NEAR, "the light beside the viewer is marked near")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_dirty_lights[far_light.light.glow_holder_key()], CLIENT_GLOW_DIRTY_FAR, "the one nobody holds is marked far")
+	var/reconsiders = GLOB.client_glow_reconsiders
+	client_glow_reconsider_flush(TRUE)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_reconsiders, reconsiders + 2, "both were redrawn")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// The darksight overlay (a radial additive glow centred on the player) eases in by how dark the player's turf is. Under client lighting that is the light the floor
+/// is drawn with, not the gameplay light level (which read a lit corridor dark and gave the player's own character a halo); with the mode off it is the gameplay level.
+/datum/unit_test/dq_client_darksight_follows_drawn_light
+
+/datum/unit_test/dq_client_darksight_follows_drawn_light/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	set_global(nameof(GLOB.client_light_level_reads), GLOB.client_light_level_reads) // the drawn-light read counts itself; teardown restores the counter
+	client_glow_counters_restore()
+	var/turf/T = run_loc_floor_bottom_left
+	TEST_ASSERT_EQUAL(client_darksight_brightness(T), T.get_lumcount(), "with client lighting off the gameplay light level decides")
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	var/list/rgb = client_flat_light_rgb(T)
+	var/drawn = max(rgb[1], rgb[2], rgb[3])
+	TEST_ASSERT(drawn > 0, "a light on the turf draws light on its floor")
+	TEST_ASSERT_EQUAL(client_darksight_brightness(T), drawn, "under client lighting the drawn light decides, not the gameplay level ([T.get_lumcount()])")
+	log_test("CLIENT DARKSIGHT: drawn [drawn] against gameplay level [T.get_lumcount()]")
+	client_lighting_set(FALSE)

@@ -274,6 +274,7 @@ default behaviour is:
 
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)
 	. = ..()
+	MOVE_COST_BEGIN(living_started)
 	PUBLISH_CHANGE(src, MOB_KEY_LOC)
 	air_check_moved()
 	// A low-priority mob placed after it was made in nullspace joins its z-level's presence
@@ -314,6 +315,7 @@ default behaviour is:
 					stop_pulling()
 
 	if(!isturf(loc))
+		MOVE_COST_END(MOVE_COST_LIVING, living_started)
 		return
 	else if(lastarea?.get_gravity() == 0)
 		inertial_drift()
@@ -332,6 +334,7 @@ default behaviour is:
 	var/turf/new_turf = loc
 	if(istype(old_turf) && old_turf.is_outdoors() != new_turf.is_outdoors())
 		update_client_color()
+	MOVE_COST_END(MOVE_COST_LIVING, living_started)
 
 /mob/living/proc/inertial_drift()
 	if(x > 1 && x < (world.maxx) && y > 1 && y < (world.maxy))

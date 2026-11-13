@@ -539,7 +539,9 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 /mob/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
+	MOVE_COST_BEGIN(follow_started)
 	update_following()
+	MOVE_COST_END(MOVE_COST_FOLLOW, follow_started)
 
 /// Observer upkeep, run by the observer_upkeep behaviour every OBSERVER_UPKEEP_INTERVAL
 /// (code/modules/mob/living/life/life_membership.dm). Living mobs do the same in their upkeep system.

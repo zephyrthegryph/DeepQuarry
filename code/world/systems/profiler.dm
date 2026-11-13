@@ -1,3 +1,12 @@
+#define PROFILE_STAGE_NATIVES 1
+#define PROFILE_STAGE_SYSTEMS 2
+#define PROFILE_STAGE_ATTRIBUTION 3
+#define PROFILE_STAGE_LEDGER 4
+#define PROFILE_STAGE_ENCODE 5
+#define PROFILE_STAGE_WRITE 6
+/// Ms of a table walk in one turn of a sample.
+#define PROFILE_WALK_SLICE_MS 3
+
 SYSTEM_DEF(profiler)
 	name = "Profiler"
 	phase = KERNEL_PHASE_K
@@ -10,6 +19,11 @@ SYSTEM_DEF(profiler)
 	/// Monotonic identifier for compact diagnostic snapshots. This profiler is
 	/// intentionally independent of BYOND's expensive full proc serializer.
 	var/diagnostic_sequence = 0
+	/// The sample being built across ticks (sample_advance()).
+	var/datum/profile_sample/building
+	/// The last finished sample's record (the JSON of PERF_PROFILE) and how many turns it took.
+	var/last_record
+	var/last_turns = 0
 
 /datum/system/profiler/stat_entry(msg)
 	msg += "F:[round(fetch_cost,1)]ms"
@@ -58,16 +72,173 @@ SYSTEM_DEF(profiler)
 	wait = CONFIG_GET(number/profiler_interval)
 	set_work_interval(PROC_REF(sample), wait)
 
+/// One sample being built. A sample is the compact diagnostics record (PERF_PROFILE): reading the natives, the systems' counters, the attribution table and the
+/// ledger, then the JSON of each section. The whole of it held one tick for 80-500 ms every minute (debug.log PROFILER SAMPLE, 2026-11-13), so each stage runs
+/// in its own tick and the two table walks take a few ms a tick (km_attr.walk_step(), km_ledger.walk_step()).
+/datum/profile_sample
+	var/stage = PROFILE_STAGE_NATIVES
+	var/started_real = 0
+	/// Ms spent in the turns added up, the dearest single turn, and how many turns there were.
+	var/build_ms = 0
+	var/max_turn_ms = 0
+	var/turns = 0
+	var/list/atmos_arena
+	var/list/rust_allocator
+	var/list/rust_metrics
+	var/list/subsystems
+	var/datum/km_attr_walk/attr_walk
+	var/datum/km_ledger_walk/ledger_walk
+	var/list/attribution
+	var/list/ledger
+	/// The sections still to encode (key -> value), and the JSON pieces so far ("key":<json>).
+	var/list/sections
+	var/list/encoded
+	var/atmos_json
+	var/alloc_json
+	var/sequence = 0
+	var/native_ms = 0
+	var/walk_ms = 0
+	var/encode_ms = 0
+
+CAPABILITIES(/datum/system/profiler)
+	owns_one(nameof(building), /datum/profile_sample)
+
+CAPABILITIES(/datum/profile_sample)
+	owns_one(nameof(attr_walk), /datum/km_attr_walk)
+	owns_one(nameof(ledger_walk), /datum/km_ledger_walk)
+
 /datum/system/profiler/proc/sample(dt)
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.
-	var/sample_start = TICK_USAGE_REAL
-	var/list/atmos_arena = vg_auxmos_diagnostics()
-	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
-	// Every Rust metric (allocator tags, jobs, ...) in one call.
-	var/list/rust_metrics = verdigris_metrics_list()
-	var/native_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start)
+	if(building)
+		log_world("PROFILER SAMPLE: the sample before is still being built (stage [building.stage] after [building.turns] turn(s)); this one is skipped")
+		return
+	rel_set(src, nameof(building), new /datum/profile_sample)
+	building.started_real = REALTIMEOFDAY
+	sample_advance(FALSE)
+
+/// A whole sample at once, for tests: every stage runs in this call.
+/datum/system/profiler/proc/sample_now()
+	rel_set(src, nameof(building), new /datum/profile_sample)
+	building.started_real = REALTIMEOFDAY
+	sample_advance(TRUE)
+
+/// The next turn of the sample being built.
+/datum/system/profiler/proc/sample_continue()
+	if(building)
+		sample_advance(FALSE)
+
+/// Runs turns of the sample: one (a stage, or a slice of a table walk) per tick, or every one at once when `sync`.
+/datum/system/profiler/proc/sample_advance(sync)
+	var/datum/profile_sample/S = building
+	while(S.stage <= PROFILE_STAGE_WRITE)
+		var/turn_started = TICK_USAGE_REAL
+		var/done = sample_stage(S)
+		var/turn_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - turn_started)
+		S.build_ms += turn_ms
+		S.turns++
+		S.max_turn_ms = max(S.max_turn_ms, turn_ms)
+		if(done)
+			S.stage++
+		if(!sync && S.stage <= PROFILE_STAGE_WRITE)
+			after(src, 1 TICKS, PROC_REF(sample_continue), key = "profile_sample")
+			return
+	rel_clear(src, nameof(building))
+
+/// One turn of the sample's current stage. TRUE when the stage is complete.
+/datum/system/profiler/proc/sample_stage(datum/profile_sample/S)
+	switch(S.stage)
+		if(PROFILE_STAGE_NATIVES)
+			var/natives_started = TICK_USAGE_REAL
+			S.atmos_arena = vg_auxmos_diagnostics()
+			S.rust_allocator = vg_verdigris_allocator_diagnostics()
+			// Every Rust metric (allocator tags, jobs, ...) in one call.
+			S.rust_metrics = verdigris_metrics_list()
+			S.native_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - natives_started)
+			return TRUE
+		if(PROFILE_STAGE_SYSTEMS)
+			S.subsystems = sample_subsystems()
+			return TRUE
+		if(PROFILE_STAGE_ATTRIBUTION)
+			// Inside sched_core / appearance_drain: top 20 callbacks, top 20 redrawn types, and the post-init settle table (attribution.dm).
+			var/datum/km_attr/attr = km_meter().attr
+			if(!S.attr_walk)
+				rel_set(S, nameof(S.attr_walk), attr.walk_begin(20))
+			var/walk_started = TICK_USAGE_REAL
+			var/walked = attr.walk_step(S.attr_walk, PROFILE_WALK_SLICE_MS)
+			if(walked)
+				S.attribution = attr.walk_result(S.attr_walk)
+				rel_clear(S, nameof(S.attr_walk))
+			S.walk_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - walk_started)
+			return walked
+		if(PROFILE_STAGE_LEDGER)
+			// Every ms of the kernel's iteration by category with its heaviest names, and what BYOND spent outside it (measure/ledger.dm).
+			var/datum/km_ledger/ledger = GLOB.km_ledger
+			if(!S.ledger_walk)
+				rel_set(S, nameof(S.ledger_walk), ledger.walk_begin(KM_LEDGER_TOP))
+			var/walk_started = TICK_USAGE_REAL
+			var/walked = ledger.walk_step(S.ledger_walk, PROFILE_WALK_SLICE_MS)
+			if(walked)
+				S.ledger = ledger.walk_result(S.ledger_walk)
+				// "outside" is the mean since boot: this is the same section over the window since the sample before.
+				var/list/outside = S.ledger["outside"]
+				outside += ledger.outside_since_mark()
+				rel_clear(S, nameof(S.ledger_walk))
+			S.walk_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - walk_started)
+			return walked
+		if(PROFILE_STAGE_ENCODE)
+			// The JSON of one section per turn: rust_metrics and the systems' counters are most of it.
+			var/encode_started = TICK_USAGE_REAL
+			if(!S.sections)
+				S.sequence = ++diagnostic_sequence
+				S.sections = list(
+					"subsystems" = S.subsystems,
+					"atmos_arena" = S.atmos_arena,
+					"rust_allocator" = S.rust_allocator,
+					"rust_metrics" = S.rust_metrics,
+					"attribution" = S.attribution,
+					"ledger" = S.ledger,
+				)
+				// world.cpu / world.tick_usage are the whole server tick (DM code). The map
+				// send cost (appearance/turf/obj changes pushed to clients) is world.map_cpu
+				// only; with no clients it is ~0. Earlier profiles logged world.cpu and
+				// world.tick_usage under the map_* names, which read as idle map churn.
+				LAZYADD(S.encoded, "\"sequence\":[S.sequence]")
+				LAZYADD(S.encoded, "\"world_time_ds\":[json_encode(TIME_NOW(CLOCK_WORLD))]")
+				LAZYADD(S.encoded, "\"players\":[length(GLOB.clients)]")
+				LAZYADD(S.encoded, "\"cpu\":[json_encode(world.cpu)]")
+				LAZYADD(S.encoded, "\"tick_usage\":[json_encode(world.tick_usage)]")
+				LAZYADD(S.encoded, "\"map_cpu\":[json_encode(world.map_cpu)]")
+				LAZYADD(S.encoded, "\"initialized\":[json_encode(Kernel.initializations_seconds > 0)]")
+				LAZYADD(S.encoded, "\"sleep_offline\":[json_encode(world.sleep_offline)]")
+				S.encode_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - encode_started)
+				return FALSE
+			var/key = S.sections[1]
+			var/json = json_encode(S.sections[key])
+			S.sections.Cut(1, 2)
+			LAZYADD(S.encoded, "\"[key]\":[json]")
+			if(key == "atmos_arena")
+				S.atmos_json = json
+			else if(key == "rust_allocator")
+				S.alloc_json = json
+			S.encode_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - encode_started)
+			return !length(S.sections)
+		if(PROFILE_STAGE_WRITE)
+			var/write_started = TICK_USAGE_REAL
+			last_record = "{[jointext(S.encoded, ",")]}"
+			last_turns = S.turns + 1
+			log_runtime("PERF_PROFILE [last_record]")
+			// Keep the stable specialized records consumed by existing benchmark tools.
+			log_runtime("ATMOS_PROFILE [S.atmos_json]")
+			log_runtime("RUST_ALLOC_PROFILE [S.alloc_json]")
+			var/write_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - write_started)
+			logger.Log(LOG_CATEGORY_DEBUG, "PROFILER SAMPLE: native reads [round(S.native_ms, 0.1)] ms, systems and tables [round(S.build_ms - S.native_ms - S.encode_ms - write_ms, 0.1)] ms (the attribution and ledger walks [round(S.walk_ms, 0.1)] of them), encode [round(S.encode_ms, 0.1)] ms, write [round(write_ms, 0.1)] ms, in [S.turns] turn(s) over [round((REALTIMEOFDAY - S.started_real) / 10, 0.1)] s, the dearest turn [round(S.max_turn_ms, 0.1)] ms")
+			return TRUE
+	return TRUE
+
+/// The systems' counters as the profile records them.
+/datum/system/profiler/proc/sample_subsystems()
 	var/list/subsystems = list(
 		"atmos" = system_diagnostics(SSair),
 		"machines" = system_diagnostics(SSmachines),
@@ -126,35 +297,7 @@ SYSTEM_DEF(profiler)
 	subsystems["explosions"] += SSexplosions.performance_diagnostics()
 	// Rust world wakes (timers, keys, rate crossings, native watches) on the scheduler.
 	subsystems["world_step"] = world_diagnostics()
-	var/gathered_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start)
-	var/list/profile = list(
-		"sequence" = ++diagnostic_sequence,
-		"world_time_ds" = TIME_NOW(CLOCK_WORLD),
-		"players" = length(GLOB.clients),
-		// world.cpu / world.tick_usage are the whole server tick (DM code). The map
-		// send cost (appearance/turf/obj changes pushed to clients) is world.map_cpu
-		// only; with no clients it is ~0. Earlier profiles logged world.cpu and
-		// world.tick_usage under the map_* names, which read as idle map churn.
-		"cpu" = world.cpu,
-		"tick_usage" = world.tick_usage,
-		"map_cpu" = world.map_cpu,
-		"initialized" = Kernel.initializations_seconds > 0,
-		"sleep_offline" = world.sleep_offline,
-		"subsystems" = subsystems,
-		"atmos_arena" = atmos_arena,
-		"rust_allocator" = rust_allocator,
-		"rust_metrics" = rust_metrics,
-		// Inside sched_core / appearance_drain: top 20 callbacks, top 20 redrawn types, and the post-init settle table (attribution.dm).
-		"attribution" = km_meter().attr.report(20),
-		// Every ms of the kernel's iteration by category with its heaviest names, and what BYOND spent outside it (measure/ledger.dm).
-		"ledger" = GLOB.km_ledger.report(KM_LEDGER_TOP),
-	)
-	var/built_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start)
-	log_runtime("PERF_PROFILE [json_encode(profile)]")
-	// Keep the stable specialized records consumed by existing benchmark tools.
-	log_runtime("ATMOS_PROFILE [json_encode(atmos_arena)]")
-	log_runtime("RUST_ALLOC_PROFILE [json_encode(rust_allocator)]")
-	logger.Log(LOG_CATEGORY_DEBUG, "PROFILER SAMPLE: native reads [round(native_ms, 0.1)] ms, subsystems [round(gathered_ms - native_ms, 0.1)] ms, attribution report [round(built_ms - gathered_ms, 0.1)] ms, encode and write [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - sample_start) - built_ms, 0.1)] ms")
+	return subsystems
 
 /// The diagnostics readout of a missing subsystem or service (shared; only encoded).
 GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))

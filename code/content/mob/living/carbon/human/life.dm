@@ -2284,6 +2284,7 @@
 //Overriding carbon move proc that forces default hunger factor
 /mob/living/carbon/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
+	MOVE_COST_BEGIN(body_started)
 
 	// Technically this does mean being dragged takes nutrition
 	// One write per step (a run burns twice a walk's share): each write publishes the nutrition key.
@@ -2296,6 +2297,7 @@
 		var/germs = germs()
 		if(germs < GERM_LEVEL_MOVE_CAP)
 			set_germs(germs + 1)
+	MOVE_COST_END(MOVE_COST_BODY, body_started)
 
 
 /mob/living/carbon

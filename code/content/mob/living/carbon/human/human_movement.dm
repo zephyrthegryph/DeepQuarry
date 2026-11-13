@@ -105,6 +105,7 @@
 
 /mob/living/carbon/human/Moved()
 	. = ..()
+	MOVE_COST_BEGIN(body_started)
 	if(embedded_flag)
 		handle_embedded_objects() //Moving with objects stuck in you can cause bad times.
 
@@ -112,6 +113,7 @@
 		STATE_SET(src, posing, pose, null)
 		STATE_SET(src, posing, pose_move, FALSE)
 		remove_pose_indicator()
+	MOVE_COST_END(MOVE_COST_BODY, body_started)
 
 // Similar to above, but for turf slowdown.
 /mob/living/carbon/human/proc/calculate_turf_slowdown(turf/T, direct)

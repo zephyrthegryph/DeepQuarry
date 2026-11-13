@@ -309,7 +309,8 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 	B.give_target(H, TRUE)
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/idle_wander), "idle_wander scored with a threat")
 	var/datum/ai_behavior/idle_wander/W = dq_get_behavior(/datum/ai_behavior/idle_wander)
-	TEST_ASSERT_EQUAL(W.tick(B, S, null), DQ_BEHAVIOR_DONE, "idle_wander is a single-tick action")
+	TEST_ASSERT(W.instant, "idle_wander is an instant action")
+	TEST_ASSERT_EQUAL(W.start(B, S, null), DQ_BEHAVIOR_DONE, "idle_wander does its one action in start()")
 
 /datum/unit_test/dq_ai_tactic_idle_speak
 
@@ -379,6 +380,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 /datum/unit_test/dq_ai_tactic_ranged_attack
 
 /datum/unit_test/dq_ai_tactic_ranged_attack/Run()
+	set_global(nameof(GLOB.hop_cache_hits), GLOB.hop_cache_hits) // the trace projectile's steps count hits on a counter the leak guard watches
 	var/list/pair = ai_pair(ai_floor(0), ai_floor(4))
 	var/mob/living/simple_mob/S = pair[1]
 	var/mob/H = pair[2]

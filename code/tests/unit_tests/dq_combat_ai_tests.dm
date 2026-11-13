@@ -376,11 +376,11 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 /datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
-	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an idle AI brain is not on the calm cadence")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK * DQ_CALM_UNSEEN_STRETCH, "an idle AI brain is not on the calm cadence (no player sees this one)")
 	hunter.ai_brain.give_target(target, TRUE)
 	TEST_ASSERT(hunter.ai_brain.action_interval() <= DQ_ACTION_TICK, "an AI brain with a combat target is not on the action cadence")
 	hunter.ai_brain.lose_target()
-	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an AI brain stayed on the action cadence after losing its combat target")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK * DQ_CALM_UNSEEN_STRETCH, "an AI brain stayed on the action cadence after losing its combat target")
 
 
 // --- runtime: aggro-on-damage: retaliate_to_attacker drives primary_threat ---

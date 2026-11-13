@@ -169,10 +169,11 @@
 	TEST_ASSERT_EQUAL(length(Q.waiting), 0, "nothing is left waiting")
 	test_driver_end()
 
-/// The manifest record's photos are not asked for inside the join's registration call: the portraits are requested on the following ticks, one direction each.
-/datum/unit_test/dq_manifest_photos_are_asked_for_later
+/// The manifest record's photos are only enqueued by the join's registration call: it holds the placeholder at once, no portrait is translated or drawn inside it
+/// or on any tick after beyond a job's budgeted layer steps, and the photos arrive through the portrait cache's async path.
+/datum/unit_test/dq_manifest_photos_arrive_async
 
-/datum/unit_test/dq_manifest_photos_are_asked_for_later/Run()
+/datum/unit_test/dq_manifest_photos_arrive_async/Run()
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
@@ -181,13 +182,25 @@
 	SSjob.equip_rank(H, JOB_INTERN, TRUE, FALSE)
 	refresh_flush()
 	var/datum/portrait_cache/cache = GLOB.portrait_cache
-	var/asked_before = cache.hits + cache.renders + cache.fallbacks
+	var/translated_before = cache.translated
+	var/fallbacks_before = cache.fallbacks
 	var/records_before = length(GLOB.data_core.general)
-	var/datum/data/record/G = GLOB.data_core.CreateGeneralRecord(H, "TEST", FALSE, staged_photos = TRUE)
-	TEST_ASSERT_EQUAL(cache.hits + cache.renders + cache.fallbacks, asked_before, "no portrait was asked for inside the call that made the record")
-	TEST_ASSERT_NULL(G.photos_waiting, "and none is awaited")
-	test_time(1 SECONDS)
-	TEST_ASSERT(cache.hits + cache.renders + cache.fallbacks > asked_before, "the portraits were asked for on the ticks that followed")
+	var/started = TICK_USAGE_REAL
+	var/datum/data/record/G = GLOB.data_core.CreateGeneralRecord(H, "TEST", FALSE)
+	var/call_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	var/placeholder = G.fields["photo-south"]
+	TEST_ASSERT(placeholder && G.fields["photo-west"], "the record holds a placeholder in both directions at once")
+	TEST_ASSERT_EQUAL(cache.translated, translated_before, "no portrait was translated inside the call that made the record")
+	TEST_ASSERT_EQUAL(cache.fallbacks, fallbacks_before, "and none was drawn the old way")
+	TEST_ASSERT(length(cache.translations) || length(G.photos_waiting) < 2, "the translations are queued, or the photos were already cached")
+	TEST_NOTICE(src, "MANIFEST_PHOTOS the record call with its photos enqueued: [round(call_ms, 0.01)] ms")
+	for(var/i in 1 to 80)
+		if(!length(G.photos_waiting) && !length(cache.translations))
+			break
+		test_time(0.25 SECONDS)
+	TEST_ASSERT(cache.translated > translated_before, "the portraits went through the translation job")
+	TEST_ASSERT_NULL(G.photos_waiting, "and every photo landed")
+	TEST_ASSERT(G.fields["photo-south"] != placeholder, "the front photo is the person's, not the placeholder")
 	qdel(G)
 	TEST_ASSERT_EQUAL(length(GLOB.data_core.general), records_before, "the test's record is gone again")
 	test_driver_end()
@@ -211,3 +224,12 @@
 	var/list/data = mc_health_data()
 	for(var/key in list("window_30s", "window_5m", "outliers", "subsystems", "kernel", "gc", "entities", "churn", "runtime", "attribution", "attribution_rest"))
 		TEST_ASSERT(!isnull(data[key]), "the panel data has [key]")
+
+/// The tick graph's section is the first one the MC Health panel's data carries, so it is built and sent before any other.
+/datum/unit_test/dq_mc_health_ticks_come_first
+
+/datum/unit_test/dq_mc_health_ticks_come_first/Run()
+	var/list/fast = mc_health_fast()
+	TEST_ASSERT_EQUAL(fast[1], "ticks", "the recent ticks are the first section of every send")
+	var/list/data = mc_health_data()
+	TEST_ASSERT_EQUAL(data[1], "ticks", "and of the whole payload, ahead of every slow group")

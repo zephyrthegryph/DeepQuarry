@@ -190,6 +190,12 @@ do { \
 /// Baked shadow masks kept; shapes asked for at once; bakes running at once.
 #define CLIENT_GLOW_MASK_CACHE_MAX 8192
 #define CLIENT_GLOW_MASK_QUEUE_MAX 512
+/// The doors a light readies the other state of ahead (client_glow_twins_ready()): its shape with each of its nearest doors flipped is baked and on every viewer before the door moves.
+#define CLIENT_GLOW_TWIN_MAX 4
+/// Twin shapes sent to one viewer per tick: a viewer that takes many lights at once must not be sent all their twins in one.
+#define CLIENT_GLOW_TWIN_PER_TICK 3
+/// Lights redrawn for an opacity change in a chunk some viewer holds per lighting step, whatever the tick budget says: a door beside a viewer never waits behind the budget.
+#define CLIENT_GLOW_NEAR_REDRAW_MAX 16
 #define CLIENT_GLOW_MASK_BAKES_MAX 16
 /// Baked glows kept on disk across rounds, by shape (bounded: past CLIENT_GLOW_STORE_MAX files the directory is emptied at first use).
 #define CLIENT_GLOW_STORE_DIR "data/client_glow_store/"

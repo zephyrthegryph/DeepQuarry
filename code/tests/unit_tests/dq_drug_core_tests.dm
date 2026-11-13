@@ -272,4 +272,106 @@
 	TEST_ASSERT_EQUAL(H.analgesia, 0, "the cover ends with the effect")
 	qdel(breath)
 
+
+// --- Declared drawbacks: per-limb healing slowdown, blood drain, stomach purge, clot risk -------------------------
+
+/// Kelotane slows the natural healing of the other wounds only on a limb where it is healing a burn, not body-wide.
+/datum/unit_test/dq_drug_kelotane_slows_only_the_treated_limb
+
+/datum/unit_test/dq_drug_kelotane_slows_only_the_treated_limb/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/burnt = H.get_organ(BP_L_ARM)
+	var/obj/item/organ/external/other = H.get_organ(BP_R_ARM)
+	var/datum/affliction/wound/burnt_cut = burnt.create_wound(CUT, 8)
+	var/datum/affliction/wound/burn = burnt.create_wound(BURN, 5)
+	var/datum/affliction/wound/other_cut = other.create_wound(CUT, 8)
+	var/datum/affliction/wound/other_bruise = other.create_wound(BRUISE, 3)
+	burnt_cut.bandage()
+	other_cut.bandage()
+	TEST_ASSERT_EQUAL(H.natural_healing_scale(burnt, burnt_cut), 1, "setup: no drug, no slowdown")
+	var/datum/reagent/kelotane = _drug_core_dose(H, REAGENT_ID_KELOTANE)
+	TEST_ASSERT_NULL(kelotane.factors?[STAT_HEALING], "kelotane no longer slows healing body-wide")
+	var/scale = kelotane.slows_other[TREAT_BURN_CARE]
+	TEST_ASSERT(scale < 1, "kelotane declares a slowdown of the other wounds")
+	TEST_ASSERT_EQUAL(H.natural_healing_scale(burnt, burnt_cut), scale, "a cut next to a burn kelotane is healing heals slower")
+	TEST_ASSERT_EQUAL(H.natural_healing_scale(burnt, burn), 1, "the burn itself is not slowed")
+	TEST_ASSERT_EQUAL(H.natural_healing_scale(other, other_cut), 1, "a cut on a limb with no burn is untouched")
+	TEST_ASSERT_EQUAL(H.natural_healing_scale(other, other_bruise), 1, "so is a bruise there")
+	var/burnt_before = burnt_cut.damage
+	var/other_before = other_cut.damage
+	H.body_clock_advance(10 * LIFE_CYCLE)
+	var/burnt_healed = burnt_before - burnt_cut.damage
+	var/other_healed = other_before - other_cut.damage
+	TEST_ASSERT(other_healed > 0, "the untreated limb cut heals on its own")
+	TEST_ASSERT(abs(burnt_healed - other_healed * scale) < 0.01, "the cut beside the burn heals at the kelotane scale (healed [burnt_healed] against [other_healed])")
+
+/// A drug that declares blood drain or a stomach purge applies them from the data.
+/datum/unit_test/dq_drug_declared_drawbacks_apply
+
+/datum/unit_test/dq_drug_declared_drawbacks_apply/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/reagent/dermaline = _drug_core_dose(H, REAGENT_ID_DERMALINE)
+	TEST_ASSERT(dermaline.drains_blood > 0, "dermaline declares a blood drain")
+	var/blood = H.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
+	dermaline.apply_drawbacks(H, 1)
+	TEST_ASSERT(H.vessel.get_reagent_amount(REAGENT_ID_BLOOD) < blood, "the declared blood drain takes blood")
+
+	var/datum/reagent/carth = _drug_core_dose(H, REAGENT_ID_CARTHATOLINE)
+	TEST_ASSERT(carth.purges_stomach, "carthatoline declares a stomach purge")
+	H.ingested.add_reagent(REAGENT_ID_PARACETAMOL, 5)
+	TEST_ASSERT(H.ingested.get_reagent_amount(REAGENT_ID_PARACETAMOL) > 0, "setup: something swallowed")
+	carth.apply_drawbacks(H, 1)
+	TEST_ASSERT_EQUAL(H.ingested.get_reagent_amount(REAGENT_ID_PARACETAMOL), 0, "the declared purge empties the stomach")
+
+/// Has the brain or the heart an ischemic lesion?
+/datum/unit_test/proc/_clot_lodged(mob/living/carbon/human/H)
+	for(var/organ_tag in list(O_BRAIN, O_HEART))
+		var/obj/item/organ/internal/O = H.organ_in(organ_tag)
+		if(O?.find_lesion(/datum/affliction/lesion/ischemic_injury))
+			return TRUE
+	return FALSE
+
+/// Myelamine clots lodge only in a body at risk: a damaged heart or a low pressure. A healthy body is never hit.
+/datum/unit_test/dq_drug_myelamine_clot_risk
+
+/datum/unit_test/dq_drug_myelamine_clot_risk/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/reagent/myelamine = _drug_core_dose(H, REAGENT_ID_MYELAMINE)
+	TEST_ASSERT(myelamine.clot_risk > 0, "myelamine declares a clot risk")
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
+	var/old_risk = myelamine.clot_risk
+	myelamine.clot_risk = 100 // sure to fire once at risk: the test follows the gate, not the dice
+	TEST_ASSERT_NULL(H.clot_risk_reason(), "setup: a healthy body is not at risk")
+	for(var/i in 1 to 10)
+		myelamine.apply_clot_risk(H, 1)
+	TEST_ASSERT(!_clot_lodged(H), "no clot lodges in a healthy body")
+
+	dq_test_set_organ_damage(heart, heart.max_damage * DRUG_CLOT_HEART_DAMAGE_FRACTION + 1)
+	TEST_ASSERT_NOTNULL(H.clot_risk_reason(), "a damaged heart is at risk")
+	for(var/i in 1 to 30)
+		myelamine.apply_clot_risk(H, 1)
+	TEST_ASSERT(_clot_lodged(H), "a clot lodges in a body with a damaged heart")
+	myelamine.clot_risk = old_risk
+
+	dq_test_set_organ_damage(heart, 0)
+	TEST_ASSERT_NULL(H.clot_risk_reason(), "with the heart healed the body is not at risk again")
+	var/datum/pressure_source = new
+	hold(H, STAT_BP_SYSTOLIC, -60, pressure_source)
+	TEST_ASSERT_NOTNULL(H.clot_risk_reason(), "a low blood pressure is at risk")
+	release(H, STAT_BP_SYSTOLIC, pressure_source)
+
+/// A stun is a shock too: a body prone to seizures seizes when stunned, one that is not never does.
+/datum/unit_test/dq_drug_stun_seizes_prone_body
+
+/datum/unit_test/dq_drug_stun_seizes_prone_body/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.status_at_least(STAT_STUNNED, 10)
+	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/seizure), "a stun does not seize a body with no proneness")
+	H.status_end(STAT_STUNNED)
+	var/datum/proneness_source = new
+	hold(H, STAT_SEIZURE_PRONENESS, 10, proneness_source)
+	H.status_at_least(STAT_STUNNED, 10)
+	TEST_ASSERT(H.body.has_affliction(/datum/affliction/seizure), "a stun seizes a strongly prone body")
+	release(H, STAT_SEIZURE_PRONENESS, proneness_source)
+
 #endif
