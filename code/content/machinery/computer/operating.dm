@@ -27,7 +27,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 	finds(nameof(table), /obj/machinery/optable) // the paired rel_one writes the table's computer
 	started_work(step = PROC_REF(work_step))
 	interface("OperatingComputer", title = "Patient Monitor")
-	ui_shape(verbose = bool(), spo2Alarm = num(), choice = bool(), health = bool(), crit = bool(), healthAlarm = num(), spo2 = bool(), occupant = nullable(row(name = schema_text(), stat = int(), vitality = num(), diagnosis = diagnosis_report(), bloodType = nullable(schema_text()), surgery = nullable(list_of(row(name = schema_text(), currentStage = schema_text(), nextSteps = list_of(schema_text())))))))
+	ui_shape(verbose = bool(), spo2Alarm = num(), choice = bool(), health = bool(), crit = bool(), healthAlarm = num(), spo2 = bool(), occupant = nullable(row(name = schema_text(), stat = int(), vitality = num(), diagnosis = diagnosis_report(), bloodType = nullable(schema_text()), surgery = nullable(list_of(row(name = schema_text(), currentStage = schema_text(), findings = list_of(schema_text()), nextSteps = list_of(schema_text())))))))
 	extend("ui_open", needs(req_operable()), then(PROC_REF(control_fingerprinted)))
 	op("verboseOn", ui_act(), then(PROC_REF(control_used)), then(PROC_REF(verboseOn)))
 	op("verboseOff", ui_act(), then(PROC_REF(control_used)), then(PROC_REF(verboseOff)))
@@ -162,11 +162,17 @@ CAPABILITIES(/obj/machinery/computer/operating)
 	for(var/limb in victim.organs_by_name)
 		var/obj/item/organ/external/E = victim.organs_by_name[limb]
 		if(E && E.open)
-			. += list(list("name" = E.name, "currentStage" = find_stage(E), "nextSteps" = find_next_steps(user, limb)))
+			. += list(list("name" = E.name, "currentStage" = find_stage(E), "findings" = find_findings(E), "nextSteps" = find_next_steps(user, limb)))
 
 /// The surgical site's state, from the limb's incision.
 /obj/machinery/computer/operating/proc/find_stage(obj/item/organ/external/E)
 	return E.surgery_state_text()
+
+/// What the open limb shows (findings.dm), one line each with the steps that answer to it.
+/obj/machinery/computer/operating/proc/find_findings(obj/item/organ/external/E)
+	. = list()
+	for(var/list/row as anything in surgical_findings(victim, E))
+		. += surgical_finding_text(row)
 
 /// What can be done next at `zone`, with the proper tools for each step.
 /obj/machinery/computer/operating/proc/find_next_steps(mob/user, zone)

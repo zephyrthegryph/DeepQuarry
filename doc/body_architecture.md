@@ -644,16 +644,33 @@ body holds only while there is work, and it integrates over the elapsed time (at
 
 ## 11. Surgery
 
-`code/modules/surgery/`. A procedure is access (incise, retract, saw, pry;
-unscrew and open a panel), operate, then close. Access state is the limb's
+`code/content/surgery/`. There are no fixed procedures. The only fixed steps are the bookends: access (incise, retract, saw,
+pry; unscrew and open a panel) and closing. Access state is the limb's
 `/datum/affliction/surgical_incision`: its `depth` is the only record of how
 far a limb is open (the limb's `open` var caches it). The site bleeds until
-clamped (`TREAT_HEMOSTATIC`) and gathers germs by the sterility of the
-surface it was opened on until it is closed (`TREAT_BONE_SETTING` closes a
-sawn bone layer, then `TREAT_SURGICAL_CLOSURE` / `TREAT_PANEL_CLOSURE`).
-A fracture is the `untreated_fracture` affliction on the limb: `fracture()`
-afflicts it, `E.is_fractured()` asks for it, and set-bone's
-`TREAT_BONE_SETTING` mends it. There is no broken-bone status flag.
+clamped (`TREAT_HEMOSTATIC`), by how well the patient clots (`incision.bleed_rate()`:
+`INCISION_BLEED_RATE` x `STAT_BLEEDING`, so an anticoagulant makes it bleed harder),
+and gathers germs by its sterility until it is closed. Sterility is set when the
+site is cut (`surgical_site_sterility()`): the surface, less what a bare-handed
+surgeon and unscrubbed skin (the limb's germ level) cost it. Closing is
+`TREAT_BONE_SETTING` for a sawn bone layer, then `TREAT_SURGICAL_CLOSURE` /
+`TREAT_PANEL_CLOSURE`. A fracture is the `untreated_fracture` affliction on the
+limb: `fracture()` afflicts it, `E.is_fractured()` asks for it, and set-bone's
+`TREAT_BONE_SETTING` mends it. A fracture that healed crooked is `/datum/affliction/malunion`:
+it can't be set, so Break Bone Again (`surgical_step/rebreak_bone`) cures it and
+fractures the limb afresh, and Set Bone then answers to that. There is no
+broken-bone status flag.
+
+**Findings** (`findings.dm`). Retracting a limb reveals what is in it. A finding
+is never stored: each `/datum/surgical_step` with `finds` says what it answers to
+in a limb (`findings()`: by default every affliction in scope that lists one of its
+treatment tags; the extraction, clamp, foreign-body and re-break steps name their own),
+and `surgical_findings(patient, limb)` merges the rows by source. Organs show once the
+limb is open to its organs. The surgeon reads them from the Survey Surgical Site entry
+on the patient's menu, the report printed on retracting (`reveal_surgical_findings()`,
+also logged), and the operating computer. The medical book's Surgeries tab is built
+from the same steps (`surgeries_tab.dm`): one entry for opening and closing, one per
+finding step, with its tools and the conditions it answers to.
 
 Each step is an op `surgery_<step>` on the patient (`surgery_ops.dm`): its state checks are the op's `when()`, the
 organ choice and drastic-step confirmation are `asks()`, the patient is `claims()`ed while the step waits, and the roll
@@ -663,18 +680,22 @@ organs, or one chosen organ) and delivers them through `mend()`. A step offers
 itself only when an affliction in scope responds to its mechanism, so a
 condition that needs surgery declares the surgical tag in `treated_by`
 (`TREAT_BONE_SETTING`, `TREAT_VESSEL_REPAIR`, `TREAT_TENDON_REPAIR`,
-`TREAT_DECOMPRESSION`, `TREAT_RESECTION`, `TREAT_FOREIGN_BODY_REMOVAL`, ...).
+`TREAT_DECOMPRESSION`, `TREAT_RESECTION`, `TREAT_FOREIGN_BODY_REMOVAL`, ...); one
+with no tag of its own (a crooked bone, embedded shrapnel, a growth, an inflamed
+appendix) is a step's own `is_needed()` and `findings()`.
 Success is tool quality x surface x surgeon (department, `BF_MOTOR_CONTROL`,
-self-surgery) x patient (a conscious patient flinches unless `BF_ANALGESIA` /
-`BF_SEDATION` cover the step's pain). A failed step injures with a specific
+self-surgery). The patient is not a die roll: when the step lands, a patient who
+still feels it (`felt_pain()`: the step's pain less `STAT_ANALGESIA` and
+`STAT_SEDATION`, nothing when unconscious, pain-immune or prosthetic) flinches and the
+step goes wrong with its complication (`flinch()`). Anaesthesia, sleep and painkillers
+only have to bring `felt_pain()` to 0. A failed step injures with a specific
 complication (a slipped suture lacerates the organ; a slipped vessel repair
 opens an arterial bleed). Organ removal and insertion go through
 `removed()` / `replaced()`, so an organ's lesions travel with it. An organ
 whose `is_beyond_repair()` is true still takes the step; the surgeon perceives
 why (`beyond_repair_perception()`) and nothing heals. Synthetic and nanoform
 parts use the same steps with repair tags; a step's `part_biology` defaults to
-the biologies its tags work on. `/datum/dq_surgery` records are the medical
-book's entries and name the steps that perform them.
+the biologies its tags work on.
 
 ## 12. Equipment slots & worn protection
 

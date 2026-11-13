@@ -213,10 +213,10 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(E.is_robotic() || E.flow_occluded())
 		return 0
 	. = 0
-	// D18b: an open surgical site bleeds only while the incision does (clamped, closed or bloodless sites don't).
+	// D18b: an open surgical site bleeds only while the incision does (clamped, closed or bloodless sites don't), by the patient's clotting.
 	var/datum/affliction/surgical_incision/incision = E.get_incision()
 	if(incision?.is_bleeding())
-		. += 2
+		. += incision.bleed_rate()
 	var/divisor = blood_loss_divisor()
 	for(var/datum/affliction/wound/W as anything in E.get_wounds())
 		if(!W.bleeding())
