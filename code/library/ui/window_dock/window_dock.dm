@@ -38,7 +38,8 @@ GLOBAL_LIST_INIT(window_dock_always_open, list(
 	var/view_hidden = FALSE
 	/// Data was owed while hidden: one full update when shown.
 	var/view_stale = FALSE
-	/// Floated out of the column: the screen point ("x,y", physical pixels) its native window opens under, for the update that opens it.
+	/// Floated out of the column: the screen point ("x,y", physical pixels) its native window opens under, for the update that opens it; "x,y,w,h" when
+	/// the window also keeps the size it had in the column.
 	var/float_at
 
 SCHEMA(/datum/tgui, float_at, schema_text())
@@ -78,10 +79,12 @@ SCHEMA(/datum/tgui, float_at, schema_text())
 /datum/tgui/proc/dock_on_close()
 	return
 
-/// A screen point from a page payload (`{x, y}`) as "x,y" text, or null.
-/proc/dock_point_text(list/point)
+/// A screen point from a page payload (`{x, y}`) as "x,y" text, or null; with a size (`{x, y}`, the size the window had in the column) "x,y,w,h".
+/proc/dock_point_text(list/point, list/size)
 	if(!islist(point) || !isnum(point["x"]) || !isnum(point["y"]))
 		return null
+	if(islist(size) && isnum(size["x"]) && isnum(size["y"]) && size["x"] > 0 && size["y"] > 0)
+		return "[round(point["x"])],[round(point["y"])],[round(size["x"])],[round(size["y"])]"
 	return "[round(point["x"])],[round(point["y"])]"
 
 /// Hook: a dock message from this UI's page (`wm/dock`, `wm/float`, `wm/dropped`, `wm/log`).

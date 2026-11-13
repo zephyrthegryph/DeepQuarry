@@ -96,6 +96,8 @@
 	TEST_ASSERT_EQUAL(dock_point_text(list("x" = 120.4, "y" = -30)), "120,-30", "a page point becomes screen text")
 	TEST_ASSERT_NULL(dock_point_text(list("x" = "1", "y" = 2)), "a point that is not two numbers is dropped")
 	TEST_ASSERT_NULL(dock_point_text("5,5"), "so is anything that is not a point")
+	TEST_ASSERT_EQUAL(dock_point_text(list("x" = 120, "y" = 30), list("x" = 330.4, "y" = 700)), "120,30,330,700", "a size the window had in the column rides with the point")
+	TEST_ASSERT_EQUAL(dock_point_text(list("x" = 120, "y" = 30), list("x" = 0, "y" = 700)), "120,30", "a size that is not positive is dropped")
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
 	var/datum/tgui/dq_dock_probe/ui = new(user, host, "Probe")

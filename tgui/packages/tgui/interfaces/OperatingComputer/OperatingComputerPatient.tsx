@@ -48,6 +48,15 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
                   <LabeledList.Item label="Current State">
                     {limb.currentStage}
                   </LabeledList.Item>
+                  <LabeledList.Item label="Findings">
+                    {limb.findings.length ? (
+                      limb.findings.map((finding) => (
+                        <div key={finding}>{finding}</div>
+                      ))
+                    ) : (
+                      <div>Nothing in view needs surgery.</div>
+                    )}
+                  </LabeledList.Item>
                   <LabeledList.Item label="Possible Next Steps">
                     {limb.nextSteps.map((step) => (
                       <div key={step}>{step}</div>

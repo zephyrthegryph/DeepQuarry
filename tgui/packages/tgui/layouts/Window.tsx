@@ -33,6 +33,7 @@ import {
 } from '../drag';
 import { EmbeddedContext } from '../embedded';
 import { suspendStart } from '../events/handlers/suspense';
+import { parseFloatAt, underPointer } from '../floatPlacement';
 import { createLogger } from '../logging';
 import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
@@ -58,6 +59,18 @@ function parsePreappliedGeometry(geometry?: {
     size: [Number(size[1]), Number(size[2])],
     pos: [Number(pos[1]), Number(pos[2])],
   };
+}
+
+let floatDoneSubscribed = false;
+
+/** The column page finished a live drag of this window (it floated with the button down): its place is kept like any other drag's. */
+function ensureFloatDoneSubscription(): void {
+  if (floatDoneSubscribed) return;
+  floatDoneSubscribed = true;
+  Byond.subscribeTo('floatdone', () => {
+    logger.log('live float drag done, storing geometry');
+    storeWindowGeometry();
+  });
 }
 
 function ensureResetPositionSubscription(): void {
@@ -169,6 +182,8 @@ function NativeWindow(props: Props) {
     if (!isReadyToRender) setIsReadyToRender(true);
   }, [config?.window?.native_shell]);
 
+  useEffect(ensureFloatDoneSubscription, []);
+
   const { scale } = config?.window || false;
   // A float out of the column comes with one update (float_at); the next update clears it, and that must not cancel the
   // placement of the reveal already under way. Held here until a reveal uses it.
@@ -214,6 +229,16 @@ function NativeWindow(props: Props) {
           return;
         }
         const float = pendingFloat.current;
+        const kept = parseFloatAt(float)?.size ?? null;
+        if (kept) {
+          // It keeps the size it had in the column, not its saved or default floating size.
+          logger.log(
+            'floated from the dock keeping its size',
+            kept,
+            geometry?.size,
+          );
+          geometry = { ...geometry, size: kept };
+        }
         const under = underPointer(float, geometry?.size);
         if (under) {
           // Pulled out of the dock: it opens under the pointer, as a popped-out chat does.
@@ -238,6 +263,8 @@ function NativeWindow(props: Props) {
         void floatTraceNative();
         if (float) {
           pendingFloat.current = null;
+          // Tells the column page this window is up, so a drag still going on moves it (wm/floated).
+          Byond.sendMessage('wm/floated', { window: Byond.windowId });
         }
         if (under) {
           // Remembered, so the next geometry recall (float_at is sent once) keeps it there.
@@ -451,16 +478,4 @@ async function floatTraceNative(): Promise<void> {
       floatTrace('native-query-failed', { error: String(error) });
     }
   }
-}
-
-export function underPointer(
-  at: string | null | undefined,
-  size: [number, number] | undefined,
-): [number, number] | null {
-  const parts = typeof at === 'string' ? at.split(',').map(Number) : [];
-  if (parts.length !== 2 || !parts.every(Number.isFinite)) {
-    return null;
-  }
-  const width = size?.[0] ?? 0;
-  return [Math.round(parts[0] - width / 2), Math.round(parts[1] - 16)];
 }

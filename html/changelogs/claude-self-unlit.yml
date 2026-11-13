@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Under client lighting, a large character's flat light is drawn on the glow plane so it replaces the per-pixel glows instead of being added to them (the character no longer looks unlit and over-bright)."

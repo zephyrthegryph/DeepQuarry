@@ -273,13 +273,11 @@
 		// Surgeries that treat this condition. The book renders each as
 		// a clickable link to the Surgery tab.
 		var/list/surgeries_treating = list()
-		for(var/ST in subtypesof(/datum/dq_surgery))
-			var/datum/dq_surgery/sp = dq_proto(ST)
-			if(sp.treats && (T in sp.treats))
-				surgeries_treating += list(list(
-					"id"   = "[ST]",
-					"name" = sp.name,
-				))
+		for(var/datum/surgical_step/S as anything in surgical_steps_answering()[T])
+			surgeries_treating += list(list(
+				"id"   = "[S.type]",
+				"name" = S.name,
+			))
 		entry["surgeries"] = surgeries_treating
 
 		// Staged conditions emit one entry per stage with that stage's
