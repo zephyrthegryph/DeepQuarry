@@ -35,16 +35,46 @@ const fastOnly = {
   stalls: [],
 };
 
+const ledger = {
+  ticks: 100,
+  world_ticks: 100,
+  budget_ms: 25,
+  window_ema_ms: 20,
+  window_avg_ms: 20,
+  categories: [],
+  outside: {
+    post_ema_ms: 0,
+    post_avg_ms: 0,
+    idle_ema_ms: 0,
+    idle_avg_ms: 0,
+    map_ema_ms: 0,
+    map_avg_ms: 0,
+  },
+  phases: [],
+};
+
+function cardTitles(data: object): (string | null)[] {
+  const { container } = render(
+    <McHealthPanel data={data as unknown as McHealthData} token={null} />,
+  );
+  return Array.from(container.querySelectorAll('.mch-card__head h3')).map(
+    (h) => h.textContent,
+  );
+}
+
 describe('MC Health panel order', () => {
-  it('puts the recent ticks graph above every other card, from the first send', () => {
-    const { container } = render(
-      <McHealthPanel data={fastOnly as unknown as McHealthData} token={null} />,
-    );
-    const titles = Array.from(
-      container.querySelectorAll('.mch-card__head h3'),
-    ).map((h) => h.textContent);
+  it('draws the recent ticks graph first from the first send, with no slow card yet', () => {
+    const titles = cardTitles(fastOnly);
+    cleanup();
+    expect(titles[0]).toBe('Recent ticks');
+    // A slice whose slow group is not built yet is not drawn.
+    expect(titles).not.toContain('Where the tick goes');
+  });
+
+  it('keeps the recent ticks graph above the other cards once they are built', () => {
+    const titles = cardTitles({ ...fastOnly, tick_budget_ms: 25, ledger });
+    cleanup();
     expect(titles[0]).toBe('Recent ticks');
     expect(titles.indexOf('Where the tick goes')).toBeGreaterThan(0);
-    cleanup();
   });
 });
