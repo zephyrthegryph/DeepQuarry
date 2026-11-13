@@ -788,6 +788,73 @@
 	SSlighting.light_step(0, TRUE)
 	test_driver_end()
 
+/// A delta crossing that brings lights into reach queues them: its call makes no glow, and the queue makes them a budgeted step at a time on the ticks after, to the same state a viewer
+/// with no budget reaches at once.
+/datum/unit_test/dq_client_glow_holder_crossing_acquire_is_budgeted
+
+/datum/unit_test/dq_client_glow_holder_crossing_acquire_is_budgeted/Run()
+	test_driver_begin()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/whole = got[2]
+	var/turf/LT = get_turf(F)
+	var/turf/E = client_glow_test_eye(LT)
+	var/obj/machinery/light/G = allocate(/obj/machinery/light, locate(LT.x + 1, LT.y, LT.z))
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_NOTNULL(G.light?.glow, "the second light glows")
+	var/step = (E.x > LT.x ? 1 : -1) * CLIENT_GLOW_CHUNK
+	var/turf/far
+	for(var/chunks in 6 to 3 step -1)
+		far = locate(E.x + step * chunks, E.y, E.z)
+		if(far)
+			break
+	TEST_ASSERT_NOTNULL(far, "a chunk far from the lights exists")
+	var/datum/client_glow_holder/lazy = new
+	lazy.acquire_budget_ms = 0 // a step makes one glow
+	lazy.view_at(far, 7, 7)
+	lazy.scan_cancel()
+	lazy.scanned = TRUE
+	TEST_ASSERT_NULL(lazy.entry_of(F.light), "far from the lights, nothing is held")
+	var/turf/at = far
+	for(var/chunks in 1 to 12)
+		if(lazy.acquire_queue)
+			break
+		at = locate(at.x - step, at.y, at.z)
+		if(!at)
+			break
+		lazy.view_at(at, 7, 7)
+	TEST_ASSERT_NOTNULL(lazy.acquire_queue, "a crossing that brings the lights into reach queues them")
+	var/queued = length(lazy.acquire_queue)
+	TEST_ASSERT(queued >= 2, "both lights are queued ([queued])")
+	TEST_ASSERT_NULL(lazy.entry_of(F.light), "and the crossing itself made no glow")
+	var/made = GLOB.client_glow_holder_made
+	lazy.acquire_continue()
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_made - made, 1, "a step with no budget left makes one glow")
+	TEST_ASSERT_EQUAL(length(lazy.acquire_queue), queued - 1, "and leaves the rest queued")
+	test_time(5 SECONDS)
+	TEST_ASSERT_NULL(lazy.acquire_queue, "the timer finished the queue")
+	TEST_ASSERT_NOTNULL(lazy.entry_of(F.light), "the light is held once its turn came")
+	TEST_ASSERT_NOTNULL(lazy.entry_of(G.light), "so is the second")
+	var/datum/client_glow_holder/direct = new // no budget: the crossing takes the lights at once
+	direct.view_at(far, 7, 7)
+	var/turf/there = far
+	for(var/chunks in 1 to 12)
+		if(direct.entry_of(F.light))
+			break
+		there = locate(there.x - step, there.y, there.z)
+		if(!there)
+			break
+		direct.view_at(there, 7, 7)
+	TEST_ASSERT_NULL(direct.acquire_queue, "a viewer with no budget queues nothing")
+	TEST_ASSERT_NOTNULL(direct.entry_of(F.light), "and holds the light as its crossing ends")
+	spent(direct)
+	spent(lazy)
+	spent(whole)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	test_driver_end()
+
 /// Cleanup: client lighting off, the light deleted and the viewer leaving each leave no image.
 /datum/unit_test/dq_client_glow_holder_cleanup
 

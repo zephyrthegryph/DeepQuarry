@@ -176,6 +176,8 @@ do { \
 #define CLIENT_GLOW_POOL_MAX 64
 /// Server milliseconds one step of the stored-shape loader (disk reads) may spend before it leaves the rest of its queue to the next tick.
 #define CLIENT_GLOW_STORE_BUDGET_MS 4
+/// Server milliseconds one step of a client holder's acquire queue (the glow images a delta crossing makes for lights newly in reach) may spend before it leaves the rest to the next tick.
+#define CLIENT_GLOW_ACQUIRE_BUDGET_MS 4
 /// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
 /// near the eye are followed once per tick (the lighting step).
 #define CLIENT_GLOW_SIGHT_INTERVAL (2 TICKS)

@@ -19,6 +19,8 @@
 //   - a held light is a glow image, baked to its reach shape once that is ready (client_shadow.dm), and an override image that hides
 //     the real glow from this client, so it is never drawn twice.
 //
+//   - a delta crossing makes the glows of the lights newly in reach through a queue, CLIENT_GLOW_ACQUIRE_BUDGET_MS a tick (acquire_run()); drops and shape readying stay in the crossing.
+//
 //   - a full scan (a login, a teleport, a drop-all) is spread: chunks are walked nearest the eye first, a client's holder for CLIENT_GLOW_SCAN_BUDGET_MS a tick, and the rest on
 //     the ticks that follow (scan_continue()). The step that finds the light around the eye runs inside the call that asked, so the view is lit when the login cover lifts. A crossing
 //     that arrives while a scan is unfinished starts a full scan over its own boxes (the delta needs a finished scan to start from). Viewers with no client (tests) scan to the end at once.
@@ -70,6 +72,17 @@ GLOBAL_VAR_INIT(client_glow_holder_sight_refreshes, 0)
 	var/scan_waiting = FALSE
 	/// Server milliseconds one step of a full scan may spend before it hands the rest to the next tick; null: the scan runs to the end in one call (viewers without a client).
 	var/scan_budget_ms
+	/// Lights a delta crossing found newly in reach and not yet held (light handle key -> TRUE, oldest first): their glow images are made by acquire_run(), a budgeted step a tick.
+	/// Lazy; null: none waiting.
+	var/list/acquire_queue
+	/// TRUE while an acquire_continue() timer is waiting.
+	var/acquire_waiting = FALSE
+	/// Server milliseconds one step of the acquire queue may spend before it leaves the rest to the next tick; null: the queue runs to the end in one call (viewers without a client).
+	var/acquire_budget_ms
+	/// The acquisitions made by the pending queue so far, and the steps and milliseconds they took (the log line of a spread queue).
+	var/acquire_done = 0
+	var/acquire_steps = 0
+	var/acquire_ms = 0
 	/// turf -> TRUE for the turfs the eye saw at its last chunk crossing: decides where a held glow stands.
 	var/list/seen
 	/// The radius of the sight query that made `seen`.
@@ -167,6 +180,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		var/datum/client_glow_holder/H = new
 		H.client = C
 		H.scan_budget_ms = CLIENT_GLOW_SCAN_BUDGET_MS
+		H.acquire_budget_ms = CLIENT_GLOW_ACQUIRE_BUDGET_MS
 		rel_set(C, nameof(C.glow_holder), H)
 	var/list/halves = client_glow_view_halves(C.view)
 	C.glow_holder.view_at(at_eye, halves[1], halves[2])
@@ -453,6 +467,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 
 /// Forgets the pending full scan (a new one begins, the held glows were dropped or the client's images wiped); a timer already waiting finds nothing to do.
 /datum/client_glow_holder/proc/scan_cancel()
+	acquire_cancel() // a full scan walks every light again; one that begins over nothing held or a client that lost its images makes the queued lights stale
 	scan_chunks = null
 	scan_keep = null
 	scan_at = 0
@@ -510,10 +525,65 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 			drop_handle(h)
 		return
 	if(!CLIENT_GLOW_CLEAR_OF(sx, sy, r, reach))
-		consider(L)
+		acquire_later(L)
 		return
 	if(!CLIENT_GLOW_CLEAR_OF(sx, sy, r, new_ring) && CLIENT_GLOW_CLEAR_OF(sx, sy, r, old_ring))
 		prefetch(L)
+
+/// Light `L` is newly in reach of a delta crossing: its glow is made by the budgeted acquire queue, so a crossing that brings many lights into view cannot spike a tick.
+/// A viewer with no budget (tests) takes it at once.
+/datum/client_glow_holder/proc/acquire_later(datum/light_source/L)
+	if(isnull(acquire_budget_ms))
+		consider(L)
+		return
+	var/h = L.glow_holder_key || L.glow_holder_key()
+	if(LAZYACCESS(acquire_queue, h))
+		return
+	LAZYSET(acquire_queue, h, TRUE)
+	if(!acquire_waiting)
+		acquire_waiting = TRUE
+		after(src, 1 TICKS, PROC_REF(acquire_continue))
+
+/// The timer of the acquire queue: its next step, unless the queue was cancelled in the meantime.
+/datum/client_glow_holder/proc/acquire_continue()
+	acquire_waiting = FALSE
+	if(!sig)
+		acquire_cancel()
+		return
+	if(!length(acquire_queue))
+		return
+	acquire_run()
+
+/// One step of the acquire queue: lights in order until the budget is spent (always at least one), then the rest waits for the next tick. A light is tested again against
+/// the boxes as they stand now (consider()), so one that left reach or was dropped while it waited makes nothing.
+/datum/client_glow_holder/proc/acquire_run()
+	var/started = TICK_USAGE_REAL
+	var/list/queue = acquire_queue
+	while(length(queue))
+		var/datum/light_source/L = handle_get(queue[1])
+		queue.Cut(1, 2)
+		if(istype(L) && !QDELETED(L) && consider(L))
+			acquire_done++
+		if(length(queue) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= acquire_budget_ms)
+			break
+	var/step_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	acquire_steps++
+	acquire_ms += step_ms
+	if(length(queue))
+		if(!acquire_waiting)
+			acquire_waiting = TRUE
+			after(src, 1 TICKS, PROC_REF(acquire_continue))
+		return
+	if(client_glow_trace_line())
+		log_world("client glow holder: [client?.ckey] acquire queue finished over [acquire_steps] step(s): [acquire_done] glow(s) made, [round(acquire_ms, 0.01)] ms in all (last step [round(step_ms, 0.01)] ms), holding [LAZYLEN(held)] glow(s)")
+	acquire_cancel()
+
+/// Forgets the lights waiting to be acquired (a drop-all, a login wipe, a new full scan that walks them anyway); a timer already waiting finds nothing to do.
+/datum/client_glow_holder/proc/acquire_cancel()
+	acquire_queue = null
+	acquire_done = 0
+	acquire_steps = 0
+	acquire_ms = 0
 
 /// The parts of box `a` that box `b` does not cover, as up to four boxes list(x0, y0, x1, y1).
 /proc/glow_box_minus(list/a, list/b)
