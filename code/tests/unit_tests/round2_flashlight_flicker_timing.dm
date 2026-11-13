@@ -6,7 +6,7 @@
 /datum/unit_test/round2_flashlight_flicker_timing/proc/exercise_flicker()
 	var/turf/surface = test_floor()
 	var/obj/item/flashlight/light = allocate(/obj/item/flashlight, surface)
-	TEST_ASSERT_NOTNULL(light.overlay_light, "Real flashlight initializes its directional lighting")
+	TEST_ASSERT_NULL(light.overlay_light, "A flashlight that starts off makes no overlay light until its light first casts")
 	TEST_ASSERT(!light.on, "Real flashlight starts off")
 	light.set_power_use(FALSE)
 	light.flicker(amount = 2, forced = TRUE)

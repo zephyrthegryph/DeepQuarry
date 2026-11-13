@@ -391,9 +391,9 @@
 	TEST_ASSERT_NOTNULL(mob_turf, "the map has room for a turf four chunks away")
 	refresh_flush()
 	var/obj/dq_interest_probe/seen_by_eye = new(eye_turf)
-	seen_by_eye.refresh_queued = DEP_PARKED
+	interest_test_park(seen_by_eye)
 	var/obj/dq_interest_probe/seen_by_mob = new(mob_turf)
-	seen_by_mob.refresh_queued = DEP_PARKED
+	interest_test_park(seen_by_mob)
 	interest_view_set("dq-test-client", eye_turf, mob_turf, world.view)
 	TEST_ASSERT(interest_covers(eye_turf), "the eye's chunk is held")
 	TEST_ASSERT(interest_covers(mob_turf), "so is the mob's")
@@ -429,9 +429,9 @@
 	top.shows = mid
 	mid.shows = bottom
 	var/obj/structure/table/under = new(bottom)
-	under.refresh_queued = DEP_PARKED
+	interest_test_park(under)
 	var/obj/structure/table/beside = new(locate(bottom.x, bottom.y + 20 <= world.maxy ? bottom.y + 20 : bottom.y - 20, bottom.z)) // not under any open space, and in another chunk
-	beside.refresh_queued = DEP_PARKED
+	interest_test_park(beside)
 	interest_view_set("dq-test-client", top, null, world.view)
 	TEST_ASSERT_EQUAL(under.refresh_queued, 0, "an atom two layers of open space below the client's tile is drawn at once")
 	TEST_ASSERT_EQUAL(beside.refresh_queued, DEP_PARKED, "an atom beside it, under nothing the client sees, stays parked")

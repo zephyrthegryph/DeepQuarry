@@ -34,6 +34,10 @@
 	set_global(nameof(GLOB.interest_visible), alist())
 	set_global(nameof(GLOB.interest_sigs), alist())
 	set_global(nameof(GLOB.interest_anchors), alist())
+	set_global(nameof(GLOB.interest_owed), alist())
+	set_global(nameof(GLOB.interest_scan_owed), GLOB.interest_scan_owed)
+	set_global(nameof(GLOB.interest_scan_stale), GLOB.interest_scan_stale)
+	set_global(nameof(GLOB.interest_scan_empty), GLOB.interest_scan_empty)
 	set_global(nameof(GLOB.refresh_deferred), GLOB.refresh_deferred)
 	set_global(nameof(GLOB.refresh_deferred_absorbed), GLOB.refresh_deferred_absorbed)
 	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
@@ -290,7 +294,7 @@
 	for(var/obj/structure/table/table as anything in tables)
 		state_changed(table)
 	for(var/obj/structure/table/table as anything in tables)
-		TEST_ASSERT(table.refresh_queued & DEP_PARKED, "a table nobody sees stays parked however its neighbours are marked")
+		TEST_ASSERT(table.refresh_queued & DEP_PARKED, "a table nobody sees stays parked however its neighbours are marked (queued [table.refresh_queued], lazy [GLOB.type_look_lazy[table.type]], covered [interest_covers(get_turf(table))], loc [table.loc], tguis [LAZYLEN(table.open_tguis)])")
 	interest_view_set("dq-test-viewer", T, null, world.view)
 	for(var/obj/structure/table/table as anything in tables)
 		TEST_ASSERT_EQUAL(table.refresh_queued, 0, "and is drawn when it is seen")
@@ -451,7 +455,7 @@
 		TEST_ASSERT(interest_sees(S), "and only the ones it sees")
 	var/list/probes = interest_probes(T, 1)
 	var/obj/dq_interest_probe/probe = probes[1]
-	probe.refresh_queued = DEP_PARKED // a draw owed where a viewer looks: the state the rule forbids
+	interest_test_park(probe) // a draw owed where a viewer looks: the state the rule forbids
 	interest_audit_turf(T)
 	TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "the audit repaired it")
 	TEST_ASSERT_EQUAL(GLOB.interest_audit_parked_in_view, 1, "and counted it")
@@ -666,7 +670,7 @@
 	for(var/obj/dq_interest_probe/probe as anything in clean)
 		probe.set_invisibility(INVISIBILITY_ABSTRACT)
 		rx_of(probe).look_key = null
-		probe.refresh_queued = DEP_PARKED
+		interest_test_park(probe)
 	for(var/obj/dq_interest_probe/probe as anything in real)
 		refresh_mark(probe, DEP_ALL)
 	GLOB.interest_test_coverable += "dq-test-walker"
@@ -720,7 +724,7 @@
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	for(var/obj/dq_interest_probe/probe as anything in list(piped, boxed, unseen))
 		rx_of(probe).look_key = null
-		probe.refresh_queued = DEP_PARKED // owes its first draw, parked as the boot leaves it
+		interest_test_park(probe) // owes its first draw, parked as the boot leaves it
 	var/skipped = GLOB.interest_unperceivable_skipped
 	interest_view_set("dq-test-viewer", floor, null, world.view)
 	refresh_flush()
@@ -752,7 +756,7 @@
 	TEST_ASSERT(!floor.cover_hides(band), "a visible thing in the band is not covered")
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	rx_of(band).look_key = null
-	band.refresh_queued = DEP_PARKED
+	interest_test_park(band)
 	interest_view_set("dq-test-viewer", floor, null, world.view)
 	refresh_flush()
 	TEST_ASSERT(!band.refresh_queued, "it draws when its chunk is seen")
@@ -773,3 +777,304 @@
 				wrong += "[A.type] at [T.x],[T.y],[T.z]"
 	log_world("dq_interest_cover_hides_nothing_visible: [checked] visible atoms checked, [length(wrong)] covered")
 	TEST_ASSERT(!length(wrong), "visible atoms reported covered: [jointext(wrong, "; ")]")
+
+/// Leaves `A` parked, owing its first draw, as the boot leaves a held atom (the owed index lists it, as every parking does).
+/datum/unit_test/proc/interest_test_park(atom/A)
+	A.refresh_queued = DEP_PARKED
+	interest_owed_note(A)
+
+/// What a chunk owes by walking its turfs and contents, the way the scan did before the owed index: the atoms with refresh_queued set. The check of the index.
+/datum/unit_test/proc/interest_owed_walk(z, cx, cy)
+	. = list()
+	var/x0 = cx * INTEREST_CHUNK + 1
+	var/y0 = cy * INTEREST_CHUNK + 1
+	for(var/turf/T as anything in block(locate(x0, y0, z), locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)))
+		if(interest_owed_real(T))
+			. += T
+		for(var/atom/movable/A as anything in T.contents)
+			if(interest_owed_real(A))
+				. += A
+
+/// A chunk scan reads the owed set only: it finds exactly the atoms a walk of the chunk finds, visits no other atom (the counter says how many).
+/datum/unit_test/dq_interest_scan_visits_only_owed
+
+/datum/unit_test/dq_interest_scan_visits_only_owed/Run()
+	interest_isolate()
+	var/turf/home = test_floor()
+	var/z = home.z
+	var/cx = INTEREST_CHUNK_OF(home.x)
+	var/cy = INTEREST_CHUNK_OF(home.y)
+	var/list/probes = interest_probes(home, 6)
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		refresh_mark(probe, DEP_ALL)
+	var/list/walked = interest_owed_walk(z, cx, cy)
+	var/owed_before = GLOB.interest_scan_owed
+	var/stale_before = GLOB.interest_scan_stale
+	var/list/found = list()
+	var/count = interest_collect_owed(found, z, cx, cy, cx, cy)
+	TEST_ASSERT_EQUAL(count, length(walked), "the scan finds what a walk of the chunk finds")
+	TEST_ASSERT_EQUAL(GLOB.interest_scan_owed - owed_before, count, "and the counter says it visited only those")
+	TEST_ASSERT_EQUAL(GLOB.interest_scan_stale - stale_before, 0, "with no stale entry in the index")
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		TEST_ASSERT(handle_of(probe) in found, "every parked probe is found")
+	// A chunk nobody owes anything in is not walked at all.
+	var/turf/away = interest_far_from(home)
+	if(away)
+		var/empty_before = GLOB.interest_scan_empty
+		var/list/none = list()
+		TEST_ASSERT_EQUAL(interest_collect_owed(none, away.z, INTEREST_CHUNK_OF(away.x), INTEREST_CHUNK_OF(away.y), cx, cy), 0, "a chunk that owes nothing yields nothing")
+		TEST_ASSERT_EQUAL(GLOB.interest_scan_empty - empty_before, 1, "and is counted empty, never walked")
+	log_world("dq_interest_scan_visits_only_owed: [count] owed found in a chunk of [INTEREST_CHUNK * INTEREST_CHUNK] turfs")
+	interest_clean(probes)
+
+/// A parked atom that moves to another chunk leaves the old chunk's set and is found by the new chunk's scan.
+/datum/unit_test/dq_interest_owed_follows_moves
+
+/datum/unit_test/dq_interest_owed_follows_moves/Run()
+	interest_isolate()
+	var/turf/home = test_floor()
+	var/turf/away = interest_far_from(home)
+	TEST_ASSERT_NOTNULL(away, "the map has room for a turf four chunks away")
+	var/list/probes = interest_probes(home, 1)
+	var/obj/dq_interest_probe/probe = probes[1]
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	refresh_mark(probe, DEP_ALL)
+	var/list/old_found = list()
+	TEST_ASSERT_EQUAL(interest_collect_owed(old_found, home.z, INTEREST_CHUNK_OF(home.x), INTEREST_CHUNK_OF(home.y), 0, 0), 1, "found where it parked")
+	probe.forceMove(away)
+	TEST_ASSERT_EQUAL(probe.refresh_queued, DEP_PARKED, "still parked after the move")
+	var/list/gone = list()
+	TEST_ASSERT_EQUAL(interest_collect_owed(gone, home.z, INTEREST_CHUNK_OF(home.x), INTEREST_CHUNK_OF(home.y), 0, 0), 0, "the old chunk no longer lists it")
+	var/list/arrived = list()
+	TEST_ASSERT_EQUAL(interest_collect_owed(arrived, away.z, INTEREST_CHUNK_OF(away.x), INTEREST_CHUNK_OF(away.y), 0, 0), 1, "the new chunk's scan finds it")
+	TEST_ASSERT(handle_of(probe) in arrived, "and it is the probe")
+	// Into a container it stands in no chunk; out again it is listed again.
+	var/obj/structure/closet/box = allocate(/obj/structure/closet, away)
+	probe.forceMove(box)
+	var/list/boxed = list()
+	interest_collect_owed(boxed, away.z, INTEREST_CHUNK_OF(away.x), INTEREST_CHUNK_OF(away.y), 0, 0)
+	TEST_ASSERT(!(handle_of(probe) in boxed), "inside a container it stands in no chunk")
+	probe.forceMove(away)
+	var/list/out = list()
+	interest_collect_owed(out, away.z, INTEREST_CHUNK_OF(away.x), INTEREST_CHUNK_OF(away.y), 0, 0)
+	TEST_ASSERT(handle_of(probe) in out, "back on the turf it is listed again")
+	// The view arriving where it moved draws it, and nothing in view owes.
+	interest_view_set("dq-test-viewer", away, null, world.view)
+	TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "the chunk became visible: drawn")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "nothing in view owes a draw")
+	interest_clean(probes)
+
+/// A mark on a parked atom keeps it parked and owed (the redraw is absorbed, nothing is woken); a qdel takes it out of the index.
+/datum/unit_test/dq_interest_owed_marks_and_qdel
+
+/datum/unit_test/dq_interest_owed_marks_and_qdel/Run()
+	interest_isolate()
+	var/turf/home = test_floor()
+	var/z = home.z
+	var/cx = INTEREST_CHUNK_OF(home.x)
+	var/cy = INTEREST_CHUNK_OF(home.y)
+	var/list/probes = interest_probes(home, 3)
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		refresh_mark(probe, DEP_ALL)
+	var/woken_before = GLOB.refresh_parked_woken
+	for(var/n in 1 to 5)
+		for(var/obj/dq_interest_probe/probe as anything in probes)
+			refresh_mark(probe, DEP_DRAW)
+	TEST_ASSERT_EQUAL(GLOB.refresh_parked_woken, woken_before, "marks on parked atoms woke none")
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		TEST_ASSERT_EQUAL(probe.refresh_queued, DEP_PARKED, "a mark of a parked atom leaves it parked")
+	var/list/found = list()
+	TEST_ASSERT_EQUAL(interest_collect_owed(found, z, cx, cy, cx, cy), 3, "and still owed: the scan lists all three")
+	var/obj/dq_interest_probe/gone = probes[1]
+	var/gone_handle = handle_of(gone)
+	qdel(gone)
+	refresh_flush()
+	var/list/after = list()
+	TEST_ASSERT_EQUAL(interest_collect_owed(after, z, cx, cy, cx, cy), 2, "a qdeleted atom is out of the scan")
+	TEST_ASSERT(!(gone_handle in after), "and it is not the one listed")
+	var/alist/set = GLOB.interest_owed[INTEREST_KEY(z, cx, cy)]
+	TEST_ASSERT(!(set && set[gone_handle]), "the index no longer holds its handle")
+	probes -= gone
+	interest_clean(probes)
+
+/// The index is checked against the walk over every chunk of the test map: nothing that owes a draw is missing from its chunk's set. Run with --full-map for the station.
+/datum/unit_test/dq_interest_owed_index_matches_walk
+
+/datum/unit_test/dq_interest_owed_index_matches_walk/Run()
+	var/checked = 0
+	var/missing = 0
+	var/list/examples = list()
+	for(var/z in 1 to world.maxz)
+		for(var/cx in 0 to INTEREST_CHUNK_OF(world.maxx))
+			for(var/cy in 0 to INTEREST_CHUNK_OF(world.maxy))
+				var/list/walked = interest_owed_walk(z, cx, cy)
+				if(!length(walked))
+					continue
+				var/alist/set = GLOB.interest_owed[INTEREST_KEY(z, cx, cy)]
+				for(var/atom/A as anything in walked)
+					checked++
+					var/handle = isturf(A) ? slot_of_turf(A) : handle_of(A)
+					if(!(set && set[handle]))
+						missing++
+						if(length(examples) < 10)
+							examples += "[A.type] at [A.x],[A.y],[A.z] queued [A.refresh_queued]"
+	log_world("dq_interest_owed_index_matches_walk: [checked] owing atoms checked, [missing] missing from the index [jointext(examples, "; ")]")
+	TEST_ASSERT_EQUAL(missing, 0, "every atom that owes a draw is in its chunk's owed set: [jointext(examples, "; ")]")
+
+/// Does `A` owe a draw that matters? Not one that is only the creation mark of an atom nothing derives for, nor a boot-held atom of an empty default look (it owes
+/// nothing: interest_audit_atom(), interest_draw_now()); the owed index lists neither.
+/datum/unit_test/proc/interest_owed_real(atom/A)
+	if(!(A.refresh_queued & ~DEP_CREATED))
+		return FALSE
+	if(A.refresh_queued == DEP_PARKED && GLOB.type_look_stamp[A.type] && look_verdict_fits(A))
+		return FALSE
+	return TRUE
+
+/// A parked atom of a lazy type stays parked under marks whatever its look became since (a verdict read from a file judged its look at creation only), and so does one
+/// written under construction: neither wakes into the queue. One in a held chunk is still queued by a mark.
+/datum/unit_test/dq_interest_parked_marks_do_not_wake
+
+/datum/unit_test/dq_interest_parked_marks_do_not_wake/Run()
+	interest_isolate()
+	var/turf/home = test_floor()
+	var/list/probes = interest_probes(home, 2)
+	var/obj/dq_interest_probe/changed = probes[1]
+	var/obj/dq_interest_probe/building = probes[2]
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	refresh_mark(changed, DEP_ALL)
+	refresh_mark(building, DEP_ALL)
+	TEST_ASSERT_EQUAL(changed.refresh_queued, DEP_PARKED, "parked while it looked as its type does")
+	var/list/from_file = GLOB.look_verdict_from_file.Copy()
+	from_file[/obj/dq_interest_probe] = TRUE
+	set_global(nameof(GLOB.look_verdict_from_file), from_file)
+	changed.set_icon_state("changed-since")
+	TEST_ASSERT(!look_verdict_fits(changed), "its look no longer fits the verdict a file gave its type")
+	var/woken_before = GLOB.refresh_parked_woken
+	var/queued_before = length(GLOB.refresh_queue)
+	refresh_mark(changed, DEP_DRAW)
+	TEST_ASSERT_EQUAL(changed.refresh_queued, DEP_PARKED, "a mark of a parked atom whose look changed leaves it parked")
+	building.datum_flags |= DF_CONSTRUCTING
+	set_global(nameof(GLOB.construction_parked_absorbed), GLOB.construction_parked_absorbed)
+	var/absorbed_before = GLOB.construction_parked_absorbed
+	construction_note(building, null)
+	building.datum_flags &= ~DF_CONSTRUCTING
+	TEST_ASSERT_EQUAL(building.refresh_queued, DEP_PARKED, "a write under construction leaves a parked atom parked")
+	TEST_ASSERT_EQUAL(GLOB.construction_parked_absorbed - absorbed_before, 1, "and is counted")
+	TEST_ASSERT_EQUAL(GLOB.refresh_parked_woken, woken_before, "nothing was woken")
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_queue), queued_before, "and nothing queued")
+	var/list/found = list()
+	interest_collect_owed(found, home.z, INTEREST_CHUNK_OF(home.x), INTEREST_CHUNK_OF(home.y), 0, 0)
+	TEST_ASSERT(handle_of(changed) in found, "both still owe, in the chunk's set")
+	TEST_ASSERT(handle_of(building) in found, "(the second too)")
+	// A viewer arriving draws them: nothing in view is left undrawn.
+	interest_view_set("dq-test-viewer", home, null, world.view)
+	TEST_ASSERT_EQUAL(changed.refresh_queued, 0, "the chunk became visible: the changed one is drawn")
+	TEST_ASSERT_EQUAL(building.refresh_queued, 0, "and the one built under construction")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-viewer")), "nothing in view owes a draw")
+	// Under a viewer's eye a mark still queues.
+	refresh_mark(changed, DEP_DRAW)
+	TEST_ASSERT(changed.refresh_queued && !(changed.refresh_queued & DEP_PARKED), "in a held chunk a mark queues the atom")
+	interest_clean(probes)
+
+/// The chunk scan as it was before the owed index (kept here to time the two against each other): every turf of the chunk and everything standing on it is looked at.
+/datum/unit_test/proc/interest_collect_owed_walked(list/into, z, cx, cy, mid_cx, mid_cy)
+	. = 0
+	var/x0 = cx * INTEREST_CHUNK + 1
+	var/y0 = cy * INTEREST_CHUNK + 1
+	if(x0 > world.maxx || y0 > world.maxy)
+		return
+	var/turf/low = locate(x0, y0, z)
+	var/turf/high = locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)
+	var/mid_x = mid_cx * INTEREST_CHUNK + INTEREST_CHUNK / 2
+	var/mid_y = mid_cy * INTEREST_CHUNK + INTEREST_CHUNK / 2
+	var/list/owed = list()
+	for(var/turf/T as anything in block(low, high))
+		var/owes = !!T.refresh_queued
+		if(!owes)
+			FOR_CONTENTS(var/atom/movable/A as anything, T)
+				if(A.refresh_queued)
+					owes = TRUE
+					break
+		if(owes)
+			owed[T] = (T.x - mid_x) ** 2 + (T.y - mid_y) ** 2
+	if(!length(owed))
+		return
+	owed = sortTim(owed, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
+	for(var/turf/T as anything in owed)
+		if(T.refresh_queued)
+			into += handle_of(T)
+			.++
+		FOR_CONTENTS(var/atom/movable/A as anything, T)
+			if(A.refresh_queued)
+				into += handle_of(A)
+				.++
+
+/// Times the walking scan against the owed index over every chunk that owes a draw (run with --full-map for the station): the counts they find, and the milliseconds
+/// each takes per chunk (median, 95th percentile and the sum; a chunk whose clock read crosses a tick is dropped, its reading would be meaningless).
+/datum/unit_test/dq_interest_scan_cost_vs_walk
+
+/datum/unit_test/dq_interest_scan_cost_vs_walk/Run()
+	var/chunks = 0
+	var/walked_found = 0
+	var/index_found = 0
+	var/list/walked_ms = list()
+	var/list/index_ms = list()
+	for(var/z in 1 to world.maxz)
+		for(var/cx in 0 to INTEREST_CHUNK_OF(world.maxx))
+			for(var/cy in 0 to INTEREST_CHUNK_OF(world.maxy))
+				var/list/via_walk = list()
+				var/started = TICK_USAGE_REAL
+				var/found = interest_collect_owed_walked(via_walk, z, cx, cy, cx, cy)
+				var/walk_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+				if(!found)
+					continue
+				chunks++
+				walked_found += found
+				var/list/via_index = list()
+				started = TICK_USAGE_REAL
+				var/indexed = interest_collect_owed(via_index, z, cx, cy, cx, cy)
+				var/via_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+				index_found += indexed
+				if(walk_ms > 0 && via_ms >= 0 && walk_ms < 500 && via_ms < 500)
+					walked_ms += walk_ms
+					index_ms += via_ms
+	walked_ms = sortTim(walked_ms, GLOBAL_PROC_REF(cmp_numeric_asc))
+	index_ms = sortTim(index_ms, GLOBAL_PROC_REF(cmp_numeric_asc))
+	var/walk_sum = 0
+	for(var/ms in walked_ms)
+		walk_sum += ms
+	var/index_sum = 0
+	for(var/ms in index_ms)
+		index_sum += ms
+	var/n = length(walked_ms)
+	if(n)
+		log_world("dq_interest_scan_cost_vs_walk: [chunks] chunks owing ([n] timed); walking scan found [walked_found], median [round(walked_ms[round(n / 2) + 1], 0.01)] ms, p95 [round(walked_ms[min(n, round(n * 0.95) + 1)], 0.01)] ms, max [round(walked_ms[n], 0.01)] ms, sum [round(walk_sum, 0.1)] ms; owed index found [index_found], median [round(index_ms[round(n / 2) + 1], 0.01)] ms, p95 [round(index_ms[min(n, round(n * 0.95) + 1)], 0.01)] ms, max [round(index_ms[n], 0.01)] ms, sum [round(index_sum, 0.1)] ms")
+	TEST_ASSERT(index_found <= walked_found, "the index never lists more than the walk finds")
+
+/// A parked unseen atom's move publishes nothing (no loc or look-dir change reaches the reaction layer); it stays parked and owed, and one moved to a watched chunk draws.
+/datum/unit_test/dq_interest_parked_move_is_quiet
+
+/datum/unit_test/dq_interest_parked_move_is_quiet/Run()
+	interest_isolate()
+	var/turf/home = test_floor()
+	var/turf/away = interest_far_from(home)
+	TEST_ASSERT_NOTNULL(away, "the map has room for a turf four chunks away")
+	var/list/probes = interest_probes(away, 1)
+	var/obj/dq_interest_probe/probe = probes[1]
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	set_global(nameof(GLOB.interest_parked_move_spared), GLOB.interest_parked_move_spared)
+	refresh_mark(probe, DEP_ALL)
+	TEST_ASSERT_EQUAL(probe.refresh_queued, DEP_PARKED, "parked out of view")
+	var/spared_before = GLOB.interest_parked_move_spared
+	var/marks_before = GLOB.refresh_marks_raised
+	for(var/n in 1 to 5)
+		probe.forceMove(locate(away.x, away.y + (n % 2), away.z))
+	TEST_ASSERT(GLOB.interest_parked_move_spared > spared_before, "its moves were spared their publish ([GLOB.interest_parked_move_spared - spared_before])")
+	TEST_ASSERT_EQUAL(GLOB.refresh_marks_raised, marks_before, "and raised no mark")
+	TEST_ASSERT_EQUAL(probe.refresh_queued, DEP_PARKED, "still parked and owed")
+	interest_view_set("dq-test-viewer", home, null, world.view)
+	probe.forceMove(home)
+	TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "moved where it is watched it draws")
+	interest_clean(probes)

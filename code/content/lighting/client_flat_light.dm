@@ -136,6 +136,15 @@ CAPABILITY_TYPE(client_flat_light, CAP_CLIENT_FLAT_LIGHT, /datum/capability/clie
 		blue += strength * tint[3] / 255
 	return list(min(red, 1), min(green, 1), min(blue, 1))
 
+/// How bright `T` looks to a player now, 0..1: under client lighting the strongest channel of the light its floor is drawn with (client_flat_light_rgb()),
+/// else the gameplay light level. The darksight overlay (a radial BLEND_ADD glow centred on the player, hud_used.dsoverlay) eases in by how dark this says the
+/// turf is; fed the gameplay level, which reads a lit corridor at 0.6 where the floor draws 1.0, it added a halo that peaked on the player's own character.
+/proc/client_darksight_brightness(turf/T)
+	if(!GLOB.client_lighting || !SSlighting.is_initialized())
+		return T.get_lumcount()
+	var/list/rgb = client_flat_light_rgb(T)
+	return max(rgb[1], rgb[2], rgb[3])
+
 /// The quantised colour of `rgb` (client_flat_light_rgb()) as one number: red, green and blue steps, 6 bits each.
 /proc/client_flat_light_key(list/rgb)
 	return round(rgb[1] * CLIENT_FLAT_LIGHT_STEPS) | (round(rgb[2] * CLIENT_FLAT_LIGHT_STEPS) << 6) | (round(rgb[3] * CLIENT_FLAT_LIGHT_STEPS) << 12)
