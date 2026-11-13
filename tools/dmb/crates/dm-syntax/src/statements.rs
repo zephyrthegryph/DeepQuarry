@@ -237,6 +237,11 @@ pub trait SettingSyntaxProvider {
     fn original_inline_if_leaf(&self, _boundary: Span, _keyword: &'static str) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// Authenticate the actual condition close and first bare assignment name.
+    /// The child's existing expression receipt still decides assignment validity.
+    fn original_inline_if_assignment_head(&self, _boundary: Span, _name: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
     /// Authenticate the range header's var/name prefix, first separator and to.
     fn original_for_range_header(
         &self, _prefix: Span, _name: Span, _between: Span, _initialized: bool,
@@ -749,6 +754,16 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
     statements
 }
 
+// DATA-only selection of a bare '=' target. Only the provider's SAME issued
+// token loan can certify its name span and the preceding condition close.
+fn original_inline_assignment_name(inline: &str) -> Option<&str> {
+    let (name, rhs) = inline.split_once('=')?;
+    let name = name.trim();
+    (!rhs.starts_with('=') && crate::expression_parser::original_ordinary_call_name(name)
+        && !matches!(name, "null" | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__"))
+        .then_some(name)
+}
+
 fn parse_if(
     item: &Item,
     else_items: &[Item],
@@ -783,16 +798,26 @@ fn parse_if(
         let inline_leaf = else_items.is_empty() && item.children.is_empty()
             && condition.as_ref().zip(inline).is_some_and(|(condition, inline)| {
                 let keyword = if starts_keyword(inline, "return") {
-                    "return"
+                    Some("return")
                 } else if inline == "continue" && origins.original_loop_control {
-                    "continue"
+                    Some("continue")
                 } else {
-                    return false;
+                    None
                 };
                 let start = item.header_span.start
                     + (inline.as_ptr() as usize - item.header.as_ptr() as usize);
-                let boundary = Span::new(condition.span.end, start + keyword.len());
-                match origins.settings.map(|provider| provider.original_inline_if_leaf(boundary, keyword)).transpose() {
+                let question = if let Some(keyword) = keyword {
+                    let boundary = Span::new(condition.span.end, start + keyword.len());
+                    origins.settings.map(|provider| provider.original_inline_if_leaf(boundary, keyword))
+                } else if let Some(name) = original_inline_assignment_name(inline) {
+                    let name_start = start + (name.as_ptr() as usize - inline.as_ptr() as usize);
+                    let name = Span::new(name_start, name_start + name.len());
+                    let boundary = Span::new(condition.span.end, name.end);
+                    origins.settings.map(|provider| provider.original_inline_if_assignment_head(boundary, name))
+                } else {
+                    return false;
+                };
+                match question.transpose() {
                     Ok(value) => value == Some(true),
                     Err(actual) => {
                         if let Some(admission) = origins.admission {
@@ -2310,4 +2335,60 @@ fn classic_for_control_spans_keep_repeated_parts_at_their_authored_occurrences()
     assert_eq!(initial.span, Span::new(initial_at, initial_at + 5));
     assert_eq!(condition.span, Span::new(condition_at, condition_at + 1));
     assert_eq!(step.span, Span::new(step_at, step_at + 5));
+}
+
+#[cfg(test)]
+#[test]
+fn original_inline_assignment_name_is_only_data_and_not_a_generic_expression_gate() {
+    for (source, expected) in [
+        ("L = list()", Some("L")), (" L\t= list()", Some("L")),
+        ("L == list()", None), ("L += list()", None),
+        ("L.field = list()", None), ("L[key] = list()", None),
+        ("null = list()", None), ("__TYPE__ = list()", None),
+        ("lookup()", None), ("return L", None),
+    ] {
+        assert_eq!(original_inline_assignment_name(source), expected, "{source}");
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn original_inline_assignment_head_first_io_stops_before_the_child_without_authority() {
+    struct Probe {
+        conditions: std::cell::Cell<usize>,
+        heads: std::cell::Cell<usize>,
+        children: std::cell::Cell<usize>,
+    }
+    impl SettingSyntaxProvider for Probe {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> {
+            panic!("this negative transport control never asks for settings");
+        }
+        fn original_expression(&self, source: &str, _: usize) -> std::io::Result<Option<crate::ParsedExpr>> {
+            if source.trim_start().starts_with("L =") {
+                self.children.set(self.children.get() + 1);
+                panic!("failed assignment-head question must stop before child expression");
+            }
+            self.conditions.set(self.conditions.get() + 1);
+            // No successful Original expression receipt is fabricated. This
+            // control only tests first-error ordering on an actual candidate.
+            Ok(None)
+        }
+        fn original_inline_if_assignment_head(&self, _: Span, _: Span) -> std::io::Result<bool> {
+            self.heads.set(self.heads.get() + 1);
+            Err(std::io::Error::from_raw_os_error(1450))
+        }
+    }
+    let source="/proc/probe(argument, L)\n    if(!argument) L = list()\n";
+    let syntax=crate::parse(source);
+    assert!(syntax.diagnostics.is_empty());
+    let probe=Probe{conditions:std::cell::Cell::new(0),heads:std::cell::Cell::new(0),children:std::cell::Cell::new(0)};
+    let root=crate::SettingChargeCounter::root_allocation_bytes();
+    let used=crate::SettingChargeCounter::try_new(root).unwrap();
+    let admission=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+    let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&probe),Some(&admission),Some(source),false);
+    assert_eq!(probe.conditions.get(),1);
+    assert_eq!(probe.heads.get(),1);
+    assert_eq!(probe.children.get(),0);
+    assert!(body.original_grammar.is_none());
+    assert_eq!(admission.take_operational_error().unwrap().raw_os_error(),Some(1450));
 }

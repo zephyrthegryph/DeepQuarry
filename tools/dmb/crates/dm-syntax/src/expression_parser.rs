@@ -1939,6 +1939,22 @@ fn original_bare_new(expr: &Expr, tokens: &[Token]) -> bool {
         && simple_term(callee, keyword) && expr.span == keyword.span)
 }
 
+// Pinned NewMiniExpr: a direct ordinary runtime target, explicitly empty
+// argument list. This is not NewImplicit and must not issue an implicit hint.
+fn original_direct_dynamic_new(expr: &Expr, tokens: &[Token]) -> bool {
+    let [keyword, target, open, close] = tokens else { return false; };
+    let ExprKind::Unary { op, value } = &expr.kind else { return false; };
+    let ExprKind::Call { callee, args } = &value.kind else { return false; };
+    op == "new" && keyword.kind == TokenKind::Ident && keyword.text == "new"
+        && matches!(&callee.kind, ExprKind::Ident(name) if original_ordinary_call_name(name)
+            && !matches!(name.as_str(), "null" | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__"))
+        && simple_term(callee, target) && args.is_empty()
+        && open.kind == TokenKind::Punctuation && open.text == "("
+        && close.kind == TokenKind::Punctuation && close.text == ")"
+        && value.span == Span::new(target.span.start, close.span.end)
+        && expr.span == Span::new(keyword.span.start, close.span.end)
+}
+
 fn original_conditional_child(expr: &Expr, tokens: &[Token], conditional: bool, depth: usize) -> bool {
     original_composed_expression(expr, tokens, conditional, depth, false)
 }
@@ -2123,6 +2139,7 @@ fn original_composed_expression(
                 && matches!(tail, [dot, name] if punctuation(dot, separator) && name.kind == TokenKind::Ident
                     && name.text == *selector && original_ascii_identifier(selector))
         }
+        ExprKind::Unary { op, .. } if op == "new" => original_direct_dynamic_new(expr, tokens),
         ExprKind::Unary { op, value } if matches!(op.as_str(), "!" | "-") => {
             matches!(tokens, [prefix, child @ ..] if punctuation(prefix, op)
                 && (matches!(&value.kind, ExprKind::Ident(_) | ExprKind::Group(_)
@@ -3188,6 +3205,47 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
      let tokens = lex(&source).tokens;
      let parsed = parse_expression_tokens(&tokens);
      assert!(!original_nested_ordinary_read_index(parsed.expr.as_ref().unwrap(), &tokens, 32));
+ }
+ #[test]
+ fn actual_original_direct_dynamic_new_keeps_runtime_target_and_has_no_implicit_hint() {
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (source, expected) in [
+         ("new path ( )", Some(OriginalSimpleKind::Complete)),
+         ("L += new path ( )", Some(OriginalSimpleKind::SimpleAssignmentStatement)),
+         ("new path", None),
+         ("new path ( value )", None),
+         ("new object . type ( )", None),
+         ("new object : type ( )", None),
+         ("new object ?. type ( )", None),
+         ("new path [ key ] ( )", None),
+     ] {
+         let rows: Vec<_> = source.split_whitespace().map(|text| {
+             let kind = if original_ascii_identifier(text) { TokenKind::Ident }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, (text == ":").then_some(true))
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let mut output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind), expected, "{source}");
+         if expected.is_some() {
+             assert!(output.parsed().diagnostics.is_empty(), "{source}");
+             assert!(output.parsed().original_constructor_facts().unwrap().as_slice().is_empty(), "dynamic target is not implicit new");
+         }
+         if source == "new path ( )" {
+             let expr = output.parsed.expr.as_mut().unwrap();
+             assert!(original_direct_dynamic_new(expr, &output.tokens));
+             let old = expr.span;
+             expr.span.end += 1;
+             assert!(!original_direct_dynamic_new(expr, &output.tokens));
+             expr.span = old;
+             assert!(matches!(&expr.kind, ExprKind::Unary { op, value } if op == "new"
+                 && matches!(&value.kind, ExprKind::Call { callee, args }
+                     if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == "path"))));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
  }
  #[test]
  fn actual_original_membership_accepts_one_lhs_dot_field_with_an_exact_name_container() {

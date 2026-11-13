@@ -863,7 +863,11 @@ mod body_syntax_census_tests;
      for (text, expected) in [
          (fixture.to_owned(), true),
          (fixture.replace("else if(istype(character, /datum/mind))\n        M = character",
-             "else if(istype(character, /datum/mind)) M = character"), false),
+             "else if(istype(character, /datum/mind)) M = character"), true),
+         (fixture.replace("else if(istype(character, /datum/mind))\n        M = character",
+             "else if(istype(character, /datum/mind)) M.field = character"), false),
+         (fixture.replace("else if(istype(character, /datum/mind))\n        M = character",
+             "else if(istype(character, /datum/mind)); M = character"), false),
          (fixture.replace("if(ismob(character))", "if(ismob(character)) ;"), false),
      ] {
          let db = Arc::new(QueryDb::default());
@@ -2576,6 +2580,43 @@ mod body_syntax_census_tests;
              let parsed = product.parsed().unwrap().statement_storage().parsed();
              assert_eq!(parsed.local_variables.entries().unwrap().iter()
                  .filter(|row| row.source_kind == dm_syntax::LocalSourceKind::ForBinding).count(), expected_for_bindings);
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_init_subtypes_keeps_inline_assignment_and_dynamic_constructor_on_one_archive() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/subtypesof(").unwrap();
+     let init = file.find("/proc/init_subtypes(").unwrap();
+     let end = file[init + 1..].find("\n/proc/").map(|at| init + 1 + at).unwrap();
+     let source = &file[start..end];
+     assert!(source.contains("if(!istype(L))\tL = list()"));
+     assert!(source.contains("L += new path()"));
+     for (text, expected) in [
+         (source.to_owned(), true),
+         (source.replace("if(!istype(L))\tL = list()", "if(!istype(L))\n        L = list()"), true),
+         (source.replace("if(!istype(L))\tL = list()", "if(!istype(L)); L = list()"), false),
+         (source.replace("if(!istype(L))\tL = list()", "if(!istype(L)) L.field = list()"), false),
+         (source.replace("new path()", "new path(prototype)"), false),
+         (source.replace("new path()", "new path.type()"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "init_subtypes");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual init_subtypes source must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();
      }

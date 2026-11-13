@@ -3964,3 +3964,26 @@ The compact checkout passed these sites and stopped after 145.51 seconds at
 if(!istype(L)) L=list() in init_subtypes. Its inline assignment needs an actual
 expression-head boundary witness. Whole-checkout parity and default cutover
 remain unproven.
+
+
+### Authenticated inline assignments and direct dynamic construction
+
+Inline bare assignments now request their own default-deny boundary question.
+The existing provider authenticates the same body/code token tape, requiring the
+actual condition close and exact assignment-name span. The child assignment
+receipt is still required; a selected name or fabricated keyword grants nothing.
+The existing question-before-child operational-error order remains intact.
+
+Direct dynamic construction is limited to the exact new path() Unary/Call form
+with an ordinary runtime target and empty arguments. It creates no implicit
+constructor hint, copies no model and changes no target inference. Four focused
+controls passed, including first 1450 before child traversal and the existing
+joined-return error check. Host libraries and test definitions checked clean
+in 3m22s; the private build passed. The complete actual init_subtypes procedure
+and its separately labelled constructor-loop diagnostic produced clean reports
+and installed pairs in 1.75 and 2.02 seconds.
+
+The compact checkout passed these sites and stopped after 169.83 seconds at
+++fromIndex in moveElement. A prefix-update statement needs its distinct
+statement receipt; expression and loop-step roles remain separate. No complete
+whole-checkout combined report or default cutover has been established.

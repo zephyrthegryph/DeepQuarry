@@ -1173,6 +1173,26 @@ fn parse_statements_admitted(
             }
             Ok(significant == 2)
         }
+        fn original_inline_if_assignment_head(
+            &self, boundary: dm_syntax::Span, name: dm_syntax::Span,
+        ) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(boundary) = tokens.tokens(boundary) else { return Ok(false); };
+            let mut significant = 0;
+            for (kind, at, spelling) in boundary {
+                self.admission.checkpoint()?;
+                match (kind, spelling, significant) {
+                    (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _, _) => (),
+                    (TokenKind::Punctuation, ")", 0) => significant += 1,
+                    (TokenKind::Ident, _, 1) if at == name => significant += 1,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(significant == 2)
+        }
         fn original_for_range_header(
             &self, prefix: dm_syntax::Span, name: dm_syntax::Span, between: dm_syntax::Span,
             initialized: bool,
