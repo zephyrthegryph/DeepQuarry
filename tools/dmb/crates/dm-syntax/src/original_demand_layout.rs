@@ -12,7 +12,13 @@ impl LayoutOwner{
 }
 // Header identity owns only its allocation. Cursor buffers and returned
 // batches have separate leases under the same resource counter.
-pub(super) struct LayoutCredit { lease: crate::SettingRootLease }
+pub(super) struct LayoutCredit {
+ lease: crate::SettingRootLease,
+ // One funded diagnostic scalar in this existing allocation. Atomic keeps
+ // cloned completed identities Send/Sync; only the live cursor claims logs.
+ #[cfg(debug_assertions)]
+ row_work_trace_next:std::sync::atomic::AtomicUsize,
+}
 
 fn actual_error(a: &crate::SettingAdmission<'_>, status: io::Error) -> io::Error {
     a.take_operational_error().unwrap_or(status)
@@ -88,8 +94,31 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
  pub(super) fn new(a:&'a crate::SettingAdmission<'budget>)->io::Result<Self>{
   let bytes=std::mem::size_of::<LayoutCredit>().checked_add(2*std::mem::size_of::<usize>()).ok_or(io::ErrorKind::OutOfMemory)?;
   let lease=a.reserve(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  #[cfg(debug_assertions)]
+  let row_work_trace_next=std::sync::atomic::AtomicUsize::new(
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){1<<20}else{usize::MAX});
   let mask_credit=a.reserve(0).map_err(|e|actual_error(a,e))?;
-  Ok(Self{masks:Default::default(),structural:Default::default(),inline:Default::default(),source_base:0,counted_tokens:0,boundaries:8,finished:false,credit:LayoutOwner::new(LayoutCredit{lease}),mask_credit,a})
+  Ok(Self{masks:Default::default(),structural:Default::default(),inline:Default::default(),source_base:0,counted_tokens:0,boundaries:8,finished:false,credit:LayoutOwner::new(LayoutCredit{lease,
+   #[cfg(debug_assertions)]
+   row_work_trace_next,
+  }),mask_credit,a})
+ }
+ // Once compaction has consumed the entire genuine mask window, batches
+ // retain only global scalar spans and their own line buffers. No issued
+ // header identity or batch borrows this scratch allocation.
+ fn release_consumed_mask_storage(&mut self)->io::Result<()> {
+  if !self.masks.visible.is_empty()||!self.masks.delimiters.is_empty()
+      ||!self.masks.multiline_literals.is_empty(){return Ok(())}
+  let dead=self.masks.visible.capacity().checked_add(self.masks.delimiters.capacity())
+   .and_then(|n|self.masks.multiline_literals.capacity().checked_mul(mem::size_of::<Span>()).and_then(|spans|n.checked_add(spans)))
+   .ok_or(io::ErrorKind::OutOfMemory)?;
+  if dead==0{return Ok(())}
+  // Free the exact same unique buffers BEFORE refunding. A first release
+  // checkpoint fault keeps the conservative lease until the cursor drops;
+  // no stale scratch pointer, credit transfer or successful batch escapes.
+  drop((mem::take(&mut self.masks.visible),mem::take(&mut self.masks.delimiters),
+      mem::take(&mut self.masks.multiline_literals)));
+  self.a.shrink(&mut self.mask_credit,dead).map_err(|actual|actual_error(self.a,actual))
  }
  pub(super) fn identity(&self)->NativePrimaryLayoutIdentity{NativePrimaryLayoutIdentity{credit:self.credit.clone()}}
  pub(super) fn matches_identity(&self,identity:&NativePrimaryLayoutIdentity)->bool{self.credit.same(&identity.credit)}
@@ -102,6 +131,30 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   a.checkpoint().map_err(|e|actual_error(a,e))?;
   Ok(NativePrimaryLayoutIdentity{credit})
  }
+ #[cfg(debug_assertions)]
+ fn claim_row_work_trace_sample(&self,bytes:usize)->bool{
+  use std::sync::atomic::Ordering;
+  let next=self.credit.row_work_trace_next.load(Ordering::Relaxed);
+  if next==usize::MAX||bytes<next{return false}
+  self.credit.row_work_trace_next.store(bytes.saturating_mul(2),Ordering::Relaxed);
+  true
+ }
+ #[cfg(debug_assertions)]
+ fn trace_row_work_highwater(&self,source_len:usize,row_work:usize,boundaries:usize,token_frontier:usize){
+  if self.claim_row_work_trace_sample(row_work){
+   self.trace_layout_geometry("ROW_WORK_HIGHWATER","row_work_live",source_len,row_work,boundaries,token_frontier);
+  }
+ }
+ #[cfg(debug_assertions)]
+ fn trace_funding_geometry(&self,stage:&str,source_len:usize,row_work:usize,boundaries:usize,token_frontier:usize){
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_none(){return}
+  self.trace_layout_geometry("FUNDING_FAILURE",stage,source_len,row_work,boundaries,token_frontier);
+ }
+ #[cfg(debug_assertions)]
+ fn trace_layout_geometry(&self,event:&str,stage:&str,source_len:usize,row_work:usize,boundaries:usize,token_frontier:usize){
+  eprintln!("ORIGINAL_LAYOUT_{event} root_retained_sample={} stage={stage} source_len={source_len} source_base={} window={} visible_len={} visible_capacity={} delimiter_len={} delimiter_capacity={} literal_len={} literal_capacity={} mask_credit={} row_work={row_work} boundaries={boundaries} token_frontier={token_frontier} prior_boundaries={} counted_tokens={} structural_offset={} structural_depth={} initializer_depth={} block_depth={} pending={:?} literal_cursor={}",
+   self.a.retained_bytes_for_trace(),self.source_base,source_len.saturating_sub(self.source_base),self.masks.visible.len(),self.masks.visible.capacity(),self.masks.delimiters.len(),self.masks.delimiters.capacity(),self.masks.multiline_literals.len(),self.masks.multiline_literals.capacity(),self.mask_credit.bytes(),self.boundaries,self.counted_tokens,self.structural.offset,self.structural.depth,self.structural.initializer_depth,self.structural.block_depth,self.structural.pending,self.structural.literal_cursor);
+ }
  pub(super) fn advance(&mut self,source:&str,tokens:&[SpanToken],original:&OriginalParseState<'_,'_,'_>,final_input:bool)->io::Result<NativeLayoutBatch>{self.advance_with_literal_facts(source,TokenWindow::from_slice(tokens),original,final_input,None)}
  pub(super) fn advance_with_literal_facts(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,final_input:bool,facts:Option<crate::OriginalLiteralRows<'_>>)->io::Result<NativeLayoutBatch>{
   self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
@@ -113,16 +166,37 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   // Earlier returned batches pay their own exact buffers. Reserve before any
   // mask or layout work, then release only after the physical rows are dead.
   let rows=boundaries.checked_mul(mem::size_of::<Line>()).and_then(|n|n.checked_mul(8)).ok_or(io::ErrorKind::OutOfMemory)?;
-  let mut row_work=self.a.reserve(rows).map_err(|e|actual_error(self.a,e))?;
+  let mut row_work=self.a.reserve(rows).map_err(|e|{
+   #[cfg(debug_assertions)]
+   self.trace_funding_geometry("row_work_request",source.len(),rows,boundaries,tokens.len());
+   actual_error(self.a,e)
+  })?;
+  #[cfg(debug_assertions)]
+  self.trace_row_work_highwater(source.len(),row_work.bytes(),boundaries,tokens.len());
   let visible_bytes=source.len()-self.source_base;
-  fund_visible_string(&mut self.masks.visible,visible_bytes,&mut self.mask_credit,self.a)?;
-  fund_buffer(&mut self.masks.delimiters,visible_bytes,&mut self.mask_credit,self.a)?;
+  fund_visible_string(&mut self.masks.visible,visible_bytes,&mut self.mask_credit,self.a).map_err(|actual|{
+    #[cfg(debug_assertions)]
+    self.trace_funding_geometry("visible",source.len(),row_work.bytes(),boundaries,tokens.len());
+    actual
+   })?;
+
+  fund_buffer(&mut self.masks.delimiters,visible_bytes,&mut self.mask_credit,self.a).map_err(|actual|{
+    #[cfg(debug_assertions)]
+    self.trace_funding_geometry("delimiters",source.len(),row_work.bytes(),boundaries,tokens.len());
+    actual
+   })?;
+
   let spans=self.masks.multiline_literals.len().checked_add(new_multiline).ok_or(io::ErrorKind::OutOfMemory)?;
   if spans>self.masks.multiline_literals.capacity(){
    // Actual next consumed tokens were counted above, so the native mask
    // pass appends inside this exact already funded allocation.
    let capacity=spans.max(4).checked_next_power_of_two().ok_or(io::ErrorKind::OutOfMemory)?;
-   fund_buffer(&mut self.masks.multiline_literals,capacity,&mut self.mask_credit,self.a)?;
+   fund_buffer(&mut self.masks.multiline_literals,capacity,&mut self.mask_credit,self.a).map_err(|actual|{
+    #[cfg(debug_assertions)]
+    self.trace_funding_geometry("multiline",source.len(),row_work.bytes(),boundaries,tokens.len());
+    actual
+   })?;
+
   }
   if !self.masks.advance_with_literal_facts(source,Span::new(self.source_base,source.len()),tokens,Some(original),facts.map(|rows|(rows,0))){return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native mask continuation has no actual complete-token provenance")))}
   self.counted_tokens=tokens.len();self.boundaries=boundaries;
@@ -142,6 +216,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
    let removed=self.masks.multiline_literals.partition_point(|span|span.end<=cut);self.masks.multiline_literals.drain(..removed);self.structural.literal_cursor=self.structural.literal_cursor.saturating_sub(removed);for span in &mut self.masks.multiline_literals{span.start=span.start.saturating_sub(cut);span.end-=cut;}
    self.boundaries=8;let start=tokens.partition_point(|token|token.span.end<=self.source_base);for token in tokens.range(start,tokens.len()).expect("retained layout token window").iter(){if token.kind==TokenKind::Newline||matches!(token.text(source),"{"|"}"|";"|"("){self.boundaries=self.boundaries.checked_add(2).ok_or(io::ErrorKind::OutOfMemory)?;}}
   }
+  self.release_consumed_mask_storage()?;
   let retained=lines.capacity().checked_mul(mem::size_of::<Line>()).ok_or(io::ErrorKind::OutOfMemory)?;
   let dead=row_work.bytes().checked_sub(retained).ok_or(io::ErrorKind::InvalidData)?;
   if dead!=0{self.a.shrink(&mut row_work,dead).map_err(|e|actual_error(self.a,e))?;}
@@ -166,7 +241,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
  }
  #[test]fn actual_sparse_large_native_demand_layout_pays_real_two_masks_and_growth_peak_without_source_multiplier(){
   let mut source=String::from("/*");source.push_str(&"x".repeat(1_550_000));source.push_str("*/\n");let tokens=lex_spans(&source).tokens;
-  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,6<<20,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let batch=cursor.advance(&source,&tokens,&original,true).unwrap();assert!(batch.is_empty());assert!(counter.load(Ordering::Acquire)>=crate::SettingChargeCounter::root_allocation_bytes() + (source.len()*2));assert!(counter.load(Ordering::Acquire)<6<<20);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()+batch._credit.bytes()));drop(batch);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()));drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let peak=std::cell::Cell::new(0);let poll=||{peak.set(peak.get().max(counter.load(Ordering::Acquire)));Ok(())};let a=crate::SettingAdmission::new(&counter,6<<20,&poll);let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let batch=cursor.advance(&source,&tokens,&original,true).unwrap();assert!(batch.is_empty());assert!(peak.get()>=crate::SettingChargeCounter::root_allocation_bytes() + (source.len()*2));assert_eq!(cursor.mask_credit.bytes(),0);assert_eq!((cursor.masks.visible.capacity(),cursor.masks.delimiters.capacity(),cursor.masks.multiline_literals.capacity()),(0,0,0));assert!(counter.load(Ordering::Acquire)<6<<20);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()+batch._credit.bytes()));drop(batch);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()));drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn cloned_formal_identities_do_not_pin_two_independently_funded_layout_batches() {
@@ -316,6 +391,87 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
    if stop==3 {assert_eq!(observed_peak.get(),crate::SettingChargeCounter::root_allocation_bytes()+4+9);}
    drop((text,rows));drop(credit);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }}
+ }
+
+ #[test]
+ fn actual_burst_masks_release_highwater_without_reclaiming_live_batches_or_unfinished_window() {
+  let burst=format!("/*{}*/\n","x".repeat(65_536));
+  let source=format!("{burst}/datum/a\n    var/\u{3b1}=list(\n        1,\n        2)\n");let tokens=lex_spans(&source).tokens;
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let identity=cursor.identity();let cloned=identity.clone();
+  let end=burst.len();let n=tokens.partition_point(|token|token.span.end<=end);
+  let first=cursor.advance(&source[..end],&tokens[..n],&original,false).unwrap();assert!(first.is_empty());
+  assert_eq!(cursor.source_base,end);assert_eq!(cursor.mask_credit.bytes(),0);
+  assert_eq!((cursor.masks.visible.capacity(),cursor.masks.delimiters.capacity(),cursor.masks.multiline_literals.capacity()),(0,0,0));
+  let header_end=end+"/datum/a\n".len();let n=tokens.partition_point(|token|token.span.end<=header_end);
+  let header=cursor.advance(&source[..header_end],&tokens[..n],&original,false).unwrap();assert_eq!(header.len(),1);
+  let owned_header=(header[0].header_start,header[0].header_end,header[0].end);assert_eq!(owned_header,(end,end+"/datum/a".len(),header_end-1));
+  // The SAME inline layout kernel trims segment whitespace and publishes
+  // end==header_end, excluding the consumed physical trailing newline.
+  assert_eq!(source.as_bytes()[header[0].end],b'\n');
+  let partial_end=source.find("        2)").unwrap();let n=tokens.partition_point(|token|token.span.end<=partial_end);
+  let partial=cursor.advance(&source[..partial_end],&tokens[..n],&original,false).unwrap();assert!(partial.is_empty());
+  assert!(cursor.structural.pending.is_some());assert!(!cursor.masks.visible.is_empty());assert!(cursor.mask_credit.bytes()>0);
+  assert_eq!(cursor.source_base,header_end+4); // only leading indentation is no longer needed
+  assert_eq!(cursor.masks.visible(),&source[cursor.source_base..partial_end]);assert!(cursor.masks.visible().contains("\u{3b1}"));assert!(cursor.matches_identity(&identity));
+  let finish=cursor.advance(&source,&tokens,&original,true).unwrap();assert_eq!(finish.len(),1);
+  assert_eq!(finish[0].header_start,header_end+4);assert_eq!(finish[0].end,source.len()-1);
+  assert_eq!(source.as_bytes()[finish[0].end],b'\n');
+  assert_eq!((header[0].header_start,header[0].header_end,header[0].end),owned_header);
+  assert_eq!(cursor.source_base,source.len());assert_eq!(cursor.mask_credit.bytes(),0);
+  assert_eq!((cursor.masks.visible.capacity(),cursor.masks.delimiters.capacity(),cursor.masks.multiline_literals.capacity()),(0,0,0));
+  let finished_identity=cursor.finish_identity().unwrap();assert!(finished_identity.same(&identity));assert!(identity.same(&cloned));let fixed=identity.credit.lease.bytes();assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+fixed+original.storage.bytes()+first._credit.bytes()+header._credit.bytes()+partial._credit.bytes()+finish._credit.bytes());
+  drop((first,header,partial,finish,original,identity,cloned,finished_identity));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn consumed_mask_release_first_io_physically_frees_buffers_before_refund_and_preserves_error() {
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=std::cell::Cell::new(0);let armed=std::cell::Cell::new(false);
+  let poll=||{if armed.get(){calls.set(calls.get()+1);return Err(io::Error::from_raw_os_error(1450));}Ok(())};
+  let a=crate::SettingAdmission::new(&counter,4096,&poll);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();
+  // Storage-only failure fixture: empty buffers hold no source/body authority.
+  fund_visible_string(&mut cursor.masks.visible,8,&mut cursor.mask_credit,&a).unwrap();
+  fund_buffer(&mut cursor.masks.delimiters,8,&mut cursor.mask_credit,&a).unwrap();
+  fund_buffer(&mut cursor.masks.multiline_literals,4,&mut cursor.mask_credit,&a).unwrap();
+  let held=cursor.mask_credit.bytes();assert_eq!(held,16+4*mem::size_of::<Span>());
+  let before=counter.load(Ordering::Acquire);armed.set(true);
+  let actual=cursor.release_consumed_mask_storage().unwrap_err();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(calls.get(),1);
+  assert_eq!((cursor.masks.visible.capacity(),cursor.masks.delimiters.capacity(),cursor.masks.multiline_literals.capacity()),(0,0,0));
+  assert_eq!(cursor.mask_credit.bytes(),held);assert_eq!(counter.load(Ordering::Acquire),before);
+  drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[cfg(debug_assertions)]
+ #[test]
+ fn layout_highwater_trace_metadata_is_in_exact_existing_owner_funding_and_visit() {
+  assert_eq!(mem::size_of::<std::sync::atomic::AtomicUsize>(),mem::size_of::<usize>());
+  assert!(mem::size_of::<LayoutCredit>()>=mem::size_of::<crate::SettingRootLease>()+mem::size_of::<usize>());
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4096,&||Ok(()));
+  let cursor=NativeDemandLayoutCursor::new(&a).unwrap();let identity=cursor.identity();
+  let fixed=mem::size_of::<LayoutCredit>()+2*mem::size_of::<usize>();
+  assert_eq!(cursor.credit.lease.bytes(),fixed);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+fixed);
+  let mut first=None;identity.visit_storage(|address,capacity,used|{if first.is_none(){first=Some((address,capacity,used));}});
+  let (_,capacity,used)=first.unwrap();assert_eq!((capacity,used),(fixed,fixed));
+  drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+fixed);
+  drop(identity);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[cfg(debug_assertions)]
+ #[test]
+ fn layout_row_work_trace_is_geometrically_bounded_and_cannot_admit_work() {
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,4096,&||Ok(()));let cursor=NativeDemandLayoutCursor::new(&a).unwrap();
+  cursor.credit.row_work_trace_next.store(1<<20,Ordering::Relaxed);let before=counter.load(Ordering::Acquire);let mut samples=0;
+  // Metadata-only scheduling control. These sizes do NOT reserve or grant
+  // row work, source/header authority, or any extra quota to this4KiB host.
+  for bytes in [0,(1<<20)-1,1<<20,(1<<20)+1,2<<20,(2<<20)+1,4<<20,8<<20,16<<20,32<<20,64<<20,(128<<20)-1] {
+   if cursor.claim_row_work_trace_sample(bytes){samples+=1;assert!(!cursor.claim_row_work_trace_sample(bytes));}
+   assert_eq!(counter.load(Ordering::Acquire),before);
+  }
+  assert_eq!(samples,7);
+  cursor.credit.row_work_trace_next.store(1<<20,Ordering::Relaxed);
+  assert!(cursor.claim_row_work_trace_sample(3<<20));
+  assert_eq!(cursor.credit.row_work_trace_next.load(Ordering::Relaxed),6<<20);
+  assert!(!cursor.claim_row_work_trace_sample((6<<20)-1));assert!(cursor.claim_row_work_trace_sample(6<<20));
+  cursor.credit.row_work_trace_next.store(usize::MAX,Ordering::Relaxed);assert!(!cursor.claim_row_work_trace_sample(usize::MAX));
+  assert_eq!(counter.load(Ordering::Acquire),before);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
 }

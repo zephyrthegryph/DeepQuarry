@@ -4196,3 +4196,27 @@ establish whole-checkout throughput/parity. No new body coverage count exists.
 The next investigation distinguishes genuinely live layout windows, output-row
 reservations and physically retained empty scratch buffers without raising the
 cap or understating ownership.
+### Consumed scratch lifetime and live row-reservation evidence
+
+Fully consumed empty mask buffers now physically drop before their exact credit
+is retired. Cumulative token and structural/inline state stays intact; returned
+Line batches retain only their own vectors and global scalar spans. The burst,
+retained-batch, shared-identity, unfinished UTF8-header and first-release I/O
+controls passed. Diagnostic highwater state is one debug-only AtomicUsize inside
+the existing size-funded LayoutCredit allocation; storage visits and refunds
+include its actual bytes. Successful row-reservation samples are bounded to
+seven threshold crossings below the existing root cap, under the existing trace
+flag. Fifteen layout/accounting controls passed with this metadata in place.
+
+The actual run confirmed the remaining over-reservation: with a single unfinished
+header at delimiter depth one and a 4,677,830-byte active window, the receiver
+held 67,133,440 bytes of provisional row work. Near refusal that reservation was
+70,620,800 bytes, masks held 10,464,744 bytes, and the shared root was near its
+unchanged 128 MiB cap. No logical Line had yet completed for that pending header.
+The producer and receiver share QueryDb.body_charge despite separate admission
+hosts, so either can observe the first actual quota error; the observed EOF
+proxy is not substituted for that error. Capture still did not complete and no
+new body-coverage count was issued. These measurements justify replacing the
+coarse delimiter-derived reservation with independently funded actual physical
+and inline row allocations; they do not justify raising a limit or omitting
+allocation peaks.
