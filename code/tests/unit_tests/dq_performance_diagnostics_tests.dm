@@ -22,7 +22,7 @@
 
 /datum/unit_test/dq_profiler_sample_runs_in_turns/Run()
 	var/sequence_before = SSprofiler.diagnostic_sequence
-	SSprofiler.building = null
+	rel_clear(SSprofiler, nameof(SSprofiler.building))
 	SSprofiler.sample(SSprofiler.wait)
 	var/datum/profile_sample/S = SSprofiler.building
 	TEST_ASSERT_NOTNULL(S, "the first turn leaves the sample unfinished")
@@ -32,8 +32,8 @@
 		SSprofiler.sample_continue()
 	TEST_ASSERT(!SSprofiler.building, "the turns end")
 	TEST_ASSERT_EQUAL(SSprofiler.diagnostic_sequence, sequence_before + 1, "with one record")
-	TEST_ASSERT(S.turns >= PROFILE_STAGE_WRITE, "taking at least a turn a stage ([S.turns] turns)")
-	var/list/record = json_decode("{[jointext(S.encoded, ",")]}")
+	TEST_ASSERT(SSprofiler.last_turns >= PROFILE_STAGE_WRITE, "taking at least a turn a stage ([SSprofiler.last_turns] turns)")
+	var/list/record = json_decode(SSprofiler.last_record)
 	TEST_ASSERT(islist(record), "the record is JSON")
 	for(var/section in list("sequence", "subsystems", "atmos_arena", "rust_allocator", "rust_metrics", "attribution", "ledger", "players", "tick_usage"))
 		TEST_ASSERT(!isnull(record[section]), "with its [section] section")

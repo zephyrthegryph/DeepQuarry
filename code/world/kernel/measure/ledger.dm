@@ -408,11 +408,12 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 	var/top_n = KM_LEDGER_TOP
 	var/at = 1
 	var/sum = 0
-	var/list/cats = list()
+	var/list/cats
 
 /datum/km_ledger/proc/walk_begin(top_n = KM_LEDGER_TOP)
 	var/datum/km_ledger_walk/W = new
 	W.top_n = top_n
+	W.cats = list()
 	return W
 
 /// Ranks categories for `budget_ms` (at least one). TRUE when every category is in.

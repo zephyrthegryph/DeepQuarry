@@ -380,6 +380,7 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
 /datum/unit_test/dq_ai_tactic_ranged_attack
 
 /datum/unit_test/dq_ai_tactic_ranged_attack/Run()
+	set_global(nameof(GLOB.hop_cache_hits), GLOB.hop_cache_hits) // the trace projectile's steps count hits on a counter the leak guard watches
 	var/list/pair = ai_pair(ai_floor(0), ai_floor(4))
 	var/mob/living/simple_mob/S = pair[1]
 	var/mob/H = pair[2]

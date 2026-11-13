@@ -328,11 +328,11 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	var/list/keys
 	var/at = 1
 	var/overflow_done = FALSE
-	var/list/call_best = list()
-	var/list/call_value = list()
-	var/list/post_best = list()
-	var/list/post_value = list()
-	var/list/folded = list()
+	var/list/call_best
+	var/list/call_value
+	var/list/post_best
+	var/list/post_value
+	var/list/folded
 	/// Rows visited, for the profile's own trace line.
 	var/visited = 0
 
@@ -340,6 +340,11 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	var/datum/km_attr_walk/W = new
 	W.top = top
 	W.keys = rows.Copy()
+	W.call_best = list()
+	W.call_value = list()
+	W.post_best = list()
+	W.post_value = list()
+	W.folded = list()
 	return W
 
 /// Walks rows for `budget_ms` (at least one owner type's worth). TRUE when the table has been walked to its end.

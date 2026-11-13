@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The MOVE_COST trace names where a step's Moved() time goes (notices, the loc hop, heat, interest anchors, the living and body tails) and what client Move() spends outside the step"
+  - code_imp: "The profiler's PERF_PROFILE sample is built over several ticks instead of holding one for 80-500 ms a minute, and reports the outside-the-kernel time since the last sample"
+  - code_imp: "Round setup logs how long each stage took; a sequence member's turn over 100 ms is named in the log"
+  - qol: "A step onto a clean floor no longer walks the turf's contents looking for a dirt overlay"

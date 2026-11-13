@@ -21,6 +21,9 @@ SYSTEM_DEF(profiler)
 	var/diagnostic_sequence = 0
 	/// The sample being built across ticks (sample_advance()).
 	var/datum/profile_sample/building
+	/// The last finished sample's record (the JSON of PERF_PROFILE) and how many turns it took.
+	var/last_record
+	var/last_turns = 0
 
 /datum/system/profiler/stat_entry(msg)
 	msg += "F:[round(fetch_cost,1)]ms"
@@ -89,13 +92,20 @@ SYSTEM_DEF(profiler)
 	var/list/ledger
 	/// The sections still to encode (key -> value), and the JSON pieces so far ("key":<json>).
 	var/list/sections
-	var/list/encoded = list()
+	var/list/encoded
 	var/atmos_json
 	var/alloc_json
 	var/sequence = 0
 	var/native_ms = 0
 	var/walk_ms = 0
 	var/encode_ms = 0
+
+CAPABILITIES(/datum/system/profiler)
+	owns_one(nameof(building), /datum/profile_sample)
+
+CAPABILITIES(/datum/profile_sample)
+	owns_one(nameof(attr_walk), /datum/km_attr_walk)
+	owns_one(nameof(ledger_walk), /datum/km_ledger_walk)
 
 /datum/system/profiler/proc/sample(dt)
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
@@ -104,13 +114,13 @@ SYSTEM_DEF(profiler)
 	if(building)
 		log_world("PROFILER SAMPLE: the sample before is still being built (stage [building.stage] after [building.turns] turn(s)); this one is skipped")
 		return
-	building = new /datum/profile_sample
+	rel_set(src, nameof(building), new /datum/profile_sample)
 	building.started_real = REALTIMEOFDAY
 	sample_advance(FALSE)
 
 /// A whole sample at once, for tests: every stage runs in this call.
 /datum/system/profiler/proc/sample_now()
-	building = new /datum/profile_sample
+	rel_set(src, nameof(building), new /datum/profile_sample)
 	building.started_real = REALTIMEOFDAY
 	sample_advance(TRUE)
 
@@ -134,7 +144,7 @@ SYSTEM_DEF(profiler)
 		if(!sync && S.stage <= PROFILE_STAGE_WRITE)
 			after(src, 1 TICKS, PROC_REF(sample_continue), key = "profile_sample")
 			return
-	building = null
+	rel_clear(src, nameof(building))
 
 /// One turn of the sample's current stage. TRUE when the stage is complete.
 /datum/system/profiler/proc/sample_stage(datum/profile_sample/S)
@@ -154,19 +164,19 @@ SYSTEM_DEF(profiler)
 			// Inside sched_core / appearance_drain: top 20 callbacks, top 20 redrawn types, and the post-init settle table (attribution.dm).
 			var/datum/km_attr/attr = km_meter().attr
 			if(!S.attr_walk)
-				S.attr_walk = attr.walk_begin(20)
+				rel_set(S, nameof(S.attr_walk), attr.walk_begin(20))
 			var/walk_started = TICK_USAGE_REAL
 			var/walked = attr.walk_step(S.attr_walk, PROFILE_WALK_SLICE_MS)
 			if(walked)
 				S.attribution = attr.walk_result(S.attr_walk)
-				S.attr_walk = null
+				rel_clear(S, nameof(S.attr_walk))
 			S.walk_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - walk_started)
 			return walked
 		if(PROFILE_STAGE_LEDGER)
 			// Every ms of the kernel's iteration by category with its heaviest names, and what BYOND spent outside it (measure/ledger.dm).
 			var/datum/km_ledger/ledger = GLOB.km_ledger
 			if(!S.ledger_walk)
-				S.ledger_walk = ledger.walk_begin(KM_LEDGER_TOP)
+				rel_set(S, nameof(S.ledger_walk), ledger.walk_begin(KM_LEDGER_TOP))
 			var/walk_started = TICK_USAGE_REAL
 			var/walked = ledger.walk_step(S.ledger_walk, PROFILE_WALK_SLICE_MS)
 			if(walked)
@@ -174,7 +184,7 @@ SYSTEM_DEF(profiler)
 				// "outside" is the mean since boot: this is the same section over the window since the sample before.
 				var/list/outside = S.ledger["outside"]
 				outside += ledger.outside_since_mark()
-				S.ledger_walk = null
+				rel_clear(S, nameof(S.ledger_walk))
 			S.walk_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - walk_started)
 			return walked
 		if(PROFILE_STAGE_ENCODE)
@@ -194,20 +204,20 @@ SYSTEM_DEF(profiler)
 				// send cost (appearance/turf/obj changes pushed to clients) is world.map_cpu
 				// only; with no clients it is ~0. Earlier profiles logged world.cpu and
 				// world.tick_usage under the map_* names, which read as idle map churn.
-				S.encoded += "\"sequence\":[S.sequence]"
-				S.encoded += "\"world_time_ds\":[json_encode(TIME_NOW(CLOCK_WORLD))]"
-				S.encoded += "\"players\":[length(GLOB.clients)]"
-				S.encoded += "\"cpu\":[json_encode(world.cpu)]"
-				S.encoded += "\"tick_usage\":[json_encode(world.tick_usage)]"
-				S.encoded += "\"map_cpu\":[json_encode(world.map_cpu)]"
-				S.encoded += "\"initialized\":[json_encode(Kernel.initializations_seconds > 0)]"
-				S.encoded += "\"sleep_offline\":[json_encode(world.sleep_offline)]"
+				LAZYADD(S.encoded, "\"sequence\":[S.sequence]")
+				LAZYADD(S.encoded, "\"world_time_ds\":[json_encode(TIME_NOW(CLOCK_WORLD))]")
+				LAZYADD(S.encoded, "\"players\":[length(GLOB.clients)]")
+				LAZYADD(S.encoded, "\"cpu\":[json_encode(world.cpu)]")
+				LAZYADD(S.encoded, "\"tick_usage\":[json_encode(world.tick_usage)]")
+				LAZYADD(S.encoded, "\"map_cpu\":[json_encode(world.map_cpu)]")
+				LAZYADD(S.encoded, "\"initialized\":[json_encode(Kernel.initializations_seconds > 0)]")
+				LAZYADD(S.encoded, "\"sleep_offline\":[json_encode(world.sleep_offline)]")
 				S.encode_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - encode_started)
 				return FALSE
 			var/key = S.sections[1]
 			var/json = json_encode(S.sections[key])
 			S.sections.Cut(1, 2)
-			S.encoded += "\"[key]\":[json]"
+			LAZYADD(S.encoded, "\"[key]\":[json]")
 			if(key == "atmos_arena")
 				S.atmos_json = json
 			else if(key == "rust_allocator")
@@ -216,7 +226,9 @@ SYSTEM_DEF(profiler)
 			return !length(S.sections)
 		if(PROFILE_STAGE_WRITE)
 			var/write_started = TICK_USAGE_REAL
-			log_runtime("PERF_PROFILE {[jointext(S.encoded, ",")]}")
+			last_record = "{[jointext(S.encoded, ",")]}"
+			last_turns = S.turns + 1
+			log_runtime("PERF_PROFILE [last_record]")
 			// Keep the stable specialized records consumed by existing benchmark tools.
 			log_runtime("ATMOS_PROFILE [S.atmos_json]")
 			log_runtime("RUST_ALLOC_PROFILE [S.alloc_json]")
