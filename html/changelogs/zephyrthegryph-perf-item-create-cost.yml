@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Making an item costs less: a movable light that is dark (a hat or helmet with no lamp, a flashlight switched off) makes no overlay light until it first casts (it made up to three atoms), a tank makes its assembly proxy only when an assembly is taped to it, an item works out its embed chance when asked instead of copying its combat trait at construction, and a pure reagent made into a container is no longer marked as changed."

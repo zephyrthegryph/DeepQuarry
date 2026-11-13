@@ -51,11 +51,10 @@
 		start_blocking_light()
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || STATE_PEEK(src, movable_misc, icon_rotation) != DEFAULT_ICON_ROTATION)
 		update_transform()
-	switch(atom_rules_of(src).light_system)
-		if(MOVABLE_LIGHT)
-			add_overlay_lighting(src, starts_on = light_on)
-		if(MOVABLE_LIGHT_DIRECTIONAL)
-			add_overlay_lighting(src, is_directional = TRUE, starts_on = light_on)
+	// A movable light that is dark now (a hat with no lamp, a flashlight switched off) makes no overlay light: light_changed() makes it when the light first casts.
+	// The overlay light is up to three more atoms and eight observers, and most head items and flashlights are never lit.
+	if(atom_casts_light(src))
+		add_movable_light()
 
 /// World registration moved out of Initialize() (L2): radiation shielding,
 /// static lighting and recursive listening reach outside the object.

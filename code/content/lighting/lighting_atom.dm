@@ -90,11 +90,26 @@ SETTER(/atom, opacity)
 /// A light input (the switch, the range, the power or the colour) changed: a static light's source follows it now. A movable not yet in the
 /// world is skipped (on_materialize() makes its source), as is anything before its Initialize(); overlay lights follow the notices.
 /atom/proc/light_changed()
-	if(atom_rules_of(src).light_system != STATIC_LIGHT || !(flags & ATOM_INITIALIZED))
+	if(!(flags & ATOM_INITIALIZED))
 		return
 	if(ismovable(src) && !(flags & ATOM_MATERIALIZED))
 		return
-	update_light()
+	if(atom_rules_of(src).light_system == STATIC_LIGHT)
+		update_light()
+	else if(ismovable(src) && atom_casts_light(src))
+		// The first time a movable light casts, its overlay light is made (on_materialize() makes none for a dark one); later changes follow its notices.
+		var/atom/movable/lamp = src
+		lamp.add_movable_light()
+
+/// Makes the overlay light of a movable that casts one (MOVABLE_LIGHT or MOVABLE_LIGHT_DIRECTIONAL) when it has none yet. Nothing for any other light system.
+/atom/movable/proc/add_movable_light()
+	if(overlay_light)
+		return
+	switch(atom_rules_of(src).light_system)
+		if(MOVABLE_LIGHT)
+			add_overlay_lighting(src, starts_on = light_on)
+		if(MOVABLE_LIGHT_DIRECTIONAL)
+			add_overlay_lighting(src, is_directional = TRUE, starts_on = light_on)
 
 /// Setter for the light power of this atom.
 /atom/proc/set_light_power(new_power)
