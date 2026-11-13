@@ -60,6 +60,29 @@ describe('the column page', () => {
     });
   });
 
+  it('keeps the list index a window was opened at when its interface is named', () => {
+    const host = new ColumnHost();
+    const name = (wid: string, iface: string) =>
+      host.receive('col/msg', {
+        wid,
+        ...msg('update', {
+          config: { interface: { name: iface }, title: iface },
+        }),
+      });
+    host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
+    name('col-1', 'Pda');
+    host.receive('col/open', { wid: 'col-2', kind: 'tgui' });
+    name('col-2', 'Notes');
+    // Dropped at the head of the list: naming it must not move it to the unplaced spot.
+    host.receive('col/open', { wid: 'col-3', kind: 'tgui', at: 0 });
+    name('col-3', 'Radio');
+    expect(host.state.groups.map((g) => g.windows[0])).toEqual([
+      'col-3',
+      'col-1',
+      'col-2',
+    ]);
+  });
+
   it('answers a window ping and drops a closed window', () => {
     const host = new ColumnHost();
     host.receive('col/open', { wid: 'col-2', kind: 'tgui' });
@@ -297,7 +320,9 @@ describe('the saved layout', () => {
     for (let n = 1; n <= 120; n++) {
       const wid = `col-${n}`;
       host.receive('col/open', { wid, kind: 'tgui' });
-      expect(Object.keys(host.state.saved).some((k) => k.startsWith('col-'))).toBe(false);
+      expect(
+        Object.keys(host.state.saved).some((k) => k.startsWith('col-')),
+      ).toBe(false);
       host.receive('col/close', { wid });
     }
     expect(Object.keys(host.state.saved)).toEqual([]);
@@ -320,7 +345,11 @@ describe('the saved layout', () => {
     host.receive('col/init', {
       saved: JSON.stringify({ 'col-1': place, 'col-2': place, Pda: place }),
     });
-    expect(Object.keys(host.state.saved).sort()).toEqual(['Chat', 'Pda'].filter((k) => k in host.state.saved));
-    expect(Object.keys(host.state.saved).some((k) => k.startsWith('col-'))).toBe(false);
+    expect(Object.keys(host.state.saved).sort()).toEqual(
+      ['Chat', 'Pda'].filter((k) => k in host.state.saved),
+    );
+    expect(
+      Object.keys(host.state.saved).some((k) => k.startsWith('col-')),
+    ).toBe(false);
   });
 });

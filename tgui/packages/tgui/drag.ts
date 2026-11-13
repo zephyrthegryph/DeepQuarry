@@ -7,6 +7,9 @@
 import { storage } from 'common/storage';
 import type { BooleanLike } from 'tgui-core/react';
 import { vecAdd, vecMultiply, vecScale, vecSubtract } from 'tgui-core/vector';
+import { mainBounds, measureColumn } from 'tgui-panel/layout/geometry';
+import type { Rect } from 'tgui-panel/layout/model';
+import { rectContains } from 'tgui-panel/layout/model';
 import { configAtom, store } from './events/store';
 import { createLogger } from './logging';
 import { snapToScreen } from './snap';
@@ -425,13 +428,31 @@ function dragEndHandler(event): void {
 }
 
 /**
- * A floating window's titlebar drag ended: the server asks the right-hand
- * column's page whether the point is over it (it knows its own place and
- * where in its window list the point falls), and docks the window there
- * (doc/rewrite/proposals/window_system.md section 12).
+ * Whether a drop at `pointer` (screen pixels) is worth asking the server
+ * about: over the column's rect, or anywhere when the column could not be
+ * measured (the page then decides). A drop elsewhere docks nothing.
  */
-function dockIfOverPanel(pointer: [number, number]): void {
+export function dropNeedsCheck(
+  column: Rect | null,
+  pointer: [number, number],
+): boolean {
+  return !column || rectContains(column, pointer[0], pointer[1]);
+}
+
+/**
+ * A floating window's titlebar drag ended: when the point is over the
+ * right-hand column, the server asks the column's page where in its window
+ * list the point falls, and docks the window there
+ * (doc/rewrite/proposals/window_system.md section 12). A drop anywhere else
+ * sends nothing.
+ */
+async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
   if (!store.get(configAtom)?.window?.dockable) {
+    return;
+  }
+  const column = await measureColumn(await mainBounds());
+  if (!dropNeedsCheck(column, pointer)) {
+    logger.log('drop outside the column', pointer);
     return;
   }
   Byond.sendMessage('wm/dropped', {

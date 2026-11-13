@@ -17,6 +17,7 @@ import {
 import { configAtom } from 'tgui/events/store';
 import { prepareRequestedInterface } from 'tgui/interfacePreparation';
 import { mainBounds, measureColumn } from '../layout/geometry';
+import { rectContains } from '../layout/model';
 import {
   type DockAction,
   type DockState,
@@ -56,6 +57,8 @@ export class ColumnHost {
   private lastSaved = '';
   /** What each docked interface was last told about being on screen (wm/view). */
   private viewHidden = new Map<string, boolean>();
+  /** The list index a window was opened at (a drop put it there), until its interface is named and it is placed again at the same index. */
+  private openedAt = new Map<string, number>();
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -138,6 +141,7 @@ export class ColumnHost {
     );
     this.backends.set(wid, backend);
     const at = typeof payload?.at === 'number' ? payload.at : undefined;
+    if (at !== undefined) this.openedAt.set(wid, at);
     // Its interface and title come with its first update; until then it has no interface, so the saved layout does not hear of it.
     this.dispatch({
       type: 'open',
@@ -221,6 +225,8 @@ export class ColumnHost {
   private retitle(wid: string, iface: string, title: string) {
     const win = this.state.windows[wid];
     if (!win) return;
+    const openedAt = this.openedAt.get(wid);
+    this.openedAt.delete(wid);
     if (
       win.iface !== iface &&
       iface === CHAT_INTERFACE &&
@@ -240,7 +246,7 @@ export class ColumnHost {
           iface,
           title,
           kind: 'tgui',
-          at: win.at ?? (placed ? undefined : this.unplacedIndex(wid)),
+          at: openedAt ?? (placed ? undefined : this.unplacedIndex(wid)),
         },
       });
     } else {
@@ -263,6 +269,7 @@ export class ColumnHost {
 
   private closed(wid: string) {
     this.backends.delete(wid);
+    this.openedAt.delete(wid);
     this.dispatch({ type: 'close', id: wid });
   }
 
@@ -331,12 +338,7 @@ export class ColumnHost {
     const ratio = window.devicePixelRatio || 1;
     const px = Number(payload?.x);
     const py = Number(payload?.y);
-    const inside =
-      !!column &&
-      px >= column.x &&
-      py >= column.y &&
-      px <= column.x + column.w &&
-      py <= column.y + column.h;
+    const inside = !!column && rectContains(column, px, py);
     const y = column ? (py - column.y) / ratio : Number.NaN;
     if (this.profiling()) {
       sendPage('WM-Log', {

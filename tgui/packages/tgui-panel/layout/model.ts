@@ -10,6 +10,13 @@ export type Point = { x: number; y: number };
 
 export type Rect = { x: number; y: number; w: number; h: number };
 
+/** Whether screen point (x, y) is inside `rect` (edges included). */
+export function rectContains(rect: Rect, x: number, y: number): boolean {
+  return (
+    x >= rect.x && y >= rect.y && x <= rect.x + rect.w && y <= rect.y + rect.h
+  );
+}
+
 /** The percent of the main split the map takes when the splitter is dragged to screen x. */
 export function mapSplitFromX(
   client: Rect,
