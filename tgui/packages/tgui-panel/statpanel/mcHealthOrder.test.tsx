@@ -63,6 +63,18 @@ function cardTitles(data: object): (string | null)[] {
 }
 
 describe('MC Health panel order', () => {
+  it('renders nothing before the recent ticks graph', () => {
+    const { container } = render(
+      <McHealthPanel data={fastOnly as unknown as McHealthData} token={null} />,
+    );
+    const root = container.querySelector('.mch');
+    expect(root?.firstElementChild?.classList.contains('mch-card')).toBe(true);
+    expect(root?.firstElementChild?.querySelector('h3')?.textContent).toBe(
+      'Recent ticks',
+    );
+    cleanup();
+  });
+
   it('draws the recent ticks graph first from the first send, with no slow card yet', () => {
     const titles = cardTitles(fastOnly);
     cleanup();

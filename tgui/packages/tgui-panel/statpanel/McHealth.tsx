@@ -733,8 +733,8 @@ export function McHealthPanel(props: {
     );
   return (
     <div className="mch">
-      <PanelFps />
       <Ticks data={data} />
+      <PanelFps />
       <Health data={data} />
       {ledger && <LedgerMemo data={ledger} />}
       {uses && <UsesMemo data={uses} />}
