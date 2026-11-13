@@ -3901,3 +3901,20 @@ The compact whole-checkout run progressed past the repaired list-helper frontier
 and stopped after 176.8 seconds at sorter = new, expanded from CREATE_SORT_INSTANCE
 in sortTim. It emitted no combined report or installed pair. This is the next
 missing grammar witness, not successful whole-checkout parity or default cutover.
+
+
+### Contextual constructor without an argument list
+
+The exact one-token bare new expression now reuses the term parser's existing
+implicit-constructor representation. Its parser-issued arguments_present=false
+fact stays distinct from new(), and contextual target inference is unchanged.
+Two focused parser controls passed, including real end-read failure and quota
+refund. Host libraries and test definitions checked clean; the private build
+passed. A fixture containing the unmodified CREATE_SORT_INSTANCE macro and real
+sortTim prefix plus declarations produced a clean report and installed pair
+in 1.73 seconds. That fixture covers the prefix, not the whole sorting algorithm.
+
+The next compact checkout run passed the prior bare-new refusal and stopped
+after 161.35 seconds at sorttext(L[Li][key], R[Ri][key]) in mergeKeyedLists.
+Sequential index reads inside arguments need their own closed read witness.
+There is still no successful whole-checkout combined report or default cutover.

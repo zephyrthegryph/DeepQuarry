@@ -1928,6 +1928,17 @@ fn original_plain_membership(expr: &Expr, tokens: &[Token]) -> bool {
         && receiver && term(rhs, right)
 }
 
+// Pinned NewImplicit with absent arguments. The actual term parser already
+// issued arguments_present=false; this only witnesses its exact consumed shape.
+// Contextual target inference remains with the native semantic consumer.
+fn original_bare_new(expr: &Expr, tokens: &[Token]) -> bool {
+    let ExprKind::Call { callee, args } = &expr.kind else { return false; };
+    matches!(tokens, [keyword] if args.is_empty()
+        && keyword.kind == TokenKind::Ident && keyword.text == "new"
+        && matches!(&callee.kind, ExprKind::Ident(name) if name == "new")
+        && simple_term(callee, keyword) && expr.span == keyword.span)
+}
+
 fn original_conditional_child(expr: &Expr, tokens: &[Token], conditional: bool, depth: usize) -> bool {
     original_composed_expression(expr, tokens, conditional, depth, false)
 }
@@ -2147,6 +2158,7 @@ fn original_composed_expression(
                     && original_conditional_child(index, key, false, depth))
         }
         ExprKind::Call { callee, args } => {
+            if original_bare_new(expr, tokens) { return true; }
             let (head, rest) = child_prefix(callee, tokens);
             let [open, body @ .., close] = rest else { return false };
             if !punctuation(open, "(") || !punctuation(close, ")") { return false; }
@@ -3047,6 +3059,75 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          drop(output);
          assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
      }
+ }
+ #[test]
+ fn actual_original_bare_new_keeps_absent_arguments_and_contextual_target_as_issued() {
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (spelling, expected, present) in [
+         ("new", OriginalSimpleKind::Complete, false),
+         ("new ( )", OriginalSimpleKind::Complete, true),
+         ("sorter = new", OriginalSimpleKind::PlainAssignment, false),
+     ] {
+         let rows: Vec<_> = spelling.split_whitespace().map(|text| {
+             let kind = if original_ascii_identifier(text) { TokenKind::Ident }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, None)
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let mut output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert!(output.parsed().diagnostics.is_empty(), "{spelling}");
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind), Some(expected), "{spelling}");
+         let actual = output.parsed().original_constructor_facts().unwrap().as_slice();
+         assert_eq!(actual.len(), 1);
+         assert_eq!(actual[0].arguments_present(), present);
+         let at = actual[0].span();
+         assert_eq!(output.parsed().original_constructor_facts().unwrap().implicit_at_using(at, &admission).unwrap(), Some(present));
+         assert_eq!(&output.tokens().iter().find(|token| token.span == at).unwrap().text, "new");
+         if spelling == "new" {
+             let expr = output.parsed.expr.as_mut().unwrap();
+             assert!(original_bare_new(expr, &output.tokens));
+             let old = expr.span;
+             expr.span.end += 1;
+             assert!(!original_bare_new(expr, &output.tokens));
+             expr.span = old;
+             let ExprKind::Call { callee, args } = &expr.kind else { panic!("native implicit-new representation"); };
+             assert!(args.is_empty());
+             assert!(matches!(&callee.kind, ExprKind::Ident(name) if name == "new"));
+         } else {
+             assert!(!original_bare_new(output.parsed().expr.as_ref().unwrap(), output.tokens()));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+ }
+ #[test]
+ fn actual_original_bare_new_still_propagates_real_end_read_failure_and_quota() {
+     struct FailEnd(ScalarMembershipFeed);
+     impl NativeExpressionTokenDemand for FailEnd {
+         fn next_token(&mut self) -> std::io::Result<Option<Token>> {
+             if self.0.0.at == self.0.0.rows.len() { return Err(std::io::Error::from_raw_os_error(1450)); }
+             self.0.next_token()
+         }
+         fn original_value(&self, at: NativeExpressionTokenOccurrence) -> std::io::Result<Option<crate::OriginalTokenValue<&str>>> { self.0.original_value(at) }
+         fn requires_original_values(&self) -> bool { true }
+     }
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let rows = [(TokenKind::Ident, "new", None)];
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     let mut fail = FailEnd(ScalarMembershipFeed(Feed::new(&rows)));
+     match parse_original_expression_demanded(&mut fail, &admission) {
+         Err(error) => assert_eq!(error.raw_os_error(), Some(1450)),
+         Ok(_) => panic!("actual end read error must survive"),
+     }
+     assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     let tiny = crate::SettingAdmission::new(&used, crate::SettingChargeCounter::root_allocation_bytes(), &|| Ok(()));
+     let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+     match parse_original_expression_demanded(&mut feed, &tiny) {
+         Err(error) => assert_eq!(error.kind(), std::io::ErrorKind::OutOfMemory),
+         Ok(_) => panic!("the existing exact admission still decides"),
+     }
+     assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]
  fn actual_original_membership_accepts_one_lhs_dot_field_with_an_exact_name_container() {

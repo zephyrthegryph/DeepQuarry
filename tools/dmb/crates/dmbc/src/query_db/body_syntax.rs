@@ -2497,6 +2497,28 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_create_sort_instance_macro_keeps_bare_contextual_new_without_target_reconstruction() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/sorts/__main.dm")).replace("\r\n", "\n");
+     let start = file.find("#define CREATE_SORT_INSTANCE(").unwrap();
+     let end = file[start..].find("\n//This is a global instance").map(|at| start + at).unwrap();
+     let actual_macro = &file[start..end];
+     assert!(actual_macro.contains("sorter = new;"));
+     let source = format!("{actual_macro}\n/datum/sort_instance\n/proc/probe(to_sort, cmp, associative, fromIndex, toIndex)\n    CREATE_SORT_INSTANCE(to_sort, cmp, associative, fromIndex, toIndex)\n    return sorter\n");
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, &source);
+     let input = original_input(&front, "probe");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+             panic!("actual CREATE_SORT_INSTANCE macro body remains available");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
  fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {
      let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
      fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {
