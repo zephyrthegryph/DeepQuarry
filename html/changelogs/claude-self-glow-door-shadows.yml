@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Under client lighting, a large character's flat light is now the colour its floor is actually drawn with (the glow sprites' falloff, strength and tint), not the gameplay light level, so the character is lit like the floor under it: dark in the dark, lit in light, never glowing."
+  - bugfix: "A door opening or closing beside a viewer updates the shadows at once: each light readies the shape it takes with each nearby door flipped, bakes it ahead and sends it to the viewers holding the light, and opacity redraws near a viewer go first and ignore the tick budget."
+  - code_imp: "lighting_trace now logs the flat light's drawn colour next to the gameplay light level, and door twin shapes readied and found baked."
