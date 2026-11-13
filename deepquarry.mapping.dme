@@ -3606,6 +3606,7 @@
 #include "code\content\structures\crate_lockers\largecrate.dm"
 #include "code\content\structures\crates_lockers\__closets.dm"
 #include "code\content\structures\crates_lockers\_closets_appearance_definitions.dm"
+#include "code\content\structures\crates_lockers\closet_fill.dm"
 #include "code\content\structures\crates_lockers\closet_notices.dm"
 #include "code\content\structures\crates_lockers\crates.dm"
 #include "code\content\structures\crates_lockers\largecrate.dm"

@@ -27,8 +27,10 @@
 /// The record's two photos (front: SOUTH, side: WEST) are those of `M` as it looks now. They come from the shared portrait cache
 /// (code/content/appearance/portrait_cache.dm), rendered off the tick: drawing the compound icon of a dressed human on the spot cost about
 /// 300 ms of every join (playtest 2026-11-09, LATEJOIN_REGISTER manifest record 325 ms). The fields hold the no-image picture until each lands.
-/datum/data/record/proc/request_photos(mob/M)
-	for(var/dir in list(SOUTH, WEST))
+/datum/data/record/proc/request_photos(mob/M, only_dir = null)
+	if(QDELETED(M))
+		return
+	for(var/dir in (isnull(only_dir) ? list(SOUTH, WEST) : list(only_dir)))
 		var/datum/portrait/P = portrait_request(M, dir, src, PROC_REF(photo_landed))
 		if(P)
 			apply_photo(dir, P)
