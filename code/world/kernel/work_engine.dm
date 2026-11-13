@@ -108,7 +108,9 @@
 	var/list/head = list()
 	var/list/rest = list()
 	for(var/datum/work_item/W as anything in ordered)
-		if(W.first)
+		// The input items (the inbox drain, then the held keys that move every player) lead phase K with the scheduler's pieces: the lighting step, tgui, the
+		// database and the ticker take whatever budget the tick has left, so none of them can spend it before a step is taken or a click is served.
+		if(W.first || (W.phase == KERNEL_PHASE_K && istype(W.owner(), /datum/system/input)))
 			head += W
 		else
 			rest += W

@@ -45,6 +45,9 @@
 
 /datum/surgical_step/treat/organ/suture
 	name = "Repair Organ"
+	finds = TRUE
+	book_category = "Organs"
+	about = "Closing tears, bruises, ischemic and toxic injury in one organ with sutures."
 	allowed_tools = list(
 		/obj/item/surgical/FixOVein = 100,
 		/obj/item/stack/medical/advanced/bruise_pack = 60,
@@ -64,6 +67,9 @@
 
 /datum/surgical_step/treat/organ/resection
 	name = "Resect Necrotic Tissue"
+	finds = TRUE
+	book_category = "Organs"
+	about = "Cutting dead tissue out of one organ. Sutures do not touch necrosis; only resection removes it."
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100,
 		/obj/item/material/knife = 50,
@@ -99,6 +105,9 @@
 
 /datum/surgical_step/treat/vessel_repair
 	name = "Repair Blood Vessels"
+	finds = TRUE
+	book_category = "Vascular"
+	about = "Mending a torn artery or an internal bleed that pressure and clamps only slow."
 	allowed_tools = list(
 		/obj/item/surgical/FixOVein = 100,
 		/obj/item/stack/cable_coil = 50,
@@ -119,6 +128,9 @@
 
 /datum/surgical_step/treat/tendon_repair
 	name = "Repair Tendon"
+	finds = TRUE
+	book_category = "Limb"
+	about = "Finding and rejoining a severed tendon so the limb works again."
 	allowed_tools = list(/obj/item/surgical/FixOVein = 100)
 	zones = list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
 	needs_full_access = FALSE
@@ -135,6 +147,9 @@
 /// releasing pressure trapped in a compartment.
 /datum/surgical_step/treat/decompression
 	name = "Surgical Decompression"
+	finds = TRUE
+	book_category = "Chest"
+	about = "Releasing pressure trapped in a limb compartment, the pleural space or the skull."
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100,
 		/obj/item/surgical/hemostat = 80,
@@ -154,6 +169,9 @@
 
 /datum/surgical_step/treat/debridement
 	name = "Debride Dead Tissue"
+	finds = TRUE
+	book_category = "Soft Tissue"
+	about = "Cutting away dead or badly infected tissue so the healthy tissue around it can recover."
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100,
 		/obj/item/surgical/bioregen = 90,
@@ -212,12 +230,16 @@
 
 /datum/surgical_step/treat/extract_foreign_body
 	name = "Extract Foreign Body"
+	finds = TRUE
+	book_category = "Trauma"
+	about = "Working shrapnel, embedded weapons and implants out of the limb, and drawing out what a deposit leaves behind."
 	allowed_tools = list(
 		/obj/item/surgical/hemostat = 100,
 		/obj/item/material/kitchen/utensil/fork = 50,
 	)
 	allowed_tool_qualities = list(TOOL_WIRECUTTER = 75)
 	scope = SURGERY_SCOPE_REGION
+	min_depth = FLESH_RETRACTED
 	treatments = list(TREAT_FOREIGN_BODY_REMOVAL = 100)
 	begin_text = "extracting foreign material from"
 	end_text = "extracts foreign material from"
@@ -227,6 +249,9 @@
 
 /datum/surgical_step/treat/reoxygenate
 	name = "Reoxygenate Tissue"
+	finds = TRUE
+	book_category = "Soft Tissue"
+	about = "Restoring tissue that starved of oxygen where a drug would not reach it."
 	allowed_tools = list(/obj/item/surgical/bioregen = 100)
 	scope = SURGERY_SCOPE_REGION
 	treatments = list(TREAT_OXYGENATION = 50)
@@ -247,6 +272,9 @@
 
 /datum/surgical_step/treat/lithotripsy
 	name = "Ultrasound Lithotripsy"
+	finds = TRUE
+	book_category = "Special"
+	about = "Breaking up stones and deposits with focused ultrasound."
 	allowed_tools = list(/obj/item/autopsy_scanner = 100)
 	scope = SURGERY_SCOPE_REGION
 	treatments = list(TREAT_LITHOTRIPSY = 100)

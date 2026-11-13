@@ -1,9 +1,15 @@
 /// Lighting queue ownership. Callers retain their existing needs_update gates;
 /// appending here must preserve duplicates rather than silently deduplicate.
+/// A source standing in a chunk some viewer holds (its view and the ring round it) waits in sources_queue_near, which the step drains first; any other in sources_queue.
 /datum/system/lighting/proc/queue_source(datum/light_source/source)
-	sources_queue += source
+	var/turf/at = source.source_turf
+	if(at && interest_covers(at))
+		sources_queue_near += handle_of(source)
+	else
+		sources_queue += source
 
 /datum/system/lighting/proc/unqueue_source(datum/light_source/source)
+	sources_queue_near -= handle_of(source)
 	sources_queue -= source
 
 /datum/system/lighting/proc/queue_corner(datum/lighting_corner/corner)
@@ -31,11 +37,11 @@
 	return sun_mult
 
 /datum/system/lighting/proc/pending_source_count()
-	return length(sources_queue)
+	return length(sources_queue) + length(sources_queue_near)
 
 /// The explosion benchmark waits for light propagation, not the sunlight pass.
 /datum/system/lighting/proc/has_pending_light_updates()
-	return length(sources_queue) || length(corners_queue) || length(objects_queue)
+	return length(sources_queue) || length(sources_queue_near) || length(corners_queue) || length(objects_queue)
 
 /datum/system/lighting/proc/completed_steps()
 	return times_fired

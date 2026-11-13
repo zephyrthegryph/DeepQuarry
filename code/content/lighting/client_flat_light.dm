@@ -1,8 +1,10 @@
 // Client lighting, big sprites. The lighting plane multiplies the world per screen pixel, so a sprite taller or wider than its tile
 // (a large or size-scaled character, a big simple mob) is lit by the glows of every tile its pixels cover: its head takes the
 // light of the tile above and looks wrong at a corner. A big atom therefore carries a flat light: a copy of its own sprite
-// (render_source, as the emissive blocker does) drawn on the lighting plane above every glow, in one grey that is the light level
-// of the turf it stands on. Where the sprite is, the plane then holds that single level instead of the per-pixel light.
+// (render_source, as the emissive blocker does) drawn on the glow plane above every glow, in one grey that is the light level
+// of the turf it stands on. Where the sprite is, the glow plane then holds that single level instead of the per-pixel light.
+// It must be on the glow plane, not the lighting plane: the lighting master ADDS the glow plane over its own content (a layer
+// filter), so a silhouette in the lighting plane is only added to by every glow and a lit character comes out over-bright.
 //
 // Cheap by construction: only an atom whose sprite is bigger than a tile gets one (client_flat_light_big()); it is registered in
 // REGISTRY_CLIENT_FLAT_LIT, redrawn only when the atom changes size, moves (the moved notice) or a light near it changes
@@ -20,10 +22,10 @@ GLOBAL_VAR_INIT(client_flat_light_refreshes, 0)
 
 REGISTRY_MEMBERSHIP(/atom/movable, REGISTRY_CLIENT_FLAT_LIT)
 
-/// The flat silhouette of a big atom: its own sprite, one grey, on the lighting plane above the glows.
+/// The flat silhouette of a big atom: its own sprite, one grey, on the glow plane above the glows.
 /atom/movable/client_flat_light
 	name = "flat light"
-	plane = PLANE_LIGHTING
+	plane = PLANE_CLIENT_GLOW
 	layer = CLIENT_GLOW_FLAT_LAYER
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	vis_flags = VIS_HIDE

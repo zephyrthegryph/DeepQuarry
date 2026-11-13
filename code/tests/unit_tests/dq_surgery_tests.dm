@@ -47,31 +47,25 @@
 		for(var/tag in S.treatments)
 			TEST_ASSERT(GLOB.dq_treatment_tag_names[tag], "[S.type] delivers unknown treatment tag [tag]")
 
-/// Every procedure record names real steps, and every condition it treats
-/// responds to a mechanism those steps deliver (or the record repairs organs).
-/datum/unit_test/dq_surgery_records_well_formed
+/// Every finding step says what it is for, and the medical book builds its tab from them.
+/datum/unit_test/dq_surgery_finding_steps_well_formed
 
-/datum/unit_test/dq_surgery_records_well_formed/Run()
-	for(var/T in subtypesof(/datum/dq_surgery))
-		var/datum/dq_surgery/sg = new T()
-		TEST_ASSERT(sg.name, "[T] has no name")
-		TEST_ASSERT(length(sg.steps), "[T] has no prose steps")
-		TEST_ASSERT(length(sg.procedure), "[T] names no surgical steps")
-		for(var/step_type in sg.procedure)
-			TEST_ASSERT(surgical_step(step_type), "[T] names unregistered step [step_type]")
-		var/list/delivered = sg.delivered_tags()
-		for(var/cond in sg.treats)
-			TEST_ASSERT(ispath(cond, /datum/affliction), "[T] treats non-affliction [cond]")
-			if(length(sg.repairs_organs))
-				continue
-			var/datum/affliction/proto = dq_proto(cond)
-			var/linked = FALSE
-			for(var/tag in delivered)
-				if(proto.treatment_rate(tag))
-					linked = TRUE
-					break
-			TEST_ASSERT(linked, "[T] claims to treat [cond], but none of its steps deliver a mechanism it responds to")
-		qdel(sg)
+/datum/unit_test/dq_surgery_finding_steps_well_formed/Run()
+	var/finders = 0
+	for(var/datum/surgical_step/S as anything in surgical_steps())
+		if(!S.finds)
+			continue
+		finders++
+		TEST_ASSERT(S.about, "[S.type] is a finding step with nothing to say for itself in the book")
+		TEST_ASSERT(S.book_category, "[S.type] has no book category")
+		for(var/affliction_type in S.treated_afflictions())
+			TEST_ASSERT(ispath(affliction_type, /datum/affliction), "[S.type] answers to non-affliction [affliction_type]")
+	TEST_ASSERT(finders > 0, "no step finds anything")
+	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
+	var/list/entries = book._dq_book_surgeries()
+	TEST_ASSERT_EQUAL(length(entries), finders + 1, "the book has an entry for opening and closing and one per finding step")
+	for(var/list/entry as anything in entries)
+		TEST_ASSERT(entry["name"] && length(entry["steps"]), "a book entry is missing its name or its steps")
 
 
 // --- incision state ---------------------------------------------------------------
@@ -363,10 +357,13 @@
 	var/improvised = S.success_chance(surgeon, H, arm, knife, 100)
 	TEST_ASSERT(improvised < on_table, "a knife ([improvised]) is worse than a scalpel ([on_table])")
 
-	// A conscious patient with no pain relief flinches; an unconscious one doesn't.
-	TEST_ASSERT(S.patient_mult(H, arm) < 1, "a conscious, unmedicated patient is a risk")
+	// A conscious patient with no pain relief feels the step and flinches; relief, sleep or no pain to feel hold them still.
+	TEST_ASSERT(S.felt_pain(H, arm) > 0, "a conscious, unmedicated patient feels the step")
+	hold(H, STAT_ANALGESIA, 200, surgeon)
+	TEST_ASSERT_EQUAL(S.felt_pain(H, arm), 0, "a patient on enough painkiller feels nothing")
+	release(H, STAT_ANALGESIA, surgeon)
 	H.set_stat(UNCONSCIOUS)
-	TEST_ASSERT_EQUAL(S.patient_mult(H, arm), 1, "an anaesthetised patient holds still")
+	TEST_ASSERT_EQUAL(S.felt_pain(H, arm), 0, "an anaesthetised patient holds still")
 	H.set_stat(CONSCIOUS)
 
 	// Operating on yourself is harder.
@@ -943,16 +940,202 @@
 
 
 // --- audit: established brain_damage has NO surgical cure ------------
-// The whole point of the brain-damage-as-terminal design — if anyone
-// adds brain_damage to a surgery's `treats` list this test catches it.
+// The whole point of the brain-damage-as-terminal design: if a finding step ever answers to brain_damage this test catches it.
 
 /datum/unit_test/dq_brain_damage_has_no_surgery
 
 /datum/unit_test/dq_brain_damage_has_no_surgery/Run()
-	for(var/T in subtypesof(/datum/dq_surgery))
-		var/datum/dq_surgery/sg = new T()
-		if(/datum/affliction/brain_damage in sg.treats)
-			TEST_FAIL("[T] declares it treats brain_damage; that condition is intentionally terminal — no surgery can repair established brain tissue damage")
-		qdel(sg)
+	var/list/steps = surgical_steps_answering()[/datum/affliction/brain_damage]
+	if(length(steps))
+		TEST_FAIL("[length(steps)] finding step(s) answer to brain_damage; that condition is intentionally terminal: no surgery can repair established brain tissue damage")
+
+
+// --- findings: an opened limb shows what is in it, and each finding is answered on its own -----------------
+
+/// A broken arm with shrapnel in it, opened: both findings are listed, and either can be answered first. Closing works after.
+/datum/unit_test/dq_surgery_findings_any_order
+
+/datum/unit_test/dq_surgery_findings_any_order/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/datum/surgical_step/set_bone = surgical_step(/datum/surgical_step/set_bone)
+	var/datum/surgical_step/treat/extract_foreign_body/extract = surgical_step(/datum/surgical_step/treat/extract_foreign_body)
+	var/datum/surgical_step/cauterize = surgical_step(/datum/surgical_step/cauterize)
+	for(var/bone_first in list(TRUE, FALSE))
+		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+		var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+		arm.fracture()
+		var/obj/item/material/shard/shrapnel = allocate(/obj/item/material/shard)
+		arm.embed(shrapnel, TRUE)
+		TEST_ASSERT(arm.is_fractured(), "the arm is broken")
+		TEST_ASSERT(shrapnel in arm.implants, "the shrapnel is in the arm")
+		TEST_ASSERT_EQUAL(length(surgical_findings(H, arm)), 0, "a closed limb shows nothing")
+
+		arm.open_surgical_site(FLESH_RETRACTED, 100)
+		var/list/found = list()
+		for(var/list/row as anything in surgical_findings(H, arm))
+			found[row["source"]] = row
+		TEST_ASSERT(found[shrapnel], "the shrapnel is a finding")
+		var/datum/affliction/untreated_fracture/fracture = H.body.find_affliction(/datum/affliction/untreated_fracture, arm)
+		TEST_ASSERT(found[fracture], "the fracture is a finding")
+		var/list/fracture_row = found[fracture]
+		TEST_ASSERT(set_bone in fracture_row["steps"], "set bone answers to the fracture")
+		var/list/shrapnel_row = found[shrapnel]
+		TEST_ASSERT(extract in shrapnel_row["steps"], "extraction answers to the shrapnel")
+		TEST_ASSERT(set_bone.can_use(surgeon, H, BP_L_ARM, null), "set bone is offered")
+		TEST_ASSERT(extract.can_use(surgeon, H, BP_L_ARM, null), "extraction is offered")
+
+		if(bone_first)
+			_surgery_perform(/datum/surgical_step/set_bone, surgeon, H, BP_L_ARM)
+			TEST_ASSERT(!arm.is_fractured(), "the bone is set")
+			TEST_ASSERT(extract.can_use(surgeon, H, BP_L_ARM, null), "the shrapnel is still there to take out")
+			extract.extract_body(surgeon, H, arm, shrapnel)
+		else
+			extract.extract_body(surgeon, H, arm, shrapnel)
+			TEST_ASSERT(set_bone.can_use(surgeon, H, BP_L_ARM, null), "the fracture is still there to set")
+			_surgery_perform(/datum/surgical_step/set_bone, surgeon, H, BP_L_ARM)
+		TEST_ASSERT(!length(arm.implants), "the shrapnel is out")
+		TEST_ASSERT(!arm.is_fractured(), "the bone is set")
+		TEST_ASSERT_EQUAL(length(surgical_findings(H, arm)), 1, "only the open site's own bleeders are left")
+		_surgery_perform(/datum/surgical_step/clamp_bleeders, surgeon, H, BP_L_ARM)
+		TEST_ASSERT_EQUAL(length(surgical_findings(H, arm)), 0, "nothing is left to find")
+		TEST_ASSERT(cauterize.can_use(surgeon, H, BP_L_ARM, null), "the site can be closed")
+		_surgery_perform(/datum/surgical_step/cauterize, surgeon, H, BP_L_ARM)
+		TEST_ASSERT_NULL(arm.get_incision(), "closing works once the findings are answered")
+
+/// Inspecting an opened limb lists its findings with the steps that answer to them; a closed limb adds nothing.
+/datum/unit_test/dq_surgery_inspection_lists_findings
+
+/datum/unit_test/dq_surgery_inspection_lists_findings/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.fracture()
+	TEST_ASSERT_EQUAL(length(surgical_inspection_lines(H, arm)), 0, "a closed limb adds nothing to the inspection")
+	arm.open_surgical_site(FLESH_RETRACTED, 100)
+	var/text = jointext(surgical_inspection_lines(H, arm), "\n")
+	TEST_ASSERT(findtext(text, "Set Bone"), "the open limb's inspection names the step that answers to the fracture: [text]")
+	TEST_ASSERT(findtext(text, "Clamp Bleeders"), "the open limb's inspection names the step that answers to the bleeders: [text]")
+
+/// Bleeders outrank every other step, so a tool that does several things clamps first; the survey op and the organ question are gone.
+/datum/unit_test/dq_surgery_bleeders_first
+
+/datum/unit_test/dq_surgery_bleeders_first/Run()
+	var/datum/surgical_step/clamp = surgical_step(/datum/surgical_step/clamp_bleeders)
+	for(var/datum/surgical_step/S as anything in surgical_steps())
+		if(S != clamp)
+			TEST_ASSERT(clamp.priority > S.priority, "[S.type] must not outrank clamping bleeders")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.fracture()
+	arm.open_surgical_site(FLESH_RETRACTED, 100)
+	var/list/rows = surgical_findings(H, arm)
+	var/list/first_steps = rows[1]["steps"]
+	TEST_ASSERT(clamp in first_steps, "the bleeders are listed first")
+
+/// Several organs answer to one tool: the finding organ goes first, never a healthy one, with nobody asked.
+/datum/unit_test/dq_surgery_target_finding_organ_first
+
+/datum/unit_test/dq_surgery_target_finding_organ_first/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/groin = H.get_organ(BP_GROIN)
+	var/obj/item/organ/internal/appendix/appendix = H.organ_in(O_APPENDIX)
+	if(!appendix)
+		TEST_FAIL("the test patient has no appendix")
+		return
+	appendix.inflamed = TRUE
+	groin.open_surgical_site(groin.surgical_full_access(), 100)
+	var/datum/surgical_step/organ/extract/extract = surgical_step(/datum/surgical_step/organ/extract)
+	var/list/choices = extract.ordered_target_choices(surgeon, H, groin, null)
+	TEST_ASSERT(length(choices) > 1, "several organs answer to extraction")
+	TEST_ASSERT_EQUAL(choices[choices[1]], appendix, "the inflamed appendix is worked on first")
+
+/// An open site bleeds as the patient's blood clots: an anticoagulant makes it bleed more.
+/datum/unit_test/dq_surgery_anticoagulant_raises_open_bleeding
+
+/datum/unit_test/dq_surgery_anticoagulant_raises_open_bleeding/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/leg = H.get_organ(BP_L_LEG)
+	var/datum/affliction/surgical_incision/site = leg.open_surgical_site(INCISION_MADE, 100)
+	var/normal = H.blood_loss_rate(leg)
+	TEST_ASSERT(normal > 0, "an open site bleeds")
+	hold(H, STAT_BLEEDING, 3, surgeon)
+	TEST_ASSERT(H.blood_loss_rate(leg) > normal, "an anticoagulated patient bleeds more from the open site")
+	TEST_ASSERT(site.bleed_rate() > INCISION_BLEED_RATE, "the site's own rate follows the clotting")
+	release(H, STAT_BLEEDING, surgeon)
+	_surgery_perform(/datum/surgical_step/clamp_bleeders, surgeon, H, BP_L_LEG)
+	TEST_ASSERT_EQUAL(H.blood_loss_rate(leg), 0, "a clamped site does not bleed")
+
+/// A patient who feels the step flinches and the step goes wrong; one who does not feel it is operated on as usual.
+/datum/unit_test/dq_surgery_unanesthetised_patient_flinches
+
+/datum/unit_test/dq_surgery_unanesthetised_patient_flinches/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/obj/item/surgical/scalpel/scalpel = allocate(/obj/item/surgical/scalpel)
+	var/datum/surgical_step/S = surgical_step(/datum/surgical_step/access/incise)
+
+	var/mob/living/carbon/human/awake = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = awake.get_organ(BP_L_ARM)
+	var/felt = S.felt_pain(awake, arm)
+	TEST_ASSERT(felt > 0, "an awake patient with no relief feels the incision")
+	var/trauma_before = arm.get_trauma()
+	awake.surgical_step_ended(TRUE, scalpel, S, surgeon, BP_L_ARM, 100, arm, arm, 100, felt)
+	TEST_ASSERT_NULL(arm.get_incision(), "the patient flinched: even a step rolled as a success did not go through")
+	TEST_ASSERT(arm.get_trauma() > trauma_before, "the flinch cost the patient the step's complication")
+
+	var/mob/living/carbon/human/asleep = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/other_arm = asleep.get_organ(BP_L_ARM)
+	asleep.set_stat(UNCONSCIOUS)
+	TEST_ASSERT_EQUAL(S.felt_pain(asleep, other_arm), 0, "a sleeping patient feels nothing")
+	asleep.surgical_step_ended(TRUE, scalpel, S, surgeon, BP_L_ARM, 100, other_arm, other_arm, 100, 0)
+	TEST_ASSERT_NOTNULL(other_arm.get_incision(), "the step goes through on a patient who feels nothing")
+
+	// Painkillers count the same as sleep.
+	var/mob/living/carbon/human/medicated = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/third_arm = medicated.get_organ(BP_L_ARM)
+	hold(medicated, STAT_ANALGESIA, 200, surgeon)
+	TEST_ASSERT_EQUAL(S.felt_pain(medicated, third_arm), 0, "a patient on enough painkiller feels nothing")
+	release(medicated, STAT_ANALGESIA, surgeon)
+
+/// A crooked fracture can't be set: it is broken again, and the fresh fracture is set.
+/datum/unit_test/dq_surgery_crooked_fracture_rebreak_then_set
+
+/datum/unit_test/dq_surgery_crooked_fracture_rebreak_then_set/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_R_ARM)
+	var/datum/affliction/malunion/crooked = H.body.afflict(/datum/affliction/malunion, arm, 40)
+	TEST_ASSERT_NOTNULL(crooked, "the crooked fracture didn't form")
+	arm.open_surgical_site(FLESH_RETRACTED, 100)
+	var/datum/surgical_step/set_bone = surgical_step(/datum/surgical_step/set_bone)
+	var/datum/surgical_step/rebreak = surgical_step(/datum/surgical_step/rebreak_bone)
+	TEST_ASSERT(!set_bone.can_use(surgeon, H, BP_R_ARM, null), "a crooked bone can't be set")
+	TEST_ASSERT(rebreak.can_use(surgeon, H, BP_R_ARM, null), "a crooked bone can be broken again")
+	var/found = FALSE
+	for(var/list/row as anything in surgical_findings(H, arm))
+		if(row["source"] == crooked)
+			found = TRUE
+	TEST_ASSERT(found, "the crooked fracture is a finding")
+
+	_surgery_perform(/datum/surgical_step/rebreak_bone, surgeon, H, BP_R_ARM)
+	TEST_ASSERT(!_has_affliction_type(H, /datum/affliction/malunion), "the crooked bone is gone")
+	TEST_ASSERT(arm.is_fractured(), "the bone is broken again, ready to be set")
+	TEST_ASSERT(!rebreak.can_use(surgeon, H, BP_R_ARM, null), "there is nothing left to break")
+	TEST_ASSERT(set_bone.can_use(surgeon, H, BP_R_ARM, null), "the fresh fracture can be set")
+	_surgery_perform(/datum/surgical_step/set_bone, surgeon, H, BP_R_ARM)
+	TEST_ASSERT(!arm.is_fractured(), "the bone is set straight")
+
+/// How sterile a site is when it is cut depends on the surgeon's hands and the patient's skin as well as the surface.
+/datum/unit_test/dq_surgery_unprepped_site_is_less_sterile
+
+/datum/unit_test/dq_surgery_unprepped_site_is_less_sterile/Run()
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.germ_level = 0
+	var/bare_hands = H.surgical_site_sterility(surgeon, arm, 100)
+	TEST_ASSERT(bare_hands < 100, "a surgeon with bare hands is not a sterile prep")
+	arm.germ_level = INFECTION_LEVEL_ONE
+	TEST_ASSERT(H.surgical_site_sterility(surgeon, arm, 100) < bare_hands, "unscrubbed skin costs the site more sterility")
 
 #endif

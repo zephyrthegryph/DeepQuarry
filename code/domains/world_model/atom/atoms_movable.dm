@@ -41,7 +41,9 @@
 	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
 	lifecycle_arm_lifetime()
 	if(proximity_tracked)
+		MOVE_COST_BEGIN(proximity_started)
 		SSproximity.member_update(src)
+		MOVE_COST_END(MOVE_COST_PROXIMITY, proximity_started)
 
 	emissive_blocker_attach()
 
@@ -157,6 +159,7 @@
 	if(!loc || !newloc)
 		return FALSE
 
+	MOVE_COST_BEGIN(move_started)
 	var/datum/act/pre_move/step = ACT_ATTEMPT(src, pre_move, direct, newloc)
 	if(ACT_REFUSED_BY(step))
 		return FALSE
@@ -292,9 +295,12 @@
 		STATE_SET(src, movement_log, last_move, 0)
 		return
 
+	MOVE_COST_END(MOVE_COST_MOVE, move_started)
 	// If we moved, call Moved() on ourselves
 	if(.)
+		MOVE_COST_BEGIN(moved_started)
 		Moved(oldloc, direct, FALSE, movetime ? movetime : MOVE_GLIDE_CALC(glide_size, moving_diagonally) )
+		MOVE_COST_END(MOVE_COST_MOVED, moved_started)
 
 	// Update timers/cooldown stuff
 	STAMP(src, l_move_time, CLOCK_WORLD)
@@ -325,8 +331,10 @@
 	if(riding_datum)
 		riding_datum.handle_vehicle_layer()
 		riding_datum.handle_vehicle_offsets()
+	MOVE_COST_BEGIN(lights_started)
 	for (var/datum/light_source/light as anything in light_sources) // Cycle through the light sources on this atom and tell them to update.
 		light.source_atom.update_light()
+	MOVE_COST_END(MOVE_COST_LIGHTS, lights_started)
 	if(!isnull(heat_body))
 		heat_recouple()
 	if(GLOB.heat_followers_of[src])
@@ -338,18 +346,24 @@
 	if(length(GLOB.interest_anchors))
 		interest_anchor_moved(src) // it may carry a client's eye or mob
 	if(lifeform_moves)
+		MOVE_COST_BEGIN(lifeform_started)
 		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
+		MOVE_COST_END(MOVE_COST_LIFEFORM, lifeform_started)
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
 	// One publish; it returns before any turf lookup while nothing is subscribed (Q12).
 	if(GLOB.mob_chunk_watches || (client && GLOB.player_chunk_watches) || length(GLOB.mob_chunks))
+		MOVE_COST_BEGIN(publish_started)
 		publish_mob_move(old_loc, src, !!client)
+		MOVE_COST_END(MOVE_COST_MOB_PUBLISH, publish_started)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
+		MOVE_COST_BEGIN(eye_started)
 		restore_remote_views()
 		SSproximity.eye_update(client)
+		MOVE_COST_END(MOVE_COST_EYE, eye_started)
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)
