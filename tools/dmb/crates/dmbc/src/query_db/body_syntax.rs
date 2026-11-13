@@ -938,7 +938,7 @@ pub(super) mod body_syntax_census_tests;
          ("var/static/list/sound_cache", true),
          ("var/static/datum/list_owner/sound_cache", true),
          ("var/static/list/sound_cache[3]", false),
-         ("var/static/list/sound_cache = list()", false),
+         ("var/static/list/sound_cache = list()", true),
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &format!("/datum/list_owner\n/proc/probe()\n    {local}\n    return sound_cache\n"));
@@ -990,11 +990,16 @@ pub(super) mod body_syntax_census_tests;
 /proc/prefix_increment(next)
     ++next
     return next
+/proc/member_increment_nested(target)
+    target.nested.next++
+    return target
+/proc/prefix_increment_return(next)
+    return ++next
 "#;
      let db = Arc::new(QueryDb::default());
      let front = issued_original_fixture(&db, fixture);
-     for (name, expected) in [("wrapper", true), ("vg_adjust_multi_hook", true), ("vg_air_watch_changed", true), ("local_row", true), ("static_initializer", false),
-         ("member_increment", false), ("prefix_increment", false)]
+     for (name, expected) in [("wrapper", true), ("vg_adjust_multi_hook", true), ("vg_air_watch_changed", true), ("local_row", true), ("static_initializer", true),
+         ("member_increment", true), ("prefix_increment", true), ("member_increment_nested", false), ("prefix_increment_return", false)]
      {
          let input = original_input(&front, name);
          let product = db.syntax_product_checked(&input).unwrap();
@@ -1506,7 +1511,9 @@ pub(super) mod body_syntax_census_tests;
          (fixture.to_owned(), true),
          (fixture.replace("\treturn 1", "\treturn"), true),
          (fixture.replace("\treturn 1", "\tfdel(INVESTIGATE_DIR)"), false),
-         (fixture.replace("\treturn 1\n", "\treturn 1\n    else\n        return 2\n"), false),
+         (fixture.replace("\treturn 1\n", "\treturn 1\n    else\n        return 2\n"), true),
+         (fixture.replace("\treturn 1", "; return 1"), false),
+         (fixture.replace("\treturn 1\n", "\treturn 1\n    else return 2\n"), false),
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &text);
@@ -1818,7 +1825,9 @@ pub(super) mod body_syntax_census_tests;
          (fixture.to_owned(), true),
          (fixture.replace("1, i <= LAZYLEN(keys),", "1; i <= LAZYLEN(keys);"), true),
          (fixture.replace("1, i <=", "1; i <="), false),
-         (fixture.replace(", i++)", ", i = i + 1)"), false),
+         (fixture.replace(", i++)", ", i = i + 1)"), true),
+         (fixture.replace("i++)", "i--)"), true),
+         (fixture.replace(", i++)", ", i.field = i)"), false),
          (fixture.replace("for(i = 1", "for(var/i = 1"), true),
          (fixture.replace("for(i = 1", "for(var/num/i = 1"), false),
          (fixture.replace("i++)", "++i)"), true),
@@ -2693,6 +2702,102 @@ pub(super) mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_empty_holder_loop_and_decrement_text_loop_keep_real_body_forms() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/atom_queries.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/get_holder_at_turf_level(").unwrap();
+     let end = file[start + 1..].find("\n/atom/proc/").map(|at| start + 1 + at).unwrap();
+     let holder = &file[start..end];
+     assert!(holder.contains("for(A=O, A && !isturf(A.loc), A=A.loc);"));
+     for (source, expected) in [
+         (holder.to_owned(), true),
+         (holder.replace("A=A.loc);", "A=A.loc)"), false),
+         (holder.replace("A=A.loc);", "A=A.loc) /* ; */"), false),
+         (holder.replace("A=O, A &&", "A=O; A &&"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "get_holder_at_turf_level");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else { panic!("actual explicitly empty loop"); };
+                 assert!(proof.belongs_to(&body));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let loop_node = parsed.statements.iter().find(|node| matches!(node.kind, dm_syntax::StatementKind::For { .. })).unwrap();
+                 assert!(matches!(&loop_node.kind, dm_syntax::StatementKind::For {
+                     control: dm_syntax::ForControl::CStyle { initializer: Some(dm_syntax::ForInitializer::Expr(_)), .. }, body,
+                 } if body.is_empty()));
+                 assert!(parsed.local_variables.entries().unwrap().iter().all(|row|
+                     !matches!(row.source_kind, dm_syntax::LocalSourceKind::ForBinding | dm_syntax::LocalSourceKind::ForInitializer)));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/text.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/trim_right(").unwrap();
+     let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+     let marker_file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/defines/engine/declare/markers.dm"));
+     let reads_from = marker_file.lines().find(|line| line.starts_with("#define READS_FROM(")).unwrap();
+     let source = format!("{reads_from}\n{}", &file[start..end]);
+     assert!(source.contains("for (var/i = length(text), i > 0, i--)"));
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, &source);
+     let input = original_input(&front, "trim_right");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else { panic!("actual decrement classic loop"); };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_absolute_new_reuses_area_queries_and_typed_exception_arguments() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/area_queries.dm")).replace("\r\n", "\n");
+     for name in ["get_current_area_turfs", "get_area_all_atoms", "get_current_area_atoms"] {
+         let marker = format!("/proc/{name}(");
+         let start = file.find(&marker).unwrap();
+         let end = file[start + 1..].find("\n/proc/").map_or(file.len(), |at| start + 1 + at);
+         let source = &file[start..end];
+         assert!(source.contains("new/list()"));
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, source);
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+                 panic!("actual area query static constructor must be available: {name}");
+             };
+             assert!(proof.belongs_to(&body));
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+     // Preserve the real typed interpolation, empty text and numeric arguments;
+     // do not substitute a guessed literal or target model for /exception.
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/stack_trace.dm")).replace("\r\n", "\n");
+     let source = &file[file.find("/proc/dq_report_caught(").unwrap()..];
+     assert!(source.contains("new /exception(\"non-exception thrown: [E]\", \"\", 0)"));
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, source);
+     let input = original_input(&front, "dq_report_caught");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+             panic!("actual typed exception constructor must be available");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
  fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {
      let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
      fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {
@@ -2964,6 +3069,56 @@ pub(super) mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_icon_initializers_preserve_named_argument_value_roles() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     let north = file.lines().find(|line| line.trim_start().starts_with("var/icon/north = getFlatIcon(")).unwrap();
+     let text = format!("/proc/probe(atom/A, I)\n{north}\n    var/mutable_appearance/overlay = mutable_appearance(I.icon, I.icon_state, plane = 8, alpha = I.alpha)\n    return north\n");
+     for (text, expected) in [
+         (text.clone(), true),
+         (text.replace("defdir=NORTH", "A.defdir=NORTH"), false),
+         (text.replace("defdir=NORTH", "defdir+=NORTH"), false),
+         (text.replace("plane = 8", "plane = layer = 8"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual named value calls must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ fn actual_original_sanitizer_assignment_keeps_input_as_the_bare_formal() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/text.dm")).replace("\r\n", "\n");
+     let line = file.lines().find(|line| line.trim() == "input = copytext(input,1,max_length)").unwrap();
+     let text = format!("/proc/probe(input, max_length)\n    {}\n    return input\n", line.trim());
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db, &text);
+     let input = original_input(&front, "probe");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+             panic!("actual bare input assignment must be available");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ #[test]
  fn actual_original_else_if_chain_authenticates_every_link() {
      let fixture = r#"
 /proc/probe(a, b)
@@ -2999,6 +3154,34 @@ pub(super) mod body_syntax_census_tests;
                      if error.kind() == std::io::ErrorKind::Unsupported), "{text}");
              }
              Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_inline_color_leaves_use_real_heads_and_zero_close_else_links() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/BlendRGB(").unwrap();
+     let end = start + 1 + file[start + 1..].find("\n/proc/").unwrap();
+     let caller = &file[start..end];
+     assert!(caller.contains("RGB1 += 255"));
+     for (text, expected) in [
+         (caller.to_owned(), true),
+         (caller.replace("RGB1 += 255", "RGB1 = list()"), true),
+         (caller.replace("RGB1 += 255", "RGB1.field += 255"), false),
+         (caller.replace("RGB1 += 255", "RGB1[1] += 255"), false),
+         (caller.replace("else if(RGB2.len < RGB1.len) RGB2 += 255", "else RGB2 += 255"), false),
+     ] {
+         // This asserts the real complete caller's grammar, not a semantic
+         // report on ReadRGB or a substituted dependency implementation.
+         let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);
+         let input=original_input(&front,"BlendRGB");let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let disposition=body.original_code_disposition();
+             if expected { let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition? else {panic!("actual inline leaves")};assert!(proof.belongs_to(&body)); }
+             else {assert!(!matches!(disposition,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))));}
+             Ok::<(),BodySyntaxFailure>(())
          }).unwrap();
      }
  }
@@ -3074,6 +3257,115 @@ pub(super) mod body_syntax_census_tests;
              }).unwrap();
          }
      }
+ }
+
+ #[test]
+ fn actual_original_initialized_static_head_preserves_primary_flags_and_rhs_role() {
+     for (local, expected) in [
+         ("var/static/slot = 0", true),
+         ("var/static/icon/template = icon('icons/effects/effects.dmi', \"nothing\")", true),
+         ("var/global/slot = 0", false), ("var/const/slot = 0", false),
+         ("var/static/slot[2] = list()", false),
+         ("var/static/slot = other = 0", false),
+         ("var/static/slot = ++other", false),
+     ] {
+         let text = format!("/proc/probe(other)\n    {local}\n");
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else { panic!("actual static head + RHS must be available: {text}"); };
+                 assert!(proof.belongs_to(&body));
+                 let facts = product.parsed().unwrap().statement_storage().parsed().local_variables.entries().unwrap();
+                 assert_eq!(facts.len(), 1);
+                 assert_eq!(facts[0].source_modifiers, 1);
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_plain_comma_locals_keep_fresh_paths_and_ordered_initializers() {
+     for (local, expected) in [
+         ("var/x,y,rsq", true), ("var/i=7,ch,len=length(key)", true),
+         ("var/list/x,y", false), ("var/static/x,y", false),
+         ("var/x,/datum/y", false), ("var/x,y[2]", false),
+         ("var/x=other=1,y", false), ("var/x=++other,y", false),
+     ] {
+         let text = format!("/proc/probe(key,other)\n    {local}\n");
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else { panic!("actual plain comma-local group must be available: {text}"); };
+                 assert!(proof.belongs_to(&body));
+                 let facts = product.parsed().unwrap().statement_storage().parsed().local_variables.entries().unwrap();
+                 assert_eq!(facts.len(),3);
+                 for fact in facts {
+                     assert_eq!(fact.source_modifiers,0);
+                     assert!(fact.type_components.is_empty());
+                     assert_eq!(fact.checker_statement_anchor(),facts[0].checker_statement_anchor());
+                 }
+                 assert!(facts.windows(2).all(|pair|pair[0].name.end < pair[1].name.start));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_gaussrand_keeps_whole_authored_comma_declaration() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/random.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/GaussRand(").unwrap();
+     let end = file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+     let text = &file[start..end];
+     assert!(text.contains("var/x,y,rsq"));
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db,text);
+     let input = original_input(&front,"GaussRand");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else { panic!("actual whole GaussRand must be available"); };
+         assert!(proof.belongs_to(&body));
+         Ok::<(),BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_guest_key_keeps_whole_authored_multi_local_group() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/client_lookup.dm")).replace("\r\n", "\n");
+     let markers = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/defines/engine/declare/markers.dm"));
+     let marker = markers.lines().find(|line|line.starts_with("#define READS_FROM(")).unwrap();
+     let start = file.find("/proc/IsGuestKey(").unwrap();
+     let end = file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+     let text = format!("{marker}\n{}",&file[start..end]);
+     assert!(text.contains("var/i = 7, ch, len = length(key)"));
+     // Whole-proc coverage also needs the independently reviewed C-for empty
+     // initializer witness. Never replace that authentic loop with a stub.
+     let db = Arc::new(QueryDb::default());
+     let front = issued_original_fixture(&db,&text);
+     let input = original_input(&front,"IsGuestKey");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else { panic!("actual whole IsGuestKey must be available"); };
+         assert!(proof.belongs_to(&body));
+         Ok::<(),BodySyntaxFailure>(())
+     }).unwrap();
  }
 
  #[test]fn actual_compound_if_disposition_binds_same_primary_product_and_rejects_foreign_and_quota_io(){

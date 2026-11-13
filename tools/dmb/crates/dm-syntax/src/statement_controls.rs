@@ -457,7 +457,10 @@ pub(super) fn parse_for(
                 diagnostics,
                 &mut |parsed| {
                     step_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
-                        proof.is_original() && proof.kind() == OriginalSimpleKind::PostIncrementStatement
+                        proof.is_original() && matches!(proof.kind(),
+                            OriginalSimpleKind::PostIncrementStatement
+                                | OriginalSimpleKind::PostDecrementStatement
+                                | OriginalSimpleKind::PlainAssignment)
                     });
                 },
             )?)

@@ -1309,6 +1309,36 @@ fn parse_statements_admitted(
             }
             Ok(true)
         }
+        fn original_empty_classic_for_body(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
+            use dm_syntax::{Span, TokenKind};
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(head) = tokens.tokens(header) else { return Ok(false); };
+            let mut previous = None;
+            let mut last = None;
+            for token in head {
+                self.admission.checkpoint()?;
+                if matches!(token.0, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) { continue; }
+                previous = last;
+                last = Some(token);
+            }
+            // Layout may retain the semicolon in the header or as the next
+            // issued token; both require the actual close plus actual ';'.
+            if let (Some((TokenKind::Punctuation, _, ")")), Some((TokenKind::Punctuation, at, ";"))) = (previous, last) {
+                return Ok(at.end == header.end);
+            }
+            if !matches!(last, Some((TokenKind::Punctuation, at, ")")) if at.end == header.end) {
+                return Ok(false);
+            }
+            let Ok(tail) = tokens.tokens(Span::new(header.end, self.body.end)) else { return Ok(false); };
+            for (kind, _, spelling) in tail {
+                self.admission.checkpoint()?;
+                if matches!(kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) { continue; }
+                return Ok(kind == TokenKind::Punctuation && spelling == ";");
+            }
+            Ok(false)
+        }
         fn original_statement_block_open(&self, gap: dm_syntax::Span) -> std::io::Result<bool> {
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
@@ -1378,7 +1408,7 @@ fn parse_statements_admitted(
                 }
             }
         }
-        fn original_uninitialized_static_local(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
+        fn original_static_local_head(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
@@ -1396,7 +1426,8 @@ fn parse_statements_admitted(
             }
             // The remaining exact slash path is a name, optionally
             // preceded by type components. Other storage modifiers, array
-            // suffixes, grouped locals and initializers stay outside this proof.
+            // suffixes and grouped locals stay outside this head proof. The
+            // caller must separately prove any initializer at its actual span.
             for _ in 0..16 {
                 let Some((TokenKind::Ident, _, name)) = tokens.next() else { return Ok(false); };
                 let mut bytes = name.bytes();
@@ -1412,6 +1443,34 @@ fn parse_statements_admitted(
                 }
             }
             Ok(false)
+        }
+        fn original_plain_comma_local_head(&self, head: dm_syntax::Span, first: bool) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let owner = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(tokens) = owner.tokens(head) else { return Ok(false); };
+            let mut actual = tokens.filter(|(kind, _, _)| !matches!(kind,
+                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment));
+            let name = if first {
+                if !matches!(actual.next(), Some((TokenKind::Ident, _, "var"))) { return Ok(false); }
+                let next = actual.next();
+                if matches!(next, Some((TokenKind::Operator | TokenKind::Punctuation, _, "/"))) {
+                    actual.next()
+                } else { next }
+            } else {
+                if !matches!(actual.next(), Some((TokenKind::Punctuation, _, ","))) { return Ok(false); }
+                actual.next()
+            };
+            let Some((TokenKind::Ident, _, name)) = name else { return Ok(false); };
+            self.admission.checkpoint()?;
+            let mut bytes = name.bytes();
+            let ordinary = bytes.next().is_some_and(|byte| byte == b'_' || byte.is_ascii_alphabetic())
+                && bytes.all(|byte| byte == b'_' || byte.is_ascii_alphanumeric());
+            Ok(ordinary
+                && !matches!(name, "static" | "global" | "const" | "tmp" | "final"
+                    | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__" | "null")
+                && actual.next().is_none())
         }
         fn original_bare_loop_control(&self, header: dm_syntax::Span, keyword: &'static str) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;

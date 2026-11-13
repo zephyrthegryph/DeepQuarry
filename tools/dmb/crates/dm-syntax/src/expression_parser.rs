@@ -1963,6 +1963,39 @@ fn original_direct_dynamic_new(expr: &Expr, tokens: &[Token]) -> bool {
         && expr.span == Span::new(keyword.span.start, close.span.end)
 }
 
+// Pinned NewPrefab with an absolute unmodified type path and an explicitly
+// present positional argument list. Existing static constructor semantics own
+// target resolution and New dispatch; this is only its consumed syntax proof.
+fn original_absolute_static_new(expr: &Expr, tokens: &[Token], depth: usize) -> bool {
+    let [keyword, tail @ ..] = tokens else { return false; };
+    let ExprKind::Unary { op, value } = &expr.kind else { return false; };
+    let ExprKind::Call { callee, args } = &value.kind else { return false; };
+    if op != "new" || keyword.kind != TokenKind::Ident || keyword.text != "new"
+        || !matches!(&callee.kind, ExprKind::TypePath(path) if path.starts_with('/'))
+        || args.len() > 16 { return false; }
+    let at = tail.partition_point(|token| token.span.end <= callee.span.end);
+    let (path, rest) = tail.split_at(at);
+    let [open, body @ .., close] = rest else { return false; };
+    if open.kind != TokenKind::Punctuation || open.text != "("
+        || close.kind != TokenKind::Punctuation || close.text != ")"
+        || value.span != Span::new(callee.span.start, close.span.end)
+        || expr.span != Span::new(keyword.span.start, close.span.end)
+        || !original_conditional_child(callee, path, false, depth) { return false; }
+    let mut remaining = body;
+    for (index, argument) in args.iter().enumerate() {
+        if index != 0 {
+            let Some((comma, rest)) = remaining.split_first() else { return false; };
+            if comma.kind != TokenKind::Punctuation || comma.text != "," { return false; }
+            remaining = rest;
+        }
+        let at = remaining.partition_point(|token| token.span.end <= argument.span.end);
+        let (run, rest) = remaining.split_at(at);
+        if !original_conditional_child(argument, run, true, depth) { return false; }
+        remaining = rest;
+    }
+    remaining.is_empty()
+}
+
 fn original_conditional_child(expr: &Expr, tokens: &[Token], conditional: bool, depth: usize) -> bool {
     original_composed_expression(expr, tokens, conditional, depth, false)
 }
@@ -2196,7 +2229,8 @@ fn original_composed_expression(
                 && matches!(tail, [dot, name] if punctuation(dot, separator) && name.kind == TokenKind::Ident
                     && name.text == *selector && original_ascii_identifier(selector))
         }
-        ExprKind::Unary { op, .. } if op == "new" => original_direct_dynamic_new(expr, tokens),
+        ExprKind::Unary { op, .. } if op == "new" => original_direct_dynamic_new(expr, tokens)
+            || original_absolute_static_new(expr, tokens, depth),
         ExprKind::Unary { op, value } if matches!(op.as_str(), "!" | "-") => {
             matches!(tokens, [prefix, child @ ..] if punctuation(prefix, op)
                 && (matches!(&value.kind, ExprKind::Ident(_) | ExprKind::Group(_)
@@ -2331,8 +2365,10 @@ fn original_composed_expression(
                 | ExprKind::SafeMember { selector, via_colon: false, .. } => original_ordinary_call_name(selector),
                 _ => false,
             };
+            let named_value_call = matches!(&callee.kind, ExprKind::Ident(name)
+                if original_ordinary_call_name(name));
             ordinary && original_conditional_child(callee, head, false, depth)
-                && arguments_match(args, body, keyword_call, true, true)
+                && arguments_match(args, body, keyword_call || named_value_call, true, true)
         }
         ExprKind::Binary { op, lhs, rhs } => {
             let Some(binding) = original_binary_binding(op) else { return false };
@@ -2453,7 +2489,7 @@ fn original_plain_assignment(expr: &Expr, tokens: &[Token]) -> bool {
     op == "="
         && matches!(equals.kind, TokenKind::Operator | TokenKind::Punctuation)
         && equals.text == "="
-        && matches!(&lhs.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
+        && matches!(&lhs.kind, ExprKind::Ident(name) if name == "input" || original_ordinary_call_name(name))
         && simple_term(lhs, name)
         && expr.span == Span::new(name.span.start, rhs.span.end)
         && original_conditional_child(rhs, value, true, 32)
@@ -3452,6 +3488,63 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
      }
  }
  #[test]
+ fn actual_original_named_value_calls_keep_assignment_only_in_argument_keys() {
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (source, expected) in [
+         ("getFlatIcon ( A , defdir = NORTH )", true),
+         ("mutable_appearance ( I . icon , I . icon_state , plane = 8 , alpha = I . alpha )", true),
+         ("value = getFlatIcon ( A , defdir = NORTH )", false),
+         ("consume ( value . field = NORTH )", false),
+         ("consume ( key = value = NORTH )", false),
+         ("consume ( key += value )", false),
+         ("getFlatIcon ( A , defdir = NORTH ) = value", false),
+     ] {
+         let rows: Vec<_> = source.split_whitespace().map(|text| {
+             let kind = if original_ascii_identifier(text) { TokenKind::Ident }
+                 else if original_decimal(text) { TokenKind::Number }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, None)
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         let proof = output.parsed().original_simple_expression;
+         assert_eq!(proof.is_some_and(|proof| proof.kind() == OriginalSimpleKind::Complete), expected, "{source}");
+         if expected {
+             assert!(output.parsed().diagnostics.is_empty(), "{source}");
+             assert!(matches!(&output.parsed().expr.as_ref().unwrap().kind, ExprKind::Call { .. }));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+ }
+
+ #[test]
+ fn actual_original_bare_input_assignment_requires_an_exact_identifier_target() {
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (source, expected) in [
+         ("input = copytext ( input , 1 , max_length )", true),
+         ("input ( ) = copytext ( value , 1 , max_length )", false),
+         ("input [ key ] = copytext ( value , 1 , max_length )", false),
+         ("input += copytext ( value , 1 , max_length )", false),
+     ] {
+         let rows: Vec<_> = source.split_whitespace().map(|text| {
+             let kind = if original_ascii_identifier(text) { TokenKind::Ident }
+                 else if original_decimal(text) { TokenKind::Number }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, None)
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(output.parsed().original_simple_expression.is_some_and(|proof|
+             proof.kind() == OriginalSimpleKind::PlainAssignment), expected, "{source}");
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+ }
+
+ #[test]
  fn actual_original_prefix_update_is_an_exact_statement_kind_not_a_read_or_postfix_value() {
      let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
      let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
@@ -3555,6 +3648,51 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
                  if matches!(&index.kind, ExprKind::Binary { op, lhs, rhs } if op == "-"
                      && matches!(&lhs.kind, ExprKind::Ident(name) if name == "i")
                      && matches!(&rhs.kind, ExprKind::Literal(value) if value.as_str() == "1"))));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+ }
+ #[test]
+ fn actual_original_absolute_new_keeps_static_path_and_positional_children_without_implicit_hints() {
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (source, expected) in [
+         ("new / list ( )", true),
+         ("new / exception ( value , other , 0 )", true),
+         ("new / datum / concrete ( value )", true),
+         ("new / datum", false),
+         ("new . datum ( )", false),
+         ("new / datum { field = value } ( )", false),
+         ("new / datum ( key = value )", false),
+         ("new / datum ( value , )", false),
+         ("new / datum ( , value )", false),
+         ("new / datum [ key ] ( )", false),
+         ("new / datum ( ) . field", false),
+     ] {
+         let rows: Vec<_> = source.split_whitespace().map(|text| {
+             let kind = if original_decimal(text) { TokenKind::Number }
+                 else if original_ascii_identifier(text) { TokenKind::Ident }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, None)
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let mut output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind),
+             expected.then_some(OriginalSimpleKind::Complete), "{source}");
+         if expected {
+             assert!(output.parsed().diagnostics.is_empty(), "{source}");
+             assert!(output.parsed().original_constructor_facts().unwrap().as_slice().is_empty());
+             let expr = output.parsed.expr.as_mut().unwrap();
+             assert!(original_absolute_static_new(expr, &output.tokens, 32));
+             let Some(crate::native_special_forms::Constructor::Static { path, args }) =
+                 crate::native_special_forms::constructor(expr).unwrap() else { panic!("same existing static meaning"); };
+             assert!(path.starts_with('/'));
+             assert_eq!(args.len(), if source.contains("exception") { 3 } else if source.contains("concrete") { 1 } else { 0 });
+             let old = expr.span;
+             expr.span.end += 1;
+             assert!(!original_absolute_static_new(expr, &output.tokens, 32));
+             expr.span = old;
          }
          drop(output);
          assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());

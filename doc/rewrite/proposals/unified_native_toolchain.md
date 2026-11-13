@@ -4055,3 +4055,38 @@ The actual bounded checkout survey of checker ranks 349..477 completed with
 unmeasured OOM cases. It exposes several adjacent grammar families for the next
 batch. It is not a complete whole-checkout combined report, full-registry parity
 proof or default cutover.
+
+### Constructor, local, call-value and control-flow cohort
+
+The next closed productions reuse existing semantics for absolute typed new,
+ordinary direct calls with named value arguments, a bare input formal assignment,
+initialized static locals and plain comma-separated local groups. Static head
+and comma-head questions authenticate the same issued token tape; each actual
+initializer still needs its own expression witness. Typed or modified comma
+groups remain unissued because their native declaration spelling inherits a
+prefix that the pinned parser resets; no type behavior was silently changed.
+
+C-style loops now accept the existing postfix decrement and plain-assignment
+step receipts. Their empty-body path requires the real issued close and
+semicolon tokens, not absence of children. Inline assignment leaves and joined
+return leaves retain exact head proofs; a following else/else-if uses the same
+counted-close token proof with zero closes. Each following link must still prove
+its own condition and body. A newly exposed operational-error path now stops
+before a later child or else-if read and clears internal completion metadata,
+while retaining the original error. Ordinary parsing without admission is
+unchanged.
+
+The 24 focused expression controls passed, followed by boundary, comma and
+first-error controls. The new zero-close error test first exposed an extra
+condition read; its failure-only repair passed. An additional direct metadata
+abort control passed. Host libraries and all test definitions checked clean in
+2m25s. The private nonincremental host/integration build passed in 9m49s under
+the low-priority two-core monitor. Library-test definitions were checked, not
+executed through the oversized monolithic test target.
+
+The same actual checker-rank window 349..477 improved from 85 Available /
+43 Unissued to 100 Available / 28 Unissued, with zero NativeRejected and zero
+unmeasured OOM cases in both surveys. The remaining first area helper now reaches
+its inline for body; additional read, assignment and pick families are visible.
+These surveys measure grammar coverage of the captured source. Complete combined
+checkout reporting, full-registry parity and default cutover remain unproven.
