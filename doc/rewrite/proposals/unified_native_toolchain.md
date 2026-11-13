@@ -4090,3 +4090,86 @@ unmeasured OOM cases in both surveys. The remaining first area helper now reache
 its inline for body; additional read, assignment and pick families are visible.
 These surveys measure grammar coverage of the captured source. Complete combined
 checkout reporting, full-registry parity and default cutover remain unproven.
+
+### Closed read/control cohort and incremental UTF-8 mask (verification in progress)
+
+The next source-backed cohort covers member stores, indexed reads/stores,
+unweighted pick arms, inline else/Each leaves, empty C-for initialization and
+left-associated power. The original operator and call roles stay distinct;
+ordinary parser acceptance is not used as a proof of admitted-source coverage.
+Seven real helper projects passed public selected reports and installed DMB/RSC
+pair checks. The eighth, get_area_turfs, reached the inner typed iteration and
+exposed a missing admitted Parent query. That scalar query now delegates to the
+same certified resolver after the existing first poll; other unissued queries
+still refuse. Its new unit controls have not yet run.
+
+Positional typed input, closed try/catch and exact throw heads have source-backed
+proofs and negative/error controls in the current cohort. Input assumption
+refinement and independently executed pinned-oracle diagnostic parity are not
+claimed. Complete helper and public report verification is still pending.
+
+The unchanged 300-second whole-source census limit exposed a separate capture
+performance defect, before body queries ran. An owned debugger sample located
+repeated full-prefix UTF-8 validation in NativeLayoutMaskCursor::visible. The
+mask now retains a safe String and appends only newly issued source gaps and
+byte-preserving ASCII masks. The borrowed visible view is constant-time. The
+existing exact allocation lease funds replacement capacity while old storage is
+live, drops old storage before refund, and retains all error/poisoning behavior.
+No unsafe UTF-8 operation, extra full-source buffer or raised limit was added.
+Independent review found no accounting or source-boundary defect.
+
+The optimized dm-syntax build passed on Rust 1.99.1 in 1m54s; all 44 selected
+syntax controls passed, including typed-input, throw/try refusal, mask emission,
+UTF-8 boundary, exact-funding and first-I/O controls. The earlier optimized Rust
+compiler trap did not recur in this changed source. This is not yet evidence
+that whole-source capture meets its existing deadline. The parent-query test,
+current host build and whole-source survey remain pending at this checkpoint.
+The scalar Parent regression and existing admitted structural-answer control
+both passed. The optimized dm-tree unit executable built in 18m09s; only those
+two behavior tests ran. This build cost is separate from game compilation.
+Host libraries and test definitions then checked clean in 4m45s, without
+building or running the monolithic dmbc library-test executable.
+
+A further closed loop cohort admits bare break/continue only within already
+authenticated Range/CStyle loops, plus already-issued bare-name +=/-= C-for
+step receipts. Existing exact keyword and separator proofs remain in force.
+Unsupported loop forms, labeled/outside exits, member/index/grouped step
+targets and nested assignment values remain denied. Independent review passed.
+One focused control exposed a fixture error: raw lossless '+' and '=' tokens
+were mislabeled as final '+='. The test transport now supplies actual final
+punctuation spellings and includes a raw-split negative; production acceptance
+was not relaxed. Failure-only/new controls passed after a 1m34s syntax rebuild.
+The current private host build and new whole-source capture remain pending.
+The current private host/integration build passed in 20m46s. All eight earlier
+whole-helper selected reports and installed DMB/RSC checks passed, including
+get_area_turfs after the Parent repair. Both whole stripped-input helpers also
+passed with their actual source paths, dependencies and unchanged questions.
+The whole dummy-savefile helper passed once its actual inherited controller
+name declaration was included; its original throw/EXCEPTION path stayed intact.
+The caught-type diagnostic contract test passed at TRY line 2, column 5. This
+is an executed native source-contract test, not an independent oracle run.
+
+safe_json_decode compiled with zero Checker diagnostics and installed its native
+pair. Its seven-policy report refused its unchanged silent_catch annotation
+because that policy was not selected. The full-registry fixture then completed
+all producers after its genuinely empty terminal UI directory was observed; it
+reported zero Checker diagnostics, used the annotation and installed the pair.
+Its report remains non-clean because the production configuration refers to
+base vars absent from this tiny fixture, the changelog example is absent, and
+its generated reads are stale. No annotation, baseline or source was changed
+to make those expected context findings disappear. This is not whole-checkout
+full-registry parity.
+
+The unchanged 300-second whole-checkout census still timed out during capture,
+before body queries: 5,120,000 producer rows were reached, with no new body
+coverage count. The safe incremental String removes repeated UTF-8 validation
+but does not by itself satisfy the existing deadline. Two short, separately
+labelled diagnostic stack samples found bulk copy and allocator free beneath
+exact layout-buffer growth. The next repair targets that allocation behavior;
+no deadline or resource ceiling is raised.
+
+A source audit also found that the pinned checker's input assumption set has no
+consumer: it is separate from static typing and never read in the saved checker
+modules. Native Unhinted therefore does not require new branch refinement to
+match that observed source contract. Independent diagnostic parity is still
+unproven; inventing refinement or a static input return type would add behavior.

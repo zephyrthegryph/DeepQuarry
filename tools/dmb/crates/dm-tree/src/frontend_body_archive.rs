@@ -1153,6 +1153,23 @@ fn parse_statements_admitted(
             // expression. A following token is not proof that it is valid.
             Ok(keyword.start == header.start && keyword.end == next.start)
         }
+        fn original_throw_head(&self, head: dm_syntax::Span) -> std::io::Result<bool> {
+            use dm_syntax::TokenKind;
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|reason| std::io::Error::new(std::io::ErrorKind::InvalidData, reason))?;
+            let Ok(tokens) = tokens.tokens(head) else { return Ok(false); };
+            let mut keyword = false;
+            for (kind, at, spelling) in tokens {
+                self.admission.checkpoint()?;
+                match (kind, spelling) {
+                    (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (TokenKind::Ident, "throw") if !keyword && at.start == head.start => keyword = true,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(keyword)
+        }
         fn original_inline_if_leaf(
             &self, boundary: dm_syntax::Span, keyword: &'static str,
         ) -> std::io::Result<bool> {
@@ -1192,6 +1209,14 @@ fn parse_statements_admitted(
                 }
             }
             Ok(significant == 2)
+        }
+        fn original_inline_for_assignment_head(
+            &self, boundary: dm_syntax::Span, name: dm_syntax::Span,
+        ) -> std::io::Result<bool> {
+            // The header's own ForList proof was checked before asking. Reuse
+            // ONLY the same immutable current body/code close+name token loan.
+            // This does not borrow an if/for grammar certificate or new context.
+            self.original_inline_if_assignment_head(boundary, name)
         }
         fn original_for_range_header(
             &self, prefix: dm_syntax::Span, name: dm_syntax::Span, between: dm_syntax::Span,
@@ -1284,25 +1309,29 @@ fn parse_statements_admitted(
             Ok(index == if declaration { 4 } else { 2 })
         }
         fn original_classic_for_separators(
-            &self, first: dm_syntax::Span, second: dm_syntax::Span,
+            &self, first: dm_syntax::Span, second: dm_syntax::Span, empty_initializer: bool,
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let mut expected = None;
-            for span in [first, second] {
+            for (index, span) in [first, second].into_iter().enumerate() {
                 let Ok(gap) = tokens.tokens(span) else { return Ok(false); };
                 let mut actual = None;
+                let empty_head = empty_initializer && index == 0;
+                let mut prefix = if empty_head { 0 } else { 2 };
                 for (kind, _, spelling) in gap {
                     self.admission.checkpoint()?;
                     match (kind, spelling) {
                         (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
-                        (TokenKind::Punctuation, ";" | ",") if actual.is_none() => actual = Some(spelling),
+                        (TokenKind::Ident, "for") if prefix == 0 => prefix = 1,
+                        (TokenKind::Punctuation, "(") if prefix == 1 => prefix = 2,
+                        (TokenKind::Punctuation, ";" | ",") if prefix == 2 && actual.is_none() => actual = Some(spelling),
                         _ => return Ok(false),
                     }
                 }
-                if actual.is_none() || expected.is_some_and(|expected| actual != Some(expected)) {
+                if prefix != 2 || actual.is_none() || expected.is_some_and(|expected| actual != Some(expected)) {
                     return Ok(false);
                 }
                 expected = actual;
@@ -1391,6 +1420,7 @@ fn parse_statements_admitted(
                     && matches!(header.next(), Some((TokenKind::Punctuation, _, "(")))),
                 OriginalLeafBlockLink::Else => Ok(matches!(header.next(), Some((TokenKind::Ident, _, "else")))
                     && header.next().is_none()),
+                OriginalLeafBlockLink::Catch => Ok(matches!(header.next(), Some((TokenKind::Ident, _, "catch")))),
                 OriginalLeafBlockLink::DoWhile => {
                     if !matches!(header.next(), Some((TokenKind::Ident, _, "while")))
                         || !matches!(header.next(), Some((TokenKind::Punctuation, _, "("))) {
@@ -1407,6 +1437,47 @@ fn parse_statements_admitted(
                     Ok(false)
                 }
             }
+        }
+        fn original_try_catch_heads(
+            &self, try_header: dm_syntax::Span, catch_header: dm_syntax::Span,
+            parameter: Option<&dm_syntax::LocalVariableSyntax>,
+        ) -> std::io::Result<bool> {
+            use dm_syntax::{LocalSourceKind, TokenKind};
+            self.admission.checkpoint()?;
+            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+            let Ok(head) = tokens.tokens(try_header) else { return Ok(false); };
+            let mut seen = false;
+            for (kind, _, spelling) in head {
+                self.admission.checkpoint()?;
+                match (kind, spelling) {
+                    (TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (TokenKind::Ident, "try") if !seen => seen = true,
+                    _ => return Ok(false),
+                }
+            }
+            if !seen { return Ok(false); }
+            if parameter.is_some_and(|row| row.source_kind != LocalSourceKind::CatchBinding
+                || row.source_modifiers != 0 || row.array_suffix || row.type_components.len() != 1) { return Ok(false); }
+            let Ok(head) = tokens.tokens(catch_header) else { return Ok(false); };
+            let mut index = 0;
+            for (kind, at, spelling) in head {
+                self.admission.checkpoint()?;
+                if matches!(kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) { continue; }
+                let valid = match (index, kind, spelling, parameter) {
+                    (0, TokenKind::Ident, "catch", _) => true,
+                    (1, TokenKind::Punctuation, "(", Some(_)) => true,
+                    (2, TokenKind::Ident, "var", Some(row)) => at == row.anchor,
+                    (3 | 5, TokenKind::Operator | TokenKind::Punctuation, "/", Some(_)) => true,
+                    (4, TokenKind::Ident, _, Some(row)) => at == row.type_components[0],
+                    (6, TokenKind::Ident, _, Some(row)) => at == row.name,
+                    (7, TokenKind::Punctuation, ")", Some(_)) => true,
+                    _ => false,
+                };
+                if !valid { return Ok(false); }
+                index += 1;
+            }
+            Ok(index == if parameter.is_some() { 8 } else { 1 })
         }
         fn original_static_local_head(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;

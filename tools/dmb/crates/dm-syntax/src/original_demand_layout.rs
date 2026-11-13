@@ -35,6 +35,23 @@ fn fund_buffer<T>(
     a.shrink(credit, prior).map_err(|e| actual_error(a, e))
 }
 
+// Reuse the same exact byte-buffer allocator and replacement-peak lease.
+// The new allocation is EMPTY, so safe String construction validates zero
+// bytes. Copy the already-valid old string once, then free/refund its buffer.
+fn fund_visible_string(
+    text: &mut String, desired: usize, credit: &mut crate::SettingRootLease,
+    a: &crate::SettingAdmission<'_>,
+) -> io::Result<()> {
+    if text.capacity() >= desired { return Ok(()); }
+    let prior = text.capacity();
+    let mut empty = Vec::<u8>::new();
+    fund_buffer(&mut empty, desired, credit, a)?;
+    let mut next = String::from_utf8(empty).expect("new funded mask buffer is empty");
+    next.push_str(text);
+    drop(mem::replace(text, next));
+    a.shrink(credit, prior).map_err(|e| actual_error(a, e))
+}
+
 /// Lines drop before their exact same-domain buffer credit, independently of
 /// other live batches, the cursor's masks and any cloned producer identity.
 pub(super) struct NativeLayoutBatch {
@@ -98,7 +115,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   let rows=boundaries.checked_mul(mem::size_of::<Line>()).and_then(|n|n.checked_mul(8)).ok_or(io::ErrorKind::OutOfMemory)?;
   let mut row_work=self.a.reserve(rows).map_err(|e|actual_error(self.a,e))?;
   let visible_bytes=source.len()-self.source_base;
-  fund_buffer(&mut self.masks.visible,visible_bytes,&mut self.mask_credit,self.a)?;
+  fund_visible_string(&mut self.masks.visible,visible_bytes,&mut self.mask_credit,self.a)?;
   fund_buffer(&mut self.masks.delimiters,visible_bytes,&mut self.mask_credit,self.a)?;
   let spans=self.masks.multiline_literals.len().checked_add(new_multiline).ok_or(io::ErrorKind::OutOfMemory)?;
   if spans>self.masks.multiline_literals.capacity(){
@@ -119,6 +136,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   let mut cut=self.structural.pending.as_ref().map_or(self.structural.offset,|line|line.header_start);
   if let Some(literal)=self.masks.multiline_literals.iter().find(|span|span.end>self.structural.offset){cut=cut.min(literal.start);}
   if cut>0{
+   if !self.masks.visible.is_char_boundary(cut){return Err(io::Error::new(io::ErrorKind::InvalidData,"native mask compaction cuts a UTF8 code point"))}
    self.masks.visible.drain(..cut);self.masks.delimiters.drain(..cut);self.source_base+=cut;self.structural.offset-=cut;self.structural.early_physical=self.structural.early_physical.map(|at|at.saturating_sub(cut));
    if let Some(line)=&mut self.structural.pending{line.header_start-=cut;line.header_end-=cut;line.end-=cut;}
    let removed=self.masks.multiline_literals.partition_point(|span|span.end<=cut);self.masks.multiline_literals.drain(..removed);self.structural.literal_cursor=self.structural.literal_cursor.saturating_sub(removed);for span in &mut self.masks.multiline_literals{span.start=span.start.saturating_sub(cut);span.end-=cut;}
@@ -197,6 +215,37 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
     assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (base+second_bytes));
     drop((second,original));
     assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn exact_visible_string_buffer_replacement_keeps_peak_funding_and_refunds_old_storage() {
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=crate::SettingAdmission::new(&counter,4096,&||Ok(()));let mut credit=a.reserve(0).unwrap();let mut visible=String::new();
+  fund_visible_string(&mut visible,8,&mut credit,&a).unwrap();assert_eq!(visible.capacity(),8);assert_eq!(credit.bytes(),8);
+  visible.push_str("\u{3b1}\u{3b2}");fund_visible_string(&mut visible,23,&mut credit,&a).unwrap();
+  assert_eq!(visible,"\u{3b1}\u{3b2}");assert_eq!(visible.capacity(),23);assert_eq!(credit.bytes(),23);
+  assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+23);
+  drop(visible);drop(credit);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let limit=crate::SettingChargeCounter::root_allocation_bytes()+7;let b=crate::SettingAdmission::new(&counter,limit,&||Ok(()));let mut credit=b.reserve(0).unwrap();let mut denied=String::new();
+  assert_eq!(fund_visible_string(&mut denied,8,&mut credit,&b).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(denied.capacity(),0);drop(denied);drop(credit);
+  assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn incremental_visible_string_first_io_keeps_partial_storage_valid_and_no_batch_escapes() {
+  let source=format!("/datum/\u{3b1}\n    /* \u{3b2}{} */ var/value=1\n","x".repeat(2050));let tokens=lex_spans(&source).tokens;let mut saw_partial=false;
+  // Bounded fault positions, not a timing benchmark. At least one must stop
+  // midway through the byte-preserving comment mask, not only before work.
+  for stop in 1..=64 {
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=std::cell::Cell::new(0usize);let armed=std::cell::Cell::new(false);
+   let poll=||{if armed.get(){let n=calls.get()+1;calls.set(n);if n==stop{return Err(io::Error::from_raw_os_error(1450))}}Ok(())};
+   let a=crate::SettingAdmission::new(&counter,1<<20,&poll);let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();armed.set(true);
+   match cursor.advance(&source,&tokens,&original,true) {
+    Err(actual)=>{assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(calls.get(),stop);saw_partial|=!cursor.masks.visible().is_empty()&&cursor.masks.visible().len()<source.len();},
+    Ok(batch)=>{assert!(calls.get()<stop);drop(batch);},
+   }
+   assert!(std::str::from_utf8(cursor.masks.visible().as_bytes()).is_ok());
+   drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+  assert!(saw_partial,"an actual mid-mask first IO was exercised; no invalid String or layout batch escaped it");
  }
  #[test]fn actual_long_source_keeps_only_live_header_mask_window_and_dropped_batch_rows_do_not_accumulate_debt(){
   let source="/datum/a\n".repeat(2048);let tokens=lex_spans(&source).tokens;let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,64<<10,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let mut end=0;

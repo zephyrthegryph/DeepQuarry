@@ -456,20 +456,18 @@ pub(super) fn parse_for(
                 offset_of(parts[2]),
                 diagnostics,
                 &mut |parsed| {
-                    step_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
-                        proof.is_original() && matches!(proof.kind(),
-                            OriginalSimpleKind::PostIncrementStatement
-                                | OriginalSimpleKind::PostDecrementStatement
-                                | OriginalSimpleKind::PlainAssignment)
-                    });
+                    step_witnessed = original_classic_step_witness(parsed);
                 },
             )?)
         };
-        if initial_witnessed && test_witnessed {
-            if let (Some(initial), Some(test), Some(step)) = (&initializer, &condition, &step) {
-                let initial_end = match initial {
-                    ForInitializer::Expr(initial) => Some(initial.span.end),
-                    ForInitializer::Declare { value: Some(value), .. } => {
+        if (initial_witnessed || initial.is_empty()) && test_witnessed {
+            if let (Some(test), Some(step)) = (&condition, &step) {
+                let initial_end = match &initializer {
+                    // Absence is DATA only until the SAME token provider proves
+                    // the entire for/open/first-separator prefix below.
+                    None => Some(item.header_span.start),
+                    Some(ForInitializer::Expr(initial)) => Some(initial.span.end),
+                    Some(ForInitializer::Declare { value: Some(value), .. }) => {
                         let start = offset_of(parts[0]);
                         origins.locals.entries().ok().and_then(|rows| rows.last()).filter(|row|
                             row.source_kind == crate::LocalSourceKind::ForInitializer
@@ -479,7 +477,7 @@ pub(super) fn parse_for(
                                 .then_some(value.span.end)
                         })
                     }
-                    ForInitializer::Declare { value: None, .. } => None,
+                    Some(ForInitializer::Declare { value: None, .. }) => None,
                 };
                 if let Some(initial_end) = initial_end {
                     if !step_witnessed {
@@ -493,16 +491,9 @@ pub(super) fn parse_for(
                     if step_witnessed {
                         let first = Span::new(initial_end, test.span.start);
                         let second = Span::new(test.span.end, step.span.start);
-                        match origins.settings.map(|provider| {
-                            provider.original_classic_for_separators(first, second)
-                        }).transpose() {
-                            Ok(value) => *original_control = value == Some(true),
-                            Err(actual) => {
-                                if let Some(admission) = origins.admission {
-                                    admission.record_operational_error(actual);
-                                }
-                            }
-                        }
+                        *original_control = original_classic_separator_question(
+                            origins.settings, first, second, initializer.is_none(), origins.admission,
+                        );
                     }
                 }
             }
@@ -519,6 +510,21 @@ pub(super) fn parse_for(
         message: "unsupported for control".into(),
     });
     None
+}
+
+// Route only the existing same-body separator question. A false/default/missing
+// provider never creates grammar authority; actual operational errors stay sticky.
+fn original_classic_separator_question(
+    provider: Option<&dyn SettingSyntaxProvider>, first: Span, second: Span,
+    empty_initializer: bool, admission: Option<&crate::SettingAdmission<'_>>,
+) -> bool {
+    match provider.map(|provider| provider.original_classic_for_separators(first, second, empty_initializer)).transpose() {
+        Ok(value) => value == Some(true),
+        Err(actual) => {
+            if let Some(admission) = admission { admission.record_operational_error(actual); }
+            false
+        }
+    }
 }
 
 fn original_classic_tokens(origins: &BodyOrigins<'_>, span: Span, name: Span, declaration: bool) -> bool {
@@ -922,6 +928,176 @@ mod original_existing_for_each_controls {
             assert_eq!(actual, binding);
             let name = source_binding.expect("one genuine consumed header name").name();
             assert_eq!(&source[name.range()], "current_sort_text");
+        }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn original_empty_classic_separator_question_defaults_closed_and_preserves_actual_error() {
+    struct Deny;
+    impl SettingSyntaxProvider for Deny {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+    }
+    struct Fail(std::cell::Cell<usize>);
+    impl SettingSyntaxProvider for Fail {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+        fn original_classic_for_separators(&self, first: Span, second: Span, empty_initializer: bool) -> std::io::Result<bool> {
+            assert_eq!(first, Span::new(10, 20));
+            assert_eq!(second, Span::new(30, 32));
+            assert!(empty_initializer);
+            self.0.set(self.0.get() + 1);
+            Err(std::io::Error::from_raw_os_error(1450))
+        }
+    }
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+    let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+    let first = Span::new(10, 20);
+    let second = Span::new(30, 32);
+    for empty in [false, true] {
+        assert!(!original_classic_separator_question(None, first, second, empty, Some(&admission)));
+        assert!(!original_classic_separator_question(Some(&Deny), first, second, empty, Some(&admission)));
+    }
+    assert!(!admission.is_stopped());
+    let fail = Fail(std::cell::Cell::new(0));
+    assert!(!original_classic_separator_question(Some(&fail), first, second, true, Some(&admission)));
+    assert_eq!(fail.0.get(), 1);
+    assert!(admission.is_stopped());
+    assert_eq!(admission.take_operational_error().unwrap().raw_os_error(), Some(1450));
+    // No fake positive source/header/expression proof is supplied by this test.
+}
+
+// A role check on an already-issued complete expression receipt; it cannot
+// produce an expression witness or authenticate a for header by itself.
+fn original_classic_step_witness(parsed: &crate::ParsedExpr) -> bool {
+    use crate::expression_parser::OriginalSimpleKind;
+    let Some(proof)=parsed.original_simple_expression else { return false; };
+    if !proof.is_original() { return false; }
+    match proof.kind() {
+        OriginalSimpleKind::PostIncrementStatement
+            | OriginalSimpleKind::PostDecrementStatement
+            | OriginalSimpleKind::PlainAssignment => true,
+        OriginalSimpleKind::SimpleAssignmentStatement => parsed.expr.as_ref().is_some_and(|expr|
+            matches!(&expr.kind, ExprKind::Binary { op, lhs, .. }
+                if matches!(op.as_str(), "+=" | "-=")
+                    && matches!(&lhs.kind, ExprKind::Ident(name)
+                        if crate::expression_parser::original_ordinary_call_name(name)
+                            && !matches!(name.as_str(), "null" | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__")))),
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn original_classic_step_never_upgrades_compatibility_expression_provenance() {
+    for text in ["i += length(char)", "i -= 1", "i++", "i = i + 1", "i.field += 1", "i[1] += 1"] {
+        let parsed=crate::parse_expression(text);
+        assert!(parsed.expr.is_some(), "{text}");
+        assert!(!original_classic_step_witness(&parsed), "a compatibility AST is not an Original receipt: {text}");
+    }
+}
+
+#[cfg(test)]
+mod original_classic_step_typed_demand_controls {
+    use super::*;
+    struct FinalTokens { rows: Vec<crate::Token>, next: usize, fail_at: Option<usize>, faulted: bool }
+    impl FinalTokens {
+        // These are already-FINAL punctuation occurrences, exactly as the
+        // occurrence-aware primary producer lends them. Raw lex() deliberately
+        // emits separate + and = bytes and must not be mislabeled final +=.
+        fn fixture(text: &str, fail_at: Option<usize>) -> Self {
+            let mut cursor=0;
+            let rows=text.split_whitespace().map(|spelling| {
+                let start=cursor+text[cursor..].find(spelling).unwrap();
+                cursor=start+spelling.len();
+                let kind=if crate::expression_parser::original_ascii_identifier(spelling) {
+                    crate::TokenKind::Ident
+                } else if spelling.bytes().all(|b|b.is_ascii_digit()) {
+                    crate::TokenKind::Number
+                } else {
+                    assert!(crate::original_scalar_transport::original_punctuation_storage_index(spelling).is_some(),
+                        "fixture punctuation must be an actual final primary spelling: {spelling}");
+                    crate::original_scalar_transport::original_punctuation_native_kind(spelling)
+                };
+                crate::Token {kind,span:Span::new(start,cursor),text:spelling.into()}
+            }).collect();
+            Self {rows,next:0,fail_at,faulted:false}
+        }
+    }
+    impl crate::NativeExpressionTokenDemand for FinalTokens {
+        fn next_token(&mut self) -> std::io::Result<Option<crate::Token>> {
+            assert!(!self.faulted,"first actual demand fault must stop later source pulls");
+            if self.fail_at == Some(self.next) {
+                self.faulted=true;
+                return Err(std::io::Error::from_raw_os_error(1450));
+            }
+            let row=self.rows.get(self.next).cloned(); self.next+=1; Ok(row)
+        }
+        fn requires_original_values(&self)->bool { true }
+        fn original_value(&self, at: crate::NativeExpressionTokenOccurrence)
+            -> std::io::Result<Option<crate::OriginalTokenValue<&str>>> {
+            let token=self.rows.get(at.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;
+            if token.span != at.span() { return Err(std::io::ErrorKind::InvalidInput.into()); }
+            Ok(Some(match token.kind {
+                crate::TokenKind::Ident => crate::OriginalTokenValue::Ident { spelling: &token.text, whitespace: false },
+                crate::TokenKind::Number => crate::OriginalTokenValue::Int(token.text.parse().map_err(|_|std::io::ErrorKind::InvalidData)?),
+                _ => {
+                    let index=crate::original_scalar_transport::original_punctuation_storage_index(&token.text)
+                        .ok_or(std::io::ErrorKind::InvalidInput)?;
+                    crate::OriginalTokenValue::Punct(crate::original_scalar_transport::original_punctuation_storage_value(index)
+                        .ok_or(std::io::ErrorKind::InvalidInput)?)
+                }
+            }))
+        }
+    }
+    #[test]
+    fn actual_original_classic_step_role_uses_issued_expression_and_exact_bare_target() {
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let admission=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+        for (text,expected) in [
+            ("i += length ( char )",true),("i -= 1",true),
+            ("i ++",true),("i --",true),("i = i + 1",true),
+            ("i . field += 1",false),("i [ 1 ] += 1",false),
+            ("( i ) += 1",false),("i *= 1",false),("i += ( char += 1 )",false),
+            ("null += 1",false),("__PROC__ += 1",false),
+        ] {
+            // A typed final-token fixture supplies only expression occurrences;
+            // it never certifies a body, loop, source header or separator.
+            let mut source=FinalTokens::fixture(text,None);
+            let root=crate::parse_original_expression_demanded(&mut source,&admission).unwrap();
+            if expected { assert!(root.parsed().diagnostics.is_empty(),"actual final-token syntax: {text}: {:?}",root.parsed().diagnostics); }
+            assert_eq!(original_classic_step_witness(root.parsed()),expected,
+                "{text}; receipt={:?}; AST={:?}; diagnostics={:?}",root.parsed().original_simple_expression,
+                root.parsed().expr,root.parsed().diagnostics);
+            drop(root);
+            assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+        }
+    }
+    #[test]
+    fn raw_split_assignment_bytes_mislabeled_as_final_are_not_repaired_into_a_step_receipt() {
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let admission=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+        let rows=crate::lex("i += length(char)").tokens;
+        assert!(!rows.iter().any(|token|token.text=="+="));
+        assert!(rows.iter().any(|token|token.text=="+"));
+        assert!(rows.iter().any(|token|token.text=="="));
+        let mut source=FinalTokens{rows,next:0,fail_at:None,faulted:false};
+        let root=crate::parse_original_expression_demanded(&mut source,&admission).unwrap();
+        assert!(!original_classic_step_witness(root.parsed()),"typed final-value contract forbids silently merging raw bytes");
+        drop(root);
+        assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+    }
+    #[test]
+    fn actual_original_classic_step_first_demand_io_never_becomes_a_role_witness() {
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let admission=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+        for fail_at in [0,1,2] {
+            let mut source=FinalTokens::fixture("i += length ( char )",Some(fail_at));
+            let error=crate::parse_original_expression_demanded(&mut source,&admission).err()
+                .expect("actual demand failure cannot become a compatibility result or step receipt");
+            assert_eq!(error.raw_os_error(),Some(1450));
+            assert_eq!(source.next,fail_at);
+            assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
         }
     }
 }

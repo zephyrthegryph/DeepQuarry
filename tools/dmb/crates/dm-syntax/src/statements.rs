@@ -217,7 +217,7 @@ pub struct SettingStatement {
     pub value: crate::SettingExpression,
 }
 #[derive(Clone, Copy)]
-pub enum OriginalLeafBlockLink { ElseIf, Else, DoWhile }
+pub enum OriginalLeafBlockLink { ElseIf, Else, DoWhile, Catch }
 
 pub trait SettingSyntaxProvider {
     #[cfg(debug_assertions)]
@@ -233,6 +233,11 @@ pub trait SettingSyntaxProvider {
     fn original_joined_return(&self, _header: Span) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// Authenticate the actual required throw keyword and ALL trivia up to
+    /// its expression start. The child's own expression receipt is separate.
+    fn original_throw_head(&self, _head: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
     /// Match the actual condition close and first inline statement token.
     fn original_inline_if_leaf(&self, _boundary: Span, _keyword: &'static str) -> std::io::Result<bool> {
         Ok(false)
@@ -240,6 +245,11 @@ pub trait SettingSyntaxProvider {
     /// Authenticate the actual condition close and first bare assignment name.
     /// The child's existing expression receipt still decides assignment validity.
     fn original_inline_if_assignment_head(&self, _boundary: Span, _name: Span) -> std::io::Result<bool> {
+        Ok(false)
+    }
+    /// Same consumed close/name boundary for an already witnessed ForList
+    /// header. The actual inline assignment still needs its own producer proof.
+    fn original_inline_for_assignment_head(&self, _boundary: Span, _name: Span) -> std::io::Result<bool> {
         Ok(false)
     }
     /// Authenticate the range header's var/name prefix, first separator and to.
@@ -260,7 +270,8 @@ pub trait SettingSyntaxProvider {
         Ok(false)
     }
     /// Authenticate both classic-loop separators in the same Original body.
-    fn original_classic_for_separators(&self, _first: Span, _second: Span) -> std::io::Result<bool> {
+    /// Empty init additionally requires the complete for/open/first separator prefix.
+    fn original_classic_for_separators(&self, _first: Span, _second: Span, _empty_initializer: bool) -> std::io::Result<bool> {
         Ok(false)
     }
     /// Prove the explicitly authored empty classic-for body on the SAME tape.
@@ -276,6 +287,9 @@ pub trait SettingSyntaxProvider {
     fn original_leaf_block_link(
         &self, _tail: Span, _next: Span, _link: OriginalLeafBlockLink, _closes: usize,
     ) -> std::io::Result<bool> { Ok(false) }
+    /// Authenticate exact try and bare/one plain var/type/name catch headers.
+    /// Parameter facts are borrowed DATA; the actual body tape must match them.
+    fn original_try_catch_heads(&self, _try_header: Span, _catch_header: Span, _parameter: Option<&crate::LocalVariableSyntax>) -> std::io::Result<bool> { Ok(false) }
     /// Authenticate the exact var/static declaration head before any initializer.
     fn original_static_local_head(&self, _header: Span) -> std::io::Result<bool> { Ok(false) }
     /// Authenticate one bare comma-local head on this same issued body tape.
@@ -571,10 +585,10 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         }
         // SAME primary consumption; unproved families/children never grant availability.
         let mut defer_joined_return = false;
-        if header == "do" || starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch")
+        if header == "do" || header == "try" || starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch")
             || starts_keyword(header,"for") {
             origins.original_compound_seen_statement=true;
-        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!original_post_increment_candidate(header)&&!original_crash_statement_candidate(header)&&!local_statement&&!initial_setting
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!starts_keyword(header,"throw")&&!possible_joined_throw(header)&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!original_post_increment_candidate(header)&&!original_crash_statement_candidate(header)&&!local_statement&&!initial_setting
             && !(matches!(header, "break" | "continue") && origins.original_loop_control)){
             // The actual Original output can join a keyword directly to
             // punctuation or an interpolation token. Let parse_one's same
@@ -721,6 +735,19 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                     if lexical.diagnostics.is_empty(){origins.catch_parts(source,&lexical.tokens,base)}else{origins.locals.decline("native catch token grammar unavailable");}
                 }
                 let catch_parameter_count=origins.locals.storage().len()-before_catch;
+                if !origins.operational_ready() { break; }
+                let shape = catch_binding.is_none() || (catch_parameter_count == 1
+                    && origins.locals.storage().last().is_some_and(|row| row.source_kind == crate::LocalSourceKind::CatchBinding
+                        && row.source_modifiers == 0 && !row.array_suffix && row.type_components.len() == 1));
+                let heads = shape && original_try_catch_head_question(
+                    origins.settings, item.header_span, catch.header_span,
+                    (catch_parameter_count == 1).then(|| origins.locals.storage().last()).flatten(), origins.admission,
+                );
+                let issued = heads && original_indented_block_boundary(item, origins)
+                    && original_linked_leaf_block(item, catch, OriginalLeafBlockLink::Catch, origins)
+                    && original_indented_block_boundary(catch, origins);
+                origins.require_original(issued, item.header_span, "try_catch");
+                if !origins.operational_ready() { break; }
                 statements.push(Statement {
                     kind: StatementKind::Try {
                         body: parse_sequence(&item.children, diagnostics, origins),
@@ -797,22 +824,66 @@ fn original_inline_assignment_name(inline: &str) -> Option<&str> {
 
 // An inline leaf has no block close to infer. Borrow the SAME real token tape
 // to prove zero closes before the actual following else/else-if header.
+fn original_try_catch_head_question(
+    provider: Option<&dyn SettingSyntaxProvider>, try_header: Span, catch_header: Span,
+    parameter: Option<&crate::LocalVariableSyntax>, admission: Option<&crate::SettingAdmission<'_>>,
+) -> bool {
+    match provider.map(|provider| provider.original_try_catch_heads(try_header, catch_header, parameter)).transpose() {
+        Ok(value) => value == Some(true),
+        Err(actual) => {
+            if let Some(admission) = admission { admission.record_operational_error(actual); }
+            false
+        }
+    }
+}
+
 fn original_inline_if_continuation(item: &Item, next_items: &[Item], origins: &BodyOrigins<'_>) -> bool {
-    let (next, link) = match next_items {
+    let (link, next_header) = match next_items {
         [] => return true,
         [next] if next.header.trim() == "else" && original_indented_block_boundary(next, origins) =>
-            (next, OriginalLeafBlockLink::Else),
+            (OriginalLeafBlockLink::Else, next.header_span),
         [next, ..] if next.header.trim_start().strip_prefix("else")
             .is_some_and(|rest| starts_keyword(rest.trim_start(), "if")) =>
-            (next, OriginalLeafBlockLink::ElseIf),
+            (OriginalLeafBlockLink::ElseIf, next.header_span),
+        [next] if next.children.is_empty() => {
+            let header = next.header.trim();
+            if !starts_keyword(header, "else") { return false; }
+            let Some(rest) = header.strip_prefix("else").map(str::trim_start) else { return false; };
+            // DATA routing only. Authenticate the final ELSE token AND
+            // every byte before the child through the SAME provider: its
+            // Else role permits only ELSE plus trivia in this entire range.
+            // The consuming child proof subsequently checks the full suffix.
+            // Padding a compatibility Item cannot hide a semicolon/brace.
+            if original_inline_assignment_name(rest).is_none() { return false; }
+            let start = next.header_span.start
+                + (header.as_ptr() as usize - next.header.as_ptr() as usize);
+            let child_start = next.header_span.start
+                + (rest.as_ptr() as usize - next.header.as_ptr() as usize);
+            (OriginalLeafBlockLink::Else, Span::new(start, child_start))
+        }
         _ => return false,
     };
-    if item.header_span.end > next.header_span.start { return false; }
-    let tail = Span::new(item.header_span.end, next.header_span.start);
-    match origins.settings.map(|provider| provider.original_leaf_block_link(tail, next.header_span, link, 0)).transpose() {
+    if item.header_span.end > next_header.start { return false; }
+    let tail = Span::new(item.header_span.end, next_header.start);
+    match origins.settings.map(|provider| provider.original_leaf_block_link(tail, next_header, link, 0)).transpose() {
         Ok(actual) => actual == Some(true),
         Err(error) => {
             if let Some(admission) = origins.admission { admission.record_operational_error(error); }
+            false
+        }
+    }
+}
+
+// Boundary question routing only. Its caller separately requires an actual
+// ForList control, and the child still needs its actual assignment receipt.
+fn original_inline_for_assignment_boundary(
+    provider: Option<&dyn SettingSyntaxProvider>, gap: Span, name: Span,
+    admission: Option<&crate::SettingAdmission<'_>>,
+) -> bool {
+    match provider.map(|provider| provider.original_inline_for_assignment_head(gap, name)).transpose() {
+        Ok(value) => value == Some(true),
+        Err(actual) => {
+            if let Some(admission) = admission { admission.record_operational_error(actual); }
             false
         }
     }
@@ -914,6 +985,7 @@ fn parse_if(
                 let mut inline = other.clone();
                 inline.header = rest.trim_end_matches(';').into();
                 inline.header_span.start += other.header.find(rest).unwrap_or(0);
+                inline.span.start = inline.header_span.start;
                 parse_sequence(&[inline], diagnostics, origins)
             } else {
                 let mut nested = other.clone();
@@ -1008,6 +1080,32 @@ fn original_linked_leaf_block(
     }
 }
 
+// DATA routing only. The actual provider must still prove a separate
+// throw Ident, so an ordinary identifier such as thrower is never retyped.
+fn possible_joined_throw(header: &str) -> bool {
+    header.strip_prefix("throw").is_some_and(|tail|
+        tail.starts_with(['"', '\'', '/', '.', '-', '!', '~', '+', '&', '*']))
+}
+fn original_throw_parts(item: &Item) -> Option<(&str, Span, usize)> {
+    let header = item.header.trim();
+    let rest = header.strip_prefix("throw")?.trim_start();
+    let start = item.header_span.start.checked_add(item.header.len() - item.header.trim_start().len())?;
+    let child = start.checked_add(header.len().checked_sub(rest.len())?)?;
+    Some((rest, Span::new(start, child), child))
+}
+fn original_throw_head_checked(origins: &mut BodyOrigins<'_>, head: Span) -> Option<bool> {
+    if !origins.operational_ready() { return None; }
+    match origins.settings.map(|provider| provider.original_throw_head(head)).transpose() {
+        Ok(value) => Some(value == Some(true)),
+        Err(actual) => {
+            origins.original_compound_complete = false;
+            *origins.original_grammar = None;
+            if let Some(admission) = origins.admission { admission.record_operational_error(actual); }
+            None
+        }
+    }
+}
+
 fn possible_joined_return(header: &str) -> bool {
     header.starts_with("return") && !starts_keyword(header, "return")
 }
@@ -1037,6 +1135,15 @@ fn parse_one(
     if defer_joined_return {
         origins.require_original(joined_return, item.header_span, "joined_return");
     }
+    // A punctuation-joined throw is normalized only after its SAME actual
+    // source head is proved. Ordinary native compatibility parsing is unchanged.
+    let joined_throw = if possible_joined_throw(header) && item.children.is_empty() {
+        let Some((rest, head, _)) = original_throw_parts(item) else { return unsupported(item); };
+        if rest.is_empty() { false } else {
+            let Some(actual) = original_throw_head_checked(origins, head) else { return unsupported(item); };
+            actual
+        }
+    } else { false };
     if crate::return_has_block(header, !item.children.is_empty())
         || (joined_return && !item.children.is_empty())
     {
@@ -1081,11 +1188,22 @@ fn parse_one(
                 },
             }
         }
+        if !boundary && original_control && item.children.is_empty() {
+            if let (Some(ForControl::Each { iterable, .. }), Some(inline)) = (&control, control_inline(item, "for")) {
+                if let Some(name) = original_inline_assignment_name(inline) {
+                    let start = item.header_span.start + (name.as_ptr() as usize - item.header.as_ptr() as usize);
+                    let name = Span::new(start, start + name.len());
+                    let gap = Span::new(iterable.span.end, name.end);
+                    boundary = original_inline_for_assignment_boundary(origins.settings, gap, name, origins.admission);
+                }
+            }
+        }
         origins.require_original(boundary && original_control, item.header_span, "for_control");
         control.map(|control| {
             let parent = origins.original_loop_control;
             origins.original_loop_control = boundary && original_control
-                && matches!(&control, ForControl::Each { .. });
+                && matches!(&control, ForControl::Each { .. }
+                    | ForControl::Range { .. } | ForControl::CStyle { .. });
             let body = control_body(item, "for", diagnostics, origins);
             origins.original_loop_control = parent;
             StatementKind::For { control, body }
@@ -1130,14 +1248,22 @@ fn parse_one(
             origins.require_original(issued, Span::new(offset, offset + rest.len()), "return_expression");
             if origins.original_terminal_header==Some(item.header_span){if let Some(actual)=parsed.original_simple_expression{*origins.original_grammar=OriginalBodyGrammarOutcome::from_simple_return(actual,offset,item.header_span);}}
         }).map(|expr| StatementKind::Return(Some(expr)))
-    } else if starts_keyword(header, "throw") {
-        let rest = header.strip_prefix("throw").unwrap().trim_start();
-        parse_expr(
-            rest,
-            item.header_span.start + (rest.as_ptr() as usize - item.header.as_ptr() as usize),
-            diagnostics,
-        )
-        .map(StatementKind::Throw)
+    } else if starts_keyword(header, "throw") || joined_throw {
+        let Some((rest, head, offset)) = original_throw_parts(item) else { return unsupported(item); };
+        let head_issued = if !rest.is_empty() && item.children.is_empty() {
+            if joined_throw { true } else {
+                let Some(actual) = original_throw_head_checked(origins, head) else { return unsupported(item); };
+                actual
+            }
+        } else { false };
+        origins.require_original(head_issued, item.header_span, "throw_head");
+        parse_expr_observed(rest, offset, diagnostics, &mut |parsed| {
+            use crate::expression_parser::OriginalSimpleKind;
+            let issued = head_issued && parsed.original_simple_expression.is_some_and(|value|
+                matches!(value.kind(), OriginalSimpleKind::Complete | OriginalSimpleKind::PlainAssignment));
+            origins.require_original(issued, Span::new(offset, offset + rest.len()), "throw_expression");
+            origins.original_compound_seen_statement |= issued;
+        }).map(StatementKind::Throw)
     } else if let Some(label) = header.strip_prefix("goto ") {
         Some(StatementKind::Goto(label.trim().into()))
     } else if let Some(label) = header.strip_suffix(':') {
@@ -1148,8 +1274,8 @@ fn parse_one(
     } else if matches!(header, "break" | "continue") {
         let keyword = if header == "break" { "break" } else { "continue" };
         if origins.original_loop_control && item.children.is_empty() {
-            match origins.settings.map(|provider| provider.original_bare_loop_control(item.header_span, keyword)).transpose() {
-                Ok(actual) => origins.require_original(actual == Some(true), item.header_span, "loop_control_terminator"),
+            match original_bare_loop_control_question(origins.settings, item.header_span, keyword) {
+                Ok(actual) => origins.require_original(actual, item.header_span, "loop_control_terminator"),
                 Err(actual) => {
                     origins.original_compound_complete = false;
                     if let Some(admission) = diagnostics.admission {
@@ -1874,6 +2000,50 @@ pub fn parse_body_items_with_admitted_literals(
 
 #[cfg(test)]
 #[test]
+fn original_throw_head_default_denial_and_first_io_cannot_mint_child_authority() {
+    struct Probe { fail:bool, heads:std::cell::Cell<usize>, children:std::cell::Cell<usize> }
+    impl SettingSyntaxProvider for Probe {
+        fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{panic!("no settings")}
+        fn original_throw_head(&self,_:Span)->std::io::Result<bool>{self.heads.set(self.heads.get()+1);if self.fail{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(false)}}
+        fn original_expression(&self,_:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{self.children.set(self.children.get()+1);Ok(None)}
+    }
+    let source="/proc/probe(value)\n    throw value\n";
+    let syntax=crate::parse(source);
+    for fail in [false,true] {
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let admission=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let probe=Probe{fail,heads:0.into(),children:0.into()};
+        let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&probe),Some(&admission),Some(source),false);
+        assert_eq!(probe.heads.get(),1);assert!(body.original_grammar.is_none());
+        if fail {assert_eq!(probe.children.get(),0);assert_eq!(admission.take_operational_error().unwrap().raw_os_error(),Some(1450));}
+        else {assert!(probe.children.get()>0);assert!(admission.take_operational_error().is_none());}
+        drop(body);assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+    }
+}
+#[test]
+fn original_throw_padded_header_sends_the_complete_hidden_separator_gap_to_the_provider() {
+    let padded="/proc/probe(value)\n    throw   value\n";
+    let actual=padded.replace("throw   ","throw;  ");assert_eq!(padded.len(),actual.len());
+    let syntax=crate::parse(padded);
+    struct Deny<'a>{source:&'a str,calls:std::cell::Cell<usize>}
+    impl SettingSyntaxProvider for Deny<'_>{
+        fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{panic!("no settings")}
+        fn original_throw_head(&self,head:Span)->std::io::Result<bool>{assert_eq!(self.source.get(head.range()),Some("throw;  "));self.calls.set(self.calls.get()+1);Ok(false)}
+    }
+    let deny=Deny{source:&actual,calls:0.into()};
+    let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&deny),None,Some(&actual),false);
+    assert_eq!(deny.calls.get(),1);assert!(body.original_grammar.is_none());
+}
+#[test]
+fn joined_throw_has_no_compatibility_text_only_normalization_or_identifier_hijack() {
+    for header in ["thrower(value)","throwable = value","throwé(value)"]{assert!(!possible_joined_throw(header));}
+    let source="/proc/probe()\n    throw\"message\"\n";
+    let syntax=crate::parse(source);let body=parse_proc_body(&syntax.items[0]);
+    assert!(!matches!(body.statements[0].kind,StatementKind::Throw(_)),"no actual source-head loan means no joined normalization");
+    assert!(body.original_grammar.is_none());
+}
+
+#[test]
 fn switch_and_throw_spans_keep_their_exact_borrowed_occurrences() {
     let source = concat!(
         "/proc/probe(w, x)\n",
@@ -2571,6 +2741,82 @@ fn original_inline_zero_close_link_first_io_stops_before_its_leaf_without_author
 
 #[cfg(test)]
 #[test]
+fn original_inline_else_padded_compatibility_item_cannot_hide_a_separator() {
+    // Equal-length DATA header padding hides a source semicolon unless the
+    // actual provider receives the entire ELSE-to-child range. This negative
+    // control never issues an Original expression or body certificate.
+    let padded = "/proc/probe(flag, output)\n    if(!flag) output += 1\n    else  output += 2\n";
+    let actual = padded.replace("else  ", "else; ");
+    assert_eq!(padded.len(), actual.len());
+    let syntax = crate::parse(padded);
+    assert!(syntax.diagnostics.is_empty());
+    let items = &syntax.items[0].children;
+    assert_eq!(items.len(), 2);
+    struct Gap<'a> { actual: &'a str, calls: std::cell::Cell<usize> }
+    impl SettingSyntaxProvider for Gap<'_> {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+        fn original_leaf_block_link(&self, tail: Span, next: Span, link: OriginalLeafBlockLink, closes: usize) -> std::io::Result<bool> {
+            assert!(matches!(link, OriginalLeafBlockLink::Else));
+            assert_eq!(closes, 0);
+            assert_eq!(tail.end, next.start);
+            assert_eq!(self.actual.get(next.range()), Some("else; "), "all hidden separator bytes reach the real provider");
+            self.calls.set(self.calls.get() + 1);
+            Ok(false)
+        }
+    }
+    let gap = Gap { actual: &actual, calls: 0.into() };
+    let mut result = ParsedBody::default();
+    let origins = BodyOrigins {
+        source: Some(&actual), original_compound_complete: true,
+        #[cfg(debug_assertions)] trace_unissued_leaf: false,
+        #[cfg(debug_assertions)] first_unissued_leaf: None,
+        original_compound_seen_statement: true, original_loop_control: false, original_terminal_header: None,
+        original_grammar: &mut result.original_grammar, controls: &mut result.control_origins,
+        locals: &mut result.local_variables, settings: Some(&gap), admission: None, deferred_literal_purity: false,
+    };
+    assert!(!original_inline_if_continuation(&items[0], &items[1..], &origins));
+    assert_eq!(gap.calls.get(), 1);
+    assert!(result.original_grammar.is_none());
+}
+
+#[cfg(test)]
+#[test]
+fn original_inline_assignment_else_link_first_io_stops_before_either_child() {
+    struct Probe { conditions: std::cell::Cell<usize>, heads: std::cell::Cell<usize>, links: std::cell::Cell<usize> }
+    impl SettingSyntaxProvider for Probe {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+        fn original_expression(&self, source: &str, _: usize) -> std::io::Result<Option<crate::ParsedExpr>> {
+            assert!(!source.trim_start().starts_with("output"), "link failure stops before either assignment");
+            self.conditions.set(self.conditions.get() + 1);
+            // Negative-only transport: never manufactures an Original receipt.
+            Ok(None)
+        }
+        fn original_inline_if_assignment_head(&self, _: Span, _: Span) -> std::io::Result<bool> {
+            self.heads.set(self.heads.get() + 1); Ok(true)
+        }
+        fn original_leaf_block_link(&self, tail: Span, next: Span, link: OriginalLeafBlockLink, closes: usize) -> std::io::Result<bool> {
+            assert!(matches!(link, OriginalLeafBlockLink::Else));
+            assert_eq!(closes, 0);
+            assert!(next.end - next.start > "else".len(), "ELSE-to-child trivia is part of the proof");
+            assert_eq!(tail.end, next.start);
+            self.links.set(self.links.get() + 1);
+            Err(std::io::Error::from_raw_os_error(1450))
+        }
+    }
+    let source = "/proc/probe(flag, output)\n    if(!flag) output += 1\n    else output += 2\n";
+    let syntax = crate::parse(source);
+    assert!(syntax.diagnostics.is_empty());
+    let probe = Probe { conditions: 0.into(), heads: 0.into(), links: 0.into() };
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+    let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+    let body = parse_body_items_using_settings(&syntax.items[0].children, Some(&probe), Some(&admission), Some(source), false);
+    assert_eq!((probe.conditions.get(), probe.heads.get(), probe.links.get()), (1, 1, 1));
+    assert!(body.original_grammar.is_none());
+    assert_eq!(admission.take_operational_error().unwrap().raw_os_error(), Some(1450));
+}
+
+#[cfg(test)]
+#[test]
 fn original_comma_head_first_io_stops_before_initializer_without_authority() {
     struct Probe(std::cell::Cell<usize>);
     impl SettingSyntaxProvider for Probe {
@@ -2661,4 +2907,108 @@ fn original_operation_abort_revokes_internal_completion_and_keeps_the_actual_fir
     assert!(!origins.operational_ready());
     assert_eq!(polls.get(),1,"a stored failure stops before any later external poll");
     assert_eq!(admission.take_operational_error().unwrap().raw_os_error(),Some(1450));
+}
+
+#[cfg(test)]
+#[test]
+fn original_inline_each_boundary_question_default_denial_and_actual_io_are_not_grammar_authority() {
+    struct Deny;
+    impl SettingSyntaxProvider for Deny {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { panic!("no settings"); }
+    }
+    struct Fail(std::cell::Cell<usize>);
+    impl SettingSyntaxProvider for Fail {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { panic!("no settings"); }
+        fn original_inline_for_assignment_head(&self, gap: Span, name: Span) -> std::io::Result<bool> {
+            assert_eq!(gap, Span::new(10, 18));
+            assert_eq!(name, Span::new(13, 18));
+            self.0.set(self.0.get() + 1);
+            Err(std::io::Error::from_raw_os_error(1450))
+        }
+    }
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+    let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+    let gap = Span::new(10, 18);
+    let name = Span::new(13, 18);
+    assert!(!original_inline_for_assignment_boundary(None, gap, name, Some(&admission)));
+    assert!(!original_inline_for_assignment_boundary(Some(&Deny), gap, name, Some(&admission)));
+    assert!(admission.take_operational_error().is_none());
+    let fail = Fail(std::cell::Cell::new(0));
+    assert!(!original_inline_for_assignment_boundary(Some(&fail), gap, name, Some(&admission)));
+    assert_eq!(fail.0.get(), 1);
+    assert_eq!(admission.take_operational_error().unwrap().raw_os_error(), Some(1450));
+    // No mocked successful expression/header/grammar receipt is ever issued.
+}
+
+#[cfg(test)]
+#[test]
+fn original_try_catch_head_question_defaults_closed_and_actual_error_stops_before_bodies() {
+    struct Deny;
+    impl SettingSyntaxProvider for Deny {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+    }
+    let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+    let admission = crate::SettingAdmission::new(&used, 1 << 20, &|| Ok(()));
+    assert!(!original_try_catch_head_question(None, Span::new(1,4), Span::new(10,15), None, Some(&admission)));
+    assert!(!original_try_catch_head_question(Some(&Deny), Span::new(1,4), Span::new(10,15), None, Some(&admission)));
+    assert!(!admission.is_stopped());
+    struct Fail { heads: std::cell::Cell<usize>, expressions: std::cell::Cell<usize> }
+    impl SettingSyntaxProvider for Fail {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+        fn original_expression(&self, _: &str, _: usize) -> std::io::Result<Option<crate::ParsedExpr>> {
+            self.expressions.set(self.expressions.get()+1);
+            panic!("actual head error must stop before either body");
+        }
+        fn original_try_catch_heads(&self, _: Span, _: Span, parameter: Option<&crate::LocalVariableSyntax>) -> std::io::Result<bool> {
+            assert!(parameter.is_none());
+            self.heads.set(self.heads.get()+1);
+            Err(std::io::Error::from_raw_os_error(1450))
+        }
+    }
+    let source = "/proc/probe()\n    try\n        return 1\n    catch\n        return 2\n";
+    let syntax = crate::parse(source);
+    let fail = Fail { heads: 0.into(), expressions: 0.into() };
+    let body = parse_body_items_using_settings(&syntax.items[0].children, Some(&fail), Some(&admission), Some(source), false);
+    assert_eq!(fail.heads.get(), 1);
+    assert_eq!(fail.expressions.get(), 0);
+    assert!(body.original_grammar.is_none());
+    assert!(admission.is_stopped());
+    assert_eq!(admission.take_operational_error().unwrap().raw_os_error(), Some(1450));
+}
+
+// A source question, never a synthetic loop/header certificate. The caller has
+// independently proved the enclosing loop and still owns error publication.
+fn original_bare_loop_control_question(
+    provider: Option<&dyn SettingSyntaxProvider>, header: Span, keyword: &'static str,
+) -> std::io::Result<bool> {
+    provider.map(|p| p.original_bare_loop_control(header, keyword))
+        .transpose().map(|actual| actual == Some(true))
+}
+
+#[cfg(test)]
+#[test]
+fn original_bare_loop_control_question_defaults_closed_and_preserves_actual_error() {
+    struct Deny;
+    impl SettingSyntaxProvider for Deny {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+    }
+    struct Fail(std::cell::Cell<usize>);
+    impl SettingSyntaxProvider for Fail {
+        fn setting(&self, _: &Item) -> Result<SettingStatement, Diagnostic> { unreachable!() }
+        fn original_bare_loop_control(&self, header: Span, keyword: &'static str) -> std::io::Result<bool> {
+            assert_eq!(header, Span::new(10, 15));
+            assert!(matches!(keyword, "break" | "continue"));
+            self.0.set(self.0.get()+1);
+            Err(std::io::Error::from_raw_os_error(1450))
+        }
+    }
+    let fail=Fail(std::cell::Cell::new(0));
+    for keyword in ["break", "continue"] {
+        assert!(!original_bare_loop_control_question(None, Span::new(10,15), keyword).unwrap());
+        assert!(!original_bare_loop_control_question(Some(&Deny), Span::new(10,15), keyword).unwrap());
+        assert_eq!(original_bare_loop_control_question(Some(&fail), Span::new(10,15), keyword)
+            .unwrap_err().raw_os_error(), Some(1450));
+    }
+    assert_eq!(fail.0.get(),2);
+    // No fabricated positive loop, source or expression certificate.
 }

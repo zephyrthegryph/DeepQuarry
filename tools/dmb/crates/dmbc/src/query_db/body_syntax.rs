@@ -1556,6 +1556,31 @@ pub(super) mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_indexed_rhs_helpers_keep_their_real_source_and_lvalue_shapes() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     let compat = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/__byond_version_compat.dm"));
+     let actual_clamp = compat.lines().find(|line| line.starts_with("#define CLAMP(")).unwrap();
+     for name in ["adjust_brightness", "AverageColor", "build_icon_state_set"] {
+         let start = file.find(&format!("/proc/{name}(")).unwrap();
+         let end = file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+         let actual = &file[start..end];
+         let source = format!("{actual_clamp}\n{actual}");
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db,&source);
+         let input = original_input(&front,name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+                 panic!("whole authored helper indexed RHS: {name}");
+             };
+             assert!(proof.belongs_to(&body));
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_plain_index_reads_and_writes_keep_exact_root_roles() {
      use dm_tree::frontend::OriginalBodyDisposition as D;
      for (body, available) in [
@@ -1567,12 +1592,13 @@ pub(super) mod body_syntax_census_tests;
          // Plain indexed stores, including a distinct indexed RHS.
          ("L[key] = temp[key]\n    return L", true),
          ("Q[x.name] = x\n    return Q", true),
-         // Keep unqualified bracket kinds, call receivers, and evaluated keys out.
-         ("return target_list?[list_length]", false),
-         ("return get_list()[list_length]", false),
+         // Exact safe-name and ordinary call-result followers now have read proofs.
+         ("return target_list?[list_length]", true),
+         ("return get_list()[list_length]", true),
+         // Other receiver/key cohorts retain their independent restrictions.
          ("return target_list[object:key]", false),
          ("return target_list[object?.key]", false),
-         ("return target_list[list_length + 1]", false),
+         ("return target_list[list_length + 1]", true),
          ("L[key][list_length] = x\n    return L", false),
          ("Q[x.name] += x\n    return Q", false),
      ] {
@@ -1813,6 +1839,137 @@ pub(super) mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_guest_key_empty_for_initializer_keeps_absence_and_real_separators() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/client_lookup.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/IsGuestKey(").unwrap();
+     let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+     let actual = &file[start..end];
+     let markers = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/defines/engine/declare/markers.dm"));
+     let reads_from = markers.lines().find(|line| line.starts_with("#define READS_FROM(")).unwrap();
+     let leaf = "for (, i <= len, ++i)";
+     assert!(actual.contains(leaf));
+     for (body, expected) in [
+         (actual.to_owned(), true),
+         (actual.replace(leaf, "for (; i <= len; ++i)"), true),
+         (actual.replace(leaf, "for (ignored, i <= len, ++i)"), false),
+         (actual.replace(leaf, "for (; i <= len, ++i)"), false),
+         (actual.replace(leaf, "for (, , ++i)"), false),
+         (actual.replace(leaf, "for (, i <= len, )"), false),
+         (actual.replace(leaf, "for (, i <= len, bump(i))"), false),
+         (actual.replace(leaf, "for (i <= len, ++i)"), false),
+     ] {
+         let source = format!("{reads_from}\n{body}");
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "IsGuestKey");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let bound = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = bound.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else { panic!("actual empty initializer loop: {source}"); };
+                 assert!(proof.belongs_to(&bound));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let loop_stmt = parsed.statements.iter().find(|statement| matches!(&statement.kind, dm_syntax::StatementKind::For { .. })).unwrap();
+                 let dm_syntax::StatementKind::For { control: dm_syntax::ForControl::CStyle { initializer, condition, step }, .. } = &loop_stmt.kind else { panic!("same C style loop"); };
+                 assert!(initializer.is_none(), "no invented initializer or new declaration");
+                 assert!(condition.is_some() && step.is_some());
+                 assert!(!parsed.local_variables.entries().unwrap().iter().any(|row| row.source_kind == dm_syntax::LocalSourceKind::ForInitializer));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+
+ #[test]
+ fn actual_original_range_and_classic_bare_loop_exits_keep_exact_source_authority() {
+     // Macro-body loop shape in getFlatIcon: this is a source-backed subtree,
+     // not a claim that every other production in the whole helper is issued.
+     let icons=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+         .join("../../../../code/host/helpers/icons.dm")).unwrap();
+     assert!(icons.contains("for (var/i in 1 to process.len)"));
+     assert!(icons.contains("for (var/index_to_compare_to in 1 to layers.len)"));
+     let fixture="/proc/probe(process)\n    for(var/i in 1 to process.len)\n        if(!i)\n            continue\n        break\n    return 0\n";
+     for (text,expected) in [
+         (fixture.to_owned(),true),
+         (fixture.replace("for(var/i in 1 to process.len)","for(var/i=1; i<=process.len; i++)"),true),
+         (fixture.replace("for(var/i in 1 to process.len)","for(var/i=1, i<=process.len, i++)"),true),
+         (fixture.replace("            continue","            continue target"),false),
+         (fixture.replace("        break","        break target"),false),
+         (fixture.replace("var/i in 1", "i in 1"),false),
+         (fixture.replace("to process.len)", "to process.len step 2)"),false),
+         (fixture.replace("for(var/i in 1 to process.len)","for(var/i=1; i<=process.len, i++)"),false),
+         ("/proc/probe()\n    break\n    return 0\n".to_owned(),false),
+         ("/proc/probe()\n    continue\n    return 0\n".to_owned(),false),
+     ] {
+         let db=Arc::new(QueryDb::default());
+         let front=issued_original_fixture(&db,&text);
+         let input=original_input(&front,"probe");
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let disposition=body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition? else {
+                     panic!("same authenticated loop must issue: {text}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition,Err(BodySyntaxFailure::Operational(error))
+                     if error.kind()==std::io::ErrorKind::Unsupported),"{text}");
+             }
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_classic_additive_steps_require_bare_names_and_matching_separators() {
+     // Exact header and first body line from reject_bad_name; other body
+     // constructs are intentionally not substituted or claimed as covered.
+     let actual=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+         .join("../../../../code/host/helpers/text.dm")).unwrap();
+     assert!(actual.contains("for(var/i = 1, i <= t_len, i += length(char))"));
+     assert!(actual.contains("char = t_in[i]"));
+     let fixture="/proc/probe(t_in,t_len,char)\n    for(var/i = 1, i <= t_len, i += length(char))\n        char = t_in[i]\n    return char\n";
+     for (text,expected) in [
+         (fixture.to_owned(),true),
+         (fixture.replace("i += length(char)","i -= length(char)"),true),
+         (fixture.replace("1, i <= t_len,", "1; i <= t_len;"),true),
+         (fixture.replace("1, i <= t_len,", "1; i <= t_len,"),false),
+         (fixture.replace("i += length(char)","i *= length(char)"),false),
+         (fixture.replace("i += length(char)","i.field += length(char)"),false),
+         (fixture.replace("i += length(char)","i[1] += length(char)"),false),
+         (fixture.replace("i += length(char)","(i) += length(char)"),false),
+         (fixture.replace("i += length(char)","null += length(char)"),false),
+         (fixture.replace("i += length(char)","__PROC__ += length(char)"),false),
+         (fixture.replace("i += length(char)","i += (char += 1)"),false),
+     ] {
+         let db=Arc::new(QueryDb::default());
+         let front=issued_original_fixture(&db,&text);
+         let input=original_input(&front,"probe");
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let disposition=body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition? else {
+                     panic!("same authored additive classic step must issue: {text}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(matches!(disposition,Err(BodySyntaxFailure::Operational(error))
+                     if error.kind()==std::io::ErrorKind::Unsupported),"{text}");
+             }
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_classic_for_uses_matching_separators_and_authored_parts() {
      let fixture = r#"
 #define LAZYLEN(L) length(L)
@@ -1955,7 +2112,7 @@ pub(super) mod body_syntax_census_tests;
          (fixture.replace("if(QDELETED(txt_rank)) continue", "if(QDELETED(txt_rank)) continue target"), false),
          (fixture.replace("if(QDELETED(txt_rank)) continue", "if(QDELETED(txt_rank)); continue"), false),
          (fixture.replace("if(QDELETED(txt_rank)) continue", "do\n            continue\n        while(txt_rank)"), false),
-         (fixture.replace("if(QDELETED(txt_rank)) continue", "for(var/i in 1 to 2)\n            continue"), false),
+         (fixture.replace("if(QDELETED(txt_rank)) continue", "for(var/i in 1 to 2)\n            continue"), true),
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &text);
@@ -2232,7 +2389,7 @@ pub(super) mod body_syntax_census_tests;
          (fixture.replace("in rank_rows", "in rank_rows.list"), false),
          (fixture.replace("var/list/row", "var/row"), false),
          (fixture.replace("                break", "                break target"), false),
-         (fixture.replace("        for(var/datum/admin_rank/R in admin_ranks)", "        for(var/R in 1 to 2)"), false),
+         (fixture.replace("        for(var/datum/admin_rank/R in admin_ranks)", "        for(var/R in 1 to 2)"), true),
          ("/proc/probe()\n    break\n".to_owned(), false),
      ] {
          let db = Arc::new(QueryDb::default());
@@ -2798,6 +2955,121 @@ pub(super) mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_md5asfile_power_uses_the_real_wrap_macro_and_whole_body() {
+     let icons = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     let math = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/defines/host/math.dm"));
+     let actual_wrap = math.lines().find(|line|line.starts_with("#define WRAP(")).unwrap();
+     let start=icons.find("/proc/md5asfile(").unwrap();
+     let end=icons[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+     let actual=&icons[start..end];
+     assert!(actual.contains("notch = WRAP(notch+1, 0, 2**15)"));
+     let source=format!("{actual_wrap}\n{actual}");
+     let db=Arc::new(QueryDb::default());
+     let front=issued_original_fixture(&db,&source);
+     let input=original_input(&front,"md5asfile");
+     let product=db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+         let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()? else {
+             panic!("actual md5asfile whole body with real numeric WRAP expansion");
+         };
+         assert!(proof.belongs_to(&body));
+         Ok::<(),BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_stripped_input_helpers_keep_their_real_questions_and_type_unions() {
+     let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/text.dm")).replace("\r\n","\n");
+     let misc=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/defines/content/misc.dm"));
+     let actual_max=misc.lines().find(|line|line.split_whitespace().nth(1)==Some("MAX_MESSAGE_LEN")).unwrap();
+     for(name,wanted)in[("stripped_input","text"),("stripped_multiline_input","message")] {
+         let start=file.find(&format!("/proc/{name}(")).unwrap();
+         let end=file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+         let actual=&file[start..end];
+         assert!(actual.contains(&format!("input(user, message, title, default) as {wanted}|null")));
+         let source=format!("{actual_max}\n{actual}");
+         let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&source);let input=original_input(&front,name);
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()? else {panic!("whole real input helper: {name}");};
+             assert!(proof.belongs_to(&body));
+             let storage=product.parsed().unwrap().statement_storage();
+             let dm_syntax::StatementKind::Var{value:Some(initializer),..}=&storage.parsed().statements[0].kind else{panic!("actual input local initializer")};
+             let form=dm_syntax::native_special_forms::input(initializer).unwrap().unwrap();
+             assert_eq!(form.types,[wanted,"null"]);assert!(form.in_list.is_none());assert_eq!(form.args.len(),4);
+             for(argument,wanted)in form.args.iter().zip(["user","message","title","default"]) {
+                 assert!(matches!(&argument.kind,dm_syntax::ExprKind::Ident(name)if name==wanted));
+             }
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_icon_helpers_reuse_typed_float_and_name_addition_read_composition() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     let appearance = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/defines/base/appearance.dm"));
+     let actual_ui = appearance.lines().find(|line| line.split_whitespace().nth(1) == Some("APPEARANCE_UI")).unwrap();
+     for name in ["sort_atoms_by_layer", "gen_hud_image"] {
+         let start = file.find(&format!("/proc/{name}(")).unwrap();
+         let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+         let actual = &file[start..end];
+         let source = format!("{actual_ui}\n{actual}");
+         if name == "gen_hud_image" { assert!(source.contains("img.layer = MOB_LAYER-0.2")); }
+         else { assert!(source.contains("result[gap+i]")); }
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, name);
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else { panic!("actual icon helper composition: {name}"); };
+             assert!(proof.belongs_to(&body));
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_get_area_turfs_inline_each_uses_existing_header_and_actual_assignment_head() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/area_queries.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/get_area_turfs(").unwrap();
+     let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+     let actual = &file[start..end];
+     let leaf = "for(var/turf/T in N) turfs += T";
+     assert!(actual.contains(leaf));
+     for (source, expected) in [
+         (actual.to_owned(), true),
+         (actual.replace(leaf, "for(var/turf/T in N); turfs += T"), false),
+         (actual.replace(leaf, "for(var/turf/T in N) turfs.field += T"), false),
+         (actual.replace(leaf, "for(var/turf/T in N) turfs[T] += T"), false),
+         (actual.replace(leaf, "for(var/turf/T in N) return T"), false),
+         (actual.replace(leaf, "for(var/turf/T in N) turfs += T++"), false),
+         (actual.replace(leaf, "for(var/i=0, i<1, i++) turfs += i"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "get_area_turfs");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual complete get_area_turfs inline ForList must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {
      let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
      fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {
@@ -3060,6 +3332,210 @@ pub(super) mod body_syntax_census_tests;
                      panic!("actual indexed postfix statement is available");
                  };
                  assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_icon_read_followers_preserve_source_conditions_and_safe_ast() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     // Exact authored condition and initializer, tested in small declared
+     // bodies. This does not claim the remaining icon helper is witnessed.
+     let condition = file.lines().find(|line| line.contains("ignoreGreyscale && rgb2num(this_color, COLORSPACE_HSV)[2] == 0")).unwrap().trim();
+     let initializer = file.lines().find(|line| line.trim() == "var/dirs = dir_counts?[state]").unwrap().trim();
+     let condition_source = format!("/proc/probe(ignoreGreyscale, this_color)\n    {condition}\n        return 1\n    return 0\n");
+     let safe_source = format!("/proc/probe(list/dir_counts, state)\n    {initializer}\n    return dirs\n");
+     for (text, expected) in [
+         (condition_source.clone(), true),
+         (safe_source.clone(), true),
+         (condition_source.replace("[2]", "[2](this_color)"), false),
+         (safe_source.replace("var/dirs = dir_counts?[state]", "dir_counts?[state] = state"), false),
+         (safe_source.replace("dir_counts?[state]", "dir_counts? [state]"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual icon read followers must be available: {text}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_dummy_savefile_keeps_whole_authored_try_catch_and_throw() {
+     // This control requires BOTH the closed Try/Catch packet and the separate
+     // Throw packet. It must fail at a remaining real frontier rather than
+     // omit or replace a production statement to manufacture whole coverage.
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/get_dummy_savefile(").unwrap();
+     let end = file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+     let source = &file[start..end];
+     assert!(source.contains("catch(var/exception/error)"));
+     assert!(source.contains("throw EXCEPTION("));
+     let db = Arc::new(QueryDb::default());
+     // EXCEPTION is the actual issued OriginalChecker0290 default macro from
+     // dm-preprocess/original_default_macro_data.rs, not a fixture substitute.
+     let front = issued_original_fixture(&db, source);
+     let input = original_input(&front, "get_dummy_savefile");
+     let product = db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+         let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else { panic!("whole actual get_dummy_savefile must keep every statement"); };
+         assert!(proof.belongs_to(&body));
+         let parsed = product.parsed().unwrap().statement_storage().parsed();
+         let caught = parsed.statements.iter().find_map(|statement| match &statement.kind {
+             dm_syntax::StatementKind::Try { catch_parameter_count, catch_body, .. } => {
+                 assert_eq!(*catch_parameter_count, 1); Some(catch_body)
+             }, _ => None,
+         }).unwrap();
+         let dm_syntax::StatementKind::If { then_branch, .. } = &caught[0].kind else { panic!("actual conditional rethrow"); };
+         assert!(matches!(&then_branch[0].kind, dm_syntax::StatementKind::Throw(_)), "actual throw statement retained");
+         Ok::<(), BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_try_catch_helpers_need_exact_heads_paths_and_block_links() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/text.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/safe_json_decode(").unwrap();
+     let end = file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+     let actual = &file[start..end];
+     let catch_line = actual.lines().find(|line|line.trim_start().starts_with("catch")).unwrap();
+     let icons = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/icons.dm")).replace("\r\n", "\n");
+     let real_typed_catch = icons.lines().find(|line|line.trim() == "catch(var/exception/error)").unwrap();
+     // Whole real bare-catch helper first. Other rows are explicitly authored
+     // header-shape variants, not claims about the whole get_dummy_savefile.
+     for (text, expected) in [
+         (actual.to_owned(), true),
+         (actual.replace(catch_line, real_typed_catch), true),
+         (actual.replace(catch_line, "\tcatch(var/absent/error)"), true),
+         (actual.replace(catch_line, "\tcatch()"), false),
+         (actual.replace(catch_line, "\tcatch(var/error)"), false),
+         (actual.replace(catch_line, "\tcatch(exception/error)"), false),
+         (actual.replace(catch_line, "\tcatch(var/static/error)"), false),
+         (actual.replace(catch_line, "\tcatch(var/exception/error, var/exception/other)"), false),
+         (actual.replace(catch_line, "\tcatch(var/datum/exception/error)"), false),
+         (actual.replace("\ttry\n", "\ttry;\n"), false),
+         (actual.replace(catch_line, "\tcatch;"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "safe_json_decode");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else { panic!("actual try/catch source shape: {text}"); };
+                 assert!(proof.belongs_to(&body));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let dm_syntax::StatementKind::Try { catch_parameter_count, .. } = &parsed.statements[0].kind else { panic!("same native Try"); };
+                 assert_eq!(*catch_parameter_count, usize::from(text.contains("catch(var/")));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_throw_requires_exact_keyword_child_and_keeps_ordinary_names() {
+     for(source,wanted)in[
+         ("/proc/probe(value)\n    throw value\n",true),
+         ("/proc/probe(value)\n    throw(value)\n",true),
+         ("/proc/probe(value)\n    throw -value\n",true),
+         ("/proc/probe()\n    throw\"message\"\n",true),
+         ("/proc/probe(value)\n    throw value = 1\n",true),
+         ("/proc/probe(value)\n    thrower(value)\n",true),
+         ("/proc/probe(value)\n    throwable = value\n",true),
+         ("/proc/probe(value)\n    throw\n",false),
+         ("/proc/probe(value)\n    throw value:field\n",false),
+         ("/proc/probe(value)\n    throw value\n        value = 1\n",false),
+     ] {
+         let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,source);let input=original_input(&front,"probe");
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let actual=body.original_code_disposition();
+             if wanted {let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=actual? else{panic!("actual throw/name scope: {source}");};assert!(proof.belongs_to(&body));}
+             else {assert!(!matches!(actual,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))),"{source}");}
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+ #[test]
+ fn actual_original_scratch_throw_line_preserves_builtin_exception_expansion_and_actual_text() {
+     let icons=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/icons.dm"));
+     let line=icons.lines().find(|line|line.trim_start().starts_with("throw EXCEPTION(")&&line.contains("get_dummy_savefile failed")).unwrap().trim();
+     // Explicit isolated syntax fixture: the typed error parameter mirrors
+     // the real catch binding. No whole helper or runtime behavior is claimed.
+     let source=format!("/proc/probe(exception/error)\n    {line}\n");
+     let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&source);let input=original_input(&front,"probe");
+     let product=db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+         let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()? else{panic!("actual exception throw expression");};
+         assert!(proof.belongs_to(&body));
+         let storage=product.parsed().unwrap().statement_storage();
+         let dm_syntax::StatementKind::Throw(value)=&storage.parsed().statements[0].kind else{panic!("actual Throw root");};
+         assert!(matches!(&value.kind,dm_syntax::ExprKind::Unary{op,value}if op=="new"&&matches!(&value.kind,dm_syntax::ExprKind::Call{callee,args}if matches!(&callee.kind,dm_syntax::ExprKind::TypePath(path)if path=="/exception")&&args.len()==1)));
+         Ok::<(),BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_sanitize_name_inline_else_requires_exact_keyword_and_assignment() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/text.dm")).replace("\r\n", "\n");
+     let mut lines = file.lines();
+     let then = lines.find(|line| line.trim_start().starts_with("if(last_char_group<2)")
+         && line.contains("output += ascii2text(ascii_char-32)")).unwrap().trim();
+     let other = lines.next().unwrap().trim();
+     assert!(other.starts_with("else") && other.contains("output += ascii2text(ascii_char)"));
+     // Exact two authored lines, isolated from unrelated switch/loop forms.
+     let source = format!("/proc/probe(output, last_char_group, ascii_char)\n    {then}\n    {other}\n    return output\n");
+     for (text, expected) in [
+         (source.clone(), true),
+         (source.replace("output += ascii2text(ascii_char)", "output -= ascii2text(ascii_char)"), true),
+         (source.replace("else", "elsewhere"), false),
+         (source.replace(other, "else; output += ascii2text(ascii_char)"), false),
+         (source.replace("output += ascii2text(ascii_char)", "output() += ascii2text(ascii_char)"), false),
+         (source.replace("output += ascii2text(ascii_char)", "output += target.field = ascii_char"), false),
+         (source.replace("    return output", "    else output += 1\n    return output"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual final inline ELSE assignment must be available: {text}");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let storage = product.parsed().unwrap().statement_storage();
+                 let dm_syntax::StatementKind::If { else_branch, .. } = &storage.parsed().statements[0].kind
+                     else { panic!("actual if with inline else"); };
+                 let child = &else_branch[0];
+                 assert_eq!(child.span.start, child.header_span.start, "else keyword is outside the actual child span");
+                 assert_eq!(text.get(child.header_span.range()).unwrap().trim(), other.strip_prefix("else").unwrap().trim().replace("+=", if text.contains("output -= ascii2text(ascii_char)") { "-=" } else { "+=" }));
              } else {
                  assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
              }
@@ -3364,6 +3840,65 @@ pub(super) mod body_syntax_census_tests;
          let body = input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
          let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else { panic!("actual whole IsGuestKey must be available"); };
          assert!(proof.belongs_to(&body));
+         Ok::<(),BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_ionnum_preserves_whole_authored_unweighted_pick_interpolations() {
+     let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/random.dm")).replace("\r\n","\n");
+     let start=file.find("/proc/ionnum(").unwrap();
+     let end=file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+     let text=&file[start..end];
+     assert!(text.contains("pick(\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"0\")"));
+     let db=Arc::new(QueryDb::default());
+     let front=issued_original_fixture(&db,text);
+     let input=original_input(&front,"ionnum");
+     let product=db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+         let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()? else { panic!("actual whole ionnum must be available"); };
+         assert!(proof.belongs_to(&body));
+         let parsed=product.parsed().unwrap().statement_storage().parsed();
+         let dm_syntax::StatementKind::Return(Some(expression))=&parsed.statements[0].kind else { panic!("actual return"); };
+         let dm_syntax::ExprKind::Literal(literal)=&expression.kind else { panic!("actual interpolated literal"); };
+         let parts=literal.prepared_syntax_parts().expect("already prepared actual literal")
+             .expect("successful actual literal preparation").expect("actual interpolated template");
+         assert_eq!(parts.expressions.len(),4);
+         for (expression,count) in parts.expressions.iter().zip([10,8,8,8]) {
+             let pick=dm_syntax::native_special_forms::pick(expression).unwrap();
+             assert_eq!(pick.choices().count(),count);
+             assert!(pick.choices().all(|choice|choice.weight.is_none()));
+         }
+         Ok::<(),BodySyntaxFailure>(())
+     }).unwrap();
+ }
+
+ #[test]
+ fn actual_original_generate_key_keeps_all_authored_unweighted_arms_beyond_sixteen() {
+     let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/text.dm")).replace("\r\n","\n");
+     let start=file.find("/proc/GenerateKey(").unwrap();
+     let end=file[start+1..].find("\n/proc/").map(|at|start+1+at).unwrap();
+     let text=&file[start..end];
+     assert_eq!(text.matches("newKey += pick(").count(),3);
+     let db=Arc::new(QueryDb::default());
+     let front=issued_original_fixture(&db,text);
+     let input=original_input(&front,"GenerateKey");
+     let product=db.syntax_product_checked(&input).unwrap();
+     setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+         let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+         let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()? else { panic!("actual whole GenerateKey must be available"); };
+         assert!(proof.belongs_to(&body));
+         let parsed=product.parsed().unwrap().statement_storage().parsed();
+         let mut counts=Vec::new();
+         for statement in &parsed.statements {
+             if let dm_syntax::StatementKind::Assign { value, .. }=&statement.kind {
+                 let pick=dm_syntax::native_special_forms::pick(value).unwrap();
+                 assert!(pick.choices().all(|choice|choice.weight.is_none()));
+                 counts.push(pick.choices().count());
+             }
+         }
+         assert_eq!(counts,[19,18,10]);
          Ok::<(),BodySyntaxFailure>(())
      }).unwrap();
  }

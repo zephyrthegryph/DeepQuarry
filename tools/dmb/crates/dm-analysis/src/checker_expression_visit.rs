@@ -635,6 +635,12 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         value: Option<&'a Expr>,
         at: Span,
     ) -> Result<(), D::Error> {
+        self.declaration_at(declaration, value, at, None)
+    }
+    fn declaration_at(
+        &mut self, declaration: &'a str, value: Option<&'a Expr>, at: Span,
+        diagnostic_at: Option<Span>,
+    ) -> Result<(), D::Error> {
         let matches = self.local_syntax.in_span(at).map_err(str::to_owned)?;
         let fact = match matches {
             [fact] => fact,
@@ -664,7 +670,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         // The ledger already applied the ORIGINAL leading-only modifier and
         // one-list suffix rules. Never normalize that source path a second time.
         let source_type = fact.type_path_using(|span|self.source.get(span.range()).ok_or("native local component source unavailable")).map_err(str::to_owned)?;
-        let ty=if let Some(observer)=self.type_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|path|observer.undefined_type(path,fact.anchor),&mut||self.prefix_demand.checkpoint())?}else{checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|_|Err(D::Error::from("parameter checker type needs undefined-type diagnostic projection")),&mut||self.prefix_demand.checkpoint())?};
+        let ty=if let Some(observer)=self.type_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|path|observer.undefined_type(path,diagnostic_at.unwrap_or(fact.anchor)),&mut||self.prefix_demand.checkpoint())?}else{checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|_|Err(D::Error::from("parameter checker type needs undefined-type diagnostic projection")),&mut||self.prefix_demand.checkpoint())?};
         if let Some(value) = value {
             let hint=ty.receiver()?;
             let warning_at = fact.checker_statement_anchor().unwrap_or(at);
@@ -2291,10 +2297,10 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
     fn iterable(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{let ty=self.with_warning_anchor(Self::warning_source(at),|this|Walker::expression(this,expression,None))?;self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.iterable(ty,at)?;}Ok(())}
     fn invalid_range(&mut self,at:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.invalid_range(at)?;}Ok(())}
     fn catch_parameters(&mut self,count:usize,at:Span,catch_header:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.catch_errors.as_mut(){observer.parameters(count,at,catch_header)?;}Ok(())}
-    fn catch_binding(&mut self,binding:Option<&'a str>,at:Span)->Result<(),D::Error>{
+    fn catch_binding(&mut self,binding:Option<&'a str>,at:Span,try_at:Span)->Result<(),D::Error>{
         let Some(binding)=binding else{return Ok(())};if binding.trim().is_empty(){return Ok(())}
         let ledger=self.local_syntax;let facts=ledger.in_span(at).map_err(str::to_owned)?;let mut found=false;
-        for fact in facts.iter().filter(|fact|fact.source_kind==dm_syntax::LocalSourceKind::CatchBinding){self.prefix_demand.checkpoint()?;found=true;self.declaration(binding,None,Span::new(fact.anchor.start,fact.name.end))?;}
+        for fact in facts.iter().filter(|fact|fact.source_kind==dm_syntax::LocalSourceKind::CatchBinding){self.prefix_demand.checkpoint()?;found=true;self.declaration_at(binding,None,Span::new(fact.anchor.start,fact.name.end),Some(try_at))?;}
         if !found{return Err("actual catch binding has no primary parameter facts".into())}Ok(())
     }
 }

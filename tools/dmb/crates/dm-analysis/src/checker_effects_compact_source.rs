@@ -68,7 +68,8 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
    return Err("compact graph replay belongs to another source".into())
   }
   Self::build_rows_reserved_checked(source,width,resolver,admission,checkpoint,&mut|start,width,_,_| {
-   Ok(GraphRows::<std::sync::Arc<EffectPageFacts>>::Replay { source, replay, start, count: width.min(source.len()-start) })
+   let row:GraphRows<'_,std::sync::Arc<EffectPageFacts>>=GraphRows::Replay { source, replay, start, count: width.min(source.len()-start) };
+   Ok(row)
   },work)
  }
 

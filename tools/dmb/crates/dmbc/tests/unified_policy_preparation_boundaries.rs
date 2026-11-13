@@ -3931,3 +3931,57 @@ fn hidden_original_grammar_census_surveys_actual_receipts_without_publication() 
         assert!(!target.join("deepquarry.dmb").exists() && !target.join("deepquarry.rsc").exists());
     }
 }
+
+#[test]
+#[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]
+fn public_original_caught_type_error_uses_pinned_try_anchor_contract() {
+    use dq_analyze::{
+        captured_allow_annotations::{full_unused, Operation},
+        captured_generator_budget::Budget,
+        selected_exclusions_wire::{CombinedTerminal, Roster},
+    };
+    use std::{ffi::OsStr, time::{Duration, SystemTime, UNIX_EPOCH}};
+    let root = test_scratch::dir("public-caught-type-anchor");
+    let transport = test_scratch::dir("public-caught-type-anchor-transport");
+    let daemon = LibraryTransport { root: &transport, namespace: format!("caught-type-anchor-{}-{}", std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()) };
+    put(&root, "deepquarry.dme", "#include \"code/probe.dm\"\n");
+    put(&root, "tools/ci/lint_scopes.toml", report_configuration::with_overlay(""));
+    // Focused diagnostic fixture, not a stand-in body for a real helper. Pinned
+    // DreamChecker 0290db5c lib.rs TryCatch calls visit_var(location, ..), where
+    // location is TRY; visit_var uses that point for env.static_type. This is
+    // a native expected-contract control, NOT an independently executed oracle.
+    let source = "/proc/probe()\n    try\n        return 1\n    catch(var/absent/error)\n        return 2\n";
+    put(&root, "code/probe.dm", source);
+    let mut build = request(&root, Q::DocSnippets);
+    build.cache_root = Some(test_scratch::dir("public-caught-type-cache"));
+    let intent = build.policy_inputs.as_mut().unwrap();
+    intent.workspace_auxiliary.clear();
+    intent.workspace.as_mut().unwrap().recursive_roots = vec![root.join("code"), root.join("maps")];
+    let budget = Budget::new(1 << 20).unwrap();
+    let mut work = Operation { budget: &budget, poll: &|| Ok(()) };
+    let all = full_unused::registered_full_selection(&[], &mut work).unwrap();
+    let roster = Roster::WithSemanticReads;
+    let exclusions: Vec<_> = all.names().iter().filter(|name| !roster.names().contains(&name.as_str())).map(|name| format!("-{name}")).collect();
+    let request_path = transport.join("caught-type-anchor.json");
+    put(&transport, "caught-type-anchor.json", serde_json::to_vec(&serde_json::json!({"build":build,"exclusions":exclusions})).unwrap());
+    let output = daemon.run(&[OsStr::new("checker-analyze-selected"), request_path.as_os_str(), OsStr::new("--report-batch")], Duration::from_secs(90)).unwrap();
+    assert_eq!(output.status.code(), Some(1), "{}", String::from_utf8_lossy(&output.stderr));
+    let end = output.stdout.iter().position(|byte| *byte == b'\n').unwrap();
+    let terminal: CombinedTerminal = serde_json::from_slice(&output.stdout[..end]).unwrap();
+    terminal.require().unwrap();
+    assert_eq!(terminal.roster, roster);
+    let (checker, _) = output.stdout[end+1..].split_at(terminal.checker.length as usize);
+    let checker: serde_json::Value = serde_json::from_slice(checker).unwrap();
+    let rows = checker["diagnostics"].as_array().unwrap();
+    assert_eq!(rows.len(), 1, "{checker}");
+    let row = &rows[0];
+    assert_eq!(row["family"], "undefined_type");
+    assert_eq!(row["message"], "undefined type: /absent");
+    assert_eq!(row["phase"], "body");
+    assert_eq!(row["location_kind"], "source");
+    assert_eq!(Path::new(row["file"].as_str().unwrap()), Path::new("code/probe.dm"));
+    assert_eq!(row["severity"], "error");
+    assert_eq!(row["line"], 2);
+    assert_eq!(row["column"], 5);
+    assert_eq!(row["notes"], serde_json::json!([]));
+}

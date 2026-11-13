@@ -230,7 +230,8 @@ fn original_declaration_lines(source:&str,range:Span,tokens:&[SpanToken])->Vec<L
 // Actual native source masks advanced over newly issued complete tokens only.
 // Existing primary layout admission owns these buffers; no source/model grant.
 #[derive(Default)]struct NativeLayoutMaskCursor{
- visible:Vec<u8>,delimiters:Vec<u8>,multiline_literals:Vec<Span>,tokens:usize,
+ visible:String,delimiters:Vec<u8>,multiline_literals:Vec<Span>,tokens:usize,
+ #[cfg(test)] visible_appended_bytes:usize,
 }
 impl NativeLayoutMaskCursor{
  #[cfg(test)]
@@ -238,17 +239,31 @@ impl NativeLayoutMaskCursor{
  fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->bool{
   let Some(text)=source.get(range.range())else{return false};
   if self.visible.len()>text.len()||self.tokens>tokens.len(){return false}
-  let old=self.visible.len();self.visible.extend_from_slice(&text.as_bytes()[old..]);self.delimiters.extend_from_slice(&text.as_bytes()[old..]);
+  let old=self.visible.len();let Some(tail)=text.get(old..)else{return false};
+  self.delimiters.extend_from_slice(tail.as_bytes());
+  // The prior visible prefix is already a valid String. Only append newly
+  // issued raw gaps and ASCII masks; never validate or rewrite that prefix.
+  let mut visible_cursor=old;
   for token in tokens.range(self.tokens,tokens.len()).expect("checked mask token frontier").iter(){
    if original.is_some_and(|state|!state.poll()){return false}
    if token.span.start<range.start+old||token.span.end>range.end||token.span.end<token.span.start{return false}
-   let multiline=matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&token.text(source).contains('\n');
+   let Some(raw)=source.get(token.span.range())else{return false};
+   let multiline=matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&raw.contains('\n');
    let visible_mask=token.kind==TokenKind::Comment||multiline;
    let delimiter_mask=visible_mask||matches!(token.kind,TokenKind::String|TokenKind::Resource|TokenKind::Interpolation);
-   if visible_mask||delimiter_mask{for(at,byte)in text.as_bytes()[token.span.start-range.start..token.span.end-range.start].iter().enumerate(){
+   if visible_mask{
+    let Some(gap)=text.get(visible_cursor..token.span.start-range.start)else{return false};
+    self.append_visible(gap);
+   }
+   if visible_mask||delimiter_mask{for(at,byte)in raw.as_bytes().iter().enumerate(){
     if at%1024==0&&original.is_some_and(|state|!state.poll()){return false}
-    if !matches!(*byte,b'\r'|b'\n'){let at=token.span.start-range.start+at;if visible_mask{self.visible[at]=b' ';}if delimiter_mask{self.delimiters[at]=b' ';}}
+    if visible_mask{
+     self.visible.push(if matches!(*byte,b'\r'|b'\n'){char::from(*byte)}else{' '});
+     #[cfg(test)]{self.visible_appended_bytes+=1;}
+    }
+    if !matches!(*byte,b'\r'|b'\n')&&delimiter_mask{self.delimiters[token.span.start-range.start+at]=b' ';}
    }}
+   if visible_mask{visible_cursor=token.span.end-range.start;}
    if token.kind==TokenKind::Interpolation{
     let Some((facts,origin))=facts else{return false};
     let Some(start)=origin.checked_add(token.span.start)else{return false};
@@ -264,9 +279,15 @@ impl NativeLayoutMaskCursor{
    }
    if multiline&&!push_layout(&mut self.multiline_literals,Span::new(token.span.start-range.start,token.span.end-range.start),original){return false}
   }
+  let Some(tail)=text.get(visible_cursor..)else{return false};
+  self.append_visible(tail);
   self.tokens=tokens.len();true
  }
- fn visible(&self)->&str{std::str::from_utf8(&self.visible).expect("native comment mask preserves UTF8 exactly")}
+ fn append_visible(&mut self,raw:&str){
+  self.visible.push_str(raw);
+  #[cfg(test)]{self.visible_appended_bytes+=raw.len();}
+ }
+ fn visible(&self)->&str{self.visible.as_str()}
 }
 fn original_declaration_lines_with_storage(source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->Vec<Line>{
  original_declaration_lines_in_window(source,range,TokenWindow::from_slice(tokens),original,None)
@@ -1620,7 +1641,36 @@ fn frozen_actual_original_declaration_lines_with_storage(source:&str,range:Span,
 
  fn shape(rows:&[Line])->Vec<(usize,usize,usize,usize,bool,bool)>{rows.iter().map(|x|(x.indent,x.header_start,x.header_end,x.end,x.explicit_block_opener,x.same_line_body)).collect()}
  #[test]fn same_native_mask_kernel_matches_actual_old_utf8_comment_literal_and_resource_layout(){for source in ["/datum/ÃŽÂ±\n    var/value=\"text // not comment\"\n    /* multi\n      comment */ var/next=2\n", "/proc/p()\n    return {\"block\ntext\"}\n/datum/later\n", "/datum/ÃŽÂ±\n    var/icon='icons/a{b}.dmi'\n"]{let tokens=lex_spans(source).tokens;let old=frozen_actual_original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);let new=original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);assert_eq!(shape(&new),shape(&old));}}
- #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/ÃŽÂ±\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_slice());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
+ #[test]
+ fn incremental_visible_string_emits_each_new_utf8_byte_once_and_matches_frozen_masks() {
+  let source="/datum/\u{3b1}\n    var/value=\"\u{3b2}\"\n    /* \u{3b3}\r\n       \u{3b4} */ var/next=2\n    var/multi={\"\u{3b5}\r\n\u{3b6}\"}\n    var/resource='icons/\u{3b7}.dmi'\n";
+  let tokens=lex_spans(source).tokens;
+  let mut wanted_visible=source.as_bytes().to_vec();let mut wanted_delimiters=wanted_visible.clone();
+  for token in &tokens{
+   let raw=token.text(source);let visible=token.kind==TokenKind::Comment||(matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&raw.contains('\n'));
+   let delimiters=visible||matches!(token.kind,TokenKind::String|TokenKind::Resource|TokenKind::Interpolation);
+   for at in token.span.range(){if !matches!(source.as_bytes()[at],b'\r'|b'\n'){if visible{wanted_visible[at]=b' ';}if delimiters{wanted_delimiters[at]=b' ';}}}
+  }
+  let mut masks=NativeLayoutMaskCursor::default();
+  for(index,token)in tokens.iter().enumerate(){
+   let previous=masks.visible.clone();
+   assert!(masks.advance(source,Span::new(0,token.span.end),&tokens[..=index],None));
+   assert_eq!(&masks.visible[..previous.len()],previous.as_str(),"settled visible prefix is untouched");
+   assert_eq!(masks.visible().len(),token.span.end);
+   assert_eq!(masks.visible_appended_bytes,token.span.end,"only new source bytes are transformed, including multi-byte masked characters");
+  }
+  if masks.visible.len()<source.len(){assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));}
+  assert_eq!(masks.visible().as_bytes(),wanted_visible);assert_eq!(masks.delimiters,wanted_delimiters);
+  assert_eq!(masks.visible_appended_bytes,source.len());
+  let before=masks.visible_appended_bytes;for _ in 0..1024{assert_eq!(masks.visible().len(),source.len());}assert_eq!(masks.visible_appended_bytes,before,"borrowed visible view performs no append/revalidation pass");
+ }
+ #[test]
+ fn incremental_visible_string_refuses_non_utf8_token_boundaries_without_invalid_string_storage() {
+  let source="\u{3b1}";let tokens=[SpanToken{kind:TokenKind::Ident,span:Span::new(0,1)}];
+  let mut masks=NativeLayoutMaskCursor::default();assert!(!masks.advance(source,Span::new(0,source.len()),&tokens,None));
+  assert!(masks.visible().is_empty());assert_eq!(masks.visible_appended_bytes,0);
+ }
+ #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/ÃŽÂ±\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_str());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
 }
 
 #[cfg(test)]mod demanded_native_inline_tests{use super::*;

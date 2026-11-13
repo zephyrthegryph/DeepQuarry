@@ -57,7 +57,7 @@ impl<'a> EvaluatedObserver<'a> for Probe {
     fn binding(&mut self, _: &'a str, _: Option<&'a Expr>, _: bool, _: Span) -> Result<(), String> {
         Ok(())
     }
-    fn catch_binding(&mut self, _: Option<&'a str>, _: Span) -> Result<(), String> {
+    fn catch_binding(&mut self, _: Option<&'a str>, _: Span, _: Span) -> Result<(), String> {
         Ok(())
     }
 }

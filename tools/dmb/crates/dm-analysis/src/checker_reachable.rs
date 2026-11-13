@@ -505,7 +505,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                 if let Some(observer)=self.observer.as_deref_mut(){observer.catch_parameters(*catch_parameter_count,statement.header_span,*catch_header_span)?;}
                 self.scoped(ScopeKind::Catch, |this| {
                     if let Some(observer) = this.observer.as_deref_mut() {
-                        observer.catch_binding(catch_binding.as_deref(), *catch_header_span)?;
+                        observer.catch_binding(catch_binding.as_deref(), *catch_header_span, statement.header_span)?;
                     }
                     this.block(catch_body, false)
                 })?;

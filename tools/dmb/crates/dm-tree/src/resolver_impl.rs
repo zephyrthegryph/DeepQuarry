@@ -516,6 +516,10 @@ impl SemanticTree {
             Q::CheckerBuiltinProc{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},false,||validate(profile),work),
             Q::SourceDeclarationChain{owner,name,verb}=>self.source_declaration_chain_using(owner,name,verb,query,Some(work)),
             Q::Type(_)=>Ok(dm_ir::Resolver::resolve(self,query)),
+            // Parent is a scalar lookup through the SAME certified hierarchy.
+            // No metadata/vector is allocated; complete_answer still refuses
+            // an uncertified hierarchy or an unknown path in partial inventory.
+            Q::Parent(_)=>Ok(dm_ir::Resolver::resolve(self,query)),
             Q::Ancestry(path)=>{
                 if !self.owner_ancestry.contains_key(&path){let mut next=self.lookup_type(path);let mut count=0usize;while let Some(id)=next{work.poll()?;count=count.checked_add(1).filter(|n|*n<=self.types().len()).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"native ancestry allocation geometry is cyclic"))?;next=self.parent(id);}work.reserve(count.checked_mul(8*std::mem::size_of::<SymbolId>()).and_then(|n|n.checked_add(256)).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native ancestry allocation geometry overflow"))?)?;}
                 Ok(dm_ir::Resolver::resolve(self,query))
