@@ -19,6 +19,22 @@ struct Line {
     same_line_body: bool,
 }
 
+// A sink changes allocation ownership only; the SAME kernels below issue rows.
+// Ordinary callers preserve their existing Vec/push_layout behavior. The demand
+// cursor supplies an allocation-owned sink whose credit follows its actual Vec.
+trait LayoutLineSink {
+ fn push_line(&mut self,line:Line,original:Option<&OriginalParseState<'_,'_,'_>>)->bool;
+ fn len(&self)->usize;
+ fn get_mut(&mut self,index:usize)->Option<&mut Line>;
+ fn last_mut(&mut self)->Option<&mut Line>;
+}
+impl LayoutLineSink for Vec<Line> {
+ fn push_line(&mut self,line:Line,original:Option<&OriginalParseState<'_,'_,'_>>)->bool{push_layout(self,line,original)}
+ fn len(&self)->usize{Vec::len(self)}
+ fn get_mut(&mut self,index:usize)->Option<&mut Line>{self.as_mut_slice().get_mut(index)}
+ fn last_mut(&mut self)->Option<&mut Line>{self.as_mut_slice().last_mut()}
+}
+
 /// Locate an assignment outside argument lists, indexing, strings, and braces.
 pub fn top_level_assignment_index(source: &str) -> Option<usize> {
     top_level_assignment_index_from_span_tokens(source, &lex_spans(source).tokens)
@@ -352,9 +368,14 @@ impl NativeStructuralCursor{
  }
 
  fn advance(&mut self,visible:&str,delimiters:&[u8],multiline_literals:&[Span],original:Option<&OriginalParseState<'_,'_,'_>>,source:&str,tokens:TokenWindow<'_>,range_start:usize,final_input:bool)->std::io::Result<Vec<Line>>{
+  let mut lines=Vec::new();
+  self.advance_into(visible,delimiters,multiline_literals,original,source,tokens,range_start,final_input,&mut lines)?;
+  Ok(lines)
+ }
+ fn advance_into(&mut self,visible:&str,delimiters:&[u8],multiline_literals:&[Span],original:Option<&OriginalParseState<'_,'_,'_>>,source:&str,tokens:TokenWindow<'_>,range_start:usize,final_input:bool,lines:&mut impl LayoutLineSink)->std::io::Result<()>{
   if self.finished||self.offset>visible.len()||!visible.is_char_boundary(self.offset)||delimiters.len()!=visible.len(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native structural cursor is finished or outside its actual masked arena"))}
   if !final_input&&!visible.is_empty()&&!visible.ends_with('\n'){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"native structural demand pauses only at an actual physical newline; no fabricated EOF"))}
-  let available_start=self.offset;let mut lines=Vec::new();
+  let available_start=self.offset;
     for raw in visible[available_start..].split_inclusive('\n') {
         if original.is_some_and(|state|!state.poll()){break}
         while multiline_literals
@@ -372,7 +393,7 @@ impl NativeStructuralCursor{
         self.begin_physical_scope(physical_indent,trimmed);
         let segment_start=self.pending.as_ref().map_or(self.offset+leading,|line|line.header_start);
         for at in self.offset..self.offset+raw.len(){
-            if at%1024==0&&original.is_some_and(|state|!state.poll()){return Ok(lines)}
+            if at%1024==0&&original.is_some_and(|state|!state.poll()){return Ok(())}
             match delimiters[at]{
                 b'(' | b'['=>self.depth+=1,
                 b')' | b']'=>self.depth=self.depth.saturating_sub(1),
@@ -397,7 +418,7 @@ impl NativeStructuralCursor{
                 // scope. Normalizing them to root indentation would send a
                 // static-scope call to the declaration/formal observer.
                 if trimmed.starts_with('/')&&self.pending_in_body&&!self.procedure_scope_exact{
-                    if let Some(state)=original{if state.operational.borrow().is_none(){*state.unavailable.borrow_mut()=Some("Original absolute-line body scope needs actual indentation provenance");}return Ok(lines)}
+                    if let Some(state)=original{if state.operational.borrow().is_none(){*state.unavailable.borrow_mut()=Some("Original absolute-line body scope needs actual indentation provenance");}return Ok(())}
                 }
                 let absolute_body=self.pending_in_body&&(self.procedure_scope_exact||trimmed.find('{').is_some_and(|at|bare_prefab(&trimmed[..at])));
                 let indent = if trimmed.starts_with('/') && !absolute_body {
@@ -433,13 +454,13 @@ impl NativeStructuralCursor{
         if self.depth == 0 && self.initializer_depth==0 && !inside_literal {
             if let Some(line) = self.pending.take() {
                 if !self.pending_in_body&&callable_header(&visible[line.header_start..line.header_end]){self.procedure=Some((line.indent,self.pending_block_start));self.procedure_scope_exact=self.pending_physical_indent==line.indent;}
-                if !push_layout(&mut lines,line,original){return Ok(lines)}
+                if !lines.push_line(line,original){return Ok(())}
             }
         }
         self.offset += raw.len();self.early_physical=None;
     }
-  if final_input{if let Some(line)=self.pending.take(){if !push_layout(&mut lines,line,original){return Ok(lines)}}self.finished=true;}
-  Ok(lines)
+  if final_input{if let Some(line)=self.pending.take(){if !lines.push_line(line,original){return Ok(())}}self.finished=true;}
+  Ok(())
  }
 }
 #[cfg(test)]
@@ -462,6 +483,10 @@ impl NativeInlineBlockCursor{
 
  fn advance(&mut self,source:&str,lines:&[Line],delimiters:&[u8],original:Option<&OriginalParseState<'_,'_,'_>>,raw_source:&str,tokens:TokenWindow<'_>,range_start:usize)->Vec<Line>{
   let mut result=Vec::new();
+  self.advance_into(source,lines,delimiters,original,raw_source,tokens,range_start,&mut result);
+  result
+ }
+ fn advance_into(&mut self,source:&str,lines:&[Line],delimiters:&[u8],original:Option<&OriginalParseState<'_,'_,'_>>,raw_source:&str,tokens:TokenWindow<'_>,range_start:usize,result:&mut impl LayoutLineSink){
     for line in lines {
         if original.is_some_and(|state|!state.poll()){break}
         if self.procedure.is_some_and(|(indent,base)|line.indent<=indent&&self.brace_depth<=base){self.procedure=None;}
@@ -472,7 +497,7 @@ impl NativeInlineBlockCursor{
         let mut paren_depth = 0usize;
         let mut inline_do_if = false;
         for at in line.header_start..line.header_end {
-            if at%1024==0&&original.is_some_and(|state|!state.poll()){return result}
+            if at%1024==0&&original.is_some_and(|state|!state.poll()){return}
             match delimiters[at] {
                 b'(' | b'[' => paren_depth += 1,
                 b')' | b']' => paren_depth = paren_depth.saturating_sub(1),
@@ -493,7 +518,7 @@ impl NativeInlineBlockCursor{
                         && segment_start == line.header_start
                     {
                         push_inline_procedure_segment(
-                            &mut result, source, delimiters, segment_start, at,
+                            result, source, delimiters, segment_start, at,
                             line.indent + self.brace_depth * 4, original,
                         );
                     } else if let Some(do_at) = (delimiters[at] == b'{' && !inline_do_if)
@@ -501,13 +526,13 @@ impl NativeInlineBlockCursor{
                         .flatten()
                     {
                         push_inline_segment(
-                            &mut result,
+                            result,
                             source,
                             segment_start,
                             segment_start + do_at,
                             line.indent + self.brace_depth * 4, original);
                         push_inline_segment(
-                            &mut result,
+                            result,
                             source,
                             segment_start + do_at,
                             at,
@@ -515,7 +540,7 @@ impl NativeInlineBlockCursor{
                         inline_do_if = true;
                     } else {
                         push_inline_segment(
-                            &mut result,
+                            result,
                             source,
                             segment_start,
                             at,
@@ -540,10 +565,9 @@ impl NativeInlineBlockCursor{
         if !in_body&&callable_header(&source[line.header_start..line.header_end]){self.procedure=Some((line.indent,block_start));}
         let indent = line.indent + self.brace_depth * 4 + usize::from(inline_do_if) * 4;
         push_inline_procedure_segment(
-            &mut result, source, delimiters, segment_start, line.header_end, indent, original,
+            result, source, delimiters, segment_start, line.header_end, indent, original,
         );
     }
-  result
  }
 }
 #[cfg(test)]
@@ -552,7 +576,7 @@ fn split_inline_blocks(source:&str,lines:&[Line],delimiters:&[u8],original:Optio
 }
 
 fn push_inline_procedure_segment(
-    rows: &mut Vec<Line>,
+    rows: &mut impl LayoutLineSink,
     source: &str,
     delimiters: &[u8],
     start: usize,
@@ -676,7 +700,7 @@ fn is_object_initializer(prefix: &str,in_body:bool) -> bool {
 }
 
 fn push_inline_segment(
-    lines: &mut Vec<Line>,
+    lines: &mut impl LayoutLineSink,
     source: &str,
     start: usize,
     end: usize,
@@ -689,7 +713,7 @@ fn push_inline_segment(
     if trimmed_end <= trimmed_start {
         return;
     }
-    push_layout(lines,Line {
+    lines.push_line(Line {
         indent,
         header_start: start + trimmed_start,
         header_end: start + trimmed_end,
@@ -1212,7 +1236,7 @@ mod shared_original_body_tests {
         for source in [
             "/datum/prefix\n/proc/p(obj/item/x = list(1,2))\n    var/y[6 / 2]\n    return x\n",
             "/datum/holder\n    proc/check(datum/x)\n        if(x) { return x; }\n",
-            "/proc/p(value=\"ÃƒÂ©,()\")\r\n    // comment ([])\r\n    return \"text\"\r\n",
+            "/proc/p(value=\"ÃƒÆ’Ã‚Â©,()\")\r\n    // comment ([])\r\n    return \"text\"\r\n",
         ] {
             let cold = parse_declaration_skeleton(source);
             assert!(cold.diagnostics.is_empty(), "{:?}", cold.diagnostics);
@@ -1395,7 +1419,7 @@ pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&cr
 #[cfg(test)]mod original_primary_comma_prefix_tests{
  use super::*;use std::sync::{atomic::{AtomicUsize, Ordering}};
  #[test]fn original_primary_class_comma_retains_only_real_first_field_and_stops_inside_enclosing_type(){
-  for source in ["/datum/holder\n    var/datum/loose\n    var/list/items\n    var/datum/first, second\n/proc/later()\n    return\n","// ÃƒÂ©Ã¦Â¼Â¢ actual original bytes\n/datum/holder\n    var/SpacemanDMM_private/datum/first, second\n/proc/later()\n    return\n","/datum/holder\n    var\n        SpacemanDMM_private\n            datum/first, second\n/proc/later()\n    return\n"]{
+  for source in ["/datum/holder\n    var/datum/loose\n    var/list/items\n    var/datum/first, second\n/proc/later()\n    return\n","// ÃƒÆ’Ã‚Â©ÃƒÂ¦Ã‚Â¼Ã‚Â¢ actual original bytes\n/datum/holder\n    var/SpacemanDMM_private/datum/first, second\n/proc/later()\n    return\n","/datum/holder\n    var\n        SpacemanDMM_private\n            datum/first, second\n/proc/later()\n    return\n"]{
    let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<24,&||Ok(()));let before=WHOLE_LEX_CALLS.with(|n|n.get());let outcome=parse_original_declaration_skeleton_using(source,&a).unwrap();assert_eq!(WHOLE_LEX_CALLS.with(|n|n.get()),before+1,"same single primary lexer");assert!(outcome.unavailable().is_none());let fatal=outcome.fatal().unwrap();assert!(fatal.first_declaration_registered());assert_eq!(fatal.token_span(),Span::new(source.find(',').unwrap(),source.find(',').unwrap()+1));assert_eq!(fatal.message(),"got ',', expected one of: '/', '[', '=', '(', '{', 'as', 'in', ';', '}'");assert_eq!(fatal.notes(),["fatal error: the parser cannot continue","constant evaluation will be skipped"]);assert!(outcome.syntax().diagnostics.is_empty());
    fn contains(items:&[Item],name:&str)->bool{items.iter().any(|item|item.header.contains(name)||contains(&item.children,name))}
    assert!(contains(&outcome.syntax().items,"first"));assert!(!contains(&outcome.syntax().items,"second"));assert!(!contains(&outcome.syntax().items,"later"));assert!(!outcome.syntax().items.is_empty(),"genuine prefix is retained, never an empty success");
@@ -1640,7 +1664,7 @@ fn frozen_actual_original_declaration_lines_with_storage(source:&str,range:Span,
 }
 
  fn shape(rows:&[Line])->Vec<(usize,usize,usize,usize,bool,bool)>{rows.iter().map(|x|(x.indent,x.header_start,x.header_end,x.end,x.explicit_block_opener,x.same_line_body)).collect()}
- #[test]fn same_native_mask_kernel_matches_actual_old_utf8_comment_literal_and_resource_layout(){for source in ["/datum/ÃŽÂ±\n    var/value=\"text // not comment\"\n    /* multi\n      comment */ var/next=2\n", "/proc/p()\n    return {\"block\ntext\"}\n/datum/later\n", "/datum/ÃŽÂ±\n    var/icon='icons/a{b}.dmi'\n"]{let tokens=lex_spans(source).tokens;let old=frozen_actual_original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);let new=original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);assert_eq!(shape(&new),shape(&old));}}
+ #[test]fn same_native_mask_kernel_matches_actual_old_utf8_comment_literal_and_resource_layout(){for source in ["/datum/ÃƒÅ½Ã‚Â±\n    var/value=\"text // not comment\"\n    /* multi\n      comment */ var/next=2\n", "/proc/p()\n    return {\"block\ntext\"}\n/datum/later\n", "/datum/ÃƒÅ½Ã‚Â±\n    var/icon='icons/a{b}.dmi'\n"]{let tokens=lex_spans(source).tokens;let old=frozen_actual_original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);let new=original_declaration_lines_with_storage(source,Span::new(0,source.len()),&tokens,None);assert_eq!(shape(&new),shape(&old));}}
  #[test]
  fn incremental_visible_string_emits_each_new_utf8_byte_once_and_matches_frozen_masks() {
   let source="/datum/\u{3b1}\n    var/value=\"\u{3b2}\"\n    /* \u{3b3}\r\n       \u{3b4} */ var/next=2\n    var/multi={\"\u{3b5}\r\n\u{3b6}\"}\n    var/resource='icons/\u{3b7}.dmi'\n";
@@ -1670,7 +1694,7 @@ fn frozen_actual_original_declaration_lines_with_storage(source:&str,range:Span,
   let mut masks=NativeLayoutMaskCursor::default();assert!(!masks.advance(source,Span::new(0,source.len()),&tokens,None));
   assert!(masks.visible().is_empty());assert_eq!(masks.visible_appended_bytes,0);
  }
- #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/ÃŽÂ±\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_str());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
+ #[test]fn masks_resume_only_new_actual_tokens_without_recopying_or_rewriting_prior_prefix(){let source="/datum/ÃƒÅ½Ã‚Â±\n    var/a=\"literal\"\n    // comment\n    var/b=2\n";let tokens=lex_spans(source).tokens;let cut=source.find("    //").unwrap();let first=tokens.partition_point(|row|row.span.end<=cut);let mut masks=NativeLayoutMaskCursor::default();assert!(masks.advance(source,Span::new(0,cut),&tokens[..first],None));let prior=masks.visible.clone();assert!(masks.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(&masks.visible[..cut],prior.as_str());let mut whole=NativeLayoutMaskCursor::default();assert!(whole.advance(source,Span::new(0,source.len()),&tokens,None));assert_eq!(masks.visible,whole.visible);assert_eq!(masks.delimiters,whole.delimiters);assert_eq!(masks.multiline_literals,whole.multiline_literals);assert_eq!(masks.tokens,tokens.len());}
 }
 
 #[cfg(test)]mod demanded_native_inline_tests{use super::*;

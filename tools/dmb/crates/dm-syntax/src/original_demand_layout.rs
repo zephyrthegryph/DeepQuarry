@@ -58,6 +58,43 @@ fn fund_visible_string(
     a.shrink(credit,prior).map_err(|e|actual_error(a,e))
 }
 
+// Field order keeps each physical Vec alive only while its exact lease lives.
+// Neither the kernels nor their callers can extract a mutable unowned Vec.
+struct OwnedLayoutLines<'a,'budget> {
+ rows:Vec<Line>,
+ credit:crate::SettingRootLease,
+ a:&'a crate::SettingAdmission<'budget>,
+}
+impl<'a,'budget> OwnedLayoutLines<'a,'budget> {
+ fn new(a:&'a crate::SettingAdmission<'budget>)->io::Result<Self>{
+  Ok(Self{rows:Vec::new(),credit:a.reserve(0).map_err(|e|actual_error(a,e))?,a})
+ }
+ fn as_slice(&self)->&[Line]{&self.rows}
+ fn globalize(&mut self,base:usize){for row in &mut self.rows{row.header_start+=base;row.header_end+=base;row.end+=base;}}
+ fn into_batch(self,header_start:Option<NativePrimaryHeaderStart>)->NativeLayoutBatch{
+  NativeLayoutBatch{lines:self.rows,header_start,_credit:self.credit}
+ }
+}
+impl LayoutLineSink for OwnedLayoutLines<'_,'_> {
+ fn push_line(&mut self,line:Line,original:Option<&OriginalParseState<'_,'_,'_>>)->bool{
+  let Some(state)=original else{
+   self.a.record_operational_error(io::Error::new(io::ErrorKind::InvalidInput,"owned layout rows require their actual primary host"));return false
+  };
+  if !std::ptr::eq(state.storage.a,self.a){return state.storage.fail(io::Error::new(io::ErrorKind::InvalidInput,"owned layout rows belong to another primary host"))}
+  if !state.poll(){return false}
+  if self.rows.len()==self.rows.capacity(){
+   // Preserve the existing Line Vec policy (first4, then2x); admission is
+   // exact old+new physical capacity BEFORE growth, never token geometry.
+   let Some(capacity)=self.rows.capacity().max(2).checked_mul(2)else{return state.storage.fail(io::ErrorKind::OutOfMemory.into())};
+   if let Err(actual)=fund_buffer(&mut self.rows,capacity,&mut self.credit,self.a){return state.storage.fail(actual)}
+  }
+  self.rows.push(line);true
+ }
+ fn len(&self)->usize{self.rows.len()}
+ fn get_mut(&mut self,index:usize)->Option<&mut Line>{self.rows.get_mut(index)}
+ fn last_mut(&mut self)->Option<&mut Line>{self.rows.last_mut()}
+}
+
 /// Lines drop before their exact same-domain buffer credit, independently of
 /// other live batches, the cursor's masks and any cloned producer identity.
 pub(super) struct NativeLayoutBatch {
@@ -162,27 +199,18 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   if self.finished||self.counted_tokens>tokens.len()||self.source_base>source.len()||self.masks.visible.len()>source.len().saturating_sub(self.source_base){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout has no new complete physical source frontier"))}
   let(mut boundaries,mut new_multiline)=(self.boundaries,0usize);
   for token in tokens.range(self.counted_tokens,tokens.len()).expect("checked layout token frontier").iter(){self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;let Some(text)=source.get(token.span.range())else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"native demanded layout token escapes actual source"))};if token.kind==TokenKind::Newline||matches!(text,"{"|"}"|";"|"("){boundaries=boundaries.checked_add(2).ok_or(io::ErrorKind::OutOfMemory)?;}if matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&text.contains('\n'){new_multiline=new_multiline.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;}}
-  // Preserve the existing structural/inline row peak bound for this advance.
-  // Earlier returned batches pay their own exact buffers. Reserve before any
-  // mask or layout work, then release only after the physical rows are dead.
-  let rows=boundaries.checked_mul(mem::size_of::<Line>()).and_then(|n|n.checked_mul(8)).ok_or(io::ErrorKind::OutOfMemory)?;
-  let mut row_work=self.a.reserve(rows).map_err(|e|{
-   #[cfg(debug_assertions)]
-   self.trace_funding_geometry("row_work_request",source.len(),rows,boundaries,tokens.len());
-   actual_error(self.a,e)
-  })?;
-  #[cfg(debug_assertions)]
-  self.trace_row_work_highwater(source.len(),row_work.bytes(),boundaries,tokens.len());
+  // Actual physical and inline Line Vecs below own independent leases.
+  // Retained token boundaries remain diagnostic DATA, not phantom row storage.
   let visible_bytes=source.len()-self.source_base;
   fund_visible_string(&mut self.masks.visible,visible_bytes,&mut self.mask_credit,self.a).map_err(|actual|{
     #[cfg(debug_assertions)]
-    self.trace_funding_geometry("visible",source.len(),row_work.bytes(),boundaries,tokens.len());
+    self.trace_funding_geometry("visible",source.len(),0,boundaries,tokens.len());
     actual
    })?;
 
   fund_buffer(&mut self.masks.delimiters,visible_bytes,&mut self.mask_credit,self.a).map_err(|actual|{
     #[cfg(debug_assertions)]
-    self.trace_funding_geometry("delimiters",source.len(),row_work.bytes(),boundaries,tokens.len());
+    self.trace_funding_geometry("delimiters",source.len(),0,boundaries,tokens.len());
     actual
    })?;
 
@@ -193,16 +221,21 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
    let capacity=spans.max(4).checked_next_power_of_two().ok_or(io::ErrorKind::OutOfMemory)?;
    fund_buffer(&mut self.masks.multiline_literals,capacity,&mut self.mask_credit,self.a).map_err(|actual|{
     #[cfg(debug_assertions)]
-    self.trace_funding_geometry("multiline",source.len(),row_work.bytes(),boundaries,tokens.len());
+    self.trace_funding_geometry("multiline",source.len(),0,boundaries,tokens.len());
     actual
    })?;
 
   }
   if !self.masks.advance_with_literal_facts(source,Span::new(self.source_base,source.len()),tokens,Some(original),facts.map(|rows|(rows,0))){return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native mask continuation has no actual complete-token provenance")))}
   self.counted_tokens=tokens.len();self.boundaries=boundaries;
-  let visible=self.masks.visible();let complete=if final_input{visible.len()}else{visible.rfind('\n').map_or(0,|at|at+1)};let physical=self.structural.advance(&visible[..complete],&self.masks.delimiters[..complete],&self.masks.multiline_literals,Some(original),source,tokens,self.source_base,final_input)?;
+  let visible=self.masks.visible();let complete=if final_input{visible.len()}else{visible.rfind('\n').map_or(0,|at|at+1)};let mut physical=OwnedLayoutLines::new(self.a)?;self.structural.advance_into(&visible[..complete],&self.masks.delimiters[..complete],&self.masks.multiline_literals,Some(original),source,tokens,self.source_base,final_input,&mut physical)?;
+  if let Some(actual)=original.storage.take_failure(){return Err(actual)}
   let header_start=if !final_input&&complete<visible.len(){match self.structural.partial_header_start(visible,self.source_base){Some(start)=>self.inline.live_header_start(start)?,None=>None}}else{None};
-  let mut lines=self.inline.advance(&source[self.source_base..],&physical,&self.masks.delimiters,Some(original),source,tokens,self.source_base);drop(physical);for line in &mut lines{line.header_start+=self.source_base;line.header_end+=self.source_base;line.end+=self.source_base;}
+  let mut lines=OwnedLayoutLines::new(self.a)?;
+  self.inline.advance_into(&source[self.source_base..],physical.as_slice(),&self.masks.delimiters,Some(original),source,tokens,self.source_base,&mut lines);
+  #[cfg(debug_assertions)]
+  self.trace_row_work_highwater(source.len(),physical.credit.bytes().checked_add(lines.credit.bytes()).ok_or(io::ErrorKind::OutOfMemory)?,boundaries,tokens.len());
+  drop(physical);lines.globalize(self.source_base);
   if let Some(actual)=original.storage.take_failure(){return Err(actual)}self.finished=final_input;
   // Consumed masks are scratch, never another retained source store. Keep only
   // the genuine unfinished logical header/literal window; committed Line spans
@@ -217,10 +250,7 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
    self.boundaries=8;let start=tokens.partition_point(|token|token.span.end<=self.source_base);for token in tokens.range(start,tokens.len()).expect("retained layout token window").iter(){if token.kind==TokenKind::Newline||matches!(token.text(source),"{"|"}"|";"|"("){self.boundaries=self.boundaries.checked_add(2).ok_or(io::ErrorKind::OutOfMemory)?;}}
   }
   self.release_consumed_mask_storage()?;
-  let retained=lines.capacity().checked_mul(mem::size_of::<Line>()).ok_or(io::ErrorKind::OutOfMemory)?;
-  let dead=row_work.bytes().checked_sub(retained).ok_or(io::ErrorKind::InvalidData)?;
-  if dead!=0{self.a.shrink(&mut row_work,dead).map_err(|e|actual_error(self.a,e))?;}
-  Ok(NativeLayoutBatch{lines,header_start,_credit:row_work})
+  Ok(lines.into_batch(header_start))
  }
 }
 
@@ -231,7 +261,19 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let source="/datum/a\n    var/value=1\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let batch=cursor.advance(source,&tokens,&original,true).unwrap();assert_eq!(batch.len(),2);let owned=counter.load(Ordering::Acquire);assert!(owned>source.len()*2);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()+batch._credit.bytes()));assert!(counter.load(Ordering::Acquire)<owned);assert_eq!(batch[1].header_start,source.find("var/value").unwrap());drop(batch);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (original.storage.bytes()));drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_demand_layout_quota_and_operational_fault_refuse_before_mask_growth_and_keep_io_identity(){
-  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,5000,&||Ok(()));let source="/datum/a\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();let error=cursor.advance(source,&tokens,&original,true).err().unwrap();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(cursor.masks.visible.is_empty());drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,5000,&||Ok(()));let source="/datum/a\n";let tokens=lex_spans(source).tokens;let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();
+  // A distinct actual byte allocation holds the remaining resource capacity.
+  // This storage-only fixture creates no source/model authority. Leave one
+  // byte free so the genuine visible-mask allocation must refuse before grow.
+  let free=5000usize.checked_sub(counter.load(Ordering::Acquire)).unwrap();assert!(free>1);
+  let mut other_credit=a.reserve(0).unwrap();let mut other=Vec::<u8>::new();
+  fund_buffer(&mut other,free-1,&mut other_credit,&a).unwrap();other.resize(free-1,0);
+  let before=counter.load(Ordering::Acquire);assert_eq!(before,4999);
+  let error=cursor.advance(source,&tokens,&original,true).err().unwrap();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
+  assert!(cursor.masks.visible.is_empty());assert_eq!(cursor.masks.visible.capacity(),0);assert_eq!(cursor.masks.delimiters.capacity(),0);assert_eq!(cursor.mask_credit.bytes(),0);
+  assert_eq!(counter.load(Ordering::Acquire),before);assert_eq!(other.capacity(),free-1);assert_eq!(other_credit.bytes(),free-1);assert!(other.iter().all(|byte|*byte==0));
+  drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+other_credit.bytes());
+  drop(other);drop(other_credit);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   let fault=||Err(io::Error::from_raw_os_error(1450));let b=crate::SettingAdmission::new(&counter,1<<20,&fault);let error=NativeDemandLayoutCursor::new(&b).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_demand_layout_resumes_same_mask_group_inline_state_with_funded_batches(){
@@ -472,6 +514,147 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   assert!(!cursor.claim_row_work_trace_sample((6<<20)-1));assert!(cursor.claim_row_work_trace_sample(6<<20));
   cursor.credit.row_work_trace_next.store(usize::MAX,Ordering::Relaxed);assert!(!cursor.claim_row_work_trace_sample(usize::MAX));
   assert_eq!(counter.load(Ordering::Acquire),before);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ fn line_owner_shape(rows:&[Line])->Vec<(usize,usize,usize,usize,bool,bool)>{
+  rows.iter().map(|r|(r.indent,r.header_start,r.header_end,r.end,r.explicit_block_opener,r.same_line_body)).collect()
+ }
+ fn line_owner_probe(at:usize)->Line{Line{indent:0,header_start:at,header_end:at+1,end:at+1,explicit_block_opener:false,same_line_body:false}}
+ #[test]
+ fn owned_layout_rows_keep_same_kernels_shapes_and_both_live_allocations(){
+  for source in [
+   "/datum/a {\n var/value=1;\n var/other=2;\n}\n/proc/p()\n return 3\n",
+   "/proc/p() {\n if(1) do {\n return 1;\n } while(0);\n}\n/datum/b\n",
+   "/datum/a\n var/value=new /datum/other {x=1; y=2}\n/proc/p() return 2\n",
+  ]{
+   let tokens=lex_spans(source).tokens;
+   let expected_physical=NativeStructuralCursor::default().advance(source,source.as_bytes(),&[],None,source,TokenWindow::from_slice(&tokens),0,true).unwrap();
+   let expected=NativeInlineBlockCursor::default().advance(source,&expected_physical,source.as_bytes(),None,source,TokenWindow::from_slice(&tokens),0);
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let peak=std::cell::Cell::new(0);let poll=||{peak.set(peak.get().max(counter.load(Ordering::Acquire)));Ok(())};
+   let a=crate::SettingAdmission::new(&counter,1<<20,&poll);let original=state(&a);
+   let base=counter.load(Ordering::Acquire);
+   let mut physical=OwnedLayoutLines::new(&a).unwrap();
+   NativeStructuralCursor::default().advance_into(source,source.as_bytes(),&[],Some(&original),source,TokenWindow::from_slice(&tokens),0,true,&mut physical).unwrap();
+   assert!(original.storage.take_failure().is_none());
+   assert_eq!(line_owner_shape(physical.as_slice()),line_owner_shape(&expected_physical));
+   assert_eq!(physical.credit.bytes(),physical.rows.capacity()*mem::size_of::<Line>());
+   let physical_bytes=physical.credit.bytes();assert!(physical_bytes>0);
+   let mut lines=OwnedLayoutLines::new(&a).unwrap();
+   NativeInlineBlockCursor::default().advance_into(source,physical.as_slice(),source.as_bytes(),Some(&original),source,TokenWindow::from_slice(&tokens),0,&mut lines);
+   assert!(original.storage.take_failure().is_none());
+   assert_eq!(line_owner_shape(lines.as_slice()),line_owner_shape(&expected));
+   let final_bytes=lines.credit.bytes();assert!(final_bytes>0);
+   assert_eq!(final_bytes,lines.rows.capacity()*mem::size_of::<Line>());
+   assert_eq!(counter.load(Ordering::Acquire),base+physical_bytes+final_bytes);
+   assert!(peak.get()>=base+physical_bytes+final_bytes);
+   drop(physical);assert_eq!(counter.load(Ordering::Acquire),base+final_bytes);
+   let batch=lines.into_batch(None);drop(original);
+   assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+final_bytes);
+   assert_eq!(line_owner_shape(&batch),line_owner_shape(&expected));drop(batch);
+   assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+ #[test]
+ fn owned_layout_rows_pending_initializer_does_not_pay_phantom_delimiter_rows(){
+  let mut source=String::from("/datum/a\n    var/value = list(\n");source.push_str(&"        list(1),\n".repeat(300));
+  let cut=source.len();source.push_str("    )\n/datum/b\n");
+  let tokens=lex_spans(&source).tokens;let n=tokens.partition_point(|token|token.span.end<=cut);
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=crate::SettingAdmission::new(&counter,64<<10,&||Ok(()));let original=state(&a);let mut cursor=NativeDemandLayoutCursor::new(&a).unwrap();
+  let first=cursor.advance(&source[..cut],&tokens[..n],&original,false).unwrap();
+  assert_eq!(first.len(),1);assert!(cursor.structural.pending.is_some());assert!(cursor.structural.depth>0);
+  assert_eq!(first._credit.bytes(),first.lines.capacity()*mem::size_of::<Line>());
+  assert!(first._credit.bytes()<=4*mem::size_of::<Line>());
+  let second=cursor.advance(&source,&tokens,&original,true).unwrap();
+  let expected=original_declaration_lines(&source,Span::new(0,source.len()),&tokens);
+  let actual:Vec<Line>=first.iter().chain(second.iter()).cloned().collect();
+  assert_eq!(line_owner_shape(&actual),line_owner_shape(&expected));
+  drop(actual);drop(cursor);drop(original);
+  assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+first._credit.bytes()+second._credit.bytes());
+  drop((first,second));assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn owned_layout_rows_deny_actual_old_plus_new_peak_before_growth(){
+  let root=crate::SettingChargeCounter::root_allocation_bytes();let size=mem::size_of::<Line>();
+  let counter=crate::SettingChargeCounter::try_new(root).unwrap();
+  let a=crate::SettingAdmission::new(&counter,root+4096+4*size+8*size-1,&||Ok(()));let original=state(&a);let mut rows=OwnedLayoutLines::new(&a).unwrap();
+  for at in 0..4{assert!(rows.push_line(line_owner_probe(at),Some(&original)));}
+  let before=line_owner_shape(rows.as_slice());let ptr=rows.rows.as_ptr();
+  assert!(!rows.push_line(line_owner_probe(4),Some(&original)));
+  assert_eq!(original.storage.take_failure().unwrap().kind(),io::ErrorKind::OutOfMemory);
+  assert_eq!(line_owner_shape(rows.as_slice()),before);assert_eq!(rows.rows.as_ptr(),ptr);
+  assert_eq!(rows.rows.capacity(),4);assert_eq!(rows.credit.bytes(),4*size);
+  drop(rows);drop(original);assert_eq!(counter.load(Ordering::Acquire),root);
+ }
+ #[test]
+ fn owned_layout_rows_keep_first_io_and_conservative_credit_on_growth_failure(){
+  // One existing state poll, then grow/reserve/refund checkpoints. The final
+  // failure is after real Vec growth but before prior-capacity credit retires.
+  for stop in 1..=4{
+   let root=crate::SettingChargeCounter::root_allocation_bytes();let size=mem::size_of::<Line>();
+   let counter=crate::SettingChargeCounter::try_new(root).unwrap();let calls=std::cell::Cell::new(0);let armed=std::cell::Cell::new(false);
+   let poll=||{if armed.get(){let n=calls.get()+1;calls.set(n);if n==stop{return Err(io::Error::from_raw_os_error(1450));}}Ok(())};
+   let a=crate::SettingAdmission::new(&counter,1<<20,&poll);let original=state(&a);let mut rows=OwnedLayoutLines::new(&a).unwrap();
+   for at in 0..4{assert!(rows.push_line(line_owner_probe(at),Some(&original)));}
+   let before=line_owner_shape(rows.as_slice());armed.set(true);
+   assert!(!rows.push_line(line_owner_probe(4),Some(&original)));
+   assert_eq!(original.storage.take_failure().unwrap().raw_os_error(),Some(1450));assert_eq!(calls.get(),stop);
+   assert_eq!(line_owner_shape(rows.as_slice()),before);
+   assert_eq!(rows.rows.capacity(),if stop<4{4}else{8});
+   assert_eq!(rows.credit.bytes(),if stop<4{4*size}else{(4+8)*size});
+   drop(rows);drop(original);assert_eq!(counter.load(Ordering::Acquire),root);
+  }
+ }
+ #[test]
+ fn owned_layout_rows_foreign_primary_refuses_without_a_grant_or_mutation(){
+  // Even equal resource-counter identity cannot substitute for the exact
+  // admission host borrowed by this actual output owner.
+  for same_counter in [false,true]{for prior_io in [false,true]{
+   let root=crate::SettingChargeCounter::root_allocation_bytes();
+   let counter=crate::SettingChargeCounter::try_new(root).unwrap();
+   let other=if same_counter{Arc::clone(&counter)}else{crate::SettingChargeCounter::try_new(root).unwrap()};
+   let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let original=state(&a);
+   let mut rows=OwnedLayoutLines::new(&a).unwrap();assert!(rows.push_line(line_owner_probe(0),Some(&original)));
+   let armed=std::cell::Cell::new(false);let polls=std::cell::Cell::new(0);
+   let poll=||{polls.set(polls.get()+1);if armed.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};
+   let foreign=crate::SettingAdmission::new(&other,1<<20,&poll);let foreign_original=state(&foreign);
+   assert!(!std::ptr::eq(&a,&foreign));
+   let before=line_owner_shape(rows.as_slice());let ptr=rows.rows.as_ptr();let capacity=rows.rows.capacity();let credit=rows.credit.bytes();
+   let own_used=counter.load(Ordering::Acquire);let other_used=other.load(Ordering::Acquire);
+   if prior_io{armed.set(true);assert!(foreign.checkpoint().is_err());}
+   let prior_polls=polls.get();
+   assert!(!rows.push_line(line_owner_probe(1),Some(&foreign_original)));
+   let actual=foreign_original.storage.take_failure().unwrap();
+   if prior_io{assert_eq!(actual.raw_os_error(),Some(1450));}else{assert_eq!(actual.kind(),io::ErrorKind::InvalidInput);assert!(actual.to_string().contains("another primary host"));}
+   assert_eq!(polls.get(),prior_polls,"wrong-host refusal must not allocate or poll the foreign host");
+   assert_eq!(line_owner_shape(rows.as_slice()),before);assert_eq!(rows.rows.as_ptr(),ptr);
+   assert_eq!(rows.rows.capacity(),capacity);assert_eq!(rows.credit.bytes(),credit);
+   assert_eq!(counter.load(Ordering::Acquire),own_used);assert_eq!(other.load(Ordering::Acquire),other_used);
+   assert!(original.storage.take_failure().is_none());
+   drop(foreign_original);drop(rows);drop(original);
+   assert_eq!(counter.load(Ordering::Acquire),root);assert_eq!(other.load(Ordering::Acquire),root);
+  }}
+ }
+ #[test]
+ fn owned_layout_rows_absent_primary_refuses_and_keeps_first_observed_io(){
+  for prior_io in [false,true]{
+   let root=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(root).unwrap();
+   let armed=std::cell::Cell::new(false);let polls=std::cell::Cell::new(0);
+   let poll=||{polls.set(polls.get()+1);if armed.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};
+   let a=crate::SettingAdmission::new(&counter,1<<20,&poll);let original=state(&a);
+   let mut rows=OwnedLayoutLines::new(&a).unwrap();assert!(rows.push_line(line_owner_probe(0),Some(&original)));
+   let before=line_owner_shape(rows.as_slice());let ptr=rows.rows.as_ptr();let capacity=rows.rows.capacity();let credit=rows.credit.bytes();let used=counter.load(Ordering::Acquire);
+   if prior_io{armed.set(true);assert!(a.checkpoint().is_err());}
+   let prior_polls=polls.get();
+   assert!(!rows.push_line(line_owner_probe(1),None));
+   let actual=a.take_operational_error().unwrap();
+   if prior_io{assert_eq!(actual.raw_os_error(),Some(1450));}else{assert_eq!(actual.kind(),io::ErrorKind::InvalidInput);assert!(actual.to_string().contains("actual primary host"));}
+   assert_eq!(polls.get(),prior_polls,"missing primary must refuse before another poll or allocation");
+   assert_eq!(line_owner_shape(rows.as_slice()),before);assert_eq!(rows.rows.as_ptr(),ptr);
+   assert_eq!(rows.rows.capacity(),capacity);assert_eq!(rows.credit.bytes(),credit);assert_eq!(counter.load(Ordering::Acquire),used);
+   drop(rows);drop(original);assert_eq!(counter.load(Ordering::Acquire),root);
+  }
  }
 
 }

@@ -4220,3 +4220,32 @@ new body-coverage count was issued. These measurements justify replacing the
 coarse delimiter-derived reservation with independently funded actual physical
 and inline row allocations; they do not justify raising a limit or omitting
 allocation peaks.
+### Allocation-owned layout rows
+
+The structural and inline passes now use one shared row-sink interface. Ordinary
+wrappers retain their Vec behavior; admitted demand parsing gives each actual
+Vec<Line> its own existing SettingRootLease. Every capacity growth admits the
+full old-plus-new peak first. Physical and inline buffers remain independently
+funded while they coexist, physical storage drops before its credit, and the
+final vector moves with its credit into NativeLayoutBatch. No mutable unowned
+Vec escapes. The old delimiter-derived reservation is gone; its boundary count
+remains diagnostic data. Non-Line push_layout users and grammar algorithms are
+unchanged.
+
+All 32 selected controls passed, covering ordinary/owned shape equality,
+unfinished initializers, simultaneous buffers, exact growth peaks, surviving
+batches, wrong hosts, absent contexts and first I/O cleanup. The former tiny-quota
+test now holds a genuine separate byte allocation, leaving one byte, so actual
+mask growth refuses without relying on the obsolete speculative row envelope.
+The private binary rebuild passed in 12m36s.
+
+The same real census reached 8,351,493 producer rows in 79.817 seconds before
+another genuine unchanged-cap refusal: a 21,972,264-byte visible-buffer request
+with 112,254,511 bytes already retained under 134,217,728 bytes. Row work was
+zero, so the earlier reservation is no longer the barrier. Both masks retained
+21,972,263 bytes, and the structural cursor still held the same unfinished
+header beginning at global expanded offset 17,590,799, depth one. That fixed
+header now spans 22 MiB while the observed callable roster remains at 31,795.
+The next diagnosis inspects that actual opener and its typed literal/delimiter
+facts before making another storage change. Capture, fresh body counts and
+whole-checkout parity remain unproven.
