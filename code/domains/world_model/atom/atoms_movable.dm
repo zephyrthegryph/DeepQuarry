@@ -312,7 +312,8 @@
 	// BYOND turns a mover natively on Move(), bypassing set_dir(): publish the dir a drawn atom now shows, only when it changed.
 	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
 		rx_of(src).look_seen_dir = dir
-		tracked_changed(src, nameof(dir))
+		if(!interest_parked_quiet(src)) // a parked atom's owed draw shows the dir it has when it runs: no per-move publish
+			tracked_changed(src, nameof(dir))
 	if(STATE_PEEK(src, movable_misc, blocks_light))
 		light_blocking_moved(old_loc)
 	if(WANTS(src, /datum/notice/moved))
@@ -341,6 +342,8 @@
 		heat_followers_moved(src)
 	if(proximity_tracked)
 		SSproximity.member_update(src)
+	if(refresh_queued)
+		interest_owed_moved(src, old_loc) // a draw owed: its entry in the owed index follows it to its new chunk (engine/change/interest.dm)
 	if(refresh_queued & DEP_PARKED)
 		interest_parked_moved(src) // a draw owed and a chunk now held: it draws (engine/change/interest.dm)
 	if(length(GLOB.interest_anchors))
@@ -552,6 +555,8 @@ ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bum
 /// write takes: the stat layer re-attaches the thing to its new container's readers (stat_hop_attach), derived() entries and on_change() hooks that
 /// read it re-evaluate, a pending operation re-resolves its watched pairs. Nothing runs while nothing reads `loc`.
 /atom/movable/proc/loc_changed(atom/old_loc)
+	if(interest_parked_quiet(src))
+		return // parked and unseen: it owes its whole draw, which reads where it stands when it runs; nothing about its place is published meanwhile
 	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))
 	// A draw that reads `loc` (a syringe drawn upright in a case) redraws: the plan names it, and no reaction or stat has to read it for the look to follow the move.

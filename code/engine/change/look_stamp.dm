@@ -64,6 +64,8 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		var/bits = D.refresh_bits
 		D.refresh_queued = 0
 		D.refresh_bits = 0
+		if(isatom(D))
+			interest_owed_drop(D)
 		if(!refresh_wanted_queued(D))
 			continue
 		var/gameplay_before = isatom(D) ? look_gameplay_state(D) : null
@@ -86,6 +88,8 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		if(D.refresh_queued & DEP_CREATED && type_look_stamped(D))
 			D.refresh_queued = 0
 			D.refresh_bits = 0
+			if(isatom(D))
+				interest_owed_drop(D)
 			skipped++
 			continue
 		// Nothing is drawn that no viewer could perceive (draw_perceivable(), interest.dm): an atom of a type whose first draw is only a picture, covered
@@ -128,6 +132,7 @@ GLOBAL_VAR_INIT(refresh_near_drawn, 0)
 		log_world("refresh boot drain pass [passes]: [queued] queued, [length(GLOB.refresh_queue)] left, [(REALTIMEOFDAY - pass_start) * 100] ms")
 	world.presentation_flush()
 	log_world("refresh boot drain: [before] queued, [length(GLOB.refresh_queue)] left after [passes] pass(es), [(REALTIMEOFDAY - start) * 100] ms")
+	log_world("refresh boot wake census: [GLOB.refresh_parked_woken] parked atoms woken by a mark so far; [interest_woken_text()]")
 
 // ---- lazy first draw (the parked backlog) ----
 //
@@ -344,6 +349,7 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 		if(GLOB.type_look_lazy[A.type] && look_lazy_ok(A) && boot_drain_deferred())
 			A.refresh_queued = DEP_PARKED
 			GLOB.refresh_parked++
+			interest_owed_note(A)
 			return TRUE
 		return FALSE
 	if(!GLOB.boot_created_sampled[A.type])
@@ -377,6 +383,9 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 			. += length(bucket) // released in one step: a parked atom of an empty default look owes nothing (interest_audit_atom(), interest_draw_now())
 			continue
 		if(GLOB.type_look_lazy[type] && boot_drain_deferred())
+			for(var/atom/A as anything in bucket)
+				if(!QDELETED(A) && A.refresh_queued == DEP_PARKED)
+					interest_owed_note(A) // they owe their first draw: the chunk scan finds them here
 			continue // a lazy type's held atoms are parked already, which is what the park would make of them: they draw when a client comes near
 		for(var/atom/A as anything in bucket)
 			if(QDELETED(A) || A.refresh_queued != DEP_PARKED)
