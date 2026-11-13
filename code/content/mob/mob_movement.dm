@@ -346,7 +346,14 @@
 		var/atom/movable/_tmp_buck_31 = my_mob?.buckled_to()
 		. = _tmp_buck_31.relaymove(my_mob,direct)
 	else
+		// MOVE_COST: this step's cost by part (code/domains/world_model/atom/move_cost.dm)
+		var/turf/cost_from = get_turf(my_mob)
+		var/cost_marks = GLOB.refresh_marks_raised
+		var/cost_chunks = GLOB.interest_chunks_entered
+		var/cost_lights = SSlighting.pending_source_count()
+		var/cost_started = move_cost_begin()
 		. = my_mob.SelfMove(n, direct, total_delay)
+		move_cost_end(cost_started, my_mob, cost_from, cost_marks, cost_chunks, cost_lights)
 
 	// If we ended up moving diagonally, increase delay.
 	if((direct & (direct - 1)) && mob.loc == n)

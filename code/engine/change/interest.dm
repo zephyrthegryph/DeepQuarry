@@ -58,6 +58,9 @@ GLOBAL_VAR_INIT(refresh_deferred_absorbed, 0)
 GLOBAL_VAR_INIT(interest_chunks_entered, 0)
 GLOBAL_VAR_INIT(interest_chunks_left, 0)
 GLOBAL_VAR_INIT(interest_drawn_now, 0)
+/// Ring chunks listed for the drain to scan (interest_prefetch()), and listed ones dropped unscanned because no observer held them any more.
+GLOBAL_VAR_INIT(interest_ring_listed, 0)
+GLOBAL_VAR_INIT(interest_ring_scans_stale, 0)
 
 /// The anchors (handles of the atoms standing on a turf that carry this client's eye or mob) registered for this client.
 /client/var/tmp/list/interest_anchor_handles
@@ -163,9 +166,10 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 			if(was_visible && (key in was_visible))
 				relocated = FALSE
 				break
-	// On a jump the visible area comes first and the ring waits behind it: the ring's chunks are scanned by the drain, nearest first, once the view is drawn.
+	// The ring is never scanned inside the step: a walker crossing a chunk edge enters four ring chunks of about 300 owed draws each (35-50 ms measured on the test server, a hitch at
+	// every edge a player runs over), so the chunks are only listed here and the drain scans them one at a time, nearest first, once the view is drawn (interest_ring_scan()).
 	if(length(ringed))
-		interest_prefetch(ringed, visible, eye, lazy = (length(arriving) && relocated))
+		interest_prefetch(ringed, visible, eye, lazy = TRUE, jump = (length(arriving) && relocated))
 	if(length(arriving))
 		interest_arrive(owner, arriving, visible, eye, relocated)
 	var/hold_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - hold_started)
@@ -273,13 +277,16 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		. += text2num(key_text)
 
 /// Chunks `keys` entered an observer's ring: what they owe is drawn ahead of the backlog, nearest the observer first, before they come into view.
-/// `lazy`: the owner's view jumped, so its visible area is drawn first; the chunks are only listed here and the drain scans them one at a time (interest_ring_scan()).
-/proc/interest_prefetch(list/keys, list/visible, turf/eye, lazy = FALSE)
+/// `lazy`: the chunks are only listed here and the drain scans them one at a time, nearest first (interest_ring_scan()); every hold change asks for it, so a step costs no scan.
+/// `jump`: the owner's view jumped (traced).
+/proc/interest_prefetch(list/keys, list/visible, turf/eye, lazy = FALSE, jump = FALSE)
 	var/list/middle = interest_view_middle(visible, eye)
 	if(lazy)
 		for(var/key in interest_chunks_nearest(keys, middle))
 			GLOB.interest_ring_scans += list(list(key, middle[1], middle[2]))
-		log_world("INTEREST: [length(keys)] chunk(s) in the ring, scan left to the drain")
+		GLOB.interest_ring_listed += length(keys)
+		if(jump)
+			log_world("INTEREST: [length(keys)] chunk(s) in the ring, scan left to the drain")
 		interest_drain_soon()
 		return
 	var/list/owed = interest_owed_ordered(keys, middle)
@@ -304,6 +311,10 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	var/list/entry = GLOB.interest_ring_scans[1]
 	GLOB.interest_ring_scans.Cut(1, 2)
 	var/key = entry[1]
+	if(!interest_count(round(key / 1048576), round((key % 1048576) / 1024), key % 1024))
+		GLOB.interest_ring_scans_stale++ // no observer holds the chunk any more (the walker moved on): nothing is prefetched for it
+		return TRUE
+	var/scan_started = TICK_USAGE_REAL
 	var/list/owed = list()
 	interest_collect_owed(owed, round(key / 1048576), round((key % 1048576) / 1024), key % 1024, entry[2], entry[3])
 	var/queued = 0
@@ -312,8 +323,9 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		if(isatom(A))
 			queued += interest_wake(A)
 	GLOB.interest_prefetched += owed
-	if(length(owed))
-		log_world("INTEREST: ring chunk scanned by the drain, [queued] parked draw(s) queued, [length(owed)] prefetched nearest first, [length(GLOB.interest_ring_scans)] ring chunk(s) left")
+	var/scan_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - scan_started)
+	if(length(owed) && scan_ms >= INTEREST_HOLD_SLOW_MS)
+		log_world("INTEREST: ring chunk scanned by the drain in [round(scan_ms, 0.1)] ms, [queued] parked draw(s) queued, [length(owed)] prefetched nearest first, [length(GLOB.interest_ring_scans)] ring chunk(s) left")
 	return TRUE
 
 /// Chunks `keys` (nearest first) wait to be scanned for owed draws behind `owner`'s cover, looking from `middle`.
