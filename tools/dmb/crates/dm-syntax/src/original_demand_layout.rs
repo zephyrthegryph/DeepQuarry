@@ -1,7 +1,7 @@
 //! Private demand-layout DATA over the SAME native kernels. Neither this
 //! retained allocation owner nor a line batch certifies source EOF/model state.
 use super::*;
-use std::{alloc::{alloc, Layout}, io, mem, ptr::NonNull, sync::Arc};
+use std::{alloc::Layout, io, mem, sync::Arc};
 struct LayoutOwner(Option<Arc<LayoutCredit>>);
 impl Clone for LayoutOwner{fn clone(&self)->Self{Self(Some(self.0.as_ref().expect("live primary layout owner").clone()))}}
 impl Drop for LayoutOwner{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(payload)=Arc::into_inner(owner){drop(payload)}}}}
@@ -18,6 +18,10 @@ fn actual_error(a: &crate::SettingAdmission<'_>, status: io::Error) -> io::Error
     a.take_operational_error().unwrap_or(status)
 }
 
+// Both buffers use the standard Global allocator and its exact logical
+// RawVec capacity. Preserve the existing old+new peak admission, but let
+// Global grow/reallocate the owner instead of always copying its full prefix
+// into a distinct new allocation on every tiny consumed-token frontier.
 fn fund_buffer<T>(
     rows: &mut Vec<T>, desired: usize, credit: &mut crate::SettingRootLease,
     a: &crate::SettingAdmission<'_>,
@@ -26,30 +30,26 @@ fn fund_buffer<T>(
     let layout = Layout::array::<T>(desired).map_err(|_| io::ErrorKind::OutOfMemory)?;
     let prior = rows.capacity().checked_mul(mem::size_of::<T>()).ok_or(io::ErrorKind::OutOfMemory)?;
     a.grow(credit, layout.size()).map_err(|e| actual_error(a, e))?;
-    // SAFETY: nonempty Global layout for the two admitted non-ZST buffer
-    // types, reserved before allocation. All existing rows move once.
-    let pointer = NonNull::new(unsafe { alloc(layout) }.cast::<T>()).ok_or(io::ErrorKind::OutOfMemory)?;
-    let mut next = unsafe { Vec::from_raw_parts(pointer.as_ptr(), 0, desired) };
-    next.append(rows);
-    drop(mem::replace(rows, next));
+    // additional is relative to LEN, not the previous capacity. This asks
+    // exactly desired total elements, without geometric speculative storage.
+    // On an allocator failure the old Vec is intact and its conservative
+    // old+new lease remains live until its unchanged owner drops.
+    rows.try_reserve_exact(desired - rows.len()).map_err(|_| io::ErrorKind::OutOfMemory)?;
     a.shrink(credit, prior).map_err(|e| actual_error(a, e))
 }
 
-// Reuse the same exact byte-buffer allocator and replacement-peak lease.
-// The new allocation is EMPTY, so safe String construction validates zero
-// bytes. Copy the already-valid old string once, then free/refund its buffer.
 fn fund_visible_string(
     text: &mut String, desired: usize, credit: &mut crate::SettingRootLease,
     a: &crate::SettingAdmission<'_>,
 ) -> io::Result<()> {
     if text.capacity() >= desired { return Ok(()); }
-    let prior = text.capacity();
-    let mut empty = Vec::<u8>::new();
-    fund_buffer(&mut empty, desired, credit, a)?;
-    let mut next = String::from_utf8(empty).expect("new funded mask buffer is empty");
-    next.push_str(text);
-    drop(mem::replace(text, next));
-    a.shrink(credit, prior).map_err(|e| actual_error(a, e))
+    let layout=Layout::array::<u8>(desired).map_err(|_| io::ErrorKind::OutOfMemory)?;
+    let prior=text.capacity();
+    a.grow(credit,layout.size()).map_err(|e|actual_error(a,e))?;
+    // String delegates to its existing byte Vec; UTF8 and the payload remain
+    // unchanged. No empty replacement Vec, repeated prefix copy, or reparse.
+    text.try_reserve_exact(desired-text.len()).map_err(|_|io::ErrorKind::OutOfMemory)?;
+    a.shrink(credit,prior).map_err(|e|actual_error(a,e))
 }
 
 /// Lines drop before their exact same-domain buffer credit, independently of
@@ -252,4 +252,70 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   for raw in source.split_inclusive('\n'){end+=raw.len();let n=tokens.partition_point(|token|token.span.end<=end);let batch=cursor.advance(&source[..end],&tokens[..n],&original,end==source.len()).unwrap();assert_eq!(batch.len(),1);assert_eq!(batch[0].header_start,end-raw.len());assert!(cursor.masks.visible.is_empty());assert!(cursor.masks.visible.capacity()<128);assert!(counter.load(Ordering::Acquire)<64<<10);drop(batch);}
   assert_eq!(cursor.source_base,source.len());drop(cursor);drop(original);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
+ #[test]
+ fn exact_layout_growth_keeps_real_global_capacity_and_preserves_bounded_frontiers() {
+  let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));
+  let mut strings=a.reserve(0).unwrap();let mut bytes=a.reserve(0).unwrap();let mut spans=a.reserve(0).unwrap();
+  let mut text=String::new();let mut data=Vec::<u8>::new();let mut rows=Vec::<Span>::new();
+  fund_visible_string(&mut text,4,&mut strings,&a).unwrap();text.push_str("\u{3b1}\u{3b2}");
+  fund_buffer(&mut data,4,&mut bytes,&a).unwrap();data.extend_from_slice(&[1,2,3,4]);
+  fund_buffer(&mut rows,4,&mut spans,&a).unwrap();rows.push(Span::new(10,20));
+  // Deterministic bounded work, not a timing benchmark or an assertion that
+  // Global realloc must stay in-place. Every frontier requests only its exact
+  // logical capacity; no application-level prefix copy is required.
+  for desired in 5..=132 {
+   fund_visible_string(&mut text,desired,&mut strings,&a).unwrap();
+   fund_buffer(&mut data,desired,&mut bytes,&a).unwrap();
+   fund_buffer(&mut rows,desired,&mut spans,&a).unwrap();
+   assert_eq!((text.capacity(),data.capacity(),rows.capacity()),(desired,desired,desired));
+   assert_eq!((strings.bytes(),bytes.bytes(),spans.bytes()),(desired,desired,desired*mem::size_of::<Span>()));
+   assert_eq!(&text[..4],"\u{3b1}\u{3b2}");assert!(text[4..].bytes().all(|v|v==b'x'));
+   assert_eq!(&data[..4],&[1,2,3,4]);assert!(data[4..].iter().all(|v|*v==5));
+   assert_eq!(rows.as_slice(),&[Span::new(10,20)]);
+   text.push('x');data.push(5);
+  }
+  let pointers=(text.as_ptr(),data.as_ptr(),rows.as_ptr());let held=counter.load(Ordering::Acquire);
+  // A capacity-sufficient query does not allocate or change the lease.
+  fund_visible_string(&mut text,132,&mut strings,&a).unwrap();fund_buffer(&mut data,132,&mut bytes,&a).unwrap();fund_buffer(&mut rows,132,&mut spans,&a).unwrap();
+  assert_eq!((text.as_ptr(),data.as_ptr(),rows.as_ptr()),pointers);assert_eq!(counter.load(Ordering::Acquire),held);
+  drop((text,data,rows));drop((strings,bytes,spans));
+  assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn exact_layout_realloc_cannot_spend_delta_only_when_old_plus_new_peak_is_denied() {
+  for string in [false,true] {
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let limit=crate::SettingChargeCounter::root_allocation_bytes()+4+9-1;
+   let a=crate::SettingAdmission::new(&counter,limit,&||Ok(()));let mut credit=a.reserve(0).unwrap();
+   let mut rows=Vec::new();let mut text=String::new();
+   if string {fund_visible_string(&mut text,4,&mut credit,&a).unwrap();text.push_str("\u{3b1}");}
+   else {fund_buffer(&mut rows,4,&mut credit,&a).unwrap();rows.extend_from_slice(&[1u8,2]);}
+   let actual=if string {fund_visible_string(&mut text,9,&mut credit,&a)}else{fund_buffer(&mut rows,9,&mut credit,&a)};
+   assert_eq!(actual.unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(credit.bytes(),4);
+   if string {assert_eq!(text,"\u{3b1}");assert_eq!(text.capacity(),4);}else{assert_eq!(rows,&[1,2]);assert_eq!(rows.capacity(),4);}
+   assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes()+4);
+   drop((text,rows));drop(credit);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+ #[test]
+ fn exact_layout_realloc_first_io_preserves_actual_error_and_conservative_credit_until_drop() {
+  for string in [false,true] {for stop in 1..=3 {
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let calls=std::cell::Cell::new(0);let armed=std::cell::Cell::new(false);let observed_peak=std::cell::Cell::new(0);
+   let poll=||{if armed.get(){observed_peak.set(observed_peak.get().max(counter.load(Ordering::Acquire)));let n=calls.get()+1;calls.set(n);if n==stop{return Err(io::Error::from_raw_os_error(1450));}}Ok(())};
+   let a=crate::SettingAdmission::new(&counter,4096,&poll);let mut credit=a.reserve(0).unwrap();let mut rows=Vec::new();let mut text=String::new();
+   if string {fund_visible_string(&mut text,4,&mut credit,&a).unwrap();text.push_str("\u{3b1}");}
+   else {fund_buffer(&mut rows,4,&mut credit,&a).unwrap();rows.extend_from_slice(&[1u8,2]);}
+   armed.set(true);
+   let actual=if string{fund_visible_string(&mut text,9,&mut credit,&a)}else{fund_buffer(&mut rows,9,&mut credit,&a)};
+   assert_eq!(actual.unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),stop);
+   let expected=if stop<3 {4}else{9};let held=if stop<3 {4}else{4+9};
+   assert_eq!(credit.bytes(),held);
+   if string{assert_eq!(text,"\u{3b1}");assert_eq!(text.capacity(),expected);}else{assert_eq!(rows,&[1,2]);assert_eq!(rows.capacity(),expected);}
+   if stop==3 {assert_eq!(observed_peak.get(),crate::SettingChargeCounter::root_allocation_bytes()+4+9);}
+   drop((text,rows));drop(credit);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }}
+ }
+
 }

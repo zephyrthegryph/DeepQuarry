@@ -4173,3 +4173,26 @@ consumer: it is separate from static typing and never read in the saved checker
 modules. Native Unhinted therefore does not require new branch refinement to
 match that observed source contract. Independent diagnostic parity is still
 unproven; inventing refinement or a static input return type would add behavior.
+### Exact layout-buffer reallocation
+
+Two owned diagnostic samples found bulk copy and allocator free under exact
+layout-buffer growth. Vec and String now use safe exact reservation under the
+same pre-funded old-plus-new peak, rather than always allocating a distinct
+buffer and copying the application payload. The supported stdlib's Global
+allocator stores the exact requested logical capacity. No geometric target,
+resource-cap increase, fallback retry or source-authority change was added;
+two raw unsafe allocation operations were removed. Reallocation can still move
+internally, so this is not a pointer-stability or asymptotic allocator promise.
+The String path removes one redundant zero-byte-release poll; every remaining
+checkpoint preserves its first actual error and conservative credit until drop.
+
+Eleven focused capacity, UTF8, payload, quota, I/O and refund controls passed.
+The warmed private host/integration rebuild passed in nine minutes. The real
+checkout then processed 4,896,185 producer rows in 36.987 seconds, with 0.007
+seconds blocked sending, before a genuine syntax-budget refusal: 5,230,559 bytes
+requested with 128,987,444 retained under the unchanged 134,217,728-byte cap.
+This clears the earlier timeout bottleneck but does not complete capture or
+establish whole-checkout throughput/parity. No new body coverage count exists.
+The next investigation distinguishes genuinely live layout windows, output-row
+reservations and physically retained empty scratch buffers without raising the
+cap or understating ownership.
