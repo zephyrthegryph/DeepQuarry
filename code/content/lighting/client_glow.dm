@@ -2,14 +2,22 @@
 // plane, blended additively over its black backdrop; the plane master multiplies the result over the world, so the client's
 // GPU does the blending and the server only sends where each glow sits, its colour, size and strength. The DM lighting
 // corners and turf underlays are not touched in this mode: no lighting object is made, and a light skips its corner work.
-// The default lighting of a running server. Glows draw on a hidden plane that is cut to what this client sees, spread onto walls and relayed to the lighting plane (client_lighting_compare.dm).
+// The default lighting of a running server. Glows draw on a hidden plane that is cut to what this client sees, spread onto walls and relayed to the lighting plane (client_lighting_screen.dm).
 
 /// TRUE while lights draw as client glows instead of the DM corner and underlay lighting. The lighting system sets it at boot
 /// (a test sets it through client_lighting_set()); a unit-test world stays on the DM engine unless the test asks.
 GLOBAL_VAR_INIT(client_lighting, FALSE)
-/// TRUE: a glow's bounds cover its reach, so BYOND sends it to every client that sees any turf it lights (a light just off
-/// screen still spills on). FALSE (benchmarks): bounds are one tile and only clients seeing the light's own turf get it.
-GLOBAL_VAR_INIT(client_glow_bounds, FALSE)
+
+/// Per-event lighting diagnostics (a chunk crossing, a delivery ack, a flat light recolour, a settle, a flush) are written only while the lighting_trace config flag is on
+/// (profiling and play-testing): they run on every crossing and light change, and a log line each is a server cost. Warnings and anomalies (images taken off a client,
+/// a stale or timed-out delivery, a drop-all and its reason) are always written. Use as `if(client_glow_trace_line())` around the log_world(); the lines written are counted.
+GLOBAL_VAR_INIT(client_glow_trace_lines, 0)
+
+/proc/client_glow_trace_line()
+	if(!CONFIG_GET(flag/lighting_trace))
+		return FALSE
+	GLOB.client_glow_trace_lines++
+	return TRUE
 
 /// One light source's glow.
 /obj/effect/overlay/client_glow
@@ -60,6 +68,8 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 /datum/light_source/proc/client_glow_apply()
 	if(!glow)
 		rel_set(src, nameof(glow), new /obj/effect/overlay/client_glow(null))
+	var/turf/was_at = glow_reach_origin // where its light last reached from, for the flat lights it leaves
+	var/was_range = glow_mask_range
 	var/obj/effect/overlay/client_glow/G = glow
 	var/range = clamp(CEILING(light_range, 0.5), 1, 6)
 	var/pixel_bounds = ((range - 1) * 64) + 32
@@ -73,20 +83,12 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	G.set_plane(client_glow_plane())
 	client_glow_note_moving()
 	G.set_alpha(clamp(round(255 * min(light_power, 1) * (range <= CLIENT_GLOW_SMALL_RANGE ? CLIENT_GLOW_SMALL_SCALE : 1)), 0, 255)) // a device's small glow reads far stronger than the corner lighting's at the same power
-	// Bounds over the reach: BYOND counts the glow as standing on every turf they cover (its locs) and sends it to any client
-	// that sees one of them. The glow is placed, never moved, so no Crossed()/Entered() fires on the covered turfs.
-	var/reach_px = GLOB.client_glow_bounds ? CEILING(range, 1) * WORLD_ICON_SIZE : 0
-	if(G.bound_x != -reach_px)
-		G.bound_x = -reach_px
-		G.bound_y = -reach_px
-		G.bound_width = 2 * reach_px + WORLD_ICON_SIZE
-		G.bound_height = 2 * reach_px + WORLD_ICON_SIZE
 	if(G.loc != source_turf)
 		G.abstract_move(source_turf)
 	client_glow_mask_apply(CEILING(range, 1), offset) // the shadow mask (client_shadow.dm)
 	applied = TRUE
 	client_glow_holders_consider(src) // viewers holding an off-screen copy follow (client_glow_holder.dm)
-	client_flat_lights_refresh(src) // big sprites near it take the new light of their turf (client_flat_light.dm)
+	client_flat_lights_refresh(src, was_at, was_range) // big sprites near it, or near where it was, take the new light of their turf (client_flat_light.dm)
 
 /// A carried light, a mob's own light and anything that has changed turf since it first glowed draw uncut: their shape changes as they go, and
 /// a bake per step would be a storm. The visibility cut on the glow plane still removes what they spill on tiles this client cannot see.
@@ -113,18 +115,23 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	if(!glow)
 		return
 	client_glow_note_moving()
-	log_world("client glow: light at [now] settled, [glow_plain ? "still carried, stays plain" : "back to its baked cut"]")
+	if(client_glow_trace_line())
+		log_world("client glow: light at [now] settled, [glow_plain ? "still carried, stays plain" : "back to its baked cut"]")
 	client_glow_holders_consider(src)
 
 /// This light stops glowing (it went off, moved into nullspace or left client lighting).
 /datum/light_source/proc/client_glow_clear()
+	var/turf/was_at = glow_reach_origin
+	var/was_range = glow_mask_range
+	if(glow_holder_key)
+		GLOB.client_glow_dirty_lights -= glow_holder_key
 	client_glow_holders_drop(src)
 	client_glow_mask_clear()
 	if(glow)
 		var/obj/effect/overlay/client_glow/G = glow
 		rel_clear(src, nameof(glow))
 		spent(G)
-	client_flat_lights_refresh(src)
+	client_flat_lights_refresh(src, was_at, was_range)
 
 /// Switches client lighting on or off live: every lighting object goes (on) or comes back (off), and every light redraws.
 /// One pass with no yield (an admin switch): a yield would leave half the map in each mode, and the test clock never resumes it.
@@ -138,7 +145,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	client_glow_holders_switched(on)
 	client_flat_lights_switched(on)
 	log_world("client lighting: [on ? "on" : "off"]")
-	client_glow_screens_sync() // the black base on every client's lighting plane (client_lighting_compare.dm)
+	client_glow_screens_sync() // the black base on every client's lighting plane (client_lighting_screen.dm)
 	if(!SSlighting.is_initialized())
 		return
 	client_glow_whites_set(on) // turfs outside dynamic lighting stay bright over the base

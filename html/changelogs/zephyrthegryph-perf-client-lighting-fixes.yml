@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Glows held for off-screen lights no longer blink out when a door closes or you step behind a wall; they move to a turf you can still see"
+  - code_imp: "Client lighting: chunk crossings walk only the chunks along the box edges, stored glow shapes load off the crossing, flat lights and opacity changes are local and batched once per lighting step, per-event lighting diagnostics are behind the lighting_trace config flag"

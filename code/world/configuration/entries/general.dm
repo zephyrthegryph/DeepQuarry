@@ -840,3 +840,7 @@
 
 /// log vore interactions
 /datum/config_entry/flag/log_vore
+
+/// Per-event client lighting diagnostics (a chunk crossing, a delivery ack, a flat light recolour, a flush) are written to the game log. Off by default: they run
+/// on every crossing and light change. Warnings and anomalies are written regardless.
+/datum/config_entry/flag/lighting_trace

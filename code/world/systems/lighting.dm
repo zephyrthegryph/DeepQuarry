@@ -97,6 +97,8 @@ SYSTEM_DEF(lighting)
 		queue.Cut(1, i + 1)
 		i = 0
 
+	client_glow_reconsider_flush(init_tick_checks) // client lighting: the opacity changes since the last step, one redraw per light (client_shadow.dm)
+
 	if(!init_tick_checks)
 		KERNEL_SPLIT_TICK
 

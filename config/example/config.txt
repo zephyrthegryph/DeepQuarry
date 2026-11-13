@@ -686,3 +686,7 @@ DRIFT_PROFILE_DELAY 150
 ## machines) and logs OM_AUDIT: MISSED WAKE when one should have been woken. A debugging aid; leave
 ## off on live servers.
 #OM_PIPELINE_AUDIT
+
+## Uncomment to write the per-event client lighting diagnostics to the game log (every chunk crossing, glow delivery,
+## flat light recolour and opacity flush). A profiling and play-testing aid; leave off on live servers.
+#LIGHTING_TRACE

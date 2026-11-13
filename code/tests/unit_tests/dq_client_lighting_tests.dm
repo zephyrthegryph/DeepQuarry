@@ -22,9 +22,6 @@
 	TEST_ASSERT_EQUAL(S.glow.loc, get_turf(L), "the glow sits on the light's turf")
 	TEST_ASSERT(S.glow.alpha > 0, "the glow is visible (alpha [S.glow.alpha])")
 	TEST_ASSERT_EQUAL(S.glow.blend_mode, BLEND_ADD, "the glow adds onto the lighting plane")
-	var/turf/edge = locate(T.x + CEILING(S.light_range, 1), T.y, T.z)
-	if(edge && GLOB.client_glow_bounds)
-		TEST_ASSERT(edge in S.glow.locs, "the glow's bounds reach the turf at the edge of its range, so a client seeing only that turf gets it")
 	var/live_glows = 0
 	var/holders = 0
 	for(var/obj/effect/overlay/client_glow/G in world)
@@ -231,11 +228,15 @@
 
 // ---- the per-client glow holder (client_glow_holder.dm) ----
 
+/// Marks every client lighting counter a test may move, so teardown restores them.
+/datum/unit_test/proc/client_glow_counters_restore()
+	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved), nameof(GLOB.client_glow_holder_chunk_visits), nameof(GLOB.client_glow_holder_sight_refreshes), nameof(GLOB.client_glow_trace_lines), nameof(GLOB.client_glow_flushes), nameof(GLOB.client_glow_flush_changes), nameof(GLOB.client_glow_reconsiders), nameof(GLOB.client_glow_mask_builds), nameof(GLOB.client_flat_light_refreshes), nameof(GLOB.client_flat_light_recolours), nameof(GLOB.client_flat_light_makes)))
+		set_global(counter, GLOB.vars[counter])
+
 /// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
 /datum/unit_test/proc/client_glow_holder_setup(list/out)
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
-	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved)))
-		set_global(counter, GLOB.vars[counter]) // teardown restores the counters
+	client_glow_counters_restore()
 	var/obj/machinery/light/F = allocate(/obj/machinery/light, run_loc_floor_bottom_left)
 	client_lighting_set(TRUE)
 	SSlighting.light_step(0, TRUE)
@@ -585,9 +586,11 @@
 	var/away = (A.x > LT.x ? 1 : -1) * CLIENT_GLOW_CHUNK
 	var/turf/B = locate(A.x + away, A.y, A.z)
 	TEST_ASSERT_NOTNULL(B, "a chunk further from the light exists")
-	var/lights = 0
+	var/list/indexed = list()
 	for(var/key in GLOB.client_glow_chunks)
-		lights += length(GLOB.client_glow_chunks[key])
+		for(var/datum/light_source/indexed_light as anything in GLOB.client_glow_chunks[key])
+			indexed[indexed_light] = TRUE
+	var/lights = length(indexed)
 	var/skipped = GLOB.client_glow_holder_scans_skipped
 	H.view_at(B, 7, 7)
 	if(lights == 1)
@@ -949,6 +952,7 @@
 /datum/unit_test/dq_client_lighting_bake_matches_plain
 
 /datum/unit_test/dq_client_lighting_bake_matches_plain/Run()
+	client_glow_counters_restore()
 	var/list/tiles = list()
 	for(var/dx in -5 to 5)
 		for(var/dy in -5 to 5)
@@ -979,9 +983,19 @@
 	fdel(png)
 	GLOB.client_glow_baker.icons -= key
 	var/loads = GLOB.client_glow_baker.stored_loads
-	TEST_ASSERT_NOTNULL(client_glow_mask_icon(key), "a stored shape is ready at once")
+	var/datum/client_glow_holder/waiting_viewer = new
+	var/image/waiting_glow = image(null)
+	LAZYSET(waiting_viewer.held, "waiting", list(waiting_glow, image(null)))
+	LAZYSET(waiting_viewer.held_shape, "waiting", key)
+	TEST_ASSERT_NULL(client_glow_mask_icon(key), "a stored shape is not read inside the request that asks for it")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_baker.stored_loads, loads, "the request read no file")
+	TEST_ASSERT(GLOB.client_glow_baker.pending[key], "the shape waits for the store's turn")
+	client_glow_store_pump()
+	TEST_ASSERT_NOTNULL(GLOB.client_glow_baker.icons[key], "the store's turn loaded the shape")
 	TEST_ASSERT_EQUAL(GLOB.client_glow_baker.stored_loads, loads + 1, "it came from the store")
-	TEST_ASSERT(!GLOB.client_glow_baker.pending[key], "nothing was queued")
+	TEST_ASSERT(!GLOB.client_glow_baker.pending[key], "nothing is left queued")
+	TEST_ASSERT_EQUAL(LAZYACCESS(waiting_viewer.cut_shape, "waiting"), key, "the viewer waiting on the shape shows it once it has loaded")
+	spent(waiting_viewer)
 	GLOB.client_glow_baker.store_on = FALSE
 	GLOB.client_glow_baker.icons -= key
 	fdel(store)
@@ -993,6 +1007,7 @@
 
 /datum/unit_test/dq_client_flat_light_big_mob/Run()
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	client_glow_counters_restore()
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/east = locate(T.x + 12, T.y, T.z)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
@@ -1061,3 +1076,271 @@
 	TEST_ASSERT(!LAZYACCESS(H.delivered, "shape1"), "the oldest entry is dropped")
 	TEST_ASSERT(LAZYACCESS(H.delivered, "shape[CLIENT_GLOW_MASK_CACHE_MAX]"), "the entry before the newest is kept")
 	spent(H)
+
+/// The store's turn is bounded: with a budget spent at once, one shape is read per turn and the rest waits for the next, in the order asked.
+/datum/unit_test/dq_client_glow_store_pump_respects_budget
+
+/datum/unit_test/dq_client_glow_store_pump_respects_budget/Run()
+	client_glow_counters_restore()
+	var/list/keys = list()
+	for(var/i in 1 to 3)
+		var/key = "160|0,0,[i],0|"
+		var/png = client_glow_mask_bake_blocking(key)
+		TEST_ASSERT_NOTNULL(png, "baked a shape to store")
+		GLOB.client_glow_baker.store_on = TRUE
+		fcopy(png, client_glow_store_path(key))
+		fdel(png)
+		GLOB.client_glow_baker.icons -= key
+		keys += key
+	for(var/key in keys)
+		client_glow_mask_request(key)
+	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 3, "all three shapes wait for the store")
+	client_glow_store_pump(-1) // a budget already spent: at least one is read
+	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 2, "a turn with no budget reads exactly one shape")
+	TEST_ASSERT_NOTNULL(GLOB.client_glow_baker.icons[keys[1]], "the first asked is the first loaded")
+	TEST_ASSERT_NULL(GLOB.client_glow_baker.icons[keys[2]], "the second waits for the next turn")
+	for(var/turn in 1 to 5)
+		if(!length(GLOB.client_glow_baker.store_queue))
+			break
+		client_glow_store_pump()
+	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 0, "a few more turns read the rest")
+	for(var/key in keys)
+		TEST_ASSERT(GLOB.client_glow_baker.icons[key], "every stored shape loaded")
+		GLOB.client_glow_baker.icons -= key
+		fdel(client_glow_store_path(key))
+	GLOB.client_glow_baker.store_on = FALSE
+
+// ---- the reach index, crossings that walk only their edges, batched opacity, sight between crossings, tracing
+
+/// A light is indexed under every chunk its reach box overlaps, and under no other; it follows the light when it moves and leaves with it.
+/datum/unit_test/dq_client_glow_index_covers_reach_box
+
+/datum/unit_test/dq_client_glow_index_covers_reach_box/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	client_glow_counters_restore()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/light/F = allocate(/obj/machinery/light, T)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/datum/light_source/S = F.light
+	TEST_ASSERT_NOTNULL(S?.glow_chunk_box, "a glowing light is indexed")
+	var/r = CLIENT_GLOW_RADIUS(S)
+	var/list/box = glow_reach_box(T, r)
+	var/expected = 0
+	var/found = 0
+	for(var/gx in -1 to world.maxx / CLIENT_GLOW_CHUNK + 1)
+		for(var/gy in -1 to world.maxy / CLIENT_GLOW_CHUNK + 1)
+			var/list/chunk_box = list(gx * CLIENT_GLOW_CHUNK + 1, gy * CLIENT_GLOW_CHUNK + 1, gx * CLIENT_GLOW_CHUNK + CLIENT_GLOW_CHUNK, gy * CLIENT_GLOW_CHUNK + CLIENT_GLOW_CHUNK)
+			var/overlaps = glow_boxes_overlap(box, chunk_box) && gx >= 0 && gy >= 0
+			var/indexed = (S in GLOB.client_glow_chunks[client_glow_chunk_id(T.z, gx, gy)])
+			if(overlaps)
+				expected++
+			if(indexed)
+				found++
+			TEST_ASSERT_EQUAL(!!indexed, !!overlaps, "the light is indexed under chunk [gx],[gy] exactly when its reach box [box[1]],[box[2]] to [box[3]],[box[4]] overlaps it")
+	TEST_ASSERT_EQUAL(found, expected, "and under no other chunk")
+	var/turf/far = locate(T.x + CLIENT_GLOW_CHUNK * 2, T.y, T.z)
+	if(far)
+		F.forceMove(far)
+		SSlighting.light_step(0, TRUE)
+		S = F.light
+		var/list/moved_box = glow_reach_box(far, r)
+		var/moved_found = 0
+		for(var/key in GLOB.client_glow_chunks)
+			if(S in GLOB.client_glow_chunks[key])
+				moved_found++
+		var/list/moved_chunks = glow_chunk_range(list(max(moved_box[1], 1), max(moved_box[2], 1), min(moved_box[3], world.maxx), min(moved_box[4], world.maxy))) // the index stays on the map
+		TEST_ASSERT_EQUAL(moved_found, (moved_chunks[3] - moved_chunks[1] + 1) * (moved_chunks[4] - moved_chunks[2] + 1), "after a move the light is under the chunks of its new reach box only")
+	var/datum/light_source/gone = S
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	for(var/key in GLOB.client_glow_chunks)
+		TEST_ASSERT(!(gone in GLOB.client_glow_chunks[key]), "a light that stopped glowing is in no chunk ([key])")
+
+/// A crossing of one chunk looks in exactly the chunks the three strips cover (the part of the new reach box the old did not cover, the same for the box grown by a
+/// chunk, and the part of the old keep box the new does not cover): no range grows them, so the walk is the edges of the boxes, well under a full scan.
+/datum/unit_test/dq_client_glow_holder_crossing_walks_edge_chunks
+
+/datum/unit_test/dq_client_glow_holder_crossing_walks_edge_chunks/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/datum/client_glow_holder/H = got[2]
+	var/obj/machinery/light/F = got[1]
+	var/turf/A = client_glow_test_eye(get_turf(F))
+	var/step = (A.x > F.x ? 1 : -1) * CLIENT_GLOW_CHUNK
+	var/turf/B = locate(A.x + step, A.y, A.z)
+	TEST_ASSERT_NOTNULL(B, "the next chunk exists")
+	H.view_at(A, 7, 7)
+	var/list/old_reach = H.reach.Copy()
+	var/list/old_keep = H.keep_reach.Copy()
+	var/visits = GLOB.client_glow_holder_chunk_visits
+	H.view_at(B, 7, 7)
+	visits = GLOB.client_glow_holder_chunk_visits - visits
+	var/chunk = CLIENT_GLOW_CHUNK
+	var/list/new_ring = list(H.reach[1] - chunk, H.reach[2] - chunk, H.reach[3] + chunk, H.reach[4] + chunk)
+	var/list/old_ring = list(old_reach[1] - chunk, old_reach[2] - chunk, old_reach[3] + chunk, old_reach[4] + chunk)
+	var/list/strips = glow_box_minus(H.reach, old_reach) + glow_box_minus(new_ring, old_ring) + glow_box_minus(old_keep, H.keep_reach)
+	var/covered = 0
+	for(var/gx in -4 to world.maxx / chunk + 4)
+		for(var/gy in -4 to world.maxy / chunk + 4)
+			var/list/chunk_box = list(gx * chunk + 1, gy * chunk + 1, gx * chunk + chunk, gy * chunk + chunk)
+			for(var/list/strip as anything in strips)
+				if(glow_boxes_overlap(strip, chunk_box))
+					covered++
+					break
+	TEST_ASSERT_EQUAL(visits, covered, "a one-chunk step looks in exactly the chunks the strips cover, not the strips grown by a range")
+	var/grown = 0 // what the strips would have cost grown by a light's longest reach, as the position index needed
+	for(var/gx in -4 to world.maxx / chunk + 4)
+		for(var/gy in -4 to world.maxy / chunk + 4)
+			var/list/chunk_box = list(gx * chunk + 1, gy * chunk + 1, gx * chunk + chunk, gy * chunk + chunk)
+			for(var/list/strip as anything in strips)
+				if(glow_boxes_overlap(list(strip[1] - CLIENT_GLOW_MAX_RANGE, strip[2] - CLIENT_GLOW_MAX_RANGE, strip[3] + CLIENT_GLOW_MAX_RANGE, strip[4] + CLIENT_GLOW_MAX_RANGE), chunk_box))
+					grown++
+					break
+	TEST_ASSERT(visits < grown, "and fewer than the strips grown by a light's reach ([visits] against [grown])")
+	log_test("CLIENT GLOW CROSSING: one chunk step looked in [visits] chunk(s); the strips grown by a light's reach would be [grown]")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// Opacity changes are folded: any number of turfs changing near a light before the next lighting step redraw its mask once.
+/datum/unit_test/dq_client_glow_opacity_changes_batched
+
+/datum/unit_test/dq_client_glow_opacity_changes_batched/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	client_glow_counters_restore()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/east1 = locate(T.x + 1, T.y, T.z)
+	var/turf/north1 = locate(T.x, T.y + 1, T.z)
+	TEST_ASSERT(east1 && north1 && !east1.directional_opacity && !north1.directional_opacity, "the test floor has clear turfs east and north")
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/datum/light_source/S = L.light
+	TEST_ASSERT_NOTNULL(S?.glow_mask_key, "the light has a mask")
+	var/reconsiders = GLOB.client_glow_reconsiders
+	var/changes = GLOB.client_glow_flush_changes
+	var/builds = GLOB.client_glow_mask_builds
+	allocate(/obj/structure/sight_test_blocker, east1)
+	allocate(/obj/structure/sight_test_blocker, north1)
+	TEST_ASSERT(length(GLOB.client_glow_dirty_lights), "the light waits for the lighting step instead of redrawing at once")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_reconsiders, reconsiders, "nothing is redrawn before the step")
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(GLOB.client_glow_flush_changes >= changes + 2, "both turfs' changes were noted ([GLOB.client_glow_flush_changes - changes])")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_reconsiders, reconsiders + 1, "the light was redrawn once for the two changes")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_mask_builds, builds + 1, "and its mask was rebuilt once")
+	TEST_ASSERT(S.glow_reach["1,0"] && S.glow_reach["0,1"], "each blocker's face is lit")
+	TEST_ASSERT(!S.glow_reach["2,0"] && !S.glow_reach["0,2"], "the floor behind each blocker is in shadow")
+	TEST_ASSERT(!length(GLOB.client_glow_dirty_lights), "the step left nothing waiting")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A held glow standing on a turf the eye can no longer see (a door closes in front of it) moves to one it does: refreshed when opacity changes in view, and when
+/// the eye steps inside its chunk, with no chunk crossing.
+/datum/unit_test/dq_client_glow_holder_stand_follows_sight
+
+/datum/unit_test/dq_client_glow_holder_stand_follows_sight/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/turf/LT = get_turf(F)
+	var/list/entry = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(entry, "the viewer holds the off-screen light")
+	var/image/glow_image = entry[1]
+	var/turf/stand = glow_image.loc
+	TEST_ASSERT(isturf(stand) && H.seen[stand] && stand != LT, "it stands on a turf the eye sees, away from the light")
+	var/toward_eye = (H.eye_x > stand.x ? 1 : -1)
+	var/turf/in_front = locate(stand.x + toward_eye, stand.y, stand.z)
+	TEST_ASSERT_NOTNULL(in_front, "there is a turf between the stand and the eye")
+	TEST_ASSERT(H.seen[in_front], "the turf in front of it is seen")
+	var/refreshes = GLOB.client_glow_holder_sight_refreshes
+	allocate(/obj/structure/sight_test_blocker, in_front) // a door closing, in the eye's row
+	SSlighting.light_step(0, TRUE) // the opacity flush: the viewer takes the new sight
+	TEST_ASSERT(GLOB.client_glow_holder_sight_refreshes > refreshes, "the opacity change in its view made the viewer take its sight again")
+	TEST_ASSERT(!H.seen[stand], "the turf behind the blocker is no longer seen")
+	entry = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(entry, "the light is still held")
+	glow_image = entry[1]
+	var/turf/now_on = glow_image.loc
+	TEST_ASSERT(isturf(now_on) && H.seen[now_on], "the glow stands on a turf the eye still sees")
+	TEST_ASSERT(now_on != stand, "and not on the one it lost")
+	// The eye steps inside its chunk: sight is taken again with no crossing.
+	var/recomputes = GLOB.client_glow_holder_recomputes
+	var/eye_before_x = H.eye_x
+	var/turf/stepped = locate(H.eye_x + ((H.eye_x - 1) % CLIENT_GLOW_CHUNK < CLIENT_GLOW_CHUNK - 1 ? 1 : -1), H.eye_y + ((H.eye_y - 1) % CLIENT_GLOW_CHUNK < CLIENT_GLOW_CHUNK - 1 ? 1 : -1), H.z)
+	refreshes = GLOB.client_glow_holder_sight_refreshes
+	H.view_at(stepped, 7, 7)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_recomputes, recomputes, "a step inside the chunk is not a crossing")
+	TEST_ASSERT(GLOB.client_glow_holder_sight_refreshes > refreshes, "but it takes the sight again")
+	TEST_ASSERT(H.eye_x == stepped.x && H.eye_y == stepped.y && H.eye_x != eye_before_x, "from where the eye stands now")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// Per-event diagnostics are written only while the lighting_trace flag is on; a crossing counts a trace line then, none otherwise.
+/datum/unit_test/dq_client_glow_trace_is_profiling_only
+
+/datum/unit_test/dq_client_glow_trace_is_profiling_only/Run()
+	var/was = CONFIG_GET(flag/lighting_trace)
+	CONFIG_SET(flag/lighting_trace, FALSE)
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/datum/client_glow_holder/H = got[2]
+	var/obj/machinery/light/F = got[1]
+	var/turf/A = client_glow_test_eye(get_turf(F))
+	var/turf/B = locate(A.x + (A.x > F.x ? 1 : -1) * CLIENT_GLOW_CHUNK, A.y, A.z)
+	var/lines = GLOB.client_glow_trace_lines
+	H.view_at(B, 7, 7)
+	TEST_ASSERT_EQUAL(GLOB.client_glow_trace_lines, lines, "a crossing writes no diagnostic line with tracing off")
+	CONFIG_SET(flag/lighting_trace, TRUE)
+	H.view_at(A, 7, 7)
+	TEST_ASSERT(GLOB.client_glow_trace_lines > lines, "a crossing writes its diagnostic line with tracing on")
+	CONFIG_SET(flag/lighting_trace, was)
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// The census reads the chunk index and counts each glowing light once, however many chunks it is in.
+/datum/unit_test/dq_client_glow_census_counts_indexed_lights
+
+/datum/unit_test/dq_client_glow_census_counts_indexed_lights/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	client_glow_counters_restore()
+	allocate(/obj/machinery/light, run_loc_floor_bottom_left)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	var/glows = 0
+	for(var/datum/light_source/L)
+		if(!QDELETED(L) && L.glow)
+			glows++
+	TEST_ASSERT(glows > 0, "a light glows")
+	TEST_ASSERT(findtext(client_glow_census(), "client glows: [glows] glow(s)"), "the census counts every glowing light once")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+
+/// A flat-lit big atom is redone only for a light that reaches it: one beyond the light's reach box is left alone.
+/datum/unit_test/dq_client_flat_light_refresh_is_local
+
+/datum/unit_test/dq_client_flat_light_refresh_is_local/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	client_glow_counters_restore()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/far = locate(T.x + CLIENT_GLOW_MAX_RANGE * 2 + 6, T.y, T.z)
+	TEST_ASSERT_NOTNULL(far, "a turf well clear of a light's reach exists")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	H.resize(2, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
+	TEST_ASSERT_NOTNULL(H.flat_light, "a double-size character has a flat light")
+	var/refreshes = GLOB.client_flat_light_refreshes
+	allocate(/obj/machinery/light, far)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT_EQUAL(GLOB.client_flat_light_refreshes, refreshes, "a light far from the big atom leaves it alone")
+	allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	TEST_ASSERT(GLOB.client_flat_light_refreshes > refreshes, "a light on its turf redoes it")
+	TEST_ASSERT_EQUAL(H.flat_light.lit_level, round(T.get_lumcount() * 32), "and its grey is its turf's level")
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)

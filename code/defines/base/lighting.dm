@@ -160,6 +160,13 @@ do { \
 #define CLIENT_GLOW_CHUNK 8
 /// The longest reach a glow is drawn and indexed for, in turfs.
 #define CLIENT_GLOW_MAX_RANGE 6
+/// The chunk a turf coordinate (x or y) is in.
+#define CLIENT_GLOW_CHUNK_OF(coord) round(((coord) - 1) / CLIENT_GLOW_CHUNK)
+/// How far a light's glow reaches from its turf on each axis, in turfs: its reach box is the square of this radius about its turf. The chunk index, the holders'
+/// boxes and the opacity lookups all measure a light by this one number.
+#define CLIENT_GLOW_RADIUS(L) clamp(CEILING((L).light_range, 1), 1, CLIENT_GLOW_MAX_RANGE)
+/// TRUE when the square of radius `r` about (sx, sy) lies clear of box list(x0, y0, x1, y1).
+#define CLIENT_GLOW_CLEAR_OF(sx, sy, r, box) (((sx) + (r) < (box)[1]) || ((sx) - (r) > (box)[3]) || ((sy) + (r) < (box)[2]) || ((sy) - (r) > (box)[4]))
 /// How many chunks past the reach box a held glow is kept before it is dropped (the keep box). A glow is acquired by the reach box alone, so this
 /// widens only what is kept: a walk back over this many chunks makes and drops nothing. The held count grows with the keep box's area, which is
 /// (chunk + 2 * view half + 2 * keep + 2 * reach range) squared: for the play log's 15x15 view, 2 chunks is 1.7 times the area of 1 (the 111-133 glows held
@@ -167,6 +174,11 @@ do { \
 #define CLIENT_GLOW_KEEP_CHUNKS 2
 /// The most dropped glow images (and, apart, hide images) one holder keeps to reuse; past it a dropped image is simply let go.
 #define CLIENT_GLOW_POOL_MAX 64
+/// Server milliseconds one step of the stored-shape loader (disk reads) may spend before it leaves the rest of its queue to the next tick.
+#define CLIENT_GLOW_STORE_BUDGET_MS 4
+/// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
+/// near the eye are followed once per tick (the lighting step).
+#define CLIENT_GLOW_SIGHT_INTERVAL (2 TICKS)
 /// Server milliseconds one step of a client holder's full scan (a login, a teleport) may spend before it leaves the rest of the chunks to the next ticks: nearest the eye first.
 #define CLIENT_GLOW_SCAN_BUDGET_MS 10
 /// Where iconforge writes baked shadow masks before they enter the resource cache.
@@ -197,3 +209,9 @@ do { \
 #define CLIENT_GLOW_SMALL_SCALE 0.5
 /// How long a light must stand on one turf before it goes back from the plain glow to its baked cut.
 #define CLIENT_GLOW_SETTLE_TIME (5 SECONDS)
+
+/// What a client's screen shows of client lighting (client.lighting_screen).
+#define CLIENT_GLOW_SCREEN_NONE 0
+#define CLIENT_GLOW_SCREEN_BASE 1
+#define CLIENT_GLOW_SCREEN_COMPARE_DM 2
+#define CLIENT_GLOW_SCREEN_COMPARE_GLOW 3

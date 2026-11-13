@@ -231,6 +231,8 @@
 		var/turf/corner = event_turfs[1]
 		event_center = locate(33, 33, corner.z)
 		stoplag()
+		if(param("client_lighting", 0))
+			client_lighting_fixture(event_turfs, event_center) // client lighting on, with lights, walls and viewers (client_lighting_play.dm)
 		switch(event_name)
 			if("large_explosion")
 				measure_event(event_name, PROC_REF(trigger_large_explosion))
@@ -251,6 +253,7 @@
 				measure_event(event_name, PROC_REF(trigger_decompression))
 			else
 				fail("unknown event '[event_name]'")
+		client_lighting_fixture_report()
 
 /datum/benchmark/major_events/proc/measure_event(event_name, trigger, atmos_cycles = 60)
 	begin_window()

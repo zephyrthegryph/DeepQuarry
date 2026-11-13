@@ -12,20 +12,16 @@ GLOBAL_VAR_INIT(client_light_level_reads, 0)
 /proc/client_light_level(turf/T)
 	GLOB.client_light_level_reads++
 	. = 0
-	var/cx = round((T.x - 1) / CLIENT_GLOW_CHUNK)
-	var/cy = round((T.y - 1) / CLIENT_GLOW_CHUNK)
-	var/span = CEILING(CLIENT_GLOW_MAX_RANGE / CLIENT_GLOW_CHUNK, 1)
-	for(var/ddx = -span, ddx <= span, ddx++)
-		for(var/ddy = -span, ddy <= span, ddy++)
-			for(var/datum/light_source/L as anything in GLOB.client_glow_chunks["[T.z],[cx + ddx],[cy + ddy]"])
-				if(QDELETED(L) || !L.glow_reach)
-					continue
-				var/turf/S = L.source_turf
-				var/dx = T.x - S.x
-				var/dy = T.y - S.y
-				if(!L.glow_reach["[dx],[dy]"])
-					continue
-				var/falloff = 1 - CLAMP01(sqrt(dx * dx + dy * dy + LIGHTING_HEIGHT) / max(1, L.light_range))
-				if(falloff <= 0)
-					continue
-				. += falloff * L.light_power * (L.lum_r + L.lum_g + L.lum_b) / 3
+	// A light reaches this turf only from a reach box that holds it, and the index holds a light in every chunk its box overlaps: the turf's own chunk has them all.
+	for(var/datum/light_source/L as anything in GLOB.client_glow_chunks[client_glow_chunk_id(T.z, CLIENT_GLOW_CHUNK_OF(T.x), CLIENT_GLOW_CHUNK_OF(T.y))])
+		if(QDELETED(L) || !L.glow_reach)
+			continue
+		var/turf/S = L.source_turf
+		var/dx = T.x - S.x
+		var/dy = T.y - S.y
+		if(!L.glow_reach["[dx],[dy]"])
+			continue
+		var/falloff = 1 - CLAMP01(sqrt(dx * dx + dy * dy + LIGHTING_HEIGHT) / max(1, L.light_range))
+		if(falloff <= 0)
+			continue
+		. += falloff * L.light_power * (L.lum_r + L.lum_g + L.lum_b) / 3

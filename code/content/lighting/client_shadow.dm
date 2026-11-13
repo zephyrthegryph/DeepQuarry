@@ -1,16 +1,24 @@
 // Client lighting, piece 2: baked shapes. Each glow is the light's sprite already cut to the open floor its light reaches (the world opacity
 // layer's sight from the light's turf, code/domains/verdigris/sight/), baked off-thread by iconforge, white so one icon serves every colour,
 // and shared by every light with the same reach. No filter per light, and nothing depends on another object being drawn. Opaque tiles are not in the
-// cut: walls take their light from the visible floor beside them, on the glow plane (client_lighting_compare.dm). The gameplay reach (glow_reach) still has them.
+// cut: walls take their light from the visible floor beside them, on the glow plane (client_lighting_screen.dm). The gameplay reach (glow_reach) still has them.
 // A viewer's glow is the plain sprite until its shape is first baked; after a change it keeps its previous cut until the new one lands. A reach is recomputed only when its light is redrawn (it moved or changed) or
-// when opacity changes inside its reach (a door, a wall built), found through a per-chunk index of glowing lights.
+// when opacity changes inside its reach (a door, a wall built), found through a per-chunk index of glowing lights. The index holds a light in every chunk its
+// reach box (CLIENT_GLOW_RADIUS about its turf) overlaps, so "the lights that reach this box" is the lights of the chunks the box covers, with no growing by a range.
 
 
 /// Cumulative mask rebuilds and reach-triggered redraws (benchmarks, the door test).
 GLOBAL_VAR_INIT(client_glow_mask_builds, 0)
 GLOBAL_VAR_INIT(client_glow_reconsiders, 0)
-/// "z,cx,cy" -> lights glowing from that chunk (client lighting only).
+/// "z,cx,cy" -> lights glowing whose reach box overlaps that chunk (client lighting only). A light is in each chunk its reach touches, up to nine.
 GLOBAL_LIST_EMPTY(client_glow_chunks)
+/// Opacity changes waiting for the next lighting step (client_glow_reconsider()): light handle -> TRUE for the glowing lights whose reach they touch, and z -> list(x0, y0, x1, y1)
+/// for the box of the changed turfs on each level (the holders whose eye sees them follow).
+GLOBAL_LIST_EMPTY(client_glow_dirty_lights)
+GLOBAL_LIST_EMPTY(client_glow_dirty_boxes)
+/// Flushes run, and opacity changes folded into them (benchmarks, tests).
+GLOBAL_VAR_INIT(client_glow_flushes, 0)
+GLOBAL_VAR_INIT(client_glow_flush_changes, 0)
 
 /datum/light_source
 	/// The reach key it last computed ("margin|offsets"): names the baked mask its viewers cut its glow with.
@@ -22,11 +30,24 @@ GLOBAL_LIST_EMPTY(client_glow_chunks)
 	var/list/glow_reach
 	/// The turf glow_reach is measured from.
 	var/turf/glow_reach_origin
-	/// The chunk key this light is indexed under while it glows.
-	var/glow_chunk
+	/// The chunks this light is indexed under while it glows: list(z, cx0, cy0, cx1, cy1), the chunks its reach box overlaps. Null while it is not indexed.
+	var/list/glow_chunk_box
 
-/proc/client_glow_chunk_key(z, x, y)
-	return "[z],[round((x - 1) / CLIENT_GLOW_CHUNK)],[round((y - 1) / CLIENT_GLOW_CHUNK)]"
+/// The index key of chunk (cx, cy) on level z.
+/proc/client_glow_chunk_id(z, cx, cy)
+	return "[z],[cx],[cy]"
+
+/// The chunks box list(x0, y0, x1, y1) overlaps: list(cx0, cy0, cx1, cy1).
+/proc/glow_chunk_range(list/box)
+	return list(CLIENT_GLOW_CHUNK_OF(box[1]), CLIENT_GLOW_CHUNK_OF(box[2]), CLIENT_GLOW_CHUNK_OF(box[3]), CLIENT_GLOW_CHUNK_OF(box[4]))
+
+/// The reach box of a light of radius `r` standing on `S`: list(x0, y0, x1, y1).
+/proc/glow_reach_box(turf/S, r)
+	return list(S.x - r, S.y - r, S.x + r, S.y + r)
+
+/// Whether box `a` and box `b` (list(x0, y0, x1, y1)) overlap.
+/proc/glow_boxes_overlap(list/a, list/b)
+	return !(b[3] < a[1] || b[1] > a[3] || b[4] < a[2] || b[2] > a[4])
 
 /// The baked shadow masks and their counters.
 GLOBAL_DATUM_INIT(client_glow_baker, /datum/client_glow_baker, new)
@@ -60,6 +81,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/stored_saves = 0
 	/// Shapes asked for ahead of a viewer holding them (the chunks around its reach box).
 	var/prefetched = 0
+	/// Shape keys waiting for the disk store to be looked in (key -> asked ahead): the store is read a few milliseconds a tick, never inside a crossing.
+	var/list/store_queue = list()
+	var/store_waiting = FALSE
 	/// FALSE: no disk store (unit tests, where a stored shape would hide the bake under test).
 #if defined(UNIT_TESTS)
 	var/store_on = FALSE
@@ -189,7 +213,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 			return TRUE
 	return FALSE
 
-/// The baked mask of this shape, or null while it is not ready (asks for it).
+/// The baked mask of this shape, or null while it is not ready (asks for it). A stored shape is read from the disk on a later tick (client_glow_store_pump()),
+/// so a crossing never waits on a file: its glow shows the plain sprite until the shape arrives.
 /proc/client_glow_mask_icon(key)
 	var/found = GLOB.client_glow_baker.icons[key]
 	if(found)
@@ -197,7 +222,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		return found
 	GLOB.client_glow_baker.misses++
 	client_glow_mask_request(key)
-	return GLOB.client_glow_baker.icons[key] // a stored shape loads on the spot
+	return GLOB.client_glow_baker.icons[key]
 
 /// The prefix of this build's stored shapes: the recipe version and the contents of every glow sprite, so a changed sprite never serves an old bake.
 /proc/client_glow_store_stamp()
@@ -235,6 +260,36 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	client_glow_mask_cache(key, fcopy_rsc(file(path)))
 	return TRUE
 
+/// The disk store's turn: the queued shapes are looked up for `budget_ms` (at least one), a stored one goes to its viewers, a shape the store lacks goes on to the
+/// bakers, and the rest waits for the next tick. A request never reads the disk itself, so a chunk crossing that acquires many lights waits on none.
+/proc/client_glow_store_pump(budget_ms = CLIENT_GLOW_STORE_BUDGET_MS)
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	var/started = TICK_USAGE_REAL
+	var/loaded = 0
+	while(length(B.store_queue))
+		var/key = B.store_queue[1]
+		var/ahead = B.store_queue[key]
+		B.store_queue.Cut(1, 2)
+		if(client_glow_store_load(key))
+			loaded++
+			B.pending -= key
+			B.asked_at -= key
+			client_glow_mask_arrived(key, B.icons[key])
+		else
+			client_glow_mask_enqueue(key, ahead)
+		if(length(B.store_queue) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			break
+	if(length(B.store_queue) && !B.store_waiting)
+		B.store_waiting = TRUE
+		after(B, 1 TICKS, TYPE_PROC_REF(/datum/client_glow_baker, store_continue))
+	if(loaded && client_glow_trace_line())
+		log_world("client glow store: loaded [loaded] stored shape(s) in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms, [length(B.store_queue)] more waiting")
+
+/// The timer of a store pump that ran out of budget.
+/datum/client_glow_baker/proc/store_continue()
+	store_waiting = FALSE
+	client_glow_store_pump()
+
 /proc/client_glow_mask_cache(key, res)
 	GLOB.client_glow_baker.icons[key] = res
 	if(length(GLOB.client_glow_baker.icons) > CLIENT_GLOW_MASK_CACHE_MAX)
@@ -256,13 +311,21 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 				GLOB.client_glow_baker.queue.Cut(at, at + 1)
 				GLOB.client_glow_baker.queue.Insert(1, key)
 		return
-	if(client_glow_store_load(key))
-		return
 	if(length(GLOB.client_glow_baker.pending) >= CLIENT_GLOW_MASK_QUEUE_MAX)
 		GLOB.client_glow_baker.refused++ // asked again the next time a viewer considers the light
 		return
 	GLOB.client_glow_baker.pending[key] = TRUE
 	GLOB.client_glow_baker.asked_at[key] = REALTIMEOFDAY
+	if(GLOB.client_glow_baker.store_on)
+		GLOB.client_glow_baker.store_queue[key] = ahead // the disk store is looked in on the next tick, then the bakers (client_glow_store_pump())
+		if(!GLOB.client_glow_baker.store_waiting)
+			GLOB.client_glow_baker.store_waiting = TRUE
+			after(GLOB.client_glow_baker, 1 TICKS, TYPE_PROC_REF(/datum/client_glow_baker, store_continue))
+		return
+	client_glow_mask_enqueue(key, ahead)
+
+/// A shape no store holds: it waits for a baker. One a viewer asked for goes before the shapes only asked for ahead.
+/proc/client_glow_mask_enqueue(key, ahead)
 	if(ahead || !length(GLOB.client_glow_baker.queue))
 		GLOB.client_glow_baker.queue += key
 	else
@@ -323,10 +386,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	fdel(path)
 	client_glow_mask_cache(key, res)
 	GLOB.client_glow_baker.baked++
-	if(!length(GLOB.client_glow_baker.pending))
+	if(!length(GLOB.client_glow_baker.pending) && client_glow_trace_line())
 		log_world("client glow masks: queue drained at [time2text(world.realtime, "hh:mm:ss")]; [client_glow_mask_stats()]") // the load-in timeline, with the first hold line
-	if(!(GLOB.client_glow_baker.baked % 64))
+	if(!(GLOB.client_glow_baker.baked % 64) && client_glow_trace_line())
 		log_world(client_glow_mask_stats())
+	client_glow_mask_arrived(key, res)
+
+/// Shape `key` is in the cache (baked or loaded from the store): every viewer waiting on it shows it.
+/proc/client_glow_mask_arrived(key, res)
 	for(var/datum/client_glow_holder/H as anything in REGISTRY_MEMBERS(REGISTRY_CLIENT_GLOW_HOLDERS))
 		H.shape_ready(key, res)
 
@@ -398,22 +465,37 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		if(T && SSwatched.client_lum_watched(T))
 			. += T
 
-/// Keeps this light in (or out of) the chunk index opacity changes look up.
+/// Keeps this light in (or out of) the chunk index: under every chunk its reach box overlaps. Cheap when its chunks are as they were.
 /datum/light_source/proc/client_glow_index(on)
-	var/key = on && source_turf ? client_glow_chunk_key(source_turf.z, source_turf.x, source_turf.y) : null
-	if(key == glow_chunk)
+	var/list/box
+	if(on && source_turf)
+		var/list/reach_box = glow_reach_box(source_turf, CLIENT_GLOW_RADIUS(src))
+		var/list/range = glow_chunk_range(list(max(reach_box[1], 1), max(reach_box[2], 1), min(reach_box[3], world.maxx), min(reach_box[4], world.maxy)))
+		box = list(source_turf.z, range[1], range[2], range[3], range[4])
+	var/list/was = glow_chunk_box
+	if(!box && !was)
 		return
-	if(glow_chunk)
-		var/list/old = GLOB.client_glow_chunks[glow_chunk]
-		old -= src
-		if(!length(old))
-			GLOB.client_glow_chunks -= glow_chunk
-	glow_chunk = key
-	if(key)
-		var/list/members = GLOB.client_glow_chunks[key]
-		if(!members)
-			members = GLOB.client_glow_chunks[key] = list()
-		members += src
+	if(box && was && box[1] == was[1] && box[2] == was[2] && box[3] == was[3] && box[4] == was[4] && box[5] == was[5])
+		return
+	if(was)
+		for(var/gx in was[2] to was[4])
+			for(var/gy in was[3] to was[5])
+				var/key = client_glow_chunk_id(was[1], gx, gy)
+				var/list/old = GLOB.client_glow_chunks[key]
+				if(!old)
+					continue
+				old -= src
+				if(!length(old))
+					GLOB.client_glow_chunks -= key
+	glow_chunk_box = box
+	if(box)
+		for(var/gx in box[2] to box[4])
+			for(var/gy in box[3] to box[5])
+				var/key = client_glow_chunk_id(box[1], gx, gy)
+				var/list/members = GLOB.client_glow_chunks[key]
+				if(!members)
+					members = GLOB.client_glow_chunks[key] = list()
+				members += src
 
 /// The mask goes with the glow.
 /datum/light_source/proc/client_glow_mask_clear()
@@ -424,40 +506,85 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	glow_reach = null
 	glow_reach_origin = null // ALLOW(ownership): lighting engine turf cache cleared with the mask, like source_turf
 
-/// Opacity changed on `T` (reconsider_lights()): every glowing light whose reach covers it redraws its mask.
+/// Opacity changed on `T` (reconsider_lights()): every glowing light whose reach covers it is marked, and redraws its mask once at the next lighting step however many
+/// turfs changed (client_glow_reconsider_flush()): an explosion that opens fifty walls redraws each light once. The holders whose eye sees `T` are marked the same way.
 /proc/client_glow_reconsider(turf/T)
-	var/cx = round((T.x - 1) / CLIENT_GLOW_CHUNK)
-	var/cy = round((T.y - 1) / CLIENT_GLOW_CHUNK)
-	var/span = CEILING(CLIENT_GLOW_MAX_RANGE / CLIENT_GLOW_CHUNK, 1)
-	for(var/dx = -span, dx <= span, dx++)
-		for(var/dy = -span, dy <= span, dy++)
-			for(var/datum/light_source/L as anything in GLOB.client_glow_chunks["[T.z],[cx + dx],[cy + dy]"])
-				if(QDELETED(L))
-					continue
-				var/turf/S = L.source_turf
-				if(!S || max(abs(S.x - T.x), abs(S.y - T.y)) > CEILING(L.light_range, 1))
-					continue
-				GLOB.client_glow_reconsiders++
-				L.client_glow_mask_refresh() // only the mask: the glow's place, size and tint did not change
+	var/list/at = list(T.x, T.y, T.x, T.y)
+	for(var/datum/light_source/L as anything in GLOB.client_glow_chunks[client_glow_chunk_id(T.z, CLIENT_GLOW_CHUNK_OF(T.x), CLIENT_GLOW_CHUNK_OF(T.y))])
+		if(QDELETED(L))
+			continue
+		var/h = L.glow_holder_key || L.glow_holder_key()
+		var/turf/S = L.source_turf
+		if(GLOB.client_glow_dirty_lights[h] || !S || CLIENT_GLOW_CLEAR_OF(S.x, S.y, CLIENT_GLOW_RADIUS(L), at))
+			continue
+		GLOB.client_glow_dirty_lights[h] = TRUE
+	var/list/box = GLOB.client_glow_dirty_boxes["[T.z]"]
+	if(box)
+		box[1] = min(box[1], T.x)
+		box[2] = min(box[2], T.y)
+		box[3] = max(box[3], T.x)
+		box[4] = max(box[4], T.y)
+	else
+		GLOB.client_glow_dirty_boxes["[T.z]"] = list(T.x, T.y, T.x, T.y)
+	GLOB.client_glow_flush_changes++
 
-/// One line on what the glows are: how many, how much of their square each mask lets through, and how strong they are.
+/// The lighting step's turn for the opacity changes since the last one (light_step()): each marked light redraws its mask once, then the holders whose eye sees a changed turf
+/// take the new sight and move the glows standing on turfs they no longer see. At most until the tick is out of time (unless `all`): the rest waits for the next step.
+/proc/client_glow_reconsider_flush(all = FALSE)
+	if(!length(GLOB.client_glow_dirty_lights) && !length(GLOB.client_glow_dirty_boxes))
+		return
+	GLOB.client_glow_flushes++
+	var/started = TICK_USAGE_REAL
+	var/redrawn = 0
+	var/list/todo = GLOB.client_glow_dirty_lights
+	GLOB.client_glow_dirty_lights = list()
+	var/done = 0
+	for(var/h in todo)
+		done++
+		if(!all && KERNEL_OVER_BUDGET)
+			for(var/i in done to length(todo))
+				GLOB.client_glow_dirty_lights[todo[i]] = TRUE // the rest waits for the next step
+			break
+		var/datum/light_source/L = handle_get(h)
+		if(!istype(L) || QDELETED(L))
+			continue
+		GLOB.client_glow_reconsiders++
+		redrawn++
+		L.client_glow_mask_refresh() // only the mask: the glow's place, size and tint did not change
+	if(length(GLOB.client_glow_dirty_lights))
+		return // out of time: the holders follow when the last light is redrawn, so they see the shapes the lights now have
+	var/list/boxes = GLOB.client_glow_dirty_boxes
+	GLOB.client_glow_dirty_boxes = list()
+	var/sighted = 0
+	for(var/datum/client_glow_holder/H as anything in REGISTRY_COPY(REGISTRY_CLIENT_GLOW_HOLDERS))
+		var/list/box = boxes["[H.z]"]
+		if(box && H.sig && H.sees_box(box))
+			H.sight_refresh()
+			sighted++
+	if(client_glow_trace_line())
+		log_world("client glow flush: [redrawn] light(s) redrawn, [sighted] viewer(s) took new sight, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms")
+
+/// One line on what the glows are: how many, how much of their square each mask lets through, and how strong they are. Reads the chunk index, not every datum.
 /proc/client_glow_census()
 	var/glows = 0
 	var/tiles = 0
 	var/possible = 0
 	var/faint = 0
 	var/one_tile = 0
-	for(var/datum/light_source/L)
-		if(QDELETED(L) || !L.glow)
-			continue
-		glows++
-		var/reached = length(L.glow_reach)
-		var/side = 2 * L.glow_mask_range + 1
-		tiles += reached
-		possible += side * side
-		if(reached <= 1)
-			one_tile++
-		var/obj/effect/overlay/client_glow/G = L.glow
-		if(G.alpha < 128)
-			faint++
+	var/list/counted = list()
+	for(var/key in GLOB.client_glow_chunks)
+		for(var/datum/light_source/L as anything in GLOB.client_glow_chunks[key])
+			if(counted[L] || QDELETED(L) || !L.glow)
+				continue
+			counted[L] = TRUE
+			glows++
+			var/reached = length(L.glow_reach)
+			var/side = 2 * L.glow_mask_range + 1
+			tiles += reached
+			possible += side * side
+			if(reached <= 1)
+				one_tile++
+			var/obj/effect/overlay/client_glow/G = L.glow
+			if(G.alpha < 128)
+				faint++
 	return "client glows: [glows] glow(s), masks open on [possible ? round(100 * tiles / possible) : 0]% of their squares ([tiles]/[possible] tiles), [one_tile] with one tile or none, [faint] under half strength; [client_glow_mask_stats()]"
