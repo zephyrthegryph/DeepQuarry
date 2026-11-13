@@ -3,8 +3,9 @@
 // Access steps create it (body.afflict()) and deepen it (open_to()). Its
 // depth is the single source of truth for how far a limb is open; the limb's
 // `open` var only caches it for icons, examine and scanners. While open it:
-//  - bleeds (organic parts, until clamped with TREAT_HEMOSTATIC): the limb's
-//    ORGAN_BLEEDING comes from is_bleeding() in update_damages();
+//  - bleeds (organic parts, until clamped with TREAT_HEMOSTATIC), by how well the
+//    patient clots (bleed_rate(): STAT_BLEEDING): the limb's ORGAN_BLEEDING comes
+//    from is_bleeding() in update_damages();
 //  - gathers germs every tick in proportion to depth and the sterility of
 //    the surface it was opened on (infection risk until closed);
 //  - hurts (severity per depth).
@@ -74,7 +75,15 @@
 	if(!(body.biology_of(location) & BIOLOGY_ORGANIC))
 		return FALSE
 	var/mob/living/carbon/human/H = owner
-	return istype(H) && H.should_have_organ(O_HEART) && !(H.species?.flags & NO_BLOOD)
+	return istype(H) && H.should_have_organ(O_HEART) && !(H.species?.flags & NO_BLOOD) && H.bleeding > 0
+
+/// Blood per Life cycle the open site loses: the patient's clotting decides it. An anticoagulant (STAT_BLEEDING above 1) makes
+/// the site bleed that much harder, a clotting agent (below 1) less; 0 for a site that isn't bleeding.
+/datum/affliction/surgical_incision/proc/bleed_rate()
+	if(!is_bleeding())
+		return 0
+	var/mob/living/carbon/human/H = owner
+	return INCISION_BLEED_RATE * H.bleeding
 
 /// Close the site entirely.
 /datum/affliction/surgical_incision/proc/close_site()

@@ -28,9 +28,7 @@
 /// The step matches the tool, but something is wrong; the step said why.
 #define SURGERY_REFUSED -1
 
-// --- Outcome tuning --------------------------------------------------------------------------
-/// Worst success multiplier from a conscious patient feeling the whole step.
-#define SURGERY_PAIN_PENALTY 0.4
+// --- Outcome tuning (the patient's pain is not here: a patient who feels a step flinches, felt_pain()) --------------------------------------------------------------------------
 /// Success multiplier for a surgeon outside the medical department.
 #define SURGERY_UNTRAINED_MULT 0.8
 /// Success multiplier for operating on yourself.
@@ -43,3 +41,11 @@
 #define INCISION_GERMS_PER_DEPTH 0.5
 /// Severity of the incision affliction per access depth (display, pain).
 #define INCISION_SEVERITY_PER_DEPTH 25
+/// Blood per Life cycle an open, unclamped incision loses at normal clotting; it scales with the patient's STAT_BLEEDING
+/// (an anticoagulant raises it, a clotting agent lowers it).
+#define INCISION_BLEED_RATE 2
+/// Sterility (0-100) lost when the surgeon cuts with bare hands: no sterile prep of the surgeon.
+#define SURGERY_NO_GLOVES_STERILITY 30
+/// Sterility lost when the skin is cut with no prep at all: the limb carries INFECTION_LEVEL_ONE germs or more. Scrubbing the
+/// skin (anything that lowers the limb's germ level) gives it back in proportion.
+#define SURGERY_UNPREPPED_SKIN_STERILITY 40

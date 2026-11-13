@@ -58,7 +58,7 @@
 // --- audit: every condition has a sensible cure path -----------------
 // A condition is "curable" if it has at least one of:
 //   - a chemical cure (treatment tags resolving to a reagent, or cured_by),
-//   - a /datum/dq_surgery whose treats list includes it,
+//   - a finding step (surgical_steps_answering()) that answers to it,
 //   - a negative progression_rate (self-resolves over time).
 
 /datum/unit_test/dq_medical_every_condition_curable
@@ -73,13 +73,7 @@
 
 /datum/unit_test/dq_medical_every_condition_curable/Run()
 	TEST_ASSERT(length(subtypesof(/datum/affliction)) > 0, "no /datum/affliction subtypes registered")
-	var/list/surgical_targets = list()
-	for(var/ST in subtypesof(/datum/dq_surgery))
-		var/datum/dq_surgery/sg = new ST()
-		if(sg.treats)
-			for(var/cond in sg.treats)
-				surgical_targets[cond] = TRUE
-		qdel(sg)
+	var/list/surgical_targets = surgical_steps_answering()
 
 	var/list/failures = list()
 	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))

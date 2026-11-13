@@ -443,9 +443,12 @@ export function serializeSaved(saved: Record<string, Placement>): string {
   return '{}';
 }
 
-/** The column's spacing (Column.scss): a header, the gap between entries, the padding round the list. */
+/**
+ * The column's spacing (Column.scss): a header, the seam between entries, the padding round the list. The seam is negative: neighbouring
+ * entries overlap by one border width so two frames collapse into one.
+ */
 export const COLUMN_HEAD = 24;
-export const COLUMN_GAP = 3;
+export const COLUMN_GAP = -3;
 export const COLUMN_PAD = 6;
 /** The least an expanded entry shows, and the least the filling entry (the chat) keeps. */
 export const FIT_MIN = DOCK_HEIGHT_MIN;

@@ -14,7 +14,7 @@
  * - the grip under an expanded entry resizes it; the last expanded entry
  *   fills what is left.
  */
-import { ReloadBoundary } from 'tgui/ReloadBoundary';
+
 import {
   memo,
   type ReactNode,
@@ -31,13 +31,16 @@ import {
   type OrderBox,
   Tabs,
 } from 'tgui/dq';
+import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import 'tgui/embeddedStyles';
+import { floatSize, type Pair } from 'tgui/floatPlacement';
 import { EmbeddedInterface } from 'tgui/routes';
 import { Button } from 'tgui-core/components';
 import { MapSplitHandle } from '../layout/ChatLayout';
 import { POP_OUT_DISTANCE } from '../layout/model';
 import { Panel } from '../Panel';
-import { type ColumnHost, columnHost } from './host';
+import { FloatFollow } from './floatDrag';
+import { type ColumnHost, columnHost, sendPage } from './host';
 import { type DockGroup, type DockWindow, fitHeights } from './model';
 
 /** Presses here keep their own meaning (buttons click, tabs select and re-arrange). */
@@ -169,6 +172,8 @@ function runDrag(
       // A whole entry floats only when another entry stays: the column is never empty.
       host.state.groups.length > 1;
   let live: GroupDrag | null = null;
+  // Set once the drag left the page with the button still down: the window is floated and follows the pointer from here.
+  let follow: FloatFollow | null = null;
   // What the list was last told: it redraws only when the drag's derived state changed, and at most once a frame.
   let shown: GroupDrag | null = null;
   let frame = 0;
@@ -179,8 +184,73 @@ function runDrag(
       setDrag(live);
     }
   };
+  const startFloat = (e: PointerEvent) => {
+    const node = document.querySelector<HTMLElement>(
+      `[data-column-group="${group}"]`,
+    );
+    const rect = node?.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const size = floatSize(
+      { w: rect?.width ?? 0, h: rect?.height ?? 0 },
+      ratio,
+      [window.screen.width * ratio, window.screen.height * ratio],
+    );
+    const point = screenPoint(e);
+    const at: Pair = [point.x, point.y];
+    host.trace('drag left the column: floating live', {
+      group,
+      pulled,
+      point: at,
+      size,
+      docked: rect && [rect.width, rect.height],
+      ratio,
+    });
+    const made = new FloatFollow(
+      size,
+      at,
+      (id, props) => Byond.winset(id, props),
+      (message, detail) => host.trace(message, detail),
+      (id) => {
+        if (host.following === made) host.following = null;
+        sendPage('WM-FloatDone', { window: id });
+      },
+    );
+    follow = made;
+    host.following = made;
+    const sized = { x: size[0], y: size[1] };
+    let floated = false;
+    if (pulled) {
+      floated = host.float(pulled, point, sized);
+    } else {
+      const now = host.state.groups.find((g) => g.id === group);
+      for (const id of now?.windows ?? []) {
+        const active = id === now?.active;
+        floated =
+          host.float(id, active ? point : null, active ? sized : null) ||
+          floated;
+      }
+    }
+    if (!floated) {
+      follow = null;
+      host.following = null;
+      return false;
+    }
+    // The entry leaves the page: keep the pointer on the document so the drag goes on after its header is gone.
+    try {
+      document.body.setPointerCapture(pointer);
+    } catch {
+      // Events still reach the document while the button is down.
+    }
+    setDrag(null);
+    return true;
+  };
   const move = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
+    if (follow) {
+      const point = screenPoint(e);
+      follow.move([point.x, point.y]);
+      return;
+    }
     const box = boxes.find((b) => b.id === group);
     const dy =
       !pulled && box ? liveClamp(box, e.clientY - start.y, min, max) : 0;
@@ -188,6 +258,7 @@ function runDrag(
       floatable &&
       outOfPage(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
     const join = float ? null : headUnder(e.clientX, e.clientY, group);
+    if (float && startFloat(e)) return;
     live = {
       group,
       window: pulled,
@@ -207,10 +278,22 @@ function runDrag(
     if (target.hasPointerCapture(pointer)) {
       target.releasePointerCapture(pointer);
     }
+    if (document.body.hasPointerCapture(pointer)) {
+      document.body.releasePointerCapture(pointer);
+    }
     const done = live;
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     setDrag(null);
+    if (follow) {
+      const point = screenPoint(e);
+      host.trace('drag ended while floated', { type: e.type, point });
+      follow.release([point.x, point.y]);
+      return;
+    }
+    if (e.type !== 'pointerup') {
+      host.trace('drag cancelled', { group, pulled });
+    }
     if (!done || e.type !== 'pointerup') {
       return;
     }
