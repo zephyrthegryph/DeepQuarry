@@ -73,6 +73,11 @@ function buildNativeGeometryPayload(
   return nativeGeometry;
 }
 
+/** Whether this client is profiling: the winget telemetry and server trace messages run only then. */
+export function isProfiling(): boolean {
+  return Boolean(store.get(configAtom)?.client?.profiling);
+}
+
 function isCurrentGeneration(generation?: number): boolean {
   return (
     !store.get(suspendedAtom) &&
@@ -152,6 +157,19 @@ async function waitForNativeGeometry(
     // Reveal still has a bounded fallback; telemetry records the mismatch.
   }
   return { matched: false, observed: nativeGeometrySignature(observed) };
+}
+
+/** One winget round trip: when it returns, DreamSeeker has processed the geometry command sent before it. */
+async function confirmNativeGeometry(): Promise<{
+  matched: boolean;
+  observed?: string;
+}> {
+  try {
+    await Byond.winget(Byond.windowId, 'size');
+  } catch {
+    // The reveal goes on; the browser viewport wait still follows.
+  }
+  return { matched: true, observed: 'barrier' };
 }
 
 function expectedViewportSize(size?: string): [number, number] | undefined {
@@ -243,7 +261,7 @@ async function monitorRevealedGeometry(
   generation: number | undefined,
   expected: NativeGeometryPayload,
 ): Promise<void> {
-  if (!store.get(configAtom)?.client?.profiling) return;
+  if (!isProfiling()) return;
   const observations: string[] = [];
   let previousDelay = 0;
   for (const delay of [0, 50, 150, 400]) {
@@ -286,6 +304,7 @@ async function monitorRevealedGeometry(
 /** Reveal only the current acquisition of a non-suspended pooled shell. */
 /** Every alpha this page sets on its native window, in the server's tgui log. */
 export function traceAlpha(alpha: number, source: string): void {
+  if (!isProfiling()) return;
   Byond.sendMessage('wm/log', {
     float: 'alpha-write',
     window: Byond.windowId,
@@ -303,13 +322,6 @@ export async function revealWindow(
   const nativeShell = Boolean(config?.window?.native_shell);
   if (!isCurrentGeneration(generation)) {
     return false;
-  }
-  if (config?.window?.docked) {
-    // Docked (doc/rewrite/proposals/window_system.md): the stat panel places
-    // and shows this window; tell it the page is up.
-    revealedGeneration = currentGeneration;
-    Byond.sendMessage('wm/ready');
-    return true;
   }
   const nativeGeometry = buildNativeGeometryPayload(geometry);
   const warmGeometry =
@@ -341,9 +353,15 @@ export async function revealWindow(
     });
     const browserObservedGeometry =
       await waitForBrowserNativeGeometry(nativeGeometry);
+    // The browser-side check above is what holds the show back. A native
+    // winget is a client round trip, so one confirms DreamSeeker has processed
+    // the geometry command before the show command is sent; polling it until
+    // the values match is telemetry and runs only while profiling.
     const verification = browserObservedGeometry
       ? { matched: true, observed: 'browser-observed' }
-      : await waitForNativeGeometry(nativeGeometry);
+      : isProfiling()
+        ? await waitForNativeGeometry(nativeGeometry)
+        : await confirmNativeGeometry();
     profileTransition('native-geometry-verified', {
       matched: verification.matched,
       observed: verification.observed,
@@ -396,7 +414,7 @@ export async function revealWindow(
   );
   revealedGeneration = currentGeneration;
   profileTransition('opacity-reveal-sent');
-  void samplePresentedTransition(currentGeneration);
+  if (isProfiling()) void samplePresentedTransition(currentGeneration);
   Byond.sendMessage('visible', {
     generation: currentGeneration,
     geometry: nativeGeometry,

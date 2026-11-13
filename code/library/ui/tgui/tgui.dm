@@ -430,6 +430,10 @@
 			"dockable" = dockable() ? TRUE : FALSE,
 			// Docked: whether the column offers float for it (never for an always-docked interface such as the stat panel).
 			"floatable" = GLOB.window_dock_always_docked[interface] ? FALSE : TRUE,
+			// Docked: whether an entry holding it can fold to its header (never an always-docked interface).
+			"collapsible" = GLOB.window_dock_always_docked[interface] ? FALSE : TRUE,
+			// Docked: whether the column offers close (and float, with floatable) buttons and a drag out for it (never an always-docked or always-open interface).
+			"closable" = (GLOB.window_dock_always_docked[interface] || GLOB.window_dock_always_open[interface]) ? FALSE : TRUE,
 		),
 		"client" = list(
 			"ckey" = user.client.ckey,

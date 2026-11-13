@@ -159,11 +159,26 @@ describe('window dock layout', () => {
     expect(order(state)).toEqual([['z', 'a'], ['b']]);
   });
 
-  it('floating marks the interface undocked but keeps where it was', () => {
-    let state = openAll('a');
-    state = dockReduce(state, { type: 'float', id: 'a' });
-    expect(state.groups).toEqual([]);
-    expect(state.saved.A.dock).toBe(false);
+  it('keeps a window with no interface yet out of the saved layout', () => {
+    let state = emptyDock();
+    state = dockReduce(state, {
+      type: 'open',
+      window: { id: 'col-1', iface: '', title: '' },
+    });
+    state = dockReduce(state, { type: 'open', window: win('a') });
+    expect(Object.keys(state.saved)).toEqual(['A']);
+    expect(state.groups).toHaveLength(2);
+  });
+
+  it('scrubs column window ids from a loaded layout', () => {
+    const place = { dock: true, group: 'g1', order: 0, tab: 0 };
+    const text = JSON.stringify({ 'col-1': place, 'col-12': place, Pda: place });
+    expect(Object.keys(parseSaved(text))).toEqual(['Pda']);
+    const loaded = dockReduce(emptyDock(), {
+      type: 'load',
+      saved: { 'col-3': parseSaved(text).Pda, Pda: parseSaved(text).Pda },
+    });
+    expect(Object.keys(loaded.saved)).toEqual(['Pda']);
   });
 
   it('round-trips the saved layout and survives junk', () => {

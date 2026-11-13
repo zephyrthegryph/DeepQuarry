@@ -5,6 +5,8 @@
 
 /// The saved layout's limit in characters.
 #define WINDOW_DOCK_LAYOUT_MAX 8000
+/// The id prefix of a column window (col-1, col-2, ...): a window's id is never an interface name, so no saved layout holds one.
+#define WINDOW_DOCK_PART_PREFIX "col-"
 
 /// The player's dock layout: interface name -> placement (JSON). The server writes `dock`; the column page keeps its arrangement too.
 /datum/preference/text/window_layout
@@ -58,6 +60,10 @@ CAPABILITIES(/datum/window_dock)
 		return !!wants_cache[interface]
 	return !!GLOB.window_dock_default_docked[interface]
 
+/// Whether `name` is a column window's id rather than an interface name (older layouts saved those by mistake).
+/proc/window_dock_is_part_id(name)
+	return istext(name) && copytext(name, 1, length(WINDOW_DOCK_PART_PREFIX) + 1) == WINDOW_DOCK_PART_PREFIX
+
 /// What a saved layout's text says of each interface it names: interface -> TRUE (opens docked) or FALSE (floats).
 /proc/window_dock_wanted(text)
 	. = list()
@@ -68,6 +74,8 @@ CAPABILITIES(/datum/window_dock)
 		return
 	for(var/interface in layout)
 		var/list/place = layout[interface]
+		if(window_dock_is_part_id(interface))
+			continue
 		if(istext(interface) && islist(place) && !isnull(place["dock"]) && !GLOB.window_dock_always_open[interface])
 			.[interface] = place["dock"] ? TRUE : FALSE
 
@@ -110,9 +118,13 @@ CAPABILITIES(/datum/window_dock)
 	var/list/stored = safe_json_decode(player.prefs.read_preference(/datum/preference/text/window_layout) || "{}")
 	if(!islist(stored))
 		stored = list()
+	// Column window ids never name an interface: scrub the ones an older layout kept.
+	for(var/interface in stored.Copy())
+		if(window_dock_is_part_id(interface))
+			stored -= interface
 	for(var/interface in page)
 		var/list/place = page[interface]
-		if(!istext(interface) || !islist(place))
+		if(!istext(interface) || !islist(place) || window_dock_is_part_id(interface))
 			continue
 		var/list/before = stored[interface]
 		place["dock"] = islist(before) ? !!before["dock"] : !!place["dock"]
@@ -142,7 +154,7 @@ CAPABILITIES(/datum/window_dock)
 	if(!player)
 		return null
 	parts_made++
-	var/datum/tgui_window/column_part/part = new(player, "col-[parts_made]", COLUMN_PART_TGUI)
+	var/datum/tgui_window/column_part/part = new(player, "[WINDOW_DOCK_PART_PREFIX][parts_made]", COLUMN_PART_TGUI)
 	var/at = LAZYACCESS(drop_index, interface)
 	if(isnum(at))
 		part.at = at
@@ -299,3 +311,4 @@ CAPABILITIES(/datum/window_dock)
 /client/var/tmp/datum/window_dock/window_dock
 
 #undef WINDOW_DOCK_LAYOUT_MAX
+#undef WINDOW_DOCK_PART_PREFIX

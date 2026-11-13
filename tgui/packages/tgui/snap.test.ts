@@ -24,4 +24,10 @@ describe('snapToScreen', () => {
       SNAP_DISTANCE + 1,
     );
   });
+
+  it('snaps to the edges of a screen that does not start at zero', () => {
+    const origin: [number, number] = [-1920, 40];
+    expect(snapToScreen([-1910, 50], size, screen, SNAP_DISTANCE, origin)).toEqual([-1920, 40]);
+    expect(snapToScreen([135, 400], size, screen, SNAP_DISTANCE, origin)[0]).toBe(140);
+  });
 });

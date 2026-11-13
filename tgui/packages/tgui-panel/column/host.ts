@@ -46,12 +46,6 @@ export function sendFor(
   Byond.sendMessage('col/msg', { wid, type, payload });
 }
 
-/** Windows the column never folds (the server's window_dock_always_docked). */
-const ALWAYS_OPEN = new Set(['StatPanel']);
-
-/** Windows with no float or close button (the server keeps them open: window_dock_always_open, _always_docked). */
-const PERMANENT = new Set(['Chat', 'StatPanel']);
-
 export class ColumnHost {
   state: DockState = emptyDock();
   /** Docked tgui interfaces by window id: their own stores and channels. */
@@ -144,10 +138,10 @@ export class ColumnHost {
     );
     this.backends.set(wid, backend);
     const at = typeof payload?.at === 'number' ? payload.at : undefined;
-    // Its interface and title come with its first update; until then it is placed by its id.
+    // Its interface and title come with its first update; until then it has no interface, so the saved layout does not hear of it.
     this.dispatch({
       type: 'open',
-      window: { id: wid, iface: wid, title: '', kind: 'tgui', at },
+      window: { id: wid, iface: '', title: '', kind: 'tgui', at },
     });
     sendFor(wid, 'ready');
   }
@@ -272,16 +266,15 @@ export class ColumnHost {
     this.dispatch({ type: 'close', id: wid });
   }
 
-  /**
-   * Whether docked window `wid` may leave the column (float or close): a
-   * tgui window whose interface floats (the stat panel never does), and
-   * never the column's last window (the column is never empty). The server
-   * holds the same rule (window_dock.dm may_leave()).
-   */
-  /** Whether an entry can fold to its header: never one holding an always-docked window. */
+  /** The window config the server sent a docked interface (its floatable, collapsible and closable words). */
+  private windowConfig(wid: string) {
+    return this.backends.get(wid)?.store.get(configAtom)?.window;
+  }
+
+  /** Whether an entry can fold to its header: never one holding a window the server says cannot (the stat panel). */
   mayCollapse(group: { windows: string[] }): boolean {
-    return !group.windows.some((id) =>
-      ALWAYS_OPEN.has(this.state.windows[id]?.iface ?? ''),
+    return !group.windows.some(
+      (id) => this.windowConfig(id)?.collapsible === false,
     );
   }
 
@@ -290,13 +283,17 @@ export class ColumnHost {
     return group.collapsed && this.mayCollapse(group);
   }
 
-  /** Whether a window's header offers float and close. */
+  /** Whether a window's header offers float and close, and a drag out floats it: the server says so (closable) and it may leave. */
   hasWindowButtons(wid: string): boolean {
-    return (
-      !PERMANENT.has(this.state.windows[wid]?.iface ?? '') && this.mayLeave(wid)
-    );
+    return this.windowConfig(wid)?.closable !== false && this.mayLeave(wid);
   }
 
+  /**
+   * Whether docked window `wid` may leave the column (float or close): a
+   * tgui window whose interface floats (the stat panel never does), and
+   * never the column's last window (the column is never empty). The server
+   * holds the same rule (window_dock.dm may_leave()).
+   */
   mayLeave(wid: string): boolean {
     const win = this.state.windows[wid];
     if (win?.kind !== 'tgui') return false;
@@ -341,12 +338,14 @@ export class ColumnHost {
       px <= column.x + column.w &&
       py <= column.y + column.h;
     const y = column ? (py - column.y) / ratio : Number.NaN;
-    sendPage('WM-Log', {
-      drop: inside ? 'column' : 'outside',
-      point: [px, py],
-      column,
-      ratio,
-    });
+    if (this.profiling()) {
+      sendPage('WM-Log', {
+        drop: inside ? 'column' : 'outside',
+        point: [px, py],
+        column,
+        ratio,
+      });
+    }
     if (!inside) return;
     const entries = Array.from(
       document.querySelectorAll<HTMLElement>('[data-column-group]'),
@@ -368,6 +367,14 @@ export class ColumnHost {
         sendPage('WM-Save', { layout: text });
       }
     }, SAVE_DELAY_MS);
+  }
+
+  /** Whether the server runs this client in profiling mode (any docked interface's config says so): diagnostics are sent only then. */
+  private profiling(): boolean {
+    for (const backend of this.backends.values()) {
+      if (backend.store.get(configAtom)?.client?.profiling) return true;
+    }
+    return false;
   }
 
   /** The window entry of `id`, if the column has it. */

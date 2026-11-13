@@ -3,7 +3,7 @@
 (globalThis as any).__TGUI_WINDOW_GEOMETRY_MANIFEST__ ??= {};
 
 import { afterEach, describe, expect, it } from 'bun:test';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 const { configAtom, store, suspendedAtom } = await import('../events/store');
 const { resetReveal } = await import('../reveal');
@@ -72,8 +72,9 @@ async function floatOut(nextUpdateAfterMs: number) {
   });
   // The server's next update: float_at is cleared.
   act(() => store.set(configAtom, config(null)));
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 1200));
+  // Until the reveal has been reported, however long the machine takes.
+  await waitFor(() => expect(sentTypes).toContain('visible'), {
+    timeout: 10000,
   });
   return { sets, sentTypes };
 }

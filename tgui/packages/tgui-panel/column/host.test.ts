@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { waitFor } from '@testing-library/react';
 import { gameDataAtom } from 'tgui/events/store';
+import { canFloat } from './Column';
 import { CHAT_PENDING, ColumnHost } from './host';
+import { DOCK_SAVE_MAX, serializeSaved } from './model';
 
 const byond = (globalThis as any).Byond;
 const original = byond.sendMessage;
@@ -238,6 +240,7 @@ describe('what the column keeps', () => {
     wid: string,
     iface: string,
     floatable = true,
+    closable = floatable,
   ) => {
     host.receive('col/open', { wid, kind: 'tgui' });
     host.receive('col/msg', {
@@ -247,7 +250,7 @@ describe('what the column keeps', () => {
         config: {
           interface: { name: iface },
           title: iface,
-          window: { floatable },
+          window: { floatable, collapsible: floatable, closable },
         },
         data: {},
       },
@@ -259,13 +262,18 @@ describe('what the column keeps', () => {
   it('never floats or closes the stat panel', () => {
     const host = new ColumnHost();
     open(host, 'col-stat', 'StatPanel', false);
-    open(host, 'col-chat', 'Chat');
+    open(host, 'col-chat', 'Chat', true, false);
+    expect(host.mayCollapse({ windows: ['col-stat'] })).toBe(false);
     expect(host.mayLeave('col-stat')).toBe(false);
     host.float('col-stat', { x: 5, y: 5 });
     host.close('col-stat');
     expect(floats()).toEqual([]);
     expect(closes()).toEqual([]);
     expect(host.mayLeave('col-chat')).toBe(true);
+    // The chat offers no buttons (the server keeps it open) but is dragged out like any window; the stat panel never is.
+    expect(host.hasWindowButtons('col-chat')).toBe(false);
+    expect(canFloat(host, 'col-chat')).toBe(true);
+    expect(canFloat(host, 'col-stat')).toBe(false);
   });
 
   it('never floats or closes its last window', () => {
@@ -280,5 +288,39 @@ describe('what the column keeps', () => {
     expect(host.mayLeave('col-pda')).toBe(true);
     host.float('col-pda');
     expect(floats()).toHaveLength(1);
+  });
+});
+
+describe('the saved layout', () => {
+  it('never hears of column window ids, and keeps saving as windows come and go', () => {
+    const host = new ColumnHost();
+    for (let n = 1; n <= 120; n++) {
+      const wid = `col-${n}`;
+      host.receive('col/open', { wid, kind: 'tgui' });
+      expect(Object.keys(host.state.saved).some((k) => k.startsWith('col-'))).toBe(false);
+      host.receive('col/close', { wid });
+    }
+    expect(Object.keys(host.state.saved)).toEqual([]);
+    host.receive('col/open', { wid: 'col-121', kind: 'tgui' });
+    host.receive('col/msg', {
+      wid: 'col-121',
+      type: 'update',
+      payload: {
+        config: { interface: { name: 'Pda' }, title: 'Pda' },
+        data: {},
+      },
+    });
+    expect(Object.keys(host.state.saved)).toEqual(['Pda']);
+    expect(serializeSaved(host.state.saved).length).toBeLessThan(DOCK_SAVE_MAX);
+  });
+
+  it('drops column window ids from the layout the server sends', () => {
+    const host = new ColumnHost();
+    const place = { dock: true, group: 'g1', order: 0, tab: 0, height: 260 };
+    host.receive('col/init', {
+      saved: JSON.stringify({ 'col-1': place, 'col-2': place, Pda: place }),
+    });
+    expect(Object.keys(host.state.saved).sort()).toEqual(['Chat', 'Pda'].filter((k) => k in host.state.saved));
+    expect(Object.keys(host.state.saved).some((k) => k.startsWith('col-'))).toBe(false);
   });
 });
