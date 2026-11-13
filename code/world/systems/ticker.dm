@@ -32,6 +32,10 @@ SYSTEM_DEF(ticker)
 
 	var/tipped = FALSE //Did we broadcast the tip of the day yet?
 
+	/// The stage setup() is in, and when it began (setup_stage()).
+	var/setup_stage_name
+	var/setup_stage_at = 0
+
 	var/timeLeft //pregame timer
 	COOLDOWN_DECLARE(start_at)
 
@@ -192,16 +196,21 @@ SYSTEM_DEF(ticker)
 #endif
 
 	CHECK_TICK
+	setup_stage("choose the game mode")
 	setup_choose_gamemode()
 	// TODO
 
 	CHECK_TICK
+	setup_stage("economy")
 	setup_economy()
+	setup_stage("create the characters")
 	create_characters() //Create player characters
+	setup_stage("collect the minds")
 	collect_minds()
+	setup_stage("equip the characters")
 	equip_characters()
 
-
+	setup_stage("round start events")
 	for(var/list/row as anything in round_start_events)
 		round_start_fire(row)
 	LAZYCLEARLIST(round_start_events)
@@ -212,7 +221,9 @@ SYSTEM_DEF(ticker)
 	SSserver_metrics.round_started()
 
 	// Spawn randomized items
+	setup_stage("multi point items")
 	spawn_multi_point_items()
+	setup_stage("AI cores, docking codes, solars")
 
 	// Place empty AI cores once we know who is playing AI
 	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
@@ -228,6 +239,7 @@ SYSTEM_DEF(ticker)
 	for(var/obj/machinery/power/solar_control/SC as anything in REGISTRY_MEMBERS(REGISTRY_SOLAR_CONTROLS))
 		SC.auto_start()
 
+	setup_stage(null)
 	log_world("Game start took [(world.timeofday - init_start)/10]s")
 	SSdbcore.SetRoundStart() // an io_job write; returns at once
 
@@ -250,6 +262,14 @@ SYSTEM_DEF(ticker)
 #endif
 
 	return TRUE
+
+/// The stage of setup() that begins now (null: setup is over): the one before it is closed and its real time logged, so a round start that holds the
+/// server (82 s on 2026-11-13, most of it five logins of one player) names where. Real time, not tick usage: a stage can run over several ticks.
+/datum/system/ticker/proc/setup_stage(stage)
+	if(setup_stage_name)
+		log_world("ROUND_SETUP: [setup_stage_name] took [round((REALTIMEOFDAY - setup_stage_at) / 10, 0.1)] s")
+	setup_stage_name = stage
+	setup_stage_at = REALTIMEOFDAY
 
 /datum/system/ticker/proc/PostSetup()
 	mode.post_setup()

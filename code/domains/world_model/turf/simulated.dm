@@ -74,8 +74,8 @@
 /turf/simulated/proc/update_dirt()
 	if(can_dirty)
 		dirt = min(dirt+1, 101)
-		var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, src)
-		if (dirt > 50)
+		if (dirt > 50) // only a dirty floor looks for its overlay: the turf's contents are not walked on every step of a clean one
+			var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, src)
 			if (!dirtoverlay)
 				dirtoverlay = new/obj/effect/decal/cleanable/dirt(src)
 			dirtoverlay.set_alpha(min((dirt - 50) * 5, 255))
@@ -84,7 +84,7 @@
 	var/dirtslip = FALSE
 	if (isliving(A))
 		var/mob/living/M = A
-		if(M.lying || stat_value(M, STAT_FLYING) || M.is_incorporeal() || !(M.flags & ATOM_INITIALIZED)) // Also ignore newly spawning mobs
+		if(M.lying || !(M.flags & ATOM_INITIALIZED) || M.is_incorporeal() || stat_value(M, STAT_FLYING)) // Also ignore newly spawning mobs; the cheap reads first
 			return ..()
 
 		if(M.dirties_floor())
