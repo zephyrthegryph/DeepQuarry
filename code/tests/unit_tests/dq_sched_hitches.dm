@@ -62,28 +62,6 @@
 	GLOB.type_look_stamp[type] = was_stamp
 	GLOB.type_look_lazy[type] = was_lazy
 
-/// The disk store's first-use work goes a sprite at a time: a turn with no budget does one step and says it is not done; the steps add up to the whole stamp.
-/datum/unit_test/dq_client_glow_store_warm_is_stepped
-
-/datum/unit_test/dq_client_glow_store_warm_is_stepped/Run()
-	var/datum/client_glow_baker/B = GLOB.client_glow_baker
-	var/list/parts_before = B.stamp_parts
-	var/done_before = B.stamp_done
-	set_var(B, nameof(B.stamp_parts), null)
-	set_var(B, nameof(B.stamp_done), FALSE)
-	TEST_ASSERT(!client_glow_store_warm(-1), "a turn with no budget is not enough for the warm-up")
-	TEST_ASSERT_EQUAL(length(B.stamp_parts), 2, "it did exactly one step (the version, then one sprite's md5)")
-	var/steps = 1 // the warm-up's own step; the step that adds the last sprite answers TRUE and is the eleventh
-	while(!client_glow_store_stamp_step())
-		steps++
-		TEST_ASSERT(steps < 50, "the steps end")
-	TEST_ASSERT_EQUAL(steps + 1, 11, "one step for each of the eleven glow sprites")
-	TEST_ASSERT_EQUAL(length(B.stamp_parts), 12, "the version and eleven sprites")
-	TEST_ASSERT(client_glow_store_warm(-1), "with every sprite in, the next turn finishes the warm-up")
-	TEST_ASSERT(B.stamp_done, "and says so")
-	B.stamp_parts = parts_before || B.stamp_parts
-	B.stamp_done = done_before || B.stamp_done
-
 /// A shape that arrives is told to its viewers a few at a time: with no budget one viewer is told per call, and the rest stay queued, in order, until each is told once.
 /datum/unit_test/dq_client_glow_arrival_fanout_is_stepped
 

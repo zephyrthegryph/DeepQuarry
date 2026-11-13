@@ -175,6 +175,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/io_lane)
 	var/seq = 0
 	/// Poll cursor: the lane resumes here when the budget ran out mid-list.
 	var/cursor = 1
+	/// Passes that stopped for the tick limit or IO_POLL_BUDGET_MS with jobs left (trace).
+	var/poll_cut = 0
 	/// Per backend name: list(started, completed, errors, dropped, latency total ms, latency max ms).
 	var/list/stats
 
@@ -286,6 +288,9 @@ CAPABILITIES(/datum/io_lane)
 		return
 	after(lane, 0.1 SECONDS, TYPE_PROC_REF(/datum/io_lane, poll_pass), key = "io_poll", clock = CLOCK_WORLD)
 
+/// Server milliseconds one pass of an I/O lane may spend once it has delivered an answer, whatever the tick's limit says.
+#define IO_POLL_BUDGET_MS 6
+
 /// The lane's after(): one pass, then the next while jobs are pending.
 /datum/io_lane/proc/poll_pass()
 	io_poll(src)
@@ -303,6 +308,8 @@ CAPABILITIES(/datum/io_lane)
 		lane.cursor = 1
 	var/checked = 0
 	var/total = length(jobs)
+	var/started = TICK_USAGE_REAL
+	var/delivered = 0
 	while(checked < total && length(lane.jobs))
 		jobs = lane.jobs
 		if(lane.cursor > length(jobs))
@@ -329,7 +336,14 @@ CAPABILITIES(/datum/io_lane)
 			rel_take(lane, nameof(lane.jobs), J)
 			io_deliver(lane, K, J, raw)
 			spent(J)
+			delivered++
 		if(Kernel?.processing && TICK_USAGE >= Kernel.current_ticklimit)
+			lane.poll_cut++
+			break
+		// A delivery runs its owner's callback (a baked shape is copied into the resource cache: tens of ms seen): the pass stops once it has spent its own share, the cursor
+		// keeps the place and the next tick goes on. At least one job is checked a pass.
+		if(delivered && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= IO_POLL_BUDGET_MS)
+			lane.poll_cut++
 			break
 	if(lane.cursor > length(lane.jobs))
 		lane.cursor = 1
