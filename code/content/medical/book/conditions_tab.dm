@@ -309,6 +309,9 @@
 				seen_symptoms[s["id"]] = TRUE
 				union_symptoms += list(s)
 		entry["symptoms"] = union_symptoms
+		// The seizure condition: what raises and lowers a body's proneness to it.
+		if(T == /datum/affliction/seizure)
+			entry["raised_by"] = _dq_seizure_proneness_sources()
 
 		out += list(entry)
 	return out
@@ -388,4 +391,23 @@
 			if(target_type in spawns)
 				out += cproto
 				break
+	return out
+
+
+/// Every reagent that moves STAT_SEIZURE_PRONENESS (its factor table), as { id, name, value, raises }: what the seizure condition lists as
+/// raising or lowering the chance of a seizure. Read from the reagents, never written out here.
+/proc/_dq_seizure_proneness_sources()
+	var/list/out = list()
+	var/list/registry = SSchemistry.ready().chemical_reagents
+	for(var/id in registry)
+		var/datum/reagent/R = registry[id]
+		var/value = R.factors ? R.factors[STAT_SEIZURE_PRONENESS] : null
+		if(!value)
+			continue
+		out += list(list(
+			"id"     = id,
+			"name"   = dq_reagent_display_name(id),
+			"value"  = value,
+			"raises" = value > 0,
+		))
 	return out

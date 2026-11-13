@@ -41,6 +41,10 @@
 	var/list/parts
 	/// TREAT_* -> DIAG_BAND_* urgency, when the profile gives hints. Lazy.
 	var/list/hints
+	/// HIDE_* readings a drug in the patient's blood masks on this scan (null = none). Vitals honour all of them.
+	var/list/masked
+	/// The subset of `masked` that applies to findings, parts and hints: only an instrument profile (not the naked eye) is fooled.
+	var/list/finding_masks
 
 CAPABILITIES(/datum/diagnosis)
 	owns_many(nameof(findings))
@@ -55,6 +59,10 @@ CAPABILITIES(/datum/diagnosis)
 			return existing
 	rel_add(src, nameof(findings), F)
 	return F
+
+/// Does this scan mask the reading `key` (HIDE_*)?
+/datum/diagnosis/proc/hides(key)
+	return !!(masked && (key in masked))
 
 /// Findings of `kind` (DIAG_FINDING_*), or every finding.
 /datum/diagnosis/proc/findings_of(kind = null)

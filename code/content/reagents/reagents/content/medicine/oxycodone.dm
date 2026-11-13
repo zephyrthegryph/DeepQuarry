@@ -1,9 +1,11 @@
 /datum/reagent/oxycodone
-	factors = alist(STAT_ANALGESIA = 200, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25)
-	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 150, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25))
+	treatment_tags = list(TREAT_ANALGESIC = 2.0)
+	hides = list(HIDE_PAIN)
+	factors = alist(STAT_ANALGESIA = 200, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25, STAT_RESP_RATE = -3)
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 150, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25, STAT_RESP_RATE = -3))
 	name = REAGENT_OXYCODONE
 	id = REAGENT_ID_OXYCODONE
-	description = "An effective and very addictive painkiller."
+	description = "An overwhelming painkiller for the worst injuries. Slows the breathing, is very addictive, and hides pain from scanners and monitors, so a patient on it can be hurt worse than the instruments show."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

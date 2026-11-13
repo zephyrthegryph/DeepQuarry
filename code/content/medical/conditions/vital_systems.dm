@@ -116,7 +116,7 @@ CAPABILITIES(/datum/affliction/airway)
 	initial_severity = 30
 	// Subsides slowly once the trigger stops; allergens and burns keep adding.
 	progression_rate = -0.3
-	treated_by = list(TREAT_VASOPRESSOR = 1.5, TREAT_AIRWAY = 0.6)
+	treated_by = list(TREAT_VASOPRESSOR = 1.5, TREAT_AIRWAY = 0.6, TREAT_ANTIEDEMA = 1.0, TREAT_RESPIRATORY = 0.6)
 	symptom_pool = list(
 		/datum/affliction_symptom/stridor         = 100,
 		/datum/affliction_symptom/facial_swelling = 70,

@@ -4,8 +4,8 @@
 	clinical_description = "An inhalation injury — heat and smoke have scorched the upper airway, and the tissue is swelling in response."
 	progression_rate = 1.0
 	// Burn-specialised dermaline / kelotane treat the airway burn itself;
-	// respirodaxon repairs the underlying lung tissue once they've cooled.
-	treated_by = list(TREAT_BURN_CARE = 1.0, TREAT_RESPIRATORY = 0.4)
+	// respirodaxon repairs the airway and the underlying lung tissue.
+	treated_by = list(TREAT_BURN_CARE = 1.0, TREAT_BURN_DEEP = 1.0, TREAT_RESPIRATORY = 1.0)
 	organ_damage_threshold = 60
 	organ_damage_type = "internal"
 	organ_damage_per_tick = 2

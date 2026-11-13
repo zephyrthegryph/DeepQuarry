@@ -1,7 +1,3 @@
-// === merged from medicine_ch.dm during hard-fork de-suffix (verified no override-order change) ===
-////////////////////////////////////
-////////////   MEDICINE   /////////
-//////////////////////////////////
 /datum/reagent/claridyl
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.25)
 	factors = alist(STAT_ANALGESIA = 40, STAT_STABILIZATION = 30)

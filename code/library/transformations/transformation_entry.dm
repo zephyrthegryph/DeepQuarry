@@ -13,6 +13,9 @@
 //   regime        which holders run the rule (REGIME_X); a holder declares the regime it runs. Default REGIME_INSTANT.
 //   takes         the terms consumed. The first one is the index key (the anchor): the rule is a candidate in a subject holding it.
 //   catalysts     present at least this much, not consumed.        blocked_by: present at least this much blocks the rule.
+//   needs_grade   list(REAGENT_ID_X = GRADE_PHARMA): the minimum grade (GRADE_CRUDE..GRADE_REAGENT, code/defines/content/chem_purity.dm) a reagent of the holder must
+//                 have for the rule to hold; a reagent below it (or absent) does not react. A pure reagent is Reagent grade, so it meets any. Reagents medium only.
+//                 What the reactants carry as contaminants is averaged into the product by the units used (xform_carried_contaminants()).
 //   holds         the conditions under which the rule holds (code/library/transformations/transformation_conditions.dm); a subtype's `holds` is ANDed over the one
 //                 it inherits. (Not `when`: that keyword is the op conditions', and the handler lints read it as one.)
 //   rate          how far one step goes, a fraction of the limit: RATE_INSTANT (the default), half_life(n), rate(r).
@@ -61,14 +64,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 	return list(reagent_id, key, default)
 
 /proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, spawns = null, effects = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null,
-		with_data = null, data_from = null, spends = null, spends_all = null)
+		with_data = null, data_from = null, spends = null, spends_all = null, needs_grade = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
 		"notice" = notice, "spawns" = spawns, "effects" = effects, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
 		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen, "crafted" = crafted, \
-		"with_data" = with_data, "data_from" = data_from, "spends" = spends, "spends_all" = spends_all))
+		"with_data" = with_data, "data_from" = data_from, "spends" = spends, "spends_all" = spends_all, "needs_grade" = needs_grade))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
 /proc/half_life(ticks)
@@ -137,6 +140,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/list/reagent_takes
 	var/list/reagent_catalysts
 	var/list/reagent_blocked
+	/// reagent id => the minimum GRADE_* it must have (`needs_grade =`), or null.
+	var/list/needs_grade
 	/// The gas terms of a gas rule as gas type => minimum moles (the shape the dispatcher reads the mixture's readings in), or null.
 	var/list/gas_takes
 	/// A gas rule's temperature window (null: open), read from its temperature_in() condition.
@@ -454,6 +459,13 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.reagent_takes = xform_assoc(X.takes, XCUR_REAGENT)
 		X.reagent_catalysts = xform_assoc(X.catalysts, XCUR_REAGENT)
 		X.reagent_blocked = xform_assoc(X.blocked_by, XCUR_REAGENT)
+		if(arguments["needs_grade"])
+			var/list/grades = arguments["needs_grade"]
+			for(var/reagent_id in grades)
+				if(!isnum(grades[reagent_id]) || grades[reagent_id] < GRADE_CRUDE || grades[reagent_id] > GRADE_REAGENT)
+					declare_report("[origin]: [type]: needs_grade for [reagent_id] must be a GRADE_* constant")
+					return null
+			X.needs_grade = grades
 		for(var/list/row as anything in X.makes)
 			if(row[1] == XCUR_REAGENT)
 				X.result = row[2]

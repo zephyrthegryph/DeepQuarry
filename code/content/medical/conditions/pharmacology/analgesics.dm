@@ -16,16 +16,33 @@
 	caused_by_chems = list(REAGENT_ID_OXYCODONE = 5)
 	caused_by_chems_organ = O_BRAIN
 
-/datum/affliction/chem_side_effect/tramadol_nausea
+/// Tramadol's nausea is a real, treatable nausea (calcium carbonate settles it): held while the drug stays in the blood.
+/datum/affliction/nausea/tramadol
 	name = "tramadol nausea"
-	clinical_description = "Tramadol is a common analgesic but its action on serotonin receptors causes mild nausea and dizziness in many patients. Resolves as the chem clears."
+	clinical_description = "Tramadol's action on serotonin receptors makes the stomach turn and can bring on vomiting. It lasts while the drug is in the blood; calcium carbonate settles it."
+	progression_rate = 0
+	initial_severity = 40
 	symptom_pool = list(
-		/datum/affliction_symptom/nausea    = 70,
+		/datum/affliction_symptom/nausea    = 100,
 		/datum/affliction_symptom/dizziness = 50,
 	)
-	min_symptoms = 1
-	max_symptoms = 2
 	caused_by_chems = list(REAGENT_ID_TRAMADOL = 8)
+
+/// A large dose of paracetamol in the blood poisons the liver slowly, long before the overdose line (the strain applies above a dose, not per unit).
+/datum/affliction/chem_side_effect/paracetamol_hepatotoxicity
+	name = "paracetamol hepatotoxicity"
+	clinical_description = "A high paracetamol level saturates the liver's clearance pathway and the metabolites damage it a little with every tick. Harmless at ordinary doses; resolves as the chem clears, but the liver damage stays."
+	symptom_pool = list(
+		/datum/affliction_symptom/fatigue = 50,
+		/datum/affliction_symptom/nausea  = 40,
+	)
+	min_symptoms = 0
+	max_symptoms = 1
+	organ_damage_threshold = 0
+	organ_damage_type = "internal"
+	organ_damage_per_tick = 0.1
+	organ_damage_targets = list(O_LIVER)
+	caused_by_chems = list(REAGENT_ID_PARACETAMOL = 30)
 	caused_by_chems_organ = O_LIVER
 
 /datum/affliction/overdose/oxycodone

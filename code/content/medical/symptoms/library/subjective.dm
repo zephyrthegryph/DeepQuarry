@@ -13,6 +13,7 @@
 /datum/affliction_symptom/headache
 	name = "headache"
 	category = "Subjective"
+	subcategory = SYMPTOM_SUBCATEGORY_PAIN
 	clinical_description = "Diffuse cranial pain, frequently retro-orbital."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 5

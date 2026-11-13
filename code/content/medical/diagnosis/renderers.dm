@@ -45,6 +45,10 @@
 		TREAT_CHEST_COMPRESSION = "chest compressions",
 		TREAT_VASOPRESSOR = "vasopressor",
 		TREAT_DIGESTIVE = "digestive repair",
+		TREAT_ANTIEMETIC = "antiemetic",
+		TREAT_ANTICONVULSANT = "anticonvulsant",
+		TREAT_BURN_DEEP = "deep burn care",
+		TREAT_ANTIEDEMA = "anti-edema",
 	)
 	return labels[tag] || tag
 

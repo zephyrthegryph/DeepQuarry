@@ -1,7 +1,7 @@
 /datum/reagent/sterilizine
 	name = REAGENT_STERILIZINE
 	id = REAGENT_ID_STERILIZINE
-	description = "Sterilizes wounds in preparation for surgery and thoroughly removes blood. Can additionally be used to prepare a surface for surgery to lower risk of infection."
+	description = "A topical that sterilizes wounds and surfaces, preventing wound and surgical infection, and thoroughly removes blood. It stings on contact."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0 //Custom touch handling.
@@ -15,6 +15,10 @@
 
 /datum/reagent/sterilizine/affect_touch(mob/living/carbon/M, alien, removed)
 	M.adjust_germ_level(-removed * 20)
+	// It stings: a little pain where it touches.
+	var/sting = M.injure(INJURY_PAIN, removed * STERILIZINE_STING_PER_UNIT, source = src, flags = INJURE_SILENT)
+	if(GLOB.chem_trace)
+		log_world("CHEM: sterilizine stings [M] for [sting] pain (removed [removed])")
 	for(var/obj/item/I in contents_of(M))
 		dq_set_was_bloodied(I, null)
 	dq_set_was_bloodied(M, null)

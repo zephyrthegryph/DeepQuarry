@@ -21,50 +21,6 @@ CAPABILITIES(/transformation/chem/distilling/biomass)
 
 
 // Medicinal
-/transformation/chem/distilling/inaprovalaze
-
-CAPABILITIES(/transformation/chem/distilling/inaprovalaze)
-	configure(transformation(name = "Distilling Inaprovalaze", id = "distill_inaprovalaze",
-		takes = list(reagent(REAGENT_ID_INAPROVALINE, 2), reagent(REAGENT_ID_FOAMINGAGENT, 1)),
-		makes = list(reagent(REAGENT_ID_INAPROVALAZE, 2)), rate = half_life(10), holds = temperature_in(T0C + 100, T0C + 120)))
-
-
-
-/transformation/chem/distilling/bicaridaze
-
-CAPABILITIES(/transformation/chem/distilling/bicaridaze)
-	configure(transformation(name = "Distilling Bicaridaze", id = "distill_bicaridaze",
-		takes = list(reagent(REAGENT_ID_BICARIDINE, 2), reagent(REAGENT_ID_FOAMINGAGENT, 1)),
-		makes = list(reagent(REAGENT_ID_BICARIDAZE, 2)), rate = half_life(10), holds = temperature_in(T0C + 110, T0C + 130)))
-
-
-
-/transformation/chem/distilling/dermalaze
-
-CAPABILITIES(/transformation/chem/distilling/dermalaze)
-	configure(transformation(name = "Distilling Dermalaze", id = "distill_dermalaze",
-		takes = list(reagent(REAGENT_ID_DERMALINE, 2), reagent(REAGENT_ID_FOAMINGAGENT, 1)),
-		makes = list(reagent(REAGENT_ID_DERMALAZE, 2)), rate = half_life(10), holds = temperature_in(T0C + 115, T0C + 130)))
-
-
-
-/transformation/chem/distilling/spacomycaze
-
-CAPABILITIES(/transformation/chem/distilling/spacomycaze)
-	configure(transformation(name = "Distilling Spacomycaze", id = "distill_spacomycaze",
-		takes = list(reagent(REAGENT_ID_PARACETAMOL, 1), reagent(REAGENT_ID_SPACEACILLIN, 1), reagent(REAGENT_ID_FOAMINGAGENT, 1)),
-		makes = list(reagent(REAGENT_ID_SPACOMYCAZE, 2)), rate = half_life(10), holds = temperature_in(T0C + 100, T0C + 120)))
-
-
-
-/transformation/chem/distilling/tricorlidaze
-
-CAPABILITIES(/transformation/chem/distilling/tricorlidaze)
-	configure(transformation(name = "Distilling Tricorlidaze", id = "distill_tricorlidaze",
-		takes = list(reagent(REAGENT_ID_TRICORDRAZINE, 1), reagent(REAGENT_ID_STERILIZINE, 1), reagent(REAGENT_ID_FOAMINGAGENT, 1)),
-		makes = list(reagent(REAGENT_ID_TRICORLIDAZE, 2)), rate = half_life(10), holds = temperature_in(T0C + 100, T0C + 120)))
-
-
 
 /transformation/chem/distilling/synthplas
 
@@ -205,7 +161,7 @@ CAPABILITIES(/transformation/chem/distilling/energybooster)
 
 CAPABILITIES(/transformation/chem/distilling/oceaniccure)
 	configure(transformation(name = "Distilling Oceanic Cure", id = "distill_oceaniccure",
-		takes = list(reagent(REAGENT_ID_CUREA, 1), reagent(REAGENT_ID_SOULDEW, 1), reagent(REAGENT_ID_CARPOTOXIN, 1)),
+		takes = list(reagent(REAGENT_ID_ANTITOXIN, 1), reagent(REAGENT_ID_SOULDEW, 1), reagent(REAGENT_ID_CARPOTOXIN, 1)),
 		makes = list(reagent(REAGENT_ID_OCEANICCURE, 2)), rate = half_life(10), holds = temperature_in(T0C + 130, T0C + 150)))
 
 
@@ -223,7 +179,7 @@ CAPABILITIES(/transformation/chem/distilling/deathclawmutagen)
 
 CAPABILITIES(/transformation/chem/distilling/senseenhancer)
 	configure(transformation(name = "Distilling Sense Enhancer", id = "distill_senseenhancer",
-		takes = list(reagent(REAGENT_ID_QUADCORD, 1), reagent(REAGENT_ID_MINDBREAKER, 1), reagent(REAGENT_ID_LIQUIDLIFE, 1)),
+		takes = list(reagent(REAGENT_ID_TRICORDRAZINE, 1), reagent(REAGENT_ID_MINDBREAKER, 1), reagent(REAGENT_ID_LIQUIDLIFE, 1)),
 		makes = list(reagent(REAGENT_ID_SENSEENHANCER, 2)), rate = half_life(10), holds = temperature_in(T0C + 50, T0C + 70)))
 
 
@@ -241,7 +197,7 @@ CAPABILITIES(/transformation/chem/distilling/heatnullifer)
 
 CAPABILITIES(/transformation/chem/distilling/juggernog)
 	configure(transformation(name = "juggernog", id = "distill_juggernog",
-		takes = list(reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_IRON, 1), reagent(REAGENT_ID_QUADCORD, 1), reagent(REAGENT_ID_NEOLIQUIDFIRE, 1), reagent(REAGENT_ID_RADIUM, 1)),
+		takes = list(reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_IRON, 1), reagent(REAGENT_ID_TRICORDRAZINE, 1), reagent(REAGENT_ID_NEOLIQUIDFIRE, 1), reagent(REAGENT_ID_RADIUM, 1)),
 		makes = list(reagent(REAGENT_ID_JUGGERNOG, 5)), rate = half_life(10), holds = temperature_in(T0C + 180, T0C + 200)))
 
 
@@ -251,7 +207,7 @@ CAPABILITIES(/transformation/chem/distilling/juggernog)
 
 CAPABILITIES(/transformation/chem/distilling/phoenixbreath)
 	configure(transformation(name = REAGENT_PHOENIXBREATH, id = REAGENT_ID_PHOENIXBREATH,
-		takes = list(reagent(REAGENT_ID_SHOCKCHEM, 1), reagent(REAGENT_ID_NEOTANE, 1), reagent(REAGENT_ID_BURNCARD, 1), reagent(REAGENT_ID_QUADCORD, 1), reagent(REAGENT_ID_MINDBREAKER, 1)),
+		takes = list(reagent(REAGENT_ID_SHOCKCHEM, 1), reagent(REAGENT_ID_KELOTANE, 1), reagent(REAGENT_ID_BICARIDINE, 1), reagent(REAGENT_ID_TRICORDRAZINE, 1), reagent(REAGENT_ID_MINDBREAKER, 1)),
 		makes = list(reagent(REAGENT_ID_PHOENIXBREATH, 6)), holds = temperature_in(T0C + 100, T0C + 120)))
 
 

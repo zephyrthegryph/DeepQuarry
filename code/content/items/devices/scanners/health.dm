@@ -121,7 +121,9 @@ CAPABILITIES(/obj/item/healthanalyzer)
 				unknown++
 				continue
 			var/overdose = R.overdose && R.volume > R.overdose && (where != "dermis" || R.can_overdose_touch)
-			known += "&emsp;[round(R.volume, 1)]u [R.name][overdose ? " - [span_danger("Overdose")]" : ""]"
+			var/purity_text = R.purity_summary()
+			var/list/contaminant_text = R.contaminant_lines()
+			known += "&emsp;[round(R.volume, 1)]u [R.name][purity_text ? ", [purity_text]" : ""][length(contaminant_text) ? " ([english_list(contaminant_text)])" : ""][overdose ? " - [span_danger("Overdose")]" : ""]"
 		if(length(known))
 			. += span_notice("Reagents detected in subject's [where]:<br>[known.Join("<br>")]")
 		if(unknown)
@@ -151,7 +153,7 @@ CAPABILITIES(/obj/item/healthanalyzer)
 		if(scan_level < SCANNABLE_ADVANCED)
 			. += span_warning("Chemical dependance detected.")
 			break
-		if(scan_level >= SCANNABLE_DIFFICULT && level <= 80)
+		if(scan_level >= SCANNABLE_DIFFICULT && level <= 80 && !M.reading_hidden(HIDE_SYMPTOM_SUPPRESSION)) // a masking drug hides the withdrawal itself; the dependence still reads
 			. += span_warning("Experiencing withdrawls from [R.name], [REAGENT_INAPROVALINE] treatment recomended.")
 		else
 			. += span_warning("Chemical dependance detected: [R.name].")

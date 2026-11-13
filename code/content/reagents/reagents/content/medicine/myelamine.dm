@@ -1,9 +1,13 @@
 /datum/reagent/myelamine
 	// The clotting agent: runs down bleeds; its wound closure is affect_blood.
+	// Hemostatic covers the internal hemorrhage and the lacerated artery too (their treated_by lists it); affect_blood closes the vessel tear.
 	treatment_tags = list(TREAT_HEMOSTATIC = 1.0)
+	// The clots strain a heart that is already damaged (a healthy heart regenerates past the strain), and the drug masks internal bleeding on scans.
+	strains = alist(O_HEART = DRUG_STRAIN_MILD)
+	hides = list(HIDE_INTERNAL_BLEEDING)
 	name = REAGENT_MYELAMINE
 	id = REAGENT_ID_MYELAMINE
-	description = "Used to rapidly clot hemorrhages by increasing the effectiveness of platelets. An ideal dosage of 10 units will fully heal any internal hemorrhages."
+	description = "Used to rapidly clot hemorrhages by increasing the effectiveness of platelets: it stops internal hemorrhage and slows an arterial bleed from a cut artery. An ideal dosage of 10 units will fully heal any internal hemorrhages. The clots strain the heart (a damaged heart is at risk), the drug hides internal bleeding from scans, and it works at half strength alongside cordradaxon."
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
 	color = "#4246C7"

@@ -67,7 +67,7 @@
 	qdel(H)
 	scheduler_test_end()
 
-/// Curing doom (curea removes it) lifts it; only running out kills.
+/// Curing doom (removing the effect) lifts it; only running out kills.
 /datum/unit_test/dq_body_effect_doom_cure_does_not_kill
 
 /datum/unit_test/dq_body_effect_doom_cure_does_not_kill/Run()

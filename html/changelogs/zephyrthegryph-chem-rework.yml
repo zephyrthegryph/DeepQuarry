@@ -1,0 +1,11 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Chemicals carry contaminants: purity and grade (Crude, Standard, Pharma, Reagent) are computed from them, dispensers and supply roll a contaminant profile per round, mixing and reactions carry contaminants through, and contaminants harm the patient or dilute potency."
+  - rscadd: "Reagent scanners, the health analyzer and the chemalyzer show purity, grade and contaminant amounts."
+  - rscadd: "Drugs now declare organ strain, what they hide from scanners and the symptoms they add; scanners and HUDs honour what a drug hides."
+  - rscadd: "New drugs Panacillin, Iron saline and Anticonvulsant; nausea and seizures are real treatable conditions; osteodaxon on an unset fracture heals the bone crooked until it is surgically re-broken."
+  - rscadd: "Nitrous oxide now anaesthetises a patient for surgery."
+  - rscdel: "Removed the topical medicines and the redundant duplicate drugs (hannoa, alizene, vermicetol, burncard, neotane, flamecure, cleansing/purifying agent, eden, curea, serazine, quadcord, livingagent, ryetalyn); recipes and kits use the base drugs. Combat stimulants moved out of medicine."
+  - rscdel: "Removed mood and dysphoria effects from Dexalin Plus and the drugs touched."
+  - qol: "The medical reference book lists every drug's treatments, strains, hides, added symptoms, interactions, recipe grades and overdose, plus nausea, seizure, crooked fracture, contaminants and grades."
