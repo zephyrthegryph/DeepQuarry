@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 /proc/type_look_stamp_record(datum/D)
 	if(isnull(GLOB.type_look_stamp[D.type]))
 		GLOB.type_look_stamp[D.type] = type_look_default_empty(D)
-		look_verdicts_learned()
+		look_verdicts_learned(D.type)
 
 /// Boot (after every system's members are ready): one fresh sample per type still waiting for a verdict is refreshed now, then every
 /// queued fresh instance of a type whose default look is empty leaves the queue. A map load queues every atom before any drain has run
@@ -160,7 +160,7 @@ GLOBAL_LIST_EMPTY(type_look_lazy_why)
 	GLOB.type_look_lazy[A.type] = isnull(why)
 	if(why)
 		GLOB.type_look_lazy_why[A.type] = why
-	look_verdicts_learned()
+	look_verdicts_learned(A.type)
 
 /// The rule that keeps `A`'s type from deriving nothing but a look, or null when it does.
 /proc/look_lazy_block(atom/A)
@@ -425,6 +425,12 @@ GLOBAL_VAR_INIT(look_verdict_unfit, 0)
 GLOBAL_VAR_INIT(look_verdicts_saved, -1)
 /// TRUE while the debounced save is waiting.
 GLOBAL_VAR_INIT(look_verdicts_save_pending, FALSE)
+/// Type paths whose verdict was learned since the cache was last written (a full save or a journal append): what the next flush appends.
+GLOBAL_LIST_EMPTY(look_verdicts_unwritten)
+/// Journal appends made this boot, the verdicts they held, and the ms the last one took (the trace line and the tests read them).
+GLOBAL_VAR_INIT(look_verdicts_appends, 0)
+GLOBAL_VAR_INIT(look_verdicts_appended, 0)
+GLOBAL_VAR_INIT(look_verdicts_last_flush_ms, 0)
 
 /// Whether a cached verdict may be applied to `D`. A cached verdict says what the type's default look is; an instance whose look vars were edited (a
 /// map var edit, a runtime-loaded map, a varedit) is not that default, so it is never spared by it and is handled as if no verdict were known.
@@ -468,7 +474,26 @@ GLOBAL_VAR_INIT(look_verdicts_save_pending, FALSE)
 	if(!look_verdicts_apply(doc))
 		log_world("LOOK VERDICTS: the cache was written by another world or format; sampling at boot")
 		return
-	log_world("LOOK VERDICTS: [GLOB.look_verdicts_loaded] type verdict(s) read from the cache")
+	var/journaled = look_verdicts_read_journal()
+	log_world("LOOK VERDICTS: [GLOB.look_verdicts_loaded] type verdict(s) read from the cache ([journaled] of them from its journal)")
+
+/// Applies the journal of verdicts appended after the file was written (the cache file's name and ".journal": one document per line, only the types learned
+/// since the last full save; the next full save folds it in and deletes it): every line that is a whole document of this world is read,
+/// a line cut short (a write that did not finish) is skipped. Returns the verdicts the journal added.
+/proc/look_verdicts_read_journal(file = "[LOOK_VERDICTS_FILE].journal")
+	if(!fexists(file))
+		return 0
+	var/before = GLOB.look_verdicts_loaded
+	var/text = file2text(file)
+	if(!istext(text))
+		return 0
+	for(var/line in splittext(text, "\n"))
+		if(!length(line) || !findtext(line, "{", 1, 2) || !rustg_json_is_valid(line))
+			continue
+		var/list/doc = json_decode(line)
+		if(islist(doc))
+			look_verdicts_apply(doc)
+	return GLOB.look_verdicts_loaded - before
 
 /// Puts the verdicts of a cache document into the verdict tables when the document was written by this world and format (its version and key). FALSE,
 /// reading nothing, for any other document: its verdicts would draw this world's atoms wrong.
@@ -515,20 +540,45 @@ GLOBAL_VAR_INIT(look_verdicts_save_pending, FALSE)
 		return FALSE
 	fcopy(temp, file) // a copy of a file already known good; BYOND has no rename
 	fdel(temp)
+	fdel("[file].journal") // what it held is in the file now
+	GLOB.look_verdicts_unwritten.Cut()
 	GLOB.look_verdicts_saved = length(GLOB.type_look_stamp) + length(GLOB.type_look_lazy)
 	log_world("LOOK VERDICTS: [length(stamp)] type verdict(s) written for the next boot ([GLOB.look_verdict_unfit] instance(s) refused a cached verdict so far)")
 	return TRUE
 
-/// A verdict was just learned (type_look_stamp_record(), look_lazy_record()). Once the boot settle has written the cache, new verdicts are written by one
-/// save a little later, so a type first made mid-round (an expedition map, a spawned item) is kept for the next boot too.
-/proc/look_verdicts_learned()
-	if(GLOB.look_verdicts_saved < 0 || GLOB.look_verdicts_save_pending)
+/// A verdict was just learned (type_look_stamp_record(), look_lazy_record()) for `path`. Once the boot settle has written the cache, new verdicts are
+/// appended by one write a little later, so a type first made mid-round (an expedition map, a spawned item) is kept for the next boot too.
+/proc/look_verdicts_learned(path)
+	if(GLOB.look_verdicts_saved < 0)
+		return
+	GLOB.look_verdicts_unwritten |= path
+	if(GLOB.look_verdicts_save_pending)
 		return
 	GLOB.look_verdicts_save_pending = TRUE
 	after(null, LOOK_VERDICTS_SAVE_DELAY, GLOBAL_PROC_REF(look_verdicts_flush), clock = CLOCK_WORLD)
 
-/// The debounced save: writes when the tables hold more than the last write did.
-/proc/look_verdicts_flush()
+/// The debounced save: appends the verdicts learned since the last write to the journal, one line holding only them. What it costs follows what was learned (a
+/// few types), not what is known (thousands): rewriting the whole cache here was a 57-64 ms call in a live tick.
+/proc/look_verdicts_flush(file = LOOK_VERDICTS_FILE)
 	GLOB.look_verdicts_save_pending = FALSE
-	if(length(GLOB.type_look_stamp) + length(GLOB.type_look_lazy) > GLOB.look_verdicts_saved)
-		look_verdicts_save()
+	var/list/paths = GLOB.look_verdicts_unwritten
+	if(!length(paths))
+		return 0
+	var/started = TICK_USAGE_REAL
+	var/list/stamp = list()
+	var/list/lazy = list()
+	for(var/path in paths)
+		if(!isnull(GLOB.type_look_stamp[path]))
+			stamp["[path]"] = GLOB.type_look_stamp[path] ? 1 : 0
+		if(!isnull(GLOB.type_look_lazy[path]))
+			lazy["[path]"] = GLOB.type_look_lazy[path] ? 1 : 0
+	var/count = length(paths)
+	paths.Cut()
+	var/line = json_encode(list("version" = LOOK_VERDICTS_VERSION, "key" = look_verdicts_key(), "stamp" = stamp, "lazy" = lazy))
+	rustg_file_append("[line]\n", "[file].journal")
+	GLOB.look_verdicts_appends++
+	GLOB.look_verdicts_appended += count
+	GLOB.look_verdicts_saved = length(GLOB.type_look_stamp) + length(GLOB.type_look_lazy)
+	GLOB.look_verdicts_last_flush_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	log_world("LOOK VERDICTS: [count] new type verdict(s) appended to the journal in [round(GLOB.look_verdicts_last_flush_ms, 0.01)] ms ([GLOB.look_verdicts_appends] append(s) this boot)")
+	return count
