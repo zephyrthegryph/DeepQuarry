@@ -56,13 +56,23 @@ fn original_for_each_clause(
         .filter(|token| !matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline));
     let identifier = |token: &crate::SpanToken| token.kind == TokenKind::Ident
         && token.text(clause).bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_');
-    if !tokens.next().is_some_and(|token| token.text(clause) == "var") { return false; }
-    loop {
-        if !tokens.next().is_some_and(|token| token.text(clause) == "/")
-            || !tokens.next().is_some_and(identifier) { return false; }
-        let Some(next) = tokens.clone().next() else { return false; };
-        if next.text(clause) != "/" { break; }
+    let Some(first) = tokens.next() else { return false; };
+    if first.text(clause) == "var" {
+        loop {
+            if !tokens.next().is_some_and(|token| token.text(clause) == "/")
+                || !tokens.next().is_some_and(identifier) { return false; }
+            let Some(next) = tokens.clone().next() else { return false; };
+            if next.text(clause) != "/" { break; }
+        }
+    } else if first.kind != TokenKind::Ident
+        || !crate::expression_parser::original_ordinary_call_name(first.text(clause))
+        || matches!(first.text(clause), "null" | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__") {
+        return false;
     }
+    // A bare name is the pinned var_type=None form, not a declaration.
+    // Exclude pinned no-argument special terms; global is a genuine Ident.
+    // Existence/resolution belongs to the semantic consumer. The same next
+    // token must still be the exact selected top-level In separator.
     if !tokens.next().is_some_and(|token| token.span.start == separator && token.text(clause) == "in") {
         return false;
     }
@@ -854,5 +864,61 @@ pub(super) fn unsupported(item: &Item) -> Statement {
         span: item.span,
         header_span: item.header_span,
         raw_header: item.header.clone(),
+    }
+}
+
+#[cfg(test)]
+mod original_existing_for_each_controls {
+    use super::*;
+    #[test]
+    fn original_existing_for_each_header_keeps_one_name_and_the_same_separator() {
+        for (clause, expected) in [
+            ("current_sort_text in incoming", true),
+            ("not_declared_here in incoming", true),
+            ("global in incoming", true),
+            ("null in incoming", false),
+            ("__PROC__ in incoming", false),
+            ("__TYPE__ in incoming", false),
+            ("__IMPLIED_TYPE__ in incoming", false),
+            ("var/current_sort_text in incoming", true),
+            ("var/datum/current_sort_text in incoming", true),
+            ("current_sort_text.name in incoming", false),
+            ("current_sort_text[key] in incoming", false),
+            ("(current_sort_text) in incoming", false),
+            ("current_sort_text = other in incoming", false),
+            ("current_sort_text, other in incoming", false),
+            ("current_sort_text as anything in incoming", false),
+            ("current_sort_text in incoming to other", false),
+            ("current_sort_text in incoming tail", false),
+        ] {
+            let lexical = crate::lex_spans(clause);
+            let separator = lexical.tokens.iter().find(|token| token.text(clause) == "in").unwrap().span.start;
+            assert_eq!(original_for_each_clause(clause, &lexical, separator,
+                false, false, false, false, false, false), expected, "{clause}");
+            assert!(!original_for_each_clause(clause, &lexical, separator + 1,
+                false, false, false, false, false, false), "wrong separator: {clause}");
+        }
+    }
+    #[test]
+    fn original_existing_for_each_never_adds_a_shadow_declaration_to_the_primary_ledger() {
+        for (outer, binding, expected_statements, expected_bindings) in [
+            ("    var/current_sort_text\n", "current_sort_text", 1, 0),
+            ("", "current_sort_text", 0, 0),
+            ("    var/current_sort_text\n", "var/current_sort_text", 1, 1),
+        ] {
+            let source = format!("/proc/probe(incoming)\n{outer}    for({binding} in incoming)\n        return current_sort_text\n    return current_sort_text\n");
+            let syntax = crate::parse(&source);
+            let body = crate::parse_proc_body(&syntax.items[0]);
+            assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+            let locals = body.local_variables.entries().unwrap();
+            assert_eq!(locals.iter().filter(|row| row.source_kind == crate::LocalSourceKind::Statement).count(), expected_statements);
+            assert_eq!(locals.iter().filter(|row| row.source_kind == crate::LocalSourceKind::ForBinding).count(), expected_bindings);
+            let statement = &body.statements[expected_statements];
+            let StatementKind::For { control: ForControl::Each { source_binding, binding: actual, .. }, .. } = &statement.kind
+                else { panic!("same for-list production"); };
+            assert_eq!(actual, binding);
+            let name = source_binding.expect("one genuine consumed header name").name();
+            assert_eq!(&source[name.range()], "current_sort_text");
+        }
     }
 }

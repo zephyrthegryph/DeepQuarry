@@ -1487,15 +1487,20 @@ fn parse_switch(
     let mut witnessed = header.ends_with(')') && control_inline(item, "switch").is_none()
         && original_indented_block_boundary(item, origins);
     let mut inline_decimal_returns = false;
+    let mut needs_case_cursor = false;
+    let mut has_inline_case = false;
     let selector = parse_control_condition_observed(item, "switch", diagnostics, &mut |parsed| {
         inline_decimal_returns = matches!(parsed.expr.as_ref().map(|value| &value.kind),
             Some(ExprKind::Call { callee, args })
                 if matches!(&callee.kind, ExprKind::Ident(name) if name == "length")
                     && matches!(args.as_slice(), [arg] if matches!(&arg.kind, ExprKind::Ident(name) if name == "input")));
+        let previous_selector = inline_decimal_returns
+            || matches!(parsed.expr.as_ref().map(|value| &value.kind), Some(ExprKind::Ident(_)));
+        needs_case_cursor |= !previous_selector;
         witnessed &= parsed.original_simple_expression.is_some_and(|value| {
             value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
-        }) && (inline_decimal_returns
-            || matches!(parsed.expr.as_ref().map(|value| &value.kind), Some(ExprKind::Ident(_))));
+                && (previous_selector || value.is_original())
+        });
     })?;
     let mut cases = Vec::new();
     let mut else_branch = Vec::new();
@@ -1521,6 +1526,7 @@ fn parse_switch(
                 .trim()
                 .trim_end_matches(';')
                 .trim();
+            has_inline_case |= !inline.is_empty();
             else_branch = if inline.is_empty() {
                 parse_sequence(&case.children, diagnostics, origins)
             } else {
@@ -1544,16 +1550,27 @@ fn parse_switch(
         let offset_of = |part: &str| base + (part.as_ptr() as usize - clause.as_ptr() as usize);
         let mut alternatives = Vec::new();
         let alternatives_source = split_case_alternatives(clause.trim_end().strip_suffix(',').unwrap_or(clause));
-        witnessed &= alternatives_source.len() == 1 && !clause.trim_end().ends_with(',');
+        needs_case_cursor |= alternatives_source.len() != 1;
+        witnessed &= !clause.trim_end().ends_with(',');
         for alternative in alternatives_source {
             let alternative = alternative.trim();
             let offset = offset_of(alternative);
             if let Some((lower, upper)) = split_top_level_keyword(alternative, "to") {
-                witnessed = false;
+                needs_case_cursor = true;
                 let lower = lower.trim();
                 let upper = upper.trim();
-                let lower = parse_expr(lower, offset_of(lower), diagnostics)?;
-                let upper = parse_expr(upper, offset_of(upper), diagnostics)?;
+                let lower = parse_expr_observed(lower, offset_of(lower), diagnostics, &mut |parsed| {
+                    witnessed &= parsed.original_simple_expression.is_some_and(|value| {
+                        value.is_original()
+                            && value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                    });
+                })?;
+                let upper = parse_expr_observed(upper, offset_of(upper), diagnostics, &mut |parsed| {
+                    witnessed &= parsed.original_simple_expression.is_some_and(|value| {
+                        value.is_original()
+                            && value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                    });
+                })?;
                 alternatives.push(SwitchAlternative::Range(lower, upper));
             } else {
                 alternatives.push(SwitchAlternative::Exact(parse_expr_observed(
@@ -1561,10 +1578,13 @@ fn parse_switch(
                     offset,
                     diagnostics,
                     &mut |parsed| {
+                        let decimal = matches!(parsed.expr.as_ref().map(|value| &value.kind),
+                            Some(ExprKind::Literal(value)) if crate::expression_parser::original_decimal(value.as_str()));
+                        needs_case_cursor |= !decimal;
                         witnessed &= parsed.original_simple_expression.is_some_and(|value| {
                             value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
-                        }) && matches!(parsed.expr.as_ref().map(|value| &value.kind),
-                            Some(ExprKind::Literal(value)) if crate::expression_parser::original_decimal(value.as_str()));
+                                && (decimal || value.is_original())
+                        });
                     },
                 )?));
             }
@@ -1581,6 +1601,7 @@ fn parse_switch(
         // Borrow following else/catch/while rows rather than cloning a roster.
         let mut next=index+1;
         let inline=control_inline(case,"if");
+        has_inline_case |= inline.is_some();
         if inline.is_none() {
             witnessed &= header.ends_with(')') && original_indented_block_boundary(case, origins);
         }
@@ -1604,8 +1625,11 @@ fn parse_switch(
         });
         index=next;
     }
-    // Decimal case terms have no case-positioned diagnostics. Current
-    // source reporting reissues a cursor from live tokens if it needs one.
+    // Newly admitted alternatives may emit case-positioned diagnostics. Their
+    // existing Original cursor must come from this body's consumed token tape.
+    // Inline bodies retain the preceding narrow length(input)/decimal proof.
+    witnessed &= !needs_case_cursor || (!has_inline_case
+        && cases.iter().all(|case| case.original_site.cursor.is_ok()));
     origins.require_original(witnessed && !cases.is_empty(), item.header_span, "switch_cases");
     Some(StatementKind::Switch {
         selector,
@@ -2206,14 +2230,19 @@ mod original_for_each_witness_tests {
     }
 
     #[test]
-    fn original_for_each_proof_consumes_declared_binding_and_actual_iterable_occurrence() {
-        for (control, iterable_name) in [("var/datum/item in items", "items"), ("var/items in items", "items")] {
+    fn original_for_each_proof_consumes_declared_or_reused_binding_and_actual_iterable_occurrence() {
+        for (control, iterable_name) in [("var/datum/item in items", "items"), ("var/items in items", "items"), ("item in items", "items"), ("global in items", "items")] {
             let (source, parsed) = body(&format!("    for({control})\n        return 0\n    return items\n"));
             assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
             let StatementKind::For { control: ForControl::Each { iterable, .. }, .. } = &parsed.statements[0].kind
                 else { panic!("actual ForList body"); };
             assert_eq!(&source[iterable.span.range()], iterable_name);
             assert_eq!(iterable.span.start, source.find(" in ").unwrap() + " in ".len());
+            // Bare syntax reuses a binding; no declaration or existence proof
+            // is invented even when no outer local was written in this fixture.
+            assert_eq!(parsed.local_variables.entries().unwrap().iter()
+                .filter(|row| row.source_kind == crate::LocalSourceKind::ForBinding).count(),
+                usize::from(control.starts_with("var/")));
             let grammar = parsed.original_grammar.expect("genuine complete Original ForList witness");
             assert_eq!(grammar.scope_roots(), Some(2));
         }
@@ -2226,7 +2255,10 @@ mod original_for_each_witness_tests {
             "    for(var/item in items) ;\n        return 0\n",
             "    for(var/item in items)\n    return 0\n",
             "    for(var/item in items)\n        continue\n",
-            "    for(item in items)\n        return 0\n",
+            "    for(null in items)\n        return 0\n",
+            "    for(__PROC__ in items)\n        return 0\n",
+            "    for(__TYPE__ in items)\n        return 0\n",
+            "    for(__IMPLIED_TYPE__ in items)\n        return 0\n",
             "    for(var/item[] in items)\n        return 0\n",
             "    for(var/item = 1 in items)\n        return 0\n",
             "    for(var/key, value in items)\n        return 0\n",

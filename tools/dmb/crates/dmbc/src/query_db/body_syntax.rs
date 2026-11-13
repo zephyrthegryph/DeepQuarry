@@ -2551,6 +2551,37 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_dd_sortedtextlist_reuses_its_existing_for_name_without_shadow_locals() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/dd_sortedtextlist(").unwrap();
+     let end = file[start..].find("\n/datum/proc/dd_SortValue()").map(|at| start + at).unwrap();
+     let actual = &file[start..end];
+     assert!(actual.contains("var/current_sort_text"));
+     assert!(actual.contains("for (current_sort_text in incoming)"));
+     for (source, expected_for_bindings) in [
+         (actual.to_owned(), 0),
+         (actual.replace("for (current_sort_text in incoming)", "for (var/current_sort_text in incoming)"), 1),
+         (actual.replace("\tvar/current_sort_text\n", ""), 0),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "dd_sortedtextlist");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+                 panic!("actual dd_sortedtextlist for-list grammar must be available");
+             };
+             assert!(proof.belongs_to(&body));
+             let parsed = product.parsed().unwrap().statement_storage().parsed();
+             assert_eq!(parsed.local_variables.entries().unwrap().iter()
+                 .filter(|row| row.source_kind == dm_syntax::LocalSourceKind::ForBinding).count(), expected_for_bindings);
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {
      let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
      fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {
@@ -2657,6 +2688,88 @@ mod body_syntax_census_tests;
              } else {
                  assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
              }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+
+ #[test]
+ fn actual_original_indented_switch_keeps_typed_cases_ranges_order_and_real_cursor() {
+     let fixture = r#"
+/datum/tag
+/proc/probe(value, datum/holder)
+    switch(value)
+        if("alpha", /datum/tag)
+            return 0
+        if(-2 to -1, 4)
+            return 1
+        if(1 || 2)
+            return 2
+        else
+            return 3
+"#;
+     for text in [fixture.to_owned(), fixture.replace("switch(value)", "switch(holder.kind)")] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = body.original_code_disposition()? else {
+                 panic!("the consumed Original indented switch must be available");
+             };
+             assert!(proof.belongs_to(&body));
+             let storage = product.parsed().unwrap().statement_storage();
+             let dm_syntax::StatementKind::Switch { cases, else_branch, default_present, .. } =
+                 &storage.parsed().statements[0].kind else { panic!("actual Switch"); };
+             assert_eq!(cases.len(), 3);
+             assert!(*default_present);
+             assert_eq!(else_branch.len(), 1);
+             assert!(matches!(&cases[0].alternatives[..], [
+                 dm_syntax::SwitchAlternative::Exact(_), dm_syntax::SwitchAlternative::Exact(_),
+             ]));
+             assert!(matches!(&cases[1].alternatives[..], [
+                 dm_syntax::SwitchAlternative::Range(_, _), dm_syntax::SwitchAlternative::Exact(_),
+             ]));
+             assert!(matches!(&cases[2].alternatives[..], [
+                 dm_syntax::SwitchAlternative::Exact(dm_syntax::Expr { kind: dm_syntax::ExprKind::Binary { op, .. }, .. }),
+             ] if op == "||"));
+             for case in cases {
+                 assert!(case.original_site.cursor.is_ok());
+                 for alternative in &case.alternatives {
+                     let values = match alternative {
+                         dm_syntax::SwitchAlternative::Exact(value) => [Some(value), None],
+                         dm_syntax::SwitchAlternative::Range(lower, upper) => [Some(lower), Some(upper)],
+                     };
+                     for value in values.into_iter().flatten() {
+                         assert!(case.original_site.header.start <= value.span.start);
+                         assert!(value.span.end <= case.original_site.header.end);
+                     }
+                 }
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_broader_switch_keeps_inline_and_separator_gaps_explicit() {
+     let fixture = "/proc/probe(value)\n    switch(value)\n        if(\"alpha\")\n            return 1\n        else\n            return 2\n";
+     for text in [
+         fixture.replace("if(\"alpha\")\n            return 1", "if(\"alpha\") return 1"),
+         fixture.replace("if(\"alpha\")", "if(\"alpha\",)"),
+         fixture.replace("if(\"alpha\")", "if(,\"alpha\")"),
+         fixture.replace("if(\"alpha\")", "if(1 to)"),
+         fixture.replace("if(\"alpha\")", "if(value = 1)"),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &text);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             assert!(!matches!(body.original_code_disposition(), Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();
      }

@@ -3937,3 +3937,30 @@ installed pair in 1.78 seconds. The compact checkout then passed that site and
 stopped after 186.25 seconds at for(current_sort_text in incoming) in
 dd_sortedtextlist. Its existing-local loop header needs the corresponding
 source witness; there is no successful whole-checkout combined report yet.
+
+
+### Existing-local iteration and authenticated switch cases
+
+An exact ordinary bare name before the actual for-list separator now reuses the
+existing binding representation. It adds no declaration row; semantic resolution
+remains with the existing consumers. Pinned special terms null, __PROC__, __TYPE__
+and __IMPLIED_TYPE__ remain excluded as bindings. Genuine names such as global
+keep their identifier meaning.
+
+Indented switch coverage now accepts additional Original expressions, ranges and
+alternative groups only with complete issued expressions and authentic existing
+case cursors. Inline, empty and malformed separator restrictions remain. Cursor
+provenance refusal cannot replace a real operational error: the same admission
+records that error and returns it before publication.
+
+Six focused iteration and switch controls passed. Host libraries and test
+definitions checked clean; the private build passed. The original complete
+dd_sortedtextlist procedure produced a clean report and installed pair in
+1.60 seconds. A deliberately redeclaring counterpart was correctly rejected for
+a duplicate variable and installed no pair; it is a negative control. A separate
+subtree's end-boundary break refusal was not used to change production behavior.
+
+The compact checkout passed these sites and stopped after 145.51 seconds at
+if(!istype(L)) L=list() in init_subtypes. Its inline assignment needs an actual
+expression-head boundary witness. Whole-checkout parity and default cutover
+remain unproven.
