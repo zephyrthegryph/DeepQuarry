@@ -1149,7 +1149,15 @@ fn original_crash_statement_candidate(header: &str) -> bool {
 
 fn original_post_increment_candidate(header: &str) -> bool {
     header.strip_suffix("++").or_else(|| header.strip_suffix("--"))
-        .is_some_and(|name| crate::expression_parser::original_ordinary_call_name(name.trim_end()))
+        .is_some_and(|target| {
+            let target = target.trim_end();
+            if crate::expression_parser::original_ordinary_call_name(target) { return true; }
+            // DATA classifier only. The expression receipt checks the actual
+            // issued one-dot receiver, operator and every child/root span.
+            target.split_once('.').is_some_and(|(receiver, member)|
+                crate::expression_parser::original_ordinary_call_name(receiver.trim_end())
+                    && crate::expression_parser::original_ascii_identifier(member.trim_start()))
+        })
 }
 
 fn original_simple_assignment_candidate(header: &str) -> bool {
@@ -1158,7 +1166,9 @@ fn original_simple_assignment_candidate(header: &str) -> bool {
         .map_or(header, str::trim);
     let Some((target, _)) = header.split_once('=') else { return false; };
     let target = target.trim_end_matches(['+', '-', '*', '/', '%', '|', '&', '^', '<', '>']).trim();
-    if target == "." { return true; }
+    // DATA routing only: the expression witness checks the exact bare
+    // Ident/list target and permitted assignment operator.
+    if matches!(target, "." | "list") { return true; }
     let name = target.split(['.', '[']).next().unwrap_or(target).trim_end();
     crate::expression_parser::original_ordinary_call_name(name)
         && !matches!(name, "break" | "continue" | "goto")

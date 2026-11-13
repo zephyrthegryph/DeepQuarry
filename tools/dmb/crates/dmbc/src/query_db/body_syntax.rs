@@ -1224,6 +1224,90 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_scalar_membership_and_bare_list_assignment_preserve_the_exact_roles() {
+     let fixture = "/proc/probe(list/list)\n    while(null in list)\n        list -= null\n    return\n";
+     for (source, expected) in [
+         (fixture.to_owned(), true),
+         (fixture.replace("list -= null", "list += null"), true),
+         (fixture.replace("list -= null", "list = null"), true),
+         (fixture.replace("null in list", "0 in list"), true),
+         (fixture.replace("null in list", "42 in list"), true),
+         (fixture.replace("null in list", "null in entries"), true),
+         (fixture.replace("null in list", "null in list()"), false),
+         (fixture.replace("null in list", "null in list && flag"), false),
+         (fixture.replace("null in list", "null && flag in list"), false),
+         (fixture.replace("null in list", "null in first to last"), false),
+         (fixture.replace("null in list", "null in list tail"), false),
+         (fixture.replace("list -= null", "list() -= null"), false),
+         (fixture.replace("list -= null", "list.key -= null"), false),
+         (fixture.replace("list -= null", "list[1] -= null"), false),
+         (fixture.replace("list -= null", "list:key -= null"), false),
+         (fixture.replace("list -= null", "list?.key -= null"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("issued scalar membership and list target must be available: {source}");
+                 };
+                 assert!(proof.belongs_to(&body));
+                 let parsed = product.parsed().unwrap().statement_storage().parsed();
+                 let dm_syntax::StatementKind::While { condition, body } = &parsed.statements[0].kind
+                     else { panic!("actual while"); };
+                 assert!(matches!(&condition.kind, dm_syntax::ExprKind::Binary { op, lhs, rhs }
+                     if op == "in" && matches!(&lhs.kind, dm_syntax::ExprKind::Literal(_))
+                         && matches!(&rhs.kind, dm_syntax::ExprKind::Ident(_))));
+                 assert_eq!(body.len(), 1);
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_pop_and_merge_key_postfix_shapes_bind_only_their_issued_roles() {
+     let pop = "/proc/probe(list/listfrom)\n    if(listfrom.len > 0)\n        var/picked = listfrom[listfrom.len]\n        listfrom.len--\n        return picked\n    return null\n";
+     let merge = "/proc/probe(list/L, Li, list/result)\n    result += L[Li++]\n    return result\n";
+     for (source, expected) in [
+         (pop.to_owned(), true),
+         (merge.to_owned(), true),
+         (merge.replace("Li++", "Li--"), true),
+         (pop.replace("listfrom.len--", "listfrom:len--"), false),
+         (pop.replace("listfrom.len--", "listfrom?.len--"), false),
+         (pop.replace("listfrom.len--", "listfrom.inner.len--"), false),
+         (merge.replace("Li++", "++Li"), false),
+         (merge.replace("Li++", "L.Li++"), false),
+         (merge.replace("Li++", "L[Li]++"), false),
+         (merge.replace("result += L[Li++]", "L[Li++] = result"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "probe");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual pop/merge postfix cohort must be available: {source}");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_for_list_direct_call_reuses_only_its_completed_ordinary_iterable() {
      let fixture = "/proc/probe(path, other)\n    for(var/T in subtypesof(path))\n        return T\n";
      for (source, expected) in [
@@ -1785,7 +1869,8 @@ mod body_syntax_census_tests;
          (fixture.replace("pixel_x +=", "return pixel_x +="), false),
          (fixture.replace("new_y--", "return new_y--"), false),
          (fixture.replace("new_y--", "--new_y"), false),
-         (fixture.replace("new_y--", "new_y.field--"), false),
+         (fixture.replace("new_y--", "new_y.field--"), true),
+         (fixture.replace("new_y--", "new_y.nested.field--"), false),
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &text);
@@ -2286,6 +2371,130 @@ mod body_syntax_census_tests;
      }
  }
 
+
+ #[test]
+ fn actual_original_dd_sort_colon_calls_keep_real_helpers_and_reject_follow_expansion() {
+     let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
+     fn actual_proc<'a>(file:&'a str,head:&str)->&'a str {
+         let tail=&file[file.find(head).unwrap()..];
+         &tail[..tail.find("\n/proc/").unwrap_or(tail.len())]
+     }
+     let merge=actual_proc(&file,"/proc/dd_mergeObjectList(");
+     let insert=actual_proc(&file,"/proc/dd_insertObjectList(");
+     let dependency=actual_proc(&file,"/datum/proc/dd_SortValue(");
+     assert!(merge.contains("LLiV = LLi:dd_SortValue()"));
+     assert!(insert.contains("var/Oval = O:dd_SortValue()"));
+     for (source,name,expected) in [
+         (format!("{dependency}\n{merge}\n{insert}"),"dd_mergeObjectList",true),
+         (format!("{dependency}\n{merge}\n{insert}"),"dd_insertObjectList",true),
+         (merge.replace("LLi:dd_SortValue()","LLi:dd_SortValue(LLi)"),"dd_mergeObjectList",false),
+         (insert.replace("O:dd_SortValue()","O.nested:dd_SortValue()"),"dd_insertObjectList",false),
+         (insert.replace("O:dd_SortValue()","O():dd_SortValue()"),"dd_insertObjectList",false),
+         (insert.replace("O:dd_SortValue()","O:dd_SortValue().field"),"dd_insertObjectList",false),
+     ] {
+         let db=Arc::new(QueryDb::default());
+         let front=issued_original_fixture(&db,&source);
+         let input=original_input(&front,name);
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let disposition=body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition? else {panic!("actual dd sort helper requires its parser-issued zeroarg colon call: {name}");};
+                 assert!(proof.belongs_to(&body));
+                 assert!(product.parsed().unwrap().statement_storage().parsed().diagnostics.is_empty());
+             } else {assert!(!matches!(disposition,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))),"{source}");}
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_nested_ordinary_index_is_a_read_and_keeps_actual_list_values() {
+     let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
+     let tail=&file[file.find("/proc/list_values(").unwrap()..];
+     let authored=&tail[..tail.find("\n/proc/").unwrap()];
+     assert!(authored.contains("V[i] = L[L[i]]"));
+     for (source,name,expected) in [
+         (authored.to_owned(),"list_values",true),
+         ("/proc/probe(L,R,i)\n    return L[R[i]]\n".to_owned(),"probe",true),
+         ("/proc/probe(L,R,i)\n    return L[R[1]]\n".to_owned(),"probe",true),
+         ("/proc/probe(L,R,i)\n    return L[R[42]]\n".to_owned(),"probe",true),
+         ("/proc/probe(L,R,i)\n    return L[R[i+1]]\n".to_owned(),"probe",false),
+         ("/proc/probe(L,R,i)\n    return L[R[-1]]\n".to_owned(),"probe",false),
+         ("/proc/probe(L,R,i)\n    return L[R[i++]]\n".to_owned(),"probe",false),
+         ("/proc/probe(L,R,i)\n    return L[R[lookup(i)]]\n".to_owned(),"probe",false),
+         ("/proc/probe(L,R,i)\n    return L[R[S[i]]]\n".to_owned(),"probe",false),
+         ("/proc/probe(L,R,i)\n    return L[(R[i])]\n".to_owned(),"probe",false),
+         ("/proc/probe(L,R,i)\n    L[R[i]] = i\n".to_owned(),"probe",false),
+         (authored.replace("V[i] = L[L[i]]","L[L[i]] = V[i]"),"list_values",false),
+     ] {
+         let db=Arc::new(QueryDb::default());
+         let front=issued_original_fixture(&db,&source);
+         let input=original_input(&front,name);
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let disposition=body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition? else {panic!("actual two-level ordinary read must be available: {source}");};
+                 assert!(proof.belongs_to(&body));
+                 let parsed=product.parsed().unwrap().statement_storage().parsed();
+                 if name=="list_values" {
+                     let dm_syntax::StatementKind::For{control:dm_syntax::ForControl::Range{..},body}=&parsed.statements[2].kind else {panic!("actual declared range");};
+                     let dm_syntax::StatementKind::Assign{target,op,value}=&body[0].kind else {panic!("actual value copy");};
+                     assert_eq!(op,"=");
+                     assert!(matches!(&target.kind,dm_syntax::ExprKind::Index{object,index}if matches!(&object.kind,dm_syntax::ExprKind::Ident(name)if name=="V")&&matches!(&index.kind,dm_syntax::ExprKind::Ident(name)if name=="i")));
+                     assert!(matches!(&value.kind,dm_syntax::ExprKind::Index{object,index}if matches!(&object.kind,dm_syntax::ExprKind::Ident(name)if name=="L")&&matches!(&index.kind,dm_syntax::ExprKind::Index{object,index}if matches!(&object.kind,dm_syntax::ExprKind::Ident(name)if name=="L")&&matches!(&index.kind,dm_syntax::ExprKind::Ident(name)if name=="i"))));
+                 }
+             } else {assert!(!matches!(disposition,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))),"{source}");}
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
+ fn actual_original_list_null_cohort_keeps_null_member_and_bare_list_target() {
+     let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
+     fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {
+         let start=file.find(&format!("/proc/{name}(")).unwrap();
+         let tail=&file[start..];
+         &tail[..tail.find("\n/proc/").unwrap_or(tail.len())]
+     }
+     let names=["listclearnulls","difflist","list_clear_nulls"];
+     let mut source=String::new();
+     for name in names { source.push_str(actual_proc(&file,name)); source.push('\n'); }
+     assert!(source.contains("/proc/listclearnulls(list/list)"));
+     assert!(source.contains("while(null in list)"));
+     assert!(source.contains("list -= null"));
+     let db=Arc::new(QueryDb::default());
+     let front=issued_original_fixture(&db,&source);
+     for name in names {
+         let input=original_input(&front,name);
+         let product=db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge,|admission| {
+             let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+             let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=body.original_code_disposition()? else {
+                 panic!("actual authored neighboring helper {name} must have Original grammar");
+             };
+             assert!(proof.belongs_to(&body));
+             let parsed=product.parsed().unwrap().statement_storage().parsed();
+             assert!(parsed.diagnostics.is_empty());
+             if name=="listclearnulls" {
+                 let dm_syntax::StatementKind::If{then_branch,..}=&parsed.statements[0].kind else { panic!("actual istype condition"); };
+                 let dm_syntax::StatementKind::While{condition,body}=&then_branch[0].kind else { panic!("actual null-membership while"); };
+                 assert!(matches!(&condition.kind,dm_syntax::ExprKind::Binary{op,lhs,rhs}
+                     if op=="in" && matches!(&lhs.kind,dm_syntax::ExprKind::Literal(value)if value.as_str()=="null")
+                     && matches!(&rhs.kind,dm_syntax::ExprKind::Ident(name)if name=="list")));
+                 assert!(matches!(&body[0].kind,dm_syntax::StatementKind::Assign{target,op,value}
+                     if op=="-=" && matches!(&target.kind,dm_syntax::ExprKind::Ident(name)if name=="list")
+                     && matches!(&value.kind,dm_syntax::ExprKind::Literal(value)if value.as_str()=="null")));
+                 assert!(matches!(parsed.statements.last().unwrap().kind,dm_syntax::StatementKind::Return(None)));
+             }
+             Ok::<(),BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
 
  #[test]
  fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {

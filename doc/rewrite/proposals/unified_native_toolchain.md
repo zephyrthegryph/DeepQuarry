@@ -3877,3 +3877,27 @@ the Full registry nor a Checker-only result. Its first missing witness was
 null-membership. Extracted unmodified helpers separately reproduced member
 post-decrement, postfix-update index reads and two-level ordinary index reads.
 Those are grouped repairs awaiting the next source build and verification.
+
+
+### Issued list-helper expression cohort
+
+The exact Original token/AST witnesses now cover null or decimal membership in
+a named list, assignment to a bare parameter named list, one-dot postfix updates,
+plain-name postfix keys in reads, two-level ordinary index reads, and zero-argument
+colon calls whose CloseColon decision was issued by the same parser. Assignment
+targets, constructors, nested effects and missing colon receipts retain their
+separate restrictions. The statement DATA router also routes the bare list
+assignment to its consuming expression proof; it grants no grammar by itself.
+
+All 42 focused expression-parser controls passed, including the corrected
+existing retention equation accounting for its counter's own root allocation.
+Host libraries and test definitions checked clean. The six public source probes
+(listclearnulls, its isolated assignment, pop, mergeKey, list_values and the actual
+dd-sort helpers) each produced a clean report and installed native artifact pair.
+The new QueryDb body regression definitions were typechecked; they were not run
+in the large host unit-test executable.
+
+The compact whole-checkout run progressed past the repaired list-helper frontier
+and stopped after 176.8 seconds at sorter = new, expanded from CREATE_SORT_INSTANCE
+in sortTim. It emitted no combined report or installed pair. This is the next
+missing grammar witness, not successful whole-checkout parity or default cutover.
