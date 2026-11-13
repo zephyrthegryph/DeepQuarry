@@ -116,7 +116,7 @@ export function snapshot(state: DockState): DockState {
   state.groups.forEach((group, order) => {
     group.windows.forEach((id, tab) => {
       const win = state.windows[id];
-      if (!win || !win.iface) {
+      if (!win?.iface) {
         return;
       }
       saved[win.iface] = {

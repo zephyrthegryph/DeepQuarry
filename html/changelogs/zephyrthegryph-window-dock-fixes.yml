@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The side column's saved layout no longer fills up with temporary window entries, so layout saves keep working"
+  - qol: "The chat can no longer be dragged out of the side column (it has no float button either)"
