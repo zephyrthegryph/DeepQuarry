@@ -95,6 +95,59 @@ impl LayoutLineSink for OwnedLayoutLines<'_,'_> {
  fn last_mut(&mut self)->Option<&mut Line>{self.rows.last_mut()}
 }
 
+// Diagnostic-only borrowed views. No literal payload is materialized or read.
+#[cfg(debug_assertions)]
+fn layout_trace_clip(text:&str,limit:usize)->&str{
+ let mut end=text.len().min(limit);while !text.is_char_boundary(end){end-=1;}&text[..end]
+}
+#[cfg(debug_assertions)]
+fn layout_trace_payload_kind(kind:TokenKind)->bool{
+ matches!(kind,TokenKind::String|TokenKind::Resource|TokenKind::Interpolation|TokenKind::Comment|TokenKind::Number|TokenKind::Unknown)
+}
+#[cfg(debug_assertions)]
+fn layout_trace_header_prefix<'s>(source:&'s str,tokens:TokenWindow<'_>,anchor:usize)->Option<&'s str>{
+ let tail=source.get(anchor..)?;let prefix=layout_trace_clip(tail,256);
+ let end=anchor.checked_add(prefix.len())?;
+ let first=tokens.partition_point(|token|token.span.end<=anchor);
+ let mut stop=end;
+ for token in tokens.range(first,tokens.len())?.iter().take_while(|token|token.span.start<end){
+  if layout_trace_payload_kind(token.kind){stop=token.span.start.max(anchor);break}
+ }
+ source.get(anchor..stop)
+}
+#[cfg(debug_assertions)]
+fn layout_trace_token_spelling(source:&str,token:SpanToken)->&str{
+ if layout_trace_payload_kind(token.kind){return "<payload omitted>"}
+ source.get(token.span.range()).map(|text|layout_trace_clip(text,24)).unwrap_or("<invalid source span>")
+}
+
+// Failure diagnostics only. This is the SAME unified()/[] depth convention
+// used by structural layout, not a new typed bracket validator or parser.
+#[cfg(debug_assertions)]
+fn last_unmatched_layout_opener(delimiters:&[u8],start:usize,end:usize)->Option<(usize,u8)>{
+ let window=delimiters.get(start..end)?;let mut close_debt=0usize;
+ for(index,byte)in window.iter().copied().enumerate().rev(){
+  match byte{
+   b')'|b']'=>close_debt=close_debt.checked_add(1)?,
+   b'('|b'['=>{if close_debt==0{return Some((start+index,byte))}close_debt-=1;},
+   _=>(),
+  }
+ }
+ None
+}
+#[cfg(debug_assertions)]
+fn layout_opener_token_metadata(
+ global:usize,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralRows<'_>>,
+)->(Option<SpanToken>,Option<&'static str>){
+ let ordinal=tokens.partition_point(|token|token.span.end<=global);
+ let token=tokens.get(ordinal).filter(|token|token.span.start<=global&&global<token.span.end);
+ let literal_kind=token.and_then(|token|facts.and_then(|rows|{
+  let at=rows.partition_point(|(span,_)|span.end<=global);
+  rows.get(at).filter(|(span,_)|*span==token.span).map(|(_,data)|data.kind())
+ }));
+ (token,literal_kind)
+}
+
 /// Lines drop before their exact same-domain buffer credit, independently of
 /// other live batches, the cursor's masks and any cloned producer identity.
 pub(super) struct NativeLayoutBatch {
@@ -183,6 +236,34 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   }
  }
  #[cfg(debug_assertions)]
+ fn trace_pending_opener(&self,source:&str,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralRows<'_>>){
+  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_none(){return}
+  let Some(pending)=self.structural.pending.as_ref()else{
+   eprintln!("ORIGINAL_LAYOUT_UNMATCHED_OPENER status=no_pending structural_depth={}",self.structural.depth);return
+  };
+  let start=pending.header_start;let end=self.structural.offset;
+  if let Some(header)=self.source_base.checked_add(start){
+   let prefix=layout_trace_header_prefix(source,tokens,header);
+   eprintln!("ORIGINAL_LAYOUT_PENDING_HEADER global_start={header} prefix={prefix:?}");
+   let first=tokens.partition_point(|token|token.span.end<=header);
+   if let Some(rows)=tokens.range(first,tokens.len()){
+    for (ordinal,token) in rows.iter().take(16).enumerate(){
+     eprintln!("ORIGINAL_LAYOUT_PENDING_TOKEN ordinal={ordinal} kind={:?} span={:?} spelling={:?}",token.kind,token.span,layout_trace_token_spelling(source,token));
+    }
+   }
+  }
+  // Do not inspect unprocessed bytes after structural.offset. This one
+  // reverse sweep borrows the existing mask only, with constant stack state.
+  let Some((local,byte))=last_unmatched_layout_opener(&self.masks.delimiters,start,end)else{
+   eprintln!("ORIGINAL_LAYOUT_UNMATCHED_OPENER status=none_or_invalid_window start={start} processed_end={end} mask_len={} structural_depth={}",self.masks.delimiters.len(),self.structural.depth);return
+  };
+  let Some(global)=self.source_base.checked_add(local)else{return};
+  let Some(global_end)=global.checked_add(1)else{return};
+  let (token,literal_kind)=layout_opener_token_metadata(global,tokens,facts);
+  eprintln!("ORIGINAL_LAYOUT_UNMATCHED_OPENER status=found start={start} processed_end={end} local={local} global_span={:?} marker={} token={token:?} literal_kind={literal_kind:?}",
+   Span::new(global,global_end),if byte==b'(' {"LeftParen"}else{"LeftBracket"});
+ }
+ #[cfg(debug_assertions)]
  fn trace_funding_geometry(&self,stage:&str,source_len:usize,row_work:usize,boundaries:usize,token_frontier:usize){
   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_none(){return}
   self.trace_layout_geometry("FUNDING_FAILURE",stage,source_len,row_work,boundaries,token_frontier);
@@ -205,12 +286,16 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
   fund_visible_string(&mut self.masks.visible,visible_bytes,&mut self.mask_credit,self.a).map_err(|actual|{
     #[cfg(debug_assertions)]
     self.trace_funding_geometry("visible",source.len(),0,boundaries,tokens.len());
+    #[cfg(debug_assertions)]
+    self.trace_pending_opener(source,tokens,facts);
     actual
    })?;
 
   fund_buffer(&mut self.masks.delimiters,visible_bytes,&mut self.mask_credit,self.a).map_err(|actual|{
     #[cfg(debug_assertions)]
     self.trace_funding_geometry("delimiters",source.len(),0,boundaries,tokens.len());
+    #[cfg(debug_assertions)]
+    self.trace_pending_opener(source,tokens,facts);
     actual
    })?;
 
@@ -222,6 +307,8 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
    fund_buffer(&mut self.masks.multiline_literals,capacity,&mut self.mask_credit,self.a).map_err(|actual|{
     #[cfg(debug_assertions)]
     self.trace_funding_geometry("multiline",source.len(),0,boundaries,tokens.len());
+    #[cfg(debug_assertions)]
+    self.trace_pending_opener(source,tokens,facts);
     actual
    })?;
 
@@ -655,6 +742,73 @@ impl<'a,'budget> NativeDemandLayoutCursor<'a,'budget>{
    assert_eq!(rows.rows.capacity(),capacity);assert_eq!(rows.credit.bytes(),credit);assert_eq!(counter.load(Ordering::Acquire),used);
    drop(rows);drop(original);assert_eq!(counter.load(Ordering::Acquire),root);
   }
+ }
+
+ #[cfg(debug_assertions)]
+ #[test]
+ fn pending_opener_reverse_sweep_uses_only_processed_window_and_same_unified_depth(){
+  for (bytes,start,end,expected)in[
+   (&b"call(x) ("[..],0,7,None), // later unprocessed '(' is deliberately excluded
+   (&b"call(x) ("[..],0,9,Some((8,b'('))),
+   (&b"old( new()"[..],4,10,None), // opener outside pending header is excluded
+   (&b"old( new()"[..],0,10,Some((3,b'('))),
+   (&b"((x)"[..],0,4,Some((0,b'('))),
+   (&b"((x"[..],0,3,Some((1,b'('))),
+   (&b"([)]"[..],0,4,None), // same unified depth, NOT a new typed nesting grammar
+   (&b"x[y]"[..],0,4,None),
+   (&b"x[y"[..],0,3,Some((1,b'['))),
+   (&b"("[..],1,0,None),(&b"("[..],0,2,None),
+  ]{
+   assert_eq!(last_unmatched_layout_opener(bytes,start,end),expected,"{bytes:?} {start}..{end}");
+  }
+ }
+ #[cfg(debug_assertions)]
+ #[test]
+ fn pending_opener_metadata_distinguishes_actual_punctuation_from_typed_interpolation_without_payload_read(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+  // Same final-token/literal-row fixture contract as the existing literal
+  // layout controls. It supplies no procedure/source/body availability grant.
+  let source="call(\"a([x]b)\")";
+  let quote=source.find('"').unwrap();let open=source.find('[').unwrap();let close=source.find(']').unwrap();let last_quote=source.rfind('"').unwrap();
+  let begin=Span::new(quote,open+1);let end=Span::new(close,last_quote+1);
+  let rows=[SpanToken{kind:TokenKind::Ident,span:Span::new(0,4)},SpanToken{kind:TokenKind::Punctuation,span:Span::new(4,5)},
+   SpanToken{kind:TokenKind::Interpolation,span:begin},SpanToken{kind:TokenKind::Ident,span:Span::new(open+1,close)},
+   SpanToken{kind:TokenKind::Interpolation,span:end},SpanToken{kind:TokenKind::Punctuation,span:Span::new(last_quote+1,source.len())}];
+  let mut facts=crate::OriginalPrimaryLiteralFacts::new(&a).unwrap();
+  for(span,value)in[(begin,crate::OriginalTokenValue::InterpBegin("a(")),(end,crate::OriginalTokenValue::InterpEnd("b)"))]{
+   let data=crate::OriginalLiteralData::from_value_with_mode_using(source[span.range()].into(),value,crate::OriginalStringMode::Normal,&a).unwrap();facts.append_actual(span,data,&a).unwrap();
+  }
+  let tokens=TokenWindow::from_slice(&rows);let mut mask=NativeLayoutMaskCursor::default();
+  assert!(mask.advance_with_literal_facts(source,Span::new(0,source.len()),tokens,None,Some((facts.rows(),0))));
+  assert_eq!(last_unmatched_layout_opener(&mask.delimiters,0,source.len()),None);
+  assert_eq!(mask.delimiters[quote+2],b' ');assert_eq!(mask.delimiters[last_quote-1],b' '); // payload parens are not structural
+  let before_outer_close=last_quote+1;assert_eq!(last_unmatched_layout_opener(&mask.delimiters,0,before_outer_close),Some((4,b'(')));
+  let before_interpolation_close=close;assert_eq!(last_unmatched_layout_opener(&mask.delimiters,0,before_interpolation_close),Some((open,b'[')));
+  let (token,kind)=layout_opener_token_metadata(open,tokens,Some(facts.rows()));assert_eq!(token.unwrap().span,begin);assert_eq!(kind,Some("InterpBegin"));
+  let (token,kind)=layout_opener_token_metadata(4,tokens,Some(facts.rows()));assert_eq!(token.unwrap().kind,TokenKind::Punctuation);assert!(kind.is_none());
+  let held=used.load(Ordering::Acquire);a.record_operational_error(io::Error::from_raw_os_error(1450));
+  assert_eq!(layout_opener_token_metadata(open,tokens,Some(facts.rows())).1,Some("InterpBegin"));
+  assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),held);
+  drop(mask);drop(facts);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[cfg(debug_assertions)]
+ #[test]
+ fn pending_layout_header_diagnostic_borrows_utf8_and_redacts_payloads(){
+  let utf8="\u{3b1}".repeat(140);let clipped=layout_trace_clip(&utf8,255);
+  assert_eq!(clipped.len(),254);assert_eq!(clipped.as_ptr(),utf8.as_ptr());assert!(clipped.is_char_boundary(clipped.len()));
+  let source="/proc/probe(arg=\"sensitive(payload)\")\n";let rows=lex_spans(source).tokens;let tokens=TokenWindow::from_slice(&rows);
+  let prefix=layout_trace_header_prefix(source,tokens,0).unwrap();assert_eq!(prefix,"/proc/probe(arg=");assert_eq!(prefix.as_ptr(),source.as_ptr());
+  for kind in [TokenKind::String,TokenKind::Resource,TokenKind::Interpolation,TokenKind::Comment,TokenKind::Number,TokenKind::Unknown]{
+   // No payload read even if the supplied diagnostic-only span is invalid.
+   assert_eq!(layout_trace_token_spelling(source,SpanToken{kind,span:Span::new(usize::MAX-1,usize::MAX)}),"<payload omitted>");
+  }
+  let name=rows.iter().find(|token|token.kind==TokenKind::Ident&&token.text(source)=="probe").unwrap();
+  assert_eq!(layout_trace_token_spelling(source,*name),"probe");
+  let mut large=String::from("/proc/");large.push_str(&"x".repeat(300));large.push_str("()\n");let rows=lex_spans(&large).tokens;
+  assert_eq!(layout_trace_header_prefix(&large,TokenWindow::from_slice(&rows),0).unwrap().len(),256);
+  let name=rows.iter().find(|token|token.kind==TokenKind::Ident).unwrap();assert_eq!(layout_trace_token_spelling(&large,*name).len(),4); // proc
+  let long=rows.iter().find(|token|token.span.end-token.span.start==300).unwrap();assert_eq!(layout_trace_token_spelling(&large,*long).len(),24);
  }
 
 }

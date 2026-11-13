@@ -4249,3 +4249,30 @@ header now spans 22 MiB while the observed callable roster remains at 31,795.
 The next diagnosis inspects that actual opener and its typed literal/delimiter
 facts before making another storage change. Capture, fresh body counts and
 whole-checkout parity remain unproven.
+
+### Pending-header diagnosis and restored source integrity (2026-11-13)
+
+Failure-only diagnostics now borrow a bounded, payload-redacted header/token
+view and reverse-scan only already-processed delimiter bytes. They add no syntax
+or EOF authority, reservations or success-path traversal. Three focused controls
+passed, including UTF8 clipping, typed interpolation boundaries and preservation
+of an earlier OS error. The private binary build passed; a shared cache response
+failure caused one local Cargo fallback during that 16m23s build.
+
+The trace identified a real unmatched parenthesis in the expanded source at
+17,590,801: the final 3,469 bytes of medical_stand.dm had been replaced with NULs
+in this worktree. The subsequent mirror declaration was therefore consumed in
+that unfinished condition. This was not evidence of a layout masking defect.
+A tracked-DM audit found ten damaged files; each retained the committed length
+and every surviving nonzero byte matched HEAD. Damaged images, hashes and the
+restoration receipt were preserved under the ignored diagnostic directory, and
+the exact committed contents were recovered. No gameplay edit was introduced.
+The lexer already reports illegal NUL bytes; its recovery behavior was retained.
+
+With the recovered sources, the same 128 MiB / 300-second census completed.
+The producer took 91.864 seconds, and ranks 349..477 reported 118 Available,
+10 Unissued, zero NativeRejected and zero unmeasured OOM. The ten remaining
+cases include static locals, dimensioned local lists, output statements,
+string-keyed call arguments, inline prefix statements and other exact grammar
+shapes. This is a bounded body survey, not full-registry qualification or
+independent Checker parity. Default routing and publication remain pending.
