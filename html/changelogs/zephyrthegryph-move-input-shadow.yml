@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Running across a chunk edge no longer hitches for 35-50 ms: the ring of chunks around the view is scanned by the drain over the following ticks instead of inside the step."
+  - bugfix: "Lights near a player are updated ahead of lights across the map, so shadows around the player no longer wait behind a power flip elsewhere."
+  - code_imp: "Added the sampled MOVE_COST trace: every 50th step of a player (and every step over 4 ms) logs where its time went."
