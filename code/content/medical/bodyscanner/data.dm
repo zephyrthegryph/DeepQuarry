@@ -81,7 +81,7 @@
 	var/has_withdrawl = FALSE
 	for(var/addic in H.get_all_addictions())
 		var/level = H.get_addiction_to_reagent(addic)
-		if(level > 0 && level < 80)
+		if(level > 0 && level < 80 && !H.reading_hidden(HIDE_SYMPTOM_SUPPRESSION))
 			has_withdrawl = TRUE
 			break
 	out["hasWithdrawl"] = has_withdrawl

@@ -314,6 +314,7 @@
 		rx_of(src).look_seen_dir = dir
 		if(!interest_parked_quiet(src)) // a parked atom's owed draw shows the dir it has when it runs: no per-move publish
 			tracked_changed(src, nameof(dir))
+	MOVE_COST_BEGIN(notices_started)
 	if(STATE_PEEK(src, movable_misc, blocks_light))
 		light_blocking_moved(old_loc)
 	if(WANTS(src, /datum/notice/moved))
@@ -321,6 +322,7 @@
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
+	MOVE_COST_END(MOVE_COST_NOTICES, notices_started)
 	loc_changed(old_loc)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
@@ -336,18 +338,22 @@
 	for (var/datum/light_source/light as anything in light_sources) // Cycle through the light sources on this atom and tell them to update.
 		light.source_atom.update_light()
 	MOVE_COST_END(MOVE_COST_LIGHTS, lights_started)
+	MOVE_COST_BEGIN(heat_started)
 	if(!isnull(heat_body))
 		heat_recouple()
 	if(GLOB.heat_followers_of[src])
 		heat_followers_moved(src)
+	MOVE_COST_END(MOVE_COST_HEAT, heat_started)
 	if(proximity_tracked)
 		SSproximity.member_update(src)
+	MOVE_COST_BEGIN(interest_started)
 	if(refresh_queued)
 		interest_owed_moved(src, old_loc) // a draw owed: its entry in the owed index follows it to its new chunk (engine/change/interest.dm)
 	if(refresh_queued & DEP_PARKED)
 		interest_parked_moved(src) // a draw owed and a chunk now held: it draws (engine/change/interest.dm)
 	if(length(GLOB.interest_anchors))
 		interest_anchor_moved(src) // it may carry a client's eye or mob
+	MOVE_COST_END(MOVE_COST_INTEREST, interest_started)
 	if(lifeform_moves)
 		MOVE_COST_BEGIN(lifeform_started)
 		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
@@ -557,13 +563,19 @@ ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bum
 /atom/movable/proc/loc_changed(atom/old_loc)
 	if(interest_parked_quiet(src))
 		return // parked and unseen: it owes its whole draw, which reads where it stands when it runs; nothing about its place is published meanwhile
+	MOVE_COST_BEGIN(reads_started)
 	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))
+	MOVE_COST_END(MOVE_COST_LOC_READS, reads_started)
 	// A draw that reads `loc` (a syringe drawn upright in a case) redraws: the plan names it, and no reaction or stat has to read it for the look to follow the move.
+	MOVE_COST_BEGIN(draw_started)
 	if(plan_bits(src, nameof(loc)) & PLAN_DRAW)
 		tracked_changed(src, nameof(loc))
+	MOVE_COST_END(MOVE_COST_LOC_DRAW, draw_started)
 	// The turf and area hops: what reads get_turf(src).x or get_area(src).x, here or on anything inside this (refs/hops.dm).
+	MOVE_COST_BEGIN(hops_started)
 	hop_moved(src, old_loc)
+	MOVE_COST_END(MOVE_COST_HOPS, hops_started)
 
 /// From base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
 ACTION(movable_z_changed, old_z, new_z, FIXED, notice = /datum/notice/movable_z_changed)

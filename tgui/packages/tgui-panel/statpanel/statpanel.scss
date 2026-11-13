@@ -445,9 +445,16 @@
   pointer-events: none;
 }
 
-.mch-tickdetail,
 .mch-line {
   margin: var(--space-sm) 0;
+}
+
+/* A fixed-height area: showing or changing a tick's details never moves the graph or anything under it, so the bar under the mouse stays under it. */
+.mch-tickdetail {
+  box-sizing: border-box;
+  height: 12em;
+  margin: var(--space-sm) 0;
+  overflow-y: auto;
 }
 
 .mch-stack {

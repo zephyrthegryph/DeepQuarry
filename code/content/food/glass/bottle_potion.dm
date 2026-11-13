@@ -10,7 +10,7 @@
 /obj/item/reagent_containers/glass/bottle/potion/greater_healing
 	name = "greater healing potion"
 	desc = "A small green bottle containing some thick red liquid that claims to rapidly heal injuries."
-	prefill = list(REAGENT_ID_VERMICETOL = 30)
+	prefill = list(REAGENT_ID_BICARIDINE = 30)
 
 /obj/item/reagent_containers/glass/bottle/potion/fire_resist
 	name = "fire resistance potion"

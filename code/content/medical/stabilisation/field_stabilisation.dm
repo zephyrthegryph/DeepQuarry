@@ -127,7 +127,7 @@ CAPABILITIES(/obj/item/stack/medical/field)
 /datum/reagent/norepinephrine
 	name = REAGENT_NOREPINEPHRINE
 	id = REAGENT_ID_NOREPINEPHRINE
-	description = REAGENT_NOREPINEPHRINE + " is a vasopressor. It tightens the blood vessels and drives the heart, holding up blood pressure in shock until the cause is dealt with."
+	description = REAGENT_NOREPINEPHRINE + " is a vasopressor. It tightens the blood vessels and drives the heart, holding up blood pressure and perfusion in shock until the cause is dealt with. It leaves the extremities numb."
 	taste_description = "metal"
 	reagent_state = LIQUID
 	color = "#E05050"

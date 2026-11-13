@@ -40,6 +40,8 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 			if(!R.name)
 				continue
 			set_found_reagents_at(R.id, R.volume)
+			if(R.contaminants)
+				to_chat(user, span_notice("[R.scan_text()]"))
 		tgui_interact(user)
 	else
 		to_chat(user, span_warning("Nothing detected in [held]"))

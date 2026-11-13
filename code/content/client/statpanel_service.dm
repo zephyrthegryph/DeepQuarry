@@ -1,5 +1,8 @@
 // The stat panel system (was SSstatpanels): refreshes every client's stat tabs every 4 ticks. The API is in
 // statpanel_api.dm.
+/// One client's turn in refresh_tabs() at least this long is logged (STATPANELS), with the tab it was on.
+#define STATPANEL_SLOW_MS 5
+
 SYSTEM_DEF(statpanels)
 	name = "Stat Panels"
 	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
@@ -13,6 +16,11 @@ SYSTEM_DEF(statpanels)
 	/// The MC Health panel's slow sections (mc_health_slow()), and when each group of them was built (group -> world time).
 	var/list/mc_slow
 	var/list/mc_slow_built_at
+	/// The longest build of one slow group so far, ms (the MC_HEALTH trace line).
+	var/mc_group_max_ms = 0
+	/// The longest single client's turn in refresh_tabs so far, ms, and the turns past STATPANEL_SLOW_MS (the STATPANELS trace line).
+	var/turn_max_ms = 0
+	var/slow_turns = 0
 	var/mc_metrics_generated_at = 0
 	mc_metrics_generated_at = -INFINITY
 
@@ -74,6 +82,7 @@ SYSTEM_DEF(statpanels)
 
 		if(!target?.stat_panel?.is_ready()) // Null target client, client has null stat panel, or stat panel isn't ready
 			continue
+		var/turn_started = TICK_USAGE_REAL
 
 		if(target.stat_tab == "Status" && num_fires % status_wait == 0)
 			set_status_tab(target)
@@ -120,6 +129,11 @@ SYSTEM_DEF(statpanels)
 			if((num_fires % misc_wait == 0))
 				update_misc_tabs(target,target_mob)
 
+		var/turn_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - turn_started)
+		turn_max_ms = max(turn_max_ms, turn_ms)
+		if(turn_ms >= STATPANEL_SLOW_MS)
+			slow_turns++
+			log_world("STATPANELS: one client's turn took [round(turn_ms, 0.1)] ms (tab [target.stat_tab], fire [num_fires]); [slow_turns] such turn(s), longest [round(turn_max_ms, 0.1)] ms")
 		if(KERNEL_OVER_BUDGET)
 			resuming = TRUE
 			return STEP_YIELD
@@ -164,7 +178,9 @@ SYSTEM_DEF(statpanels)
 /datum/system/statpanels/proc/set_MC_tab(client/target)
 	var/turf/eye_turf = get_turf(target.eye)
 	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 1 SECONDS)
+		var/mc_build_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: build the panel data") // the ledger names the build apart from the send
 		mc_metrics = mc_health_data()
+		km_ledger_leave(mc_build_ledger)
 		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
 	// Only the sections this client has not got: a slow section (mc_health_slow()) is the same list object until it is built again, so an
 	// unchanged one is skipped without encoding it. A client that opens the panel or reloads its page gets everything (mc_health_forget()).
@@ -181,11 +197,13 @@ SYSTEM_DEF(statpanels)
 			sent[section] = value
 	if(length(changed) == length(mc_metrics))
 		log_tgui(target, "Server health: whole send of [length(changed)] section(s), window [target.stat_panel.id], ready=[target.stat_panel.is_ready() ? 1 : 0].", context = "stat_panel")
+	var/mc_send_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: encode and send") // the JSON of the changed sections goes out here
 	target.stat_panel.send_message("update_mc", list(
 		"mc_metrics" = changed,
 		"partial" = length(changed) != length(mc_metrics),
 		"coord_entry" = COORD(eye_turf),
 	))
+	km_ledger_leave(mc_send_ledger)
 
 /// The client's panel holds none of the MC Health sections any more (it was opened again or its page reloaded): the next send is whole.
 /datum/system/statpanels/proc/mc_health_forget(client/target)

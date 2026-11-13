@@ -196,10 +196,10 @@
 	item_cost = 30
 	path = /obj/item/storage/pill_bottle/healing_nanites
 
-/datum/uplink_item/item/medical/vermicetol
-	name = "Vermicetol Bottle"
+/datum/uplink_item/item/medical/bicaridine
+	name = "Bicaridine Bottle"
 	item_cost = 30
-	path = /obj/item/reagent_containers/glass/bottle/vermicetol
+	path = /obj/item/reagent_containers/glass/bottle/bicaridine
 	antag_roles = list("ert")
 	blacklisted = 1
 

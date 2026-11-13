@@ -71,26 +71,6 @@
 	TEST_ASSERT(!H.has_status(STAT_STUNNED), "one roll must not also stun")
 	TEST_ASSERT(!H.has_status(STAT_PARALYZED), "one roll must not also paralyse")
 
-/// B7: Hannoa's sedation bands are reachable, and it treats by mechanism.
-/datum/unit_test/dq_p1_b7_hannoa_bands
-
-/datum/unit_test/dq_p1_b7_hannoa_bands/Run()
-	var/datum/reagent/hannoa/R = SSchemistry.chemical_reagents[REAGENT_ID_HANNOA]
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	R.hannoa_sedation(H, 3)
-	TEST_ASSERT(H.has_status(STAT_BLURRY), "a dose of 3 blurs vision")
-	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
-	R.hannoa_sedation(H2, 10)
-	TEST_ASSERT(H2.has_status(STAT_DROWSY), "a dose of 10 makes the patient drowsy")
-	TEST_ASSERT(R.treatment_tags?[TREAT_HEMOSTATIC] && R.treatment_tags?[TREAT_TISSUE_REPAIR], "Hannoa declares its clotting and tissue repair tags")
-
-/// B8: Eden leaves the body.
-/datum/unit_test/dq_p1_b8_eden_metabolises
-
-/datum/unit_test/dq_p1_b8_eden_metabolises/Run()
-	var/datum/reagent/eden/R = SSchemistry.chemical_reagents[REAGENT_ID_EDEN]
-	TEST_ASSERT(R.metabolism > 0, "Eden must metabolise (metabolism [R.metabolism])")
-
 /// B16: Malish-Qualem never divides by a zero healing strength.
 /datum/unit_test/dq_p1_b16_malish_qualem_zero_strength
 

@@ -24,55 +24,6 @@
 	caused_by_chems = list(REAGENT_ID_SYNAPTIZINE = 5)
 	caused_by_chems_organ = O_BRAIN
 
-/datum/affliction/chem_side_effect/hyperzine_palpitations
-	factors = alist(STAT_HEART_RATE = 20, STAT_BP_SYSTOLIC = 8)
-	name = "stimulant tachycardia"
-	clinical_description = "Hyperzine is a potent stimulant. Sub-overdose levels accelerate the heart and raise blood pressure in a noticeable way. Resolves as the chem clears."
-	symptom_pool = list(
-		/datum/affliction_symptom/palpitations = 90,
-		/datum/affliction_symptom/jittery      = 60,
-	)
-	min_symptoms = 1
-	max_symptoms = 2
-	caused_by_chems = list(REAGENT_ID_HYPERZINE = 5)
-	caused_by_chems_organ = O_HEART
-
-/datum/affliction/overdose/hyperzine
-	name = "stimulant overdose"
-	clinical_description = "Hyperzine at overdose drives the heart and adrenergic system past their working range. Severe tachycardia, hypertension, toxic muscle stress. Patients in this state move noticeably faster and shrug off pain — combat use is a known abuse, but the heart strain and toxin damage are real."
-	symptom_pool = list(
-		/datum/affliction_symptom/palpitations     = 95,
-		/datum/affliction_symptom/jittery          = 80,
-		/datum/affliction_symptom/sharp_chest_pain = 50,
-	)
-	min_symptoms = 2
-	max_symptoms = 3
-	organ_damage_threshold = 0
-	organ_damage_type = INJURY_TOXIN
-	organ_damage_per_tick = 1.0
-	factors = alist(STAT_SLOWDOWN = -1, STAT_ACCURACY = 20, STAT_ANALGESIA = 15, STAT_HEART_RATE = 40, STAT_BP_SYSTOLIC = 20)
-	caused_by_chems = list(REAGENT_ID_HYPERZINE = 20)
-	caused_by_chems_organ = O_HEART
-
-/datum/affliction/overdose/hyperzine
-	overdose_stage_data = list(
-		list(list(
-			/datum/affliction_symptom/palpitations = 70,
-			/datum/affliction_symptom/jittery      = 60,
-		), 1, 2, list("organ_damage_per_tick" = 0.3, "factors" = alist(STAT_SLOWDOWN = -0.4, STAT_ACCURACY = 8, STAT_ANALGESIA = 5, STAT_HEART_RATE = 15, STAT_BP_SYSTOLIC = 8))),
-		list(list(
-			/datum/affliction_symptom/palpitations     = 90,
-			/datum/affliction_symptom/jittery          = 80,
-			/datum/affliction_symptom/sharp_chest_pain = 50,
-		), 2, 3, list("organ_damage_per_tick" = 0.7, "factors" = alist(STAT_SLOWDOWN = -0.8, STAT_ACCURACY = 15, STAT_ANALGESIA = 10, STAT_HEART_RATE = 28, STAT_BP_SYSTOLIC = 14))),
-		list(list(
-			/datum/affliction_symptom/palpitations        = 100,
-			/datum/affliction_symptom/jittery             = 90,
-			/datum/affliction_symptom/sharp_chest_pain    = 80,
-			/datum/affliction_symptom/chest_pain_crushing = 50,
-		), 3, 4, list("organ_damage_per_tick" = 1.4, "factors" = alist(STAT_SLOWDOWN = -1.2, STAT_ACCURACY = 25, STAT_ANALGESIA = 20, STAT_HEART_RATE = 45, STAT_BP_SYSTOLIC = 25), "always_spawns" = list(/datum/affliction/heart_damage, /datum/affliction/chem_interaction/tachycardia_chem))),
-	)
-
 /datum/affliction/overdose/alkysine
 	name = "alkysine overdose"
 	clinical_description = "Excess alkysine is itself neurotoxic — the same neurotransmitter pathway it's meant to support gets overwhelmed. Confusion, headache, and accumulating brain damage."
@@ -184,3 +135,63 @@
 			/datum/affliction_symptom/pupillary_asymmetry = 50,
 		), 3, 4, list("organ_damage_per_tick" = 0.7, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_BRAIN))),
 	)
+
+/datum/affliction/chem_side_effect/adranol_jitter
+	name = "adranol agitation"
+	clinical_description = "Adranol overstimulates a little: the patient is restless, jittery and agitated while it is in the blood. Resolves as the chem clears."
+	symptom_pool = list(
+		/datum/affliction_symptom/jittery = 100,
+	)
+	min_symptoms = 1
+	max_symptoms = 1
+	caused_by_chems = list(REAGENT_ID_ADRANOL = 2)
+	caused_by_chems_organ = O_BRAIN
+
+/datum/affliction/chem_side_effect/adranol_drowsy
+	name = "adranol drowsiness"
+	clinical_description = "A mild drowsiness under the restlessness. Resolves as the chem clears."
+	symptom_pool = list(
+		/datum/affliction_symptom/drowsy = 100,
+	)
+	min_symptoms = 1
+	max_symptoms = 1
+	factors = alist(STAT_SLOWDOWN = 0.15)
+	caused_by_chems = list(REAGENT_ID_ADRANOL = 2)
+	caused_by_chems_organ = O_BRAIN
+
+/datum/affliction/chem_side_effect/ethylredoxrazine_disorientation
+	name = "ethylredoxrazine disorientation"
+	clinical_description = "Ethylredoxrazine leaves the patient confused and dizzy, and their speech slurs. Resolves as the chem clears."
+	symptom_pool = list(
+		/datum/affliction_symptom/confusion      = 100,
+		/datum/affliction_symptom/dizziness      = 100,
+		/datum/affliction_symptom/slurred_speech = 100,
+	)
+	min_symptoms = 3
+	max_symptoms = 3
+	caused_by_chems = list(REAGENT_ID_ETHYLREDOXRAZINE = 2)
+	caused_by_chems_organ = O_BRAIN
+
+/datum/affliction/chem_side_effect/tercozolam_drowsy
+	name = "tercozolam drowsiness"
+	clinical_description = "Tercozolam leaves the patient mildly drowsy and slow while it is in the blood. Resolves as the chem clears."
+	symptom_pool = list(
+		/datum/affliction_symptom/drowsy = 100,
+	)
+	min_symptoms = 1
+	max_symptoms = 1
+	factors = alist(STAT_SLOWDOWN = 0.15)
+	caused_by_chems = list(REAGENT_ID_TERCOZOLAM = 3)
+	caused_by_chems_organ = O_BRAIN
+
+/datum/affliction/chem_side_effect/anticonvulsant_drowsy
+	name = "anticonvulsant drowsiness"
+	clinical_description = "Anticonvulsants dull the nervous system a little: the patient is mildly drowsy while it is in the blood. Resolves as the chem clears."
+	symptom_pool = list(
+		/datum/affliction_symptom/drowsy = 100,
+	)
+	min_symptoms = 1
+	max_symptoms = 1
+	factors = alist(STAT_SLOWDOWN = 0.15)
+	caused_by_chems = list(REAGENT_ID_ANTICONVULSANT = 3)
+	caused_by_chems_organ = O_BRAIN

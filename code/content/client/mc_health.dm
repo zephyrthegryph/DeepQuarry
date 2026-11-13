@@ -28,6 +28,8 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 /proc/mc_health_fast()
 	var/list/history = Kernel.perf_tick_usage
 	return list(
+		// The tick graph is the first section built and sent: it is on the panel from the first send, before any slow group.
+		"ticks" = mc_health_recent_ticks(),
 		"header" = list(
 			"tick_budget_ms" = world.tick_lag * 100,
 			"target_tps" = world.fps,
@@ -36,13 +38,13 @@ GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_tota
 			"tidi" = time_track_time_dilation_current(),
 		),
 		"window_5s" = Kernel.performance_window(5),
-		"ticks" = mc_health_recent_ticks(),
 		"stalls" = km_meter().stalls || list(),
 	)
 
-/// The slow sections, in the groups that are rebuilt together. After the first send, at most one group is rebuilt per send (the stalest one past
-/// MC_HEALTH_SLOW_EVERY), so their cost is spread over the seconds instead of landing in one.
-GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution_top", "counts", "attribution_rest", "rust"))
+/// The slow sections, in the groups that are rebuilt together. At most one group is built per send, the first never built (the panel fills in over its first
+/// sends), then the stalest one past MC_HEALTH_SLOW_EVERY, so their cost is spread over the seconds instead of landing in one: the first send of a panel built
+/// all of them in one call of 40-66 ms (SLOW_TICK 2026-11-13, statpanels refresh_tabs).
+GLOBAL_LIST_INIT(mc_health_slow_groups, list("windows", "kernel", "attribution_top", "counts", "census", "attribution_rest", "rust"))
 
 /// The sections kept for MC_HEALTH_SLOW_EVERY: the same list objects until their group is built again.
 /proc/mc_health_slow()
@@ -51,34 +53,43 @@ GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution_top", "c
 	if(!S.mc_slow)
 		S.mc_slow = list()
 		S.mc_slow_built_at = list()
-	// A group never built is built at once (the panel's first send is whole); after that, the stalest due group only.
-	var/list/due = list()
+	// One group per send: the first never built, else the stalest one past its time.
+	var/due
 	var/stalest
 	for(var/group in GLOB.mc_health_slow_groups)
 		var/at = S.mc_slow_built_at[group]
 		if(isnull(at))
-			due += group
-		else if(now - at >= MC_HEALTH_SLOW_EVERY && (!stalest || at < S.mc_slow_built_at[stalest]))
+			due = group
+			break
+		if(now - at >= MC_HEALTH_SLOW_EVERY && (!stalest || at < S.mc_slow_built_at[stalest]))
 			stalest = group
-	if(!length(due) && stalest)
-		due += stalest
-	for(var/group in due)
-		S.mc_slow_built_at[group] = now
-		var/list/built = mc_health_slow_group(group)
+	due ||= stalest
+	if(due)
+		var/started = TICK_USAGE_REAL
+		S.mc_slow_built_at[due] = now
+		var/list/built = mc_health_slow_group(due)
 		for(var/section in built)
 			S.mc_slow[section] = built[section]
+		var/group_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+		S.mc_group_max_ms = max(S.mc_group_max_ms, group_ms)
+		if(group_ms >= 5)
+			log_world("MC_HEALTH: building the [due] group took [round(group_ms, 0.1)] ms (the slowest group so far [round(S.mc_group_max_ms, 0.1)] ms)")
 	return S.mc_slow
 
 /// The sections of one slow group, built now.
 /proc/mc_health_slow_group(group)
 	switch(group)
-		if("ticks_long")
+		if("windows")
 			return list(
 				"window_30s" = Kernel.performance_window(30),
 				"window_5m" = Kernel.performance_window(300),
 				"outliers" = Kernel.perf_outliers.Copy(),
+			)
+		if("kernel")
+			return list(
 				"subsystems" = mc_health_subsystems(),
 				"kernel" = km_panel_data(),
+				"ledger" = GLOB.km_ledger.report(KM_LEDGER_TOP),
 				"runtime" = list(
 					"cpu" = world.cpu,
 					"clients" = length(GLOB.clients),
@@ -95,7 +106,9 @@ GLOBAL_LIST_INIT(mc_health_slow_groups, list("ticks_long", "attribution_top", "c
 			var/list/systems = km_panel_data(8)["systems"]
 			return list("attribution_rest" = mc_health_attribution(systems.Copy(min(length(systems), 4) + 1)))
 		if("counts")
-			return list("gc" = mc_health_gc(), "entities" = mc_health_entities(), "churn" = mc_health_churn())
+			return list("gc" = mc_health_gc(), "churn" = mc_health_churn())
+		if("census")
+			return list("entities" = mc_health_entities())
 		if("rust")
 			return list("rust" = mc_health_rust())
 	return list()

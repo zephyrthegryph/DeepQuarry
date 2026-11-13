@@ -10,7 +10,9 @@
 //   parts         per-part integrity bands (plan hook)
 //   plan findings brain death, blood loss, radiation (plan hook)
 //   hints         treatment_demand() for profiles that give advice
-// Feigned death is applied once, here.
+// Feigned death is applied once, here. So is drug masking: a reagent that declares
+// `hides = list(HIDE_*)` (code/content/reagents/drug_profile.dm) changes only what an
+// INSTRUMENT reports (the afflictions and organs stay on the body); the naked eye is not fooled.
 
 /// Diagnose this mob through `profile` (a /datum/diagnostic_profile typepath
 /// or instance). Null when the mob has no body.
@@ -37,6 +39,12 @@
 	shared_set(D, nameof(D.profile), P)
 	D.patient_name = owner.name
 	D.fake_death = (owner.status_flags & FAKEDEATH) && !P.sees_fake_death
+	if(!P.sees_masked)
+		D.masked = owner.hidden_readings()
+		if(P.senses & (PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB | PRESENT_SYNTHETIC | PRESENT_NANITE))
+			D.finding_masks = D.masked
+		if(D.masked && GLOB.chem_trace)
+			log_world("CHEM: scan of [owner] through [P.name] masks [jointext(D.masked, ", ")]")
 
 	if(owner.is_dead() || D.fake_death)
 		D.status = DIAG_STATUS_DEAD
@@ -81,8 +89,13 @@
 		var/rhythm = heart_rhythm()
 		if(!isnull(rhythm))
 			D.heart_rhythm = flat ? RHYTHM_ASYSTOLE : rhythm
+			if(!flat && (rhythm == RHYTHM_TACHY || rhythm == RHYTHM_VFIB) && D.hides(HIDE_PULSE_IRREGULAR))
+				D.heart_rhythm = RHYTHM_SINUS // the drug evens the ECG out: the instrument reads a regular rhythm
 	if(P.vitals & VITALS_TEMP)
 		D.temperature = round((owner.body_temperature() - T0C) * 10) / 10 // STAT_TEMPERATURE moves the real set point (C16)
+		if(D.hides(HIDE_FEVER))
+			var/mob/living/carbon/human/H = owner
+			D.temperature = round(((istype(H) ? H.species.body_temperature : BODYTEMP_NORMAL) - T0C) * 10) / 10
 	if(P.vitals & VITALS_CONSCIOUSNESS)
 		if(flat)
 			D.consciousness = "none"
@@ -97,9 +110,12 @@
 /datum/body/proc/diagnose_afflictions(datum/diagnosis/D, datum/diagnostic_profile/P, baseline_key, update_baseline = FALSE)
 	var/instrument = P.senses & (PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB | PRESENT_SYNTHETIC | PRESENT_NANITE)
 	var/eyes = P.senses & PRESENT_VISIBLE
+	var/list/masks = D.finding_masks
 	for(var/datum/affliction/A as anything in afflictions)
 		var/where = (P.localize && A.location) ? "[A.location.name]" : ""
 		var/band = dq_qualitative_damage_band(A.diagnostic_severity(), 100)
+		if(masks && affliction_masked(A, band, masks))
+			continue // masked on this instrument: neither the condition nor the signs it presents
 		if(A.perceived_by(P) && band != DIAG_BAND_NONE)
 			var/datum/diagnosis_finding/F = D.add_finding(new /datum/diagnosis_finding(A.diagnostic_name(), A.finding_kind(), band, where, A.type))
 			if(P.describe)
@@ -115,13 +131,37 @@
 		if(!A.active_symptoms || !(biology_of(A.location) & P.biology))
 			continue
 		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(A))
+			var/sign_where = where
+			if(masks)
+				if(S.subcategory == SYMPTOM_SUBCATEGORY_PAIN)
+					if(HIDE_PAIN in masks)
+						continue
+					if(HIDE_PAIN_LOCATION in masks)
+						sign_where = ""
+				else if(S.subcategory == SYMPTOM_SUBCATEGORY_WITHDRAWAL && (HIDE_SYMPTOM_SUPPRESSION in masks))
+					continue
+				else if(istype(S, /datum/affliction_symptom/palpitations) && (HIDE_PULSE_IRREGULAR in masks))
+					continue
 			var/phrase
 			if(instrument && S.is_scanner_visible())
 				phrase = S.scanner_phrase
 			else if(eyes && (S.audiences & SYMPTOM_AUDIENCE_PUBLIC))
 				phrase = S.examine_line || S.name
 			if(phrase)
-				D.add_finding(new /datum/diagnosis_finding(phrase, DIAG_FINDING_SIGN, band, where))
+				D.add_finding(new /datum/diagnosis_finding(phrase, DIAG_FINDING_SIGN, band, sign_where))
+
+/// Is `A` (read at `band`) hidden from a scan that masks `masks` (HIDE_* keys)? Only the report changes: the affliction stays on the body.
+/datum/body/proc/affliction_masked(datum/affliction/A, band, list/masks)
+	if(HIDE_INTERNAL_BLEEDING in masks)
+		if(istype(A, /datum/affliction/internal_hemorrhage) || istype(A, /datum/affliction/lacerated_artery) || istype(A, /datum/affliction/wound/internal_bleeding))
+			return TRUE
+	if(HIDE_LUNG_HEART in masks)
+		if(istype(A, /datum/affliction/pulmonary_contusion) || istype(A.location, /obj/item/organ/internal/lungs) || istype(A.location, /obj/item/organ/internal/heart))
+			return TRUE
+	if((HIDE_ORGAN_MILD in masks) && band == DIAG_BAND_MINOR)
+		if(istype(A, /datum/affliction/lesion) || istype(A.location, /obj/item/organ/internal))
+			return TRUE
+	return FALSE
 
 /// Plan-specific findings (brain death, blood loss, radiation...). Base:
 /// radiation, which every living mob accumulates.
@@ -139,15 +179,21 @@
 /// TREAT_* -> DIAG_BAND_* urgency (the worst band among the afflictions it
 /// treats). Without a profile, every affliction counts. Natural
 /// regeneration and restoration are never asked for.
+/// An instrument profile is fooled like the scan itself: the afflictions a drug in the blood masks (HIDE_*) are not asked for.
 /datum/body/proc/treatment_demand(datum/diagnostic_profile/P = null)
 	if(ispath(P))
 		P = diagnostic_profile(P)
+	var/list/masks
+	if(P && !P.sees_masked && (P.senses & (PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB | PRESENT_SYNTHETIC | PRESENT_NANITE)))
+		masks = owner.hidden_readings()
 	var/list/demand
 	for(var/datum/affliction/A as anything in afflictions)
 		if(P && !A.perceived_by(P))
 			continue
 		var/band = dq_qualitative_damage_band(A.diagnostic_severity(), 100)
 		if(band == DIAG_BAND_NONE)
+			continue
+		if(masks && affliction_masked(A, band, masks))
 			continue
 		var/part_biology = biology_of(A.location)
 		for(var/tag in A.treated_by)
@@ -252,9 +298,9 @@
 			flags += "destroyed"
 		var/list/implants
 		if(P.senses & PRESENT_INTERNAL)
-			if(istype(E, /obj/item/organ/external/chest) && H.is_lung_ruptured())
+			if(istype(E, /obj/item/organ/external/chest) && H.is_lung_ruptured() && !(HIDE_LUNG_HEART in D.finding_masks))
 				flags += "ruptured lung"
-			if(length(dq_limb_internal_bleeds(E)))
+			if(length(dq_limb_internal_bleeds(E)) && !(HIDE_INTERNAL_BLEEDING in D.finding_masks))
 				flags += "internal bleeding"
 			implants = diagnose_part_implants(E)
 		LAZYADD(D.parts, list(list(
@@ -307,6 +353,11 @@
 			if(A.inflamed)
 				flags += "appendicitis"
 		var/band = dq_qualitative_damage_band(I.damage, I.max_damage)
+		if(D.finding_masks)
+			if((HIDE_LUNG_HEART in D.finding_masks) && (istype(I, /obj/item/organ/internal/lungs) || istype(I, /obj/item/organ/internal/heart)))
+				band = DIAG_BAND_NONE
+			else if((HIDE_ORGAN_MILD in D.finding_masks) && band == DIAG_BAND_MINOR)
+				band = DIAG_BAND_NONE
 		if(D.fake_death)
 			if(istype(I, /obj/item/organ/internal/brain))
 				band = DIAG_BAND_CRITICAL

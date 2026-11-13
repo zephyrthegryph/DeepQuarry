@@ -410,6 +410,12 @@
 	if(override_blindness_check || !(disabilities() & BLIND))
 		overlay_fullscreen("flash", type)
 		after(src, 2.5 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 2.5 SECONDS))
+		if(flash_vulnerability > 1)
+			// Eyes made sensitive (imidazoline) are blinded for longer by the same flash.
+			var/extra = round(FLASH_VULNERABILITY_BLIND * (flash_vulnerability - 1))
+			status_adjust(STAT_BLINDED, extra)
+			if(GLOB.chem_trace)
+				log_world("CHEM: flash blinds [src] for [extra] extra (flash_vulnerability [flash_vulnerability])")
 		return 1
 
 /mob/living/proc/cannot_use_vents()

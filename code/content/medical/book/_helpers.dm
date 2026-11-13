@@ -55,3 +55,19 @@
 	return types
 
 GLOBAL_TABLE(dq_catalogued_affliction_types, GLOBAL_PROC_REF(build_dq_catalogued_affliction_types))
+
+/// One reading a drug masks on instruments (HIDE_* in code/defines/content/drug_profile.dm) in the book's words.
+GLOBAL_LIST_INIT(dq_hide_labels, list( \
+	HIDE_PAIN                = "the patient's pain level and every pain finding", \
+	HIDE_PAIN_LOCATION       = "where it hurts", \
+	HIDE_ORGAN_MILD          = "mild organ damage", \
+	HIDE_PULSE_IRREGULAR     = "an irregular pulse (reads as a normal rhythm)", \
+	HIDE_INTERNAL_BLEEDING   = "internal bleeding", \
+	HIDE_LUNG_HEART          = "lung and heart damage", \
+	HIDE_FEVER               = "fever (the temperature reads normal)", \
+	HIDE_SYMPTOM_SUPPRESSION = "withdrawal and similar signs", \
+))
+
+/// The label of a HIDE_* key.
+/proc/dq_hide_label(key)
+	return GLOB.dq_hide_labels[key] || "[key]"

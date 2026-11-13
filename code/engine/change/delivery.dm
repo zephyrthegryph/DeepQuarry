@@ -203,13 +203,17 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 						if(R.at_most && !rx_at_most_admit(E, R, keys))
 							continue
 						var/attr_start = TICK_USAGE
+						var/reaction_ledger = km_ledger_enter(KM_CAT_REACTION, E.type, R.handler)
 						rx_call_reaction(E, R, keys)
+						km_ledger_leave(reaction_ledger)
 						attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, E.type, R.handler, TICK_USAGE_TO_MS(attr_start))
 					else
 						var/datum/rx_listener/L = target
 						if(L.source_slot && L.listener_slot && !QDELETED(L.listener()))
 							var/attr_start = TICK_USAGE
+							var/observer_ledger = km_ledger_enter(KM_CAT_REACTION, L.listener().type, L.handler)
 							rx_call(L.listener(), L.handler, E, keys)
+							km_ledger_leave(observer_ledger)
 							attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, L.listener().type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
 					dq_report_caught(e, "rx_drain: [E.type]")

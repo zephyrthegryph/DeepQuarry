@@ -625,6 +625,27 @@
 	qdel(attr)
 	return
 
+/// The profiler's walk of the table a few rows at a time is the report made at once.
+/datum/unit_test/dq_km_attr_walk_matches_report
+
+/datum/unit_test/dq_km_attr_walk_matches_report/Run()
+	var/datum/km_attr/attr = new
+	var/list/types = list(/obj/machinery/light, /obj/item/gun, /obj/structure/table, /obj/machinery/door)
+	for(var/t in types)
+		for(var/i in 1 to 30)
+			attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, t, "cb[i]", i * 0.5)
+	attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, /obj/machinery/light, "draw", 3)
+	attr.end_tick(FALSE)
+	var/list/whole = attr.report(5)
+	var/datum/km_attr_walk/W = attr.walk_begin(5)
+	var/turns = 1
+	while(!attr.walk_step(W, 0))
+		turns++
+		TEST_ASSERT(turns <= length(types) + 2, "the walk ends")
+	TEST_ASSERT(turns > 1, "a spent budget leaves the rest for the next turn ([turns] turns)")
+	TEST_ASSERT_EQUAL(json_encode(attr.walk_result(W)), json_encode(whole), "the slices add up to the report")
+	qdel(attr)
+
 /// The bookkeeping cost, measured: the whole per-call price of an attributed callback (two TICK_USAGE reads and note()) over a working set of
 /// keys, with the allocation check. The bound is generous (the test world is a loaded machine); the measured figure is logged.
 /datum/unit_test/dq_km_attr_overhead

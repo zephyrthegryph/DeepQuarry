@@ -1173,10 +1173,12 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 				rec.marked -= def ? def.skey : ct.row_key
 			var/started = stat_charge_begin()
 			var/eval_started = TICK_USAGE
+			var/eval_ledger = km_ledger_enter(KM_CAT_STAT_EVAL, E.type, def ? def.name : "contributes_to")
 			if(ct)
 				stat_ct_update(E, ct)
 			else
 				stat_settle_def(E, def)
+			km_ledger_leave(eval_ledger)
 			KM_SLOW_INNER(eval_started, "stat [E.type] [def ? def.name : "contributes_to"]")
 			.++
 			spent += stat_charge_end(started)
@@ -1248,11 +1250,25 @@ GLOBAL_VAR_INIT(stat_marked_sorted, 0)
 		merged += list(rows[j++])
 	return merged
 
+/// Drain points that found the lane's budget spent with work waiting and left it untouched (a counter for tests and the profiler).
+GLOBAL_VAR_INIT(stat_drain_skipped, 0)
+
 /// The kernel's drain point (the start of phases D, P and R): the marked stats recompute under the simulation lane's budget. Costs one list length
 /// when nothing is marked. While a map loads (a load frame is open, even one suspended between chunks) it does nothing: initial evaluation is
 /// silent until the load completes, and the load's own settling drain (SSatoms.initialize_atoms_finish()) then runs what is owed, once.
 /proc/stat_drain_point()
 	if(materialization_host().map_loading())
+		return
+	// A drain point after the lane's budget is spent runs nothing: it must not touch what waits (every drain below takes its whole backlog apart
+	// and puts the rest back before it finds the budget gone), so it costs the same whether ten holders are marked or ten thousand.
+	var/drain_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "budget check")
+	var/budget_spent = GLOB.stat_tick_spent && GLOB.stat_tick_spent + STAT_EVAL_CHARGE > stat_lane_budget(LANE_SIMULATION)
+	km_ledger_leave(drain_ledger)
+	if(budget_spent)
+		if(length(GLOB.stat_marked) || GLOB.hook_change_pending || length(GLOB.notice_late_queue))
+			GLOB.stat_spills++
+			GLOB.stat_drain_skipped++
+			TEST_REC_SPILL("drain point: the lane's budget is spent with work still marked")
 		return
 	var/act_started = TICK_USAGE
 	act_drain_point(FALSE) // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
@@ -1264,7 +1280,9 @@ GLOBAL_VAR_INIT(stat_marked_sorted, 0)
 		passes++
 		var/spills = GLOB.stat_spills
 		var/marked_started = TICK_USAGE
+		var/marked_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "marked stats")
 		stat_drain_marked(LANE_SIMULATION, FALSE)
+		km_ledger_leave(marked_ledger)
 		KM_SLOW_INNER(marked_started, "stat_drain_marked pass [passes]")
 		act_started = TICK_USAGE
 		act_drain_point(FALSE)

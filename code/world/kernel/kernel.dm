@@ -155,6 +155,7 @@
 	act_backstop_reset()
 	// K
 	var/k_start = TICK_USAGE
+	var/k_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_K])
 	// The phase's work items first (the input inbox drains here, ahead of every host service), then the host services.
 	if(length(items_by_phase[KERNEL_PHASE_K]))
 		try
@@ -163,11 +164,13 @@
 			phase_fault(KERNEL_PHASE_K, k_e)
 	if(TICK_USAGE - k_start > KERNEL_INPUT_CAP)
 		k_over_cap++
+	km_ledger_leave(k_ledger)
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_K, k_start)
 
 	// S: simulation sync. Whatever is pushed to Rust is pushed now, so input resolved in K reaches this frame's native
 	// step. It has no scheduler piece and is never shed: the phase's own items, under the tick's limit.
 	var/s_start = TICK_USAGE
+	var/s_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_S])
 	if(length(items_by_phase[KERNEL_PHASE_S]))
 		try
 			work_run_phase(KERNEL_PHASE_S, tick_limit, 0, world.time)
@@ -177,20 +180,26 @@
 	if(length(GLOB.refresh_push_queue))
 		try
 			var/push_start = TICK_USAGE
+			var/push_ledger = km_ledger_enter(KM_CAT_DRAW, "refresh", "refresh_drain_pushes")
 			refresh_drain_pushes()
+			km_ledger_leave(push_ledger)
 			slow_span_since(KM_SPAN_DRAIN, "refresh_drain_pushes", push_start, KERNEL_PHASE_S)
 		catch(var/exception/push_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_S, push_e)
+	km_ledger_leave(s_ledger)
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_S, s_start)
 
 	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))
 		var/sb_start = TICK_USAGE
+		var/sb_ledger = km_ledger_enter(KM_CAT_SCHED, "scheduler", "pass_begin")
 		sched.pass_begin(tick_limit)
 		slow_span_since(KM_SPAN_LOOP, "sched.pass_begin", sb_start, KERNEL_PHASE_N)
 		stat_tick_begin()
+		km_ledger_leave(sb_ledger)
 		sched_ms_tick = TICK_USAGE_TO_MS(sb_start)
 		// N
 		var/n_start = TICK_USAGE
+		var/n_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_N])
 		var/elapsed = last_native ? min(world.time - last_native, KERNEL_NATIVE_MAX_CATCHUP * world.tick_lag) : world.tick_lag
 		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_native = world.time
@@ -201,39 +210,50 @@
 			run_native(elapsed, sched.world_budget)
 		catch(var/exception/n_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_N, n_e)
+		km_ledger_leave(n_ledger)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_N, n_start)
 		// U
 		var/u_start = TICK_USAGE
+		var/u_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_U])
 		if(length(urgent_queue))
 			try
 				run_urgent(min(tick_limit, TICK_USAGE + sched.pass_avail * KERNEL_URGENT_SHARE), world.time)
 			catch(var/exception/u_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 				phase_fault(KERNEL_PHASE_U, u_e)
+		km_ledger_leave(u_ledger)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_U, u_start)
 		// D
 		var/d_start = TICK_USAGE
+		var/d_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_D])
 		try
 			run_deadline_phase(tick_limit, world.time)
 		catch(var/exception/d_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_D, d_e)
+		km_ledger_leave(d_ledger)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_D, d_start)
 		// P
 		var/p_start = TICK_USAGE
+		var/p_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_P])
 		try
 			run_lane_phase(tick_limit, world.time)
 		catch(var/exception/p_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_P, p_e)
+		km_ledger_leave(p_ledger)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_P, p_start)
 		// R
 		var/r_start = TICK_USAGE
+		var/r_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_R])
 		try
 			run_leftover_phase(tick_limit, world.time)
 		catch(var/exception/r_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_R, r_e)
+		km_ledger_leave(r_ledger)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_R, r_start)
 		// The scheduler pass is N through R: phase K's host services (input, verbs, tgui, ...) are not part of it.
 		var/se_start = TICK_USAGE
+		var/se_ledger = km_ledger_enter(KM_CAT_SCHED, "scheduler", "pass_end")
 		sched.pass_end()
+		km_ledger_leave(se_ledger)
 		slow_span_since(KM_SPAN_LOOP, "sched.pass_end", se_start, KERNEL_PHASE_G)
 		sched_ms_tick += TICK_USAGE_TO_MS(se_start)
 		var/pass_ms = TICK_USAGE_TO_MS(sched.pass_start)
@@ -241,6 +261,7 @@
 
 	// G: whatever is left, with a floor once a second.
 	var/g_start = TICK_USAGE
+	var/g_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", GLOB.km_phase_labels[KERNEL_PHASE_G])
 	var/g_limit = tick_limit
 	// ALLOW(sys_world_time_expiry): the kernel clock: compares the scheduler own timestamps, not an entity expiry
 	if(world.time - last_g_floor >= KERNEL_GARBAGE_FLOOR_PERIOD)
@@ -252,6 +273,7 @@
 			work_run_phase(KERNEL_PHASE_G, g_limit, 0, world.time)
 		catch(var/exception/g_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_G, g_e)
+	km_ledger_leave(g_ledger)
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_G, g_start)
 
 	last_tick_ms = TICK_USAGE_TO_MS(tick_start)
@@ -307,7 +329,9 @@
 /// A drain point (the marked stats, the queued notices and on_change hooks) at the start of phase `phase`, timed as a span of the slow-tick trace.
 /datum/controller/kernel/proc/drain_point(phase)
 	var/started = TICK_USAGE
+	var/drain_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", GLOB.km_phase_labels[phase])
 	stat_drain_point()
+	km_ledger_leave(drain_ledger)
 	slow_span_since(KM_SPAN_DRAIN, "stat_drain_point", started, phase)
 
 /// Adds a span of the slow-tick trace for work that began at `started` (a TICK_USAGE) if it took KM_SLOW_SPAN_MIN_MS or more.

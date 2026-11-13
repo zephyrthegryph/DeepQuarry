@@ -241,10 +241,15 @@ GLOBAL_LIST_EMPTY(notice_unheard)
 /proc/act_drain_point(fresh = TRUE)
 	if(fresh)
 		GLOB.stat_tick_spent = 0
+	// Bracketed under the stat drain's own names so the tick ledger says which part of a drain point the bookkeeping is.
 	if(length(GLOB.notice_late_queue) && !GLOB.notice_draining_late)
+		var/late_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "late notice queue")
 		notice_drain_late(FALSE)
+		km_ledger_leave(late_ledger)
 	if(GLOB.hook_change_pending)
+		var/hooks_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "on_change marks")
 		hooks_drain_changes(FALSE)
+		km_ledger_leave(hooks_ledger)
 
 /// The holder of a late-queue row: a handle resolves to a live datum (null once it was deleted); a datum put in a row by hand is itself.
 /proc/notice_late_holder(list/row)
@@ -315,8 +320,10 @@ GLOBAL_LIST_EMPTY(notice_unheard)
 				return
 			var/charge_started = stat_charge_begin()
 			var/late_started = TICK_USAGE
-			notice_late_deliver(holder, row)
 			var/datum/notice/late_notice = row[2]
+			var/late_ledger = km_ledger_enter(KM_CAT_NOTICE, holder.type, late_notice?.type)
+			notice_late_deliver(holder, row)
+			km_ledger_leave(late_ledger)
 			KM_SLOW_INNER(late_started, "late notice [late_notice?.type] on [holder.type]")
 			GLOB.stat_tick_spent = spent + stat_charge_end(charge_started)
 	if(length(GLOB.notice_late_queue))

@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - balance: "Kelotane now slows the natural healing of other wounds only on a limb where it is healing burns, not across the whole body."
+  - balance: "A stun can now set off a seizure in a body prone to them, not only an electric injury."
+  - balance: "Myelamine now carries a real clot risk (an ischemic event in the brain or heart) when the heart is damaged or the blood pressure is low."
+  - code_imp: "Dermaline's blood drain, carthatoline's stomach purge, kelotane's per-limb slowdown and myelamine's clot risk are declared drug-profile data; the medical book lists them, and the osteodaxon crooked-knit line, from that data."
+  - code_imp: "Regenerated the tgui ui_data fixtures and re-blessed the transformation pins for the repointed recipes."

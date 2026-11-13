@@ -193,7 +193,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 		dat += span_red("Retinal misalignment detected.")
 	for(var/addic in occupant.get_all_addictions())
 		var/level = occupant.get_addiction_to_reagent(addic)
-		if(level > 0 && level < 80)
+		if(level > 0 && level < 80 && !occupant.reading_hidden(HIDE_SYMPTOM_SUPPRESSION))
 			var/datum/reagent/R = SSchemistry.ready().chemical_reagents[addic]
 			dat += span_red("Experiencing withdrawal symptoms: [R.name]")
 			break

@@ -20,6 +20,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 	var/name
 	/// "[owner_type]:[handler]", set by kernel_register_work(). `after` may name it.
 	var/key
+	/// The tick ledger category the item's runs are charged to (measure/ledger.dm), set when it is registered.
+	var/ledger_cat = KM_CAT_SYSTEM
 	/// The datum type whose handler this is: a /datum/system type (its singleton is the owner), or any type with a
 	/// global singleton the caller resolves through `owner_resolver`.
 	var/owner_type
@@ -282,3 +284,6 @@ CAPABILITIES(/datum/work_item)
 		return STEP_DONE
 	pipeline_stage_run_now(member, stage_type)
 	return STEP_DONE
+
+/// The tick ledger category a run is charged to is assigned from a table lookup at registration (kernel/measure/ledger.dm).
+SCHEMA(/datum/work_item, ledger_cat, int())

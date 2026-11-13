@@ -101,7 +101,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			var/share = WOUND_AUTOHEAL_PER_CYCLE * CONFIG_GET(number/organ_regeneration_multiplier) * cycles / (length(wounds) + 1)
 			for(var/datum/affliction/wound/W as anything in wounds.Copy())
 				if(W.damage > 0 && W.can_autoheal() && W.wound_damage() < WOUND_AUTOHEAL_MAX_DAMAGE)
-					W.heal_damage(share)
+					W.heal_damage(share * natural_healing_scale(E, W))
 				// Moving about gets an open wound dirty faster.
 				if(moving && W.infection_check())
 					W.germ_level += 1

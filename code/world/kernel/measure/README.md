@@ -57,3 +57,20 @@ is joined with the meter's systems, the timer callbacks / reactions / redraws an
 `SLOW_TICK` line to the debug log (at most 12 a minute). Each phase's time that its itemised work does not cover is its own row
 ("phase N time not itemised"), as are the time before the MC, between phases and after `kernel.tick()`: that is what the overrun
 record calls "MC other".
+
+## The tick ledger
+
+`ledger.dm` keeps one exclusive timeline for the kernel's iteration (from the start of the BYOND tick to `record_performance_tick()`, the
+interval the performance windows average). Work sites bracket what they do with `km_ledger_enter(category, owner, proc)` /
+`km_ledger_leave(token)`; entering charges the time since the last switch to the category that was current, so a Move inside a timer
+callback, or an on_change hook inside a drain, takes its time out of the region around it. The categories therefore add up to the window by
+construction, and `KM_CAT_UNATTRIBUTED` (time in the kernel loop outside any bracket) is the residual the old breakdown called "Not attributed".
+
+Sites: loop top (`begin`), `record_performance_tick` (`finish`), each kernel phase and the scheduler's pass begin/end, work items by owner
+(`km_ledger_item_category()`), timer callbacks and after_init fires, stat drain / stat evaluations / on_change hooks / late notices, change
+reactions and redraws, the native frame and its delivery records, and `Move()` (`movement.dm`). BYOND's own time after the iteration and the
+map send are noted from `/datum/tick_frame/frame_end()`.
+
+Surfaces: the MC Health panel's "Where the tick goes" card (bars are the moving average, a row opens to its heaviest names), the Tick Report
+verb, and `ledger` in PERF_PROFILE. Cost: one TICK_USAGE read and a few list writes per bracket; no string is built (names are type paths,
+proc names and entries); rows are bounded per category (`KM_LEDGER_ROWS`).

@@ -194,6 +194,7 @@
 			html += k <= length(keys) ? "<td>[html_encode(keys[k])] [round(mss[k], 0.1)] ms</td>" : "<td></td>"
 		html += "</tr>"
 	html += "</table>"
+	html += GLOB.km_ledger.report_html()
 	return html
 
 ADMIN_VERB(tick_report, R_DEBUG, "Tick Report", "Shows the flight recorder: the last minute of ticks with usage, maptick, input cost and the top systems of each.", ADMIN_CATEGORY_DEBUG_INVESTIGATE, mode as null|anything in list("Overruns only", "All ticks"))

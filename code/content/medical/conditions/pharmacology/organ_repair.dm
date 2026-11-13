@@ -1,6 +1,17 @@
 // Organ repair: the daxon family, eye drugs and cellular repair: pharmacological side effects, overdoses and interactions.
 // Families and the stage template: _pharmacology.dm.
 
+/datum/affliction/chem_side_effect/peridaxon_confusion
+	name = "peridaxon confusion"
+	clinical_description = "Peridaxon primes the receptors of every damaged organ, brain included, and the patient is muddled while it works. Resolves as the chem clears."
+	symptom_pool = list(
+		/datum/affliction_symptom/confusion = 100,
+	)
+	min_symptoms = 1
+	max_symptoms = 1
+	caused_by_chems = list(REAGENT_ID_PERIDAXON = 2)
+	caused_by_chems_organ = O_BRAIN
+
 /datum/affliction/overdose/peridaxon
 	name = "peridaxon overdose"
 	clinical_description = "Peridaxon at overdose induces hallucinations and disorientation — the same organ-receptor priming that makes it useful at therapeutic dose becomes overwhelming at high concentrations."
@@ -232,35 +243,6 @@
 		list(list(
 			/datum/affliction_symptom/confusion           = 80,
 			/datum/affliction_symptom/fatigue             = 85,
-			/datum/affliction_symptom/nausea              = 70,
-			/datum/affliction_symptom/genetic_instability = 60,
-		), 2, 3, list("always_spawns" = list(/datum/affliction/genetic_damage))),
-	)
-
-/datum/affliction/overdose/ryetalyn
-	name = "ryetalyn overdose"
-	clinical_description = "Ryetalyn at overdose interferes with normal cellular processes outside the genetic targets it's meant to fix. Weakness and mild GI symptoms."
-	symptom_pool = list(
-		/datum/affliction_symptom/fatigue = 70,
-		/datum/affliction_symptom/nausea  = 50,
-	)
-	min_symptoms = 1
-	max_symptoms = 2
-	caused_by_chems = list(REAGENT_ID_RYETALYN = 20)
-	caused_by_chems_organ = O_LIVER
-
-/datum/affliction/overdose/ryetalyn
-	overdose_stage_data = list(
-		list(list(
-			/datum/affliction_symptom/fatigue = 55,
-			/datum/affliction_symptom/nausea  = 40,
-		), 1, 1),
-		list(list(
-			/datum/affliction_symptom/fatigue = 75,
-			/datum/affliction_symptom/nausea  = 50,
-		), 1, 2),
-		list(list(
-			/datum/affliction_symptom/fatigue             = 90,
 			/datum/affliction_symptom/nausea              = 70,
 			/datum/affliction_symptom/genetic_instability = 60,
 		), 2, 3, list("always_spawns" = list(/datum/affliction/genetic_damage))),

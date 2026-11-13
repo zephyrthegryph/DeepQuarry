@@ -1,16 +1,13 @@
 // Antitoxins, radiation purgers, antacids and alcohol antagonists: pharmacological side effects, overdoses and interactions.
 // Families and the stage template: _pharmacology.dm.
 
-/datum/affliction/chem_side_effect/antitoxin_nausea
+/// A real nausea condition (code/content/medical/conditions/nausea.dm): it makes the patient vomit, and an antiemetic settles it. Held by the chem, cleared as it leaves.
+/datum/affliction/nausea/antitoxin
 	name = "antitoxin nausea"
-	clinical_description = "Antitoxin scrubs toxins from the blood but the breakdown byproducts can churn the stomach. Resolves as the chem clears."
-	symptom_pool = list(
-		/datum/affliction_symptom/nausea = 80,
-	)
-	min_symptoms = 1
-	max_symptoms = 1
+	clinical_description = "Antitoxin scrubs toxins from the blood but the breakdown byproducts churn the stomach. Resolves as the chem clears; calcium carbonate settles it sooner."
+	progression_rate = 0
 	caused_by_chems = list(REAGENT_ID_ANTITOXIN = 10)
-	caused_by_chems_organ = O_LIVER
+	caused_by_chems_organ = O_STOMACH
 
 /datum/affliction/chem_side_effect/carthatoline_evacuant
 	name = "carthatoline evacuation"

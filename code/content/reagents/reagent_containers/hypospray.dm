@@ -243,7 +243,7 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray/autoinjector)
 	name = "purity hypo"
 	desc = "A refined version of the standard autoinjector, allowing greater capacity.  This variant excels at \
 	resolving viruses, infections, radiation, and genetic maladies."
-	filled_reagents = list(REAGENT_ID_SPACEACILLIN = 4, REAGENT_ID_ARITHRAZINE = 5, REAGENT_ID_PRUSSIANBLUE = 5, REAGENT_ID_RYETALYN = 1)
+	filled_reagents = list(REAGENT_ID_SPACEACILLIN = 4, REAGENT_ID_ARITHRAZINE = 5, REAGENT_ID_PRUSSIANBLUE = 5, REAGENT_ID_REZADONE = 1)
 
 /obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain
 	name = "pain hypo"

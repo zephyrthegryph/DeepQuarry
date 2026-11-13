@@ -83,7 +83,8 @@ STAT(/mob/living, siemens, PRODUCT, bounds = list(0, 10))
 // --- Chemistry ----------------------------------------------------------------------------------------------------------------
 STAT(/mob/living, stabilization, SUM, bounds = list(0, INFINITY))
 STAT(/mob/living, antimicrobial, SUM, bounds = list(0, INFINITY))
-STAT(/mob/living, blood_regen, SUM, bounds = list(0, INFINITY))
+/// Blood rebuilt per cycle on top of BLOOD_REGEN_PER_CYCLE (0.1, code/domains/body/body_clock.dm): the lower bound lets a drug slow the refill down to nothing, no further.
+STAT(/mob/living, blood_regen, SUM, bounds = list(-0.1, INFINITY))
 STAT(/mob/living, intoxication, SUM, bounds = list(0, INFINITY))
 STAT(/mob/living, hepatotoxicity, SUM, bounds = list(0, INFINITY))
 STAT(/mob/living, antiemetic, SUM, bounds = list(0, INFINITY))
@@ -91,6 +92,12 @@ STAT(/mob/living, allergy, SUM, bounds = list(0, INFINITY))
 STAT(/mob/living, withdrawal, SUM, bounds = list(0, INFINITY))
 STAT(/mob/living, neural_repair, SUM, bounds = list(0, INFINITY))
 STAT(/mob/living, immune_suppression, SUM, bounds = list(0, INFINITY))
+/// How easily a shock sets off a seizure: the threshold is SEIZURE_BASE_THRESHOLD minus this times SEIZURE_PRONENESS_SCALE (/datum/affliction/seizure). Zero: never from a shock.
+STAT(/mob/living, seizure_proneness, SUM, bounds = list(0, INFINITY))
+/// Share of an ingested reagent that is absorbed into the blood (the stomach route's absorbed share, cycle_body()); an antitoxin in the blood lowers it.
+STAT(/mob/living, ingest_absorption, PRODUCT, bounds = list(0, 2))
+/// How much longer a bright flash blinds: above 1, a flash that lands adds FLASH_VULNERABILITY_BLIND times the excess in blindness (/mob/living/flash_eyes()).
+STAT(/mob/living, flash_vulnerability, PRODUCT, bounds = list(0, 10))
 
 // --- Oxygen transport and stasis ----------------------------------------------------------------------------------------------
 STAT(/mob/living, o2_carriage, PRODUCT, bounds = list(0, 2))

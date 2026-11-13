@@ -1,12 +1,12 @@
 /* Painkillers */
 
 /datum/reagent/paracetamol
-	treatment_tags = list(TREAT_ANALGESIC = 1.0)
+	treatment_tags = list(TREAT_ANALGESIC = 0.5)
 	factors = alist(STAT_ANALGESIA = 25)
 	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 18.75))
 	name = REAGENT_PARACETAMOL
 	id = REAGENT_ID_PARACETAMOL
-	description = "Most probably know this as Tylenol, but this chemical is a mild, simple painkiller."
+	description = "Most probably know this as Tylenol, but this chemical is a mild, simple painkiller. Gentle on the body at ordinary doses, but a large dose in the blood poisons the liver (see paracetamol hepatotoxicity)."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

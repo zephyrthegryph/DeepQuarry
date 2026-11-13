@@ -73,6 +73,7 @@
 #define REGISTRY_CLEANBOT_RESERVED_TURFS "cleanbot_reserved_turfs"
 #define REGISTRY_COMMUNICATORS "all_communicators"
 #define REGISTRY_DOG_TELEPORTERS "dog_teleporters"
+#define REGISTRY_DOORS "all_doors"
 #define REGISTRY_COMM_MESSAGE_LISTENERS "comm_message_listeners"
 #define REGISTRY_CREMATORIUMS "all_crematoriums"
 #define REGISTRY_DARKPORTAL_HUBS "all_darkportal_hubs"

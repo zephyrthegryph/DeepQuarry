@@ -176,6 +176,8 @@ do { \
 #define CLIENT_GLOW_POOL_MAX 64
 /// Server milliseconds one step of the stored-shape loader (disk reads) may spend before it leaves the rest of its queue to the next tick.
 #define CLIENT_GLOW_STORE_BUDGET_MS 4
+/// A store step (one shape read, or one warm-up step) at least this long is logged, whatever the lighting trace says.
+#define CLIENT_GLOW_STORE_SLOW_MS 5
 /// Server milliseconds one step of a client holder's acquire queue (the glow images a delta crossing makes for lights newly in reach) may spend before it leaves the rest to the next tick.
 #define CLIENT_GLOW_ACQUIRE_BUDGET_MS 4
 /// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
@@ -188,6 +190,12 @@ do { \
 /// Baked shadow masks kept; shapes asked for at once; bakes running at once.
 #define CLIENT_GLOW_MASK_CACHE_MAX 8192
 #define CLIENT_GLOW_MASK_QUEUE_MAX 512
+/// The doors a light readies the other state of ahead (client_glow_twins_ready()): its shape with each of its nearest doors flipped is baked and on every viewer before the door moves.
+#define CLIENT_GLOW_TWIN_MAX 4
+/// Twin shapes sent to one viewer per tick: a viewer that takes many lights at once must not be sent all their twins in one.
+#define CLIENT_GLOW_TWIN_PER_TICK 3
+/// Lights redrawn for an opacity change in a chunk some viewer holds per lighting step, whatever the tick budget says: a door beside a viewer never waits behind the budget.
+#define CLIENT_GLOW_NEAR_REDRAW_MAX 16
 #define CLIENT_GLOW_MASK_BAKES_MAX 16
 /// Baked glows kept on disk across rounds, by shape (bounded: past CLIENT_GLOW_STORE_MAX files the directory is emptied at first use).
 #define CLIENT_GLOW_STORE_DIR "data/client_glow_store/"
