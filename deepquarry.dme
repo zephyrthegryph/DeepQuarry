@@ -1687,6 +1687,7 @@
 #include "code\content\medical\conditions\pharmacology\corophizine.dm"
 #include "code\content\medical\conditions\pharmacology\corophizine_gi.dm"
 #include "code\content\medical\conditions\pharmacology\detoxifiers.dm"
+#include "code\content\medical\conditions\pharmacology\drug_overdoses.dm"
 #include "code\content\medical\conditions\pharmacology\drug_set_b.dm"
 #include "code\content\medical\conditions\pharmacology\immunosuprizine.dm"
 #include "code\content\medical\conditions\pharmacology\interactions.dm"

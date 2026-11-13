@@ -85,7 +85,7 @@
 	for(var/condition_type in list(/datum/affliction/nausea, /datum/affliction/seizure, /datum/affliction/malunion))
 		var/list/condition = by_id["[condition_type]"]
 		TEST_ASSERT_NOTNULL(condition, "the conditions tab lacks [condition_type]")
-		TEST_ASSERT(length(condition["mechanisms"]), "[condition_type] shows what treats it")
+		TEST_ASSERT(length(condition["mechanisms"]) || length(condition["surgeries"]), "[condition_type] shows what treats it")
 	var/list/seizure = by_id["[/datum/affliction/seizure]"]
 	TEST_ASSERT(length(seizure["raised_by"]), "the seizure condition lists what moves proneness")
 	var/list/malunion = by_id["[/datum/affliction/malunion]"]

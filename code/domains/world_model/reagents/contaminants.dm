@@ -148,6 +148,7 @@ GLOBAL_TABLE(contaminant_defs_table, GLOBAL_PROC_REF(build_contaminant_defs))
 		if(isnum(fraction) && fraction >= CONTAMINANT_EPSILON)
 			LAZYSET(kept, contaminant_id, min(fraction, 1))
 	contaminants = kept
+	tracked_changed(src, nameof(contaminants))
 
 /// `amount` units of this reagent carrying `incoming` are about to be added (the volume is still the old one): the new fractions are the volume-weighted
 /// average. Called by /datum/reagents/proc/add_reagent() before it raises the volume.

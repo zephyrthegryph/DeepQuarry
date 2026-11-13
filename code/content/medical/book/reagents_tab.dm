@@ -380,63 +380,62 @@
 
 
 /// reagent id -> clinical category: the drugs the book lists, whether or not a condition names them.
+GLOBAL_LIST_INIT(dq_reagent_category_by_id, list(
+		// --- Trauma & wound management ---
+		REAGENT_ID_BICARIDINE     = "Trauma",
+		REAGENT_ID_KELOTANE       = "Trauma",
+		REAGENT_ID_DERMALINE      = "Trauma",
+		REAGENT_ID_OSTEODAXON     = "Trauma",
+		REAGENT_ID_MYELAMINE      = "Trauma",
+		// --- Organ repair (the *-daxon family) ---
+		REAGENT_ID_PERIDAXON         = "Organ repair",
+		REAGENT_ID_CORDRADAXON       = "Organ repair",
+		REAGENT_ID_RESPIRODAXON      = "Organ repair",
+		REAGENT_ID_HEPANEPHRODAXON   = "Organ repair",
+		REAGENT_ID_GASTIRODAXON      = "Organ repair",
+		REAGENT_ID_ALKYSINE          = "Organ repair",
+		REAGENT_ID_SYNAPTIZINE       = "Organ repair",
+		REAGENT_ID_IMIDAZOLINE       = "Organ repair",
+		REAGENT_ID_REZADONE          = "Organ repair",
+		REAGENT_ID_NECROXADONE       = "Organ repair",
+		// --- Anti-infective ---
+		REAGENT_ID_SPACEACILLIN   = "Anti-infective",
+		REAGENT_ID_PANACILLIN     = "Anti-infective",
+		REAGENT_ID_COROPHIZINE    = "Anti-infective",
+		REAGENT_ID_STERILIZINE    = "Anti-infective",
+		// --- Toxicology ---
+		REAGENT_ID_ANTITOXIN      = "Toxicology",
+		REAGENT_ID_CARTHATOLINE   = "Toxicology",
+		REAGENT_ID_ETHYLREDOXRAZINE = "Toxicology",
+		// --- Environmental ---
+		REAGENT_ID_LEPORAZINE     = "Environmental",
+		REAGENT_ID_HYRONALIN      = "Environmental",
+		REAGENT_ID_ARITHRAZINE    = "Environmental",
+		REAGENT_ID_TERCOZOLAM     = "Environmental",
+		// --- Respiratory support ---
+		REAGENT_ID_DEXALIN        = "Respiratory support",
+		REAGENT_ID_DEXALINP       = "Respiratory support",
+		// --- Cardiac / vital stabilisers ---
+		REAGENT_ID_INAPROVALINE   = "Vital stabiliser",
+		REAGENT_ID_TRICORDRAZINE  = "Vital stabiliser",
+		REAGENT_ID_NUTRIMENT      = "Vital stabiliser",
+		REAGENT_ID_IRON           = "Vital stabiliser",
+		REAGENT_ID_IRONSALINE     = "Vital stabiliser",
+		REAGENT_ID_EPINEPHRINE    = "Vital stabiliser",
+		REAGENT_ID_NOREPINEPHRINE = "Vital stabiliser",
+		// --- Analgesia ---
+		REAGENT_ID_PARACETAMOL    = "Analgesic",
+		REAGENT_ID_TRAMADOL       = "Analgesic",
+		REAGENT_ID_OXYCODONE      = "Analgesic",
+		REAGENT_ID_ANTICONVULSANT = "Neurological",
+		REAGENT_ID_CALCIUMCARBONATE = "Gastrointestinal",
+		REAGENT_ID_ADRANOL        = "Neurological",
+		// --- Combat stimulants (code/content/reagents/reagents/content/combat_stims/; not medicine) ---
+		REAGENT_ID_HYPERZINE          = "Combat stimulants",
+		REAGENT_ID_CLARIDYL           = "Combat stimulants",
+		REAGENT_ID_BLOODSEALER        = "Combat stimulants",
+		REAGENT_ID_PERFORMANCEPEAKER  = "Combat stimulants",
+))
+
 /proc/dq_reagent_category_table()
-	var/static/list/cat
-	if(!cat)
-		cat = list(
-			// --- Trauma & wound management ---
-			REAGENT_ID_BICARIDINE     = "Trauma",
-			REAGENT_ID_KELOTANE       = "Trauma",
-			REAGENT_ID_DERMALINE      = "Trauma",
-			REAGENT_ID_OSTEODAXON     = "Trauma",
-			REAGENT_ID_MYELAMINE      = "Trauma",
-			// --- Organ repair (the *-daxon family) ---
-			REAGENT_ID_PERIDAXON         = "Organ repair",
-			REAGENT_ID_CORDRADAXON       = "Organ repair",
-			REAGENT_ID_RESPIRODAXON      = "Organ repair",
-			REAGENT_ID_HEPANEPHRODAXON   = "Organ repair",
-			REAGENT_ID_GASTIRODAXON      = "Organ repair",
-			REAGENT_ID_ALKYSINE          = "Organ repair",
-			REAGENT_ID_SYNAPTIZINE       = "Organ repair",
-			REAGENT_ID_IMIDAZOLINE       = "Organ repair",
-			REAGENT_ID_REZADONE          = "Organ repair",
-			REAGENT_ID_NECROXADONE       = "Organ repair",
-			// --- Anti-infective ---
-			REAGENT_ID_SPACEACILLIN   = "Anti-infective",
-			REAGENT_ID_PANACILLIN     = "Anti-infective",
-			REAGENT_ID_COROPHIZINE    = "Anti-infective",
-			REAGENT_ID_STERILIZINE    = "Anti-infective",
-			// --- Toxicology ---
-			REAGENT_ID_ANTITOXIN      = "Toxicology",
-			REAGENT_ID_CARTHATOLINE   = "Toxicology",
-			REAGENT_ID_ETHYLREDOXRAZINE = "Toxicology",
-			// --- Environmental ---
-			REAGENT_ID_LEPORAZINE     = "Environmental",
-			REAGENT_ID_HYRONALIN      = "Environmental",
-			REAGENT_ID_ARITHRAZINE    = "Environmental",
-			REAGENT_ID_TERCOZOLAM     = "Environmental",
-			// --- Respiratory support ---
-			REAGENT_ID_DEXALIN        = "Respiratory support",
-			REAGENT_ID_DEXALINP       = "Respiratory support",
-			// --- Cardiac / vital stabilisers ---
-			REAGENT_ID_INAPROVALINE   = "Vital stabiliser",
-			REAGENT_ID_TRICORDRAZINE  = "Vital stabiliser",
-			REAGENT_ID_NUTRIMENT      = "Vital stabiliser",
-			REAGENT_ID_IRON           = "Vital stabiliser",
-			REAGENT_ID_IRONSALINE     = "Vital stabiliser",
-			REAGENT_ID_EPINEPHRINE    = "Vital stabiliser",
-			REAGENT_ID_NOREPINEPHRINE = "Vital stabiliser",
-			// --- Analgesia ---
-			REAGENT_ID_PARACETAMOL    = "Analgesic",
-			REAGENT_ID_TRAMADOL       = "Analgesic",
-			REAGENT_ID_OXYCODONE      = "Analgesic",
-			REAGENT_ID_ANTICONVULSANT = "Neurological",
-			REAGENT_ID_CALCIUMCARBONATE = "Gastrointestinal",
-			REAGENT_ID_ADRANOL        = "Neurological",
-			// --- Combat stimulants (code/content/reagents/reagents/content/combat_stims/; not medicine) ---
-			REAGENT_ID_HYPERZINE          = "Combat stimulants",
-			REAGENT_ID_CLARIDYL           = "Combat stimulants",
-			REAGENT_ID_BLOODSEALER        = "Combat stimulants",
-			REAGENT_ID_PERFORMANCEPEAKER  = "Combat stimulants",
-		)
-	return cat
+	return GLOB.dq_reagent_category_by_id

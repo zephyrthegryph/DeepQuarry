@@ -37,8 +37,7 @@
 /datum/affliction/seizure/on_added()
 	. = ..()
 	if(owner)
-		to_chat(owner, span_danger("You have a seizure!"))
-		owner.visible_message(span_danger("[owner] starts having a seizure!"))
+		act_message(owner, null, MSG_SELF(span_danger("You have a seizure!")), MSG_OTHERS(span_danger("%U% starts having a seizure!")))
 		log_game("SEIZURE: [key_name(owner)] started a seizure.")
 
 

@@ -79,7 +79,8 @@ TYPE_TABLE(/datum/affliction_symptom/fatigue, get_patient_messages, list( \
 	name = "numb arm"
 	category = "Subjective"
 	clinical_description = "Loss of sensation in the affected arm and hand; reduced fine-motor function."
-	audiences = SYMPTOM_AUDIENCE_PATIENT
+	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_SCANNER
+	scanner_phrase = "numb arm"
 
 TYPE_TABLE(/datum/affliction_symptom/numbness_arm, get_patient_messages, list( \
 		"Your arm feels numb and useless.", \
@@ -91,7 +92,8 @@ TYPE_TABLE(/datum/affliction_symptom/numbness_arm, get_patient_messages, list( \
 	name = "numb leg"
 	category = "Subjective"
 	clinical_description = "Loss of sensation in the affected leg and foot; reduced proprioception."
-	audiences = SYMPTOM_AUDIENCE_PATIENT
+	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_SCANNER
+	scanner_phrase = "numb leg"
 
 TYPE_TABLE(/datum/affliction_symptom/numbness_leg, get_patient_messages, list( \
 		"Your leg feels numb and dead.", \
