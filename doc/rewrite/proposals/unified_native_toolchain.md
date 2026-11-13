@@ -3918,3 +3918,22 @@ The next compact checkout run passed the prior bare-new refusal and stopped
 after 161.35 seconds at sorttext(L[Li][key], R[Ri][key]) in mergeKeyedLists.
 Sequential index reads inside arguments need their own closed read witness.
 There is still no successful whole-checkout combined report or default cutover.
+
+
+### Read-only ordinary index trees
+
+The existing read witness now handles bounded ordinary index trees, including
+sequential follows inside arguments such as sorttext(L[Li][key], R[Ri][key]).
+It checks each consumed child and root interval, permits ordinary names and
+decimal keys, and retains the existing depth bound. Shared write-target and
+callee rules are unchanged. Effectful keys, calls, colon or safe receivers and
+new assignment targets remain outside this witness. A formerly excluded
+three-level pure key now has a recursive proof rather than a blanket exception.
+
+Both focused index controls passed, including write/callee and depth refusals.
+Host libraries and test definitions checked clean in 3m15s. The private build
+passed, and the actual mergeKeyedLists procedure produced a clean report and
+installed pair in 1.78 seconds. The compact checkout then passed that site and
+stopped after 186.25 seconds at for(current_sort_text in incoming) in
+dd_sortedtextlist. Its existing-local loop header needs the corresponding
+source witness; there is no successful whole-checkout combined report yet.

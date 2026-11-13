@@ -2519,6 +2519,38 @@ mod body_syntax_census_tests;
  }
 
  #[test]
+ fn actual_original_merge_keyed_lists_uses_sequential_reads_in_real_sorttext_arguments() {
+     let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
+     let start = file.find("/proc/mergeKeyedLists(").unwrap();
+     let end = file[start + 1..].find("\n/proc/").map(|at| start + 1 + at).unwrap();
+     let actual = &file[start..end];
+     assert!(actual.contains("sorttext(L[Li][key], R[Ri][key])"));
+     for (source, expected) in [
+         (actual.to_owned(), true),
+         (actual.replace("L[Li][key]", "L[Li][lookup(key)]"), false),
+         (actual.replace("L[Li][key]", "L[Li][key++]"), false),
+     ] {
+         let db = Arc::new(QueryDb::default());
+         let front = issued_original_fixture(&db, &source);
+         let input = original_input(&front, "mergeKeyedLists");
+         let product = db.syntax_product_checked(&input).unwrap();
+         setting_syntax::with_setting_admission(&db.body_charge, |admission| {
+             let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
+             let disposition = body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof) = disposition? else {
+                     panic!("actual mergeKeyedLists body must be available");
+                 };
+                 assert!(proof.belongs_to(&body));
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{source}");
+             }
+             Ok::<(), BodySyntaxFailure>(())
+         }).unwrap();
+     }
+ }
+
+ #[test]
  fn actual_original_typecache_cohort_keeps_real_for_list_call_children() {
      let file=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/../../../../code/host/helpers/_lists.dm")).replace("\r\n","\n");
      fn actual_proc<'a>(file:&'a str,name:&str)->&'a str {

@@ -1983,26 +1983,30 @@ fn original_plain_index(
                 && original_conditional_child(index, key, false, depth)))
 }
 
-// Read-only two-level ordinary indexing, as authored by list_values.
-// Do not add this to original_plain_index: that helper also admits lvalues.
-fn original_nested_ordinary_read_index(
-    expr: &Expr, object: &Expr, index: &Expr, tokens: &[Token], depth: usize,
-) -> bool {
-    if depth == 0 { return false; }
-    let ExprKind::Index { object: inner_object, index: inner_key } = &index.kind else { return false; };
-    let ordinary = |value: &Expr| matches!(&value.kind, ExprKind::Ident(name) if original_ordinary_call_name(name));
-    let scalar = ordinary(inner_key) || matches!(&inner_key.kind, ExprKind::Literal(value) if original_decimal(value.as_str()));
-    if !ordinary(object) || !ordinary(inner_object) || !scalar { return false; }
-    let at = tokens.partition_point(|token| token.span.end <= object.span.end);
-    let (receiver, tail) = tokens.split_at(at);
-    let [open, key @ .., close] = tail else { return false; };
-    let (Some(first),Some(key_first),Some(key_last)) = (receiver.first(),key.first(),key.last()) else { return false; };
-    original_assignment_receiver(object, receiver)
-        && open.kind == TokenKind::Punctuation && open.text == "["
-        && close.kind == TokenKind::Punctuation && close.text == "]"
-        && expr.span == Span::new(first.span.start, close.span.end)
-        && index.span == Span::new(key_first.span.start,key_last.span.end)
-        && original_plain_index(index, inner_object, inner_key, key, depth - 1)
+// Bounded read-only ordinary index trees, including both nested keys and
+// sequential follows. Keep outside original_plain_index, also used for lvalues.
+fn original_nested_ordinary_read_index(expr: &Expr, tokens: &[Token], depth: usize) -> bool {
+    let Some(depth) = depth.checked_sub(1) else { return false; };
+    let (Some(first), Some(last)) = (tokens.first(), tokens.last()) else { return false; };
+    if expr.span != Span::new(first.span.start, last.span.end) { return false; }
+    match &expr.kind {
+        ExprKind::Ident(name) => original_ordinary_call_name(name)
+            && matches!(tokens, [only] if simple_term(expr, only)),
+        ExprKind::Literal(value) => original_decimal(value.as_str())
+            && matches!(tokens, [only] if simple_term(expr, only)),
+        ExprKind::Index { object, index } => {
+            // A numeric value is a key, never a new receiver cohort.
+            if !matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Index { .. }) { return false; }
+            let at = tokens.partition_point(|token| token.span.end <= object.span.end);
+            let (receiver, tail) = tokens.split_at(at);
+            let [open, key @ .., close] = tail else { return false; };
+            open.kind == TokenKind::Punctuation && open.text == "["
+                && close.kind == TokenKind::Punctuation && close.text == "]"
+                && original_nested_ordinary_read_index(object, receiver, depth)
+                && original_nested_ordinary_read_index(index, key, depth)
+        }
+        _ => false,
+    }
 }
 
 fn original_nested_string_index(expr: &Expr) -> bool {
@@ -2143,7 +2147,7 @@ fn original_composed_expression(
         ExprKind::Index { object, index } => {
             if original_plain_index(expr, object, index, tokens, depth)
                 || original_updated_key_index(expr, object, index, tokens)
-                || original_nested_ordinary_read_index(expr, object, index, tokens, depth) { return true; }
+                || original_nested_ordinary_read_index(expr, tokens, depth) { return true; }
             let (receiver, tail) = child_prefix(object, tokens);
             (matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Member { via_colon: false, .. })
                 || (matches!(&object.kind, ExprKind::Index { .. }) && original_nested_string_index(expr)))
@@ -2385,7 +2389,7 @@ fn original_simple_complete(expr:&Expr,tokens:&[Token],original_profile:bool)->O
  let plain_index = original_profile && matches!(&expr.kind, ExprKind::Index { object, index }
      if original_plain_index(expr, object, index, tokens, 32)
          || original_updated_key_index(expr, object, index, tokens)
-         || original_nested_ordinary_read_index(expr, object, index, tokens, 32));
+         || original_nested_ordinary_read_index(expr, tokens, 32));
  let return_slot = original_profile && matches!((&expr.kind, tokens), (ExprKind::Ident(name), [dot])
      if name == "." && dot.kind == TokenKind::Punctuation && dot.text == "." && dot.span == expr.span);
  let kind=if original_profile&&matches!(&expr.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="CRASH")){if original_crash_statement(expr,tokens){OriginalSimpleKind::CrashStatement}else{return None}}else if complete||original_composed||plain_index||return_slot||original_return_list(expr,tokens){OriginalSimpleKind::Complete}else if original_positional_statement_call(expr,tokens)||(original_profile&&original_keyword_statement_call(expr,tokens)){OriginalSimpleKind::OrdinaryCallStatement}else if original_profile&&original_plain_assignment(expr,tokens){OriginalSimpleKind::PlainAssignment}else if original_simple_assignment(expr,tokens,original_profile)||(original_profile&&original_grouped_field_assignment(expr,tokens)){OriginalSimpleKind::SimpleAssignmentStatement}else if original_profile{original_post_update(expr,tokens)?}else{return None};
@@ -2479,7 +2483,7 @@ fn original_nested_ordinary_read_index_keeps_complete_brackets_and_refuses_lvalu
         ("L[R[42]]",Some(OriginalSimpleKind::Complete)),
         ("V[i]=L[L[i]]",Some(OriginalSimpleKind::SimpleAssignmentStatement)),
         ("L[R[i+1]]",None),("L[R[-1]]",None),("L[R[i++]]",None),
-        ("L[R[lookup(i)]]",None),("L[R[S[i]]]",None),("L[(R[i])]",None),
+        ("L[R[lookup(i)]]",None),("L[R[S[i]]]",Some(OriginalSimpleKind::Complete)),("L[(R[i])]",None),
         ("L[R[i]]=value",None),("L[R[i]]+=value",None),("L[R[i]]=V[i]",None),
     ] {
         let tokens=lex(source).tokens.into_iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect::<Vec<_>>();
@@ -3128,6 +3132,62 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          Ok(_) => panic!("the existing exact admission still decides"),
      }
      assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn actual_original_sequential_index_reads_compose_in_arguments_without_new_write_or_callee_roles() {
+     use OriginalSimpleKind::{Complete, SimpleAssignmentStatement};
+     let used = crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let admission = crate::SettingAdmission::new(&used, 8 << 20, &|| Ok(()));
+     for (source, expected) in [
+         ("L [ Li ] [ key ]", Some(Complete)),
+         ("L [ Li ] [ key ] [ next ]", Some(Complete)),
+         ("L [ R [ i ] ] [ key ]", Some(Complete)),
+         ("L [ R [ S [ i ] ] ]", Some(Complete)),
+         ("L [ 1 ] [ 42 ]", Some(Complete)),
+         ("sorttext ( L [ Li ] [ key ] , R [ Ri ] [ key ] ) < 1", Some(Complete)),
+         ("result += L [ Li ] [ key ]", Some(SimpleAssignmentStatement)),
+         ("L [ Li ] [ key ] = value", None),
+         ("L [ Li ] [ key ] += value", None),
+         ("L [ Li ] [ key ] ( )", None),
+         ("L [ Li ] [ key ] . callback ( )", None),
+         ("L [ Li ] [ key ] : callback ( )", None),
+         ("L [ Li ] [ key ] ?. callback ( )", None),
+         ("L [ Li ++ ] [ key ]", None),
+         ("L [ Li ] [ key ++ ]", None),
+         ("L [ Li ] [ object . key ]", None),
+         ("L [ Li ] [ lookup ( key ) ]", None),
+         ("L [ Li ] [ ( key ) ]", None),
+         ("object : L [ Li ] [ key ]", None),
+         ("object ?. L [ Li ] [ key ]", None),
+         ("lookup ( ) [ Li ] [ key ]", None),
+         ("1 [ Li ] [ key ]", None),
+     ] {
+         let rows: Vec<_> = source.split_whitespace().map(|text| {
+             let kind = if original_decimal(text) { TokenKind::Number }
+                 else if original_ascii_identifier(text) { TokenKind::Ident }
+                 else { crate::original_scalar_transport::original_punctuation_native_kind(text) };
+             (kind, text, (text == ":").then_some(true))
+         }).collect();
+         let mut feed = ScalarMembershipFeed(Feed::new(&rows));
+         let mut output = parse_original_expression_demanded(&mut feed, &admission).unwrap();
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind), expected, "{source}");
+         if expected.is_some() { assert!(output.parsed().diagnostics.is_empty(), "{source}"); }
+         if source == "L [ Li ] [ key ]" {
+             let expr = output.parsed.expr.as_mut().unwrap();
+             assert!(original_nested_ordinary_read_index(expr, &output.tokens, 32));
+             let old = expr.span;
+             expr.span.end += 1;
+             assert!(!original_nested_ordinary_read_index(expr, &output.tokens, 32));
+             expr.span = old;
+             assert!(!original_nested_ordinary_read_index(expr, &output.tokens, 1));
+         }
+         drop(output);
+         assert_eq!(used.load(Ordering::Acquire), crate::SettingChargeCounter::root_allocation_bytes());
+     }
+     let source = format!("L{}", "[i]".repeat(40));
+     let tokens = lex(&source).tokens;
+     let parsed = parse_expression_tokens(&tokens);
+     assert!(!original_nested_ordinary_read_index(parsed.expr.as_ref().unwrap(), &tokens, 32));
  }
  #[test]
  fn actual_original_membership_accepts_one_lhs_dot_field_with_an_exact_name_container() {
