@@ -18,6 +18,7 @@ import { configAtom } from 'tgui/events/store';
 import { prepareRequestedInterface } from 'tgui/interfacePreparation';
 import { mainBounds, measureColumn } from '../layout/geometry';
 import { rectContains } from '../layout/model';
+import type { FloatFollow } from './floatDrag';
 import {
   type DockAction,
   type DockState,
@@ -120,6 +121,9 @@ export class ColumnHost {
       case 'col/close':
         if (typeof payload?.wid === 'string') this.closed(payload.wid);
         return true;
+      case 'col/floated':
+        this.floated(payload);
+        return true;
       case 'col/drop-check':
         this.dropCheck(payload);
         return true;
@@ -131,6 +135,13 @@ export class ColumnHost {
         return true;
     }
     return false;
+  }
+
+  /** The native window a live drag floated is up: the drag moves it from here. */
+  private floated(payload: any) {
+    const id = payload?.window;
+    if (typeof id !== 'string') return;
+    this.following?.adopt(id);
   }
 
   private open(payload: any) {
@@ -319,12 +330,33 @@ export class ColumnHost {
     sendFor(wid, 'close');
   }
 
-  /** Floats a docked interface out into a native window, under a screen point when a drag gave one. */
-  float(wid: string, at?: { x: number; y: number } | null) {
+  /** The live follow of a drag that floated a window with the button still down (one drag at a time), until its release. */
+  following: FloatFollow | null = null;
+
+  /**
+   * Floats a docked interface out into a native window, under a screen point when a drag gave one, at the size it had in the column
+   * when `size` (physical px) says so.
+   */
+  float(
+    wid: string,
+    at?: { x: number; y: number } | null,
+    size?: { x: number; y: number } | null,
+  ): boolean {
     // A drag can end after its window closed (the server closed it, the page reloaded): nothing is left to float. Nor does a window
     // the column keeps (the stat panel, the last window).
-    if (!this.mayLeave(wid)) return;
-    sendFor(wid, 'wm/float', at ? { at } : {});
+    if (!this.mayLeave(wid)) {
+      this.trace('float refused', { wid });
+      return false;
+    }
+    this.trace('float', { wid, at, size });
+    sendFor(wid, 'wm/float', at ? { at, ...(size ? { size } : {}) } : {});
+    return true;
+  }
+
+  /** A drag, pop-out or size decision: in the page's console always, and in the server's tgui log while profiling. */
+  trace(message: string, detail: Record<string, unknown> = {}) {
+    console.log(`column: ${message}`, detail);
+    if (this.profiling()) sendPage('WM-Log', { trace: message, ...detail });
   }
 
   /**

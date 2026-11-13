@@ -172,7 +172,11 @@ describe('window dock layout', () => {
 
   it('scrubs column window ids from a loaded layout', () => {
     const place = { dock: true, group: 'g1', order: 0, tab: 0 };
-    const text = JSON.stringify({ 'col-1': place, 'col-12': place, Pda: place });
+    const text = JSON.stringify({
+      'col-1': place,
+      'col-12': place,
+      Pda: place,
+    });
     expect(Object.keys(parseSaved(text))).toEqual(['Pda']);
     const loaded = dockReduce(emptyDock(), {
       type: 'load',
@@ -298,6 +302,15 @@ describe('fitting the entries to the column', () => {
       a + b + COLUMN_PAD + 2 * COLUMN_GAP + COLUMN_HEAD + FILL_MIN,
     ).toBeLessThanOrEqual(600);
     expect(groups[0].height).toBe(300);
+  });
+
+  it('collapses the border between neighbouring entries: the seam is an overlap of one border width', () => {
+    expect(COLUMN_GAP).toBe(-3);
+    const groups = [group('a', 300), group('b', 300), group('chat', 260)];
+    // Two seams give two border widths back to the entries: the budget is 416, not 410.
+    const [a, b] = fitHeights(groups, 2, 600);
+    expect(a + b).toBeGreaterThan(410);
+    expect(a + b).toBeLessThanOrEqual(416);
   });
 
   it('never cuts an entry under its least: 25 entries on a minimal column scroll instead', () => {
