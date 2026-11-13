@@ -4320,3 +4320,29 @@ production to treat split raw bytes as the same receipt. The dmbc actual-helper
 control definitions compile, but their execution and fresh whole-source coverage
 with this cohort are still pending the private host rebuild. These passes do
 not qualify full-registry parity or the default cutover.
+
+
+### Parent calls, final inline returns and cleanup handoff (2026-11-13)
+
+The refreshed actual-source survey reached 508 Available and three Unissued
+bodies before the next real allocation refusal at rank511/ordinal840. It
+remains a bounded survey, not a full-registry or Checker parity result. The
+remaining demonstrated grammar shapes now have exact native producers:
+parent calls with arguments, compound bit/shift right-hand sides, and the
+actual forward terminator after a final inline switch return when another
+procedure follows in the same owner. The Original-only call route remains
+separate from ordinary identifier calls; no compatibility classifier grants
+availability or invents parent resolution.
+
+After complete cleanup measurement, the body allocator now retires only the
+unused part of its startup cleanup reservation before growing the retained
+payload. It keeps the measured destruction guarantee on failure and preserves
+full physical old/new overlap. The startup multiplier and resource cap are
+unchanged; AST payload credit is not released before the owner is destroyed.
+
+Eighteen focused syntax controls and two focused dm-tree cursor controls
+passed. Current host and test definitions passed cargo check as well. These
+results cover cleanup/quota/first-I/O failures, argument provenance, actual
+forward delimiters and existing cursor behavior. Fresh private-host execution,
+whole-registry completion, independent oracle parity and default routing are
+still pending; no public compiler was replaced.

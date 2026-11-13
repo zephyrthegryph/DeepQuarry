@@ -1764,7 +1764,7 @@ fn original_simple_assignment(expr: &Expr, tokens: &[Token], original_profile: b
         && matches!(&lhs.kind, ExprKind::Member { via_colon: false, .. }) {
         return original_conditional_child(rhs, value, true, 32);
     }
-    if original_profile && plain && matches!(op.as_str(), "+=" | "-=")
+    if original_profile && plain && matches!(op.as_str(), "+=" | "-=" | "*=" | "/=" | "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=")
         && matches!(&lhs.kind, ExprKind::Ident(name) if original_ordinary_call_name(name))
     {
         return original_conditional_child(rhs, value, true, 32);
@@ -2418,6 +2418,14 @@ fn original_composed_expression(
             if matches!(&callee.kind, ExprKind::Ident(name) if name == ".") {
                 return matches!(head, [dot] if dot.kind == TokenKind::Punctuation
                     && dot.text == "." && callee.span == dot.span)
+                    && arguments_match(args, body, true, true, true);
+            }
+            // Pinned Super + arguments is ParentCall. The actual lexer
+            // contributes ONE '..' punctuation occurrence; two Dot tokens
+            // may build compatibility DATA but cannot issue this receipt.
+            if matches!(&callee.kind, ExprKind::Ident(name) if name == "..") {
+                return matches!(head, [super_token] if super_token.kind == TokenKind::Punctuation
+                    && super_token.text == ".." && callee.span == super_token.span)
                     && arguments_match(args, body, true, true, true);
             }
             // Pinned input is its own primary primitive. Reuse the SAME
@@ -3593,7 +3601,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          (". [ i ] += . ( . [ i ] )", None),
          (". [ i ] = . ( i )", Some(SimpleAssignmentStatement)),
          (". ( . [ i ] , i )", Some(Complete)),
-         (".. ( . [ i ] )", None),
+         (".. ( . [ i ] )", Some(Complete)),
          (". [ i ] [ i ]", None),
          (". ?[ i ]", None),
          (". [ i ++ ]", None),
@@ -3613,7 +3621,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
              let check = |expr: &Expr, tokens: &[Token]| {
                  if expected == SimpleAssignmentStatement {
                      original_return_slot_index_assignment(expr, tokens)
-                 } else if source.starts_with(". (") {
+                 } else if source.starts_with(". (") || source.starts_with(".. (") {
                      original_conditional_child(expr, tokens, true, 32)
                  } else {
                      original_return_slot_index(expr, tokens)
@@ -3652,7 +3660,7 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
          (". ( , rest )",None),(". ( rest , , next )",None),
          (". ( rest ) ( )",None),(". ( rest ) = next",None),
          (". ( rest ) . field",None),(". : callback ( rest )",None),
-         (".. ( rest )",None),
+         (".. ( rest )",Some(Complete)),
          ("locate ( REF ( icon ) )",Some(Complete)),
          ("value = locate ( REF ( icon ) )",Some(PlainAssignment)),
          ("locate ( x , y , z )",Some(Complete)),
@@ -3691,6 +3699,85 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
      assert!(parse_expression(".(rest)").original_simple_expression.is_none());
      assert!(parse_expression("locate(REF(icon))").original_simple_expression.is_none());
  }
+ #[test]
+ fn actual_original_parent_calls_require_one_super_and_independent_arguments() {
+     use OriginalSimpleKind::{Complete, PlainAssignment, SimpleAssignmentStatement};
+     let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+     let mut cases=vec![
+         (".. ( )".to_owned(),Some(Complete)), // pre-existing exact zero-call receipt
+         (".. ( value )".to_owned(),Some(Complete)),
+         (".. ( left , right )".to_owned(),Some(Complete)),
+         (".. ( key = value )".to_owned(),Some(Complete)),
+         (".. ( value , )".to_owned(),Some(Complete)),
+         (".. ( value ++ )".to_owned(),Some(Complete)),
+         (".. ( arglist ( values ) )".to_owned(),Some(Complete)),
+         ("value = .. ( other )".to_owned(),Some(PlainAssignment)),
+         (". = .. ( value )".to_owned(),Some(SimpleAssignmentStatement)),
+         (". [ i ] = .. ( . [ i ] )".to_owned(),Some(SimpleAssignmentStatement)),
+         ("consume ( .. ( value ) )".to_owned(),Some(Complete)),
+         (". . ( value )".to_owned(),None),(". . ( )".to_owned(),None),
+         ("... ( value )".to_owned(),None),("..".to_owned(),None),
+         (".. [ value ]".to_owned(),None),
+         (".. ( , value )".to_owned(),None),(".. ( value , , other )".to_owned(),None),
+         (".. ( value ) = other".to_owned(),None),
+         (".. ( value ) ( )".to_owned(),None),(".. ( value ) . field".to_owned(),None),
+     ];
+     cases.push((format!(".. ( {} )",["value";17].join(" , ")),Some(Complete)));
+     for(source,expected)in cases{
+         let rows:Vec<_>=source.split_whitespace().map(|text|{
+             let kind=if original_ascii_identifier(text){TokenKind::Ident}
+                 else{crate::original_scalar_transport::original_punctuation_native_kind(text)};
+             (kind,text,None)
+         }).collect();
+         let mut feed=ScalarMembershipFeed(Feed::new(&rows));
+         let mut output=parse_original_expression_demanded(&mut feed,&a).unwrap_or_else(|error|panic!("{source}: {error}"));
+         assert_eq!(output.parsed().original_simple_expression.map(OriginalSimpleExpression::kind),expected,"{source}");
+         if expected.is_some(){assert!(output.parsed().diagnostics.is_empty(),"{source}");}
+         if source==".. ( value )"{
+             let root=output.parsed.expr.as_mut().unwrap();
+             let exact=|root:&Expr,tokens:&[Token]|original_conditional_child(root,tokens,true,32);
+             assert!(exact(root,&output.tokens));
+             let span=root.span;root.span.end+=1;assert!(!exact(root,&output.tokens));root.span=span;
+             let ExprKind::Call{callee,..}=&mut root.kind else{panic!("same ParentCall node")};
+             let span=callee.span;callee.span.start+=1;assert!(!exact(root,&output.tokens));
+             let ExprKind::Call{callee,..}=&mut root.kind else{unreachable!()};callee.span=span;
+             let ExprKind::Call{args,..}=&mut root.kind else{unreachable!()};
+             let span=args[0].span;args[0].span.start+=1;assert!(!exact(root,&output.tokens));
+             let ExprKind::Call{args,..}=&mut root.kind else{unreachable!()};args[0].span=span;
+             let text=output.tokens[0].text.clone();output.tokens[0].text=".".into();
+             assert!(!exact(root,&output.tokens));output.tokens[0].text=text;
+             let kind=output.tokens[0].kind;output.tokens[0].kind=TokenKind::Ident;
+             assert!(!exact(root,&output.tokens));output.tokens[0].kind=kind;
+             assert!(exact(root,&output.tokens));
+         }
+         drop(output);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+     }
+     assert!(parse_expression("..(value)").original_simple_expression.is_none(),"compatibility parser cannot issue Original parent authority");
+ }
+ #[test]
+ fn actual_original_parent_call_keeps_real_end_error_and_admitted_storage() {
+     struct FailEnd(ScalarMembershipFeed);
+     impl NativeExpressionTokenDemand for FailEnd {
+         fn next_token(&mut self)->std::io::Result<Option<Token>>{
+             if self.0.0.at==self.0.0.rows.len(){return Err(std::io::Error::from_raw_os_error(1450));}
+             self.0.next_token()
+         }
+         fn original_value(&self,at:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{self.0.original_value(at)}
+         fn requires_original_values(&self)->bool{true}
+     }
+     let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+     let rows=[(TokenKind::Punctuation,"..",None),(TokenKind::Punctuation,"(",None),(TokenKind::Ident,"value",None),(TokenKind::Punctuation,")",None)];
+     let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+     let mut fail=FailEnd(ScalarMembershipFeed(Feed::new(&rows)));
+     assert_eq!(parse_original_expression_demanded(&mut fail,&a).err().expect("real read failure").raw_os_error(),Some(1450));
+     assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+     let tiny=crate::SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes(),&||Ok(()));
+     let mut feed=ScalarMembershipFeed(Feed::new(&rows));
+     assert_eq!(parse_original_expression_demanded(&mut feed,&tiny).err().expect("existing quota").kind(),std::io::ErrorKind::OutOfMemory);
+     assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
  #[test]
  fn actual_original_self_call_lookup_locate_preserve_first_read_failure_and_quota() {
      struct FailEnd(ScalarMembershipFeed);
@@ -3821,6 +3908,10 @@ pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],sour
    ("owner . count -= a + b",Some(SimpleAssignmentStatement)),
    ("owner . count *= choose ( a )",Some(SimpleAssignmentStatement)),
    ("owner . count /= ( a + b )",Some(SimpleAssignmentStatement)),
+   ("r |= r << 4",Some(SimpleAssignmentStatement)),
+   ("r &= mask | other",Some(SimpleAssignmentStatement)),
+   ("r ^= choose ( value )",Some(SimpleAssignmentStatement)),
+   ("consume ( r |= r << 4 )",None),
    ("consume ( owner . count += 1 * 2 )",None),
    ("owner . nested . count += 1 * 2",None),
    ("owner . count += 1 *",None),("owner . count %= a + b",None),

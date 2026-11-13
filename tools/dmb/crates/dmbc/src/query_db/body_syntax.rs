@@ -2612,6 +2612,21 @@ pub(super) mod body_syntax_census_tests;
 
 
  #[test]
+ fn actual_original_last_inline_switch_return_has_an_actual_forward_terminator(){
+  for fixture in [
+   "/proc/probe(value)\n    switch(value)\n        if(1) return \"north\"\n/proc/later()\n    return 0\n",
+   "/proc/probe(value)\n    switch(uppertext(value))\n        if(\"NORTH\") return 1\n/proc/later()\n    return 0\n",
+  ]{for(text,expected)in[(fixture.to_owned(),true),(fixture.replace(") return", "); return"),false),(fixture.replace(r#"return "north""#, "return value=1").replace("return 1", "return value=1"),false)]{
+   let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
+    if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("actual final inline switch case remains unissued: {text}")};assert!(proof.belongs_to(&body));
+     let parsed=product.parsed().unwrap().statement_storage().parsed();let dm_syntax::StatementKind::Switch{cases,..}=&parsed.statements[0].kind else{panic!("actual switch")};assert!(cases[0].original_site.cursor.is_ok());
+    }else{assert!(!matches!(disposition,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))),"{text}");}Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }}
+ }
+
+ #[test]
  fn actual_original_inline_switch_value_returns_have_exact_heads_and_case_cursors(){
   let fixture="/proc/probe(value)\n    switch(value)\n        if(1.0) return 1\n        if(\"NORTH\") return \"north\"\n        else return 0\n";
   for(text,expected)in[(fixture.to_owned(),true),(fixture.replace("switch(value)","switch(uppertext(value))"),true),
@@ -3378,12 +3393,14 @@ pub(super) mod body_syntax_census_tests;
  #[test]
  fn actual_original_broader_switch_keeps_inline_and_separator_gaps_explicit() {
      let fixture = "/proc/probe(value)\n    switch(value)\n        if(\"alpha\")\n            return 1\n        else\n            return 2\n";
-     for text in [
-         fixture.replace("if(\"alpha\")\n            return 1", "if(\"alpha\") return 1"),
-         fixture.replace("if(\"alpha\")", "if(\"alpha\",)"),
-         fixture.replace("if(\"alpha\")", "if(,\"alpha\")"),
-         fixture.replace("if(\"alpha\")", "if(1 to)"),
-         fixture.replace("if(\"alpha\")", "if(value = 1)"),
+     for (text, expected) in [
+         // Exact single-case inline value return is now certified by its own
+         // actual head token loan and owned case cursor, not by normalization.
+         (fixture.replace("if(\"alpha\")\n            return 1", "if(\"alpha\") return 1"), true),
+         (fixture.replace("if(\"alpha\")", "if(\"alpha\",)"), false),
+         (fixture.replace("if(\"alpha\")", "if(,\"alpha\")"), false),
+         (fixture.replace("if(\"alpha\")", "if(1 to)"), false),
+         (fixture.replace("if(\"alpha\")", "if(value = 1)"), false),
      ] {
          let db = Arc::new(QueryDb::default());
          let front = issued_original_fixture(&db, &text);
@@ -3391,12 +3408,66 @@ pub(super) mod body_syntax_census_tests;
          let product = db.syntax_product_checked(&input).unwrap();
          setting_syntax::with_setting_admission(&db.body_charge, |admission| {
              let body = input.bind_original_product_checked(product.parsed().unwrap(), admission)?;
-             assert!(!matches!(body.original_code_disposition(), Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             let disposition=body.original_code_disposition();
+             if expected {
+                 let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition? else { panic!("exact supported inline switch return: {text}"); };
+                 assert!(proof.belongs_to(&body));
+                 let parsed=product.parsed().unwrap().statement_storage().parsed();
+                 let dm_syntax::StatementKind::Switch{cases,..}=&parsed.statements[0].kind else{panic!("actual switch")};
+                 assert_eq!(cases.len(),1);assert!(cases[0].original_site.cursor.is_ok());
+             } else {
+                 assert!(!matches!(disposition, Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))), "{text}");
+             }
              Ok::<(), BodySyntaxFailure>(())
          }).unwrap();
      }
  }
 
+
+ #[test]
+ fn actual_original_silicon_ash_parent_call_retains_whole_authored_helper_and_literal(){
+  let path=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../code/content/mob");
+  let silicon=std::fs::read_to_string(path.join("living/silicon/death.dm")).unwrap().replace("\r\n","\n");
+  let base=std::fs::read_to_string(path.join("death.dm")).unwrap().replace("\r\n","\n");
+  fn whole<'a>(source:&'a str,header:&str)->&'a str{
+   let start=source.find(header).unwrap();let tail=&source[start..];
+   let end=tail[1..].find("\n/").map_or(tail.len(),|at|at+2);&tail[..end]
+  }
+  let authored=whole(&silicon,"/mob/living/silicon/ash()\n");
+  assert_eq!(authored,"/mob/living/silicon/ash()\n\t..(\"dust-r\")\n\n");
+  let parent=whole(&base,"/mob/proc/ash(anim=\"dust-m\")\n");
+  assert!(parent.contains("\tdisintegrate(anim, null, FALSE)\n"));
+  // Both actual methods are retained. Only the child body's syntax is asked
+  // here; this is not parent dependency closure or full Checker qualification.
+  for(child,wanted)in[(authored.to_owned(),true),
+   (authored.replace("..(\"dust-r\")","..(\"dust-r\",)"),true),
+   (authored.replace("..(\"dust-r\")",". .(\"dust-r\")"),false),
+   (authored.replace("..(\"dust-r\")","..(\"dust-r\")()"),false)]{
+   let source=format!("{parent}\n{child}");let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&source);
+   let view=front.source_view().unwrap();let archive=view.archive();
+   let ordinal=archive.occurrences().iter().enumerate().find(|(_,row)|{
+    let member=view.tree().member(row.member).unwrap();
+    member.name==dm_ir::SymbolId::of("ash")
+     &&view.tree().type_node(member.owner).unwrap().path==dm_ir::SymbolId::of("/mob/living/silicon")
+   }).unwrap().0;
+   let input=Arc::clone(&archive.syntax_inputs().unwrap()[ordinal]);let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|admission|{
+    let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;
+    let result=body.original_code_disposition();
+    if wanted{
+     let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=result?else{panic!("whole actual silicon ash helper")};assert!(proof.belongs_to(&body));
+     let parsed=product.parsed().unwrap().statement_storage().parsed();
+     let [statement]=parsed.statements.as_slice()else{panic!("one authored parent-call statement")};
+     let dm_syntax::StatementKind::Call(expression)=&statement.kind else{panic!("same Call statement")};
+     let dm_syntax::ExprKind::Call{callee,args}=&expression.kind else{unreachable!()};
+     assert!(matches!(&callee.kind,dm_syntax::ExprKind::Ident(name)if name==".."));
+     assert!(matches!(args.as_slice(),[argument]if matches!(&argument.kind,dm_syntax::ExprKind::Literal(value)
+      if matches!(value.original_value(),Some(dm_syntax::OriginalTokenValue::String(text))if text=="dust-r"))));
+    }else{assert!(!matches!(result,Ok(dm_tree::frontend::OriginalBodyDisposition::Available(_))),"{child}");}
+    Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+  }
+ }
 
  #[test]
  fn actual_original_deep_copy_uses_the_return_slot_and_exact_current_procedure_call() {
@@ -3410,9 +3481,9 @@ pub(super) mod body_syntax_census_tests;
          (source.to_owned(), true),
          (source.replace(".[i] = .(.[i])", "return .(.[i])"), true),
          (source.replace(".[i] = .(.[i])", ".[i] += .(.[i])"), false),
-         (source.replace(".[i] = .(.[i])", ".[i] = .(i)"), false),
-         (source.replace(".[i] = .(.[i])", ".[i] = .(.[i], i)"), false),
-         (source.replace(".[i] = .(.[i])", ".[i] = ..(.[i])"), false),
+         (source.replace(".[i] = .(.[i])", ".[i] = .(i)"), true),
+         (source.replace(".[i] = .(.[i])", ".[i] = .(.[i], i)"), true),
+         (source.replace(".[i] = .(.[i])", ".[i] = ..(.[i])"), true),
          (source.replace(".[i] = .(.[i])", ".[i][i] = .(.[i])"), false),
          (source.replace("islist(.[i])", "islist(.?[i])"), false),
      ] {
@@ -3874,7 +3945,7 @@ pub(super) mod body_syntax_census_tests;
      for (local, expected) in [
          ("var/static/slot = 0", true),
          ("var/static/icon/template = icon('icons/effects/effects.dmi', \"nothing\")", true),
-         ("var/global/slot = 0", false), ("var/const/slot = 0", false),
+         ("var/global/slot = 0", true), ("var/const/slot = 0", false),
          ("var/static/slot[2] = list()", false),
          ("var/static/slot = other = 0", false),
          ("var/static/slot = ++other", false),

@@ -201,3 +201,49 @@ fn body_peak_skips_paid_template_but_keeps_fresh_nested_literal_and_foreign_refu
  drop(permit);
  assert_eq!(counter.load(Ordering::Acquire), fixed);
 }
+
+#[test]
+fn body_measured_cleanup_retires_only_unused_startup_before_final_payload_growth(){
+ let source=format!("/proc/p()\n    return {}\n", "x".repeat(64*1024));
+ let base=crate::SettingChargeCounter::root_allocation_bytes();
+ let counter=crate::SettingChargeCounter::try_new(base).unwrap();let healthy=||Ok(());
+ let initial=1024*1024;let limit=base+initial+16*1024;
+ let a=SettingAdmission::new(&counter,limit,&healthy);
+ let prepared=prepare_body_literal_syntax(body(&source),a.reserve(initial).unwrap(),&a).unwrap();
+ let(parsed,admission)=prepared.into_parts();
+ assert!(admission.anchor.bytes()>64*1024);
+ assert!(initial+admission.anchor.bytes()>limit-base,"the superseded startup/final overlap would not fit");
+ assert_eq!(counter.load(Ordering::Acquire),base+admission.anchor.bytes());
+ drop_body_literal_syntax(parsed,Some(admission));assert_eq!(counter.load(Ordering::Acquire),base);
+ // Retiring startup-only headroom does not make an oversized final payload fit.
+ let initial=8192;let low=SettingAdmission::new(&counter,base+initial+16*1024,&healthy);
+ let error=prepare_body_literal_syntax(body(&source),low.reserve(initial).unwrap(),&low).err().unwrap();
+ assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),base);
+}
+#[test]
+fn body_cleanup_handoff_split_and_post_retirement_first_io_keep_original_failure_and_refund(){
+ use std::cell::{Cell,RefCell};
+ let source=format!("/proc/p()\n    return {}\n", "x".repeat(64*1024));
+ let base=crate::SettingChargeCounter::root_allocation_bytes();let initial=1024*1024;
+ let counter=crate::SettingChargeCounter::try_new(base).unwrap();let armed=Cell::new(false);let trace=RefCell::new(Vec::new());
+ let healthy=||{if armed.get(){trace.borrow_mut().push(counter.load(Ordering::Acquire));}Ok(())};
+ let a=SettingAdmission::new(&counter,4*1024*1024,&healthy);let cleanup=a.reserve(initial).unwrap();armed.set(true);
+ drop(prepare_body_literal_syntax(body(&source),cleanup,&a).unwrap());
+ assert_eq!(counter.load(Ordering::Acquire),base);
+ let after_retirement=trace.borrow().iter().position(|used|*used<base+initial).expect("first grow checkpoint follows retirement");
+ assert!(after_retirement>0);drop(a);
+ // The immediately previous checkpoint is the split: it must retain the old
+ // complete guarantee on failure. The next is grow with measured cleanup held.
+ for stop in [after_retirement-1,after_retirement]{
+  let armed=Cell::new(false);let calls=Cell::new(0);let fault_usage=Cell::new(0);
+  let fail=||{if !armed.get(){return Ok(())}let n=calls.get();calls.set(n+1);if n==stop{fault_usage.set(counter.load(Ordering::Acquire));Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};
+  let a=SettingAdmission::new(&counter,4*1024*1024,&fail);let cleanup=a.reserve(initial).unwrap();armed.set(true);
+  let status=prepare_body_literal_syntax(body(&source),cleanup,&a).err().unwrap();
+  // grow keeps the real first payload in the existing admission latch;
+  // split returns that same payload directly. The host observes either route.
+  let error=a.take_operational_error().unwrap_or(status);
+  assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(calls.get(),stop+1,"cleanup never polls after first stop");
+  if stop==after_retirement-1{assert!(fault_usage.get()>=base+initial)}else{assert!(fault_usage.get()<base+initial)}
+  assert_eq!(counter.load(Ordering::Acquire),base);
+ }
+}

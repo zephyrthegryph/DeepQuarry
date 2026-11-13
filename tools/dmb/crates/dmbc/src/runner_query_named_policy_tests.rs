@@ -1749,3 +1749,14 @@ fn current_whole_original_body_rows_match_absolute_report_bytes_and_keep_warm_sy
  assert!(matches!(error,dm_tree::frontend::BodySyntaxFailure::Operational(actual)
   if actual.kind()==std::io::ErrorKind::Unsupported&&actual.to_string().contains("genuine original per-body grammar outcome is not issued")));
 }
+
+#[test]
+fn original_final_inline_switch_warning_uses_real_forward_cursor_before_later_procedure(){
+ let source=b"/proc/probe(value)\n    switch(value)\n        if(1 || 2) return 1\n/proc/later()\n    return 0\n";
+ let(host,environment)=original_switch_case_host(source,&[],None);let current=host.query_state();let state=current.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();
+ let mut output=Vec::new();snapshot.write_native_configured_checker(filter_ordinal(snapshot,"probe"),"switch_case",&environment,None,&snapshot.tree,&mut output).unwrap();
+ let row:serde_json::Value=serde_json::from_slice(&output).unwrap();let diagnostics=row["diagnostics"].as_array().unwrap();assert_eq!(diagnostics.len(),1,"{row}");
+ let actual=&diagnostics[0];assert_eq!(actual["family"],"switch_case_or");assert_eq!(actual["location_kind"],"source");assert_eq!(actual["line"],3);assert_eq!(actual["column"],28);
+ assert_eq!(actual["message"],"Elements in a switch-case branch separated by ||, this is likely in error and should be replaced by a comma");
+ assert!(!actual["expanded_span"].is_null(),"real forward token retains its source span");
+}

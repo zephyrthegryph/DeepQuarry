@@ -2459,6 +2459,15 @@ impl OriginalBodyTokens<'_>{
    let follow=tokens.get(i).ok_or("inline compound keyword unavailable")?.text(source)=="if";i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("inline compound case opening condition unavailable".into())}let mut nested=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>case_end{return Err("inline compound condition escapes case".into())}match token.text(source){"("=>nested=nested.checked_add(1).ok_or("inline condition depth overflow")?,")"=>{nested-=1;if nested==0{break}},_=>()}i+=1;}if nested!=0{return Err("inline compound close unavailable".into())}let after=tokens.get(i).ok_or("inline compound close unavailable")?.span.end;if let Some(cursor)=self.original_case_block_cursor_using(after,if follow{OriginalCaseContinuation::If}else{OriginalCaseContinuation::Block},checkpoint)?{return Ok(cursor)}return Err("inline compound simple statement continuation unavailable".into())
   }
   if !newline&&tokens.get(i).is_some_and(|token|matches!(token.text(source),"do"|"try")){let token=tokens.get(i).ok_or("inline compound keyword unavailable")?;let mode=if token.text(source)=="try"{OriginalCaseContinuation::Try}else{OriginalCaseContinuation::Do};if let Some(cursor)=self.original_case_block_cursor_using(token.span.end,mode,checkpoint)?{return Ok(cursor)}return Err("inline try/do simple statement continuation unavailable".into())}
+  // The last simple inline RETURN Item also trims its physical delimiter.
+  // Ask the SAME actual owner/layout walk for that delimiter; a later proc
+  // in this owner is not a reason to search backward or fabricate source EOF.
+  // The exact close/RETURN head and independent value proof are still required
+  // by the body consumer; this cursor contributes delimiter DATA only.
+  if !newline&&tokens.get(i).is_some_and(|token|token.kind==TokenKind::Ident&&token.text(source)=="return"){
+   return self.original_case_block_cursor_using(case_end,OriginalCaseContinuation::StatementTerminator,checkpoint)?
+    .ok_or_else(||E::from("inline case actual statement terminator unavailable"))
+  }
   // Inline primary items end before their delimiter. Recover only the real
   // following semicolon of this body. Its final Item (and enclosing body)
   // excludes that delimiter; never cross a physical newline/other statement.
@@ -2639,6 +2648,23 @@ mod original_do_while_terminator_cursor_tests{
   let(owner,body,header)=fixture("/proc/probe(x)\n    do\n        x*=2\n    while(x<8)\n",0);let tokens=owner.body_tokens(body,0).unwrap();
   for stop in [1,3,9]{let mut calls=0;let result=tokens.do_while_terminator_cursor_using(header,&mut||{calls+=1;if calls==stop{Err(Failure::Io(std::io::Error::from_raw_os_error(1450)))}else{Ok(())}});
    match result{Err(Failure::Io(actual))=>assert_eq!(actual.raw_os_error(),Some(1450)),Err(Failure::Invalid(why))=>panic!("source error replaced real IO: {why}"),Ok(_)=>panic!("actual fault site not reached")};assert_eq!(calls,stop);
+  }
+ }
+}
+
+#[cfg(test)]mod original_inline_return_final_cursor_controls{
+ use super::*;
+ #[test]fn actual_last_inline_return_uses_forward_owned_delimiter_before_a_later_procedure(){
+  for source in [
+   "/proc/probe(value)\n    switch(value)\n        if(1) return \"north\"\n/proc/later()\n    return 0\n",
+   "/proc/probe(value)\n    switch(uppertext(value))\n        if(\"NORTH\") return 1\n/proc/later()\n    return 0\n",
+  ]{let ast=dm_syntax::parse(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);let procedure=&ast.items[0];let case=&procedure.children[0].children[0];
+   let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();
+   for offset in [0,37]{let tokens=owner.body_tokens(procedure.span,offset).unwrap();let shift=|s:Span|Span::new(s.start+offset,s.end+offset);
+    let cursor=tokens.switch_case_cursor_using(shift(case.header_span),shift(case.span),&mut||Ok::<(),&'static str>(())).unwrap();
+    let dm_syntax::OriginalCaseCursor::Token(at)=cursor else{panic!("a real later procedure exists; source end must not be invented: {cursor:?}")};
+    let physical=Span::new(at.start-offset,at.end-offset);assert_eq!(&source[physical.range()],"\n");assert!(physical.start>=case.header_span.end);assert!(physical.end<=ast.items[1].header_span.start);
+   }
   }
  }
 }

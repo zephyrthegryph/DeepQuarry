@@ -613,7 +613,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         if header == "do" || header == "try" || starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch")
             || starts_keyword(header,"for") {
             origins.original_compound_seen_statement=true;
-        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!starts_keyword(header,"throw")&&!possible_joined_throw(header)&&!original_ordinary_call_header(header)&&!original_simple_assignment_candidate(header)&&!original_post_increment_candidate(header)&&!original_crash_statement_candidate(header)&&!original_possible_output_header(header)&&!local_statement&&!initial_setting
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!starts_keyword(header,"throw")&&!possible_joined_throw(header)&&!original_ordinary_call_header(header)&&!original_explicit_call_header(header)&&!original_simple_assignment_candidate(header)&&!original_post_increment_candidate(header)&&!original_crash_statement_candidate(header)&&!original_possible_output_header(header)&&!local_statement&&!initial_setting
             && !(matches!(header, "break" | "continue") && origins.original_loop_control)){
             // The actual Original output can join a keyword directly to
             // punctuation or an interpolation token. Let parse_one's same
@@ -1358,12 +1358,13 @@ fn parse_one(
         None
     } else {
         let ordinary_call=original_ordinary_call_header(header);
+        let explicit_call=original_explicit_call_header(header);
         let assignment=original_simple_assignment_candidate(header);
         let increment=original_post_increment_candidate(header);
         let crash=original_crash_statement_candidate(header);
         let output=original_possible_output_header(header);
         parse_expr_observed(header,item.header_span.start,diagnostics,&mut|parsed|{
-            if ordinary_call || assignment || increment || crash || output {
+            if ordinary_call || explicit_call || assignment || increment || crash || output {
                 use crate::expression_parser::OriginalSimpleKind;
                 let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
                     OriginalSimpleKind::OrdinaryCallStatement=>ordinary_call,
@@ -1372,7 +1373,10 @@ fn parse_one(
                     | OriginalSimpleKind::PrefixIncrementStatement | OriginalSimpleKind::PrefixDecrementStatement
                     | OriginalSimpleKind::IndexedUpdateStatement=>increment,
                     OriginalSimpleKind::CrashStatement=>crash,
-                    OriginalSimpleKind::Complete => (output && actual.is_original() && parsed.expr.as_ref().is_some_and(original_output_statement_root)) || (ordinary_call && parsed.expr.as_ref().is_some_and(|expr| {
+                    OriginalSimpleKind::Complete => (explicit_call && actual.is_original()
+                        && parsed.expr.as_ref().is_some_and(|expr|matches!(&expr.kind,
+                            ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if matches!(name.as_str(),"."|"..")))))
+                        || (output && actual.is_original() && parsed.expr.as_ref().is_some_and(original_output_statement_root)) || (ordinary_call && parsed.expr.as_ref().is_some_and(|expr| {
                         let ExprKind::Call { callee, .. } = &expr.kind else { return false; };
                         if matches!(&callee.kind, ExprKind::Ident(_)) {
                             return true;
@@ -1412,6 +1416,13 @@ fn parse_one(
         },
         None => unsupported(item),
     }
+}
+
+// DATA route for implicit current/parent calls only. Keep this separate
+// from ordinary names: Complete must be Original before this family can issue.
+fn original_explicit_call_header(header:&str)->bool{
+    header.strip_suffix(')').and_then(|head|head.split_once('('))
+        .is_some_and(|(name,_)|matches!(name.trim_end(),"."|".."))
 }
 
 // A routing filter only. The consuming expression parser certifies the
@@ -3299,4 +3310,17 @@ fn original_inline_switch_first_head_io_stops_before_returned_child_without_rece
  let source="/proc/probe(value)\n    switch(value)\n        if(1) return 2\n";let syntax=crate::parse(source);assert!(syntax.diagnostics.is_empty());let probe=Probe{heads:std::cell::Cell::new(0),values:std::cell::Cell::new(0)};
  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&probe),Some(&a),Some(source),false);
  assert_eq!((probe.heads.get(),probe.values.get()),(1,0));assert!(body.original_grammar.is_none());assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));
+}
+
+#[cfg(test)]
+#[test]
+fn implicit_call_statement_heads_are_only_data_routes(){
+ for(source,wanted)in[("..(value)",true),(".. (value)",true),(".(value)",true),
+  (". .(value)",false),("...(value)",false),("..member(value)",false)]{
+  assert_eq!(original_explicit_call_header(source),wanted,"{source}");
+  assert!(!original_ordinary_call_header(source),"implicit heads never become ordinary names");
+  let syntax=crate::parse(&format!("/proc/probe(value)\n    {source}\n"));
+  let body=crate::parse_proc_body(&syntax.items[0]);
+  assert!(body.original_grammar.is_none(),"DATA routing must not promote an unissued compatibility body: {source}");
+ }
 }

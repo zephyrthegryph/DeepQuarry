@@ -122,8 +122,15 @@ pub fn prepare_body_literal_syntax<'a,'op>(body:ParsedBody,cleanup:SettingRootLe
   let lease=if reusable==0{
    a.reserve(retained)?
   }else{
-   // Grow before splitting: denial or cancellation must leave the entire
-   // old cleanup allowance alive until Pending has destroyed the body.
+   // Every body/array/literal child has now been measured. Keep its SAME
+   // measured cleanup guarantee for Pending, but retire unused startup-only
+   // headroom before admitting final payload. This releases no AST storage.
+   if initial.bytes()>cleanup_bytes{
+    let unused=initial.bytes()-cleanup_bytes;
+    // Split failure leaves the entire old guarantee intact. Success keeps
+    // cleanup_bytes owned even if the following grow fails or is cancelled.
+    drop(a.split(initial,unused)?);
+   }
    a.grow(initial,retained-reusable)?;
    a.split(initial,retained)?
   };
