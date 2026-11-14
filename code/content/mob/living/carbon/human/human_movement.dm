@@ -189,8 +189,8 @@
 
 // Handle footstep sounds
 /mob/living/carbon/human/handle_footstep(turf/T)
-	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !stat_value(src, STAT_FLYING))
-		var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
+	. = ..() // the footstep capability's sound (the override used to leave it out: a human's step made none)
+	var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
+	if(shoes && WANTS(shoes, /datum/notice/shoes_step) && loc == T && get_gravity(loc) && !stat_value(src, STAT_FLYING)) // asked first: most shoes have no listener, and the gravity and flight reads are for one
 		PUBLISH(shoes, shoes_step, wearer = src, m_intent = m_intent)
-	return
 

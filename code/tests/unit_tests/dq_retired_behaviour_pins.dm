@@ -36,10 +36,10 @@
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_type, FOOTSTEP_MOB_CLAW, "enable_footsteps() sets the kind of sounds")
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_e_range, -6, "and their range")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the capability is granted")
-	STATE_SET(walker, footfall, footstep_steps, 0)
+	var/heard_before = GLOB.footsteps_audible
 	walker.forceMove(next)
 	walker.forceMove(start)
-	TEST_ASSERT_EQUAL(STATE_GET(walker, footfall, footstep_steps), 0, "a step in a chunk no observer holds is not counted")
+	TEST_ASSERT_EQUAL(GLOB.footsteps_audible, heard_before, "a step in a chunk no observer holds is not counted")
 	TEST_ASSERT_NULL(walker.footfall, "an unheard step made no footfall state")
 	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), 1)
 	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), 1)
@@ -47,7 +47,7 @@
 	walker.forceMove(start)
 	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), -1)
 	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), -1)
-	TEST_ASSERT(STATE_GET(walker, footfall, footstep_steps) > 0, "each move an observer can hear is a step (counted [STATE_GET(walker, footfall, footstep_steps)])")
+	TEST_ASSERT(GLOB.footsteps_audible - heard_before >= 2, "each move an observer can hear is a step (counted [GLOB.footsteps_audible - heard_before])")
 	walker.disable_footsteps()
 	var/own_grants = 0
 	for(var/datum/activation/A as anything in walker.rx?.activations)

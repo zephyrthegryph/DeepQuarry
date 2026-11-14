@@ -575,6 +575,7 @@
 #include "dq_fresh_look_default.dm"
 #include "dq_chunk_interest.dm"
 #include "dq_move_input_shadow.dm"
+#include "dq_step_cost.dm"
 #include "dq_async_log_tests.dm"
 #include "dq_hide_base_tests.dm"
 #include "dq_flashlight_rounds_tests.dm"
