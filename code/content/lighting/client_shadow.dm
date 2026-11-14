@@ -19,6 +19,11 @@ GLOBAL_LIST_EMPTY(client_glow_dirty_boxes)
 /// Door twin shapes asked for ahead, and opacity redraws that found their new shape cached (benchmarks, tests).
 GLOBAL_VAR_INIT(client_glow_twins_made, 0)
 GLOBAL_VAR_INIT(client_glow_twin_hits, 0)
+/// "z,cx,cy" -> the doors standing in that chunk (the same grid as client_glow_chunks), kept by the door on init, move and removal (glow_door_index()): a light's twins look only at the
+/// chunks under its reach box. Lights whose twins were worked out, and the doors they examined to do it (benchmarks, tests: doors examined per light is the local count).
+GLOBAL_LIST_EMPTY(client_glow_door_chunks)
+GLOBAL_VAR_INIT(client_glow_twin_lights, 0)
+GLOBAL_VAR_INIT(client_glow_twin_doors_examined, 0)
 /// Flushes run, and opacity changes folded into them (benchmarks, tests).
 GLOBAL_VAR_INIT(client_glow_flushes, 0)
 GLOBAL_VAR_INIT(client_glow_flush_changes, 0)
@@ -519,32 +524,73 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	glow_twins_for = glow_mask_key
 	glow_twins = null
 	var/turf/S = source_turf
-	var/list/box = glow_reach_box(S, glow_mask_range)
-	var/list/near = list() // door -> distance, the nearest first
-	for(var/obj/machinery/door/D as anything in REGISTRY_MEMBERS(REGISTRY_DOORS))
-		var/turf/T = D.loc
-		if(!isturf(T) || T.z != S.z || CLIENT_GLOW_CLEAR_OF(T.x, T.y, 0, box))
-			continue
-		near[D] = abs(T.x - S.x) + abs(T.y - S.y)
+	var/list/near = client_glow_near_doors(S, glow_mask_range) // door -> distance, the nearest first
+	GLOB.client_glow_twin_lights++
 	if(!length(near))
 		return
 	sortTim(near, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
+	var/list/cells = client_glow_door_cells(near)
 	var/found = 0
+	if(length(cells)) // one call: the flip, the shadowcast and the key of each door's twin happen in the sight layer
+		for(var/key in sight_twin_keys(S, glow_mask_range, glow_mask_margin, cells, glow_mask_key, CLIENT_GLOW_TWIN_MAX))
+			LAZYADD(glow_twins, key)
+			client_glow_mask_prefetch(key)
+			GLOB.client_glow_twins_made++
+			found++
+	if(found && client_glow_trace_line())
+		log_world("client glow: light at [S.x],[S.y],[S.z] readied [found] door twin shape(s) ahead")
+
+/// The doors a light on `S` of reach `range` could flip its shape with: door -> distance, from the door chunks under its reach box only (not every door in the world).
+/proc/client_glow_near_doors(turf/S, range)
+	. = list()
+	var/list/box = glow_reach_box(S, range)
+	var/list/chunks = glow_chunk_range(list(max(box[1], 1), max(box[2], 1), min(box[3], world.maxx), min(box[4], world.maxy)))
+	var/examined = 0
+	for(var/gx in chunks[1] to chunks[3])
+		for(var/gy in chunks[2] to chunks[4])
+			for(var/obj/machinery/door/D as anything in GLOB.client_glow_door_chunks[client_glow_chunk_id(S.z, gx, gy)])
+				examined++
+				var/turf/T = D.loc
+				if(!isturf(T) || CLIENT_GLOW_CLEAR_OF(T.x, T.y, 0, box))
+					continue
+				.[D] = abs(T.x - S.x) + abs(T.y - S.y)
+	GLOB.client_glow_twin_doors_examined += examined
+
+/// The flat `x, y, z, dirs` list of the doors in `near` (nearest first) whose other state changes what a shape shows: the cells sight_twin_keys() reads as flipped, one at a time.
+/proc/client_glow_door_cells(list/near)
+	. = list()
 	for(var/obj/machinery/door/D as anything in near)
 		var/turf/T = D.loc
 		var/dirs = client_glow_door_flip(D, T)
 		if(isnull(dirs))
 			continue
-		var/key = client_glow_shape_key(S, glow_mask_margin, sight_view_turfs_flipped(S, glow_mask_range, T, dirs), T, dirs)
-		if(key == glow_mask_key || (key in glow_twins))
-			continue
-		LAZYADD(glow_twins, key)
-		client_glow_mask_prefetch(key)
-		GLOB.client_glow_twins_made++
-		if(++found >= CLIENT_GLOW_TWIN_MAX)
-			break
-	if(found && client_glow_trace_line())
-		log_world("client glow: light at [S.x],[S.y],[S.z] readied [found] door twin shape(s) ahead")
+		. += list(T.x, T.y, T.z, dirs)
+
+/// Files this door under the chunk it stands in (client_glow_near_doors()); cheap when it is where it was. Called on init and after every move.
+/obj/machinery/door/proc/glow_door_index()
+	var/turf/T = loc
+	var/key = isturf(T) ? client_glow_chunk_id(T.z, CLIENT_GLOW_CHUNK_OF(T.x), CLIENT_GLOW_CHUNK_OF(T.y)) : null
+	if(key == glow_door_chunk)
+		return
+	glow_door_unindex()
+	if(!key)
+		return
+	var/list/members = GLOB.client_glow_door_chunks[key]
+	if(!members)
+		members = GLOB.client_glow_door_chunks[key] = list()
+	members += src
+	glow_door_chunk = key
+
+/// Takes this door out of its chunk (it left the map or is going).
+/obj/machinery/door/proc/glow_door_unindex()
+	if(!glow_door_chunk)
+		return
+	var/list/members = GLOB.client_glow_door_chunks[glow_door_chunk]
+	if(members)
+		members -= src
+		if(!length(members))
+			GLOB.client_glow_door_chunks -= glow_door_chunk
+	glow_door_chunk = null
 
 /// The watched turfs (lum bands) in this light's last reach.
 /datum/light_source/proc/client_glow_watched_reach()
