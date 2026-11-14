@@ -346,4 +346,133 @@ describe('fitting the entries to the column', () => {
     expect(heights[0]).toBe(500);
     expect(heights[1]).toBeLessThan(900);
   });
+
+  describe('boundary drag and opening', () => {
+    const iface = (id: string, name: string, height: number) => ({
+      id,
+      iface: name,
+      title: name,
+      height,
+    });
+    /** Status 300 over APC 200 over the chat (sized 260). */
+    const column = () => {
+      let state = emptyDock();
+      state = dockReduce(state, {
+        type: 'open',
+        window: iface('s', 'StatPanel', 300),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: iface('a', 'APC', 200),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      return state;
+    };
+    const heights = (state: DockState) => state.groups.map((g) => g.height);
+
+    it('dragging the Status/APC boundary resizes those two and never the chat', () => {
+      const state = column();
+      const [s, a, c] = state.groups;
+      const next = dockReduce(state, {
+        type: 'boundary',
+        group: s.id,
+        next: a.id,
+        start: 300,
+        nextStart: 200,
+        dy: 50,
+      });
+      expect(heights(next)).toEqual([350, 150, c.height]);
+      expect(next.groups[2]).toEqual(c);
+    });
+
+    it('a boundary drag keeps the pair total and stops at the least height', () => {
+      const state = column();
+      const [s, a] = state.groups;
+      const next = dockReduce(state, {
+        type: 'boundary',
+        group: s.id,
+        next: a.id,
+        start: 300,
+        nextStart: 200,
+        dy: 1000,
+      });
+      expect(heights(next).slice(0, 2)).toEqual([500 - FIT_MIN, FIT_MIN]);
+      const up = dockReduce(state, {
+        type: 'boundary',
+        group: s.id,
+        next: a.id,
+        start: 300,
+        nextStart: 200,
+        dy: -1000,
+      });
+      expect(heights(up).slice(0, 2)).toEqual([FIT_MIN, 500 - FIT_MIN]);
+    });
+
+    it('the boundary above the chat resizes only the entry over it', () => {
+      const state = column();
+      const [s, a, c] = state.groups;
+      const next = dockReduce(state, {
+        type: 'boundary',
+        group: a.id,
+        next: null,
+        start: 200,
+        nextStart: 0,
+        dy: 40,
+      });
+      expect(heights(next)).toEqual([s.height, 240, c.height]);
+    });
+
+    it('a new entry takes its height from Status first', () => {
+      let state = dockReduce(emptyDock(), {
+        type: 'open',
+        window: iface('s', 'StatPanel', 400),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('a', 'APC', 150), at: 1 },
+      });
+      expect(order(state)).toEqual([['s'], ['a'], ['c']]);
+      expect(heights(state).slice(0, 2)).toEqual([250, 150]);
+    });
+
+    it('takes from Status only down to its least, then from a sized chat', () => {
+      let state = dockReduce(emptyDock(), {
+        type: 'open',
+        window: iface('s', 'StatPanel', 100),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      state = dockReduce(state, {
+        type: 'resize',
+        group: state.groups[1].id,
+        height: 400,
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('a', 'APC', 150), at: 1 },
+      });
+      // Status gives 20 (100 to 80); the chat gives the other 130 (400 to 270).
+      expect(heights(state)).toEqual([FIT_MIN, 150, 270]);
+    });
+
+    it('a window reopened at its saved place takes nothing again', () => {
+      const state = column();
+      const before = heights(state);
+      let next = dockReduce(state, { type: 'close', id: 'a' });
+      next = dockReduce(next, {
+        type: 'open',
+        window: { id: 'a', iface: 'APC', title: 'APC' },
+      });
+      expect(heights(next)[0]).toBe(before[0]);
+    });
+  });
 });

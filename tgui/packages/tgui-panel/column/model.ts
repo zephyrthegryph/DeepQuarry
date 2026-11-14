@@ -55,6 +55,10 @@ export const DOCK_HEIGHT_MIN = 80;
 export const DOCK_HEIGHT_MAX = 2000;
 /** The saved layout's limit (the window_layout preference keeps at most this). */
 export const DOCK_SAVE_MAX = 8000;
+/** The interface a new entry takes its space from first (the stat panel). */
+export const STATUS_INTERFACE = 'StatPanel';
+/** The chat: the filling entry, which takes from nothing when it opens. */
+const CHAT_IFACE = 'Chat';
 
 export type DockAction =
   | { type: 'open'; window: DockWindow }
@@ -63,6 +67,16 @@ export type DockAction =
   | { type: 'activate'; id: string }
   | { type: 'collapse'; group: string; collapsed: boolean }
   | { type: 'resize'; group: string; height: number }
+  | {
+      type: 'boundary';
+      group: string;
+      /** The expanded, non-filling entry below the boundary that gives or takes the space (null: the filling entry, or none, takes what is left). */
+      next: string | null;
+      /** Both entries' heights when the drag began, and how far the boundary moved. */
+      start: number;
+      nextStart: number;
+      dy: number;
+    }
   | { type: 'moveGroup'; group: string; index: number }
   | { type: 'moveWindow'; id: string; group: string; index: number }
   | { type: 'splitWindow'; id: string; index: number }
@@ -207,8 +221,55 @@ function open(state: DockState, window: DockWindow): DockState {
       ? clampIndex(place.order, groups.length)
       : groups.length;
   groups.splice(at, 0, group);
-  return { ...state, windows, groups, nextGroup };
+  // An entry that is still a placeholder (no interface yet) is opened again under its interface: it takes its space then.
+  const taken =
+    window.iface &&
+    window.iface !== CHAT_IFACE &&
+    (!place || typeof openHeight === 'number') &&
+    !group.collapsed
+      ? takeSpace(state, groups, group)
+      : groups;
+  return { ...state, windows, groups: taken, nextGroup };
 }
+
+/**
+ * A new entry's space comes from the stat panel first, down to FIT_MIN, and only then from the chat (the filling entry: the last expanded
+ * one, which keeps FILL_MIN, or what the player sized it to). `groups` already holds `added`.
+ */
+function takeSpace(
+  state: DockState,
+  groups: DockGroup[],
+  added: DockGroup,
+): DockGroup[] {
+  let need = added.height;
+  const out = groups.slice();
+  const statusAt = out.findIndex(
+    (g) =>
+      g !== added &&
+      !g.collapsed &&
+      g.windows.some((id) => state.windows[id]?.iface === STATUS_INTERFACE),
+  );
+  const fillAt = lastExpanded(out);
+  if (statusAt >= 0 && statusAt !== fillAt) {
+    const status = out[statusAt];
+    const give = Math.min(need, Math.max(0, status.height - FIT_MIN));
+    out[statusAt] = { ...status, height: status.height - give };
+    need -= give;
+  }
+  if (need > 0 && fillAt >= 0 && out[fillAt] !== added && out[fillAt].sized) {
+    const fill = out[fillAt];
+    const give = Math.min(need, Math.max(0, fill.height - FILL_MIN));
+    out[fillAt] = { ...fill, height: fill.height - give };
+  }
+  return out;
+}
+
+const lastExpanded = (groups: DockGroup[]): number => {
+  for (let i = groups.length - 1; i >= 0; i--) {
+    if (!groups[i].collapsed) return i;
+  }
+  return -1;
+};
 
 function forget(state: DockState, id: string): DockState {
   const { [id]: _gone, ...windows } = state.windows;
@@ -264,6 +325,34 @@ function reduce(state: DockState, action: DockAction): DockState {
         height: clampHeight(action.height),
         sized: true,
       }));
+    case 'boundary': {
+      const next = action.next
+        ? state.groups.find((g) => g.id === action.next)
+        : undefined;
+      if (!next) {
+        return reduce(state, {
+          type: 'resize',
+          group: action.group,
+          height: action.start + action.dy,
+        });
+      }
+      // The pair keeps its total: one grows by what the other gives, neither under FIT_MIN. The filling entry is never one of them.
+      const total = action.start + action.nextStart;
+      const a = Math.min(
+        total - FIT_MIN,
+        Math.max(FIT_MIN, Math.round(action.start + action.dy)),
+      );
+      return {
+        ...state,
+        groups: state.groups.map((g) =>
+          g.id === action.group
+            ? { ...g, height: clampHeight(a), sized: true }
+            : g.id === next.id
+              ? { ...g, height: clampHeight(total - a), sized: true }
+              : g,
+        ),
+      };
+    }
     case 'moveGroup': {
       const from = state.groups.findIndex((g) => g.id === action.group);
       if (from < 0) {
