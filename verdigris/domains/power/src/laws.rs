@@ -298,6 +298,7 @@ vg_core::law! {
     pub ApcTick("power_apc_tick"): () => (Apc, Option<InRegion<Cables>>), |ctx, _dt| {
         let (apc, region) = &mut ctx.writes;
         let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
+        let channels_before = apc.channels;
         // No network: nothing available, and the load has nowhere to land.
         let mut spare_load = 0.0;
         let status = match region {
@@ -324,9 +325,12 @@ vg_core::law! {
         });
         // Watts (`RateStore`'s API) to the cell's own units, as the field moved.
         let (rate, alarm) = (apc.rate, apc.alarm);
+        let channels_changed = apc.channels != channels_before;
         ctx.ledger().source("power_apc_charge", charged * rate);
         ctx.ledger().sink("power_apc_charge", discharged * rate);
-        if alarm {
+        // The event says a channel *changed* (the shedding ladder moved, or a manual override landed). It used to go out every tick for every
+        // APC whose alarm was up, which is any APC that has shed or has no cell: a notice per APC per tick that nothing on the DM side hears.
+        if alarm && channels_changed {
             ctx.emit(PowerEvent::ApcChannelChanged);
         }
         if let Some(report) = report {

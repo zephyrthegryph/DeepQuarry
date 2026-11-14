@@ -102,6 +102,8 @@
 // Attribution inside sched_core and appearance_drain (code/world/kernel/measure/attribution.dm).
 /// Rows the attribution table holds; a key past it lands on a per-kind overflow row and the cheaper half is dropped at the end of the tick.
 #define KA_MAX_ROWS 4096
+/// A budgeted table walk (km_attr walk_step(), km_ledger walk_step()) looks at the clock every this many rows.
+#define KA_WALK_CHECK_ROWS 32
 /// What a row is: a timer callback and a change reaction (both reported as callbacks), or a redraw of an atom type.
 #define KA_KIND_CALLBACK 1
 #define KA_KIND_REACTION 2

@@ -23,6 +23,9 @@
  * `PUBLISH` and `on_cross`): today they raise the scheduler's channels/events and call the watch's own
  * callback; integration points them at the new machinery.
  */
+/// The most NATIVE_NOTICE_SLOW lines one frame writes.
+#define NATIVE_NOTICE_SLOW_LINES 5
+
 /datum/system/native
 	name = "native"
 	/// Frames run, and the outbox of the last one, for the profiler.
@@ -47,6 +50,19 @@
 	var/delivery_crossed_ms = 0
 	var/last_slowest_ms = 0
 	var/last_slowest = ""
+	/// What native_step spent after the frame was timed, ms: the APC charge drain, the slow-notice and deferral log lines, the slow-frame report (a log
+	/// write can block the whole tick on a busy disk, and it sat in native_step's "not itemised" share until it was named here).
+	var/last_post_apc_ms = 0
+	var/last_post_notice_log_ms = 0
+	var/last_post_deferral_log_ms = 0
+	var/last_post_report_ms = 0
+	/// The Rust phases (ms, frame.slow_us.*) the last slow-frame report named, and the frame of that report: the slow-tick trace shows them beside vg_frame.
+	var/list/last_rust_phases
+	var/last_rust_phases_frame = -1
+	/// NOTICE records delivered since boot, "[header]" -> count: which notices flood the delivery (a notice per APC per tick showed here as 65538).
+	var/list/notice_counts
+	/// NATIVE_NOTICE_SLOW lines waiting for the end of the frame: written inside the record they describe, the write was charged to that record.
+	var/list/slow_notice_lines
 	/// world.tick_lag as last sent to Rust.
 	var/tick_lag_sent = 0
 	/// The wheel tick of the last frame (elapsed ticks are measured from it).
@@ -117,16 +133,28 @@
 	km_ledger_leave(step_ledger)
 	var/vg_done = TICK_USAGE_REAL
 	deliver(box, budgeted = elapsed > 0)
+	var/post_start = TICK_USAGE_REAL
 	if(length(GLOB.apc_charge_backlog))
 		var/apc_ledger = km_ledger_enter(KM_CAT_NATIVE_DELIVERY, "native delivery", "apc charge drain")
 		apc_charge_drain() // the APC reports the delivery deferred (code/modules/power/apc.dm): a few a tick
 		km_ledger_leave(apc_ledger)
+	last_post_apc_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - post_start)
 	km_ledger_leave(frame_ledger)
 	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
 	last_vg_ms = TICK_DELTA_TO_MS(vg_done - start)
+	// The log writes come after the frame is timed, so a stalled write is named here and never charged to the delivery or the vg_frame it describes.
+	var/log_ledger = km_ledger_enter(KM_CAT_NATIVE_DELIVERY, "native delivery", "log lines after the frame")
+	var/log_start = TICK_USAGE_REAL
+	flush_slow_notice_lines()
+	last_post_notice_log_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - log_start)
+	log_start = TICK_USAGE_REAL
 	flush_deferral_summary()
+	last_post_deferral_log_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - log_start)
+	log_start = TICK_USAGE_REAL
 	if(last_frame_ms >= NATIVE_SLOW_FRAME_MS)
 		report_slow_frame(TICK_DELTA_TO_MS(vg_done - start))
+	last_post_report_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - log_start)
+	km_ledger_leave(log_ledger)
 	return TRUE
 
 /// Logs a frame that took NATIVE_SLOW_FRAME_MS or more with the Rust phases (`frame.us.<phase>`, microseconds) that grew since the
@@ -162,6 +190,8 @@
 		else if(delta >= 1000)
 			grew[copytext(name, 15)] = round(delta / 1000, 0.1)
 	slow_frame_prev = now_us
+	last_rust_phases = grew
+	last_rust_phases_frame = frames
 	if(isnum(rust["frame.priority_class"]))
 		os_counts["priority_class"] = rust["frame.priority_class"]
 	if(held_back)
@@ -245,6 +275,20 @@
 		deferred_late = 0
 		deferred_peak = 0
 
+/// Writes the NATIVE_NOTICE_SLOW lines the frame's records raised (at most NATIVE_NOTICE_SLOW_LINES a frame; the rest are counted in the last line).
+/datum/system/native/proc/flush_slow_notice_lines()
+	if(!length(slow_notice_lines))
+		return
+	var/list/lines = slow_notice_lines
+	slow_notice_lines = null
+	var/dropped = length(lines) - NATIVE_NOTICE_SLOW_LINES
+	if(dropped > 0)
+		lines.Cut(NATIVE_NOTICE_SLOW_LINES + 1)
+	for(var/line in lines)
+		log_world(line)
+	if(dropped > 0)
+		log_world("NATIVE_NOTICE_SLOW: [dropped] more slow notice(s) in that frame were not written")
+
 /// Logs the closed deferral streaks as one NATIVE_DELIVERY_DEFERRED line, at most once per NATIVE_DELIVERY_SUMMARY_INTERVAL (`force`: now).
 /// Called after the frame's time is taken, so the log write is never counted in, or stalls, the delivery it describes.
 /datum/system/native/proc/flush_deferral_summary(force = FALSE)
@@ -288,6 +332,9 @@
 		if(istype(device) && device.rust_owns_device(entity))
 			device.rust_device_stepped(box[p], box[p + 1], box[p + 2])
 		return
+	var/header_key = "[header]"
+	LAZYINITLIST(notice_counts)
+	notice_counts[header_key] = (notice_counts[header_key] || 0) + 1
 	var/start = TICK_USAGE
 	vg_dispatch_notice(header, entity, box, p)
 	var/dispatch_ms = TICK_USAGE_TO_MS(start)
@@ -309,7 +356,7 @@
 			publish_ms = TICK_USAGE_TO_MS(publish_start)
 	var/total_ms = TICK_USAGE_TO_MS(start)
 	if(total_ms >= NATIVE_NOTICE_SLOW_MS)
-		log_world("NATIVE_NOTICE_SLOW: header [header] entity [entity] ([target ? target.type : "none"]) payload [count] took [round(total_ms, 0.1)] ms: handler (vg_dispatch_notice) [round(dispatch_ms, 0.1)], entity lookup [round(lookup_ms, 0.1)], notice_wanted [round(wanted_ms, 0.1)], publish [round(publish_ms, 0.1)], unaccounted [round(total_ms - dispatch_ms - lookup_ms - wanted_ms - publish_ms, 0.1)]")
+		LAZYADD(slow_notice_lines, "NATIVE_NOTICE_SLOW: header [header] entity [entity] ([target ? target.type : "none"]) payload [count] took [round(total_ms, 0.1)] ms: handler (vg_dispatch_notice) [round(dispatch_ms, 0.1)], entity lookup [round(lookup_ms, 0.1)], notice_wanted [round(wanted_ms, 0.1)], publish [round(publish_ms, 0.1)], unaccounted [round(total_ms - dispatch_ms - lookup_ms - wanted_ms - publish_ms, 0.1)]")
 
 /// CROSSED (`watch`, `band`): the watch's own delivery.
 /datum/system/native/proc/on_crossed(handle, band, list/box, p, count)
