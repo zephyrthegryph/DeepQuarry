@@ -241,7 +241,9 @@ CAPABILITIES(/datum/mc_health_build)
 			// The tick graph is the first section built and sent: it is on the panel from the first send, before any slow group.
 			if(B.step == 1)
 				var/list/tick_rows = mc_health_recent_ticks(B)
-				B.publish_piece("ticks", tick_rows, "[url_encode("\"ticks\":[")][jointext(B.tick_pieces, url_encode(","))][url_encode("]")]")
+				var/ticks_head = url_encode("\"ticks\":\[")
+				var/ticks_tail = url_encode("]")
+				B.publish_piece("ticks", tick_rows, "[ticks_head][jointext(B.tick_pieces, url_encode(","))][ticks_tail]")
 				B.step = 2
 				return FALSE
 			var/list/history = Kernel.perf_tick_usage
