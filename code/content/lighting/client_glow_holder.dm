@@ -42,6 +42,8 @@ GLOBAL_VAR_INIT(client_glow_holder_stands_moved, 0)
 /// Chunks looked in by crossings and scans (empty ones too: the walk's cost), and sight refreshes between crossings.
 GLOBAL_VAR_INIT(client_glow_holder_chunk_visits, 0)
 GLOBAL_VAR_INIT(client_glow_holder_sight_refreshes, 0)
+/// Steps the holders' stand and prefetch queues took (upkeep_run()).
+GLOBAL_VAR_INIT(client_glow_holder_upkeep_steps, 0)
 
 /// One viewer's held glows. A client owns one (client.glow_holder); tests and benchmarks make one with no client.
 /datum/client_glow_holder
@@ -80,6 +82,16 @@ GLOBAL_VAR_INIT(client_glow_holder_sight_refreshes, 0)
 	var/list/acquire_queue
 	/// TRUE while an acquire_continue() timer is waiting.
 	var/acquire_waiting = FALSE
+	/// Held glows whose stand may have to change after the eye's sight moved (light handle key -> TRUE, oldest first): stand_turf() is a search, so the upkeep of a crossing
+	/// or a sight refresh only files them and upkeep_run() looks at them a budgeted step a tick. Lazy; null: none waiting.
+	var/list/stand_queue
+	/// Lights a delta crossing found newly inside the prefetch ring (light handle key -> TRUE): their shapes are readied (baking asked for, the PNG sent) by upkeep_run(). Lazy.
+	var/list/prefetch_queue
+	/// TRUE while an upkeep_continue() timer is waiting.
+	var/upkeep_waiting = FALSE
+	/// The steps the upkeep queues took, and the longest one in milliseconds (counters for the walk traces and tests).
+	var/upkeep_steps = 0
+	var/upkeep_worst_ms = 0
 	/// Server milliseconds one step of the acquire queue may spend before it leaves the rest to the next tick; null: the queue runs to the end in one call (viewers without a client).
 	var/acquire_budget_ms
 	/// The acquisitions made by the pending queue so far, and the steps and milliseconds they took (the log line of a spread queue).
@@ -435,7 +447,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 			keep[L] = TRUE
 		else
 			keep[L] = FALSE
-			prefetch(L)
+			prefetch_later(L)
 	return examined
 
 /// Readies the shape of light `L`, which is not held: baking starts, and the picture goes to the client before the crossing that holds it.
@@ -452,6 +464,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /// what the eye sees is held by the first step, the ring comes last. `counts` gets the chunks walked and lights examined by the step that ran here.
 /datum/client_glow_holder/proc/scan_all(list/counts)
 	scan_cancel()
+	follow_cancel() // refresh_stands() files every held glow again
 	var/chunk = CLIENT_GLOW_CHUNK
 	var/list/chunks_in_reach = glow_chunk_range(list(reach[1] - chunk, reach[2] - chunk, reach[3] + chunk, reach[4] + chunk))
 	var/list/order = list()
@@ -588,7 +601,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		acquire_later(L)
 		return
 	if(!CLIENT_GLOW_CLEAR_OF(sx, sy, r, new_ring) && CLIENT_GLOW_CLEAR_OF(sx, sy, r, old_ring))
-		prefetch(L)
+		prefetch_later(L)
 
 /// Light `L` is newly in reach of a delta crossing: its glow is made by the budgeted acquire queue, so a crossing that brings many lights into view cannot spike a tick.
 /// A viewer with no budget (tests) takes it at once.
@@ -637,6 +650,81 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	if(client_glow_trace_line())
 		log_world("client glow holder: [client?.ckey] acquire queue finished over [acquire_steps] step(s): [acquire_done] glow(s) made, [round(acquire_ms, 0.01)] ms in all (last step [round(step_ms, 0.01)] ms), holding [LAZYLEN(held)] glow(s)")
 	acquire_cancel()
+
+/// Light `L` is not held and its shape should be readied: with a budget it waits in the prefetch queue (the baking request and the PNG send of each light cost a crossing
+/// its ms), else it is readied at once (tests).
+/datum/client_glow_holder/proc/prefetch_later(datum/light_source/L)
+	if(isnull(acquire_budget_ms))
+		prefetch(L)
+		return
+	if(unlit || unmasked || !L.glow_mask_key || L.glow_plain)
+		return
+	var/h = L.glow_holder_key || L.glow_holder_key()
+	if(LAZYACCESS(prefetch_queue, h))
+		return
+	LAZYSET(prefetch_queue, h, TRUE)
+	upkeep_wake()
+
+/// Held glow `h` may need another stand turf after the eye's sight changed: filed for upkeep_run() (a viewer with no budget fixes it at once).
+/datum/client_glow_holder/proc/stand_later(h)
+	if(isnull(acquire_budget_ms))
+		stand_fix(h)
+		return
+	LAZYSET(stand_queue, h, TRUE)
+	upkeep_wake()
+
+/datum/client_glow_holder/proc/upkeep_wake()
+	if(upkeep_waiting)
+		return
+	upkeep_waiting = TRUE
+	after(src, 1 TICKS, PROC_REF(upkeep_continue))
+
+/// The timer of the stand and prefetch queues.
+/datum/client_glow_holder/proc/upkeep_continue()
+	upkeep_waiting = FALSE
+	if(!sig)
+		follow_cancel()
+		return
+	upkeep_run()
+
+/// One step of the stand and prefetch queues: stands first (a glow on a turf the eye no longer sees blinks), then the shapes, until acquire_budget_ms is spent (at least one
+/// entry a call); the rest waits for the next tick. Each entry is judged against the sight as it stands now, so a queue that outlives a later crossing is still right.
+/datum/client_glow_holder/proc/upkeep_run()
+	var/started = TICK_USAGE_REAL
+	var/done = 0
+	while(length(stand_queue))
+		var/h = stand_queue[1]
+		stand_queue.Cut(1, 2)
+		stand_fix(h)
+		done++
+		if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= acquire_budget_ms)
+			break
+	while(length(prefetch_queue) && (!done || TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) < acquire_budget_ms)) // at least one entry a step, so a queue always empties
+		var/h = prefetch_queue[1]
+		prefetch_queue.Cut(1, 2)
+		var/datum/light_source/L = handle_get(h)
+		if(istype(L) && !QDELETED(L) && !LAZYACCESS(held, h))
+			prefetch(L)
+		done++
+	var/step_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	upkeep_steps++
+	upkeep_worst_ms = max(upkeep_worst_ms, step_ms)
+	GLOB.client_glow_holder_upkeep_steps++
+	if(step_ms >= CLIENT_GLOW_SLOW_CROSSING_MS)
+		log_world("GLOW_SLOW: [client?.ckey]'s glow holder spent [round(step_ms, 0.1)] ms on one upkeep step ([done] entries; [length(stand_queue)] stand(s) and [length(prefetch_queue)] shape(s) still waiting)")
+	if(client_glow_trace_line())
+		log_world("client glow holder: [client?.ckey] upkeep step took [round(step_ms, 0.01)] ms for [done] entr(ies), [length(stand_queue)] stand(s) and [length(prefetch_queue)] shape(s) left")
+	if(!length(stand_queue))
+		stand_queue = null
+	if(!length(prefetch_queue))
+		prefetch_queue = null
+	if(stand_queue || prefetch_queue)
+		upkeep_wake()
+
+/// Forgets the stands and shapes waiting (a drop-all, a full scan that looks at every held glow anyway); a timer already waiting finds nothing to do.
+/datum/client_glow_holder/proc/follow_cancel()
+	stand_queue = null
+	prefetch_queue = null
 
 /// Forgets the lights waiting to be acquired (a drop-all, a login wipe, a new full scan that walks them anyway); a timer already waiting finds nothing to do.
 /datum/client_glow_holder/proc/acquire_cancel()
@@ -714,6 +802,24 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 			return
 		if(seen[S] ? (at == S) : (at != S && seen[at]))
 			return
+	stand_later(L.glow_holder_key)
+
+/// Held glow `h` is looked at against the sight as it stands now: it gets a new stand if the turf it stands on is no longer seen (or its own turf came into sight).
+/datum/client_glow_holder/proc/stand_fix(h)
+	var/list/entry = LAZYACCESS(held, h)
+	if(length(entry) < 2 || unlit || !seen)
+		return
+	var/datum/light_source/L = handle_get(h)
+	if(!istype(L) || QDELETED(L))
+		return
+	var/image/glow_image = entry[1]
+	var/turf/S = L.source_turf
+	var/obj/effect/overlay/client_glow/G = L.glow
+	if(!S || !G)
+		return
+	var/turf/at = glow_image.loc
+	if(seen[S] ? (at == S) : (at != S && seen[at]))
+		return
 	var/turf/stand_on = stand_turf(L, S, at)
 	if(stand_on != at)
 		restand(glow_image, G, S, stand_on)
@@ -737,12 +843,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		var/turf/at = glow_image.loc
 		if(seen[S] ? (at == S) : (at != S && seen[at]))
 			continue
-		var/datum/light_source/L = handle_get(h)
-		if(!istype(L) || QDELETED(L))
-			continue
-		var/turf/stand_on = stand_turf(L, S, at)
-		if(stand_on != at)
-			restand(glow_image, G, S, stand_on)
+		stand_later(h)
 
 /// Puts `glow_image` on `stand_on`, offset so it draws where the real glow (standing on `S`) would. Only a changed value is written: an assignment to an
 /// image the client holds can cost a client update even when nothing differs.
@@ -1066,6 +1167,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /datum/client_glow_holder/proc/drop_all(reason = "unspecified")
 	scanned = FALSE // nothing held matches any box now: the next crossing walks the whole region
 	scan_cancel() // and a scan under way walked boxes that no longer hold
+	follow_cancel()
 	if(LAZYLEN(held))
 		log_world("client glow holder: [client?.ckey] dropped all [LAZYLEN(held)] held glow(s): [reason]") // every glow gone at once shows as black with only the darksight circle
 	for(var/h in LAZYCOPY(held))

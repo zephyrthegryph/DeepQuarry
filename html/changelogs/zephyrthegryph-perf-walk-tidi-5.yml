@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Walking no longer spikes the tick when the client lighting holder follows the eye: glow stand upkeep and shape prefetch are spread over budgeted steps, and full scan steps are 4 ms"
