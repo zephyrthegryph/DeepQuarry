@@ -1443,12 +1443,16 @@
 /// P2-F1: the human screen, one proc per overlay family below.
 /mob/living/carbon/human/life_hud()
 	if(src.hud_updateflag) // update our mob's hud overlays, AKA what others see flaoting above our head
+		var/list_started = TICK_USAGE
+		var/list_flags = src.hud_updateflag
 		life_hud_list()
+		KM_SLOW_INNER(list_started, "life_hud_list flags [list_flags] on human")
 
 	// now handle what we see on our screen
 	. = ..()
 	if(!.)
 		return
+	var/screen_started = TICK_USAGE
 
 	if(istype(src.client.eye,/obj/machinery/camera))
 		var/obj/machinery/camera/cam = src.client.eye
@@ -1472,6 +1476,7 @@
 			src.claim_global_hud(GLOB.global_hud.darkMask)
 
 	src.reconcile_global_huds()
+	KM_SLOW_INNER(screen_started, "life_hud screen overlays on human")
 
 /// Severity band of `value` against ascending `thresholds`: 0 below the first, n at or past the nth.
 /mob/living/carbon/human/proc/life_hud_overlay_band(value, list/thresholds)
@@ -2289,7 +2294,9 @@
 	// Technically this does mean being dragged takes nutrition
 	// One write per step (a run burns twice a walk's share): each write publishes the nutrition key.
 	if(stat != DEAD)
+		MOVE_COST_BEGIN(nutrition_started)
 		adjust_nutrition(hunger_rate_of(src) / -10 * (m_intent == I_RUN ? 2 : 1))
+		MOVE_COST_END(MOVE_COST_BODY_NUTRITION, nutrition_started)
 
 	// Moving around increases germ_level faster
 	// The roll first: the slot read stays off most moves.

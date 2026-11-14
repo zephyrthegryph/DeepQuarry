@@ -1,0 +1,7 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "A step no longer reads every glow of its chunk for the floor light: a glow that cannot reach the turf is skipped before any work (night vision on a step and a big sprite's flat light)"
+  - bugfix: "A finished glow shadow bake is taken in by the lighting baker's turn, a few milliseconds a tick, not by the io callback (those answers cost 11-74 ms each)"
+  - bugfix: "The lighting step redraws the lights beside a viewer for at most a few milliseconds a step, not sixteen lights whatever they cost"
+  - code_imp: "New traces: UI_PUSH_SLOW names a slow window push, light_step's slow line splits its parts, the HUD pass and a step's living tail are split into named parts"

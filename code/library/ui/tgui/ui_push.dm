@@ -64,6 +64,9 @@ SYSTEM_DEF(ui_push)
 		ui_push_queue(ui, UI_PUSH_DATA)
 		.++
 
+/// A coalesced push that takes this long (ms) is traced (UI_PUSH_SLOW).
+#define UI_PUSH_SLOW_MS 10
+
 /// Delivers every queued push now (the phase R step; refresh_flush() for tests and admin tools).
 /proc/ui_push_flush()
 	var/datum/system/ui_push/S = SSui_push
@@ -76,8 +79,15 @@ SYSTEM_DEF(ui_push)
 		var/datum/tgui/ui = handle_get(ui_h)
 		if(!ui)
 			continue // deleted while queued
-		if(ui.push_coalesced(batch[ui_h]))
+		var/push_started = TICK_USAGE_REAL
+		var/owed = batch[ui_h]
+		var/was_status = ui.status
+		if(ui.push_coalesced(owed))
 			.++
+		var/push_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - push_started)
+		// One push that costs a tenth of a tick is named with what it was (a live round had one phase R of 790 ms with no span under it).
+		if(push_ms >= UI_PUSH_SLOW_MS)
+			log_world("UI_PUSH_SLOW: [round(push_ms, 0.1)] ms pushing [ui.interface || "no interface"] of [ui.src_object()?.type || "no host"] to [ui.user] (owed [owed], status [was_status] -> [ui.status], closing [!!ui.closing], [length(batch)] window(s) in this pass, tick usage [round(TICK_USAGE_REAL, 1)]%)")
 
 /// One coalesced delivery: the status is re-checked (a window whose host or user went away closes), then what the window is owed goes out.
 /// A data push runs ui_data() inside it, as an output: it must not write state. TRUE when data went out (or the interact re-ran).

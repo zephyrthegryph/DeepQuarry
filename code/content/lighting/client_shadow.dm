@@ -104,6 +104,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	/// Trace counters of the arrival turns: steps taken and viewers told.
 	var/arrival_steps = 0
 	var/arrival_told = 0
+	/// Finished bakes whose result is not taken in yet: list(key, sheet, result, error, handed_at) each, oldest first. The io callback only files the row; a turn takes the
+	/// PNG into the resource cache (client_glow_finished_run()), a few milliseconds a tick: decode, file copy and delete in the callback was 11-74 ms of one io pass.
+	var/list/finished = list()
+	/// Trace counters of the finishing turns: bakes taken in, and the longest one (ms).
+	var/finished_done = 0
+	var/finished_max_ms = 0
 
 /// The reached tiles (flat text list dx,dy,...) merged into rectangles: a flat number list x0,y0,x1,y1,... (tile offsets, inclusive).
 /// Horizontal runs per row, then a run identical to the row below's extends that rectangle upward.
@@ -243,11 +249,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 /proc/client_glow_baker_turn(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
 	var/started = TICK_USAGE_REAL
+	client_glow_finished_run(budget_ms)
 	client_glow_arrivals_run(max(0, budget_ms - TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)))
 	if(length(B.queue) && B.inflight < CLIENT_GLOW_MASK_BAKES_MAX)
 		client_glow_mask_pump()
 	client_glow_twins_pump(max(0, budget_ms - TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)))
-	if(length(B.twin_work))
+	if(length(B.twin_work) || length(B.finished))
 		client_glow_baker_wake()
 
 /// Arms the baker's next turn if it is not already waiting.
@@ -366,22 +373,52 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/path = "[CLIENT_GLOW_MASK_DIR][sheet]_[sprite_data["size_id"]].png"
 	return rustg_file_exists(path) ? path : null
 
-/// io_job() callback: a mask bake finished.
+/// io_job() callback: a mask bake finished. It only files the result: taking it in (decode, the file into the resource cache, the file's delete, the next bake's start) is
+/// the baker's turn's work, a few milliseconds a tick (client_glow_finished_run()), so one io pass never pays for a bake's whole arrival.
 /proc/client_glow_mask_job_done(result, error, key, sheet)
-	GLOB.client_glow_baker.inflight--
-	GLOB.client_glow_baker.pending -= key
-	var/asked = GLOB.client_glow_baker.asked_at[key]
-	GLOB.client_glow_baker.asked_at -= key
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	B.inflight--
+	B.finished += list(list(key, sheet, result, error, REALTIMEOFDAY))
+	client_glow_baker_wake()
+
+/// Takes the finished bakes in, oldest first, until `budget_ms` is spent (always at least one): each is decoded and its PNG cached, then its shape is told to the viewers
+/// (client_glow_arrivals_run() hands it out in its own turns). Returns the bakes taken in.
+/proc/client_glow_finished_run(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	if(!length(B.finished))
+		return 0
+	var/started = TICK_USAGE_REAL
+	var/done = 0
+	while(length(B.finished))
+		var/list/row = B.finished[1]
+		B.finished.Cut(1, 2)
+		var/step_started = TICK_USAGE_REAL
+		client_glow_mask_finish(row[1], row[2], row[3], row[4])
+		done++
+		var/step_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		B.finished_max_ms = max(B.finished_max_ms, step_ms)
+		if(step_ms >= 10) // a bake that cost a tenth of a tick: said with what it was and how long it sat filed
+			log_world("client glow mask: taking in [row[2]] took [round(step_ms, 0.1)] ms ([length(B.finished)] more finished, filed [round((REALTIMEOFDAY - row[5]) * 100)] ms ago)")
+		if(length(B.finished) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			break
+	B.finished_done += done
+	return done
+
+/// One finished bake taken in: its shape is cached and queued to be told to the viewers, or counted failed.
+/proc/client_glow_mask_finish(key, sheet, result, error)
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	B.pending -= key
+	var/asked = B.asked_at[key]
+	B.asked_at -= key
 	var/path = error ? null : client_glow_mask_png(sheet, result)
 	if(!path)
-		GLOB.client_glow_baker.failed++
+		B.failed++
 		log_world("client glow mask: bake failed for [sheet] ([error || result]); its lights stay uncut until asked again")
 	else
-		GLOB.client_glow_baker.wait_ds += REALTIMEOFDAY - asked
+		B.wait_ds += REALTIMEOFDAY - asked
 		client_glow_mask_store(key, path)
-	client_glow_mask_pump()
 
-/// Takes a baked PNG into the resource cache and gives it to every viewer waiting on the shape.
+/// Takes a baked PNG into the resource cache and queues the shape for every viewer waiting on it.
 /proc/client_glow_mask_store(key, path)
 	var/res = fcopy_rsc(file(path))
 	fdel(path)
@@ -394,11 +431,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	client_glow_mask_arrived(key, res)
 
 /// Shape `key` is in the cache (baked): every viewer waiting on it shows it. The viewers are told in turns of CLIENT_GLOW_TURN_BUDGET_MS
-/// (client_glow_arrivals_run()); the first of them is told now.
+/// (client_glow_arrivals_run()), from the baker's next turn.
 /proc/client_glow_mask_arrived(key, res)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
 	B.arrivals += list(list(key, res, REGISTRY_MEMBERS(REGISTRY_CLIENT_GLOW_HOLDERS).Copy()))
-	client_glow_arrivals_run(CLIENT_GLOW_TURN_BUDGET_MS)
+	client_glow_baker_wake() // the viewers are told in the baker's turn, with the budget it has, not inside whatever took the shape in
 
 /// Tells the viewers of arrived shapes, oldest shape first, until `budget_ms` is spent (always at least one viewer); the rest waits for the next tick.
 /// A viewer that was deleted meanwhile is skipped. Returns the viewers told.
@@ -675,6 +712,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		GLOB.client_glow_dirty_boxes["[T.z]"] = list(T.x, T.y, T.x, T.y)
 	GLOB.client_glow_flush_changes++
 
+/// What the last glow flush did (light_step()'s slow line says it): lights redrawn, viewers that took new sight.
+GLOBAL_VAR_INIT(client_glow_last_flush_redrawn, 0)
+GLOBAL_VAR_INIT(client_glow_last_flush_sighted, 0)
+
 /// The lighting step's turn for the opacity changes since the last one (light_step()): each marked light redraws its mask once, then the holders whose eye sees a changed turf
 /// take the new sight and move the glows standing on turfs they no longer see. At most until the tick is out of time (unless `all`): the rest waits for the next step.
 /proc/client_glow_reconsider_flush(all = FALSE)
@@ -696,8 +737,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/list/queued = todo.Copy()
 	for(var/h in todo)
 		done++
-		// A near light (a door beside a viewer) is redrawn whatever the tick has left, up to CLIENT_GLOW_NEAR_REDRAW_MAX: the shadows round a player never wait behind the budget.
-		if(!all && KERNEL_OVER_BUDGET && !(done <= near_count && done <= CLIENT_GLOW_NEAR_REDRAW_MAX))
+		// A near light (a door beside a viewer) is redrawn whatever the tick has left, up to CLIENT_GLOW_NEAR_REDRAW_MAX lights and CLIENT_GLOW_NEAR_REDRAW_MS of them:
+		// the shadows round a player never wait behind the budget, but sixteen redraws at a few ms each were a whole tick (light_step at 50 ms with every queue empty).
+		if(!all && KERNEL_OVER_BUDGET && !(done <= near_count && done <= CLIENT_GLOW_NEAR_REDRAW_MAX && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) < CLIENT_GLOW_NEAR_REDRAW_MS))
 			for(var/i in done to length(queued))
 				var/key = queued[i]
 				GLOB.client_glow_dirty_lights[key] = queued[key] // the rest waits for the next step
@@ -708,6 +750,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		GLOB.client_glow_reconsiders++
 		redrawn++
 		L.client_glow_mask_refresh() // only the mask: the glow's place, size and tint did not change
+	GLOB.client_glow_last_flush_redrawn = redrawn
+	GLOB.client_glow_last_flush_sighted = 0
 	if(length(GLOB.client_glow_dirty_lights))
 		return // out of time: the holders follow when the last light is redrawn, so they see the shapes the lights now have
 	var/list/boxes = GLOB.client_glow_dirty_boxes
@@ -718,6 +762,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		if(box && H.sig && H.sees_box(box))
 			H.sight_refresh()
 			sighted++
+	GLOB.client_glow_last_flush_sighted = sighted
 	if(client_glow_trace_line())
 		log_world("client glow flush: [redrawn] light(s) redrawn, [sighted] viewer(s) took new sight, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms")
 

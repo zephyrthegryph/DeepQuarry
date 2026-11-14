@@ -275,15 +275,21 @@ default behaviour is:
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)
 	. = ..()
 	MOVE_COST_BEGIN(living_started)
+	MOVE_COST_BEGIN(publish_started)
 	PUBLISH_CHANGE(src, MOB_KEY_LOC)
+	MOVE_COST_END(MOVE_COST_LIVING_PUBLISH, publish_started)
+	MOVE_COST_BEGIN(air_started)
 	air_check_moved()
+	MOVE_COST_END(MOVE_COST_LIVING_AIR, air_started)
 	// A low-priority mob placed after it was made in nullspace joins its z-level's presence
 	// (z-level changes after that come through onTransitZ()).
 	if(low_priority && !STATE_GET(src, living_misc, life_z))
 		life_update_relevance()
+	MOVE_COST_BEGIN(foot_started)
 	handle_footstep(loc)
 	if(!forced && movetime /* && !is_incorporeal()*/)
 		SSmotiontracker?.ping(src) // ? in case this runs before GLOB is set up (turf enter gravity).
+	MOVE_COST_END(MOVE_COST_LIVING_FOOT, foot_started)
 	if(is_shifted)
 		set_is_shifted(FALSE)
 		set_pixel_x(default_pixel_x)
@@ -291,6 +297,7 @@ default behaviour is:
 		set_layer(initial(layer))
 		set_plane(initial(plane))
 
+	MOVE_COST_BEGIN(pull_started)
 	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling) // we were pulling a thing and didn't lose it during our move.
 		var/pull_dir = get_dir(src, pulling)
@@ -314,7 +321,10 @@ default behaviour is:
 				if(get_dist(src, pulling) > 1) // the pullee couldn't keep up
 					stop_pulling()
 
+	MOVE_COST_END(MOVE_COST_LIVING_PULL, pull_started)
+	MOVE_COST_BEGIN(after_started)
 	if(!isturf(loc))
+		MOVE_COST_END(MOVE_COST_LIVING_AFTER, after_started)
 		MOVE_COST_END(MOVE_COST_LIVING, living_started)
 		return
 	else if(lastarea?.get_gravity() == 0)
@@ -334,6 +344,7 @@ default behaviour is:
 	var/turf/new_turf = loc
 	if(istype(old_turf) && old_turf.is_outdoors() != new_turf.is_outdoors())
 		update_client_color()
+	MOVE_COST_END(MOVE_COST_LIVING_AFTER, after_started)
 	MOVE_COST_END(MOVE_COST_LIVING, living_started)
 
 /mob/living/proc/inertial_drift()
