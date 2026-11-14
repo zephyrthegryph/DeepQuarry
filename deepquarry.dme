@@ -5139,6 +5139,7 @@
 #include "code\content\mob\living\carbon\human\gradient.dm"
 #include "code\content\mob\living\carbon\human\human.dm"
 #include "code\content\mob\living\carbon\human\human_attackhand.dm"
+#include "code\content\mob\living\carbon\human\human_bake.dm"
 #include "code\content\mob\living\carbon\human\human_bellies.dm"
 #include "code\content\mob\living\carbon\human\human_damage.dm"
 #include "code\content\mob\living\carbon\human\human_defense.dm"

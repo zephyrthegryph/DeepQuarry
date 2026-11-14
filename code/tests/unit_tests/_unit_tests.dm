@@ -472,6 +472,7 @@
 #include "dq_spawnpoint_audit_tests.dm"
 #include "dq_human_draw.dm"
 #include "dq_human_draw_cost.dm"
+#include "dq_human_bake_tests.dm"
 #include "dq_worn_redraw_tests.dm"
 #include "dq_relation_entries_tests.dm"
 #include "dq_tail_animation.dm"

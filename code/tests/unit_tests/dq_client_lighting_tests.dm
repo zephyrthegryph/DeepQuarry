@@ -1658,3 +1658,161 @@
 	var/near = I.GetPixel(240, 240 + 100)
 	TEST_ASSERT_EQUAL(centre, near, "a flat centre: no peak at the player's own tile")
 	TEST_ASSERT(isnull(I.GetPixel(2, 2)) || I.GetPixel(2, 2) != centre, "the corner fades out")
+
+/// The door lookup of a light's twins (client_glow_near_doors()) reads only the door chunks under the light's reach box: it finds the doors the old walk over every door found,
+/// looks at a handful of them rather than all, and the index follows a door that moves and one that goes. Measures both on the map the test runs on (Southern Cross with --full-map).
+/datum/unit_test/dq_client_glow_door_index_local
+
+/datum/unit_test/dq_client_glow_door_index_local/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	// A map with no lights of its own (the unit-test map) gets a scene: airlocks and lights on a grid of its floor, so there are many doors and every light has a few near it.
+	var/map_lights = 0
+	for(var/obj/machinery/light/F in world)
+		map_lights++
+	if(map_lights < 40)
+		var/placed_doors = 0
+		var/placed_lights = 0
+		for(var/turf/simulated/floor/T in world)
+			if(T.x % 5 || T.y % 4)
+				continue
+			if(placed_doors < 160 && !T.density)
+				allocate(/obj/machinery/door/airlock, T)
+				placed_doors++
+			var/turf/L = locate(T.x + 2, T.y, T.z)
+			if(placed_lights < 80 && istype(L, /turf/simulated/floor))
+				allocate(/obj/machinery/light, L)
+				placed_lights++
+		SSlighting.light_step(0, TRUE)
+		log_test("CLIENT GLOW DOOR INDEX: no lights on this map, so a scene of [placed_doors] airlocks and [placed_lights] lights was made")
+	var/list/all_doors = list()
+	for(var/obj/machinery/door/D in world)
+		if(isturf(D.loc))
+			all_doors += D
+	var/indexed = 0
+	for(var/key in GLOB.client_glow_door_chunks)
+		indexed += length(GLOB.client_glow_door_chunks[key])
+	TEST_ASSERT_EQUAL(indexed, length(all_doors), "every door standing on a turf is in the chunk index, once")
+	var/list/lights = list()
+	for(var/obj/machinery/light/F in world)
+		if(F.light && F.light.source_turf && length(lights) < 200)
+			lights += F.light
+	if(!length(lights))
+		log_test("CLIENT GLOW DOOR INDEX: no lights on this map (run with --full-map for the measurement)")
+	var/old_ms = 0
+	var/new_ms = 0
+	var/old_examined = 0
+	var/new_examined_start = GLOB.client_glow_twin_doors_examined
+	var/stamp
+	var/neighbours = 0
+	for(var/datum/light_source/L as anything in lights)
+		var/turf/S = L.source_turf
+		var/r = CLIENT_GLOW_RADIUS(L)
+		stamp = TICK_USAGE_REAL
+		var/list/old = list() // the walk this replaced: every door, one box test each
+		var/list/box = glow_reach_box(S, r)
+		for(var/obj/machinery/door/D as anything in all_doors)
+			old_examined++
+			var/turf/T = D.loc
+			if(T.z != S.z || CLIENT_GLOW_CLEAR_OF(T.x, T.y, 0, box))
+				continue
+			old[D] = abs(T.x - S.x) + abs(T.y - S.y)
+		old_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		stamp = TICK_USAGE_REAL
+		var/list/found = client_glow_near_doors(S, r)
+		new_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		neighbours += length(found)
+		TEST_ASSERT_EQUAL(length(found), length(old), "the same number of doors in the reach box of the light at [S.x],[S.y],[S.z]")
+		for(var/obj/machinery/door/D as anything in old)
+			TEST_ASSERT_EQUAL(found[D], old[D], "door [D.type] at [D.x],[D.y] is found at the same distance")
+	var/new_examined = GLOB.client_glow_twin_doors_examined - new_examined_start
+	var/n = max(length(lights), 1)
+	log_test("CLIENT GLOW DOOR INDEX: [length(lights)] lights, [length(all_doors)] doors: walk examined [old_examined / n] doors and took [old_ms / n] ms per light; the chunk index examined [new_examined / n] and took [new_ms / n] ms per light ([neighbours / n] in reach)")
+	if(length(lights) > 20)
+		TEST_ASSERT(new_examined / n <= 40, "a light examines the doors of its own chunks only ([new_examined / n] per light)")
+		TEST_ASSERT(new_examined * 4 < old_examined, "far fewer doors examined than the walk over all of them ([new_examined] against [old_examined])")
+	// The twin keys: the sight layer's one call against the per-door DM work it replaced (the flip, a shadowcast and a key built by client_glow_shape_key() for each door), key for key.
+	var/dm_ms = 0
+	var/rust_ms = 0
+	var/count = 0
+	var/compared = 0
+	var/twin_start = GLOB.client_glow_twin_doors_examined
+	for(var/datum/light_source/L as anything in lights)
+		if(count >= 60)
+			break
+		L.client_glow_mask_apply(CLIENT_GLOW_RADIUS(L), (CLIENT_GLOW_RADIUS(L) - 1) * 32) // the margin a real glow has
+		var/turf/S = L.source_turf
+		var/list/near = client_glow_near_doors(S, L.glow_mask_range)
+		sortTim(near, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
+		stamp = TICK_USAGE_REAL
+		var/list/want = list()
+		for(var/obj/machinery/door/D as anything in near)
+			var/turf/T = D.loc
+			var/dirs = client_glow_door_flip(D, T)
+			if(isnull(dirs))
+				continue
+			var/key = client_glow_shape_key(S, L.glow_mask_margin, sight_view_turfs_flipped(S, L.glow_mask_range, T, dirs), T, dirs)
+			if(key == L.glow_mask_key || (key in want))
+				continue
+			want += key
+		dm_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		stamp = TICK_USAGE_REAL
+		var/list/got = sight_twin_keys(S, L.glow_mask_range, L.glow_mask_margin, client_glow_door_cells(near), L.glow_mask_key, 1000)
+		rust_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		TEST_ASSERT_EQUAL(length(got), length(want), "the sight layer finds the same number of twin shapes for the light at [S.x],[S.y],[S.z]")
+		for(var/i in 1 to length(want))
+			TEST_ASSERT_EQUAL(got[i], want[i], "twin shape [i] of the light at [S.x],[S.y],[S.z] is the key client_glow_shape_key() builds")
+			compared++
+		count++
+	log_test("CLIENT GLOW DOOR INDEX: twin keys for [count] lights ([compared] shapes, all equal): DM per door [dm_ms / max(count, 1)] ms per light, one sight_twin_keys() call [rust_ms / max(count, 1)] ms per light")
+	var/twins_ms = 0
+	count = 0
+	twin_start = GLOB.client_glow_twin_doors_examined
+	for(var/datum/light_source/L as anything in lights)
+		if(count >= 60)
+			break
+		L.glow_twins_for = null
+		stamp = TICK_USAGE_REAL
+		L.client_glow_twins_ready()
+		twins_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		count++
+	log_test("CLIENT GLOW DOOR INDEX: client_glow_twins_ready() for [count] lights took [twins_ms / max(count, 1)] ms per light (including the bake requests); [(GLOB.client_glow_twin_doors_examined - twin_start) / max(count, 1)] doors examined per light")
+	var/obj/machinery/door/airlock/flip
+	for(var/obj/machinery/door/airlock/D as anything in all_doors)
+		if(D.opacity)
+			flip = D
+			break
+	if(flip)
+		var/turf/FT = flip.loc
+		var/in_reach = 0
+		var/changed = 0
+		var/before = GLOB.client_glow_twin_lights
+		flip.set_opacity(FALSE)
+		for(var/datum/light_source/L as anything in lights)
+			if(!L.glow_mask_key)
+				continue
+			var/list/box = glow_reach_box(L.source_turf, L.glow_mask_range)
+			if(L.source_turf.z == FT.z && !CLIENT_GLOW_CLEAR_OF(FT.x, FT.y, 0, box))
+				in_reach++
+			if(L.client_glow_mask_apply(L.glow_mask_range, L.glow_mask_margin))
+				changed++
+			L.client_glow_twins_ready()
+		flip.set_opacity(TRUE)
+		TEST_ASSERT_EQUAL(GLOB.client_glow_twin_lights - before, changed, "only a light whose shape changed works its twins out again")
+		TEST_ASSERT(changed <= in_reach, "and only a light with the door in its reach changed shape ([changed] changed, [in_reach] reach it)")
+	for(var/datum/light_source/L as anything in lights)
+		L.client_glow_mask_clear()
+	// The index follows a door that moves, and drops one that goes.
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/far = locate(T.x + CLIENT_GLOW_CHUNK * 2, T.y, T.z) || locate(T.x - CLIENT_GLOW_CHUNK * 2, T.y, T.z)
+	var/obj/machinery/door/airlock/D = allocate(/obj/machinery/door/airlock, T)
+	var/key = client_glow_chunk_id(T.z, CLIENT_GLOW_CHUNK_OF(T.x), CLIENT_GLOW_CHUNK_OF(T.y))
+	TEST_ASSERT(D in GLOB.client_glow_door_chunks[key], "a new door is in the index of its chunk")
+	TEST_ASSERT(D in client_glow_near_doors(T, 1), "and a light beside it finds it")
+	if(far)
+		D.forceMove(far)
+		TEST_ASSERT(!(D in GLOB.client_glow_door_chunks[key]), "a door that moved is out of the chunk it left")
+		TEST_ASSERT(D in GLOB.client_glow_door_chunks[client_glow_chunk_id(far.z, CLIENT_GLOW_CHUNK_OF(far.x), CLIENT_GLOW_CHUNK_OF(far.y))], "and in the chunk it went to")
+		TEST_ASSERT(!(D in client_glow_near_doors(T, 1)), "so a light where it was no longer finds it")
+	var/gone_key = D.glow_door_chunk
+	qdel(D)
+	TEST_ASSERT(!(D in GLOB.client_glow_door_chunks[gone_key]), "a door that is deleted leaves the index")
