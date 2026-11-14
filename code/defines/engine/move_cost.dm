@@ -35,7 +35,14 @@
 #define MOVE_COST_EYE_CELL 17 // SSproximity.eye_update(): eye_place(), counting the eye into its proximity cell and waking the cells round it
 #define MOVE_COST_EYE_GAZE 18 // gaze_update(): the chunks the view holds (gaze_view_set) and the anchors
 #define MOVE_COST_EYE_GLOW 19 // client.gaze_moved(): the glow holder's crossing or in-chunk follow and the lighting screen sync
-#define MOVE_COST_PART_COUNT 19
+// What the living and carbon tails are made of (a trace of a slow step names them; the parts are inside MOVE_COST_LIVING and MOVE_COST_BODY).
+#define MOVE_COST_LIVING_PUBLISH 20 // mob/living/Moved(): the loc change publish
+#define MOVE_COST_LIVING_AIR 21 // mob/living/Moved(): air_check_moved(), the air watch's band compare (it runs the air steps at once on a crossing)
+#define MOVE_COST_LIVING_FOOT 22 // mob/living/Moved(): the footstep and the motion tracker ping
+#define MOVE_COST_LIVING_PULL 23 // mob/living/Moved(): the pulled thing follows
+#define MOVE_COST_LIVING_AFTER 24 // mob/living/Moved(): inertia, gravity, layer, the client colour for an indoor/outdoor change
+#define MOVE_COST_BODY_NUTRITION 25 // carbon Moved(): the nutrition write and its publish
+#define MOVE_COST_PART_COUNT 25
 
 /// Starts timing a part: the tick usage now while a client's step is being measured, else 0.
 #define MOVE_COST_BEGIN(started) var/started = GLOB.move_cost_on ? TICK_USAGE_REAL : 0

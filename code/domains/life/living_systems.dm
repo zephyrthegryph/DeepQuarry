@@ -401,7 +401,9 @@
 	SHOULD_CALL_PARENT(TRUE)
 	if(!hud_available())
 		return FALSE
+	var/place_started = TICK_USAGE
 	life_hud_darksight()
+	KM_SLOW_INNER(place_started, "life_hud_place darksight [type]") // the tick ledger names a step's HUD place pass when it passes KM_SLOW_SPAN_MIN_MS
 	return TRUE
 
 /// One reactive HUD pass: draw it, then arm its rewake (darksight, fading overlays) or, while it
@@ -409,7 +411,9 @@
 /mob/living/proc/life_hud_pass()
 	if(!life_placed())
 		return
+	var/pass_started = TICK_USAGE
 	life_hud()
+	KM_SLOW_INNER(pass_started, "life_hud pass [type]")
 	var/delay = life_hud_idle() ? life_hud_rewake_delay() : LIFE_CYCLE
 	if(delay > 0 && client)
 		after(src, delay, PROC_REF(life_hud_rewake), key = LIFE_HUD_REWAKE, clock = CLOCK_WORLD)
@@ -442,8 +446,12 @@
 	SHOULD_CALL_PARENT(TRUE)
 	if(!hud_available())
 		return FALSE
+	var/darksight_started = TICK_USAGE
 	life_hud_darksight()
+	KM_SLOW_INNER(darksight_started, "life_hud darksight [type]")
+	var/icons_started = TICK_USAGE
 	life_hud_health_icons()
+	KM_SLOW_INNER(icons_started, "life_hud health icons [type]")
 	return TRUE
 
 

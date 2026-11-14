@@ -196,6 +196,8 @@ do { \
 #define CLIENT_GLOW_TWIN_PER_TICK 3
 /// Lights redrawn for an opacity change in a chunk some viewer holds per lighting step, whatever the tick budget says: a door beside a viewer never waits behind the budget.
 #define CLIENT_GLOW_NEAR_REDRAW_MAX 16
+/// Past this many milliseconds of one flush the near lights wait for the next step too.
+#define CLIENT_GLOW_NEAR_REDRAW_MS 6
 #define CLIENT_GLOW_MASK_BAKES_MAX 16
 /// How long a client with no session (so no asset ack to wait for) is given to receive a new baked glow PNG before held glows swap to it.
 #define CLIENT_GLOW_ICON_DELIVERY (0.5 SECONDS)

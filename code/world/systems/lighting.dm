@@ -71,7 +71,10 @@ SYSTEM_DEF(lighting)
 	if(!drain_sources(sources_queue_near, init_tick_checks, TRUE))
 		drain_sources(sources_queue, init_tick_checks)
 
+	var/sources_ms = TICK_USAGE_TO_MS(step_start)
+	var/flush_started = TICK_USAGE
 	client_glow_reconsider_flush(init_tick_checks) // client lighting: the opacity changes since the last step, one redraw per light (client_shadow.dm)
+	var/flush_ms = TICK_USAGE_TO_MS(flush_started)
 
 	if(!init_tick_checks)
 		KERNEL_SPLIT_TICK
@@ -133,11 +136,12 @@ SYSTEM_DEF(lighting)
 	if (i)
 		queue.Cut(1, i + 1)
 
+	var/smooth_started = TICK_USAGE
 	lighting_smooth_step(init_tick_checks) // corner mode: the turfs sampled since the last step, their corners and tiles (lighting_smoothing.dm)
 
 	// A step over a whole tick: what it had to do and what it left, to tell one huge element from a budget that did not bind.
 	if(!init_tick_checks && TICK_USAGE_TO_MS(step_start) > world.tick_lag * 100)
-		log_world("light_step took [TICK_USAGE_TO_MS(step_start)]ms (limit [Kernel.current_ticklimit]%); start: sources [start_sources] ([start_near] near a viewer), corners [start_corners], objects [start_objects], sunlight [start_sunlight]; left: sources [length(sources_queue) + length(sources_queue_near)], corners [length(corners_queue)], objects [length(objects_queue)], sunlight [length(sunlight_queue_active)]")
+		log_world("light_step took [TICK_USAGE_TO_MS(step_start)]ms (limit [Kernel.current_ticklimit]%); parts: sources [round(sources_ms, 0.1)], glow flush [round(flush_ms, 0.1)] ([GLOB.client_glow_last_flush_redrawn] light(s) redrawn, [GLOB.client_glow_last_flush_sighted] viewer(s) took sight), smoothing [round(TICK_USAGE_TO_MS(smooth_started), 0.1)]; start: sources [start_sources] ([start_near] near a viewer), corners [start_corners], objects [start_objects], sunlight [start_sunlight]; left: sources [length(sources_queue) + length(sources_queue_near)], corners [length(corners_queue)], objects [length(objects_queue)], sunlight [length(sunlight_queue_active)]")
 
 /// Drains the light sources in `queue` (one of the two source queues) in order until it is empty or the tick's budget is spent. TRUE when the budget stopped it
 /// with sources left. `handles`: the queue holds handles (the near queue), not the sources.

@@ -123,9 +123,13 @@ CAPABILITY_TYPE(client_flat_light, CAP_CLIENT_FLAT_LIGHT, /datum/capability/clie
 			continue
 		var/dx = T.x - S.x
 		var/dy = T.y - S.y
+		// A turf past the sprite's rim (the profile is 0 from f = 1) costs two multiplies: most of the glows in a chunk are out of reach, and the reach lookup below builds a key text.
+		var/half_width = WORLD_ICON_SIZE / 2 - G.pixel_x // pixel_x is minus the sprite's margin
+		if((dx * dx + dy * dy) * (WORLD_ICON_SIZE * WORLD_ICON_SIZE) >= half_width * half_width)
+			continue
 		if(!L.glow_plain && !L.glow_reach?["[dx],[dy]"]) // a plain (carried) glow is drawn uncut: the visibility cut is all that bounds it
 			continue
-		var/strength = client_flat_light_profile(sqrt(dx * dx + dy * dy) * WORLD_ICON_SIZE / (WORLD_ICON_SIZE / 2 - G.pixel_x)) * G.alpha / 255 // pixel_x is minus the sprite's margin
+		var/strength = client_flat_light_profile(sqrt(dx * dx + dy * dy) * WORLD_ICON_SIZE / half_width) * G.alpha / 255
 		if(strength <= 0)
 			continue
 		var/list/tint = istext(G.color) ? rgb2num(G.color) : null
