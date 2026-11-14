@@ -212,6 +212,9 @@ do { \
 /// The blur over the whole glow plane that softens every tile-shaped cut, so neighbouring colours blend (one filter per client, none per light), always on:
 /// its size in pixels, about 0.4 of a tile. Wider bleeds light past walls (the blur runs after the wall cut).
 #define LIGHTING_SMOOTH_BLUR_SIZE 12
+/// A stair tile is lit as its floor is, scaled so the way it goes reads: the piece you step onto to go up is lighter, the one you step off the top to go down is darker.
+#define LIGHTING_STAIR_UP_SCALE 1.3
+#define LIGHTING_STAIR_DOWN_SCALE 0.7
 /// Corner lighting (code/content/lighting/lighting_smoothing.dm), on top of the blur: each turf is shaded from four corner values (a gradient underlay per
 /// lit turf) in place of the glows. The state of LIGHTING_ICON that holds the four corner gradients (the first, unnamed one: icons/effects/lighting_object.dmi.toml).
 #define LIGHTING_SMOOTH_GRADIENT_STATE ""

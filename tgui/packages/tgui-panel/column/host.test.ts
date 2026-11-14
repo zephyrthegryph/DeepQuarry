@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { waitFor } from '@testing-library/react';
 import { gameDataAtom } from 'tgui/events/store';
 import { canFloat } from './Column';
-import { CHAT_PENDING, ColumnHost } from './host';
+import { CHAT_PENDING, ColumnHost, dropIndex } from './host';
 import { DOCK_SAVE_MAX, serializeSaved } from './model';
 
 const byond = (globalThis as any).Byond;
@@ -351,5 +351,17 @@ describe('the saved layout', () => {
     expect(
       Object.keys(host.state.saved).some((k) => k.startsWith('col-')),
     ).toBe(false);
+  });
+});
+
+describe('dropIndex', () => {
+  it('lands before the first entry whose middle is below the point, else last', () => {
+    const boxes = [
+      { top: 0, height: 400 },
+      { top: 403, height: 597 },
+    ];
+    expect(dropIndex(boxes, 100)).toBe(0);
+    expect(dropIndex(boxes, 300)).toBe(1);
+    expect(dropIndex(boxes, 900)).toBe(2);
   });
 });

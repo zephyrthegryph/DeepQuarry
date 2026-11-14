@@ -11,13 +11,13 @@ import {
   emptyDock,
   FILL_MIN,
   FIT_MIN,
+  fillHeight,
   fillIndexOf,
   fitHeights,
   hiddenIds,
   parseSaved,
   serializeSaved,
   shownIds,
-  fillHeight,
 } from './model';
 
 const win = (id: string, iface = id.toUpperCase()) => ({
@@ -381,7 +381,10 @@ describe('fitting the entries to the column', () => {
       below: number | null,
       dy: number,
     ) => {
-      const [x, y] = [state.groups[above], below === null ? null : state.groups[below]];
+      const [x, y] = [
+        state.groups[above],
+        below === null ? null : state.groups[below],
+      ];
       return dockReduce(state, {
         type: 'boundary',
         above: x.id,
@@ -470,9 +473,9 @@ describe('fitting the entries to the column', () => {
         group: state.groups[2].id,
         index: 0,
       });
-      expect(
-        fillIndexOf(state.groups, state.windows, (g) => g.collapsed),
-      ).toBe(0);
+      expect(fillIndexOf(state.groups, state.windows, (g) => g.collapsed)).toBe(
+        0,
+      );
     });
 
     it('a new entry takes its height from Status first', () => {

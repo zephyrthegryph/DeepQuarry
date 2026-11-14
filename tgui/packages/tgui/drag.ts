@@ -9,7 +9,6 @@ import type { BooleanLike } from 'tgui-core/react';
 import { vecAdd, vecMultiply, vecScale, vecSubtract } from 'tgui-core/vector';
 import { mainBounds, measureColumn } from 'tgui-panel/layout/geometry';
 import type { Rect } from 'tgui-panel/layout/model';
-import { rectContains } from 'tgui-panel/layout/model';
 import { configAtom, store } from './events/store';
 import { dragFrame } from './floatPlacement';
 import { createLogger } from './logging';
@@ -32,6 +31,9 @@ let dragging = false;
 let resizing = false;
 /** Screen x lines the dragged window's right edge sticks to (the right-hand panel's left edge), set while a drag runs. */
 let columnStops: number[] = [];
+/** The column's screen rect, measured as the drag began, and whether the page is showing its drop hint now. */
+let columnRect: Rect | null = null;
+let hintShown = false;
 let screenOffset: Point = [0, 0];
 let screenOffsetPromise: Promise<Point> | undefined;
 let screenOffsetKnown = false;
@@ -435,10 +437,15 @@ export function dragStartHandler(event): void {
   dragging = true;
   // The right-hand panel's left edge is a place to rest against; measured once as the drag begins.
   columnStops = [];
+  columnRect = null;
+  hintShown = false;
   mainBounds()
     .then((main) => measureColumn(main))
     .then((column) => {
-      if (dragging && column) columnStops = [column.x];
+      if (dragging && column) {
+        columnStops = [column.x];
+        columnRect = column;
+      }
     })
     .catch(() => undefined);
   dragPointOffset = vecSubtract(
@@ -464,41 +471,109 @@ function dragEndHandler(event): void {
   document.removeEventListener('mousemove', dragMoveHandler);
   document.removeEventListener('mouseup', dragEndHandler);
   dragging = false;
+  sendDropHint(null);
   storeWindowGeometry();
   dockIfOverPanel([event.screenX * ratioNow(), event.screenY * ratioNow()]);
 }
 
+/** How much of a window must lie over the column for it to dock: this share of its area, or of its width. */
+export const DOCK_OVERLAP = 0.6;
+
 /**
- * Whether a drop at `pointer` (screen pixels) is worth asking the server
- * about: over the column's rect, or anywhere when the column could not be
- * measured (the page then decides). A drop elsewhere docks nothing.
+ * Whether a window at `win` (its own rect, screen pixels) is mostly over
+ * the column: at least DOCK_OVERLAP of its area or of its width overlaps
+ * `column`. The cursor does not count, so a big window docks only when
+ * most of it is in, a small one when it is in.
  */
-export function dropNeedsCheck(
-  column: Rect | null,
-  pointer: [number, number],
-): boolean {
-  return !column || rectContains(column, pointer[0], pointer[1]);
+export function overlapsColumn(column: Rect, win: Rect): boolean {
+  if (win.w <= 0 || win.h <= 0) return false;
+  const w =
+    Math.min(win.x + win.w, column.x + column.w) - Math.max(win.x, column.x);
+  const h =
+    Math.min(win.y + win.h, column.y + column.h) - Math.max(win.y, column.y);
+  if (w <= 0 || h <= 0) return false;
+  return (w * h) / (win.w * win.h) >= DOCK_OVERLAP || w / win.w >= DOCK_OVERLAP;
 }
 
 /**
- * A floating window's titlebar drag ended: when the point is over the
- * right-hand column, the server asks the column's page where in its window
- * list the point falls, and docks the window there
+ * Whether a drop of the window at `win` is worth asking the server about:
+ * mostly over the column (overlapsColumn), or always when the column could
+ * not be measured (the page then decides).
+ */
+export function dropNeedsCheck(column: Rect | null, win: Rect): boolean {
+  return !column || overlapsColumn(column, win);
+}
+
+/** The window's own rect: its place and size (screen pixels). */
+function windowRect(): Rect {
+  const [x, y] = getWindowPosition();
+  const [w, h] = getWindowSize();
+  return { x, y, w, h };
+}
+
+/**
+ * A floating window's titlebar drag ended: when most of the window is over
+ * the right-hand column, the server asks the column's page where in its
+ * window list the point falls, and docks the window there
  * (doc/rewrite/proposals/window_system.md section 12). A drop anywhere else
- * sends nothing.
+ * sends nothing, and a window that may not dock (config.window.dockable
+ * false: character setup, the lobby, admin tools) never asks.
  */
 async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
   if (!store.get(configAtom)?.window?.dockable) {
     return;
   }
   const column = await measureColumn(await mainBounds());
-  if (!dropNeedsCheck(column, pointer)) {
+  if (!dropNeedsCheck(column, windowRect())) {
     logger.log('drop outside the column', pointer);
     return;
   }
   Byond.sendMessage('wm/dropped', {
-    pointer: { x: Math.round(pointer[0]), y: Math.round(pointer[1]) },
+    pointer: pointInColumn(column, pointer),
   });
+}
+
+/**
+ * The point the column page judges: the page decides where in its list a
+ * point falls, and the window's overlap has already decided, so the point
+ * is the pointer held inside the column. The drop and the drop hint send
+ * the same point, so they name the same index.
+ */
+export function pointInColumn(
+  column: Rect | null,
+  pointer: [number, number],
+): { x: number; y: number } {
+  const [px, py] = column
+    ? [
+        Math.min(Math.max(pointer[0], column.x), column.x + column.w),
+        Math.min(Math.max(pointer[1], column.y), column.y + column.h),
+      ]
+    : pointer;
+  return { x: Math.round(px), y: Math.round(py) };
+}
+
+/** Whether the drop hint is up for a drag now: the column is known and most of the window is over it. */
+export function hintWanted(column: Rect | null, win: Rect): boolean {
+  return !!column && overlapsColumn(column, win);
+}
+
+/** Tells the column page where the dragged window would land (a point), or that there is no landing (null). Sent only on a change of shown or hidden, and on each new point. */
+function sendDropHint(point: { x: number; y: number } | null): void {
+  if (!point && !hintShown) return;
+  hintShown = !!point;
+  Byond.sendMessage('wm/drophint', { pointer: point });
+}
+
+/** While a drag runs: shows the page's drop hint when the window may dock and most of it is over the column, else takes it down. */
+function updateDropHint(win: Rect, pointer: [number, number]): void {
+  if (
+    !store.get(configAtom)?.window?.dockable ||
+    !hintWanted(columnRect, win)
+  ) {
+    sendDropHint(null);
+    return;
+  }
+  sendDropHint(pointInColumn(columnRect, pointer));
 }
 
 // Move the window while dragging
@@ -522,6 +597,10 @@ function dragMoveHandler(event: MouseEvent): void {
   // density), its size is put back in the same transaction.
   const frame = dragFrame(pos, heldSize, getWindowSize());
   setWindowPositionBatched(pos);
+  updateDropHint({ x: pos[0], y: pos[1], w: heldSize[0], h: heldSize[1] }, [
+    event.screenX * ratioNow(),
+    event.screenY * ratioNow(),
+  ]);
   if (frame.drift) {
     if (!driftLogged) {
       driftLogged = true;
