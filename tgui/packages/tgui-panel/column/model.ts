@@ -606,3 +606,26 @@ export function fitHeights(
   }
   return heights;
 }
+
+/** An entry's place on the page, for the live drop index. */
+export type DropBox = { id: string; start: number; size: number };
+
+/**
+ * The list index dragged entry `id` would land at when it is `dy` pixels from where it started. Moving up the entry's top edge is tested
+ * against the middles above it and moving down its bottom edge against the middles below, so a tall entry (the chat) dragged to the top
+ * of the page reaches slot 0 whatever its own height: its centre could never get above a short first entry's middle.
+ */
+export function dropIndex(boxes: DropBox[], id: string, dy: number): number {
+  const from = boxes.findIndex((box) => box.id === id);
+  if (from < 0) return -1;
+  const top = boxes[from].start + dy;
+  const bottom = top + boxes[from].size;
+  let to = from;
+  for (let i = 0; i < boxes.length; i++) {
+    if (i === from) continue;
+    const mid = boxes[i].start + boxes[i].size / 2;
+    if (i > from && bottom > mid) to = Math.max(to, i);
+    if (i < from && top < mid) to = Math.min(to, i);
+  }
+  return to;
+}

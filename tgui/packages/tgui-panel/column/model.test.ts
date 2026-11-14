@@ -7,6 +7,7 @@ import {
   DOCK_SAVE_MAX,
   type DockState,
   dockReduce,
+  dropIndex,
   emptyDock,
   FILL_MIN,
   FIT_MIN,
@@ -473,6 +474,45 @@ describe('fitting the entries to the column', () => {
         window: { id: 'a', iface: 'APC', title: 'APC' },
       });
       expect(heights(next)[0]).toBe(before[0]);
+    });
+  });
+
+  describe('reordering', () => {
+    const boxes = [
+      { id: 'a', start: 0, size: 100 },
+      { id: 'b', start: 97, size: 100 },
+      { id: 'chat', start: 194, size: 500 },
+    ];
+
+    it('the tall chat dragged to the top of the page lands in slot 0', () => {
+      // The page clamps the drag at the top: the chat's top edge is at 0.
+      expect(dropIndex(boxes, 'chat', -194)).toBe(0);
+    });
+
+    it('the chat lands in slot 1 only between the first and second middles', () => {
+      expect(dropIndex(boxes, 'chat', -100)).toBe(1);
+      expect(dropIndex(boxes, 'chat', -145)).toBe(0);
+      expect(dropIndex(boxes, 'chat', 0)).toBe(2);
+    });
+
+    it('an entry dragged down lands by its bottom edge', () => {
+      expect(dropIndex(boxes, 'a', 10)).toBe(0);
+      expect(dropIndex(boxes, 'a', 60)).toBe(1);
+      expect(dropIndex(boxes, 'a', 400)).toBe(2);
+      expect(dropIndex(boxes, 'zzz', 0)).toBe(-1);
+    });
+
+    it('moving an entry keeps every group and window id (so the page keeps each entry mounted)', () => {
+      const state = openAll('a', 'b', 'c');
+      const ids = state.groups.map((g) => g.id);
+      const moved = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
+      });
+      expect(moved.groups.map((g) => g.id)).toEqual([ids[2], ids[0], ids[1]]);
+      expect(order(moved)).toEqual([['c'], ['a'], ['b']]);
+      expect(Object.keys(moved.windows).sort()).toEqual(['a', 'b', 'c']);
     });
   });
 });

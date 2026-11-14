@@ -20,13 +20,14 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
 import {
   DRAG_THRESHOLD,
   liveClamp,
-  liveDropIndex,
   liveSlide,
   type OrderBox,
   Tabs,
@@ -44,6 +45,7 @@ import { type ColumnHost, columnHost, sendPage } from './host';
 import {
   type DockGroup,
   type DockWindow,
+  dropIndex,
   fillHeight,
   fitHeights,
 } from './model';
@@ -301,7 +303,7 @@ function runDrag(
       group,
       window: pulled,
       dy,
-      to: pulled ? indexAtY(boxes, e.clientY) : liveDropIndex(boxes, group, dy),
+      to: pulled ? indexAtY(boxes, e.clientY) : dropIndex(boxes, group, dy),
       join,
       float,
       boxes,
@@ -561,6 +563,17 @@ const Group = memo(function Group(
     ghost,
   } = props;
   const { windows } = host.state;
+  // Scroll positions inside the entry: a reorder moves its DOM node, which resets every scroller in it, so each is put back after a render.
+  const scrolls = useRef(new Map<Element, [number, number]>());
+  useLayoutEffect(() => {
+    for (const [node, [top, left]] of scrolls.current) {
+      if (!node.isConnected) scrolls.current.delete(node);
+      else if (node.scrollTop !== top || node.scrollLeft !== left) {
+        node.scrollTop = top;
+        node.scrollLeft = left;
+      }
+    }
+  });
   const active = windows[group.active];
   const title = active?.title || active?.iface || '';
   const stacked = group.windows.length > 1;
@@ -587,6 +600,10 @@ const Group = memo(function Group(
         .filter(Boolean)
         .join(' ')}
       data-column-group={group.id}
+      onScrollCapture={(event) => {
+        const node = event.target as Element;
+        scrolls.current.set(node, [node.scrollTop, node.scrollLeft]);
+      }}
       style={{
         transform: offset ? `translateY(${offset}px)` : undefined,
         height: collapsed || fill ? undefined : `${height}px`,
