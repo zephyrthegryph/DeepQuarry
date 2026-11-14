@@ -82,6 +82,9 @@
 	var/tmp/rebuilds_done = 0
 	var/tmp/rebuilds_skipped = 0
 	var/tmp/instants_run = 0
+	/// Where the last strategic run's time went, in ms: rebuilding behaviours, the pack's backstop perception, the threat pick, behaviour selection and the
+	/// instant behaviour it ran (a wander step goes through the op pipeline). ai_slow_tick_log() prints it so a slow run names its stage.
+	var/tmp/list/strategic_stage_ms
 
 CAPABILITIES(/datum/ai_brain)
 	ref_one(nameof(holder), /mob/living)
@@ -183,10 +186,14 @@ CAPABILITIES(/datum/ai_brain)
 		return
 	if(holder.client && !autopilot)
 		return
+	var/stage_t = TICK_USAGE
 	rebuild_behaviors()
+	stage_t = strategic_stage("rebuild", stage_t)
 	// Perception is the pack's: this is only the backstop for a pack nothing has stirred for a window.
 	pack?.perceive_if_due()
+	stage_t = strategic_stage("perceive", stage_t)
 	update_primary_threat()
+	stage_t = strategic_stage("threat", stage_t)
 	selection_dirty = TRUE
 	if(primary_threat)
 		// Combat: the quarter-second tactical loop owns behavior selection.
@@ -197,6 +204,7 @@ CAPABILITIES(/datum/ai_brain)
 	// selected, on the slow cadence rather than per action tick.
 	var/instants_before = instants_run
 	var/idle_pending = pick_and_run()
+	strategic_stage("pick", stage_t)
 	if(active_behavior_type)
 		// A tick-driven idle behavior is running: the loop drives it until it finishes.
 		defer_strategic(2 SECONDS)
@@ -207,6 +215,13 @@ CAPABILITIES(/datum/ai_brain)
 	// toward one) stays on the slow cadence so it actually gets to act.
 	if(!idle_pending && !destination())
 		park_calm()
+
+/// Records the ms since `t` against stage `name` of this run (the first stage of a run clears the last run's) and returns the new "since".
+/datum/ai_brain/proc/strategic_stage(name, t)
+	if(name == "rebuild" || !strategic_stage_ms)
+		strategic_stage_ms = list()
+	strategic_stage_ms[name] = TICK_USAGE_TO_MS(t)
+	return TICK_USAGE
 
 /// Tactical tick. Fast — 250ms. Runs while a threat exists OR while a
 /// tick-driven behavior (combat or idle) is active; see sync_fast_processing.
