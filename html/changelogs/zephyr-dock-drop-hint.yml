@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "Dragging a window over the column shows an accent line where it will dock, once most of it is over the column"

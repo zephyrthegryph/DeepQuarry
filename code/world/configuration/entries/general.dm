@@ -845,7 +845,3 @@
 /// on every crossing and light change. Warnings and anomalies are written regardless.
 /datum/config_entry/flag/lighting_trace
 
-/// Client lighting's corner layer (each tile shaded from its four corners, code/content/lighting/lighting_smoothing.dm), on top of the always-on blur. On by
-/// default; admins switch it live (Toggle Corner Lighting).
-/datum/config_entry/flag/lighting_corners
-	default = TRUE

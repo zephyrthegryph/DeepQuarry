@@ -14,6 +14,19 @@ GLOBAL_LIST_INIT(window_dock_modal_interfaces, list(
 	"TextInputModal" = TRUE,
 ))
 
+/// Interfaces that never dock: big or full-screen windows (character setup, the lobby, admin tools) that are never offered the dock
+/// button or a drop on the column, and never open in it.
+GLOBAL_LIST_INIT(window_dock_never_docked, list(
+	"PreferencesMenu" = TRUE,
+	"LobbyMenu" = TRUE,
+	"AdminVerbBrowser" = TRUE,
+	"BanPanel" = TRUE,
+	"PermissionsPanel" = TRUE,
+	"PlayerPanel" = TRUE,
+	"ViewVariables" = TRUE,
+	"SpawnPanel" = TRUE,
+))
+
 /// Interfaces that open docked in the right-hand column until the player floats them (the saved layout then says).
 GLOBAL_LIST_INIT(window_dock_default_docked, list(
 	"Chat" = TRUE,
@@ -46,7 +59,7 @@ SCHEMA(/datum/tgui, float_at, schema_text())
 
 /// Whether this interface may live in the column at all: not a modal prompt, not a child of another UI.
 /datum/tgui/proc/dockable_interface()
-	return !GLOB.window_dock_modal_interfaces[interface] && !parent_ui()
+	return !GLOB.window_dock_modal_interfaces[interface] && !GLOB.window_dock_never_docked[interface] && !parent_ui()
 
 /// Whether this docked UI may leave the column (float, or close): never one that is always docked, never the column's last window
 /// (the column is never empty). Content answers (window_dock.dm).

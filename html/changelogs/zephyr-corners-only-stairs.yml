@@ -1,0 +1,6 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - rscdel: "Corner lighting is the only client lighting path; the Toggle Corner Lighting verb and the LIGHTING_CORNERS config entry are gone."
+  - qol: "Stair tiles are lit like the floor they stand on, a little lighter going up and darker going down, instead of a fixed level."
+  - bugfix: "A light fixture running on its emergency cell shows its red emergency sprite again, and is dark once the cell is empty."

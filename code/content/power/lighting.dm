@@ -75,10 +75,10 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
 	var/no_emergency = FALSE	// if true, this light cannot ever have an emergency mode
-	var/bulb_emergency_brightness_mul = 0.25	// multiplier for this light's base brightness in emergency power mode
+	var/bulb_emergency_brightness_mul = 0.5	// multiplier for this light's base brightness in emergency power mode
 	var/bulb_emergency_colour = "#FF3232"	// determines the colour of the light while it's in emergency mode
-	var/bulb_emergency_pow_mul = 0.75	// the multiplier for determining the light's power in emergency mode
-	var/bulb_emergency_pow_min = 0.5	// the minimum value for the light's power in emergency mode
+	var/bulb_emergency_pow_mul = 1.5	// the multiplier for determining the light's power in emergency mode
+	var/bulb_emergency_pow_min = 1	// the minimum value for the light's power in emergency mode
 	var/nightshift_allowed = TRUE
 	var/brightness_range_ns
 	var/brightness_power_ns
@@ -214,6 +214,11 @@ CAPABILITIES(/obj/machinery/light)
 
 // ---- what it looks like ----
 
+/// The fixture is lit by its emergency cell: off the grid and in emergency mode (refresh_light() ends the mode when the cell runs out). Its draw shows the lit
+/// tube in the emergency colour then.
+/obj/machinery/light/proc/emergency_lit()
+	return !on && emergency_mode
+
 /// The fixture's picture: the bulb's state, and the glow of a lit tube.
 /obj/machinery/light/draw(datum/look/look)
 	..()
@@ -227,6 +232,9 @@ CAPABILITIES(/obj/machinery/light)
 				look.state("[base_state][on]")
 				if(on)
 					look.overlay(light_overlay())
+					look.overlay(light_emissive(), when = !overlay_above_everything)
+				else if(emergency_lit())
+					look.overlay(light_overlay(TRUE, null, null, bulb_emergency_colour))
 					look.overlay(light_emissive(), when = !overlay_above_everything)
 		if(LIGHT_EMPTY)
 			look.state("[base_state]-empty")
@@ -245,20 +253,23 @@ CAPABILITIES(/obj/machinery/light)
 			if(on)
 				look.overlay(light_overlay(TRUE, null, "flampshade"))
 				look.overlay(light_emissive(null, "flampshade"), when = !overlay_above_everything)
+			else if(emergency_lit())
+				look.overlay(light_overlay(TRUE, null, "flampshade", bulb_emergency_colour))
+				look.overlay(light_emissive(null, "flampshade"), when = !overlay_above_everything)
 		if(LIGHT_EMPTY, LIGHT_BURNED, LIGHT_BROKEN)
 			look.state("flampshade0")
 
 /// The lit glow over the sprite, tinted by the light's colour. An overhead lamp draws it on the lighting-above plane; any other fixture draws it on
 /// its own plane at its own layer, so a mob standing in front of the fixture (a large one reaching over it) covers it like the fixture.
-/obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null)
+/obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null, tint = null)
 	var/image/overlay_layer
 	if(provided_state)
 		overlay_layer = image(icon, "[provided_state]-overlay")
 	else
 		overlay_layer = image(icon, "[state_base || base_state]-overlay")
 	overlay_layer.appearance_flags = RESET_COLOR|KEEP_APART
-	if(overlay_color && do_color)
-		overlay_layer.color = overlay_color
+	if(do_color && (tint || overlay_color))
+		overlay_layer.color = tint || overlay_color
 	if(overlay_above_everything)
 		overlay_layer.plane = PLANE_LIGHTING_ABOVE
 	return overlay_layer
@@ -379,6 +390,7 @@ CAPABILITIES(/obj/machinery/light)
 		begin_emergency_discharge()
 	else
 		set_use_power(USE_POWER_IDLE)
+		set_emergency_mode(FALSE) // the cell is flat (or the fixture may not use it): no emergency sprite
 		set_glow(src, GLOW(0, null, null))
 	// The active draw counts only while the lamp is on (use_power ACTIVE); a dark or emergency lamp is idle and draws its idle power. It follows the
 	// lamp's glow while on and is left alone otherwise: a write republishes the power trait and re-settles every power-gated stat of the fixture

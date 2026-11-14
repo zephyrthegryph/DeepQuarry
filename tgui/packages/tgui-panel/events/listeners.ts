@@ -29,6 +29,7 @@ const listeners = {
   'col/msg': column('col/msg'),
   'col/close': column('col/close'),
   'col/drop-check': column('col/drop-check'),
+  'col/drop-hint': column('col/drop-hint'),
   'col/init': column('col/init'),
   'asset/stylesheet': loadStyleSheet,
   'asset/mappings': handleLoadAssets,

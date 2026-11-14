@@ -270,6 +270,18 @@ describe('a native window dropped on the column', () => {
     expect(await dropAt(300)).toEqual({ wid: 'tgui-window-3', index: 1 });
     // Below the chat's middle: last.
     expect(await dropAt(900)).toEqual({ wid: 'tgui-window-3', index: 2 });
+    // The drop hint names the index the drop at the same point uses, shows none outside the column, and clears on null.
+    for (const y of [100, 300, 900]) {
+      const index = (await dropAt(y)).index;
+      columnHost.receive('col/drop-hint', { x: 1500, y });
+      await waitFor(() => expect(columnHost.hint).toBe(index));
+    }
+    columnHost.receive('col/drop-hint', { x: 300, y: 500 });
+    await waitFor(() => expect(columnHost.hint).toBeNull());
+    columnHost.receive('col/drop-hint', { x: 1500, y: 100 });
+    await waitFor(() => expect(columnHost.hint).toBe(0));
+    columnHost.receive('col/drop-hint', null);
+    await waitFor(() => expect(columnHost.hint).toBeNull());
   });
 
   it('does nothing for a drop over the map', async () => {

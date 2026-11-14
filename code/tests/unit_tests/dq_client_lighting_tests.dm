@@ -966,7 +966,7 @@
 	TEST_ASSERT_EQUAL(length(GLOB.client_spread_plane_master.filters), 2, "the spread plane is bloomed and limited to opaque tiles")
 	var/atom/movable/screen/plane_master/lighting/lit_master = new
 	client_glow_master_compose(lit_master)
-	TEST_ASSERT_EQUAL(length(lit_master.filters), lighting_corners_active() ? 3 : 4, "the lighting master keeps its two emissive masks and adds the spread, and the glow plane unless corner lighting draws the floor")
+	TEST_ASSERT_EQUAL(length(lit_master.filters), 3, "the lighting master keeps its two emissive masks and adds the spread, not the glow plane: the corner gradients are the floor")
 	QDEL_NULL(lit_master)
 	var/turf/wall_tile = run_loc_floor_bottom_left
 	var/old_opacity_dirs = wall_tile.directional_opacity
@@ -1451,10 +1451,10 @@
 	TEST_ASSERT_EQUAL(glow_master.render_target, CLIENT_GLOW_RENDER_TARGET, "it renders only to a hidden target")
 	var/atom/movable/screen/plane_master/lighting/lit_master = new
 	client_glow_master_compose(lit_master)
-	var/list/added = lit_master.filter_data?["client_glow_add"]
-	TEST_ASSERT_NOTNULL(added, "the lighting master adds the glow plane")
-	TEST_ASSERT_EQUAL(added["render_source"], CLIENT_GLOW_RENDER_TARGET, "the filter reads the glow target")
-	TEST_ASSERT_EQUAL(added["blend_mode"], BLEND_ADD, "the glow plane is added over the black base, not overlaid or multiplied")
+	TEST_ASSERT(!lit_master.filter_data?["client_glow_add"], "the lighting master does not add the glow plane over the floor: the corner gradients are the floor")
+	var/list/spread = lit_master.filter_data?["client_spread_add"]
+	TEST_ASSERT_NOTNULL(spread, "the lighting master adds the wall spread")
+	TEST_ASSERT_EQUAL(spread["blend_mode"], BLEND_ADD, "the spread is added over the black base, not overlaid or multiplied")
 	QDEL_NULL(lit_master)
 	var/atom/movable/screen/client_glow_base/base = GLOB.client_glow_base
 	TEST_ASSERT_EQUAL(base.color, "#000000", "the base the glow plane is added to is black")
