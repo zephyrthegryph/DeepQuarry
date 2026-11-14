@@ -356,5 +356,8 @@ default behaviour is:
 			return
 		Move(T, stepdir, 5)
 
+/// The step's sound, played by the footstep capability (code/content/behaviours/footstep.dm) when the mob has it, type-declared or granted: a direct call, no moved notice per step.
 /mob/living/proc/handle_footstep(turf/T)
-	return FALSE
+	var/datum/capability/footstep/F = cap_of(src, CAP_FOOTSTEP)
+	if(F)
+		F.footstep_moved(src)

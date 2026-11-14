@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Game log files are appended by a verdigris writer thread (queued over FFI, flushed on reboot and shutdown) so a stalled disk never stalls a tick"
+  - code_imp: "Footsteps are called from the mob's Moved() through a capability check instead of a moved notice per step"
