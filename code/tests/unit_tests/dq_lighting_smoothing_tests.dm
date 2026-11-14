@@ -17,9 +17,9 @@
 	T.set_global(nameof(GLOB.client_spread_plane_master), GLOB.client_spread_plane_master)
 	T.set_global(nameof(GLOB.client_glow_spread_relay), GLOB.client_glow_spread_relay)
 	T.set_global(nameof(GLOB.client_visible_plane_master), GLOB.client_visible_plane_master)
-	for(var/counter in list(nameof(GLOB.lighting_smooth_samples_taken), nameof(GLOB.lighting_smooth_samples_changed), nameof(GLOB.lighting_smooth_corner_updates), nameof(GLOB.lighting_smooth_redraws), nameof(GLOB.lighting_smooth_ms), nameof(GLOB.lighting_smooth_log_next), nameof(GLOB.lighting_smooth_logged_samples), nameof(GLOB.lighting_smooth_logged_corners), nameof(GLOB.lighting_smooth_logged_redraws), nameof(GLOB.lighting_smooth_logged_ms)))
+	for(var/counter in list(nameof(GLOB.lighting_smooth_samples_taken), nameof(GLOB.lighting_smooth_samples_changed), nameof(GLOB.lighting_smooth_corner_updates), nameof(GLOB.lighting_smooth_redraws), nameof(GLOB.lighting_smooth_ms), nameof(GLOB.lighting_smooth_log_next), nameof(GLOB.lighting_smooth_logged_samples), nameof(GLOB.lighting_smooth_logged_corners), nameof(GLOB.lighting_smooth_logged_redraws), nameof(GLOB.lighting_smooth_logged_ms), nameof(GLOB.lighting_smooth_look_hits), nameof(GLOB.lighting_smooth_look_made), nameof(GLOB.lighting_smooth_dark_joined)))
 		T.set_global(counter, 0)
-	for(var/table in list(nameof(GLOB.lighting_smooth_samples), nameof(GLOB.lighting_smooth_dirty), nameof(GLOB.lighting_smooth_redraw), nameof(GLOB.lighting_smooth_underlays), nameof(GLOB.lighting_smooth_levels)))
+	for(var/table in list(nameof(GLOB.lighting_smooth_samples), nameof(GLOB.lighting_smooth_dirty), nameof(GLOB.lighting_smooth_redraw), nameof(GLOB.lighting_smooth_underlays), nameof(GLOB.lighting_smooth_levels), nameof(GLOB.lighting_smooth_looks)))
 		T.set_global(table, list())
 
 /datum/unit_test/dq_lighting_smoothing_blur
@@ -153,7 +153,7 @@
 	for(var/turf/W as anything in wall)
 		W.set_opacity(FALSE)
 	dq_smoothing_drain()
-	log_test("LIGHTING SMOOTHING CORNERS: [GLOB.lighting_smooth_samples_taken] samples ([GLOB.lighting_smooth_samples_changed] changed), [GLOB.lighting_smooth_corner_updates] corner reads, [GLOB.lighting_smooth_redraws] redraws, [round(GLOB.lighting_smooth_ms, 0.1)] ms in all, [length(GLOB.lighting_smooth_underlays)] lit tiles")
+	log_test("LIGHTING SMOOTHING CORNERS: [GLOB.lighting_smooth_samples_taken] samples ([GLOB.lighting_smooth_samples_changed] changed), [GLOB.lighting_smooth_corner_updates] corner reads, [GLOB.lighting_smooth_redraws] redraws, [round(GLOB.lighting_smooth_ms, 0.1)] ms in all, [length(GLOB.lighting_smooth_underlays)] lit tiles, [GLOB.lighting_smooth_dark_joined] unlit joins (no redraw queued), [GLOB.lighting_smooth_look_made] gradients made, [GLOB.lighting_smooth_look_hits] shared")
 	lighting_corners_set(FALSE)
 	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_underlays), 0, "leaving corner mode takes every gradient away")
 	var/atom/movable/screen/plane_master/lighting/off_master = new
@@ -259,10 +259,57 @@
 	dq_smoothing_drain()
 	TEST_ASSERT(dq_smoothing_underlay_level(behind) < 0.05, "shut again, the tile behind the door is dark again ([dq_smoothing_underlay_level(behind)])")
 	TEST_ASSERT(!GLOB.lighting_smooth_underlays[door_turf], "shut again, the door's tile carries no gradient")
-	log_test("LIGHTING SMOOTHING DOORS: [GLOB.lighting_smooth_samples_taken] samples, [GLOB.lighting_smooth_corner_updates] corner reads, [GLOB.lighting_smooth_redraws] redraws, [round(GLOB.lighting_smooth_ms, 0.1)] ms in all")
+	log_test("LIGHTING SMOOTHING DOORS: [GLOB.lighting_smooth_samples_taken] samples, [GLOB.lighting_smooth_corner_updates] corner reads, [GLOB.lighting_smooth_redraws] redraws, [round(GLOB.lighting_smooth_ms, 0.1)] ms in all, [GLOB.lighting_smooth_dark_joined] unlit joins (no redraw queued), [GLOB.lighting_smooth_look_made] gradients made, [GLOB.lighting_smooth_look_hits] shared")
 	for(var/turf/W as anything in wall)
 		W.set_opacity(FALSE)
 	dq_smoothing_drain()
+	lighting_corners_set(FALSE)
+	client_lighting_set(FALSE)
+	set_global(nameof(GLOB.lighting_corners), null)
+
+/// The boot's corner backlog: an unlit open turf that joins a neighbourhood with no light in it queues no redraw (every corner it touches is dark either way), one with
+/// light near it does, and tiles whose corner levels are the same hold the one underlay.
+/datum/unit_test/dq_lighting_smoothing_boot_backlog
+
+/datum/unit_test/dq_lighting_smoothing_boot_backlog/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	set_global(nameof(GLOB.lighting_corners), null)
+	dq_smoothing_keep_screens(src)
+	var/turf/T = run_loc_floor_bottom_left
+	var/list/dark = lighting_smooth_sample_of(T)
+	TEST_ASSERT(dark && !dark[1] && !dark[2] && !dark[3], "the room's corner is an open turf with no light on it ([json_encode(dark)])")
+	// An empty table: the turf's first sample is dark and nothing is lit near it.
+	var/joined = GLOB.lighting_smooth_dark_joined
+	TEST_ASSERT(lighting_smooth_sample(T), "its first sample is a change")
+	TEST_ASSERT_EQUAL(GLOB.lighting_smooth_dark_joined - joined, 1, "an unlit turf joining a dark neighbourhood")
+	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_redraw), 0, "queues no tile for a redraw")
+	// The same turf with a lit neighbour: the nine tiles round it are drawn again (their corners average its sample in).
+	var/list/samples = GLOB.lighting_smooth_samples["[T.z]"]
+	TEST_ASSERT_NOTNULL(samples, "the level has a sample table")
+	samples[LIGHTING_SMOOTH_INDEX(T.x, T.y)] = null
+	samples[LIGHTING_SMOOTH_INDEX(T.x + 1, T.y)] = list(0.5, 0.5, 0.5)
+	joined = GLOB.lighting_smooth_dark_joined
+	TEST_ASSERT(lighting_smooth_sample(T), "a first sample beside a lit turf is a change")
+	TEST_ASSERT_EQUAL(GLOB.lighting_smooth_dark_joined - joined, 0, "which is no dark join")
+	TEST_ASSERT(length(GLOB.lighting_smooth_redraw) > 0, "and queues the tiles round it")
+	// A light: lit tiles get gradients, and tiles at the same levels share one underlay.
+	set_global(nameof(GLOB.lighting_smooth_redraw), list())
+	client_lighting_set(TRUE)
+	lighting_corners_set(TRUE)
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	dq_smoothing_drain()
+	TEST_ASSERT_NOTNULL(L.light?.glow, "the fixture glows")
+	TEST_ASSERT(length(GLOB.lighting_smooth_underlays) > 0, "the lit tiles carry gradients")
+	var/list/by_levels = list()
+	for(var/turf/R as anything in GLOB.lighting_smooth_underlays)
+		var/levels = GLOB.lighting_smooth_levels[R]
+		if(isnull(by_levels[levels]))
+			by_levels[levels] = GLOB.lighting_smooth_underlays[R]
+		else
+			TEST_ASSERT(by_levels[levels] == GLOB.lighting_smooth_underlays[R], "the tile at [R.x],[R.y] has the levels another tile has and the same underlay")
+	for(var/levels in by_levels)
+		TEST_ASSERT(GLOB.lighting_smooth_looks[levels] == by_levels[levels], "the underlay shown for the levels [levels] is the one held for them")
+	log_test("LIGHTING SMOOTHING BOOT BACKLOG: [length(GLOB.lighting_smooth_underlays)] lit tiles, [GLOB.lighting_smooth_look_made] gradients made, [GLOB.lighting_smooth_look_hits] shared, [GLOB.lighting_smooth_dark_joined] unlit joins, [GLOB.lighting_smooth_redraws] redraws")
 	lighting_corners_set(FALSE)
 	client_lighting_set(FALSE)
 	set_global(nameof(GLOB.lighting_corners), null)

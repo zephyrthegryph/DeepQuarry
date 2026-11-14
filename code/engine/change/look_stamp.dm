@@ -15,6 +15,9 @@
 GLOBAL_LIST_EMPTY(type_look_stamp)
 /// Type path -> the cache key of the sample's inputs, for a stamped type the cache can key (look_cache_key()). Absent: any instance is stamped.
 GLOBAL_LIST_EMPTY(type_look_stamp_key)
+/// Type path -> TRUE for a type whose sampled first draw left the sample's appearance as the map made it (a draw that shows what the atom already shows). Only
+/// a record for the boot log (look_stamp.dm, boot_created_release()): such a type's other instances are not spared their draw, since their own inputs may differ.
+GLOBAL_ALIST_EMPTY(type_look_sample_noop)
 /// Fresh entities the stamp spared a first refresh (the draw-queue test and the boot log read it).
 GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 
@@ -83,12 +86,16 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		refresh_queue_drop(D)
 		if(!refresh_wanted_queued(D))
 			continue
+		var/atom/sample_atom = isatom(D) ? D : null
+		var/sample_appearance = sample_atom?.appearance // to tell whether the sampled draw changed what the map made
 		try
 			refresh_one(D, bits, pending)
 		catch(var/exception/e)
 			dq_report_caught(e, "refresh of [D.type]")
 			continue
 		type_look_stamp_record(D)
+		if(sample_atom && sample_atom.appearance == sample_appearance)
+			GLOB.type_look_sample_noop[D.type] = TRUE
 	var/sampled_at = REALTIMEOFDAY
 	var/list/kept = list()
 	var/skipped = 0
@@ -212,6 +219,8 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 	GLOB.boot_created_sampled = list()
 	GLOB.boot_created_settled = TRUE
 	. = 0
+	var/list/marked = list() // type -> held atoms of it that owe a first draw: what the boot will draw
+	var/same_as_map = 0 // of them, atoms of a type whose sampled draw showed what the map already shows
 	for(var/type in buckets)
 		var/list/bucket = buckets[type]
 		var/empty = GLOB.type_look_stamp[type]
@@ -222,6 +231,23 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 			if(empty && type_look_stamped(A))
 				.++
 				continue
+			marked["[type]"]++
+			if(GLOB.type_look_sample_noop[type])
+				same_as_map++
 			refresh_mark(A, DEP_ALL)
 			A.refresh_queued |= DEP_CREATED
 	GLOB.boot_created_dropped += .
+	var/text = "held atoms released to draw, by type (stamp verdict in brackets)"
+	var/shown = 0
+	var/total = 0
+	for(var/name in marked)
+		total += marked[name]
+	while(shown < 15 && length(marked))
+		var/best
+		for(var/name in marked)
+			if(isnull(best) || marked[name] > marked[best])
+				best = name
+		text += "; [best] x[marked[best]] [GLOB.type_look_stamp[text2path(best)] ? "(stamped, instances differ from the sample)" : "(draws something)"]"
+		marked -= best
+		shown++
+	log_world("boot release: [total] held atom(s) marked for a first draw ([same_as_map] of a type whose sampled draw left the sample's appearance as the map made it: candidates for a wider default look), [.] dropped without one. [text]")

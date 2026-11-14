@@ -70,6 +70,9 @@ The map loader creates every atom before any drain runs.
 - A server leaves the remaining boot draws to the presentation lane: they are drawn over the ticks that follow, nearest a client first and then all the
   rest, and no player enters the map until the refresh queue (everything with an output besides its look) is empty (`boot_draws_pending()`); the filed look draws drain nearest a client first and are not waited for. A test world draws them all before init completes
   (`refresh_boot_drain()`).
+- While those first draws are made (`GLOB.boot_drain_boost`, from the deferred boot until both queues are empty) the presentation lane takes 80 % of each pass
+  (`SCHED_BOOT_DRAW_SHARE`) instead of its own share: nobody is in the map, so the draws are the one thing worth the tick. The log says when it ends
+  (`Boot drain finished ... s after init: N draws`) with the types that ran draw().
 - The writes an atom's own setup makes (`DF_INIT_OPEN`, `DF_CONSTRUCTING`) are its construction: one first draw, with what it was written.
 
 ## 5. The gaze registry
@@ -83,7 +86,10 @@ queues) and the turf each client looks from (`GLOB.gaze_at`, which orders the dr
 The look log line (`REFRESH LOOKS`, at boot and every five minutes) carries: look changes, draws and drain ms per second since the last line; the draw
 queue (filed, buckets, refresh queue depth, dirtied, filed, drawn and how many of them within a chunk of an eye, stale entries skipped, drain passes,
 their ms and the longest, passes the budget cut); the default looks skipped; the appearance cache (hits, misses, hit rate, bypassed, held, looks
-built); and the draw cost (mean and p95 ms over all draws, and by type for the five types that cost the most).
+built); and the draw cost (mean and p95 ms over all draws, and by type for the five types that cost the most); the types whose draws ran draw() most and how each went
+(`look_kinds_text()`: built and held, built and not held, no cache key, drew nothing, served); and the types filed most (`draw_filed_types_text()`). At the boot
+settle `boot release:` lists the held atoms that owe a first draw by type. A draw that takes 25 ms or more logs `DRAW_SLOW` with the same atom drawn again at once
+(dry): a repeat that costs microseconds says the draw itself is cheap and the first one paid for a stall of the process, not for work.
 
 ## 7. Tests
 

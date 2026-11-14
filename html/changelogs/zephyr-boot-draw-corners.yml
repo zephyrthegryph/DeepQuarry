@@ -1,0 +1,7 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "A server's first draws after boot take most of each tick until they are done, so the map opens sooner"
+  - qol: "Corner lighting does far less work at boot: unlit tiles queue no redraws and tiles with the same corner levels share one gradient"
+  - code_imp: "The look log line and the end of the boot drain name the types whose draws ran draw(), how each went (cache hit, built, held, no key, empty) and which types were filed most"
+  - code_imp: "The mob service's two-minute profile dump writes its lines within the tick's budget and logs what it cost"
