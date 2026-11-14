@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "An APC that has shed its channels no longer sends a channel notice every tick, which flooded the native delivery and ran it out of budget while a player moved"
+  - code_imp: "The slow-tick trace names what native_step spends after the frame (APC charge drain, log writes, slow-frame report) and the Rust phases of vg_frame; a slow notice's log write is no longer charged to its record; the slow log line names the file-exists checks"

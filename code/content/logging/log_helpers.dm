@@ -60,3 +60,12 @@
 
 /client/key_name_masked()
 	return admin_can(src, 0) && admin_fakekey(src)
+
+/// fexists() for a log file, timed: it is a disk call made on the tick, and on a busy disk it blocks (LOG_WORLD_SLOW names the time it took).
+/proc/log_file_exists(file)
+	var/started = TICK_USAGE_REAL
+	. = fexists(file)
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	GLOB.log_exists_calls++
+	GLOB.log_exists_ms += ms
+	GLOB.log_exists_max_ms = max(GLOB.log_exists_max_ms, ms)

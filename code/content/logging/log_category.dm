@@ -44,6 +44,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 
 /// Add an entry to this category. It is very important that any data you provide doesn't hold references to anything!
 /datum/log_category/proc/create_entry(message, list/data, list/semver_store)
+	var/build_started = TICK_USAGE_REAL
 	var/datum/log_entry/entry = new(
 		// world state contains raw timestamp
 		timestamp = logger.human_readable_timestamp(),
@@ -54,6 +55,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 		semver_store = semver_store,
 	)
 
+	GLOB.log_entry_build_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - build_started)
 	write_entry(entry)
 	set_entry_count(entry_count + 1)
 

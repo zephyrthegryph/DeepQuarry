@@ -184,6 +184,15 @@
 		native = alist("vg_frame" = N.last_vg_ms, "delivery changed" = N.delivery_changed_ms, "delivery notices" = N.delivery_notices_ms, "delivery crossed" = N.delivery_crossed_ms)
 		if(N.last_slowest_ms >= 1)
 			native["slowest record: [N.last_slowest]"] = N.last_slowest_ms
+		// What native_step spent outside vg_frame and delivery: the post-frame work and the log writes (a write can block on a busy disk).
+		native["post-frame apc charge drain"] = N.last_post_apc_ms
+		native["post-frame slow-notice log write"] = N.last_post_notice_log_ms
+		native["post-frame deferral-summary log write"] = N.last_post_deferral_log_ms
+		native["post-frame slow-frame report (metrics read and log write)"] = N.last_post_report_ms
+		// The Rust phases of this frame's vg_frame (named by the slow-frame report that ran in the same tick): pace, stage, devices, crossings; off_cpu is time the OS had the server off a core.
+		if(N.last_rust_phases_frame == N.frames)
+			for(var/phase in N.last_rust_phases)
+				native["vg_frame rust phase [phase]"] = N.last_rust_phases[phase]
 	var/list/step = sched?.slow_step
 	if(step && step["world_time"] == world.time)
 		S.span(KM_SPAN_STEP, "[step["kind"]] [step["behaviour"]] on [step["entity"]] ([step["name"]])", step["ms"] || 0)

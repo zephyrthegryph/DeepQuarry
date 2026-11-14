@@ -107,7 +107,7 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 	var/static/in_error_recovery = FALSE; \
 	var/datum/verified_log_file/verified = LAZYACCESS(logger.verified_log_files, ##file); \
 	if(!verified || ELAPSED(verified, verified_at, CLOCK_WORLD) >= LOG_FILE_RECHECK_INTERVAL) { \
-		if(!fexists(##file)) { \
+		if(!log_file_exists(##file)) { \
 			if(verified) { \
 				rel_remove(logger, nameof(/datum/log_holder::verified_log_files), verified); \
 			}; \
