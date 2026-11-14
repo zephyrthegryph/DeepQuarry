@@ -1,5 +1,5 @@
 // Client lighting, piece 2: baked shapes. Each glow is the light's sprite already cut to the open floor its light reaches (the world opacity
-// layer's sight from the light's turf, code/domains/verdigris/sight/), baked off-thread by iconforge, white so one icon serves every colour,
+// layer's sight from the light's turf, code/domains/verdigris/sight/), baked off-thread by the Rust baker (verdigris/ffi/src/glow_mask.rs), white so one icon serves every colour,
 // and shared by every light with the same reach. No filter per light, and nothing depends on another object being drawn. Opaque tiles are not in the
 // cut: walls take their light from the visible floor beside them, on the glow plane (client_lighting_screen.dm). The gameplay reach (glow_reach) still has them.
 // A viewer's glow is the plain sprite until its shape is first baked; after a change it keeps its previous cut until the new one lands. A reach is recomputed only when its light is redrawn (it moved or changed) or
@@ -108,118 +108,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	/// Trace counters of the arrival turns: steps taken and viewers told.
 	var/arrival_steps = 0
 	var/arrival_told = 0
-	/// Finished bakes whose result is not taken in yet: list(key, sheet, result, error, handed_at) each, oldest first. The io callback only files the row; a turn takes the
-	/// PNG into the resource cache (client_glow_finished_run()), a few milliseconds a tick: decode, file copy and delete in the callback was 11-74 ms of one io pass.
+	/// Finished bakes whose result is not taken in yet: list(key, path, error, rust ms, rust hit, filed at) each, oldest first. A turn collects them from the Rust baker and copies each PNG
+	/// into the resource cache (client_glow_finished_run()), a few milliseconds a tick.
 	var/list/finished = list()
 	/// Trace counters of the finishing turns: bakes taken in, and the longest one (ms).
 	var/finished_done = 0
 	var/finished_max_ms = 0
+	/// Milliseconds the Rust baker spent on the masks taken in (its own clock, off the game thread), and how many of them it already had on disk.
+	var/rust_ms = 0
+	var/rust_hits = 0
 
-/// The reached tiles (flat text list dx,dy,...) merged into rectangles: a flat number list x0,y0,x1,y1,... (tile offsets, inclusive).
-/// Horizontal runs per row, then a run identical to the row below's extends that rectangle upward.
-/proc/client_glow_mask_rects(list/offsets)
-	. = list()
-	if(!length(offsets))
-		return
-	var/list/rows = list()
-	var/low = INFINITY
-	var/high = -INFINITY
-	for(var/i = 1, i < length(offsets), i += 2)
-		var/x = text2num(offsets[i])
-		var/y = text2num(offsets[i + 1])
-		var/list/row = rows["[y]"]
-		if(!row)
-			row = rows["[y]"] = list()
-		row += x
-		low = min(low, y)
-		high = max(high, y)
-	var/list/open = list() // "x0,x1" -> index of its rectangle in the result
-	for(var/y in low to high)
-		var/list/row = rows["[y]"]
-		var/list/next_open = list()
-		if(row)
-			sortTim(row, GLOBAL_PROC_REF(cmp_numeric_asc))
-			var/start = row[1]
-			var/last = start
-			for(var/n in 2 to length(row) + 1)
-				var/x = n <= length(row) ? row[n] : null
-				if(!isnull(x) && x == last + 1)
-					last = x
-					continue
-				var/run = "[start],[last]"
-				var/at = open[run]
-				if(at)
-					.[at + 3] = y
-				else
-					at = length(.) + 1
-					. += list(start, y, last, y)
-				next_open[run] = at
-				if(!isnull(x))
-					start = x
-					last = x
-		open = next_open
-
-/// Adds one draw step per rectangle (client_glow_mask_rects(), tile offsets) to `steps`, each grown `grow` pixels; a null colour clears.
-/proc/client_glow_mask_boxes(list/steps, list/rects, margin, size, grow, color)
-	for(var/i = 1, i < length(rects), i += 4)
-		var/x1 = max(rects[i] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
-		var/y1 = max(rects[i + 1] * WORLD_ICON_SIZE + margin + 1 - grow, 1)
-		var/x2 = min((rects[i + 2] + 1) * WORLD_ICON_SIZE + margin + grow, size)
-		var/y2 = min((rects[i + 3] + 1) * WORLD_ICON_SIZE + margin + grow, size)
-		if(x1 > x2 || y1 > y2)
-			continue
-		var/list/box = list("type" = RUSTG_ICONFORGE_DRAW_BOX, "x1" = x1, "y1" = y1, "x2" = x2, "y2" = y2)
-		if(color)
-			box["color"] = color
-		steps += list(box)
-
-/// The iconforge sprite of a mask of this shape (key "margin|dx,dy,...|blocked dx,dy,..."): the glow sprite wiped clear, then the reached
-/// tiles solid. Every step overwrites. An edge against an unreached floor fades INWARD, inside the reached tile; an edge against a blocked
-/// (opaque) tile stays full strength, because a wall is a real edge and floor beside it must not dim. The last steps clear every tile
-/// outside the reach exactly, so the bake holds no light at all on a wall: its near half is on screen from the wall's far side.
-/proc/client_glow_mask_sprite(key)
-	var/list/parts = splittext(key, "|")
-	var/margin = text2num(parts[1])
-	var/list/offsets = length(parts) > 1 && length(parts[2]) ? splittext(parts[2], ",") : list()
-	var/list/blocked_offsets = length(parts) > 2 && length(parts[3]) ? splittext(parts[3], ",") : list()
-	var/size = margin * 2 + WORLD_ICON_SIZE
-	var/list/steps = list(list("type" = RUSTG_ICONFORGE_DRAW_BOX, "x1" = 1, "y1" = 1, "x2" = size, "y2" = size))
-	var/list/reached = list()
-	for(var/i = 1, i < length(offsets), i += 2)
-		reached["[offsets[i]],[offsets[i + 1]]"] = TRUE
-	var/list/blocked = list()
-	for(var/i = 1, i < length(blocked_offsets), i += 2)
-		blocked["[blocked_offsets[i]],[blocked_offsets[i + 1]]"] = TRUE
-	// Only the tiles the sprite covers: a reached tile past its edge would spend a step on nothing.
-	var/grid = CEILING(margin / WORLD_ICON_SIZE, 1)
-	var/list/inside = list()
-	var/list/outside = list()
-	var/list/fading = list()
-	for(var/dy in -grid to grid)
-		for(var/dx in -grid to grid)
-			var/tile = "[dx],[dy]"
-			if(reached[tile])
-				inside += list("[dx]", "[dy]")
-				continue
-			outside += list("[dx]", "[dy]")
-			if(!blocked[tile] && (reached["[dx - 1],[dy]"] || reached["[dx + 1],[dy]"] || reached["[dx],[dy - 1]"] || reached["[dx],[dy + 1]"])) // only a floor edge fades: a tile touching the reach by a corner alone would dim floor beside a wall
-				fading += list("[dx]", "[dy]")
-	var/list/inside_rects = client_glow_mask_rects(inside)
-	var/list/outside_rects = client_glow_mask_rects(outside)
-	var/list/fading_rects = client_glow_mask_rects(fading)
-	client_glow_mask_boxes(steps, inside_rects, margin, size, 0, "#FFFFFFFF")
-	// Iconforge refuses a sprite past CLIENT_GLOW_MASK_STEPS_MAX transforms. The body and the final clear always fit (merged rectangles);
-	// a jagged shape gives up its widest rings first, so the fade narrows but the cut stays exact.
-	var/static/list/ring_colors = list("#FFFFFFCC", "#FFFFFF99", "#FFFFFF66", "#FFFFFF33") // deepest into the reached tile first
-	var/fading_count = length(fading_rects) / 4
-	var/spare = CLIENT_GLOW_MASK_STEPS_MAX - 1 - (length(inside_rects) + length(outside_rects)) / 4
-	var/rings = fading_count ? clamp(round(spare / fading_count), 0, length(ring_colors)) : 0
-	for(var/ring in (length(ring_colors) - rings + 1) to length(ring_colors))
-		client_glow_mask_boxes(steps, fading_rects, margin, size, (length(ring_colors) - ring + 1) * CLIENT_GLOW_MASK_RING_STEP, ring_colors[ring])
-	client_glow_mask_boxes(steps, outside_rects, margin, size, 0, null)
-	var/source = resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(size)))
-	var/list/mask = list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = steps)
-	return list("icon_file" = source, "icon_state" = "light", "dir" = SOUTH, "frame" = 1, "transform" = list(list("type" = RUSTG_ICONFORGE_BLEND_ICON, "icon" = mask, "blend_mode" = ICON_MULTIPLY, "x" = 1, "y" = 1)))
+/// The glow sprite file the mask of a `size`-pixel glow is cut from (the Rust baker reads it: its image is the sprite).
+/proc/client_glow_mask_icon_file(size)
+	return resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(size)))
 
 /// TRUE when shape `now` reaches a floor tile shape `was` did not (keys "margin|dx,dy,...|blocked").
 /proc/client_glow_shape_grew(was, now)
@@ -283,7 +184,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	if(total >= CLIENT_GLOW_TURN_SLOW_MS)
 		B.turn_slow++
 		log_world("client glow baker: a turn took [round(total, 0.1)] ms (finished [round(spent[1], 0.1)] of [length(B.finished)] left, arrivals [round(spent[2], 0.1)] of [length(B.arrivals)] left, bake starts [round(spent[3], 0.1)] of [length(B.queue)] queued, twins [round(spent[4], 0.1)] of [length(B.twin_work)] left; longest turn [round(B.turn_max_ms, 0.1)] ms, [B.turn_slow] slow so far)")
-	if(length(B.twin_work) || length(B.finished) || length(B.arrivals) || (length(B.queue) && B.inflight < CLIENT_GLOW_MASK_BAKES_MAX))
+	if(length(B.twin_work) || length(B.finished) || length(B.arrivals) || B.inflight || (length(B.queue) && B.inflight < CLIENT_GLOW_MASK_BAKES_MAX))
 		client_glow_baker_wake()
 
 /// Arms the baker's next turn if it is not already waiting.
@@ -365,14 +266,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		GLOB.client_glow_baker.queue.Insert(1, key)
 	client_glow_baker_wake() // the bake starts in the baker's budgeted turn: a start is a sprite build and a JSON encode (10-30 ms), and a light's four door twins asked inline were 121 ms of one timer
 
-/proc/client_glow_mask_dir_ready()
-	var/static/made = FALSE
-	if(!made)
-		rustg_file_write("", "[CLIENT_GLOW_MASK_DIR].keep")
-		made = TRUE
-
-/// Starts bakes for the queued shapes, up to CLIENT_GLOW_MASK_BAKES_MAX at once; each start is a sprite build and a JSON encode, so one call stops once it has spent
-/// `budget_ms` (at least one start) and the baker's next turn goes on (client_glow_baker_turn()). Returns the starts made.
+/// Starts bakes for the queued shapes, up to CLIENT_GLOW_MASK_BAKES_MAX at once. A start is a call that hands the key to the Rust baker's thread (verdigris/ffi/src/glow_mask.rs), which
+/// cuts the glow sprite and writes the PNG; the answer is collected by the baker's turns (client_glow_mask_collect()). One call stops once it has spent `budget_ms` (at least one start)
+/// and the baker's next turn goes on (client_glow_baker_turn()). Returns the starts made.
 /proc/client_glow_mask_pump(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
 	var/started = TICK_USAGE_REAL
 	var/begun = 0
@@ -383,38 +279,30 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		begun++
 		var/key = GLOB.client_glow_baker.queue[1]
 		GLOB.client_glow_baker.queue.Cut(1, 2)
-		client_glow_mask_dir_ready()
-		var/sheet = "cglow_[md5(key)]"
-		var/job_id = rustg_iconforge_generate_async(CLIENT_GLOW_MASK_DIR, sheet, json_encode(list("mask" = client_glow_mask_sprite(key))), FALSE, FALSE, TRUE)
+		glow_mask_bake(key, CLIENT_GLOW_MASK_DIR, client_glow_mask_icon_file(client_glow_mask_key_size(key)))
 		GLOB.client_glow_baker.inflight++
-		io_job(null, /datum/io_backend/rustg_job, job_id, GLOBAL_PROC_REF(client_glow_mask_job_done), key, sheet)
 	return begun
 
-/// The PNG a bake's output names, or null.
-/proc/client_glow_mask_png(sheet, output)
-	if(!output || !findtext(output, "{", 1, 2))
-		log_world("client glow mask: iconforge gave no result for [sheet]: [output]")
-		return null
-	var/list/data = json_decode(output)
-	var/list/sprite_data = data["sprites"]?["mask"]
-	if(length(data["error"]) || !sprite_data)
-		log_world("client glow mask: iconforge reported [json_encode(data["error"])] for [sheet]: [output]")
-		return null
-	var/path = "[CLIENT_GLOW_MASK_DIR][sheet]_[sprite_data["size_id"]].png"
-	return rustg_file_exists(path) ? path : null
+/// The pixels on a side of the glow sprite a shape key is cut from: twice its margin and a tile.
+/proc/client_glow_mask_key_size(key)
+	return text2num(copytext(key, 1, findtext(key, "|"))) * 2 + WORLD_ICON_SIZE
 
-/// io_job() callback: a mask bake finished. It only files the result: taking it in (decode, the file into the resource cache, the file's delete, the next bake's start) is
-/// the baker's turn's work, a few milliseconds a tick (client_glow_finished_run()), so one io pass never pays for a bake's whole arrival.
-/proc/client_glow_mask_job_done(result, error, key, sheet)
+/// Files the bakes the Rust thread has finished since the last call (a row of five strings each: key, PNG path, error, worker ms, 1 when the mask was already baked). Cheap when
+/// nothing is baking: no call at all.
+/proc/client_glow_mask_collect()
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
-	B.inflight--
-	B.finished += list(list(key, sheet, result, error, REALTIMEOFDAY))
-	client_glow_baker_wake()
+	if(!B.inflight)
+		return
+	var/list/rows = glow_mask_poll()
+	for(var/i = 1, i < length(rows), i += 5)
+		B.inflight--
+		B.finished += list(list(rows[i], rows[i + 1], rows[i + 2], text2num(rows[i + 3]), text2num(rows[i + 4]), REALTIMEOFDAY))
 
-/// Takes the finished bakes in, oldest first, until `budget_ms` is spent (always at least one): each is decoded and its PNG cached, then its shape is told to the viewers
+/// Takes the finished bakes in, oldest first, until `budget_ms` is spent (always at least one): each PNG is copied into the resource cache, then its shape is told to the viewers
 /// (client_glow_arrivals_run() hands it out in its own turns). Returns the bakes taken in.
 /proc/client_glow_finished_run(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	client_glow_mask_collect()
 	if(!length(B.finished))
 		return 0
 	var/started = TICK_USAGE_REAL
@@ -423,35 +311,36 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		var/list/row = B.finished[1]
 		B.finished.Cut(1, 2)
 		var/step_started = TICK_USAGE_REAL
-		client_glow_mask_finish(row[1], row[2], row[3], row[4])
+		client_glow_mask_finish(row[1], row[2], row[3], row[4], row[5])
 		done++
 		var/step_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
 		B.finished_max_ms = max(B.finished_max_ms, step_ms)
 		if(step_ms >= 10) // a bake that cost a tenth of a tick: said with what it was and how long it sat filed
-			log_world("client glow mask: taking in [row[2]] took [round(step_ms, 0.1)] ms ([length(B.finished)] more finished, filed [round((REALTIMEOFDAY - row[5]) * 100)] ms ago)")
+			log_world("client glow mask: taking in [row[2]] took [round(step_ms, 0.1)] ms (the Rust bake took [round(row[4], 0.01)] ms[row[5] ? ", a file hit" : ""]; [length(B.finished)] more finished, filed [round((REALTIMEOFDAY - row[6]) * 100)] ms ago)")
 		if(length(B.finished) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
 			break
 	B.finished_done += done
 	return done
 
-/// One finished bake taken in: its shape is cached and queued to be told to the viewers, or counted failed.
-/proc/client_glow_mask_finish(key, sheet, result, error)
+/// One finished bake taken in: its shape is cached and queued to be told to the viewers, or counted failed. `path` is the PNG the Rust baker wrote (empty on an `error`); the
+/// baker keeps the file for the next bake of the same shape and deletes it when it evicts it.
+/proc/client_glow_mask_finish(key, path, error, bake_ms, was_hit)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
 	B.pending -= key
 	var/asked = B.asked_at[key]
 	B.asked_at -= key
-	var/path = error ? null : client_glow_mask_png(sheet, result)
-	if(!path)
+	if(!length(path) || length(error))
 		B.failed++
-		log_world("client glow mask: bake failed for [sheet] ([error || result]); its lights stay uncut until asked again")
-	else
-		B.wait_ds += REALTIMEOFDAY - asked
-		client_glow_mask_store(key, path)
+		log_world("client glow mask: bake failed for shape [key] ([error]); its lights stay uncut until asked again")
+		return
+	B.wait_ds += REALTIMEOFDAY - asked
+	B.rust_ms += bake_ms
+	B.rust_hits += was_hit
+	client_glow_mask_store(key, path)
 
 /// Takes a baked PNG into the resource cache and queues the shape for every viewer waiting on it.
 /proc/client_glow_mask_store(key, path)
 	var/res = fcopy_rsc(file(path))
-	fdel(path)
 	client_glow_mask_cache(key, res)
 	GLOB.client_glow_baker.baked++
 	if(!length(GLOB.client_glow_baker.pending) && client_glow_trace_line())
@@ -497,15 +386,20 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		client_glow_baker_wake()
 	return told
 
-/// (Tests, nothing else: it blocks.) Bakes a shape on the spot and returns the PNG's path; the caller deletes it.
+/// (Tests, nothing else: it blocks.) Bakes a shape on the spot and returns the PNG's path; the file stays the Rust baker's (it deletes it when it evicts it).
 /proc/client_glow_mask_bake_blocking(key)
-	client_glow_mask_dir_ready()
-	var/sheet = "cglow_test_[md5(key)]"
-	return client_glow_mask_png(sheet, rustg_iconforge_generate(CLIENT_GLOW_MASK_DIR, sheet, json_encode(list("mask" = client_glow_mask_sprite(key))), FALSE, FALSE, TRUE))
+	return glow_mask_bake_now(key, CLIENT_GLOW_MASK_DIR, client_glow_mask_icon_file(client_glow_mask_key_size(key)))
+
+/// The Rust baker's counts, as a list: baked, hits (a mask asked for that was already on disk), failed, files evicted, bake ms in all, longest bake ms, files, bytes.
+/proc/client_glow_mask_rust_stats()
+	. = list()
+	for(var/part in splittext(glow_mask_stats(), ","))
+		. += text2num(part)
 
 /proc/client_glow_mask_stats()
 	var/baked = GLOB.client_glow_baker.baked
-	return "client glow masks: [length(GLOB.client_glow_baker.icons)] cached, [baked] baked, [GLOB.client_glow_baker.hits] hits, [GLOB.client_glow_baker.misses] misses, [GLOB.client_glow_baker.failed] failed, [GLOB.client_glow_baker.refused] refused, [GLOB.client_glow_baker.evicted] evicted, [GLOB.client_glow_baker.prefetched] prefetched, [length(GLOB.client_glow_baker.pending)] waiting, mean wait [baked ? round(GLOB.client_glow_baker.wait_ds / baked, 0.1) : 0] ds"
+	var/list/rust = client_glow_mask_rust_stats()
+	return "client glow masks: [length(GLOB.client_glow_baker.icons)] cached, [baked] baked, [GLOB.client_glow_baker.hits] hits, [GLOB.client_glow_baker.misses] misses, [GLOB.client_glow_baker.failed] failed, [GLOB.client_glow_baker.refused] refused, [GLOB.client_glow_baker.evicted] evicted, [GLOB.client_glow_baker.prefetched] prefetched, [length(GLOB.client_glow_baker.pending)] waiting, mean wait [baked ? round(GLOB.client_glow_baker.wait_ds / baked, 0.1) : 0] ds; rust baker: [rust[1]] baked in [round(rust[5], 0.1)] ms (mean [rust[1] ? round(rust[5] / rust[1], 0.01) : 0], longest [round(rust[6], 0.01)]), [rust[2]] file hits, [rust[3]] failed, [rust[4]] files evicted, [rust[7]] on disk ([round(rust[8] / 1024)] KB)"
 
 /// Recomputes this light's reach after an opacity change and rebuilds the mask only if the reach changed.
 /datum/light_source/proc/client_glow_mask_refresh()
@@ -527,10 +421,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	glow_mask_range = range
 	glow_mask_margin = margin
 	// The reach first, as a shape key: an opacity change that leaves this light's reach as it was (most of them) stops here.
-	var/list/seen = sight_view_turfs(source_turf, range)
+	var/list/seen = sight_view_keyed(source_turf, range, margin) // the shape key first, then the turfs seen (the Rust sight layer builds both from one walk)
+	var/key = length(seen) ? seen[1] : "[margin]||"
+	if(length(seen))
+		seen.Cut(1, 2)
 	var/sx = source_turf.x
 	var/sy = source_turf.y
-	var/key = client_glow_shape_key(source_turf, margin, seen)
 	if(key == glow_mask_key && glow_reach_origin == source_turf)
 		return
 	// Lum watches (watched(T, WATCH_LUM)) on turfs this light lit or now lights hear about it.
@@ -549,20 +445,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	glow_mask_key = key
 	client_glow_index(TRUE)
 	return TRUE
-
-/// The shape key of a light on `S` whose sight is `seen` (client_glow_mask_sprite()'s "margin|dx,dy,...|blocked dx,dy,..."). `flipped`, when given, is read as blocking as
-/// `flipped_dirs` says instead of as its directional_opacity does (the other state of a door).
-/proc/client_glow_shape_key(turf/S, margin, list/seen, turf/flipped = null, flipped_dirs = NONE)
-	var/list/offsets = list()
-	var/list/blocked = list()
-	for(var/turf/T as anything in seen)
-		if((T == flipped ? flipped_dirs : T.directional_opacity) == ALL_CARDINALS)
-			blocked += T.x - S.x
-			blocked += T.y - S.y
-			continue // a fully opaque tile (a border object leaves the rest of its tile lit); an opaque tile, the light's own included, is lit from the visible floor beside it, not by this cut
-		offsets += T.x - S.x
-		offsets += T.y - S.y
-	return "[margin]|[jointext(offsets, ",")]|[jointext(blocked, ",")]"
 
 /// How the directional opacity of `T` would read with door `D` in its other state, or null when the door's other state changes nothing a shape can show (it never blocks,
 /// stands on a border, or another full-tile blocker holds the tile either way).

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "An airlock no longer renders black while it swings open: it keeps its lit wall face until its floor light is drawn"

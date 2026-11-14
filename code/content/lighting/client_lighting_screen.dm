@@ -190,11 +190,24 @@ DECLARE_SHARED_CACHE(client_glow_white_tiles, GLOBAL_PROC_REF(client_glow_white_
 		tile = mutable_appearance(LIGHTING_ICON, "transparent", CLIENT_GLOW_WHITE_LAYER, PLANE_CLIENT_WALLS, 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
 	return tile
 
-/// This turf's opacity changed or it was just made: it is on the walls plane exactly while it is opaque. Events only.
+/// This turf's opacity changed or it was just made: it is on the walls plane exactly while it is opaque. Events only. A turf that stops being opaque
+/// (a door opening) keeps its tile until its floor gradient is drawn (lighting_smooth_step() releases it, client_glow_wall_release()), so the tile is never
+/// unlit between the two: the gradient takes the sampling and redraw steps to arrive, and the door swung black for that long.
 /turf/proc/client_glow_wall_sync()
+	var/opaque = GLOB.client_lighting && directional_opacity == ALL_CARDINALS
+	if(!opaque && GLOB.client_lighting && has_dynamic_lighting())
+		return // lighting_smooth_dirty_turf() queued the redraw that releases it
 	underlays -= client_walls_tile()
-	if(GLOB.client_lighting && directional_opacity == ALL_CARDINALS)
+	if(opaque)
 		underlays += client_walls_tile()
+
+/// `T` was just redrawn (corner mode): when it no longer blocks, its floor is lit now and the walls tile it kept leaves.
+/proc/client_glow_wall_release(turf/T)
+	if(IS_OPAQUE_TURF(T))
+		return
+	var/mutable_appearance/tile = client_walls_tile()
+	if(tile in T.underlays)
+		T.underlays -= tile
 
 /// The white tile every area draws on the visibility plane: BYOND shows it only on turfs this client sees.
 /proc/client_visible_tile()
