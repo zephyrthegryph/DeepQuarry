@@ -202,3 +202,15 @@
 	qdel(pda)
 	qdel(stat)
 	qdel(dock)
+
+/datum/unit_test/dq_window_dock_never_docked_interfaces
+/datum/unit_test/dq_window_dock_never_docked_interfaces/Run()
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/datum/tgui/dq_dock_probe/ordinary = new(user, host, "Probe")
+	TEST_ASSERT(ordinary.dockable_interface(), "an ordinary interface may dock")
+	for(var/interface in GLOB.window_dock_never_docked)
+		var/datum/tgui/dq_dock_probe/ui = new(user, host, interface)
+		TEST_ASSERT(!ui.dockable_interface(), "[interface] never docks")
+		TEST_ASSERT(!ui.dockable(), "[interface] is never offered the dock button or a drop")
+	TEST_ASSERT(GLOB.window_dock_never_docked["PreferencesMenu"], "character setup never docks")

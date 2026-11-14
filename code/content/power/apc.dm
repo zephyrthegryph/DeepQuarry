@@ -913,23 +913,55 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 		return
 	var/channels_ms = TICK_USAGE_TO_MS(flip_start)
 	apc_flip_note(src, channels_ms, flip_start)
-	contract_power_revision++
-	var/powered_channels = new_power_light + new_power_equip + new_power_environ
-	if(SScontracts)
-		emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
-			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "power-service:[handle_text(handle_of(src))]",
-			"fact_revision" = contract_power_revision,
-			"service_id" = handle_of(src),
-			"operational" = powered_channels == 3,
-			"metrics" = list(
-				"powered_channels" = powered_channels,
-				"cell_percent" = charge_percent_now(),
-				"load" = channel_load_total(),
-			),
-			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
-		), "power-service:[handle_text(handle_of(src))]:[contract_power_revision]", src)
+	apc_contract_report_queue(src) // the contract fact is built and published a tick or more later (apc_contract_report_queue()), not inside the native notice that flipped the channels
 	apc_flip_note(src, channels_ms, flip_start, TRUE)
+
+/// TRUE while this APC's power-service contract report waits its slot (a flip in between is folded into it: it reads the state when it runs).
+/obj/machinery/power/apc/var/tmp/contract_report_waiting = FALSE
+
+/// The world time the last queued contract report was given, so reports run one a tick (apc_contract_report_queue()).
+GLOBAL_VAR_INIT(apc_contract_slot, 0)
+/// Contract reports run late, longest time one waited, and the slowest one (ms), for the log.
+GLOBAL_VAR_INIT(apc_contract_late_max, 0)
+GLOBAL_VAR_INIT(apc_contract_ms_max, 0)
+
+/// `apc`'s channels flipped: its power-service report goes to the contracts (apc_contract_report()), at one a tick across the station. The report was 77-134 ms of the native
+/// frame's APC notice (the event, its history and the opportunity windows); a station start flips every APC at once, so each takes its own tick instead.
+/proc/apc_contract_report_queue(obj/machinery/power/apc/apc)
+	if(apc.contract_report_waiting)
+		return
+	apc.contract_report_waiting = TRUE
+	var/now = TIME_NOW(CLOCK_WORLD)
+	var/slot = max(GLOB.apc_contract_slot + 1 TICKS, now + 1 TICKS)
+	GLOB.apc_contract_slot = slot
+	after(apc, slot - now, TYPE_PROC_REF(/obj/machinery/power/apc, apc_contract_report))
+
+/// The deferred power-service contract report of this APC: what its area shows now (operating channels out of three), published once however many flips happened meanwhile.
+/obj/machinery/power/apc/proc/apc_contract_report()
+	contract_report_waiting = FALSE
+	if(QDELETED(src) || !area || !SScontracts)
+		return
+	var/started = TICK_USAGE
+	var/powered_channels = !!area.power_light + !!area.power_equip + !!area.power_environ
+	contract_power_revision++
+	var/handle = handle_text(handle_of(src))
+	emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
+		"department" = DEPARTMENT_ENGINEERING,
+		"fact_id" = "power-service:[handle]",
+		"fact_revision" = contract_power_revision,
+		"service_id" = handle_of(src),
+		"operational" = powered_channels == 3,
+		"metrics" = list(
+			"powered_channels" = powered_channels,
+			"cell_percent" = charge_percent_now(),
+			"load" = channel_load_total(),
+		),
+		"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
+	), "power-service:[handle]:[contract_power_revision]", src)
+	var/ms = TICK_USAGE_TO_MS(started)
+	GLOB.apc_contract_ms_max = max(GLOB.apc_contract_ms_max, ms)
+	if(ms >= 25)
+		log_world("APC_CONTRACT: [src] ([area]) power-service report took [round(ms, 0.1)] ms (slowest so far [round(GLOB.apc_contract_ms_max, 0.1)] ms; report slot queue ends [round(max(0, GLOB.apc_contract_slot - TIME_NOW(CLOCK_WORLD)) / (1 TICKS))] tick(s) out)")
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)

@@ -110,14 +110,11 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 		GLOB.client_spread_plane_master.add_filter("client_walls_only", 2, list(type = "alpha", render_source = CLIENT_WALLS_RENDER_TARGET))
 	return list(GLOB.client_glow_plane_master, GLOB.client_glow_base, GLOB.client_glow_compare_base, GLOB.client_glow_relay, GLOB.client_visible_plane_master, GLOB.client_walls_plane_master, GLOB.client_spread_plane_master, GLOB.client_glow_spread_relay)
 
-/// The lighting master adds the glow plane and the wall spread over its black base, before its emissive masks so those still punch through; compare mode relays instead. A filter whose source is not on this screen adds nothing.
+/// The lighting master adds the wall spread over its black base (the floor is the corner gradient underlays; the glow plane renders for the spread only), before its emissive masks so those still punch through; compare mode relays instead. A filter whose source is not on this screen adds nothing.
 /proc/client_glow_master_compose(atom/movable/screen/plane_master/lighting/M)
-	M.remove_filter("client_glow_add")
 	M.remove_filter("client_spread_add")
 	if(GLOB.client_lighting_compare)
 		return
-	if(!lighting_corners_active()) // corner lighting draws the floor from gradient underlays; the glow plane still renders, for the wall spread below
-		M.add_filter("client_glow_add", -2, list(type = "layer", render_source = CLIENT_GLOW_RENDER_TARGET, blend_mode = BLEND_ADD))
 	M.add_filter("client_spread_add", -1, list(type = "layer", render_source = CLIENT_SPREAD_RENDER_TARGET, blend_mode = BLEND_ADD))
 
 /// The screen state a client wants now.

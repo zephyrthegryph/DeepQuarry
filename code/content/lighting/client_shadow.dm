@@ -92,6 +92,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/prefetched = 0
 	/// TRUE while a turn() timer is waiting: the baker's turns hand arrivals to viewers, work out door twins and start queued bakes, a few milliseconds a tick.
 	var/turn_waiting = FALSE
+	/// Which stage the next turn starts with (client_glow_baker_turn()), and trace counters of the turns: the longest (ms) and how many cost CLIENT_GLOW_TURN_SLOW_MS or more.
+	var/turn_rotor = 0
+	var/turn_max_ms = 0
+	var/turn_slow = 0
 	/// Light handle -> TRUE for held lights whose door twins are still to be worked out (client_glow_twins_pump()): each costs a sight query per nearby door, so a turn does a few ms of them.
 	var/list/twin_work = list()
 	/// Trace counters of the twin work: lights done, turns taken, the longest one light (ms).
@@ -244,17 +248,42 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	client_glow_mask_request(key)
 	return GLOB.client_glow_baker.icons[key]
 
-/// The baker's turn: arrived shapes are told to their viewers, queued bakes are started and door twins are worked out, `budget_ms` of them in all (each part at least one item),
-/// and what is left waits for the next tick.
+/// The baker's turn: arrived shapes are told to their viewers, queued bakes are started, finished ones taken in and door twins are worked out, `budget_ms` of them in all.
+/// Each stage does at least one item when it runs, and one item can cost tens of ms (a bake's start, a PNG's file copy, a light's door sight queries), so a turn runs stages only
+/// while it has budget left: it always runs one stage, then goes on to the next only if the first left time. The stage a turn starts with rotates (turn_rotor), so a stage that
+/// is always first in line never starves the others. A turn that cost CLIENT_GLOW_TURN_SLOW_MS is written with the time of each stage.
 /proc/client_glow_baker_turn(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
 	var/started = TICK_USAGE_REAL
-	client_glow_finished_run(budget_ms)
-	client_glow_arrivals_run(max(0, budget_ms - TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)))
-	if(length(B.queue) && B.inflight < CLIENT_GLOW_MASK_BAKES_MAX)
-		client_glow_mask_pump()
-	client_glow_twins_pump(max(0, budget_ms - TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)))
-	if(length(B.twin_work) || length(B.finished))
+	var/list/spent = list(0, 0, 0, 0) // finished, arrivals, bake starts, twins (ms)
+	var/ran = 0
+	B.turn_rotor = (B.turn_rotor % 4) + 1
+	for(var/n in 0 to 3)
+		var/left = budget_ms - TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+		if(ran && left <= 0)
+			break
+		var/stage = ((B.turn_rotor + n - 1) % 4) + 1
+		var/stage_started = TICK_USAGE_REAL
+		var/did = 0
+		switch(stage)
+			if(1)
+				did = client_glow_finished_run(max(0, left))
+			if(2)
+				did = client_glow_arrivals_run(max(0, left))
+			if(3)
+				if(length(B.queue) && B.inflight < CLIENT_GLOW_MASK_BAKES_MAX)
+					did = client_glow_mask_pump(max(0, left))
+			if(4)
+				did = client_glow_twins_pump(max(0, left))
+		if(did)
+			ran++
+		spent[stage] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_started)
+	var/total = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	B.turn_max_ms = max(B.turn_max_ms, total)
+	if(total >= CLIENT_GLOW_TURN_SLOW_MS)
+		B.turn_slow++
+		log_world("client glow baker: a turn took [round(total, 0.1)] ms (finished [round(spent[1], 0.1)] of [length(B.finished)] left, arrivals [round(spent[2], 0.1)] of [length(B.arrivals)] left, bake starts [round(spent[3], 0.1)] of [length(B.queue)] queued, twins [round(spent[4], 0.1)] of [length(B.twin_work)] left; longest turn [round(B.turn_max_ms, 0.1)] ms, [B.turn_slow] slow so far)")
+	if(length(B.twin_work) || length(B.finished) || length(B.arrivals) || (length(B.queue) && B.inflight < CLIENT_GLOW_MASK_BAKES_MAX))
 		client_glow_baker_wake()
 
 /// Arms the baker's next turn if it is not already waiting.
@@ -334,7 +363,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		GLOB.client_glow_baker.queue += key
 	else
 		GLOB.client_glow_baker.queue.Insert(1, key)
-	client_glow_mask_pump()
+	client_glow_baker_wake() // the bake starts in the baker's budgeted turn: a start is a sprite build and a JSON encode (10-30 ms), and a light's four door twins asked inline were 121 ms of one timer
 
 /proc/client_glow_mask_dir_ready()
 	var/static/made = FALSE
@@ -343,14 +372,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		made = TRUE
 
 /// Starts bakes for the queued shapes, up to CLIENT_GLOW_MASK_BAKES_MAX at once; each start is a sprite build and a JSON encode, so one call stops once it has spent
-/// CLIENT_GLOW_TURN_BUDGET_MS (at least one start) and the baker's next turn goes on (client_glow_baker_turn()).
-/proc/client_glow_mask_pump()
+/// `budget_ms` (at least one start) and the baker's next turn goes on (client_glow_baker_turn()). Returns the starts made.
+/proc/client_glow_mask_pump(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
 	var/started = TICK_USAGE_REAL
 	var/begun = 0
 	while(GLOB.client_glow_baker.inflight < CLIENT_GLOW_MASK_BAKES_MAX && length(GLOB.client_glow_baker.queue))
-		if(begun && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= CLIENT_GLOW_TURN_BUDGET_MS)
+		if(begun && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
 			client_glow_baker_wake()
-			return
+			return begun
 		begun++
 		var/key = GLOB.client_glow_baker.queue[1]
 		GLOB.client_glow_baker.queue.Cut(1, 2)
@@ -359,6 +388,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		var/job_id = rustg_iconforge_generate_async(CLIENT_GLOW_MASK_DIR, sheet, json_encode(list("mask" = client_glow_mask_sprite(key))), FALSE, FALSE, TRUE)
 		GLOB.client_glow_baker.inflight++
 		io_job(null, /datum/io_backend/rustg_job, job_id, GLOBAL_PROC_REF(client_glow_mask_job_done), key, sheet)
+	return begun
 
 /// The PNG a bake's output names, or null.
 /proc/client_glow_mask_png(sheet, output)

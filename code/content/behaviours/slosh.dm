@@ -21,29 +21,35 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 	if(istype(source))
 		slosh_moved(source)
 
-/// One step of `source` (the mob that moved): humans slosh by intent, silicons every other step.
+/// One step of `source` (the mob that moved): humans slosh by intent, silicons every other step. The step counter is read once and written once a step (it was a lazy
+/// state read and write at each of up to three counts, and a state made and dropped every few steps: the dearest moved-notice listener of a walk).
 /datum/capability/slosh/proc/slosh_moved(mob/living/source)
+	var/steps = STATE_GET(source, slosh, slosh_steps)
+	var/was = steps
 	if(ishuman(source))
 		var/mob/living/carbon/human/source_human = source
-		if(source_human.m_intent == I_WALK && slosh_step_count(source) % 20 == 0)
-			return
-		if(source_human.m_intent == I_RUN && slosh_step_count(source) % 2 != 0)
-			return
-		choose_vorefootstep(source)
-	if(issilicon(source))
-		if(slosh_step_count(source) % 2)
-			choose_vorefootstep(source)
+		var/skip = FALSE
+		if(source_human.m_intent == I_WALK)
+			skip = steps % 20 == 0
+			steps++
+		if(!skip && source_human.m_intent == I_RUN)
+			skip = steps % 2 != 0
+			steps++
+		if(!skip)
+			steps = choose_vorefootstep(source, steps)
+	else if(issilicon(source))
+		var/odd = steps % 2
+		steps++
+		if(odd)
+			steps = choose_vorefootstep(source, steps)
+	if(steps != was)
+		STATE_SET(source, slosh, slosh_steps, steps)
 
-
-/// The steps `source` had taken before this one; counts this one (the old `slosh_steps++`).
-/datum/capability/slosh/proc/slosh_step_count(mob/living/source)
-	var/steps = STATE_GET(source, slosh, slosh_steps)
-	STATE_SET(source, slosh, slosh_steps, steps + 1)
-	return steps
-
-/datum/capability/slosh/proc/choose_vorefootstep(mob/living/source)
-	if(slosh_step_count(source) >= 5)
-
+/// The step count after this step's pick: counts it, and every fifth recomputes the cached volume and chance from the bellies and may play a sound. `steps` is the count before.
+/datum/capability/slosh/proc/choose_vorefootstep(mob/living/source, steps)
+	var/before = steps
+	steps++
+	if(before >= 5)
 		var/highest_vol = 0
 
 		for(var/obj/belly/B in source.vore_organs)
@@ -59,13 +65,14 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 			STATE_SET(source, slosh, slosh_volume, 20 + highest_vol * 4/5)
 			STATE_SET(source, slosh, slosh_chance, highest_vol/4)
 
-		STATE_SET(source, slosh, slosh_steps, 0)
+		steps = 0
 
 		if(!STATE_GET(source, slosh, slosh_volume) || !STATE_GET(source, slosh, slosh_chance))
-			return
+			return steps
 
 		if(prob(STATE_GET(source, slosh, slosh_chance)))
 			handle_vorefootstep(source)
+	return steps
 
 /datum/capability/slosh/proc/handle_vorefootstep(mob/living/source)
 	if(!CONFIG_GET(number/vorefootstep_volume) || !STATE_GET(source, slosh, slosh_volume))

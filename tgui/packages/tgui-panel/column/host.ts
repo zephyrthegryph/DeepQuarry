@@ -26,8 +26,8 @@ import {
   dockReduce,
   emptyDock,
   parseSaved,
-  serializeSaved,
   STATUS_INTERFACE,
+  serializeSaved,
 } from './model';
 
 const SAVE_DELAY_MS = 1000;
@@ -49,7 +49,20 @@ export function sendFor(
   Byond.sendMessage('col/msg', { wid, type, payload });
 }
 
+/** The list index a point at `y` (page px) falls at among the entries' boxes: before the first entry whose middle is below it, else last. */
+export function dropIndex(
+  boxes: { top: number; height: number }[],
+  y: number,
+): number {
+  const index = boxes.findIndex((box) => y < box.top + box.height / 2);
+  return index < 0 ? boxes.length : index;
+}
+
 export class ColumnHost {
+  /** Where a dragged window would land (a list index), while the drag's drop hint is up. */
+  hint: number | null = null;
+  private hintSeq = 0;
+
   state: DockState = emptyDock();
   /** Docked tgui interfaces by window id: their own stores and channels. */
   backends = new Map<string, EmbeddedBackend>();
@@ -130,6 +143,9 @@ export class ColumnHost {
       case 'col/drop-check':
         this.dropCheck(payload);
         return true;
+      case 'col/drop-hint':
+        this.dropHint(payload);
+        return true;
       case 'col/init':
         this.lastSaved =
           typeof payload?.saved === 'string' ? payload.saved : '';
@@ -156,7 +172,8 @@ export class ColumnHost {
     this.backends.set(wid, backend);
     const at = typeof payload?.at === 'number' ? payload.at : undefined;
     if (at !== undefined) this.openedAt.set(wid, at);
-    const height = typeof payload?.height === 'number' ? payload.height : undefined;
+    const height =
+      typeof payload?.height === 'number' ? payload.height : undefined;
     if (height !== undefined) this.openedHeight.set(wid, height);
     // Its interface and title come with its first update; until then it has no interface, so the saved layout does not hear of it.
     this.dispatch({
@@ -376,6 +393,22 @@ export class ColumnHost {
    * it there. The page's screen place is its own client area's.
    */
   private async dropCheck(payload: any) {
+    const index = await this.dropTarget(payload, true);
+    if (index === null) return;
+    sendPage('WM-Drop', { wid: payload?.wid, index });
+  }
+
+  /** A drag's hover point (or null: it left): the hint shows the index a drop there would use, the same dropTarget() the drop answers with. */
+  private async dropHint(payload: any) {
+    const seq = ++this.hintSeq;
+    const index = payload ? await this.dropTarget(payload, false) : null;
+    if (seq !== this.hintSeq || index === this.hint) return;
+    this.hint = index;
+    this.changed();
+  }
+
+  /** The list index a drop at the payload's screen point lands at, or null when the point is outside the column. */
+  async dropTarget(payload: any, log: boolean): Promise<number | null> {
     // The column's screen rect: the same measurement the chat's own pin to the column uses (layout/geometry.ts).
     const column = await measureColumn(await mainBounds());
     const ratio = window.devicePixelRatio || 1;
@@ -383,7 +416,7 @@ export class ColumnHost {
     const py = Number(payload?.y);
     const inside = !!column && rectContains(column, px, py);
     const y = column ? (py - column.y) / ratio : Number.NaN;
-    if (this.profiling()) {
+    if (log && this.profiling()) {
       sendPage('WM-Log', {
         drop: inside ? 'column' : 'outside',
         point: [px, py],
@@ -391,16 +424,11 @@ export class ColumnHost {
         ratio,
       });
     }
-    if (!inside) return;
-    const entries = Array.from(
+    if (!inside) return null;
+    const boxes = Array.from(
       document.querySelectorAll<HTMLElement>('[data-column-group]'),
-    );
-    let index = entries.findIndex((node) => {
-      const rect = node.getBoundingClientRect();
-      return y < rect.top + rect.height / 2;
-    });
-    if (index < 0) index = entries.length;
-    sendPage('WM-Drop', { wid: payload?.wid, index });
+    ).map((node) => node.getBoundingClientRect());
+    return dropIndex(boxes, y);
   }
 
   private scheduleSave() {

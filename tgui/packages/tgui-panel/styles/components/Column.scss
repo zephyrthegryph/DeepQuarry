@@ -68,6 +68,15 @@
   background: rgba(141, 192, 255, 0.9);
 }
 
+.column-drop-hint {
+  // Where a window dragged over the column would land (host.hint), in the console accent.
+  height: 3px;
+  flex: 0 0 auto;
+  background: console.$console-accent;
+  box-shadow: 0 0 6px console.$console-accent;
+  pointer-events: none;
+}
+
 .column-head {
   display: flex;
   align-items: center;

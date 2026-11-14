@@ -21,6 +21,9 @@
 	var/near = 0
 	/// Tracked things in this cell.
 	var/list/members
+	/// TRUE while the members hold RELEVANCE_NEAR under this cell's source (reconcile_cell()). It follows `near > 0`, at once for an eye placed without a step (tests, the sweep)
+	/// and a few ms a tick for a client's step (reconcile_run()).
+	var/applied = FALSE
 
 SYSTEM_DEF(proximity)
 	name = "Proximity"
@@ -34,6 +37,16 @@ SYSTEM_DEF(proximity)
 	VAR_PRIVATE/alist/filed = alist()
 	/// The source a carried tracked thing holds its relevance under.
 	var/datum/proximity_carried/carried
+	/// TRUE while a client's step is counting its eye: the cells it wakes or lets go are put on the reconcile queue instead of holding or releasing every member at once.
+	VAR_PRIVATE/defer_holds = FALSE
+	/// Ids of the cells whose members still have to follow their near count, oldest first (reconcile_run()).
+	VAR_PRIVATE/list/reconcile_queue
+	VAR_PRIVATE/reconcile_waiting = FALSE
+	/// Trace counters of the reconcile turns: cells reconciled, turns taken, the dearest cell (ms), the longest queue seen.
+	var/reconciled = 0
+	var/reconcile_turns = 0
+	var/reconcile_max_ms = 0
+	var/reconcile_peak = 0
 
 CAPABILITIES(/datum/proximity_cell)
 	ref_many(nameof(members), /atom/movable)
@@ -80,7 +93,7 @@ CAPABILITIES(/datum/system/proximity)
 
 /// A cell nothing refers to any more goes.
 /datum/system/proximity/proc/cell_prune(datum/proximity_cell/P)
-	if(P.eyes || P.near || length(P.members))
+	if(P.eyes || P.near || P.applied || length(P.members))
 		return
 	cells -= "[P.id]"
 
@@ -103,16 +116,83 @@ CAPABILITIES(/datum/system/proximity)
 			var/datum/proximity_cell/P = step > 0 ? cell_of(id, z, nx, ny) : cells["[id]"]
 			if(!P)
 				continue
-			var/was = P.near
 			P.near += step
-			if(!was && P.near > 0)
-				for(var/atom/movable/M as anything in P.members)
-					hold(M, STAT_RELEVANCE, RELEVANCE_NEAR, P)
-			else if(was > 0 && P.near <= 0)
+			if(P.near < 0)
 				P.near = 0
-				for(var/atom/movable/M as anything in P.members)
-					release(M, STAT_RELEVANCE, P)
-				cell_prune(P)
+			if((P.near > 0) == P.applied)
+				if(!P.near)
+					cell_prune(P)
+				continue
+			if(defer_holds)
+				LAZYADD(reconcile_queue, P.id)
+				reconcile_peak = max(reconcile_peak, length(reconcile_queue))
+				if(!reconcile_waiting)
+					reconcile_waiting = TRUE
+					after(src, 1 TICKS, PROC_REF(reconcile_run))
+			else
+				reconcile_cell(P)
+
+/// The members of `P` hold RELEVANCE_NEAR under it while it is near and release it when it is not. Returns the members touched.
+/datum/system/proximity/proc/reconcile_cell(datum/proximity_cell/P)
+	var/want = P.near > 0
+	if(want == P.applied)
+		return 0
+	P.applied = want
+	. = length(P.members)
+	if(want)
+		for(var/atom/movable/M as anything in P.members)
+			hold(M, STAT_RELEVANCE, RELEVANCE_NEAR, P)
+	else
+		for(var/atom/movable/M as anything in P.members)
+			release(M, STAT_RELEVANCE, P)
+		cell_prune(P)
+
+/// The timer of the reconcile queue: the cells a client's step woke or let go have their members hold or release, until PROXIMITY_RECONCILE_BUDGET_MS is spent (at least one
+/// cell a turn; a cell is a few tens of tracked things at most). A step crossing into a new cell was 8-10 ms of holds and releases in the step itself.
+/datum/system/proximity/proc/reconcile_run()
+	reconcile_waiting = FALSE
+	var/started = TICK_USAGE_REAL
+	var/done = 0
+	reconcile_turns++
+	while(length(reconcile_queue))
+		var/queued_id = reconcile_queue[1]
+		reconcile_queue.Cut(1, 2)
+		var/datum/proximity_cell/P = cells["[queued_id]"]
+		if(!P) // pruned since: nothing holds under it
+			continue
+		var/cell_started = TICK_USAGE_REAL
+		var/touched = reconcile_cell(P)
+		var/cell_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - cell_started)
+		reconcile_max_ms = max(reconcile_max_ms, cell_ms)
+		done++
+		reconciled++
+		if(cell_ms >= PROXIMITY_RECONCILE_SLOW_MS)
+			log_world("PROXIMITY_RECONCILE_SLOW: cell [P.id] took [round(cell_ms, 0.1)] ms for [touched] member(s) (dearest so far [round(reconcile_max_ms, 0.1)] ms, [length(reconcile_queue)] cell(s) still waiting)")
+		if(length(reconcile_queue) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= PROXIMITY_RECONCILE_BUDGET_MS)
+			break
+	if(!length(reconcile_queue))
+		reconcile_queue = null
+	else
+		reconcile_waiting = TRUE
+		after(src, 1 TICKS, PROC_REF(reconcile_run))
+
+/// eye_place() for a client's step: the cells it wakes or lets go follow on the reconcile queue (reconcile_run()) instead of all in this step.
+/datum/system/proximity/proc/eye_place_deferred(datum/proximity_eye/R, turf/T)
+	defer_holds = TRUE
+	eye_place(R, T)
+	defer_holds = FALSE
+
+/// Cells waiting for their members to hold or release (tests, the admin view).
+/datum/system/proximity/proc/reconcile_waiting_count()
+	return length(reconcile_queue)
+
+/// Test hook: every queued cell reconciled now.
+/datum/system/proximity/proc/reconcile_all()
+	for(var/queued_id in reconcile_queue)
+		var/datum/proximity_cell/P = cells["[queued_id]"]
+		if(P)
+			reconcile_cell(P)
+	reconcile_queue = null
 
 /// An eye update that takes this long (ms) is traced with its two halves (PROXIMITY_EYE_SLOW).
 #define PROXIMITY_EYE_SLOW_MS 25
@@ -126,7 +206,7 @@ CAPABILITIES(/datum/system/proximity)
 		rel_set(C, nameof(C.proximity_eye), R)
 	var/started = TICK_USAGE_REAL
 	MOVE_COST_BEGIN(cell_started) // the step's trace itemises the eye part
-	eye_place(R, get_turf(C.eye))
+	eye_place_deferred(R, get_turf(C.eye))
 	MOVE_COST_END(MOVE_COST_EYE_CELL, cell_started)
 	var/placed_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	gaze_update(C) // the chunks this eye holds (engine/change/gaze.dm)
@@ -189,7 +269,7 @@ CAPABILITIES(/datum/system/proximity)
 	var/datum/proximity_cell/P = cell_of(id, T.z, PROXIMITY_CELL_COORD(T.x), PROXIMITY_CELL_COORD(T.y))
 	rel_add(P, nameof(P.members), M)
 	filed[handle] = id
-	if(P.near > 0)
+	if(P.applied) // a cell near but not yet applied holds its members, this one included, when its reconcile turn comes
 		hold(M, STAT_RELEVANCE, RELEVANCE_NEAR, P)
 
 /// A tracked thing leaves its cell (a move, its deletion).

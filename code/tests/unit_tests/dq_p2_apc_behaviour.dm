@@ -337,7 +337,6 @@
 
 /datum/unit_test/dq_p2_apc/lighting_channel_off_then_on_relights_the_area/run_gate()
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
-	set_global(nameof(GLOB.lighting_corners), null)
 	dq_smoothing_keep_screens(src)
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
@@ -374,7 +373,6 @@
 		var/list/rgb = client_flat_light_rgb(get_turf(L))
 		TEST_ASSERT(max(rgb[1], rgb[2], rgb[3]) > 0.3, "the floor under the fixture is lit again ([json_encode(rgb)])")
 	client_lighting_set(FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The ID lock
