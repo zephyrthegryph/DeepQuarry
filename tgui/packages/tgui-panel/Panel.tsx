@@ -75,7 +75,8 @@ export function Panel(props) {
         )}
         <Stack.Item grow>
           <Section fill fitted position="relative">
-            <Pane.Content scrollable id="chat-pane">
+            {/* fitted: no Window__contentPadding (a 0.5rem margin all round, 0.5rem under the last line); .Chat pads itself. */}
+            <Pane.Content fitted scrollable id="chat-pane">
               <ChatPanel lineHeight={settings.lineHeight} />
             </Pane.Content>
             <ScrollToBottom />

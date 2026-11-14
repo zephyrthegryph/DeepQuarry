@@ -2,6 +2,7 @@
 // entries, each a header (title or stacked tabs) over a body, in the console look. Neighbouring entries share one border: each entry
 // after the first overlaps the one above by a border width (COLUMN_GAP in model.ts), so a seam is 3px, not two frames and a gap.
 @use '~tgui/styles/console';
+@use '~tgui/styles/dq/row-control';
 
 .column {
   // The CRT scanlines belong to the whole page, whichever windows are docked in it.
@@ -81,6 +82,12 @@
   // The page scrolls vertically (.column), so without this the browser takes a vertical drag of the header as a pan and cancels it:
   // an entry then moved sideways only.
   touch-action: none;
+
+  // The fold, float and close buttons are one height on the title's centre line, whatever glyph each draws.
+  > .Button {
+    @include row-control.button(22px);
+    padding: 0 6px;
+  }
 
   &--lit {
     outline: 2px dashed #8dc0ff;

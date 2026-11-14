@@ -116,7 +116,7 @@ export function Chat() {
     };
   }, []);
   return (
-    <Window title="Chat" width={520} height={640}>
+    <Window title="Chat" width={520} height={640} framed>
       <Window.Content fitted>
         <Provider store={store}>
           <div className="chat-theme">

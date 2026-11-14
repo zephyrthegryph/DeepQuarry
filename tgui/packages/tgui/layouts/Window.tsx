@@ -90,6 +90,8 @@ type Props = Partial<{
   title: string;
   width: number;
   fitted: boolean;
+  /** The page draws the window's frame (the chat): the title bar has no status icon, border or glow of its own. */
+  framed: boolean;
   /** Grow the window until all of its content shows (see fitWindow.ts). */
   fitContent: boolean;
   scrollbars: boolean;
@@ -147,6 +149,7 @@ function NativeWindow(props: Props) {
     width: requestedWidth,
     height: requestedHeight,
     fitted,
+    framed,
     fitContent,
     scrollbars = true,
   } = props;
@@ -346,6 +349,7 @@ function NativeWindow(props: Props) {
           title={title || decodeHtmlEntities(config.title)}
           status={config.status}
           fancy={fancy}
+          framed={framed}
           onDragStart={dragStartHandler}
           onClose={suspendStart}
           canClose={canClose}

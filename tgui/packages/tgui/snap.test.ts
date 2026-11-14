@@ -27,7 +27,28 @@ describe('snapToScreen', () => {
 
   it('snaps to the edges of a screen that does not start at zero', () => {
     const origin: [number, number] = [-1920, 40];
-    expect(snapToScreen([-1910, 50], size, screen, SNAP_DISTANCE, origin)).toEqual([-1920, 40]);
-    expect(snapToScreen([135, 400], size, screen, SNAP_DISTANCE, origin)[0]).toBe(140);
+    expect(
+      snapToScreen([-1910, 50], size, screen, SNAP_DISTANCE, origin),
+    ).toEqual([-1920, 40]);
+    expect(
+      snapToScreen([135, 400], size, screen, SNAP_DISTANCE, origin)[0],
+    ).toBe(140);
+  });
+
+  it('has a generous snap distance', () => {
+    expect(SNAP_DISTANCE).toBeGreaterThanOrEqual(48);
+  });
+
+  it("rests flush against the right-hand panel's left edge", () => {
+    // The panel starts at x 1900: a 500 wide window's right edge meets it at x 1400.
+    expect(
+      snapToScreen([1430, 400], size, screen, SNAP_DISTANCE, [0, 0], [1900]),
+    ).toEqual([1400, 400]);
+    expect(
+      snapToScreen([1360, 400], size, screen, SNAP_DISTANCE, [0, 0], [1900])[0],
+    ).toBe(1400);
+    expect(
+      snapToScreen([1300, 400], size, screen, SNAP_DISTANCE, [0, 0], [1900])[0],
+    ).toBe(1300);
   });
 });

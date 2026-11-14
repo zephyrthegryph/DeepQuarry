@@ -271,9 +271,20 @@ function runDrag(
     setDrag(null);
     return true;
   };
+  // The pop-out opens a native window that takes the focus, and the page can lose the pointer to it (a pointercancel, or a new pointer id
+  // for the same press). The drag is not over then: the window keeps following while the button is down, and is only released by the
+  // button going up, the button found up on a move, or no event for a grace period after the cancel.
+  let grace: ReturnType<typeof setTimeout> | undefined;
+  const mine = (e: PointerEvent) => e.pointerId === pointer || !!follow;
   const move = (e: PointerEvent) => {
-    if (e.pointerId !== pointer) return;
+    if (!mine(e)) return;
     if (follow) {
+      clearTimeout(grace);
+      if (e.buttons === 0 && e.type !== 'pointerup') {
+        host.trace('drag found the button up while floated', { type: e.type });
+        end(e);
+        return;
+      }
       const point = screenPoint(e);
       follow.move([point.x, point.y]);
       return;
@@ -298,7 +309,17 @@ function runDrag(
     if (!frame) frame = requestAnimationFrame(publish);
   };
   const end = (e: PointerEvent) => {
-    if (e.pointerId !== pointer) return;
+    if (!mine(e)) return;
+    if (follow && e.type === 'pointercancel') {
+      const point = screenPoint(e);
+      host.trace('drag lost the pointer while floated: still following', {
+        point,
+      });
+      clearTimeout(grace);
+      grace = setTimeout(() => end(new PointerEvent('pointerup', e)), 1500);
+      return;
+    }
+    clearTimeout(grace);
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', end);
     document.removeEventListener('pointercancel', end);
