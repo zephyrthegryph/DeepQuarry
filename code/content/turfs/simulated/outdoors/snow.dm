@@ -12,8 +12,8 @@
 	if(!isliving(A))
 		return null
 	var/mob/living/L = A
-	if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying things shouldn't make footprints.
-		if(stat_value(L, STAT_FLYING))
+	if(dq_get_hovering(L) || L.flying) // Flying things shouldn't make footprints.
+		if(L.flying)
 			L.adjust_nutrition(-0.5)
 		return null
 	var/mdir = "[A.dir]"
