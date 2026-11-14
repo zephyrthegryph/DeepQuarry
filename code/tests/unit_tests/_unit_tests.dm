@@ -573,6 +573,7 @@
 #include "dq_draw_sweep_3c.dm"
 #include "dq_draw_reagents.dm"
 #include "dq_look_forms.dm"
+#include "dq_look_cache.dm"
 #include "dq_look_glow_tests.dm"
 #include "dq_glow_batch_tests.dm"
 #include "dq_fresh_look_default.dm"

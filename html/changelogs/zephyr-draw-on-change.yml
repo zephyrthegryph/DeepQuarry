@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Joining or teleporting no longer blacks the screen out until the surroundings are drawn."
+  - code_imp: "Draws are served from an appearance cache keyed by what the draw reads, and each draw's cost is logged by type."

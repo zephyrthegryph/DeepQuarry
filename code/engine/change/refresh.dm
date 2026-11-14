@@ -700,10 +700,28 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 	D.presentation_refresh_static()
 
 
-/// Builds A's look and applies it when its key changed. Returns the key.
+/// Builds A's look and applies it when its key changed. Returns the key. An atom whose inputs a finished look was built from is served that look
+/// (look_cache.dm): its draw does not run. Every draw's cost is noted by type (look_cost_note()).
 /proc/refresh_look(atom/A, apply = TRUE)
+	var/started = TICK_USAGE_REAL
+	var/cache_key = apply ? look_cache_key(A) : null
+	if(cache_key)
+		var/datum/look/hit = GLOB.look_cache[cache_key]
+		if(hit)
+			. = look_cache_serve(A, hit)
+			look_cost_note(A.type, TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), TRUE)
+#if defined(UNIT_TESTS)
+			look_cache_verify(A, hit)
+#endif
+			return .
+	. = refresh_look_draw(A, apply, cache_key)
+	look_cost_note(A.type, TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), FALSE)
+
+/// refresh_look()'s draw: builds the look, applies it when its key changed (`apply`), and holds it in the cache under `cache_key` when it may be. Returns the key.
+/proc/refresh_look_draw(atom/A, apply, cache_key)
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
+	GLOB.look_builds++
 	call_output(A, "draw", TYPE_PROC_REF(/atom, draw), L)
 	// Transient flashes (look_flash()) sit on top of whatever draw() described.
 	var/datum/cap_engine_state/engine = capability_data(A)?[/datum/cap_engine_state] // inline cap_engine_state_of(): every look refresh passes here
@@ -728,6 +746,12 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks, L.watched_worn)
 		return null
 	var/key = L.change_key()
+	if(cache_key)
+		if(!engine && look_cache_storable(L))
+			look_cache_store(cache_key, L, key)
+			GLOB.look_cache_misses++
+		else
+			GLOB.look_cache_bypassed++
 	if(apply)
 		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
 		if(L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state])
@@ -830,7 +854,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]; [interest_stats_text()]; [interest_woken_text()]"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]; [interest_stats_text()]; [interest_woken_text()]; [look_cache_text()]; [look_cost_text(5)]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text
