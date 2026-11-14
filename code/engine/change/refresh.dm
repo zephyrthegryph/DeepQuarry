@@ -132,9 +132,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, and after E is marked itself (the mark is what makes the second mark a "not first"),
 	// so two entities watching each other (two railings that draw each other) stop after one round.
-	// An atom already parked that this mark would park again (interest.dm) has been through its first mark: its watchers heard then, and two atoms
-	// that watch each other would otherwise pass the notice back and forth for ever, neither ever becoming non-idle.
-	var/first_mark = E.rel_watchers && REFRESH_IDLE(E) && !((E.refresh_queued & DEP_PARKED) && GLOB.interest_defer_marks && interest_parked_stays(E))
+	var/first_mark = E.rel_watchers && REFRESH_IDLE(E)
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
@@ -149,9 +147,7 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 		if(!refresh_wanted(E))
 			refresh_mark_owner(E, mask, channel)
 		else
-			GLOB.refresh_mark_var = var_name // the wake census (interest_woken_note()) names the write that woke a parked atom
 			refresh_mark(E, mask, channel)
-			GLOB.refresh_mark_var = null
 	if(first_mark)
 		rel_notify_watchers(E)
 
@@ -216,8 +212,6 @@ GLOBAL_LIST_EMPTY(atoms_init_outer)
 		var/atom/A = D
 		if(ismob(A))
 			return . | DEP_ALL // a mob's species and traits grant verbs no type flag knows
-		if(GLOB.type_look_lazy[A.type] && !LAZYLEN(A.open_tguis))
-			return . | DEP_DRAW // a lazy verdict is a declaration-level finding: the type derives nothing but its look (look_lazy_block())
 		var/flags = type_derive_flags(A)
 		if(flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
 			. |= DEP_DRAW
@@ -271,48 +265,37 @@ GLOBAL_VAR_INIT(refresh_marks_raised, 0)
 
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
+/// An atom whose pending outputs are its look alone is filed in the draw queue, by the chunk it stands in (draw_queue.dm); any other entity is in the
+/// refresh queue, which runs every output. A fresh atom of the boot map load waits in the boot hold (DF_BOOT_HELD) and is marked by the settle.
 /proc/refresh_mark(datum/E, mask, channel = 0)
 	GLOB.refresh_marks_raised++ // the MOVE_COST trace diffs it over a step
 	if(GLOB.refresh_mark_probe_type && istype(E, GLOB.refresh_mark_probe_type))
 		refresh_mark_probe_note(mask)
 	var/datum/D = E
 	for(var/depth in 1 to 8)
-		// A parked atom (DEP_PARKED) is out of the queue and owes its whole first refresh: the real mark queues it and the owed draw rides with it.
-		var/owed = D.refresh_queued & DEP_PARKED
-		var/idle = !(D.refresh_queued & ~DEP_PARKED)
-		if(idle && GLOB.interest_defer_marks && ((mask & DEP_DRAW) || owed) && (owed ? interest_parked_stays(D) : interest_defers(D)))
-			// Unobserved presentation (interest.dm): no client, camera or screen holds the chunk it stands in. It owes the draw and costs nothing until
-			// a chunk it stands in is entered or it moves into one that is held.
-			if(owed)
-				GLOB.refresh_deferred_absorbed++ // another mark on a draw already owed: the redraw it would have been never happens
-			else
-				GLOB.refresh_deferred++
-			D.refresh_queued = DEP_PARKED
-			D.refresh_bits = 0
-			if(!owed && isatom(D))
-				interest_owed_note(D)
-		else
-			if(mask & DEP_LEGACY)
-				D.refresh_bits |= channel
-			if(idle)
-				refresh_queue_push(D)
-				if(isatom(D))
-					interest_owed_note(D)
-			// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
-			// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
-			// Only a type that defines push_to_rust() or on_state_changed() (the generated list) has a push to run early: for any other type the entry would be
-			// a queue slot for nothing, and every new item that sets a trait in its setup() would take one.
-			if((mask & DEP_PUSH) && mask != DEP_ALL && refresh_pushes(D))
-				GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
-			// A real mark: no longer the type's default state. Not one the atom's own construction makes: its setup() hooks and a map-loaded atom's
-			// after_init() entries run in an init frame (DF_INIT_OPEN, interest.dm) and write the state its first draw reads, as Initialize() does. That first
-			// draw is already queued (DEP_CREATED), so such a write is part of it, and the type can still be sampled and stamped at boot (look_stamp.dm): a wall
-			// or floor marked by its setup() would lose the creation mark and wait, unsampled, for the post-boot drain (35 k turfs, ~3.5 minutes).
-			var/construction = (D.refresh_queued & DEP_CREATED) && (D.datum_flags & DF_INIT_OPEN)
-			D.refresh_queued = (D.refresh_queued & ~(construction ? DEP_PARKED : (DEP_CREATED | DEP_PARKED))) | mask | (owed ? DEP_ALL : 0)
-			if(owed)
-				GLOB.refresh_parked_woken++
-				interest_woken_note(D)
+		if(D.datum_flags & DF_BOOT_HELD)
+			GLOB.boot_held_marks++ // it owes its whole first draw: the settle makes it, once, from what the atom is then
+			break
+		if(mask & DEP_LEGACY)
+			D.refresh_bits |= channel
+		var/idle = !D.refresh_queued
+		// A real mark: no longer the type's default state. Not one the atom's own construction makes: its setup() hooks and a map-loaded atom's
+		// after_init() entries run in an init frame (DF_INIT_OPEN) and write the state its first draw reads, as Initialize() does. That first
+		// draw is already queued (DEP_CREATED), so such a write is part of it, and the type can still be sampled and stamped at boot (look_stamp.dm).
+		var/construction = (D.refresh_queued & DEP_CREATED) && (D.datum_flags & DF_INIT_OPEN)
+		D.refresh_queued = (D.refresh_queued & ~(construction ? 0 : DEP_CREATED)) | mask
+		if(idle)
+			GLOB.draw_n["dirtied"]++
+		if(refresh_eager(D))
+			refresh_queue_push(D) // one entry however often it is marked
+		else if(idle)
+			draw_file(D)
+		// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
+		// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
+		// Only a type that defines push_to_rust() or on_state_changed() (the generated list) has a push to run early: for any other type the entry would be
+		// a queue slot for nothing, and every new item that sets a trait in its setup() would take one.
+		if((mask & DEP_PUSH) && mask != DEP_ALL && refresh_pushes(D))
+			GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
 		// A selective mark reaches an owner only through the look (an owner never reads a child's window data).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
 			break
@@ -324,6 +307,17 @@ GLOBAL_VAR_INIT(refresh_marks_raised, 0)
 		D = owner
 		if(mask != DEP_ALL)
 			mask = DEP_DRAW
+
+/// Whether what `D` owes is run by the refresh queue (every output, now) rather than filed in the draw queue (its look alone, nearest a viewer first): a
+/// datum that is no atom, a mob, an atom with any live output besides its look, and everything before the boot settle (it samples the queue by type).
+/proc/refresh_eager(datum/D)
+	if(!isatom(D) || !GLOB.boot_created_settled)
+		return TRUE
+	var/beside_look = D.refresh_queued & ~(DEP_DRAW | DEP_CREATED)
+	return beside_look && (beside_look & refresh_live_outputs(D))
+
+/// Marks of held atoms the boot hold took (the boot log reads it).
+GLOBAL_VAR_INIT(boot_held_marks, 0)
 
 GLOBAL_LIST_EMPTY(refresh_queue)
 /// A queued datum's slot -> its absolute place in the queue (refresh_queue_base + its index when it was appended). The entry of a deleted datum is found in one step
@@ -377,8 +371,6 @@ GLOBAL_VAR_INIT(refresh_queue_base, 0)
 	GLOB.refresh_queue_base = 0
 	for(var/datum/D as anything in kept)
 		refresh_queue_push(D)
-/// Parked first draws a real mark put back in the queue (look_stamp.dm), for the boot log.
-GLOBAL_VAR_INIT(refresh_parked_woken, 0)
 /// The entities marked for a Rust push (DEP_PUSH) since the last phase S: refresh_drain_pushes() runs them before the native step.
 GLOBAL_LIST_EMPTY(refresh_push_queue)
 
@@ -401,10 +393,10 @@ GLOBAL_VAR_INIT(refresh_forget_scan_max, 0)
 		return
 	GLOB.refresh_push_queue -= D
 	refresh_queue_drop(D)
-	if(D.refresh_queued == DEP_PARKED)
+	if(D.datum_flags & DF_BOOT_HELD)
 		boot_created_forget(D)
-	if(D.refresh_queued && ismovable(D))
-		interest_owed_drop(D)
+	if(D.refresh_queued)
+		draw_unfile(D)
 	D.refresh_queued = 0
 	D.refresh_bits = 0
 /// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
@@ -555,47 +547,7 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 		if(D.refresh_pass == pass)
 			LAZYADD(deferred, D)
 			continue
-		var/pending = D.refresh_queued
-		if(pending == DEP_PARKED)
-			continue // a stale entry of an atom parked since (refresh_park_backlog()): it keeps owing its first draw
-		D.refresh_queued = 0
-		if(isatom(D))
-			interest_owed_drop(D)
-		if(QDELETED(D))
-			D.refresh_bits = 0
-			continue
-		if(!pending)
-			continue // a stale duplicate: an earlier entry already ran its outputs
-		var/fresh = pending & DEP_CREATED
-		pending &= ~DEP_CREATED
-		if(fresh && type_look_stamped(D))
-			// Queued at creation before its type's verdict was in, and the type's default look is empty: nothing to draw (look_stamp.dm).
-			D.refresh_bits = 0
-			GLOB.type_look_stamp_skipped++
-			continue
-		if(!refresh_wanted_queued(D))
-			// Every atom's first refresh is queued at init (caps_init()) before its type's verdict is in: the first
-			// instance probes the type, and the rest, queued behind it, skip here once it is known to derive nothing.
-			D.refresh_bits = 0
-			continue
-		D.refresh_pass = pass
-		CHURN_COUNT(draws, D.type)
-		var/bits = D.refresh_bits
-		D.refresh_bits = 0
-		GLOB.refresh_bench_drained++
-		var/attr_start = TICK_USAGE
-		var/draw_ledger = km_ledger_enter(KM_CAT_DRAW, D.type, km_attr_reason(pending | fresh))
-		try
-			refresh_one(D, bits, pending)
-			if(fresh)
-				type_look_stamp_record(D)
-		catch(var/exception/e)
-			if(sched)
-				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
-			else
-				dq_report_caught(e, "refresh of [D.type]")
-		km_ledger_leave(draw_ledger)
-		attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
+		refresh_run(D, pass, sched, attr)
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)
 			GLOB.refresh_queue_base += i
@@ -610,18 +562,68 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 		return FALSE
 	return TRUE
 
-/// Every queued refresh now, ignoring the budget (tests, admin tools), then the UI pushes they queued. A
+/// Runs the outputs `D` has pending, now (its entry in a queue is consumed by the caller): the refresh queue's entries and the draw queue's. An entry whose
+/// atom has nothing pending any more (it was run since, by the other queue) is skipped. The first refresh of a fresh atom of a stamped type (look_stamp.dm)
+/// does nothing; the first one of a type nobody sampled records its verdict.
+/proc/refresh_run(datum/D, pass, datum/time_scheduler/sched, datum/km_attr/attr)
+	var/pending = D.refresh_queued
+	D.refresh_queued = 0
+	if(QDELETED(D))
+		D.refresh_bits = 0
+		return
+	if(!pending)
+		return // a stale duplicate: an earlier entry already ran its outputs
+	var/fresh = pending & DEP_CREATED
+	pending &= ~DEP_CREATED
+	if(fresh && type_look_stamped(D))
+		// Queued at creation before its type's verdict was in, and the type's default look is empty: nothing to draw (look_stamp.dm).
+		D.refresh_bits = 0
+		GLOB.type_look_stamp_skipped++
+		return
+	if(!refresh_wanted_queued(D))
+		// Every atom's first refresh is queued at init (caps_init()) before its type's verdict is in: the first
+		// instance probes the type, and the rest, queued behind it, skip here once it is known to derive nothing.
+		D.refresh_bits = 0
+		return
+	D.refresh_pass = pass
+	CHURN_COUNT(draws, D.type)
+	var/bits = D.refresh_bits
+	D.refresh_bits = 0
+	GLOB.refresh_bench_drained++
+	var/attr_start = TICK_USAGE
+	var/draw_ledger = km_ledger_enter(KM_CAT_DRAW, D.type, km_attr_reason(pending | fresh))
+	try
+		refresh_one(D, bits, pending)
+		if(fresh)
+			type_look_stamp_record(D)
+	catch(var/exception/e)
+		if(sched)
+			sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
+		else
+			dq_report_caught(e, "refresh of [D.type]")
+	km_ledger_leave(draw_ledger)
+	attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
+
+/// Every queued refresh and every filed draw now, ignoring the budget (tests, admin tools), then the UI pushes they queued. A
 /// self-re-marking entity is refreshed a bounded number of times, then reported.
 /proc/refresh_flush()
 	var/passes = 0
-	while(length(GLOB.refresh_queue))
+	while(length(GLOB.refresh_queue) || length(GLOB.draw_buckets))
 		refresh_drain(null)
+		draw_drain(null)
 		if(++passes > 20)
-			stack_trace("refresh_flush: still queued after 20 passes (a reactive proc re-marks its entity?): [jointext(GLOB.refresh_queue, ", ")]")
+			stack_trace("refresh_flush: still queued after 20 passes (a reactive proc re-marks its entity?): [jointext(GLOB.refresh_queue, ", ")] and [draw_depth()] filed")
 			for(var/datum/D as anything in GLOB.refresh_queue)
 				D.refresh_queued = 0
 				D.refresh_bits = 0
 			refresh_queue_replace(null)
+			for(var/key in GLOB.draw_buckets)
+				for(var/atom/A as anything in GLOB.draw_buckets[key])
+					if(A)
+						A.refresh_queued = 0
+						A.refresh_bits = 0
+			GLOB.draw_buckets = alist()
+			GLOB.draw_filed = alist()
 			break
 	world.presentation_flush()
 
@@ -854,7 +856,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]; parked [GLOB.refresh_parked], unparked by a client [GLOB.refresh_parked_near], unparked by a mark [GLOB.refresh_parked_woken]; [interest_stats_text()]; [interest_woken_text()]; [look_cache_text()]; [look_cost_text(5)]"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; [draw_rates_text()]; [draw_stats_text()]; queue forget scans [GLOB.refresh_forget_scans] ([GLOB.refresh_forget_scan_steps] steps, longest [GLOB.refresh_forget_scan_max]); [look_cache_text()]; [look_cost_text(5)]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text
@@ -908,9 +910,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 #else
 	if(!refresh_sweep_due())
 		return
-	// A debug build samples: a few random turfs of the chunks observers see (interest.dm), never the whole view, and nothing is held between steps.
-	for(var/turf/T as anything in interest_sample_turfs(min(budget, 10)))
-		interest_audit_turf(T)
+	// A debug build samples nothing: the drain draws everything that changed, and the strict staleness checker (staleness.dm) is the test builds' audit.
 #endif
 #else
 	// Production (and a benchmark build) audits nothing and repairs nothing; only the look counters are logged.
@@ -1134,16 +1134,11 @@ GLOBAL_VAR_INIT(silent_construction, TRUE)
 /// Writes noted under construction, and the vars their births published (the boot bench reads both).
 GLOBAL_VAR_INIT(construction_writes_noted, 0)
 GLOBAL_VAR_INIT(construction_writes_published, 0)
-/// Writes an atom under construction made while it was parked for a lazy type: each would have woken it into the queue, and none needs to (construction_note()).
-GLOBAL_VAR_INIT(construction_parked_absorbed, 0)
 
-/// state_changed() of an atom under construction: its first refresh is queued if it is not (a held or parked atom owes everything again), and a var
-/// some reader may follow is noted once for the birth.
+/// state_changed() of an atom under construction: its first refresh is queued if it is not, and a var some reader may follow is noted once for the birth.
 /proc/construction_note(atom/A, var_name)
 	GLOB.construction_writes_noted++
-	if(A.refresh_queued == DEP_PARKED && GLOB.interest_defer_marks && interest_parked_stays(A))
-		GLOB.construction_parked_absorbed++ // it owes its whole first draw already, which will show what these writes made; birth settles it (construction_birth())
-	else if(!A.refresh_queued || A.refresh_queued == DEP_PARKED)
+	if(!A.refresh_queued)
 		refresh_mark(A, DEP_ALL)
 	if(!var_name || !plan_reader_bits(var_name, A.type))
 		return
@@ -1229,13 +1224,51 @@ GLOBAL_VAR_INIT(construction_parked_absorbed, 0)
 /proc/construction_birth(atom/A)
 	if(!(A.datum_flags & DF_CONSTRUCT_NOTED))
 		A.datum_flags &= ~DF_CONSTRUCTING
-		if(A.refresh_queued & DEP_PARKED)
-			interest_settle(A) // a draw it owed while under construction, in a chunk someone sees now, happens now (as an init frame's end does)
 		return
 	A.datum_flags &= ~(DF_CONSTRUCTING | DF_CONSTRUCT_NOTED)
-	if(A.refresh_queued & DEP_PARKED)
-		interest_settle(A)
 	construction_birth_held(A) // its own writes ("self") and those of the records it holds, each published once
+
+// ---- init frames ----
+
+/// An atom's init frame past Initialize() is one bit of its own datum_flags (DF_INIT_OPEN): its setup() hooks running (setup_run()), or a map-loaded
+/// atom's after_init() entries waiting for the load frame to close and then running (after_init_flush()). A write inside the frame is the atom's own
+/// construction, not a change (refresh_mark() keeps the creation mark). On the atom itself, so it holds nothing and needs no slot: one deleted inside
+/// its own frame takes the bit with it (init_open_forget() clears it as well). The engine never opens a second frame inside the first; one that does
+/// (a test, a hook that re-enters) is counted here by slot until the outer frame ends. A real global: atoms initialize while the globals are still being made.
+GLOBAL_REAL(init_open, /alist)
+
+/// `A` enters an init frame that runs its own code after Initialize() returned.
+/proc/init_open_begin(atom/A)
+	if(!(A.datum_flags & DF_INIT_OPEN))
+		A.datum_flags |= DF_INIT_OPEN
+		return
+	var/slot = slot_of(A)
+	if(!slot)
+		return
+	if(!init_open)
+		init_open = alist()
+	init_open[slot] = (init_open[slot] || 0) + 1
+
+/// The frame ends. An atom deleted inside its frame has lost the bit already.
+/proc/init_open_end(atom/A)
+	if(!(A.datum_flags & DF_INIT_OPEN))
+		return
+	var/slot = A.handle_slot
+	var/nested = slot && init_open?[slot]
+	if(nested)
+		if(nested > 1)
+			init_open[slot] = nested - 1
+		else
+			init_open -= slot
+		return
+	A.datum_flags &= ~DF_INIT_OPEN
+
+/// engine_forget(): a datum is being destroyed, its slot still valid. Its open init frame (an atom deleted inside its own setup) is dropped, so it is not
+/// taken for one still setting up, and neither is the slot's next holder. Idempotent: a second call finds nothing.
+/proc/init_open_forget(datum/D)
+	D.datum_flags &= ~DF_INIT_OPEN
+	if(init_open && D.handle_slot)
+		init_open -= D.handle_slot
 
 // ---- the hook-firing census of construction writes (debug tracing; -params bench_construction_census=1 with silent_construction off) ----
 

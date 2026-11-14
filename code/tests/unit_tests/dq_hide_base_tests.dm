@@ -28,24 +28,3 @@
 	var/before = thing.invisibility
 	thing.hide(TRUE)
 	TEST_ASSERT_EQUAL(thing.invisibility, before, "an item is not hidden by hide()")
-
-/// A T-ray scan of a hidden thing that still owes its first draw (the cover withheld it) draws it before building the scan image, so the image shows
-/// its drawn state (the terminal's faded "term-f"), not the type's default.
-/datum/unit_test/dq_tray_draws_covered_owed
-
-/datum/unit_test/dq_tray_draws_covered_owed/Run()
-	var/turf/simulated/floor/floor = test_floor()
-	TEST_ASSERT(istype(floor) && !floor.is_plating(), "the test floor has tiles on")
-	var/obj/machinery/power/terminal/term = allocate(/obj/machinery/power/terminal, floor)
-	floor.levelupdate()
-	refresh_flush()
-	TEST_ASSERT(term.invisibility >= INVISIBILITY_ABSTRACT, "the terminal hides under the tiles")
-	rx_of(term).look_key = null
-	term.set_icon_state("term")
-	interest_test_park(term) // owes its first draw, as the cover leaves it
-	var/obj/item/t_scanner/scanner = allocate(/obj/item/t_scanner, floor)
-	GLOB.overlay_cache -= handle_of(term)
-	var/image/I = scanner.get_overlay(term)
-	TEST_ASSERT(!term.refresh_queued, "the scan drew what it owed")
-	TEST_ASSERT(!isnull(term.rx?.look_key), "and it has a look")
-	TEST_ASSERT_EQUAL(I.icon_state, "term-f", "the scan image shows the drawn (faded) state")

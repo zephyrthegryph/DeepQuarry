@@ -35,41 +35,6 @@
 	TEST_ASSERT(checked, "the world has areas with turfs")
 	TEST_ASSERT(!length(shown), "[length(shown)] area(s) still show a map-editor sprite: [jointext(shown.Copy(1, min(length(shown), 12) + 1), ", ")]")
 
-/// A boot that loads a look-verdict cache (look_verdicts_load()) knows its types lazy before any of them draws. An area is in no chunk a client can come near, so a
-/// parked first draw of it is never asked for: it showed its map sprite for the whole round ("Space", "Emergency Storage"). Areas are never lazy, whatever a verdict
-/// says, and the boot settle draws them. Nothing here flushes after the settle.
-/datum/unit_test/dq_areas_draw_under_cached_lazy_verdict
-
-/datum/unit_test/dq_areas_draw_under_cached_lazy_verdict/Run()
-	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
-	interest_isolate()
-	set_global(nameof(GLOB.refresh_parked_marked), GLOB.refresh_parked_marked)
-	set_global(nameof(GLOB.refresh_parked), GLOB.refresh_parked)
-	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
-	set_global(nameof(GLOB.refresh_park_residual), GLOB.refresh_park_residual)
-	set_global(nameof(GLOB.type_look_stamp_skipped), GLOB.type_look_stamp_skipped)
-	set_global(nameof(GLOB.interest_unperceivable_skipped), GLOB.interest_unperceivable_skipped)
-	var/area/A = get_area(test_floor())
-	TEST_ASSERT_NOTNULL(A, "the test floor has an area")
-	refresh_flush()
-	var/was_lazy = GLOB.type_look_lazy[A.type]
-	var/was_stamp = GLOB.type_look_stamp[A.type]
-	GLOB.type_look_lazy[A.type] = TRUE // the cache says so
-	GLOB.type_look_stamp -= A.type
-	TEST_ASSERT(!look_lazy_ok(A), "an area is never lazy, whatever its verdict")
-	// The state a boot with that cache leaves: the map sprite showing, one real mark made during init (the lighting setup's), nothing drawn.
-	A.set_icon_state(initial(A.icon_state))
-	rx_of(A).look_key = null
-	refresh_mark(A, DEP_ALL)
-	TEST_ASSERT(!(A.refresh_queued & DEP_CREATED), "a real mark clears the creation mark")
-	refresh_settle_created()
-	refresh_park_backlog()
-	TEST_ASSERT(A.refresh_queued != DEP_PARKED, "the park leaves the area's first draw queued")
-	refresh_flush()
-	TEST_ASSERT_EQUAL(A.icon_state, "", "and the area is drawn blank (was its map state '[initial(A.icon_state)]')")
-	GLOB.type_look_lazy[A.type] = was_lazy
-	GLOB.type_look_stamp[A.type] = was_stamp
-
 /// An item equipped onto the toggled inventory bar while it is folded gets no screen position (so it is not drawn on the screen);
 /// the always-shown slots keep theirs. Slot ids are text, so this must not be an ordering test on them.
 /datum/unit_test/dq_folded_inventory_hides_equipped_items

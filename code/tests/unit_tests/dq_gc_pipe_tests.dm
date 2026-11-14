@@ -99,16 +99,21 @@
 	var/obj/machinery/atmospherics/pipe/simple/hidden/yellow/P = new(T)
 	refresh_flush()
 	refresh_mark(P, DEP_ALL)
-	P.refresh_queued = 0 // the settle's sample: drawn at once, its entry stays in the queue
+	P.refresh_queued = 0 // drawn at once, its entry stays in the queue
 	refresh_mark(P, DEP_ALL) // marked again before the queue was replaced
 	var/entries = 0
 	for(var/datum/D as anything in GLOB.refresh_queue)
 		if(D == P)
 			entries++
+	var/pipe_slot = slot_known(P)
+	if(pipe_slot && !isnull(GLOB.draw_filed[pipe_slot]))
+		entries++ // a look-only atom waits in the draw queue
 	TEST_ASSERT_EQUAL(entries, 1, "a marked datum has one queue entry however often it is marked")
 	qdel(P)
 	for(var/datum/D as anything in GLOB.refresh_queue)
 		TEST_ASSERT(D != P, "a destroyed datum left an entry in the refresh queue")
+	for(var/key in GLOB.draw_buckets)
+		TEST_ASSERT(!(P in GLOB.draw_buckets[key]), "a destroyed datum left an entry in the draw queue")
 
 // ref_holders() (code/content/admin/view_variables/ref_holders.dm), the whole-world holder search: it finds a holder in a global list, names the path, and
 // reports when it stops short.

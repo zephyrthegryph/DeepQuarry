@@ -311,8 +311,7 @@
 	// BYOND turns a mover natively on Move(), bypassing set_dir(): publish the dir a drawn atom now shows, only when it changed.
 	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
 		rx_of(src).look_seen_dir = dir
-		if(!interest_parked_quiet(src)) // a parked atom's owed draw shows the dir it has when it runs: no per-move publish
-			tracked_changed(src, nameof(dir))
+		tracked_changed(src, nameof(dir))
 	MOVE_COST_BEGIN(notices_started)
 	if(STATE_PEEK(src, movable_misc, blocks_light))
 		light_blocking_moved(old_loc)
@@ -345,14 +344,10 @@
 	MOVE_COST_END(MOVE_COST_HEAT, heat_started)
 	if(proximity_tracked)
 		SSproximity.member_update(src)
-	MOVE_COST_BEGIN(interest_started)
-	if(refresh_queued)
-		interest_owed_moved(src, old_loc) // a draw owed: its entry in the owed index follows it to its new chunk (engine/change/interest.dm)
-	if(refresh_queued & DEP_PARKED)
-		interest_parked_moved(src) // a draw owed and a chunk now held: it draws (engine/change/interest.dm)
-	if(length(GLOB.interest_anchors))
-		interest_anchor_moved(src) // it may carry a client's eye or mob
-	MOVE_COST_END(MOVE_COST_INTEREST, interest_started)
+	MOVE_COST_BEGIN(gaze_started)
+	if(length(GLOB.gaze_anchors))
+		gaze_anchor_moved(src) // it may carry a client's eye or mob
+	MOVE_COST_END(MOVE_COST_INTEREST, gaze_started)
 	if(lifeform_moves)
 		MOVE_COST_BEGIN(lifeform_started)
 		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
@@ -560,8 +555,6 @@ ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bum
 /// write takes: the stat layer re-attaches the thing to its new container's readers (stat_hop_attach), derived() entries and on_change() hooks that
 /// read it re-evaluate, a pending operation re-resolves its watched pairs. Nothing runs while nothing reads `loc`.
 /atom/movable/proc/loc_changed(atom/old_loc)
-	if(interest_parked_quiet(src))
-		return // parked and unseen: it owes its whole draw, which reads where it stands when it runs; nothing about its place is published meanwhile
 	MOVE_COST_BEGIN(reads_started)
 	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))

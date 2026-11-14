@@ -55,8 +55,9 @@ DECLARE_SHARED_CACHE(look_cache_vars_of, GLOBAL_PROC_REF(look_cache_vars_build),
 		names += key
 	return sortTim(names, GLOBAL_PROC_REF(cmp_text_asc))
 
-/// The cache key of `A`'s next draw, or null when A is not cacheable now.
-/proc/look_cache_key(atom/A)
+/// The cache key of `A`'s next draw, or null when A is not cacheable now. `base` FALSE leaves the base vars (icon_state, dir, ...) out: the key of the
+/// vars the type's draw names alone, which is what the default-look stamp compares (a space turf's icon_state differs per turf and its draw reads none).
+/proc/look_cache_key(atom/A, base = TRUE)
 	if(!GLOB.look_cache_on)
 		return null
 	var/list/names = CACHED_KEY(look_cache_vars_of, A.type, A)
@@ -69,6 +70,8 @@ DECLARE_SHARED_CACHE(look_cache_vars_of, GLOBAL_PROC_REF(look_cache_vars_build),
 		if(!(isnull(value) || isnum(value) || istext(value) || ispath(value) || (isfile(value) && length("[value]"))))
 			return null // (a file with no name is an icon made at runtime: every one would share the key)
 		parts += "[value]"
+	if(!base)
+		return jointext(parts, "|")
 	// The base vars no look has set are inputs too (the draw may read them, and an unset one is the mapped value); one a look set is the draw's own output.
 	if(!(isnull(A.icon) || istext(A.icon) || (isfile(A.icon) && length("[A.icon]"))))
 		return null

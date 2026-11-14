@@ -113,6 +113,6 @@
 	return null
 
 /// The turf whose contents a client sees through this turf (open space shows the level below), or null. The host has no levels;
-/// code/content/behaviours/turf_transparency.dm answers. interest_view_keys() follows it so a client holds the chunks below open space.
+/// code/content/behaviours/turf_transparency.dm answers. gaze_view_keys() follows it so a client holds the chunks below open space.
 /turf/proc/seen_through()
 	return null

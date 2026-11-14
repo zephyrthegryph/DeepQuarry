@@ -296,15 +296,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// atoms of types whose default look is empty (code/engine/change/look_stamp.dm).
 	refresh_settle_created()
 	var/tail_settle = REALTIMEOFDAY
-	// What the settle kept is every first draw the map still owes. A server leaves them to the presentation lane, which draws the atoms
-	// around each client first (interest_enter(), engine/change/interest.dm): nobody sees the map from the lobby, and anything a client does see is drawn before
-	// the rest, so the lobby opens without waiting about 45 s for draws nobody is looking at. Test worlds draw everything now, as their
-	// tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
+	// What the settle kept is every first draw the map still owes: the look-only ones are filed by chunk (draw_queue.dm), the others are in the refresh
+	// queue. A server leaves them to the presentation lane, which draws them over the ticks that follow, nearest a client first and then all the rest:
+	// nobody sees the map from the lobby, and no player enters it until the last is drawn (boot_draws_pending()). Test worlds draw everything now, as
+	// their tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
 	if(boot_drain_deferred())
-		refresh_park_backlog() // the cosmetic first draws wait for a client to come near instead of draining
-		GLOB.boot_draws_outstanding = length(GLOB.refresh_queue) > 0
+		GLOB.boot_draws_outstanding = (length(GLOB.refresh_queue) + draw_depth()) > 0
 		GLOB.boot_draws_deferred_at = REALTIMEOFDAY
-		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] first draws left to the presentation lane (nearest clients first).")
+		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] queued and [draw_depth()] filed first draws left to the presentation lane (nearest clients first).")
 	else
 		refresh_boot_drain()
 	var/tail_drain = REALTIMEOFDAY
@@ -652,7 +651,7 @@ GLOBAL_VAR_INIT(boot_draws_deferred_at, 0)
 	if(!GLOB.boot_draws_outstanding)
 		return FALSE
 	if(length(GLOB.refresh_queue))
-		return TRUE
+		return TRUE // (the filed draws are not waited for: the drain draws the chunks nearest a client first, so what a joiner sees is drawn)
 	GLOB.boot_draws_outstanding = FALSE
 	log_world("Boot draws finished [(REALTIMEOFDAY - GLOB.boot_draws_deferred_at) / 10]s after init; the map is open.")
 	return FALSE

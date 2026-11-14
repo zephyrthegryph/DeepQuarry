@@ -16,8 +16,6 @@
 	else if(isturf(holder))
 		var/turf/T = holder
 		T.vis_contents += thing
-	if(isturf(thing) || islist(thing))
-		interest_vis_sync(holder) // turfs shown through a holder are observed while it does (engine/change/interest.dm)
 
 /// Stops showing `thing` (an atom, or a list) through `holder`.
 /proc/vis_remove(atom/holder, thing)
@@ -29,8 +27,6 @@
 	else if(isturf(holder))
 		var/turf/T = holder
 		T.vis_contents -= thing
-	if(isturf(thing) || islist(thing))
-		interest_vis_sync(holder)
 
 /// Shows `thing` (an atom, or a list) through `holder`'s vis_contents unless it is already there (`|=`).
 /proc/vis_include(atom/holder, thing)
@@ -42,8 +38,6 @@
 	else if(isturf(holder))
 		var/turf/T = holder
 		T.vis_contents |= thing
-	if(isturf(thing) || islist(thing))
-		interest_vis_sync(holder)
 
 /// Replaces `holder`'s vis_contents with `thing` (an atom, a list, or null for none).
 /proc/vis_set(atom/holder, thing)
@@ -60,7 +54,6 @@
 	else if(isturf(holder))
 		var/turf/T = holder
 		T.vis_contents = shown
-	interest_vis_sync(holder)
 
 /// Empties `holder`'s vis_contents.
 /proc/vis_clear(atom/holder)
@@ -72,7 +65,6 @@
 	else if(isturf(holder))
 		var/turf/T = holder
 		T.vis_contents.Cut()
-	interest_vis_sync(holder)
 
 /// Puts `thing` (a screen object, or a list) on client `C`'s screen.
 /proc/client_screen_add(client/C, thing)

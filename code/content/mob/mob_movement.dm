@@ -349,7 +349,7 @@
 		// MOVE_COST: this step's cost by part (code/domains/world_model/atom/move_cost.dm)
 		var/turf/cost_from = get_turf(my_mob)
 		var/cost_marks = GLOB.refresh_marks_raised
-		var/cost_chunks = GLOB.interest_chunks_entered
+		var/cost_chunks = GLOB.gaze_chunks_entered
 		var/cost_lights = SSlighting.pending_source_count()
 		var/cost_started = move_cost_begin()
 		. = my_mob.SelfMove(n, direct, total_delay)

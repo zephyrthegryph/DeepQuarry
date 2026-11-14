@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(footsteps_audible, 0)
 /// prepared at all: the step counter, the turf sound lookup and the playsound are work for a listener. The count restarts when an observer arrives.
 /datum/capability/footstep/proc/footstep_moved(mob/living/source)
 	var/turf/where = source.loc
-	if(isturf(where) && !interest_covers(where))
+	if(isturf(where) && !gaze_covers(where))
 		return
 	GLOB.footsteps_audible++
 	if(ishuman(source))

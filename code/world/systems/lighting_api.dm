@@ -3,7 +3,7 @@
 /// A source standing in a chunk some viewer holds (its view and the ring round it) waits in sources_queue_near, which the step drains first; any other in sources_queue.
 /datum/system/lighting/proc/queue_source(datum/light_source/source)
 	var/turf/at = source.source_turf
-	if(at && interest_covers(at))
+	if(at && gaze_covers(at))
 		sources_queue_near += handle_of(source)
 	else
 		sources_queue += source

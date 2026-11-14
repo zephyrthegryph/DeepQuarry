@@ -1134,7 +1134,7 @@ ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspectiv
 	if (client && new_view != client.view)
 		client.view = new_view
 		client.attempt_auto_fit_viewport()
-		interest_eye_update(client) // the view reaches other chunks
+		gaze_update(client) // the view reaches other chunks
 		return TRUE
 	return FALSE
 

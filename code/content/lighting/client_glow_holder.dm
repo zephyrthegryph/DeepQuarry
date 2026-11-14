@@ -25,7 +25,7 @@
 //     the ticks that follow (scan_continue()). The step that finds the light around the eye runs inside the call that asked, so the view is lit when the login cover lifts. A crossing
 //     that arrives while a scan is unfinished starts a full scan over its own boxes (the delta needs a finished scan to start from). Viewers with no client (tests) scan to the end at once.
 //
-// Events only: the eye crossing a chunk or changing view (interest_eye_update()), a light glowing, moving or changing
+// Events only: the eye crossing a chunk or changing view (gaze_update()), a light glowing, moving or changing
 // (client_glow_apply()), its mask rebuilding (client_glow_mask_apply()), going out (client_glow_clear()), client lighting
 // switching off and the client leaving.
 
@@ -145,12 +145,12 @@ SCHEMA(/datum/light_source, glow_holder_key, schema_text())
 /// Every live holder (REGISTRY_CLIENT_GLOW_HOLDERS): a light event walks them, one per connected client plus test and benchmark viewers.
 REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 
-/client/interest_eye_moved(turf/at_eye)
+/client/gaze_moved(turf/at_eye)
 	..()
 	client_glow_holder_eye(src, at_eye) // held off-screen glows follow the eye's glow chunk
 	client_glow_screen_sync(src) // the lighting screen objects (client_lighting_screen.dm); one comparison when in step
 
-/client/interest_eye_left()
+/client/gaze_left()
 	..()
 	client_glow_holder_gone(src)
 
@@ -176,7 +176,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		return client_glow_view_halves(n)
 	return list(n, n)
 
-/// The client's eye moved or its view changed (interest_eye_update()): its holder follows when the eye's chunk did.
+/// The client's eye moved or its view changed (gaze_update()): its holder follows when the eye's chunk did.
 /proc/client_glow_holder_eye(client/C, turf/at_eye)
 	if(!GLOB.client_lighting || !C || QDELETED(C))
 		return

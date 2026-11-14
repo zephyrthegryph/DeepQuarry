@@ -18,10 +18,10 @@
 #define MOVE_COST_PROXIMITY 4 // SSproximity.member_update()
 #define MOVE_COST_LIFEFORM 5 // lifeform_moved(): registries and adjacency
 #define MOVE_COST_MOB_PUBLISH 6 // publish_mob_move(): the mob chunk watches
-#define MOVE_COST_EYE 7 // restore_remote_views() and SSproximity.eye_update(): the client's chunk interest, the glow holder
+#define MOVE_COST_EYE 7 // restore_remote_views() and SSproximity.eye_update(): the client's gaze chunks, the glow holder
 // Pieces of the Moved() chain that no part above covers, so "other overrides" in the trace names what is left (a live round's trace showed 4-22 ms there).
 #define MOVE_COST_NOTICES 8 // atom/movable/Moved(): the light-blocking update, the move notice and the observed-loc change
-#define MOVE_COST_INTEREST 9 // atom/movable/Moved(): interest_parked_moved() and interest_anchor_moved()
+#define MOVE_COST_INTEREST 9 // atom/movable/Moved(): gaze_anchor_moved()
 #define MOVE_COST_HEAT 10 // atom/movable/Moved(): heat_recouple() and heat_followers_moved()
 #define MOVE_COST_LIVING 11 // mob/living/Moved() after its parent: the loc change publish, the air watch, footsteps, the pulled thing, inertia, layer
 #define MOVE_COST_BODY 12 // carbon and human Moved() after their parents: nutrition, germs, embedded objects, pose

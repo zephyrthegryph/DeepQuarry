@@ -660,7 +660,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		var/turf/S = L.source_turf
 		if(!S || CLIENT_GLOW_CLEAR_OF(S.x, S.y, CLIENT_GLOW_RADIUS(L), at))
 			continue
-		var/near = interest_covers(S) ? CLIENT_GLOW_DIRTY_NEAR : CLIENT_GLOW_DIRTY_FAR // a light in a chunk some viewer holds redraws before the others, as the near source queue does
+		var/near = gaze_covers(S) ? CLIENT_GLOW_DIRTY_NEAR : CLIENT_GLOW_DIRTY_FAR // a light in a chunk some viewer holds redraws before the others, as the near source queue does
 		if(GLOB.client_glow_dirty_lights[h] >= near)
 			continue
 		GLOB.client_glow_dirty_lights[h] = near

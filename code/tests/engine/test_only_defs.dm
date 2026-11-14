@@ -39,7 +39,10 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 	GLOB.stale_backlog = GLOB.stale_new
 	GLOB.stale_new = list()
 	var/unseen = 0
-	for(var/datum/D as anything in GLOB.refresh_queue)
+	var/list/waiting = GLOB.refresh_queue.Copy()
+	for(var/key in GLOB.draw_buckets)
+		waiting += GLOB.draw_buckets[key]
+	for(var/datum/D as anything in waiting)
 		if(!GLOB.stale_all[REF(D)])
 			GLOB.stale_pretest[REF(D)] = TRUE
 			unseen++
@@ -53,7 +56,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 		return
 	var/started = REALTIMEOFDAY
 	var/checks_before = GLOB.staleness_checks
-	var/queued = length(GLOB.refresh_queue)
+	var/queued = length(GLOB.refresh_queue) + draw_depth()
 	var/found
 	var/visited = 0
 	if(GLOB.staleness_bounded)
