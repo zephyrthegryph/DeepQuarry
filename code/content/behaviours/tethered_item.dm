@@ -105,7 +105,7 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 /obj/item/proc/make_tethered(handheld_path)
 	STATE_SET(src, item_misc, tether_path, handheld_path)
 	set_actions_types(item_rules_of(src).actions_types + (list(/datum/action/item_action/swap_tethered_item)))
-	add_item_action(/datum/action/item_action/swap_tethered_item) // the declared actions were made when the init chain returned, before this setup hook
+	make_declared_actions() // the swap action joins the declared ones, made now only if the item is already carried
 	grant(src, /datum/capability/tether_host, src)
 	tether_make_handheld()
 
