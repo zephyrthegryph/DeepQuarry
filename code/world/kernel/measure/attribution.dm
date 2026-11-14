@@ -338,6 +338,11 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	var/list/cur_table
 	var/cur_at = 1
 	var/list/cur_entry
+	/// The folded redraw rows ranked after the table is walked: the next one (by position) and the heaviest `top` so far. Ranking them all with a sort was the
+	/// dearest turn of a profile sample.
+	var/fold_at = 1
+	var/fold_done = FALSE
+	var/list/type_best
 	/// Rows visited, for the profile's own trace line.
 	var/visited = 0
 
@@ -400,6 +405,25 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 			consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, W.call_best, W.call_value)
 			if(row[KA_POST_COUNT])
 				consider(row, KA_BY_POST, 0, 0, top, W.post_best, W.post_value)
+	if(!W.fold_done)
+		var/list/best = W.type_best
+		if(!best)
+			best = list()
+			W.type_best = best
+		var/list/folded = W.folded
+		while(W.fold_at <= length(folded))
+			var/list/entry = folded[folded[W.fold_at++]]
+			var/total = entry["total_ms"]
+			var/at = length(best) + 1
+			while(at > 1 && best[at - 1]["total_ms"] < total)
+				at--
+			if(at <= top)
+				best.Insert(at, list(entry))
+				if(length(best) > top)
+					best.Cut(top + 1)
+			if(!(++since_check % KA_WALK_CHECK_ROWS) && W.fold_at <= length(folded) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+				return FALSE
+		W.fold_done = TRUE
 	return TRUE
 
 /// The heaviest rows of each system in "wanted" ("[system index]" -> anything), being found a slice at a time (select_top_by_system(), walked the way walk_step() does).
@@ -470,7 +494,7 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 		settle += list(row_data(row))
 	return list(
 		"callbacks" = callbacks,
-		"redrawn_types" = type_rows_of(W.folded, top),
+		"redrawn_types" = type_rows_ranked(W.type_best),
 		"settle" = settle,
 		"init_complete_seconds_ago" = init_real ? round((REALTIMEOFDAY - init_real) * 0.1, 0.1) : null,
 		"rows" = n_rows,
@@ -514,6 +538,17 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	out = sortTim(out, GLOBAL_PROC_REF(cmp_km_attr_total_dsc))
 	if(length(out) > top)
 		out.Cut(top + 1)
+	return out
+
+/// The ranked folded rows of a walk, as the report names them.
+/datum/km_attr/proc/type_rows_ranked(list/ranked)
+	var/list/out = list()
+	for(var/list/entry as anything in ranked)
+		entry["type"] = "[entry["type"]]"
+		entry["total_ms"] = round(entry["total_ms"], 0.01)
+		entry["max_ms"] = round(entry["max_ms"], 0.01)
+		entry -= "reason_ms"
+		out += list(entry)
 	return out
 
 /proc/cmp_km_attr_total_dsc(list/a, list/b)

@@ -122,7 +122,7 @@
 	mc_health_pump(B)
 	TEST_ASSERT_EQUAL(B.units, units_before, "a build with nothing due runs no unit")
 	// A second later the fast group is due again, and only it.
-	test_time(MC_HEALTH_FAST_EVERY + 1)
+	B.started_at[MC_GROUP_FAST] -= MC_HEALTH_FAST_EVERY + 1
 	var/groups_before = B.groups_built
 	mc_health_pump(B, 1000)
 	TEST_ASSERT_EQUAL(B.groups_built, groups_before + 1, "after the fast period only the fast group is rebuilt")
@@ -169,9 +169,12 @@
 /datum/unit_test/dq_mc_health_attribution_walk_is_sliced
 /datum/unit_test/dq_mc_health_attribution_walk_is_sliced/Run()
 	var/datum/km_attr/attr = new
-	var/total_rows = KA_MAX_ROWS - 8
-	for(var/i in 1 to total_rows)
+	var/callback_rows = KA_MAX_ROWS - 40
+	for(var/i in 1 to callback_rows)
 		attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, "/datum/one_big_type", "proc_[i]", i / 1000)
+	for(var/i in 1 to 30)
+		attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, "/obj/redrawn_[i]", "run", i)
+	var/total_rows = callback_rows + 30
 	var/datum/km_attr_sys_walk/W = attr.sys_walk_begin(5, list("[KM_SYS_SCHED_CORE]" = list("sched_core", 1)))
 	// A spent budget (0 ms) ends a slice at the next check: the work of a slice is at most KA_WALK_CHECK_ROWS rows, however long the clock says it took.
 	var/steps = 0
@@ -192,7 +195,7 @@
 	TEST_NOTICE(src, "MC_HEALTH_ATTR_SLICES: [steps] slices of at most [most_rows] rows, the longest took [round(max_ms, 0.01)] ms")
 	var/list/best = W.best["[KM_SYS_SCHED_CORE]"]
 	TEST_ASSERT_EQUAL(length(best), 5, "five rows are kept")
-	TEST_ASSERT_EQUAL(best[1][KA_B], "proc_[total_rows]", "the heaviest is first")
+	TEST_ASSERT_EQUAL(best[1][KA_B], "proc_[callback_rows]", "the heaviest is first")
 	// The profiler's walk of the same table finds the same heaviest callback.
 	var/datum/km_attr_walk/P = attr.walk_begin(5)
 	var/profiler_steps = 0
@@ -200,7 +203,11 @@
 		profiler_steps++
 	TEST_ASSERT(profiler_steps >= total_rows / KA_WALK_CHECK_ROWS - 1, "the profiler's walk is sliced by row as well ([profiler_steps] slices)")
 	TEST_ASSERT_EQUAL(P.visited, total_rows, "and visits every row once")
-	TEST_ASSERT_EQUAL(P.call_best[1][KA_B], "proc_[total_rows]", "and finds the heaviest callback")
+	TEST_ASSERT_EQUAL(P.call_best[1][KA_B], "proc_[callback_rows]", "and finds the heaviest callback")
+	var/list/redrawn = attr.walk_result(P)["redrawn_types"]
+	TEST_ASSERT_EQUAL(length(redrawn), 5, "the five heaviest redrawn types are ranked")
+	TEST_ASSERT_EQUAL(redrawn[1]["type"], "/obj/redrawn_30", "heaviest first")
+	TEST_ASSERT_EQUAL(redrawn[5]["type"], "/obj/redrawn_26", "and the fifth is the fifth")
 
 /// The sample window walked in slices reads what performance_window() reads in one call.
 /datum/unit_test/dq_mc_health_window_walk_matches_window
@@ -227,7 +234,7 @@
 /datum/unit_test/dq_mc_health_churn_walk_is_sliced/Run()
 	var/datum/churn_census/census = GLOB.churn_census
 	for(var/i in 1 to 200)
-		census.draws["dq_slice_test_[i]"] = 1000000000 + i
+		census.draws["dq_slice_test_[i]"] = 1000000 + i // under 2^24, where a DM number still tells neighbours apart
 	var/datum/mc_churn_walk/W = new
 	W.kinds = census.peek()
 	for(var/kind in W.kinds)

@@ -73,6 +73,7 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 	var/list/systems
 	/// The recent-tick rows as last built, and how many ticks the flight recorder had counted then (only the new ticks are read each time).
 	var/list/tick_rows
+	var/list/tick_pieces
 	var/tick_count = 0
 	/// TRUE when a published section holds the admin-link placeholder (its piece cannot be shared: send_message() fills it per client).
 	var/has_href = FALSE
@@ -137,6 +138,13 @@ CAPABILITIES(/datum/mc_health_build)
 	if(!has_href)
 		payload = "[url_encode("{\"mc_metrics\":{")][jointext(parts, url_encode(","))][url_encode("},\"partial\":[whole ? "false" : "true"],\"coord_entry\":[json_encode(coord)]}")]"
 	return list("payload" = payload, "sections" = length(parts), "whole" = whole, "changed" = changed)
+
+/// Gives the section `name` a new version with `piece` as its encoded form: for a section that keeps its own pieces and joins them (the tick graph), which
+/// would otherwise be encoded whole every second.
+/datum/mc_health_build/proc/publish_piece(name, value, piece)
+	values[name] = value
+	pieces[name] = piece
+	versions[name] = ++version
 
 /// The group `now` calls for: the first never built, else the one most overdue (its age over its period); null when none is due.
 /datum/mc_health_build/proc/next_group(now)
@@ -231,8 +239,12 @@ CAPABILITIES(/datum/mc_health_build)
 	switch(B.group)
 		if(MC_GROUP_FAST)
 			// The tick graph is the first section built and sent: it is on the panel from the first send, before any slow group.
+			if(B.step == 1)
+				var/list/tick_rows = mc_health_recent_ticks(B)
+				B.publish_piece("ticks", tick_rows, "[url_encode("\"ticks\":[")][jointext(B.tick_pieces, url_encode(","))][url_encode("]")]")
+				B.step = 2
+				return FALSE
 			var/list/history = Kernel.perf_tick_usage
-			B.publish("ticks", mc_health_recent_ticks(B))
 			B.publish("header", list(
 				"tick_budget_ms" = world.tick_lag * 100,
 				"target_tps" = world.fps,
@@ -389,8 +401,10 @@ CAPABILITIES(/datum/mc_health_build)
 	var/first = B.tick_count + 1
 	if(!B.tick_rows || fresh < 0 || fresh >= MC_HEALTH_TICKS)
 		B.tick_rows = list()
+		B.tick_pieces = list()
 		first = max(1, count - MC_HEALTH_TICKS + 1)
 	var/list/rows = B.tick_rows
+	var/list/encoded = B.tick_pieces
 	for(var/n in first to count)
 		var/at = meter.ring_index(n)
 		var/list/keys = list()
@@ -402,9 +416,12 @@ CAPABILITIES(/datum/mc_health_build)
 				continue
 			keys += registry.keys[idx]
 			mss += round(meter.fr_top_ms[base + k], 0.01)
-		rows += list(list(round(meter.fr_usage[at], 0.1), keys, mss, round(meter.fr_pre[at], 0.1), round(meter.fr_maptick[at], 0.1)))
+		var/list/row = list(round(meter.fr_usage[at], 0.1), keys, mss, round(meter.fr_pre[at], 0.1), round(meter.fr_maptick[at], 0.1))
+		rows += list(row)
+		encoded += url_encode(json_encode(row)) // each tick is encoded once, when it is first read
 	if(length(rows) > MC_HEALTH_TICKS)
 		rows.Cut(1, length(rows) - MC_HEALTH_TICKS + 1)
+		encoded.Cut(1, length(encoded) - MC_HEALTH_TICKS + 1)
 	B.tick_count = count
 	return rows
 
