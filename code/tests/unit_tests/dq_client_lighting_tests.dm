@@ -1096,6 +1096,62 @@
 	client_lighting_set(FALSE)
 	TEST_ASSERT_NULL(H.flat_light, "DM lighting: no flat light")
 
+/// Everything drawn for a player's own character under client lighting, read as the planes and blend modes it really has: the character is
+/// drawn once, under the lighting multiply, and the only thing of it on the glow plane is its flat light, which is a one-colour silhouette (the
+/// colour matrix of the flat light itself, not the sprite's own colours). An overlay is a snapshot of the atom when it is added, so a flat light
+/// recoloured after it was added left the character carrying an uncoloured copy of its own sprite, drawn on the glow plane that the lighting
+/// master ADDS: a glow in the character's own colours over the character.
+/datum/unit_test/dq_client_self_drawn_once
+
+/datum/unit_test/dq_client_self_drawn_once/Run()
+	for(var/screen_var in list(nameof(GLOB.client_glow_plane_master), nameof(GLOB.client_glow_base), nameof(GLOB.client_glow_compare_base), nameof(GLOB.client_glow_relay), nameof(GLOB.client_walls_plane_master), nameof(GLOB.client_spread_plane_master), nameof(GLOB.client_visible_plane_master), nameof(GLOB.client_glow_spread_relay)))
+		set_global(screen_var, GLOB.vars[screen_var]) // the shared screen objects are made on first use; teardown restores
+	client_glow_counters_restore()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	H.resize(1.25, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE) // a size above 1: its sprite is a little bigger than a tile
+	TEST_ASSERT_NOTNULL(H.flat_light, "a character a quarter taller than a tile carries a flat light")
+	client_flat_light_self_check(H, "unlit floor")
+	allocate(/obj/machinery/light, T)
+	SSlighting.light_step(0, TRUE)
+	client_flat_light_self_check(H, "lit floor")
+	H.regenerate_icons()
+	client_flat_light_self_check(H, "after a full redraw")
+	// What the client's own screen adds: nothing of the character, and no relay of its plane.
+	for(var/atom/movable/screen/S as anything in client_glow_screen(CLIENT_GLOW_SCREEN_BASE))
+		TEST_ASSERT(S.render_source != H.render_target, "the client screen object [S.type] holds no copy of the character")
+	client_lighting_set(FALSE)
+
+/// A colour as BYOND stores it (a matrix may come back as text), for comparing two.
+/datum/unit_test/proc/client_flat_light_test_colour(color)
+	var/image/probe = new
+	probe.color = color
+	return islist(probe.color) ? json_encode(probe.color) : "[probe.color]"
+
+/datum/unit_test/proc/client_flat_light_self_check(mob/living/carbon/human/H, when)
+	TEST_ASSERT(H.plane < PLANE_LIGHTING, "[when]: the character is drawn under the lighting plane (plane [H.plane])")
+	TEST_ASSERT_NOTEQUAL(H.blend_mode, BLEND_ADD, "[when]: the character itself is not additive")
+	var/want = client_flat_light_test_colour(H.flat_light.color)
+	TEST_ASSERT(want != client_flat_light_test_colour(null), "[when]: the flat light has a colour of its own")
+	var/silhouettes = 0
+	var/list/lines = list()
+	for(var/image/O as anything in H.overlays)
+		lines += "plane [O.plane] blend [O.blend_mode] render_source [O.render_source] color [islist(O.color) ? json_encode(O.color) : O.color]"
+		if(O.plane == PLANE_CLIENT_GLOW)
+			silhouettes++
+			TEST_ASSERT_EQUAL(O.render_source, H.render_target, "[when]: the only glow-plane overlay is the character's flat light")
+			TEST_ASSERT_EQUAL(client_flat_light_test_colour(O.color), want, "[when]: the flat light the character carries has the flat light's colour: an uncoloured copy of the sprite is added over the light")
+			continue
+		TEST_ASSERT_NOTEQUAL(O.blend_mode, BLEND_ADD, "[when]: no additive overlay of the character (plane [O.plane])")
+		TEST_ASSERT(O.plane == FLOAT_PLANE || O.plane < PLANE_LIGHTING || O.plane == PLANE_EMISSIVE, "[when]: an overlay on plane [O.plane] is neither under the lighting nor the emissive blocker")
+		if(O.plane == PLANE_EMISSIVE)
+			TEST_ASSERT_EQUAL(client_flat_light_test_colour(O.color), client_flat_light_test_colour(GLOB.em_block_color), "[when]: the emissive overlay is the blocker colour, not the sprite")
+	TEST_ASSERT_EQUAL(silhouettes, 1, "[when]: exactly one flat light on the character, found [silhouettes]")
+	log_test("SELF DRAWN ONCE ([when]): [lines.Join("; ")]")
+
 /// A delivery answer that arrives after forget_images() (a login emptied the client's images) belongs to a client state that is gone: it marks nothing
 /// delivered. An answer under the current generation marks the shape.
 /datum/unit_test/dq_client_glow_delivery_stale_after_reset

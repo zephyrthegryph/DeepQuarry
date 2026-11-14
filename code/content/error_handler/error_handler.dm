@@ -30,7 +30,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 	var/skipcount = abs(error_cooldown[erroruid]) - 1
 	error_cooldown[erroruid] = 0
 	if(skipcount > 0)
-		SEND_TEXT(world.log, "\[[time_stamp()]] Skipped [skipcount] runtimes in [error_where(E)].")
+		world_log_line("\[[time_stamp()]] Skipped [skipcount] runtimes in [error_where(E)].", TRUE)
 		GLOB.error_cache.log_error(E, skip_count = skipcount)
 
 /world/Error(exception/E, datum/e_src)
@@ -162,9 +162,9 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 		GLOB.error_cache.log_error(E, desclines)
 
 	var/main_line = "\[[time_stamp()]] Runtime in [error_where(E)]: [E]"
-	SEND_TEXT(world.log, main_line)
+	world_log_line(main_line, TRUE)
 	for(var/line in desclines)
-		SEND_TEXT(world.log, line)
+		world_log_line(line, TRUE)
 
 #ifdef UNIT_TESTS
 	if(GLOB.current_test)

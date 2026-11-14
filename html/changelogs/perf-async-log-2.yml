@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "World log lines past the first 200 of a round go to the async writer (dd_async.log); runtime errors still reach the console and dd.log"

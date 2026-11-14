@@ -55,4 +55,4 @@ DECLARE_SHARED_CACHE(emissive_blocker_generic, GLOBAL_PROC_REF(emissive_blocker_
 	add_overlay(list(flat_light), TRUE)
 
 /atom/movable/proc/flat_light_overlay_cut()
-	cut_overlay(flat_light)
+	cut_overlay(list(flat_light), TRUE) // also out of the priority list, or a later wipe-and-redraw brings the old snapshot back

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A calm AI brain's slow run (perception backstop and wander step) waits for the next loop run when the tick has no budget left; AI SLOW log lines now name the strategic stage"

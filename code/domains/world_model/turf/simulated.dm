@@ -78,7 +78,9 @@
 			var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, src)
 			if (!dirtoverlay)
 				dirtoverlay = new/obj/effect/decal/cleanable/dirt(src)
-			dirtoverlay.set_alpha(min((dirt - 50) * 5, 255))
+			var/dirt_alpha = min((dirt - 50) * 5, 255)
+			if(dirtoverlay.alpha != dirt_alpha) // a floor at its dirtiest is walked on every step: the overlay is not written again for the same value
+				dirtoverlay.set_alpha(dirt_alpha)
 
 /turf/simulated/Entered(atom/A, atom/OL)
 	var/dirtslip = FALSE
