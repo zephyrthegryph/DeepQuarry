@@ -27,6 +27,7 @@ import {
   emptyDock,
   parseSaved,
   serializeSaved,
+  STATUS_INTERFACE,
 } from './model';
 
 const SAVE_DELAY_MS = 1000;
@@ -323,6 +324,8 @@ export class ColumnHost {
   mayLeave(wid: string): boolean {
     const win = this.state.windows[wid];
     if (win?.kind !== 'tgui') return false;
+    // The stat panel never leaves the column, whatever its config says (or has not yet said).
+    if (win.iface === STATUS_INTERFACE) return false;
     const floatable = this.backends.get(wid)?.store.get(configAtom)
       ?.window?.floatable;
     if (floatable === false) return false;

@@ -20,13 +20,14 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
 import {
   DRAG_THRESHOLD,
   liveClamp,
-  liveDropIndex,
   liveSlide,
   type OrderBox,
   Tabs,
@@ -44,6 +45,7 @@ import { type ColumnHost, columnHost, sendPage } from './host';
 import {
   type DockGroup,
   type DockWindow,
+  dropIndex,
   fillHeight,
   fitHeights,
 } from './model';
@@ -301,7 +303,7 @@ function runDrag(
       group,
       window: pulled,
       dy,
-      to: pulled ? indexAtY(boxes, e.clientY) : liveDropIndex(boxes, group, dy),
+      to: pulled ? indexAtY(boxes, e.clientY) : dropIndex(boxes, group, dy),
       join,
       float,
       boxes,
@@ -427,10 +429,19 @@ function pressHead(
   document.addEventListener('pointercancel', stop);
 }
 
+/** An entry's drawn height (its frame, as the model counts it), or `fallback` when it is not on the page. */
+function drawnHeight(id: string, fallback: number): number {
+  const rect = document
+    .querySelector<HTMLElement>(`[data-column-group="${id}"]`)
+    ?.getBoundingClientRect();
+  return rect ? Math.round(rect.height) : fallback;
+}
+
 function startResize(
   event: ReactPointerEvent<HTMLElement>,
   host: ColumnHost,
   group: DockGroup,
+  below: string | null,
 ) {
   if (event.button !== 0) {
     return;
@@ -439,18 +450,25 @@ function startResize(
   const target = event.currentTarget;
   const pointer = event.pointerId;
   const startY = event.clientY;
-  const body = target.parentElement?.getBoundingClientRect();
-  const startHeight = body ? Math.round(body.height) : group.height;
+  const startHeight = drawnHeight(group.id, group.height);
+  const nextStart = below ? drawnHeight(below, 0) : 0;
   target.setPointerCapture(pointer);
   // The whole column redraws on each resize: at most once a frame, and the last height is always applied.
-  let height = startHeight;
+  let dy = 0;
   let frame = 0;
   const apply = () => {
     frame = 0;
-    host.dispatch({ type: 'resize', group: group.id, height });
+    host.dispatch({
+      type: 'boundary',
+      group: group.id,
+      next: below,
+      start: startHeight,
+      nextStart,
+      dy,
+    });
   };
   const move = (e: PointerEvent) => {
-    height = startHeight + e.clientY - startY;
+    dy = e.clientY - startY;
     if (!frame) frame = requestAnimationFrame(apply);
   };
   const end = () => {
@@ -520,6 +538,8 @@ const Group = memo(function Group(
     group: DockGroup;
     index: number;
     fill: boolean;
+    /** The expanded, non-filling entry under this one: the grip's other side (null: the chat, or nothing). */
+    below: string | null;
     /** The height it is drawn at (fitHeights()): its own, or less on a column too short for every entry. */
     height: number;
     host: ColumnHost;
@@ -531,6 +551,7 @@ const Group = memo(function Group(
   const {
     group,
     fill,
+    below,
     height,
     host,
     setDrag,
@@ -542,6 +563,17 @@ const Group = memo(function Group(
     ghost,
   } = props;
   const { windows } = host.state;
+  // Scroll positions inside the entry: a reorder moves its DOM node, which resets every scroller in it, so each is put back after a render.
+  const scrolls = useRef(new Map<Element, [number, number]>());
+  useLayoutEffect(() => {
+    for (const [node, [top, left]] of scrolls.current) {
+      if (!node.isConnected) scrolls.current.delete(node);
+      else if (node.scrollTop !== top || node.scrollLeft !== left) {
+        node.scrollTop = top;
+        node.scrollLeft = left;
+      }
+    }
+  });
   const active = windows[group.active];
   const title = active?.title || active?.iface || '';
   const stacked = group.windows.length > 1;
@@ -568,6 +600,10 @@ const Group = memo(function Group(
         .filter(Boolean)
         .join(' ')}
       data-column-group={group.id}
+      onScrollCapture={(event) => {
+        const node = event.target as Element;
+        scrolls.current.set(node, [node.scrollTop, node.scrollLeft]);
+      }}
       style={{
         transform: offset ? `translateY(${offset}px)` : undefined,
         height: collapsed || fill ? undefined : `${height}px`,
@@ -662,13 +698,27 @@ const Group = memo(function Group(
           {ghost && <div className="column-body__ghost">{ghost}</div>}
           <div
             className={`column-grip${fill ? ' column-grip--fill' : ''}`}
-            onPointerDown={(event) => startResize(event, host, group)}
+            onPointerDown={(event) => startResize(event, host, group, below)}
           />
         </div>
       )}
     </div>
   );
 });
+
+/** The expanded entry after `index` when it is not the filling one: the grip's neighbour that gives and takes space. */
+function belowOf(
+  groups: DockGroup[],
+  index: number,
+  fillAt: number,
+  host: ColumnHost,
+): string | null {
+  for (let i = index + 1; i < groups.length; i++) {
+    if (host.collapsed(groups[i])) continue;
+    return i === fillAt ? null : groups[i].id;
+  }
+  return null;
+}
 
 export function Column() {
   const host = columnHost;
@@ -699,6 +749,7 @@ export function Column() {
           group={group}
           index={index}
           fill={index === fillAt}
+          below={belowOf(groups, index, fillAt, host)}
           height={heights[index]}
           host={host}
           version={version}
