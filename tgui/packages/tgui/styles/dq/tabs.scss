@@ -7,6 +7,10 @@
 @use './row-control';
 
 .DqTabs {
+  // One height for everything on the row: the tabs, the add button and the end controls share it, bottom-aligned on the rule, so they
+  // share one top, one bottom and one centre.
+  --dq-row-control-height: 26px;
+
   display: flex;
   flex: none;
   flex-wrap: wrap;
@@ -27,8 +31,12 @@
   }
 
   .Tab {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--dq-row-control-height);
     min-width: 0;
-    min-height: 2em;
+    min-height: 0;
     margin-right: 2px;
     font-family: console.$console-font;
     font-weight: 700;
@@ -42,9 +50,14 @@
   }
 
   .DqTabs__after {
+    display: flex;
     flex: none;
-    align-self: center;
-    padding-bottom: 2px;
+    align-items: center;
+    align-self: flex-end;
+
+    > .Button {
+      @include row-control.button(var(--dq-row-control-height, 22px));
+    }
   }
 
   // Row-end content (buttons, a search box), centred on the tabs and clear
@@ -54,7 +67,7 @@
     flex: none;
     align-items: center;
     gap: 2px;
-    align-self: center;
+    align-self: flex-end;
     margin-left: auto;
 
     // Every control here (the chat's ping indicator, music and settings
@@ -103,6 +116,7 @@
 
   &--classic {
     .Tab {
+      height: auto;
       min-height: 1.6em;
     }
 
@@ -118,6 +132,7 @@
     background-color: transparent;
 
     .Tab {
+      height: auto;
       min-height: 1.6em;
       font-size: 11px;
       max-width: 12em;

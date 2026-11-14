@@ -60,7 +60,9 @@
     // Left and right equal the tab strip's left padding (tgui/styles/dq/tabs.scss, 6px); little room under the last line.
     padding: 6px 6px 2px;
     font-family: Verdana, Geneva, sans-serif;
-    font-size: 12px;
+    // The same physical size docked and floating: a floating window with UI scaling off is zoomed out by the display ratio (drag.ts
+    // sets --scaling-amount to it), the column page is not, so the floating chat counts the zoom back in.
+    font-size: calc(12px * var(--scaling-amount, 1));
     font-weight: 400;
     line-height: 1.5;
     word-wrap: break-word;

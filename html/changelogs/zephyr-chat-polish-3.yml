@@ -1,0 +1,7 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Chat text no longer gains a second inset after the chat is popped out and back in"
+  - bugfix: "Header and tab row controls share one height and centre"
+  - bugfix: "Floating chat text is the same size as the docked chat's"
+  - bugfix: "The chat keeps its scroll position (or its stick-to-bottom) when popped in or out"

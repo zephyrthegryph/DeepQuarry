@@ -4,8 +4,8 @@
  * @license MIT
  */
 
-import { reportUiError } from 'tgui/errors';
 import { createRoot } from 'react-dom/client';
+import { reportUiError } from 'tgui/errors';
 import { createLogger } from 'tgui/logging';
 import { Tooltip } from 'tgui-core/components';
 import { EventEmitter } from 'tgui-core/events';
@@ -33,7 +33,11 @@ import {
   typeIsImportant,
 } from './model';
 import { highlightNode, linkifyNode } from './replaceInTextNode';
+import { recallChatScroll, rememberChatScroll } from './scrollState';
 import type { Page, SerializedMessage } from './types';
+
+/** How long a restored scroll is held while the log lays out. */
+const RESTORE_HOLD_MS = 2000;
 
 const logger = createLogger('chatRenderer');
 
@@ -168,6 +172,8 @@ class ChatRenderer {
   interleaveColor: string;
   hideImportantInAdminTab: boolean;
   scrollNode: HTMLElement | null;
+  /** True while a restored scroll position is being held (restoreScroll). */
+  restoring = false;
   scrollTracking: boolean;
   handleScroll: (type: any) => void;
   ensureScrollTracking: () => void;
@@ -229,6 +235,10 @@ class ChatRenderer {
         store.set(scrollTrackingAtom, scrollTracking);
         logger.debug('tracking', this.scrollTracking);
       }
+      // The restore's own scrolls are not the player's: they must not overwrite what is being restored.
+      if (!this.restoring) {
+        rememberChatScroll({ top: node.scrollTop, tracking: scrollTracking });
+      }
     };
     // Periodic message pruning
     setInterval(() => this.pruneMessages(), MESSAGE_PRUNE_INTERVAL);
@@ -239,9 +249,14 @@ class ChatRenderer {
   }
 
   mount(node) {
-    // Mount existing root node on top of the new node
-    if (this.rootNode) {
-      node.appendChild(this.rootNode);
+    // The chat moves to a new element (popped out and back in): the messages go into it. The old root is not nested inside the new
+    // one, which would pad the text twice (both are the .Chat box).
+    if (this.rootNode && this.rootNode !== node) {
+      const old = this.rootNode;
+      while (old.firstChild) {
+        node.appendChild(old.firstChild);
+      }
+      this.rootNode = node;
     }
     // Initialize the root node
     else {
@@ -251,6 +266,49 @@ class ChatRenderer {
     this.tryFindScrollable();
     // Flush the queue
     this.tryFlushQueue();
+    this.restoreScroll();
+  }
+
+  /**
+   * Puts the scroll back where the chat was left (scrollState.ts): at the newest line when it was pinned, else at its position. The
+   * log arrives and lays out after the mount, so the restore holds for a moment and stops at the player's first wheel or drag.
+   */
+  restoreScroll() {
+    const node = this.scrollNode;
+    if (!node) return;
+    this.restoring = true;
+    recallChatScroll().then((state) => {
+      if (!state || this.scrollNode !== node) {
+        this.restoring = false;
+        return;
+      }
+      const until = Date.now() + RESTORE_HOLD_MS;
+      const apply = () => {
+        if (state.tracking) {
+          node.scrollTop = node.scrollHeight;
+        } else {
+          node.scrollTop = state.top;
+        }
+      };
+      const stop = () => {
+        this.restoring = false;
+        observer.disconnect();
+        node.removeEventListener('wheel', stop);
+        node.removeEventListener('pointerdown', stop);
+      };
+      const observer = new ResizeObserver(() => {
+        if (Date.now() > until) {
+          stop();
+          return;
+        }
+        apply();
+      });
+      if (this.rootNode) observer.observe(this.rootNode);
+      node.addEventListener('wheel', stop, { passive: true });
+      node.addEventListener('pointerdown', stop);
+      apply();
+      setTimeout(stop, RESTORE_HOLD_MS);
+    });
   }
 
   onStateLoaded() {
@@ -423,6 +481,7 @@ class ChatRenderer {
 
   tryFindScrollable() {
     // Find scrollable parent
+    this.scrollNode?.removeEventListener('scroll', this.handleScroll);
     this.scrollNode = document.getElementById('chat-pane');
     this.scrollNode?.addEventListener('scroll', this.handleScroll);
   }
