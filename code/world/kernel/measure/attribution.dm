@@ -333,6 +333,12 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	var/list/post_best
 	var/list/post_value
 	var/list/folded
+	/// The owner type being walked: its table, its keys (a snapshot) and the next one, so one type with thousands of rows is walked a slice at a time too.
+	var/cur_a
+	var/list/cur_table
+	var/list/cur_keys
+	var/cur_at = 1
+	var/list/cur_entry
 	/// Rows visited, for the profile's own trace line.
 	var/visited = 0
 
@@ -347,34 +353,50 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	W.folded = list()
 	return W
 
-/// Walks rows for `budget_ms` (at least one owner type's worth). TRUE when the table has been walked to its end.
+/// Walks rows for `budget_ms`, checked every KA_WALK_CHECK_ROWS rows. TRUE when the table has been walked to its end.
 /// One walk of the table feeds all three sections (three walks and a text per row cost ~75 ms of one tick).
 /datum/km_attr/proc/walk_step(datum/km_attr_walk/W, budget_ms)
 	var/started = TICK_USAGE_REAL
 	var/list/keys = W.keys
 	var/top = W.top
-	while(W.at <= length(keys))
-		var/a = keys[W.at++]
-		var/list/by_a = rows[a]
-		var/list/entry = null
-		for(var/b in by_a)
-			var/list/row = by_a[b]
-			W.visited++
-			consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, W.call_best, W.call_value)
-			if(row[KA_POST_COUNT])
-				consider(row, KA_BY_POST, 0, 0, top, W.post_best, W.post_value)
-			if(row[KA_KIND] != KA_KIND_DRAW)
+	var/since_check = 0
+	while(W.cur_keys || W.at <= length(keys))
+		if(!W.cur_keys)
+			W.cur_a = keys[W.at++]
+			W.cur_table = rows[W.cur_a]
+			if(!W.cur_table)
 				continue
-			var/ms = row[KA_MS] + row[KA_MS_HI]
-			if(!entry)
-				entry = list("type" = a, "count" = 0, "total_ms" = 0, "max_ms" = 0, "reason" = row[KA_B], "reason_ms" = -1)
-				W.folded[a] = entry
-			entry["count"] += row[KA_COUNT]
-			entry["total_ms"] += ms
-			entry["max_ms"] = max(entry["max_ms"], row[KA_MAX])
-			if(ms > entry["reason_ms"])
-				entry["reason"] = row[KA_B]
-				entry["reason_ms"] = ms
+			W.cur_keys = W.cur_table.Copy()
+			W.cur_at = 1
+			W.cur_entry = null
+		var/a = W.cur_a
+		var/list/cur_keys = W.cur_keys
+		while(W.cur_at <= length(cur_keys))
+			var/list/row = W.cur_table[cur_keys[W.cur_at++]]
+			if(row)
+				W.visited++
+				consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, W.call_best, W.call_value)
+				if(row[KA_POST_COUNT])
+					consider(row, KA_BY_POST, 0, 0, top, W.post_best, W.post_value)
+				if(row[KA_KIND] == KA_KIND_DRAW)
+					var/ms = row[KA_MS] + row[KA_MS_HI]
+					var/list/entry = W.cur_entry
+					if(!entry)
+						entry = list("type" = a, "count" = 0, "total_ms" = 0, "max_ms" = 0, "reason" = row[KA_B], "reason_ms" = -1)
+						W.folded[a] = entry
+						W.cur_entry = entry
+					entry["count"] += row[KA_COUNT]
+					entry["total_ms"] += ms
+					entry["max_ms"] = max(entry["max_ms"], row[KA_MAX])
+					if(ms > entry["reason_ms"])
+						entry["reason"] = row[KA_B]
+						entry["reason_ms"] = ms
+			if(!(++since_check % KA_WALK_CHECK_ROWS) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+				if(W.cur_at > length(cur_keys))
+					W.cur_keys = null
+				return FALSE
+		W.cur_keys = null
+		W.cur_table = null
 		if(W.at <= length(keys) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
 			return FALSE
 	if(!W.overflow_done)
@@ -383,6 +405,69 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 			consider(row, KA_BY_TOTAL, 0, KA_CALLBACK_KINDS, top, W.call_best, W.call_value)
 			if(row[KA_POST_COUNT])
 				consider(row, KA_BY_POST, 0, 0, top, W.post_best, W.post_value)
+	return TRUE
+
+/// The heaviest rows of each system in `wanted` ("[system index]" -> key), being found a slice at a time (select_top_by_system(), walked the way walk_step() does).
+/datum/km_attr_sys_walk
+	var/n = 5
+	var/list/wanted
+	var/list/best
+	var/list/best_value
+	var/list/keys
+	var/at = 1
+	var/list/cur_table
+	var/list/cur_keys
+	var/cur_at = 1
+	var/overflow_done = FALSE
+	var/visited = 0
+
+/datum/km_attr/proc/sys_walk_begin(n, list/wanted)
+	var/datum/km_attr_sys_walk/W = new
+	W.n = n
+	W.wanted = wanted
+	W.best = list()
+	W.best_value = list()
+	for(var/key in wanted)
+		W.best[key] = list()
+		W.best_value[key] = list()
+	W.keys = rows.Copy()
+	return W
+
+/// Walks rows for `budget_ms`, checked every KA_WALK_CHECK_ROWS rows. TRUE when the table has been walked to its end.
+/datum/km_attr/proc/sys_walk_step(datum/km_attr_sys_walk/W, budget_ms)
+	var/started = TICK_USAGE_REAL
+	var/list/keys = W.keys
+	var/list/wanted = W.wanted
+	var/since_check = 0
+	while(W.cur_keys || W.at <= length(keys))
+		if(!W.cur_keys)
+			W.cur_table = rows[keys[W.at++]]
+			if(!W.cur_table)
+				continue
+			W.cur_keys = W.cur_table.Copy()
+			W.cur_at = 1
+		var/list/cur_keys = W.cur_keys
+		while(W.cur_at <= length(cur_keys))
+			var/list/row = W.cur_table[cur_keys[W.cur_at++]]
+			if(row)
+				W.visited++
+				var/key = "[row[KA_SYS]]"
+				if(wanted[key])
+					consider(row, KA_BY_TOTAL, row[KA_SYS], 0, W.n, W.best[key], W.best_value[key])
+			if(!(++since_check % KA_WALK_CHECK_ROWS) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+				if(W.cur_at > length(cur_keys))
+					W.cur_keys = null
+				return FALSE
+		W.cur_keys = null
+		W.cur_table = null
+		if(W.at <= length(keys) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			return FALSE
+	if(!W.overflow_done)
+		W.overflow_done = TRUE
+		for(var/list/row as anything in overflow)
+			var/overflow_key = "[row[KA_SYS]]"
+			if(wanted[overflow_key])
+				consider(row, KA_BY_TOTAL, row[KA_SYS], 0, W.n, W.best[overflow_key], W.best_value[overflow_key])
 	return TRUE
 
 /// The finished walk as report() returns it.

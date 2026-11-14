@@ -474,33 +474,83 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" = 0, "p95" = 0, "p99" = 0, "max" = 0, "overruns" = 0, "tps" = 0))
 
 /datum/controller/kernel/proc/performance_window(seconds, start_index_override)
-	var/sample_count
-	var/start_index
 	if(start_index_override)
-		start_index = clamp(start_index_override, 1, perf_tick_usage.len + 1)
-		sample_count = perf_tick_usage.len - start_index + 1
-	else
-		sample_count = min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
-		start_index = perf_tick_usage.len - sample_count + 1
-	if(!sample_count)
+		var/start_index = clamp(start_index_override, 1, perf_tick_usage.len + 1)
+		var/count = perf_tick_usage.len - start_index + 1
+		if(!count)
+			return GLOB.empty_performance_window
+		var/datum/perf_window_walk/from_start = performance_walk_begin(null, count)
+		performance_walk_step(from_start, INFINITY)
+		return performance_walk_result(from_start)
+	var/datum/perf_window_walk/W = performance_walk_begin(seconds)
+	if(!W)
 		return GLOB.empty_performance_window
-	// Percentiles come from a 1%-wide histogram filled in the same pass as the
-	// average, so the window is never copied or sorted (Q7). Usage above
-	// PERF_HISTOGRAM_BINS% lands in the top bin; "max" stays exact.
-	var/list/histogram = new /list(PERF_HISTOGRAM_BINS + 1)
+	performance_walk_step(W, INFINITY)
+	return performance_walk_result(W)
+
+/// A performance_window() being read a slice at a time (the MC Health panel's 30 s and 5 min windows: 600 and 6000 samples in one call held a
+/// tick for several ms). The samples are named by their absolute position (perf_samples_total), so the ring trimming meanwhile only
+/// clamps the walk to the oldest sample kept. Percentiles come from a 1%-wide histogram filled in the same pass as the average, so the
+/// window is never copied or sorted (Q7). Usage above PERF_HISTOGRAM_BINS% lands in the top bin; "max" stays exact.
+/datum/perf_window_walk
+	/// The absolute positions of the first and last sample of the window, and the next one to read.
+	var/first_pos = 0
+	var/last_pos = 0
+	var/next_pos = 0
+	var/samples = 0
+	var/list/histogram
 	var/sum = 0
 	var/overruns = 0
 	var/window_max = 0
-	var/end_index = start_index + sample_count - 1
-	for(var/i in start_index to end_index)
-		var/value = perf_tick_usage[i]
-		sum += value
-		if(value > window_max)
-			window_max = value
+	/// REALTIMEOFDAY of the first and last sample read.
+	var/real_first
+	var/real_last
+
+/// The walk of the last `seconds` of samples (or the last `count` samples), or null when there are none.
+/datum/controller/kernel/proc/performance_walk_begin(seconds, count)
+	var/sample_count = count || min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
+	sample_count = min(sample_count, perf_tick_usage.len)
+	if(!sample_count)
+		return null
+	var/datum/perf_window_walk/W = new
+	W.last_pos = perf_samples_total
+	W.first_pos = perf_samples_total - sample_count + 1
+	W.next_pos = W.first_pos
+	W.histogram = new /list(PERF_HISTOGRAM_BINS + 1)
+	return W
+
+/// Reads samples for `budget_ms` (at least a few). TRUE when the window has been read to its end.
+/datum/controller/kernel/proc/performance_walk_step(datum/perf_window_walk/W, budget_ms)
+	var/started = TICK_USAGE_REAL
+	var/oldest = perf_samples_total - perf_tick_usage.len + 1
+	if(W.next_pos < oldest)
+		W.next_pos = oldest // trimmed away meanwhile: the window starts at the oldest kept
+	var/list/histogram = W.histogram
+	var/n = 0
+	while(W.next_pos <= W.last_pos)
+		var/idx = perf_index_of(W.next_pos)
+		var/value = perf_tick_usage[idx]
+		if(!W.samples)
+			W.real_first = perf_tick_realtime[idx]
+		W.real_last = perf_tick_realtime[idx]
+		W.samples++
+		W.next_pos++
+		W.sum += value
+		if(value > W.window_max)
+			W.window_max = value
 		if(value > 100)
-			overruns++
-		var/bin = min(round(value), PERF_HISTOGRAM_BINS) + 1
-		histogram[bin]++
+			W.overruns++
+		histogram[min(round(value), PERF_HISTOGRAM_BINS) + 1]++
+		if(!(++n % 64) && W.next_pos <= W.last_pos && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			return FALSE
+	return TRUE
+
+/// The finished walk, as performance_window() returns it.
+/datum/controller/kernel/proc/performance_walk_result(datum/perf_window_walk/W)
+	var/sample_count = W.samples
+	if(!sample_count)
+		return GLOB.empty_performance_window
+	var/list/histogram = W.histogram
 	var/list/percentile_ranks = list(
 		max(CEILING(sample_count * 0.50, 1), 1),
 		max(CEILING(sample_count * 0.95, 1), 1),
@@ -516,18 +566,18 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 			rank_index++
 		if(rank_index > 3)
 			break
-	var/realtime_delta = perf_tick_realtime[perf_tick_realtime.len] - perf_tick_realtime[start_index]
+	var/realtime_delta = W.real_last - W.real_first
 	if(realtime_delta < 0)
 		realtime_delta += 24 HOURS
 	return list(
 		"samples" = sample_count,
-		"avg" = sum / sample_count,
+		"avg" = W.sum / sample_count,
 		"percentile_samples" = sample_count,
 		"p50" = percentiles[1],
 		"p95" = percentiles[2],
 		"p99" = percentiles[3],
-		"max" = window_max,
-		"overruns" = overruns,
+		"max" = W.window_max,
+		"overruns" = W.overruns,
 		"tps" = realtime_delta > 0 ? ((sample_count - 1) / (realtime_delta * 0.1)) : world.fps,
 	)
 

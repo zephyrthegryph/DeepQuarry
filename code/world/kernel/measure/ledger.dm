@@ -409,6 +409,17 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 	var/at = 1
 	var/sum = 0
 	var/list/cats
+	/// The category being ranked: its table, the owner keys (a snapshot) and the next one, the current owner's table and keys, and the heaviest rows so far.
+	/// One category can hold thousands of rows, so the ranking is a slice at a time too.
+	var/in_cat = FALSE
+	var/list/cat_table
+	var/list/a_keys
+	var/a_at = 1
+	var/cur_a
+	var/list/b_table
+	var/list/b_keys
+	var/b_at = 1
+	var/list/best
 
 /datum/km_ledger/proc/walk_begin(top_n = KM_LEDGER_TOP)
 	var/datum/km_ledger_walk/W = new
@@ -416,15 +427,27 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 	W.cats = list()
 	return W
 
-/// Ranks categories for `budget_ms` (at least one). TRUE when every category is in.
+/// Ranks categories for `budget_ms`, checked every KA_WALK_CHECK_ROWS rows. TRUE when every category is in.
 /datum/km_ledger/proc/walk_step(datum/km_ledger_walk/W, budget_ms)
 	var/list/names = km_ledger_names()
 	var/n = max(ticks, 1)
 	var/started = TICK_USAGE_REAL
 	while(W.at <= KM_CAT_COUNT)
-		var/i = W.at++
+		var/i = W.at
+		if(!W.in_cat)
+			W.in_cat = TRUE
+			W.best = list()
+			W.b_keys = null
+			W.a_at = 1
+			W.cat_table = (i == KM_CAT_UNATTRIBUTED || i == KM_CAT_BYOND_PRE) ? null : rows[i]
+			W.a_keys = W.cat_table ? W.cat_table.Copy() : list()
+		if(!rank_slice(W, started, budget_ms))
+			return FALSE
 		var/total = lo[i] + hi[i]
 		W.sum += total
+		var/list/top = list()
+		for(var/list/row as anything in W.best)
+			top += list(list(km_ledger_describe(row[1], row[2]), row[4], round(row[3], 0.01), round(row[5], 0.01)))
 		W.cats += list(list(
 			"key" = names[i][1],
 			"label" = names[i][2],
@@ -432,10 +455,45 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 			"avg_ms" = round(total / n, 0.001),
 			"total_ms" = round(total, 0.01),
 			"count" = counts[i],
-			"top" = (i == KM_CAT_UNATTRIBUTED || i == KM_CAT_BYOND_PRE) ? list() : top_of(i, W.top_n),
+			"top" = top,
 		))
+		W.at++
+		W.in_cat = FALSE
 		if(W.at <= KM_CAT_COUNT && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
 			return FALSE
+	return TRUE
+
+/// Ranks the rest of the current category's rows into W.best. TRUE when they are all in, FALSE when `budget_ms` since `started` is spent.
+/datum/km_ledger/proc/rank_slice(datum/km_ledger_walk/W, started, budget_ms)
+	var/since_check = 0
+	var/n = W.top_n
+	var/list/best = W.best
+	while(W.b_keys || W.a_at <= length(W.a_keys))
+		if(!W.b_keys)
+			W.cur_a = W.a_keys[W.a_at++]
+			W.b_table = W.cat_table[W.cur_a]
+			if(!W.b_table)
+				continue
+			W.b_keys = W.b_table.Copy()
+			W.b_at = 1
+		var/list/b_keys = W.b_keys
+		while(W.b_at <= length(b_keys))
+			var/b = b_keys[W.b_at++]
+			var/list/row = W.b_table[b]
+			if(row)
+				var/total = row[KL_MS] + row[KL_MS_HI]
+				if(length(best) < n || total > best[length(best)][3])
+					var/at = length(best) + 1
+					while(at > 1 && best[at - 1][3] < total)
+						at--
+					best.Insert(at, list(list(W.cur_a, b, total, row[KL_COUNT], row[KL_MAX])))
+					if(length(best) > n)
+						best.Cut(n + 1)
+			if(!(++since_check % KA_WALK_CHECK_ROWS) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+				if(W.b_at > length(b_keys))
+					W.b_keys = null
+				return FALSE
+		W.b_keys = null
 	return TRUE
 
 /// The finished walk as report() returns it.
