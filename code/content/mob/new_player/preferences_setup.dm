@@ -169,9 +169,11 @@
 		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	copy_to(mannequin, TRUE)
 
-	// The preview always wears the loadout and the job outfit.
-	var/_preview_loadout = TRUE
-	var/_preview_job = TRUE
+	// The two preview toggles; the loadout tab (show_outfit) shows both whatever they say.
+	var/_preview_loadout = show_outfit || read_preference(/datum/preference/toggle/human/preview_loadout)
+	var/_preview_job = show_outfit || read_preference(/datum/preference/toggle/human/preview_job)
+	if(!_preview_loadout && !_preview_job)
+		return
 
 	// was 25 lines of department-switch logic duplicated with get_highest_job().
 	// Single call now; the visitor sentinel is the explicit prefer_visitor_role pref. For
