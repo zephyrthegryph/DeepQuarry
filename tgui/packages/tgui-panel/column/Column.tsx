@@ -33,7 +33,7 @@ import {
 } from 'tgui/dq';
 import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import 'tgui/embeddedStyles';
-import { floatSize, type Pair } from 'tgui/floatPlacement';
+import { floatSize, type Pair, TITLE_GRAB } from 'tgui/floatPlacement';
 import { EmbeddedInterface } from 'tgui/routes';
 import { Button } from 'tgui-core/components';
 import { MapSplitHandle } from '../layout/ChatLayout';
@@ -41,7 +41,12 @@ import { POP_OUT_DISTANCE } from '../layout/model';
 import { Panel } from '../Panel';
 import { FloatFollow } from './floatDrag';
 import { type ColumnHost, columnHost, sendPage } from './host';
-import { type DockGroup, type DockWindow, fitHeights } from './model';
+import {
+  type DockGroup,
+  type DockWindow,
+  fillHeight,
+  fitHeights,
+} from './model';
 
 /** Presses here keep their own meaning (buttons click, tabs select and re-arrange). */
 const NO_DRAG = 'button, input, .Button, .Tab, [data-dq-tab]';
@@ -144,6 +149,28 @@ function screenPoint(e: PointerEvent) {
     x: Math.round(e.screenX * ratio),
     y: Math.round(e.screenY * ratio),
   };
+}
+
+/** The float button: the window leaves the column at the size its entry had, so a pop out keeps what the player sized. */
+function floatEntry(host: ColumnHost, group: DockGroup) {
+  const rect = document
+    .querySelector<HTMLElement>(`[data-column-group="${group.id}"]`)
+    ?.getBoundingClientRect();
+  if (!rect) {
+    host.float(group.active);
+    return;
+  }
+  const ratio = window.devicePixelRatio || 1;
+  const size = floatSize({ w: rect.width, h: rect.height }, ratio, [
+    window.screen.width * ratio,
+    window.screen.height * ratio,
+  ]);
+  // It opens where the entry was (the title bar's middle at the entry's top), as tall and wide as the entry was.
+  const point = {
+    x: Math.round((window.screenX + rect.left + rect.width / 2) * ratio),
+    y: Math.round((window.screenY + rect.top) * ratio + TITLE_GRAB),
+  };
+  host.float(group.active, point, { x: size[0], y: size[1] });
 }
 
 /** A live drag of an entry (`pulled` null) or of one tab pulled out of its stack. */
@@ -523,6 +550,8 @@ const Group = memo(function Group(
       style={{
         transform: offset ? `translateY(${offset}px)` : undefined,
         height: collapsed || fill ? undefined : `${height}px`,
+        // The filling entry the player sized keeps that height (the column scrolls) instead of only what the others leave.
+        minHeight: fill && !collapsed ? `${fillHeight(group)}px` : undefined,
       }}
     >
       <div
@@ -581,7 +610,7 @@ const Group = memo(function Group(
               color="transparent"
               icon="up-right-from-square"
               tooltip="Float"
-              onClick={() => host.float(group.active)}
+              onClick={() => floatEntry(host, group)}
             />
             <Button
               compact
@@ -610,12 +639,10 @@ const Group = memo(function Group(
             );
           })}
           {ghost && <div className="column-body__ghost">{ghost}</div>}
-          {!fill && (
-            <div
-              className="column-grip"
-              onPointerDown={(event) => startResize(event, host, group)}
-            />
-          )}
+          <div
+            className={`column-grip${fill ? ' column-grip--fill' : ''}`}
+            onPointerDown={(event) => startResize(event, host, group)}
+          />
         </div>
       )}
     </div>

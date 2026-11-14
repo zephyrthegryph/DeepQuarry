@@ -186,11 +186,16 @@ export function parseAvailableChannels(value: unknown): InputChannel[] {
   return known.length ? known : ['OOC'];
 }
 
-/** The channel to show when the available set changes: the current one if still usable, else the first usable. */
+/** The channel to show when the available set changes: Say once it first becomes usable, else the current one if still usable, else the first usable. */
 export function settleChannel(
   channel: InputChannel,
   available: readonly InputChannel[],
+  before?: readonly InputChannel[],
 ): InputChannel {
+  // Speech just became available (the round started, the player spawned): the row opens on it, not on the lobby's OOC.
+  if (before && !before.includes('Say') && available.includes('Say')) {
+    return 'Say';
+  }
   return available.includes(channel) ? channel : (available[0] ?? 'OOC');
 }
 

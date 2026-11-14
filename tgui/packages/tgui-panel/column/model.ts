@@ -17,6 +17,8 @@ export type DockWindow = {
   kind?: WindowKind;
   /** Where in the list a window dropped on the panel goes (its drop point), over the saved place. */
   at?: number;
+  /** The entry's height when it opens as a new entry (a native window docked at the height it had), over the saved one. */
+  height?: number;
 };
 
 export type DockGroup = {
@@ -26,6 +28,8 @@ export type DockGroup = {
   collapsed: boolean;
   /** Body height in CSS pixels. */
   height: number;
+  /** The player sized this entry: when it is the filling one, it keeps at least this height (the column scrolls) instead of only what is left. */
+  sized?: boolean;
 };
 
 /** Where an interface sits when it is docked again. */
@@ -36,6 +40,7 @@ export type Placement = {
   tab: number;
   collapsed: boolean;
   height: number;
+  sized?: boolean;
 };
 
 export type DockState = {
@@ -126,6 +131,7 @@ export function snapshot(state: DockState): DockState {
         tab,
         collapsed: group.collapsed,
         height: group.height,
+        ...(group.sized ? { sized: true } : {}),
       };
     });
   });
@@ -156,7 +162,7 @@ function open(state: DockState, window: DockWindow): DockState {
       },
     };
   }
-  const { at: dropAt, ...entry } = window;
+  const { at: dropAt, height: openHeight, ...entry } = window;
   const windows = { ...state.windows, [window.id]: entry };
   const dropped = typeof dropAt === 'number' && Number.isFinite(dropAt);
   const place = dropped ? undefined : state.saved[window.iface];
@@ -182,11 +188,18 @@ function open(state: DockState, window: DockWindow): DockState {
     active: window.id,
     collapsed: Boolean(place?.collapsed),
     height: clampHeight(place?.height ?? DOCK_HEIGHT_DEFAULT),
+    ...(place?.sized ? { sized: true } : {}),
   };
   const saved = state.saved[window.iface];
   if (dropped) {
     group.collapsed = false;
     group.height = clampHeight(saved?.height ?? DOCK_HEIGHT_DEFAULT);
+  }
+  if (typeof openHeight === 'number' && openHeight > 0) {
+    // A native window docked: the entry is as tall as the window was.
+    group.collapsed = false;
+    group.height = clampHeight(openHeight);
+    group.sized = true;
   }
   const at = dropped
     ? clampIndex(dropAt!, groups.length)
@@ -249,6 +262,7 @@ function reduce(state: DockState, action: DockAction): DockState {
       return mapGroup(state, action.group, (g) => ({
         ...g,
         height: clampHeight(action.height),
+        sized: true,
       }));
     case 'moveGroup': {
       const from = state.groups.findIndex((g) => g.id === action.group);
@@ -420,6 +434,7 @@ export function parseSaved(text: unknown): Record<string, Placement> {
       tab: Math.max(0, Math.round(Number(value.tab)) || 0),
       collapsed: Boolean(value.collapsed),
       height: clampHeight(value.height),
+      ...(value.sized ? { sized: true } : {}),
     };
   }
   return out;
@@ -454,6 +469,23 @@ export const COLUMN_PAD = 6;
 export const FIT_MIN = DOCK_HEIGHT_MIN;
 export const FILL_MIN = 160;
 
+/** The least the filling entry keeps: what the player sized it to, else FILL_MIN. */
+export function fillHeight(group: DockGroup): number {
+  return group.sized ? Math.max(FILL_MIN, group.height) : FILL_MIN;
+}
+
+/** The expanded entry above list index `at` (the neighbour a filling entry's top edge gives space to or takes it from), or -1. */
+export function expandedBefore(
+  groups: DockGroup[],
+  at: number,
+  collapsed: (group: DockGroup) => boolean,
+): number {
+  for (let i = at - 1; i >= 0; i--) {
+    if (!collapsed(groups[i])) return i;
+  }
+  return -1;
+}
+
 /**
  * The heights the column draws its entries at, for a column `available`
  * pixels tall: the saved heights while they fit, else each expanded entry
@@ -475,7 +507,7 @@ export function fitHeights(
     COLUMN_PAD +
     COLUMN_GAP * Math.max(0, groups.length - 1) +
     COLUMN_HEAD * groups.filter((g, i) => g.collapsed || i === fillAt).length +
-    (fillAt >= 0 ? FILL_MIN : 0);
+    (fillAt >= 0 ? fillHeight(groups[fillAt]) : 0);
   const budget = Math.max(0, available - reserved);
   const wanted = expanded.reduce((sum, i) => sum + heights[i], 0);
   if (wanted <= budget || wanted === 0) return heights;

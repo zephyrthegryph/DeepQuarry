@@ -57,7 +57,8 @@
   }
 
   .Chat {
-    padding: 8px 8px 8px 3px;
+    // Left and right equal the tab strip's left padding (tgui/styles/dq/tabs.scss, 6px); little room under the last line.
+    padding: 6px 6px 2px;
     font-family: Verdana, Geneva, sans-serif;
     font-size: 12px;
     font-weight: 400;

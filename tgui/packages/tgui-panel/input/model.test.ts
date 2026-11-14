@@ -312,5 +312,8 @@ describe('channel availability', () => {
     expect(parseAvailableChannels(['OOC', 'Say'])).toEqual(['Say', 'OOC']);
     expect(settleChannel('Say', ['OOC'])).toBe('OOC');
     expect(settleChannel('Me', ['Say', 'Me', 'OOC'])).toBe('Me');
+    // The round starts: Say becomes available, and the row moves off the lobby's OOC.
+    expect(settleChannel('OOC', ['Say', 'OOC'], ['OOC'])).toBe('Say');
+    expect(settleChannel('OOC', ['Say', 'OOC'], ['Say', 'OOC'])).toBe('OOC');
   });
 });

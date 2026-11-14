@@ -15,6 +15,7 @@ import {
   parseSaved,
   serializeSaved,
   shownIds,
+  fillHeight,
 } from './model';
 
 const win = (id: string, iface = id.toUpperCase()) => ({
@@ -286,6 +287,26 @@ describe('fitting the entries to the column', () => {
     active: id,
     collapsed,
     height,
+  });
+
+  it('keeps a sized filling entry its height; an unsized one only the least', () => {
+    expect(fillHeight(group('chat', 500))).toBe(160);
+    expect(fillHeight({ ...group('chat', 500), sized: true })).toBe(500);
+    expect(fillHeight({ ...group('chat', 90), sized: true })).toBe(160);
+  });
+
+  it('resizing any entry, the filling one included, marks it sized', () => {
+    let state = dockReduce(emptyDock(), {
+      type: 'open',
+      window: { id: 'w', iface: 'Chat', title: 'Chat' },
+    });
+    state = dockReduce(state, {
+      type: 'resize',
+      group: state.groups[0].id,
+      height: 400,
+    });
+    expect(state.groups[0].sized).toBe(true);
+    expect(state.saved.Chat.sized).toBe(true);
   });
 
   it('keeps the saved heights while they fit, and gets them back on a taller column', () => {

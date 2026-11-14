@@ -9,6 +9,8 @@
 	var/kind = COLUMN_PART_TGUI
 	/// The column list index a drop asked for (null: wherever the page's saved arrangement puts this interface).
 	var/at
+	/// The body height (CSS px) the entry opens at, from a native window that docked (null: the page's saved height).
+	var/height
 
 /datum/tgui_window/column_part/New(client/client, id, kind = COLUMN_PART_TGUI)
 	..(client, id, FALSE)
@@ -41,8 +43,9 @@
 	document_id = "[id]-[world.time]-[++document_sequence]"
 	for(var/datum/asset/asset in assets)
 		asset.send(client())
-	host().send_message("col/open", list("wid" = id, "kind" = kind, "document" = document_id, "at" = at))
+	host().send_message("col/open", list("wid" = id, "kind" = kind, "document" = document_id, "at" = at, "height" = height))
 	at = null
+	height = null
 	log_tgui(client(), "Column window opened ([kind], [document_id]).", window = src)
 
 /// Everything this window sends leaves through the column page, tagged with its id.

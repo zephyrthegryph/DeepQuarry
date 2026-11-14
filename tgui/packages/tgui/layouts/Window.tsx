@@ -357,7 +357,14 @@ function NativeWindow(props: Props) {
               tooltip="Dock in the side panel"
               tooltipPosition="bottom-start"
               color="transparent"
-              onClick={() => Byond.sendMessage('wm/dock')}
+              onClick={() =>
+                // The body height goes with it: the column entry opens as tall as this window was.
+                Byond.sendMessage('wm/dock', {
+                  height: Math.round(
+                    restRef.current?.getBoundingClientRect().height ?? 0,
+                  ),
+                })
+              }
             />
           )}
         </TitleBar>
@@ -404,6 +411,7 @@ type ContentProps = Partial<{
 
 function WindowContent(props: ContentProps) {
   const { className, fitted, children, ...rest } = props;
+  const { config } = useBackend();
   const [altDown, setAltDown] = useState(false);
 
   useEffect(ensureResetPositionSubscription, []);
@@ -418,6 +426,7 @@ function WindowContent(props: ContentProps) {
     <Layout.Content
       onMouseDown={dragStartIfAltHeld}
       className={classes(['Window__content', className])}
+      scrollKey={config?.interface?.name}
       {...rest}
     >
       <KeyListener

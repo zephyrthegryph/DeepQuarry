@@ -23,7 +23,10 @@ import { chatResumeAfter, setChatSession } from 'tgui-panel/chat/log';
 import { chatRenderer } from 'tgui-panel/chat/renderer';
 import { bus } from 'tgui-panel/events/listeners';
 import { store } from 'tgui-panel/events/store';
-import { databaseBackendEnabledAtom } from 'tgui-panel/game/atoms';
+import {
+  databaseBackendEnabledAtom,
+  userDataAtom,
+} from 'tgui-panel/game/atoms';
 import { chatDraftAtom } from 'tgui-panel/input/atoms';
 import { Panel } from 'tgui-panel/Panel';
 
@@ -56,7 +59,7 @@ export function chatBusMessage(
 }
 
 export function Chat() {
-  const { data } = useBackend<Data>();
+  const { data, config } = useBackend<Data>();
   const embedded = !!useContext(EmbeddedContext);
   const send = useWindowSend();
   const started = useRef(false);
@@ -64,6 +67,14 @@ export function Chat() {
     started.current = true;
     // The connection the stored log's mark must be from (chat/log.ts).
     if (data?.session) setChatSession(data.session);
+    // The column page learns the player from its telemetry handler; a floating chat is its own page and learns it from its window's
+    // config. Without it the chat never loads its stored log (use-chat-persistence.ts), so a popped-out chat opened empty.
+    if (!store.get(userDataAtom) && config?.client?.ckey) {
+      store.set(userDataAtom, {
+        ckey: config.client.ckey,
+        token: config.client.chatlog_token,
+      });
+    }
     if (data?.draft && !store.get(chatDraftAtom)) {
       store.set(chatDraftAtom, data.draft);
     }

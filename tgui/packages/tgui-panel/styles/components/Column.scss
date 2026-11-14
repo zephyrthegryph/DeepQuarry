@@ -148,6 +148,11 @@
   height: 7px;
   cursor: ns-resize;
   z-index: 2;
+
+  // The filling entry ends at the column's edge: its grip sits inside it.
+  &--fill {
+    bottom: 0;
+  }
 }
 
 // The chat draws a frame around its own page (ChatConsole.scss, console-frame: fixed). In the column each window is framed by its

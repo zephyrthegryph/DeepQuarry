@@ -99,8 +99,14 @@ export function ChatInput() {
   }
 
   // The speaker's channels changed (lobby, spawn, ghost, a headset): leave one that is gone.
+  const previousAvailable = useRef<readonly InputChannel[]>(available);
   useEffect(() => {
-    const next = settleChannel(input.channel, available);
+    const next = settleChannel(
+      input.channel,
+      available,
+      previousAvailable.current,
+    );
+    previousAvailable.current = available;
     if (next !== input.channel) {
       setChannel(next);
     }

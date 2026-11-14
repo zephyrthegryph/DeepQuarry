@@ -37,6 +37,8 @@
 	var/parts_made = 0
 	/// Interface name -> the column list index a drop asked for, used by the next column window of that interface.
 	var/list/drop_index
+	/// Interface name -> the body height (CSS px) a native window had when it was docked: its column entry opens at that height.
+	var/list/dock_heights
 	/// Interface name -> the screen point ("x,y") a drag out of the column ended at: its next native window opens under it.
 	var/list/float_points
 
@@ -161,6 +163,10 @@ CAPABILITIES(/datum/window_dock)
 	if(isnum(at))
 		part.at = at
 		LAZYREMOVE(drop_index, interface)
+	var/height = LAZYACCESS(dock_heights, interface)
+	if(isnum(height))
+		part.height = height
+		LAZYREMOVE(dock_heights, interface)
 	return part
 
 /// Reopens `ui` on the other side: closed here, opened again by its host, which picks the column or a native window by wants().
@@ -173,12 +179,15 @@ CAPABILITIES(/datum/window_dock)
 	return null
 
 /// Docks `ui` into the column (its dock button, or a drop on the column), at list index `at` when a drop gave one.
-/datum/window_dock/proc/dock(datum/tgui/ui, at)
+/// `height` (CSS px) is the body height the window had as a native window: its column entry keeps it.
+/datum/window_dock/proc/dock(datum/tgui/ui, at, height)
 	if(!ui.dockable() || ui.docked)
 		return FALSE
 	remember(ui.interface, TRUE)
 	if(isnum(at))
 		LAZYSET(drop_index, ui.interface, at)
+	if(isnum(height) && height > 0)
+		LAZYSET(dock_heights, ui.interface, round(height))
 	log_tgui(owner(), "Window dock: [ui.interface] docked[isnum(at) ? " at [at]" : ""].", window = ui.window())
 	reopen(ui)
 	return TRUE
@@ -307,7 +316,7 @@ CAPABILITIES(/datum/window_dock)
 	switch(type)
 		if("wm/dock")
 			// The dock button in a native window's title bar.
-			dock?.dock(src)
+			dock?.dock(src, height = payload?["height"])
 		if("wm/float")
 			// The float button (or a drag out) on a docked window in the column; `at` is the screen point it was dragged to.
 			dock?.undock(src, dock_point_text(payload?["at"], payload?["size"]))

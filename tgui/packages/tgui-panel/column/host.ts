@@ -60,6 +60,8 @@ export class ColumnHost {
   private viewHidden = new Map<string, boolean>();
   /** The list index a window was opened at (a drop put it there), until its interface is named and it is placed again at the same index. */
   private openedAt = new Map<string, number>();
+  /** The height a window was opened at (it docked from a native window of that height), kept the same way. */
+  private openedHeight = new Map<string, number>();
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -153,10 +155,12 @@ export class ColumnHost {
     this.backends.set(wid, backend);
     const at = typeof payload?.at === 'number' ? payload.at : undefined;
     if (at !== undefined) this.openedAt.set(wid, at);
+    const height = typeof payload?.height === 'number' ? payload.height : undefined;
+    if (height !== undefined) this.openedHeight.set(wid, height);
     // Its interface and title come with its first update; until then it has no interface, so the saved layout does not hear of it.
     this.dispatch({
       type: 'open',
-      window: { id: wid, iface: '', title: '', kind: 'tgui', at },
+      window: { id: wid, iface: '', title: '', kind: 'tgui', at, height },
     });
     sendFor(wid, 'ready');
   }
@@ -238,6 +242,8 @@ export class ColumnHost {
     if (!win) return;
     const openedAt = this.openedAt.get(wid);
     this.openedAt.delete(wid);
+    const height = this.openedHeight.get(wid);
+    this.openedHeight.delete(wid);
     if (
       win.iface !== iface &&
       iface === CHAT_INTERFACE &&
@@ -258,6 +264,7 @@ export class ColumnHost {
           title,
           kind: 'tgui',
           at: openedAt ?? (placed ? undefined : this.unplacedIndex(wid)),
+          height,
         },
       });
     } else {
@@ -281,6 +288,7 @@ export class ColumnHost {
   private closed(wid: string) {
     this.backends.delete(wid);
     this.openedAt.delete(wid);
+    this.openedHeight.delete(wid);
     this.dispatch({ type: 'close', id: wid });
   }
 
