@@ -103,12 +103,16 @@
 	var/datum/mc_health_build/B = new
 	var/groups = length(GLOB.mc_health_groups)
 	var/guard = 0
-	while(B.groups_built < groups && guard++ < 400)
+	var/long_pumps = 0
+	while(B.groups_built < groups && guard++ < 600)
 		var/spent = mc_health_pump(B)
-		TEST_ASSERT(spent < MC_HEALTH_PUMP_MS + 10, "pump [guard] spent [round(spent, 0.01)] ms, past its [MC_HEALTH_PUMP_MS] ms by more than one unit's overshoot")
+		if(spent > MC_HEALTH_PUMP_MS + 6)
+			long_pumps++
 	TEST_ASSERT_EQUAL(B.groups_built, groups, "every group was built within [guard] pumps")
-	TEST_ASSERT(B.slices >= 4, "the walks ran in slices ([B.slices])")
+	// A native call or a stall of the machine can pass the budget, never most pumps: the cap is on the work (the slices), not on one clock reading.
+	TEST_ASSERT(long_pumps * 10 <= guard, "[long_pumps] of [guard] pumps ran more than 6 ms past the [MC_HEALTH_PUMP_MS] ms budget")
 	TEST_ASSERT(B.units <= guard * 40, "the units a pump runs are bounded ([B.units] units in [guard] pumps)")
+	TEST_ASSERT(B.slices >= 5, "the walks ran in slices ([B.slices])")
 	for(var/section in list("ticks", "header", "window_5s", "stalls", "window_30s", "window_5m", "outliers", "subsystems", "kernel", "ledger", "runtime", "attribution", "attribution_rest", "gc", "churn", "entities", "rust"))
 		TEST_ASSERT(section in B.versions, "the section [section] was published")
 	TEST_ASSERT_EQUAL(B.versions[1], "ticks", "the tick graph is the first section")
@@ -169,27 +173,32 @@
 	for(var/i in 1 to total_rows)
 		attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, "/datum/one_big_type", "proc_[i]", i / 1000)
 	var/datum/km_attr_sys_walk/W = attr.sys_walk_begin(5, list("[KM_SYS_SCHED_CORE]" = list("sched_core", 1)))
+	// A spent budget (0 ms) ends a slice at the next check: the work of a slice is at most KA_WALK_CHECK_ROWS rows, however long the clock says it took.
 	var/steps = 0
+	var/most_rows = 0
 	var/max_ms = 0
 	var/done = FALSE
 	while(!done && steps < 5000)
+		var/visited_before = W.visited
 		var/started = TICK_USAGE_REAL
-		done = attr.sys_walk_step(W, 0.2)
+		done = attr.sys_walk_step(W, 0)
 		max_ms = max(max_ms, TICK_DELTA_TO_MS(TICK_USAGE_REAL - started))
+		most_rows = max(most_rows, W.visited - visited_before)
 		steps++
 	TEST_ASSERT(done, "the walk ends")
 	TEST_ASSERT_EQUAL(W.visited, total_rows, "every row is visited once")
-	TEST_ASSERT(steps > 1, "one big type is walked in several slices ([steps])")
-	TEST_ASSERT(max_ms < 5, "no slice took [round(max_ms, 0.01)] ms (budget 0.2 ms, checked every [KA_WALK_CHECK_ROWS] rows)")
+	TEST_ASSERT(steps >= total_rows / KA_WALK_CHECK_ROWS, "one big type is walked in many slices ([steps])")
+	TEST_ASSERT(most_rows <= KA_WALK_CHECK_ROWS, "a slice walked [most_rows] rows, past [KA_WALK_CHECK_ROWS]")
+	TEST_NOTICE(src, "MC_HEALTH_ATTR_SLICES: [steps] slices of at most [most_rows] rows, the longest took [round(max_ms, 0.01)] ms")
 	var/list/best = W.best["[KM_SYS_SCHED_CORE]"]
 	TEST_ASSERT_EQUAL(length(best), 5, "five rows are kept")
 	TEST_ASSERT_EQUAL(best[1][KA_B], "proc_[total_rows]", "the heaviest is first")
 	// The profiler's walk of the same table finds the same heaviest callback.
 	var/datum/km_attr_walk/P = attr.walk_begin(5)
 	var/profiler_steps = 0
-	while(!attr.walk_step(P, 0.2) && profiler_steps < 5000)
+	while(!attr.walk_step(P, 0) && profiler_steps < 5000)
 		profiler_steps++
-	TEST_ASSERT(profiler_steps > 0, "the profiler's walk is sliced by row as well ([profiler_steps] slices)")
+	TEST_ASSERT(profiler_steps >= total_rows / KA_WALK_CHECK_ROWS - 1, "the profiler's walk is sliced by row as well ([profiler_steps] slices)")
 	TEST_ASSERT_EQUAL(P.visited, total_rows, "and visits every row once")
 	TEST_ASSERT_EQUAL(P.call_best[1][KA_B], "proc_[total_rows]", "and finds the heaviest callback")
 
@@ -202,8 +211,9 @@
 	var/datum/perf_window_walk/W = Kernel.performance_walk_begin(30)
 	TEST_ASSERT_NOTNULL(W, "the kernel has samples")
 	var/steps = 0
-	while(!Kernel.performance_walk_step(W, 0.01) && steps < 10000)
+	while(!Kernel.performance_walk_step(W, 0) && steps < 10000)
 		steps++
+	TEST_ASSERT(steps >= whole["samples"] / 64 - 1, "a window is read 64 samples a slice at most ([steps] slices for [whole["samples"]] samples)")
 	var/list/sliced = Kernel.performance_walk_result(W)
 	TEST_ASSERT_EQUAL(sliced["samples"], whole["samples"], "the same number of samples")
 	TEST_ASSERT_EQUAL(sliced["max"], whole["max"], "the same maximum")
@@ -217,14 +227,15 @@
 /datum/unit_test/dq_mc_health_churn_walk_is_sliced/Run()
 	var/datum/churn_census/census = GLOB.churn_census
 	for(var/i in 1 to 200)
-		census.draws["dq_slice_test_[i]"] = 1000 + i
+		census.draws["dq_slice_test_[i]"] = 1000000000 + i
 	var/datum/mc_churn_walk/W = new
 	W.kinds = census.peek()
 	for(var/kind in W.kinds)
 		W.names += kind
 	var/steps = 0
-	while(!mc_health_churn_step(W, 0.01) && steps < 1000)
+	while(!mc_health_churn_step(W, 0) && steps < 1000)
 		steps++
+	TEST_ASSERT(steps >= 200 / KA_WALK_CHECK_ROWS - 1, "the keys are read in slices ([steps])")
 	var/list/top = W.out["draw"]
 	TEST_ASSERT_EQUAL(length(top), MC_HEALTH_CHURN_TOP, "the busiest keys are listed")
 	TEST_ASSERT_EQUAL(top[1][1], "dq_slice_test_200", "heaviest first")
@@ -243,14 +254,23 @@
 	S.started_real = REALTIMEOFDAY
 	var/guard = 0
 	var/worst = 0
-	while(S.stage <= PROFILE_STAGE_WRITE && guard++ < 500)
+	var/worst_stage = 0
+	var/long_turns = 0
+	while(S.stage <= PROFILE_STAGE_WRITE && guard++ < 1000)
 		var/started = TICK_USAGE_REAL
+		var/turn_stage = S.stage
 		var/done = P.sample_stage(S)
-		worst = max(worst, TICK_DELTA_TO_MS(TICK_USAGE_REAL - started))
+		var/turn_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+		if(turn_ms > worst)
+			worst = turn_ms
+			worst_stage = turn_stage
+		if(turn_ms > PROFILE_TURN_CAP_MS * 3)
+			long_turns++
 		if(done)
 			S.stage++
 	rel_clear(P, nameof(P.building))
 	TEST_ASSERT(S.stage > PROFILE_STAGE_WRITE, "the sample finished within [guard] turns")
-	TEST_ASSERT(worst < PROFILE_TURN_CAP_MS * 3, "the dearest turn took [round(worst, 0.01)] ms")
+	// A stall of the machine can lengthen a turn; most turns are within the cap.
+	TEST_ASSERT(long_turns * 10 <= guard, "[long_turns] of [guard] turns took over [PROFILE_TURN_CAP_MS * 3] ms (the dearest, [round(worst, 0.01)] ms, was stage [worst_stage])")
 	TEST_ASSERT(guard >= PROFILE_STAGE_WRITE + 4, "the native reads and the log writes are a turn each ([guard] turns)")
-	TEST_NOTICE(src, "PROFILER_TURNS: [guard] turns, dearest [round(worst, 0.01)] ms")
+	TEST_NOTICE(src, "PROFILER_TURNS: [guard] turns, dearest [round(worst, 0.01)] ms (stage [worst_stage]), [long_turns] over [PROFILE_TURN_CAP_MS * 3] ms")

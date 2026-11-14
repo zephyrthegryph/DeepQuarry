@@ -20,6 +20,8 @@
 /// attribution table, the collector, the counts, the census, the native metrics).
 #define MC_HEALTH_FAST_EVERY (1 SECONDS)
 #define MC_HEALTH_SLOW_EVERY (5 SECONDS)
+/// How often the ledger (the kernel's time by category, with the heaviest names of each: several thousand rows to rank) is built: its own group, and the slowest.
+#define MC_HEALTH_LEDGER_EVERY (30 SECONDS)
 /// The ms one pump (one fire of the stat panel system) spends building: units run until it is spent, and a walk takes only what is left of it. A
 /// native call or one section's JSON cannot be cut, so a unit may pass it a little (MC_HEALTH_UNIT_LOG_MS logs one that does).
 #define MC_HEALTH_PUMP_MS 1.5
@@ -35,6 +37,7 @@
 #define MC_GROUP_WINDOWS "windows"
 #define MC_GROUP_KERNEL "kernel"
 #define MC_GROUP_ATTRIBUTION "attribution"
+#define MC_GROUP_LEDGER "ledger"
 #define MC_GROUP_COUNTS "counts"
 #define MC_GROUP_CENSUS "census"
 #define MC_GROUP_RUST "rust"
@@ -44,7 +47,7 @@
 GLOBAL_LIST_INIT(mc_health_rust_families, list("sim.", "frame.", "ffi.calls_total", "ffi.errors_total", "jobs.pending", "alloc.", "process.", "world.awake.", "world.stepped."))
 
 /// The groups of sections, in the order a panel that has none of them is filled in (the tick graph first); "attribution" reads the systems the kernel group found.
-GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROUP_KERNEL, MC_GROUP_ATTRIBUTION, MC_GROUP_COUNTS, MC_GROUP_CENSUS, MC_GROUP_RUST))
+GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROUP_KERNEL, MC_GROUP_ATTRIBUTION, MC_GROUP_LEDGER, MC_GROUP_COUNTS, MC_GROUP_CENSUS, MC_GROUP_RUST))
 
 /// What the panel's data is built into: the sections' encoded pieces, which group is being built and how far, and the counters the bounds are tested against.
 /datum/mc_health_build
@@ -61,8 +64,11 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 	var/group
 	var/step = 1
 	var/list/pending
-	/// The state a sliced unit carries between pumps: a table walk, a sample window, the churn read.
-	var/walk
+	/// The state a sliced unit carries between pumps: a table walk, a sample window, the churn read (the one its group is at is set, the rest are null).
+	var/datum/km_ledger_walk/ledger_walk
+	var/datum/km_attr_sys_walk/attr_walk
+	var/datum/mc_churn_walk/churn_walk
+	var/datum/perf_window_walk/window_walk
 	/// The systems the kernel group last found (the attribution group expands the first MC_HEALTH_ATTRIBUTION_SYSTEMS of them).
 	var/list/systems
 	/// The recent-tick rows as last built, and how many ticks the flight recorder had counted then (only the new ticks are read each time).
@@ -86,6 +92,12 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 	/// The ms the group being built has taken over its pumps, and the dearest group so far.
 	var/group_ms = 0
 	var/group_max_ms = 0
+
+CAPABILITIES(/datum/mc_health_build)
+	owns_one(nameof(ledger_walk), /datum/km_ledger_walk)
+	owns_one(nameof(attr_walk), /datum/km_attr_sys_walk)
+	owns_one(nameof(churn_walk), /datum/mc_churn_walk)
+	owns_one(nameof(window_walk), /datum/perf_window_walk)
 
 /datum/mc_health_build/New()
 	. = ..()
@@ -134,18 +146,34 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 		var/at = started_at[g]
 		if(isnull(at))
 			return g
-		var/ratio = (now - at) / (g == MC_GROUP_FAST ? MC_HEALTH_FAST_EVERY : MC_HEALTH_SLOW_EVERY)
+		var/ratio = (now - at) / group_period(g)
 		if(ratio >= best_ratio)
 			best = g
 			best_ratio = ratio
 	return best
+
+/// How often group `g` is built.
+/datum/mc_health_build/proc/group_period(g)
+	switch(g)
+		if(MC_GROUP_FAST)
+			return MC_HEALTH_FAST_EVERY
+		if(MC_GROUP_LEDGER)
+			return MC_HEALTH_LEDGER_EVERY
+	return MC_HEALTH_SLOW_EVERY
+
+/// Lets go of the walks a group left half done (a group started over).
+/datum/mc_health_build/proc/drop_walks()
+	rel_clear(src, nameof(ledger_walk))
+	rel_clear(src, nameof(attr_walk))
+	rel_clear(src, nameof(churn_walk))
+	rel_clear(src, nameof(window_walk))
 
 /// Starts building `g`.
 /datum/mc_health_build/proc/begin_group(g, now)
 	group = g
 	step = 1
 	pending = list()
-	walk = null
+	drop_walks()
 	group_ms = 0
 	started_at[g] = now
 
@@ -239,20 +267,6 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 					B.systems = panel["systems"]
 					B.publish("kernel", panel)
 					B.step = 3
-				if(3)
-					var/datum/km_ledger/ledger = GLOB.km_ledger
-					var/datum/km_ledger_walk/ledger_walk = B.walk
-					if(!ledger_walk)
-						ledger_walk = ledger.walk_begin(KM_LEDGER_TOP)
-						B.walk = ledger_walk
-					var/at_before = ledger_walk.at
-					var/ledger_done = ledger.walk_step(ledger_walk, slice_ms)
-					B.walked += ledger_walk.at - at_before
-					B.slices++
-					if(ledger_done)
-						B.publish("ledger", ledger.walk_result(ledger_walk))
-						B.walk = null
-						B.step = 4
 				else
 					B.publish("runtime", list(
 						"cpu" = world.cpu,
@@ -263,6 +277,20 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 					))
 					return TRUE
 			return FALSE
+		// Every ms of the kernel's iteration by category with its heaviest names: its own group, a slice at a time, the slowest to come round.
+		if(MC_GROUP_LEDGER)
+			var/datum/km_ledger/ledger = GLOB.km_ledger
+			if(!B.ledger_walk)
+				rel_set(B, nameof(B.ledger_walk), ledger.walk_begin(KM_LEDGER_TOP))
+			var/at_before = B.ledger_walk.at
+			var/ledger_done = ledger.walk_step(B.ledger_walk, slice_ms)
+			B.walked += B.ledger_walk.at - at_before
+			B.slices++
+			if(!ledger_done)
+				return FALSE
+			B.publish("ledger", ledger.walk_result(B.ledger_walk))
+			rel_clear(B, nameof(B.ledger_walk))
+			return TRUE
 		// The callbacks behind the panel's top 8 systems (two sections of four): one walk of the attribution table, a slice at a time.
 		if(MC_GROUP_ATTRIBUTION)
 			var/datum/km_attr/attr = km_meter().attr
@@ -270,8 +298,7 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 				B.publish("attribution", list())
 				B.publish("attribution_rest", list())
 				return TRUE
-			var/datum/km_attr_sys_walk/attr_walk = B.walk
-			if(!attr_walk)
+			if(!B.attr_walk)
 				var/datum/km_systems/registry = km_systems()
 				var/list/wanted = list()
 				for(var/i in 1 to min(length(B.systems), MC_HEALTH_ATTRIBUTION_SYSTEMS))
@@ -279,29 +306,29 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 					var/sys = registry.index_by_key?[S["key"]]
 					if(sys)
 						wanted["[sys]"] = list(S["key"], i)
-				attr_walk = attr.sys_walk_begin(5, wanted)
-				B.walk = attr_walk
-			var/visited_before = attr_walk.visited
-			var/attr_done = attr.sys_walk_step(attr_walk, slice_ms)
-			B.walked += attr_walk.visited - visited_before
+				rel_set(B, nameof(B.attr_walk), attr.sys_walk_begin(5, wanted))
+			var/visited_before = B.attr_walk.visited
+			var/attr_done = attr.sys_walk_step(B.attr_walk, slice_ms)
+			B.walked += B.attr_walk.visited - visited_before
 			B.slices++
 			if(!attr_done)
 				return FALSE
 			var/list/first = list()
 			var/list/rest = list()
-			for(var/sys_key in attr_walk.best)
+			var/datum/km_attr_sys_walk/finished = B.attr_walk
+			for(var/sys_key in finished.best)
 				var/list/rows = list()
-				for(var/list/row as anything in attr_walk.best[sys_key])
+				for(var/list/row as anything in finished.best[sys_key])
 					var/list/data = attr.row_data(row)
 					rows += list(list(data["source"], data["kind"], data["count"], data["total_ms"], data["max_ms"]))
 				if(!length(rows))
 					continue
-				var/list/target = attr_walk.wanted[sys_key]
+				var/list/target = finished.wanted[sys_key]
 				if(target[2] <= MC_HEALTH_ATTRIBUTION_FIRST)
 					first[target[1]] = rows
 				else
 					rest[target[1]] = rows
-			B.walk = null
+			rel_clear(B, nameof(B.attr_walk))
 			B.publish("attribution", first)
 			B.publish("attribution_rest", rest)
 			return TRUE
@@ -310,21 +337,20 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 				B.publish("gc", mc_health_gc())
 				B.step = 2
 				return FALSE
-			var/datum/mc_churn_walk/churn_walk = B.walk
-			if(!churn_walk)
-				churn_walk = new
-				churn_walk.kinds = GLOB.churn_census.peek()
-				for(var/kind in churn_walk.kinds)
-					churn_walk.names += kind
-				B.walk = churn_walk
-			var/churn_before = churn_walk.visited
-			var/churn_done = mc_health_churn_step(churn_walk, slice_ms)
-			B.walked += churn_walk.visited - churn_before
+			if(!B.churn_walk)
+				var/datum/mc_churn_walk/started_walk = new
+				started_walk.kinds = GLOB.churn_census.peek()
+				for(var/kind in started_walk.kinds)
+					started_walk.names += kind
+				rel_set(B, nameof(B.churn_walk), started_walk)
+			var/churn_before = B.churn_walk.visited
+			var/churn_done = mc_health_churn_step(B.churn_walk, slice_ms)
+			B.walked += B.churn_walk.visited - churn_before
 			B.slices++
 			if(!churn_done)
 				return FALSE
-			B.publish("churn", churn_walk.out)
-			B.walk = null
+			B.publish("churn", B.churn_walk.out)
+			rel_clear(B, nameof(B.churn_walk))
 			return TRUE
 		if(MC_GROUP_CENSUS)
 			B.publish("entities", mc_health_entities())
@@ -334,22 +360,21 @@ GLOBAL_LIST_INIT(mc_health_groups, list(MC_GROUP_FAST, MC_GROUP_WINDOWS, MC_GROU
 			return TRUE
 	return TRUE
 
-/// One slice of the sample window of the last `seconds` seconds, kept in B.walk, its result in B.pending["window"]. TRUE when it is complete.
+/// One slice of the sample window of the last `seconds` seconds, kept in B.window_walk, its result in B.pending["window"]. TRUE when it is complete.
 /proc/mc_health_window_step(datum/mc_health_build/B, seconds, slice_ms)
-	var/datum/perf_window_walk/window_walk = B.walk
-	if(!window_walk)
-		window_walk = Kernel.performance_walk_begin(seconds)
-		if(!window_walk)
+	if(!B.window_walk)
+		var/datum/perf_window_walk/started_walk = Kernel.performance_walk_begin(seconds)
+		if(!started_walk)
 			B.pending["window"] = GLOB.empty_performance_window
 			return TRUE
-		B.walk = window_walk
-	var/samples_before = window_walk.samples
-	var/done = Kernel.performance_walk_step(window_walk, slice_ms)
-	B.walked += window_walk.samples - samples_before
+		rel_set(B, nameof(B.window_walk), started_walk)
+	var/samples_before = B.window_walk.samples
+	var/done = Kernel.performance_walk_step(B.window_walk, slice_ms)
+	B.walked += B.window_walk.samples - samples_before
 	B.slices++
 	if(done)
-		B.pending["window"] = Kernel.performance_walk_result(window_walk)
-		B.walk = null
+		B.pending["window"] = Kernel.performance_walk_result(B.window_walk)
+		rel_clear(B, nameof(B.window_walk))
 	return done
 
 /// The last MC_HEALTH_TICKS ticks of the flight recorder: list(usage, list(top keys), list(top ms), pre-kernel usage, map send usage) each, oldest first.

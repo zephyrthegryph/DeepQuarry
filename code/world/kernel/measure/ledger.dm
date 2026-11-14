@@ -409,15 +409,13 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 	var/at = 1
 	var/sum = 0
 	var/list/cats
-	/// The category being ranked: its table, the owner keys (a snapshot) and the next one, the current owner's table and keys, and the heaviest rows so far.
-	/// One category can hold thousands of rows, so the ranking is a slice at a time too.
+	/// The category being ranked: its table, the next owner of it (by position: a table is never copied; a row pruned meanwhile moves the rest up a place and the
+	/// walk may skip one), the owner's table and its next row, and the heaviest rows so far. One category can hold thousands of rows, so the ranking is a slice at a time too.
 	var/in_cat = FALSE
 	var/list/cat_table
-	var/list/a_keys
 	var/a_at = 1
 	var/cur_a
 	var/list/b_table
-	var/list/b_keys
 	var/b_at = 1
 	var/list/best
 
@@ -437,10 +435,9 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 		if(!W.in_cat)
 			W.in_cat = TRUE
 			W.best = list()
-			W.b_keys = null
+			W.b_table = null
 			W.a_at = 1
 			W.cat_table = (i == KM_CAT_UNATTRIBUTED || i == KM_CAT_BYOND_PRE) ? null : rows[i]
-			W.a_keys = W.cat_table ? W.cat_table.Copy() : list()
 		if(!rank_slice(W, started, budget_ms))
 			return FALSE
 		var/total = lo[i] + hi[i]
@@ -468,18 +465,18 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 	var/since_check = 0
 	var/n = W.top_n
 	var/list/best = W.best
-	while(W.b_keys || W.a_at <= length(W.a_keys))
-		if(!W.b_keys)
-			W.cur_a = W.a_keys[W.a_at++]
-			W.b_table = W.cat_table[W.cur_a]
+	var/list/cat_table = W.cat_table
+	while(W.b_table || W.a_at <= length(cat_table))
+		if(!W.b_table)
+			W.cur_a = cat_table[W.a_at++]
+			W.b_table = cat_table[W.cur_a]
 			if(!W.b_table)
 				continue
-			W.b_keys = W.b_table.Copy()
 			W.b_at = 1
-		var/list/b_keys = W.b_keys
-		while(W.b_at <= length(b_keys))
-			var/b = b_keys[W.b_at++]
-			var/list/row = W.b_table[b]
+		var/list/table = W.b_table
+		while(W.b_at <= length(table))
+			var/b = table[W.b_at++]
+			var/list/row = table[b]
 			if(row)
 				var/total = row[KL_MS] + row[KL_MS_HI]
 				if(length(best) < n || total > best[length(best)][3])
@@ -490,10 +487,10 @@ GLOBAL_LIST_INIT(km_cat_names, list(
 					if(length(best) > n)
 						best.Cut(n + 1)
 			if(!(++since_check % KA_WALK_CHECK_ROWS) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
-				if(W.b_at > length(b_keys))
-					W.b_keys = null
+				if(W.b_at > length(table))
+					W.b_table = null
 				return FALSE
-		W.b_keys = null
+		W.b_table = null
 	return TRUE
 
 /// The finished walk as report() returns it.

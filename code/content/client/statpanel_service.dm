@@ -35,6 +35,9 @@ SYSTEM_DEF(statpanels)
 	///how many full runs this subsystem has completed. used for variable rate refreshes.
 	var/num_fires = 0
 
+CAPABILITIES(/datum/system/statpanels)
+	owns_one(nameof(mc_build), /datum/mc_health_build)
+
 /datum/system/statpanels/reactions()
 	. = ..()
 	. += every(4, PROC_REF(refresh_tabs), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
@@ -184,8 +187,8 @@ SYSTEM_DEF(statpanels)
 /// admin on it, and made on the first.
 /datum/system/statpanels/proc/mc_build_step()
 	if(!mc_build)
-		mc_build = new
-		log_world("MC_HEALTH: the panel's data is being built a slice of [MC_HEALTH_PUMP_MS] ms a fire (groups every [MC_HEALTH_SLOW_EVERY / 10] s, the tick graph every [MC_HEALTH_FAST_EVERY / 10] s)")
+		rel_set(src, nameof(mc_build), new /datum/mc_health_build)
+		log_world("MC_HEALTH: the panel's data is being built a slice of [MC_HEALTH_PUMP_MS] ms a fire (groups every [MC_HEALTH_SLOW_EVERY / 10] s, the ledger every [MC_HEALTH_LEDGER_EVERY / 10] s, the tick graph every [MC_HEALTH_FAST_EVERY / 10] s)")
 	var/mc_build_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: build the panel data") // the ledger names the build apart from the send
 	mc_health_pump(mc_build)
 	km_ledger_leave(mc_build_ledger)
