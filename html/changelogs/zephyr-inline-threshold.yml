@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "A floating window docks into the column only when most of it (60% of its area or width) is over the column, not when the cursor enters it"
+  - bugfix: "Character setup, the lobby, preferences and big admin tools never dock into the column"

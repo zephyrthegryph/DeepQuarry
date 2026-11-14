@@ -250,6 +250,15 @@ CAPABILITIES(/datum/window_dock)
 		return
 	player.tgui_panel.window.send_message("col/drop-check", list("wid" = ui.window()?.id, "x" = point["x"], "y" = point["y"]))
 
+/// A native window is being dragged: the column page shows where it would land at screen point `point`, or clears the hint (a null point,
+/// or a window that may not dock never shows one).
+/datum/window_dock/proc/drop_hint(datum/tgui/ui, list/point)
+	var/client/player = owner()
+	if(!player?.tgui_panel?.window)
+		return
+	var/shown = ui.dockable() && !ui.docked && !isnull(dock_point_text(point))
+	player.tgui_panel.window.send_message("col/drop-hint", shown ? list("x" = point["x"], "y" = point["y"]) : null)
+
 /// The column page's answer to a drop check: window `wid` was dropped over it, at list index `index`.
 /datum/window_dock/proc/drop_answer(list/payload)
 	var/client/player = owner()
@@ -328,6 +337,9 @@ CAPABILITIES(/datum/window_dock)
 		if("wm/dropped")
 			// A native window's titlebar drag ended at screen point `pointer`: maybe over the column.
 			dock?.dropped(src, payload?["pointer"])
+		if("wm/drophint")
+			// A native window's titlebar drag is over the column enough to dock: the column page shows where it would land (null: it is not).
+			dock?.drop_hint(src, payload?["pointer"])
 		if("wm/view")
 			// The column page: this docked window's entry is collapsed or behind another tab (no data pushes), or shown again (one update).
 			if(docked)
