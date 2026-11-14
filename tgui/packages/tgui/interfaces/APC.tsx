@@ -205,6 +205,8 @@ const ApcContent = (props) => {
                       <Box
                         inline
                         mx={2}
+                        width="2.5em"
+                        textAlign="center"
                         color={channel.status >= 2 ? 'good' : 'bad'}
                       >
                         {channel.status >= 2 ? 'On' : 'Off'}

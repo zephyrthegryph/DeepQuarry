@@ -107,8 +107,9 @@ CAPABILITY_TYPE(client_flat_light, CAP_CLIENT_FLAT_LIGHT, /datum/capability/clie
 /// The light the floor of `T` is drawn with: list(red, green, blue), 0..1 each, worked out the way the screen draws it. A turf outside dynamic
 /// lighting carries a white tile (full light). Otherwise the glows whose baked reach covers the turf add, each as the colour of its light times its
 /// drawn alpha (strength, small-light scale) times the sprite's falloff at the turf's centre, and the lighting plane clamps the sum. The turf's own
-/// gameplay light level (get_lumcount()) is another curve and is not used.
-/proc/client_flat_light_rgb(turf/T)
+/// gameplay light level (get_lumcount()) is another curve and is not used. A plain (carried) glow is drawn uncut, so it lights through walls here; `cut_plain` cuts it
+/// by its reach like any other (corner lighting has no visibility cut behind it: a wall must block a carried light too).
+/proc/client_flat_light_rgb(turf/T, cut_plain = FALSE)
 	if(!T.has_dynamic_lighting())
 		return list(1, 1, 1)
 	var/red = 0
@@ -123,7 +124,7 @@ CAPABILITY_TYPE(client_flat_light, CAP_CLIENT_FLAT_LIGHT, /datum/capability/clie
 			continue
 		var/dx = T.x - S.x
 		var/dy = T.y - S.y
-		if(!L.glow_plain && !L.glow_reach?["[dx],[dy]"]) // a plain (carried) glow is drawn uncut: the visibility cut is all that bounds it
+		if((cut_plain || !L.glow_plain) && !L.glow_reach?["[dx],[dy]"]) // a plain (carried) glow is drawn uncut: the visibility cut is all that bounds it
 			continue
 		var/strength = client_flat_light_profile(sqrt(dx * dx + dy * dy) * WORLD_ICON_SIZE / (WORLD_ICON_SIZE / 2 - G.pixel_x)) * G.alpha / 255 // pixel_x is minus the sprite's margin
 		if(strength <= 0)
@@ -208,9 +209,9 @@ CAPABILITY_TYPE(client_flat_light, CAP_CLIENT_FLAT_LIGHT, /datum/capability/clie
 /// A light near the flat-lit atoms changed (it glows, moved, resized, went dark or its mask changed): each flat-lit atom within its reach takes the new light of its turf.
 /// The registry holds only big atoms, so this walks a handful, not the world; of those only the ones standing within the light's reach box (CLIENT_GLOW_RADIUS about
 /// its turf, on its level) can have a different level. `was_at` and `was_range` are where and how far it reached before this change (a move or a resize leaves the
-/// atoms of the old reach to be redone too); null for a change that left them as they were.
-/proc/client_flat_lights_refresh(datum/light_source/L, turf/was_at = null, was_range = 0)
-	lighting_smooth_dirty(L, was_at, was_range) // corner mode: the turfs this change reaches are sampled again (lighting_smoothing.dm)
+/// atoms of the old reach to be redone too); null for a change that left them as they were. `was_reach` is the reach it had (corner lighting resamples just those turfs).
+/proc/client_flat_lights_refresh(datum/light_source/L, turf/was_at = null, was_range = 0, list/was_reach = null)
+	lighting_smooth_dirty(L, was_at, was_range, was_reach) // corner mode: the turfs this change reaches are sampled again (lighting_smoothing.dm)
 	if(!REGISTRY_COUNT(REGISTRY_CLIENT_FLAT_LIT))
 		return
 	var/r = CLIENT_GLOW_RADIUS(L)

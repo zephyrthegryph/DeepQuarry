@@ -444,6 +444,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 /datum/light_source/proc/client_glow_mask_refresh()
 	if(!glow || !glow_mask_key || !source_turf)
 		return
+	var/list/was_reach = glow_reach // the list a new shape replaces
 	if(client_glow_mask_apply(glow_mask_range, glow_mask_margin))
 		var/twin = (glow_mask_key in glow_twins) || GLOB.client_glow_baker.icons[glow_mask_key] // the shape the door's other state was readied as, or any already baked
 		if(twin)
@@ -451,7 +452,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		if(client_glow_trace_line())
 			log_world("client glow: light at [source_turf.x],[source_turf.y],[source_turf.z] took a new shape after an opacity change, [twin ? "already baked" : "not baked yet: viewers wait for the bake"]")
 		client_glow_holders_consider(src) // the held copies take the new mask
-		client_flat_lights_refresh(src) // a turf in the reach may have gone dark or lit
+		client_flat_lights_refresh(src, null, 0, was_reach) // a turf in the reach may have gone dark or lit
 
 /// Recomputes this light's reach and mask shape (client_glow_apply()). `margin` is the glow sprite's: the baked mask is the same size,
 /// so the two line up with no offset. TRUE when the shape changed.

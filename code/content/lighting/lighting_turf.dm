@@ -25,6 +25,7 @@
 /turf/proc/reconsider_lights()
 	if(GLOB.client_lighting)
 		client_glow_reconsider(src) // client lighting: glowing lights in reach redraw their shadow masks
+		lighting_smooth_dirty_turf(src) // corner lighting: this turf is sampled again (a wall takes no light, an opened door takes it)
 	lighting_corner_NE?.vis_update()
 	lighting_corner_SE?.vis_update()
 	lighting_corner_SW?.vis_update()

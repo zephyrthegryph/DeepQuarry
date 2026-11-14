@@ -845,6 +845,7 @@
 /// on every crossing and light change. Warnings and anomalies are written regardless.
 /datum/config_entry/flag/lighting_trace
 
-/// How client lighting is smoothed at boot: "off", "blur" or "corners" (code/content/lighting/lighting_smoothing.dm). Admins switch it live (Cycle Lighting Smoothing).
-/datum/config_entry/string/lighting_smoothing
-	default = LIGHTING_SMOOTH_BLUR
+/// Client lighting's corner layer (each tile shaded from its four corners, code/content/lighting/lighting_smoothing.dm), on top of the always-on blur. On by
+/// default; admins switch it live (Toggle Corner Lighting).
+/datum/config_entry/flag/lighting_corners
+	default = TRUE

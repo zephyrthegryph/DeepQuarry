@@ -690,3 +690,7 @@ DRIFT_PROFILE_DELAY 150
 ## Uncomment to write the per-event client lighting diagnostics to the game log (every chunk crossing, glow delivery,
 ## flat light recolour and opacity flush). A profiling and play-testing aid; leave off on live servers.
 #LIGHTING_TRACE
+
+## Client lighting's corner layer: every tile is shaded from four corner brightnesses on top of the always-on blur. On by default;
+## set to 0 to start with it off (admins switch it live with Toggle Corner Lighting).
+LIGHTING_CORNERS 1

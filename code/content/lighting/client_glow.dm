@@ -70,6 +70,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 		rel_set(src, nameof(glow), new /obj/effect/overlay/client_glow(null))
 	var/turf/was_at = glow_reach_origin // where its light last reached from, for the flat lights it leaves
 	var/was_range = glow_mask_range
+	var/list/was_reach = glow_reach // the list the new reach replaces
 	var/obj/effect/overlay/client_glow/G = glow
 	var/range = clamp(CEILING(light_range, 0.5), 1, 6)
 	var/pixel_bounds = ((range - 1) * 64) + 32
@@ -88,7 +89,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	client_glow_mask_apply(CEILING(range, 1), offset) // the shadow mask (client_shadow.dm)
 	applied = TRUE
 	client_glow_holders_consider(src) // viewers holding an off-screen copy follow (client_glow_holder.dm)
-	client_flat_lights_refresh(src, was_at, was_range) // big sprites near it, or near where it was, take the new light of their turf (client_flat_light.dm)
+	client_flat_lights_refresh(src, was_at, was_range, was_reach) // big sprites near it, or near where it was, take the new light of their turf (client_flat_light.dm)
 
 /// A carried light, a mob's own light and anything that has changed turf since it first glowed draw uncut: their shape changes as they go, and
 /// a bake per step would be a storm. The visibility cut on the glow plane still removes what they spill on tiles this client cannot see.
@@ -123,6 +124,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 /datum/light_source/proc/client_glow_clear()
 	var/turf/was_at = glow_reach_origin
 	var/was_range = glow_mask_range
+	var/list/was_reach = glow_reach
 	if(glow_holder_key)
 		GLOB.client_glow_dirty_lights -= glow_holder_key
 	client_glow_holders_drop(src)
@@ -131,7 +133,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 		var/obj/effect/overlay/client_glow/G = glow
 		rel_clear(src, nameof(glow))
 		spent(G)
-	client_flat_lights_refresh(src, was_at, was_range)
+	client_flat_lights_refresh(src, was_at, was_range, was_reach)
 
 /// Switches client lighting on or off live: every lighting object goes (on) or comes back (off), and every light redraws.
 /// One pass with no yield (an admin switch): a yield would leave half the map in each mode, and the test clock never resumes it.

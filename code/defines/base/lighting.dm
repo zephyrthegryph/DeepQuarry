@@ -205,22 +205,23 @@ do { \
 #define CLIENT_GLOW_SPREAD_SIZE 20
 #define CLIENT_GLOW_SPREAD_OFFSET 4
 #define CLIENT_GLOW_SPREAD_ALPHA 160
-/// The blur over the whole glow plane that softens every tile-shaped cut, so neighbouring colours blend (one filter per client, none per light).
 /// Pixels each fade ring of a baked cut adds: wide enough that lights with different reach blend instead of leaving tile-shaped seams (client rig).
 #define CLIENT_GLOW_MASK_RING_STEP 4
-#define CLIENT_GLOW_SOFTEN_SIZE 4
-/// Lighting smoothing modes (code/content/lighting/lighting_smoothing.dm): "off" keeps the plain softening, "blur" widens the blur on the glow plane,
-/// "corners" shades each turf from four corner values (a gradient underlay per lit turf) in place of the glows.
-#define LIGHTING_SMOOTH_OFF "off"
-#define LIGHTING_SMOOTH_BLUR "blur"
-#define LIGHTING_SMOOTH_CORNERS "corners"
-/// The glow plane's blur in blur mode, in pixels: about 0.4 of a tile. Wider bleeds light past walls (the blur runs after the wall cut).
-/// The state of LIGHTING_ICON that holds the four corner gradients (the first, unnamed one: icons/effects/lighting_object.dmi.toml).
-#define LIGHTING_SMOOTH_GRADIENT_STATE ""
+/// The blur over the whole glow plane that softens every tile-shaped cut, so neighbouring colours blend (one filter per client, none per light), always on:
+/// its size in pixels, about 0.4 of a tile. Wider bleeds light past walls (the blur runs after the wall cut).
 #define LIGHTING_SMOOTH_BLUR_SIZE 12
-/// Corner mode: turfs sampled and tiles redrawn per lighting step at most, and how often the counters are written to the log.
+/// Corner lighting (code/content/lighting/lighting_smoothing.dm), on top of the blur: each turf is shaded from four corner values (a gradient underlay per
+/// lit turf) in place of the glows. The state of LIGHTING_ICON that holds the four corner gradients (the first, unnamed one: icons/effects/lighting_object.dmi.toml).
+#define LIGHTING_SMOOTH_GRADIENT_STATE ""
+/// Corner mode: turfs sampled and tiles redrawn per lighting step at most, the least done before the tick budget is looked at, and how often the counters are logged.
 #define LIGHTING_SMOOTH_SAMPLES_MAX 384
 #define LIGHTING_SMOOTH_RENDERS_MAX 512
+#define LIGHTING_SMOOTH_MIN_SAMPLES 8
+#define LIGHTING_SMOOTH_MIN_RENDERS 16
+/// The most milliseconds a lighting step spends on corner sampling and drawing (once the minimum is done), in a running round.
+#define LIGHTING_SMOOTH_BUDGET_MS 3
+/// The steps a corner level is told apart in (a redraw that lands on the same steps keeps the underlay it has).
+#define LIGHTING_SMOOTH_LEVEL_STEPS 32
 #define LIGHTING_SMOOTH_LOG_EVERY (10 SECONDS)
 /// A light this short (a wall device, a console) draws at CLIENT_GLOW_SMALL_SCALE of its power.
 #define CLIENT_GLOW_SMALL_RANGE 2
