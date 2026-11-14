@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "A prosthetic limb whose model sheet has no sprite for it (a monitor head's sheet) draws the generic robotic limb instead of nothing"
+  - bugfix: "Tail, wing and other grouped body layers no longer draw a second, offset copy of the body in the examine picture of a composed body"

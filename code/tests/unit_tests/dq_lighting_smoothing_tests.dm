@@ -223,6 +223,9 @@
 	var/samples_before = GLOB.lighting_smooth_samples_taken
 	D.set_opacity(0)
 	TEST_ASSERT(!IS_OPAQUE_TURF(door_turf), "the open door no longer blocks")
+	// Mid-swing, before its floor gradient exists, the tile is still lit as a wall face: it never goes unlit between the two (the door swung black).
+	TEST_ASSERT(client_walls_tile() in door_turf.underlays, "an opening door keeps its walls tile until its floor gradient is drawn")
+	TEST_ASSERT(!GLOB.lighting_smooth_underlays[door_turf], "an opening door has no gradient yet")
 	SSlighting.light_step(0, TRUE)
 	dq_smoothing_drain()
 	TEST_ASSERT(dq_smoothing_underlay_level(behind) > 0.05, "open, the light goes through: the tile behind the door is lit ([dq_smoothing_underlay_level(behind)])")
