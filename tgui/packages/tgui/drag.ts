@@ -30,6 +30,8 @@ const ratioNow = () => window.devicePixelRatio || 1;
 let windowKey = Byond.windowId;
 let dragging = false;
 let resizing = false;
+/** Screen x lines the dragged window's right edge sticks to (the right-hand panel's left edge), set while a drag runs. */
+let columnStops: number[] = [];
 let screenOffset: Point = [0, 0];
 let screenOffsetPromise: Promise<Point> | undefined;
 let screenOffsetKnown = false;
@@ -431,6 +433,14 @@ export function dragStartHandler(event): void {
     })
     .catch(() => undefined);
   dragging = true;
+  // The right-hand panel's left edge is a place to rest against; measured once as the drag begins.
+  columnStops = [];
+  mainBounds()
+    .then((main) => measureColumn(main))
+    .then((column) => {
+      if (dragging && column) columnStops = [column.x];
+    })
+    .catch(() => undefined);
   dragPointOffset = vecSubtract(
     [event.screenX * ratioNow(), event.screenY * ratioNow()],
     getWindowPosition(),
@@ -506,6 +516,7 @@ function dragMoveHandler(event: MouseEvent): void {
     getScreenSize(),
     undefined,
     getScreenOrigin(),
+    columnStops,
   );
   // Only the place moves. When the window no longer has the size the drag began with (the system rescaled it on a monitor of another
   // density), its size is put back in the same transaction.
