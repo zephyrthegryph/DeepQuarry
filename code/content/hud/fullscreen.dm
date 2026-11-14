@@ -39,17 +39,6 @@
 			client_screen_remove(client, screen)
 		spent(screen)
 
-/// The interest system covers the view black while what a player is about to see is drawn (a login, an arrival, a teleport: code/engine/change/interest.dm),
-/// and lifts it with a short fade.
-/mob/view_cover_set(covered)
-	if(covered)
-		overlay_fullscreen("interest_cover", /atom/movable/screen/fullscreen/blind)
-	else
-		clear_fullscreen("interest_cover", 2)
-	var/turf/seen = get_turf(client?.eye)
-	log_world("VIEW_COVER: [covered ? "raise" : "lift"] on [src] ([type]): client [client ? "yes" : "no"], eye [client?.eye] at [seen ? "[seen.x],[seen.y],[seen.z]" : "nowhere"], sight [sight], stat [stat], fullscreens [english_list(screens ? screens.Copy() : list(), nothing_text = "none")]")
-	return TRUE
-
 /mob/proc/clear_fullscreens()
 	for(var/category in screens)
 		clear_fullscreen(category)
