@@ -1,13 +1,13 @@
 #define SHOULD_DISABLE_FOOTSTEPS(source)
 
 ///Footstep behaviour (was /datum/element/footstep). Plays footsteps at the mob's location
-///when it is appropriate. A capability hooked on the moved notice; the per-mob settings and step
-///counter live on the mob. L.enable_footsteps() grants it.
+///when it is appropriate. A capability the mob's own Moved() calls directly (handle_footstep(), a granted check, no
+///moved notice allocated per step); the per-mob settings and step counter live on the mob. L.enable_footsteps() grants it.
 CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /datum/capability/footstep
 
 /datum/capability/footstep/entries()
-	return list(on_notice(/datum/notice/moved, then(CAP_PROC(footstep_moved))))
+	return list()
 
 /mob/living/proc/enable_footsteps(type = FOOTSTEP_MOB_BAREFOOT, volume = 0.1, e_range = -8, vary = FALSE)
 	set_footstep_type(type)
@@ -22,8 +22,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 
 /// Steps taken in a chunk no observer holds (no client's view window or its ring reaches it) make no sound anyone could hear, so they are not counted or
 /// prepared at all: the step counter, the turf sound lookup and the playsound are work for a listener. The count restarts when an observer arrives.
-/datum/capability/footstep/proc/footstep_moved(datum/act/A)
-	var/mob/living/source = A.holder
+/datum/capability/footstep/proc/footstep_moved(mob/living/source)
 	var/turf/where = source.loc
 	if(isturf(where) && !interest_covers(where))
 		return

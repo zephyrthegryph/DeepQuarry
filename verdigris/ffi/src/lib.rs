@@ -21,6 +21,7 @@ mod heat_regulator;
 mod jobs;
 mod layout;
 mod lifecycle;
+mod log_writer;
 mod metrics;
 mod pipes;
 mod power;

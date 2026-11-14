@@ -851,6 +851,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /world/Del()
 	log_world("EXIT: world.Del() at [time_stamp()]")
 	// Joins verdigris' frame and job threads before BYOND unloads the DLL.
+	log_file_stop()
 	vg_world_shutdown()
 	QDEL_NULL(Tracy)
 	QDEL_NULL(Debugger)

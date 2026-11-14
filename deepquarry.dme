@@ -361,6 +361,7 @@
 #include "code\host\helpers\geometry.dm"
 #include "code\host\helpers\html_tab.dm"
 #include "code\host\helpers\logging\_logging.dm"
+#include "code\host\helpers\logging\async_log.dm"
 #include "code\host\helpers\logging\debug.dm"
 #include "code\host\helpers\logging\game.dm"
 #include "code\host\helpers\pathfinding\astar.dm"

@@ -190,6 +190,8 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 
 /// Sets up the given category's file and header.
 /datum/log_holder/proc/init_category_file(datum/log_category/category)
+	// Lines still queued for the old file must land before it is reset.
+	log_file_flush()
 	var/file_path = category.get_output_file(null)
 	if(fexists(file_path)) // already exists? implant a reset marker
 		rustg_file_append(LOG_CATEGORY_RESET_FILE_MARKER, file_path)
