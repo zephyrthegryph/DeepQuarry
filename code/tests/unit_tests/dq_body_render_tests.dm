@@ -106,48 +106,62 @@
 	TEST_ASSERT(!length(bad), "robotic arms: [jointext(bad, "; ")]")
 	test_driver_end()
 
-/// The layered body and the composed body are the same picture facing every way, with a missing arm and a robotic arm.
+/// The layered body and the composed body are the same picture facing every way (the far limbs go under the body: the left ones facing east, the
+/// right ones facing west), whole and with a missing arm, a missing leg, a missing right arm and a robotic arm.
 /datum/unit_test/dq_body_render_layered_matches_composed
 
 /datum/unit_test/dq_body_render_layered_matches_composed/Run()
 	test_driver_begin()
-	var/mob/living/carbon/human/H = dq_br_body("rejuv", TRUE)
-	var/image/layered = H.build_layered_body_look('icons/mob/human.dmi', FALSE, FALSE)[2]
-	var/icon/composed = H.build_body_look('icons/mob/human.dmi', FALSE, FALSE, FALSE, FALSE)[1]
-	var/image/plain = image(icon = composed)
 	var/list/bad = list()
-	for(var/d in list(NORTH, SOUTH, EAST)) // WEST: the far limbs go under the body there (icon_position), which the layered body does not do yet
-		var/icon/a = getFlatIcon(layered, d, no_anim = TRUE)
-		var/icon/b = getFlatIcon(plain, d, no_anim = TRUE)
-		var/diff = 0
-		var/only_layered = 0
-		var/only_composed = 0
-		var/min_x = 99
-		var/max_x = 0
-		for(var/x in 1 to 32)
-			for(var/y in 1 to 32)
-				var/pa = a.GetPixel(x, y)
-				var/pb = b.GetPixel(x, y)
-				if(dq_test_pixel_difference(pa, pb) > 3)
-					diff++
-					if(pa && !pb)
-						only_layered++
-					if(pb && !pa)
-						only_composed++
-					min_x = min(min_x, x)
-					max_x = max(max_x, x)
-		TEST_NOTICE(src, "BODYRENDER layered vs composed [dir2text(d)]: [diff] pixels differ (only layered [only_layered], only composed [only_composed]) x [min_x]..[max_x]")
-		if(diff)
-			bad += "[dir2text(d)] [diff] (layered only [only_layered], composed only [only_composed], x [min_x]..[max_x])"
-	for(var/d in list(EAST, WEST, NORTH))
-		var/icon/shown = getFlatIcon(layered, d, no_anim = TRUE)
-		var/list/rows = list()
-		for(var/y in 32 to 1 step -1)
-			var/row = ""
+	for(var/scenario in list("whole", "left_arm", "right_arm", "left_leg", "both_arms", "robotic_left_missing"))
+		var/mob/living/carbon/human/H = dq_br_body(scenario == "left_arm" || scenario == "robotic_left_missing" ? "rejuv" : "none", scenario == "robotic_left_missing" || scenario == "whole")
+		var/list/gone = list()
+		switch(scenario)
+			if("right_arm")
+				gone = list(BP_R_ARM)
+			if("left_leg")
+				gone = list(BP_L_LEG)
+			if("both_arms")
+				gone = list(BP_L_ARM, BP_R_ARM)
+		for(var/tag in gone)
+			var/obj/item/organ/external/lost = H.limb_tagged(tag)
+			lost.remove_rejuv()
+		refresh_flush()
+		var/image/layered = H.build_layered_body_look('icons/mob/human.dmi', FALSE, FALSE)[2]
+		var/icon/composed = H.build_body_look('icons/mob/human.dmi', FALSE, FALSE, FALSE, FALSE)[1]
+		var/image/plain = image(icon = composed)
+		for(var/d in GLOB.cardinal)
+			var/icon/a = getFlatIcon(layered, d, no_anim = TRUE)
+			var/icon/b = getFlatIcon(plain, d, no_anim = TRUE)
+			var/diff = 0
+			var/only_layered = 0
+			var/only_composed = 0
+			var/min_x = 99
+			var/max_x = 0
 			for(var/x in 1 to 32)
-				row += shown.GetPixel(x, y) ? "#" : "."
-			rows += row
-		TEST_NOTICE(src, "BODYRENDER ascii [dir2text(d)]:\n[jointext(rows, "\n")]")
+				for(var/y in 1 to 32)
+					var/pa = a.GetPixel(x, y)
+					var/pb = b.GetPixel(x, y)
+					if(dq_test_pixel_difference(pa, pb) > 3)
+						diff++
+						if(pa && !pb)
+							only_layered++
+						if(pb && !pa)
+							only_composed++
+						min_x = min(min_x, x)
+						max_x = max(max_x, x)
+			TEST_NOTICE(src, "BODYRENDER layered vs composed [scenario] [dir2text(d)]: [diff] pixels differ (only layered [only_layered], only composed [only_composed]) x [min_x]..[max_x]")
+			if(diff)
+				bad += "[scenario] [dir2text(d)] [diff] (layered only [only_layered], composed only [only_composed], x [min_x]..[max_x])"
+			if(scenario == "both_arms" || scenario == "right_arm" || scenario == "left_arm")
+				// A missing arm leaves nothing of itself: not a hole in the torso, not a floating sprite.
+				var/list/rows = list()
+				for(var/y in 32 to 1 step -1)
+					var/row = ""
+					for(var/x in 1 to 32)
+						row += a.GetPixel(x, y) ? "#" : "."
+					rows += row
+				TEST_NOTICE(src, "BODYRENDER ascii [scenario] [dir2text(d)]:\n[jointext(rows, "\n")]")
 	TEST_ASSERT(!length(bad), "the layered body differs from the composed one: [jointext(bad, "; ")]")
 	test_driver_end()
 

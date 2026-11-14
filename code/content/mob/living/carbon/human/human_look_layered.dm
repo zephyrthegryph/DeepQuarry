@@ -35,6 +35,22 @@
 	group.pixel_y = pixel_y
 	return look_composed_image(group, parts)
 
+/// `parts` drawn only facing `dirs`: each part's sprite reduced to those facings (a copy of the part, the same tint), as a tail is split by facing.
+/// An overlay made from it shows only while its holder faces one of `dirs`, so a body layered by facing needs no redraw when it turns.
+/mob/living/carbon/human/proc/human_dirs_parts(list/parts, list/dirs)
+	READS_FROM()
+	. = list()
+	for(var/image/part as anything in parts)
+		var/image/kept = image(part)
+		kept.icon = human_look_icon("limb_dirs|[part.icon]|[part.icon_state]|[jointext(dirs, ",")]", "build_limb_dirs", part.icon, part.icon_state, dirs)
+		kept.icon_state = ""
+		. += kept
+
+/// One state of `file` with only its `dirs` facings drawn. A cache builder (human_dirs_parts()).
+/mob/living/carbon/human/proc/build_limb_dirs(file, state, list/dirs)
+	human_icon_op(2 + length(dirs))
+	return icon_keep_dirs(icon(file, state), dirs)
+
 /// The emissive blockers of `parts`: each part's shape, at `alpha`, shared by every colour of it.
 /proc/human_em_blocks(list/parts, alpha = 255)
 	READS_FROM()
@@ -78,8 +94,15 @@
 	for(var/obj/item/organ/external/part in organs)
 		if(part.is_stump() || limb_hidden(part))
 			continue
-		if(part.icon_position & UNDER)
-			under += part.layered_parts(skeleton)
+		// A composed body underlays each part in turn, so a later one lies under the earlier ones: the layered list is built the same way round.
+		if(part.icon_position & (LEFT | RIGHT))
+			// The far limb goes under the body: the left one facing east, the right one facing west. The near copy shows in the other three facings.
+			var/far_dir = (part.icon_position & LEFT) ? EAST : WEST
+			var/list/layered = part.layered_parts(skeleton)
+			under = human_dirs_parts(layered, list(far_dir)) + under
+			parts += human_dirs_parts(layered, GLOB.cardinal - far_dir)
+		else if(part.icon_position & UNDER)
+			under = part.layered_parts(skeleton) + under
 		else
 			parts += part.layered_parts(skeleton)
 	var/image/body = image(icon = template, icon_state = "blank", layer = BODY_LAYER + BODYPARTS_LAYER)
