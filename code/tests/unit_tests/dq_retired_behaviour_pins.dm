@@ -36,6 +36,7 @@
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_type, FOOTSTEP_MOB_CLAW, "enable_footsteps() sets the kind of sounds")
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_e_range, -6, "and their range")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the capability is granted")
+	set_global(nameof(GLOB.footsteps_audible), GLOB.footsteps_audible)
 	var/heard_before = GLOB.footsteps_audible
 	walker.forceMove(next)
 	walker.forceMove(start)
@@ -56,7 +57,7 @@
 	TEST_ASSERT_EQUAL(own_grants, 0, "disable_footsteps() ends the grant enable_footsteps() made")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the type's own declaration stays")
 
-/// A step plays through handle_footstep() called from /mob/living/Moved(): the mob has the capability, the step is counted, and no moved notice
+/// A step plays through handle_footstep() called from /mob/living/Moved(): the mob has the capability, the step is counted in GLOB.footsteps_audible, and no moved notice
 /// is taken for it (nothing wants one on the mob, so a step allocates none).
 /datum/unit_test/dq_footstep_step_takes_no_moved_notice
 
@@ -69,11 +70,12 @@
 	TEST_ASSERT(!notice_wanted(walker, /datum/notice/moved, ACT_COMMITTED), "nothing wants a moved notice from the mob")
 	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), 1)
 	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), 1)
-	STATE_SET(walker, footfall, footstep_steps, 0)
+	set_global(nameof(GLOB.footsteps_audible), GLOB.footsteps_audible)
+	var/heard_before = GLOB.footsteps_audible
 	var/taken_before = GLOB.notice_taken
 	walker.forceMove(next)
 	var/taken_after = GLOB.notice_taken
-	var/steps = STATE_GET(walker, footfall, footstep_steps)
+	var/steps = GLOB.footsteps_audible - heard_before
 	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), -1)
 	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), -1)
 	TEST_ASSERT(steps > 0, "the step reached the footstep capability (counted [steps])")
