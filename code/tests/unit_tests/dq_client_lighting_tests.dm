@@ -1523,7 +1523,7 @@
 /datum/unit_test/dq_client_glow_door_opens_in_one_step
 
 /datum/unit_test/dq_client_glow_door_opens_in_one_step/Run()
-	interest_isolate()
+	draw_isolate()
 	for(var/counter in list(nameof(GLOB.client_glow_twins_made), nameof(GLOB.client_glow_twin_hits)))
 		set_global(counter, GLOB.vars[counter])
 	var/turf/T = run_loc_floor_bottom_left
@@ -1536,7 +1536,7 @@
 	client_glow_holder_setup(got)
 	var/obj/machinery/light/F = got[1]
 	var/datum/client_glow_holder/H = got[2]
-	interest_view_set("dq-test-viewer", T, null, world.view)
+	gaze_view_set("dq-test-viewer", T, null, world.view)
 	SSlighting.light_step(0, TRUE)
 	var/datum/light_source/S = F.light
 	var/h = S.glow_holder_key()
@@ -1578,11 +1578,11 @@
 /datum/unit_test/dq_client_glow_opacity_marks_near_first
 
 /datum/unit_test/dq_client_glow_opacity_marks_near_first/Run()
-	interest_isolate()
+	draw_isolate()
 	set_global(nameof(GLOB.client_lighting), FALSE)
 	client_glow_counters_restore()
 	var/turf/home = test_floor()
-	var/turf/far = interest_far_from(home)
+	var/turf/far = draw_chunks_from(home, 4)
 	TEST_ASSERT(home && far, "the map has room")
 	var/turf/home_east = locate(home.x + 1, home.y, home.z)
 	var/turf/far_east = locate(far.x + 1, far.y, far.z)
@@ -1591,7 +1591,7 @@
 	var/obj/machinery/light/far_light = allocate(/obj/machinery/light, far)
 	client_lighting_set(TRUE)
 	SSlighting.light_step(0, TRUE)
-	interest_view_set("dq-test-viewer", home, null, world.view)
+	gaze_view_set("dq-test-viewer", home, null, world.view)
 	allocate(/obj/structure/sight_test_blocker, far_east)
 	allocate(/obj/structure/sight_test_blocker, home_east)
 	TEST_ASSERT_EQUAL(GLOB.client_glow_dirty_lights[near_light.light.glow_holder_key()], CLIENT_GLOW_DIRTY_NEAR, "the light beside the viewer is marked near")

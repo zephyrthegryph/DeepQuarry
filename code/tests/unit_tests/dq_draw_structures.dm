@@ -275,6 +275,9 @@
 	for(var/datum/queued as anything in GLOB.refresh_queue)
 		if(queued == D)
 			.++
+	var/slot = slot_known(D)
+	if(slot && !isnull(GLOB.draw_filed[slot]))
+		.++ // filed in the draw queue: the one entry a look-only atom waits in
 
 /// A list relation written in place (a pizza box's stack: a member added or removed) and a single ref (a janitorial cart's mop: set or taken) each queue a reader of
 /// that var exactly once and redraw it: both go through the one engine path, own_field_changed().

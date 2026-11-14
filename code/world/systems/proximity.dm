@@ -127,14 +127,14 @@ CAPABILITIES(/datum/system/proximity)
 	var/started = TICK_USAGE_REAL
 	eye_place(R, get_turf(C.eye))
 	var/placed_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
-	interest_eye_update(C) // the chunks this eye holds (engine/change/interest.dm)
+	gaze_update(C) // the chunks this eye holds (engine/change/gaze.dm)
 	var/total_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	if(total_ms >= PROXIMITY_EYE_SLOW_MS)
-		log_world("PROXIMITY_EYE_SLOW: [C.ckey]'s eye update took [round(total_ms, 0.1)] ms: counting it into its cell and waking the cells around [round(placed_ms, 0.1)] ms, the chunks it holds (interest_eye_update) [round(total_ms - placed_ms, 0.1)] ms")
+		log_world("PROXIMITY_EYE_SLOW: [C.ckey]'s eye update took [round(total_ms, 0.1)] ms: counting it into its cell and waking the cells around [round(placed_ms, 0.1)] ms, the chunks it holds (gaze_update) [round(total_ms - placed_ms, 0.1)] ms")
 
 /// The client left: its eye stops counting.
 /datum/system/proximity/proc/eye_remove(client/C)
-	interest_eye_remove(C)
+	gaze_remove(C)
 	var/datum/proximity_eye/R = C.proximity_eye
 	if(!R)
 		return
@@ -225,5 +225,3 @@ CAPABILITIES(/datum/system/proximity)
 	. = ..()
 	if(proximity_tracked)
 		SSproximity.member_leave(src)
-	if(length(GLOB.interest_holds))
-		interest_holder_gone(src) // a vis_contents holder that showed turfs stops being an observer of them (engine/change/interest.dm)

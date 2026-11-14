@@ -551,9 +551,10 @@
 		"looks_changed" = looks["changed"] || 0,
 		"looks_same" = looks["same"] || 0,
 		"draws_spared" = GLOB.refresh_dispatched_draws_spared,
-		"draws_parked" = GLOB.refresh_parked,
-		"unparked_by_client" = GLOB.refresh_parked_near,
-		"unparked_by_mark" = GLOB.refresh_parked_woken,
+		"draws_dirtied" = GLOB.draw_n["dirtied"],
+		"draws_filed" = GLOB.draw_n["filed_total"],
+		"draws_drained" = GLOB.draw_n["drawn"],
+		"draw_drain_ms" = GLOB.draw_drain_ms,
 	)
 
 /datum/benchmark/proc/work_metrics(prefix, list/since)

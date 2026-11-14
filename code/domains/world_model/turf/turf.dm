@@ -386,7 +386,6 @@ CAPABILITIES(/turf)
 /turf/proc/levelupdate()
 	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(O.hides_under_flooring() && !is_plating())
-	interest_turf_revealed(src) // the cover changed: what it no longer hides draws what it owed
 
 /turf/proc/AdjacentTurfs(check_blockage = TRUE)
 	. = list()

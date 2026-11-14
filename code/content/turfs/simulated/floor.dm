@@ -38,11 +38,6 @@
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
 
-/// Intact tiles cover what lies in the plating plane's utility band and is hidden under them today (its invisibility held up by hide_under_floor()).
-/// A thing drawn in that band that stays visible on an intact floor (an atmos device, a connector) is not covered: the band alone is not enough.
-/turf/simulated/floor/cover_hides(atom/movable/A)
-	return !is_plating() && A.plane == PLATING_PLANE && A.layer < ABOVE_UTILITY && A.invisibility >= INVISIBILITY_ABSTRACT
-
 /// The flooring a floor is made with (its constructor param), or its initial one.
 /turf/simulated/floor/var/floortype_at_make // ALLOW(base_vars): the param() var (floor_acts.dm, pos = 1) naming the flooring a floor is made with; read in this type's init as floortype_at_make || initial_flooring
 
@@ -126,7 +121,6 @@
 	var/floored_over = !is_plating()
 	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(O.hides_under_flooring() && floored_over)
-	interest_turf_revealed(src) // the tiles came or went: what they no longer cover draws what it owed
 
 /turf/simulated/floor/can_engrave()
 	return (!flooring || flooring.can_engrave)

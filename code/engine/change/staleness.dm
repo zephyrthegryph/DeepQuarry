@@ -520,7 +520,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 /// Brings the pending work to the state the next frame would: queued redraws run, marked stats drain. Used before a sweep so a value that is
 /// only waiting for its drain is not reported.
 /proc/staleness_settle()
-	if(length(GLOB.refresh_queue))
+	if(length(GLOB.refresh_queue) || length(GLOB.draw_buckets))
 		refresh_flush()
 	if(length(GLOB.stat_marked))
 		stat_drain_point()

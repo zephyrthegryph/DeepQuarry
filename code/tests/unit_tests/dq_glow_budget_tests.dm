@@ -117,16 +117,3 @@
 			break
 		io_poll(GLOB.io_lane)
 	TEST_ASSERT_EQUAL(E.done, 24, "every job was delivered over the passes")
-
-/// A drain pass without a cap stops once it has spent its own milliseconds after drawing something; a capped pass (a login) and a pass that drew nothing do not.
-/datum/unit_test/dq_interest_drain_pass_has_a_ms_cap
-
-/datum/unit_test/dq_interest_drain_pass_has_a_ms_cap/Run()
-	set_global(nameof(GLOB.interest_arrival_step_max), 0)
-	set_global(nameof(GLOB.interest_pass_cut), 0)
-	GLOB.interest_pass_started = TICK_USAGE_REAL
-	TEST_ASSERT(!interest_arrival_pass_full(1), "a fresh pass is not full")
-	glow_budget_burn(INTEREST_ARRIVAL_PASS_MS + 1)
-	TEST_ASSERT(interest_arrival_pass_full(1), "a pass past its milliseconds that drew something is full")
-	TEST_ASSERT(!interest_arrival_pass_full(0), "one that drew nothing still draws its first")
-	TEST_ASSERT(!interest_arrival_pass_full(1, 32), "a capped pass is the caller's own and is cut by its cap alone")

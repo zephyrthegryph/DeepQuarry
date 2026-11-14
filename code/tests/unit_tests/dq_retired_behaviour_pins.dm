@@ -42,12 +42,12 @@
 	walker.forceMove(start)
 	TEST_ASSERT_EQUAL(GLOB.footsteps_audible, heard_before, "a step in a chunk no observer holds is not counted")
 	TEST_ASSERT_NULL(walker.footfall, "an unheard step made no footfall state")
-	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), 1)
-	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), 1)
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), 1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), 1)
 	walker.forceMove(next)
 	walker.forceMove(start)
-	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), -1)
-	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), -1)
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), -1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), -1)
 	TEST_ASSERT(GLOB.footsteps_audible - heard_before >= 2, "each move an observer can hear is a step (counted [GLOB.footsteps_audible - heard_before])")
 	walker.disable_footsteps()
 	var/own_grants = 0
@@ -68,16 +68,16 @@
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the test mob has the footstep capability")
 	TEST_ASSERT_NOTNULL(cap_of(walker, CAP_FOOTSTEP), "and handle_footstep() finds it")
 	TEST_ASSERT(!notice_wanted(walker, /datum/notice/moved, ACT_COMMITTED), "nothing wants a moved notice from the mob")
-	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), 1)
-	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), 1)
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), 1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), 1)
 	set_global(nameof(GLOB.footsteps_audible), GLOB.footsteps_audible)
 	var/heard_before = GLOB.footsteps_audible
 	var/taken_before = GLOB.notice_taken
 	walker.forceMove(next)
 	var/taken_after = GLOB.notice_taken
 	var/steps = GLOB.footsteps_audible - heard_before
-	interest_adjust(start.z, INTEREST_CHUNK_OF(start.x), INTEREST_CHUNK_OF(start.y), -1)
-	interest_adjust(next.z, INTEREST_CHUNK_OF(next.x), INTEREST_CHUNK_OF(next.y), -1)
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), -1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), -1)
 	TEST_ASSERT(steps > 0, "the step reached the footstep capability (counted [steps])")
 	TEST_ASSERT_EQUAL(taken_after - taken_before, 0, "and the step took no notice")
 

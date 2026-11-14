@@ -2,4 +2,5 @@ author: "zephyrthegryph"
 delete-after: true
 changes:
   - bugfix: "Joining or teleporting no longer blacks the screen out until the surroundings are drawn."
-  - code_imp: "Draws are served from an appearance cache keyed by what the draw reads, and each draw's cost is logged by type."
+  - refactor: "Looks are drawn when they change, nearest a player first, instead of when first seen; objects at their default look are not drawn, and the look-verdict file is gone."
+  - code_imp: "Draws are served from an appearance cache keyed by what the draw reads, and draw cost, queue depth, drain time and cache hit rate are logged."

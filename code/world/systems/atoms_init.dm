@@ -113,8 +113,8 @@
 		else
 			setup_pending -= A
 	BOOT_PHASE_END(bp_setup, "InitAtom: setup_run" + BOOT_KIND(A), A)
-	if(!(A.datum_flags & DF_CONSTRUCT_NOTED) && !(A.refresh_queued & DEP_PARKED))
-		A.datum_flags &= ~DF_CONSTRUCTING // born with nothing noted and no parked draw: construction_birth() would only clear the flag
+	if(!(A.datum_flags & DF_CONSTRUCT_NOTED))
+		A.datum_flags &= ~DF_CONSTRUCTING // born with nothing noted: construction_birth() would only clear the flag
 	else
 		construction_birth(A) // silent construction ends: what it wrote is published once, its on_change baselines taken (code/engine/change/refresh.dm)
 

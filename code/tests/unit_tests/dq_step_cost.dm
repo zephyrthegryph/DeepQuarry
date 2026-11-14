@@ -2,7 +2,7 @@
 //
 // A real player has a client; a test world has none, so the mob here carries what a client gives a step that the server pays for: a walking
 // human in shoes at run intent (the footstep capability and the shoes_step notice), and an observer holding the chunks around the mob
-// (interest_view_set, what the client's eye does every step), which is what makes the footstep audible and the lighting and draws near.
+// (gaze_view_set, what the client's eye does every step), which is what makes the footstep audible and the lighting and draws near.
 
 /// The costliest procs of the profile since the last clear, `count` of them by self time, as one log line each with calls a step.
 /datum/unit_test/proc/step_profile_log(label, steps, count = 40, key = "self")
@@ -48,10 +48,10 @@
 		var/started = move_cost_begin()
 		if(H.Move(next, walk_dir))
 			moved++
-		if(viewer_token_turf) // the client's eye follows the mob (interest_eye_update)
-			interest_view_set("dq-step-viewer", get_turf(H), null, world.view)
+		if(viewer_token_turf) // the client's eye follows the mob (gaze_update)
+			gaze_view_set("dq-step-viewer", get_turf(H), null, world.view)
 		total += TICK_USAGE_REAL - started
-		move_cost_end(started, H, null, GLOB.refresh_marks_raised, GLOB.interest_chunks_entered, 0)
+		move_cost_end(started, H, null, GLOB.refresh_marks_raised, GLOB.gaze_chunks_entered, 0)
 		for(var/part in 1 to MOVE_COST_PART_COUNT)
 			sum[part] += GLOB.move_cost_parts[part]
 		refresh_flush()
@@ -68,7 +68,7 @@
 	set_global(nameof(GLOB.move_cost_total_ms), GLOB.move_cost_total_ms)
 	set_global(nameof(GLOB.move_cost_on), FALSE)
 	set_global(nameof(GLOB.staleness_on), FALSE) // the staleness checker re-derives every stat and draw read: it is a correctness tool, not a step's cost
-	interest_isolate()
+	draw_isolate()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/shoes/black/shoes = allocate(/obj/item/clothing/shoes/black)
@@ -82,7 +82,7 @@
 	H.set_hud_used(new /datum/hud(H))
 	H.hud_used.instantiate()
 	life_test_place(H)
-	interest_view_set("dq-step-viewer", get_turf(H), null, world.view)
+	gaze_view_set("dq-step-viewer", get_turf(H), null, world.view)
 	refresh_flush()
 	step_walk(H, 20, T) // warm: the first steps build caches
 	// Who hears a moved notice from this mob: the hooks that run when the step publishes it (the trace of what a step pays the notice for).
@@ -221,7 +221,7 @@
 		var/before = GLOB.move_cost_listeners_timed
 		var/started = move_cost_begin()
 		var/moved = first.Move(target, walk_dir)
-		move_cost_end(started, first, null, GLOB.refresh_marks_raised, GLOB.interest_chunks_entered, 0)
+		move_cost_end(started, first, null, GLOB.refresh_marks_raised, GLOB.gaze_chunks_entered, 0)
 		if(!moved)
 			continue
 		steps++

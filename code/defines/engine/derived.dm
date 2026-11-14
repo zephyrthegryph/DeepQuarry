@@ -31,12 +31,8 @@
 /// Beside DEP_ALL on a fresh atom's creation mark (caps_init()); any real mark clears it (refresh_mark()). An entity still carrying it is in
 /// its type's default state, so a type whose default look is empty skips it (the default-look stamp, code/engine/change/look_stamp.dm).
 #define DEP_CREATED (1<<17)
-/// A fresh atom whose first draw is deferred until a client is near it or something marks it (refresh_park_backlog(), code/engine/change/look_stamp.dm).
-/// It is out of GLOB.refresh_queue and owes its whole first refresh: refresh_mark() puts it back with DEP_ALL, interest_enter() queues its draw when a client holds the chunk. Alone in
-/// refresh_queued it means "nothing pending", so a first-mark test reads REFRESH_IDLE().
-#define DEP_PARKED (1<<18)
-/// TRUE when nothing is pending on E: not queued, or only parked (its first draw owed but not queued).
-#define REFRESH_IDLE(E) (!((E).refresh_queued & ~DEP_PARKED))
+/// TRUE when nothing is pending on E: it is in no queue, and a mark makes it dirty (refresh_mark()).
+#define REFRESH_IDLE(E) (!(E).refresh_queued)
 
 // ---- derived() entry kinds ----
 #define DKIND_DRAWN 2

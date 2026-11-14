@@ -108,7 +108,7 @@ client's view:
 4. Lights whose own turf **is** in the client's view keep the normal glow object; no image copy (no double drawing).
    When a light crosses into view, drop its image; when it leaves view while its reach still overlaps, add one.
 5. **Events, no polling.** Recompute a client's set when:
-   - its eye crosses a chunk or the view edge moves (the interest system, `code/engine/change/interest.dm`,
+   - its eye crosses a chunk or the view edge moves (the gaze registry, `code/engine/change/gaze.dm`,
      already reports chunk entry/exit per owner: `interest_arrive()`, `interest_hold_set()`, counters
      `interest_chunks_entered/left`);
    - a light glows, moves, changes range or turns off (`client_glow_apply()` / `client_glow_clear()`);

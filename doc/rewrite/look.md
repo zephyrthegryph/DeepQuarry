@@ -101,3 +101,9 @@ around it, and each one's `edges_changed()` writes its own TRACKED masks through
 
 What a neighbour reads of a floor's sprite is `edge_look_state()`, a function of the floor's tracked state (`flooring`, `flooring_override`, damage,
 scorch), never of another turf's drawn `icon_state`. Nothing in these chains calls `update_icon()`, `changed(src)` or `appearance_notify_neighbours()`.
+
+## 6. When a look is drawn, and the appearance cache
+
+A look is drawn when it changes, not when it is seen: a change files the atom in the draw queue and a budgeted drain draws it, nearest a client first
+([draw_on_change.md](draw_on_change.md)). A draw whose inputs match a finished look held in the appearance cache (`code/engine/present/look_cache.dm`) assigns
+that look and runs no `draw()`; what may be cached, and how test builds verify every hit, is in draw_on_change.md section 2.
