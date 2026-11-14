@@ -96,54 +96,15 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 
 #undef MANUAL_JSON_ENTRY
 
-/// When a log file was last confirmed to exist; the logger owns one per file (verified_log_files).
-/datum/verified_log_file
-	var/verified_at = 0
-
-/// How long a log file is trusted to still exist before fexists() is checked again.
-#define LOG_FILE_RECHECK_INTERVAL (10 SECONDS)
-
-#define CHECK_AND_TRY_FILE_ERROR_RECOVERY(file) \
-	var/static/in_error_recovery = FALSE; \
-	var/datum/verified_log_file/verified = LAZYACCESS(logger.verified_log_files, ##file); \
-	if(!verified || ELAPSED(verified, verified_at, CLOCK_WORLD) >= LOG_FILE_RECHECK_INTERVAL) { \
-		if(!fexists(##file)) { \
-			if(verified) { \
-				rel_remove(logger, nameof(/datum/log_holder::verified_log_files), verified); \
-			}; \
-			if(in_error_recovery) { \
-				in_error_recovery = FALSE; \
-				CRASH("Failed to error recover log file: [file]"); \
-			}; \
-			in_error_recovery = TRUE; \
-			logger.Log(LOG_CATEGORY_INTERNAL_ERROR, "attempting to perform file error recovery: [file]"); \
-			logger.init_category_file(logger.log_categories[category]); \
-			call(src, __PROC__)(arglist(args)); \
-			return; \
-		}; \
-		if(verified) { \
-			STAMP(verified, verified_at, CLOCK_WORLD); \
-		} else { \
-			verified = new; \
-			STAMP(verified, verified_at, CLOCK_WORLD); \
-			rel_add(logger, nameof(/datum/log_holder::verified_log_files), verified, key = ##file); \
-		}; \
-	}; \
-	in_error_recovery = FALSE;
-
 /// Writes the log entry to a file.
 /datum/log_entry/proc/write_entry_to_file(file)
-	CHECK_AND_TRY_FILE_ERROR_RECOVERY(file)
 	WRITE_LOG_NO_FORMAT(file, "[to_json_text()]\n")
 
 /// Writes the log entry to a file as a human-readable string.
 /datum/log_entry/proc/write_readable_entry_to_file(file, format_internally = TRUE)
-	CHECK_AND_TRY_FILE_ERROR_RECOVERY(file)
 	// If it's being formatted internally we need to manually add a newline
 	if(format_internally)
 		WRITE_LOG_NO_FORMAT(file, "[to_readable_text(format = TRUE)]\n")
 	else
 		WRITE_LOG(file, "[to_readable_text(format = FALSE)]")
 
-#undef CHECK_AND_TRY_FILE_ERROR_RECOVERY
-#undef LOG_FILE_RECHECK_INTERVAL

@@ -30,9 +30,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/log_holder)
 	var/initialized = FALSE
 	var/shutdown = FALSE
 
-	/// Log file path -> the /datum/verified_log_file that says when it was last confirmed to exist. Saves an fexists() per entry (Q8).
-	var/list/verified_log_files
-
 GENERAL_PROTECT_DATUM(/datum/log_holder)
 
 ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the rounds logs.", ADMIN_CATEGORY_LOGS)
@@ -73,7 +70,6 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	set_data_cache_at("categories", category_map)
 
 CAPABILITIES(/datum/log_holder)
-	owns_many(nameof(verified_log_files), /datum/verified_log_file)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
 	interface("LogViewer", title = "Log Viewer", rights = R_ADMIN|R_MOD|R_DEBUG)
 	ui_shape(tree = row(enabled = list_of(schema_text())), categories = map_of(schema_text(), row(entry_count = int(), entries = list_of(row(id = int(), message = schema_text(), timestamp = schema_text(), data = nullable(list_of(any)), semver = nullable(map_of(schema_text(), schema_text())))))))
@@ -194,18 +190,22 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 	log_file_flush()
 	var/file_path = category.get_output_file(null)
 	if(fexists(file_path)) // already exists? implant a reset marker
-		rustg_file_append(LOG_CATEGORY_RESET_FILE_MARKER, file_path)
+		log_file_append_sync(file_path, LOG_CATEGORY_RESET_FILE_MARKER)
 		fcopy(file_path, get_recovery_file_for(file_path))
-	rustg_file_write("[json_encode(category.category_header)]\n", file_path)
+	var/header = "[json_encode(category.category_header)]\n"
+	log_file_write_sync(file_path, header)
+	log_file_set_header(file_path, header)
 
 	if(!human_readable_enabled)
 		return
 
 	file_path = category.get_output_file(null, "log")
 	if(fexists(file_path))
-		rustg_file_append(LOG_CATEGORY_RESET_FILE_MARKER_READABLE, file_path)
+		log_file_append_sync(file_path, LOG_CATEGORY_RESET_FILE_MARKER_READABLE)
 		fcopy(file_path, get_recovery_file_for(file_path))
-	rustg_file_write("\[[human_readable_timestamp()]\] Starting up round ID [round_id].\n - -------------------------\n", file_path)
+	header = "\[[human_readable_timestamp()]\] Starting up round ID [round_id].\n - -------------------------\n"
+	log_file_write_sync(file_path, header)
+	log_file_set_header(file_path, header)
 
 #undef LOG_CATEGORY_RESET_FILE_MARKER
 #undef LOG_CATEGORY_RESET_FILE_MARKER_READABLE
