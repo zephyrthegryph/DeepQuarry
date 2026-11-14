@@ -140,8 +140,12 @@ GLOBAL_VAR_INIT(gaze_chunks_left, 0)
 	var/token = handle_of(C)
 	if(token)
 		GLOB.gaze_at[token] = at_eye || at_mob
+	MOVE_COST_BEGIN(hold_started)
 	gaze_view_set(token, at_eye, at_mob, gaze_view_half(C.view))
+	MOVE_COST_END(MOVE_COST_EYE_GAZE, hold_started)
+	MOVE_COST_BEGIN(glow_started)
 	C.gaze_moved(at_eye)
+	MOVE_COST_END(MOVE_COST_EYE_GLOW, glow_started)
 
 /// Observer `token` sees from `at_eye` and from `at_mob` (either may be null) with a view of half-width `half`: its hold follows. Returns TRUE when the
 /// hold changed. Nothing happens while the chunk rectangles of its view window are the ones it holds already.

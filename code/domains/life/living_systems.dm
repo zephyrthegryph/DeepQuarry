@@ -390,6 +390,20 @@
 		return
 	life_hud_pass()
 
+/// A move changed the place the mob stands in: only what the HUD reads from the place is redrawn (life_hud_place()), never the whole pass.
+/mob/living/proc/life_hud_place_changed(datum/act/A)
+	if(QDELETED(src) || !life_hud_wanted() || !life_placed())
+		return
+	life_hud_place()
+
+/// The part of the HUD that depends on where the mob is. A type whose life_hud() reads its place (a robot's air, a pAI's card) overrides this and calls ..().
+/mob/living/proc/life_hud_place()
+	SHOULD_CALL_PARENT(TRUE)
+	if(!hud_available())
+		return FALSE
+	life_hud_darksight()
+	return TRUE
+
 /// One reactive HUD pass: draw it, then arm its rewake (darksight, fading overlays) or, while it
 /// still has work (life_hud_idle() FALSE), run again a Life cycle later.
 /mob/living/proc/life_hud_pass()
