@@ -207,6 +207,19 @@ do { \
 /// Pixels each fade ring of a baked cut adds: wide enough that lights with different reach blend instead of leaving tile-shaped seams (client rig).
 #define CLIENT_GLOW_MASK_RING_STEP 4
 #define CLIENT_GLOW_SOFTEN_SIZE 4
+/// Lighting smoothing modes (code/content/lighting/lighting_smoothing.dm): "off" keeps the plain softening, "blur" widens the blur on the glow plane,
+/// "corners" shades each turf from four corner values (a gradient underlay per lit turf) in place of the glows.
+#define LIGHTING_SMOOTH_OFF "off"
+#define LIGHTING_SMOOTH_BLUR "blur"
+#define LIGHTING_SMOOTH_CORNERS "corners"
+/// The glow plane's blur in blur mode, in pixels: about 0.4 of a tile. Wider bleeds light past walls (the blur runs after the wall cut).
+/// The state of LIGHTING_ICON that holds the four corner gradients (the first, unnamed one: icons/effects/lighting_object.dmi.toml).
+#define LIGHTING_SMOOTH_GRADIENT_STATE ""
+#define LIGHTING_SMOOTH_BLUR_SIZE 12
+/// Corner mode: turfs sampled and tiles redrawn per lighting step at most, and how often the counters are written to the log.
+#define LIGHTING_SMOOTH_SAMPLES_MAX 384
+#define LIGHTING_SMOOTH_RENDERS_MAX 512
+#define LIGHTING_SMOOTH_LOG_EVERY (10 SECONDS)
 /// A light this short (a wall device, a console) draws at CLIENT_GLOW_SMALL_SCALE of its power.
 #define CLIENT_GLOW_SMALL_RANGE 2
 #define CLIENT_GLOW_SMALL_SCALE 0.5

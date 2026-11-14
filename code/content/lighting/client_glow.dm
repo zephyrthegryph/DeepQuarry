@@ -146,6 +146,7 @@ CAPABILITIES_PART(/datum/light_source, light_source_client_glow)
 	client_flat_lights_switched(on)
 	log_world("client lighting: [on ? "on" : "off"]")
 	client_glow_screens_sync() // the black base on every client's lighting plane (client_lighting_screen.dm)
+	lighting_smooth_apply() // the smoothing mode follows the engine on or off
 	if(!SSlighting.is_initialized())
 		return
 	client_glow_whites_set(on) // turfs outside dynamic lighting stay bright over the base

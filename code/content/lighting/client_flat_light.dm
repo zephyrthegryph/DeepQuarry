@@ -210,6 +210,7 @@ CAPABILITY_TYPE(client_flat_light, CAP_CLIENT_FLAT_LIGHT, /datum/capability/clie
 /// its turf, on its level) can have a different level. `was_at` and `was_range` are where and how far it reached before this change (a move or a resize leaves the
 /// atoms of the old reach to be redone too); null for a change that left them as they were.
 /proc/client_flat_lights_refresh(datum/light_source/L, turf/was_at = null, was_range = 0)
+	lighting_smooth_dirty(L, was_at, was_range) // corner mode: the turfs this change reaches are sampled again (lighting_smoothing.dm)
 	if(!REGISTRY_COUNT(REGISTRY_CLIENT_FLAT_LIT))
 		return
 	var/r = CLIENT_GLOW_RADIUS(L)

@@ -569,6 +569,7 @@
 #include "dq_sight_tests.dm"
 #include "dq_overlay_light_step.dm"
 #include "dq_client_lighting_tests.dm"
+#include "dq_lighting_smoothing_tests.dm"
 #include "dq_change_sweep_redraw.dm"
 #include "dq_draw_structures.dm"
 #include "dq_draw_sweep_3c.dm"

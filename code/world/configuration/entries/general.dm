@@ -844,3 +844,7 @@
 /// Per-event client lighting diagnostics (a chunk crossing, a delivery ack, a flat light recolour, a flush) are written to the game log. Off by default: they run
 /// on every crossing and light change. Warnings and anomalies are written regardless.
 /datum/config_entry/flag/lighting_trace
+
+/// How client lighting is smoothed at boot: "off", "blur" or "corners" (code/content/lighting/lighting_smoothing.dm). Admins switch it live (Cycle Lighting Smoothing).
+/datum/config_entry/string/lighting_smoothing
+	default = LIGHTING_SMOOTH_BLUR

@@ -35,6 +35,7 @@ SYSTEM_DEF(lighting)
 		initialized = TRUE
 		GLOB.client_lighting = TRUE // client-rendered glows from round start: no lighting objects (client_glow.dm)
 		log_world("client lighting: on")
+		lighting_smooth_apply()
 		create_all_lighting_objects()
 	#endif
 
@@ -131,6 +132,8 @@ SYSTEM_DEF(lighting)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
+
+	lighting_smooth_step(init_tick_checks) // corner mode: the turfs sampled since the last step, their corners and tiles (lighting_smoothing.dm)
 
 	// A step over a whole tick: what it had to do and what it left, to tell one huge element from a budget that did not bind.
 	if(!init_tick_checks && TICK_USAGE_TO_MS(step_start) > world.tick_lag * 100)

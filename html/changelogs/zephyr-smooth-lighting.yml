@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - rscadd: "Lighting smoothing: client lighting gets a wider blur by default (config lighting_smoothing: off, blur or corners). The Cycle Lighting Smoothing admin verb switches it live, and corners shades every tile from its four corner brightnesses."

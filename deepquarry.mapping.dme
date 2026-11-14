@@ -4821,6 +4821,7 @@
 #include "code\content\lighting\lighting_fake_sun.dm"
 #include "code\content\lighting\lighting_overlay.dm"
 #include "code\content\lighting\lighting_setup.dm"
+#include "code\content\lighting\lighting_smoothing.dm"
 #include "code\content\lighting\lighting_source.dm"
 #include "code\content\lighting\lighting_turf.dm"
 #include "code\content\lighting\overlay_lighting.dm"
