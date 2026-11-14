@@ -121,3 +121,30 @@ impl HandlerWorkspaceSnapshot{
   };if answer.is_err(){return answer}self.require_full_snapshot(full)?;answer
  }
 }
+
+impl super::SourceSnapshot{
+ /// Borrow only the mapping of the independently admitted full source already
+ /// bound to this exact Handler owner. No generic mapping/Model reseal API.
+ pub(crate) fn source_handler_mapping<'a>(&'a self,handlers:&HandlerWorkspaceSnapshot)->io::Result<&'a Arc<dm_tree::frontend::SourceExportMapping>>{
+  if !handlers.requires_full(){return Err(invalid("conditional mapping loan cannot force a full Handler source"))}
+  handlers.require_full_snapshot(Some(self))?;self.source_mapping.as_ref().ok_or_else(||invalid("actual required Handler full mapping absent"))
+ }
+}
+
+impl HandlerWorkspaceSnapshot{
+ /// Callback loan for the actual exclusive Handler child of a conditional
+ /// source union. It neither reconstructs output nor replays diagnostics.
+ pub(super) fn with_source_union_report<T>(&self,full:Option<&super::SourceSnapshot>,consume:impl FnOnce(&dq_analyze::captured_sem_handlers::Data,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->io::Result<T>)->io::Result<T>{
+  if self.capture.prepared().subject().is_selected_full(){return Err(invalid("conditional source union cannot borrow a different selected Handler role"))}
+  self.require_full_snapshot(full)?;
+  let result=match full{
+   None=>self.queries.with_handlers_structural_report(&self.capture,&self.proof,consume),
+   Some(full)=>{
+    let guard=full.workspace_native_read()?;let workspace=full.native_workspace.as_ref().ok_or_else(||invalid("actual full Handler workspace absent"))?;
+    let inputs=full.native_policy_inputs.as_ref().ok_or_else(||invalid("actual full Handler declaration input absent"))?;
+    let(path,bytes)=workspace.configuration();self.capture.prepared().subject().require_configuration(path,bytes)?;
+    self.queries.with_handlers_full_report(&self.capture,&self.proof,workspace,&guard,inputs,None,consume)
+   },
+  };if result.is_err(){return result}self.require_full_snapshot(full)?;result
+ }
+}

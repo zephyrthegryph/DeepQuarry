@@ -1596,7 +1596,7 @@ mod compound_replay;
 #[path="runner_full_registry_check.rs"]
 mod full_registry_check;
 pub use full_registry_check::FullRegistryCheckOptions;
-pub(crate) use query_snapshot::{NativeCheckSelection,prepare_native_check_selection};
+pub(crate) use query_snapshot::{NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
 pub(crate) use full_registry_check::FullRegistryCheckReport;
 
 impl BuildHost {

@@ -47,7 +47,7 @@ enum RequestCommand {
     FullRegistryCheck{options:crate::runner_host::FullRegistryCheckOptions,selectors:Arc<Vec<String>>},
     SchemaProposals,
     NativeFix(crate::native_fix::Codemod,Vec<String>,bool),
-    CheckerText(PathBuf, Option<PathBuf>,bool),
+    CheckerText(PathBuf, Option<PathBuf>,Option<PathBuf>,bool),
     CompileSelectedReports(super::selected_report_wire::CompoundRoster, bool),
     NamedImageDir,
     GenerationCheck,
@@ -1112,8 +1112,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         },
         Request::CheckerText(request)=>{
             if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
-            let super::checker_text::Request{build,display,configuration,json}=request;
-            handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::CheckerText{display,configuration,json}))
+            let super::checker_text::Request{build,display,caller_directory,configuration,json}=request;
+            handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::CheckerText{display,caller_directory,configuration,json}))
         }
         Request::NativeFix(request)=>{
             if let Err(error)=super::native_fix::qualify(&request){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
@@ -1164,7 +1164,7 @@ enum ReportDispatch {
     FullRegistryCheck{options:crate::runner_host::FullRegistryCheckOptions,selectors:Arc<Vec<String>>},
     SchemaProposals,
     NativeFix{mode:crate::native_fix::Codemod,prefixes:Vec<String>,apply:bool},
-    CheckerText{display:PathBuf,configuration:Option<PathBuf>,json:bool},
+    CheckerText{display:PathBuf,caller_directory:Option<PathBuf>,configuration:Option<PathBuf>,json:bool},
 }
 
 fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
@@ -1285,7 +1285,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     ReportDispatch::FullRegistryCheck{options,selectors}=>RequestCommand::FullRegistryCheck{options:*options,selectors:Arc::clone(selectors)},
                     ReportDispatch::SchemaProposals=>RequestCommand::SchemaProposals,
                     ReportDispatch::NativeFix{mode,prefixes,apply}=>RequestCommand::NativeFix(*mode,prefixes.clone(),*apply),
-                    ReportDispatch::CheckerText{display,configuration,json}=>RequestCommand::CheckerText(display.clone(),configuration.clone(),*json),
+                    ReportDispatch::CheckerText{display,caller_directory,configuration,json}=>RequestCommand::CheckerText(display.clone(),caller_directory.clone(),configuration.clone(),*json),
                     ReportDispatch::CompileSelected { roster, compact_checker, .. } => {
                         let (native, _) = compound.as_ref().expect("admitted compound destination");
                         let native_key = RequestKey::of(native, &path, &[], &[]);
@@ -1416,7 +1416,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                             ReportDispatch::FullRegistryCheck{options,selectors}=>host.stage_selected_registry_check_report(request,options,selectors.as_slice()).map(super::generation::Executed::FullRegistryCheck),
                             ReportDispatch::SchemaProposals=>host.stage_schema_proposals(request).map(super::generation::Executed::SchemaProposals),
                             ReportDispatch::NativeFix{mode,prefixes,apply}=>crate::native_fix::stage_batch(crate::native_fix::BatchRequest{build:request,codemod:mode,prefixes,apply},&mut host).map(super::generation::Executed::NativeFix),
-                            ReportDispatch::CheckerText{display,configuration,json}=>host.stage_standalone_checker(request,display,configuration,json).map(super::generation::Executed::CheckerText),
+                            ReportDispatch::CheckerText{display,caller_directory,configuration,json}=>host.stage_standalone_checker(request,display,caller_directory,configuration,json).map(super::generation::Executed::CheckerText),
                             ReportDispatch::CompileSelected { roster, exclusions, compact_checker, .. } => {
                                 let (native, destination) = compound.ok_or_else(|| io::Error::other("compound destination absent"))?;
                                 let output_guards = destination.claim()?;

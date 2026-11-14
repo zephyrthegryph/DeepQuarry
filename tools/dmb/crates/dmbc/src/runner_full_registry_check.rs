@@ -3,12 +3,13 @@
 use super::BuildHost;use std::{error::Error,io::{self,Write}};
 pub use dq_analyze::full_registry_check_wire::Options as FullRegistryCheckOptions;
 pub(crate) enum FullRegistryCheckInputs{
+ SourceHandlers(crate::request_runner::source_handler_capture::Inputs),
  Model(crate::request_runner::JoinedSelectedInputs),
  SelectedModel(crate::request_runner::checker_capture::Inputs),
  Source(crate::request_runner::native_check_source::NativeSourceCheckInputs),
  Handlers(crate::request_runner::native_check_handlers::Inputs),
 }
-impl FullRegistryCheckInputs{pub(crate) fn require_report_current(&self,project:&std::path::Path)->Result<(),Box<dyn Error>>{match self{Self::Model(inputs)=>inputs.require_report_current(project),Self::SelectedModel(inputs)=>inputs.require_current(project),Self::Source(inputs)=>inputs.require_current(project).map_err(Into::into),Self::Handlers(inputs)=>inputs.require_current(project).map_err(Into::into)}}}
+impl FullRegistryCheckInputs{pub(crate) fn require_report_current(&self,project:&std::path::Path)->Result<(),Box<dyn Error>>{match self{Self::SourceHandlers(inputs)=>inputs.require_report_current(project).map_err(Into::into),Self::Model(inputs)=>inputs.require_report_current(project),Self::SelectedModel(inputs)=>inputs.require_current(project),Self::Source(inputs)=>inputs.require_current(project).map_err(Into::into),Self::Handlers(inputs)=>inputs.require_current(project).map_err(Into::into)}}}
 pub(crate) struct FullRegistryCheckReport{
  pub(crate) project:std::path::PathBuf,pub(crate) inputs:FullRegistryCheckInputs,
  pub(crate) frame:dq_analyze::full_registry_check_wire::CheckFrame,
@@ -86,8 +87,8 @@ impl BuildHost{
  /// Partial delivery is not completion: callers buffer/discard on error.
  pub fn write_selected_registry_check(&mut self,request:crate::request::BuildRequest,options:FullRegistryCheckOptions,selectors:&[String],diagnostics:&mut impl Write,report:&mut impl Write)->Result<bool,Box<dyn Error>>{
   with_full_registry_check_context(request.command,request.timeout_seconds,||{
-  let plan=super::prepare_native_check_selection(selectors,options,self.source_arena_work())?;
-  let completed=if plan.handlers_only(){match self.stage_registered_handlers_check_report(request,plan)?{
+  let plan=super::prepare_native_registered_check_selection(selectors,options,self.source_arena_work())?;
+  let completed=if plan.handlers_only()&&!plan.source_handler_union_candidate(){match self.stage_registered_handlers_check_report(request,plan)?{
    HandlerCheckStage::Current(report)=>report,
    HandlerCheckStage::FailedFullOneShot{actual,report:failed}=>{let _=failed.write_once(diagnostics,report);return Err(actual)},
   }}else{self.stage_selected_registry_check_with_plan(request,plan)?};
@@ -134,12 +135,13 @@ impl BuildHost{
   request.no_cache|=options.no_cache;
   // Native reports always validate exact content; --rehash requests this existing guarantee.
   request.exact_inputs=true;
-  let plan=super::prepare_native_check_selection(selectors,options,self.source_arena_work())?;
+  let plan=super::prepare_native_registered_check_selection(selectors,options,self.source_arena_work())?;
   self.stage_selected_registry_check_with_plan(request,plan)
  }
  fn stage_selected_registry_check_with_plan(&mut self,mut request:crate::request::BuildRequest,plan:std::sync::Arc<super::NativeCheckSelection>)->Result<FullRegistryCheckReport,Box<dyn Error>>{
   let options=plan.format();
   request.no_cache|=options.no_cache;request.exact_inputs=true;
+  if plan.source_handler_union_candidate(){return self.stage_registered_source_handler_check_report(request,plan)}
   if plan.exclusive_engine_layering(){return self.stage_exclusive_registered_engine_check_report(request,plan)}
   if plan.has_unjoined_handlers(){return Err(io::Error::new(io::ErrorKind::Unsupported,"selected mixed conditional Handler CHECK requires its real joined owner; no semantic-model fallback is issued").into())}
   if plan.handlers_only(){return match self.stage_registered_handlers_check_report(request,plan)?{
@@ -208,5 +210,45 @@ impl BuildHost{
   };
   let diagnostics=if diagnostics.length()==0{None}else{Some(super::query_snapshot::checked_selected_report_stage(diagnostics)?)};crate::daemon::control::checkpoint()?;
   Ok(FullRegistryCheckReport{project,inputs,frame,selection:plan.binding(),selected,registered,format:plan.format(),clean,diagnostics,report,_credit:credit})
+ }
+}
+
+impl BuildHost{
+ fn stage_registered_source_handler_check_report(&mut self,mut request:crate::request::BuildRequest,plan:std::sync::Arc<super::NativeCheckSelection>)->Result<FullRegistryCheckReport,Box<dyn Error>>{
+  use dq_analyze::{full_registry_check_wire::CheckFrame,selected_exclusions_wire::Hex128};
+  if !plan.source_handler_union_candidate(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual conditional Source/Handler plan required").into())}
+  request.exact_inputs=true;request.no_cache|=plan.format().no_cache;
+  let(root,cache,project,retained,credit)=self.prepare_registered_check_request(&mut request,&plan)?;
+  let projection=std::sync::Arc::new(super::derive_source_handler_projection(std::sync::Arc::clone(&plan),self.source_arena_work())?);
+  let mut diagnostics=crate::selected_report_spool::Stage::new(&cache)?;let file=crate::selected_report_spool::Stage::new(&cache)?;
+  let(outcome,actual)=crate::request_runner::native_check_source::prepare_registered_source_handlers_check(request,self,std::sync::Arc::clone(&projection),&mut diagnostics)?;
+  actual.inputs.require_report_current(&project)?;
+  let(clean,report,pins)={
+   let state=self.query_state.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"conditional Source/Handler state borrowed"))?;
+   let raw=state.raw_snapshot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual conditional Raw snapshot disappeared"))?;
+   let handler=state.handlers_snapshot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual conditional Handler snapshot disappeared"))?;
+   let full=if handler.requires_full(){Some(state.snapshot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual required Handler full snapshot disappeared"))?)}else{None};
+   actual.raw.require_same_registered_frame(raw,projection.raw())?;
+   actual.inputs.require_binding(raw,handler,full,&projection)?;
+   let pins=actual.inputs.pins();
+   // Wire/outcome values reject disagreement only; the actual native siblings
+   // and moved closure above remain the only producer authority.
+   match &outcome{
+    crate::request::BuildOutcome::RawQueryPrepared{query_revision,source_revision,policy_revision,retained:true}if full.is_none()=>{
+     let parse=|text:&str|u128::from_str_radix(text,16).ok();if parse(query_revision)!=Some(pins.raw_query)||parse(source_revision)!=Some(pins.raw_source)||parse(policy_revision)!=Some(pins.raw_policy){return Err(io::Error::new(io::ErrorKind::InvalidData,"conditional Raw outcome differs from actual sibling").into())}
+    },
+    crate::request::BuildOutcome::HandlersQueryPrepared{query_revision,partial_source_revision,full_source_revision,retained:true}if full.is_some()=>{
+     let parse=|text:&str|u128::from_str_radix(text,16).ok();if parse(query_revision)!=Some(pins.handler_query)||partial_source_revision.as_ref().map(|text|parse(text))!=pins.handler_source.map(Some)||full_source_revision.as_ref().map(|text|parse(text))!=pins.handler_full_source.map(Some){return Err(io::Error::new(io::ErrorKind::InvalidData,"conditional Handler outcome differs from actual full sibling").into())}
+    },
+    _=>return Err(io::Error::new(io::ErrorKind::InvalidData,"conditional actual preparation outcome was relabeled").into()),
+   }
+   let(clean,report)=raw.stage_source_handler_registry_check(&retained,&root,file,&projection,handler,full)?;
+   actual.inputs.require_binding(raw,handler,full,&projection)?;actual.inputs.require_report_current(&project)?;(clean,report,pins)
+  };
+  if report.length().checked_add(diagnostics.length()).is_none_or(|total|total>dq_analyze::selected_exclusions_wire::MAX_STREAM){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"conditional combined output exceeds existing report bound").into())}
+  let diagnostics=if diagnostics.length()==0{None}else{Some(crate::request_runner::native_check_handlers::check_diagnostic_stage(diagnostics)?)};
+  let frame=CheckFrame::SourceHandlers{query_revision:Hex128(pins.raw_query),source_revision:Hex128(pins.raw_source),policy_revision:Hex128(pins.raw_policy),handler_query_revision:Hex128(pins.handler_query),partial_source_revision:pins.handler_source.map(Hex128),full_source_revision:pins.handler_full_source.map(Hex128),full_semantic_revision:pins.full_semantic.map(Hex128),full_policy_revision:pins.full_policy.map(Hex128)};
+  crate::daemon::control::checkpoint()?;
+  Ok(FullRegistryCheckReport{project,inputs:FullRegistryCheckInputs::SourceHandlers(actual.inputs),frame,selection:plan.binding(),selected:u64::try_from(plan.names().len()).map_err(|_|io::Error::from(io::ErrorKind::InvalidData))?,registered:u64::try_from(plan.registered_count()?).map_err(|_|io::Error::from(io::ErrorKind::InvalidData))?,format:plan.format(),clean,diagnostics,report,_credit:credit})
  }
 }

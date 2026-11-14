@@ -296,12 +296,19 @@ impl SourceSnapshot{
      let question=producer.question().ok_or("semantic read producer has no source question")?;
      if let Some(stage)=stage.as_deref_mut(){
       let child=self.workspace_semantic_inputs_with_guard(question,&guard)?;
-      queries.with_selected_workspace_semantic_read_report(capture,&guard,child,question,|data,config,child_budget|{
+      let consume=|data:&dq_analyze::captured_sem_reads::SemanticPolicyData,config:&dq_analyze::captured_raw_file::Config,child_budget:&Arc<Budget>|{
        let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
        let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
        stage(meta,UnionRows::Semantic(question,data),scope,child_budget)?;
        record(data.allow_used())
-      })?;
+      };
+      if let Some(plan)=registered{
+       capture.require_registered_plan(plan)?;
+       if !plan.metadata().any(|actual|std::ptr::eq(actual,producer.metadata()))||!plan.questions().any(|actual|actual==question){return Err("registered read report differs from actual producer demand".into())}
+       // An individual registered lint uses its complete CODE_DM producer,
+       // not the legacy combined CODE/MAPS selected-report endpoint.
+       queries.with_original_workspace_semantic_guard_report(capture,&guard,child,question,consume)?;
+      }else{queries.with_selected_workspace_semantic_read_report(capture,&guard,child,question,consume)?;}
      }else{
       self.with_original_semantic_policy_report(question,|data,_,_|record(data.allow_used()))?;
      }
@@ -309,12 +316,19 @@ impl SourceSnapshot{
     Producer::Special("setter_publishes")=>{
      if let Some(stage)=stage.as_deref_mut(){
       let child=self.workspace_semantic_inputs_with_guard(Q::SetterPublishes,&guard)?;
-      queries.with_selected_workspace_setter_report(capture,&guard,child,|data,config,child_budget|{
+      let consume=|data:&dq_analyze::captured_sem_reads::SemanticPolicyData,config:&dq_analyze::captured_raw_file::Config,child_budget:&Arc<Budget>|{
        let meta=producer.metadata();let empty=dq_analyze::scopes::LintScope::default();
        let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
        stage(meta,UnionRows::Semantic(Q::SetterPublishes,data),scope,child_budget)?;
        record(data.allow_used())
-      })?;
+      };
+      if let Some(plan)=registered{
+       capture.require_registered_plan(plan)?;
+       if !plan.metadata().any(|actual|std::ptr::eq(actual,producer.metadata()))||!plan.questions().any(|actual|actual==Q::SetterPublishes){return Err("registered setter report differs from actual producer demand".into())}
+       // An individual registered lint uses its complete CODE_DM producer,
+       // not the legacy combined CODE/MAPS selected-report endpoint.
+       queries.with_original_workspace_semantic_guard_report(capture,&guard,child,Q::SetterPublishes,consume)?;
+      }else{queries.with_selected_workspace_setter_report(capture,&guard,child,consume)?;}
      }else{
       self.with_original_semantic_policy_report(Q::SetterPublishes,|data,_,_|record(data.allow_used()))?;
      }
@@ -553,7 +567,7 @@ mod union_tests;
 
 #[path="runner_query_selected_report.rs"]
 mod selected_report;
-pub(crate) use selected_report::{NativeCheckSelection,prepare_native_check_selection};
+pub(crate) use selected_report::{NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
 pub(crate) use selected_report::{stage_registered_handlers_current,stage_registered_handlers_failed_full};
 pub(in crate::runner_host) use selected_report::{checked_stage,stage_named_image_dir,validate_selection,validate_selection_v2,SelectedReportPlan};
 

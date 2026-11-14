@@ -27,6 +27,9 @@ pub(crate) mod runner_freshness;
 mod runner_generated_paths;
 use runner_cache_records::publish_cache_records;
 #[path="request_handlers_prepare.rs"]mod handlers_prepare;
+#[path="runner_source_handler_intent.rs"]mod source_handler_intent;
+#[path="runner_source_handler_prepare.rs"]mod source_handler_prepare;
+#[path="runner_source_handler_capture.rs"]pub(crate)mod source_handler_capture;
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
         Command::Query { request, jsonl } => {
@@ -289,7 +292,10 @@ fn run_build_attempt(
     } = request;
     let registered_model=source_check.as_deref().and_then(|preparation|preparation.model_plan()).cloned();
     let registered_engine=source_check.as_deref().and_then(|preparation|preparation.engine_plan()).cloned();
-    let policy_inputs = policy_inputs.map(|request| if let Some(plan)=&registered_model {
+    let registered_source_handlers=source_check.as_deref().and_then(native_check_source::Preparation::source_handler_intents).cloned();
+    let mut policy_inputs = policy_inputs.map(|request| if let Some(intents)=&registered_source_handlers{
+        request.admit_registered_source_handler_check(intents.projection())
+    }else if let Some(plan)=&registered_model {
         request.admit_registered_model_check(plan)
     } else if private_authored_doc_ui {
         request.admit_private_authored_doc_ui()
@@ -374,6 +380,32 @@ fn run_build_attempt(
         .with_initial_environment(analysis_context.map_or(dm_preprocess::InitialEnvironment::Native5161687,|context|context.initial_environment()))
         .with_exact_reuse(exact_inputs)
         .with_prepared_sources(prepared_sources.clone());
+    // One operation-local conditional phase; no new worker or frontend is
+    // created. Only the actual Handler subject may demand a full continuation.
+    let mut conditional_required_full=None;
+    if let Some(intents)=&registered_source_handlers{
+        let parent=policy_inputs.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"conditional parent admitted intent absent"))?;
+        intents.projection().require_parent_intent(parent)?;
+        let actual=source_handler_prepare::prepare(&inputs_capture,&stamped_provider,&input_provider,generated_paths,intents,host,workers)?;
+        match actual{
+            source_handler_prepare::ActualPreparation::Structural(pair)=>{
+                let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
+                input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+                let pending=pair.capture(&inputs_capture,&project,intents,generated_paths,queries.as_ref())?;
+                let inputs=pending.finish(inputs_capture)?;let raw=pair.raw.clone();
+                let pins=query_attempt.admit_registered_source_handlers(pair.raw,pair.handlers,pair.admission,intents.projection().raw())?;
+                query_attempt.finish_registered_source_handlers();
+                source_check.as_deref_mut().ok_or_else(||io::Error::other("conditional operation slot disappeared"))?.record_source_handlers(raw,inputs)?;
+                return Ok(BuildOutcome::RawQueryPrepared{query_revision:format!("{:032x}",pins.raw_query),source_revision:format!("{:032x}",pins.raw_source),policy_revision:format!("{:032x}",pins.raw_policy),retained:retains_query_owners});
+            },
+            source_handler_prepare::ActualPreparation::RequiresFull(actual)=>{
+                // This clone is funded by ChildIntents and permitted only by
+                // the SAME prepared subject's actual full-model requirement.
+                policy_inputs=Some(intents.clone_required_full_intent(&actual.capture,&inputs_capture)?);
+                conditional_required_full=Some(actual);
+            },
+        }
+    }
     if let Some(preparation)=source_check.as_deref_mut().filter(|preparation|preparation.source_plan().is_some()){
         let plan=Arc::clone(preparation.source_plan().expect("actual source-only operation variant"));
         let intent=policy_inputs.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"registered source CHECK needs its actual workspace intent"))?;
@@ -433,7 +465,7 @@ fn run_build_attempt(
     // Genuine partial source is prepared before any independent full Subject.
     let registered_handlers=registered_model.as_ref().filter(|plan|plan.model_handler_join());
     let stage_handlers=registered_handlers.is_some()||joined_derived.is_some()&&preparation_output.needs_combined_checker()&&preparation_output.wants_joined_inputs();
-    let mut handlers_capture=if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>if let Some(plan)=registered_handlers{handlers_prepare::prepare_registered(&inputs_capture,intent,host,workers,plan)?}else{handlers_prepare::prepare(&inputs_capture,intent,host,workers,joined_derived.as_ref(),stage_handlers)?},None=>None}}else{None};
+    let mut handlers_capture=if let Some(actual)=&conditional_required_full{Some(Arc::clone(&actual.capture))}else if command==BuildCommand::PrepareQuery{match policy_inputs.as_ref(){Some(intent)=>if let Some(plan)=registered_handlers{handlers_prepare::prepare_registered(&inputs_capture,intent,host,workers,plan)?}else{handlers_prepare::prepare(&inputs_capture,intent,host,workers,joined_derived.as_ref(),stage_handlers)?},None=>None}}else{None};
     if stage_handlers{
         let capture=handlers_capture.take().ok_or("full registry partial handler source absent")?;
         let cache=cache_root.as_deref().ok_or("full registry handler row stage requires its admitted cache root")?;
@@ -1155,6 +1187,15 @@ fn run_build_attempt(
                     let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),source_policy_queries.as_ref())?.1.into_shared()?;
                     let query=if let Some(plan)=registered_handlers{query_attempt.admit_registered_handlers_source(intent,capture,proof,Arc::clone(&source_policy_queries),plan)?}else{query_attempt.admit_handlers_source(intent,capture,proof,Arc::clone(&source_policy_queries))?};
                     if !selected {
+                        if let Some(actual)=conditional_required_full.take(){
+                            let intents=registered_source_handlers.as_ref().ok_or_else(||io::Error::other("conditional parent operation disappeared"))?;
+                            let raw=actual.raw.clone();query_attempt.retain_registered_source_handler_full(actual.raw,actual.admission,intents.projection().raw())?;
+                            let pending=source_handler_capture::capture_current(&inputs_capture,registered_model_report_project,Arc::clone(intents.projection()),query_attempt.current_state(),generated_paths,source_policy_queries.as_ref())?;
+                            let inputs=pending.finish(inputs_capture)?;
+                            source_check.as_deref_mut().ok_or_else(||io::Error::other("conditional operation slot disappeared"))?.record_source_handlers(raw,inputs)?;
+                            query_attempt.finish_registered_source_handlers();
+                            return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:Some(format!("{:032x}",view.source_revision())),retained:retains_query_owners});
+                        }
                         if let Some(plan)=source_check.as_deref().and_then(native_check_source::Preparation::handlers_plan).map(Arc::clone){
                          let pending=native_check_handlers::capture_current(&inputs_capture,&project,plan,query_attempt.current_state(),generated_paths,source_policy_queries.as_ref())?;
                          let actual=pending.finish(inputs_capture)?;

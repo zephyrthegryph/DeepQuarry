@@ -1,10 +1,13 @@
 //! Explicit thin Checker client: existing native daemon, no local DM model.
 use super::{capture_command,policy_stdout_work,bounded,NativeReportWork,OUTER_WATCHDOG,MAX_STDERR};use crate::{native_checker_wire::Terminal,selected_exclusions_wire::MAX_HEADER,report_work::Work};use std::{io::{self,Write},path::PathBuf,process::Command};
 fn invalid(message:&str)->io::Error{io::Error::new(io::ErrorKind::InvalidInput,message)}
-#[derive(Debug)]struct Invocation{program:PathBuf,arguments:Vec<String>,project:PathBuf,json:bool}
-fn invocation(arguments:&[String])->io::Result<Invocation>{
- let(mut program,mut project)=(None,None);let mut ordinary=Vec::new();let mut json=false;let mut at=0;while at<arguments.len(){let arg=&arguments[at];at+=1;if arg=="--native-dmbc"{let path=PathBuf::from(arguments.get(at).ok_or_else(||invalid("--native-dmbc needs an absolute executable"))?);at+=1;if !path.is_absolute()||program.replace(path).is_some(){return Err(invalid("Checker needs one absolute native executable"))}}else{if arg=="--json"{json=true;}ordinary.push(arg.clone());if arg=="-e"{let value=arguments.get(at).ok_or_else(||invalid("-e requires an environment"))?;at+=1;let path=PathBuf::from(value);if !path.is_absolute()||project.replace(path).is_some(){return Err(invalid("Checker initial text scope needs exactly one absolute -e"))}ordinary.push(value.clone());}else if arg=="-c"{let value=arguments.get(at).ok_or_else(||invalid("-c needs configuration"))?;at+=1;ordinary.push(value.clone());}}}
- let project=std::fs::canonicalize(project.ok_or_else(||invalid("Checker initial scope requires explicit -e"))?)?;Ok(Invocation{program:program.ok_or_else(||invalid("Checker needs --native-dmbc ABSOLUTE_EXE"))?,arguments:ordinary,project,json})
+#[derive(Debug)]struct Invocation{program:PathBuf,arguments:Vec<String>,project:PathBuf,json:bool,unknown:Option<String>}
+fn invocation(arguments:&[String])->io::Result<Invocation>{invocation_using(arguments,std::env::current_dir)}
+fn invocation_using(arguments:&[String],cwd:impl FnOnce()->io::Result<PathBuf>)->io::Result<Invocation>{
+ match super::checker_caller_paths::select(arguments,true)?{
+  super::checker_caller_paths::Selection::Unknown(arg)=>Ok(Invocation{program:PathBuf::new(),arguments:Vec::new(),project:PathBuf::new(),json:false,unknown:Some(arg)}),
+  super::checker_caller_paths::Selection::Check(mut selected)=>{let program=selected.program.take().ok_or_else(||invalid("Checker needs --native-dmbc ABSOLUTE_EXE"))?;let ordinary=std::mem::take(&mut selected.ordinary);let actual=super::checker_caller_paths::resolve_selected_using(selected,cwd)?;Ok(Invocation{program,arguments:ordinary,project:actual.project,json:actual.json,unknown:None})}
+ }
 }
 struct Delivered<'a>{diagnostics:&'a[u8],output:&'a[u8]}
 fn text<'a>(bytes:&'a[u8],status:i32,project:&std::path::Path,work:&NativeReportWork,operational:&[u8],json:bool)->io::Result<Delivered<'a>>{
@@ -21,7 +24,7 @@ fn valid_summary(output:&[u8],emitted:u64,json:bool)->bool{
  counts.error.checked_add(counts.warning).and_then(|n|n.checked_add(counts.info))==Some(emitted)
 }
 #[derive(serde::Deserialize)]#[serde(deny_unknown_fields)]struct Counts{hint:u64,info:u64,warning:u64,error:u64}
-pub(super) fn run(arguments:&[String],stdout:&mut impl Write,stderr:&mut impl Write)->io::Result<u8>{let invocation=invocation(arguments)?;let mut command=Command::new(invocation.program);command.arg("checker-text").args(&invocation.arguments);let(status,captured,operational)=capture_command(command,OUTER_WATCHDOG,policy_stdout_work,|input|bounded(input,MAX_STDERR))?;stderr.write_all(&operational)?;let Some(code @ (0|1))=status.code()else{return Ok(if status.code()==Some(75){75}else{2})};let work=captured.policy_work.as_ref().ok_or_else(||invalid("Checker lost physical output allowance"))?;let delivered=text(&captured.bytes,code,&invocation.project,work,&operational,invocation.json)?;stderr.write_all(delivered.diagnostics)?;stdout.write_all(delivered.output)?;Ok(code as u8)}
+pub(super) fn run(arguments:&[String],stdout:&mut impl Write,stderr:&mut impl Write)->io::Result<u8>{let invocation=invocation(arguments)?;if let Some(arg)=invocation.unknown{writeln!(stderr,"unknown argument: {arg}")?;return Ok(0)}let mut command=Command::new(invocation.program);command.arg("checker-text").args(&invocation.arguments);let(status,captured,operational)=capture_command(command,OUTER_WATCHDOG,policy_stdout_work,|input|bounded(input,MAX_STDERR))?;stderr.write_all(&operational)?;let Some(code @ (0|1))=status.code()else{return Ok(if status.code()==Some(75){75}else{2})};let work=captured.policy_work.as_ref().ok_or_else(||invalid("Checker lost physical output allowance"))?;let delivered=text(&captured.bytes,code,&invocation.project,work,&operational,invocation.json)?;stderr.write_all(delivered.diagnostics)?;stdout.write_all(delivered.output)?;Ok(code as u8)}
 pub(super)fn cli(arguments:&[String])->std::process::ExitCode{match run(arguments,&mut io::stdout().lock(),&mut io::stderr().lock()){Ok(code)=>std::process::ExitCode::from(code),Err(error)=>{eprintln!("native Checker: {error}");std::process::ExitCode::from(2)}}}
 
 #[cfg(test)]mod tests{use super::*;use crate::{native_checker_wire::{Schema,Frame},selected_exclusions_wire::{Hex128,Seal}};
@@ -29,7 +32,29 @@ pub(super)fn cli(arguments:&[String])->std::process::ExitCode{match run(argument
   let project=if cfg!(windows){std::path::Path::new("E:/actual/project.dme")}else{std::path::Path::new("/actual/project.dme")};let diagnostic=b"error: real semantic row\n";let output=b"Found 1 diagnostics\n";let mut terminal=Terminal{schema:Schema::V1,complete:true,full_checker_parity:false,json:false,project:project.into(),emitted:1,visited_bodies:1,exit_code:1,frame:Frame{semantic_revision:Hex128(1),source_revision:Hex128(2),policy_revision:Hex128(3)},diagnostics:Some(Seal{length:diagnostic.len()as u64,hash:Hex128(xxhash_rust::xxh3::xxh3_128(diagnostic))}),output:Seal{length:output.len()as u64,hash:Hex128(xxhash_rust::xxh3::xxh3_128(output))}};
   let encode=|t:&Terminal|{let mut bytes=serde_json::to_vec(t).unwrap();bytes.push(b'\n');bytes.extend_from_slice(diagnostic);bytes.extend_from_slice(output);bytes};let work=NativeReportWork::new();let wire=encode(&terminal);let got=text(&wire,1,project,&work,&[],false).unwrap();assert_eq!(got.diagnostics,diagnostic);assert_eq!(got.output,output);assert!(text(&wire,0,project,&work,&[],false).is_err());assert!(text(&wire,2,project,&work,&[],false).is_err());assert!(text(&wire[..wire.len()-1],1,project,&work,&[],false).is_err());assert_eq!(text(&wire,1,project,&work,b"preserved actual native trace\n",false).err().unwrap().kind(),io::ErrorKind::Unsupported);terminal.emitted=2;assert!(text(&encode(&terminal),1,project,&work,&[],false).is_err());terminal.emitted=1;terminal.diagnostics.as_mut().unwrap().hash=Hex128(0);assert!(text(&encode(&terminal),1,project,&work,&[],false).is_err());
  }
- #[test]fn resident_checker_client_rejects_missing_native_or_environment_before_process_start(){for arguments in[vec![],vec!["--native-dmbc".into(),"relative.exe".into()],vec!["--native-dmbc".into(),if cfg!(windows){"E:/not-started.exe".into()}else{"/not-started.exe".into()},"-e".into(),"relative.dme".into()]]{assert!(invocation(&arguments).is_err())}}
+ #[test]fn resident_checker_client_rejects_missing_native_or_environment_before_process_start(){for arguments in[vec![],vec!["--native-dmbc".into(),"relative.exe".into()],vec!["--native-dmbc".into(),if cfg!(windows){"E:/not-started.exe".into()}else{"/not-started.exe".into()},"-e".into()]]{assert!(invocation(&arguments).is_err())}}
 }
 
 #[cfg(test)]mod json_summary_controls{use super::*;#[test]fn requested_json_summary_requires_exact_four_counts_and_visible_sum(){assert!(valid_summary(b"Found 2 diagnostics\n{\"error\":1,\"hint\":9,\"info\":1,\"warning\":0}",2,true));assert!(!valid_summary(b"Found 2 diagnostics\n{\"error\":1,\"hint\":9,\"info\":0,\"warning\":0}",2,true));assert!(!valid_summary(b"Found 2 diagnostics\n",2,true));assert!(!valid_summary(b"Found 2 diagnostics\n{\"error\":1,\"info\":1,\"warning\":0}",2,true));assert!(!valid_summary(b"Found 2 diagnostics\n{\"error\":1,\"hint\":9,\"info\":1,\"warning\":0}trailing",2,true));assert!(!valid_summary(b"Found 0 diagnostics\n{\"error\":18446744073709551615,\"hint\":0,\"info\":1,\"warning\":0}",0,true));assert!(!valid_summary(b"Found 0 diagnostics\n{\"error\":0,\"hint\":0,\"info\":0,\"warning\":0}",0,false));}}
+
+#[cfg(test)]mod early_argument_action_controls{use super::*;
+ #[test]fn actual_thin_checker_unknown_stops_before_later_missing_value_cwd_and_backend(){
+  let program=if cfg!(windows){"E:/nonexistent-checker-not-started.exe"}else{"/nonexistent-checker-not-started"};let arguments=["--native-dmbc".into(),program.into(),"--unknown".into(),"-e".into()];
+  let selected=invocation_using(&arguments,||panic!("unknown action must not request cwd")).unwrap();assert_eq!(selected.unknown.as_deref(),Some("--unknown"));
+  let(mut stdout,mut stderr)=(Vec::new(),Vec::new());assert_eq!(run(&arguments,&mut stdout,&mut stderr).unwrap(),0);assert!(stdout.is_empty(),"argument action cannot mint Checker completion");assert_eq!(stderr,b"unknown argument: --unknown\n");
+ }
+}
+
+#[cfg(test)]mod absolute_no_caller_directory_controls{use super::*;
+ #[test]fn actual_thin_checker_absolute_project_and_absolute_or_absent_config_never_requests_cwd(){
+  let root={let base=if cfg!(windows){PathBuf::from("E:/dq-cache/test-scratch")}else{std::env::temp_dir()};std::fs::create_dir_all(&base).unwrap();std::fs::canonicalize(base).unwrap()};
+  // Use an existing physical file for canonical project resolution; invocation
+  // does not parse its bytes or launch this explicitly nonexistent backend.
+  let project=root.join(format!("checker-absolute-no-cwd-{}-{}.dme",std::process::id(),std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));std::fs::write(&project,b"/proc/p()\n    return\n").unwrap();let project=std::fs::canonicalize(project).unwrap();
+  let program=if cfg!(windows){"E:/nonexistent-checker-not-started.exe"}else{"/nonexistent-checker-not-started"};
+  for config in [None,Some(root.join("absolute-config.toml"))]{
+   let mut arguments=vec!["--native-dmbc".into(),program.into(),"-e".into(),project.to_string_lossy().into_owned()];if let Some(config)=config{arguments.extend(["-c".into(),config.to_string_lossy().into_owned()]);}
+   let actual=invocation_using(&arguments,||panic!("absolute explicit paths must not obtain cwd")).unwrap();assert_eq!(actual.project,project);assert!(actual.unknown.is_none());
+  }std::fs::remove_file(project).unwrap();
+ }
+}

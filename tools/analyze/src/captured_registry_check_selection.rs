@@ -15,6 +15,11 @@ fn matches_select_directory(select:&crate::tree::Select,relative:&str)->bool{
  if !select.hidden&&relative.split('/').any(|part|part.starts_with('.')){return false}
  select.roots.iter().any(|(root,_)|{let root=root.trim_end_matches('/');relative.is_empty()||root.is_empty()||relative==root||relative.strip_prefix(root).is_some_and(|tail|tail.starts_with('/'))||root.strip_prefix(relative).is_some_and(|tail|tail.starts_with('/'))})
 }
+/// Checked canonical registry-name traversal only; these names are DATA.
+/// Actual producers still owe their own typed metadata/source/EOF evidence.
+pub fn visit_registered_names<C:Control>(work:&mut C,visit:&mut dyn FnMut(&str,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{
+ crate::allow_registry_fields::visit_all_scopes(work,&mut|requirement,work|visit(requirement.name,work))
+}
 pub struct Selection{names:Vec<String>,exclusions:Vec<String>,full_run:bool}
 impl Selection{
  pub fn names(&self)->&[String]{&self.names}pub fn exclusions(&self)->&[String]{&self.exclusions}pub fn full_run(&self)->bool{self.full_run}

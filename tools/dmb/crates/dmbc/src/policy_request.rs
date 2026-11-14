@@ -763,3 +763,14 @@ impl PolicyInputRequest{
   let wanted=std::mem::take(&mut self.workspace_auxiliary);let mut admitted=self.admit()?;admitted.workspace_auxiliary=wanted;Ok(admitted)
  }
 }
+
+impl PolicyInputRequest{
+ /// Actual registry parent intent only. This metadata cannot grant a Model,
+ /// and conditional preparation must still execute both independently derived
+ /// producers and obtain the actual Handler requirement before a full source.
+ pub(crate) fn admit_registered_source_handler_check(mut self,projection:&crate::runner_host::query_snapshot::SourceHandlerProjection)->io::Result<AdmittedPolicyRequest>{
+  projection.require_parent(projection.parent())?;
+  if self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290)||!self.files.is_empty()||!self.search_folders.is_empty()||!self.workspace_generators.is_empty()||!self.workspace_auxiliary.iter().copied().eq(projection.parent().questions()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional parent metadata differs from actual registry producers"))}
+  let wanted=std::mem::take(&mut self.workspace_auxiliary);let mut admitted=self.admit()?;admitted.workspace_auxiliary=wanted;projection.require_parent_intent(&admitted)?;Ok(admitted)
+ }
+}

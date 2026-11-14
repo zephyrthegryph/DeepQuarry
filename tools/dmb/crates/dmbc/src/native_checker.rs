@@ -59,13 +59,19 @@ pub(crate) fn run_prepared(build:BuildRequest,display_environment:&std::path::Pa
  run_prepared_with_json(build,display_environment,explicit_configuration,false,host,stdout,stderr)
 }
 pub(crate) fn run_prepared_with_json(build:BuildRequest,display_environment:&std::path::Path,explicit_configuration:Option<&std::path::Path>,json:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<(Outcome,crate::request_runner::checker_capture::Inputs),Box<dyn Error>>{
+ run_prepared_with_caller(build,display_environment,None,explicit_configuration,json,host,stdout,stderr)
+}
+pub(crate) fn run_prepared_with_caller(build:BuildRequest,display_environment:&std::path::Path,caller_directory:Option<&std::path::Path>,explicit_configuration:Option<&std::path::Path>,json:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<(Outcome,crate::request_runner::checker_capture::Inputs),Box<dyn Error>>{
  use crate::daemon::control;
  if crate::daemon::control::WorkerContext::capture_for_checkpoints().is_none()||crate::daemon::control::current_deadline().is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Checker staging requires its existing original request binding").into())}
- require_prepared_shape(&build,display_environment,explicit_configuration)?;crate::daemon::control::checkpoint()?;
- // Resolve the real display association only inside the existing bound and
- // funded request. Lexical spelling cannot equate Windows verbatim paths.
- if std::fs::canonicalize(display_environment)?!=build.project{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Checker display environment differs from actual canonical project").into())}
- crate::daemon::control::checkpoint()?;
+ require_prepared_shape_with_caller(&build,display_environment,caller_directory,explicit_configuration)?;control::checkpoint()?;
+ if let Some(caller)=caller_directory{
+  // The existing physical source role and its actual moved ledger remain the
+  // only source authority. This initial relative spelling must name that SAME
+  // canonical key lexically; unresolved symlink aliases need a separate proof.
+  if display_environment.is_absolute()||dm_preprocess::regions::canonical_path(&caller.join(display_environment))!=build.project{return Err(io::Error::new(io::ErrorKind::Unsupported,"relative Checker spelling requires a separately authenticated alias").into())}
+ }else if std::fs::canonicalize(display_environment)?!=build.project{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Checker display environment differs from actual canonical project").into())}
+ control::checkpoint()?;
  let project=build.project.clone();let cache_root=build.cache_root.clone().ok_or_else(||io::Error::other("Checker actual cache root absent"))?;
 
  let mut stdout=CheckedOutput(stdout);let mut stderr=CheckedOutput(stderr);
@@ -90,6 +96,11 @@ pub(crate) fn run_prepared_with_json(build:BuildRequest,display_environment:&std
  inputs.require_current(&project)?;writeln!(stdout,"============================================================\nFound {} diagnostics",outcome.emitted)?;if json{counts.write_json(&mut stdout)?;}stdout.flush()?;stderr.flush()?;
  inputs.require_current(&project)?;control::checkpoint()?;Ok((outcome,inputs))
 }
+pub(crate) fn require_prepared_shape_with_caller(build:&BuildRequest,display:&std::path::Path,caller:Option<&std::path::Path>,explicit:Option<&std::path::Path>)->io::Result<()>{
+ let Some(caller)=caller else{return require_prepared_shape(build,display,explicit)};
+ if display.is_absolute()||display.as_os_str().len()>65536||!caller.is_absolute()||caller.as_os_str().len()>65536{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Checker display requires bounded caller-resolved DATA"))}
+ require_prepared_shape(build,&build.project,explicit)
+}
 pub(crate) fn require_prepared_shape(build:&BuildRequest,display:&std::path::Path,explicit:Option<&std::path::Path>)->io::Result<()>{
  use crate::policy_request::{AnalysisContext,PolicyInputRole};
  let invalid=||io::Error::new(io::ErrorKind::InvalidInput,"resident Checker needs the exact nonpublishing Original checker request");
@@ -112,5 +123,21 @@ impl<W:Write>Write for CheckedOutput<'_,W>{
  #[test]fn native_checker_initial_flags_refuse_unissued_modes_and_paths(){
   let cache=PathBuf::from(if cfg!(windows){"E:/dq-cache/native-checker"}else{"/tmp/native-checker"});
   for args in [vec!["--json".into()],vec!["--parse-only".into()],vec!["-e".into(),"relative.dme".into()],vec![]]{assert!(Request::from_arguments(&args,cache.clone()).is_err());}
+ }
+}
+
+#[cfg(test)]mod caller_display_binding_controls{
+ use super::*;
+ fn actual(label:&str)->(Request,PathBuf){let root=std::fs::canonicalize(crate::test_scratch::dir(label)).unwrap();let cache=std::fs::canonicalize(crate::test_scratch::dir(&format!("{label}-cache"))).unwrap();std::fs::write(root.join("project.dme"),"/proc/probe()\n    return 1\n").unwrap();std::fs::write(root.join("SpacemanDMM.toml"),"").unwrap();(Request{project:root.join("project.dme"),configuration:None,cache_root:cache,workers:1,timeout_seconds:60},root)}
+ #[test]fn actual_checker_relative_display_denies_foreign_caller_without_issuing_output(){
+  let(request,root)=actual("checker-relative-foreign");let foreign=std::fs::canonicalize(crate::test_scratch::dir("checker-relative-foreign-owner")).unwrap();let mut host=BuildHost::default();let(mut out,mut err)=(Vec::new(),Vec::new());let _bound=crate::daemon::control::bind_with_deadline(crate::daemon::control::Cancellation::default(),std::time::Instant::now()+std::time::Duration::from_secs(60));
+  let failure=run_prepared_with_caller(request.build().unwrap(),std::path::Path::new("project.dme"),Some(&foreign),None,false,&mut host,&mut out,&mut err).err().unwrap();assert_eq!(failure.downcast_ref::<io::Error>().unwrap().kind(),io::ErrorKind::Unsupported);assert!(out.is_empty()&&err.is_empty());
+  let(outcome,inputs)=run_prepared_with_caller(request.build().unwrap(),std::path::Path::new("./project.dme"),Some(&root),None,false,&mut host,&mut out,&mut err).unwrap();assert_eq!(outcome.exit_code,0);assert!(!outcome.full_checker_parity);inputs.require_current(&request.project).unwrap();assert!(String::from_utf8(out).unwrap().contains("Parsing ./project.dme..."));
+ }
+ #[test]fn actual_checker_relative_display_keeps_first_output_1450_and_same_host_recovers(){
+  struct Stop;impl Write for Stop{fn write(&mut self,_:&[u8])->io::Result<usize>{Err(io::Error::from_raw_os_error(1450))}fn flush(&mut self)->io::Result<()>{Ok(())}}
+  let(request,root)=actual("checker-relative-first-io");let mut host=BuildHost::default();let _bound=crate::daemon::control::bind_with_deadline(crate::daemon::control::Cancellation::default(),std::time::Instant::now()+std::time::Duration::from_secs(60));let mut err=Vec::new();
+  let failure=run_prepared_with_caller(request.build().unwrap(),std::path::Path::new("project.dme"),Some(&root),None,false,&mut host,&mut Stop,&mut err).err().unwrap();assert_eq!(failure.downcast_ref::<io::Error>().unwrap().raw_os_error(),Some(1450));assert!(err.is_empty());
+  let mut out=Vec::new();let(outcome,_)=run_prepared_with_caller(request.build().unwrap(),std::path::Path::new("project.dme"),Some(&root),None,false,&mut host,&mut out,&mut err).unwrap();assert_eq!(outcome.exit_code,0);assert!(err.is_empty());
  }
 }

@@ -42,7 +42,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 #[path="runner_query_raw_workspace.rs"]mod raw_workspace;
-pub(crate) use raw_workspace::RawWorkspaceSnapshot;
+pub(crate) use raw_workspace::{RawWorkspaceSnapshot,SourceHandlerPins};
 #[path="runner_query_handlers.rs"]mod handlers;
 pub(crate) use handlers::HandlerWorkspaceSnapshot;
 #[cfg(test)]
@@ -1638,7 +1638,7 @@ impl SourceSnapshot{
 #[cfg(test)]#[path="runner_query_op_order_tests.rs"]mod op_order_complete_raw;
 
 #[path="runner_query_allow_full_run.rs"]mod allow_full_run;
-pub(crate) use allow_full_run::{NativeCheckSelection,prepare_native_check_selection};
+pub(crate) use allow_full_run::{NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
 pub(crate) use allow_full_run::{stage_registered_handlers_current,stage_registered_handlers_failed_full};
 pub(super) use allow_full_run::{checked_stage as checked_selected_report_stage,stage_named_image_dir,validate_selection as validate_selected_report_selection,validate_selection_v2 as validate_selected_report_selection_v2,SelectedReportPlan};
 

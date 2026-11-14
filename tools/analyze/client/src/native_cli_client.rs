@@ -4,6 +4,7 @@ use std::{ffi::OsString,io::{self,Read,Write},path::PathBuf,process::{Child,Chil
 // Independent outer watchdog covers process startup, generation handshake,
 // queueing and cleanup. Only dmbc starts/interprets the typed request deadline.
 #[path="native_exclusions.rs"]mod native_exclusions;
+#[path="checker_caller_paths.rs"]pub mod checker_caller_paths;
 #[path="native_full_check.rs"]mod native_full_check;
 #[path="native_schema_proposals.rs"]mod native_schema_proposals;
 #[path="native_fix.rs"]mod native_fix;

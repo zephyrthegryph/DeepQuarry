@@ -14,13 +14,13 @@ fn options_using(args:&[String],usage_export:bool)->io::Result<Invocation>{
   _=>ordinary.push(arg.clone()),
  }}
  if !explicit{return Err(invalid("full registry native check needs explicit --native-full-registry"))}
- let parsed=crate::cli_arguments::parse(ordinary);if parsed.cmd!="check"{return Err(invalid("full registry adapter serves check only"))}
+ let parsed=crate::cli_arguments::parse(ordinary);if !matches!(parsed.cmd.as_str(),"check"|"report"){return Err(invalid("full registry adapter serves check/report only"))}let report=parsed.cmd=="report";
  for flag in &parsed.flags{if !matches!(flag.as_str(),"--raw"|"--ci"|"--unused"|"--no-unused"|"--no-selftest"|"--no-cache"|"--rehash"){return Err(io::Error::new(io::ErrorKind::Unsupported,format!("full native check has no exact implementation for {flag}; no compatibility fallback")))}}
  if !parsed.flags.iter().any(|f|f=="--no-selftest"){return Err(io::Error::new(io::ErrorKind::Unsupported,"full native check requires explicit --no-selftest until native fixture selftests are qualified"))}
  if usage_export{return Err(io::Error::new(io::ErrorKind::Unsupported,"full native check has no qualified DQ_ALLOW_USAGE export yet; no fallback"))}
  let root=std::path::absolute(crate::cli_arguments::find_root(parsed.root))?;
  let has=|name:&str|parsed.flags.iter().any(|flag|flag==name);
- Ok(Invocation{program:program.ok_or_else(||invalid("full native check needs --native-dmbc ABSOLUTE_EXE"))?,root,options:Options{raw:has("--raw"),ci:has("--ci"),unused:!has("--no-unused"),no_cache:has("--no-cache"),rehash:has("--rehash")},selectors:parsed.lints})
+ Ok(Invocation{program:program.ok_or_else(||invalid("full native check needs --native-dmbc ABSOLUTE_EXE"))?,root,options:Options{raw:report||has("--raw"),ci:has("--ci"),unused:!report&&!has("--no-unused"),no_cache:has("--no-cache"),rehash:has("--rehash")},selectors:parsed.lints})
 }
 struct Text<'a>{diagnostics:&'a[u8],report:&'a[u8]}
 fn text<'a>(bytes:&'a[u8],status:i32,expected:Options,selection:SelectionBinding,work:&NativeReportWork)->io::Result<Text<'a>>{
@@ -72,4 +72,20 @@ pub(super)fn cli(args:&[String])->std::process::ExitCode{match run(args,&mut io:
   let mut missing=serde_json::to_value(&terminal).unwrap();missing.as_object_mut().unwrap().remove("diagnostics");assert!(serde_json::from_value::<Terminal>(missing).is_err(),"diagnostic field must be explicit even when null");
  }
 
+}
+
+#[cfg(test)]mod report_alias_controls{
+ use super::*;use crate::{full_registry_check_wire::{Schema,Scope,CheckFrame},selected_exclusions_wire::{Seal,Hex128}};
+ fn args()->Vec<String>{vec!["report".into(),"--native-full-registry".into(),"--native-dmbc".into(),if cfg!(windows){"E:/not-started/dmbc.exe".into()}else{"/not-started/dmbc".into()},"--root".into(),"actual-relative-root".into(),"--no-selftest".into()]}
+ #[test]fn native_report_alias_forces_raw_even_with_ci_and_never_requests_whole_unused(){
+  let mut arguments=args();arguments.extend(["--ci".into(),"--unused".into(),"--no-cache".into(),"--rehash".into(),"--lint".into(),"scheduler,-tracked,scheduler".into()]);let report=options_using(&arguments,false).unwrap();assert_eq!(report.options,Options{raw:true,ci:true,unused:false,no_cache:true,rehash:true});assert_eq!(report.selectors,["scheduler","-tracked","scheduler"]);
+  arguments.push("--no-unused".into());assert_eq!(options_using(&arguments,false).unwrap().options,report.options);arguments[0]="check".into();assert!(!options_using(&arguments,false).unwrap().options.raw,"check must keep its existing independent raw flag");
+  arguments=args();arguments.retain(|arg|arg!="--no-selftest");assert_eq!(options_using(&arguments,false).unwrap_err().kind(),io::ErrorKind::Unsupported);for mode in ["--changed-only","--timing"]{let mut arguments=args();arguments.push(mode.into());assert_eq!(options_using(&arguments,false).unwrap_err().kind(),io::ErrorKind::Unsupported)}assert_eq!(options_using(&args(),true).unwrap_err().kind(),io::ErrorKind::Unsupported);
+ }
+ #[test]fn native_report_terminal_requires_effective_raw_ci_no_audit_and_both_exact_streams(){
+  let mut arguments=args();arguments.extend(["--ci".into(),"--unused".into(),"--lint".into(),"scheduler".into()]);let invocation=options_using(&arguments,false).unwrap();let selection=SelectionBinding::for_selectors(&invocation.selectors).unwrap();let diagnostics=b"actual registered diagnostic\n";let report=b"::group::scheduler\nactual finding\n::endgroup::\nRatchet lints failed: scheduler\n";
+  let terminal=Terminal{schema:Schema::V2,scope:Scope::RegistrySelection,complete:true,full_policy_parity:false,options:invocation.options,selection,selected:1,registered:2,frame:CheckFrame::Source{query_revision:Hex128(1),source_revision:Hex128(2),policy_revision:Hex128(3)},clean:false,diagnostics:Some(Seal{length:diagnostics.len()as u64,hash:Hex128(xxhash_rust::xxh3::xxh3_128(diagnostics))}),report:Seal{length:report.len()as u64,hash:Hex128(xxhash_rust::xxh3::xxh3_128(report))}};
+  let encode=|terminal:&Terminal|{let mut bytes=serde_json::to_vec(terminal).unwrap();bytes.push(b'\n');bytes.extend_from_slice(diagnostics);bytes.extend_from_slice(report);bytes};let wire=encode(&terminal);let work=NativeReportWork::new();let actual=text(&wire,1,invocation.options,selection,&work).unwrap();assert_eq!(actual.diagnostics,diagnostics);assert_eq!(actual.report,report);
+  for mode in 0..3{let mut wrong=terminal.clone();match mode{0=>wrong.options.raw=false,1=>wrong.options.unused=true,_=>wrong.options.ci=false}assert!(text(&encode(&wrong),1,invocation.options,selection,&work).is_err())}assert!(text(&wire,0,invocation.options,selection,&work).is_err());let mut corrupt=wire;*corrupt.last_mut().unwrap()^=1;assert!(text(&corrupt,1,invocation.options,selection,&work).is_err());
+ }
 }

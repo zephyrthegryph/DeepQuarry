@@ -11,6 +11,10 @@ impl LibraryTransport<'_>{
   self.run_program_with_trace(program,args,timeout,false)
  }
  pub(crate) fn run_program_with_trace(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration,trace_original:bool)->std::io::Result<std::process::Output>{
+  self.run_program_using(program,args,timeout,trace_original,None)
+ }
+ pub(crate) fn run_program_in(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration,caller:&Path)->std::io::Result<std::process::Output>{self.run_program_using(program,args,timeout,false,Some(caller))}
+ fn run_program_using(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration,trace_original:bool,caller:Option<&Path>)->std::io::Result<std::process::Output>{
   use std::{fs::File,io,process::{Command,Stdio},time::Instant};
   let stdout=self.root.join("transport.stdout");let stderr=self.root.join("transport.stderr");
   let mut command=Command::new(program);
@@ -19,6 +23,7 @@ impl LibraryTransport<'_>{
    .env("DMB_DAEMON_AUTOSTART","1").env("DMB_FORWARDED","1")
    .env("DMB_DAEMON_IDLE_EXIT_SECS","120").env("RAYON_NUM_THREADS","1")
    .env_remove("DMB_UNIFIED_ANALYSIS").env_remove("DQ_ALLOW_USAGE");
+  if let Some(caller)=caller{command.current_dir(caller);}
   if trace_original { command.env("DMB_ORIGINAL_TRACE_STAGES","1"); }
   #[cfg(windows)]{use std::os::windows::process::CommandExt;command.creation_flags(0x0800_0000|0x0000_4000);}
   let mut child=command.spawn()?;

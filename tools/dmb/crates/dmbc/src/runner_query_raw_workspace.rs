@@ -89,3 +89,52 @@ impl super::QueryAttempt{
   if self.enabled{let mut state=self.state.lock().unwrap_or_else(|error|error.into_inner());state.snapshot=None;state.handlers_snapshot=None;state.raw_snapshot=Some(snapshot);state.publication_pair=None;self.captured=true;}Ok(pins)
  }
 }
+
+/// DATA coordinates from the two actual current no-model producer owners.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) struct SourceHandlerPins{pub(crate) raw_query:u128,pub(crate) raw_source:u128,pub(crate) raw_policy:u128,pub(crate) handler_query:u128,pub(crate) handler_source:Option<u128>,pub(crate) handler_full_source:Option<u128>,pub(crate) full_semantic:Option<u128>,pub(crate) full_policy:Option<u128>}
+impl RawWorkspaceSnapshot{
+ pub(crate) fn require_structural_handler_sibling(&self,handlers:&crate::runner_host::query_snapshot::HandlerWorkspaceSnapshot,raw_plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<SourceHandlerPins>{
+  if handlers.requires_full(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"structural sibling cannot borrow a demanded full Handler partition"))}
+  self.require_source_handler_sibling(handlers,raw_plan,None)
+ }
+ pub(crate) fn require_source_handler_sibling(&self,handlers:&crate::runner_host::query_snapshot::HandlerWorkspaceSnapshot,raw_plan:&Arc<crate::runner_host::NativeCheckSelection>,full:Option<&super::SourceSnapshot>)->io::Result<SourceHandlerPins>{
+  self.require_registered_source_plan(raw_plan)?;handlers.require_current()?;handlers.require_full_snapshot(full)?;
+  let(configuration,bytes)=self.capture.configuration();handlers.capture().prepared().subject().require_configuration(configuration,bytes)?;
+  if handlers.capture().prepared().subject().is_selected_full()||handlers.capture().root()!=self.capture.root()||!Arc::ptr_eq(handlers.queries(),&self.queries){return Err(io::Error::new(io::ErrorKind::InvalidInput,"source+Handler frame requires actual same-query sibling owners"))}
+  let full_model=full.map(|actual|{let workspace=actual.native_workspace.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual conditional full policy workspace absent"))?;Ok::<_,io::Error>((actual.tree.identity(),actual.source_revision,workspace.policy_revision()))}).transpose()?;
+  let handler_full_source=handlers.full_source_revision()?;
+  if handlers.requires_full()!=handler_full_source.is_some()||full_model.as_ref().map(|(_,source,_)|*source)!=handler_full_source{return Err(io::Error::new(io::ErrorKind::InvalidInput,"Handler full-source coordinates lack their actual conditional owner"))}
+  Ok(SourceHandlerPins{raw_query:self.revision(),raw_source:self.source_revision(),raw_policy:self.policy_revision(),handler_query:handlers.revision(),handler_source:handlers.source_revision()?,handler_full_source,full_semantic:full_model.map(|(semantic,_,_)|semantic),full_policy:full_model.map(|(_,_,policy)|policy)})
+ }
+
+}
+impl super::QueryAttempt{
+ /// One atomic publication of BOTH actual no-model owners. Ordinary raw-only
+ /// and Handler-only admission still keep their existing state semantics.
+ pub(crate) fn admit_registered_source_handlers(&mut self,raw:RawWorkspaceSnapshot,handlers:crate::runner_host::query_snapshot::HandlerWorkspaceSnapshot,admission:crate::request_runner::runner_freshness::WorkspacePolicyAdmission,raw_plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<SourceHandlerPins>{
+  if self.finished||self.captured||self.pending_source.is_some()||self.pending_workspace.is_some()||self.pending_diagnostic.is_some()||!Arc::ptr_eq(&raw.capture,admission.capture())||admission.take_generation_inputs().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"source+Handler cannot replace unfinished or foreign source admission"))}
+  let pins=raw.require_structural_handler_sibling(&handlers,raw_plan)?;crate::daemon::control::checkpoint()?;
+  if self.enabled{let mut state=self.state.lock().unwrap_or_else(|error|error.into_inner());state.snapshot=None;state.raw_snapshot=Some(raw);state.handlers_snapshot=Some(handlers);state.publication_pair=None;self.captured=true;}Ok(pins)
+ }
+ pub(crate) fn finish_registered_source_handlers(&mut self){let mut state=self.state.lock().unwrap_or_else(|error|error.into_inner());state.publication_pair=None;state.last_request_outcome="source_handler_prepared";self.finished=true;}
+}
+
+impl RawWorkspaceSnapshot{
+ pub(crate) fn require_recorded_source_handler_prefix(&self,inputs:&crate::input_snapshot::InputSnapshot,plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<()>{
+  self.require_registered_source_plan(plan)?;if !self.capture.is_recorded_in(inputs){return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined source ledger omits actual raw producer observations"))}Ok(())
+ }
+}
+
+impl super::QueryAttempt{
+ /// Retain an independently captured Raw sibling only AFTER this same attempt
+ /// genuinely admitted the full source required by its actual Handler child.
+ pub(crate) fn retain_registered_source_handler_full(&mut self,raw:RawWorkspaceSnapshot,admission:crate::request_runner::runner_freshness::WorkspacePolicyAdmission,raw_plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<SourceHandlerPins>{
+  if self.finished||!self.captured||self.pending_source.is_some()||self.pending_workspace.is_some()||self.pending_diagnostic.is_some()||!Arc::ptr_eq(&raw.capture,admission.capture())||admission.take_generation_inputs().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional raw sibling lacks its actual admitted full continuation"))}
+  let mut state=self.state.lock().unwrap_or_else(|error|error.into_inner());
+  let full=state.snapshot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual required Handler model absent"))?;
+  let handlers=state.handlers_snapshot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"actual required Handler snapshot absent"))?;
+  if !handlers.requires_full(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw policies cannot force an unrequested full Handler model"))}
+  let pins=raw.require_source_handler_sibling(handlers,raw_plan,Some(full))?;crate::daemon::control::checkpoint()?;
+  if self.enabled{state.raw_snapshot=Some(raw);state.publication_pair=None;}Ok(pins)
+ }
+}

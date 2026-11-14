@@ -816,7 +816,7 @@ impl super::super::RawWorkspaceSnapshot {
     fn stage_raw_file_report_using(
         &self,prepared:&crate::request::BuildOutcome,exclusions:&[String],retained:&Arc<Budget>,root:&Path,selected:&'static[&'static str],
         purpose:crate::runner_host::workspace_capture::RawSourcePurpose,file:Stage,cache_report:bool,prior:Option<Arc<WorkspaceCapture>>,
-    )->io::Result<(bool,Verified)>{self.stage_raw_file_report_using_plan(prepared,exclusions,retained,root,selected,purpose,file,cache_report,prior,None)}
+    )->io::Result<(bool,Verified)>{self.stage_raw_file_report_using_plan(Some(prepared),exclusions,retained,root,selected,purpose,file,cache_report,prior,None,None)}
 
     pub(in crate::runner_host) fn stage_selected_registry_source_check(
         &self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,
@@ -824,22 +824,49 @@ impl super::super::RawWorkspaceSnapshot {
         self.require_registered_source_plan(plan)?;
         let mut work=Operation{budget:retained,poll:&||crate::daemon::control::checkpoint()};let mut order=Vec::new();
         for name in plan.names(){kc::row(&mut work,&mut order).map_err(operational)?;order.push(name.as_str());}
-        self.stage_raw_file_report_using_plan(prepared,plan.exclusions(),retained,root,&order,crate::runner_host::workspace_capture::RawSourcePurpose::RegisteredSourceCheck,file,false,None,Some(plan))
+        self.stage_raw_file_report_using_plan(Some(prepared),plan.exclusions(),retained,root,&order,crate::runner_host::workspace_capture::RawSourcePurpose::RegisteredSourceCheck,file,false,None,Some(plan),None)
+    }
+
+    pub(in crate::runner_host) fn stage_source_handler_registry_check(
+        &self,retained:&Arc<Budget>,root:&Path,file:Stage,
+        projection:&SourceHandlerProjection,handler:&super::super::HandlerWorkspaceSnapshot,full:Option<&SourceSnapshot>,
+    )->io::Result<(bool,Verified)>{
+        projection.require_parent(projection.parent())?;self.require_source_handler_sibling(handler,projection.raw(),full)?;
+        // Group reporting DATA only; neither a Model nor full Handler source
+        // revision is minted from these independently authentic native owners.
+        let owner_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork=self.queries.as_ref();
+        let mut control=NativeSelectionControl{work:owner_work,credit:owner_work.reserve(0)?};
+        let mut order=Vec::new();for name in projection.parent().names(){kc::row(&mut control,&mut order).map_err(operational)?;order.push(name.as_str());}
+        let answer=self.stage_raw_file_report_using_plan(None,projection.parent().exclusions(),retained,root,&order,
+            crate::runner_host::workspace_capture::RawSourcePurpose::RegisteredSourceCheck,file,false,None,Some(projection.raw()),Some((projection,handler,full)));
+        if answer.is_err(){return answer}self.require_source_handler_sibling(handler,projection.raw(),full)?;answer
     }
 
     fn stage_raw_file_report_using_plan(
-        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        &self, prepared: Option<&crate::request::BuildOutcome>, exclusions: &[String], retained: &Arc<Budget>,
         root: &Path, selected: &[&str],
         purpose: crate::runner_host::workspace_capture::RawSourcePurpose, mut file: Stage,
         cache_report: bool, prior: Option<Arc<WorkspaceCapture>>,check_plan:Option<&Arc<NativeCheckSelection>>,
+        source_handler:Option<(&SourceHandlerProjection,&super::super::HandlerWorkspaceSnapshot,Option<&SourceSnapshot>)>,
     ) -> io::Result<(bool, Verified)> {
         use crate::{request::BuildOutcome, runner_host::workspace_capture::RawSourcePurpose};
         if let Some(plan)=check_plan{self.require_registered_source_plan(plan)?;if !plan.source_only()||purpose!=RawSourcePurpose::RegisteredSourceCheck||cache_report||prior.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"registered source CHECK profile differs from its actual plan"))}}
         use dq_analyze::captured_allow_annotations::full_unused::{FrameData, FrameOwner, SelectedTreePlanData, UsageJoinData};
-        let BuildOutcome::RawQueryPrepared { query_revision, source_revision, policy_revision, retained: true } = prepared else {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "selected raw-file preparation did not issue a current source-only frame"));
+        // This private coordinator borrows actual sibling owners. The Raw
+        // proof remains bound to its own derived source-only child plan.
+        if let Some((projection,handler,full))=source_handler{
+            projection.require_parent(projection.parent())?;
+            if check_plan.is_none_or(|plan|!Arc::ptr_eq(plan,projection.raw()))
+                ||!selected.iter().copied().eq(projection.parent().names().iter().map(String::as_str))
+                ||exclusions!=projection.parent().exclusions(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined report differs from its actual parent/source plans"))}
+            self.require_source_handler_sibling(handler,projection.raw(),full)?;
+        }
+        let pin=|text:&str|u128::from_str_radix(text,16).ok();
+        let(query_revision,source_revision,policy_revision)=match(prepared,source_handler){
+            (Some(BuildOutcome::RawQueryPrepared{query_revision,source_revision,policy_revision,retained:true}),_)=>(pin(query_revision),pin(source_revision),pin(policy_revision)),
+            (None,Some(_))=>(Some(self.revision()),Some(self.source_revision()),Some(self.policy_revision())),
+            _=>return Err(io::Error::new(io::ErrorKind::InvalidData,"selected raw-file preparation did not issue a current source-only frame")),
         };
-        let pin = |text: &str| u128::from_str_radix(text, 16).ok();
         let capture = &self.capture;
         let queries = &self.queries;
         let sealed_bulk = purpose == RawSourcePurpose::AllRawFilePolicies;
@@ -847,9 +874,9 @@ impl super::super::RawWorkspaceSnapshot {
             || self.source.purpose() != purpose
             || capture.root() != root || (check_plan.is_none()&&capture.configuration().1.is_none())
             || (check_plan.is_none()&&!purpose.question().is_some_and(|question|capture.matches_auxiliary_questions(&[question])))
-            || pin(query_revision) != Some(self.revision())
-            || pin(source_revision) != Some(self.source_revision())
-            || pin(policy_revision) != Some(self.policy_revision())
+            || query_revision != Some(self.revision())
+            || source_revision != Some(self.source_revision())
+            || policy_revision != Some(self.policy_revision())
         {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected raw-file preparation differs from the actual workspace frame"));
         }
@@ -857,7 +884,9 @@ impl super::super::RawWorkspaceSnapshot {
         let poll = || {
             retained.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
             crate::daemon::control::checkpoint()?;
-            capture.require_scope(&guard)
+            capture.require_scope(&guard)?;
+            if let Some((projection,handler,full))=source_handler{self.require_source_handler_sibling(handler,projection.raw(),full)?;}
+            Ok(())
         };
         queries.require_workspace_report_configuration(capture, &guard).map_err(operational)?;
         let mut work = Operation { budget: retained, poll: &poll };
@@ -887,7 +916,7 @@ impl super::super::RawWorkspaceSnapshot {
         };
         let mut usage = UsageJoinData::new(&selection, frame);
         let observed_baseline=|meta:&Meta|{capture.registered_check_baseline(meta,&guard,check_plan.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"registered baseline role absent"))?)};
-        let mut stage = ReportStage {check_format:check_plan.map(|plan|{let mut format=plan.format();format.unused=plan.audit_unused();format}),registered_source:check_plan.map(Arc::as_ref),
+        let mut stage = ReportStage {check_format:check_plan.map(|plan|{let mut format=plan.format();format.unused=plan.audit_unused();format}),registered_source:source_handler.map(|(projection,_,_)|projection.parent().as_ref()).or_else(||check_plan.map(Arc::as_ref)),
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, private_check_grep: false, private_derived_reads: false, judgment: JudgmentV2::Raw, library_baseline: None, full_ci_baseline: check_plan.is_some_and(|plan|!plan.format().raw).then_some(&observed_baseline),
         };
@@ -930,6 +959,16 @@ impl super::super::RawWorkspaceSnapshot {
                         usage.record_fold(name, frame, data.allow_used(), &mut work).map_err(operational)
                     }).map_err(operational)?;
                 }
+                Producer::Special("sem/handlers") if source_handler.is_some()=>{
+                    let(projection,handler,full)=source_handler.expect("actual combined coordinator role");
+                    self.require_source_handler_sibling(handler,projection.raw(),full)?;
+                    handler.with_source_union_report(full,|data,config,child|{
+                        let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
+                        stage.observe(root,meta,ReportRows::Union(UnionRows::Handlers(data)),scope,child)?;
+                        usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)
+                    })?;
+                    self.require_source_handler_sibling(handler,projection.raw(),full)?;
+                }
                 Producer::Special("allow_annotations") => {
                     queries.with_workspace_allow_annotations(capture, &guard, |data, config, child| {
                         let empty = LintScope::default();
@@ -948,14 +987,21 @@ impl super::super::RawWorkspaceSnapshot {
             dm_profile::detail_mark(meta.name, policy_started);
         }
         let completed = usage.finish_data(&mut work).map_err(operational)?;
+        let unused_tree=if source_handler.is_some()&&check_plan.is_some_and(|plan|plan.audit_unused()){
+            Some(SelectedTreePlanData::new([dq_analyze::tree::CODE_MAPS_DM],&mut work).map_err(operational)?)
+        }else{None};
         let clean = if check_plan.is_some_and(|plan|!plan.audit_unused()){
             poll()?;stage.finish(&CompleteAllowRun{selected:selection.names(),validation:None,unused:None},retained)?
-        }else{queries.with_workspace_full_allow_unused(capture, &guard, &selected_tree, &completed, |unused, _, budget| {
+        }else{queries.with_workspace_full_allow_unused(capture, &guard, unused_tree.as_ref().unwrap_or(&selected_tree), &completed, |unused, _, budget| {
             poll()?;
             stage.finish(&CompleteAllowRun { selected: selection.names(), validation: None, unused:Some(unused) }, budget)
         }).map_err(operational)?};
         let output = if cache_report {
             queries.finish_bulk_raw_report(capture, &guard, stage.file, clean)?
+        } else if source_handler.is_some(){
+            // Reuse the existing bounded byte-seal drain. Its Verified value
+            // is only output integrity; producer/source authority stays above.
+            crate::request_runner::native_check_handlers::check_diagnostic_stage(stage.file)?
         } else {
             checked_stage(stage.file)?
         };
@@ -1457,6 +1503,10 @@ pub(crate) struct NativeCheckSelection{
  _credit:dm_preprocess::source_arena_credit::SourceArenaCredit,
 }
 impl NativeCheckSelection{
+ pub(crate) fn source_handler_union_candidate(&self)->bool{
+  self.needs_handlers()&&(self.names().len()>1||self.audit_unused())&&self.names().iter().all(|name|matches!(Producer::from_name(name),Some(Producer::Special("sem/handlers")))||Producer::from_name(name).is_some_and(source_only_registry_producer))
+ }
+
  pub(crate) fn model_handler_join(&self)->bool{self.needs_handlers()&&self.names().len()>1&&!self.exclusions().is_empty()&&self.names().iter().filter(|name|name.as_str()!="sem/handlers").filter_map(|name|Producer::from_name(name)).any(|producer|!source_only_registry_producer(producer))}
  pub(crate) fn require_model_handler_intent(&self,intent:&crate::policy_request::AdmittedPolicyRequest)->io::Result<()>{
   let invalid=||io::Error::new(io::ErrorKind::InvalidInput,"registered Handler child requires the exact actual model selection and admitted namespace");
@@ -1543,12 +1593,22 @@ impl Control for NativeSelectionControl<'_>{
 /// Shared registry role classification, identical to the existing source-only dispatch.
 fn source_only_registry_producer(producer:Producer)->bool{matches!(producer,Producer::Raw(_)|Producer::Tree(_)|Producer::Special("allow_annotations"|"sem/keys"|"sys/hygiene"|"sys/resolvers"|"sys/tables"|"system_boundary"))}
 pub(crate) fn prepare_native_check_selection(selectors:&[String],format:crate::runner_host::FullRegistryCheckOptions,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<Arc<NativeCheckSelection>>{
+ prepare_native_check_selection_for(selectors,format,work,NativeSelectionPurpose::ExistingRoutes)
+}
+#[derive(Clone,Copy)]enum NativeSelectionPurpose{ExistingRoutes,ConditionalSourceHandlers}
+pub(crate) fn prepare_native_registered_check_selection(selectors:&[String],format:crate::runner_host::FullRegistryCheckOptions,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<Arc<NativeCheckSelection>>{
+ prepare_native_check_selection_for(selectors,format,work,NativeSelectionPurpose::ConditionalSourceHandlers)
+}
+pub(crate) fn prepare_native_source_handler_selection(selectors:&[String],format:crate::runner_host::FullRegistryCheckOptions,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<Arc<NativeCheckSelection>>{
+ let plan=prepare_native_check_selection_for(selectors,format,work,NativeSelectionPurpose::ConditionalSourceHandlers)?;if !plan.source_handler_union_candidate(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual conditional source plus Handler selection required"))}Ok(plan)
+}
+fn prepare_native_check_selection_for(selectors:&[String],format:crate::runner_host::FullRegistryCheckOptions,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,purpose:NativeSelectionPurpose)->io::Result<Arc<NativeCheckSelection>>{
  work.checkpoint()?;
  let credit=work.reserve(std::mem::size_of::<NativeCheckSelection>()+2*std::mem::size_of::<usize>())?;let mut control=NativeSelectionControl{work,credit};
  let selection=dq_analyze::captured_registry_check_selection::select_using(selectors,&mut control).map_err(operational)?;
  // This actual full-run context still requests the independent whole-unused
  // audit. Exclusive Handler alone owns neither that raw roster nor its EOF.
- if selection.names().len()==1&&selection.names()[0]=="sem/handlers"&&format.unused&&selection.full_run(){return Err(io::Error::new(io::ErrorKind::Unsupported,"conditional Handler plus whole-unused audit requires its genuine source union; not yet admitted"))}
+ if matches!(purpose,NativeSelectionPurpose::ExistingRoutes)&&selection.names().len()==1&&selection.names()[0]=="sem/handlers"&&format.unused&&selection.full_run(){return Err(io::Error::new(io::ErrorKind::Unsupported,"conditional Handler plus whole-unused audit requires its genuine source union; not yet admitted"))}
  let exclusive_engine=selection.names().len()==1&&selection.names()[0]=="engine_layering"&&!(format.unused&&selection.full_run());
  if selection.names().iter().any(|name|name=="engine_layering")&&!exclusive_engine&&!selection.exclusions().is_empty(){return Err(io::Error::new(io::ErrorKind::Unsupported,"selected source+Engine mixtures require an actual joined purpose; not yet admitted"))}
  let mut roots=Vec::new();let mut questions=Vec::new();let mut source_only=true;let(mut docs,mut ui)=(false,false);
@@ -1733,4 +1793,30 @@ impl SourceSnapshot{
   let ui=prepare_native_check_selection(&["tracked".into(),"sem/handlers".into(),"ui_actions".into()],options,work).unwrap();let mut roots=Vec::new();for(directory,_)in ui.roots(){let path=root.join(directory);std::fs::create_dir_all(&path).unwrap();if !roots.contains(&path){roots.push(path)}}assert!(roots.len()<ui.roots().len(),"actual UI has multiple extensions on its same directory");let ui_request=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalAnalyze0290),workspace:Some(WorkspacePolicyRequest{root:root.clone(),recursive_roots:roots,configuration:root.join("tools/ci/lint_scopes.toml")}),workspace_auxiliary:ui.questions().collect(),..Default::default()};let admitted_ui=ui_request.admit_registered_model_check(&ui).unwrap();ui.require_model_handler_intent(&admitted_ui).unwrap();
   let mut missing_question=make();missing_question.workspace_auxiliary.clear();let unrelated=missing_question.admit().unwrap();assert_eq!(plan.require_model_handler_intent(&unrelated).unwrap_err().kind(),io::ErrorKind::InvalidInput);let mut duplicate_root=make();let workspace=duplicate_root.workspace.as_mut().unwrap();assert!(workspace.recursive_roots.len()>1);let first=workspace.recursive_roots[0].clone();workspace.recursive_roots[1]=first;assert_eq!(duplicate_root.admit_registered_model_check(&plan).unwrap_err().kind(),io::ErrorKind::InvalidInput);
  }
+}
+
+/// Private metadata relation only. Real source/Handler receipts remain required.
+pub(crate) struct SourceHandlerProjection{parent:Arc<NativeCheckSelection>,raw:Arc<NativeCheckSelection>,_credit:dm_preprocess::source_arena_credit::SourceArenaCredit}
+impl SourceHandlerProjection{
+ pub(crate) fn parent(&self)->&Arc<NativeCheckSelection>{&self.parent}
+ pub(crate) fn raw(&self)->&Arc<NativeCheckSelection>{&self.raw}
+ pub(crate) fn require_parent_intent(&self,intent:&crate::policy_request::AdmittedPolicyRequest)->io::Result<()>{
+  self.require_parent(&self.parent)?;let invalid=||io::Error::new(io::ErrorKind::InvalidInput,"conditional operation requires its actual parent request namespace");
+  if intent.analysis_context()!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||!intent.workspace_auxiliary().iter().copied().eq(self.parent.questions()){return Err(invalid())}
+  let workspace=intent.workspace().ok_or_else(invalid)?;let directories=self.parent.roots().iter().enumerate().filter(|(index,(directory,_))|!self.parent.roots()[..*index].iter().any(|(prior,_)|prior==directory)).count();
+  if workspace.configuration.strip_prefix(&workspace.root).ok()!=Some(Path::new("tools/ci/lint_scopes.toml"))||workspace.recursive_roots.len()!=directories||self.parent.roots().iter().any(|(directory,_)|!workspace.recursive_roots.iter().any(|path|path.strip_prefix(&workspace.root).ok()==Some(Path::new(directory))))||workspace.recursive_roots.iter().any(|path|!self.parent.roots().iter().any(|(directory,_)|path.strip_prefix(&workspace.root).ok()==Some(Path::new(directory)))){return Err(invalid())}Ok(())
+ }
+
+ pub(crate) fn require_parent(&self,parent:&Arc<NativeCheckSelection>)->io::Result<()>{if !Arc::ptr_eq(parent,&self.parent)||!parent.source_handler_union_candidate()||!self.raw.source_only()||self.raw.audit_unused()!=parent.audit_unused(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional source projection differs from its actual registered parent"))}Ok(())}
+}
+pub(crate) fn derive_source_handler_projection(parent:Arc<NativeCheckSelection>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<SourceHandlerProjection>{
+ work.checkpoint()?;if !parent.source_handler_union_candidate(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"source projection cannot force an unrequested model"))}
+ let credit=work.reserve(std::mem::size_of::<SourceHandlerProjection>()+2*std::mem::size_of::<usize>())?;let temporary=work.reserve(std::mem::size_of::<Vec<String>>()+std::mem::size_of::<NativeSelectionControl<'_>>()+256)?;let mut control=NativeSelectionControl{work,credit:temporary};let mut selectors=Vec::new();
+ dq_analyze::captured_registry_check_selection::visit_registered_names(&mut control,&mut|name,control|{
+  let producer=Producer::from_name(name).ok_or_else(||dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"canonical registry name lacks its actual registered producer")))?;let meta=producer.metadata();
+  let source=parent.names().iter().any(|name|name==meta.name)&&Producer::from_name(meta.name).is_some_and(source_only_registry_producer);let auxiliary=parent.audit_unused()&&std::ptr::eq(meta,dq_analyze::allow_annotation_policy::metadata());let wanted=source||auxiliary;
+  if parent.audit_unused(){if !wanted{kc::row(control,&mut selectors)?;selectors.push(kc::format(control,format_args!("-{}",meta.name))?);}}else if wanted{kc::row(control,&mut selectors)?;selectors.push(kc::own(control,meta.name)?);}Ok(())
+ }).map_err(operational)?;let mut options=parent.format();options.unused=parent.audit_unused();let raw=prepare_native_check_selection(&selectors,options,work)?;drop(selectors);drop(control);
+ if !raw.source_only()||raw.audit_unused()!=parent.audit_unused()||parent.metadata().filter(|meta|Producer::from_name(meta.name).is_some_and(source_only_registry_producer)).any(|meta|!raw.names().iter().any(|name|name==meta.name))||raw.names().iter().any(|name|!parent.names().contains(name)&&!(parent.audit_unused()&&name==dq_analyze::allow_annotation_policy::metadata().name)){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual source child selection differs from its producer projection"))}
+ let result=SourceHandlerProjection{parent,raw,_credit:credit};result.require_parent(result.parent())?;Ok(result)
 }
