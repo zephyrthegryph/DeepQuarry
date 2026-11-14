@@ -24,7 +24,8 @@
 /// that fades (or that `together` asks for: an inset layer needs the group's own surface) is KEEP_TOGETHER.
 /proc/human_part_group(list/parts, layer = FLOAT_LAYER, alpha = 255, pixel_x = 0, pixel_y = 0, together = FALSE, flags = null)
 	READS_FROM()
-	var/image/group = image(icon = null, layer = layer)
+	// An explicit blank state: a group with no icon of its own would draw the icon of whatever it is flattened over (a composed body is the mob's own icon).
+	var/image/group = image(icon = 'icons/mob/human.dmi', icon_state = "blank", layer = layer)
 	if(!isnull(flags))
 		group.appearance_flags = flags
 	if(together || alpha < 255)
@@ -113,8 +114,8 @@
 	var/base_file
 	var/state
 	if(layered_forced_icon())
-		base_file = force_icon
 		state = "[icon_name][gendered_icon ? "_[owner.gender == FEMALE ? "f" : "m"]" : ""]"
+		base_file = forced_icon_file(state)
 	else
 		var/gender = gendered_icon ? (data.body_gender ? "f" : "m") : null
 		state = "[icon_name][gender ? "_[gender]" : ""]"
