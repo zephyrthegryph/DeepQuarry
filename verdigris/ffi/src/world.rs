@@ -864,6 +864,7 @@ pub fn shutdown() {
     }
     SHUT_DOWN.with(|s| s.set(true));
     crate::jobs::shutdown();
+    crate::glow_mask::stop();
 }
 
 /// Undoes [`shutdown`] for a new `world/New()`. BYOND keeps the library

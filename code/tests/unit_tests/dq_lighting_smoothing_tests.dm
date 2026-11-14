@@ -54,6 +54,7 @@
 
 /datum/unit_test/dq_lighting_smoothing_corners/Run()
 	set_global(nameof(GLOB.client_lighting), FALSE)
+	client_glow_counters_restore() // the baker's own turns (door twins of the lights this test lights) move these counters between ticks
 	dq_smoothing_keep_screens(src)
 	TEST_ASSERT(LIGHTING_SMOOTH_GRADIENT_STATE in icon_states(LIGHTING_ICON), "the lighting icon has the gradient state the tiles use (states: [json_encode(icon_states(LIGHTING_ICON))])")
 	client_lighting_set(TRUE)
