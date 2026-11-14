@@ -47,7 +47,9 @@ import {
   type DockWindow,
   dropIndex,
   fillHeight,
+  fillIndexOf,
   fitHeights,
+  type Measured,
 } from './model';
 
 /** Presses here keep their own meaning (buttons click, tabs select and re-arrange). */
@@ -192,6 +194,8 @@ function runDrag(
     // Not tracked any more: the drag follows the moves it gets.
   }
   const boxes = measure();
+  // The sizes as the drag began: a drop stores them, so moving an entry changes no entry's height.
+  const heights = measureHeights();
   const min = 0;
   const max = Math.max(window.innerHeight, boxes.at(-1)?.start ?? 0);
   const groupOf = host.state.groups.find((g) => g.id === group);
@@ -357,9 +361,15 @@ function runDrag(
           id: pulled,
           group: done.join,
           index: into?.windows.length ?? 0,
+          measured: heights,
         });
       } else {
-        host.dispatch({ type: 'splitWindow', id: pulled, index: done.to });
+        host.dispatch({
+          type: 'splitWindow',
+          id: pulled,
+          index: done.to,
+          measured: heights,
+        });
       }
       return;
     }
@@ -373,7 +383,12 @@ function runDrag(
         host.float(id, id === now.active ? screenPoint(e) : null);
       }
     } else if (done.join) {
-      host.dispatch({ type: 'joinGroup', group, into: done.join });
+      host.dispatch({
+        type: 'joinGroup',
+        group,
+        into: done.join,
+        measured: heights,
+      });
     } else {
       // moveGroup counts positions before the move; the live index is the one after.
       const from = done.boxes.findIndex((b) => b.id === group);
@@ -381,6 +396,7 @@ function runDrag(
         type: 'moveGroup',
         group,
         index: done.to > from ? done.to + 1 : done.to,
+        measured: heights,
       });
     }
   };
@@ -437,6 +453,19 @@ function drawnHeight(id: string, fallback: number): number {
   return rect ? Math.round(rect.height) : fallback;
 }
 
+/** Every entry's drawn height now: a move stores them, so reordering changes no size. */
+function measureHeights(): Measured {
+  const out: Measured = {};
+  for (const node of Array.from(
+    document.querySelectorAll<HTMLElement>('[data-column-group]'),
+  )) {
+    out[node.dataset.columnGroup ?? ''] = Math.round(
+      node.getBoundingClientRect().height,
+    );
+  }
+  return out;
+}
+
 function startResize(
   event: ReactPointerEvent<HTMLElement>,
   host: ColumnHost,
@@ -451,7 +480,7 @@ function startResize(
   const pointer = event.pointerId;
   const startY = event.clientY;
   const startHeight = drawnHeight(group.id, group.height);
-  const nextStart = below ? drawnHeight(below, 0) : 0;
+  const belowStart = below ? drawnHeight(below, 0) : 0;
   target.setPointerCapture(pointer);
   // The whole column redraws on each resize: at most once a frame, and the last height is always applied.
   let dy = 0;
@@ -460,10 +489,10 @@ function startResize(
     frame = 0;
     host.dispatch({
       type: 'boundary',
-      group: group.id,
-      next: below,
-      start: startHeight,
-      nextStart,
+      above: group.id,
+      below,
+      aboveStart: startHeight,
+      belowStart,
       dy,
     });
   };
@@ -706,16 +735,14 @@ const Group = memo(function Group(
   );
 });
 
-/** The expanded entry after `index` when it is not the filling one: the grip's neighbour that gives and takes space. */
+/** The expanded entry after `index` (the other side of this entry's grip), or null at the column's foot. */
 function belowOf(
   groups: DockGroup[],
   index: number,
-  fillAt: number,
   host: ColumnHost,
 ): string | null {
   for (let i = index + 1; i < groups.length; i++) {
-    if (host.collapsed(groups[i])) continue;
-    return i === fillAt ? null : groups[i].id;
+    if (!host.collapsed(groups[i])) return groups[i].id;
   }
   return null;
 }
@@ -725,11 +752,10 @@ export function Column() {
   const version = useSyncExternalStore(host.subscribe, host.getVersion);
   const [drag, setDrag] = useState<GroupDrag | null>(null);
   const { groups } = host.state;
-  // The last expanded entry fills what the others leave.
-  let fillAt = -1;
-  groups.forEach((group, index) => {
-    if (!host.collapsed(group)) fillAt = index;
-  });
+  // The chat fills what the others leave, wherever it sits (else the last expanded entry).
+  const fillAt = fillIndexOf(groups, host.state.windows, (g) =>
+    host.collapsed(g),
+  );
   const insertEnd =
     !!drag?.window && !drag.float && !drag.join && drag.to >= groups.length;
   // The page's height: a resize of the column (or of the client) fits the entries again.
@@ -749,7 +775,7 @@ export function Column() {
           group={group}
           index={index}
           fill={index === fillAt}
-          below={belowOf(groups, index, fillAt, host)}
+          below={belowOf(groups, index, host)}
           height={heights[index]}
           host={host}
           version={version}

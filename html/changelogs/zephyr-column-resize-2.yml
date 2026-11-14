@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Dragging a window boundary in the right-hand column changes only the two windows either side of it"
+  - bugfix: "Moving the chat in the right-hand column no longer resizes it or the other windows"

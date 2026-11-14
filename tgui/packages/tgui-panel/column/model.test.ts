@@ -11,6 +11,7 @@ import {
   emptyDock,
   FILL_MIN,
   FIT_MIN,
+  fillIndexOf,
   fitHeights,
   hiddenIds,
   parseSaved,
@@ -374,56 +375,104 @@ describe('fitting the entries to the column', () => {
     };
     const heights = (state: DockState) => state.groups.map((g) => g.height);
 
-    it('dragging the Status/APC boundary resizes those two and never the chat', () => {
-      const state = column();
-      const [s, a, c] = state.groups;
-      const next = dockReduce(state, {
+    const drag = (
+      state: DockState,
+      above: number,
+      below: number | null,
+      dy: number,
+    ) => {
+      const [x, y] = [state.groups[above], below === null ? null : state.groups[below]];
+      return dockReduce(state, {
         type: 'boundary',
-        group: s.id,
-        next: a.id,
-        start: 300,
-        nextStart: 200,
-        dy: 50,
+        above: x.id,
+        below: y?.id ?? null,
+        aboveStart: x.height,
+        belowStart: y?.height ?? 0,
+        dy,
       });
-      expect(heights(next)).toEqual([350, 150, c.height]);
-      expect(next.groups[2]).toEqual(c);
+    };
+    const changed = (a: DockState, b: DockState) =>
+      a.groups.filter((g, i) => g.height !== b.groups[i].height).length;
+
+    it('dragging the Status/APC boundary changes exactly those two, by a transfer', () => {
+      const state = column();
+      const [s, a, c] = state.groups.map((g) => g.height);
+      const next = drag(state, 0, 1, 50);
+      expect(heights(next)).toEqual([s + 50, a - 50, c]);
+      expect(changed(state, next)).toBe(2);
     });
 
     it('a boundary drag keeps the pair total and stops at the least height', () => {
       const state = column();
-      const [s, a] = state.groups;
-      const next = dockReduce(state, {
-        type: 'boundary',
-        group: s.id,
-        next: a.id,
-        start: 300,
-        nextStart: 200,
-        dy: 1000,
-      });
-      expect(heights(next).slice(0, 2)).toEqual([500 - FIT_MIN, FIT_MIN]);
-      const up = dockReduce(state, {
-        type: 'boundary',
-        group: s.id,
-        next: a.id,
-        start: 300,
-        nextStart: 200,
-        dy: -1000,
-      });
-      expect(heights(up).slice(0, 2)).toEqual([FIT_MIN, 500 - FIT_MIN]);
+      const total = state.groups[0].height + state.groups[1].height;
+      expect(heights(drag(state, 0, 1, 1000)).slice(0, 2)).toEqual([
+        total - FIT_MIN,
+        FIT_MIN,
+      ]);
+      expect(heights(drag(state, 0, 1, -1000)).slice(0, 2)).toEqual([
+        FIT_MIN,
+        total - FIT_MIN,
+      ]);
     });
 
-    it('the boundary above the chat resizes only the entry over it', () => {
+    it('the boundary above the chat changes only the entry over it', () => {
       const state = column();
-      const [s, a, c] = state.groups;
-      const next = dockReduce(state, {
-        type: 'boundary',
-        group: a.id,
-        next: null,
-        start: 200,
-        nextStart: 0,
-        dy: 40,
+      const next = drag(state, 1, 2, 40);
+      expect(heights(next)).toEqual([
+        state.groups[0].height,
+        state.groups[1].height + 40,
+        state.groups[2].height,
+      ]);
+      expect(changed(state, next)).toBe(1);
+    });
+
+    it('a chat at the top: the boundary under it changes only the entry below', () => {
+      let state = column();
+      state = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
       });
-      expect(heights(next)).toEqual([s.height, 240, c.height]);
+      expect(order(state)).toEqual([['c'], ['s'], ['a']]);
+      const next = drag(state, 0, 1, 10);
+      expect(heights(next)).toEqual([
+        state.groups[0].height,
+        state.groups[1].height - 10,
+        state.groups[2].height,
+      ]);
+      // A boundary between two stored entries below the chat moves neither it nor the chat.
+      const pair = drag(state, 1, 2, 25);
+      expect(pair.groups[0].height).toBe(state.groups[0].height);
+      expect(changed(state, pair)).toBe(2);
+    });
+
+    it('moving the chat to the top keeps every height when the drawn sizes are stored', () => {
+      const state = column();
+      const measured = {
+        [state.groups[0].id]: 300,
+        [state.groups[1].id]: 220,
+        [state.groups[2].id]: 410,
+      };
+      const moved = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
+        measured,
+      });
+      expect(order(moved)).toEqual([['c'], ['s'], ['a']]);
+      expect(heights(moved)).toEqual([410, 300, 220]);
+    });
+
+    it('the chat is the filling entry wherever it sits', () => {
+      let state = column();
+      state = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
+      });
+      expect(
+        fillIndexOf(state.groups, state.windows, (g) => g.collapsed),
+      ).toBe(0);
     });
 
     it('a new entry takes its height from Status first', () => {

@@ -60,6 +60,9 @@ export const STATUS_INTERFACE = 'StatPanel';
 /** The chat: the filling entry, which takes from nothing when it opens. */
 const CHAT_IFACE = 'Chat';
 
+/** The heights the entries are drawn at (group id to px): a move stores them first, so no entry changes size when the fill role moves. */
+export type Measured = Record<string, number>;
+
 export type DockAction =
   | { type: 'open'; window: DockWindow }
   | { type: 'close'; id: string }
@@ -69,19 +72,25 @@ export type DockAction =
   | { type: 'resize'; group: string; height: number }
   | {
       type: 'boundary';
-      group: string;
-      /** The expanded, non-filling entry below the boundary that gives or takes the space (null: the filling entry, or none, takes what is left). */
-      next: string | null;
-      /** Both entries' heights when the drag began, and how far the boundary moved. */
-      start: number;
-      nextStart: number;
+      /** The expanded entries either side of the dragged boundary (below is null at the column's foot). */
+      above: string;
+      below: string | null;
+      /** Their drawn heights when the drag began, and how far the boundary moved. */
+      aboveStart: number;
+      belowStart: number;
       dy: number;
     }
-  | { type: 'moveGroup'; group: string; index: number }
-  | { type: 'moveWindow'; id: string; group: string; index: number }
-  | { type: 'splitWindow'; id: string; index: number }
+  | { type: 'moveGroup'; group: string; index: number; measured?: Measured }
+  | {
+      type: 'moveWindow';
+      id: string;
+      group: string;
+      index: number;
+      measured?: Measured;
+    }
+  | { type: 'splitWindow'; id: string; index: number; measured?: Measured }
   | { type: 'orderTabs'; group: string; order: string[] }
-  | { type: 'joinGroup'; group: string; into: string }
+  | { type: 'joinGroup'; group: string; into: string; measured?: Measured }
   | { type: 'load'; saved: Record<string, Placement> };
 
 export function emptyDock(): DockState {
@@ -249,7 +258,7 @@ function takeSpace(
       !g.collapsed &&
       g.windows.some((id) => state.windows[id]?.iface === STATUS_INTERFACE),
   );
-  const fillAt = lastExpanded(out);
+  const fillAt = fillIndexOf(out, state.windows, (g) => g.collapsed);
   if (statusAt >= 0 && statusAt !== fillAt) {
     const status = out[statusAt];
     const give = Math.min(need, Math.max(0, status.height - FIT_MIN));
@@ -264,12 +273,25 @@ function takeSpace(
   return out;
 }
 
-const lastExpanded = (groups: DockGroup[]): number => {
+/**
+ * The filling entry: the one holding the chat (wherever it sits in the list), else the last expanded one. `collapsed` says what folds
+ * (the host's mayCollapse rule). -1 when nothing is expanded.
+ */
+export function fillIndexOf(
+  groups: DockGroup[],
+  windows: Record<string, DockWindow>,
+  collapsed: (group: DockGroup) => boolean,
+): number {
+  const chat = groups.findIndex(
+    (g) =>
+      !collapsed(g) && g.windows.some((id) => windows[id]?.iface === CHAT_IFACE),
+  );
+  if (chat >= 0) return chat;
   for (let i = groups.length - 1; i >= 0; i--) {
-    if (!groups[i].collapsed) return i;
+    if (!collapsed(groups[i])) return i;
   }
   return -1;
-};
+}
 
 function forget(state: DockState, id: string): DockState {
   const { [id]: _gone, ...windows } = state.windows;
@@ -285,7 +307,30 @@ const mapGroup = (
   groups: state.groups.map((g) => (g.id === id ? change(g) : g)),
 });
 
+/** Stores the drawn heights (the fill's included), so what the move changes is the order only. */
+function withMeasured(state: DockState, measured?: Measured): DockState {
+  if (!measured) return state;
+  return {
+    ...state,
+    groups: state.groups.map((g) =>
+      typeof measured[g.id] === 'number' && measured[g.id] > 0
+        ? { ...g, height: clampHeight(measured[g.id]) }
+        : g,
+    ),
+  };
+}
+
 function reduce(state: DockState, action: DockAction): DockState {
+  if (
+    (action.type === 'moveGroup' ||
+      action.type === 'moveWindow' ||
+      action.type === 'splitWindow' ||
+      action.type === 'joinGroup') &&
+    action.measured
+  ) {
+    const { measured, ...rest } = action;
+    return reduce(withMeasured(state, measured), rest as DockAction);
+  }
   switch (action.type) {
     case 'open':
       return open(state, action.window);
@@ -326,30 +371,41 @@ function reduce(state: DockState, action: DockAction): DockState {
         sized: true,
       }));
     case 'boundary': {
-      const next = action.next
-        ? state.groups.find((g) => g.id === action.next)
-        : undefined;
-      if (!next) {
-        return reduce(state, {
-          type: 'resize',
-          group: action.group,
-          height: action.start + action.dy,
-        });
+      // A pure transfer between the two entries either side of the boundary. The filling entry (the chat) is one of them only by
+      // taking what the other gives up: its height is never stored, and no other entry changes.
+      const fillAt = fillIndexOf(state.groups, state.windows, (g) => g.collapsed);
+      const fillId = fillAt >= 0 ? state.groups[fillAt].id : null;
+      const heights = new Map<string, number>();
+      if (action.below === null) {
+        if (action.above !== fillId) {
+          heights.set(action.above, action.aboveStart + action.dy);
+        }
+      } else if (action.above === fillId) {
+        heights.set(
+          action.below,
+          Math.max(FIT_MIN, action.belowStart - action.dy),
+        );
+      } else if (action.below === fillId) {
+        heights.set(
+          action.above,
+          Math.max(FIT_MIN, action.aboveStart + action.dy),
+        );
+      } else {
+        // Both stored: the pair keeps its total and neither goes under FIT_MIN.
+        const total = action.aboveStart + action.belowStart;
+        const up = Math.min(
+          total - FIT_MIN,
+          Math.max(FIT_MIN, Math.round(action.aboveStart + action.dy)),
+        );
+        heights.set(action.above, up);
+        heights.set(action.below, total - up);
       }
-      // The pair keeps its total: one grows by what the other gives, neither under FIT_MIN. The filling entry is never one of them.
-      const total = action.start + action.nextStart;
-      const a = Math.min(
-        total - FIT_MIN,
-        Math.max(FIT_MIN, Math.round(action.start + action.dy)),
-      );
       return {
         ...state,
         groups: state.groups.map((g) =>
-          g.id === action.group
-            ? { ...g, height: clampHeight(a), sized: true }
-            : g.id === next.id
-              ? { ...g, height: clampHeight(total - a), sized: true }
-              : g,
+          heights.has(g.id)
+            ? { ...g, height: clampHeight(heights.get(g.id)), sized: true }
+            : g,
         ),
       };
     }
