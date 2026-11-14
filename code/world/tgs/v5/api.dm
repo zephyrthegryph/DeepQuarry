@@ -25,27 +25,18 @@
 	var/datum/tgs_version/interop_version
 
 	var/chunked_requests = 0
-	var/list/chunked_topics
+	var/list/chunked_topics = list()
 
-	var/list/pending_events
+	var/list/pending_events = list()
 
 	var/detached = FALSE
 
 	var/datum/tgs_http_handler/http_handler
 
-CAPABILITIES(/datum/tgs_api/v5)
-	owns_many(nameof(custom_commands))
-	owns_many(nameof(test_merges))
-	owns_one(nameof(revision), /datum/tgs_revision_information)
-	owns_many(nameof(chat_channels))
-	owns_one(nameof(interop_version), /datum/tgs_version)
-	owns_one(nameof(http_handler), /datum/tgs_http_handler)
-
 /datum/tgs_api/v5/New(datum/tgs_event_handler/event_handler, datum/tgs_version/version, datum/tgs_http_handler/http_handler)
 	. = ..()
-	// the base type owns `version` (and replaces it on reattach): keep our own copy of the interop version
-	rel_set(src, nameof(interop_version), new /datum/tgs_version(version.raw_parameter))
-	rel_set(src, nameof(http_handler), http_handler)
+	interop_version = version
+	src.http_handler = http_handler
 	TGS_DEBUG_LOG("V5 API created: [json_encode(args)]")
 
 /datum/tgs_api/v5/ApiVersion()
@@ -59,7 +50,7 @@ CAPABILITIES(/datum/tgs_api/v5)
 	access_identifier = world.params[DMAPI5_PARAM_ACCESS_IDENTIFIER]
 
 	var/datum/tgs_version/api_version = ApiVersion()
-	rel_clear(src, nameof(version)) // we want this to be the TGS version, not the interop version
+	version = null // we want this to be the TGS version, not the interop version
 
 	// sleep once to prevent an issue where world.Export on the first tick can hang indefinitely
 	TGS_DEBUG_LOG("Starting Export bug prevention sleep tick. time:[world.time] sleep_offline:[world.sleep_offline]")
@@ -81,21 +72,21 @@ CAPABILITIES(/datum/tgs_api/v5)
 		TerminateWorld()
 
 	initial_bridge_request_received = TRUE
-	rel_set(src, nameof(version), new /datum/tgs_version(runtime_information[DMAPI5_RUNTIME_INFORMATION_SERVER_VERSION])) // reassigning this because it can change if TGS updates
+	version = new /datum/tgs_version(runtime_information[DMAPI5_RUNTIME_INFORMATION_SERVER_VERSION]) // reassigning this because it can change if TGS updates
 	security_level = runtime_information[DMAPI5_RUNTIME_INFORMATION_SECURITY_LEVEL]
 	visibility = runtime_information[DMAPI5_RUNTIME_INFORMATION_VISIBILITY]
 	instance_name = runtime_information[DMAPI5_RUNTIME_INFORMATION_INSTANCE_NAME]
 
 	var/list/revisionData = runtime_information[DMAPI5_RUNTIME_INFORMATION_REVISION]
 	if(istype(revisionData))
-		rel_set(src, nameof(revision), new /datum/tgs_revision_information)
+		revision = new
 		revision.commit = revisionData[DMAPI5_REVISION_INFORMATION_COMMIT_SHA]
 		revision.timestamp = revisionData[DMAPI5_REVISION_INFORMATION_TIMESTAMP]
 		revision.origin_commit = revisionData[DMAPI5_REVISION_INFORMATION_ORIGIN_COMMIT_SHA]
 	else
 		TGS_ERROR_LOG("Failed to decode [DMAPI5_RUNTIME_INFORMATION_REVISION] from runtime information!")
 
-	rel_take_all(src, nameof(test_merges))
+	test_merges = list()
 	var/list/test_merge_json = runtime_information[DMAPI5_RUNTIME_INFORMATION_TEST_MERGES]
 	if(istype(test_merge_json))
 		for(var/entry in test_merge_json)
@@ -120,11 +111,11 @@ CAPABILITIES(/datum/tgs_api/v5)
 			tm.head_commit = entry[DMAPI5_TEST_MERGE_PULL_REQUEST_REVISION]
 			tm.comment = entry[DMAPI5_TEST_MERGE_COMMENT]
 
-			rel_add(src, nameof(test_merges), tm)
+			test_merges += tm
 	else
 		TGS_WARNING_LOG("Failed to decode [DMAPI5_RUNTIME_INFORMATION_TEST_MERGES] from runtime information!")
 
-	rel_take_all(src, nameof(chat_channels))
+	chat_channels = list()
 	DecodeChannels(runtime_information)
 
 	initialized = TRUE
@@ -295,11 +286,11 @@ CAPABILITIES(/datum/tgs_api/v5)
 
 	TGS_DEBUG_LOG("Waiting for completion of event ID: [event_id]")
 
-	while(!LAZYACCESS(pending_events, event_id))
+	while(!pending_events[event_id])
 		sleep(world.tick_lag)
 
 	TGS_DEBUG_LOG("Completed wait on event ID: [event_id]")
-	LAZYREMOVE(pending_events, event_id)
+	pending_events -= event_id
 
 	return TRUE
 
@@ -320,11 +311,11 @@ CAPABILITIES(/datum/tgs_api/v5)
 	TGS_DEBUG_LOG("DecodeChannels()")
 	var/list/chat_channels_json = chat_update_json[DMAPI5_CHAT_UPDATE_CHANNELS]
 	if(istype(chat_channels_json))
-		rel_take_all(src, nameof(chat_channels))
+		chat_channels.Cut()
 		for(var/channel_json in chat_channels_json)
 			var/datum/tgs_chat_channel/channel = DecodeChannel(channel_json)
 			if(channel)
-				rel_add(src, nameof(chat_channels), channel)
+				chat_channels += channel
 	else
 		TGS_WARNING_LOG("Failed to decode [DMAPI5_CHAT_UPDATE_CHANNELS] from channel update!")
 
@@ -346,5 +337,3 @@ CAPABILITIES(/datum/tgs_api/v5)
 /datum/tgs_api/v5/Visibility()
 	RequireInitialBridgeResponse()
 	return visibility
-
-
