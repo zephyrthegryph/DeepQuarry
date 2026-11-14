@@ -443,18 +443,22 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 				if(!istype(N, R.key))
 					continue
 				var/started = TICK_USAGE
+				MOVE_COST_BEGIN(reaction_started)
 				var/faulted = FALSE
 				try
 					rx_call_reaction(E, R, N)
 				catch(var/exception/e)
 					faulted = TRUE
 					dq_report_caught(e, "notice [N.type] handler [R.handler] on [E.type]")
+				move_cost_listener(reaction_started, "reaction", N.type, R.handler, E)
 				R.work?.account(TICK_USAGE_TO_MS(started), faulted) // per-reaction cost; delivery stays synchronous and in order
 		for(var/datum/rx_listener/L as anything in E.rx?.listeners?.Copy())
 			var/datum/reaction/R = L.trigger
 			if(R.kind != RXN_NOTICE || !istype(N, R.key) || !L.listener() || QDELETED(L.listener()))
 				continue
+			MOVE_COST_BEGIN(observer_started)
 			try
 				rx_call(L.listener(), L.handler, E, N)
 			catch(var/exception/e2)
 				dq_report_caught(e2, "notice [N.type] observer [L.handler] on [L.listener().type]")
+			move_cost_listener(observer_started, "observer", N.type, L.handler, L.listener())

@@ -94,7 +94,9 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		if(!watcher)
 			C.watchers -= key
 			continue
+		MOVE_COST_BEGIN(watcher_started)
 		call(watcher, watch[2])(C, bits)
+		move_cost_listener(watcher_started, "chunk watcher", "mob chunk [id]", watch[2], watcher)
 
 /// Every chunk within `radius` tiles of `center`.
 /proc/mob_chunks_around(turf/center, radius)

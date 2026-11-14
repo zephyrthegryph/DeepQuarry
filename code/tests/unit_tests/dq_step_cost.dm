@@ -189,3 +189,50 @@
 	for(var/obj/item/stack/hose/spare in T) // the hose item a disconnect drops
 		qdel(spare)
 	TEST_ASSERT(!notice_wanted(first, /datum/notice/moved, ACT_COMMITTED), "an unplugged socket stops hearing it")
+
+/// A step names its dearest listener: a carrier whose plugged hose follows it times each moved-notice listener, keeps the slowest of the step for the SLOW
+/// line, and runs a bounded number of them (a step is not a cascade of listeners).
+/datum/unit_test/dq_step_cost_names_slowest_listener
+
+/datum/unit_test/dq_step_cost_names_slowest_listener/Run()
+	set_global(nameof(GLOB.move_cost_on), FALSE)
+	set_global(nameof(GLOB.move_cost_listeners_timed), 0)
+	set_global(nameof(GLOB.move_cost_listener_ms), 0)
+	set_global(nameof(GLOB.move_cost_listener_what), "")
+	set_global(nameof(GLOB.move_cost_listener_worst_ms), 0)
+	set_global(nameof(GLOB.move_cost_listener_worst_what), "")
+	var/turf/T = test_floor()
+	var/turf/next = get_step(T, EAST)
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, next)
+	var/datum/hose_connector/out_socket = first.add_hose_connector(/datum/hose_connector/output)
+	var/datum/hose_connector/in_socket = second.add_hose_connector(/datum/hose_connector/input)
+	var/datum/hose/hose = new
+	hose.set_hose(out_socket, in_socket, 5)
+	act_drain_point()
+	TEST_ASSERT(notice_wanted(first, /datum/notice/moved, ACT_COMMITTED), "the plugged carrier hears its own move")
+	var/steps = 0
+	var/walk_dir = WEST
+	for(var/i in 1 to 20)
+		var/turf/target = get_step(first, walk_dir)
+		if(!target || target.density)
+			walk_dir = turn(walk_dir, 180)
+			target = get_step(first, walk_dir)
+		var/before = GLOB.move_cost_listeners_timed
+		var/started = move_cost_begin()
+		var/moved = first.Move(target, walk_dir)
+		move_cost_end(started, first, null, GLOB.refresh_marks_raised, GLOB.interest_chunks_entered, 0)
+		if(!moved)
+			continue
+		steps++
+		TEST_ASSERT(GLOB.move_cost_listeners_timed - before >= 1, "step [i]: a moved listener was timed")
+		TEST_ASSERT(GLOB.move_cost_listeners_timed - before <= 8, "step [i]: a step runs at most 8 timed listeners ([GLOB.move_cost_listeners_timed - before])")
+		TEST_ASSERT(length(GLOB.move_cost_listener_what), "step [i]: the slowest listener is named")
+		TEST_ASSERT(findtext(GLOB.move_cost_listener_what, "moved"), "step [i]: it is a moved-notice listener ([GLOB.move_cost_listener_what])")
+		refresh_flush()
+	TEST_ASSERT(steps >= 10, "the carrier walked ([steps] steps)")
+	TEST_ASSERT(length(GLOB.move_cost_listener_worst_what), "the dearest listener of any step is kept ([GLOB.move_cost_listener_worst_what])")
+	spent(hose)
+	act_drain_point()
+	for(var/obj/item/stack/hose/spare in T)
+		qdel(spare)
