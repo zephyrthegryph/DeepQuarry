@@ -19,9 +19,13 @@ CAPABILITIES(/mob/observer)
 /mob/observer/proc/following_target() as /atom/movable
 	return following
 
-/// The observers following this mob.
+/// The observers following this mob. Asked on every step of every mob, so it reads the observers (a handful) and what each follows, instead of walking the
+/// reverse relation index of the mob (every organ, item and body part naming it: tens of rows for a walking human).
 /mob/proc/follower_list() as /list
-	return rel_sources_via(src, OBSERVER_FOLLOWING_VAR)
+	. = list()
+	for(var/mob/observer/dead/watcher as anything in REGISTRY_MEMBERS(REGISTRY_OBSERVERS))
+		if(watcher.following_target() == src)
+			. += watcher
 
 /mob/observer/dead
 	name = "ghost"
@@ -511,6 +515,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 /mob/proc/update_following()
 	. = get_turf(src)
+	if(!REGISTRY_COUNT(REGISTRY_OBSERVERS))
+		return
 	for(var/mob/observer/dead/M in src?.follower_list())
 		if(!.)
 			M.stop_following()

@@ -300,7 +300,7 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 //called to set the atom's dir and used to add behaviour to dir-changes
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
-	if(WANTS(src, /datum/notice/atom_dir_change))
+	if(new_dir != dir && WANTS(src, /datum/notice/atom_dir_change)) // a turn that changes nothing tells nobody (every step of a mob sets its dir)
 		PUBLISH(src, atom_dir_change, old_dir = dir, new_dir = new_dir)
 	var/old_dir = dir
 	dir = new_dir

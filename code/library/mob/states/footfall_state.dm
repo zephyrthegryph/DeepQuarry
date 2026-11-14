@@ -2,7 +2,6 @@
 // read a field with STATE_GET(M, footfall, field), write with STATE_SET(M, footfall, field, value), end it with footfall_clear(M).
 
 /datum/footfall_state
-	var/footstep_steps = 0
 	var/footstep_vary = FALSE
 
 /mob/living

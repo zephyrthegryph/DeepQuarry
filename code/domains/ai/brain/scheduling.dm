@@ -156,6 +156,8 @@ GLOBAL_VAR_INIT(ai_navigation_revision, 1)
 
 /// Times a parked brain was woken (diagnostics and tests).
 /datum/ai_brain/var/tmp/wakes = 0
+/// Calm strategic runs put off to the next run of the loop because the tick had no budget left (diagnostics and tests).
+/datum/ai_brain/var/tmp/budget_deferrals = 0
 /// TRUE while the brain sleeps in park_calm().
 /datum/ai_brain/var/tmp/parked = FALSE
 
@@ -188,6 +190,12 @@ GLOBAL_VAR_INIT(ai_navigation_revision, 1)
 		return
 	if(ELAPSED(src, strategic_set_at, CLOCK_WORLD) < strategic_wait)
 		return
+	// A calm brain's slow work is a perception backstop and an optional step (a wander): on a tick that has no budget left it waits for the next run of the
+	// loop instead of adding its cost (a step on a busy map is the dearest thing a calm mouse does) to a tick already over.
+	if(!primary_threat && !active_behavior_type && KERNEL_OVER_BUDGET)
+		budget_deferrals++
+		trace("calm strategic run deferred: the tick is over budget ([budget_deferrals] so far)")
+		return
 	var/started = TICK_USAGE
 	handle_strategicals()
 	GLOB.ai_brain_cost_ms += TICK_USAGE_TO_MS(started)
@@ -212,4 +220,7 @@ GLOBAL_LIST_EMPTY(ai_slow_ticks_by_type)
 			var/turf/theirs = get_turf(C.mob)
 			if(theirs && theirs.z == where.z && get_dist(theirs, where) <= 2 * world.view)
 				near++
-	log_world("AI SLOW: [round(strategic_ms + tactics_ms, 0.1)] ms ([round(strategic_ms, 0.1)] strategic, [round(tactics_ms, 0.1)] tactics) [type_key] [holder] at ([where?.x],[where?.y],[where?.z]); behaviour [brain.active_behavior_type || "none"]; threat [brain.primary_threat || "none"]; model [brain.model ? "yes" : "no"]; clients near [near] (#[GLOB.ai_slow_ticks_by_type[type_key]] of this type)")
+	var/stages = ""
+	for(var/stage in brain.strategic_stage_ms)
+		stages += " [stage] [round(brain.strategic_stage_ms[stage], 0.1)]"
+	log_world("AI SLOW: [round(strategic_ms + tactics_ms, 0.1)] ms ([round(strategic_ms, 0.1)] strategic, [round(tactics_ms, 0.1)] tactics) [type_key] [holder] at ([where?.x],[where?.y],[where?.z]); behaviour [brain.active_behavior_type || "none"]; threat [brain.primary_threat || "none"]; model [brain.model ? "yes" : "no"]; clients near [near]; pack of [length(brain.pack?.members)]; strategic stages (ms):[stages || " none"] (#[GLOB.ai_slow_ticks_by_type[type_key]] of this type)")

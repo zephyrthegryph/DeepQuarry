@@ -26,7 +26,7 @@
 //!
 //! Slopes are exact rationals, so the result depends only on the layer and
 //! the inputs.
-use crate::grid::{BlockKind, Grid};
+use crate::grid::{BlockKind, Dir, Grid};
 
 /// A slope `num / den` (`den > 0`), compared exactly.
 #[derive(Clone, Copy)]
@@ -149,10 +149,63 @@ fn cast(win: &mut Window, q: u8, depth: i64, mut start: Slope, end: Slope) {
     }
 }
 
+/// The blocked faces of `cell`, with `over` standing in for its own when it names this cell.
+fn mask_of(grid: &Grid, kind: BlockKind, cell: u32, over: Option<(u32, Dir)>) -> Dir {
+    match over {
+        Some((c, mask)) if c == cell => mask,
+        _ => grid.blocked(kind, cell),
+    }
+}
+
+/// The shape key of a light on `center` (client lighting, `client_glow_shape_key()` in DM): `"{margin}|{offsets}|{blocked}"`, the cells the light sees in
+/// [`view_over`] order as `dx,dy` pairs joined by commas, a cell whose faces are all blocked (`0b1111`) listed under `blocked` and the rest under
+/// `offsets`. `margin` is the text DM prints for it. `None` when `center` is off the grid.
+#[must_use]
+pub fn shape_key(
+    grid: &Grid,
+    kind: BlockKind,
+    center: u32,
+    range: u32,
+    margin: &str,
+    over: Option<(u32, Dir)>,
+) -> Option<String> {
+    let dims = grid.dims();
+    let (cx, cy, _) = dims.coords(center)?;
+    let mut offsets = String::new();
+    let mut blocked = String::new();
+    for cell in view_over(grid, kind, center, range, over) {
+        let (x, y, _) = dims.coords(cell)?;
+        let (dx, dy) = (i64::from(x) - i64::from(cx), i64::from(y) - i64::from(cy));
+        let list = if mask_of(grid, kind, cell, over) == Dir(0b1111) {
+            &mut blocked
+        } else {
+            &mut offsets
+        };
+        if !list.is_empty() {
+            list.push(',');
+        }
+        list.push_str(&format!("{dx},{dy}"));
+    }
+    Some(format!("{margin}|{offsets}|{blocked}"))
+}
+
 /// The cells `center` sees within `range` on its own z-level, the centre
 /// first, then in window order. Empty if `center` is outside the grid.
 #[must_use]
 pub fn view(grid: &Grid, kind: BlockKind, center: u32, range: u32) -> Vec<u32> {
+    view_over(grid, kind, center, range, None)
+}
+
+/// [`view`] with one cell read as blocking as `over` says (`(cell, mask)`) instead of as the layer holds it: a door's other state, asked
+/// without touching the layer.
+#[must_use]
+pub fn view_over(
+    grid: &Grid,
+    kind: BlockKind,
+    center: u32,
+    range: u32,
+    over: Option<(u32, Dir)>,
+) -> Vec<u32> {
     let dims = grid.dims();
     let Some((cx, cy, cz)) = dims.coords(center) else {
         return Vec::new();
@@ -169,7 +222,7 @@ pub fn view(grid: &Grid, kind: BlockKind, center: u32, range: u32) -> Vec<u32> {
             }
             if let Some(cell) = dims.index(x as u32, y as u32, cz) {
                 let i = ((dy + r) * side + (dx + r)) as usize;
-                cells[i] = Some((cell, !grid.blocked(kind, cell).is_empty()));
+                cells[i] = Some((cell, !mask_of(grid, kind, cell, over).is_empty()));
             }
         }
     }
@@ -415,5 +468,27 @@ mod tests {
                 view(&g, BlockKind::Opacity, c, 6)
             );
         }
+    }
+
+    #[test]
+    fn shape_key_lists_floor_and_walls_and_reads_the_flipped_cell() {
+        let mut g = grid(9);
+        let c = at(&g, 4, 4);
+        let door = at(&g, 5, 4);
+        g.set_blocked(BlockKind::Opacity, door, Dir(0b1111)); // as DM writes a fully opaque turf
+        let shut = shape_key(&g, BlockKind::Opacity, c, 1, "0", None).unwrap();
+        let (head, rest) = shut.split_once('|').unwrap();
+        assert_eq!(head, "0");
+        let (offsets, blocked) = rest.split_once('|').unwrap();
+        assert_eq!(blocked, "1,0", "the wall east is the one blocked cell");
+        assert!(offsets.starts_with("0,0,"), "the centre is listed first: {offsets}");
+        let open = shape_key(&g, BlockKind::Opacity, c, 1, "0", Some((door, Dir::NONE))).unwrap();
+        assert!(open.ends_with('|'), "flipped open nothing is blocked: {open}");
+        assert!(open.contains("1,0"), "and the cell is listed as floor: {open}");
+        // The layer itself is untouched by the question.
+        assert_eq!(shape_key(&g, BlockKind::Opacity, c, 1, "0", None).unwrap(), shut);
+        // A door that stays a half block (a border object) is not a full wall.
+        let half = shape_key(&g, BlockKind::Opacity, c, 1, "0", Some((door, Dir::EAST))).unwrap();
+        assert!(half.ends_with('|'));
     }
 }

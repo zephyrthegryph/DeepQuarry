@@ -167,24 +167,32 @@ CAPABILITY_TYPE(client_flat_light, CAP_CLIENT_FLAT_LIGHT, /datum/capability/clie
 		return
 	var/list/rgb = client_flat_light_rgb(T)
 	var/key = client_flat_light_key(rgb)
+	var/made = FALSE
 	if(!A.flat_light)
 		if(isnull(A.render_target))
 			A.render_target = ref(A) // the name the emissive blocker uses too
 		rel_set(A, nameof(/atom/movable::flat_light), new /atom/movable/client_flat_light(null, A.render_target))
-		A.flat_light_overlay_add()
 		registry_join(REGISTRY_CLIENT_FLAT_LIT, A)
 		grant(A, /datum/capability/client_flat_light, A)
 		GLOB.client_flat_light_makes++
+		made = TRUE
 		if(client_glow_trace_line())
 			log_world("client flat light: [A] ([A.type]) is [round(client_flat_light_extent(A))] px, plane [A.flat_light.plane] layer [A.flat_light.layer], lit as the floor of its turf [T.x],[T.y],[T.z]")
 	var/atom/movable/client_flat_light/F = A.flat_light
-	if(F.lit_key == key)
+	if(F.lit_key == key && !made)
 		return
+	// An overlay is a snapshot of the atom taken when it is added: a colour set on the flat light afterwards never reaches the copy the
+	// atom carries, which then draws the atom's own sprite, uncoloured and added over the light (a glow of the character's own colours on
+	// top of it). So the old snapshot comes off (cut_overlay matches by the appearance it was added with, the old colour), the colour is
+	// set, and the new snapshot goes on.
+	if(!made)
+		A.flat_light_overlay_cut()
 	F.set_lit_key(key)
 	F.set_color(client_flat_light_color(key))
+	A.flat_light_overlay_add()
 	GLOB.client_flat_light_recolours++
 	if(client_glow_trace_line())
-		log_world("client flat light: [A] now rgb [round(rgb[1] * CLIENT_FLAT_LIGHT_STEPS)],[round(rgb[2] * CLIENT_FLAT_LIGHT_STEPS)],[round(rgb[3] * CLIENT_FLAT_LIGHT_STEPS)] of [CLIENT_FLAT_LIGHT_STEPS] at [T.x],[T.y],[T.z] (the floor's drawn light; the gameplay light level there is [round(T.get_lumcount(), 0.01)])")
+		log_world("client flat light: [A] now rgb [round(rgb[1] * CLIENT_FLAT_LIGHT_STEPS)],[round(rgb[2] * CLIENT_FLAT_LIGHT_STEPS)],[round(rgb[3] * CLIENT_FLAT_LIGHT_STEPS)] of [CLIENT_FLAT_LIGHT_STEPS] at [T.x],[T.y],[T.z] (the floor's drawn light; the gameplay light level there is [round(T.get_lumcount(), 0.01)]); overlay re-snapshotted with colour [json_encode(F.color)], [length(A.overlays)] overlays on the atom")
 
 /// Takes `A`'s flat light away (a no-op without one).
 /proc/client_flat_light_drop(atom/movable/A)
