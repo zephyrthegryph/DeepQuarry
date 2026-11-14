@@ -168,3 +168,32 @@
 	TEST_ASSERT_EQUAL(second.max_integrity, first.max_integrity, "and ends with the same integrity")
 	TEST_ASSERT_EQUAL(protection_of(second).siemens, protection_of(first).siemens, "and the same conduction")
 	TEST_ASSERT_EQUAL(second.max_integrity, row["max_integrity"], "which is the row's number")
+
+/// A pill's fill links its reagent both ways and settles the holder's total, colour and master from that one reagent; the holder and the reagent,
+/// which are no atoms and are named by nothing, walk no draw hop to be told they changed.
+/datum/unit_test/dq_reagent_fill_links_and_settles
+
+/datum/unit_test/dq_reagent_fill_links_and_settles/Run()
+	GLOB.boot_phase_on = TRUE
+	GLOB.boot_phase_calls = list()
+	var/obj/item/reagent_containers/pill/inaprovaline/pill = allocate(/obj/item/reagent_containers/pill/inaprovaline)
+	GLOB.boot_phase_on = FALSE
+	var/walks = 0
+	for(var/phase in GLOB.boot_phase_calls)
+		if(findtext(phase, "draw_hop_published: walk") == 1)
+			walks += GLOB.boot_phase_calls[phase]
+	TEST_ASSERT_EQUAL(walks, 0, "making a pill walked [walks] draw hop chains for its reagent and holder")
+	var/datum/reagents/holder = pill.reagents
+	TEST_ASSERT_EQUAL(length(holder.reagent_list), 1, "the pill holds one reagent")
+	var/datum/reagent/R = holder.reagent_list[1]
+	TEST_ASSERT(R.holder == holder, "the reagent names its holder")
+	TEST_ASSERT(holder.reagent_by_id[R.id] == R, "the id index finds it")
+	TEST_ASSERT(owner_of(R) == holder, "the holder owns it")
+	TEST_ASSERT_EQUAL(holder.total_volume, R.volume, "the total is the reagent's volume")
+	TEST_ASSERT_EQUAL(holder.master_id, R.id, "the master is the reagent")
+	TEST_ASSERT_EQUAL(holder.tint, R.color, "the tint is the reagent's colour")
+	var/before = holder.total_volume
+	holder.add_reagent(R.id, 1)
+	TEST_ASSERT(holder.total_volume > before || holder.total_volume == holder.maximum_volume, "a later add still settles the total")
+	qdel(pill)
+	TEST_ASSERT(QDELETED(R), "the reagent dies with its holder")

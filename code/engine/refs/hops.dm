@@ -299,6 +299,10 @@ GLOBAL_LIST_EMPTY(draw_hop_batch_pending)
 /// The walk for E's changed vars `names`: the entries are grouped by chain (every type that reads `area.power_light` adds the same chain), so
 /// each chain is walked once and a reader on it is marked when its draw reads any of the group's reads.
 /proc/draw_hop_publish_vars(datum/E, list/names)
+	// A datum that is not an atom has no loc, turf or area to hop through, and when nothing names it through a relation view there is no source to walk
+	// either (a reagent or a reagent holder being filled at construction): no reader can be reached, so the chains are not even built.
+	if(!isatom(E) && !_rel_index_of(E))
+		return
 	// An empty turf that nothing names through a relation view (most floors at a map load) has no reader on the turf hop: its only source is itself,
 	// which is skipped below. One test replaces a walk that allocates a frontier, a nested-contents list and a relation list per chain.
 	var/lone_turf = FALSE
