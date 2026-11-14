@@ -232,10 +232,12 @@ GLOBAL_LIST_EMPTY(notice_unheard)
 			N.source = holder
 		var/depth = GLOB.act_depth
 		GLOB.act_chain += "[N.type]:[run_on.type]"
+		MOVE_COST_BEGIN(hook_started)
 		try
 			hook_run_parts(H, N, H.entry.children)
 		catch(var/exception/e)
 			dq_report_caught(e, "notice [N.type] hook on [run_on.type]")
+		move_cost_listener(hook_started, "hook", N.type, H.cap_key || "entry", run_on)
 		GLOB.act_depth = depth
 		GLOB.act_chain.len--
 

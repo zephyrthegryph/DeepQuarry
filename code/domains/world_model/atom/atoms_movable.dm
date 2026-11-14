@@ -314,12 +314,16 @@
 		tracked_changed(src, nameof(dir))
 	MOVE_COST_BEGIN(notices_started)
 	if(STATE_PEEK(src, movable_misc, blocks_light))
+		MOVE_COST_BEGIN(blocking_started)
 		light_blocking_moved(old_loc)
+		move_cost_listener(blocking_started, "light blocking", "moved", "light_blocking_moved", src)
 	if(WANTS(src, /datum/notice/moved))
 		PUBLISH(src, move, old_loc = old_loc, direction = direction, forced = forced)
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
+		MOVE_COST_BEGIN(loc_change_started)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
+		move_cost_listener(loc_change_started, "key change", "loc", "publish_key_changed", src)
 	MOVE_COST_END(MOVE_COST_NOTICES, notices_started)
 	loc_changed(old_loc)
 	// Covers Destroy() too, which moves to nullspace.

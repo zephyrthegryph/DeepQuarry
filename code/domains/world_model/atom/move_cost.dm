@@ -18,11 +18,32 @@ GLOBAL_VAR_INIT(move_cost_ended_at, 0)
 /// Client moves whose work outside the step itself took MOVE_COST_SLOW_MS or more.
 GLOBAL_VAR_INIT(move_cost_outside_slow, 0)
 
+/// The dearest single listener of the step being measured (ms, and what it was: "<kind> <notice> -> <handler> on <listener type>"), and the dearest of any step.
+GLOBAL_VAR_INIT(move_cost_listener_ms, 0)
+GLOBAL_VAR_INIT(move_cost_listener_what, "")
+GLOBAL_VAR_INIT(move_cost_listener_worst_ms, 0)
+GLOBAL_VAR_INIT(move_cost_listener_worst_what, "")
+/// Listeners timed (a counter, for tests: it rises only while a step is being measured).
+GLOBAL_VAR_INIT(move_cost_listeners_timed, 0)
+
+/// One listener of the step being measured finished: `started` is its MOVE_COST_BEGIN. The dearest of the step is kept for the SLOW line, which names it.
+/proc/move_cost_listener(started, kind, notice_type, handler, datum/listener)
+	if(!started)
+		return
+	var/spent = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	GLOB.move_cost_listeners_timed++
+	if(spent <= GLOB.move_cost_listener_ms)
+		return
+	GLOB.move_cost_listener_ms = spent
+	GLOB.move_cost_listener_what = "[kind] [notice_type] -> [handler] on [listener?.type]"
+
 /// A client's step begins: clears the parts and starts the clock. Returns the tick usage the step started at, for move_cost_end().
 /proc/move_cost_begin()
 	for(var/part in 1 to MOVE_COST_PART_COUNT)
 		GLOB.move_cost_parts[part] = 0
 	GLOB.move_cost_on = TRUE
+	GLOB.move_cost_listener_ms = 0
+	GLOB.move_cost_listener_what = ""
 	GLOB.move_cost_began_at = TICK_USAGE_REAL
 	GLOB.move_cost_ended_at = 0
 	return GLOB.move_cost_began_at
@@ -55,6 +76,9 @@ GLOBAL_VAR_INIT(move_cost_outside_slow, 0)
 	GLOB.move_cost_total_ms += total_ms
 	if(total_ms > GLOB.move_cost_worst_ms)
 		GLOB.move_cost_worst_ms = total_ms
+	if(GLOB.move_cost_listener_ms > GLOB.move_cost_listener_worst_ms)
+		GLOB.move_cost_listener_worst_ms = GLOB.move_cost_listener_ms
+		GLOB.move_cost_listener_worst_what = GLOB.move_cost_listener_what
 	var/slow = total_ms >= MOVE_COST_SLOW_MS
 	var/sampled = !(GLOB.move_cost_steps % MOVE_COST_SAMPLE_EVERY)
 	if(!slow && !sampled)
@@ -69,7 +93,7 @@ GLOBAL_VAR_INIT(move_cost_outside_slow, 0)
 	for(var/part in MOVE_COST_LIGHTS to MOVE_COST_PART_COUNT)
 		inside_ms += parts[part]
 	inside_ms = TICK_DELTA_TO_MS(inside_ms)
-	move_cost_log(mover, "MOVE_COST: [slow ? "SLOW " : ""]step [mover] [from ? "[from.x],[from.y],[from.z]" : "null"] -> [mover?.loc ? "[mover.x],[mover.y],[mover.z]" : "null"] took [round(total_ms, 0.01)] ms: move handlers [round(TICK_DELTA_TO_MS(parts[MOVE_COST_MOVE]), 0.01)] (pre_move, Exit/Enter/Crossed), Moved chain [round(moved_ms, 0.01)] (lights [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LIGHTS]), 0.01)], proximity [round(TICK_DELTA_TO_MS(parts[MOVE_COST_PROXIMITY]), 0.01)], lifeform [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LIFEFORM]), 0.01)], mob publish [round(TICK_DELTA_TO_MS(parts[MOVE_COST_MOB_PUBLISH]), 0.01)], eye/interest [round(TICK_DELTA_TO_MS(parts[MOVE_COST_EYE]), 0.01)], notices [round(TICK_DELTA_TO_MS(parts[MOVE_COST_NOTICES]), 0.01)], loc readers [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LOC_READS]), 0.01)], loc draw [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LOC_DRAW]), 0.01)], hops [round(TICK_DELTA_TO_MS(parts[MOVE_COST_HOPS]), 0.01)], heat [round(TICK_DELTA_TO_MS(parts[MOVE_COST_HEAT]), 0.01)], interest anchors [round(TICK_DELTA_TO_MS(parts[MOVE_COST_INTEREST]), 0.01)], living tail [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LIVING]), 0.01)], carbon/human tail [round(TICK_DELTA_TO_MS(parts[MOVE_COST_BODY]), 0.01)], follow/cult [round(TICK_DELTA_TO_MS(parts[MOVE_COST_FOLLOW]), 0.01)], still unmarked [round(max(0, moved_ms - inside_ms), 0.01)]), rest of client Move [round(max(0, total_ms - moved_ms - TICK_DELTA_TO_MS(parts[MOVE_COST_MOVE])), 0.01)]; marks raised [GLOB.refresh_marks_raised - marks_before], chunks scanned [GLOB.gaze_chunks_entered - chunks_before], lights queued [SSlighting.pending_source_count() - light_queue_before], tick usage now [round(TICK_USAGE_REAL, 1)]%; steps [GLOB.move_cost_steps], mean [round(GLOB.move_cost_total_ms / GLOB.move_cost_steps, 0.01)] ms, worst [round(GLOB.move_cost_worst_ms, 0.01)] ms")
+	move_cost_log(mover, "MOVE_COST: [slow ? "SLOW " : ""]step [mover] [from ? "[from.x],[from.y],[from.z]" : "null"] -> [mover?.loc ? "[mover.x],[mover.y],[mover.z]" : "null"] took [round(total_ms, 0.01)] ms: move handlers [round(TICK_DELTA_TO_MS(parts[MOVE_COST_MOVE]), 0.01)] (pre_move, Exit/Enter/Crossed), Moved chain [round(moved_ms, 0.01)] (lights [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LIGHTS]), 0.01)], proximity [round(TICK_DELTA_TO_MS(parts[MOVE_COST_PROXIMITY]), 0.01)], lifeform [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LIFEFORM]), 0.01)], mob publish [round(TICK_DELTA_TO_MS(parts[MOVE_COST_MOB_PUBLISH]), 0.01)], eye/interest [round(TICK_DELTA_TO_MS(parts[MOVE_COST_EYE]), 0.01)], notices [round(TICK_DELTA_TO_MS(parts[MOVE_COST_NOTICES]), 0.01)], loc readers [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LOC_READS]), 0.01)], loc draw [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LOC_DRAW]), 0.01)], hops [round(TICK_DELTA_TO_MS(parts[MOVE_COST_HOPS]), 0.01)], heat [round(TICK_DELTA_TO_MS(parts[MOVE_COST_HEAT]), 0.01)], interest anchors [round(TICK_DELTA_TO_MS(parts[MOVE_COST_INTEREST]), 0.01)], living tail [round(TICK_DELTA_TO_MS(parts[MOVE_COST_LIVING]), 0.01)], carbon/human tail [round(TICK_DELTA_TO_MS(parts[MOVE_COST_BODY]), 0.01)], follow/cult [round(TICK_DELTA_TO_MS(parts[MOVE_COST_FOLLOW]), 0.01)], still unmarked [round(max(0, moved_ms - inside_ms), 0.01)]), rest of client Move [round(max(0, total_ms - moved_ms - TICK_DELTA_TO_MS(parts[MOVE_COST_MOVE])), 0.01)]; marks raised [GLOB.refresh_marks_raised - marks_before], chunks scanned [GLOB.gaze_chunks_entered - chunks_before], lights queued [SSlighting.pending_source_count() - light_queue_before], tick usage now [round(TICK_USAGE_REAL, 1)]%; slowest listener [GLOB.move_cost_listener_ms ? "[GLOB.move_cost_listener_what] [round(GLOB.move_cost_listener_ms, 0.01)] ms" : "none"]; steps [GLOB.move_cost_steps], mean [round(GLOB.move_cost_total_ms / GLOB.move_cost_steps, 0.01)] ms, worst [round(GLOB.move_cost_worst_ms, 0.01)] ms")
 
 /// Trace lines waiting to be written, and whether a flush is armed (and since when, real ds: a flush armed on a mob that was deleted is armed again).
 GLOBAL_LIST_EMPTY(move_cost_lines)
