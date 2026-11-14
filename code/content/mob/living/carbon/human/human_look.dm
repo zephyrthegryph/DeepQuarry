@@ -125,8 +125,37 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/human_look_icon(key, builder, ...)
 	return CACHED_KEY(human_look_icons, key, src, builder, args.Copy(3))
 
+/// Cost counters of the look cache (the trace and the tests): builds run (a miss), the /icon operations they made (human_icon_op()), the time they took,
+/// the dearest build's time and the last HUMAN_LOOK_TRACE_MAX builds with what each cost. A draw is an output and writes no log, so the trace is read
+/// from here (human_look_stats_line()).
+GLOBAL_VAR_INIT(human_look_builds, 0)
+GLOBAL_VAR_INIT(human_look_icon_ops, 0)
+GLOBAL_VAR_INIT(human_look_build_ms, 0)
+GLOBAL_VAR_INIT(human_look_worst_ms, 0)
+GLOBAL_LIST_EMPTY(human_look_recent)
+
+#define HUMAN_LOOK_TRACE_MAX 40
+
+/// A cache builder that is about to do `count` /icon operations (Blend, Insert, MapColors, a new icon from a file) says so, so a draw's pixel work is counted.
+/proc/human_icon_op(count = 1)
+	GLOB.human_look_icon_ops += count
+
+/// The trace of the look cache: what was built, what it cost, and the last builds.
+/proc/human_look_stats_line()
+	return "human look: [GLOB.human_look_builds] builds, [GLOB.human_look_icon_ops] icon operations, [round(GLOB.human_look_build_ms, 0.1)] ms, worst [round(GLOB.human_look_worst_ms, 0.1)] ms; last: [jointext(GLOB.human_look_recent, "; ")]"
+
 /proc/build_human_look_icon(mob/living/carbon/human/H, builder, list/builder_args)
-	return call(H, builder)(arglist(builder_args))
+	var/started = TICK_USAGE_REAL
+	var/ops_before = GLOB.human_look_icon_ops
+	. = call(H, builder)(arglist(builder_args))
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	GLOB.human_look_builds++
+	GLOB.human_look_build_ms += ms
+	if(ms > GLOB.human_look_worst_ms)
+		GLOB.human_look_worst_ms = ms
+	GLOB.human_look_recent += "[builder] [round(ms, 0.1)]ms [GLOB.human_look_icon_ops - ops_before]ops [builder_args.Join(",")]"
+	if(length(GLOB.human_look_recent) > HUMAN_LOOK_TRACE_MAX)
+		GLOB.human_look_recent.Cut(1, 2)
 
 // ---- the body ----
 
@@ -167,6 +196,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return human_look_icon("body|[template]|[icon_key]", "build_body_look", template, key_result[2], husk, hulk, skeleton)
 
 /mob/living/carbon/human/proc/build_body_look(template, wholeicontransparent, husk, hulk, skeleton)
+	human_icon_op(2 + length(organs) * 3) // a new icon, one blend and one or more inserts a limb
 	var/icon/stand_icon = new(template, icon_state = "blank")
 	stand_icon.Blend(build_body_icon(wholeicontransparent, husk, hulk, skeleton), ICON_OVERLAY)
 	var/image/body = image(stand_icon)
@@ -393,6 +423,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return human_look_icon("damage|[species.get_damage_overlays(src)]|[species.get_damage_mask(src)]|[blood_colour]|[bodytype]|[key]", "build_damage_look", key, blood_colour)
 
 /mob/living/carbon/human/proc/build_damage_look(key, blood_colour)
+	human_icon_op(3 * length(splittext(key, ";")))
 	var/list/damage = list()
 	for(var/part in splittext(key, ";"))
 		if(!length(part))
@@ -635,6 +666,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return human_part(file, state, colour, mode)
 
 /mob/living/carbon/human/proc/build_tail_dirs(file, state, list/dirs)
+	human_icon_op(2 + length(dirs))
 	return icon_keep_dirs(icon(file, state), dirs)
 
 /// `I` (one state, any frames) with only its `dirs` facings drawn, the others blank. An overlay made from it shows only while its holder faces one
