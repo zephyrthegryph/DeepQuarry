@@ -164,3 +164,129 @@
 /datum/unit_test/dq_move_cost_parts_name_the_living_tail/Run()
 	TEST_ASSERT(MOVE_COST_LIVING_PUBLISH > MOVE_COST_EYE_GLOW && MOVE_COST_BODY_NUTRITION <= MOVE_COST_PART_COUNT, "the new parts sit past the older ones and inside the table")
 	TEST_ASSERT_EQUAL(length(GLOB.move_cost_parts), MOVE_COST_PART_COUNT, "the table has a slot for each")
+
+
+/// A shape asked for (by a viewer, or ahead by a crossing's ring scan or a light's door twins) only waits for the baker: the bake's start (a sprite build and a JSON
+/// encode, 10-30 ms) runs in the baker's budgeted turn, never inside the asker.
+/datum/unit_test/dq_glow_mask_request_defers_the_bake_start
+
+/datum/unit_test/dq_glow_mask_request_defers_the_bake_start/Run()
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	set_var(B, nameof(B.queue), list())
+	set_var(B, nameof(B.pending), list())
+	set_var(B, nameof(B.asked_at), list())
+	set_var(B, nameof(B.inflight), 0)
+	set_var(B, nameof(B.turn_waiting), FALSE)
+	client_glow_mask_request("dq-walk4-shape", TRUE)
+	TEST_ASSERT_EQUAL(B.inflight, 0, "no bake was started inside the request")
+	TEST_ASSERT_EQUAL(length(B.queue), 1, "the shape waits in the queue")
+	TEST_ASSERT(B.pending["dq-walk4-shape"], "and is marked pending")
+	TEST_ASSERT(B.turn_waiting, "the baker's turn was armed to start it")
+	set_var(B, nameof(B.queue), list())
+	set_var(B, nameof(B.pending), list())
+	set_var(B, nameof(B.asked_at), list())
+
+/// A baker turn that has spent its budget on one stage leaves the other stages to the next turn, and the stage it starts with rotates.
+/datum/unit_test/dq_glow_baker_turn_stops_when_the_budget_is_spent
+
+/datum/unit_test/dq_glow_baker_turn_stops_when_the_budget_is_spent/Run()
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	var/list/keys = list("dq-walk4-a", "dq-walk4-b", "dq-walk4-c")
+	var/list/pending = list()
+	var/list/asked = list()
+	for(var/key in keys)
+		pending[key] = TRUE
+		asked[key] = REALTIMEOFDAY
+	set_var(B, nameof(B.finished), list())
+	set_var(B, nameof(B.inflight), 3)
+	set_var(B, nameof(B.pending), pending)
+	set_var(B, nameof(B.asked_at), asked)
+	set_var(B, nameof(B.turn_rotor), 0)
+	set_var(B, nameof(B.turn_waiting), FALSE)
+	for(var/key in keys)
+		client_glow_mask_job_done(null, "test error", key, "sheet-[key]")
+	var/failed_before = B.failed
+	client_glow_baker_turn(0)
+	TEST_ASSERT_EQUAL(B.failed, failed_before + 1, "a turn with no budget took in one finished bake")
+	TEST_ASSERT_EQUAL(length(B.finished), 2, "and left the rest")
+	TEST_ASSERT_EQUAL(B.turn_rotor, 1, "the starting stage moved on")
+	TEST_ASSERT(B.turn_waiting, "the next turn is armed")
+	client_glow_baker_turn(100000)
+	TEST_ASSERT_EQUAL(length(B.finished), 0, "a turn with room took in the rest")
+	TEST_ASSERT_EQUAL(B.failed, failed_before + 3, "all three were counted")
+
+/// A hook named for the SLOW step line says where it was declared and what it runs, not a bare capability id.
+/datum/unit_test/dq_move_cost_names_a_hook_by_its_handler
+
+/datum/unit_test/dq_move_cost_names_a_hook_by_its_handler/Run()
+	var/datum/entry/E = on_notice(/datum/notice/moved, then(TYPE_PROC_REF(/datum/capability/slosh, slosh_step)))
+	var/datum/hook/hook = hook_make(HOOK_NOTICE, /datum/notice/moved, E, E, null, null, 0)
+	hook.cap_key = CAP_SLOSH
+	var/name = move_cost_hook_name(hook)
+	TEST_ASSERT(findtext(name, "slosh_step"), "the name carries the handler ([name])")
+	TEST_ASSERT(findtext(name, "[CAP_SLOSH]"), "and the capability id ([name])")
+
+/// The slosh step counter is read and written once a step and wraps at the fifth count.
+/datum/unit_test/dq_slosh_counts_once_a_step
+
+/datum/unit_test/dq_slosh_counts_once_a_step/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	H.set_m_intent(I_RUN)
+	var/datum/capability/slosh/S = new
+	var/was = STATE_GET(H, slosh, slosh_steps)
+	S.slosh_moved(H)
+	TEST_ASSERT(STATE_GET(H, slosh, slosh_steps) != was, "a step moves the counter")
+	for(var/i in 1 to 40)
+		S.slosh_moved(H)
+		TEST_ASSERT(STATE_GET(H, slosh, slosh_steps) <= 5, "the counter wraps at the fifth count, never past it ([STATE_GET(H, slosh, slosh_steps)])")
+	qdel(S)
+
+/// A cell a client's step wakes or lets go is queued: the step itself holds and releases no member, and a reconcile turn does it. An eye placed without a step (the sweep, tests) is at once.
+/datum/unit_test/dq_proximity_client_step_defers_the_holds
+
+/datum/unit_test/dq_proximity_client_step_defers_the_holds/Run()
+	test_driver_begin()
+	var/z = run_loc_floor_bottom_left.z
+	var/turf/near_turf = locate(30, 30, z)
+	var/turf/far_turf = locate(60, 30, z)
+	var/obj/prox_probe/probe = allocate(/obj/prox_probe, near_turf)
+	var/datum/proximity_eye/eye = new
+	SSproximity.eye_place_deferred(eye, near_turf)
+	TEST_ASSERT_EQUAL(stat_value(probe, STAT_RELEVANCE), RELEVANCE_NONE, "the step held nothing yet")
+	TEST_ASSERT(SSproximity.reconcile_waiting_count() >= 1, "the woken cells wait their turn")
+	SSproximity.reconcile_all()
+	TEST_ASSERT_EQUAL(stat_value(probe, STAT_RELEVANCE), RELEVANCE_NEAR, "the reconcile turn made the probe relevant")
+	SSproximity.eye_place_deferred(eye, far_turf)
+	TEST_ASSERT_EQUAL(stat_value(probe, STAT_RELEVANCE), RELEVANCE_NEAR, "leaving releases nothing in the step")
+	SSproximity.reconcile_all()
+	TEST_ASSERT_EQUAL(stat_value(probe, STAT_RELEVANCE), RELEVANCE_NONE, "the turn released it")
+	SSproximity.eye_place(eye, near_turf)
+	TEST_ASSERT_EQUAL(stat_value(probe, STAT_RELEVANCE), RELEVANCE_NEAR, "an eye placed without a step holds at once")
+	SSproximity.eye_place(eye, null)
+	TEST_ASSERT_EQUAL(stat_value(probe, STAT_RELEVANCE), RELEVANCE_NONE, "and releases at once")
+	qdel(eye)
+	test_driver_end()
+
+/// An APC's channel flip reports to the contracts a tick later, and flips in between share the one slot.
+/datum/unit_test/dq_apc_contract_report_is_queued
+
+/datum/unit_test/dq_apc_contract_report_is_queued/Run()
+	test_driver_begin()
+	var/obj/machinery/power/apc/A = allocate(/obj/machinery/power/apc, run_loc_floor_bottom_left)
+	var/revision = A.contract_power_revision
+	set_global(nameof(GLOB.apc_contract_slot), 0)
+	set_var(A, nameof(A.contract_report_waiting), FALSE)
+	apc_contract_report_queue(A)
+	TEST_ASSERT(A.contract_report_waiting, "the report waits")
+	TEST_ASSERT_EQUAL(A.contract_power_revision, revision, "nothing was published inside the flip")
+	var/slot = GLOB.apc_contract_slot
+	apc_contract_report_queue(A)
+	TEST_ASSERT_EQUAL(GLOB.apc_contract_slot, slot, "a second flip takes no second slot")
+	test_time(1 SECOND)
+	TEST_ASSERT(!A.contract_report_waiting, "the report ran")
+	TEST_ASSERT(A.contract_power_revision > revision, "it published the fact")
+	if(A.terminal)
+		qdel(A.terminal)
+	if(A.cell)
+		qdel(A.cell)
+	test_driver_end()

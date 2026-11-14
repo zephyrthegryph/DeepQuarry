@@ -35,7 +35,18 @@ GLOBAL_VAR_INIT(move_cost_listeners_timed, 0)
 	if(spent <= GLOB.move_cost_listener_ms)
 		return
 	GLOB.move_cost_listener_ms = spent
-	GLOB.move_cost_listener_what = "[kind] [notice_type] -> [handler] on [listener?.type]"
+	var/named = handler
+	if(istype(handler, /datum/hook))
+		named = move_cost_hook_name(handler)
+	GLOB.move_cost_listener_what = "[kind] [notice_type] -> [named] on [listener?.type]"
+
+/// A hook named for the SLOW line: its capability key (an id), where it was declared and the handler procs of its parts. Built only for the dearest listener of a step.
+/proc/move_cost_hook_name(datum/hook/H)
+	var/list/handlers = list()
+	for(var/datum/entry/part as anything in H.entry?.children)
+		if(part.kind == ENTRY_THEN)
+			handlers += "[part.args["handler"]]"
+	return "[H.cap_key || "entry"] ([H.origin || "no origin"]; [length(handlers) ? jointext(handlers, ", ") : "no handler"])"
 
 /// A client's step begins: clears the parts and starts the clock. Returns the tick usage the step started at, for move_cost_end().
 /proc/move_cost_begin()

@@ -178,6 +178,8 @@ do { \
 #define CLIENT_GLOW_POOL_MAX 64
 /// Server milliseconds one turn of the glow baker (telling viewers of arrived shapes, starting bakes, working out door twins) may spend before it leaves the rest to the next tick.
 #define CLIENT_GLOW_TURN_BUDGET_MS 4
+/// A baker turn that cost this many ms is written to the world log with the time of each stage.
+#define CLIENT_GLOW_TURN_SLOW_MS 8
 /// Server milliseconds one step of a client holder's acquire queue (the glow images a delta crossing makes for lights newly in reach) may spend before it leaves the rest to the next tick.
 #define CLIENT_GLOW_ACQUIRE_BUDGET_MS 4
 /// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
