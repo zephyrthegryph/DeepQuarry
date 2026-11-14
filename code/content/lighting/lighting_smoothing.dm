@@ -121,6 +121,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	if(!GLOB.client_lighting)
 		return
 	GLOB.lighting_smooth_dirty[T] = TRUE
+	GLOB.lighting_smooth_redraw[T] = TRUE // its own tile is drawn again even when its sample is unchanged: that is what releases a walls tile it kept (client_glow_wall_release())
 
 /// The sample of `T`: the light its floor is drawn with (a carried light cut by its reach too: a wall blocks it), or null for an opaque turf or one outside dynamic lighting.
 /proc/lighting_smooth_sample_of(turf/T)
@@ -270,6 +271,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 			done++
 			if(!QDELETED(T))
 				lighting_smooth_draw(T)
+				client_glow_wall_release(T)
 			if(!init_tick_checks && done >= LIGHTING_SMOOTH_MIN_RENDERS && (KERNEL_OVER_BUDGET || TICK_USAGE_TO_MS(started) >= LIGHTING_SMOOTH_BUDGET_MS))
 				break
 	GLOB.lighting_smooth_ms += TICK_USAGE_TO_MS(started)
