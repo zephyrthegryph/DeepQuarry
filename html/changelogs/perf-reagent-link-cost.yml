@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Filling a new reagent holder skips the total walk and the draw hop walks for datums nothing can reach"
