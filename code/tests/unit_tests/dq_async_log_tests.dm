@@ -4,6 +4,8 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 #define DQ_ASYNC_LOG_FILE "data/dq_async_log_test.log"
+/// Its own file: a registered header stays with its path, so no other test may share it.
+#define DQ_ASYNC_HEADER_FILE "data/dq_async_log_header_test.log"
 
 /// Lines queued across two files land whole and in call order, and a flush is what makes them readable.
 /datum/unit_test/dq_async_log_keeps_order
@@ -90,22 +92,23 @@
 /datum/unit_test/dq_log_file_deleted_gets_its_header_back
 
 /datum/unit_test/dq_log_file_deleted_gets_its_header_back/Run()
-	fdel(DQ_ASYNC_LOG_FILE)
-	log_file_set_header(DQ_ASYNC_LOG_FILE, "header\n")
-	log_file_append(DQ_ASYNC_LOG_FILE, "one\n", FALSE)
+	fdel(DQ_ASYNC_HEADER_FILE)
+	log_file_set_header(DQ_ASYNC_HEADER_FILE, "header\n")
+	log_file_append(DQ_ASYNC_HEADER_FILE, "one\n", FALSE)
 	log_file_flush()
-	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_LOG_FILE), "header\none\n", "the first open of a missing file starts it with the header")
+	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_HEADER_FILE), "header\none\n", "the first open of a missing file starts it with the header")
 	var/recovered = log_file_counts()[4]
-	log_file_append(DQ_ASYNC_LOG_FILE, "two\n", FALSE)
+	log_file_append(DQ_ASYNC_HEADER_FILE, "two\n", FALSE)
 	log_file_flush()
-	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_LOG_FILE), "header\none\ntwo\n", "an existing file only gets the line")
-	fdel(DQ_ASYNC_LOG_FILE)
-	log_file_append(DQ_ASYNC_LOG_FILE, "three\n", FALSE)
+	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_HEADER_FILE), "header\none\ntwo\n", "an existing file only gets the line")
+	fdel(DQ_ASYNC_HEADER_FILE)
+	log_file_append(DQ_ASYNC_HEADER_FILE, "three\n", FALSE)
 	log_file_flush()
-	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_LOG_FILE), "header\nthree\n", "a deleted file starts again with its header")
+	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_HEADER_FILE), "header\nthree\n", "a deleted file starts again with its header")
 	TEST_ASSERT(log_file_counts()[4] > recovered, "and the recovery is counted")
-	fdel(DQ_ASYNC_LOG_FILE)
+	fdel(DQ_ASYNC_HEADER_FILE)
 
 #undef DQ_ASYNC_LOG_FILE
+#undef DQ_ASYNC_HEADER_FILE
 
 #endif
