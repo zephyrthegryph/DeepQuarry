@@ -54,6 +54,19 @@
 		"352" = 'icons/effects/light_overlays/light_352.dmi',
 		)
 
+	///Tracing counters, shared by every light (read by tests and by lighting_trace()): footprint updates asked for, sight reads made (the footprint is no longer a DM view()), turfs whose lumcount was written, updates skipped as unchanged.
+	var/static/stat_updates = 0
+	var/static/stat_views = 0
+	var/static/stat_turfs_written = 0
+	var/static/stat_skipped = 0
+	var/static/stat_worst_step = 0
+	///Where and at what range the affected_turfs were last worked out (lit_z 0: nowhere), and the sight layer version then.
+	var/lit_x = 0
+	var/lit_y = 0
+	var/lit_z = 0
+	var/lit_range = 0
+	var/lit_version = 0
+
 	///Overlay effect to cut into the darkness and provide light.
 	var/obj/effect/overlay/light_visible/visible_mask
 	///Lazy list to track the turfs being affected by our light, to determine their visibility.
@@ -185,30 +198,66 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()
+	stat_turfs_written += length(affected_turfs)
 	for(var/turf/lit_turf as anything in affected_turfs)
 		lit_turf.dynamic_lumcount -= lum_power
 	affected_turfs = null // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
+	lit_z = 0
 
-///Populates the affected_turfs lazylist, adding to its contents the effects of being near the light.
+///Brings the affected_turfs set (turf -> TRUE) to what the light reaches from where it is now. The footprint is read once from the Rust sight layer, and only the turfs that entered
+///or left it have their lumcount written: for a one-tile step that is the two edge strips. A light still on the turf, at the range, with no opacity change since, reads and writes nothing.
 /datum/overlay_lighting/proc/get_new_turfs()
 	if(!current_holder())
 		return
 	var/atom/movable/light_source = GET_LIGHT_SOURCE
-	. = list()
-	for(var/turf/lit_turf in view(lumcount_range, get_turf(light_source)))
-		lit_turf.dynamic_lumcount += lum_power
-		. += lit_turf
-	if(length(.))
-		affected_turfs = . // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
+	var/turf/center = get_turf(light_source)
+	if(!center)
+		clean_old_turfs()
+		return
+	if(lit_z == center.z && lit_x == center.x && lit_y == center.y && lit_range == lumcount_range && lit_version == sight_version())
+		stat_skipped++
+		return
+	stat_views++
+	var/list/seen = sight_view_turfs(center, lumcount_range)
+	var/list/fresh = list()
+	for(var/turf/lit_turf as anything in seen)
+		fresh[lit_turf] = TRUE
+	var/list/old = affected_turfs
+	var/written = 0
+	for(var/turf/entered as anything in fresh)
+		if(!old || !old[entered])
+			entered.dynamic_lumcount += lum_power
+			written++
+	for(var/turf/left as anything in old)
+		if(!fresh[left])
+			left.dynamic_lumcount -= lum_power
+			written++
+	stat_turfs_written += written
+	if(length(fresh))
+		affected_turfs = fresh // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
+	else
+		affected_turfs = null // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
+	lit_x = center.x
+	lit_y = center.y
+	lit_z = center.z
+	lit_range = lumcount_range
+	lit_version = sight_version()
+	if(written > stat_worst_step)
+		stat_worst_step = written
 
-///Clears the old affected turfs and populates the new ones.
+///Updates the affected turfs for the light's new place: the delta against the last footprint, not a rebuild.
 /datum/overlay_lighting/proc/make_luminosity_update()
-	clean_old_turfs()
+	stat_updates++
 	if(!isturf(current_holder()?.loc))
+		clean_old_turfs()
 		return
 	if(directional)
 		cast_directional_light()
 	get_new_turfs()
+
+///The counters as one line, for the tracing of a walking light (see the stat_ vars).
+/datum/overlay_lighting/proc/lighting_trace()
+	return "overlay light updates [stat_updates], sight reads [stat_views], skipped as unchanged [stat_skipped], turfs written [stat_turfs_written], worst step [stat_worst_step]"
 
 ///Adds the luminosity and source for the afected movable atoms to keep track of their visibility.
 /datum/overlay_lighting/proc/add_dynamic_lumi()

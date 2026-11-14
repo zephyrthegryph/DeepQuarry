@@ -928,21 +928,21 @@ DM holds handles; simulation state lives in Rust (verdigris). `vg_*` binds are g
 #### Generated binds: Rust functions become `vg_*` procs
 Need: call Rust from DM.
 Defined: `frame_set_tick_lag` at `verdigris/ffi/src/frame.rs:94` (the Rust fn becomes `vg_frame_set_tick_lag`)
-Example: `vg_frame_set_tick_lag(world.tick_lag)`, `code/domains/verdigris/system.dm:85`
+Example: `vg_frame_set_tick_lag(world.tick_lag)`, `code/domains/verdigris/system.dm:101`
 Replaces / bans: raw `call_ext` (rejected outside its allow list); `vg_*` in content (`banned_outside` in `tools/ci/lint_scopes.toml`).
 Notes: to add a bind write the Rust fn with `#[auxmacros::bind]` and run `tools/build/build.sh verdigris-bindings`. The output `code/__defines/verdigris/_bindings.dm` is gitignored. `verdigris_init(VERDIGRIS_ABI)` checks the ABI hash at boot. Wrap binds in a domain `*_api.dm` proc as `code/domains/verdigris/native_api.dm` does.
 
 #### `native_read(E, key, index)` and `native_write(E, key, value, index)`
 Need: read or write a Rust-owned component field; `key` is `NATIVE_KEY(code, field)`.
-Defined: `native_read` at `code/domains/verdigris/system.dm:378`, `native_write` at `code/domains/verdigris/system.dm:359`
+Defined: `native_read` at `code/domains/verdigris/system.dm:464`, `native_write` at `code/domains/verdigris/system.dm:445`
 Example: `native_write(serving, NATIVE_APC_STATIC_LOAD, equip_load, 0)`, `code/content/machinery/power_bridge.dm:64`
 Replaces / bans: DM mirrors of Rust-owned fields.
 Notes: reads are cached per frame by (entity, key). The domain wrapper (`heat_body_*`, `power_net_*`, `atmos_*`) wins where one exists.
 
 #### `vg_frame` and the outbox
 Need: the one per-tick call into the simulation; Rust events come back as records.
-Defined: `code/domains/verdigris/system.dm:106`
-Example: `var/list/box = vg_frame(elapsed, budget)`, `code/domains/verdigris/system.dm:114`
+Defined: `code/domains/verdigris/system.dm:132`
+Example: `var/list/box = vg_frame(elapsed, budget)`, `code/domains/verdigris/system.dm:132`
 Replaces / bans: `vg_world_tick`, `vg_drain_events`, `vg_world_step`.
 Notes: records are `NATIVE_REC_CHANGED` / `NOTICE` / `CROSSED`, delivered as `native_publish_change`, `native_publish_notice` and `native_crossed`. A frame over `NATIVE_SLOW_FRAME_MS` is logged with the Rust phases that grew.
 

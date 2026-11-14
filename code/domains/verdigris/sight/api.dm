@@ -36,3 +36,10 @@
 		SSsight.flush()
 	SSsight.views++
 	return vg_sight_view(center, range)
+
+/// A number that changes whenever the opacity layer does: a footprint read at version V is still true while this returns V again. -1 while opacity changes are pending
+/// (the layer is about to change), so a cached read never matches until the next flush.
+/proc/sight_version()
+	if(length(SSsight.dirty_turfs))
+		return -1
+	return SSsight.flushes

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Carried lights (flashlights, PDAs, helmet lamps) update only the turfs that enter or leave their footprint when they move, reading sight from the Rust layer instead of a DM view()"

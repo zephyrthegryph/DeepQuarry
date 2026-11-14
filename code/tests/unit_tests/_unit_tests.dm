@@ -567,6 +567,7 @@
 #include "dq_hop_kinds.dm"
 #include "dq_watched_band_tests.dm"
 #include "dq_sight_tests.dm"
+#include "dq_overlay_light_step.dm"
 #include "dq_client_lighting_tests.dm"
 #include "dq_change_sweep_redraw.dm"
 #include "dq_draw_structures.dm"
