@@ -157,7 +157,7 @@ fn mask_of(grid: &Grid, kind: BlockKind, cell: u32, over: Option<(u32, Dir)>) ->
     }
 }
 
-/// The shape key of a light on `center` (client lighting, `client_glow_shape_key()` in DM): `"{margin}|{offsets}|{blocked}"`, the cells the light sees in
+/// The shape key of a light on `center` (client lighting, `code/content/lighting/client_shadow.dm`): `"{margin}|{offsets}|{blocked}"`, the cells the light sees in
 /// [`view_over`] order as `dx,dy` pairs joined by commas, a cell whose faces are all blocked (`0b1111`) listed under `blocked` and the rest under
 /// `offsets`. `margin` is the text DM prints for it. `None` when `center` is off the grid.
 #[must_use]
@@ -169,14 +169,40 @@ pub fn shape_key(
     margin: &str,
     over: Option<(u32, Dir)>,
 ) -> Option<String> {
+    let cells = view_over(grid, kind, center, range, over);
+    key_of(grid, kind, center, &cells, margin, over)
+}
+
+/// The cells `center` sees within `range` ([`view`]) and their shape key ([`shape_key`]) from the one walk. `None` when `center` is off the grid.
+#[must_use]
+pub fn keyed_view(
+    grid: &Grid,
+    kind: BlockKind,
+    center: u32,
+    range: u32,
+    margin: &str,
+) -> Option<(String, Vec<u32>)> {
+    let cells = view_over(grid, kind, center, range, None);
+    let key = key_of(grid, kind, center, &cells, margin, None)?;
+    Some((key, cells))
+}
+
+fn key_of(
+    grid: &Grid,
+    kind: BlockKind,
+    center: u32,
+    cells: &[u32],
+    margin: &str,
+    over: Option<(u32, Dir)>,
+) -> Option<String> {
     let dims = grid.dims();
     let (cx, cy, _) = dims.coords(center)?;
     let mut offsets = String::new();
     let mut blocked = String::new();
-    for cell in view_over(grid, kind, center, range, over) {
-        let (x, y, _) = dims.coords(cell)?;
+    for cell in cells {
+        let (x, y, _) = dims.coords(*cell)?;
         let (dx, dy) = (i64::from(x) - i64::from(cx), i64::from(y) - i64::from(cy));
-        let list = if mask_of(grid, kind, cell, over) == Dir(0b1111) {
+        let list = if mask_of(grid, kind, *cell, over) == Dir(0b1111) {
             &mut blocked
         } else {
             &mut offsets
@@ -490,5 +516,15 @@ mod tests {
         // A door that stays a half block (a border object) is not a full wall.
         let half = shape_key(&g, BlockKind::Opacity, c, 1, "0", Some((door, Dir::EAST))).unwrap();
         assert!(half.ends_with('|'));
+    }
+
+    #[test]
+    fn keyed_view_is_the_view_and_its_key() {
+        let mut g = scattered(15, 7, 150);
+        let c = at(&g, 7, 7);
+        g.set_blocked(BlockKind::Opacity, c, Dir::NONE);
+        let (key, cells) = keyed_view(&g, BlockKind::Opacity, c, 5, "64").unwrap();
+        assert_eq!(cells, view(&g, BlockKind::Opacity, c, 5));
+        assert_eq!(Some(key), shape_key(&g, BlockKind::Opacity, c, 5, "64", None));
     }
 }

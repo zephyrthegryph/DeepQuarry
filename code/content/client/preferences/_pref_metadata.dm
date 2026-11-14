@@ -106,6 +106,8 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Markings (handled by editor)
 	tag_pref(., /datum/preference/body_markings, "appearance", "markings", PREF_WIDGET_HIDDEN)
 	// Preview controls
+	tag_pref(., /datum/preference/toggle/human/preview_loadout, "appearance", "preview")
+	tag_pref(., /datum/preference/toggle/human/preview_job, "appearance", "preview")
 
 	//// SIZE & VOICE ////
 	tag_pref(., /datum/preference/numeric/human/size_multiplier, "identity", "size")

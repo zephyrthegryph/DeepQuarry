@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The character setup's Show loadout and Show job outfit preview switches are back"

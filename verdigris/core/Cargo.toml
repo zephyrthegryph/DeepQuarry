@@ -12,6 +12,8 @@ rayon = "1.10.0"
 # (doc/rewrite/rust_bindings.md §2) instead of the longer `auxmacros::` path.
 # Host-buildable: auxmacros itself has no byondapi dependency.
 auxmacros = { path = "../ffi/macros" }
+# The baked client glow masks (propagate::mask) are read and written as PNG.
+png = "0.18.0"
 
 [features]
 default = ["rayon"]

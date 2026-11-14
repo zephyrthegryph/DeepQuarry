@@ -4,11 +4,12 @@
 /datum/unit_test/dq_retired_character_keys_migrate
 
 /datum/unit_test/dq_retired_character_keys_migrate/Run()
-	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "equip_preview_mob" = 1, "preview_loadout" = 0, "vantag_volunteer" = 1, "custom_say" = "declares", "religion" = "Mars"))
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "equip_preview_mob" = 1, "vantag_volunteer" = 1, "custom_say" = "declares", "religion" = "Mars"))
 	var/list/save = P.get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
 	for(var/key in GLOB.retired_character_pref_keys)
 		TEST_ASSERT(!(key in save), "[key] is dropped from the slot")
 	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/choiced/species), SPECIES_HUMAN, "the live settings still load")
+	qdel(P, TRUE)
 
 /// A sound toggle that was off mutes the volume channel that replaced it.
 /datum/unit_test/dq_retired_sound_toggle_mutes_channel
@@ -34,3 +35,16 @@
 	TEST_ASSERT(save["CHAT_OOC"] == 1, "a live setting is kept")
 	for(var/key in GLOB.preference_entries_by_key)
 		TEST_ASSERT(!(key in GLOB.retired_player_pref_keys) && !(key in GLOB.retired_character_pref_keys), "[key] is a live setting and is not retired")
+
+/// The character setup's "Show loadout" / "Show job outfit" switches are live settings: on by default, saved, and a change redraws the preview.
+/datum/unit_test/dq_preview_toggles_are_live_settings
+
+/datum/unit_test/dq_preview_toggles_are_live_settings/Run()
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "preview_loadout" = 0))
+	TEST_ASSERT(!P.read_preference(/datum/preference/toggle/human/preview_loadout), "a saved off loadout toggle loads")
+	TEST_ASSERT(P.read_preference(/datum/preference/toggle/human/preview_job), "the job toggle defaults on")
+	for(var/type in list(/datum/preference/toggle/human/preview_loadout, /datum/preference/toggle/human/preview_job))
+		var/datum/preference/preference = GLOB.preference_entries[type]
+		TEST_ASSERT(P.dq_preference_affects_preview(preference), "[type] redraws the preview")
+	TEST_ASSERT(!("preview_loadout" in GLOB.retired_character_pref_keys) && !("preview_job" in GLOB.retired_character_pref_keys), "the toggles are not retired keys")
+	qdel(P, TRUE)

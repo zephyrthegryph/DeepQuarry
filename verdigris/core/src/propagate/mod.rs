@@ -9,6 +9,7 @@
 //! floods or rays without allocating once the scratch has warmed up.
 
 pub mod emp;
+pub mod mask;
 pub mod radiation;
 pub mod ray;
 pub mod view;

@@ -124,8 +124,8 @@
 	client_lighting_set(FALSE)
 	SSlighting.light_step(0, TRUE)
 
-/// The io callback of a finished mask bake only files the answer: the bake's pending mark stays until a baker turn takes it in, a turn with no budget takes one in, and
-/// a turn with room takes the rest, so one io pass never pays for a bake's whole arrival.
+/// A finished mask bake is filed by the baker's collect and taken in by a baker turn: the bake's pending mark stays until a turn takes it in, a turn with no budget takes one in, and
+/// a turn with room takes the rest, so one pass never pays for a bake's whole arrival.
 /datum/unit_test/dq_glow_mask_answer_is_filed_then_taken_in_by_a_turn
 
 /datum/unit_test/dq_glow_mask_answer_is_filed_then_taken_in_by_a_turn/Run()
@@ -133,22 +133,18 @@
 	var/list/keys = list("dq-walk3-a", "dq-walk3-b", "dq-walk3-c")
 	var/list/pending = list()
 	var/list/asked = list()
+	var/list/filed = list()
 	for(var/key in keys)
 		pending[key] = TRUE
 		asked[key] = REALTIMEOFDAY
-	set_var(B, nameof(B.finished), list())
-	set_var(B, nameof(B.inflight), 3)
+		filed += list(list(key, "", "test error", 0, 0, REALTIMEOFDAY))
+	set_var(B, nameof(B.finished), filed)
+	set_var(B, nameof(B.inflight), 0)
 	set_var(B, nameof(B.pending), pending)
 	set_var(B, nameof(B.asked_at), asked)
 	set_var(B, nameof(B.failed), B.failed)
 	var/failed_before = B.failed
-	for(var/key in keys)
-		client_glow_mask_job_done(null, "test error", key, "sheet-[key]")
-	TEST_ASSERT_EQUAL(length(B.finished), 3, "the three answers were filed")
-	TEST_ASSERT_EQUAL(B.inflight, 0, "and the bakes are no longer in flight")
-	TEST_ASSERT_EQUAL(B.failed, failed_before, "the callback took nothing in")
-	TEST_ASSERT(B.pending[keys[1]], "the shape is still pending until a turn takes it in")
-	TEST_ASSERT(B.turn_waiting, "the baker's turn was armed")
+	TEST_ASSERT(B.pending[keys[1]], "the shape is pending until a turn takes it in")
 	TEST_ASSERT_EQUAL(client_glow_finished_run(-1), 1, "a turn with no budget takes one in")
 	TEST_ASSERT_EQUAL(B.failed, failed_before + 1, "it was counted")
 	TEST_ASSERT(!B.pending[keys[1]], "and its pending mark is gone")
@@ -158,6 +154,43 @@
 	TEST_ASSERT_EQUAL(B.failed, failed_before + 3, "all three were counted")
 	TEST_ASSERT(!B.pending[keys[3]], "no pending mark is left")
 
+/// A bake started through the pump runs on the Rust baker's thread and is collected by a later turn: the same call a baker turn makes, polled until the mask arrives.
+/datum/unit_test/dq_glow_mask_rust_bake_round_trip
+
+/datum/unit_test/dq_glow_mask_rust_bake_round_trip/Run()
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	var/key = "32|0,0,1,0|-1,0"
+	set_var(B, nameof(B.queue), list())
+	set_var(B, nameof(B.finished), list())
+	set_var(B, nameof(B.inflight), 0)
+	set_var(B, nameof(B.pending), list())
+	set_var(B, nameof(B.asked_at), list())
+	set_var(B, nameof(B.turn_waiting), FALSE)
+	client_glow_mask_request(key)
+	var/start_stamp = TICK_USAGE_REAL
+	TEST_ASSERT_EQUAL(client_glow_mask_pump(100000), 1, "the pump started the bake")
+	var/start_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start_stamp)
+	TEST_ASSERT_EQUAL(B.inflight, 1, "and it is in flight")
+	var/waited = 0
+	while(!length(B.finished) && waited < 200)
+		client_glow_mask_collect()
+		if(!length(B.finished))
+			sleep(1)
+			waited++
+	TEST_ASSERT_EQUAL(length(B.finished), 1, "the Rust baker answered")
+	TEST_ASSERT_EQUAL(B.inflight, 0, "the bake is no longer in flight")
+	var/list/row = B.finished[1]
+	TEST_ASSERT_EQUAL(row[1], key, "the answer names the shape")
+	TEST_ASSERT(length(row[2]) && !length(row[3]), "with a path and no error ([row[3]])")
+	TEST_ASSERT(rustg_file_exists(row[2]), "and the PNG is on disk")
+	var/take_stamp = TICK_USAGE_REAL
+	client_glow_finished_run(100000)
+	log_test("CLIENT GLOW MASK RUST: bake start [round(start_ms, 0.001)] ms on the game thread, taking in (collect and file copy) [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - take_stamp), 0.001)] ms, the Rust bake [round(row[4], 0.001)] ms on its own thread")
+	TEST_ASSERT(B.icons[key], "the baker took the PNG into the resource cache")
+	TEST_ASSERT(!B.pending[key], "and the shape is no longer pending")
+	GLOB.client_glow_baker.icons -= key
+	GLOB.client_glow_baker.arrivals = list()
+
 /// A step's parts (the living tail's pieces and the nutrition write among them) are numbered inside the table, so a trace line can name them.
 /datum/unit_test/dq_move_cost_parts_name_the_living_tail
 
@@ -166,8 +199,7 @@
 	TEST_ASSERT_EQUAL(length(GLOB.move_cost_parts), MOVE_COST_PART_COUNT, "the table has a slot for each")
 
 
-/// A shape asked for (by a viewer, or ahead by a crossing's ring scan or a light's door twins) only waits for the baker: the bake's start (a sprite build and a JSON
-/// encode, 10-30 ms) runs in the baker's budgeted turn, never inside the asker.
+/// A shape asked for (by a viewer, or ahead by a crossing's ring scan or a light's door twins) only waits for the baker: the bake's start (the call to the Rust baker) runs in the baker's budgeted turn, never inside the asker.
 /datum/unit_test/dq_glow_mask_request_defers_the_bake_start
 
 /datum/unit_test/dq_glow_mask_request_defers_the_bake_start/Run()
@@ -197,14 +229,15 @@
 	for(var/key in keys)
 		pending[key] = TRUE
 		asked[key] = REALTIMEOFDAY
-	set_var(B, nameof(B.finished), list())
-	set_var(B, nameof(B.inflight), 3)
+	var/list/filed = list()
+	for(var/key in keys)
+		filed += list(list(key, "", "test error", 0, 0, REALTIMEOFDAY))
+	set_var(B, nameof(B.finished), filed)
+	set_var(B, nameof(B.inflight), 0)
 	set_var(B, nameof(B.pending), pending)
 	set_var(B, nameof(B.asked_at), asked)
 	set_var(B, nameof(B.turn_rotor), 0)
 	set_var(B, nameof(B.turn_waiting), FALSE)
-	for(var/key in keys)
-		client_glow_mask_job_done(null, "test error", key, "sheet-[key]")
 	var/failed_before = B.failed
 	client_glow_baker_turn(0)
 	TEST_ASSERT_EQUAL(B.failed, failed_before + 1, "a turn with no budget took in one finished bake")

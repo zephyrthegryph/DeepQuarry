@@ -433,7 +433,10 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
   );
 };
 
-const PREVIEW_LABELS: Record<string, string> = {};
+const PREVIEW_LABELS: Record<string, string> = {
+  preview_loadout: 'Show loadout',
+  preview_job: 'Show job outfit',
+};
 
 const PreviewSwitch = ({ item }: { item: PrefWidgetItem }) => {
   const { act } = useBackend();
