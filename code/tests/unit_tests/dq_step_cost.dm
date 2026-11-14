@@ -221,7 +221,7 @@
 		var/before = GLOB.move_cost_listeners_timed
 		var/started = move_cost_begin()
 		var/moved = first.Move(target, walk_dir)
-		move_cost_end(started, first, null, GLOB.refresh_marks_raised, GLOB.interest_chunks_entered, 0)
+		move_cost_end(started, first, null, GLOB.refresh_marks_raised, GLOB.gaze_chunks_entered, 0)
 		if(!moved)
 			continue
 		steps++
