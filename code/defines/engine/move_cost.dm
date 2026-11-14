@@ -6,7 +6,10 @@
 /// One step in this many by a client is traced even when it was cheap.
 #define MOVE_COST_SAMPLE_EVERY 50
 /// A step that takes this long (ms) is traced whatever the sampling says.
-#define MOVE_COST_SLOW_MS 4
+#define MOVE_COST_SLOW_MS 12
+/// Trace lines are written together this often, and at most this many wait.
+#define MOVE_COST_FLUSH_EVERY (10 SECONDS)
+#define MOVE_COST_LINES_MAX 40
 
 /// The parts of a step (indexes into GLOB.move_cost_parts), and their names in the trace line.
 #define MOVE_COST_MOVE 1 // atom/movable/Move() up to Moved(): the Exit/Enter/Crossed/Uncrossed handlers and the pre_move action

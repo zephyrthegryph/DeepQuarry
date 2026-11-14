@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "Chunk scans for owed draws read a per-chunk owed index instead of walking every turf and its contents; the wake census and scan counters join the periodic look log"
+  - bugfix: "A vis_contents observer with no screen to cover is logged as such instead of as a failed login cover"

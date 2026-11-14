@@ -83,31 +83,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	var/evicted = 0
 	/// Sum of the time from request to baked, deciseconds (real time).
 	var/wait_ds = 0
-	/// Shapes loaded from the disk store instead of baked; shapes written to it.
-	var/stored_loads = 0
-	var/stored_saves = 0
 	/// Shapes asked for ahead of a viewer holding them (the chunks around its reach box).
 	var/prefetched = 0
-	/// Shape keys waiting for the disk store to be looked in (key -> asked ahead): the store is read a few milliseconds a tick, never inside a crossing.
-	var/list/store_queue = list()
-	var/store_waiting = FALSE
+	/// TRUE while a turn() timer is waiting: the baker's turns hand arrivals to viewers, work out door twins and start queued bakes, a few milliseconds a tick.
+	var/turn_waiting = FALSE
+	/// Light handle -> TRUE for held lights whose door twins are still to be worked out (client_glow_twins_pump()): each costs a sight query per nearby door, so a turn does a few ms of them.
+	var/list/twin_work = list()
+	/// Trace counters of the twin work: lights done, turns taken, the longest one light (ms).
+	var/twins_done = 0
+	var/twins_turns = 0
+	var/twins_max_ms = 0
 	/// Arrived shapes whose viewers have not all been told: list(key, icon, list of holders still to tell) each, oldest first. A holder is told a few milliseconds a tick
-	/// (client_glow_arrivals_run()): one shape held by many clients was one call of tens of ms (the whole fan-out of a stored shape's arrival).
+	/// (client_glow_arrivals_run()): one shape held by many clients was one call of tens of ms (the whole fan-out of a shape's arrival).
 	var/list/arrivals = list()
-	/// The one-time warm-up of the disk store (client_glow_store_warm()): the md5 of each glow sprite is one step, the store's directory listing the last.
-	var/list/stamp_parts
-	var/stamp_done = FALSE
-	/// Trace counters of the store's turns: the longest one-shape step (ms), the steps past CLIENT_GLOW_STORE_SLOW_MS, and the arrival steps and viewers told.
-	var/store_max_ms = 0
-	var/store_slow = 0
+	/// Trace counters of the arrival turns: steps taken and viewers told.
 	var/arrival_steps = 0
 	var/arrival_told = 0
-	/// FALSE: no disk store (unit tests, where a stored shape would hide the bake under test).
-#if defined(UNIT_TESTS)
-	var/store_on = FALSE
-#else
-	var/store_on = TRUE
-#endif
 
 /// The reached tiles (flat text list dx,dy,...) merged into rectangles: a flat number list x0,y0,x1,y1,... (tile offsets, inclusive).
 /// Horizontal runs per row, then a run identical to the row below's extends that rectangle upward.
@@ -231,8 +222,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 			return TRUE
 	return FALSE
 
-/// The baked mask of this shape, or null while it is not ready (asks for it). A stored shape is read from the disk on a later tick (client_glow_store_pump()),
-/// so a crossing never waits on a file: its glow shows the plain sprite until the shape arrives.
+/// The baked mask of this shape, or null while it is not ready (asks for it). A crossing never waits on a bake: its glow shows the plain
+/// sprite until the shape arrives.
 /proc/client_glow_mask_icon(key)
 	var/found = GLOB.client_glow_baker.icons[key]
 	if(found)
@@ -242,107 +233,60 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	client_glow_mask_request(key)
 	return GLOB.client_glow_baker.icons[key]
 
-/// The prefix of this build's stored shapes: the recipe version and the contents of every glow sprite, so a changed sprite never serves an old bake.
-/// Built a sprite at a time by the store's first turns (client_glow_store_warm()); a caller that needs it before then builds the rest here.
-/proc/client_glow_store_stamp()
-	var/static/stamp
-	if(!stamp)
-		while(!client_glow_store_stamp_step())
-			continue
-		stamp = md5(jointext(GLOB.client_glow_baker.stamp_parts, "|"))
-	return stamp
-
-/// One step of the stamp: the md5 of the next glow sprite's file (each is a few ms). TRUE when every sprite is in.
-/proc/client_glow_store_stamp_step()
-	var/datum/client_glow_baker/B = GLOB.client_glow_baker
-	if(!B.stamp_parts)
-		B.stamp_parts = list(CLIENT_GLOW_STORE_VERSION)
-	var/list/sizes = list(32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352)
-	var/next = length(B.stamp_parts) // the version is part 1, so the sprite for sizes[next] is the next one
-	if(next > length(sizes))
-		return TRUE
-	B.stamp_parts += md5(file(resolve_icon_dmi_path(get_icon_dmi_path(client_glow_icon(sizes[next])))))
-	return length(B.stamp_parts) > length(sizes)
-
-/// The store's first-use work, in steps the turn's budget can stop between: every sprite's md5, then the directory's size check. TRUE once all is done.
-/// Nothing here runs inside a request; the first turn of a round used to do all of it in one call (46 ms, SLOW_TICK 2026-11-13).
-/proc/client_glow_store_warm(budget_ms = CLIENT_GLOW_STORE_BUDGET_MS)
-	var/datum/client_glow_baker/B = GLOB.client_glow_baker
-	if(B.stamp_done)
-		return TRUE
-	var/started = TICK_USAGE_REAL
-	while(!client_glow_store_stamp_step())
-		if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
-			return FALSE
-	client_glow_store_stamp()
-	client_glow_store_ready()
-	B.stamp_done = TRUE
-	log_world("client glow store: warmed in steps, last step [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms")
-	return TRUE
-
-/proc/client_glow_store_path(key)
-	return "[CLIENT_GLOW_STORE_DIR][md5("[client_glow_store_stamp()]|[key]")].png"
-
-/// Once per world: the store stays bounded by emptying it when it has grown past its cap.
-/proc/client_glow_store_ready()
-	var/static/checked = FALSE
-	if(checked)
-		return
-	checked = TRUE
-	var/list/files = flist(CLIENT_GLOW_STORE_DIR)
-	if(length(files) > CLIENT_GLOW_STORE_MAX)
-		log_world("client glow store: [length(files)] files past the cap of [CLIENT_GLOW_STORE_MAX], emptied")
-		fdel(CLIENT_GLOW_STORE_DIR)
-
-/// Loads a stored shape into the cache. TRUE if it was on disk.
-/proc/client_glow_store_load(key)
-	if(!GLOB.client_glow_baker.store_on)
-		return FALSE
-	client_glow_store_ready()
-	var/path = client_glow_store_path(key)
-	if(!rustg_file_exists(path))
-		return FALSE
-	GLOB.client_glow_baker.stored_loads++
-	client_glow_mask_cache(key, fcopy_rsc(file(path)))
-	return TRUE
-
-/// The disk store's turn: the queued shapes are looked up for `budget_ms` (at least one), a stored one goes to its viewers, a shape the store lacks goes on to the
-/// bakers, and the rest waits for the next tick. A request never reads the disk itself, so a chunk crossing that acquires many lights waits on none.
-/proc/client_glow_store_pump(budget_ms = CLIENT_GLOW_STORE_BUDGET_MS)
+/// The baker's turn: arrived shapes are told to their viewers, queued bakes are started and door twins are worked out, `budget_ms` of them in all (each part at least one item),
+/// and what is left waits for the next tick.
+/proc/client_glow_baker_turn(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
 	var/started = TICK_USAGE_REAL
-	var/loaded = 0
-	var/warm = !B.store_on || client_glow_store_warm(budget_ms)
-	while(warm && length(B.store_queue))
-		var/key = B.store_queue[1]
-		var/ahead = B.store_queue[key]
-		B.store_queue.Cut(1, 2)
-		var/step_started = TICK_USAGE_REAL
-		if(client_glow_store_load(key))
-			loaded++
-			B.pending -= key
-			B.asked_at -= key
-			client_glow_mask_arrived(key, B.icons[key])
-		else
-			client_glow_mask_enqueue(key, ahead)
-		var/step_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
-		B.store_max_ms = max(B.store_max_ms, step_ms)
-		if(step_ms >= CLIENT_GLOW_STORE_SLOW_MS)
-			B.store_slow++
-			log_world("client glow store: one shape took [round(step_ms, 0.01)] ms ([B.store_slow] such step(s) so far, longest [round(B.store_max_ms, 0.01)] ms): [key]")
-		if(length(B.store_queue) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
-			break
 	client_glow_arrivals_run(max(0, budget_ms - TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)))
-	if((length(B.store_queue) || !warm) && !B.store_waiting)
-		B.store_waiting = TRUE
-		after(B, 1 TICKS, TYPE_PROC_REF(/datum/client_glow_baker, store_continue))
-	if(loaded && client_glow_trace_line())
-		log_world("client glow store: loaded [loaded] stored shape(s) in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms, [length(B.store_queue)] more waiting")
+	if(length(B.queue) && B.inflight < CLIENT_GLOW_MASK_BAKES_MAX)
+		client_glow_mask_pump()
+	client_glow_twins_pump(max(0, budget_ms - TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)))
+	if(length(B.twin_work))
+		client_glow_baker_wake()
 
-/// The timer of a store pump that ran out of budget.
-/datum/client_glow_baker/proc/store_continue()
-	store_waiting = FALSE
-	client_glow_store_pump()
+/// Arms the baker's next turn if it is not already waiting.
+/proc/client_glow_baker_wake()
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	if(B.turn_waiting)
+		return
+	B.turn_waiting = TRUE
+	after(B, 1 TICKS, TYPE_PROC_REF(/datum/client_glow_baker, turn_continue))
+
+/// Works out the door twins of the held lights waiting for it, until `budget_ms` is spent (at least one light a turn: the turn's own, however little the turn has left), then tells the
+/// viewers holding each light. A light that was deleted or lost its glow meanwhile is skipped. Returns the lights done.
+/proc/client_glow_twins_pump(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
+	var/datum/client_glow_baker/B = GLOB.client_glow_baker
+	if(!length(B.twin_work))
+		return 0
+	var/started = TICK_USAGE_REAL
+	var/done = 0
+	B.twins_turns++
+	while(length(B.twin_work))
+		var/h = B.twin_work[1]
+		B.twin_work.Cut(1, 2)
+		var/datum/light_source/L = handle_get(h)
+		if(!istype(L) || QDELETED(L) || !L.glow_mask_key)
+			continue
+		var/step_started = TICK_USAGE_REAL
+		L.client_glow_twins_ready()
+		done++
+		for(var/datum/client_glow_holder/H as anything in REGISTRY_MEMBERS(REGISTRY_CLIENT_GLOW_HOLDERS))
+			if(!QDELETED(H) && LAZYACCESS(H.held, h))
+				H.queue_twins(L)
+		var/step_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		B.twins_max_ms = max(B.twins_max_ms, step_ms)
+		if(length(B.twin_work) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			break
+	B.twins_done += done
+	if(done && client_glow_trace_line())
+		log_world("client glow twins: [done] light(s) worked out in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms, [length(B.twin_work)] more waiting (longest light [round(B.twins_max_ms, 0.01)] ms, [B.twins_done] in all over [B.twins_turns] turn(s))")
+	return done
+
+/// The timer of a baker turn that ran out of budget.
+/datum/client_glow_baker/proc/turn_continue()
+	turn_waiting = FALSE
+	client_glow_baker_turn()
 
 /proc/client_glow_mask_cache(key, res)
 	GLOB.client_glow_baker.icons[key] = res
@@ -370,15 +314,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		return
 	GLOB.client_glow_baker.pending[key] = TRUE
 	GLOB.client_glow_baker.asked_at[key] = REALTIMEOFDAY
-	if(GLOB.client_glow_baker.store_on)
-		GLOB.client_glow_baker.store_queue[key] = ahead // the disk store is looked in on the next tick, then the bakers (client_glow_store_pump())
-		if(!GLOB.client_glow_baker.store_waiting)
-			GLOB.client_glow_baker.store_waiting = TRUE
-			after(GLOB.client_glow_baker, 1 TICKS, TYPE_PROC_REF(/datum/client_glow_baker, store_continue))
-		return
 	client_glow_mask_enqueue(key, ahead)
 
-/// A shape no store holds: it waits for a baker. One a viewer asked for goes before the shapes only asked for ahead.
+/// A shape waits for a baker. One a viewer asked for goes before the shapes only asked for ahead.
 /proc/client_glow_mask_enqueue(key, ahead)
 	if(ahead || !length(GLOB.client_glow_baker.queue))
 		GLOB.client_glow_baker.queue += key
@@ -392,8 +330,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		rustg_file_write("", "[CLIENT_GLOW_MASK_DIR].keep")
 		made = TRUE
 
+/// Starts bakes for the queued shapes, up to CLIENT_GLOW_MASK_BAKES_MAX at once; each start is a sprite build and a JSON encode, so one call stops once it has spent
+/// CLIENT_GLOW_TURN_BUDGET_MS (at least one start) and the baker's next turn goes on (client_glow_baker_turn()).
 /proc/client_glow_mask_pump()
+	var/started = TICK_USAGE_REAL
+	var/begun = 0
 	while(GLOB.client_glow_baker.inflight < CLIENT_GLOW_MASK_BAKES_MAX && length(GLOB.client_glow_baker.queue))
+		if(begun && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= CLIENT_GLOW_TURN_BUDGET_MS)
+			client_glow_baker_wake()
+			return
+		begun++
 		var/key = GLOB.client_glow_baker.queue[1]
 		GLOB.client_glow_baker.queue.Cut(1, 2)
 		client_glow_mask_dir_ready()
@@ -433,10 +379,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 /// Takes a baked PNG into the resource cache and gives it to every viewer waiting on the shape.
 /proc/client_glow_mask_store(key, path)
 	var/res = fcopy_rsc(file(path))
-	if(GLOB.client_glow_baker.store_on)
-		client_glow_store_ready()
-		if(fcopy(path, client_glow_store_path(key)))
-			GLOB.client_glow_baker.stored_saves++
 	fdel(path)
 	client_glow_mask_cache(key, res)
 	GLOB.client_glow_baker.baked++
@@ -446,16 +388,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 		log_world(client_glow_mask_stats())
 	client_glow_mask_arrived(key, res)
 
-/// Shape `key` is in the cache (baked or loaded from the store): every viewer waiting on it shows it. The viewers are told in turns of CLIENT_GLOW_STORE_BUDGET_MS
+/// Shape `key` is in the cache (baked): every viewer waiting on it shows it. The viewers are told in turns of CLIENT_GLOW_TURN_BUDGET_MS
 /// (client_glow_arrivals_run()); the first of them is told now.
 /proc/client_glow_mask_arrived(key, res)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
 	B.arrivals += list(list(key, res, REGISTRY_MEMBERS(REGISTRY_CLIENT_GLOW_HOLDERS).Copy()))
-	client_glow_arrivals_run(CLIENT_GLOW_STORE_BUDGET_MS)
+	client_glow_arrivals_run(CLIENT_GLOW_TURN_BUDGET_MS)
 
 /// Tells the viewers of arrived shapes, oldest shape first, until `budget_ms` is spent (always at least one viewer); the rest waits for the next tick.
 /// A viewer that was deleted meanwhile is skipped. Returns the viewers told.
-/proc/client_glow_arrivals_run(budget_ms = CLIENT_GLOW_STORE_BUDGET_MS)
+/proc/client_glow_arrivals_run(budget_ms = CLIENT_GLOW_TURN_BUDGET_MS)
 	var/datum/client_glow_baker/B = GLOB.client_glow_baker
 	if(!length(B.arrivals))
 		return 0
@@ -479,9 +421,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 			break
 	B.arrival_steps++
 	B.arrival_told += told
-	if(length(B.arrivals) && !B.store_waiting)
-		B.store_waiting = TRUE
-		after(B, 1 TICKS, TYPE_PROC_REF(/datum/client_glow_baker, store_continue))
+	if(length(B.arrivals))
+		client_glow_baker_wake()
 	return told
 
 /// (Tests, nothing else: it blocks.) Bakes a shape on the spot and returns the PNG's path; the caller deletes it.
@@ -492,7 +433,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 
 /proc/client_glow_mask_stats()
 	var/baked = GLOB.client_glow_baker.baked
-	return "client glow masks: [length(GLOB.client_glow_baker.icons)] cached, [baked] baked, [GLOB.client_glow_baker.hits] hits, [GLOB.client_glow_baker.misses] misses, [GLOB.client_glow_baker.failed] failed, [GLOB.client_glow_baker.refused] refused, [GLOB.client_glow_baker.evicted] evicted, [GLOB.client_glow_baker.stored_loads] loaded from store, [GLOB.client_glow_baker.stored_saves] stored, [GLOB.client_glow_baker.prefetched] prefetched, [length(GLOB.client_glow_baker.pending)] waiting, mean wait [baked ? round(GLOB.client_glow_baker.wait_ds / baked, 0.1) : 0] ds"
+	return "client glow masks: [length(GLOB.client_glow_baker.icons)] cached, [baked] baked, [GLOB.client_glow_baker.hits] hits, [GLOB.client_glow_baker.misses] misses, [GLOB.client_glow_baker.failed] failed, [GLOB.client_glow_baker.refused] refused, [GLOB.client_glow_baker.evicted] evicted, [GLOB.client_glow_baker.prefetched] prefetched, [length(GLOB.client_glow_baker.pending)] waiting, mean wait [baked ? round(GLOB.client_glow_baker.wait_ds / baked, 0.1) : 0] ds"
 
 /// Recomputes this light's reach after an opacity change and rebuilds the mask only if the reach changed.
 /datum/light_source/proc/client_glow_mask_refresh()
@@ -569,7 +510,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/client_glow_baker)
 	return dirs
 
 /// Readies the shapes this light takes when each door in its reach is flipped (the nearest CLIENT_GLOW_TWIN_MAX): the shape key with that door's tile read in its other state,
-/// asked of the sight layer without touching the door. Each is baked ahead (client_glow_mask_prefetch(), the disk store keeps it across rounds) and the viewers holding the
+/// asked of the sight layer without touching the door. Each is baked ahead (client_glow_mask_prefetch()) and the viewers holding the
 /// light are sent it (client_glow_holder queue_twins()), so when the door moves the light's new shape is already cached and on the client: the swap is the same step as the
 /// opacity change. Done once per shape of the light; a viewer asks when it holds the light.
 /datum/light_source/proc/client_glow_twins_ready()

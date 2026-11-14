@@ -482,25 +482,43 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 	act_cancel(draw)
 	return TRUE
 
-/// Adapts the darkness overlay to the light level and the mob's darksight.
+/// How strong night vision is for `sight` tiles of darksight, 0..1: none at DARKSIGHT_MIN_SIGHT or less, full at DARKSIGHT_FULL_SIGHT.
+/proc/darksight_strength(sight)
+	return clamp((sight - DARKSIGHT_MIN_SIGHT) / (DARKSIGHT_FULL_SIGHT - DARKSIGHT_MIN_SIGHT), 0, 1)
+
+/// The half width, in tiles, of the smaller side of the view `view` (a number or "WxH").
+/proc/darksight_view_radius(view)
+	var/list/size = getviewsize(view)
+	return min(size[1], size[2]) / 2
+
+/// How wide the night-vision disc reaches, in tiles: the darksight distance, never past the view.
+/proc/darksight_radius(sight, view_radius)
+	return clamp(sight + 1, 0, view_radius)
+
+/// The scale to draw the 480 px overlay icon at so its disc reaches darksight_radius().
+/proc/darksight_scale(sight, view_radius)
+	return max(darksight_radius(sight, view_radius), 0.1) / DARKSIGHT_ICON_RADIUS
+
+/// The overlay's alpha, 0..1, for `sight` tiles of darksight over a floor that looks `darkness` dark (0..1): it eases in with the dark, none in light.
+/proc/darksight_alpha(sight, darkness)
+	return DARKSIGHT_MAX_ALPHA * darksight_strength(sight) * clamp(darkness, 0, 1)
+
+/// Adapts the night-vision overlay to the light level and the mob's darksight.
 /mob/living/proc/life_hud_darksight()
 	PUBLISH(src, mob_handle_hud_darksight)
 	var/image/dsoverlay = hud_of(src)?.dsoverlay
 	if(!dsoverlay) // no client, nothing to adapt
 		return
-	if(!src.seedarkness) //Cheap 'always darksight' var
-		dsoverlay.alpha = 255
-		return
 
-	var/darksightedness = min(src.see_in_dark/world.view,1.0)	//A ratio of how good your darksight is, from 'nada' to 'really darn good'
-	var/current = dsoverlay.alpha/255						//Our current adjustedness
-
+	var/view_radius = darksight_view_radius(client?.view || world.view)
+	var/sight = src.seedarkness ? src.see_in_dark : DARKSIGHT_FULL_SIGHT
 	var/brightness = 0.0 //We'll assume it's superdark if we can't find something else.
 
-	if(isturf(src.loc))
+	if(!src.seedarkness)
+		brightness = 0
+	else if(isturf(src.loc))
 		var/turf/T = src.loc //Will be true 99% of the time, thus avoiding the whole elif chain
 		brightness = client_darksight_brightness(T)
-
 	//Snowflake treatment of potential locations
 	else if(istype(src.loc,/obj/mecha)) //I imagine there's like displays and junk in there. Use the lights!
 		brightness = 1
@@ -508,14 +526,16 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 		var/turf/T = get_turf(src)
 		brightness = client_darksight_brightness(T)
 
-	var/darkness = 1-brightness					//Silly, I know, but 'alpha' and 'darkness' go the same direction on a number line
-	var/adjust_to = min(darkness,darksightedness)//Capped by how darksighted they are
+	var/current = dsoverlay.alpha/255
+	var/adjust_to = darksight_alpha(sight, 1 - brightness)
+	var/scale = darksight_scale(sight, view_radius)
+	var/current_scale = dsoverlay.transform.a
 	var/distance = abs(current-adjust_to)		//Used for how long to animate for
-	if(distance < 0.01) return					//We're already all set
+	if(distance < 0.01 && abs(current_scale - scale) < 0.02) return //We're already all set
 
 	if(client_glow_trace_line())
-		log_world("client lighting: darksight of [src] eases from alpha [round(current * 255)] to [round(adjust_to * 255)] (turf brightness [round(brightness, 0.01)], darksight ratio [round(darksightedness, 0.01)])")
-	animate(dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
+		log_world("client lighting: night vision of [src] eases from alpha [round(current * 255)] to [round(adjust_to * 255)] at scale [round(scale, 0.01)] (turf brightness [round(brightness, 0.01)], sight [sight] of view radius [view_radius])")
+	animate(dsoverlay, alpha = (adjust_to*255), transform = matrix(scale, 0, 0, 0, scale, 0), time = max(distance * 10 SECONDS, 1 SECONDS))
 
 /// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Only the sight reaction runs it (life_vision_pass()).
 

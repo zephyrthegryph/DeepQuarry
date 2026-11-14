@@ -30,6 +30,7 @@
 	dsma.alpha = 0
 	dsma.plane = PLANE_LIGHTING
 	dsma.blend_mode = BLEND_ADD
+	dsma.color = DARKSIGHT_TINT // night vision is grey, not white light
 	dsoverlay.appearance = dsma
 	hud_used.dsoverlay = dsoverlay
 	client_images_include(client, dsoverlay)

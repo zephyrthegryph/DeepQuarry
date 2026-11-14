@@ -62,6 +62,29 @@ GLOBAL_VAR_INIT(interest_drawn_now, 0)
 GLOBAL_VAR_INIT(interest_ring_listed, 0)
 GLOBAL_VAR_INIT(interest_ring_scans_stale, 0)
 
+/// Chunk key -> the atoms standing in it that owe a draw (refresh_queued set, parked or queued), as an assoc list of handle -> TRUE (interest_owed_note()). A chunk
+/// scan reads only this set. An entry may be stale (the atom drew or left since); the scan checks each and drops what no longer fits. A turf's handle is
+/// its negative position slot (slot_of_turf()), a movable's is handle_of().
+GLOBAL_ALIST_EMPTY(interest_owed)
+/// Chunk scans (interest_collect_owed()): the owed atoms they found, the stale index entries they dropped, the scans that found nothing, the ms they took in all
+/// and the longest, and the most one found.
+GLOBAL_VAR_INIT(interest_scan_owed, 0)
+GLOBAL_VAR_INIT(interest_scan_stale, 0)
+GLOBAL_VAR_INIT(interest_scan_empty, 0)
+GLOBAL_VAR_INIT(interest_scan_ms, 0)
+GLOBAL_VAR_INIT(interest_scan_ms_max, 0)
+GLOBAL_VAR_INIT(interest_scan_owed_max, 0)
+/// Drain passes (interest_arrival_drain()): how many, the ms they took in all and the longest.
+GLOBAL_VAR_INIT(interest_drain_calls, 0)
+GLOBAL_VAR_INIT(interest_drain_ms, 0)
+GLOBAL_VAR_INIT(interest_drain_ms_max, 0)
+/// Parked atoms a mark woke (refresh_mark(): the mark found them no longer deferrable), by why, by why and type, and by type and the var written (interest_woken_note()).
+GLOBAL_ALIST_EMPTY(refresh_woken_why)
+GLOBAL_ALIST_EMPTY(refresh_woken_types)
+GLOBAL_ALIST_EMPTY(refresh_woken_vars)
+/// The var name state_changed() is marking for (null for an explicit mark): what the wake census names.
+GLOBAL_VAR(refresh_mark_var)
+
 /// The anchors (handles of the atoms standing on a turf that carry this client's eye or mob) registered for this client.
 /client/var/tmp/list/interest_anchor_handles
 
@@ -213,6 +236,9 @@ GLOBAL_VAR_INIT(interest_unperceivable_skipped, 0)
 
 /// Owed draws one drain pass always runs while ticks are tight: a covered arrival and the prefetch keep moving on a busy server.
 #define INTEREST_ARRIVAL_MIN_STEP 32
+/// Owed draws one drain pass runs even when the tick is over its budget, so a busy server still moves the queues (a draw is the unit: the pass stops at the next
+/// one past the budget). INTEREST_ARRIVAL_MIN_STEP is the cap of an arrival's own first pass.
+#define INTEREST_DRAIN_FLOOR 4
 /// The most owed draws a walker's edge runs in the tick its chunk becomes visible (nearest its eye first); the rest drain over the following ticks (interest_arrive()).
 #define INTEREST_WALKER_NOW_MAX 48
 /// The most owed items a walker's edge looks at in that tick, drawn or not, so a long list of items that need nothing is not itself a hitch (interest_arrive()).
@@ -237,6 +263,11 @@ GLOBAL_VAR_INIT(interest_covers_raised, 0)
 GLOBAL_VAR_INIT(interest_walker_deferred, 0)
 /// The most owed draws one drain pass runs (0: the tick's budget decides). Tests set it to see the spread a busy tick makes.
 GLOBAL_VAR_INIT(interest_arrival_step_max, 0)
+/// Server milliseconds a timer-run drain pass (no cap) may spend once it has drawn something, whatever the tick's limit says: a pass is at least INTEREST_DRAIN_FLOOR draws
+/// otherwise, and 10 to 75 ms were seen in one call (SLOW_TICK 2026-11-13). The pass that stopped for it is counted and traced.
+#define INTEREST_ARRIVAL_PASS_MS 6
+GLOBAL_VAR_INIT(interest_pass_started, 0)
+GLOBAL_VAR_INIT(interest_pass_cut, 0)
 /// Observer keys that tests treat as coverable without a client (a client is what a cover is shown on).
 GLOBAL_LIST_EMPTY(interest_test_coverable)
 
@@ -410,7 +441,15 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		return TRUE
 	var/client/C = handle_get(owner)
 	if(!istype(C) || !C.mob || !C.mob.view_cover_set(TRUE))
-		log_world("INTEREST: no cover raised for [owner] (client [istype(C) ? "present" : "gone"], mob [istype(C) ? C.mob : "none"])")
+		// Three different things: an observer that is not a client at all (a vis_contents holder: a camera screen, a monitor; nothing can be covered and its view
+		// is drawn at once, which is how it is meant to go), a client whose handle no longer resolves (it left), and a client with no mob yet or whose mob has no cover.
+		var/datum/who = handle_get(owner)
+		if(istype(C))
+			log_world("INTEREST: no cover raised for [owner]: a client with [C.mob ? "a [C.mob.type] that shows no cover" : "no mob yet"]")
+		else if(isatom(who))
+			log_world("INTEREST: no cover for [owner]: a [who.type] observing through vis_contents, not a client; its view is drawn at once")
+		else
+			log_world("INTEREST: no cover raised for [owner]: the client is gone")
 		return FALSE
 	log_world("INTEREST: cover raised for [owner] on [C.mob]")
 	GLOB.interest_covers_raised++
@@ -440,50 +479,168 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	if(!after_pending(null, "interest_arrival_drain"))
 		after(null, world.tick_lag, GLOBAL_PROC_REF(interest_arrival_drain), key = "interest_arrival_drain")
 
-/// Appends to `into` the handles of what chunk (z, cx, cy) owes, nearest the chunk point (mid_cx, mid_cy) first. Returns how many.
+// ---- the owed index ----
+
+/// The chunk key of the turf `A` stands on (a turf is its own), or null when it stands in a container or nowhere.
+/proc/interest_owed_key(atom/A)
+	var/turf/T = isturf(A) ? A : A.loc
+	if(!isturf(T))
+		return null
+	return INTEREST_KEY(T.z, INTEREST_CHUNK_OF(T.x), INTEREST_CHUNK_OF(T.y))
+
+/// `A` owes a draw (refresh_queued just became set): it joins the owed set of the chunk it stands in. Nothing for an atom in a container; it joins when it moves out.
+/proc/interest_owed_note(atom/A)
+	var/key = interest_owed_key(A)
+	if(isnull(key))
+		return
+	var/handle = isturf(A) ? slot_of_turf(A) : handle_of(A)
+	if(!handle)
+		return
+	var/alist/owed = GLOB.interest_owed[key]
+	if(!owed)
+		owed = alist()
+		GLOB.interest_owed[key] = owed
+	owed[handle] = TRUE
+
+/// `A` no longer owes (drawn, deleted, or left the chunk of `from`, a turf it stood on; null: the one it stands on now).
+/proc/interest_owed_drop(atom/A, turf/from = null)
+	var/key = from ? INTEREST_KEY(from.z, INTEREST_CHUNK_OF(from.x), INTEREST_CHUNK_OF(from.y)) : interest_owed_key(A)
+	if(isnull(key))
+		return
+	var/alist/owed = GLOB.interest_owed[key]
+	if(!owed)
+		return
+	var/handle
+	if(isturf(A))
+		handle = slot_of_turf(A)
+	else if(A.handle_slot)
+		handle = handle_of(A)
+	if(isnull(handle))
+		return
+	owed -= handle
+	if(!length(owed))
+		GLOB.interest_owed -= key
+
+/// A movable that owes a draw moved from `old_loc`: its entry follows it to the chunk it stands in now (atom/movable Moved()).
+/proc/interest_owed_moved(atom/movable/M, atom/old_loc)
+	var/from_key = isturf(old_loc) ? INTEREST_KEY(old_loc.z, INTEREST_CHUNK_OF(old_loc.x), INTEREST_CHUNK_OF(old_loc.y)) : null
+	var/to_key = interest_owed_key(M)
+	if(from_key == to_key)
+		return
+	if(!isnull(from_key))
+		interest_owed_drop(M, old_loc)
+	if(!isnull(to_key))
+		interest_owed_note(M)
+
+/// The atom an owed-set handle names, or null (a deleted atom, a handle of a freed slot).
+/proc/interest_owed_atom(handle)
+	if(handle < 0)
+		var/v = -handle
+		var/x = v % 512
+		var/q = (v - x) / 512
+		var/y = q % 512
+		return locate(x, y, (q - y) / 512)
+	return handle_get(handle)
+
+/// Appends to `into` the handles of what chunk (z, cx, cy) owes, nearest the chunk point (mid_cx, mid_cy) first. Returns how many. Reads the chunk's owed set only
+/// (interest_owed): nothing walks the chunk's turfs or contents, and only the owed atoms are sorted.
 /proc/interest_collect_owed(list/into, z, cx, cy, mid_cx, mid_cy)
 	. = 0
 	GLOB.interest_chunks_entered++
-	if(z < 1 || z > world.maxz)
+	var/key = INTEREST_KEY(z, cx, cy)
+	var/alist/owed = GLOB.interest_owed[key]
+	if(!length(owed))
+		GLOB.interest_scan_empty++
 		return
-	var/x0 = cx * INTEREST_CHUNK + 1
-	var/y0 = cy * INTEREST_CHUNK + 1
-	if(x0 > world.maxx || y0 > world.maxy)
-		return
-	var/turf/low = locate(x0, y0, z)
-	var/turf/high = locate(min(world.maxx, x0 + INTEREST_CHUNK - 1), min(world.maxy, y0 + INTEREST_CHUNK - 1), z)
+	var/started = TICK_USAGE_REAL
 	// The point to order by, in turfs: a chunk is 16 turfs, so the order inside one matters.
 	var/mid_x = mid_cx * INTEREST_CHUNK + INTEREST_CHUNK / 2
 	var/mid_y = mid_cy * INTEREST_CHUNK + INTEREST_CHUNK / 2
-	var/list/owed = list()
-	for(var/turf/T as anything in block(low, high))
-		var/owes = !!T.refresh_queued
-		if(!owes)
-			FOR_CONTENTS(var/atom/movable/A as anything, T)
-				if(A.refresh_queued)
-					owes = TRUE
-					break
-		if(owes)
-			owed[T] = (T.x - mid_x) ** 2 + (T.y - mid_y) ** 2
-	if(!length(owed))
-		return
-	owed = sortTim(owed, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
-	for(var/turf/T as anything in owed)
-		if(T.refresh_queued)
-			into += handle_of(T)
-			.++
-		FOR_CONTENTS(var/atom/movable/A as anything, T)
-			if(A.refresh_queued)
-				into += handle_of(A)
-				.++
+	var/list/rank = list() // atom -> squared distance of its turf from the point, doubled, a turf's own entry just before what stands on it (local to the scan)
+	var/list/stale
+	for(var/handle in owed)
+		var/atom/A = interest_owed_atom(handle)
+		if(!isatom(A) || QDELETED(A) || !A.refresh_queued || interest_owed_key(A) != key)
+			LAZYADD(stale, handle)
+			continue
+		var/turf/T = isturf(A) ? A : A.loc
+		rank[A] = ((T.x - mid_x) ** 2 + (T.y - mid_y) ** 2) * 2 + (isturf(A) ? 0 : 1)
+	if(stale)
+		for(var/dead in stale)
+			owed -= dead
+		GLOB.interest_scan_stale += length(stale)
+		if(!length(owed))
+			GLOB.interest_owed -= key
+	if(length(rank) > 1)
+		rank = sortTim(rank, GLOBAL_PROC_REF(cmp_numeric_asc), associative = TRUE)
+	for(var/atom/ranked as anything in rank)
+		into += handle_of(ranked)
+		.++
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	GLOB.interest_scan_owed += .
+	GLOB.interest_scan_ms += ms
+	GLOB.interest_scan_ms_max = max(GLOB.interest_scan_ms_max, ms)
+	GLOB.interest_scan_owed_max = max(GLOB.interest_scan_owed_max, .)
+
+/// A mark found parked `D` no longer deferrable and woke it (refresh_mark()): counted by why, by why and type, and by type and the var the mark wrote. The census the
+/// periodic look log prints, to find what writes parked atoms.
+/proc/interest_woken_note(datum/D)
+	var/why = "not an atom"
+	if(isatom(D))
+		var/atom/A = D
+		var/turf/T = isturf(A) ? A : A.loc
+		if(ismob(A))
+			why = "mob"
+		else if(!isturf(T))
+			why = "not on a turf"
+		else if(interest_covers(T))
+			why = "chunk held"
+		else if(isnull(GLOB.type_look_lazy[A.type]))
+			why = "type verdict unknown"
+		else if(!GLOB.type_look_lazy[A.type])
+			why = "type not lazy"
+		else if(LAZYLEN(A.open_tguis))
+			why = "open window"
+		else if(!look_verdict_fits(A))
+			why = "look differs from the type default"
+		else
+			why = "other"
+	GLOB.refresh_woken_why[why] = (GLOB.refresh_woken_why[why] || 0) + 1
+	var/typed = "[why] [D.type]"
+	GLOB.refresh_woken_types[typed] = (GLOB.refresh_woken_types[typed] || 0) + 1
+	var/varkey = "[D.type].[GLOB.refresh_mark_var || "(explicit)"]"
+	GLOB.refresh_woken_vars[varkey] = (GLOB.refresh_woken_vars[varkey] || 0) + 1
+
+/// The `top` highest counts of `counts` as " key xN," text.
+/proc/interest_top_counts(list/counts, top = 8)
+	var/list/work = counts.Copy()
+	var/text = ""
+	for(var/n in 1 to top)
+		var/best
+		for(var/k in work)
+			if(isnull(best) || work[k] > work[best])
+				best = k
+		if(isnull(best))
+			break
+		text += " [best] x[work[best]],"
+		work -= best
+	return text
+
+/// The wake census as one line, for the periodic look log.
+/proc/interest_woken_text()
+	if(!length(GLOB.refresh_woken_why))
+		return "woken by a mark: none; construction writes absorbed while parked [GLOB.construction_parked_absorbed]"
+	return "construction writes absorbed while parked [GLOB.construction_parked_absorbed]; woken by a mark, why:[interest_top_counts(GLOB.refresh_woken_why)] types:[interest_top_counts(GLOB.refresh_woken_types)] vars:[interest_top_counts(GLOB.refresh_woken_vars)]"
 
 /// One pass over the queues: every covered observer's owed draws first (its screen is black until they are done), then the prefetch, as the tick allows.
 /// A covered observer whose queue empties is uncovered. The pass re-arms itself for the next tick only while something is left. Returns how many it drew.
 /// `cap`: the most it draws this pass (0: the tick's budget decides).
 /proc/interest_arrival_drain(cap = 0)
 	. = 0
+	var/drain_started = TICK_USAGE_REAL
 	var/budget_hit = FALSE
 	var/scans = 0
+	GLOB.interest_pass_started = TICK_USAGE_REAL
 	for(var/owner in GLOB.interest_covered)
 		var/list/Q = GLOB.interest_covered[owner]
 		var/list/pending = GLOB.interest_scan_pending[owner]
@@ -533,6 +690,12 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 			if(interest_arrival_pass_full(., cap))
 				break
 		P.Cut(1, j + 1)
+	var/drain_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - drain_started)
+	GLOB.interest_drain_ms += drain_ms
+	GLOB.interest_drain_calls++
+	GLOB.interest_drain_ms_max = max(GLOB.interest_drain_ms_max, drain_ms)
+	if(drain_ms >= INTEREST_HOLD_SLOW_MS)
+		log_world("INTEREST_DRAIN_SLOW: a drain pass took [round(drain_ms, 0.1)] ms: [.] drawn, [scans] chunk scan(s), [length(GLOB.interest_covered)] covered, [length(GLOB.interest_prefetched)] prefetched waiting, [length(GLOB.interest_ring_scans)] ring chunk(s) left")
 	if(length(GLOB.interest_covered) || length(GLOB.interest_prefetched) || length(GLOB.interest_ring_scans))
 		interest_drain_soon()
 
@@ -542,7 +705,12 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		return TRUE
 	if(GLOB.interest_arrival_step_max)
 		return drawn >= GLOB.interest_arrival_step_max
-	return drawn >= INTEREST_ARRIVAL_MIN_STEP && KERNEL_OVER_BUDGET
+	if(!cap && drawn && TICK_DELTA_TO_MS(TICK_USAGE_REAL - GLOB.interest_pass_started) >= INTEREST_ARRIVAL_PASS_MS)
+		GLOB.interest_pass_cut++
+		if(!(GLOB.interest_pass_cut % 64))
+			log_world("INTEREST: [GLOB.interest_pass_cut] drain pass(es) stopped for their [INTEREST_ARRIVAL_PASS_MS] ms (last: [drawn] draw(s))")
+		return TRUE
+	return drawn >= INTEREST_DRAIN_FLOOR && KERNEL_OVER_BUDGET
 
 /// The atoms in `owner`'s visible chunks that still owe a draw while it can see them (not covered): must always be empty (the rule the tests hold).
 /proc/interest_view_owing(owner)
@@ -597,6 +765,7 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	A.refresh_queued = 0
 	A.refresh_bits = 0
 	refresh_queue_drop(A) // its queue entry goes with the draw: a deleted atom must not stay pinned by a stale one
+	interest_owed_drop(A)
 	if(fresh && type_look_stamped(A))
 		GLOB.type_look_stamp_skipped++
 		return 0
@@ -688,6 +857,31 @@ GLOBAL_REAL(init_open, /alist)
 	if(!isturf(T))
 		return FALSE
 	return !interest_covers(T)
+
+/// Whether a mark of `D`, which is parked already (it owes its whole first draw), leaves it parked: an atom of a lazy type on a turf nobody holds. The parking judged
+/// the instance (look_lazy_ok(): its look at creation fits the type's verdict); what it was written since (a window's smoothing, a cable's direction, anything its init
+/// or its life changed) is the look its owed draw will show, so it is not judged again: the type's outputs are its look alone, and the draw comes when a viewer does.
+/proc/interest_parked_stays(datum/D)
+	if(!isatom(D) || ismob(D))
+		return FALSE
+	var/atom/A = D
+	if(!GLOB.type_look_lazy[A.type] || LAZYLEN(A.open_tguis))
+		return FALSE
+	var/turf/T = isturf(A) ? A : A.loc
+	if(!isturf(T))
+		return FALSE
+	return !interest_covers(T)
+
+/// Parked moves whose publishes were spared (a look-seen dir, a loc/hop change): a parked unseen atom owes its whole draw, so what its own move would publish is moot.
+GLOBAL_VAR_INIT(interest_parked_move_spared, 0)
+
+/// TRUE when `M` is parked, unseen and watched by no relation, carries nothing, and stays parked where it stands now: its move publishes nothing (it stays owed, and
+/// interest_parked_moved() settles it if the move put it where someone looks).
+/proc/interest_parked_quiet(atom/movable/M)
+	if(M.refresh_queued != DEP_PARKED || M.rel_watchers || length(M.contents) || !GLOB.interest_defer_marks || !interest_parked_stays(M))
+		return FALSE
+	GLOB.interest_parked_move_spared++
+	return TRUE
 
 // ---- a client's eye ----
 
@@ -872,7 +1066,7 @@ GLOBAL_REAL(init_open, /alist)
 
 /// The interest census, for the periodic look log: held chunks, anchors, and the deferral counters.
 /proc/interest_stats_text()
-	return "interest: [length(GLOB.interest_holds)] observers, scanned [GLOB.interest_chunks_entered] chunks, left [GLOB.interest_chunks_left], drawn at once [GLOB.interest_drawn_now]; marks deferred [GLOB.refresh_deferred], absorbed while deferred [GLOB.refresh_deferred_absorbed]; queue forget scans [GLOB.refresh_forget_scans] ([GLOB.refresh_forget_scan_steps] steps, longest [GLOB.refresh_forget_scan_max])"
+	return "interest: [length(GLOB.interest_holds)] observers, scanned [GLOB.interest_chunks_entered] chunks, left [GLOB.interest_chunks_left], drawn at once [GLOB.interest_drawn_now]; marks deferred [GLOB.refresh_deferred], absorbed while deferred [GLOB.refresh_deferred_absorbed]; queue forget scans [GLOB.refresh_forget_scans] ([GLOB.refresh_forget_scan_steps] steps, longest [GLOB.refresh_forget_scan_max]); chunk scans found [GLOB.interest_scan_owed] owed in all (most [GLOB.interest_scan_owed_max] in one, [GLOB.interest_scan_empty] empty, [GLOB.interest_scan_stale] stale entries dropped), [round(GLOB.interest_scan_ms, 0.01)] ms in all, longest [round(GLOB.interest_scan_ms_max, 0.01)] ms, [length(GLOB.interest_owed)] chunks hold owed atoms; parked moves spared a publish [GLOB.interest_parked_move_spared]; drain passes [GLOB.interest_drain_calls] took [round(GLOB.interest_drain_ms, 0.1)] ms, longest [round(GLOB.interest_drain_ms_max, 0.1)] ms"
 
 // ---- the sampled audit (debug and test builds only: DQ_LOOK_AUDIT; production compiles none of it) ----
 

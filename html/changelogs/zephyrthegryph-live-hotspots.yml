@@ -5,3 +5,4 @@ changes:
   - code_imp: "The profiler's PERF_PROFILE sample is built over several ticks instead of holding one for 80-500 ms a minute, and reports the outside-the-kernel time since the last sample"
   - code_imp: "Round setup logs how long each stage took; a sequence member's turn over 100 ms is named in the log"
   - qol: "A step onto a clean floor no longer walks the turf's contents looking for a dirt overlay"
+  - bugfix: "The step trace no longer writes a log line inside every step (a stalled log write held one tick for 885 ms); its lines are written together every 10 seconds"
