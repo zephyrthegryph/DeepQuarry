@@ -3,7 +3,7 @@
 //
 //   blur     always on: the glow plane's filter is LIGHTING_SMOOTH_BLUR_SIZE px (about 0.4 of a tile). Client GPU only, no server cost. The blur runs
 //            after the wall cut, so a wider radius bleeds light a few pixels past a wall: keep it tight.
-//   corners  on top of it (config lighting_corners, default on; the Toggle Corner Lighting admin verb switches it live): each open turf is shaded from four
+//   corners  on top of it, always (whenever client lighting is on): each open turf is shaded from four
 //            corner brightnesses, interpolated across the tile by the gradient icon (the corner engine's own gradient state: a colour matrix whose rows
 //            are the corners), so edges are smooth and a wall still cuts crisply. The lighting master no longer adds the glow plane (client_glow_master_compose()),
 //            so the gradient underlays on the lighting plane, added over the black base, are the floor's light. The glow plane itself is still drawn, cut to what
@@ -22,8 +22,6 @@
 // small minimum, so they never starve, and a step spends at most LIGHTING_SMOOTH_BUDGET_MS. Nothing runs when nothing changes. Counters and a log line every LIGHTING_SMOOTH_LOG_EVERY give samples, corner reads,
 // redraws and the milliseconds spent.
 
-/// Whether corner lighting was switched live (TRUE or FALSE); null until first asked (then the lighting_corners config value).
-GLOBAL_VAR(lighting_corners)
 /// "z" -> list(turf key -> list(red, green, blue)): the sample each lit turf contributed.
 GLOBAL_LIST_EMPTY(lighting_smooth_samples)
 /// turf -> TRUE: turfs to sample again.
@@ -49,17 +47,6 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_corners, 0)
 GLOBAL_VAR_INIT(lighting_smooth_logged_redraws, 0)
 GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 
-/// Whether corner lighting is switched on (the live setting, else the config).
-/proc/lighting_corners_enabled()
-	var/on = GLOB.lighting_corners
-	if(isnull(on))
-		on = CONFIG_GET(flag/lighting_corners)
-	return !!on
-
-/// Whether the corner layer is running: client lighting is on and so are the corners.
-/proc/lighting_corners_active()
-	return GLOB.client_lighting && lighting_corners_enabled()
-
 /// The glow plane's blur size: the wide blur, always.
 /proc/lighting_smooth_blur_size()
 	return LIGHTING_SMOOTH_BLUR_SIZE
@@ -68,24 +55,12 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /proc/lighting_smooth_key(x, y)
 	return "[x],[y]"
 
-/// Switches corner lighting on or off live and puts the screen and the corner layer in step with it.
-/proc/lighting_corners_set(on)
-	GLOB.lighting_corners = !!on
-	log_world("lighting corners: [GLOB.lighting_corners ? "on" : "off"]")
-	lighting_smooth_apply()
-
-/// Puts the glow plane's filter, its visibility and the corner layer in step with the corner setting and with client lighting being on.
+/// Puts the glow plane's filter and the corner layer in step with client lighting being on or off.
 /proc/lighting_smooth_apply()
-	var/corners = lighting_corners_active()
 	var/atom/movable/screen/plane_master/client_glow/master = GLOB.client_glow_plane_master // made on first use, with this filter
 	if(master)
 		master.modify_filter("client_glow_soften", list(size = lighting_smooth_blur_size()))
-	// The glow plane is drawn either way (the wall spread reads it); whether the lighting master adds it over the floor is the corner setting.
-	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS)) // a player made later composes its own master (plane_holder New)
-		var/datum/plane_holder/holder = hud_of(M)?.plane_holder
-		if(holder)
-			client_glow_master_compose(holder.plane_masters[VIS_LIGHTING])
-	if(!corners)
+	if(!GLOB.client_lighting)
 		lighting_smooth_clear()
 		return
 	// Every glowing light dirties the turfs in its reach: the corner layer is built from what the screen draws now.
@@ -118,7 +93,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /// `was_at`, or its own place when it did not move; a box when the old reach is not known) are sampled again. Only those: a turf the light never reached is
 /// the same dark before and after, and so is an opaque one (its opacity changing is lighting_smooth_dirty_turf()'s).
 /proc/lighting_smooth_dirty(datum/light_source/L, turf/was_at = null, was_range = 0, list/was_reach = null)
-	if(!lighting_corners_active())
+	if(!GLOB.client_lighting)
 		return
 	var/r = CLIENT_GLOW_RADIUS(L)
 	var/turf/at = L.source_turf || L.glow_reach_origin
@@ -143,7 +118,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 
 /// `T` changed what it blocks (a wall built, a door opened or closed): it is sampled again, and the nine tiles around it are drawn again when that changes its sample.
 /proc/lighting_smooth_dirty_turf(turf/T)
-	if(!lighting_corners_active())
+	if(!GLOB.client_lighting)
 		return
 	GLOB.lighting_smooth_dirty[T] = TRUE
 
@@ -151,7 +126,13 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /proc/lighting_smooth_sample_of(turf/T)
 	if(IS_OPAQUE_TURF(T) || !T.has_dynamic_lighting())
 		return null
-	return client_flat_light_rgb(T, TRUE)
+	var/list/rgb = client_flat_light_rgb(T, TRUE)
+	var/obj/structure/stairs/S = locate_on(T, /obj/structure/stairs)
+	if(!S)
+		return rgb
+	// A stair takes the light of its floor, scaled by the way it goes (lighter up, darker down): a dark room's stairs stay dark, a lit room's are lit plus the offset.
+	var/scale = S.light_scale()
+	return list(min(rgb[1] * scale, 1), min(rgb[2] * scale, 1), min(rgb[3] * scale, 1))
 
 /// Takes a fresh sample of `T` and, when it changed, queues the nine tiles it can touch. TRUE when it changed.
 /proc/lighting_smooth_sample(turf/T)
@@ -264,7 +245,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /// LIGHTING_SMOOTH_RENDERS_MAX tiles. Both stop after LIGHTING_SMOOTH_BUDGET_MS of the step, or when the tick is over budget (KERNEL_OVER_BUDGET), once a small
 /// minimum is done, so a busy tick still moves them on and the corner layer never takes more than its share of a tick.
 /proc/lighting_smooth_step(init_tick_checks)
-	if(!lighting_corners_active())
+	if(!GLOB.client_lighting)
 		return
 	if(!length(GLOB.lighting_smooth_dirty) && !length(GLOB.lighting_smooth_redraw))
 		return
@@ -304,8 +285,3 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	GLOB.lighting_smooth_logged_corners = GLOB.lighting_smooth_corner_updates
 	GLOB.lighting_smooth_logged_redraws = GLOB.lighting_smooth_redraws
 	GLOB.lighting_smooth_logged_ms = GLOB.lighting_smooth_ms
-
-ADMIN_VERB(toggle_corner_lighting, R_DEBUG|R_SERVER, "Toggle Corner Lighting", "Switch client lighting's corner layer (each tile shaded from its four corners, on top of the always-on blur) on or off.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/next = !lighting_corners_enabled()
-	lighting_corners_set(next)
-	message_admins("[key_name_admin(user)] set corner lighting [next ? "on" : "off"].")

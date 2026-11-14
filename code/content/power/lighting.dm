@@ -214,6 +214,11 @@ CAPABILITIES(/obj/machinery/light)
 
 // ---- what it looks like ----
 
+/// The fixture is lit by its emergency cell: off the grid, in emergency mode, and the cell still gives light (the glow is the cell's, so it reads dark again
+/// the moment the cell runs out). Its draw shows the lit tube in the emergency colour then.
+/obj/machinery/light/proc/emergency_lit()
+	return !on && emergency_mode && glow_of(src).range > 0
+
 /// The fixture's picture: the bulb's state, and the glow of a lit tube.
 /obj/machinery/light/draw(datum/look/look)
 	..()
@@ -227,6 +232,9 @@ CAPABILITIES(/obj/machinery/light)
 				look.state("[base_state][on]")
 				if(on)
 					look.overlay(light_overlay())
+					look.overlay(light_emissive(), when = !overlay_above_everything)
+				else if(emergency_lit())
+					look.overlay(light_overlay(TRUE, null, null, bulb_emergency_colour))
 					look.overlay(light_emissive(), when = !overlay_above_everything)
 		if(LIGHT_EMPTY)
 			look.state("[base_state]-empty")
@@ -245,20 +253,23 @@ CAPABILITIES(/obj/machinery/light)
 			if(on)
 				look.overlay(light_overlay(TRUE, null, "flampshade"))
 				look.overlay(light_emissive(null, "flampshade"), when = !overlay_above_everything)
+			else if(emergency_lit())
+				look.overlay(light_overlay(TRUE, null, "flampshade", bulb_emergency_colour))
+				look.overlay(light_emissive(null, "flampshade"), when = !overlay_above_everything)
 		if(LIGHT_EMPTY, LIGHT_BURNED, LIGHT_BROKEN)
 			look.state("flampshade0")
 
 /// The lit glow over the sprite, tinted by the light's colour. An overhead lamp draws it on the lighting-above plane; any other fixture draws it on
 /// its own plane at its own layer, so a mob standing in front of the fixture (a large one reaching over it) covers it like the fixture.
-/obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null)
+/obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null, tint = null)
 	var/image/overlay_layer
 	if(provided_state)
 		overlay_layer = image(icon, "[provided_state]-overlay")
 	else
 		overlay_layer = image(icon, "[state_base || base_state]-overlay")
 	overlay_layer.appearance_flags = RESET_COLOR|KEEP_APART
-	if(overlay_color && do_color)
-		overlay_layer.color = overlay_color
+	if(do_color && (tint || overlay_color))
+		overlay_layer.color = tint || overlay_color
 	if(overlay_above_everything)
 		overlay_layer.plane = PLANE_LIGHTING_ABOVE
 	return overlay_layer

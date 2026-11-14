@@ -388,6 +388,41 @@
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_ACTIVE, "back on, active")
 	TEST_ASSERT_EQUAL(L.get_power_usage(), lit_draw, "drawing for its glow")
 
+/// The emergency sprite of an unpowered fixture: the lit tube overlay tinted red over the unlit body, plus its emissive copy, while the cell gives light; none
+/// with a flat cell, and none once the cell's light is gone.
+/proc/p2l_lit_overlays(obj/machinery/light/L, tint = null)
+	refresh_flush()
+	var/n = 0
+	for(var/overlay in L.overlays)
+		var/mutable_appearance/MA = new(overlay)
+		if(MA.icon_state == "[L.base_state]-overlay" && (isnull(tint) || MA.color == tint))
+			n++
+	return n
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_shows_its_emergency_sprite
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_shows_its_emergency_sprite/run_gate()
+	var/obj/machinery/light/L = light()
+	TEST_ASSERT(p2l_lit_overlays(L, L.overlay_color) > 0, "lit on the grid: the white lit overlay")
+	set_area_power(FALSE)
+	TEST_ASSERT(p2l_emergency(L), "on emergency power")
+	TEST_ASSERT_EQUAL(L.icon_state, "[L.base_state]0", "the body is the unlit one")
+	TEST_ASSERT(p2l_lit_overlays(L, L.bulb_emergency_colour) > 0, "the red emergency overlay is drawn")
+	TEST_ASSERT_EQUAL(p2l_lit_overlays(L, L.overlay_color), 0, "and not the white one")
+	set_glow(L, GLOW(0, null, null)) // the cell's light is gone
+	TEST_ASSERT_EQUAL(p2l_lit_overlays(L), 0, "with the cell's light gone the fixture is dark")
+	set_area_power(TRUE)
+	TEST_ASSERT(p2l_lit_overlays(L, L.overlay_color) > 0, "power back: the white lit overlay again")
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_with_a_flat_cell_is_dark
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_with_a_flat_cell_is_dark/run_gate()
+	var/obj/machinery/light/L = light()
+	L.stock_cell_charge = 0
+	set_area_power(FALSE)
+	TEST_ASSERT(!p2l_emergency(L), "no charge, no emergency")
+	TEST_ASSERT_EQUAL(p2l_lit_overlays(L), 0, "no lit overlay of any colour")
+
 /// A fixture with no cell goes dark when the area loses power.
 /datum/unit_test/dq_p2_lights/area_power_loss_darkens_a_fixture_without_a_cell
 

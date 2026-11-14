@@ -26,24 +26,14 @@
 
 /datum/unit_test/dq_lighting_smoothing_blur/Run()
 	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
-	set_global(nameof(GLOB.lighting_corners), null)
 	dq_smoothing_keep_screens(src)
 	client_lighting_set(TRUE)
-	lighting_corners_set(FALSE)
-	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "corners off: the glow plane carries the wide blur filter")
+	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "the glow plane carries the wide blur filter")
 	var/atom/movable/screen/plane_master/client_glow/master = client_glow_screen_objects()[1]
-	TEST_ASSERT_EQUAL(master.alpha, 255, "corners off: the glow plane is drawn")
-	var/atom/movable/screen/plane_master/lighting/off_master = new
-	client_glow_master_compose(off_master)
-	TEST_ASSERT_NOTNULL(off_master.filter_data?["client_glow_add"], "corners off: the lighting master adds the glow plane")
-	QDEL_NULL(off_master)
+	TEST_ASSERT_EQUAL(master.alpha, 255, "the glow plane is drawn, it feeds the wall spread")
 	TEST_ASSERT(LIGHTING_SMOOTH_BLUR_SIZE <= WORLD_ICON_SIZE / 2, "the blur stays under half a tile so light does not bleed far past a wall")
-	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_underlays), 0, "corners off: no corner underlay")
-	lighting_corners_set(TRUE)
-	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "corners on: the blur stays under them")
-	TEST_ASSERT_EQUAL(master.alpha, 255, "corners on: the glow plane stays drawn for the wall spread")
 	client_lighting_set(FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
+	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_underlays), 0, "client lighting off: no corner underlay")
 
 /// Steps the lighting system until the corner layer has nothing left to sample or draw.
 /proc/dq_smoothing_drain()
@@ -64,21 +54,18 @@
 
 /datum/unit_test/dq_lighting_smoothing_corners/Run()
 	set_global(nameof(GLOB.client_lighting), FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
 	dq_smoothing_keep_screens(src)
 	TEST_ASSERT(LIGHTING_SMOOTH_GRADIENT_STATE in icon_states(LIGHTING_ICON), "the lighting icon has the gradient state the tiles use (states: [json_encode(icon_states(LIGHTING_ICON))])")
-	TEST_ASSERT(CONFIG_GET(flag/lighting_corners), "corner lighting is on by default")
 	client_lighting_set(TRUE)
-	lighting_corners_set(TRUE)
 	var/atom/movable/screen/plane_master/client_glow/master = client_glow_screen_objects()[1]
-	TEST_ASSERT_EQUAL(master.alpha, 255, "corners on: the glow plane still renders, it feeds the wall spread")
+	TEST_ASSERT_EQUAL(master.alpha, 255, "the glow plane still renders, it feeds the wall spread")
 	var/atom/movable/screen/plane_master/lighting/lit_master = new
 	client_glow_master_compose(lit_master)
-	TEST_ASSERT(!lit_master.filter_data?["client_glow_add"], "corners on: the lighting master does not add the glow plane over the floor, the gradients are the light")
-	TEST_ASSERT_NOTNULL(lit_master.filter_data?["client_spread_add"], "corners on: the lighting master still adds the wall spread, so a wall face is lit as in glow mode")
+	TEST_ASSERT(!lit_master.filter_data?["client_glow_add"], "the lighting master does not add the glow plane over the floor, the gradients are the light")
+	TEST_ASSERT_NOTNULL(lit_master.filter_data?["client_spread_add"], "the lighting master still adds the wall spread, so a wall face is lit as in glow mode")
 	QDEL_NULL(lit_master)
 	TEST_ASSERT_NOTNULL(master.filter_data?["client_visible_cut"], "the glow plane is cut to what each client sees, so a viewer behind a wall gets none of the light on the other side")
-	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "corners on: the blur is still there")
+	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "the blur is still there")
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/far = run_loc_floor_top_right
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
@@ -154,14 +141,8 @@
 		W.set_opacity(FALSE)
 	dq_smoothing_drain()
 	log_test("LIGHTING SMOOTHING CORNERS: [GLOB.lighting_smooth_samples_taken] samples ([GLOB.lighting_smooth_samples_changed] changed), [GLOB.lighting_smooth_corner_updates] corner reads, [GLOB.lighting_smooth_redraws] redraws, [round(GLOB.lighting_smooth_ms, 0.1)] ms in all, [length(GLOB.lighting_smooth_underlays)] lit tiles")
-	lighting_corners_set(FALSE)
-	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_underlays), 0, "leaving corner mode takes every gradient away")
-	var/atom/movable/screen/plane_master/lighting/off_master = new
-	client_glow_master_compose(off_master)
-	TEST_ASSERT_NOTNULL(off_master.filter_data?["client_glow_add"], "leaving corner mode adds the glow plane again")
-	QDEL_NULL(off_master)
 	client_lighting_set(FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
+	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_underlays), 0, "switching client lighting off takes every gradient away")
 
 /// One light that keeps moving: each move samples only the turfs the light reached before and reaches now (not the whole box round it, opaque turfs and all), and
 /// redraws that leave a tile's levels as they were add no underlay. The counters are what the round's log line reports (samples/s, ms): the live round with corners
@@ -170,10 +151,8 @@
 
 /datum/unit_test/dq_lighting_smoothing_moving_light/Run()
 	set_global(nameof(GLOB.client_lighting), FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
 	dq_smoothing_keep_screens(src)
 	client_lighting_set(TRUE)
-	lighting_corners_set(TRUE)
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/next = locate(start.x + 1, start.y, start.z)
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, start)
@@ -192,9 +171,7 @@
 	log_test("LIGHTING SMOOTHING MOVING LIGHT: [moves] moves, [GLOB.lighting_smooth_samples_taken - taken] samples ([round(per_move, 0.1)] a move, [GLOB.lighting_smooth_samples_changed - changed] changed), [GLOB.lighting_smooth_redraws - redraws] redraws, [ms] ms of wall time in all ([round(ms / moves, 0.1)] a move)")
 	// The room is 25 floor tiles; the old box dirtied (2r+1)^2 turfs twice a move, walls and all.
 	TEST_ASSERT(per_move <= 60, "a move samples only the turfs the light reaches ([per_move] a move)")
-	lighting_corners_set(FALSE)
 	client_lighting_set(FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
 
 /// A closed door blocks the corner layer like a wall, and a wall's face is lit by the same spread as in glow mode. A column across the room is wall but for one
 /// airlock on the light's row: shut, the floor behind it stays dark and the door tile carries no gradient; open (its opacity is what the door changes), the light goes through; shut
@@ -204,10 +181,8 @@
 
 /datum/unit_test/dq_lighting_smoothing_doors/Run()
 	set_global(nameof(GLOB.client_lighting), FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
 	dq_smoothing_keep_screens(src)
 	client_lighting_set(TRUE)
-	lighting_corners_set(TRUE)
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/far = run_loc_floor_top_right
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
@@ -263,6 +238,55 @@
 	for(var/turf/W as anything in wall)
 		W.set_opacity(FALSE)
 	dq_smoothing_drain()
-	lighting_corners_set(FALSE)
 	client_lighting_set(FALSE)
-	set_global(nameof(GLOB.lighting_corners), null)
+
+/// Stairs for the stair lighting test: the test level has nothing above or below to keep a real stair for.
+/obj/structure/stairs/bottom/dq_test_up
+/obj/structure/stairs/top/dq_test_down
+
+/obj/structure/stairs/bottom/dq_test_up/has_level_above()
+	return TRUE
+
+/obj/structure/stairs/top/dq_test_down/has_level_below()
+	return TRUE
+
+/// A stair tile takes the corner light of its own tile, scaled by the way it goes: lighter for the piece that goes up, darker for the one that goes down. In a
+/// dark room it stays dark (a scale of nothing is nothing), and in a lit room it is the floor's light plus the offset, never a fixed level.
+/datum/unit_test/dq_lighting_smoothing_stairs
+
+/datum/unit_test/dq_lighting_smoothing_stairs/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	dq_smoothing_keep_screens(src)
+	client_lighting_set(TRUE)
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/far = run_loc_floor_top_right
+	var/turf/up_turf = locate(T.x + 2, T.y, T.z)
+	var/turf/down_turf = locate(T.x, T.y + 2, T.z)
+	var/obj/structure/stairs/up = allocate(/obj/structure/stairs/bottom/dq_test_up, up_turf)
+	var/obj/structure/stairs/down = allocate(/obj/structure/stairs/top/dq_test_down, down_turf)
+	var/obj/structure/stairs/dark_up = allocate(/obj/structure/stairs/bottom/dq_test_up, far)
+	TEST_ASSERT(!QDELETED(up) && !QDELETED(down) && !QDELETED(dark_up), "the test stairs are kept")
+	TEST_ASSERT(up.light_scale() > 1 && down.light_scale() < 1, "up is lighter than its floor, down darker ([up.light_scale()], [down.light_scale()])")
+	// A dark room: nothing to scale.
+	var/list/dark = lighting_smooth_sample_of(far)
+	TEST_ASSERT(max(dark[1], dark[2], dark[3]) < 0.01, "a stair in a dark room stays dark ([json_encode(dark)])")
+	// A lit room: the floor's light, plus the offset.
+	allocate(/obj/machinery/light, T)
+	for(var/i in 1 to 9)
+		SSlighting.light_step(0, TRUE)
+	for(var/list/pair in list(list(up_turf, up.light_scale()), list(down_turf, down.light_scale())))
+		var/turf/S = pair[1]
+		var/scale = pair[2]
+		var/list/floor = client_flat_light_rgb(S, TRUE)
+		var/list/got = lighting_smooth_sample_of(S)
+		TEST_ASSERT(max(floor[1], floor[2], floor[3]) > 0.05, "the floor at [S.x],[S.y] is lit ([json_encode(floor)])")
+		for(var/c in 1 to 3)
+			TEST_ASSERT(abs(got[c] - min(floor[c] * scale, 1)) < 0.001, "the stair on [S.x],[S.y] is its floor's light [json_encode(floor)] times [scale], not a fixed level ([json_encode(got)])")
+	var/list/up_floor = client_flat_light_rgb(up_turf, TRUE)
+	var/list/down_floor = client_flat_light_rgb(down_turf, TRUE)
+	var/list/up_got = lighting_smooth_sample_of(up_turf)
+	var/list/down_got = lighting_smooth_sample_of(down_turf)
+	TEST_ASSERT(max(up_got[1], up_got[2], up_got[3]) >= max(up_floor[1], up_floor[2], up_floor[3]), "the way up is no darker than its floor")
+	TEST_ASSERT(max(down_got[1], down_got[2], down_got[3]) <= max(down_floor[1], down_floor[2], down_floor[3]), "the way down is no lighter than its floor")
+	dq_smoothing_drain()
+	client_lighting_set(FALSE)

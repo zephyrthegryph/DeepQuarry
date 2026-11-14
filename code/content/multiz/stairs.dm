@@ -8,6 +8,16 @@
 	anchored = TRUE
 	layer = STAIRS_LAYER
 
+/// What the light of this stair's tile is multiplied by (lighting_smooth_sample_of()): a stair is lit as the floor it stands on, by this much more or less.
+/obj/structure/stairs/proc/light_scale()
+	return 1
+
+/obj/structure/stairs/bottom/light_scale()
+	return LIGHTING_STAIR_UP_SCALE
+
+/obj/structure/stairs/top/light_scale()
+	return LIGHTING_STAIR_DOWN_SCALE
+
 // Returns TRUE if the stairs are a complete and connected unit, FALSE if a piece is missing or obstructed
 // Will attempt to reconnect broken pieces
 // Parameters:
