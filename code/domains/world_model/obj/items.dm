@@ -68,10 +68,25 @@
 /obj/item/proc/share_tool_qualities()
 	tool_qualities = intern_list(tool_qualities)
 
-/// The actions a type declares (actions_types) are made for the item.
+/// The actions a type declares (actions_types) are made when the item is first held or worn (equipped()), not at construction: each is a datum, a relation
+/// entry and an observer, and most items are never carried. An item made straight into a mob's hands or slots makes them now.
 /obj/item/proc/make_declared_actions()
-	for(var/path in item_rules_of(src).actions_types)
-		add_item_action(path)
+	if(ismob(loc))
+		ensure_declared_actions()
+
+/// Makes the declared actions the item does not have yet. Safe to call again.
+/obj/item/proc/ensure_declared_actions()
+	var/list/declared = item_rules_of(src).actions_types
+	if(!declared)
+		return
+	for(var/path in declared)
+		var/have = FALSE
+		for(var/datum/action/existing as anything in actions)
+			if(existing.type == path)
+				have = TRUE
+				break
+		if(!have)
+			add_item_action(path)
 
 /// The chance (0-100) this item lodges in a body it hits: the one its type declares, or, left on the size default (-1), the one its weight and edge give. Worked out
 /// when asked: an item made once and never swung would otherwise take a private copy of its combat trait at construction just to hold this number.
@@ -394,6 +409,7 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 	if(user)
 		PUBLISH_CHANGE(user, MOB_KEY_HANDS)
 	// Give out actions our item has to people who equip it.
+	ensure_declared_actions()
 	for(var/datum/action/action as anything in actions)
 		give_item_action(action, user, slot)
 	hud_layerise()

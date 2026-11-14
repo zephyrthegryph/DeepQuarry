@@ -8,7 +8,10 @@
 	var/turf/T = dq_containment_floor()
 
 	var/obj/item/flashlight/F = allocate(/obj/item/flashlight, T)
-	TEST_ASSERT_EQUAL(length(F.actions), length(item_rules_of(F).actions_types), "an item makes the actions its type declares")
+	TEST_ASSERT_EQUAL(length(F.actions), 0, "an item made on the floor has made no actions yet")
+	F.ensure_declared_actions()
+	F.ensure_declared_actions()
+	TEST_ASSERT_EQUAL(length(F.actions), length(item_rules_of(F).actions_types), "an item makes the actions its type declares when asked, once")
 
 	var/obj/item/pen/P = allocate(/obj/item/pen, T)
 	var/datum/type_trait/item_combat/combat = combat_of(P)

@@ -36,15 +36,13 @@ DECLARE_SHARED_CACHE(pristine_blueprint, GLOBAL_PROC_REF(pristine_blueprint_buil
 		return materials[role]
 	return material_for_role(role)
 
-/obj/item/proc/apply_material_role_effects(application_profile)
-	// A fresh item of its type's own blueprint reads its materials from its type's table (resolved once); anything else resolves them one by one.
-	var/list/pristine = blueprint_pristine() ? CACHED(pristine_blueprint, type) : null
-	var/datum/material/primary = pristine ? pristine["primary"] : primary_construction_material()
-	if(!primary)
-		return FALSE
-	var/datum/material_build/build = material_build(src)
-	build.engineered_id = primary.name
-	build.profile = application_profile
+/// Type -> the worked effects of a pristine item of it (blueprint_worked_effects()).
+GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
+
+/// What this item's blend of materials gives it: "total" (units of material counted), "density", "resistance" (the weighted dielectric strength),
+/// "throw_speed", "throw_range", "siemens" and "max_integrity" (the numbers its handling, conduction and integrity are set to). A pure function of the
+/// type's declarations, the item's template and total and the materials, so a pristine item's is kept per type.
+/obj/item/proc/blueprint_worked_effects(list/pristine, datum/material/primary, application_profile)
 	var/total_amount = 0
 	var/weighted_density = 0
 	var/weighted_dielectric = 0
@@ -58,18 +56,20 @@ DECLARE_SHARED_CACHE(pristine_blueprint, GLOBAL_PROC_REF(pristine_blueprint_buil
 		total_amount += part_amount
 		weighted_density += part_material.density * part_amount
 		weighted_dielectric += part_material.dielectric_strength * part_amount
-	if(total_amount > 0)
-		build.effective_density = weighted_density / total_amount
-		build.effective_electrical_resistance = weighted_dielectric / total_amount
-		// Density changes the physical handling of every manufactured object;
-		// dielectric performance changes its real electrical coupling.
-		set_throw_speed(max(1, round(motion_of_type(type).throw_speed * clamp(100 / max(build.effective_density, 10), 0.5, 1.5))))
-		set_throw_range(max(1, round(motion_of_type(type).throw_range * clamp(100 / max(build.effective_density, 10), 0.5, 1.5))))
-		set_siemens_coefficient(clamp(protection_of_type(type).siemens * (1.25 - build.effective_electrical_resistance / 125), 0.05, 2))
-		worn_protection_changed()
-	var/datum/material/structure = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || blueprint_material(pristine, MATERIAL_ROLE_FRAME) || blueprint_material(pristine, MATERIAL_ROLE_BODY) || primary
-	if(max_integrity > 0 && total_amount > 0)
-		var/condition = atom_rules_of(src).uses_integrity ? get_integrity() / max_integrity : 1
+	var/list/worked = list("total" = total_amount)
+	if(total_amount <= 0)
+		return worked
+	var/effective_density = weighted_density / total_amount
+	var/effective_resistance = weighted_dielectric / total_amount
+	worked["density"] = effective_density
+	worked["resistance"] = effective_resistance
+	// Density changes the physical handling of every manufactured object;
+	// dielectric performance changes its real electrical coupling.
+	worked["throw_speed"] = max(1, round(motion_of_type(type).throw_speed * clamp(100 / max(effective_density, 10), 0.5, 1.5)))
+	worked["throw_range"] = max(1, round(motion_of_type(type).throw_range * clamp(100 / max(effective_density, 10), 0.5, 1.5)))
+	worked["siemens"] = clamp(protection_of_type(type).siemens * (1.25 - effective_resistance / 125), 0.05, 2)
+	if(max_integrity > 0)
+		var/datum/material/structure = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || blueprint_material(pristine, MATERIAL_ROLE_FRAME) || blueprint_material(pristine, MATERIAL_ROLE_BODY) || primary
 		var/datum/material_template/reference_template = material_template_for_application(application_profile)
 		var/reference_id = MAT_STEEL
 		for(var/role in list(MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_BODY))
@@ -79,10 +79,49 @@ DECLARE_SHARED_CACHE(pristine_blueprint, GLOBAL_PROC_REF(pristine_blueprint_buil
 				break
 		var/datum/material/reference = get_material_by_name(reference_id)
 		var/integrity_factor = clamp(structure.integrity / max(reference.integrity, 1), 0.2, 4)
-		set_max_integrity(max(1, round(initial(max_integrity) * integrity_factor)))
+		worked["max_integrity"] = max(1, round(initial(max_integrity) * integrity_factor))
+	return worked
+
+/obj/item/proc/apply_material_role_effects(application_profile)
+	BOOT_PHASE_BEGIN(bp_roles)
+	// A fresh item of its type's own blueprint reads its materials from its type's table (resolved once); anything else resolves them one by one.
+	var/list/pristine = blueprint_pristine() ? CACHED(pristine_blueprint, type) : null
+	var/datum/material/primary = pristine ? pristine["primary"] : primary_construction_material()
+	if(!primary)
+		return FALSE
+	var/datum/material_build/build = material_build(src)
+	BOOT_PHASE_END(bp_roles, "blueprint effects: resolve materials and build record", src)
+	BOOT_PHASE_BEGIN(bp_density)
+	build.engineered_id = primary.name
+	build.profile = application_profile
+	// What a fresh item of a type works out (its blend of materials and what follows from it) is the same for every one of them: worked out by the first
+	// and read from the type's row by the rest. A customised or re-blueprinted item works it out itself.
+	var/list/worked = pristine ? GLOB.pristine_blueprint_effects[type] : null
+	if(!worked)
+		worked = blueprint_worked_effects(pristine, primary, application_profile)
+		if(pristine)
+			GLOB.pristine_blueprint_effects[type] = worked
+	var/total_amount = worked["total"]
+	if(total_amount > 0)
+		build.effective_density = worked["density"]
+		build.effective_electrical_resistance = worked["resistance"]
+		set_throw_speed(worked["throw_speed"])
+		set_throw_range(worked["throw_range"])
+		set_siemens_coefficient(worked["siemens"])
+		worn_protection_changed()
+	BOOT_PHASE_END(bp_density, "blueprint effects: density and handling", src)
+	BOOT_PHASE_BEGIN(bp_integrity)
+	var/datum/material/structure = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || blueprint_material(pristine, MATERIAL_ROLE_FRAME) || blueprint_material(pristine, MATERIAL_ROLE_BODY) || primary
+	if(max_integrity > 0 && total_amount > 0 && worked["max_integrity"])
+		var/condition = atom_rules_of(src).uses_integrity ? get_integrity() / max_integrity : 1
+		set_max_integrity(worked["max_integrity"])
 		if(atom_rules_of(src).uses_integrity)
 			update_integrity(max_integrity * condition)
+	BOOT_PHASE_END(bp_integrity, "blueprint effects: integrity", src)
+	BOOT_PHASE_BEGIN(bp_behaviors)
 	primary.dq_apply_material_behaviors(src)
+	BOOT_PHASE_END(bp_behaviors, "blueprint effects: material behaviors", src)
+	BOOT_PHASE_BEGIN(bp_profile)
 	switch(application_profile)
 		if(MATERIAL_APPLICATION_TOOL)
 			var/datum/material/working = blueprint_material(pristine, MATERIAL_ROLE_WORKING) || primary
@@ -196,6 +235,7 @@ DECLARE_SHARED_CACHE(pristine_blueprint, GLOBAL_PROC_REF(pristine_blueprint_buil
 				light.brightness_range = max(1, round(light.init_brightness_range * optical_factor))
 				light.nightshift_power = max(0.1, light.init_nightshift_power * output_factor)
 				light.nightshift_range = max(1, round(light.init_nightshift_range * optical_factor))
+	BOOT_PHASE_END(bp_profile, "blueprint effects: application profile", src)
 	return TRUE
 
 /obj/item/cell

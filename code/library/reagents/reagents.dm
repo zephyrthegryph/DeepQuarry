@@ -186,7 +186,9 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 /// tint = TRUE: the holder takes the colour of what it was filled with.
 /datum/capability/lib/reagents/proc/tint_holder(atom/holder)
 	if(tint)
+		BOOT_PHASE_BEGIN(bp_tint)
 		holder.set_color(holder.reagents.get_color())
+		BOOT_PHASE_END(bp_tint, "reagents: tint_holder", holder)
 
 /// The ids this declaration puts in `holder`, or null when it takes a computed contents_from list.
 /datum/capability/lib/reagents/proc/declared_ids(atom/holder)

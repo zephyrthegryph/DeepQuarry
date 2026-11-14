@@ -133,9 +133,13 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 	// A cell's temperature and electrical phase are functional state even for
 	// the standard construction. Unlike idle machine housings, cells therefore
 	// always need a service datum; it sleeps dependency-driven when stable.
+	BOOT_PHASE_BEGIN(bp_blueprint)
 	apply_blueprint_effects()
+	BOOT_PHASE_END(bp_blueprint, "cell start_up: blueprint effects", src)
+	BOOT_PHASE_BEGIN(bp_service)
 	if(material_service_needed_at_start())
 		enable_material_service()
+	BOOT_PHASE_END(bp_service, "cell start_up: material service check", src)
 	c_uid = next_serial(power_cell)
 
 /obj/item/cell/get_cell()

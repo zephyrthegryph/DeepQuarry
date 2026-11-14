@@ -379,9 +379,23 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 	for(var/type in buckets)
 		var/list/bucket = buckets[type]
 		var/empty = GLOB.type_look_stamp[type]
-		if(empty)
+		if(empty && !GLOB.look_verdict_from_file[type])
 			. += length(bucket) // released in one step: a parked atom of an empty default look owes nothing (interest_audit_atom(), interest_draw_now())
 			continue
+		if(empty)
+			// A verdict read from the cache says what the type's default look is: an instance whose look vars were edited (a map var edit) is held here because it does
+			// not fit it, so it owes its draw and goes the way of any other type's held atoms below; only the ones that fit owe nothing.
+			var/list/owing = list()
+			for(var/atom/A as anything in bucket)
+				if(QDELETED(A) || A.refresh_queued != DEP_PARKED)
+					continue
+				if(look_verdict_fits(A))
+					.++
+				else
+					owing += A
+			if(!length(owing))
+				continue
+			bucket = owing
 		if(GLOB.type_look_lazy[type] && boot_drain_deferred())
 			for(var/atom/A as anything in bucket)
 				if(!QDELETED(A) && A.refresh_queued == DEP_PARKED)
