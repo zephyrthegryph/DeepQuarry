@@ -119,6 +119,7 @@
 		log_test("STEP_COST mark source #[i] [mark_sources[i]]: [round(mark_sources[mark_sources[i]] / moved, 0.01)] a step")
 	log_test("STEP_COST client-like over [moved] steps: [round(result[1], 0.001)] ms a step (profiled, so inflated); notices taken [round(notices / moved, 0.01)] a step, marks raised [round(marks / moved, 0.01)] a step")
 	log_test("STEP_COST parts, ms a step: handlers [round(TICK_DELTA_TO_MS(sum[MOVE_COST_MOVE]) / moved, 0.001)], Moved() [round(TICK_DELTA_TO_MS(sum[MOVE_COST_MOVED]) / moved, 0.001)] (notices [round(TICK_DELTA_TO_MS(sum[MOVE_COST_NOTICES]) / moved, 0.001)], loc readers [round(TICK_DELTA_TO_MS(sum[MOVE_COST_LOC_READS]) / moved, 0.001)], hops [round(TICK_DELTA_TO_MS(sum[MOVE_COST_HOPS]) / moved, 0.001)], heat [round(TICK_DELTA_TO_MS(sum[MOVE_COST_HEAT]) / moved, 0.001)], interest [round(TICK_DELTA_TO_MS(sum[MOVE_COST_INTEREST]) / moved, 0.001)], living [round(TICK_DELTA_TO_MS(sum[MOVE_COST_LIVING]) / moved, 0.001)], body [round(TICK_DELTA_TO_MS(sum[MOVE_COST_BODY]) / moved, 0.001)])")
+	log_test("STEP_COST eye part, ms a step: eye [round(TICK_DELTA_TO_MS(sum[MOVE_COST_EYE]) / moved, 0.001)] (proximity cell [round(TICK_DELTA_TO_MS(sum[MOVE_COST_EYE_CELL]) / moved, 0.001)], gaze hold [round(TICK_DELTA_TO_MS(sum[MOVE_COST_EYE_GAZE]) / moved, 0.001)], glow holder [round(TICK_DELTA_TO_MS(sum[MOVE_COST_EYE_GLOW]) / moved, 0.001)])")
 	step_profile_log("client-like", moved)
 	step_profile_log("client-like", moved, 150, "total")
 	world.Profile(PROFILE_STOP)

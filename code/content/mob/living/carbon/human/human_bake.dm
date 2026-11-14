@@ -17,6 +17,8 @@
 #define HUMAN_BAKE_INFLIGHT_MAX 4
 /// Baked pictures kept (oldest dropped first: an image already using one keeps it).
 #define HUMAN_BAKE_KEPT 2048
+/// Pictures dropped (file deleted, entry cut) by one landing while the cache is over HUMAN_BAKE_KEPT.
+#define HUMAN_BAKE_DROP_PER_LANDING 8
 /// What human_baked() answers for a bake that failed: the asker builds the picture the old way.
 #define HUMAN_BAKE_FAILED "failed"
 
@@ -140,11 +142,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/human_baker)
 		log_world("human bake: [key] failed: [why]; it is built the old way")
 	set_baked_at(key, res)
 	if(length(baked) > HUMAN_BAKE_KEPT)
-		for(var/i in 1 to HUMAN_BAKE_KEPT / 4 - 1)
+		// A few pictures a landing, oldest first: dropping a quarter of the cache at once was hundreds of file deletes inside one I/O delivery.
+		for(var/i in 1 to HUMAN_BAKE_DROP_PER_LANDING)
 			var/dropped = baked[baked[i]]
 			if(dropped != HUMAN_BAKE_FAILED)
 				fdel("[dropped]")
-		cut_baked(1, HUMAN_BAKE_KEPT / 4)
+		cut_baked(1, HUMAN_BAKE_DROP_PER_LANDING + 1)
 	var/list/who = waiters[key]
 	remove_waiters(key)
 	for(var/handle in who)

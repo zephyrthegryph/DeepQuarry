@@ -74,7 +74,7 @@
 		refresh_flush()
 	TEST_ASSERT(moved >= 40, "the mob walked ([moved] steps)")
 	var/inside = 0
-	for(var/part in MOVE_COST_LIGHTS to MOVE_COST_PART_COUNT)
+	for(var/part in MOVE_COST_LIGHTS to MOVE_COST_INSIDE_LAST)
 		inside += sum[part]
 	TEST_ASSERT(inside <= sum[MOVE_COST_MOVED] * 1.01 + 0.01, "the parts inside the Moved() chain add up to no more than it ([TICK_DELTA_TO_MS(inside)] of [TICK_DELTA_TO_MS(sum[MOVE_COST_MOVED])] ms)")
 	log_test("MOVE_COST parts over [moved] steps, ms a step: whole [round(TICK_DELTA_TO_MS(total) / moved, 0.001)], handlers [round(TICK_DELTA_TO_MS(sum[MOVE_COST_MOVE]) / moved, 0.001)], Moved() [round(TICK_DELTA_TO_MS(sum[MOVE_COST_MOVED]) / moved, 0.001)] (notices [round(TICK_DELTA_TO_MS(sum[MOVE_COST_NOTICES]) / moved, 0.001)], loc readers [round(TICK_DELTA_TO_MS(sum[MOVE_COST_LOC_READS]) / moved, 0.001)], loc draw [round(TICK_DELTA_TO_MS(sum[MOVE_COST_LOC_DRAW]) / moved, 0.001)], hops [round(TICK_DELTA_TO_MS(sum[MOVE_COST_HOPS]) / moved, 0.001)], heat [round(TICK_DELTA_TO_MS(sum[MOVE_COST_HEAT]) / moved, 0.001)], interest [round(TICK_DELTA_TO_MS(sum[MOVE_COST_INTEREST]) / moved, 0.001)], living [round(TICK_DELTA_TO_MS(sum[MOVE_COST_LIVING]) / moved, 0.001)], body [round(TICK_DELTA_TO_MS(sum[MOVE_COST_BODY]) / moved, 0.001)], follow [round(TICK_DELTA_TO_MS(sum[MOVE_COST_FOLLOW]) / moved, 0.001)], lights [round(TICK_DELTA_TO_MS(sum[MOVE_COST_LIGHTS]) / moved, 0.001)], lifeform [round(TICK_DELTA_TO_MS(sum[MOVE_COST_LIFEFORM]) / moved, 0.001)], publish [round(TICK_DELTA_TO_MS(sum[MOVE_COST_MOB_PUBLISH]) / moved, 0.001)])")

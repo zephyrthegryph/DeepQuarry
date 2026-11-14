@@ -421,6 +421,10 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 		return TRUE
 	return FALSE
 
+/// TRUE when the tick is already past this lane's share (no call counted): work that cannot be split (one draw, one answer's callback) asks before it starts.
+/datum/time_scheduler/proc/over_tick_limit()
+	return TICK_USAGE > limit
+
 /// run_lane() behind a lane-level guard. Hooks are already isolated per behaviour
 /// (run_slot, call_hook, services, world wakes, derived values); this catches what
 /// escapes them (scheduler bookkeeping, a ring's behaviour lookup), so one lane's

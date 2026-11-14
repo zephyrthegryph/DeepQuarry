@@ -98,6 +98,10 @@ GLOBAL_VAR_INIT(client_glow_holder_sight_refreshes, 0)
 	var/sight_to_y = 0
 	/// TRUE while a sight_wake() timer is waiting.
 	var/sight_waiting = FALSE
+	/// TRUE while a crossing into another glow chunk waits for its timer (a connected client's crossings are not taken inside its step).
+	var/crossing_waiting = FALSE
+	/// TRUE while that timer's crossing runs, so view_at() takes it at once.
+	var/crossing_inline = FALSE
 	/// TRUE once this viewer's first hold has been logged (the load-in timeline).
 	var/first_hold_logged = FALSE
 	/// TRUE: a ghost still seeing darkness: its held copies carry no shadow mask (it sees through walls, so masks buy it nothing).
@@ -224,8 +228,39 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	rel_clear(C, nameof(C.glow_holder))
 	spent(H)
 
-/// The viewer sees from `eye` with view halves (hx, hy). Recomputes only when the eye's chunk or the view changed.
+/// The signature of the viewer's place for the holder: z, glow chunk, view halves and its darkness sight. Equal signature, nothing to recompute.
+/datum/client_glow_holder/proc/view_sig_of(turf/eye, hx, hy)
+	var/mob/viewer = client?.mob
+	var/mob/observer/dead/ghost = istype(viewer, /mob/observer/dead) ? viewer : null
+	var/now_unlit = viewer ? (!viewer.seedarkness || (ghost && !ghost.lighting_alpha)) : FALSE
+	var/now_unmasked = !!ghost && !now_unlit
+	return "[eye.z]:[round((eye.x - 1) / CLIENT_GLOW_CHUNK)]:[round((eye.y - 1) / CLIENT_GLOW_CHUNK)]:[hx]:[hy]:[now_unlit]:[now_unmasked]"
+
+/// The viewer sees from `eye` with view halves (hx, hy). A connected client's step into another glow chunk does not recompute here: that is a sight query, a scan of the
+/// chunks that came near and the stands, tens of ms in one step (the MOVE_COST trace named the eye part for 9 to 44 ms). The holder keeps CLIENT_GLOW_KEEP_CHUNKS of
+/// slack round the chunk, so the glows follow a timer later (view_cross_wake()) and several crossings in a row cost one. A viewer with no client (a test) takes it at once.
 /datum/client_glow_holder/proc/view_at(turf/eye, hx, hy)
+	if(!client || !eye || crossing_inline || view_sig_of(eye, hx, hy) == sig)
+		return view_now(eye, hx, hy)
+	if(!crossing_waiting)
+		crossing_waiting = TRUE
+		after(src, 1 TICKS, PROC_REF(view_cross_wake))
+
+/// The timer of view_at(): the crossing, from where the eye stands now.
+/datum/client_glow_holder/proc/view_cross_wake()
+	crossing_waiting = FALSE
+	if(!client || QDELETED(client))
+		return
+	var/turf/eye = get_turf(client.eye || client.mob)
+	if(!eye)
+		return
+	var/list/halves = client_glow_view_halves(client.view)
+	crossing_inline = TRUE
+	view_now(eye, halves[1], halves[2])
+	crossing_inline = FALSE
+
+/// The viewer sees from `eye` with view halves (hx, hy), now. Recomputes only when the eye's chunk or the view changed.
+/datum/client_glow_holder/proc/view_now(turf/eye, hx, hy)
 	if(!eye)
 		sig = null
 		drop_all("eye has no turf")
@@ -304,6 +339,9 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		log_world(client_glow_census())
 	if(client && length(client.images) < LAZYLEN(held))
 		log_world("client glow holder: [client.ckey] has [length(client.images)] images for [LAZYLEN(held)] held glows: something took them off the client")
+	var/crossing_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(crossing_ms >= CLIENT_GLOW_SLOW_CROSSING_MS) // always logged: the lighting trace is off in a live round, which is where this was seen
+		log_world("GLOW_SLOW: [client?.ckey]'s glow holder took [round(crossing_ms, 0.1)] ms for a crossing into chunk [new_sig] (sight [round(TICK_DELTA_TO_MS(scan_started - seen_started), 0.1)], scan [round(TICK_DELTA_TO_MS(stands_started - scan_started), 0.1)], stands [round(TICK_DELTA_TO_MS(stands_ended - stands_started), 0.1)]; [delta ? "delta scan, [chunks] chunk(s)" : "full scan"], seen [length(seen)] turf(s) (+[length(added)]/-[length(removed)]), holding [LAZYLEN(held)] glow(s))")
 	// This crossing's cost: the server time it took (a tick_usage delta, so well under a decisecond), and the glows (two client.images each) the client was sent or
 	// told to forget. The server time is server cost; the images are the client's (the map FPS is only on the client, so this is as near as the server can say).
 	if(!client_glow_trace_line())
@@ -369,6 +407,9 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	resight(eye, added, removed)
 	refresh_stands_near(added, removed)
 	GLOB.client_glow_holder_sight_refreshes++
+	var/refresh_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(refresh_ms >= CLIENT_GLOW_SLOW_CROSSING_MS)
+		log_world("GLOW_SLOW: [client?.ckey]'s glow holder took [round(refresh_ms, 0.1)] ms to take its sight again at [eye.x],[eye.y] (seen +[length(added)]/-[length(removed)] turf(s), [GLOB.client_glow_holder_stands_moved - moved_before] stand(s) moved, [SSsight.flushes] opacity flushes so far)")
 	if(client_glow_trace_line())
 		log_world("client glow holder: [client?.ckey] took new sight at [eye.x],[eye.y]: seen +[length(added)]/-[length(removed)] turf(s), [GLOB.client_glow_holder_stands_moved - moved_before] stand(s) moved, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.01)] ms")
 

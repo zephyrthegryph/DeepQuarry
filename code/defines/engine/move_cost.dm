@@ -29,7 +29,13 @@
 #define MOVE_COST_LOC_READS 14 // loc_changed(): own_field_changed(), the stat layer and derived entries that read `loc`
 #define MOVE_COST_LOC_DRAW 15 // loc_changed(): tracked_changed() for a draw that reads `loc`
 #define MOVE_COST_HOPS 16 // loc_changed(): hop_moved(), the turf and area hops
-#define MOVE_COST_PART_COUNT 16
+/// The last part that lies inside the Moved() chain and adds to it (the parts above it split part MOVE_COST_EYE and are counted in it).
+#define MOVE_COST_INSIDE_LAST 16
+// What the eye part is made of (a trace of a slow step names them): the proximity cell, the gaze hold, the client's glow holder and lighting screen.
+#define MOVE_COST_EYE_CELL 17 // SSproximity.eye_update(): eye_place(), counting the eye into its proximity cell and waking the cells round it
+#define MOVE_COST_EYE_GAZE 18 // gaze_update(): the chunks the view holds (gaze_view_set) and the anchors
+#define MOVE_COST_EYE_GLOW 19 // client.gaze_moved(): the glow holder's crossing or in-chunk follow and the lighting screen sync
+#define MOVE_COST_PART_COUNT 19
 
 /// Starts timing a part: the tick usage now while a client's step is being measured, else 0.
 #define MOVE_COST_BEGIN(started) var/started = GLOB.move_cost_on ? TICK_USAGE_REAL : 0

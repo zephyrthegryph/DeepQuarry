@@ -125,7 +125,9 @@ CAPABILITIES(/datum/system/proximity)
 		R.client = C
 		rel_set(C, nameof(C.proximity_eye), R)
 	var/started = TICK_USAGE_REAL
+	MOVE_COST_BEGIN(cell_started) // the step's trace itemises the eye part
 	eye_place(R, get_turf(C.eye))
+	MOVE_COST_END(MOVE_COST_EYE_CELL, cell_started)
 	var/placed_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	gaze_update(C) // the chunks this eye holds (engine/change/gaze.dm)
 	var/total_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)

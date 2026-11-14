@@ -31,8 +31,12 @@ GLOBAL_VAR_INIT(draw_working_key, -1)
 
 /// Counters, by name: `dirtied` (look changes: atoms that went from nothing owed to owing a refresh, filed here or queued in the refresh queue), `filed_total`,
 /// `drawn` (out of the buckets) and `drawn_near` (the share that stood within a chunk of an eye), `stale` (entries the drain skipped: the refresh queue
-/// drew the atom since it was filed), `drain_calls` (passes that found work) and `drain_cut` (passes the budget cut). The ms of the passes follow.
-GLOBAL_LIST_INIT(draw_n, list("dirtied" = 0, "filed_total" = 0, "drawn" = 0, "drawn_near" = 0, "stale" = 0, "drain_calls" = 0, "drain_cut" = 0)) // a list: the test state guard reads a scalar counter that went 0 to 1 as a leaked flag
+/// drew the atom since it was filed), `drain_calls` (passes that found work) and `drain_cut` (passes the budget cut), `budget_skips` (draws held back to the next tick because the tick was already spent when the pass began; `starved` counts those passes in a row, and after DRAW_STARVED_MAX of them the next pass draws one anyway) and `worst_ms`/`worst_what` (the dearest single draw: a draw is not split, so that is what a pass can overrun by). The ms of the passes follow.
+GLOBAL_LIST_INIT(draw_n, list("dirtied" = 0, "filed_total" = 0, "drawn" = 0, "drawn_near" = 0, "stale" = 0, "drain_calls" = 0, "drain_cut" = 0, "starved" = 0, "budget_skips" = 0, "worst_ms" = 0, "worst_what" = "")) // a list: the test state guard reads a scalar counter that went 0 to 1 as a leaked flag
+/// Passes the budget can hold the drain back in a row before it must draw one.
+#define DRAW_STARVED_MAX 3
+/// A draw that takes this long (ms) is traced.
+#define DRAW_SLOW_MS 25
 GLOBAL_VAR_INIT(draw_drain_ms, 0)
 GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 
@@ -137,6 +141,7 @@ GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 	var/pass = ++GLOB.refresh_drain_pass
 	var/list/order = draw_order()
 	var/cut = FALSE
+	var/drew = FALSE
 	for(var/key in order)
 		var/list/work = GLOB.draw_buckets[key]
 		if(!work)
@@ -147,6 +152,17 @@ GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 		var/near = draw_key_near(key)
 		var/i = 0
 		while(i < length(work))
+			// One draw cannot be split, so the budget is asked before it starts as well as after it: a pass that finds the tick already spent leaves
+			// everything filed (the starvation guard lets one draw through after DRAW_STARVED_MAX passes in a row, so the queue still empties).
+			if(sched && !drew && sched.over_tick_limit() && GLOB.draw_n["starved"] < DRAW_STARVED_MAX)
+				GLOB.draw_n["starved"]++
+				GLOB.draw_n["budget_skips"]++
+				var/list/untouched = work.Copy(i + 1)
+				if(length(untouched))
+					var/list/filed_since = GLOB.draw_buckets[key]
+					GLOB.draw_buckets[key] = filed_since ? untouched + filed_since : untouched
+				cut = TRUE
+				break
 			i++
 			var/atom/A = work[i]
 			if(isnull(A))
@@ -163,7 +179,16 @@ GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 					GLOB.draw_filed[slot] = key
 				continue
 			else
+				var/draw_started = TICK_USAGE_REAL
 				refresh_run(A, pass, sched, attr)
+				drew = TRUE
+				GLOB.draw_n["starved"] = 0
+				var/draw_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - draw_started)
+				if(draw_ms > GLOB.draw_n["worst_ms"])
+					GLOB.draw_n["worst_ms"] = draw_ms
+					GLOB.draw_n["worst_what"] = "[A.type]"
+				if(draw_ms >= DRAW_SLOW_MS)
+					log_world("DRAW_SLOW: [A.type] took [round(draw_ms, 0.1)] ms to draw in one piece (a draw is not split); the pass held back [GLOB.draw_n["budget_skips"]] draw(s) so far on a spent tick")
 				GLOB.draw_n["drawn"]++
 				if(near)
 					GLOB.draw_n["drawn_near"]++
@@ -198,7 +223,7 @@ GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 
 /// The draw queue's counters, for the look log line: what is filed, what was drawn and how near, and what the drain cost.
 /proc/draw_stats_text()
-	return "draw queue: [draw_depth()] filed in [length(GLOB.draw_buckets)] buckets, [length(GLOB.refresh_queue)] in the refresh queue; dirtied [GLOB.draw_n["dirtied"]], filed [GLOB.draw_n["filed_total"]], drawn [GLOB.draw_n["drawn"]] ([GLOB.draw_n["drawn_near"]] within a chunk of an eye), stale entries skipped [GLOB.draw_n["stale"]]; drain [GLOB.draw_n["drain_calls"]] passes took [round(GLOB.draw_drain_ms, 0.1)] ms, longest [round(GLOB.draw_drain_ms_max, 0.1)] ms, cut by the budget [GLOB.draw_n["drain_cut"]]; default looks skipped [GLOB.type_look_stamp_skipped]; eye chunks entered [GLOB.gaze_chunks_entered], left [GLOB.gaze_chunks_left]"
+	return "draw queue: [draw_depth()] filed in [length(GLOB.draw_buckets)] buckets, [length(GLOB.refresh_queue)] in the refresh queue; dirtied [GLOB.draw_n["dirtied"]], filed [GLOB.draw_n["filed_total"]], drawn [GLOB.draw_n["drawn"]] ([GLOB.draw_n["drawn_near"]] within a chunk of an eye), stale entries skipped [GLOB.draw_n["stale"]]; drain [GLOB.draw_n["drain_calls"]] passes took [round(GLOB.draw_drain_ms, 0.1)] ms, longest [round(GLOB.draw_drain_ms_max, 0.1)] ms, cut by the budget [GLOB.draw_n["drain_cut"]], held back on a spent tick [GLOB.draw_n["budget_skips"]], dearest single draw [round(GLOB.draw_n["worst_ms"], 0.1)] ms ([GLOB.draw_n["worst_what"]]); default looks skipped [GLOB.type_look_stamp_skipped]; eye chunks entered [GLOB.gaze_chunks_entered], left [GLOB.gaze_chunks_left]"
 
 // ---- rates ----
 

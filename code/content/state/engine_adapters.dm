@@ -6,6 +6,8 @@
 		return FALSE
 	if(!draw_drain(src))
 		return FALSE
+	if(over_tick_limit()) // the sweep and the staleness check are background work: they wait for a tick with room
+		return TRUE
 	refresh_sweep_step()
 	staleness_drain_step()
 	return TRUE

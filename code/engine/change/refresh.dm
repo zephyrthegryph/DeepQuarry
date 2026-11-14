@@ -536,6 +536,13 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 	var/pass = ++GLOB.refresh_drain_pass
 	var/list/deferred
 	var/i = 0
+	if(sched && length(Q) && sched.over_tick_limit() && GLOB.draw_n["starved"] < DRAW_STARVED_MAX)
+		// One refresh cannot be split: a pass that finds the tick already spent starts none (draw_drain() has the same rule and the same starvation guard).
+		GLOB.draw_n["starved"]++
+		GLOB.draw_n["budget_skips"]++
+		return FALSE
+	if(length(Q))
+		GLOB.draw_n["starved"] = 0
 	while(i < length(Q))
 		i++
 		var/datum/D = Q[i]
