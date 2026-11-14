@@ -966,7 +966,7 @@
 	TEST_ASSERT_EQUAL(length(GLOB.client_spread_plane_master.filters), 2, "the spread plane is bloomed and limited to opaque tiles")
 	var/atom/movable/screen/plane_master/lighting/lit_master = new
 	client_glow_master_compose(lit_master)
-	TEST_ASSERT_EQUAL(length(lit_master.filters), 4, "the lighting master keeps its two emissive masks and adds the glow plane and the spread")
+	TEST_ASSERT_EQUAL(length(lit_master.filters), lighting_corners_active() ? 3 : 4, "the lighting master keeps its two emissive masks and adds the spread, and the glow plane unless corner lighting draws the floor")
 	QDEL_NULL(lit_master)
 	var/turf/wall_tile = run_loc_floor_bottom_left
 	var/old_opacity_dirs = wall_tile.directional_opacity

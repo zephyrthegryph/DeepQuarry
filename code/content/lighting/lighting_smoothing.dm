@@ -3,18 +3,21 @@
 //
 //   blur     always on: the glow plane's filter is LIGHTING_SMOOTH_BLUR_SIZE px (about 0.4 of a tile). Client GPU only, no server cost. The blur runs
 //            after the wall cut, so a wider radius bleeds light a few pixels past a wall: keep it tight.
-//   corners  on top of it (config lighting_corners, default on; the Toggle Corner Lighting admin verb switches it live): each turf is shaded from four
+//   corners  on top of it (config lighting_corners, default on; the Toggle Corner Lighting admin verb switches it live): each open turf is shaded from four
 //            corner brightnesses, interpolated across the tile by the gradient icon (the corner engine's own gradient state: a colour matrix whose rows
-//            are the corners), so edges are smooth and a wall still cuts crisply. The glow plane is hidden (alpha 0) and the gradient underlays on the
-//            lighting plane, added over the black base, are the light.
+//            are the corners), so edges are smooth and a wall still cuts crisply. The lighting master no longer adds the glow plane (client_glow_master_compose()),
+//            so the gradient underlays on the lighting plane, added over the black base, are the floor's light. The glow plane itself is still drawn, cut to what
+//            each client sees: it feeds the wall spread (client_lighting_screen.dm), which lights the face of a wall from the floor beside it exactly as in
+//            glow mode, per viewer, so a wall is lit only on the side its light is on and a viewer behind it sees none of it.
 //
 // Corner mode is incremental. A light change dirties only the turfs in its reach box (lighting_smooth_dirty(), from client_flat_lights_refresh()), and an
 // opacity change dirties its own turf (reconsider_lights()). Each lighting step samples a bounded number of them: the sample of a turf is the light its floor is
 // drawn with (client_flat_light_rgb(), the model the flat lights use; opaque turfs and turfs outside dynamic lighting have none). A sample that changed
 // queues the nine tiles it can touch. A tile is drawn from its own sample and its neighbours': each of its four corners is the average of the tile and the
-// open turfs around that corner on the tile's own side of any wall (lighting_smooth_vertex()): an opaque neighbour never counts, and the diagonal turf counts
-// only when one of the two turfs between it and the tile is open, so a wall blocks light and a wall corner never lends the far side's light. An opaque turf
-// gets no gradient at all, and a tile whose corners are all dark loses its underlay. Redraws wait until the sampling backlog is drained (a tile drawn from half
+// open turfs around that corner on the tile's own side of any wall (lighting_smooth_vertex()): a blocker never counts, and the diagonal turf counts
+// only when one of the two turfs between it and the tile is open, so a wall blocks light and a wall corner never lends the far side's light. A blocker is
+// what the sight layer and the glow cut say blocks (IS_OPAQUE_TURF: the turf's own opacity or an opaque thing standing on it, a closed door, a shutter); an
+// opacity change of either kind comes through reconsider_lights(). A blocker gets no gradient at all, and a tile whose corners are all dark loses its underlay. Redraws wait until the sampling backlog is drained (a tile drawn from half
 // the samples is drawn again), except when the redraw backlog grows past four steps' worth. Sampling and drawing yield when the tick is over budget after a
 // small minimum, so they never starve, and a step spends at most LIGHTING_SMOOTH_BUDGET_MS. Nothing runs when nothing changes. Counters and a log line every LIGHTING_SMOOTH_LOG_EVERY give samples, corner reads,
 // redraws and the milliseconds spent.
@@ -61,12 +64,6 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /proc/lighting_smooth_blur_size()
 	return LIGHTING_SMOOTH_BLUR_SIZE
 
-/// The glow plane's alpha: 0 under corners (a hidden render target at alpha 0 renders empty, so the gradients are the light), else drawn.
-/proc/lighting_smooth_glow_alpha()
-	if(lighting_corners_active())
-		return 0
-	return 255
-
 /// The key of tile (x, y) in a per-level table (text: a number would index the list).
 /proc/lighting_smooth_key(x, y)
 	return "[x],[y]"
@@ -80,10 +77,14 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /// Puts the glow plane's filter, its visibility and the corner layer in step with the corner setting and with client lighting being on.
 /proc/lighting_smooth_apply()
 	var/corners = lighting_corners_active()
-	var/atom/movable/screen/plane_master/client_glow/master = GLOB.client_glow_plane_master // made on first use, with this filter and alpha
+	var/atom/movable/screen/plane_master/client_glow/master = GLOB.client_glow_plane_master // made on first use, with this filter
 	if(master)
 		master.modify_filter("client_glow_soften", list(size = lighting_smooth_blur_size()))
-		master.set_alpha(lighting_smooth_glow_alpha())
+	// The glow plane is drawn either way (the wall spread reads it); whether the lighting master adds it over the floor is the corner setting.
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS)) // a player made later composes its own master (plane_holder New)
+		var/datum/plane_holder/holder = hud_of(M)?.plane_holder
+		if(holder)
+			client_glow_master_compose(holder.plane_masters[VIS_LIGHTING])
 	if(!corners)
 		lighting_smooth_clear()
 		return
@@ -134,13 +135,13 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	var/cx = centre.x
 	var/cy = centre.y
 	for(var/turf/T as anything in RANGE_TURFS(r, centre))
-		if(T.opacity)
+		if(IS_OPAQUE_TURF(T))
 			continue
 		if(reach && !reach["[T.x - cx],[T.y - cy]"])
 			continue
 		GLOB.lighting_smooth_dirty[T] = TRUE
 
-/// `T` changed its opacity (a wall built, a door opened): it is sampled again, and the nine tiles around it are drawn again when that changes its sample.
+/// `T` changed what it blocks (a wall built, a door opened or closed): it is sampled again, and the nine tiles around it are drawn again when that changes its sample.
 /proc/lighting_smooth_dirty_turf(turf/T)
 	if(!lighting_corners_active())
 		return
@@ -148,7 +149,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 
 /// The sample of `T`: the light its floor is drawn with (a carried light cut by its reach too: a wall blocks it), or null for an opaque turf or one outside dynamic lighting.
 /proc/lighting_smooth_sample_of(turf/T)
-	if(T.opacity || !T.has_dynamic_lighting())
+	if(IS_OPAQUE_TURF(T) || !T.has_dynamic_lighting())
 		return null
 	return client_flat_light_rgb(T, TRUE)
 
@@ -177,7 +178,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	return TRUE
 
 /// The corner of tile `T` towards (sx, sy) (each -1 or 1): list(red, green, blue), the average of the samples of `T` and of the open turfs around that corner on
-/// its side of any wall. An orthogonal neighbour counts when it is not opaque; the diagonal one only when it is not opaque and one of the two turfs between it and
+/// its side of any wall. An orthogonal neighbour counts when it is not a blocker (IS_OPAQUE_TURF); the diagonal one only when it is not a blocker and one of the two turfs between it and
 /// `T` is open: light never crosses a wall, and a corner that touches a wall never lends the far side's light. `samples` is the level's sample table; `T` has a sample.
 /proc/lighting_smooth_vertex(turf/T, list/samples, sx, sy)
 	var/list/own = samples[lighting_smooth_key(T.x, T.y)]
@@ -188,8 +189,8 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	var/z = T.z
 	var/turf/X = locate(T.x + sx, T.y, z)
 	var/turf/Y = locate(T.x, T.y + sy, z)
-	var/open_x = X && !X.opacity
-	var/open_y = Y && !Y.opacity
+	var/open_x = X && !IS_OPAQUE_TURF(X)
+	var/open_y = Y && !IS_OPAQUE_TURF(Y)
 	var/list/s
 	if(open_x)
 		s = samples[lighting_smooth_key(X.x, X.y)]
@@ -207,7 +208,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 			n++
 	if(open_x || open_y)
 		var/turf/D = locate(T.x + sx, T.y + sy, z)
-		if(D && !D.opacity)
+		if(D && !IS_OPAQUE_TURF(D))
 			s = samples[lighting_smooth_key(D.x, D.y)]
 			if(s)
 				red += s[1]
@@ -217,12 +218,12 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	GLOB.lighting_smooth_corner_updates++
 	return list(clamp(red / n, 0, 1), clamp(green / n, 0, 1), clamp(blue / n, 0, 1))
 
-/// Redraws `T`: its gradient underlay from its four corners, or none when they are all dark or `T` is opaque (a wall takes no light). A tile whose twelve corner
+/// Redraws `T`: its gradient underlay from its four corners, or none when they are all dark or `T` is a blocker (a wall or a closed door takes no light of its own: its face is the wall spread's). A tile whose twelve corner
 /// levels (LIGHTING_SMOOTH_LEVEL_STEPS steps each, as dark as the screen tells apart) are the ones it was drawn from keeps its underlay: no appearance is made or swapped.
 /proc/lighting_smooth_draw(turf/T)
 	GLOB.lighting_smooth_redraws++
 	var/list/samples = GLOB.lighting_smooth_samples["[T.z]"]
-	var/list/own = T.opacity ? null : samples?[lighting_smooth_key(T.x, T.y)]
+	var/list/own = IS_OPAQUE_TURF(T) ? null : samples?[lighting_smooth_key(T.x, T.y)]
 	if(!own)
 		lighting_smooth_undraw(T)
 		return

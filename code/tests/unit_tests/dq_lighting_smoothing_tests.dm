@@ -33,10 +33,15 @@
 	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "corners off: the glow plane carries the wide blur filter")
 	var/atom/movable/screen/plane_master/client_glow/master = client_glow_screen_objects()[1]
 	TEST_ASSERT_EQUAL(master.alpha, 255, "corners off: the glow plane is drawn")
+	var/atom/movable/screen/plane_master/lighting/off_master = new
+	client_glow_master_compose(off_master)
+	TEST_ASSERT_NOTNULL(off_master.filter_data?["client_glow_add"], "corners off: the lighting master adds the glow plane")
+	QDEL_NULL(off_master)
 	TEST_ASSERT(LIGHTING_SMOOTH_BLUR_SIZE <= WORLD_ICON_SIZE / 2, "the blur stays under half a tile so light does not bleed far past a wall")
 	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_underlays), 0, "corners off: no corner underlay")
 	lighting_corners_set(TRUE)
 	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "corners on: the blur stays under them")
+	TEST_ASSERT_EQUAL(master.alpha, 255, "corners on: the glow plane stays drawn for the wall spread")
 	client_lighting_set(FALSE)
 	set_global(nameof(GLOB.lighting_corners), null)
 
@@ -66,7 +71,13 @@
 	client_lighting_set(TRUE)
 	lighting_corners_set(TRUE)
 	var/atom/movable/screen/plane_master/client_glow/master = client_glow_screen_objects()[1]
-	TEST_ASSERT_EQUAL(master.alpha, 0, "corners on: the glow plane is hidden, the gradients are the light")
+	TEST_ASSERT_EQUAL(master.alpha, 255, "corners on: the glow plane still renders, it feeds the wall spread")
+	var/atom/movable/screen/plane_master/lighting/lit_master = new
+	client_glow_master_compose(lit_master)
+	TEST_ASSERT(!lit_master.filter_data?["client_glow_add"], "corners on: the lighting master does not add the glow plane over the floor, the gradients are the light")
+	TEST_ASSERT_NOTNULL(lit_master.filter_data?["client_spread_add"], "corners on: the lighting master still adds the wall spread, so a wall face is lit as in glow mode")
+	QDEL_NULL(lit_master)
+	TEST_ASSERT_NOTNULL(master.filter_data?["client_visible_cut"], "the glow plane is cut to what each client sees, so a viewer behind a wall gets none of the light on the other side")
 	TEST_ASSERT_EQUAL(dq_smoothing_filter_size(), LIGHTING_SMOOTH_BLUR_SIZE, "corners on: the blur is still there")
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/far = run_loc_floor_top_right
@@ -145,7 +156,10 @@
 	log_test("LIGHTING SMOOTHING CORNERS: [GLOB.lighting_smooth_samples_taken] samples ([GLOB.lighting_smooth_samples_changed] changed), [GLOB.lighting_smooth_corner_updates] corner reads, [GLOB.lighting_smooth_redraws] redraws, [round(GLOB.lighting_smooth_ms, 0.1)] ms in all, [length(GLOB.lighting_smooth_underlays)] lit tiles")
 	lighting_corners_set(FALSE)
 	TEST_ASSERT_EQUAL(length(GLOB.lighting_smooth_underlays), 0, "leaving corner mode takes every gradient away")
-	TEST_ASSERT_EQUAL(master.alpha, 255, "leaving corner mode draws the glow plane again")
+	var/atom/movable/screen/plane_master/lighting/off_master = new
+	client_glow_master_compose(off_master)
+	TEST_ASSERT_NOTNULL(off_master.filter_data?["client_glow_add"], "leaving corner mode adds the glow plane again")
+	QDEL_NULL(off_master)
 	client_lighting_set(FALSE)
 	set_global(nameof(GLOB.lighting_corners), null)
 
@@ -178,6 +192,77 @@
 	log_test("LIGHTING SMOOTHING MOVING LIGHT: [moves] moves, [GLOB.lighting_smooth_samples_taken - taken] samples ([round(per_move, 0.1)] a move, [GLOB.lighting_smooth_samples_changed - changed] changed), [GLOB.lighting_smooth_redraws - redraws] redraws, [ms] ms of wall time in all ([round(ms / moves, 0.1)] a move)")
 	// The room is 25 floor tiles; the old box dirtied (2r+1)^2 turfs twice a move, walls and all.
 	TEST_ASSERT(per_move <= 60, "a move samples only the turfs the light reaches ([per_move] a move)")
+	lighting_corners_set(FALSE)
+	client_lighting_set(FALSE)
+	set_global(nameof(GLOB.lighting_corners), null)
+
+/// A closed door blocks the corner layer like a wall, and a wall's face is lit by the same spread as in glow mode. A column across the room is wall but for one
+/// airlock on the light's row: shut, the floor behind it stays dark and the door tile carries no gradient; open (its opacity is what the door changes), the light goes through; shut
+/// again, dark. The wall and the door tile are on the walls plane (the spread lights their face from the floor beside them, cut per client by what it sees), and from
+/// behind the shut door the light's own tile is out of sight.
+/datum/unit_test/dq_lighting_smoothing_doors
+
+/datum/unit_test/dq_lighting_smoothing_doors/Run()
+	set_global(nameof(GLOB.client_lighting), FALSE)
+	set_global(nameof(GLOB.lighting_corners), null)
+	dq_smoothing_keep_screens(src)
+	client_lighting_set(TRUE)
+	lighting_corners_set(TRUE)
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/far = run_loc_floor_top_right
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	var/wall_x = T.x + 2
+	var/list/wall = list()
+	for(var/wy in T.y + 1 to far.y)
+		var/turf/W = locate(wall_x, wy, T.z)
+		wall += W
+		W.set_opacity(TRUE)
+	var/turf/door_turf = locate(wall_x, T.y, T.z)
+	var/obj/machinery/door/airlock/D = allocate(/obj/machinery/door/airlock, door_turf)
+	TEST_ASSERT(D.opacity, "the airlock starts shut and opaque")
+	TEST_ASSERT(IS_OPAQUE_TURF(door_turf) && !door_turf.opacity, "a shut door makes its open turf a blocker without the turf being opaque")
+	SSlighting.light_step(0, TRUE)
+	dq_smoothing_drain()
+	TEST_ASSERT_NOTNULL(L.light?.glow, "the fixture glows")
+	var/turf/front = locate(T.x + 1, T.y, T.z)
+	var/turf/behind = locate(wall_x + 1, T.y, T.z)
+	var/turf/behind_far = locate(wall_x + 2, T.y, T.z)
+	TEST_ASSERT(dq_smoothing_underlay_level(front) > 0.05, "the tile in front of the door is lit ([dq_smoothing_underlay_level(front)])")
+	TEST_ASSERT(!GLOB.lighting_smooth_underlays[door_turf], "the shut door's tile carries no gradient")
+	TEST_ASSERT(dq_smoothing_underlay_level(behind) < 0.05, "shut, the tile behind the door stays dark ([dq_smoothing_underlay_level(behind)], light [json_encode(client_flat_light_rgb(behind, TRUE))])")
+	TEST_ASSERT(dq_smoothing_underlay_level(behind_far) < 0.05, "shut, the tile two behind the door stays dark ([dq_smoothing_underlay_level(behind_far)])")
+	// The corner of the tile in front towards the door takes nothing from behind it: the door is not a neighbour to average.
+	var/list/samples = GLOB.lighting_smooth_samples["[T.z]"]
+	var/list/toward_door = lighting_smooth_vertex(front, samples, 1, 1)
+	var/list/own = samples[lighting_smooth_key(front.x, front.y)]
+	var/list/along = samples[lighting_smooth_key(front.x, front.y + 1)]
+	TEST_ASSERT(abs(toward_door[1] - (own[1] + along[1]) / 2) < 0.02, "the corner against the wall beside the door averages the open turfs on this side alone ([toward_door[1]] against [(own[1] + along[1]) / 2])")
+	// The faces: the wall and the shut door are on the walls plane, which the spread lights from the floor beside them, per client.
+	TEST_ASSERT(client_walls_tile() in door_turf.underlays, "the shut door's tile is on the walls plane")
+	for(var/turf/W as anything in wall)
+		TEST_ASSERT(client_walls_tile() in W.underlays, "the wall at [W.x],[W.y] is on the walls plane")
+		TEST_ASSERT(!GLOB.lighting_smooth_underlays[W], "the wall at [W.x],[W.y] carries no gradient")
+	TEST_ASSERT(!(T in sight_view_turfs(behind, 8)), "from behind the shut door the light's tile is out of sight")
+	// Open it.
+	var/samples_before = GLOB.lighting_smooth_samples_taken
+	D.set_opacity(0)
+	TEST_ASSERT(!IS_OPAQUE_TURF(door_turf), "the open door no longer blocks")
+	SSlighting.light_step(0, TRUE)
+	dq_smoothing_drain()
+	TEST_ASSERT(dq_smoothing_underlay_level(behind) > 0.05, "open, the light goes through: the tile behind the door is lit ([dq_smoothing_underlay_level(behind)])")
+	TEST_ASSERT_NOTNULL(GLOB.lighting_smooth_underlays[door_turf], "the open door's tile is lit")
+	TEST_ASSERT(!(client_walls_tile() in door_turf.underlays), "the open door's tile leaves the walls plane")
+	TEST_ASSERT(GLOB.lighting_smooth_samples_taken - samples_before <= 120, "opening a door samples only the turfs it changes ([GLOB.lighting_smooth_samples_taken - samples_before])")
+	// Shut again.
+	D.set_opacity(1)
+	SSlighting.light_step(0, TRUE)
+	dq_smoothing_drain()
+	TEST_ASSERT(dq_smoothing_underlay_level(behind) < 0.05, "shut again, the tile behind the door is dark again ([dq_smoothing_underlay_level(behind)])")
+	TEST_ASSERT(!GLOB.lighting_smooth_underlays[door_turf], "shut again, the door's tile carries no gradient")
+	log_test("LIGHTING SMOOTHING DOORS: [GLOB.lighting_smooth_samples_taken] samples, [GLOB.lighting_smooth_corner_updates] corner reads, [GLOB.lighting_smooth_redraws] redraws, [round(GLOB.lighting_smooth_ms, 0.1)] ms in all")
+	for(var/turf/W as anything in wall)
+		W.set_opacity(FALSE)
+	dq_smoothing_drain()
 	lighting_corners_set(FALSE)
 	client_lighting_set(FALSE)
 	set_global(nameof(GLOB.lighting_corners), null)

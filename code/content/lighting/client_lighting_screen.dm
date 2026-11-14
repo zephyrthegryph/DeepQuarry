@@ -106,7 +106,6 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 		// Opaque tiles leave the glow plane before anything spreads: a soft edge of a few pixels on the far side of a wall is enough for the bloom to light the whole wall (client rig).
 		GLOB.client_glow_plane_master.add_filter("client_glow_no_walls", 2, list(type = "alpha", render_source = CLIENT_WALLS_RENDER_TARGET, flags = MASK_INVERSE))
 		GLOB.client_glow_plane_master.add_filter("client_glow_soften", 3, list(type = "blur", size = lighting_smooth_blur_size()))
-		GLOB.client_glow_plane_master.set_alpha(lighting_smooth_glow_alpha())
 		GLOB.client_spread_plane_master.add_filter("client_wall_spread", 1, list(type = "bloom", threshold = "#000000", size = CLIENT_GLOW_SPREAD_SIZE, offset = CLIENT_GLOW_SPREAD_OFFSET, alpha = CLIENT_GLOW_SPREAD_ALPHA))
 		GLOB.client_spread_plane_master.add_filter("client_walls_only", 2, list(type = "alpha", render_source = CLIENT_WALLS_RENDER_TARGET))
 	return list(GLOB.client_glow_plane_master, GLOB.client_glow_base, GLOB.client_glow_compare_base, GLOB.client_glow_relay, GLOB.client_visible_plane_master, GLOB.client_walls_plane_master, GLOB.client_spread_plane_master, GLOB.client_glow_spread_relay)
@@ -117,7 +116,8 @@ CAPABILITIES_PART(/datum/controller/global_vars, client_glow_screens)
 	M.remove_filter("client_spread_add")
 	if(GLOB.client_lighting_compare)
 		return
-	M.add_filter("client_glow_add", -2, list(type = "layer", render_source = CLIENT_GLOW_RENDER_TARGET, blend_mode = BLEND_ADD))
+	if(!lighting_corners_active()) // corner lighting draws the floor from gradient underlays; the glow plane still renders, for the wall spread below
+		M.add_filter("client_glow_add", -2, list(type = "layer", render_source = CLIENT_GLOW_RENDER_TARGET, blend_mode = BLEND_ADD))
 	M.add_filter("client_spread_add", -1, list(type = "layer", render_source = CLIENT_SPREAD_RENDER_TARGET, blend_mode = BLEND_ADD))
 
 /// The screen state a client wants now.
