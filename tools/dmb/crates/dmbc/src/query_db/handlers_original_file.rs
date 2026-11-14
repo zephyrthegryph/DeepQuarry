@@ -12,8 +12,13 @@ pub(super) fn with_actual_file(subject:&crate::input_snapshot::HandlerStructural
  // already authenticated mapping can issue this path under either root.
  let path=subject.root_path().join(Path::new(relative));
  let canonical=subject.canonical_root_path().join(Path::new(relative));
+ // The private Handler recipe renders its already captured canonical root
+ // through this exact existing drive-prefix key before issuing includes.
+ // Match that producer spelling, never an arbitrary canonicalized candidate.
+ let rendered=dm_preprocess::regions::filesystem_comparison_key(subject.canonical_root_path()).join(Path::new(relative));
  let acquired=mapping.source_acquisitions().find(|(actual,_)|*actual==path.as_path())
   .or_else(||mapping.source_acquisitions().find(|(actual,_)|*actual==canonical.as_path()))
+  .or_else(||mapping.source_acquisitions().find(|(actual,_)|*actual==rendered.as_path()))
   .ok_or("handler finding file has no actual partial/full acquisition")?.1.ok_or("handler finding file's acquisition is unissued")?;
  let original=crate::input_snapshot::recorded_source_original(acquired)?;let raw=match &original{crate::input_snapshot::RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()};
  let all=dq_analyze::captured_raw_file::with_original_policy_file_prepared(subject.root_path(),&path,0,budget,|scratch|{

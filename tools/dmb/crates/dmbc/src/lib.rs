@@ -172,3 +172,9 @@ mod native_fix_physical;
 
 /// Explicit optional native Checker text adapter; no default activation.
 pub mod native_checker;
+
+/// One actual combined-preparation ledger; no compiled/pair role is issued.
+pub use request_runner::runner_freshness::observation::ReportObservation as FullRegistryReportInputObservation;
+
+/// Explicit CHECK-only real-generation qualification observation; no default route.
+pub use daemon::generation::{with_all_generation_check_input_observation,GenerationCheckObservation};

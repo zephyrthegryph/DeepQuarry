@@ -177,7 +177,7 @@ impl SourceSnapshot{
 }
 
 impl SourceSnapshot{
- fn require_original_analyze_subject(&self,capture:&crate::runner_host::workspace_capture::WorkspaceCapture)->io::Result<()>{
+ pub(super) fn require_original_analyze_subject(&self,capture:&crate::runner_host::workspace_capture::WorkspaceCapture)->io::Result<()>{
   if let Some(subject)=&self.analysis_subject{
    let mapping=self.source_mapping.as_ref().ok_or_else(||io::Error::other("actual Analyze source mapping absent"))?;
    let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;subject.require_bound_mapping(mapping)?;return capture.require_analysis_subject(subject)

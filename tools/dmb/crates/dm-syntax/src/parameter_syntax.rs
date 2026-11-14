@@ -41,7 +41,7 @@ impl ParameterToken for SpanToken {
         SpanToken::text(*self, source)
     }
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct ParameterSyntax {
     ordinal: usize,
     name: Span,
@@ -49,11 +49,23 @@ pub struct ParameterSyntax {
     variadic: bool,
     type_components: Box<[Span]>,
     source_modifiers: u8,
+    native_children: u8,
     array_brackets: Box<[Span]>,
     expressions: Result<Option<Box<crate::ParameterExpressions>>, &'static str>,
 }
+impl std::fmt::Debug for ParameterSyntax{
+ fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("ParameterSyntax").field("ordinal",&self.ordinal).field("name",&self.name).field("declaration_cursor",&self.declaration_cursor).field("variadic",&self.variadic).field("type_components",&self.type_components).field("source_modifiers",&self.source_modifiers).field("array_brackets",&self.array_brackets).field("expressions",&self.expressions).finish()}
+}
+impl PartialEq for ParameterSyntax{
+ fn eq(&self,other:&Self)->bool{self.ordinal==other.ordinal&&self.name==other.name&&self.declaration_cursor==other.declaration_cursor&&self.variadic==other.variadic&&self.type_components==other.type_components&&self.source_modifiers==other.source_modifiers&&self.array_brackets==other.array_brackets&&self.expressions==other.expressions}
+}
+impl Eq for ParameterSyntax{}
 impl ParameterSyntax {
     /// Original syntax roots only; not a current-source/metadata admission proof.
+    pub fn native_child_observation(&self)->Option<(bool,bool,bool)>{
+        self.expressions.as_ref().ok()?;
+        (self.native_children != 0).then_some((self.native_children & 1 != 0,self.native_children & 2 != 0,self.native_children & 4 != 0))
+    }
     pub fn expressions(&self) -> Result<Option<&crate::ParameterExpressions>, &'static str> {
         self.expressions
             .as_ref()
@@ -281,7 +293,7 @@ pub(crate) fn trivia<T: ParameterToken>(t: &T) -> bool {
         TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
     )
 }
-#[derive(Clone,Copy,Eq,PartialEq)]enum FormalPathProfile{Compiler,Original0290}
+#[derive(Clone,Copy,Eq,PartialEq)]enum FormalPathProfile{Compiler,Original0290,NativeObserved}
 fn one<T: ParameterToken>(
     source: &str,
     tokens: &[T],
@@ -302,7 +314,7 @@ fn one<T: ParameterToken>(
         .peek()
         .is_some_and(|(_, t)| t.text(source) == "/")
     {
-        if profile==FormalPathProfile::Compiler{return Err("absolute parameter-header declaration is outside pinned parameter issuance");}
+        if profile!=FormalPathProfile::Original0290{return Err("absolute parameter-header declaration is outside pinned parameter issuance");}
         significant.next();
     }
     // Primary lexing retains punctuation one byte at a time. The pinned
@@ -333,6 +345,7 @@ fn one<T: ParameterToken>(
             variadic: true,
             type_components: Box::default(),
             source_modifiers: 0,
+            native_children: if profile==FormalPathProfile::NativeObserved {9} else {0},
             array_brackets: Box::default(),
             expressions: Ok(None),
         });
@@ -351,6 +364,7 @@ fn one<T: ParameterToken>(
                 variadic: true,
                 type_components: Box::default(),
                 source_modifiers: 0,
+            native_children: if profile==FormalPathProfile::NativeObserved {9} else {0},
                 array_brackets: Box::default(),
                 expressions: Ok(None),
             });
@@ -429,7 +443,13 @@ fn one<T: ParameterToken>(
             return Err("parameter type path has an unissued following cursor");
         }
     }
-    let expressions = if profile==FormalPathProfile::Original0290{crate::parameter_expressions::issue_original_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)}else{crate::parameter_expressions::issue_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)};
+    let mut native_no_child=false;
+    let expressions = if profile==FormalPathProfile::Original0290{crate::parameter_expressions::issue_original_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)}else if profile==FormalPathProfile::NativeObserved{let(result,observed)=crate::parameter_expressions::issue_native_observed(source,tokens,&brackets,base,ordinal,defaults);native_no_child=observed;result}else{crate::parameter_expressions::issue_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)};
+    let native_children=match (&expressions,defaults.as_mut()){
+        (Ok(expressions),Some(provider))=>match provider.native_child_observation(ordinal,expressions.as_deref())?{Some((complete,recovered,deferred))=>8|u8::from(complete && !recovered && !deferred)|(u8::from(recovered)<<1)|(u8::from(deferred)<<2),None=>0},
+        _ if native_no_child=>9,
+        _=>0,
+    };
     let components = path[prefix..]
         .iter()
         .map(|s| shift(*s, base))
@@ -445,6 +465,7 @@ fn one<T: ParameterToken>(
         variadic: false,
         type_components: components,
         source_modifiers: flags,
+        native_children,
         array_brackets: brackets,
         expressions,
     })
@@ -502,7 +523,7 @@ fn append<T: ParameterToken>(
     if rows.iter().any(ParameterSyntax::variadic) {
         return Err("original header entry follows variadic marker");
     }
-    if profile==FormalPathProfile::Compiler && tokens
+    if profile!=FormalPathProfile::Original0290 && tokens
         .iter()
         .find(|t| !trivia(*t))
         .is_some_and(|t| t.text(source) == "/")
@@ -547,6 +568,11 @@ fn issue_tokens<T: ParameterToken>(
 ) -> ParameterSignature {issue_tokens_with_defaults(source,tokens,header,base,&mut None,FormalPathProfile::Compiler)}
 /// SAME native parameter/path/annotation producer with already-owned default
 /// roots. Missing provider data is a refusal; it never calls the default parser.
+/// SAME canonical parameter production, observed only by the private actual native recipe.
+/// Child-bearing entries still require their actual producer observations.
+pub(crate) fn parameter_signature_native_observed(source:&str,tokens:&[SpanToken],header:Span,base:usize,defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->ParameterSignature{
+ issue_tokens_with_defaults(source,tokens,header,base,defaults,FormalPathProfile::NativeObserved)
+}
 pub fn parameter_signature_with_default_roots(source:&str,tokens:&[SpanToken],header:Span,base:usize,defaults:&mut dyn crate::ParameterDefaultSyntaxProvider)->ParameterSignature{issue_tokens_with_defaults(source,tokens,header,base,&mut Some(defaults),FormalPathProfile::Compiler)}
 /// Original syntax DATA only. The current genuine frontend/header owner must
 /// independently select and authenticate its role; this issues no model grant.
@@ -736,4 +762,54 @@ mod aggregate_optional_admission_tests {
   let original=parameter_signature_original_with_default_roots(source,&primary.tokens,header,0,&mut None);let entries=original.entries().unwrap();assert_eq!(entries.len(),2);assert_eq!(&source[entries[0].name().range()],"value");assert_eq!(&source[entries[1].name().range()],"foo");assert!(original.absolute_declarations().unwrap().is_empty());
   let compiler=issue_spans(source,&primary.tokens,header,0);assert!(compiler.entries().unwrap().is_empty());assert_eq!(compiler.absolute_declarations().unwrap().len(),2);
  }
+}
+
+#[cfg(test)]
+mod native_parameter_observation_tests{
+ use super::*;
+ #[allow(dead_code)]
+ struct PriorParameterSyntax{ordinal:usize,name:Span,declaration_cursor:Span,variadic:bool,type_components:Box<[Span]>,source_modifiers:u8,array_brackets:Box<[Span]>,expressions:Result<Option<Box<crate::ParameterExpressions>>,&'static str>}
+ #[test]fn native_parameter_observation_uses_existing_entry_padding(){
+  let prior=std::mem::size_of::<PriorParameterSyntax>();let current=std::mem::size_of::<ParameterSyntax>();
+  eprintln!("NATIVE_PARAMETER_ENTRY_SIZE prior={prior} current={current}");assert_eq!(current,prior);
+ }
+ #[test]fn ordinary_parameter_parser_does_not_issue_native_child_observations(){
+  let source="/proc/test(value=1)";let tokens=crate::lex(source).tokens.into_iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
+  let signature=parameter_signature_original_with_default_roots(source,&tokens,Span::new(0,source.len()),0,&mut None);
+  let entry=&signature.entries().unwrap()[0];assert_eq!(entry.native_child_observation(),None);
+  let mut copied=entry.clone();copied.native_children=9;assert_eq!(*entry,copied,"classification DATA must not alter semantic syntax equality");
+  copied.expressions=Err("actual optional child admission failed");assert_eq!(copied.native_child_observation(),None);
+ }
+}
+
+#[cfg(test)]
+#[test]fn native_observed_parameter_settlement_does_not_invent_child_completion(){
+ for (source,expected) in [("/proc/test(value)",Some((true,false,false))),("/proc/test(value=1)",None)]{
+  let tokens=crate::lex(source).tokens.into_iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
+  let observed=parameter_signature_native_observed(source,&tokens,Span::new(0,source.len()),0,&mut None);
+  assert_eq!(observed.entries().unwrap()[0].native_child_observation(),expected);
+  let ordinary=issue_spans(source,&tokens,Span::new(0,source.len()),0);
+  assert_eq!(ordinary.entries().unwrap()[0].native_child_observation(),None);
+ }
+}
+
+#[cfg(test)]
+#[test]fn accepted_variadic_production_never_borrows_nonexistent_named_clause_rows(){
+ struct NamedRows;
+ impl crate::ParameterDefaultSyntaxProvider for NamedRows{
+  fn native_child_observation(&mut self,_:usize,_:Option<&crate::ParameterExpressions>)->Result<Option<(bool,bool,bool)>,&'static str>{panic!("ellipsis has no named child row")}
+  fn default_root(&mut self,_:usize,_:Span,_:Span)->Result<crate::SettingExpression,&'static str>{Err("no named default row")}
+ }
+ let source="/proc/test(...)";let tokens=crate::lex(source).tokens.into_iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
+ let mut rows=NamedRows;let mut provider:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>=Some(&mut rows);
+ let original=parameter_signature_original_with_default_roots(source,&tokens,Span::new(0,source.len()),0,&mut provider);
+ let entry=&original.entries().unwrap()[0];assert!(entry.variadic());assert_eq!(entry.native_child_observation(),None);
+ let native=parameter_signature_native_observed(source,&tokens,Span::new(0,source.len()),0,&mut provider);
+ assert!(native.entries().unwrap()[0].variadic());assert_eq!(native.entries().unwrap()[0].native_child_observation(),Some((true,false,false)));
+ for bad in ["/proc/test(. . .)","/proc/test(...value)"]{
+  let tokens=crate::lex(bad).tokens.into_iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
+  assert!(parameter_signature_original_with_default_roots(bad,&tokens,Span::new(0,bad.len()),0,&mut provider).entries().is_err());
+ }
+ let named="/proc/test(value=1)";let tokens=crate::lex(named).tokens.into_iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
+ let named_signature=parameter_signature_original_with_default_roots(named,&tokens,Span::new(0,named.len()),0,&mut provider);assert!(named_signature.entries().unwrap()[0].expressions().is_err(),"missing actual named/default clauses remain refused");
 }

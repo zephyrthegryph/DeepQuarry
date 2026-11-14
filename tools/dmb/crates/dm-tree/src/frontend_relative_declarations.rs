@@ -113,6 +113,13 @@ impl CurrentBodyRecipe<'_> {
     }
 
     pub(crate) fn source_window(&self)->Result<Span,&'static str>{let source=self.headers.ok_or("actual original header owner unissued")?;let end=self.offset.checked_add(source.abi_source_len()).ok_or("current original source window overflows")?;Ok(Span::new(self.offset,end))}
+    pub(crate) fn parse_native_admitted(&self,a:&dm_syntax::SettingAdmission<'_>)
+      ->std::io::Result<(Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>,bool)>{
+      match self.headers{
+        Some(headers)=>headers.parse_body_admitted_with_native_consumption(self.relative.span,self.offset,a),
+        None=>Ok((self.parse_original(),false)),
+      }
+    }
     pub(crate) fn parse_original_admitted(&self,a:&dm_syntax::SettingAdmission<'_>)
         ->std::io::Result<Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>> {
         match self.headers {
@@ -829,10 +836,13 @@ impl DeclarationSyntax {
       root.project_current(recipe.offset,headers.abi_source_len()).map_err(dm_syntax::SettingSyntaxFailure::Operational)
     }
     pub(crate) fn original_body_expression(&self,body:Span,code:&Arc<BodyCodeIdentity>,source:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<dm_syntax::ParsedExpr>>{
+      self.original_body_expression_with_native_facts(body,code,source,offset,a).map(|value|value.map(|(parsed,_)|parsed))
+    }
+    pub(crate) fn original_body_expression_with_native_facts(&self,body:Span,code:&Arc<BodyCodeIdentity>,source:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{
       let recipe=self.original_body_recipe(body,code).map_err(|e|std::io::Error::new(std::io::ErrorKind::InvalidData,e.message))?;
       let original=offset.checked_sub(recipe.offset).ok_or(std::io::ErrorKind::InvalidInput)?;
       let headers=recipe.headers.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"original BODY expression header owner is unissued"))?;
-      headers.original_body_expression(source,original,a)
+      headers.original_body_expression_with_native_facts(source,original,a)
     }
     pub(crate) fn setting_token_input<'a>(
         &'a self,
@@ -1037,13 +1047,13 @@ impl DeclarationSyntax {
     }
     /// Called only by the original native body parser under its SAME stack
     /// admission. No host/query/gate/revision call occurs at this leaf.
-    pub(crate) fn setting_statement_expression(
+    pub(crate) fn setting_statement_expression_with_native_observation(
         &self,
         body: Span,
         code: &Arc<BodyCodeIdentity>,
         statement: &Item,
         admission: &dm_syntax::SettingAdmission<'_>,
-    ) -> Result<(String, String, dm_syntax::SettingExpression), dm_syntax::SettingSyntaxFailure>
+    ) -> Result<(String,String,dm_syntax::SettingExpression,Option<dm_syntax::NativeExpressionParserFacts>),dm_syntax::SettingSyntaxFailure>
     {
         let syntax = |message: &str| {
             dm_syntax::SettingSyntaxFailure::Syntax(dm_syntax::Diagnostic {
@@ -1097,9 +1107,9 @@ impl DeclarationSyntax {
         let slots = headers
             .setting_root_slots(recipe.original_body_span(), owner, footprint)
             .map_err(|e| syntax(&e))?;
-        let original = slots
-            .obtain(footprint.ordinal, owner.settings.len(), admission, || {
-                tokens.with_dense_using(admission,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts(source,dense,footprint.value,admission,headers.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?
+        let(original,native) = slots
+            .obtain_with_native_observation(footprint.ordinal, owner.settings.len(), admission, || {
+                tokens.with_dense_using(admission,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts_and_native_observation(source,dense,footprint.value,admission,headers.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?
             })
             .map_err(|failure| match failure {
                 dm_syntax::SettingSyntaxFailure::Syntax(mut error) => {
@@ -1126,7 +1136,7 @@ impl DeclarationSyntax {
         let current = original
             .project_current(offset, source.len())
             .map_err(dm_syntax::SettingSyntaxFailure::Operational)?;
-        Ok((attribute.to_owned(), relation.to_owned(), current))
+        Ok((attribute.to_owned(),relation.to_owned(),current,native))
     }
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
         self.chunks
@@ -1790,12 +1800,44 @@ fn code_literal_equal(left:Option<CodeLiteralFacts<'_>>,left_body:dm_syntax::Spa
   };if !equal{return Ok(false)}
  }Ok(true)
 }
+// Close-Colon roles are an actual sparse primary side column. Rendered bytes
+// and literal values cannot authorize reuse across differing native roles.
+type CodeColonFacts<'a>=(dm_syntax::OriginalColonRows<'a>,usize);
+type CodeColonWindow<'a>=(dm_syntax::OriginalColonRows<'a>,usize,usize,usize);
+fn code_colon_rows<'a>(rows:Option<CodeColonFacts<'a>>,body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CodeColonWindow<'a>>>{
+ let Some((rows,origin))=rows else{return Ok(None)};
+ let start=origin.checked_add(body.start).ok_or_else(||code_io("actual colon body origin overflow"))?;
+ let end=origin.checked_add(body.end).ok_or_else(||code_io("actual colon body end overflow"))?;
+ if start>end{return Err(code_io("actual colon body window is reversed"))}
+ let begin=rows.partition_point(|(span,_)|span.end<=start);
+ let limit=rows.partition_point(|(span,_)|span.start<end);
+ if begin>limit{return Err(code_io("actual colon fact ordering differs"))}
+ for index in begin..limit{let(span,_)=rows.get(index).ok_or_else(||code_io("actual colon fact ordinal differs"))?;code_checkpoint(a)?;if span.start<start||span.end>end||span.end<span.start{return Err(code_io("actual colon fact crosses its body recipe"))}}
+ Ok(Some((rows,start,begin,limit)))
+}
+fn code_colon_hash(rows:Option<CodeColonFacts<'_>>,body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
+ use std::hash::Hasher;let mut hash=std::collections::hash_map::DefaultHasher::new();
+ code_checkpoint(a)?;let Some((rows,base,begin,end))=code_colon_rows(rows,body,a)? else{hash.write_u8(0);return Ok(hash.finish())};
+ hash.write_u8(1);hash.write_usize(end-begin);
+ for index in begin..end{let(span,role)=rows.get(index).ok_or_else(||code_io("actual colon fact ordinal differs"))?;code_checkpoint(a)?;hash.write_usize(span.start-base);hash.write_usize(span.end-base);hash.write_u8(u8::from(role));}
+ Ok(hash.finish())
+}
+fn code_colon_equal(left:Option<CodeColonFacts<'_>>,left_body:dm_syntax::Span,right:Option<CodeColonFacts<'_>>,right_body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+ code_checkpoint(a)?;let left=code_colon_rows(left,left_body,a)?;let right=code_colon_rows(right,right_body,a)?;
+ let((left,lb,ls,le),(right,rb,rs,re))=match(left,right){(None,None)=>return Ok(true),(Some(left),Some(right))=>(left,right),_=>return Ok(false)};
+ if le-ls!=re-rs{return Ok(false)}
+ for(li,ri)in (ls..le).zip(rs..re){
+  let(ls,lv)=left.get(li).ok_or_else(||code_io("actual left colon ordinal differs"))?;let(rs,rv)=right.get(ri).ok_or_else(||code_io("actual right colon ordinal differs"))?;
+  code_checkpoint(a)?;if(ls.start-lb,ls.end-lb,lv)!=(rs.start-rb,rs.end-rb,rv){return Ok(false)}
+ }Ok(true)
+}
 impl RelativeSyntax{
  /// The actual fresh primary produced these facts already. Identical rendered
  /// source text alone cannot authorize reuse of a different typed token stream.
  pub(crate) fn original_literals_match_headers(&self,headers:&crate::procedure::OriginalProcedureHeaders,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
   let Some(previous)=self.original_headers.as_ref()else{return Ok(false)};
-  code_literal_equal(previous.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),headers.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),a)
+  Ok(code_literal_equal(previous.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),headers.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),a)?
+   &&code_colon_equal(previous.original_literal_facts()?.map(|view|view.raw_colons()),dm_syntax::Span::new(0,self.source_len),headers.original_literal_facts()?.map(|view|view.raw_colons()),dm_syntax::Span::new(0,self.source_len),a)?)
  }
  fn code_recipe_hash(&self,ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
   #[cfg(test)]
@@ -1803,12 +1845,14 @@ impl RelativeSyntax{
   let(bytes,header,profile)=self.code_parts(ordinal)?;let body=self.bodies.get(ordinal).ok_or_else(||code_io("actual relative body absent"))?;
   let headers=self.original_headers.as_ref().ok_or_else(||code_io("actual original header producer absent"))?;
   let literals=code_literal_hash(headers.original_literal_facts()?.map(|view|view.raw_parts()),body.span,a)?.to_le_bytes();
-  code_hash(&[bytes,header,&profile,&literals],a)
+  let colons=code_colon_hash(headers.original_literal_facts()?.map(|view|view.raw_colons()),body.span,a)?.to_le_bytes();
+  code_hash(&[bytes,header,&profile,&literals,&colons],a)
  }
  fn code_recipe_literals_equal(&self,ordinal:usize,other:&Self,other_ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
   let body=self.bodies.get(ordinal).ok_or_else(||code_io("actual relative body absent"))?;let old=other.bodies.get(other_ordinal).ok_or_else(||code_io("actual previous relative body absent"))?;
   let headers=self.original_headers.as_ref().ok_or_else(||code_io("actual original header producer absent"))?;let previous=other.original_headers.as_ref().ok_or_else(||code_io("actual previous original header producer absent"))?;
-  code_literal_equal(headers.original_literal_facts()?.map(|view|view.raw_parts()),body.span,previous.original_literal_facts()?.map(|view|view.raw_parts()),old.span,a)
+  Ok(code_literal_equal(headers.original_literal_facts()?.map(|view|view.raw_parts()),body.span,previous.original_literal_facts()?.map(|view|view.raw_parts()),old.span,a)?
+   &&code_colon_equal(headers.original_literal_facts()?.map(|view|view.raw_colons()),body.span,previous.original_literal_facts()?.map(|view|view.raw_colons()),old.span,a)?)
  }
  fn code_item(&self,path:&[usize])->Option<arena::Ref<'_>>{
   let(first,rest)=path.split_first()?;let mut item=self.items.roots().nth(*first)?;

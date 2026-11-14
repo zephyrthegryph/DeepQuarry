@@ -240,10 +240,17 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
  /// Internal child of the already admitted OriginalAnalyze parent. This reads
  /// the actual selected files and config through its existing input ledger.
  pub(crate) fn issue_handlers_structural_subject_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,selected:Option<&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender,queries:&crate::query_db::QueryDb,derived:Option<&Arc<super::DerivedPreflight>>,retire_producer:bool)->io::Result<HandlerStructuralSubject>{
+  self.issue_handlers_structural_subject_impl(intent,selected,budget,lender,queries,derived,retire_producer,None)
+ }
+ pub(crate) fn issue_registered_handlers_structural_subject_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,selected:&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender,queries:&crate::query_db::QueryDb,retire_producer:bool,plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<HandlerStructuralSubject>{
+  plan.require_model_handler_intent(intent)?;self.issue_handlers_structural_subject_impl(intent,Some(selected),budget,lender,queries,None,retire_producer,Some(plan))
+ }
+ fn issue_handlers_structural_subject_impl(&self,intent:&crate::policy_request::AdmittedPolicyRequest,selected:Option<&dq_analyze::captured_allow_annotations::full_unused::SelectedTreePlanData>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender,queries:&crate::query_db::QueryDb,derived:Option<&Arc<super::DerivedPreflight>>,retire_producer:bool,registered:Option<&Arc<crate::runner_host::NativeCheckSelection>>)->io::Result<HandlerStructuralSubject>{
   use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
-  let auxiliary=if selected.is_some(){Q::admits_selected_handlers(intent.workspace_auxiliary())}else{intent.workspace_auxiliary()==[Q::SemHandlers]};
+  if let Some(plan)=registered{plan.require_model_handler_intent(intent)?;}
+  let auxiliary=if selected.is_some(){registered.is_some()||Q::admits_selected_handlers(intent.workspace_auxiliary())}else{intent.workspace_auxiliary()==[Q::SemHandlers]};
   if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||!auxiliary||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(fail("handlers partial child requires its actual Original Analyze purpose"))}
-  if retire_producer&&(selected.is_none()||derived.is_none()||intent.workspace_auxiliary()!=Q::PRIVATE_FULL_REGISTRY){
+  if retire_producer&&registered.is_none()&&(selected.is_none()||derived.is_none()||intent.workspace_auxiliary()!=Q::PRIVATE_FULL_REGISTRY){
    return Err(fail("retireable Handler producer requires its exact private joined request"));
   }
   let workspace=intent.workspace().ok_or_else(||fail("handlers child has no admitted workspace"))?;let mut control=Native{budget};control.checkpoint()?;
@@ -261,7 +268,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
     && Q::authored_doc_ui_roots(intent.workspace_auxiliary()).is_some_and(|expected|
       roots.len()==expected.len() && roots.iter().zip(expected).all(|(path,relative)|
         path.strip_prefix(&workspace.root).ok()==Some(Path::new(relative))));
-   if (!exact&&!joined)||plan.roots()!=["code","maps"]||workspace.configuration.strip_prefix(&workspace.root).ok()!=Some(Path::new("tools/ci/lint_scopes.toml")){
+   if (!exact&&!joined&&registered.is_none())||plan.roots()!=["code","maps"]||workspace.configuration.strip_prefix(&workspace.root).ok()!=Some(Path::new("tools/ci/lint_scopes.toml")){
     return Err(fail("selected handlers requires its exact admitted CODE+MAPS workspace and plan"));
    }
    kc::reserve(&mut control,||workspace.root.as_os_str().len().checked_mul(8)?.checked_add(1024))?;
@@ -328,7 +335,7 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   if trace {
    eprintln!("original handler source recipe includes={} candidates={}", recipe.includes.len(), recipe.candidates.len());
   }
-  if selected.is_some()&&!requires_full&&!Q::is_private_handlers_domain(intent.workspace_auxiliary()){
+  if selected.is_some()&&!requires_full&&registered.is_none()&&!Q::is_private_handlers_domain(intent.workspace_auxiliary()){
    return Err(io::Error::new(io::ErrorKind::Unsupported,"selected handlers requires genuine full-model demand"));
   }
   let selection_scratch=Budget::scoped_temporaries(budget).map_err(|message|quota(budget,&message))?;

@@ -3,15 +3,23 @@
 use std::{io,path::Path,sync::Arc};
 use crate::{input_snapshot::HandlerPreparedCapture,policy_request::{AdmittedPolicyRequest,AnalysisContext,WorkspaceAuxiliaryQuestion as Q},query_db::QueryDb,request_runner::runner_freshness::HandlerPolicyAdmission};
 fn invalid(message:&str)->io::Error{io::Error::new(io::ErrorKind::InvalidInput,message)}
+#[derive(Clone)]
 pub(crate) struct HandlerWorkspaceSnapshot{capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>,revision:u128,full_subject:Option<Arc<crate::input_snapshot::OriginalAnalysisSubject>>,full_revision:Option<u128>,joined_selected:bool}
 impl HandlerWorkspaceSnapshot{
  /// Issuance is possible only after the real normal input barrier issued the
  /// distinct partial admission for this exact retained current producer.
  pub(crate) fn issued(intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>)->io::Result<Self>{
+  Self::issued_using(intent,capture,proof,queries,None)
+ }
+ pub(crate) fn issued_registered(intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>,plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<Self>{
+  plan.require_model_handler_intent(intent)?;Self::issued_using(intent,capture,proof,queries,Some(plan))
+ }
+ fn issued_using(intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>,registered:Option<&Arc<crate::runner_host::NativeCheckSelection>>)->io::Result<Self>{
   crate::daemon::control::checkpoint()?;
   let subject=capture.prepared().subject();
-  let joined_selected=Q::is_private_handlers_domain(intent.workspace_auxiliary());
-  let purpose=if subject.is_selected_full(){Q::admits_selected_handlers(intent.workspace_auxiliary())}else{intent.workspace_auxiliary()==[Q::SemHandlers]};
+  if let Some(plan)=registered{plan.require_model_handler_intent(intent)?;}
+  let joined_selected=registered.is_some()||Q::is_private_handlers_domain(intent.workspace_auxiliary());
+  let purpose=if subject.is_selected_full(){registered.is_some()||Q::admits_selected_handlers(intent.workspace_auxiliary())}else{intent.workspace_auxiliary()==[Q::SemHandlers]};
   if intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||!purpose||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty()||intent.workspace().is_none_or(|workspace|workspace.root!=capture.root())||(subject.is_selected_full()&&!subject.requires_full_model()&&!joined_selected)||!proof.is_current()||!Arc::ptr_eq(&capture,proof.capture())||!capture.uses_queries(&queries){return Err(invalid("handler snapshot differs from its actual exclusive current partial-purpose admission"))}
   capture.require_bound()?;
   // The key is a private current-owner query namespace, not evidence of source
@@ -22,6 +30,17 @@ impl HandlerWorkspaceSnapshot{
    hash.update(&[2,u8::from(model_present)]);
   }else{match capture.partial_revision()?{Some(revision)=>{hash.update(&[1]);hash.update(&revision.to_le_bytes());},None=>{hash.update(&[0]);}}}
   let revision=hash.digest128();Ok(Self{capture,proof,queries,revision,full_subject:None,full_revision:None,joined_selected})
+ }
+ /// Alias comparison retains the same real admission/query/capture owners;
+ /// equal revision DATA alone never establishes a current Handler frame.
+ pub(crate) fn require_same_snapshot(&self,other:&Self)->io::Result<()>{
+  self.require_current()?;other.require_current()?;
+  let same_full=match(&self.full_subject,&other.full_subject){(None,None)=>true,(Some(a),Some(b))=>Arc::ptr_eq(a,b),_=>false};
+  if !Arc::ptr_eq(&self.capture,&other.capture)||!Arc::ptr_eq(&self.proof,&other.proof)
+   ||!Arc::ptr_eq(&self.queries,&other.queries)||self.revision!=other.revision
+   ||self.full_revision!=other.full_revision||self.joined_selected!=other.joined_selected||!same_full{
+   return Err(invalid("Handler report source owner differs from the current admitted snapshot"))
+  }Ok(())
  }
  pub(crate) fn requires_full(&self)->bool{self.capture.prepared().subject().requires_full_model()}
  /// A joined structural-only handler still borrows the independently
@@ -40,6 +59,7 @@ impl HandlerWorkspaceSnapshot{
  }
  pub(crate) fn require_current(&self)->io::Result<()>{crate::daemon::control::checkpoint()?;if !self.proof.is_current()||!Arc::ptr_eq(&self.capture,self.proof.capture())||!self.capture.uses_queries(&self.queries){return Err(invalid("handler current host/query/admission owner changed"))}self.capture.require_bound()}
  pub(crate) fn revision(&self)->u128{self.revision}
+ pub(crate) fn full_source_revision(&self)->io::Result<Option<u128>>{self.require_current()?;Ok(self.full_revision)}
  pub(crate) fn source_revision(&self)->io::Result<Option<u128>>{self.require_current()?;self.capture.partial_revision()}
  pub(crate) fn capture(&self)->&Arc<HandlerPreparedCapture>{&self.capture}
  pub(crate) fn admission(&self)->&Arc<HandlerPolicyAdmission>{&self.proof}
@@ -52,8 +72,15 @@ impl super::QueryAttempt{
  /// Called after the real partial freshness barrier, and after the separate
  /// full source barrier exactly when selection demanded the full partition.
  pub(crate) fn admit_handlers_source(&mut self,intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>)->io::Result<u128>{
+  self.admit_handlers_source_using(intent,capture,proof,queries,None)
+ }
+ pub(crate) fn admit_registered_handlers_source(&mut self,intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>,plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<u128>{
+  plan.require_model_handler_intent(intent)?;self.admit_handlers_source_using(intent,capture,proof,queries,Some(plan))
+ }
+ fn admit_handlers_source_using(&mut self,intent:&AdmittedPolicyRequest,capture:Arc<HandlerPreparedCapture>,proof:Arc<HandlerPolicyAdmission>,queries:Arc<QueryDb>,registered:Option<&Arc<crate::runner_host::NativeCheckSelection>>)->io::Result<u128>{
   if self.finished||self.pending_source.is_some()||self.pending_workspace.is_some()||self.pending_diagnostic.is_some(){return Err(invalid("handler source cannot publish over unfinished source admission"))}
-  let mut snapshot=HandlerWorkspaceSnapshot::issued(intent,capture,proof,queries)?;let revision=snapshot.revision();let mut state=self.state.lock().unwrap_or_else(|e|e.into_inner());
+  let mut snapshot=match registered{Some(plan)=>HandlerWorkspaceSnapshot::issued_registered(intent,capture,proof,queries,plan)?,None=>HandlerWorkspaceSnapshot::issued(intent,capture,proof,queries)?};let revision=snapshot.revision();let mut state=self.state.lock().unwrap_or_else(|e|e.into_inner());
+  if let Some(plan)=registered{state.snapshot.as_ref().ok_or_else(||invalid("registered Handler parent model absent"))?.require_registered_handler_join_plan(plan)?;}
   if snapshot.binds_full_scope(){if !self.captured{return Err(invalid("handler full partition was not actually admitted by this current query attempt"))}snapshot.bind_full_snapshot(state.snapshot.as_ref())?;}else{snapshot.bind_full_snapshot(None)?;}crate::daemon::control::checkpoint()?;
   if self.enabled{if !snapshot.binds_full_scope(){state.snapshot=None;}state.raw_snapshot=None;state.handlers_snapshot=Some(snapshot);state.publication_pair=None;self.captured=true;}Ok(revision)
  }

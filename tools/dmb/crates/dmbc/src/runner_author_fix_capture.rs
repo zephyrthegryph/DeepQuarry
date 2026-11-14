@@ -54,3 +54,9 @@ impl Inputs {
   self.inputs.authored_preimage_stamp(&target,preimage)
  }
 }
+
+impl Inputs{
+ pub(crate) fn require_authored_step(&self,next:&Self,transition:Option<&crate::native_author_fix_transaction::Transition>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;if self.project!=next.project||!self.inputs.same_authored_step(&next.inputs,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"native authored batch source/configuration/namespace changed beyond its exact successful write"))}Ok(())
+ }
+}

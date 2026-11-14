@@ -12,6 +12,17 @@ pub enum GenerationPreparationFailure {
     Declarations(Vec<crate::AdapterError>),
     Assembly(Vec<Diagnostic>),
 }
+// SAME fixed/backing categories exposed by visit_generation_metadata below.
+// The previous four-word approximation was smaller than these actual fields
+// when an actual missing/blank subject retained zero declaration spans.
+fn generation_metadata_reservation(span_capacity:usize)->Option<usize>{
+ span_capacity.checked_mul(std::mem::size_of::<Span>())
+  .and_then(|n|n.checked_add(std::mem::size_of::<Vec<Span>>()))
+  .and_then(|n|n.checked_add(std::mem::size_of::<dm_syntax::SettingRootLease>()))
+  .and_then(|n|n.checked_add(std::mem::size_of::<bool>()))
+  .and_then(|n|n.checked_add(std::mem::size_of::<std::sync::Weak<dyn SettingExpressionQueries>>()))
+  .and_then(|n|n.checked_add(std::mem::size_of::<dm_syntax::SettingChargeCounter>()))
+}
 pub struct GenerationDeclarationFrame {
     plan: dm_preprocess::regions::GenerationDirectivePlan,
     parsed: super::declaration_parse::ParsedDeclarations,
@@ -185,7 +196,7 @@ impl GenerationDeclarationFrame {
             // retains it. Fund its actual bounded backing BEFORE projection.
             let span_capacity=adapted.origins.len().checked_mul(4).ok_or_else(||GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"generation retained span capacity overflow"))))?;
             let original_variables=if plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{Some(crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).ok_or_else(||GenerationPreparationFailure::Assembly(vec![internal("Original generation requires actual declaration-only catalog seed")]))?)}else{None};
-            let metadata_bytes=span_capacity.checked_mul(std::mem::size_of::<Span>()).and_then(|n|n.checked_add(std::mem::size_of::<Vec<Span>>()+std::mem::size_of::<dm_syntax::SettingRootLease>()+4*std::mem::size_of::<usize>())).ok_or_else(||GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"generation retained metadata overflow"))))?;
+            let metadata_bytes=generation_metadata_reservation(span_capacity).ok_or_else(||GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"generation retained metadata overflow"))))?;
             let retained_metadata=demand.run(|permit|permit.retain_generation_metadata(metadata_bytes)).map_err(GenerationPreparationFailure::Frontend)?;
             let (spans,_regions,origins)=super::pipeline::project_declaration_origins(&mapping,&adapted.origins).map_err(GenerationPreparationFailure::Assembly)?;
             if spans.capacity()>span_capacity{return Err(GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"generation retained span capacity exceeds admission"))))}
@@ -386,3 +397,18 @@ impl GenerationNativeQuestions{
 /// Physical original token point for generation data only. This carries no
 /// compiler FileList registration or ordinary checker-location capability.
 pub struct GenerationSourcePoint<'a>{pub path:&'a Path,pub line:usize,pub byte_column:usize,include:usize,owner:&'a GenerationQuestionGeometry}
+
+#[cfg(test)]mod generation_metadata_reservation_controls{
+ use super::*;
+ #[test]fn actual_generation_zero_span_reservation_covers_fixed_counter_geometry_and_refunds(){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let reserved=generation_metadata_reservation(0).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(root+reserved).unwrap();
+  let spans:Vec<Span>=Vec::new();let flag=false;let lease=dm_syntax::SettingRootLease::reserve(&counter,root+reserved,reserved).unwrap();
+  let mut actual=std::mem::size_of_val(&spans)+std::mem::size_of_val(&lease)+std::mem::size_of_val(&flag)+std::mem::size_of::<std::sync::Weak<dyn SettingExpressionQueries>>();let mut visits=0;lease.visit_counter_storage(|_,bytes|{visits+=1;actual=actual.checked_add(bytes).unwrap();});
+  assert_eq!(spans.capacity(),0);assert_eq!(visits,1);assert_eq!(reserved,actual,"zero backing must not rely on surplus nonempty span capacity");assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),root+reserved);drop(lease);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),root);
+ }
+ #[test]fn actual_generation_zero_span_charge_denies_one_byte_short_before_lease_then_recovers(){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let reserved=generation_metadata_reservation(0).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(root+reserved).unwrap();
+  let poll=||Ok(());let denied=dm_syntax::SettingAdmission::new(&counter,root+reserved-1,&poll);assert_eq!(denied.reserve(reserved).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),root);drop(denied);
+  let healthy=dm_syntax::SettingAdmission::new(&counter,root+reserved,&poll);let lease=healthy.reserve(reserved).unwrap();drop(lease);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),root);assert!(generation_metadata_reservation(usize::MAX).is_none());
+ }
+}

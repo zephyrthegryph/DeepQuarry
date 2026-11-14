@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 pub(super) use super::retained_rejection::{MAX_FRAME,send_rejected_text};
-pub(super) const VERSION: u32 = 9;
+pub(super) const VERSION: u32 = 10;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
     Hello { version: u32, compiler: u128 },
@@ -17,6 +17,7 @@ pub(super) enum Request {
     CompileSelectedReports(super::selected_compilation::Request),
     FullRegistryCheck(super::full_registry_check::Request),
     SchemaProposals(super::schema_proposals::Request),
+    NativeFix(crate::native_fix::BatchRequest),
     CheckerText(super::checker_text::Request),
     NamedImageDir(super::named_image_dir::Request),
 }

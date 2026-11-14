@@ -69,3 +69,27 @@ pub fn find_root(explicit: Option<PathBuf>) -> PathBuf {
 #[test]fn original_command_arguments_keep_parity_positionals_and_missing_argument_behavior(){let parse_args=|args:&[&str]|parse(args.iter().map(|s|s.to_string()).collect());assert_eq!(parse_args(&["analyze"]).cmd,"help");assert_eq!(parse_args(&["analyze","parity","one,two","--all","three"]).lints,["one","two","three"]);let args=parse_args(&["analyze","gen","reads","--check"]);assert_eq!(args.flags,["reads","--check"]);assert!(args.lints.is_empty());let args=parse_args(&["analyze","check","--root"]);assert!(args.root.is_none());assert!(args.flags.is_empty());assert_eq!(parse_args(&["analyze","check","--lint",",first,,last,"]).lints,["first","last"]);}
 #[test]fn explicit_root_selection_preserves_the_actual_argument_without_source_read(){let path=PathBuf::from("path not observed by argument selection");assert_eq!(find_root(Some(path.clone())),path);}
 }
+
+/// The one original name/group predicate. Selection is DATA only; producer
+/// completion and captured-source authority are supplied by the native runner.
+pub fn lint_selected(name:&str,group:&str,selectors:&[String])->bool{
+ let matches=|candidate:&str|candidate==name||(!group.is_empty()&&candidate==group);
+ let has_include=selectors.iter().any(|candidate|!candidate.starts_with('-'));
+ (!has_include||selectors.iter().filter(|candidate|!candidate.starts_with('-')).any(|candidate|matches(candidate)))
+  &&!selectors.iter().filter_map(|candidate|candidate.strip_prefix('-')).any(matches)
+}
+/// Positive selection suppresses the original whole-run unused-ALLOW audit.
+pub fn full_check_selection(selectors:&[String])->bool{selectors.iter().all(|candidate|candidate.starts_with('-'))}
+#[cfg(test)]mod selection_tests{
+ use super::*;
+ #[test]fn original_selection_keeps_order_independent_inclusion_and_exclusion_roles(){
+  let args=|rows:&[&str]|rows.iter().map(|row|row.to_string()).collect::<Vec<_>>();
+  assert!(lint_selected("sem/reads","sem",&[]));assert!(full_check_selection(&[]));
+  assert!(lint_selected("sem/reads","sem",&args(&["sem"])));assert!(!full_check_selection(&args(&["sem"])));
+  assert!(!lint_selected("sem/reads","sem",&args(&["sem","-sem/reads","sem"])));
+  assert!(!lint_selected("sem/reads","sem",&args(&["sem/reads","-sem"])));
+  assert!(lint_selected("scheduler","sys",&args(&["-sem"])));assert!(full_check_selection(&args(&["-sem"])));
+  assert!(!lint_selected("scheduler","",&args(&[""])));assert!(!lint_selected("scheduler","sys",&args(&["unknown"])));
+  assert!(lint_selected("scheduler","sys",&args(&["-unknown","scheduler"])));assert!(!full_check_selection(&args(&["-unknown","scheduler"])));
+ }
+}

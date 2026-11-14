@@ -6,6 +6,7 @@ use std::{ffi::OsString,io::{self,Read,Write},path::PathBuf,process::{Child,Chil
 #[path="native_exclusions.rs"]mod native_exclusions;
 #[path="native_full_check.rs"]mod native_full_check;
 #[path="native_schema_proposals.rs"]mod native_schema_proposals;
+#[path="native_fix.rs"]mod native_fix;
 pub fn exclusions_cli(args:&[String])->std::process::ExitCode{native_exclusions::cli(args)}
 pub fn image_dir_cli(args:&[String])->std::process::ExitCode{native_exclusions::image_dir_cli(args)}
 const OUTER_WATCHDOG:Duration=Duration::from_secs(30*60);
@@ -370,6 +371,7 @@ fn run_workspace_check(args: &[String], stdout: &mut impl Write, stderr: &mut im
 /// returns a verdict or a refusal before the legacy engine can start.
 pub fn workspace_check(args: &[String]) -> Option<std::process::ExitCode> {
     if args.iter().any(|a|a=="--propose-schema")&&args.iter().any(|a|a=="--native-dmbc"||a.starts_with("--native-dmbc=")){return Some(native_schema_proposals::cli(args))}
+    if args.first().is_some_and(|arg|arg=="fix")&&args.iter().any(|arg|arg=="--native-dmbc"||arg.starts_with("--native-dmbc=")){return Some(native_fix::cli(args))}
     if args.iter().any(|arg|arg=="--native-full-registry"||arg.starts_with("--native-full-registry=")){return Some(native_full_check::cli(args))}
 
     if !args.iter().any(|arg| arg == "--native-dmbc" || arg.starts_with("--native-dmbc=")) {

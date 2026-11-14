@@ -6,7 +6,7 @@ use dm_syntax::{Expr,ExprKind,Span,SettingAdmission,SettingExpression,SettingRoo
 use std::io;
 fn invalid(text:&'static str)->io::Error{io::Error::new(io::ErrorKind::InvalidData,text)}
 fn checkpoint(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
-struct Row{header:Span,parameter:usize,role:FormalExpressionRole,enclosure:Option<Span>,assignment:Span,expression:Span,root:SettingExpression}
+struct Row{header:Span,parameter:usize,role:FormalExpressionRole,enclosure:Option<Span>,assignment:Span,root:SettingExpression,native_children:u8}
 struct ClauseRow{header:Span,argument_offset:usize,clauses:FormalClauseRows,_lease:std::sync::Arc<SettingRootLease>}
 struct InputRow{header:Span,parameter:usize,marker:Span,span:Span,after_in:bool,input:dm_syntax::RetainedParameterInput}
 pub(crate) struct OriginalDefaultRoots{rows:Vec<Row>,inputs:Vec<InputRow>,input_bytes:usize,clauses:Vec<ClauseRow>,clause_storage:Option<SettingRootLease>,last_clause_header:Option<usize>,binding:dm_preprocess::regions::OriginalLiteralSourceBinding,credit:SettingRootLease}
@@ -57,7 +57,7 @@ impl OriginalDefaultRoots{
   checkpoint(a)
  }
  fn clauses_for(&self,header:Span,parameter:usize)->Result<dm_syntax::ParameterClauseSpans,&'static str>{let at=self.clauses.binary_search_by_key(&header.start,|row|row.header.start).map_err(|_|"actual produced formal clauses are unissued")?;let row=&self.clauses[at];if row.header!=header{return Err("actual clause header differs")}let mut parts=row.clauses.get(parameter).ok_or("actual clause ordinal absent")?;let origin=header.start.checked_add(row.argument_offset).ok_or("actual clause origin overflow")?;let shift=|span:Span|->Result<Span,&'static str>{Ok(Span::new(span.start.checked_add(origin).ok_or("actual clause coordinate overflow")?,span.end.checked_add(origin).ok_or("actual clause coordinate overflow")?))};parts.parameter=shift(parts.parameter)?;parts.assignment=parts.assignment.map(shift).transpose()?;parts.annotation=parts.annotation.map(shift).transpose()?;parts.source=parts.source.map(shift).transpose()?;parts.post_source_annotation=parts.post_source_annotation.map(shift).transpose()?;Ok(parts)}
- pub(super) fn add(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&dm_ir::SymbolTable,demanded:CompletedFormalRoot,a:&SettingAdmission<'_>)->io::Result<()>{
+ pub(super) fn add(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&dm_ir::SymbolTable,demanded:CompletedFormalRoot,native_children:u8,a:&SettingAdmission<'_>)->io::Result<()>{
   checkpoint(a)?;if self.rows.len()==self.rows.capacity(){return Err(invalid("actual default directory exceeds its admitted completed cohort"))}
   if self.rows.last().is_some_and(|row|(row.header.start,row.parameter,row.role)>=(header.start,demanded.parameter,demanded.role)){return Err(invalid("actual default directory repeats or reverses primary source order"))}
   let parameter_start=header.start.checked_add(argument_offset).and_then(|n|n.checked_add(parameter.relative_span.start)).ok_or(io::ErrorKind::InvalidInput)?;
@@ -101,7 +101,7 @@ impl OriginalDefaultRoots{
   }
   literals(produced,rows,origin,a)?;
   let root=demanded.syntax.retain(a).map_err(|failure|match failure{dm_syntax::SettingSyntaxFailure::Operational(actual)=>a.take_operational_error().unwrap_or(actual),dm_syntax::SettingSyntaxFailure::Syntax(_)=>invalid("completed demanded root unexpectedly retained syntax diagnostics")})?;
-  self.rows.push(Row{header,parameter:demanded.parameter,role:demanded.role,enclosure:demanded.enclosure,assignment:demanded.assignment,expression,root});checkpoint(a)
+  self.rows.push(Row{header,parameter:demanded.parameter,role:demanded.role,enclosure:demanded.enclosure,assignment:demanded.assignment,root,native_children});checkpoint(a)
  }
  pub(super) fn add_input(&mut self,headers:&OriginalProcedureHeaders,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,_symbols:&dm_ir::SymbolTable,ordinal:usize,marker:Span,input:dm_syntax::RetainedParameterInput,a:&SettingAdmission<'_>)->io::Result<()>{
   checkpoint(a)?;if !input.is_admitted_by(a)||self.inputs.last().is_some_and(|row|(row.header.start,row.parameter,row.marker.start)>=(header.start,ordinal,marker.start)){return Err(invalid("actual input annotation is foreign or reverses primary order"))}
@@ -139,11 +139,33 @@ pub(super) struct DefaultLoans<'a>{owner:&'a OriginalDefaultRoots,header:Span,no
 impl DefaultLoans<'_>{
  fn root(&self,parameter:usize,role:FormalExpressionRole,marker:Span,enclosure:Option<Span>,expression:Span)->Result<SettingExpression,&'static str>{
   let at=self.owner.rows.binary_search_by_key(&(self.header.start,parameter,role),|row|(row.header.start,row.parameter,row.role)).map_err(|_|"actual demanded formal expression root is unissued")?;let row=&self.owner.rows[at];
-  if row.header!=self.header||row.assignment!=marker||row.enclosure!=enclosure||row.expression!=expression||row.root.current_offset()!=0||row.root.original_expression().span!=expression{return Err("actual formal expression root belongs to another header/parameter occurrence")}
+  if row.header!=self.header||row.assignment!=marker||row.enclosure!=enclosure||row.root.current_offset()!=0||row.root.original_expression().span!=expression{return Err("actual formal expression root belongs to another header/parameter occurrence")}
   Ok(row.root.clone())
  }
 }
 impl dm_syntax::ParameterDefaultSyntaxProvider for DefaultLoans<'_>{
+ fn native_child_observation(&mut self,parameter:usize,expressions:Option<&dm_syntax::ParameterExpressions>)->Result<Option<(bool,bool,bool)>,&'static str>{
+  let _actual_clauses=self.owner.clauses_for(self.header,parameter)?;
+  let key=(self.header.start,parameter);
+  let first=self.owner.rows.partition_point(|row|(row.header.start,row.parameter)<key);
+  let last=self.owner.rows.partition_point(|row|(row.header.start,row.parameter)<=key);
+  let rows=&self.owner.rows[first..last];
+  let mut complete=true;let mut recovered=false;let mut deferred=false;let mut count=0usize;
+  let mut check=|root:&SettingExpression,role:FormalExpressionRole|->Result<(),&'static str>{
+   let mut matches=rows.iter().filter(|row|row.header==self.header&&row.parameter==parameter&&row.role==role&&row.root.same_root(root));
+   let row=matches.next().ok_or("native formal child has no same-occurrence producer observation")?;
+   if matches.next().is_some()||row.root.current_offset()!=0||row.root.original_expression().span!=root.original_expression().span{return Err("native formal child occurrence is ambiguous or projected")}
+   complete&=row.native_children&1!=0;recovered|=row.native_children&2!=0;deferred|=row.native_children&4!=0||row.native_children&8==0;count+=1;Ok(())
+  };
+  if let Some(expressions)=expressions{
+   if let Some(root)=expressions.default_root(){check(root,FormalExpressionRole::Default)?;}
+   if let Some(root)=expressions.source_root(){check(root,FormalExpressionRole::Source)?;}
+   for (index,root) in expressions.dimensions().iter().enumerate(){if let Some(root)=root{check(root,FormalExpressionRole::Dimension(index))?;}}
+  }
+  if rows.len()!=count{return Err("native formal settlement omitted a produced child")}
+  Ok(Some((complete&&!recovered&&!deferred,recovered,deferred)))
+ }
+
  fn produced_clauses(&mut self,parameter:usize,span:Span)->Result<dm_syntax::ParameterClauseSpans,&'static str>{let mut parts=self.owner.clauses_for(self.header,parameter)?;if span.start<parts.parameter.start||span.end>parts.parameter.end{return Err("requested formal clause view escapes actual produced parameter")}for marker in[parts.assignment,parts.annotation,parts.source,parts.post_source_annotation].into_iter().flatten(){if marker.start<span.start||marker.end>span.end{return Err("requested formal view cuts an actual clause marker")}}parts.parameter=span;Ok(parts)}
  fn default_root(&mut self,parameter:usize,assignment:Span,expression:Span)->Result<SettingExpression,&'static str>{self.root(parameter,FormalExpressionRole::Default,assignment,None,expression)}
  fn trailing_semicolon(&mut self,_parameter:usize,at:Span)->Result<(),&'static str>{let notices=self.notices.ok_or("actual original semicolon notice owner absent")?;if !notices.for_header(self.header.start).iter().any(|row|row.notice.is_semicolon()&&row.notice.span()==at){return Err("actual original semicolon was not produced for this header")}Ok(())}
@@ -197,4 +219,11 @@ mod default_directory_storage_tests {
         assert_eq!(allocate_default_directory(1, &failed).err().unwrap().raw_os_error(), Some(1450));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
+}
+
+#[cfg(test)]
+mod native_default_row_footprint_tests{
+ use super::*;
+ #[allow(dead_code)]struct PriorRow{header:Span,parameter:usize,role:FormalExpressionRole,enclosure:Option<Span>,assignment:Span,expression:Span,root:SettingExpression}
+ #[test]fn native_default_observation_reports_actual_row_cost(){let prior=std::mem::size_of::<PriorRow>();let current=std::mem::size_of::<Row>();eprintln!("NATIVE_DEFAULT_ROW_SIZE prior={prior} current={current}");assert!(current<=prior,"native observation must not grow actual retained default rows");}
 }

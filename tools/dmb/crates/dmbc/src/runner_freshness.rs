@@ -450,6 +450,14 @@ pub(crate) struct GenerationInputClosure {
     names: [Option<crate::GeneratorName>; 13],
 }
 impl GenerationInputClosure {
+    pub(crate) fn observation_retention_charge(&self)->std::io::Result<usize>{self.inputs.observation_retention_charge()?.checked_add(self.root.capacity()+std::mem::size_of::<Self>()).ok_or(std::io::ErrorKind::OutOfMemory.into())}
+    pub(crate) fn write_observed_inputs(&self,output:&mut impl std::io::Write)->std::io::Result<()>{serde_json::to_writer(output,&self.inputs).map_err(std::io::Error::from)}
+    pub(crate) fn require_current_exact(&self)->Result<(),Box<dyn Error>>{
+        let provider=crate::input_snapshot::GeneratedOutputInputs::borrowed(&crate::input_snapshot::FileSystemInputs,self.inputs.generated_outputs());
+        self.require_current(&crate::input_snapshot::FileSystemInputs)?;
+        if !self.inputs.exact_positive_contents_match(&provider)?{return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"observed generation input contents changed").into())}
+        crate::daemon::control::checkpoint()?;Ok(())
+    }
     pub(crate) fn from_bootstrap_retired(retired:crate::input_snapshot::RetiredGenerationInputs)->Self{let(inputs,root,names)=retired.into_parts();Self{inputs,root,names}}
     pub(crate) fn root(&self)->&std::path::Path{&self.root}
     pub(crate) fn names(&self)->impl Iterator<Item=crate::GeneratorName>+'_ {self.names.iter().flatten().copied()}
@@ -607,6 +615,14 @@ impl JoinedSelectedInputs {
         admit(&self.inputs,&provider).map_err(|error|->Box<dyn Error>{if error.is::<InputsMoved>(){std::io::Error::new(std::io::ErrorKind::Interrupted,"report-only captured input observations changed; prepare again").into()}else{error}})?;
         if !self.inputs.exact_positive_contents_match(&provider)?{return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"report-only captured input contents changed; prepare again").into())}
         crate::daemon::control::checkpoint()?;Ok(())
+    }
+
+    /// DATA loan from this same moved combined-preparation ledger only.
+    pub(crate) fn with_report_input_observation<T>(&self,project:&std::path::Path,observe:impl FnOnce(&InputSnapshot)->std::io::Result<T>)->Result<T,Box<dyn Error>>{
+        self.require_report_current(project)?;
+        let result=observe(&self.inputs)?;
+        self.require_report_current(project)?;
+        Ok(result)
     }
 
     /// Advisory exact replay check. A current native input snapshot must
@@ -806,3 +822,11 @@ pub(crate) fn admit_generator_workspace_captured_using<P: SnapshotProvider>(
 pub(crate) use handlers::{HandlerPolicyAdmission,admit_handlers_captured_using,admit_handlers_structural_staging};
 
 pub(crate) use handlers::admit_handlers_actual_failed_full;
+
+/// Borrow the actual recorder ledger; do not clone a second source closure.
+/// This is validation only. Actual raw-frame publication remains QueryAttempt.
+pub(crate) fn admit_registered_source_ledger(inputs:&InputSnapshot,generated:&std::collections::BTreeSet<std::path::PathBuf>,capture:std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>)->Result<WorkspacePolicyAdmission,Box<dyn Error>>{
+    admit_live(inputs,generated)?;
+    if !capture.is_recorded_in(inputs){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"registered source admission omits actual workspace observations").into())}
+    Ok(WorkspacePolicyAdmission{capture,generation_inputs:None})
+}

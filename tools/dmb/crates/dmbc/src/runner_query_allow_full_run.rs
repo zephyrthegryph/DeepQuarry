@@ -8,8 +8,8 @@ const PRIVATE_IMAGE_DIR_ROSTER: &[&str] = &["allow_annotations","image_dir_after
 fn operational(error:Failure)->io::Error{match error{Failure::Operational(error)=>error,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)}}
 /// Borrowed only while this SAME execution's data and allocation budgets live.
 /// This type has no public constructor and no independent source/run authority.
-pub(crate) struct CompleteAllowRun<'a>{selected:&'a[String],validation:Option<&'a ValidationData>,unused:&'a[String]}
-impl CompleteAllowRun<'_>{pub(crate) fn selected(&self)->&[String]{self.selected}pub(crate) fn validation(&self)->Option<&ValidationData>{self.validation}pub(crate) fn unused(&self)->&[String]{self.unused}}
+pub(crate) struct CompleteAllowRun<'a>{selected:&'a[String],validation:Option<&'a ValidationData>,unused:Option<&'a[String]>}
+impl CompleteAllowRun<'_>{pub(crate) fn selected(&self)->&[String]{self.selected}pub(crate) fn validation(&self)->Option<&ValidationData>{self.validation}pub(crate) fn unused(&self)->io::Result<&[String]>{self.unused.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"unused-ALLOW audit was not requested for this producer run"))}}
 /// A private staged report may borrow completed findings from these exact
 /// producer calls. The final callback still owns authorization to publish.
 enum UnionRows<'a,'rows>{
@@ -114,18 +114,23 @@ impl SourceSnapshot{
  pub(crate) fn with_native_allow_full_run<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
   self.with_native_allow_full_run_using(tree,exclusions,None,None,false,None,consume)
  }
- fn with_native_allow_full_run_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
-  crate::daemon::control::checkpoint()?;if !self.matches_tree(tree){return Err("full ALLOW actual tree differs".into())}self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.require_original_fixed_report_subject(tree)?;
+ fn with_native_allow_full_run_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+  self.with_native_allow_registered_using(tree,exclusions,retained,handlers,private_checker_body,None,true,stage,consume)
+ }
+ fn with_native_allow_registered_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,registered:Option<&Arc<NativeCheckSelection>>,audit_requested:bool,mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+  crate::daemon::control::checkpoint()?;if !self.matches_tree(tree){return Err("full ALLOW actual tree differs".into())}self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;if registered.is_none(){self.require_original_fixed_report_subject(tree)?;}
   let capture=self.native_workspace.as_ref().ok_or("full ALLOW actual workspace absent")?;let queries=self.native_raw_queries.as_ref().ok_or("full ALLOW actual QueryDb absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;queries.require_workspace_report_configuration(capture,&guard)?;
+  if let Some(plan)=registered{capture.require_registered_plan(plan)?;self.require_original_analyze_subject(capture)?;}
   let owned_budget;
   let budget=match retained{Some(budget)=>budget,None=>{owned_budget=queries.workspace_allow_run_budget(capture,&guard)?;&owned_budget}};
   let poll=||{budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;crate::daemon::control::checkpoint()?;capture.require_scope(&guard)};
   let mut c=Operation{budget,poll:&poll};let selection=full_unused::registered_full_selection(exclusions,&mut c)?;
+  if registered.is_some_and(|plan|plan.names()!=selection.names()||plan.audit_unused()!=audit_requested){return Err("registered CHECK selection/audit request differs from its actual plan".into())}
   if selection.names().is_empty(){kc::reserve(&mut c,||exclusions.iter().try_fold(128usize,|n,name|n.checked_add(name.len().checked_mul(4)?)))?;return Err(Failure::Unsupported(format!("no lint matches {exclusions:?}")))}
   if selection.names().iter().any(|name|name=="image_dir_after_build"){
    let named = selection.names().iter().map(String::as_str).eq(PRIVATE_IMAGE_DIR_ROSTER.iter().copied())
     && capture.matches_auxiliary_questions(&[Q::ImageDir]);
-   let joined = private_checker_body
+   let joined = registered.is_some_and(|plan|plan.needs_checker()) || private_checker_body
     && (capture.matches_auxiliary_questions(Q::PRIVATE_EXTENDED_AUTHORED_WITH_CHECKER_AND_IMAGE)
      || (Q::is_private_authored_actor_domain(capture.auxiliary()) || Q::is_private_grep_domain(capture.auxiliary())));
    if stage.is_none() || (!named && !joined) {
@@ -136,7 +141,7 @@ impl SourceSnapshot{
     .bind(child.policy().archive())?;
   }
   if Q::is_private_authored_checker(capture.auxiliary())
-      && (!private_checker_body || stage.is_none()) {
+      && registered.is_none() && (!private_checker_body || stage.is_none()) {
    return Err("private full ALLOW requires the verified staged Checker body domain".into());
   }
   let mut producers=Vec::new();
@@ -167,6 +172,7 @@ impl SourceSnapshot{
      let tests=policy.tracked().expect("selected tracked policy");
      let question=if tests{Q::TrackedTests}else{Q::Tracked};
      if !capture.matches_auxiliary_questions(Q::SELECTED_STORED_AND_TRACKED)
+       && !registered.is_some_and(|plan|plan.questions().any(|actual|actual==question))
        && !(private_checker_body && Q::is_private_authored_checker(capture.auxiliary())){
       return Err("tracked union needs its complete selected stored/track profile".into());
      }
@@ -528,7 +534,8 @@ impl SourceSnapshot{
    poll()?;
   }
   let completed=usage.finish_data(&mut c)?;
-  queries.with_workspace_full_allow_unused(capture,&guard,&selected_tree,&completed,|problems,config,unused_budget|{poll()?;let data=CompleteAllowRun{selected:selection.names(),validation:validation.as_ref(),unused:problems};let pending=consume(&data,config,if retained.is_some(){unused_budget}else{budget});if pending.is_err(){return pending}poll()?;pending})
+  if !audit_requested{poll()?;let data=CompleteAllowRun{selected:selection.names(),validation:validation.as_ref(),unused:None};let borrowed=match registered{Some(plan)=>Some(capture.registered_check_configuration(plan)?),None=>capture.productive_ui_configuration()?};let config;let configuration=if let Some(borrowed)=borrowed{borrowed}else{let (_,bytes)=capture.configuration();let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||c.overflow())?;c.reserve(bound)?;config=Config::capture(bytes.map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,dq_analyze::captured_raw_policy::Configuration::Captured))?;&config};let value=consume(&data,configuration,budget).map_err(Failure::Operational)?;poll()?;return Ok(value);}
+  queries.with_workspace_full_allow_unused(capture,&guard,&selected_tree,&completed,|problems,config,unused_budget|{poll()?;let data=CompleteAllowRun{selected:selection.names(),validation:validation.as_ref(),unused:Some(problems)};let pending=consume(&data,config,if retained.is_some(){unused_budget}else{budget});if pending.is_err(){return pending}poll()?;pending})
  }
 }
 
@@ -546,4 +553,11 @@ mod union_tests;
 
 #[path="runner_query_selected_report.rs"]
 mod selected_report;
+pub(crate) use selected_report::{NativeCheckSelection,prepare_native_check_selection};
+pub(crate) use selected_report::{stage_registered_handlers_current,stage_registered_handlers_failed_full};
 pub(in crate::runner_host) use selected_report::{checked_stage,stage_named_image_dir,validate_selection,validate_selection_v2,SelectedReportPlan};
+
+#[cfg(test)]mod requested_audit_data_controls{
+ use super::*;
+ #[test]fn unrequested_unused_audit_cannot_impersonate_a_completed_empty_audit(){let names=vec!["scheduler".to_owned()];let absent=CompleteAllowRun{selected:&names,validation:None,unused:None};assert_eq!(absent.unused().unwrap_err().kind(),io::ErrorKind::InvalidInput);let complete=CompleteAllowRun{selected:&names,validation:None,unused:Some(&[])};assert!(complete.unused().unwrap().is_empty());}
+}

@@ -30,31 +30,34 @@ fn map_edits(physical:&[u8],preimage:&str,edits:&[dq_analyze::captured_tracked_f
  let credit=work.reserve(capacity.checked_mul(4).and_then(|n|n.checked_add(8192)).ok_or_else(||invalid("physical fix output backing overflow"))?)?;
  let mut output=Vec::new();output.try_reserve_exact(capacity).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
  if output.capacity()>capacity.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}
- let(mut physical_at,mut normalized_at,mut line,mut index)=(0usize,0usize,1usize,0usize);
+ let(mut physical_at,mut normalized_at,mut line,mut index)=(0usize,0usize,1usize,0usize);let mut pending_separator:Option<&[u8]>=None;
  loop{
   let mut end=physical_at;while end<physical.len(){work.checkpoint()?;let width=(physical.len()-end).min(8192);if let Some(off)=physical[end..end+width].iter().position(|c|matches!(c,b'\r'|b'\n')){end+=off;break}end+=width;}
   let content=&physical[physical_at..end];let normal_end=normalized_at.checked_add(content.len()).ok_or_else(||invalid("normalized line overflow"))?;
   let expected=normalized.get(normalized_at..normal_end).ok_or_else(||invalid("normalized preimage line absent"))?;
   if !same_bytes(content,expected,work)?{return Err(invalid("physical authored bytes differ from normalized captured preimage"))}
+  let drop=edits.get(index).is_some_and(|edit|edit.line as usize==line&&edit.drop_line);
+  if drop{let edit=&edits[index];if edit.start!=normalized_at||edit.end!=normal_end||edit.was.as_bytes()!=content||!edit.text.is_empty()||edits.get(index+1).is_some_and(|next|next.line as usize==line){return Err(invalid("drop declaration is not one exact whole-line edit"))}index+=1;}
+  else if let Some(separator)=pending_separator.take(){output.extend_from_slice(separator)}
   let mut column=0;
-  while let Some(edit)=edits.get(index){
+  while !drop{let Some(edit)=edits.get(index)else{break};
    if (edit.line as usize)<line{return Err(invalid("normalized fix line order changed"))}if edit.line as usize!=line{break}
    let start=edit.start.checked_sub(normalized_at).ok_or_else(||invalid("normalized edit precedes its line"))?;
    let finish=edit.end.checked_sub(normalized_at).ok_or_else(||invalid("normalized edit end precedes line"))?;
-   if start<column||finish<start||finish>content.len()||source.get(physical_at+start..physical_at+finish)!=Some(edit.was.as_str())||normalized.get(edit.start..edit.end)!=Some(edit.was.as_bytes())||edit.text.contains(['\r','\n']){return Err(invalid("normalized edit does not match exact physical single-line span"))}
+   if edit.drop_line||start<column||finish<start||finish>content.len()||source.get(physical_at+start..physical_at+finish)!=Some(edit.was.as_str())||normalized.get(edit.start..edit.end)!=Some(edit.was.as_bytes())||edit.text.contains(['\r','\n']){return Err(invalid("normalized edit does not match exact physical single-line span"))}
    output.extend_from_slice(&content[column..start]);output.extend_from_slice(edit.text.as_bytes());column=finish;index+=1;
   }
-  output.extend_from_slice(&content[column..]);
+  if !drop{output.extend_from_slice(&content[column..]);}
   if end==physical.len(){if normal_end!=normalized.len(){return Err(invalid("normalized captured source has unmatched tail"))}break}
   if normalized.get(normal_end)!=Some(&b'\n'){return Err(invalid("normalized captured newline differs"))}
-  let width=if physical[end]==b'\r'&&physical.get(end+1)==Some(&b'\n'){2}else{1};output.extend_from_slice(&physical[end..end+width]);physical_at=end+width;normalized_at=normal_end+1;line=line.checked_add(1).ok_or_else(||invalid("physical line number overflow"))?;
+  let width=if physical[end]==b'\r'&&physical.get(end+1)==Some(&b'\n'){2}else{1};if !drop{pending_separator=Some(&physical[end..end+width]);}physical_at=end+width;normalized_at=normal_end+1;line=line.checked_add(1).ok_or_else(||invalid("physical line number overflow"))?;
  }
  if index!=edits.len()||output.len()>capacity{return Err(invalid("physical fix edit coverage differs"))}Ok(Output{bytes:output,_credit:credit})
 }
 
 #[cfg(test)]mod controls{
  use super::*;use dq_analyze::captured_tracked_fix::Edit;
- fn edit(source:&str,was:&str,replacement:&str,line:u32)->Edit{let start=source.find(was).unwrap();Edit{start,end:start+was.len(),was:was.into(),text:replacement.into(),line}}
+ fn edit(source:&str,was:&str,replacement:&str,line:u32)->Edit{let start=source.find(was).unwrap();Edit{start,end:start+was.len(),was:was.into(),text:replacement.into(),line,drop_line:false}}
  #[test]fn actual_physical_mapper_keeps_crlf_lone_cr_lf_and_utf8_without_a_second_parser(){
   let physical="// é retained\r\n/obj/box\r    LAZYSET(items, key, value) // 一\n    LAZYREMOVE(items, other)\r\n";
   let normalized=dq_analyze::util::universal_newlines(physical.into());let edits=[edit(&normalized,"LAZYSET(items, key, value)","set_items_at(key, value)",3),edit(&normalized,"LAZYREMOVE(items, other)","remove_items(other)",4)];let work=crate::query_db::QueryDb::default();let actual=map_edits(physical.as_bytes(),&normalized,&edits,&work).unwrap();assert_eq!(actual.bytes,"// é retained\r\n/obj/box\r    set_items_at(key, value) // 一\n    remove_items(other)\r\n".as_bytes());
@@ -68,4 +71,11 @@ fn map_edits(physical:&[u8],preimage:&str,edits:&[dq_analyze::captured_tracked_f
  #[test]fn actual_physical_mapper_funding_denial_then_released_credit_recovery(){
   let work=crate::query_db::QueryDb::default();let limit=work.transformed_source_address_limit().unwrap();let source="x".repeat(160*1024);let pressure=work.reserve(limit-512*1024).unwrap();let error=map_edits(source.as_bytes(),&source,&[],&work).err().unwrap();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);drop(pressure);assert_eq!(map_edits(source.as_bytes(),&source,&[],&work).unwrap().bytes,source.as_bytes());
  }
+ #[test]fn actual_physical_mapper_drops_exact_lines_preserving_retained_separators_and_final_shape(){
+  for(physical,expected)in[("keep\r\nDROP\r\nlast\r\n","keep\r\nlast\r\n"),("keep\r\nDROP","keep"),("DROP\r\nDROP",""),("keep\rDROP\nlast","keep\rlast"),("DROP\r\n",""),("DROP\r\nlast","last")]{
+   let normal=dq_analyze::util::universal_newlines(physical.into());let mut edits=Vec::new();let mut at=0;for(number,line)in normal.split('\n').enumerate(){if line=="DROP"{edits.push(Edit{start:at,end:at+line.len(),was:line.into(),text:String::new(),line:(number+1)as u32,drop_line:true})}at+=line.len()+1;}
+   let work=crate::query_db::QueryDb::default();assert_eq!(map_edits(physical.as_bytes(),&normal,&edits,&work).unwrap().bytes,expected.as_bytes(),"{physical:?}");
+  }
+ }
+
 }

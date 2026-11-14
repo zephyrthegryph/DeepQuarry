@@ -233,7 +233,18 @@ pub fn parse_original_proc_with_shared_parameters_from_spans(source:&str,span:Sp
 pub fn parse_original_proc_with_shared_parameters_from_window(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,parameters:crate::SharedParameterSignature,facts:Option<crate::OriginalLiteralFactsView<'_>>)->Result<ProcedureWithOrigins,Diagnostic>{
     parse_proc_with_parameter_profile(source,span,tokens,base,None,true,Some(parameters),facts)
 }
+/// Source-neutral consumption DATA from the SAME actual native production.
+/// Current authority requires the private recipe/factory; exported Items cannot
+/// reacquire that owner merely by carrying equal bytes or this scalar.
+pub fn parse_proc_with_native_consumption_from_window(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->(Result<ProcedureWithOrigins,Diagnostic>,bool){
+ let mut complete=false;
+ let result=parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,defaults,original,preissued,facts,Some(&mut complete));
+ (result,complete)
+}
 fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->Result<ProcedureWithOrigins,Diagnostic>{
+    parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,defaults,original,preissued,facts,None)
+}
+fn parse_proc_with_parameter_profile_and_native_consumption(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>,native_consumption:Option<&mut bool>)->Result<ProcedureWithOrigins,Diagnostic>{
     let failure = |message: &str| Diagnostic {
         span,
         kind: DiagnosticKind::Unsupported,
@@ -253,8 +264,11 @@ fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWi
     {
         return Err(failure("original procedure token boundaries differ"));
     }
+    let mut consumed=false;
     let (mut items, diagnostics) =
-        crate::declaration_parser::parse_original_body_span_range_in_window(source, span, tokens, facts);
+        crate::declaration_parser::parse_original_body_span_range_with_native_consumption(source, span, tokens, facts,&mut consumed);
+    let observe_native_parameters=native_consumption.is_some()&&!original;
+    if let Some(complete)=native_consumption{*complete=consumed;}
     if let Some(mut diagnostic) = diagnostics.into_iter().next() {
         diagnostic.span.start += base;
         diagnostic.span.end += base;
@@ -277,7 +291,7 @@ fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWi
         .map(|t| Span::new(t.span.start + base, t.span.end + base));
     let parameters = match preissued{Some(parameters)=>{let header=Span::new(item.header_span.start.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?,item.header_span.end.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?);if parameters.header()!=header{return Err(failure("preissued parameter metadata belongs to another actual header"))}crate::ProcedureParameters::Shared(parameters)},None=>{
         let dense=tokens.as_dense_slice().ok_or_else(||failure("actual original parameter metadata is unissued"))?;
-        crate::ProcedureParameters::Owned(if original{crate::parameter_syntax::parameter_signature_original_with_default_roots(source,dense,item.header_span,base,&mut defaults)}else{match defaults{Some(provider)=>crate::parameter_syntax::parameter_signature_with_default_roots(source,dense,item.header_span,base,provider),None=>crate::parameter_syntax::issue_spans(source,dense,item.header_span,base)}})
+        crate::ProcedureParameters::Owned(if original{crate::parameter_syntax::parameter_signature_original_with_default_roots(source,dense,item.header_span,base,&mut defaults)}else if observe_native_parameters{crate::parameter_syntax::parameter_signature_native_observed(source,dense,item.header_span,base,&mut defaults)}else{match defaults{Some(provider)=>crate::parameter_syntax::parameter_signature_with_default_roots(source,dense,item.header_span,base,provider),None=>crate::parameter_syntax::issue_spans(source,dense,item.header_span,base)}})
     }};
     rebase_item(&mut item, base);
     Ok(ProcedureWithOrigins {
@@ -781,4 +795,22 @@ mod ascii_scan_tests {
         }
     }
     }
+}
+
+#[cfg(test)]
+mod native_structural_consumption_controls{
+ use super::*;
+ #[test]fn native_consumption_comes_from_actual_mask_layout_and_level_exhaustion(){
+  for(source,expected)in[
+   ("/proc/p()\n    return 1\n",true),
+   ("/proc/p() { return 1; }\n",true),
+   ("/proc/p() { return 1;\n",false),
+   ("/proc/p()\n    return 1\n}\n",false),
+  ]{
+   let tokens=crate::lex_spans(source);
+   assert!(tokens.diagnostics.is_empty());
+   let(parsed,complete)=parse_proc_with_native_consumption_from_window(source,Span::new(0,source.len()),crate::TokenWindow::from_slice(&tokens.tokens),0,None,false,None,None);
+   assert_eq!(complete&&parsed.is_ok(),expected,"{source}: native successful consumption, not a span-length EOF");
+  }
+ }
 }

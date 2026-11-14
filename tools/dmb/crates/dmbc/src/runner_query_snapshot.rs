@@ -688,6 +688,9 @@ impl QueryAttempt {
             enabled,
         }
     }
+    /// Borrow the actual variant currently bound to this attempt, after any
+    /// engine switch; callers must not retain an earlier host-state alias.
+    pub(crate) fn current_state(&self) -> &Mutex<QueryState> { self.state.as_ref() }
     /// Bind the actual selected BuildHost variant before any source capture.
     /// Early cached publication stays on its existing path; a real engine
     /// switch must not publish into the now-stashed previous variant.
@@ -1574,14 +1577,14 @@ impl SourceSnapshot{
 impl SourceSnapshot{
  /// Only the actually selected Original diagnostic semantic child enters this
  /// producer. Its separate CODE_MAPS_DM EOF remains mandatory at the host.
- pub(crate) fn with_original_list_macro_fix<T>(&self,inputs:&crate::request_runner::author_fix_capture::Inputs,relative:&str,
+ pub(crate) fn with_original_list_macro_fix<T>(&self,inputs:&crate::request_runner::author_fix_capture::Inputs,relative:&str,tracked_fixes:bool,tests:bool,drop_declared:bool,
   consume:impl FnOnce(dq_analyze::captured_tracked_fix::ListMacroFixData,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->std::io::Result<T>)->std::io::Result<T>{
   use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
-  let capture=self.workspace_semantic_inputs(Q::Tracked)?;let guard=self.workspace_native_read()?;
+  let capture=self.workspace_semantic_inputs(if drop_declared{Q::SemReads}else if tests{Q::TrackedTests}else{Q::Tracked})?;let guard=self.workspace_native_read()?;
   let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("native fix current workspace absent"))?;
   inputs.require_workspace(workspace)?;
   let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("native fix actual QueryDb absent"))?;
-  let result=queries.with_original_workspace_list_macro_fix(workspace,&guard,capture,relative,consume)?;
+  let result=queries.with_original_workspace_list_macro_fix(workspace,&guard,capture,relative,tracked_fixes,tests,drop_declared,consume)?;
   inputs.require_workspace(workspace)?;Ok(result)
  }
  pub(crate) fn with_original_tracked_policy<T>(&self,tests:bool,consume:impl FnOnce(&dq_analyze::captured_tracked_pages::TrackedData)->std::io::Result<T>)->std::io::Result<T>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;let question=if tests{Q::TrackedTests}else{Q::Tracked};let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original tracked workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original tracked QueryDb unavailable"))?;queries.with_original_workspace_tracked_guard(workspace,&guard,capture,tests,consume)}
@@ -1635,6 +1638,8 @@ impl SourceSnapshot{
 #[cfg(test)]#[path="runner_query_op_order_tests.rs"]mod op_order_complete_raw;
 
 #[path="runner_query_allow_full_run.rs"]mod allow_full_run;
+pub(crate) use allow_full_run::{NativeCheckSelection,prepare_native_check_selection};
+pub(crate) use allow_full_run::{stage_registered_handlers_current,stage_registered_handlers_failed_full};
 pub(super) use allow_full_run::{checked_stage as checked_selected_report_stage,stage_named_image_dir,validate_selection as validate_selected_report_selection,validate_selection_v2 as validate_selected_report_selection_v2,SelectedReportPlan};
 
 impl SourceSnapshot{pub(crate) fn with_original_derived_policy_report<T>(&self,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{self.with_original_derived_policy_report_to(&mut crate::daemon::stderr_writer(),consume)}pub(crate) fn with_original_derived_policy_report_to<T>(&self,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{let capture=self.workspace_semantic_inputs(crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("Derived actual workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("Derived actual QueryDb unavailable"))?;let subject=capture.original_analysis_subject().ok_or_else(||std::io::Error::other("Derived actual full subject absent"))?;subject.derived_preflight()?.require_current(subject,workspace,&guard,capture.policy(),queries)?;self.replay_original_preprocess_notices(diagnostics)?;queries.with_original_workspace_derived_guard_report(workspace,&guard,capture,consume)}}
@@ -1675,3 +1680,9 @@ impl SourceSnapshot{
 }
 
 #[path="runner_query_schema_proposals.rs"]mod schema_proposals;
+
+impl SourceSnapshot{
+ pub(crate) fn with_original_fix_targets<T>(&self,inputs:&crate::request_runner::author_fix_capture::Inputs,mode:dq_analyze::native_fix_wire::Mode,prefixes:&[String],consume:impl FnOnce(dq_analyze::captured_tracked_pages::FixTargetsData,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->std::io::Result<T>)->std::io::Result<T>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;let capture=self.workspace_semantic_inputs(if mode==dq_analyze::native_fix_wire::Mode::TrackedDropDeclared{Q::SemReads}else if mode==dq_analyze::native_fix_wire::Mode::TrackedTests{Q::TrackedTests}else{Q::Tracked})?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("native FIX target workspace absent"))?;inputs.require_workspace(workspace)?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("native FIX target QueryDb absent"))?;let result=queries.with_original_workspace_fix_targets(workspace,&guard,capture,mode,prefixes,consume)?;inputs.require_workspace(workspace)?;Ok(result)
+ }
+}

@@ -252,7 +252,10 @@ impl SourceSnapshot{
   })
  }
  fn visit_original_cli_diagnostics_in_scope<'a>(&self,input:&'a Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<CompletedOrderedVisit<'a>> {
-   let completion=self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,|row|{use dm_analysis::check_policy::DiagnosticSeverity as S;let level=match &row{
+  self.visit_original_registered_cli_diagnostics_in_scope(input,tree,db,scope,|row,level|{if dm_analysis::check_policy::cli_printed(level){consume(row,level)?;}Ok(())})
+ }
+ fn visit_original_registered_cli_diagnostics_in_scope<'a>(&self,input:&'a Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<CompletedOrderedVisit<'a>> {
+   let completion=self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,|row|{let level=match &row{
     OriginalThroughReaderDeclarations::Declaration(finding)=>scope.policy().register(finding.registration_tag(),finding.original_fixed_level().ok_or_else(||std::io::Error::other("original reader diagnostic lacks genuine default severity"))?),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Declaration(finding))))=>scope.policy().register(finding.registration_tag(),finding.default_severity()),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Body{row,..})))=>scope.policy().register(row.registration_tag(),row.default_level()),
@@ -261,7 +264,7 @@ impl SourceSnapshot{
      scope.policy().register(Some(REGISTRATION_TAG),DEFAULT_SEVERITY)
     },
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Graph(row))=>Some(row.severity),
-   };if let Some(level)=level.filter(|level|*level<=S::Info){consume(row,level)?;}Ok(())})?;scope.validate(db,input).map_err(std::io::Error::other)?;Ok(CompletedOrderedVisit{body:completion})
+   };if let Some(level)=level{consume(row,level)?;}Ok(())})?;scope.validate(db,input).map_err(std::io::Error::other)?;Ok(CompletedOrderedVisit{body:completion})
  }
 }
 

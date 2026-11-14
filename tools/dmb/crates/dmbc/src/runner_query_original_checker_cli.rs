@@ -27,11 +27,16 @@ fn notice_point<'a>(point:OriginalDiagnosticPoint<'a>)->(&'a Path,usize,usize){m
  OriginalDiagnosticPoint::Builtins=>(Path::new("(builtins)"),1,1),
  OriginalDiagnosticPoint::Acquired{reported_path,line,byte_column,..}=>(reported_path,line,byte_column),
 }}
-fn preprocess_notice(out:&mut impl Write,notice:OriginalPreprocessNotice<'_>,policy:&CheckerPolicy)->io::Result<usize>{
+#[derive(Clone,Copy,Default)]
+pub(crate) struct DiagnosticCounts{pub(crate)hint:usize,pub(crate)info:usize,pub(crate)warning:usize,pub(crate)error:usize}
+impl DiagnosticCounts{fn register(&mut self,level:DiagnosticSeverity)->io::Result<()>{let count=match level{DiagnosticSeverity::Hint=>&mut self.hint,DiagnosticSeverity::Info=>&mut self.info,DiagnosticSeverity::Warning=>&mut self.warning,DiagnosticSeverity::Error=>&mut self.error};*count=count.checked_add(1).ok_or_else(||invalid("Checker severity count overflow"))?;Ok(())}
+ pub(crate)fn write_json(self,out:&mut impl Write)->io::Result<()>{write!(out,"{{\"error\":{},\"hint\":{},\"info\":{},\"warning\":{}}}",self.error,self.hint,self.info,self.warning)}}
+fn preprocess_notice(out:&mut impl Write,notice:OriginalPreprocessNotice<'_>,policy:&CheckerPolicy,counts:&mut DiagnosticCounts)->io::Result<usize>{
  crate::daemon::control::checkpoint()?;
  use dm_preprocess::regions::OriginalNoticeSeverity as S;
  let default=match notice.severity{S::Error=>DiagnosticSeverity::Error,S::Warning=>DiagnosticSeverity::Warning,S::Hint=>DiagnosticSeverity::Hint};
- let Some(level)=policy.register(notice.error_type,default).filter(|s|dm_analysis::check_policy::cli_printed(*s))else{return Ok(0)};
+ let Some(level)=policy.register(notice.error_type,default)else{return Ok(0)};
+ counts.register(level)?;if !dm_analysis::check_policy::cli_printed(level){return Ok(0)}
  let at=notice_point(notice.point);header(out,at,level,notice.message)?;
  for note in notice.notes{crate::daemon::control::checkpoint()?;let(point,message)=note.map_err(invalid)?;let next=notice_point(point);
   if next==at{writeln!(out,"- {message}")?}else if next.0==at.0{writeln!(out,"- {}:{}: {message}",next.1,next.2)?}else{writeln!(out,"- {}:{}:{}: {message}",next.0.display(),next.1,next.2)?}
@@ -40,7 +45,7 @@ fn preprocess_notice(out:&mut impl Write,notice:OriginalPreprocessNotice<'_>,pol
 /// Merge two genuine ordered registrations, never source-anchor positions or
 /// producer-wallclock order. Hidden rows are authenticated before policy drops
 /// them. The actual notice owners remain borrowed through final scope checks.
-fn flush_preprocess<'a,I:Iterator<Item=Result<OriginalPreprocessNotice<'a>,&'static str>>>(out:&mut impl Write,rows:&mut std::iter::Peekable<I>,until:Option<&OriginalNoticeRegistration>,previous:&mut Option<OriginalNoticeRegistration>,policy:&CheckerPolicy)->io::Result<usize>{
+fn flush_preprocess<'a,I:Iterator<Item=Result<OriginalPreprocessNotice<'a>,&'static str>>>(out:&mut impl Write,rows:&mut std::iter::Peekable<I>,until:Option<&OriginalNoticeRegistration>,previous:&mut Option<OriginalNoticeRegistration>,policy:&CheckerPolicy,counts:&mut DiagnosticCounts)->io::Result<usize>{
  let mut count=0usize;
  loop{
   crate::daemon::control::checkpoint()?;
@@ -51,7 +56,7 @@ fn flush_preprocess<'a,I:Iterator<Item=Result<OriginalPreprocessNotice<'a>,&'sta
   if let Some(until)=until{if registration.compare_same_source(until)?==std::cmp::Ordering::Greater{break}}
   *previous=Some(registration.clone());
   let row=rows.next().expect("actual peeked row remains in this iterator").map_err(invalid)?;
-  count=count.checked_add(preprocess_notice(out,row,policy)?).ok_or_else(||invalid("checker notice count overflow"))?;
+  count=count.checked_add(preprocess_notice(out,row,policy,counts)?).ok_or_else(||invalid("checker notice count overflow"))?;
  }
  Ok(count)
 }
@@ -76,7 +81,7 @@ fn row(out:&mut impl Write,input:&dm_analysis::checker_effects::EffectInput,valu
 /// Only the successful real full ordered traversal below constructs this value.
 /// It is current-producer scope evidence, NOT independently established parity.
 pub(crate) struct Transcript{
- stderr:Option<Verified>,pub(crate) emitted:usize,pub(crate) visited_bodies:usize,
+ stderr:Option<Verified>,pub(crate) counts:DiagnosticCounts,pub(crate) emitted:usize,pub(crate) visited_bodies:usize,
  pub(crate) semantic:u128,pub(crate) source:u128,pub(crate) policy:u128,
  _credit:SourceArenaCredit,
 }
@@ -94,25 +99,28 @@ impl SourceSnapshot{
     OriginalNoticeReplay::Released=>return Err(io::Error::new(io::ErrorKind::NotConnected,"Checker notice owner pressure-released; reprepare required")),
     OriginalNoticeReplay::Ordinary=>return Err(io::Error::new(io::ErrorKind::Unsupported,"native Checker lacks its actual Original notice owner")),
    };
-   let mut preprocess_rows=notices.iter().peekable();let mut previous_preprocess=None;let mut previous_reader:Option<OriginalNoticeRegistration>=None;let mut reader_phase_closed=false;let mut emitted=0usize;
-   let completed=self.visit_original_cli_diagnostics_in_scope(input,&self.tree,db,scope,|value,level|{
+   let mut preprocess_rows=notices.iter().peekable();let mut previous_preprocess=None;let mut previous_reader:Option<OriginalNoticeRegistration>=None;let mut reader_phase_closed=false;let mut emitted=0usize;let mut counts=DiagnosticCounts::default();
+   let completed=self.visit_original_registered_cli_diagnostics_in_scope(input,&self.tree,db,scope,|value,level|{
+    // Count genuine registered rows before the unchanged text visibility gate.
+    // Hidden rows do not borrow display data or alter the visible causal merge.
+    counts.register(level)?;if !dm_analysis::check_policy::cli_printed(level){return Ok(())}
     let extra=if let Reader::Declaration(finding)=&value{
      if reader_phase_closed{return Err(invalid("reader registration appeared after semantic Checker phase"))}
      let registration=finding.reader_registration().map_err(io::Error::other)?;
      if let Some(previous)=&previous_reader{if previous.compare_same_source(&registration)?==std::cmp::Ordering::Greater{return Err(invalid("actual reader registration order moved backwards"))}}
      previous_reader=Some(registration.clone());
-     flush_preprocess(&mut stage,&mut preprocess_rows,Some(&registration),&mut previous_preprocess,scope.policy())?
-    }else{reader_phase_closed=true;flush_preprocess(&mut stage,&mut preprocess_rows,None,&mut previous_preprocess,scope.policy())?};
+     flush_preprocess(&mut stage,&mut preprocess_rows,Some(&registration),&mut previous_preprocess,scope.policy(),&mut counts)?
+    }else{reader_phase_closed=true;flush_preprocess(&mut stage,&mut preprocess_rows,None,&mut previous_preprocess,scope.policy(),&mut counts)?};
     emitted=emitted.checked_add(extra).ok_or_else(||invalid("Checker diagnostic count overflow"))?;
     row(&mut stage,input,value,level)?;emitted=emitted.checked_add(1).ok_or_else(||invalid("Checker diagnostic count overflow"))?;Ok(())
    })?;
    // No visible semantic row is required for the real full traversal to finish.
    // Its completion token must exist before draining the remaining PP rows.
-   emitted=emitted.checked_add(flush_preprocess(&mut stage,&mut preprocess_rows,None,&mut previous_preprocess,scope.policy())?).ok_or_else(||invalid("Checker diagnostic count overflow"))?;
+   emitted=emitted.checked_add(flush_preprocess(&mut stage,&mut preprocess_rows,None,&mut previous_preprocess,scope.policy(),&mut counts)?).ok_or_else(||invalid("Checker diagnostic count overflow"))?;
    let visited_bodies=completed.body_count_for(input)?;
    let stderr=if stage.length()==0{None}else{let(sealed,())=stage.seal()?.validate(|stream|{let mut scratch=[0u8;8192];loop{crate::daemon::control::checkpoint()?;let count=stream.read(&mut scratch)?;if count==0{break}}Ok(())})?;Some(sealed)};
    scope.validate(db,input).map_err(io::Error::other)?;inputs.require_binding(environment,mapping,self.tree.identity(),self.source_revision)?;
-   Ok(Transcript{stderr,emitted,visited_bodies,semantic:self.tree.identity(),source:self.source_revision,policy:self.policy_revision.ok_or_else(||invalid("Checker policy revision absent"))?,_credit:credit})
+   Ok(Transcript{stderr,counts,emitted,visited_bodies,semantic:self.tree.identity(),source:self.source_revision,policy:self.policy_revision.ok_or_else(||invalid("Checker policy revision absent"))?,_credit:credit})
   })
  }
 }
@@ -130,3 +138,6 @@ impl SourceSnapshot{
   assert_eq!(header(&mut Failed,(Path::new("actual.dm"),1,1),DiagnosticSeverity::Error,"message").unwrap_err().raw_os_error(),Some(1450));
  }
 }
+
+#[cfg(test)]mod json_count_controls{use super::*;#[test]fn registered_counts_keep_hidden_hints_without_text_or_visibility_reclassification(){let mut counts=DiagnosticCounts::default();for level in[DiagnosticSeverity::Hint,DiagnosticSeverity::Info,DiagnosticSeverity::Warning,DiagnosticSeverity::Error]{counts.register(level).unwrap();}let mut bytes=Vec::new();counts.write_json(&mut bytes).unwrap();assert_eq!(bytes,b"{\"error\":1,\"hint\":1,\"info\":1,\"warning\":1}");assert!(!dm_analysis::check_policy::cli_printed(DiagnosticSeverity::Hint));assert!(dm_analysis::check_policy::cli_printed(DiagnosticSeverity::Info));}
+#[test]fn actual_json_count_output_preserves_first_io_and_count_overflow(){struct Fail;impl Write for Fail{fn write(&mut self,_:&[u8])->io::Result<usize>{Err(io::Error::from_raw_os_error(1450))}fn flush(&mut self)->io::Result<()>{panic!("no flush after first JSON write error")}}let counts=DiagnosticCounts::default();assert_eq!(counts.write_json(&mut Fail).unwrap_err().raw_os_error(),Some(1450));let mut full=DiagnosticCounts{hint:usize::MAX,..Default::default()};assert!(full.register(DiagnosticSeverity::Hint).is_err());assert_eq!(full.hint,usize::MAX);}}

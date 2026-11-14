@@ -18,6 +18,8 @@ use std::{io, path::Path};
 const MAX_WINDOW: usize = 1024;
 const MAX_EXAMPLES: usize = 32;
 
+#[derive(Clone,Copy,Eq,PartialEq)]enum CensusContract{Original0290,NativeIntrinsic}
+impl CensusContract{fn label(self)->&'static str{match self{Self::Original0290=>"original",Self::NativeIntrinsic=>"native_intrinsic"}}}
 #[derive(Clone, Copy)]
 enum Order {
     #[cfg(test)]
@@ -96,6 +98,7 @@ enum Disposition {
     Skipped,
     Unissued(u32),
     NativeRejected,
+    NativeComplete,NativeRecovered,NativeDeferred,NativeNotCovered,
 }
 
 fn invalid(message: &str) -> BodySyntaxFailure {
@@ -136,6 +139,9 @@ fn inspect(
     rank: Option<usize>,
     examples: &mut Examples,
 ) -> Result<Disposition, BodySyntaxFailure> {
+    inspect_contract(db,archive,ordinal,rank,examples,CensusContract::Original0290)
+}
+fn inspect_contract(db:&QueryDb,archive:&BodyArchive,ordinal:usize,rank:Option<usize>,examples:&mut Examples,contract:CensusContract)->Result<Disposition,BodySyntaxFailure>{
     let occurrence = archive.occurrences().get(ordinal).ok_or_else(|| invalid("missing archive body ordinal"))?;
     let input = archive.syntax_inputs()
         .and_then(|inputs| inputs.get(ordinal))
@@ -159,6 +165,18 @@ fn inspect(
         let bound = input.bind_original_product_checked(syntax, admission)?;
         if bound.body_span() != occurrence.expanded_span {
             return Err(invalid("census current BODY occurrence differs"));
+        }
+        if contract==CensusContract::NativeIntrinsic{
+            use dm_tree::frontend::NativeBodyDisposition as Native;
+            let result=match bound.native_code_disposition_using(admission)?{
+                Native::Complete(grant)=>{if !grant.belongs_to(&bound){return Err(invalid("native census current grant owner differs"))}Disposition::NativeComplete},
+                Native::Recovered=>Disposition::NativeRecovered,Native::Deferred=>Disposition::NativeDeferred,Native::NotCovered=>Disposition::NativeNotCovered,
+            };
+            if result!=Disposition::NativeComplete&&examples.include(None){
+                eprintln!("native_intrinsic.census rank={rank:?} ordinal={ordinal} file={} line={} result={result:?}",
+                    occurrence.source.semantic_path,occurrence.source.line);
+            }
+            return Ok(result)
         }
         match bound.original_code_disposition() {
             Ok(OriginalBodyDisposition::Available(_)) => Ok(Disposition::Available),
@@ -202,6 +220,10 @@ fn survey_archive(
     db: &Arc<QueryDb>, archive: &BodyArchive, start: usize, count: usize, order: Order,
     continue_after_oom: bool,
 ) -> [usize; 4] {
+    let all=survey_archive_contract(db,archive,start,count,order,continue_after_oom,CensusContract::Original0290);
+    [all[0],all[1],all[2],all[3]]
+}
+fn survey_archive_contract(db:&Arc<QueryDb>,archive:&BodyArchive,start:usize,count:usize,order:Order,continue_after_oom:bool,contract:CensusContract)->[usize;5]{
     assert!((1..=MAX_WINDOW).contains(&count), "invalid survey window size");
     assert_eq!(archive.source_mapping().initial_environment(), dm_preprocess::InitialEnvironment::OriginalChecker0290);
     assert!(archive.uses_body_queries(db.as_ref()));
@@ -217,7 +239,7 @@ fn survey_archive(
         Order::Archive => ordinals.iter_mut().zip(start..end).for_each(|(slot, ordinal)| *slot = ordinal),
         Order::Checker => db.checker_order_window_for_census(archive, start, ordinals).unwrap(),
     }
-    let mut counts = [0; 4];
+    let mut counts = [0; 5];
     let mut unissued_roots = [0usize; ROOT_NAMES.len()];
     let mut examples = Examples::default();
     let mut unmeasured_oom = 0;
@@ -230,7 +252,7 @@ fn survey_archive(
             Order::Checker => Some(start + index),
         };
         let retained_before = syntax.load(Ordering::Acquire);
-        let disposition = match inspect(db.as_ref(), archive, ordinal, rank, &mut examples) {
+        let disposition = match inspect_contract(db.as_ref(), archive, ordinal, rank, &mut examples,contract) {
             Ok(disposition) => disposition,
             Err(BodySyntaxFailure::Operational(error))
                 if continue_after_oom && error.kind() == io::ErrorKind::OutOfMemory =>
@@ -245,7 +267,10 @@ fn survey_archive(
                 unmeasured_oom += 1;
                 continue;
             }
-            Err(error) => panic!("Original census stopped at rank {rank:?}, ordinal {ordinal}; prior counts {counts:?}: {error:?}"),
+            Err(error) => {
+                if contract==CensusContract::NativeIntrinsic{panic!("Native intrinsic census stopped at rank {rank:?}, ordinal {ordinal}; prior counts {counts:?}: {error:?}")}
+                panic!("Original census stopped at rank {rank:?}, ordinal {ordinal}; prior counts {counts:?}: {error:?}")
+            },
         };
         match disposition {
             Disposition::Available => counts[0] += 1,
@@ -256,16 +281,23 @@ fn survey_archive(
                     *count += usize::from(roots & (1 << index) != 0);
                 }
             }
-            Disposition::NativeRejected => counts[3] += 1,
+            Disposition::NativeRejected => counts[if contract==CensusContract::NativeIntrinsic{4}else{3}] += 1,
+            Disposition::NativeComplete=>counts[0]+=1,Disposition::NativeRecovered=>counts[1]+=1,
+            Disposition::NativeDeferred=>counts[2]+=1,Disposition::NativeNotCovered=>counts[3]+=1,
         }
     }
     assert_eq!(db.db.stats(BODY_SYNTAX).computed, before, "survey must not install Kind4 products");
     assert_eq!(db.db.stats(REPORT).computed, report_before, "survey must not compute reports");
     assert_eq!(counts.iter().sum::<usize>() + unmeasured_oom, ordinals.len());
+    if contract==CensusContract::NativeIntrinsic{
+        eprintln!("native_intrinsic.census coordinate={} range={start}..{end} total={total} complete={} recovered={} deferred={} unsupported_or_not_issued={} native_rejected={} unmeasured_oom={unmeasured_oom} actual_initial_environment=OriginalChecker0290 pinned_parity=false",
+            order.label(),counts[0],counts[1],counts[2],counts[3],counts[4]);
+    }else{
     eprintln!("original.census coordinate={} range={start}..{end} total={total} available={} skipped={} unissued={} native_rejected={} unmeasured_oom={unmeasured_oom}",
         order.label(), counts[0], counts[1], counts[2], counts[3]);
     for (root, count) in ROOT_NAMES.into_iter().zip(unissued_roots).filter(|(_, count)| *count != 0) {
         eprintln!("original.census unissued_bodies_containing_root={root} count={count}");
+    }
     }
     counts
 }
@@ -276,6 +308,10 @@ fn survey_archive(
 fn compact_checkout_survey(
     project: &Path, start: usize, count: usize, order: Order, continue_after_oom: bool,
 ) -> [usize; 4] {
+    let all=compact_checkout_survey_contract(project,start,count,order,continue_after_oom,CensusContract::Original0290);
+    [all[0],all[1],all[2],all[3]]
+}
+fn compact_checkout_survey_contract(project:&Path,start:usize,count:usize,order:Order,continue_after_oom:bool,contract:CensusContract)->[usize;5]{
     let root = project.parent().unwrap();
     let intent = PolicyInputRequest {
         analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
@@ -306,7 +342,7 @@ fn compact_checkout_survey(
     recorder.diagnostic_source_evidence(&view).unwrap().check(view.mapping()).unwrap();
     assert!(view.archive().matches_tree(view.tree()));
     assert!(Arc::ptr_eq(view.archive().source_mapping(), view.mapping()));
-    survey_archive(&queries, view.archive(), start, count, order, continue_after_oom)
+    survey_archive_contract(&queries, view.archive(), start, count, order, continue_after_oom,contract)
 }
 
 #[test]
@@ -375,21 +411,41 @@ fn authenticated_original_checkout_body_syntax_census() {
 /// Hidden diagnostic only. Uses the exact same source-authenticated survey as
 /// the existing ignored test, never a report, graph or publication operation.
 pub(crate) fn run_current_cli(project: std::path::PathBuf, start: usize, count: usize) -> Result<(), String> {
+    run_contract_cli(project,start,count,CensusContract::Original0290)
+}
+pub(crate) fn run_native_cli(project:std::path::PathBuf,start:usize,count:usize)->Result<(),String>{
+    run_contract_cli(project,start,count,CensusContract::NativeIntrinsic)
+}
+fn run_contract_cli(project:std::path::PathBuf,start:usize,count:usize,contract:CensusContract)->Result<(),String>{
     if !project.is_absolute() || !(1..=MAX_WINDOW).contains(&count) || start.checked_add(count).is_none() {
         return Err("invalid bounded Original grammar census request".into());
     }
-    let worker = std::thread::Builder::new().name("original-grammar-census".into())
+    let worker = std::thread::Builder::new().name(format!("{}-grammar-census",contract.label()))
         .stack_size(dm_exec::COMPILER_STACK_BYTES).spawn(move || {
             use crate::daemon::control::{bind_with_deadline, Cancellation};
             use std::time::{Duration, Instant};
             let _deadline = bind_with_deadline(Cancellation::default(), Instant::now() + Duration::from_secs(300));
             // No CLI or environment opt-out for operational errors. This shared
             // implementation classifies only the nominal missing-witness cause.
-            compact_checkout_survey(&project, start, count, Order::Checker, false);
+            compact_checkout_survey_contract(&project, start, count, Order::Checker, false,contract);
         }).map_err(|error| error.to_string())?;
     worker.join().map_err(|cause| {
         if let Some(message) = cause.downcast_ref::<String>() { message.clone() }
         else if let Some(message) = cause.downcast_ref::<&str>() { (*message).to_owned() }
         else { "Original grammar census failed; no report or publication produced".into() }
     })
+}
+
+#[test]
+fn actual_native_census_separates_same_parser_completion_recovery_and_deferred_children(){
+    let root=crate::test_scratch::dir("native-intrinsic-census-control");
+    std::fs::create_dir(root.join("code")).unwrap();let project=root.join("deepquarry.dme");
+    std::fs::write(&project,"#include \"code/probe.dm\"\n").unwrap();
+    std::fs::write(root.join("code/probe.dm"),concat!(
+      "/proc/a()\n    return 1\n",
+      "/proc/b(value)\n    return value +\n",
+      "/proc/c(size)\n    var/list/items[size]\n    return 0\n",
+    )).unwrap();
+    let actual=compact_checkout_survey_contract(&project,0,3,Order::Checker,false,CensusContract::NativeIntrinsic);
+    assert_eq!(actual,[1,1,1,0,0],"actual same parser; native recovery is not Original skipped, local dimension DATA is deferred");
 }

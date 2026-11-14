@@ -264,8 +264,15 @@ pub(crate) const RULE_SETTER: u8 = 0;
 pub(crate) const RULE_LIST: u8 = 1;
 
 /// A single-line edit: bytes `start..end` of the line become `text`; `was` is the text it expects there.
+
+#[derive(Clone,Copy,Debug,Default,PartialEq,Eq,PartialOrd,Ord,serde::Serialize,serde::Deserialize)]
+#[serde(rename_all="snake_case")]
+pub enum FixAction{#[default]Unknown,Set,Add,Remove,Include,SetAt,Clear,Cut,Insert,Swap}
+impl FixAction{pub(crate) fn method(self,var:&str)->Option<String>{let(prefix,suffix)=match self{Self::Unknown=>return None,Self::Set=>("set_",""),Self::Add=>("add_",""),Self::Remove=>("remove_",""),Self::Include=>("include_",""),Self::SetAt=>("set_","_at"),Self::Clear=>("clear_",""),Self::Cut=>("cut_",""),Self::Insert=>("insert_",""),Self::Swap=>("swap_","")};Some(format!("{prefix}{var}{suffix}"))}}
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize, Default)]
 pub struct Fix {
+    #[serde(skip)]
+    pub action: FixAction,
     pub start: u32,
     pub end: u32,
     pub was: String,
@@ -359,6 +366,7 @@ pub(crate) fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holde
             }
             let close = close_paren(clean, open)?;
             let spans = arg_spans(clean, open, close);
+            let action=match form{"LAZYADD"=>FixAction::Add,"LAZYREMOVE"=>FixAction::Remove,"LAZYOR"|"LAZYDISTINCTADD"=>FixAction::Include,"LAZYSET"=>FixAction::SetAt,"LAZYCLEARLIST"=>FixAction::Clear,"LAZYNULL"=>FixAction::Set,_=>FixAction::Unknown};
             let text = match (form, spans.len()) {
                 ("LAZYADD", 2) => format!("{pre}add_{var}({})", arg(spans[1])),
                 ("LAZYREMOVE", 2) => format!("{pre}remove_{var}({})", arg(spans[1])),
@@ -368,7 +376,7 @@ pub(crate) fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holde
                 ("LAZYNULL", 1) => format!("{pre}set_{var}(null)"),
                 _ => return None,
             };
-            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text, more: Vec::new() })
+            Some(Fix { action,start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text, more: Vec::new() })
         }
         "method" => {
             // A statement: nothing before it on the line, and the call closes the line.
@@ -381,6 +389,7 @@ pub(crate) fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holde
                 return None;
             }
             let spans = arg_spans(clean, open, close);
+            let action=match form{"Add"=>FixAction::Add,"Remove"=>FixAction::Remove,"Cut" if spans.is_empty()=>FixAction::Clear,"Cut"=>FixAction::Cut,"Insert"=>FixAction::Insert,"Swap"=>FixAction::Swap,_=>FixAction::Unknown};
             let text = match (form, spans.len()) {
                 ("Add", 1) => format!("{pre}add_{var}({})", arg(spans[0])),
                 ("Add", n) if n > 1 => format!("{pre}add_{var}(list({}))", spans.iter().map(|s| arg(*s)).collect::<Vec<_>>().join(", ")),
@@ -392,7 +401,7 @@ pub(crate) fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holde
                 ("Swap", 2) => format!("{pre}swap_{var}({}, {})", arg(spans[0]), arg(spans[1])),
                 _ => return None,
             };
-            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text, more: Vec::new() })
+            Some(Fix { action,start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text, more: Vec::new() })
         }
         "index" => {
             if !clean[..m_start].trim().is_empty() {
@@ -428,7 +437,7 @@ pub(crate) fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holde
                 return None; // a value that continues on the next line
             }
             let idx = raw[open + 1..close].trim();
-            Some(Fix { start: m_start as u32, end: end as u32, was: raw[m_start..end].to_string(), text: format!("{pre}set_{var}_at({idx}, {value})"), more: Vec::new() })
+            Some(Fix { action:FixAction::SetAt,start: m_start as u32, end: end as u32, was: raw[m_start..end].to_string(), text: format!("{pre}set_{var}_at({idx}, {value})"), more: Vec::new() })
         }
         _ => None,
     }
@@ -544,7 +553,7 @@ pub(crate) fn setter_fix(clean: &[&str], raw: &[&str], number: usize, m_start: u
             return None;
         }
         let delta = if op == "++" { "+" } else { "-" };
-        return Some(Fix { start: m_start as u32, end: end_of_line as u32, was: rl[m_start..end_of_line].to_string(), text: format!("{pre}set_{var}({read} {delta} 1)"), more: Vec::new() });
+        return Some(Fix { action:FixAction::Set,start: m_start as u32, end: end_of_line as u32, was: rl[m_start..end_of_line].to_string(), text: format!("{pre}set_{var}({read} {delta} 1)"), more: Vec::new() });
     }
     if optext.starts_with("++") || optext.starts_with("--") {
         let rest = cl[op_at + 2..].trim();
@@ -552,7 +561,7 @@ pub(crate) fn setter_fix(clean: &[&str], raw: &[&str], number: usize, m_start: u
             return None;
         }
         let delta = if optext.starts_with("++") { "+" } else { "-" };
-        return Some(Fix { start: m_start as u32, end: end_of_line as u32, was: rl[m_start..end_of_line].to_string(), text: format!("{pre}set_{var}({read} {delta} 1)"), more: Vec::new() });
+        return Some(Fix { action:FixAction::Set,start: m_start as u32, end: end_of_line as u32, was: rl[m_start..end_of_line].to_string(), text: format!("{pre}set_{var}({read} {delta} 1)"), more: Vec::new() });
     }
     // `=` or a compound assignment
     let op = ["<<=", ">>=", "+=", "-=", "*=", "/=", "|=", "&=", "^=", "="].iter().find(|o| optext.starts_with(**o))?;
@@ -588,6 +597,7 @@ pub(crate) fn setter_fix(clean: &[&str], raw: &[&str], number: usize, m_start: u
         }
     };
     Some(Fix {
+        action:if !list||*op=="="{FixAction::Set}else{match *op{"+="=>FixAction::Add,"-="=>FixAction::Remove,"|="=>FixAction::Include,_=>return None}},
         start: m_start as u32,
         end: rhs_start as u32,
         was: rl[m_start..rhs_start].to_string(),
@@ -606,15 +616,29 @@ fn in_call_args_using<C:crate::key_policy_control::Control>(line:&str,pos:usize,
 pub(crate) fn scan_one_using<C:crate::key_policy_control::Control>(tracked:&Tracked,pats:&Pats,lists:&Tracked,lpats:Option<&ListPats>,f:&SourceFile,named_args:&BTreeSet<(usize,usize)>,control:&mut C,allowed:&mut impl FnMut(usize)->Result<bool,C::Error>)->Result<(Vec<Hit>,Vec<(String,String)>),C::Error>{
  scan_one_for_fix_using(tracked,pats,lists,lpats,f,named_args,control,allowed,false)
 }
+fn fix_lines<'a,C:crate::key_policy_control::Control>(view:&'a crate::tree::View,control:&mut C)->Result<Vec<&'a str>,C::Error>{
+ use crate::key_policy_control as kc;let count=view.num_lines();kc::reserve(control,||count.checked_mul(4*std::mem::size_of::<&str>())?.checked_add(64))?;let mut rows=Vec::new();rows.try_reserve_exact(count).map_err(|_|control.allocation_failed())?;if rows.capacity()>count.saturating_mul(4){return Err(control.allocation_failed())}for line in view.lines(){control.checkpoint()?;rows.push(line)}Ok(rows)
+}
+fn admitted_setter_fix<C:crate::key_policy_control::Control>(clean:&[&str],raw:&[&str],number:usize,start:usize,holder:&str,var:&str,list:bool,control:&mut C)->Result<Option<Fix>,C::Error>{
+ use crate::key_policy_control as kc;let width=raw.get(number.saturating_sub(1)).map_or(0,|line|line.len());kc::reserve(control,||width.checked_mul(16)?.checked_add(holder.len().checked_mul(8)?)?.checked_add(var.len().checked_mul(8)?)?.checked_add(1024+4*std::mem::size_of::<MoreEdit>()))?;
+ let fix=setter_fix(clean,raw,number,start,holder,var,list);control.checkpoint()?;if fix.as_ref().is_some_and(|fix|fix.more.is_empty()&&fix.was.contains(';')){return Ok(None)}Ok(fix)
+}
 pub(crate) fn scan_one_for_fix_using<C:crate::key_policy_control::Control>(tracked:&Tracked,pats:&Pats,lists:&Tracked,lpats:Option<&ListPats>,f:&SourceFile,named_args:&BTreeSet<(usize,usize)>,control:&mut C,allowed:&mut impl FnMut(usize)->Result<bool,C::Error>,list_macro_fixes:bool)->Result<(Vec<Hit>,Vec<(String,String)>),C::Error>{
+ scan_one_fix_scope_using(tracked,pats,lists,lpats,f,named_args,control,allowed,if list_macro_fixes{FixScanScope::ListMacros}else{FixScanScope::Lint},&mut|_,_,_|Ok(false))
+}
+#[derive(Clone,Copy,PartialEq,Eq)]pub(crate) enum FixScanScope{Lint,ListMacros,Tracked}
+pub(crate) fn scan_one_tracked_fixes_using<C:crate::key_policy_control::Control>(tracked:&Tracked,pats:&Pats,lists:&Tracked,lpats:Option<&ListPats>,f:&SourceFile,named_args:&BTreeSet<(usize,usize)>,control:&mut C,allowed:&mut impl FnMut(usize)->Result<bool,C::Error>,setter_available:&mut impl FnMut(&str,&str,FixAction)->Result<bool,C::Error>)->Result<(Vec<Hit>,Vec<(String,String)>),C::Error>{
+ scan_one_fix_scope_using(tracked,pats,lists,lpats,f,named_args,control,allowed,FixScanScope::Tracked,setter_available)
+}
+fn scan_one_fix_scope_using<C:crate::key_policy_control::Control>(tracked:&Tracked,pats:&Pats,lists:&Tracked,lpats:Option<&ListPats>,f:&SourceFile,named_args:&BTreeSet<(usize,usize)>,control:&mut C,allowed:&mut impl FnMut(usize)->Result<bool,C::Error>,scope:FixScanScope,setter_available:&mut impl FnMut(&str,&str,FixAction)->Result<bool,C::Error>)->Result<(Vec<Hit>,Vec<(String,String)>),C::Error>{
     use crate::key_policy_control as kc;control.checkpoint()?;let make_fixes=!C::CHECKED;let mut temporary_bytes=0;
     let mut hits = Vec::new();
     let mut setters = Vec::new();
     if !pats.any.is_match(f.text()) {
         return Ok((hits, setters));
     }
-    let clean_lines:Vec<&str>=if make_fixes{f.clean().text.split('\n').collect()}else{Vec::new()};
-    let raw_lines:Vec<&str>=if make_fixes{f.raw().text.split('\n').collect()}else{Vec::new()};
+    let clean_lines=if make_fixes{f.clean().text.split('\n').collect()}else if scope==FixScanScope::Tracked{fix_lines(f.clean(),control)?}else{Vec::new()};
+    let raw_lines=if make_fixes{f.raw().text.split('\n').collect()}else if scope==FixScanScope::Tracked{fix_lines(f.raw(),control)?}else{Vec::new()};
     for p in parse_procs_using(f.clean(),control)? {
         control.checkpoint()?;
         kc::reserve(control,||p.owner.len().checked_mul(8)?.checked_add(256))?;
@@ -680,7 +704,7 @@ pub(crate) fn scan_one_for_fix_using<C:crate::key_policy_control::Control>(track
                 if let Some(base) = base {
                     if !allowed(*number)? {
                         let is_list = tracked_base(lists, var, &owner).is_some();
-                        let fix = if make_fixes{setter_fix(&clean_lines, &raw_lines, *number, m.start(0), if written_via_src { "src" } else { "" }, var, is_list)}else{None};
+                        let fix = if make_fixes{setter_fix(&clean_lines, &raw_lines, *number, m.start(0), if written_via_src { "src" } else { "" }, var, is_list)}else if scope==FixScanScope::Tracked{let fix=admitted_setter_fix(&clean_lines,&raw_lines,*number,m.start(0),if written_via_src{"src"}else{""},var,is_list,control)?;match fix{Some(fix)if setter_available(&owner,var,fix.action)?=>Some(fix),_=>None}}else{None};
                         let msg=kc::format(control,format_args!("{} written outside {}/proc/set_{}()", var, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_SETTER,fix,list_macro:false});
                     }
                 }
@@ -699,14 +723,14 @@ pub(crate) fn scan_one_for_fix_using<C:crate::key_policy_control::Control>(track
                 if let Some(base) = base {
                     if !allowed(*number)? {
                         let is_list = typed.get(holder).and_then(|t| tracked_base(lists, var, t)).is_some();
-                        let fix = if make_fixes{setter_fix(&clean_lines, &raw_lines, *number, m.start(0), holder, var, is_list)}else{None};
+                        let fix = if make_fixes{setter_fix(&clean_lines, &raw_lines, *number, m.start(0), holder, var, is_list)}else if scope==FixScanScope::Tracked{let fix=admitted_setter_fix(&clean_lines,&raw_lines,*number,m.start(0),holder,var,is_list,control)?;match fix{Some(fix)if setter_available(typed.get(holder).map_or(owner.as_str(),String::as_str),var,fix.action)?=>Some(fix),_=>None}}else{None};
                         let msg=kc::format(control,format_args!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_SETTER,fix,list_macro:false});
                     }
                 }
             }
             if let Some(lp) = lpats {
                 // In-place edits of a tracked list var: the same holder rules as a write, one pattern per form.
-                let raw_line=if make_fixes||list_macro_fixes{f.raw().line(*number)}else{""};
+                let raw_line=if make_fixes||scope!=FixScanScope::Lint{f.raw().line(*number)}else{""};
                 let forms: [(&Pat, &str, usize, usize, usize); 3] = [(&lp.r#macro, "macro", 2, 3, 1), (&lp.method, "method", 1, 2, 3), (&lp.index, "index", 1, 2, 0)];
                 for (pat, kind, holder_group, var_group, form_group) in forms {
                     for m in pat.captures_iter(line) {
@@ -731,13 +755,13 @@ pub(crate) fn scan_one_for_fix_using<C:crate::key_policy_control::Control>(track
                         }
                         let form = if form_group == 0 { "" } else { m.s(form_group) };
                         let list_macro=kind=="macro"&&matches!(form,"LAZYADD"|"LAZYREMOVE"|"LAZYOR"|"LAZYDISTINCTADD"|"LAZYSET"|"LAZYCLEARLIST"|"LAZYNULL");
-                        let fix = if make_fixes{list_fix(line, raw_line, kind, m.start(0), holder, var, form)}else if list_macro_fixes&&list_macro&&statement_prefix_ok(&line[..m.start(0)]) {
+                        let fix = if make_fixes{list_fix(line, raw_line, kind, m.start(0), holder, var, form)}else if (scope==FixScanScope::Tracked||scope==FixScanScope::ListMacros&&list_macro)&&statement_prefix_ok(&line[..m.start(0)]) {
                             // Explicit native edit collection only. Ordinary
                             // checked lint queries still allocate NO fix buffers.
                             kc::reserve(control,||kc::split_bound(raw_line.len())?.checked_add(raw_line.len().checked_mul(8)?)?.checked_add(holder.len().checked_mul(4)?)?.checked_add(var.len().checked_mul(4)?)?.checked_add(1024))?;
                             let fix=list_fix(line,raw_line,kind,m.start(0),holder,var,form).filter(|fix|line.get(fix.end as usize..).is_some_and(|tail|{let tail=tail.trim_start();tail.is_empty()||tail.starts_with(';')}));
                             control.checkpoint()?;
-                            fix
+                            if scope==FixScanScope::Tracked{match fix{Some(fix)if setter_available(if holder.is_empty()||holder=="src"{&owner}else{typed.get(holder).map_or(owner.as_str(),String::as_str)},var,fix.action)?=>Some(fix),_=>None}}else{fix}
                         }else{None};
                         let who = if holder.is_empty(){kc::own(control,var)?}else{kc::format(control,format_args!("{}.{}",holder,var))?};
                         let msg=kc::format(control,format_args!("{} edited in place ({}) outside {}'s generated add_/remove_/set_{}_at/clear_ procs", who, if form.is_empty() { "[] =" } else { form }, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_LIST,fix,list_macro});
@@ -846,5 +870,31 @@ pub fn metadata(tests:bool)->&'static Meta{if tests{&META_TESTS}else{&META}}
   let old=scan_one(&tracked,&pats,&lists,Some(&lpats),&file,&mut Sink::new(),&BTreeSet::new()).0;let budget=Budget::new(1<<20).unwrap();let poll=||Ok(());
   let actual=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut Operation{budget:&budget,poll:&poll},&mut|_|Ok(false),true).unwrap().0;
   assert_eq!(old.len(),1);assert_eq!(actual.len(),1);assert_eq!(old[0].fix,actual[0].fix);assert_eq!(actual[0].fix.as_ref().unwrap().text,"set_items_at(key, value)");
+ }
+}
+
+#[cfg(all(test,feature="native-policy"))]mod native_full_tracked_fix_controls {
+ use super::*;use crate::{captured_generator_budget::Budget,captured_allow_annotations::Operation};
+ fn fixture(body:&str,list:bool)->(SourceFile,Tracked,Pats,Tracked,Option<ListPats>){
+  let source=format!("/obj/box\n    var/{ty}value\nTRACKED(/obj/box, value)\n/obj/box/proc/change()\n{body}\n",ty=if list{"list/"}else{""});
+  let file=SourceFile::from_text("code/fix.dm",&source);let mut tracked=Tracked::new();tracked_from_text(&file,&mut tracked);let pats=build_pats(&tracked).unwrap();let lists=if list{tracked.clone()}else{Tracked::new()};let lpats=build_list_pats(&lists);(file,tracked,pats,lists,lpats)
+ }
+ #[test]fn checked_full_tracked_fixes_use_same_scalar_method_index_and_multiline_kernels(){
+  for(body,list,action)in[("    value = 42",false,FixAction::Set),("    value += text(\n        42)",false,FixAction::Set),("    ++value",false,FixAction::Set),("    value += 42",true,FixAction::Add),("    value -= 42",true,FixAction::Remove),("    value |= 42",true,FixAction::Include),("    value.Add(42)",true,FixAction::Add),("    value[1] = 42",true,FixAction::SetAt),("    value.Cut()",true,FixAction::Clear),("    value.Insert(1, 42)",true,FixAction::Insert),("    value.Swap(1, 2)",true,FixAction::Swap)]{
+   let(f,t,p,l,lp)=fixture(body,list);let old=scan_one(&t,&p,&l,lp.as_ref(),&f,&mut Sink::new(),&BTreeSet::new()).0;
+   let budget=Budget::new(8<<20).unwrap();let poll=||Ok(());let mut asked=Vec::new();let now=scan_one_tracked_fixes_using(&t,&p,&l,lp.as_ref(),&f,&BTreeSet::new(),&mut Operation{budget:&budget,poll:&poll},&mut|_|Ok(false),&mut|owner,var,which|{asked.push((owner.to_owned(),var.to_owned(),which));Ok(true)}).unwrap().0;
+   assert_eq!(old.len(),1,"{body}");assert_eq!(now.len(),1,"{body}");assert_eq!(now[0].fix,old[0].fix,"{body}");assert_eq!(now[0].fix.as_ref().unwrap().action,action);assert_eq!(asked,[("/obj/box".into(),"value".into(),action)]);
+  }
+ }
+ #[test]fn checked_full_tracked_fixes_require_actual_setter_and_refuse_semicolon_tail_loss(){
+  let(f,t,p,l,lp)=fixture("    value = 42",false);let budget=Budget::new(1<<20).unwrap();let poll=||Ok(());
+  let hits=scan_one_tracked_fixes_using(&t,&p,&l,lp.as_ref(),&f,&BTreeSet::new(),&mut Operation{budget:&budget,poll:&poll},&mut|_|Ok(false),&mut|_,_,_|Ok(false)).unwrap().0;assert_eq!(hits.len(),1);assert!(hits[0].fix.is_none());
+  let(f,t,p,l,lp)=fixture("    value++; keep_effect()",false);let old=scan_one(&t,&p,&l,lp.as_ref(),&f,&mut Sink::new(),&BTreeSet::new()).0;assert!(old[0].fix.as_ref().unwrap().was.contains("keep_effect"),"actual old kernel safety regression");
+  let hits=scan_one_tracked_fixes_using(&t,&p,&l,lp.as_ref(),&f,&BTreeSet::new(),&mut Operation{budget:&budget,poll:&poll},&mut|_|Ok(false),&mut|_,_,_|Ok(true)).unwrap().0;assert_eq!(hits.len(),1);assert!(hits[0].fix.is_none());
+ }
+ #[test]fn checked_full_tracked_fix_preserves_first_io_and_real_allocation_denial(){
+  let(f,t,p,l,lp)=fixture("    value = text(42)",false);let root=Budget::new(1<<20).unwrap();let first=||Err(std::io::Error::from_raw_os_error(1450));
+  let actual=scan_one_tracked_fixes_using(&t,&p,&l,lp.as_ref(),&f,&BTreeSet::new(),&mut Operation{budget:&root,poll:&first},&mut|_|panic!("no later allowance pull"),&mut|_,_,_|panic!("no later metadata pull")).err().unwrap();assert!(matches!(actual,crate::captured_reactive_reads::Failure::Operational(ref e)if e.raw_os_error()==Some(1450)));
+  let tiny=Budget::new(1).unwrap();let poll=||Ok(());let actual=scan_one_tracked_fixes_using(&t,&p,&l,lp.as_ref(),&f,&BTreeSet::new(),&mut Operation{budget:&tiny,poll:&poll},&mut|_|Ok(false),&mut|_,_,_|Ok(true)).err().unwrap();assert!(matches!(actual,crate::captured_reactive_reads::Failure::Operational(ref e)if e.kind()==std::io::ErrorKind::OutOfMemory));
  }
 }

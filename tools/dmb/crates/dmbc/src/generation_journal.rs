@@ -129,7 +129,10 @@ pub(crate) struct SealedJournal {
     digest: u128,
 }
 impl SealedJournal {
-    pub(crate) fn verify(&mut self) -> io::Result<()> {
+    pub(crate) fn verify(&mut self) -> io::Result<()> {self.verify_with(&mut||Ok(()))}
+    pub(crate) fn verify_for_observation(&mut self)->io::Result<()>{self.verify_with(&mut||crate::daemon::control::checkpoint())}
+    fn verify_with(&mut self,poll:&mut impl FnMut()->io::Result<()>)->io::Result<()>{
+        poll()?;
         self.file.seek(SeekFrom::Start(0))?;
         let mut header = [0u8; HEADER as usize];
         self.file.read_exact(&mut header)?;
@@ -148,6 +151,7 @@ impl SealedJournal {
         let mut remaining = self.length - HEADER;
         let mut block = [0u8; 8192];
         while remaining != 0 {
+            poll()?;
             let count = usize::try_from(remaining.min(block.len() as u64)).unwrap();
             self.file.read_exact(&mut block[..count])?;
             hash.update(&block[..count]);
@@ -390,3 +394,14 @@ impl SealedJournal{
   self.file.seek(SeekFrom::Start(payload.offset))?;let mut source=Read::take(&mut self.file,payload.length);let mut block=[0u8;8192];while source.limit()!=0{crate::daemon::control::checkpoint()?;let count=source.read(&mut block)?;if count==0{return Err(io::ErrorKind::UnexpectedEof.into())}out.write_all(&block[..count])?;}Ok(())
  }
 }
+
+impl JournalPayload{pub(crate) fn observation_extent(self)->(u64,u64){(self.offset,self.length)}}
+impl SealedJournal{
+    /// The SAME sealed desired journal, including native header/digest/records.
+    /// No target path or source permission escapes through these bytes.
+    pub(crate) fn write_observed_journal(&mut self,output:&mut impl Write)->io::Result<()>{
+        self.verify_for_observation()?;self.file.seek(SeekFrom::Start(0))?;let mut remaining=self.length;let mut block=[0u8;8192];while remaining!=0{crate::daemon::control::checkpoint()?;let count=remaining.min(block.len()as u64)as usize;self.file.read_exact(&mut block[..count])?;output.write_all(&block[..count])?;remaining-=count as u64;}output.flush()?;self.verify_for_observation()?;crate::daemon::control::checkpoint()
+    }
+}
+
+impl SealedJournal{pub(crate) fn observation_identity(&self)->(u64,u64,u128){(self.length,self.count,self.digest)}}

@@ -230,7 +230,7 @@ impl DerivedPreflight{
  /// actual source ownership and expiry remain with its original producer.
  pub(super) fn bind_mapping(&self,subject:&OriginalAnalysisSubject,mapping:&Arc<dm_tree::frontend::SourceExportMapping>)->io::Result<()>{self.require_subject(subject)?;subject.require_bound_mapping(mapping)}
  fn require_subject(&self,subject:&OriginalAnalysisSubject)->io::Result<()>{if self.subject_issuer.get().is_none_or(|owner|!Arc::ptr_eq(owner,subject.actual_subject_issuer()))||!subject.derived_preflight().is_ok_and(|p|std::ptr::eq(p,self)){return Err(invalid("Derived preflight has no actual issued full subject"))}Ok(())}
- fn require_bound_frame(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<()>{crate::daemon::control::checkpoint()?;workspace.require_scope(scope)?;self.require_subject(subject)?;subject.require_bound_mapping(inputs.mapping())?;workspace.require_analysis_subject(subject)?;if !scope.uses_query_owner(&self.queries)||workspace.root()!=self.discovery.contract().root||!workspace.matches_auxiliary_questions(if self.joined_registry {
+ fn require_bound_frame(&self,subject:&OriginalAnalysisSubject,workspace:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->io::Result<()>{crate::daemon::control::checkpoint()?;workspace.require_scope(scope)?;self.require_subject(subject)?;subject.require_bound_mapping(inputs.mapping())?;workspace.require_analysis_subject(subject)?;if let Some(plan)=self.discovery.registered_plan(){if !plan.needs_derived(){return Err(invalid("registered Derived source was not selected"))}workspace.require_registered_plan(plan)?;}if !scope.uses_query_owner(&self.queries)||workspace.root()!=self.discovery.contract().root||self.discovery.registered_plan().is_none()&&!workspace.matches_auxiliary_questions(if self.joined_registry {
   crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_FULL_REGISTRY
  } else { &[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads] }){return Err(invalid("Derived bound mapping/current QueryDb/role/workspace differs"))}if !workspace.borrows_file_facts(self) {
   self.require_subset_with_directories(workspace.file_facts(),workspace.policy_directories())?;
@@ -258,8 +258,9 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
 
  /// Closed cold purpose. This performs selected raw schema before manifest,
  /// native frontend, Globals or BODY. Later full subject binding is separate.
- pub(crate) fn issue_derived_preflight_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender)->io::Result<Arc<DerivedPreflight>>{
-  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};let joined_registry=intent.workspace_auxiliary()==Q::PRIVATE_FULL_REGISTRY;if self.analysis_subject.is_some()||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290||intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||(!joined_registry&&intent.workspace_auxiliary()!=[Q::DerivedReads])||!intent.workspace_generators().is_empty()||!intent.files().is_empty()||!intent.search_folders().is_empty(){return Err(invalid("Derived cold preflight requires its exact unissued Original purpose"))}let workspace=intent.workspace().ok_or_else(||invalid("Derived workspace absent"))?;let code=if joined_registry{workspace.root.join("code")}else{derived_code_root(workspace)?};
+ pub(crate) fn issue_derived_preflight_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender)->io::Result<Arc<DerivedPreflight>>{self.issue_derived_preflight_registered_using(intent,queries,budget,lender,None)}
+ pub(crate) fn issue_derived_preflight_registered_using(&self,intent:&crate::policy_request::AdmittedPolicyRequest,queries:&Arc<crate::query_db::QueryDb>,budget:&Arc<Budget>,lender:&mut dyn super::RecordedPolicySourceLender,registered:Option<Arc<crate::runner_host::NativeCheckSelection>>)->io::Result<Arc<DerivedPreflight>>{
+  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};let joined_registry=registered.is_none()&&intent.workspace_auxiliary()==Q::PRIVATE_FULL_REGISTRY;if registered.as_ref().is_some_and(|plan|plan.source_only()||!plan.needs_derived()||!intent.workspace_auxiliary().iter().copied().eq(plan.questions())){return Err(invalid("Derived registered preflight differs from actual selected model demand"))}if self.analysis_subject.is_some()||self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290||intent.analysis_context()!=Some(AnalysisContext::OriginalAnalyze0290)||(!joined_registry&&registered.is_none()&&intent.workspace_auxiliary()!=[Q::DerivedReads])||!intent.workspace_generators().is_empty()||!intent.files().is_empty()||!intent.search_folders().is_empty(){return Err(invalid("Derived cold preflight requires its exact unissued Original purpose"))}let workspace=intent.workspace().ok_or_else(||invalid("Derived workspace absent"))?;let code=if joined_registry||registered.is_some(){workspace.root.join("code")}else{derived_code_root(workspace)?};
   let trace = cfg!(debug_assertions) && std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
   let mark = |stage, files| {
    if trace {
@@ -269,7 +270,9 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
   let configuration = canonical_path(&workspace.configuration);
   let (bytes, config)=self.read_derived_configuration(&configuration,budget,joined_registry)?;
   mark("configuration", 0);
-  let discovery=Arc::new(if joined_registry {
+  let discovery=Arc::new(if let Some(plan)=&registered{
+   crate::runner_host::workspace_discovery::discover_registered_source_check(self,DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()},&configuration,Arc::clone(plan))?.0
+  }else if joined_registry {
    crate::runner_host::workspace_discovery::discover_full_registry_from_derived(self,
     DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()},
     &configuration,&config,budget,lender)?
@@ -731,4 +734,10 @@ fn actual_joined_derived_schema_and_discovery_precede_manifest_bytes() {
  let subject=inputs.issue_original_analysis_subject_derived(&intent,Arc::clone(&preflight)).unwrap();
  assert!(Arc::ptr_eq(subject.discovery(),preflight.discovery()));
  assert!(Arc::ptr_eq(subject.derived_preflight_owner().unwrap(),&preflight));
+}
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ pub(crate) fn issue_original_analysis_subject_registered_derived(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,plan:&Arc<crate::runner_host::NativeCheckSelection>,preflight:Arc<DerivedPreflight>)->io::Result<Arc<OriginalAnalysisSubject>>{
+  if !plan.needs_derived(){return Err(invalid("registered model did not select Derived"))}preflight.require_recording(self)?;preflight.discovery().requires_registered_check(plan)?;let subject=self.issue_original_analysis_subject_registered_from_discovery(intent,plan,preflight.discovery())?;preflight.bind_subject(self,&subject)?;subject.install_derived_preflight(preflight)?;Ok(subject)
+ }
 }

@@ -888,7 +888,7 @@ impl OriginalProcedureHeaders {
     pub(crate) fn new_default_roots(&self,count:usize,binding:&dm_preprocess::regions::OriginalLiteralSourceBinding,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<OriginalDefaultRoots>{
      let roots=OriginalDefaultRoots::new(count,binding,a)?;if !roots.matches(self,a){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"default roots belong to another actual primary/source owner"))}Ok(roots)
     }
-    pub(crate) fn add_default_root(&self,roots:&mut OriginalDefaultRoots,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&SymbolTable,root:super::CompletedFormalRoot,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{if !roots.matches(self,a){return Err(std::io::ErrorKind::InvalidInput.into())}roots.add(self,header,argument_offset,parameter,symbols,root,a)}
+    pub(crate) fn add_default_root(&self,roots:&mut OriginalDefaultRoots,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&SymbolTable,root:super::CompletedFormalRoot,native_children:u8,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{if !roots.matches(self,a){return Err(std::io::ErrorKind::InvalidInput.into())}roots.add(self,header,argument_offset,parameter,symbols,root,native_children,a)}
     pub(crate) fn add_produced_clauses(&self,roots:&mut OriginalDefaultRoots,header:Span,argument_offset:usize,parameters:&[dm_ir::Parameter],clauses:super::FormalClauseRows,lease:Arc<dm_syntax::SettingRootLease>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{if !roots.matches(self,a){return Err(std::io::ErrorKind::InvalidInput.into())}roots.add_clauses(self,header,argument_offset,parameters,clauses,lease,a)}
     pub(crate) fn add_input_root(&self,roots:&mut OriginalDefaultRoots,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&SymbolTable,ordinal:usize,marker:Span,input:dm_syntax::RetainedParameterInput,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{if !roots.matches(self,a){return Err(std::io::ErrorKind::InvalidInput.into())}roots.add_input(self,header,argument_offset,parameter,symbols,ordinal,marker,input,a)}
     pub(crate) fn install_default_roots(&self,roots:OriginalDefaultRoots,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
@@ -916,11 +916,11 @@ impl OriginalProcedureHeaders {
         let relative = Span::new(header.start - offset, header.end - offset);
         let (source, tokens, value) =
             self.initializer_tokens(relative, variable, expression, symbols)?;
-        match self.initializer_roots.obtain(ordinal, count, a, || {
-            tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts(source,dense,value,a,self.original_literal_facts()?)))
+        match self.initializer_roots.obtain_with_native_observation(ordinal, count, a, || {
+            tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts_and_native_observation(source,dense,value,a,self.original_literal_facts()?)))
                 .map_err(dm_syntax::SettingSyntaxFailure::Operational)?
         }) {
-            Ok(root) => Ok(Ok(root)),
+            Ok((root,_)) => Ok(Ok(root)),
             Err(dm_syntax::SettingSyntaxFailure::Syntax(error)) => Ok(Err(error)),
             Err(dm_syntax::SettingSyntaxFailure::Operational(actual)) => Err(
                 OriginalHeaderFailure::Operational(a.take_operational_error().unwrap_or(actual)),
@@ -993,14 +993,23 @@ impl OriginalProcedureHeaders {
     /// The scalar facts remain with their neutral owner; only AST-local inline
     /// origins are produced by the one native parser invocation.
     pub(crate) fn original_body_expression(&self,source:&str,original_start:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<dm_syntax::ParsedExpr>>{
-      let Some(facts)=self.original_literal_facts()?else{return Ok(None)};
+      // Preserve the old Original-only entry; a native-default token owner
+      // cannot borrow that profile merely by owning an actual native tape.
+      if self.original_literal_facts()?.is_none(){return Ok(None)}
+      self.original_body_expression_with_native_facts(source,original_start,a).map(|value|value.map(|(parsed,_)|parsed))
+    }
+    pub(crate) fn original_body_expression_with_native_facts(&self,source:&str,original_start:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{
+      let facts=self.original_literal_facts()?;
+      // An actual Original profile still requires its actual Original facts.
+      // The separate native-default contract has no such profile permission.
+      if self.checker_diagnostic_settings&&facts.is_none(){return Ok(None)}
       let end=original_start.checked_add(source.len()).ok_or(std::io::ErrorKind::InvalidInput)?;
       if self.source.get(original_start..end)!=Some(source){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"current BODY expression differs from actual original source view"))}
       let first=self.tokens.window().partition_point(|token|token.span.end<=original_start);let last=self.tokens.window().partition_point(|token|token.span.start<end);
       let cut=||std::io::Error::new(std::io::ErrorKind::InvalidInput,"current BODY expression cuts actual primary token occurrence");
       let tokens=self.tokens.window().range(first,last).ok_or_else(cut)?;
       if tokens.iter().any(|token|token.span.start<original_start||token.span.end>end){return Err(cut())}
-      tokens.with_dense_using(a,|dense|Ok(Some(dm_syntax::parse_expression_original_token_view(&self.source,dense,original_start,a,Some(facts)))))
+      tokens.with_dense_using(a,|dense|Ok(Some(dm_syntax::parse_expression_token_view_with_native_facts(&self.source,dense,original_start,a,facts))))
     }
     /// Publish header DATA after the genuine streaming observer has installed
     /// its actual default/source/dimension/input roots and clause partitions.
@@ -1101,6 +1110,38 @@ impl OriginalProcedureHeaders {
         let index = self.headers.binary_search_by_key(&body.start, |header| header.start)
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "actual original header is absent"))?;
         self.realize_parameter_signature(index, self.headers[index], roots, a, || None)
+    }
+
+    // SAME private source/token/header owner, SAME canonical parser. The
+    // scalar is read by the private BodySyntax factory before any public export.
+    pub(crate) fn parse_body_admitted_with_native_consumption(
+      &self,span:Span,offset:usize,a:&dm_syntax::SettingAdmission<'_>,
+    )->std::io::Result<(Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>,bool)>{
+      original_checkpoint(a)?;
+      let fail=|message:&str|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()};
+      if self.source.get(span.range()).is_none()||span.end.checked_add(offset).is_none(){
+        return Ok((Err(fail("native procedure token range is outside source")),false))
+      }
+      let all=self.tokens.window();
+      let first=all.partition_point(|token|token.span.end<=span.start);
+      let last=all.partition_point(|token|token.span.start<span.end);
+      let Some(tokens)=all.range(first,last)else{return Ok((Err(fail("native procedure token range differs")),false))};
+      if self.parameter_signatures.get().is_some()||self.lazy_parameter_signatures.get().is_some(){
+        if offset!=0{return Ok((Err(fail("shared parameter metadata requires its canonical original source window")),false))}
+        let signature=self.parameter_signature_admitted(span,a)?;
+        let facts=self.original_literal_facts()?;
+        let result=dm_syntax::parse_proc_with_native_consumption_from_window(&self.source,span,tokens,offset,None,true,Some(signature),facts);
+        original_checkpoint(a)?;return Ok(result)
+      }
+      let result=if let Some(roots)=self.demanded_defaults.get(){
+        if offset!=0{return Ok((Err(fail("streamed default root requires its canonical original source window")),false))}
+        let Ok(index)=self.headers.binary_search_by_key(&span.start,|header|header.start)else{return Ok((Err(fail("actual default header owner is absent")),false))};
+        let mut loan=roots.loan(self.headers[index],self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));
+        dm_syntax::parse_proc_with_native_consumption_from_window(&self.source,span,tokens,offset,Some(&mut loan),self.checker_diagnostic_settings,None,None)
+      }else{
+        dm_syntax::parse_proc_with_native_consumption_from_window(&self.source,span,tokens,offset,None,self.checker_diagnostic_settings,None,None)
+      };
+      original_checkpoint(a)?;Ok(result)
     }
 
     pub(crate) fn parse_body_admitted(
@@ -2531,6 +2572,15 @@ impl OriginalBodyTokens<'_>{
    // An unavailable grammar delimiter is Deferred, never fabricated EOF.
    Ok(actual.ok().flatten())
   }
+ /// Exact bare keyword plus the SAME owned statement-delimiter production.
+ /// Token/end DATA only; the actual current BODY retains source authority.
+ pub(crate) fn bare_loop_control_using(&self,head:Span,keyword:&'static str,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+  a.checkpoint()?;if !matches!(keyword,"break"|"continue"){return Ok(false)}
+  let Ok(mut actual)=self.tokens(head)else{return Ok(false)};
+  if !matches!(actual.next(),Some((TokenKind::Ident,span,text))if span==head&&text==keyword)
+   ||actual.next().is_some(){return Ok(false)}
+  Ok(self.native_statement_terminator_using(head,a)?.is_some())
+ }
  pub(crate) fn named_loop_control_using(&self,head:Span,keyword:&'static str,name:Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
   a.checkpoint()?;
   if !matches!(keyword,"break"|"continue")||head.end!=name.end{return Ok(false)}
@@ -2859,5 +2909,21 @@ mod original_do_while_terminator_cursor_tests{
   assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(proxy.kind(),actual.kind());
   assert!(failed.is_stopped());assert!(failed.checkpoint().is_err());
   assert_eq!(calls.get(),1,"sticky stop prevents another actual source poll");
+ }
+}
+
+#[cfg(test)]mod bare_loop_owned_terminator_tests{
+ use super::*;
+ #[test]fn bare_loop_delimiter_uses_owned_layout_and_denies_foreign_head_and_named_operand(){
+  let source="/proc/p()\n    break\n/proc/q()\n    continue\n";let parsed=dm_syntax::parse(source);assert!(parsed.diagnostics.is_empty());let p=&parsed.items[0];let q=&parsed.items[1];
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&||Ok(()));
+  for offset in [0,37]{let tokens=owner.body_tokens(p.span,offset).unwrap();let h=p.children[0].header_span;let h=Span::new(h.start+offset,h.end+offset);assert!(tokens.bare_loop_control_using(h,"break",&a).unwrap());assert!(!tokens.bare_loop_control_using(h,"continue",&a).unwrap());assert!(!tokens.bare_loop_control_using(h,"return",&a).unwrap());let foreign=q.children[0].header_span;assert!(!tokens.bare_loop_control_using(Span::new(foreign.start+offset,foreign.end+offset),"continue",&a).unwrap());}
+  let source="/proc/p()\n    break label\n";let parsed=dm_syntax::parse(source);let p=&parsed.items[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let tokens=owner.body_tokens(p.span,0).unwrap();let h=p.children[0].header_span;assert!(!tokens.bare_loop_control_using(Span::new(h.start,h.start+5),"break",&a).unwrap(),"an actual label operand cannot be skipped to prove the bare role");
+  assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]fn bare_loop_delimiter_initial_io_uses_real_admission_latch_and_stops(){
+  let source="/proc/p()\n    continue\n";let parsed=dm_syntax::parse(source);let p=&parsed.items[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let tokens=owner.body_tokens(p.span,0).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=std::cell::Cell::new(0);let fail=||{calls.set(calls.get()+1);Err(std::io::Error::from_raw_os_error(1450))};let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&fail);
+  let proxy=tokens.bare_loop_control_using(p.children[0].header_span,"continue",&a).unwrap_err();let actual=a.take_operational_error().expect("same real admission owns initial1450");assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(proxy.kind(),actual.kind());assert!(a.is_stopped());assert!(a.checkpoint().is_err());assert_eq!(calls.get(),1);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
 }

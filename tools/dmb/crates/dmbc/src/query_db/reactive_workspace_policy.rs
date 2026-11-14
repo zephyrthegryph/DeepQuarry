@@ -239,11 +239,11 @@ impl QueryDb{
  }
  /// Ephemeral authored edit plan over the existing selected tracked source.
  /// No separate AST/model or retained policy cache is constructed.
- pub(crate) fn with_original_workspace_list_macro_fix<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,relative:&str,
+ pub(crate) fn with_original_workspace_list_macro_fix<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,relative:&str,tracked_fixes:bool,tests:bool,drop_declared:bool,
   consume:impl FnOnce(dq_analyze::captured_tracked_fix::ListMacroFixData,&Arc<Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<T>)->io::Result<T>{
   use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
   crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;
-  if !guard.uses_queries(self)||!workspace.matches_auxiliary_questions(&[Q::Tracked])||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {
+  if !guard.uses_queries(self)||!workspace.matches_auxiliary_questions(if drop_declared{&[Q::SemReads,Q::Tracked][..]}else if tests{&[Q::TrackedTests][..]}else{&[Q::Tracked][..]})||(tests||drop_declared)&&!tracked_fixes||tests&&drop_declared||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {
    return Err(io::Error::new(io::ErrorKind::InvalidInput,"native fix needs the actual exact Original tracked source/QueryDb role"))
   }
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
@@ -259,7 +259,13 @@ impl QueryDb{
     // This plan is NOT memoized. Its exact frame/ledger is checked on every
     // request; syntax comes from the SAME existing checked Body query owner.
     let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|dm_tree::frontend::BodySyntaxQueries::syntax_checked(self,input);
-    let(data,witness)=reader.tracked_list_macro_data(capture.policy(),&config.config,relative,&body)?;
+    let(data,witness)=if drop_declared{
+     let question=workspace.semantic_order_question().ok_or("declared fix lacks actual semantic manifest role")?;let order=workspace.with_semantic_manifest(current,question,|bytes|reads::scoped_original_include_order_bytes(bytes,reader.budget(),&crate::daemon::control::checkpoint))?;
+     // The existing child entry binds its own same-owner operation; retire this
+     // initial configuration loan first, never nest the non-reentrant frame.
+     drop(_operation);
+     self.with_workspace_job_reader(workspace,&scope,capture,Request::Dependencies,None,reader,current,|value|{let Value::RawDependencies(value)=value else{return Err(io::Error::new(io::ErrorKind::InvalidData,"declared fix dependency child returned another role"))};reader.tracked_drop_declared_data(capture.policy(),&config.config,relative,&value.data,&order,&body).map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})})?
+    }else{reader.tracked_list_macro_data(capture.policy(),&config.config,relative,tracked_fixes,tests,&body)?};
     if !witness.matches(workspace,current,capture.policy())?{return Err("native fix declaration/selected EOF witness belongs to another scope".into())}
     // The actual raw-family gate is already held. Ordinary QueryDb::reserve
     // would reacquire it and deadlock. Per-file loans have ended; lend this
@@ -459,7 +465,7 @@ impl QueryDb{
   crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;
   let subject=capture.original_analysis_subject().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"handler declarations lack independently requested full Subject"))?;
   workspace.require_analysis_subject(subject)?;subject.require_bound_mapping(capture.policy().mapping())?;
-  let question=if selected_full{Q::admits_selected_handlers(workspace.auxiliary())}else{workspace.matches_auxiliary_questions(&[Q::SemHandlers])};
+  let question=if selected_full{Q::admits_selected_handlers(workspace.auxiliary())||workspace.registered_model_handler_join()?}else{workspace.matches_auxiliary_questions(&[Q::SemHandlers])};
   if !guard.uses_queries(self)||!question||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!matches!(guard.model_preparation(),Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete|dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"handler declaration child has no independent actual full source purpose")))}
   reader.budget().charge(2*std::mem::size_of::<usize>()).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
   let scope=guard.query_receipt(&mut|bytes|reader.budget().charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let scope=Arc::new(scope);
@@ -487,4 +493,14 @@ impl QueryDb{
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());let pending=self.with_workspace_code_pages_limit_locked(workspace,guard,limit,|reader|reader.schema_proposals_using(capture,consume));pending.map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
  }
 
+}
+
+impl QueryDb{
+ pub(crate) fn with_original_workspace_fix_targets<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,mode:dq_analyze::native_fix_wire::Mode,prefixes:&[String],consume:impl FnOnce(dq_analyze::captured_tracked_pages::FixTargetsData,&Arc<Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<T>)->io::Result<T>{
+  crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;if !guard.uses_queries(self)||!workspace.matches_auxiliary_questions(crate::native_fix::mode_questions(mode))||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"native FIX target roster lacks exact current native scope"))}
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
+  self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|{reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;reader.budget().charge(2*std::mem::size_of::<usize>())?;let scope=Arc::new(guard.query_receipt(&mut|bytes|reader.budget().charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?);
+   flatten(scope.with_guard(self,workspace,capture.policy(),|_|split((||{let _operation=self.raw_policy.admission.bind_workspace_operation(reader.budget(),&scope,workspace,capture)?;let key=configuration_input(self,reader,capture)?;let config=self.db.input::<ConfigData>(key).ok_or("native FIX actual configuration absent")?;config.require_original(capture.configuration_bytes(reader.configuration().0)?)?;let targets=reader.tracked_fix_targets(capture.policy(),&config.config,mode,prefixes)?;let result=reader.with_held_source_work(|work|consume(targets,reader.budget(),work)).map_err(Failure::Operational)?;reader.require_policy_inputs(capture.policy())?;Ok(result)})())))
+  }).map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+ }
 }

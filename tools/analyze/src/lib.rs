@@ -8,7 +8,7 @@
 #[cfg(test)]
 extern crate self as dq_analyze;
 
-pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire, full_registry_check_wire, schema_proposals_wire};
+pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire, full_registry_check_wire, full_registry_check_selection_wire, schema_proposals_wire, native_fix_wire};
 pub mod allow;
 #[cfg(feature = "legacy-sem")]
 pub mod base_vars_dead;
@@ -587,3 +587,6 @@ mod client_producer_contract_tests {
 }
 
 pub use dq_analyze_client::native_checker_wire;
+
+#[cfg(feature="native-policy")]mod captured_tracked_drop;
+#[cfg(feature="native-policy")]pub mod captured_registry_check_selection;

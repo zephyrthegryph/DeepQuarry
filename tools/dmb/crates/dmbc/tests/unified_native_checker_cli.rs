@@ -116,6 +116,61 @@ fn actual_resident_checker_reuses_one_daemon_and_seals_semantic_output_without_t
  let transport_root=scratch::dir("resident-checker-transport");let transport=native_transport::LibraryTransport{root:&transport_root,namespace:format!("resident-checker-{}",std::process::id())};let arguments=[OsStr::new("checker-text"),OsStr::new("-e"),project.as_os_str()];
  let first=transport.run_program_with_trace(std::path::Path::new(env!("CARGO_BIN_EXE_dmbc")),&arguments,Duration::from_secs(90),true).unwrap();assert_eq!(first.status.code(),Some(0),"{}",String::from_utf8_lossy(&first.stderr));assert!(first.stderr.is_empty(),"operational logs must remain lifecycle output: {}",String::from_utf8_lossy(&first.stderr));let(first_terminal,diagnostic,output)=checker_transport_payload(&first.stdout,&canonical_project);assert_eq!(first_terminal.emitted,0);assert_eq!(first_terminal.visited_bodies,1);assert!(diagnostic.is_empty());assert!(output.ends_with(b"Found 0 diagnostics\n"));assert!(String::from_utf8_lossy(output).contains(&format!("Parsing {}...",project.display())),"display spelling stays authored while canonical identity is real");let pid=checker_transport_pid(&transport_root);
  fs::write(&project,"/proc/probe()\n    return missing_value\n").unwrap();let second=transport.run_program(std::path::Path::new(env!("CARGO_BIN_EXE_dmbc")),&arguments,Duration::from_secs(90)).unwrap();assert_eq!(second.status.code(),Some(1),"{}",String::from_utf8_lossy(&second.stderr));assert!(second.stderr.is_empty());let(second_terminal,diagnostic,output)=checker_transport_payload(&second.stdout,&canonical_project);assert_eq!(second_terminal.emitted,1);assert!(String::from_utf8_lossy(diagnostic).contains("undefined var: \"missing_value\""));assert!(output.ends_with(b"Found 1 diagnostics\n"));assert_ne!(first_terminal.frame.source_revision,second_terminal.frame.source_revision);assert_eq!(checker_transport_pid(&transport_root),pid,"same real resident process handles changed source");
+ let json_arguments=[OsStr::new("checker-text"),OsStr::new("-e"),project.as_os_str(),OsStr::new("--json")];let json=transport.run_program(std::path::Path::new(env!("CARGO_BIN_EXE_dmbc")),&json_arguments,Duration::from_secs(90)).unwrap();assert_eq!(json.status.code(),Some(1));assert!(json.stderr.is_empty());let(json_terminal,diagnostic,output)=checker_transport_payload(&json.stdout,&canonical_project);assert!(json_terminal.json);assert_eq!(json_terminal.emitted,1);assert!(output.ends_with(b"Found 1 diagnostics\n{\"error\":1,\"hint\":0,\"info\":0,\"warning\":0}"));assert_eq!(checker_transport_pid(&transport_root),pid,"same actual daemon serves JSON without another parser host");
  if cfg!(debug_assertions){let lifecycle=fs::read_to_string(transport_root.join("daemon/lifecycle.log")).unwrap();assert!(lifecycle.contains("ORIGINAL_ADAPTER_CREDIT stage=before_adapt"),"existing original tracing must remain observable");assert!(!String::from_utf8_lossy(output).contains("ORIGINAL_ADAPTER_CREDIT"));assert!(!String::from_utf8_lossy(diagnostic).contains("ORIGINAL_ADAPTER_CREDIT"));}
  for entry in fs::read_dir(&root).unwrap(){let path=entry.unwrap().path();assert!(!matches!(path.extension().and_then(|s|s.to_str()),Some("dmb"|"rsc")),"Checker must not publish executable products")}
+}
+
+#[test]fn actual_standalone_checker_json_counts_hidden_preprocess_hint_and_visible_body_error(){
+ let(request,_)=fixture("native-checker-json-registered","#define A 1\n#define A 2\n/proc/probe()\n    return missing_value\n","[diagnostics]\nmacro_redefined = \"hint\"\n");
+ let mut host=BuildHost::default();let(mut out,mut err)=(Vec::new(),Vec::new());let result=native_checker::run_with_json(request,true,&mut host,&mut out,&mut err).unwrap();assert!(result.json);assert_eq!(result.exit_code,1);assert_eq!(result.emitted,1);assert_eq!(result.visited_bodies,1);
+ let text=String::from_utf8(out).unwrap();assert!(text.ends_with("Found 1 diagnostics\n{\"error\":1,\"hint\":1,\"info\":0,\"warning\":0}"),"{text}");let err=String::from_utf8(err).unwrap();assert!(err.contains("undefined var: \"missing_value\""));assert!(!err.contains("macro redefined"),"hidden hint remains a genuine registered count without semantic text");assert!(!result.full_checker_parity);
+}
+
+#[test]
+fn actual_standalone_checker_variadic_formal_keeps_issued_original_header(){
+ let(request,_)=fixture("native-checker-cli-variadic-formal","/proc/probe(...)\n    return\n","");let mut host=BuildHost::default();let(mut out,mut err)=(Vec::new(),Vec::new());
+ let result=native_checker::run(request,&mut host,&mut out,&mut err).unwrap();
+ assert_eq!(result.exit_code,0,"{}",String::from_utf8_lossy(&err));assert_eq!(result.visited_bodies,1);assert_eq!(result.emitted,0);assert!(!result.full_checker_parity);assert!(err.is_empty());
+ assert!(String::from_utf8(out).unwrap().ends_with("Found 0 diagnostics\n"));
+}
+
+#[test]
+fn actual_standalone_checker_bare_postfix_read_values_keep_real_effects_and_full_bodies(){
+ for(name,source)in[
+  ("postfix-return","/proc/probe(safety)\n    return safety--\n"),
+  ("postfix-negated","/proc/probe(safety)\n    return !safety--\n"),
+  ("postfix-write-key","/proc/probe(list/path, index, value)\n    path[index--] = value\n    return index\n"),
+  ("postfix-interpolation","/proc/probe(i)\n    return \"[i++]\"\n"),
+ ]{
+  let(request,_)=fixture(name,source,"");let mut host=BuildHost::default();let(mut out,mut err)=(Vec::new(),Vec::new());
+  let result=native_checker::run(request,&mut host,&mut out,&mut err).unwrap();
+  assert_eq!(result.exit_code,0,"{name}: {}",String::from_utf8_lossy(&err));assert_eq!(result.emitted,0,"{name}");
+  assert_eq!(result.visited_bodies,1,"{name}");assert!(!result.full_checker_parity);
+  assert!(String::from_utf8(out).unwrap().ends_with("Found 0 diagnostics\n"));assert!(err.is_empty());
+ }
+}
+
+#[test]fn actual_standalone_checker_absolute_static_new_without_arguments_keeps_real_target(){
+ let source="/datum/seed_pile\n/proc/probe()\n    var/datum/seed_pile/P = new /datum/seed_pile\n    return P\n";
+ let(request,_)=fixture("absolute-static-new-absent",source,"");let mut host=BuildHost::default();let(mut out,mut err)=(Vec::new(),Vec::new());
+ let result=native_checker::run(request,&mut host,&mut out,&mut err).unwrap();assert_eq!(result.exit_code,0,"{}",String::from_utf8_lossy(&err));assert_eq!(result.emitted,0);assert_eq!(result.visited_bodies,1);assert!(!result.full_checker_parity);assert!(err.is_empty());
+ assert!(String::from_utf8(out).unwrap().ends_with("Found 0 diagnostics\n"));
+}
+
+#[test]fn actual_standalone_checker_bare_loop_controls_use_real_owned_layout_terminators(){
+ for(name,source)in[
+  ("owned-break-followed","/proc/probe(value)\n    while(value)\n        break\n    return 0\n"),
+  ("owned-continue-followed","/proc/probe(value)\n    while(value)\n        continue\n    return 0\n"),
+  ("owned-break-end","/proc/probe(value)\n    while(value)\n        break\n"),
+ ]{
+  let(request,_)=fixture(name,source,"");let mut host=BuildHost::default();let(mut out,mut err)=(Vec::new(),Vec::new());
+  let result=native_checker::run(request,&mut host,&mut out,&mut err).unwrap();assert_eq!(result.exit_code,0,"{name}: {}",String::from_utf8_lossy(&err));assert_eq!(result.emitted,0);assert_eq!(result.visited_bodies,1);assert!(!result.full_checker_parity);assert!(err.is_empty());assert!(String::from_utf8(out).unwrap().ends_with("Found 0 diagnostics\n"));
+ }
+}
+
+#[test]fn actual_standalone_checker_member_safe_index_uses_real_member_then_safe_key(){
+ let source="/datum/holder\n    var/list/factors\n/proc/probe(datum/holder/other_trait, id)\n    return !isnull(other_trait.factors?[id])\n";
+ let(request,_)=fixture("member-safe-index-read",source,"");let mut host=BuildHost::default();let(mut out,mut err)=(Vec::new(),Vec::new());let result=native_checker::run(request,&mut host,&mut out,&mut err).unwrap();
+ assert_eq!(result.exit_code,0,"{}",String::from_utf8_lossy(&err));assert_eq!(result.emitted,0);assert_eq!(result.visited_bodies,1);assert!(!result.full_checker_parity);assert!(err.is_empty());assert!(String::from_utf8(out).unwrap().ends_with("Found 0 diagnostics\n"));
 }

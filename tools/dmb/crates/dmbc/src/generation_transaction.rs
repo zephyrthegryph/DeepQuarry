@@ -41,7 +41,11 @@ fn rollback(root:&Path,targets:&mut[Target],backup:&mut File,admit:&Admission,gu
 pub(crate) fn commit(closed:ClosedGeneration,cache_root:&Path,mode:Mode)->Result<Report,TransactionError>{commit_using(closed,cache_root,mode,&mut|_|Ok(()))}
 pub(crate) fn commit_using(closed:ClosedGeneration,cache_root:&Path,mode:Mode,hook:&mut impl FnMut(Event)->io::Result<()>)->Result<Report,TransactionError>{commit_using_existing(closed,cache_root,mode,hook,0)}
 pub(crate) fn commit_with_existing(closed:ClosedGeneration,cache_root:&Path,mode:Mode,existing:usize)->Result<Report,TransactionError>{commit_using_existing(closed,cache_root,mode,&mut|_|Ok(()),existing)}
-fn commit_using_existing(mut closed:ClosedGeneration,cache_root:&Path,mode:Mode,hook:&mut impl FnMut(Event)->io::Result<()>,existing:usize)->Result<Report,TransactionError>{
+fn commit_using_existing(closed:ClosedGeneration,cache_root:&Path,mode:Mode,hook:&mut impl FnMut(Event)->io::Result<()>,existing:usize)->Result<Report,TransactionError>{commit_retaining_check(closed,cache_root,mode,hook,existing,None).map(|(report,_)|report)}
+pub(crate) fn capture_check(closed:ClosedGeneration,cache_root:&Path,existing:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->Result<(Report,CheckEvidence),TransactionError>{let(report,evidence)=commit_retaining_check(closed,cache_root,Mode::Check,&mut|_|Ok(()),existing,Some(work))?;Ok((report,evidence.ok_or_else(||invalid("actual Check evidence was not retained"))?))}
+fn commit_retaining_check(mut closed:ClosedGeneration,cache_root:&Path,mode:Mode,hook:&mut impl FnMut(Event)->io::Result<()>,existing:usize,observe:Option<&dyn dm_preprocess::source_arena_credit::SourceArenaWork>)->Result<(Report,Option<CheckEvidence>),TransactionError>{
+ if observe.is_some()&&mode!=Mode::Check{return Err(invalid("generation observation is CHECK-only").into())}
+
  let admit=Admission{used:std::cell::Cell::new(8192)};admit.charge(existing)?;let root=admit.path(closed.inputs.root())?;let actual_root=fs::canonicalize(&root)?;let actual_cache=fs::canonicalize(cache_root)?;if actual_cache.starts_with(&actual_root){return Err(invalid("generation scratch must be outside issued source root").into())}
  let _lease=crate::publish::generation_destination_lease()?;let mut guards=Vec::new();admit.row(&mut guards)?;guards.push(crate::frozen_inputs::generation_ancestor_guard(&root,&root)?);closed.inputs.require_current(&FileSystemInputs).map_err(|primary|TransactionError{primary,rollback:Vec::new()})?;
  let mut backup=crate::generation_staging::temporary_output(cache_root)?;let mut backup_length=0u64;let mut targets=Vec::<Target>::new();let mut diagnostics=Vec::<Diagnostic>::new();let names:Vec<_>=closed.inputs.names().collect();let mut current=None;let mut ordinal=0usize;let mut per_name=[0usize;13];let mut diagnostics_started=false;
@@ -79,7 +83,11 @@ fn commit_using_existing(mut closed:ClosedGeneration,cache_root:&Path,mode:Mode,
  // an unsafe rollback after another backup has already been removed.
  if let Err(error)=hook(Event::AfterCommit){rollback_failures.push(RollbackFailure{path:root.clone(),error});}
  for target in &mut targets{for mut temp in [target.temporary.take(),target.restore.take()].into_iter().flatten(){if let Err(error)=temp.cleanup(){rollback_failures.push(RollbackFailure{path:temp.path.clone(),error});}}}
- report.cleanup=rollback_failures;report.committed=mode==Mode::Write&&targets.iter().any(|target|!target.fresh);Ok(report)
+ report.cleanup=rollback_failures;report.committed=mode==Mode::Write&&targets.iter().any(|target|!target.fresh);
+ let evidence=if let Some(work)=observe{
+  work.checkpoint()?;let owned=admit.used.get().checked_sub(existing).and_then(|n|n.checked_add(std::mem::size_of::<CheckEvidence>())).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;let bytes=owned.checked_add(closed.inputs.observation_retention_charge()?).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;let credit=work.reserve(bytes)?;
+  let mut evidence=CheckEvidence{closed,targets,backup,bytes,_credit:credit};evidence.require_current().map_err(|primary|TransactionError{primary,rollback:Vec::new()})?;Some(evidence)
+ }else{None};Ok((report,evidence))
 }
 
 #[cfg(test)]mod transaction_path_tests{use super::*;#[test]fn generation_transaction_rejects_real_symlink_ancestor_without_touching_external_directory(){let root=crate::test_scratch::dir("generation-transaction-symlink-root");let external=crate::test_scratch::dir("generation-transaction-symlink-external");fs::create_dir(root.join("code")).unwrap();fs::write(external.join("untouched"),b"external").unwrap();#[cfg(windows)]std::os::windows::fs::symlink_dir(&external,root.join("code/engine")).expect("actual symlink privilege is required for this filesystem negative");#[cfg(unix)]std::os::unix::fs::symlink(&external,root.join("code/engine")).unwrap();#[cfg(any(windows,unix))]{assert!(ordinary_ancestors(&root,&root.join("code/engine/_generated")).is_err());assert_eq!(fs::read(external.join("untouched")).unwrap(),b"external");}}}
@@ -94,5 +102,41 @@ mod publication_admission_tests{use super::*;
   let root=crate::test_scratch::dir("generation-publication-deep");let mut parent=root.clone();for _ in 0..20{parent.push("x")}fs::create_dir_all(&parent).unwrap();let charge=crate::frozen_inputs::generation_publication_guard_charge(&parent,&root).unwrap();assert!(charge>parent.as_os_str().len()*16+4096,"actual ancestor storage cannot use only terminal path width");
   let deny=Admission{used:std::cell::Cell::new(LIMIT-1)};assert_eq!(admitted_publication_guard(&deny,&parent,&root).err().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_eq!(fs::read_dir(&parent).unwrap().count(),0,"quota refuses before the real publication anchor is created");
   let healthy=Admission{used:std::cell::Cell::new(0)};let guard=admitted_publication_guard(&healthy,&parent,&root).unwrap();assert_eq!(healthy.used.get(),charge);assert_eq!(fs::read_dir(&parent).unwrap().count(),1);drop(guard);assert_eq!(fs::read_dir(&parent).unwrap().count(),0);
+ }
+}
+
+/// Real closed phase/source and target owners, retained only by CHECK capture.
+pub(crate) struct CheckEvidence{
+ closed:ClosedGeneration,targets:Vec<Target>,backup:File,bytes:usize,
+ _credit:dm_preprocess::source_arena_credit::SourceArenaCredit,
+}
+impl CheckEvidence{
+ pub(crate) fn retained_bytes(&self)->usize{self.bytes}
+ pub(crate) fn names(&self)->impl Iterator<Item=GeneratorName>+'_ {self.closed.inputs.names()}
+ pub(crate) fn journal_identity(&self)->(u64,u64,u128){self.closed.journal.observation_identity()}
+ pub(crate) fn retained_spool_bytes(&self)->io::Result<u64>{self.closed.journal.observation_identity().0.checked_add(self.backup.metadata()?.len()).ok_or(io::ErrorKind::OutOfMemory.into())}
+
+ pub(crate) fn root(&self)->&Path{self.closed.inputs.root()}
+ pub(crate) fn matches_names(&self,names:&[GeneratorName])->bool{self.closed.inputs.names().eq(names.iter().copied())}
+ pub(crate) fn require_current(&mut self)->Result<(),Box<dyn Error>>{
+  crate::daemon::control::checkpoint()?;self.closed.inputs.require_current_exact()?;
+  for target in &self.targets{
+   crate::daemon::control::checkpoint()?;expected_target(self.closed.inputs.root(),target)?;
+   if let Some(previous)=&target.previous{
+    let mut actual=File::open(&target.path)?;if crate::input_snapshot::stamp_handle(&actual)?!=previous.stamp{return Err(invalid("observed generated destination changed before exact check").into())}
+    self.backup.seek(SeekFrom::Start(previous.offset))?;let mut left=previous.length;let(mut want,mut got)=([0u8;8192],[0u8;8192]);while left!=0{crate::daemon::control::checkpoint()?;let count=left.min(want.len()as u64)as usize;self.backup.read_exact(&mut want[..count])?;actual.read_exact(&mut got[..count])?;if want[..count]!=got[..count]{return Err(invalid("observed generated destination bytes changed").into())}left-=count as u64;}
+    let mut tail=[0u8;1];if actual.read(&mut tail)?!=0||crate::input_snapshot::stamp_handle(&actual)?!=previous.stamp{return Err(invalid("observed generated destination changed during exact check").into())}expected_target(self.closed.inputs.root(),target)?;
+   }
+  }
+  self.closed.journal.verify_for_observation()?;crate::daemon::control::checkpoint()?;Ok(())
+ }
+ pub(crate) fn write_inputs(&self,output:&mut impl Write)->io::Result<()>{self.closed.inputs.write_observed_inputs(output)}
+ pub(crate) fn write_journal(&mut self,output:&mut impl Write)->io::Result<()>{self.closed.journal.write_observed_journal(output)}
+ pub(crate) fn write_targets(&mut self,output:&mut impl Write)->io::Result<()>{
+  use serde::{Serialize,Serializer as _};use serde::ser::SerializeSeq;#[derive(Serialize)]struct Row<'a>{generator:&'static str,path:&'a Path,previous:Option<&'a Stamp>,previous_hash:Option<dq_analyze::selected_exclusions_wire::Hex128>,previous_length:Option<u64>,desired_extent:(u64,u64)}
+  let mut serializer=serde_json::Serializer::new(output);let mut rows=serializer.serialize_seq(Some(self.targets.len())).map_err(io::Error::from)?;
+  for target in &self.targets{crate::daemon::control::checkpoint()?;let hash=if let Some(previous)=&target.previous{let mut hash=xxhash_rust::xxh3::Xxh3::new();struct Hash<'a>(&'a mut xxhash_rust::xxh3::Xxh3);impl Write for Hash<'_>{fn write(&mut self,bytes:&[u8])->io::Result<usize>{self.0.update(bytes);Ok(bytes.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}copy_range(&mut self.backup,previous.offset,previous.length,&mut Hash(&mut hash),true)?;Some(dq_analyze::selected_exclusions_wire::Hex128(hash.digest128()))}else{None};
+   rows.serialize_element(&Row{generator:target.name.name(),path:&target.path,previous:target.previous.as_ref().map(|p|&p.stamp),previous_hash:hash,previous_length:target.previous.as_ref().map(|p|p.length),desired_extent:target.payload.observation_extent()}).map_err(io::Error::from)?;
+  }rows.end().map_err(io::Error::from)
  }
 }

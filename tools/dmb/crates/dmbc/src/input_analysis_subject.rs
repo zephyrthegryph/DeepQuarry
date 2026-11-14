@@ -68,6 +68,17 @@ impl OriginalAnalysisSubject{
  }
 }
 impl<P:SnapshotProvider> RecordingInputs<P>{
+ pub(crate) fn issue_original_analysis_subject_registered(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<Arc<OriginalAnalysisSubject>>{
+  if plan.source_only()||intent.analysis_context()!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||!intent.workspace_auxiliary().iter().copied().eq(plan.questions()){return Err(invalid("selected model subject requires its actual registered declaration demand"))}
+  let workspace=intent.workspace().ok_or_else(||invalid("selected model workspace absent"))?;let contract=DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
+  let(discovery,_configuration)=crate::runner_host::workspace_discovery::discover_registered_source_check(self,contract,&workspace.configuration,Arc::clone(plan))?;let discovery=Arc::new(discovery);discovery.requires_registered_check(plan)?;
+  // Reuse the exact real/missing/blank-manifest issuer, actual CODE_DM proof,
+  // source acquisitions, directives and private logical-root ownership.
+  self.issue_original_analysis_subject_registered_from_discovery(intent,plan,&discovery)
+ }
+ pub(super) fn issue_original_analysis_subject_registered_from_discovery(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,plan:&Arc<crate::runner_host::NativeCheckSelection>,discovery:&Arc<DiscoveryReceipt>)->io::Result<Arc<OriginalAnalysisSubject>>{
+  if plan.source_only()||intent.analysis_context()!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||!intent.workspace_auxiliary().iter().copied().eq(plan.questions()){return Err(invalid("registered subject dependency role differs"))}discovery.requires_registered_check(plan)?;discovery.validate_recording(self)?;self.issue_original_analysis_subject_with_engine(intent,None,Some(discovery))
+ }
  pub(crate) fn issue_original_analysis_subject(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest)->io::Result<Arc<OriginalAnalysisSubject>>{self.issue_original_analysis_subject_with_engine(intent,None,None)}
  pub(crate) fn issue_original_analysis_subject_engine(&mut self,intent:&crate::policy_request::AdmittedPolicyRequest,preflight:crate::runner_host::workspace_discovery::EnginePreflight)->io::Result<Arc<OriginalAnalysisSubject>>{if intent.workspace_auxiliary()!=[preflight.question()]||intent.workspace().is_none_or(|workspace|workspace.root!=preflight.discovery().contract().root||workspace.recursive_roots!=preflight.discovery().contract().recursive_roots||workspace.configuration!=preflight.configuration().0){return Err(invalid("engine preflight cannot grant another actual subject namespace/purpose"))}preflight.require(self)?;if preflight.is_empty(){return Err(invalid("empty engine selection must finish before manifest/model acquisition"))}self.issue_original_analysis_subject_with_engine(intent,Some(Arc::new(preflight)),None)}
  pub(super) fn issue_original_analysis_subject_full_registry(

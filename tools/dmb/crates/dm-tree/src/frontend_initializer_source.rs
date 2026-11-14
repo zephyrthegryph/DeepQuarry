@@ -228,8 +228,8 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
     }
 }
 fn prepare_original_expression<'source>(frontend:&'source ColdFrontend,expression:&'source SymbolicExpression,i:&relative_declarations::OriginalInitializerTokenInput<'source>,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
-        let produce=||i.tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts(i.source,dense,i.value,a,i.owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?;
-        let pending=if i.dimension{i.slots.obtain_dimension(i.ordinal,i.count,i.dimension_index,i.dimension_count,i.value,a,produce)}else{i.slots.obtain(i.ordinal,i.count,a,produce)};
+        let produce=||i.tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts_and_native_observation(i.source,dense,i.value,a,i.owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?;
+        let pending=if i.dimension{i.slots.obtain_dimension(i.ordinal,i.count,i.dimension_index,i.dimension_count,i.value,a,||produce().map(|(root,_)|root))}else{i.slots.obtain_with_native_observation(i.ordinal,i.count,a,produce).map(|(root,_)|root)};
         let result=pending
             .and_then(|root| {
                 root.project_current(i.offset, i.source.len())

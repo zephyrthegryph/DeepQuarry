@@ -305,10 +305,10 @@ impl ReturnAnnotationInput<'_> {
         let input = &self.input;
         let result = input
             .slots
-            .obtain(input.ordinal, input.count, a, || {
-                input.tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts(input.source,dense,input.original_value,a,input.literal_owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?
+            .obtain_with_native_observation(input.ordinal, input.count, a, || {
+                input.tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts_and_native_observation(input.source,dense,input.original_value,a,input.literal_owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?
             })
-            .and_then(|root| {
+            .and_then(|(root,_)| {
                 root.project_current(input.offset, input.source.len())
                     .map_err(dm_syntax::SettingSyntaxFailure::Operational)
             });

@@ -194,3 +194,49 @@ where F:for<'a> FnOnce(Observation<'a>)->io::Result<()> + Send + 'static {
         assert!(std::str::from_utf8(&actual).unwrap().contains(&u128::MAX.to_string()));
     }
 }
+
+/// Actual source/read-only report DATA. It never represents a compiled pair.
+#[derive(Clone,Copy,Serialize)]pub(crate) struct ReportBinding {
+ pub(crate) frame:Frame,pub(crate) checker_frame:Frame,
+ pub(crate) options:dq_analyze::full_registry_check_wire::Options,
+ pub(crate) clean:bool,pub(crate) diagnostics:Option<Seal>,
+ pub(crate) checker:Seal,pub(crate) report:Seal,
+}
+#[derive(Serialize)]struct ReportHeader<'a>{
+ schema:&'static str,kind:&'static str,scope:&'static str,
+ full_checker_parity:bool,full_policy_parity:bool,project:&'a Path,
+ analysis_context:crate::policy_request::AnalysisContext,
+ binding:ReportBinding,combined_preparation_inputs:Seal,
+}
+/// One genuine combined-preparation ledger, not two synthesized source roles.
+pub struct ReportObservation<'a>{
+ pub project:&'a Path,pub deadline:std::time::Instant,
+ header:Verified,inputs:Verified,checker:Verified,export_failure:&'a std::cell::RefCell<Option<io::Error>>,_credit:SourceArenaCredit,
+}
+impl ReportObservation<'_>{
+ pub fn write_inputs(self,header:&mut impl Write,inputs:&mut impl Write,checker:&mut impl Write)->io::Result<()>{
+  let Self{header:head,inputs:actual,checker:actual_checker,export_failure,_credit,..}=self;
+  let written:io::Result<()>=(||{head.publish(header)?;actual.publish(inputs)?;actual_checker.publish(checker)?;drop(_credit);Ok(())})();
+  if let Err(actual)=written{let kind=actual.kind();*export_failure.borrow_mut()=Some(actual);return Err(io::Error::new(kind,"report observation export failed; operation retains its first actual error"))}Ok(())
+ }
+}
+// Reuse the same codec, Stage/Verified seals and real SourceArena lender as
+// compiled observation. The copied payload is only existing immutable DATA.
+fn verify_report(stage:Stage,context:&crate::daemon::control::WorkerContext)->io::Result<Verified>{
+ let(verified,())=stage.seal()?.validate(|reader|{
+  use std::io::Read;let mut bytes=[0u8;8192];loop{context.checkpoint()?;let n=reader.read(&mut bytes)?;if n==0{break;}}context.checkpoint()
+ })?;Ok(verified)
+}
+pub(crate) fn observe_report_inputs<F>(project:&Path,cache:&Path,actual:&InputSnapshot,binding:ReportBinding,checker:Verified,work:&dyn SourceArenaWork,consume:F)->io::Result<()>
+where F:for<'a>FnOnce(ReportObservation<'a>)->io::Result<()>{
+ work.checkpoint()?;if binding.checker.length!=checker.length()||binding.checker.hash.0!=checker.hash(){return Err(invalid("observed Checker seal differs from its actual stage"))}let context=crate::daemon::control::WorkerContext::capture().ok_or_else(||invalid("report input observation lacks original active request context"))?;
+ let deadline=crate::daemon::control::current_deadline().ok_or_else(||invalid("report input observation lacks original deadline"))?;
+ let bytes=cache.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(project.as_os_str().len().checked_mul(4)?)).and_then(|n|n.checked_add(SCRATCH+2*256+std::mem::size_of::<F>()+std::mem::size_of::<ReportObservation<'_>>()+std::mem::size_of::<std::cell::RefCell<Option<io::Error>>>())).ok_or(io::ErrorKind::OutOfMemory)?;
+ let credit=work.reserve(bytes)?;let mut input=Stage::new(cache)?;encode(actual,&mut input)?;
+ if input.length()>MAX_STREAM{return Err(io::ErrorKind::OutOfMemory.into())}let input=verify_report(input,&context)?;
+ let mut header=Stage::new(cache)?;encode(&ReportHeader{schema:"joined-report-input-observation-v1",kind:"observed_combined_preparation_inputs_only",scope:"actual combined preparation ledger; exact before/after checks do not prove no intervening change",full_checker_parity:false,full_policy_parity:false,project,analysis_context:crate::policy_request::AnalysisContext::OriginalAnalyze0290,binding,combined_preparation_inputs:seal(&input)},&mut header)?;
+ if input.length().checked_add(header.length()).and_then(|n|n.checked_add(checker.length())).is_none_or(|n|n>MAX_STREAM){return Err(io::ErrorKind::OutOfMemory.into())}let header=verify_report(header,&context)?;
+ let export_failure=std::cell::RefCell::new(None);let _control=credit.control();
+ let observed=consume(ReportObservation{project,deadline,header,inputs:input,checker,export_failure:&export_failure,_credit:credit});
+ let first=export_failure.borrow_mut().take();if let Some(actual)=first{return Err(actual)}observed?;context.checkpoint()
+}

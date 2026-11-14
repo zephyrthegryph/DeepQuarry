@@ -834,19 +834,25 @@ pub(super) fn parse_expr(
     parse_expr_observed(source,offset,diagnostics,&mut |_|{})
 }
 pub(super) fn parse_expr_observed(source:&str,offset:usize,diagnostics:&mut BodyDiagnostics<'_>,observe:&mut dyn FnMut(&crate::ParsedExpr))->Option<Expr>{
+    parse_expr_observed_with_native(source,offset,diagnostics,observe).0
+}
+pub(super) fn parse_expr_observed_with_native(source:&str,offset:usize,diagnostics:&mut BodyDiagnostics<'_>,observe:&mut dyn FnMut(&crate::ParsedExpr))->(Option<Expr>,Option<crate::NativeExpressionParserFacts>){
     if source.trim().is_empty() {
         diagnostics.push(Diagnostic {
             span: Span::new(offset, offset),
             kind: DiagnosticKind::Statement,
             message: "missing expression".into(),
         });
-        return None;
+        return (None,None);
     }
     let original=match diagnostics.settings{
-      Some(provider)=>match provider.original_expression(source,offset){Ok(value)=>value,Err(actual)=>{if let Some(a)=diagnostics.admission{a.record_operational_error(actual);}return None}},None=>None,
+      Some(provider)=>match provider.original_expression_with_native_facts(source,offset){Ok(value)=>value,Err(actual)=>{if let Some(a)=diagnostics.admission{a.record_operational_error(actual);}return (None,None)}},None=>None,
     };
     let using_original=original.is_some();
-    let mut parsed = match original{Some(parsed)=>parsed,None=>parse_expression(source)};
+    let (mut parsed,native) = match original{Some(pair)=>pair,None=>(parse_expression(source),None)};
+    if let Some(progress)=diagnostics.native_progress{
+        progress.expression(native,parsed.expr.as_ref().map(|expr|expr.span));
+    }
     observe(&parsed);
     for diagnostic in &mut parsed.diagnostics {
         diagnostic.span.start += offset;
@@ -855,20 +861,20 @@ pub(super) fn parse_expr_observed(source:&str,offset:usize,diagnostics:&mut Body
     let clean = parsed.diagnostics.is_empty();
     diagnostics.extend(parsed.diagnostics);
     if !clean {
-        return None;
+        return (None,None);
     }
-    let mut expr=parsed.expr?;
+    let Some(mut expr)=parsed.expr else{return (None,None)};
     if using_original {
         let Some(a)=diagnostics.admission else {
             diagnostics.push(Diagnostic{span:expr.span,kind:DiagnosticKind::Statement,message:"Original expression requires its native operation admission".into()});
-            return None;
+            return (None,None);
         };
         if let Err(actual)=crate::literal::shift_unpublished_expression_using(&mut expr,offset,a) {
             a.record_operational_error(actual);
-            return None;
+            return (None,None);
         }
     } else { shift_expr(&mut expr, offset); }
-    Some(expr)
+    (Some(expr),native)
 }
 
 fn shift_expr(expr: &mut Expr, offset: usize) {

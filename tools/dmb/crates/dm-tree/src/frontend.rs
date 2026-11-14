@@ -1467,7 +1467,7 @@ pub use directive_plan::FrontendDirectivePlan;
 
 pub use diagnostic_preparation::{HandlersStructuralSource,OriginalAnalysisCompleteness,DiagnosticPreparationPurpose,ORIGINAL_ANALYZE_PREPARATION_VERSION};
 
-pub use body_queries::{OriginalBodyDisposition,OriginalBodyCodeGrant};
+pub use body_queries::{OriginalBodyDisposition,OriginalBodyCodeGrant,NativeBodyDisposition,NativeBodyCodeGrant};
 
 #[path="frontend_original_signature_funding.rs"]mod original_signature_funding;
 pub use original_signature_funding::{OriginalSignatureAliasGroup,OriginalSignatureAliasCensus};

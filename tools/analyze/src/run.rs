@@ -57,17 +57,10 @@ pub fn registry() -> Registry {
     reg
 }
 
-pub fn selected<'a>(reg: &'a Registry, names: &[String]) -> Vec<&'a dyn Lint> {
-    // `-name` excludes a lint or group; with only exclusions every other lint is selected.
-    let matches = |l: &dyn Lint, n: &str| l.meta().name == n || (!l.meta().group.is_empty() && l.meta().group == n);
-    let include: Vec<&String> = names.iter().filter(|n| !n.starts_with('-')).collect();
-    let exclude: Vec<&str> = names.iter().filter_map(|n| n.strip_prefix('-')).collect();
-    reg.lints
-        .iter()
-        .map(|b| b.as_ref())
-        .filter(|l| include.is_empty() || include.iter().any(|n| matches(*l, n)))
-        .filter(|l| !exclude.iter().any(|n| matches(*l, n)))
-        .collect()
+pub fn selected<'a>(reg:&'a Registry,names:&[String])->Vec<&'a dyn Lint>{
+ reg.lints.iter().map(|lint|lint.as_ref()).filter(|lint|{
+  let meta=lint.meta();crate::cli_arguments::lint_selected(meta.name,meta.group,names)
+ }).collect()
 }
 
 impl Engine {

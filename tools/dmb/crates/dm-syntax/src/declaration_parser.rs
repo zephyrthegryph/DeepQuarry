@@ -220,12 +220,20 @@ type LayoutLiteralRows<'a> = (OriginalLiteralRows<'a>,usize);
 pub(super) fn parse_original_body_span_range_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->(Vec<Item>,Vec<Diagnostic>){
     parse_original_span_range_with_outcome(source,range,tokens,false,None,facts.as_ref().map(|view|view.raw_parts()))
 }
+pub(super) fn parse_original_body_span_range_with_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,complete:&mut bool)->(Vec<Item>,Vec<Diagnostic>){
+ *complete=false;
+ parse_original_span_range_with_native_consumption(source,range,tokens,false,None,facts.as_ref().map(|view|view.raw_parts()),Some(complete))
+}
 fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->(Vec<Item>,Vec<Diagnostic>){
+    parse_original_span_range_with_native_consumption(source,range,tokens,skeleton,original,facts,None)
+}
+fn parse_original_span_range_with_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>)->(Vec<Item>,Vec<Diagnostic>){
     let layout=original.and_then(|state|state.storage.layout(source,tokens,std::mem::size_of::<Line>()));
     if original.is_some()&&layout.is_none(){return(Vec::new(),Vec::new())}
-    let lines = original_declaration_lines_in_window(source,range,tokens,original,facts);
+    let mut layout_consumed=false;
+    let lines = original_declaration_lines_with_native_consumption(source,range,tokens,original,facts,Some(&mut layout_consumed));
     let mut diagnostics = Vec::new();
-    let (items, _) = parse_level(
+    let (items, consumed) = parse_level(
         source,
         &lines,
         0,
@@ -239,6 +247,7 @@ fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:TokenWin
         },
         &mut diagnostics,
     );
+    if let Some(complete)=native_consumption{*complete=layout_consumed&&consumed==lines.len();}
     (items, diagnostics)
 }
 
@@ -309,10 +318,21 @@ fn original_declaration_lines_with_storage(source:&str,range:Span,tokens:&[SpanT
  original_declaration_lines_in_window(source,range,TokenWindow::from_slice(tokens),original,None)
 }
 fn original_declaration_lines_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->Vec<Line>{
+ original_declaration_lines_with_native_consumption(source,range,tokens,original,facts,None)
+}
+fn original_declaration_lines_with_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>)->Vec<Line>{
  let mut masks=NativeLayoutMaskCursor::default();if !masks.advance_with_literal_facts(source,range,tokens,original,facts){return Vec::new()}
  let range_source=&source[range.range()];let visible=masks.visible();
- let physical=NativeStructuralCursor::default().advance(visible,&masks.delimiters,&masks.multiline_literals,original,source,tokens,range.start,true).expect("fresh final native structural input has actual mask geometry");
- let mut lines=NativeInlineBlockCursor::default().advance(range_source,&physical,&masks.delimiters,original,source,tokens,range.start);
+ let mut structural=NativeStructuralCursor::default();
+ let physical=structural.advance(visible,&masks.delimiters,&masks.multiline_literals,original,source,tokens,range.start,true).expect("fresh final native structural input has actual mask geometry");
+ let mut inline=NativeInlineBlockCursor::default();
+ let mut lines=inline.advance(range_source,&physical,&masks.delimiters,original,source,tokens,range.start);
+ if let Some(complete)=native_consumption{
+  *complete=structural.finished&&!structural.native_unmatched_close&&structural.offset==visible.len()
+   &&structural.pending.is_none()&&structural.depth==0&&structural.initializer_depth==0
+   &&structural.block_depth==0&&inline.brace_depth==0&&inline.initializer_depth==0
+   &&masks.tokens==tokens.len()&&masks.visible.len()==range.end-range.start;
+ }
  for line in &mut lines{line.header_start+=range.start;line.header_end+=range.start;line.end+=range.start;}lines
 }
 
@@ -343,7 +363,7 @@ fn original_line_outer_probe<E>(source:&str,tokens:TokenWindow<'_>,line:&Line,in
 // SAME physical-layout state carried across native expansion demand pauses.
 // This owns scalar/pending-line DATA only; it cannot issue syntax/model/EOF.
 #[derive(Default)]struct NativeStructuralCursor{
- offset:usize,pending:Option<Line>,depth:usize,literal_cursor:usize,
+ offset:usize,pending:Option<Line>,depth:usize,literal_cursor:usize,native_unmatched_close:bool,
  initializer_depth:usize,block_depth:usize,procedure:Option<(usize,usize)>,
  pending_in_body:bool,pending_block_start:usize,pending_physical_indent:usize,procedure_scope_exact:bool,finished:bool,early_physical:Option<usize>,
 }
@@ -396,13 +416,13 @@ impl NativeStructuralCursor{
             if at%1024==0&&original.is_some_and(|state|!state.poll()){return Ok(())}
             match delimiters[at]{
                 b'(' | b'['=>self.depth+=1,
-                b')' | b']'=>self.depth=self.depth.saturating_sub(1),
+                b')' | b']'=>{if self.depth==0{self.native_unmatched_close=true;}self.depth=self.depth.saturating_sub(1)},
                 b'{' if self.initializer_depth > 0 || (self.depth == 0
                     && (self.pending_in_body || !typed_procedure_header(visible, delimiters, segment_start, at))
                     && is_object_initializer_primary(&visible[segment_start..at],self.pending_in_body,original.map(|state|(source,tokens,Span::new(range_start+segment_start,range_start+at),state))))=>self.initializer_depth+=1,
                 b'}' if self.initializer_depth>0=>self.initializer_depth-=1,
                 b'{' if self.depth==0=>self.block_depth+=1,
-                b'}' if self.depth==0=>self.block_depth=self.block_depth.saturating_sub(1),
+                b'}' if self.depth==0=>{if self.block_depth==0{self.native_unmatched_close=true;}self.block_depth=self.block_depth.saturating_sub(1)},
                 _=>()
             }
         }

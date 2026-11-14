@@ -7,11 +7,13 @@ use std::{io, mem::size_of, sync::Mutex};
 const ROOT_PAGE_LEN: usize = 256;
 const ROOT_WORD_BITS: usize = u64::BITS as usize;
 
+/// The existing occupied slot owns its native observation; empty pages do not.
+struct Ready{root:SettingExpression,native:crate::expression_parser::NativeExpressionParserState}
 /// The mask addresses original ordinals. Only published roots have a row.
 #[derive(Default)]
 struct RootPage {
     mask: [u64; ROOT_PAGE_LEN / ROOT_WORD_BITS],
-    roots: Vec<SettingExpression>,
+    roots: Vec<Ready>,
     credit: Option<SettingRootLease>,
 }
 
@@ -26,11 +28,12 @@ impl RootPage {
 
     fn get(&self, local: usize) -> Option<&SettingExpression> {
         let (index, occupied) = self.position(local);
-        occupied.then(|| &self.roots[index])
+        occupied.then(|| &self.roots[index].root)
     }
 
+    fn ready(&self,local:usize)->Option<&Ready>{let(index,occupied)=self.position(local);occupied.then(||&self.roots[index])}
     fn insert(
-        &mut self, local: usize, root: &SettingExpression, a: &SettingAdmission<'_>,
+        &mut self, local: usize, root: &SettingExpression, facts:Option<crate::NativeExpressionParserFacts>, a: &SettingAdmission<'_>,
     ) -> Result<(), SettingSyntaxFailure> {
         let (index, occupied) = self.position(local);
         debug_assert!(!occupied);
@@ -49,7 +52,7 @@ impl RootPage {
             drop(std::mem::replace(&mut self.roots, rows));
             self.credit = Some(credit);
         }
-        self.roots.insert(index, root.clone());
+        self.roots.insert(index,Ready{root:root.clone(),native:crate::expression_parser::NativeExpressionParserState::for_root(facts,root.original_expression().span)});
         self.mask[local / ROOT_WORD_BITS] |= 1u64 << (local % ROOT_WORD_BITS);
         Ok(())
     }
@@ -186,6 +189,14 @@ impl SettingExpressionSlots {
         a: &SettingAdmission<'_>,
         produce: impl FnOnce() -> Result<SettingExpression, SettingSyntaxFailure>,
     ) -> Result<SettingExpression, SettingSyntaxFailure> {
+      self.obtain_with_native_observation(ordinal,count,a,||produce().map(|root|(root,None))).map(|(root,_)|root)
+    }
+    /// Same authentic occupied slot, with DATA from its actual first producer.
+    /// Cached absent observations remain absent; this never reparses.
+    pub fn obtain_with_native_observation(
+      &self,ordinal:usize,count:usize,a:&SettingAdmission<'_>,
+      produce:impl FnOnce()->Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>),SettingSyntaxFailure>,
+    )->Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>),SettingSyntaxFailure>{
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
         if ordinal >= count {
             return Err(denied(
@@ -198,7 +209,8 @@ impl SettingExpressionSlots {
         let storage=guard.as_mut().expect("initialized original slots");
         let page = &mut storage.roots[ordinal / ROOT_PAGE_LEN];
         let local = ordinal % ROOT_PAGE_LEN;
-        if let Some(root) = page.get(local) {
+        if let Some(ready) = page.ready(local) {
+            let root=&ready.root;
             if !root.is_retained_in(a) || root.current_offset() != 0 {
                 return Err(denied(
                     a,
@@ -207,9 +219,9 @@ impl SettingExpressionSlots {
                 ));
             }
             a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
-            return Ok(root.clone());
+            return Ok((root.clone(),ready.native.facts(Some(root.original_expression().span))));
         }
-        let root = produce()?;
+        let(root,facts)=produce()?;
         if !root.is_retained_in(a) || root.current_offset() != 0 {
             return Err(denied(
                 a,
@@ -217,8 +229,9 @@ impl SettingExpressionSlots {
                 "unissued storage cannot populate native setting slot",
             ));
         }
-        page.insert(local, &root, a)?;
-        Ok(root)
+        if facts.is_some_and(|f|(f.is_complete()&&f.complete_span()!=Some(root.original_expression().span))||f.complete_span().is_some_and(|span|span!=root.original_expression().span)){return Err(denied(a,io::ErrorKind::InvalidInput,"native slot observation differs from its actual produced root"))}
+        page.insert(local,&root,facts,a)?;
+        Ok((root,facts))
     }
     /// Storage identity only. The enclosing ORIGINAL source receipt must bind
     /// this particular slot before it checks a host's returned sealed handle.
@@ -293,12 +306,12 @@ impl SettingExpressionSlots {
                         credit.visit_counter_storage(|p, n| allocation(p, n, n));
                         allocation(
                             page.roots.as_ptr() as usize,
-                            page.roots.len() * size_of::<SettingExpression>(),
-                            page.roots.capacity() * size_of::<SettingExpression>(),
+                            page.roots.len() * size_of::<Ready>(),
+                            page.roots.capacity() * size_of::<Ready>(),
                         );
                     }
                     for value in &page.roots {
-                        root(value);
+                        root(&value.root);
                     }
                 }
             }
@@ -337,7 +350,7 @@ mod tests {
         let poll_count = polls.get();
         let geometry = slots.container_geometry_for_trace().unwrap();
         assert_eq!(geometry[0], (1, 3 * size_of::<RootPage>(), 3 * size_of::<RootPage>()));
-        assert_eq!(geometry[1], (2, 4 * size_of::<SettingExpression>(), 5 * size_of::<SettingExpression>()));
+        assert_eq!(geometry[1], (2, 4 * size_of::<Ready>(), 5 * size_of::<Ready>()));
         assert_eq!((geometry[2].0, geometry[2].1), (1, 513 * size_of::<Option<DimensionGroup>>()));
         assert!(geometry[2].2 >= geometry[2].1);
         assert_eq!((geometry[3].0, geometry[3].1), (1, 2 * size_of::<Option<(crate::Span, SettingExpression)>>()));
@@ -365,7 +378,7 @@ mod tests {
             assert!(slots.contains_original(ordinal, &value));
         }
         let directories = count.div_ceil(ROOT_PAGE_LEN) * size_of::<RootPage>();
-        let leaf_capacity = (4 + 1 + 1) * size_of::<SettingExpression>();
+        let leaf_capacity = (4 + 1 + 1) * size_of::<Ready>();
         assert_eq!(counter.load(Ordering::Acquire) - base,
             size_of::<Storage>() + directories + leaf_capacity);
         let mut visited = 0;
@@ -403,7 +416,7 @@ mod tests {
         slots.obtain(later, count, &a, || Ok(first.clone())).unwrap();
         let before = counter.load(Ordering::Acquire);
         let limited = SettingAdmission::new(&counter,
-            before + 2 * size_of::<SettingExpression>() - 1, &|| Ok(()));
+            before + 2 * size_of::<Ready>() - 1, &|| Ok(()));
         assert!(matches!(slots.obtain(earlier, count, &limited, || Ok(second.clone())),
             Err(SettingSyntaxFailure::Operational(ref e)) if e.kind() == io::ErrorKind::OutOfMemory));
         assert_eq!(counter.load(Ordering::Acquire), before);
@@ -534,4 +547,22 @@ mod tests {
       drop(rhs);drop(dimension);drop(warm);drop(recovered);drop(slots);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes(),"dimension aliases/metadata physically release original credit");
     }
 
+}
+
+#[cfg(test)]mod observed_slot_owner_controls{
+ use super::*;use std::{cell::Cell,sync::atomic::Ordering};
+ fn actual(text:&str,a:&SettingAdmission<'_>)->Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>),SettingSyntaxFailure>{let lexed=crate::lex_spans(text);crate::prepare_setting_expression_with_original_literal_facts_and_native_observation(text,&lexed.tokens,crate::Span::new(0,text.len()),a,None)}
+ #[test]fn actual_slot_observation_belongs_to_same_cached_root_without_reparse_or_new_empty_page_bytes(){
+  struct PriorPage{mask:[u64;4],roots:Vec<SettingExpression>,credit:Option<SettingRootLease>}
+  assert_eq!(size_of::<RootPage>(),size_of::<PriorPage>());assert!(size_of::<Ready>()<=size_of::<SettingExpression>()+size_of::<usize>());
+  eprintln!("NATIVE_SETTING_READY_SIZE prior={} current={} page={}",size_of::<SettingExpression>(),size_of::<Ready>(),size_of::<RootPage>());
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let slots=SettingExpressionSlots::default();let calls=Cell::new(0);
+  let(root,facts)=slots.obtain_with_native_observation(0,1,&a,||{calls.set(calls.get()+1);actual("value+1",&a)}).unwrap();assert!(facts.unwrap().is_complete());let before=used.load(Ordering::Acquire);
+  let(cached,again)=slots.obtain_with_native_observation(0,1,&a,||panic!("cached observation cannot reparse")).unwrap();assert!(root.same_root(&cached));assert_eq!(again,facts);assert_eq!(again.unwrap().complete_span(),Some(cached.original_expression().span));assert_eq!(used.load(Ordering::Acquire),before);assert_eq!(calls.get(),1);drop((slots,root,cached));assert_eq!(used.load(Ordering::Acquire),fixed);
+ }
+ #[test]fn actual_slot_observation_rejects_another_parsers_span_before_publishing_or_leaking_credit(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let(root,_)=actual("value+1",&a).unwrap();let(other,wrong)=actual("long_value+1",&a).unwrap();let slots=SettingExpressionSlots::default();
+  assert!(matches!(slots.obtain_with_native_observation(0,1,&a,||Ok((root.clone(),wrong))),Err(SettingSyntaxFailure::Operational(_))));assert_eq!(a.take_operational_error().unwrap().kind(),io::ErrorKind::InvalidInput);assert!(!slots.contains_original(0,&root));
+  let fresh=SettingAdmission::new(&used,8<<20,&||Ok(()));let(ok,facts)=slots.obtain_with_native_observation(0,1,&fresh,||actual("value+1",&fresh)).unwrap();assert!(facts.unwrap().is_complete());assert!(slots.contains_original(0,&ok));drop((root,other,ok,slots));assert_eq!(used.load(Ordering::Acquire),fixed);
+ }
 }

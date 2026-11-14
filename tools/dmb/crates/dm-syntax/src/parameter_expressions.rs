@@ -27,6 +27,7 @@ impl ParameterExpressions {
     pub fn default(&self) -> Option<&Expr> {
         self.default.as_deref()
     }
+    pub fn source_root(&self)->Option<&crate::SettingExpression>{self.source.as_ref()}
     pub fn source(&self) -> Option<&Expr> {
         self.source.as_deref()
     }
@@ -187,6 +188,8 @@ fn annotation<T:ParameterToken>(source:&str,tokens:&[T],span:Span,base:usize,aft
 /// Syntax DATA source for already-produced roots. Source/header/current-role
 /// authority remains with the actual caller; a span is not an ownership grant.
 pub trait ParameterDefaultSyntaxProvider{
+ /// Classification DATA only; current header/owner admission remains independent.
+ fn native_child_observation(&mut self,_parameter:usize,_expressions:Option<&ParameterExpressions>)->Result<Option<(bool,bool,bool)>,&'static str>{Ok(None)}
  fn produced_clauses(&mut self,_parameter:usize,_span:Span)->Result<crate::ParameterClauseSpans,&'static str>{Err("actual formal expression clause producer is unissued")}
  fn default_root(&mut self,parameter:usize,assignment:Span,expression:Span)->Result<crate::SettingExpression,&'static str>;
  fn input_annotation(&mut self,_parameter:usize,_marker:Span,_annotation:Span,_after_in:bool)->Result<crate::RetainedParameterInput,&'static str>{Err("actual demanded input annotation is unissued")}
@@ -204,9 +207,10 @@ pub(crate) fn issue<T: ParameterToken>(
     brackets: &[Span],
     base: usize,
  ) -> Result<Option<Box<ParameterExpressions>>, &'static str> {issue_with_default_provider(source,tokens,brackets,base,0,&mut None)}
-pub(crate) fn issue_with_default_provider<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span],base:usize,parameter:usize,defaults:&mut Option<&mut dyn ParameterDefaultSyntaxProvider>)->Result<Option<Box<ParameterExpressions>>,&'static str>{issue_with_profile(source,tokens,brackets,base,parameter,defaults,false)}
-pub(crate) fn issue_original_with_default_provider<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span],base:usize,parameter:usize,defaults:&mut Option<&mut dyn ParameterDefaultSyntaxProvider>)->Result<Option<Box<ParameterExpressions>>,&'static str>{issue_with_profile(source,tokens,brackets,base,parameter,defaults,true)}
-fn issue_with_profile<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span],base:usize,parameter:usize,defaults:&mut Option<&mut dyn ParameterDefaultSyntaxProvider>,original:bool)->Result<Option<Box<ParameterExpressions>>,&'static str>{
+pub(crate) fn issue_with_default_provider<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span],base:usize,parameter:usize,defaults:&mut Option<&mut dyn ParameterDefaultSyntaxProvider>)->Result<Option<Box<ParameterExpressions>>,&'static str>{issue_with_profile(source,tokens,brackets,base,parameter,defaults,false,None)}
+pub(crate) fn issue_original_with_default_provider<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span],base:usize,parameter:usize,defaults:&mut Option<&mut dyn ParameterDefaultSyntaxProvider>)->Result<Option<Box<ParameterExpressions>>,&'static str>{issue_with_profile(source,tokens,brackets,base,parameter,defaults,true,None)}
+pub(crate) fn issue_native_observed<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span],base:usize,parameter:usize,defaults:&mut Option<&mut dyn ParameterDefaultSyntaxProvider>)->(Result<Option<Box<ParameterExpressions>>,&'static str>,bool){let mut no_child=false;let result=issue_with_profile(source,tokens,brackets,base,parameter,defaults,false,Some(&mut no_child));(result,no_child)}
+fn issue_with_profile<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span],base:usize,parameter:usize,defaults:&mut Option<&mut dyn ParameterDefaultSyntaxProvider>,original:bool,native_no_child:Option<&mut bool>)->Result<Option<Box<ParameterExpressions>>,&'static str>{
     let tokens=if let Some(last)=tokens.iter().rposition(|token|!super::parameter_syntax::trivia(token)){
      if tokens[last].text(source)==";"{if let Some(provider)=defaults.as_mut(){provider.trailing_semicolon(parameter,shift(tokens[last].span(),base)?)?;&tokens[..last]}else{tokens}}else{tokens}
     }else{tokens};
@@ -220,6 +224,7 @@ fn issue_with_profile<T:ParameterToken>(source:&str,tokens:&[T],brackets:&[Span]
         && clauses.annotation.is_none()
         && brackets.is_empty()
     {
+        if let Some(observed)=native_no_child{*observed=true;}
         return Ok(None);
     }
     // Preserve current native unsupported semantics until semicolon ABI/notes

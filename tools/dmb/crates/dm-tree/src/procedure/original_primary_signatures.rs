@@ -257,7 +257,7 @@ struct Row<Geometry = PackedHeader, Producer = ()> {
 }
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
-struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::CompletedFormalRoot}
+struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::CompletedFormalRoot,native_children:u8}
 pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:CompletedSignatureRows,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool,pub(crate) reader_registration:Option<dm_preprocess::regions::OriginalNoticeRegistration>,reader_commits:Option<dm_preprocess::regions::OriginalReaderRegistrationTable>,reader_committed:usize}
 /// Borrowed accounting from existing unique observer leases. The floor is
 /// the existing post-header reconciliation, including its fixed allowance,
@@ -2182,7 +2182,7 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
    let index=match found{Some(index)=>index,None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>return Ok(()),None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
    let row=self.rows.get(index).expect("located default signature");let geometry=self.rows.geometry(index,row);
    let parameters=self.rows.parameters(row).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual default metadata was consumed before primary publication")))?;let parameter=parameters.get(pending.root.parameter).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual demanded parameter slot is absent")))?;
-   headers.add_default_root(&mut roots,geometry.header,geometry.argument_offset,parameter,&self.symbols,pending.root,a).map_err(OriginalHeaderFailure::Operational)
+   headers.add_default_root(&mut roots,geometry.header,geometry.argument_offset,parameter,&self.symbols,pending.root,pending.native_children,a).map_err(OriginalHeaderFailure::Operational)
   })?;
   for pending in self.inputs{
    checkpoint(a)?;let index=match self.rows.find(pending.live.start()){Some(index)=>index,None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"input annotation has no actual completed header or genuine stop frontier")))};let row=self.rows.get(index).expect("located input signature");let parameter=self.rows.parameters(row).and_then(|parameters|parameters.get(pending.parameter)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native input parameter metadata absent")))?;
@@ -2648,9 +2648,11 @@ impl OriginalSignatureObserver<'_,'_>{
  fn retain_default(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot)->std::io::Result<()>{
   checkpoint(self.a)?;if self.defaults.last().is_some_and(|row|(row.live.start(),row.root.parameter,row.root.role)>=(live.start(),root.parameter,root.role)){return Err(std::io::ErrorKind::InvalidInput.into())}
   let super::DemandedFormalRoot{role,enclosure,parameter,assignment,syntax}=root;
-  let syntax=syntax.into_completed_syntax(self.a)?;
+  let (syntax,observation)=syntax.into_completed_syntax_with_native_observation(self.a)?;
+  if (observation.is_complete()&&observation.complete_span()!=Some(syntax.expression().span))||observation.complete_span().is_some_and(|span|span!=syntax.expression().span){return Err(std::io::ErrorKind::InvalidData.into())}
+  let native_children=8|u8::from(observation.is_complete())|(u8::from(observation.recovered())<<1)|(u8::from(observation.deferred())<<2);
   let root=super::DemandedFormalRoot{role,enclosure,parameter,assignment,syntax};
-  self.defaults.push(PendingDefault{live,root},self.a)
+  self.defaults.push(PendingDefault{live,root,native_children},self.a)
  }
  /// No source borrow survives this call. The actual driver supplies a completed
  /// formal and already-consumed delimiter while the SAME live owner is active.
@@ -2960,4 +2962,11 @@ mod procedure_canonical_allocation_tests {
  #[test]fn compatibility_formal_findings_remain_available_without_causal_authority(){
   let text="/proc/p(var/static/value)\n    return value\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let notices=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(notices.len(),2);for notice in notices{assert!(input.headers.optional_formal_notice_registration(notice).unwrap().is_none());assert!(input.headers.formal_notice_registration(notice).is_err());assert!(notice.message_width(input.headers.formal_notice_text(notice).unwrap()).unwrap()>0)}let header=input.items.view(&input.source).unwrap().iter().find(|item|item.kind()==dm_syntax::ItemKind::Proc).unwrap().header_span();assert!(input.headers.optional_reader_commit_registration(header,0).unwrap().is_none());assert!(input.headers.reader_commit_registration(header,0).is_err());assert!(input.headers.optional_reader_end_registration().unwrap().is_none());drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
+}
+
+#[cfg(test)]
+mod native_pending_default_footprint_tests{
+ use super::*;
+ #[allow(dead_code)]struct PriorPending{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::super::CompletedFormalRoot}
+ #[test]fn native_pending_default_observation_reports_actual_row_cost(){let prior=std::mem::size_of::<PriorPending>();let current=std::mem::size_of::<PendingDefault>();eprintln!("NATIVE_PENDING_DEFAULT_SIZE prior={prior} current={current}");assert!(current<=prior+std::mem::size_of::<usize>());}
 }

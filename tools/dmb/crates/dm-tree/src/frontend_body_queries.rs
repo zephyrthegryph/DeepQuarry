@@ -41,6 +41,7 @@ pub struct BodySyntax {
     original_code: Arc<BodyCodeIdentity>,
     original_window: dm_syntax::Span,
     original_body_span:dm_syntax::Span,
+    native_primary_consumed:bool,
 }
 
 impl BodySyntaxInput {
@@ -131,9 +132,9 @@ impl BodySyntaxInput {
         let code=self.original_code.as_ref().ok_or_else(||internal("original body code input is unissued"))?;
         let recipe=self.syntax.original_body_recipe(self.span,code).map_err(|error|{observe(&error);Diagnostic{kind:syntax_kind(error.kind),stage:DiagnosticStage::Syntax,location:self.mapping.output(error.span.start).or_else(||Some(self.location.clone())),message:error.message}})?;
         let original_window=recipe.source_window().map_err(internal)?;
-        let issued = match admission {
-            Some((a, operational)) => recipe.parse_original_admitted(a).map_err(operational)?,
-            None => recipe.parse_original(),
+        let (issued,native_primary_consumed) = match admission {
+            Some((a, operational)) => recipe.parse_native_admitted(a).map_err(operational)?,
+            None => (recipe.parse_original(),false),
         };
         let mut issued = issued.map_err(|error| {observe(&error);Diagnostic {
                 kind: syntax_kind(error.kind),
@@ -156,6 +157,7 @@ impl BodySyntaxInput {
         let statements = parse_statements(&mut item)?;
         Ok(BodySyntax {
             issuance: self.id,
+            native_primary_consumed,
             opening_parenthesis: issued.opening_parenthesis,
             parameters: issued.parameters.into_shared(),
             item,
@@ -545,6 +547,9 @@ impl<'a> BindingWork<'a>{
 }
 impl<'a> CurrentBodySyntax<'a>{
  fn validate_issued_coordinates(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<usize,BodySyntaxFailure>{
+  self.validate_issued_coordinates_with_native_children(a,false)
+ }
+ fn validate_issued_coordinates_with_native_children(&self,a:&dm_syntax::SettingAdmission<'_>,native:bool)->Result<usize,BodySyntaxFailure>{
   let mut work=BindingWork::new(a)?;let mut deferred=0usize;
   let parameters=self.parameters()?;for declaration in parameters.absolute_declarations().map_err(binding_view_error)?{a.checkpoint().map_err(BodySyntaxFailure::Operational)?;declaration.span().map_err(binding_view_error)?;}
   for parameter in parameters.entries().map_err(binding_view_error)?{
@@ -561,6 +566,13 @@ impl<'a> CurrentBodySyntax<'a>{
   work.statements(self.statements(),a)?;
   while let Some(node)=work.nodes.pop(){a.checkpoint().map_err(BodySyntaxFailure::Operational)?;match node{
    BindingNode::Expression(root)=>{
+    if native{
+      if let dm_syntax::ExprKind::Literal(text)=&root.original().kind{
+       if text.owns_template_syntax()&&!text.native_parser_facts().is_some_and(|facts|facts.is_complete()&&!facts.recovered()&&!facts.deferred()){
+        deferred=deferred.checked_add(1).ok_or_else(||binding_error("native deferred literal count overflows"))?;
+       }
+      }
+    }
     if let dm_syntax::ExprKind::Literal(text)=&root.original().kind{if text.owns_template_syntax()&&!matches!(text.prepared_syntax_parts(),Some(Ok(_))){deferred=deferred.checked_add(1).ok_or_else(||binding_error("deferred literal count overflows"))?;continue}}
     if matches!(root.original().kind,dm_syntax::ExprKind::Literal(_)){if let Some(fragments)=root.literal_fragments().map_err(binding_view_error)?{for fragment in fragments{a.checkpoint().map_err(BodySyntaxFailure::Operational)?;let fragment=fragment.map_err(binding_view_error)?;for token in fragment.tokens(){a.checkpoint().map_err(BodySyntaxFailure::Operational)?;token.map_err(binding_view_error)?;}fragment.expression().map_err(binding_view_error)?;}}}
     let children=root.try_visit_children(|_,child|work.expression(Some(child.map_err(binding_view_error)?),a))?;children.map_err(binding_view_error)?;
@@ -568,7 +580,9 @@ impl<'a> CurrentBodySyntax<'a>{
    BindingNode::Statement(row)=>{
     // Inspect only the original issued node. Projected setting children keep
     // the same payload and resource owner, with a composed current window.
-    if let dm_syntax::StatementKind::ProjectedSet{value,..}=&row.original().kind{if !value.is_retained_in(a){return Err(binding_error("setting parser product belongs to another native resource domain"))}let value=dm_syntax::ProjectedSettingExpression::new(value,self.projection).map_err(binding_view_error)?;work.expression(Some(value.expression()),a)?;continue}
+    if let dm_syntax::StatementKind::ProjectedSet{value,..}=&row.original().kind{
+      // Actual setting observation already folded before the private BODY seal.
+      if !value.is_retained_in(a){return Err(binding_error("setting parser product belongs to another native resource domain"))}let value=dm_syntax::ProjectedSettingExpression::new(value,self.projection).map_err(binding_view_error)?;work.expression(Some(value.expression()),a)?;continue}
     use dm_syntax::ProjectedStatementKind as S;match row.kind().map_err(binding_view_error)?{
      S::If{condition,then_branch,else_branch}=>{work.expression(Some(condition),a)?;work.statements(then_branch,a)?;work.statements(else_branch,a)?;}
      S::While{condition,body}|S::DoWhile{condition,body}=>{work.expression(Some(condition),a)?;work.statements(body,a)?;}
@@ -685,20 +699,31 @@ mod current_original_body_product_binding_tests {
    assert_eq!(old.kind(),std::io::ErrorKind::Unsupported);
    assert_eq!(old.to_string(),"original body grammar profile is not actually issued");
    match bound.native_code_disposition_using(&a).unwrap(){
-    NativeBodyDisposition::Complete(grant)=>{assert!(grant.belongs_to(&bound));assert_eq!(&input.source[grant.statement_span().range()],"return");}
+    NativeBodyDisposition::Complete(grant)=>{assert!(grant.belongs_to(&bound));assert_eq!(&input.source[grant.statement_span().expect("sole actual statement").range()],"return");}
     _=>panic!("actual single bare-return production must complete"),
    }
    assert_eq!(host.parses.load(Ordering::Relaxed),0,"same direct actual producer, no reparse through query host");
   }
  }
  #[test]
+ fn native_variadic_production_keeps_real_signature_and_separate_original_profile(){
+  let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());
+  let front=same_chunk(&mut state,"/proc/p(...)\n    return\n",&host);let input=input(&front);
+  let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));
+  let product=input.parse_original_product_with_setting_admission(&a).unwrap();
+  let bound=input.bind_original_product_checked(product.parsed().unwrap(),&a).unwrap();
+  let Err(BodySyntaxFailure::Operational(old))=bound.original_code_disposition() else{panic!("native-default must not issue Original grammar")};
+  assert_eq!(old.kind(),std::io::ErrorKind::Unsupported);
+  match bound.native_code_disposition_using(&a).unwrap(){NativeBodyDisposition::Complete(grant)=>assert!(grant.belongs_to(&bound)),_=>panic!("actual native variadic no-child production must complete")}
+ }
+ #[test]
  fn native_only_census_separates_uncovered_and_deferred_from_original_availability(){
   let mut complete=0;let mut uncovered=0;let mut deferred=0;
   for(source,expected)in [
    ("/proc/p()\n    return\n",0),
-   ("/proc/p()\n    return 1\n",1),
-   ("/proc/p()\n    return\n    return\n",1),
-   ("/proc/p(value)\n    return\n",2),
+   ("/proc/p()\n    return 1\n",0),
+   ("/proc/p()\n    return\n    return\n",0),
+   ("/proc/p(value)\n    return\n",0),
   ]{
    let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());
    let front=same_chunk(&mut state,source,&host);let input=input(&front);
@@ -713,7 +738,31 @@ mod current_original_body_product_binding_tests {
    };
    assert_eq!(actual,expected,"actual source native census, not Original relabeling: {source}");
   }
-  assert_eq!((complete,uncovered,deferred),(1,2,1));
+  assert_eq!((complete,uncovered,deferred),(4,0,0));
+ }
+ #[test]
+ fn intrinsic_native_productions_complete_whole_scopes_without_original_relabeling(){
+  for source in[
+   "/proc/p(value)\n    return value+1\n",
+   "/proc/p(value)\n    if(value)\n        return value+1\n    else\n        return value-1\n",
+   "/proc/p(value)\n    while(value>0)\n        value-=1\n    return value\n",
+   "/proc/p(value)\n    var/result=value+1\n    result+=2\n    return result\n",
+   "/proc/p(value)\n    set waitfor = 0\n    return value+1\n",
+  ]{
+   let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());
+   let front=same_chunk(&mut state,source,&host);let input=input(&front);
+   let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));
+   let product=input.parse_original_product_with_setting_admission(&a).unwrap();
+   let body=product.parsed().expect("actual canonical body");
+   let bound=input.bind_original_product_checked(body,&a).unwrap();
+   let Err(BodySyntaxFailure::Operational(original))=bound.original_code_disposition()
+    else{panic!("native-default expressions must not gain an Original profile")};
+   assert_eq!(original.kind(),std::io::ErrorKind::Unsupported);
+   assert_eq!(original.to_string(),"original body grammar profile is not actually issued");
+   let NativeBodyDisposition::Complete(grant)=bound.native_code_disposition_using(&a).unwrap()else{panic!("actual canonical intrinsic production remains incomplete: {source}")};
+   assert!(grant.belongs_to(&bound));assert_eq!(grant.scope_roots(),body.statement_storage().parsed().statements.len());
+   assert_eq!(host.parses.load(Ordering::Relaxed),0,"one actual private product, no query reparse");
+  }
  }
  #[test]
  fn native_only_grant_keeps_actual_io_foreign_domain_and_exported_data_boundaries(){
@@ -758,8 +807,8 @@ mod current_original_body_product_binding_tests {
   let NativeBodyDisposition::Complete(grant)=bound.native_code_disposition_using(&a).unwrap()
    else{panic!("same private product must retain native completeness at its real current projection")};
   assert!(grant.belongs_to(&bound));
-  assert_eq!(&current.source[grant.statement_span().range()],"return");
-  assert_ne!(grant.statement_span(),product.statements.parsed().statements[0].header_span);
+  assert_eq!(&current.source[grant.statement_span().expect("sole actual statement").range()],"return");
+  assert_ne!(grant.statement_span(),Some(product.statements.parsed().statements[0].header_span));
   assert_eq!(host.parses.load(Ordering::Relaxed),1,"grant uses original canonical product, no parser replay");
   let fresh=front(&mut RetainedSemanticTree::new(),source,q("// actual preceding source edit changes current expanded position\n\n"),&host);
   assert!(input(&fresh).bind_original_product_checked(&product,&a).is_err(),"equal exported source DATA cannot reseal a foreign private product");
@@ -893,15 +942,17 @@ pub enum NativeBodyDisposition<'loan,'syntax> {
 }
 pub struct NativeBodyCodeGrant<'loan,'syntax> {
  body:&'loan CurrentBodySyntax<'syntax>,
- statement:dm_syntax::Span,
+ statement:Option<dm_syntax::Span>,
+ scope_roots:usize,
 }
 impl NativeBodyCodeGrant<'_,'_> {
  pub fn belongs_to(&self,body:&CurrentBodySyntax<'_>)->bool{std::ptr::eq(self.body,body)}
- pub fn statement_span(&self)->dm_syntax::Span{self.statement}
+ pub fn statement_span(&self)->Option<dm_syntax::Span>{self.statement}
+ pub fn scope_roots(&self)->usize{self.scope_roots}
 }
 impl<'syntax> CurrentBodySyntax<'syntax> {
- /// Conservative first native slice: one real bare-return production, no
- /// parameters/optional children, and actual containing-input termination.
+ /// Actual native production consumption, settled children and containing-input
+ /// termination; Original compatibility and semantic/lowering proof stay separate.
  /// Source-neutral/parser-exported DATA cannot manufacture this borrowed grant.
  pub fn native_code_disposition_using<'loan>(&'loan self,a:&dm_syntax::SettingAdmission<'_>)
   ->Result<NativeBodyDisposition<'loan,'syntax>,BodySyntaxFailure>{
@@ -910,10 +961,55 @@ impl<'syntax> CurrentBodySyntax<'syntax> {
    let _current=self.input.bind_original_product_checked(self.original,a)?;
    let parsed=self.original.statements.parsed();
    let header=match self.original.statements.native_parser_facts{
-    Some(dm_syntax::NativeBodyParserFacts::BareReturn{header})=>header,
+    Some(dm_syntax::NativeBodyParserFacts::BareReturn{header})=>Some(header),
+    Some(dm_syntax::NativeBodyParserFacts::Intrinsic{scope_roots,..})=>{
+      if scope_roots!=self.original.item.children.len(){return Err(binding_error("native consumed root roster differs from private primary product"))}
+      None
+    },
     Some(dm_syntax::NativeBodyParserFacts::Recovered)=>return Ok(NativeBodyDisposition::Recovered),
+    Some(dm_syntax::NativeBodyParserFacts::Deferred)=>return Ok(NativeBodyDisposition::Deferred),
     _=>return Ok(NativeBodyDisposition::NotCovered),
    };
+   if header.is_none()||self.original.native_primary_consumed{
+    if !self.original.native_primary_consumed{return Ok(NativeBodyDisposition::Deferred)}
+    if !self.original.statements.original_literal_syntax_complete()
+      ||self.deferred_literal_roots!=0{return Ok(NativeBodyDisposition::Deferred)}
+    let parameters=self.parameters()?;
+    for declaration in parameters.absolute_declarations().map_err(binding_view_error)?{
+      a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      declaration.span().map_err(binding_view_error)?;
+    }
+    for parameter in parameters.entries().map_err(binding_view_error)?{
+      a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      if !matches!(parameter.original().native_child_observation(),Some((true,false,false))){return Ok(NativeBodyDisposition::Deferred)}
+      match parameter.original().expressions(){
+        Ok(Some(roots))=>for root in roots.default_root().into_iter().chain(roots.source_root()).chain(roots.dimensions().iter().filter_map(Option::as_ref)){
+          a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+          if !root.is_retained_in(a){return Ok(NativeBodyDisposition::Deferred)}
+        },
+        Ok(None)=>(),
+        Err(_)=>return Ok(NativeBodyDisposition::Deferred),
+      }
+    }
+    // Local dimension roots still originate in the compatibility declaration
+    // ledger. Until that actual producer retains native facts they are deferred,
+    // never certified from an equal AST or a matching dimension count.
+    for local in self.locals().entries().map_err(binding_view_error)?{
+      a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      if local.array().is_some_and(|array|array.dimensions().next().is_some()){
+        return Ok(NativeBodyDisposition::Deferred)
+      }
+    }
+    // Reuse the existing admitted projection/child kernel, adding only reads
+    // of actual immutable child completion facts. No second parser/AST owner.
+    if self.validate_issued_coordinates_with_native_children(a,true)?!=0{
+      return Ok(NativeBodyDisposition::Deferred)
+    }
+    a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+    let only=if let [only]=parsed.statements.as_slice(){Some(self.projection.span(only.header_span).ok_or_else(||binding_error("native sole statement escapes current source"))?)}else{None};
+    return Ok(NativeBodyDisposition::Complete(NativeBodyCodeGrant{body:self,statement:only,scope_roots:parsed.statements.len()}))
+   }
+   let header=header.unwrap();
    // Result-bearing real header metadata: failed optional parsing cannot turn
    // into the empty parameter roster accepted by this initial slice.
    let parameters=self.parameters()?;
@@ -956,7 +1052,7 @@ impl<'syntax> CurrentBodySyntax<'syntax> {
     return Ok(NativeBodyDisposition::Deferred)
    }
    a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
-   Ok(NativeBodyDisposition::Complete(NativeBodyCodeGrant{body:self,statement:header}))
+   Ok(NativeBodyDisposition::Complete(NativeBodyCodeGrant{body:self,statement:Some(header),scope_roots:1}))
   })();
   if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
   pending

@@ -4,7 +4,7 @@
 use crate::{request::{BuildRequest,BuildOutcome,BuildCommand},runner_host::BuildHost};
 use std::{error::Error,io::{self,Write},path::PathBuf};
 #[derive(Clone,Debug,serde::Serialize,serde::Deserialize)]#[serde(deny_unknown_fields)]pub struct Request{pub project:PathBuf,pub configuration:Option<PathBuf>,pub cache_root:PathBuf,pub workers:usize,pub timeout_seconds:u16}
-#[derive(Clone,Debug,serde::Serialize)]pub struct Outcome{pub emitted:usize,pub visited_bodies:usize,pub exit_code:i32,pub semantic_revision:u128,pub source_revision:u128,pub policy_revision:u128,pub full_checker_parity:bool}
+#[derive(Clone,Debug,serde::Serialize)]pub struct Outcome{pub json:bool,pub emitted:usize,pub visited_bodies:usize,pub exit_code:i32,pub semantic_revision:u128,pub source_revision:u128,pub policy_revision:u128,pub full_checker_parity:bool}
 impl Request{
  pub fn from_arguments(arguments:&[String],cache_root:PathBuf)->io::Result<Self>{
   let(mut project,mut configuration)=(None,None);let mut args=arguments.iter();
@@ -36,6 +36,10 @@ impl Request{
 /// unissued source/grammar/configuration/chronology, or output failure—not clean.
 /// No default CLI or daemon dispatch is activated by this in-process function.
 pub fn run(request:Request,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<Outcome,Box<dyn Error>>{
+ run_with_json(request,false,host,stdout,stderr)
+}
+/// Explicit pinned JSON-count mode over the same actual complete native run.
+pub fn run_with_json(request:Request,json:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<Outcome,Box<dyn Error>>{
  use crate::daemon::{control,prepare_deadline};
  if !host.retains_artifacts(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native Checker needs the existing retained host").into())}
  request.validate()?;
@@ -46,12 +50,15 @@ pub fn run(request:Request,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mu
  control::checkpoint()?;
  let width=request.project.as_os_str().len().checked_add(request.cache_root.as_os_str().len()).and_then(|n|n.checked_add(request.configuration.as_ref().map_or(0,|p|p.as_os_str().len()))).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(65536)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
  let _request_credit=host.source_arena_work().reserve(width)?;
- let build=request.build()?;let(outcome,_inputs)=run_prepared(build,&request.project,request.configuration.as_deref(),host,stdout,stderr)?;Ok(outcome)
+ let build=request.build()?;let(outcome,_inputs)=run_prepared_with_json(build,&request.project,request.configuration.as_deref(),json,host,stdout,stderr)?;Ok(outcome)
 }
 
 /// SAME Checker execution after the existing daemon admitted its actual request.
 /// The moved source ledger survives staging and is revalidated during transport.
 pub(crate) fn run_prepared(build:BuildRequest,display_environment:&std::path::Path,explicit_configuration:Option<&std::path::Path>,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<(Outcome,crate::request_runner::checker_capture::Inputs),Box<dyn Error>>{
+ run_prepared_with_json(build,display_environment,explicit_configuration,false,host,stdout,stderr)
+}
+pub(crate) fn run_prepared_with_json(build:BuildRequest,display_environment:&std::path::Path,explicit_configuration:Option<&std::path::Path>,json:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<(Outcome,crate::request_runner::checker_capture::Inputs),Box<dyn Error>>{
  use crate::daemon::control;
  if crate::daemon::control::WorkerContext::capture_for_checkpoints().is_none()||crate::daemon::control::current_deadline().is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Checker staging requires its existing original request binding").into())}
  require_prepared_shape(&build,display_environment,explicit_configuration)?;crate::daemon::control::checkpoint()?;
@@ -74,13 +81,13 @@ pub(crate) fn run_prepared(build:BuildRequest,display_environment:&std::path::Pa
   snapshot.stage_original_checker_cli(&project,explicit_configuration,&cache_root,&inputs)?
  };
  inputs.require_current(&project)?;
- let outcome=Outcome{emitted:transcript.emitted,visited_bodies:transcript.visited_bodies,exit_code:if transcript.emitted==0{0}else{1},semantic_revision:transcript.semantic,source_revision:transcript.source,policy_revision:transcript.policy,full_checker_parity:false};
- transcript.publish(&mut stderr)?;
+ let outcome=Outcome{json,emitted:transcript.emitted,visited_bodies:transcript.visited_bodies,exit_code:if transcript.emitted==0{0}else{1},semantic_revision:transcript.semantic,source_revision:transcript.source,policy_revision:transcript.policy,full_checker_parity:false};
+ let counts=transcript.counts;transcript.publish(&mut stderr)?;
  // Emit the exact reference phase labels ONLY after every actual producer and
  // completion token succeeded. Separate stdout/stderr streams retain their own
  // reference order; this makes no claim about wall-clock interleaving.
  for phase in ["Analyzing variables...","Gathering proc settings...","Analyzing proc bodies...","Analyzing proc override validity...","Analyzing proc call tree..."]{writeln!(stdout,"============================================================\n{phase}\n")?;}
- inputs.require_current(&project)?;writeln!(stdout,"============================================================\nFound {} diagnostics",outcome.emitted)?;stdout.flush()?;stderr.flush()?;
+ inputs.require_current(&project)?;writeln!(stdout,"============================================================\nFound {} diagnostics",outcome.emitted)?;if json{counts.write_json(&mut stdout)?;}stdout.flush()?;stderr.flush()?;
  inputs.require_current(&project)?;control::checkpoint()?;Ok((outcome,inputs))
 }
 pub(crate) fn require_prepared_shape(build:&BuildRequest,display:&std::path::Path,explicit:Option<&std::path::Path>)->io::Result<()>{

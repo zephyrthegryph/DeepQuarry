@@ -57,7 +57,7 @@ impl QueryDb{
  /// Real independently admitted full model; same current reader/budget owns
  /// partial structural and full declared/output child evaluation.
  pub(crate) fn with_handlers_full_report<T>(self:&Arc<Self>,capture:&Arc<HandlerPreparedCapture>,proof:&Arc<HandlerPolicyAdmission>,workspace:&Arc<WorkspaceCapture>,guard:&NativeReadGuard<'_>,full_capture:&Arc<CapturedPolicyInputs>,selected_tree:Option<&SelectedTreePlanData>,consume:impl FnOnce(&Data,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
-  let produced=(||{require_current(self,capture,proof)?;if !proof.is_current(){return Err("failed handler proof cannot publish a current full report".into())}let joined=crate::policy_request::WorkspaceAuxiliaryQuestion::is_private_handlers_domain(workspace.auxiliary());
+  let produced=(||{require_current(self,capture,proof)?;if !proof.is_current(){return Err("failed handler proof cannot publish a current full report".into())}let joined=crate::policy_request::WorkspaceAuxiliaryQuestion::is_private_handlers_domain(workspace.auxiliary())||workspace.registered_model_handler_join()?;
    if !capture.prepared().subject().requires_full_model()&&!(joined&&selected_tree.is_some()){
     return Err("handler full partition was not requested".into());
    }if workspace.root()!=capture.root(){return Err("handler partial and full workspace roots differ".into())}

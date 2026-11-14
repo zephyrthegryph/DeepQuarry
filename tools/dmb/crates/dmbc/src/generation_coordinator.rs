@@ -147,3 +147,36 @@ fn run_using(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],mo
 #[path="generation_cold_tests.rs"]
 mod cold_tests;
 #[cfg(test)]#[path="generation_original_tests.rs"]mod original_tests;
+
+// The explicit all-twelve CHECK observer never accepts a mutation mode.
+pub(crate) const OBSERVED_NAMES:[GeneratorName;12]=[GeneratorName::Actions,GeneratorName::AutoTracked,GeneratorName::Declare,GeneratorName::DeclareIds,GeneratorName::Deps,GeneratorName::DerivedReads,GeneratorName::Plans,GeneratorName::Reads,GeneratorName::Stats,GeneratorName::SystemAccessors,GeneratorName::TrackedLists,GeneratorName::UiTypes];
+pub(crate) struct ObservedCheck{
+ pub(crate) report:Report,
+ pub(crate) phases:[Option<transaction::CheckEvidence>;3],
+ pub(crate) observation_error:Option<io::Error>,
+ _report_credit:dm_preprocess::source_arena_credit::SourceArenaCredit,
+ _credit:dm_preprocess::source_arena_credit::SourceArenaCredit,
+}
+impl ObservedCheck{
+ pub(crate) fn require_current(&mut self)->Result<(),Failure>{let mut spools=0u64;for phase in self.phases.iter_mut().flatten(){phase.require_current()?;spools=spools.checked_add(phase.retained_spool_bytes()?).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;if spools>RETAINED as u64{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"observed Check retained journals/backups exceed existing output bound").into())}}crate::daemon::control::checkpoint()?;Ok(())}
+}
+fn capture_check_phase(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],requested:&[GeneratorName],cache:&Path,existing:usize,questions:bool,fallback:bool)->Result<Option<(Report,transaction::CheckEvidence)>,Failure>{
+ if names.is_empty(){return Ok(None)}let closed=match crate::request_runner::generation_cold::stage(host,context,names,requested,questions,cache)?{
+  crate::request_runner::generation_cold::Preparation::Closed(closed)=>{let old=host.query_state().lock().unwrap_or_else(|error|error.into_inner()).snapshot.take();drop(old);Some(closed)},
+  crate::request_runner::generation_cold::Preparation::NotNeeded if !fallback=>None,
+  crate::request_runner::generation_cold::Preparation::NotNeeded=>{prepare(host,context,names)?;let snapshot=host.query_state().lock().unwrap_or_else(|error|error.into_inner()).snapshot.take().ok_or_else(||io::Error::other("observed Check actual phase source absent"))?;Some(snapshot.stage_generation(crate::generation_staging::temporary_output(cache)?)?)},
+ };
+ match closed{None=>Ok(None),Some(closed)=>{let(report,evidence)=transaction::capture_check(closed,cache,existing,host.source_arena_work())?;if !evidence.matches_names(names){return Err(io::Error::new(io::ErrorKind::InvalidData,"observed Check closure names differ from actual phase").into())}if report.committed||!report.changed.is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidData,"CHECK phase unexpectedly mutated generated outputs").into())}Ok(Some((report,evidence)))}}
+}
+pub(crate) fn capture_all_check(host:&mut BuildHost,context:&BuildRequest,cache:&Path)->Result<ObservedCheck,Failure>{
+ crate::daemon::control::checkpoint()?;let mut names=OBSERVED_NAMES;names.sort();let actual=context.policy_inputs.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"observed Check actual generator intent absent"))?;
+ if actual.workspace_generators.len()!=names.len()||names.iter().any(|name|actual.workspace_generators.iter().filter(|candidate|*candidate==name).count()!=1){return Err(io::Error::new(io::ErrorKind::InvalidInput,"observed Check requires each canonical production generator exactly once").into())}
+ let workspace=actual.workspace.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"observed Check workspace absent"))?;let expected=dm_preprocess::regions::canonical_path(&workspace.root.join("tools/ci/lint_scopes.toml"));if dm_preprocess::regions::canonical_path(&workspace.configuration)!=expected{return Err(io::Error::new(io::ErrorKind::InvalidInput,"observed Check Auto needs actual fixed lint_scopes configuration").into())}
+ let control=host.source_arena_work().reserve(std::mem::size_of::<ObservedCheck>()+65536)?;
+ let zero:Vec<_>=names.iter().copied().filter(|name|phase(*name)==0).collect();let one:Vec<_>=names.iter().copied().filter(|name|phase(*name)==1).collect();let source:Vec<_>=zero.iter().copied().filter(|name|source_only(*name)).collect();let mut phases:[Option<transaction::CheckEvidence>;3]=std::array::from_fn(|_|None);let mut live=4096usize;
+ if let Some((report,evidence))=capture_check_phase(host,context,&source,&names,cache,live,false,false)?{live=sum(live,evidence.retained_bytes())?;bounded(sum(live,report_bytes(&report)?)?)?;phases[0]=Some(evidence);drop(report);}
+ let(first,first_evidence)=capture_check_phase(host,context,&zero,&names,cache,live,true,true)?.ok_or_else(||io::Error::other("observed Check stage0 was not actually completed"))?;live=sum(live,first_evidence.retained_bytes())?;phases[1]=Some(first_evidence);bounded(sum(live,report_bytes(&first)?)?)?;
+ let(second,second_evidence)=capture_check_phase(host,context,&one,&names,cache,sum(live,report_bytes(&first)?)?,true,true)?.ok_or_else(||io::Error::other("observed Check stage1 was not actually completed"))?;live=sum(live,second_evidence.retained_bytes())?;phases[2]=Some(second_evidence);let merge_bytes=first.rows.len().checked_add(second.rows.len()).and_then(|n|n.checked_mul(6*std::mem::size_of::<transaction::OutputRow>())).and_then(|n|first.diagnostics.len().checked_add(second.diagnostics.len()).and_then(|d|d.checked_mul(6*std::mem::size_of::<transaction::Diagnostic>())).and_then(|d|n.checked_add(d))).and_then(|n|n.checked_add(65536)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;bounded(sum(live,merge_bytes)?)?;let report_credit=host.source_arena_work().reserve(merge_bytes)?;let report=merge(first,second,live)?;
+ if report.rows.is_empty()||report.committed||!report.changed.is_empty()||!report.cleanup.is_empty()||report.rows.iter().any(|row|!names.contains(&row.name)){return Err(io::Error::new(io::ErrorKind::InvalidData,"observed Check final report is incomplete or contains mutation/foreign rows").into())}
+ bounded(sum(live,report_bytes(&report)?)?)?;prepare(host,context,&names)?;let mut completed=ObservedCheck{report,phases,observation_error:None,_report_credit:report_credit,_credit:control};completed.require_current()?;Ok(completed)
+}

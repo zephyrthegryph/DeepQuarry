@@ -228,8 +228,12 @@ pub trait SettingSyntaxProvider {
     /// Optional SAME original expression producer. Some returns snippet-local
     /// syntax once; operational errors must escape the admitted BODY producer.
     /// None denotes the unchanged ordinary parser route, not original parity.
+    fn original_expression_with_native_facts(&self,source:&str,offset:usize)->std::io::Result<Option<(crate::ParsedExpr,Option<crate::NativeExpressionParserFacts>)>>{
+      self.original_expression(source,offset).map(|value|value.map(|parsed|(parsed,None)))
+    }
     fn original_expression(&self,_source:&str,_offset:usize)->std::io::Result<Option<crate::ParsedExpr>>{Ok(None)}
     fn setting(&self, item: &Item) -> Result<SettingStatement, Diagnostic>;
+    fn setting_with_native_observation(&self,item:&Item)->Result<(SettingStatement,Option<crate::NativeExpressionParserFacts>),Diagnostic>{self.setting(item).map(|value|(value,None))}
     /// Prove a separate Original return keyword directly before another
     /// issued token. Expression validity is decided by the expression parser.
     fn original_joined_return(&self, _header: Span) -> std::io::Result<bool> {
@@ -343,16 +347,51 @@ fn trace_original_unissued_leaf(body_start: usize, leaf: Span, reason: &str, sou
 
 /// Source-neutral actual-production report; never current source authority.
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
-pub enum NativeBodyParserFacts { NotCovered, Recovered, BareReturn { header:Span } }
+pub enum NativeBodyParserFacts {
+ NotCovered, Recovered, Deferred, Unsupported,
+ BareReturn { header:Span },
+ Intrinsic { scope_roots:usize, scopes:usize, productions:usize, expressions:usize },
+}
+// One stack-owned producer ledger. Recursive scopes and expression loans borrow
+// the SAME cells; no AST walk, public flag or separate frontend can settle them.
 #[derive(Default)]
-struct NativeBodyParserProgress { input_roots:usize, root_header:Option<Span>, productions:usize, bare_return:Option<Span> }
+struct NativeBodyParserProgress {
+ input_roots:usize, root_header:Option<Span>,
+ productions:std::cell::Cell<usize>, bare_return:std::cell::Cell<Option<Span>>,
+ scopes_started:std::cell::Cell<usize>, scopes_finished:std::cell::Cell<usize>,
+ expressions:std::cell::Cell<usize>, recovered:std::cell::Cell<bool>,
+ deferred:std::cell::Cell<bool>, unsupported:std::cell::Cell<bool>,
+}
 impl NativeBodyParserProgress {
- fn production(&mut self){self.productions=self.productions.saturating_add(1);}
+ fn increment(&self,cell:&std::cell::Cell<usize>){
+  match cell.get().checked_add(1){Some(value)=>cell.set(value),None=>self.deferred.set(true)}
+ }
+ fn production(&self){self.increment(&self.productions);}
+ fn scope_started(&self){self.increment(&self.scopes_started);}
+ fn scope_finished(&self,exhausted:bool){
+  if exhausted{self.increment(&self.scopes_finished)}else{self.deferred.set(true)}
+ }
+ fn expression(&self,facts:Option<crate::NativeExpressionParserFacts>,span:Option<Span>){
+  self.increment(&self.expressions);
+  match facts {
+   Some(facts) => {
+    self.recovered.set(self.recovered.get()||facts.recovered());
+    self.deferred.set(self.deferred.get()||facts.deferred()
+     ||!facts.exhausted()||!facts.is_complete()||facts.complete_span()!=span);
+   },
+   None=>self.deferred.set(true),
+  }
+ }
  fn finish(self,body:&ParsedBody)->NativeBodyParserFacts{
-  if !body.diagnostics.is_empty(){return NativeBodyParserFacts::Recovered}
-  match self.bare_return{
-   Some(header) if self.input_roots==1 && self.productions==1 && self.root_header==Some(header) => NativeBodyParserFacts::BareReturn{header},
-   _=>NativeBodyParserFacts::NotCovered,
+  if self.recovered.get()||!body.diagnostics.is_empty(){return NativeBodyParserFacts::Recovered}
+  if self.unsupported.get(){return NativeBodyParserFacts::Unsupported}
+  if self.deferred.get()||self.scopes_started.get()!=self.scopes_finished.get()
+    ||self.scopes_started.get()==0{return NativeBodyParserFacts::Deferred}
+  match self.bare_return.get(){
+   Some(header) if self.input_roots==1 && self.productions.get()==1
+    &&self.root_header==Some(header) => NativeBodyParserFacts::BareReturn{header},
+   _=>NativeBodyParserFacts::Intrinsic{scope_roots:self.input_roots,
+     scopes:self.scopes_finished.get(),productions:self.productions.get(),expressions:self.expressions.get()},
   }
  }
 }
@@ -367,7 +406,7 @@ fn parse_body_items_using_settings(
 }
 fn parse_body_items_with_native_progress(
     items:&[Item],settings:Option<&dyn SettingSyntaxProvider>,admission:Option<&crate::SettingAdmission<'_>>,
-    source:Option<&str>,deferred_literal_purity:bool,native_progress:Option<&mut NativeBodyParserProgress>,
+    source:Option<&str>,deferred_literal_purity:bool,native_progress:Option<&NativeBodyParserProgress>,
 )->ParsedBody {
     let mut result = ParsedBody::default();
     let mut origins = BodyOrigins {
@@ -392,7 +431,7 @@ fn parse_body_items_with_native_progress(
         original_grammar:&mut result.original_grammar,
     };
     if items.is_empty(){*origins.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:0,scope_roots:None,kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});}
-    let mut diagnostics=BodyDiagnostics{rows:&mut result.diagnostics,settings,admission};
+    let mut diagnostics=BodyDiagnostics{rows:&mut result.diagnostics,settings,admission,native_progress};
     let mut prefix_settings = 0;
     result.statements = parse_sequence_first(items, None, &mut diagnostics, &mut origins, Some(&mut prefix_settings));
     drop(diagnostics);
@@ -452,12 +491,16 @@ pub fn parse_body_items_with_context_and_settings(
 
 // Stack-only context of the existing BODY parser. It borrows the one output
 // Vec and actual producer; no parser/model/cache or second diagnostic walk.
-struct BodyDiagnostics<'a>{rows:&'a mut Vec<Diagnostic>,settings:Option<&'a dyn SettingSyntaxProvider>,admission:Option<&'a crate::SettingAdmission<'a>>}
+struct BodyDiagnostics<'a>{rows:&'a mut Vec<Diagnostic>,settings:Option<&'a dyn SettingSyntaxProvider>,admission:Option<&'a crate::SettingAdmission<'a>>,native_progress:Option<&'a NativeBodyParserProgress>}
+impl BodyDiagnostics<'_>{
+ fn push(&mut self,row:Diagnostic){if let Some(progress)=self.native_progress{progress.recovered.set(true)}self.rows.push(row)}
+ fn extend(&mut self,rows:impl IntoIterator<Item=Diagnostic>){for row in rows{self.push(row)}}
+}
 impl std::ops::Deref for BodyDiagnostics<'_>{type Target=Vec<Diagnostic>;fn deref(&self)->&Self::Target{self.rows}}
 impl std::ops::DerefMut for BodyDiagnostics<'_>{fn deref_mut(&mut self)->&mut Self::Target{self.rows}}
 /// One existing native parser pass owns control AND local declaration origins.
 struct BodyOrigins<'a> {
-    native_progress:Option<&'a mut NativeBodyParserProgress>,
+    native_progress:Option<&'a NativeBodyParserProgress>,
     source: Option<&'a str>,
     original_compound_complete:bool,
     #[cfg(debug_assertions)]
@@ -609,6 +652,10 @@ impl BodyOrigins<'_> {
 
 // DATA routing only; a genuine Complete Original expression must still prove
 // both children and the exact output operator before this statement can issue.
+fn native_unsupported(item:&Item,origins:&BodyOrigins<'_>)->Statement{
+ if let Some(progress)=origins.native_progress{progress.unsupported.set(true);}
+ unsupported(item)
+}
 fn original_possible_output_header(header:&str)->bool{header.contains("<<")}
 fn original_output_statement_root(expr:&Expr)->bool{
  let ExprKind::Binary{op,lhs,..}=&expr.kind else{return false};
@@ -628,6 +675,7 @@ fn parse_sequence(items:&[Item],diagnostics:&mut BodyDiagnostics<'_>,origins:&mu
 // Same sequence parser with its existing single inline normalization loan. The
 // remaining items keep their original ownership and source coordinates.
 fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>,mut root_prefix:Option<&mut usize>)->Vec<Statement>{
+    if let Some(progress)=origins.native_progress{progress.scope_started();}
     let mut statements = Vec::new();
     let mut index = 0;
     while index < items.len() {
@@ -738,6 +786,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             continue;
         }
         if header == "do" {
+            if let Some(progress)=origins.native_progress{progress.production();}
             if let Some(next) = items.get(index + 1).filter(|next| {
                 starts_keyword(next.header.trim(), "while") && next.children.is_empty()
             }) {
@@ -762,7 +811,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                         raw_header: item.header.clone(),
                     });
                 } else {
-                    statements.push(unsupported(item));
+                    statements.push(native_unsupported(item,origins));
                 }
                 index += 2;
                 continue;
@@ -772,18 +821,19 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 kind: DiagnosticKind::Statement,
                 message: "do requires a following while condition".into(),
             });
-            statements.push(unsupported(item));
+            statements.push(native_unsupported(item,origins));
             index += 1;
             continue;
         }
         if header == "try" {
+            if let Some(progress)=origins.native_progress{progress.production();}
             let Some(catch) = items.get(index + 1) else {
                 diagnostics.push(Diagnostic {
                     span: item.header_span,
                     kind: DiagnosticKind::Statement,
                     message: "try requires catch".into(),
                 });
-                statements.push(unsupported(item));
+                statements.push(native_unsupported(item,origins));
                 index += 1;
                 continue;
             };
@@ -843,7 +893,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 kind: DiagnosticKind::Statement,
                 message: "try requires catch".into(),
             });
-            statements.push(unsupported(item));
+            statements.push(native_unsupported(item,origins));
             index += 1;
             continue;
         }
@@ -853,7 +903,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 kind: DiagnosticKind::Statement,
                 message: "catch without try".into(),
             });
-            statements.push(unsupported(item));
+            statements.push(native_unsupported(item,origins));
             index += 1;
             continue;
         }
@@ -863,7 +913,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 kind: DiagnosticKind::Statement,
                 message: "else without preceding if".into(),
             });
-            statements.push(unsupported(item));
+            statements.push(native_unsupported(item,origins));
             index += 1;
             continue;
         }
@@ -879,6 +929,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         statements.push(statement);
         index += 1;
     }
+    if let Some(progress)=origins.native_progress{progress.scope_finished(index==items.len());}
     statements
 }
 
@@ -991,7 +1042,8 @@ fn parse_if(
     origins: &mut BodyOrigins<'_>,
     require_continuation_proof: bool,
 ) -> Statement {
-    if !origins.operational_ready() { return unsupported(item); }
+    if let Some(progress)=origins.native_progress{progress.production();}
+    if !origins.operational_ready() { return native_unsupported(item,origins); }
     let condition = parse_control_condition_origin(item, "if", diagnostics, origins);
     let newly_composed = condition.as_ref().is_some_and(|value| match &value.kind {
         ExprKind::Unary { .. } | ExprKind::Binary { .. } | ExprKind::Group(_) => true,
@@ -1063,9 +1115,9 @@ fn parse_if(
         require_next_proof = issued && (require_continuation_proof || else_items.len() > 1
             || (inline.is_some() && !else_items.is_empty()));
     }
-    if !origins.operational_ready() { return unsupported(item); }
+    if !origins.operational_ready() { return native_unsupported(item,origins); }
     let then_branch = control_body_from_inline(item, inline, diagnostics, origins);
-    if !origins.operational_ready() { return unsupported(item); }
+    if !origins.operational_ready() { return native_unsupported(item,origins); }
     let mut span = item.span;
     let else_branch = if let Some((other, remaining)) = else_items.split_first() {
         span.end = else_items.last().unwrap().span.end;
@@ -1084,6 +1136,7 @@ fn parse_if(
                 // Native inline-else compatibility drops surplus clauses; that
                 // is not a fully consumed Original source scope.
                 origins.require_original(remaining.is_empty(), other.header_span, "else_chain");
+                if !remaining.is_empty(){if let Some(progress)=origins.native_progress{progress.unsupported.set(true);}}
                 let mut inline = other.clone();
                 inline.header = rest.trim_end_matches(';').into();
                 inline.header_span.start += other.header.find(rest).unwrap_or(0);
@@ -1101,7 +1154,7 @@ fn parse_if(
                 kind: DiagnosticKind::Unsupported,
                 message: "unsupported else clause".into(),
             });
-            vec![unsupported(other)]
+            vec![native_unsupported(other,origins)]
         }
     } else {
         Vec::new()
@@ -1117,7 +1170,7 @@ fn parse_if(
             header_span: item.header_span,
             raw_header: item.header.clone(),
         },
-        None => unsupported(item),
+        None => native_unsupported(item,origins),
     }
 }
 
@@ -1223,7 +1276,8 @@ fn parse_one(
     mut original_local_head: bool,
     defer_joined_return: bool,
 ) -> Statement {
-    if let Some(native)=origins.native_progress.as_mut(){native.production();}
+    if let Some(native)=origins.native_progress{native.production();}
+    let native_child_scopes=origins.native_progress.map(|progress|progress.scopes_started.get());
     let header = item.header.trim();
     let joined_return = if possible_joined_return(header) {
         match origins.settings.map(|provider| provider.original_joined_return(item.header_span)).transpose() {
@@ -1233,7 +1287,7 @@ fn parse_one(
                 if let Some(admission) = diagnostics.admission {
                     admission.record_operational_error(actual);
                 }
-                return unsupported(item);
+                return native_unsupported(item,origins);
             }
         }
     } else {
@@ -1245,9 +1299,9 @@ fn parse_one(
     // A punctuation-joined throw is normalized only after its SAME actual
     // source head is proved. Ordinary native compatibility parsing is unchanged.
     let joined_throw = if possible_joined_throw(header) && item.children.is_empty() {
-        let Some((rest, head, _)) = original_throw_parts(item) else { return unsupported(item); };
+        let Some((rest, head, _)) = original_throw_parts(item) else { return native_unsupported(item,origins); };
         if rest.is_empty() { false } else {
-            let Some(actual) = original_throw_head_checked(origins, head) else { return unsupported(item); };
+            let Some(actual) = original_throw_head_checked(origins, head) else { return native_unsupported(item,origins); };
             actual
         }
     } else { false };
@@ -1259,7 +1313,7 @@ fn parse_one(
             kind: DiagnosticKind::Unsupported,
             message: crate::RETURN_BLOCK_UNSUPPORTED.into(),
         });
-        return unsupported(item);
+        return native_unsupported(item,origins);
     }
     let kind = if starts_keyword(header, "while") {
         let inline = control_inline(item, "while");
@@ -1269,7 +1323,7 @@ fn parse_one(
             && original_indented_block_boundary(item, origins);
         let condition = parse_control_condition_observed(item, "while", diagnostics, &mut |parsed| {
             witnessed &= parsed.original_simple_expression.is_some_and(|value| {
-                value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                value.is_read_value()
                     ||(value.is_original()&&value.kind()==crate::expression_parser::OriginalSimpleKind::PrefixCondition)
             });
         });
@@ -1324,12 +1378,15 @@ fn parse_one(
         parse_spawn(item, diagnostics, origins)
     } else if starts_keyword(header, "set") {
         match origins.settings {
-            Some(provider) => match provider.setting(item) {
-                Ok(setting) => Some(StatementKind::ProjectedSet {
-                    attribute: setting.attribute,
-                    relation: setting.relation,
-                    value: setting.value,
-                }),
+            Some(provider) => match provider.setting_with_native_observation(item) {
+                Ok((setting,native)) => {
+                    if let Some(progress)=origins.native_progress{
+                      progress.expression(native,Some(setting.value.original_expression().span));
+                    }
+                    Some(StatementKind::ProjectedSet {
+                      attribute:setting.attribute,relation:setting.relation,value:setting.value,
+                    })
+                },
                 Err(error) => {
                     diagnostics.push(error);
                     None
@@ -1338,7 +1395,7 @@ fn parse_one(
             None => parse_set(item, diagnostics),
         }
     } else if header == "return" {
-        if item.children.is_empty(){if let Some(native)=origins.native_progress.as_mut(){native.bare_return=Some(item.header_span);}}
+        if item.children.is_empty(){if let Some(native)=origins.native_progress{native.bare_return.set(Some(item.header_span));}}
         if origins.original_terminal_header==Some(item.header_span){*origins.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:0,scope_roots:None,kind:OriginalBodyGrammarKind::Available,statement:Some(item.header_span),expression:None,operator:None});}
         Some(StatementKind::Return(None))
     } else if starts_keyword(header, "return")
@@ -1350,7 +1407,7 @@ fn parse_one(
         let leading = item.header.len() - item.header.trim_start().len();
         let offset = item.header_span.start + leading + (header.len() - rest.len());
         let return_head=match original_return_head_question(origins.settings,Span::new(item.header_span.start+leading,offset)){
-            Ok(issued)=>issued,Err(actual)=>{origins.original_compound_complete=false;if let Some(a)=origins.admission{a.record_operational_error(actual)}return unsupported(item)}
+            Ok(issued)=>issued,Err(actual)=>{origins.original_compound_complete=false;if let Some(a)=origins.admission{a.record_operational_error(actual)}return native_unsupported(item,origins)}
         };
         parse_expr_observed(rest,offset,diagnostics,&mut|parsed|{
             use crate::expression_parser::OriginalSimpleKind;
@@ -1361,7 +1418,7 @@ fn parse_one(
                         &&!matches!(&rhs.kind,ExprKind::Binary{op,..}if is_assignment(op))));
             let indexed_assignment=indexed_assignment&&return_head;
             let issued = indexed_assignment || parsed.original_simple_expression.is_some_and(|value| {
-                matches!(value.kind(), OriginalSimpleKind::Complete | OriginalSimpleKind::PlainAssignment)
+                (value.is_read_value() || value.kind()==OriginalSimpleKind::PlainAssignment)
             });
             origins.original_compound_seen_statement|=indexed_assignment;
             origins.require_original(issued, Span::new(offset, offset + rest.len()), "return_expression");
@@ -1376,22 +1433,22 @@ fn parse_one(
             match origins.settings.map(|provider|provider.original_delete_head(head)).transpose(){
                 Ok(value)=>value==Some(true),
                 Err(actual)=>{origins.original_compound_complete=false;*origins.original_grammar=None;
-                    if let Some(a)=origins.admission{a.record_operational_error(actual);}return unsupported(item)}
+                    if let Some(a)=origins.admission{a.record_operational_error(actual);}return native_unsupported(item,origins)}
             }
         }else{false};
         origins.require_original(head_issued,item.header_span,"delete_head");
         parse_expr_observed(rest,offset,diagnostics,&mut|parsed|{
             use crate::expression_parser::OriginalSimpleKind;
             let issued=head_issued&&parsed.original_simple_expression.is_some_and(|proof|proof.is_original()
-                &&matches!(proof.kind(),OriginalSimpleKind::Complete|OriginalSimpleKind::PlainAssignment));
+                &&(proof.is_read_value()||proof.kind()==OriginalSimpleKind::PlainAssignment));
             origins.require_original(issued,Span::new(offset,offset+rest.len()),"delete_operand");
             origins.original_compound_seen_statement|=issued;
         }).map(StatementKind::Delete)
     } else if starts_keyword(header, "throw") || joined_throw {
-        let Some((rest, head, offset)) = original_throw_parts(item) else { return unsupported(item); };
+        let Some((rest, head, offset)) = original_throw_parts(item) else { return native_unsupported(item,origins); };
         let head_issued = if !rest.is_empty() && item.children.is_empty() {
             if joined_throw { true } else {
-                let Some(actual) = original_throw_head_checked(origins, head) else { return unsupported(item); };
+                let Some(actual) = original_throw_head_checked(origins, head) else { return native_unsupported(item,origins); };
                 actual
             }
         } else { false };
@@ -1399,7 +1456,7 @@ fn parse_one(
         parse_expr_observed(rest, offset, diagnostics, &mut |parsed| {
             use crate::expression_parser::OriginalSimpleKind;
             let issued = head_issued && parsed.original_simple_expression.is_some_and(|value|
-                matches!(value.kind(), OriginalSimpleKind::Complete | OriginalSimpleKind::PlainAssignment));
+                (value.is_read_value() || value.kind()==OriginalSimpleKind::PlainAssignment));
             origins.require_original(issued, Span::new(offset, offset + rest.len()), "throw_expression");
             origins.original_compound_seen_statement |= issued;
         }).map(StatementKind::Throw)
@@ -1435,7 +1492,7 @@ fn parse_one(
                     if let Some(admission) = diagnostics.admission {
                         admission.record_operational_error(actual);
                     }
-                    return unsupported(item);
+                    return native_unsupported(item,origins);
                 }
             }
         }
@@ -1518,6 +1575,11 @@ fn parse_one(
             _ => StatementKind::Expression(expr),
         })
     };
+    if !item.children.is_empty(){
+      if let(Some(progress),Some(before))=(origins.native_progress,native_child_scopes){
+        if progress.scopes_started.get()==before{progress.unsupported.set(true);}
+      }
+    }
     match kind {
         Some(kind) => Statement {
             kind,
@@ -1525,7 +1587,7 @@ fn parse_one(
             header_span: item.header_span,
             raw_header: item.header.clone(),
         },
-        None => unsupported(item),
+        None => native_unsupported(item,origins),
     }
 }
 
@@ -1967,7 +2029,7 @@ fn original_single_array_local(
  let mut witnessed=false;
  let Some(root)=parse_expr_observed(source,dimension.start,diagnostics,&mut|parsed|{
   witnessed=parsed.original_simple_expression.is_some_and(|receipt|receipt.is_original()
-   &&receipt.kind()==crate::expression_parser::OriginalSimpleKind::Complete);
+   &&receipt.is_read_value());
  })else{return false};
  if !witnessed{crate::setting_drop::drop_expression(root,None);return false}
  // The checker/compiler must use this actual consumed dimension, never the
@@ -2027,7 +2089,7 @@ fn parse_var_header(
                     use crate::expression_parser::OriginalSimpleKind;
                     // Real Original positional calls are Complete. Its
                     // statement-only keyed calls must not prove a local RHS.
-                    value.kind() == OriginalSimpleKind::Complete
+                    value.is_read_value()
                         || (!value.is_original() && value.kind() == OriginalSimpleKind::OrdinaryCallStatement)
                 });
             }
@@ -2085,7 +2147,7 @@ fn parse_switch(
             || matches!(parsed.expr.as_ref().map(|value| &value.kind), Some(ExprKind::Ident(_)));
         needs_case_cursor |= !previous_selector;
         witnessed &= parsed.original_simple_expression.is_some_and(|value| {
-            value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+            value.is_read_value()
                 && (previous_selector || value.is_original())
         });
     })?;
@@ -2158,13 +2220,13 @@ fn parse_switch(
                 let lower = parse_expr_observed(lower, offset_of(lower), diagnostics, &mut |parsed| {
                     witnessed &= parsed.original_simple_expression.is_some_and(|value| {
                         value.is_original()
-                            && value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                            && value.is_read_value()
                     });
                 })?;
                 let upper = parse_expr_observed(upper, offset_of(upper), diagnostics, &mut |parsed| {
                     witnessed &= parsed.original_simple_expression.is_some_and(|value| {
                         value.is_original()
-                            && value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                            && value.is_read_value()
                     });
                 })?;
                 alternatives.push(SwitchAlternative::Range(lower, upper));
@@ -2178,7 +2240,7 @@ fn parse_switch(
                             Some(ExprKind::Literal(value)) if crate::expression_parser::original_decimal(value.as_str()));
                         needs_case_cursor |= !decimal;
                         witnessed &= parsed.original_simple_expression.is_some_and(|value| {
-                            value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
+                            value.is_read_value()
                                 && (decimal || value.is_original())
                         });
                     },
@@ -2348,8 +2410,8 @@ pub fn parse_body_items_with_admitted_literals(
  items:&[Item],source:&str,context:&dyn Fn(usize)->Option<ItemKind>,settings:&dyn SettingSyntaxProvider,
  admission:&crate::SettingAdmission<'_>,cleanup:crate::SettingRootLease,
 )->std::io::Result<crate::PreparedBodyLiteralSyntax>{
-  let mut progress=NativeBodyParserProgress{input_roots:items.len(),root_header:items.first().map(|item|item.header_span),..Default::default()};
-  let mut parsed=parse_body_items_with_native_progress(items,Some(settings),Some(admission),Some(source),true,Some(&mut progress));
+  let progress=NativeBodyParserProgress{input_roots:items.len(),root_header:items.first().map(|item|item.header_span),..Default::default()};
+  let mut parsed=parse_body_items_with_native_progress(items,Some(settings),Some(admission),Some(source),true,Some(&progress));
   if !admission.is_stopped(){parsed.pending_bodies=crate::pending_body::pending_bodies(&parsed.statements,source,context);}
   let native=progress.finish(&parsed);
   let mut prepared=crate::prepare_body_literal_syntax(parsed,cleanup,admission)?;
@@ -2461,7 +2523,7 @@ impl OriginalBodyGrammarOutcome{
   let shift=|span:Span|Some(Span::new(span.start.checked_add(offset)?,span.end.checked_add(offset)?));
   let expression=shift(actual.span())?;let operator=match actual.operator(){Some(span)=>Some(shift(span)?),None=>None};
   if expression.start<statement.start||expression.end>statement.end{return None}
-  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){crate::expression_parser::OriginalSimpleKind::Complete|crate::expression_parser::OriginalSimpleKind::PlainAssignment=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::PostDecrementStatement|crate::expression_parser::OriginalSimpleKind::PrefixIncrementStatement|crate::expression_parser::OriginalSimpleKind::PrefixDecrementStatement|crate::expression_parser::OriginalSimpleKind::IndexedUpdateStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement|crate::expression_parser::OriginalSimpleKind::PrefixCondition=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
+  Some(Self{prefix_settings:0,scope_roots:None,kind:match actual.kind(){_ if actual.is_read_value()=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::Complete|crate::expression_parser::OriginalSimpleKind::PlainAssignment=>OriginalBodyGrammarKind::Available,crate::expression_parser::OriginalSimpleKind::OrdinaryCallStatement|crate::expression_parser::OriginalSimpleKind::SimpleAssignmentStatement|crate::expression_parser::OriginalSimpleKind::PostIncrementStatement|crate::expression_parser::OriginalSimpleKind::PostDecrementStatement|crate::expression_parser::OriginalSimpleKind::PrefixIncrementStatement|crate::expression_parser::OriginalSimpleKind::PrefixDecrementStatement|crate::expression_parser::OriginalSimpleKind::IndexedUpdateStatement|crate::expression_parser::OriginalSimpleKind::CrashStatement|crate::expression_parser::OriginalSimpleKind::PrefixCondition=>return None,crate::expression_parser::OriginalSimpleKind::MissingArithmeticOperand=>OriginalBodyGrammarKind::SkippedMissingSimpleOperand},statement:Some(statement),expression:Some(expression),operator})
  }
  pub fn prefix_settings(self)->usize{self.prefix_settings}
  pub fn kind(self)->OriginalBodyGrammarKind{self.kind}

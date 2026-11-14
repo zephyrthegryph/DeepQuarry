@@ -298,3 +298,29 @@ pub fn run_original_grammar_census(arguments: &[String]) -> Result<(), String> {
     let (project, start, count) = original_grammar_census_arguments(arguments)?;
     crate::query_db::run_original_grammar_census(project, start, count)
 }
+
+// Native-only diagnostic over the SAME authenticated capture/order/BODY parser.
+// This grants no compiler/report/default behavior and carries no pinned parity.
+#[doc(hidden)]
+pub fn run_native_grammar_census(arguments:&[String])->Result<(),String>{
+    if arguments.len()!=4||arguments[0]!="--native-grammar-census"{return Err("usage: dmbc --native-grammar-census <absolute.dme> <start> <count:1..1024>".into())}
+    let project=PathBuf::from(&arguments[1]);let decimal=|text:&str|!text.is_empty()&&text.bytes().all(|byte|byte.is_ascii_digit());
+    if !project.is_absolute()||!decimal(&arguments[2])||!decimal(&arguments[3]){return Err("native grammar census requires an absolute project and unsigned decimal bounds".into())}
+    let start=arguments[2].parse::<usize>().map_err(|_|"native census start overflow")?;
+    let count=arguments[3].parse::<usize>().map_err(|_|"native census count overflow")?;
+    if !(1..=1024).contains(&count)||start.checked_add(count).is_none(){return Err("native census requires count1..1024 and nonoverflowing end".into())}
+    crate::query_db::run_native_grammar_census(project,start,count)
+}
+
+#[cfg(test)]mod native_census_cli_boundary_controls{
+ use super::*;
+ #[test]fn native_census_refuses_relative_zero_overflow_and_nondecimal_before_capture(){
+  for args in[
+   vec!["--native-grammar-census","relative.dme","0","1"],
+   vec!["--native-grammar-census","E:/actual.dme","0","0"],
+   vec!["--native-grammar-census","E:/actual.dme","0","1025"],
+   vec!["--native-grammar-census","E:/actual.dme","-1","1"],
+   vec!["--native-grammar-census","E:/actual.dme","18446744073709551615","1"],
+  ]{let args=args.into_iter().map(str::to_owned).collect::<Vec<_>>();assert!(run_native_grammar_census(&args).is_err());}
+ }
+}

@@ -124,3 +124,6 @@ impl<'a,'s> NativeCandidates<'a,'s>{
  pub(crate) fn named_candidate(&self,owner:&str,name:&str)->Result<bool,Failure>{named_candidate(self.source,self.facts,owner,name)}
  pub(crate) fn called_candidates(&self)->&BTreeSet<(String,String)>{&self.called}
 }
+
+/// Same legacy declared-tracking call policy over already-owned native facts.
+pub(crate) fn declared_called_here(source:&dyn OriginalSource,defs:&HashMap<String,Vec<String>>,calls:&BTreeSet<String>,typed:&crate::auto_typed_set_calls_native::TypedSetterCalls,owner:&str,var:&str)->Result<bool,Failure>{policy::called_here(&mut Native{source},defs,||Ok(typed),calls,owner,var)}

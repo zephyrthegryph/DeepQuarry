@@ -37,14 +37,14 @@ impl<'a> OriginalSettingSource<'a> {
         admission: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<dm_syntax::SettingExpression, dm_syntax::SettingSyntaxFailure> {
         let i = &self.input;
-        let root = i.slots.obtain(
+        let root = i.slots.obtain_with_native_observation(
             i.ordinal,
             i.original_owner.settings.len(),
             admission,
             || {
-                i.tokens.with_dense_using(admission,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts(i.source,dense,i.original_value,admission,i.literal_owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?
+                i.tokens.with_dense_using(admission,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts_and_native_observation(i.source,dense,i.original_value,admission,i.literal_owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?
             },
-        )?;
+        ).map(|(root,_)|root)?;
         root.project_current(i.offset, i.source.len())
             .map_err(dm_syntax::SettingSyntaxFailure::Operational)
     }

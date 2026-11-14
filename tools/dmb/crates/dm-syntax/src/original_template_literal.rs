@@ -10,7 +10,7 @@ fn envelope<T>(count:usize)->io::Result<usize>{
 fn refund(a:&crate::SettingAdmission<'_>,credit:&mut crate::SettingRootLease,bytes:usize)->io::Result<()>{
     a.shrink(credit,bytes).map_err(|error|a.take_operational_error().unwrap_or(error))
 }
-struct Part{data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:Vec<crate::SpanToken>}
+struct Part{data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:Vec<crate::SpanToken>,native:Option<crate::NativeExpressionParserFacts>,native_observed:bool,empty_native:bool}
 pub(crate) struct OriginalTemplateBuilder{rows:Vec<Part>,credit:Option<crate::SettingRootLease>}
 impl Drop for OriginalTemplateBuilder{fn drop(&mut self){for mut row in self.rows.drain(..){if let Some(expr)=row.expression.take(){crate::setting_drop::drop_expression(expr,None)}}}}
 struct PendingParts(Option<LiteralParts>);
@@ -21,11 +21,14 @@ impl OriginalTemplateBuilder{
     a.grow(self.credit.as_mut().ok_or(io::ErrorKind::InvalidInput)?,n)
         .map_err(|error|a.take_operational_error().unwrap_or(error))
  }
- pub(crate) fn push(&mut self,data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:&[crate::Token],a:&crate::SettingAdmission<'_>)->io::Result<()>{
+ pub(crate) fn push(&mut self,data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:&[crate::Token],a:&crate::SettingAdmission<'_>)->io::Result<()>{self.push_inner(data,span,expression,tokens,None,false,false,a)}
+ pub(crate) fn push_with_native_facts(&mut self,data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:&[crate::Token],native:Option<crate::NativeExpressionParserFacts>,empty_native:bool,a:&crate::SettingAdmission<'_>)->io::Result<()>{self.push_inner(data,span,expression,tokens,native,true,empty_native,a)}
+ fn push_inner(&mut self,data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:&[crate::Token],native:Option<crate::NativeExpressionParserFacts>,native_observed:bool,empty_native:bool,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   // Own the AST on ALL fallible paths; its iterative release precedes credit.
-  let mut part=Part{data,span,expression,tokens:Vec::new()};
+  let mut part=Part{data,span,expression,tokens:Vec::new(),native,native_observed,empty_native};
   let result=(||{
     poll(a)?;
+    if empty_native&&(part.expression.is_some()||tokens.iter().any(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment))){return Err(io::ErrorKind::InvalidInput.into())}
     let token_bound=envelope::<crate::SpanToken>(tokens.len())?;
     self.grow(token_bound,a)?;
     part.tokens.try_reserve_exact(tokens.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
@@ -56,6 +59,10 @@ impl OriginalTemplateBuilder{
   // This path moves already parsed children and typed fragments. Admit only
   // the allocations made here; the producer's parse/cleanup guard still owns
   // the incoming AST until the enclosing syntax owner measures it.
+  let(mut native_issued,mut native_complete,mut native_recovered,mut native_deferred)=(true,true,false,false);
+  for(i,row)in self.rows.iter().enumerate(){native_issued&=row.native_observed;if i==0{continue}
+   match(&row.expression,row.native){(Some(expression),Some(facts))=>{native_recovered|=facts.recovered();native_deferred|=facts.deferred();native_complete&=facts.is_complete()&&facts.complete_span()==Some(expression.span);},(None,_)if row.empty_native=>(),_=>{native_complete=false;native_deferred=true;}}
+  }
   let count=self.rows.len();
   let fragment_bound=envelope::<LiteralFragment>(count)?;
   let expression_bound=envelope::<Expr>(count-1)?;
@@ -63,7 +70,7 @@ impl OriginalTemplateBuilder{
   self.grow(owners,a)?;
   self.grow(fragment_bound,a)?;
   self.grow(expression_bound,a)?;
-  let mut pending=PendingParts(Some(LiteralParts{runtime_error:None,fragments:Vec::new(),template:Vec::new(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:true,pinned_segment_nonempty:nonempty})}));
+  let mut pending=PendingParts(Some(LiteralParts{native_parser_facts:crate::expression_parser::NativeExpressionParserState::aggregate(native_issued.then(||crate::NativeExpressionParserFacts::aggregate(native_complete,native_recovered,native_deferred||!native_complete))),runtime_error:None,fragments:Vec::new(),template:Vec::new(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:true,pinned_segment_nonempty:nonempty})}));
   let parts=pending.0.as_mut().unwrap();parts.fragments.try_reserve_exact(self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;parts.expressions.try_reserve_exact(self.rows.len()-1).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
   let unused_fragments=fragment_bound.checked_sub(capacity_bytes::<LiteralFragment>(parts.fragments.capacity())?).ok_or(io::ErrorKind::OutOfMemory)?;
   let unused_expressions=expression_bound.checked_sub(capacity_bytes::<Expr>(parts.expressions.capacity())?).ok_or(io::ErrorKind::OutOfMemory)?;
@@ -73,6 +80,7 @@ impl OriginalTemplateBuilder{
   drop(std::mem::take(&mut self.rows));
   refund(a,self.credit.as_mut().unwrap(),builder_bytes)?;
   decode_actual_template_runtime(parts,a,self.credit.as_mut().unwrap())?;
+  if parts.runtime_error.is_some()||parts.lexical.is_err(){if let Some(facts)=parts.native_parser_facts.facts(None){parts.native_parser_facts=crate::expression_parser::NativeExpressionParserState::aggregate(Some(crate::NativeExpressionParserFacts::aggregate(false,facts.recovered(),true)));}}
   let raw=crate::admitted_message_using(a,self.credit.as_mut().unwrap(),|out|out.write_str(raw))?;poll(a)?;
   let retention=OnceLock::new();let _=retention.set(crate::SharedSettingRetention::new(self.credit.take().unwrap()));
   let prepared=OnceLock::new();let _=prepared.set(Ok(pending.0.take()));
@@ -87,7 +95,7 @@ impl OriginalTemplateBuilder{
   let begin=crate::OriginalLiteralData::from_value_with_mode_using("\"head[".into(),crate::OriginalTokenValue::InterpBegin("[typed, not grammar]"),crate::OriginalStringMode::Normal,&a).unwrap();
   let end=crate::OriginalLiteralData::from_value_with_mode_using("]tail\"".into(),crate::OriginalTokenValue::InterpEnd("tail"),crate::OriginalStringMode::Normal,&a).unwrap();
   builder.push(begin,Span::new(0,6),None,&[],&a).unwrap();let mut child=crate::parse_expression("x.y").expr.unwrap();shift_expression(&mut child,6);let mut tokens=crate::lex("x.y").tokens;for token in &mut tokens{token.span.start+=6;token.span.end+=6;}
-  let before=literal_child_parses_for_test();builder.push(end,Span::new(9,15),Some(child),&tokens,&a).unwrap();let value=builder.finish(raw,0,&a).unwrap();assert_eq!(literal_child_parses_for_test(),before);
+  let before=literal_child_parses_for_test();builder.push(end,Span::new(9,15),Some(child),&tokens,&a).unwrap();let value=builder.finish(raw,0,&a).unwrap();assert!(value.native_parser_facts().is_none(),"generic caller-built child cannot mint a native parser receipt");assert_eq!(literal_child_parses_for_test(),before);
   assert!(value.parts().unwrap().is_some());let parts=value.syntax_parts().unwrap().unwrap();assert_eq!(parts.expressions.len(),1);assert!(matches!(parts.expressions[0].kind,ExprKind::Member{..}));let address=&parts.expressions[0]as*const Expr;
   let alias=value.clone();let mut texts=Vec::new();for part in alias.pinned_fragments().unwrap().unwrap(){let mut text=String::new();part.unwrap().write_text(&mut text).unwrap();texts.push(text)}assert_eq!(texts,["[typed, not grammar]","tail"]);assert_eq!(alias.syntax_parts().unwrap().unwrap().expressions.as_ptr(),address);drop(value);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());assert_eq!(alias.syntax_parts().unwrap().unwrap().expressions.as_ptr(),address);drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());assert_eq!(literal_child_parses_for_test(),before);
  }
@@ -204,4 +212,15 @@ fn decode_actual_template_runtime(parts:&mut LiteralParts,a:&crate::SettingAdmis
   let source=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let target=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let from=crate::SettingAdmission::new(&source,16<<20,&||Ok(()));let to=crate::SettingAdmission::new(&target,16<<20,&||Ok(()));let raw=r#""value""#;let data=crate::OriginalLiteralData::from_value_using(raw.into(),crate::OriginalTokenValue::String("value"),&from).unwrap();let credit=source.load(Ordering::Acquire);let value=LiteralText::from_original_data(&data,0,&to).unwrap();let mut root=Expr{kind:ExprKind::Literal(value),span:Span::new(0,raw.len())};shift_unpublished_expression_using(&mut root,31,&to).unwrap();let ExprKind::Literal(value)=&root.kind else{panic!("literal")};assert!(value.original_data().unwrap().same_owner(&data));assert_eq!(value.original_origin(),Some(31));assert!(matches!(data.value(),crate::OriginalTokenValue::String("value")));assert_eq!(source.load(Ordering::Acquire),credit);assert_eq!(target.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());drop(root);assert_eq!(source.load(Ordering::Acquire),credit);drop(data);assert_eq!(source.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
  }
 
+}
+
+#[cfg(test)]mod native_template_child_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn typed_template_retains_same_actual_parser_child_facts_without_reparse(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let raw="\"head[x.y]tail\"";let mut builder=OriginalTemplateBuilder::new(&a).unwrap();
+  let begin=crate::OriginalLiteralData::from_value_with_mode_using("\"head[".into(),crate::OriginalTokenValue::InterpBegin("head"),crate::OriginalStringMode::Normal,&a).unwrap();let end=crate::OriginalLiteralData::from_value_with_mode_using("]tail\"".into(),crate::OriginalTokenValue::InterpEnd("tail"),crate::OriginalStringMode::Normal,&a).unwrap();
+  let mut tokens=crate::lex("x.y").tokens;for token in &mut tokens{token.span.start+=6;token.span.end+=6;}let spans=tokens.iter().map(|t|crate::SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
+  let(mut parsed,native)=crate::expression_parser::parse_expression_span_tokens_with_original_literals_and_native_facts(raw,&spans,0,&a,None);assert!(parsed.diagnostics.is_empty());let child=parsed.expr.take().unwrap();assert_eq!(native.unwrap().complete_span(),Some(child.span));let address=child.span;
+  builder.push_with_native_facts(begin,Span::new(0,6),None,&[],None,false,&a).unwrap();builder.push_with_native_facts(end,Span::new(9,15),Some(child),&tokens,native,false,&a).unwrap();let before=literal_child_parses_for_test();let literal=builder.finish(raw,0,&a).unwrap();assert!(literal.native_parser_facts().unwrap().is_complete());assert_eq!(literal.syntax_parts().unwrap().unwrap().expressions[0].span,address);let alias=literal.clone();assert_eq!(literal_child_parses_for_test(),before);drop(literal);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
 }

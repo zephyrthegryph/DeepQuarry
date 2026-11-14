@@ -748,3 +748,18 @@ mod auxiliary_questions{
   request.workspace_auxiliary.push(WorkspaceAuxiliaryQuestion::SemReads);assert!(request.clone().admit().is_err());request.workspace_auxiliary=vec![WorkspaceAuxiliaryQuestion::SemReads];request.analysis_context=None;assert!(request.admit().is_err());assert!(serde_json::from_str::<PolicyInputRequest>(r#"{"workspace_auxiliary":["unissued_auxiliary_question"]}"#).is_err());
  }
 }
+
+impl PolicyInputRequest{
+ /// Private actual registry admission; wire DATA cannot invoke this without a
+ /// funded plan derived from the same canonical registered producer set.
+ pub(crate) fn admit_registered_model_check(mut self,plan:&std::sync::Arc<crate::runner_host::NativeCheckSelection>)->io::Result<AdmittedPolicyRequest>{
+  if plan.source_only()||self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290)||!self.files.is_empty()||!self.search_folders.is_empty()||!self.workspace_generators.is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"registered model CHECK needs its actual Original workspace purpose"))}
+  if !self.workspace_auxiliary.iter().copied().eq(plan.questions()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"registered model questions differ from actual selected producers"))}
+  let workspace=self.workspace.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"registered model workspace absent"))?;
+  if workspace.configuration!=workspace.root.join("tools/ci/lint_scopes.toml")||plan.roots().iter().any(|(directory,_)|!workspace.recursive_roots.iter().any(|path|*path==workspace.root.join(directory)))||workspace.recursive_roots.iter().any(|path|!plan.roots().iter().any(|(directory,_)|*path==workspace.root.join(directory))){return Err(io::Error::new(io::ErrorKind::InvalidInput,"registered model roots/config differ from actual selected dependencies"))}
+  // Ordinary path normalization and namespace checks still run. Only the
+  // closed pilot's question-combination restriction is replaced by this
+  // actual registry-derived question/roots proof.
+  let wanted=std::mem::take(&mut self.workspace_auxiliary);let mut admitted=self.admit()?;admitted.workspace_auxiliary=wanted;Ok(admitted)
+ }
+}

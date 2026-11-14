@@ -990,6 +990,18 @@ impl InputSnapshot {
             &self.generated_outputs,
         );
     }
+    /// Resource-only sum over already owned physical capacities; no new facts.
+    /// Shared backing is deliberately overcounted, never used as source authority.
+    pub(crate) fn observation_retention_charge(&self)->io::Result<usize>{
+        let mut total=std::mem::size_of::<Self>().checked_add(self.policy_directory_accounting_retained_charge()).ok_or(io::ErrorKind::OutOfMemory)?;
+        let mut visits=0usize;let mut add=|n:usize|->io::Result<()>{if visits&1023==0{crate::daemon::control::checkpoint()?;}visits=visits.wrapping_add(1);total=total.checked_add(n).ok_or(io::ErrorKind::OutOfMemory)?;Ok(())};
+        for(path,file)in &self.files{crate::daemon::control::checkpoint()?;add(128+std::mem::size_of_val(file))?;add(path.capacity())?;add(file.path.capacity())?;}
+        for(path,listing)in &self.folders{crate::daemon::control::checkpoint()?;add(128+path.capacity())?;if let FolderListing::Present(names)=listing{add(names.capacity().checked_mul(std::mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?)?;for name in names{crate::daemon::control::checkpoint()?;add(name.capacity())?;}}}
+        for path in self.negative_files.iter().chain(self.generated_outputs.iter()){crate::daemon::control::checkpoint()?;add(96+path.capacity())?;}
+        for(path,fact)in &self.policy_directories{crate::daemon::control::checkpoint()?;add(128+path.capacity())?;if let PolicyDirectoryListing::Present(entries)=&fact.listing{add(2*std::mem::size_of::<usize>())?;let mut error=None;entries.visit_storage(|storage|{if error.is_none(){let n=match storage{PolicyDirectoryStorage::Owner{bytes,..}=>bytes,PolicyDirectoryStorage::Buffer{capacity,..}=>capacity,PolicyDirectoryStorage::Name(name)=>name.capacity()};if let Err(e)=add(n){error=Some(e)}}});if let Some(e)=error{return Err(e)}}}
+        let mut error=None;self.visit_original_open_storage(|_,_,capacity|{if error.is_none(){if let Err(e)=add(capacity){error=Some(e)}}});if let Some(e)=error{return Err(e)}
+        crate::daemon::control::checkpoint()?;Ok(total)
+    }
     pub fn generated_outputs(&self) -> &BTreeSet<PathBuf> {
         &self.generated_outputs
     }
@@ -1807,3 +1819,27 @@ mod watch_tests;
 #[path="input_handlers_subject.rs"]mod handlers_subject;
 
 pub(crate) use handlers_subject::{HandlerStructuralSubject,HandlerPreparedCapture,PreparedHandlersStructural};
+
+impl InputSnapshot{
+ /// Compare two actually recorded closures, allowing exactly one opaque
+ /// successful authored write. This does not rewrite either immutable ledger,
+ /// exempt generated paths, or authorize a parser/query from comparison DATA.
+ pub(crate) fn same_authored_step(&self,next:&Self,transition:Option<&crate::native_author_fix_transaction::Transition>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+  fn same<T:PartialEq>(mut old:impl Iterator<Item=T>,mut new:impl Iterator<Item=T>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{loop{work.checkpoint()?;match(old.next(),new.next()){(None,None)=>return Ok(true),(Some(a),Some(b))if a==b=>{},_=>return Ok(false)}}}
+  work.checkpoint()?;self.check_structure()?;next.check_structure()?;
+  if !same(self.path_presence.iter(),next.path_presence.iter(),work)?||!same(self.opened_reads.iter(),next.opened_reads.iter(),work)?||!same(self.negative_files.iter(),next.negative_files.iter(),work)?||!same(self.generated_outputs.iter(),next.generated_outputs.iter(),work)?{return Ok(false)}
+  if self.folders.len()!=next.folders.len()||self.policy_directories.len()!=next.policy_directories.len(){return Ok(false)}
+  for(path,before)in &self.folders{work.checkpoint()?;let Some(after)=next.folders.get(path)else{return Ok(false)};match(before,after){(FolderListing::Missing,FolderListing::Missing)=>{},(FolderListing::Present(a),FolderListing::Present(b))if same(a.iter(),b.iter(),work)?=>{},_=>return Ok(false)}}
+  for(path,before)in &self.policy_directories{work.checkpoint()?;let Some(after)=next.policy_directories.get(path)else{return Ok(false)};if before.follow_root!=after.follow_root{return Ok(false)}match(&before.listing,&after.listing){(PolicyDirectoryListing::Missing,PolicyDirectoryListing::Missing)|(PolicyDirectoryListing::NotDirectory,PolicyDirectoryListing::NotDirectory)=>{},(PolicyDirectoryListing::Present(a),PolicyDirectoryListing::Present(b))if same(a.iter(),b.iter(),work)?=>{},_=>return Ok(false)}}
+  let mut seen=false;if self.files.len()!=next.files.len(){return Ok(false)}for(path,before)in &self.files{work.checkpoint()?;let Some(after)=next.files.get(path)else{return Ok(false)};if let Some(t)=transition.filter(|t|t.path()==path.as_path()){if before.path!=after.path||!t.before(&before.stamp,before.content)||!t.after(&after.stamp,after.content){return Ok(false)}seen=true;}else if before!=after{return Ok(false)}}
+  let mut old=self.original_payloads.iter();let mut new=next.original_payloads.iter();loop{work.checkpoint()?;match(old.next(),new.next()){
+   (None,None)=>break,(Some((path,before)),Some((new_path,after)))if path==new_path=>{if let Some(t)=transition.filter(|t|t.path()==path.as_path()){if !t.before(&before.stamp,before.content)||!t.after(&after.stamp,after.content){return Ok(false)}seen=true;}else if before!=after{return Ok(false)}},_=>return Ok(false)
+  }}Ok(transition.is_none()||seen)
+ }
+}
+
+#[cfg(test)]mod authored_step_io_controls{
+ use super::*;use dm_preprocess::source_arena_credit::{SourceArenaWork,SourceArenaCredit};
+ struct FirstIo;impl SourceArenaWork for FirstIo{fn checkpoint(&self)->io::Result<()>{Err(io::Error::from_raw_os_error(1450))}fn reserve(&self,_:usize)->io::Result<SourceArenaCredit>{panic!("comparison must never allocate a resource grant")}fn grow(&self,_:&mut SourceArenaCredit,_:usize)->io::Result<()>{panic!("comparison must never grow storage")}fn shrink(&self,_:&mut SourceArenaCredit,_:usize)->io::Result<()>{panic!("comparison must never alter retained credit")}}
+ #[test]fn authored_step_comparison_preserves_first_actual_io_without_any_allocation_or_followup(){let a=InputSnapshot::new(0);let b=InputSnapshot::new(0);let error=a.same_authored_step(&b,None,&FirstIo).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));}
+}

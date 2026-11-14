@@ -10,6 +10,7 @@ pub(crate) fn drop_expression(expression: Expr, anchor: Option<SharedSettingRete
 }
 pub(crate) fn drop_literal_parts(parts: LiteralParts, anchor: Option<SharedSettingRetention>) {
     let LiteralParts {
+        native_parser_facts: _,
         template,
         fragments,
         expressions,

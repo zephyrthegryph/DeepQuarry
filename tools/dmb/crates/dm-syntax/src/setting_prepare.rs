@@ -377,7 +377,13 @@ pub fn prepare_setting_expression(
 pub fn prepare_setting_expression_with_original_literal_facts(
  source:&str,tokens:&[SpanToken],value_span:Span,a:&SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,
 )->Result<SettingExpression,SettingSyntaxFailure>{
-    let produce = || -> Result<SettingExpression, SettingSyntaxFailure> {
+ prepare_setting_expression_with_original_literal_facts_and_native_observation(source,tokens,value_span,a,facts).map(|(root,_)|root)
+}
+/// Same actual parser/retention call with a transient native observation.
+pub fn prepare_setting_expression_with_original_literal_facts_and_native_observation(
+ source:&str,tokens:&[SpanToken],value_span:Span,a:&SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,
+)->Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>),SettingSyntaxFailure>{
+    let produce = || -> Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>), SettingSyntaxFailure> {
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
         for token in tokens {
             if token.span.start > token.span.end
@@ -410,7 +416,7 @@ pub fn prepare_setting_expression_with_original_literal_facts(
             _peak: peak,
             _admission: a,
         };
-        let mut parsed = crate::expression_parser::parse_expression_span_tokens_with_original_literals(
+        let (mut parsed,native_facts) = crate::expression_parser::parse_expression_span_tokens_with_original_literals_and_native_facts(
             source,tokens,0,a,facts,
         );
         guard.expression = parsed.expr.take();
@@ -448,7 +454,8 @@ pub fn prepare_setting_expression_with_original_literal_facts(
         attach(expression, &anchor, a).map_err(SettingSyntaxFailure::Operational)?;
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
         let expression = guard.expression.take().expect("prepared original root");
-        Ok(SettingExpression::retained_with_anchor(expression, anchor))
+        let native_facts=native_facts.filter(|facts|facts.complete_span().is_none_or(|span|span==expression.span));
+        Ok((SettingExpression::retained_with_anchor(expression,anchor),native_facts))
     };
     produce()
 }
@@ -577,7 +584,7 @@ impl crate::CompletedDemandedExpression {
         drop(tokens);
         let mut guard = Unpublished { expression: Some(expression), anchor: None, _peak: peak, _admission: a };
         check_demanded_retention(&guard, a)?;
-        retain_demanded_root(&mut guard, a)
+        retain_demanded_root(&mut guard,a)
     }
 }
 
@@ -595,4 +602,32 @@ fn retain_demanded_root(guard: &mut Unpublished<'_, '_>, a: &SettingAdmission<'_
  let final_bytes=add(a,add(a,measured.bytes,cleanup).map_err(SettingSyntaxFailure::Operational)?,crate::setting_expression::root_storage_envelope()).map_err(SettingSyntaxFailure::Operational)?;
  let anchor=SharedSettingRetention::new(a.reserve(final_bytes).map_err(SettingSyntaxFailure::Operational)?);guard.anchor=Some(anchor.clone());attach(expression,&anchor,a).map_err(SettingSyntaxFailure::Operational)?;a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
  Ok(SettingExpression::retained_with_anchor(guard.expression.take().expect("checked demanded root"),anchor))
+}
+
+#[cfg(test)]mod native_child_owner_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ fn actual(text:&str,a:&SettingAdmission<'_>)->Result<SettingExpression,SettingSyntaxFailure>{let lexed=crate::lex_spans(text);assert!(lexed.diagnostics.is_empty());prepare_setting_expression(text,&lexed.tokens,Span::new(0,text.len()),a)}
+ fn observed(text:&str,a:&SettingAdmission<'_>)->Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>),SettingSyntaxFailure>{let lexed=crate::lex_spans(text);assert!(lexed.diagnostics.is_empty());prepare_setting_expression_with_original_literal_facts_and_native_observation(text,&lexed.tokens,Span::new(0,text.len()),a,None)}
+ #[test]fn actual_setting_observation_pairs_same_root_through_current_projection_without_a_root_marker(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let(root,facts)=observed("value+1",&a).unwrap();let facts=facts.expect("actual parser observation");assert!(facts.is_complete()&&!facts.recovered()&&!facts.deferred());assert_eq!(facts.complete_span(),Some(root.original_expression().span));let alias=root.clone().project_current(37,7).unwrap();assert!(root.same_root(&alias));assert!(std::ptr::eq(root.original_expression(),alias.original_expression()));assert_eq!(facts.complete_span(),Some(alias.original_expression().span));assert_eq!(alias.current_span(),Span::new(37,44));drop(root);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]fn compatibility_setting_roots_cannot_borrow_another_parsers_complete_classification(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let(root,facts)=observed("value+1",&a).unwrap();let parsed=crate::parse_expression("value+1").expr.unwrap();let compat=SettingExpression::compatibility(parsed);assert!(!compat.is_retained_in(&a));
+  let slots=crate::SettingExpressionSlots::default();assert!(matches!(slots.obtain_with_native_observation(0,1,&a,||Ok((compat,facts))),Err(SettingSyntaxFailure::Operational(_))));assert_eq!(a.take_operational_error().unwrap().kind(),io::ErrorKind::InvalidInput);
+  let fresh=SettingAdmission::new(&used,8<<20,&||Ok(()));let original=slots.obtain(0,1,&fresh,||Ok(root.clone())).unwrap();let(cached,state)=slots.obtain_with_native_observation(0,1,&fresh,||panic!("generic cache entry cannot be silently reparsed/upgraded")).unwrap();assert!(cached.same_root(&original));assert!(state.is_none(),"resource-only cached root does not retain a copied observation");drop((cached,original,slots,root));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]fn admitted_literal_completion_reuses_actual_children_and_optional_empty_grammar(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::with_stack_allowance(&used,16<<20,1<<20,&||Ok(()));
+  for text in["\"head[value]tail\"","\"head[ ]tail\"","\"head[/* comment */]tail\"","@\"static [not interpolation]\""]{let root=actual(text,&a).unwrap();let ExprKind::Literal(value)=&root.kind else{panic!("actual string root")};let before=crate::literal::literal_child_parses_for_test();let facts=value.native_parser_facts().expect("same admitted literal traversal issued facts");assert!(facts.is_complete()&&!facts.recovered()&&!facts.deferred(),"{text}");let alias=value.clone();assert_eq!(alias.native_parser_facts(),Some(facts));assert_eq!(crate::literal::literal_child_parses_for_test(),before,"reading/aliasing cannot parse a child again");drop(root);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
+ }
+ #[test]fn child_owner_first_actual_io_refuses_before_any_native_readiness_or_leak(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let polls=std::cell::Cell::new(0);let fail=||{polls.set(polls.get()+1);Err(io::Error::from_raw_os_error(1450))};let a=SettingAdmission::new(&used,8<<20,&fail);let status=actual("value+1",&a).unwrap_err();assert!(matches!(status,SettingSyntaxFailure::Operational(_)));let actual=a.take_operational_error().expect("same admission actual first failure");assert_eq!(actual.raw_os_error(),Some(1450));assert!(a.is_stopped());assert!(a.checkpoint().is_err());assert_eq!(polls.get(),1);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]fn recovered_literal_and_compatibility_cache_never_mint_native_child_readiness(){
+  let value=crate::LiteralText::at("\"head[value]tail\"".into(),0);value.syntax_parts().unwrap();assert!(value.native_parser_facts().is_none(),"an unadmitted compatibility cache is not a native settled-child receipt");drop(value);
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::with_stack_allowance(&used,16<<20,1<<20,&||Ok(()));
+  match actual("\"head[value + ]tail\"",&a){Ok(root)=>{let ExprKind::Literal(value)=&root.kind else{panic!("literal root")};assert!(!value.native_parser_facts().is_some_and(|facts|facts.is_complete()),"a recovered missing operand must not become complete after diagnostic clearing");drop(root)},Err(SettingSyntaxFailure::Syntax(_))=>(),Err(SettingSyntaxFailure::Operational(error))=>panic!("ordinary tiny malformed grammar must not need an operational fallback: {error}")}
+  assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
 }

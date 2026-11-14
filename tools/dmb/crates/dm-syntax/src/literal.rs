@@ -25,8 +25,10 @@ pub enum LiteralLexicalError {
 
 #[derive(Clone,Debug,Eq,PartialEq)]
 pub(crate) struct LiteralFragment{pub(crate) range:Span,pub(crate) expression:Option<usize>,pub(crate) tokens:Vec<crate::SpanToken>,pub(crate) original:Option<crate::OriginalLiteralData>}
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct LiteralParts {
+    // Immutable completion DATA from this SAME admitted literal/child traversal.
+    pub(crate) native_parser_facts:crate::expression_parser::NativeExpressionParserState,
     // Native runtime refusal is distinct from primary lexical/child syntax.
     pub(crate) runtime_error: Option<String>,
     pub(crate) fragments: Vec<LiteralFragment>,
@@ -34,6 +36,9 @@ pub struct LiteralParts {
     pub expressions: Vec<Expr>,
     pub lexical: Result<LiteralLexicalShape, LiteralLexicalError>,
 }
+impl fmt::Debug for LiteralParts{fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{f.debug_struct("LiteralParts").field("runtime_error",&self.runtime_error).field("fragments",&self.fragments).field("template",&self.template).field("expressions",&self.expressions).field("lexical",&self.lexical).finish()}}
+impl PartialEq for LiteralParts{fn eq(&self,other:&Self)->bool{self.runtime_error==other.runtime_error&&self.fragments==other.fragments&&self.template==other.template&&self.expressions==other.expressions&&self.lexical==other.lexical}}
+impl Eq for LiteralParts{}
 #[derive(Debug)]
 struct LiteralState {
     raw: String,
@@ -228,6 +233,8 @@ impl LiteralText {
         Self::from_original_data(data,origin,a)
     }
     pub fn visit_original_literal_storage(&self,visit:impl FnMut(usize,usize,usize)){if let Some(data)=self.original_data(){data.visit_storage(visit)}}
+    /// Borrows only the completion DATA already retained by this literal. No parse/upgrade.
+    pub fn native_parser_facts(&self)->Option<crate::NativeExpressionParserFacts>{match &self.0{Backing::Text(owner)=>owner.parts.get().and_then(|parts|parts.as_ref().ok()).and_then(|parts|parts.as_ref()).and_then(|parts|parts.native_parser_facts.facts(None)),_=>None}}
     pub fn at(raw: String, origin: usize) -> Self {
         if raw.starts_with('"')
             || raw.starts_with("{\"")
@@ -619,7 +626,9 @@ fn string_literal_parts_clean(
 ) -> Result<Option<LiteralParts>, String> {
     let Some((is_raw,value))=literal_content(raw) else{return Ok(None)};
     if is_raw{
-     return Ok(Some(raw_static_parts(value,Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!projection.segment(value.as_ptr() as usize-raw.as_ptr() as usize,value.len()).is_empty()}))));
+     let mut parts=raw_static_parts(value,Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!projection.segment(value.as_ptr() as usize-raw.as_ptr() as usize,value.len()).is_empty()}));
+     parts.native_parser_facts=crate::expression_parser::NativeExpressionParserState::aggregate(admission.map(|_|crate::NativeExpressionParserFacts::aggregate(parts.lexical.is_ok(),false,parts.lexical.is_err())));
+     return Ok(Some(parts));
     }
     let offset = value.as_ptr() as usize - raw.as_ptr() as usize;
     let mut parts = parse_interpolated_string_clean(value, projection.offset(offset), admission)?;
@@ -730,7 +739,7 @@ pub(crate) fn visit_pinned_segment<E>(
 }
 
 fn raw_static_parts(value:&str,lexical:Result<LiteralLexicalShape,LiteralLexicalError>)->LiteralParts{
-    LiteralParts{runtime_error:None,fragments:Vec::new(),template:value.as_bytes().to_vec(),expressions:Vec::new(),lexical}
+    LiteralParts{native_parser_facts:Default::default(),runtime_error:None,fragments:Vec::new(),template:value.as_bytes().to_vec(),expressions:Vec::new(),lexical}
 }
 fn parse_interpolated_string_clean(
     value: &str,
@@ -837,6 +846,7 @@ fn parse_text_content_clean(
     let mut preceding_expression=None;
     let mut preceding_tokens=Vec::new();
     let mut expressions = Vec::new();
+    let(mut native_complete,mut native_recovered,mut native_deferred)=(true,false,false);
     let mut next_marker = None;
     let mut substituted = false;
     let mut lexical = LiteralLexicalShape {
@@ -914,7 +924,7 @@ fn parse_text_content_clean(
             let raw_expression = raw_expression.trim();
             let (source, positions) = splice_with_positions(raw_expression);
             #[cfg(test)] LITERAL_CHILD_PARSES.with(|n|n.set(n.get()+1));
-            let(parsed,mut primary_tokens)=crate::expression_parser::parse_expression_with_primary_tokens(&source,admission)?;
+            let(parsed,mut primary_tokens,native)=crate::expression_parser::parse_optional_interpolation_with_primary_tokens_and_native_facts(&source,admission)?;
             if admission.is_some_and(|a| a.is_stopped()) {
                 return Err("interpolation operation stopped".into());
             }
@@ -923,12 +933,17 @@ fn parse_text_content_clean(
             }
             let Some(mut expression)=parsed.expr else{
                 if primary_tokens.iter().any(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment)){return Err("empty string interpolation".into())}
+                if !native.is_some_and(|facts|facts.exhausted()&&!facts.recovered()&&!facts.deferred()){native_complete=false;native_deferred=true;}
                 // The SAME primary lexer proved a trivia-only empty child.
                 // Pinned interpolation expressions are optional, like [ ].
                 for token in &mut primary_tokens{let span=remapped_span(token.span,&positions,raw_expression.len());token.span=projection.token_span(start+leading+span.start,span.end-span.start);}
                 preceding_expression=None;preceding_tokens=primary_tokens;
                 template.extend([0xff,next_marker.take().unwrap_or(1)]);at=cursor+1;segment_start=at;continue;
             };
+            if let Some(facts)=native{
+                native_recovered|=facts.recovered();native_deferred|=facts.deferred();
+                native_complete&=facts.is_complete()&&facts.complete_span()==Some(expression.span);
+            }else{native_complete=false;native_deferred=true;}
             remap(&mut expression, &positions, raw_expression);
             shift_expression(&mut expression, start + leading);
             for token in &mut primary_tokens{let span=remapped_span(token.span,&positions,raw_expression.len());token.span=projection.token_span(start+leading+span.start,span.end-span.start);}
@@ -957,7 +972,9 @@ fn parse_text_content_clean(
         &mut segment_error,
     );
     if lexical.interpolated{fragments.push(LiteralFragment{range:projection.segment_span(segment_start,value.len()-segment_start),expression:preceding_expression,tokens:std::mem::take(&mut preceding_tokens),original:None});}
+    let native_lexical=segment_error.is_none()&&runtime_error.is_none();
     Ok(LiteralParts {
+        native_parser_facts:crate::expression_parser::NativeExpressionParserState::aggregate(admission.map(|_|crate::NativeExpressionParserFacts::aggregate(native_complete&&native_lexical,native_recovered,native_deferred||!native_complete||!native_lexical))),
         runtime_error:runtime_error.take(),
         fragments,
         template,
@@ -1758,4 +1775,12 @@ fn original_prepared_body_parts_require_issued_template_and_exact_span() {
     assert!(ordinary.original_prepared_body_parts(span).is_none());
     drop(literal);
     assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire), fixed);
+}
+
+#[cfg(test)]mod native_literal_layout_controls{
+ use super::*;
+ struct PriorLiteralPartsShape{runtime_error:Option<String>,fragments:Vec<LiteralFragment>,template:Vec<u8>,expressions:Vec<Expr>,lexical:Result<LiteralLexicalShape,LiteralLexicalError>}
+ #[test]fn native_scalar_literal_status_does_not_grow_the_prior_physical_owner(){
+  assert_eq!(std::mem::size_of::<LiteralParts>(),std::mem::size_of::<PriorLiteralPartsShape>());
+ }
 }

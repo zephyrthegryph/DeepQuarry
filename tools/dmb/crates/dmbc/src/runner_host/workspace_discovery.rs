@@ -20,7 +20,7 @@ pub(crate) struct DiscoveryContract {
 /// The selector actually executed by the only recursive receipt issuer.
 /// No caller flag, include glob or exclusion list can construct this value.
 #[derive(Clone,Copy)]
-enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1, AuthoredDocUiExtendedV1, AuthoredCheckGrepV1}
+enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1, AuthoredDocUiExtendedV1, AuthoredCheckGrepV1, RegisteredSourceCheckV1}
 /// Obligations of the one physical traversal selected by the private issuer.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 struct DiscoveryFacets {
@@ -85,6 +85,7 @@ impl DiscoverySelection{
   }),
   Self::DocSnippetsDemandV2=>path.strip_prefix(root).is_ok_and(|relative|{let relative=relative.to_string_lossy().replace('\\',"/");dq_analyze::captured_raw_file::is_code_dm(&relative)||(!relative.split('/').any(|part|part.starts_with('.'))&&dq_analyze::doc_snippets_policy::is_doc_path(&relative))}),
   Self::DocSnippetsCodeAndMarkdownV1=>path.strip_prefix(root).is_ok_and(|relative|(relative.starts_with("code")&&path.extension().is_some_and(|ext|ext=="dm"))||(relative.starts_with("doc/rewrite")&&path.extension().is_some_and(|ext|ext=="md"))),
+  Self::RegisteredSourceCheckV1=>false, // actual plan is required by the shared issuer below
   Self::RecursiveDmNoChildLinksV1|Self::MapEditsJoinedDmNoLinksV1=>path.extension().is_some_and(|extension|extension=="dm"),
   // Preserve existing code/maps DM roles; the added tgui walk retains only
   // the unique CheckGrep selector, not unrelated tgui DM payloads.
@@ -105,8 +106,48 @@ pub(crate) struct DiscoveryReceipt {
     files: Vec<PathBuf>,
     check_grep:Option<CheckGrepNames>,
     doc_configuration:Option<DocConfiguration>,
+    registered_check:Option<Arc<crate::runner_host::NativeCheckSelection>>,
 }
 impl DiscoveryReceipt {
+    /// Only the same private selector and the actual typed traversal certify
+    /// this selected producer. No generic CODE/model coverage is granted.
+    /// A required index subdomain is certified only by an ACTUAL unpruned
+    /// selected producer domain (or independent full audit/model dependency),
+    /// never by the dynamic discovery tag alone.
+    pub(crate) fn covers_registered_index_roots(&self,plan:&Arc<crate::runner_host::NativeCheckSelection>,roots:&[(&str,&str)],missing_is_empty:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        self.requires_registered_check(plan)?;
+        if !plan.source_only()&&roots==dq_analyze::tree::CODE_DM.roots{return self.covers_selected_roots(roots,missing_is_empty,false,admit)}
+        let includes=|declared:&[(&str,&str)]|roots.iter().all(|required|declared.iter().any(|held|held==required));
+        if plan.audit_unused()&&includes(dq_analyze::allow_annotation_policy::metadata().select.roots)&&self.covers_registered_audit(plan,admit)?{return self.covers_selected_roots(roots,missing_is_empty,false,admit)}
+        for meta in plan.metadata(){if plan.needs_unselected_source(meta)&&includes(meta.select.roots)&&self.covers_registered_check(plan,meta,admit)?{return self.covers_selected_roots(roots,missing_is_empty,false,admit)}}
+        Ok(false)
+    }
+    pub(crate) fn covers_registered_check(&self,plan:&Arc<crate::runner_host::NativeCheckSelection>,meta:&dq_analyze::lint::Meta,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        let Some(held)=&self.registered_check else{return Ok(false)};
+        if !Arc::ptr_eq(held,plan)||!plan.metadata().any(|actual|std::ptr::eq(actual,meta)){return Ok(false)}
+        self.registered_domain_observed(plan,meta,admit)
+    }
+    pub(crate) fn covers_registered_audit(&self,plan:&Arc<crate::runner_host::NativeCheckSelection>,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        self.requires_registered_check(plan)?;if !plan.audit_unused(){return Ok(false)}
+        self.registered_domain_observed(plan,dq_analyze::allow_annotation_policy::metadata(),admit)
+    }
+    fn registered_domain_observed(&self,plan:&Arc<crate::runner_host::NativeCheckSelection>,meta:&dq_analyze::lint::Meta,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        for &(directory,_) in meta.select.roots{
+            crate::daemon::control::checkpoint()?;
+            admit(self.contract.root.as_os_str().len().checked_add(directory.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(512)).ok_or(io::ErrorKind::OutOfMemory)?)?;
+            let root=self.contract.root.join(directory);
+            if !plan.needs_source_directory(directory,self.registered_configuration(plan)?){continue}
+            if !self.contract.recursive_roots.contains(&root)||!self.facts.policy_directories().contains_key(&root){return Ok(false)}
+        }
+        Ok(true)
+    }
+    pub(crate) fn requires_registered_check(&self,plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<()>{
+        if self.registered_check.as_ref().is_some_and(|held|Arc::ptr_eq(held,plan)){Ok(())}else{Err(io::Error::new(io::ErrorKind::InvalidInput,"registered source discovery belongs to another actual selection"))}
+    }
+    pub(crate) fn registered_configuration(&self,plan:&Arc<crate::runner_host::NativeCheckSelection>)->io::Result<&dq_analyze::captured_raw_file::Config>{
+        self.requires_registered_check(plan)?;self.doc_configuration.as_ref().map(|row|row.value.as_ref()).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"registered discovery lacks its actual captured configuration"))
+    }
+    pub(crate) fn registered_plan(&self)->Option<&Arc<crate::runner_host::NativeCheckSelection>>{self.registered_check.as_ref()}
     pub(crate) fn check_grep_names(&self)->io::Result<(&[PathBuf],&[PathBuf])>{match &self.check_grep{Some(names) if self.selection.observes_check_grep()=>Ok((&names.dmes,&names.jsx)),_=>Err(io::Error::new(io::ErrorKind::Unsupported,"complete check_grep selection was not actually observed"))}}
     /// Full CODE_DM coverage is a property of this actual unfiltered typed
     /// traversal, not a normal folder fact or a caller's claimed prefix.
@@ -119,6 +160,14 @@ impl DiscoveryReceipt {
         self.covers_dm_roots(dq_analyze::captured_raw_file::generator_cli_test_roots(),true,admit)
     }
     pub(crate) fn covers_dm_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        if matches!(self.selection,DiscoverySelection::RegisteredSourceCheckV1){
+            let Some(plan)=&self.registered_check else{return Ok(false)};
+            // The actual private registered model demand retains complete CODE
+            // declarations, independently of any selected lint exemption.
+            // A source-only productive plan can never enter this path.
+            if plan.source_only()||roots!=dq_analyze::tree::CODE_DM.roots{return Ok(false)}
+            return self.covers_selected_roots(roots,missing_is_empty,false,admit)
+        }
         if matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::DocSnippetsCodeAndMarkdownV1|DiscoverySelection::DocSnippetsDemandV2){return Ok(false)}
         if matches!(self.selection,DiscoverySelection::OwnershipCodeDmV2)&&roots!=[("code","dm")]{return Ok(false)}
@@ -383,6 +432,9 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contrac
     discover_selected_lent_scoped(inputs,contract,selection,doc_configuration,lender,None)
 }
 fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,scratch:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>)->io::Result<DiscoveryReceipt>{
+    discover_selected_lent_scoped_plan(inputs,contract,selection,doc_configuration,lender,scratch,None)
+}
+fn discover_selected_lent_scoped_plan<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,scratch:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>,registered_check:Option<Arc<crate::runner_host::NativeCheckSelection>>)->io::Result<DiscoveryReceipt>{
     if !contract.root.is_absolute() || contract.recursive_roots.iter().any(|p| !p.is_absolute()) {
         return Err(io::Error::other(
             "workspace discovery paths must be caller absolute",
@@ -439,6 +491,7 @@ fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,
     let mut fund_metadata=|bytes:usize|->io::Result<()>{if let Some(budget)=&metadata_budget{let extra=bytes.saturating_sub(funded_metadata);budget.charge(extra).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;}funded_metadata=funded_metadata.max(bytes);Ok(())};
     if let Some(config)=&doc_configuration{metadata=metadata.checked_add(config.scope_bound).and_then(|n|n.checked_add(config.path.capacity()*8+4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc scope/traversal metadata overflow"))?;}
     fund_metadata(metadata)?;check(inputs, metadata)?;
+    if matches!(selection,DiscoverySelection::RegisteredSourceCheckV1)!=registered_check.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"registered discovery requires its actual selector"))}
     let facets = selection.facets();
     let mut stack = contract
         .recursive_roots
@@ -459,6 +512,12 @@ fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,
      for entry in entries.iter(){crate::daemon::control::checkpoint()?;if entry.kind==Kind::File&&dq_analyze::lints::check_grep::native::is_root_dme(&entry.name){let path=contract.root.join(&entry.name);metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep root DME metadata overflow"))?;fund_metadata(metadata)?;check(inputs,metadata)?;dmes.insert(path.clone());files.insert(path);}}
     }
     while let Some((folder, follow_root)) = stack.pop() {
+        if let Some(plan)=&registered_check{
+            crate::daemon::control::checkpoint()?;
+            let relative=folder.strip_prefix(&contract.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"registered discovery folder escapes workspace"))?.to_string_lossy().replace('\\',"/");
+            let config=doc_configuration.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"registered discovery lacks actual configuration"))?;
+            if !plan.needs_source_directory(&relative,&config.value){continue}
+        }
         crate::daemon::control::checkpoint()?;
         if matches!(selection,DiscoverySelection::DocSnippetsDemandV2){let relative=folder.strip_prefix(&contract.root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"Doc folder escapes actual root"))?.to_string_lossy().replace('\\',"/");let key=format!("{relative}/");if (relative.starts_with("doc/rewrite/")||relative.split('/').any(|part|part.starts_with('.')))||doc_configuration.as_ref().is_some_and(|config|config.excludes_subtree(&key)){continue}}
         if facets.docs_share_complete_dm {
@@ -486,6 +545,7 @@ fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,
         match listing {
             Listing::Missing => {} // exact negative directory fact retained, not an empty positive listing
             Listing::NotDirectory if matches!(selection,DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::OwnershipCodeDmV2|DiscoverySelection::UiActionsVisibleRootsV1)=>{} // genuine negative subtree observation, never a fabricated empty listing
+            Listing::NotDirectory if registered_check.as_ref().is_some_and(|plan|plan.source_only())=>{} // actual negative source-only selection, never an empty positive listing
             Listing::NotDirectory => {
                 return Err(io::Error::other(
                     "workspace discovery root changed to nondirectory",
@@ -509,7 +569,13 @@ fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,
                             fund_metadata(metadata)?;check(inputs, metadata)?;
                             stack.push((path, false));
                         }
-                        Kind::File if selection.includes_file(&path,&contract.root)
+                        Kind::File if registered_check.as_ref().map_or_else(||selection.includes_file(&path,&contract.root),|plan|
+                            path.strip_prefix(&contract.root).is_ok_and(|relative|{
+                                let relative=relative.to_string_lossy().replace('\\',"/");
+                                plan.metadata().any(|meta|dq_analyze::captured_registry_check_selection::matches_meta_path(meta,&relative))
+                                    ||plan.audit_unused()&&dq_analyze::captured_registry_check_selection::matches_meta_path(dq_analyze::allow_annotation_policy::metadata(),&relative)
+                                    ||!plan.source_only()&&dq_analyze::captured_registry_check_selection::matches_model_declaration_path(&relative)
+                            }))
                             && !doc_configuration.as_ref().is_some_and(|config|
                                 path.strip_prefix(&contract.root).is_ok_and(|relative| {
                                     facets.applies_doc_exemption(relative) && config.excludes(&relative.to_string_lossy().replace('\\',"/"))
@@ -564,7 +630,7 @@ fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,
         selection,
         contract,
         facts,
-        files,check_grep,doc_configuration,
+        files,check_grep,doc_configuration,registered_check,
     })
 }
 
@@ -781,4 +847,35 @@ fn joined_doc_discovery_proves_each_domain_without_admitting_exempt_markdown() {
         .policy_path_exempt("doc_snippets","","code/skip.dm"));
     let partial=DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code"),root.join("doc/rewrite")]};
     assert!(discover_doc_snippets_joined(&inputs,partial,&configuration).is_err());
+}
+
+/// The only dynamic discovery issuer consumes the genuine registered plan.
+/// It runs the existing typed directory kernel; no second walker or text scan.
+pub(crate) fn discover_registered_source_check<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,configuration:&Path,plan:Arc<crate::runner_host::NativeCheckSelection>)->io::Result<(DiscoveryReceipt,Option<dm_resources::SharedBytes>)>{
+    let directories=plan.roots().iter().enumerate().filter(|(index,(root,_))|!plan.roots()[..*index].iter().any(|(prior,_)|prior==root)).count();
+    if contract.recursive_roots.len()!=directories||plan.roots().iter().any(|(root,_)|!contract.recursive_roots.iter().any(|path|path.strip_prefix(&contract.root).ok()==Some(Path::new(root)))){
+        return Err(io::Error::new(io::ErrorKind::InvalidInput,"source selection requires all actual registered roots"))
+    }
+    let path=canonical_path(configuration);if !path.is_absolute(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected CHECK configuration must be actual absolute input"))}
+    let bytes=inputs.read_policy_candidate(&path,64*1024*1024)?;
+    let peak=bytes.as_ref().map_or(Some(1024),|bytes|bytes.capacity().checked_mul(64).and_then(|n|n.checked_add(8192+path.capacity()*8))).ok_or(io::ErrorKind::OutOfMemory)?;
+    if inputs.policy_discovery_metadata_charge()?.checked_add(peak).is_none_or(|n|n>64*1024*1024){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"selected CHECK configuration exceeds existing discovery metadata grant"))}
+    let value=Arc::new(dq_analyze::captured_raw_file::Config::capture(bytes.as_ref().map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,|bytes|dq_analyze::captured_raw_policy::Configuration::Captured(bytes.as_slice()))).map_err(io::Error::other)?);
+    let observation=inputs.recorded_policy_file_observation(&path)?;let scope_bound=value.budget_charge();
+    let config=DocConfiguration{path,observation,value,scope_bound,scope_prepaid:false};
+    let receipt=discover_selected_lent_scoped_plan(inputs,contract,DiscoverySelection::RegisteredSourceCheckV1,Some(config),None,None,Some(plan))?;
+    Ok((receipt,bytes))
+}
+
+#[cfg(test)]mod registered_selected_namespace_controls{
+ use super::*;
+ #[test]fn actual_selected_index_namespace_is_not_a_whole_unused_audit_or_productive_tag(){
+  let root=std::fs::canonicalize(crate::test_scratch::dir("selected-index-vs-audit")).unwrap();for directory in ["code","maps"]{std::fs::create_dir(root.join(directory)).unwrap();std::fs::write(root.join(directory).join("proof.dm"),"/obj/proof\n").unwrap();}
+  let host=crate::runner_host::BuildHost::default();let format=crate::runner_host::FullRegistryCheckOptions{raw:true,unused:false,..Default::default()};let work=host.source_arena_work();
+  let plan=crate::runner_host::prepare_native_check_selection(&["tracked".into(),"sem/handlers".into()],format,work).unwrap();assert!(plan.model_handler_join()&&!plan.audit_unused());let inputs=RecordingInputs::new(crate::input_snapshot::FileSystemInputs,0);let contract=DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code"),root.join("maps")]};
+  let(receipt,_)=discover_registered_source_check(&inputs,contract.clone(),&root.join("absent-scopes.toml"),Arc::clone(&plan)).unwrap();receipt.validate_recording(&inputs).unwrap();assert!(receipt.covers_registered_index_roots(&plan,dq_analyze::tree::CODE_MAPS_DM.roots,false,&mut |_|Ok(())).unwrap());assert!(!receipt.covers_registered_audit(&plan,&mut |_|panic!("unrequested audit cannot borrow namespace readiness")).unwrap());
+  let foreign=crate::runner_host::prepare_native_check_selection(&["tracked".into(),"sem/handlers".into()],format,work).unwrap();assert_eq!(receipt.covers_registered_index_roots(&foreign,dq_analyze::tree::CODE_MAPS_DM.roots,false,&mut |_|Ok(())).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  let mut polls=0;let actual=receipt.covers_registered_index_roots(&plan,dq_analyze::tree::CODE_MAPS_DM.roots,false,&mut |_|{polls+=1;Err(io::Error::from_raw_os_error(1450))}).unwrap_err();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(polls,1);
+  let productive=crate::runner_host::prepare_native_check_selection(&["scheduler".into()],format,work).unwrap();assert!(productive.source_only());let ordinary=RecordingInputs::new(crate::input_snapshot::FileSystemInputs,1);let(pruned,_)=discover_registered_source_check(&ordinary,contract,&root.join("absent-scopes.toml"),Arc::clone(&productive)).unwrap();pruned.validate_recording(&ordinary).unwrap();assert!(!pruned.covers_registered_index_roots(&productive,dq_analyze::tree::CODE_MAPS_DM.roots,false,&mut |_|Ok(())).unwrap(),"an actual productive receipt alone cannot certify a missing unselected-index obligation");
+ }
 }

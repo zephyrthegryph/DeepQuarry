@@ -7,6 +7,8 @@ pub mod report_work;
 pub mod selected_exclusions_wire;
 
 pub mod full_registry_check_wire;
+pub mod full_registry_check_selection_wire;
 pub mod schema_proposals_wire;
+pub mod native_fix_wire;
 
 pub mod native_checker_wire;

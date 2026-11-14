@@ -47,6 +47,11 @@ fn main_inner() {
             std::process::exit(2);
         }
     };
+    if arguments.first().map(String::as_str)==Some("--native-grammar-census"){
+        if compile_result.is_some(){eprintln!("--native-grammar-census accepts no compile result");std::process::exit(2);}
+        if let Err(error)=dmbc::cli::run_native_grammar_census(&arguments){eprintln!("native intrinsic grammar census: {error}");std::process::exit(2);}
+        return;
+    }
     if arguments.first().map(String::as_str) == Some("--original-grammar-census") {
         if compile_result.is_some() {
             eprintln!("--original-grammar-census accepts no compile result");
@@ -178,6 +183,10 @@ fn main_inner() {
     if arguments.first().map(String::as_str)==Some("checker-text"){
         let result=if compile_result.is_none(){dmbc::daemon::run_checker_text_cli(&arguments[1..])}else{Err("profiling compile output is not a standalone Checker request".into())};
         match result{Ok(code)=>std::process::exit(i32::from(code)),Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
+    }
+    if arguments.first().map(String::as_str)==Some("analyze-fix"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_native_fix_cli(&arguments[1..])}else{Err("profiling compile output is not an authored fix request".into())};
+        match result{Ok(())=>return,Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
     }
     if arguments.first().map(String::as_str)==Some("analyze-schema-proposals"){
         let result=if compile_result.is_none(){dmbc::daemon::run_schema_proposals_cli(&arguments[1..])}else{Err("profiling compile output is not a schema report request".into())};

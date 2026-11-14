@@ -38,7 +38,7 @@ pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
     for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
     parse_proc_with_origins_at_span, parse_proc_with_origins_from_spans, ChunkReport,
-    ProcedureWithOrigins, parse_original_proc_with_shared_parameters_from_spans,parse_original_proc_with_shared_parameters_from_window, StreamingAudit,parse_original_proc_with_origins_and_default_roots_from_spans, parse_proc_with_origins_and_default_roots_from_spans,
+    ProcedureWithOrigins, parse_proc_with_native_consumption_from_window, parse_original_proc_with_shared_parameters_from_spans,parse_original_proc_with_shared_parameters_from_window, StreamingAudit,parse_original_proc_with_origins_and_default_roots_from_spans, parse_proc_with_origins_and_default_roots_from_spans,
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
@@ -325,7 +325,7 @@ mod setting_prepare;
 mod admitted_worklist;
 mod body_literal_syntax;
 pub use body_literal_syntax::{prepare_body_literal_syntax,PreparedBodyLiteralSyntax,BodyLiteralAdmission,drop_body_literal_syntax};
-pub use setting_prepare::{prepare_setting_expression,prepare_setting_expression_with_original_literal_facts,retain_demanded_expression, SettingSyntaxFailure};
+pub use setting_prepare::{prepare_setting_expression,prepare_setting_expression_with_original_literal_facts,prepare_setting_expression_with_original_literal_facts_and_native_observation,retain_demanded_expression, SettingSyntaxFailure};
 mod setting_expression;
 pub use setting_expression::{
     visit_setting_literal_retention, SettingAdmission, SettingEvaluationFrame, SettingExpression, SettingRootLease,
@@ -383,3 +383,5 @@ pub use original_failure_format::{write_original_input_failure,write_original_te
 
 mod setting_charge_counter;
 pub use setting_charge_counter::{ProvisionalNativeGrant, SettingChargeCounter, SharedNativeReservation};
+
+pub use expression_parser::{NativeExpressionParserFacts,parse_expression_original_token_view_with_native_facts,parse_expression_token_view_with_native_facts};

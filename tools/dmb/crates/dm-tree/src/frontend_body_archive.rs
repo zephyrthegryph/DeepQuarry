@@ -1134,6 +1134,7 @@ fn parse_statements_admitted(
         }
 
         fn original_expression(&self,source:&str,offset:usize)->std::io::Result<Option<dm_syntax::ParsedExpr>>{self.syntax.original_body_expression(self.body,self.code,source,offset,self.admission)}
+        fn original_expression_with_native_facts(&self,source:&str,offset:usize)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{self.syntax.original_body_expression_with_native_facts(self.body,self.code,source,offset,self.admission)}
         fn original_joined_return(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             use std::io::{Error, ErrorKind};
@@ -1678,23 +1679,10 @@ fn parse_statements_admitted(
             tokens.named_loop_control_using(head,keyword,name,self.admission)
         }
         fn original_bare_loop_control(&self, header: dm_syntax::Span, keyword: &'static str) -> std::io::Result<bool> {
-            use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             let tokens = self.syntax.original_body_tokens(self.body, self.code)
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
-            let tail = dm_syntax::Span::new(header.start, tokens.current_span().end);
-            let Ok(mut actual) = tokens.tokens(tail) else { return Ok(false); };
-            if !matches!(actual.next(), Some((TokenKind::Ident, span, actual)) if span == header && actual == keyword) {
-                return Ok(false);
-            }
-            for (kind, _, text) in actual {
-                self.admission.checkpoint()?;
-                if matches!(kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) {
-                    continue;
-                }
-                return Ok(kind == TokenKind::Punctuation && matches!(text, ";" | "}"));
-            }
-            Ok(false)
+            tokens.bare_loop_control_using(header,keyword,self.admission)
         }
         fn switch_case_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
             let mut checkpoint=||{self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"native case cursor operation stopped"})};
@@ -1703,18 +1691,15 @@ fn parse_statements_admitted(
         fn setting(
             &self,
             item: &Item,
-        ) -> Result<dm_syntax::SettingStatement, dm_syntax::Diagnostic> {
-            match self.syntax.setting_statement_expression(
+        ) -> Result<dm_syntax::SettingStatement, dm_syntax::Diagnostic> {self.setting_with_native_observation(item).map(|(value,_)|value)}
+        fn setting_with_native_observation(&self,item:&Item)->Result<(dm_syntax::SettingStatement,Option<dm_syntax::NativeExpressionParserFacts>),dm_syntax::Diagnostic>{
+            match self.syntax.setting_statement_expression_with_native_observation(
                 self.body,
                 self.code,
                 item,
                 self.admission,
             ) {
-                Ok((attribute, relation, value)) => Ok(dm_syntax::SettingStatement {
-                    attribute,
-                    relation,
-                    value,
-                }),
+                Ok((attribute,relation,value,native)) => Ok((dm_syntax::SettingStatement {attribute,relation,value},native)),
                 Err(dm_syntax::SettingSyntaxFailure::Syntax(error)) => Err(error),
                 Err(dm_syntax::SettingSyntaxFailure::Operational(error)) => {
                     self.admission.record_operational_error(error);

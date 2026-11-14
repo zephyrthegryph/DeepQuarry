@@ -39,8 +39,9 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
    Ok(())
   }),|data,_,_|{
    assert_eq!(data.selected().len(),retained.len());
-   assert_eq!(data.unused().len(),1);
-   assert!(data.unused()[0].starts_with("maps/stale.dm:2: ALLOW(scheduler) is unused"));
+   let unused=data.unused()?;
+   assert_eq!(unused.len(),1);
+   assert!(unused[0].starts_with("maps/stale.dm:2: ALLOW(scheduler) is unused"));
    Ok(())
   }).unwrap();
   assert_eq!(observed.len(),retained.len());
@@ -56,8 +57,9 @@ fn actual_original_selected_union_observes_same_completed_folds_and_real_unused_
    Ok(())
   }),|data,_,_|{
    assert!(data.selected().iter().map(String::as_str).eq(subset));
-   assert_eq!(data.unused().len(),1);
-   assert!(data.unused()[0].starts_with("maps/stale.dm:2: ALLOW(scheduler) is unused"));
+   let unused=data.unused()?;
+   assert_eq!(unused.len(),1);
+   assert!(unused[0].starts_with("maps/stale.dm:2: ALLOW(scheduler) is unused"));
    Ok(())
   }).unwrap();
   assert_eq!(completed,subset);
