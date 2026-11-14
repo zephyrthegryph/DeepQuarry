@@ -22,6 +22,8 @@
 	look.overlay(pose_indicator, when = !!pose_indicator)
 	if(!species)
 		return
+	if(bake_landed < 0)
+		return // never: reading it is how a bake landing draws the human again
 	var/list/body = body_look(look)
 	if(body)
 		look.set_icon(body[1])
@@ -47,6 +49,7 @@
 /mob/living/carbon/human/proc/look_layers(datum/look/look, list/body_image)
 	RETURN_TYPE(/list)
 	. = new /list(TOTAL_LAYERS)
+	var/datum/look/drawing = look // null for a reader outside a draw: a bake it needs is then asked for at once
 	if(!look)
 		look = new /datum/look
 	if(!species)
@@ -58,14 +61,14 @@
 	.[MUTATIONS_LAYER] = mutations_look()
 	.[SKIN_LAYER] = species.skin_look(src)
 	.[BLOOD_LAYER] = blood_look()
-	.[MOB_DAM_LAYER] = damage_look(look)
+	.[MOB_DAM_LAYER] = damage_look(drawing)
 	.[SURGERY_LAYER] = surgery_look(look)
 	.[UNDERWEAR_LAYER] = underwear_look()
 	var/list/hair = hair_look(look)
 	.[HAIR_LAYER] = hair[1]
 	.[HAIR_ACCESSORY_LAYER] = hair[2]
 	.[EYES_LAYER] = eyes_look(look)
-	var/list/tail = tail_look()
+	var/list/tail = tail_look(drawing)
 	for(var/list/tail_part as anything in tail)
 		.[tail_part[1]] = tail_part[2]
 	.[WING_LAYER] = wing_look(FALSE)
@@ -142,7 +145,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 
 /// The trace of the look cache: what was built, what it cost, and the last builds.
 /proc/human_look_stats_line()
-	return "human look: [GLOB.human_look_builds] builds, [GLOB.human_look_icon_ops] icon operations, [round(GLOB.human_look_build_ms, 0.1)] ms, worst [round(GLOB.human_look_worst_ms, 0.1)] ms; last: [jointext(GLOB.human_look_recent, "; ")]"
+	return "human look: [GLOB.human_look_builds] builds, [GLOB.human_look_icon_ops] icon operations, [round(GLOB.human_look_build_ms, 0.1)] ms, worst [round(GLOB.human_look_worst_ms, 0.1)] ms; [human_bake_stats_line()]; last: [jointext(GLOB.human_look_recent, "; ")]"
 
 /proc/build_human_look_icon(mob/living/carbon/human/H, builder, list/builder_args)
 	var/started = TICK_USAGE_REAL
@@ -408,32 +411,55 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	if(feet_blood_DNA)
 		. += human_layer_image(looks.digitigrade ? 'icons/mob/human_races/masks/blood_digitigrade.dmi' : species.get_blood_mask(src), "shoeblood", BODY_LAYER + BLOOD_LAYER, color = feet_blood_color)
 
-/// The wound overlay of every damaged, visible limb, blended with the species' blood colour.
+/// The wound overlay of every damaged, visible limb: each limb's wound picture is its own bake (human_bake.dm, key: damage state, limb, sheets, blood), so one
+/// wound changing bakes one limb, and a limb still baking is left out of the layer until its picture lands. A bake that failed is built the old way.
 /mob/living/carbon/human/proc/damage_look(datum/look/look)
-	var/key = ""
+	var/list/parts = list()
 	for(var/obj/item/organ/external/O in organs)
 		look?.watch(O)
 		if(isnull(O) || O.is_stump() || limb_hidden(O) || O.damage_state == "00")
 			continue
-		key += "[O.damage_state]/[O.icon_name];"
-	if(!length(key))
+		parts += "[O.damage_state]/[O.icon_name]"
+	if(!length(parts))
 		return null
 	var/blood_colour = species.get_blood_colour(src)
 	var/bodytype = species.get_bodytype(src)
-	return human_look_icon("damage|[species.get_damage_overlays(src)]|[species.get_damage_mask(src)]|[blood_colour]|[bodytype]|[key]", "build_damage_look", key, blood_colour)
+	var/overlay_file = species.get_damage_overlays(src)
+	var/mask_file = species.get_damage_mask(src)
+	var/base = "damage|[overlay_file]|[mask_file]|[blood_colour]|[bodytype]"
+	// What is shown: each limb's picture once baked (r), or built the old way once its bake failed (f). Part of the key, so the layer is built again as bakes land.
+	var/list/shown = list()
+	var/list/states = list()
+	for(var/part in parts)
+		var/got = human_baked(look, "[base]|[part]", "damage_sprite", list(overlay_file, mask_file, blood_colour, part))
+		if(got == HUMAN_BAKE_FAILED)
+			shown += part
+			states += "f"
+		else if(got)
+			shown += part
+			states += "r"
+	if(!length(shown))
+		return null
+	return human_look_icon("[base]|[jointext(shown, ";")]|[jointext(states, "")]", "build_damage_look", shown, states, base, blood_colour)
 
-/mob/living/carbon/human/proc/build_damage_look(key, blood_colour)
-	human_icon_op(3 * length(splittext(key, ";")))
+/// The wound layer of `shown` limbs (`states`: r baked, f built here): the species' damage sheet with a picture over it per limb. A cache builder (damage_look()).
+/mob/living/carbon/human/proc/build_damage_look(list/shown, list/states, base, blood_colour)
 	var/list/damage = list()
-	for(var/part in splittext(key, ";"))
-		if(!length(part))
-			continue
-		var/list/bits = splittext(part, "/")
-		var/icon/DI = icon(species.get_damage_overlays(src), bits[1])			// the damage icon for whole human
-		DI.Blend(icon(species.get_damage_mask(src), bits[2]), ICON_MULTIPLY)	// mask with this organ's pixels
-		DI.Blend(blood_colour, ICON_MULTIPLY)
-		damage += DI
+	for(var/i in 1 to length(shown))
+		if(states[i] == "r")
+			damage += image(icon = GLOB.human_baker.baked["[base]|[shown[i]]"], icon_state = HUMAN_BAKE_STATE)
+		else
+			damage += build_damage_part(shown[i], blood_colour)
 	return look_composed_image(image(icon = species.damage_overlays, icon_state = "00", layer = BODY_LAYER + MOB_DAM_LAYER), damage)
+
+/// One limb's wound picture the old way (a bake that failed, and what the bakes are measured against): `part` is "<damage state>/<limb icon name>".
+/mob/living/carbon/human/proc/build_damage_part(part, blood_colour)
+	human_icon_op(3)
+	var/list/bits = splittext(part, "/")
+	var/icon/DI = icon(species.get_damage_overlays(src), bits[1])			// the damage icon for whole human
+	DI.Blend(icon(species.get_damage_mask(src), bits[2]), ICON_MULTIPLY)	// mask with this organ's pixels
+	DI.Blend(blood_colour, ICON_MULTIPLY)
+	return DI
 
 /mob/living/carbon/human/proc/surgery_look(datum/look/look)
 	. = null
@@ -609,10 +635,10 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 
 /// The tail: a list of list(layer, image), empty for none. The tail is drawn twice, once on each tail layer, each copy keeping only the frames of
 /// the facings it shows in (tail_part()): BYOND picks the frame for the dir, so turning round needs no redraw (the draw reads no dir).
-/mob/living/carbon/human/proc/tail_look()
+/mob/living/carbon/human/proc/tail_look(datum/look/look)
 	. = list()
 	if(tail_style?.clip_mask_state)
-		var/image/clipped = get_tail_image(BODY_LAYER + TAIL_UPPER_LAYER) // one copy over the uniform: the clip mask handles every facing
+		var/image/clipped = get_tail_image(BODY_LAYER + TAIL_UPPER_LAYER, null, look) // one copy over the uniform: the clip mask handles every facing
 		if(clipped)
 			. += list(list(TAIL_UPPER_LAYER, clipped))
 		return
@@ -622,7 +648,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 		var/list/dirs = tail_layer == TAIL_LOWER_LAYER ? lower_dirs : upper_dirs
 		if(!length(dirs))
 			continue
-		var/image/tail_image = get_tail_image(BODY_LAYER + tail_layer, dirs)
+		var/image/tail_image = get_tail_image(BODY_LAYER + tail_layer, dirs, look)
 		if(tail_image)
 			. += list(list(tail_layer, tail_image))
 	if(length(.))
@@ -642,7 +668,8 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 		var/list/dirs = tail_layer == TAIL_LOWER_LAYER ? lower_dirs : upper_dirs
 		if(!length(dirs))
 			continue
-		. += list(list(tail_layer, human_look_icon("tail_species|[species.get_race_key(src)]|[state]|[hair_state]|[species_tail]|[looks.skin_color]|[looks.hair_color]|[mode]|[alpha]|[tail_layer]|[jointext(dirs, ",")]", "build_species_tail_image", state, hair_state, mode, alpha, tail_layer, dirs)))
+		var/baked = tail_bake_token(dirs, species_tail_specs(state, hair_state), look)
+		. += list(list(tail_layer, human_look_icon("tail_species|[species.get_race_key(src)]|[state]|[hair_state]|[species_tail]|[looks.skin_color]|[looks.hair_color]|[mode]|[alpha]|[tail_layer]|[jointext(dirs, ",")]|[baked]", "build_species_tail_image", state, hair_state, mode, alpha, tail_layer, dirs)))
 
 /// The sheet the species' own tail is drawn from.
 /mob/living/carbon/human/proc/species_tail_file()
@@ -650,6 +677,12 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	if(!tail_file && species.icobase_tail)
 		tail_file = species.icobase // Allow override of file for non-animated tails
 	return tail_file || 'icons/effects/species.dmi'
+
+/// The sheets and states the species tail in `state` is drawn from: list(list(file, state)), the tail itself and its hair overlay.
+/mob/living/carbon/human/proc/species_tail_specs(state, hair_state)
+	. = list(list(species_tail_file(), state))
+	if(hair_state)
+		. += list(list('icons/effects/species.dmi', "[species.get_tail(src)]_[hair_state]"))
 
 /// The species tail in `state` (tinted like the skin, with its hair overlay in the hair colour), on `tail_layer`, drawn only facing `dirs`. A cache builder (tail_look()).
 /mob/living/carbon/human/proc/build_species_tail_image(state, hair_state, mode, alpha, tail_layer, list/dirs)
@@ -659,12 +692,29 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	return human_accessory_image(parts, BODY_LAYER + tail_layer, alpha)
 
 /// One part of a tail: `state` of `file` tinted, drawn only facing `dirs` (every facing when null). A part that shows in some facings only reads a static icon
-/// of those frames (the same for every colour of it, built once per sprite: icon_keep_dirs()); BYOND has no way to hide a layer in some facings but frames.
+/// of those frames (the same for every colour of it): baked off the main thread (human_bake.dm), so the part is left out until the bake lands (the cache key of
+/// the tail names that: tail_bake_token()), and built the old way (icon_keep_dirs()) if the bake failed.
 /mob/living/carbon/human/proc/tail_part(file, state, list/dirs, colour, mode)
 	if(length(dirs) && length(dirs) < length(GLOB.cardinal))
-		return human_part(human_look_icon("tail_dirs|[file]|[state]|[jointext(dirs, ",")]", "build_tail_dirs", file, state, dirs), "", colour, mode)
+		var/got = human_bake_get("tail_dirs|[file]|[state]|[jointext(dirs, ",")]") // asked for by the tail's cache key (tail_bake_token())
+		if(got == HUMAN_BAKE_FAILED)
+			return human_part(human_look_icon("tail_dirs|[file]|[state]|[jointext(dirs, ",")]", "build_tail_dirs", file, state, dirs), "", colour, mode)
+		if(!got)
+			return null // still baking: the tail is drawn again when it lands
+		return human_part(got, HUMAN_BAKE_STATE, colour, mode)
 	return human_part(file, state, colour, mode)
 
+/// Where the baked facings of `specs` (list(list(file, state))) stand, one letter each (r ready, f failed, p pending), asking for those not asked yet. Part of
+/// the tail's cache key, so the tail is built again when a bake lands. Empty for a tail drawn in every facing.
+/mob/living/carbon/human/proc/tail_bake_token(list/dirs, list/specs, datum/look/look)
+	. = ""
+	if(!length(dirs) || length(dirs) >= length(GLOB.cardinal))
+		return
+	for(var/list/spec as anything in specs)
+		var/got = human_baked(look, "tail_dirs|[spec[1]]|[spec[2]]|[jointext(dirs, ",")]", "tail_dirs_sprite", list(spec[1], spec[2], dirs))
+		. += got == HUMAN_BAKE_FAILED ? "f" : (got ? "r" : "p")
+
+/// The synchronous build of a tail part's facings, for a bake that failed.
 /mob/living/carbon/human/proc/build_tail_dirs(file, state, list/dirs)
 	human_icon_op(2 + length(dirs))
 	return icon_keep_dirs(icon(file, state), dirs)
@@ -684,13 +734,22 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 
 /// A custom or prosthetic tail's image at `layer`, or null.
 /// `dirs`: only those facings are drawn (tail_part()); null draws every facing.
-/mob/living/carbon/human/proc/get_tail_image(layer = FLOAT_LAYER, list/dirs = null)
+/mob/living/carbon/human/proc/get_tail_image(layer = FLOAT_LAYER, list/dirs = null, datum/look/look = null)
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!tail_style || (suit && (worn_of(suit).hides & HIDETAIL) && !istaurtail(tail_style)) || tail_hidden)
 		return null
 	var/loaf = tail_style.can_loaf && resting
 	var/wag = wagging && tail_style.ani_state
-	return human_look_icon("tail|[tail_style.type]|[loaf]|[wag]|[looks.tail_color]|[looks.tail_color2]|[looks.tail_color3]|[looks.tail_alpha]|[layer]|[dirs ? jointext(dirs, ",") : "all"]", "build_tail_image", loaf, wag, layer, dirs)
+	return human_look_icon("tail|[tail_style.type]|[loaf]|[wag]|[looks.tail_color]|[looks.tail_color2]|[looks.tail_color3]|[looks.tail_alpha]|[layer]|[dirs ? jointext(dirs, ",") : "all"]|[tail_bake_token(dirs, tail_style_specs(loaf, wag), look)]", "build_tail_image", loaf, wag, layer, dirs)
+
+/// The sheet and states a custom tail is drawn from: list(list(file, state)), the tail and its extra overlays.
+/mob/living/carbon/human/proc/tail_style_specs(loaf, wag)
+	var/tail_file = loaf ? tail_style.icon_loaf : tail_style.icon
+	. = list(list(tail_file, wag ? tail_style.ani_state : tail_style.icon_state))
+	if(tail_style.extra_overlay)
+		. += list(list(tail_file, wag ? tail_style.extra_overlay_w : tail_style.extra_overlay))
+	if(tail_style.extra_overlay2)
+		. += list(list(tail_file, wag ? tail_style.extra_overlay2_w : tail_style.extra_overlay2))
 
 /// The tail as tinted parts (the sprite, then the two extra overlays) with their emissive blockers. A cache builder (get_tail_image()).
 /mob/living/carbon/human/proc/build_tail_image(loaf, wag, layer, list/dirs)

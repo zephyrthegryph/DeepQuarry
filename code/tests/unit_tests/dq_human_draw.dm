@@ -94,11 +94,13 @@
 /datum/unit_test/dq_human_draw_tail_layers_against_uniform
 
 /datum/unit_test/dq_human_draw_tail_layers_against_uniform/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/H = dq_hd_body(list(), "tail")
 	dq_hd_set(H, "tail_style", GLOB.tail_styles_list[/datum/sprite_accessory/tail/squirrel])
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 	H.set_dir(SOUTH)
 	refresh_flush()
+	dq_hb_settle() // each copy's facing split is baked off the main thread (human_bake.dm)
 	// The tail is on both layers, each copy drawn only in its own facings: BYOND shows the frame for the dir, so a turn redraws nothing.
 	var/list/layers = H.look_layers()
 	var/image/lower = layers[TAIL_LOWER_LAYER]
@@ -114,6 +116,7 @@
 	H.set_dir(NORTH)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(H.rx?.look_key, south_key, "turning round leaves the look as it is (no redraw)")
+	test_driver_end()
 
 /// TRUE when the layer has no visible pixel facing `facing`: its own icon and every part it is made of (emissive blockers are not part of the picture).
 /datum/unit_test/proc/dq_hd_blank_facing(I, facing)
@@ -135,14 +138,18 @@
 /datum/unit_test/dq_human_draw_damage_overlay_follows_injury
 
 /datum/unit_test/dq_human_draw_damage_overlay_follows_injury/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/H = dq_hd_body(list(), "damage")
 	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "an unhurt human has no damage overlay")
 	var/unhurt = dq_hd_picture(H)
 	H.injure(INJURY_BURN, 60, BP_TORSO, flags = INJURE_SILENT)
+	refresh_flush()
+	dq_hb_settle() // the wound's picture is baked off the main thread (human_bake.dm)
 	TEST_ASSERT(H.look_layers()[MOB_DAM_LAYER], "a burn on the torso draws a damage overlay")
 	TEST_ASSERT(dq_hd_picture(H) != unhurt, "and the drawn human shows it")
 	H.fully_heal()
 	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "healing takes the overlay off")
+	test_driver_end()
 
 /// The layered body is off by default, and when on the body is one blank image carrying the limbs as overlays.
 /datum/unit_test/dq_human_draw_layered_body
