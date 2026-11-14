@@ -10,7 +10,7 @@ pub enum OriginalDiagnosticPoint<'a>{
   acquisition:&'a SourceAcquisitionLease,line:usize,byte_column:usize,
   raw_span:Option<dm_syntax::Span>},
 }
-pub struct OriginalPreprocessNotice<'a>{pub point:OriginalDiagnosticPoint<'a>,pub severity:OriginalNoticeSeverity,pub error_type:Option<&'static str>,pub message:&'a str,pub notes:OriginalPreprocessNotes<'a>}
+pub struct OriginalPreprocessNotice<'a>{pub point:OriginalDiagnosticPoint<'a>,pub severity:OriginalNoticeSeverity,pub error_type:Option<&'static str>,pub message:&'a str,pub notes:OriginalPreprocessNotes<'a>,pub registration:Option<&'a dm_preprocess::regions::OriginalNoticeRegistration>}
 pub struct OriginalPreprocessNotices<'a>{plan:&'a OriginalDiagnosticPlan,mapping:Option<&'a SourceExportMapping>}
 pub struct OriginalPreprocessNotes<'a>{plan:&'a OriginalDiagnosticPlan,mapping:Option<&'a SourceExportMapping>,notes:OriginalNoticeNotes<'a>}
 fn point<'a>(plan:&'a OriginalDiagnosticPlan,mapping:Option<&'a SourceExportMapping>,place:OriginalNoticePlace)->Result<OriginalDiagnosticPoint<'a>,&'static str>{
@@ -46,7 +46,7 @@ impl<'a> OriginalPreprocessNotices<'a>{
  pub fn is_empty(&self)->bool{self.plan.original_notices().is_empty()}
  pub fn iter(&self)->impl Iterator<Item=Result<OriginalPreprocessNotice<'a>,&'static str>>+'_ {
   let plan=self.plan;let mapping=self.mapping;
-  plan.original_notices().iter().map(move|row|Ok(OriginalPreprocessNotice{point:point(plan,mapping,row.place)?,severity:row.severity,error_type:row.error_type,message:row.message,notes:OriginalPreprocessNotes{plan,mapping,notes:row.notes}}))
+  plan.original_notices().iter().map(move|row|Ok(OriginalPreprocessNotice{point:point(plan,mapping,row.place)?,severity:row.severity,error_type:row.error_type,message:row.message,notes:OriginalPreprocessNotes{plan,mapping,notes:row.notes},registration:row.registration}))
  }
 }
 impl<'a> Iterator for OriginalPreprocessNotes<'a>{

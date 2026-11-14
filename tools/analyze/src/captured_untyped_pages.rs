@@ -77,3 +77,6 @@ pub fn collect_from_pages(inputs:&dm_analysis::policy_inputs::PolicyInputs,value
  let mut data=UntypedData{sites:Vec::new(),source_text:Vec::new()};for(row,text)in rows.into_iter().zip(texts){fund::checked(root,poll)?;let text=text.ok_or("untyped finding lacks actual original declaration source loan")?;fund::row(root,poll,&mut data.sites)?;data.sites.push(Site{rule:fund::own(root,poll,row.rule.name())?,rel:fund::own(root,poll,&row.file)?,line:u32::try_from(row.line).map_err(|_|oom(root,"untyped declaration line overflow"))?,msg:fund::own(root,poll,&row.message)?,key:String::new(),ident:fund::own(root,poll,&row.identity)?});fund::row(root,poll,&mut data.source_text)?;data.source_text.push(fund::own(root,poll,&text)?);}fund::checked(root,poll)?;Ok::<_,Failure>(data)
  })();if matches!(&pending,Err(Failure::Operational(_))){return pending}fund::checked(root,poll)?;phase.ok=pending.is_ok();drop(phase);pending
 }
+
+#[path="captured_schema_proposals.rs"]
+pub mod schema_proposals;

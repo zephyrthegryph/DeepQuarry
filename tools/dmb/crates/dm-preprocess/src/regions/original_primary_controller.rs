@@ -91,6 +91,7 @@ impl<'source,'loan,'budget> OriginalLogicalProducer<'source,'loan,'budget>{
  pub(super) fn enable_batch_geometry(&mut self){self.loan_batch_geometry=true;}
  fn pull_inner(&mut self)->io::Result<Option<OriginalPreparedDeliveryToken>>{
   loop{self.a.checkpoint().map_err(|e|self.a.take_operational_error().unwrap_or(e))?;
+   self.notices.before_logical_pull(self.cursor.before_pull_registration(self.a)?,self.a)?;
    let actual=match original_fill_bucket!(Macro,self.driver.next_logical_using(self.provider,self.notices,self.host,self.a))?{
     DriverEvent::Token(LogicalToken::Actual(token))=>token,
     DriverEvent::Token(LogicalToken::Delimiter{spelling,location:None})=>{if spelling!=";"{return Err(io::Error::new(io::ErrorKind::InvalidData,"default logical state issued unexpected nonphysical punctuation"))}let prepared=self.cursor.prepare_default_semicolon(self.a)?;self.control.default_semicolon(prepared.produced(),self.driver,self.a)?;return Ok(Some(prepared.into_delivery()))},
@@ -123,21 +124,21 @@ impl OriginalPreparedTokenSource for OriginalLogicalProducer<'_,'_,'_>{
 }
 struct PrimaryReceiver<'source,'arena,'loan,'budget>{source:&'source mut dyn OriginalPreparedTokenSource,output:OriginalFinalOutput<'arena>,a:&'loan SettingAdmission<'budget>,actual_end:Option<OriginalProducedEnd>}
 impl PrimaryReceiver<'_,'_,'_,'_>{fn pull(&mut self,primary:&mut OriginalPrimaryDemand<'_,'_,'_>)->io::Result<Option<OriginalEmittedToken>>{match self.source.next_prepared()?{Some(prepared)=>self.output.adopt(prepared,primary,self.a).map(Some),None if self.source.reached_eof()=>{let actual=self.source.actual_end();if let Some(end)=&actual{end.validate(&self.output.delivery()?,self.a)?;}self.actual_end=actual;Ok(None)},None=>Err(io::Error::new(io::ErrorKind::InvalidData,"batch/source pause cannot become actual primary EOF"))}}}
-impl OriginalFormalProducer for PrimaryReceiver<'_,'_,'_,'_>{fn pull_formal_token(&mut self,primary:&mut OriginalPrimaryDemand<'_,'_,'_>)->io::Result<Option<OriginalEmittedToken>>{self.pull(primary)}fn current_source(&self)->&str{self.output.source()}fn actual_end(&self)->Option<&OriginalProducedEnd>{self.actual_end.as_ref()}}
+impl OriginalFormalProducer for PrimaryReceiver<'_,'_,'_,'_>{fn pull_formal_token(&mut self,primary:&mut OriginalPrimaryDemand<'_,'_,'_>)->io::Result<Option<OriginalEmittedToken>>{self.pull(primary)}fn current_source(&self)->&str{self.output.source()}fn reader_registration(&self)->io::Result<super::original_prepared_output::OriginalNoticeRegistration>{let delivery=self.output.delivery()?;if self.source.reached_eof()&&self.actual_end.is_none(){return Err(io::Error::new(io::ErrorKind::Unsupported,"actual reader EOF registration is unissued"))}if let Some(end)=&self.actual_end{end.validate(&delivery,self.a)?}Ok(delivery.reader_registration(self.actual_end.is_some()))}fn actual_end(&self)->Option<&OriginalProducedEnd>{self.actual_end.as_ref()}}
 /// ONE grammar loop for both authentic delivery profiles. The source already
 /// enforces either lazy driver demand or the genuine complete-batch protocol.
 pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTokenSource,work:&dyn SourceArenaWork,a:&SettingAdmission<'_>,consumer:&mut dyn OriginalPrimaryStreamConsumer)->io::Result<OriginalPrimaryOutput>{
- let initial=source.initial_delivery();if initial.end()!=0||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+ let initial=source.initial_delivery();if initial.end()!=0||initial.ordinal()!=0||!initial.owner().admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
  let committed=consumer.retains_committed_items();
  let mut primary=if committed{OriginalPrimaryDemand::new_committed(a,None)?}else{OriginalPrimaryDemand::new(a,None)?};if committed&&source.projects_body_spelling(){primary.enable_body_spelling_projection(initial.owner().projection_data())?;}let mut receiver=PrimaryReceiver{source,output:OriginalFinalOutput::receiver(work,initial)?,a,actual_end:None};let mut stopped_after_formals=false;let mut entered:Option<OriginalPrimaryLiveHeader>=None;
  let progress=(||->io::Result<()>{loop{
-  if receiver.pull(&mut primary).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_pull {error:?}");}})?.is_none(){primary.advance_with_observer(receiver.output.source(),true,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_eof {error:?}");}})?;break}
-  if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
+  if receiver.pull(&mut primary).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_pull {error:?}");}})?.is_none(){if consumer.wants_reader_registrations(){consumer.reader_registration(receiver.reader_registration()?)?;}primary.advance_with_observer(receiver.output.source(),true,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_eof {error:?}");}})?;break}
+  if consumer.wants_reader_registrations(){consumer.reader_registration(receiver.reader_registration()?)?;}if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
   if let Some(live)=primary.resume_live_callable_header(receiver.output.source()).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=live_header {error:?}");}})?{
    if entered.as_ref().is_some_and(|old|old.start()==live.start()){primary.validate_live_header(entered.as_ref().unwrap())?;continue}
    let result={let mut source=OriginalLiveFormalSource::new(&mut receiver,&mut primary,live.clone(),a)?;consumer.callable(live.clone(),&mut source).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=callable {error:?}");}})?};entered=Some(live.clone());
    if result==OriginalHeaderFlow::Stop{stopped_after_formals=true;primary.observer_stop_live_header_at(&live,receiver.output.source()).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=stop_live {error:?}");}})?;receiver.source.stop();break}
-   if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
+   if consumer.wants_reader_registrations(){consumer.reader_registration(receiver.reader_registration()?)?;}if !primary.advance_with_observer(receiver.output.source(),false,consumer).inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=advance_current {error:?}");}})?{receiver.source.stop();break}
   }
  }Ok(())})();
  progress.inspect_err(|_error|{
@@ -165,10 +166,11 @@ pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTok
  // A real physical EOF inside a failed formal still leaves primary at its
  // authored Stop frontier, without the ordinary declaration EOF assembly.
  let consumed_eof=receiver.source.reached_eof()&&!stopped_after_formals;
+ if consumer.wants_reader_registrations(){consumer.reader_registration(receiver.reader_registration()?)?;}
  let actual=if committed{
-     primary.finish_committed(receiver.output.source(),consumed_eof).map(OriginalStreamPrimary::Committed)
+     primary.finish_committed_with_observer(receiver.output.source(),consumed_eof,consumer).map(OriginalStreamPrimary::Committed)
  }else{
-     primary.finish(receiver.output.source(),consumed_eof).map(OriginalStreamPrimary::Dense)
+     primary.finish_with_observer(receiver.output.source(),consumed_eof,consumer).map(OriginalStreamPrimary::Dense)
  }.inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=primary_finish {error:?}");}})?;
  let delivery=receiver.output.delivery().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_delivery {error:?}");}})?;let source=receiver.output.finish().inspect_err(|error|{#[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FATAL_STAGE=receiver_finish {error:?}");}})?;Ok(OriginalPrimaryOutput{source,primary:actual,consumed_eof,delivery})
 }

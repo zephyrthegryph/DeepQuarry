@@ -9,8 +9,14 @@ impl BodyLiteralAdmission{
  pub fn visit_storage(&self,visit:impl FnMut(usize,usize)){self.anchor.visit_storage(visit)}
 }
 /// Opaque completed storage preparation, never standalone source authority.
-pub struct PreparedBodyLiteralSyntax{body:Option<ParsedBody>,admission:Option<BodyLiteralAdmission>}
-impl PreparedBodyLiteralSyntax{pub fn into_parts(mut self)->(ParsedBody,BodyLiteralAdmission){(self.body.take().unwrap(),self.admission.take().unwrap())}}
+pub struct PreparedBodyLiteralSyntax{body:Option<ParsedBody>,admission:Option<BodyLiteralAdmission>,native_parser_facts:Option<crate::NativeBodyParserFacts>}
+impl PreparedBodyLiteralSyntax{
+ pub fn into_parts(mut self)->(ParsedBody,BodyLiteralAdmission){(self.body.take().unwrap(),self.admission.take().unwrap())}
+ /// DATA handoff to the private BODY factory; never a source/current grant.
+ #[doc(hidden)]
+ pub fn into_parts_with_native_parser_facts(mut self)->(ParsedBody,BodyLiteralAdmission,Option<crate::NativeBodyParserFacts>){(self.body.take().unwrap(),self.admission.take().unwrap(),self.native_parser_facts.take())}
+ pub(crate) fn set_native_parser_facts(&mut self,facts:crate::NativeBodyParserFacts){self.native_parser_facts=Some(facts)}
+}
 impl Drop for PreparedBodyLiteralSyntax{fn drop(&mut self){if let Some(body)=self.body.take(){drop_body_literal_syntax(body,self.admission.take());}}}
 fn stop(a:&SettingAdmission<'_>,kind:io::ErrorKind,text:&'static str)->io::Error{a.record_operational_error(io::Error::new(kind,text));kind.into()}
 fn add(a:&SettingAdmission<'_>,x:usize,y:usize)->io::Result<usize>{x.checked_add(y).ok_or_else(||stop(a,io::ErrorKind::OutOfMemory,"body literal storage overflow"))}
@@ -67,7 +73,7 @@ fn collect<'a,'op,'body>(body:&'body ParsedBody,a:&'a SettingAdmission<'op>)->io
    StatementKind::Return(value)=>{for e in value{root!(e);}},
    StatementKind::Var{declaration,value}=>{charge!(declaration.capacity());for e in value{root!(e);}},
    StatementKind::Assign{target,op,value}=>{charge!(op.capacity());root!(target);root!(value);},
-   StatementKind::Throw(e)|StatementKind::Call(e)|StatementKind::Expression(e)=>root!(e),
+   StatementKind::Throw(e)|StatementKind::Delete(e)|StatementKind::Call(e)|StatementKind::Expression(e)=>root!(e),
    StatementKind::Break|StatementKind::Continue|StatementKind::Unsupported=>(),
   }
  }
@@ -145,7 +151,7 @@ pub fn prepare_body_literal_syntax<'a,'op>(body:ParsedBody,cleanup:SettingRootLe
   Ok(BodyLiteralAdmission{anchor})
  })();
  let admission=result?;
- let body=guard.body.take().unwrap();Ok(PreparedBodyLiteralSyntax{body:Some(body),admission:Some(admission)})
+ let body=guard.body.take().unwrap();Ok(PreparedBodyLiteralSyntax{body:Some(body),admission:Some(admission),native_parser_facts:None})
 }
 /// Stack-safe original ownership destruction, used before any credit release.
 /// This helper creates no syntax, calls no parser and clones no AST/root/source.
@@ -183,7 +189,7 @@ fn drop_body_inner(body:ParsedBody,anchor:Option<SharedSettingRetention>){
    StatementKind::Label{mut body,..}=>statements.append(&mut body),
    StatementKind::Return(value)|StatementKind::Var{value,..}=>{for e in value{crate::setting_drop::drop_expression(e,anchor.clone());}},
    StatementKind::Assign{target,value,..}=>{crate::setting_drop::drop_expression(target,anchor.clone());crate::setting_drop::drop_expression(value,anchor.clone());},
-   StatementKind::Throw(e)|StatementKind::Call(e)|StatementKind::Expression(e)=>crate::setting_drop::drop_expression(e,anchor.clone()),
+   StatementKind::Throw(e)|StatementKind::Delete(e)|StatementKind::Call(e)|StatementKind::Expression(e)=>crate::setting_drop::drop_expression(e,anchor.clone()),
    StatementKind::Goto(_)|StatementKind::BreakLabel(_)|StatementKind::ContinueLabel(_)|StatementKind::Break|StatementKind::Continue|StatementKind::Unsupported=>(),
   }
  }
@@ -192,3 +198,24 @@ fn drop_body_inner(body:ParsedBody,anchor:Option<SharedSettingRetention>){
 
 #[cfg(test)]
 #[path="body_literal_syntax_tests.rs"]mod tests;
+
+#[cfg(test)]
+mod native_parser_fact_export_controls {
+ use super::*;
+ #[test]
+ fn public_literal_preparation_cannot_reseal_exported_or_forged_parser_data(){
+  use std::sync::atomic::Ordering;
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let source="/proc/p()\n    return\n";
+  let original=crate::parse(source);
+  let mut data=crate::parse_proc_body(&original.items[0]);
+  let outcome=data.original_grammar;
+  data.statements.clear();data.original_grammar=outcome;
+  let prepared=prepare_body_literal_syntax(data,a.reserve(8192).unwrap(),&a).unwrap();
+  let(body,credit,native)=prepared.into_parts_with_native_parser_facts();
+  assert!(native.is_none(),"copied Original marker and mutable AST DATA cannot install native parser facts");
+  drop_body_literal_syntax(body,Some(credit));
+  assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+}

@@ -2,6 +2,8 @@
 use crate::input_snapshot::{InputSnapshot, SnapshotProvider};
 use crate::request::{BuildOutcome, BuildRequest};
 use std::{error::Error, fmt};
+#[path = "joined_input_observation.rs"]
+pub(crate) mod observation;
 
 #[derive(Debug)]
 struct InputsMoved(std::io::Error);
@@ -550,6 +552,7 @@ pub(crate) fn admit_workspace_captured_using<P: SnapshotProvider>(
 
 /// Actual selected input facts, never native semantic/publication authority.
 pub(crate) struct JoinedSelectedInputs {
+    observation: Option<observation::Plan>,
     project: std::path::PathBuf,
     strict_profile: crate::request::CompoundStrictProfile,
     inputs: InputSnapshot,
@@ -558,6 +561,24 @@ pub(crate) struct JoinedSelectedInputs {
     _credit: dm_preprocess::source_arena_credit::SourceArenaCredit,
 }
 impl JoinedSelectedInputs {
+    pub(crate) fn with_observation(mut self, observation: observation::Plan) -> Self {
+        self.observation=Some(observation);
+        self
+    }
+
+    /// Called after actual installation, still borrowing both original ledgers.
+    /// No report/qualification success is returned if the consumer or either
+    /// exact barrier fails. The installed pair itself is never rolled back.
+    pub(super) fn observe_installed(&self,project:&std::path::Path,native:&InputSnapshot,
+        pair:&crate::publish::OutputPair,defines:&std::collections::BTreeMap<String,String>,
+        engine_identity:u128,bootstrap_catalog:bool)->Result<(),Box<dyn Error>> {
+        let Some(observation)=&self.observation else {return Ok(())};
+        observation.with_checkpoints(|| {
+            self.with_current_input_observation(project,native,|_,_|Ok(()))?;
+            observation.published(project,pair,defines,engine_identity,bootstrap_catalog)?;
+            self.with_current_input_observation(project,native,|_,_|Ok(()))
+        })
+    }
     pub(crate) fn for_strict_profile(mut self, profile: crate::request::CompoundStrictProfile) -> Self {
         self.strict_profile = profile;
         self
@@ -573,6 +594,19 @@ impl JoinedSelectedInputs {
                 "native defines do not match the joined compound Strict profile"));
         }
         Ok(())
+    }
+
+    /// Actual report-only demand needs no Strict compilation or pair. This
+    /// validates the SAME moved preparation ledger; it is not replay permission.
+    pub(crate) fn require_report_current(&self,project:&std::path::Path)->Result<(),Box<dyn Error>>{
+        use crate::input_snapshot::GeneratedOutputInputs;
+        if self.project!=project{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"report-only source project differs from its captured preparation").into())}
+        crate::daemon::control::checkpoint()?;
+        let proofs=crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&self.inputs)?;
+        let provider=GeneratedOutputInputs::new(&proofs,self.inputs.generated_outputs().iter().cloned());
+        admit(&self.inputs,&provider).map_err(|error|->Box<dyn Error>{if error.is::<InputsMoved>(){std::io::Error::new(std::io::ErrorKind::Interrupted,"report-only captured input observations changed; prepare again").into()}else{error}})?;
+        if !self.inputs.exact_positive_contents_match(&provider)?{return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"report-only captured input contents changed; prepare again").into())}
+        crate::daemon::control::checkpoint()?;Ok(())
     }
 
     /// Advisory exact replay check. A current native input snapshot must
@@ -597,6 +631,22 @@ impl JoinedSelectedInputs {
     pub(super) fn require_current(
         &self, project: &std::path::Path, native: &InputSnapshot,
     ) -> Result<(), Box<dyn Error>> {
+        self.with_current_input_observation(project,native,|native,report| {
+            if let Some(observation)=&self.observation {observation.stage(native,report)?;}
+            Ok(())
+        })?;
+        if self.observation.is_some() {
+            // Export must not create a stale successful publication window.
+            self.with_current_input_observation(project,native,|_,_|Ok(()))?;
+        }
+        Ok(())
+    }
+
+    /// Borrow DATA only after the existing exact two-role publication barrier.
+    fn with_current_input_observation<T>(
+        &self,project:&std::path::Path,native:&InputSnapshot,
+        observe:impl FnOnce(&InputSnapshot,&InputSnapshot)->Result<T,Box<dyn Error>>,
+    )->Result<T,Box<dyn Error>> {
         use crate::input_snapshot::GeneratedOutputInputs;
         use std::io;
         if self.project != project {
@@ -626,7 +676,7 @@ impl JoinedSelectedInputs {
         if !native.exact_positive_contents_match_pair(&self.inputs, &proofs)? {
             return Err(changed().into());
         }
-        Ok(())
+        observe(native,&self.inputs)
     }
 }
 
@@ -644,6 +694,7 @@ impl PendingJoinedInputs {
     ) -> std::io::Result<JoinedSelectedInputs> {
         let inputs = capture.into_joined_report_snapshot(&self.epoch)?;
         Ok(JoinedSelectedInputs {
+            observation:None,
             project: self.project,
             strict_profile: crate::request::CompoundStrictProfile::Default,
             inputs,

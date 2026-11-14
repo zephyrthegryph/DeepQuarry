@@ -1423,7 +1423,7 @@ impl QueryDb {
 
 #[path="purity_current_variables.rs"]pub(super) mod current_variables;
 
-#[path="purity_compact_chunk.rs"]mod compact_chunk;
+#[path="purity_compact_chunk.rs"]pub(super) mod compact_chunk;
 
 
 #[cfg(test)]

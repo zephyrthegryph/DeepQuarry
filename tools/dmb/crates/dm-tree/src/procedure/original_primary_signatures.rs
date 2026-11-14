@@ -258,7 +258,7 @@ struct Row<Geometry = PackedHeader, Producer = ()> {
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
 struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::CompletedFormalRoot}
-pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:CompletedSignatureRows,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool}
+pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:CompletedSignatureRows,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool,pub(crate) reader_registration:Option<dm_preprocess::regions::OriginalNoticeRegistration>,reader_commits:Option<dm_preprocess::regions::OriginalReaderRegistrationTable>,reader_committed:usize}
 /// Borrowed accounting from existing unique observer leases. The floor is
 /// the existing post-header reconciliation, including its fixed allowance,
 /// not a claim about allocator bytes or releasable memory.
@@ -417,6 +417,24 @@ impl<T, const PAGE_LEN: usize> FundedRowPages<Option<T>, PAGE_LEN> {
 }
 
 impl OriginalDeclarationHeaderObserver for OriginalSignatureObserver<'_,'_>{
+ fn declaration_committed(&mut self,event:dm_syntax::OriginalPrimaryCommit<'_>)->std::io::Result<()>{
+  checkpoint(self.a)?;
+  if !matches!(event.item().kind,dm_syntax::ItemKind::Proc|dm_syntax::ItemKind::Verb){return Ok(())}
+  if self.reader_registration.is_none(){return Ok(())} // Compatibility traversal has no causal authority.
+  let Some(index)=self.rows.find(event.item().header_span.start) else {
+   if self.failure_live.as_ref().is_some_and(|live|live.start()==event.item().header_span.start){return Ok(())}
+   return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"committed callable lacks its actual completed header"))
+  };
+  let row=self.rows.get(index).ok_or(std::io::ErrorKind::InvalidData)?;
+  let geometry=self.rows.geometry(index,row);
+  if geometry.header!=event.item().header_span||event.source().get(geometry.header.range())!=Some(event.item().header.as_str())||index!=self.reader_committed{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual callable commit differs from its completed header occurrence"))}
+  let Some(registration)=self.reader_registration.as_ref() else {return Ok(())}; // Compatibility traversal gains no fabricated causal receipt.
+  if self.reader_commits.is_none(){self.reader_commits=Some(dm_preprocess::regions::OriginalReaderRegistrationTable::new(self.a)?)}
+  if self.reader_commits.as_mut().expect("actual commit table").push(registration,self.a)?!=index{return Err(std::io::ErrorKind::InvalidData.into())}
+  self.reader_committed=self.reader_committed.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;
+  Ok(())
+ }
+
  fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{let result=self.header_using(event);if result.is_err(){self.stream_failed=true}result}
 }
 /// Fund the replacement Vec while its old buffer still owns its credit.
@@ -2108,7 +2126,7 @@ pub(crate) struct OriginalSignatureInput{
 impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  /// SAME signature producer state, created before genuine token demand starts.
  /// This allocates no header products or symbols speculatively.
- pub(crate) fn new(a:&'a SettingAdmission<'b>)->std::io::Result<Self>{checkpoint(a)?;Ok(Self{a,symbols:SymbolTable::default(),rows:CompletedSignatureRows::new(),failure_storage:None,failure:None,unsupported:None,early:None,defaults:PendingDefaultPages::new(),inputs:Vec::new(),input_storage:None,stream_failed:false,failure_live:None,failure_head_data:None,notices:None,notices_complete:true})}
+ pub(crate) fn new(a:&'a SettingAdmission<'b>)->std::io::Result<Self>{checkpoint(a)?;Ok(Self{a,symbols:SymbolTable::default(),rows:CompletedSignatureRows::new(),failure_storage:None,failure:None,unsupported:None,early:None,defaults:PendingDefaultPages::new(),inputs:Vec::new(),input_storage:None,stream_failed:false,failure_live:None,failure_head_data:None,notices:None,notices_complete:true,reader_registration:None,reader_commits:None,reader_committed:0})}
  /// Consume the actual stream-issued primary product exactly once. The source
  /// and neutral literal binding are authenticated together; no parse/expand or
  /// alternate SymbolTable is introduced at this handoff.
@@ -2176,6 +2194,12 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  }else if !self.defaults.is_empty()||!self.inputs.is_empty()||self.failure_head_data.is_some(){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"demanded default stream has no genuine final literal/source binding")))}
  if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(a)?)}
  headers.install_original_formal_notices(self.notices.take().expect("actual formal event ledger"),self.notices_complete,a).map_err(OriginalHeaderFailure::Operational)?;
+ if literal_source.is_some(){
+  let end=self.reader_registration.take().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual reader final registration absent")))?;
+  let complete=end.require_after_actual_end().is_ok();
+  if complete&&self.reader_committed!=self.rows.len(){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual reader completed header/commit inventory differs")))}
+  headers.install_original_reader_registrations(self.reader_commits.take(),self.reader_committed,end,a).map_err(OriginalHeaderFailure::Operational)?;
+ }
  // In a bound stream each successful row's actual live producer was checked
  // against this exact primary before the token/source handoff above.
  if lazy_parameters {
@@ -2524,7 +2548,7 @@ impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn formal_default_using(&self,source:&mut dyn dm_syntax::NativeExpressionTokenDemand,clauses:&mut dm_syntax::ParameterClauseCursor)->std::io::Result<super::DemandedFormalDefault>{
   let early=self.early.as_ref().filter(|state|state.closed.is_none()).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual live formal owner is absent or closed"))?;if early.head_assignment!=clauses.spans().assignment||early.head_assignment.is_none(){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual native formal head was not admitted before RHS demand"))}early.accumulator.default_using(source,clauses,self.a)
  }
- fn record_formal_notice(&mut self,header:usize,notice:super::OriginalFormalNotice)->std::io::Result<()>{if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(self.a)?)}self.notices.as_mut().expect("actual notice owner").push(header,notice,self.a)}
+ fn record_formal_notice(&mut self,header:usize,notice:super::OriginalFormalNotice)->std::io::Result<()>{if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(self.a)?)}self.notices.as_mut().expect("actual notice owner").push(header,notice,self.a)?;if let Some(registration)=self.reader_registration.clone(){self.notices.as_mut().unwrap().register_last(header,notice,registration,self.a)?}Ok(())}
  fn drain_live_head_notices(&mut self)->std::io::Result<()>{let early=self.early.as_mut().ok_or(std::io::ErrorKind::InvalidInput)?;let header=early.live.start();let origin=early.live.argument_start();let rows=early.accumulator.take_formal_notices();for notice in rows{self.record_formal_notice(header,notice.checked_shift(origin)?)?;}Ok(())}
  pub(crate) fn observed_input_identifier(&mut self,at:Span,text:&str)->std::io::Result<()>{if !super::original_formal_notices::original_input_name(text){let header=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?.live.start();self.record_formal_notice(header,super::OriginalFormalNotice::new(at,super::original_formal_notices::Kind::BadInput))?;}Ok(())}
  pub(crate) fn observed_trailing_semicolon(&mut self,at:Span)->std::io::Result<()>{let early=self.early.as_mut().ok_or(std::io::ErrorKind::InvalidInput)?;let header=early.live.start();let origin=early.live.argument_start();let relative=Span::new(at.start.checked_sub(origin).ok_or(std::io::ErrorKind::InvalidInput)?,at.end.checked_sub(origin).ok_or(std::io::ErrorKind::InvalidInput)?);early.accumulator.mark_semicolon_observed(relative).map_err(|_|std::io::Error::new(std::io::ErrorKind::InvalidData,"actual semicolon producer was repeated"))?;self.record_formal_notice(header,super::OriginalFormalNotice::new(at,super::original_formal_notices::Kind::Semicolon))}
@@ -2611,11 +2635,12 @@ impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn observe_expression_notices(&mut self,syntax:&dm_syntax::DemandedExpression)->std::io::Result<()>{let early=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?;let header=early.live.start();let notices=syntax.parsed().original_input_notices().ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual Original expression parser notice producer is unissued"))?;if !notices.is_admitted_by(self.a){return Err(std::io::ErrorKind::InvalidInput.into())}for notice in notices.as_slice(){checkpoint(self.a)?;let span=notice.span();if syntax.tokens().first().is_none_or(|token|token.span.start>span.start)||syntax.tokens().last().is_none_or(|token|token.span.end<span.end){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual primitive parser notice escapes its produced expression"))}self.record_formal_notice(header,super::OriginalFormalNotice::from_primitive(*notice))?;}Ok(())}
  pub(crate) fn observe_stream_expression_notices(&mut self,source:&dyn dm_preprocess::regions::OriginalFormalTokenStream,syntax:&dm_syntax::DemandedExpression)->std::io::Result<()>{
   let early=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?;let header=early.live.start();let argument_start=early.live.argument_start();let notices=syntax.parsed().original_input_notices().ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual Original expression notice owner is unissued"))?;if !notices.is_admitted_by(self.a){return Err(std::io::ErrorKind::InvalidInput.into())}let rows=notices.as_slice();let mut emitted=0;
-  let primitive=|this:&mut Self,notice:dm_syntax::OriginalInputNotice|->std::io::Result<()>{checkpoint(this.a)?;let span=notice.span();if syntax.tokens().first().is_none_or(|token|token.span.start>span.start)||syntax.tokens().last().is_none_or(|token|token.span.end<span.end){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual primitive notice escapes its expression"))}this.record_formal_notice(header,super::OriginalFormalNotice::from_primitive(notice))};
+  let mut primitive_at=0usize;
+  let mut primitive=|this:&mut Self,notice:dm_syntax::OriginalInputNotice|->std::io::Result<()>{checkpoint(this.a)?;let span=notice.span();if syntax.tokens().first().is_none_or(|token|token.span.start>span.start)||syntax.tokens().last().is_none_or(|token|token.span.end<span.end){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual primitive notice escapes its expression"))}this.reader_registration=Some(source.primitive_registration(primitive_at)?);primitive_at=primitive_at.checked_add(1).ok_or(std::io::ErrorKind::InvalidData)?;this.record_formal_notice(header,super::OriginalFormalNotice::from_primitive(notice))};
   source.visit_member_recoveries(&mut|recovery|{
    let before=recovery.preceding_primitive_notices();if before<emitted||before>rows.len(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"formal recovery/primitive event order differs"))}for notice in &rows[emitted..before]{primitive(self,*notice)?;}emitted=before;
    let separator=recovery.separator_span();let following=recovery.following_span();if separator.start<argument_start||separator.start>=separator.end||following.start<separator.end||following.start>=following.end{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual member recovery escapes active formal source"))}
-   let notice=super::OriginalFormalNotice::new(following,super::original_formal_notices::Kind::MissingMember);if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(self.a)?)}let value=recovery.actual_value();if matches!(value,dm_syntax::OriginalTokenValue::Ident{..}){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"hidden formal boundary is an actual valid member identifier"))}self.notices.as_mut().expect("actual formal notice owner").push_rendered(header,notice,self.a,|out|dm_syntax::write_original_input_failure(out,Some(value),dm_syntax::OriginalInputExpected::Identifier))
+   self.reader_registration=Some(recovery.registration().clone());let notice=super::OriginalFormalNotice::new(following,super::original_formal_notices::Kind::MissingMember);if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(self.a)?)}let value=recovery.actual_value();if matches!(value,dm_syntax::OriginalTokenValue::Ident{..}){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"hidden formal boundary is an actual valid member identifier"))}self.notices.as_mut().expect("actual formal notice owner").push_rendered(header,notice,self.a,|out|dm_syntax::write_original_input_failure(out,Some(value),dm_syntax::OriginalInputExpected::Identifier))?;self.notices.as_mut().unwrap().register_last(header,notice,recovery.registration().clone(),self.a)
   })?;for notice in &rows[emitted..]{primitive(self,*notice)?;}Ok(())
  }
  pub(crate) fn observe_formal_outcome_notices(&mut self,source:&dyn dm_preprocess::regions::OriginalFormalTokenStream,actual:&super::DemandedFormalDefault)->std::io::Result<()>{match actual{super::DemandedFormalDefault::Complete{root,..}=>self.observe_stream_expression_notices(source,&root.syntax),super::DemandedFormalDefault::ExpectedTerm(failure)=>self.observe_stream_expression_notices(source,&failure.syntax),super::DemandedFormalDefault::NativeSyntax{syntax,..}=>self.observe_stream_expression_notices(source,syntax)}}
@@ -2928,4 +2953,11 @@ mod procedure_canonical_allocation_tests {
         drop((first, second, held));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
+}
+
+#[cfg(test)]mod causal_registration_compatibility_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn compatibility_formal_findings_remain_available_without_causal_authority(){
+  let text="/proc/p(var/static/value)\n    return value\n";let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));let input=parse_original_signatures_using(SourceText::from(text),&a).unwrap();assert!(input.signature_failure.is_none());let notices=input.headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(notices.len(),2);for notice in notices{assert!(input.headers.optional_formal_notice_registration(notice).unwrap().is_none());assert!(input.headers.formal_notice_registration(notice).is_err());assert!(notice.message_width(input.headers.formal_notice_text(notice).unwrap()).unwrap()>0)}let header=input.items.view(&input.source).unwrap().iter().find(|item|item.kind()==dm_syntax::ItemKind::Proc).unwrap().header_span();assert!(input.headers.optional_reader_commit_registration(header,0).unwrap().is_none());assert!(input.headers.reader_commit_registration(header,0).is_err());assert!(input.headers.optional_reader_end_registration().unwrap().is_none());drop(input);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
 }

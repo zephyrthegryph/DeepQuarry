@@ -3,7 +3,7 @@
 use super::original_native_projection::{project_output_token_using,Adjacency,OriginalNativeProjection,OutputSpelling,needs_separator};
 use crate::{SourceProvider,macro_expansion::{OriginalMacroToken as Token,OriginalMacroValue as Value,OriginalMacroTextValue as MacroTextValue}};
 use dm_syntax::{SettingAdmission,SettingRootLease,Span,SpanToken};use std::{io,sync::Arc};
-#[derive(Clone,Copy)]struct CursorState{last:Option<Adjacency>,offset:usize,line:usize,failed:bool}
+#[derive(Clone,Copy)]struct CursorState{last:Option<Adjacency>,offset:usize,line:usize,ordinal:usize,failed:bool}
 struct Payload{credit:SettingRootLease}
 /// The identity is the actual producer-issued output allocation. Receipts
 /// borrow only that owner; they never read or advance the producer frontier.
@@ -443,11 +443,84 @@ impl OriginalDeliveryBatchCursor {
     }
 }
 
-#[derive(Clone)]pub(super) struct OriginalDeliveryFrontier{owner:OriginalOutputIdentity,end:usize}
+#[derive(Clone)]pub(super) struct OriginalDeliveryFrontier{owner:OriginalOutputIdentity,end:usize,ordinal:usize}
 impl OriginalDeliveryFrontier{
  pub(super) fn belongs_to(&self,owner:&OriginalOutputIdentity)->bool{self.owner.same(owner)}
  pub(super) fn end(&self)->usize{self.end}
+ pub(super) fn ordinal(&self)->usize{self.ordinal}
+ pub(super) fn reader_registration(&self,actual_end:bool)->OriginalNoticeRegistration{OriginalNoticeRegistration{owner:self.owner.clone(),ordinal:self.ordinal,phase:if actual_end{RegistrationPhase::AfterActualEnd}else{RegistrationPhase::AfterConsumed}}}
  pub(super) fn owner(&self)->&OriginalOutputIdentity{&self.owner}
+}
+/// Opaque registration from the SAME actual output owner. Neither an expanded
+/// byte offset nor a resource-counter identity can construct one. The count is
+/// the logical delivery ordinal; no per-token metadata or shared mutable clock
+/// is retained. Sparse notice owners keep their own admitted row storage.
+#[derive(Clone)]
+pub struct OriginalNoticeRegistration{owner:OriginalOutputIdentity,ordinal:usize,phase:RegistrationPhase}
+impl std::fmt::Debug for OriginalNoticeRegistration{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalNoticeRegistration").field("ordinal",&self.ordinal).field("after_actual_end",&(self.phase==RegistrationPhase::AfterActualEnd)).finish_non_exhaustive()}}
+#[derive(Clone,Copy,Eq,PartialEq,Ord,PartialOrd)]
+enum RegistrationPhase{AfterConsumed,BeforeNextPull,AfterActualEnd}
+impl OriginalNoticeRegistration{
+ pub fn compare_same_source(&self,other:&Self)->io::Result<std::cmp::Ordering>{if !self.owner.same(&other.owner){return Err(io::Error::new(io::ErrorKind::InvalidInput,"notice registrations belong to different actual output owners"))}Ok((self.ordinal,self.phase).cmp(&(other.ordinal,other.phase)))}
+ pub fn require_after_actual_end(&self)->io::Result<()>{if self.phase!=RegistrationPhase::AfterActualEnd{return Err(io::Error::new(io::ErrorKind::InvalidInput,"reader registration has not consumed the actual logical end"))}Ok(())}
+ pub(super) fn admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.owner.admitted_by(a)}
+ pub(super) fn is_before_pull(&self)->bool{self.phase==RegistrationPhase::BeforeNextPull}
+ pub(super) fn is_initial(&self)->bool{self.ordinal==0&&self.is_before_pull()}
+ pub fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize,usize)){self.owner.visit_storage(visit)}
+}
+/// Funded reader positions on ONE actual output owner. Returned row indexes are
+/// DATA, not header/source/currentness authority; actual declaration constructors
+/// must bind their own occurrence to the index produced by their real callback.
+/// Common rows retain one u32 containing the exact delivery ordinal and EOF
+/// phase. Full-width ordinals have an exact sorted side row, never a ceiling.
+pub struct OriginalReaderRegistrationTable{
+ ordinals:crate::macro_expansion::OriginalMacroRows<u32>,
+ wide:crate::macro_expansion::OriginalMacroRows<WideReaderRegistration>,
+ owner:Option<OriginalNoticeRegistration>,failed:bool,domain:SettingRootLease,
+}
+struct WideReaderRegistration{index:usize,ordinal:usize,after_end:bool}
+const WIDE_READER_REGISTRATION:u32=u32::MAX;
+fn compact_reader_registration(ordinal:usize,phase:RegistrationPhase)->Option<u32>{
+ if phase==RegistrationPhase::BeforeNextPull{return None}
+ let phase=usize::from(phase==RegistrationPhase::AfterActualEnd);
+ let code=ordinal.checked_mul(2)?.checked_add(phase)?;
+ let code=u32::try_from(code).ok()?;
+ (code!=WIDE_READER_REGISTRATION).then_some(code)
+}
+impl std::fmt::Debug for OriginalReaderRegistrationTable{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalReaderRegistrationTable").field("rows",&self.ordinals.len()).field("failed",&self.failed).finish_non_exhaustive()}}
+impl OriginalReaderRegistrationTable{
+ pub fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))?;Ok(Self{ordinals:crate::macro_expansion::OriginalMacroRows::new(a)?,wide:crate::macro_expansion::OriginalMacroRows::new(a)?,owner:None,failed:false,domain:a.reserve(0).map_err(|error|a.take_operational_error().unwrap_or(error))?})}
+ pub fn push(&mut self,registration:&OriginalNoticeRegistration,a:&SettingAdmission<'_>)->io::Result<usize>{
+  a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))?;
+  if self.failed||!a.matches_lease_domain(&self.domain)||!registration.admitted_by(a)||registration.is_before_pull(){return Err(io::ErrorKind::InvalidInput.into())}
+  if let Some(owner)=&self.owner{owner.compare_same_source(registration)?;}
+  let index=self.ordinals.len();
+  let compact=compact_reader_registration(registration.ordinal,registration.phase);
+  let result=(||{
+   self.ordinals.push(compact.unwrap_or(WIDE_READER_REGISTRATION),a)?;
+   if compact.is_none(){self.wide.push(WideReaderRegistration{index,ordinal:registration.ordinal,after_end:registration.phase==RegistrationPhase::AfterActualEnd},a)?;}
+   Ok(index)
+  })();
+  if result.is_err(){self.failed=true;}else if self.owner.is_none(){self.owner=Some(registration.clone());}
+  result
+ }
+ pub fn get(&self,index:usize)->io::Result<OriginalNoticeRegistration>{
+  if self.failed{return Err(io::ErrorKind::InvalidInput.into())}
+  let code=*self.ordinals.as_slice().get(index).ok_or(io::ErrorKind::InvalidInput)?;
+  let(ordinal,after_end)=if code==WIDE_READER_REGISTRATION{
+   let at=self.wide.as_slice().binary_search_by_key(&index,|row|row.index).map_err(|_|io::ErrorKind::InvalidData)?;
+   let actual=&self.wide.as_slice()[at];(actual.ordinal,actual.after_end)
+  }else{((code>>1)as usize,code&1!=0)};
+  let owner=self.owner.as_ref().ok_or(io::ErrorKind::InvalidInput)?;
+  let phase=if after_end{RegistrationPhase::AfterActualEnd}else{RegistrationPhase::AfterConsumed};
+  Ok(OriginalNoticeRegistration{owner:owner.owner.clone(),ordinal,phase})
+ }
+ pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+  self.ordinals.visit_allocation(|pointer,capacity|visit(pointer,self.ordinals.len()*std::mem::size_of::<u32>(),capacity));
+  self.wide.visit_allocation(|pointer,capacity|visit(pointer,self.wide.len()*std::mem::size_of::<WideReaderRegistration>(),capacity));
+  if let Some(owner)=&self.owner{owner.visit_storage(&mut visit)}
+  self.domain.visit_counter_storage(|pointer,bytes|{let bytes=bytes+2*std::mem::size_of::<usize>();visit(pointer,bytes,bytes)});
+ }
 }
 /// Issued only after the driver reaches ActualEnd. This aliases the existing
 /// funded output cursor and carries no token or declaration-completeness claim.
@@ -456,7 +529,7 @@ pub(super) struct OriginalProducedEnd(OriginalDeliveryFrontier);
 impl OriginalProducedEnd {
     pub(super) fn validate(&self, delivered: &OriginalDeliveryFrontier, a: &SettingAdmission<'_>) -> io::Result<()> {
         a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
-        if !self.0.owner.admitted_by(a) || !self.0.owner.same(&delivered.owner) || self.0.end != delivered.end {
+        if !self.0.owner.admitted_by(a) || !self.0.owner.same(&delivered.owner) || self.0.end != delivered.end || self.0.ordinal != delivered.ordinal {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "logical end does not close the actual delivered frontier"));
         }
         Ok(())
@@ -474,14 +547,15 @@ impl OriginalProducedSpan<'_>{
  pub(super) fn cover(&self)->Span{self.token.cover}
 }
 impl OriginalOutputCursor{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint()?;let credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>())?;Ok(Self{state:CursorState{last:None,offset:0,line:1,failed:false},owner:OriginalOutputIdentity(Some(Arc::new(Payload{credit}))),literals:dm_syntax::OriginalLiteralPool::new(a)?})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{a.checkpoint()?;let credit=a.reserve(std::mem::size_of::<Payload>()+2*std::mem::size_of::<usize>())?;Ok(Self{state:CursorState{last:None,offset:0,line:1,ordinal:0,failed:false},owner:OriginalOutputIdentity(Some(Arc::new(Payload{credit}))),literals:dm_syntax::OriginalLiteralPool::new(a)?})}
  pub(super) fn identity(&self)->OriginalOutputIdentity{self.owner.clone()}
- pub(super) fn initial_delivery(&self)->io::Result<OriginalDeliveryFrontier>{let state=self.state;if state.offset!=0||state.failed{return Err(io::ErrorKind::InvalidInput.into())}Ok(OriginalDeliveryFrontier{owner:self.owner.clone(),end:0})}
+ pub(super) fn before_pull_registration(&self,a:&SettingAdmission<'_>)->io::Result<OriginalNoticeRegistration>{a.checkpoint().map_err(|error|a.take_operational_error().unwrap_or(error))?;if self.state.failed||!self.owner.admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}Ok(OriginalNoticeRegistration{owner:self.owner.clone(),ordinal:self.state.ordinal,phase:RegistrationPhase::BeforeNextPull})}
+ pub(super) fn initial_delivery(&self)->io::Result<OriginalDeliveryFrontier>{let state=self.state;if state.offset!=0||state.ordinal!=0||state.failed{return Err(io::ErrorKind::InvalidInput.into())}Ok(OriginalDeliveryFrontier{owner:self.owner.clone(),end:0,ordinal:0})}
  pub(super) fn seal_actual_end(&self, a: &SettingAdmission<'_>) -> io::Result<OriginalProducedEnd> {
     a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
     let state = self.state;
     if state.failed || !self.owner.admitted_by(a) { return Err(io::ErrorKind::InvalidInput.into()); }
-    Ok(OriginalProducedEnd(OriginalDeliveryFrontier { owner: self.owner.clone(), end: state.offset }))
+    Ok(OriginalProducedEnd(OriginalDeliveryFrontier { owner: self.owner.clone(), end: state.offset, ordinal:state.ordinal }))
  }
  pub(super) fn prepare(&mut self,actual:Token<'static>,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<OriginalPreparedOutputToken>{
   let result=self.prepare_inner(actual,provider,a);if result.is_err(){self.state.failed=true}result
@@ -519,7 +593,7 @@ impl OriginalOutputCursor{
   let span=Span::new(start,end);
   let delivered_value=actual.as_ref().map(|actual|OriginalDeliveredValue::from_projection(actual,&spelling,text,span,literal.is_some())).transpose()?;
   a.checkpoint()?;
-  self.state=CursorState{last:Some(if trailing{Adjacency::Whitespace}else{adjacency}),offset:frontier,line,failed:false};
+  self.state=CursorState{last:Some(if trailing{Adjacency::Whitespace}else{adjacency}),offset:frontier,line,ordinal:state.ordinal.checked_add(1).ok_or(io::ErrorKind::InvalidData)?,failed:false};
   Ok(OriginalPreparedOutputToken{token:SpanToken{kind,span},literal,actual,delivered_value,leading,trailing,cover:Span::new(start,frontier),line:state.line,owner:self.owner.clone(),spelling})
  }
 }
@@ -549,9 +623,9 @@ impl OriginalPreparedOutputToken{
 }
 
 impl OriginalPreparedDeliveryToken {
- pub(super) fn adopt(self,arena:&mut super::original_source_arena::OriginalSourceArena<'_>,primary:&mut dm_syntax::OriginalPrimaryDemand<'_,'_,'_>,owner:&OriginalOutputIdentity,a:&SettingAdmission<'_>)->io::Result<(super::original_final_output::OriginalEmittedToken,OriginalDeliveryFrontier)>{
+ pub(super) fn adopt(self,arena:&mut super::original_source_arena::OriginalSourceArena<'_>,primary:&mut dm_syntax::OriginalPrimaryDemand<'_,'_,'_>,previous:&OriginalDeliveryFrontier,a:&SettingAdmission<'_>)->io::Result<(super::original_final_output::OriginalEmittedToken,OriginalDeliveryFrontier)>{
   a.checkpoint().map_err(|error| a.take_operational_error().unwrap_or(error))?;
-  if !self.owner.same(owner) || !self.owner.admitted_by(a)
+  if !self.owner.same(&previous.owner) || !self.owner.admitted_by(a) || previous.end!=arena.as_str().len()
       || self.token.span.start.checked_sub(usize::from(self.leading)) != Some(arena.as_str().len())
   {
       return Err(io::Error::new(io::ErrorKind::InvalidInput, "prepared output does not continue this SAME actual receiver"));
@@ -577,7 +651,8 @@ impl OriginalPreparedDeliveryToken {
       primary.token(native)?;
   }
   if self.trailing{arena.append("\n")?;}if arena.as_str().len()!=self.end{return Err(io::ErrorKind::InvalidData.into())}
-  let delivery=OriginalDeliveryFrontier{owner:self.owner.clone(),end:self.end};
+  let ordinal=previous.ordinal.checked_add(1).ok_or(io::ErrorKind::InvalidData)?;
+  let delivery=OriginalDeliveryFrontier{owner:self.owner.clone(),end:self.end,ordinal};
   Ok((super::original_final_output::OriginalEmittedToken{token:native,original:self.actual},delivery))
  }
 }
@@ -957,5 +1032,187 @@ mod compact_queue_tests {
             assert_eq!(used.load(Ordering::Acquire), fixed);
         }
     }
+
+}
+
+#[cfg(test)]
+mod causal_notice_controls {
+ use super::*;
+ use super::super::{original_raw_inputs::OriginalRawNoticeSink,original_rich_notices::OriginalRichNotices};
+ use std::sync::atomic::Ordering;
+
+ // Low-level transport contract only: this does not claim that a parser or
+ // public report completed, and does not synthesize a successful header.
+ #[test]
+ fn actual_delivery_ordinals_order_sparse_notices_and_actual_end_without_byte_keys(){
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut cursor=OriginalOutputCursor::new(&a).unwrap();
+  let initial=cursor.initial_delivery().unwrap();
+  let before_zero=cursor.before_pull_registration(&a).unwrap();
+  let default=cursor.prepare_default_semicolon(&a).unwrap();
+  let before_one=cursor.before_pull_registration(&a).unwrap();
+  assert_eq!(before_zero.compare_same_source(&before_one).unwrap(),std::cmp::Ordering::Less);
+  let end=cursor.seal_actual_end(&a).unwrap();
+  assert_eq!(end.0.ordinal(),1);
+  assert!(end.validate(&initial,&a).is_err(),"real issued EOF cannot close an unconsumed delivery");
+  let after_end=end.0.reader_registration(true);
+  assert_eq!(before_one.compare_same_source(&after_end).unwrap(),std::cmp::Ordering::Less,"trailing PP notices precede actual EOF reader registration");
+  assert!(cursor.initial_delivery().is_err(),"initial count cannot be reissued after a delivery");
+  drop((default,end,after_end,before_zero,before_one,initial,cursor));
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn actual_notice_registration_rejects_foreign_owner_and_preserves_first_io_before_rebinding(){
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let one=OriginalOutputCursor::new(&a).unwrap();
+  let two=OriginalOutputCursor::new(&a).unwrap();
+  let one_mark=one.before_pull_registration(&a).unwrap();
+  let two_mark=two.before_pull_registration(&a).unwrap();
+  assert_eq!(one_mark.compare_same_source(&two_mark).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  let mut notices=OriginalRichNotices::new(&a).unwrap();
+  notices.before_logical_pull(one_mark.clone(),&a).unwrap();
+  assert_eq!(notices.before_logical_pull(two_mark.clone(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  let failed=SettingAdmission::new(&used,1<<20,&||Err(io::Error::from_raw_os_error(1450)));
+  assert_eq!(notices.before_logical_pull(two_mark,&failed).unwrap_err().raw_os_error(),Some(1450));
+  assert!(notices.is_empty());
+  drop((notices,one_mark,one,two));
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn logical_ordinal_overflow_cannot_issue_a_token_or_successful_end_and_io_stays_first(){
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut cursor=OriginalOutputCursor::new(&a).unwrap();
+  cursor.state.ordinal=usize::MAX; // deliberate private fault, never a source grant
+  let failed=SettingAdmission::new(&used,1<<20,&||Err(io::Error::from_raw_os_error(1450)));
+  assert_eq!(cursor.prepare_default_semicolon(&failed).err().unwrap().raw_os_error(),Some(1450));
+  assert_eq!(cursor.prepare_default_semicolon(&a).err().unwrap().kind(),io::ErrorKind::InvalidData);
+  assert!(cursor.seal_actual_end(&a).is_err());
+  assert!(cursor.before_pull_registration(&a).is_err());
+  drop(cursor);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn sparse_notice_row_quota_failure_retains_actual_owner_until_drop_and_refunds(){
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let cursor=OriginalOutputCursor::new(&a).unwrap();
+  let mut notices=OriginalRichNotices::new(&a).unwrap();
+  notices.before_logical_pull(cursor.before_pull_registration(&a).unwrap(),&a).unwrap();
+  let tiny=SettingAdmission::new(&used,used.load(Ordering::Acquire),&||Ok(()));
+  let text=crate::macro_expansion::OriginalMacroText::new(&tiny).unwrap();
+  let error=notices.message_using(super::super::original_current_location::OriginalCurrentLocation::Default,None,super::super::original_rich_notices::OriginalNoticeSeverity::Warning,None,text,&tiny).unwrap_err();
+  assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
+  assert!(notices.is_empty(),"denied sparse row cannot become a registered notice");
+  drop(cursor);
+  assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"real output owner survives its retained registration");
+  drop(notices);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn reader_position_table_keeps_exact_eof_phase_one_owner_and_no_pp_grant(){
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut one=OriginalOutputCursor::new(&a).unwrap();
+  let two=OriginalOutputCursor::new(&a).unwrap();
+  let initial=one.initial_delivery().unwrap();
+  let ordinary=initial.reader_registration(false);
+  assert_eq!(ordinary.require_after_actual_end().unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  let mut table=OriginalReaderRegistrationTable::new(&a).unwrap();
+  assert_eq!(table.push(&one.before_pull_registration(&a).unwrap(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  let first=table.push(&ordinary,&a).unwrap();
+  assert_eq!(table.get(first).unwrap().compare_same_source(&ordinary).unwrap(),std::cmp::Ordering::Equal);
+  assert_eq!(table.push(&two.initial_delivery().unwrap().reader_registration(false),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  let token=one.prepare_default_semicolon(&a).unwrap();
+  let end=one.seal_actual_end(&a).unwrap();
+  let eof=end.0.reader_registration(true);
+  eof.require_after_actual_end().unwrap();
+  let last=table.push(&eof,&a).unwrap();
+  assert_eq!(table.get(last).unwrap().compare_same_source(&eof).unwrap(),std::cmp::Ordering::Equal);
+  table.get(last).unwrap().require_after_actual_end().unwrap();
+  assert!(table.get(last+1).is_err());
+  assert_eq!(table.ordinals.len(),2);assert!(table.wide.as_slice().is_empty());assert_eq!(table.ordinals.as_slice()[last]&1,1);
+  drop((ordinary,eof,end,token,initial,one,two));
+  assert!(used.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  drop(table);
+  assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn reader_table_actual_growth_denial_and_first_io_issue_no_lookup_and_refund(){
+  for operational in [false,true]{
+   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+   let cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let registration=initial.reader_registration(false);
+   let mut table=OriginalReaderRegistrationTable::new(&a).unwrap();
+   let before=used.load(Ordering::Acquire);
+   let failure=||{if operational&&used.load(Ordering::Acquire)>before{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};
+   let constrained=SettingAdmission::new(&used,if operational{1<<20}else{before},&failure);
+   let error=table.push(&registration,&constrained).unwrap_err();
+   if operational{assert_eq!(error.raw_os_error(),Some(1450));}else{assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);}
+   assert!(table.get(0).is_err(),"failed actual append cannot issue a causal position");
+   drop((table,registration,initial,cursor));
+   assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+ #[test]fn reader_registration_compact_scalar_codec_never_truncates_full_width_or_phase(){
+  for ordinal in[0usize,1,123456,(u32::MAX as usize)/2-1]{
+   for phase in[RegistrationPhase::AfterConsumed,RegistrationPhase::AfterActualEnd]{
+    let code=compact_reader_registration(ordinal,phase).unwrap();
+    assert_eq!((code>>1)as usize,ordinal);assert_eq!(code&1!=0,phase==RegistrationPhase::AfterActualEnd);
+   }
+  }
+  assert!(compact_reader_registration(usize::MAX,RegistrationPhase::AfterConsumed).is_none());
+  assert!(compact_reader_registration((u32::MAX as usize)/2,RegistrationPhase::AfterActualEnd).is_none(),"sentinel never aliases an actual EOF phase");
+  assert!(compact_reader_registration(0,RegistrationPhase::BeforeNextPull).is_none());
+ }
+ #[test]fn reader_registration_common_rows_have_half_width_storage_with_same_actual_owner(){
+  let base=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let used=dm_syntax::SettingChargeCounter::try_new(base).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();
+  let mut table=OriginalReaderRegistrationTable::new(&a).unwrap();
+  for _ in 0..513{
+   let actual=cursor.initial_delivery().unwrap().reader_registration(false);
+   // Identical actual consumed frontier is a valid repeated commit observation.
+   let index=table.push(&actual,&a).unwrap();assert_eq!(table.get(index).unwrap().compare_same_source(&actual).unwrap(),std::cmp::Ordering::Equal);
+  }
+  let mut logical=0;let mut physical=0;table.ordinals.visit_allocation(|_,bytes|physical+=bytes);logical+=table.ordinals.len()*std::mem::size_of::<u32>();
+  assert_eq!(logical,513*4);assert!(physical>=logical);assert!(table.wide.as_slice().is_empty());
+  let end=cursor.seal_actual_end(&a).unwrap();let actual=end.0.reader_registration(true);let index=table.push(&actual,&a).unwrap();table.get(index).unwrap().require_after_actual_end().unwrap();
+  drop((actual,end,initial,cursor,table));assert_eq!(used.load(Ordering::Acquire),base);
+ }
+
+ // Storage-boundary DATA fixtures below alter only private scalars inside the
+ // issuing module. They do not claim a real billion-token source traversal or
+ // mint any current declaration/source capability.
+ #[test]fn reader_registration_wide_scalar_storage_keeps_usize_and_phase_without_truncation(){
+  let base=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(base).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut table=OriginalReaderRegistrationTable::new(&a).unwrap();
+  for(ordinal,phase)in[(usize::MAX,RegistrationPhase::AfterConsumed),((u32::MAX as usize)/2,RegistrationPhase::AfterActualEnd)]{
+   let mut scalar=initial.reader_registration(false);scalar.ordinal=ordinal;scalar.phase=phase;
+   let index=table.push(&scalar,&a).unwrap();assert_eq!(table.ordinals.as_slice()[index],WIDE_READER_REGISTRATION);
+   assert_eq!(table.get(index).unwrap().compare_same_source(&scalar).unwrap(),std::cmp::Ordering::Equal);
+  }
+  assert_eq!(table.wide.len(),2);drop((table,initial,cursor));assert_eq!(used.load(Ordering::Acquire),base);
+ }
+ #[test]fn reader_registration_wide_growth_denial_keeps_first_io_and_issues_no_partial_lookup(){
+  for operational in[false,true]{
+   let base=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(base).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+   let cursor=OriginalOutputCursor::new(&a).unwrap();let initial=cursor.initial_delivery().unwrap();let mut scalar=initial.reader_registration(false);let mut table=OriginalReaderRegistrationTable::new(&a).unwrap();
+   table.push(&scalar,&a).unwrap();let before=used.load(Ordering::Acquire);scalar.ordinal=usize::MAX;
+   let failure=||if operational&&used.load(Ordering::Acquire)>before{Err(io::Error::from_raw_os_error(1450))}else{Ok(())};
+   let constrained=SettingAdmission::new(&used,if operational{1<<20}else{before},&failure);
+   let actual=table.push(&scalar,&constrained).unwrap_err();
+   if operational{assert_eq!(actual.raw_os_error(),Some(1450));}else{assert_eq!(actual.kind(),io::ErrorKind::OutOfMemory);}
+   assert!(table.get(0).is_err());assert!(table.get(1).is_err());assert_eq!(used.load(Ordering::Acquire),before);
+   drop((table,scalar,initial,cursor));assert_eq!(used.load(Ordering::Acquire),base);
+  }
+ }
 
 }

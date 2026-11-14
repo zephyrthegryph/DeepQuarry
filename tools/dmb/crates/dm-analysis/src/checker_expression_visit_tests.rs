@@ -655,3 +655,22 @@ fn absolute_header_type_is_not_a_checker_argument_or_implicit_local() {
         [("missing_var", "A", 2)]
     );
 }
+
+#[test]
+fn contextual_delete_visits_operand_only_but_expression_del_remains_an_ordinary_call(){
+ let rows=observe_mode("/proc/p(D)\n    del(hidden(D))\n    visible_tail()\n    return del(D)\n",true).unwrap();
+ assert_eq!(rows.iter().map(|row|row.1.as_str()).collect::<Vec<_>>(),["hidden","visible_tail","del"],"only the expression-context del is an unscoped call");
+ let rows=observe_mode("/datum/holder/proc/p()\n    del(src)\n    visible_tail()\n",true).unwrap();assert_eq!(rows.iter().map(|row|row.1.as_str()).collect::<Vec<_>>(),["visible_tail"],"pinned Checker does not terminate traversal on deletion");
+}
+
+#[test]
+fn authored_operator_checker_walk_preserves_pinned_operand_and_assignment_observations(){
+ let rows=observe_mode("/proc/p(flag)\n    flag ||= rhs_or()\n    flag &&= rhs_and()\n    return ~mask() ~= other()\n",true).unwrap();
+ assert_eq!(rows.iter().map(|row|row.1.as_str()).collect::<Vec<_>>(),["rhs_or","rhs_and","mask","other"],"pinned Checker visits every assignment RHS, including logical assignments; it does not execute runtime short-circuiting");
+}
+
+#[test]
+fn dynamic_dispatch_checker_observes_target_arguments_then_invocation_arguments_without_a_call_name_event(){
+ let rows=observe_mode("/proc/p()\n    return call(make_target(),make_name())(get_value())\n",true).unwrap();
+ assert_eq!(rows.iter().map(|row|row.1.as_str()).collect::<Vec<_>>(),["make_target","make_name","get_value"],"same pinned DynamicCall target-list then argument-list traversal, not an unscoped call named call");
+}

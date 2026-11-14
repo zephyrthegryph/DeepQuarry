@@ -1029,7 +1029,7 @@ fn parse_level(
             index += 1;
         }
         saw_item = true;
-        if !commit_primary_item(source,line,kind,end,children,has_children,observed_outer_terminator,context,&mut items){break}
+        if !commit_primary_item(source,line,kind,end,children,has_children,observed_outer_terminator,context,&mut items,None){break}
     }
     let items=if context.skeleton&&context.in_body{
         if let Some(state)=context.original{match state.storage.compact(items.len()){Some(_temporary)=>retain_setting_chains(items,context.original),None=>Vec::new()}}else{retain_setting_chains(items,None)}
@@ -1068,7 +1068,7 @@ fn prepare_primary_line(source:&str,line:&Line,child:Option<&Line>,context:Parse
 
 // SAME native Item/header/cursor/qualifier commit judge, shared by whole
 // traversal and forthcoming retained demand frames. This does not acquire IO.
-fn commit_primary_item(source:&str,line:&Line,kind:ItemKind,end:usize,children:Vec<Item>,has_children:bool,observed_outer_terminator:Option<bool>,context:ParseContext<'_,'_,'_>,items:&mut Vec<Item>)->bool{
+fn commit_primary_item(source:&str,line:&Line,kind:ItemKind,end:usize,children:Vec<Item>,has_children:bool,observed_outer_terminator:Option<bool>,context:ParseContext<'_,'_,'_>,items:&mut Vec<Item>,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->bool{
  let header=&source[line.header_start..line.header_end];
         if context.skeleton
             && context.in_body
@@ -1129,6 +1129,20 @@ fn commit_primary_item(source:&str,line:&Line,kind:ItemKind,end:usize,children:V
             indent: line.indent,
             children,
         },context.original){return false}
+ if !context.in_body {
+  let item=items.last().expect("actual successfully committed declaration");
+  let event=OriginalPrimaryCommit{source,item};
+  let result=match observer {
+   Some(observer)=>observer.declaration_committed(event),
+   None=>match context.original.and_then(|state|state.observer.as_ref()) {
+    Some(observer)=>observer.borrow_mut().declaration_committed(event),None=>Ok(())
+   }
+  };
+  if let Err(error)=result {
+   if let Some(state)=context.original {let mut first=state.operational.borrow_mut();if first.is_none(){*first=Some(error)}}
+   return false
+  }
+ }
  true
 }
 
@@ -1332,7 +1346,14 @@ impl<'a> OriginalPrimaryHeader<'a>{
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalHeaderFlow{Continue,Stop}
 /// Parser-state observer, not a second header parser. The tree layer lends its
 /// existing formal signature producer and retains that producer's exact result.
-pub trait OriginalDeclarationHeaderObserver{fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>;}
+/// Borrowed only at the actual canonical declaration commit, after all children.
+/// Private fields prevent callers from manufacturing a registration frontier.
+pub struct OriginalPrimaryCommit<'a>{source:&'a str,item:&'a Item}
+impl<'a> OriginalPrimaryCommit<'a>{pub fn source(&self)->&'a str{self.source}pub fn item(&self)->&'a Item{self.item}}
+pub trait OriginalDeclarationHeaderObserver{
+ fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>;
+ fn declaration_committed(&mut self,_event:OriginalPrimaryCommit<'_>)->std::io::Result<()>{Ok(())}
+}
 #[derive(Clone,Debug,Default,Eq,PartialEq)]
 pub struct OriginalDeclarationSyntax{pub items:Vec<Item>,pub tokens:crate::SpanTokenStorage,pub diagnostics:Vec<Diagnostic>}
 pub struct OriginalDeclarationSkeleton{

@@ -4325,7 +4325,7 @@ not qualify full-registry parity or the default cutover.
 ### Parent calls, final inline returns and cleanup handoff (2026-11-13)
 
 The refreshed actual-source survey reached 508 Available and three Unissued
-bodies before the next real allocation refusal at rank511/ordinal840. It
+bodies before the next real allocation refusal at rank 511/ordinal 840. It
 remains a bounded survey, not a full-registry or Checker parity result. The
 remaining demonstrated grammar shapes now have exact native producers:
 parent calls with arguments, compound bit/shift right-hand sides, and the
@@ -4379,3 +4379,64 @@ expectations for newly supported forms and missing typed colon test input;
 those corrections were test-only. Current host and test definitions also pass
 cargo check. Whole-source execution with this extended cohort, independent
 Checker/Analyze parity, default cutover and publication are still pending.
+
+
+### Joined-input verification and contextual statements (2026-11-13)
+
+The current private image (SHA256 7fa2781319847ae53928af17b7a0a54cab59928db1d314ebdc1c5ae28baea1c2) completed the bounded first 1,024 checker-ranked procedures from the actual 109,675-procedure checkout roster: 976 Available, 48 Unissued, zero NativeRejected and zero unmeasured OOM. The prior successful image reported 931/93. The intervening source24 attempt expired before issuing a census result; it was not a coverage result. The new run kept the original deadline and resource caps. These numbers describe this bounded range only.
+
+Contextual delete statements reuse the existing native deletion producer; authored bit-not/equivalence and logical compound assignments use exact token-role and child proofs. No source spelling alone issues authority. Five focused stable build-output tests passed. All five affected libraries and their test definitions typechecked after repairing two fixture API/import errors. Actual selected runtime verification then passed 17 controls and failed seven. Five failures expose the compound path creating its own .dmbc directory after report capture; strict directory freshness correctly refuses that change. Two failures are fixture-phase/operational-error ownership mistakes. Repairs remain explicit and are not counted as passes.
+
+The two affected-target Cargo invocations completed successfully; their successful receipts bind the test executables and normal private compiler. No shared compiler was published. Runtime evidence is immutable per invocation under E:/dq-cache/logs/unified-analysis-del-operator-20261113; the bounded census has separate source/image-bound evidence there.
+
+Whole-registry completion, independent legacy Analyze and pinned Checker output comparisons, native fix/schema completion and ordinary default routing remain unfinished. Reviewed chronology/CLI drafts are not executable proof and are not enabled by this checkpoint.
+
+
+### Public report integration repair batch (2026-11-14)
+
+The next real selected runtime completed with 32 passes and 17 failures across 49 cases. Source and image guards passed, and evidence is immutable under unified-analysis-next54-20261113/runtime/20261114T065649379699Z-37916-30a2de80a80649189ab166920215fa1e. The inherited-deadline, first-output-IO, malformed compiler namespace, genuine delivery-owner, quota/refund and transport controls reached their real branches. Remaining failures included an incorrect standalone preparation-purpose guard blocking nine cases, a genuine Call delimiter extent omission, and fixture expectations concerning canonical Windows paths, live receipt-credit retention, intentionally nonclean full-registry input and now-supported syntax. Repairs preserve the strict guards rather than allowing incomplete reports.
+
+Reviewed schema request/client, narrow private native-completion owner, and two grammar qualification extensions are now installed for verification. They are not yet typechecked or runtime-qualified in this batch. Original availability and public defaults remain unchanged; the native-completion slice is deliberately limited and does not assert pinned compatibility or whole-source completion.
+
+
+### Schema and authored-fix integration checkpoint (2026-11-14)
+
+The next actual metadata run reached the new schema implementation and found four borrow-order errors. Their repair evaluates the same checked retention sizes before borrowing the resource counter; capacities, overflow and funding rules are unchanged. A subsequent run passed that code and found two error-conversion sites (six compiler diagnostics), where a non-Send boxed error could not be stored in an IO error. The repair matches the existing transport: actual IO errors are moved unchanged first, preserving their kind and OS code; only the non-IO fallback becomes text. Neither failed metadata run is counted as a successful build or runtime result.
+
+The source-reviewed native seven-list-macro operation is now installed for verification. It borrows the existing native analysis and actual source ledger, maps normalized edit positions to authenticated physical UTF8/CRLF bytes, and applies through an in-place writer followed by real same-host reprepare. It makes no atomic-replacement or rollback claim. Unsupported edits refuse before partial application. Seven public retained-host controls and lower-level failure controls are defined but have not run. The schema request now keeps operational traces in the existing lifecycle log instead of mixing them into its sealed diagnostic response; tracing is preserved.
+
+Whole-source independent Checker/Analyze parity, all-generator qualification, complete FIX coverage and ordinary default cutover remain unfinished. These source integrations are not evidence that all three tools are working fully, and no shared compiler has been published.
+
+
+### Focused runtime and real-source resource checkpoint (2026-11-14)
+
+Both affected-workspace metadata checks passed. The private executable build completed successfully: the three library test executables took 27m19s, the one combined compiler/example/five-target build 20m41s, and client tests 35.15s under the low-priority worker limits. The initial runtime admission stopped before tests because one planned selector retained its old name; actual executable listing confirmed the corrected exact 58 names without another compile.
+
+The genuine 58-case run completed 43 passes and 15 failures, with every source/image/evidence guard passing. Immutable evidence is unified-analysis-next39-20261114/runtime/20261114T083627299763Z-35088-ac34a40bf88845ff9bb47aded366260c. All five public schema-proposal cases passed, as did the previously blocked standalone Checker controls. Failures exposed the real Original punctuation kind for division assignment and incorrect fixture setup: skeleton parsing does not contain body children, native-default input cannot issue an Original-only profile, SETTER alone does not create a generated tracked-list declaration, embedded-engine publication truthfully enables bootstrap, and an unused unsupported body need not be demanded by targeted Analyze policies. Those controls retain their original substantive negative/state assertions. One resource-failure classification remains unresolved and now prints its actual error on a future failed rerun; its required OutOfMemory kind has not been relaxed.
+
+A subsequent actual first 1024 checkout census stopped at rank 511/ordinal 840 on the unchanged 134217728-byte admission limit, before issuing a complete census. It is not a coverage improvement. The prior 976/48 successful census remains the latest completed range. Current retained admission was 130044294 before a 4339200-byte cleanup reservation. The source-reviewed repair compacts the same reader-registration table to a lossless common u32 representation with exact usize overflow rows; no limit, authority or cleanup envelope is raised or reduced. Its saving and real-source recovery still require execution.
+
+The source-reviewed resident Checker text route and grouped runtime repairs are installed for verification, with one protocol 8-to-9 bump. It reuses the existing daemon/session and retains the actual source ledger through delivery; ordinary defaults are unchanged. Generic intrinsic body work remains held because its initial per-root metadata layout would add too much retained storage. Whole-source independent parity, complete CLI/fix selection and ordinary default retirement are still unfinished. No shared compiler was published.
+
+
+### 2026-11-14: measured NEXT27 repair follow-up
+
+The actual frozen-source executable build succeeded. Its selected run completed 31 passes and 3 failures, with final image/source guards intact (next27 runtime 20261114T093412480405Z-25572-158b41ee40c44e15b416219199324ddf). The unchanged 128 MiB, 0..1024 real-checkout census still failed at rank 511/ordinal 840: its parser frame required 16,384 bytes with 134,202,819 bytes retained. The compact chronology table improved the allocation boundary but did not establish a completed census or memory recovery.
+
+The next six exact, independently reviewed files remove a redundant optional retention wrapper from the real expression owner (same anchor lifetime and sizeof-based admission); fix the project-only resident Checker cache check without inventing a workspace; preserve OutOfMemory at the actual exhausted raw-input producer; correct a negative fixture to demand genuinely incomplete literal syntax while adding a valid-Goto tracked-write witness; and expose the existing parser-free native Checker client from its native-only executable. No resource limits or cleanup envelopes change. These edits are installed but not yet runtime-qualified.
+
+An independent pinned Checker comparison of five exact public-query fixtures matched clean, undefined-variable and indexed-update rows. The two causal preprocessor cases differed because that query's declaration/body stream excludes the preprocessor notices emitted separately by the standalone CLI. Those comparisons do not qualify the standalone CLI; no notice is filtered, omitted or re-labelled to make them equal. A separate driver will compare both completed semantic CLI streams using the existing actual client. Neither this fixture evidence nor the bounded census establishes universal Checker or full-project parity.
+
+
+### 2026-11-14: NEXT6 actual results and client admission repair
+
+The frozen NEXT6 build and ten focused cases completed successfully with all final guards. Actual sizeof(Root) decreased from 80 to 72 bytes; the real 128 MiB 0..1024 census then completed: 1005 Available, 19 Unissued, 0 NativeRejected and 0 unmeasured OOM (total callable roster 109675). This verifies the bounded memory repair, not universal grammar coverage. The earlier completed range was 976 Available/48 Unissued; the intervening indexed/static-construction repairs now have a completed measurement.
+
+The actual six-fixture parser-free client comparison failed admission before the native Checker: its generic workspace dispatcher intercepted --native-dmbc before the explicit native-checker arm. An independently reviewed main-only order correction sends each already recognized explicit command through its existing validator before the unchanged generic check/shorthand fallback. Only the client needs rebuilding for that correction; no native semantic/parser/IPC library code changes. The six failed admissions still need actual native/pinned reruns; the ten passing semantic cases and completed memory census are not rerun for this entry-point-only repair.
+
+
+### 2026-11-14: independent public text CLI qualification
+
+The parser-free analyze-native client was rebuilt after the main-only dispatch correction in 0.77 seconds; the dmbc backend stayed exactly 07e25f59d8afaee2714018e78ccf09004466b4aef04bf5c34f1bababf127145d. The isolated fixture setup also now creates its explicitly required existing cache outside captured source inputs. Neither correction weakens a result check.
+
+All six independently pinned text CLI fixtures completed and matched: clean, undefined variable, causal formal, causal include, indexed update and duplicate-registration EOF. Both full semantic stderr rows and stdout (only CRLF/LF formatting normalized), phase completion, summaries and exit codes match. Actual images and all frozen source/fixture bytes were checked before and after. Immutable evidence: E:/dq-cache/logs/unified-native-cli-independent-20261114T103832-0a87beb2657d4b239deaccb12762d151/result.json. This is six-fixture qualification only; JSON, parse-only, autodetection, all-registry/GEN independent qualification, remaining grammar coverage and default cutover are still unfinished.

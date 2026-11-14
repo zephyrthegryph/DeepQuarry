@@ -237,6 +237,41 @@ impl QueryDb{
  fn with_original_workspace_semantic_guard_using<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,question:crate::policy_request::WorkspaceAuxiliaryQuestion,contract:SemanticReportContract,consume:impl FnOnce(&dq_analyze::captured_sem_reads::SemanticPolicyData,Option<&Config>,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
   use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;if !matches!(question,Q::SemReads|Q::UntrackedInputs|Q::SetterPublishes){return Err(io::Error::new(io::ErrorKind::InvalidInput,"semantic guard does not issue this read policy role"))}self.with_original_workspace_semantic_value_using(workspace,guard,capture,question,contract,|value,config,budget|match value{Value::SemanticPolicy(result)=>consume(result.read_data().ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"semantic result is not a read policy"))?,config,budget),_=>Err(io::Error::new(io::ErrorKind::InvalidData,"semantic result returned another role"))})
  }
+ /// Ephemeral authored edit plan over the existing selected tracked source.
+ /// No separate AST/model or retained policy cache is constructed.
+ pub(crate) fn with_original_workspace_list_macro_fix<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,relative:&str,
+  consume:impl FnOnce(dq_analyze::captured_tracked_fix::ListMacroFixData,&Arc<Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<T>)->io::Result<T>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+  crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;
+  if !guard.uses_queries(self)||!workspace.matches_auxiliary_questions(&[Q::Tracked])||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {
+   return Err(io::Error::new(io::ErrorKind::InvalidInput,"native fix needs the actual exact Original tracked source/QueryDb role"))
+  }
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
+  let pending=self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|{
+   reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;
+   reader.budget().charge(2*std::mem::size_of::<usize>()).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+   let scope=Arc::new(guard.query_receipt(&mut|bytes|reader.budget().charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?);
+   let produced=flatten(scope.with_guard(self,workspace,capture.policy(),|current|split((||{
+    let _operation=self.raw_policy.admission.bind_workspace_operation(reader.budget(),&scope,workspace,capture)?;
+    let key=configuration_input(self,reader,capture)?;
+    let config=self.db.input::<ConfigData>(key).ok_or_else(||Failure::Operational(io::Error::other("actual fix configuration absent")))?;
+    config.require_original(capture.configuration_bytes(reader.configuration().0)?)?;
+    // This plan is NOT memoized. Its exact frame/ledger is checked on every
+    // request; syntax comes from the SAME existing checked Body query owner.
+    let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|dm_tree::frontend::BodySyntaxQueries::syntax_checked(self,input);
+    let(data,witness)=reader.tracked_list_macro_data(capture.policy(),&config.config,relative,&body)?;
+    if !witness.matches(workspace,current,capture.policy())?{return Err("native fix declaration/selected EOF witness belongs to another scope".into())}
+    // The actual raw-family gate is already held. Ordinary QueryDb::reserve
+    // would reacquire it and deadlock. Per-file loans have ended; lend this
+    // same live ledger/domain + actual reader budget only for local capture.
+    let result=reader.with_held_source_work(|work|consume(data,reader.budget(),work)).map_err(Failure::Operational)?;
+    reader.require_policy_inputs(capture.policy())?;Ok(result)
+   })())));
+   if matches!(&produced,Err(Failure::Operational(_))){return produced}
+   if reader.budget().denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"native fix source admission exhausted")))}produced
+  });
+  pending.map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(reason)=>io::Error::new(io::ErrorKind::Unsupported,reason)})
+ }
  pub(crate) fn with_original_workspace_tracked_guard<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,tests:bool,consume:impl FnOnce(&dq_analyze::captured_tracked_pages::TrackedData)->io::Result<T>)->io::Result<T>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;let question=if tests{Q::TrackedTests}else{Q::Tracked};self.with_original_workspace_semantic_value_using(workspace,guard,capture,question,SemanticReportContract::Existing,|value,_,_|match value{Value::SemanticPolicy(result)=>consume(result.tracked_data().ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"semantic result is not a tracked policy"))?),_=>Err(io::Error::new(io::ErrorKind::InvalidData,"semantic result returned another role"))})}
  // SAME guarded reader/operation core for the actual four selected child roles.
  fn with_original_workspace_semantic_value_using<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,question:crate::policy_request::WorkspaceAuxiliaryQuestion,contract:SemanticReportContract,consume:impl FnOnce(&Value,Option<&Config>,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
@@ -444,4 +479,12 @@ impl QueryDb{
   if !guard.uses_queries(self)||!selected||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"silicon_entry requires its actual selected full Original subject and same QueryDb"))}capture.semantic_source_evidence().check(capture.policy().mapping())?;
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());let pending=self.with_workspace_code_pages_limit_locked(workspace,guard,limit,|reader|reader.silicon_entry_using(capture.policy(),domain,consume));pending.map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
  }
+}
+
+impl QueryDb{
+ pub(crate) fn with_original_workspace_schema_proposals_guard<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,subject:&crate::input_snapshot::OriginalAnalysisSubject,limit:Option<usize>,consume:impl FnOnce(&dq_analyze::captured_untyped_pages::schema_proposals::Data,&Config,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
+  let question=crate::policy_request::WorkspaceAuxiliaryQuestion::Untyped;crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;workspace.require_analysis_subject(subject)?;subject.require_bound_mapping(capture.policy().mapping())?;if !guard.uses_queries(self)||!workspace.has_semantic_question(question)||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"untyped requires its actual selected full Original subject and same QueryDb"))}capture.semantic_source_evidence().check(capture.policy().mapping())?;
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());let pending=self.with_workspace_code_pages_limit_locked(workspace,guard,limit,|reader|reader.schema_proposals_using(capture,consume));pending.map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+ }
+
 }

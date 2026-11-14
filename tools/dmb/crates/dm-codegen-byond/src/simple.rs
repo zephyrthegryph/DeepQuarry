@@ -861,6 +861,7 @@ fn supported_statements(
             | StatementKind::Continue
             | StatementKind::ContinueLabel(_)
             | StatementKind::Throw(_)
+            | StatementKind::Delete(_)
             | StatementKind::Goto(_) => true,
             StatementKind::Label { body, .. } => {
                 supported_statements(body, stored_declarations, mask, locals)

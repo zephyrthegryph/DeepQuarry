@@ -311,3 +311,9 @@ fn nonlocal_deletion_requires_exact_nonopaque_writable_metadata() {
 
 #[path = "typed_delete_resolver_native.rs"]
 mod resolver_native;
+
+#[test]
+fn contextual_delete_bare_and_parenthesized_spelling_reuse_the_same_native_producer(){
+ let first=dm_syntax::parse("/proc/delete_value(value)\n    del(value)\n    return 0\n");let second=dm_syntax::parse("/proc/delete_value(value)\n    del value\n    return 0\n");
+ let a=compile_simple_proc_with_params(&first.items[0].children,&["value".into()]).unwrap();let b=compile_simple_proc_with_params(&second.items[0].children,&["value".into()]).unwrap();assert_eq!(a.code,b.code,"canonical grouping is transparent to the existing deletion producer");
+}

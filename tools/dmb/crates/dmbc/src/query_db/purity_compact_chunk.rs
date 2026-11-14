@@ -151,6 +151,20 @@ struct VerifiedBodyPhases {
     prelude: crate::selected_report_spool::Verified,
     body: crate::selected_report_spool::Verified,
     clean: bool,
+    bodies: usize,
+}
+
+/// Issued only after actual body stage sealing and both final graph walks.
+/// Its private fields cannot be constructed by report metadata callers.
+pub(crate) struct CompletedCompactReport<'a>{input:&'a EffectInput,bodies:usize,graph_visits:[usize;2],graph_targets:usize}
+impl CompletedCompactReport<'_>{
+ pub(crate) fn body_count_for(&self,input:&EffectInput)->io::Result<usize>{
+  if !std::ptr::eq(self.input,input)||self.bodies!=input.archive().len()
+   ||self.graph_targets!=input.archive().callables().source_order().len()
+   ||self.graph_visits!=[self.graph_targets;2]{
+   return Err(io::Error::new(io::ErrorKind::InvalidInput,"compact completion is foreign or incomplete"));
+  }Ok(self.bodies)
+ }
 }
 
 struct BodyPhases {
@@ -234,7 +248,7 @@ impl BodyPhases {
             let (verified, _) = stage.seal()?.validate(|source| io::copy(source, &mut io::sink()))?;
             Ok(verified)
         }
-        Ok(VerifiedBodyPhases { prelude: verified(self.prelude)?, body: verified(self.body)?, clean: self.clean })
+        Ok(VerifiedBodyPhases { prelude: verified(self.prelude)?, body: verified(self.body)?, clean: self.clean, bodies: self.rows })
     }
 }
 
@@ -417,17 +431,19 @@ impl QueryDb {
         phases.body.publish(body)
     }
 
-    pub(crate) fn with_archived_compact_report(
+    pub(crate) fn with_archived_compact_report_completed<'a>(
         &self,
-        input: &Arc<EffectInput>,
+        input: &'a Arc<EffectInput>,
         scope: &crate::runner_host::query_snapshot::PurityScope<'_>,
         width: usize,
         cache: &Path,
         render: BodyRenderer,
         mut keyword: impl FnMut(&dm_analysis::checks_keyword_overrides::Findings<'_>) -> io::Result<()>,
         mut graph_row: impl FnMut(&Produced) -> io::Result<()>,
-    ) -> io::Result<(crate::selected_report_spool::Verified, crate::selected_report_spool::Verified, bool)> {
+    ) -> io::Result<(crate::selected_report_spool::Verified, crate::selected_report_spool::Verified, bool, CompletedCompactReport<'a>)> {
         use dm_analysis::checker_effects::{CompactEffectGraph, CompactEffectScc, CompactGraphReplay, EffectReportPhase, EffectSource, ProducedPhase};
+        let mut graph_visits=[0usize;2];
+        let mut graph_targets=None;
         let phases = self.with_archived_compact_body_phases(input, scope, width, cache, render, |chunks, work| {
             let _gate = self.purity.gate.lock().unwrap_or_else(|error| error.into_inner());
             let validate = || scope.validate(self, input).map_err(io::Error::other);
@@ -491,8 +507,9 @@ impl QueryDb {
                 .map_err(transport)?;
             drop(admission);
             work.reconcile(order_mark, order.retained_charge().ok_or_else(|| oom("compact report order retention overflow"))?)?;
-            for (phase, wanted) in [(EffectReportPhase::Sleep, ProducedPhase::SleepGraph),
-                                    (EffectReportPhase::Purity, ProducedPhase::PurityGraph)] {
+            graph_targets=Some(source.len());
+            for (phase_index,(phase, wanted)) in [(EffectReportPhase::Sleep, ProducedPhase::SleepGraph),
+                                    (EffectReportPhase::Purity, ProducedPhase::PurityGraph)].into_iter().enumerate() {
                 validate()?;
                 for start in (0..source.len()).step_by(256) {
                     let mut phase_work = graph_work::GraphWork::new(Arc::clone(ledger), key(CHUNK,input,2));
@@ -503,6 +520,8 @@ impl QueryDb {
                         &admission, &mut || checkpoint(), &replay, &mut phase_work,
                     ).map_err(transport)?;
                     for row in rows.iter().filter(|row| row.phase() == wanted) { graph_row(row)?; }
+                    graph_visits[phase_index]=graph_visits[phase_index].checked_add(256.min(source.len()-start))
+                        .ok_or_else(||oom("compact completed graph count overflow"))?;
                 }
             }
             validate()?;
@@ -511,7 +530,10 @@ impl QueryDb {
             }
             Ok(())
         })?;
-        Ok((phases.prelude, phases.body, phases.clean))
+        let completion=CompletedCompactReport{input:input.as_ref(),bodies:phases.bodies,
+            graph_visits,graph_targets:graph_targets.ok_or_else(||io::Error::other("compact graph traversal did not complete"))?};
+        completion.body_count_for(input.as_ref())?;
+        Ok((phases.prelude, phases.body, phases.clean,completion))
     }
 
     fn with_archived_compact_body_phases(

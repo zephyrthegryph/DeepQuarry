@@ -3,6 +3,8 @@
 //! which keys the on-disk cache so a rebuilt engine never serves a stale result.
 #[path = "cargo_source_inputs.rs"]
 mod cargo_source_inputs;
+mod build_output;
+use build_output::write_if_changed;
 #[path = "client/src/native_policy_roster.rs"]
 mod native_policy_roster;
 use std::fmt::Write as _;
@@ -64,7 +66,7 @@ fn main() {
     full_metadata.push_str("#[cfg(feature=\"native-policy\")]\n pub(crate) fn visit_all_scopes<C:crate::key_policy_control::Control>(control:&mut C,visit:&mut dyn FnMut(crate::required_scope_policy::Requirement<'_>,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{\n");
     for module in &full_metadata_modules {if matches!(module.as_str(),"lifeform_allows"|"escape_hatches"){continue}writeln!(full_metadata,"{}::visit_scopes(control,visit)?;",module).unwrap();}
     full_metadata.push_str("control.checkpoint()\n}\n");
-    fs::write(out_dir.join("allow_registry_fields_gen.rs"),full_metadata).unwrap();
+    write_if_changed(out_dir.join("allow_registry_fields_gen.rs"),full_metadata).unwrap();
 
     let mut native_registry = String::from("{\n");
     for (module, _) in native_policy_roster::MODULES {
@@ -75,7 +77,7 @@ fn main() {
         );
     }
     native_registry.push_str("}\n");
-    fs::write(
+    write_if_changed(
         out_dir.join("native_policy_registry_gen.rs"),
         native_registry,
     )
@@ -133,7 +135,7 @@ fn main() {
             }
             let _ = writeln!(gen, "}}");
         }
-        fs::write(out_dir.join(format!("{}_gen.rs", sub)), gen).unwrap();
+        write_if_changed(out_dir.join(format!("{}_gen.rs", sub)), gen).unwrap();
     }
 
     // ---- engine hash ---------------------------------------------------------------------

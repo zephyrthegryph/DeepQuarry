@@ -1923,7 +1923,8 @@ pub(crate) use purity::global_graph::NativeEffectGraph;
 
 pub(crate) use purity::global_summary::NativeEffectSummary;
 
-pub(crate) use purity::pages::NativeEffectPage;
+pub(crate) use purity::pages::{NativeEffectPage, CompletedOriginalBodyVisit};
+pub(crate) use purity::compact_chunk::CompletedCompactReport;
 
 pub(crate) use purity::global_report::NativeEffectReport;
 

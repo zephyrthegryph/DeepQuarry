@@ -107,6 +107,9 @@ impl Compiler<'_> {
                     self.expression(value, &statement.raw_header)?;
                     self.emit(0x12d, vec![]);
                 }
+                StatementKind::Delete(value) => {
+                    if self.typed_delete(value,&statement.raw_header)? { break; }
+                }
                 StatementKind::Label { name, body } => {
                     let label = self
                         .user_labels

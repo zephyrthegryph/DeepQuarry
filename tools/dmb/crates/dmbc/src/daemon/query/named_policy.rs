@@ -295,11 +295,24 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
             }
             SourceQuery::NativeOriginalOrderedChecker { environment, configuration } => {
                 use super::ORIGINAL_ORDERED_CHECKER_PHASES as PHASES;
+                let completed=row.get("scope_completion").is_some();
+                if completed{
+                    exact(&row,&["row","schema","semantic_revision","source_revision","policy_revision","environment","configuration","configuration_explicit","configuration_present","coverage","phase_order","full_checker_parity","diagnostics","scope_completion"])?;
+                    let receipt=&row["scope_completion"];
+                    exact(receipt,&["scope","visited_bodies","completed_phase_order"])?;
+                    if receipt["scope"]!="whole_input_current_ordered_producers"
+                        ||receipt["visited_bodies"].as_u64().is_none()
+                        ||receipt["completed_phase_order"]!=serde_json::to_value(PHASES).map_err(io::Error::other)?{
+                        return Err(invalid("ordered checker completion"));
+                    }
+                }else{
                 exact(&row, &[
                     "row", "schema", "semantic_revision", "source_revision", "policy_revision",
                     "environment", "configuration", "configuration_explicit", "configuration_present",
                     "coverage", "phase_order", "full_checker_parity", "diagnostics",
                 ])?;
+                }
+
                 let selected = dm_analysis::check_configuration::select(environment, configuration.as_deref());
                 if row["row"] != "source_native_original_ordered_checker"
                     || row["environment"] != serde_json::to_value(environment).map_err(io::Error::other)?

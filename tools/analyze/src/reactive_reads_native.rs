@@ -698,7 +698,7 @@ impl<'source,'op> Walk<'source,'op>{
   for st in statements{
    self.tick()?;self.line=self.source.line_at(st.header_span.start)?;
    match &st.kind{
-    StatementKind::Expression(e)|StatementKind::Call(e)|StatementKind::Throw(e)=>{self.eval(fr,e)?;},
+    StatementKind::Expression(e)|StatementKind::Call(e)|StatementKind::Throw(e)|StatementKind::Delete(e)=>{self.eval(fr,e)?;},
     StatementKind::Assign{target,op,value}=>{let rv=self.eval(fr,value)?;self.assign(fr,target,op,&rv)?;},
     StatementKind::Return(Some(e))=>{let v=self.eval(fr,e)?;fr.note_return(v);},
     StatementKind::Return(None)|StatementKind::Break|StatementKind::Continue|StatementKind::Goto(_)|StatementKind::BreakLabel(_)|StatementKind::ContinueLabel(_)=>(),

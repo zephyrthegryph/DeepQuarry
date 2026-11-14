@@ -1,0 +1,19 @@
+//! Resident Checker uses the existing bounded report fragments and collectors.
+use super::*;use dq_analyze::native_checker_wire::{Terminal as CheckerTerminal,Schema as CheckerSchema,Frame as CheckerFrame};
+pub(crate) fn send_checker_text(stream:&mut impl Write,completed:crate::runner_host::StandaloneCheckerReport,work:&dyn SourceArenaWork)->Result<(),SendFailure>{
+ let crate::runner_host::StandaloneCheckerReport{project,outcome,inputs,diagnostics,output,_credit}=completed;
+ let convert=|e:Box<dyn Error>|match e.downcast::<io::Error>(){Ok(e)=>*e,Err(e)=>io::Error::other(e.to_string())};
+ inputs.require_current(&project).map_err(convert).map_err(SendFailure::BeforePublication)?;
+ let terminal=CheckerTerminal{schema:CheckerSchema::V1,complete:true,full_checker_parity:outcome.full_checker_parity,project,emitted:u64::try_from(outcome.emitted).map_err(|_|SendFailure::BeforePublication(io::ErrorKind::OutOfMemory.into()))?,visited_bodies:u64::try_from(outcome.visited_bodies).map_err(|_|SendFailure::BeforePublication(io::ErrorKind::OutOfMemory.into()))?,exit_code:u8::try_from(outcome.exit_code).map_err(|_|SendFailure::BeforePublication(invalid("invalid actual Checker exit code")))?,frame:CheckerFrame{semantic_revision:dq_analyze::selected_exclusions_wire::Hex128(outcome.semantic_revision),source_revision:dq_analyze::selected_exclusions_wire::Hex128(outcome.source_revision),policy_revision:dq_analyze::selected_exclusions_wire::Hex128(outcome.policy_revision)},diagnostics:diagnostics.as_ref().map(seal_of),output:seal_of(&output)};
+ terminal.require(&terminal.project).map_err(SendFailure::BeforePublication)?;encode_header(&terminal).map_err(SendFailure::BeforePublication)?;let _scratch=work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
+ let sent=(||{control::checkpoint()?;if let Some(stage)=diagnostics{stage.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Diagnostics,sequence:0,offset:0})?;}output.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Report,sequence:0,offset:0})?;inputs.require_current(&terminal.project).map_err(convert)?;control::checkpoint()?;protocol::send(stream,&SendReply::CheckerTextFinished(terminal))})();sent.map_err(SendFailure::AfterPublication)
+}
+pub(crate) struct DeliveredCheckerText{terminal:CheckerTerminal,diagnostics:Option<Verified>,output:Verified}
+impl DeliveredCheckerText{pub(crate)fn publish(self,writer:&mut impl Write)->io::Result<u8>{let(header,length)=encode_header(&self.terminal)?;writer.write_all(&header[..length])?;if let Some(stage)=self.diagnostics{stage.publish(writer)?;}self.output.publish(writer)?;Ok(self.terminal.exit_code)}}
+pub(crate)fn receive_checker_text(stream:&mut impl Read,cache:&Path,project:&Path)->Result<DeliveredCheckerText,Box<dyn Error>>{let(mut accepted,mut diagnostics,mut output)=(false,Collector::default(),Collector::default());loop{control::checkpoint()?;match protocol::receive_bounded::<ReceiveReply>(stream,protocol::MAX_FRAME)?{
+ ReceiveReply::Accepted if !accepted=>accepted=true,
+ ReceiveReply::Rejected(error)if diagnostics.next==0&&output.next==0=>return Err(RequestFailure{kind:error.kind,message:error.message}.into()),
+ ReceiveReply::SelectedReportFragment(fragment)if accepted=>match fragment.channel{Channel::Diagnostics=>diagnostics.push(cache,&fragment)?,Channel::Report=>output.push(cache,&fragment)?,_=>return Err(invalid("standalone Checker cannot receive compile/other Checker channel").into())},
+ ReceiveReply::CheckerTextFinished(terminal)if accepted=>{terminal.require(project)?;require_end(stream)?;let diagnostics=diagnostics.finish(terminal.diagnostics)?;let output=output.finish(Some(terminal.output))?.ok_or_else(||invalid("Checker terminal lacks actual stdout"))?;return Ok(DeliveredCheckerText{terminal,diagnostics,output})},
+ _=>return Err(invalid("unexpected standalone Checker transport frame").into()),
+ }}}

@@ -9,6 +9,8 @@ use std::io;
 /// A borrowed actual stream. All source/token loans in with_current_source end
 /// before another pull; default AST/metadata moves into the existing owner.
 pub trait OriginalFormalTokenStream:NativeExpressionTokenDemand{
+ fn reader_registration(&self)->io::Result<super::original_prepared_output::OriginalNoticeRegistration>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual reader registration frontier is unissued"))}
+ fn primitive_registration(&self,_ordinal:usize)->io::Result<super::original_prepared_output::OriginalNoticeRegistration>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual primitive registration frontier is unissued"))}
  fn next_header_token(&mut self)->io::Result<Option<dm_syntax::Token>>;
  fn actual_end(&self)->io::Result<Option<super::original_formal_source::OriginalFormalActualEnd<'_>>>{Ok(None)}
  /// Visit actual producer-owned missing-member recoveries, in parser order.
@@ -27,6 +29,9 @@ pub trait OriginalFormalTokenStream:NativeExpressionTokenDemand{
  fn with_current_source(&self,read:&mut dyn FnMut(&str,TokenWindow<'_>)->io::Result<()>)->io::Result<()>;
 }
 pub trait OriginalPrimaryStreamConsumer:OriginalDeclarationHeaderObserver{
+ /// Requests actual causal loans; this request grants no completion or source authority.
+ fn wants_reader_registrations(&self)->bool{false}
+ fn reader_registration(&mut self,_registration:super::original_prepared_output::OriginalNoticeRegistration)->io::Result<()>{Ok(())}
  /// Opt in only if the receiver can retain the committed item forest directly.
  fn retains_committed_items(&self) -> bool { false }
 

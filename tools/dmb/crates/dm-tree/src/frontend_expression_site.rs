@@ -111,7 +111,7 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
                 statements(body, visit);
             }
             S::ProjectedSet { .. } => (), // exact requested projected modifier was refused above
-            S::Set { value, .. } | S::Throw(value) | S::Call(value) | S::Expression(value) => {
+            S::Set { value, .. } | S::Throw(value) | S::Delete(value) | S::Call(value) | S::Expression(value) => {
                 expression(value, visit)
             }
             S::For { control, body } => {

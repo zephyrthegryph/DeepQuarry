@@ -385,7 +385,8 @@ pub(super) fn parse_for(
         return Some(control);
     }
     let mut parts = split_for_clauses(clause);
-    if parts.len() == 2 {
+    let two_clause=parts.len()==2;
+    if two_clause {
         parts.push("");
     }
     if parts.len() == 1 && parts[0].is_empty() {
@@ -455,7 +456,7 @@ pub(super) fn parse_for(
                 diagnostics,
                 &mut |parsed| {
                     test_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
-                        proof.is_original() && proof.kind() == OriginalSimpleKind::Complete
+                        proof.is_original() && matches!(proof.kind(),OriginalSimpleKind::Complete|OriginalSimpleKind::PrefixCondition)
                     });
                 },
             )?)
@@ -473,7 +474,7 @@ pub(super) fn parse_for(
             )?)
         };
         if (initial_witnessed || initial.is_empty()) && test_witnessed {
-            if let (Some(test), Some(step)) = (&condition, &step) {
+            if let Some(test) = &condition {
                 let initial_end = match &initializer {
                     // Absence is DATA only until the SAME token provider proves
                     // the entire for/open/first-separator prefix below.
@@ -492,6 +493,11 @@ pub(super) fn parse_for(
                     Some(ForInitializer::Declare { value: None, .. }) => None,
                 };
                 if let Some(initial_end) = initial_end {
+                    if two_clause&&step.is_none(){
+                        *original_control=original_two_clause_separator_question(origins.settings,
+                            Span::new(initial_end,test.span.start),Span::new(test.span.end,item.header_span.end),
+                            initializer.is_none(),origins.admission);
+                    }else if let Some(step)=&step{
                     if !step_witnessed {
                         if let ExprKind::Unary { op, value } = &step.kind {
                             step_witnessed = op == "pre++"
@@ -506,6 +512,7 @@ pub(super) fn parse_for(
                         *original_control = original_classic_separator_question(
                             origins.settings, first, second, initializer.is_none(), origins.admission,
                         );
+                    }
                     }
                 }
             }
@@ -522,6 +529,10 @@ pub(super) fn parse_for(
         message: "unsupported for control".into(),
     });
     None
+}
+
+fn original_two_clause_separator_question(provider:Option<&dyn SettingSyntaxProvider>,first:Span,tail:Span,empty:bool,a:Option<&crate::SettingAdmission<'_>>)->bool{
+ match provider.map(|p|p.original_two_clause_for_header(first,tail,empty)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.record_operational_error(actual)}false}}
 }
 
 // Route only the existing same-body separator question. A false/default/missing
@@ -748,7 +759,7 @@ pub(super) fn parse_control_condition_origin(
         start,
         diagnostics,
         &mut |parsed| {
-            let issued = parsed.original_simple_expression.is_some_and(|value| value.kind() == crate::expression_parser::OriginalSimpleKind::Complete);
+            let issued = parsed.original_simple_expression.is_some_and(|value| value.kind() == crate::expression_parser::OriginalSimpleKind::Complete || (value.is_original()&&value.kind()==crate::expression_parser::OriginalSimpleKind::PrefixCondition));
             origins.require_original(issued, Span::new(start, start + clause.len()), "control_condition");
         },
     )?;
@@ -1153,4 +1164,18 @@ fn composed_iterable_data_route_preserves_the_selected_binding_and_in_separator(
   let syntax=crate::parse(&format!("/proc/probe(owner,key,item)\n    {leaf}\n"));
   assert!(crate::parse_proc_body(&syntax.items[0]).original_grammar.is_none());
  }
+}
+
+#[cfg(test)]
+#[test]
+fn two_clause_for_question_defaults_closed_and_preserves_first_actual_io(){
+ struct Deny;impl SettingSyntaxProvider for Deny{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}}
+ struct Fail(std::cell::Cell<usize>);impl SettingSyntaxProvider for Fail{
+  fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+  fn original_two_clause_for_header(&self,first:Span,tail:Span,empty:bool)->std::io::Result<bool>{assert_eq!(first,Span::new(10,20));assert_eq!(tail,Span::new(30,31));assert!(!empty);self.0.set(self.0.get()+1);Err(std::io::Error::from_raw_os_error(1450))}
+ }
+ let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+ assert!(!original_two_clause_separator_question(None,Span::new(10,20),Span::new(30,31),false,Some(&a)));
+ assert!(!original_two_clause_separator_question(Some(&Deny),Span::new(10,20),Span::new(30,31),false,Some(&a)));
+ let fail=Fail(0.into());assert!(!original_two_clause_separator_question(Some(&fail),Span::new(10,20),Span::new(30,31),false,Some(&a)));assert_eq!(fail.0.get(),1);assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),root);
 }

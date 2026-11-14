@@ -757,6 +757,25 @@ impl DeclarationSyntax {
         let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;let headers=recipe.headers.ok_or("actual original formal header owner unavailable")?;let offset=recipe.offset;let rows=headers.formal_notices_for(recipe.relative.span).map_err(str::to_owned)?;
         Ok(rows.map(move|notice|{let text=headers.formal_notice_text(notice).map_err(str::to_owned)?;let current=notice.checked_shift(offset).map_err(|error|error.to_string())?;Ok((current,text))}))
     }
+    pub(crate) fn original_reader_commit_registration(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
+        let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;
+        let headers=recipe.headers.ok_or("actual reader header owner unissued")?;
+        headers.optional_reader_body_commit_registration(recipe.relative.span)
+    }
+    pub(crate) fn original_reader_end_registration(&self)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
+        let mut end:Option<dm_preprocess::regions::OriginalNoticeRegistration>=None;let mut absent=false;
+        for chunk in self.chunks.iter(){
+            let Some(headers)=chunk.relative.original_headers.as_ref() else{absent=true;continue};
+            let Some(current)=headers.optional_reader_end_registration()? else{absent=true;continue};
+            if let Some(previous)=&end{if previous.compare_same_source(&current).map_err(|error|error.to_string())?==std::cmp::Ordering::Greater{return Err("actual reader end registrations are not monotone".into())}}
+            end=Some(current);
+        }
+        if absent&&end.is_some(){return Err("actual reader end registration coverage is partial".into())}Ok(end)
+    }
+    pub(crate) fn original_formal_notice_registration_rows<'a>(&'a self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>,Option<dm_preprocess::regions::OriginalNoticeRegistration>),String>>+'a,String>{
+        let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;let headers=recipe.headers.ok_or("actual original formal header owner unavailable")?;let offset=recipe.offset;let rows=headers.formal_notices_for(recipe.relative.span).map_err(str::to_owned)?;
+        Ok(rows.map(move|notice|{let text=headers.formal_notice_text(notice).map_err(str::to_owned)?;let registration=headers.optional_formal_notice_registration(notice).map_err(str::to_owned)?.cloned();let current=notice.checked_shift(offset).map_err(|error|error.to_string())?;Ok((current,text,registration))}))
+    }
     pub(super) fn requires_admitted_original_header_parameters(
       &self,span:Span,code:&Arc<BodyCodeIdentity>,
     )->Result<bool,BodySyntaxFailure>{

@@ -71,45 +71,8 @@ fn checker_request(root:&Path)->BuildRequest{
  let root=test_scratch::dir("public-original-fatal-class-comma");put(&root,"deepquarry.dme",include_bytes!("../../../fixtures/unified_checks/fatal_declaration_class_comma/project.dme"));let request=checker_request(&root);let mut host=BuildHost::default();let error=dmbc::request_runner::run_build_with_host(request.clone(),&mut host).unwrap_err();let failure=dmbc::request_failure::RequestFailure::from_error(error.as_ref());assert_eq!(failure.kind,dmbc::request_failure::FailureKind::Source,"actual public failure: {failure:?}");assert_eq!(failure.kind.exit_code(),2);assert!(failure.message.contains("got ','"),"{}",failure.message);put(&root,"deepquarry.dme",b"/datum/valid\n    var/value = 1\n");assert!(matches!(dmbc::request_runner::run_build_with_host(request,&mut host).unwrap(),BuildOutcome::QueryPrepared{retained:true,..}));
 }
 
-/// Opt-in transport control. Use the binary Cargo actually built and retire
-/// only this private namespace after the run. Files prevent pipe backpressure
-/// while the caller polls the bounded child.
-struct LibraryTransport<'a>{root:&'a Path,namespace:String}
-impl LibraryTransport<'_>{
- fn run(&self,args:&[&std::ffi::OsStr],timeout:std::time::Duration)->std::io::Result<std::process::Output>{
-  self.run_program(Path::new(env!("CARGO_BIN_EXE_dmbc")),args,timeout)
- }
- fn run_program(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration)->std::io::Result<std::process::Output>{
-  self.run_program_with_trace(program,args,timeout,false)
- }
- fn run_program_with_trace(&self,program:&Path,args:&[&std::ffi::OsStr],timeout:std::time::Duration,trace_original:bool)->std::io::Result<std::process::Output>{
-  use std::{fs::File,io,process::{Command,Stdio},time::Instant};
-  let stdout=self.root.join("transport.stdout");let stderr=self.root.join("transport.stderr");
-  let mut command=Command::new(program);
-  command.args(args).stdin(Stdio::null()).stdout(File::create(&stdout)?).stderr(File::create(&stderr)?)
-   .env("DMB_DAEMON_NAMESPACE",&self.namespace).env("DMB_DAEMON_DIR",self.root.join("daemon"))
-   .env("DMB_DAEMON_AUTOSTART","1").env("DMB_FORWARDED","1")
-   .env("DMB_DAEMON_IDLE_EXIT_SECS","120").env("RAYON_NUM_THREADS","1")
-   .env_remove("DMB_UNIFIED_ANALYSIS").env_remove("DQ_ALLOW_USAGE");
-  if trace_original { command.env("DMB_ORIGINAL_TRACE_STAGES","1"); }
-  #[cfg(windows)]{use std::os::windows::process::CommandExt;command.creation_flags(0x0800_0000|0x0000_4000);}
-  let mut child=command.spawn()?;
-  let start=Instant::now();
-  let status=loop{
-   match child.try_wait(){
-    Ok(Some(status))=>break status,
-    Ok(None)if start.elapsed()<timeout=>std::thread::sleep(std::time::Duration::from_millis(20)),
-    result=>{let _=child.kill();let _=child.wait();return Err(result.err().unwrap_or_else(||io::Error::new(io::ErrorKind::TimedOut,"owned library transport child exceeded its watchdog")));}
-   }
-  };
-  Ok(std::process::Output{status,stdout:std::fs::read(stdout)?,stderr:std::fs::read(stderr)?})
- }
-}
-impl Drop for LibraryTransport<'_>{
- fn drop(&mut self){
-  let _=self.run(&[std::ffi::OsStr::new("--daemon-retire")],std::time::Duration::from_secs(20));
- }
-}
+#[path="../../../shared/test_native_transport.rs"]mod native_transport;
+use native_transport::LibraryTransport;
 
 #[test]
 #[ignore = "private dmbc transport; run outside Cargo with the dm_compile machine slot"]

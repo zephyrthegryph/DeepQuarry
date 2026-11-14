@@ -1574,6 +1574,16 @@ impl SourceSnapshot{
 impl SourceSnapshot{
  /// Only the actually selected Original diagnostic semantic child enters this
  /// producer. Its separate CODE_MAPS_DM EOF remains mandatory at the host.
+ pub(crate) fn with_original_list_macro_fix<T>(&self,inputs:&crate::request_runner::author_fix_capture::Inputs,relative:&str,
+  consume:impl FnOnce(dq_analyze::captured_tracked_fix::ListMacroFixData,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->std::io::Result<T>)->std::io::Result<T>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+  let capture=self.workspace_semantic_inputs(Q::Tracked)?;let guard=self.workspace_native_read()?;
+  let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("native fix current workspace absent"))?;
+  inputs.require_workspace(workspace)?;
+  let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("native fix actual QueryDb absent"))?;
+  let result=queries.with_original_workspace_list_macro_fix(workspace,&guard,capture,relative,consume)?;
+  inputs.require_workspace(workspace)?;Ok(result)
+ }
  pub(crate) fn with_original_tracked_policy<T>(&self,tests:bool,consume:impl FnOnce(&dq_analyze::captured_tracked_pages::TrackedData)->std::io::Result<T>)->std::io::Result<T>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;let question=if tests{Q::TrackedTests}else{Q::Tracked};let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original tracked workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original tracked QueryDb unavailable"))?;queries.with_original_workspace_tracked_guard(workspace,&guard,capture,tests,consume)}
 }
 
@@ -1663,3 +1673,5 @@ impl SourceSnapshot{
   }
  }
 }
+
+#[path="runner_query_schema_proposals.rs"]mod schema_proposals;

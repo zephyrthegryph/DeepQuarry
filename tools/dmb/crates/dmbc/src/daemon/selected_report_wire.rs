@@ -19,6 +19,8 @@ use dq_analyze::selected_exclusions_wire::{
 };
 pub(crate) use dq_analyze::selected_exclusions_wire::Roster;
 
+#[path="schema_report_wire.rs"]mod schema_report;
+pub(crate) use schema_report::{send_schema,receive_schema};
 const FRAGMENT: usize = 8192;
 // At most one frame and fixed-sized decoded fragment live. Numeric-byte JSON
 // can expand a single u8 to four bytes before the enclosing record is counted.
@@ -43,6 +45,7 @@ fn invalid(message: &'static str) -> io::Error {
 #[derive(Clone, Copy)]
 pub(crate) struct Frame(WireFrame);
 impl Frame {
+    pub(crate) fn observation_data(self)->WireFrame {self.0}
     pub(crate) fn from_prepared(prepared: &BuildOutcome) -> io::Result<Self> {
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
             return Err(invalid("selected report requires actual retained Original preparation"));
@@ -265,6 +268,9 @@ enum SendReply<'a> {
     SelectedCompilationFinished(CompoundTerminal),
     NamedImageDirReportFinished(NamedImageDirTerminal),
     NamedImageDirRejected(NamedRejection),
+    FullRegistryCheckFinished(dq_analyze::full_registry_check_wire::Terminal),
+    SchemaProposalsFinished(dq_analyze::schema_proposals_wire::Terminal),
+    CheckerTextFinished(dq_analyze::native_checker_wire::Terminal),
 }
 
 struct FragmentWriter<'a, W> {
@@ -498,6 +504,9 @@ enum ReceiveReply {
     SelectedCompilationFinished(CompoundTerminal),
     NamedImageDirReportFinished(NamedImageDirTerminal),
     NamedImageDirRejected(NamedRejection),
+    FullRegistryCheckFinished(dq_analyze::full_registry_check_wire::Terminal),
+    SchemaProposalsFinished(dq_analyze::schema_proposals_wire::Terminal),
+    CheckerTextFinished(dq_analyze::native_checker_wire::Terminal),
 }
 
 #[derive(Default)]
@@ -832,3 +841,49 @@ fn finish_combined(terminal: CombinedTerminal, diagnostics: Collector, checker: 
 #[cfg(test)]
 #[path = "selected_report_wire_controls.rs"]
 mod wire_controls;
+
+
+/// Report-only full-registry delivery retains the actual preparation ledger.
+/// It has no irreversible source/output mutation, so keep cancellation and the
+/// SAME request deadline active throughout fragments AND final freshness.
+pub(crate) fn send_full_check(stream:&mut impl Write,completed:crate::runner_host::FullRegistryCheckReport,work:&dyn SourceArenaWork)->Result<(),SendFailure>{
+ use dq_analyze::full_registry_check_wire::{Terminal,Schema,Scope};
+ let crate::runner_host::FullRegistryCheckReport{project,inputs,frame,format,clean,diagnostics,report,_credit}=completed;
+ let convert=|error:Box<dyn Error>|match error.downcast::<io::Error>(){Ok(actual)=>*actual,Err(other)=>io::Error::other(other.to_string())};
+ inputs.require_report_current(&project).map_err(convert).map_err(SendFailure::BeforePublication)?;
+ let terminal=Terminal{schema:Schema::V1,complete:true,full_policy_parity:false,scope:Scope::FullRegistry,options:format,frame:frame.observation_data(),clean,diagnostics:diagnostics.as_ref().map(seal_of),report:seal_of(&report)};
+ terminal.require(format).map_err(SendFailure::BeforePublication)?;encode_header(&terminal).map_err(SendFailure::BeforePublication)?;
+ let _scratch=work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
+ let sent=(||{
+  control::checkpoint()?;
+  if let Some(stage)=diagnostics{stage.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Diagnostics,sequence:0,offset:0})?;}
+  report.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Report,sequence:0,offset:0})?;
+  inputs.require_report_current(&project).map_err(convert)?;control::checkpoint()?;
+  protocol::send(stream,&SendReply::FullRegistryCheckFinished(terminal))
+ })();sent.map_err(SendFailure::AfterPublication)
+}
+pub(crate) struct DeliveredFullCheck{terminal:dq_analyze::full_registry_check_wire::Terminal,diagnostics:Option<Verified>,report:Verified}
+impl DeliveredFullCheck{
+ pub(crate) fn publish(self,diagnostics:&mut impl Write,output:&mut impl Write)->io::Result<bool>{
+  let(header,length)=encode_header(&self.terminal)?;
+  if let Some(stage)=self.diagnostics{stage.publish(diagnostics)?;}output.write_all(&header[..length])?;self.report.publish(output)?;Ok(self.terminal.clean)
+ }
+}
+pub(crate) fn receive_full_check(stream:&mut impl Read,cache:&Path,expected:crate::runner_host::FullRegistryCheckOptions)->Result<DeliveredFullCheck,Box<dyn Error>>{
+ let(mut accepted,mut diagnostics,mut report)=(false,Collector::default(),Collector::default());
+ loop{control::checkpoint()?;match protocol::receive_bounded::<ReceiveReply>(stream,protocol::MAX_FRAME)?{
+  ReceiveReply::Accepted if !accepted=>accepted=true,
+  ReceiveReply::Rejected(error) if diagnostics.next==0&&report.next==0=>return Err(RequestFailure{kind:error.kind,message:error.message}.into()),
+  ReceiveReply::SelectedReportFragment(fragment) if accepted=>match fragment.channel{Channel::Diagnostics=>diagnostics.push(cache,&fragment)?,Channel::Report=>report.push(cache,&fragment)?,_=>return Err(invalid("report-only check cannot receive Checker/compile channels").into())},
+  ReceiveReply::FullRegistryCheckFinished(terminal) if accepted=>{
+   terminal.require(expected)?;require_end(stream)?;
+   let diagnostics=diagnostics.finish(terminal.diagnostics)?;
+   let report=report.finish(Some(terminal.report))?.ok_or_else(||invalid("full check terminal has no actual report body"))?;
+   return Ok(DeliveredFullCheck{terminal,diagnostics,report})
+  },
+  _=>return Err(invalid("unexpected full native check report-only frame").into()),
+ }}
+}
+
+#[path="checker_text_wire.rs"]mod checker_text_wire;
+pub(crate) use checker_text_wire::{send_checker_text,receive_checker_text};

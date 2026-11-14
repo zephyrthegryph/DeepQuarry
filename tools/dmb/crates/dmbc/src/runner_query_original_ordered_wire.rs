@@ -12,6 +12,32 @@ use dm_analysis::{
 };
 use std::{io, path::Path};
 
+/// Scope observation from a successful actual ordered traversal. It does not
+/// assert pinned semantic completeness or independent parity.
+#[derive(serde::Serialize)]
+struct ScopeCompletion {
+ scope: &'static str,
+ visited_bodies: usize,
+ completed_phase_order: &'static [&'static str; 7],
+}
+impl ScopeCompletion {
+ fn from_normal(input:&EffectInput,complete:super::CompletedOrderedVisit<'_>)->io::Result<Self>{
+  Ok(Self{scope:"whole_input_current_ordered_producers",visited_bodies:complete.body_count_for(input)?,completed_phase_order:&PHASES})
+ }
+ fn from_compact(input:&EffectInput,complete:crate::query_db::CompletedCompactReport<'_>)->io::Result<Self>{
+  Ok(Self{scope:"whole_input_current_ordered_producers",visited_bodies:complete.body_count_for(input)?,completed_phase_order:&PHASES})
+ }
+ fn tail_bytes(&self)->io::Result<u64>{
+  struct Count(u64);impl io::Write for Count{fn write(&mut self,bytes:&[u8])->io::Result<usize>{self.0=self.0.checked_add(bytes.len()as u64).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"scope completion length overflow"))?;Ok(bytes.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
+  let mut count=Count(0);self.write_tail(&mut count)?;Ok(count.0)
+ }
+ fn write_tail(&self,out:&mut impl io::Write)->io::Result<()>{
+  out.write_all(b"],\"scope_completion\":")?;
+  serde_json::to_writer(&mut *out,self).map_err(io::Error::from)?;
+  out.write_all(b"}\n")
+ }
+}
+
 #[derive(serde::Serialize)]
 struct Row<'a> {
     phase: &'static str,
@@ -198,7 +224,7 @@ impl SourceSnapshot {
             output.write_all(b",\"diagnostics\":[")?;
             let mut first = true;
             let mut clean = true;
-            self.visit_original_cli_diagnostics_in_scope(input, tree, db, scope, |row, severity| {
+            let complete=self.visit_original_cli_diagnostics_in_scope(input, tree, db, scope, |row, severity| {
                 if !first {
                     output.write_all(b",")?;
                 }
@@ -208,7 +234,7 @@ impl SourceSnapshot {
                 clean &= severity > DiagnosticSeverity::Info;
                 Ok(())
             })?;
-            output.write_all(b"]}\n")?;
+            ScopeCompletion::from_normal(input,complete)?.write_tail(output)?;
             Ok(clean)
         })
     }
@@ -292,7 +318,7 @@ impl SourceSnapshot {
                 let _ = io::Write::write_fmt(&mut io::stderr().lock(), format_args!("checker.declarations_done bodies={} elapsed_ms={}\n", input.archive().len(), started.elapsed().as_millis()));
             }
             let tail = RefCell::new(OrderedArray::new(cache)?);
-            let (prelude, body, body_clean) = db.with_archived_compact_report(
+            let (prelude, body, body_clean, complete) = db.with_archived_compact_report_completed(
                 input, scope, width, cache, write_body_diagnostic_row,
                 |findings| {
                     use dm_analysis::checks_keyword_overrides::DEFAULT_SEVERITY;
@@ -312,11 +338,13 @@ impl SourceSnapshot {
             )?;
             let tail = tail.into_inner();
             let clean = declarations.clean && body_clean && tail.clean;
+            let completion=ScopeCompletion::from_compact(input,complete)?;
             let phases = [declarations.seal()?, prelude, body, tail.seal()?];
             let header = self.original_ordered_header(environment, tree, scope)?;
             let prefix = header.strip_suffix(b"}").ok_or_else(|| io::Error::other("invalid ordered checker metadata object"))?;
             let head = b",\"diagnostics\":[";
-            let mut length = (prefix.len()+head.len()+3) as u64;
+            let mut length = (prefix.len()+head.len()) as u64;
+            length=length.checked_add(completion.tail_bytes()?).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"ordered completion length overflow"))?;
             let mut groups = 0u64;
             for phase in &phases {
                 let inner = phase.length().checked_sub(2).ok_or_else(|| io::Error::other("short verified checker phase"))?;
@@ -332,7 +360,7 @@ impl SourceSnapshot {
             output.write_all(head)?;
             let mut first = true;
             for phase in phases { phase.append_array_rows(output, &mut first)?; }
-            output.write_all(b"]}\n")?;
+            completion.write_tail(output)?;
             Ok(clean)
         })
     }

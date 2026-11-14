@@ -256,6 +256,7 @@ pub(crate) struct Hit {
     pub(crate) msg: String,
     pub(crate) rule: u8,
     pub(crate) fix: Option<Fix>,
+    pub(crate) list_macro: bool,
 }
 
 /// Rule indexes (the order of `Meta::rules`).
@@ -603,6 +604,9 @@ fn temporary_peak<C:crate::key_policy_control::Control>(control:&mut C,peak:&mut
 fn declares_local<C:crate::key_policy_control::Control>(line:&str,var:&str,control:&mut C,peak:&mut usize)->Result<bool,C::Error>{if !C::CHECKED{return Ok(Pat::cached(&format!(r"\bvar/(?:[\w/]*/)?{}\b",regex::escape(var))).is_match(line))}temporary_peak(control,peak,||var.len().checked_mul(24)?.checked_add(1024))?;let source=format!(r"\bvar/(?:[\w/]*/)?{}\b",regex::escape(var));let pattern=Pat::try_new(&source).map_err(|_|control.allocation_failed())?;Ok(pattern.is_match(line))}
 fn in_call_args_using<C:crate::key_policy_control::Control>(line:&str,pos:usize,control:&mut C,peak:&mut usize)->Result<bool,C::Error>{temporary_peak(control,peak,||pos.checked_mul(12)?.checked_add(128))?;control.checkpoint()?;Ok(in_call_args(line,pos))}
 pub(crate) fn scan_one_using<C:crate::key_policy_control::Control>(tracked:&Tracked,pats:&Pats,lists:&Tracked,lpats:Option<&ListPats>,f:&SourceFile,named_args:&BTreeSet<(usize,usize)>,control:&mut C,allowed:&mut impl FnMut(usize)->Result<bool,C::Error>)->Result<(Vec<Hit>,Vec<(String,String)>),C::Error>{
+ scan_one_for_fix_using(tracked,pats,lists,lpats,f,named_args,control,allowed,false)
+}
+pub(crate) fn scan_one_for_fix_using<C:crate::key_policy_control::Control>(tracked:&Tracked,pats:&Pats,lists:&Tracked,lpats:Option<&ListPats>,f:&SourceFile,named_args:&BTreeSet<(usize,usize)>,control:&mut C,allowed:&mut impl FnMut(usize)->Result<bool,C::Error>,list_macro_fixes:bool)->Result<(Vec<Hit>,Vec<(String,String)>),C::Error>{
     use crate::key_policy_control as kc;control.checkpoint()?;let make_fixes=!C::CHECKED;let mut temporary_bytes=0;
     let mut hits = Vec::new();
     let mut setters = Vec::new();
@@ -677,7 +681,7 @@ pub(crate) fn scan_one_using<C:crate::key_policy_control::Control>(tracked:&Trac
                     if !allowed(*number)? {
                         let is_list = tracked_base(lists, var, &owner).is_some();
                         let fix = if make_fixes{setter_fix(&clean_lines, &raw_lines, *number, m.start(0), if written_via_src { "src" } else { "" }, var, is_list)}else{None};
-                        let msg=kc::format(control,format_args!("{} written outside {}/proc/set_{}()", var, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_SETTER,fix});
+                        let msg=kc::format(control,format_args!("{} written outside {}/proc/set_{}()", var, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_SETTER,fix,list_macro:false});
                     }
                 }
             }
@@ -696,13 +700,13 @@ pub(crate) fn scan_one_using<C:crate::key_policy_control::Control>(tracked:&Trac
                     if !allowed(*number)? {
                         let is_list = typed.get(holder).and_then(|t| tracked_base(lists, var, t)).is_some();
                         let fix = if make_fixes{setter_fix(&clean_lines, &raw_lines, *number, m.start(0), holder, var, is_list)}else{None};
-                        let msg=kc::format(control,format_args!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_SETTER,fix});
+                        let msg=kc::format(control,format_args!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_SETTER,fix,list_macro:false});
                     }
                 }
             }
             if let Some(lp) = lpats {
                 // In-place edits of a tracked list var: the same holder rules as a write, one pattern per form.
-                let raw_line=if make_fixes{f.raw().text.split('\n').nth(number-1).unwrap_or("")}else{""};
+                let raw_line=if make_fixes||list_macro_fixes{f.raw().line(*number)}else{""};
                 let forms: [(&Pat, &str, usize, usize, usize); 3] = [(&lp.r#macro, "macro", 2, 3, 1), (&lp.method, "method", 1, 2, 3), (&lp.index, "index", 1, 2, 0)];
                 for (pat, kind, holder_group, var_group, form_group) in forms {
                     for m in pat.captures_iter(line) {
@@ -726,9 +730,17 @@ pub(crate) fn scan_one_using<C:crate::key_policy_control::Control>(tracked:&Trac
                             continue;
                         }
                         let form = if form_group == 0 { "" } else { m.s(form_group) };
-                        let fix = if make_fixes{list_fix(line, raw_line, kind, m.start(0), holder, var, form)}else{None};
+                        let list_macro=kind=="macro"&&matches!(form,"LAZYADD"|"LAZYREMOVE"|"LAZYOR"|"LAZYDISTINCTADD"|"LAZYSET"|"LAZYCLEARLIST"|"LAZYNULL");
+                        let fix = if make_fixes{list_fix(line, raw_line, kind, m.start(0), holder, var, form)}else if list_macro_fixes&&list_macro&&statement_prefix_ok(&line[..m.start(0)]) {
+                            // Explicit native edit collection only. Ordinary
+                            // checked lint queries still allocate NO fix buffers.
+                            kc::reserve(control,||kc::split_bound(raw_line.len())?.checked_add(raw_line.len().checked_mul(8)?)?.checked_add(holder.len().checked_mul(4)?)?.checked_add(var.len().checked_mul(4)?)?.checked_add(1024))?;
+                            let fix=list_fix(line,raw_line,kind,m.start(0),holder,var,form).filter(|fix|line.get(fix.end as usize..).is_some_and(|tail|{let tail=tail.trim_start();tail.is_empty()||tail.starts_with(';')}));
+                            control.checkpoint()?;
+                            fix
+                        }else{None};
                         let who = if holder.is_empty(){kc::own(control,var)?}else{kc::format(control,format_args!("{}.{}",holder,var))?};
-                        let msg=kc::format(control,format_args!("{} edited in place ({}) outside {}'s generated add_/remove_/set_{}_at/clear_ procs", who, if form.is_empty() { "[] =" } else { form }, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_LIST,fix});
+                        let msg=kc::format(control,format_args!("{} edited in place ({}) outside {}'s generated add_/remove_/set_{}_at/clear_ procs", who, if form.is_empty() { "[] =" } else { form }, base, var))?;kc::row(control,&mut hits)?;hits.push(Hit{line:*number,msg,rule:RULE_LIST,fix,list_macro});
                     }
                 }
             }
@@ -761,4 +773,78 @@ pub fn metadata(tests:bool)->&'static Meta{if tests{&META_TESTS}else{&META}}
  use super::*;use crate::{captured_generator_budget::Budget,captured_allow_annotations::Operation,reactive_reads_native::Failure};use std::io;
  #[test]fn checked_scanner_real_growth_denial_precedes_late_poll_and_fresh_retry(){let text=format!("/obj/box\n    var/plain\nTRACKED(/obj/box, plain)\n/obj/box/proc/change()\n{}",(0..80).map(|_|"    plain = 2\n").collect::<String>());let source=SourceFile::from_text("code/probe.dm",&text);let mut tracked=Tracked::new();tracked_from_text(&source,&mut tracked);let pats=build_pats(&tracked).unwrap();let small=Budget::new(1024).unwrap();let late=||if small.denied(){Err(io::Error::new(io::ErrorKind::Interrupted,"late tracked control"))}else{Ok(())};let mut control=Operation{budget:&small,poll:&late};captures_admission(&mut control,Some(&pats),None).unwrap();let error=match scan_one_using(&tracked,&pats,&Tracked::new(),None,&source,&BTreeSet::new(),&mut control,&mut|_|Ok(false)){Ok(_)=>panic!("actual tracked row growth must deny"),Err(actual)=>actual};assert!(matches!(error,Failure::Operational(actual)if actual.kind()==io::ErrorKind::OutOfMemory));let fresh=Budget::new(1<<20).unwrap();let poll=||Ok(());let mut control=Operation{budget:&fresh,poll:&poll};captures_admission(&mut control,Some(&pats),None).unwrap();let(hits,_)=scan_one_using(&tracked,&pats,&Tracked::new(),None,&source,&BTreeSet::new(),&mut control,&mut|_|Ok(false)).unwrap();assert_eq!(hits.len(),80);assert!(hits.iter().all(|hit|hit.fix.is_none()),"native findings do not allocate unused rewrite buffers");}
  #[test]fn checked_scanner_returns_actual_first_io_without_reclassification(){let source=SourceFile::from_text("code/probe.dm","TRACKED(/obj/box, plain)\n/obj/box/proc/change()\n    plain = 2\n");let mut tracked=Tracked::new();tracked_from_text(&source,&mut tracked);let pats=build_pats(&tracked).unwrap();let root=Budget::new(1<<20).unwrap();let stop=||Err(io::Error::from_raw_os_error(1450));let result=scan_one_using(&tracked,&pats,&Tracked::new(),None,&source,&BTreeSet::new(),&mut Operation{budget:&root,poll:&stop},&mut|_|Ok(false));assert!(matches!(result,Err(Failure::Operational(ref actual))if actual.raw_os_error()==Some(1450)));}
+}
+
+#[cfg(all(test,feature="native-policy"))]mod native_list_macro_fix_control_tests {
+ use super::*;use crate::{captured_generator_budget::Budget,captured_allow_annotations::Operation,captured_reactive_reads::Failure};
+ fn fixture(body:&str)->(SourceFile,Tracked,Tracked,Pats,ListPats){
+  let source=format!("/obj/box\n    var/list/items\nTRACKED(/obj/box, items)\n/obj/box/proc/change()\n    {body}\n");
+  let file=SourceFile::from_text("code/fix.dm",&source);let mut tracked=Tracked::new();tracked_from_text(&file,&mut tracked);
+  let lists=tracked.clone();let pats=build_pats(&tracked).unwrap();let lpats=build_list_pats(&lists).unwrap();(file,tracked,lists,pats,lpats)
+ }
+ #[test]fn explicit_checked_list_macro_fix_matches_same_legacy_kernel_but_ordinary_lint_still_allocates_no_fix(){
+  for body in ["LAZYADD(items, value)","LAZYADD(src.items, make(a, b))","LAZYADD(items, list(a, b)) // keep","LAZYREMOVE(items, value)","LAZYOR(items, value)","LAZYDISTINCTADD(src.items, list(a, b))","LAZYSET(items, key, value)","LAZYCLEARLIST(items)","LAZYNULL(items)"]{
+   let(file,tracked,lists,pats,lpats)=fixture(body);let old=scan_one(&tracked,&pats,&lists,Some(&lpats),&file,&mut Sink::new(),&BTreeSet::new()).0;
+   let root=Budget::new(1<<20).unwrap();let poll=||Ok(());let mut control=Operation{budget:&root,poll:&poll};
+   let now=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut control,&mut|_|Ok(false),true).unwrap().0;
+   assert_eq!(old.len(),1);assert_eq!(now.len(),1);assert!(now[0].list_macro);let before=old[0].fix.as_ref().unwrap();let after=now[0].fix.as_ref().unwrap();assert_eq!((&before.was,&before.text,before.start,before.end),(&after.was,&after.text,after.start,after.end));
+   let lint=scan_one_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut control,&mut|_|Ok(false)).unwrap().0;
+   assert!(lint.iter().all(|hit|hit.fix.is_none()));
+  }
+ }
+ #[test]fn checked_list_macro_fix_does_not_broaden_other_forms_strings_or_expression_contexts(){
+  let(file,tracked,lists,pats,lpats)=fixture("items.Add(value)");let root=Budget::new(1<<20).unwrap();let poll=||Ok(());let mut c=Operation{budget:&root,poll:&poll};
+  let hits=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut c,&mut|_|Ok(false),true).unwrap().0;
+  assert_eq!(hits.len(),1);assert!(!hits[0].list_macro);assert!(hits[0].fix.is_none());
+  let(file,tracked,lists,pats,lpats)=fixture("var/count = LAZYADD(items, value)");
+  let hits=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut c,&mut|_|Ok(false),true).unwrap().0;
+  assert_eq!(hits.len(),1);assert!(hits[0].list_macro);assert!(hits[0].fix.is_none());
+  let(file,tracked,lists,pats,lpats)=fixture("LAZYADD(items, value) + 1");
+  let hits=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut c,&mut|_|Ok(false),true).unwrap().0;assert_eq!(hits.len(),1);assert!(hits[0].fix.is_none());
+  let(file,tracked,lists,pats,lpats)=fixture(r#"var/text = "LAZYADD(items, value)""#);
+  let hits=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut c,&mut|_|Ok(false),true).unwrap().0;assert!(hits.is_empty());
+ }
+ #[test]fn checked_list_macro_fix_funds_malformed_argument_span_growth_before_legacy_arity_rejection(){
+  let body=format!("LAZYADD(items,{})",",".repeat(1024));let(file,tracked,lists,pats,lpats)=fixture(&body);
+  let root=Budget::new(32768).unwrap();let poll=||Ok(());let actual=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut Operation{budget:&root,poll:&poll},&mut|_|Ok(false),true).err().expect("span growth must be funded before list_fix allocates and rejects arity");
+  assert!(matches!(actual,Failure::Operational(error)if error.kind()==std::io::ErrorKind::OutOfMemory));
+  let root=Budget::new(1<<20).unwrap();let hits=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut Operation{budget:&root,poll:&poll},&mut|_|Ok(false),true).unwrap().0;assert_eq!(hits.len(),1);assert!(hits[0].list_macro);assert!(hits[0].fix.is_none());
+ }
+ #[test]fn checked_list_macro_fix_preserves_first_actual_io_and_denies_before_unfunded_rewrite(){
+  let(file,tracked,lists,pats,lpats)=fixture("LAZYADD(items, value)");
+  let budget=Budget::new(1<<20).unwrap();let first=||Err(std::io::Error::from_raw_os_error(1450));
+  let actual=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut Operation{budget:&budget,poll:&first},&mut|_|Ok(false),true).err().expect("checked native fix must refuse");
+  assert!(matches!(actual,Failure::Operational(error)if error.raw_os_error()==Some(1450)));
+  let tiny=Budget::new(256).unwrap();let poll=||Ok(());
+  let actual=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut Operation{budget:&tiny,poll:&poll},&mut|_|Ok(false),true).err().expect("checked native fix must refuse");
+  assert!(matches!(actual,Failure::Operational(error)if error.kind()==std::io::ErrorKind::OutOfMemory));
+ }
+}
+
+#[cfg(all(test,feature="native-policy"))]mod native_list_macro_additional_controls {
+ use super::*;use crate::{captured_generator_budget::Budget,captured_allow_annotations::Operation};
+ #[test]fn checked_list_macro_fix_denies_value_context_for_each_supported_form(){
+  for call in ["LAZYADD(items, value)","LAZYREMOVE(items, value)","LAZYOR(items, value)","LAZYDISTINCTADD(items, value)","LAZYSET(items, key, value)","LAZYCLEARLIST(items)","LAZYNULL(items)"]{
+   for body in [format!("return {call}"),format!("var/value = {call}"),format!("{call} + 1")]{
+    let source=format!("/obj/box\n    var/list/items\nTRACKED(/obj/box, items)\n/obj/box/proc/change()\n    {body}\n");
+    let file=SourceFile::from_text("code/fix.dm",&source);let mut tracked=Tracked::new();tracked_from_text(&file,&mut tracked);let lists=tracked.clone();let pats=build_pats(&tracked).unwrap();let lpats=build_list_pats(&lists).unwrap();let budget=Budget::new(1<<20).unwrap();let poll=||Ok(());
+    let hits=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut Operation{budget:&budget,poll:&poll},&mut|_|Ok(false),true).unwrap().0;
+    assert_eq!(hits.len(),1,"{body}");assert!(hits[0].list_macro,"{body}");assert!(hits[0].fix.is_none(),"must preserve value-used context: {body}");
+   }
+  }
+ }
+}
+
+#[cfg(all(test,feature="native-policy"))]mod native_list_macro_raw_line_controls {
+ use super::*;use crate::{captured_generator_budget::Budget,captured_allow_annotations::Operation};
+ #[test]fn checked_list_macro_fix_preserves_normalized_crlf_kernel_and_exact_view_line_bytes(){
+  let authored="/obj/box\r\n    var/list/items\r\nTRACKED(/obj/box, items)\r\n/obj/box/proc/change()\r\n    LAZYSET(items, key, value) // keep\r\n";
+  let exact=crate::tree::View::new(authored.to_owned());
+  for (number,split) in authored.split('\n').enumerate(){assert_eq!(exact.line(number+1),split,"indexed view must preserve CR exactly");}
+  let file=SourceFile::from_text("code/fix.dm",authored);assert!(!file.raw().text.contains('\r'),"Analyze source view is universal-newline normalized, not physical byte authority");
+  let mut tracked=Tracked::new();tracked_from_text(&file,&mut tracked);let lists=tracked.clone();let pats=build_pats(&tracked).unwrap();let lpats=build_list_pats(&lists).unwrap();
+  let old=scan_one(&tracked,&pats,&lists,Some(&lpats),&file,&mut Sink::new(),&BTreeSet::new()).0;let budget=Budget::new(1<<20).unwrap();let poll=||Ok(());
+  let actual=scan_one_for_fix_using(&tracked,&pats,&lists,Some(&lpats),&file,&BTreeSet::new(),&mut Operation{budget:&budget,poll:&poll},&mut|_|Ok(false),true).unwrap().0;
+  assert_eq!(old.len(),1);assert_eq!(actual.len(),1);assert_eq!(old[0].fix,actual[0].fix);assert_eq!(actual[0].fix.as_ref().unwrap().text,"set_items_at(key, value)");
+ }
 }

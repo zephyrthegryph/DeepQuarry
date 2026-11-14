@@ -175,6 +175,18 @@ fn main_inner() {
             }
         }
     }
+    if arguments.first().map(String::as_str)==Some("checker-text"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_checker_text_cli(&arguments[1..])}else{Err("profiling compile output is not a standalone Checker request".into())};
+        match result{Ok(code)=>std::process::exit(i32::from(code)),Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
+    }
+    if arguments.first().map(String::as_str)==Some("analyze-schema-proposals"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_schema_proposals_cli(&arguments[1..])}else{Err("profiling compile output is not a schema report request".into())};
+        match result{Ok(())=>return,Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
+    }
+    if arguments.first().map(String::as_str)==Some("analyze-full-check"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_full_registry_check_cli(&arguments[1..])}else{Err("profiling compile output is not a report-only check request".into())};
+        match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");let status=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if status==75{75}else{2})}}
+    }
     if matches!(arguments.first().map(String::as_str), Some("analyze-exclusions" | "analyze-exclusions-v2" | "checker-analyze-selected")) {
         let result = if compile_result.is_none() && arguments.len() == 3 && arguments[2] == "--report-batch" {
             let path = std::path::Path::new(&arguments[1]);

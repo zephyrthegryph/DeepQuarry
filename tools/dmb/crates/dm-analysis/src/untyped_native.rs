@@ -15,6 +15,10 @@ use dm_tree::frontend::{
 use dm_tree::SemanticTree;
 use std::collections::BTreeMap;
 
+#[path = "untyped_native_schema.rs"]
+mod schema_proposal;
+pub use schema_proposal::{SchemaLiteralEvidence, SchemaProposalData, SchemaProposalRow};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Rule {
     Typed,
@@ -152,7 +156,11 @@ fn evidence<'a>(
     evidence_using(body,syntax,scope,values,schemas,exempt_types,&mut LegacyWork)
 }
 fn evidence_using<'a,W:crate::policy_body_demand::WorkspaceWork>(body:PolicyBody<'a>,syntax:&StatementBody,scope:untyped::Walker<'a,dyn Resolver + 'a>,values:&Values<'a>,schemas:&Schemas,exempt_types:&'a[String],work:&mut W)->Result<Vec<Evidence>,W::Error>{
-    struct Scan<'a, 'c, 'w, W:crate::policy_body_demand::WorkspaceWork> {
+    evidence_with_schema_observer_using(body,syntax,scope,values,schemas,exempt_types,work,
+        &mut|_,_,_,_,_|Ok(()))
+}
+fn evidence_with_schema_observer_using<'a,W:crate::policy_body_demand::WorkspaceWork,O:FnMut(SymbolId,SymbolId,&Expr,Span,&mut W)->Result<(),W::Error>>(body:PolicyBody<'a>,syntax:&StatementBody,scope:untyped::Walker<'a,dyn Resolver + 'a>,values:&Values<'a>,schemas:&Schemas,exempt_types:&'a[String],work:&mut W,observe:&mut O)->Result<Vec<Evidence>,W::Error>{
+    struct Scan<'a, 'c, 'w, W:crate::policy_body_demand::WorkspaceWork, O> {
         body: PolicyBody<'a>,
         scope: untyped::Walker<'a, dyn Resolver + 'a>,
         values: &'c Values<'a>,
@@ -160,8 +168,9 @@ fn evidence_using<'a,W:crate::policy_body_demand::WorkspaceWork>(body:PolicyBody
         exempt: &'a [String],
         evidence: Vec<Evidence>,
         work:&'w mut W,
+        observe:&'w mut O,
     }
-    impl<W:crate::policy_body_demand::WorkspaceWork> Scan<'_, '_, '_, W> {
+    impl<W:crate::policy_body_demand::WorkspaceWork,O:FnMut(SymbolId,SymbolId,&Expr,Span,&mut W)->Result<(),W::Error>> Scan<'_, '_, '_, W, O> {
         fn assign(&mut self, target: &Expr, rhs: &Expr, at: Span) -> Result<(), W::Error> {
             self.work.checkpoint()?;
             let name = match &untyped::ungroup_using(target,&mut||self.work.checkpoint())?.kind {
@@ -187,6 +196,7 @@ fn evidence_using<'a,W:crate::policy_body_demand::WorkspaceWork>(body:PolicyBody
             {
                 return Ok(());
             }
+            (self.observe)(owner,name,rhs,at,self.work)?;
             let schema = self.schemas.find_using(self.body.tree(),owner,name,&mut||self.work.checkpoint())?;
             if let Some(kind) = schema.filter(|kind| **kind != Kind::Any) {
                 let mut paths = Vec::new();
@@ -248,6 +258,7 @@ fn evidence_using<'a,W:crate::policy_body_demand::WorkspaceWork>(body:PolicyBody
         exempt: exempt_types,
         evidence: Vec::new(),
         work,
+        observe,
     };
     let observed=crate::untyped_order::try_assignments_current(syntax.view(),&mut scan,&mut|scan|scan.work.checkpoint(),&mut|scan,target,rhs,at,_|scan.assign(target,rhs,at));
     match observed{Ok(())=>Ok(scan.evidence),Err(crate::untyped_order::PolicyVisitFailure::Callback(actual))=>Err(actual),Err(crate::untyped_order::PolicyVisitFailure::Unsupported(message))=>Err(Unsupported(message.into()).into())}
@@ -511,6 +522,37 @@ pub trait CurrentFindingWork: crate::policy_body_demand::WorkspaceWork {
         ) -> Result<(), Self::Error>,
     ) -> Result<(), Self::Error>;
     fn syntax_failure(&mut self, error: BodySyntaxFailure) -> Self::Error;
+}
+
+/// Read-only current-DME proposal DATA over the SAME value proof and current
+/// BODY loans. Host source/config/final-delivery barriers remain mandatory.
+pub fn current_schema_proposals_workspace_using<'a, W: CurrentFindingWork>(
+    archive: &'a BodyArchive, values: &Values<'a>, schemas: &Schemas, root: &std::path::Path,
+    exempt_types: &'a [String], exempt_file: impl Fn(&str) -> bool,
+    project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>, work: &mut W,
+) -> Result<SchemaProposalData, W::Error> {
+    let mut proposals=schema_proposal::Accumulator::default();
+    let findings=workspace_findings_using(archive,values,root,exempt_types,exempt_file,&project,work,
+        |ordinal,occurrence,width,max_path,grouped,project,work|{
+            work.with_current_body(archive,ordinal,|work,body,admission|{
+                if !body.belongs_to(archive)||!std::ptr::eq(body.occurrence(),occurrence){return Err("schema proposal host returned foreign canonical BODY loan".into())}
+                let locals=body.source_locals(admission).map_err(|error|work.syntax_failure(error))?;
+                let current=values.current_body_identity(&body,locals)?;
+                if W::CHECKED{charge_body(occurrence,width,max_path,locals.scope_admission().map_err(Unsupported)?,work)?;}
+                let parameters=body.source_parameters(admission).map_err(|error|work.syntax_failure(error))?;
+                let syntax=body.syntax().canonical_statement_storage();
+                let scope=untyped::scope_from_parameters_using(archive.tree(),occurrence,syntax,values.resolver(),exempt_types,Some(parameters),Some(locals),work)?.with_archive(archive)?;
+                let mut observe=|owner,name,rhs:&Expr,at,work:&mut W|{
+                    let at=body.syntax().projection().span(at).ok_or("schema proposal evidence escapes current BODY projection")?;
+                    body.current_source(at).map_err(|error|work.syntax_failure(error))?;
+                    proposals.observe(owner,name,rhs,work)
+                };
+                let mut rows=evidence_with_schema_observer_using(PolicyBody::Current(archive,current),syntax,scope,values,schemas,exempt_types,work,&mut observe)?;
+                for row in &mut rows{work.checkpoint()?;row.at=body.syntax().projection().span(row.at).ok_or("untyped assignment escapes its canonical body projection")?;body.current_source(row.at).map_err(|error|work.syntax_failure(error))?;}
+                record_body(archive,rows,grouped,root,project,work)
+            })
+        })?;
+    schema_proposal::finish(archive,findings,proposals,root,&project,work)
 }
 
 pub fn current_findings_workspace_using<'a, W: CurrentFindingWork>(

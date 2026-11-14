@@ -4,6 +4,8 @@ use std::{ffi::OsString,io::{self,Read,Write},path::PathBuf,process::{Child,Chil
 // Independent outer watchdog covers process startup, generation handshake,
 // queueing and cleanup. Only dmbc starts/interprets the typed request deadline.
 #[path="native_exclusions.rs"]mod native_exclusions;
+#[path="native_full_check.rs"]mod native_full_check;
+#[path="native_schema_proposals.rs"]mod native_schema_proposals;
 pub fn exclusions_cli(args:&[String])->std::process::ExitCode{native_exclusions::cli(args)}
 pub fn image_dir_cli(args:&[String])->std::process::ExitCode{native_exclusions::image_dir_cli(args)}
 const OUTER_WATCHDOG:Duration=Duration::from_secs(30*60);
@@ -367,6 +369,9 @@ fn run_workspace_check(args: &[String], stdout: &mut impl Write, stderr: &mut im
 /// An explicit opt-in to one resident policy cohort. A recognized opt-in
 /// returns a verdict or a refusal before the legacy engine can start.
 pub fn workspace_check(args: &[String]) -> Option<std::process::ExitCode> {
+    if args.iter().any(|a|a=="--propose-schema")&&args.iter().any(|a|a=="--native-dmbc"||a.starts_with("--native-dmbc=")){return Some(native_schema_proposals::cli(args))}
+    if args.iter().any(|arg|arg=="--native-full-registry"||arg.starts_with("--native-full-registry=")){return Some(native_full_check::cli(args))}
+
     if !args.iter().any(|arg| arg == "--native-dmbc" || arg.starts_with("--native-dmbc=")) {
         return None;
     }
@@ -667,3 +672,6 @@ mod workspace_check_tests {
  #[test]fn thin_client_accepts_only_honest_exclusive_current_or_failed_root_derived_data(){for failed in [false,true]{let bytes=wire(failed);validate_policy(&bytes,1,false).unwrap();assert!(validate_policy(&bytes,0,false).is_err());assert!(validate_policy(&bytes,1,true).is_err());let mut row:serde_json::Value=serde_json::from_slice(&bytes).unwrap();row["lints"]=serde_json::json!(["derived_reads","scheduler"]);assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());row["lints"]=serde_json::json!(["derived_reads"]);row["preparation"]["kind"]="foreign".into();assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).is_err());}assert!(!EXCLUSIVE_TREE_REPORT_NAMES.contains(&"derived_reads"),"no old-schema or default roster promotion");}
  #[test]fn thin_client_report_quota_precedes_decode_and_fresh_operation_recovers_without_reset(){use crate::report_work::Work;let bytes=wire(false);let denied=NativeReportWork::for_buffer(MAX_POLICY_OUTPUT).unwrap();assert_eq!(validate_policy_work(&bytes,1,false,&denied).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert!(denied.checkpoint().is_err());validate_policy(&bytes,1,false).unwrap();}
 }
+
+#[path="native_checker_text.rs"]mod native_checker_text;
+pub fn checker_text_cli(arguments:&[String])->std::process::ExitCode{native_checker_text::cli(arguments)}

@@ -212,40 +212,47 @@ pub(super) enum OriginalDeclarationAndBody<'a>{Declaration(&'a dm_analysis::chec
 pub(super) enum OriginalThroughKeywords<'a>{Source(OriginalDeclarationAndBody<'a>),Keyword{findings:&'a dm_analysis::checks_keyword_overrides::Findings<'a>,row:&'a dm_analysis::checks_keyword_overrides::Finding}}
 pub(super) enum OriginalThroughGraph<'a>{Source(OriginalThroughKeywords<'a>),Graph(&'a dm_analysis::checker_effects::Produced)}
 pub(super) enum OriginalThroughReaderDeclarations<'a>{Declaration(dm_analysis::checks_proc_visibility::Finding<'a>),Semantic(OriginalThroughGraph<'a>)}
+/// Issued only by the final successful whole ordered CLI traversal below.
+/// A BODY receipt by itself cannot stand in for reader/keyword/graph completion.
+struct CompletedOrderedVisit<'a>{body:crate::query_db::CompletedOriginalBodyVisit<'a>}
+impl CompletedOrderedVisit<'_>{
+ fn body_count_for(&self,input:&EffectInput)->std::io::Result<usize>{self.body.body_count_for(input)}
+}
 impl SourceSnapshot{
- fn visit_original_declarations_and_bodies_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalDeclarationAndBody<'_>)->std::io::Result<()>)->std::io::Result<()>{
+ fn visit_original_declarations_and_bodies_in_scope<'a>(&self,input:&'a Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalDeclarationAndBody<'_>)->std::io::Result<()>)->std::io::Result<crate::query_db::CompletedOriginalBodyVisit<'a>>{
   db.with_original_declarations(input,tree,||scope.validate(db,input).map_err(std::io::Error::other),|findings|{for row in findings.rows(){crate::daemon::control::checkpoint()?;consume(OriginalDeclarationAndBody::Declaration(row))?;}Ok(())})?;
-  db.visit_cached_original_diagnostics(input,||scope.validate(db,input).map_err(std::io::Error::other),|ordinal,row|consume(OriginalDeclarationAndBody::Body{ordinal,row}))
+  db.visit_cached_original_diagnostics_completed(input,||scope.validate(db,input).map_err(std::io::Error::other),|ordinal,row|consume(OriginalDeclarationAndBody::Body{ordinal,row}))
  }
- fn visit_original_through_keywords_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughKeywords<'_>)->std::io::Result<()>)->std::io::Result<()>{
-  self.visit_original_declarations_and_bodies_in_scope(input,tree,db,scope,|row|consume(OriginalThroughKeywords::Source(row)))?;
-  db.with_cached_original_keyword_overrides(input,tree,||scope.validate(db,input).map_err(std::io::Error::other),|findings|{if !findings.belongs_to(input.archive()){return Err(std::io::Error::other("keyword finalization result belongs to another archive"))}for row in findings.rows(){crate::daemon::control::checkpoint()?;consume(OriginalThroughKeywords::Keyword{findings,row})?;}Ok(())})
+ fn visit_original_through_keywords_in_scope<'a>(&self,input:&'a Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughKeywords<'_>)->std::io::Result<()>)->std::io::Result<crate::query_db::CompletedOriginalBodyVisit<'a>>{
+  let completion=self.visit_original_declarations_and_bodies_in_scope(input,tree,db,scope,|row|consume(OriginalThroughKeywords::Source(row)))?;
+  db.with_cached_original_keyword_overrides(input,tree,||scope.validate(db,input).map_err(std::io::Error::other),|findings|{if !findings.belongs_to(input.archive()){return Err(std::io::Error::other("keyword finalization result belongs to another archive"))}for row in findings.rows(){crate::daemon::control::checkpoint()?;consume(OriginalThroughKeywords::Keyword{findings,row})?;}Ok(())})?;
+  Ok(completion)
  }
- fn visit_original_through_graph_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughGraph<'_>)->std::io::Result<()>)->std::io::Result<()>{
-  self.visit_original_through_keywords_in_scope(input,tree,db,scope,|row|consume(OriginalThroughGraph::Source(row)))?;
+ fn visit_original_through_graph_in_scope<'a>(&self,input:&'a Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughGraph<'_>)->std::io::Result<()>)->std::io::Result<crate::query_db::CompletedOriginalBodyVisit<'a>>{
+  let completion=self.visit_original_through_keywords_in_scope(input,tree,db,scope,|row|consume(OriginalThroughGraph::Source(row)))?;
   use dm_analysis::checker_effects::{EffectReportPhase,ProducedPhase};let total=input.archive().callables().source_order().len();
   for(phase,issued)in[(EffectReportPhase::Sleep,ProducedPhase::SleepGraph),(EffectReportPhase::Purity,ProducedPhase::PurityGraph)]{
    let mut start=0;while start<total{crate::daemon::control::checkpoint()?;let count=256usize.min(total-start);let rows=db.native_effect_source_report_window(input,scope,32,phase,start,count)?;for row in rows.iter(){crate::daemon::control::checkpoint()?;if row.phase()==issued{consume(OriginalThroughGraph::Graph(row))?;}}drop(rows);scope.validate(db,input).map_err(std::io::Error::other)?;start=start.checked_add(count).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original graph delivery progress overflow"))?;}
   }
-  scope.validate(db,input).map_err(std::io::Error::other)
+  scope.validate(db,input).map_err(std::io::Error::other)?;Ok(completion)
  }
- fn visit_original_through_reader_declarations_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>)->std::io::Result<()>)->std::io::Result<()>{
+ fn visit_original_through_reader_declarations_in_scope<'a>(&self,input:&'a Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>)->std::io::Result<()>)->std::io::Result<crate::query_db::CompletedOriginalBodyVisit<'a>>{
   db.visit_original_reader_declarations(input,||scope.validate(db,input).map_err(std::io::Error::other),|row|consume(OriginalThroughReaderDeclarations::Declaration(row)))?;
   self.visit_original_through_graph_in_scope(input,tree,db,scope,|row|consume(OriginalThroughReaderDeclarations::Semantic(row)))
  }
- pub(super) fn visit_original_declarations_and_bodies(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalDeclarationAndBody<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_declarations_and_bodies_in_scope(input,tree,db,scope,consume))}
- pub(super) fn visit_original_through_keywords(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughKeywords<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_keywords_in_scope(input,tree,db,scope,consume))}
- pub(super) fn visit_original_through_graph(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughGraph<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_graph_in_scope(input,tree,db,scope,consume))}
- pub(super) fn visit_original_through_reader_declarations(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughReaderDeclarations<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,consume))}
+ pub(super) fn visit_original_declarations_and_bodies(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalDeclarationAndBody<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_declarations_and_bodies_in_scope(input,tree,db,scope,consume).map(|_|()))}
+ pub(super) fn visit_original_through_keywords(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughKeywords<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_keywords_in_scope(input,tree,db,scope,consume).map(|_|()))}
+ pub(super) fn visit_original_through_graph(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughGraph<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_graph_in_scope(input,tree,db,scope,consume).map(|_|()))}
+ pub(super) fn visit_original_through_reader_declarations(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughReaderDeclarations<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,consume).map(|_|()))}
  /// Old CLI visibility follows each real producer's registration. Graph rows
  /// already registered their levels; raw context still retains all real Hints.
  pub(super) fn visit_original_cli_diagnostics(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<()>{
   let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|{
-   self.visit_original_cli_diagnostics_in_scope(input,tree,db,scope,consume)
+   self.visit_original_cli_diagnostics_in_scope(input,tree,db,scope,consume).map(|_|())
   })
  }
- fn visit_original_cli_diagnostics_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<()> {
-   self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,|row|{use dm_analysis::check_policy::DiagnosticSeverity as S;let level=match &row{
+ fn visit_original_cli_diagnostics_in_scope<'a>(&self,input:&'a Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<CompletedOrderedVisit<'a>> {
+   let completion=self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,|row|{use dm_analysis::check_policy::DiagnosticSeverity as S;let level=match &row{
     OriginalThroughReaderDeclarations::Declaration(finding)=>scope.policy().register(finding.registration_tag(),finding.original_fixed_level().ok_or_else(||std::io::Error::other("original reader diagnostic lacks genuine default severity"))?),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Declaration(finding))))=>scope.policy().register(finding.registration_tag(),finding.default_severity()),
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Body{row,..})))=>scope.policy().register(row.registration_tag(),row.default_level()),
@@ -254,7 +261,7 @@ impl SourceSnapshot{
      scope.policy().register(Some(REGISTRATION_TAG),DEFAULT_SEVERITY)
     },
     OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Graph(row))=>Some(row.severity),
-   };if let Some(level)=level.filter(|level|*level<=S::Info){consume(row,level)?;}Ok(())})?;scope.validate(db,input).map_err(std::io::Error::other)
+   };if let Some(level)=level.filter(|level|*level<=S::Info){consume(row,level)?;}Ok(())})?;scope.validate(db,input).map_err(std::io::Error::other)?;Ok(CompletedOrderedVisit{body:completion})
  }
 }
 
@@ -345,3 +352,5 @@ impl SourceSnapshot{
   let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.visit_current_selected_diagnostics(input,scope,ordinal,consume))
  }
 }
+
+#[path="runner_query_original_checker_cli.rs"]mod original_checker_cli;

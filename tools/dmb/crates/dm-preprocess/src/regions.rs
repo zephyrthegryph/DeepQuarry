@@ -456,6 +456,7 @@ pub use origin_raw_rows::visit_physical_original_token_page_storage;
 mod original_output_trace;
 
 mod original_prepared_output;
+pub use original_prepared_output::{OriginalNoticeRegistration,OriginalReaderRegistrationTable};
 mod original_final_output;
 
 mod original_formal_source;

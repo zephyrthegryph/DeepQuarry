@@ -285,6 +285,7 @@ impl HeapCensus {
                             pending.extend([Node::Expr(target), Node::Expr(value)]);
                         }
                         StatementKind::Throw(value)
+                        | StatementKind::Delete(value)
                         | StatementKind::Call(value)
                         | StatementKind::Expression(value) => pending.push(Node::Expr(value)),
                         StatementKind::Break

@@ -1137,6 +1137,30 @@ impl InputSnapshot {
     pub fn files(&self) -> impl Iterator<Item = &FileInput> {
         self.files.values()
     }
+    /// DATA equality with actually recorded bytes/stamp, not a fresh restamp.
+    /// Original opened payloads may intentionally be outside ordinary files().
+    pub(crate) fn authored_recorded_preimage(&self,path:&Path)->io::Result<(Stamp,u128)>{
+        self.check_structure()?;
+        let ordinary=self.files.get(path);
+        let original=self.original_payloads.get_ref(path);
+        if let Some(payload)=original {
+            if self.opened_reads.get(path).is_none_or(|status|!status.is_readable()){
+                return Err(invalid("fix Original preimage lacks genuine readable open evidence"))
+            }
+            if ordinary.is_some_and(|other|other.content!=payload.content||other.stamp!=payload.stamp){return Err(invalid("fix ordinary/Original recorded stamp or contents disagree"))}
+        }
+        let(stamp,content)=match(original,ordinary){
+            (Some(actual),_)=>(actual.stamp.clone(),actual.content),
+            (None,Some(actual))=>(actual.stamp.clone(),actual.content),
+            (None,None)=>return Err(invalid("fix target was not actually read by native preparation")),
+        };
+        Ok((stamp,content))
+    }
+    pub(crate) fn authored_preimage_stamp(&self,path:&Path,preimage:&[u8])->io::Result<Stamp>{
+        let(stamp,content)=self.authored_recorded_preimage(path)?;
+        if stamp.size!=preimage.len()as u64||content!=xxhash_rust::xxh3::xxh3_128(preimage){return Err(invalid("fix preimage differs from actual native captured payload"))}
+        Ok(stamp)
+    }
     /// Select a payload-free asset proof domain. Search membership and negative
     /// candidates are retained because they qualify source-path shadowing.
     pub fn select_files(&self, selected: &BTreeSet<PathBuf>) -> io::Result<Self> {

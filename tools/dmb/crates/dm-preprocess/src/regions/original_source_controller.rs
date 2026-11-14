@@ -59,6 +59,7 @@ impl State{
 }
 pub(super) struct NoticeSink(pub(super) Shared);
 impl OriginalRawNoticeSink for NoticeSink{
+ fn before_logical_pull(&mut self,registration:super::original_prepared_output::OriginalNoticeRegistration,a:&SettingAdmission<'_>)->io::Result<()>{self.0.borrow_mut().notices.before_logical_pull(registration,a)}
  fn condition_identifier_recovery(&mut self,at:Origin,value:Option<dm_syntax::OriginalTokenValue<&str>>,a:&SettingAdmission<'_>)->io::Result<()>{self.0.borrow_mut().notices.condition_identifier_recovery(at,value,a)}
 
  fn condition_primitive(&mut self,at:Origin,kind:dm_syntax::OriginalInputNoticeKind,value:dm_syntax::OriginalTokenValue<&str>,a:&SettingAdmission<'_>)->io::Result<()>{self.0.borrow_mut().notices.condition_primitive(at,kind,value,a)}

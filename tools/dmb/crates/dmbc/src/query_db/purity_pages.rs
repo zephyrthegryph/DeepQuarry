@@ -204,17 +204,39 @@ impl QueryDb{pub(crate) fn with_cached_original_keyword_overrides(&self,input:&A
  let pending=dm_analysis::checks_keyword_overrides::with_cached_body_uses(input,resolver,&admission,&mut work,&validate,&mut obtain,|findings|{current().map_err(PolicyFailure::Operational)?;consume(findings).map_err(PolicyFailure::Operational)});if let Err(PolicyFailure::Operational(actual))=pending{return Err(actual)}current()?;validate()?;pending.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(message)=>std::io::Error::other(message.0)})
 }}
 
+/// Borrowed observation of BOTH successful archived-order passes. Private
+/// fields prevent a caller from substituting requested counts for visitation.
+/// This is not all-family coverage or an independent parity certificate.
+pub(crate) struct CompletedOriginalBodyVisit<'a> {
+ input: &'a EffectInput,
+ visits: [usize; 2],
+}
+impl CompletedOriginalBodyVisit<'_> {
+ pub(crate) fn body_count_for(&self, input: &EffectInput) -> std::io::Result<usize> {
+  if !std::ptr::eq(self.input, input) || self.visits != [input.archive().len(); 2] {
+   return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
+    "completed BODY visit belongs to another input or is incomplete"));
+  }
+  Ok(self.visits[0])
+ }
+}
+
 impl QueryDb{
  // Unique direct lookup of the SAME actual BODY key, also used by PAGE jobs.
  // Caller owns the existing purity gate and the genuine operation admission.
  fn cached_original_body(&self,input:&Arc<EffectInput>,sources:&Arc<Vec<Key>>,admission:&ExecutionAdmission,ordinal:usize)->Result<Arc<Result<Arc<BodyEffects>,String>>,dm_analysis::policy_body_demand::PolicyFailure>{
   use dm_analysis::policy_body_demand::PolicyFailure;input.require_original_checker_source()?;let actual=key(BODY,input,ordinal as u128);let extra=ExecutionAdmission::fixed_control_charge();let size=std::mem::size_of::<Params>().checked_add(extra).ok_or("cached original BODY parameter backing overflow")?;let _reserved=node_admission(&self.purity.ledger,input,actual,size).map_err(|message|PolicyFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;let params=Arc::new(Params{input:Arc::downgrade(input),key:actual,ordinal,sources:Arc::clone(sources),policy:Weak::new(),body_admission:Some(admission.downgrade_for_job())});remember_params_with_backing(&self.purity.ledger,input,actual,&params,extra);self.db.get::<Result<Arc<BodyEffects>,String>>(actual,params).map_err(|error|PolicyFailure::Operational(restore_graph_error(&self.purity.ledger,error)))
  }
- pub(crate) fn visit_cached_original_diagnostics(&self,input:&Arc<EffectInput>,mut current:impl FnMut()->std::io::Result<()>,mut consume:impl FnMut(usize,&dm_analysis::checker_effects::OriginalBodyDiagnostic)->std::io::Result<()>)->std::io::Result<()>{
+ pub(crate) fn visit_cached_original_diagnostics(&self,input:&Arc<EffectInput>,current:impl FnMut()->std::io::Result<()>,consume:impl FnMut(usize,&dm_analysis::checker_effects::OriginalBodyDiagnostic)->std::io::Result<()>)->std::io::Result<()>{
+  self.visit_cached_original_diagnostics_completed(input,current,consume).map(|_|())
+ }
+ pub(crate) fn visit_cached_original_diagnostics_completed<'a>(&self,input:&'a Arc<EffectInput>,mut current:impl FnMut()->std::io::Result<()>,mut consume:impl FnMut(usize,&dm_analysis::checker_effects::OriginalBodyDiagnostic)->std::io::Result<()>)->std::io::Result<CompletedOriginalBodyVisit<'a>>{
   use dm_analysis::{policy_body_demand::PolicyFailure,checker_effects::OriginalDiagnosticPhase};current()?;crate::daemon::control::checkpoint()?;input.require_original_checker_source().map_err(std::io::Error::other)?;input.validate_current(input.archive(),self).map_err(std::io::Error::other)?;self.prune_purity();let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());{let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
   let sources=self.purity_sources(input).map_err(std::io::Error::other)?;let validate=||->std::io::Result<()>{crate::daemon::control::checkpoint()?;input.require_original_checker_source().map_err(std::io::Error::other)?;input.validate_current(input.archive(),self).map_err(std::io::Error::other)};validate()?;let mut work=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),Key::new(PAGE,input.archive().tree().identity()));work.reserve(ExecutionAdmission::fixed_control_charge())?;let admission=page_execution_admission(&self.purity.ledger).map_err(|message|std::io::Error::new(std::io::ErrorKind::OutOfMemory,message))?;
-  let pending=dm_analysis::checker_order::with_archived_order_using(input.archive(),&admission,&mut work,&validate,|order,_work|{for phase in [OriginalDiagnosticPhase::Prelude,OriginalDiagnosticPhase::Body]{for rank in 0..order.len(){validate().map_err(PolicyFailure::Operational)?;let ordinal=order.ordinal(rank).ok_or("original checker order omitted body ordinal")?;let value=self.cached_original_body(input,&sources,&admission,ordinal)?;let body=value.as_ref().as_ref().map_err(|message|PolicyFailure::from(message.clone()))?;body.with_original_diagnostics(input,|rows|{for row in rows.iter().filter(|row|row.phase()==phase){validate().map_err(PolicyFailure::Operational)?;consume(ordinal,row).map_err(PolicyFailure::Operational)?;}Ok::<(),PolicyFailure>(())})??;}}Ok(())});
-  if let Err(PolicyFailure::Operational(actual))=pending{return Err(actual)}current()?;validate()?;pending.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(message)=>std::io::Error::other(message.0)})
+  let mut visits=[0usize;2];
+  let pending=dm_analysis::checker_order::with_archived_order_using(input.archive(),&admission,&mut work,&validate,|order,_work|{if order.len()!=input.archive().len(){return Err(PolicyFailure::from("original checker order omits requested input bodies"))}for(phase_index,phase)in [OriginalDiagnosticPhase::Prelude,OriginalDiagnosticPhase::Body].into_iter().enumerate(){for rank in 0..order.len(){validate().map_err(PolicyFailure::Operational)?;let ordinal=order.ordinal(rank).ok_or("original checker order omitted body ordinal")?;let value=self.cached_original_body(input,&sources,&admission,ordinal)?;let body=value.as_ref().as_ref().map_err(|message|PolicyFailure::from(message.clone()))?;body.with_original_diagnostics(input,|rows|{for row in rows.iter().filter(|row|row.phase()==phase){validate().map_err(PolicyFailure::Operational)?;consume(ordinal,row).map_err(PolicyFailure::Operational)?;}Ok::<(),PolicyFailure>(())})??;visits[phase_index]=visits[phase_index].checked_add(1).ok_or("original BODY visit count overflow")?;}}Ok(())});
+  if let Err(PolicyFailure::Operational(actual))=pending{return Err(actual)}current()?;validate()?;pending.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(message)=>std::io::Error::other(message.0)})?;
+  let completed=CompletedOriginalBodyVisit{input:input.as_ref(),visits};completed.body_count_for(input.as_ref())?;Ok(completed)
  }
 }
 

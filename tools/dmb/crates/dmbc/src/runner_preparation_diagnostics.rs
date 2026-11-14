@@ -10,7 +10,7 @@ pub(crate) struct PreparedCheckerTranscript {
 }
 
 enum Destination<'a>{Writer(&'a mut dyn Write),ReportStage(&'a mut crate::selected_report_spool::Stage)}
-pub(crate) struct PreparationDiagnosticOutput<'a>{destination:Destination<'a>,checker:Option<&'a mut crate::selected_report_spool::Stage>,checker_frame:Option<PreparedCheckerTranscript>,compact_checker_cache:Option<&'a std::path::Path>,joined:Option<&'a mut Option<super::runner_freshness::JoinedSelectedInputs>>,first:Option<io::Error>,capture:bool,library_sites:bool,full_ci:bool}
+pub(crate) struct PreparationDiagnosticOutput<'a>{destination:Destination<'a>,checker:Option<&'a mut crate::selected_report_spool::Stage>,checker_frame:Option<PreparedCheckerTranscript>,compact_checker_cache:Option<&'a std::path::Path>,joined:Option<&'a mut Option<super::runner_freshness::JoinedSelectedInputs>>,author_fix:Option<&'a mut Option<super::author_fix_capture::Inputs>>,checker_inputs:Option<&'a mut Option<super::checker_capture::Inputs>>,schema:Option<&'a mut Option<super::schema_capture::Inputs>>,first:Option<io::Error>,capture:bool,library_sites:bool,full_ci:bool}
 struct Guarded<'a>{writer:&'a mut dyn Write,first:Option<io::Error>}
 impl Write for Guarded<'_>{
  fn write(&mut self,b:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::ErrorKind::Other.into())}match self.writer.write(b){Ok(n)=>Ok(n),Err(actual)=>{self.first=Some(actual);Err(io::ErrorKind::Other.into())}}}
@@ -40,11 +40,11 @@ mod selected_attempt_controls {
     }
 }
 impl<'a> PreparationDiagnosticOutput<'a>{
- pub(crate) fn immediate(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:false,library_sites:false,full_ci:false}}
- pub(crate) fn captured(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false,full_ci:false}}
- pub(crate) fn selected_report(stage:&'a mut crate::selected_report_spool::Stage)->Self{Self{destination:Destination::ReportStage(stage),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false,full_ci:false}}
+ pub(crate) fn immediate(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,checker_inputs:None,author_fix:None,schema:None,first:None,capture:false,library_sites:false,full_ci:false}}
+ pub(crate) fn captured(writer:&'a mut dyn Write)->Self{Self{destination:Destination::Writer(writer),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,checker_inputs:None,author_fix:None,schema:None,first:None,capture:true,library_sites:false,full_ci:false}}
+ pub(crate) fn selected_report(stage:&'a mut crate::selected_report_spool::Stage)->Self{Self{destination:Destination::ReportStage(stage),checker:None,checker_frame:None,compact_checker_cache:None,joined:None,checker_inputs:None,author_fix:None,schema:None,first:None,capture:true,library_sites:false,full_ci:false}}
  pub(crate) fn selected_combined(stage:&'a mut crate::selected_report_spool::Stage,checker:&'a mut crate::selected_report_spool::Stage)->Self{
-  Self{destination:Destination::ReportStage(stage),checker:Some(checker),checker_frame:None,compact_checker_cache:None,joined:None,first:None,capture:true,library_sites:false,full_ci:false}
+  Self{destination:Destination::ReportStage(stage),checker:Some(checker),checker_frame:None,compact_checker_cache:None,joined:None,checker_inputs:None,author_fix:None,schema:None,first:None,capture:true,library_sites:false,full_ci:false}
  }
  pub(super) fn require_library_sites_baseline(&mut self) -> io::Result<()> {
   if !self.is_selected_report() || self.needs_combined_checker() {
@@ -75,9 +75,19 @@ impl<'a> PreparationDiagnosticOutput<'a>{
   self.joined = Some(slot);
  }
  pub(super) fn wants_joined_inputs(&self) -> bool { self.joined.is_some() }
+ pub(super) fn retain_checker_inputs(&mut self,slot:&'a mut Option<super::checker_capture::Inputs>){self.checker_inputs=Some(slot);}
+ pub(super) fn retain_author_fix_inputs(&mut self,slot:&'a mut Option<super::author_fix_capture::Inputs>){self.author_fix=Some(slot);}
+ pub(super) fn wants_author_fix_inputs(&self)->bool{self.author_fix.is_some()}
+ pub(super) fn record_author_fix_inputs(&mut self,value:Option<super::author_fix_capture::Inputs>){if let Some(slot)=self.author_fix.as_deref_mut(){*slot=value;}}
+ pub(super) fn wants_checker_inputs(&self)->bool{self.checker_inputs.is_some()}
+ pub(super) fn record_checker_inputs(&mut self,value:Option<super::checker_capture::Inputs>){if let Some(slot)=self.checker_inputs.as_deref_mut(){*slot=value;}}
+
  pub(super) fn record_joined_inputs(&mut self, pending: Option<super::runner_freshness::JoinedSelectedInputs>) {
   if let Some(slot) = self.joined.as_deref_mut() { *slot = pending; }
  }
+ pub(super) fn retain_schema_inputs(&mut self,slot:&'a mut Option<super::schema_capture::Inputs>){self.schema=Some(slot)}
+ pub(super) fn wants_schema_inputs(&self)->bool{self.schema.is_some()}
+ pub(super) fn record_schema_inputs(&mut self,inputs:super::schema_capture::Inputs){if let Some(slot)=self.schema.as_deref_mut(){*slot=Some(inputs)}}
  pub(crate) fn needs_combined_checker(&self)->bool{self.checker.is_some()}
  pub(crate) fn is_selected_report(&self)->bool{matches!(&self.destination,Destination::ReportStage(_))}
  pub(crate) fn emit_combined_checker(&mut self,run:impl FnOnce(&mut crate::selected_report_spool::Stage)->io::Result<PreparedCheckerTranscript>)->io::Result<()>{
@@ -89,12 +99,14 @@ impl<'a> PreparationDiagnosticOutput<'a>{
  }
  pub(crate) fn take_checker_frame(&mut self)->Option<PreparedCheckerTranscript>{self.checker_frame.take()}
  pub(crate) fn start_attempt(&mut self)->io::Result<()>{
+  self.record_checker_inputs(None);
+  self.record_author_fix_inputs(None);
   let Destination::ReportStage(stage)=&mut self.destination else{return Ok(())};
   if let Some(error)=self.first.take(){return Err(error)}
   stage.restart_attempt()?;
   if let Some(checker)=self.checker.as_deref_mut(){checker.restart_attempt()?;}
   self.checker_frame=None;
-  self.record_joined_inputs(None);
+  self.record_joined_inputs(None);if let Some(slot)=self.schema.as_deref_mut(){*slot=None;}
   Ok(())
  }
  pub(crate) fn take_error(&mut self)->Option<io::Error>{self.first.take()}

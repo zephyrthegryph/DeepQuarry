@@ -382,7 +382,10 @@ pub(crate) fn root_storage_envelope() -> usize {
 struct Root {
     expression: Expr,
     // LAST: original child allocations/anchors drop before this root alias.
-    retention: Option<SharedSettingRetention>,
+    retention: SharedSettingRetention,
+}
+impl Root{
+ fn retention(&self)->Option<&SharedSettingRetention>{self.retention.owner.as_ref().map(|_|&self.retention)}
 }
 impl Drop for Root {
     fn drop(&mut self) {
@@ -393,7 +396,8 @@ impl Drop for Root {
                 span: crate::Span::new(0, 0),
             },
         );
-        crate::setting_drop::drop_expression(expression, self.retention.take());
+        let retention=self.retention.owner.take().map(|owner|SharedSettingRetention{owner:Some(owner)});
+        crate::setting_drop::drop_expression(expression,retention);
     }
 }
 /// Sealed no-Weak root handle. Equality/debug inspect syntax only; neither is an
@@ -410,7 +414,7 @@ impl SettingExpression {
         Self {
             root: Some(Arc::new(Root {
                 expression,
-                retention: None,
+                retention: SharedSettingRetention{owner:None},
             })),
             current_offset: 0,
             source_extent,
@@ -424,7 +428,7 @@ impl SettingExpression {
         Self {
             root: Some(Arc::new(Root {
                 expression,
-                retention: Some(retention),
+                retention,
             })),
             current_offset: 0,
             source_extent,
@@ -476,16 +480,14 @@ impl SettingExpression {
     }
     pub fn retained_charge(&self) -> Option<usize> {
         self.payload()
-            .retention
-            .as_ref()
+            .retention()
             .map(SharedSettingRetention::bytes)
     }
     /// Storage-domain check only. Exact current source/body/metadata authority
     /// must already be established by the declaration owner before slot lookup.
     pub fn is_retained_in(&self, admission: &SettingAdmission<'_>) -> bool {
         self.payload()
-            .retention
-            .as_ref()
+            .retention()
             .is_some_and(|owner| owner.is_admitted_by(admission))
     }
     /// Actual stable allocation identity plus payload bytes; the caller's census
@@ -500,7 +502,7 @@ impl SettingExpression {
     /// Borrow retained quota-counter storage for the existing address census.
     /// This reveals no Arc alias and is never a budget/source authority token.
     pub fn visit_retention_storage(&self, mut visit: impl FnMut(usize, usize)) {
-        if let Some(owner) = &self.payload().retention {
+        if let Some(owner) = self.payload().retention() {
             owner.visit_storage(&mut visit);
         }
     }
@@ -701,4 +703,22 @@ mod evaluation_frame_tests {
  use super::*;
  #[test]fn actual_split_and_absorb_transfer_without_changing_counter_and_drop_tracks_each_live_payload(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4096,&||Ok(()));let mut parent=a.reserve(1000).unwrap();let mut child=a.split(&mut parent,400).unwrap();assert_eq!((parent.bytes(),child.bytes(),used.load(Ordering::Acquire)),(600,400,crate::SettingChargeCounter::root_allocation_bytes() + (1000)));a.absorb(&mut parent,&mut child).unwrap();assert_eq!((parent.bytes(),child.bytes(),used.load(Ordering::Acquire)),(1000,0,crate::SettingChargeCounter::root_allocation_bytes() + (1000)));let child=a.split(&mut parent,700).unwrap();drop(parent);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes() + (700));drop(child);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
  #[test]fn split_first_io_foreign_overdraw_and_lower_limit_leave_parent_and_counter_intact(){let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let other=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let good=SettingAdmission::new(&used,4096,&||Ok(()));let mut parent=good.reserve(1000).unwrap();let fault=||Err(std::io::Error::from_raw_os_error(1450));let fail=SettingAdmission::new(&used,4096,&fault);assert_eq!(fail.split(&mut parent,100).err().unwrap().raw_os_error(),Some(1450));assert_eq!((parent.bytes(),used.load(Ordering::Acquire)),(1000,crate::SettingChargeCounter::root_allocation_bytes() + (1000)));let foreign=SettingAdmission::new(&other,4096,&||Ok(()));assert_eq!(foreign.split(&mut parent,100).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(good.split(&mut parent,1001).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);let low=SettingAdmission::new(&used,crate::SettingChargeCounter::root_allocation_bytes() + (500),&||Ok(()));assert_eq!(low.split(&mut parent,100).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!((parent.bytes(),used.load(Ordering::Acquire),other.load(Ordering::Acquire)),(1000,crate::SettingChargeCounter::root_allocation_bytes() + (1000),crate::SettingChargeCounter::root_allocation_bytes()));let fresh=SettingAdmission::new(&used,4096,&||Ok(()));drop(fresh.split(&mut parent,100).unwrap());assert_eq!((parent.bytes(),used.load(Ordering::Acquire)),(900,crate::SettingChargeCounter::root_allocation_bytes() + (900)));drop(parent);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());}
+}
+
+#[cfg(test)]mod compact_root_retention_controls{
+ use super::*;
+ struct PriorRootShape{expression:Expr,retention:Option<SharedSettingRetention>}
+ #[test]fn compact_private_root_retention_reduces_actual_owner_size_and_admission_envelope(){
+  let prior=std::mem::size_of::<PriorRootShape>();let current=std::mem::size_of::<Root>();
+  eprintln!("SETTING_ROOT_COMPACTION prior={prior} current={current} saved={} envelope={}",prior.saturating_sub(current),root_storage_envelope());
+  assert!(current<prior,"the actual owner, not a quota-only declaration, must become smaller");
+  assert_eq!(root_storage_envelope(),current+std::mem::size_of::<Retention>()+4*std::mem::size_of::<usize>());
+ }
+ #[test]fn compact_private_root_retention_keeps_absence_alias_domain_and_last_drop_refund(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4096,&||Ok(()));
+  let expression=||Expr{kind:crate::ExprKind::Ident(String::new()),span:crate::Span::new(0,0)};
+  let plain=SettingExpression::compatibility(expression());assert_eq!(plain.retained_charge(),None);assert!(!plain.is_retained_in(&a));let mut visits=0;plain.visit_retention_storage(|_,_|visits+=1);assert_eq!(visits,0);drop(plain);
+  let root=SettingExpression::retained(expression(),a.reserve(512).unwrap());let alias=root.clone();let baseline=crate::SettingChargeCounter::root_allocation_bytes();
+  assert!(root.same_root(&alias));assert_eq!(root.retained_charge(),Some(512));assert!(root.is_retained_in(&a));drop(root);assert_eq!(used.load(Ordering::Acquire),baseline+512);drop(alias);assert_eq!(used.load(Ordering::Acquire),baseline);
+ }
 }

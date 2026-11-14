@@ -378,6 +378,7 @@ impl<V: TypedVisitor> Walk<'_, V> {
             }
             StatementKind::Label { body, .. } => self.branch(0, body, statement),
             StatementKind::Throw(value)
+            | StatementKind::Delete(value)
             | StatementKind::Call(value)
             | StatementKind::Expression(value) => self.root_expression(0, value),
             StatementKind::Return(value) | StatementKind::Var { value, .. } => {

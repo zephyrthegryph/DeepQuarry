@@ -646,6 +646,7 @@ impl PolicyWalk<'_> {
                 self.walk(catch_body, emit);
             }
             StatementKind::Throw(value)
+            | StatementKind::Delete(value)
             | StatementKind::Call(value)
             | StatementKind::Expression(value) => expression(value, at, emit),
             StatementKind::Return(Some(value))=>expression(value,at,emit),

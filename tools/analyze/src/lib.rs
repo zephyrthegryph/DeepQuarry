@@ -8,7 +8,7 @@
 #[cfg(test)]
 extern crate self as dq_analyze;
 
-pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire};
+pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire, full_registry_check_wire, schema_proposals_wire};
 pub mod allow;
 #[cfg(feature = "legacy-sem")]
 pub mod base_vars_dead;
@@ -329,6 +329,7 @@ mod test_scratch;
 pub mod tracked_policy;
 #[cfg(feature="native-policy")]mod tracked_named_arguments_native;
 #[cfg(feature="native-policy")]pub mod captured_tracked_pages;
+#[cfg(feature="native-policy")]pub mod captured_tracked_fix;
 
 #[cfg(all(test,feature="legacy-sem"))]mod tracked_policy_tests;
 
@@ -584,3 +585,5 @@ mod client_producer_contract_tests {
         }
     }
 }
+
+pub use dq_analyze_client::native_checker_wire;

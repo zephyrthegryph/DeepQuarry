@@ -346,7 +346,7 @@ pub(crate) fn check_issued_statement_body_using<E:From<String>+From<&'static str
                 }
                 break;
             }
-            StatementKind::Throw(value) => expression(value)?,
+            StatementKind::Throw(value) | StatementKind::Delete(value) => expression(value)?,
             StatementKind::Goto(_) => (), // pinned checker does not terminate
             _ => {
                 return Err(

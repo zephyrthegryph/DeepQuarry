@@ -77,6 +77,33 @@ impl WorkerContext {
         check_running(&self.token, self.deadline.is_some_and(|deadline| now() >= deadline))
     }
 
+    /// Reuse this same request's prepublication checkpoint context for bounded
+    /// post-install observational work. Restore the exact outer publication
+    /// binding on success, first error or unwind; never reset its deadline.
+    pub(crate) fn with_checkpoint_context<T,E:From<std::io::Error>>(
+        &self,run:impl FnOnce()->Result<T,E>,
+    )->Result<T,E> {
+        struct Restore(Option<(Cancellation,bool,Option<Instant>)>);
+        impl Drop for Restore {
+            fn drop(&mut self){ACTIVE.with(|active|*active.borrow_mut()=self.0.take());}
+        }
+        let previous=ACTIVE.with(|active| {
+            let mut current=active.borrow_mut();
+            let Some((token,_,deadline))=current.as_ref() else {
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"checkpoint loan has no active request"));
+            };
+            if !token.same_request(&self.token)||*deadline!=self.deadline {
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"checkpoint loan belongs to another request"));
+            }
+            Ok(current.replace((self.token.clone(),false,self.deadline)))
+        })?;
+        let _restore=Restore(previous);
+        self.checkpoint()?;
+        let value=run()?;
+        self.checkpoint()?;
+        Ok(value)
+    }
+
     pub(crate) fn enter(&self) -> Binding {
         bind_inner(self.token.clone(), self.deadline)
     }
@@ -210,6 +237,52 @@ mod tests {
         assert!(begin_publication().is_err());
         drop(binding);
         checkpoint_at(now + std::time::Duration::from_secs(300)).unwrap();
+    }
+    #[test]
+    fn post_install_checkpoint_loan_keeps_original_deadline_and_restores_publication_after_first_error(){
+        let now=Instant::now();let deadline=now+std::time::Duration::from_secs(300);
+        let _binding=bind_with_deadline(Cancellation::default(),deadline);
+        let context=WorkerContext::capture().unwrap();begin_publication().unwrap();
+        checkpoint_at(deadline).unwrap();
+        let first:std::io::Result<()>=context.with_checkpoint_context(||Err(std::io::Error::from_raw_os_error(1450)));
+        assert_eq!(first.unwrap_err().raw_os_error(),Some(1450));
+        checkpoint_at(deadline).unwrap();
+        let expired:std::io::Result<()>=context.with_checkpoint_context(||checkpoint_at(deadline));
+        assert_eq!(expired.unwrap_err().kind(),std::io::ErrorKind::Interrupted);
+        assert_eq!(current_deadline(),Some(deadline));
+        checkpoint_at(deadline).unwrap();
+    }
+    #[test]
+    fn post_install_checkpoint_loan_restores_exact_outer_binding_when_consumer_unwinds(){
+        let deadline=Instant::now()+std::time::Duration::from_secs(300);
+        let _binding=bind_with_deadline(Cancellation::default(),deadline);
+        let context=WorkerContext::capture().unwrap();begin_publication().unwrap();
+        let result=std::panic::catch_unwind(|| {
+            let _:std::io::Result<()>=context.with_checkpoint_context(||panic!("observer fault"));
+        });
+        assert!(result.is_err());assert_eq!(current_deadline(),Some(deadline));
+        assert!(WorkerContext::capture_for_checkpoints().is_none());
+        checkpoint_at(deadline).unwrap();
+    }
+    #[test]
+    fn post_install_checkpoint_loan_rejects_foreign_request_deadline_and_absent_binding_without_touching_outer(){
+        let deadline=Instant::now()+std::time::Duration::from_secs(300);
+        let token=Cancellation::default();
+        let foreign={let _binding=bind_with_deadline(Cancellation::default(),deadline);WorkerContext::capture().unwrap()};
+        let other_deadline={let _binding=bind_with_deadline(token.clone(),deadline+std::time::Duration::from_secs(1));WorkerContext::capture().unwrap()};
+        let binding=bind_with_deadline(token,deadline);begin_publication().unwrap();
+        for context in [&foreign,&other_deadline]{
+            let mut entered=false;
+            let result:std::io::Result<()>=context.with_checkpoint_context(||{entered=true;Ok(())});
+            assert_eq!(result.unwrap_err().kind(),std::io::ErrorKind::InvalidInput);
+            assert!(!entered);assert_eq!(current_deadline(),Some(deadline));
+            assert!(WorkerContext::capture_for_checkpoints().is_none());
+            checkpoint_at(deadline).unwrap();
+        }
+        drop(binding);
+        let absent:std::io::Result<()>=foreign.with_checkpoint_context(||panic!("absent request cannot enter"));
+        assert_eq!(absent.unwrap_err().kind(),std::io::ErrorKind::InvalidInput);
+        assert!(current_deadline().is_none());
     }
     #[test]
     fn admitted_publication_remains_indivisible_after_deadline() {

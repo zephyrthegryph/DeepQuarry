@@ -186,7 +186,10 @@ fn typed_list_formals_keep_lexical_list_and_authored_element_input_flags() {
     }
 
     let mut parameters = metadata.signature.parameters.to_vec();
-    parameters[0].input_annotation = Some(expression("num|null", &mut symbols));
+    parameters[0] = parameters[0].clone().with_tail(dm_ir::ParameterTail {
+        input_annotation: Some(expression("num|null", &mut symbols)),
+        ..std::ops::Deref::deref(&parameters[0]).clone()
+    });
     metadata.signature.parameters = parameters.into();
     let annotated = prepare_procedure(
         &metadata,

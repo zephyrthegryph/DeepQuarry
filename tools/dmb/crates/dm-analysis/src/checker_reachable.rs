@@ -335,6 +335,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
             &statement.kind,
             StatementKind::Return(_)
                 | StatementKind::Throw(_)
+                | StatementKind::Delete(_)
                 | StatementKind::Var { .. }
                 | StatementKind::Assign { .. }
                 | StatementKind::Call(_)
@@ -541,6 +542,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                 Err("unsupported native statement in checker traversal".into())
             }
             StatementKind::Throw(_)
+            | StatementKind::Delete(_)
             | StatementKind::Goto(_)
             | StatementKind::Set { .. }
             | StatementKind::ProjectedSet { .. }

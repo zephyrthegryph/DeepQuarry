@@ -20,6 +20,12 @@ pub(crate) struct SelectedHandlerFiles<'reader,'capture,'scope>{
  domain:SiliconActorDomain<'reader>,
 }
 impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
+ /// Resource-only loan under this actual endpoint's already-held family gate.
+ /// Per-file source loans have ended before capture; no query reentry in consume.
+ pub(in crate::query_db) fn with_held_source_work<T>(&self,consume:impl FnOnce(&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<T>)->io::Result<T>{
+  let mut ledger=self.db.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+  super::source_arena::with_held_source_work(self.db,&mut ledger,self.budget(),consume)
+ }
  pub(crate) fn image_dir_using<R>(
   &self, proof: &dm_tree::frontend::CleanOriginalImageDirProof, inputs: &dm_analysis::policy_inputs::PolicyInputs,
   consume: impl FnOnce(&dq_analyze::captured_image_dir::Data,&Config,&Arc<Budget>)->io::Result<R>,
@@ -533,6 +539,18 @@ impl WorkspaceCodeReader<'_,'_>{
   if !(1..=2).contains(&pages.passes.get()){return Err(Failure::Operational(invalid("tracked producer omitted actual complete declaration EOF")))}
   self.require_policy_inputs(inputs)?;self.require_sys_discovery()?;self.budget.charge(std::mem::size_of::<WorkspaceTrackedWitness>()+std::mem::size_of::<WorkspaceCapture>()+2*std::mem::size_of::<usize>())?;let witness=WorkspaceTrackedWitness{capture:Arc::downgrade(self.capture)};self.checkpoint()?;Ok((data,witness))
  }
+ pub(crate) fn tracked_list_macro_data(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,config:&Config,relative:&str,body:&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>)->Result<(dq_analyze::captured_tracked_fix::ListMacroFixData,WorkspaceTrackedWitness),Failure>{
+  self.require_policy_inputs(inputs)?;self.require_sys_discovery()?;
+  let actual=dq_analyze::tracked_policy::metadata(false).select;let required=dq_analyze::dm::sys::policy_selection();if actual.roots!=required.roots||actual.hidden!=required.hidden{return Err(Failure::Operational(invalid("tracked metadata differs from actual CODE_MAPS_DM discovery")))}
+  struct Pages<'a,'capture,'scope>{reader:&'a WorkspaceCodeReader<'capture,'scope>,config:&'a Config,tests:bool,passes:std::cell::Cell<usize>}
+  impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{let pass=self.passes.get();if pass>1{return Err(Failure::Operational(invalid("tracked producer exceeded its actual two source phases")))}self.reader.require_sys_discovery()?;let selection=if pass==0{None}else{Some((self.config,self.tests))};if !self.reader.for_each_file(FileDomain::Tracked(selection),visit)?{return Ok(false)}self.reader.require_sys_discovery()?;self.reader.checkpoint()?;self.passes.set(pass+1);Ok(true)}}
+  let pages=Pages{reader:self,config,tests:false,passes:std::cell::Cell::new(0)};let poll=||self.checkpoint().map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)});
+  let data=dq_analyze::captured_tracked_pages::collect_list_macro_fix_from_pages(inputs,self.root(),&pages,config,relative,self.budget(),&poll,body)?;
+  // The concrete producer can omit phase two only when no tracked schema exists.
+  // Arbitrary DATA callbacks cannot supply this count or mint the witness.
+  if !(1..=2).contains(&pages.passes.get()){return Err(Failure::Operational(invalid("tracked producer omitted actual complete declaration EOF")))}
+  self.require_policy_inputs(inputs)?;self.require_sys_discovery()?;self.budget.charge(std::mem::size_of::<WorkspaceTrackedWitness>()+std::mem::size_of::<WorkspaceCapture>()+2*std::mem::size_of::<usize>())?;let witness=WorkspaceTrackedWitness{capture:Arc::downgrade(self.capture)};self.checkpoint()?;Ok((data,witness))
+ }
 }
 
 /// Real CODE_DM exhaustion of the unique raw state-schema producer only.
@@ -1004,3 +1022,13 @@ impl WorkspaceCodeReader<'_,'_>{
   if pending.is_err(){return pending}self.require_policy_inputs(inputs)?;pending
  }
 }
+
+struct SchemaProposalCompletion<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>}
+impl SchemaProposalCompletion<'_,'_,'_>{fn require(self)->Result<(),Failure>{self.reader.require_full_code_discovery()?;self.reader.checkpoint()}}
+impl WorkspaceCodeReader<'_,'_>{pub(crate) fn schema_proposals_using<R>(&self,capture:&crate::runner_host::policy_capture::CapturedPolicyInputs,consume:impl FnOnce(&dq_analyze::captured_untyped_pages::schema_proposals::Data,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+ let inputs=capture.policy();self.require_policy_inputs(inputs)?;self.require_full_code_discovery()?;let meta=dq_analyze::untyped_policy_metadata::metadata();let code=dq_analyze::tree::CODE_DM;if meta.select.roots!=code.roots||meta.select.hidden!=code.hidden{return Err("weak original CODE declaration selection differs".into())}let(_,bytes)=self.configuration();let peak=bytes.map_or(Some(1024),|b|b.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;self.budget().charge(peak).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+ let empty=dq_analyze::scopes::LintScope::default();let current_scope=config.borrowed_report_scope("untyped","").unwrap_or(&empty);self.checkpoint()?;let value_input=capture.untyped_input_mode(current_scope.list("exempt_types"),true).map_err(Failure::Operational)?;let proof=dm_analysis::value_query::ArchiveValueQueries::value_proof_checked(self.db,&value_input).map_err(|e|match e{dm_analysis::value_query::ValueQueryFailure::Operational(actual)=>Failure::Operational(actual),dm_analysis::value_query::ValueQueryFailure::Unsupported(error)=>Failure::Unsupported(error.0),dm_analysis::value_query::ValueQueryFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;let manifest=capture.untyped_manifest(self.root()).map_err(Failure::Operational)?;
+ struct Pages<'a,'capture,'scope>{reader:&'a WorkspaceCodeReader<'capture,'scope>,inputs:&'a dm_analysis::policy_inputs::PolicyInputs,config:&'a Config,completed:std::cell::RefCell<[Option<SchemaProposalCompletion<'a,'capture,'scope>>;2]>,passes:std::cell::Cell<usize>}
+ impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{let pass=self.passes.get();if pass>=2{return Err("schema proposals exceeded schema and source-report phases".into())}self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;if !self.reader.for_each_file(if pass==0{FileDomain::Code}else{FileDomain::CodeSelected(self.config,"untyped","")},visit)?{return Ok(false)}self.reader.require_policy_inputs(self.inputs)?;self.reader.require_full_code_discovery()?;self.completed.borrow_mut()[pass]=Some(SchemaProposalCompletion{reader:self.reader});self.passes.set(pass+1);Ok(true)}}
+ let pages=Pages{reader:self,inputs,config:&config,completed:std::cell::RefCell::new([None,None]),passes:std::cell::Cell::new(0)};let poll=||self.checkpoint().map_err(|f|match f{Failure::Operational(actual)=>actual,Failure::Unsupported(m)=>io::Error::new(io::ErrorKind::Unsupported,m)});let bodies=CurrentUntypedBodies{reader:self,inputs};let current=value_input.requires_canonical_bodies().then_some(&bodies as &dyn dq_analyze::captured_untyped_pages::CurrentBodyLoan);let data=dq_analyze::captured_untyped_pages::schema_proposals::collect_from_pages(inputs,&value_input,proof,manifest,self.root(),&pages,&config,self.budget(),&poll,current)?;if pages.passes.get()!=2{return Err("schema proposals omitted an actual raw phase".into())}for token in pages.completed.borrow_mut().iter_mut(){token.take().ok_or("schema proposal actual CODE EOF absent")?.require()?;}self.require_policy_inputs(inputs)?;self.checkpoint()?;let pending=consume(&data,&config,self.budget()).map_err(Failure::Operational);drop(data);drop(pages);drop(config);if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_policy_inputs(inputs)?;self.checkpoint()?;pending
+}}

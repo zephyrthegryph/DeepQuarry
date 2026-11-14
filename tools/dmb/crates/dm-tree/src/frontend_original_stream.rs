@@ -617,4 +617,39 @@ pub(crate) fn prepare_original_stream_with_parameter_mode_using(
 
  #[test]fn productive_empty_parentheses_default_retains_native_null_and_exact_warning_in_lazy_and_batch(){for batch_mode in[false,true]{let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_live=Arc::new(AtomicUsize::new(0));let work=Work{live:source_live.clone(),fail:false};let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));let source=Source::new("/proc/p(value=())\n    return value\n");let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=StreamHost{counter:Arc::clone(&counter)};let adapter=TreeOriginalBatchHost(&host);let batch=OriginalBatchExecution::new(&source,&adapter,&executor);let streamed=prepare_original_stream_using(Path::new("actual-empty-group.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,batch_mode.then_some(&batch)).unwrap();assert!(streamed.primary().frontier().is_none());let headers=streamed.primary().inputs()[0].headers();let rows=headers.all_formal_notices().unwrap().filter(|notice|notice.family()=="empty_parentheses").collect::<Vec<_>>();assert_eq!(rows.len(),1);assert_eq!(rows[0].registration(),(None,crate::OriginalFormalNoticeLevel::Warning));assert_eq!(rows[0].static_message(),Some("'()' should be replaced with 'null'"));let mut actual=0;headers.visit_default_roots(|root|{if matches!(&root.original_expression().kind,dm_syntax::ExprKind::Literal(value)if value.as_str()=="null"){actual+=1}});assert_eq!(actual,1);drop(rows);drop(streamed);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_live.load(Ordering::Acquire),0);}}
 
+
+ #[test]
+ fn original_reader_registration_commits_full_bodies_and_retains_actual_end() {
+  for batch_mode in [false,true]{
+   let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_live=Arc::new(AtomicUsize::new(0));let work=Work{live:source_live.clone(),fail:false};let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+   let text="/proc/first(var/value)\n    if(value)\n        return value\n/proc/second(static/value)\n    return value\n";let source=Source::new(text);let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=StreamHost{counter:Arc::clone(&counter)};let adapter=TreeOriginalBatchHost(&host);let batch=OriginalBatchExecution::new(&source,&adapter,&executor);
+   let streamed=prepare_original_stream_using(Path::new("actual-registration.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,batch_mode.then_some(&batch)).unwrap();assert!(streamed.primary().frontier().is_none());
+   let input=&streamed.primary().inputs()[0];let headers=input.headers();let items=input.items().unwrap();let first=items.iter().find(|item|item.header().contains("/first(")).unwrap().header_span();let second=items.iter().find(|item|item.header().contains("/second(")).unwrap().header_span();
+   let first_commit=headers.reader_commit_registration(first,0).unwrap();let second_commit=headers.reader_commit_registration(second,0).unwrap();let end=headers.reader_end_registration().unwrap();end.require_after_actual_end().unwrap();
+   let notices=headers.all_formal_notices().unwrap().collect::<Vec<_>>();assert_eq!(notices.len(),2);let first_notice=headers.formal_notice_registration(notices[0]).unwrap();let second_notice=headers.formal_notice_registration(notices[1]).unwrap();
+   assert_eq!(first_notice.compare_same_source(&first_commit).unwrap(),std::cmp::Ordering::Less);assert_eq!(first_commit.compare_same_source(second_notice).unwrap(),std::cmp::Ordering::Less);assert_ne!(second_notice.compare_same_source(&second_commit).unwrap(),std::cmp::Ordering::Greater);assert_ne!(second_commit.compare_same_source(&end).unwrap(),std::cmp::Ordering::Greater);
+   assert!(headers.reader_commit_registration(dm_syntax::Span::new(first.start,first.end-1),0).is_err());
+   drop(notices);drop(streamed);
+   assert!(counter.load(Ordering::Acquire)>dm_syntax::SettingChargeCounter::root_allocation_bytes(),"actual neutral registration owner stays funded while receipt clones survive");
+   drop((first_commit,second_commit,end));
+   assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_live.load(Ordering::Acquire),0);
+  }
+ }
+ #[test]
+ fn original_reader_registration_actual_end_exists_without_callable_rows() {
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_live=Arc::new(AtomicUsize::new(0));let work=Work{live:source_live.clone(),fail:false};let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));let source=Source::new("/datum/empty\n    var/value=1\n");
+  let streamed=prepare_original_stream_using(Path::new("actual-registration-empty.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,None).unwrap();assert!(streamed.primary().frontier().is_none());streamed.primary().inputs()[0].headers().reader_end_registration().unwrap().require_after_actual_end().unwrap();drop(streamed);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_live.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn original_reader_prefix_failure_never_issues_actual_end_registration() {
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let source_live=Arc::new(AtomicUsize::new(0));let work=Work{live:source_live.clone(),fail:false};let a=dm_syntax::SettingAdmission::new(&counter,16<<20,&||Ok(()));let source=Source::new("/proc/fail(var/value=)\n    return value\n/proc/future()\n    return 2\n");
+  let streamed=prepare_original_stream_using(Path::new("actual-registration-prefix.dme"),&source,&BTreeMap::new(),omissions(),1<<20,&work,&a,None).unwrap();assert!(streamed.primary().frontier().is_some());assert!(streamed.primary().inputs()[0].headers().reader_end_registration().is_err());drop(streamed);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());assert_eq!(source_live.load(Ordering::Acquire),0);
+ }
+
+ #[test]
+ fn original_reader_archive_commit_lookup_uses_actual_body_owner_not_header_extent() {
+  let source=Source::new("/proc/p(var/value)\n    if(value)\n        return value\n/proc/q()\n    return 2\n");let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=super::super::declaration_checked_tests::original_test_host();let config=FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None};
+  let frontend=super::super::build_for_original_analysis_with_state_checked(Path::new("actual-registration-archive.dme"),&source,&BTreeMap::new(),config,None,&executor,None,&host).unwrap();let view=frontend.source_view().unwrap();let archive=view.archive();let headers=archive.callable_header_source();assert_eq!(archive.occurrences().len(),2);let first=headers.reader_commit_registration(archive.occurrences()[0].member).unwrap().expect("actual first commit");let second=headers.reader_commit_registration(archive.occurrences()[1].member).unwrap().expect("actual second commit");assert_eq!(first.compare_same_source(&second).unwrap(),std::cmp::Ordering::Less);headers.reader_end_registration().unwrap().expect("actual complete end").require_after_actual_end().unwrap();
+ }
 }

@@ -7,26 +7,28 @@ use dm_syntax::{SettingAdmission,SettingRootLease,Span,OriginalLexicalNoticePoin
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalNoticeSeverity{Error,Warning,Hint}
 /// Coordinate DATA only, never a source currentness/EOF/model witness.
 #[derive(Clone,Copy,Debug)]pub enum OriginalNoticePlace{Default,Builtins,Actual{occurrence:usize,line:usize,column:usize,raw_span:Option<Span>}}
-pub struct OriginalNoticeView<'a>{pub place:OriginalNoticePlace,pub severity:OriginalNoticeSeverity,pub error_type:Option<&'static str>,pub message:&'a str,pub notes:OriginalNoticeNotes<'a>}
+pub struct OriginalNoticeView<'a>{pub place:OriginalNoticePlace,pub severity:OriginalNoticeSeverity,pub error_type:Option<&'static str>,pub message:&'a str,pub notes:OriginalNoticeNotes<'a>,pub registration:Option<&'a super::original_prepared_output::OriginalNoticeRegistration>}
 pub struct OriginalNoticeNotes<'a>{rows:std::slice::Iter<'a,Note>}
 impl<'a>Iterator for OriginalNoticeNotes<'a>{type Item=(OriginalNoticePlace,&'a str);fn next(&mut self)->Option<Self::Item>{self.rows.next().map(|row|(place(&row.location,None),row.message.as_str()))}}
 struct Note{location:Location,message:Text}
-struct Notice{location:Location,raw_span:Option<Span>,severity:OriginalNoticeSeverity,error_type:Option<&'static str>,message:Text,notes:Rows<Note>}
+struct Notice{location:Location,raw_span:Option<Span>,severity:OriginalNoticeSeverity,error_type:Option<&'static str>,message:Text,notes:Rows<Note>,registration:Option<super::original_prepared_output::OriginalNoticeRegistration>}
 /// Payload rows and all nested text/frame handles precede their domain root.
 /// No Clone permits duplicating row allocations under one reservation.
-pub struct OriginalRichNotices{rows:Rows<Notice>,domain:SettingRootLease,failed:bool}
+pub struct OriginalRichNotices{rows:Rows<Notice>,domain:SettingRootLease,registration:Option<super::original_prepared_output::OriginalNoticeRegistration>,failed:bool}
 fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
 fn place(location:&Location,span:Option<Span>)->OriginalNoticePlace{match location{Location::Default=>OriginalNoticePlace::Default,Location::Builtins=>OriginalNoticePlace::Builtins,Location::Expansion(origin)=>OriginalNoticePlace::Actual{occurrence:origin.occurrence,line:origin.line,column:origin.byte_column.expect("checked actual expansion byte column"),raw_span:span},Location::Physical{occurrence,point,..}=>OriginalNoticePlace::Actual{occurrence:*occurrence,line:point.line,column:point.column,raw_span:span}}}
 impl OriginalRichNotices{
- pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?,failed:false})}
+ pub(super) fn new(a:&SettingAdmission<'_>)->io::Result<Self>{Ok(Self{rows:Rows::new(a)?,domain:a.reserve(0).map_err(|e|a.take_operational_error().unwrap_or(e))?,registration:None,failed:false})}
  fn check(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::ErrorKind::InvalidInput.into())}let result=if !a.matches_lease_domain(&self.domain){Err(io::ErrorKind::InvalidInput.into())}else{poll(a)};if result.is_err(){self.failed=true}result}
  pub(super) fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{!self.failed&&a.matches_lease_domain(&self.domain)}
- pub fn iter(&self)->impl Iterator<Item=OriginalNoticeView<'_>>{self.rows.as_slice().iter().map(|row|OriginalNoticeView{place:place(&row.location,row.raw_span),severity:row.severity,error_type:row.error_type,message:row.message.as_str(),notes:OriginalNoticeNotes{rows:row.notes.as_slice().iter()}})}
+ pub fn iter(&self)->impl Iterator<Item=OriginalNoticeView<'_>>{self.rows.as_slice().iter().map(|row|OriginalNoticeView{place:place(&row.location,row.raw_span),severity:row.severity,error_type:row.error_type,message:row.message.as_str(),notes:OriginalNoticeNotes{rows:row.notes.as_slice().iter()},registration:row.registration.as_ref()})}
  /// Actual retained buffers/frame objects, never quota-reservation sizes.
  pub(super) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   self.rows.visit_allocation(|p,capacity|visit(p,self.rows.len()*std::mem::size_of::<Notice>(),capacity));
   let mut location=|at:&Location,visit:&mut dyn FnMut(usize,usize,usize)|{if let Location::Physical{frame,..}=at{frame.visit_metadata_storage(visit)}};
+  if let Some(registration)=&self.registration{registration.visit_storage(&mut visit)}
   for row in self.rows.as_slice(){
+   if let Some(registration)=&row.registration{registration.visit_storage(&mut visit)}
    location(&row.location,&mut visit);row.message.visit_allocation(|p,capacity|visit(p,row.message.as_str().len(),capacity));
    row.notes.visit_allocation(|p,capacity|visit(p,row.notes.len()*std::mem::size_of::<Note>(),capacity));
    for note in row.notes.as_slice(){location(&note.location,&mut visit);note.message.visit_allocation(|p,capacity|visit(p,note.message.as_str().len(),capacity));}
@@ -34,11 +36,18 @@ impl OriginalRichNotices{
   self.domain.visit_counter_storage(|p,n|visit(p,n+2*std::mem::size_of::<usize>(),n+2*std::mem::size_of::<usize>()));
  }
  pub fn len(&self)->usize{self.rows.len()}pub fn is_empty(&self)->bool{self.rows.len()==0}
- pub(super) fn message_using(&mut self,location:Location,span:Option<Span>,severity:OriginalNoticeSeverity,error_type:Option<&'static str>,message:Text,a:&SettingAdmission<'_>)->io::Result<usize>{self.check(a)?;let result=(||{match &location{Location::Expansion(origin)if origin.byte_column.is_none()=>return Err(io::ErrorKind::InvalidInput.into()),Location::Physical{frame,..}if !frame.admitted_by(a)=>return Err(io::ErrorKind::InvalidInput.into()),_=>()};let index=self.rows.len();self.rows.push(Notice{location,raw_span:span,severity,error_type,message,notes:Rows::new(a)?},a)?;Ok(index)})();if result.is_err(){self.failed=true}result}
+ pub(super) fn message_using(&mut self,location:Location,span:Option<Span>,severity:OriginalNoticeSeverity,error_type:Option<&'static str>,message:Text,a:&SettingAdmission<'_>)->io::Result<usize>{self.check(a)?;let result=(||{match &location{Location::Expansion(origin)if origin.byte_column.is_none()=>return Err(io::ErrorKind::InvalidInput.into()),Location::Physical{frame,..}if !frame.admitted_by(a)=>return Err(io::ErrorKind::InvalidInput.into()),_=>()};let index=self.rows.len();self.rows.push(Notice{location,raw_span:span,severity,error_type,message,notes:Rows::new(a)?,registration:self.registration.clone()},a)?;Ok(index)})();if result.is_err(){self.failed=true}result}
  pub(super) fn note_using(&mut self,at:usize,location:Location,message:Text,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=(||{match &location{Location::Expansion(origin)if origin.byte_column.is_none()=>return Err(io::ErrorKind::InvalidInput.into()),Location::Physical{frame,..}if !frame.admitted_by(a)=>return Err(io::ErrorKind::InvalidInput.into()),_=>()};let notice=self.rows.as_mut_slice().get_mut(at).ok_or(io::ErrorKind::InvalidInput)?;notice.notes.push(Note{location,message},a)})();if result.is_err(){self.failed=true}result}
  pub(super) fn macro_using(&mut self,location:Location,kind:&MacroKind,a:&SettingAdmission<'_>)->io::Result<usize>{let mut text=Text::new(a)?;original_format_using(&mut text,a,|out|{use std::fmt::Write;match kind{MacroKind::WrongArity=>out.write_str("wrong number of arguments to macro call"),MacroKind::UnexpectedEof=>out.write_str("unexpected EOF"),MacroKind::DepthLimit(name)=>write!(out,"expanding {:?} would exceed max recursion depth of 32 levels",name.as_str()),MacroKind::StringifyNonArgument(name)=>write!(out,"can't stringify non-argument ident {:?}",name.as_str()),MacroKind::StringifyNonIdent(token)=>write!(out,"can't stringify non-ident '{}'",token.as_str()),MacroKind::StringifyEof=>out.write_str("can't stringify EOF")}})?;self.message_using(location,None,OriginalNoticeSeverity::Error,None,text,a)}
 }
 impl OriginalRawNoticeSink for OriginalRichNotices{
+ fn before_logical_pull(&mut self,registration:super::original_prepared_output::OriginalNoticeRegistration,a:&SettingAdmission<'_>)->io::Result<()>{
+  self.check(a)?;
+  if !registration.admitted_by(a)||!registration.is_before_pull(){return Err(io::ErrorKind::InvalidInput.into())}
+  if let Some(previous)=&self.registration{if previous.compare_same_source(&registration)?==std::cmp::Ordering::Greater{return Err(io::ErrorKind::InvalidInput.into())}}
+  else{if !registration.is_initial(){return Err(io::ErrorKind::InvalidInput.into())}for row in self.rows.as_mut_slice(){if row.registration.is_some(){return Err(io::ErrorKind::InvalidInput.into())}row.registration=Some(registration.clone());}}
+  self.registration=Some(registration);Ok(())
+ }
  fn condition_identifier_recovery(&mut self,at:crate::macro_expansion::OriginalMacroOrigin,value:Option<dm_syntax::OriginalTokenValue<&str>>,a:&SettingAdmission<'_>)->io::Result<()>{let mut message=Text::new(a)?;original_format_using(&mut message,a,|out|dm_syntax::write_original_input_failure(out,value,dm_syntax::OriginalInputExpected::Identifier))?;self.message_using(Location::Expansion(at),None,OriginalNoticeSeverity::Error,None,message,a)?;Ok(())}
  fn condition_primitive(&mut self,at:crate::macro_expansion::OriginalMacroOrigin,kind:dm_syntax::OriginalInputNoticeKind,value:dm_syntax::OriginalTokenValue<&str>,a:&SettingAdmission<'_>)->io::Result<()>{let mut message=Text::new(a)?;original_format_using(&mut message,a,|out|kind.write_message(Some(value),out))?;let(error_type,warning)=kind.registration();self.message_using(Location::Expansion(at),None,if warning{OriginalNoticeSeverity::Warning}else{OriginalNoticeSeverity::Error},error_type,message,a)?;Ok(())}
 

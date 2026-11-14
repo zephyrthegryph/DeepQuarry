@@ -304,11 +304,14 @@ struct ReportStage<'a> {
     library_baseline: Option<Option<&'a [u8]>>,
     // Borrow the issued workspace and its live read guard through the stage.
     full_ci_baseline: Option<&'a dyn Fn(&Meta) -> io::Result<Option<&'a [u8]>>>,
+    check_format:Option<crate::runner_host::FullRegistryCheckOptions>,
 }
 impl ReportStage<'_> {
     fn is_raw(&self) -> bool {
-        self.judgment.is_raw() && self.full_ci_baseline.is_none()
+        self.check_format.map_or(self.judgment.is_raw() && self.full_ci_baseline.is_none(),|format|format.raw)
     }
+
+    fn grouped(&self)->bool{self.check_format.map_or(!self.is_raw(),|format|format.ci)}
 
     fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
         if let ReportRows::Union(UnionRows::CheckGrep(data)) = &rows {
@@ -327,12 +330,12 @@ impl ReportStage<'_> {
             // the actual Check observations, and owns its admitted report
             // bytes. The generic judge prefixes notes before that hook.
             checkpoint()?;
-            if !self.is_raw() { writeln!(self.file, "::group::{}", meta.name)?; }
+            if self.grouped() { writeln!(self.file, "::group::{}", meta.name)?; }
             for note in &data.run.notes {
                 writeln!(self.file, "{note}")?;
             }
             self.file.write_all(data.report.as_bytes())?;
-            if !self.is_raw() { writeln!(self.file, "::endgroup::")?; }
+            if self.grouped() { writeln!(self.file, "::endgroup::")?; }
             checkpoint()?;
             self.failed.record(self.finished, data.failed)?;
             self.finished += 1;
@@ -345,7 +348,7 @@ impl ReportStage<'_> {
                 .is_some_and(|expected| std::ptr::eq(meta, expected));
         if self.selected.get(self.finished).copied() != Some(meta.name)
             || (!deadline && !matches!(meta.policy, Policy::Hard | Policy::Sites { .. })
-                && !(self.full_ci_baseline.is_some() && matches!(meta.policy, Policy::Ceilings { .. }))) {
+                && !((self.full_ci_baseline.is_some() || self.check_format.is_some_and(|format|format.raw)) && matches!(meta.policy, Policy::Ceilings { .. }))) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report section order or judge differs"));
         }
         let mut scratch = SectionScratch { budget: Budget::scoped_temporaries(child)
@@ -742,9 +745,9 @@ impl ReportStage<'_> {
         } else {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "staged CI judgment cannot read a baseline"));
         };
-        if !raw { writeln!(self.file, "::group::{}", meta.name)?; }
+        if self.grouped() { writeln!(self.file, "::group::{}", meta.name)?; }
         self.file.write_all(text.as_bytes())?;
-        if !raw { self.file.write_all(b"::endgroup::\n")?; }
+        if self.grouped() { self.file.write_all(b"::endgroup::\n")?; }
         self.failed.record(self.finished, failed)?;
         self.finished += 1;
         drop(text);
@@ -757,12 +760,15 @@ impl ReportStage<'_> {
         if self.finished != self.selected.len() || !data.selected().iter().map(String::as_str).eq(self.selected.iter().copied()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected sections did not complete their actual ALLOW join"));
         }
-        for problem in data.unused() { writeln!(self.file, "{problem}")?; }
-        writeln!(self.file, "allow annotations: {} unused", data.unused().len())?;
+        let audit_unused=self.check_format.is_none_or(|format|format.unused);
+        if audit_unused {
+            for problem in data.unused() { writeln!(self.file, "{problem}")?; }
+            writeln!(self.file, "allow annotations: {} unused", data.unused().len())?;
+        }
         budget.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
         let failed = data.selected().iter().enumerate()
             .filter_map(|(ordinal, name)| self.failed.failed(ordinal).then_some(name.as_str()))
-            .chain((!data.unused().is_empty()).then_some("allow_annotations --unused"));
+            .chain((audit_unused&&!data.unused().is_empty()).then_some("allow_annotations --unused"));
         policy_finish::write_result_line(failed, &mut self.file)
     }
 }
@@ -857,7 +863,7 @@ impl super::super::RawWorkspaceSnapshot {
             configuration: self.policy_revision(),
         };
         let mut usage = UsageJoinData::new(&selection, frame);
-        let mut stage = ReportStage {
+        let mut stage = ReportStage {check_format:None,
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, private_check_grep: false, private_derived_reads: false, judgment: JudgmentV2::Raw, library_baseline: None, full_ci_baseline: None,
         };
@@ -1084,6 +1090,17 @@ impl SourceSnapshot {
             true, true, true, Some(checker), true, true, true, Some(handlers), true)
     }
 
+    pub(in crate::runner_host) fn stage_private_full_registry_check(
+        &self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,
+        checker:&crate::request_runner::PreparedCheckerTranscript,handlers:&super::super::HandlerWorkspaceSnapshot,
+        format:crate::runner_host::FullRegistryCheckOptions,
+    )->io::Result<(bool,Verified)>{
+        let mut work=Operation{budget:retained,poll:&||crate::daemon::control::checkpoint()};
+        let selection=full_unused::registered_full_selection(&[],&mut work).map_err(operational)?;
+        let mut order=Vec::new();for name in selection.names(){kc::row(&mut work,&mut order).map_err(operational)?;order.push(name.as_str());}
+        self.stage_selected_report_judging_format(prepared,&[],retained,root,&order,Q::PRIVATE_FULL_REGISTRY,JudgmentV2::Raw,false,true,Some(handlers),file,true,Some(checker),!format.raw,Some(format))
+    }
+
     pub(in crate::runner_host) fn stage_private_full_registry_ci(
         &self, prepared: &crate::request::BuildOutcome, retained: &Arc<Budget>,
         root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
@@ -1186,6 +1203,16 @@ impl SourceSnapshot {
         handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
         checker: Option<&crate::request_runner::PreparedCheckerTranscript>, full_ci: bool,
     ) -> io::Result<(bool, Verified)> {
+        self.stage_selected_report_judging_format(prepared,exclusions,retained,root,selected,questions,judgment,needs_library_sites_baseline,requires_handlers,handlers,file,ordinary_fold_sys,checker,full_ci,None)
+    }
+
+    fn stage_selected_report_judging_format(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
+        needs_library_sites_baseline: bool, requires_handlers: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, full_ci: bool, check_format:Option<crate::runner_host::FullRegistryCheckOptions>,
+    ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation did not issue a current Original frame"));
@@ -1228,7 +1255,7 @@ impl SourceSnapshot {
             let guard = ci_guard.as_ref().ok_or_else(|| io::Error::other("full CI read guard absent"))?;
             workspace.full_ci_baseline(guard, meta)
         };
-        let stage = RefCell::new(ReportStage {
+        let stage = RefCell::new(ReportStage {check_format,
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys,
             ordinary_semantic_and_fixed: ordinary_fold_sys && (private_checker_body || questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC),
@@ -1353,7 +1380,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
     let empty = LintScope::default();
     let meta = data.metadata();
     let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
-    let mut stage = ReportStage {
+    let mut stage = ReportStage {check_format:None,
         file,
         finished: 0,
         selected: &["image_dir_after_build"],

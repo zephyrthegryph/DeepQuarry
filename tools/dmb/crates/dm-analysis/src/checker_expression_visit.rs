@@ -611,7 +611,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
                 return Ok(true);
             }
-            StatementKind::Throw(value) => {
+            StatementKind::Throw(value) | StatementKind::Delete(value) => {
                 self.expression(value, None)?;
             }
             StatementKind::Goto(_)

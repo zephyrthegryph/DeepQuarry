@@ -1094,7 +1094,7 @@ pub(super) fn parse_statements(
     let parsed = dm_syntax::parse_body_items_with_context(&item.children, source, &|offset| {
         syntax.declaration_header_at(offset)
     });
-    finish_statements(item, parsed, supported, None)
+    finish_statements(item, parsed, supported, None, None)
 }
 /// Native parser only: exact original-source provider and SAME in-scope permit.
 pub(super) fn parse_statements_with_setting_admission(
@@ -1152,6 +1152,11 @@ fn parse_statements_admitted(
             // Original consumes the exact identifier before parsing an optional
             // expression. A following token is not proof that it is valid.
             Ok(keyword.start == header.start && keyword.end == next.start)
+        }
+        fn original_delete_head(&self,head:dm_syntax::Span)->std::io::Result<bool>{
+            self.syntax.original_body_tokens(self.body,self.code)
+                .map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?
+                .delete_head_using(head,self.admission)
         }
         fn original_throw_head(&self, head: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
@@ -1331,6 +1336,24 @@ fn parse_statements_admitted(
                 }
             }
             Ok(index == if declaration { 4 } else { 2 })
+        }
+        fn original_two_clause_for_header(&self,first:dm_syntax::Span,tail:dm_syntax::Span,empty:bool)->std::io::Result<bool>{
+            use dm_syntax::TokenKind;self.admission.checkpoint()?;
+            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let(Ok(first),Ok(tail))=(owner.tokens(first),owner.tokens(tail))else{return Ok(false)};
+            let mut stage=if empty{0}else{2};let mut separator=false;
+            for(kind,_,text)in first{self.admission.checkpoint()?;match(kind,text){
+                (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
+                (TokenKind::Ident,"for")if stage==0=>stage=1,
+                (TokenKind::Punctuation,"(")if stage==1=>stage=2,
+                (TokenKind::Punctuation,";"|",")if stage==2&&!separator=>separator=true,
+                _=>return Ok(false),
+            }}if stage!=2||!separator{return Ok(false)}
+            let mut closed=false;for(kind,_,text)in tail{self.admission.checkpoint()?;match(kind,text){
+                (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
+                (TokenKind::Punctuation,")")if !closed=>closed=true,
+                _=>return Ok(false),
+            }}Ok(closed)
         }
         fn original_classic_for_separators(
             &self, first: dm_syntax::Span, second: dm_syntax::Span, empty_initializer: bool,
@@ -1513,7 +1536,7 @@ fn parse_statements_admitted(
             for (index,(kind,text)) in [(TokenKind::Ident,"var"),(TokenKind::Operator,"/"),
                 (TokenKind::Ident,"static"),(TokenKind::Operator,"/")].into_iter().enumerate(){
                 let Some((actual,_,spelling))=tokens.next()else{return Ok(false)};
-                let same_spelling=if index==2{matches!(spelling,"static"|"global")}else{spelling==text};
+                let same_spelling=if index==2{matches!(spelling,"static"|"global"|"const")}else{spelling==text};
                 if !same_spelling||!(actual==kind||(text=="/"&&actual==TokenKind::Punctuation)){return Ok(false)}
             }
             // The remaining exact slash path is a name, optionally
@@ -1569,6 +1592,31 @@ fn parse_statements_admitted(
                 }
             }
             Ok(closed)
+        }
+        fn original_return_head(&self,head:dm_syntax::Span)->std::io::Result<bool>{
+            use dm_syntax::TokenKind;self.admission.checkpoint()?;
+            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let Ok(tokens)=owner.tokens(head)else{return Ok(false)};let mut keyword=false;
+            for(kind,at,text)in tokens{self.admission.checkpoint()?;match(kind,text){
+                (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
+                (TokenKind::Ident,"return")if !keyword&&at.start==head.start=>keyword=true,
+                _=>return Ok(false),
+            }}Ok(keyword)
+        }
+        fn original_inline_switch_body_head(&self,gap:dm_syntax::Span)->std::io::Result<bool>{
+            use dm_syntax::TokenKind;self.admission.checkpoint()?;
+            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let Ok(tokens)=owner.tokens(gap)else{return Ok(false)};let mut closed=false;
+            for(kind,_,text)in tokens{self.admission.checkpoint()?;match(kind,text){
+                (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
+                (TokenKind::Punctuation,")")if !closed=>closed=true,
+                _=>return Ok(false),
+            }}Ok(closed)
+        }
+        fn switch_inline_statement_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
+            let mut checkpoint=||self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"inline statement cursor operation stopped"});
+            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|_|"original inline statement owner unavailable")?;
+            owner.switch_inline_statement_cursor_using(item.header_span,item.span,&mut checkpoint)
         }
         fn original_inline_switch_return_head(&self,head:dm_syntax::Span,default:bool)->std::io::Result<bool>{
             // A case close is only an immutable punctuation/keyword loan; it
@@ -1700,19 +1748,19 @@ fn parse_statements_admitted(
         let prepared=dm_syntax::parse_body_items_with_admitted_literals(
             &item.children,source,&|at|syntax.declaration_header_at(at),&provider,admission,cleanup,
         ).map_err(BodySyntaxFailure::Operational)?;
-        let (parsed,literals)=prepared.into_parts();
+        let (parsed,literals,native)=prepared.into_parts_with_native_parser_facts();
         if let Some(actual)=admission.take_operational_error(){
             dm_syntax::drop_body_literal_syntax(parsed,Some(literals));
             return Err(BodySyntaxFailure::Operational(actual));
         }
-        Ok(finish_statements(item,parsed,supported,Some(literals)))
+        Ok(finish_statements(item,parsed,supported,Some(literals),native))
     }else{
         let parsed=dm_syntax::parse_body_items_with_context_and_settings(
             &item.children,source,&|at|syntax.declaration_header_at(at),&provider,admission,
         );
         if let Some(actual)=admission.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual));}
         admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
-        Ok(finish_statements(item,parsed,supported,None))
+        Ok(finish_statements(item,parsed,supported,None,None))
     }
 }
 fn finish_statements(
@@ -1720,6 +1768,7 @@ fn finish_statements(
     parsed: dm_syntax::ParsedBody,
     supported: fn(&[dm_syntax::Statement]) -> bool,
     literal_admission:Option<dm_syntax::BodyLiteralAdmission>,
+    native_parser_facts:Option<dm_syntax::NativeBodyParserFacts>,
 ) -> Arc<StatementBody> {
     fn headers(items: &[Item], result: &mut std::collections::HashSet<(usize, usize)>) {
         for item in items {
@@ -1742,6 +1791,7 @@ fn finish_statements(
         item.children = Vec::new();
     }
     Arc::new(StatementBody {
+        native_parser_facts,
         parsed,
         syntax_complete: std::sync::OnceLock::new(),
         declaration_headers,
@@ -1955,6 +2005,9 @@ impl<'a> CallableHeaderSource<'a>{
   let code=self.codes.get(ordinal).ok_or("callable header original code absent")?;self.syntax.original_callable_opening(occurrence.expanded_span,&code.identity)
  }
  /// Authenticated actual parser records; no Q4/body/default grammar is run.
+ pub fn reader_commit_registration(&self,member:crate::MemberId)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual reader member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual reader occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual reader code owner absent")?;self.syntax.original_reader_commit_registration(occurrence.expanded_span,&code.identity)}
+ pub fn reader_end_registration(&self)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{self.syntax.original_reader_end_registration()}
+ pub fn formal_notice_registrations(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>,Option<dm_preprocess::regions::OriginalNoticeRegistration>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual formal code owner absent")?;self.syntax.original_formal_notice_registration_rows(occurrence.expanded_span,&code.identity)}
  pub fn formal_notices(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual formal code owner absent")?;self.syntax.original_formal_notice_rows(occurrence.expanded_span,&code.identity)}
  pub fn reported_policy_line(&self,member:crate::MemberId)->Result<SourcePolicyLineOrigin,String>{self.mapping.original_policy_line(self.cursor(member)?)}
  pub fn reported_point(&self,member:crate::MemberId)->Result<super::BorrowedSourceNoteOrigin<'a>,String>{self.mapping.borrowed_source_note_point(self.cursor(member)?).map_err(str::to_owned)}

@@ -158,15 +158,15 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   }
   Ok(())
  }
- fn resolve(&mut self,source:&str,tokens:TokenWindow<'_>,child:Option<&Line>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
+ fn resolve(&mut self,source:&str,tokens:TokenWindow<'_>,child:Option<&Line>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
   let Some(frame)=self.frames.last_mut()else{return Err(io::ErrorKind::InvalidInput.into())};let Some(pending)=frame.pending.take()else{return Ok(true)};let line=pending.line;let scope=frame.scope;
   let child=child.filter(|next|next.indent>line.indent);let context=scope.context(tokens,original);let Some(prepared)=prepare_primary_line(source,&line,child,context,diagnostics,pending.scoped_observer)else{return Ok(false)};
   if let Some(child)=child{
    let scope=Scope{indent:child.indent,in_body:scope.in_body||matches!(prepared.kind,ItemKind::Proc|ItemKind::Verb|ItemKind::Statement),skeleton:scope.skeleton&&(scope.in_body||!matches!(prepared.kind,ItemKind::Statement)),var_context:prepared.var_context};let prior_end=line.end;frame.open=Some(OpenPrimary{line,prepared});self.push(scope,prior_end)?;
-  }else{let end=line.end;if !commit_primary_item(source,&line,prepared.kind,end,Vec::new(),false,prepared.outer,context,&mut frame.items){return Ok(false)}frame.saw_item=true;frame.last_end=end;self.settle_root_items(source,original)?;}
+  }else{let end=line.end;if !commit_primary_item(source,&line,prepared.kind,end,Vec::new(),false,prepared.outer,context,&mut frame.items,observer){return Ok(false)}frame.saw_item=true;frame.last_end=end;self.settle_root_items(source,original)?;}
   Ok(true)
  }
- fn close_child(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>)->io::Result<bool>{
+ fn close_child(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
   let Some(mut child)=self.frames.pop()else{return Err(io::ErrorKind::InvalidInput.into())};
   let items=std::mem::take(&mut child.items);let items=if child.scope.skeleton&&child.scope.in_body{match original.storage.compact(items.len()){Some(_temporary)=>retain_setting_chains(items,Some(original)),None=>return Ok(false)}}else{items};
   let Some(items)=original.storage.settle_child_items(items) else {return Ok(false)};
@@ -174,10 +174,10 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   // Exactly like returning from the old recursive call, release this actual
   // worker frame only AFTER its unique compaction judge has finished.
   drop(child);let Some(parent)=self.frames.last_mut()else{return Err(io::ErrorKind::InvalidInput.into())};let Some(open)=parent.open.take()else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"retained native child has no actual parent header"))};let context=parent.scope.context(tokens,original);let end=if parent.scope.skeleton{child_end}else{items.last().map_or(open.line.end,|item|item.span.end)};
-  if !commit_primary_item(source,&open.line,open.prepared.kind,end,items,true,open.prepared.outer,context,&mut parent.items){return Ok(false)}parent.saw_item=true;parent.last_end=end;self.settle_root_items(source,original)?;Ok(true)
+  if !commit_primary_item(source,&open.line,open.prepared.kind,end,items,true,open.prepared.outer,context,&mut parent.items,observer){return Ok(false)}parent.saw_item=true;parent.last_end=end;self.settle_root_items(source,original)?;Ok(true)
  }
- fn begin_line_scope(&mut self,source:&str,tokens:TokenWindow<'_>,line:&Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
-  self.check(original)?;if original.stopped(){return Ok(false)}if !self.resolve(source,tokens,Some(line),original,diagnostics)?{return Ok(false)}
+ fn begin_line_scope(&mut self,source:&str,tokens:TokenWindow<'_>,line:&Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,mut observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
+  self.check(original)?;if original.stopped(){return Ok(false)}if !self.resolve(source,tokens,Some(line),original,diagnostics,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?{return Ok(false)}
   loop{let Some(top)=self.frames.last()else{return Err(io::ErrorKind::InvalidInput.into())};if line.indent>=top.scope.indent&&!(line.indent>top.scope.indent&&top.saw_item){break}if self.frames.len()==1{
    let header=source.get(line.header_start..line.header_end).unwrap_or_default();
    let excerpt:String=header.chars().take(96).collect();
@@ -185,15 +185,15 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
     "Original retained primary root has an unissued relative-indentation frontier: indent {} after root {} near {excerpt:?}",
     line.indent,top.scope.indent
    )))
-  }if !self.close_child(source,tokens,original)?{return Ok(false)}}
+  }if !self.close_child(source,tokens,original,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?{return Ok(false)}}
   Ok(true)
  }
  /// Only the SAME structural cursor can construct this event. Resolve
  /// previous completed header/parents once using actual observed indentation;
  /// no current header/body or following token is guessed or reparsed here.
- pub(super) fn begin_early_header(&mut self,source:&str,tokens:TokenWindow<'_>,start:NativePrimaryHeaderStart,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
+ pub(super) fn begin_early_header(&mut self,source:&str,tokens:TokenWindow<'_>,start:NativePrimaryHeaderStart,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,mut observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
   if self.live_header.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual live primary header already exists"))}
-  if !self.begin_line_scope(source,tokens,&start.line,original,diagnostics)?{return Ok(false)}self.live_header=Some((start.line.header_start,start.line.indent));Ok(true)
+  if !self.begin_line_scope(source,tokens,&start.line,original,diagnostics,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?{return Ok(false)}self.live_header=Some((start.line.header_start,start.line.indent));Ok(true)
  }
  /// Scalar locator only; source/token borrows are obtained only during the
  /// actual metadata callback and MUST end before another demand/growth pull.
@@ -203,9 +203,9 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
  pub(super) fn line(&mut self,source:&str,tokens:TokenWindow<'_>,line:Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>)->io::Result<bool>{
   self.line_scoped(source,tokens,line,original,diagnostics,None)
  }
- pub(super) fn line_scoped(&mut self,source:&str,tokens:TokenWindow<'_>,line:Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
+ pub(super) fn line_scoped(&mut self,source:&str,tokens:TokenWindow<'_>,line:Line,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,mut observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
   self.check(original)?;if original.stopped(){return Ok(false)}
-  if let Some((start,indent))=self.live_header.take(){if start!=line.header_start||indent!=line.indent{return Err(io::Error::new(io::ErrorKind::InvalidInput,"completed header differs from its actual early primary owner"))}}else if !self.begin_line_scope(source,tokens,&line,original,diagnostics)?{return Ok(false)}
+  if let Some((start,indent))=self.live_header.take(){if start!=line.header_start||indent!=line.indent{return Err(io::Error::new(io::ErrorKind::InvalidInput,"completed header differs from its actual early primary owner"))}}else if !self.begin_line_scope(source,tokens,&line,original,diagnostics,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?{return Ok(false)}
   let frame=self.frames.last_mut().unwrap();if line.indent>frame.scope.indent{let span=Span::new(line.header_start,line.header_end);if !original.storage.diagnostic_parts(diagnostics,span,DiagnosticKind::Indentation,"unexpected indentation"){return Ok(false)}}
   // Crucially before asking the producer for another line/include. The SAME
   // private comma producer and SAME tree-owned formal observer are called once.
@@ -231,27 +231,29 @@ impl<'a,'budget> NativeOriginalPrimaryFrames<'a,'budget>{
   census
  }
 
- fn finish_active(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<Frame<'a,'budget>>{
+ fn finish_active(&mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool,mut observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<Frame<'a,'budget>>{
   self.check(original)?;
   if !actual_eof&&!original.stopped(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary pause cannot be sealed as EOF or an authenticated fatal outcome"))}
-  if actual_eof&&!original.stopped()&&!self.resolve(source,tokens,None,original,diagnostics)?{return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary final line has no issued native outcome")))}
-  while self.frames.len()>1{if !self.close_child(source,tokens,original)?{return Err(original.storage.take_failure().unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary prefix child could not commit")))}}
+  if actual_eof&&!original.stopped()&&!self.resolve(source,tokens,None,original,diagnostics,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?{return Err(original.operational.borrow_mut().take().or_else(||original.storage.take_failure()).unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary final line has no issued native outcome")))}
+  while self.frames.len()>1{if !self.close_child(source,tokens,original,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?{return Err(original.operational.borrow_mut().take().or_else(||original.storage.take_failure()).unwrap_or_else(||io::Error::new(io::ErrorKind::Unsupported,"primary prefix child could not commit")))}}
   let root=self.frames.pop().ok_or(io::ErrorKind::InvalidInput)?;if root.pending.is_some()||root.open.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"primary seal retains unresolved actual header state"))}self.finished=true;
   Ok(root)
  }
 
- pub(super) fn finish(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<Vec<Item>>{
+ pub(super) fn finish(self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<Vec<Item>>{self.finish_using(source,tokens,original,diagnostics,actual_eof,None)}
+ pub(super) fn finish_using(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<Vec<Item>>{
   if self.committed.is_some(){return Err(io::ErrorKind::InvalidInput.into())}
-  let mut root=self.finish_active(source,tokens,original,diagnostics,actual_eof)?;
+  let mut root=self.finish_active(source,tokens,original,diagnostics,actual_eof,observer)?;
   // Legacy callers require a contiguous Vec<Item>; compact callers never
   // enter this path or materialize a replacement tree.
   original.storage.finish_root_items(std::mem::take(&mut self.root_items),std::mem::take(&mut root.items))
    .ok_or_else(||original.storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))
  }
 
- pub(super) fn finish_committed(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<PendingCommittedItems>{
+ pub(super) fn finish_committed(self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool)->io::Result<PendingCommittedItems>{self.finish_committed_using(source,tokens,original,diagnostics,actual_eof,None)}
+ pub(super) fn finish_committed_using(mut self,source:&str,tokens:TokenWindow<'_>,original:&OriginalParseState<'_,'_,'_>,diagnostics:&mut Vec<Diagnostic>,actual_eof:bool,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<PendingCommittedItems>{
   if self.committed.is_none(){return Err(io::ErrorKind::InvalidInput.into())}
-  let mut root=self.finish_active(source,tokens,original,diagnostics,actual_eof)?;
+  let mut root=self.finish_active(source,tokens,original,diagnostics,actual_eof,observer)?;
   let mut committed=self.committed.take().expect("actual committed frame mode");
   if !root.items.is_empty(){committed.push(std::mem::take(&mut root.items),source,&original.storage)?}
   Ok(committed)

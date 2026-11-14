@@ -1593,6 +1593,10 @@ fn original_exclusions_shape<'a>(request: &'a crate::request::BuildRequest, root
 
 #[path="runner_compound_replay.rs"]
 mod compound_replay;
+#[path="runner_full_registry_check.rs"]
+mod full_registry_check;
+pub use full_registry_check::FullRegistryCheckOptions;
+pub(crate) use full_registry_check::FullRegistryCheckReport;
 
 impl BuildHost {
     /// Preflight the wire request before it may supersede another caller. The
@@ -1804,9 +1808,40 @@ impl BuildHost {
         exclusions: &[String], roster: crate::daemon::selected_report_wire::CompoundRoster, compact_checker: bool,
         finish: impl FnOnce(crate::daemon::selected_report_wire::CompiledSelectedReports) -> std::io::Result<T>,
     ) -> Result<T, Box<dyn std::error::Error>> {
+        self.with_compiled_reports_observation_inner(prepare,compile,exclusions,roster,compact_checker,false,
+            |_,_,_|Ok(None),finish)
+    }
+
+    /// Initial private harness seam only. Public CLI/wire remains unchanged.
+    /// Callback executes after actual pair installation while BOTH original
+    /// ledgers remain live; exact source checks bracket its independent work.
+    pub(crate) fn with_compiled_full_registry_observed_using<T,F>(
+        &mut self,prepare:crate::request::BuildRequest,compile:crate::request::BuildRequest,
+        roster:crate::daemon::selected_report_wire::CompoundRoster,compact_checker:bool,
+        observe:F,
+        finish:impl FnOnce(crate::daemon::selected_report_wire::CompiledSelectedReports)->std::io::Result<T>,
+    )->Result<T,Box<dyn std::error::Error>>
+    where F:for<'a> FnOnce(crate::request_runner::runner_freshness::observation::Observation<'a>)->std::io::Result<()> + Send + 'static {
+        self.with_compiled_reports_observation_inner(prepare,compile,&[],roster,compact_checker,true,
+            move|binding,cache,work|crate::request_runner::runner_freshness::observation::Plan::new(cache,work,binding,observe).map(Some),finish)
+    }
+
+    fn with_compiled_reports_observation_inner<T>(
+        &mut self,prepare:crate::request::BuildRequest,compile:crate::request::BuildRequest,
+        exclusions:&[String],roster:crate::daemon::selected_report_wire::CompoundRoster,compact_checker:bool,
+        observed:bool,
+        make_observation:impl FnOnce(crate::request_runner::runner_freshness::observation::Binding,&std::path::Path,
+            &dyn dm_preprocess::source_arena_credit::SourceArenaWork)->std::io::Result<Option<crate::request_runner::runner_freshness::observation::Plan>>,
+        finish:impl FnOnce(crate::daemon::selected_report_wire::CompiledSelectedReports)->std::io::Result<T>,
+    )->Result<T,Box<dyn std::error::Error>> {
         use crate::daemon::{control, prepare_deadline};
         use std::io;
         use crate::daemon::selected_report_wire::{CompoundRoster, CompoundSendScratch, Frame};
+        if observed && !roster.is_full(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"input observation requires the actual full registry roster").into())}
+        let analysis_context=prepare.policy_inputs.as_ref().and_then(|p|p.analysis_context);
+        if observed && analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,"observed full registry requires the actual Original Analyze initial profile").into())
+        }
         let (root, physical_cache) = Self::compound_report_paths(&prepare,roster)?;
         if roster.is_full() && !exclusions.is_empty(){
             return Err(io::Error::new(io::ErrorKind::InvalidInput,"full compound registry cannot exclude policies").into());
@@ -1839,10 +1874,17 @@ impl BuildHost {
             }
             None
         };
-        let candidate = compound_replay::Candidate::closed(
-            &prepare, root, physical_cache, roster, compact_checker,
-        );
-        if let Some(entry) = self.joined_report_replay.take() {
+        // Native compilation creates this same session/lock namespace. Create
+        // it before either source ledger observes the workspace's exact names;
+        // creating it between report capture and compilation would invalidate
+        // our own joined source roster on the first compound invocation.
+        control::checkpoint()?;
+        crate::compile_driver::initialize_build_directory(&compile.project)?;
+        // Observed qualification never reuses a previously staged observation.
+        let (candidate,observation_cache)=if observed {(None,Some(physical_cache))} else {
+            (compound_replay::Candidate::closed(&prepare,root,physical_cache,roster,compact_checker),None)
+        };
+        if let Some(entry) = self.joined_report_replay.take().filter(|_|!observed) {
             if candidate.as_ref().is_some_and(|candidate|entry.matches(candidate, exclusions))
                 && entry.joined.replay_inputs_current(
                     &crate::policy_request::canonical_analysis_project(
@@ -1876,7 +1918,19 @@ impl BuildHost {
             CompoundRoster::FullRegistry | CompoundRoster::FullRegistryCi | CompoundRoster::FullRegistryCiCbt =>
                 self.stage_compound_full_registry(prepare, compact_checker, roster.is_ci())?,
         };
-        let joined = joined.for_strict_profile(roster.strict_profile());
+        let mut joined = joined.for_strict_profile(roster.strict_profile());
+        if let Some(cache)=observation_cache.as_deref() {
+            use crate::request_runner::runner_freshness::observation::Binding;
+            use dq_analyze::selected_exclusions_wire::{Seal,Hex128};
+            let seal=|file:&crate::selected_report_spool::Verified|Seal {length:file.length(),hash:Hex128(file.hash())};
+            let binding=Binding {frame:frame.observation_data(),checker_policy_revision:checked.0.policy_revision,
+                roster:match roster {CompoundRoster::FullRegistry=>"full_registry",CompoundRoster::FullRegistryCi=>"full_registry_ci",
+                    CompoundRoster::FullRegistryCiCbt=>"full_registry_ci_cbt",CompoundRoster::Selected(_)=>unreachable!("observed roster checked before preparation")},
+                clean,diagnostics:notices.as_ref().map(seal),checker:seal(&checked.1),report:seal(&report),analysis_context};
+            let plan=make_observation(binding,cache,self.source_arena_work())?
+                .ok_or_else(||io::Error::other("observed full registry did not create its funded plan"))?;
+            joined=joined.with_observation(plan);
+        }
         let compiled = crate::request_runner::compile_with_joined_selected_inputs(compile, self, &joined)?;
         if !matches!(compiled, crate::request::BuildOutcome::Published { .. }) {
             return Err(io::Error::other("exact native compilation did not publish a pair").into());
@@ -1902,7 +1956,19 @@ impl BuildHost {
     }
 
     fn stage_compound_full_registry(
-        &mut self, mut request:crate::request::BuildRequest, compact_checker:bool, full_ci:bool,
+        &mut self, request:crate::request::BuildRequest, compact_checker:bool, full_ci:bool,
+    )->Result<(
+        crate::request_runner::JoinedSelectedInputs,
+        crate::daemon::selected_report_wire::Frame, bool,
+        Option<crate::selected_report_spool::Verified>,
+        (dq_analyze::selected_exclusions_wire::Frame,crate::selected_report_spool::Verified),
+        crate::selected_report_spool::Verified, dm_preprocess::source_arena_credit::SourceArenaCredit,
+    ),Box<dyn std::error::Error>>{
+        self.stage_full_registry_report_using(request,compact_checker,full_ci,None)
+    }
+
+    fn stage_full_registry_report_using(
+        &mut self, mut request:crate::request::BuildRequest, compact_checker:bool, full_ci:bool, format:Option<FullRegistryCheckOptions>,
     )->Result<(
         crate::request_runner::JoinedSelectedInputs,
         crate::daemon::selected_report_wire::Frame, bool,
@@ -1942,7 +2008,9 @@ impl BuildHost {
             let state=self.query_state.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"full registry query state is already borrowed"))?;
             let snapshot=state.snapshot.as_ref().ok_or_else(||io::Error::other("full registry current source absent"))?;
             let handlers=state.handlers_snapshot.as_ref().ok_or_else(||io::Error::other("full registry handler source absent"))?;
-            if full_ci {
+            if let Some(format)=format {
+                snapshot.stage_private_full_registry_check(&prepared,&retained,&root,report,&transcript,handlers,format)?
+            } else if full_ci {
                 snapshot.stage_private_full_registry_ci(&prepared,&retained,&root,report,&transcript,handlers)?
             } else {
                 snapshot.stage_private_full_registry(&prepared,&retained,&root,report,&transcript,handlers)?
@@ -1956,7 +2024,7 @@ impl BuildHost {
             return Err(io::Error::new(io::ErrorKind::OutOfMemory,"full registry compound reports exceed the aggregate stream bound").into());
         }
         let joined=joined.ok_or_else(||io::Error::other("full registry joined input closure absent"))?;
-        Ok((joined,frame,clean&&transcript.clean,diagnostics,(transcript.frame,checker),report,credit))
+        Ok((joined,frame,if format.is_some(){clean}else{clean&&transcript.clean},diagnostics,(transcript.frame,checker),report,credit))
     }
 
     pub(crate) fn stage_selected_original_reports_using<T>(
@@ -2337,3 +2405,9 @@ mod joined_selected_publication_control {
         assert_eq!(warm_analyze, analyze_bytes);
     }
 }
+
+#[path="runner_schema_proposals_report.rs"]mod schema_proposals_report;
+pub(crate) use schema_proposals_report::SchemaReport;
+
+#[path="runner_standalone_checker_report.rs"]mod standalone_checker_report;
+pub(crate) use standalone_checker_report::StandaloneCheckerReport;

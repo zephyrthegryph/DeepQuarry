@@ -345,7 +345,7 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   let continuing = if !self.original.stopped() {
    if let Some(start) = batch.take_header_start() {
     self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?
-     .begin_early_header(source, tokens, start, &self.original, &mut self.diagnostics)?
+     .begin_early_header(source, tokens, start, &self.original, &mut self.diagnostics,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?
    } else { true }
   } else { false };
   // Resolving the previous frame from a partial header can return false
@@ -384,16 +384,26 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   Ok(FinishedPrimary{tokens,diagnostics:self.lexical,literal_facts:self.literal_facts_issued.then_some(self.literal_facts),
    primary_owner,fatal:fatal.into_inner(),unavailable:unavailable.into_inner(),observer_stop:observer_stop.get(),storage})
  }
- pub fn finish(mut self,source:&str,actual_eof:bool)->io::Result<OriginalDeclarationSkeleton>{
+ pub fn finish(self,source:&str,actual_eof:bool)->io::Result<OriginalDeclarationSkeleton>{self.finish_using(source,actual_eof,None)}
+ pub fn finish_with_observer(self,source:&str,actual_eof:bool,observer:&mut dyn OriginalDeclarationHeaderObserver)->io::Result<OriginalDeclarationSkeleton>{
+  if self.failed||self.original.observer.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"scoped primary observer conflicts with retained observer or failed state"))}
+  self.finish_using(source,actual_eof,Some(observer))
+ }
+ fn finish_using(mut self,source:&str,actual_eof:bool,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<OriginalDeclarationSkeleton>{
   self.validate_finish(source,actual_eof)?;
-  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof)?;
+  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_using(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof,observer)?;
   let FinishedPrimary{tokens,diagnostics,literal_facts,primary_owner,fatal,unavailable,observer_stop,storage}=self.finish_parts(source)?;
   let lease=storage.finish(&items,0,&diagnostics)?;
   Ok(OriginalDeclarationSkeleton{syntax:OriginalDeclarationSyntax{items,tokens:tokens.into(),diagnostics},literal_facts,primary_owner:Some(primary_owner),fatal,unavailable,observer_stop,_lease:lease})
  }
- pub fn finish_committed(mut self,source:&str,actual_eof:bool)->io::Result<OriginalCommittedPrimary>{
+ pub fn finish_committed(self,source:&str,actual_eof:bool)->io::Result<OriginalCommittedPrimary>{self.finish_committed_using(source,actual_eof,None)}
+ pub fn finish_committed_with_observer(self,source:&str,actual_eof:bool,observer:&mut dyn OriginalDeclarationHeaderObserver)->io::Result<OriginalCommittedPrimary>{
+  if self.failed||self.original.observer.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"scoped primary observer conflicts with retained observer or failed state"))}
+  self.finish_committed_using(source,actual_eof,Some(observer))
+ }
+ fn finish_committed_using(mut self,source:&str,actual_eof:bool,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<OriginalCommittedPrimary>{
   self.validate_finish(source,actual_eof)?;
-  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_committed(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof)?;
+  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_committed_using(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof,observer)?;
   let FinishedPrimary{tokens,diagnostics,literal_facts,primary_owner,fatal,unavailable,observer_stop,storage}=self.finish_parts(source)?;
   let item_bytes=items.bytes(&storage).ok_or_else(||storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))?;
   let (item_lease,lease)=storage.finish_committed(item_bytes,&diagnostics)?;
@@ -712,5 +722,31 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   let source="/proc/bad(value=, BAD())\n";let open=source.find('(').unwrap()+1;let stop=source.find(',').unwrap()+1;let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observer=Observer;let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();let tokens=lex_spans(source).tokens;
   for token in tokens.iter().filter(|token|token.span.end<=open){primary.token(*token).unwrap();primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap();}let live=primary.live_callable_header(&source[..open]).unwrap().unwrap();
   for token in tokens.iter().filter(|token|token.span.start>=open&&token.span.end<=stop){primary.token(*token).unwrap();}assert_eq!(primary.consumed_frontier(),open);primary.observer_stop_live_header_at(&live,&source[..stop]).unwrap();assert_eq!(primary.consumed_frontier(),stop);let actual=primary.finish(&source[..stop],false).unwrap();assert!(actual.syntax().items.is_empty());assert_eq!(actual.observer_stop(),Some(Span::new(0,stop)));assert!(actual.fatal().is_none(),"observer control is not a fabricated authored fatal");drop((actual,live));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn actual_declaration_commit_observer_runs_after_full_body_and_before_next_header() {
+  struct Observer{events:Vec<(&'static str,usize,usize)>}
+  impl OriginalDeclarationHeaderObserver for Observer{
+   fn header(&mut self,event:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{if matches!(event.kind(),ItemKind::Proc|ItemKind::Verb){self.events.push(("header",event.span().start,event.span().end))}Ok(OriginalHeaderFlow::Continue)}
+   fn declaration_committed(&mut self,event:crate::OriginalPrimaryCommit<'_>)->io::Result<()>{if matches!(event.item().kind,ItemKind::Proc|ItemKind::Verb){assert_eq!(event.source().get(event.item().header_span.range()),Some(event.item().header.as_str()));self.events.push(("commit",event.item().header_span.start,event.item().span.end))}Ok(())}
+  }
+  let source="/proc/first()\n    if(1)\n        return 7\n/proc/second()\n    return 9\n";
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut observer=Observer{events:Vec::new()};let mut primary=OriginalPrimaryDemand::new(&a,None).unwrap();
+  for token in lex_spans(source).tokens{primary.token(token).unwrap();assert!(primary.advance_with_observer(&source[..token.span.end],false,&mut observer).unwrap());}
+  assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let product=primary.finish_with_observer(source,true,&mut observer).unwrap();
+  assert_eq!(observer.events.iter().map(|row|row.0).collect::<Vec<_>>(),["header","commit","header","commit"]);
+  assert!(observer.events[1].2>=source.find("return 7").unwrap()+"return 7".len());assert!(observer.events[1].2<=observer.events[2].1);assert!(observer.events[3].2>=source.find("return 9").unwrap()+"return 9".len());
+  drop(product);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]
+ fn actual_declaration_commit_finish_preserves_first_io_and_refunds() {
+  struct Observer;impl OriginalDeclarationHeaderObserver for Observer{
+   fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}
+   fn declaration_committed(&mut self,event:crate::OriginalPrimaryCommit<'_>)->io::Result<()>{if matches!(event.item().kind,ItemKind::Proc|ItemKind::Verb){Err(io::Error::from_raw_os_error(1450))}else{Ok(())}}
+  }
+  for committed in [false,true]{let source="/proc/last()\n    return 1\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut observer=Observer;let mut primary=if committed{OriginalPrimaryDemand::new_committed(&a,None)}else{OriginalPrimaryDemand::new(&a,None)}.unwrap();for token in lex_spans(source).tokens{primary.token(token).unwrap();}
+   assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let error=if committed{primary.finish_committed_with_observer(source,true,&mut observer).err().unwrap()}else{primary.finish_with_observer(source,true,&mut observer).err().unwrap()};assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
  }
 }

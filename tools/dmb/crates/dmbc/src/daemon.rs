@@ -25,6 +25,10 @@ pub mod generation;
 pub mod analyze;
 mod selected_exclusions;
 mod selected_compilation;
+mod full_registry_check;
+mod schema_proposals;
+pub use schema_proposals::run_cli as run_schema_proposals_cli;
+pub use full_registry_check::run_cli as run_full_registry_check_cli;
 pub use selected_compilation::run_file as run_compile_selected_reports_file;
 mod named_image_dir;
 pub use named_image_dir::run_file as run_named_image_dir_file;
@@ -408,3 +412,6 @@ mod output_tests {
 /// the caller must keep its existing ordinary error transport. No raw text or
 /// caller-supplied status can obtain a native source/diagnostic grant here.
 pub fn write_retained_preparation_rejection(output:&mut impl std::io::Write,error:&(dyn std::error::Error+'static))->std::io::Result<bool>{match crate::diagnostics::retained_preparation_failure_parts(error){Some((kind,message))=>{retained_rejection::send_rejected_text(output,kind,message)?;Ok(true)},None=>Ok(false)}}
+
+mod checker_text;
+pub use checker_text::run_cli as run_checker_text_cli;

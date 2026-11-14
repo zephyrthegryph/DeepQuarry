@@ -573,7 +573,7 @@ impl<'a> CurrentBodySyntax<'a>{
      S::If{condition,then_branch,else_branch}=>{work.expression(Some(condition),a)?;work.statements(then_branch,a)?;work.statements(else_branch,a)?;}
      S::While{condition,body}|S::DoWhile{condition,body}=>{work.expression(Some(condition),a)?;work.statements(body,a)?;}
      S::Spawn{delay,body}=>{work.expression(delay,a)?;work.statements(body,a)?;}
-     S::Set{value,..}|S::Throw(value)|S::Call(value)|S::Expression(value)=>work.expression(Some(value),a)?,
+     S::Set{value,..}|S::Throw(value)|S::Delete(value)|S::Call(value)|S::Expression(value)=>work.expression(Some(value),a)?,
      S::For{control,body}=>{use dm_syntax::ProjectedForControl as F;match control{F::All{..}=>{},F::Each{iterable,..}|F::Pair{iterable,..}=>work.expression(Some(iterable),a)?,F::Range{start,end,step,..}=>{work.expression(Some(start),a)?;work.expression(Some(end),a)?;work.expression(step,a)?;},F::RangeImplicitArray{end,step,..}=>{work.expression(Some(end),a)?;work.expression(step,a)?;},F::CStyle{initializer,condition,step}=>{if let Some(initializer)=initializer{match initializer{dm_syntax::ProjectedForInitializer::Declare{value,..}=>work.expression(value,a)?,dm_syntax::ProjectedForInitializer::Expr(root)=>work.expression(Some(root),a)?}}work.expression(condition,a)?;work.expression(step,a)?;}}work.statements(body,a)?;}
      S::Switch{selector,cases,else_branch,..}=>{work.expression(Some(selector),a)?;for case in cases.iter(){a.checkpoint().map_err(BodySyntaxFailure::Operational)?;case.projected_case_site().map_err(binding_view_error)?;for alternative in case.alternatives(){match alternative.map_err(binding_view_error)?{dm_syntax::ProjectedSwitchAlternative::Exact(root)=>work.expression(Some(root),a)?,dm_syntax::ProjectedSwitchAlternative::Range(start,end)=>{work.expression(Some(start),a)?;work.expression(Some(end),a)?;}}}work.statements(case.body(),a)?;}work.statements(else_branch,a)?;}
      S::Try{body,catch_body,..}=>{work.statements(body,a)?;work.statements(catch_body,a)?;}
@@ -671,6 +671,102 @@ mod current_original_body_product_binding_tests {
   let used=host.counter.load(Ordering::Acquire);let a=dm_syntax::SettingAdmission::new(&host.counter,used,&||Ok(()));let Err(BodySyntaxFailure::Operational(error))=current.bind_original_product_checked(&product,&a)else{panic!("actual temporary-work admission denied")};assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(host.counter.load(Ordering::Acquire),used);
   let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));assert!(current.bind_original_product_checked(&product,&a).is_ok());assert_eq!(host.parses.load(Ordering::Relaxed),1);
  }
+
+ #[test]
+ fn native_only_bare_return_grant_uses_actual_product_end_and_current_coordinates(){
+  for source in ["/proc/p()\n    return\n","/proc/p()\n    return\n/proc/later()\n    return 2\n"]{
+   let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());
+   let front=same_chunk(&mut state,source,&host);let input=input(&front);
+   let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));
+   let product=input.parse_original_product_with_setting_admission(&a).unwrap();
+   let parsed=product.parsed().unwrap();let bound=input.bind_original_product_checked(parsed,&a).unwrap();
+   let Err(BodySyntaxFailure::Operational(old))=bound.original_code_disposition()
+    else{panic!("native-default fixture must not mint an Original-only profile")};
+   assert_eq!(old.kind(),std::io::ErrorKind::Unsupported);
+   assert_eq!(old.to_string(),"original body grammar profile is not actually issued");
+   match bound.native_code_disposition_using(&a).unwrap(){
+    NativeBodyDisposition::Complete(grant)=>{assert!(grant.belongs_to(&bound));assert_eq!(&input.source[grant.statement_span().range()],"return");}
+    _=>panic!("actual single bare-return production must complete"),
+   }
+   assert_eq!(host.parses.load(Ordering::Relaxed),0,"same direct actual producer, no reparse through query host");
+  }
+ }
+ #[test]
+ fn native_only_census_separates_uncovered_and_deferred_from_original_availability(){
+  let mut complete=0;let mut uncovered=0;let mut deferred=0;
+  for(source,expected)in [
+   ("/proc/p()\n    return\n",0),
+   ("/proc/p()\n    return 1\n",1),
+   ("/proc/p()\n    return\n    return\n",1),
+   ("/proc/p(value)\n    return\n",2),
+  ]{
+   let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());
+   let front=same_chunk(&mut state,source,&host);let input=input(&front);
+   let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));
+   let product=input.parse_original_product_with_setting_admission(&a).unwrap();
+   let bound=input.bind_original_product_checked(product.parsed().unwrap(),&a).unwrap();
+   let actual=match bound.native_code_disposition_using(&a).unwrap(){
+    NativeBodyDisposition::Complete(_)=>{complete+=1;0},
+    NativeBodyDisposition::NotCovered=>{uncovered+=1;1},
+    NativeBodyDisposition::Deferred=>{deferred+=1;2},
+    NativeBodyDisposition::Recovered=>3,
+   };
+   assert_eq!(actual,expected,"actual source native census, not Original relabeling: {source}");
+  }
+  assert_eq!((complete,uncovered,deferred),(1,2,1));
+ }
+ #[test]
+ fn native_only_grant_keeps_actual_io_foreign_domain_and_exported_data_boundaries(){
+  let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());
+  let front=same_chunk(&mut state,"/proc/p()\n    return\n",&host);let input=input(&front);
+  let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));
+  let product=input.parse_original_product_with_setting_admission(&a).unwrap();
+  let parsed=product.parsed().unwrap();let bound=input.bind_original_product_checked(parsed,&a).unwrap();
+  let mut exported=parsed.statement_storage().parsed().clone();
+  exported.statements.clear();exported.diagnostics.clear();
+  assert!(matches!(bound.native_code_disposition_using(&a).unwrap(),NativeBodyDisposition::Complete(_)),
+   "mutable public DATA does not mutate the actual private retained product");
+  let before=host.counter.load(Ordering::Acquire);
+  let bad=||Err(std::io::Error::from_raw_os_error(1450));
+  let stopped=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&bad);
+  let Err(BodySyntaxFailure::Operational(actual))=bound.native_code_disposition_using(&stopped)
+   else{panic!("first actual IO is not a native disposition")};
+  assert_eq!(actual.raw_os_error(),Some(1450));
+  assert_eq!(host.counter.load(Ordering::Acquire),before);
+  let tight=dm_syntax::SettingAdmission::new(&host.counter,before,&||Ok(()));
+  let Err(BodySyntaxFailure::Operational(actual))=bound.native_code_disposition_using(&tight)
+   else{panic!("real current binding temporary work must be admitted")};
+  assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);
+  assert_eq!(host.counter.load(Ordering::Acquire),before);
+  let foreign=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let other=dm_syntax::SettingAdmission::new(&foreign,1<<26,&||Ok(()));
+  assert!(bound.native_code_disposition_using(&other).is_err(),"equal budget cannot reissue another resource owner's grant");
+  assert!(matches!(bound.native_code_disposition_using(&a).unwrap(),NativeBodyDisposition::Complete(_)));
+ }
+
+
+ #[test]
+ fn native_only_retained_bare_return_grant_uses_shifted_current_input_without_reparse(){
+  let mut state=RetainedSemanticTree::new();let host=Arc::new(NativeHost::new());
+  let source=acquired("/proc/p()\n    return\n");
+  let old=front(&mut state,source.clone(),q(""),&host);let original=input(&old);
+  let product=host.syntax_checked(&original).unwrap();
+  let next=front(&mut state,source.clone(),q("// actual preceding source edit changes current expanded position\n\n"),&host);
+  let current=input(&next);assert_ne!(original.span.start,current.span.start);
+  let a=dm_syntax::SettingAdmission::new(&host.counter,1<<26,&||Ok(()));
+  let bound=current.bind_original_product_checked(&product,&a).unwrap();
+  let NativeBodyDisposition::Complete(grant)=bound.native_code_disposition_using(&a).unwrap()
+   else{panic!("same private product must retain native completeness at its real current projection")};
+  assert!(grant.belongs_to(&bound));
+  assert_eq!(&current.source[grant.statement_span().range()],"return");
+  assert_ne!(grant.statement_span(),product.statements.parsed().statements[0].header_span);
+  assert_eq!(host.parses.load(Ordering::Relaxed),1,"grant uses original canonical product, no parser replay");
+  let fresh=front(&mut RetainedSemanticTree::new(),source,q("// actual preceding source edit changes current expanded position\n\n"),&host);
+  assert!(input(&fresh).bind_original_product_checked(&product,&a).is_err(),"equal exported source DATA cannot reseal a foreign private product");
+  let changed=front(&mut state,acquired("/proc/p()\n    return 1\n"),q(""),&host);
+  assert!(input(&changed).bind_original_product_checked(&product,&a).is_err(),"changed canonical code cannot inherit native completion");
+ }
+
 }
 
 /// Source-neutral native grammar result, never a current frontend/model.
@@ -784,5 +880,85 @@ impl<'syntax> CurrentBodySyntax<'syntax>{
   }
   if !parsed.statements.iter().take(outcome.prefix_settings()).all(|row|matches!(&row.kind,dm_syntax::StatementKind::Set{..}|dm_syntax::StatementKind::ProjectedSet{..})){return Err(binding_error("actual original setting prefix contains another native statement"))}
   let grant=OriginalBodyCodeGrant{body:self,outcome};Ok(match outcome.kind(){dm_syntax::OriginalBodyGrammarKind::Available=>OriginalBodyDisposition::Available(grant),dm_syntax::OriginalBodyGrammarKind::SkippedMissingSimpleOperand=>OriginalBodyDisposition::Skipped(grant)})
+ }
+}
+
+/// Native-only coverage from the actual private BODY producer. It is not
+/// Original availability, lowering coverage, or independent Checker parity.
+pub enum NativeBodyDisposition<'loan,'syntax> {
+ Complete(NativeBodyCodeGrant<'loan,'syntax>),
+ Recovered,
+ NotCovered,
+ Deferred,
+}
+pub struct NativeBodyCodeGrant<'loan,'syntax> {
+ body:&'loan CurrentBodySyntax<'syntax>,
+ statement:dm_syntax::Span,
+}
+impl NativeBodyCodeGrant<'_,'_> {
+ pub fn belongs_to(&self,body:&CurrentBodySyntax<'_>)->bool{std::ptr::eq(self.body,body)}
+ pub fn statement_span(&self)->dm_syntax::Span{self.statement}
+}
+impl<'syntax> CurrentBodySyntax<'syntax> {
+ /// Conservative first native slice: one real bare-return production, no
+ /// parameters/optional children, and actual containing-input termination.
+ /// Source-neutral/parser-exported DATA cannot manufacture this borrowed grant.
+ pub fn native_code_disposition_using<'loan>(&'loan self,a:&dm_syntax::SettingAdmission<'_>)
+  ->Result<NativeBodyDisposition<'loan,'syntax>,BodySyntaxFailure>{
+  let pending=(||{
+   // Reuse SAME private input/product/projection/resource checks on each loan.
+   let _current=self.input.bind_original_product_checked(self.original,a)?;
+   let parsed=self.original.statements.parsed();
+   let header=match self.original.statements.native_parser_facts{
+    Some(dm_syntax::NativeBodyParserFacts::BareReturn{header})=>header,
+    Some(dm_syntax::NativeBodyParserFacts::Recovered)=>return Ok(NativeBodyDisposition::Recovered),
+    _=>return Ok(NativeBodyDisposition::NotCovered),
+   };
+   // Result-bearing real header metadata: failed optional parsing cannot turn
+   // into the empty parameter roster accepted by this initial slice.
+   let parameters=self.parameters()?;
+   if parameters.entries().map_err(binding_view_error)?.next().is_some()
+    ||parameters.absolute_declarations().map_err(binding_view_error)?.next().is_some(){
+    return Ok(NativeBodyDisposition::Deferred)
+   }
+   if self.deferred_literal_roots!=0 || !parsed.pending_bodies.is_empty()
+    || !parsed.control_origins.is_empty()
+    || self.locals().entries().map_err(binding_view_error)?.next().is_some(){
+    return Ok(NativeBodyDisposition::Deferred)
+   }
+   let [only]=parsed.statements.as_slice() else{return Err(binding_error("native production roster differs from private parser facts"))};
+   let [child]=self.original.item.children.as_slice() else{return Err(binding_error("native production child consumption differs"))};
+   if only.header_span!=header || child.header_span!=header || !child.children.is_empty()
+    || !matches!(&only.kind,dm_syntax::StatementKind::Return(None))
+    || !parsed.diagnostics.is_empty(){
+    return Err(binding_error("native bare-return production differs from retained canonical data"))
+   }
+   let code=self.input.original_code.as_ref().ok_or_else(||binding_error("native grant has no actual code owner"))?;
+   let recipe=self.input.syntax.original_body_recipe(self.input.span,code).map_err(|_|binding_error("native current recipe is not authentic"))?;
+   let _window=recipe.source_window().map_err(binding_error)?;
+   let header=self.projection.span(header).ok_or_else(||binding_error("native production escapes actual current body"))?;
+   let tokens=self.input.syntax.original_body_tokens(self.input.span,code).map_err(|message|binding_error(&message))?;
+   let actual=tokens.tokens(header).map_err(binding_error)?;
+   let mut saw_keyword=false;
+   for(kind,span,text)in actual{
+    a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+    match(kind,text){
+     (dm_syntax::TokenKind::Whitespace|dm_syntax::TokenKind::Newline|dm_syntax::TokenKind::Comment,_)=>(),
+     (dm_syntax::TokenKind::Ident,"return")if !saw_keyword&&span.start==header.start=>saw_keyword=true,
+     _=>return Err(binding_error("native bare-return header differs from actual token loan")),
+    }
+   }
+   if !saw_keyword{return Err(binding_error("native return token was not consumed"))}
+   // Actual primary layout may emit a semicolon or enclosing close here.
+   // Reuse its same owned delimiter producer, not raw-text lookahead or a
+   // procedure-length EOF. Later declarations remain real forward tokens.
+   if tokens.native_statement_terminator_using(header,a).map_err(BodySyntaxFailure::Operational)?.is_none(){
+    return Ok(NativeBodyDisposition::Deferred)
+   }
+   a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+   Ok(NativeBodyDisposition::Complete(NativeBodyCodeGrant{body:self,statement:header}))
+  })();
+  if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
+  pending
  }
 }

@@ -8,13 +8,7 @@ use dm_tree::frontend::ColdFrontend;
 /// Hold this handle through capture, compilation and installation. Independent
 /// worktrees have distinct locks; two processes targeting one manifest serialize.
 pub fn acquire_build_lock(project: &std::path::Path) -> std::io::Result<std::fs::File> {
-    let directory = project
-        .parent()
-        .ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::InvalidInput, "manifest has no parent")
-        })?
-        .join(".dmbc");
-    std::fs::create_dir_all(&directory)?;
+    let directory = initialize_build_directory(project)?;
     let file = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -23,6 +17,20 @@ pub fn acquire_build_lock(project: &std::path::Path) -> std::io::Result<std::fs:
         .open(directory.join("build.lock"))?;
     crate::request_lease::acquire(&file)?;
     Ok(file)
+}
+
+/// Initialize the compiler's existing session/lock namespace before a compound
+/// operation records exact source-directory rosters. This grants no source or
+/// publication permission, and does not acquire/release a second build lock.
+pub(crate) fn initialize_build_directory(project: &std::path::Path) -> std::io::Result<std::path::PathBuf> {
+    let directory = project
+        .parent()
+        .ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "manifest has no parent")
+        })?
+        .join(".dmbc");
+    std::fs::create_dir_all(&directory)?;
+    Ok(directory)
 }
 
 /// Resolve source scalar constants once, using the same backend spelling rules

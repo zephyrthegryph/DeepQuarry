@@ -1760,3 +1760,79 @@ fn original_final_inline_switch_warning_uses_real_forward_cursor_before_later_pr
  assert_eq!(actual["message"],"Elements in a switch-case branch separated by ||, this is likely in error and should be replaced by a comma");
  assert!(!actual["expanded_span"].is_null(),"real forward token retains its source span");
 }
+
+// Completion is issued by actual traversal even when a body has zero findings.
+// A stopped diagnostic consumer or unissued body cannot mint a receipt.
+#[cfg(debug_assertions)]
+#[test]
+fn original_body_completion_requires_both_real_passes_and_same_input() {
+ let source=b"/proc/probe()\n    return missing\n/proc/empty()\n    return 0\n";
+ let(host,_)=original_filter_flags_host(source);
+ let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();
+ let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();let input=owner.input();
+ let db=snapshot.native_raw_queries.as_ref().unwrap();let mut rows=0usize;
+ let complete=db.visit_cached_original_diagnostics_completed(input,||Ok(()),|_,_|{rows+=1;Ok(())}).unwrap();
+ assert_eq!(complete.body_count_for(input.as_ref()).unwrap(),input.archive().len());assert!(rows>0);
+ let(other,_)=original_filter_flags_host(source);let other_state=other.query_state();let other_state=other_state.lock().unwrap();let other_snapshot=other_state.snapshot.as_ref().unwrap();let other_owner=other_snapshot.original_checker_request_input(&other_snapshot.tree).unwrap();
+ assert!(complete.body_count_for(other_owner.input().as_ref()).is_err());
+ let stopped=db.visit_cached_original_diagnostics_completed(input,||Ok(()),|_,_|Err(std::io::Error::from_raw_os_error(1450)));
+ match stopped{Err(actual)=>assert_eq!(actual.raw_os_error(),Some(1450)),Ok(_)=>panic!("partial traversal minted completion")}
+}
+#[cfg(debug_assertions)]
+#[test]
+fn original_body_completion_refuses_unissued_body_before_any_completion() {
+ let(host,_)=original_filter_flags_host(b"/proc/probe(value,other,third)\n    return value = other = third\n");
+ let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();
+ let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();let input=owner.input();let db=snapshot.native_raw_queries.as_ref().unwrap();
+ assert!(db.visit_cached_original_diagnostics_completed(input,||Ok(()),|_,_|Ok(())).is_err());
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn ordered_whole_input_scope_completion_matches_normal_and_compact_real_traversals() {
+ let(host,environment)=original_filter_flags_host(b"/proc/probe()\n    return missing\n/proc/empty()\n    return 0\n");
+ let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();
+ let input_owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();let input=input_owner.input();
+ let mut normal=Vec::new();snapshot.write_original_ordered_checker(&environment,None,&snapshot.tree,&mut normal).unwrap();
+ let cache=crate::test_scratch::dir("whole-checker-completion-compact");
+ let mut compact=Vec::new();snapshot.write_compact_original_ordered_checker(&environment,&snapshot.tree,&cache,&mut compact).unwrap();
+ let normal:serde_json::Value=serde_json::from_slice(&normal).unwrap();let compact:serde_json::Value=serde_json::from_slice(&compact).unwrap();
+ assert_eq!(normal,compact);
+ assert_eq!(normal["scope_completion"]["scope"],"whole_input_current_ordered_producers");
+ assert_eq!(normal["scope_completion"]["visited_bodies"],input.archive().len());
+ assert_eq!(normal["scope_completion"]["completed_phase_order"],serde_json::to_value(crate::daemon::query::ORIGINAL_ORDERED_CHECKER_PHASES).unwrap());
+ assert_eq!(normal["full_checker_parity"],false,"scope observation is not independent parity");
+}
+#[cfg(debug_assertions)]
+#[test]
+fn ordered_whole_input_scope_completion_cannot_survive_unsupported_body_or_output_io() {
+ let(host,environment)=original_filter_flags_host(b"/proc/probe(value,other,third)\n    return value = other = third\n");
+ let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();
+ let mut normal=Vec::new();assert!(snapshot.write_original_ordered_checker(&environment,None,&snapshot.tree,&mut normal).is_err());
+ assert!(serde_json::from_slice::<serde_json::Value>(&normal).is_err(),"partial header is not a completed report");
+ let cache=crate::test_scratch::dir("unsupported-checker-completion-compact");
+ let mut compact=Vec::new();assert!(snapshot.write_compact_original_ordered_checker(&environment,&snapshot.tree,&cache,&mut compact).is_err());
+ assert!(compact.is_empty(),"compact failure must not deliver a completion envelope");
+ drop(state);
+ struct Stopped;impl std::io::Write for Stopped{fn write(&mut self,_:&[u8])->std::io::Result<usize>{Err(std::io::Error::from_raw_os_error(1450))}fn flush(&mut self)->std::io::Result<()>{Ok(())}}
+ let(host,environment)=original_filter_flags_host(b"/proc/probe()\n    return 0\n");let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();
+ assert_eq!(snapshot.write_original_ordered_checker(&environment,None,&snapshot.tree,&mut Stopped).unwrap_err().raw_os_error(),Some(1450));
+ let cache=crate::test_scratch::dir("stopped-checker-completion-compact");
+ assert_eq!(snapshot.write_compact_original_ordered_checker(&environment,&snapshot.tree,&cache,&mut Stopped).unwrap_err().raw_os_error(),Some(1450));
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn original_body_completion_quota_cancel_and_late_freshness_fail_without_receipt_then_recover() {
+ let(host,_)=original_filter_flags_host(b"/proc/probe()\n    return 0\n");let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();
+ let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();let input=owner.input();let db=snapshot.native_raw_queries.as_ref().unwrap();
+ let before=db.effect_graph_work_for_test();let quota=db.effect_storage_limit_for_test(1);
+ let denied=db.visit_cached_original_diagnostics_completed(input,||Ok(()),|_,_|Ok(())).err().expect("real quota must deny completion");
+ assert_eq!(denied.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(db.effect_graph_work_for_test(),before);drop(quota);
+ let cancel=crate::daemon::control::Cancellation::default();let guard=crate::daemon::control::bind_with_deadline(cancel.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));cancel.cancel();
+ let stopped=db.visit_cached_original_diagnostics_completed(input,||Ok(()),|_,_|Ok(())).err().expect("cancelled traversal cannot complete");assert_eq!(stopped.kind(),std::io::ErrorKind::Interrupted);drop(guard);assert_eq!(db.effect_graph_work_for_test(),before);
+ let calls=std::cell::Cell::new(0usize);
+ let late=db.visit_cached_original_diagnostics_completed(input,||{let at=calls.get()+1;calls.set(at);if at==2{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}},|_,_|Ok(())).err().expect("late actual freshness error cannot mint completion");
+ assert_eq!(late.raw_os_error(),Some(1450));assert_eq!(calls.get(),2);
+ let complete=db.visit_cached_original_diagnostics_completed(input,||Ok(()),|_,_|Ok(())).unwrap();assert_eq!(complete.body_count_for(input.as_ref()).unwrap(),input.archive().len());
+}

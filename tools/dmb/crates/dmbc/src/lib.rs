@@ -161,3 +161,14 @@ mod generation_transaction;
 mod generation_coordinator;
 
 #[cfg(test)]mod generation_test_fixture;
+
+// Opt-in observational harness; no default source/export or parity authority.
+pub use request_runner::runner_freshness::observation::{with_compiled_full_registry_input_observation, Observation as JoinedInputObservation};
+
+// Explicit native source-bound edit cohort; no ordinary CLI/default activation.
+pub mod native_fix;
+mod native_author_fix_transaction;
+mod native_fix_physical;
+
+/// Explicit optional native Checker text adapter; no default activation.
+pub mod native_checker;

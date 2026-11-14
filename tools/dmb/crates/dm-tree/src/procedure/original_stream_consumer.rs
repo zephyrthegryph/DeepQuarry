@@ -13,6 +13,7 @@ impl OriginalSignatureObserver<'_,'_>{
  /// The SAME actual consumed boundary is copied as scalar geometry only. The
  /// default retains its one original Token/value allocation; no String clone.
  fn complete_from_stream(&mut self,source:&mut dyn OriginalFormalTokenStream,start:usize,following:SpanToken,default:Option<DemandedFormalDefault>,clauses:dm_syntax::ParameterClauseSpans)->io::Result<OriginalHeaderFlow>{
+  self.reader_registration=Some(source.reader_registration()?);
   let span=Span::new(start,following.span.start);let mut pending=Some(default);let mut completed=None;
   source.with_current_source(&mut |text,tokens|{
    if completed.is_some(){return Err(invalid("formal source-loan callback repeated"))}
@@ -30,6 +31,7 @@ impl OriginalSignatureObserver<'_,'_>{
  /// Validate/intern the actual head once before asking the RHS producer for
  /// any future raw token. The retained native head is consumed by completion.
  fn admit_head_from_stream(&mut self,source:&mut dyn OriginalFormalTokenStream,start:usize,assignment:SpanToken)->io::Result<OriginalHeaderFlow>{
+  self.reader_registration=Some(source.reader_registration()?);
   let span=Span::new(start,assignment.span.start);let mut completed=None;
   source.with_current_source(&mut |text,tokens|{
    if completed.is_some(){return Err(invalid("formal-head source-loan callback repeated"))}
@@ -43,6 +45,8 @@ impl OriginalSignatureObserver<'_,'_>{
  }
 }
 impl OriginalPrimaryStreamConsumer for OriginalSignatureObserver<'_,'_>{
+ fn wants_reader_registrations(&self)->bool{true}
+ fn reader_registration(&mut self,registration:dm_preprocess::regions::OriginalNoticeRegistration)->io::Result<()>{super::checkpoint(self.a)?;if let Some(previous)=&self.reader_registration{if previous.compare_same_source(&registration)?==std::cmp::Ordering::Greater{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual reader registration frontier moved backwards"))}}self.reader_registration=Some(registration);Ok(())}
  fn retains_committed_items(&self) -> bool { true }
 
  fn callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
@@ -62,6 +66,7 @@ impl OriginalSignatureObserver<'_,'_>{
  }
  fn consume_callable(&mut self,live:OriginalPrimaryLiveHeader,source:&mut dyn OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
   if self.failure.is_some()||self.unsupported.is_some(){return Err(io::ErrorKind::InvalidInput.into())}
+  self.reader_registration=Some(source.reader_registration()?);
   let mut start=live.argument_start();self.begin_formals(live)?;let mut clauses=ParameterClauseCursor::new(start);let mut head_seen=false;let mut dimension=0usize;let mut pending=None;let mut after_input=false;let mut trailing_semicolon=None;
   loop{
    super::checkpoint(self.a)?;let token=match pending.take(){
@@ -74,6 +79,7 @@ impl OriginalSignatureObserver<'_,'_>{
      },
     },
    };
+   self.reader_registration=Some(source.reader_registration()?);
    if clauses.is_top_level()&&formal_boundary(token.kind,&token.text){
     let following=SpanToken{kind:token.kind,span:token.span};let closed=token.text==")";let next=token.span.end;drop(token);
     let flow=self.complete_from_stream(source,start,following,None,clauses.finish(following.span.start))?;if flow==OriginalHeaderFlow::Stop||closed{return Ok(flow)}start=next;clauses=ParameterClauseCursor::new(start);head_seen=false;dimension=0;after_input=false;trailing_semicolon=None;continue
@@ -98,7 +104,7 @@ impl OriginalSignatureObserver<'_,'_>{
     loop{super::checkpoint(self.a)?;let token=source.next_header_token()?.ok_or_else(||unsupported("Original input annotation EOF recovery is not issued"))?;
      match input.feed(token.kind,token.span,&token.text){
       Ok(dm_syntax::ParameterInputFlow::Boundary)=>{pending=Some(token);break},
-      Ok(dm_syntax::ParameterInputFlow::ConsumedIdentifier)=>{self.observed_input_identifier(token.span,&token.text)?;clauses.push(token.kind,token.span,&token.text);},
+      Ok(dm_syntax::ParameterInputFlow::ConsumedIdentifier)=>{self.reader_registration=Some(source.reader_registration()?);self.observed_input_identifier(token.span,&token.text)?;clauses.push(token.kind,token.span,&token.text);},
       Ok(dm_syntax::ParameterInputFlow::Consumed)=>clauses.push(token.kind,token.span,&token.text),
       Err(dm_syntax::ParameterInputFailure::Operational(actual))=>return Err(actual),
       Err(dm_syntax::ParameterInputFailure::Syntax{receipt,..})=>{let actual=SpanToken{kind:token.kind,span:token.span};drop(token);drop(input);return self.reject_input_failure_using(source,receipt,actual)},

@@ -29,6 +29,7 @@ pub(crate) struct OriginalProcedureHeaders {
     parameter_signatures:OnceLock<HeaderParameterSignatures>,
     lazy_parameter_signatures:OnceLock<()>,
     formal_notices:OnceLock<(super::original_formal_notices::FormalNotices,bool)>,
+    reader_registrations:OnceLock<(Option<dm_preprocess::regions::OriginalReaderRegistrationTable>,usize,dm_preprocess::regions::OriginalNoticeRegistration)>,
     original_literal_source:OnceLock<HeaderLiteralSourceHold>,
     // Last: actual token/header payload drops before its SAME resource credit.
     original_primary_resource:OnceLock<OriginalPrimaryResourceHold>,
@@ -586,7 +587,7 @@ impl OriginalProcedureHeaders {
             initializer_coordinates: coordinates,
             initializer_roots: Default::default(),
             initializer_facts: OnceLock::new(),
-            demanded_defaults:OnceLock::new(),parameter_signatures:OnceLock::new(),lazy_parameter_signatures:OnceLock::new(),formal_notices:OnceLock::new(),
+            demanded_defaults:OnceLock::new(),parameter_signatures:OnceLock::new(),lazy_parameter_signatures:OnceLock::new(),formal_notices:OnceLock::new(),reader_registrations:OnceLock::new(),
             original_literal_source:OnceLock::new(),
             original_primary_resource:OnceLock::new(),
         }))
@@ -846,9 +847,38 @@ impl OriginalProcedureHeaders {
         &self.initializer_roots
     }
     pub(super) fn install_original_formal_notices(&self,notices:super::original_formal_notices::FormalNotices,complete:bool,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{original_checkpoint(a)?;if !notices.is_admitted_by(a){return Err(std::io::ErrorKind::InvalidInput.into())}self.formal_notices.set((notices,complete)).map_err(|_|std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual formal parser notices were already installed"))}
+    pub(super) fn install_original_reader_registrations(&self,rows:Option<dm_preprocess::regions::OriginalReaderRegistrationTable>,count:usize,end:dm_preprocess::regions::OriginalNoticeRegistration,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+        original_checkpoint(a)?;
+        if count>self.headers.len()||(count!=0&&rows.is_none()){return Err(std::io::ErrorKind::InvalidData.into())}
+        for index in 0..count{original_checkpoint(a)?;let registration=rows.as_ref().ok_or(std::io::ErrorKind::InvalidData)?.get(index)?;if registration.compare_same_source(&end)?==std::cmp::Ordering::Greater{return Err(std::io::ErrorKind::InvalidData.into())}}
+        self.reader_registrations.set((rows,count,end)).map_err(|_|std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual reader registrations already installed"))
+    }
+    pub(crate) fn optional_reader_body_commit_registration(&self,body:Span)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
+        let index=self.headers.binary_search_by_key(&body.start,|header|header.start).map_err(|_|"actual body has no retained callable header")?;
+        let header=self.headers[index];if header.end>body.end{return Err("actual callable header escapes its authenticated body".into())}
+        self.optional_reader_commit_registration(header,0)
+    }
+    pub(crate) fn optional_reader_commit_registration(&self,header:Span,offset:usize)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
+        if self.reader_registrations.get().is_none(){return Ok(None)}self.reader_commit_registration(header,offset).map(Some)
+    }
+    pub(crate) fn optional_reader_end_registration(&self)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
+        if self.reader_registrations.get().is_none(){return Ok(None)}self.reader_end_registration().map(Some)
+    }
+    pub(crate) fn optional_formal_notice_registration(&self,notice:super::OriginalFormalNotice)->Result<Option<&dm_preprocess::regions::OriginalNoticeRegistration>,&'static str>{let(notices,complete)=self.formal_notices.get().ok_or("actual formal parser notice coverage is unissued")?;if !complete{return Err("actual formal parser notice coverage is incomplete")}notices.optional_registration(notice)}
+    pub(crate) fn reader_commit_registration(&self,header:Span,offset:usize)->Result<dm_preprocess::regions::OriginalNoticeRegistration,String>{
+        let index=self.header_ordinal(header,offset)?;
+        let(rows,count,_)=self.reader_registrations.get().ok_or("actual reader registration owner unissued")?;
+        if index>=*count{return Err("actual callable commit registration unissued".into())}
+        rows.as_ref().ok_or("actual callable commit table absent")?.get(index).map_err(|error|error.to_string())
+    }
+    pub(crate) fn reader_end_registration(&self)->Result<dm_preprocess::regions::OriginalNoticeRegistration,String>{
+        let(_,_,end)=self.reader_registrations.get().ok_or("actual reader final registration unissued")?;
+        end.require_after_actual_end().map_err(|error|error.to_string())?;Ok(end.clone())
+    }
     pub(crate) fn formal_notices_for(&self,header:Span)->Result<impl Iterator<Item=super::OriginalFormalNotice>+'_,&'static str>{let(notices,complete)=self.formal_notices.get().ok_or("actual original formal parser notice coverage is unissued")?;if !complete{return Err("actual original formal clause notice coverage is unissued")}Ok(notices.for_header(header.start).iter().map(|entry|entry.notice))}
     pub(crate) fn formal_source_matches(&self,parent:&SourceText,offset:usize)->bool{offset.checked_add(self.source.len()).and_then(|end|parent.checked_view(offset..end)).is_some_and(|view|view.same_view(&self.source))}
     pub(crate) fn all_formal_notices(&self)->Result<impl Iterator<Item=super::OriginalFormalNotice>+'_,&'static str>{let(notices,complete)=self.formal_notices.get().ok_or("actual original formal parser notice coverage is unissued")?;if !complete{return Err("actual original formal clause notice coverage is unissued")}Ok(notices.all().iter().map(|entry|entry.notice))}
+    pub(crate) fn formal_notice_registration(&self,notice:super::OriginalFormalNotice)->Result<&dm_preprocess::regions::OriginalNoticeRegistration,&'static str>{let(notices,complete)=self.formal_notices.get().ok_or("actual formal notice owner absent")?;if !complete{return Err("actual formal notice registration coverage is unissued")}notices.registration(notice)}
     pub(crate) fn formal_notice_text(&self,notice:super::OriginalFormalNotice)->Result<Option<&str>,&'static str>{if notice.needs_rendered_message(){let(notices,_)=self.formal_notices.get().ok_or("actual rendered formal notice owner absent")?;return notices.rendered_message(notice).map(Some)}notice.value_span().map(|span|self.source.get(span.range()).ok_or("actual formal notice value escaped its producer source")).transpose()}
     #[cfg(test)]
     pub(crate) fn clause_storage_for_test(&self) -> (usize, usize) {
@@ -1165,6 +1195,7 @@ impl OriginalProcedureHeaders {
         let mut visit=|p,n,c|classified(p,n,c,false);
         if let Some(roots)=self.demanded_defaults.get(){roots.visit_storage(&mut visit);}
         if let Some((notices,_))=self.formal_notices.get(){notices.visit_storage(&mut visit);}
+        if let Some((rows,_,end))=self.reader_registrations.get(){if let Some(rows)=rows{rows.visit_storage(&mut visit)}end.visit_storage(&mut visit)}
         if let Some(root)=self.original_primary_resource.get(){let bytes=std::mem::size_of::<dm_syntax::SettingRootLease>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(&root.0)as usize,bytes,bytes);root.0.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));}
 
         if let Some(cohort)=self.parameter_signatures.get(){
@@ -2382,13 +2413,14 @@ impl OriginalBodyTokens<'_>{
  // The pinned checker CLI leaves parser annotations disabled, so block-local
  // annotation replay cannot move this cursor after the consumed delimiter.
  fn original_case_block_cursor_using<E:From<&'static str>>(&self,after:usize,continuation_mode:OriginalCaseContinuation,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<dm_syntax::OriginalCaseCursor>,E>{
+  let global_span=|at:Span|->Result<Span,E>{Ok(Span::new(at.start.checked_add(self.offset).ok_or(if continuation_mode==OriginalCaseContinuation::StatementTerminator{"case terminator cursor overflow"}else{"case cursor span start overflow"})?,at.end.checked_add(self.offset).ok_or(if continuation_mode==OriginalCaseContinuation::StatementTerminator{"case terminator cursor overflow"}else{"case cursor span end overflow"})?))};
   let mut current:Option<(usize,usize)>=None;let mut spaces:Option<usize>=None;let mut parentheses=0usize;let mut eol:Option<Span>=None;let active=std::cell::Cell::new(false);let mut depth=0usize;let decided=std::cell::Cell::new(false);let waiting=std::cell::Cell::new(false);let else_mode=std::cell::Cell::new(0u8);let else_parens=std::cell::Cell::new(0usize);let else_if=std::cell::Cell::new(false);let final_else=std::cell::Cell::new(false);let continuation=std::cell::Cell::new(0u8);let continuation_depth=std::cell::Cell::new(0usize);
   let mut emit=|text:&str,at:Span,terminal:bool|->Result<Option<dm_syntax::OriginalCaseCursor>,E>{
    if continuation_mode==OriginalCaseContinuation::StatementTerminator{
     if at.start<after&&!(terminal&&at.end>=after){return Ok(None)}
     if !matches!(text,";"|"}"){return Err("do-while actual statement terminator unavailable".into())}
-    return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("do-while terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}
-     else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}));
+    return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("do-while terminal cursor overflow")?,fallback:global_span(at)?}}
+     else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}));
    }
    match continuation.get(){
     10=>{if text==";"{return Ok(None)}if text!="catch"{return Err("inline try continuation lacks actual catch".into())}continuation.set(11);return Ok(None)},
@@ -2399,12 +2431,12 @@ impl OriginalBodyTokens<'_>{
     22=>{match text{"("=>continuation_depth.set(continuation_depth.get().checked_add(1).ok_or("do condition depth overflow")?),")"=>{let n=continuation_depth.get().checked_sub(1).ok_or("do condition opening unavailable")?;continuation_depth.set(n);if n==0{continuation.set(23)}},_=>()}return Ok(None)},
     23=>{if !matches!(text,";"|"}"){return Err("inline do condition terminator unavailable".into())}},_=>()
    }
-   if continuation.get()==11||continuation.get()==23{return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}))}
+   if continuation.get()==11||continuation.get()==23{return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}
    if else_mode.get()==2{match text{"("=>else_parens.set(else_parens.get().checked_add(1).ok_or("inline else-if depth overflow")?),")"=>{let n=else_parens.get().checked_sub(1).ok_or("inline else-if opening unavailable")?;else_parens.set(n);if n==0{else_mode.set(1)}},_=>()}return Ok(None)}
    if else_mode.get()==1{match text{"if"=>{else_if.set(true);else_mode.set(2);return Ok(None)},"{"=>{else_mode.set(0);active.set(true);depth=1;final_else.set(!else_if.get());return Ok(None)},_=>return Err("inline else simple statement continuation unavailable".into())}}
-   if waiting.get(){if text=="else"{waiting.set(false);else_if.set(false);else_mode.set(1);return Ok(None)}if text==";"{return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}))}
+   if waiting.get(){if text=="else"{waiting.set(false);else_if.set(false);else_mode.set(1);return Ok(None)}if text==";"{return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}
    if !active.get() {if at.start<after{return Ok(None)}if text==";"{return Ok(None)}decided.set(true);if text!="{"{return Ok(None)}active.set(true);depth=1;return Ok(None)}
-   if text=="{"{depth=depth.checked_add(1).ok_or("case layout depth overflow")?;}else if text=="}"{depth=depth.checked_sub(1).ok_or("case layout close underflow")?;if depth==0{if continuation_mode==OriginalCaseContinuation::Try&&continuation.get()==0{continuation.set(10);return Ok(None)}if continuation_mode==OriginalCaseContinuation::Do&&continuation.get()==0{continuation.set(20);return Ok(None)}if continuation_mode==OriginalCaseContinuation::If&&!final_else.get(){waiting.set(true);return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}))}}Ok(None)
+   if text=="{"{depth=depth.checked_add(1).ok_or("case layout depth overflow")?;}else if text=="}"{depth=depth.checked_sub(1).ok_or("case layout close underflow")?;if depth==0{if continuation_mode==OriginalCaseContinuation::Try&&continuation.get()==0{continuation.set(10);return Ok(None)}if continuation_mode==OriginalCaseContinuation::Do&&continuation.get()==0{continuation.set(20);return Ok(None)}if continuation_mode==OriginalCaseContinuation::If&&!final_else.get(){waiting.set(true);return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}}Ok(None)
   };
   let source=self.owner.source.as_str();let mut last=Span::new(0,0);
   for token in self.owner.tokens.window().iter() {checkpoint()?;let text=token.text(source);last=token.span;
@@ -2420,7 +2452,7 @@ impl OriginalBodyTokens<'_>{
    if current.is_some_and(|(_,count)|count>0){let at=eol.unwrap_or(last);checkpoint()?;return emit("}",at,true)}
    return Err("do-while source end has no actual enclosing layout close".into())
   }
-  if active.get(){if let Some((_,count))=current{let at=eol.unwrap_or(last);for _ in 0..count{checkpoint()?;if let Some(point)=emit("}",at,true)?{return Ok(Some(point))}}}if waiting.get(){let at=eol.unwrap_or(last);return Ok(Some(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}))}return Err("case original block close unavailable".into())}Ok(None)
+  if active.get(){if let Some((_,count))=current{let at=eol.unwrap_or(last);for _ in 0..count{checkpoint()?;if let Some(point)=emit("}",at,true)?{return Ok(Some(point))}}}if waiting.get(){let at=eol.unwrap_or(last);return Ok(Some(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}))}return Err("case original block close unavailable".into())}Ok(None)
  }
 
  // Consume only the real WHILE close and then ask the SAME owned
@@ -2453,6 +2485,17 @@ impl OriginalBodyTokens<'_>{
  }
  // These loans reuse the actual owner, native expression and typed Colon
  // facts. Unknown label names remain grammar; no resolver/label cache exists.
+ // DEL is a statement keyword only in this actual head role. All tokens in
+ // the gap must be its single Ident plus trivia; the operand is separate.
+ pub(crate) fn delete_head_using(&self,head:Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+  a.checkpoint()?;let Ok(tokens)=self.tokens(head)else{return Ok(false)};
+  let mut keyword=false;
+  for(kind,at,text)in tokens{a.checkpoint()?;match(kind,text){
+   (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
+   (TokenKind::Ident,"del")if !keyword&&at.start==head.start=>keyword=true,
+   _=>return Ok(false),
+  }}Ok(keyword)
+ }
  pub(crate) fn label_head_using(&self,head:Span,name:Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
   a.checkpoint()?;
   let Some(facts)=self.owner.original_literal_facts()?else{return Ok(false)};
@@ -2474,6 +2517,20 @@ impl OriginalBodyTokens<'_>{
   if rows.get(position)!=Some((at,false)){return Ok(false)}
   Ok(true)
  }
+
+  /// Exact same owned layout producer used by existing statement terminators.
+  /// Returns token/end DATA only; the private current BODY grants source scope.
+  pub(crate) fn native_statement_terminator_using(&self,head:Span,a:&dm_syntax::SettingAdmission<'_>)
+   ->std::io::Result<Option<dm_syntax::OriginalCaseCursor>>{
+   a.checkpoint()?;
+   self.tokens(head).map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidInput,reason))?;
+   let after=head.end.checked_sub(self.offset).ok_or(std::io::ErrorKind::InvalidInput)?;
+   let mut poll=||a.checkpoint().map_err(|actual|{a.record_operational_error(actual);"native actual terminator walk stopped"});
+   let actual=self.original_case_block_cursor_using(after,OriginalCaseContinuation::StatementTerminator,&mut poll);
+   if let Some(error)=a.take_operational_error(){return Err(error)}
+   // An unavailable grammar delimiter is Deferred, never fabricated EOF.
+   Ok(actual.ok().flatten())
+  }
  pub(crate) fn named_loop_control_using(&self,head:Span,keyword:&'static str,name:Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
   a.checkpoint()?;
   if !matches!(keyword,"break"|"continue")||head.end!=name.end{return Ok(false)}
@@ -2494,6 +2551,12 @@ impl OriginalBodyTokens<'_>{
   Ok(matches!(result,Ok(Some(_))))
  }
  pub(crate) fn switch_case_cursor_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<dm_syntax::OriginalCaseCursor,E>{
+  self.switch_case_cursor_profile_using(header,case,checkpoint,false)
+ }
+ pub(crate) fn switch_inline_statement_cursor_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<dm_syntax::OriginalCaseCursor,E>{
+  self.switch_case_cursor_profile_using(header,case,checkpoint,true)
+ }
+ fn switch_case_cursor_profile_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>,simple_inline:bool)->Result<dm_syntax::OriginalCaseCursor,E>{
   checkpoint()?;let start=header.start.checked_sub(self.offset).ok_or("case header before current source")?;let end=header.end.checked_sub(self.offset).ok_or("case header end before current source")?;let case_end=case.end.checked_sub(self.offset).ok_or("case body before current source")?;if start<self.body.start||start>=end||end>case_end||case_end>self.body.end||case_end>self.owner.source.len(){return Err("case cursor escapes original body/header".into())}
   let tokens=self.owner.tokens.window();let source=self.owner.source.as_str();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
   if let Some(cursor)=self.original_case_block_cursor_using(condition_end,OriginalCaseContinuation::Block,checkpoint)?{return Ok(cursor)}
@@ -2506,7 +2569,7 @@ impl OriginalBodyTokens<'_>{
   // in this owner is not a reason to search backward or fabricate source EOF.
   // The exact close/RETURN head and independent value proof are still required
   // by the body consumer; this cursor contributes delimiter DATA only.
-  if !newline&&tokens.get(i).is_some_and(|token|token.kind==TokenKind::Ident&&token.text(source)=="return"){
+  if !newline&&(simple_inline||tokens.get(i).is_some_and(|token|token.kind==TokenKind::Ident&&token.text(source)=="return")){
    return self.original_case_block_cursor_using(case_end,OriginalCaseContinuation::StatementTerminator,checkpoint)?
     .ok_or_else(||E::from("inline case actual statement terminator unavailable"))
   }
@@ -2540,6 +2603,7 @@ impl OriginalBodyTokens<'_>{
    let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let tokens=owner.body_tokens(procedure.span,0).unwrap();
    let cursor=tokens.switch_case_cursor_using(case.header_span,case.span,&mut||Ok::<(),&'static str>(())).unwrap();assert!(matches!(cursor,dm_syntax::OriginalCaseCursor::Token(at)if at==semicolon.span));
    let mut polls=0;let failed=tokens.switch_case_cursor_using(case.header_span,case.span,&mut||{polls+=1;Err::<(),&'static str>("actual cancellation")});assert!(matches!(failed,Err("actual cancellation")));assert_eq!(polls,1);
+   let offset=37;let shifted=owner.body_tokens(procedure.span,offset).unwrap();let shifted_header=Span::new(case.header_span.start+offset,case.header_span.end+offset);let shifted_case=Span::new(case.span.start+offset,case.span.end+offset);let cursor=shifted.switch_case_cursor_using(shifted_header,shifted_case,&mut||Ok::<(),&'static str>(())).unwrap();assert!(matches!(cursor,dm_syntax::OriginalCaseCursor::Token(at)if at==Span::new(semicolon.span.start+offset,semicolon.span.end+offset)),"the same real forward delimiter remains valid under a representable offset");
    let offset=usize::MAX-procedure.span.end;let shifted=owner.body_tokens(procedure.span,offset).unwrap();let header=Span::new(case.header_span.start+offset,case.header_span.end+offset);let case=Span::new(case.span.start+offset,case.span.end+offset);assert!(matches!(shifted.switch_case_cursor_using(header,case,&mut||Ok::<(),&'static str>(())),Err("case terminator cursor overflow")),"the real trailing token must not escape the admitted offset envelope");
   }
  }
@@ -2722,5 +2786,78 @@ mod original_do_while_terminator_cursor_tests{
   let polls=AtomicUsize::new(0);let stop=||{polls.fetch_add(1,Ordering::Relaxed);Err(std::io::Error::from_raw_os_error(1450))};
   let a=dm_syntax::SettingAdmission::new(&used,1<<20,&stop);let status=tokens.label_head_using(label.header_span,name,&a).unwrap_err();assert_eq!(a.take_operational_error().unwrap_or(status).raw_os_error(),Some(1450));assert_eq!(polls.load(Ordering::Relaxed),1);
   let _=a.take_operational_error();assert_eq!(used.load(Ordering::Acquire),root);
+ }
+}
+
+#[cfg(test)]mod original_inline_effect_cursor_controls{
+ use super::*;
+ #[derive(Debug)]enum Failure{Source(&'static str),Io(std::io::Error)}impl From<&'static str>for Failure{fn from(value:&'static str)->Self{Self::Source(value)}}
+ #[test]fn inline_effect_cursor_is_opt_in_and_keeps_owned_forward_terminator_and_first_io(){
+  let source="/proc/probe(H,value)\n    switch(H.gender)\n        if(\"male\") value += H.name\n/proc/later()\n    return 0\n";let tree=dm_syntax::parse(source);let procedure=&tree.items[0];let case=&procedure.children[0].children[0];
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&tree.items,0,tree.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();
+  for offset in [0,37]{let tokens=owner.body_tokens(procedure.span,offset).unwrap();let shift=|at:Span|Span::new(at.start+offset,at.end+offset);
+   let cursor=tokens.switch_inline_statement_cursor_using(shift(case.header_span),shift(case.span),&mut||Ok::<(),&'static str>(())).unwrap();
+   assert!(matches!(cursor,dm_syntax::OriginalCaseCursor::Token(at)if at.start>=case.header_span.end+offset&&at.end<=source.find("/proc/later").unwrap()+offset));
+   let mut calls=0;let result=tokens.switch_inline_statement_cursor_using(shift(case.header_span),shift(case.span),&mut||{calls+=1;if calls==3{Err(Failure::Io(std::io::Error::from_raw_os_error(1450)))}else{Ok(())}});
+   assert!(matches!(result,Err(Failure::Io(actual))if actual.raw_os_error()==Some(1450)));assert_eq!(calls,3);
+  }
+ }
+}
+
+#[cfg(test)]mod original_delete_head_controls{
+ use super::*;
+ #[test]fn delete_head_requires_the_actual_keyword_full_gap_and_same_body_span(){
+  for(source,word,wanted)in[("/proc/p(value)\n    del   value\n","del   ",true),("/proc/p(value)\n    del;  value\n","del;  ",false),("/proc/p(value)\n    delta(value)\n","del",false)]{
+   let ast=dm_syntax::parse(source);let procedure=&ast.items[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect()).unwrap();let body=owner.body_tokens(procedure.span,0).unwrap();
+   let start=source.find(word).unwrap();let head=Span::new(start,start+word.len());let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));
+   assert_eq!(body.delete_head_using(head,&a).unwrap(),wanted,"{source}");
+   assert!(!body.delete_head_using(Span::new(start+1,head.end),&a).unwrap(),"partial/foreign keyword span cannot borrow this occurrence");
+   assert!(!body.delete_head_using(Span::new(procedure.span.end,procedure.span.end+1),&a).unwrap(),"a span outside this body is not authority");
+  }
+ }
+ #[test]fn delete_head_keeps_first_actual_checkpoint_io(){
+  let source="/proc/p(D)\n    del(D)\n";let ast=dm_syntax::parse(source);let p=&ast.items[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect()).unwrap();let body=owner.body_tokens(p.span,0).unwrap();let at=source.find("del").unwrap();
+  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let polls=std::cell::Cell::new(0);let stop=||{polls.set(polls.get()+1);Err(std::io::Error::from_raw_os_error(1450))};let a=dm_syntax::SettingAdmission::new(&used,1<<20,&stop);
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+  let status=body.delete_head_using(Span::new(at,at+3),&a).unwrap_err();
+  let actual=a.take_operational_error().expect("the first actual checkpoint failure must remain latched");assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(status.kind(),actual.kind());assert_eq!(polls.get(),1);
+  assert!(a.is_stopped());assert_eq!(body.delete_head_using(Span::new(at,at+3),&a).unwrap_err().kind(),actual.kind());assert_eq!(polls.get(),1,"stopped admission must not invoke a second callback");assert!(a.take_operational_error().is_none());assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),root);
+ }
+}
+
+#[cfg(test)]mod native_statement_terminator_controls{
+ use super::*;
+ #[test]fn native_statement_terminator_is_owned_forward_token_with_later_procedure(){
+  let source="/proc/p()\n    return\n/proc/later()\n    return 1\n";
+  let parsed=dm_syntax::parse(source);
+  assert!(parsed.diagnostics.is_empty());let procedure=&parsed.items[0];let head=procedure.children[0].header_span;
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&||Ok(()));
+  for offset in[0usize,37]{
+   let tokens=owner.body_tokens(procedure.span,offset).unwrap();
+   let head=Span::new(head.start+offset,head.end+offset);
+   let Some(dm_syntax::OriginalCaseCursor::Token(at))=tokens.native_statement_terminator_using(head,&a).unwrap()
+    else{panic!("later procedure forbids fake SourceEnd")};
+   assert!(at.start>=head.end);assert!(source[at.start-offset..at.end-offset].contains('\n'));
+  }
+ }
+ #[test]fn native_statement_terminator_denies_hidden_tail_and_keeps_first_actual_io(){
+  let source="/proc/p()\n    return value\n";let parsed=dm_syntax::parse(source);
+  assert!(parsed.diagnostics.is_empty());let procedure=&parsed.items[0];let head=procedure.children[0].header_span;
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();
+  let tokens=owner.body_tokens(procedure.span,0).unwrap();
+  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+  let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&||Ok(()));
+  assert!(tokens.native_statement_terminator_using(Span::new(head.start,head.start+6),&a).unwrap().is_none(),
+   "actual unconsumed value cannot become a statement delimiter");
+  let calls=std::cell::Cell::new(0usize);
+  let fail=||{calls.set(calls.get()+1);Err(std::io::Error::from_raw_os_error(1450))};
+  let failed=dm_syntax::SettingAdmission::new(&counter,1<<20,&fail);
+  let proxy=tokens.native_statement_terminator_using(head,&failed).err().unwrap();
+  let actual=failed.take_operational_error().expect("same admission retains actual checkpoint failure");
+  assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(proxy.kind(),actual.kind());
+  assert!(failed.is_stopped());assert!(failed.checkpoint().is_err());
+  assert_eq!(calls.get(),1,"sticky stop prevents another actual source poll");
  }
 }

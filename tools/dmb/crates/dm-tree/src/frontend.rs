@@ -657,6 +657,8 @@ pub struct ParsedBody<'a> {
 /// Full lossless children are released once the target admits this model.
 pub struct StatementBody {
     parsed: dm_syntax::ParsedBody,
+    // Actual admitted parser/normalization DATA; authority stays with current binding.
+    native_parser_facts:Option<dm_syntax::NativeBodyParserFacts>,
     syntax_complete: std::sync::OnceLock<bool>,
     declaration_headers: std::collections::HashSet<(usize, usize)>,
     stored_candidates: bool,

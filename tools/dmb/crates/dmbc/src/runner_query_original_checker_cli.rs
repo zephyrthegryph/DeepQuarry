@@ -1,0 +1,132 @@
+//! Explicit nondefault pinned-text projection over the SAME whole native Checker.
+//! No new parser, analysis model, query roster, diagnostic cache or oracle claim.
+use super::{SourceSnapshot,OriginalThroughReaderDeclarations as Reader,OriginalThroughGraph as Graph,
+ OriginalThroughKeywords as Keyword,OriginalDeclarationAndBody as Body};
+use super::super::OriginalNoticeReplay;
+use crate::selected_report_spool::{Stage,Verified};
+use dm_analysis::{check_policy::{CheckerPolicy,DiagnosticSeverity},checks::{Diagnostic,Note}};
+use dm_preprocess::source_arena_credit::{SourceArenaCredit,SourceArenaWork};
+use dm_tree::frontend::{OriginalDiagnosticPoint,OriginalPreprocessNotice};
+use dm_preprocess::regions::OriginalNoticeRegistration;
+use std::{io::{self,Read,Write},path::Path};
+fn invalid(s:&'static str)->io::Error{io::Error::new(io::ErrorKind::InvalidData,s)}
+fn header(out:&mut impl Write,(path,line,column):(&Path,usize,usize),severity:DiagnosticSeverity,message:&str)->io::Result<()> {
+ writeln!(out,"{}, line {line}, column {column}:",path.display())?;
+ writeln!(out,"{}: {message}",super::super::named_policy::severity(severity))
+}
+fn diagnostic(out:&mut impl Write,at:(&Path,usize,usize),level:DiagnosticSeverity,row:&Diagnostic)->io::Result<()> {
+ header(out,at,level,&row.message)?;
+ for note in &row.notes{crate::daemon::control::checkpoint()?;legacy_note(out,note)?;}writeln!(out)
+}
+fn legacy_note(out:&mut impl Write,note:&Note)->io::Result<()> {
+ // Same existing Note::legacy_text shape without allocating a cloned String.
+ match &note.source{Some(source)=>writeln!(out,"- {}:{}: {}",source.line,source.byte_column,note.message),None=>writeln!(out,"- {}",note.message)}
+}
+fn notice_point<'a>(point:OriginalDiagnosticPoint<'a>)->(&'a Path,usize,usize){match point{
+ OriginalDiagnosticPoint::Default=>(Path::new("(unknown)"),0,0),
+ OriginalDiagnosticPoint::Builtins=>(Path::new("(builtins)"),1,1),
+ OriginalDiagnosticPoint::Acquired{reported_path,line,byte_column,..}=>(reported_path,line,byte_column),
+}}
+fn preprocess_notice(out:&mut impl Write,notice:OriginalPreprocessNotice<'_>,policy:&CheckerPolicy)->io::Result<usize>{
+ crate::daemon::control::checkpoint()?;
+ use dm_preprocess::regions::OriginalNoticeSeverity as S;
+ let default=match notice.severity{S::Error=>DiagnosticSeverity::Error,S::Warning=>DiagnosticSeverity::Warning,S::Hint=>DiagnosticSeverity::Hint};
+ let Some(level)=policy.register(notice.error_type,default).filter(|s|dm_analysis::check_policy::cli_printed(*s))else{return Ok(0)};
+ let at=notice_point(notice.point);header(out,at,level,notice.message)?;
+ for note in notice.notes{crate::daemon::control::checkpoint()?;let(point,message)=note.map_err(invalid)?;let next=notice_point(point);
+  if next==at{writeln!(out,"- {message}")?}else if next.0==at.0{writeln!(out,"- {}:{}: {message}",next.1,next.2)?}else{writeln!(out,"- {}:{}:{}: {message}",next.0.display(),next.1,next.2)?}
+ }writeln!(out)?;Ok(1)
+}
+/// Merge two genuine ordered registrations, never source-anchor positions or
+/// producer-wallclock order. Hidden rows are authenticated before policy drops
+/// them. The actual notice owners remain borrowed through final scope checks.
+fn flush_preprocess<'a,I:Iterator<Item=Result<OriginalPreprocessNotice<'a>,&'static str>>>(out:&mut impl Write,rows:&mut std::iter::Peekable<I>,until:Option<&OriginalNoticeRegistration>,previous:&mut Option<OriginalNoticeRegistration>,policy:&CheckerPolicy)->io::Result<usize>{
+ let mut count=0usize;
+ loop{
+  crate::daemon::control::checkpoint()?;
+  let Some(next)=rows.peek()else{break};
+  let next=next.as_ref().map_err(|error|invalid(*error))?;
+  let registration=next.registration.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual preprocess registration chronology is unissued"))?;
+  if let Some(previous)=previous.as_ref(){if previous.compare_same_source(registration)?==std::cmp::Ordering::Greater{return Err(invalid("actual preprocess registration order moved backwards"))}}
+  if let Some(until)=until{if registration.compare_same_source(until)?==std::cmp::Ordering::Greater{break}}
+  *previous=Some(registration.clone());
+  let row=rows.next().expect("actual peeked row remains in this iterator").map_err(invalid)?;
+  count=count.checked_add(preprocess_notice(out,row,policy)?).ok_or_else(||invalid("checker notice count overflow"))?;
+ }
+ Ok(count)
+}
+fn row(out:&mut impl Write,input:&dm_analysis::checker_effects::EffectInput,value:Reader<'_>,level:DiagnosticSeverity)->io::Result<()> {
+ match value{
+  Reader::Declaration(finding)=>{let at=finding.borrowed_reported_point().map_err(io::Error::other)?;diagnostic(out,at.coordinates(),level,finding.diagnostic())}
+  Reader::Semantic(Graph::Source(Keyword::Source(Body::Declaration(finding))))=>{let point=input.archive().borrowed_source_note_point(finding.diagnostic().span.start).map_err(io::Error::other)?;diagnostic(out,point.reported_coordinates(),level,finding.diagnostic())}
+  Reader::Semantic(Graph::Source(Keyword::Source(Body::Body{row,..})))=>{
+   use dm_analysis::checker_effects::OriginalDiagnosticLocation as L;
+   let point=match row.location(){L::Expanded=>Some(input.archive().borrowed_source_note_point(row.diagnostic().span.start).map_err(io::Error::other)?),L::Reader(at)=>Some(input.archive().source_mapping().borrow_stored_original_reported_point(at).map_err(io::Error::other)?),L::ParserSynthetic=>None};
+   let at=point.as_ref().map_or((Path::new("(unknown)"),0,0),|p|p.reported_coordinates());diagnostic(out,at,level,row.diagnostic())
+  }
+  Reader::Semantic(Graph::Source(Keyword::Keyword{findings,row}))=>{let point=findings.point(row.point).map_err(io::Error::other)?;header(out,point.coordinates(),level,&row.message)?;
+   for note in &row.notes{crate::daemon::control::checkpoint()?;writeln!(out,"- {}",findings.legacy_note(row.point,note).map_err(io::Error::other)?)?;}writeln!(out)
+  }
+  Reader::Semantic(Graph::Graph(finding))=>{
+   if finding.phase()==dm_analysis::checker_effects::ProducedPhase::BodyImmediate{return Err(invalid("immediate effect is not final Checker graph output"))}
+   let point=input.archive().borrowed_source_note_point(finding.diagnostic.span.start).map_err(io::Error::other)?;diagnostic(out,point.reported_coordinates(),level,&finding.diagnostic)
+  }
+ }
+}
+/// Only the successful real full ordered traversal below constructs this value.
+/// It is current-producer scope evidence, NOT independently established parity.
+pub(crate) struct Transcript{
+ stderr:Option<Verified>,pub(crate) emitted:usize,pub(crate) visited_bodies:usize,
+ pub(crate) semantic:u128,pub(crate) source:u128,pub(crate) policy:u128,
+ _credit:SourceArenaCredit,
+}
+impl Transcript{pub(crate) fn publish(self,out:&mut impl Write)->io::Result<()>{match self.stderr{Some(stream)=>stream.publish(out),None=>out.flush()}}}
+impl SourceSnapshot{
+ pub(crate) fn stage_original_checker_cli(&self,environment:&Path,explicit:Option<&Path>,cache:&Path,inputs:&crate::request_runner::checker_capture::Inputs)->io::Result<Transcript>{
+  self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalChecker0290))?;
+  let mapping=self.source_mapping.as_ref().ok_or_else(||invalid("Checker source mapping absent"))?;inputs.require_binding(environment,mapping,self.tree.identity(),self.source_revision)?;
+  let owner=self.original_checker_request_input(&self.tree)?;let input=owner.input();
+  self.with_effect_scope(input,environment,explicit,&self.tree,|db,scope|{
+   let credit=SourceArenaWork::reserve(db,16384usize.checked_add(std::mem::size_of::<Stage>()).and_then(|n|n.checked_add(std::mem::size_of::<Transcript>())).ok_or_else(||invalid("checker stage control width overflow"))?)?;
+   let mut stage=Stage::new(cache)?;
+   let notices=match &self.original_notice_replay{
+    OriginalNoticeReplay::Retained(owner)=>{if self.source_mapping.as_ref().is_none_or(|mapping|!owner.matches_mapping(mapping)){return Err(invalid("Checker notices belong to another actual source mapping"))}owner.borrow()},
+    OriginalNoticeReplay::Released=>return Err(io::Error::new(io::ErrorKind::NotConnected,"Checker notice owner pressure-released; reprepare required")),
+    OriginalNoticeReplay::Ordinary=>return Err(io::Error::new(io::ErrorKind::Unsupported,"native Checker lacks its actual Original notice owner")),
+   };
+   let mut preprocess_rows=notices.iter().peekable();let mut previous_preprocess=None;let mut previous_reader:Option<OriginalNoticeRegistration>=None;let mut reader_phase_closed=false;let mut emitted=0usize;
+   let completed=self.visit_original_cli_diagnostics_in_scope(input,&self.tree,db,scope,|value,level|{
+    let extra=if let Reader::Declaration(finding)=&value{
+     if reader_phase_closed{return Err(invalid("reader registration appeared after semantic Checker phase"))}
+     let registration=finding.reader_registration().map_err(io::Error::other)?;
+     if let Some(previous)=&previous_reader{if previous.compare_same_source(&registration)?==std::cmp::Ordering::Greater{return Err(invalid("actual reader registration order moved backwards"))}}
+     previous_reader=Some(registration.clone());
+     flush_preprocess(&mut stage,&mut preprocess_rows,Some(&registration),&mut previous_preprocess,scope.policy())?
+    }else{reader_phase_closed=true;flush_preprocess(&mut stage,&mut preprocess_rows,None,&mut previous_preprocess,scope.policy())?};
+    emitted=emitted.checked_add(extra).ok_or_else(||invalid("Checker diagnostic count overflow"))?;
+    row(&mut stage,input,value,level)?;emitted=emitted.checked_add(1).ok_or_else(||invalid("Checker diagnostic count overflow"))?;Ok(())
+   })?;
+   // No visible semantic row is required for the real full traversal to finish.
+   // Its completion token must exist before draining the remaining PP rows.
+   emitted=emitted.checked_add(flush_preprocess(&mut stage,&mut preprocess_rows,None,&mut previous_preprocess,scope.policy())?).ok_or_else(||invalid("Checker diagnostic count overflow"))?;
+   let visited_bodies=completed.body_count_for(input)?;
+   let stderr=if stage.length()==0{None}else{let(sealed,())=stage.seal()?.validate(|stream|{let mut scratch=[0u8;8192];loop{crate::daemon::control::checkpoint()?;let count=stream.read(&mut scratch)?;if count==0{break}}Ok(())})?;Some(sealed)};
+   scope.validate(db,input).map_err(io::Error::other)?;inputs.require_binding(environment,mapping,self.tree.identity(),self.source_revision)?;
+   Ok(Transcript{stderr,emitted,visited_bodies,semantic:self.tree.identity(),source:self.source_revision,policy:self.policy_revision.ok_or_else(||invalid("Checker policy revision absent"))?,_credit:credit})
+  })
+ }
+}
+#[cfg(test)]mod formatting_controls{
+ use super::*;
+ #[test]fn checker_text_keeps_pinned_location_message_note_and_blank_line_shape(){
+  let mut out=Vec::new();header(&mut out,(Path::new("code/example.dm"),3,7),DiagnosticSeverity::Warning,"actual message").unwrap();
+  legacy_note(&mut out,&Note{message:"(builtins):1:1: previous definition".into(),source:None}).unwrap();writeln!(out).unwrap();
+  assert_eq!(out,b"code/example.dm, line 3, column 7:\nwarning: actual message\n- (builtins):1:1: previous definition\n\n");
+ }
+ #[test]fn checker_default_and_builtin_notice_coordinates_keep_reference_file_registry_sentinels(){
+  assert_eq!(notice_point(OriginalDiagnosticPoint::Default),(Path::new("(unknown)"),0,0));assert_eq!(notice_point(OriginalDiagnosticPoint::Builtins),(Path::new("(builtins)"),1,1));
+ }
+ #[test]fn checker_text_returns_first_real_output_io_unchanged(){struct Failed;impl Write for Failed{fn write(&mut self,_:&[u8])->io::Result<usize>{Err(io::Error::from_raw_os_error(1450))}fn flush(&mut self)->io::Result<()>{panic!("no flush after first output failure")}}
+  assert_eq!(header(&mut Failed,(Path::new("actual.dm"),1,1),DiagnosticSeverity::Error,"message").unwrap_err().raw_os_error(),Some(1450));
+ }
+}

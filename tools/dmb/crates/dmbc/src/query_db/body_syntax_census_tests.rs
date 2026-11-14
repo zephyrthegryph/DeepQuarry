@@ -59,10 +59,10 @@ impl Examples {
         true
     }
 }
-const ROOT_NAMES: [&str; 18] = [
+const ROOT_NAMES: [&str; 19] = [
     "if", "while", "do_while", "spawn", "set", "for", "switch", "try", "throw",
     "label", "goto", "return", "local", "assignment", "call", "expression", "loop_exit",
-    "unsupported",
+    "unsupported", "delete",
 ];
 
 fn root_bucket(statement: &StatementKind) -> usize {
@@ -86,6 +86,7 @@ fn root_bucket(statement: &StatementKind) -> usize {
         StatementKind::Break | StatementKind::BreakLabel(_) | StatementKind::Continue
             | StatementKind::ContinueLabel(_) => 16,
         StatementKind::Unsupported => 17,
+        StatementKind::Delete(_) => 18,
     }
 }
 

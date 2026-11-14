@@ -2616,7 +2616,7 @@ pub(super) mod body_syntax_census_tests;
   for fixture in [
    "/proc/probe(value)\n    switch(value)\n        if(1) return \"north\"\n/proc/later()\n    return 0\n",
    "/proc/probe(value)\n    switch(uppertext(value))\n        if(\"NORTH\") return 1\n/proc/later()\n    return 0\n",
-  ]{for(text,expected)in[(fixture.to_owned(),true),(fixture.replace(") return", "); return"),false),(fixture.replace(r#"return "north""#, "return value=1").replace("return 1", "return value=1"),false)]{
+  ]{for(text,expected)in[(fixture.to_owned(),true),(fixture.replace(") return", "); return"),false),(fixture.replace(r#"return "north""#, "return value=1").replace("return 1", "return value=1"),true)]{
    let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
    setting_syntax::with_setting_admission(&db.body_charge,|admission|{let body=input.bind_original_product_checked(product.parsed().unwrap(),admission)?;let disposition=body.original_code_disposition();
     if expected{let dm_tree::frontend::OriginalBodyDisposition::Available(proof)=disposition?else{panic!("actual final inline switch case remains unissued: {text}")};assert!(proof.belongs_to(&body));
@@ -2630,9 +2630,9 @@ pub(super) mod body_syntax_census_tests;
  fn actual_original_inline_switch_value_returns_have_exact_heads_and_case_cursors(){
   let fixture="/proc/probe(value)\n    switch(value)\n        if(1.0) return 1\n        if(\"NORTH\") return \"north\"\n        else return 0\n";
   for(text,expected)in[(fixture.to_owned(),true),(fixture.replace("switch(value)","switch(uppertext(value))"),true),
-   (fixture.replace("if(1.0)","if(1,2)"),false),(fixture.replace("if(1.0)","if(1 to 2)"),false),
-   (fixture.replace("return 1","return"),false),(fixture.replace("return 1","return lookup(value)"),false),
-   (fixture.replace("return 1","return value=1"),false),(fixture.replace("if(1.0) return","if(1.0); return"),false),
+   (fixture.replace("if(1.0)","if(1,2)"),true),(fixture.replace("if(1.0)","if(1 to 2)"),true),
+   (fixture.replace("return 1","return"),false),(fixture.replace("return 1","return lookup(value)"),true),
+   (fixture.replace("return 1","return value=1"),true),(fixture.replace("if(1.0) return","if(1.0); return"),false),
    (fixture.replace("else return","else; return"),false),(fixture.replace("else return 0","else value=0"),false)]{
    let db=Arc::new(QueryDb::default());let front=issued_original_fixture(&db,&text);let input=original_input(&front,"probe");let product=db.syntax_product_checked(&input).unwrap();
    setting_syntax::with_setting_admission(&db.body_charge,|admission|{
@@ -3122,13 +3122,122 @@ pub(super) mod body_syntax_census_tests;
   let start=file.find("/proc/alpha_mask_filter(").unwrap();let end=start+1+file[start+1..].find("/proc/").unwrap();let source=&file[start..end];
   assert!(source.contains(".[\"x\"] = x"));
   for(text,expected)in[(source.to_owned(),true),
-   (source.replace(".[\"x\"] = x",".[\"[x]\"] = x"),false),
-   (source.replace(".[\"x\"] = x",".[\"x\" + \"suffix\"] = x"),false)]{
+   (source.replace(".[\"x\"] = x",".[\"[x]\"] = x"),true),
+   (source.replace(".[\"x\"] = x",".[\"x\" + \"suffix\"] = x"),true)]{
    assert_statement_control_source_has_original_body(&text,"alpha_mask_filter",expected);
   }
   let source="/proc/probe(value)\n    . = list()\n    .[\"a=b\"] = value\n    return .\n";
   assert_statement_control_source_has_original_body(source,"probe",true);
  }
+
+ #[test]
+ fn actual_original_const_local_and_two_clause_for_keep_head_test_and_close_receipts(){
+  for(leaf,expected)in[
+   ("var/const/GUID_VERSION = \"b\"\n    return GUID_VERSION",true),
+   ("for(var/i=0, ++i<=colors.len)\n        values += colors[i]\n    return values",true),
+   ("for(var/i=0; ++i<=colors.len)\n        values += colors[i]\n    return values",true),
+   ("for(var/i=0, i<colors.len)\n        values += colors[i]\n    return values",true),
+   ("while(istype(Ab,/turf/simulated/open) && --above_range>0)\n        above_range -= 1\n    return values",true),
+   ("if(++i<=colors.len)\n        return i\n    return 0",true),
+   ("return ++i<=colors.len",false),
+   ("var/value = ++i<=colors.len\n    return value",false),
+   ("for(var/i=0, ++owner.i<=colors.len)\n        return i",false),
+  ]{let source=format!("/proc/probe(colors,values,i,owner,Ab,above_range)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",expected);}
+ }
+ #[test]
+ fn actual_original_dynamic_dot_index_and_safe_member_statements_keep_root_receipts(){
+  for(leaf,expected)in[
+   (". = list()\n    .[state_data[\"name\"]] = state_data[\"dirs\"]",true),
+   ("remove_from?.images -= image",true),
+   ("return remove_from?.images -= image",false),
+   (". = list()\n    .[state_data[\"[key]\"]] = values",true),
+   (". = list()\n    .[++key] = values",false),
+  ]{let source=format!("/proc/probe(state_data,values,remove_from,image,key)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",expected);}
+ }
+ #[test]
+ fn actual_original_return_index_assignment_is_a_distinct_value_context_not_nested_permission(){
+  for(leaf,expected)in[
+   ("return GLOB.string_lists[string_id] = values",true),
+   ("return list(string_id = values)",true),
+   ("return GLOB.string_lists[string_id] = other = values",false),
+   ("return GLOB.string_lists[string_id] += values",false),
+   ("consume(GLOB.string_lists[string_id] = values)",false),
+  ]{let source=format!("/proc/probe(string_id,values,other)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",expected);}
+ }
+ #[test]
+ fn actual_original_inline_switch_effects_ranges_and_call_returns_keep_actual_case_cursors(){
+  for(source,expected)in[
+   ("/proc/probe(H,G)\n    switch(H.gender)\n        if(\"male\") G.values += H.name\n        if(\"female\") G.values += H.name\n        else\n            G.values += H.name\n",true),
+   ("/proc/probe(ascii)\n    switch(ascii)\n        if(48 to 57) . += ascii2text(ascii)\n        if(65 to 70) . += ascii2text(ascii+32)\n        else return text_or_null(default)\n    return .\n",true),
+   ("/proc/probe(ascii)\n    switch(ascii)\n        if(48,49) return lookup(ascii)\n    return .\n",true),
+   ("/proc/probe(ascii)\n    switch(ascii)\n        if(48 to 57); . += ascii2text(ascii)\n    return .\n",false),
+  ]{assert_statement_control_source_has_original_body(source,"probe",expected);}
+ }
+ #[test]
+ fn actual_original_do_while_nested_tail_uses_real_terminal_condition_and_delimiter(){
+  for(source,expected)in[
+   ("/proc/probe(value)\n    do\n        if(value)\n            value -= 1\n    while(value)\n    return value\n",true),
+   ("/proc/probe(value)\n    do\n        if(value)\n            value -= 1\n    while(value)\n/proc/later()\n    return 0\n",true),
+   ("/proc/probe(value)\n    do\n        if(value)\n            break\n    while(value)\n    return value\n",true),
+   ("/proc/probe(value)\n    do;\n        if(value)\n            value -= 1\n    while(value)\n",false),
+  ]{assert_statement_control_source_has_original_body(source,"probe",expected);}
+ }
+ fn actual_next_whole_helper(path:&str,name:&str){
+  let file=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..").join(path)).unwrap();let needle=format!("/proc/{name}(");let start=file.find(&needle).unwrap();let end=file[start+1..].find("/proc/").map_or(file.len(),|at|start+1+at);
+  assert_statement_control_source_has_original_body(&file[start..end],name,true);
+ }
+
+ #[test]
+ fn actual_original_primary_in_whole_spatial_helpers_use_current_authored_source(){
+  for name in ["locate_on","locate_in_area"]{actual_next_whole_helper("code/engine/refs/containment/spatial.dm",name);}
+ }
+ #[test]
+ fn actual_original_primary_in_authored_expression_roles_and_warning_boundaries(){
+  for(leaf,expected)in[
+   ("return input(user, message, title, default) as null|anything in items",true),
+   ("var/area/overmap/map = locate() in world\n    return map",true),
+   ("return !!(locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in slot_contents())",true),
+   ("if(anchored || (locate(/obj/structure/table) in contents_of(loc)))\n        return 1\n    return 0",true),
+   ("if(!(locate(integrated_ai()) in ai_card))\n        return 1\n    return 0",true),
+   ("return input() in items as text",false),
+   ("return locate(type in items)",false),
+   ("return locate(1,2,3) in items",false),
+   ("return input() in (++index < limit)",false),
+  ]{let source=format!("/proc/probe(user,message,title,default,items,anchored,type,ai_card,index,limit)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",expected);}
+ }
+
+ #[test]fn actual_original_delete_keeps_authored_command_context_and_expression_distinction(){
+  let file=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../code/world/systems/garbage.dm")).unwrap();
+  let line=file.lines().find(|line|line.trim_start().starts_with("del(D) // ALLOW(scheduler): GC:")).expect("actual authored GC delete command");
+  let source=format!("/proc/probe(D)\n{}\n    return 0\n",line);assert_statement_control_source_has_original_body(&source,"probe",true);
+  for(leaf,wanted)in[("del D\n    return 0",true),("del(D)\n    return del(D)",true),("del(D,other)",false),("del",false),("del(++index < limit)",false)]{
+   let source=format!("/proc/probe(D,other,index,limit)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",wanted);
+  }
+ }
+
+ #[test]fn actual_original_authored_operator_roots_and_conditions_retain_full_body_loans(){
+  for(path,prefix)in[("code/engine/time/scheduler.dm","rec.queued &= ~bit"),("code/engine/time/records.dm","rec.pend_union &= ~rec.att_pend[i]"),("code/library/capabilities/capabilities.dm","caps ||= list()"),("code/library/helpers/gender.dm","temp_gender ||= get_visible_gender()"),("code/content/client/verbs/character_directory.dm","can_set_prefs &&= !!user.client.prefs")]{
+   let file=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..").join(path)).unwrap();let line=file.lines().find(|line|line.trim_start().starts_with(prefix)).expect("actual authored operator statement");
+   let source=format!("/proc/probe(rec,bit,i,caps,temp_gender,can_set_prefs,user)\n    {}\n    return 0\n",line.trim_start());assert_statement_control_source_has_original_body(&source,"probe",true);
+  }
+  for(leaf,wanted)in[("if(between ~= via)\n        return ~mask\n    return 0",true),("return flat_size ~! add_size",true),("return caps ||= values",false),("var/local = caps &&= values",false),("consume(caps ||= values)",false),("caps ||= values = other",false)]{
+   let source=format!("/proc/probe(between,via,mask,flat_size,add_size,caps,values,other)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",wanted);
+  }
+ }
+
+ #[test]fn actual_original_dynamic_dispatch_keeps_authored_timer_and_change_statement_roles(){
+  for(path,prefix)in[("code/engine/time/timers.dm","return call(proc_ref)(arglist(call_args || list()))"),("code/engine/time/timers.dm","return call(E, proc_ref)(arglist(call_args || list()))"),("code/engine/time/timers.dm","state[2] = call(proc_ref)(arglist(call_args || list()))"),("code/engine/time/timers.dm","call(proc_ref)(arglist(call_args))"),("code/engine/change/state.dm","return !!call(E, R.when)()")]{
+   let file=std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..").join(path)).unwrap();let line=file.lines().find(|line|line.trim_start().starts_with(prefix)).expect("actual authored dynamic call source");let source=format!("/proc/probe(proc_ref,call_args,state,E,R)\n    {}\n",line.trim_start());assert_statement_control_source_has_original_body(&source,"probe",true);
+  }
+  for(leaf,wanted)in[("var/result = call(target,name)(value)\n    return result",true),("if(call(target)(value))\n        return 1\n    return 0",true),("call(target)(value)",true),("call(target)",false),("call(target)(name = value)",false),("call(target)(value = other = third)",false),("call(target)(value;other)",false)]{let source=format!("/proc/probe(target,name,value,other,third)\n    {leaf}\n");assert_statement_control_source_has_original_body(&source,"probe",wanted);}
+ }
+ #[test]fn actual_original_whole_guid_keeps_const_declarations_and_real_interpolations(){actual_next_whole_helper("code/library/helpers/guid.dm","GUID")}
+ #[test]fn actual_original_whole_mixcolors_keeps_two_clause_prefix_test(){actual_next_whole_helper("code/library/helpers/game.dm","MixColors")}
+ #[test]fn actual_original_whole_hex_sanitizer_keeps_inline_range_effects(){actual_next_whole_helper("code/library/helpers/sanitize_values.dm","sanitize_hexcolor")}
+ #[test]fn actual_original_whole_shell_url_scrub_keeps_nested_do_tail(){actual_next_whole_helper("code/library/helpers/shell.dm","shell_url_scrub")}
+ #[test]fn actual_original_whole_string_list_keeps_returned_cache_assignment(){actual_next_whole_helper("code/library/helpers/string_lists.dm","string_list")}
+ #[test]fn actual_original_whole_icon_state_counts_keeps_dynamic_dot_key(){actual_next_whole_helper("code/library/helpers/icons/icon_html.dm","build_icon_state_dir_counts")}
+ #[test]fn actual_original_whole_remove_image_keeps_safe_member_compound_write(){actual_next_whole_helper("code/library/helpers/game.dm","remove_image_from_client")}
  #[test]
  fn actual_original_reverse_range_keeps_postfix_argument_values_and_refuses_root_value_roles() {
      let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../code/host/helpers/_lists.dm")).replace("\r\n", "\n");
@@ -4281,6 +4390,12 @@ pub(super) mod body_syntax_census_tests;
    let archive=Arc::clone(own.source_view().unwrap().archive());let calls=std::cell::Cell::new(0);let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&fault);
    assert!(matches!(archive.with_current_body_checked(0,&a,|_|{calls.set(calls.get()+1);Ok(())}),Err(BodySyntaxFailure::Operational(error))if error.raw_os_error()==Some(1450)));assert_eq!(calls.get(),0);
   }
+ }
+
+ #[test]fn actual_original_call_member_conditions_switch_and_nested_comparison_keep_real_body_owners(){
+  let source="/proc/read_condition(check_obj,ignore_show_messages)\n    if(ignore_show_messages || rules_of(check_obj).show_messages)\n        return check_obj\n    return check_obj\n/proc/read_switch(source)\n    switch(combat_of(source).force)\n        if(1) return source\n        else return source\n/proc/read_nested(prey,limit)\n    if(!(cooldowns_view(prey).slip_protect < limit))\n        return prey\n    return prey\n";
+  let db=Arc::new(QueryDb::default());let own=original_frontend(&mut RetainedSemanticTree::new(),&db,source);let foreign=original_frontend(&mut RetainedSemanticTree::new(),&db,source);
+  for name in["read_condition","read_switch","read_nested"]{let input=original_input(&own,name);let other=original_input(&foreign,name);let product=db.syntax_product_checked(&input).unwrap();setting_syntax::with_setting_admission(&db.body_charge,|a|{let bound=input.bind_original_product_checked(product.parsed().unwrap(),a)?;let dm_tree::frontend::OriginalBodyDisposition::Available(grant)=bound.original_code_disposition()?else{panic!("actual call-member child did not issue complete BODY: {name}")};assert!(grant.belongs_to(&bound));assert!(other.bind_original_product_checked(product.parsed().unwrap(),a).is_err());Ok::<(),BodySyntaxFailure>(())}).unwrap();}
  }
 
 }

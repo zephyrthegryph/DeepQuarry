@@ -33,7 +33,7 @@ mod soft_memory;
 /// Hosts are retained per manifest and semantic configuration. Supersession also
 /// requires the same logical destination. Different defines targeting one file
 /// serialize through the existing output lease but do not cancel each other.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum RequestCommand {
     Analyze,
     AnalyzeBodies,
@@ -44,6 +44,9 @@ enum RequestCommand {
     SelectedExclusions(super::selected_report_wire::Roster),
     SelectedExclusionsV2(super::selected_report_wire::Roster, dq_analyze::selected_exclusions_wire::JudgmentV2),
     CombinedSelectedReports,
+    FullRegistryCheck(crate::runner_host::FullRegistryCheckOptions),
+    SchemaProposals,
+    CheckerText(PathBuf, Option<PathBuf>),
     CompileSelectedReports(super::selected_report_wire::CompoundRoster, bool),
     NamedImageDir,
     GenerationCheck,
@@ -1106,6 +1109,19 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             };
             handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::NamedImageDir))
         },
+        Request::CheckerText(request)=>{
+            if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+            let super::checker_text::Request{build,display,configuration}=request;
+            handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::CheckerText{display,configuration}))
+        }
+        Request::SchemaProposals(request)=>{
+            if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+            handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(ReportDispatch::SchemaProposals))
+        }
+        Request::FullRegistryCheck(request)=>{
+            if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+            handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(ReportDispatch::FullRegistryCheck(request.options)))
+        }
         Request::CompileSelectedReports(request) => {
             let roster = match request.qualify() {
                 Ok(roster) => roster,
@@ -1140,6 +1156,9 @@ enum ReportDispatch {
     SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, mode: super::selected_exclusions::Mode },
     CompileSelected { roster: super::selected_report_wire::CompoundRoster, exclusions: Vec<String>, output_name: String, compact_checker: bool },
     NamedImageDir,
+    FullRegistryCheck(crate::runner_host::FullRegistryCheckOptions),
+    SchemaProposals,
+    CheckerText{display:PathBuf,configuration:Option<PathBuf>},
 }
 
 fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
@@ -1257,6 +1276,9 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
                     ReportDispatch::NamedImageDir => RequestCommand::NamedImageDir,
+                    ReportDispatch::FullRegistryCheck(options)=>RequestCommand::FullRegistryCheck(*options),
+                    ReportDispatch::SchemaProposals=>RequestCommand::SchemaProposals,
+                    ReportDispatch::CheckerText{display,configuration}=>RequestCommand::CheckerText(display.clone(),configuration.clone()),
                     ReportDispatch::CompileSelected { roster, compact_checker, .. } => {
                         let (native, _) = compound.as_ref().expect("admitted compound destination");
                         let native_key = RequestKey::of(native, &path, &[], &[]);
@@ -1297,7 +1319,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let stream = Arc::new(Mutex::new(stream));
             // Only staged preparation diagnostics belong to the verified
             // transcript. Ordinary daemon traces stay in the lifecycle log.
-            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. } | ReportDispatch::CompileSelected { .. } | ReportDispatch::NamedImageDir)))
+            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. } | ReportDispatch::CompileSelected { .. } | ReportDispatch::NamedImageDir | ReportDispatch::FullRegistryCheck(_) | ReportDispatch::SchemaProposals | ReportDispatch::CheckerText{..})))
                 .then(|| super::output_binding(Arc::clone(&stream)));
             let _binding = match preparation_deadline {
                 Some(deadline) => control::bind_with_deadline(token, deadline),
@@ -1384,6 +1406,9 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                                 })?;
                                 Ok(super::generation::Executed::NamedImageDir)
                             }
+                            ReportDispatch::FullRegistryCheck(options)=>host.stage_full_registry_check_report(request,options).map(super::generation::Executed::FullRegistryCheck),
+                            ReportDispatch::SchemaProposals=>host.stage_schema_proposals(request).map(super::generation::Executed::SchemaProposals),
+                            ReportDispatch::CheckerText{display,configuration}=>host.stage_standalone_checker(request,display,configuration).map(super::generation::Executed::CheckerText),
                             ReportDispatch::CompileSelected { roster, exclusions, compact_checker, .. } => {
                                 let (native, destination) = compound.ok_or_else(|| io::Error::other("compound destination absent"))?;
                                 let output_guards = destination.claim()?;
@@ -1460,6 +1485,21 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                         .map_err(|failure| match failure {
                             SendFailure::BeforePublication(error) | SendFailure::AfterPublication(error) => error,
                         })
+                }
+                Ok(Ok(super::generation::Executed::CheckerText(report)))=>{
+                    use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
+                    match super::selected_report_wire::send_checker_text(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
+                }
+                Ok(Ok(super::generation::Executed::SchemaProposals(report)))=>{
+                    use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
+                    match super::selected_report_wire::send_schema(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
+                }
+                Ok(Ok(super::generation::Executed::FullRegistryCheck(report)))=>{
+                    use super::selected_report_wire::SendFailure;
+                    let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());
+                    match super::selected_report_wire::send_full_check(&mut *output,report,host.source_arena_work()){
+                        Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error),
+                    }
                 }
                 Ok(Ok(super::generation::Executed::SelectedExclusions(report))) => {
                     use super::selected_report_wire::SendFailure;

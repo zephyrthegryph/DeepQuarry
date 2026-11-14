@@ -673,7 +673,7 @@ impl QueryDb {
     }
     pub(super) fn workspace_input_base_headroom_locked(&self, fixed: usize) -> io::Result<usize> {
         self.workspace_input_base_remaining_locked(fixed)?.filter(|n| *n > 0)
-            .ok_or_else(|| invalid("shared raw input-family budget exhausted"))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::OutOfMemory,"shared raw input-family budget exhausted"))
     }
     pub(super) fn workspace_input_base_remaining_locked(&self, fixed: usize) -> io::Result<Option<usize>> {
         let raw_inputs = self
@@ -1205,5 +1205,26 @@ impl QueryDb{
     ).map_err(|failure|match failure{dq_analyze::captured_reactive_reads::Failure::Operational(e)=>e,dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
    }
   }else{consume(&mut rows,&mut usage,None)};if pending.is_err(){return pending}crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;pending
+ }
+}
+
+#[cfg(test)]mod shared_input_exhaustion_controls{
+ use super::*;
+ #[test]fn actual_shared_raw_input_headroom_denial_is_out_of_memory_without_changing_remaining_credit(){
+  let db=QueryDb::default();let _gate=db.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  let before=db.workspace_input_base_headroom_locked(0).unwrap();assert!(before>0);
+  for fixed in [before,before.checked_add(1).unwrap()]{
+   let error=db.workspace_input_base_headroom_locked(fixed).unwrap_err();
+   assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
+   assert_eq!(error.to_string(),"shared raw input-family budget exhausted");
+   assert_eq!(db.workspace_input_base_headroom_locked(0).unwrap(),before,"denial does not allocate or consume headroom");
+  }
+ }
+ #[test]fn actual_shared_raw_source_capture_preserves_first_callback_io_before_any_late_headroom_check(){
+  let db=QueryDb::default();let mut calls=0;
+  let error=match db.with_raw_source_capture_inputs(|_,_|{calls+=1;Err(io::Error::from_raw_os_error(1450))}){Err(actual)=>actual,Ok(_)=>panic!("first callback IO cannot become success")};
+  assert_eq!(calls,1);assert_eq!(error.raw_os_error(),Some(1450));
+  let _gate=db.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  assert!(db.workspace_input_base_headroom_locked(0).unwrap()>0);
  }
 }

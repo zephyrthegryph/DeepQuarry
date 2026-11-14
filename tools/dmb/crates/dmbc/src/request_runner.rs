@@ -22,6 +22,7 @@ mod runner_cache_records;
 mod runner_configuration;
 #[path = "runner_freshness.rs"]
 pub(crate) mod runner_freshness;
+#[path="runner_author_fix_capture.rs"]pub(crate) mod author_fix_capture;
 #[path = "runner_generated_paths.rs"]
 mod runner_generated_paths;
 use runner_cache_records::publish_cache_records;
@@ -84,6 +85,17 @@ impl Drop for RecordTimer {
 pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     run_build_with_host(request, &mut crate::runner_host::BuildHost::one_shot())
 }
+pub(crate) fn prepare_native_author_fix(request:BuildRequest,host:&mut crate::runner_host::BuildHost,
+ diagnostics:&mut dyn Write)->Result<(BuildOutcome,author_fix_capture::Inputs),Box<dyn std::error::Error>>{
+ let mut inputs=None;
+ let mut output=PreparationDiagnosticOutput::captured(diagnostics);
+ output.retain_author_fix_inputs(&mut inputs);
+ let prepared=run_build_with_host_and_derived_sink(request,host,None,&mut output);
+ let writer=output.take_error();drop(output);
+ if let Some(first)=writer{return Err(first.into())}let prepared=prepared?;
+ let inputs=inputs.ok_or_else(||io::Error::other("native authored fix did not transfer its actual admitted input ledger"))?;
+ Ok((prepared,inputs))
+}
 pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
@@ -112,6 +124,40 @@ pub(crate) fn run_build_with_host_and_policy_sinks_from(
 }
 
 pub(crate) use runner_freshness::JoinedSelectedInputs;
+#[path="runner_schema_capture.rs"]pub(crate) mod schema_capture;
+pub(crate) fn prepare_schema_proposals(request:BuildRequest,host:&mut crate::runner_host::BuildHost)->Result<(BuildOutcome,schema_capture::Inputs,Option<crate::selected_report_spool::Verified>,dm_preprocess::source_arena_credit::SourceArenaCredit),Box<dyn std::error::Error>>{
+ use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
+ if request.command!=BuildCommand::PrepareQuery||!request.exact_inputs||!request.no_cache||request.no_daemon||!host.retains_artifacts()||!request.defines.is_empty()||request.engine_template.is_some()||request.bootstrap_catalog||request.record_inputs.is_some()||request.replay_inputs.is_some()||request.artifact_directory.is_some()||request.output_store.is_some()||request.trace_path.is_some()||request.source_questions.is_some()||request.diagnostic_declarations
+ ||request.policy_inputs.as_ref().is_none_or(|p|p.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290)||p.workspace.is_none()||p.workspace_auxiliary!=[Q::Untyped]||!p.workspace_generators.is_empty()||!p.files.is_empty()||!p.search_folders.is_empty()){
+  return Err(io::Error::new(io::ErrorKind::InvalidInput,"schema proposal capture requires exact retained original Untyped workspace preparation").into())
+ }
+  let workspace=request.policy_inputs.as_ref().and_then(|p|p.workspace.as_ref()).expect("qualified schema workspace");
+  let canonical=|p:&std::path::Path|crate::policy_request::canonical_analysis_project(p,Some(AnalysisContext::OriginalAnalyze0290));
+  if canonical(&request.project)?!=canonical(&workspace.root.join("deepquarry.dme"))?{return Err(io::Error::new(io::ErrorKind::InvalidInput,"schema project and actual workspace root differ").into())}
+ let cache=request.cache_root.as_deref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"schema explicit external cache absent"))?;
+  let canonical_cache=std::fs::canonicalize(cache)?;let canonical_root=std::fs::canonicalize(&workspace.root)?;if !canonical_cache.is_dir()||canonical_cache.starts_with(canonical_root){return Err(io::Error::new(io::ErrorKind::InvalidInput,"schema cache must be existing and outside workspace").into())}
+  let credit=host.source_arena_work().reserve(cache.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(16384)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?)?;
+  let mut stage=crate::selected_report_spool::Stage::new(cache)?;
+  let mut inputs=None;let mut output=PreparationDiagnosticOutput::selected_report(&mut stage);output.retain_schema_inputs(&mut inputs);
+ let pending=run_build_with_host_and_derived_sink(request,host,None,&mut output);let first=output.take_error();drop(output);
+ if let Some(actual)=first{return Err(actual.into())}let prepared=pending?;
+ let inputs=inputs.ok_or_else(||io::Error::other("schema preparation omitted actual moved recorder closure"))?;let diagnostics=if stage.length()==0{None}else{Some(stage.seal()?.validate(schema_capture::drain)?.0)};inputs.require_current()?;Ok((prepared,inputs,diagnostics,credit))
+}
+#[path="runner_checker_capture.rs"]pub(crate) mod checker_capture;
+/// Nonpublishing capture on the actual existing retained checker host path.
+pub(crate) fn prepare_standalone_checker(request:BuildRequest,host:&mut crate::runner_host::BuildHost)->Result<(BuildOutcome,checker_capture::Inputs),Box<dyn std::error::Error>>{
+ if request.command!=BuildCommand::PrepareQuery||!request.exact_inputs||!request.no_cache||request.no_daemon||!host.retains_artifacts()
+  ||request.policy_inputs.as_ref().is_none_or(|p|p.analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalChecker0290)||p.workspace.is_some()||!p.workspace_auxiliary.is_empty()||!p.workspace_generators.is_empty()){
+  return Err(io::Error::new(io::ErrorKind::InvalidInput,"standalone Checker requires its exact retained Original checker preparation role").into())
+ }
+ let cache=request.cache_root.as_ref().ok_or_else(||io::Error::other("standalone Checker explicit cache root absent"))?;
+ let mut private=crate::selected_report_spool::Stage::new(cache)?;
+ let mut inputs=None;let mut output=PreparationDiagnosticOutput::captured(&mut private);output.retain_checker_inputs(&mut inputs);
+ let result=run_build_with_host_and_derived_sink(request,host,None,&mut output);let first=output.take_error();drop(output);
+ if let Some(actual)=first{return Err(actual.into())}let result=result?;
+ let inputs=inputs.ok_or_else(||io::Error::other("standalone Checker did not transfer its actual complete recorder closure"))?;Ok((result,inputs))
+}
+
 pub(crate) fn validate_joined_compile_request(
     request: &BuildRequest, host: &crate::runner_host::BuildHost,
 ) -> io::Result<()> {
@@ -926,6 +972,8 @@ fn run_build_attempt(
                 let view=prepared.source_view()?;
                 let intent=policy_inputs.as_ref().ok_or("analysis purpose requires its actual admitted request")?;
                 let mut pending_joined = None;
+                let mut pending_author_fix = None;
+                let mut pending_checker = None;
                 if let Some(workspace)=intent.workspace(){
                     let check_grep=intent.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline));
                     if check_grep&&analysis_subject.is_none(){
@@ -1006,6 +1054,10 @@ fn run_build_attempt(
                     }else{
                         (runner_freshness::admit_generator_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),intent,source_policy_queries.as_ref())?,None)
                     };
+                    if preparation_output.wants_author_fix_inputs(){
+                        if checker_ready.is_some()||pending_joined.is_some()||preparation_output.wants_checker_inputs()||preparation_output.wants_schema_inputs()||!intent.workspace_generators().is_empty()||intent.workspace_auxiliary()!=[crate::policy_request::WorkspaceAuxiliaryQuestion::Tracked]{return Err(io::Error::new(io::ErrorKind::InvalidInput,"authored fix requires its independent tracked preparation role").into())}
+                        pending_author_fix=Some(author_fix_capture::Pending::capture(&inputs_capture,&project,&captured,generated_paths,source_policy_queries.as_ref())?);
+                    }
                     dm_profile::request_mark("joined.workspace_freshness_bound");
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     if let Some((frame,proof))=checker_ready{
@@ -1021,6 +1073,10 @@ fn run_build_attempt(
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
                     query_attempt.admit_diagnostic_policy(admission)?;
+                    if preparation_output.wants_checker_inputs(){
+                     if intent.analysis_context()!=Some(crate::policy_request::AnalysisContext::OriginalChecker0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"standalone Checker capture cannot borrow another analysis purpose").into())}
+                     pending_checker=Some(checker_capture::Pending::capture(&inputs_capture,&project,&view,generated_paths,source_policy_queries.as_ref())?);
+                    }
                 }
                 if let Some(capture)=handlers_capture.take(){
                     let selected=capture.prepared().subject().is_selected_full();
@@ -1036,9 +1092,18 @@ fn run_build_attempt(
 
                 }
                 let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners};
-                if let Some(joined) = pending_joined {
-                    preparation_output.record_joined_inputs(Some(joined.finish(inputs_capture)?));
-                }
+                 let pending_schema=if preparation_output.wants_schema_inputs(){
+                  if pending_joined.is_some()||pending_checker.is_some()||pending_author_fix.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"one recorder cannot transfer to schema and another report").into())}
+                  Some(schema_capture::Pending::capture(&inputs_capture,&project,&view,generated_paths,source_policy_queries.as_ref())?)
+                 }else{None};
+                 match(pending_joined,pending_checker,pending_schema,pending_author_fix){
+                  (Some(joined),None,None,None)=>preparation_output.record_joined_inputs(Some(joined.finish(inputs_capture)?)),
+                  (None,Some(checker),None,None)=>preparation_output.record_checker_inputs(Some(checker.finish(inputs_capture)?)),
+                  (None,None,Some(schema),None)=>preparation_output.record_schema_inputs(schema.finish(inputs_capture)?),
+                  (None,None,None,Some(author))=>preparation_output.record_author_fix_inputs(Some(author.finish(inputs_capture)?)),
+                  (None,None,None,None)=>(),
+                  _=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"one recorder cannot transfer to multiple report/fix owners").into()),
+                 }
                 query_attempt.finish_analyzed();return Ok(outcome);
             }
             match prepared.try_into_compilable_retained(&mut *semantic_state){
@@ -1742,6 +1807,12 @@ fn run_build_attempt(
             Some(&output.dmb),
         )?;
         dm_profile::request_mark("publication.installed");
+        if let Some(joined)=joined {
+            if let Err(first)=joined.observe_installed(&project,&publication_inputs,&pair,&defines,engine_identity,bootstrap_catalog) {
+                dmbc::daemon_eprintln!("output pair {} is installed, but joined observation/independent qualification failed: {first}",pair.name());
+                return Err(first);
+            }
+        }
         let resource_journal_admission = resource_journal_admission.into_inner().unwrap_or_else(|error| error.into_inner());
         let publication_proof = verification_capture.then(|| crate::publication_proof::issue_with_resource_admission(&publication_inputs, &pair, &project, &defines, engine_identity, bootstrap_catalog, store.root_path(), resource_journal_admission)).transpose().map_err(|error| std::io::Error::other(format!("output pair {} was published, but native input proof issuance failed: {error}", pair.name())))?;
         if !verification_capture && (session.is_some() || resource_owner.is_some()) {

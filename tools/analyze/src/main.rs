@@ -124,6 +124,7 @@ fn options(args: &Args, root: &Path) -> Options {
 
 fn main() -> ExitCode {
     let native_args=std::env::args().collect::<Vec<_>>();
+    if native_args.get(1).is_some_and(|arg|arg=="native-checker"){return dq_analyze::native_cli_client::checker_text_cli(&native_args[2..]);}
     if let Some(exit) = dq_analyze::native_cli_client::workspace_check(&native_args[1..]) {
         return exit;
     }

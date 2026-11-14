@@ -10,6 +10,7 @@ struct OpenFrame{frame:OriginalRawFrame,path:Option<super::original_file_path::O
 /// The outer DirectivePass records them in its actual report/trace owner before
 /// lending the next token. This trait grants no lexical/model/source capability.
 pub(super) trait OriginalRawNoticeSink{
+ fn before_logical_pull(&mut self,_registration:super::original_prepared_output::OriginalNoticeRegistration,_a:&SettingAdmission<'_>)->io::Result<()>{Ok(())}
  fn condition_identifier_recovery(&mut self,_at:Origin,_value:Option<dm_syntax::OriginalTokenValue<&str>>,_a:&SettingAdmission<'_>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original member-name recovery notice sink is unissued"))}
 
  fn condition_primitive(&mut self,_at:Origin,_kind:dm_syntax::OriginalInputNoticeKind,_value:dm_syntax::OriginalTokenValue<&str>,_a:&SettingAdmission<'_>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original condition primitive notice sink is unissued"))}

@@ -1,4 +1,5 @@
 use super::*;
+use crate::SettingChargeCounter;
 use std::sync::{atomic::{Ordering}};
 fn body(source:&str)->ParsedBody{
  let ast=crate::parse(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);
@@ -246,4 +247,12 @@ fn body_cleanup_handoff_split_and_post_retirement_first_io_keep_original_failure
   if stop==after_retirement-1{assert!(fault_usage.get()>=base+initial)}else{assert!(fault_usage.get()<base+initial)}
   assert_eq!(counter.load(Ordering::Acquire),base);
  }
+}
+
+#[test]
+fn delete_operand_literal_children_reuse_existing_admission_and_refund(){
+ let source="/proc/p()\n    del(\"value [1 + 2]\")\n    return 0\n";let used=SettingChargeCounter::try_new(SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::with_stack_allowance(&used,32<<20,1<<20,&||Ok(()));
+ let prepared=prepare(source,&a).unwrap();let(parsed,admission)=prepared.into_parts();let StatementKind::Delete(Expr{kind:ExprKind::Group(value),..})=&parsed.statements[0].kind else{panic!("same canonical grouped delete operand")};let ExprKind::Literal(literal)=&value.kind else{panic!("actual literal")};assert_eq!(literal.parts().unwrap().unwrap().expressions.len(),1);
+ drop_body_literal_syntax(parsed,Some(admission));assert_eq!(used.load(Ordering::Acquire),SettingChargeCounter::root_allocation_bytes());
+ let tiny=SettingAdmission::new(&used,SettingChargeCounter::root_allocation_bytes(),&||Ok(()));let error=prepare(source,&tiny).err().expect("actual cleanup/resource reservation must refuse");assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),SettingChargeCounter::root_allocation_bytes());
 }
