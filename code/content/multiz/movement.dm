@@ -113,7 +113,7 @@
 
 			else if(isliving(src)) // . Are they a mob, and are they currently flying??
 				var/mob/living/H = src
-				if(stat_value(H, STAT_FLYING))
+				if(H.flying)
 					if(H.incapacitated(INCAPACITATION_ALL))
 						to_chat(src, span_notice("You can't fly in your current state."))
 						H.stop_flying() //Should already be done, but just in case.
@@ -149,7 +149,7 @@
 /mob/proc/zmove_timed_done(datum/act/op/A)
 	if(A.arg("flight"))
 		var/mob/living/H = src
-		if(!istype(H) || !stat_value(H, STAT_FLYING))
+		if(!istype(H) || !H.flying)
 			to_chat(src, span_warning("You stopped flying upwards."))
 			return
 	to_chat(src, span_notice(A.arg("done")))
@@ -243,7 +243,7 @@
 	if(dq_get_hovering(src) || is_incorporeal())
 		return TRUE
 
-	if(stat_value(src, STAT_FLYING)) // . Allows movement up/down with wings.
+	if(src.flying) // . Allows movement up/down with wings.
 		return TRUE
 
 	if(Process_Spacemove())
@@ -321,7 +321,7 @@
 	// . Flight on mobs.
 	if(isliving(src))
 		var/mob/living/L = src // . Flight on mobs.
-		if(stat_value(L, STAT_FLYING)) //Some other checks are done in the wings_toggle proc
+		if(L.flying) //Some other checks are done in the wings_toggle proc
 			if(nutrition_of(L) > 0.5)
 				L.adjust_nutrition(-0.5) //You use up -0.5 nutrition per TILE and tick of flying above open spaces. If people wanna flap their wings in the hallways, shouldn't penalize them for it.
 			if(L.incapacitated(INCAPACITATION_ALL))

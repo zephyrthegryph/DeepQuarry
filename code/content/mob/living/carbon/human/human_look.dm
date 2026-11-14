@@ -940,7 +940,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	if(istype(loc, /turf/simulated/floor/outdoors/fur) && ishuman(src))
 		depth = WATER_DEPTH_FUR
 		colour = loc.color
-	else if(!(buckled_to() || dq_get_hovering(src) || stat_value(src, STAT_FLYING) || is_incorporeal() || locate_within(loc, /obj/structure/catwalk)))
+	else if(!(buckled_to() || dq_get_hovering(src) || src.flying || is_incorporeal() || locate_within(loc, /obj/structure/catwalk)))
 		var/turf/simulated/floor/water/T = loc
 		if(istype(T))
 			depth = T.depth

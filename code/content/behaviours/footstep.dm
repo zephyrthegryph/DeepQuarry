@@ -68,7 +68,7 @@ GLOBAL_VAR_INIT(footsteps_audible, 0)
 	if(source.is_incorporeal())
 		return
 
-	if(source?.buckled_to() || source.throwing || source.movement_type & (STATE_GET(source, vent_crawl, is_ventcrawling) | stat_value(source, STAT_FLYING)))
+	if(source?.buckled_to() || source.throwing || source.movement_type & (STATE_GET(source, vent_crawl, is_ventcrawling) | source.flying))
 		return
 
 	if(source.lying) //play crawling sound if we're lying

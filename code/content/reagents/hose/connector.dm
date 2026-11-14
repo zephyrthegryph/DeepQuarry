@@ -17,6 +17,7 @@ CAPABILITIES(/datum/hose_connector)
 	ref_one(nameof(my_hose))
 	owns_one(nameof(reagents), /datum/reagents)
 	every(2 SECONDS, then(PROC_REF(connector_step)), when = nameof(my_hose))
+	on_change(nameof(my_hose), ANY, then(PROC_REF(hose_link_changed)))
 	ref_one(nameof(carrier))
 
 /// Carrier's hose sockets (/datum/hose_connector), owned: deleted with the carrier.
@@ -57,7 +58,6 @@ CAPABILITIES(/datum/hose_connector)
 	connector_number = same + 1
 	rel_add(carrier, nameof(carrier.hose_connectors), src)
 	observe(carrier, /datum/notice/examine, src, then(PROC_REF(on_examine)))
-	observe(carrier, /datum/notice/moved, src, then(PROC_REF(move_react)))
 	observe(carrier, /datum/notice/hose_forcepump, src, then(PROC_REF(on_force_pump)))
 	return TRUE
 
@@ -206,6 +206,17 @@ CAPABILITIES(/datum/hose_connector)
 	else
 		hose_pair = "nothing"
 	examine_texts += span_notice("[name] #[connector_number] is [my_hose ? "connected to [hose_pair]" : "disconnected"].")
+
+/// A hose came or went: the carrier's moves matter (the beam follows it) only while one is plugged in, so a socket with none (every human has some) hears no
+/// moved notice, and the carrier's step publishes none for it.
+/datum/hose_connector/proc/hose_link_changed(datum/act/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(QDELETED(src) || !carrier)
+		return
+	if(my_hose)
+		observe(carrier, /datum/notice/moved, src, then(PROC_REF(move_react)))
+	else
+		unobserve(carrier, /datum/notice/moved, src)
 
 /datum/hose_connector/proc/move_react(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

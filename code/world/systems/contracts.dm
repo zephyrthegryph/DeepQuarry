@@ -125,7 +125,7 @@ SYSTEM_DEF(contracts)
 	observe(subject, /datum/notice/mob_logout, src, then(PROC_REF(on_medical_subject_availability)))
 	observe(subject, /datum/notice/mob_mind_transferred_into, src, then(PROC_REF(on_medical_subject_availability)))
 	observe(subject, /datum/notice/mob_mind_transferred_out_of, src, then(PROC_REF(on_medical_subject_availability)))
-	observe(subject, /datum/notice/moved, src, then(PROC_REF(on_custody_input_changed)))
+	// Walking in and out of the brig is the area's Entered()/Exited() (/area/security/brig): a moved notice per step of every human is not heard.
 	observe(subject, /datum/notice/mob_equipped_item, src, then(PROC_REF(on_custody_input_changed)))
 	observe(subject, /datum/notice/mob_unequipped_item, src, then(PROC_REF(on_custody_input_changed)))
 	refresh_physical_custody(subject)
