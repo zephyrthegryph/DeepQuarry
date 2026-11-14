@@ -75,10 +75,10 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
 	var/no_emergency = FALSE	// if true, this light cannot ever have an emergency mode
-	var/bulb_emergency_brightness_mul = 0.25	// multiplier for this light's base brightness in emergency power mode
+	var/bulb_emergency_brightness_mul = 0.5	// multiplier for this light's base brightness in emergency power mode
 	var/bulb_emergency_colour = "#FF3232"	// determines the colour of the light while it's in emergency mode
-	var/bulb_emergency_pow_mul = 0.75	// the multiplier for determining the light's power in emergency mode
-	var/bulb_emergency_pow_min = 0.5	// the minimum value for the light's power in emergency mode
+	var/bulb_emergency_pow_mul = 1.5	// the multiplier for determining the light's power in emergency mode
+	var/bulb_emergency_pow_min = 1	// the minimum value for the light's power in emergency mode
 	var/nightshift_allowed = TRUE
 	var/brightness_range_ns
 	var/brightness_power_ns
@@ -214,10 +214,10 @@ CAPABILITIES(/obj/machinery/light)
 
 // ---- what it looks like ----
 
-/// The fixture is lit by its emergency cell: off the grid, in emergency mode, and the cell still gives light (the glow is the cell's, so it reads dark again
-/// the moment the cell runs out). Its draw shows the lit tube in the emergency colour then.
+/// The fixture is lit by its emergency cell: off the grid and in emergency mode (refresh_light() ends the mode when the cell runs out). Its draw shows the lit
+/// tube in the emergency colour then.
 /obj/machinery/light/proc/emergency_lit()
-	return !on && emergency_mode && glow_of(src).range > 0
+	return !on && emergency_mode
 
 /// The fixture's picture: the bulb's state, and the glow of a lit tube.
 /obj/machinery/light/draw(datum/look/look)
@@ -390,6 +390,7 @@ CAPABILITIES(/obj/machinery/light)
 		begin_emergency_discharge()
 	else
 		set_use_power(USE_POWER_IDLE)
+		set_emergency_mode(FALSE) // the cell is flat (or the fixture may not use it): no emergency sprite
 		set_glow(src, GLOW(0, null, null))
 	// The active draw counts only while the lamp is on (use_power ACTIVE); a dark or emergency lamp is idle and draws its idle power. It follows the
 	// lamp's glow while on and is left alone otherwise: a write republishes the power trait and re-settles every power-gated stat of the fixture

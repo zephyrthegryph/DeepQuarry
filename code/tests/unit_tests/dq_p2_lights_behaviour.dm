@@ -354,7 +354,7 @@
 	set_area_power(FALSE)
 	TEST_ASSERT(!L.on, "no longer on the grid")
 	TEST_ASSERT(p2l_emergency(L), "on emergency power")
-	TEST_ASSERT_EQUAL(glow_of(L).range, 6 * 0.25, "a quarter of its range")
+	TEST_ASSERT_EQUAL(glow_of(L).range, L.brightness_range * L.bulb_emergency_brightness_mul, "its emergency share of its range")
 	TEST_ASSERT_EQUAL(glow_of(L).color, L.bulb_emergency_colour, "emergency red")
 	TEST_ASSERT_EQUAL(glow_of(L).power, L.bulb_emergency_pow_mul, "the first level of emergency output")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_IDLE, "it draws idle power")
@@ -395,7 +395,7 @@
 	var/n = 0
 	for(var/overlay in L.overlays)
 		var/mutable_appearance/MA = new(overlay)
-		if(MA.icon_state == "[L.base_state]-overlay" && (isnull(tint) || MA.color == tint))
+		if(MA.icon_state == "[L.base_state]-overlay" && (isnull(tint) || lowertext("[MA.color]") == lowertext(tint)))
 			n++
 	return n
 
@@ -409,7 +409,9 @@
 	TEST_ASSERT_EQUAL(L.icon_state, "[L.base_state]0", "the body is the unlit one")
 	TEST_ASSERT(p2l_lit_overlays(L, L.bulb_emergency_colour) > 0, "the red emergency overlay is drawn")
 	TEST_ASSERT_EQUAL(p2l_lit_overlays(L, L.overlay_color), 0, "and not the white one")
-	set_glow(L, GLOW(0, null, null)) // the cell's light is gone
+	L.stock_cell_charge = 0 // the cell runs flat
+	L.refresh_light(FALSE)
+	settle()
 	TEST_ASSERT_EQUAL(p2l_lit_overlays(L), 0, "with the cell's light gone the fixture is dark")
 	set_area_power(TRUE)
 	TEST_ASSERT(p2l_lit_overlays(L, L.overlay_color) > 0, "power back: the white lit overlay again")
