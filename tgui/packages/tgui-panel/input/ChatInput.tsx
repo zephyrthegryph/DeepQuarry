@@ -75,7 +75,10 @@ export function ChatInput() {
     setRadioState(next);
   }
 
-  function setChannel(next: InputChannel) {
+  // Whether the player picked the channel (a click, Tab, a prefix, a hotkey): until then the row follows the server's list (settleChannel).
+  const chosen = useRef(false);
+  function setChannel(next: InputChannel, byServer = false) {
+    if (!byServer) chosen.current = true;
     input.setChannel(next);
     setChannelState(next);
   }
@@ -99,16 +102,14 @@ export function ChatInput() {
   }
 
   // The speaker's channels changed (lobby, spawn, ghost, a headset): leave one that is gone.
-  const previousAvailable = useRef<readonly InputChannel[]>(available);
   useEffect(() => {
     const next = settleChannel(
-      input.channel,
+      { channel: input.channel, chosen: chosen.current },
       available,
-      previousAvailable.current,
     );
-    previousAvailable.current = available;
-    if (next !== input.channel) {
-      setChannel(next);
+    chosen.current = next.chosen;
+    if (next.channel !== input.channel) {
+      setChannel(next.channel, true);
     }
   }, [available]);
 
@@ -188,6 +189,7 @@ export function ChatInput() {
         break;
       case 'next':
       case 'prev':
+        chosen.current = true;
         input.step(action === 'next' ? 1 : -1, available);
         setChannelState(input.channel);
         break;

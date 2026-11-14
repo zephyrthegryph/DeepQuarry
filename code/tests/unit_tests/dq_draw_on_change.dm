@@ -23,6 +23,7 @@
 /// A scheduler that is out of budget after `cap` draws: the drain's budget, made countable.
 /datum/time_scheduler/dq_draw_cap
 	cap = 1
+	limit = 1000 // the tick is not spent: only the draw count is the budget (dq_spent_tick is the other case)
 
 /// The state every test of this file starts from: the draw queue, the refresh queue and the gaze registry are empty and private to the test (the world's
 /// are put back when it ends).

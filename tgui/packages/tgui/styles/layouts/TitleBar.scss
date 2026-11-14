@@ -20,6 +20,16 @@
   box-shadow: 0px 0px base.em(6px) base.em(-1px) var(--titlebar-shadow-color);
   z-index: 101; // More than Dimmer
 
+  // The page draws the frame (a floating chat): the bar has no rule or glow of its own to double it.
+  &--framed {
+    border-bottom: 0;
+    box-shadow: none;
+
+    .TitleBar__title {
+      padding-left: base.rem(12px);
+    }
+  }
+
   &__dragZone {
     position: absolute;
     inset: 0;

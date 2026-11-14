@@ -177,6 +177,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/io_lane)
 	var/cursor = 1
 	/// Passes that stopped for the tick limit or IO_POLL_BUDGET_MS with jobs left (trace).
 	var/poll_cut = 0
+	/// Passes in a row that delivered nothing because the tick was already spent when they began (after IO_POLL_SKIPS_MAX the next one runs).
+	var/poll_skips = 0
+	/// Passes held back that way since boot.
+	var/poll_held = 0
+	/// Answers whose callback took IO_SLOW_DELIVERY_MS or more, the dearest one's ms and what it was.
+	var/slow_deliveries = 0
+	var/slow_ms_max = 0
+	var/slow_what = ""
 	/// Per backend name: list(started, completed, errors, dropped, latency total ms, latency max ms).
 	var/list/stats
 
@@ -290,10 +298,22 @@ CAPABILITIES(/datum/io_lane)
 
 /// Server milliseconds one pass of an I/O lane may spend once it has delivered an answer, whatever the tick's limit says.
 #define IO_POLL_BUDGET_MS 6
+/// Passes in a row that may find the tick already spent and wait for the next one; the one after that runs, so an answer is never held for ever.
+#define IO_POLL_SKIPS_MAX 3
+/// A delivery (decode and the owner's callback) this long (ms) is logged with its backend and callback: the callback is the part nothing here can split.
+#define IO_SLOW_DELIVERY_MS 10
 
 /// The lane's after(): one pass, then the next while jobs are pending.
 /datum/io_lane/proc/poll_pass()
-	io_poll(src)
+	// A delivery runs the owner's callback whole, which can take tens of ms: a pass that begins on a tick already spent waits for the next one (a few passes
+	// in a row at most, then it runs, so an answer is never held for ever).
+	if(Kernel?.processing && TICK_USAGE >= Kernel.current_ticklimit && poll_skips < IO_POLL_SKIPS_MAX)
+		poll_skips++
+		poll_held++
+		poll_cut++
+	else
+		poll_skips = 0
+		io_poll(src)
 	if(length(jobs))
 		io_lane_wake(src)
 
@@ -334,7 +354,16 @@ CAPABILITIES(/datum/io_lane)
 			lane.cursor++
 		else
 			rel_take(lane, nameof(lane.jobs), J)
+			var/deliver_started = TICK_USAGE_REAL
 			io_deliver(lane, K, J, raw)
+			var/deliver_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - deliver_started)
+			if(deliver_ms >= IO_SLOW_DELIVERY_MS)
+				lane.slow_deliveries++
+				var/what = "[K.name] job [J.id] -> [J.on_done]"
+				if(deliver_ms > lane.slow_ms_max)
+					lane.slow_ms_max = deliver_ms
+					lane.slow_what = what
+				log_world("IO_SLOW: delivering [what] took [round(deliver_ms, 0.1)] ms (decode and the owner's callback; this pass held back [lane.poll_held] time(s) so far, [length(lane.jobs)] job(s) still pending)")
 			spent(J)
 			delivered++
 		if(Kernel?.processing && TICK_USAGE >= Kernel.current_ticklimit)

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  type ChannelState,
   ChatInputModel,
   COMMON_OPTION,
   HISTORY_LIMIT,
@@ -11,11 +12,11 @@ import {
   nextRadioOption,
   parseAvailableChannels,
   parseCommonPrefix,
-  settleChannel,
   parseRadioPrefix,
   previewEntry,
-  radioColorName,
   type RadioOption,
+  radioColorName,
+  settleChannel,
   TYPING_THROTTLE_MS,
 } from './model';
 
@@ -306,14 +307,52 @@ describe('channel availability', () => {
     expect(nextChannel('LOOC', 1, ['Say', 'Me', 'OOC', 'LOOC'])).toBe('Say');
   });
 
-  it('keeps the lobby to OOC and settles a channel that went away', () => {
+  it('keeps the lobby to OOC and parses the list', () => {
     expect(parseAvailableChannels(['OOC'])).toEqual(['OOC']);
     expect(parseAvailableChannels(['Bogus'])).toEqual(['OOC']);
     expect(parseAvailableChannels(['OOC', 'Say'])).toEqual(['Say', 'OOC']);
-    expect(settleChannel('Say', ['OOC'])).toBe('OOC');
-    expect(settleChannel('Me', ['Say', 'Me', 'OOC'])).toBe('Me');
-    // The round starts: Say becomes available, and the row moves off the lobby's OOC.
-    expect(settleChannel('OOC', ['Say', 'OOC'], ['OOC'])).toBe('Say');
-    expect(settleChannel('OOC', ['Say', 'OOC'], ['Say', 'OOC'])).toBe('OOC');
+  });
+
+  it('settles on Say when the player spawns, whatever order the lists arrive in', () => {
+    const lobby = parseAvailableChannels(['OOC']);
+    const body = parseAvailableChannels(['Say', 'Me', 'OOC', 'LOOC']);
+    const feed = (lists: InputChannel[][], from?: ChannelState) =>
+      lists.reduce(
+        (state, list) => settleChannel(state, list),
+        from ?? { channel: 'Say' as InputChannel, chosen: false },
+      );
+    // The live order: the row mounts (Say is its first guess) in the lobby, the player focuses it (the server answers with the lobby list
+    // again), the round starts, the player spawns (the body's list, then once more when the row opens).
+    expect(feed([lobby, lobby, lobby])).toEqual({
+      channel: 'OOC',
+      chosen: false,
+    });
+    expect(feed([lobby, lobby, lobby, body, body]).channel).toBe('Say');
+    // A row mounted after the spawn, or that never saw the lobby list.
+    expect(feed([body]).channel).toBe('Say');
+    expect(feed([body, lobby, body]).channel).toBe('Say');
+    // Two lists in one render: only the last is seen.
+    expect(feed([body]).channel).toBe('Say');
+    // A row left on OOC by the lobby, with Say already in the list before it settles.
+    expect(settleChannel({ channel: 'OOC', chosen: false }, body).channel).toBe(
+      'Say',
+    );
+  });
+
+  it('keeps a channel the player picked until Say goes away', () => {
+    const body = parseAvailableChannels(['Say', 'Me', 'OOC']);
+    const lobby = parseAvailableChannels(['OOC']);
+    let state: ChannelState = { channel: 'Me', chosen: true };
+    state = settleChannel(state, body);
+    expect(state).toEqual({ channel: 'Me', chosen: true });
+    // A pick that is gone falls back to Say, a picked one is dropped in the lobby.
+    expect(settleChannel(state, ['Say', 'OOC']).channel).toBe('Say');
+    state = settleChannel(state, lobby);
+    expect(state).toEqual({ channel: 'OOC', chosen: false });
+    expect(settleChannel(state, body).channel).toBe('Say');
+    expect(settleChannel({ channel: 'Say', chosen: false }, ['OOC'])).toEqual({
+      channel: 'OOC',
+      chosen: false,
+    });
   });
 });

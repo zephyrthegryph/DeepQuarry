@@ -198,7 +198,9 @@ CAPABILITIES(/mob/living)
 	// (a MOB_KEY_* fact its producer publishes, or a var's setter); the generator adds what the handler's procs read (reaction_reads()). HUD and sight
 	// run at most once a LIFE_PRESENT_MIN_INTERVAL, the first change at once and the rest in one trailing run (a walking player raises a location change most ticks) and only for the mobs their gate wants.
 	on_change(cond_published(MOB_KEY_STATUS, nameof(stat)), ANY, when(PROC_REF(life_canmove_wanted)), then(PROC_REF(life_canmove_changed)))
-	on_change(cond_published(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_changed)))
+	on_change(cond_published(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_changed)))
+	// A step changes only what the HUD reads from the place (night vision's light level, a robot's air, a pAI's card): that is its own cheap reaction, not the whole HUD pass.
+	on_change(cond_published(MOB_KEY_LOC), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_place_changed)))
 	on_change(cond_published(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), nameof(sdisabilities), nameof(tf_mob_holder), nameof(virtual_reality_mob)), ANY, when(PROC_REF(life_vision_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_vision_changed)))
 	owns_one(nameof(aiming), /obj/aiming_overlay)
 	// a human builds its body in set_species(), before init, so its organs have part slots to attach into; the var then holds it and nothing is made here

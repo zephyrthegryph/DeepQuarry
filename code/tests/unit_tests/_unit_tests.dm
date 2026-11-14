@@ -580,6 +580,7 @@
 #include "dq_glow_batch_tests.dm"
 #include "dq_fresh_look_default.dm"
 #include "dq_draw_on_change.dm"
+#include "dq_walk_tidi_tests.dm"
 #include "dq_move_input_shadow.dm"
 #include "dq_run_circle_cost.dm"
 #include "dq_step_cost.dm"

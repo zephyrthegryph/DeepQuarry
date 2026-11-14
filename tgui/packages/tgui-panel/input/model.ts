@@ -186,17 +186,34 @@ export function parseAvailableChannels(value: unknown): InputChannel[] {
   return known.length ? known : ['OOC'];
 }
 
-/** The channel to show when the available set changes: Say once it first becomes usable, else the current one if still usable, else the first usable. */
+/** What the row shows and whether the player picked it: the pair `settleChannel` works on. */
+export type ChannelState = { channel: InputChannel; chosen: boolean };
+
+/**
+ * The row's state after the server's channel list changed. Until the player picks a channel themselves the row follows the server: Say
+ * whenever it is usable (the round started, the player spawned), else the lobby's OOC. It does not depend on which lists came before, so
+ * a repeated list, a list that arrives with the first message, or a row mounted after the spawn all end on Say. A pick stands until Say
+ * goes away again (back to the lobby, a new round), and is then dropped if its channel is gone.
+ */
 export function settleChannel(
-  channel: InputChannel,
+  state: ChannelState,
   available: readonly InputChannel[],
-  before?: readonly InputChannel[],
-): InputChannel {
-  // Speech just became available (the round started, the player spawned): the row opens on it, not on the lobby's OOC.
-  if (before && !before.includes('Say') && available.includes('Say')) {
-    return 'Say';
+): ChannelState {
+  const canSay = available.includes('Say');
+  if (!canSay) {
+    // The lobby: the next time Say appears the row follows the server again.
+    const channel = available.includes(state.channel)
+      ? state.channel
+      : (available[0] ?? 'OOC');
+    return { channel, chosen: false };
   }
-  return available.includes(channel) ? channel : (available[0] ?? 'OOC');
+  if (!state.chosen) {
+    return { channel: 'Say', chosen: false };
+  }
+  return {
+    channel: available.includes(state.channel) ? state.channel : 'Say',
+    chosen: true,
+  };
 }
 
 export function isChannel(value: unknown): value is InputChannel {

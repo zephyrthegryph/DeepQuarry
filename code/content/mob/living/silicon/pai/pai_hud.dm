@@ -364,6 +364,13 @@
 	if(!.)
 		return
 
+	life_hud_place()
+
+/// Folded while it rides in its card.
+/mob/living/silicon/pai/life_hud_place()
+	. = ..()
+	if(!.)
+		return
 	if(src.pai_fold_display)
 		if(src.loc == src.card)
 			src.pai_fold_display.set_icon_state("folded")

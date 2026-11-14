@@ -158,6 +158,8 @@ do { \
 // Client lighting (code/content/lighting/client_*.dm).
 /// Side of the chunks glowing lights are indexed by, in turfs.
 #define CLIENT_GLOW_CHUNK 8
+/// A holder's crossing or sight refresh that takes this long (ms) is logged whatever the lighting trace says (GLOW_SLOW).
+#define CLIENT_GLOW_SLOW_CROSSING_MS 8
 /// The longest reach a glow is drawn and indexed for, in turfs.
 #define CLIENT_GLOW_MAX_RANGE 6
 /// The chunk a turf coordinate (x or y) is in.
