@@ -197,7 +197,7 @@ GLOBAL_VAR(refresh_mark_var)
 		interest_arrive(owner, arriving, visible, eye, relocated)
 	var/hold_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - hold_started)
 	if(hold_ms >= INTEREST_HOLD_SLOW_MS)
-		log_world("INTEREST_HOLD_SLOW: [owner] hold took [round(hold_ms, 0.1)] ms: [length(entered)] chunk(s) entered ([length(ringed)] ring, [length(arriving)] visible), [relocated ? "a view jump" : "a step"], [length(GLOB.interest_ring_scans)] ring chunk(s) left to the drain")
+		log_world("INTEREST_HOLD_SLOW: [owner] hold took [round(hold_ms, 0.1)] ms: [length(entered)] chunk(s) entered ([length(ringed)] ring, [length(arriving)] visible), [relocated ? "a view jump" : "a step"], [length(GLOB.interest_ring_scans)] ring chunk(s) and [length(GLOB.interest_edge_scans)] visible chunk(s) left to the drain")
 
 // ---- perceivability: nothing is drawn that no viewer could perceive ----
 //
@@ -240,9 +240,13 @@ GLOBAL_VAR_INIT(interest_unperceivable_skipped, 0)
 /// one past the budget). INTEREST_ARRIVAL_MIN_STEP is the cap of an arrival's own first pass.
 #define INTEREST_DRAIN_FLOOR 4
 /// The most owed draws a walker's edge runs in the tick its chunk becomes visible (nearest its eye first); the rest drain over the following ticks (interest_arrive()).
-#define INTEREST_WALKER_NOW_MAX 48
+#define INTEREST_WALKER_NOW_MAX 12
 /// The most owed items a walker's edge looks at in that tick, drawn or not, so a long list of items that need nothing is not itself a hitch (interest_arrive()).
-#define INTEREST_WALKER_INSPECT_MAX 256
+/// The whole step's scanning is held to this: a newly visible chunk whose owed set (read in O(1) from interest_owed) would take it past the rest is not scanned
+/// in the step at all; it goes to the drain's edge list (interest_edge_scans), which scans it first thing the next pass and draws it ahead of every other queue.
+#define INTEREST_WALKER_INSPECT_MAX 32
+/// Server milliseconds a walker's edge may spend drawing in its own tick, after its first draw (0: no limit; unit tests run without one, they count).
+#define INTEREST_WALKER_NOW_MS 3
 /// Observer key -> the chunk keys of its covered arrival that are not scanned for owed draws yet, nearest its eye first (interest_scan_queue()). The drain scans them
 /// one chunk at a time behind the cover, so the tick of a login does not walk the whole view.
 GLOBAL_ALIST_EMPTY(interest_scan_pending)
@@ -250,6 +254,18 @@ GLOBAL_ALIST_EMPTY(interest_scan_pending)
 GLOBAL_ALIST_EMPTY(interest_scan_middle)
 /// Ring chunks of a view jump not scanned yet: entries list(key, mid_cx, mid_cy), nearest first. The drain scans one when the prefetch queue runs dry.
 GLOBAL_LIST_EMPTY(interest_ring_scans)
+/// Chunks a walker's step made visible that were not scanned inside the step (interest_arrive()): entries list(key, mid_cx, mid_cy), nearest first. The drain scans
+/// them before anything else in the prefetch stage and puts what they owe at the front of the prefetch queue.
+GLOBAL_LIST_EMPTY(interest_edge_scans)
+/// Walker steps that left chunk scans to the drain, and the chunks they left; walker steps' draws cut short by their time limit.
+GLOBAL_VAR_INIT(interest_edge_steps_deferred, 0)
+GLOBAL_VAR_INIT(interest_edge_chunks_deferred, 0)
+GLOBAL_VAR_INIT(interest_walker_time_cut, 0)
+#if defined(UNIT_TESTS)
+GLOBAL_VAR_INIT(interest_walker_now_ms, 0)
+#else
+GLOBAL_VAR_INIT(interest_walker_now_ms, INTEREST_WALKER_NOW_MS)
+#endif
 /// Observer key -> handles (handle_of()) of the atoms it owes behind its cover, nearest its eye first. Present only while that observer is covered.
 GLOBAL_ALIST_EMPTY(interest_covered)
 /// Handles of atoms owed in ring chunks (a chunk away from someone's view), nearest the observer first, drawn ahead of the presentation backlog.
@@ -359,6 +375,28 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		log_world("INTEREST: ring chunk scanned by the drain in [round(scan_ms, 0.1)] ms, [queued] parked draw(s) queued, [length(owed)] prefetched nearest first, [length(GLOB.interest_ring_scans)] ring chunk(s) left")
 	return TRUE
 
+/// The drain scans the next chunk a walker's step left unscanned: what it owes is woken and inserted into the prefetch queue at `at` (after the chunks scanned before
+/// it this pass, so the order stays nearest first). Returns how many it inserted.
+/proc/interest_edge_scan(at)
+	. = 0
+	if(!length(GLOB.interest_edge_scans))
+		return
+	var/list/entry = GLOB.interest_edge_scans[1]
+	GLOB.interest_edge_scans.Cut(1, 2)
+	var/key = entry[1]
+	if(!interest_count(round(key / 1048576), round((key % 1048576) / 1024), key % 1024))
+		GLOB.interest_ring_scans_stale++
+		return
+	var/list/owed = list()
+	interest_collect_owed(owed, round(key / 1048576), round((key % 1048576) / 1024), key % 1024, entry[2], entry[3])
+	for(var/handle in owed)
+		var/atom/A = handle_get(handle)
+		if(isatom(A))
+			interest_wake(A)
+	if(length(owed))
+		GLOB.interest_prefetched.Insert(at + 1, owed)
+	return length(owed)
+
 /// Chunks `keys` (nearest first) wait to be scanned for owed draws behind `owner`'s cover, looking from `middle`.
 /proc/interest_scan_queue(owner, list/keys, list/middle)
 	var/list/pending = GLOB.interest_scan_pending[owner]
@@ -400,7 +438,25 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 			var/rest_key = order[i]
 			interest_collect_owed(owed, round(rest_key / 1048576), round((rest_key % 1048576) / 1024), rest_key % 1024, middle[1], middle[2])
 	else
-		owed = interest_owed_ordered(keys, middle)
+		// A walker's step: scan nearest first while the chunks' owed sets (their size is read without a scan) fit the step's inspection budget; the rest is the drain's.
+		owed = list()
+		var/list/walk_order = interest_chunks_nearest(keys, middle)
+		var/walk_room = INTEREST_WALKER_INSPECT_MAX
+		var/walk_scanned = 0
+		for(var/walk_key in walk_order)
+			var/list/index = GLOB.interest_owed[walk_key]
+			var/count = length(index)
+			if(count > walk_room)
+				break
+			walk_room -= count
+			walk_scanned++
+			interest_collect_owed(owed, round(walk_key / 1048576), round((walk_key % 1048576) / 1024), walk_key % 1024, middle[1], middle[2])
+		if(walk_scanned < length(walk_order))
+			for(var/i in walk_scanned + 1 to length(walk_order))
+				GLOB.interest_edge_scans += list(list(walk_order[i], middle[1], middle[2]))
+			GLOB.interest_edge_chunks_deferred += length(walk_order) - walk_scanned
+			GLOB.interest_edge_steps_deferred++
+			interest_drain_soon()
 	if(!length(owed))
 		return
 	// No cover: a walker's edge draws the nearest INTEREST_WALKER_NOW_MAX now (a small batch is all of it) and queues the rest at the front of the prefetch
@@ -417,6 +473,9 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	for(var/handle in owed)
 		if(limited && (drawn >= INTEREST_WALKER_NOW_MAX || inspected >= INTEREST_WALKER_INSPECT_MAX))
 			break
+		if(limited && ran && GLOB.interest_walker_now_ms && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= GLOB.interest_walker_now_ms)
+			GLOB.interest_walker_time_cut++
+			break // the step's own time is spent: what is left goes to the front of the drain's queue
 		inspected++
 		var/atom/A = handle_get(handle)
 		if(isatom(A) && !QDELETED(A))
@@ -671,6 +730,11 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 		if(budget_hit)
 			break
 	if(!budget_hit)
+		// Chunks a walker's step left unscanned (visible now): scanned first, what they owe goes to the front of the prefetch queue, nearest first.
+		var/edge_at = 0
+		while(length(GLOB.interest_edge_scans) && (!scans || !(interest_arrival_pass_full(., cap) || KERNEL_OVER_BUDGET)))
+			edge_at += interest_edge_scan(edge_at)
+			scans++
 		var/list/P = GLOB.interest_prefetched
 		var/j = 0
 		while(TRUE)
@@ -696,7 +760,7 @@ GLOBAL_LIST_EMPTY(interest_test_coverable)
 	GLOB.interest_drain_ms_max = max(GLOB.interest_drain_ms_max, drain_ms)
 	if(drain_ms >= INTEREST_HOLD_SLOW_MS)
 		log_world("INTEREST_DRAIN_SLOW: a drain pass took [round(drain_ms, 0.1)] ms: [.] drawn, [scans] chunk scan(s), [length(GLOB.interest_covered)] covered, [length(GLOB.interest_prefetched)] prefetched waiting, [length(GLOB.interest_ring_scans)] ring chunk(s) left")
-	if(length(GLOB.interest_covered) || length(GLOB.interest_prefetched) || length(GLOB.interest_ring_scans))
+	if(length(GLOB.interest_covered) || length(GLOB.interest_prefetched) || length(GLOB.interest_ring_scans) || length(GLOB.interest_edge_scans))
 		interest_drain_soon()
 
 /// Has a drain pass that ran `drawn` draws used its share of the tick?

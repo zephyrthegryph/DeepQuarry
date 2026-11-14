@@ -20,6 +20,11 @@ GLOBAL_VAR_INIT(act_backstops, 0)
 /// Counters (metrics, and what a test reads): contexts taken, notices taken, notices queued past the depth cap, actions refused for depth.
 GLOBAL_COUNTER(act_taken)
 GLOBAL_VAR_INIT(notice_taken, 0)
+#if defined(UNIT_TESTS)
+/// "notice type on holder type" -> asks while a test traces them (the step-cost test); null: off.
+GLOBAL_LIST(notice_wanted_trace)
+#endif
+GLOBAL_VAR_INIT(notice_wanted_calls, 0) // notice_wanted() asks (WANTS), counted by the step-cost test
 GLOBAL_VAR_INIT(notice_late, 0)
 GLOBAL_VAR_INIT(act_too_deep, 0)
 /// The chain of what is running, innermost last: logged when the depth cap trips.

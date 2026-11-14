@@ -1795,7 +1795,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/Check_Shoegrip()
 	if(get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
-	if(stat_value(src, STAT_FLYING)) // Checks to see if they have wings and are stat_value(src, STAT_FLYING).
+	if(src.flying) // Checks to see if they have wings and are src.flying.
 		return 1
 	return 0
 

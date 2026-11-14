@@ -24,6 +24,8 @@ struct Progress {
     written: u64,
     /// Lines whose write failed (a counted drop, never a silent one).
     failed: u64,
+    /// Files found missing when a batch opened them (deleted while the round ran) and started again with their header.
+    recovered: u64,
 }
 
 struct Inner {
@@ -34,6 +36,8 @@ struct Inner {
 struct Writer {
     inner: Mutex<Inner>,
     progress: Mutex<Progress>,
+    /// File path -> the header it starts with (`verdigris_log_header`): what the writer puts back first when it finds the file gone.
+    headers: Mutex<Option<HashMap<String, String>>>,
     done: Condvar,
 }
 
@@ -46,7 +50,9 @@ static WRITER: Writer = Writer {
         queued: 0,
         written: 0,
         failed: 0,
+        recovered: 0,
     }),
+    headers: Mutex::new(None),
     done: Condvar::new(),
 };
 
@@ -68,22 +74,39 @@ fn sender(inner: &mut Inner) -> Option<Sender<Line>> {
     inner.tx.clone()
 }
 
-fn open(path: &str) -> std::io::Result<BufWriter<File>> {
+/// Opens `path` for appending. A file that is gone but has a registered header starts again with that header and counts as
+/// recovered, so a deleted log file is noticed on the writer thread and the game thread never has to look at the disk.
+fn open(path: &str, recovered: &mut u64) -> std::io::Result<BufWriter<File>> {
     let p = PathBuf::from(path);
     if let Some(dir) = p.parent() {
         if !dir.as_os_str().is_empty() {
             fs::create_dir_all(dir)?;
         }
     }
-    Ok(BufWriter::new(
-        OpenOptions::new().create(true).append(true).open(p)?,
-    ))
+    let header = WRITER
+        .headers
+        .lock()
+        .ok()
+        .and_then(|h| h.as_ref().and_then(|m| m.get(path).cloned()));
+    let gone = header.is_some() && !p.exists();
+    let mut f = BufWriter::new(OpenOptions::new().create(true).append(true).open(p)?);
+    if gone {
+        if let Some(h) = header {
+            f.write_all(h.as_bytes())?;
+        }
+        *recovered += 1;
+    }
+    Ok(f)
 }
 
 /// Writes one line to its file through the open handles of this batch.
-fn put(files: &mut HashMap<String, BufWriter<File>>, line: &Line) -> std::io::Result<()> {
+fn put(
+    files: &mut HashMap<String, BufWriter<File>>,
+    line: &Line,
+    recovered: &mut u64,
+) -> std::io::Result<()> {
     if !files.contains_key(&line.path) {
-        files.insert(line.path.clone(), open(&line.path)?);
+        files.insert(line.path.clone(), open(&line.path, recovered)?);
     }
     match files.get_mut(&line.path) {
         Some(f) => f.write_all(line.text.as_bytes()),
@@ -98,9 +121,10 @@ fn run(w: &Writer, rx: &Receiver<Line>) {
         let mut files: HashMap<String, BufWriter<File>> = HashMap::new();
         let mut done = 0_u64;
         let mut failed = 0_u64;
+        let mut recovered = 0_u64;
         let mut next = Some(first);
         while let Some(line) = next {
-            if put(&mut files, &line).is_err() {
+            if put(&mut files, &line, &mut recovered).is_err() {
                 failed += 1;
             }
             done += 1;
@@ -115,6 +139,7 @@ fn run(w: &Writer, rx: &Receiver<Line>) {
         if let Ok(mut p) = w.progress.lock() {
             p.written += done;
             p.failed += failed;
+            p.recovered += recovered;
         }
         w.done.notify_all();
     }
@@ -143,7 +168,8 @@ pub fn append(path: &str, text: &str) {
         return;
     }
     let mut files = HashMap::new();
-    let ok = put(&mut files, &line).is_ok() && files.values_mut().all(|f| f.flush().is_ok());
+    let mut recovered = 0_u64;
+    let ok = put(&mut files, &line, &mut recovered).is_ok() && files.values_mut().all(|f| f.flush().is_ok());
     if let Ok(mut p) = w.progress.lock() {
         p.queued += 1;
         p.written += 1;
@@ -183,19 +209,34 @@ pub fn stop() {
     }
 }
 
-/// (queued, written, failed) line counts.
-pub fn counts() -> (u64, u64, u64) {
+/// (queued, written, failed, recovered) counts.
+pub fn counts() -> (u64, u64, u64, u64) {
     WRITER
         .progress
         .lock()
-        .map(|p| (p.queued, p.written, p.failed))
-        .unwrap_or((0, 0, 0))
+        .map(|p| (p.queued, p.written, p.failed, p.recovered))
+        .unwrap_or((0, 0, 0, 0))
+}
+
+/// Registers the header a file starts with, for the writer to put back if the file is found gone.
+pub fn set_header(path: &str, text: &str) {
+    if let Ok(mut h) = WRITER.headers.lock() {
+        h.get_or_insert_with(HashMap::new)
+            .insert(path.to_owned(), text.to_owned());
+    }
 }
 
 /// Queues `text` for `path` and returns at once.
 #[auxmacros::bind("/proc/verdigris_log_append")]
 fn verdigris_log_append(path: ByondValue, text: ByondValue) -> Result<ByondValue> {
     append(&path.get_string()?, &text.get_string()?);
+    Ok(ByondValue::null())
+}
+
+/// Registers `text` as the header `path` starts with; the writer thread writes it first if it finds the file gone.
+#[auxmacros::bind("/proc/verdigris_log_header")]
+fn verdigris_log_header(path: ByondValue, text: ByondValue) -> Result<ByondValue> {
+    set_header(&path.get_string()?, &text.get_string()?);
     Ok(ByondValue::null())
 }
 
@@ -213,11 +254,11 @@ fn verdigris_log_stop() -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
-/// `"queued,written,failed"`: line counts since the DLL loaded.
+/// `"queued,written,failed,recovered"`: counts since the DLL loaded.
 #[auxmacros::bind("/proc/verdigris_log_counts")]
 fn verdigris_log_counts() -> Result<ByondValue> {
-    let (q, w, f) = counts();
-    Ok(crate::held::Held::new_str(format!("{q},{w},{f}"))?.leak())
+    let (q, w, f, r) = counts();
+    Ok(crate::held::Held::new_str(format!("{q},{w},{f},{r}"))?.leak())
 }
 
 #[cfg(test)]

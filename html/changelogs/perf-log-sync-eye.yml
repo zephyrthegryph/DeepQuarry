@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Log files are no longer checked for existence on the game thread; the async writer restores a deleted file's header itself"
+  - code_imp: "A walker crossing a chunk edge scans and draws a bounded amount in the step; the rest goes to the drain"

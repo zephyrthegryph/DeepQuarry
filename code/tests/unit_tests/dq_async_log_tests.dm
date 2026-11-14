@@ -4,6 +4,8 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 #define DQ_ASYNC_LOG_FILE "data/dq_async_log_test.log"
+/// Its own file: a registered header stays with its path, so no other test may share it.
+#define DQ_ASYNC_HEADER_FILE "data/dq_async_log_header_test.log"
 
 /// Lines queued across two files land whole and in call order, and a flush is what makes them readable.
 /datum/unit_test/dq_async_log_keeps_order
@@ -70,6 +72,43 @@
 	TEST_ASSERT(queue_ms < 100, "queuing 1000 lines took [round(queue_ms, 0.1)] ms")
 	fdel(DQ_ASYNC_LOG_FILE)
 
+/// log_world() and every category log write (the readable and json files) go to the writer thread: none writes a file, or asks the disk
+/// whether one exists, on the calling thread. The counter on the synchronous path (log_file_write_sync/log_file_append_sync) stays put.
+/datum/unit_test/dq_log_world_writes_no_file_synchronously
+
+/datum/unit_test/dq_log_world_writes_no_file_synchronously/Run()
+	var/sync_before = GLOB.log_sync_writes
+	var/list/counts_before = log_file_counts()
+	for(var/i in 1 to 50)
+		log_world("dq_log_sync_probe [i]")
+	log_game("dq_log_sync_probe game")
+	log_file_flush()
+	var/list/counts_after = log_file_counts()
+	TEST_ASSERT_EQUAL(GLOB.log_sync_writes, sync_before, "log_world and category logs made no synchronous file write")
+	TEST_ASSERT(counts_after[1] - counts_before[1] >= 51, "the lines were queued to the writer ([counts_after[1] - counts_before[1]])")
+	TEST_ASSERT_EQUAL(counts_after[2], counts_after[1], "and written")
+
+/// A log file deleted while the round runs starts again with its header, put back by the writer thread when it next opens the file.
+/datum/unit_test/dq_log_file_deleted_gets_its_header_back
+
+/datum/unit_test/dq_log_file_deleted_gets_its_header_back/Run()
+	fdel(DQ_ASYNC_HEADER_FILE)
+	log_file_set_header(DQ_ASYNC_HEADER_FILE, "header\n")
+	log_file_append(DQ_ASYNC_HEADER_FILE, "one\n", FALSE)
+	log_file_flush()
+	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_HEADER_FILE), "header\none\n", "the first open of a missing file starts it with the header")
+	var/recovered = log_file_counts()[4]
+	log_file_append(DQ_ASYNC_HEADER_FILE, "two\n", FALSE)
+	log_file_flush()
+	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_HEADER_FILE), "header\none\ntwo\n", "an existing file only gets the line")
+	fdel(DQ_ASYNC_HEADER_FILE)
+	log_file_append(DQ_ASYNC_HEADER_FILE, "three\n", FALSE)
+	log_file_flush()
+	TEST_ASSERT_EQUAL(file2text(DQ_ASYNC_HEADER_FILE), "header\nthree\n", "a deleted file starts again with its header")
+	TEST_ASSERT(log_file_counts()[4] > recovered, "and the recovery is counted")
+	fdel(DQ_ASYNC_HEADER_FILE)
+
 #undef DQ_ASYNC_LOG_FILE
+#undef DQ_ASYNC_HEADER_FILE
 
 #endif

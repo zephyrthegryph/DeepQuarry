@@ -49,6 +49,7 @@
 	set_global(nameof(GLOB.interest_scan_pending), alist())
 	set_global(nameof(GLOB.interest_scan_middle), alist())
 	set_global(nameof(GLOB.interest_ring_scans), list())
+	set_global(nameof(GLOB.interest_edge_scans), list())
 	set_global(nameof(GLOB.interest_chunks_entered), GLOB.interest_chunks_entered)
 	set_global(nameof(GLOB.interest_test_coverable), list())
 	set_global(nameof(GLOB.interest_covers_raised), GLOB.interest_covers_raised)
@@ -587,7 +588,7 @@
 	var/turf/stepped = locate(start_x + 9, base.y, base.z) // its window reaches the next chunk and keeps the one it held
 	var/turf/edge = locate(start_x + INTEREST_CHUNK, base.y, base.z)
 	TEST_ASSERT(home && stepped && edge, "the map has room for two neighbouring chunks")
-	var/list/probes = interest_probes(edge, INTEREST_ARRIVAL_MIN_STEP + 8)
+	var/list/probes = interest_probes(edge, INTEREST_WALKER_NOW_MAX)
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	for(var/obj/dq_interest_probe/probe as anything in probes)
 		refresh_mark(probe, DEP_ALL)
@@ -615,7 +616,7 @@
 	var/turf/edge = locate(start_x + INTEREST_CHUNK, base.y, base.z)
 	var/turf/far_corner = locate(start_x + 2 * INTEREST_CHUNK - 1, base.y, base.z) // the far end of the new chunk: the farthest from the eye
 	TEST_ASSERT(home && stepped && edge && far_corner, "the map has room for two neighbouring chunks")
-	var/list/near = interest_probes(edge, INTEREST_WALKER_NOW_MAX + 20)
+	var/list/near = interest_probes(edge, INTEREST_WALKER_NOW_MAX + 8)
 	var/list/far = interest_probes(far_corner, 5)
 	var/list/probes = near + far
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
@@ -637,6 +638,7 @@
 			if(probe in far)
 				far_owing++
 	TEST_ASSERT_EQUAL(owing, length(probes) - INTEREST_WALKER_NOW_MAX, "only one tick's batch was drawn now")
+	TEST_ASSERT_EQUAL(length(GLOB.interest_edge_scans), 0, "the chunk fit the step's inspection budget, so none was left to the drain's edge list")
 	TEST_ASSERT_EQUAL(far_owing, length(far), "nearest the eye first: the farthest ones are the ones left")
 	TEST_ASSERT_EQUAL(GLOB.interest_walker_deferred - deferred_before, owing, "the deferred draws are counted")
 	TEST_ASSERT(length(GLOB.interest_prefetched) >= owing, "and wait in the queue the drain works")
@@ -669,7 +671,7 @@
 	var/turf/edge = locate(start_x + INTEREST_CHUNK, base.y, base.z)
 	var/turf/far_corner = locate(start_x + 2 * INTEREST_CHUNK - 1, base.y, base.z)
 	TEST_ASSERT(home && stepped && edge && far_corner, "the map has room for two neighbouring chunks")
-	var/list/clean = interest_probes(edge, INTEREST_WALKER_NOW_MAX + 10) // nearest the eye, and none of them can be drawn
+	var/list/clean = interest_probes(edge, 10) // nearest the eye, and none of them can be drawn
 	var/list/real = interest_probes(far_corner, INTEREST_WALKER_NOW_MAX + 2)
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	for(var/obj/dq_interest_probe/probe as anything in clean)
@@ -692,6 +694,51 @@
 	TEST_ASSERT_EQUAL(owing, length(real) - INTEREST_WALKER_NOW_MAX, "the full batch of real draws ran now, behind the items that needed none")
 	TEST_ASSERT_EQUAL(GLOB.interest_walker_deferred - deferred_before, owing, "only the real draws past the batch were deferred")
 	interest_clean(clean + real)
+
+/// A walker's step does bounded work: a newly visible chunk owing more than the step's inspection budget (INTEREST_WALKER_INSPECT_MAX, read from the owed index without a
+/// scan) is not scanned or drawn inside the step. It is listed for the drain, which scans it first thing, draws it ahead of the rest of the queue and leaves nothing in view owing.
+/datum/unit_test/dq_interest_walker_step_work_is_bounded
+
+/datum/unit_test/dq_interest_walker_step_work_is_bounded/Run()
+	interest_isolate()
+	set_global(nameof(GLOB.interest_edge_steps_deferred), GLOB.interest_edge_steps_deferred)
+	set_global(nameof(GLOB.interest_edge_chunks_deferred), GLOB.interest_edge_chunks_deferred)
+	var/turf/base = test_floor()
+	var/start_x = round((base.x - 1) / INTEREST_CHUNK) * INTEREST_CHUNK + 1
+	var/turf/home = locate(start_x, base.y, base.z)
+	var/turf/stepped = locate(start_x + 9, base.y, base.z)
+	var/turf/edge = locate(start_x + INTEREST_CHUNK, base.y, base.z)
+	TEST_ASSERT(home && stepped && edge, "the map has room for two neighbouring chunks")
+	var/list/probes = interest_probes(edge, INTEREST_WALKER_INSPECT_MAX + 20)
+	set_global(nameof(GLOB.interest_defer_marks), TRUE)
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		refresh_mark(probe, DEP_ALL)
+	GLOB.interest_test_coverable += "dq-test-walker"
+	interest_view_set("dq-test-walker", home, null, world.view)
+	GLOB.interest_covered -= "dq-test-walker"
+	var/scanned_before = GLOB.interest_chunks_entered
+	var/drawn_before = GLOB.interest_drawn_now
+	var/steps_before = GLOB.interest_edge_steps_deferred
+	var/chunks_before = GLOB.interest_edge_chunks_deferred
+	interest_view_set("dq-test-walker", stepped, null, world.view)
+	TEST_ASSERT_EQUAL(GLOB.interest_chunks_entered - scanned_before, 0, "the crossing scanned no chunk inside the step")
+	TEST_ASSERT_EQUAL(GLOB.interest_drawn_now - drawn_before, 0, "and drew nothing inside the step")
+	TEST_ASSERT_EQUAL(GLOB.interest_edge_steps_deferred - steps_before, 1, "it is counted as a deferred step")
+	TEST_ASSERT(GLOB.interest_edge_chunks_deferred - chunks_before >= 1, "with the chunk it left")
+	TEST_ASSERT(length(GLOB.interest_edge_scans) >= 1, "the chunk waits in the drain's edge list")
+	set_global(nameof(GLOB.interest_arrival_step_max), 10)
+	var/passes = 0
+	for(var/pass in 1 to 200)
+		if(!length(GLOB.interest_prefetched) && !length(GLOB.interest_edge_scans))
+			break
+		interest_arrival_drain()
+		passes++
+	TEST_ASSERT(passes >= 2, "the drain spread the draws over passes ([passes])")
+	TEST_ASSERT_EQUAL(length(GLOB.interest_edge_scans), 0, "no visible chunk is left unscanned")
+	for(var/obj/dq_interest_probe/probe as anything in probes)
+		TEST_ASSERT_EQUAL(probe.refresh_queued, 0, "every draw ran")
+	TEST_ASSERT(!length(interest_view_owing("dq-test-walker")), "and nothing in view owes a draw")
+	interest_clean(probes)
 
 /// A viewer that cannot be covered (no client: a camera screen) gets everything in view drawn at once: it never sees an owed draw.
 /datum/unit_test/dq_interest_uncoverable_view_draws_at_once

@@ -7,7 +7,7 @@
 		return
 	if(ishuman(src)) // . Floating code.
 		var/mob/living/carbon/human/H = src
-		if(stat_value(H, STAT_FLYING))
+		if(H.flying)
 			make_floating(1)
 			return
 	var/turf/turf = get_turf(src)

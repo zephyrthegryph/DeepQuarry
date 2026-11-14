@@ -86,7 +86,7 @@
 	var/dirtslip = FALSE
 	if (isliving(A))
 		var/mob/living/M = A
-		if(M.lying || !(M.flags & ATOM_INITIALIZED) || M.is_incorporeal() || stat_value(M, STAT_FLYING)) // Also ignore newly spawning mobs; the cheap reads first
+		if(M.lying || !(M.flags & ATOM_INITIALIZED) || M.is_incorporeal() || M.flying) // Also ignore newly spawning mobs; the cheap reads first
 			return ..()
 
 		if(M.dirties_floor())
@@ -102,8 +102,9 @@
 			// Tracking blood
 			var/list/bloodDNA = null
 			var/bloodcolor=""
-			if(H.get_equipped_item(SLOT_ID_SHOES))
-				var/obj/item/clothing/shoes/S = H.get_equipped_item(SLOT_ID_SHOES)
+			var/obj/item/worn_shoes = H.get_equipped_item(SLOT_ID_SHOES)
+			if(worn_shoes)
+				var/obj/item/clothing/shoes/S = worn_shoes
 				if(istype(S))
 					S.handle_movement(src,(H.m_intent == I_RUN ? 1 : 0), H) // handle_movement now needs to know who is moving, for inshoe steppies
 					if(S.track_blood)
@@ -124,7 +125,7 @@
 
 				bloodDNA = null
 
-		if(check_slipping(M,dirtslip))
+		if((!ishuman(M) || wet || dirtslip) && check_slipping(M,dirtslip)) // a human on a dry floor that is not dirt-slick cannot slip: check_slipping() would read shoes and species to say no
 			var/datum/turfslip/TSC = M.get_or_start_turfslip()
 			TSC.start_slip(src,dirtslip)
 	..()

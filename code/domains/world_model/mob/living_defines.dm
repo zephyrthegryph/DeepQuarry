@@ -99,8 +99,9 @@ PUBLISHED_BY(/mob/living, body, MOB_KEY_HEALTH)
 	return link_set_one(L, LK_NEST, nest)
 
 
-/// Flight: TRUE while anything holds the mob aloft (wings, a flying ability, a dragon's charge). Read stat_value(L, STAT_FLYING); write set_flying().
-STAT(/mob/living, flying, ANY, virtual = TRUE)
+/// Flight: TRUE while anything holds the mob aloft (wings, a flying ability, a dragon's charge). Read L.flying (the stat's var, settled by the stat layer: a step reads it
+/// several times, so it is a plain var read, not a composed stat_value()); write set_flying().
+STAT(/mob/living, flying, ANY)
 SOURCE_DEF(flight)
 
 /// Starts (TRUE) or stops (FALSE) the mob's own flight, the SRC_FLIGHT hold on STAT_FLYING.

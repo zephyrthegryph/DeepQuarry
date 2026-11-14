@@ -995,6 +995,17 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	name = "\improper Security - Brig"
 	icon_state = "brig"
 
+/// Custody is the brig's: a prisoner arriving or leaving starts or ends it (the contracts system no longer hears every step of every human).
+/area/security/brig/Entered(atom/movable/AM, oldLoc)
+	. = ..()
+	if(ishuman(AM))
+		contracts_custody_moved(AM)
+
+/area/security/brig/Exited(atom/movable/AM, newLoc)
+	. = ..()
+	if(ishuman(AM))
+		contracts_custody_moved(AM)
+
 /area/security/brig/prison_break()
 	for(var/obj/structure/closet/secure_closet/brig/temp_closet in area_contents_of_type(src, /obj/structure/closet/secure_closet/brig))
 		temp_closet.force_lock(FALSE)
