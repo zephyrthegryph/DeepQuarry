@@ -119,3 +119,81 @@
 	TEST_ASSERT_NULL(lamp.overlay_light, "a flashlight that starts off has none either")
 	lamp.set_light_on(TRUE)
 	TEST_ASSERT_NOTNULL(lamp.overlay_light, "turned on it has one")
+
+/// One pill: its reagent holder and what it holds.
+/datum/unit_test/dq_item_cost_one/pill
+	item_path = /obj/item/reagent_containers/pill/inaprovaline
+
+/// One autoinjector: its reagent holder and what it holds.
+/datum/unit_test/dq_item_cost_one/autoinjector
+	item_path = /obj/item/reagent_containers/hypospray/autoinjector/oxy
+
+/// A power cell.
+/datum/unit_test/dq_item_cost_one/cell
+	item_path = /obj/item/cell/high
+
+/// A flashlight (its toggle action).
+/datum/unit_test/dq_item_cost_one/flashlight
+	item_path = /obj/item/flashlight
+	atoms_per_item = 2
+
+/// An item makes the action buttons its type declares when it is first held or worn, not when it is made; made straight into a mob's hands it has them at once.
+/datum/unit_test/dq_item_actions_are_lazy
+
+/datum/unit_test/dq_item_actions_are_lazy/Run()
+	var/turf/floor = dq_containment_floor()
+	var/obj/item/clothing/mask/breath/mask = allocate(/obj/item/clothing/mask/breath, floor)
+	TEST_ASSERT_EQUAL(length(mask.actions), 0, "a mask on the floor has made no action")
+	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human, floor)
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(mask, SLOT_ID_MASK), "the human wears the mask")
+	TEST_ASSERT_EQUAL(length(mask.actions), length(item_rules_of(mask).actions_types), "wearing it makes the actions its type declares")
+	TEST_ASSERT_EQUAL(length(mask.actions), 1, "the one adjust action")
+	var/datum/action/made = mask.actions[1]
+	wearer.drop_from_inventory(mask, floor)
+	wearer.equip_to_slot_if_possible(mask, SLOT_ID_MASK)
+	TEST_ASSERT(mask.actions[1] == made && length(mask.actions) == 1, "wearing it again makes no second action")
+	var/obj/item/flashlight/held = allocate(/obj/item/flashlight, wearer)
+	TEST_ASSERT_EQUAL(length(held.actions), length(item_rules_of(held).actions_types), "an item made in a mob's hands has its actions at once")
+
+/// A fresh item of a type reads what its blend of materials works out from the type's row: the same numbers for every one, the row made once.
+/datum/unit_test/dq_pristine_blueprint_effects_shared
+
+/datum/unit_test/dq_pristine_blueprint_effects_shared/Run()
+	var/turf/floor = dq_containment_floor()
+	var/obj/item/tank/emergency/oxygen/first = allocate(/obj/item/tank/emergency/oxygen, floor)
+	var/list/row = GLOB.pristine_blueprint_effects[first.type]
+	TEST_ASSERT_NOTNULL(row, "the first tank of a type leaves its row")
+	var/obj/item/tank/emergency/oxygen/second = allocate(/obj/item/tank/emergency/oxygen, floor)
+	TEST_ASSERT(GLOB.pristine_blueprint_effects[second.type] == row, "the second reads the same row")
+	TEST_ASSERT_EQUAL(second.max_integrity, first.max_integrity, "and ends with the same integrity")
+	TEST_ASSERT_EQUAL(protection_of(second).siemens, protection_of(first).siemens, "and the same conduction")
+	TEST_ASSERT_EQUAL(second.max_integrity, row["max_integrity"], "which is the row's number")
+
+/// A pill's fill links its reagent both ways and settles the holder's total, colour and master from that one reagent; the holder and the reagent,
+/// which are no atoms and are named by nothing, walk no draw hop to be told they changed.
+/datum/unit_test/dq_reagent_fill_links_and_settles
+
+/datum/unit_test/dq_reagent_fill_links_and_settles/Run()
+	GLOB.boot_phase_on = TRUE
+	GLOB.boot_phase_calls = list()
+	var/obj/item/reagent_containers/pill/inaprovaline/pill = allocate(/obj/item/reagent_containers/pill/inaprovaline)
+	GLOB.boot_phase_on = FALSE
+	var/walks = 0
+	for(var/phase in GLOB.boot_phase_calls)
+		if(findtext(phase, "draw_hop_published: walk") == 1)
+			walks += GLOB.boot_phase_calls[phase]
+	TEST_ASSERT_EQUAL(walks, 0, "making a pill walked [walks] draw hop chains for its reagent and holder")
+	var/datum/reagents/holder = pill.reagents
+	TEST_ASSERT_EQUAL(length(holder.reagent_list), 1, "the pill holds one reagent")
+	var/datum/reagent/R = holder.reagent_list[1]
+	TEST_ASSERT(R.holder == holder, "the reagent names its holder")
+	TEST_ASSERT(holder.reagent_by_id[R.id] == R, "the id index finds it")
+	TEST_ASSERT(owner_of(R) == holder, "the holder owns it")
+	TEST_ASSERT_EQUAL(holder.total_volume, R.volume, "the total is the reagent's volume")
+	TEST_ASSERT_EQUAL(holder.master_id, R.id, "the master is the reagent")
+	TEST_ASSERT_EQUAL(holder.tint, R.color, "the tint is the reagent's colour")
+	var/before = holder.total_volume
+	holder.add_reagent(R.id, 1)
+	TEST_ASSERT(holder.total_volume > before || holder.total_volume == holder.maximum_volume, "a later add still settles the total")
+	qdel(pill)
+	TEST_ASSERT(QDELETED(R), "the reagent dies with its holder")

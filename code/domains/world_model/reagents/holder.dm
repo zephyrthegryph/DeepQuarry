@@ -112,6 +112,16 @@ CAPABILITIES(/datum/reagents)
 		my_atom.heat_capacity_changed()
 	return
 
+/// update_total() for a holder that held nothing before `R` (one reagent, at or above the minimum volume) went in: the total, colour and master are
+/// that reagent's, so nothing is walked or summed. The same writes update_total() makes.
+/datum/reagents/proc/settle_first_reagent(datum/reagent/R)
+	set_total_volume(R.volume)
+	if(!ismob(my_atom))
+		set_tint(R.color)
+		set_master_id(R.id)
+	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
+		my_atom.heat_capacity_changed()
+
 /// Heat capacity of the contents, J/K: each reagent's volume x specific heat.
 /datum/reagents/proc/heat_capacity()
 	. = 0
@@ -186,7 +196,11 @@ CAPABILITIES(/datum/reagents)
 
 	var/datum/reagent/D = SSchemistry.ready().chemical_reagents[id]
 	if(D)
+		BOOT_PHASE_BEGIN(bp_new)
 		var/datum/reagent/R = new D.type()
+		BOOT_PHASE_END(bp_new, "add_reagent: new reagent datum", my_atom)
+		BOOT_PHASE_BEGIN(bp_link)
+		var/was_empty = !length(reagent_list)
 		own_reagent_lists()
 		rel_add(src, nameof(reagent_list), R)
 		// Only update reagent_by_id if no entry exists yet for this id.
@@ -201,11 +215,21 @@ CAPABILITIES(/datum/reagents)
 		SetViruses(R,data)
 		if(was_from_belly)
 			R.from_belly = was_from_belly
-		update_total()
+		BOOT_PHASE_END(bp_link, "add_reagent: link and fill the new reagent", my_atom)
+		BOOT_PHASE_BEGIN(bp_total)
+		if(was_empty && R.volume >= MINIMUM_CHEMICAL_VOLUME)
+			settle_first_reagent(R) // the holder held nothing: its total is this one reagent's volume, no walk of the list
+		else
+			update_total()
+		BOOT_PHASE_END(bp_total, "add_reagent: update_total", my_atom)
+		BOOT_PHASE_BEGIN(bp_react)
 		if(!safety)
 			handle_reactions()
+		BOOT_PHASE_END(bp_react, "add_reagent: handle_reactions", my_atom)
+		BOOT_PHASE_BEGIN(bp_changed)
 		if(my_atom)
 			my_atom.on_reagent_change()
+		BOOT_PHASE_END(bp_changed, "add_reagent: on_reagent_change", my_atom)
 		return 1
 	else
 		stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist.")

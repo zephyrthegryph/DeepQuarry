@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Making an item costs less: an item makes its action buttons (mask adjust, helmet light, flashlight toggle) when it is first held or worn instead of at construction, a fresh item of a type reads its blend-of-materials numbers (handling, conduction, integrity) from one row kept per type, and a material that glows, irradiates and poisons nothing writes and revokes nothing on a new item."

@@ -289,6 +289,11 @@
 	var/list/lazy = GLOB.type_look_lazy.Copy()
 	lazy[/obj/structure/table] = TRUE
 	set_global(nameof(GLOB.type_look_lazy), lazy)
+	// The verdict of the table type is this test's own: a verdict read from the cache file (it is there from the second boot of a world on) judges a table's look
+	// against its default, and a table smoothed to its neighbours does not fit it, so it would never park.
+	var/list/from_file = GLOB.look_verdict_from_file.Copy()
+	from_file -= /obj/structure/table
+	set_global(nameof(GLOB.look_verdict_from_file), from_file)
 	refresh_flush()
 	set_global(nameof(GLOB.interest_defer_marks), TRUE)
 	for(var/obj/structure/table/table as anything in tables)

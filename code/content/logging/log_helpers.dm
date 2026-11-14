@@ -51,6 +51,7 @@
 
 /* Close open log handles. This should be called as late as possible, and no logging should hapen after. */
 /proc/shutdown_logging()
+	log_file_flush()
 	rustg_log_close_all()
 	logger.shutdown_logging()
 
