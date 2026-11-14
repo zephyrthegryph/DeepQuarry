@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import { dropNeedsCheck, overlapsColumn } from './drag';
+import {
+  dropNeedsCheck,
+  hintWanted,
+  overlapsColumn,
+  pointInColumn,
+} from './drag';
 
 const column = { x: 1600, y: 0, w: 320, h: 900 };
 
@@ -53,5 +58,18 @@ describe('dropNeedsCheck', () => {
 
   it('leaves it to the page when the column cannot be measured', () => {
     expect(dropNeedsCheck(null, { x: 800, y: 100, w: 250, h: 300 })).toBe(true);
+  });
+});
+
+describe('drop hint', () => {
+  it('shows only while the overlap rule holds', () => {
+    expect(hintWanted(column, { x: 1620, y: 100, w: 250, h: 300 })).toBe(true);
+    expect(hintWanted(column, { x: 1000, y: 50, w: 700, h: 700 })).toBe(false);
+    expect(hintWanted(null, { x: 1620, y: 100, w: 250, h: 300 })).toBe(false);
+  });
+
+  it('sends the same point the drop does', () => {
+    expect(pointInColumn(column, [1500.4, 950])).toEqual({ x: 1600, y: 900 });
+    expect(pointInColumn(column, [1700, 400])).toEqual({ x: 1700, y: 400 });
   });
 });

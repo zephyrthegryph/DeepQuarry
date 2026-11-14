@@ -284,7 +284,8 @@ export function fillIndexOf(
 ): number {
   const chat = groups.findIndex(
     (g) =>
-      !collapsed(g) && g.windows.some((id) => windows[id]?.iface === CHAT_IFACE),
+      !collapsed(g) &&
+      g.windows.some((id) => windows[id]?.iface === CHAT_IFACE),
   );
   if (chat >= 0) return chat;
   for (let i = groups.length - 1; i >= 0; i--) {
@@ -373,7 +374,11 @@ function reduce(state: DockState, action: DockAction): DockState {
     case 'boundary': {
       // A pure transfer between the two entries either side of the boundary. The filling entry (the chat) is one of them only by
       // taking what the other gives up: its height is never stored, and no other entry changes.
-      const fillAt = fillIndexOf(state.groups, state.windows, (g) => g.collapsed);
+      const fillAt = fillIndexOf(
+        state.groups,
+        state.windows,
+        (g) => g.collapsed,
+      );
       const fillId = fillAt >= 0 ? state.groups[fillAt].id : null;
       const heights = new Map<string, number>();
       if (action.below === null) {

@@ -31,6 +31,9 @@ let dragging = false;
 let resizing = false;
 /** Screen x lines the dragged window's right edge sticks to (the right-hand panel's left edge), set while a drag runs. */
 let columnStops: number[] = [];
+/** The column's screen rect, measured as the drag began, and whether the page is showing its drop hint now. */
+let columnRect: Rect | null = null;
+let hintShown = false;
 let screenOffset: Point = [0, 0];
 let screenOffsetPromise: Promise<Point> | undefined;
 let screenOffsetKnown = false;
@@ -434,10 +437,15 @@ export function dragStartHandler(event): void {
   dragging = true;
   // The right-hand panel's left edge is a place to rest against; measured once as the drag begins.
   columnStops = [];
+  columnRect = null;
+  hintShown = false;
   mainBounds()
     .then((main) => measureColumn(main))
     .then((column) => {
-      if (dragging && column) columnStops = [column.x];
+      if (dragging && column) {
+        columnStops = [column.x];
+        columnRect = column;
+      }
     })
     .catch(() => undefined);
   dragPointOffset = vecSubtract(
@@ -463,6 +471,7 @@ function dragEndHandler(event): void {
   document.removeEventListener('mousemove', dragMoveHandler);
   document.removeEventListener('mouseup', dragEndHandler);
   dragging = false;
+  sendDropHint(null);
   storeWindowGeometry();
   dockIfOverPanel([event.screenX * ratioNow(), event.screenY * ratioNow()]);
 }
@@ -519,16 +528,52 @@ async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
     logger.log('drop outside the column', pointer);
     return;
   }
-  // The column page judges a point; the window's overlap has decided, so the point sent is the pointer held inside the column.
+  Byond.sendMessage('wm/dropped', {
+    pointer: pointInColumn(column, pointer),
+  });
+}
+
+/**
+ * The point the column page judges: the page decides where in its list a
+ * point falls, and the window's overlap has already decided, so the point
+ * is the pointer held inside the column. The drop and the drop hint send
+ * the same point, so they name the same index.
+ */
+export function pointInColumn(
+  column: Rect | null,
+  pointer: [number, number],
+): { x: number; y: number } {
   const [px, py] = column
     ? [
         Math.min(Math.max(pointer[0], column.x), column.x + column.w),
         Math.min(Math.max(pointer[1], column.y), column.y + column.h),
       ]
     : pointer;
-  Byond.sendMessage('wm/dropped', {
-    pointer: { x: Math.round(px), y: Math.round(py) },
-  });
+  return { x: Math.round(px), y: Math.round(py) };
+}
+
+/** Whether the drop hint is up for a drag now: the column is known and most of the window is over it. */
+export function hintWanted(column: Rect | null, win: Rect): boolean {
+  return !!column && overlapsColumn(column, win);
+}
+
+/** Tells the column page where the dragged window would land (a point), or that there is no landing (null). Sent only on a change of shown or hidden, and on each new point. */
+function sendDropHint(point: { x: number; y: number } | null): void {
+  if (!point && !hintShown) return;
+  hintShown = !!point;
+  Byond.sendMessage('wm/drophint', { pointer: point });
+}
+
+/** While a drag runs: shows the page's drop hint when the window may dock and most of it is over the column, else takes it down. */
+function updateDropHint(win: Rect, pointer: [number, number]): void {
+  if (
+    !store.get(configAtom)?.window?.dockable ||
+    !hintWanted(columnRect, win)
+  ) {
+    sendDropHint(null);
+    return;
+  }
+  sendDropHint(pointInColumn(columnRect, pointer));
 }
 
 // Move the window while dragging
@@ -552,6 +597,10 @@ function dragMoveHandler(event: MouseEvent): void {
   // density), its size is put back in the same transaction.
   const frame = dragFrame(pos, heldSize, getWindowSize());
   setWindowPositionBatched(pos);
+  updateDropHint({ x: pos[0], y: pos[1], w: heldSize[0], h: heldSize[1] }, [
+    event.screenX * ratioNow(),
+    event.screenY * ratioNow(),
+  ]);
   if (frame.drift) {
     if (!driftLogged) {
       driftLogged = true;

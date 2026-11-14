@@ -769,7 +769,10 @@ export function Column() {
   return (
     <div className={`column${drag ? ' column--dragging' : ''}`}>
       <MapSplitHandle />
-      {groups.map((group, index) => (
+      {groups.map((group, index) => [
+        host.hint === index && (
+          <div key={`hint-${group.id}`} className="column-drop-hint" />
+        ),
         <Group
           key={group.id}
           group={group}
@@ -781,8 +784,11 @@ export function Column() {
           version={version}
           setDrag={setDrag}
           {...dragView(drag, group.id, index)}
-        />
-      ))}
+        />,
+      ])}
+      {host.hint !== null && host.hint >= groups.length && (
+        <div className="column-drop-hint" />
+      )}
       {insertEnd && <div className="column-insert-end" />}
     </div>
   );
