@@ -70,8 +70,12 @@ CAPABILITIES(/obj/item/tank)
 	return proxyassembly
 
 /obj/item/tank/proc/start_up()
+	BOOT_PHASE_BEGIN(bp_blueprint)
 	apply_blueprint_effects()
+	BOOT_PHASE_END(bp_blueprint, "tank start_up: blueprint effects", src)
+	BOOT_PHASE_BEGIN(bp_gauge)
 	update_gauge()
+	BOOT_PHASE_END(bp_gauge, "tank start_up: gauge", src)
 
 DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 

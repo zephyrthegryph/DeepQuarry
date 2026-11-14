@@ -68,6 +68,9 @@ GLOBAL_VAR_INIT(client_glow_holder_sight_refreshes, 0)
 	var/scan_lights = 0
 	var/scan_steps = 0
 	var/scan_ms = 0
+	/// TRUE when the last scan_chunk() stopped inside a chunk for the budget; steps that did so (trace).
+	var/scan_partial = FALSE
+	var/scan_partial_steps = 0
 	/// TRUE while a scan_continue() timer is waiting.
 	var/scan_waiting = FALSE
 	/// Server milliseconds one step of a full scan may spend before it hands the rest to the next tick; null: the scan runs to the end in one call (viewers without a client).
@@ -371,8 +374,11 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 
 /// Walks the lights of chunk `chunk_key` ("gx,gy") on this level: each is acquired, updated or dropped against the boxes; one that is not held may have its shape sent ahead.
 /// `keep` (a full scan) collects the lights met (light -> TRUE if held): a light is in every chunk its reach box overlaps, so it is met once. Returns how many lights it examined.
-/datum/client_glow_holder/proc/scan_chunk(chunk_key, list/keep)
+/// `started`/`budget_ms` (a spread scan): the walk stops after the light that spends the budget (at least one light a call) and sets `scan_partial`; the chunk is walked again by the
+/// next step, which skips the lights `keep` already holds.
+/datum/client_glow_holder/proc/scan_chunk(chunk_key, list/keep, started = null, budget_ms = null)
 	GLOB.client_glow_holder_chunk_visits++
+	scan_partial = FALSE
 	var/list/members = GLOB.client_glow_chunks["[z],[chunk_key]"]
 	if(!members)
 		return 0
@@ -380,6 +386,9 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	for(var/datum/light_source/L as anything in members)
 		if(!isnull(keep[L]))
 			continue
+		if(examined && !isnull(budget_ms) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			scan_partial = TRUE
+			break
 		examined++
 		if(consider(L))
 			keep[L] = TRUE
@@ -392,8 +401,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 /datum/client_glow_holder/proc/prefetch(datum/light_source/L)
 	if(unlit || unmasked || !L.glow_mask_key || L.glow_plain)
 		return
-	client_glow_mask_prefetch(L.glow_mask_key)
-	L.client_glow_twins_ready() // its door states are baked ahead too
+	client_glow_mask_prefetch(L.glow_mask_key) // its door twins wait until a viewer holds it (apply_shape(): the sight query per door is too dear for every light of the ring)
 	var/ahead = GLOB.client_glow_baker.icons[L.glow_mask_key]
 	if(ahead)
 		deliver(L.glow_mask_key, ahead) // on the client before the crossing that holds it
@@ -420,6 +428,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	scan_lights = 0
 	scan_steps = 0
 	scan_ms = 0
+	scan_partial_steps = 0
 	scan_run()
 	counts[1] = scan_walked
 	counts[2] = scan_lights
@@ -429,10 +438,14 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/started = TICK_USAGE_REAL
 	var/list/chunks = scan_chunks
 	while(scan_at < length(chunks))
-		var/walked = scan_chunk(chunks[++scan_at], scan_keep)
+		var/walked = scan_chunk(chunks[++scan_at], scan_keep, started, scan_budget_ms)
+		scan_lights += walked
+		if(scan_partial)
+			scan_at-- // the chunk still holds lights; the next step walks it again past the ones kept
+			scan_partial_steps++
+			break
 		if(walked)
 			scan_walked++
-			scan_lights += walked
 		if(!isnull(scan_budget_ms) && scan_at < length(chunks) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= scan_budget_ms)
 			break
 	scan_steps++
@@ -465,10 +478,11 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/spent_ms = scan_ms
 	var/chunks = scan_walked
 	var/lights = scan_lights
+	var/partial = scan_partial_steps
 	scan_cancel()
 	scanned = TRUE
 	if(steps > 1) // a one-step scan is the crossing's own log line
-		log_world("client glow holder: [client?.ckey] full scan finished over [steps] steps: [chunks] chunk(s), [lights] light(s), [round(spent_ms, 0.01)] ms in all, holding [LAZYLEN(held)] glow(s)")
+		log_world("client glow holder: [client?.ckey] full scan finished over [steps] steps ([partial] inside a chunk): [chunks] chunk(s), [lights] light(s), [round(spent_ms, 0.01)] ms in all, holding [LAZYLEN(held)] glow(s)")
 
 /// Forgets the pending full scan (a new one begins, the held glows were dropped or the client's images wiped); a timer already waiting finds nothing to do.
 /datum/client_glow_holder/proc/scan_cancel()
@@ -835,8 +849,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/shape = L.glow_mask_key
 	if(LAZYACCESS(held_shape, h) != shape)
 		LAZYSET(held_shape, h, shape)
-		L.client_glow_twins_ready()
-		queue_twins(L) // the shapes a door of its reach gives it are sent ahead, so a door moving swaps a shape the client has
+		twins_later(L) // its door twins are worked out a few ms a tick, then sent ahead (queue_twins()), so a door moving swaps a shape the client has
 		var/baked = client_glow_mask_icon(shape)
 		if(baked && deliver(shape, baked))
 			cut_with(h, glow_image, shape, baked)
@@ -930,6 +943,20 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		var/list/entry = LAZYACCESS(held, h)
 		if(length(entry) == 2)
 			cut_with(h, entry[1], shape, baked)
+
+/// Light `L` is now held: its door twins are worked out (client_glow_twins_ready()) and queued for this client. A viewer with a budget leaves the sight queries to the baker's
+/// budgeted turns (client_glow_twins_pump()); one without (tests) does it at once.
+/datum/client_glow_holder/proc/twins_later(datum/light_source/L)
+	if(isnull(acquire_budget_ms))
+		L.client_glow_twins_ready()
+		queue_twins(L)
+		return
+	if(L.glow_twins_for == L.glow_mask_key) // already worked out for this shape (another viewer's turn): only this viewer's queue is left
+		queue_twins(L)
+		return
+	var/h = L.glow_holder_key || L.glow_holder_key()
+	GLOB.client_glow_baker.twin_work[h] = TRUE
+	client_glow_baker_wake()
 
 /// Light `L`'s door twin shapes are to be sent to this client (and nothing else is sent for them): queued, then delivered a few a tick once baked (twin_continue()).
 /datum/client_glow_holder/proc/queue_twins(datum/light_source/L)

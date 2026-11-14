@@ -186,7 +186,10 @@ CAPABILITIES(/datum/reagents)
 
 	var/datum/reagent/D = SSchemistry.ready().chemical_reagents[id]
 	if(D)
+		BOOT_PHASE_BEGIN(bp_new)
 		var/datum/reagent/R = new D.type()
+		BOOT_PHASE_END(bp_new, "add_reagent: new reagent datum", my_atom)
+		BOOT_PHASE_BEGIN(bp_link)
 		own_reagent_lists()
 		rel_add(src, nameof(reagent_list), R)
 		// Only update reagent_by_id if no entry exists yet for this id.
@@ -201,11 +204,18 @@ CAPABILITIES(/datum/reagents)
 		SetViruses(R,data)
 		if(was_from_belly)
 			R.from_belly = was_from_belly
+		BOOT_PHASE_END(bp_link, "add_reagent: link and fill the new reagent", my_atom)
+		BOOT_PHASE_BEGIN(bp_total)
 		update_total()
+		BOOT_PHASE_END(bp_total, "add_reagent: update_total", my_atom)
+		BOOT_PHASE_BEGIN(bp_react)
 		if(!safety)
 			handle_reactions()
+		BOOT_PHASE_END(bp_react, "add_reagent: handle_reactions", my_atom)
+		BOOT_PHASE_BEGIN(bp_changed)
 		if(my_atom)
 			my_atom.on_reagent_change()
+		BOOT_PHASE_END(bp_changed, "add_reagent: on_reagent_change", my_atom)
 		return 1
 	else
 		stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist.")

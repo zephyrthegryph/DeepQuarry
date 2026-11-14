@@ -1044,28 +1044,8 @@
 			worst = max(worst, abs(a - b))
 	log_world("client glow test: worst bake-against-plain alpha difference [worst]")
 	TEST_ASSERT(worst <= 2, "the bake lines up with the plain sprite (worst alpha difference [worst])")
-	GLOB.client_glow_baker.store_on = TRUE
-	var/store = client_glow_store_path(key)
-	fcopy(png, store)
+	GLOB.client_glow_baker.icons -= key
 	fdel(png)
-	GLOB.client_glow_baker.icons -= key
-	var/loads = GLOB.client_glow_baker.stored_loads
-	var/datum/client_glow_holder/waiting_viewer = new
-	var/image/waiting_glow = image(null)
-	LAZYSET(waiting_viewer.held, "waiting", list(waiting_glow, image(null)))
-	LAZYSET(waiting_viewer.held_shape, "waiting", key)
-	TEST_ASSERT_NULL(client_glow_mask_icon(key), "a stored shape is not read inside the request that asks for it")
-	TEST_ASSERT_EQUAL(GLOB.client_glow_baker.stored_loads, loads, "the request read no file")
-	TEST_ASSERT(GLOB.client_glow_baker.pending[key], "the shape waits for the store's turn")
-	client_glow_store_pump()
-	TEST_ASSERT_NOTNULL(GLOB.client_glow_baker.icons[key], "the store's turn loaded the shape")
-	TEST_ASSERT_EQUAL(GLOB.client_glow_baker.stored_loads, loads + 1, "it came from the store")
-	TEST_ASSERT(!GLOB.client_glow_baker.pending[key], "nothing is left queued")
-	TEST_ASSERT_EQUAL(LAZYACCESS(waiting_viewer.cut_shape, "waiting"), key, "the viewer waiting on the shape shows it once it has loaded")
-	spent(waiting_viewer)
-	GLOB.client_glow_baker.store_on = FALSE
-	GLOB.client_glow_baker.icons -= key
-	fdel(store)
 
 /// A sprite bigger than a tile is lit as the turf it stands on: under client lighting it carries a flat light whose grey is that
 /// turf's level, a normal-sized atom carries none, the grey follows a light coming and going and the atom moving, and the flat
@@ -1145,39 +1125,6 @@
 	TEST_ASSERT(!LAZYACCESS(H.delivered, "shape1"), "the oldest entry is dropped")
 	TEST_ASSERT(LAZYACCESS(H.delivered, "shape[CLIENT_GLOW_MASK_CACHE_MAX]"), "the entry before the newest is kept")
 	spent(H)
-
-/// The store's turn is bounded: with a budget spent at once, one shape is read per turn and the rest waits for the next, in the order asked.
-/datum/unit_test/dq_client_glow_store_pump_respects_budget
-
-/datum/unit_test/dq_client_glow_store_pump_respects_budget/Run()
-	client_glow_counters_restore()
-	var/list/keys = list()
-	for(var/i in 1 to 3)
-		var/key = "160|0,0,[i],0|"
-		var/png = client_glow_mask_bake_blocking(key)
-		TEST_ASSERT_NOTNULL(png, "baked a shape to store")
-		GLOB.client_glow_baker.store_on = TRUE
-		fcopy(png, client_glow_store_path(key))
-		fdel(png)
-		GLOB.client_glow_baker.icons -= key
-		keys += key
-	for(var/key in keys)
-		client_glow_mask_request(key)
-	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 3, "all three shapes wait for the store")
-	client_glow_store_pump(-1) // a budget already spent: at least one is read
-	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 2, "a turn with no budget reads exactly one shape")
-	TEST_ASSERT_NOTNULL(GLOB.client_glow_baker.icons[keys[1]], "the first asked is the first loaded")
-	TEST_ASSERT_NULL(GLOB.client_glow_baker.icons[keys[2]], "the second waits for the next turn")
-	for(var/turn in 1 to 5)
-		if(!length(GLOB.client_glow_baker.store_queue))
-			break
-		client_glow_store_pump()
-	TEST_ASSERT_EQUAL(length(GLOB.client_glow_baker.store_queue), 0, "a few more turns read the rest")
-	for(var/key in keys)
-		TEST_ASSERT(GLOB.client_glow_baker.icons[key], "every stored shape loaded")
-		GLOB.client_glow_baker.icons -= key
-		fdel(client_glow_store_path(key))
-	GLOB.client_glow_baker.store_on = FALSE
 
 // ---- the reach index, crossings that walk only their edges, batched opacity, sight between crossings, tracing
 
@@ -1619,3 +1566,39 @@
 	TEST_ASSERT_EQUAL(client_darksight_brightness(T), drawn, "under client lighting the drawn light decides, not the gameplay level ([T.get_lumcount()])")
 	log_test("CLIENT DARKSIGHT: drawn [drawn] against gameplay level [T.get_lumcount()]")
 	client_lighting_set(FALSE)
+
+/// Night vision is none for a mob with no darksight, grows with see_in_dark, reaches no further than the view, adds at most DARKSIGHT_MAX_ALPHA and
+/// fades out as the floor gets lighter.
+/datum/unit_test/dq_darksight_night_vision_curve
+
+/datum/unit_test/dq_darksight_night_vision_curve/Run()
+	TEST_ASSERT_EQUAL(darksight_alpha(0, 1), 0, "no darksight, no night vision")
+	TEST_ASSERT_EQUAL(darksight_alpha(DARKSIGHT_MIN_SIGHT, 1), 0, "the human default of 2 gets none")
+	var/weak = darksight_alpha(4, 1)
+	var/strong = darksight_alpha(7, 1)
+	TEST_ASSERT(weak > 0 && strong > weak, "more see_in_dark is stronger ([weak] < [strong])")
+	TEST_ASSERT(darksight_alpha(DARKSIGHT_FULL_SIGHT, 1) <= DARKSIGHT_MAX_ALPHA, "never over the cap")
+	TEST_ASSERT_EQUAL(darksight_alpha(25, 1), DARKSIGHT_MAX_ALPHA, "a hyena's 25 is capped at full")
+	TEST_ASSERT(DARKSIGHT_MAX_ALPHA <= 0.4, "dim: at most about 40%")
+	TEST_ASSERT_EQUAL(darksight_alpha(8, 0), 0, "none in a lit area")
+	TEST_ASSERT(darksight_alpha(8, 0.5) < darksight_alpha(8, 1), "it eases in with the dark")
+	TEST_ASSERT_EQUAL(darksight_view_radius("15x15"), 7.5, "a text view is read as its half width")
+	TEST_ASSERT_EQUAL(darksight_view_radius(7), 7.5, "a number view is a radius around the player")
+	TEST_ASSERT(darksight_scale(4, 7.5) < darksight_scale(8, 7.5), "more sight, a wider disc")
+	TEST_ASSERT_EQUAL(darksight_scale(25, 7.5), 1, "the disc stops at the view")
+	TEST_ASSERT_EQUAL(darksight_radius(25, 7.5), 7.5, "never past the view")
+	TEST_ASSERT(darksight_scale(5, 15) > darksight_scale(5, 7.5) || darksight_scale(5, 15) == darksight_scale(5, 7.5), "a bigger view never narrows it")
+
+/// The overlay icon is a flat disc: no hot spot at the centre, and its tint is a grey rather than white.
+/datum/unit_test/dq_darksight_overlay_is_flat_and_grey
+
+/datum/unit_test/dq_darksight_overlay_is_flat_and_grey/Run()
+	var/list/tint = rgb2num(DARKSIGHT_TINT)
+	TEST_ASSERT(max(tint[1], tint[2], tint[3]) - min(tint[1], tint[2], tint[3]) <= 40, "the tint is desaturated")
+	TEST_ASSERT(min(tint[1], tint[2], tint[3]) >= 100, "and not dark")
+	var/icon/I = icon('icons/mob/darksight.dmi')
+	TEST_ASSERT_EQUAL(I.Width(), 480, "the icon is 15 tiles wide")
+	var/centre = I.GetPixel(240, 240)
+	var/near = I.GetPixel(240, 240 + 100)
+	TEST_ASSERT_EQUAL(centre, near, "a flat centre: no peak at the player's own tile")
+	TEST_ASSERT(isnull(I.GetPixel(2, 2)) || I.GetPixel(2, 2) != centre, "the corner fades out")

@@ -50,6 +50,9 @@ CAPABILITY_TYPE(material_emission, CAP_MATERIAL_EMISSION, /datum/capability/mate
 
 /obj/item/proc/configure_material_behaviors(_lum = 0, _rad = 0, _tox = 0, colour = null)
 	var/old_luminescence = STATE_PEEK(src, item_material, mat_luminescence)
+	// A material that glows, irradiates and poisons nothing, on an item that never did: nothing to write, light or grant or revoke.
+	if(!_lum && !_rad && !_tox && !old_luminescence && !STATE_PEEK(src, item_material, mat_radioactivity) && !STATE_PEEK(src, item_material, mat_toxicity))
+		return
 	STATE_SET(src, item_material, mat_luminescence, _lum)
 	STATE_SET(src, item_material, mat_radioactivity, _rad)
 	STATE_SET(src, item_material, mat_toxicity, _tox)
