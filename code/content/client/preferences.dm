@@ -518,7 +518,7 @@ CAPABILITIES(/datum/preferences)
 	character.dna.base_species = bodytype_selected
 	var/datum/species/private_species = rel_private(character, nameof(character.species)) // PROTO: private copy
 	private_species.set_base_species(bodytype_selected)
-	private_species.icobase = private_species.get_icobase()
+	private_species.set_icobase(private_species.get_icobase())
 	private_species.deform = private_species.get_icobase(get_deform = TRUE)
 	private_species.vanity_base_fit = text_or_null(bodytype_selected)
 	if(istype(character.species, /datum/species/shapeshifter))
