@@ -78,5 +78,5 @@ GLOBAL_VAR_INIT(world_log_direct_left, WORLD_LOG_DIRECT_LINES)
 	// A write that blocks (the console, the log file, a scanner on the disk) stalls the whole tick whoever wrote the line: name which half was slow.
 	if(total_ms >= LOG_WORLD_SLOW_MS && !noting)
 		noting = TRUE
-		log_world("LOG_WORLD_SLOW: a log line of [length(text)] characters took [round(total_ms, 0.1)] ms: runtime log file [round(file_ms, 0.1)] ms, world.log (dd.log) [round(total_ms - file_ms, 0.1)] ms; it began [copytext("[text]", 1, 80)]")
+		log_world("LOG_WORLD_SLOW: a log line of [length(text)] characters took [round(total_ms, 0.1)] ms: runtime log file [round(file_ms, 0.1)] ms, world.log (dd.log) [round(total_ms - file_ms, 0.1)] ms; writer queued/written/failed/recovered [log_file_counts().Join("/")], synchronous log file writes [GLOB.log_sync_writes], tick usage [round(TICK_USAGE_REAL, 1)]%; it began [copytext("[text]", 1, 80)]")
 		noting = FALSE
