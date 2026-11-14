@@ -10,19 +10,19 @@ SYSTEM_DEF(statpanels)
 	VAR_PRIVATE/resuming = FALSE
 	var/list/currentrun = list()
 	var/list/global_data
-	var/list/mc_metrics
-	/// ckey -> (section -> the section's list as last sent to that client): what each admin's MC Health panel already holds.
+	/// ckey -> (section -> the version of it as last sent to that client): what each admin's MC Health panel already holds.
 	var/list/mc_sent_by_client = list()
-	/// The MC Health panel's slow sections (mc_health_slow()), and when each group of them was built (group -> world time).
-	var/list/mc_slow
-	var/list/mc_slow_built_at
-	/// The longest build of one slow group so far, ms (the MC_HEALTH trace line).
-	var/mc_group_max_ms = 0
+	/// What the MC Health panel's data is built into (mc_health.dm), shared by every admin on the panel: made when one first opens it, built a slice a fire.
+	var/datum/mc_health_build/mc_build
+	/// Ready clients on the MC tab at the start of this pass (nothing is built when none is).
+	var/mc_watchers = 0
+	/// The ms of the longest MC send to one client so far, how many sends there were, and how many ran past MC_HEALTH_TURN_MS.
+	var/mc_send_max_ms = 0
+	var/mc_sends = 0
+	var/mc_slow_sends = 0
 	/// The longest single client's turn in refresh_tabs so far, ms, and the turns past STATPANEL_SLOW_MS (the STATPANELS trace line).
 	var/turn_max_ms = 0
 	var/slow_turns = 0
-	var/mc_metrics_generated_at = 0
-	mc_metrics_generated_at = -INFINITY
 
 	///how many subsystem fires between most tab updates
 	var/default_wait = 10
@@ -34,6 +34,9 @@ SYSTEM_DEF(statpanels)
 	var/mc_wait = 3
 	///how many full runs this subsystem has completed. used for variable rate refreshes.
 	var/num_fires = 0
+
+CAPABILITIES(/datum/system/statpanels)
+	owns_one(nameof(mc_build), /datum/mc_health_build)
 
 /datum/system/statpanels/reactions()
 	. = ..()
@@ -74,6 +77,12 @@ SYSTEM_DEF(statpanels)
 
 	if (!resumed)
 		src.currentrun = GLOB.clients.Copy()
+		mc_watchers = 0
+		for(var/client/watcher as anything in GLOB.clients)
+			if(watcher.stat_tab == "MC" && watcher.stat_panel?.is_ready())
+				mc_watchers++
+		if(mc_watchers)
+			mc_build_step()
 
 	var/list/currentrun = src.currentrun
 	while(length(currentrun))
@@ -174,36 +183,49 @@ SYSTEM_DEF(statpanels)
 		other_str = target.mob?.get_status_tab_items(),
 	), same_key = "update_stat")
 
-/// The MC Health panel's data (mc_health.dm), sent only to a client on the panel (stat_tab "MC") and rebuilt at most once a second.
+/// One slice of the MC Health panel's data (mc_health.dm): MC_HEALTH_PUMP_MS of units, once a fire while an admin is on the panel. The build is shared by every
+/// admin on it, and made on the first.
+/datum/system/statpanels/proc/mc_build_step()
+	if(!mc_build)
+		rel_set(src, nameof(mc_build), new /datum/mc_health_build)
+		log_world("MC_HEALTH: the panel's data is being built a slice of [MC_HEALTH_PUMP_MS] ms a fire (groups every [MC_HEALTH_SLOW_EVERY / 10] s, the ledger every [MC_HEALTH_LEDGER_EVERY / 10] s, the tick graph every [MC_HEALTH_FAST_EVERY / 10] s)")
+	var/mc_build_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: build the panel data") // the ledger names the build apart from the send
+	mc_health_pump(mc_build)
+	km_ledger_leave(mc_build_ledger)
+
+/// The MC Health panel's data, sent only to a client on the panel (stat_tab "MC"): the sections it has not got, as the pieces already encoded when they were built (a section
+/// that did not change since the client last got it is skipped). A client that opens the panel or reloads its page gets everything (mc_health_forget()).
 /datum/system/statpanels/proc/set_MC_tab(client/target)
-	var/turf/eye_turf = get_turf(target.eye)
-	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 1 SECONDS)
-		var/mc_build_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: build the panel data") // the ledger names the build apart from the send
-		mc_metrics = mc_health_data()
-		km_ledger_leave(mc_build_ledger)
-		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
-	// Only the sections this client has not got: a slow section (mc_health_slow()) is the same list object until it is built again, so an
-	// unchanged one is skipped without encoding it. A client that opens the panel or reloads its page gets everything (mc_health_forget()).
+	var/datum/mc_health_build/B = mc_build
+	if(!B || !length(B.versions))
+		return
+	var/send_started = TICK_USAGE_REAL
+	var/coord = COORD(get_turf(target.eye))
 	var/key = target.ckey
 	var/list/sent = mc_sent_by_client[key]
 	if(!sent)
 		sent = list()
 		mc_sent_by_client[key] = sent
-	var/list/changed = list()
-	for(var/section in mc_metrics)
-		var/value = mc_metrics[section]
-		if(sent[section] != value)
-			changed[section] = value
-			sent[section] = value
-	if(length(changed) == length(mc_metrics))
-		log_tgui(target, "Server health: whole send of [length(changed)] section(s), window [target.stat_panel.id], ready=[target.stat_panel.is_ready() ? 1 : 0].", context = "stat_panel")
-	var/mc_send_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: encode and send") // the JSON of the changed sections goes out here
-	target.stat_panel.send_message("update_mc", list(
-		"mc_metrics" = changed,
-		"partial" = length(changed) != length(mc_metrics),
-		"coord_entry" = COORD(eye_turf),
-	))
+	var/list/update = B.client_update(sent, coord)
+	if(!update)
+		return
+	var/sections = update["sections"]
+	var/whole = update["whole"]
+	if(whole)
+		log_tgui(target, "Server health: whole send of [sections] section(s), window [target.stat_panel.id], ready=[target.stat_panel.is_ready() ? 1 : 0].", context = "stat_panel")
+	var/mc_send_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: send") // the pieces were encoded when built; this joins and sends them
+	if(B.has_href)
+		// A section holds an admin link: the one path that fills it for this client (send_message() scans the JSON).
+		target.stat_panel.send_message("update_mc", list("mc_metrics" = update["changed"] || list(), "partial" = !whole, "coord_entry" = coord))
+	else
+		target.stat_panel.send_encoded("update_mc", update["payload"])
 	km_ledger_leave(mc_send_ledger)
+	var/send_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - send_started)
+	mc_sends++
+	mc_send_max_ms = max(mc_send_max_ms, send_ms)
+	if(send_ms >= MC_HEALTH_TURN_MS)
+		mc_slow_sends++
+		log_world("MC_HEALTH: sending the panel to [key] took [round(send_ms, 0.1)] ms for [sections] section(s); [mc_slow_sends] such send(s) of [mc_sends], longest [round(mc_send_max_ms, 0.1)] ms")
 
 /// The client's panel holds none of the MC Health sections any more (it was opened again or its page reloaded): the next send is whole.
 /datum/system/statpanels/proc/mc_health_forget(client/target)

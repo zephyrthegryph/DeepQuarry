@@ -65,13 +65,6 @@ GLOBAL_VAR_INIT(world_log_direct_left, WORLD_LOG_DIRECT_LINES)
 /// A log line that takes this long (ms) to write is traced (LOG_WORLD_SLOW).
 #define LOG_WORLD_SLOW_MS 25
 
-/// What the runtime log's entry spent, ms, since the last LOG_WORLD_SLOW line: the file-exists checks (a syscall on the tick, once per file per
-/// LOG_FILE_RECHECK_INTERVAL), building the entry (timestamp, json), and the ring. Filled by code/content/logging/log_category.dm.
-GLOBAL_VAR_INIT(log_exists_ms, 0)
-GLOBAL_VAR_INIT(log_exists_max_ms, 0)
-GLOBAL_VAR_INIT(log_exists_calls, 0)
-GLOBAL_VAR_INIT(log_entry_build_ms, 0)
-
 /// Log to both DD and the logfile.
 /proc/log_world(text, list/data)
 	var/static/noting = FALSE
@@ -85,9 +78,5 @@ GLOBAL_VAR_INIT(log_entry_build_ms, 0)
 	// A write that blocks (the console, the log file, a scanner on the disk) stalls the whole tick whoever wrote the line: name which half was slow.
 	if(total_ms >= LOG_WORLD_SLOW_MS && !noting)
 		noting = TRUE
-		log_world("LOG_WORLD_SLOW: a log line of [length(text)] characters took [round(total_ms, 0.1)] ms: runtime log file [round(file_ms, 0.1)] ms (of the logger's own work since the last such line: [GLOB.log_exists_calls] file-exists check(s) [round(GLOB.log_exists_ms, 0.1)] ms, the slowest [round(GLOB.log_exists_max_ms, 0.1)] ms; building entries [round(GLOB.log_entry_build_ms, 0.1)] ms), world.log (dd.log) [round(total_ms - file_ms, 0.1)] ms; it began [copytext("[text]", 1, 80)]")
-		GLOB.log_exists_ms = 0
-		GLOB.log_exists_max_ms = 0
-		GLOB.log_exists_calls = 0
-		GLOB.log_entry_build_ms = 0
+		log_world("LOG_WORLD_SLOW: a log line of [length(text)] characters took [round(total_ms, 0.1)] ms: runtime log file [round(file_ms, 0.1)] ms, world.log (dd.log) [round(total_ms - file_ms, 0.1)] ms; writer queued/written/failed/recovered [log_file_counts().Join("/")], synchronous log file writes [GLOB.log_sync_writes], tick usage [round(TICK_USAGE_REAL, 1)]%; it began [copytext("[text]", 1, 80)]")
 		noting = FALSE

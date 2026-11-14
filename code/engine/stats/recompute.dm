@@ -34,6 +34,11 @@ GLOBAL_VAR_INIT(stat_deferred_targets, 0)
 /// The slots of the targets that have queued settles (rec.pending); a slot whose rows a read already settled is skipped when the frame closes.
 GLOBAL_LIST_EMPTY(stat_pending_slots)
 GLOBAL_LIST_EMPTY(stat_read_compute_by) // BENCHMARK builds: "type:stat" -> uncached read computes
+#if defined(UNIT_TESTS)
+/// "stat id on holder type" -> reads while a test traces them (the step-cost test); null: off.
+GLOBAL_LIST(stat_value_trace)
+#endif
+GLOBAL_VAR_INIT(stat_value_reads, 0) // stat_value() calls (the step-cost test counts the reads a player step makes)
 GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
@@ -55,6 +60,11 @@ PROC_SUMMARY(/proc/stat_call) // vars[] / call() dispatcher: the walk cannot ent
 PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_value(datum/E, stat_id)
 	READS_FROM(E)
+	GLOB.stat_value_reads++
+#if defined(UNIT_TESTS)
+	if(GLOB.stat_value_trace)
+		GLOB.stat_value_trace["[stat_id] on [E?.type]"]++
+#endif
 	var/datum/stat_def/def = stat_def_of(stat_id)
 	if(!def)
 		// A condition reading a stat that does not exist would just read false for ever.

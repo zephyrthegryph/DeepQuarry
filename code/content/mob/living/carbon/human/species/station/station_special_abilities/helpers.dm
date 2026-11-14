@@ -695,13 +695,13 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(C.incapacitated(INCAPACITATION_ALL))
 		to_chat(src, "You cannot fly in this state!")
 		return
-	if(nutrition_of(C) < 25 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't fly.
+	if(nutrition_of(C) < 25 && !C.flying) //Don't have any food in you?" You can't fly.
 		to_chat(C, span_notice("You lack the nutrition to fly."))
 		return
 
-	set_flying(C, !stat_value(C, STAT_FLYING))
+	set_flying(C, !C.flying)
 	update_floating()
-	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] flying."))
+	to_chat(C, span_notice("You have [C.flying?"started":"stopped"] flying."))
 
 /mob/living/proc/flying_vore_toggle()
 	set name = "Toggle Flight Vore"
@@ -722,13 +722,13 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(!istype(C) || !C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
 		to_chat(src, "You don't have wings!")
 		return
-	if(!stat_value(C, STAT_FLYING))
+	if(!C.flying)
 		to_chat(src, "You must be flying to hover!")
 		return
 	if(C.incapacitated(INCAPACITATION_ALL))
 		to_chat(src, "You cannot hover in your current state!")
 		return
-	if(nutrition_of(C) < 50 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition. And it's not 25 since we don't want them to immediately fall.
+	if(nutrition_of(C) < 50 && !C.flying) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition. And it's not 25 since we don't want them to immediately fall.
 		to_chat(C, span_notice("You lack the nutrition to fly."))
 		return
 	if(C.anchored)

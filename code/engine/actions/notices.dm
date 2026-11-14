@@ -78,13 +78,13 @@ GLOBAL_LIST_EMPTY(notice_unheard)
 /// are asked by notice_wanted() itself.
 /proc/notice_type_unheard(datum/E, notice_type)
 	var/list/memo = GLOB?.notice_unheard
-	if(!memo || !islist(GLOB.notice_plans) || !islist(GLOB.rx_tables))
-		return FALSE // the tables are still being built: ask the full path, cache nothing
-	var/list/by_type = memo[E.type]
+	var/list/by_type = memo?[E.type]
 	if(by_type)
 		var/known = by_type[notice_type]
 		if(!isnull(known))
-			return known
+			return known // an answer is memoized only once both tables exist: the memo is the first thing asked
+	if(!memo || !islist(GLOB.notice_plans) || !islist(GLOB.rx_tables))
+		return FALSE // the tables are still being built: ask the full path, cache nothing
 	var/datum/type_table/T = table_of(E)
 	if(T == table_empty())
 		return FALSE
@@ -117,6 +117,11 @@ GLOBAL_LIST_EMPTY(notice_unheard)
 /// TRUE when something on E listens for `notice_type` for `outcome` (the committed outcome by default): a type-level or activation hook, or a
 /// legacy on_notice() reaction (committed only).
 /proc/notice_wanted(datum/E, notice_type, outcome = ACT_COMMITTED)
+	GLOB.notice_wanted_calls++
+#if defined(UNIT_TESTS)
+	if(GLOB.notice_wanted_trace)
+		GLOB.notice_wanted_trace["[notice_type] on [E?.type]"]++
+#endif
 	// Nothing of E's type hears it and E has no listener of its own (activation hooks and observed notice types live on E.rx): no table walk. Most publishes
 	// are of this kind, the "created" notice every atom sends its location at init among them (504 k at a full-map boot, heard by nothing).
 	if(!E)

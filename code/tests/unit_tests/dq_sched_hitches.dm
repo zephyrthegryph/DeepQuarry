@@ -183,31 +183,3 @@
 	TEST_ASSERT_EQUAL(length(GLOB.data_core.general), records_before, "the test's record is gone again")
 	test_driver_end()
 
-/// The MC Health panel builds one slow group a send: a send builds at most one, the first never built, so the panel fills in over its first sends and no send
-/// carries them all.
-/datum/unit_test/dq_mc_health_builds_one_group_a_send
-
-/datum/unit_test/dq_mc_health_builds_one_group_a_send/Run()
-	var/datum/system/statpanels/S = SSstatpanels
-	set_var(S, nameof(S.mc_slow), null)
-	set_var(S, nameof(S.mc_slow_built_at), null)
-	var/groups = length(GLOB.mc_health_slow_groups)
-	var/before = 0
-	for(var/n in 1 to groups)
-		mc_health_slow()
-		var/built = length(S.mc_slow_built_at)
-		TEST_ASSERT_EQUAL(built - before, 1, "send [n] built exactly one group")
-		before = built
-	TEST_ASSERT_EQUAL(before, groups, "after as many sends as there are groups, every group is built")
-	var/list/data = mc_health_data()
-	for(var/key in list("window_30s", "window_5m", "outliers", "subsystems", "kernel", "gc", "entities", "churn", "runtime", "attribution", "attribution_rest"))
-		TEST_ASSERT(!isnull(data[key]), "the panel data has [key]")
-
-/// The tick graph's section is the first one the MC Health panel's data carries, so it is built and sent before any other.
-/datum/unit_test/dq_mc_health_ticks_come_first
-
-/datum/unit_test/dq_mc_health_ticks_come_first/Run()
-	var/list/fast = mc_health_fast()
-	TEST_ASSERT_EQUAL(fast[1], "ticks", "the recent ticks are the first section of every send")
-	var/list/data = mc_health_data()
-	TEST_ASSERT_EQUAL(data[1], "ticks", "and of the whole payload, ahead of every slow group")

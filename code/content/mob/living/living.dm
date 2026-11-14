@@ -1280,7 +1280,7 @@ CAPABILITIES(/datum/character_setup_button)
 	return FALSE
 
 /mob/living/Check_Shoegrip()
-	if(stat_value(src, STAT_FLYING))
+	if(src.flying)
 		return 1
 	..()
 

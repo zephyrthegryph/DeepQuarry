@@ -5,7 +5,11 @@
 #define PROFILE_STAGE_ENCODE 5
 #define PROFILE_STAGE_WRITE 6
 /// Ms of a table walk in one turn of a sample.
-#define PROFILE_WALK_SLICE_MS 3
+#define PROFILE_WALK_SLICE_MS 1.5
+/// A turn of a sample longer than this is counted and named in the sample's summary line (a native call or one section's JSON cannot be cut).
+#define PROFILE_TURN_CAP_MS 5
+/// A turn is put off to the next tick, up to this many times a sample, when the tick it would run in is already over the kernel's budget.
+#define PROFILE_MAX_DEFERRALS 40
 
 SYSTEM_DEF(profiler)
 	name = "Profiler"
@@ -98,7 +102,13 @@ SYSTEM_DEF(profiler)
 	var/sequence = 0
 	var/native_ms = 0
 	var/walk_ms = 0
+	var/write_ms = 0
 	var/encode_ms = 0
+	/// The turns past PROFILE_TURN_CAP_MS (and the stage of the dearest), the turns put off to a calmer tick, and the part of a stage already done (a stage of several native calls runs one a turn).
+	var/over_cap_turns = 0
+	var/max_turn_stage = 0
+	var/deferrals = 0
+	var/substep = 1
 
 CAPABILITIES(/datum/system/profiler)
 	owns_one(nameof(building), /datum/profile_sample)
@@ -132,13 +142,23 @@ CAPABILITIES(/datum/profile_sample)
 /// Runs turns of the sample: one (a stage, or a slice of a table walk) per tick, or every one at once when `sync`.
 /datum/system/profiler/proc/sample_advance(sync)
 	var/datum/profile_sample/S = building
+	// A tick already over its budget gets none of the sample: the turn waits for the next one (a bounded number of times, so a sample still finishes).
+	if(!sync && S.deferrals < PROFILE_MAX_DEFERRALS && KERNEL_OVER_BUDGET)
+		S.deferrals++
+		after(src, 1 TICKS, PROC_REF(sample_continue), key = "profile_sample")
+		return
 	while(S.stage <= PROFILE_STAGE_WRITE)
 		var/turn_started = TICK_USAGE_REAL
+		var/turn_stage = S.stage
 		var/done = sample_stage(S)
 		var/turn_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - turn_started)
 		S.build_ms += turn_ms
 		S.turns++
-		S.max_turn_ms = max(S.max_turn_ms, turn_ms)
+		if(turn_ms > S.max_turn_ms)
+			S.max_turn_ms = turn_ms
+			S.max_turn_stage = turn_stage
+		if(turn_ms > PROFILE_TURN_CAP_MS)
+			S.over_cap_turns++
 		if(done)
 			S.stage++
 		if(!sync && S.stage <= PROFILE_STAGE_WRITE)
@@ -150,12 +170,20 @@ CAPABILITIES(/datum/profile_sample)
 /datum/system/profiler/proc/sample_stage(datum/profile_sample/S)
 	switch(S.stage)
 		if(PROFILE_STAGE_NATIVES)
+			// Three native calls, one a turn (each is one call that cannot be cut).
 			var/natives_started = TICK_USAGE_REAL
-			S.atmos_arena = vg_auxmos_diagnostics()
-			S.rust_allocator = vg_verdigris_allocator_diagnostics()
-			// Every Rust metric (allocator tags, jobs, ...) in one call.
-			S.rust_metrics = verdigris_metrics_list()
-			S.native_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - natives_started)
+			switch(S.substep)
+				if(1)
+					S.atmos_arena = vg_auxmos_diagnostics()
+				if(2)
+					S.rust_allocator = vg_verdigris_allocator_diagnostics()
+				else
+					// Every Rust metric (allocator tags, jobs, ...) in one call.
+					S.rust_metrics = verdigris_metrics_list()
+			S.native_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - natives_started)
+			if(S.substep++ < 3)
+				return FALSE
+			S.substep = 1
 			return TRUE
 		if(PROFILE_STAGE_SYSTEMS)
 			S.subsystems = sample_subsystems()
@@ -225,15 +253,22 @@ CAPABILITIES(/datum/profile_sample)
 			S.encode_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - encode_started)
 			return !length(S.sections)
 		if(PROFILE_STAGE_WRITE)
+			// The three log lines, one a turn; the summary goes with the last.
 			var/write_started = TICK_USAGE_REAL
-			last_record = "{[jointext(S.encoded, ",")]}"
-			last_turns = S.turns + 1
-			log_runtime("PERF_PROFILE [last_record]")
-			// Keep the stable specialized records consumed by existing benchmark tools.
-			log_runtime("ATMOS_PROFILE [S.atmos_json]")
-			log_runtime("RUST_ALLOC_PROFILE [S.alloc_json]")
-			var/write_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - write_started)
-			logger.Log(LOG_CATEGORY_DEBUG, "PROFILER SAMPLE: native reads [round(S.native_ms, 0.1)] ms, systems and tables [round(S.build_ms - S.native_ms - S.encode_ms - write_ms, 0.1)] ms (the attribution and ledger walks [round(S.walk_ms, 0.1)] of them), encode [round(S.encode_ms, 0.1)] ms, write [round(write_ms, 0.1)] ms, in [S.turns] turn(s) over [round((REALTIMEOFDAY - S.started_real) / 10, 0.1)] s, the dearest turn [round(S.max_turn_ms, 0.1)] ms")
+			switch(S.substep)
+				if(1)
+					last_record = "{[jointext(S.encoded, ",")]}"
+					last_turns = S.turns + 1
+					log_runtime("PERF_PROFILE [last_record]")
+				if(2)
+					// Keep the stable specialized records consumed by existing benchmark tools.
+					log_runtime("ATMOS_PROFILE [S.atmos_json]")
+				else
+					log_runtime("RUST_ALLOC_PROFILE [S.alloc_json]")
+			S.write_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - write_started)
+			if(S.substep++ < 3)
+				return FALSE
+			logger.Log(LOG_CATEGORY_DEBUG, "PROFILER SAMPLE: native reads [round(S.native_ms, 0.1)] ms, systems and tables [round(S.build_ms - S.native_ms - S.encode_ms - S.write_ms, 0.1)] ms (the attribution and ledger walks [round(S.walk_ms, 0.1)] of them), encode [round(S.encode_ms, 0.1)] ms, write [round(S.write_ms, 0.1)] ms, in [S.turns] turn(s) over [round((REALTIMEOFDAY - S.started_real) / 10, 0.1)] s, the dearest turn [round(S.max_turn_ms, 0.1)] ms (stage [S.max_turn_stage]), [S.over_cap_turns] turn(s) past [PROFILE_TURN_CAP_MS] ms, [S.deferrals] put off to a calmer tick")
 			return TRUE
 	return TRUE
 

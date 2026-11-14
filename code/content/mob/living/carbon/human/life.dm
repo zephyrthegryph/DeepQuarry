@@ -74,7 +74,7 @@
 /// Event-driven: moving, equipment, status and the ground changing (MOB_KEY_GROUND) wake it. Only a flier hovering over
 /// open space has per-frame work (flight tires it), so only it comes back on the next frame.
 /mob/living/carbon/human/proc/life_fall_rewake()
-	if(!stat_value(src, STAT_FLYING) || !isturf(src.loc))
+	if(!src.flying || !isturf(src.loc))
 		return 0
 	var/turf/T = src.loc
 	return T.CanZPass(src, DOWN) ? LIFE_CYCLE : 0

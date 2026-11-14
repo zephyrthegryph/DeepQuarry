@@ -46,6 +46,8 @@
 			for(var/turf/T as anything in contents_of(at, /turf))
 				. += T
 				. += hop_nested_contents(T)
+	if(!(segment in rel_names_by_id))
+		return // no relation is declared under this name, so no view names `at` through it (rel_sources_via() would walk the index to say so)
 	BOOT_PHASE_BEGIN(bp_rel)
 	var/list/named_by = rel_sources_via(at, segment)
 	BOOT_PHASE_END(bp_rel, "hop_sources: rel_sources of [segment]", at)
