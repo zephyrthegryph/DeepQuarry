@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The emergency shuttle no longer waits forever at the station when its docking never completes, so the round ends"
+  - bugfix: "Bumping a station holomap that had no map image no longer runtimes"

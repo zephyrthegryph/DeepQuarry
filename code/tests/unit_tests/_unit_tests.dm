@@ -1529,6 +1529,7 @@
 #include "dq_lighting_planet_boundary_tests.dm"
 #include "dq_supply_contract_boundary_tests.dm"
 #include "dq_round_job_boundary_tests.dm"
+#include "dq_shuttle_stuck_dock_tests.dm"
 #include "dq_a6_power_init.dm"
 #include "dq_a1_archaeology_init.dm"
 #include "dq_a9_initialization_tests.dm"
