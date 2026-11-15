@@ -99,7 +99,7 @@
 	var/obj/item/material/ashtray/tray = allocate(/obj/item/material/ashtray, test_floor())
 	TEST_ASSERT(tray.material && !QDELETED(tray), "The material parent resolves a real material before dish setup")
 	TEST_ASSERT_EQUAL(initial(tray.icon_state), "blank", "The formerly fixed initialization state is now the type default")
-	TEST_ASSERT_EQUAL(tray.max_butts, round(tray.material.hardness / 5), "Capacity uses the parent's actual material hardness")
+	TEST_ASSERT_EQUAL(tray.max_butts, round(tray.material.strength / 5), "Capacity uses the parent's actual material strength")
 	TEST_ASSERT_NULL(tray.color, "The material dish clears the parent's overall material tint")
 	TEST_ASSERT_NOTNULL(tray.base_overlay, "The dish setup builds its material-colored base overlay")
 

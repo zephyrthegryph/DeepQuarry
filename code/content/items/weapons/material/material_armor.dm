@@ -25,7 +25,7 @@
 		spent(src)
 	else
 		name = "[material.display_name] [initial(name)]"
-		set_max_integrity(max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT)
+		set_max_integrity(max(1, round(material.toughness * MATERIAL_HP_PER_TOUGHNESS / 10)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		if(applies_material_color)
 			set_color(material.icon_colour)
@@ -56,12 +56,12 @@
 	var/wear = 0
 	if(material.is_brittle())
 		wear = get_integrity()
-	else if(!prob(material.hardness))
+	else if(!prob(material.strength))
 		wear = MATERIAL_WEAR_UNIT
-	if(material.shape_recovery_rate > 0)
+	if(material.trait(MT_SHAPE_MEMORY) > 0)
 		var/turf/turf = get_turf(src)
 		var/datum/gas_mixture/air = turf?.return_air()
-		if(air && air.return_temperature() >= material.shape_recovery_temperature)
+		if(air && air.return_temperature() >= MATERIAL_SHAPE_MEMORY_TEMPERATURE)
 			wear -= MATERIAL_WEAR_UNIT
 
 	// Wear is not a blow from outside, so the armour's own armour doesn't apply.
@@ -162,17 +162,17 @@
 	if(material)
 		var/melee_armor = 0, bullet_armor = 0, laser_armor = 0, energy_armor = 0, bomb_armor = 0
 
-		melee_armor = calculate_material_armor(material.protectiveness * material_armor_modifier)
+		melee_armor = calculate_material_armor(material.protectiveness() * material_armor_modifier)
 
-		bullet_armor = calculate_material_armor((material.protectiveness * (material.hardness / 100) * material_armor_modifier) * 0.7)
+		bullet_armor = calculate_material_armor((material.protectiveness() * (material.strength / 100) * material_armor_modifier) * 0.7)
 
-		laser_armor = calculate_material_armor((material.protectiveness * (material.reflectivity + 1) * material_armor_modifier) * 0.7)
+		laser_armor = calculate_material_armor((material.protectiveness() * (material.reflectivity + 1) * material_armor_modifier) * 0.7)
 		if(material.opacity != 1)
 			laser_armor *= max(material.opacity - 0.3, 0) // Glass and such has an opacity of 0.3, but lasers should go through glass armor entirely.
 
-		energy_armor = calculate_material_armor((material.protectiveness * material_armor_modifier) * 0.4)
+		energy_armor = calculate_material_armor((material.protectiveness() * material_armor_modifier) * 0.4)
 
-		bomb_armor = calculate_material_armor((material.protectiveness * material_armor_modifier) * 0.5)
+		bomb_armor = calculate_material_armor((material.protectiveness() * material_armor_modifier) * 0.5)
 
 		// Makes sure the numbers stay capped.
 		for(var/number in list(melee_armor, bullet_armor, laser_armor, energy_armor, bomb_armor))
@@ -188,7 +188,7 @@
 			set_siemens_coefficient(between(0, material.conductivity / 10, 10))
 		worn_protection_changed()
 
-		var/slowdownModified = between(0, round(material.density / 10, 0.1), 6) // weight renamed to density.
+		var/slowdownModified = between(0, round(material.weight / 10, 0.1), 6)
 
 		var/slowdownUncapped = (material_slowdown_multiplier * slowdownModified) - material_slowdown_modifier
 

@@ -28,11 +28,11 @@ CAPABILITIES(/obj/item/cell/spike)
 			if(istype(T, /turf/simulated/wall))
 				var/turf/simulated/wall/WT = T
 
-				if(WT.material.conductive)
+				if(WT.material.conductive())
 					conductive = TRUE
-				else if(WT.girder_material.conductive)
+				else if(WT.girder_material.conductive())
 					conductive = TRUE
-				else if(WT.reinf_material && WT.reinf_material.conductive)
+				else if(WT.reinf_material && WT.reinf_material.conductive())
 					conductive = TRUE
 
 			if(istype(T, /turf/simulated/floor))

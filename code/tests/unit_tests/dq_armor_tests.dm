@@ -101,7 +101,7 @@
 	// Material armour tables: every material's makeshift armour soaks by its own numbers.
 	for(var/name in GLOB.name_to_material)
 		var/datum/material/M = GLOB.name_to_material[name]
-		var/points = calculate_material_armor(M.protectiveness)
+		var/points = calculate_material_armor(M.protectiveness())
 		var/datum/armor/A = dq_armor(list(MELEE = points))
 		TEST_ASSERT(dq_near(A.soak_key(MELEE, 100, 0), 100 - dq_armor_average_percent(clamp(points, 0, 100))), "[name] armour ([points]) should soak by its points")
 
@@ -251,10 +251,10 @@
 	for(var/name in GLOB.name_to_material)
 		var/datum/material/M = GLOB.name_to_material[name]
 		var/datum/impact_response/R = dq_impact_response_for_material(M)
-		var/blunt = clamp((M.hardness - 60) / 200, 0, 0.5)
-		var/cut = clamp((M.yield_strength - 300) / 1500, 0, 0.5)
-		var/tough = clamp((M.fracture_toughness - 25) / 200, 0, 0.5)
-		var/heat = isnull(M.melting_point) ? 0 : clamp((M.melting_point - 1800) / 8000, 0, 0.5)
+		var/blunt = clamp((M.strength - 60) / 200, 0, 0.5)
+		var/cut = clamp((M.yield_strength() - 300) / 1500, 0, 0.5)
+		var/tough = clamp((M.fracture_toughness() - 25) / 200, 0, 0.5)
+		var/heat = clamp((M.melting_point() - 1800) / 8000, 0, 0.5)
 		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_BLUNT), 1 - blunt), "[name] blunt factor")
 		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_BLAST), 1 - blunt), "[name] blast factor")
 		TEST_ASSERT(dq_near(R.damage_factor(DAMAGE_SHARP), 1 - cut), "[name] sharp factor")
@@ -279,9 +279,8 @@
 
 	// Items read the same numbers through P1 properties.
 	var/obj/item/dq_armor_steel_probe/probe = allocate(/obj/item/dq_armor_steel_probe)
-	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_HARDNESS), steel.hardness, "an item's hardness is its material's")
-	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_YIELD_STRENGTH), steel.yield_strength, "an item's yield strength is its material's")
-	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_FRACTURE_TOUGHNESS), steel.fracture_toughness, "an item's toughness is its material's")
+	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_STRENGTH), steel.strength, "an item's strength is its material's")
+	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_TOUGHNESS), steel.toughness, "an item's toughness is its material's")
 	TEST_ASSERT_EQUAL(probe.impact_response(), steel_response, "and its response is steel's")
 
 /// A plain steel item for property reads.

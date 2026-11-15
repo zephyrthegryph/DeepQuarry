@@ -28,6 +28,17 @@ test('engineering diagnostics presents operating energy and independent installe
         material: 'Steel',
         meltingPoint: 1810,
         corrosion: 65,
+        stats: [
+          {
+            name: 'Toughness',
+            value: 62,
+            breakdown: [
+              { label: 'base', delta: 70 },
+              { label: 'sulfur', delta: -12 },
+              { label: 'tempered', delta: 4 },
+            ],
+          },
+        ],
       },
       {
         role: 'conductor',

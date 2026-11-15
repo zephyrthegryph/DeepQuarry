@@ -35,7 +35,7 @@
 	rel_set(W, nameof(W.material), get_material_by_name(MAT_PLASTEEL))
 	W.set_reinf_material(get_material_by_name(MAT_PLASTEEL))
 	W.update_material()
-	var/cap = W.material.integrity + W.reinf_material.integrity
+	var/cap = W.material.toughness * MATERIAL_HP_PER_TOUGHNESS + W.reinf_material.toughness * MATERIAL_HP_PER_TOUGHNESS
 	TEST_ASSERT(atom_rules_of(W).uses_integrity, "walls use integrity")
 	TEST_ASSERT_EQUAL(W.max_integrity, cap, "a wall's max integrity is its material cap")
 	TEST_ASSERT_EQUAL(W.get_integrity(), cap, "a new wall is intact")
@@ -67,8 +67,8 @@
 	W.take_damage(30)
 	W.set_reinf_material(null)
 	W.update_material()
-	TEST_ASSERT_EQUAL(W.max_integrity, W.material.integrity, "an unreinforced wall's cap is its plating")
-	TEST_ASSERT_EQUAL(W.get_integrity(), W.material.integrity - 30, "a material change keeps the wall's damage")
+	TEST_ASSERT_EQUAL(W.max_integrity, W.material.toughness * MATERIAL_HP_PER_TOUGHNESS, "an unreinforced wall's cap is its plating")
+	TEST_ASSERT_EQUAL(W.get_integrity(), W.material.toughness * MATERIAL_HP_PER_TOUGHNESS - 30, "a material change keeps the wall's damage")
 
 	W.take_damage(W.get_integrity() + 10)
 	TEST_ASSERT(!istype(T, /turf/simulated/wall), "a wall at zero integrity is dismantled ([T.type])")
@@ -190,7 +190,7 @@
 	var/turf/T = scratch_turf()
 	var/obj/structure/simple_door/D = allocate(/obj/structure/simple_door, T, MAT_STEEL)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	TEST_ASSERT_EQUAL(D.max_integrity, max(1, round(steel.integrity / 10)) * 10, "a door's integrity is its material's")
+	TEST_ASSERT_EQUAL(D.max_integrity, max(1, round(steel.toughness * MATERIAL_HP_PER_TOUGHNESS / 10)) * 10, "a door's integrity is its material's")
 
 	D.take_damage(25)
 	TEST_ASSERT_EQUAL(D.get_integrity(), D.max_integrity - 25, "hits come off integrity")
@@ -323,7 +323,7 @@
 /datum/unit_test/dq_integrity_pool/material_weapon/Run()
 	var/turf/T = scratch_turf()
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife, T)
-	TEST_ASSERT_EQUAL(knife.max_integrity, max(1, round(knife.material.integrity / 10)) * MATERIAL_WEAR_UNIT, "a weapon's integrity is its material's")
+	TEST_ASSERT_EQUAL(knife.max_integrity, max(1, round(knife.material.toughness * MATERIAL_HP_PER_TOUGHNESS / 10)) * MATERIAL_WEAR_UNIT, "a weapon's integrity is its material's")
 	knife.material_wear(MATERIAL_WEAR_UNIT)
 	TEST_ASSERT_EQUAL(knife.get_integrity_damage(), MATERIAL_WEAR_UNIT, "a blow wears one unit")
 	knife.repair_damage(MATERIAL_WEAR_UNIT)
@@ -351,7 +351,7 @@
 	var/turf/T = scratch_turf()
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest, T)
 	vest.set_material(MAT_STEEL)
-	TEST_ASSERT_EQUAL(vest.max_integrity, max(1, round(vest.material.integrity / 10)) * MATERIAL_WEAR_UNIT, "material armour's integrity is its material's")
+	TEST_ASSERT_EQUAL(vest.max_integrity, max(1, round(vest.material.toughness * MATERIAL_HP_PER_TOUGHNESS / 10)) * MATERIAL_WEAR_UNIT, "material armour's integrity is its material's")
 	vest.take_damage(MATERIAL_WEAR_UNIT, BRUTE, null, FALSE)
 	TEST_ASSERT_EQUAL(vest.get_integrity_damage(), MATERIAL_WEAR_UNIT, "hits wear the armour")
 	vest.repair_damage(MATERIAL_WEAR_UNIT)
@@ -367,7 +367,7 @@
 /datum/unit_test/dq_integrity_pool/material_misc/Run()
 	var/turf/T = scratch_turf()
 	var/obj/item/material/barbedwire/wire = allocate(/obj/item/material/barbedwire, T)
-	TEST_ASSERT_EQUAL(wire.max_integrity, max(1, round(wire.material.integrity / 3)) * MATERIAL_WEAR_UNIT, "barbed wire has a third of its material's integrity")
+	TEST_ASSERT_EQUAL(wire.max_integrity, max(1, round(wire.material.toughness * MATERIAL_HP_PER_TOUGHNESS / 3)) * MATERIAL_WEAR_UNIT, "barbed wire has a third of its material's integrity")
 	wire.material_wear(wire.get_integrity())
 	TEST_ASSERT(QDELETED(wire), "worn-out barbed wire breaks")
 

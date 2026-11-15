@@ -300,8 +300,8 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	stack_type = /obj/item/stack/material/algae
 	icon_colour = "#557722"
 	shard_type = SHARD_STONE_PIECE
-	density = 10 // weight renamed to density.
-	hardness = 10
+	weight = 10 // weight renamed to density.
+	strength = 10
 	sheet_singular_name = "sheet"
 	sheet_plural_name = "sheets"
 	supply_conversion_value = 0.25

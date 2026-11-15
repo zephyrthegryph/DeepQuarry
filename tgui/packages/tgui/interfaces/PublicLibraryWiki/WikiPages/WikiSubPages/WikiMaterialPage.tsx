@@ -14,9 +14,13 @@ import {
 export const WikiMaterialPage = (props: { materials: MaterialData }) => {
   const {
     title,
-    integrity,
-    hardness,
+    strength,
+    toughness,
+    heat_resistance,
+    conductivity,
+    corrosion_resistance,
     weight,
+    traits,
     stack_size,
     supply_points,
     market_price,
@@ -46,9 +50,23 @@ export const WikiMaterialPage = (props: { materials: MaterialData }) => {
               />
             </LabeledList.Item>
             <LabeledList.Divider />
-            <LabeledList.Item label="Integrity">{integrity}</LabeledList.Item>
-            <LabeledList.Item label="Hardness">{hardness}</LabeledList.Item>
+            <LabeledList.Item label="Strength">{strength}</LabeledList.Item>
+            <LabeledList.Item label="Toughness">{toughness}</LabeledList.Item>
+            <LabeledList.Item label="Heat resistance">
+              {heat_resistance}
+            </LabeledList.Item>
+            <LabeledList.Item label="Conductivity">
+              {conductivity}
+            </LabeledList.Item>
+            <LabeledList.Item label="Corrosion resistance">
+              {corrosion_resistance}
+            </LabeledList.Item>
             <LabeledList.Item label="Weight">{weight}</LabeledList.Item>
+            {traits?.map((trait) => (
+              <LabeledList.Item key={trait} label="Trait">
+                {trait}
+              </LabeledList.Item>
+            ))}
             <LabeledList.Divider />
             <SupplyEntry
               supply_points={supply_points}

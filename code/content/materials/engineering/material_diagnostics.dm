@@ -195,7 +195,7 @@ CAPABILITIES(/datum/material_service)
 	ref_one(nameof(owner), /obj)
 	owns_many(nameof(gas_watches), /datum/native_watch/world)
 	interface("EngineeringAssembly")
-	ui_shape(status = schema_text(), temperature = num(), buffer = num(), input = num(), output = num(), lossEnergy = num(), parts = list_of(row(role = schema_text(), material = schema_text(), meltingPoint = num(), corrosion = num(), purpose = schema_text())), limiting = nullable(schema_text()), liner = num(), shell = num(), fatigue = num(), monitoring = bool(), reading = nullable(row(name = schema_text(), assembly = schema_text(), duration = num(), minimum_output_watts = num(), minimum_flow_moles = num(), minimum_pressure_kpa = num(), maximum_temperature_k = num(), efficiency = num())), emitter = nullable(row(output = num(), cadence = num(), stored = num(), active = bool())))
+	ui_shape(status = schema_text(), temperature = num(), buffer = num(), input = num(), output = num(), lossEnergy = num(), parts = list_of(row(role = schema_text(), material = schema_text(), meltingPoint = num(), corrosion = num(), purpose = schema_text(), stats = list_of(row(name = schema_text(), value = num(), breakdown = list_of(row(label = schema_text(), delta = num())))))), limiting = nullable(schema_text()), liner = num(), shell = num(), fatigue = num(), monitoring = bool(), reading = nullable(row(name = schema_text(), assembly = schema_text(), duration = num(), minimum_output_watts = num(), minimum_flow_moles = num(), minimum_pressure_kpa = num(), maximum_temperature_k = num(), efficiency = num())), emitter = nullable(row(output = num(), cadence = num(), stored = num(), active = bool())))
 	// Fitting a new component from a stack of sheets (fit_stock() asks which one): the user stays for two seconds.
 	op("fit_stock", ai(), takes("role", "quantity", "material_id"), wait(2 SECONDS), then(PROC_REF(fit_stock_done)))
 	op("emitter_setting", ui_act("emitter_setting", arg("setting"), arg("value", num(0.25, 3))), then(PROC_REF(ui_act_emitter_setting)))
@@ -211,7 +211,7 @@ CAPABILITIES(/datum/material_service)
 	var/list/parts = list()
 	for(var/role in owner().material_roles())
 		var/datum/material/material = owner().material_for_role(role)
-		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point, "corrosion" = material.corrosion_resistance, "purpose" = describe_part(role, material)))
+		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point(), "corrosion" = material.corrosion_resistance, "purpose" = describe_part(role, material), "stats" = material.card_rows()))
 	var/datum/material_assembly/wear = material_assembly_view(owner())
 	// The last measurement, as far as the window shows it (the observer's identity stays on the printed record).
 	var/list/reading
@@ -226,21 +226,21 @@ CAPABILITIES(/datum/material_service)
 /datum/material_service/proc/describe_part(role, datum/material/material)
 	switch(role)
 		if(MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_CONTACTS, MATERIAL_ROLE_ELECTRODE)
-			var/superconducting = material.critical_temperature ? "; superconducts below [round(material.critical_temperature)] K up to [round(material.critical_current_density)] current density" : ""
+			var/superconducting = material.critical_temperature() ? "; superconducts below [round(material.critical_temperature())] K up to [round(material.critical_current_density())] current density" : ""
 			return "Carries power: [round(material.conductivity)] conductivity[superconducting]."
 		if(MATERIAL_ROLE_THERMAL)
-			var/buffer = material.phase_change_capacity ? "; buffers [round(material.phase_change_capacity)] J near [round(material.phase_change_temperature)] K" : ""
-			return "Controls operating heat: [round(material.specific_heat)] specific heat[buffer]."
+			var/buffer = material.phase_change_capacity() ? "; buffers [round(material.phase_change_capacity())] J near [round(material.phase_change_temperature())] K" : ""
+			return "Controls operating heat: [round(material.heat_resistance)] heat resistance[buffer]."
 		if(MATERIAL_ROLE_INSULATION, MATERIAL_ROLE_DIELECTRIC, MATERIAL_ROLE_JACKET)
-			return "Limits heat or electrical leakage: [round(material.thermal_insulation)] insulation, [round(material.dielectric_strength)] dielectric strength."
+			return "Limits heat or electrical leakage: [round(100 - material.conductivity)] insulation, [round(material.dielectric_strength())] dielectric strength."
 		if(MATERIAL_ROLE_LINER)
 			return "Touches the working fluid: [round(material.corrosion_resistance)] corrosion resistance."
 		if(MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_BODY, MATERIAL_ROLE_BARREL)
-			return "Carries mechanical load: [round(material.yield_strength)] yield strength, [round(material.fracture_toughness)] fracture toughness."
+			return "Carries mechanical load: [round(material.strength)] strength, [round(material.toughness)] toughness."
 		if(MATERIAL_ROLE_OPTICAL, MATERIAL_ROLE_SENSOR, MATERIAL_ROLE_EMITTER)
-			return "Shapes or measures output: [round(material.reflectivity * 100)]% reflectivity, [round(material.melting_point)] K thermal limit."
+			return "Shapes or measures output: [round(material.reflectivity * 100)]% reflectivity, [round(material.melting_point())] K thermal limit."
 		if(MATERIAL_ROLE_ACTUATOR, MATERIAL_ROLE_BEARINGS, MATERIAL_ROLE_SPRING, MATERIAL_ROLE_FEED)
-			return "Controls motion: [round(material.elasticity)] elasticity, [round(material.hardness)] hardness."
+			return "Controls motion: [round(material.toughness)] toughness, [round(material.strength)] strength."
 	return "Functional behavior follows this material's measured physical properties."
 
 /datum/material_service/proc/ui_gate(datum/act/op/A)

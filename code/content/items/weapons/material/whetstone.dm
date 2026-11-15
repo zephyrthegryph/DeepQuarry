@@ -42,9 +42,9 @@ CAPABILITIES(/obj/item/whetstone)
 	. += "There [uses == 1 ? "is" : "are"] [uses] [material] [uses == 1 ? src.material.sheet_singular_name : src.material.sheet_plural_name] left for use."
 
 /obj/item/material/sharpeningkit/proc/setrepair()
-	repair_amount = material.hardness * 0.1
-	repair_time = material.density * 0.5 // weight renamed to density.
-	sharpen_time = material.density * 3 // weight renamed to density.
+	repair_amount = material.strength * 0.1
+	repair_time = material.weight * 0.5
+	sharpen_time = material.weight * 3
 
 CAPABILITIES(/obj/item/material/sharpeningkit)
 	setup(PROC_REF(setrepair))

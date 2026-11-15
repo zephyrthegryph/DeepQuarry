@@ -41,7 +41,7 @@
 	return msg_text("You start carving \the [src.name].", "[A.actor] starts carving \the [src.name].")
 
 /obj/item/material/gravemarker/proc/wrench_duration(datum/act/op/A)
-	return material.hardness
+	return material.strength
 
 /obj/item/material/gravemarker/proc/wrench_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor

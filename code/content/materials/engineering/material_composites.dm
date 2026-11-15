@@ -131,8 +131,8 @@ ACTION(material_facts_changed, FIXED, notice = /datum/notice/material_facts_chan
 			var/heat = heat_conduct(internal, external, conductance, elapsed_seconds) // the exact pair solution, in Rust
 			active = abs(heat) > 0.01 || active
 
-	if(!service_owns_heat && structure && max(internal_temperature, external_temperature) >= structure.melting_point)
-		take_damage(max(1, (max(internal_temperature, external_temperature) - structure.melting_point) / 100) * elapsed_seconds, BURN)
+	if(!service_owns_heat && structure && max(internal_temperature, external_temperature) >= structure.melting_point())
+		take_damage(max(1, (max(internal_temperature, external_temperature) - structure.melting_point()) / 100) * elapsed_seconds, BURN)
 		active = TRUE
 	if(QDELETED(src))
 		return FALSE
@@ -182,7 +182,7 @@ ACTION(material_facts_changed, FIXED, notice = /datum/notice/material_facts_chan
 
 /obj/item/reagent_containers/material_reaction_rate_multiplier()
 	var/datum/material/material = construction_liner_material()
-	return material ? 1 + material.catalytic_activity / 100 : 1
+	return material ? 1 + material.trait(MT_CATALYTIC) / 100 : 1
 
 /obj/item/reagent_containers/on_reagent_change()
 	. = ..()

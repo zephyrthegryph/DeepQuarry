@@ -95,7 +95,7 @@
 	user.setClickCooldown(user.get_attack_speed())
 	var/rotting = (locate_on(src, /obj/effect/overlay/wallrot))
 	if (user.has_mutation(HULK))
-		if (rotting || !prob(material.hardness))
+		if (rotting || !prob(material.strength))
 			success_smash(user)
 		else
 			fail_smash(user)
@@ -119,10 +119,10 @@
 		return OP_OK
 
 	if(reinf_material)
-		if(damage >= max(material.hardness, reinf_material.hardness) )
+		if(damage >= max(material.strength, reinf_material.strength) )
 			success_smash(user)
 			return OP_OK
-	else if(damage >= material.hardness)
+	else if(damage >= material.strength)
 		success_smash(user)
 		return OP_OK
 	fail_smash(user)

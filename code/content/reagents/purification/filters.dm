@@ -179,20 +179,20 @@ CAPABILITIES(/obj/item/chem_filter/sorbent)
 	name = "[M.display_name] sorbent filter"
 	capacity = 40 + 60 * sorption()
 
-/// The material's sorption (0..1): the best of its reagent porosity and gas sorption, over 25.
+/// The material's sorption (0..1): its sorbent trait over 100.
 /obj/item/chem_filter/sorbent/proc/sorption()
 	var/datum/material/M = get_material_by_name(material_name)
-	return M ? clamp(max(M.reagent_porosity, M.gas_sorption_capacity) / 25, 0, 1) : 0
+	return M ? clamp(M.trait(MT_SORBENT) / 100, 0, 1) : 0
 
 /// The material's catalytic activity (0..1).
 /obj/item/chem_filter/sorbent/proc/catalysis()
 	var/datum/material/M = get_material_by_name(material_name)
-	return M ? clamp(M.catalytic_activity / 100, 0, 1) : 0
+	return M ? clamp(M.trait(MT_CATALYTIC) / 100, 0, 1) : 0
 
 /// The material's antimicrobial activity (0..1).
 /obj/item/chem_filter/sorbent/proc/antimicrobial()
 	var/datum/material/M = get_material_by_name(material_name)
-	return M ? clamp(M.antimicrobial_activity / 100, 0, 1) : 0
+	return M ? clamp(M.trait(MT_ANTIMICROBIAL) / 100, 0, 1) : 0
 
 /obj/item/chem_filter/sorbent/class_strengths()
 	var/sorbed = sorption()

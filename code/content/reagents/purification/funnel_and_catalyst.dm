@@ -68,7 +68,7 @@ CAPABILITY_DEF(glass_purification, CAP_GLASS_PURIFICATION, key = NONE)
 /// A sheet of a material that works as a catalyst can go in, and there is no catalyst yet.
 /obj/item/reagent_containers/glass/proc/catalyst_fits(datum/act/op/A)
 	var/obj/item/stack/material/sheet = A.held
-	return istype(sheet) && !catalyst && sheet.material?.catalytic_activity > 0
+	return istype(sheet) && !catalyst && sheet.material?.trait(MT_CATALYTIC) > 0
 
 /// There is a catalyst to take out.
 /obj/item/reagent_containers/glass/proc/catalyst_lying(datum/act/op/A)
@@ -76,7 +76,7 @@ CAPABILITY_DEF(glass_purification, CAP_GLASS_PURIFICATION, key = NONE)
 
 /// The activity (0..100) of the catalyst in the glass: 0 with none.
 /obj/item/reagent_containers/glass/proc/catalyst_activity()
-	return catalyst?.material ? clamp(catalyst.material.catalytic_activity, 0, 100) : 0
+	return catalyst?.material ? clamp(catalyst.material.trait(MT_CATALYTIC), 0, 100) : 0
 
 /obj/item/reagent_containers/glass/proc/catalyst_added(datum/act/op/A)
 	var/mob/user = A.actor

@@ -1,0 +1,7 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Material stats collapse into a six-stat card (strength, toughness, heat resistance, conductivity, corrosion resistance, weight); every other number is derived from it, and the exotic energy and field coefficients fold into traits shown only when present"
+  - rscadd: "Alloy batches are now composition, temper and flaws: wanted additives are composition, quenching hardens and annealing softens, and trace substances such as sulfur, hydrogen, lead and carbon change a stat each"
+  - rscadd: "Every material stat and trait shows the steps behind its number in examine, the engineering window, the fabricator picker and the wiki; an analyzer assays a stack to reveal its traces"
+  - qol: "Material stacks merge like a beaker of solid: traces average by amount, a merged stack is unassayed if either half was, and stock of a different temper or treatment does not merge"

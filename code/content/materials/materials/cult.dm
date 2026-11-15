@@ -8,9 +8,9 @@
 	shard_type = SHARD_STONE_PIECE
 	sheet_singular_name = "brick"
 	sheet_plural_name = "bricks"
-	conductive = 0
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = 0
+	conductivity = 2
 
 /datum/material/cult/place_dismantled_girder(turf/target)
 	new /obj/structure/girder/cult(target, MAT_CULT)

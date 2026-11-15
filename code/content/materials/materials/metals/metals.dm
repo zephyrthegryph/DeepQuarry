@@ -2,22 +2,20 @@
 /datum/material/durasteel
 	name = MAT_DURASTEEL
 	stack_type = /obj/item/stack/material/durasteel
-	integrity = 600
-	melting_point = 7000
+	toughness = 300
+	heat_resistance = 168.8
 	icon_base = "metal"
 	icon_reinf = "reinf_metal"
 	icon_colour = "#6EA7BE"
-	explosion_resistance = 75
-	hardness = 100
-	density = 28
-	protectiveness = 60 // 75%
+	strength = 100
+	weight = 28
 	reflectivity = 0.7 // Not a perfect mirror, but close.
 	supply_conversion_value = 9
 
 /datum/material/titanium
 	name = MAT_TITANIUM
 	stack_type = /obj/item/stack/material/titanium
-	conductivity = 2.38
+	conductivity = 8
 	icon_base = "metal"
 	door_icon_base = "metal"
 	icon_colour = "#D1E6E3"
@@ -38,7 +36,7 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	name = MAT_IRON
 	stack_type = /obj/item/stack/material/iron
 	icon_colour = "#5C5454"
-	density = 22
+	weight = 22
 	conductivity = 10
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -48,7 +46,7 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	name = MAT_LEAD
 	stack_type = /obj/item/stack/material/lead
 	icon_colour = "#273956"
-	density = 23 // Lead is a bit more dense than silver IRL, and silver has 22 ingame.
+	weight = 23 // Lead is a bit more dense than silver IRL, and silver has 22 ingame.
 	conductivity = 10
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -59,8 +57,8 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	name = MAT_GOLD
 	stack_type = /obj/item/stack/material/gold
 	icon_colour = "#EDD12F"
-	density = 24
-	hardness = 40
+	weight = 24
+	strength = 40
 	conductivity = 41
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -70,8 +68,8 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	name = MAT_SILVER
 	stack_type = /obj/item/stack/material/silver
 	icon_colour = "#D1E6E3"
-	density = 22
-	hardness = 50
+	weight = 22
+	strength = 50
 	conductivity = 63
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -81,7 +79,7 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	name = MAT_PLATINUM
 	stack_type = /obj/item/stack/material/platinum
 	icon_colour = "#9999FF"
-	density = 27
+	weight = 27
 	conductivity = 9.43
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -93,13 +91,10 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	icon_base = "stone"
 	icon_reinf = "reinf_stone"
 	icon_colour = "#007A00"
-	density = 22
+	weight = 22
 	door_icon_base = "stone"
 	supply_conversion_value = 2
-
-/datum/material/uranium/New()
-	. = ..()
-	radioactivity = 12
+	traits = list(MT_RADIOACTIVE = 12)
 
 /datum/material/mhydrogen
 	name = MAT_METALHYDROGEN
@@ -117,8 +112,8 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
 	is_fusion_fuel = 1
-	conductive = 0
 	supply_conversion_value = 3
+	conductivity = 2
 
 /datum/material/tritium
 	name = MAT_TRITIUM
@@ -127,8 +122,8 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
 	is_fusion_fuel = 1
-	conductive = 0
 	supply_conversion_value = 4
+	conductivity = 2
 
 /datum/material/osmium
 	name = MAT_OSMIUM
@@ -147,12 +142,11 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	table_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
 	icon_colour = "#333333"
-	hardness = 75
-	density = 15
-	integrity = 175
-	protectiveness = 15
+	strength = 75
+	weight = 15
+	toughness = 88
 	conductivity = 18
-	melting_point = T0C+3600
+	heat_resistance = 90.6
 	radiation_resistance = 15
 	supply_conversion_value = 0.5
 
@@ -162,9 +156,8 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	icon_colour = "#EDD12F"
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
-	integrity = 120
+	toughness = 60
 	conductivity = 12
-	protectiveness = 9 // 33%
 	supply_conversion_value = 1
 
 /datum/material/tin
@@ -178,39 +171,35 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	name = MAT_NICKEL
 	stack_type = /obj/item/stack/material/nickel
 	icon_colour = "#aeb8aa"
-	density = 19
-	hardness = 58
-	integrity = 120
+	weight = 19
+	strength = 58
+	toughness = 60
 	conductivity = 24
 	heat_resistance = 72
 	corrosion_resistance = 62
-	melting_point = 1728
 	supply_conversion_value = 1.5
 
 /datum/material/chromium
 	name = MAT_CHROMIUM
 	stack_type = /obj/item/stack/material/chromium
 	icon_colour = "#cad4da"
-	density = 16
-	hardness = 78
-	integrity = 105
+	weight = 16
+	strength = 78
+	toughness = 52
 	conductivity = 18
 	heat_resistance = 76
 	corrosion_resistance = 92
-	melting_point = 2180
 	supply_conversion_value = 2
 
 /datum/material/tungsten
 	name = MAT_TUNGSTEN
 	stack_type = /obj/item/stack/material/tungsten
 	icon_colour = "#676b72"
-	density = 35
-	hardness = 92
-	integrity = 175
-	brittleness = 22
+	weight = 35
+	strength = 92
+	toughness = 88
 	conductivity = 31
 	heat_resistance = 100
-	melting_point = 3695
 	supply_conversion_value = 3
 
 /datum/material/technical_ceramic
@@ -218,24 +207,19 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	stack_type = /obj/item/stack/material/technical_ceramic
 	icon_colour = "#e1ddd0"
 	icon_base = "stone"
-	density = 11
-	hardness = 82
-	integrity = 90
-	brittleness = 38
-	conductive = FALSE
+	weight = 11
+	strength = 82
+	toughness = 45
 	conductivity = 2
 	heat_resistance = 96
-	thermal_insulation = 88
-	dielectric_strength = 130
 	corrosion_resistance = 95
-	melting_point = 2600
 	supply_conversion_value = 2
 	icon_colour = "#b2afaf"
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
 	supply_conversion_value = 0.5
-	hardness = 50
-	density = 13
+	strength = 50
+	weight = 13
 
 /datum/material/copper
 	name = MAT_COPPER
@@ -247,8 +231,8 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
 	supply_conversion_value = 0.5
-	density = 13
-	hardness = 50
+	weight = 13
+	strength = 50
 
 /datum/material/aluminium
 	name = MAT_ALUMINIUM
@@ -259,7 +243,7 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
 	supply_conversion_value = 1
-	density = 10
+	weight = 10
 
 
 /transformation/stack/durasteel__durasteel_hull_sheet
@@ -286,58 +270,47 @@ CAPABILITIES(/transformation/stack/durasteel__whetstone)
 			build_time = 30)))
 
 /datum/material/durasteel //Slightly nerfed protectivness
-	protectiveness = 55
 
 /datum/material/durasteel/hull //Severly reduces protectivness
-	protectiveness = 45
 
 /datum/material/titanium //Adjusted hardness, reflective, and protection
-	hardness = 60
-	protectiveness = 30
+	strength = 60
 	reflectivity = 0.3
 
 
 /datum/material/iron //Adjusted hardness, reflective, and protection
-	hardness = 70
-	protectiveness = 20
+	strength = 70
 	reflectivity = 0.1
 
 
 /datum/material/lead //Adjusted hardness, reflective, and protection
-	hardness = 60
-	protectiveness = 15
+	strength = 60
 	reflectivity = 0.1
 
 
 /datum/material/gold //Adjusted reflective, and protection
-	hardness = 50
-	protectiveness = 30
+	strength = 50
 	reflectivity = 0.05
 
 
 /datum/material/silver //Adjusted reflective, and protection
-	hardness = 60
-	protectiveness = 30
+	strength = 60
 	reflectivity = 0.2
 
 
 /datum/material/platinum //Adjusted hardness, reflective, and protection
-	hardness = 60
-	protectiveness = 30
+	strength = 60
 	reflectivity = 0.0
 
 /datum/material/uranium //Adjusted hardness, reflective, and protection
-	hardness = 70
-	protectiveness = 30
+	strength = 70
 	reflectivity = 0.5
 
 /datum/material/mhydrogen //Adjusted hardness, reflective, and protection. And weight.
-	hardness = 75
-	protectiveness = 40
+	strength = 75
 	reflectivity = 0.4
-	density = 5
+	weight = 5
 
 /datum/material/osmium //Adjusted hardness, reflective, and protection
-	hardness = 65
-	protectiveness = 30
+	strength = 65
 	reflectivity = 0.1

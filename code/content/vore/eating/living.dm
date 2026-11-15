@@ -1179,7 +1179,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 	if(nom) //Ravenous 1-4, snackage confirmed. Clear for chowdown, over.
 		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
-		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
+		var/T = (istype(M) ? M.strength/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.
 		perform_op(feeder, src, "eat_minerals", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("snack" = I, "nom" = nom, "time" = T))

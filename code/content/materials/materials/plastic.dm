@@ -5,33 +5,30 @@
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
 	icon_colour = "#CCCCCC"
-	hardness = 10
-	density = 12
-	protectiveness = 5 // 20%
-	conductive = 0
+	strength = 10
+	weight = 12
 	conductivity = 2 // For the sake of material armor diversity, we're gonna pretend this plastic is a good insulator.
-	melting_point = T0C+371 //assuming heat resistant plastic
+	heat_resistance = 9.9
 	supply_conversion_value = 0.5
 
 /datum/material/cardboard
 	name = MAT_CARDBOARD
 	stack_type = /obj/item/stack/material/cardboard
 	flags = MATERIAL_BRITTLE
-	integrity = 10
+	toughness = 5
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
 	icon_colour = "#AAAAAA"
-	hardness = 1
-	density = 1
-	protectiveness = 0 // 0%
-	conductive = 0
+	strength = 1
+	weight = 1
 	ignition_point = T0C+232 //"the temperature at which book-paper catches fire, and burns." close enough
-	melting_point = T0C+232 //temperature at which cardboard walls would be destroyed
+	heat_resistance = 6.4
 	door_icon_base = "wood"
 	destruction_desc = "crumples"
 	radiation_resistance = 1
 	pass_stack_colors = TRUE
 	supply_conversion_value = 0.05
+	conductivity = 2
 
 /transformation/stack/cardboard__box
 CAPABILITIES(/transformation/stack/cardboard__box)
@@ -151,14 +148,13 @@ CAPABILITIES(/transformation/stack/cardboard__yellow_folder)
 	use_name = MAT_FOAM
 	flags = MATERIAL_PADDING
 	ignition_point = T0C+232
-	melting_point = T0C+300
+	heat_resistance = 8.1
 	icon_colour = "#ff9900"
-	hardness = 1
-	density = 1
-	protectiveness = 0 // 0%
-	conductive = 0
+	strength = 1
+	weight = 1
 	can_sharpen = FALSE
 	supply_conversion_value = 0
+	conductivity = 2
 
 
 /transformation/stack/plastic__plastic_crate

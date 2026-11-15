@@ -310,21 +310,21 @@ CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_pro
 	TEST_ASSERT(dq_type_has_tag(path, TAG_SHARP), "sharp comes from initial(sharp)")
 	// Matter-derived values per type, from the declared blueprint and total.
 	TEST_ASSERT(abs(dq_type_property(path, PROP_MASS) - 1.5) < 0.0001, "per-type mass: 1000 + 500 matter units is 1.5 kg, got [dq_type_property(path, PROP_MASS)]")
-	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_MELTING_POINT), min(steel.melting_point, cardboard.melting_point), "per-type melting point is the lowest material's")
+	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_MELTING_POINT), min(steel.melting_point(), cardboard.melting_point()), "per-type melting point is the lowest material's")
 	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_IGNITION_POINT), cardboard.ignition_point, "per-type ignition point comes from the cardboard")
 	TEST_ASSERT(dq_type_has_tag(path, TAG_FLAMMABLE), "per type, cardboard makes it flammable")
 	TEST_ASSERT(abs(dq_type_property(/obj/item/dq_property_test/twin, PROP_MASS) - 1.5) < 0.0001, "a subtype inherits its parent's per-type matter")
 	TEST_ASSERT(abs(dq_type_property(/obj/item/dq_property_test/blunt, PROP_MASS) - 0.2) < 0.0001, "a subtype's own declaration wins, got [dq_type_property(/obj/item/dq_property_test/blunt, PROP_MASS)]")
 	TEST_ASSERT(!dq_type_has_tag(/obj/item/dq_property_test/blunt, TAG_FLAMMABLE), "per type, steel alone is not flammable")
-	TEST_ASSERT_EQUAL(dq_type_has_tag(/obj/item/dq_property_test/blunt, TAG_CONDUCTIVE), steel.conductive ? TRUE : FALSE, "per-type conductive follows the material")
+	TEST_ASSERT_EQUAL(dq_type_has_tag(/obj/item/dq_property_test/blunt, TAG_CONDUCTIVE), steel.conductive() ? TRUE : FALSE, "per-type conductive follows the material")
 	var/obj/item/dq_property_test/probe = allocate(path)
 	TEST_ASSERT(abs(PROPERTY(probe, PROP_MASS) - 1.5) < 0.0001, "1000 + 500 matter units is 1.5 kg, got [PROPERTY(probe, PROP_MASS)]")
-	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_MELTING_POINT), min(steel.melting_point, cardboard.melting_point), "melting point is the lowest material's")
+	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_MELTING_POINT), min(steel.melting_point(), cardboard.melting_point()), "melting point is the lowest material's")
 	TEST_ASSERT_EQUAL(PROPERTY(probe, PROP_IGNITION_POINT), cardboard.ignition_point, "ignition point comes from the cardboard")
 	TEST_ASSERT(HAS_TAG(probe, TAG_FLAMMABLE), "cardboard makes it flammable")
 	var/obj/item/dq_property_test/blunt/blunt = allocate(/obj/item/dq_property_test/blunt)
 	TEST_ASSERT(!HAS_TAG(blunt, TAG_FLAMMABLE), "steel alone is not flammable")
-	TEST_ASSERT_EQUAL(HAS_TAG(blunt, TAG_CONDUCTIVE), steel.conductive ? TRUE : FALSE, "conductive follows the material")
+	TEST_ASSERT_EQUAL(HAS_TAG(blunt, TAG_CONDUCTIVE), steel.conductive() ? TRUE : FALSE, "conductive follows the material")
 	TEST_ASSERT(!dq_type_has_tag(/obj/item/dq_property_test/blunt, TAG_SHARP), "the blunt subtype is not sharp")
 	TEST_ASSERT_EQUAL(dq_type_property(/obj/item/tool/screwdriver, PROP_SIZE_CLASS), /obj/item/tool/screwdriver::w_class, "a real item reads its w_class")
 
@@ -368,4 +368,4 @@ CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_pro
 
 	// Container-style aggregates.
 	TEST_ASSERT_EQUAL(dq_property_aggregate(PROP_SIZE_CLASS, list(item, held)), ITEMSIZE_LARGE, "size aggregates with max")
-	TEST_ASSERT_EQUAL(dq_property_aggregate(PROP_MELTING_POINT, list(item, held)), min(steel.melting_point, cardboard.melting_point), "melting point aggregates with min")
+	TEST_ASSERT_EQUAL(dq_property_aggregate(PROP_MELTING_POINT, list(item, held)), min(steel.melting_point(), cardboard.melting_point()), "melting point aggregates with min")

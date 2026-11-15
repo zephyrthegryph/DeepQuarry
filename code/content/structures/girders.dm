@@ -52,7 +52,7 @@
 /obj/structure/girder/proc/set_material(datum/material/new_material)
 	girder_material = new_material
 	name = "[girder_material.display_name] [initial(name)]"
-	set_max_integrity(round(girder_material.integrity)) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
+	set_max_integrity(round(girder_material.toughness * MATERIAL_HP_PER_TOUGHNESS)) //Should be 150 for steel. Weaker than ye-olden Girders now.
 	update_integrity(max_integrity)
 	displaced_health = round(max_integrity/4)
 	update_rad_insulation()
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/structure/girder)
 	set_anchored(TRUE)
 	cover = initial(cover)
 	// Rebuild the frame allowance before applying the reinforcement still present.
-	set_max_integrity(round(girder_material.integrity))
+	set_max_integrity(round(girder_material.toughness * MATERIAL_HP_PER_TOUGHNESS))
 	repair_damage(max_integrity)
 	state = 0
 	set_icon_state(initial(icon_state))
@@ -223,7 +223,7 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 	var/wall_fake
 	add_hiddenprint(user)
 
-	if(M.integrity < 50)
+	if(M.toughness < 25)
 		to_chat(user, span_notice("This material is too soft for use in wall construction."))
 		return FALSE
 
@@ -271,7 +271,7 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 		return 0
 
 	var/datum/material/M = GLOB.name_to_material[S.default_type]
-	if(!istype(M) || M.integrity < 50)
+	if(!istype(M) || M.toughness < 25)
 		to_chat(user, "You cannot reinforce \the [src] with that; it is too soft.")
 		return 0
 
@@ -299,9 +299,9 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 	set_rad_insulation(transmission)
 
 /obj/structure/girder/proc/reinforce_girder()
-	cover = reinf_material.hardness
+	cover = reinf_material.strength
 	update_rad_insulation()
-	var/bonus = round(reinf_material.integrity/2)
+	var/bonus = round(reinf_material.toughness)
 	set_max_integrity(max_integrity + bonus)
 	repair_damage(bonus)
 	state = 2

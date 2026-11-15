@@ -1,25 +1,53 @@
 GLOBAL_LIST_EMPTY(processed_material_dedup)
 
+/// What a plain stack carries beyond its material: the traces in it (hidden until assayed) and whether anyone has read them.
+/// A stack is like a beaker of solid: sheets of the same material merge whatever lot they came from, traces average by amount,
+/// and the merged stack is unassayed if either half was.
 /obj/item/stack/material
-	/// Source variability lives on the physical feedstock lot; material laws remain deterministic.
-	var/feedstock_purity
-	var/feedstock_lot_id
-	var/feedstock_trace
-	var/feedstock_trace_units = 0
+	/// Substance id -> amount in sheets, for the whole stack (a processed alloy keeps its traces in its batch's composition).
+	var/list/trace_amounts
+	/// Whether this stack's traces have been rolled (its source's signature contaminants, rolled once when first needed).
+	var/traces_rolled = FALSE
+	/// Whether a spectrometer has read this stack's traces. Until then the player sees only the base card.
+	var/assayed = FALSE
 
-/obj/item/stack/material/proc/ensure_feedstock_lot()
-	if(feedstock_purity)
+/// The substances a freshly sourced sheet may carry a little of. L4 replaces this roll with per-round and per-lot pools of the source's signature contaminants.
+GLOBAL_LIST_INIT(material_stock_trace_pool, list("carbon", "silicon", "sulfur", "oxygen", "lead"))
+
+/// Rolls this stack's traces once. Most stock carries a little of one substance; a processed alloy's are part of its batch instead.
+/obj/item/stack/material/proc/ensure_traces()
+	if(traces_rolled)
 		return
+	traces_rolled = TRUE
 	if(istype(material, /datum/material/processed_alloy))
-		var/datum/material/processed_alloy/processed = material
-		feedstock_purity = processed.batch_template.purity
-		feedstock_lot_id = copytext(processed.batch_template.fingerprint(), 1, 9)
 		return
-	feedstock_purity = rand(78, 99)
-	feedstock_lot_id = uppertext(copytext(md5("[world.realtime]-[REF(src)]-[rand()]"), 1, 9))
-	if(feedstock_purity < 96)
-		feedstock_trace = pick("carbon trace", "silicon trace", "sulfur contamination", "copper trace", "oxide inclusion")
-		feedstock_trace_units = rand(2, max(2, 100 - feedstock_purity)) / 10
+	if(prob(80))
+		var/trace_id = pick(GLOB.material_stock_trace_pool)
+		var/per_sheet = rand(5, 30) / 1000
+		LAZYSET(trace_amounts, trace_id, per_sheet * amount)
+	material_log("[REF(src)] ([material?.name]) rolled traces [json_encode(trace_amounts)]")
+
+/// Substance id -> percent of the stack's mass, for a spectrometer to read.
+/obj/item/stack/material/proc/trace_shares()
+	ensure_traces()
+	if(istype(material, /datum/material/processed_alloy))
+		var/obj/item/stack/material/processed_alloy/processed = src
+		var/datum/material_batch/batch = processed.physical_batch()
+		return batch ? material_trace_shares(batch.composition, batch.amount) : null
+	return material_trace_shares(trace_amounts, amount)
+
+/// A spectrometer reading: reveals the traces in this stack. Returns the lines it printed.
+/obj/item/stack/material/proc/assay(mob/user)
+	var/list/shares = trace_shares()
+	assayed = TRUE
+	var/list/lines = material_trace_lines(shares)
+	material_log("[REF(src)] ([material?.name]) assayed by [user ? key_name(user) : "nobody"]: [length(lines) ? jointext(lines, "; ") : "clean"]")
+	return lines
+
+/// Scales the traces with the sheets: used, split off or taken into a batch, a share of them goes too.
+/obj/item/stack/material/proc/scale_traces(factor)
+	for(var/id in trace_amounts)
+		trace_amounts[id] *= factor
 
 /// Re-point this stack at another registered material. Ordinary sheet types
 /// carry their material in the type path, but runtime materials (processed
@@ -35,7 +63,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	set_stacktype(material.stack_type)
 	if(apply_colour || pass_color)
 		set_color(material.icon_colour)
-	if(material.conductive)
+	if(material.conductive())
 		flags &= ~NOCONDUCT
 	else
 		flags |= NOCONDUCT
@@ -49,18 +77,24 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		return
 	if(copy.material?.name != material.name)
 		copy.set_stack_material(material.name)
-	// A split does not change the physical lot the sheets came from.
-	copy.feedstock_purity = feedstock_purity
-	copy.feedstock_lot_id = feedstock_lot_id
-	copy.feedstock_trace = feedstock_trace
-	copy.feedstock_trace_units = feedstock_trace_units
+	copy.traces_rolled = traces_rolled
+	copy.assayed = assayed
 
 /obj/item/stack/material/examine(mob/user)
 	. = ..()
-	ensure_feedstock_lot()
-	. += span_notice("Feedstock lot [feedstock_lot_id], assay purity [feedstock_purity]%.")
-	if(feedstock_trace)
-		. += span_notice("Trace assay: [feedstock_trace_units]u [feedstock_trace] per sheet.")
+	ensure_traces()
+	var/list/card = material.card_lines()
+	if(material.stat_notes)
+		for(var/line in card)
+			. += span_notice(line)
+	else
+		. += span_notice("[jointext(card, ", ")].")
+	if(assayed)
+		var/list/lines = material_trace_lines(trace_shares())
+		var/assay_text = length(lines) ? "Assay: [jointext(lines, "; ")]. Building ignores traces; melting the sheets into a batch does not." : "Assay: no traces."
+		. += span_notice(assay_text)
+	else
+		. += span_notice("Its traces are unassayed; an analyzer reads them.")
 
 /datum/material/processed_alloy
 	stack_type = /obj/item/stack/material/processed_alloy
@@ -86,161 +120,42 @@ CAPABILITIES(/datum/material/processed_alloy)
 	rel_set(material, nameof(material.batch_template), batch.copy_batch())
 	// A template is a definition, not a piece of stock: it records the temperature stock is made at and holds no heat of its own.
 	material.batch_template.settle_heat(null)
-	material.set_hardness(batch.hardness)
-	material.set_integrity(clamp(round(batch.toughness * 2), 5, 250))
-	material.set_elasticity(clamp(batch.toughness - batch.brittleness * 0.25, 1, 100))
-	material.set_brittleness(batch.brittleness)
+	// The card and the traits are the batch's, with the steps behind each number.
+	material.set_strength(batch.strength)
+	material.set_toughness(batch.toughness)
 	material.set_heat_resistance(batch.heat_resistance)
 	material.set_conductivity(batch.conductivity)
 	material.set_corrosion_resistance(batch.corrosion_resistance)
-	material.reactivity = clamp(100 - batch.purity + length(batch.impurities) * 5, 0, 100)
-	material.set_melting_point(batch.melting_temperature())
-	material.set_electrical_resistivity(max(0.02, (105 - batch.conductivity) / max(batch.conductivity, 1)))
-	material.set_specific_heat(clamp(round(250 + batch.heat_resistance * 5 + batch.porosity * 2), 200, 1200))
-	material.yield_strength = clamp(round(batch.hardness * 8 + batch.toughness * 3 - batch.porosity * 2), 25, 1200)
-	material.set_fracture_toughness(clamp(round(batch.toughness - batch.brittleness * 0.5), 5, 150))
-	material.set_dielectric_strength(clamp(round((100 - batch.conductivity) * 1.2 + batch.corrosion_resistance * 0.25), 1, 150))
-	var/cryo_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CRYO) || 0
-	var/thermal_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_THERMAL) || 0
-	var/metal_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_METAL) || 0
-	var/corrosion_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CORROSION) || 0
-	var/bluespace_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_BLUESPACE) || 0
-	if(metal_skin)
-		material.set_hardness(clamp(material.hardness + metal_skin * 0.2, 1, 100))
-		material.set_integrity(clamp(material.integrity + round(metal_skin * 0.8), 5, 250))
-	if(corrosion_skin)
-		material.set_corrosion_resistance(clamp(material.corrosion_resistance + corrosion_skin * 0.6, 0, 100))
-	var/metal_hydrogen_share = (LAZYACCESS(batch.composition, MAT_METALHYDROGEN) || 0) / max(batch.amount, 1)
-	if((metal_hydrogen_share >= 0.15 || (batch.additive_units_matching("cryogenic stabilizer") && cryo_skin)) && batch.conductivity >= 75 && batch.purity >= 90)
-		material.set_critical_temperature(clamp(T0C - 120 + cryo_skin * 0.8, 40, T0C - 5))
-		material.set_critical_current_density(clamp(batch.conductivity * batch.purity / 8, 100, 1500))
-	if(cryo_skin || thermal_skin)
-		material.set_phase_change_temperature(cryo_skin ? max(60, T0C - cryo_skin) : T0C + thermal_skin * 2)
-		material.set_phase_change_capacity(clamp(round((cryo_skin + thermal_skin) * material.specific_heat * 4), 1000, 500000))
-	if(LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CATALYTIC) || batch.additive_units_matching("platinum plating") || batch.additive_units_matching("gold plating"))
-		material.catalytic_activity = clamp(round(batch.purity * 0.7 + batch.corrosion_resistance * 0.3), 1, 100)
-	var/crystal_amount = (LAZYACCESS(batch.composition, MAT_QUARTZ) || 0) + (LAZYACCESS(batch.composition, MAT_DIAMOND) || 0) + (LAZYACCESS(batch.composition, MAT_GLASS) || 0) + (LAZYACCESS(batch.composition, MAT_VOLTAIC_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_KINETIC_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_LUMEN_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_RIFT_GLASS) || 0)
-	var/biological_amount = (LAZYACCESS(batch.composition, MAT_BIOMASS) || 0) + (LAZYACCESS(batch.composition, MAT_FLESH) || 0) + (LAZYACCESS(batch.composition, MAT_CHITIN) || 0) + (LAZYACCESS(batch.composition, MAT_ALIENCHITIN) || 0) + (LAZYACCESS(batch.composition, MAT_SPORE_BIOMASS) || 0)
-	var/has_crystal = crystal_amount / max(batch.amount, 1) >= 0.1
-	var/has_biological = biological_amount / max(batch.amount, 1) >= 0.15
-	var/particle_conditioned = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_PARTICLE) || 0
-	var/emitter_charged = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_EMITTER) || 0
-	var/fusion_stabilized = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0
-	var/energy_storage = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_ENERGY_STORAGE) || 0
-	var/nickel_share = (LAZYACCESS(batch.composition, MAT_NICKEL) || 0) / max(batch.amount, 1)
-	var/copper_share = (LAZYACCESS(batch.composition, MAT_COPPER) || 0) / max(batch.amount, 1)
-	var/titanium_share = (LAZYACCESS(batch.composition, MAT_TITANIUM) || 0) / max(batch.amount, 1)
-	var/chromium_share = (LAZYACCESS(batch.composition, MAT_CHROMIUM) || 0) / max(batch.amount, 1)
-	var/tungsten_share = (LAZYACCESS(batch.composition, MAT_TUNGSTEN) || 0) / max(batch.amount, 1)
-	var/ceramic_share = (LAZYACCESS(batch.composition, MAT_TECH_CERAMIC) || 0) / max(batch.amount, 1)
-	var/phoron_share = ((LAZYACCESS(batch.composition, MAT_PHORON) || 0) + (LAZYACCESS(batch.dissolved_gases, "fusion phoron") || 0) * 0.1) / max(batch.amount, 1)
-	if((nickel_share >= 0.15 && copper_share >= 0.15) || (batch.additive_units_matching("thermal phase catalyst") && thermal_skin && batch.conductivity >= 45))
-		material.thermoelectric_coefficient = clamp((batch.conductivity + batch.heat_resistance) / 200, 0, 1)
-	if(has_crystal && batch.conductivity >= 30 && batch.homogeneity >= 70)
-		material.piezoelectric_coefficient = clamp((batch.conductivity + batch.homogeneity - batch.porosity) / 200, 0, 1)
-	if(LAZYACCESS(batch.composition, MAT_KINETIC_CRYSTAL))
-		var/kinetic_share = LAZYACCESS(batch.composition, MAT_KINETIC_CRYSTAL) / max(batch.amount, 1)
-		material.piezoelectric_coefficient = max(material.piezoelectric_coefficient, clamp(0.68 * kinetic_share * batch.homogeneity / 100, 0, 1))
-	if(LAZYACCESS(batch.composition, MAT_THERMIC_CERAMIC))
-		var/thermic_share = LAZYACCESS(batch.composition, MAT_THERMIC_CERAMIC) / max(batch.amount, 1)
-		material.set_phase_change_temperature(T0C + 40)
-		material.set_phase_change_capacity(max(material.phase_change_capacity, round(65000 * thermic_share * batch.purity / 100)))
-	if(LAZYACCESS(batch.composition, MAT_ETCHING_CERAMIC))
-		material.catalytic_activity = max(material.catalytic_activity, clamp(batch.purity * batch.corrosion_resistance / 100, 0, 100))
-	if(batch.additive_units_matching("conductive dopant") && LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CONDUCTIVE) && batch.conductivity >= 40 && batch.homogeneity >= 60)
-		material.electrogenic_rate = clamp((batch.conductivity + batch.homogeneity) / 4, 0, 50)
-	if(((LAZYACCESS(batch.composition, MAT_MORPHIUM) || 0) / max(batch.amount, 1) >= 0.15 || (nickel_share >= 0.2 && titanium_share >= 0.2) || (titanium_share >= 0.25 && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
-		material.shape_recovery_rate = clamp((batch.toughness + batch.homogeneity - batch.internal_stress) / 40, 0, 5)
-		material.shape_recovery_temperature = T0C + 80
-	if(nickel_share >= 0.15 && chromium_share >= 0.15)
-		material.set_heat_resistance(max(material.heat_resistance, clamp(70 + tungsten_share * 30, 0, 100)))
-		material.set_electrical_resistivity(max(material.electrical_resistivity, 1.5))
-	if((ceramic_share >= 0.2 && batch.conductivity >= 25 && particle_conditioned >= 25) || (copper_share >= 0.2 && nickel_share >= 0.15 && fusion_stabilized >= 25))
-		material.heat_pump_coefficient = clamp((particle_conditioned + fusion_stabilized + batch.homogeneity) / 250, 0.1, 1)
-	if(copper_share >= 0.2 && nickel_share >= 0.15 && fusion_stabilized >= 35)
-		material.thermal_switch_temperature = T0C + clamp(40 + fusion_stabilized, 40, 140)
-		material.thermal_switch_ratio = clamp(2 + fusion_stabilized / 20, 2, 7)
-	if(phoron_share >= 0.08 && tungsten_share >= 0.15 && fusion_stabilized >= 20)
-		material.exothermic_heat_rate = clamp(phoron_share * fusion_stabilized * 18, 25, 500)
-	if(has_crystal && batch.conductivity >= 35 && (particle_conditioned >= 20 || emitter_charged >= 20))
-		material.field_charge_efficiency = clamp((batch.conductivity + batch.homogeneity + particle_conditioned + emitter_charged) / 400, 0.1, 0.9)
-		material.field_energy_capacity = clamp((energy_storage + particle_conditioned + emitter_charged) * batch.purity * 8, 1000, 100000)
-	var/radiation_hardened = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_RADIATION_HARDENED) || 0
-	if(radiation_hardened)
-		material.set_heat_resistance(clamp(material.heat_resistance + radiation_hardened * 0.2, 0, 120))
-		material.yield_strength = clamp(material.yield_strength * (1 + radiation_hardened / 250), 25, 1600)
-		material.set_brittleness(clamp(material.brittleness + max(0, radiation_hardened - 60) * 0.25, 0, 100))
-	if(fusion_stabilized && metal_hydrogen_share >= 0.15 && material.critical_temperature)
-		material.set_critical_temperature(clamp(material.critical_temperature + fusion_stabilized * 0.45, 40, T0C + 25))
-		material.set_critical_current_density(clamp(material.critical_current_density * (1 + fusion_stabilized / 100), 100, 3000))
-	if((LAZYACCESS(batch.composition, MAT_WARD_METAL) || 0) / max(batch.amount, 1) >= 0.15 || ((LAZYACCESS(batch.composition, MAT_PLASTEEL) || 0) / max(batch.amount, 1) >= 0.25 && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
-		material.reactive_energy_capacity = clamp((batch.toughness + batch.hardness) * 25, 0, 5000)
-	if(((LAZYACCESS(batch.composition, MAT_SILVER) || 0) / max(batch.amount, 1) >= 0.1 || batch.additive_units_matching("silver plating")) && batch.corrosion_resistance >= 50)
-		material.antimicrobial_activity = clamp((batch.corrosion_resistance + batch.purity) / 2, 0, 100)
-	if(has_biological && (LAZYACCESS(batch.composition, MAT_IRON) || batch.additive_units_matching("precipitation catalyst")))
-		material.hemostatic_activity = clamp((batch.homogeneity + batch.purity) / 2, 0, 100)
-	if(has_biological && (LAZYACCESS(batch.composition, MAT_MORPHIUM) || batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] >= 20))
-		material.biocompatibility = clamp((batch.toughness + batch.homogeneity) / 2, 0, 100)
-	if(batch.porosity >= 18 && (LAZYACCESS(batch.composition, MAT_TITANIUM) || LAZYACCESS(batch.composition, MAT_ALUMINIUM) || LAZYACCESS(batch.composition, MAT_GRAPHITE)))
-		material.gas_sorption_capacity = clamp(batch.porosity / 5 + batch.corrosion_resistance / 20, 0, 25)
-	if(bluespace_skin)
-		material.gas_sorption_capacity = max(material.gas_sorption_capacity, clamp(bluespace_skin / 2, 0, 50))
-	if((LAZYACCESS(batch.composition, MAT_RIFT_GLASS) || 0) / max(batch.amount, 1) >= 0.15)
-		material.gas_sorption_capacity = max(material.gas_sorption_capacity, clamp(batch.porosity / 4 + batch.purity / 8, 0, 25))
-	if(batch.porosity >= 22 && batch.corrosion_resistance >= 45)
-		material.reagent_porosity = clamp(batch.porosity / 4, 0, 25)
-	var/weighted_density = 0
-	var/weighted_magnetism = 0
+	material.set_weight(batch.weight)
+	material.traits = LAZYCOPY(batch.traits)
+	material.stat_notes = batch.stat_notes?.Copy()
 	var/weighted_reflectivity = 0
 	var/weighted_opacity = 0
-	var/weighted_luminescence = 0
-	var/weighted_radioactivity = 0
-	var/weighted_toxicity = 0
 	var/weighted_radiation_resistance = 0
 	material.composite_material = list()
 	for(var/component in batch.composition)
 		var/share = LAZYACCESS(batch.composition, component) / max(batch.amount, 1)
-		material.composite_material[component] = SHEET_MATERIAL_AMOUNT * share
 		var/datum/material/component_material = get_material_by_name(component)
 		if(!component_material)
 			continue
-		weighted_density += component_material.density * share
-		weighted_magnetism += component_material.magnetism * share
+		material.composite_material[component] = SHEET_MATERIAL_AMOUNT * share
 		weighted_reflectivity += component_material.reflectivity * share
 		weighted_opacity += component_material.opacity * share
-		weighted_luminescence += dq_material_luminescence(component_material) * share
-		weighted_radioactivity += dq_material_radioactivity(component_material) * share
-		weighted_toxicity += dq_material_toxicity(component_material) * share
 		weighted_radiation_resistance += component_material.radiation_resistance * share
-	material.set_density(clamp(round(max(weighted_density, batch.hardness * 0.35 + batch.toughness * 0.25)), 1, 120))
-	material.protectiveness = clamp(round(batch.toughness * 0.48 + batch.hardness * 0.28 - batch.brittleness * 0.2), 1, 75)
-	material.explosion_resistance = clamp(round(batch.toughness / 8 + batch.hardness / 14 - batch.brittleness / 20), 1, 25)
-	material.set_thermal_insulation(clamp(round(batch.heat_resistance * 0.65 + (100 - batch.conductivity) * 0.35), 0, 100))
-	material.magnetism = clamp(round(weighted_magnetism), 0, 100)
-	material.reflectivity = clamp(weighted_reflectivity + batch.purity / 500, 0, 1)
+	var/quality = 100 - batch.flaws
+	material.reflectivity = clamp(weighted_reflectivity + quality / 500, 0, 1)
 	material.opacity = clamp(weighted_opacity > 0 ? weighted_opacity : 1, 0, 1)
-	material.luminescence = max(0, round(weighted_luminescence))
-	material.set_radioactivity(max(0, round(weighted_radioactivity)))
-	var/radioactive_share = ((LAZYACCESS(batch.composition, MAT_URANIUM) || 0) + (LAZYACCESS(batch.composition, MAT_TRITIUM) || 0)) / max(batch.amount, 1)
-	if(radioactive_share >= 0.1 && batch.conductivity >= 35 && particle_conditioned >= 20)
-		material.radiovoltaic_efficiency = clamp((batch.conductivity + material.radioactivity) / 200, 0, 1)
-	if(radioactive_share >= 0.1 && has_crystal && batch.homogeneity >= 65 && particle_conditioned >= 20)
-		material.scintillation_efficiency = clamp((batch.homogeneity + material.reflectivity * 100) / 200, 0, 1)
-	if((LAZYACCESS(batch.composition, MAT_LUMEN_CRYSTAL) || 0) / max(batch.amount, 1) >= 0.15 && batch.homogeneity >= 60)
-		material.scintillation_efficiency = max(material.scintillation_efficiency, clamp((batch.homogeneity + batch.purity) / 220, 0, 1))
-	material.toxicity = max(0, round(weighted_toxicity * (1 - batch.corrosion_resistance / 200)))
-	material.radiation_resistance = max(0, round(weighted_radiation_resistance + material.density / 12))
-	material.conductive = batch.conductivity >= 15
-	if(batch.brittleness >= 70)
+	material.radiation_resistance = max(0, round(weighted_radiation_resistance + material.weight / 12))
+	if(material.brittleness() >= 70)
 		material.flags |= MATERIAL_BRITTLE
-	var/performance_value = (batch.hardness + batch.toughness + batch.conductivity + batch.heat_resistance + batch.corrosion_resistance + batch.purity) / 24
+	var/performance_value = (batch.strength + batch.toughness + batch.conductivity + batch.heat_resistance + batch.corrosion_resistance + quality) / 24
 	// Sale value follows useful performance. Inefficient processing remains an
 	// expense rather than making an otherwise identical material worth more.
 	material.supply_conversion_value = clamp(round(performance_value), 5, 80)
 	var/datum/material/dominant
 	var/dominant_amount = 0
 	for(var/component in batch.composition)
-		if(LAZYACCESS(batch.composition, component) > dominant_amount)
+		if(LAZYACCESS(batch.composition, component) > dominant_amount && get_material_by_name(component))
 			dominant = get_material_by_name(component)
 			dominant_amount = LAZYACCESS(batch.composition, component)
 	if(dominant)
@@ -248,6 +163,7 @@ CAPABILITIES(/datum/material/processed_alloy)
 	material.material_facts_changed()
 	GLOB.name_to_material[key] = material
 	GLOB.processed_material_dedup[fingerprint] = key
+	material_log("registered [key] ([material.display_name]): strength [material.strength], toughness [material.toughness], heat [material.heat_resistance], conductivity [material.conductivity], corrosion [material.corrosion_resistance], weight [material.weight], traits [json_encode(material.traits)]")
 	return key
 
 /proc/processed_spawn_stack(turf/location, datum/material_batch/batch, amount)
@@ -263,8 +179,7 @@ CAPABILITIES(/datum/material/processed_alloy)
 	var/obj/item/stack/material/processed_alloy/stock = new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
 	own_clear(stock, nameof(stock.batch_state), OWN_DELETE)
 	rel_set(stock, nameof(stock.batch_state), batch.copy_for_amount(stack_amount))
-	stock.feedstock_purity = batch.purity
-	stock.feedstock_lot_id = uppertext(copytext(md5("[world.realtime]-[REF(stock)]-[rand()]"), 1, 9))
+	stock.traces_rolled = TRUE
 	stock.update_thermal_processing()
 	return stock
 
@@ -332,6 +247,13 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	var/turf/open/turf = get_turf(src)
 	var/datum/gas_mixture/air = istype(turf) ? turf.turf_air() : null
 	var/ambient_temperature = air ? air.return_temperature() : T20C
+	// Solution-treated stock that has cooled past the quench window without being quenched anneals: softer, with fewer flaws.
+	if(batch.solution_treated && batch.temperature() < batch.melting_temperature() * 0.62)
+		var/datum/material_batch/annealed = batch.copy_batch()
+		if(annealed.apply_process(MATERIAL_PROCESS_ANNEAL))
+			replace_processed_stack(src, annealed, get_turf(src))
+		spent(annealed)
+		return
 	if(abs(batch.temperature() - ambient_temperature) < 5)
 		batch.settle_heat(air ? turf : null)
 		set_glow(src, GLOW(0, null, null))
@@ -348,6 +270,7 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 		spent(original)
 		return new_stack
 	new_stack.set_processed_material(material.name)
+	new_stack.assayed = assayed
 	own_clear(new_stack, nameof(new_stack.batch_state), OWN_DELETE)
 	rel_set(new_stack, nameof(new_stack.batch_state), original.copy_for_amount(new_stack.get_amount()))
 	rel_clear(src, nameof(batch_state))
@@ -355,14 +278,27 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	spent(original)
 	return new_stack
 
+/// Alloy stock merges when it is the same kind: the same bulk materials in the same proportions, the same temper and the same treatments.
+/// Its traces average by amount and the merged stock is unassayed if either half was.
+/obj/item/stack/material/processed_alloy/can_merge_with(obj/item/stack/material/other)
+	var/obj/item/stack/material/processed_alloy/processed_other = other
+	if(!istype(processed_other) || !istype(material, /datum/material/processed_alloy) || !istype(processed_other.material, /datum/material/processed_alloy))
+		return FALSE
+	if(material.name == processed_other.material.name)
+		return TRUE
+	var/datum/material_batch/mine = physical_batch()
+	var/datum/material_batch/theirs = processed_other.physical_batch()
+	return mine && theirs && mine.identity() == theirs.identity()
+
 /obj/item/stack/material/processed_alloy/transfer_to(obj/item/stack/target, tamount = null, type_verified)
 	var/obj/item/stack/material/processed_alloy/processed_target = target
-	if(!istype(processed_target) || processed_target.material?.name != material?.name)
+	if(!istype(processed_target) || !can_merge_with(processed_target))
 		return 0
 	var/source_before = get_amount()
 	var/target_before = processed_target.get_amount()
 	var/datum/material_batch/source_batch = physical_batch()?.copy_batch()
 	var/datum/material_batch/target_batch = processed_target.physical_batch()?.copy_batch()
+	var/both_assayed = assayed && processed_target.assayed
 	var/transferred = ..(target, tamount, type_verified)
 	if(!transferred)
 		consumed(source_batch, src)
@@ -370,26 +306,16 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 		return 0
 	var/datum/material_batch/new_target = target_batch.copy_for_amount(target_before)
 	var/datum/material_batch/source_portion = source_batch.copy_for_amount(transferred)
-	new_target.amount += source_portion.amount
-	for(var/material_name in source_portion.composition)
-		LAZYSET(new_target.composition, material_name, (LAZYACCESS(new_target.composition, material_name) || 0) + LAZYACCESS(source_portion.composition, material_name))
-	for(var/impurity in source_portion.impurities)
-		LAZYSET(new_target.impurities, impurity, (LAZYACCESS(new_target.impurities, impurity) || 0) + LAZYACCESS(source_portion.impurities, impurity))
-	for(var/lot_id in source_portion.feedstock_lots)
-		LAZYSET(new_target.feedstock_lots, lot_id, (LAZYACCESS(new_target.feedstock_lots, lot_id) || 0) + LAZYACCESS(source_portion.feedstock_lots, lot_id))
-	for(var/account_number in source_portion.contributors)
-		new_target.contributors[account_number] = (new_target.contributors[account_number] || 0) + source_portion.contributors[account_number]
-	for(var/category in source_portion.cost_ledger)
-		new_target.cost_ledger[category] = (new_target.cost_ledger[category] || 0) + source_portion.cost_ledger[category]
-	new_target.cost_basis += source_portion.cost_basis
-	new_target.energy_spent += source_portion.energy_spent
-	// The two portions' heat mixes: they meet at their common temperature, then the merged batch (now the size of both) holds both.
-	if(abs(new_target.temperature() - source_portion.temperature()) > 0.01)
-		heat_equalize(HEAT_STORE(new_target.ensure_heat_store()), HEAT_STORE(source_portion.ensure_heat_store()))
-	new_target.recalculate()
+	new_target.absorb(source_portion)
+	// The merged stock's traces are the amount-weighted mix, so it is a different registered material when they differ.
+	var/new_key = register_processed_material(new_target)
 	own_clear(processed_target, nameof(processed_target.batch_state), OWN_DELETE)
 	rel_set(processed_target, nameof(processed_target.batch_state), new_target)
+	if(new_key && processed_target.material?.name != new_key)
+		processed_target.set_processed_material(new_key)
+	processed_target.assayed = both_assayed
 	processed_target.update_thermal_processing()
+	material_log("[REF(src)] merged [transferred] sheets into [REF(processed_target)]: now [new_target.amount] sheets, assayed [both_assayed ? "yes" : "no"]")
 	if(!QDELETED(src))
 		var/datum/material_batch/new_source = source_batch.copy_for_amount(source_before - transferred)
 		rel_clear(src, nameof(batch_state))
@@ -423,7 +349,7 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	set_recipes(material.get_recipes())
 	set_stacktype(material.stack_type)
 	set_color(material.icon_colour)
-	if(material.conductive)
+	if(material.conductive())
 		flags &= ~NOCONDUCT
 	else
 		flags |= NOCONDUCT
@@ -441,11 +367,7 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 		. += span_warning("The alloy is still dangerously hot.")
 	if(length(batch.surface_layers))
 		. += span_notice("Surface treatment: [jointext(batch.surface_layers, ", ")].")
-	if(length(batch.dissolved_gases))
-		. += span_notice("It contains [jointext(batch.dissolved_gases, ", ")].")
 	if(length(batch.field_treatments))
 		. += span_notice("Field treatment: [jointext(batch.field_treatments, ", ")].")
-	var/list/responses = material.material_response_summary()
-	if(length(responses))
-		. += span_notice("Useful properties: [jointext(responses, "; ")].")
-	. += span_notice("Use an analyzer for exact composition and measurements.")
+	var/temper_text = "Temper [round(batch.temper)] (0 soft, 100 hard); flaws [round(batch.flaws)]. [batch.solution_treated ? "Solution-treated: quench it, or let it cool and it anneals." : ""]"
+	. += span_notice(temper_text)

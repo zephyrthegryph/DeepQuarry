@@ -456,8 +456,8 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	var/datum/material/insulation = material_for_role(MATERIAL_ROLE_INSULATION)
 	var/datum/material/plastic = get_material_by_name(MAT_PLASTIC)
 	var/material_failure_temperature = T0C + failure_temp
-	if(insulation && plastic?.melting_point)
-		material_failure_temperature = T0C + failure_temp * insulation.melting_point / plastic.melting_point
+	if(insulation && plastic?.melting_point())
+		material_failure_temperature = T0C + failure_temp * insulation.melting_point() / plastic.melting_point()
 
 	if(pressure > material_fragment_pressure)
 		if(get_integrity() <= 70)

@@ -45,12 +45,11 @@ CAPABILITIES(/obj/item/stack/material/chitin)
 	sheet_singular_name = "bundle"
 	sheet_plural_name = "bundles"
 	ignition_point = T0C+232
-	melting_point = T0C+300
-	protectiveness = 1
+	heat_resistance = 8.1
 	flags = MATERIAL_PADDING
-	conductive = 0
-	integrity = 40
-	hardness = 5
+	toughness = 20
+	strength = 5
+	conductivity = 2
 
 /datum/material/fur/wool
 	name = MAT_WOOL

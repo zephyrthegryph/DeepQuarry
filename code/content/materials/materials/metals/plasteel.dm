@@ -1,15 +1,13 @@
 /datum/material/plasteel
 	name = MAT_PLASTEEL
 	stack_type = /obj/item/stack/material/plasteel
-	integrity = 400
-	melting_point = 6000
+	toughness = 200
+	heat_resistance = 143.8
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
 	icon_colour = "#777777"
-	explosion_resistance = 25
-	hardness = 80
-	density = 23
-	protectiveness = 20 // 50%
+	strength = 80
+	weight = 23
 	conductivity = 13 // For the purposes of balance.
 	supply_conversion_value = 6
 
@@ -154,16 +152,14 @@ CAPABILITIES(/transformation/stack/plasteel__sofa_corner)
 /datum/material/plastitanium
 	name = MAT_PLASTITANIUM
 	stack_type = /obj/item/stack/material/plastitanium
-	integrity = 600
-	melting_point = 9000
+	toughness = 300
+	heat_resistance = 218.8
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
 	icon_colour = "#585658"
-	explosion_resistance = 35
-	hardness = 90
-	density = 40
-	protectiveness = 30
-	conductivity = 7
+	strength = 90
+	weight = 40
+	conductivity = 8
 	supply_conversion_value = 8
 
 /transformation/stack/plastitanium__whetstone
