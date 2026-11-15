@@ -206,10 +206,9 @@ export function StatSearch(props: {
   );
 }
 
-/** The card a server push opens over the current view: examine, inspect, a turf's contents, the panel debug page. */
+/** The card a server push opens over the current view: examine, a turf's contents, the panel debug page. */
 function overlayOf(state: State, store: StatStore): ReactNode {
   const tab = state.currentTab;
-  if (tab === 'Inspect') return <InspectTab data={state.inspect} />;
   if (tab === 'Examine') return <Examine lines={state.examine} />;
   if (tab === 'Debug Stat Panel') return <Debug state={state} store={store} />;
   if (state.turfName && tab === state.turfName) {
@@ -430,6 +429,8 @@ function ViewContent({ state, store }: { state: State; store: StatStore }) {
       );
     case 'Staff':
       return <StaffView state={state} />;
+    case 'Inspect':
+      return <InspectTab data={state.inspect} />;
     case 'Server':
       return <ServerView state={state} store={store} />;
     default:

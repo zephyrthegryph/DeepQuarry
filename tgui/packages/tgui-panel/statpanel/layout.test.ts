@@ -53,11 +53,12 @@ describe('right panel layout', () => {
     expect(dataTabOf('Server', 'Health')).toBe('MC');
     expect(dataTabOf('Server', 'Queries')).toBe('SDQL2');
     expect(dataTabOf('Actions', 'Health')).toBe('Actions');
+    expect(dataTabOf('Inspect', 'Health')).toBe('Inspect');
   });
 
-  it('examine, inspect and the turf list are cards over the view', () => {
+  it('examine and the turf list are cards over the view; inspect is a view', () => {
     expect(isOverlayTab('Examine', '')).toBe(true);
-    expect(isOverlayTab('Inspect', '')).toBe(true);
+    expect(isOverlayTab('Inspect', '')).toBe(false);
     expect(isOverlayTab('Floor', 'Floor')).toBe(true);
     expect(isOverlayTab('Status', 'Floor')).toBe(false);
   });
