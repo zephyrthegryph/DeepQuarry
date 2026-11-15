@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The chat keeps its bottom in place when the pane is made taller or shorter: a chat at the newest line stays there, a scrolled one keeps the same message at the bottom edge"
+  - bugfix: "The ping box, music and settings buttons in the chat header are centred between the row's top and its rule, docked and floating"

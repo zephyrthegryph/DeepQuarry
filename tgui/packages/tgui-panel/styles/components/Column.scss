@@ -125,6 +125,8 @@
   // The head owns the rule under its row (its 2px border-bottom); the stacked tabs sit on it, one row-control high, so they and the
   // buttons beside them share a centre line.
   --dq-row-control-height: 24px;
+  // No top padding here to reach over (tgui/styles/dq/tabs.scss).
+  --dq-row-end-lift: 0px;
 
   margin: 0;
   padding-top: 0;

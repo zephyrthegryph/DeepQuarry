@@ -36,4 +36,7 @@ fi
 
 echo "dq_test_server: starting bin\\server.cmd in $TS (config/example, port 1337); saves in $TS/data/player_saves"
 cd "$TS" || die "cannot enter $TS"
+# The server's DLL uses verdigris/Cargo.toml [profile.server] (opt-level 3, no LTO, incremental); its cargo target in $TS/verdigris/target is kept between
+# restarts (nothing here cleans it; tools/ci/disk_budget.toml lists test-server as a permanent worktree), so a Rust edit rebuilds incrementally.
+export DQ_VERDIGRIS_PROFILE=server
 exec cmd //c "bin\\server.cmd" "${args[@]}"
