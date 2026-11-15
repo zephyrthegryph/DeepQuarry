@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -13,7 +14,6 @@ import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelToolti
 import { gameStateToColor, gameStateToIcon, gameTooltip } from './constants';
 import { getRemainingMines, getScoreColor } from './functions';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const PlayerMenu = (props) => {
   const { act, data } = useBackend<Data, VoreSweeperActions>();

@@ -1,10 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Image, LabeledList, Stack } from 'tgui-core/components';
-
 import { doEdit } from '../GeneralRecords/functions';
 import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const MedicalRecordsViewGeneral = (props) => {
   const { data } = useBackend<Data, MedicalRecordsActions>();

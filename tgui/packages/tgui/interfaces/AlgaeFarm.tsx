@@ -11,10 +11,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-import type {
-  AlgaeFarmActions,
-  AlgaeFarmData,
-} from './generated/AlgaeFarm';
+import type { AlgaeFarmActions, AlgaeFarmData } from './generated/AlgaeFarm';
 
 type Data = AlgaeFarmData;
 

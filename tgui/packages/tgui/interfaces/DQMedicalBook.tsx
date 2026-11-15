@@ -21,6 +21,7 @@
 
 import { Fragment, type ReactNode } from 'react';
 import { useBackend, useSharedState } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -31,7 +32,6 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-import { Label } from 'tgui/components/Label';
 
 // --- Band tables ---------------------------------------------------------
 //

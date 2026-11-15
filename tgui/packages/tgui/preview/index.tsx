@@ -17,8 +17,8 @@ import {
   store,
   suspendedAtom,
 } from '../events/store';
-import { alignmentFindings, markFindings } from './alignment';
 import captured from '../interfaces/__fixtures__/ui_data.json';
+import { alignmentFindings, markFindings } from './alignment';
 
 const requireInterface = require.context(
   '../interfaces',

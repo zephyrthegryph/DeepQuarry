@@ -3,10 +3,10 @@
 // Read-only viewer. Content is author-provided HTML written via pen tool.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import { Label } from 'tgui/components/Label';
 
 type Data = {
   title: string;

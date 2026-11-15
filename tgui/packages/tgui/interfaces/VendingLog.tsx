@@ -1,10 +1,10 @@
 // Vending machine log — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
-import { Label } from 'tgui/components/Label';
 
 type Entry = string[]; // [time, action, registered_name, stationtime, item_name]
 

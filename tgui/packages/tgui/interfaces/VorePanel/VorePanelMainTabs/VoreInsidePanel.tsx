@@ -1,3 +1,4 @@
+import { Label } from 'tgui/components/Label';
 import { Box, Section, Stack } from 'tgui-core/components';
 import {
   digestModeToColor,
@@ -5,7 +6,6 @@ import {
   reagentToColor,
 } from '../constants';
 import type { InsideData } from '../types';
-import { Label } from 'tgui/components/Label';
 
 export const VoreInsidePanel = (props: { inside: InsideData }) => {
   const { inside } = props;

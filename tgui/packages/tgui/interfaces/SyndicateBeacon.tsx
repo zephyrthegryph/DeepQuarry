@@ -1,13 +1,13 @@
 // Syndicate (Virgo) beacon — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import type {
   SyndicateBeaconActions,
   SyndicateBeaconData,
 } from './generated/SyndicateBeacon';
-import { Label } from 'tgui/components/Label';
 
 export const SyndicateBeacon = () => {
   const { data, act } = useBackend<

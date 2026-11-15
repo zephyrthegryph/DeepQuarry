@@ -81,7 +81,6 @@ describe('native dark palette', () => {
     }
   });
 
-
   it('the stat panel reads the palette', () => {
     const hex = (value: string) => value.toLowerCase();
     expect(statCss).toContain(`--stat-base: ${hex(DARK_PALETTE.base)}`);
@@ -132,6 +131,8 @@ describe('one chat stylesheet', () => {
 
 describe('one chat theme', () => {
   it('chat-tokens.scss defines only the dark theme', () => {
-    expect([...chatTokens.matchAll(/^@mixin ([\w-]+)/gm)].map((m) => m[1])).toEqual(['dark']);
+    expect(
+      [...chatTokens.matchAll(/^@mixin ([\w-]+)/gm)].map((m) => m[1]),
+    ).toEqual(['dark']);
   });
 });

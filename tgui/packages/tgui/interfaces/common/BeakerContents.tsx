@@ -1,5 +1,5 @@
-import { Box, Stack } from 'tgui-core/components';
 import { Label } from 'tgui/components/Label';
+import { Box, Stack } from 'tgui-core/components';
 
 export const formatUnits = (a) => `${a} unit${a === 1 ? '' : 's'}`;
 

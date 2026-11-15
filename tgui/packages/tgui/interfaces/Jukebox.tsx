@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -17,7 +18,6 @@ import { formatTime } from 'tgui-core/format';
 import { round, toFixed } from 'tgui-core/math';
 import { capitalize } from 'tgui-core/string';
 import type { JukeboxActions, JukeboxData } from './generated/Jukebox';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const Jukebox = (props) => {
   const { act, data } = useBackend<JukeboxData, JukeboxActions>();

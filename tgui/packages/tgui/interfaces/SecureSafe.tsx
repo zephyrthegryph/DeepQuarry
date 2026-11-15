@@ -8,10 +8,7 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type {
-  SecureSafeActions,
-  SecureSafeData,
-} from './generated/SecureSafe';
+import type { SecureSafeActions, SecureSafeData } from './generated/SecureSafe';
 
 const NukeKeypad = (props) => {
   const { act, data } = useBackend<SecureSafeData, SecureSafeActions>();

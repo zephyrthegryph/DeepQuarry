@@ -1,9 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { getDockingStatus } from './functions';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const ShuttleControlSharedShuttleStatus = (props: {
   engineName?: string;

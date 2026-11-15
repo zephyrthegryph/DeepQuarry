@@ -3,6 +3,7 @@
 // would need to be wired up; for now we show a "(photo attached)" notice.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -10,7 +11,6 @@ import type {
   AdminNewscasterActions,
   AdminNewscasterData,
 } from './generated/AdminNewscaster';
-import { Label } from 'tgui/components/Label';
 
 type Data = AdminNewscasterData;
 

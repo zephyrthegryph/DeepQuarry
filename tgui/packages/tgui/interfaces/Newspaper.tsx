@@ -6,11 +6,11 @@
 // photos are omitted in this view.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { NewspaperActions, NewspaperData } from './generated/Newspaper';
-import { Label } from 'tgui/components/Label';
 
 type Data = NewspaperData;
 

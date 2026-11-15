@@ -81,29 +81,34 @@ export const Changelog = (props) => {
 
       act('get_month', { date });
 
-      fetch(resolveAsset(`${date}.yml`)).then(async (response) => {
-        const result = await response.text();
-        const errorRegex = /^Cannot find/;
+      fetch(resolveAsset(`${date}.yml`))
+        .then(async (response) => {
+          const result = await response.text();
+          const errorRegex = /^Cannot find/;
 
-        if (errorRegex.test(result)) {
-          const timeout = 50 + attemptNumber * 50;
-          setChangelogData(
-            `Loading changelog data${'.'.repeat(attemptNumber + 3)}`,
+          if (errorRegex.test(result)) {
+            const timeout = 50 + attemptNumber * 50;
+            setChangelogData(
+              `Loading changelog data${'.'.repeat(attemptNumber + 3)}`,
+            );
+            setTimeout(() => {
+              getData(date, attemptNumber + 1);
+            }, timeout);
+          } else {
+            import('js-yaml').then((yaml) => {
+              setChangelogData(yaml.load(result, { schema: yaml.CORE_SCHEMA }));
+            });
+          }
+        })
+        .catch(() => {
+          // The asset is not served yet (or the request was refused): retry like a "Cannot find" answer.
+          setTimeout(
+            () => {
+              getData(date, attemptNumber + 1);
+            },
+            50 + attemptNumber * 50,
           );
-          setTimeout(() => {
-            getData(date, attemptNumber + 1);
-          }, timeout);
-        } else {
-          import('js-yaml').then((yaml) => {
-            setChangelogData(yaml.load(result, { schema: yaml.CORE_SCHEMA }));
-          });
-        }
-      }).catch(() => {
-        // The asset is not served yet (or the request was refused): retry like a "Cannot find" answer.
-        setTimeout(() => {
-          getData(date, attemptNumber + 1);
-        }, 50 + attemptNumber * 50);
-      });
+        });
     },
     [act],
   );

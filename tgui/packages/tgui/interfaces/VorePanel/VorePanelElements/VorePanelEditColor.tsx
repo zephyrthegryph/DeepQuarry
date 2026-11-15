@@ -6,13 +6,13 @@ import {
   useState,
 } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { ColorSelector } from 'tgui/interfaces/ColorPickerModal';
 import { type HsvaColor, hexToHsva, hsvaToHex } from 'tgui-core/color';
 import { Box, Floating, Stack } from 'tgui-core/components';
 import { VorePanelColorBox } from './VorePanelCommonElements';
 import { VorePanelEditNumber } from './VorePanelEditNumber';
 import { VorePanelTooltip } from './VorePanelTooltip';
-import { Label } from 'tgui/components/Label';
 
 export const VorePanelEditColor = (
   props: {

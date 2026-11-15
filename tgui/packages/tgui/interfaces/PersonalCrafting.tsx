@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -19,7 +20,6 @@ import type {
   PersonalCraftingActions,
   PersonalCraftingData,
 } from './generated/PersonalCrafting';
-import { Label } from 'tgui/components/Label';
 
 type Recipe = Extract<
   PersonalCraftingData['crafting_recipes'][string],

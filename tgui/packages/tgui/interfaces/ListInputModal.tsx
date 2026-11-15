@@ -120,12 +120,7 @@ export const ListInputModal = (props) => {
   }
 
   return (
-    <Window
-      fitContent
-      title={title}
-      width={325}
-      height={windowHeight}
-    >
+    <Window fitContent title={title} width={325} height={windowHeight}>
       {!!timeout && <Loader value={timeout} />}
       <Window.Content
         onKeyDown={(event) => {

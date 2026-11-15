@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type {
   ArcadeBattleActions,
   ArcadeBattleData,
 } from './generated/ArcadeBattle';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = ArcadeBattleData;
 

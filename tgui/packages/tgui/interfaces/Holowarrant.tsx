@@ -1,11 +1,11 @@
 // Holowarrant viewer — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-import { Label } from 'tgui/components/Label';
 
 type Data = {
   loaded: BooleanLike;

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Box,
   Button,
@@ -19,7 +20,6 @@ import {
 } from '../constants';
 import { ChargeStatus } from '../MedigunHelpers/ChargeStatus';
 import type { Data, SModule } from '../types';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const MedigunContent = (props: { smodule: SModule }) => {
   const { act, data } = useBackend<Data, MedigunActions>();

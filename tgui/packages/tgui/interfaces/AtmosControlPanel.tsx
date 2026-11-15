@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Table } from 'tgui-core/components';
 import type {
   AtmosControlPanelActions,
   AtmosControlPanelData,
 } from './generated/AtmosControlPanel';
-import { Label } from 'tgui/components/Label';
 
 type Data = AtmosControlPanelData;
 

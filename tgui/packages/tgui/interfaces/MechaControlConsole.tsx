@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -15,8 +17,6 @@ import type {
   MechaControlConsoleActions,
   MechaControlConsoleData,
 } from './generated/MechaControlConsole';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 export const MechaControlConsole = (props) => {
   const { act, data } = useBackend<

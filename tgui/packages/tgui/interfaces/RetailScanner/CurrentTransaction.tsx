@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Button,
   Divider,
@@ -9,7 +10,6 @@ import {
 } from 'tgui-core/components';
 import type { RetailScannerActions } from '../generated/RetailScanner';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const CurrentTransaction = (model) => {
   const { act, data } = useBackend<Data, RetailScannerActions>();

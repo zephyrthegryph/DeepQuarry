@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import {
   CONSOLE_THEME,
   resolveTheme,
-  WINDOW_THEMES,
   SCANLINES_DISABLED_KEY,
   scanlineOverride,
+  WINDOW_THEMES,
 } from './layouts/consoleTheme';
 
 const read = (path: string) =>

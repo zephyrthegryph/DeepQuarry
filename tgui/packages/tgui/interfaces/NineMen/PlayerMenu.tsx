@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { PlayerIndicator } from '../ChessCheckers/PlayerMenu';
 import type { NineMenActions } from '../generated/NineMen';
@@ -7,7 +8,6 @@ import { gameTooltip, phastToText } from './constants';
 import { gameStateToText, stateToColor } from './functions';
 import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const PlayerMenu = (props) => {
   const { act, data } = useBackend<Data, NineMenActions>();

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -11,7 +12,6 @@ import type {
   PortableGeneratorActions,
   PortableGeneratorData,
 } from './generated/PortableGenerator';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = PortableGeneratorData;
 

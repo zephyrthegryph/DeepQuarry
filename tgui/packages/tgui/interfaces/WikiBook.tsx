@@ -6,11 +6,11 @@
 // in the user's default web browser via `client << link(url)`.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
 import type { WikiBookActions } from './generated/WikiBook';
-import { Label } from 'tgui/components/Label';
 
 type Data = {
   title: string;

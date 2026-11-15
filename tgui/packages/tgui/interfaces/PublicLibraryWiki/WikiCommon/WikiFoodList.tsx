@@ -1,9 +1,8 @@
+import { Label } from 'tgui/components/Label';
 import { Box, LabeledList } from 'tgui-core/components';
-
 import type { RedipeData } from '../types';
 import { SupplyEntry } from '../WikiCommon/WikiQuickElements';
 import { WikiSpoileredList } from './WikiListElements';
-import { Label } from 'tgui/components/Label';
 
 export const RecipeList = (props: { title: string; recipe: RedipeData }) => {
   const { title, recipe } = props;

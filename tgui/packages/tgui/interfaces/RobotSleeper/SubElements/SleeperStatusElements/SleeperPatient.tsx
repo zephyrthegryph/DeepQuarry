@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Stack } from 'tgui-core/components';
 import { DIAGNOSIS_BAND } from '../../../common/Diagnosis';
 import type {
@@ -6,7 +7,6 @@ import type {
   RobotSleeperData,
 } from '../../../generated/RobotSleeper';
 import { STAT_TO_COLOR } from '../../constants';
-import { Label } from 'tgui/components/Label';
 
 export const SleeperPatient = (props: { name: string }) => {
   const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();

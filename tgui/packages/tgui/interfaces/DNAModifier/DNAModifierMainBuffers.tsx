@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -9,7 +10,6 @@ import {
 } from 'tgui-core/components';
 import type { DNAModifierActions } from '../generated/DNAModifier';
 import type { buffData, Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const DNAModifierMainBuffers = (props) => {
   const { data } = useBackend<Data, DNAModifierActions>();

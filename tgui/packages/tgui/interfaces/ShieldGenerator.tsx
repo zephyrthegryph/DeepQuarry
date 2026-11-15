@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -9,13 +10,11 @@ import {
   Section,
 } from 'tgui-core/components';
 import { formatPower, formatSiUnit } from 'tgui-core/format';
-
 import { FullscreenNotice } from './common/FullscreenNotice';
 import type {
   ShieldGeneratorActions,
   ShieldGeneratorData,
 } from './generated/ShieldGenerator';
-import { Label } from 'tgui/components/Label';
 
 type Data = ShieldGeneratorData;
 

@@ -5,6 +5,7 @@
 // via tgui_act, no embedded byond:// hrefs.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -12,7 +13,6 @@ import type {
   TechnomancerCatalogActions,
   TechnomancerCatalogData,
 } from './generated/TechnomancerCatalog';
-import { Label } from 'tgui/components/Label';
 
 type Data = TechnomancerCatalogData;
 

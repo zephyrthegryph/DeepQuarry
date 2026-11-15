@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -14,7 +15,6 @@ import {
 } from 'tgui-core/components';
 import type { PrefEditorTraitPickerStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
-import { Label } from 'tgui/components/Label';
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],

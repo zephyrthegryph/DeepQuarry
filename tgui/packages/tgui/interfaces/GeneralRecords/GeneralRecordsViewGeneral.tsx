@@ -1,11 +1,10 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Image, LabeledList, Section } from 'tgui-core/components';
-
 import { modalOpen } from '../common/ComplexModal';
 import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import { doEdit } from './functions';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const GeneralRecordsViewGeneral = (props) => {
   const { act, data } = useBackend<Data, GeneralRecordsActions>();

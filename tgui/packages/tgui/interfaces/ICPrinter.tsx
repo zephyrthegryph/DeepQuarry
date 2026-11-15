@@ -1,4 +1,5 @@
 import { useBackend, useSharedState } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -9,7 +10,6 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { ICPrinterActions, ICPrinterData } from './generated/ICPrinter';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = ICPrinterData;
 

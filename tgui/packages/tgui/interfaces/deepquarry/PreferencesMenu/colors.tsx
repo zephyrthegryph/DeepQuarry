@@ -12,12 +12,12 @@
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { type HsvaColor, hexToHsva, hsvaToHex } from 'tgui-core/color';
 import { Box, Button, Floating, Input } from 'tgui-core/components';
 import { Hue, SaturationValue } from '../../ColorPickerModal';
 import { SliderBox } from './controls';
 import { highlightStyle, prefAnchor, useSearchHighlight } from './search';
-import { Label } from 'tgui/components/Label';
 
 export type SlotName =
   | 'primary'

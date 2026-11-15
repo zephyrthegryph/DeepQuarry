@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -13,7 +14,6 @@ import type {
   SupermatterMonitorActions,
   SupermatterMonitorData,
 } from './generated/SupermatterMonitor';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = SupermatterMonitorData;
 

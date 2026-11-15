@@ -1,8 +1,8 @@
+import { Label } from 'tgui/components/Label';
 import { Blink, Box, Icon, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { getOverlays } from '../../functions';
 import { MultiOverlayImage } from '../../VorePanelElements/MultiOverlayImage';
-import { Label } from 'tgui/components/Label';
 
 export function BellyFullscreenPreview(props: {
   colors: string[];
