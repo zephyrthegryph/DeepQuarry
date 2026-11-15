@@ -40,6 +40,24 @@ GLOBAL_LIST_INIT(draw_n, list("dirtied" = 0, "filed_total" = 0, "drawn" = 0, "dr
 GLOBAL_VAR_INIT(draw_drain_ms, 0)
 GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 
+/// Type path (as text) -> how many atoms of it were filed here since the world began: what a boot's first draws are made of.
+GLOBAL_ALIST_EMPTY(draw_filed_types)
+
+/// The `top` types filed most, as one line for the look log.
+/proc/draw_filed_types_text(top = 12)
+	var/list/ranked = GLOB.draw_filed_types.Copy()
+	var/text = "filed by type"
+	for(var/n in 1 to top)
+		var/best
+		for(var/name in ranked)
+			if(isnull(best) || ranked[name] > ranked[best])
+				best = name
+		if(isnull(best))
+			break
+		text += "; [best] x[ranked[best]]"
+		ranked -= best
+	return text
+
 /// Atoms filed and waiting.
 /proc/draw_depth()
 	return length(GLOB.draw_filed)
@@ -63,6 +81,7 @@ GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 	bucket += A
 	GLOB.draw_filed[slot] = key
 	GLOB.draw_n["filed_total"]++
+	GLOB.draw_filed_types["[A.type]"]++
 
 /// engine_forget(): a dying atom leaves its bucket.
 /proc/draw_unfile(datum/D)
@@ -188,7 +207,12 @@ GLOBAL_VAR_INIT(draw_drain_ms_max, 0)
 					GLOB.draw_n["worst_ms"] = draw_ms
 					GLOB.draw_n["worst_what"] = "[A.type]"
 				if(draw_ms >= DRAW_SLOW_MS)
-					log_world("DRAW_SLOW: [A.type] took [round(draw_ms, 0.1)] ms to draw in one piece (a draw is not split); the pass held back [GLOB.draw_n["budget_skips"]] draw(s) so far on a spent tick")
+					// The same atom drawn again at once (dry, nothing applied): a repeat that costs microseconds says the draw itself is cheap and the first one paid for something that
+					// happens once (a file read, a stall of the process); a repeat that is slow too says the draw is.
+					var/repeat_started = TICK_USAGE_REAL
+					refresh_look(A, FALSE)
+					var/repeat_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - repeat_started)
+					log_world("DRAW_SLOW: [A.type] took [round(draw_ms, 0.1)] ms to draw in one piece (a draw is not split), [round(repeat_ms, 0.01)] ms when drawn again at once; it stood at [A.x],[A.y],[A.z] in [A.loc?.type || "nothing"], icon [A.icon]; the pass held back [GLOB.draw_n["budget_skips"]] draw(s) so far on a spent tick; world cpu [round(world.cpu)]%")
 				GLOB.draw_n["drawn"]++
 				if(near)
 					GLOB.draw_n["drawn_near"]++

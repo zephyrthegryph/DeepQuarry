@@ -334,6 +334,11 @@ CAPABILITIES(/datum/window_dock)
 			var/client/player = user?.client
 			if(player?.tgui_panel?.window && istext(payload?["window"]))
 				player.tgui_panel.window.send_message("col/floated", list("window" = payload["window"]))
+		if("wm/geometry")
+			// A popped-out window was moved or sized: the column page keeps its size for the next pop out (it is saved with the layout).
+			var/client/player = user?.client
+			if(!docked && player?.tgui_panel?.window && islist(payload?["size"]))
+				player.tgui_panel.window.send_message("col/geometry", list("iface" = interface, "size" = payload["size"], "pos" = payload["pos"]))
 		if("wm/dropped")
 			// A native window's titlebar drag ended at screen point `pointer`: maybe over the column.
 			dock?.dropped(src, payload?["pointer"])

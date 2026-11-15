@@ -718,6 +718,7 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 		var/datum/look/hit = GLOB.look_cache[cache_key]
 		if(hit)
 			. = look_cache_serve(A, hit)
+			look_kind_note(A.type, LOOK_KIND_HIT)
 			look_cost_note(A.type, TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), TRUE)
 #if defined(UNIT_TESTS)
 			look_cache_verify(A, hit)
@@ -739,6 +740,8 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 			L.state(engine.look_flash_state)
 		for(var/state in engine.look_flashes)
 			L.overlay(state)
+	if(apply)
+		look_kind_note(A.type, !L.touched ? LOOK_KIND_EMPTY : isnull(cache_key) ? LOOK_KIND_NOKEY : LOOK_KIND_BYPASSED) // (a stored look is moved to its own row below)
 	if(!L.touched)
 		if(apply && !isnull(A.rx?.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the
@@ -759,6 +762,10 @@ GLOBAL_ALIST_EMPTY(refresh_traced)
 		if(!engine && look_cache_storable(L))
 			look_cache_store(cache_key, L, key)
 			GLOB.look_cache_misses++
+			if(apply)
+				var/list/kinds = GLOB.look_kinds[A.type]
+				kinds[LOOK_KIND_BYPASSED]--
+				kinds[LOOK_KIND_STORED]++
 		else
 			GLOB.look_cache_bypassed++
 	if(apply)
@@ -863,7 +870,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; [draw_rates_text()]; [draw_stats_text()]; queue forget scans [GLOB.refresh_forget_scans] ([GLOB.refresh_forget_scan_steps] steps, longest [GLOB.refresh_forget_scan_max]); [look_cache_text()]; [look_cost_text(5)]"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; [draw_rates_text()]; [draw_stats_text()]; queue forget scans [GLOB.refresh_forget_scans] ([GLOB.refresh_forget_scan_steps] steps, longest [GLOB.refresh_forget_scan_max]); [look_cache_text()]; [look_cost_text(5)]; [look_kinds_text()]; [draw_filed_types_text()]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text

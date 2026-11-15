@@ -11,3 +11,10 @@
 #define LOOK_SET_LIGHT (1<<8)
 #define LOOK_SET_OFFSET (1<<9)
 #define LOOK_SET_INVISIBILITY (1<<10)
+
+/// Slots of a look_kinds row.
+#define LOOK_KIND_HIT 1
+#define LOOK_KIND_STORED 2
+#define LOOK_KIND_BYPASSED 3
+#define LOOK_KIND_NOKEY 4
+#define LOOK_KIND_EMPTY 5

@@ -30,6 +30,12 @@
     background-color: transparent;
   }
 
+  // The selected-tab indicator is absolutely placed on the row's rule; the library's bottom padding for it would lift the label a pixel
+  // above the centre line the row's buttons share.
+  .DqTabs__list .Tab {
+    padding-bottom: 0;
+  }
+
   .Tab {
     display: inline-flex;
     align-items: center;

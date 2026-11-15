@@ -606,7 +606,7 @@
 				send_full_update()
 			initialized = TRUE
 			cancel_after(src, "ping")
-		if("wm/dock", "wm/float", "wm/dropped", "wm/view", "wm/log")
+		if("wm/dock", "wm/float", "wm/floated", "wm/geometry", "wm/dropped", "wm/drophint", "wm/view", "wm/log")
 			dock_message(type, payload)
 		if("wm/error")
 			log_tgui_client_error(user, payload, window())

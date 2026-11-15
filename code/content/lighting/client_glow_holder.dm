@@ -41,6 +41,9 @@ GLOBAL_VAR_INIT(client_glow_holder_scans_skipped, 0)
 GLOBAL_VAR_INIT(client_glow_holder_stands_moved, 0)
 /// Chunks looked in by crossings and scans (empty ones too: the walk's cost), and sight refreshes between crossings.
 GLOBAL_VAR_INIT(client_glow_holder_chunk_visits, 0)
+/// Steps the delta crossings' chunk walks took (a walk spread over ticks is several), and the longest one in milliseconds.
+GLOBAL_VAR_INIT(client_glow_holder_delta_steps, 0)
+GLOBAL_VAR_INIT(client_glow_holder_delta_worst_ms, 0)
 GLOBAL_VAR_INIT(client_glow_holder_sight_refreshes, 0)
 /// Steps the holders' stand and prefetch queues took (upkeep_run()).
 GLOBAL_VAR_INIT(client_glow_holder_upkeep_steps, 0)
@@ -77,6 +80,20 @@ GLOBAL_VAR_INIT(client_glow_holder_upkeep_steps, 0)
 	var/scan_waiting = FALSE
 	/// Server milliseconds one step of a full scan may spend before it hands the rest to the next tick; null: the scan runs to the end in one call (viewers without a client).
 	var/scan_budget_ms
+	/// A delta crossing's chunk walk still under way: the chunks its strips cover ("gx,gy" texts), the position of the next one, how many of that chunk's lights an earlier step tested (a
+	/// chunk walked again after a stop inside it starts past them; a light in several chunks is tested again, which is harmless), and the prefetch rings the exact test needs. Null `delta_chunks` is none pending; `scanned` is FALSE while one is.
+	var/list/delta_chunks
+	var/delta_at = 0
+	var/delta_in_chunk = 0
+	var/list/delta_new_ring
+	var/list/delta_old_ring
+	/// What the pending delta walk has done: steps taken and server milliseconds spent over all of them.
+	var/delta_steps = 0
+	var/delta_ms = 0
+	/// TRUE while a delta_continue() timer is waiting.
+	var/delta_waiting = FALSE
+	/// Server milliseconds the walk of a delta crossing may spend before it leaves the rest (chunks, drops, acquisitions filed) to the next tick; null: it runs to the end (viewers without a client).
+	var/delta_budget_ms
 	/// Lights a delta crossing found newly in reach and not yet held (light handle key -> TRUE, oldest first): their glow images are made by acquire_run(), a budgeted step a tick.
 	/// Lazy; null: none waiting.
 	var/list/acquire_queue
@@ -203,6 +220,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		H.client = C
 		H.scan_budget_ms = CLIENT_GLOW_SCAN_BUDGET_MS
 		H.acquire_budget_ms = CLIENT_GLOW_ACQUIRE_BUDGET_MS
+		H.delta_budget_ms = CLIENT_GLOW_DELTA_BUDGET_MS
 		rel_set(C, nameof(C.glow_holder), H)
 	var/list/halves = client_glow_view_halves(C.view)
 	C.glow_holder.view_at(at_eye, halves[1], halves[2])
@@ -337,7 +355,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/lights = walk_counts[2]
 	if(delta && !chunks)
 		GLOB.client_glow_holder_scans_skipped++
-	scanned = !scan_chunks // a full scan with chunks left walks them on the next ticks, and marks the scan done itself
+	scanned = !scan_chunks && !delta_chunks // a scan with chunks left walks them on the next ticks, and marks itself done
 	var/stands_started = TICK_USAGE_REAL
 	if(delta && had_seen)
 		refresh_stands_near(added, removed)
@@ -544,6 +562,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	scan_chunks = null
 	scan_keep = null
 	scan_at = 0
+	delta_cancel()
 
 /// A crossing from the boxes `old_reach`/`old_keep` to the current ones. Light events keep every held glow current against the boxes as they stood, so a
 /// light's status changes only where the boxes moved. The lights that can change have their reach boxes overlapping one of three strips:
@@ -557,30 +576,96 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/list/new_ring = list(reach[1] - chunk, reach[2] - chunk, reach[3] + chunk, reach[4] + chunk)
 	var/list/old_ring = list(old_reach[1] - chunk, old_reach[2] - chunk, old_reach[3] + chunk, old_reach[4] + chunk)
 	var/list/strips = glow_box_minus(reach, old_reach) + glow_box_minus(new_ring, old_ring) + glow_box_minus(old_keep, keep_reach)
-	var/list/done = list()
+	var/list/order = list()
+	var/list/seen_chunks = list()
 	for(var/list/strip as anything in strips)
-		walk_box_chunks(strip, done, counts, new_ring, old_ring)
-
-/// Walks the chunks (not yet in `done`) that box `box` covers, testing each light there (once: a light is in several chunks) against the boxes.
-/datum/client_glow_holder/proc/walk_box_chunks(list/box, list/done, list/counts, list/new_ring, list/old_ring)
-	var/list/chunks_in_box = glow_chunk_range(box)
-	for(var/gx in chunks_in_box[1] to chunks_in_box[3])
-		for(var/gy in chunks_in_box[2] to chunks_in_box[4])
-			var/chunk_id = "[gx],[gy]"
-			if(done[chunk_id])
-				continue
-			done[chunk_id] = TRUE
-			GLOB.client_glow_holder_chunk_visits++
-			var/list/members = GLOB.client_glow_chunks["[z],[chunk_id]"]
-			if(!members)
-				continue
-			counts[1]++
-			for(var/datum/light_source/L as anything in members)
-				if(done[L])
+		var/list/chunks_in_box = glow_chunk_range(strip)
+		for(var/gx in chunks_in_box[1] to chunks_in_box[3])
+			for(var/gy in chunks_in_box[2] to chunks_in_box[4])
+				var/chunk_id = "[gx],[gy]"
+				if(seen_chunks[chunk_id])
 					continue
-				done[L] = TRUE
-				counts[2]++
-				scan_light_delta(L, new_ring, old_ring)
+				seen_chunks[chunk_id] = TRUE
+				order += chunk_id
+	delta_chunks = order
+	delta_at = 0
+	delta_in_chunk = 0
+	delta_new_ring = new_ring
+	delta_old_ring = old_ring
+	delta_steps = 0
+	delta_ms = 0
+	delta_run(counts)
+
+/// One step of the pending delta walk: the chunks in order, each light there tested once (a light is in several chunks) against the boxes, until the inline budget is spent (always at
+/// least one light a step); the rest goes to the next tick (delta_continue()), where the held glows that left the keep box are dropped and the lights newly in reach filed. The
+/// last step closes the walk, so the next crossing is a delta again. `counts` (when given) gets the chunks with lights walked and the lights examined by this step.
+/datum/client_glow_holder/proc/delta_run(list/counts = null)
+	var/started = TICK_USAGE_REAL
+	var/list/chunks = delta_chunks
+	var/examined = 0
+	var/walked = 0
+	while(delta_at < length(chunks))
+		var/list/members = GLOB.client_glow_chunks["[z],[chunks[delta_at + 1]]"]
+		var/stopped = FALSE
+		var/index = 0
+		for(var/datum/light_source/L as anything in members)
+			if(++index <= delta_in_chunk)
+				continue
+			if(examined && !isnull(delta_budget_ms) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= delta_budget_ms)
+				stopped = TRUE
+				break
+			delta_in_chunk = index
+			examined++
+			scan_light_delta(L, delta_new_ring, delta_old_ring)
+		if(stopped)
+			break // the chunk still holds lights; the next step walks it again past the ones tested
+		delta_in_chunk = 0
+		delta_at++
+		GLOB.client_glow_holder_chunk_visits++
+		if(members)
+			walked++
+		if(!isnull(delta_budget_ms) && delta_at < length(chunks) && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= delta_budget_ms)
+			break
+	var/step_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	delta_steps++
+	delta_ms += step_ms
+	GLOB.client_glow_holder_delta_steps++
+	GLOB.client_glow_holder_delta_worst_ms = max(GLOB.client_glow_holder_delta_worst_ms, step_ms)
+	if(counts)
+		counts[1] += walked
+		counts[2] += examined
+	if(delta_at < length(chunks))
+		if(!delta_waiting)
+			delta_waiting = TRUE
+			after(src, 1 TICKS, PROC_REF(delta_continue))
+		return
+	var/steps = delta_steps
+	var/spent_ms = delta_ms
+	delta_chunks = null
+	delta_new_ring = null
+	delta_old_ring = null
+	delta_at = 0
+	scanned = TRUE
+	if(steps > 1 && client_glow_trace_line())
+		log_world("client glow holder: [client?.ckey] delta scan finished over [steps] steps, [round(spent_ms, 0.01)] ms in all, holding [LAZYLEN(held)] glow(s)")
+
+/// The timer of a spread delta walk: its next step, unless the walk was cancelled (a full scan, a drop-all) in the meantime.
+/datum/client_glow_holder/proc/delta_continue()
+	delta_waiting = FALSE
+	if(!delta_chunks || !sig)
+		return
+	delta_run()
+
+/// Forgets a pending delta walk: held glows no longer match the boxes it was walking, so the next crossing walks the whole region.
+/datum/client_glow_holder/proc/delta_cancel()
+	if(!delta_chunks)
+		return
+	delta_chunks = null
+	delta_new_ring = null
+	delta_old_ring = null
+	delta_at = 0
+	delta_in_chunk = 0
+	scanned = FALSE
 
 /// One light met by a delta crossing: held and clear of the keep box, it is dropped; not held and meeting the reach box, it is acquired; not held and newly inside the
 /// prefetch ring, its shape is readied. A held light inside the keep box needs nothing (its events keep it current).

@@ -41,6 +41,11 @@ export type Placement = {
   collapsed: boolean;
   height: number;
   sized?: boolean;
+  /** Height this window handed on when it left the column (to Status, else `gaveTo`'s entry): it takes it back when it docks again. */
+  gave?: number;
+  gaveTo?: string;
+  /** The window's popped-out geometry (physical px), kept apart from its docked height: a resize in either mode changes only its own. */
+  float?: { size: [number, number]; pos?: [number, number] };
 };
 
 export type DockState = {
@@ -70,6 +75,13 @@ export type DockAction =
   | { type: 'activate'; id: string }
   | { type: 'collapse'; group: string; collapsed: boolean }
   | { type: 'resize'; group: string; height: number }
+  /** A popped-out window's native geometry changed (physical px): kept with its placement, apart from its docked height. */
+  | {
+      type: 'floatGeometry';
+      iface: string;
+      size: [number, number];
+      pos?: [number, number];
+    }
   | {
       type: 'boundary';
       /** The expanded entries either side of the dragged boundary (below is null at the column's foot). */
@@ -147,6 +159,7 @@ export function snapshot(state: DockState): DockState {
       if (!win?.iface) {
         return;
       }
+      const float = saved[win.iface]?.float;
       saved[win.iface] = {
         dock: true,
         group: group.id,
@@ -155,6 +168,7 @@ export function snapshot(state: DockState): DockState {
         collapsed: group.collapsed,
         height: group.height,
         ...(group.sized ? { sized: true } : {}),
+        ...(float ? { float } : {}),
       };
     });
   });
@@ -219,10 +233,13 @@ function open(state: DockState, window: DockWindow): DockState {
     group.height = clampHeight(saved?.height ?? DOCK_HEIGHT_DEFAULT);
   }
   if (typeof openHeight === 'number' && openHeight > 0) {
-    // A native window docked: the entry is as tall as the window was.
+    // A native window docked: it opens at the height it last had docked (its own saved inline height), else as tall as the window
+    // was. A popped-out window's size is its own, kept separately by its native window.
     group.collapsed = false;
-    group.height = clampHeight(openHeight);
-    group.sized = true;
+    if (!place) {
+      group.height = clampHeight(openHeight);
+      group.sized = true;
+    }
   }
   const at = dropped
     ? clampIndex(dropAt!, groups.length)
@@ -231,12 +248,11 @@ function open(state: DockState, window: DockWindow): DockState {
       : groups.length;
   groups.splice(at, 0, group);
   // An entry that is still a placeholder (no interface yet) is opened again under its interface: it takes its space then.
+  // A new entry takes its whole height; one that left and docks again takes back what it handed on.
+  const owed = place ? (place.gave ?? 0) : group.height;
   const taken =
-    window.iface &&
-    window.iface !== CHAT_IFACE &&
-    (!place || typeof openHeight === 'number') &&
-    !group.collapsed
-      ? takeSpace(state, groups, group)
+    window.iface && window.iface !== CHAT_IFACE && owed > 0 && !group.collapsed
+      ? takeSpace(state, groups, group, owed, place?.gaveTo)
       : groups;
   return { ...state, windows, groups: taken, nextGroup };
 }
@@ -249,15 +265,18 @@ function takeSpace(
   state: DockState,
   groups: DockGroup[],
   added: DockGroup,
+  owed: number,
+  donor?: string,
 ): DockGroup[] {
-  let need = added.height;
+  let need = owed;
   const out = groups.slice();
-  const statusAt = out.findIndex(
-    (g) =>
-      g !== added &&
-      !g.collapsed &&
-      g.windows.some((id) => state.windows[id]?.iface === STATUS_INTERFACE),
-  );
+  const holds = (g: DockGroup, iface: string) =>
+    g !== added &&
+    !g.collapsed &&
+    g.windows.some((id) => state.windows[id]?.iface === iface);
+  let statusAt = out.findIndex((g) => holds(g, STATUS_INTERFACE));
+  // With no Status the space comes back from the entry that was given it.
+  if (statusAt < 0 && donor) statusAt = out.findIndex((g) => holds(g, donor));
   const fillAt = fillIndexOf(out, state.windows, (g) => g.collapsed);
   if (statusAt >= 0 && statusAt !== fillAt) {
     const status = out[statusAt];
@@ -294,9 +313,64 @@ export function fillIndexOf(
   return -1;
 }
 
+/**
+ * The mirror of takeSpace: an entry that leaves (popped out, closed, undocked) hands its height to the stat panel, not to the chat
+ * (the filling entry keeps its size, since it is only what the others leave). With no stat panel it goes to the expanded entry next
+ * to the freed slot (above first, then below), never the chat. Collapsed entries free only a header, which the fill absorbs.
+ */
+function freeSpace(
+  state: DockState,
+  before: DockGroup[],
+  after: DockGroup[],
+  id: string,
+): { groups: DockGroup[]; gave?: number; to?: string } {
+  const iface = state.windows[id]?.iface;
+  // A placeholder (no interface yet) took no space when it opened, and the chat is the filling entry: neither gives any back.
+  if (!iface || iface === CHAT_IFACE) return { groups: after };
+  const at = before.findIndex((g) => g.windows.includes(id));
+  const gone = before[at];
+  if (!gone || after.some((g) => g.id === gone.id) || gone.collapsed) {
+    return { groups: after };
+  }
+  const fillAt = fillIndexOf(before, state.windows, (g) => g.collapsed);
+  if (fillAt === at) return { groups: after };
+  const fillId = before[fillAt]?.id;
+  const open = (g: DockGroup) => !g.collapsed && g.id !== fillId;
+  let target = after.findIndex(
+    (g) =>
+      open(g) &&
+      g.windows.some((w) => state.windows[w]?.iface === STATUS_INTERFACE),
+  );
+  if (target < 0) {
+    // `after` lost `gone`, so the slot's neighbours are at-1 (above) and at (below).
+    const near = [at - 1, at, at - 2, at + 1].filter(
+      (i) => i >= 0 && i < after.length,
+    );
+    target = near.find((i) => open(after[i])) ?? -1;
+  }
+  if (target < 0) return { groups: after };
+  const out = after.slice();
+  const grown = clampHeight(out[target].height + gone.height);
+  const gave = grown - out[target].height;
+  out[target] = { ...out[target], height: grown };
+  const to = state.windows[out[target].active]?.iface;
+  return { groups: out, gave, to };
+}
+
 function forget(state: DockState, id: string): DockState {
   const { [id]: _gone, ...windows } = state.windows;
-  return { ...state, windows, groups: detach(state.groups, id) };
+  const groups = detach(state.groups, id);
+  const freed = freeSpace(state, state.groups, groups, id);
+  const iface = state.windows[id]?.iface;
+  let saved = state.saved;
+  if (iface && saved[iface] && freed.gave) {
+    // Remembered with its placement: docking again takes it back from the same entry.
+    saved = {
+      ...saved,
+      [iface]: { ...saved[iface], gave: freed.gave, gaveTo: freed.to },
+    };
+  }
+  return { ...state, windows, groups: freed.groups, saved };
 }
 
 const mapGroup = (
@@ -359,6 +433,27 @@ function reduce(state: DockState, action: DockAction): DockState {
         active: action.id,
         collapsed: false,
       }));
+    }
+    case 'floatGeometry': {
+      const placed = state.saved[action.iface];
+      const [w, h] = action.size.map((n) => Math.round(Number(n)));
+      if (!placed || !(w > 0 && h > 0) || w > 8000 || h > 8000) return state;
+      const pos = action.pos?.map((n) => Math.round(Number(n)));
+      return {
+        ...state,
+        saved: {
+          ...state.saved,
+          [action.iface]: {
+            ...placed,
+            float: {
+              size: [w, h],
+              ...(pos?.length === 2 && pos.every(Number.isFinite)
+                ? { pos: [pos[0], pos[1]] as [number, number] }
+                : {}),
+            },
+          },
+        },
+      };
     }
     case 'collapse':
       return mapGroup(state, action.group, (g) => ({
@@ -558,6 +653,19 @@ const isPlacement = (value: unknown): value is Placement =>
   typeof value === 'object' &&
   typeof (value as Placement).group === 'string';
 
+function parseFloatGeometry(value: unknown): Placement['float'] | undefined {
+  const raw = value as { size?: unknown; pos?: unknown } | undefined;
+  const size = Array.isArray(raw?.size) ? raw.size.map(Number) : [];
+  if (size.length !== 2 || !size.every((n) => n > 0 && n <= 8000)) return;
+  const pos = Array.isArray(raw?.pos) ? raw.pos.map(Number) : [];
+  return {
+    size: [Math.round(size[0]), Math.round(size[1])],
+    ...(pos.length === 2 && pos.every(Number.isFinite)
+      ? { pos: [Math.round(pos[0]), Math.round(pos[1])] as [number, number] }
+      : {}),
+  };
+}
+
 /** The saved layout from its preference text; junk gives an empty layout. */
 export function parseSaved(text: unknown): Record<string, Placement> {
   if (typeof text !== 'string' || !text) {
@@ -585,6 +693,17 @@ export function parseSaved(text: unknown): Record<string, Placement> {
       collapsed: Boolean(value.collapsed),
       height: clampHeight(value.height),
       ...(value.sized ? { sized: true } : {}),
+      ...(parseFloatGeometry(value.float)
+        ? { float: parseFloatGeometry(value.float) }
+        : {}),
+      ...(Number(value.gave) > 0
+        ? {
+            gave: Math.round(Number(value.gave)),
+            ...(typeof value.gaveTo === 'string'
+              ? { gaveTo: value.gaveTo }
+              : {}),
+          }
+        : {}),
     };
   }
   return out;
