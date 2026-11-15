@@ -151,7 +151,7 @@
 	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "healing takes the overlay off")
 	test_driver_end()
 
-/// The layered body is off by default, and when on the body is one blank image carrying the limbs as overlays.
+/// The body is one blank image carrying the limbs as overlays.
 /datum/unit_test/dq_human_draw_layered_body
 
 /datum/unit_test/dq_human_draw_layered_body/Run()
@@ -159,18 +159,12 @@
 	var/list/body = H.body_look(new /datum/look)
 	var/image/layered = body[2]
 	TEST_ASSERT(length(layered.overlays) >= 5, "the limbs are overlays of the body image")
-	var/list/composed = H.build_body_look('icons/mob/human.dmi', FALSE, FALSE, FALSE, FALSE)
-	var/image/flat = composed[2]
-	TEST_ASSERT_EQUAL(length(flat.overlays), 0, "the composed body is one icon")
 
-/// A hulk and a skeleton are layered too: the hulk's green is one colour over the whole body, the skeleton draws the skeleton sprites.
+/// A hulk, a husk and a skeleton are layered too: the hulk's green is one colour over the whole body, the husk's tone is one over its limbs, the skeleton draws the skeleton sprites.
 /datum/unit_test/dq_human_draw_layered_forms
 
 /datum/unit_test/dq_human_draw_layered_forms/Run()
 	var/mob/living/carbon/human/H = dq_hd_body(list(), "forms")
-	TEST_ASSERT(H.can_layer_body(FALSE, FALSE), "a plain body is layered")
-	TEST_ASSERT(H.can_layer_body(FALSE, TRUE), "a skeleton is layered")
-	TEST_ASSERT(!H.can_layer_body(TRUE, FALSE), "a husk is not (its tone has no client form)")
 	var/list/plain = H.build_layered_body_look('icons/mob/human.dmi', FALSE, FALSE)
 	var/list/hulk = H.build_layered_body_look('icons/mob/human.dmi', TRUE, FALSE)
 	var/image/hulk_body = hulk[2]
@@ -179,6 +173,11 @@
 	var/image/plain_body = plain[2]
 	TEST_ASSERT(!plain_body.color, "a plain body is not tinted as a whole")
 	TEST_ASSERT_EQUAL(length(hulk_body.overlays), length(plain_body.overlays), "a hulk has the same parts as a plain body")
+	var/list/husk = H.build_layered_body_look('icons/mob/human.dmi', FALSE, FALSE, TRUE)
+	var/image/husk_body = husk[2]
+	TEST_ASSERT(husk_body.appearance_flags & KEEP_TOGETHER, "the husk's tone covers the body as one picture")
+	var/image/toned = husk_body.overlays[1]
+	TEST_ASSERT(islist(toned.color), "the husk's limbs carry the tone as a colour matrix")
 	var/list/skeleton = H.build_layered_body_look('icons/mob/human.dmi', FALSE, TRUE)
 	var/image/skeleton_body = skeleton[2]
 	TEST_ASSERT(length(skeleton_body.overlays) >= 5, "a skeleton is made of its limbs")
@@ -193,7 +192,7 @@
 	refresh_flush()
 	var/image/hair = H.look_layers()[HAIR_LAYER]
 	TEST_ASSERT(hair, "a haired human draws a hair layer")
-	TEST_ASSERT(!hair.icon, "the hair layer is a group of tinted parts, not one composited icon")
+	TEST_ASSERT_EQUAL(hair.icon_state, "blank", "the hair layer is a group of tinted parts on a blank, not one composited icon")
 	TEST_ASSERT(length(hair.overlays) >= 1, "the hair is a part of the group")
 	var/list/body = H.body_look(new /datum/look)
 	var/image/body_image = body[2]
