@@ -241,7 +241,7 @@ export const WidgetGrid = ({
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
-            columnGap: '1.5em',
+            columnGap: '0.75em',
             rowGap: '0.4em',
           }}
         >

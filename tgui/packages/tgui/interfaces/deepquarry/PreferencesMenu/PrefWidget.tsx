@@ -165,7 +165,7 @@ const menuWidth = (choices: Array<[string, string]>) => {
     (n, [, label]) => Math.max(n, label.length),
     0,
   );
-  if (longest <= 4) return 'min(100%, 6em)';
+  if (longest <= 4) return '6em';
   return `min(100%, max(9em, calc(${Math.max(longest, 6)}ch + 3.5em)), 24em)`;
 };
 

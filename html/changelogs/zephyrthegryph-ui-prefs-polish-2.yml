@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Character setup: blood type and blood colour sit tightly on one line, with shorter labels"
