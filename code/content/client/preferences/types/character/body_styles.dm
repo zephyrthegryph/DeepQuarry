@@ -144,6 +144,17 @@
 	out[""] = list("layers" = dq_body_thumb_layers(preferences), "base" = TRUE)
 	return out
 
+/// A style that means "none" (Bald, Shaved, no gradient) shown as the body without the part, so its box matches the rest.
+/// Keeps the style's channel count when it has a thumbnail already.
+/proc/dq_none_style_thumb(list/thumbs, none_key, datum/preferences/preferences)
+	if(!thumbs)
+		thumbs = list()
+	var/list/old = thumbs[none_key]
+	var/list/entry = list("layers" = dq_body_thumb_layers(preferences))
+	if(old && !isnull(old["channels"]))
+		entry["channels"] = old["channels"]
+	thumbs[none_key] = entry
+	return thumbs
 
 /datum/preference/text/human/bgstate
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL

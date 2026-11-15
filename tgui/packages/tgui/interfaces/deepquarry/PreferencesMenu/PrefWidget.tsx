@@ -405,7 +405,7 @@ export const thumbLayers = (
   thumbs: Record<string, PrefThumbnail>,
   value: string,
 ): ImageLayer[] | null => {
-  const t = thumbs[value];
+  const t = thumbs[value] ?? (isNoneValue(value) ? thumbs[''] : undefined);
   if (!t) return null;
   if (t.layers?.length) return t.layers;
   if (!t.icon || !t.icon_state) return null;

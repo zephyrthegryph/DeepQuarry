@@ -578,14 +578,24 @@ const StyleCell = ({
   item,
   clearable,
   skin,
+  disabled,
 }: {
   item: PrefWidgetItem | null;
   clearable?: boolean;
   skin: unknown;
+  disabled?: boolean;
 }) => {
   if (!item) return <Box style={cellStyle} />;
   return (
-    <Box style={cellStyle}>
+    <Box
+      className={disabled ? 'dq-tail-under-taur' : undefined}
+      aria-disabled={disabled || undefined}
+      style={
+        disabled
+          ? { ...cellStyle, opacity: 0.5, pointerEvents: 'none' }
+          : cellStyle
+      }
+    >
       <BareField
         item={{
           ...item,
@@ -663,22 +673,13 @@ const BodyTable = ({
               return (
                 <Box key={row.label} style={{ display: 'contents' }}>
                   <Box style={{ ...cellStyle, opacity: 0.5 }}>{row.label}</Box>
-                  <Box
-                    className="dq-tail-under-taur"
-                    aria-disabled
-                    style={{
-                      ...cellStyle,
-                      gridColumn: '2 / -1',
-                      opacity: 0.5,
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <StyleCell
-                      item={{ ...item, value: kept }}
-                      clearable={row.clearable}
-                      skin={values.skin_color}
-                    />
-                  </Box>
+                  <StyleCell
+                    item={{ ...item, value: kept }}
+                    clearable={row.clearable}
+                    skin={values.skin_color}
+                    disabled
+                  />
+                  <Box style={{ ...cellStyle, gridColumn: '3 / -1' }} />
                 </Box>
               );
             }

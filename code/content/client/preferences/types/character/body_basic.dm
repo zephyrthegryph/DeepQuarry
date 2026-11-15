@@ -34,7 +34,7 @@
 	return GLOB.hair_styles_list ? assoc_to_keys(GLOB.hair_styles_list) : null
 
 /datum/preference/text/human/h_style/get_pref_thumbnails(datum/preferences/preferences)
-	return sprite_accessory_thumbs(GLOB.hair_styles_list, "_s")
+	return dq_none_style_thumb(sprite_accessory_thumbs(GLOB.hair_styles_list, "_s"), "Bald", preferences)
 
 /datum/preference/text/human/h_style/apply_to_human(mob/living/carbon/human/target, value)
 	target.looks.set_hair_style(value)
@@ -54,7 +54,7 @@
 	return GLOB.facial_hair_styles_list ? assoc_to_keys(GLOB.facial_hair_styles_list) : null
 
 /datum/preference/text/human/f_style/get_pref_thumbnails(datum/preferences/preferences)
-	return sprite_accessory_thumbs(GLOB.facial_hair_styles_list, "_s")
+	return dq_none_style_thumb(sprite_accessory_thumbs(GLOB.facial_hair_styles_list, "_s"), "Shaved", preferences)
 
 /datum/preference/text/human/f_style/apply_to_human(mob/living/carbon/human/target, value)
 	target.looks.set_facial_style(value)
@@ -96,7 +96,7 @@
 			"hair_icon" = "[REF(sample.icon)]",
 			"hair_state" = "[sample.icon_state]_s",
 		)
-	return out
+	return dq_none_style_thumb(out, "none", preferences)
 
 /datum/preference/text/human/grad_style/apply_to_human(mob/living/carbon/human/target, value)
 	target.looks.set_grad_style(value)
