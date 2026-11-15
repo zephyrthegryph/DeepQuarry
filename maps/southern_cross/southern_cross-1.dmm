@@ -24272,18 +24272,6 @@
 	},
 /turf/simulated/floor/tiled,
 /area/security/prison)
-"aXg" = (
-/obj/effect/landmark{
-	name = "JoinLateTeleporter"
-	},
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
-	dir = 10
-	},
-/obj/machinery/atmospherics/pipe/simple/hidden/supply{
-	dir = 10
-	},
-/turf/simulated/floor/tiled,
-/area/hallway/primary/thirddeck/central)
 "aXh" = (
 /turf/simulated/wall,
 /area/security/prison)
@@ -32327,14 +32315,6 @@
 /obj/machinery/door/firedoor/glass,
 /turf/simulated/floor/plating,
 /area/engineering/atmos)
-"bkK" = (
-/obj/effect/landmark{
-	name = "JoinLateTeleporter"
-	},
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
-/obj/machinery/atmospherics/pipe/simple/hidden/supply,
-/turf/simulated/floor/tiled,
-/area/hallway/primary/thirddeck/central)
 "bkL" = (
 /obj/machinery/atmospherics/pipe/simple/visible/cyan,
 /obj/effect/wingrille_spawn/reinforced,
@@ -45358,18 +45338,6 @@
 /obj/machinery/door/firedoor/border_only,
 /turf/simulated/floor/plating,
 /area/rnd/mixing)
-"bJw" = (
-/obj/effect/landmark{
-	name = "JoinLateTeleporter"
-	},
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
-	dir = 4
-	},
-/obj/machinery/atmospherics/pipe/simple/hidden/supply{
-	dir = 4
-	},
-/turf/simulated/floor/tiled,
-/area/hallway/primary/thirddeck/central)
 "bJB" = (
 /obj/machinery/atmospherics/portables_connector{
 	dir = 4
@@ -273895,7 +273863,7 @@ dFH
 dFX
 dGq
 dFs
-bJw
+dHg
 dHB
 dIf
 dIU
@@ -274152,8 +274120,8 @@ dFs
 dOJ
 dGr
 dFs
-aXg
-bkK
+dHk
+dHA
 dHA
 dIV
 dJK

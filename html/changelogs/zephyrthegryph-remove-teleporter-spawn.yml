@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscdel: "Removed the Teleporter latejoin spawn option; a saved choice of it falls back to the default spawn."
