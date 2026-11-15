@@ -118,7 +118,7 @@ export const OccupationEditor = ({
           LOW {d.counts?.low ?? 0}
         </Box>
         <Box style={{ flex: '1 1 auto' }} />
-        <Label inline fontSize="0.85em">
+        <Label inline fontSize="1em">
           If none available:
         </Label>
         <Dropdown
@@ -173,7 +173,7 @@ const DepartmentBlock = ({
       px={1}
       py={0.25}
       bold
-      fontSize="0.85em"
+      fontSize="1em"
       style={{
         backgroundColor: dept.color ? `${dept.color}33` : 'rgba(0,0,0,0.25)',
         borderLeft: dept.color ? `0.25em solid ${dept.color}` : undefined,
@@ -257,8 +257,8 @@ const JobRow = ({
         cursor: 'pointer',
         userSelect: 'none',
         marginBottom: '1px',
-        minHeight: '1.667em',
-        fontSize: '0.9em',
+        minHeight: '2em',
+        fontSize: '1.1em',
       }}
       onClick={() => cycleTo(false)}
       onContextMenu={(e: React.MouseEvent) => {
@@ -266,93 +266,105 @@ const JobRow = ({
         cycleTo(true);
       }}
     >
-      {/* Title: either an inline dropdown (alt-titled jobs) or plain text. The Tooltip
+      {/* The title column: wide enough for the longest title, wrapping rather than cutting it off. */}
+      <Box
+        style={{
+          flex: '1 1 17em',
+          minWidth: '15em',
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          rowGap: '0.1em',
+        }}
+      >
+        {/* Title: either an inline dropdown (alt-titled jobs) or plain text. The Tooltip
           wraps ONLY the plain-text title — clicking the dropdown moves the cursor off
           the tooltip's hover target so it dismisses on its own. */}
-      {altChoices && !blocked ? (
-        <Box
-          inline
-          style={{ flex: '0 0 auto' }}
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          onContextMenu={(e: React.MouseEvent) => e.stopPropagation()}
-        >
-          <Dropdown
-            width="12.5em"
-            selected={altSel}
-            displayText={altSel}
-            options={altOpts}
-            onSelected={(v) =>
-              send(act, 'set_alt_title', { job: job.title, alt: String(v) })
-            }
-          />
-        </Box>
-      ) : (
-        <Tooltip content={tipParts.join('\n') || job.title}>
+        {altChoices && !blocked ? (
           <Box
             inline
+            style={{ flex: '0 0 auto' }}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            onContextMenu={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <Dropdown
+              width="12.5em"
+              selected={altSel}
+              displayText={altSel}
+              options={altOpts}
+              onSelected={(v) =>
+                send(act, 'set_alt_title', { job: job.title, alt: String(v) })
+              }
+            />
+          </Box>
+        ) : (
+          <Tooltip content={tipParts.join('\n') || job.title}>
+            <Box
+              inline
+              style={{
+                flex: '0 1 auto',
+                overflowWrap: 'anywhere',
+                textDecoration: blocked ? 'line-through' : undefined,
+              }}
+            >
+              {job.title}
+            </Box>
+          </Tooltip>
+        )}
+        {job.total_positions > 0 && (
+          <Label
+            inline
+            ml={0.5}
+            fontSize="0.85em"
             style={{
               flex: '0 0 auto',
-              textDecoration: blocked ? 'line-through' : undefined,
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
             }}
           >
-            {job.title}
+            {job.current_positions}/{job.total_positions}
+          </Label>
+        )}
+        {blockReason && (
+          <Box
+            inline
+            ml={0.5}
+            px={0.5}
+            backgroundColor="bad"
+            color="white"
+            fontSize="0.8em"
+            style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
+          >
+            {blockReason}
           </Box>
-        </Tooltip>
-      )}
-      {job.total_positions > 0 && (
-        <Label
-          inline
-          ml={0.5}
-          fontSize="0.78em"
-          style={{
-            flex: '0 0 auto',
-            fontVariantNumeric: 'tabular-nums',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {job.current_positions}/{job.total_positions}
-        </Label>
-      )}
-      {blockReason && (
-        <Box
-          inline
-          ml={0.5}
-          px={0.5}
-          backgroundColor="bad"
-          color="white"
-          fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
-        >
-          {blockReason}
-        </Box>
-      )}
-      {!blockReason && !!job.whitelist_only && (
-        <Box
-          inline
-          ml={0.5}
-          px={0.5}
-          backgroundColor="good"
-          color="white"
-          fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
-        >
-          WL
-        </Box>
-      )}
-      {!blockReason && job.min_age > 0 && (
-        <Box
-          inline
-          ml={0.5}
-          px={0.5}
-          backgroundColor="average"
-          color="white"
-          fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
-        >
-          AGE {job.min_age}+
-        </Box>
-      )}
-      <Box style={{ flex: '1 1 auto' }} />
+        )}
+        {!blockReason && !!job.whitelist_only && (
+          <Box
+            inline
+            ml={0.5}
+            px={0.5}
+            backgroundColor="good"
+            color="white"
+            fontSize="0.8em"
+            style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
+          >
+            WL
+          </Box>
+        )}
+        {!blockReason && job.min_age > 0 && (
+          <Box
+            inline
+            ml={0.5}
+            px={0.5}
+            backgroundColor="average"
+            color="white"
+            fontSize="0.8em"
+            style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
+          >
+            AGE {job.min_age}+
+          </Box>
+        )}
+      </Box>
       <Box
         inline
         style={{ flex: '0 0 auto' }}

@@ -8,7 +8,6 @@
 
 import type { ComponentType } from 'react';
 import type { PreferencesMenuData } from '../../../generated/PreferencesMenu';
-import { AntagOptInEditor } from './AntagOptInEditor';
 import { BirthdayEditor } from './BirthdayEditor';
 import { BodyMarkingsEditor } from './BodyMarkingsEditor';
 import { FactionAffiliationsEditor } from './FactionAffiliationsEditor';
@@ -54,7 +53,6 @@ export type EditorProps<K extends EditorKey> = {
 export const PREF_EDITORS: {
   [K in EditorKey]?: ComponentType<EditorProps<K>>;
 } = {
-  antag_optin: AntagOptInEditor,
   birthday: BirthdayEditor,
   body_markings: BodyMarkingsEditor,
   flavor: FlavorTextEditor,

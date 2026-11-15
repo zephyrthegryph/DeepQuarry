@@ -40,32 +40,23 @@ export const languageKeyProblem = (
   return null;
 };
 
-/// The rows to list: unrestricted, pickable by this character (or already picked), matching the search; picked first.
+/// The languages to list: unrestricted, pickable by this character (or already picked); picked ones first.
 export const filterLanguages = (
   entries: [string, LangMeta][],
   pickable: Set<string> | null,
   selected: Set<string>,
-  search: string,
-): [string, LangMeta][] => {
-  const q = search.trim().toLowerCase();
-  return entries
+): [string, LangMeta][] =>
+  entries
     .filter(
       ([key, meta]) =>
         selected.has(key) ||
         (!meta.restricted && (!pickable || pickable.has(key))),
-    )
-    .filter(
-      ([, meta]) =>
-        !q ||
-        meta.name.toLowerCase().includes(q) ||
-        meta.desc.toLowerCase().includes(q),
     )
     .sort((x, y) => {
       const xs = selected.has(x[0]) ? 0 : 1;
       const ys = selected.has(y[0]) ? 0 : 1;
       return xs - ys || x[1].name.localeCompare(y[1].name);
     });
-};
 
 export const LanguagePicker = ({
   data: d,
@@ -83,12 +74,10 @@ export const LanguagePicker = ({
   // The server names the languages this character may actually pick; anything else (restricted, whitelisted for someone
   // else) is not listed at all. Selected ones come first, then the rest alphabetically; the search narrows both.
   const pickable = d.pickable_languages ? new Set(d.pickable_languages) : null;
-  const [search, setSearch] = useState('');
   const sortedLanguageEntries = filterLanguages(
     Object.entries(all),
     pickable,
     new Set([...selected, ...known]),
-    search,
   );
   return (
     <Stack vertical>
@@ -126,19 +115,19 @@ export const LanguagePicker = ({
             default. Green languages are known. To speak another in chat, type
             its prefix.
           </Label>
-          <Input
-            fluid
-            mb={0.5}
-            placeholder={`Search ${pickable ? pickable.size + selected.size : Object.keys(all).length} languages...`}
-            value={search}
-            onChange={setSearch}
-          />
-          <Box style={{ maxHeight: '20em', overflowY: 'auto' }}>
-            {sortedLanguageEntries.length === 0 && (
-              <Label italic>No language matches.</Label>
-            )}
+          {sortedLanguageEntries.length === 0 && (
+            <Label italic>No language to pick.</Label>
+          )}
+          <Box
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(12em, 1fr))',
+              gap: '0.4em',
+              alignItems: 'start',
+            }}
+          >
             {sortedLanguageEntries.map(([key, meta]) => (
-              <LanguageRow
+              <LanguageTile
                 key={key}
                 languageKey={key}
                 meta={meta}
@@ -157,9 +146,11 @@ export const LanguagePicker = ({
   );
 };
 
-// ─── Single language row ──────────────────────────────────────────────────────────
+// ─── Single language tile ─────────────────────────────────────────────────────────
 
-const LanguageRow = ({
+/// One language as a tile: the name toggles it (the language's description is the tooltip); a known one also shows the
+/// prefix that speaks it and the button that makes it the default.
+const LanguageTile = ({
   languageKey,
   meta,
   selected,
@@ -178,13 +169,11 @@ const LanguageRow = ({
   keys: Record<string, string>;
   act: Act;
 }) => {
-  const hasDesc = !!meta.desc;
-  const disabled = !selected && roomLeft === 0;
+  const canAdd = !selected && !known && roomLeft > 0;
+  const toggles = selected || canAdd;
   return (
     <Box
-      mb={0.25}
-      px={0.75}
-      py={0.25}
+      p={0.4}
       style={{
         borderRadius: '0.333em',
         background: known ? 'rgba(46,204,113,0.1)' : 'rgba(255,255,255,0.03)',
@@ -193,69 +182,58 @@ const LanguageRow = ({
           : '1px solid rgba(255,255,255,0.06)',
       }}
     >
-      <Stack align="center">
-        <Stack.Item grow>
-          <Tooltip content={hasDesc ? meta.desc : meta.name}>
-            <Box
-              bold
-              color={known ? 'good' : undefined}
-              style={{
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {meta.name}
-            </Box>
-          </Tooltip>
-        </Stack.Item>
-        {known && (
-          <Stack.Item>
-            <LanguageKeyInput
-              languageKey={languageKey}
-              defaultKey={meta.default_key ?? ''}
-              keys={keys}
-              act={act}
-            />
-          </Stack.Item>
-        )}
-        {known && (
-          <Stack.Item>
-            <Button
-              ml={0.5}
-              compact
-              selected={preferred}
-              tooltip={
-                preferred
-                  ? 'Spoken by default'
-                  : 'Speak this language by default'
-              }
-              onClick={() =>
-                send(act, 'set_preferred', { language: languageKey })
-              }
-            >
-              {preferred ? 'Default' : 'Set default'}
-            </Button>
-          </Stack.Item>
-        )}
-        {(selected || !known) && (
-          <Stack.Item>
-            <Button
-              ml={0.5}
-              icon={selected ? 'minus' : 'plus'}
-              color={selected ? 'bad' : 'good'}
-              disabled={disabled}
-              onClick={() =>
-                selected
-                  ? send(act, 'remove_language', { language: languageKey })
-                  : send(act, 'add_language', { language: languageKey })
-              }
-            >
-              {selected ? 'Remove' : 'Add'}
-            </Button>
-          </Stack.Item>
-        )}
-      </Stack>
+      <Tooltip content={meta.desc || meta.name}>
+        <Button
+          fluid
+          textAlign="center"
+          color={known ? 'good' : 'default'}
+          selected={selected}
+          style={{
+            cursor: toggles ? 'pointer' : 'default',
+            opacity: toggles || known ? 1 : 0.55,
+          }}
+          onClick={() => {
+            if (selected) {
+              send(act, 'remove_language', { language: languageKey });
+            } else if (canAdd) {
+              send(act, 'add_language', { language: languageKey });
+            }
+          }}
+        >
+          {meta.name}
+        </Button>
+      </Tooltip>
+      {known && (
+        <Box
+          mt={0.4}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.3em',
+            flexWrap: 'wrap',
+          }}
+        >
+          <LanguageKeyInput
+            languageKey={languageKey}
+            defaultKey={meta.default_key ?? ''}
+            keys={keys}
+            act={act}
+          />
+          <Button
+            compact
+            selected={preferred}
+            tooltip={
+              preferred ? 'Spoken by default' : 'Speak this language by default'
+            }
+            onClick={() =>
+              send(act, 'set_preferred', { language: languageKey })
+            }
+          >
+            {preferred ? 'Default' : 'Set default'}
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };

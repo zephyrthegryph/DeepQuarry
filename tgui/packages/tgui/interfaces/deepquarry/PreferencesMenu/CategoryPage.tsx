@@ -18,14 +18,7 @@ import type { EditorDataCache, EditorStaticCache } from './editors';
 import { PrefEditor } from './editors/PrefEditor';
 import { LooksPage, looksHasBody } from './LooksPage';
 import { labelForGroup, labelForKey } from './labels';
-import { PrefWidget, resolveWidget } from './PrefWidget';
-import {
-  editorAnchor,
-  groupAnchor,
-  highlightStyle,
-  prefAnchor,
-  useSearchHighlight,
-} from './search';
+import { isInlineWidget, PrefWidget, resolveWidget } from './PrefWidget';
 import { type SwitcherEntry, TextSwitcher } from './TextSwitcher';
 import type {
   PrefCategory,
@@ -50,7 +43,6 @@ type Props = {
 const FULL_WIDTH_EDITORS = new Set<string>([
   'trait_picker',
   'occupation',
-  'antag_optin',
   'organs',
   'body_markings',
   'flavor',
@@ -82,7 +74,6 @@ export const CategoryPage = ({
         {page.groups.map((group, gi) => (
           <GroupBlock
             key={`${gi}-${group.group}`}
-            category={page.category}
             group={group}
             staticData={staticData}
             values={values}
@@ -117,7 +108,6 @@ export const CategoryPage = ({
             }
           >
             <GroupBlock
-              category={page.category}
               group={group}
               staticData={staticData}
               values={values}
@@ -220,21 +210,66 @@ export const WidgetGrid = ({
 }: {
   widgets: PrefWidgetItem[];
   values: Record<string, unknown>;
+}) => {
+  const shown = widgets.filter(
+    (item) => DEPENDENT_ROWS[item.key]?.(values) ?? true,
+  );
+  const inline = shown.filter(isInlineWidget);
+  const rows = shown.filter((item) => !isInlineWidget(item));
+  return (
+    <Box>
+      {rows.length > 0 && (
+        <Box
+          style={{
+            display: 'grid',
+            gridTemplateColumns:
+              'minmax(min(100%, 6em), max-content) minmax(0, 1fr)',
+            columnGap: '0.75em',
+            rowGap: '0.3em',
+            alignItems: 'center',
+          }}
+        >
+          {rows.map((item) => (
+            <WidgetRow key={item.key} item={item} values={values} />
+          ))}
+        </Box>
+      )}
+      {inline.length > 0 && (
+        <Box
+          mt={rows.length > 0 ? 0.5 : 0}
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            columnGap: '1.5em',
+            rowGap: '0.4em',
+          }}
+        >
+          {inline.map((item) => (
+            <InlineWidget key={item.key} item={item} values={values} />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+/// A short control with its label beside it, flowing in a line with the others.
+const InlineWidget = ({
+  item,
+  values,
+}: {
+  item: PrefWidgetItem;
+  values: Record<string, unknown>;
 }) => (
-  <Box
-    style={{
-      display: 'grid',
-      gridTemplateColumns: 'minmax(min(100%, 6em), max-content) minmax(0, 1fr)',
-      columnGap: '0.75em',
-      rowGap: '0.3em',
-      alignItems: 'center',
-    }}
-  >
-    {widgets
-      .filter((item) => DEPENDENT_ROWS[item.key]?.(values) ?? true)
-      .map((item) => (
-        <WidgetRow key={item.key} item={item} values={values} />
-      ))}
+  <Box style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5em' }}>
+    <Label>{labelForKey(item.key, item.label)}:</Label>
+    <PrefWidget
+      item={{
+        ...item,
+        value: Object.hasOwn(values, item.key) ? values[item.key] : item.value,
+      }}
+    />
   </Box>
 );
 
@@ -245,11 +280,8 @@ const WidgetRow = ({
   item: PrefWidgetItem;
   values: Record<string, unknown>;
 }) => {
-  const anchor = prefAnchor(item.key);
-  const lit = useSearchHighlight(anchor);
   return (
     <Box
-      data-dq-anchor={anchor}
       style={{
         display: 'contents',
       }}
@@ -258,12 +290,11 @@ const WidgetRow = ({
         style={{
           maxWidth: '14em',
           overflowWrap: 'anywhere',
-          ...highlightStyle(lit),
         }}
       >
         {labelForKey(item.key, item.label)}:
       </Label>
-      <Box style={{ minWidth: 0, ...highlightStyle(lit) }}>
+      <Box style={{ minWidth: 0 }}>
         <PrefWidget
           item={{
             ...item,
@@ -278,14 +309,12 @@ const WidgetRow = ({
 };
 
 const GroupBlock = ({
-  category,
   group,
   staticData,
   values,
   editorData,
   fillHeight,
 }: {
-  category: string;
   group: PrefGroup;
   staticData?: EditorStaticCache;
   values: Record<string, unknown>;
@@ -301,8 +330,6 @@ const GroupBlock = ({
     : [];
   const plain = widgets.filter((w) => !switched.includes(w));
   const hasTitle = !!group.group;
-  const anchor = groupAnchor(category, group.group);
-  const lit = useSearchHighlight(anchor);
 
   // Full-height editor pages (Loadout, Mind & Body) MUST fill the panel. Render the editor(s)
   // directly in a height:100% container even when the group carries a title — a titled, non-fill
@@ -342,11 +369,7 @@ const GroupBlock = ({
   }
 
   return (
-    <Section
-      title={hasTitle ? labelForGroup(group.group) : null}
-      data-dq-anchor={anchor}
-      style={highlightStyle(lit)}
-    >
+    <Section title={hasTitle ? labelForGroup(group.group) : null}>
       {group.group === 'flavor' &&
         editors.map((item, idx) => (
           <Box
@@ -394,14 +417,9 @@ const EditorBlock = ({
   editorData: EditorDataCache;
   staticData?: EditorStaticCache;
 }) => {
-  const anchor = editorAnchor(item.key);
-  const lit = useSearchHighlight(anchor);
   if (item.type !== 'editor') return null;
   return (
-    <Box
-      data-dq-anchor={anchor}
-      style={{ height: '100%', ...highlightStyle(lit) }}
-    >
+    <Box style={{ height: '100%' }}>
       <PrefEditor
         editorKey={item.key}
         editorData={editorData}

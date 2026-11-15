@@ -93,7 +93,7 @@ export const TraitPicker = ({
       <Box
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15em), 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18em), 1fr))',
           gap: '0.5em',
         }}
       >
@@ -171,11 +171,11 @@ const TraitColumn = ({
       }}
     >
       <Box style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-        <Box mb={0.25} bold color={color} fontSize="0.85em">
+        <Box mb={0.25} bold color={color} fontSize="1.1em">
           Selected
         </Box>
         {selected.length === 0 && (
-          <Label italic mb={0.5} fontSize="0.85em">
+          <Label italic mb={0.5} fontSize="1.05em">
             None
           </Label>
         )}
@@ -194,7 +194,7 @@ const TraitColumn = ({
             />
           );
         })}
-        <Box mt={0.5} mb={0.25} bold color={color} fontSize="0.85em">
+        <Box mt={0.75} mb={0.25} bold color={color} fontSize="1.1em">
           Available
         </Box>
         {available
@@ -239,7 +239,7 @@ const TraitRow = ({
   const costStr =
     meta.cost === 0 ? '0' : meta.cost > 0 ? `+${meta.cost}` : `${meta.cost}`;
   return (
-    <Box mb={0.1} fontSize="0.85em">
+    <Box mb={0.25} fontSize="1.15em">
       <Box style={{ display: 'flex', alignItems: 'center', gap: '0.333em' }}>
         <Button
           compact
@@ -279,7 +279,7 @@ const TraitRow = ({
         </Box>
       </Box>
       {open && (
-        <Label fontSize="0.85em" pl={3} pr={1}>
+        <Label fontSize="1em" pl={3} pr={1}>
           {meta.desc}
         </Label>
       )}
