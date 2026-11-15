@@ -33,7 +33,12 @@ import {
   typeIsImportant,
 } from './model';
 import { highlightNode, linkifyNode } from './replaceInTextNode';
-import { recallChatScroll, rememberChatScroll } from './scrollState';
+import {
+  anchoredScrollTop,
+  type ResizeSnapshot,
+  recallChatScroll,
+  rememberChatScroll,
+} from './scrollState';
 import type { Page, SerializedMessage } from './types';
 
 /** How long a restored scroll is held while the log lays out. */
@@ -190,6 +195,8 @@ class ChatRenderer {
     | null;
   databaseBackendEnabled: boolean;
   lastScrollHeight: number;
+  sizeSnapshot: ResizeSnapshot;
+  sizeObserver: ResizeObserver | null;
   ttsVoice: string;
   ttsCategories: Record<string, boolean>;
 
@@ -220,6 +227,8 @@ class ChatRenderer {
     this.scrollNode = null;
     this.scrollTracking = true;
     this.lastScrollHeight = 0;
+    this.sizeSnapshot = { height: 0, top: 0, tracking: true };
+    this.sizeObserver = null;
     this.handleScroll = (evt) => {
       const node = this.scrollNode;
       if (!node) {
@@ -234,6 +243,14 @@ class ChatRenderer {
         this.scrollTracking = scrollTracking;
         store.set(scrollTrackingAtom, scrollTracking);
         logger.debug('tracking', this.scrollTracking);
+      }
+      // Only while the box keeps its height: a resize's own clamped scroll is not where the player had been (watchResize()).
+      if (node.clientHeight === this.sizeSnapshot.height) {
+        this.sizeSnapshot = {
+          height: node.clientHeight,
+          top: node.scrollTop,
+          tracking: scrollTracking,
+        };
       }
       // The restore's own scrolls are not the player's: they must not overwrite what is being restored.
       if (!this.restoring) {
@@ -484,6 +501,36 @@ class ChatRenderer {
     this.scrollNode?.removeEventListener('scroll', this.handleScroll);
     this.scrollNode = document.getElementById('chat-pane');
     this.scrollNode?.addEventListener('scroll', this.handleScroll);
+    this.watchResize();
+  }
+
+  /**
+   * The log's box gets taller or shorter (the column boundary dragged, the window resized): the bottom stays where it was. A log
+   * pinned to the newest line stays pinned; one scrolled up keeps its bottom-edge message at the same distance from the bottom edge
+   * (anchoredScrollTop), so nothing scrolls up as the pane grows.
+   */
+  watchResize() {
+    this.sizeObserver?.disconnect();
+    this.sizeObserver = null;
+    const node = this.scrollNode;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    this.sizeSnapshot = {
+      height: node.clientHeight,
+      top: node.scrollTop,
+      tracking: this.scrollTracking,
+    };
+    this.sizeObserver = new ResizeObserver(() => {
+      const before = this.sizeSnapshot;
+      const height = node.clientHeight;
+      if (height === before.height) return;
+      this.sizeSnapshot = { ...before, height };
+      // A first measure, or a restore in progress (its own observer holds the position): nothing to anchor.
+      if (before.height === 0 || this.restoring) return;
+      const top = anchoredScrollTop(before, height, node.scrollHeight);
+      logger.debug('resize', before.height, '->', height, 'top', top);
+      node.scrollTop = top;
+    });
+    this.sizeObserver.observe(node);
   }
 
   setVisualChatLimits(

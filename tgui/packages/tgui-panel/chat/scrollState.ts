@@ -47,3 +47,28 @@ export function forgetChatScroll(): void {
   memory = null;
   clearTimeout(timer);
 }
+
+/** What the log's scroll box looked like when its height last stood still: the box height, how far it was scrolled and whether it was pinned. */
+export type ResizeSnapshot = {
+  height: number;
+  top: number;
+  tracking: boolean;
+};
+
+/**
+ * Where the scroll box goes when its height changes from `before.height` to `height` (the column boundary dragged, the window
+ * resized). A pinned log stays at the newest line. Otherwise the message at the bottom edge keeps its distance from the bottom edge, so
+ * the lines above it come into view as the box grows and the text does not ride up with the edge: the position moves by the height
+ * delta, within the log.
+ */
+export function anchoredScrollTop(
+  before: ResizeSnapshot,
+  height: number,
+  scrollHeight: number,
+): number {
+  const max = Math.max(0, scrollHeight - height);
+  if (before.tracking) {
+    return max;
+  }
+  return Math.min(max, Math.max(0, before.top - (height - before.height)));
+}
