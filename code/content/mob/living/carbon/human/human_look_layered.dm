@@ -24,7 +24,8 @@
 /// that fades (or that `together` asks for: an inset layer needs the group's own surface) is KEEP_TOGETHER.
 /proc/human_part_group(list/parts, layer = FLOAT_LAYER, alpha = 255, pixel_x = 0, pixel_y = 0, together = FALSE, flags = null)
 	READS_FROM()
-	var/image/group = image(icon = null, layer = layer)
+	// An explicit blank state: a group with no icon of its own would draw the icon of whatever it is flattened over (a composed body is the mob's own icon).
+	var/image/group = image(icon = 'icons/mob/human.dmi', icon_state = "blank", layer = layer)
 	if(!isnull(flags))
 		group.appearance_flags = flags
 	if(together || alpha < 255)
@@ -33,6 +34,22 @@
 	group.pixel_x = pixel_x
 	group.pixel_y = pixel_y
 	return look_composed_image(group, parts)
+
+/// `parts` drawn only facing `dirs`: each part's sprite reduced to those facings (a copy of the part, the same tint), as a tail is split by facing.
+/// An overlay made from it shows only while its holder faces one of `dirs`, so a body layered by facing needs no redraw when it turns.
+/mob/living/carbon/human/proc/human_dirs_parts(list/parts, list/dirs)
+	READS_FROM()
+	. = list()
+	for(var/image/part as anything in parts)
+		var/image/kept = image(part)
+		kept.icon = human_look_icon("limb_dirs|[part.icon]|[part.icon_state]|[jointext(dirs, ",")]", "build_limb_dirs", part.icon, part.icon_state, dirs)
+		kept.icon_state = ""
+		. += kept
+
+/// One state of `file` with only its `dirs` facings drawn. A cache builder (human_dirs_parts()).
+/mob/living/carbon/human/proc/build_limb_dirs(file, state, list/dirs)
+	human_icon_op(2 + length(dirs))
+	return icon_keep_dirs(icon(file, state), dirs)
 
 /// The emissive blockers of `parts`: each part's shape, at `alpha`, shared by every colour of it.
 /proc/human_em_blocks(list/parts, alpha = 255)
@@ -77,8 +94,15 @@
 	for(var/obj/item/organ/external/part in organs)
 		if(part.is_stump() || limb_hidden(part))
 			continue
-		if(part.icon_position & UNDER)
-			under += part.layered_parts(skeleton)
+		// A composed body underlays each part in turn, so a later one lies under the earlier ones: the layered list is built the same way round.
+		if(part.icon_position & (LEFT | RIGHT))
+			// The far limb goes under the body: the left one facing east, the right one facing west. The near copy shows in the other three facings.
+			var/far_dir = (part.icon_position & LEFT) ? EAST : WEST
+			var/list/layered = part.layered_parts(skeleton)
+			under = human_dirs_parts(layered, list(far_dir)) + under
+			parts += human_dirs_parts(layered, GLOB.cardinal - far_dir)
+		else if(part.icon_position & UNDER)
+			under = part.layered_parts(skeleton) + under
 		else
 			parts += part.layered_parts(skeleton)
 	var/image/body = image(icon = template, icon_state = "blank", layer = BODY_LAYER + BODYPARTS_LAYER)
@@ -113,8 +137,8 @@
 	var/base_file
 	var/state
 	if(layered_forced_icon())
-		base_file = force_icon
 		state = "[icon_name][gendered_icon ? "_[owner.gender == FEMALE ? "f" : "m"]" : ""]"
+		base_file = forced_icon_file(state)
 	else
 		var/gender = gendered_icon ? (data.body_gender ? "f" : "m") : null
 		state = "[icon_name][gender ? "_[gender]" : ""]"

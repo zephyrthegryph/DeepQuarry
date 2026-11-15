@@ -1,5 +1,6 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   Button,
@@ -14,7 +15,6 @@ import type {
   NtosNewsBrowserActions,
   NtosNewsBrowserData,
 } from './generated/NtosNewsBrowser';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const NtosNewsBrowser = (props) => {
   const { act, data } = useBackend<

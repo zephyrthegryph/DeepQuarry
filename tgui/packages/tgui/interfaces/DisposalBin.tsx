@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Icon, RoundGauge, Section, Stack } from 'tgui-core/components';
-import type { DisposalBinActions, DisposalBinData } from './generated/DisposalBin';
+import type {
+  DisposalBinActions,
+  DisposalBinData,
+} from './generated/DisposalBin';
 
 type Data = DisposalBinData;
 

@@ -6,6 +6,7 @@ type BinaryIO = 0 | 1;
 
 type Client = {
   address: string;
+  chatlog_token: string;
   ckey: string;
   computer_id: string;
   profiling?: BinaryIO;

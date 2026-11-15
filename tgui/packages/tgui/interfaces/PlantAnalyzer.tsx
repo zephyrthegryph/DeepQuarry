@@ -1,9 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import type { PlantAnalyzerActions } from './generated/PlantAnalyzer';
-import { Label } from 'tgui/components/Label';
 
 type Data = {
   no_seed: BooleanLike;

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -12,12 +13,11 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { sanitizeText } from '../sanitize';
 import type {
   NtosEmailClientActions,
   NtosEmailClientData,
 } from './generated/NtosEmailClient';
-import { sanitizeText } from '../sanitize';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = NtosEmailClientData;
 

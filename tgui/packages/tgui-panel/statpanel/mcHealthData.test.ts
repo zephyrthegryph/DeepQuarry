@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  averageTickParts,
   bytes,
   framePhases,
   histogramPercentile,
   nativeMemoryByArea,
   nativeWork,
+  overrunParts,
   overrunSummary,
   perMinute,
   systemsByCost,
-  verdictOf,
-  averageTickParts,
-  overrunParts,
   tickParts,
+  verdictOf,
 } from './mcHealthData';
 
 const win = (avg: number, p99: number, overruns = 0) => ({

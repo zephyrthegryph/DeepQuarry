@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -23,7 +24,6 @@ import type {
   PermissionsPanelActions,
   PermissionsPanelData,
 } from './generated/PermissionsPanel';
-import { Label } from 'tgui/components/Label';
 
 type Data = PermissionsPanelData;
 type AdminRow = NonNullable<Data['permissions_rows']>[number];

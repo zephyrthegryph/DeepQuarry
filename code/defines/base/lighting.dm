@@ -178,14 +178,16 @@ do { \
 #define CLIENT_GLOW_POOL_MAX 64
 /// Server milliseconds one turn of the glow baker (telling viewers of arrived shapes, starting bakes, working out door twins) may spend before it leaves the rest to the next tick.
 #define CLIENT_GLOW_TURN_BUDGET_MS 4
+/// A baker turn that cost this many ms is written to the world log with the time of each stage.
+#define CLIENT_GLOW_TURN_SLOW_MS 8
 /// Server milliseconds one step of a client holder's acquire queue (the glow images a delta crossing makes for lights newly in reach) may spend before it leaves the rest to the next tick.
 #define CLIENT_GLOW_ACQUIRE_BUDGET_MS 4
 /// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
 /// near the eye are followed once per tick (the lighting step).
 #define CLIENT_GLOW_SIGHT_INTERVAL (2 TICKS)
 /// Server milliseconds one step of a client holder's full scan (a login, a teleport) may spend before it leaves the rest of the chunks to the next ticks: nearest the eye first.
-#define CLIENT_GLOW_SCAN_BUDGET_MS 10
-/// Where iconforge writes baked shadow masks before they enter the resource cache.
+#define CLIENT_GLOW_SCAN_BUDGET_MS 4
+/// Where the Rust baker writes baked shadow masks (it keeps them there, within a file and byte budget, until they enter the resource cache and after).
 #define CLIENT_GLOW_MASK_DIR "data/client_glow_masks/"
 /// Baked shadow masks kept; shapes asked for at once; bakes running at once.
 #define CLIENT_GLOW_MASK_CACHE_MAX 8192
@@ -201,14 +203,10 @@ do { \
 #define CLIENT_GLOW_MASK_BAKES_MAX 16
 /// How long a client with no session (so no asset ack to wait for) is given to receive a new baked glow PNG before held glows swap to it.
 #define CLIENT_GLOW_ICON_DELIVERY (0.5 SECONDS)
-/// Iconforge's own limit on one sprite's transforms is 128; the mask stays under it.
-#define CLIENT_GLOW_MASK_STEPS_MAX 126
 /// The bloom that carries floor light about a tile onto the walls beside it: its blur, its growth before the blur (pixels), its strength.
 #define CLIENT_GLOW_SPREAD_SIZE 20
 #define CLIENT_GLOW_SPREAD_OFFSET 4
 #define CLIENT_GLOW_SPREAD_ALPHA 160
-/// Pixels each fade ring of a baked cut adds: wide enough that lights with different reach blend instead of leaving tile-shaped seams (client rig).
-#define CLIENT_GLOW_MASK_RING_STEP 4
 /// The blur over the whole glow plane that softens every tile-shaped cut, so neighbouring colours blend (one filter per client, none per light), always on:
 /// its size in pixels, about 0.4 of a tile. Wider bleeds light past walls (the blur runs after the wall cut).
 #define LIGHTING_SMOOTH_BLUR_SIZE 12

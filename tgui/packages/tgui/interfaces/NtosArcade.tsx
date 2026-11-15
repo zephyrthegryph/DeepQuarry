@@ -1,5 +1,6 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -12,7 +13,6 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { NtosArcadeActions, NtosArcadeData } from './generated/NtosArcade';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const NtosArcade = (props) => {
   const { act, data } = useBackend<NtosArcadeData, NtosArcadeActions>();

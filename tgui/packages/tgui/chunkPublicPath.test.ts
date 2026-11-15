@@ -1,6 +1,7 @@
 // The chunk prefetch: the server ranks the most opened interfaces' chunks first (`priority`); those are fetched first, the rest after them,
 // two at a time at low network priority.
 import { afterEach, describe, expect, it } from 'bun:test';
+
 // webpack defines the public path global; the module assigns it.
 (globalThis as any).__webpack_public_path__ = '';
 const { warmChunkPublicPath } = await import('./chunkPublicPath');
@@ -23,7 +24,10 @@ describe('chunk prefetch', () => {
       calls.push({ url, low: init?.priority === 'low' });
       return new Promise((resolve) => {
         resolvers.push(() =>
-          resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(0) } as any),
+          resolve({
+            ok: true,
+            arrayBuffer: async () => new ArrayBuffer(0),
+          } as any),
         );
       });
     }) as any;

@@ -11,10 +11,7 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { sanitizeAdminHtml } from '../sanitize';
-import type {
-  TicketChatActions,
-  TicketChatData,
-} from './generated/TicketChat';
+import type { TicketChatActions, TicketChatData } from './generated/TicketChat';
 
 const Level = {
   0: 'Mentorhelp',

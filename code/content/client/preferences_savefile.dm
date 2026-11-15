@@ -410,8 +410,6 @@ GLOBAL_LIST_INIT(retired_character_pref_keys, list(
 	"name_is_always_random",
 	"nickname",
 	"offset_override",
-	"preview_job",
-	"preview_loadout",
 	"religion",
 	"resleeve_lock",
 	"sec_record",

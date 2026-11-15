@@ -75,7 +75,7 @@
 	var/margin = text2num(shape_parts[1])
 	var/north_margin_key = "[margin]|0,0,0,1"
 	var/png = client_glow_mask_bake_blocking(north_margin_key)
-	TEST_ASSERT_NOTNULL(png, "iconforge baked the mask")
+	TEST_ASSERT_NOTNULL(png, "the Rust baker baked the mask")
 	var/icon/baked = icon(file(png))
 	var/size = margin * 2 + WORLD_ICON_SIZE
 	TEST_ASSERT_EQUAL(baked.Width(), size, "the mask is the glow sprite's size")
@@ -85,23 +85,21 @@
 	TEST_ASSERT_NULL(baked.GetPixel(margin + 56, margin + 16), "the tile east, not reached, is clear past the fade")
 	TEST_ASSERT_NULL(baked.GetPixel(margin + 34, margin + 16), "nothing spills past a reached tile's edge")
 	TEST_ASSERT(client_lighting_test_alpha(baked.GetPixel(margin + 31, margin + 16)) < client_lighting_test_alpha(baked.GetPixel(margin + 16, margin + 16)), "the fade is inside the reached tile")
-	fdel(png)
 	// A wall is exact: no light anywhere on it, and the floor beside it is not faded.
 	var/wall_png = client_glow_mask_bake_blocking("[margin]|0,0,0,1|0,-1,1,0")
-	TEST_ASSERT_NOTNULL(wall_png, "iconforge baked the walled mask")
+	TEST_ASSERT_NOTNULL(wall_png, "the Rust baker baked the walled mask")
 	var/icon/walled = icon(file(wall_png))
 	for(var/px in 1 to WORLD_ICON_SIZE)
 		for(var/py in 1 to WORLD_ICON_SIZE)
 			TEST_ASSERT_NULL(walled.GetPixel(margin + px, margin - WORLD_ICON_SIZE + py), "no light on the wall south of the light")
 	TEST_ASSERT_EQUAL(client_lighting_test_alpha(walled.GetPixel(margin + 24, margin + 1)), client_lighting_test_alpha(walled.GetPixel(margin + 24, margin + 16)), "the floor against the wall is not faded")
-	fdel(wall_png)
 	// The real tube on Southern Cross, when this run has that map (--full-map): through the real path, its wall row and everything past it hold no light.
 	var/obj/machinery/light/real_tube = locate(/obj/machinery/light) in locate(132, 80, 2)
 	if(real_tube?.light?.glow_mask_key)
 		var/real_key = real_tube.light.glow_mask_key
 		var/real_margin = text2num(splittext(real_key, "|")[1])
 		var/real_png = client_glow_mask_bake_blocking(real_key)
-		TEST_ASSERT_NOTNULL(real_png, "iconforge baked the real tube")
+		TEST_ASSERT_NOTNULL(real_png, "the Rust baker baked the real tube")
 		var/icon/real = icon(file(real_png))
 		var/real_size = real_margin * 2 + WORLD_ICON_SIZE
 		TEST_ASSERT_NOTNULL(real.GetPixel(real_margin + 16, real_margin + 16), "the tube's floor tile is lit")
@@ -109,9 +107,8 @@
 			for(var/py in 1 to real_margin)
 				TEST_ASSERT_NULL(real.GetPixel(px, py), "no light on the wall row or past it")
 		log_world("client glow test: real tube key [real_key] clear below its own tile")
-		fdel(real_png)
 	TEST_ASSERT(S.glow_reach["2,0"], "the open floor two tiles east is lit")
-	// The largest glow, wide open and then checkered (the most rectangles a shape can need): both must bake, iconforge refuses over 128 steps.
+	// The largest glow, wide open and then checkered (the most tiles a shape can have): both bake, whole and with the full fade (no cap on its steps).
 	var/list/open_tiles = list()
 	var/list/checkered = list()
 	for(var/dx in -5 to 5)
@@ -119,12 +116,11 @@
 			open_tiles += "[dx],[dy]"
 			if(!((dx + dy) % 2))
 				checkered += "[dx],[dy]"
-	var/list/open_sprite = client_glow_mask_sprite("160|[jointext(open_tiles, ",")]")
-	TEST_ASSERT(length(open_sprite["transform"]) <= CLIENT_GLOW_MASK_STEPS_MAX, "an open range 6 mask fits iconforge's transform limit")
 	for(var/list/shape in list(open_tiles, checkered))
 		var/big_png = client_glow_mask_bake_blocking("160|[jointext(shape, ",")]")
-		TEST_ASSERT_NOTNULL(big_png, "iconforge baked a range 6 mask")
-		fdel(big_png)
+		TEST_ASSERT_NOTNULL(big_png, "the Rust baker baked a range 6 mask")
+		var/icon/big = icon(file(big_png))
+		TEST_ASSERT_EQUAL(big.Width(), 352, "the range 6 mask is the largest glow sprite's size")
 	var/builds = GLOB.client_glow_mask_builds
 	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, east1)
 	SSlighting.light_step(0, TRUE)
@@ -230,7 +226,7 @@
 
 /// Marks every client lighting counter a test may move, so teardown restores them.
 /datum/unit_test/proc/client_glow_counters_restore()
-	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved), nameof(GLOB.client_glow_holder_chunk_visits), nameof(GLOB.client_glow_holder_sight_refreshes), nameof(GLOB.client_glow_trace_lines), nameof(GLOB.client_glow_flushes), nameof(GLOB.client_glow_flush_changes), nameof(GLOB.client_glow_reconsiders), nameof(GLOB.client_glow_mask_builds), nameof(GLOB.client_flat_light_refreshes), nameof(GLOB.client_flat_light_recolours), nameof(GLOB.client_flat_light_makes), nameof(GLOB.client_glow_twins_made), nameof(GLOB.client_glow_twin_hits)))
+	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved), nameof(GLOB.client_glow_holder_chunk_visits), nameof(GLOB.client_glow_holder_sight_refreshes), nameof(GLOB.client_glow_trace_lines), nameof(GLOB.client_glow_flushes), nameof(GLOB.client_glow_flush_changes), nameof(GLOB.client_glow_reconsiders), nameof(GLOB.client_glow_mask_builds), nameof(GLOB.client_flat_light_refreshes), nameof(GLOB.client_flat_light_recolours), nameof(GLOB.client_flat_light_makes), nameof(GLOB.client_glow_twins_made), nameof(GLOB.client_glow_twin_hits), nameof(GLOB.client_glow_twin_lights), nameof(GLOB.client_glow_twin_doors_examined)))
 		set_global(counter, GLOB.vars[counter])
 
 /// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
@@ -1032,9 +1028,8 @@
 	var/key = "160|[jointext(tiles, ",")]|"
 	var/started = REALTIMEOFDAY
 	for(var/i in 1 to 10)
-		var/timed = client_glow_mask_bake_blocking(key)
-		fdel(timed)
-	log_world("client glow test: one open range 6 bake takes [(REALTIMEOFDAY - started) / 10] ds")
+		client_glow_mask_bake_blocking("[key][i],6") // a blocked tile outside the reach: a distinct key, so each is a bake and not a file hit
+	log_world("client glow test: one open range 6 bake takes [(REALTIMEOFDAY - started) / 10] ds from the game thread")
 	var/png = client_glow_mask_bake_blocking(key)
 	TEST_ASSERT_NOTNULL(png, "baked")
 	var/icon/baked = icon(file(png))
@@ -1050,7 +1045,6 @@
 	log_world("client glow test: worst bake-against-plain alpha difference [worst]")
 	TEST_ASSERT(worst <= 2, "the bake lines up with the plain sprite (worst alpha difference [worst])")
 	GLOB.client_glow_baker.icons -= key
-	fdel(png)
 
 /// A sprite bigger than a tile is lit as the turf it stands on: under client lighting it carries a flat light whose grey is that
 /// turf's level, a normal-sized atom carries none, the grey follows a light coming and going and the atom moving, and the flat
@@ -1555,9 +1549,9 @@
 	TEST_ASSERT(client_glow_shape_grew(shut_key, open_key), "and reaches floor the shut one does not")
 	TEST_ASSERT(GLOB.client_glow_twins_made > 0, "the twin was counted")
 	TEST_ASSERT(GLOB.client_glow_baker.pending[open_key] || GLOB.client_glow_baker.icons[open_key], "and asked of the bakers ahead")
-	if(!GLOB.client_glow_baker.icons[open_key]) // a unit-test world bakes on the spot instead of waiting on iconforge's thread
+	if(!GLOB.client_glow_baker.icons[open_key]) // a unit-test world bakes on the spot instead of waiting on the baker's thread
 		var/png = client_glow_mask_bake_blocking(open_key)
-		TEST_ASSERT_NOTNULL(png, "iconforge baked the open shape")
+		TEST_ASSERT_NOTNULL(png, "the Rust baker baked the open shape")
 		client_glow_mask_cache(open_key, fcopy_rsc(file(png)))
 		fdel(png)
 	// Open it.
@@ -1735,7 +1729,7 @@
 	if(length(lights) > 20)
 		TEST_ASSERT(new_examined / n <= 40, "a light examines the doors of its own chunks only ([new_examined / n] per light)")
 		TEST_ASSERT(new_examined * 4 < old_examined, "far fewer doors examined than the walk over all of them ([new_examined] against [old_examined])")
-	// The twin keys: the sight layer's one call against the per-door DM work it replaced (the flip, a shadowcast and a key built by client_glow_shape_key() for each door), key for key.
+	// The twin keys: the sight layer's one call against the per-door DM work it replaced (the flip, a shadowcast and a key built by dq_test_glow_shape_key() for each door), key for key.
 	var/dm_ms = 0
 	var/rust_ms = 0
 	var/count = 0
@@ -1755,7 +1749,7 @@
 			var/dirs = client_glow_door_flip(D, T)
 			if(isnull(dirs))
 				continue
-			var/key = client_glow_shape_key(S, L.glow_mask_margin, sight_view_turfs_flipped(S, L.glow_mask_range, T, dirs), T, dirs)
+			var/key = dq_test_glow_shape_key(S, L.glow_mask_margin, sight_view_turfs_flipped(S, L.glow_mask_range, T, dirs), T, dirs)
 			if(key == L.glow_mask_key || (key in want))
 				continue
 			want += key
@@ -1765,7 +1759,7 @@
 		rust_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		TEST_ASSERT_EQUAL(length(got), length(want), "the sight layer finds the same number of twin shapes for the light at [S.x],[S.y],[S.z]")
 		for(var/i in 1 to length(want))
-			TEST_ASSERT_EQUAL(got[i], want[i], "twin shape [i] of the light at [S.x],[S.y],[S.z] is the key client_glow_shape_key() builds")
+			TEST_ASSERT_EQUAL(got[i], want[i], "twin shape [i] of the light at [S.x],[S.y],[S.z] is the key dq_test_glow_shape_key() builds")
 			compared++
 		count++
 	log_test("CLIENT GLOW DOOR INDEX: twin keys for [count] lights ([compared] shapes, all equal): DM per door [dm_ms / max(count, 1)] ms per light, one sight_twin_keys() call [rust_ms / max(count, 1)] ms per light")
@@ -1821,3 +1815,36 @@
 	var/gone_key = D.glow_door_chunk
 	qdel(D)
 	TEST_ASSERT(!(D in GLOB.client_glow_door_chunks[gone_key]), "a door that is deleted leaves the index")
+
+/// The shape key of a light on `S` whose sight is `seen`, built in DM from each turf's directional_opacity ("margin|dx,dy,...|blocked dx,dy,..."): the oracle the Rust sight layer's keys (sight_view_keyed(),
+/// sight_twin_keys()) are held to. `flipped`, when given, is read as blocking as `flipped_dirs` says instead of as its directional_opacity does (the other state of a door).
+/proc/dq_test_glow_shape_key(turf/S, margin, list/seen, turf/flipped = null, flipped_dirs = NONE)
+	var/list/offsets = list()
+	var/list/blocked = list()
+	for(var/turf/T as anything in seen)
+		if((T == flipped ? flipped_dirs : T.directional_opacity) == ALL_CARDINALS)
+			blocked += T.x - S.x
+			blocked += T.y - S.y
+			continue
+		offsets += T.x - S.x
+		offsets += T.y - S.y
+	return "[margin]|[jointext(offsets, ",")]|[jointext(blocked, ",")]"
+
+/// The key the Rust sight layer builds with the turfs a light sees (sight_view_keyed()) is the key built in DM from the same turfs, with a blocker in the way.
+/datum/unit_test/dq_glow_shape_key_from_rust_matches_dm
+
+/datum/unit_test/dq_glow_shape_key_from_rust_matches_dm/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/structure/sight_test_blocker/B = allocate(/obj/structure/sight_test_blocker, locate(T.x + 2, T.y, T.z))
+	SSsight.flush()
+	for(var/range in list(1, 3, 6))
+		var/margin = (range - 1) * 64
+		var/list/keyed = sight_view_keyed(T, range, margin)
+		var/list/plain = sight_view_turfs(T, range)
+		TEST_ASSERT_EQUAL(length(keyed), length(plain) + 1, "the keyed view is the key and the turfs of the plain one (range [range])")
+		var/key = keyed[1]
+		keyed.Cut(1, 2)
+		for(var/i in 1 to length(plain))
+			TEST_ASSERT(keyed[i] == plain[i], "turf [i] is the same (range [range])")
+		TEST_ASSERT_EQUAL(key, dq_test_glow_shape_key(T, margin, plain), "the key is the one DM builds (range [range])")
+	qdel(B)

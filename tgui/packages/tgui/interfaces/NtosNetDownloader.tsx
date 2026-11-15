@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   Box,
@@ -14,8 +16,6 @@ import type {
   NtosNetDownloaderActions,
   NtosNetDownloaderData,
 } from './generated/NtosNetDownloader';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 type program = NtosNetDownloaderData['downloadable_programs'][number];
 

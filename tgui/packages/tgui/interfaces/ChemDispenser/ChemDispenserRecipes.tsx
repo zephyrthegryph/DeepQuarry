@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import { handleImportData } from '../PlushieEditor/function';
 import { exportRecipes } from './functions';
 import type { Data, Recipe } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const ChemDispenserRecipes = (props: {
   /** Associated list of saved recipe macros. */

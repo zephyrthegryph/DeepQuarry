@@ -1,10 +1,10 @@
 // Wizard spellbook — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { SpellbookActions, SpellbookData } from './generated/Spellbook';
-import { Label } from 'tgui/components/Label';
 
 type Data = SpellbookData;
 

@@ -13,11 +13,7 @@ import { MaterialAccessBar } from './common/MaterialAccessBar';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import { DesignBrowser } from './Fabrication/DesignBrowser';
 import { MaterialCostSequence } from './Fabrication/MaterialCostSequence';
-import type {
-  Design,
-  Material,
-  MaterialMap,
-} from './Fabrication/Types';
+import type { Design, Material, MaterialMap } from './Fabrication/Types';
 import type {
   ExosuitFabricatorTgActions,
   ExosuitFabricatorTgData,

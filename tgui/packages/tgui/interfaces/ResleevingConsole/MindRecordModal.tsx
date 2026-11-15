@@ -5,12 +5,7 @@ import type { modalMindData as ActiveMindRecordData } from './types';
 
 export const MindRecordModal = (props: { data: ActiveMindRecordData }) => {
   const { act } = useBackend();
-  const {
-    realname,
-    obviously_dead,
-    oocnotes,
-    can_sleeve_active,
-  } = props.data;
+  const { realname, obviously_dead, oocnotes, can_sleeve_active } = props.data;
   return (
     <Section
       backgroundColor="#252525"

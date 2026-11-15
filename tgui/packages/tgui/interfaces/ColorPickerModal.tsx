@@ -14,6 +14,7 @@ import React, {
   useState,
 } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   type HsvaColor,
@@ -45,7 +46,6 @@ import type {
   ColorPickerModalActions,
   ColorPickerModalData,
 } from './generated/ColorPickerModal';
-import { Label } from 'tgui/components/Label';
 
 type ColorPickerData = ColorPickerModalData;
 

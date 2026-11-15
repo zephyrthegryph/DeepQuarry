@@ -12,6 +12,7 @@
 //    dominate vertical space.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section } from 'tgui-core/components';
 import type { EditorDataCache, EditorStaticCache } from './editors';
 import { PrefEditor } from './editors/PrefEditor';
@@ -32,7 +33,6 @@ import type {
   PrefGroupItem,
   PrefWidgetItem,
 } from './types';
-import { Label } from 'tgui/components/Label';
 
 type Props = {
   page: PrefCategory;

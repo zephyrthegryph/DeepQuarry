@@ -1,12 +1,12 @@
 // Latest News (station newspaper) — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
 import type { LatestNewsActions, LatestNewsData } from './generated/LatestNews';
-import { Label } from 'tgui/components/Label';
 
 export const LatestNews = () => {
   const { data, act } = useBackend<LatestNewsData, LatestNewsActions>();

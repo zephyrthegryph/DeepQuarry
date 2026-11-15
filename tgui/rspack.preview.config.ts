@@ -11,7 +11,10 @@ export default defineConfig({
   ...config,
   entry: { preview: './packages/tgui/preview' },
   output: {
-    path: path.resolve(process.env.PREVIEW_OUT ?? path.join(import.meta.dirname, '..', 'data', 'tgui_preview')),
+    path: path.resolve(
+      process.env.PREVIEW_OUT ??
+        path.join(import.meta.dirname, '..', 'data', 'tgui_preview'),
+    ),
     filename: '[name].bundle.js',
     publicPath: '',
     assetModuleFilename: '[name][ext]',

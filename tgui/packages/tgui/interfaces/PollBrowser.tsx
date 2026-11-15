@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -21,7 +22,6 @@ import type {
   PollBrowserActions,
   PollBrowserData,
 } from './generated/PollBrowser';
-import { Label } from 'tgui/components/Label';
 
 type Data = PollBrowserData;
 

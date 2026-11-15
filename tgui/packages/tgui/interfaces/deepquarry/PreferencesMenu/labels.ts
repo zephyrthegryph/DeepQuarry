@@ -77,6 +77,8 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   hair_style_name: 'Hair Style',
   facial_style_name: 'Facial Hair Style',
   preflang: 'Preferred Language',
+  preview_loadout: 'Show Loadout in Preview',
+  preview_job: 'Show Job in Preview',
   voice_freq: 'Voice Frequency',
   voice_sound: 'Voice Sound',
   spawnpoint: 'Spawn Point',

@@ -1,0 +1,7 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Glow bakes start in the baker's budgeted turn instead of inside whatever asked for the shape; a baker turn runs one stage at a time within its budget and logs a slow one by stage"
+  - code_imp: "An APC's power-service contract report is sent a tick later, one APC a tick, instead of inside the native notice that flipped its channels"
+  - code_imp: "A client step's proximity cell wake and release is done a few milliseconds a tick"
+  - code_imp: "Slosh reads and writes its step counter once a step; the playsound pressure of the source is read once per sound; the slow-step line names a hook by its handler"

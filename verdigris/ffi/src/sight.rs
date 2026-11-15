@@ -6,7 +6,7 @@ use crate::held::HeldRead;
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::grid::{BlockKind, Dir};
-use vg_core::propagate::view::{shape_key, view};
+use vg_core::propagate::view::{keyed_view, shape_key, view};
 
 use crate::arg::num;
 use crate::world::with_world;
@@ -67,6 +67,42 @@ fn sight_view(center: ByondValue, range: ByondValue) -> Result<ByondValue> {
     Ok(crate::held::hand_list(&items)?)
 }
 
+/// DM prints a whole number without a decimal point, as the key's text does.
+fn margin_text(margin: &ByondValue) -> Result<String> {
+    let margin = num(margin)?;
+    Ok(if margin.fract() == 0.0 {
+        format!("{}", margin as i64)
+    } else {
+        format!("{margin}")
+    })
+}
+
+/// What [`sight_view`] returns and the light's shape key in one walk: a list whose first entry is the key (`"margin|dx,dy,...|blocked dx,dy,..."`,
+/// exactly what `shape_key` builds from the cells seen) and whose other entries are the turfs seen, the centre first. A light that is off the grid
+/// gets an empty list.
+#[auxmacros::bind("/proc/sight_view_keyed")]
+fn sight_view_keyed(center: ByondValue, range: ByondValue, margin: ByondValue) -> Result<ByondValue> {
+    let cell = center.get_ref()?;
+    let range = num(&range)?;
+    if !(range >= 0.0) {
+        bail!("sight_view_keyed: bad range {range}");
+    }
+    let margin = margin_text(&margin)?;
+    let keyed = with_world(|w| {
+        let grid = w.grid().map_err(|e| eyre!("{e}"))?;
+        Ok(keyed_view(&grid, BlockKind::Opacity, cell, range as u32, &margin))
+    })?;
+    let Some((key, cells)) = keyed else {
+        return Ok(crate::held::hand_list(&[])?);
+    };
+    let mut items: Vec<crate::held::Held> = Vec::with_capacity(cells.len() + 1);
+    items.push(crate::held::Held::new_str(key)?);
+    for c in cells {
+        items.push(crate::held::Held::adopt(ByondValue::new_ref(ValueType::Turf, c)));
+    }
+    Ok(crate::held::hand_owned_list(items)?)
+}
+
 /// The shape keys of a light on `center` (a turf) of reach `range` with each of the cells in `cells` read as blocking as it says instead of as the opacity layer
 /// holds it, one at a time: `cells` is a flat list of `x, y, z, mask` (a door's tile and its other state's `directional_opacity`), nearest door first. `margin` is the
 /// glow margin (a number; the key prints it as DM does). A key equal to `skip_key` (the light's own shape) or already returned is left out; the first `limit` are returned, as a list of
@@ -85,13 +121,7 @@ fn sight_twin_keys(
     if !(range >= 0.0) {
         bail!("sight_twin_keys: bad range {range}");
     }
-    let margin = num(&margin)?;
-    // DM prints a whole number without a decimal point, as the key's text does.
-    let margin = if margin.fract() == 0.0 {
-        format!("{}", margin as i64)
-    } else {
-        format!("{margin}")
-    };
+    let margin = margin_text(&margin)?;
     let skip = skip_key.get_string()?;
     let limit = num(&limit)? as usize;
     let values: Vec<f32> = cells.held_list()?.iter().map(num).collect::<Result<_>>()?;

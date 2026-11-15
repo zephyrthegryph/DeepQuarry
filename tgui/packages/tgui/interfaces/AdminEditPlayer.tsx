@@ -6,6 +6,7 @@
 // transformation, etc.) keep their behavior.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { ActFn } from './common/PanelTypes';
@@ -13,7 +14,6 @@ import type {
   AdminEditPlayerActions,
   AdminEditPlayerData,
 } from './generated/AdminEditPlayer';
-import { Label } from 'tgui/components/Label';
 
 type Data = AdminEditPlayerData;
 type DnaCell = NonNullable<Data['dna_cells']>[number];

@@ -108,7 +108,8 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	icon_cache_key = "[icon_name]_[data.get_species_bodytype(owner)]"
 
 	if(force_icon && !skip_forced_icon)
-		mob_icon = new /icon(force_icon, "[icon_name][gendered_icon ? "_[gender]" : ""]")
+		var/forced_state = "[icon_name][gendered_icon ? "_[gender]" : ""]"
+		mob_icon = new /icon(forced_icon_file(forced_state), forced_state)
 	else
 		if(!data)
 			mob_icon = new /icon('icons/mob/human_races/r_human.dmi', "[icon_name][gendered_icon ? "_[gender]" : ""]")
@@ -181,6 +182,13 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 		set_icon(mob_icon)
 		set_shown_layers(layers)
 	return mob_icon
+
+/// The sheet a prosthetic's `state` is drawn from: the model's own, or the generic robotic sheet when the model's sheet has no such state (a monitor head's
+/// sheet holds heads only). A state missing from the sheet draws nothing at all, so the limb would be invisible.
+/obj/item/organ/external/proc/forced_icon_file(state)
+	if(force_icon && icon_exists(force_icon, state))
+		return force_icon
+	return 'icons/mob/human_races/robotic.dmi'
 
 /obj/item/organ/external/proc/apply_colouration(icon/applying)
 

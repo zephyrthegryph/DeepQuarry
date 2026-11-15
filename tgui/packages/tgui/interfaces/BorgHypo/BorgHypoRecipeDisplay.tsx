@@ -11,10 +11,10 @@ export const BorgHypoRecipeDisplay = (props) => {
   const recording = !!recordingRecipe;
 
   const recordedContents = (recordingRecipe ?? []).map((r) => ({
-      id: r.id,
-      name: r.id.replace(/_/, ' '),
-      volume: r.amount,
-    }));
+    id: r.id,
+    name: r.id.replace(/_/, ' '),
+    volume: r.amount,
+  }));
 
   return (
     <Section

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -18,7 +19,6 @@ import type {
   MaterialMap,
   MaterialSlot,
 } from './Types';
-import { Label } from 'tgui/components/Label';
 
 type Props = {
   design: Design;

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -11,7 +12,6 @@ import type {
   XenoarchArtifactHarvesterActions,
   XenoarchArtifactHarvesterData,
 } from './generated/XenoarchArtifactHarvester';
-import { Label } from 'tgui/components/Label';
 
 type Data = XenoarchArtifactHarvesterData;
 

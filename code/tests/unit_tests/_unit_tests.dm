@@ -470,6 +470,7 @@
 #include "dq_preferences_tests.dm"
 #include "dq_looks_preview_tests.dm"
 #include "dq_spawnpoint_audit_tests.dm"
+#include "dq_body_render_tests.dm"
 #include "dq_human_draw.dm"
 #include "dq_human_draw_cost.dm"
 #include "dq_human_bake_tests.dm"

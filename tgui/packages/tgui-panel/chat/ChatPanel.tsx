@@ -7,12 +7,12 @@
 import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { Button } from 'tgui-core/components';
+import { store } from '../events/store';
 import {
   chatPagesRecordAtom,
   currentPageIdAtom,
   scrollTrackingAtom,
 } from './atoms';
-import { store } from '../events/store';
 import { chatRenderer } from './renderer';
 import type { Page } from './types';
 

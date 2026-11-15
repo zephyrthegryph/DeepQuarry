@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Arms, legs, hands and feet on the far side of a body now draw under the torso when it faces east or west, as they did before the body was drawn in layers"

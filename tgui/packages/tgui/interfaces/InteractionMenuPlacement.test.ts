@@ -58,7 +58,10 @@ describe('cursorInMap', () => {
   });
   test('a click on your own mob at the view centre lands mid-screen on a stretched map', () => {
     for (const loc of ['8:1,8:1', '8:0,8:0', '8:32,8:32', '8,8']) {
-      const p = cursorInMap(`icon-x=1;icon-y=1;right=1;screen-loc=${loc}`, stretch);
+      const p = cursorInMap(
+        `icon-x=1;icon-y=1;right=1;screen-loc=${loc}`,
+        stretch,
+      );
       expect(p).not.toBeNull();
       expect(p?.[0]).toBeGreaterThan(520);
       expect(p?.[0]).toBeLessThan(580);

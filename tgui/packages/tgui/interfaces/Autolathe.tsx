@@ -1,3 +1,4 @@
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Button,
   Collapsible,
@@ -10,7 +11,6 @@ import {
 } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
-
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
@@ -22,7 +22,6 @@ import {
 } from './Fabrication/SelectableRecipe';
 import type { Design, MaterialMap } from './Fabrication/Types';
 import type { AutolatheActions, AutolatheData } from './generated/Autolathe';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const Autolathe = (props) => {
   const { act, data } = useBackend<AutolatheData, AutolatheActions>();

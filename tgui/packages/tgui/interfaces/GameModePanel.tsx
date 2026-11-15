@@ -1,6 +1,7 @@
 // Edit Game Mode admin panel — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -8,7 +9,6 @@ import type {
   GameModePanelActions,
   GameModePanelData,
 } from './generated/GameModePanel';
-import { Label } from 'tgui/components/Label';
 
 export const GameModePanel = () => {
   const { data, act } = useBackend<GameModePanelData, GameModePanelActions>();

@@ -101,10 +101,15 @@ export function TechNode(props: Props) {
           <Stack>
             <Stack.Item>
               {tier > 0 &&
-                (can_unlock && (is_free || Object.keys(queue_nodes).length === 0) ? (
+                (can_unlock &&
+                (is_free || Object.keys(queue_nodes).length === 0) ? (
                   <Button
                     icon="lightbulb"
-                    disabled={!can_unlock || tier > 1 || Object.keys(queue_nodes).length > 0}
+                    disabled={
+                      !can_unlock ||
+                      tier > 1 ||
+                      Object.keys(queue_nodes).length > 0
+                    }
                     onClick={() => act('researchNode', { node_id: id })}
                   >
                     Research

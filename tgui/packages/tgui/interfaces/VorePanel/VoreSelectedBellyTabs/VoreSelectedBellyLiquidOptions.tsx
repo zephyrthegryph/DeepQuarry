@@ -1,14 +1,13 @@
 import { useMemo } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
 import { liquidToTooltip, reagentToColor } from '../constants';
 import type { BellyLiquidData } from '../types';
 import { VorePanelEditCheckboxes } from '../VorePanelElements/VorePanelEditCheckboxes';
 import { VorePanelEditSwitch } from '../VorePanelElements/VorePanelEditSwitch';
 import { LiquidOptionsLeft } from './LiquidTab/LiquidOptionsLeft';
 import { LiquidOptionsRight } from './LiquidTab/LiquidOptionsRight';
-import { Label } from 'tgui/components/Label';
 
 export const VoreSelectedBellyLiquidOptions = (props: {
   editMode: boolean;

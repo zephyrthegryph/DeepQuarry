@@ -1,5 +1,5 @@
-import { Box, LabeledList, ProgressBar, Stack } from 'tgui-core/components';
 import { Label } from 'tgui/components/Label';
+import { Box, LabeledList, ProgressBar, Stack } from 'tgui-core/components';
 
 export const ChargeStatus = (props: {
   name: string;

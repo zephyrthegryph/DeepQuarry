@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
 import type {
   NtosNetTransferActions,
   NtosNetTransferData,
 } from './generated/NtosNetTransfer';
-import { StatBar } from 'tgui/components/StatBar';
 
 type server = NtosNetTransferData['servers'][number];
 

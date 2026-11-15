@@ -6,6 +6,7 @@
 // only show the photo name.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
@@ -13,7 +14,6 @@ import type {
   PaperBundleActions,
   PaperBundleData,
 } from './generated/PaperBundle';
-import { Label } from 'tgui/components/Label';
 
 type Data = PaperBundleData;
 

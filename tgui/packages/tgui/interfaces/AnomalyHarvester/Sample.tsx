@@ -7,7 +7,10 @@ import type {
 } from '../generated/AnomalyHarvester';
 
 export const SampleDisplay = (props) => {
-  const { act, data } = useBackend<AnomalyHarvesterData, AnomalyHarvesterActions>();
+  const { act, data } = useBackend<
+    AnomalyHarvesterData,
+    AnomalyHarvesterActions
+  >();
   const { samples = [] } = data;
 
   return (

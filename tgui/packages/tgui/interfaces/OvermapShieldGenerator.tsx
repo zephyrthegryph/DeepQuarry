@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -13,8 +15,6 @@ import type {
   OvermapShieldGeneratorActions,
   OvermapShieldGeneratorData,
 } from './generated/OvermapShieldGenerator';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 type Data = OvermapShieldGeneratorData;
 

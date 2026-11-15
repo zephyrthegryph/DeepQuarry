@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   AnimatedNumber,
   Box,
@@ -10,7 +11,6 @@ import {
 import type { NIFActions } from '../generated/NIF';
 import { getNifCondition, getNutritionText } from './functions';
 import type { Data } from './types';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const NIFMain = (props) => {
   const { act, data } = useBackend<Data, NIFActions>();

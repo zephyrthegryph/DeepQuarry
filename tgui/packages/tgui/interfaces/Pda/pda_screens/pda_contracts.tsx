@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -9,7 +10,6 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import type { PdaActions } from '../../generated/Pda';
-import { Label } from 'tgui/components/Label';
 
 type Contract = {
   id: string;

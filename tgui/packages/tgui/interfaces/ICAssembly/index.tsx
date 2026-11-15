@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -14,7 +15,6 @@ import { formatPower } from 'tgui-core/format';
 import type { ICAssemblyActions } from '../generated/ICAssembly';
 import { PlaneWrapper } from './Plane';
 import type { Data } from './types';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const ICAssembly = (props) => {
   const [showInfo, setShowInfo] = useState(false);

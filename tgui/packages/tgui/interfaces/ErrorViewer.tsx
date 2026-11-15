@@ -7,6 +7,7 @@
 //   - "entry":  full detail of a single error including usr/loc admin links
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
@@ -16,7 +17,6 @@ import type {
   ErrorViewerActions,
   ErrorViewerData,
 } from './generated/ErrorViewer';
-import { Label } from 'tgui/components/Label';
 
 type Item = {
   ref: string;

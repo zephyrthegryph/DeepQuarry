@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import { LabeledList, Stack } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
@@ -7,7 +8,6 @@ import type {
   AnomalyHarvesterData,
 } from '../generated/AnomalyHarvester';
 import { SampleDisplay } from './Sample';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const AnomalyHarvester = (props) => {
   const { act, data } = useBackend<

@@ -1,15 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type {
-  AirlockConsoleAdvancedActions,
-  AirlockConsoleAdvancedData,
-} from './generated/AirlockConsoleAdvanced';
 import {
   StandardControls,
   StatusDisplay,
 } from './EmbeddedController/EmbeddedControllerHelpers';
 import { PanelOpen } from './EmbeddedController/PanelOpen';
+import type {
+  AirlockConsoleAdvancedActions,
+  AirlockConsoleAdvancedData,
+} from './generated/AirlockConsoleAdvanced';
 
 /**
  * Advanced airlock consoles display the external pressure,

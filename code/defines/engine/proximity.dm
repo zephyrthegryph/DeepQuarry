@@ -4,3 +4,6 @@
 #define PROXIMITY_CARRIED "carried"
 #define PROXIMITY_CELL_COORD(v) (round(((v) - 1) / PROXIMITY_CELL_SIZE))
 #define PROXIMITY_CELL_KEY(z, cx, cy) ((((z) * 256) + (cy)) * 256 + (cx))
+/// Milliseconds of members held or released a tick for the cells a client's step woke or let go (reconcile_run()), and the cell that takes this long (ms) is traced.
+#define PROXIMITY_RECONCILE_BUDGET_MS 3
+#define PROXIMITY_RECONCILE_SLOW_MS 5

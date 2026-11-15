@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -13,7 +14,6 @@ import {
 } from 'tgui-core/components';
 import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { CargoMarketBid, Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 const bidLabel = (bid: CargoMarketBid) =>
   `${bid.counterparty} — ${bid.name} (×${bid.multiplier.toFixed(2)})`;

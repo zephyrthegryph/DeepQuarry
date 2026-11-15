@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
-import { Button, Stack } from 'tgui-core/components';
 import { Label } from 'tgui/components/Label';
+import { Button, Stack } from 'tgui-core/components';
 
 type InputButtonsData = {
   large_buttons: boolean;

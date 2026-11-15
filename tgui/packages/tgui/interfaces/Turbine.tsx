@@ -7,10 +7,7 @@ import {
   Section,
 } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
-import type {
-  TurbineActions,
-  TurbineData,
-} from './generated/Turbine';
+import type { TurbineActions, TurbineData } from './generated/Turbine';
 
 type Data = TurbineData;
 

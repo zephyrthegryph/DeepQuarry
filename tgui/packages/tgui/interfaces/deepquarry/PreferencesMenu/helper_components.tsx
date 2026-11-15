@@ -289,10 +289,14 @@ export const layerPlacements = (
   px: number,
   sizes: ({ width: number; height: number } | null)[],
 ) => {
-  const loaded = sizes.filter((s): s is { width: number; height: number } => !!s);
+  const loaded = sizes.filter(
+    (s): s is { width: number; height: number } => !!s,
+  );
   const tile = Math.max(
     1,
-    loaded.length ? Math.min(...loaded.map((s) => Math.max(s.width, s.height))) : 1,
+    loaded.length
+      ? Math.min(...loaded.map((s) => Math.max(s.width, s.height)))
+      : 1,
   );
   const unit = px / tile;
   return sizes.map((s) => {

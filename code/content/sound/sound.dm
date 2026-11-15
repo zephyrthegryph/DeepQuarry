@@ -15,6 +15,8 @@
 	var/source_soundproof = area_source.flag_check(AREA_SOUNDPROOF)
 	// Built on the first hearer and shared; playsound_local resets every field it uses per listener (Q6).
 	var/sound/S
+	// The pressure at the source, read once for every hearer (each read crosses into the atmos backend: two a hearer, a footstep was 1.5-3 ms of them and the rest).
+	var/source_pressure = null
 
 	// Looping through the player list has the added bonus of working for mobs inside containers.
 	// Iterated in place: nothing below can add or remove players.
@@ -40,7 +42,10 @@
 				continue
 			if(!S)
 				S = sound(get_sfx(soundin))
-			hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T)
+				if(pressure_affected)
+					var/datum/gas_mixture/source_env = turf_source.return_air()
+					source_pressure = source_env ? source_env.return_pressure() : SOUND_NO_AIR
+			hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T, source_pressure)
 			SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
 
 /// TRUE if any player could hear a playsound() from `turf_source` within `max_distance`.
@@ -74,7 +79,8 @@
 
 	return TRUE
 
-/mob/proc/playsound_local(turf/turf_source, soundin, vol as num, vary, frequency, falloff, is_global, channel = 0, pressure_affected = TRUE, sound/S, preference, volume_channel = null)
+/// `heard_at` (the hearer's turf) is playsound()'s own read of it; `source_pressure` is the source turf's pressure (SOUND_NO_AIR in space) when playsound() already read it.
+/mob/proc/playsound_local(turf/turf_source, soundin, vol as num, vary, frequency, falloff, is_global, channel = 0, pressure_affected = TRUE, sound/S, preference, volume_channel = null, turf/heard_at = null, source_pressure = null)
 	if(!client || has_status(STAT_DEAFENED))
 		return
 
@@ -117,11 +123,15 @@
 		//Atmosphere affects sound
 		var/pressure_factor = 1
 		if(pressure_affected)
-			var/datum/gas_mixture/hearer_env = T.return_air()
-			var/datum/gas_mixture/source_env = turf_source.return_air()
-
-			if(hearer_env && source_env)
-				var/pressure = min(hearer_env.return_pressure(), source_env.return_pressure())
+			if(isnull(source_pressure))
+				var/datum/gas_mixture/source_env = turf_source.return_air()
+				source_pressure = source_env ? source_env.return_pressure() : SOUND_NO_AIR
+			var/hearer_pressure = source_pressure
+			if(T != turf_source && source_pressure != SOUND_NO_AIR) // the hearer on the source's own turf breathes the same air
+				var/datum/gas_mixture/hearer_env = T.return_air()
+				hearer_pressure = hearer_env ? hearer_env.return_pressure() : SOUND_NO_AIR
+			if(hearer_pressure != SOUND_NO_AIR && source_pressure != SOUND_NO_AIR)
+				var/pressure = min(hearer_pressure, source_pressure)
 				if(pressure < ONE_ATMOSPHERE)
 					pressure_factor = max((pressure - SOUND_MINIMUM_PRESSURE)/(ONE_ATMOSPHERE - SOUND_MINIMUM_PRESSURE), 0)
 			else //space

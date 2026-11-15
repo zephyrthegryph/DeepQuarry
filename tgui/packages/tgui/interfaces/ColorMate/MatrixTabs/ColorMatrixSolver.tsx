@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import type {
   ColorMateActions,
@@ -7,7 +8,6 @@ import type {
 import { computeMatrixFromPairs, isValidHex } from '../functions';
 import { ColorMatrixColorBox } from '../Helpers/MatrixColorBox';
 import type { ColorPair, ColorUpdate, SelectedId } from '../types';
-import { Label } from 'tgui/components/Label';
 
 export const ColorMateMatrixSolver = (props: {
   activeID: SelectedId;

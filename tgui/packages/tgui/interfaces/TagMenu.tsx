@@ -1,11 +1,11 @@
 // Admin Tag Menu — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { TagMenuActions, TagMenuData } from './generated/TagMenu';
-import { Label } from 'tgui/components/Label';
 
 export const TagMenu = () => {
   const { data, act } = useBackend<TagMenuData, TagMenuActions>();
