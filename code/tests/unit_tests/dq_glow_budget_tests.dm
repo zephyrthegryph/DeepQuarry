@@ -117,3 +117,69 @@
 			break
 		io_poll(GLOB.io_lane)
 	TEST_ASSERT_EQUAL(E.done, 24, "every job was delivered over the passes")
+
+/// Steps a pending delta crossing walk to its end (the ticks that follow); returns the steps taken.
+/datum/unit_test/proc/client_glow_finish_delta(datum/client_glow_holder/H, limit = 500)
+	var/steps = 0
+	while(H.delta_chunks && steps < limit)
+		H.delta_continue()
+		steps++
+	return steps
+
+/// A delta crossing with a budget stops inside the chunks of its strips (one light a step at a zero budget) and leaves the rest to later steps; the steps together end where a crossing
+/// that ran to the end ends, and a crossing that arrives while the walk is pending is a full scan, never a delta from a walk that did not finish.
+/datum/unit_test/dq_glow_delta_walk_is_bounded
+
+/datum/unit_test/dq_glow_delta_walk_is_bounded/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/turf/A = client_glow_test_eye(get_turf(got[1]))
+	var/turf/B = locate(A.x + CLIENT_GLOW_CHUNK, A.y, A.z)
+	var/turf/C = locate(A.x + 2 * CLIENT_GLOW_CHUNK, A.y, A.z)
+	TEST_ASSERT(B && C, "the chunks beside the eye exist")
+	var/made = 0
+	for(var/turf/T as anything in block(locate(max(1, B.x - 4), max(1, B.y - 4), B.z), locate(min(world.maxx, B.x + 4), min(world.maxy, B.y + 4), B.z)))
+		if(T.density || locate(/obj/machinery/light) in T)
+			continue
+		allocate(/obj/machinery/light, T)
+		if(++made >= 8)
+			break
+	TEST_ASSERT(made >= 4, "several lights stand in the next chunk ([made])")
+	SSlighting.light_step(0, TRUE)
+	var/datum/client_glow_holder/spread = new
+	spread.view_at(A, 7, 7)
+	TEST_ASSERT(spread.scanned, "the first scan finished")
+	spread.delta_budget_ms = 0
+	var/steps_before = GLOB.client_glow_holder_delta_steps
+	spread.view_at(B, 7, 7) // a delta crossing
+	TEST_ASSERT_NOTNULL(spread.delta_chunks, "the first step leaves the walk for the next ticks")
+	TEST_ASSERT(!spread.scanned, "a delta needs a finished walk to start from")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_delta_steps - steps_before, 1, "the crossing took one step")
+	var/steps = client_glow_finish_delta(spread)
+	TEST_ASSERT(steps >= 2, "the walk took several steps ([steps])")
+	TEST_ASSERT_NULL(spread.delta_chunks, "the walk closed")
+	TEST_ASSERT(spread.scanned, "and the next crossing is a delta again")
+	var/datum/client_glow_holder/direct = new
+	direct.view_at(A, 7, 7)
+	direct.view_at(B, 7, 7)
+	TEST_ASSERT_EQUAL(client_glow_held_keys(spread), client_glow_held_keys(direct), "a walk spread over steps holds what a crossing in one go holds")
+	// A crossing while the walk is pending.
+	var/datum/client_glow_holder/hurried = new
+	hurried.view_at(A, 7, 7)
+	hurried.delta_budget_ms = 0
+	hurried.scan_budget_ms = 0
+	hurried.view_at(B, 7, 7)
+	TEST_ASSERT_NOTNULL(hurried.delta_chunks, "a walk is pending")
+	hurried.view_at(C, 7, 7)
+	TEST_ASSERT_NULL(hurried.delta_chunks, "the pending walk was dropped")
+	TEST_ASSERT(!hurried.scanned, "a crossing over a pending walk is a full scan")
+	client_glow_finish_scan(hurried)
+	client_glow_finish_delta(hurried)
+	var/datum/client_glow_holder/direct_c = new
+	direct_c.view_at(C, 7, 7)
+	for(var/h in direct_c.held)
+		TEST_ASSERT(!isnull(LAZYACCESS(hurried.held, h)), "a crossing over a pending walk holds every glow a scan from there holds")
+	for(var/datum/client_glow_holder/H as anything in list(got[2], spread, direct, hurried, direct_c))
+		spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)

@@ -108,3 +108,15 @@
   // The frame over the pane edge and the scanlines (styles/console.scss).
   @include console.console-frame;
 }
+
+// In a native window the chat sits under the window's title bar (its dock and close buttons, its drag zone): the pane fills what the
+// bar leaves, not the whole page (`.Window` is fixed to it), so the tab row and its buttons are not hidden behind the bar.
+.Window__rest .ChatConsole {
+  position: absolute;
+
+  // The outer window page has its scanlines already (the console theme's `.Window::after`): a second full-page gradient layer over
+  // the chat is re-rastered with every new line and made the popped-out chat lag.
+  &::after {
+    display: none;
+  }
+}

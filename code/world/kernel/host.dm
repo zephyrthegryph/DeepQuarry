@@ -303,6 +303,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	if(boot_drain_deferred())
 		GLOB.boot_draws_outstanding = (length(GLOB.refresh_queue) + draw_depth()) > 0
 		GLOB.boot_draws_deferred_at = REALTIMEOFDAY
+		GLOB.boot_drain_boost = (length(GLOB.refresh_queue) + draw_depth()) > 0
+		GLOB.boot_drain_boost_draws = GLOB.look_cost_all_draws
 		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] queued and [draw_depth()] filed first draws left to the presentation lane (nearest clients first).")
 	else
 		refresh_boot_drain()
@@ -644,6 +646,17 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 GLOBAL_VAR_INIT(boot_draws_outstanding, FALSE)
 /// REALTIMEOFDAY when the first draws were deferred (for the log line when they finish).
 GLOBAL_VAR_INIT(boot_draws_deferred_at, 0)
+/// TRUE from the deferred boot until both draw queues have been empty: the presentation lane takes most of each tick meanwhile (scheduler.dm SCHED_BOOT_DRAW_SHARE).
+GLOBAL_VAR_INIT(boot_drain_boost, FALSE)
+/// Draws made (look_cost_all_draws) when the deferred boot began, for the log line when the boost ends.
+GLOBAL_VAR_INIT(boot_drain_boost_draws, 0)
+
+/// The deferred boot's draws are all made (nothing in the refresh queue and nothing filed): the lane goes back to its own share. Logs how long it took.
+/proc/boot_drain_boost_end()
+	if(length(GLOB.refresh_queue) || length(GLOB.draw_buckets))
+		return
+	GLOB.boot_drain_boost = FALSE
+	log_world("Boot drain finished [(REALTIMEOFDAY - GLOB.boot_draws_deferred_at) / 10]s after init: [GLOB.look_cost_all_draws - GLOB.boot_drain_boost_draws] draws, [round(GLOB.draw_drain_ms)] ms of draw drain in all. [look_kinds_text(8)]")
 
 /// Whether the map's deferred first draws are still being made: until then no player enters the map (round start, observing, an
 /// admin ghost), so nobody ever sees an atom that has not been drawn. Clears for good the first time the refresh queue is empty.

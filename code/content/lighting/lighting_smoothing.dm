@@ -33,6 +33,16 @@ GLOBAL_LIST_EMPTY(lighting_smooth_underlays)
 /// turf -> the twelve corner levels (quantised, as text) its underlay was drawn from: a redraw that works out the same levels leaves the underlay as it is.
 GLOBAL_LIST_EMPTY(lighting_smooth_levels)
 
+/// The twelve corner levels of a gradient (four numbers, one per corner: the quantised red, green and blue packed together, as text) -> the underlay that shows
+/// them. A tile whose levels were seen before shares the underlay: no appearance is made, and the engine keeps one copy of each gradient.
+GLOBAL_LIST_EMPTY(lighting_smooth_looks)
+/// Gradients drawn from a held underlay, gradients made, open turfs that joined an unlit neighbourhood (no tile drawn differently, so none queued).
+GLOBAL_VAR_INIT(lighting_smooth_look_hits, 0)
+GLOBAL_VAR_INIT(lighting_smooth_look_made, 0)
+GLOBAL_VAR_INIT(lighting_smooth_dark_joined, 0)
+/// The most gradients held; a fuller table is emptied (the tiles keep theirs).
+#define LIGHTING_SMOOTH_LOOKS_MAX 8192
+
 /// Cumulative counters (tests, the log line, benchmarks).
 GLOBAL_VAR_INIT(lighting_smooth_samples_taken, 0)
 GLOBAL_VAR_INIT(lighting_smooth_samples_changed, 0)
@@ -51,9 +61,9 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /proc/lighting_smooth_blur_size()
 	return LIGHTING_SMOOTH_BLUR_SIZE
 
-/// The key of tile (x, y) in a per-level table (text: a number would index the list).
+/// The key of tile (x, y) in a per-level sample table: its place in a list of maxx * maxy slots (no text is made to look a tile up).
 /proc/lighting_smooth_key(x, y)
-	return "[x],[y]"
+	return LIGHTING_SMOOTH_INDEX(x, y)
 
 /// Puts the glow plane's filter and the corner layer in step with client lighting being on or off.
 /proc/lighting_smooth_apply()
@@ -85,6 +95,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 		T.underlays -= GLOB.lighting_smooth_underlays[T]
 	GLOB.lighting_smooth_underlays.Cut()
 	GLOB.lighting_smooth_levels.Cut()
+	GLOB.lighting_smooth_looks.Cut()
 	GLOB.lighting_smooth_samples.Cut()
 	GLOB.lighting_smooth_dirty.Cut()
 	GLOB.lighting_smooth_redraw.Cut()
@@ -140,10 +151,10 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	GLOB.lighting_smooth_samples_taken++
 	var/z = T.z
 	var/list/samples = GLOB.lighting_smooth_samples["[z]"]
-	if(!samples)
-		samples = list()
+	if(length(samples) != world.maxx * world.maxy) // first sample of the level, or the world grew (a place in the table is no longer the same turf)
+		samples = new /list(world.maxx * world.maxy)
 		GLOB.lighting_smooth_samples["[z]"] = samples
-	var/key = lighting_smooth_key(T.x, T.y)
+	var/key = LIGHTING_SMOOTH_INDEX(T.x, T.y)
 	var/list/old = samples[key]
 	var/list/new_sample = lighting_smooth_sample_of(T)
 	if(isnull(old) && isnull(new_sample))
@@ -151,19 +162,32 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	if(old && new_sample && abs(new_sample[1] - old[1]) < 0.004 && abs(new_sample[2] - old[2]) < 0.004 && abs(new_sample[3] - old[3]) < 0.004)
 		return FALSE
 	GLOB.lighting_smooth_samples_changed++
-	if(new_sample)
-		samples[key] = new_sample
-	else
-		samples -= key
+	samples[key] = new_sample
+	if(isnull(old) && new_sample && !new_sample[1] && !new_sample[2] && !new_sample[3] && !lighting_smooth_lit_near(T, samples))
+		// An unlit open turf joining a neighbourhood with no light in it (most of a map at boot): every corner it touches is dark with its sample and without it,
+		// so no tile is drawn differently and none is queued.
+		GLOB.lighting_smooth_dark_joined++
+		return TRUE
 	for(var/turf/N as anything in RANGE_TURFS(1, T))
 		GLOB.lighting_smooth_redraw[N] = TRUE
 	return TRUE
+
+/// Whether any turf within two of `T` (the tiles whose corners the sample of `T` is part of, and the turfs those corners read) has a sample with some light in it.
+/proc/lighting_smooth_lit_near(turf/T, list/samples)
+	var/maxx = world.maxx
+	for(var/y in max(T.y - 2, 1) to min(T.y + 2, world.maxy))
+		var/row = (y - 1) * maxx
+		for(var/x in max(T.x - 2, 1) to min(T.x + 2, maxx))
+			var/list/s = samples[row + x]
+			if(s && (s[1] > 0 || s[2] > 0 || s[3] > 0))
+				return TRUE
+	return FALSE
 
 /// The corner of tile `T` towards (sx, sy) (each -1 or 1): list(red, green, blue), the average of the samples of `T` and of the open turfs around that corner on
 /// its side of any wall. An orthogonal neighbour counts when it is not a blocker (IS_OPAQUE_TURF); the diagonal one only when it is not a blocker and one of the two turfs between it and
 /// `T` is open: light never crosses a wall, and a corner that touches a wall never lends the far side's light. `samples` is the level's sample table; `T` has a sample.
 /proc/lighting_smooth_vertex(turf/T, list/samples, sx, sy)
-	var/list/own = samples[lighting_smooth_key(T.x, T.y)]
+	var/list/own = samples[LIGHTING_SMOOTH_INDEX(T.x, T.y)]
 	var/red = own[1]
 	var/green = own[2]
 	var/blue = own[3]
@@ -175,14 +199,14 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	var/open_y = Y && !IS_OPAQUE_TURF(Y)
 	var/list/s
 	if(open_x)
-		s = samples[lighting_smooth_key(X.x, X.y)]
+		s = samples[LIGHTING_SMOOTH_INDEX(X.x, X.y)]
 		if(s)
 			red += s[1]
 			green += s[2]
 			blue += s[3]
 			n++
 	if(open_y)
-		s = samples[lighting_smooth_key(Y.x, Y.y)]
+		s = samples[LIGHTING_SMOOTH_INDEX(Y.x, Y.y)]
 		if(s)
 			red += s[1]
 			green += s[2]
@@ -191,7 +215,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	if(open_x || open_y)
 		var/turf/D = locate(T.x + sx, T.y + sy, z)
 		if(D && !IS_OPAQUE_TURF(D))
-			s = samples[lighting_smooth_key(D.x, D.y)]
+			s = samples[LIGHTING_SMOOTH_INDEX(D.x, D.y)]
 			if(s)
 				red += s[1]
 				green += s[2]
@@ -201,11 +225,14 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	return list(clamp(red / n, 0, 1), clamp(green / n, 0, 1), clamp(blue / n, 0, 1))
 
 /// Redraws `T`: its gradient underlay from its four corners, or none when they are all dark or `T` is a blocker (a wall or a closed door takes no light of its own: its face is the wall spread's). A tile whose twelve corner
-/// levels (LIGHTING_SMOOTH_LEVEL_STEPS steps each, as dark as the screen tells apart) are the ones it was drawn from keeps its underlay: no appearance is made or swapped.
+/// levels (LIGHTING_SMOOTH_LEVEL_STEPS steps each, as dark as the screen tells apart) are the ones it was drawn from keeps its underlay: no appearance is made or swapped. A tile whose levels another tile
+/// shows takes that tile's underlay (lighting_smooth_looks).
 /proc/lighting_smooth_draw(turf/T)
 	GLOB.lighting_smooth_redraws++
 	var/list/samples = GLOB.lighting_smooth_samples["[T.z]"]
-	var/list/own = IS_OPAQUE_TURF(T) ? null : samples?[lighting_smooth_key(T.x, T.y)]
+	if(length(samples) != world.maxx * world.maxy)
+		samples = null // none taken at this world size
+	var/list/own = IS_OPAQUE_TURF(T) ? null : samples?[LIGHTING_SMOOTH_INDEX(T.x, T.y)]
 	if(!own)
 		lighting_smooth_undraw(T)
 		return
@@ -214,22 +241,31 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 	var/list/nw = lighting_smooth_vertex(T, samples, -1, 1)
 	var/list/ne = lighting_smooth_vertex(T, samples, 1, 1)
 	var/steps = LIGHTING_SMOOTH_LEVEL_STEPS
-	var/levels = "[round(sw[1] * steps)],[round(sw[2] * steps)],[round(sw[3] * steps)],[round(se[1] * steps)],[round(se[2] * steps)],[round(se[3] * steps)],[round(nw[1] * steps)],[round(nw[2] * steps)],[round(nw[3] * steps)],[round(ne[1] * steps)],[round(ne[2] * steps)],[round(ne[3] * steps)]"
+	var/radix = steps + 1 // a corner's three levels are one number below radix ^ 3 (35937 at 32 steps: exact in a float)
+	var/levels = "[round(sw[1] * steps) * radix * radix + round(sw[2] * steps) * radix + round(sw[3] * steps)],[round(se[1] * steps) * radix * radix + round(se[2] * steps) * radix + round(se[3] * steps)],[round(nw[1] * steps) * radix * radix + round(nw[2] * steps) * radix + round(nw[3] * steps)],[round(ne[1] * steps) * radix * radix + round(ne[2] * steps) * radix + round(ne[3] * steps)]"
 	if(GLOB.lighting_smooth_levels[T] == levels) // the same levels: the underlay it has is right
 		return
 	if(!(sw[1] + sw[2] + sw[3] + se[1] + se[2] + se[3] + nw[1] + nw[2] + nw[3] + ne[1] + ne[2] + ne[3] >= 0.01))
 		lighting_smooth_undraw(T)
 		return
 	lighting_smooth_undraw(T)
-	var/mutable_appearance/MA = mutable_appearance(LIGHTING_ICON, LIGHTING_SMOOTH_GRADIENT_STATE, CLIENT_GLOW_LAYER, PLANE_LIGHTING, 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
-	MA.blend_mode = BLEND_ADD
-	MA.color = list(
-		sw[1], sw[2], sw[3], 0,
-		se[1], se[2], se[3], 0,
-		nw[1], nw[2], nw[3], 0,
-		ne[1], ne[2], ne[3], 0,
-		0, 0, 0, 1
-	)
+	var/mutable_appearance/MA = GLOB.lighting_smooth_looks[levels]
+	if(MA)
+		GLOB.lighting_smooth_look_hits++
+	else
+		if(length(GLOB.lighting_smooth_looks) >= LIGHTING_SMOOTH_LOOKS_MAX)
+			GLOB.lighting_smooth_looks.Cut()
+		GLOB.lighting_smooth_look_made++
+		MA = mutable_appearance(LIGHTING_ICON, LIGHTING_SMOOTH_GRADIENT_STATE, CLIENT_GLOW_LAYER, PLANE_LIGHTING, 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
+		MA.blend_mode = BLEND_ADD
+		MA.color = list(
+			sw[1], sw[2], sw[3], 0,
+			se[1], se[2], se[3], 0,
+			nw[1], nw[2], nw[3], 0,
+			ne[1], ne[2], ne[3], 0,
+			0, 0, 0, 1
+		)
+		GLOB.lighting_smooth_looks[levels] = MA
 	T.underlays += MA
 	GLOB.lighting_smooth_underlays[T] = MA
 	GLOB.lighting_smooth_levels[T] = levels
@@ -281,7 +317,7 @@ GLOBAL_VAR_INIT(lighting_smooth_logged_ms, 0)
 /// Writes what corner mode did since the last line: samples, changed samples, corner reads, redraws and milliseconds, with what waits.
 /proc/lighting_smooth_log()
 	var/seconds = LIGHTING_SMOOTH_LOG_EVERY / (1 SECONDS)
-	log_world("lighting smoothing corners: [round((GLOB.lighting_smooth_samples_taken - GLOB.lighting_smooth_logged_samples) / seconds, 0.1)] samples/s ([GLOB.lighting_smooth_samples_changed] changed in all), [round((GLOB.lighting_smooth_corner_updates - GLOB.lighting_smooth_logged_corners) / seconds, 0.1)] corner reads/s, [round((GLOB.lighting_smooth_redraws - GLOB.lighting_smooth_logged_redraws) / seconds, 0.1)] redraws/s, [round(GLOB.lighting_smooth_ms - GLOB.lighting_smooth_logged_ms, 0.1)] ms in the last [round(seconds)] s; waiting: [length(GLOB.lighting_smooth_dirty)] to sample, [length(GLOB.lighting_smooth_redraw)] to redraw; [length(GLOB.lighting_smooth_underlays)] lit tiles")
+	log_world("lighting smoothing corners: [round((GLOB.lighting_smooth_samples_taken - GLOB.lighting_smooth_logged_samples) / seconds, 0.1)] samples/s ([GLOB.lighting_smooth_samples_changed] changed in all), [round((GLOB.lighting_smooth_corner_updates - GLOB.lighting_smooth_logged_corners) / seconds, 0.1)] corner reads/s, [round((GLOB.lighting_smooth_redraws - GLOB.lighting_smooth_logged_redraws) / seconds, 0.1)] redraws/s, [round(GLOB.lighting_smooth_ms - GLOB.lighting_smooth_logged_ms, 0.1)] ms in the last [round(seconds)] s; waiting: [length(GLOB.lighting_smooth_dirty)] to sample, [length(GLOB.lighting_smooth_redraw)] to redraw; [length(GLOB.lighting_smooth_underlays)] lit tiles; [GLOB.lighting_smooth_look_made] gradients made, [GLOB.lighting_smooth_look_hits] shared ([length(GLOB.lighting_smooth_looks)] held); [GLOB.lighting_smooth_dark_joined] unlit turfs joined a dark neighbourhood with no redraw")
 	COOLDOWN_START(GLOB, lighting_smooth_log_next, LIGHTING_SMOOTH_LOG_EVERY)
 	GLOB.lighting_smooth_logged_samples = GLOB.lighting_smooth_samples_taken
 	GLOB.lighting_smooth_logged_corners = GLOB.lighting_smooth_corner_updates

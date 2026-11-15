@@ -13,6 +13,10 @@ SYSTEM_DEF(mobs)
 	var/list/respawn_timers
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
+	/// The profile lines worked out by dump_profile() and not written yet (it writes within the tick's budget and resumes), and when it began and what it spent.
+	var/list/profile_lines
+	var/profile_dump_started = 0
+	var/profile_dump_ms = 0
 
 CAPABILITIES(/datum/system/mobs)
 	owns_many(nameof(respawn_timers), /datum/respawn_timer)
@@ -76,23 +80,41 @@ CAPABILITIES(/datum/system/mobs)
 	SSdbcore.mass_insert_io(null, format_table_name("death"), batch)
 
 /// MOB_STEP_PROFILE lines (sampled cost per Life step, every LIFE_PROFILE_STRIDEth frame) and one MOB_PARK_SUMMARY
-/// line, every two minutes.
+/// line, every two minutes. The lines are worked out at once (the counters reset there) and written within the tick's budget: a write that stalls
+/// (a log line once took 670 ms) holds back only the lines behind it, which resume at the next tick, in order.
 /datum/system/mobs/proc/dump_profile(dt)
-	var/datum/sequence/life = sequence_def(/datum/sequence/life)
-	var/list/steps = list()
-	for(var/i in 1 to length(life.slot_keys))
-		steps[life.slot_keys[i]] = life.step_ms[i]
-	sortTim(steps, /proc/cmp_numeric_desc, TRUE)
-	var/rank = 0
-	for(var/key in steps)
-		var/i = life.slot_of[key]
-		log_runtime("MOB_STEP_PROFILE step=[key] estimated_cost_ms=[round(steps[key], 0.01)] estimated_calls=[life.step_calls[i]]")
-		if(++rank >= 30)
+	var/started = TICK_USAGE_REAL
+	if(!length(profile_lines))
+		var/datum/sequence/life = sequence_def(/datum/sequence/life)
+		var/list/steps = list()
+		for(var/i in 1 to length(life.slot_keys))
+			steps[life.slot_keys[i]] = life.step_ms[i]
+		sortTim(steps, /proc/cmp_numeric_desc, TRUE)
+		var/rank = 0
+		for(var/key in steps)
+			var/i = life.slot_of[key]
+			LAZYADD(profile_lines, "MOB_STEP_PROFILE step=[key] estimated_cost_ms=[round(steps[key], 0.01)] estimated_calls=[life.step_calls[i]]")
+			if(++rank >= 30)
+				break
+		for(var/i in 1 to length(life.slot_keys))
+			life.step_ms[i] = 0
+			life.step_calls[i] = 0
+		var/list/now = list(life.parks, life.unparks, life.missed)
+		LAZYADD(profile_lines, "MOB_PARK_SUMMARY parked=[members_total(life.parked_key)] parks=[now[1] - last_counts[1]] unparks=[now[2] - last_counts[2]] missed_wakes=[now[3] - last_counts[3]]")
+		last_counts = now
+		profile_dump_started = started
+		profile_dump_ms = 0
+	var/written = 0
+	while(length(profile_lines))
+		log_runtime(profile_lines[1])
+		profile_lines.Cut(1, 2)
+		written++
+		if(written >= MOB_PROFILE_MIN_LINES && KERNEL_OVER_BUDGET && length(profile_lines))
 			break
-	for(var/i in 1 to length(life.slot_keys))
-		life.step_ms[i] = 0
-		life.step_calls[i] = 0
-	var/list/now = list(life.parks, life.unparks, life.missed)
-	log_runtime("MOB_PARK_SUMMARY parked=[members_total(life.parked_key)] parks=[now[1] - last_counts[1]] unparks=[now[2] - last_counts[2]] missed_wakes=[now[3] - last_counts[3]]")
-	last_counts = now
+	profile_dump_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(length(profile_lines))
+		return STEP_YIELD
+	// What the dump cost in all, so a stalled write shows as the one step it was in (the lines are in runtime.log; this one is in the world log).
+	log_world("MOB_PROFILE_DUMP: [written] line(s) in the last step, [round(profile_dump_ms, 0.1)] ms of work in all, [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - profile_dump_started), 0.1)] ms from the first line to the last")
+	profile_lines = null
 	return STEP_DONE
