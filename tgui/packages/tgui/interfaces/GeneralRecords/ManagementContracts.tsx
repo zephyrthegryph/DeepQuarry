@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -13,7 +14,6 @@ import {
 } from 'tgui-core/components';
 import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import type { contractClauseOption, Data, managementContract } from './types';
-import { Label } from 'tgui/components/Label';
 
 const signed = (value: number, suffix = '') =>
   `${value > 0 ? '+' : ''}${value}${suffix}`;

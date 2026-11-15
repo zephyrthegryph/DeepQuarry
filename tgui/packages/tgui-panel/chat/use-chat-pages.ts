@@ -1,4 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai';
+import { store } from '../events/store';
 import {
   chatPagesAtom,
   chatPagesRecordAtom,
@@ -6,7 +7,6 @@ import {
   currentPageIdAtom,
   mainPage,
 } from './atoms';
-import { store } from '../events/store';
 import { createPage, reorderedPages } from './model';
 import { chatRenderer } from './renderer';
 import type { Page } from './types';

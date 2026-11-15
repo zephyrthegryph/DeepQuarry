@@ -1,8 +1,7 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-
-import type { Data } from './types';
 import { StatBar } from 'tgui/components/StatBar';
+import { Box, Button, LabeledList, Section } from 'tgui-core/components';
+import type { Data } from './types';
 
 export const RIGSuitStatus = (props) => {
   const { act, data } = useBackend<Data>();

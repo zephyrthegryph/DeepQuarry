@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -13,7 +14,6 @@ import type {
   BeaconLocatorActions,
   BeaconLocatorData,
 } from './generated/BeaconLocator';
-import { Label } from 'tgui/components/Label';
 
 type Data = BeaconLocatorData;
 

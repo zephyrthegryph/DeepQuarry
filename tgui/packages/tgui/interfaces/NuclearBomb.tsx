@@ -8,13 +8,13 @@
 // The DM side toggles `wire_view` to switch which view is shown.
 
 import { useBackend } from 'tgui/backend';
+import { YesNo } from 'tgui/components/YesNo';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type {
   NuclearBombActions,
   NuclearBombData,
 } from './generated/NuclearBomb';
-import { YesNo } from 'tgui/components/YesNo';
 
 const KEYPAD: Array<string[]> = [
   ['1', '2', '3'],

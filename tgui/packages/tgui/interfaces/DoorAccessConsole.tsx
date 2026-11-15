@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import { PanelOpen } from './EmbeddedController/PanelOpen';
 import type {
   DoorAccessConsoleActions,
   DoorAccessConsoleData,
 } from './generated/DoorAccessConsole';
-import { PanelOpen } from './EmbeddedController/PanelOpen';
 
 /**
  * Airlock but without anything other than doors. Separates clean rooms.

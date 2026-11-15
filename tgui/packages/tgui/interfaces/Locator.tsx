@@ -4,10 +4,10 @@
 // implants on the same z-level.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { LocatorActions, LocatorData } from './generated/Locator';
-import { Label } from 'tgui/components/Label';
 
 const strengthColor = (s: string): string => {
   if (s === 'very strong') return 'good';

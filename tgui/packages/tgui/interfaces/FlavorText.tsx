@@ -1,11 +1,11 @@
 // Set Flavour Text — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { FlavorTextActions, FlavorTextData } from './generated/FlavorText';
-import { Label } from 'tgui/components/Label';
 
 export const FlavorText = () => {
   const { data, act } = useBackend<FlavorTextData, FlavorTextActions>();

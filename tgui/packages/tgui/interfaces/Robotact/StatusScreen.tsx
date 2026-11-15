@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Box,
   ColorBox,
@@ -11,7 +12,6 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { RobotactActions, RobotactData } from '../generated/Robotact';
-import { StatBar } from 'tgui/components/StatBar';
 
 const quick_actions: {
   name: string;

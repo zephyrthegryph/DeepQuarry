@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -11,13 +12,11 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
 import { MiningUser } from './common/Mining';
 import type {
   MiningVendorActions,
   MiningVendorData,
 } from './generated/MiningVendor';
-import { Label } from 'tgui/components/Label';
 
 type Item = MiningVendorData['items'][string][string];
 

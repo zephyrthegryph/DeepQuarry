@@ -26,8 +26,7 @@ export const ROUND_ITEMS: MenuItem[] = [
   { label: 'Incorporeal speed', command: 'set-incorporeal-speed' },
 ];
 
-export const CHAT_ITEMS: MenuItem[] = [
-];
+export const CHAT_ITEMS: MenuItem[] = [];
 
 const mapSet = (param: string, value: string | number) =>
   `.winset "mapwindow.map.${param}=${value}"`;

@@ -38,7 +38,14 @@ describe('unread counts', () => {
   it('the viewed tab counts its own messages only while scrolled up', () => {
     const { main, radio, byId } = pages();
     expect(
-      unreadAfterBatch([main.id, radio.id], byId, main.id, false, { localchat: 2 }, false),
+      unreadAfterBatch(
+        [main.id, radio.id],
+        byId,
+        main.id,
+        false,
+        { localchat: 2 },
+        false,
+      ),
     ).toEqual({ [main.id]: 2 });
   });
 });

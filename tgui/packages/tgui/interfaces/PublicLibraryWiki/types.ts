@@ -1,4 +1,3 @@
-import type { PublicLibraryWikiData } from '../generated/PublicLibraryWiki';
 import type {
   WikiBotany,
   WikiCatalog,
@@ -10,6 +9,7 @@ import type {
   WikiReagent,
   WikiVirus,
 } from '../generated/_schemas';
+import type { PublicLibraryWikiData } from '../generated/PublicLibraryWiki';
 
 // Every shape here is generated from its DM schema (UI_SCHEMA wiki_* in code/content/library/wikicomp.dm).
 export type Data = PublicLibraryWikiData;

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Button,
@@ -7,7 +8,6 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { TankActions, TankData } from './generated/Tank';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const Tank = (props) => {
   const { act, data } = useBackend<TankData, TankActions>();

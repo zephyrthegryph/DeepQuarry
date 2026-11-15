@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
 import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { getDockingStatus } from './functions';
 import type { Data } from './types';
-import { StatBar } from 'tgui/components/StatBar';
 
 /* Ugh. Just ugh. */
 export const ShuttleControlConsoleWeb = (props) => {

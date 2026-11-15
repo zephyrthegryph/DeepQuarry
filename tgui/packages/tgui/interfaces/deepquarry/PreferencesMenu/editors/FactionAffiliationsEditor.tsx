@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
-import { Label } from 'tgui/components/Label';
 
 const AFFILIATION_COLORS: Record<string, string> = {
   Hostile: '#d94b4b',

@@ -2,10 +2,10 @@
 // area beside it, and the text as examine prints it below.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Button } from 'tgui-core/components';
 import { type SwitcherEntry, TextSwitcher } from '../TextSwitcher';
 import type { EditorProps } from './index';
-import { Label } from 'tgui/components/Label';
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],

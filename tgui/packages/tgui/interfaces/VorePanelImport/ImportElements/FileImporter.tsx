@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Dropdown, Section, Stack } from 'tgui-core/components';
 import { handleImportData } from '../function';
 import type { DesiredData } from '../types';
-import { Label } from 'tgui/components/Label';
 
 export const FileImport = (props: {
   characterData: DesiredData;

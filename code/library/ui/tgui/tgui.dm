@@ -437,6 +437,7 @@
 		),
 		"client" = list(
 			"ckey" = user.client.ckey,
+			"chatlog_token" = user.client.chatlog_token || "",
 			"address" = user.client.address,
 			"computer_id" = user.client.computer_id,
 			// The development cache handshake is the explicit live-profiling switch

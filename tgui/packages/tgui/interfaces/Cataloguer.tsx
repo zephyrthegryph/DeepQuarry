@@ -5,11 +5,11 @@
 // leaving it null.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { CataloguerActions, CataloguerData } from './generated/Cataloguer';
-import { Label } from 'tgui/components/Label';
 
 export const Cataloguer = () => {
   const { data, act } = useBackend<CataloguerData, CataloguerActions>();

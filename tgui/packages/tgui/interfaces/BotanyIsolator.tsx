@@ -13,10 +13,7 @@ import type {
 } from './generated/BotanyIsolator';
 
 export const BotanyIsolator = (props) => {
-  const { act, data } = useBackend<
-    BotanyIsolatorData,
-    BotanyIsolatorActions
-  >();
+  const { act, data } = useBackend<BotanyIsolatorData, BotanyIsolatorActions>();
 
   const {
     geneMasks,

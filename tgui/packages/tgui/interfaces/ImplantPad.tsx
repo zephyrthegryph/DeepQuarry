@@ -8,10 +8,7 @@ import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
-import type {
-  ImplantPadActions,
-  ImplantPadData,
-} from './generated/ImplantPad';
+import type { ImplantPadActions, ImplantPadData } from './generated/ImplantPad';
 
 export const ImplantPad = () => {
   const { data, act } = useBackend<ImplantPadData, ImplantPadActions>();

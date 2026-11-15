@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Button,
   LabeledList,
@@ -8,7 +9,6 @@ import {
 } from 'tgui-core/components';
 import { capitalizeFirst } from 'tgui-core/string';
 import type { PandemicActions, PandemicData } from '../generated/Pandemic';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const BeakerDisplay = (props) => {
   const { act, data } = useBackend<PandemicData, PandemicActions>();

@@ -18,6 +18,10 @@
 /datum/time_scheduler/proc/drain_presentation()
 	return TRUE
 
+/// Whether the presentation lane takes a larger share of the pass now (the boot's first draws, before anyone is in the map). Content answers.
+/datum/time_scheduler/proc/presentation_boosted()
+	return FALSE
+
 /datum/native_watch/proc/bind_native()
 	return 0
 

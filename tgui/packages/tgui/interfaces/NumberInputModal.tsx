@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Button, RestrictedInput, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
 import type {
   NumberInputModalActions,
   NumberInputModalData,
 } from './generated/NumberInputModal';
-import { Label } from 'tgui/components/Label';
 
 type Data = NumberInputModalData;
 

@@ -249,3 +249,6 @@ do { \
 #define DARKSIGHT_ICON_RADIUS 7.5
 /// The overlay's night-vision tint: a desaturated grey-green, multiplied into the disc.
 #define DARKSIGHT_TINT "#9fb0a6"
+
+/// The place of tile (x, y) in a level's sample table (lighting_smoothing.dm): a flat list of maxx * maxy slots, row by row.
+#define LIGHTING_SMOOTH_INDEX(x, y) (((y) - 1) * world.maxx + (x))

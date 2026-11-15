@@ -1,9 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { capitalize, toTitleCase } from 'tgui-core/string';
-
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const RIGSuitModules = (props) => {
   const { act, data } = useBackend<Data>();

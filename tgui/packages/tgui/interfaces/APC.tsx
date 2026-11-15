@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -10,11 +11,9 @@ import {
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
 import { FullscreenNotice } from './common/FullscreenNotice';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
 import type { APCActions } from './generated/APC';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = {
   gridCheck: BooleanLike;

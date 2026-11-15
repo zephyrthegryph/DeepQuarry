@@ -5,6 +5,7 @@
 // edit becomes a typed React component.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -13,7 +14,6 @@ import type {
   EditMemoryPanelActions,
   EditMemoryPanelData,
 } from './generated/EditMemoryPanel';
-import { Label } from 'tgui/components/Label';
 
 export const EditMemoryPanel = () => {
   const { data, act } = useBackend<

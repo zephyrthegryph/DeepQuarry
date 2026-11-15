@@ -1,8 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Button, Divider, Knob, Section, Stack } from 'tgui-core/components';
 import type { DNAModifierActions } from '../../generated/DNAModifier';
 import type { Data } from '../types';
-import { Label } from 'tgui/components/Label';
 
 export const DNAModifierMainRadiationEmitter = (props) => {
   const { act, data } = useBackend<Data, DNAModifierActions>();

@@ -6,7 +6,6 @@
 
 import { type AbilitiesData, hasAbilities } from './abilities';
 import type { InspectData } from './inspect';
-import type { McHealthData } from './mcHealthData';
 import {
   ADMIN_VIEWS,
   dataTabOf,
@@ -17,6 +16,7 @@ import {
   SERVER_PAGES,
   type ServerPage,
 } from './layout';
+import type { McHealthData } from './mcHealthData';
 import { run } from './menu';
 
 export type Host = {

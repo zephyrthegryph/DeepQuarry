@@ -1,5 +1,5 @@
-import { store } from '../events/store';
 import type { LanguageRules } from 'tgui/dq';
+import { store } from '../events/store';
 import {
   availableChannelsAtom,
   inputFocusRequestAtom,
@@ -43,7 +43,10 @@ export function languageRules(
   payload: { rules?: LanguageRules; preview?: unknown } | undefined,
 ) {
   store.set(languageRulesAtom, payload?.rules ?? null);
-  store.set(previewEnabledAtom, payload?.preview !== false && payload?.preview !== 0);
+  store.set(
+    previewEnabledAtom,
+    payload?.preview !== false && payload?.preview !== 0,
+  );
 }
 
 /** The channels the speaker can use now; the row hides the rest. */

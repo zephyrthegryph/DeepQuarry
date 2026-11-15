@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -16,7 +17,6 @@ import type {
   ViewVariablesActions,
   ViewVariablesData,
 } from './generated/ViewVariables';
-import { Label } from 'tgui/components/Label';
 
 type Data = ViewVariablesData;
 type Variable = Data['variables'][number];

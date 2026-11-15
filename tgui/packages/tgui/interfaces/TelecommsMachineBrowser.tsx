@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -12,7 +13,6 @@ import type {
   TelecommsMachineBrowserActions,
   TelecommsMachineBrowserData,
 } from './generated/TelecommsMachineBrowser';
-import { Label } from 'tgui/components/Label';
 
 type Machine = TelecommsMachineBrowserData['machinelist'][number];
 

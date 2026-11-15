@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Icon, LabeledList, Section, Stack } from 'tgui-core/components';
+import { DockStatus } from './EmbeddedController/EmbeddedControllerHelpers';
 import type {
   DockingConsoleMultiActions,
   DockingConsoleMultiData,
 } from './generated/DockingConsoleMulti';
-import { DockStatus } from './EmbeddedController/EmbeddedControllerHelpers';
 
 /**
  * Shockingly, the multi docking console is the simplest docking console.

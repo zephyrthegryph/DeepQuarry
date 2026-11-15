@@ -5,6 +5,7 @@
 
 import { useContext, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
@@ -31,7 +32,6 @@ import {
   useSearchHighlight,
 } from './search';
 import type { PrefCategory, PrefThumbnail, PrefWidgetItem } from './types';
-import { Label } from 'tgui/components/Label';
 
 export type Region = 'body' | 'organs';
 

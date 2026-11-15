@@ -4,13 +4,13 @@
 // at another device) to authorize.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type {
   KeycardAuthActions,
   KeycardAuthData,
 } from './generated/KeycardAuth';
-import { Label } from 'tgui/components/Label';
 
 type Data = KeycardAuthData;
 

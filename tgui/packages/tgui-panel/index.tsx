@@ -7,15 +7,15 @@
 import './styles/main.scss';
 
 import { createRoot } from 'react-dom/client';
-import { setupGlobalEvents } from 'tgui-core/events';
-import { captureExternalLinks } from 'tgui-core/links';
-import { setupHotReloading } from 'tgui-dev-server/link/client';
-import { App } from './app';
 import {
   guardedDispatch,
   installErrorReporting,
   setErrorChannel,
 } from 'tgui/errors';
+import { setupGlobalEvents } from 'tgui-core/events';
+import { captureExternalLinks } from 'tgui-core/links';
+import { setupHotReloading } from 'tgui-dev-server/link/client';
+import { App } from './app';
 import { sendPage } from './column/host';
 import { bus } from './events/listeners';
 import { fitChatBrowser } from './layout/geometry';

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Button,
@@ -13,7 +14,6 @@ import type {
   DepartmentStorefrontActions,
   DepartmentStorefrontData,
 } from './generated/DepartmentStorefront';
-import { Label } from 'tgui/components/Label';
 
 export const DepartmentStorefront = (props) => {
   const { act, data } = useBackend<

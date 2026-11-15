@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { YesNo } from 'tgui/components/YesNo';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type {
   ParticleAcceleratorActions,
   ParticleAcceleratorData,
 } from './generated/ParticleAccelerator';
-import { YesNo } from 'tgui/components/YesNo';
 
 type Data = ParticleAcceleratorData;
 
