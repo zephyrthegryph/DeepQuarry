@@ -69,13 +69,23 @@
 	.[HAIR_ACCESSORY_LAYER] = hair[2]
 	.[EYES_LAYER] = eyes_look(look)
 	var/list/tail = tail_look(drawing)
+	var/list/blockers = list() // the emissive blockers of the tail, wings and bellies: overlays of the mob itself, never nested in a group
 	for(var/list/tail_part as anything in tail)
-		.[tail_part[1]] = tail_part[2]
+		if(tail_part[1] == ACCESSORY_BLOCKER_LAYER)
+			blockers += tail_part[2]
+		else
+			.[tail_part[1]] = tail_part[2]
 	.[WING_LAYER] = wing_look(FALSE)
+	blockers += wing_blockers(FALSE)
 	if(wing_style?.multi_dir)
 		.[WING_LOWER_LAYER] = wing_look(TRUE)
+		blockers += wing_blockers(TRUE)
 	.[VORE_BELLY_LAYER] = vore_belly_look()
+	blockers += vore_belly_blockers()
 	.[VORE_TAIL_LAYER] = vore_tail_look()
+	blockers += vore_tail_blockers()
+	if(length(blockers))
+		.[ACCESSORY_BLOCKER_LAYER] = blockers
 	.[MODIFIER_EFFECTS_LAYER] = modifier_look()
 	.[FIRE_LAYER] = fire_look()
 	.[MOB_WATER_LAYER] = water_look()
@@ -574,6 +584,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 		var/image/clipped = get_tail_image(BODY_LAYER + (istaurtail(tail_style) ? TAIL_OVER_WING_LAYER : TAIL_UPPER_LAYER), null, look) // one copy over the uniform (and a taur's over the wings): the clip mask handles every facing
 		if(clipped)
 			. += list(list(TAIL_UPPER_LAYER, clipped))
+			. += list(list(ACCESSORY_BLOCKER_LAYER, get_tail_blockers(null, look)))
 		return
 	var/list/lower_dirs = tail_lower_dirs()
 	var/list/upper_dirs = GLOB.cardinal - lower_dirs
@@ -585,6 +596,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 		var/image/tail_image = get_tail_image(BODY_LAYER + ((tail_layer == TAIL_UPPER_LAYER && istaurtail(tail_style)) ? TAIL_OVER_WING_LAYER : tail_layer), dirs, look)
 		if(tail_image)
 			. += list(list(tail_layer, tail_image))
+			. += list(list(ACCESSORY_BLOCKER_LAYER, get_tail_blockers(dirs, look)))
 	if(length(.))
 		return
 	var/species_tail = species.get_tail(src) // Species tail icon_state prefix.
@@ -685,8 +697,8 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	if(tail_style.extra_overlay2)
 		. += list(list(tail_file, wag ? tail_style.extra_overlay2_w : tail_style.extra_overlay2))
 
-/// The tail as tinted parts (the sprite, then the two extra overlays) with their emissive blockers. A cache builder (get_tail_image()).
-/mob/living/carbon/human/proc/build_tail_image(loaf, wag, layer, list/dirs)
+/// The tail's parts (the sprite, then the two extra overlays), tinted, drawn only facing `dirs`.
+/mob/living/carbon/human/proc/tail_style_parts(loaf, wag, list/dirs)
 	var/tail_file = loaf ? tail_style.icon_loaf : tail_style.icon
 	var/mode = tail_style.color_blend_mode
 	var/list/parts = list(tail_part(tail_file, wag ? tail_style.ani_state : tail_style.icon_state, dirs, tail_style.do_colouration ? looks.tail_color : null, mode))
@@ -694,8 +706,26 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 		parts += tail_part(tail_file, wag ? tail_style.extra_overlay_w : tail_style.extra_overlay, dirs, looks.tail_color2, mode)
 	if(tail_style.extra_overlay2)
 		parts += tail_part(tail_file, wag ? tail_style.extra_overlay2_w : tail_style.extra_overlay2, dirs, looks.tail_color3, mode)
+	return parts
+
+/// The tail as tinted parts (the sprite, then the two extra overlays). A cache builder (get_tail_image()).
+/mob/living/carbon/human/proc/build_tail_image(loaf, wag, layer, list/dirs)
 	var/offset = istaurtail(tail_style) || islongtail(tail_style)
-	return human_accessory_image(parts, layer, looks.tail_alpha, offset ? tail_style.offset_x : 0, offset ? tail_style.offset_y : 0, tail_style.em_block)
+	return human_accessory_image(tail_style_parts(loaf, wag, dirs), layer, looks.tail_alpha, offset ? tail_style.offset_x : 0, offset ? tail_style.offset_y : 0)
+
+/// The emissive blockers of the tail's copy drawn facing `dirs` (a list of the mob's own overlays; empty for a tail that lets light through, or none drawn).
+/mob/living/carbon/human/proc/get_tail_blockers(list/dirs = null, datum/look/look = null)
+	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
+	if(!tail_style?.em_block || (suit && (worn_of(suit).hides & HIDETAIL) && !istaurtail(tail_style)) || tail_hidden)
+		return list()
+	var/loaf = tail_style.can_loaf && resting
+	var/wag = wagging && tail_style.ani_state
+	return human_look_icon("tail_em|[tail_style.type]|[loaf]|[wag]|[dirs ? jointext(dirs, ",") : "all"]|[tail_bake_token(dirs, tail_style_specs(loaf, wag), look)]", "build_tail_blockers", loaf, wag, dirs)
+
+/// A cache builder (get_tail_blockers()): the shape of each part of the tail, where the tail is.
+/mob/living/carbon/human/proc/build_tail_blockers(loaf, wag, list/dirs)
+	var/offset = istaurtail(tail_style) || islongtail(tail_style)
+	return human_accessory_blockers(tail_style_parts(loaf, wag, dirs), offset ? tail_style.offset_x : 0, offset ? tail_style.offset_y : 0)
 
 /// The wings (`under_layer`: the half drawn behind the body, for wings drawn in two halves), or null.
 /mob/living/carbon/human/proc/wing_look(under_layer)
@@ -706,8 +736,12 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	var/flap = flapping && wing_style.ani_state
 	return human_look_icon("wing|[wing_style.type]|[under_layer]|[flap]|[looks.wing_color]|[looks.wing_color2]|[looks.wing_color3]|[looks.wing_alpha]|[layer]", "build_wing_image", under_layer, flap, layer)
 
-/// The wings as tinted parts with their emissive blockers. A cache builder (wing_look()).
+/// The wings as tinted parts. A cache builder (wing_look()).
 /mob/living/carbon/human/proc/build_wing_image(under_layer, flap, layer)
+	return human_accessory_image(wing_style_parts(under_layer, flap), layer, looks.wing_alpha, -wing_style.wing_offset, 0)
+
+/// The wings' parts (the sprite, then the two extra overlays), tinted.
+/mob/living/carbon/human/proc/wing_style_parts(under_layer, flap)
 	var/wing_state = flap ? wing_style.ani_state : wing_style.icon_state
 	if(wing_style.multi_dir)
 		wing_state += "_[under_layer ? "back" : "front"]"
@@ -717,7 +751,19 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 		parts += human_part(wing_style.icon, wing_style.extra_overlay, looks.wing_color2, mode)
 	if(wing_style.extra_overlay2)
 		parts += human_part(wing_style.icon, wing_style.ani_state ? wing_style.extra_overlay2_w : wing_style.extra_overlay2, looks.wing_color3, mode)
-	return human_accessory_image(parts, layer, looks.wing_alpha, -wing_style.wing_offset, 0, wing_style.em_block, looks.wing_alpha)
+	return parts
+
+/// The emissive blockers of the wings (`under_layer`: the half drawn behind the body): a list of the mob's own overlays, empty for wings that let light through or none drawn.
+/mob/living/carbon/human/proc/wing_blockers(under_layer)
+	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
+	if(!wing_style?.em_block || (suit && (worn_of(suit).hides & HIDETAIL)) || wings_hidden)
+		return list()
+	var/flap = flapping && wing_style.ani_state
+	return human_look_icon("wing_em|[wing_style.type]|[under_layer]|[flap]|[looks.wing_alpha]", "build_wing_blockers", under_layer, flap)
+
+/// A cache builder (wing_blockers()): the shape of each part of the wings.
+/mob/living/carbon/human/proc/build_wing_blockers(under_layer, flap)
+	return human_accessory_blockers(wing_style_parts(under_layer, flap), -wing_style.wing_offset, 0, looks.wing_alpha)
 
 /// The ears overlay: the prosthetic's, or the chosen ears and secondary ears in their colours. The voodoo doll draws the ears from it; the human draws them as layers (ears_parts()).
 /mob/living/carbon/human/proc/get_ears_overlay(block_head_hair)
@@ -785,7 +831,29 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 /mob/living/carbon/human/proc/build_vore_belly(file, state, colour, multiply, offset_x, em_block, layer, flags)
 	var/image/belly = human_part(file, state, colour, multiply ? ICON_MULTIPLY : ICON_ADD)
 	belly.appearance_flags = flags
-	return human_accessory_image(list(belly), layer, 255, offset_x, 0, em_block)
+	return human_accessory_image(list(belly), layer, 255, offset_x, 0)
+
+/// The emissive blockers of the stomach bellies: a list of the mob's own overlays.
+/mob/living/carbon/human/proc/vore_belly_blockers()
+	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
+	if(suit && (worn_of(suit).hides & HIDETAIL))
+		return list()
+	var/state = "[species.vore_belly_default_variant]Belly[vore_fullness_ex["stomach"]][struggle_anim_stomach ? "" : " idle"]"
+	return human_look_icon("vore_belly_em|[state]", "build_vore_blockers", 'icons/mob/vore/Bellies.dmi', state, 0)
+
+/// The emissive blockers of a taur's belly: a list of the mob's own overlays.
+/mob/living/carbon/human/proc/vore_tail_blockers()
+	if(!tail_style || !istaurtail(tail_style) || !tail_style.vore_tail_sprite_variant || !tail_style.em_block)
+		return list()
+	var/vs_fullness = vore_fullness_ex["taur belly"]
+	var/loaf_alt = lying && tail_style.belly_variant_when_loaf
+	var/fullness_icons = min(tail_style.fullness_icons, vs_fullness)
+	var/state = "Taur[tail_style.vore_tail_sprite_variant]-Belly-[fullness_icons][loaf_alt ? " loaf" : (struggle_anim_taur ? "" : " idle")]"
+	return human_look_icon("vore_tail_em|[tail_style.bellies_icon_path]|[state]", "build_vore_blockers", tail_style.bellies_icon_path, state, -16)
+
+/// A cache builder (vore_belly_blockers(), vore_tail_blockers()): the shape of the belly sprite `state`.
+/mob/living/carbon/human/proc/build_vore_blockers(file, state, offset_x)
+	return human_accessory_blockers(list(human_part(file, state)), offset_x, 0)
 
 // ---- what is worn and held ----
 

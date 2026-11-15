@@ -116,15 +116,24 @@ GLOBAL_LIST_INIT(human_glass_matrix_values, list(0.302,0.302,0.302,0, 0.588,0.58
 		probe.alpha = alpha
 		. += em_block_image_generic(probe)
 
-/// A tail or a wing: its `parts` (faded as one picture when `alpha` is under 255) and, for a sprite that blocks light, their blockers, on `layer`.
-/proc/human_accessory_image(list/parts, layer, alpha = 255, pixel_x = 0, pixel_y = 0, em_block = FALSE, blocker_alpha = 255)
+/// A tail or a wing: its `parts` (faded as one picture when `alpha` is under 255), on `layer`. Its emissive blockers are not part of the group: a blocker
+/// nested in a group is drawn into the mob's own buffer (the mob is KEEP_TOGETHER), over the sprite, so a sprite that blocks light has them drawn by
+/// human_accessory_blockers() as overlays of the mob itself (ACCESSORY_BLOCKER_LAYER).
+/proc/human_accessory_image(list/parts, layer, alpha = 255, pixel_x = 0, pixel_y = 0)
 	READS_FROM()
 	var/list/shown = parts
 	if(alpha < 255)
 		shown = list(human_part_group(parts, alpha = alpha))
-	if(em_block)
-		shown = shown + human_em_blocks(parts, blocker_alpha)
 	return human_part_group(shown, layer, pixel_x = pixel_x, pixel_y = pixel_y)
+
+/// The emissive blockers of an accessory's `parts`, offset as the accessory is: a list of the mob's own overlays (on the emissive plane, kept apart), each the shape of one part.
+/proc/human_accessory_blockers(list/parts, pixel_x = 0, pixel_y = 0, alpha = 255)
+	READS_FROM()
+	. = list()
+	for(var/mutable_appearance/blocker as anything in human_em_blocks(parts, alpha))
+		blocker.pixel_x = pixel_x
+		blocker.pixel_y = pixel_y
+		. += blocker
 
 /// The body as one blank image carrying a tinted overlay per limb part. A cache builder (body_look()): every input is in its key.
 /// `husk`: the body is toned grey-brown with the species' husk marks inset; `whole_transparent`: every limb is see-through, so the body is faded as one picture.

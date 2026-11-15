@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The emissive blockers of wings, tails and bellies are overlays of the character itself, not nested in the sprite's group, so they no longer paint over the sprite"

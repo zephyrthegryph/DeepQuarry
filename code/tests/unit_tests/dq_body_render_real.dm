@@ -178,3 +178,45 @@
 	var/list/twice = human_matrix_then(identity, human_tint_matrix("#808080"))
 	TEST_ASSERT(abs(twice[1] - 128 / 255) < 0.001 && abs(twice[6] - 128 / 255) < 0.001 && abs(twice[11] - 128 / 255) < 0.001, "a multiply tint is a diagonal matrix")
 	test_driver_end()
+
+/// Every appearance under `I` (its overlays, recursively) that is on the emissive plane or kept apart, as text: a blocker nested in a group of the mob
+/// is drawn into the mob's own (KEEP_TOGETHER) buffer, in black over the sprite it was to leave alone, so none may be nested.
+/datum/unit_test/proc/dq_br_nested_blockers(I, list/into)
+	if(isnull(into))
+		into = list()
+	for(var/part in I:overlays)
+		var/mutable_appearance/MA = new(part)
+		if(MA.plane == PLANE_EMISSIVE || (MA.appearance_flags & KEEP_APART))
+			into += "[MA.icon]/[MA.icon_state] plane=[MA.plane] flags=[MA.appearance_flags]"
+		dq_br_nested_blockers(MA, into)
+	return into
+
+/// The wings' and the taur's emissive blockers are overlays of the mob itself, the shape of the wing and tail sprites alone: none sits inside a group, and none is made from the body.
+/datum/unit_test/dq_body_render_accessory_blockers_direct
+
+/datum/unit_test/dq_body_render_accessory_blockers_direct/Run()
+	test_driver_begin()
+	var/mob/living/carbon/human/H = dq_real_character()
+	TEST_ASSERT_EQUAL(H.wing_style?.name, "Cyber angel wing (colorable)", "the character has the saved wings")
+	TEST_ASSERT_EQUAL(H.tail_style?.name, "Wolf (Taur)", "and the saved taur")
+	var/list/layers = H.look_layers()
+	var/list/direct = layers[ACCESSORY_BLOCKER_LAYER]
+	TEST_ASSERT(islist(direct) && length(direct) >= 2, "the wings and the taur each have a blocker of their own")
+	var/wing_blocks = 0
+	for(var/mutable_appearance/blocker as anything in direct)
+		TEST_ASSERT_EQUAL(blocker.plane, PLANE_EMISSIVE, "a blocker is on the emissive plane")
+		TEST_ASSERT(blocker.appearance_flags & KEEP_APART, "a blocker is kept apart from the mob's picture")
+		TEST_ASSERT(!length(blocker.overlays), "a blocker holds nothing of its own")
+		if(blocker.icon == H.wing_style.icon && blocker.icon_state == H.wing_style.icon_state)
+			wing_blocks++
+	TEST_ASSERT_EQUAL(wing_blocks, 1, "the wings' blocker is the shape of the wing sprite")
+	// What the mob draws in groups and limbs holds no blocker: the body is the limbs that exist, and the wings, tails and bellies are plain groups.
+	var/list/groups = list(BODYPARTS_LAYER, WING_LOWER_LAYER, WING_LAYER, TAIL_LOWER_LAYER, TAIL_UPPER_LAYER, TAIL_UPPER_LAYER_LOW, TAIL_UPPER_LAYER_HIGH, VORE_BELLY_LAYER, VORE_TAIL_LAYER)
+	for(var/index in groups)
+		var/entry = layers[index]
+		for(var/image/group in (islist(entry) ? entry : list(entry)))
+			var/list/nested = dq_br_nested_blockers(group)
+			TEST_ASSERT(!length(nested), "layer [index] nests a blocker in a group: [jointext(nested, " | ")]")
+	var/list/body = H.body_look(new /datum/look)
+	TEST_ASSERT(!length(dq_br_nested_blockers(body[2])), "the body of the limbs that are there has no blocker")
+	test_driver_end()
