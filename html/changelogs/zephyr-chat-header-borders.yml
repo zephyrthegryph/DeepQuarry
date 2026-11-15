@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Chat and column headers: the tab row, stacked window tabs and header buttons now share one centre line, and each edge has one border (no doubled lines between docked windows, tabs, the chat area and the input row)."

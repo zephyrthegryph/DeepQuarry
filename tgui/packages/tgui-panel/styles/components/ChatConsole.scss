@@ -12,7 +12,8 @@
   // One frame for the whole pane (docked and floating alike): the sections
   // inside carry no border or glow of their own, only a 2px rule between them,
   // so nothing doubles up against the window edge or the input row.
-  .Section {
+  // (`:root` outranks the console theme's own `.theme-console:root .Section` frame, which is for stand-alone windows.)
+  :root & .Section {
     background-color: console.$console-panel;
     border: 0;
     box-shadow: none;

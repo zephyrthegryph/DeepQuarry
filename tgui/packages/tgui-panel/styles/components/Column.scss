@@ -122,7 +122,13 @@
 }
 
 .column-tabs {
+  // The head owns the rule under its row (its 2px border-bottom); the stacked tabs sit on it, one row-control high, so they and the
+  // buttons beside them share a centre line.
+  --dq-row-control-height: 24px;
+
   margin: 0;
+  padding-top: 0;
+  border-bottom: 0;
 }
 
 .column-body {

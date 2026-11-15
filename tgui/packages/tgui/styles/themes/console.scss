@@ -182,9 +182,13 @@
     contain: inline-size;
   }
 
+  // A DQ tab row (dq/tabs.scss) draws the rule under its tabs once, on the row; its inner list must not draw it again.
+  .Tabs--horizontal:not(.DqTabs__list) {
+    border-bottom: 2px solid console.$console-border;
+  }
+
   .Tabs--horizontal {
     flex-wrap: wrap;
-    border-bottom: 2px solid console.$console-border;
   }
 
   .Divider--horizontal,
