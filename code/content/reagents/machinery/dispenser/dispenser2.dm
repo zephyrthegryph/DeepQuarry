@@ -181,7 +181,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	var/list/chemicals = list()
 	for(var/label in cartridges)
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
-		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.reagents.total_volume))) // list in a list because Byond merges the first list...
+		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.stock_volume()))) // list in a list because Byond merges the first list...
 	data["chemicals"] = chemicals
 
 	data["recipes"] = (saved_recipes || list())
@@ -213,7 +213,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	else if(LAZYACCESS(cartridges, label) && container && container.is_open_container())
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
-		C.reagents.trans_to(container, amount)
+		C.dispense_to(container, amount)
 		work_start(src)
 	. = TRUE
 
@@ -319,7 +319,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 			// Allows copying recipes
 			play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
-			var/amount_actually_dispensed = C.reagents.trans_to(container, dispense_amount)
+			var/amount_actually_dispensed = C.dispense_to(container, dispense_amount)
 			work_start(src)
 			if(dispense_amount != amount_actually_dispensed)
 				visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))

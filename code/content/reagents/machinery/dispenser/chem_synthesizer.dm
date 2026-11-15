@@ -297,7 +297,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 			if(C && C.reagents.total_volume < C.reagents.maximum_volume)
 				var/to_restore = min(C.reagents.maximum_volume - C.reagents.total_volume, 5)
 				use_power(to_restore * 500)
-				C.reagents.add_reagent(id, to_restore)
+				C.add_stock(id, to_restore)
 				. = 1
 		if(.)
 			SStgui.update_uis(src)
@@ -358,7 +358,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/chemicals[0]
 	for(var/label in cartridges)
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
-		chemicals.Add(list(list("title" = label, "id" = label, "amount" = C.reagents.total_volume))) // list in a list because Byond merges the first list
+		chemicals.Add(list(list("title" = label, "id" = label, "amount" = C.stock_volume()))) // list in a list because Byond merges the first list
 	data["chemicals"] = chemicals
 
 	// the window's modal (the engine adds it too; the key is always sent, as it was)
@@ -753,21 +753,22 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		stall()
 		return
 
-	if(quantity > reagents.get_free_space())
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
+	var/drawn = C.draw_amount(quantity) // the stock and the contaminants that sit with it
+	if(drawn > reagents.get_free_space())
 		visible_message(span_warning("The [src] beeps loudly, flashing a 'maximum volume exceeded' error!"), "You hear loud beeping!")
 		play_sfx(src, SFX_WEAPONS_SMG_EMPTY_ALARM)
 		stall()
 		return
 
 	// If there isn't enough reagent left for this step, try again in a minute.
-	var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
-	if(quantity > C.reagents.total_volume)
+	if(quantity > C.stock_volume())
 		visible_message(span_notice("The [src] flashes an 'insufficient reagents' warning."))
 		after(src, 1 MINUTE, PROC_REF(perform_reaction), with = list(r_id, step))
 		return
 
 	// After all this mess of code, we reach the line where the magic happens.
-	C.reagents.trans_to_holder(src.reagents, quantity)
+	C.dispense_to_holder(src.reagents, quantity)
 	work_start(src) // a cartridge to refill
 	play_sfx(src, SFX_MACHINES_HPLC_BINARY_PUMP)
 

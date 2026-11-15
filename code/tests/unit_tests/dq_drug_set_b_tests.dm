@@ -92,17 +92,17 @@
 
 /datum/unit_test/dq_drug_set_b_recipes_need_pharma/Run()
 	var/list/expected = list(
-		/transformation/chem/instant/cordradaxon = REAGENT_ID_BICARIDINE,
-		/transformation/chem/instant/respirodaxon = REAGENT_ID_DEXALINP,
-		/transformation/chem/instant/hepanephrodaxon = REAGENT_ID_CARTHATOLINE,
-		/transformation/chem/instant/gastirodaxon = REAGENT_ID_CARTHATOLINE,
-		/transformation/chem/instant/dexalinp = REAGENT_ID_DEXALIN,
-		/transformation/chem/instant/corophizine = REAGENT_ID_SPACEACILLIN,
+		/transformation/chem/instant/cordradaxon,
+		/transformation/chem/instant/respirodaxon,
+		/transformation/chem/instant/hepanephrodaxon,
+		/transformation/chem/instant/gastirodaxon,
+		/transformation/chem/instant/dexalinp,
+		/transformation/chem/instant/corophizine,
 	)
 	for(var/rule_type in expected)
 		var/datum/xform/X = xform_of(rule_type)
 		TEST_ASSERT_NOTNULL(X, "[rule_type] compiled")
-		TEST_ASSERT_EQUAL(X.needs_grade?[expected[rule_type]], GRADE_PHARMA, "[rule_type] needs Pharma grade [expected[rule_type]]")
+		TEST_ASSERT_EQUAL(X.needs_grade, GRADE_PHARMA, "[rule_type] needs a Pharma grade mixture")
 
 
 // --- Interactions ----------------------------------------------------------------------------------------------------------------

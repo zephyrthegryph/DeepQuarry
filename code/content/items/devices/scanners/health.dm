@@ -121,9 +121,10 @@ CAPABILITIES(/obj/item/healthanalyzer)
 				unknown++
 				continue
 			var/overdose = R.overdose && R.volume > R.overdose && (where != "dermis" || R.can_overdose_touch)
-			var/purity_text = R.purity_summary()
-			var/list/contaminant_text = R.contaminant_lines()
-			known += "&emsp;[round(R.volume, 1)]u [R.name][purity_text ? ", [purity_text]" : ""][length(contaminant_text) ? " ([english_list(contaminant_text)])" : ""][overdose ? " - [span_danger("Overdose")]" : ""]"
+			known += "&emsp;[round(R.volume, 1)]u [R.name][overdose ? " - [span_danger("Overdose")]" : ""]"
+		var/mixture = holder.purity_summary()
+		if(mixture && scan_level >= SCANNABLE_ADVANCED) // the grade is read off the contaminants, which this tier can name
+			known += "&emsp;Mixture: [mixture]"
 		if(length(known))
 			. += span_notice("Reagents detected in subject's [where]:<br>[known.Join("<br>")]")
 		if(unknown)

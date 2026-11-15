@@ -66,9 +66,6 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		var/list/source = holder.get_data(X.data_from[1])
 		data = (source && source[X.data_from[2]]) || X.data_from[3]
 
-	// what the reactants carry besides themselves goes into the product (read before they are removed)
-	var/list/carried = X.result ? xform_carried_contaminants(X, holder, reaction_progress) : null
-
 	//remove the reactants
 	for(var/reactant in X.reagent_takes)
 		var/amt_used = LAZYACCESS(X.reagent_takes, reactant) * reaction_progress
@@ -77,7 +74,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	//add the product
 	var/amt_produced = X.result_amount * reaction_progress
 	if(X.result)
-		holder.add_reagent(X.result, amt_produced, data, safety = 1, was_from_belly = belly_reagent, contaminants = carried)
+		holder.add_reagent(X.result, amt_produced, data, safety = 1, was_from_belly = belly_reagent)
 
 	xform_effects(X, holder, owner, amt_produced)
 	if(SScontracts && X.result && amt_produced > 0)

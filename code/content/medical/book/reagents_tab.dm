@@ -193,12 +193,11 @@
 			"name"   = dq_reagent_display_name(RQ),
 			"amount" = LAZYACCESS(CR.reagent_takes, RQ),
 		)
-		// The minimum grade a graded ingredient needs (`needs_grade`), by name.
-		var/min_grade = LAZYACCESS(CR.needs_grade, RQ)
-		if(min_grade)
-			ingredient["grade"] = grade_name(min_grade)
-			ingredient["grade_band"] = purity_band_text(min_grade)
 		reqs += list(ingredient)
+	// The minimum grade the mixture must be (`needs_grade`), by name.
+	if(CR.needs_grade)
+		entry["grade"] = grade_name(CR.needs_grade)
+		entry["grade_band"] = purity_band_text(CR.needs_grade)
 	entry["required"] = reqs
 	var/list/catal = list()
 	for(var/CL in CR.reagent_catalysts)
@@ -206,9 +205,6 @@
 			"id"   = CL,
 			"name" = dq_reagent_display_name(CL),
 		)
-		var/catalyst_grade = LAZYACCESS(CR.needs_grade, CL)
-		if(catalyst_grade)
-			catalyst["grade"] = grade_name(catalyst_grade)
 		catal += list(catalyst)
 	entry["catalysts"] = catal
 	var/list/inhib = list()

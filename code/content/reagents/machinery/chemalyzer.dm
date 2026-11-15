@@ -40,8 +40,9 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 			if(!R.name)
 				continue
 			set_found_reagents_at(R.id, R.volume)
-			if(R.contaminants)
-				to_chat(user, span_notice("[R.scan_text()]"))
+		var/mixture = held.reagents.purity_summary() // the contaminants are lines of the list; the mixture's grade is said here
+		if(mixture)
+			to_chat(user, span_notice("Mixture: [mixture]"))
 		tgui_interact(user)
 	else
 		to_chat(user, span_warning("Nothing detected in [held]"))

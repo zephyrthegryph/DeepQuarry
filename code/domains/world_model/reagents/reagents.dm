@@ -21,9 +21,6 @@
 	var/overdose_mod = 1	//Modifier to overdose damage
 	var/can_overdose_touch = FALSE	// Can the chemical OD when processing on touch?
 	var/scannable = SCANNABLE_SECRETIVE // Shows up on health analyzers.
-	/// Contaminant id -> fraction of this volume (0..1), null unless something is nonzero (sparse). See contaminants.dm: set_contaminants() and
-	/// blend_contaminants() write it; purity() is computed from it.
-	var/list/contaminants
 
 	var/affects_dead = 0	// Does this chem process inside a corpse without outside intervention required?
 	var/affects_robots = 0	// Does this chem process inside a Synth?
@@ -216,9 +213,7 @@
 	if(effective_dose(M, removed, route_class) > 0)
 		switch(route_class)
 			if(CHEM_BLOOD)
-				// Impurities dilute the dose: a contaminated volume acts with its purity (a pure one is untouched). Ingest and touch only move
-				// material toward the blood, so they pass the full amount (the blood route scales it).
-				affect_blood(M, alien, removed * potency())
+				affect_blood(M, alien, removed)
 			if(CHEM_INGEST)
 				if(istype(src, /datum/reagent/toxin) && has_trait(M, INGESTED_TOXIN_IMMUNE))
 					remove_self(removed)
@@ -231,7 +226,6 @@
 			apply_species_injuries(M, species_injuries_blood, removed)
 			apply_strains(M, removed)
 			apply_drawbacks(M, removed)
-			apply_contaminants(M, removed)
 		if(CHEM_INGEST)
 			apply_species_injuries(M, species_injuries_ingest, removed * ingest_abs_mult)
 		if(CHEM_TOUCH)
@@ -282,12 +276,16 @@
 /datum/reagent/proc/affect_blood(mob/living/carbon/M, alien, removed)
 	return
 
+/// How a machine's listing describes this reagent (the description; a contaminant adds what grade the mixture it sits in is).
+/datum/reagent/proc/listing_description()
+	return description
+
 /datum/reagent/proc/affect_ingest(mob/living/carbon/M, alien, removed)
-	M.bloodstr.add_reagent(id, removed, contaminants = contaminants)
+	M.bloodstr.add_reagent(id, removed)
 	return
 
 /datum/reagent/proc/affect_touch(mob/living/carbon/M, alien, removed)
-	M.bloodstr.add_reagent(id, removed * dermal_absorption, contaminants = contaminants)
+	M.bloodstr.add_reagent(id, removed * dermal_absorption)
 	return
 
 /datum/reagent/proc/overdose(mob/living/carbon/M, alien, removed) // Overdose effect.

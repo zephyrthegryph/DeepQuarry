@@ -133,7 +133,7 @@
 	TEST_ASSERT(!isnull(stacked.caused_by_chems[REAGENT_ID_ANTICONVULSANT]), "the sedation interaction needs the anticonvulsant too")
 	TEST_ASSERT(stacked.symptom_pool[/datum/affliction_symptom/drowsy], "adranol with an anticonvulsant stacks drowsiness")
 
-/// Both new reagents have a recipe in the transformation registry, and the painkillers need pharma-grade stock.
+/// Both new reagents have a recipe in the transformation registry, and the painkillers need a pharma-grade mixture.
 /datum/unit_test/dq_drug_c_new_reagents_craftable
 
 /datum/unit_test/dq_drug_c_new_reagents_craftable/Run()
@@ -151,9 +151,9 @@
 		TEST_ASSERT(makes_it, "the recipe makes [reagent_id]")
 		TEST_ASSERT(length(X.reagent_takes) >= 2, "[reagent_id] needs ingredients")
 	var/datum/xform/tram = xform_of(/transformation/chem/instant/tramadol)
-	TEST_ASSERT_EQUAL(tram.needs_grade[REAGENT_ID_PARACETAMOL], GRADE_PHARMA, "tramadol needs pharma-grade paracetamol")
+	TEST_ASSERT_EQUAL(tram.needs_grade, GRADE_PHARMA, "tramadol needs a pharma-grade mixture")
 	var/datum/xform/oxy = xform_of(/transformation/chem/instant/oxycodone)
-	TEST_ASSERT_EQUAL(oxy.needs_grade[REAGENT_ID_TRAMADOL], GRADE_PHARMA, "oxycodone needs pharma-grade tramadol")
+	TEST_ASSERT_EQUAL(oxy.needs_grade, GRADE_PHARMA, "oxycodone needs a pharma-grade mixture")
 
 
 // --- Runtime ------------------------------------------------------------------------------------------------

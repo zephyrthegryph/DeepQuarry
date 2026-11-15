@@ -56,11 +56,12 @@ About the Holder:
     handle_reactions()
     	Checks reagents and triggers any reactions that happen. Usually called automatically.
 
-    add_reagent(var/id, var/amount, var/data = null, var/safety = 0, ..., list/contaminants = null)
+    add_reagent(var/id, var/amount, var/data = null, var/safety = 0, ...)
     	Adds [amount] units of [id] reagent. [data] will be passed to reagent's mix_data() or initialize_data(). If [safety] is 0, handle_reactions() will be called. Returns 1 if successful, 0 otherwise.
-    	[contaminants] (contaminant id -> fraction of the added volume, see domains/world_model/reagents/contaminants.dm) is blended into the reagent already
-    	there by volume (the old volume weights the old fractions); a new reagent takes a copy. Every holder-to-holder move (trans_to_holder, trans_id_to,
-    	trans_type_to, ingest -> blood) passes the source reagent's `contaminants`. A reagent's purity() is 1 minus their sum, computed, never stored.
+    	Contaminants are reagents too (see "Contaminants" below), so every add, transfer and ingest moves them like any other reagent.
+
+    add_sourced_reagent(var/id, var/amount, list/profile, ...)
+    	Adds up to [amount] units of stock [id] with the contaminants of [profile] (contaminant id -> units per unit of stock, chem_source_profile()). Returns the stock added.
 
     remove_reagent(var/id, var/amount, var/safety = 0)
     	Ditto, but removes reagent. Returns 1 if successful, 0 otherwise.
@@ -306,3 +307,22 @@ About the Tools:
     	tools to manipulate it.
 
 \*/
+
+Contaminants
+------------
+Impurities are reagents (`/datum/reagent/contaminant`, `code/content/reagents/reagents/content/contaminants.dm`): 2u of "Heavy metals" is 2u in the
+beaker, with its own volume. It is added, transferred, mixed, splashed, ingested and metabolised like any reagent and does its own harm from its own
+metabolism, by role: toxic (organ or general toxin damage per unit), reactive (a chance of a burn per cycle), biological (toxin and a fever), inert
+(nothing). No transformation takes or makes one, so a contaminant never reacts: it rides along and dilutes. Nothing is attached to another reagent;
+there is no per-reagent fraction and no potency scaling.
+
+Purity belongs to the mixture: 1 minus the contaminant volume over the holder's total volume (`purity()`, computed, never stored), and its grade
+(`grade()`: Crude under 60%, Standard 60-90%, Pharma 90-99%, Reagent 99% and over). A transformation's `needs_grade = GRADE_PHARMA` asks for a minimum
+grade of the holder it runs in.
+
+A source (a chemical dispenser cartridge) rolls a profile per round (`chem_source_profile(reagent, source_key, grade)`, deterministic for the round
+seed): the units of each contaminant that come with each unit of stock. `add_sourced_reagent()` adds stock and contaminants together; the cartridge fills
+with it, recharges with it (`add_stock()`, used by the dispenser and the synthesizer, so a recharge never raises purity) and dispenses with it
+(`dispense_to()`: the stock asked for and the contaminants that sit with it). Scanners, the chem master, the analyzer and the health scanner list each
+contaminant as a line of its own and say the mixture's grade; the medical book's Purity tab is read from the contaminant types. `GLOB.chem_trace` logs
+source rolls, stock added, dispenses, refused graded reactions and effects on a patient.

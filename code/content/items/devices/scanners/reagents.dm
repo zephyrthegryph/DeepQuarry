@@ -32,9 +32,11 @@ CAPABILITIES(/obj/item/reagent_scanner)
 		if(O.reagents.reagent_list.len > 0)
 			var/one_percent = O.reagents.total_volume / 100
 			for (var/datum/reagent/R in O.reagents.reagent_list)
-				// The advanced scanner prints the amount, the grade and each contaminant; the basic one names the reagent and flags an impure batch.
-				var/purity_text = R.purity_summary()
-				dat += "\n \t " + span_notice(details ? "[R.scan_text()]: [R.volume / one_percent]%" : "[R][purity_text ? ", [purity_text]" : ""]")
+				// Contaminants are reagents: each is a line of its own. The advanced scanner prints the amount and share, the basic one the name.
+				dat += "\n \t " + span_notice(details ? "[R.name] [round(R.volume, 0.1)]u: [R.volume / one_percent]%" : "[R]")
+			var/mixture = O.reagents.purity_summary()
+			if(mixture)
+				dat += "\n \t " + span_notice("Mixture: [mixture]")
 		if(dat)
 			to_chat(user, span_notice("Chemicals found: [dat]"))
 		else

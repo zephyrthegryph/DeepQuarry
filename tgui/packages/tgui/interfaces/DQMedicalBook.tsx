@@ -179,17 +179,17 @@ type RecipeIngredient = {
   id: string;
   name: string;
   amount: number;
-  // The minimum grade the ingredient must be ("Pharma"), when the recipe
-  // is graded, and the purity band that grade covers.
-  grade?: string;
-  grade_band?: string;
 };
 
 type RecipeEntry = {
   distilling: 0 | 1;
   result_amount: number;
+  // The minimum grade the mixture must be ("Pharma"), when the recipe is
+  // graded, and the purity band that grade covers.
+  grade?: string;
+  grade_band?: string;
   required: RecipeIngredient[];
-  catalysts: { id: string; name: string; grade?: string }[];
+  catalysts: { id: string; name: string }[];
   inhibitors: { id: string; name: string }[];
   temp_min?: number;
   temp_max?: number;
@@ -305,7 +305,8 @@ type PurityData = {
   graded_recipes: {
     id: string;
     name: string;
-    needs: { id: string; name: string; grade: string }[];
+    grade: string;
+    band: string;
   }[];
 };
 
@@ -1346,11 +1347,6 @@ const ReagentDetail = (props: {
                     <Button compact onClick={() => props.goToReagent(ing.id)}>
                       {ing.name}
                     </Button>
-                    {ing.grade ? (
-                      <Label inline ml="2px">
-                        ({ing.grade} grade or better)
-                      </Label>
-                    ) : null}
                   </Box>
                 </Fragment>
               ))}
@@ -1366,6 +1362,11 @@ const ReagentDetail = (props: {
                   {rcp.temp_min ? ` at ${rcp.temp_min}-${rcp.temp_max} K` : ''}
                 </Box>
               ) : null}
+              {rcp.grade ? (
+                <Box color="grey" fontSize="0.85em" ml={1}>
+                  Mixture must be {rcp.grade} grade or better ({rcp.grade_band})
+                </Box>
+              ) : null}
               {rcp.catalysts.length ? (
                 <Box color="grey" fontSize="0.85em" ml={1}>
                   Catalyst:{' '}
@@ -1376,7 +1377,6 @@ const ReagentDetail = (props: {
                       onClick={() => props.goToReagent(c.id)}
                     >
                       {c.name}
-                      {c.grade ? ` (${c.grade} grade)` : ''}
                       {k < rcp.catalysts.length - 1 ? ',' : ''}
                     </Button>
                   ))}
@@ -1438,9 +1438,10 @@ const PurityTab = (props: {
   return (
     <Section title="Grades and contaminants" fill scrollable>
       <Box mb={1}>
-        Every reagent carries a purity: one minus the contaminants it holds.
-        Impurities dilute the dose and act on the patient as listed below. Some
-        recipes ask for a minimum grade of an ingredient.
+        A mixture has a purity: one minus the share of it that is contaminant.
+        Contaminants are reagents with a volume of their own; they never react,
+        they dilute whatever they are mixed with, and they act on the patient
+        as listed below. Some recipes ask for a minimum grade of the mixture.
       </Box>
       <Section title="Grades">
         <LabeledList>
@@ -1470,7 +1471,7 @@ const PurityTab = (props: {
                 {r.name}
               </Button>
               <Label inline ml={1}>
-                needs {r.needs.map((n) => `${n.name} (${n.grade})`).join(', ')}
+                needs a {r.grade} mixture ({r.band})
               </Label>
             </Box>
           ))

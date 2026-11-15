@@ -13,9 +13,9 @@
 //   regime        which holders run the rule (REGIME_X); a holder declares the regime it runs. Default REGIME_INSTANT.
 //   takes         the terms consumed. The first one is the index key (the anchor): the rule is a candidate in a subject holding it.
 //   catalysts     present at least this much, not consumed.        blocked_by: present at least this much blocks the rule.
-//   needs_grade   list(REAGENT_ID_X = GRADE_PHARMA): the minimum grade (GRADE_CRUDE..GRADE_REAGENT, code/defines/content/chem_purity.dm) a reagent of the holder must
-//                 have for the rule to hold; a reagent below it (or absent) does not react. A pure reagent is Reagent grade, so it meets any. Reagents medium only.
-//                 What the reactants carry as contaminants is averaged into the product by the units used (xform_carried_contaminants()).
+//   needs_grade   GRADE_PHARMA: the minimum grade (GRADE_CRUDE..GRADE_REAGENT, code/defines/content/chem_purity.dm) of the holder's mixture for the rule to hold
+//                 (the contaminant volume over the total volume, code/domains/world_model/reagents/contaminants.dm); a holder below it does not react. A holder
+//                 with no contaminant is Reagent grade, so it meets any. Reagents medium only.
 //   holds         the conditions under which the rule holds (code/library/transformations/transformation_conditions.dm); a subtype's `holds` is ANDed over the one
 //                 it inherits. (Not `when`: that keyword is the op conditions', and the handler lints read it as one.)
 //   rate          how far one step goes, a fraction of the limit: RATE_INSTANT (the default), half_life(n), rate(r).
@@ -140,8 +140,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/list/reagent_takes
 	var/list/reagent_catalysts
 	var/list/reagent_blocked
-	/// reagent id => the minimum GRADE_* it must have (`needs_grade =`), or null.
-	var/list/needs_grade
+	/// The minimum GRADE_* of the holder's mixture (`needs_grade =`), or null.
+	var/needs_grade
 	/// The gas terms of a gas rule as gas type => minimum moles (the shape the dispatcher reads the mixture's readings in), or null.
 	var/list/gas_takes
 	/// A gas rule's temperature window (null: open), read from its temperature_in() condition.
@@ -460,12 +460,11 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.reagent_catalysts = xform_assoc(X.catalysts, XCUR_REAGENT)
 		X.reagent_blocked = xform_assoc(X.blocked_by, XCUR_REAGENT)
 		if(arguments["needs_grade"])
-			var/list/grades = arguments["needs_grade"]
-			for(var/reagent_id in grades)
-				if(!isnum(grades[reagent_id]) || grades[reagent_id] < GRADE_CRUDE || grades[reagent_id] > GRADE_REAGENT)
-					declare_report("[origin]: [type]: needs_grade for [reagent_id] must be a GRADE_* constant")
-					return null
-			X.needs_grade = grades
+			var/grade = arguments["needs_grade"]
+			if(!isnum(grade) || grade < GRADE_CRUDE || grade > GRADE_REAGENT)
+				declare_report("[origin]: [type]: needs_grade must be a GRADE_* constant")
+				return null
+			X.needs_grade = grade
 		for(var/list/row as anything in X.makes)
 			if(row[1] == XCUR_REAGENT)
 				X.result = row[2]

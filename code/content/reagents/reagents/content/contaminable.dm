@@ -15,3 +15,6 @@
 
 /datum/reagent/blood/source_contaminable()
 	return FALSE
+
+/datum/reagent/contaminant/source_contaminable()
+	return FALSE

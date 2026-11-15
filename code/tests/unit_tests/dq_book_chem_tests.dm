@@ -1,5 +1,5 @@
 // Unit tests for the chemistry half of the medical reference book (code/content/medical/book/): every drug is listed with what it treats, its
-// strains, hides and adds, its recipe with the grade each graded ingredient needs, and the purity section lists the registry. The book is built
+// strains, hides and adds, its recipe with the grade its mixture needs, and the purity section lists the registry. The book is built
 // from the reagents, the conditions and the transformation rules, so these tests read the same data back.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -142,14 +142,15 @@
 	for(var/list/row in purity["contaminants"])
 		listed += row["id"]
 		TEST_ASSERT(length(row["name"]) && length(row["effect"]), "[row["id"]] has a name and an effect")
-	var/list/defs = contaminant_defs()
-	TEST_ASSERT_EQUAL(length(listed), length(defs), "every contaminant of the registry is listed")
-	for(var/id in defs)
+	var/list/ids = contaminant_ids()
+	TEST_ASSERT(length(ids) >= 10, "the contaminant reagents are found")
+	TEST_ASSERT_EQUAL(length(listed), length(ids), "every contaminant reagent is listed")
+	for(var/id in ids)
 		TEST_ASSERT(id in listed, "contaminant [id] is not in the purity section")
 	TEST_ASSERT(length(purity["graded_recipes"]), "the purity section lists the recipes that ask for a grade")
 
 
-/// A recipe that needs a grade shows the grade's name on the ingredient.
+/// A recipe that needs a grade shows the grade's name on the recipe.
 /datum/unit_test/dq_book_recipe_shows_grade
 
 /datum/unit_test/dq_book_recipe_shows_grade/Run()
@@ -157,7 +158,7 @@
 	var/list/reagents = book._dq_book_reagents()
 	var/checked = 0
 	for(var/datum/xform/CR as anything in GLOB.xform_rules)
-		if(CR.medium != MEDIUM_REAGENTS || !ispath(CR.rule_type, /transformation/chem) || !length(CR.needs_grade) || !CR.result)
+		if(CR.medium != MEDIUM_REAGENTS || !ispath(CR.rule_type, /transformation/chem) || !CR.needs_grade || !CR.result)
 			continue
 		if(CR.wiki & WIKI_SPOILER)
 			continue
@@ -172,12 +173,8 @@
 					same_rule = FALSE
 			if(!same_rule)
 				continue
-			for(var/list/ingredient in recipe["required"])
-				var/min_grade = CR.needs_grade[ingredient["id"]]
-				if(!min_grade)
-					continue
-				TEST_ASSERT_EQUAL(ingredient["grade"], grade_name(min_grade), "[CR.result]: [ingredient["id"]] shows the grade it needs")
-				checked++
+			TEST_ASSERT_EQUAL(recipe["grade"], grade_name(CR.needs_grade), "[CR.result] shows the grade its mixture needs")
+			checked++
 	TEST_ASSERT(checked, "at least one graded recipe was read back")
 
 #endif

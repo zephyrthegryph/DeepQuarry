@@ -18,11 +18,42 @@
 	/// Names the source in chem_source_profile(): cartridges with the same key and reagent hold the same per-round impurities.
 	var/source_key = "chemical supply"
 
-/// The starting stock takes its source's contaminant profile for the round (nothing for a reagent that cannot carry impurities).
-/obj/item/reagent_containers/chem_disp_cartridge/proc/stamp_source_contaminants()
-	if(!spawn_reagent || !reagents)
-		return
-	chem_stamp_source(reagents, spawn_reagent, source_key, source_grade)
+/// Puts `amount` units of the stock `reagent_id` in, with the contaminants its source comes with (chem_source_profile(): units of each per unit of stock;
+/// nothing for a reagent that cannot carry impurities). As much as fits. Returns the units of stock added. The starting fill and the recharge of a
+/// dispenser or synthesizer both come through here, so they add contaminants in the same proportions and a recharge never raises purity.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/add_stock(reagent_id, amount)
+	if(!reagents)
+		return 0
+	return reagents.add_sourced_reagent(reagent_id, amount, chem_source_profile(reagent_id, source_key, source_grade))
+
+/// The starting stock: full, as stock and the contaminants of its source.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/fill_stock()
+	if(spawn_reagent)
+		add_stock(spawn_reagent, volume)
+
+/// Units of stock held: everything that is not contaminant.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/stock_volume()
+	return reagents.total_volume - reagents.contaminant_volume()
+
+/// The mixture that holds `stock_units` of stock: the stock and the contaminants that sit with it.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/draw_amount(stock_units)
+	return stock_units * reagents.stock_scale()
+
+/// Dispenses `stock_units` of stock, with its contaminants, into `target` (an atom: a beaker). Returns the units of stock moved.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to(atom/target, stock_units)
+	var/scale = reagents.stock_scale()
+	var/moved = reagents.trans_to(target, stock_units * scale) || 0
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of mixture ([round(moved / scale, 0.001)]u of stock) into [target]")
+	return moved / scale
+
+/// Dispenses `stock_units` of stock, with its contaminants, into the holder `target`. Returns the units of stock moved.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to_holder(datum/reagents/target, stock_units)
+	var/scale = reagents.stock_scale()
+	var/moved = reagents.trans_to_holder(target, stock_units * scale) || 0
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of mixture ([round(moved / scale, 0.001)]u of stock) into a holder")
+	return moved / scale
 
 /obj/item/reagent_containers/chem_disp_cartridge/proc/label_initial_chemical()
 	if(spawn_reagent)
@@ -48,8 +79,7 @@ CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
 	variants(nameof(variant), PROC_REF(variant_table))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(label_initial_chemical))
-	configure(reagents(starts_from = list(nameof(spawn_reagent) = nameof(volume))))
-	setup(PROC_REF(stamp_source_contaminants))
+	setup(PROC_REF(fill_stock))
 	reagent_container(
 		volume = nameof(volume),
 		lid = TRUE,
