@@ -388,7 +388,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	// serves any ring near its staleness bound, and the floor admits one pass a second.
 	if(!kernel_admit_lane(lane))
 		return
-	limit = min(TICK_USAGE + pass_avail * lane_share[lane], tick_limit)
+	limit = min(TICK_USAGE + pass_avail * (lane == LANE_PRESENTATION && presentation_boosted() ? SCHED_BOOT_DRAW_SHARE : lane_share[lane]), tick_limit)
 	cap = harness_caps ? harness_caps[lane] : 0
 	calls = 0
 	if(!run_lane_guarded(lane, pass_t))

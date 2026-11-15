@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A client's glow holder walks the chunks of a crossing a millisecond or two a tick, so drops and acquisitions no longer pile into one step"
+  - code_imp: "Sounds read the volume preference once a hearer and raise one motion tracker echo a sound; slow sounds are traced (PLAYSOUND_SLOW)"

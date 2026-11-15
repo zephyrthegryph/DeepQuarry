@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Header tab labels sit on the same line as the buttons beside them, and windows draw one frame: docked windows draw no frame of their own sections, and a section inside a section is no longer boxed again."

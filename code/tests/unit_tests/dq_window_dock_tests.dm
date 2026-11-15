@@ -5,6 +5,12 @@
 /// A window with no browser whose status always holds: it counts the full updates it is sent.
 /datum/tgui/dq_dock_probe
 	var/probe_full = 0
+	/// The dock messages that reached it from its page.
+	var/list/probe_dock_messages = list()
+
+/datum/tgui/dq_dock_probe/dock_message(type, list/payload)
+	probe_dock_messages += type
+	return ..()
 
 /datum/tgui/dq_dock_probe/ui_participants_alive()
 	return TRUE
@@ -214,3 +220,18 @@
 		TEST_ASSERT(!ui.dockable_interface(), "[interface] never docks")
 		TEST_ASSERT(!ui.dockable(), "[interface] is never offered the dock button or a drop")
 	TEST_ASSERT(GLOB.window_dock_never_docked["PreferencesMenu"], "character setup never docks")
+
+/// Every message a window's page sends the dock reaches it: a float drag whose "wm/floated" never arrived left the new window standing
+/// where it opened instead of following the pointer, and a drop hint never showed.
+/datum/unit_test/dq_window_dock_page_messages_route
+/datum/unit_test/dq_window_dock_page_messages_route/Run()
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/datum/tgui/dq_dock_probe/ui = new(user, host, "Probe")
+	var/list/expected = list("wm/dock", "wm/float", "wm/floated", "wm/geometry", "wm/dropped", "wm/drophint", "wm/view", "wm/log")
+	for(var/type in expected)
+		ui.on_message(type, list(), list())
+	TEST_ASSERT_EQUAL(length(ui.probe_dock_messages), length(expected), "every dock message of a window's page reaches the dock")
+	for(var/type in expected)
+		TEST_ASSERT(type in ui.probe_dock_messages, "[type] reaches the dock")
+	qdel(ui)

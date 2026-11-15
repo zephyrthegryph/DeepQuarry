@@ -229,6 +229,37 @@ GLOBAL_VAR_INIT(look_cost_all_ms, 0)
 		ranked -= best
 	return text
 
+// ---- what each type's draws did: served, built and stored, built and not held, built with no key, built and empty ----
+
+/// Type path -> list(served, built and stored, built and not held, built with no cache key, built and drew nothing), counted for applied draws only.
+GLOBAL_ALIST_EMPTY(look_kinds)
+
+/proc/look_kind_note(type, kind)
+	var/list/row = GLOB.look_kinds[type]
+	if(!row)
+		row = list(0, 0, 0, 0, 0)
+		GLOB.look_kinds[type] = row
+	row[kind]++
+
+/// The `top` types whose draws ran draw() most (everything but a served hit), with how each of their draws went: the types a boot should not be drawing.
+/proc/look_kinds_text(top = 12)
+	var/list/ranked = list()
+	for(var/type in GLOB.look_kinds)
+		var/list/row = GLOB.look_kinds[type]
+		ranked["[type]"] = row[LOOK_KIND_STORED] + row[LOOK_KIND_BYPASSED] + row[LOOK_KIND_NOKEY] + row[LOOK_KIND_EMPTY]
+	var/text = "draws that ran draw() by type (type: built stored/held not/no key/empty, served)"
+	for(var/n in 1 to top)
+		var/best
+		for(var/name in ranked)
+			if(isnull(best) || ranked[name] > ranked[best])
+				best = name
+		if(isnull(best) || !ranked[best])
+			break
+		var/list/row = GLOB.look_kinds[text2path(best)]
+		text += "; [best]: [ranked[best]] ([row[LOOK_KIND_STORED]]/[row[LOOK_KIND_BYPASSED]]/[row[LOOK_KIND_NOKEY]]/[row[LOOK_KIND_EMPTY]], [row[LOOK_KIND_HIT]] served)"
+		ranked -= best
+	return text
+
 /// The cache's counters, for the look log line.
 /proc/look_cache_text()
 	var/served = GLOB.look_cache_hits + GLOB.look_cache_misses

@@ -16,7 +16,11 @@ declare const __TGUI_WINDOW_GEOMETRY_MANIFEST__: Record<
   StaticWindowGeometry
 >;
 
-export const staticWindowGeometry = __TGUI_WINDOW_GEOMETRY_MANIFEST__;
+// The bundler defines the manifest; a bare module load (the unit tests) has none.
+export const staticWindowGeometry: Record<string, StaticWindowGeometry> =
+  typeof __TGUI_WINDOW_GEOMETRY_MANIFEST__ === 'undefined'
+    ? {}
+    : __TGUI_WINDOW_GEOMETRY_MANIFEST__;
 
 export function getStaticWindowGeometry(
   interfaceName?: string,

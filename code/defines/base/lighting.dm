@@ -185,6 +185,8 @@ do { \
 /// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
 /// near the eye are followed once per tick (the lighting step).
 #define CLIENT_GLOW_SIGHT_INTERVAL (2 TICKS)
+/// Server milliseconds one step of a client holder's delta crossing walk (the chunks along the moved box edges, the drops and acquisitions they find) may spend inside the crossing before it leaves the rest to the next tick.
+#define CLIENT_GLOW_DELTA_BUDGET_MS 1.5
 /// Server milliseconds one step of a client holder's full scan (a login, a teleport) may spend before it leaves the rest of the chunks to the next ticks: nearest the eye first.
 #define CLIENT_GLOW_SCAN_BUDGET_MS 4
 /// Where the Rust baker writes baked shadow masks (it keeps them there, within a file and byte budget, until they enter the resource cache and after).
@@ -247,3 +249,6 @@ do { \
 #define DARKSIGHT_ICON_RADIUS 7.5
 /// The overlay's night-vision tint: a desaturated grey-green, multiplied into the disc.
 #define DARKSIGHT_TINT "#9fb0a6"
+
+/// The place of tile (x, y) in a level's sample table (lighting_smoothing.dm): a flat list of maxx * maxy slots, row by row.
+#define LIGHTING_SMOOTH_INDEX(x, y) (((y) - 1) * world.maxx + (x))

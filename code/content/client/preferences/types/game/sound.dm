@@ -70,6 +70,16 @@
 	var/list/volume_channels = prefs.read_preference(/datum/preference/volume_channels)
 	return volume_channels["[volume_channel]"]
 
+/// The product of the volume channel's setting and the master volume, from one read of the preference (each read copies the channels list; a sound was reading it twice a hearer).
+/client/proc/get_sound_volume_factor(volume_channel)
+	if(!prefs)
+		return 1
+	var/list/volume_channels = prefs.read_preference(/datum/preference/volume_channels)
+	var/factor = volume_channels["[VOLUME_CHANNEL_MASTER]"]
+	if(volume_channel)
+		factor *= volume_channels["[volume_channel]"]
+	return factor
+
 // Neat little volume adjuster thing in case you don't wanna touch preferences by hand you lazy fuck
 /datum/volume_panel
 
