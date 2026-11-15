@@ -227,6 +227,16 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	return FALSE
 
+/// What one part of `D` costs, by material: its effective table (a design with a material template keeps its cost in the template's slots, not in `materials`),
+/// so the part is charged what it is recorded as made of.
+/proc/mechfab_cost(datum/design_techweb/D)
+	. = list()
+	var/list/effective = D.effective_materials(null) || D.materials
+	for(var/key in effective)
+		var/datum/material/M = istype(key, /datum/material) ? key : get_material_by_name(key)
+		if(istype(M))
+			.[M] += effective[key]
+
 /**
  * Starts the build process for a given design datum.
  *
@@ -254,12 +264,15 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 		if(verbose)
 			atom_say("Mineral access is on hold, please contact the quartermaster.")
 		return FALSE
-	if(!materials.has_materials(D.materials, component_coeff))
+	var/list/needed = mechfab_cost(D)
+	if(!materials.has_materials(needed, component_coeff))
 		if(verbose)
 			atom_say("Not enough resources. Processing stopped.")
 		return FALSE
 
-	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
+	rmat.use_materials(needed, component_coeff, 1, "built", "[D.name]")
+	if(GLOB.fab_trace)
+		log_world("FAB: [src] takes [fab_matter_text(needed, component_coeff)] for [D.id]")
 	set_being_built(D)
 	cap_key_set(src, FABRICATOR_PRINTING, TRUE, null)
 	current_producer_account = producer_account
@@ -300,7 +313,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/dispense_built_part(datum/design_techweb/dispensed_design)
 	var/obj/item/built_part = create_new_part(dispensed_design)
-	split_materials_uniformly(dispensed_design.materials, component_coeff, built_part)
+	split_materials_uniformly(mechfab_cost(dispensed_design), component_coeff, built_part)
 	built_part.set_economic_provenance(DEPARTMENT_RESEARCH, max(25, dispensed_design.construction_time), current_producer_account)
 	current_producer_account = 0
 

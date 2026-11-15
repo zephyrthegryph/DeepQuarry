@@ -193,13 +193,25 @@ UI_SCHEMA(stack_recipe_tree, map_of(schema_text(), one_of(row(res_amount = num()
 /// Set to log what every fabricator print and stack recipe records against what it cost (FAB: lines in the world log).
 GLOBAL_VAR_INIT(fab_trace, FALSE)
 
+/// A material list as text for the FAB trace: name amount, scaled.
+/proc/fab_matter_text(list/matter, scale)
+	var/list/parts = list()
+	for(var/key in matter)
+		var/datum/material/material = istype(key, /datum/material) ? key : get_material_by_name(key)
+		parts += "[istype(material) ? material.name : key] [round(matter[key] * scale)]"
+	return parts.Join(", ") || "nothing"
+
 /// Makes what `recipe` makes at `where` from `required` units of a stack, `produced` of them. The product is recorded as made of exactly what it cost, never
 /// more: its matter is what the units were worth, capped at what an item of its size can hold (stack_recipe_matter()). The build and the conservation
 /// sweep (code/tests/unit_tests/dq_fab_conservation_tests.dm) both read this, so the sweep sees what a player gets.
 /proc/stack_recipe_product(datum/xform/recipe, atom/where, required, produced)
 	var/atom/O
 	if(recipe.use_material)
-		O = new recipe.result(where, recipe.use_material)
+		// a stack that is not a material sheet takes its amount as the constructor's first argument, not a material
+		if(ispath(recipe.result, /obj/item/stack) && !ispath(recipe.result, /obj/item/stack/material))
+			O = new recipe.result(where)
+		else
+			O = new recipe.result(where, recipe.use_material)
 		if(isitem(O))
 			stack_recipe_matter(O, recipe.use_material, required, produced)
 	else

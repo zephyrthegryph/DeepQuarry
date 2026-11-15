@@ -16,6 +16,8 @@
 
  */
 /proc/split_materials_uniformly(list/custom_materials, multiplier, obj/item/target_object)
+	if(GLOB.fab_trace)
+		log_world("FAB: [target_object] is recorded as made of [fab_matter_text(custom_materials, multiplier)] (what its design cost)")
 	if(!length(target_object.contents)) //most common case where the object is just 1 thing
 		target_object.set_custom_materials(custom_materials, multiplier)
 		return

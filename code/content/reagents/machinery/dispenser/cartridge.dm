@@ -98,3 +98,9 @@ CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
 	var/datum/prompt/R = A.answer
 	setLabel(R?.value, A.actor)
 	return OP_OK
+
+/// The cartridge's fill gauge follows its contents: a dispenser's recharge adds stock with no other change to the cartridge, so the look watches the holder
+/// (without it the cached look kept the old fill level: a REFRESH DRIFT / STALE draw).
+/obj/item/reagent_containers/chem_disp_cartridge/draw(datum/look/look)
+	..()
+	look.watch(reagents)

@@ -152,7 +152,7 @@
 		return
 	// the cost the machine takes for one run: a lathe the effective table (template slots with their default materials), the exosuit and prosthetics fabricators the table as it is
 	var/list/needed = list()
-	var/list/source = (D.build_type & (MECHFAB | PROSFAB)) ? D.materials : D.effective_materials(null)
+	var/list/source = (D.build_type & (MECHFAB | PROSFAB)) ? mechfab_cost(D) : D.effective_materials(null)
 	for(var/key in source)
 		var/datum/material/M = istype(key, /datum/material) ? key : get_material_by_name(key)
 		if(istype(M))
