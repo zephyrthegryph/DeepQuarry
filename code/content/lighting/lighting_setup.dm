@@ -9,7 +9,7 @@
 			if(T.has_dynamic_lighting() && !T.luminosity)
 				T.set_luminosity(1, TRUE)
 				shown++
-			CHECK_TICK
+			// (no yield: a cheap flag scan of the map, and a yield in a test world resumes once per tick behind the corner backlog the mode switch just queued)
 		log_world("client lighting: boot showed [shown] dynamic turf(s) that initialized at luminosity 0")
 		return
 	var/list/all_turfs = block(locate(1,1,1), locate(world.maxx, world.maxy, world.maxz))

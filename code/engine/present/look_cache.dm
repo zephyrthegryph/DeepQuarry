@@ -6,6 +6,8 @@
 // What may be cached is decided from declarations, never by running the draw twice:
 //   - the type's plan names only vars of the holder itself (no hop: a draw that reads its turf, area or container is keyed by state the key cannot see),
 //     and every one of them holds text, a number, a path, a file or null (a datum, a list or a runtime icon is state the key cannot see);
+//   - its look layers and capability draws read only vars of the holder (a powered machine's dark layer reads its stat: never keyed), and it carries no grant of its own;
+//   - the draw reads no published key (a machine's stat, a slot's occupancy: generated_draw_keys): that state is no var of the holder;
 //   - the holder is not a mob or an area and has no capability engine state (a watched atom or a flash);
 //   - the finished look is plain data: overlays are icon_state names, and it has no effect, flick, underlay, vis_contents or watched atom.
 // Anything else draws as it always did (counted as a bypass). Test builds verify every hit against a fresh draw (look_cache_verify()); a mismatch
@@ -43,9 +45,21 @@ DECLARE_SHARED_CACHE(look_cache_vars_of, GLOBAL_PROC_REF(look_cache_vars_build),
 	var/list/plan = plan_of(type)
 	if(!length(plan) || plan_type_fallback(type))
 		return LOOK_CACHE_NEVER
+	if(derived_generated_draw_keys(sample))
+		return LOOK_CACHE_NEVER // a draw that reads a published key (a machine's stat, a slot's occupancy) reads state no var of the holder carries
+	// What the holder's look layers and capability draws read beside its draw() (a powered machine's dark layer reads its stat): none of it may be state a var of the holder
+	// does not carry, and what is a var is part of the key like the draw's own.
+	var/list/presented = plan_presentation_reads(sample)
+	if(isnull(presented))
+		return LOOK_CACHE_NEVER // something it draws reads what no table knows
 	var/list/names = list()
 	var/list/vars_of = sample.vars
+	var/list/reads = list()
 	for(var/key in plan)
+		reads += key
+	for(var/key in presented)
+		reads |= key
+	for(var/key in reads)
 		if(key == "rx" || key == "type")
 			continue
 		if((plan[key] & PLAN_DRAW_HOP) || findtext(key, "."))
@@ -63,6 +77,8 @@ DECLARE_SHARED_CACHE(look_cache_vars_of, GLOBAL_PROC_REF(look_cache_vars_build),
 	var/list/names = CACHED_KEY(look_cache_vars_of, A.type, A)
 	if(!islist(names) || capability_data(A)?[/datum/cap_engine_state])
 		return null
+	if(LAZYLEN(A.rx?.activations) && look_cache_granted(A))
+		return null // a look layer a grant brings (a held condition) is state the key cannot see
 	var/list/vars_of = A.vars
 	var/list/parts = list("[A.type]")
 	for(var/name in names)
@@ -86,6 +102,15 @@ DECLARE_SHARED_CACHE(look_cache_vars_of, GLOBAL_PROC_REF(look_cache_vars_build),
 	parts += (was & LOOK_SET_INVISIBILITY) ? "~" : A.invisibility
 	parts += (was & LOOK_SET_OFFSET) ? "~" : "[A.pixel_x],[A.pixel_y]"
 	return jointext(parts, "|")
+
+/// TRUE when `A` carries a running grant its type's table does not declare itself (a held condition, a granted capability).
+/proc/look_cache_granted(atom/A)
+	var/datum/type_table/T = table_of(A)
+	for(var/datum/activation/act as anything in A.rx?.activations)
+		if(act.dead || !act.runs || T.caps[act.def.key])
+			continue
+		return TRUE
+	return FALSE
 
 /// Whether the finished look in `L` may be held: plain data that builds the same for any holder with the same key.
 /proc/look_cache_storable(datum/look/L)
