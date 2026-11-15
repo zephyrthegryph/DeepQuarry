@@ -241,3 +241,19 @@
 	TEST_ASSERT_EQUAL(SK.flicker_break_chance, 5, "the break chance seeds the panel")
 	TEST_ASSERT_EQUAL(SK.flicker_distance, 6, "the flicker distance seeds the panel")
 	TEST_ASSERT_EQUAL(lowertext(SK.flicker_color), "#123456", "the flicker colour seeds the panel")
+
+/// Hair, facial hair and the gradient draw their "none" style as the body, so no row of the Looks tab shows a bare label.
+/datum/unit_test/dq_hair_none_styles_have_a_body_thumb
+
+/datum/unit_test/dq_hair_none_styles_have_a_body_thumb/Run()
+	var/datum/preferences/dq_test_stub/P = new()
+	var/static/list/none_keys = list(
+		/datum/preference/text/human/h_style = "Bald",
+		/datum/preference/text/human/f_style = "Shaved",
+		/datum/preference/text/human/grad_style = "none",
+	)
+	for(var/type in none_keys)
+		var/datum/preference/pref = GLOB.preference_entries[type]
+		var/list/thumbs = pref.get_pref_thumbnails(P)
+		var/list/none = islist(thumbs) ? thumbs[none_keys[type]] : null
+		TEST_ASSERT(islist(none) && length(none["layers"]), "[type]: [none_keys[type]] has the body's layers")

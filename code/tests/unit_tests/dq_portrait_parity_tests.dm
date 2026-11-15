@@ -94,6 +94,33 @@
 	TEST_ASSERT_NULL(GLOB.dq_species_preview_waits[S.name], "the waiter was dropped once it landed")
 	TEST_NOTICE(src, "SPECIES_THUMB the slow path on the tick: [round(ask_ms, 0.01)] ms (was a synchronous getFlatIcon)")
 
+/// Every species the picker lists, Human included, ends up with a thumbnail: two species that look the same render to one portrait, and
+/// each of them is still filed.
+/datum/unit_test/dq_species_every_picker_entry_has_preview
+
+/datum/unit_test/dq_species_every_picker_entry_has_preview/Run()
+	var/list/names = list()
+	for(var/species_name in GLOB.playable_species)
+		if(species_name == SPECIES_CUSTOM || !GLOB.all_species[species_name])
+			continue
+		names += species_name
+	TEST_ASSERT(SPECIES_HUMAN in names, "Human is a playable species")
+	for(var/species_name in names)
+		GLOB.dq_species_preview_cache -= species_name
+		GLOB.dq_species_preview_waits -= species_name
+	for(var/species_name in names)
+		dq_species_preview_b64(GLOB.all_species[species_name])
+	var/deadline = world.time + 60 SECONDS
+	UNTIL(!length(thumbnails_missing(names)) || world.time > deadline)
+	var/list/missing = thumbnails_missing(names)
+	TEST_ASSERT(!length(missing), "these picker species have no thumbnail: [missing.Join(", ")]")
+
+/datum/unit_test/dq_species_every_picker_entry_has_preview/proc/thumbnails_missing(list/names)
+	. = list()
+	for(var/species_name in names)
+		if(!GLOB.dq_species_preview_cache[species_name])
+			. += species_name
+
 /// Coloured vendor product pictures through iconforge: the same pixels as the BYOND Blend path, and what each costs on the tick (VENDPROD_BENCH).
 /datum/unit_test/dq_vending_product_forge_matches
 

@@ -90,6 +90,11 @@ describe('thumbLayers', () => {
       { icon: 'ears.dmi', icon_state: 'fox', color: '#ffffff' },
     ]);
   });
+  it('draws a "none" value as the None body when no style carries that name', () => {
+    expect(thumbLayers({ '': { layers: body, base: 1 } }, 'none')).toEqual(
+      body,
+    );
+  });
   it('draws a style alone when the picker has no body', () => {
     expect(
       thumbLayers({ fox: { icon: 'e.dmi', icon_state: 'f' } }, 'fox'),
