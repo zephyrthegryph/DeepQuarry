@@ -2057,6 +2057,7 @@
 #include "code\content\reagents\reagent_containers\unidentified_hypospray.dm"
 #include "code\content\reagents\reagents\content\basic.dm"
 #include "code\content\reagents\reagents\content\contaminable.dm"
+#include "code\content\reagents\reagents\content\contaminants.dm"
 #include "code\content\reagents\reagents\content\drinks\drink.dm"
 #include "code\content\reagents\reagents\content\drinks\helpers.dm"
 #include "code\content\reagents\reagents\content\drinks\juice.dm"
