@@ -71,6 +71,14 @@ GLOBAL_LIST_INIT(reagent_boiling_points, list(
 	REAGENT_ID_COUPLINGAGENT = T0C + 200,
 	REAGENT_ID_CAUSTICDIGEST = T0C + 140,
 	REAGENT_ID_SCAVENGERRESIN = BOILING_POINT_NEVER,
+	// the exotic trees' intermediates and finds
+	REAGENT_ID_CHLOROFIRE = T0C + 240,
+	REAGENT_ID_LIFEACID = T0C + 250,
+	REAGENT_ID_HALOSOULDEW = T0C + 320,
+	REAGENT_ID_RELICICHOR = T0C + 260,
+	REAGENT_ID_RELICESSENCE = T0C + 270,
+	REAGENT_ID_VOIDAMBER = T0C + 250,
+	REAGENT_ID_CHLOROVOID = T0C + 260,
 ))
 
 /// The boiling point of a reagent type's category, K: the first row its type belongs to, so a narrower category goes above a wider one.

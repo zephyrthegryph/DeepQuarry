@@ -1,7 +1,8 @@
 // The chemistry families converted to block structures (doc/rewrite/proposals/chemistry_recipes.md; the machinery: code/domains/world_model/reagents/blocks/, the
 // declarations: code/content/reagents/blocks/): every declared chemical has a tier and is made by the route its structure gives, the staples are reachable in one or
 // two steps without a solid catalyst, the dirty shortcuts leave their traces, the process chemicals do their process, the groups clash on contact (in a beaker and in the
-// stomach, never in the blood), and the precursors are stocked.
+// stomach, never in the blood), and the precursors are stocked. The tier 4 trees (code/content/reagents/blocks/structures.dm: every blend starts from an exotic core
+// that cannot be made on the station) and the leftovers of tiers 2 and 3 are checked at the end.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -31,18 +32,35 @@
 		REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_PHORON, REAGENT_ID_BORON11, REAGENT_ID_FUEL, REAGENT_ID_ENZYME, REAGENT_ID_YEAST, \
 		REAGENT_ID_AMMONIA, REAGENT_ID_LYE, REAGENT_ID_DIETHYLAMINE, REAGENT_ID_CYANIDE, REAGENT_ID_CALCIUMCARBONATE, REAGENT_ID_FOAMINGAGENT, REAGENT_ID_SAND, \
 		REAGENT_ID_PHENOL, REAGENT_ID_SALICYLICACID, REAGENT_ID_WOODALDEHYDE, REAGENT_ID_NITRICACID, REAGENT_ID_HYDROCHLORIC, REAGENT_ID_PHOSPHORICACID, REAGENT_ID_ACETICACID, \
-		REAGENT_ID_BLEACH, REAGENT_ID_SODAASH, REAGENT_ID_GLYCEROL, REAGENT_ID_SILICATE, REAGENT_ID_FATTYACID, REAGENT_ID_PYRIDINE, REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID)
+		REAGENT_ID_BLEACH, REAGENT_ID_SODAASH, REAGENT_ID_GLYCEROL, REAGENT_ID_SILICATE, REAGENT_ID_FATTYACID, REAGENT_ID_PYRIDINE, REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID) + dq_fam_exotic_inputs()
+
+/// What a creature, a slime or an expedition gives: the exotic cores, the one thing the tier 4 trees cannot be reached without.
+/datum/unit_test/proc/dq_fam_exotic_inputs()
+	return list(REAGENT_ID_LIQUIDFIRE, REAGENT_ID_DEATHBLOOD, REAGENT_ID_LIQUIDLIFE, REAGENT_ID_CARPOTOXIN, REAGENT_ID_SPIDERTOXIN, REAGENT_ID_SLIMEJELLY, REAGENT_ID_SHOCKCHEM, \
+		REAGENT_ID_RELICICHOR, REAGENT_ID_VOIDAMBER)
+
+/// The tier 4 chemicals that are blends: finished chemicals made from an exotic input, not the inputs and not the rungs between.
+/datum/unit_test/proc/dq_fam_blends()
+	return list(REAGENT_ID_NEOLIQUIDFIRE, REAGENT_ID_BLOODSEALER, REAGENT_ID_JUGGERNOG, REAGENT_ID_DEATHCLAWMUTAGEN, REAGENT_ID_HEATNULLIFER, REAGENT_ID_PERFORMANCEPEAKER, \
+		REAGENT_ID_SENSEENHANCER, REAGENT_ID_SOULDEW, REAGENT_ID_LIQUIDHEALER, REAGENT_ID_OCEANICCURE, REAGENT_ID_ZOMBIEPOWDER, REAGENT_ID_LICHPOWDER, REAGENT_ID_NECROXADONE, \
+		REAGENT_ID_BERSERKMED, REAGENT_ID_MUTATIONTOXIN, REAGENT_ID_ADVMUTATIONTOXIN, REAGENT_ID_ENERGYBOOSTER, REAGENT_ID_PHOENIXBREATH, REAGENT_ID_CLARIDYL, \
+		REAGENT_ID_MORTIFERIN, REAGENT_ID_MALISHQUALEM)
 
 /// How many steps from the base each chemical is: id => depth (0 = the base). A step is a rule whose reactants are all known; the solid-catalyst routes are left out
 /// (`clean_only` also leaves out the process chemicals and the one-pot shortcuts: the clean routes only), and so are the clashes.
-/datum/unit_test/proc/dq_fam_depths(clean_only = FALSE)
+/datum/unit_test/proc/dq_fam_depths(clean_only = FALSE, with_exotic = TRUE)
 	var/list/depth = list()
+	var/list/exotic = dq_fam_exotic_inputs()
 	for(var/id in dq_fam_base())
+		if(!with_exotic && (id in exotic))
+			continue
 		depth[id] = 0
 	var/list/rules = list()
 	for(var/datum/xform/X as anything in GLOB.xform_rules)
 		if(X.medium != MEDIUM_REAGENTS || X.regime != REGIME_INSTANT || !X.result)
 			continue
+		if(!with_exotic && (X.subject_type || !length(X.reagent_takes)))
+			continue // a slime extract, or a rule that takes nothing: the xenobiology input is exotic too
 		var/datum/chem_route/R = chem_route_of(X)
 		if(R)
 			if(R.kind == CHEM_CATALYST_SOLID_METAL || R.kind == CHEM_CATALYST_SOLID_ACID || R.kind == CHEM_CATALYST_CONTACT)
@@ -79,7 +97,7 @@
 
 // ---- the declarations ----
 
-/// Every chemistry reagent that has a structure and is not a contaminant, a metal or a base has a tier; a staple, a standard and an advanced one are the three that exist.
+/// Every chemistry reagent that has a structure and is not a contaminant, a metal or a base has a tier: a staple, a standard, an advanced or an exotic one.
 /datum/unit_test/dq_chem_families_declared_chemicals_have_a_tier
 
 /datum/unit_test/dq_chem_families_declared_chemicals_have_a_tier/Run()
@@ -93,12 +111,14 @@
 			continue // a metal
 		var/tier = chem_tier_of(id)
 		TEST_ASSERT_NOTNULL(tier, "[id] has a tier")
-		TEST_ASSERT(tier >= CHEM_TIER_STAPLE && tier <= CHEM_TIER_ADVANCED, "[id] is tier 1 to 3 (tier 4 is not converted: [tier])")
+		TEST_ASSERT(tier >= CHEM_TIER_STAPLE && tier <= CHEM_TIER_EXOTIC, "[id] is tier 1 to 4 ([tier])")
 		counted++
 	TEST_ASSERT(counted > 100, "the declared chemistry was counted ([counted])")
 	TEST_ASSERT_NULL(text2path("/transformation/chem/instant/inaprovaline"), "the element mix of inaprovaline is gone")
-	for(var/gone in list("bicaridine", "dylovene", "dexalin", "paracetamol", "sterilizine", "silicate", "lube", "tricordrazine", "hyronalin", "arithrazine", "lexorin", "mindbreaker", "sodiumchloride", "prussian_blue", "coolant"))
+	for(var/gone in list("bicaridine", "dylovene", "dexalin", "paracetamol", "sterilizine", "silicate", "lube", "tricordrazine", "hyronalin", "arithrazine", "lexorin", "mindbreaker", "sodiumchloride", "prussian_blue", "coolant", "anticonvulsant", "rezadone", "benzilate", "souldew", "liquidhealer", "neoliquidfire", "performancepeaker", "bloodsealer", "claridyl", "mortiferin", "malish_qualem", "zombiepowder", "slimeify"))
 		TEST_ASSERT_NULL(text2path("/transformation/chem/instant/[gone]"), "the old [gone] recipe is gone")
+	for(var/gone in list("juggernog", "phoenixbreath", "energybooster", "oceaniccure", "deathclawmutagen", "senseenhancer", "heatnullifer", "lichpowder", "necroxadone", "berserkjuice"))
+		TEST_ASSERT_NULL(text2path("/transformation/chem/distilling/[gone]"), "the old distilling [gone] recipe is gone")
 
 /// The clean route of each converted chemical: what it is made from, by which process.
 /datum/unit_test/dq_chem_families_clean_routes_exist
@@ -185,6 +205,45 @@
 		list(REAGENT_ID_RESPIRODAXON, list(REAGENT_ID_AMINOACID, REAGENT_ID_DEXALINP), CHEM_CATALYST_ACID),
 		list(REAGENT_ID_BULLVALENE, list(REAGENT_ID_DERMALINE, REAGENT_ID_COPPERSALT), CHEM_CATALYST_NONE),
 		list(REAGENT_ID_IMPEDREZENE, list(REAGENT_ID_CRYPTOBIOLIN, REAGENT_ID_CHLORINE), CHEM_CATALYST_NONE),
+		// the leftovers of tiers 2 and 3
+		list(REAGENT_ID_ANTICONVULSANT, list(REAGENT_ID_ETHYLREDOXRAZINE, REAGENT_ID_DIETHYLAMINE), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_REZADONE, list(REAGENT_ID_ETHYLREDOXRAZINE, REAGENT_ID_SUGAR), CHEM_CATALYST_ACID),
+		list(REAGENT_ID_BENZILATE, list(REAGENT_ID_ALKALOIDACID, REAGENT_ID_PARACETAMOL), CHEM_CATALYST_ACID),
+		// tier 4: [fire] dragon blood
+		list(REAGENT_ID_CHLOROFIRE, list(REAGENT_ID_LIQUIDFIRE, REAGENT_ID_CHLORINE), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_NEOLIQUIDFIRE, list(REAGENT_ID_CHLOROFIRE, REAGENT_ID_SULFUR), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_BLOODSEALER, list(REAGENT_ID_NEOLIQUIDFIRE, REAGENT_ID_OXYGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_JUGGERNOG, list(REAGENT_ID_NEOLIQUIDFIRE, REAGENT_ID_IRONSALT), CHEM_CATALYST_NONE),
+		// [death] deathclaw blood
+		list(REAGENT_ID_DEATHCLAWMUTAGEN, list(REAGENT_ID_DEATHBLOOD, REAGENT_ID_CHLORINE), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_HEATNULLIFER, list(REAGENT_ID_DEATHCLAWMUTAGEN, REAGENT_ID_AMMONIA), CHEM_CATALYST_NONE),
+		// [life] liquid life
+		list(REAGENT_ID_PERFORMANCEPEAKER, list(REAGENT_ID_LIQUIDLIFE, REAGENT_ID_OXYGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_SENSEENHANCER, list(REAGENT_ID_PERFORMANCEPEAKER, REAGENT_ID_AMMONIA, REAGENT_ID_HYDROGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_LIFEACID, list(REAGENT_ID_PERFORMANCEPEAKER, REAGENT_ID_OXYGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_HALOSOULDEW, list(REAGENT_ID_LIFEACID, REAGENT_ID_ALKYSINE), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_SOULDEW, list(REAGENT_ID_HALOSOULDEW, REAGENT_ID_SULFUR), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_LIQUIDHEALER, list(REAGENT_ID_BICARIDINE, REAGENT_ID_LIQUIDLIFE), CHEM_CATALYST_ACID),
+		// [venom] carp and spider toxin
+		list(REAGENT_ID_OCEANICCURE, list(REAGENT_ID_CARPOTOXIN, REAGENT_ID_WATER), CHEM_CATALYST_ENZYME),
+		list(REAGENT_ID_OCEANICCURE, list(REAGENT_ID_SPIDERTOXIN, REAGENT_ID_WATER), CHEM_CATALYST_ENZYME),
+		list(REAGENT_ID_ZOMBIEPOWDER, list(REAGENT_ID_CARPOTOXIN, REAGENT_ID_CHLORALHYDRATE), CHEM_CATALYST_ACID),
+		list(REAGENT_ID_LICHPOWDER, list(REAGENT_ID_ZOMBIEPOWDER, REAGENT_ID_LEPORAZINE), CHEM_CATALYST_ACID),
+		list(REAGENT_ID_NECROXADONE, list(REAGENT_ID_LICHPOWDER, REAGENT_ID_SULFUR), CHEM_CATALYST_NONE),
+		// [slime] slime jelly
+		list(REAGENT_ID_BERSERKMED, list(REAGENT_ID_SLIMEJELLY, REAGENT_ID_NITRICACID, REAGENT_ID_SACID), CHEM_CATALYST_ACID),
+		list(REAGENT_ID_MUTATIONTOXIN, list(REAGENT_ID_BERSERKMED, REAGENT_ID_HYDROGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_ADVMUTATIONTOXIN, list(REAGENT_ID_MUTATIONTOXIN, REAGENT_ID_CHLORINE), CHEM_CATALYST_NONE),
+		// [volt] 200 V
+		list(REAGENT_ID_ENERGYBOOSTER, list(REAGENT_ID_SHOCKCHEM, REAGENT_ID_PHOSPHORUS), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_PHOENIXBREATH, list(REAGENT_ID_BICARIDINE, REAGENT_ID_SHOCKCHEM), CHEM_CATALYST_ACID),
+		// the expedition finds
+		list(REAGENT_ID_RELICESSENCE, list(REAGENT_ID_RELICICHOR, REAGENT_ID_OXYGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_CLARIDYL, list(REAGENT_ID_RELICESSENCE, REAGENT_ID_LITHIUMSALT), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_CHLOROVOID, list(REAGENT_ID_VOIDAMBER, REAGENT_ID_CHLORINE), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_MORTIFERIN, list(REAGENT_ID_CHLOROVOID, REAGENT_ID_AMMONIA), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_MALISHQUALEM, list(REAGENT_ID_MORTIFERIN, REAGENT_ID_OXYGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_MORTIFERIN, list(REAGENT_ID_MALISHQUALEM, REAGENT_ID_HYDROGEN), CHEM_CATALYST_NONE),
 	)
 	var/missing = list()
 	for(var/list/row in rows)
@@ -564,5 +623,187 @@
 	var/list/sold = pack.contains
 	for(var/box_type in list(/obj/item/storage/box/precursors_inorganic, /obj/item/storage/box/precursors_ring, /obj/item/storage/box/precursors_bio))
 		TEST_ASSERT(box_type in sold, "cargo sells [box_type]")
+
+// ---- tier 4: the exotic trees ----
+
+/// Every chemical with an exotic core is tier 4, and nothing else is: the tier says what the structure says.
+/datum/unit_test/dq_chem_families_exotic_cores_are_tier_four
+
+/datum/unit_test/dq_chem_families_exotic_cores_are_tier_four/Run()
+	var/exotic = 0
+	for(var/id in GLOB.chem_declared_structures)
+		var/datum/chem_structure/S = GLOB.chem_declared_structures[id]
+		var/tier = chem_tier_of(id)
+		if(S.has_exotic_core())
+			TEST_ASSERT_EQUAL(tier, CHEM_TIER_EXOTIC, "[id] carries an exotic core, so it is tier 4")
+			exotic++
+		else
+			TEST_ASSERT(tier != CHEM_TIER_EXOTIC, "[id] is tier 4 with no exotic core")
+	TEST_ASSERT(exotic >= 30, "the exotic trees were counted ([exotic])")
+	for(var/id in dq_fam_blends())
+		TEST_ASSERT_EQUAL(chem_tier_of(id), CHEM_TIER_EXOTIC, "[id] is tier 4")
+	// Peridaxon and the size drugs are not exotic: tier 3, no exotic core.
+	for(var/id in list(REAGENT_ID_PERIDAXON, REAGENT_ID_SIZEOXADONE, REAGENT_ID_MACROCILLIN, REAGENT_ID_MICROCILLIN, REAGENT_ID_NORMALCILLIN))
+		TEST_ASSERT_EQUAL(chem_tier_of(id), CHEM_TIER_ADVANCED, "[id] is tier 3, with no exotic input")
+		TEST_ASSERT(!chem_structure_of(id).has_exotic_core(), "[id] has no exotic core")
+
+/// A blend is made by routes and by nothing else (the slime extracts are the xenobiology input and are named): no recipe, no shortcut, no process chemical in one pot.
+/datum/unit_test/dq_chem_families_exotic_blends_have_no_dirty_shortcut
+
+/datum/unit_test/dq_chem_families_exotic_blends_have_no_dirty_shortcut/Run()
+	var/list/from_extracts = list(REAGENT_ID_NEOLIQUIDFIRE, REAGENT_ID_SENSEENHANCER, REAGENT_ID_BERSERKMED, REAGENT_ID_MUTATIONTOXIN)
+	for(var/id in dq_fam_blends())
+		var/routes = 0
+		for(var/datum/xform/X as anything in GLOB.xform_rules)
+			if(X.medium != MEDIUM_REAGENTS || X.result != id)
+				continue
+			var/datum/chem_route/R = chem_route_of(X)
+			if(!R)
+				TEST_ASSERT(id in from_extracts, "[id] is made by a recipe ([X.rule_type]) and not by a route")
+				continue
+			TEST_ASSERT(R.kind != CHEM_CATALYST_AGENT, "[id] is made by a process chemical in one pot ([R.id])")
+			routes++
+		TEST_ASSERT(routes > 0, "[id] has a route")
+	for(var/route_id in GLOB.chem_routes)
+		var/datum/chem_route/R = GLOB.chem_routes[route_id]
+		if(!R.agent_key)
+			continue
+		for(var/product_id in R.products)
+			var/datum/chem_structure/S = chem_structure_of(product_id)
+			TEST_ASSERT(!S?.has_exotic_core(), "[route_id]: a process chemical makes [product_id], which has an exotic core")
+
+/// No exotic core is made from nothing and none is turned into another: every route that makes a chemical with an exotic core takes one that has that core.
+/datum/unit_test/dq_chem_families_no_route_makes_or_changes_an_exotic_core
+
+/datum/unit_test/dq_chem_families_no_route_makes_or_changes_an_exotic_core/Run()
+	var/checked = 0
+	for(var/route_id in GLOB.chem_routes)
+		var/datum/chem_route/R = GLOB.chem_routes[route_id]
+		if(R.process_id == CHEM_PROCESS_CLASH)
+			continue
+		var/list/taken = list()
+		for(var/from_id in R.from)
+			var/datum/chem_structure/F = chem_structure_of(from_id)
+			for(var/core in F?.cores)
+				if(core in GLOB.chem_exotic_cores)
+					taken |= core
+		for(var/product_id in R.products)
+			var/datum/chem_structure/P = chem_structure_of(product_id)
+			if(!P)
+				continue
+			for(var/core in P.cores)
+				if(!(core in GLOB.chem_exotic_cores))
+					continue
+				TEST_ASSERT(core in taken, "[route_id] makes [product_id] with the [core] core out of nothing that has it")
+				checked++
+	TEST_ASSERT(checked > 20, "the exotic routes were checked ([checked])")
+	// One tree each: no chemical carries two exotic cores.
+	for(var/id in GLOB.chem_declared_structures)
+		var/datum/chem_structure/S = GLOB.chem_declared_structures[id]
+		var/list/seen = list()
+		for(var/core in S.cores)
+			if(core in GLOB.chem_exotic_cores)
+				seen |= core
+		TEST_ASSERT(length(seen) <= 1, "[id] mixes exotic cores")
+
+/// Without the exotic inputs not one blend is reachable, however many process chemicals and stock bottles there are; with them each is.
+/datum/unit_test/dq_chem_families_exotic_blends_need_an_exotic_input
+
+/datum/unit_test/dq_chem_families_exotic_blends_need_an_exotic_input/Run()
+	var/list/depth = dq_fam_depths(FALSE, FALSE)
+	for(var/id in dq_fam_blends())
+		TEST_ASSERT(isnull(depth[id]), "[id] is reachable from the stock alone ([depth[id]] steps)")
+	var/list/with = dq_fam_depths(FALSE, TRUE)
+	for(var/id in dq_fam_blends())
+		TEST_ASSERT(!isnull(with[id]), "[id] is not reachable from its exotic input")
+
+/// A step on an exotic core spends a third more of it than it makes: the yields are small.
+/datum/unit_test/dq_chem_families_exotic_yields_are_small
+
+/datum/unit_test/dq_chem_families_exotic_yields_are_small/Run()
+	var/datum/chem_route/R = dq_fam_route(REAGENT_ID_PERFORMANCEPEAKER, list(REAGENT_ID_LIQUIDLIFE, REAGENT_ID_OXYGEN))
+	TEST_ASSERT_NOTNULL(R, "liquid life oxidises to the performance peaker")
+	TEST_ASSERT_EQUAL(R.takes[REAGENT_ID_LIQUIDLIFE], CHEM_EXOTIC_TAKE, "it spends more liquid life than it makes")
+	TEST_ASSERT_EQUAL(R.takes[REAGENT_ID_OXYGEN], 1, "and an ordinary agent is spent a unit for a unit")
+	var/datum/chem_route/plain = dq_fam_route(REAGENT_ID_PARACETAMOL, list(REAGENT_ID_ACETICACID, REAGENT_ID_INAPROVALINE))
+	TEST_ASSERT_NOTNULL(plain, "paracetamol has its route")
+	TEST_ASSERT_EQUAL(plain.takes[REAGENT_ID_INAPROVALINE], 1, "a step with no exotic core in it is unchanged")
+	var/obj/item/reagent_containers/glass/beaker/B = dq_blk_beaker(95)
+	B.reagents.add_reagent(REAGENT_ID_LIQUIDLIFE, 15, safety = 1)
+	B.reagents.add_reagent(REAGENT_ID_OXYGEN, 10)
+	TEST_ASSERT(dq_blk_near(B.reagents.get_reagent_amount(REAGENT_ID_PERFORMANCEPEAKER), 10, 1), "15u of liquid life make 10u of the performance peaker ([B.reagents.get_reagents()])")
+
+/// The clash problem of the old recipes: bicaridine with what it clashed with. The routes make liquid healer and phoenix breath of bicaridine and the exotic input.
+/datum/unit_test/dq_chem_families_liquid_healer_and_phoenix_breath_work
+
+/datum/unit_test/dq_chem_families_liquid_healer_and_phoenix_breath_work/Run()
+	var/obj/item/reagent_containers/glass/beaker/healer = dq_blk_beaker(100)
+	healer.reagents.add_reagent(REAGENT_ID_BICARIDINE, 10, safety = 1)
+	healer.reagents.add_reagent(REAGENT_ID_LIQUIDLIFE, 15, safety = 1)
+	healer.reagents.add_reagent(REAGENT_ID_SACID, 2)
+	TEST_ASSERT(dq_blk_near(healer.reagents.get_reagent_amount(REAGENT_ID_LIQUIDHEALER), 10, 1), "bicaridine and liquid life make liquid healer ([healer.reagents.get_reagents()])")
+	TEST_ASSERT_EQUAL(healer.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_SALTS), 0, "with no salting out")
+	var/obj/item/reagent_containers/glass/beaker/breath = dq_blk_beaker(100)
+	breath.reagents.add_reagent(REAGENT_ID_BICARIDINE, 10, safety = 1)
+	breath.reagents.add_reagent(REAGENT_ID_SHOCKCHEM, 15, safety = 1)
+	breath.reagents.add_reagent(REAGENT_ID_SACID, 2)
+	TEST_ASSERT(dq_blk_near(breath.reagents.get_reagent_amount(REAGENT_ID_PHOENIXBREATH), 10, 1), "bicaridine and 200 V make phoenix breath ([breath.reagents.get_reagents()])")
+	TEST_ASSERT_EQUAL(breath.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_SALTS), 0, "with no salting out")
+
+/// Carp toxin, cut part way by an enzyme, is oceanic cure; soul dew is the life tree's last step (joined to alkysine, then sulfur).
+/datum/unit_test/dq_chem_families_oceanic_cure_and_soul_dew_by_route
+
+/datum/unit_test/dq_chem_families_oceanic_cure_and_soul_dew_by_route/Run()
+	var/obj/item/reagent_containers/glass/beaker/cure = dq_blk_beaker(30)
+	cure.reagents.add_reagent(REAGENT_ID_CARPOTOXIN, 15, safety = 1)
+	cure.reagents.add_reagent(REAGENT_ID_WATER, 10, safety = 1)
+	cure.reagents.add_reagent(REAGENT_ID_ENZYME, 2)
+	TEST_ASSERT(dq_blk_near(cure.reagents.get_reagent_amount(REAGENT_ID_OCEANICCURE), 10, 1), "an enzyme cuts carpotoxin part way: oceanic cure ([cure.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/dew = dq_blk_beaker(50)
+	dew.reagents.add_reagent(REAGENT_ID_HALOSOULDEW, 15, safety = 1)
+	dew.reagents.add_reagent(REAGENT_ID_SULFUR, 10)
+	TEST_ASSERT(dq_blk_near(dew.reagents.get_reagent_amount(REAGENT_ID_SOULDEW), 10, 1), "sulfur makes soul dew of the halogenated extract ([dew.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/joined = dq_blk_beaker(80)
+	joined.reagents.add_reagent(REAGENT_ID_LIFEACID, 15, safety = 1)
+	joined.reagents.add_reagent(REAGENT_ID_ALKYSINE, 10)
+	TEST_ASSERT(dq_blk_near(joined.reagents.get_reagent_amount(REAGENT_ID_HALOSOULDEW), 10, 1), "liquid life acid and alkysine join into the halogenated extract ([joined.reagents.get_reagents()])")
+
+// ---- soul dew and the brain ----
+
+/// A brain at full damage is repaired by soul dew and by nothing else: the neural repair of alkysine, synaptizine, peridaxon and dexalin, the surgical and restoring
+/// mechanisms all stop at brain death.
+/datum/unit_test/dq_chem_families_only_soul_dew_repairs_a_brain_dead_brain
+
+/datum/unit_test/dq_chem_families_only_soul_dew_repairs_a_brain_dead_brain/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
+	TEST_ASSERT_NOTNULL(brain, "no brain")
+	H.injure(INJURY_BLUNT, brain.max_damage, brain, affliction = /datum/affliction/lesion/contusion, flags = INJURE_IGNORE_RESISTANCE)
+	brain.set_status(brain.status | ORGAN_DEAD)
+	TEST_ASSERT(brain.is_brain_dead(), "the brain is dead (damage [brain.damage] of [brain.max_damage])")
+	var/list/tags = list(TREAT_NEURAL_REPAIR, TREAT_SURGICAL_REPAIR, TREAT_RESTORATION, TREAT_TISSUE_REPAIR, TREAT_RESECTION, TREAT_OXYGENATION)
+	// What the four drugs deliver is their tags: take each reagent's own.
+	var/list/reagents = SSchemistry.ready().chemical_reagents
+	for(var/id in list(REAGENT_ID_ALKYSINE, REAGENT_ID_SYNAPTIZINE, REAGENT_ID_PERIDAXON, REAGENT_ID_DEXALIN))
+		var/datum/reagent/R = reagents[id]
+		for(var/tag in R.treatment_tags)
+			tags |= tag
+	for(var/tag in tags)
+		H.mend(tag, 100)
+		TEST_ASSERT(brain.is_brain_dead(), "[tag] does not repair a brain-dead brain (damage [brain.damage] of [brain.max_damage])")
+	TEST_ASSERT_EQUAL(brain.damage, brain.max_damage, "nothing moved it")
+	// Soul dew does: in a body that is dead, its dose mends the brain, and the death flag with it.
+	H.set_stat(DEAD)
+	H.bloodstr.add_reagent(REAGENT_ID_SOULDEW, 20)
+	var/datum/reagent/soul = H.bloodstr.get_reagent(REAGENT_ID_SOULDEW)
+	TEST_ASSERT_NOTNULL(soul, "soul dew is in the blood")
+	soul.affect_blood(H, 0, 4)
+	TEST_ASSERT(brain.damage < brain.max_damage, "soul dew mended the brain (damage [brain.damage] of [brain.max_damage])")
+	TEST_ASSERT(!brain.is_brain_dead(), "it is no longer brain dead")
+	TEST_ASSERT(!(brain.status & ORGAN_DEAD), "and its death flag is lifted")
+	// With the brain below full damage the ordinary mechanisms work again.
+	var/before = brain.damage
+	H.mend(TREAT_NEURAL_REPAIR, 5)
+	TEST_ASSERT(brain.damage < before, "neural repair works once the brain is alive")
 
 #endif

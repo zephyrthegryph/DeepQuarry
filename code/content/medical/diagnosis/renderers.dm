@@ -49,6 +49,7 @@
 		TREAT_ANTICONVULSANT = "anticonvulsant",
 		TREAT_BURN_DEEP = "deep burn care",
 		TREAT_ANTIEDEMA = "anti-edema",
+		TREAT_SOULMEND = "soul mending",
 	)
 	return labels[tag] || tag
 

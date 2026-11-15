@@ -26,7 +26,18 @@ GLOBAL_LIST_INIT(chem_core_atoms, list(
 	CHEM_CORE_NITROGEN_RING = list("C" = 5, "H" = 5, "N" = 1),
 	CHEM_CORE_SILOXANE = list("Si" = 2, "O" = 1, "H" = 6),
 	CHEM_CORE_PHORON_LATTICE = list("Ph" = 2),
+	CHEM_CORE_FIRE = list("C" = 9, "H" = 12, "Dr" = 1),
+	CHEM_CORE_DEATH = list("C" = 8, "H" = 10, "Ra" = 1),
+	CHEM_CORE_LIFE = list("C" = 6, "H" = 12, "Vi" = 1),
+	CHEM_CORE_VENOM = list("C" = 4, "H" = 9, "N" = 2),
+	CHEM_CORE_SLIME = list("C" = 6, "H" = 8, "N" = 1, "Sl" = 1),
+	CHEM_CORE_VOLT = list("C" = 3, "H" = 4, "Vo" = 1),
+	CHEM_CORE_RELIC = list("C" = 7, "H" = 8, "Re" = 1),
+	CHEM_CORE_VOID = list("C" = 5, "H" = 6, "Vd" = 1),
 ))
+
+/// The exotic cores: what a creature, a slime or an expedition gives. A chemical with one is gated on it, and no process turns one core into another.
+GLOBAL_LIST_INIT(chem_exotic_cores, list(CHEM_CORE_FIRE, CHEM_CORE_DEATH, CHEM_CORE_LIFE, CHEM_CORE_VENOM, CHEM_CORE_SLIME, CHEM_CORE_VOLT, CHEM_CORE_RELIC, CHEM_CORE_VOID))
 
 /// atoms a group adds to the core it hangs on (a group takes the place of a hydrogen, so a negative count takes hydrogen away).
 GLOBAL_LIST_INIT(chem_group_atoms, list(
@@ -130,6 +141,13 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 
 /datum/chem_structure/proc/has_core(core)
 	return (core in cores) ? TRUE : FALSE
+
+/// Does it carry an exotic core (one that cannot be made on the station)?
+/datum/chem_structure/proc/has_exotic_core()
+	for(var/core in cores)
+		if(core in GLOB.chem_exotic_cores)
+			return TRUE
+	return FALSE
 
 /// An acid: a hydrogen cation on an anion that is not hydroxide (water is neither acid nor base) or peroxide (a peroxide is an oxidiser, not an acid).
 /datum/chem_structure/proc/is_acid()
@@ -296,6 +314,8 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 		return "silicone"
 	if(has_core(CHEM_CORE_PHORON_LATTICE))
 		return "phoron lattice"
+	if(has_exotic_core())
+		return "exotic extract"
 	if(has_core(CHEM_CORE_RING) || has_core(CHEM_CORE_DOUBLE_RING) || has_core(CHEM_CORE_NITROGEN_RING))
 		return "aromatic"
 	return "hydrocarbon"

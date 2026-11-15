@@ -541,6 +541,17 @@ CAPABILITIES(/obj/item/reagent_containers/glass/kettle)
 	desc = "A glass vial containing the extremely dangerous results of grinding a shard of supermatter down to a fine powder."
 	prefill = list(REAGENT_ID_SUPERMATTER = 5)
 
+/// The expedition finds the rare feedstock chemistry starts from (code/content/reagents/blocks/structures.dm, the relic and void trees): found, never made.
+/obj/item/reagent_containers/glass/beaker/vial/relic_ichor
+	name = "sealed vial (" + REAGENT_ID_RELICICHOR + ")"
+	desc = "A wax-sealed vial of thick ichor from a vault of an old expedition site."
+	prefill = list(REAGENT_ID_RELICICHOR = 20)
+
+/obj/item/reagent_containers/glass/beaker/vial/void_amber
+	name = "sealed vial (" + REAGENT_ID_VOIDAMBER + ")"
+	desc = "A lead-sealed vial of amber that set around something that was not there."
+	prefill = list(REAGENT_ID_VOIDAMBER = 20)
+
 /obj/item/reagent_containers/glass/beaker/measuring_cup
 	name = "measuring cup"
 	desc = "A measuring cup."

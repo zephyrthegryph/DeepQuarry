@@ -129,6 +129,7 @@
 #define TREAT_LITHOTRIPSY      "lithotripsy"  // breaks up deposits with focused ultrasound
 #define TREAT_BURN_DEEP        "burn_deep"  // deep burns (degrees 4-5: deep burn, carbonised area) and airway burns (dermaline); kelotane-grade burn care barely reaches them
 #define TREAT_ANTIEDEMA        "antiedema"  // shrinks tissue swelling in the airway (airway edema from an inhalation burn)
+#define TREAT_SOULMEND         "soulmend"  // soul dew: the only mechanism that repairs a brain-dead brain (a brain at full damage); every other neural repair stops at brain death
 
 // --- Cardiac rhythms (/datum/affliction/cardiac_arrhythmia) ------------------------------
 /// Normal rhythm; the arrhythmia is settling and will resolve.

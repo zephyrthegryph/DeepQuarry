@@ -299,3 +299,68 @@
 	color = "#D0D0D0"
 	strength = 6
 
+
+// ---- the exotic trees: the intermediates between a creature, slime or expedition input and the finished blends, and the two expedition finds (structures.dm) ----
+
+/datum/reagent/toxin/chem_chlorofire
+	name = REAGENT_CHLOROFIRE
+	id = REAGENT_ID_CHLOROFIRE
+	description = "Dragon blood with a halide hung on it. An intermediate: sulfur makes neon liquid fire of it, ammonia wastes it."
+	taste_description = "smoke"
+	reagent_state = LIQUID
+	color = "#D8601A"
+	strength = 7
+
+/datum/reagent/toxin/chem_lifeacid
+	name = REAGENT_LIFEACID
+	id = REAGENT_ID_LIFEACID
+	description = "Liquid life taken all the way to its acid. An intermediate: it condenses with an amine."
+	taste_description = "copper"
+	reagent_state = LIQUID
+	color = "#E8C0C8"
+	strength = 0
+
+/datum/reagent/toxin/chem_halosouldew
+	name = REAGENT_HALOSOULDEW
+	id = REAGENT_ID_HALOSOULDEW
+	description = "Liquid life joined to alkysine, with the halide still on it. An intermediate: sulfur makes soul dew of it."
+	taste_description = "ash"
+	reagent_state = LIQUID
+	color = "#8A8AB8"
+	strength = 1
+
+/datum/reagent/toxin/chem_relicichor
+	name = REAGENT_RELICICHOR
+	id = REAGENT_ID_RELICICHOR
+	description = "A thick ichor sealed in the vaults of old expedition sites. It cannot be made on the station."
+	taste_description = "dust"
+	reagent_state = LIQUID
+	color = "#C8A860"
+	strength = 2
+
+/datum/reagent/toxin/chem_relicessence
+	name = REAGENT_RELICESSENCE
+	id = REAGENT_ID_RELICESSENCE
+	description = "Relic ichor taken one step further. An intermediate: lithium binds to it."
+	taste_description = "dust"
+	reagent_state = LIQUID
+	color = "#E0C070"
+	strength = 3
+
+/datum/reagent/toxin/chem_voidamber
+	name = REAGENT_VOIDAMBER
+	id = REAGENT_ID_VOIDAMBER
+	description = "Amber that set around something that was not there. Found on expeditions; it cannot be made on the station."
+	taste_description = "cold"
+	reagent_state = LIQUID
+	color = "#4A2A7A"
+	strength = 2
+
+/datum/reagent/toxin/chem_chlorovoid
+	name = REAGENT_CHLOROVOID
+	id = REAGENT_ID_CHLOROVOID
+	description = "Void amber with a halide hung on it. An intermediate: ammonia makes mortiferin of it."
+	taste_description = "cold"
+	reagent_state = LIQUID
+	color = "#5A3A8A"
+	strength = 4

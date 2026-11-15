@@ -87,6 +87,7 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 	TREAT_LITHOTRIPSY      = "Lithotripsy", \
 	TREAT_BURN_DEEP        = "Deep burn care", \
 	TREAT_ANTIEDEMA        = "Anti-edema", \
+	TREAT_SOULMEND         = "Soul mending", \
 ))
 
 /proc/dq_treatment_tag_name(tag)
@@ -106,6 +107,8 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 			return TRUE // the body itself, powers, magic, admin, steel fed to a refactory
 		if(TREAT_SURGICAL_CLOSURE, TREAT_PANEL_CLOSURE, TREAT_BONE_SETTING, TREAT_VESSEL_REPAIR, TREAT_TENDON_REPAIR, TREAT_FOREIGN_BODY_REMOVAL, TREAT_LITHOTRIPSY)
 			return TRUE // surgical procedure steps
+		if(TREAT_SOULMEND)
+			return TRUE // soul dew mends it directly, in a body that is dead
 	return FALSE
 
 /// Biologies a treatment mechanism works on. Biological mechanisms (every

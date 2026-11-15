@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Tier 4 chemistry: every exotic blend (soul dew, liquid healer, phoenix breath, juggernog, blood sealer, performance peaker, sense enhancer, neon liquid fire, heat nullifier, deathclaw mutagen, oceanic cure, zombie, lich and necroxadone, brute juice, mutation toxins, energy booster, claridyl, malish-qualem, mortiferin) is now made by process routes from an exotic input: dragon blood, deathclaw blood, liquid life, carp or spider toxin, slime jelly, 200 V, or a relic ichor or void amber vial found on expeditions. Yields are small and there is no dirty shortcut."
+  - rscadd: "Sealed vials of relic ichor and void amber can turn up in rare expedition loot."
+  - bugfix: "Liquid healer and phoenix breath no longer need medicines that salt each other out: they are made from bicaridine and liquid life or 200 V."
+  - balance: "Soul dew is the only thing that repairs a brain-dead brain (a brain at full damage). Alkysine, synaptizine, peridaxon, dexalin and surgery still stop at brain death."
+  - code_imp: "Anticonvulsant, rezadone and benzilate are made by routes (a pyridine acid with diethylamine or a sugar, an alkaloid acid on paracetamol)."

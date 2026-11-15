@@ -1,6 +1,5 @@
 distilling/ale => important=0; p0=8; p50=8; end50=ale:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/beer => important=0; p0=8; p50=8; end50=beer:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
-distilling/berserkjuice => important=0; p0=12; p50=12; end50=berserkmed:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
 distilling/biomass => important=0; p0=24; p50=24; end50=biomass:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/concentrate_radium => important=0; p0=4; p50=4; end50=concentrated_radium:4 uranium:1; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/condense_carbon => important=0; p0=0.0903; p50=0.0903; end50=carbon:0.0903 coolant:0.0382; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
@@ -12,7 +11,6 @@ distilling/condense_oxygen => important=0; p0=0.0903; p50=0.0903; end50=coolant:
 distilling/condense_phoron => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 phoron:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
 distilling/cryogel => important=0; p0=4; p50=4; end50=cryoslurry:4; gas50=2.7; spawned50=/obj/effect/effect/smoke/elemental/frost+6; p100=4; below=0; above=0
 distilling/cyanide => important=0; p0=4; p50=4; end50=cyanide:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/deathclawmutagen => important=0; p0=8; p50=8; end50=deathclawmutagen:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/drinks/berrytea => important=0; p0=24; p50=24; end50=berrytea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/berrytea_decaf => important=0; p0=24; p50=24; end50=berryteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/cherrytea => important=0; p0=24; p50=24; end50=cherrytea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
@@ -33,15 +31,11 @@ distilling/drinks/orangetea => important=0; p0=24; p50=24; end50=orangetea:24; g
 distilling/drinks/orangetea_decaf => important=0; p0=24; p50=24; end50=orangeteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/tea => important=0; p0=20; p50=20; end50=tea:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
 distilling/drinks/watermelontea => important=0; p0=24; p50=24; end50=watermelontea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
-distilling/energybooster => important=0; p0=8; p50=8; end50=energybooster:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/ethanol => important=0; p0=8; p50=8; end50=ethanol:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/eznutrient => important=0; p0=4; p50=4; end50=eznutrient:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/fuel_phoron => important=0; p0=3; p50=3; end50=phoron:3; gas50=2.7; spawned50=-; p100=3; below=1; above=1
-distilling/heatnullifer => important=0; p0=8; p50=8; end50=heatnullifer:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/hydrogen => important=0; p0=8; p50=8; end50=hydrogen:8 platinum:1; gas50=2.7; spawned50=-; p100=8; below=0; above=0
-distilling/juggernog => important=0; p0=20; p50=20; end50=juggernog:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
 distilling/leftforzed => important=0; p0=4; p50=4; end50=left4zed:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/lichpowder => important=0; p0=8; p50=8; end50=lichpowder:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/marker_ink_black => important=0; p0=4; p50=4; end50=marker_ink_black:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/marker_ink_blue => important=0; p0=4; p50=4; end50=marker_ink_blue:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/marker_ink_brown => important=0; p0=4; p50=4; end50=marker_ink_brown:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
@@ -53,14 +47,10 @@ distilling/marker_ink_red => important=0; p0=4; p50=4; end50=marker_ink_red:4; g
 distilling/marker_ink_yellow => important=0; p0=4; p50=4; end50=marker_ink_yellow:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/mineralized_carbon => important=0; p0=4; p50=4; end50=carbon:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/mineralized_sodium => important=0; p0=4; p50=4; end50=sodium:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/necroxadone => important=0; p0=8; p50=8; end50=necroxadone:8 phoron:5; gas50=2.7; spawned50=-; p100=8; below=0; above=0
-distilling/oceaniccure => important=0; p0=8; p50=8; end50=oceaniccure:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/oxygen => important=0; p0=4; p50=4; end50=oxygen:4 platinum:1; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/phoenixbreath => important=0; p0=24; p50=24; end50=phoenixbreath:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/reduce_salt => important=0; p0=2; p50=2; end50=sodium:2; gas50=2.7; spawned50=-; p100=2; below=0; above=0
 distilling/robustharvest => important=0; p0=4; p50=4; end50=robustharvest:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/sacid => important=0; p0=4; p50=4; end50=sacid:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/senseenhancer => important=0; p0=8; p50=8; end50=senseenhancer:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/sugar => important=0; p0=3; p50=3; end50=sugar:3 water:1; gas50=2.7; spawned50=-; p100=3; below=1; above=1
 distilling/synthplas => important=0; p0=12; p50=12; end50=synthblood_dilute:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
 distilling/titanium_refine => important=0; p0=4; p50=4; end50=titanium:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
@@ -70,18 +60,15 @@ instant/ammonia => important=0; match=1; fired=instant/ammonia; end=ammonia:12; 
 instant/androgynorovir_bootleg => important=0; match=1; fired=instant/androgynorovir_bootleg; end=androgynorovir:4; spawned=-; contract=1; uses=-
 instant/androrovir_bootleg => important=0; match=1; fired=instant/androrovir_bootleg; end=androrovir:4; spawned=-; contract=1; uses=-
 instant/antibodies => important=0; match=1; fired=instant/antibodies; end=antibodies:2 inaprovaline:0.1; spawned=-; contract=1; uses=-
-instant/anticonvulsant => important=0; match=1; fired=instant/anticonvulsant; end=anticonvulsant:12; spawned=-; contract=1; uses=-
 instant/aphrodisiac => important=0; match=1; fired=instant/aphrodisiac; end=aphrodisiac:24; spawned=-; contract=1; uses=-
 instant/artificial_sustenance => important=0; match=1; fired=instant/artificial_sustenance; end=a_sustenance:4; spawned=-; contract=1; uses=-
 instant/banana_juice_metal_paint => important=0; match=1; fired=instant/banana_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/banana_juice_paint => important=0; match=1; fired=instant/banana_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
-instant/benzilate => important=0; match=1; fired=instant/benzilate; end=benzilate:8; spawned=-; contract=1; uses=-
 instant/berry_juice_metal_paint => important=0; match=1; fired=instant/berry_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/berry_juice_paint => important=0; match=1; fired=instant/berry_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/biomass => important=0; match=1; fired=instant/biomass; end=biomass:24; spawned=-; contract=1; uses=-
 instant/blob_reconstitution => important=0; match=0; fired=-; end=phoron:240; spawned=-; contract=0; uses=-
 instant/blob_reconstitution/domination => important=0; match=0; fired=-; end=hydrophoron:160 mutagen:80 peridaxon:80; spawned=-; contract=0; uses=-
-instant/bloodsealer => important=0; match=1; fired=instant/bloodsealer; end=bloodsealer:8; spawned=-; contract=1; uses=-
 instant/blood_paint => important=0; match=1; fired=instant/blood_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/blue_metal_paint => important=0; match=1; fired=instant/blue_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/blue_paint => important=0; match=1; fired=instant/blue_paint; end=paint:20; spawned=-; contract=1; uses=-
@@ -108,7 +95,6 @@ instant/carpotoxin => important=0; match=1; fired=instant/carpotoxin; end=carpot
 instant/carrot_juice_metal_paint => important=0; match=1; fired=instant/carrot_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/carrot_juice_paint => important=0; match=1; fired=instant/carrot_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/chemsmoke => important=0; match=1; fired=instant/chemsmoke; end=-; spawned=/obj/effect/effect/smoke/chem+1; contract=0; uses=-
-instant/claridyl => important=0; match=1; fired=instant/claridyl; end=claridyl:4; spawned=-; contract=1; uses=-
 instant/concrete => important=0; match=1; fired=instant/concrete; end=-; spawned=/obj/item/stack/material/concrete+1; contract=0; uses=-
 instant/cube/sagaru => important=0; match=1; fired=instant/cube/sagaru; end=-; spawned=/obj/item/reagent_containers/food/snacks/monkeycube/sarucube+4; contract=0; uses=-
 instant/deuterium => important=0; match=1; fired=instant/deuterium; end=deuterium:12; spawned=-; contract=1; uses=-
@@ -420,9 +406,7 @@ instant/lemon_juice_paint => important=0; match=1; fired=instant/lemon_juice_pai
 instant/lime_juice_metal_paint => important=0; match=1; fired=instant/lime_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/lime_juice_paint => important=0; match=1; fired=instant/lime_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/lipozine => important=0; match=1; fired=instant/lipozine; end=lipozine:12; spawned=-; contract=1; uses=-
-instant/liquidhealer => important=0; match=1; fired=instant/liquidhealer; end=liquidhealer:24; spawned=-; contract=1; uses=-
 instant/lye => important=0; match=1; fired=instant/lye; end=lye:12; spawned=-; contract=1; uses=-
-instant/malish_qualem => important=0; match=1; fired=instant/malish_qualem; end=malish-qualem:8 phoron:5; spawned=-; contract=1; uses=-
 instant/meatcolony => important=0; match=1; fired=instant/meatcolony; end=protein:240; spawned=-; contract=1; uses=-
 instant/metalfoam => important=0; match=1; fired=instant/metalfoam; end=-; spawned=/obj/effect/effect/foam+1; contract=0; uses=-
 instant/metal_paint => important=0; match=1; fired=instant/metal_paint; end=paint:20; spawned=-; contract=1; uses=-
@@ -442,10 +426,8 @@ instant/mix_virus/mix_virus_9 => important=0; match=1; fired=instant/mix_virus/m
 instant/mix_virus/picky => important=0; match=1; fired=instant/mix_virus; end=blood:1; spawned=-; contract=0; uses=-
 instant/mix_virus/picky/size => important=0; match=1; fired=instant/mix_virus/picky/size; end=blood:1; spawned=-; contract=0; uses=-
 instant/mix_virus/rem_virus => important=0; match=1; fired=instant/mix_virus/rem_virus; end=blood:1; spawned=-; contract=0; uses=-
-instant/mortiferin => important=0; match=1; fired=instant/mortiferin; end=mortiferin:8 phoron:5; spawned=-; contract=1; uses=-
 instant/myelamine_sap => important=0; match=1; fired=instant/myelamine_sap; end=myelamine:4; spawned=-; contract=1; uses=-
 instant/napalm => important=0; match=1; fired=instant/napalm; end=-; spawned=-; contract=0; uses=-
-instant/neoliquidfire => important=0; match=1; fired=instant/neoliquidfire; end=neoliquidfire:4 phoron:4.6; spawned=-; contract=1; uses=-
 instant/neurotoxin => important=0; match=1; fired=instant/neurotoxin; end=neurotoxin:8; spawned=-; contract=1; uses=-
 instant/neuter_virus => important=0; match=1; fired=instant/neuter_virus; end=blood:1; spawned=-; contract=0; uses=-
 instant/neutralise_acid/ammonia => important=0; match=1; fired=instant/neutralise_acid/ammonia; end=contaminant_salts:4 water:4; spawned=-; contract=1; uses=-
@@ -462,7 +444,6 @@ instant/orange_juice_metal_paint => important=0; match=1; fired=instant/orange_j
 instant/orange_juice_paint => important=0; match=1; fired=instant/orange_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/orange_metal_paint => important=0; match=1; fired=instant/orange_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/orange_paint => important=0; match=1; fired=instant/orange_paint; end=paint:20; spawned=-; contract=1; uses=-
-instant/performancepeaker => important=0; match=1; fired=instant/performancepeaker; end=performancepeaker:8; spawned=-; contract=1; uses=-
 instant/peridaxon_ch => important=0; match=1; fired=instant/peridaxon_ch; end=peridaxon:48; spawned=-; contract=1; uses=-
 instant/phenethylamine => important=0; match=1; fired=instant/phenethylamine; end=phenethylamine:8; spawned=-; contract=1; uses=-
 instant/plantcolony => important=0; match=1; fired=instant/plantcolony; end=nutriment:240; spawned=-; contract=1; uses=-
@@ -477,7 +458,6 @@ instant/purple_paint => important=0; match=1; fired=instant/purple_paint; end=pa
 instant/qerr_quem => important=0; match=1; fired=instant/qerr_quem; end=qerr_quem:16; spawned=-; contract=1; uses=-
 instant/red_metal_paint => important=0; match=1; fired=instant/red_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/red_paint => important=0; match=1; fired=instant/red_paint; end=paint:20; spawned=-; contract=1; uses=-
-instant/rezadone => important=0; match=1; fired=instant/rezadone; end=rezadone:12; spawned=-; contract=1; uses=-
 instant/robustharvest => important=0; match=1; fired=instant/robustharvest; end=robustharvest:12; spawned=-; contract=1; uses=-
 instant/slime/amber_goop => important=0; match=1; fired=instant/slime/amber_goop; end=slime_goop:120; spawned=-; contract=1; uses=0
 instant/slime/amber_random_food => important=0; match=1; fired=instant/slime/amber_random_food; end=-; spawned=/obj/item/reagent_containers/food/snacks/monkeykabob+1,/obj/item/reagent_containers/food/snacks/monkeysdelight+1,/obj/item/reagent_containers/food/snacks/pineapple_ring+1,/obj/item/reagent_containers/food/snacks/snackplanet/phoron+1; contract=0; uses=0
@@ -601,7 +581,6 @@ instant/slime/yellow_battery => important=0; match=1; fired=instant/slime/yellow
 instant/slime/yellow_emp => important=0; match=1; fired=instant/slime/yellow_emp; end=-; spawned=-; contract=0; uses=0
 instant/slime/yellow_flashlight => important=0; match=1; fired=instant/slime/yellow_flashlight; end=-; spawned=/obj/item/flashlight/slime+1; contract=0; uses=0
 instant/slime/yellow_lightning => important=0; match=1; fired=instant/slime/yellow_lightning; end=-; spawned=-; contract=0; uses=0
-instant/slimeify => important=0; match=1; fired=instant/slimeify; end=advmutationtoxin:4; spawned=-; contract=1; uses=-
 instant/soapification => important=0; match=1; fired=instant/soapification; end=-; spawned=/obj/item/soap+4; contract=0; uses=-
 instant/soapification/alt => important=0; match=1; fired=instant/soapification/alt; end=-; spawned=/obj/item/soap+4; contract=0; uses=-
 instant/soapification/gibs => important=0; match=1; fired=instant/soapification/gibs; end=-; spawned=/obj/item/soap/homemade+4; contract=0; uses=-
@@ -618,7 +597,6 @@ instant/solidification/silver => important=0; match=1; fired=instant/solidificat
 instant/solidification/steel => important=0; match=1; fired=instant/solidification; end=carbon:80 frostoil:20; spawned=/obj/item/stack/material/iron+1; contract=0; uses=-
 instant/solidification/uranium => important=0; match=1; fired=instant/solidification/uranium; end=-; spawned=/obj/item/stack/material/uranium+1; contract=0; uses=-
 instant/sorbitol => important=0; match=1; fired=instant/sorbitol; end=sorbitol:8; spawned=-; contract=1; uses=-
-instant/souldew => important=0; match=1; fired=instant/souldew; end=souldew:12; spawned=-; contract=1; uses=-
 instant/space_cleaner => important=0; match=1; fired=instant/space_cleaner; end=cleaner:8; spawned=-; contract=1; uses=-
 instant/stimm => important=0; match=1; fired=instant/stimm; end=fuel:1 stimm:8; spawned=-; contract=1; uses=-
 instant/succubi_paralize => important=0; match=1; fired=instant/succubi_paralize; end=succubi_paralize:8; spawned=-; contract=1; uses=-
@@ -647,5 +625,3 @@ instant/watermelon_juice_paint => important=0; match=1; fired=instant/watermelon
 instant/xenolazarus => important=0; match=1; fired=instant/xenolazarus; end=-; spawned=-; contract=0; uses=-
 instant/yellow_metal_paint => important=0; match=1; fired=instant/yellow_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/yellow_paint => important=0; match=1; fired=instant/yellow_paint; end=paint:20; spawned=-; contract=1; uses=-
-instant/zombiepowder => important=0; match=1; fired=instant/zombiepowder; end=zombiepowder:8; spawned=-; contract=1; uses=-
-instant/zombiepowder/alt => important=0; match=1; fired=instant/zombiepowder/alt; end=zombiepowder:8; spawned=-; contract=1; uses=-

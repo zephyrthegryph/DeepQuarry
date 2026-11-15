@@ -30,7 +30,6 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 		/transformation/chem/instant/flash_powder,
 		/transformation/chem/instant/emp_pulse,
 		/transformation/chem/instant/napalm,
-		/transformation/chem/instant/neoliquidfire,
 	),
 	REACTION_TEMP_HOT = list(
 		/transformation/chem/instant/pacid,
@@ -44,7 +43,6 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 		/transformation/chem/instant/shortcut_hyperzine,
 		/transformation/chem/instant/thermite,
 		/transformation/chem/instant/neurotoxin,
-		/transformation/chem/instant/zombiepowder,
 		/transformation/chem/instant/titanium_oxidation,
 		/transformation/chem/instant/hydrophoron,
 		/transformation/chem/instant/deuterium,
@@ -54,7 +52,6 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 		/transformation/chem/instant/chlorinatingagent,
 		/transformation/chem/instant/shortcut_bicaridine,
 		/transformation/chem/instant/shortcut_dylovene,
-		/transformation/chem/instant/mortiferin,
 		/transformation/chem/instant/carpotoxin,
 		/transformation/chem/instant/left4zed,
 	),

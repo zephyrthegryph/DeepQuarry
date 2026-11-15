@@ -139,6 +139,12 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 	var/matched = length(matched_ids) > 0
 	if(!matched && !P.residue_routes)
 		return 0
+	// No process chemical makes an exotic blend in one pot: the exotic trees have no dirty shortcut (chemistry_recipes.md section 13).
+	if(A)
+		for(var/matched_id in matched_ids)
+			var/datum/chem_structure/made_structure = G.structures[matched_id]
+			if(made_structure?.has_exotic_core())
+				return 0
 	var/list/makes = list()
 	for(var/product in matched_ids + residue_ids)
 		makes[product] = (makes[product] || 0) + 1
@@ -146,7 +152,9 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 		makes[byproduct] = (makes[byproduct] || 0) + V.byproducts[byproduct]
 	var/list/take_rows = list()
 	for(var/substrate in V.from)
-		take_rows[substrate] = (take_rows[substrate] || 0) + 1
+		// An exotic core wastes a third of itself in every step: the exotic trees give small yields.
+		var/datum/chem_structure/substrate_structure = G.structures[substrate]
+		take_rows[substrate] = (take_rows[substrate] || 0) + (substrate_structure?.has_exotic_core() ? CHEM_EXOTIC_TAKE : 1)
 	for(var/agent in V.agents)
 		take_rows[agent] = (take_rows[agent] || 0) + V.agents[agent]
 	for(var/taken_id in take_rows)
