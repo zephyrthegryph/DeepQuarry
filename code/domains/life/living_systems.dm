@@ -504,18 +504,20 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 	act_cancel(draw)
 	return TRUE
 
-/// How strong night vision is for `sight` tiles of darksight, 0..1: none at DARKSIGHT_MIN_SIGHT or less, full at DARKSIGHT_FULL_SIGHT.
+/// How strong night vision is for `sight` tiles of darksight, 0..1: none with no darksight, DARKSIGHT_BASE_STRENGTH up to DARKSIGHT_MIN_SIGHT, full at DARKSIGHT_FULL_SIGHT.
 /proc/darksight_strength(sight)
-	return clamp((sight - DARKSIGHT_MIN_SIGHT) / (DARKSIGHT_FULL_SIGHT - DARKSIGHT_MIN_SIGHT), 0, 1)
+	if(sight <= 0)
+		return 0
+	return clamp((sight - DARKSIGHT_MIN_SIGHT) / (DARKSIGHT_FULL_SIGHT - DARKSIGHT_MIN_SIGHT), DARKSIGHT_BASE_STRENGTH, 1)
 
 /// The half width, in tiles, of the smaller side of the view `view` (a number or "WxH").
 /proc/darksight_view_radius(view)
 	var/list/size = getviewsize(view)
 	return min(size[1], size[2]) / 2
 
-/// How wide the night-vision disc reaches, in tiles: the darksight distance, never past the view.
+/// How wide the night-vision disc reaches, in tiles: the darksight distance (one more past DARKSIGHT_MIN_SIGHT, where the disc's faded rim needs room), never past the view.
 /proc/darksight_radius(sight, view_radius)
-	return clamp(sight + 1, 0, view_radius)
+	return clamp(sight > DARKSIGHT_MIN_SIGHT ? sight + 1 : sight, 0, view_radius)
 
 /// The scale to draw the 480 px overlay icon at so its disc reaches darksight_radius().
 /proc/darksight_scale(sight, view_radius)

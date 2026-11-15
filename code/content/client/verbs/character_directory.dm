@@ -51,8 +51,8 @@ CAPABILITIES(/datum/character_directory)
 		data["personalTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
 		data["personalErpTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
 		data["personalEventTag"] = GLOB.vantag_choices_list[user.client.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
-		data["personalGenderTag"] = user.mind?.directory_gendertag || "Unset"
-		data["personalSexualityTag"] = user.mind?.directory_sexualitytag || "Unset"
+		data["personalGenderTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag) || "Unset"
+		data["personalSexualityTag"] = user.client.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag) || "Unset"
 
 	return data
 
@@ -121,8 +121,8 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 		tag = C.prefs.read_preference(/datum/preference/choiced/human/directory_tag) || "Unset"
 		erptag = C.prefs.read_preference(/datum/preference/choiced/human/directory_erptag) || "Unset"
 		character_ad = C.prefs.read_preference(/datum/preference/text/human/directory_ad)
-		gendertag = "Unset"
-		sexualitytag = "Unset"
+		gendertag = C.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag) || "Unset"
+		sexualitytag = C.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag) || "Unset"
 		eventtag = GLOB.vantag_choices_list[C.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)]
 
 	if(ishuman(C.mob))
@@ -419,10 +419,14 @@ GLOBAL_ALIST_EMPTY(chardirectory_photos)
 			if (can_set_mind)
 				user.mind.set_vantag_preference(text_or_null(new_value))
 		if ("setGenderTag")
+			if (can_set_prefs)
+				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_gendertag, new_value)
 			if (can_set_mind)
 				user.mind.set_directory_gendertag(text_or_null(new_value))
 			return TRUE
 		if ("setSexualityTag")
+			if (can_set_prefs)
+				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_sexualitytag, new_value)
 			if (can_set_mind)
 				user.mind.set_directory_sexualitytag(text_or_null(new_value))
 			return TRUE

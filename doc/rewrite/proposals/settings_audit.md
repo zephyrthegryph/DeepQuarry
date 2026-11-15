@@ -648,7 +648,27 @@ A per-sound toggle that was off in an old save sets its volume channel to 0 (`GL
 | `weight_loss` | `/datum/preference/numeric/human/weight_loss` | hardcoded `50` |
 | `wing_alpha` | `/datum/preference/numeric/human/wing_alpha` | hardcoded `255` |
 
-The gender and sexuality directory tags are kept for the round on the mind (set from the Character Directory) instead of saved. The shadekin flicker settings are set per round from the shadekin panel. The starting-kit editor is deleted.
+**Restored (2026-11-15).** These character preferences came back as saved settings, no longer retired, with their readers and a place in the character setup (Identity unless noted):
+
+| Settings | Where in the character setup |
+|---|---|
+| `home_system`, `birthplace`, `citizenship`, `religion`, `economic_status` | Identity, Background |
+| `med_record`, `sec_record`, `gen_record` | Identity, Records (the record updater writes them back) |
+| `custom_say`, `custom_whisper`, `custom_ask`, `custom_exclaim`, `autohiss` | Identity, Speech Verbs |
+| `custom_speech_bubble`, `custom_footstep`, `species_sound` | Identity, Voice |
+| `nickname` | Identity, Name & Details |
+| `directory_gendertag`, `directory_sexualitytag` | Identity, Directory; the saved value seeds the mind (`seed_directory_from`) and stays editable per round from the Character Directory |
+| `blood_reagents` | Identity, Blood |
+| `weight_gain`, `weight_loss`, `fuzzy`, `offset_override` | Identity, Size |
+| `Pai_Ad`, `Pai_Desc`, `Pai_Role`, `Pai_Comments` | Game, pAI Card |
+| `flicker_time`, `flicker_color`, `flicker_break_chance`, `flicker_distance` | Game, Shadekin; the saved value seeds the Shadekin panel, which writes its changes back |
+| `vore_egg_type`, `ignore_shoes`, `borg_petting` | Game, Roleplay |
+| `sensorpref` | Game, Input |
+| `resleeve_lock`, `auto_backup_implant` | Game, Persistence |
+
+Cut and still cut: `antag_faction`, `antag_vis`, `exploit_record`, `uplinklocation`, `bday_announce`, `name_is_always_random`, `custom_link`, `communicator_visibility`, `ttone` (and the starting-kit editor). The preview toggles, the hair gradient and the opacities were restored earlier (Looks tab). Tests: `dq_restored_character_settings_present`, `dq_restored_character_settings_round_trip`, `dq_directory_tags_seed_the_mind`, `dq_flicker_prefs_seed_the_panel`, `dq_live_prefs/restored_settings_reach_the_mob`.
+
+The gender and sexuality directory tags were set per round on the mind only (set from the Character Directory) while they were cut; they are saved again and seed the mind. The shadekin flicker settings were set per round from the shadekin panel while they were cut; the saved value now seeds the panel. The starting-kit editor stays deleted.
 
 ### Verb panel
 

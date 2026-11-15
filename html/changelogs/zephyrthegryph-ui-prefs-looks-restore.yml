@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Character setup Looks: hair gradient style and colour, ear, second ear, tail and wing opacity, and the preview Animate switch are back"
+  - bugfix: "Character setup Looks: the greyed Tail row under a taur body shows the same None picture as the other part pickers"

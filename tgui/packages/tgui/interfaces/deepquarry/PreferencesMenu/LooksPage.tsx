@@ -376,6 +376,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
 const PREVIEW_LABELS: Record<string, string> = {
   preview_loadout: 'Show loadout',
   preview_job: 'Show job outfit',
+  animations_toggle: 'Animate',
 };
 
 const PreviewSwitch = ({ item }: { item: PrefWidgetItem }) => {
@@ -577,14 +578,24 @@ const StyleCell = ({
   item,
   clearable,
   skin,
+  disabled,
 }: {
   item: PrefWidgetItem | null;
   clearable?: boolean;
   skin: unknown;
+  disabled?: boolean;
 }) => {
   if (!item) return <Box style={cellStyle} />;
   return (
-    <Box style={cellStyle}>
+    <Box
+      className={disabled ? 'dq-tail-under-taur' : undefined}
+      aria-disabled={disabled || undefined}
+      style={
+        disabled
+          ? { ...cellStyle, opacity: 0.5, pointerEvents: 'none' }
+          : cellStyle
+      }
+    >
       <BareField
         item={{
           ...item,
@@ -662,22 +673,13 @@ const BodyTable = ({
               return (
                 <Box key={row.label} style={{ display: 'contents' }}>
                   <Box style={{ ...cellStyle, opacity: 0.5 }}>{row.label}</Box>
-                  <Box
-                    className="dq-tail-under-taur"
-                    aria-disabled
-                    style={{
-                      ...cellStyle,
-                      gridColumn: '2 / -1',
-                      opacity: 0.5,
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <StyleCell
-                      item={{ ...item, value: kept }}
-                      clearable={row.clearable}
-                      skin={values.skin_color}
-                    />
-                  </Box>
+                  <StyleCell
+                    item={{ ...item, value: kept }}
+                    clearable={row.clearable}
+                    skin={values.skin_color}
+                    disabled
+                  />
+                  <Box style={{ ...cellStyle, gridColumn: '3 / -1' }} />
                 </Box>
               );
             }
@@ -747,6 +749,14 @@ export const legChoices = (
   ...Object.fromEntries(taurStyles),
 });
 
+/// The Legs picker's thumbnails: the tail styles' without None, whose body would sit under every taur sprite.
+export const legThumbnails = (
+  thumbnails: Record<string, PrefThumbnail> | undefined,
+): Record<string, PrefThumbnail> =>
+  Object.fromEntries(
+    Object.entries(thumbnails ?? {}).filter(([k]) => k !== ''),
+  );
+
 /// Legs: one style picker. Normal, digitigrade or a taur body.
 const LegsRow = ({
   values,
@@ -775,7 +785,10 @@ const LegsRow = ({
     widget: 'thumbgrid',
     value,
     choices: legChoices(!!widgets.digitigrade, taurStyles),
-    thumbnails: withSkin(tailItem?.thumbnails, values.skin_color),
+    thumbnails: withSkin(
+      legThumbnails(tailItem?.thumbnails),
+      values.skin_color,
+    ),
   };
   return (
     <Box style={{ display: 'contents' }}>

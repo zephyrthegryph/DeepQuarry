@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Looks tab: the greyed Tail row under a taur body keeps its Change button in the Change column"
+  - bugfix: "Looks tab: facial hair, hair and gradient show the None thumbnail box like every other part"

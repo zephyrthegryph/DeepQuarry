@@ -53,9 +53,9 @@
 /datum/preference/text/human/tail_style/get_pref_choices(datum/preferences/preferences)
 	return sprite_accessory_names(GLOB.tail_styles_list)
 
-/// The tail styles, and the Legs picker's Normal and Digitigrade (it shows the taur bodies among the tails' thumbnails).
+/// The tail styles with None as the bare body (as the ears and wings have), and the Legs picker's Normal and Digitigrade (it shows the taur bodies among the tails' thumbnails and leaves the None body out).
 /datum/preference/text/human/tail_style/get_pref_thumbnails(datum/preferences/preferences)
-	var/list/out = sprite_accessory_thumbs(GLOB.tail_styles_list) || list()
+	var/list/out = dq_part_style_thumbs(GLOB.tail_styles_list, preferences)
 	out["plantigrade"] = list("layers" = dq_body_thumb_layers(preferences))
 	out["digitigrade"] = list("layers" = dq_body_thumb_layers(preferences, digitigrade = TRUE))
 	return out
@@ -144,6 +144,17 @@
 	out[""] = list("layers" = dq_body_thumb_layers(preferences), "base" = TRUE)
 	return out
 
+/// A style that means "none" (Bald, Shaved, no gradient) shown as the body without the part, so its box matches the rest.
+/// Keeps the style's channel count when it has a thumbnail already.
+/proc/dq_none_style_thumb(list/thumbs, none_key, datum/preferences/preferences)
+	if(!thumbs)
+		thumbs = list()
+	var/list/old = thumbs[none_key]
+	var/list/entry = list("layers" = dq_body_thumb_layers(preferences))
+	if(old && !isnull(old["channels"]))
+		entry["channels"] = old["channels"]
+	thumbs[none_key] = entry
+	return thumbs
 
 /datum/preference/text/human/bgstate
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
@@ -187,6 +198,17 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/preview_job/apply_to_human(mob/living/carbon/human/target, value)
+	return
+
+
+/datum/preference/toggle/human/animations_toggle
+	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
+	savefile_key = "animations_toggle"
+	default_value = FALSE
+	savefile_identifier = PREFERENCE_CHARACTER
+	can_randomize = FALSE
+
+/datum/preference/toggle/human/animations_toggle/apply_to_human(mob/living/carbon/human/target, value)
 	return
 
 

@@ -19,7 +19,10 @@
 /datum/unit_test/dq_live_prefs/the_settings_apply_live
 /datum/unit_test/dq_live_prefs/the_settings_apply_live/run_live()
 	var/list/live = list(
-		/datum/preference/numeric/human/voice_freq, /datum/preference/text/human/voice_sound,
+		/datum/preference/text/human/custom_say, /datum/preference/text/human/custom_whisper,
+		/datum/preference/text/human/custom_ask, /datum/preference/text/human/custom_exclaim,
+		/datum/preference/numeric/human/voice_freq,
+		/datum/preference/text/human/voice_sound, /datum/preference/text/human/custom_speech_bubble,
 		/datum/preference/toggle/human/capture_crystal,
 	)
 	for(var/pref_type in live)
@@ -29,6 +32,10 @@
 
 /datum/unit_test/dq_live_prefs/speech_settings_reach_the_mob
 /datum/unit_test/dq_live_prefs/speech_settings_reach_the_mob/run_live()
+	apply(/datum/preference/text/human/custom_say, "Declares")
+	TEST_ASSERT_EQUAL(subject.bio.custom_say, "declares", "the say verb is stored lower case")
+	apply(/datum/preference/text/human/custom_speech_bubble, "robot")
+	TEST_ASSERT_EQUAL(subject.bio.custom_speech_bubble, "robot", "the speech bubble reaches the body")
 	apply(/datum/preference/numeric/human/voice_freq, 50000)
 	TEST_ASSERT_EQUAL(STATE_GET(subject, mob_misc, voice_freq), 50000, "the voice pitch reaches the voice")
 	apply(/datum/preference/toggle/human/capture_crystal, FALSE)

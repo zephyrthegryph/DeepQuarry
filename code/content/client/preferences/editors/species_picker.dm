@@ -137,7 +137,7 @@ GLOBAL_VAR_INIT(dq_species_preview_warmed, FALSE)
 
 /// Species thumbnails rendering in the portrait cache: species name -> when it was asked for (a render that never landed is asked again).
 GLOBAL_LIST_EMPTY(dq_species_preview_waits)
-/// The portrait key of each rendering thumbnail -> its species name, for the waiter.
+/// The portrait key of each rendering thumbnail -> the names of the species waiting on it, for the waiter.
 GLOBAL_LIST_EMPTY(dq_species_preview_keys)
 GLOBAL_DATUM_INIT(dq_species_preview_waiter, /datum/dq_species_preview_waiter, new)
 
@@ -145,19 +145,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_species_preview_waiter)
 /// Called back by the portrait cache when a species thumbnail lands.
 /datum/dq_species_preview_waiter
 
-/// The thumbnail landed: filed, and every player's species picker catalog is rebuilt and pushed (the placeholder is replaced in place).
+/// The thumbnail landed: filed for every species that asked for this picture (two species whose mannequins look alike share one render and
+/// one callback, so every pending ask it answers is filed, not the first only), and every player's species picker catalog is rebuilt and
+/// pushed (the placeholder is replaced in place).
 /datum/dq_species_preview_waiter/proc/landed(datum/portrait/P)
-	var/asked_as
-	for(var/asked in GLOB.dq_species_preview_keys)
-		if(P.answers(asked))
-			asked_as = asked
-			break
-	var/species_name = asked_as ? GLOB.dq_species_preview_keys[asked_as] : null
-	if(!species_name)
+	var/filed = 0
+	for(var/asked in GLOB.dq_species_preview_keys.Copy())
+		if(!P.answers(asked))
+			continue
+		for(var/species_name in GLOB.dq_species_preview_keys[asked])
+			GLOB.dq_species_preview_waits -= species_name
+			GLOB.dq_species_preview_cache[species_name] = P.b64
+			filed++
+			log_world("SPECIES_THUMB filed the [species_name] thumbnail from portrait [P.key || "(uncached)"]")
+		GLOB.dq_species_preview_keys -= asked
+	if(!filed)
 		return
-	GLOB.dq_species_preview_keys -= asked_as
-	GLOB.dq_species_preview_waits -= species_name
-	GLOB.dq_species_preview_cache[species_name] = P.b64
 	var/datum/preference_editor/editor = GLOB.preference_editors_by_key["species_picker"]
 	if(!editor)
 		return
@@ -196,7 +199,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_species_preview_waiter)
 			if(!P)
 				var/key = portrait_key_of(M, SOUTH)
 				if(key)
-					GLOB.dq_species_preview_keys[key] = S.name
+					LAZYADD(GLOB.dq_species_preview_keys[key], S.name)
 					GLOB.dq_species_preview_waits[S.name] = TIME_NOW(CLOCK_WORLD)
 			spent(M)
 			if(!P?.b64)
