@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A taur's lower body is drawn over the character's wings in every facing, under the back item"

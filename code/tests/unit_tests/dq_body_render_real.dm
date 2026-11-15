@@ -52,7 +52,8 @@
 	TEST_ASSERT(pack && wings && tail, "the backpack, the wings and the taur are each a layer")
 	TEST_ASSERT(pack.layer > wings.layer, "the backpack is drawn over the wings")
 	TEST_ASSERT(tail.layer > body_image.layer, "the taur is drawn over the body")
-	TEST_ASSERT(wings.layer > tail.layer, "the wings are over the taur")
+	TEST_ASSERT(tail.layer > wings.layer, "the taur is drawn over the wings")
+	TEST_ASSERT(tail.layer < pack.layer, "but under the backpack")
 
 	var/list/bad = list()
 	for(var/d in list(SOUTH, NORTH, EAST, WEST))
@@ -61,6 +62,42 @@
 		refresh_flush()
 		var/list/whole = dq_real_pixels(H, d)
 		TEST_ASSERT(length(whole) > 100, "[dir2text(d)]: the character draws")
+		// The taur is over the wings in every facing (the copy a facing shows is the one over the wings), the wings over the body.
+		var/list/facing_layers = H.look_layers()
+		var/image/facing_tail = facing_layers[TAIL_UPPER_LAYER]
+		var/image/facing_wings = facing_layers[WING_LAYER]
+		if(!facing_tail || !facing_wings || facing_tail.layer <= facing_wings.layer || facing_wings.layer <= body_image.layer)
+			bad += "[dir2text(d)] the taur is not over the wings, or the wings not over the body ([facing_tail?.layer] [facing_wings?.layer] [body_image.layer])"
+		// The wings lose nothing to what is under them: every opaque wing pixel that nothing above the wings covers shows in the whole picture, in the wings' colour.
+		var/icon/wing_flat = getFlatIcon(facing_wings, d, no_anim = TRUE)
+		var/icon/whole_flat = getFlatIcon(H, d, no_anim = TRUE)
+		var/list/covers = list()
+		for(var/index in 1 to TOTAL_LAYERS)
+			var/entry = facing_layers[index]
+			for(var/image/over in (islist(entry) ? entry : list(entry)))
+				if(over && over != facing_wings && over.layer >= facing_wings.layer && (over.plane == FLOAT_PLANE || over.plane == H.plane))
+					covers |= dq_real_pixels(over, d)
+		var/wing_px = 0
+		var/wing_lost = 0
+		var/lost_minx = 99
+		var/lost_maxx = 0
+		var/lost_miny = 99
+		var/lost_maxy = 0
+		for(var/x in 1 to wing_flat.Width())
+			for(var/y in 1 to wing_flat.Height())
+				var/colour = wing_flat.GetPixel(x, y)
+				if(!colour || length(colour) != 7 || ("[x],[y]" in covers))
+					continue
+				wing_px++
+				if(whole_flat.GetPixel(x, y) != colour)
+					wing_lost++
+					lost_minx = min(lost_minx, x)
+					lost_maxx = max(lost_maxx, x)
+					lost_miny = min(lost_miny, y)
+					lost_maxy = max(lost_maxy, y)
+		TEST_NOTICE(src, "REALCHAR [dir2text(d)]: wing px [wing_px], lost [wing_lost] in x [lost_minx]-[lost_maxx] y [lost_miny]-[lost_maxy]; whole [whole_flat.Width()]x[whole_flat.Height()]")
+		if(wing_lost)
+			bad += "[dir2text(d)] the wings lose [wing_lost] of [wing_px] pixels to what is under them (x [lost_minx]-[lost_maxx], y [lost_miny]-[lost_maxy])"
 		// The torso's own pixels are all in the body: a missing arm leaves no cut in it.
 		var/obj/item/organ/external/torso = H.limb_tagged(BP_TORSO)
 		var/image/torso_image = image(icon = 'icons/mob/human.dmi', icon_state = "blank")

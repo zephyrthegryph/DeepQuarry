@@ -558,7 +558,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 // ---- the tail, wings and bellies ----
 
 /// The facings in which the tail sits under the clothing (TAIL_LOWER_LAYER): south, east and west unless the tail sprite names others.
-/// Facing the rest it hangs over the uniform (TAIL_UPPER_LAYER), over the back of the pants.
+/// Facing the rest it hangs over the uniform (TAIL_UPPER_LAYER), over the back of the pants; a taur's is then over the wings too (TAIL_OVER_WING_LAYER).
 /mob/living/carbon/human/proc/tail_lower_dirs()
 	return tail_style ? tail_style.lower_layer_dirs : list(SOUTH, EAST, WEST)
 
@@ -571,7 +571,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 /mob/living/carbon/human/proc/tail_look(datum/look/look)
 	. = list()
 	if(tail_style?.clip_mask_state)
-		var/image/clipped = get_tail_image(BODY_LAYER + TAIL_UPPER_LAYER, null, look) // one copy over the uniform: the clip mask handles every facing
+		var/image/clipped = get_tail_image(BODY_LAYER + (istaurtail(tail_style) ? TAIL_OVER_WING_LAYER : TAIL_UPPER_LAYER), null, look) // one copy over the uniform (and a taur's over the wings): the clip mask handles every facing
 		if(clipped)
 			. += list(list(TAIL_UPPER_LAYER, clipped))
 		return
@@ -581,7 +581,8 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 		var/list/dirs = tail_layer == TAIL_LOWER_LAYER ? lower_dirs : upper_dirs
 		if(!length(dirs))
 			continue
-		var/image/tail_image = get_tail_image(BODY_LAYER + tail_layer, dirs, look)
+		// A taur's lower body stands in front of the wings when it shows over the body (facing north); the copy under the body stays under it.
+		var/image/tail_image = get_tail_image(BODY_LAYER + ((tail_layer == TAIL_UPPER_LAYER && istaurtail(tail_style)) ? TAIL_OVER_WING_LAYER : tail_layer), dirs, look)
 		if(tail_image)
 			. += list(list(tail_layer, tail_image))
 	if(length(.))

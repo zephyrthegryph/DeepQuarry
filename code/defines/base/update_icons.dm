@@ -25,6 +25,8 @@
 #define SUIT_STORE_LAYER		21		//Suit storage-slot item
 #define WING_LAYER				22		//Wings or protrusions over the suit and under the back item.
 #define BACK_LAYER				23		//Back-slot item
+/// Where a taur's lower body is drawn (as an image layer, in the tail's own slot): over the wings, under the back item.
+#define TAIL_OVER_WING_LAYER	(WING_LAYER + 0.5)
 #define HAIR_LAYER				24		//The human's hair
 #define HAIR_ACCESSORY_LAYER	25		//Simply move this up a number if things are added.
 #define EARS_LAYER				26		//Both ear-slot items (combined image)
