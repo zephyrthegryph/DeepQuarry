@@ -226,7 +226,7 @@
 
 /// Marks every client lighting counter a test may move, so teardown restores them.
 /datum/unit_test/proc/client_glow_counters_restore()
-	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved), nameof(GLOB.client_glow_holder_chunk_visits), nameof(GLOB.client_glow_holder_sight_refreshes), nameof(GLOB.client_glow_trace_lines), nameof(GLOB.client_glow_flushes), nameof(GLOB.client_glow_flush_changes), nameof(GLOB.client_glow_reconsiders), nameof(GLOB.client_glow_mask_builds), nameof(GLOB.client_flat_light_refreshes), nameof(GLOB.client_flat_light_recolours), nameof(GLOB.client_flat_light_makes), nameof(GLOB.client_glow_twins_made), nameof(GLOB.client_glow_twin_hits), nameof(GLOB.client_glow_twin_lights), nameof(GLOB.client_glow_twin_doors_examined)))
+	for(var/counter in list(nameof(GLOB.client_glow_holder_made), nameof(GLOB.client_glow_holder_updated), nameof(GLOB.client_glow_holder_dropped), nameof(GLOB.client_glow_holder_recomputes), nameof(GLOB.client_glow_holder_reused), nameof(GLOB.client_glow_holder_scans_skipped), nameof(GLOB.client_glow_holder_stands_moved), nameof(GLOB.client_glow_holder_chunk_visits), nameof(GLOB.client_glow_holder_sight_refreshes), nameof(GLOB.client_glow_holder_delta_steps), nameof(GLOB.client_glow_holder_delta_worst_ms), nameof(GLOB.client_glow_trace_lines), nameof(GLOB.client_glow_flushes), nameof(GLOB.client_glow_flush_changes), nameof(GLOB.client_glow_reconsiders), nameof(GLOB.client_glow_mask_builds), nameof(GLOB.client_flat_light_refreshes), nameof(GLOB.client_flat_light_recolours), nameof(GLOB.client_flat_light_makes), nameof(GLOB.client_glow_twins_made), nameof(GLOB.client_glow_twin_hits), nameof(GLOB.client_glow_twin_lights), nameof(GLOB.client_glow_twin_doors_examined)))
 		set_global(counter, GLOB.vars[counter])
 
 /// A lit fixture with client lighting on, and a holder (no client) seeing from just off the light's screen.
@@ -1632,7 +1632,10 @@
 
 /datum/unit_test/dq_darksight_night_vision_curve/Run()
 	TEST_ASSERT_EQUAL(darksight_alpha(0, 1), 0, "no darksight, no night vision")
-	TEST_ASSERT_EQUAL(darksight_alpha(DARKSIGHT_MIN_SIGHT, 1), 0, "the human default of 2 gets none")
+	var/human_alpha = darksight_alpha(DARKSIGHT_MIN_SIGHT, 1)
+	TEST_ASSERT(human_alpha > 0 && human_alpha < darksight_alpha(4, 1), "the human default of 2 gets a dim hint, less than any stronger darksight ([human_alpha])")
+	TEST_ASSERT_EQUAL(darksight_alpha(DARKSIGHT_MIN_SIGHT, 0), 0, "the human hint is none in a lit area")
+	TEST_ASSERT_EQUAL(darksight_radius(DARKSIGHT_MIN_SIGHT, 7.5), DARKSIGHT_MIN_SIGHT, "the human hint reaches 2 tiles")
 	var/weak = darksight_alpha(4, 1)
 	var/strong = darksight_alpha(7, 1)
 	TEST_ASSERT(weak > 0 && strong > weak, "more see_in_dark is stronger ([weak] < [strong])")
@@ -1852,3 +1855,27 @@
 			TEST_ASSERT(keyed[i] == plain[i], "turf [i] is the same (range [range])")
 		TEST_ASSERT_EQUAL(key, dq_test_glow_shape_key(T, margin, plain), "the key is the one DM builds (range [range])")
 	qdel(B)
+
+/// A glow of a light the eye did not see draws nothing until its cut is on the client (an uncut sprite would light the near side of the wall between); a light the eye sees shows
+/// its plain sprite meanwhile, and the cut replaces either.
+/datum/unit_test/dq_client_glow_unbaked_hidden_behind_wall
+
+/datum/unit_test/dq_client_glow_unbaked_hidden_behind_wall/Run()
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/S = F.light
+	var/list/entry = H.entry_of(S)
+	TEST_ASSERT_NOTNULL(entry, "the viewer holds the off-screen light")
+	var/image/glow_image = entry[1]
+	var/turf/LT = get_turf(F)
+	TEST_ASSERT(!H.seen[LT], "the eye did not see the light's own turf")
+	if(LAZYACCESS(H.cut_shape, S.glow_holder_key) != S.glow_mask_key) // a bake that finished inside the setup leaves nothing unbaked to look at
+		TEST_ASSERT_NULL(glow_image.icon, "an out-of-sight light draws no uncut sprite while its cut is not ready")
+		TEST_ASSERT_NULL(glow_image.icon_state, "no uncut state either")
+	H.shape_ready(S.glow_mask_key, 'icons/effects/light_overlays/light_32.dmi')
+	TEST_ASSERT_EQUAL(glow_image.icon, 'icons/effects/light_overlays/light_32.dmi', "the cut shows once it is ready")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)

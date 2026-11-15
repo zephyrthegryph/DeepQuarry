@@ -1013,7 +1013,7 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 		glow_pool.len--
 		GLOB.client_glow_holder_reused++
 	else
-		glow_image = image(G.icon, null, G.icon_state)
+		glow_image = image(null) // blank: apply_shape() gives it the cut, or the plain sprite where that is safe
 		glow_image.blend_mode = BLEND_ADD
 		glow_image.appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		glow_image.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
@@ -1084,11 +1084,30 @@ REGISTRY_MEMBERSHIP(/datum/client_glow_holder, REGISTRY_CLIENT_GLOW_HOLDERS)
 	var/cut = LAZYACCESS(cut_shape, h)
 	if(cut == shape)
 		return
+	// An uncut sprite lights the floor on the near side of every wall within the light's range, so it is shown only for a light whose own turf the eye saw: a light behind a wall
+	// (or out of sight) draws nothing until its cut is on this client, or a glow newly in reach would show through the wall for as long as the bake and the delivery take.
+	var/turf/S = L.source_turf
+	var/plain_ok = S && seen[S]
 	// The old cut may only stand in when the new reach is inside it: a door opening grows the reach, and the old cut would leave the door
 	// tile and the room behind it dark until the new one arrives. The plain sprite is already on the client; the visibility and wall cuts bound it.
-	if(!cut || copytext(cut, 1, findtext(cut, "|")) != copytext(shape, 1, findtext(shape, "|")) || client_glow_shape_grew(cut, shape))
+	if(!cut || copytext(cut, 1, findtext(cut, "|")) != copytext(shape, 1, findtext(shape, "|")))
+		LAZYREMOVE(cut_shape, h)
+		if(plain_ok)
+			show_plain(glow_image, G)
+		else
+			hide_unseen(glow_image, h)
+	else if(client_glow_shape_grew(cut, shape) && plain_ok)
 		LAZYREMOVE(cut_shape, h)
 		show_plain(glow_image, G)
+
+/// A held glow of a light the eye did not see draws nothing while its cut is not ready.
+/datum/client_glow_holder/proc/hide_unseen(image/glow_image, h)
+	if(isnull(glow_image.icon) && isnull(glow_image.icon_state))
+		return
+	glow_image.icon = null
+	glow_image.icon_state = null
+	if(client_glow_trace_line())
+		log_world("client glow holder: [client?.ckey] glow [h] held blank until its cut is delivered (its light is out of sight)")
 
 /datum/client_glow_holder/proc/show_plain(image/glow_image, obj/effect/overlay/client_glow/G)
 	glow_image.icon = G.icon
