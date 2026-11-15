@@ -51,3 +51,34 @@ describe('chat scroll state', () => {
     expect(second.contains(message)).toBe(true);
   });
 });
+
+describe('anchoredScrollTop', () => {
+  const { anchoredScrollTop } = state;
+  it('keeps a pinned log at the newest line as the box grows or shrinks', () => {
+    expect(
+      anchoredScrollTop({ height: 200, top: 800, tracking: true }, 300, 1000),
+    ).toBe(700);
+    expect(
+      anchoredScrollTop({ height: 300, top: 700, tracking: true }, 150, 1000),
+    ).toBe(850);
+  });
+  it('moves a scrolled log by the height delta, so the bottom message keeps its distance from the bottom edge', () => {
+    expect(
+      anchoredScrollTop({ height: 200, top: 400, tracking: false }, 260, 1000),
+    ).toBe(340);
+    expect(
+      anchoredScrollTop({ height: 260, top: 340, tracking: false }, 200, 1000),
+    ).toBe(400);
+  });
+  it('stays inside the log', () => {
+    expect(
+      anchoredScrollTop({ height: 200, top: 30, tracking: false }, 300, 1000),
+    ).toBe(0);
+    expect(
+      anchoredScrollTop({ height: 200, top: 850, tracking: false }, 100, 1000),
+    ).toBe(900);
+    expect(
+      anchoredScrollTop({ height: 200, top: 0, tracking: true }, 300, 150),
+    ).toBe(0);
+  });
+});
