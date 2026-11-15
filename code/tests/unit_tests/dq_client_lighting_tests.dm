@@ -944,8 +944,10 @@
 		if(!T.has_dynamic_lighting())
 			fixed = T
 			break
+	var/phase_started = REALTIMEOFDAY
 	client_lighting_set(TRUE)
 	SSlighting.light_step(0, TRUE)
+	log_test("CLIENT DARK BASE: mode on and one step took [(REALTIMEOFDAY - phase_started) * 100] ms")
 	// Boot path: the map's turfs initialize before the config turns the mode on, at the DM engine's luminosity 0.
 	var/turf/dynamic
 	for(var/turf/T as anything in block(locate(1, 1, 1), locate(world.maxx, world.maxy, world.maxz)))
@@ -953,9 +955,12 @@
 			dynamic = T
 			break
 	TEST_ASSERT(dynamic, "the map has a dynamic turf")
+	log_test("CLIENT DARK BASE: found a dynamic turf after [(REALTIMEOFDAY - phase_started) * 100] ms")
 	var/old_luminosity = dynamic.luminosity
 	dynamic.luminosity = 0
+	var/boot_started = REALTIMEOFDAY
 	create_all_lighting_objects()
+	log_test("CLIENT DARK BASE: the boot path took [(REALTIMEOFDAY - boot_started) * 100] ms over [world.maxx * world.maxy * world.maxz] turfs; the corner layer waits on [length(GLOB.lighting_smooth_dirty)] to sample and [length(GLOB.lighting_smooth_redraw)] to redraw")
 	TEST_ASSERT_EQUAL(dynamic.luminosity, 1, "boot in client mode shows a dynamic turf that initialized dark")
 	dynamic.luminosity = old_luminosity
 	var/list/screen = client_glow_screen(client_glow_screen_state(null))
