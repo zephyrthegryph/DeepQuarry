@@ -117,7 +117,7 @@
 		/datum/preference/toggle/human/borg_petting = FALSE,
 		/datum/preference/toggle/human/resleeve_lock = TRUE,
 		/datum/preference/toggle/human/auto_backup_implant = TRUE,
-		/datum/preference/numeric/human/sensorpref = 3,
+		/datum/preference/choiced/human/sensorpref = "Vitals",
 		/datum/preference/toggle/human/ignore_shoes = TRUE,
 		/datum/preference/toggle/human/fuzzy = TRUE,
 		/datum/preference/toggle/human/offset_override = FALSE,
@@ -173,6 +173,23 @@
 	TEST_ASSERT(!length(wrong), "restored settings keep their saved values: [jointext(wrong, "; ")]")
 	fdel(path)
 
+/// The Shadekin flicker settings show only for a species with the Shadekin state (a custom species: its base), and an old numeric sensor level loads as its mode.
+/datum/unit_test/dq_shadekin_settings_follow_species
+/datum/unit_test/dq_shadekin_settings_follow_species/Run()
+	var/datum/preference/numeric/living/flicker_time/flicker = GLOB.preference_entries[/datum/preference/numeric/living/flicker_time]
+	var/list/expected = list(SPECIES_HUMAN = FALSE, SPECIES_SHADEKIN = TRUE)
+	for(var/species_name in expected)
+		var/path = dq_test_write_character_save(list("species" = species_name, "sensorpref" = 3))
+		var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
+		P.load_and_save = TRUE
+		P.path = path
+		P.load_savefile()
+		TEST_ASSERT(P.load_character(1), "the [species_name] save loads")
+		var/shown = flicker.get_widget(P) != PREF_WIDGET_HIDDEN
+		TEST_ASSERT_EQUAL(shown, expected[species_name], "the flicker settings for [species_name]")
+		TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/choiced/human/sensorpref), "Vitals", "the old sensor level loads as its mode")
+		fdel(path)
+
 /// The restored settings reach the body being played: records, background, nickname, sensor level, footstep, weight rates, speech verbs.
 /datum/unit_test/dq_live_prefs/restored_settings_reach_the_mob
 /datum/unit_test/dq_live_prefs/restored_settings_reach_the_mob/run_live()
@@ -192,8 +209,13 @@
 	TEST_ASSERT_EQUAL(subject.bio.religion, "Unitarianism", "the religion reaches the body")
 	apply(/datum/preference/name/nickname, "Nicky")
 	TEST_ASSERT_EQUAL(subject.bio.nickname, "Nicky", "the nickname reaches the body")
-	apply(/datum/preference/numeric/human/sensorpref, 3)
+	apply(/datum/preference/choiced/human/sensorpref, "Vitals")
 	TEST_ASSERT_EQUAL(subject.bio.sensorpref, 3, "the sensor level reaches the body")
+	var/datum/preference/choiced/human/sensorpref/sensor_pref = GLOB.preference_entries[/datum/preference/choiced/human/sensorpref]
+	TEST_ASSERT_EQUAL(sensor_pref.pref_deserialize(4, null), "Tracking", "an old numeric level becomes its mode")
+	TEST_ASSERT_EQUAL(sensor_pref.pref_deserialize(5.0, null), SENSORPREF_RANDOM, "the old random level stays random")
+	TEST_ASSERT_EQUAL(sensor_pref.pref_deserialize(9, null), SENSORPREF_RANDOM, "an out-of-range level takes the default")
+	TEST_ASSERT_EQUAL(sensor_pref.pref_deserialize("Binary", null), "Binary", "a mode name is kept")
 	apply(/datum/preference/text/human/custom_footstep, "Claw")
 	TEST_ASSERT_EQUAL(footstep_of(subject).custom_footstep, FOOTSTEP_MOB_CLAW, "the footstep sound reaches the body")
 	apply(/datum/preference/numeric/human/weight_gain, 77)
