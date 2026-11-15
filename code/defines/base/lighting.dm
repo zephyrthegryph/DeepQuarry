@@ -240,10 +240,12 @@ do { \
 #define CLIENT_GLOW_SCREEN_COMPARE_DM 2
 #define CLIENT_GLOW_SCREEN_COMPARE_GLOW 3
 
-/// The darksight overlay (night vision): a flat, grey, additive disc over the dark. It shows nothing at or under DARKSIGHT_MIN_SIGHT tiles of sight, reaches
-/// full strength at DARKSIGHT_FULL_SIGHT, and never adds more than DARKSIGHT_MAX_ALPHA of white. Its icon is a flat disc (no hot spot) that fades over its outer 40%.
+/// The darksight overlay (night vision): a flat, grey, additive disc over the dark. Any sight at all shows DARKSIGHT_BASE_STRENGTH of it, a disc as wide as the sight (the
+/// small darkvision every character has: a human's 2 tiles); past DARKSIGHT_MIN_SIGHT it grows to full strength at DARKSIGHT_FULL_SIGHT, and it never adds more than DARKSIGHT_MAX_ALPHA of white. Its icon is a flat disc (no hot spot) that fades over its outer 40%.
 #define DARKSIGHT_MIN_SIGHT 2
 #define DARKSIGHT_FULL_SIGHT 8
+/// The share of full strength a mob with any darksight gets: a dim hint of the floor around it.
+#define DARKSIGHT_BASE_STRENGTH 0.25
 #define DARKSIGHT_MAX_ALPHA 0.35
 /// The radius, in tiles, of the overlay icon (480 px).
 #define DARKSIGHT_ICON_RADIUS 7.5
