@@ -144,8 +144,8 @@
 		TEST_FAIL("[unresolved.len] prefs returned PREF_WIDGET_AUTO from get_widget(): [english_list(unresolved)]")
 
 
-/// The character setup tabs open on the ones every new character needs (Identity, Looks, Loadout, Jobs), and the
-/// rarely-changed ones the window folds under "More" come after every other tab, so the strip never interleaves them.
+/// The character setup tabs open on the ones every new character needs (Identity, Looks, Loadout, Jobs), and Game
+/// (the general settings) comes last; there is no More tab folding rarely-changed ones away.
 /datum/unit_test/dq_charsetup_category_order
 
 /datum/unit_test/dq_charsetup_category_order/Run()
@@ -154,14 +154,8 @@
 	var/list/first = list("identity", "appearance", "loadout", "occupation")
 	for(var/i in 1 to length(first))
 		TEST_ASSERT_EQUAL(index[i], first[i], "tab [i] of [jointext(index, ", ")]")
-	for(var/more in GLOB.dq_more_categories)
-		TEST_ASSERT(more in GLOB.dq_category_order, "the More tab's [more] has a place in dq_category_order")
-	var/seen_more = FALSE
-	for(var/category in index)
-		if(category in GLOB.dq_more_categories)
-			seen_more = TRUE
-		else
-			TEST_ASSERT(!seen_more, "[category] comes after a More category: [jointext(index, ", ")]")
+	TEST_ASSERT_EQUAL(index[length(index)], "game", "Game is the last tab of [jointext(index, ", ")]")
+	TEST_ASSERT(!("misc" in index), "no Misc tab: [jointext(index, ", ")]")
 	// Robot and pAI modes keep the order of what they show.
 	for(var/mode in list("robot", "pai"))
 		var/list/mode_index = dq_character_category_index(mode)

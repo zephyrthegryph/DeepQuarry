@@ -17,7 +17,6 @@ import { type HsvaColor, hexToHsva, hsvaToHex } from 'tgui-core/color';
 import { Box, Button, Floating, Input } from 'tgui-core/components';
 import { Hue, SaturationValue } from '../../ColorPickerModal';
 import { SliderBox } from './controls';
-import { highlightStyle, prefAnchor, useSearchHighlight } from './search';
 
 export type SlotName =
   | 'primary'
@@ -571,31 +570,24 @@ export const ColorStrip = ({
   );
 };
 
-/// Wraps a control so the settings search can find and highlight it.
+/// A palette or channel cell: a flex box, optionally growing to share the row.
 const SwatchAnchor = ({
-  prefKey,
   children,
   grow,
 }: {
   prefKey: string;
   children: ReactNode;
   grow?: boolean;
-}) => {
-  const anchor = prefAnchor(prefKey);
-  const lit = useSearchHighlight(anchor);
-  return (
-    <Box
-      data-dq-anchor={anchor}
-      style={{
-        display: grow ? 'flex' : 'inline-flex',
-        flex: grow ? '1 1 12em' : undefined,
-        ...highlightStyle(lit),
-      }}
-    >
-      {children}
-    </Box>
-  );
-};
+}) => (
+  <Box
+    style={{
+      display: grow ? 'flex' : 'inline-flex',
+      flex: grow ? '1 1 12em' : undefined,
+    }}
+  >
+    {children}
+  </Box>
+);
 
 /// The palette: each slot's colour and name. Clicking the name makes it the brush.
 export const PaletteSlots = ({

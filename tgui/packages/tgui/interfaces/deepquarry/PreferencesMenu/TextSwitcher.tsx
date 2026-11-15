@@ -3,7 +3,7 @@
 
 import { type ReactNode, useEffect, useState } from 'react';
 import { Box, Button, Input, TextArea } from 'tgui-core/components';
-import { FormattingTextArea } from './FormattingTextArea';
+import { FormattingTextArea, useExpandOnFocus } from './FormattingTextArea';
 
 export type SwitcherEntry = {
   key: string;
@@ -26,6 +26,33 @@ export const storedText = (typed: string, defaultText?: string) =>
   (typed.trim() === '' || typed.trim() === defaultText)
     ? ''
     : typed;
+
+/// A text area that rests as a line or two and opens while it is edited.
+const PlainTextArea = ({
+  value,
+  onChange,
+  onBlur,
+  maxLength,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+  maxLength?: number;
+}) => {
+  const expand = useExpandOnFocus('10em');
+  return (
+    <div {...expand.handlers}>
+      <TextArea
+        fluid
+        height={expand.height}
+        maxLength={maxLength}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+    </div>
+  );
+};
 
 export const TextSwitcher = ({
   entries,
@@ -84,9 +111,7 @@ export const TextSwitcher = ({
       onBlur={commit}
     />
   ) : (
-    <TextArea
-      fluid
-      height="10em"
+    <PlainTextArea
       maxLength={entry.maxLength}
       value={draft}
       onChange={setDraft}

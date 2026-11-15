@@ -345,13 +345,49 @@ export const ValidateDmeTarget = new Juke.Target({
     }
     const dmFiles = Juke.glob('code/**/*.dm');
 
+    // Reading ~8k files took 190 s on a loaded machine (a restart after a merge), so each file's include lists are kept in
+    // data/dme-gen-cache/validate-dme.json by size and mtime: only files edited since the last run are read. The result is the same as a read.
+    type IncludeFacts = { size: number; mtimeMs: number; active: string[]; commented: string[] };
+    const factsFile = 'data/dme-gen-cache/validate-dme.json';
+    let facts: Record<string, IncludeFacts> = {};
+    if (!process.env.DQ_FULL_CHECKS && !process.env.CI) {
+      try {
+        facts = JSON.parse(fs.readFileSync(factsFile, 'utf-8'));
+      } catch {
+        facts = {};
+      }
+    }
+    const usedFacts: Record<string, IncludeFacts> = {};
     seed(dmeText, '.');
     while (queue.length > 0) {
       const file = queue.pop() as string;
       if (reachable.has(file)) continue;
       reachable.add(file);
-      if (!fs.existsSync(file)) continue; // missing include target: DM compile will report it
-      seed(fs.readFileSync(file, 'utf-8'), dirOf(file));
+      let st: fs.Stats;
+      try {
+        st = fs.statSync(file);
+      } catch {
+        continue; // missing include target: DM compile will report it
+      }
+      let f = facts[file];
+      if (!f || f.size !== st.size || f.mtimeMs !== st.mtimeMs) {
+        const content = fs.readFileSync(file, 'utf-8');
+        f = {
+          size: st.size,
+          mtimeMs: st.mtimeMs,
+          active: [...content.matchAll(ACTIVE_INCLUDE)].map((m) => m[1]),
+          commented: [...content.matchAll(COMMENTED_INCLUDE)].map((m) => m[1]),
+        };
+      }
+      usedFacts[file] = f;
+      for (const raw of f.active) queue.push(resolveInclude(dirOf(file), raw));
+      for (const raw of f.commented) disabled.add(resolveInclude(dirOf(file), raw));
+    }
+    try {
+      fs.mkdirSync('data/dme-gen-cache', { recursive: true });
+      fs.writeFileSync(factsFile, JSON.stringify(usedFacts));
+    } catch {
+      // the cache is optional
     }
 
     // Unit-test files are compiled only under a separate test .dme, never from

@@ -1,4 +1,5 @@
-// DQ-migrated: antagonism + candidacy prefs.
+// DQ-migrated: antagonism + candidacy prefs. Neither has a settings page: be_special is flipped by the ghost-role prompts
+// (ghost_query, drones, pAI) and read by the role pickers, vantag_preference is set in the character directory.
 
 /datum/preference/numeric/human/be_special
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
@@ -7,7 +8,7 @@
 	can_randomize = FALSE
 	minimum = 0
 	maximum = 65535
-	widget = PREF_WIDGET_HIDDEN  // bitmask of antag opt-ins; managed by the antag panel
+	widget = PREF_WIDGET_HIDDEN  // bitmask of role opt-ins; flipped by the ghost-role prompts
 
 /datum/preference/numeric/human/be_special/create_default_value()
 	return 0

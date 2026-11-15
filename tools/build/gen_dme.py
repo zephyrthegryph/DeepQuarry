@@ -40,6 +40,9 @@ import sys
 import functools
 import heapq
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dm_filecache  # noqa: E402
+
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 SPEC = "tools/build/dme_spec.txt"
 MOVES = "tools/build/dme_moves.txt"
@@ -178,23 +181,22 @@ def ignored_files(root: str, roots: list[str]) -> set[str]:
     return {line.strip() for line in out.stdout.splitlines() if line.strip()}
 
 
-def collect(spec: Spec, root: str) -> list[str]:
+def collect(spec: Spec, root: str, cache=None) -> list[str]:
+    """The manifest's files. `cache` (dm_filecache.FileCache) holds each file's raw #include list by its stat, so only files that
+    changed since the last run are opened; the result is the same with or without it."""
     found: set[str] = set()
+    stats: dict[str, tuple[int, int]] = {}
     ignored = ignored_files(root, spec.scan) if os.path.isdir(os.path.join(root, ".git")) or os.path.isfile(os.path.join(root, ".git")) else set()
     for base in spec.scan:
         top = os.path.join(root, base)
         if not os.path.isdir(top):
             raise SpecError(f"scan {base}: no such directory")
-        for dirpath, dirnames, filenames in os.walk(top):
-            dirnames.sort()
-            for name in filenames:
-                if not name.endswith(".dm"):
-                    continue
-                rel = os.path.relpath(os.path.join(dirpath, name), root).replace("\\", "/")
-                spec.scanned.add(rel)
-                if rel in ignored or any(p.match(rel) for p in spec.skip):
-                    continue
-                found.add(rel)
+        for rel, _full, size, mtime in dm_filecache.walk(top, root):
+            spec.scanned.add(rel)
+            stats[rel] = (size, mtime)
+            if rel in ignored or any(p.match(rel) for p in spec.skip):
+                continue
+            found.add(rel)
     for f in spec.files:
         found.add(f)
     for f in spec.optional:
@@ -207,19 +209,27 @@ def collect(spec: Spec, root: str) -> list[str]:
     owned: set[str] = set()
     queue = [f for f in found if f.endswith(".dm") and f not in spec.files and f not in spec.optional]
     seen: set[str] = set()
+
+    def raw_includes(f: str) -> list[str]:
+        try:
+            with open(os.path.join(root, f), encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+        except OSError:
+            return []
+        return INCLUDE.findall(text) if "#include" in text else []
+
     while queue:
         f = queue.pop()
         if f in seen:
             continue
         seen.add(f)
-        path = os.path.join(root, f)
-        if not os.path.isfile(path):
-            continue
-        with open(path, encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
-        if "#include" not in text:
-            continue
-        for raw in INCLUDE.findall(text):
+        if cache is not None and f in stats:
+            raws = cache.get(("inc", f), stats[f][0], stats[f][1], lambda f=f: raw_includes(f))
+        else:
+            if not os.path.isfile(os.path.join(root, f)):
+                continue
+            raws = raw_includes(f)
+        for raw in raws:
             target = os.path.normpath(os.path.join(os.path.dirname(f), raw.replace("\\", "/"))).replace("\\", "/")
             if target != f:
                 owned.add(target)
@@ -449,14 +459,33 @@ def recorded_order(root: str) -> list[str] | None:
     return [p for p in out if p != "code/genesis_call.dme"]
 
 
-def generate(root: str = ROOT, spec_text: str | None = None, repin: bool = False, recorded: list[str] | None = None) -> str:
+def generate(root: str = ROOT, spec_text: str | None = None, repin: bool = False, recorded: list[str] | None = None, cache=None) -> str:
+    """The manifest text. `cache` (dm_filecache.FileCache) makes a run with few changed files cheap: each file's #include list is kept
+    by its stat, and the finished text is kept by a digest of everything it is computed from (the spec, the move log, the recorded
+    order, the files found and the scanned set), so an edit that adds or removes no file and changes no #include costs a directory walk.
+    The text is the same with or without it (`--selftest` compares them)."""
     if spec_text is None:
         with open(os.path.join(root, SPEC), encoding="utf-8") as fh:
             spec_text = fh.read()
     spec = Spec(spec_text)
-    files = collect(spec, root)
+    files = collect(spec, root, cache)
     if recorded is None and not repin:
         recorded = recorded_order(root)
+    memo_key = None
+    if cache is not None and cache.use:
+        import hashlib
+
+        moves_path = os.path.join(root, MOVES)
+        moves_text = open(moves_path, encoding="utf-8").read() if os.path.isfile(moves_path) else ""
+        h = hashlib.sha256()
+        for part in (HEADER, spec_text, moves_text, "\n".join(files), "\0", "\n".join(sorted(spec.scanned)), "\0",
+                     "repin" if repin else "\n".join(recorded or ["<none>"])):
+            h.update(part.encode("utf-8", "replace"))
+            h.update(b"\1")
+        memo_key = h.hexdigest()
+        hit = cache.memo_get(memo_key)
+        if hit is not None:
+            return hit
     ordered = order(spec, files, root, None if repin else recorded)
 
     def matches(kind: str, g: str) -> bool:
@@ -469,7 +498,10 @@ def generate(root: str = ROOT, spec_text: str | None = None, repin: bool = False
     unused = [f"{SPEC}:{n}: `{k} {g}` matches no file" for k, n, g in spec.patterns if not matches(k, g)]
     if unused:
         raise SpecError("a stale rule (the files it orders are gone; drop or update it):\n  " + "\n  ".join(unused))
-    return render(spec, ordered)
+    text = render(spec, ordered)
+    if memo_key is not None:
+        cache.memo_put(memo_key, text)
+    return text
 
 
 def includes_of(text: str) -> set[str]:
@@ -561,8 +593,10 @@ def main(argv: list[str]) -> int:
         out_path = os.path.abspath(argv[argv.index("--out") + 1])
     if "--moved" in argv:
         record_moves(root, argv[argv.index("--moved") + 1])
+    cache = dm_filecache.FileCache(root, "gen_dme", dm_filecache.stamp_of(os.path.abspath(__file__)))
     try:
-        text = generate(root, repin="--repin" in argv)
+        text = generate(root, repin="--repin" in argv, cache=cache)
+        cache.save()
     except SpecError as e:
         print(f"gen_dme: {e}", file=sys.stderr)
         return 2
@@ -660,6 +694,30 @@ ifdef DOC code/doc.dm
         except SpecError:
             pass
         check(generate(tmp, spec) == text, "deterministic")
+        # The incremental path (per-file #include cache and the finished-text memo) gives exactly what a full run gives, after every kind of
+        # change: nothing, a file's text, a new #include (an aggregator), a new file, a deleted file, an edit that keeps the size.
+        inc = dm_filecache.FileCache(tmp, "selftest", "s", force=True)
+        check(generate(tmp, spec, cache=inc) == generate(tmp, spec), "incremental: cold cache matches a full run")
+        inc.save()
+        inc = dm_filecache.FileCache(tmp, "selftest", "s", force=True)
+        check(generate(tmp, spec, cache=inc) == text and inc.memo, "incremental: a warm cache matches and reuses the finished text")
+        later = os.path.join(tmp, "code", "game", "z.dm")
+        steps = [
+            ("an edit", lambda: open(later, "w").write("// edited\n")),
+            ("a new aggregator include", lambda: open(os.path.join(tmp, "code", "game", "A.dm"), "w").write('#include "sub/x.dm"\n')),
+            ("a new file", lambda: touch("code/game/new.dm")),
+            ("a deleted file", lambda: os.remove(os.path.join(tmp, "code", "game", "new.dm"))),
+            ("a same-size edit", lambda: open(os.path.join(tmp, "code", "game", "A.dm"), "w").write('#include "sub/y.dm"\n')),
+        ]
+        for what, change in steps:
+            change()
+            os.utime(os.path.join(tmp, "code", "game"), None)
+            inc = dm_filecache.FileCache(tmp, "selftest", "s", force=True)
+            got = generate(tmp, spec, cache=inc)
+            inc.save()
+            check(got == generate(tmp, spec), f"incremental: after {what} the text is the full run's")
+        os.remove(os.path.join(tmp, "code", "game", "A.dm"))
+        touch("code/game/A.dm")
         # optional: absent, its rule holds and nothing is included; present, it is included where its rule puts it.
         opt = spec + "skip code/zz/late.dm\noptional code/zz/late.dm\nlast code/zz/late.dm\n"
         check("late.dm" not in generate(tmp, opt), "an absent optional file is not included")

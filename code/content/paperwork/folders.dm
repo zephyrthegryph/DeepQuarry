@@ -27,7 +27,7 @@ MSG_DEF_SELF(folder/only_paper, "only paper, photos and bundles fit")
 /// A folder shows its papers once it holds any (the slot publishes its occupancy, so the look redraws by itself).
 /obj/item/folder/draw(datum/look/look)
 	..()
-	look.overlay("folder_paper", when = length(slot_contents(CONTAINER_SLOT_PAGES)) > 0)
+	look.overlay("folder_paper", when = slot_occupancy(CONTAINER_SLOT_PAGES) > 0)
 
 /obj/item/folder/blue
 	desc = "A blue folder."

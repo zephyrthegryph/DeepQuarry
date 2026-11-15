@@ -3,7 +3,7 @@
 // Limbs & organs is its own. Skin and eyes are palette slots. Legs choose among plantigrade, digitigrade and taur:
 // a taur is still saved and worn as a tail style, so riding, clothing and vore sprites read what they always did.
 
-import { useContext, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Label } from 'tgui/components/Label';
 import { Box, Button, Section } from 'tgui-core/components';
@@ -23,15 +23,9 @@ import { OrgansEditor } from './editors/OrgansEditor';
 import { PrefEditor } from './editors/PrefEditor';
 import { labelForGroup } from './labels';
 import { normalizeChoices, PrefWidget } from './PrefWidget';
-import {
-  editorAnchor,
-  groupAnchor,
-  highlightStyle,
-  prefAnchor,
-  SearchHighlightContext,
-  useSearchHighlight,
-} from './search';
 import type { PrefCategory, PrefThumbnail, PrefWidgetItem } from './types';
+
+const MARKINGS_ID = 'dq-body-markings';
 
 export type Region = 'body' | 'organs';
 
@@ -96,42 +90,6 @@ const CARD_KEYS: Record<CardId, string[]> = {
   chassis: ['robot_chassis'],
 };
 
-const KEY_TO_CARD: Record<string, CardId> = {};
-for (const [card, keys] of Object.entries(CARD_KEYS)) {
-  for (const key of keys) KEY_TO_CARD[key] = card as CardId;
-}
-
-/// The one category that shows a card.
-const cardRegion = (card: CardId): Region =>
-  (Object.keys(REGION_CARDS) as Region[]).find((r) =>
-    REGION_CARDS[r].includes(card),
-  ) ?? 'body';
-
-const LEFT_COLUMN_KEYS = [
-  'palette_primary',
-  'palette_secondary',
-  'palette_tertiary',
-  'palette_extra1',
-  'palette_extra2',
-  'preview_loadout',
-  'preview_job',
-  'animations_toggle',
-];
-const LEFT_COLUMN_GROUPS = ['palette', 'preview'];
-
-/// Where a search jump lands: the category holding it, or null when it stays put (the left column is always shown).
-export const regionForHighlight = (highlight: string): Region | null => {
-  if (highlight.startsWith('group:')) {
-    const group = highlight.slice(highlight.indexOf('/') + 1);
-    if (LEFT_COLUMN_GROUPS.includes(group)) return null;
-    return group === 'organs' ? 'organs' : 'body';
-  }
-  const key = highlight.replace(/^(pref|editor):/, '');
-  if (LEFT_COLUMN_KEYS.includes(key)) return null;
-  const card = KEY_TO_CARD[key];
-  return card ? cardRegion(card) : 'body';
-};
-
 /// The body layout fits a page with body parts (human mode); robot and pAI pages, which have
 /// none of these, keep the plain group list.
 export const looksHasBody = (page: PrefCategory) =>
@@ -193,19 +151,10 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
     };
   };
 
-  // A search jump to a field the current region hides switches to a region that shows it.
-  const highlight = useContext(SearchHighlightContext);
   const [focusLimb, setFocusLimb] = useState<string | null>(null);
   const [markingZones, setMarkingZones] = useState<
     (typeof ZONE_GROUPS)[number] | null
   >(null);
-  useEffect(() => {
-    if (!highlight) return;
-    const target = regionForHighlight(highlight);
-    if (!target) return;
-    if (highlight === 'editor:body_markings') setMarkingZones(null);
-    setRegion(target);
-  }, [highlight]);
 
   // Cards that have something to show in this play mode.
   const cardHasContent = (card: CardId) => CARD_KEYS[card].some(has);
@@ -246,7 +195,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         );
       case 'markings':
         return (
-          <Box key={card} data-dq-anchor={editorAnchor('body_markings')}>
+          <Box key={card} id={MARKINGS_ID}>
             {editorData.body_markings && (
               <BodyMarkingsEditor
                 data={editorData.body_markings}
@@ -259,7 +208,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         );
       case 'organs':
         return (
-          <Box key={card} data-dq-anchor={editorAnchor('organs')}>
+          <Box key={card}>
             <Section title="Limbs & organs">
               {editorData.organs && (
                 <OrgansEditor
@@ -274,7 +223,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
       case 'chassis': {
         const key = 'robot_chassis';
         return (
-          <Box key={card} data-dq-anchor={editorAnchor(key)}>
+          <Box key={card}>
             <Section title="Chassis">
               <PrefEditor
                 editorKey={key}
@@ -321,9 +270,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
               const group = zoneGroup(zone);
               setMarkingZones(group === markingZones ? null : group);
               document
-                .querySelector(
-                  `[data-dq-anchor="${editorAnchor('body_markings')}"]`,
-                )
+                .getElementById(MARKINGS_ID)
                 ?.scrollIntoView({ block: 'start' });
             }
           }}
@@ -344,10 +291,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             ))}
         </Box>
         {PREVIEW_KEYS.some(has) && (
-          <Section
-            title="Preview"
-            data-dq-anchor={groupAnchor('appearance', 'preview')}
-          >
+          <Section title="Preview">
             <Box
               style={{ display: 'flex', flexDirection: 'column', gap: '0.3em' }}
             >
@@ -360,10 +304,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
           </Section>
         )}
         {has('palette_primary') && (
-          <Section
-            title="Palette"
-            data-dq-anchor={groupAnchor('appearance', 'palette')}
-          >
+          <Section title="Palette">
             <PaletteSlots values={values} />
           </Section>
         )}
@@ -401,7 +342,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             <Box key={`other-${group.group}`} style={{ gridColumn: '1 / -1' }}>
               <Section
                 title={group.group ? labelForGroup(group.group) : 'Other'}
-                data-dq-anchor={groupAnchor(page.category, group.group)}
               >
                 <WidgetGrid
                   widgets={
@@ -414,7 +354,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                 {group.items
                   .filter((i) => i.type === 'editor')
                   .map((i) => (
-                    <Box key={i.key} data-dq-anchor={editorAnchor(i.key)}>
+                    <Box key={i.key}>
                       <PrefEditor
                         editorKey={i.key}
                         editorData={editorData}
@@ -440,10 +380,8 @@ const PREVIEW_LABELS: Record<string, string> = {
 
 const PreviewSwitch = ({ item }: { item: PrefWidgetItem }) => {
   const { act } = useBackend();
-  const anchor = prefAnchor(item.key);
-  const lit = useSearchHighlight(anchor);
   return (
-    <Box data-dq-anchor={anchor} style={highlightStyle(lit)}>
+    <Box>
       <Switch
         checked={!!item.value}
         label={PREVIEW_LABELS[item.key] ?? item.label ?? item.key}
@@ -724,11 +662,7 @@ const BodyTable = ({
               const keptLabel =
                 allTails.find(([v]) => v === kept)?.[1] ?? (kept || 'None');
               return (
-                <Box
-                  key={row.label}
-                  style={{ display: 'contents' }}
-                  data-dq-anchor={groupAnchor('appearance', row.group)}
-                >
+                <Box key={row.label} style={{ display: 'contents' }}>
                   <Box style={cellStyle}>{row.label}</Box>
                   <Label
                     className="dq-tail-under-taur"
@@ -749,11 +683,7 @@ const BodyTable = ({
                   }
                 : item;
             return (
-              <Box
-                key={row.label}
-                style={{ display: 'contents' }}
-                data-dq-anchor={groupAnchor('appearance', row.group)}
-              >
+              <Box key={row.label} style={{ display: 'contents' }}>
                 <Box style={cellStyle}>{row.label}</Box>
                 <StyleCell
                   item={shownItem}
@@ -840,10 +770,7 @@ const LegsRow = ({
     thumbnails: withSkin(tailItem?.thumbnails, values.skin_color),
   };
   return (
-    <Box
-      style={{ display: 'contents' }}
-      data-dq-anchor={prefAnchor('digitigrade')}
-    >
+    <Box style={{ display: 'contents' }}>
       <Box style={cellStyle}>Legs</Box>
       <Box style={cellStyle}>
         <Box style={{ flex: 1, minWidth: 0 }}>
@@ -877,13 +804,8 @@ const LegsRow = ({
 };
 
 const BareField = ({ item }: { item: PrefWidgetItem }) => {
-  const anchor = prefAnchor(item.key);
-  const lit = useSearchHighlight(anchor);
   return (
-    <Box
-      data-dq-anchor={anchor}
-      style={{ ...highlightStyle(lit), flex: 1, minWidth: 0 }}
-    >
+    <Box style={{ flex: 1, minWidth: 0 }}>
       <PrefWidget item={item} />
     </Box>
   );

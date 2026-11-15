@@ -1,0 +1,7 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Computers, bookcases, fire alarms and disposal units no longer show a cached look that ignores their power, damage or contents"
+  - bugfix: "A folder shows its paper as soon as a page goes in"
+  - qol: "Boot skips the first draw of mapped atoms whose draw would leave the look the map already gave them"
+  - bugfix: "Switching client lighting on at boot no longer waits a tick per turf"

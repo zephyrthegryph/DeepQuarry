@@ -5281,7 +5281,6 @@
 #include "code\content\client\preferences\constraints\nif_validity.dm"
 #include "code\content\client\preferences\constraints\species_change.dm"
 #include "code\content\client\preferences\constraints\traits_validity.dm"
-#include "code\content\client\preferences\editors\antag_optin.dm"
 #include "code\content\client\preferences\editors\birthday.dm"
 #include "code\content\client\preferences\editors\body_markings.dm"
 #include "code\content\client\preferences\editors\ear_secondary_colors.dm"

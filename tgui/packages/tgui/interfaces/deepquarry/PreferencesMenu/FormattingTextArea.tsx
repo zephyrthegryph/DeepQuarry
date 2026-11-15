@@ -2,7 +2,12 @@
 // transparent textarea (same monospace font, so bold never moves a character), and Ctrl+B/I/U toggle the chat's markers
 // with the say box's own edit (tgui/dq toggleMarker). The markers come from the server (GLOB.speech_toppings).
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import {
+  type FocusEventHandler,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useBackend } from 'tgui/backend';
 import { FormattedBackdrop, SHORTCUT_MARKERS, toggleMarker } from 'tgui/dq';
 
@@ -28,6 +33,29 @@ const BOX_STYLE: React.CSSProperties = {
   borderRadius: '0.2em',
 };
 
+/// A long text box rests as a line or two and opens to its full height while it is being edited.
+export const COLLAPSED_TEXT_HEIGHT = '3.4em';
+
+/// The height a long text box has now, and the focus handlers that open and close it. Focus anywhere inside the
+/// wrapper they go on counts (a Ctrl+B in the box keeps it open).
+export const useExpandOnFocus = (
+  expanded: string,
+  collapsed = COLLAPSED_TEXT_HEIGHT,
+) => {
+  const [open, setOpen] = useState(false);
+  const onFocus: FocusEventHandler = () => setOpen(true);
+  const onBlur: FocusEventHandler = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setOpen(false);
+    }
+  };
+  return {
+    open,
+    height: open ? expanded : collapsed,
+    handlers: { onFocus, onBlur },
+  };
+};
+
 export const FormattingTextArea = ({
   value,
   onChange,
@@ -44,6 +72,7 @@ export const FormattingTextArea = ({
   const { data } = useBackend<{ dq_text_markers?: Record<string, string> }>();
   const markers = data.dq_text_markers ?? DEFAULT_MARKERS;
   const area = useRef<HTMLTextAreaElement>(null);
+  const expand = useExpandOnFocus(height);
   const backdrop = useRef<HTMLDivElement>(null);
   const [caret, setCaret] = useState<[number, number] | null>(null);
   useLayoutEffect(() => {
@@ -70,7 +99,10 @@ export const FormattingTextArea = ({
     setCaret([edit.start, edit.end]);
   };
   return (
-    <div style={{ position: 'relative', height }}>
+    <div
+      {...expand.handlers}
+      style={{ position: 'relative', height: expand.height }}
+    >
       <div
         ref={backdrop}
         aria-hidden

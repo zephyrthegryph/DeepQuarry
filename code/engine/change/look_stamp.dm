@@ -16,10 +16,14 @@ GLOBAL_LIST_EMPTY(type_look_stamp)
 /// Type path -> the cache key of the sample's inputs, for a stamped type the cache can key (look_cache_key()). Absent: any instance is stamped.
 GLOBAL_LIST_EMPTY(type_look_stamp_key)
 /// Type path -> the full cache key (look_cache_key(), base vars included) of the inputs of the type's sampled instance before its first draw, for a type whose sampled
-/// draw left that instance's appearance as the map made it and that the cache can key. A record for the boot log only (boot_created_release()): sparing such a type's
-/// other instances their draw is not safe while some keyable types' plans miss an input of their draw (the LOOK CACHE DRIFT of a full-map boot: a computer, a
-/// bookcase, a fire alarm, a disposal unit, a light), and an instance whose unnamed input differs would be left undrawn.
+/// draw left that instance's appearance as the map made it and that the cache can key. A fresh instance of such a type whose own key is the same has the same
+/// inputs, so its draw would leave the map's look as it is: it is spared the draw (type_look_noop_matches()). Sound because look_cache_vars_build() keys only a
+/// type whose draw reads nothing but the vars its plan names (a draw that reads a published key, a stat or a neighbour is never keyed).
 GLOBAL_ALIST_EMPTY(type_look_noop_key)
+#if defined(UNIT_TESTS)
+/// Type path -> the look key the sampled draw made, for a type in type_look_noop_key: a test build draws each spared atom once more and compares (LOOK SKIP DRIFT).
+GLOBAL_ALIST_EMPTY(type_look_noop_made)
+#endif
 /// Fresh entities the stamp spared a first refresh (the draw-queue test and the boot log read it).
 GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 
@@ -50,6 +54,22 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	var/sample_key = GLOB.type_look_stamp_key[D.type]
 	if(sample_key && isatom(D) && look_cache_key(D, FALSE) != sample_key)
 		return FALSE
+	return TRUE
+
+/// TRUE when a fresh `A` of a type whose sampled draw left the map's look as it was has the sample's inputs (the same full cache key): its first draw would leave
+/// the look as it is, so it owes none.
+/proc/type_look_noop_matches(atom/A)
+	var/sample_key = GLOB.type_look_noop_key[A.type]
+	if(!sample_key || LAZYLEN(A.open_tguis))
+		return FALSE
+	if(look_cache_key(A, TRUE) != sample_key)
+		return FALSE
+#if defined(UNIT_TESTS)
+	var/made = GLOB.type_look_noop_made[A.type]
+	var/key = refresh_look_draw(A, FALSE, null)
+	if(key != made && !GLOB.look_cache_drift_expected)
+		stack_trace("LOOK CACHE DRIFT: [A.type] has the inputs of its type's no-op sample but a fresh draw does not make its look ([refresh_key_difference(made, key)])")
+#endif
 	return TRUE
 
 /// Whether the draw just made for `A` (the shared builder still holds it) is one a fresh instance can be spared: it sets nothing besides the look the map already
@@ -110,6 +130,9 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		type_look_stamp_record(D)
 		if(sample_key && !GLOB.type_look_stamp[D.type] && sample_atom.appearance == sample_appearance && type_look_noop_sample(sample_atom))
 			GLOB.type_look_noop_key[D.type] = sample_key
+#if defined(UNIT_TESTS)
+			GLOB.type_look_noop_made[D.type] = sample_atom.rx?.look_key
+#endif
 	var/sampled_at = REALTIMEOFDAY
 	var/list/kept = list()
 	var/skipped = 0
@@ -117,7 +140,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	for(var/datum/D as anything in Q)
 		if(isnull(D) || !D.refresh_queued)
 			continue
-		if((D.refresh_queued & DEP_CREATED) && type_look_stamped(D))
+		if((D.refresh_queued & DEP_CREATED) && (type_look_stamped(D) || (isatom(D) && type_look_noop_matches(D))))
 			D.refresh_queued = 0
 			D.refresh_bits = 0
 			skipped++
@@ -234,7 +257,7 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 	GLOB.boot_created_settled = TRUE
 	. = 0
 	var/list/marked = list() // type -> held atoms of it that owe a first draw: what the boot will draw
-	var/same_as_map = 0 // of them, atoms of a type whose sampled draw showed what the map already shows
+	var/same_as_map = 0 // of the dropped, atoms with the inputs of a sample whose draw showed what the map already shows
 	for(var/type in buckets)
 		var/list/bucket = buckets[type]
 		var/empty = GLOB.type_look_stamp[type]
@@ -245,9 +268,11 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 			if(empty && type_look_stamped(A))
 				.++
 				continue
-			marked["[type]"]++
-			if(GLOB.type_look_noop_key[type])
+			if(type_look_noop_matches(A))
+				.++
 				same_as_map++
+				continue
+			marked["[type]"]++
 			refresh_mark(A, DEP_ALL)
 			A.refresh_queued |= DEP_CREATED
 	GLOB.boot_created_dropped += .
@@ -264,4 +289,4 @@ GLOBAL_VAR_INIT(boot_created_dropped, 0)
 		text += "; [best] x[marked[best]] [GLOB.type_look_stamp[text2path(best)] ? "(stamped, instances differ from the sample)" : "(draws something)"]"
 		marked -= best
 		shown++
-	log_world("boot release: [total] held atom(s) marked for a first draw ([same_as_map] of a type whose sampled draw left the sample as the map made it: candidates for a wider default look, if their draws name every input), [.] dropped without one. [text]")
+	log_world("boot release: [total] held atom(s) marked for a first draw ([same_as_map] of the dropped ones have the inputs of a sample whose draw left the map's look as it was), [.] dropped without a draw. [text]")
