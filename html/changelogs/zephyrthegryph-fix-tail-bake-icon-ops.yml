@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Limb facing splits of the layered body are baked off the main thread like tails; a bake whose asker was deleted is dropped instead of remembered as failed"

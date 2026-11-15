@@ -101,11 +101,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/human_baker)
 	var/list/request = pending[key]
 	set_pending_at(key, TRUE)
 	var/mob/living/carbon/human/asker = handle_get(request[1])
-	var/list/sprite
-	if(asker && !QDELETED(asker))
-		sprite = call(asker, request[2])(arglist(request[3]))
+	if(!asker || QDELETED(asker))
+		// The asker is gone: any other human waiting for the picture can build its description (a builder reads no state of the human).
+		asker = null
+		for(var/handle in waiters[key])
+			var/mob/living/carbon/human/waiting = handle_get(handle)
+			if(waiting && !QDELETED(waiting))
+				asker = waiting
+				break
+		if(!asker)
+			// Nobody is waiting: the request is dropped, not remembered as a failure (the next human to want the picture asks again).
+			remove_pending(key)
+			remove_waiters(key)
+			return pump_next()
+	var/list/sprite = call(asker, request[2])(arglist(request[3]))
 	if(!sprite)
-		finish(key, null, "no sprite (the asker is gone or its builder gave none)")
+		finish(key, null, "its builder gave no sprite")
 		return pump_next()
 	var/sheet = "hb_[md5(key)]"
 	human_bake_dir_ready()

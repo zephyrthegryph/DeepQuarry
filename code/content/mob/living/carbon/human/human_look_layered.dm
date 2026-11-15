@@ -85,20 +85,37 @@ GLOBAL_LIST_INIT(human_glass_matrix_values, list(0.302,0.302,0.302,0, 0.588,0.58
 	group.pixel_y = pixel_y
 	return look_composed_image(group, parts)
 
+/// The bake key of `state` of `file` reduced to `dirs` (the same picture a tail's facing split bakes, human_bake.dm).
+/proc/human_dirs_bake_key(file, state, list/dirs)
+	return "tail_dirs|[file]|[state]|[jointext(dirs, ",")]"
+
 /// `parts` drawn only facing `dirs`: each part's sprite reduced to those facings (a copy of the part, the same tint), as a tail is split by facing.
 /// An overlay made from it shows only while its holder faces one of `dirs`, so a body layered by facing needs no redraw when it turns.
-/// `cut`: the taur's leg cutter takes its share of each sprite too (the legs a taur's lower half stands in for).
+/// The reduced sprites are baked off the main thread (human_bake.dm; body_dirs_bake_token() asks for them and names their state in the body's cache key):
+/// null while one is still baking, and a bake that failed is built the old way. `cut`: the taur's leg cutter takes its share of each sprite too (the legs a
+/// taur's lower half stands in for); that sprite is one per taur and built once.
 /mob/living/carbon/human/proc/human_dirs_parts(list/parts, list/dirs, cut = FALSE)
 	READS_FROM()
 	. = list()
 	var/cutter = cut && body_taur_cuts()
 	for(var/image/part as anything in parts)
 		var/image/kept = image(part)
-		kept.icon = human_look_icon("limb_dirs|[part.icon]|[part.icon_state]|[jointext(dirs, ",")]|[cutter ? tail_style.type : ""]", "build_limb_dirs", part.icon, part.icon_state, dirs, cutter)
-		kept.icon_state = ""
+		if(cutter)
+			kept.icon = human_look_icon("limb_dirs|[part.icon]|[part.icon_state]|[jointext(dirs, ",")]|[tail_style.type]", "build_limb_dirs", part.icon, part.icon_state, dirs, TRUE)
+			kept.icon_state = ""
+		else
+			var/got = human_bake_get(human_dirs_bake_key(part.icon, part.icon_state, dirs))
+			if(got == HUMAN_BAKE_FAILED)
+				kept.icon = human_look_icon("limb_dirs|[part.icon]|[part.icon_state]|[jointext(dirs, ",")]|", "build_limb_dirs", part.icon, part.icon_state, dirs, FALSE)
+				kept.icon_state = ""
+			else if(!got)
+				return null // still baking: the body is drawn again when it lands
+			else
+				kept.icon = got
+				kept.icon_state = HUMAN_BAKE_STATE
 		. += kept
 
-/// One state of `file` with only its `dirs` facings drawn. A cache builder (human_dirs_parts()).
+/// One state of `file` with only its `dirs` facings drawn, built on the spot: a taur's leg (cut by the cutter), or a bake that failed. A cache builder (human_dirs_parts()).
 /mob/living/carbon/human/proc/build_limb_dirs(file, state, list/dirs, cut)
 	human_icon_op(3 + length(dirs))
 	var/icon/kept = icon_keep_dirs(icon(file, state), dirs)
@@ -106,6 +123,22 @@ GLOBAL_LIST_INIT(human_glass_matrix_values, list(0.302,0.302,0.302,0, 0.588,0.58
 	if(cutter)
 		kept.Blend(cutter[1], ICON_AND, x = cutter[2], y = cutter[3])
 	return kept
+
+/// Where the baked facings of the limbs the layered body splits by facing stand, one letter each (r ready, f failed, p pending), asking for those not asked
+/// yet. Part of the body's cache key, so the body is built again when a bake lands. A taur's cut legs are built on the spot and not named here.
+/mob/living/carbon/human/proc/body_dirs_bake_token(datum/look/look, skeleton, whole_transparent)
+	. = ""
+	var/cut = body_taur_cuts()
+	for(var/obj/item/organ/external/part in organs)
+		if(part.is_stump() || limb_hidden(part) || !(part.icon_position & (LEFT | RIGHT)))
+			continue
+		if(cut && (part.organ_tag in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
+			continue
+		var/far_dir = (part.icon_position & LEFT) ? EAST : WEST
+		for(var/image/shown as anything in part.layered_shown_parts(skeleton, whole_transparent))
+			for(var/list/dirs in list(list(far_dir), GLOB.cardinal - far_dir))
+				var/got = human_baked(look, human_dirs_bake_key(shown.icon, shown.icon_state, dirs), "tail_dirs_sprite", list(shown.icon, shown.icon_state, dirs))
+				. += got == HUMAN_BAKE_FAILED ? "f" : (got ? "r" : "p")
 
 /// The emissive blockers of `parts`: each part's shape, at `alpha`, shared by every colour of it.
 /proc/human_em_blocks(list/parts, alpha = 255)
@@ -150,8 +183,13 @@ GLOBAL_LIST_INIT(human_glass_matrix_values, list(0.302,0.302,0.302,0, 0.588,0.58
 			// The far limb goes under the body: the left one facing east, the right one facing west. The near copy shows in the other three facings.
 			var/far_dir = (part.icon_position & LEFT) ? EAST : WEST
 			var/cut_part = cut && (part.organ_tag in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT))
-			under = human_dirs_parts(layered, list(far_dir), cut_part) + under
-			parts += human_dirs_parts(layered, GLOB.cardinal - far_dir, cut_part)
+			var/list/far = human_dirs_parts(layered, list(far_dir), cut_part)
+			var/list/near = human_dirs_parts(layered, GLOB.cardinal - far_dir, cut_part)
+			if(far && near)
+				under = far + under
+				parts += near
+			else
+				parts += layered // its facings are still baking: the limb shows whole until they land
 		else if(part.icon_position & UNDER)
 			under = layered + under
 		else

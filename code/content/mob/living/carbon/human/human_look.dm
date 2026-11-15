@@ -204,7 +204,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	var/list/key_result = body_icon_key(look)
 	var/icon_key = "[key_result[1]][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
 	var/template = species.icon_template ? species.icon_template : 'icons/mob/human.dmi'
-	return human_look_icon("layered_body|[template]|[icon_key]", "build_layered_body_look", template, hulk, skeleton, husk, key_result[2])
+	return human_look_icon("layered_body|[template]|[icon_key]|[body_dirs_bake_token(look, skeleton, key_result[2])]", "build_layered_body_look", template, hulk, skeleton, husk, key_result[2])
 
 /// The body icon cache key from the species, skin, eyes and every visible part, and whether every part is transparent: list(key, whole icon
 /// transparent).
