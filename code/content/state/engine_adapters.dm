@@ -6,11 +6,17 @@
 		return FALSE
 	if(!draw_drain(src))
 		return FALSE
+	if(GLOB.boot_drain_boost)
+		boot_drain_boost_end()
 	if(over_tick_limit()) // the sweep and the staleness check are background work: they wait for a tick with room
 		return TRUE
 	refresh_sweep_step()
 	staleness_drain_step()
 	return TRUE
+
+/// The boot's first draws are left to the presentation lane (boot_drain_deferred()): it takes most of each tick until both queues are empty.
+/datum/time_scheduler/presentation_boosted()
+	return GLOB.boot_drain_boost
 
 /datum/native_watch/bind_native()
 	return SSvg.bind_datum(src)

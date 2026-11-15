@@ -215,3 +215,7 @@
 // The ASK_* re-check flags moved to code/defines/engine/kernel.dm (a request re-checks them when its answer arrives).
 
 
+
+/// The share of a pass the presentation lane takes while the boot's first draws are being made (presentation_boosted(): nobody is in the map yet, so the draws
+/// are the one thing worth the tick); the other lanes keep the rest.
+#define SCHED_BOOT_DRAW_SHARE 0.8
