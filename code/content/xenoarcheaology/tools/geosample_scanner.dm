@@ -23,6 +23,7 @@
 	density = TRUE
 	icon = 'icons/obj/virology.dmi'
 	icon_state = "analyser"
+	circuit = VARIANT(/obj/item/circuitboard/radiocarbon_spectrometer)
 
 	use_power = USE_POWER_IDLE
 
@@ -93,6 +94,8 @@ MSG_DEF_SELF(radiocarbon_spectrometer/no_item, "insert an item to scan")
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	configure(uses_power(idle = 20, active = 300))
 	reagents(100) // COOLANT_MAX (a file-local define the generated table cannot see)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))

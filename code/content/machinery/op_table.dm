@@ -6,12 +6,15 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
+	circuit = VARIANT(/obj/item/circuitboard/optable)
 	var/strapped = 0.0
 	var/obj/machinery/computer/operating/computer = null
 
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 /obj/machinery/optable/var/mob/living/carbon/human/victim
 CAPABILITIES(/obj/machinery/optable)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	configure(atom_rules(throwpass = 1))
 	configure(movable_motion(unacidable = TRUE))
 	configure(obj_rules(surgery_cleanliness = 100))

@@ -47,6 +47,8 @@
 		"slimetaser",
 		"slime_scanner",
 		"slime_grinder",
+		"slime_processor",
+		"monkey_processor",
 		// "xenobioconsole",
 		// "slime_scanner",
 		// "limbdesign_ethereal",

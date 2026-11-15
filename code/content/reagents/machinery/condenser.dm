@@ -12,6 +12,7 @@
 	anchored = FALSE
 	layer = ABOVE_WINDOW_LAYER
 	use_power = USE_POWER_IDLE
+	circuit = VARIANT(/obj/item/circuitboard/chem_condenser)
 	/// The container under the spout.
 	var/obj/item/reagent_containers/glass/held_container
 
@@ -20,6 +21,7 @@ CAPABILITIES(/obj/machinery/chem_condenser)
 	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(idle = 10))
 	owns_one(nameof(held_container), /obj/item/reagent_containers/glass)
+	default_parts()
 	op("place_container", item(/obj/item/reagent_containers/glass), label("Stand it under the spout"), needs(req(PROC_REF(spout_free))), then(PROC_REF(container_placed)))
 	op("remove_container", hand(), label("Take the container from the spout"), needs(req(PROC_REF(container_present), silent = TRUE)), then(PROC_REF(container_removed)))
 

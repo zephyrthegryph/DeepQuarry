@@ -32,7 +32,7 @@ GLOBAL_VAR_INIT(gaze_chunks_left, 0)
 /// How many observers hold the chunk (z, cx, cy).
 /proc/gaze_count(z, cx, cy)
 	var/list/grid = GLOB.gaze_grid
-	if(z > length(grid))
+	if(z < 1 || z > length(grid)) // z 0: the thing stands in nullspace (a fabricator makes its products there, a light that starts with them looks)
 		return 0
 	var/list/col = grid[z]
 	if(!col || cx + 1 > length(col))

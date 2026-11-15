@@ -134,17 +134,22 @@ MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 5 SECONDS, PROC_REF(crush_done), with = list(O))
 
-/obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
-	var/trash = 1 // Trash multiplier
-	var/list/modified_mats = list()
-	if(istype(O,/obj/item/trash)) // Trash multiplier
-		trash = 5 // Trash good
-	if(istype(O,/obj/item/stack))
+/// How many times its recorded materials breaking `O` down returns: a stack's amount (its materials are per unit), one for anything else. Never more than what
+/// it is made of, so no recycler returns more than the thing cost to make (code/tests/unit_tests/dq_fab_conservation_tests.dm).
+/proc/breakdown_units(obj/item/O)
+	if(istype(O, /obj/item/stack))
 		var/obj/item/stack/S = O
-		trash = S.amount
+		return S.amount
+	return 1
+
+/obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
+	var/units = breakdown_units(O)
+	var/list/modified_mats = list()
 	var/list/item_matter = O.material_totals()
 	for(var/mat in item_matter)
-		modified_mats[mat] = item_matter[mat] * effic_factor * trash // Trash multiplier
+		modified_mats[mat] = item_matter[mat] * effic_factor * units
+	if(GLOB.fab_trace)
+		log_world("FAB: [src] crushed [O] ([units] unit\s): [fab_matter_text(item_matter, effic_factor * units)] into debris")
 	var/turf/T = get_step(src, dir)
 	for(var/obj/item/debris_pack/D in turf_contents_of_type(T, /obj/item/debris_pack))
 		if(istype(D))

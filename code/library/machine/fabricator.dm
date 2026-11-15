@@ -239,9 +239,20 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 		return null
 	var/atom/movable/made = D.create_item(null, run.chosen)
 	split_materials_uniformly(run.needed, run.coefficient, made)
+	if(GLOB.fab_trace)
+		var/obj/recorded = made
+		log_world("FAB: [M] printed [made] from design [D.id]: paid [fab_matter_text(run.needed, run.coefficient)], recorded [istype(recorded) ? fab_matter_text(recorded.material_totals(), 1) : "nothing (not an object)"]")
 	fabricator_place(made, target, run, worth)
 	run.remaining--
 	return null
+
+/// A material list as text for the FAB trace: name amount, scaled.
+/proc/fab_matter_text(list/matter, scale)
+	var/list/parts = list()
+	for(var/key in matter)
+		var/datum/material/material = istype(key, /datum/material) ? key : get_material_by_name(key)
+		parts += "[istype(material) ? material.name : key] [round(matter[key] * scale)]"
+	return parts.Join(", ") || "nothing"
 
 /// A printed thing lands on `target`, a little off centre, carrying who made it.
 /proc/fabricator_place(atom/movable/made, turf/target, datum/fab_run/run, worth)

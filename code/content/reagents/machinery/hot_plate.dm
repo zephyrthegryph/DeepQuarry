@@ -15,6 +15,7 @@
 	anchored = FALSE
 	layer = ABOVE_WINDOW_LAYER
 	use_power = USE_POWER_IDLE
+	circuit = VARIANT(/obj/item/circuitboard/chem_hot_plate)
 	/// The temperature the dial is set to, K.
 	var/target_temp = T0C + 60
 	/// The element is on.
@@ -31,6 +32,7 @@ CAPABILITIES(/obj/machinery/chem_hot_plate)
 	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(idle = 5, active = HOT_PLATE_POWER))
 	owns_one(nameof(held_container), /obj/item/reagent_containers/glass)
+	default_parts()
 	started_work(step = PROC_REF(work_step), interval = 1 SECONDS, starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
 	op("place_container", item(/obj/item/reagent_containers/glass), label("Stand it on the plate"), needs(req(PROC_REF(plate_free))), then(PROC_REF(container_placed)))
 	op("hot_plate_radial", hand(), ungated(), label("Use"),

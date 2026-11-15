@@ -15,6 +15,7 @@
 	density = TRUE
 	anchored = FALSE
 	use_power = USE_POWER_OFF
+	circuit = VARIANT(/obj/item/circuitboard/icecream_vat)
 	flags = OPENCONTAINER | NOREACT
 
 	var/list/product_types
@@ -49,7 +50,8 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		add_product_types(5)
 
 CAPABILITIES(/obj/machinery/icecream_vat)
-	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	setup(PROC_REF(prepare_product_selections))
 	reagents(100, starts = list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
 	interface("IcecreamVat")

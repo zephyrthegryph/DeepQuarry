@@ -5,6 +5,7 @@
 	icon_state = "bunsen0"
 	/// Heat the flame puts into the burner and what sits on it, W.
 	var/heat_power = BUNSEN_HEAT_POWER
+	circuit = VARIANT(/obj/item/circuitboard/bunsen_burner)
 	var/obj/item/reagent_containers/held_container
 
 /obj/machinery/bunsen_burner/var/heating = FALSE
@@ -89,7 +90,8 @@
 /// Boils its container; runs while heating (declared).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/bunsen_burner)
-	configure(machine_rules(maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_WRENCH))
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	owns_one(nameof(held_container), /obj/item/reagent_containers)
 	op("place_container", item(/obj/item), label("Place container"), then(PROC_REF(interaction_place_container)))
 	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))
