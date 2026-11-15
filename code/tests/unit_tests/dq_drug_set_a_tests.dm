@@ -192,7 +192,7 @@
 	H.ingested.add_reagent(REAGENT_ID_CARTHATOLINE, 5)
 	H.bloodstr.add_reagent(REAGENT_ID_CARTHATOLINE, 5)
 	var/datum/reagent/R = H.bloodstr.get_reagent(REAGENT_ID_CARTHATOLINE)
-	R.affect_blood(H, null, 0.2)
+	R.apply_drawbacks(H, 0.2) // the purge is a declared drawback, applied by the metabolism after affect_blood
 	TEST_ASSERT_EQUAL(H.ingested.get_reagent_amount(REAGENT_ID_TRAMADOL), 0, "carthatoline flushed the swallowed tramadol")
 	TEST_ASSERT(H.ingested.get_reagent_amount(REAGENT_ID_CARTHATOLINE) > 0, "but not the carthatoline still on its way in")
 
