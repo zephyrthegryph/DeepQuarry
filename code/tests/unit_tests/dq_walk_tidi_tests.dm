@@ -323,3 +323,55 @@
 	if(A.cell)
 		qdel(A.cell)
 	test_driver_end()
+
+/// A crossing's stand upkeep and shape prefetch are filed, not done inside the call: a viewer with a budget finds each in its queue, the crossing's own work leaves the
+/// stands and the baker alone, and the upkeep timer does them a budgeted step a tick (live round 2026-11-14: crossings of 10-50 ms, 11-35 ms of it stands and shape sends).
+/datum/unit_test/dq_client_glow_holder_upkeep_is_budgeted
+
+/datum/unit_test/dq_client_glow_holder_upkeep_is_budgeted/Run()
+	test_driver_begin()
+	set_global(nameof(GLOB.client_glow_twin_lights), GLOB.client_glow_twin_lights) // the held light's twins are worked out in here; teardown restores the count
+	var/list/got = list()
+	client_glow_holder_setup(got)
+	var/obj/machinery/light/F = got[1]
+	var/datum/client_glow_holder/H = got[2]
+	var/datum/light_source/L = F.light
+	var/h = L.glow_holder_key || L.glow_holder_key()
+	var/list/entry = H.entry_of(L)
+	TEST_ASSERT_NOTNULL(entry, "the viewer holds the light")
+	var/image/glow_image = entry[1]
+	var/turf/wrong = locate(L.source_turf.x, L.source_turf.y + 3, L.source_turf.z)
+	TEST_ASSERT_NOTNULL(wrong, "a turf to misplace the glow on exists")
+	image_anchor(glow_image, wrong)
+	H.acquire_budget_ms = 0 // a step does one entry
+	var/steps = GLOB.client_glow_holder_upkeep_steps
+	var/moved = GLOB.client_glow_holder_stands_moved
+	H.stand_later(h)
+	TEST_ASSERT_NOTNULL(H.stand_queue, "the stand waits in the queue")
+	TEST_ASSERT_EQUAL(GLOB.client_glow_holder_stands_moved, moved, "the call itself moved no stand")
+	TEST_ASSERT_EQUAL(glow_image.loc, wrong, "the glow image stands where it stood")
+	test_time(1 SECONDS)
+	TEST_ASSERT_NULL(H.stand_queue, "the timer emptied the queue")
+	TEST_ASSERT(GLOB.client_glow_holder_stands_moved > moved, "and the stand moved")
+	TEST_ASSERT(GLOB.client_glow_holder_upkeep_steps > steps, "in a counted upkeep step")
+	// The shapes: a light that is not held is queued, not sent, and a step with no budget readies one.
+	H.drop(L)
+	H.prefetch_later(L)
+	TEST_ASSERT(length(H.prefetch_queue) == 1 || !L.glow_mask_key || L.glow_plain, "the shape waits in the queue")
+	var/before = GLOB.client_glow_baker.prefetched
+	var/queued = length(H.prefetch_queue)
+	H.upkeep_continue()
+	TEST_ASSERT(length(H.prefetch_queue) <= queued, "a step only takes entries off the queue")
+	TEST_ASSERT(GLOB.client_glow_baker.prefetched >= before, "the baker is asked only by the step")
+	var/worst = H.upkeep_worst_ms
+	test_time(1 SECONDS)
+	TEST_ASSERT_NULL(H.prefetch_queue, "the timer emptied the shape queue")
+	TEST_ASSERT(H.upkeep_worst_ms < 20 || H.upkeep_worst_ms == worst, "no upkeep step grew past the budget by more than one entry ([H.upkeep_worst_ms] ms)")
+	// A drop-all forgets what was waiting.
+	H.stand_later(h)
+	H.drop_all("test")
+	TEST_ASSERT_NULL(H.stand_queue, "a drop-all clears the stand queue")
+	spent(H)
+	client_lighting_set(FALSE)
+	SSlighting.light_step(0, TRUE)
+	test_driver_end()

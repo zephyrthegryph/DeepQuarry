@@ -186,7 +186,7 @@ do { \
 /// near the eye are followed once per tick (the lighting step).
 #define CLIENT_GLOW_SIGHT_INTERVAL (2 TICKS)
 /// Server milliseconds one step of a client holder's full scan (a login, a teleport) may spend before it leaves the rest of the chunks to the next ticks: nearest the eye first.
-#define CLIENT_GLOW_SCAN_BUDGET_MS 10
+#define CLIENT_GLOW_SCAN_BUDGET_MS 4
 /// Where the Rust baker writes baked shadow masks (it keeps them there, within a file and byte budget, until they enter the resource cache and after).
 #define CLIENT_GLOW_MASK_DIR "data/client_glow_masks/"
 /// Baked shadow masks kept; shapes asked for at once; bakes running at once.
