@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "Inspect is now its own tab beside Status and Actions, selected when you inspect something, instead of a card drawn over Status"

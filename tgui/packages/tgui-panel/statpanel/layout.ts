@@ -6,7 +6,14 @@
  * own name, so a new verb is never lost.
  */
 
-export type PanelView = 'Status' | 'Actions' | 'Game' | 'Staff' | 'Server';
+/** Inspect is not in the fixed lists below: it is a view only while the player has something inspected (viewsOf). */
+export type PanelView =
+  | 'Status'
+  | 'Actions'
+  | 'Game'
+  | 'Staff'
+  | 'Server'
+  | 'Inspect';
 
 /** The Server view's sub-pages. */
 export type ServerPage = 'Health' | 'Tools' | 'Queries';
@@ -164,7 +171,5 @@ export function dataTabOf(view: PanelView, server: ServerPage): string {
 
 /** Stat tabs drawn as a card over the current view instead of taking the panel over. */
 export function isOverlayTab(tab: string, turfName: string): boolean {
-  return (
-    tab === 'Examine' || tab === 'Inspect' || (!!turfName && tab === turfName)
-  );
+  return tab === 'Examine' || (!!turfName && tab === turfName);
 }
