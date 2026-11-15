@@ -62,8 +62,14 @@ GLOBAL_LIST_INIT(dq_limb_parents, list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_AR
 		up = GLOB.dq_limb_parents[up]
 	return null
 
+/// A taur body has no legs or feet of its own: those limbs stay Normal, and their saved setting is kept, not applied.
+/datum/preferences/proc/limb_taur_locked(limb)
+	if(limb != BP_L_LEG && limb != BP_R_LEG && limb != BP_L_FOOT && limb != BP_R_FOOT)
+		return FALSE
+	return has_taur_body()
+
 /// The wire shape of /datum/preference_editor/organs's build_ui_data() (an empty assoc list encodes as [] in JSON).
-UI_SCHEMA(pref_editor_organs, row(robotic_body = bool(), body_color = nullable(schema_text()), body_link = schema_text(), externals = map_of(schema_text(), row(status = enum(list("normal", "amputated", "cyborg")), model = nullable(schema_text()), color = nullable(schema_text()), own_color = bool(), forced_by = nullable(schema_text()), lost_via = nullable(schema_text()), link = schema_text())), internals = map_of(schema_text(), schema_text()), external_labels = map_of(schema_text(), schema_text()), internal_labels = map_of(schema_text(), schema_text()), external_order = list_of(schema_text()), internal_order = list_of(schema_text())))
+UI_SCHEMA(pref_editor_organs, row(robotic_body = bool(), body_color = nullable(schema_text()), body_link = schema_text(), externals = map_of(schema_text(), row(status = enum(list("normal", "amputated", "cyborg")), model = nullable(schema_text()), color = nullable(schema_text()), own_color = bool(), forced_by = nullable(schema_text()), lost_via = nullable(schema_text()), taur = bool(), link = schema_text())), internals = map_of(schema_text(), schema_text()), external_labels = map_of(schema_text(), schema_text()), internal_labels = map_of(schema_text(), schema_text()), external_order = list_of(schema_text()), internal_order = list_of(schema_text())))
 /// ...and of its build_ui_static_data().
 UI_SCHEMA(pref_editor_organs_static, row(limb_models = list_of(schema_text()), doll_regions = list_of(list_of(schema_any()))))
 
@@ -88,6 +94,7 @@ UI_SCHEMA(pref_editor_organs_static, row(limb_models = list_of(schema_text()), d
 			"own_color" = !!colors[name],
 			"forced_by" = forced_by,
 			"lost_via" = dq_limb_lost_through(organ_data, name),
+			"taur" = preferences.limb_taur_locked(name),
 			"link"   = dq_color_slot_type(stored_colors[name]) ? stored_colors[name] : "",
 		)
 	var/list/internals = list()
@@ -125,7 +132,7 @@ UI_SCHEMA(pref_editor_organs_static, row(limb_models = list_of(schema_text()), d
 	if(!(limb in TYPE_TABLE_GET(src, external_limb_labels)))
 		return PREF_UPDATE_REJECTED
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
-	if(dq_limb_lost_through(organ_data, limb) || (status == "normal" && dq_limb_forced_by(organ_data, limb)))
+	if(preferences.limb_taur_locked(limb) || dq_limb_lost_through(organ_data, limb) || (status == "normal" && dq_limb_forced_by(organ_data, limb)))
 		return PREF_UPDATE_REJECTED
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
 	var/list/colors = preferences.read_preference_raw(/datum/preference/limb_colors) || list()
@@ -212,7 +219,7 @@ UI_SCHEMA(pref_editor_organs_static, row(limb_models = list_of(schema_text()), d
 	if(!(model in GLOB.all_robolimbs))
 		return PREF_UPDATE_REJECTED
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
-	if(dq_limb_lost_through(organ_data, limb))
+	if(preferences.limb_taur_locked(limb) || dq_limb_lost_through(organ_data, limb))
 		return PREF_UPDATE_REJECTED
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
 	organ_data[limb] = "cyborg"

@@ -153,15 +153,20 @@ export const resolveWidget = (item: PrefWidgetItem): ResolvedWidget => {
 /// Rows whose control is short (a switch, a few buttons, a swatch) sit side by side in a wrapping line instead of
 /// each taking a row of the label grid.
 export const isInlineWidget = (item: PrefWidgetItem) =>
-  ['switch', 'segmented', 'color'].includes(resolveWidget(item));
+  ['switch', 'segmented', 'color'].includes(resolveWidget(item)) ||
+  INLINE_KEYS.has(item.key);
 
-/// A dropdown is as wide as its longest option (up to a cap), not the whole column.
+/// Rows that read as one line with their neighbour whatever their control (blood type beside blood colour).
+const INLINE_KEYS = new Set(['b_type']);
+
+/// A dropdown is as wide as its longest option (up to a cap), not the whole column; a list of short options (blood types) is narrow.
 const menuWidth = (choices: Array<[string, string]>) => {
   const longest = choices.reduce(
     (n, [, label]) => Math.max(n, label.length),
-    6,
+    0,
   );
-  return `min(100%, max(9em, calc(${longest}ch + 3.5em)), 24em)`;
+  if (longest <= 4) return 'min(100%, 6em)';
+  return `min(100%, max(9em, calc(${Math.max(longest, 6)}ch + 3.5em)), 24em)`;
 };
 
 export const PrefWidget = ({ item, onPick }: Props) => {

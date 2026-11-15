@@ -37,31 +37,29 @@ export const BirthdayEditor = ({
   const dayLabel =
     dayOptions.find((o) => o.value === dayVal)?.displayText ?? dayVal;
 
-  // One grid: the labels share a column and the two menus share a width, so Month and Day line up.
+  // One line: the Birthday label, then the month and the day menus.
   return (
     <Box
       style={{
-        display: 'grid',
-        gridTemplateColumns: 'max-content max-content',
-        columnGap: '0.75em',
-        rowGap: '0.3em',
+        display: 'flex',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.3em 0.75em',
       }}
     >
-      <Box color="label">Month</Box>
+      <Box color="label">Birthday:</Box>
       <Dropdown
-        width="11.667em"
+        width="9em"
         // A fixed menu size: sized to its content, the menu's own scrollbar changed that width every frame.
-        menuWidth="11.667em"
+        menuWidth="9em"
         selected={monthVal}
         displayText={monthLabel}
         options={monthOptions}
         onSelected={(v) => send('set_month', String(v))}
       />
-      <Box color="label">Day</Box>
       <Dropdown
-        width="11.667em"
-        menuWidth="11.667em"
+        width="5em"
+        menuWidth="5em"
         selected={dayVal}
         displayText={dayLabel}
         options={dayOptions}

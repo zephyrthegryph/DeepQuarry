@@ -8,8 +8,6 @@ import {
   Box,
   Button,
   Input,
-  Section,
-  Stack,
   Tooltip,
 } from 'tgui-core/components';
 import type { PrefEditorLanguageStatic } from '../../../generated/_schemas';
@@ -80,48 +78,48 @@ export const LanguagePicker = ({
     new Set([...selected, ...known]),
   );
   return (
-    <Stack vertical>
-      <Stack.Item>
-        <Section
-          title={
-            <Stack align="center">
-              <Stack.Item grow />
-              <Stack.Item>
-                <Box
-                  style={{
-                    padding: '0.167em 0.667em',
-                    borderRadius: '0.833em',
-                    backgroundColor:
-                      room === 0
-                        ? 'rgba(231,76,60,0.2)'
-                        : 'rgba(255,255,255,0.06)',
-                    color: room === 0 ? '#E74C3C' : '#fff',
-                    fontWeight: 'bold',
-                    fontSize: '0.85em',
-                  }}
-                >
-                  {selected.size} / {max} picked
-                </Box>
-              </Stack.Item>
-            </Stack>
-          }
+    <Box>
+      <Box
+        mb={1}
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '0.75em',
+        }}
+      >
+        <Label fontSize="0.85em" style={{ minWidth: 0 }}>
+          Pick up to{' '}
+          <Box inline bold color="white">
+            {max}
+          </Box>{' '}
+          alternate languages your character knows on top of their species
+          default. Green languages are known. To speak another in chat, type
+          its prefix.
+        </Label>
+        <Box
+          style={{
+            flex: '0 0 auto',
+            padding: '0.167em 0.667em',
+            borderRadius: '0.833em',
+            backgroundColor:
+              room === 0 ? 'rgba(231,76,60,0.2)' : 'rgba(255,255,255,0.06)',
+            color: room === 0 ? '#E74C3C' : '#fff',
+            fontWeight: 'bold',
+            fontSize: '0.85em',
+            whiteSpace: 'nowrap',
+          }}
         >
-          <Label mb={1} fontSize="0.85em">
-            Pick up to{' '}
-            <Box inline bold color="white">
-              {max}
-            </Box>{' '}
-            alternate languages your character knows on top of their species
-            default. Green languages are known. To speak another in chat, type
-            its prefix.
-          </Label>
+          {selected.size} / {max} picked
+        </Box>
+      </Box>
           {sortedLanguageEntries.length === 0 && (
             <Label italic>No language to pick.</Label>
           )}
           <Box
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(12em, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 17em), 1fr))',
               gap: '0.4em',
               alignItems: 'start',
             }}
@@ -140,9 +138,7 @@ export const LanguagePicker = ({
               />
             ))}
           </Box>
-        </Section>
-      </Stack.Item>
-    </Stack>
+    </Box>
   );
 };
 
@@ -175,6 +171,7 @@ const LanguageTile = ({
     <Box
       p={0.4}
       style={{
+        minWidth: 0,
         borderRadius: '0.333em',
         background: known ? 'rgba(46,204,113,0.1)' : 'rgba(255,255,255,0.03)',
         border: known
@@ -189,6 +186,9 @@ const LanguageTile = ({
           color={known ? 'good' : 'default'}
           selected={selected}
           style={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
             cursor: toggles ? 'pointer' : 'default',
             opacity: toggles || known ? 1 : 0.55,
           }}
@@ -211,7 +211,7 @@ const LanguageTile = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '0.3em',
-            flexWrap: 'wrap',
+            flexWrap: 'nowrap',
           }}
         >
           <LanguageKeyInput
@@ -271,12 +271,14 @@ const LanguageKeyInput = ({
     if (!why) send(act, 'set_key', { language: languageKey, key: value });
   };
   return (
-    <Box inline>
-      {problem && (
-        <Box inline color="bad" mr={0.5} fontSize="0.85em">
-          {problem}
-        </Box>
-      )}
+    <Box style={{ minWidth: 0 }}>
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'nowrap',
+        }}
+      >
       <Label inline mr={0.25}>
         Prefix
       </Label>
@@ -296,6 +298,12 @@ const LanguageKeyInput = ({
           tooltip={`Back to its own prefix (${defaultKey})`}
           onClick={() => send(act, 'reset_key', { language: languageKey })}
         />
+      )}
+      </Box>
+      {problem && (
+        <Box color="bad" fontSize="0.85em">
+          {problem}
+        </Box>
       )}
     </Box>
   );
