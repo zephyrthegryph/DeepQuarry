@@ -90,13 +90,10 @@ class Spec:
 
 
 def on_disk(root: str) -> list[str]:
-    out = []
-    for d, dirs, names in os.walk(os.path.join(root, "code", "tests")):
-        dirs.sort()
-        for n in names:
-            if n.endswith(".dm"):
-                out.append(os.path.relpath(os.path.join(d, n), root).replace("\\", "/"))
-    return sorted(out, key=gen_dme.path_key)
+    """The .dm files under code/tests (one directory listing, with the stat that comes with it; `generate` asks several times)."""
+    import dm_filecache
+
+    return sorted((rel for rel, _full, _size, _mtime in dm_filecache.walk(os.path.join(root, "code", "tests"), root)), key=gen_dme.path_key)
 
 
 def listed(root: str, agg: str) -> list[str]:
@@ -118,9 +115,10 @@ def generate(root: str = ROOT, spec_text: str | None = None) -> dict[str, str]:
         with open(os.path.join(root, SPEC), encoding="utf-8") as fh:
             spec_text = fh.read()
     spec = Spec(spec_text)
-    files = [f for f in on_disk(root) if f not in (TESTS, UNIT) and f not in spec.exclude]
+    everything = on_disk(root)
+    files = [f for f in everything if f not in (TESTS, UNIT) and f not in spec.exclude]
     stale = [f"{SPEC}:{n}: `{k} {g}` matches no file" for n, k, g in spec.rules
-             if not any(gen_dme.glob_re(g).match(f) for f in on_disk(root))]
+             if not any(gen_dme.glob_re(g).match(f) for f in everything)]
     if stale:
         raise gen_dme.SpecError("a stale rule (drop or update it):\n  " + "\n  ".join(stale))
     recorded = listed(root, TESTS) + listed(root, UNIT)

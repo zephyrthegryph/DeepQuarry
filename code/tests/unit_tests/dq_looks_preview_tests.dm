@@ -7,6 +7,10 @@
 	P.dress_preview_mob(mannequin)
 	mannequin.set_dir(SOUTH)
 	draw_now(mannequin)
+	// A tail that shows in some facings only is left out of the draw until its facings are baked (tail_part()): wait for them, and the landing redraws the mannequin.
+	var/deadline = world.time + 10 SECONDS
+	UNTIL(!length(GLOB.human_baker.pending) || world.time > deadline)
+	draw_now(mannequin)
 	var/datum/dq_preview_flattener/flattener = new
 	var/list/flat = flattener.flatten(mannequin, SOUTH)
 	return "[json_encode(flat)]|[flattener.unsupported]"

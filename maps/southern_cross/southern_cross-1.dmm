@@ -18113,12 +18113,6 @@
 /obj/structure/closet/emcloset,
 /turf/simulated/floor/plating,
 /area/maintenance/firstdeck/aftstarboard)
-"aLx" = (
-/obj/effect/landmark{
-	name = "JoinLateTeleporter"
-	},
-/turf/simulated/floor/tiled,
-/area/teleporter)
 "aLy" = (
 /obj/machinery/light{
 	dir = 8
@@ -22423,15 +22417,6 @@
 "aTW" = (
 /turf/simulated/floor/tiled/monotile,
 /area/security/checkpoint3)
-"aTX" = (
-/obj/effect/landmark{
-	name = "JoinLateTeleporter"
-	},
-/obj/structure/extinguisher_cabinet{
-	pixel_x = -28
-	},
-/turf/simulated/floor/tiled,
-/area/teleporter)
 "aTY" = (
 /obj/machinery/firealarm{
 	dir = 8;
@@ -24287,6 +24272,18 @@
 	},
 /turf/simulated/floor/tiled,
 /area/security/prison)
+"aXg" = (
+/obj/effect/landmark{
+	name = "JoinLateTeleporter"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 10
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 10
+	},
+/turf/simulated/floor/tiled,
+/area/hallway/primary/thirddeck/central)
 "aXh" = (
 /turf/simulated/wall,
 /area/security/prison)
@@ -32330,6 +32327,14 @@
 /obj/machinery/door/firedoor/glass,
 /turf/simulated/floor/plating,
 /area/engineering/atmos)
+"bkK" = (
+/obj/effect/landmark{
+	name = "JoinLateTeleporter"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
+/obj/machinery/atmospherics/pipe/simple/hidden/supply,
+/turf/simulated/floor/tiled,
+/area/hallway/primary/thirddeck/central)
 "bkL" = (
 /obj/machinery/atmospherics/pipe/simple/visible/cyan,
 /obj/effect/wingrille_spawn/reinforced,
@@ -45353,6 +45358,18 @@
 /obj/machinery/door/firedoor/border_only,
 /turf/simulated/floor/plating,
 /area/rnd/mixing)
+"bJw" = (
+/obj/effect/landmark{
+	name = "JoinLateTeleporter"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
+/turf/simulated/floor/tiled,
+/area/hallway/primary/thirddeck/central)
 "bJB" = (
 /obj/machinery/atmospherics/portables_connector{
 	dir = 4
@@ -174294,6 +174311,7 @@ aaa
 aaa
 aaa
 "}
+
 (1,1,2) = {"
 aaa
 aaa
@@ -208598,8 +208616,8 @@ bWG
 bZO
 cbH
 ceM
-aTX
-aLx
+chU
+bYj
 dMr
 bWD
 dxo
@@ -208855,7 +208873,7 @@ bWD
 cbe
 cbJ
 ceN
-aLx
+bYj
 cny
 ecF
 bWD
@@ -239829,6 +239847,7 @@ aaa
 aaa
 aaa
 "}
+
 (1,1,3) = {"
 aaa
 aaa
@@ -273876,7 +273895,7 @@ dFH
 dFX
 dGq
 dFs
-dHg
+bJw
 dHB
 dIf
 dIU
@@ -274133,8 +274152,8 @@ dFs
 dOJ
 dGr
 dFs
-dHk
-dHA
+aXg
+bkK
 dHA
 dIV
 dJK

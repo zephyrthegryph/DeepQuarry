@@ -17,6 +17,21 @@ if [ ! -d "$TS/.git" ] && [ ! -f "$TS/.git" ]; then
 	mkdir -p "$TS/data/player_saves"
 fi
 
+# Self-update. The server is started from the main checkout, which agents never write and nothing updates, so its copy of this script is
+# old by design: after the fetch, when origin/master's copy of it differs from the one running, run that one instead (extracted with git
+# show into E:/dq-cache/test-server-self, never into a checkout) so a change to the start path (the verdigris profile below) takes effect
+# on the next restart. DQ_TS_SELF=1 marks the re-run; DQ_TS_NO_SELF_UPDATE=1 turns it off.
+if [ -z "${DQ_TS_SELF:-}" ] && [ -z "${DQ_TS_NO_SELF_UPDATE:-}" ] && [ -d "$TS" ]; then
+	git -C "$TS" fetch -q origin 2>/dev/null
+	fresh="$(git -C "$TS" show origin/master:tools/dq_test_server.sh 2>/dev/null | tr -d '\r')"
+	mine="$(tr -d '\r' <"${BASH_SOURCE[0]}")"
+	if [ -n "$fresh" ] && [ "$fresh" != "$mine" ]; then
+		SELF_DIR="${DQ_TS_SELF_DIR:-E:/dq-cache/test-server-self}"
+		mkdir -p "$SELF_DIR" && printf '%s\n' "$fresh" >"$SELF_DIR/dq_test_server.sh.$$" && mv -f "$SELF_DIR/dq_test_server.sh.$$" "$SELF_DIR/dq_test_server.sh" \
+			&& { echo "dq_test_server: origin/master has a newer copy of this script; running it ($SELF_DIR/dq_test_server.sh)"; DQ_TS_SELF=1 exec bash "$SELF_DIR/dq_test_server.sh" "$@"; }
+	fi
+fi
+
 update=1
 args=()
 for a in "$@"; do case "$a" in --no-update) update=0 ;; *) args+=("$a") ;; esac; done
