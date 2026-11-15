@@ -42,6 +42,9 @@ CAPABILITIES(/obj/item/stack/material)
 
 /obj/item/stack/material/proc/stack_material_setup()
 	randpixel_xy()
+	// A stack made in a shipment being unpacked, or on an expedition site's level, is a lot of its own (a lot a smelter set already stands).
+	if(isnull(lot_key))
+		lot_key = trace_lot_at(src)
 
 	set_recipes(material.get_recipes())
 	set_stacktype(material.stack_type)

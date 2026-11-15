@@ -9,6 +9,23 @@
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle-3"
 
+// The stock is not clean: it carries the traces its source was rolled with, a mild (Pharma-grade) mix of the source's signature and a few extras (chem_source_profile(),
+// code/domains/world_model/reagents/trace_sources.dm). The bottles of the lab's closet are one source for the round; a bottle that came in a cargo shipment (or on an expedition
+// site's level) is that lot's. Hidden until a scanner reads the beaker; every roll is logged.
+CAPABILITIES(/obj/item/reagent_containers/glass/bottle/precursor)
+	setup(PROC_REF(roll_stock_traces))
+
+/// The bottle's contents are re-poured as stock with its source's traces: the stock a little under the bottle's volume, the traces beside it.
+/obj/item/reagent_containers/glass/bottle/precursor/proc/roll_stock_traces()
+	var/list/stock = list()
+	for(var/datum/reagent/R as anything in reagents.reagent_list)
+		stock[R.id] = R.volume
+	reagents.clear_reagents()
+	var/lot = trace_lot_at(src)
+	var/source_key = lot || "precursor stock"
+	for(var/stock_id in stock)
+		reagents.add_sourced_reagent(stock_id, stock[stock_id], chem_source_profile(stock_id, source_key, GRADE_PHARMA))
+
 /obj/item/reagent_containers/glass/bottle/precursor/phenol
 	name = "phenol bottle"
 	prefill = list(REAGENT_ID_PHENOL = 60)

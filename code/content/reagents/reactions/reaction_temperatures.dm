@@ -48,6 +48,7 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 		/transformation/chem/instant/titanium_oxidation,
 		/transformation/chem/instant/hydrophoron,
 		/transformation/chem/instant/deuterium,
+		/transformation/chem/instant/silicate_from_silicon,
 	),
 	REACTION_TEMP_WARM = list(
 		/transformation/chem/instant/couplingagent,

@@ -38,6 +38,9 @@
 #define REAGENTS_PER_ORE 20
 #define REAGENTS_PER_LOG 40
 #define REAGENTS_PER_HULL 40
+/// Units an item with no recorded materials grinds into, per point of its size (w_class), when it has a hand-written feedstock row (an item that has materials
+/// grinds into what they are worth, never more: code/content/refinery/grinding.dm item_feedstock()).
+#define GRIND_ITEM_UNITS_PER_SIZE 1
 
 // STAT_ANTIMICROBIAL levels
 #define ANTIBIO_NORM	1

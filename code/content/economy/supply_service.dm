@@ -724,6 +724,8 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 		else
 			contains = SP.contains
 
+		// What is unpacked from this shipment is one lot: its stacks and stocked bottles are rolled with the traces of order #[SO.ordernum] (trace_roll(), logged).
+		trace_lot_begin("shipment [SO.ordernum]")
 		for(var/typepath in contains)
 			if(!typepath)
 				continue
@@ -740,6 +742,8 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 
 				if(slip)
 					slip.set_info(slip.info + ("<li>[B2.name]</li>")) //add the item to the manifest
+
+		trace_lot_end()
 
 		//manifest finalisation
 		if(slip)

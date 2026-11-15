@@ -5,13 +5,27 @@
 	w_class = ITEMSIZE_SMALL
 	var/datum/geosample/geologic_data
 	var/material
+	/// The vein this ore lies in (the level and the eight-tile block it was found in, and its kind): one vein carries one set of rolled traces, found when the ore is
+	/// ground or smelted (trace_roll(), code/domains/world_model/reagents/trace_sources.dm). Hidden until assayed.
+	var/lot_key
 
 CAPABILITIES(/obj/item/ore)
+	setup(PROC_REF(assign_lot))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(item_handling(randpixel = 8))
 	owns_one(nameof(geologic_data), /datum/geosample)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/// The vein this ore came out of, named by where it lies: a lot of its own for the traces.
+/obj/item/ore/proc/assign_lot()
+	var/turf/here = get_turf(src)
+	lot_key = here ? "vein [here.z]:[round(here.x / 8)]:[round(here.y / 8)] [material]" : "loose [material]"
+
+/// The source this ore's traces are rolled as: the material it smelts to, else the reagent it grinds to, else its own name.
+/obj/item/ore/proc/trace_source_id()
+	var/datum/ore/data = GLOB.ore_data[material]
+	return data?.smelts_to || data?.reagent || material
 
 /obj/item/ore/archeology_debris
 	name = "rocky debris"

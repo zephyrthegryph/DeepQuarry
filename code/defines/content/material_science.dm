@@ -85,6 +85,17 @@
 #define MATERIAL_PROCESS_SOLUTION_TREAT "solution treat"
 #define MATERIAL_PROCESS_ANNEAL "anneal"
 
+/// Refining a melt with the shared chemistry processes (code/content/materials/engineering/material_traces.dm): reduce is smelting, oxidise roasting, displace
+/// fluxing, electrolyse electrorefining, and a hard vacuum degasses. Each takes a trace down to its own floor (a percent of the batch), never to nothing.
+#define MATERIAL_REFINE_SMELT "smelt"
+#define MATERIAL_REFINE_ROAST "roast"
+#define MATERIAL_REFINE_FLUX "flux"
+#define MATERIAL_REFINE_ELECTRO "electrorefine"
+#define MATERIAL_REFINE_DEGAS "degas"
+/// Joules the furnace's current takes to electrorefine a charge, and the moles of oxygen a chamber needs for a roast (ordinary air holds about 4).
+#define MATERIAL_ELECTROREFINE_ENERGY 200000
+#define MATERIAL_ROAST_OXYGEN 8
+
 /// A spectrometer reading: the one assay, it reveals the traces in a stack or lot.
 #define MATERIAL_TEST_SPECTROMETRY "spectrometry"
 

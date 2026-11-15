@@ -7,6 +7,4 @@
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 10
 	volume = 250
-
-CAPABILITIES(/obj/item/reagent_containers/spray/luminol)
-	configure(reagents(add = list(REAGENT_ID_LUMINOL = 250)))
+	starting_fill = list(REAGENT_ID_LUMINOL = 250)

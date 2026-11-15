@@ -201,6 +201,8 @@ CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
 	conductivity = 31
 	heat_resistance = 100
 	supply_conversion_value = 3
+	// A solid metal catalyst that does not sinter: the one that runs the high-temperature crack and reduce (CHEM_CATALYST_SOLID_REFRACTORY).
+	traits = list(MT_CATALYTIC = 55)
 
 /datum/material/technical_ceramic
 	name = MAT_TECH_CERAMIC

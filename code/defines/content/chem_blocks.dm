@@ -100,6 +100,10 @@
 #define CHEM_CATALYST_SOLID_METAL "solid_metal"
 /// A sheet of a porous catalytic material (a solid acid) lying in the container.
 #define CHEM_CATALYST_SOLID_ACID "solid_acid"
+/// A sheet of a heat-resistant catalytic metal (tungsten): it does everything a solid metal does and also runs the high-temperature crack and reduce that melt or sinter any other.
+#define CHEM_CATALYST_SOLID_REFRACTORY "solid_refractory"
+/// A catalytic metal whose heat resistance (its card stat) is at least this is refractory.
+#define CHEM_REFRACTORY_HEAT 90
 /// An enzyme in the mixture: works at gentle heat, leaves biological residue.
 #define CHEM_CATALYST_ENZYME "enzyme"
 /// A process chemical poured in (hydride, a strong oxidiser, ...): it is the process, consumed; less selective, leaves its own residue (agents.dm).

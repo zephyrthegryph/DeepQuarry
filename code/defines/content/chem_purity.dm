@@ -103,3 +103,19 @@
 #define REACTION_TEMP_STATE_COLD -1
 #define REACTION_TEMP_STATE_HOT 1
 #define REACTION_TEMP_STATE_OUT 2
+
+// ---- Rolled traces (code/domains/world_model/reagents/trace_sources.dm) ----
+
+/// A roll's scope: one roll for the whole round (station stock, the dispenser's cartridges, the lab's bottles), or one per lot (an ore vein, a cargo shipment, an expedition site).
+#define TRACE_SCOPE_ROUND "round"
+#define TRACE_SCOPE_LOT "lot"
+/// The key of the round-wide roll.
+#define TRACE_KEY_STATION "station"
+/// The source a thing with no entry of its own is rolled as.
+#define TRACE_SOURCE_DEFAULT "default"
+/// Sheets of a trace per sheet of stock for a signature contaminant at full strength (a rolled strength is 0.3 to 1.2 of it).
+#define TRACE_SHEET_SHARE 0.02
+/// A lot is dirtier than station stock by this factor (raw ore carries more than refined stock).
+#define TRACE_LOT_DIRT 1.6
+/// Units of a contaminant that come out of one ground ore at full strength.
+#define TRACE_ORE_UNITS 0.8

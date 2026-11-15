@@ -96,7 +96,7 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/reduce
 	id = CHEM_PROCESS_REDUCE
 	name = "Reduce"
-	desc = "Hydrogen takes a carboxyl to a carbonyl, a carbonyl to a hydroxyl, a nitro to an amine and a hydroxyl off altogether, giving up water."
+	desc = "Hydrogen takes a carboxyl to a carbonyl, a carbonyl to a hydroxyl, a nitro to an amine and a hydroxyl off altogether, giving up water. Hot enough, a sheet of tungsten (the one catalyst that does not sinter) takes a hydroxyl off cleanly."
 	kinds = list(CHEM_CATALYST_SOLID_METAL, CHEM_CATALYST_NONE)
 	band_class = REACTION_TEMP_HOT
 
@@ -116,6 +116,8 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	T = S.swap_group(CHEM_GROUP_HYDROXYL, null)
 	if(T && !S.has_core(CHEM_CORE_PHORON_LATTICE)) // phoron is mined, not reduced out of a medicine
 		. += chem_variant(list(substrate_id), list(T), list(REAGENT_ID_HYDROGEN = 1), list(REAGENT_ID_WATER = 1))
+		// The high-temperature arm: only a refractory metal (tungsten) holds its activity this hot, and it runs clean.
+		. += chem_variant(list(substrate_id), list(T), list(REAGENT_ID_HYDROGEN = 1), list(REAGENT_ID_WATER = 1), null, list(CHEM_CATALYST_SOLID_REFRACTORY), null, chem_band_of(REACTION_TEMP_VIOLENT))
 
 // ---- halogenate ----
 
@@ -323,8 +325,8 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/crack
 	id = CHEM_PROCESS_CRACK
 	name = "Crack"
-	desc = "Heat breaks a long chain into a short one. It leaves tar, more of it without a solid acid."
-	kinds = list(CHEM_CATALYST_NONE, CHEM_CATALYST_SOLID_ACID)
+	desc = "Heat breaks a long chain into a short one. It leaves tar, more of it without a solid acid, and least over a sheet of tungsten (hot enough that nothing else holds its activity)."
+	kinds = list(CHEM_CATALYST_NONE, CHEM_CATALYST_SOLID_ACID, CHEM_CATALYST_SOLID_REFRACTORY)
 	band_class = REACTION_TEMP_VIOLENT
 
 /datum/chem_process/crack/chem_variants(substrate_id, datum/chem_structure/S, datum/chem_gen/G)
@@ -334,7 +336,7 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 		. += chem_variant(list(substrate_id), list(T))
 
 /datum/chem_process/crack/fallout(kind, datum/chem_structure/S, temperature)
-	return list(REAGENT_ID_CONTAMINANT_TAR = (kind == CHEM_CATALYST_NONE ? 0.1 : 0.03))
+	return list(REAGENT_ID_CONTAMINANT_TAR = (kind == CHEM_CATALYST_NONE ? 0.1 : (kind == CHEM_CATALYST_SOLID_REFRACTORY ? 0.015 : 0.03)))
 
 // ---- neutralise ----
 

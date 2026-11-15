@@ -12,6 +12,13 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	var/spray_size = 3
 	var/static/list/spray_sizes = list(1,3)
 	volume = 250
+	/// What it comes full of, reagent id => units (null: empty). This is the whole difference between a bottle of cleaner, of weed killer and of sterilizine: a spray bottle is
+	/// one refillable container, a starting fill and a label (doc/rewrite/proposals/chemistry_recipes.md section 11c). Empty it and fill it with anything else, and label it with a pen.
+	var/list/starting_fill
+	/// The label a pen wrote on it (empty: the bottle's own name stands).
+	var/label_text = ""
+	var/base_name
+	var/base_desc
 
 // A spray bottle sprays one amount at what it is clicked on, near or far (a puff of it at the floor and at the air, a splash over a dense thing next to
 // the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
@@ -26,10 +33,15 @@ CAPABILITIES(/obj/item/reagent_containers/spray)
 		spray = TRUE,
 		settable = FALSE,
 		shows_contents = FALSE,
+		starts = nameof(starting_fill),
 		transfer_default = nameof(amount_per_transfer_from_this),
 		taps = list(/obj/structure/reagent_dispensers),
 		rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart))
+	setup(PROC_REF(remember_base_text))
 	op("empty", menu(), label("Empty Spray Bottle"), confirms("Are you sure you want to empty that?"), then(PROC_REF(emptied)))
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:"), step = "label"), \
+		needs(req_answer(PROC_REF(label_refusal), step = "label")), then(PROC_REF(label_applied)))
 	examine_line(PROC_REF(units_left))
 	extend("reagent_container.spray", reach(REACH_ANY), then(PROC_REF(spray_logged)))
 
@@ -59,6 +71,33 @@ MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 		log_and_message_admins("fired Space lube from \a [src].", A.actor)
 	return OP_OK
 
+/// The bottle's own name and description, which a label is written over.
+/obj/item/reagent_containers/spray/proc/remember_base_text()
+	base_name = name
+	base_desc = desc
+
+/// The label the pen wrote, cleaned the way it is kept (empty when it wrote nothing).
+/obj/item/reagent_containers/spray/proc/label_written(datum/act/op/A)
+	return sanitizeSafe("[A.step_value("label")]", MAX_NAME_LEN) || ""
+
+/// A label of more than 50 letters is refused (the same limit as a glass container's).
+/obj/item/reagent_containers/spray/proc/label_refusal(datum/act/op/A)
+	return length(label_written(A)) > 50 ? MSG(glass/label_too_long) : null
+
+/// The pen wrote a label: the bottle is named for it (the name shows 20 letters), or goes back to its own name when it is empty.
+/obj/item/reagent_containers/spray/proc/label_applied(datum/act/op/A)
+	label_text = label_written(A)
+	if(label_text == "")
+		name = base_name
+		desc = base_desc
+	else
+		name = "[base_name] ([length(label_text) > 20 ? "[copytext(label_text, 1, 21)]..." : label_text])"
+		desc = "[base_desc] It is labeled \"[label_text]\"."
+	balloon_alert(A.actor, label_text == "" ? "label cleared" : "label set")
+	if(GLOB.chem_trace)
+		log_world("CHEM: [A.actor] labelled [src] \"[label_text]\" (holds [reagents.get_reagents()])")
+	return OP_OK
+
 /// How much is left, to whoever holds it.
 /obj/item/reagent_containers/spray/proc/units_left(datum/act/op/A)
 	if(loc != A.actor)
@@ -78,21 +117,18 @@ MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 /obj/item/reagent_containers/spray/cleaner
 	name = "space cleaner"
 	desc = "BLAM!-brand non-foaming space cleaner!"
+	starting_fill = list(REAGENT_ID_CLEANER = 250)
 
 /obj/item/reagent_containers/spray/cleaner/drone
 	name = "space cleaner"
 	desc = "BLAM!-brand non-foaming space cleaner!"
 	volume = 50
-
-CAPABILITIES(/obj/item/reagent_containers/spray/cleaner)
-	configure(reagents(add = list(REAGENT_ID_CLEANER = nameof(volume))))
+	starting_fill = list(REAGENT_ID_CLEANER = 50)
 
 /obj/item/reagent_containers/spray/sterilizine
 	name = REAGENT_ID_STERILIZINE
 	desc = "Great for hiding incriminating bloodstains and sterilizing scalpels."
-
-CAPABILITIES(/obj/item/reagent_containers/spray/sterilizine)
-	configure(reagents(add = list(REAGENT_ID_STERILIZINE = nameof(volume))))
+	starting_fill = list(REAGENT_ID_STERILIZINE = 250)
 
 /obj/item/reagent_containers/spray/pepper
 	name = "pepperspray"
@@ -102,12 +138,12 @@ CAPABILITIES(/obj/item/reagent_containers/spray/sterilizine)
 	item_state = "pepperspray"
 	max_transfer_amount = null
 	volume = 40
+	starting_fill = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40)
 	var/safety = TRUE
 
 // The pepper spray has a safety, worked in hand: while it is on nothing comes out. It is loaded with 40 units of condensed capsaicin.
 CAPABILITIES(/obj/item/reagent_containers/spray/pepper)
 	configure(item_handling(center_x = 16, center_y = 16))
-	configure(reagent_container(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40)))
 	op("safety", in_hand(), label("Toggle safety"), toggles(nameof(safety)), then(PROC_REF(safety_toggled)))
 	examine_line(PROC_REF(safety_text))
 	extend("reagent_container.spray", needs(req_is(nameof(safety), FALSE, because = MSG(spray/safety_on))))
@@ -178,9 +214,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer)
 	icon_state = "plantbgone"
 	item_state = "plantbgone"
 	volume = 100
-
-CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
-	configure(reagent_container(starts = list(REAGENT_ID_PLANTBGONE = 100)))
+	starting_fill = list(REAGENT_ID_PLANTBGONE = 100)
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed
 	name = "hose nozzle"
@@ -280,6 +314,4 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
 	item_state = "spraycan"
 	max_transfer_amount = null
 	volume = 80
-
-CAPABILITIES(/obj/item/reagent_containers/spray/windowsealant)
-	configure(reagent_container(starts = list(REAGENT_ID_SILICATE = 80)))
+	starting_fill = list(REAGENT_ID_SILICATE = 80)

@@ -547,9 +547,15 @@
 	for(var/box_type in list(/obj/item/storage/box/precursors_inorganic, /obj/item/storage/box/precursors_ring, /obj/item/storage/box/precursors_bio))
 		var/obj/item/storage/box/B = allocate(box_type, test_floor())
 		for(var/obj/item/reagent_containers/glass/bottle/bottle in B.contents)
-			TEST_ASSERT_EQUAL(length(bottle.reagents.reagent_list), 1, "[bottle] holds one chemical")
-			var/datum/reagent/R = bottle.reagents.reagent_list[1]
-			TEST_ASSERT(dq_blk_near(R.volume, 60), "[bottle] is full")
+			// The stock carries the traces its source was rolled with (a mild mix): the one chemical is what is not a contaminant, and the bottle is full of it and them.
+			var/datum/reagent/R
+			for(var/datum/reagent/part as anything in bottle.reagents.reagent_list)
+				if(!istype(part, /datum/reagent/contaminant))
+					TEST_ASSERT_NULL(R, "[bottle] holds one chemical")
+					R = part
+			TEST_ASSERT_NOTNULL(R, "[bottle] holds its chemical")
+			TEST_ASSERT(dq_blk_near(bottle.reagents.total_volume, 60), "[bottle] is full")
+			TEST_ASSERT(bottle.reagents.purity() >= PURITY_PHARMA - PURITY_EPSILON, "[bottle] is a Pharma-grade mix at worst")
 			found += R.id
 	for(var/id in expected)
 		TEST_ASSERT(id in found, "a bottle of [id] is in the boxes")

@@ -57,7 +57,7 @@
 	// Needs to be sheet, ore, or grindable reagent containing things
 	if(LAZYLEN(O.tool_qualities)) // Stops messages about the wrench being unsuitable to grind
 		return OP_OK
-	if(!grinding_rule_for(O.type) && (!O.reagents || !O.reagents.total_volume))
+	if(!item_grindable(O))
 		to_chat(user, "\The [O] is not suitable for blending.")
 		return OP_OK
 
@@ -111,7 +111,7 @@
 		return FALSE
 	if(ismob(AM)) // No mob bumping YET
 		return FALSE
-	if(!grinding_rule_for(AM.type) && (!AM.reagents || !AM.reagents.total_volume))
+	if(!item_grindable(AM))
 		return FALSE
 	move_into(src, nameof(src.holdingitems), AM)
 	return TRUE

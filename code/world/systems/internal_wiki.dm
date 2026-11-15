@@ -388,7 +388,7 @@ SCHEMA(/datum/system/internal_wiki, highest_cached_donator, schema_text())
 	var/grind_list = list()
 	var/list/display_reactions = list()
 	for(var/datum/xform/grind as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_GRINDING))
-		if(grind.takes[1][1] != XCUR_ITEM)
+		if(grind.takes[1][1] != XCUR_ITEM || !ispath(grind.takes[1][2], /obj/item/ore))
 			continue
 		var/obj/item/ore/O = grind.takes[1][2]
 		if(R.id in grind.grind_ids())

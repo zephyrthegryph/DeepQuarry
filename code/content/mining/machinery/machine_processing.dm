@@ -206,6 +206,8 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	var/tmp/obj/machinery/mineral/console
 	var/sheets_per_tick = 10
 	var/list/ores_processing
+	/// Ore kind -> the lot of the last loose ore of it taken in (what the sheets smelted from it are rolled as); ore that came in a box or a chunk has no lot of its own.
+	var/list/ore_lots
 	var/list/ores_stored = list() // ALLOW(instance_list): d: filled in New() with an entry per ore
 	active = FALSE
 
@@ -318,6 +320,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 			continue
 		if(!isnull(ores_stored[ore_material]))
 			ores_stored[ore_material]++
+			LAZYSET(ore_lots, ore_material, O.lot_key)
 			set_points(points + ((ore_values[ore_material]*points_mult)))
 
 	//Process our stored ores and spit out sheets.
@@ -392,7 +395,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 				for(var/i=0,i<can_make,i++)
 					ores_stored[metal]--
 					sheets++
-					new M.stack_type(output_marker().loc)
+					lot_stack_new(M.stack_type, output_marker().loc, LAZYACCESS(ore_lots, metal))
 			else
 				ores_stored[metal]--
 				sheets++

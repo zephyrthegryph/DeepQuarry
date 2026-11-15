@@ -86,11 +86,14 @@ CAPABILITY_DEF(glass_purification, CAP_GLASS_PURIFICATION, key = NONE)
 /obj/item/reagent_containers/glass/proc/catalyst_activity()
 	return catalyst?.material ? clamp(catalyst.material.trait(MT_CATALYTIC), 0, 100) : 0
 
-/// The kind of the solid catalyst in the glass (CHEM_CATALYST_SOLID_ACID for a porous material, else CHEM_CATALYST_SOLID_METAL), or null with none.
+/// The kind of the solid catalyst in the glass (CHEM_CATALYST_SOLID_ACID for a porous material, CHEM_CATALYST_SOLID_REFRACTORY for a heat-resistant metal, else
+/// CHEM_CATALYST_SOLID_METAL), or null with none.
 /obj/item/reagent_containers/glass/proc/catalyst_kind()
 	if(!catalyst?.material)
 		return null
-	return catalyst.material.sorbed_volume() >= CHEM_SOLID_ACID_POROSITY ? CHEM_CATALYST_SOLID_ACID : CHEM_CATALYST_SOLID_METAL
+	if(catalyst.material.sorbed_volume() >= CHEM_SOLID_ACID_POROSITY)
+		return CHEM_CATALYST_SOLID_ACID
+	return catalyst.material.heat_resistance >= CHEM_REFRACTORY_HEAT ? CHEM_CATALYST_SOLID_REFRACTORY : CHEM_CATALYST_SOLID_METAL
 
 /obj/item/reagent_containers/glass/proc/catalyst_added(datum/act/op/A)
 	var/mob/user = A.actor

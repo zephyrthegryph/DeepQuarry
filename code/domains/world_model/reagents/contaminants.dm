@@ -173,13 +173,28 @@ GLOBAL_TABLE(contaminant_ids_table, GLOBAL_PROC_REF(build_contaminant_ids))
 	// The share of the finished mixture that is contaminant.
 	var/total = min_total + (max_total - min_total) * roll.unit()
 	var/count = roll.number(min_types, max_types)
+	// The source's fixed signature is always in; the rest of the types are extras from its pool (a source with no pool of its own draws from every contaminant a source
+	// can carry), and what is rolled is the same list the stock of that source is rolled as everywhere (trace_roll(), trace_sources.dm): one vocabulary.
+	var/datum/trace_source/source = trace_source_of(reagent_id)
 	var/list/pool = list()
-	for(var/contaminant_id in contaminant_ids())
-		var/datum/reagent/contaminant/C = contaminant_def(contaminant_id)
-		pool[contaminant_id] = C.source_weight
+	if(length(source.extras) && source.id != TRACE_SOURCE_DEFAULT)
+		for(var/extra_id in source.extras)
+			pool[extra_id] = source.extras[extra_id]
+	else
+		for(var/contaminant_id in contaminant_ids())
+			var/datum/reagent/contaminant/C = contaminant_def(contaminant_id)
+			pool[contaminant_id] = C.source_weight
 	var/list/shares = list()
 	var/share_sum = 0
-	for(var/i in 1 to count)
+	for(var/signature_id in source.signature)
+		if(source.id == TRACE_SOURCE_DEFAULT)
+			break
+		var/share = (1 + 0.5 * roll.unit()) * (isnum(source.signature[signature_id]) ? source.signature[signature_id] : 1)
+		shares[signature_id] = share
+		share_sum += share
+		pool -= signature_id
+		count--
+	for(var/i in 1 to max(count, length(shares) ? 0 : 1))
 		var/picked = roll.weighted(pool)
 		if(isnull(picked))
 			break

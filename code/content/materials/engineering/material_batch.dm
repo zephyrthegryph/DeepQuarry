@@ -102,16 +102,56 @@
 	material_log("[REF(src)] -[round(removed, 0.001)] [substance_id]")
 	return removed
 
-/// Strips a share of every substance that `degasses` (a hot vacuum) or, for `leaching`, that an acid wash dissolves.
+/// An acid wash (`leaching`) dissolves every substance that `leaches` out of the batch, to nothing; a hard vacuum (not leaching) degasses what `degasses` down to its floor.
 /datum/material_batch/proc/strip_traces(leaching)
+	if(!leaching)
+		return refine_traces(MATERIAL_REFINE_DEGAS)
 	var/removed_total = 0
 	for(var/id in LAZYCOPY(composition))
 		var/datum/material_trace/trace = GLOB.material_traces[id]
 		if(!trace || get_material_by_name(id))
 			continue
-		if(leaching ? trace.leaches : trace.degasses)
+		if(trace.leaches)
 			removed_total += remove_substance(id)
 	return removed_total
+
+/// Takes every trace the method acts on down to its floor (a percent of the batch, per trace type: a method never takes a trace to nothing, and a trace already below
+/// the floor is left). Returns the sheets taken out. The shared processes of the chemistry are the methods: reduce smelts, oxidise roasts, displace fluxes, electrolyse
+/// electrorefines, and a vacuum degasses (MATERIAL_REFINE_*, GLOB.material_refine_methods).
+/datum/material_batch/proc/refine_traces(method)
+	var/removed_total = 0
+	if(amount <= 0)
+		return removed_total
+	for(var/id in LAZYCOPY(composition))
+		var/datum/material_trace/trace = GLOB.material_traces[id]
+		if(!trace || get_material_by_name(id))
+			continue
+		var/floor_percent = trace.floors?[method]
+		if(isnull(floor_percent))
+			continue
+		var/have = LAZYACCESS(composition, id)
+		var/keep = floor_percent * amount / 100
+		if(have <= keep)
+			continue
+		LAZYSET(composition, id, keep)
+		removed_total += have - keep
+		material_log("[REF(src)] [method] takes [id] from [round(have * 100 / amount, 0.001)]% to [round(floor_percent, 0.001)]% of the batch")
+	if(removed_total > 0)
+		recalculate()
+	return removed_total
+
+/// Refines the melt with a shared chemistry process (CHEM_PROCESS_REDUCE, _OXIDISE, _DISPLACE or _ELECTROLYSE): returns the sheets of traces it took out, or FALSE when
+/// the process is not a refining one. A cleaner melt is also a less flawed one.
+/datum/material_batch/proc/refine_by_process(process_id)
+	var/method = GLOB.material_refine_methods[process_id]
+	if(!method)
+		return FALSE
+	var/removed = refine_traces(method)
+	refine(min(8, round(removed * 40)))
+	LAZYADD(process_history, "[method] ([process_id])")
+	LAZYSET(process_counts, method, (LAZYACCESS(process_counts, method) || 0) + 1)
+	material_log("[REF(src)] refined by [process_id] ([method]): [round(removed, 0.001)] sheets of traces out, flaws [flaws]")
+	return removed
 
 /datum/material_batch/proc/add_surface_layer(layer_name, strength, additive_name, additive_units = 0)
 	if(!layer_name || strength <= 0)

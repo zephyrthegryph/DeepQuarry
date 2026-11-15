@@ -463,6 +463,7 @@
 #include "dq_chem_purification_tests.dm"
 #include "dq_chem_blocks_tests.dm"
 #include "dq_chem_families_tests.dm"
+#include "dq_chem_feedstock_tests.dm"
 #include "dq_book_chem_tests.dm"
 #include "dq_stabilisation_tests.dm"
 #include "dq_vital_systems_tests.dm"

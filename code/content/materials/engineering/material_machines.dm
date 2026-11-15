@@ -175,8 +175,8 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return null
 	if(firing)
 		return "the furnace is still firing"
-	if(!LAZYLEN(feedstock))
-		return "the furnace is empty; load material sheets before firing it"
+	if(!LAZYLEN(feedstock) && !polymer_recipe_for(src, TRUE))
+		return "the furnace is empty; load material sheets, or the units of a polymer, before firing it"
 	if(!operable())
 		return "the furnace has no power or requires repairs"
 	return null
@@ -225,6 +225,11 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	set_firing(FALSE)
 	set_icon_state("nt_cruciforge")
 	set_glow(src, GLOW(0, null, null))
+	// A charge that is the makings of a polymer (the units of one in the medium, or sheets of cellulose with nitric acid, or aramid in nitrogen) is polymerised, not alloyed.
+	var/datum/polymer_recipe/polymer = polymer_recipe_for(src)
+	if(polymer)
+		polymerise(polymer)
+		return
 	var/datum/material_batch/batch
 	var/heat_treatment = FALSE
 	if(LAZYLEN(feedstock) == 1 && !LAZYLEN(carbon_feed) && !reagents?.total_volume)
@@ -246,8 +251,10 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		if(!QDELETED(stock) && stock.get_amount())
 			stock.forceMove(get_turf(src))
 	rel_take_all(src, nameof(feedstock))
+	var/coal_fed = 0
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_substance(REAGENT_ID_CARBON, 4 * MATERIAL_SHEETS_PER_REAGENT_UNIT, 0.5, MATERIAL_COST_CHEMICALS)
+		coal_fed++
 		consumed(coal, src)
 	rel_take_all(src, nameof(carbon_feed))
 	if(!batch.amount)
@@ -255,6 +262,9 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return
 	process_chemistry(batch)
 	apply_real_atmosphere(batch)
+	// Coal in the charge is smelting: the carbon takes the oxide out (reduce, down to the oxide's floor).
+	if(coal_fed)
+		batch.refine_by_process(CHEM_PROCESS_REDUCE)
 	// A hotter chamber gives the charge what it can: the two meet at their common temperature (it was the chamber's temperature for free).
 	if(chamber_air.return_temperature() > batch.temperature())
 		heat_equalize(chamber_air, HEAT_STORE(batch.ensure_heat_store()))
@@ -281,14 +291,19 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	visible_message(span_notice("[src] finishes firing. The completed alloy is ready to collect."))
 	spent(batch)
 
-/// Every reagent in the medium goes into the melt as a substance with an amount (up to 6 units each); the ones in the trace table change
-/// the numbers, the rest are inert residue. An acid wash (sulfuric or polytrifluoric, 5 units or more) strips the leachable traces.
+/// Every reagent in the medium goes into the melt as a substance with an amount (up to 6 units each), by the vocabulary the chemistry and the materials share
+/// (melt_trace_of()): a reagent that is a trace, a contaminant that maps to one, an organic that chars to carbon, slag; one that boils below the melt leaves as a vapour.
+/// An acid wash (sulfuric or polytrifluoric, 5 units or more) strips the leachable traces. A flux (limestone or soda ash, 5 units or more) is the displace step: it
+/// skims the slag and the silica off, down to their floor; an electrolyte (a metal salt, 5 units or more) with the power for it is the electrolyse step, the electrorefining
+/// of the lead and the alkali.
 /obj/machinery/material_furnace/proc/process_chemistry(datum/material_batch/batch)
 	if(!reagents?.total_volume)
 		return
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
+	var/flux = reagents.get_reagent_amount(REAGENT_ID_CALCIUMCARBONATE) + reagents.get_reagent_amount(REAGENT_ID_SODAASH)
+	var/electrolyte = reagents.get_reagent_amount(REAGENT_ID_IRONSALT) + reagents.get_reagent_amount(REAGENT_ID_COPPERSALT) + reagents.get_reagent_amount(REAGENT_ID_LITHIUMSALT)
 	for(var/datum/reagent/reagent in reagents.reagent_list)
-		if(reagent.id in list(REAGENT_ID_SACID, REAGENT_ID_PACID))
+		if(reagent.id in list(REAGENT_ID_SACID, REAGENT_ID_PACID, REAGENT_ID_CALCIUMCARBONATE, REAGENT_ID_SODAASH, REAGENT_ID_IRONSALT, REAGENT_ID_COPPERSALT, REAGENT_ID_LITHIUMSALT))
 			continue
 		var/units = min(reagent.volume, 6)
 		if(units < 2 && !(reagent.id in list(REAGENT_ID_CARBON, REAGENT_ID_SILICON)))
@@ -297,20 +312,40 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		var/unit_cost = max(reagent.supply_conversion_value, 0.05)
 		if(get_material_by_name(reagent.id))
 			batch.add_material(reagent.id, sheets)
-		else
-			batch.add_substance(reagent.id, sheets, unit_cost, MATERIAL_COST_CHEMICALS)
+			continue
+		var/list/melt = melt_trace_of(reagent.id)
+		if(!melt)
+			material_log("[REF(batch)] [reagent.id] ([round(units, 0.1)]u) boiled off in the melt")
+			continue
+		batch.add_substance(melt[1], sheets * melt[2], unit_cost, MATERIAL_COST_CHEMICALS)
+		material_log("[REF(batch)] [reagent.id] ([round(units, 0.1)]u) went into the melt as [melt[1]] ([round(sheets * melt[2], 0.001)] sheets)")
 	if(acid >= 5)
 		batch.strip_traces(TRUE)
 		batch.refine(min(round(acid / 2), 12))
+	if(flux >= 5)
+		batch.refine_by_process(CHEM_PROCESS_DISPLACE)
+	if(electrolyte >= 5)
+		var/supplied = use_power_oneoff(MATERIAL_ELECTROREFINE_ENERGY)
+		if(supplied >= MATERIAL_ELECTROREFINE_ENERGY * 0.9)
+			batch.record_electricity(supplied)
+			batch.refine_by_process(CHEM_PROCESS_ELECTROLYSE)
+		else
+			material_log("[REF(batch)] electrorefining stopped: the furnace could not supply the current ([round(supplied)] of [MATERIAL_ELECTROREFINE_ENERGY] J)")
 	LAZYADD(batch.process_history, "chemically treated in [round(reagents.total_volume, 0.1)]u medium")
 	reagents.clear_reagents()
 
 /obj/machinery/material_furnace/proc/apply_real_atmosphere(datum/material_batch/batch)
 	var/pressure = chamber_air.return_pressure()
 	if(pressure < 20)
-		// A hard vacuum draws dissolved gas and oxide out of the melt and leaves it cleaner.
+		// A hard vacuum draws dissolved gas and oxide out of the melt, down to their floors, and leaves it cleaner.
 		batch.strip_traces(FALSE)
 		batch.refine(4)
+	var/oxygen = chamber_air.get_moles(/datum/gas/oxygen)
+	if(oxygen >= MATERIAL_ROAST_OXYGEN && pressure >= 50)
+		// An oxygen-rich chamber roasts the sulfur and carbon off (the oxidise step); ordinary air is too thin for it.
+		var/roast_used = min(oxygen, MATERIAL_ROAST_OXYGEN * 0.1)
+		chamber_air.adjust_moles(/datum/gas/oxygen, -roast_used)
+		batch.refine_by_process(CHEM_PROCESS_OXIDISE)
 	var/hydrogen = chamber_air.get_moles(/datum/gas/hydrogen)
 	if(hydrogen > 0.05)
 		var/used = min(hydrogen, 0.08 * clamp(pressure / ONE_ATMOSPHERE, 0, 5))

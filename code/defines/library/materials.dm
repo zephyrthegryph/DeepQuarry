@@ -49,6 +49,13 @@
 
 //other
 #define MAT_PLASTIC			"plastic"
+// The polymers of the workshop (chemistry makes the units, the furnace polymerises them: code/content/materials/engineering/material_polymers.dm)
+#define MAT_RUBBER			"rubber"
+#define MAT_NYLON			"nylon"
+#define MAT_HARD_PLASTIC	"hard plastic"
+#define MAT_GUNCOTTON		"guncotton"
+#define MAT_ARAMID			"aramid"
+#define MAT_CARBON_FIBRE	"carbon fibre"
 #define MAT_GLASS			"glass"
 #define MAT_RGLASS			"rglass"
 #define MAT_PGLASS			"borosilicate glass"

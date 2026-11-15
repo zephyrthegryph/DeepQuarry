@@ -10,22 +10,36 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/traces_rolled = FALSE
 	/// Whether a spectrometer has read this stack's traces. Until then the player sees only the base card.
 	var/assayed = FALSE
+	/// The lot this stack came from (an ore vein it was smelted out of, a cargo shipment, an expedition site), or null for station stock. Its traces are the lot's.
+	var/lot_key
 
-/// The substances a freshly sourced sheet may carry a little of. L4 replaces this roll with per-round and per-lot pools of the source's signature contaminants.
-GLOBAL_LIST_INIT(material_stock_trace_pool, list("carbon", "silicon", "sulfur", "oxygen", "lead"))
+SCHEMA(/obj/item/stack/material, lot_key, schema_text())
 
-/// Rolls this stack's traces once. Most stock carries a little of one substance; a processed alloy's are part of its batch instead.
+/// Makes a stack of `path` at `loc` that came from the lot `lot_key` (null: station stock). The lot is set before the stack initializes, so a stack that merges into a pile
+/// on arrival takes the lot's traces with it, not the station's.
+/proc/lot_stack_new(path, loc, lot_key)
+	if(lot_key)
+		world.preloader_setup(list("lot_key" = lot_key), path)
+	. = new path(loc)
+	GLOB._preloader_path = null
+
+/// Rolls this stack's traces once, from the signature and the pool of extras of its material (code/content/reagents/trace_sources.dm). Station stock is rolled once for
+/// the round; a stack that came from a lot (an ore vein, a cargo shipment, an expedition site: `lot_key`) is rolled for that lot, and dirtier. A processed alloy's are
+/// part of its batch instead. Every roll is logged (trace_roll() writes the roll, this the stack that took it).
 /obj/item/stack/material/proc/ensure_traces()
 	if(traces_rolled)
 		return
 	traces_rolled = TRUE
 	if(istype(material, /datum/material/processed_alloy))
 		return
-	if(prob(80))
-		var/trace_id = pick(GLOB.material_stock_trace_pool)
-		var/per_sheet = rand(5, 30) / 1000
-		LAZYSET(trace_amounts, trace_id, per_sheet * amount)
-	material_log("[REF(src)] ([material?.name]) rolled traces [json_encode(trace_amounts)]")
+	var/list/roll = trace_roll(material?.name, lot_key ? TRACE_SCOPE_LOT : TRACE_SCOPE_ROUND, lot_key || TRACE_KEY_STATION)
+	var/dirt = lot_key ? TRACE_LOT_DIRT : 1
+	for(var/contaminant_id in roll)
+		var/trace_id = material_trace_of_contaminant(contaminant_id)
+		if(!trace_id)
+			continue
+		LAZYSET(trace_amounts, trace_id, (LAZYACCESS(trace_amounts, trace_id) || 0) + roll[contaminant_id] * TRACE_SHEET_SHARE * dirt * amount)
+	material_log("[REF(src)] ([material?.name]) took the [lot_key ? "lot [lot_key]" : "round"] roll: traces [json_encode(trace_amounts)]")
 
 /// Substance id -> percent of the stack's mass, for a spectrometer to read.
 /obj/item/stack/material/proc/trace_shares()
@@ -79,6 +93,7 @@ GLOBAL_LIST_INIT(material_stock_trace_pool, list("carbon", "silicon", "sulfur", 
 		copy.set_stack_material(material.name)
 	copy.traces_rolled = traces_rolled
 	copy.assayed = assayed
+	copy.lot_key = lot_key
 
 /obj/item/stack/material/examine(mob/user)
 	. = ..()

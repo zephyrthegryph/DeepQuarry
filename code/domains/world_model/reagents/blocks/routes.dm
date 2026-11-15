@@ -323,9 +323,9 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 	if(needs_current && !holder.current_flows())
 		return FALSE
 	switch(kind)
-		if(CHEM_CATALYST_SOLID_METAL, CHEM_CATALYST_SOLID_ACID)
+		if(CHEM_CATALYST_SOLID_METAL, CHEM_CATALYST_SOLID_ACID, CHEM_CATALYST_SOLID_REFRACTORY)
 			var/list/solid = holder.solid_catalyst()
-			if(!solid || solid[1] != kind || solid[2] < CHEM_SOLID_MIN_ACTIVITY)
+			if(!solid || !solid_runs(solid[1]) || solid[2] < CHEM_SOLID_MIN_ACTIVITY)
 				return FALSE
 		if(CHEM_CATALYST_ENZYME)
 			if(holder.heavy_metal_share() > CHEM_ENZYME_POISON_SHARE)
@@ -334,12 +334,16 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 				return FALSE
 	return TRUE
 
+/// Does a solid catalyst of this kind run this route? Its own kind does, and a refractory metal (tungsten) also does everything a solid metal does.
+/datum/chem_route/proc/solid_runs(catalyst_kind)
+	return catalyst_kind == kind || (kind == CHEM_CATALYST_SOLID_METAL && catalyst_kind == CHEM_CATALYST_SOLID_REFRACTORY)
+
 /// The band the route runs in in `holder`, kelvin: its process's, moved down by a solid catalyst's effective activity.
 /datum/chem_route/proc/band_in(datum/reagents/holder)
-	if(fixed_band || (kind != CHEM_CATALYST_SOLID_METAL && kind != CHEM_CATALYST_SOLID_ACID))
+	if(fixed_band || (kind != CHEM_CATALYST_SOLID_METAL && kind != CHEM_CATALYST_SOLID_ACID && kind != CHEM_CATALYST_SOLID_REFRACTORY))
 		return band_base
 	var/list/solid = holder.solid_catalyst()
-	if(!solid || solid[1] != kind)
+	if(!solid || !solid_runs(solid[1]))
 		return band_base
 	var/shift = solid[2] * CHEM_SOLID_REDUCTION_PER_POINT
 	return list(band_base[1] - shift, band_base[2] - shift, band_base[3] - shift, band_base[4] - shift)
@@ -356,9 +360,9 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 			return CHEM_SELECTIVITY_DISSOLVED
 		if(CHEM_CATALYST_ENZYME)
 			return CHEM_SELECTIVITY_ENZYME
-		if(CHEM_CATALYST_SOLID_METAL, CHEM_CATALYST_SOLID_ACID)
+		if(CHEM_CATALYST_SOLID_METAL, CHEM_CATALYST_SOLID_ACID, CHEM_CATALYST_SOLID_REFRACTORY)
 			var/list/solid = holder.solid_catalyst()
-			var/activity = (solid && solid[1] == kind) ? solid[2] : 0
+			var/activity = (solid && solid_runs(solid[1])) ? solid[2] : 0
 			return clamp(CHEM_SELECTIVITY_NONE + (1 - CHEM_SELECTIVITY_NONE) * activity / 100, CHEM_SELECTIVITY_NONE, 1)
 	return CHEM_SELECTIVITY_NONE
 
