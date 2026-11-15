@@ -21,6 +21,8 @@
 /obj/item/stack/material/algae => sheet: carbon,nitrogen,nitrogen,phosphorus,phosphorus; ground: carbon=12,nitrogen=24,phosphorus=24
 /obj/item/stack/material/algae/ten => sheet: carbon,nitrogen,nitrogen,phosphorus,phosphorus; ground: carbon=12,nitrogen=24,phosphorus=24
 /obj/item/stack/material/aluminium => sheet: aluminum; ground: aluminum=60
+/obj/item/stack/material/aramid => sheet: myelamine; ground: myelamine=60
+/obj/item/stack/material/carbon_fibre => sheet: carbon; ground: carbon=60
 /obj/item/stack/material/cardboard => sheet: woodpulp; ground: woodpulp=60
 /obj/item/stack/material/cloth => sheet: carbon,carbon,carbon,protein,sodium; ground: carbon=36,protein=12,sodium=12
 /obj/item/stack/material/concrete => sheet: silicate,calcium; ground: calcium=30,silicate=30
@@ -39,6 +41,8 @@
 /obj/item/stack/material/glass/titanium => sheet: titanium,silicon; ground: silicon=30,titanium=30
 /obj/item/stack/material/gold => sheet: gold; ground: gold=60
 /obj/item/stack/material/graphite => sheet: carbon; ground: carbon=60
+/obj/item/stack/material/guncotton => sheet: woodpulp,nitricacid; ground: nitricacid=30,woodpulp=30
+/obj/item/stack/material/hard_plastic => sheet: phenol,woodaldehyde; ground: phenol=30,woodaldehyde=30
 /obj/item/stack/material/iron => sheet: iron; ground: iron=60
 /obj/item/stack/material/lead => sheet: lead; ground: lead=60
 /obj/item/stack/material/leather => sheet: carbon,carbon,protein,protein,triglyceride; ground: carbon=24,protein=24,triglyceride=12
@@ -47,6 +51,7 @@
 /obj/item/stack/material/log/sif => sheet: carbon,woodpulp,nitrogen,potassium,sodium; ground: carbon=24,nitrogen=24,potassium=24,sodium=24,woodpulp=24
 /obj/item/stack/material/marble => sheet: calcium; ground: calcium=60
 /obj/item/stack/material/mhydrogen => sheet: hydrogen; ground: hydrogen=60
+/obj/item/stack/material/nylon => sheet: fattyacid,diethylamine; ground: diethylamine=30,fattyacid=30
 /obj/item/stack/material/osmium => sheet: platinum; ground: platinum=60
 /obj/item/stack/material/phoron => sheet: phoron; ground: phoron=60
 /obj/item/stack/material/plasteel => sheet: iron,iron,carbon,carbon,platinum; ground: carbon=24,iron=24,platinum=12
@@ -55,6 +60,7 @@
 /obj/item/stack/material/plastic => sheet: carbon,carbon,oxygen,chlorine,sulfur; ground: carbon=24,chlorine=12,oxygen=12,sulfur=12
 /obj/item/stack/material/plastitanium/hull => sheet: titanium,silicon,iron,carbon,platinum; ground: carbon=12,iron=12,platinum=12,silicon=12,titanium=12
 /obj/item/stack/material/platinum => sheet: platinum; ground: platinum=60
+/obj/item/stack/material/rubber => sheet: fattyacid,sulfur; ground: fattyacid=30,sulfur=30
 /obj/item/stack/material/sandstone => sheet: silicon,oxygen; ground: oxygen=30,silicon=30
 /obj/item/stack/material/silver => sheet: silver; ground: silver=60
 /obj/item/stack/material/snow => sheet: water,ice; ground: ice=30,water=30

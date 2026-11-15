@@ -124,12 +124,15 @@
 		return removed_total
 	for(var/id in LAZYCOPY(composition))
 		var/datum/material_trace/trace = GLOB.material_traces[id]
-		if(!trace || get_material_by_name(id))
+		if(!trace)
+			continue
+		var/have = LAZYACCESS(composition, id)
+		// A material that is also a trace (lead) is a trace while it is a small share of the batch, and an ingredient past the trace's limit.
+		if(get_material_by_name(id) && have * 100 / amount > trace.limit)
 			continue
 		var/floor_percent = trace.floors?[method]
 		if(isnull(floor_percent))
 			continue
-		var/have = LAZYACCESS(composition, id)
 		var/keep = floor_percent * amount / 100
 		if(have <= keep)
 			continue
