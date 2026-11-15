@@ -1468,6 +1468,7 @@
 #include "dq_draw_mobs.dm"
 #include "dq_draw_items.dm"
 #include "dq_draw_pockets.dm"
+#include "dq_hud_slot_stable.dm"
 #include "dq_draw_final.dm"
 #include "dq_small_forms.dm"
 #include "dq_client_render_regressions.dm"
