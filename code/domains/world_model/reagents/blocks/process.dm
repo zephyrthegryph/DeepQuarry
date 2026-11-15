@@ -20,9 +20,17 @@
 	var/list/byproducts
 	/// A reagent id that is the product when no chemical has the structure (default: the process's residue); a variant with an explicit product ignores it.
 	var/residue
+	/// The catalyst kinds this variant runs on, or null for all of its process's (an enzyme oxidation, an uncatalysed amide).
+	var/list/kinds
+	/// reagent ids that stop this variant (an uncatalysed amide is blocked by the sulphuric acid that would make an ester of it).
+	var/list/blocked
+	/// An explicit band for this variant, kelvin (range low, ideal low, ideal high, range high), or null for its process's.
+	var/list/band
+	/// reagent id => units made per unit of product by this variant alone (the poisons it leaves: cyanide from the cyanide arm).
+	var/list/fallout
 
 /// A variant of these substrates.
-/proc/chem_variant(list/from, list/to, list/agents = null, list/byproducts = null, residue = null)
+/proc/chem_variant(list/from, list/to, list/agents = null, list/byproducts = null, residue = null, list/kinds = null, list/blocked = null, list/band = null, list/fallout = null)
 	RETURN_TYPE(/datum/chem_variant)
 	var/datum/chem_variant/V = new /datum/chem_variant
 	V.from = from
@@ -30,6 +38,10 @@
 	V.agents = agents
 	V.byproducts = byproducts
 	V.residue = residue
+	V.kinds = kinds
+	V.blocked = blocked
+	V.band = band
+	V.fallout = fallout
 	return V
 
 /// What the generator hands a process: every structure that exists (reagent id => structure), and the condensations that made a chemical (structure key => rows of
@@ -47,7 +59,7 @@
 	var/id
 	var/name
 	var/desc
-	/// Reserved: the process is declared but generates nothing yet (polymerise belongs to the materials lane).
+	/// Reserved: the process is declared but generates nothing yet.
 	var/reserved = FALSE
 	/// The catalyst kinds (CHEM_CATALYST_*) a route can run on: one route per kind.
 	var/list/kinds
@@ -69,6 +81,8 @@
 	var/residue_routes = TRUE
 	/// What a step of it says, when it is a loud one.
 	var/says = ""
+	/// Where its routes stand among the processes' when two want the same reactants: lower first (amination before reduction).
+	var/rank = 50
 
 /datum/chem_process/New()
 	..()
@@ -88,8 +102,8 @@
 	return list()
 
 /// The band the process runs in on `kind`, before a solid catalyst moves it: list(range low, ideal low, ideal high, range high), kelvin.
-/datum/chem_process/proc/band_for(kind)
-	var/list/base = band
+/datum/chem_process/proc/band_for(kind, list/override = null)
+	var/list/base = override || band
 	if(!base)
 		base = GLOB.reaction_temperature_classes[band_class]
 	if(kind == CHEM_CATALYST_ENZYME)
@@ -107,17 +121,19 @@ GLOBAL_LIST_EMPTY(chem_processes)
 	GLOB.chem_processes = list()
 	var/list/made = list()
 	for(var/type in subtypesof(/datum/chem_process))
+		var/datum/chem_process/proto = type
+		if(!initial(proto.id))
+			continue // a base type
 		var/datum/chem_process/P = new type
-		if(!P.id)
-			qdel(P)
-			continue
 		made[P.id] = P
-	var/list/ids = list()
+	var/list/keys = list()
 	for(var/made_id in made)
-		ids += made_id
-	sortTim(ids, GLOBAL_PROC_REF(cmp_text_asc))
-	for(var/sorted_id in ids)
-		GLOB.chem_processes[sorted_id] = made[sorted_id]
+		var/datum/chem_process/ranked = made[made_id]
+		keys += "[100 + ranked.rank]:[made_id]"
+	sortTim(keys, GLOBAL_PROC_REF(cmp_text_asc))
+	for(var/key in keys)
+		var/list/split = splittext(key, ":")
+		GLOB.chem_processes[split[2]] = made[split[2]]
 
 /// The process with this id, or null.
 /proc/chem_process_of(process_id)

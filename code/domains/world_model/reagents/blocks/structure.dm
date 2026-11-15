@@ -38,7 +38,8 @@ GLOBAL_LIST_INIT(chem_group_atoms, list(
 	CHEM_GROUP_HALIDE = list("Cl" = 1, "H" = -1),
 	CHEM_GROUP_THIOL = list("S" = 1),
 	CHEM_GROUP_PHOSPHATE = list("P" = 1, "O" = 4, "H" = 1),
-	CHEM_GROUP_METAL_CENTRE = list("Fe" = 1, "H" = -2),
+	CHEM_GROUP_METAL_CENTRE = list("H" = -2),
+	CHEM_GROUP_CYANIDE = list("C" = 1, "N" = 1, "H" = -1),
 ))
 
 /// atoms a link adds (it joins two parts, each of which gave up a hydrogen).
@@ -62,6 +63,13 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 	CHEM_ION_CARBONATE = list("CO3", 2, TRUE),
 	CHEM_ION_PEROXIDE = list("O2", 2, FALSE),
 	CHEM_ION_SILICATE = list("SiO3", 2, TRUE),
+	CHEM_ION_HYPOCHLORITE = list("OCl", 1, TRUE),
+	CHEM_ION_PHOSPHATE = list("PO4", 3, TRUE),
+	CHEM_ION_CYANIDE = list("CN", 1, TRUE),
+	CHEM_ION_HYDRIDE = list("H", 1, FALSE),
+	CHEM_ION_LITHIUM = list("Li", 1, FALSE),
+	CHEM_ION_IRON = list("Fe", 2, FALSE),
+	CHEM_ION_COPPER = list("Cu", 2, FALSE),
 ))
 
 /// A structure: cores, groups, links, or a cation and anion. Never written after chem_structure_make().
@@ -69,6 +77,7 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 	var/list/cores
 	var/list/groups
 	var/list/links
+	/// An inorganic's cation; an organic that carries a metal centre names the metal here (an organometallic: iron on a lattice, sodium on a phosphate).
 	var/cation
 	var/anion
 	/// The reagent that declares this structure (set when it is registered, chem_blocks_build()); null for one a process made along the way.
@@ -126,10 +135,12 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 /datum/chem_structure/proc/is_acid()
 	return cation == CHEM_ION_HYDROGEN && anion && anion != CHEM_ION_HYDROXIDE && anion != CHEM_ION_PEROXIDE
 
-/// A base: a hydroxide anion on a cation that is not hydrogen, or an organic amine that is nothing else.
+/// A base: a hydroxide or a carbonate on a cation that is not hydrogen, or an organic amine that is nothing else.
 /datum/chem_structure/proc/is_base()
 	if(anion == CHEM_ION_HYDROXIDE)
 		return cation && cation != CHEM_ION_HYDROGEN
+	if(anion == CHEM_ION_CARBONATE)
+		return !!cation && cation != CHEM_ION_HYDROGEN && cation != CHEM_ION_HEAVY_METAL
 	return is_organic() && has_group(CHEM_GROUP_AMINE) && !has_group(CHEM_GROUP_CARBOXYL) && !has_group(CHEM_GROUP_PHOSPHATE)
 
 /// A copy with `from` (a group) replaced by `to` once; null when it does not have `from`. `to` null takes the group away.
@@ -142,6 +153,19 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 	if(to)
 		made += to
 	return chem_structure_make(cores, made, links, cation, anion)
+
+/// A copy with a metal centre of this metal (a cation) bound on: null when it already has one.
+/datum/chem_structure/proc/with_metal(metal)
+	RETURN_TYPE(/datum/chem_structure)
+	if(has_group(CHEM_GROUP_METAL_CENTRE) || is_ionic() || !is_organic())
+		return null
+	var/list/made = groups.Copy()
+	made += CHEM_GROUP_METAL_CENTRE
+	return chem_structure_make(cores, made, links, metal, null)
+
+/// The metal bound to this organic's metal centre, or null.
+/datum/chem_structure/proc/bound_metal()
+	return (is_organic() && has_group(CHEM_GROUP_METAL_CENTRE)) ? cation : null
 
 /// A copy with a group added.
 /datum/chem_structure/proc/with_group(group)
@@ -171,6 +195,8 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 		chem_atoms_add(atoms, GLOB.chem_core_atoms[core])
 	for(var/group in groups)
 		chem_atoms_add(atoms, GLOB.chem_group_atoms[group])
+		if(group == CHEM_GROUP_METAL_CENTRE)
+			chem_atoms_add(atoms, list("[chem_ion_symbol(cation)]" = 1))
 	for(var/link in links)
 		chem_atoms_add(atoms, GLOB.chem_link_atoms[link])
 	var/list/order = list()
@@ -292,15 +318,15 @@ GLOBAL_LIST_INIT(chem_ion_symbols, list(
 		made |= CHEM_TAG_ACIDIC
 	if(is_base())
 		made |= CHEM_TAG_BASIC
-	if(has_group(CHEM_GROUP_METAL_CENTRE) || cation == CHEM_ION_HEAVY_METAL)
+	if(has_group(CHEM_GROUP_METAL_CENTRE) || cation == CHEM_ION_HEAVY_METAL || cation == CHEM_ION_IRON || cation == CHEM_ION_COPPER)
 		made |= CHEM_TAG_METALLIC
 	if(has_group(CHEM_GROUP_THIOL) || anion == CHEM_ION_SULFATE)
 		made |= CHEM_TAG_SULFUROUS
 	if(has_group(CHEM_GROUP_HALIDE) || anion == CHEM_ION_CHLORIDE)
 		made |= CHEM_TAG_HALOGENATED
-	if(has_group(CHEM_GROUP_AMINE) || has_group(CHEM_GROUP_NITRO) || (CHEM_LINK_AMIDE in links) || has_core(CHEM_CORE_AMINO) || has_core(CHEM_CORE_NITROGEN_RING) || anion == CHEM_ION_NITRATE)
+	if(has_group(CHEM_GROUP_AMINE) || has_group(CHEM_GROUP_NITRO) || has_group(CHEM_GROUP_CYANIDE) || anion == CHEM_ION_CYANIDE || (CHEM_LINK_AMIDE in links) || has_core(CHEM_CORE_AMINO) || has_core(CHEM_CORE_NITROGEN_RING) || anion == CHEM_ION_NITRATE)
 		made |= CHEM_TAG_NITROGENOUS
-	if(has_group(CHEM_GROUP_NITRO) || anion == CHEM_ION_NITRATE || anion == CHEM_ION_PEROXIDE)
+	if(has_group(CHEM_GROUP_NITRO) || anion == CHEM_ION_NITRATE || anion == CHEM_ION_PEROXIDE || anion == CHEM_ION_HYPOCHLORITE)
 		made |= CHEM_TAG_OXIDISER
 	if(has_core(CHEM_CORE_AMINO))
 		made |= CHEM_TAG_BIOLOGICAL

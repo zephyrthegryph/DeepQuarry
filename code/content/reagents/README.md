@@ -371,9 +371,13 @@ Block structures and processes
   (organic, polar, nonpolar, ionic, acidic, basic, metallic, sulfurous, halogenated, nitrogenous, oxidiser, biological) are derived from the structure
   (`chem_structure_of(id)`, `.formula()`, `.class_name()`, `.tags`). Contaminants have structures too: their tags are what filters take them by. Cores
   come from feedstock; nothing builds a core from elements.
-* **Processes** (`processes.dm`; fifteen, `polymerise` reserved for the materials lane): oxidise, reduce, halogenate, nitrate, substitute (a halide for an amine
-  or a thiol), phosphorylate, decarboxylate, condense, hydrolyse, ferment, crack, neutralise, displace (a metal for a metal, or a metal bound to a carboxyl or
-  phosphate), electrolyse (a conductive sheet in a container on a plate that is on), polymerise. A process says which structures it acts on and what they become
+* **Processes** (`processes.dm`; fifteen): oxidise, reduce, halogenate, nitrate, substitute (a halide for an amine, a thiol or a nitrile; a carbonyl, ammonia
+  and hydrogen for an amine), phosphorylate, decarboxylate, condense (an ester with a dissolved or solid acid; an amide, warm, with no acid in the mixture),
+  hydrolyse, ferment, crack, neutralise (an acid and a base, a hydroxide, a carbonate or an amine; sand in hot lye is silicate), displace (a metal for a metal, an
+  acid dissolving a metal, two salts swapping ions, a metal bound to a medicine out of a salt or a base), electrolyse (a clip-on electrode pair,
+  `/obj/item/chem_electrode`, on a container on a plate that is on), polymerise (two silanols into silicone oil: lube; the workshop polymers, which are materials,
+  are the materials lane's). A variant can carry its own catalyst kinds, blockers, band and fallout (`chem_variant()`), and a process its `rank` (amination before
+  reduction). A process says which structures it acts on and what they become
   (`variants()`), what it adds (an oxidiser, a nitrating acid, water), the catalyst kinds it runs on, its temperature band, and the trace-potent contaminants it leaves
   (`fallout()`). It never names a chemical it makes.
 * **Routes.** At boot every process is run over every structure (`chem_routes_build()`): a variant whose end structure is a chemical that exists is a route that
@@ -396,3 +400,31 @@ Block structures and processes
 * **The book** shows each reagent's block diagram (formula, class, tags, blocks), the processes that act on it and what they give, and for a generated recipe
   its process, catalyst and clean temperature. The burn medicines are the first family converted: silicate and an acid make kelotane (a siloxane with a
   hydroxyl) and leave salts; kelotane and phosphorus, hot, make dermaline (a phosphate on it) and water.
+
+The three tiers of the chemistry (stage 3)
+------------------------------------------
+`doc/rewrite/proposals/chemistry_redesign.md` is the design and `chemistry_recipes.md` the recipe book (section 14 there says what was built and where it differs
+from the draft). Every chemistry reagent of tiers 1 to 3 has a block structure (`blocks/structures.dm`) and a tier (`blocks/tiers.dm`: staples 1, standard 2,
+advanced 3; the book shows it, and says for each recipe whether it is the clean route, a process chemical poured in, a one-pot dirty shortcut, or a clash). The
+old element-mixing recipes of a converted chemical are deleted: the route its structure gives is the recipe.
+
+* **Building blocks and intermediates** (`reagents/content/chemistry/blocks.dm`): hydrochloric, nitric, phosphoric and acetic acid, bleach, soda ash, phenol, wood
+  aldehyde, salicylic acid, fatty acid, pyridine base, plant alkaloid base, sterol, amino acid, the metal salts, sand, and the intermediates a ladder passes through
+  (chlorohydrin, nitrosalicylic acid, chlorophoron, alkaloid acid, pyridone, halogenated spaceacillin). `GLOB.chem_building_blocks` lists the ones the clashes leave
+  alone.
+* **Process chemicals** (`blocks/agents.dm`, machinery in `world_model/reagents/blocks/agents.dm`): a chemical that is a process. Poured in it does the process,
+  without the usual setup, less selectively, leaving its own residue (`/datum/chem_agent`: `variants()`, `selectivity`, `leaves`, `trace()`): hydride (reduce and
+  aminate), strong oxidiser (all the way to a carboxyl), bleach (oxidise one step, halogenate a ring), nitrating mix, chlorinating agent, coupling agent (condense in
+  water), caustic digest (hydrolyse anything), yeast (ferment). Their routes are kind `agent`. The dry agent and the scavenger resin act on contact (below).
+* **Dirty shortcuts** of the staples are either the route of a process chemical or a one-pot recipe (`reactions/instant/chemistry.dm`, `shortcut_*`) whose makes list
+  carries the trace-potent contaminants.
+* **Clashes** (`blocks/clashes.dm`): two finished chemicals that meet react by the groups they carry (an acid group and an amine make a salt; a thiol takes a metal
+  centre; a nitro compound and an amine make nitrosamine; a nitro compound takes a thiol or a hydroxyl; a halide and an amine, warm, join into residue; a
+  phosphate drops out against calcium or iron; a nitro compound and a reducer run hot). They run in a loose container and in the stomach (`ingested`), never in the
+  bloodstream or on the skin (`holder.clash_allowed()`); a pair that condenses into a chemical that exists is a recipe, not a clash.
+* **Byproducts are real chemicals**: a halogenation frees hydrochloric acid, a nitrile substitution potassium chloride and cyanide, a neutralisation water; the
+  trace-potent contaminants are still there for what no chemical is.
+* **Stock**: the chemical closet starts with three boxes of bottles (`reagent_containers/precursors.dm`: sixteen precursors, silicate standing in for silanol, which
+  is kelotane) and cargo sells a crate (`/datum/supply_pack/med/chemprecursors`).
+* **Metal centres** are an organic's `cation`: dexalin plus is dexalin with iron, clonexadone cryoxadone with sodium; the daxons differ by their metal. The
+  tenth group, the nitrile (`cyanide`), is what the cyanide arm of substitution hangs.

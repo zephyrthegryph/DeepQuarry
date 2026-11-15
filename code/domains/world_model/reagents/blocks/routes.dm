@@ -50,6 +50,15 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 	var/clean = FALSE
 	/// What a dissolved catalyst or an enzyme is spent into, or null.
 	var/catalyst_residue
+	/// reagent id => units left per unit of product by this variant (the poisons of its arm), beside the process's.
+	var/list/extra_fallout
+	/// The key of the process chemical that runs it (an agent route: "reagent:process", GLOB.chem_agents), or null.
+	var/agent_key
+
+/// The process chemical that runs this route, or null.
+/datum/chem_route/proc/agent()
+	RETURN_TYPE(/datum/chem_agent)
+	return agent_key ? GLOB.chem_agents[agent_key] : null
 
 /// The route a compiled rule was generated from, or null for a declared recipe.
 /proc/chem_route_of(datum/xform/X)
@@ -97,10 +106,24 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 			var/list/made = P.chem_variants(substrate_id, G.structures[substrate_id], G)
 			for(var/variant in made)
 				written += chem_route_emit(P, variant, G)
-	log_world("Chemistry routes: [written] generated from [length(GLOB.chem_processes)] processes over [length(ids)] structures")
+	var/agent_written = 0
+	chem_agents_build()
+	for(var/agent_key in GLOB.chem_agents)
+		var/datum/chem_agent/A = GLOB.chem_agents[agent_key]
+		var/datum/chem_process/AP = chem_process_of(A.process_id)
+		if(!AP || !G.reagents[A.reagent_id])
+			continue
+		for(var/substrate_id in ids)
+			if(istype(reagents[substrate_id], /datum/reagent/contaminant))
+				continue
+			var/list/agent_variants = A.variants(substrate_id, G.structures[substrate_id], G)
+			for(var/variant in agent_variants)
+				agent_written += chem_route_emit(AP, variant, G, A)
+	var/clash_written = chem_clashes_build(G)
+	log_world("Chemistry routes: [written] generated from [length(GLOB.chem_processes)] processes over [length(ids)] structures; [agent_written] by process chemicals, [clash_written] clashes")
 
 /// Writes the routes of one variant (one per catalyst kind of its process). Returns how many were new.
-/proc/chem_route_emit(datum/chem_process/P, datum/chem_variant/V, datum/chem_gen/G)
+/proc/chem_route_emit(datum/chem_process/P, datum/chem_variant/V, datum/chem_gen/G, datum/chem_agent/A = null)
 	var/list/matched_ids = list()
 	var/list/residue_ids = list()
 	for(var/entry in V.to)
@@ -134,7 +157,8 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 			return 0
 	var/list/products = matched_ids + residue_ids
 	var/written = 0
-	for(var/kind in P.kinds)
+	var/list/run_kinds = A ? list(CHEM_CATALYST_AGENT) : (V.kinds || P.kinds)
+	for(var/kind in run_kinds)
 		var/list/catalysts
 		var/residue
 		switch(kind)
@@ -153,9 +177,14 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 				usable = FALSE
 		if(!usable)
 			continue
-		var/route_id = "[P.id]:[jointext(V.from, "+")]:[kind]>[jointext(products, "+")]"
+		var/route_id = "[P.id]:[jointext(V.from, "+")]:[A ? "agent_[A.reagent_id]" : kind]>[jointext(products, "+")]"
 		if(GLOB.chem_routes[route_id])
-			continue
+			var/list/agent_names = list()
+			for(var/agent_name in V.agents)
+				agent_names += agent_name
+			route_id = "[route_id]~[jointext(agent_names, "+")]"
+			if(GLOB.chem_routes[route_id])
+				continue
 		var/datum/chem_route/R = new /datum/chem_route
 		R.id = route_id
 		R.process_id = P.id
@@ -164,15 +193,22 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 		R.from = V.from
 		R.takes = take_rows
 		R.catalysts = catalysts
-		if(P.blocked_by_water)
+		if(P.blocked_by_water && !A?.ignores_water)
 			R.blocked = list(REAGENT_ID_WATER = 1)
+		if(!A)
+			for(var/blocker in V.blocked)
+				if(!R.blocked)
+					R.blocked = list()
+				R.blocked[blocker] = 1
+		R.extra_fallout = V.fallout
+		R.agent_key = A ? "[A.reagent_id]:[A.process_id]" : null
 		var/list/rows = list()
 		for(var/make_id in makes)
 			rows += list(list(make_id, makes[make_id]))
 		R.makes = rows
 		R.products = products
 		R.matched = matched
-		R.band_base = P.band_for(kind)
+		R.band_base = P.band_for(kind, A ? A.band : V.band)
 		R.fixed_band = P.fixed_band
 		R.needs_current = P.needs_current
 		R.clean = P.clean
@@ -192,7 +228,7 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 	for(var/product_id in products)
 		var/datum/reagent/product_reagent = SSchemistry.ready().chemical_reagents[product_id]
 		to_names += product_reagent ? product_reagent.name : product_id
-	return "[P?.name]: [jointext(from_names, " + ")] -> [jointext(to_names, " + ")]"
+	return "[P ? P.name : "Clash"]: [jointext(from_names, " + ")] -> [jointext(to_names, " + ")]"
 
 // ---- compile and install ----
 
@@ -241,7 +277,7 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 	for(var/list/row as anything in R.makes)
 		make_terms += reagent(row[1], row[2])
 	var/datum/entry/E = transformation(name = R.title(), id = R.id, takes = take_terms, catalysts = length(catalyst_terms) ? catalyst_terms : null, \
-		blocked_by = length(blocked_terms) ? blocked_terms : null, makes = make_terms)
+		blocked_by = length(blocked_terms) ? blocked_terms : null, makes = make_terms, effects = chem_route_effects(R))
 	var/datum/xform/X = xform_compile(/transformation/process_route, E, order, "chem route [R.id]")
 	if(!X)
 		return null
@@ -266,13 +302,22 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 		for(var/list/row as anything in R.makes)
 			makes += "[row[1]] [row[2]]"
 		var/list/band = R.band_base
-		lines[route_id] = "takes [jointext(takes, ", ")] | catalysts [jointext(catalysts, ", ") || "none"] | blocked by [jointext(blocked, ", ") || "none"] | makes [jointext(makes, ", ")] | [R.matched ? "product" : "residue"] | band [round(band[1] - T0C)]..[round(band[2] - T0C)]..[round(band[3] - T0C)]..[round(band[4] - T0C)] C"
+		var/band_text = band ? "[round(band[1] - T0C)]..[round(band[2] - T0C)]..[round(band[3] - T0C)]..[round(band[4] - T0C)] C" : "on contact"
+		var/list/fallout_text = list()
+		for(var/fallout_id in R.extra_fallout)
+			fallout_text += fallout_id
+		var/datum/chem_agent/runs = R.agent()
+		for(var/fallout_id in runs?.leaves)
+			fallout_text += fallout_id
+		lines[route_id] = "takes [jointext(takes, ", ")] | catalysts [jointext(catalysts, ", ") || "none"] | blocked by [jointext(blocked, ", ") || "none"] | makes [jointext(makes, ", ")] | [R.matched ? "product" : "residue"] | band [band_text][length(fallout_text) ? " | leaves [jointext(fallout_text, ", ")]" : ""]"
 	return lines
 
 // ---- the matcher, the gate and the step ask the route ----
 
 /// Does this route hold in `holder` now: a loose container, the catalyst kind there, a current if it needs one.
 /datum/chem_route/proc/can_run(datum/reagents/holder)
+	if(kind == CHEM_CATALYST_CONTACT)
+		return holder.clash_allowed()
 	if(!holder.temperature_gated())
 		return FALSE
 	if(needs_current && !holder.current_flows())
@@ -303,6 +348,9 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 /datum/chem_route/proc/selectivity(datum/reagents/holder)
 	if(clean)
 		return 1
+	if(kind == CHEM_CATALYST_AGENT)
+		var/datum/chem_agent/runs = agent()
+		return runs ? runs.selectivity : CHEM_SELECTIVITY_NONE
 	switch(kind)
 		if(CHEM_CATALYST_ACID, CHEM_CATALYST_BASE)
 			return CHEM_SELECTIVITY_DISSOLVED
@@ -334,7 +382,20 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 		holder.add_reagent(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE, residue, safety = 1)
 		parts += "[round(residue, 0.001)]u organic residue from what the [kind] route was not selective for"
 	var/datum/chem_structure/S = chem_structure_of(substrate_id)
-	var/list/traces = P?.fallout(kind, S, temperature)
+	var/list/summed = list()
+	var/list/process_traces = P?.fallout(kind, S, temperature)
+	for(var/trace_id in process_traces)
+		summed[trace_id] = (summed[trace_id] || 0) + process_traces[trace_id]
+	for(var/extra_id in extra_fallout)
+		summed[extra_id] = (summed[extra_id] || 0) + extra_fallout[extra_id]
+	var/datum/chem_agent/runs = agent()
+	if(runs)
+		for(var/leave_id in runs.leaves)
+			summed[leave_id] = (summed[leave_id] || 0) + runs.leaves[leave_id]
+		var/list/agent_traces = runs.trace(S, temperature)
+		for(var/leave_id in agent_traces)
+			summed[leave_id] = (summed[leave_id] || 0) + agent_traces[leave_id]
+	var/list/traces = summed
 	for(var/trace_id in traces)
 		var/units = produced * traces[trace_id]
 		if(units <= 0)
@@ -370,10 +431,19 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 		return null
 	return list(kind, vessel.catalyst_activity() * (1 - catalyst_poison()))
 
-/// A current flows through the mixture: the container stands on a hot plate whose element is on (the plate's leads are the electrodes).
+/// A current flows through the mixture: the container stands on a hot plate whose element is on and carries a clip-on electrode pair in the liquid.
 /datum/reagents/proc/current_flows()
 	var/obj/machinery/chem_hot_plate/plate = my_atom?.loc
-	return istype(plate) && plate.heating
+	var/obj/item/reagent_containers/glass/vessel = my_atom
+	return istype(plate) && plate.heating && istype(vessel) && !!vessel.electrode
+
+/// Do the clashes (reactions on contact by group, agents.dm) run in this holder: in a loose container, and in the stomach where swallowed doses mix. Never in the
+/// bloodstream or on the skin.
+/datum/reagents/proc/clash_allowed()
+	if(temperature_gated())
+		return TRUE
+	var/mob/living/carbon/body = my_atom
+	return istype(body) && body.ingested == src
 
 // ---- peroxide ----
 

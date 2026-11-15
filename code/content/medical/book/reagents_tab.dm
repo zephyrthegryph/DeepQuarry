@@ -103,6 +103,7 @@
 		entry["worsens"]     = by_id[id]["worsens"] || list()
 		entry["recipe"]          = _dq_reagent_recipe(id)
 		entry["blocks"]          = _dq_reagent_blocks(id)
+		entry["tier"]            = chem_tier_of(id)
 		entry["acted_on"]        = _dq_reagent_routes_from(id)
 		// Filter the Used-In list: only show destinations that are
 		// themselves in the medical index, and dedupe by id (some
@@ -200,11 +201,16 @@
 	var/datum/chem_route/route = chem_route_of(CR)
 	if(route)
 		var/datum/chem_process/P = chem_process_of(route.process_id)
-		entry["process"] = P?.name
+		entry["process"] = P ? P.name : "Clash"
 		entry["catalyst_kind"] = route.kind
-		entry["ideal_low"] = _dq_book_celsius(route.band_base[2])
-		entry["ideal_high"] = _dq_book_celsius(route.band_base[3])
+		if(route.band_base)
+			entry["ideal_low"] = _dq_book_celsius(route.band_base[2])
+			entry["ideal_high"] = _dq_book_celsius(route.band_base[3])
 		entry["product"] = route.matched
+		// A route that is a process chemical poured in is the dirty way; the others are the clean routes of the process.
+		entry["route_kind"] = route.agent_key ? "process chemical" : (route.kind == CHEM_CATALYST_CONTACT ? "on contact" : "clean route")
+	else if(findtext("[CR.rule_type]", "shortcut_"))
+		entry["route_kind"] = "dirty shortcut"
 	entry["required"] = reqs
 	var/list/catal = list()
 	for(var/CL in CR.reagent_catalysts)
@@ -500,12 +506,12 @@ GLOBAL_LIST_INIT(dq_reagent_category_by_id, list(
 		for(var/list/row as anything in R.makes)
 			gives += dq_reagent_display_name(row[1])
 		out += list(list(
-			"process"  = P?.name,
+			"process"  = P ? P.name : "Clash",
 			"kind"     = R.kind,
 			"with"     = partners,
 			"gives"    = gives,
 			"product"  = R.matched,
-			"low"      = _dq_book_celsius(R.band_base[2]),
-			"high"     = _dq_book_celsius(R.band_base[3]),
+			"low"      = R.band_base ? _dq_book_celsius(R.band_base[2]) : null,
+			"high"     = R.band_base ? _dq_book_celsius(R.band_base[3]) : null,
 		))
 	return out

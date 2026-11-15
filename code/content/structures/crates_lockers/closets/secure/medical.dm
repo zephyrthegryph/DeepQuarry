@@ -158,6 +158,9 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 		/obj/item/reagent_containers/dropper = 2,
 		/obj/item/reagent_containers/glass/bottle/inaprovaline = 2,
 		/obj/item/reagent_containers/glass/bottle/antitoxin = 2,
+		/obj/item/storage/box/precursors_inorganic,
+		/obj/item/storage/box/precursors_ring,
+		/obj/item/storage/box/precursors_bio,
 		/obj/item/storage/fancy/vials)
 
 

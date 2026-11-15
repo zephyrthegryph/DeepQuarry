@@ -191,6 +191,9 @@ type RecipeEntry = {
   ideal_low?: number;
   ideal_high?: number;
   product?: boolean;
+  // How it is made: the clean route of a process, a process chemical poured
+  // in, a dirty one-pot shortcut, or a clash on contact.
+  route_kind?: string;
   required: RecipeIngredient[];
   catalysts: { id: string; name: string }[];
   inhibitors: { id: string; name: string }[];
@@ -272,6 +275,8 @@ type ReagentEntry = {
   recipe: RecipeEntry[] | null;
   // The reagent's blocks (null: none declared) and the processes that act on it.
   blocks?: BlockDiagram | null;
+  // The tier (1 staple, 2 standard, 3 advanced, 4 exotic) of a chemistry reagent.
+  tier?: number | null;
   acted_on?: ProcessRoute[];
   used_in: { id: string; name: string }[];
   overdose: OverdoseInfo | null;
@@ -1384,6 +1389,7 @@ const ReagentDetail = (props: {
         <Section title="Blocks" mt={1}>
           <Box>
             {r.blocks.formula} ({r.blocks.class})
+            {r.tier ? `, tier ${r.tier}` : ''}
           </Box>
           <Box color="grey" fontSize="0.85em">
             {[...r.blocks.cores.map((c) => `[${c.replace('_', ' ')}]`)]
@@ -1450,6 +1456,11 @@ const ReagentDetail = (props: {
                 <Box color="grey" fontSize="0.85em" ml={1}>
                   Distilled
                   {rcp.temp_min ? ` at ${rcp.temp_min}-${rcp.temp_max} K` : ''}
+                </Box>
+              ) : null}
+              {rcp.route_kind ? (
+                <Box color="grey" fontSize="0.85em" ml={1}>
+                  ({rcp.route_kind})
                 </Box>
               ) : null}
               {rcp.process ? (

@@ -105,11 +105,15 @@
 			CHEM_PROCESS_DISPLACE, CHEM_PROCESS_ELECTROLYSE, CHEM_PROCESS_POLYMERISE))
 		TEST_ASSERT_NOTNULL(chem_process_of(id), "process [id] exists")
 	var/datum/chem_process/polymerise = chem_process_of(CHEM_PROCESS_POLYMERISE)
-	TEST_ASSERT(polymerise.reserved, "polymerise is reserved for the materials lane")
+	TEST_ASSERT(!polymerise.reserved, "polymerise makes the chemistry-side products (lube); the workshop's polymers are the materials lane's")
+	var/polymerised = 0
 	for(var/route_id in GLOB.chem_routes)
 		var/datum/chem_route/R = GLOB.chem_routes[route_id]
-		TEST_ASSERT(R.process_id != CHEM_PROCESS_POLYMERISE, "no route polymerises")
+		if(R.process_id == CHEM_PROCESS_POLYMERISE)
+			polymerised++
+			TEST_ASSERT(R.products[1] == REAGENT_ID_LUBE, "[route_id]: the only polymer a chemist makes is silicone oil")
 		TEST_ASSERT_NOTNULL(dq_route_rule(R), "[route_id] compiled into a rule")
+	TEST_ASSERT_EQUAL(polymerised, 1, "one route polymerises: kelotane into lube")
 
 /// What each process does to a structure, with structures of its own (so no reagent has to exist).
 /datum/unit_test/dq_chem_blocks_processes_change_structures
@@ -161,15 +165,17 @@
 	// Electrolyse splits water; displace binds nothing where no chemical results.
 	var/list/split_water = dq_blk_made(CHEM_PROCESS_ELECTROLYSE, chem_structure_of(REAGENT_ID_WATER), real, REAGENT_ID_WATER)
 	TEST_ASSERT((REAGENT_ID_HYDROGEN in split_water) && (REAGENT_ID_OXYGEN in split_water), "electrolysis of water gives hydrogen and oxygen")
-	TEST_ASSERT_EQUAL(length(dq_blk_made(CHEM_PROCESS_DISPLACE, chem_structure_of(REAGENT_ID_SODIUMCHLORIDE), real, REAGENT_ID_SODIUMCHLORIDE)), 0, "nothing displaces salt while no metal is declared")
-	TEST_ASSERT_EQUAL(length(dq_blk_made(CHEM_PROCESS_POLYMERISE, ethanol, G)), 0, "polymerise makes nothing yet")
+	var/list/displaced = dq_blk_made(CHEM_PROCESS_DISPLACE, chem_structure_of(REAGENT_ID_SODIUMCHLORIDE), real, REAGENT_ID_SODIUMCHLORIDE)
+	TEST_ASSERT(chem_structure_of(REAGENT_ID_POTASSIUMCHLORIDE).key in displaced, "potassium takes the place of sodium in table salt")
+	TEST_ASSERT(REAGENT_ID_SODIUM in displaced, "and sets the sodium free")
+	TEST_ASSERT_EQUAL(length(dq_blk_made(CHEM_PROCESS_POLYMERISE, ethanol, G)), 0, "polymerise makes nothing of an ethanol")
 
 /// A salt's metal binding to an acid group makes the organometallic that has the structure (a temporary entry in the index stands in for one).
 /datum/unit_test/dq_chem_blocks_displace_binds_a_metal
 
 /datum/unit_test/dq_chem_blocks_displace_binds_a_metal/Run()
 	var/datum/chem_structure/phosphate = chem_structure_make(list(CHEM_CORE_SILOXANE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_PHOSPHATE))
-	var/datum/chem_structure/bound = phosphate.with_group(CHEM_GROUP_METAL_CENTRE)
+	var/datum/chem_structure/bound = phosphate.with_metal(CHEM_ION_CALCIUM)
 	var/datum/chem_structure/copper_salt = chem_structure_make(null, null, null, CHEM_ION_CALCIUM, CHEM_ION_SULFATE)
 	var/datum/chem_gen/G = dq_blk_gen(list("dq_phosphate" = phosphate, "dq_salt" = copper_salt))
 	var/datum/chem_process/displace = chem_process_of(CHEM_PROCESS_DISPLACE)
@@ -195,16 +201,20 @@
 /datum/unit_test/dq_chem_routes_make_nothing_gated
 
 /datum/unit_test/dq_chem_routes_make_nothing_gated/Run()
-	var/list/gated = list(REAGENT_ID_NITROGLYCERIN, REAGENT_ID_PHORON, REAGENT_ID_THERMITE, REAGENT_ID_PACID, REAGENT_ID_LIQUIDFIRE, REAGENT_ID_NEOLIQUIDFIRE, REAGENT_ID_MUTAGEN, REAGENT_ID_CYANIDE)
+	// Nitroglycerin and mutagen have approved routes (nitrate glycerol, halogenate diethylamine). Cyanide is made by its own recipe; the only route that ends in it is
+	// the ion exchange of prussian blue with potassium, which gives back the cyanide that made it.
+	var/list/gated = list(REAGENT_ID_PHORON, REAGENT_ID_THERMITE, REAGENT_ID_PACID, REAGENT_ID_LIQUIDFIRE, REAGENT_ID_NEOLIQUIDFIRE, REAGENT_ID_CYANIDE)
 	for(var/route_id in GLOB.chem_routes)
 		var/datum/chem_route/R = GLOB.chem_routes[route_id]
 		for(var/id in R.products)
+			if(id == REAGENT_ID_CYANIDE && R.process_id == CHEM_PROCESS_DISPLACE && (REAGENT_ID_PRUSSIANBLUE in R.from))
+				continue
 			TEST_ASSERT(!(id in gated), "[route_id] makes [id], which only its own recipe may")
 		if(!R.matched)
 			for(var/id in R.products)
 				TEST_ASSERT(id == REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE || id == REAGENT_ID_CONTAMINANT_SALTS, "[route_id] ends in residue only, and makes [id]")
 		for(var/id in R.from)
-			TEST_ASSERT(!istype(SSchemistry.ready().chemical_reagents[id], /datum/reagent/contaminant) || R.process_id == CHEM_PROCESS_NEUTRALISE, "[route_id] starts from a contaminant")
+			TEST_ASSERT(!istype(SSchemistry.ready().chemical_reagents[id], /datum/reagent/contaminant) || R.process_id == CHEM_PROCESS_NEUTRALISE || R.process_id == CHEM_PROCESS_CLASH, "[route_id] starts from a contaminant")
 
 // ---- the burn medicines, through the processes ----
 
@@ -256,9 +266,10 @@
 	var/obj/item/reagent_containers/glass/beaker/chlorinated = dq_blk_beaker(55)
 	chlorinated.reagents.add_reagent(REAGENT_ID_ETHANOL, 10, safety = 1)
 	chlorinated.reagents.add_reagent(REAGENT_ID_CHLORINE, 10)
-	TEST_ASSERT(dq_blk_near(chlorinated.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HYDROCHLORIC), 10), "halogenating ethanol frees hydrogen chloride ([chlorinated.reagents.get_reagents()])")
+	TEST_ASSERT(dq_blk_near(chlorinated.reagents.get_reagent_amount(REAGENT_ID_HYDROCHLORIC), 10), "halogenating ethanol frees hydrochloric acid, a real chemical ([chlorinated.reagents.get_reagents()])")
+	TEST_ASSERT(dq_blk_near(chlorinated.reagents.get_reagent_amount(REAGENT_ID_CHLORALHYDRATE), 10), "and makes chloral hydrate of the ethanol")
 	chlorinated.reagents.add_reagent(REAGENT_ID_LYE, 10)
-	TEST_ASSERT(dq_blk_near(chlorinated.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HYDROCHLORIC), 0), "lye spends it")
+	TEST_ASSERT(dq_blk_near(chlorinated.reagents.get_reagent_amount(REAGENT_ID_HYDROCHLORIC), 0), "lye spends it")
 	TEST_ASSERT(dq_blk_near(chlorinated.reagents.get_reagent_amount(REAGENT_ID_SODIUMCHLORIDE), 10), "into table salt, which is a chemical that exists")
 
 /// An enzyme ferments sugar into ethanol at gentle heat, leaves methanol and endotoxin, is spent, and is poisoned by heavy metals.
@@ -384,9 +395,9 @@
 /datum/unit_test/dq_chem_blocks_no_recipe_asks_for_a_grade/Run()
 	var/obj/item/reagent_containers/glass/beaker/B = dq_blk_beaker()
 	B.reagents.add_reagent(REAGENT_ID_CONTAMINANT_INERT_FILLER, 40, safety = 1)
-	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/carthatoline, 10)
+	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/anticonvulsant, 10)
 	B.reagents.handle_reactions()
 	TEST_ASSERT(B.reagents.purity() < PURITY_STANDARD, "the mixture is Crude")
-	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_CARTHATOLINE) > 0, "and a recipe that used to want Pharma goes: [X.name]")
+	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT) > 0, "and a recipe that used to want Pharma goes: [X.name]")
 
 #endif

@@ -126,10 +126,10 @@
 		TEST_ASSERT(!isnull(GLOB.reaction_temperature_classes[reaction_temperature_class(X.rule_type)]), "[X.rule_type] is filed under a class that exists")
 		checked++
 	TEST_ASSERT(checked > 100, "the instant recipes were checked ([checked])")
-	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/inaprovaline), REACTION_TEMP_GENTLE, "a plain medicine is gentle")
+	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/anticonvulsant), REACTION_TEMP_GENTLE, "a plain medicine is gentle")
 	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/drinks/grapejuice), REACTION_TEMP_AMBIENT, "a bar drink is ambient")
-	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/pacid), REACTION_TEMP_HOT, "an acid is hot")
-	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/nitroglycerin), REACTION_TEMP_VIOLENT, "an explosive is violent")
+	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/hydride), REACTION_TEMP_HOT, "a hydride is hot")
+	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/explosion_potassium), REACTION_TEMP_VIOLENT, "an explosive is violent")
 	var/list/gentle = GLOB.reaction_temperature_classes[REACTION_TEMP_GENTLE]
 	var/list/hot = GLOB.reaction_temperature_classes[REACTION_TEMP_HOT]
 	var/list/violent = GLOB.reaction_temperature_classes[REACTION_TEMP_VIOLENT]
@@ -141,10 +141,10 @@
 
 /datum/unit_test/dq_pur_reaction_clean_in_the_ideal_band/Run()
 	var/obj/item/reagent_containers/glass/beaker/B = dq_pur_beaker()
-	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/inaprovaline, 10, 25)
+	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/anticonvulsant, 10, 25)
 	TEST_ASSERT_EQUAL(B.reagents.reaction_temperature_state(X)[1], REACTION_TEMP_STATE_IDEAL, "25 C is inside the ideal band")
 	B.reagents.handle_reactions()
-	TEST_ASSERT(dq_pur_near(B.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "ten reaction units made 30u of product")
+	TEST_ASSERT(dq_pur_near(B.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 30), "ten reaction units made 30u of product")
 	TEST_ASSERT_EQUAL(B.reagents.contaminant_volume(), 0, "and not a unit of contaminant")
 	TEST_ASSERT_EQUAL(B.reagents.grade(), GRADE_REAGENT, "Reagent grade")
 
@@ -153,23 +153,23 @@
 
 /datum/unit_test/dq_pur_reaction_off_ideal_makes_contaminants/Run()
 	var/obj/item/reagent_containers/glass/beaker/cold = dq_pur_beaker()
-	dq_pur_fill_for(cold, /transformation/chem/instant/inaprovaline, 10, 5)
+	dq_pur_fill_for(cold, /transformation/chem/instant/anticonvulsant, 10, 5)
 	cold.reagents.handle_reactions()
-	TEST_ASSERT(dq_pur_near(cold.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "a cold run still makes all the product")
+	TEST_ASSERT(dq_pur_near(cold.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 30), "a cold run still makes all the product")
 	var/residue = cold.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE)
 	TEST_ASSERT(residue > 1, "too cold leaves organic residue ([residue]u)")
 	TEST_ASSERT_EQUAL(cold.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_REACTIVE), 0, "and no reactive impurity")
 	TEST_ASSERT(cold.reagents.purity() < 1 && cold.reagents.grade() < GRADE_REAGENT, "so the batch is no longer Reagent grade")
 	// Colder is dirtier.
 	var/obj/item/reagent_containers/glass/beaker/colder = dq_pur_beaker()
-	dq_pur_fill_for(colder, /transformation/chem/instant/inaprovaline, 10, 1)
+	dq_pur_fill_for(colder, /transformation/chem/instant/anticonvulsant, 10, 1)
 	colder.reagents.handle_reactions()
 	TEST_ASSERT(colder.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE) > residue, "the further from the band, the more residue")
 	var/obj/item/reagent_containers/glass/beaker/hot = dq_pur_beaker()
-	dq_pur_fill_for(hot, /transformation/chem/instant/inaprovaline, 10, 60)
+	dq_pur_fill_for(hot, /transformation/chem/instant/anticonvulsant, 10, 60)
 	hot.reagents.handle_reactions()
 	var/impurity = hot.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_REACTIVE)
-	var/product = hot.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE)
+	var/product = hot.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT)
 	TEST_ASSERT(impurity > 1, "too hot leaves a reactive impurity ([impurity]u)")
 	TEST_ASSERT(product < 30 && product > 20, "and burns off some of the product ([product]u of 30)")
 	TEST_ASSERT_EQUAL(hot.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE), 0, "but leaves no organic residue")
@@ -179,19 +179,19 @@
 
 /datum/unit_test/dq_pur_reaction_refused_out_of_range/Run()
 	var/obj/item/reagent_containers/glass/beaker/freezing = dq_pur_beaker()
-	var/datum/xform/X = dq_pur_fill_for(freezing, /transformation/chem/instant/inaprovaline, 10, -20)
+	var/datum/xform/X = dq_pur_fill_for(freezing, /transformation/chem/instant/anticonvulsant, 10, -20)
 	freezing.reagents.handle_reactions()
-	TEST_ASSERT_EQUAL(freezing.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 0, "too cold: no product")
-	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_OXYGEN), 10), "the reactants are untouched")
+	TEST_ASSERT_EQUAL(freezing.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 0, "too cold: no product")
+	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_SUGAR), 10), "the reactants are untouched")
 	TEST_ASSERT_EQUAL(freezing.reagents.reaction_temperature_state(X)[1], REACTION_TEMP_STATE_OUT, "-20 C is outside the range")
 	var/obj/item/reagent_containers/glass/beaker/boiling = dq_pur_beaker()
-	dq_pur_fill_for(boiling, /transformation/chem/instant/inaprovaline, 10, 120)
+	dq_pur_fill_for(boiling, /transformation/chem/instant/anticonvulsant, 10, 120)
 	boiling.reagents.handle_reactions()
-	TEST_ASSERT_EQUAL(boiling.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 0, "too hot: no product either")
+	TEST_ASSERT_EQUAL(boiling.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 0, "too hot: no product either")
 	// And warmed into the range it goes.
 	dq_pur_set_temp(freezing, 25)
 	freezing.reagents.handle_reactions()
-	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "back in the band the mixture reacts at once")
+	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 30), "back in the band the mixture reacts at once")
 
 /// A harsh recipe needs a hot plate; a bar drink does not.
 /datum/unit_test/dq_pur_harsh_needs_heat_and_drinks_do_not

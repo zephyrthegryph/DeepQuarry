@@ -83,18 +83,6 @@ distilling/marker_ink_grey + distilling/marker_ink_yellow => fired=-; end=marker
 distilling/marker_ink_orange + distilling/marker_ink_purple => fired=-; end=marker_ink_blue:3.0116 marker_ink_orange:3.0116 marker_ink_purple:0.9884 marker_ink_yellow:0.9884; spawned=-
 distilling/marker_ink_red + distilling/marker_ink_yellow => fired=-; end=iron:0.9884 marker_ink_red:3.0116 marker_ink_yellow:0.9884 sulfur:3.0116; spawned=-
 distilling/mineralized_carbon + distilling/mineralized_sodium => fired=-; end=carbon:4; spawned=-
-instant/adranol + instant/drinks/bilk => fired=instant/drinks/bilk,instant/adranol; end=adranol:6 bilk:8 hydrogen:2 potassium:2; spawned=-
-instant/adranol + instant/drinks/cappuccino => fired=instant/drinks/cappuccino,instant/adranol; end=adranol:6 cappuccino:24 hydrogen:2 potassium:2; spawned=-
-instant/adranol + instant/drinks/choccymilk => fired=instant/drinks/choccymilk; end=choccymilk:16 hydrogen:4 potassium:4; spawned=-
-instant/adranol + instant/drinks/dreamcream => fired=instant/drinks/dreamcream; end=dreamcream:16 hydrogen:4 potassium:4; spawned=-
-instant/adranol + instant/drinks/eggnog => fired=instant/drinks/eggnog; end=eggnog:60 hydrogen:4 potassium:4; spawned=-
-instant/adranol + instant/drinks/flat_white => fired=instant/drinks/flat_white; end=flat_white:12 hydrogen:4 potassium:4; spawned=-
-instant/adranol + instant/drinks/horchata => fired=instant/drinks/horchata,instant/adranol; end=adranol:6 horchata:20 hydrogen:2 potassium:2; spawned=-
-instant/adranol + instant/drinks/macchiato => fired=instant/drinks/macchiato,instant/adranol; end=adranol:6 hydrogen:2 macchiato:12 potassium:2; spawned=-
-instant/adranol + instant/drinks/mocha => fired=instant/drinks/mocha,instant/adranol; end=adranol:6 hydrogen:2 mocha:40 potassium:2; spawned=-
-instant/adranol + instant/drinks/pilk => fired=instant/drinks/pilk,instant/adranol; end=adranol:6 hydrogen:2 pilk:8 potassium:2; spawned=-
-instant/adranol + instant/food/cheesewheel => fired=instant/food/cheesewheel; end=enzyme:5 hydrogen:4 potassium:4; spawned=/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel+4
-instant/adranol + instant/food/chocolate_bar2 => fired=instant/food/chocolate_bar2; end=enzyme:5 hydrogen:4 potassium:4; spawned=/obj/item/reagent_containers/food/snacks/chocolatebar+4
 instant/aluminum_paint + instant/banana_juice_paint => fired=instant/banana_juice_paint; end=aluminum:4 paint:20; spawned=-
 instant/aluminum_paint + instant/berry_juice_paint => fired=instant/berry_juice_paint; end=aluminum:4 paint:20; spawned=-
 instant/aluminum_paint + instant/blood_paint => fired=instant/blood_paint; end=aluminum:4 paint:20; spawned=-
@@ -118,30 +106,12 @@ instant/aluminum_paint + instant/tomato_juice_paint => fired=instant/tomato_juic
 instant/aluminum_paint + instant/watermelon_juice_paint => fired=instant/watermelon_juice_paint; end=aluminum:4 paint:20; spawned=-
 instant/aluminum_paint + instant/yellow_paint => fired=instant/yellow_paint; end=aluminum:4 paint:20; spawned=-
 instant/ammonia + instant/hydrophoron => fired=instant/lexorin; end=hydrogen:8 lexorin:12; spawned=-
-instant/ammonia + instant/luminol => fired=instant/ammonia; end=ammonia:20 carbon:8; spawned=-
-instant/amorphorovir + instant/mortiferin => fired=instant/mortiferin,instant/amorphorovir; end=amorphorovir:3.8667 biomass:4 hyperzine:2.6667 mortiferin:8 phoron:5; spawned=-
-instant/amorphorovir + instant/spaceacillin => fired=instant/spaceacillin,instant/amorphorovir; end=amorphorovir:3.8667 biomass:4 hyperzine:2.6667 phoron:5 spaceacillin:8; spawned=-
-instant/androgynorovir + instant/androgynorovir_bootleg => fired=instant/androgynorovir; end=androgynorovir:4 berryjuice:40 cola:40; spawned=-
-instant/androgynorovir + instant/androrovir => fired=instant/androrovir; end=androrovir:4 anti_toxin:80 fluorine:80 tungsten:80; spawned=-
-instant/androgynorovir + instant/androrovir_bootleg => fired=instant/androgynorovir; end=androgynorovir:4 capsaicin:40 protein:40; spawned=-
-instant/androgynorovir + instant/gynorovir => fired=instant/gynorovir; end=anti_toxin:80 fluorine:80 gynorovir:4 tungsten:80; spawned=-
-instant/androgynorovir + instant/gynorovir_bootleg => fired=instant/androgynorovir; end=androgynorovir:4 soymilk:40 sugar:40; spawned=-
-instant/androgynorovir_bootleg + instant/androrovir => fired=instant/androrovir; end=androrovir:4 berryjuice:40 cola:40; spawned=-
 instant/androgynorovir_bootleg + instant/androrovir_bootleg => fired=instant/androrovir_bootleg; end=androrovir:4 berryjuice:40 cola:40; spawned=-
-instant/androgynorovir_bootleg + instant/gynorovir => fired=instant/gynorovir; end=berryjuice:40 cola:40 gynorovir:4; spawned=-
 instant/androgynorovir_bootleg + instant/gynorovir_bootleg => fired=instant/gynorovir_bootleg; end=berryjuice:40 cola:40 gynorovir:4; spawned=-
-instant/androrovir + instant/androrovir_bootleg => fired=instant/androrovir; end=androrovir:4 capsaicin:40 protein:40; spawned=-
-instant/androrovir + instant/gynorovir => fired=instant/androrovir; end=androrovir:4 inaprovaline:80 silicon:80 sugar:80; spawned=-
-instant/androrovir + instant/gynorovir_bootleg => fired=instant/androrovir; end=androrovir:4 soymilk:40 sugar:40; spawned=-
-instant/androrovir_bootleg + instant/gynorovir => fired=instant/gynorovir; end=capsaicin:40 gynorovir:4 protein:40; spawned=-
 instant/androrovir_bootleg + instant/gynorovir_bootleg => fired=instant/androrovir_bootleg; end=androrovir:4 soymilk:40 sugar:40; spawned=-
-instant/anticonvulsant + instant/carthatoline => fired=instant/carthatoline; end=carthatoline:8 phoron:0.6 sodium:4 sugar:4; spawned=-
 instant/anticonvulsant + instant/dyloteane => fired=instant/anticonvulsant; end=anticonvulsant:12 tea:4; spawned=-
 instant/anticonvulsant + instant/dyloteane/super => fired=instant/anticonvulsant; end=anticonvulsant:12 tea:4; spawned=-
 instant/anticonvulsant + instant/neutralize_neurotoxic_protein => fired=instant/anticonvulsant; end=anticonvulsant:12 neurotoxic_protein:8; spawned=-
-instant/anticonvulsant + instant/tercozolam => fired=instant/anticonvulsant; end=anticonvulsant:12 ethanol:4 lithium:4; spawned=-
-instant/aphrodisiac + instant/imidazoline => fired=instant/imidazoline,instant/aphrodisiac; end=aphrodisiac:12 imidazoline:8 oxygen:4 water:2; spawned=-
-instant/aphrodisiac + instant/prussian_blue => fired=instant/aphrodisiac,instant/prussian_blue; end=aphrodisiac:24 iron:2.6667 nitrogen:8 prussian_blue:9.3333; spawned=-
 instant/artificial_sustenance + instant/drinks/moonshine => fired=instant/drinks/moonshine; end=enzyme:5 moonshine:40 mutagen:4 phoron:4; spawned=-
 instant/banana_juice_metal_paint + instant/berry_juice_metal_paint => fired=instant/berry_juice_metal_paint; end=banana:20 paint:20; spawned=-
 instant/banana_juice_metal_paint + instant/blue_metal_paint => fired=instant/blue_metal_paint; end=banana:20 paint:20; spawned=-
@@ -182,7 +152,6 @@ instant/banana_juice_paint + instant/red_paint => fired=instant/red_paint; end=b
 instant/banana_juice_paint + instant/tomato_juice_paint => fired=instant/tomato_juice_paint; end=banana:20 paint:20; spawned=-
 instant/banana_juice_paint + instant/watermelon_juice_paint => fired=instant/watermelon_juice_paint; end=banana:20 paint:20; spawned=-
 instant/banana_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=banana:20 paint:20; spawned=-
-instant/benzilate + instant/tramadol => fired=instant/tramadol; end=mindbreaker:4 tramadol:12; spawned=-
 instant/berry_juice_metal_paint + instant/blue_metal_paint => fired=instant/blue_metal_paint; end=berryjuice:20 paint:20; spawned=-
 instant/berry_juice_metal_paint + instant/brown_metal_paint => fired=instant/brown_metal_paint; end=berryjuice:20 paint:20; spawned=-
 instant/berry_juice_metal_paint + instant/carrot_juice_metal_paint => fired=instant/carrot_juice_metal_paint; end=berryjuice:20 paint:20; spawned=-
@@ -220,14 +189,9 @@ instant/berry_juice_paint + instant/red_paint => fired=instant/red_paint; end=be
 instant/berry_juice_paint + instant/tomato_juice_paint => fired=instant/tomato_juice_paint; end=berryjuice:20 paint:20; spawned=-
 instant/berry_juice_paint + instant/watermelon_juice_paint => fired=instant/berry_juice_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/berry_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=berryjuice:20 paint:20; spawned=-
-instant/bicaridine + instant/paracetamol => fired=instant/paracetamol; end=carbon:4 paracetamol:8; spawned=-
-instant/bicaridine + instant/tricordrazine => fired=instant/tricordrazine; end=carbon:4 tricordrazine:8; spawned=-
-instant/bicaridine + instant/virus_food_mutagen_inaprovaline => fired=instant/bicaridine; end=bicaridine:8 mutagenvirusfood:4; spawned=-
 instant/biomass + instant/food/meatball => fired=instant/food/meatball; end=enzyme:5 phoron:4 sugar:4; spawned=/obj/item/reagent_containers/food/snacks/meatball+12
 instant/biomass + instant/soapification/gibs => fired=instant/soapification/gibs; end=phoron:4 sugar:4; spawned=/obj/item/soap/homemade+4
-instant/bliss + instant/impedrezene => fired=instant/bliss; end=bliss:12 oxygen:4; spawned=-
 instant/blob_reconstitution + instant/drinks/voxdelight => fired=instant/drinks/voxdelight; end=phoron:228 voxdelight:16; spawned=-
-instant/blob_reconstitution + instant/lexorin => fired=instant/lexorin; end=lexorin:12 phoron:236; spawned=-
 instant/blob_reconstitution + instant/promethean_brain_revival => fired=-; end=phoron:240; spawned=-
 instant/blob_reconstitution + instant/slimeify => fired=instant/slimeify; end=advmutationtoxin:4 phoron:180; spawned=-
 instant/blob_reconstitution + instant/virus_food_phoron => fired=instant/virus_food_phoron; end=phoron:236 phoronvirusfood:4; spawned=-
@@ -319,9 +283,6 @@ instant/brown_paint + instant/red_paint => fired=instant/red_paint; end=marker_i
 instant/brown_paint + instant/tomato_juice_paint => fired=instant/brown_paint; end=paint:20 tomatojuice:20; spawned=-
 instant/brown_paint + instant/watermelon_juice_paint => fired=instant/brown_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/brown_paint + instant/yellow_paint => fired=instant/yellow_paint; end=marker_ink_brown:4 paint:20; spawned=-
-instant/calciumcarbonate + instant/dexalin => fired=instant/dexalin; end=calcium:4 carbon:4 dexalin:6 phoron:0.4; spawned=-
-instant/calciumcarbonate + instant/ethylredoxrazine => fired=instant/ethylredoxrazine; end=calcium:4 ethylredoxrazine:12 oxygen:8; spawned=-
-instant/calciumcarbonate + instant/inaprovaline => fired=instant/inaprovaline; end=calcium:4 inaprovaline:12 oxygen:8; spawned=-
 instant/calciumcarbonate + instant/water => fired=instant/calciumcarbonate; end=calciumcarbonate:8 hydrogen:8; spawned=-
 instant/carbon_paint + instant/carrot_juice_paint => fired=instant/carrot_juice_paint; end=carbon:4 paint:20; spawned=-
 instant/carbon_paint + instant/grape_juice_paint => fired=instant/grape_juice_paint; end=carbon:4 paint:20; spawned=-
@@ -397,30 +358,9 @@ instant/carrot_juice_paint + instant/red_paint => fired=instant/red_paint; end=c
 instant/carrot_juice_paint + instant/tomato_juice_paint => fired=instant/tomato_juice_paint; end=carrotjuice:20 paint:20; spawned=-
 instant/carrot_juice_paint + instant/watermelon_juice_paint => fired=instant/carrot_juice_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/carrot_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=carrotjuice:20 paint:20; spawned=-
-instant/carthatoline + instant/dyloteane => fired=instant/carthatoline; end=carthatoline:8 phoron:0.6 tea:4; spawned=-
-instant/carthatoline + instant/dyloteane/super => fired=instant/carthatoline; end=carthatoline:8 phoron:0.6 sugar:4 tea:4; spawned=-
-instant/carthatoline + instant/neutralize_neurotoxic_protein => fired=instant/carthatoline; end=carthatoline:8 neurotoxic_protein:8 phoron:0.6; spawned=-
-instant/carthatoline + instant/tercozolam => fired=instant/carthatoline; end=carthatoline:8 ethanol:4 lithium:4 phoron:0.6; spawned=-
-instant/chemsmoke + instant/cryptobiolin => fired=instant/cryptobiolin; end=cryptobiolin:12 phosphorus:4; spawned=-
-instant/chloralhydrate + instant/drinks/fringe_weaver => fired=instant/drinks/fringe_weaver; end=chlorine:12 fringe_weaver:40 water:4; spawned=-
-instant/chloralhydrate + instant/dryagent => fired=instant/chloralhydrate,instant/dryagent; end=chloralhydrate:4 dryagent:8 phoron:4.8 sodium:4; spawned=-
-instant/chloralhydrate + instant/oxycodone => fired=instant/oxycodone; end=chlorine:12 oxycodone:4 phoron:5 water:4; spawned=-
-instant/chloralhydrate + instant/sterilizine => fired=instant/sterilizine; end=chlorine:8 sterilizine:12 water:4; spawned=-
-instant/citalopram + instant/methylphenidate => fired=instant/methylphenidate; end=carbon:4 methylphenidate:12; spawned=-
-instant/citalopram + instant/paroxetine => fired=instant/citalopram; end=citalopram:12 inaprovaline:4 oxygen:4; spawned=-
 instant/claridyl + instant/foaming_agent => fired=instant/foaming_agent; end=foaming_agent:4 radium:4 sugar:4; spawned=-
-instant/condensedcapsaicin + instant/drinks/mauna_loa => fired=instant/drinks/mauna_loa; end=mauna_loa:20 phoron:5; spawned=-
-instant/condensedcapsaicin + instant/food/hell_ramen => fired=instant/food/hell_ramen,instant/condensedcapsaicin; end=condensedcapsaicin:2 hell_ramen:24 phoron:5; spawned=-
-instant/cordradaxon + instant/zombiepowder/alt => fired=instant/cordradaxon,instant/zombiepowder/alt; end=chloralhydrate:4 cordradaxon:8 mercury:4 phoron:5 stoxin:4 zombiepowder:6.4; spawned=-
-instant/corophizine + instant/falter_virus => fired=instant/corophizine; end=blood:1 corophizine:8 phoron:4.6; spawned=-
-instant/corophizine + instant/panacillin => fired=instant/panacillin; end=carbon:4 panacillin:8 phoron:5; spawned=-
-instant/cryoxadone + instant/dexalinp => fired=instant/dexalinp; end=dexalinp:12 oxygen:4 water:4; spawned=-
-instant/dexalin + instant/ethylredoxrazine => fired=instant/dexalin; end=anti_toxin:4 carbon:4 dexalin:4 phoron:0.6; spawned=-
-instant/dexalin + instant/inaprovaline => fired=instant/inaprovaline,instant/dexalin; end=dexalin:2 inaprovaline:12 phoron:0.8; spawned=-
-instant/dexalin + instant/water => fired=instant/water; end=oxygen:4 phoron:1 water:4; spawned=-
 instant/diethylamine + instant/robustharvest => fired=instant/diethylamine; end=calcium:4 diethylamine:8 neurotoxic_protein:4; spawned=-
 instant/diethylamine + instant/space_cleaner => fired=instant/diethylamine; end=diethylamine:8 water:4; spawned=-
-instant/drinks/acidspit + instant/pacid => fired=instant/drinks/acidspit; end=acidspit:24 chlorine:4 potassium:4; spawned=-
 instant/drinks/alliescocktail + instant/drinks/screamingviking => fired=instant/drinks/alliescocktail,instant/drinks/screamingviking; end=alliescocktail:8 limejuice:2 rum:2 screamingviking:12 vodkatonic:4; spawned=-
 instant/drinks/aloe + instant/drinks/balloon => fired=instant/drinks/aloe; end=aloe:12 bluecuracao:4; spawned=-
 instant/drinks/aloe + instant/drinks/booger => fired=instant/drinks/booger; end=booger:20 whiskey:4; spawned=-
@@ -446,7 +386,6 @@ instant/drinks/americano + instant/drinks/watermelonjuice => fired=instant/drink
 instant/drinks/americano + instant/explosion_potassium => fired=instant/drinks/americano; end=americano:12 potassium:4; spawned=-
 instant/drinks/americano + instant/firefightingfoam => fired=instant/drinks/americano; end=americano:12 fluorine:10; spawned=-
 instant/drinks/americano + instant/firefightingfoamqol => fired=instant/drinks/americano; end=americano:12 firefoam:5; spawned=-
-instant/drinks/americano + instant/lube => fired=instant/drinks/americano; end=americano:12 oxygen:4 silicon:4; spawned=-
 instant/drinks/americano + instant/virus_food => fired=instant/drinks/americano; end=americano:12 milk:4; spawned=-
 instant/drinks/andalusia + instant/drinks/angelswrath => fired=instant/drinks/andalusia,instant/drinks/angelswrath; end=andalusia:12 angelswrath:16 dr_gibb:1.3333 holywine:1.3333 spacemountainwind:1.3333; spawned=-
 instant/drinks/andalusia + instant/drinks/bahama_mama => fired=instant/drinks/bahama_mama; end=bahama_mama:24 lemonjuice:4 whiskey:4; spawned=-
@@ -496,7 +435,6 @@ instant/drinks/applejuice + instant/drinks/watermelonjuice => fired=instant/drin
 instant/drinks/applejuice + instant/explosion_potassium => fired=instant/drinks/applejuice; end=applejuice:12 potassium:4; spawned=-
 instant/drinks/applejuice + instant/firefightingfoam => fired=instant/drinks/applejuice; end=applejuice:12 fluorine:10; spawned=-
 instant/drinks/applejuice + instant/firefightingfoamqol => fired=instant/drinks/applejuice; end=applejuice:12 firefoam:5; spawned=-
-instant/drinks/applejuice + instant/lube => fired=instant/drinks/applejuice; end=applejuice:12 oxygen:4 silicon:4; spawned=-
 instant/drinks/applejuice + instant/virus_food => fired=instant/drinks/applejuice; end=applejuice:12 milk:4; spawned=-
 instant/drinks/appletini + instant/drinks/cider => fired=instant/drinks/cider; end=cider:40 enzyme:5 vodka:4; spawned=-
 instant/drinks/appletini + instant/food/vinegar_apple => fired=instant/drinks/appletini; end=appletini:12 sugar:8 water:8 yeast:5; spawned=-
@@ -724,8 +662,6 @@ instant/drinks/fauxfizz + instant/drinks/virgin_mojito => fired=instant/drinks/v
 instant/drinks/firepunch + instant/drinks/hooch => fired=instant/drinks/hooch; end=hooch:12 rum:8; spawned=-
 instant/drinks/firepunch + instant/drinks/mead => fired=instant/drinks/mead; end=enzyme:5 mead:8 rum:8; spawned=-
 instant/drinks/firepunch + instant/drinks/sugarrush => fired=instant/drinks/firepunch; end=firepunch:12 sodawater:4 vodka:4; spawned=-
-instant/drinks/firepunch + instant/hyperzine => fired=instant/drinks/firepunch; end=firepunch:12 phosphorus:4 sulfur:4; spawned=-
-instant/drinks/firepunch + instant/synaptizine => fired=instant/drinks/firepunch; end=firepunch:12 lithium:4 water:4; spawned=-
 instant/drinks/firepunch + instant/virus_food_mutagen_sugar => fired=instant/drinks/firepunch; end=firepunch:12 mutagenvirusfood:4; spawned=-
 instant/drinks/flapper + instant/drinks/hachi => fired=instant/drinks/flapper,instant/drinks/hachi; end=flapper:12 hachi:10 lemonjuice:2 psilocybin:2 sake:2; spawned=-
 instant/drinks/flapper + instant/drinks/irish_cream => fired=instant/drinks/irish_cream; end=blood:4 ice:4 irishcream:12; spawned=-
@@ -742,9 +678,6 @@ instant/drinks/flat_white + instant/drinks/mocha => fired=instant/drinks/flat_wh
 instant/drinks/flat_white + instant/drinks/pilk => fired=instant/drinks/flat_white; end=cola:4 flat_white:12; spawned=-
 instant/drinks/flat_white + instant/food/cheesewheel => fired=instant/drinks/flat_white,instant/food/cheesewheel; end=enzyme:5 flat_white:12; spawned=/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel+3
 instant/drinks/flat_white + instant/food/chocolate_bar2 => fired=instant/drinks/flat_white; end=coco:8 enzyme:5 flat_white:12 sugar:8; spawned=-
-instant/drinks/fringe_weaver + instant/dryagent => fired=instant/drinks/fringe_weaver; end=fringe_weaver:40 phoron:5 sodium:8; spawned=-
-instant/drinks/fringe_weaver + instant/oxycodone => fired=instant/drinks/fringe_weaver; end=fringe_weaver:40 phoron:5 tramadol:4; spawned=-
-instant/drinks/fringe_weaver + instant/sterilizine => fired=instant/drinks/fringe_weaver; end=anti_toxin:4 chlorine:4 fringe_weaver:40; spawned=-
 instant/drinks/fusionnaire + instant/drinks/lemonade => fired=instant/drinks/lemonade,instant/drinks/fusionnaire; end=fusionnaire:24 ice:1.3333 lemonade:12 rum:1.3333 schnapps_lem:1.3333 schnapps_pep:1.3333 vodka:2.6667; spawned=-
 instant/drinks/galacticpanic + instant/neurotoxin => fired=instant/drinks/galacticpanic; end=galacticpanic:24 stoxin:4; spawned=-
 instant/drinks/gargle_blaster + instant/drinks/godka => fired=instant/drinks/gargle_blaster; end=carthatoline:4 enzyme:5 ethanol:4 gargleblaster:24 holywater:5; spawned=-
@@ -800,7 +733,6 @@ instant/drinks/grapejuice + instant/drinks/watermelonjuice => fired=instant/drin
 instant/drinks/grapejuice + instant/explosion_potassium => fired=instant/drinks/grapejuice; end=grapejuice:12 potassium:4; spawned=-
 instant/drinks/grapejuice + instant/firefightingfoam => fired=instant/drinks/grapejuice; end=fluorine:10 grapejuice:12; spawned=-
 instant/drinks/grapejuice + instant/firefightingfoamqol => fired=instant/drinks/grapejuice; end=firefoam:5 grapejuice:12; spawned=-
-instant/drinks/grapejuice + instant/lube => fired=instant/drinks/grapejuice; end=grapejuice:12 oxygen:4 silicon:4; spawned=-
 instant/drinks/grapejuice + instant/virus_food => fired=instant/drinks/grapejuice; end=grapejuice:12 milk:4; spawned=-
 instant/drinks/grapesoda + instant/drinks/holywine => fired=instant/drinks/grapesoda,instant/drinks/holywine; end=gold:8 grapesoda:12 holywater:5 holywine:24; spawned=-
 instant/drinks/grapesoda + instant/drinks/wine => fired=instant/drinks/wine; end=cola:4 enzyme:5 redwine:40; spawned=-
@@ -835,8 +767,6 @@ instant/drinks/holy_mary + instant/drinks/vodka_tonic => fired=instant/drinks/vo
 instant/drinks/honeyshot + instant/drinks/lovemaker => fired=instant/drinks/lovemaker; end=grenadine:4 lovemaker:24 vodka:4; spawned=-
 instant/drinks/hooch + instant/drinks/mead => fired=instant/drinks/hooch; end=enzyme:5 hooch:12 water:4; spawned=-
 instant/drinks/hooch + instant/drinks/sugarrush => fired=instant/drinks/hooch; end=hooch:12 sodawater:4 vodka:4; spawned=-
-instant/drinks/hooch + instant/hyperzine => fired=instant/drinks/hooch; end=hooch:12 phosphorus:4 sulfur:4; spawned=-
-instant/drinks/hooch + instant/synaptizine => fired=instant/drinks/hooch; end=hooch:12 lithium:4 water:4; spawned=-
 instant/drinks/hooch + instant/virus_food_mutagen_sugar => fired=instant/drinks/hooch; end=hooch:12 mutagenvirusfood:4; spawned=-
 instant/drinks/horchata + instant/drinks/macchiato => fired=instant/drinks/macchiato; end=macchiato:12 rice:8 sugar:8; spawned=-
 instant/drinks/horchata + instant/drinks/mocha => fired=instant/drinks/mocha; end=mocha:40 rice:8 sugar:8; spawned=-
@@ -885,7 +815,6 @@ instant/drinks/long_black + instant/drinks/watermelonjuice => fired=instant/drin
 instant/drinks/long_black + instant/explosion_potassium => fired=instant/drinks/long_black; end=long_black:8 potassium:4; spawned=-
 instant/drinks/long_black + instant/firefightingfoam => fired=instant/drinks/long_black; end=fluorine:10 long_black:8; spawned=-
 instant/drinks/long_black + instant/firefightingfoamqol => fired=instant/drinks/long_black; end=firefoam:5 long_black:8; spawned=-
-instant/drinks/long_black + instant/lube => fired=instant/drinks/long_black; end=long_black:8 oxygen:4 silicon:4; spawned=-
 instant/drinks/long_black + instant/virus_food => fired=instant/drinks/long_black; end=long_black:8 milk:4; spawned=-
 instant/drinks/love_potion + instant/drinks/milkshake => fired=instant/drinks/milkshake,instant/drinks/berryshake; end=berryshake:8 milkshake:16 sugar:4; spawned=-
 instant/drinks/love_potion + instant/drinks/mocha/alt => fired=instant/drinks/mocha/alt; end=berryjuice:4 mocha:40 sugar:4; spawned=-
@@ -915,8 +844,6 @@ instant/drinks/martini + instant/drinks/negroni => fired=instant/drinks/negroni;
 instant/drinks/martini + instant/drinks/vesper => fired=instant/drinks/martini,instant/drinks/vesper,instant/drinks/alliescocktail; end=alliescocktail:5.3333 martini:9.3333 redwine:2.6667 vesper:5.3333; spawned=-
 instant/drinks/mauna_loa + instant/food/hell_ramen => fired=instant/drinks/mauna_loa; end=hot_ramen:24 mauna_loa:20; spawned=-
 instant/drinks/mead + instant/drinks/sugarrush => fired=instant/drinks/mead; end=enzyme:5 mead:8 sodawater:4 vodka:4; spawned=-
-instant/drinks/mead + instant/hyperzine => fired=instant/drinks/mead; end=enzyme:5 mead:8 phosphorus:4 sulfur:4; spawned=-
-instant/drinks/mead + instant/synaptizine => fired=instant/drinks/mead; end=enzyme:5 lithium:4 mead:8; spawned=-
 instant/drinks/mead + instant/virus_food_mutagen_sugar => fired=instant/drinks/mead; end=enzyme:5 mead:8 mutagenvirusfood:4; spawned=-
 instant/drinks/melonade + instant/drinks/melonliquor => fired=instant/drinks/melonliquor; end=enzyme:5 melonliquor:40 sodawater:4 sugar:4; spawned=-
 instant/drinks/melonade + instant/drinks/melonspritzer => fired=instant/drinks/melonade,instant/drinks/melonspritzer; end=applejuice:2 limejuice:2 melonade:12 melonspritzer:12 redwine:4; spawned=-
@@ -972,7 +899,6 @@ instant/drinks/orangejuice + instant/drinks/watermelonjuice => fired=instant/dri
 instant/drinks/orangejuice + instant/explosion_potassium => fired=instant/drinks/orangejuice; end=orangejuice:12 potassium:4; spawned=-
 instant/drinks/orangejuice + instant/firefightingfoam => fired=instant/drinks/orangejuice; end=fluorine:10 orangejuice:12; spawned=-
 instant/drinks/orangejuice + instant/firefightingfoamqol => fired=instant/drinks/orangejuice; end=firefoam:5 orangejuice:12; spawned=-
-instant/drinks/orangejuice + instant/lube => fired=instant/drinks/orangejuice; end=orangejuice:12 oxygen:4 silicon:4; spawned=-
 instant/drinks/orangejuice + instant/virus_food => fired=instant/drinks/orangejuice; end=milk:4 orangejuice:12; spawned=-
 instant/drinks/paloma + instant/drinks/tropicalfizz => fired=instant/drinks/tropicalfizz; end=tequilasunrise:8 tropicalfizz:32; spawned=-
 instant/drinks/paloma + instant/drinks/virgin_mojito => fired=instant/drinks/paloma,instant/drinks/virgin_mojito; end=limejuice:1.3333 mint:1.3333 paloma:12 sugar:1.3333 virginmojito:13.3333; spawned=-
@@ -994,7 +920,6 @@ instant/drinks/protein_shake + instant/drinks/watermelonjuice => fired=instant/d
 instant/drinks/protein_shake + instant/explosion_potassium => fired=instant/drinks/protein_shake; end=potassium:4 protein_shake:20; spawned=-
 instant/drinks/protein_shake + instant/firefightingfoam => fired=instant/drinks/protein_shake; end=fluorine:10 protein_shake:20; spawned=-
 instant/drinks/protein_shake + instant/firefightingfoamqol => fired=instant/drinks/protein_shake; end=firefoam:5 protein_shake:20; spawned=-
-instant/drinks/protein_shake + instant/lube => fired=instant/drinks/protein_shake; end=oxygen:4 protein_shake:20 silicon:4; spawned=-
 instant/drinks/protein_shake + instant/virus_food => fired=instant/drinks/protein_shake; end=milk:4 protein_shake:20; spawned=-
 instant/drinks/protein_shake/banana + instant/drinks/protein_shake/chocolate => fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20 chocolate_protein_powder:4; spawned=-
 instant/drinks/protein_shake/banana + instant/drinks/protein_shake/strawberry => fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20 strawberry_protein_powder:4; spawned=-
@@ -1004,7 +929,6 @@ instant/drinks/protein_shake/banana + instant/drinks/watermelonjuice => fired=in
 instant/drinks/protein_shake/banana + instant/explosion_potassium => fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20 potassium:4; spawned=-
 instant/drinks/protein_shake/banana + instant/firefightingfoam => fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20 fluorine:10; spawned=-
 instant/drinks/protein_shake/banana + instant/firefightingfoamqol => fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20 firefoam:5; spawned=-
-instant/drinks/protein_shake/banana + instant/lube => fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20 oxygen:4 silicon:4; spawned=-
 instant/drinks/protein_shake/banana + instant/virus_food => fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20 milk:4; spawned=-
 instant/drinks/protein_shake/chocolate + instant/drinks/protein_shake/strawberry => fired=instant/drinks/protein_shake/chocolate; end=chocolate_protein_shake:20 strawberry_protein_powder:4; spawned=-
 instant/drinks/protein_shake/chocolate + instant/drinks/protein_shake/vanilla => fired=instant/drinks/protein_shake/vanilla; end=chocolate_protein_powder:4 vanilla_protein_shake:20; spawned=-
@@ -1013,7 +937,6 @@ instant/drinks/protein_shake/chocolate + instant/drinks/watermelonjuice => fired
 instant/drinks/protein_shake/chocolate + instant/explosion_potassium => fired=instant/drinks/protein_shake/chocolate; end=chocolate_protein_shake:20 potassium:4; spawned=-
 instant/drinks/protein_shake/chocolate + instant/firefightingfoam => fired=instant/drinks/protein_shake/chocolate; end=chocolate_protein_shake:20 fluorine:10; spawned=-
 instant/drinks/protein_shake/chocolate + instant/firefightingfoamqol => fired=instant/drinks/protein_shake/chocolate; end=chocolate_protein_shake:20 firefoam:5; spawned=-
-instant/drinks/protein_shake/chocolate + instant/lube => fired=instant/drinks/protein_shake/chocolate; end=chocolate_protein_shake:20 oxygen:4 silicon:4; spawned=-
 instant/drinks/protein_shake/chocolate + instant/virus_food => fired=instant/drinks/protein_shake/chocolate; end=chocolate_protein_shake:20 milk:4; spawned=-
 instant/drinks/protein_shake/strawberry + instant/drinks/protein_shake/vanilla => fired=instant/drinks/protein_shake/vanilla; end=strawberry_protein_powder:4 vanilla_protein_shake:20; spawned=-
 instant/drinks/protein_shake/strawberry + instant/drinks/squirt_cider => fired=instant/drinks/protein_shake/strawberry; end=nutriment:4 strawberry_protein_shake:20 tomatojuice:4; spawned=-
@@ -1021,14 +944,12 @@ instant/drinks/protein_shake/strawberry + instant/drinks/watermelonjuice => fire
 instant/drinks/protein_shake/strawberry + instant/explosion_potassium => fired=instant/drinks/protein_shake/strawberry; end=potassium:4 strawberry_protein_shake:20; spawned=-
 instant/drinks/protein_shake/strawberry + instant/firefightingfoam => fired=instant/drinks/protein_shake/strawberry; end=fluorine:10 strawberry_protein_shake:20; spawned=-
 instant/drinks/protein_shake/strawberry + instant/firefightingfoamqol => fired=instant/drinks/protein_shake/strawberry; end=firefoam:5 strawberry_protein_shake:20; spawned=-
-instant/drinks/protein_shake/strawberry + instant/lube => fired=instant/drinks/protein_shake/strawberry; end=oxygen:4 silicon:4 strawberry_protein_shake:20; spawned=-
 instant/drinks/protein_shake/strawberry + instant/virus_food => fired=instant/drinks/protein_shake/strawberry; end=milk:4 strawberry_protein_shake:20; spawned=-
 instant/drinks/protein_shake/vanilla + instant/drinks/squirt_cider => fired=instant/drinks/protein_shake/vanilla; end=nutriment:4 tomatojuice:4 vanilla_protein_shake:20; spawned=-
 instant/drinks/protein_shake/vanilla + instant/drinks/watermelonjuice => fired=instant/drinks/watermelonjuice,instant/drinks/protein_shake/vanilla; end=vanilla_protein_powder:2.4 vanilla_protein_shake:8 watermelonjuice:12; spawned=-
 instant/drinks/protein_shake/vanilla + instant/explosion_potassium => fired=instant/drinks/protein_shake/vanilla; end=potassium:4 vanilla_protein_shake:20; spawned=-
 instant/drinks/protein_shake/vanilla + instant/firefightingfoam => fired=instant/drinks/protein_shake/vanilla; end=fluorine:10 vanilla_protein_shake:20; spawned=-
 instant/drinks/protein_shake/vanilla + instant/firefightingfoamqol => fired=instant/drinks/protein_shake/vanilla; end=firefoam:5 vanilla_protein_shake:20; spawned=-
-instant/drinks/protein_shake/vanilla + instant/lube => fired=instant/drinks/protein_shake/vanilla; end=oxygen:4 silicon:4 vanilla_protein_shake:20; spawned=-
 instant/drinks/protein_shake/vanilla + instant/virus_food => fired=instant/drinks/protein_shake/vanilla; end=milk:4 vanilla_protein_shake:20; spawned=-
 instant/drinks/redspaceflush + instant/drinks/rum_and_cola => fired=instant/drinks/rum_and_cola; end=blood:4 phoron:4 rumandcola:12 whiskey:8; spawned=-
 instant/drinks/red_mead + instant/food/syntiflesh => fired=instant/drinks/red_mead,instant/food/syntiflesh; end=clonexadone:0.8 red_mead:8; spawned=/obj/item/reagent_containers/food/snacks/meat/syntiflesh+3
@@ -1061,17 +982,13 @@ instant/drinks/squirt_cider + instant/drinks/watermelonjuice => fired=instant/dr
 instant/drinks/squirt_cider + instant/explosion_potassium => fired=instant/drinks/squirt_cider; end=potassium:4 squirt_cider:12; spawned=-
 instant/drinks/squirt_cider + instant/firefightingfoam => fired=instant/drinks/squirt_cider; end=fluorine:10 squirt_cider:12; spawned=-
 instant/drinks/squirt_cider + instant/firefightingfoamqol => fired=instant/drinks/squirt_cider; end=firefoam:5 squirt_cider:12; spawned=-
-instant/drinks/squirt_cider + instant/lube => fired=instant/drinks/squirt_cider; end=oxygen:4 silicon:4 squirt_cider:12; spawned=-
 instant/drinks/squirt_cider + instant/virus_food => fired=instant/drinks/squirt_cider; end=milk:4 squirt_cider:12; spawned=-
-instant/drinks/sugarrush + instant/hyperzine => fired=instant/drinks/sugarrush; end=phosphorus:4 sugarrush:12 sulfur:4; spawned=-
-instant/drinks/sugarrush + instant/synaptizine => fired=instant/drinks/sugarrush; end=lithium:4 sugarrush:12 water:4; spawned=-
 instant/drinks/sugarrush + instant/virus_food_mutagen_sugar => fired=instant/drinks/sugarrush; end=mutagenvirusfood:4 sugarrush:12; spawned=-
 instant/drinks/syndicatebomb + instant/drinks/thirteenloko => fired=instant/drinks/syndicatebomb; end=coffee:4 syndicatebomb:8 tequila:4; spawned=-
 instant/drinks/tamagozake + instant/drinks/tokyorose => fired=instant/drinks/tamagozake; end=berryjuice:4 tamagozake:60; spawned=-
 instant/drinks/tropicalfizz + instant/drinks/virgin_mojito => fired=instant/drinks/virgin_mojito; end=berryjuice:4 lemonjuice:4 pineapplejuice:4 sodawater:12 virginmojito:20; spawned=-
 instant/drinks/vienna + instant/food/butter => fired=instant/drinks/vienna,instant/food/butter; end=sodiumchloride:0.4 vienna:12; spawned=/obj/item/reagent_containers/food/snacks/spreads/butter+3
 instant/drinks/vodkamartini + instant/drinks/vodka_tonic => fired=instant/drinks/vodkamartini; end=tonic:4 vodkamartini:12; spawned=-
-instant/drinks/voxdelight + instant/lexorin => fired=instant/drinks/voxdelight,instant/ammonia; end=ammonia:4 nitrogen:2.6667 voxdelight:16; spawned=-
 instant/drinks/voxdelight + instant/promethean_brain_revival => fired=instant/drinks/voxdelight; end=phoron:148 voxdelight:16; spawned=-
 instant/drinks/voxdelight + instant/slimeify => fired=instant/drinks/voxdelight,instant/slimeify; end=advmutationtoxin:3.2 mutationtoxin:12 slimejelly:12 voxdelight:16; spawned=-
 instant/drinks/voxdelight + instant/virus_food_phoron => fired=instant/drinks/voxdelight; end=virusfood:4 voxdelight:16; spawned=-
@@ -1080,39 +997,25 @@ instant/drinks/voxdelight + instant/virus_food_uranium_stable_alt => fired=insta
 instant/drinks/watermelonjuice + instant/explosion_potassium => fired=instant/drinks/watermelonjuice; end=potassium:4 watermelonjuice:12; spawned=-
 instant/drinks/watermelonjuice + instant/firefightingfoam => fired=instant/drinks/watermelonjuice; end=fluorine:10 watermelonjuice:12; spawned=-
 instant/drinks/watermelonjuice + instant/firefightingfoamqol => fired=instant/drinks/watermelonjuice; end=firefoam:5 watermelonjuice:12; spawned=-
-instant/drinks/watermelonjuice + instant/lube => fired=instant/drinks/watermelonjuice; end=oxygen:4 silicon:4 watermelonjuice:12; spawned=-
 instant/drinks/watermelonjuice + instant/virus_food => fired=instant/drinks/watermelonjuice; end=milk:4 watermelonjuice:12; spawned=-
 instant/drinks/whiskeysoda + instant/drinks/whiskeysour => fired=instant/drinks/whiskeysoda; end=lemonjuice:4 sugar:4 whiskeysoda:12; spawned=-
 instant/drinks/whiskeysoda + instant/drinks/whiskey_cola => fired=instant/drinks/whiskey_cola; end=sodawater:4 whiskeycola:12; spawned=-
 instant/drinks/whiskeysour + instant/drinks/whiskey_cola => fired=instant/drinks/whiskey_cola; end=lemonjuice:4 sugar:4 whiskeycola:12; spawned=-
 instant/drinks/wine + instant/food/vinegar_grape => fired=instant/drinks/wine,instant/drinks/mead; end=enzyme:5 mead:16 redwine:40 yeast:5; spawned=-
-instant/dryagent + instant/oxycodone => fired=instant/oxycodone,instant/dryagent; end=dryagent:8 oxycodone:4 phoron:4.8 sodium:4; spawned=-
-instant/dryagent + instant/sterilizine => fired=instant/sterilizine,instant/dryagent; end=dryagent:8 phoron:4.8 sodium:4 sterilizine:12; spawned=-
 instant/dyloteane + instant/dyloteane/super => fired=instant/dyloteane; end=dyloteane:4 sugar:4; spawned=-
 instant/dyloteane + instant/neutralize_neurotoxic_protein => fired=instant/neutralize_neurotoxic_protein; end=protein:8 tea:4; spawned=-
-instant/dyloteane + instant/tercozolam => fired=instant/tercozolam; end=tea:4 tercozolam:12; spawned=-
 instant/dyloteane/super + instant/neutralize_neurotoxic_protein => fired=instant/neutralize_neurotoxic_protein; end=protein:8 sugar:4 tea:4; spawned=-
-instant/dyloteane/super + instant/tercozolam => fired=instant/tercozolam; end=sugar:4 tea:4 tercozolam:12; spawned=-
-instant/dylovene + instant/leporazine => fired=instant/dylovene; end=anti_toxin:12 copper:4 phoron:5; spawned=-
-instant/dylovene + instant/mindbreaker => fired=instant/dylovene; end=anti_toxin:16 hydrogen:4; spawned=-
 instant/emp_pulse + instant/mix_virus/mix_virus_4 => fired=instant/emp_pulse; end=-; spawned=-
 instant/emp_pulse + instant/virus_food_uranium => fired=instant/emp_pulse; end=-; spawned=-
 instant/emp_pulse + instant/virus_food_uranium_unstable => fired=instant/emp_pulse; end=-; spawned=-
-instant/ethylredoxrazine + instant/inaprovaline => fired=instant/inaprovaline,instant/tricordrazine; end=inaprovaline:8 tricordrazine:8; spawned=-
-instant/ethylredoxrazine + instant/water => fired=instant/ethylredoxrazine; end=ethylredoxrazine:12 hydrogen:8; spawned=-
 instant/explosion_potassium + instant/firefightingfoam => fired=instant/explosion_potassium; end=-; spawned=/obj/effect/effect/sparks+2
 instant/explosion_potassium + instant/firefightingfoamqol => fired=instant/explosion_potassium; end=-; spawned=/obj/effect/effect/sparks+2
-instant/explosion_potassium + instant/lube => fired=instant/lube; end=lube:16 potassium:4; spawned=-
 instant/explosion_potassium + instant/virus_food => fired=instant/virus_food; end=potassium:4 virusfood:20; spawned=-
-instant/falter_virus + instant/panacillin => fired=instant/panacillin; end=blood:1 panacillin:8; spawned=-
 instant/firefightingfoam + instant/firefightingfoamqol => fired=instant/firefightingfoam; end=firefoam:9 fluorine:10; spawned=-
-instant/firefightingfoam + instant/lube => fired=instant/lube; end=fluorine:10 lube:16; spawned=-
 instant/firefightingfoam + instant/virus_food => fired=instant/virus_food; end=fluorine:10 virusfood:20; spawned=-
-instant/firefightingfoamqol + instant/lube => fired=instant/lube; end=firefoam:5 lube:16; spawned=-
 instant/firefightingfoamqol + instant/virus_food => fired=instant/virus_food; end=firefoam:5 virusfood:20; spawned=-
 instant/flash_powder + instant/metalfoam => fired=instant/flash_powder,instant/metalfoam; end=foaming_agent:1.3333 pacid:1.3333; spawned=/obj/effect/effect/foam+1,/obj/effect/effect/sparks+2
 instant/flash_powder + instant/napalm => fired=instant/flash_powder; end=phoron:4 sacid:4; spawned=/obj/effect/effect/sparks+2
-instant/flash_powder + instant/silicate => fired=instant/silicate; end=potassium:4 silicate:12 sulfur:4; spawned=-
 instant/flash_powder + instant/thermite => fired=instant/thermite; end=potassium:4 sulfur:4 thermite:12; spawned=-
 instant/food/barbecue + instant/food/ketchup => fired=instant/food/ketchup; end=applejuice:4 ketchup:16 spacespice:4; spawned=-
 instant/food/blondiemix + instant/food/browniemix => fired=instant/food/browniemix; end=browniemix:60 vanilla:20; spawned=-
@@ -1132,9 +1035,7 @@ instant/food/cookingoilpeanut + instant/food/peanutbutter => fired=instant/food/
 instant/food/dough + instant/food/mayonnaise => fired=instant/food/mayonnaise; end=flour:40 mayo:60; spawned=-
 instant/food/meatball + instant/soapification/gibs => fired=instant/food/meatball,instant/soapification/gibs; end=enzyme:5 lye:12; spawned=/obj/item/reagent_containers/food/snacks/meatball+12,/obj/item/soap/homemade+2
 instant/food/soysauce + instant/food/tofu => fired=instant/food/tofu; end=enzyme:5 sacid:4; spawned=/obj/item/reagent_containers/food/snacks/tofu+4
-instant/gastirodaxon + instant/hepanephrodaxon => fired=-; end=biomass:8 carthatoline:8 lithium:4 phoron:5 tungsten:8; spawned=-
 instant/glucose + instant/lipozine => fired=instant/lipozine; end=lipozine:12 sugar:4 water:4; spawned=-
-instant/glucose + instant/potassium_chloride => fired=instant/potassium_chloride; end=potassium_chloride:8 sugar:4 water:4; spawned=-
 instant/glycerol + instant/soapification/alt => fired=instant/glycerol,instant/soapification/alt; end=glycerol:4 lye:2.4; spawned=/obj/item/soap+2
 instant/grape_juice_metal_paint + instant/green_metal_paint => fired=instant/green_metal_paint; end=grapejuice:20 paint:20; spawned=-
 instant/grape_juice_metal_paint + instant/lemon_juice_metal_paint => fired=instant/grape_juice_metal_paint; end=lemonjuice:20 paint:20; spawned=-
@@ -1200,14 +1101,7 @@ instant/grey_paint + instant/red_paint => fired=instant/red_paint; end=marker_in
 instant/grey_paint + instant/tomato_juice_paint => fired=instant/grey_paint; end=paint:20 tomatojuice:20; spawned=-
 instant/grey_paint + instant/watermelon_juice_paint => fired=instant/grey_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/grey_paint + instant/yellow_paint => fired=instant/yellow_paint; end=marker_ink_grey:4 paint:20; spawned=-
-instant/gynorovir + instant/gynorovir_bootleg => fired=instant/gynorovir; end=gynorovir:4 soymilk:40; spawned=-
-instant/hydrophoron + instant/luminol => fired=instant/luminol; end=luminol:24 phoron:4; spawned=-
-instant/hyperzine + instant/synaptizine => fired=instant/synaptizine; end=phosphorus:4 sulfur:4 synaptizine:12; spawned=-
-instant/hyperzine + instant/virus_food_mutagen_sugar => fired=instant/hyperzine; end=hyperzine:12 mutagenvirusfood:4; spawned=-
-instant/hyronalin + instant/mutagen => fired=instant/mutagen; end=anti_toxin:4 mutagen:12; spawned=-
 instant/ickypak + instant/performancepeaker => fired=instant/ickypak; end=ickypak:20 inaprovaline:4 liquidlife:4; spawned=-
-instant/imidazoline + instant/prussian_blue => fired=instant/imidazoline,instant/prussian_blue; end=imidazoline:8 iron:1.3333 nitrogen:4 prussian_blue:18.6667; spawned=-
-instant/inaprovaline + instant/water => fired=instant/inaprovaline; end=hydrogen:8 inaprovaline:12; spawned=-
 instant/ironfoam + instant/ironsaline => fired=instant/ironsaline,instant/ironfoam; end=foaming_agent:1.3333 ironsaline:16 pacid:1.3333; spawned=/obj/effect/effect/foam+1
 instant/lemon_juice_metal_paint + instant/lime_juice_metal_paint => fired=instant/lime_juice_metal_paint; end=lemonjuice:20 paint:20; spawned=-
 instant/lemon_juice_metal_paint + instant/metal_paint => fired=instant/metal_paint; end=lemonjuice:20 paint:20; spawned=-
@@ -1231,12 +1125,6 @@ instant/lemon_juice_paint + instant/red_paint => fired=instant/red_paint; end=le
 instant/lemon_juice_paint + instant/tomato_juice_paint => fired=instant/tomato_juice_paint; end=lemonjuice:20 paint:20; spawned=-
 instant/lemon_juice_paint + instant/watermelon_juice_paint => fired=instant/watermelon_juice_paint; end=lemonjuice:20 paint:20; spawned=-
 instant/lemon_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=lemonjuice:20 paint:20; spawned=-
-instant/leporazine + instant/mindbreaker => fired=instant/leporazine,instant/hydrophoron; end=anti_toxin:4 hydrophoron:8 leporazine:8 phoron:1; spawned=-
-instant/lexorin + instant/promethean_brain_revival => fired=instant/lexorin; end=lexorin:12 phoron:156; spawned=-
-instant/lexorin + instant/slimeify => fired=instant/lexorin,instant/slimeify; end=advmutationtoxin:3.7333 lexorin:12 mutationtoxin:4 slimejelly:4; spawned=-
-instant/lexorin + instant/virus_food_phoron => fired=instant/lexorin; end=lexorin:12 virusfood:4; spawned=-
-instant/lexorin + instant/virus_food_uranium_stable => fired=instant/lexorin,instant/virus_food_uranium_stable; end=lexorin:12 silver:4 stableuraniumvirusfood:3.2 uranium:4; spawned=-
-instant/lexorin + instant/virus_food_uranium_stable_alt => fired=instant/lexorin,instant/virus_food_uranium_stable_alt; end=gold:4 lexorin:12 stableuraniumvirusfood:3.2 uranium:4; spawned=-
 instant/lime_juice_metal_paint + instant/metal_paint => fired=instant/metal_paint; end=limejuice:20 paint:20; spawned=-
 instant/lime_juice_metal_paint + instant/orange_juice_metal_paint => fired=instant/orange_juice_metal_paint; end=limejuice:20 paint:20; spawned=-
 instant/lime_juice_metal_paint + instant/orange_metal_paint => fired=instant/orange_metal_paint; end=limejuice:20 paint:20; spawned=-
@@ -1257,21 +1145,9 @@ instant/lime_juice_paint + instant/red_paint => fired=instant/red_paint; end=lim
 instant/lime_juice_paint + instant/tomato_juice_paint => fired=instant/tomato_juice_paint; end=limejuice:20 paint:20; spawned=-
 instant/lime_juice_paint + instant/watermelon_juice_paint => fired=instant/lime_juice_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/lime_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=limejuice:20 paint:20; spawned=-
-instant/lipostipo + instant/lipozilase => fired=instant/lipozilase; end=fluorine:4 lipozilase:8 nutriment:4; spawned=-
-instant/lipozine + instant/potassium_chloride => fired=instant/potassium_chloride; end=ethanol:4 potassium_chloride:8 radium:4; spawned=-
-instant/liquidhealer + instant/myelamine => fired=instant/myelamine; end=carpotoxin:4 cryptobiolin:4 kelotane:4 liquidlife:4 myelamine:8 tricordrazine:4; spawned=-
 instant/liquidhealer + instant/myelamine_sap => fired=instant/myelamine_sap; end=carpotoxin:4 cryptobiolin:4 liquidlife:4 myelamine:4 tricordrazine:4; spawned=-
-instant/liquidhealer + instant/osteodaxon => fired=instant/osteodaxon; end=cryptobiolin:4 kelotane:4 liquidlife:4 osteodaxon:8 phoron:4.6 tricordrazine:4; spawned=-
-instant/liquidhealer + instant/peridaxon => fired=instant/peridaxon; end=carpotoxin:4 cryptobiolin:4 kelotane:4 liquidlife:4 peridaxon:8 phoron:5 tricordrazine:4; spawned=-
-instant/lube + instant/virus_food => fired=instant/lube; end=lube:16 milk:4; spawned=-
-instant/lye + instant/sizeoxadone => fired=instant/lye; end=lye:12 phoron:5 tramadol:4; spawned=-
-instant/lye + instant/sodiumchloride => fired=instant/lye; end=chlorine:4 lye:12; spawned=-
-instant/macrocillin + instant/microcillin => fired=instant/macrocillin; end=macrocillin:4 sodiumchloride:80; spawned=-
-instant/macrocillin + instant/normalcillin => fired=instant/macrocillin; end=leporazine:80 macrocillin:4; spawned=-
-instant/macrocillin + instant/virus_food_size => fired=instant/macrocillin; end=macrocillin:4 phoronvirusfood:4; spawned=-
 instant/malish_qualem + instant/neuter_virus => fired=instant/malish_qualem; end=blood:1 malish-qualem:8 phoron:5; spawned=-
 instant/metalfoam + instant/napalm => fired=instant/napalm,instant/metalfoam; end=foaming_agent:1.3333 pacid:1.3333; spawned=/obj/effect/effect/foam+1
-instant/metalfoam + instant/silicate => fired=instant/silicate,instant/metalfoam; end=foaming_agent:1.3333 pacid:1.3333 silicate:12; spawned=/obj/effect/effect/foam+1
 instant/metalfoam + instant/thermite => fired=instant/thermite,instant/metalfoam; end=foaming_agent:1.3333 pacid:1.3333 thermite:12; spawned=/obj/effect/effect/foam+1
 instant/metal_paint + instant/orange_juice_metal_paint => fired=instant/metal_paint; end=orangejuice:20 paint:20; spawned=-
 instant/metal_paint + instant/orange_metal_paint => fired=instant/metal_paint; end=marker_ink_orange:4 paint:20; spawned=-
@@ -1282,9 +1158,6 @@ instant/metal_paint + instant/red_metal_paint => fired=instant/metal_paint; end=
 instant/metal_paint + instant/tomato_juice_metal_paint => fired=instant/metal_paint; end=paint:20 tomatojuice:20; spawned=-
 instant/metal_paint + instant/watermelon_juice_metal_paint => fired=instant/metal_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/metal_paint + instant/yellow_metal_paint => fired=instant/metal_paint; end=marker_ink_yellow:4 paint:20; spawned=-
-instant/methylphenidate + instant/paroxetine => fired=instant/methylphenidate; end=inaprovaline:4 methylphenidate:12 oxygen:4; spawned=-
-instant/microcillin + instant/normalcillin => fired=instant/microcillin; end=leporazine:80 microcillin:4; spawned=-
-instant/microcillin + instant/virus_food_size => fired=instant/microcillin; end=microcillin:4 phoronvirusfood:4; spawned=-
 instant/milk_paint + instant/orange_juice_paint => fired=instant/milk_paint; end=orangejuice:20 paint:20; spawned=-
 instant/milk_paint + instant/orange_paint => fired=instant/orange_paint; end=milk:20 paint:20; spawned=-
 instant/milk_paint + instant/poisonberry_juice_paint => fired=instant/milk_paint; end=paint:20 poisonberryjuice:20; spawned=-
@@ -1303,21 +1176,12 @@ instant/mix_virus/mix_virus_4 + instant/virus_food_uranium => fired=instant/viru
 instant/mix_virus/mix_virus_4 + instant/virus_food_uranium_unstable => fired=instant/virus_food_uranium_unstable,instant/mix_virus/mix_virus_11; end=blood:1; spawned=-
 instant/mix_virus/rem_virus + instant/virus_food_adranol => fired=instant/virus_food_adranol,instant/mix_virus/mix_virus_9; end=blood:1; spawned=-
 instant/mix_virus/rem_virus + instant/virus_food_phoron_adranol => fired=instant/virus_food_phoron_adranol,instant/mix_virus/mix_virus_7; end=blood:1; spawned=-
-instant/mortiferin + instant/spaceacillin => fired=instant/mortiferin; end=inaprovaline:4 mortiferin:8 phoron:5; spawned=-
-instant/myelamine + instant/myelamine_sap => fired=instant/myelamine; end=bluesap:4 kelotane:4 myelamine:8; spawned=-
-instant/myelamine + instant/osteodaxon => fired=instant/osteodaxon; end=iron:8 osteodaxon:8 phoron:4.6 spidertoxin:4; spawned=-
-instant/myelamine + instant/peridaxon => fired=instant/peridaxon; end=iron:8 peridaxon:8 phoron:5 spidertoxin:4; spawned=-
-instant/myelamine_sap + instant/osteodaxon => fired=instant/osteodaxon; end=bluesap:4 iron:8 kelotane:4 osteodaxon:8 phoron:4.6; spawned=-
-instant/myelamine_sap + instant/peridaxon => fired=instant/peridaxon; end=bluesap:4 iron:8 kelotane:4 peridaxon:8 phoron:5; spawned=-
-instant/napalm + instant/silicate => fired=instant/silicate; end=phoron:4 sacid:4 silicate:12; spawned=-
 instant/napalm + instant/thermite => fired=instant/thermite; end=phoron:4 sacid:4 thermite:12; spawned=-
 instant/neutralise_acid/ammonia + instant/neutralise_acid/diethylamine => fired=instant/neutralise_acid/ammonia; end=contaminant_salts:4 diethylamine:4 water:4; spawned=-
 instant/neutralise_acid/ammonia + instant/neutralise_acid/lye => fired=instant/neutralise_acid/lye; end=ammonia:4 contaminant_salts:4 water:4; spawned=-
 instant/neutralise_acid/diethylamine + instant/neutralise_acid/lye => fired=instant/neutralise_acid/lye; end=contaminant_salts:4 diethylamine:4 water:4; spawned=-
 instant/neutralise_base/polytrinic + instant/neutralise_base/sulphuric => fired=instant/neutralise_base/sulphuric; end=contaminant_salts:4 pacid:4 water:4; spawned=-
 instant/neutralize_carpotoxin + instant/neutralize_spidertoxin => fired=instant/neutralize_carpotoxin; end=protein:4 spidertoxin:4; spawned=-
-instant/neutralize_neurotoxic_protein + instant/tercozolam => fired=instant/neutralize_neurotoxic_protein; end=ethanol:4 lithium:4 protein:8; spawned=-
-instant/normalcillin + instant/virus_food_size => fired=instant/normalcillin; end=normalcillin:4 phoronvirusfood:4; spawned=-
 instant/orange_juice_metal_paint + instant/orange_metal_paint => fired=instant/orange_metal_paint; end=orangejuice:20 paint:20; spawned=-
 instant/orange_juice_metal_paint + instant/poisonberry_juice_metal_paint => fired=instant/orange_juice_metal_paint; end=paint:20 poisonberryjuice:20; spawned=-
 instant/orange_juice_metal_paint + instant/potato_juice_metal_paint => fired=instant/orange_juice_metal_paint; end=paint:20 potatojuice:20; spawned=-
@@ -1348,10 +1212,6 @@ instant/orange_paint + instant/red_paint => fired=instant/red_paint; end=marker_
 instant/orange_paint + instant/tomato_juice_paint => fired=instant/orange_paint; end=paint:20 tomatojuice:20; spawned=-
 instant/orange_paint + instant/watermelon_juice_paint => fired=instant/orange_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/orange_paint + instant/yellow_paint => fired=instant/orange_paint; end=marker_ink_yellow:4 paint:20; spawned=-
-instant/osteodaxon + instant/peridaxon => fired=instant/peridaxon; end=carpotoxin:4 peridaxon:8 phoron:5; spawned=-
-instant/oxycodone + instant/sterilizine => fired=instant/oxycodone; end=anti_toxin:4 chlorine:4 oxycodone:4 phoron:5; spawned=-
-instant/paracetamol + instant/tricordrazine => fired=instant/paracetamol; end=anti_toxin:4 paracetamol:8; spawned=-
-instant/paracetamol + instant/virus_food_mutagen_inaprovaline => fired=instant/paracetamol; end=mutagenvirusfood:4 paracetamol:8; spawned=-
 instant/poisonberry_juice_metal_paint + instant/potato_juice_metal_paint => fired=instant/poisonberry_juice_metal_paint; end=paint:20 potatojuice:20; spawned=-
 instant/poisonberry_juice_metal_paint + instant/purple_metal_paint => fired=instant/purple_metal_paint; end=paint:20 poisonberryjuice:20; spawned=-
 instant/poisonberry_juice_metal_paint + instant/red_metal_paint => fired=instant/red_metal_paint; end=paint:20 poisonberryjuice:20; spawned=-
@@ -1394,8 +1254,6 @@ instant/red_paint + instant/watermelon_juice_paint => fired=instant/red_paint; e
 instant/red_paint + instant/yellow_paint => fired=instant/red_paint; end=marker_ink_yellow:4 paint:20; spawned=-
 instant/rezadone + instant/zombiepowder => fired=instant/zombiepowder; end=cryptobiolin:4 zombiepowder:8; spawned=-
 instant/robustharvest + instant/space_cleaner => fired=instant/robustharvest; end=robustharvest:12 water:4; spawned=-
-instant/silicate + instant/thermite => fired=instant/silicate; end=iron:4 silicate:12; spawned=-
-instant/sizeoxadone + instant/sodiumchloride => fired=instant/sodiumchloride; end=phoron:5 sodiumchloride:8 tramadol:4; spawned=-
 instant/slime/green_emitter + instant/slime/nuclear_emitter => fired=instant/slime/nuclear_emitter; end=-; spawned=/obj/item/slime_irradiator+1
 instant/slime/green_radium + instant/slime/nuclear_radium => fired=instant/slime/nuclear_radium; end=radium:120; spawned=-
 instant/slime/green_uranium + instant/slime/nuclear_uranium => fired=instant/slime/nuclear_uranium; end=-; spawned=/obj/item/stack/material/uranium+1
@@ -1468,12 +1326,10 @@ instant/solidification/platinum + instant/solidification/uranium => fired=instan
 instant/solidification/silver + instant/solidification/steel => fired=instant/solidification,instant/solidification/silver; end=carbon:80; spawned=/obj/item/stack/material/iron+1,/obj/item/stack/material/silver+1
 instant/solidification/silver + instant/solidification/uranium => fired=instant/solidification/silver; end=uranium:80; spawned=/obj/item/stack/material/silver+1
 instant/solidification/steel + instant/solidification/uranium => fired=instant/solidification,instant/solidification/uranium; end=carbon:80; spawned=/obj/item/stack/material/iron+1,/obj/item/stack/material/uranium+1
-instant/synaptizine + instant/virus_food_mutagen_sugar => fired=instant/synaptizine; end=mutagenvirusfood:4 synaptizine:12; spawned=-
 instant/tomato_juice_metal_paint + instant/watermelon_juice_metal_paint => fired=instant/tomato_juice_metal_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/tomato_juice_metal_paint + instant/yellow_metal_paint => fired=instant/yellow_metal_paint; end=paint:20 tomatojuice:20; spawned=-
 instant/tomato_juice_paint + instant/watermelon_juice_paint => fired=instant/tomato_juice_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/tomato_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=paint:20 tomatojuice:20; spawned=-
-instant/tricordrazine + instant/virus_food_mutagen_inaprovaline => fired=instant/tricordrazine; end=mutagenvirusfood:4 tricordrazine:8; spawned=-
 instant/unsorbitol + instant/virus_food_mutagen => fired=instant/unsorbitol; end=unsorbitol:20 virusfood:4; spawned=-
 instant/virus_food_adranol + instant/virus_food_phoron_adranol => fired=instant/virus_food_adranol; end=adranolvirusfood:4 phoronvirusfood:4; spawned=-
 instant/virus_food_phoron + instant/virus_food_uranium_stable => fired=instant/virus_food_phoron,instant/virus_food_uranium_stable,instant/virus_food_uranium_unstable; end=silver:4 stableuraniumvirusfood:3.2 unstableuraniumvirusfood:4; spawned=-
@@ -1482,4 +1338,3 @@ instant/virus_food_uranium + instant/virus_food_uranium_unstable => fired=instan
 instant/virus_food_uranium_stable + instant/virus_food_uranium_stable_alt => fired=instant/virus_food_uranium_stable; end=gold:20 stableuraniumvirusfood:4; spawned=-
 instant/watermelon_juice_metal_paint + instant/yellow_metal_paint => fired=instant/yellow_metal_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/watermelon_juice_paint + instant/yellow_paint => fired=instant/yellow_paint; end=paint:20 watermelonjuice:20; spawned=-
-

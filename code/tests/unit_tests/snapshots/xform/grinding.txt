@@ -17,7 +17,7 @@
 /obj/item/ore/tin => ore: tin; ground: tin=20
 /obj/item/ore/uranium => ore: uranium; ground: uranium=20
 /obj/item/ore/verdantium => ore: radium,phoron,nitrogen,phosphorus,sodium; ground: nitrogen=4,phoron=4,phosphorus=4,radium=4,sodium=4
-/obj/item/ore/void_opal => ore: silicon,silicon,oxygen,water; ground: lube=20,silicon=5
+/obj/item/ore/void_opal => ore: silicon,silicon,oxygen,water; ground: oxygen=5,silicon=10,water=5
 /obj/item/stack/material/algae => sheet: carbon,nitrogen,nitrogen,phosphorus,phosphorus; ground: carbon=12,nitrogen=24,phosphorus=24
 /obj/item/stack/material/algae/ten => sheet: carbon,nitrogen,nitrogen,phosphorus,phosphorus; ground: carbon=12,nitrogen=24,phosphorus=24
 /obj/item/stack/material/aluminium => sheet: aluminum; ground: aluminum=60

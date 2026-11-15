@@ -7,7 +7,11 @@
 	var/obj/item/chem_funnel/funnel
 	/// A sheet of catalytic material lying in the container, or null: its activity widens the ideal temperature band of every recipe run in it.
 	var/obj/item/stack/material/catalyst
+	/// The clip-on electrode pair dipping into the liquid, or null: what an electrolysis needs besides a hot plate that is on.
+	var/obj/item/chem_electrode/electrode
 
+MSG_DEF_SELF(glass/electrode_fitted, "There is an electrode pair on it already.")
+MSG_DEF_SELF(glass/no_electrode, "There is no electrode pair on it.")
 MSG_DEF_SELF(glass/funnel_fitted, "There is a funnel in it already.")
 MSG_DEF_SELF(glass/no_funnel, "There is no funnel on it.")
 MSG_DEF_SELF(glass/catalyst_present, "There is a catalyst in it already.")
@@ -25,7 +29,11 @@ CAPABILITY_DEF(glass_purification, CAP_GLASS_PURIFICATION, key = NONE)
 		op("add_catalyst", item(/obj/item/stack/material), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, catalyst_fits)), label("Drop a sheet in as a catalyst"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, catalyst_added))),
 		op("remove_catalyst", menu(), when(req_actor_kind(/mob/living)), label("Take out the catalyst"), \
-			needs(req_capable(), req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, catalyst_lying), silent = TRUE)), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, catalyst_removed))))
+			needs(req_capable(), req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, catalyst_lying), silent = TRUE)), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, catalyst_removed))),
+		op("attach_electrode", item(/obj/item/chem_electrode), label("Clip the electrodes on"), \
+			needs(req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, electrode_free))), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, electrode_attached))),
+		op("remove_electrode", menu(), when(req_actor_kind(/mob/living)), label("Take the electrodes off"), \
+			needs(req_capable(), req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, electrode_fitted), silent = TRUE)), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, electrode_removed))))
 
 // ---- the funnel ----
 
@@ -109,3 +117,44 @@ CAPABILITY_DEF(glass_purification, CAP_GLASS_PURIFICATION, key = NONE)
 	user.put_in_hands(sheet)
 	to_chat(user, span_notice("You fish \the [sheet] out of \the [src]."))
 	return OP_OK
+
+// ---- the electrode pair ----
+
+/// An electrode pair can clip on.
+/obj/item/reagent_containers/glass/proc/electrode_free(datum/act/op/A)
+	return electrode ? MSG(glass/electrode_fitted) : null
+
+/// There is an electrode pair to take off.
+/obj/item/reagent_containers/glass/proc/electrode_fitted(datum/act/op/A)
+	return electrode ? null : /datum/msg/req_failed
+
+/obj/item/reagent_containers/glass/proc/electrode_attached(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/chem_electrode/E = A.held
+	if(!move_into(src, nameof(src.electrode), E, user))
+		return OP_OK
+	to_chat(user, span_notice("You clip \the [E] onto \the [src]; the leads dip into the liquid. An electrolysis needs it on a hot plate that is on."))
+	if(GLOB.chem_trace)
+		log_world("CHEM: [user] clipped [E] on [src]")
+	reagents?.handle_reactions() // an electrolysis may go now, if the plate is on
+	return OP_OK
+
+/obj/item/reagent_containers/glass/proc/electrode_removed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/chem_electrode/E = electrode
+	if(!E)
+		return OP_OK
+	E.forceMove(get_turf(src))
+	rel_take(src, nameof(electrode))
+	user.put_in_hands(E)
+	to_chat(user, span_notice("You unclip \the [E] from \the [src]."))
+	return OP_OK
+
+/// A clip-on electrode pair: two leads on a clip that dip into a glass container. Stood on a hot plate that is on, the plate's current runs through the liquid
+/// (the electrolysis process: code/content/reagents/blocks/processes.dm).
+/obj/item/chem_electrode
+	name = "electrode pair"
+	desc = "Two graphite leads on a spring clip. Clip it onto a beaker, stand the beaker on a hot plate that is on, and the current runs through the liquid."
+	icon = 'icons/obj/chemical.dmi'
+	icon_state = "dropper0"
+	w_class = ITEMSIZE_SMALL

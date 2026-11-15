@@ -26,6 +26,8 @@
 #define CHEM_GROUP_THIOL "thiol"
 #define CHEM_GROUP_PHOSPHATE "phosphate"
 #define CHEM_GROUP_METAL_CENTRE "metal_centre"
+/// A nitrile: a carbon and a nitrogen hung on a core (the tenth group: the cyanide arm of substitution and the glues need it).
+#define CHEM_GROUP_CYANIDE "cyanide"
 
 // ---- links (join two parts) ----
 #define CHEM_LINK_ESTER "ester"
@@ -45,6 +47,13 @@
 #define CHEM_ION_CARBONATE "carbonate"
 #define CHEM_ION_PEROXIDE "peroxide"
 #define CHEM_ION_SILICATE "silicate"
+#define CHEM_ION_HYPOCHLORITE "hypochlorite"
+#define CHEM_ION_PHOSPHATE "phosphate"
+#define CHEM_ION_CYANIDE "cyanide"
+#define CHEM_ION_HYDRIDE "hydride"
+#define CHEM_ION_LITHIUM "lithium"
+#define CHEM_ION_IRON "iron"
+#define CHEM_ION_COPPER "copper"
 
 // ---- tags (what a structure is, for filters and the book) ----
 #define CHEM_TAG_ORGANIC "organic"
@@ -77,6 +86,8 @@
 #define CHEM_PROCESS_DISPLACE "displace"
 #define CHEM_PROCESS_ELECTROLYSE "electrolyse"
 #define CHEM_PROCESS_POLYMERISE "polymerise"
+/// Not a process a mixture is made to do: the reaction between two chemicals on contact, by the groups they carry (code/content/reagents/blocks/clashes.dm).
+#define CHEM_PROCESS_CLASH "clash"
 
 // ---- catalyst kinds: what a process runs on ----
 /// Nothing but heat and the added reagent.
@@ -91,6 +102,10 @@
 #define CHEM_CATALYST_SOLID_ACID "solid_acid"
 /// An enzyme in the mixture: works at gentle heat, leaves biological residue.
 #define CHEM_CATALYST_ENZYME "enzyme"
+/// A process chemical poured in (hydride, a strong oxidiser, ...): it is the process, consumed; less selective, leaves its own residue (agents.dm).
+#define CHEM_CATALYST_AGENT "agent"
+/// A reaction on contact (a clash): no catalyst, no band; in a container and in the stomach, never in the bloodstream.
+#define CHEM_CATALYST_CONTACT "contact"
 
 /// A solid catalyst whose material holds this much reagent (reagent_porosity) is a solid acid; any other catalytic sheet is a metal.
 #define CHEM_SOLID_ACID_POROSITY 8
@@ -123,3 +138,9 @@
 
 /// A structure with its groups at most this many (a process does not hang a fifth group on a core).
 #define CHEM_GROUPS_MAX 4
+
+/// The tiers of the chemistry (doc/rewrite/proposals/chemistry_redesign.md section 8), for the book.
+#define CHEM_TIER_STAPLE 1
+#define CHEM_TIER_STANDARD 2
+#define CHEM_TIER_ADVANCED 3
+#define CHEM_TIER_EXOTIC 4
