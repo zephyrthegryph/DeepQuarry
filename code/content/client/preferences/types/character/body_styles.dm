@@ -53,9 +53,9 @@
 /datum/preference/text/human/tail_style/get_pref_choices(datum/preferences/preferences)
 	return sprite_accessory_names(GLOB.tail_styles_list)
 
-/// The tail styles, and the Legs picker's Normal and Digitigrade (it shows the taur bodies among the tails' thumbnails).
+/// The tail styles with None as the bare body (as the ears and wings have), and the Legs picker's Normal and Digitigrade (it shows the taur bodies among the tails' thumbnails and leaves the None body out).
 /datum/preference/text/human/tail_style/get_pref_thumbnails(datum/preferences/preferences)
-	var/list/out = sprite_accessory_thumbs(GLOB.tail_styles_list) || list()
+	var/list/out = dq_part_style_thumbs(GLOB.tail_styles_list, preferences)
 	out["plantigrade"] = list("layers" = dq_body_thumb_layers(preferences))
 	out["digitigrade"] = list("layers" = dq_body_thumb_layers(preferences, digitigrade = TRUE))
 	return out
@@ -187,6 +187,17 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/preview_job/apply_to_human(mob/living/carbon/human/target, value)
+	return
+
+
+/datum/preference/toggle/human/animations_toggle
+	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
+	savefile_key = "animations_toggle"
+	default_value = FALSE
+	savefile_identifier = PREFERENCE_CHARACTER
+	can_randomize = FALSE
+
+/datum/preference/toggle/human/animations_toggle/apply_to_human(mob/living/carbon/human/target, value)
 	return
 
 

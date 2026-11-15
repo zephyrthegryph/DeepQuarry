@@ -83,30 +83,37 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Hair
 	tag_pref(., /datum/preference/text/human/h_style, "appearance", "hair")
 	tag_pref(., /datum/preference/text/human/f_style, "appearance", "hair")
+	tag_pref(., /datum/preference/text/human/grad_style, "appearance", "hair")
 	tag_pref(., /datum/preference/color/human/hair_color, "appearance", "hair")
 	tag_pref(., /datum/preference/color/human/facial_color, "appearance", "hair")
+	tag_pref(., /datum/preference/color/human/grad_color, "appearance", "hair")
 	// Ears
 	tag_pref(., /datum/preference/text/human/ear_style, "appearance", "ears")
 	tag_pref(., /datum/preference/text/human/ear_secondary_style, "appearance", "ears")
 	tag_pref(., /datum/preference/color/human/ears_color1, "appearance", "ears")
 	tag_pref(., /datum/preference/color/human/ears_color2, "appearance", "ears")
 	tag_pref(., /datum/preference/color/human/ears_color3, "appearance", "ears")
+	tag_pref(., /datum/preference/numeric/human/ears_alpha, "appearance", "ears")
+	tag_pref(., /datum/preference/numeric/human/ears_alpha/secondary, "appearance", "ears")
 	tag_pref(., /datum/preference/ear_secondary_colors, "appearance", "ears", PREF_WIDGET_HIDDEN)
 	// Tail
 	tag_pref(., /datum/preference/text/human/tail_style, "appearance", "tail")
 	tag_pref(., /datum/preference/color/human/tail_color1, "appearance", "tail")
 	tag_pref(., /datum/preference/color/human/tail_color2, "appearance", "tail")
 	tag_pref(., /datum/preference/color/human/tail_color3, "appearance", "tail")
+	tag_pref(., /datum/preference/numeric/human/tail_alpha, "appearance", "tail")
 	// Wings
 	tag_pref(., /datum/preference/text/human/wing_style, "appearance", "wings")
 	tag_pref(., /datum/preference/color/human/wing_color1, "appearance", "wings")
 	tag_pref(., /datum/preference/color/human/wing_color2, "appearance", "wings")
 	tag_pref(., /datum/preference/color/human/wing_color3, "appearance", "wings")
+	tag_pref(., /datum/preference/numeric/human/wing_alpha, "appearance", "wings")
 	// Markings (handled by editor)
 	tag_pref(., /datum/preference/body_markings, "appearance", "markings", PREF_WIDGET_HIDDEN)
 	// Preview controls
 	tag_pref(., /datum/preference/toggle/human/preview_loadout, "appearance", "preview")
 	tag_pref(., /datum/preference/toggle/human/preview_job, "appearance", "preview")
+	tag_pref(., /datum/preference/toggle/human/animations_toggle, "appearance", "preview")
 
 	//// SIZE & VOICE ////
 	tag_pref(., /datum/preference/numeric/human/size_multiplier, "identity", "size")

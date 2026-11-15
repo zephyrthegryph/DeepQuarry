@@ -376,6 +376,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
 const PREVIEW_LABELS: Record<string, string> = {
   preview_loadout: 'Show loadout',
   preview_job: 'Show job outfit',
+  animations_toggle: 'Animate',
 };
 
 const PreviewSwitch = ({ item }: { item: PrefWidgetItem }) => {
@@ -747,6 +748,14 @@ export const legChoices = (
   ...Object.fromEntries(taurStyles),
 });
 
+/// The Legs picker's thumbnails: the tail styles' without None, whose body would sit under every taur sprite.
+export const legThumbnails = (
+  thumbnails: Record<string, PrefThumbnail> | undefined,
+): Record<string, PrefThumbnail> =>
+  Object.fromEntries(
+    Object.entries(thumbnails ?? {}).filter(([k]) => k !== ''),
+  );
+
 /// Legs: one style picker. Normal, digitigrade or a taur body.
 const LegsRow = ({
   values,
@@ -775,7 +784,10 @@ const LegsRow = ({
     widget: 'thumbgrid',
     value,
     choices: legChoices(!!widgets.digitigrade, taurStyles),
-    thumbnails: withSkin(tailItem?.thumbnails, values.skin_color),
+    thumbnails: withSkin(
+      legThumbnails(tailItem?.thumbnails),
+      values.skin_color,
+    ),
   };
   return (
     <Box style={{ display: 'contents' }}>

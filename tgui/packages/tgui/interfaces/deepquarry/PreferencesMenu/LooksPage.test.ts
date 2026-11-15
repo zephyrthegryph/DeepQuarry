@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
   legChoices,
+  legThumbnails,
   REGION_CARDS,
   withNoneChoice,
   withSkin,
@@ -53,5 +54,19 @@ describe('withSkin', () => {
     expect(thumbs[''].layers?.[0].color).toBe('#c8a283');
     expect(thumbs[''].layers?.[1].color).toBeNull();
     expect(thumbs.fox).toEqual({ icon: 'e', icon_state: 'fox' });
+  });
+});
+
+describe('legThumbnails', () => {
+  it('leaves the None body out so it does not sit under a taur sprite', () => {
+    const thumbs = legThumbnails({
+      '': {
+        layers: [{ icon: 'b', icon_state: 'torso_m', color: null }],
+        base: 1,
+      },
+      Horse: { icon: 't', icon_state: 'horse' },
+    });
+    expect(Object.keys(thumbs)).toEqual(['Horse']);
+    expect(legThumbnails(undefined)).toEqual({});
   });
 });

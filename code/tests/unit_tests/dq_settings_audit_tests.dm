@@ -48,3 +48,32 @@
 		TEST_ASSERT(P.dq_preference_affects_preview(preference), "[type] redraws the preview")
 	TEST_ASSERT(!("preview_loadout" in GLOB.retired_character_pref_keys) && !("preview_job" in GLOB.retired_character_pref_keys), "the toggles are not retired keys")
 	qdel(P, TRUE)
+
+/// The character setup's Looks options come back: the hair gradient, the ear, tail and wing opacities and the preview animation switch are settings again, tagged to the Looks tab, and no longer retired.
+/datum/unit_test/dq_looks_options_present
+
+/datum/unit_test/dq_looks_options_present/Run()
+	var/list/types = list(
+		/datum/preference/text/human/grad_style, /datum/preference/color/human/grad_color,
+		/datum/preference/numeric/human/ears_alpha, /datum/preference/numeric/human/ears_alpha/secondary,
+		/datum/preference/numeric/human/tail_alpha, /datum/preference/numeric/human/wing_alpha,
+		/datum/preference/toggle/human/animations_toggle,
+	)
+	for(var/pref_type in types)
+		var/datum/preference/pref = GLOB.preference_entries[pref_type]
+		TEST_ASSERT_NOTNULL(pref, "[pref_type] exists")
+		TEST_ASSERT(!(pref.savefile_key in GLOB.retired_character_pref_keys), "[pref.savefile_key] is not retired")
+		var/list/entry = GLOB.pref_metadata_table[pref_type]
+		TEST_ASSERT_EQUAL(entry?["category"], "appearance", "[pref_type] is on the Looks tab")
+	TEST_ASSERT_EQUAL(GLOB.pref_metadata_table[/datum/preference/text/human/grad_style]["group"], "hair", "the gradient sits with the hair")
+
+/// A taur body picks its tail style like any other part: None is the bare body, as the ears and wings have it, and the Legs picker leaves the body to the client.
+/datum/unit_test/dq_tail_none_is_the_body
+
+/datum/unit_test/dq_tail_none_is_the_body/Run()
+	var/datum/preferences/dq_test_stub/P = new()
+	var/datum/preference/pref = GLOB.preference_entries[/datum/preference/text/human/tail_style]
+	var/list/thumbs = pref.get_pref_thumbnails(P)
+	var/list/none = thumbs[""]
+	TEST_ASSERT(islist(none) && length(none["layers"]) && none["base"], "None has the body's layers as its base")
+	TEST_ASSERT(thumbs["plantigrade"] && thumbs["digitigrade"], "the Legs picker's bodies are still there")
