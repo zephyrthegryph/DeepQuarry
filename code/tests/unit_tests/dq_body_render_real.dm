@@ -2,8 +2,8 @@
 // The fixture holds only the appearance of the character (code/tests/unit_tests/data/profile_saves/taur_wings_character.json).
 
 /// A human built from the fixture character by preferences copy_to, settled the way a spawn is (deferred redraws and bakes run out).
-/datum/unit_test/proc/dq_real_character()
-	var/list/overrides = json_decode(file2text("code/tests/unit_tests/data/profile_saves/taur_wings_character.json"))
+/datum/unit_test/proc/dq_real_character(fixture = "taur_wings_character")
+	var/list/overrides = json_decode(file2text("code/tests/unit_tests/data/profile_saves/[fixture].json"))
 	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(overrides)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	P.copy_to(H)
@@ -219,4 +219,39 @@
 			TEST_ASSERT(!length(nested), "layer [index] nests a blocker in a group: [jointext(nested, " | ")]")
 	var/list/body = H.body_look(new /datum/look)
 	TEST_ASSERT(!length(dq_br_nested_blockers(body[2])), "the body of the limbs that are there has no blocker")
+	test_driver_end()
+
+/// The playtester's saved character (the fixture is character1 of the live save, appearance only): the save amputates the right arm, so it is gone, and keeps
+/// a Talon LLC left arm and hand, which exist and draw in every facing where their sprite has art (a far limb has none in its far facing: a human's own arm is
+/// empty there as well, and a prosthetic's art follows the same rule).
+/datum/unit_test/dq_body_render_playtest_limbs
+
+/datum/unit_test/dq_body_render_playtest_limbs/Run()
+	test_driver_begin()
+	var/mob/living/carbon/human/H = dq_real_character("playtest_arm_character")
+	var/list/organ_data = json_decode(file2text("code/tests/unit_tests/data/profile_saves/playtest_arm_character.json"))["organ_data"]
+	for(var/tag in organ_data)
+		if(organ_data[tag] == "amputated")
+			TEST_ASSERT_NULL(H.limb_tagged(tag), "[tag] is amputated in the save, so it is gone")
+	for(var/tag in list(BP_L_ARM, BP_L_HAND))
+		var/obj/item/organ/external/prosthetic = H.limb_tagged(tag)
+		TEST_ASSERT(prosthetic?.is_robotic(), "[tag] is a prosthetic in the save, and exists")
+		TEST_ASSERT_EQUAL(prosthetic.model, "Talon LLC", "[tag] is the saved model")
+	var/list/bad = list()
+	for(var/d in list(SOUTH, NORTH, EAST, WEST))
+		H.set_dir(d)
+		H.animate_tail_stop()
+		refresh_flush()
+		draw_now(H)
+		for(var/obj/item/organ/external/limb as anything in H.organs)
+			if(limb.is_stump() || H.limb_hidden(limb))
+				continue
+			var/own = 0
+			for(var/image/part as anything in limb.layered_parts(FALSE))
+				own += length(dq_br_opaque(icon(part.icon, part.icon_state, d)))
+			TEST_NOTICE(src, "PLAYTEST [dir2text(d)] [limb.organ_tag]: own sprite px [own]")
+			var/far_facing = (limb.organ_tag in list(BP_L_ARM, BP_L_HAND)) ? EAST : ((limb.organ_tag in list(BP_R_ARM, BP_R_HAND)) ? WEST : null)
+			if(!own && d != far_facing)
+				bad += "[dir2text(d)] [limb.organ_tag] has no sprite pixels"
+	TEST_ASSERT(!length(bad), "limbs with nothing to draw: [jointext(bad, "; ")]")
 	test_driver_end()
