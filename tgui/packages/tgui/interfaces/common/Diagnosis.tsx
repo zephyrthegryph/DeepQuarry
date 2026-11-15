@@ -3,6 +3,7 @@
 // findings, with treatment hints when the instrument gives them.
 
 import type { ReactNode } from 'react';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   LabeledList,
@@ -11,7 +12,6 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import type { DiagnosisReport as DiagnosisShape } from '../generated/_schemas';
-import { Label } from 'tgui/components/Label';
 
 /** The report's type comes from its DM shape (UI_SCHEMA diagnosis_report, generated/_schemas). */
 export type Diagnosis = DiagnosisShape;

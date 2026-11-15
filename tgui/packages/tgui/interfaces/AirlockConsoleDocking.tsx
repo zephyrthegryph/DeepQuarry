@@ -1,15 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type {
-  AirlockConsoleDockingActions,
-  AirlockConsoleDockingData,
-} from './generated/AirlockConsoleDocking';
 import {
   DockStatus,
   StandardControls,
   StatusDisplay,
 } from './EmbeddedController/EmbeddedControllerHelpers';
+import type {
+  AirlockConsoleDockingActions,
+  AirlockConsoleDockingData,
+} from './generated/AirlockConsoleDocking';
 
 /**
  * This is a mix airlock & docking console. It lets you control the dock status

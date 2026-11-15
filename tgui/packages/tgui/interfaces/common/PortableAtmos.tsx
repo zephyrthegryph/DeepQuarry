@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   AnimatedNumber,
   Box,
@@ -7,7 +8,6 @@ import {
   Section,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = {
   connected: BooleanLike;

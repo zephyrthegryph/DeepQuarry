@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, LabeledList, Section, Table } from 'tgui-core/components';
 import type { PdaActions } from '../../generated/Pda';
-import { Label } from 'tgui/components/Label';
 
 type ServiceReceipt = {
   invoice_id: number;

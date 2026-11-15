@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -9,7 +10,6 @@ import type {
   MechaSyringeGunActions,
   MechaSyringeGunData,
 } from './generated/MechaSyringeGun';
-import { Label } from 'tgui/components/Label';
 
 type KnownReagent = MechaSyringeGunData['known_reagents'][number];
 

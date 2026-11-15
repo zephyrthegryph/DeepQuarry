@@ -1,10 +1,10 @@
-import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import {
   type MouseEvent,
   type ReactNode,
   useState,
   useSyncExternalStore,
 } from 'react';
+import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import { Button, Input } from 'tgui-core/components';
 import { AbilitiesTab } from './AbilitiesTab';
 import { InspectTab } from './InspectTab';

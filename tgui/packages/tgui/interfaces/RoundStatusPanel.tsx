@@ -8,6 +8,7 @@
 // (see code/modules/admin/antag_panel_data.dm).
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -15,7 +16,6 @@ import type {
   RoundStatusPanelActions,
   RoundStatusPanelData,
 } from './generated/RoundStatusPanel';
-import { Label } from 'tgui/components/Label';
 
 type Data = RoundStatusPanelData;
 type ShuttleData = Data['shuttle'];

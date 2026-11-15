@@ -1,8 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { AICardActions, AICardData } from './generated/AICard';
-import { StatBar } from 'tgui/components/StatBar';
 
 export const AICard = (props) => {
   const { act, data } = useBackend<AICardData, AICardActions>();

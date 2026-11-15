@@ -1,10 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Icon, Input } from 'tgui-core/components';
-
 import { FullscreenNotice } from '../common/FullscreenNotice';
 import type { MessageMonitorActions } from '../generated/MessageMonitor';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const MessageMonitorLogin = (props) => {
   const { act, data } = useBackend<Data, MessageMonitorActions>();

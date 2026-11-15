@@ -10,6 +10,7 @@
 
 import { useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { getIconFromRefMap } from 'tgui/events/handlers/assets';
 import { Box, Button, Input, Section } from 'tgui-core/components';
 import type {
@@ -26,7 +27,6 @@ import {
   markingCategory,
   markingSubgroup,
 } from './markingCategories';
-import { Label } from 'tgui/components/Label';
 
 type MarkingsData = PrefEditorBodyMarkings;
 type MarkingState = MarkingsData['markings'][string];

@@ -1,13 +1,12 @@
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { LabeledList, Section } from 'tgui-core/components';
-
 import {
   DiagnosisFindingsSection,
   DiagnosisVitalsSection,
 } from '../common/Diagnosis';
 import { stats } from './constants';
 import type { occupant } from './types';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 export const OperatingComputerPatient = (props: { occupant: occupant }) => {
   const { occupant } = props;

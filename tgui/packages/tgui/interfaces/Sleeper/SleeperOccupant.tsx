@@ -1,9 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { SleeperActions, SleeperData } from '../generated/Sleeper';
 import { stats, tempColors } from './constants';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 export const SleeperOccupant = (props) => {
   const { act, data } = useBackend<SleeperData, SleeperActions>();

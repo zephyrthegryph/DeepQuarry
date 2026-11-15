@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -18,7 +19,6 @@ import type {
   XenoarchSpectrometerActions,
   XenoarchSpectrometerData,
 } from './generated/XenoarchSpectrometer';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = XenoarchSpectrometerData;
 

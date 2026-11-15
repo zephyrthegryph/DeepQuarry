@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Divider,
@@ -15,10 +16,8 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
-
 import { SYNTAX_COLOR, SYNTAX_REGEX } from '../constants';
 import { calcLineHeight } from '../functions';
-import { Label } from 'tgui/components/Label';
 
 const DescriptionSyntaxHighlighting = (props: { desc: string }) => {
   const { desc } = props;

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -9,7 +10,6 @@ import {
 } from 'tgui-core/components';
 import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const CloningConsoleTemp = (props) => {
   const { act, data } = useBackend<Data, CloningConsoleActions>();

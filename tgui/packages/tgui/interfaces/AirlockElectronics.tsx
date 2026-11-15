@@ -4,13 +4,13 @@
 // the airlock should require.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type {
   AirlockElectronicsActions,
   AirlockElectronicsData,
 } from './generated/AirlockElectronics';
-import { Label } from 'tgui/components/Label';
 
 export const AirlockElectronics = () => {
   const { data, act } = useBackend<

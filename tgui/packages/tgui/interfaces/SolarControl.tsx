@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Button,
@@ -11,8 +13,6 @@ import type {
   SolarControlActions,
   SolarControlData,
 } from './generated/SolarControl';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 type Data = SolarControlData;
 

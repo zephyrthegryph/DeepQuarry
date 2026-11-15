@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -10,8 +12,6 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { formatPower, formatSiUnit } from 'tgui-core/format';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 type Data = {
   totalOutput: number;

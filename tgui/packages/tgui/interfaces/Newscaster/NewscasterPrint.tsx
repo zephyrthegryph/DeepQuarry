@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import type {
   NewscasterActions,
   NewscasterData,
 } from '../generated/Newscaster';
 import { NEWSCASTER_SCREEN_MAIN } from './constants';
-import { Label } from 'tgui/components/Label';
 
 export const NewscasterPrint = (props: {
   setScreen: React.Dispatch<React.SetStateAction<string>>;

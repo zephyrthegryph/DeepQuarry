@@ -1,5 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Box,
   Button,
@@ -9,13 +11,10 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-
 import { PEAK_DRAW } from './constants';
 import { powerRank } from './functions';
 import { AreaCharge, AreaStatusColorBox } from './PowerMonitorHelpers';
 import type { area, sensor } from './types';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 export const PowerMonitorFocus = (props: { focus: sensor }) => {
   const { act } = useBackend();

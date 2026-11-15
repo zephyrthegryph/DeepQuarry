@@ -1,12 +1,12 @@
 import { Fragment } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Stack } from 'tgui-core/components';
 import type {
   RobotSleeperActions,
   RobotSleeperData,
 } from '../../../generated/RobotSleeper';
 import { filterFuel, summarizeItems } from '../../functions';
-import { Label } from 'tgui/components/Label';
 
 export const SleeperCargoStatus = (props) => {
   const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();

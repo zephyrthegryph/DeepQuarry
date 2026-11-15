@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -28,7 +29,6 @@ import {
   type ToggleRow,
   type VerbRow,
 } from './logic';
-import { Label } from 'tgui/components/Label';
 
 type Data = AdminVerbBrowserData;
 

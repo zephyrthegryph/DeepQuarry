@@ -4,11 +4,11 @@
 // is kept but not applied (organs apply hook), so restoring the parent brings it back.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button } from 'tgui-core/components';
 import { ColorChoice } from '../colors';
 import { optionBar, SearchableDropdown, Segmented } from '../controls';
 import type { EditorProps } from './index';
-import { Label } from 'tgui/components/Label';
 
 const EXTERNAL_STATES: Array<{
   key: 'normal' | 'amputated' | 'cyborg';

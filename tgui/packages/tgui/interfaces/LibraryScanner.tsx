@@ -5,6 +5,7 @@
 // cache or the book.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -12,7 +13,6 @@ import type {
   LibraryScannerActions,
   LibraryScannerData,
 } from './generated/LibraryScanner';
-import { Label } from 'tgui/components/Label';
 
 type Data = LibraryScannerData;
 

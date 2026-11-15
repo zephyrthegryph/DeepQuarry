@@ -5,11 +5,11 @@
 // pages show name + scribble only.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
 import type { BookBundleActions, BookBundleData } from './generated/BookBundle';
-import { Label } from 'tgui/components/Label';
 
 export const BookBundle = () => {
   const { data, act } = useBackend<BookBundleData, BookBundleActions>();

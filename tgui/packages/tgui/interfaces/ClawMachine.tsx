@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList } from 'tgui-core/components';
 import type {
   ClawMachineActions,
   ClawMachineData,
 } from './generated/ClawMachine';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = ClawMachineData;
 

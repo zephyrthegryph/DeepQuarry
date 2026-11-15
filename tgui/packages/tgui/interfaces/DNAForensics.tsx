@@ -1,12 +1,12 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type {
   DNAForensicsActions,
   DNAForensicsData,
 } from './generated/DNAForensics';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 export const DNAForensics = (props) => {
   const { act, data } = useBackend<DNAForensicsData, DNAForensicsActions>();

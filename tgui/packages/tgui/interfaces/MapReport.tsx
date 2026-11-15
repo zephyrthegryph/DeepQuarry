@@ -1,10 +1,10 @@
 // Map verify report — structured TGUI panel for admin map-load diagnostics.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import { Label } from 'tgui/components/Label';
 
 type BadPath = { path: string; keys: string[] };
 type BadKey = { key: string; messages: string[] };

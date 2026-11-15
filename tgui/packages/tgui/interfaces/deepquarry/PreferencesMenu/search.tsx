@@ -5,10 +5,10 @@
 // scrolls the anchor into view and highlights it for a moment.
 
 import { createContext, useContext, useMemo, useState } from 'react';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Input } from 'tgui-core/components';
 import { labelForCategory, labelForGroup, labelForKey } from './labels';
 import type { PrefCategory } from './types';
-import { Label } from 'tgui/components/Label';
 
 /// Extra words an editor answers to (its display name and key are always searched).
 const EDITOR_KEYWORDS: Record<string, string> = {

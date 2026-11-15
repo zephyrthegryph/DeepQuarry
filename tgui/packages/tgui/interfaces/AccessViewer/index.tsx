@@ -12,10 +12,7 @@ import { region_ids } from './constants';
 import type { Access } from './types';
 
 export const AccessViewer = (props) => {
-  const { act, data } = useBackend<
-    AccessViewerData,
-    AccessViewerActions
-  >();
+  const { act, data } = useBackend<AccessViewerData, AccessViewerActions>();
   const { name, coords, req_access, req_one_access } = data;
   const [searchText, setSearchText] = useState('');
 

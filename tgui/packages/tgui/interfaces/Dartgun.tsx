@@ -1,11 +1,11 @@
 // Dartgun mixing control — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
 import type { DartgunActions, DartgunData } from './generated/Dartgun';
-import { Label } from 'tgui/components/Label';
 
 export const Dartgun = () => {
   const { data, act } = useBackend<DartgunData, DartgunActions>();

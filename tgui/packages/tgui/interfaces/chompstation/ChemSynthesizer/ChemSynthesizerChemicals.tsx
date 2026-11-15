@@ -1,10 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { BeakerContents } from 'tgui/interfaces/common/BeakerContents';
 import { Button, Section, Stack } from 'tgui-core/components';
-
 import type { ChemSynthesizerActions } from '../../generated/ChemSynthesizer';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const ChemSynthesizerChemicals = (props) => {
   const { act, data } = useBackend<Data, ChemSynthesizerActions>();

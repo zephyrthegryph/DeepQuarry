@@ -7,6 +7,9 @@
 //   maint      — maintenance console actions
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
+import { YesNo } from 'tgui/components/YesNo';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -21,9 +24,6 @@ import type {
   MechaInterfaceActions,
   MechaInterfaceData,
 } from './generated/MechaInterface';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
-import { YesNo } from 'tgui/components/YesNo';
 
 type Main = NonNullable<MechaInterfaceData['main']>;
 

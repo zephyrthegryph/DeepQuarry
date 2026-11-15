@@ -8,10 +8,10 @@
 //     Once paid, the "Back" button needs the access code to unlock.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { EftposActions, EftposData } from './generated/Eftpos';
-import { Label } from 'tgui/components/Label';
 
 export const Eftpos = () => {
   const { data, act } = useBackend<EftposData, EftposActions>();

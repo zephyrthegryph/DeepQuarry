@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Box,
   Button,
@@ -11,8 +13,6 @@ import type { BooleanLike } from 'tgui-core/react';
 import type { DNAModifierActions } from '../generated/DNAModifier';
 import { stats } from './constants';
 import type { Data } from './types';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 export const DNAModifierOccupant = (props: { isDNAInvalid: BooleanLike }) => {
   const { act, data } = useBackend<Data, DNAModifierActions>();

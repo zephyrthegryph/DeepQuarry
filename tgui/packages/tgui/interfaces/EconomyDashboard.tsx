@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   LabeledList,
@@ -7,7 +8,6 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import { Label } from 'tgui/components/Label';
 
 type LedgerRow = { name: string; amount: number };
 type DepartmentRow = {
