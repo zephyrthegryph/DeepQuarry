@@ -30,8 +30,9 @@ use crate::tree::{Hash, Tree};
 
 const FILE: &str = "sem-model.bin";
 const DELTA: &str = "sem-model-delta.bin";
-/// More files to parse than this and the full parse is cheaper than the partial ones.
-const MAX_SPLICED: usize = 12;
+/// More files to parse than this and the full parse is cheaper than the partial ones (each is about 55 ms on one core, spread over all of them; the
+/// full parse is 8-12 s, and loaded it is several times that: a merge batch of dozens of files must not cost it).
+const MAX_SPLICED: usize = 128;
 /// A delta of more files than this is folded into a new base.
 const REBASE_AT: usize = 48;
 /// ... or when the patches are about this large (an estimate: 2 KB a proc).

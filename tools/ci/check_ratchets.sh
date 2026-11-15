@@ -65,7 +65,7 @@ else echo "check_ratchets: gen_capability_varmap --selftest skipped (tools/dx un
 # test tree's generated include lists (code/tests/_tests.dm, code/tests/unit_tests/_unit_tests.dm: tools/build/gen_test_includes.py).
 run_gen gen_dme_check tools/build/gen_dme.py --check
 if selftest_wanted '^tools/build/(gen_test_includes\.py|test_includes_spec\.txt)$'; then run_gen gen_test_includes_selftest tools/build/gen_test_includes.py --selftest; gen_names+=(gen_test_includes_selftest); fi
-if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
+if selftest_wanted '^tools/build/(gen_dme\.py|dm_filecache\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
 else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
 
 # Font Awesome: html/font-awesome/ ships only the icons the code names (tools/fontawesome/subset.py), so an icon added to the code or DM data
@@ -79,6 +79,7 @@ gen_names+=(check_variants)
 # The mapping dme (StrongDMM) and its stub types follow the variant tables.
 ( "$PY" tools/build/gen_mapping_dme.py --check >"$gen_dir/check_mapping_dme.out" 2>&1; echo $? >"$gen_dir/check_mapping_dme.rc" ) &
 gen_names+=(check_mapping_dme)
+if selftest_wanted '^tools/(build/(gen_mapping_dme|dm_filecache)\.py|ci/(variant_census|check_variants)\.py)$'; then run_gen gen_mapping_incremental tools/build/gen_mapping_dme.py --verify-incremental; gen_names+=(gen_mapping_incremental); fi
 
 # .gitattributes must name files that exist and merge drivers that exist (a move once left the _unit_tests.dm union rule dead).
 ( bash tools/ci/check_gitattributes.sh >"$gen_dir/gitattributes_check.out" 2>&1; echo $? >"$gen_dir/gitattributes_check.rc" ) &

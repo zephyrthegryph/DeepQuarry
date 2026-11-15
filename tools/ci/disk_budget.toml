@@ -252,6 +252,14 @@ policy = state
 [cache.lane-pool]
 policy = state
 
+[cache.test-server-self]
+# tools/dq_test_server.sh: origin/master's copy of the script, run when the main checkout's own copy differs (one file, rewritten each start).
+policy = files-lru
+glob = dq_test_server.sh*
+depth = 1
+cap_mb = 1
+age_days = 30
+
 [cache.health]
 # tools/dq_post_push_check.sh: the verdict, its history and one log per checked commit.
 policy = state
@@ -382,6 +390,14 @@ path = data/analyze-cache
 policy = files-lru
 depth = 6
 cap_mb = 500
+age_days = 14
+
+[worktree.dme-gen-cache]
+# The manifest generators' per-file facts keyed by stat (tools/build/dm_filecache.py): about 12 MB; rebuilt in a few seconds when missing.
+path = data/dme-gen-cache
+policy = files-lru
+depth = 2
+cap_mb = 50
 age_days = 14
 
 [worktree.loose-data-files]
