@@ -201,3 +201,17 @@
 	var/obj/item/organ/external/head/head = H.limb_tagged(BP_HEAD)
 	TEST_ASSERT(length(head.layered_parts(FALSE)) >= 2, "the head is its sprite and its eyes, as parts")
 	TEST_ASSERT(with_head >= 6, "the head's parts are in the body")
+
+/// Wings are drawn over the suit and under the back item (a backpack hides the wing roots, not the other way round), and every layer is its own index.
+/datum/unit_test/dq_human_draw_wing_under_back
+
+/datum/unit_test/dq_human_draw_wing_under_back/Run()
+	TEST_ASSERT(WING_LAYER > SUIT_LAYER, "wings are over the suit")
+	TEST_ASSERT(WING_LAYER > TAIL_UPPER_LAYER, "wings are over the tail seen from behind")
+	TEST_ASSERT(WING_LAYER < BACK_LAYER, "wings are under the back item")
+	var/list/seen = list()
+	for(var/layer in list(MUTATIONS_LAYER, TAIL_LOWER_LAYER, WING_LOWER_LAYER, BODYPARTS_LAYER, SKIN_LAYER, BLOOD_LAYER, MOB_DAM_LAYER, SURGERY_LAYER, UNDERWEAR_LAYER, SHOES_LAYER_ALT, TAIL_UPPER_LAYER_LOW, UNIFORM_LAYER, ID_LAYER, SHOES_LAYER, GLOVES_LAYER, BELT_LAYER, SUIT_LAYER, TAIL_UPPER_LAYER, GLASSES_LAYER, BELT_LAYER_ALT, SUIT_STORE_LAYER, WING_LAYER, BACK_LAYER, HAIR_LAYER, HAIR_ACCESSORY_LAYER, EARS_LAYER, EYES_LAYER, FACEMASK_LAYER, GLASSES_LAYER_ALT, HEAD_LAYER, HANDCUFF_LAYER, LEGCUFF_LAYER, L_HAND_LAYER, R_HAND_LAYER, VORE_BELLY_LAYER, VORE_TAIL_LAYER, TAIL_UPPER_LAYER_HIGH, MODIFIER_EFFECTS_LAYER, FIRE_LAYER, MOB_WATER_LAYER, TARGETED_LAYER))
+		TEST_ASSERT(!seen["[layer]"], "layer index [layer] is used once")
+		TEST_ASSERT(layer >= 1 && layer <= TOTAL_LAYERS, "layer index [layer] is within TOTAL_LAYERS")
+		seen["[layer]"] = TRUE
+	TEST_ASSERT_EQUAL(length(seen), TOTAL_LAYERS, "every index up to TOTAL_LAYERS is a layer")

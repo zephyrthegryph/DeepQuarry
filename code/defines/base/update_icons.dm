@@ -23,19 +23,19 @@
 #define GLASSES_LAYER			19		//Eye-slot item
 #define BELT_LAYER_ALT			20		//Belt-slot item (when set to be above suit via verb)
 #define SUIT_STORE_LAYER		21		//Suit storage-slot item
-#define BACK_LAYER				22		//Back-slot item
-#define HAIR_LAYER				23		//The human's hair
-#define HAIR_ACCESSORY_LAYER	24		//Simply move this up a number if things are added.
-#define EARS_LAYER				25		//Both ear-slot items (combined image)
-#define EYES_LAYER				26		//Mob's eyes (used for glowing eyes)
-#define FACEMASK_LAYER			27		//Mask-slot item
-#define GLASSES_LAYER_ALT		28		//So some glasses can appear on top of hair and things
-#define HEAD_LAYER				29		//Head-slot item
-#define HANDCUFF_LAYER			30		//Handcuffs, if the human is handcuffed, in a secret inv slot
-#define LEGCUFF_LAYER			31		//Same as handcuffs, for legcuffs
-#define L_HAND_LAYER			32		//Left-hand item
-#define R_HAND_LAYER			33		//Right-hand item
-#define WING_LAYER				34		//Wings or protrusions over the suit.
+#define WING_LAYER				22		//Wings or protrusions over the suit and under the back item.
+#define BACK_LAYER				23		//Back-slot item
+#define HAIR_LAYER				24		//The human's hair
+#define HAIR_ACCESSORY_LAYER	25		//Simply move this up a number if things are added.
+#define EARS_LAYER				26		//Both ear-slot items (combined image)
+#define EYES_LAYER				27		//Mob's eyes (used for glowing eyes)
+#define FACEMASK_LAYER			28		//Mask-slot item
+#define GLASSES_LAYER_ALT		29		//So some glasses can appear on top of hair and things
+#define HEAD_LAYER				30		//Head-slot item
+#define HANDCUFF_LAYER			31		//Handcuffs, if the human is handcuffed, in a secret inv slot
+#define LEGCUFF_LAYER			32		//Same as handcuffs, for legcuffs
+#define L_HAND_LAYER			33		//Left-hand item
+#define R_HAND_LAYER			34		//Right-hand item
 #define VORE_BELLY_LAYER		35		//Move this and everything after up if things are added.
 #define VORE_TAIL_LAYER			36		//Move this and everything after up if things are added.
 #define TAIL_UPPER_LAYER_HIGH	37		//Modified tail-sprite layer. Tend to be larger.
