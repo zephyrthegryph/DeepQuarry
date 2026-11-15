@@ -18,7 +18,7 @@
 	// custom-built equipment.
 	if(ismachinery(src) && exposed_temperature > T0C + 100)
 		var/datum/material/hazard_material = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
-		material_service_event(MATERIAL_EVENT_TEMPERATURE, hazard_material ? exposed_temperature / max(hazard_material.melting_point, 1) : 0, exposed_temperature)
+		material_service_event(MATERIAL_EVENT_TEMPERATURE, hazard_material ? exposed_temperature / max(hazard_material.melting_point(), 1) : 0, exposed_temperature)
 	return ..()
 
 /// Explosion adapter: blast from the propagated severity, delivered in type

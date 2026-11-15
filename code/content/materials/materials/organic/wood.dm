@@ -2,17 +2,14 @@
 	name = MAT_WOOD
 	stack_type = /obj/item/stack/material/wood
 	icon_colour = "#9c5930"
-	integrity = 50
+	toughness = 25
 	icon_base = "wood"
-	explosion_resistance = 2
 	shard_type = SHARD_SPLINTER
 	shard_can_repair = 0 // you can't weld splinters back into planks
-	hardness = 15
-	density = 18
-	protectiveness = 8 // 28%
-	conductive = 0
+	strength = 15
+	weight = 18
 	conductivity = 1
-	melting_point = T0C+300 //okay, not melting in this case, but hot enough to destroy wood
+	heat_resistance = 8.1
 	ignition_point = T0C+288
 	dooropen_noise = SFX_EFFECTS_DOORCREAKY
 	door_icon_base = "wood"
@@ -385,9 +382,9 @@ CAPABILITIES(/transformation/stack/wood_sif__vertical_large_alien_wood_floor_til
 	icon_base = "stone"
 	table_icon_base = "stone"
 	icon_reinf = "reinf_stone"
-	integrity = 65	//a bit stronger than regular wood
-	hardness = 20
-	density = 20	//likewise, heavier
+	toughness = 32
+	strength = 20
+	weight = 20 //likewise, heavier
 
 /transformation/stack/wood_hardwood__hardwood_floor_tile
 CAPABILITIES(/transformation/stack/wood_hardwood__hardwood_floor_tile)
@@ -498,9 +495,9 @@ CAPABILITIES(/transformation/stack/wood_stick__clears)
 	icon_colour = "#f6dec0"
 	icon_base = "wood"
 	icon_reinf = "reinf_stone"
-	integrity = 65
-	hardness = 20
-	density = 20
+	toughness = 32
+	strength = 20
+	weight = 20
 
 /transformation/stack/wood_birch__birch_floor_tile
 CAPABILITIES(/transformation/stack/wood_birch__birch_floor_tile)
@@ -561,9 +558,9 @@ CAPABILITIES(/transformation/stack/wood_birch__vertical_large_birch_floor_tile)
 	icon_colour = "#cd9d6f"
 	icon_base = "wood"
 	icon_reinf = "reinf_stone"
-	integrity = 65
-	hardness = 20
-	density = 20
+	toughness = 32
+	strength = 20
+	weight = 20
 
 /transformation/stack/wood_pine__pine_floor_tile
 CAPABILITIES(/transformation/stack/wood_pine__pine_floor_tile)
@@ -624,9 +621,9 @@ CAPABILITIES(/transformation/stack/wood_pine__vertical_large_pine_floor_tile)
 	icon_colour = "#674928"
 	icon_base = "wood"
 	icon_reinf = "reinf_stone"
-	integrity = 65
-	hardness = 20
-	density = 20
+	toughness = 32
+	strength = 20
+	weight = 20
 
 /transformation/stack/wood_oak__oak_floor_tile
 CAPABILITIES(/transformation/stack/wood_oak__oak_floor_tile)
@@ -687,9 +684,9 @@ CAPABILITIES(/transformation/stack/wood_oak__vertical_large_oak_floor_tile)
 	icon_colour = "#b75e12"
 	icon_base = "wood"
 	icon_reinf = "reinf_stone"
-	integrity = 65
-	hardness = 20
-	density = 20
+	toughness = 32
+	strength = 20
+	weight = 20
 
 /transformation/stack/wood_acacia__acacia_floor_tile
 CAPABILITIES(/transformation/stack/wood_acacia__acacia_floor_tile)
@@ -751,9 +748,9 @@ CAPABILITIES(/transformation/stack/wood_acacia__vertical_large_acacia_floor_tile
 	icon_base = "wood"
 	table_icon_base = "stone"
 	icon_reinf = "reinf_stone"
-	integrity = 65
-	hardness = 20
-	density = 20
+	toughness = 32
+	strength = 20
+	weight = 20
 
 /transformation/stack/wood_redwood__redwood_floor_tile
 CAPABILITIES(/transformation/stack/wood_redwood__redwood_floor_tile)

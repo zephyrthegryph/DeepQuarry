@@ -51,9 +51,13 @@
 	var/datum/material/M = new /datum/material/processed_alloy
 	M.set_name(name)
 	M.set_display_name(name)
-	M.reagent_porosity = porosity
-	M.catalytic_activity = catalysis
-	M.antimicrobial_activity = antimicrobial
+	// A sorbent trait of s sorbs s / 100 (porosity p is s = 4p).
+	if(porosity)
+		LAZYSET(M.traits, MT_SORBENT, porosity * 4)
+	if(catalysis)
+		LAZYSET(M.traits, MT_CATALYTIC, catalysis)
+	if(antimicrobial)
+		LAZYSET(M.traits, MT_ANTIMICROBIAL, antimicrobial)
 	GLOB.name_to_material[name] = M
 	return M
 
@@ -245,13 +249,13 @@
 	var/obj/item/stack/material/exotic_feedstock/sheets = allocate(/obj/item/stack/material/exotic_feedstock, run_loc_floor_bottom_left)
 	sheets.set_stack_material(MAT_ETCHING_CERAMIC)
 	sheets.set_amount(3)
-	TEST_ASSERT(sheets.material.catalytic_activity > 0, "etching ceramic is catalytic")
+	TEST_ASSERT(sheets.material.trait(MT_CATALYTIC) > 0, "etching ceramic is catalytic")
 	var/material_name = sheets.material.name
 	rc_click(H, B, sheets)
 	TEST_ASSERT_NOTNULL(B.catalyst, "the sheet went into the beaker")
 	TEST_ASSERT_EQUAL(sheets.get_amount(), 2, "one sheet of three")
 	TEST_ASSERT_EQUAL(B.catalyst.material.name, material_name, "of the material")
-	TEST_ASSERT(dq_pur_near(B.catalyst_activity(), sheets.material.catalytic_activity), "its activity is the beaker's")
+	TEST_ASSERT(dq_pur_near(B.catalyst_activity(), sheets.material.trait(MT_CATALYTIC)), "its activity is the beaker's")
 	var/list/solid = B.reagents.solid_catalyst()
 	TEST_ASSERT_EQUAL(solid[1], B.catalyst_kind(), "its kind is the beaker's")
 	var/list/lowered = route.band_in(B.reagents)

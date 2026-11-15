@@ -44,7 +44,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 	else
 		set_material_mix(new_matter)
 
-	if(!(material.conductive))
+	if(!(material.conductive()))
 		src.flags |= NOCONDUCT
 
 /obj/item/material/get_material()
@@ -67,7 +67,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 	else
 		if(named_from_material)
 			name = "[material.display_name] [initial(name)]"
-		set_max_integrity(max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT)
+		set_max_integrity(max(1, round(material.toughness * MATERIAL_HP_PER_TOUGHNESS / 10)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		if(applies_material_colour)
 			set_color(material.icon_colour)
@@ -82,7 +82,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 	if(!unbreakable)
 		if(material.is_brittle())
 			material_wear(get_integrity())
-		else if(!prob(material.hardness))
+		else if(!prob(material.strength))
 			material_wear(MATERIAL_WEAR_UNIT)
 
 /obj/item/material/throw_impact(atom/hit_atom)

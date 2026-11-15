@@ -91,6 +91,13 @@ export type MaterialSlot = {
   description?: string | null;
 };
 
+/** One card stat or trait with the steps behind its number ("sulfur -12"). */
+export type MaterialCardRow = {
+  name: string;
+  value: number;
+  breakdown: { label: string; delta: number }[];
+};
+
 /**
  * A loaded material offered in a material-selectable design's picker.
  */
@@ -104,15 +111,13 @@ export type MaterialChoice = {
   color: string;
   layers: { role: string; name: string; share: number }[];
   responses: string[];
-  hardness: number;
-  density: number;
-  integrity: number;
-  elasticity: number;
-  brittleness: number;
+  /** The card (strength, toughness, ...) and any traits, each with the steps behind its number. */
+  card: MaterialCardRow[];
+  strength: number;
+  weight: number;
   toughness: number;
   conductivity: number;
   heatResistance: number;
-  thermalInsulation: number;
   corrosionResistance: number;
   pressureLimit: number;
   resistivity?: number;

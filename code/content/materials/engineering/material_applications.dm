@@ -54,8 +54,8 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 		if(!part_material || part_amount <= 0)
 			continue
 		total_amount += part_amount
-		weighted_density += part_material.density * part_amount
-		weighted_dielectric += part_material.dielectric_strength * part_amount
+		weighted_density += part_material.weight * part_amount
+		weighted_dielectric += part_material.dielectric_strength() * part_amount
 	var/list/worked = list("total" = total_amount)
 	if(total_amount <= 0)
 		return worked
@@ -78,7 +78,7 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 				reference_id = default_id
 				break
 		var/datum/material/reference = get_material_by_name(reference_id)
-		var/integrity_factor = clamp(structure.integrity / max(reference.integrity, 1), 0.2, 4)
+		var/integrity_factor = clamp(structure.toughness / max(reference.toughness, 1), 0.2, 4)
 		worked["max_integrity"] = max(1, round(initial(max_integrity) * integrity_factor))
 	return worked
 
@@ -122,20 +122,22 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 	primary.dq_apply_material_behaviors(src)
 	BOOT_PHASE_END(bp_behaviors, "blueprint effects: material behaviors", src)
 	BOOT_PHASE_BEGIN(bp_profile)
+	// The standard everything is calibrated against: a part of steel gets the baseline its item was authored with.
+	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	switch(application_profile)
 		if(MATERIAL_APPLICATION_TOOL)
 			var/datum/material/working = blueprint_material(pristine, MATERIAL_ROLE_WORKING) || primary
 			var/datum/material/grip = blueprint_material(pristine, MATERIAL_ROLE_GRIP) || primary
-			set_force(max(combat_of_type(type).force, round((working.hardness + working.density) / 18)))
-			set_throwforce(max(thrown_of_type(type).force, round((working.integrity + working.density) / 28)))
-			set_toolspeed(clamp(1.25 - (working.hardness + working.elasticity + grip.elasticity * 0.25) / 245, 0.35, 1.25))
+			set_force(max(combat_of_type(type).force, round((working.strength + working.weight) / 18)))
+			set_throwforce(max(thrown_of_type(type).force, round((working.toughness * MATERIAL_HP_PER_TOUGHNESS + working.weight) / 28)))
+			set_toolspeed(clamp(1.25 - (working.strength + (working.toughness - steel.toughness) + (grip.toughness - steel.toughness) * 0.25) / 245, 0.35, 1.25))
 		if(MATERIAL_APPLICATION_SURGICAL)
 			var/datum/material/working = blueprint_material(pristine, MATERIAL_ROLE_WORKING) || primary
 			var/datum/material/grip = blueprint_material(pristine, MATERIAL_ROLE_GRIP) || primary
-			set_force(max(combat_of_type(type).force, round(working.hardness / 8)))
-			set_toolspeed(clamp(1.15 - (working.hardness + working.elasticity + working.corrosion_resistance + grip.elasticity * 0.4 + grip.dielectric_strength * 0.2) / 390, 0.3, 1.15))
-			build.surgery_cleanliness_bonus = clamp(round((working.corrosion_resistance + working.heat_resistance + working.reactivity * -0.5) / 3), 0, 35)
-			build.tool_quality_bonus = clamp(round((working.hardness + working.elasticity + working.purity_equivalent()) / 20), 0, 15)
+			set_force(max(combat_of_type(type).force, round(working.strength / 8)))
+			set_toolspeed(clamp(1.15 - (working.strength + (working.toughness - steel.toughness) + (working.corrosion_resistance - steel.corrosion_resistance) + (grip.toughness - steel.toughness) * 0.4 + (grip.dielectric_strength() - steel.dielectric_strength()) * 0.2) / 390, 0.3, 1.15))
+			build.surgery_cleanliness_bonus = clamp(round(((working.corrosion_resistance - steel.corrosion_resistance) * 1.5 + (working.heat_resistance - steel.heat_resistance)) / 3), 0, 35)
+			build.tool_quality_bonus = clamp(round((working.strength + (working.toughness - steel.toughness) + working.quality()) / 20), 0, 15)
 		if(MATERIAL_APPLICATION_CELL)
 			if(istype(src, /obj/item/cell))
 				var/obj/item/cell/cell = src
@@ -150,11 +152,11 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 				cell.set_maxcharge(round(initial(cell.maxcharge) * capacity_factor))
 				// Beam-conditioned crystalline electrodes retain deposited field
 				// energy as real cell capacity rather than an abstract quality bonus.
-				cell.set_maxcharge(cell.maxcharge + round(electrode.field_energy_capacity))
+				cell.set_maxcharge(cell.maxcharge + round(electrode.trait(MT_FIELD_STORAGE) * 1000))
 				cell.set_charge(min(cell.charge, cell.maxcharge))
-				cell.material_emp_resistance = clamp(round((insulation?.dielectric_strength || 0) * 0.5 + conductor.magnetism * 0.2 + casing.heat_resistance * 0.2), 0, 90)
-				cell.robot_durability = clamp(round(casing.integrity / 2), 20, 125)
-				cell.set_material_discharge_limit(max(1, round(initial(cell.maxcharge) * clamp((conductor.conductivity + thermal.heat_resistance * 0.5 + thermal.conductivity * (1 - thermal.thermal_insulation / 125) * 0.5) / 150, 0.1, 2))))
+				cell.material_emp_resistance = clamp(round((insulation?.dielectric_strength() || 0) * 0.5 + conductor.conductivity * 0.1 + casing.heat_resistance * 0.2), 0, 90)
+				cell.robot_durability = clamp(round(casing.toughness), 20, 125)
+				cell.set_material_discharge_limit(max(1, round(initial(cell.maxcharge) * clamp((conductor.conductivity + thermal.heat_resistance * 0.5 + thermal.conductivity * 0.5) / 150, 0.1, 2))))
 		if(MATERIAL_APPLICATION_ARMOR)
 			if(istype(src, /obj/item/clothing))
 				var/obj/item/clothing/clothing = src
@@ -163,8 +165,8 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 				// the load-bearing layer supplies the actual armor calculation.
 				set_color(blueprint_material(pristine, MATERIAL_ROLE_JACKET)?.icon_colour || structure.icon_colour)
 				var/datum/material/liner = blueprint_material(pristine, MATERIAL_ROLE_LINER) || structure
-				clothing.set_siemens_coefficient(clamp(protection_of_type(clothing.type).siemens * (1.2 - liner.dielectric_strength / 125), 0.05, 2))
-				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.2 - liner.corrosion_resistance / 125), 0.05, 2))
+				clothing.set_siemens_coefficient(clamp(protection_of_type(clothing.type).siemens * (1.2 - liner.dielectric_strength() / 125), 0.05, 2))
+				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.2 - (liner.corrosion_resistance - steel.corrosion_resistance) / 125), 0.05, 2))
 				clothing.worn_protection_changed()
 		if(MATERIAL_APPLICATION_MACHINE_PART, MATERIAL_APPLICATION_CAPACITOR, MATERIAL_APPLICATION_MANIPULATOR, MATERIAL_APPLICATION_MATTER_BIN, MATERIAL_APPLICATION_SCANNER, MATERIAL_APPLICATION_LASER)
 			if(istype(src, /obj/item/stock_parts))
@@ -179,8 +181,8 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 				var/datum/material/grip = blueprint_material(pristine, MATERIAL_ROLE_GRIP) || receiver
 				gun.accuracy -= build.accuracy_delta
 				gun.recoil -= build.recoil_delta
-				build.accuracy_delta = clamp(round((barrel.hardness + barrel.heat_resistance + barrel.fracture_toughness - barrel.brittleness) / 35) - 4, -8, 8)
-				build.recoil_delta = clamp(round((receiver.brittleness - receiver.fracture_toughness - grip.elasticity * 0.5) / 35), -3, 3)
+				build.accuracy_delta = clamp(round((barrel.strength + (barrel.heat_resistance - steel.heat_resistance) + barrel.fracture_toughness() - barrel.brittleness()) / 35) - 4, -8, 8)
+				build.recoil_delta = clamp(round((receiver.brittleness() - receiver.fracture_toughness() - (grip.toughness - steel.toughness) * 0.5) / 35), -3, 3)
 				gun.accuracy += build.accuracy_delta
 				gun.recoil = max(0, gun.recoil + build.recoil_delta)
 		if(MATERIAL_APPLICATION_PROJECTILE)
@@ -202,13 +204,13 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 				var/datum/material/emitter = blueprint_material(pristine, MATERIAL_ROLE_EMITTER) || primary
 				var/datum/material/optics = blueprint_material(pristine, MATERIAL_ROLE_OPTICAL) || emitter
 				gun.accuracy -= build.accuracy_delta
-				build.accuracy_delta = clamp(round((emitter.heat_resistance + optics.purity_equivalent() + optics.hardness - optics.brittleness) / 45) - 4, -8, 8)
+				build.accuracy_delta = clamp(round(((emitter.heat_resistance - steel.heat_resistance) + optics.quality() + optics.strength - optics.brittleness()) / 45) - 4, -8, 8)
 				gun.accuracy += build.accuracy_delta
 				if(istype(gun, /obj/item/gun/energy))
 					var/obj/item/gun/energy/energy_gun = gun
 					var/datum/material/conductor = blueprint_material(pristine, MATERIAL_ROLE_CONDUCTOR) || primary
 					var/datum/material/thermal = blueprint_material(pristine, MATERIAL_ROLE_THERMAL) || conductor
-					energy_gun.set_charge_cost(max(1, round(initial(energy_gun.charge_cost) * clamp(1.35 - conductor.conductivity / 200 - thermal.conductivity * (1 - thermal.thermal_insulation / 125) / 500, 0.55, 1.5))))
+					energy_gun.set_charge_cost(max(1, round(initial(energy_gun.charge_cost) * clamp(1.35 - conductor.conductivity / 200 - thermal.conductivity / 500, 0.55, 1.5))))
 		if(MATERIAL_APPLICATION_SOFT_GOODS)
 			if(istype(src, /obj/item/clothing))
 				var/obj/item/clothing/clothing = src
@@ -216,7 +218,7 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 				clothing.set_material(fabric.name)
 				set_color(fabric.icon_colour)
 				var/datum/material/reinforcement = blueprint_material(pristine, MATERIAL_ROLE_STRUCTURE) || fabric
-				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.15 - reinforcement.corrosion_resistance / 150), 0.05, 2))
+				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.15 - (reinforcement.corrosion_resistance - steel.corrosion_resistance) / 150), 0.05, 2))
 		if(MATERIAL_APPLICATION_CABLE)
 			var/datum/material/conductor = blueprint_material(pristine, MATERIAL_ROLE_CONDUCTOR) || primary
 			build.engineered_id = conductor.name
@@ -230,7 +232,7 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 				// station-light baseline. Material selection modifies that authored
 				// output; it must not replace it with an arbitrary absolute scale.
 				var/output_factor = clamp((dq_material_luminescence(emitter) * 2 + emitter.conductivity + contacts.conductivity) / 53, 0.35, 2)
-				var/optical_factor = clamp((optics.purity_equivalent() + optics.integrity) / 180, 0.5, 1.5)
+				var/optical_factor = clamp((optics.quality() + optics.toughness * MATERIAL_HP_PER_TOUGHNESS) / 180, 0.5, 1.5)
 				light.brightness_power = max(0.2, light.init_brightness_power * output_factor)
 				light.brightness_range = max(1, round(light.init_brightness_range * optical_factor))
 				light.nightshift_power = max(0.1, light.init_nightshift_power * output_factor)
@@ -241,10 +243,11 @@ GLOBAL_LIST_EMPTY(pristine_blueprint_effects)
 /obj/item/cell
 	var/material_discharge_limit = INFINITY
 
-/datum/material/proc/purity_equivalent()
+/// How clean the material is, 0-100: an ordinary material 80, a processed alloy its batch's quality (100 minus its flaws).
+/datum/material/proc/quality()
 	if(istype(src, /datum/material/processed_alloy))
 		var/datum/material/processed_alloy/processed = src
-		return processed.batch_template?.purity || 80
+		return processed.batch_template ? 100 - processed.batch_template.flaws : 80
 	return 80
 
 /obj/item/get_material()

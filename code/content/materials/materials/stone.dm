@@ -6,10 +6,8 @@
 	icon_reinf = "reinf_stone"
 	icon_colour = "#D9C179"
 	shard_type = SHARD_STONE_PIECE
-	density = 22
-	hardness = 55
-	protectiveness = 5 // 20%
-	conductive = 0
+	weight = 22
+	strength = 55
 	conductivity = 5
 	door_icon_base = "stone"
 	sheet_singular_name = "brick"
@@ -29,9 +27,9 @@ CAPABILITIES(/transformation/stack/stone__planting_bed)
 /datum/material/stone/marble
 	name = MAT_MARBLE
 	icon_colour = "#AAAAAA"
-	density = 26
-	hardness = 30 // Please.
-	integrity = 201 //hack to stop kitchen benches being flippable, todo: refactor into weight system
+	weight = 26
+	strength = 30 // Please.
+	toughness = 100
 	stack_type = /obj/item/stack/material/marble
 	supply_conversion_value = 2
 
@@ -54,9 +52,9 @@ CAPABILITIES(/transformation/stack/stone_marble__dark_marble_floor_tile)
 /datum/material/stone/flint
 	name = MAT_FLINT
 	icon_colour = "#9e9c99"
-	density = 20
-	hardness = 30
-	integrity = 100
+	weight = 20
+	strength = 30
+	toughness = 50
 	stack_type = /obj/item/stack/material/flint
 	supply_conversion_value = 2
 	sheet_singular_name = "piece"
@@ -72,11 +70,10 @@ CAPABILITIES(/transformation/stack/stone_flint__clears)
 	stack_type = /obj/item/stack/material/concrete
 	icon_base = "brick"
 	icon_colour = COLOR_GRAY
-	integrity = 150
-	melting_point = 1550
-	protectiveness = 10
-	density = 27
-	hardness = 60
+	toughness = 75
+	heat_resistance = 32.5
+	weight = 27
+	strength = 60
 	var/image/texture
 	supply_conversion_value = 0.1
 

@@ -216,3 +216,74 @@ At the sampled point DreamDaemon used approximately 1.65 GiB working set and
 1.68 GiB private memory. The server is left running for playtesting. The diagnostic
 preview is a rendering of the actual React component and stylesheet with fixture
 data, not a screenshot of a live BYOND measurement.
+
+## The material card, traits and batches (lane L2)
+
+The ~56 stats the model once carried collapsed into a short card, traits that show only when
+present, and a batch of three things. Nothing below is stored twice: every other number is a
+formula over these (`code/content/materials/properties.dm`).
+
+**The card** (`/datum/material`): `strength`, `toughness`, `heat_resistance`, `conductivity`,
+`corrosion_resistance`, `weight`, on one scale (steel: 60, 75, 38.75, 11, 50, 20; exotic stock
+runs past 100). Derived readers: `melting_point()` (250 K + 40 per point of heat resistance),
+`conductive()` (conductivity 8 or more), `electrical_resistivity()`, `dielectric_strength()`,
+`specific_heat()`, `yield_strength()` (5 x strength), `fracture_toughness()` (0.3 x toughness),
+`brittleness()` (strength over toughness), `protectiveness()`, `explosion_resistance()`.
+Hit points are `toughness * MATERIAL_HP_PER_TOUGHNESS`. Calibration formulas that were written
+against a steel part measure a part against steel (`MATERIAL_REFERENCE_*`).
+
+| Collapsed | Into |
+|---|---|
+| hardness, yield_strength, integrity, protectiveness, explosion_resistance, fracture_toughness, elasticity, brittleness | strength and toughness |
+| conductivity, electrical_resistivity, conductive, dielectric_strength, thermal_insulation, magnetism | conductivity |
+| reactivity | corrosion_resistance (its inverse) |
+| heat_resistance, melting_point, specific_heat | heat_resistance |
+| density | weight |
+
+**Traits** (`traits`: id -> strength 0-100, only the ones a material has): superconducting,
+thermal buffer, cryogenic buffer, thermal switch, shape memory, piezoelectric, thermoelectric
+(also the heat pump), radiovoltaic (also the glow after irradiation), field storage (also the
+slow trickle), exothermic, reactive, catalytic, sorbent (gas and reagent pores), antimicrobial,
+hemostatic (also the tissue mend), luminescent, radioactive, toxic. The six temperature
+thresholds are fixed per trait or follow its strength (`critical_temperature()`,
+`thermal_switch_temperature()`, `MATERIAL_*_TEMPERATURE`); there is one strength each.
+`field_charge_efficiency`, magnetism and the dead surface and field entries are gone.
+
+**A batch** (`/datum/material_batch`) is composition, temper and flaws.
+- *Composition*: substance id -> amount in sheets. Bulk materials and trace substances are one
+  list; a wanted additive (carbon in steel) is just composition. There is no impurity list and no
+  scalar purity.
+- *Temper*: 0 soft to 100 hard. Quenching raises it (strength up, toughness down); a
+  solution-treated piece left to cool without a quench, or the anneal step, brings it back down.
+- *Flaws*: 0 flawless to 100 ruined, one number for porosity, locked-in stress, defects and
+  poor mixing. Casting adds flaws; forging, homogenising, purifying, vacuum and beams remove them.
+
+**Trace effects** (`material_traces.dm`): a small table, each substance with one clear effect per
+percent of the batch mass, saturating at its limit: sulfur lowers toughness, dissolved hydrogen
+lowers toughness (embrittlement), lead lowers strength and adds the toxic trait (surgical tools
+poison), carbon raises strength and lowers conductivity and superconduction, silicon and
+interstitial phoron raise heat resistance, oxide inclusions lower corrosion resistance, lithium
+raises conductivity. An acid wash strips leachable traces; a hard vacuum degasses.
+
+**Breakdown**: every card stat and trait carries the steps behind it (`stat_notes`), shown as
+"Toughness 62: base 70, sulfur -12, tempered +4" in examine, the engineering window, the
+fabricator picker and the wiki. The traces themselves stay hidden until assayed.
+
+**Assay**: an analyzer used on any material stack is a spectrometry reading
+(`/obj/item/stack/material/proc/assay`). It reveals the stack traces and marks it assayed. The
+analyzer on processed stock also records the contract certification as before.
+
+**Stacks merge like a beaker of solid.** Plain stock of the same material merges whatever lot it
+came from; its trace amounts add (so concentrations average by amount), a split takes its share,
+and the merged stack is unassayed if either half was. Processed stock merges when its bulk
+composition, temper bucket and treatments match (`/datum/material_batch/proc/identity()`); its
+traces average and the merged stock is registered as the material its new traces make. Stock of
+a different temper or treatment does not merge. Ordinary building ignores traces: a stack
+material is the plain singleton; only melting a stack into a batch, or engineering with an
+alloy, uses them.
+
+**Open for L4**: the trace roll on fresh stock (`GLOB.material_stock_trace_pool`) is a stand-in
+for per-round and per-lot pools of each source signature contaminants; reagent ids that match
+a trace-table id (carbon, silicon, lithium, sulfur, hydrogen, lead) already enter melts as that
+substance, any other reagent enters as an inert residue until the contaminant vocabulary links
+up. Surface layers and field treatments are unchanged inputs to the traits.

@@ -884,10 +884,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 	var/obj/item/stack/stack_path = M.stack_type
 	SSinternal_wiki.add_icon(data, initial(stack_path.icon), initial(stack_path.icon_state), initial(M.icon_colour))
 	// Get internal data
-	// weight renamed to density; radioactivity is a component lookup.
-	set_data_at("integrity", M.integrity)
-	set_data_at("hardness", M.hardness)
-	set_data_at("weight", M.density)
+	// The card, and the traits the material has (a trait it lacks is not listed).
+	set_data_at("strength", M.strength)
+	set_data_at("toughness", M.toughness)
+	set_data_at("heat_resistance", M.heat_resistance)
+	set_data_at("conductivity", M.conductivity)
+	set_data_at("corrosion_resistance", M.corrosion_resistance)
+	set_data_at("weight", M.weight)
+	set_data_at("traits", M.trait_lines())
 	set_data_at("stack_size", initial(stack_path.max_amount) ? initial(stack_path.max_amount) : 0)
 	var/supply_value = M.supply_conversion_value ? M.supply_conversion_value : 0
 	set_data_at("supply_points", supply_value)
@@ -896,12 +900,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 	set_data_at("market_price", value)
 
 	set_data_at("opacity", M.opacity)
-	set_data_at("conductive", M.conductive)
-	set_data_at("protectiveness", M.protectiveness)
-	set_data_at("explosion_resistance", M.explosion_resistance)
+	set_data_at("conductive", M.conductive())
+	set_data_at("protectiveness", M.protectiveness())
+	set_data_at("explosion_resistance", M.explosion_resistance())
 	set_data_at("radioactivity", dq_material_radioactivity(M))
 	set_data_at("reflectivity", M.reflectivity)
-	set_data_at("melting_point", M.melting_point)
+	set_data_at("melting_point", M.melting_point())
 	set_data_at("ignition_point", M.ignition_point)
 
 	set_data_at("grind_reagents", null)
@@ -937,9 +941,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 
 /datum/internal_wiki/page/material/get_print()
 	var/body = ""
-	body += "<b>Integrity: [data["integrity"]]</b><br>"
-	body += "<b>Hardness: [data["hardness"]]</b><br>"
+	body += "<b>Strength: [data["strength"]]</b><br>"
+	body += "<b>Toughness: [data["toughness"]]</b><br>"
+	body += "<b>Heat resistance: [data["heat_resistance"]]</b><br>"
+	body += "<b>Conductivity: [data["conductivity"]]</b><br>"
+	body += "<b>Corrosion resistance: [data["corrosion_resistance"]]</b><br>"
 	body += "<b>Weight: [data["weight"]]</b><br>"
+	for(var/trait_line in data["traits"])
+		body += "<b>[trait_line]</b><br>"
 	var/points = data["supply_points"]
 	var/stack_size = data["stack_size"]
 	body += "<b>Supply Points: [points] per sheet, [points * stack_size] per stack of [stack_size]</b><br>"

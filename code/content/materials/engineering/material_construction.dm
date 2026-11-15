@@ -250,9 +250,9 @@ GLOBAL_LIST_INIT(primary_construction_roles, list(MATERIAL_ROLE_WORKING, MATERIA
 /obj/proc/construction_thermal_conductance(area_m2, thickness_m, temperature)
 	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	var/conductance = thermal ? thermal.thermal_conductance(area_m2, thickness_m, temperature) : null
-	if(!isnull(conductance) && thermal?.thermal_switch_temperature)
-		var/switch_fraction = clamp((temperature - thermal.thermal_switch_temperature) / 20, 0, 1)
-		conductance *= 1 + (thermal.thermal_switch_ratio - 1) * switch_fraction
+	if(!isnull(conductance) && thermal?.trait(MT_THERMAL_SWITCH))
+		var/switch_fraction = clamp((temperature - thermal.thermal_switch_temperature()) / 20, 0, 1)
+		conductance *= 1 + (thermal.thermal_switch_ratio() - 1) * switch_fraction
 	var/datum/material/insulator = material_for_role(MATERIAL_ROLE_INSULATION)
 	if(!isnull(conductance) && insulator)
 		var/insulation_conductance = insulator.thermal_conductance(area_m2, thickness_m, temperature)

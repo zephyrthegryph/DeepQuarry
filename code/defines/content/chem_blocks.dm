@@ -107,7 +107,7 @@
 /// A reaction on contact (a clash): no catalyst, no band; in a container and in the stomach, never in the bloodstream.
 #define CHEM_CATALYST_CONTACT "contact"
 
-/// A solid catalyst whose material holds this much reagent (reagent_porosity) is a solid acid; any other catalytic sheet is a metal.
+/// A solid catalyst whose material holds this much reagent (its sorbent trait, sorbed_volume()) is a solid acid; any other catalytic sheet is a metal.
 #define CHEM_SOLID_ACID_POROSITY 8
 /// Kelvin a solid catalyst of activity 100 lowers the working band of a process by.
 #define CHEM_SOLID_REDUCTION_PER_POINT 0.5

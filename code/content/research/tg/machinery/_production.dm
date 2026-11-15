@@ -239,7 +239,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		out += list(material_choice_tgui(mat, amount))
 	return out
 
-UI_SCHEMA(lathe_material_choice, row(id = schema_text(), label = schema_text(), sheets = int(), color = schema_text(), layers = list_of(row(role = schema_text(), name = schema_text(), share = num())), responses = list_of(schema_text()), hardness = num(), density = num(), integrity = num(), elasticity = num(), brittleness = num(), toughness = num(), conductivity = num(), heatResistance = num(), thermalInsulation = num(), corrosionResistance = num(), pressureLimit = num(), resistivity = num(), criticalTemperature = num(), criticalCurrentDensity = num(), specificHeat = num(), phaseCapacity = num(), phaseTemperature = num(), dielectricStrength = num(), meltingPoint = num()))
+UI_SCHEMA(lathe_material_choice, row(id = schema_text(), label = schema_text(), sheets = int(), color = schema_text(), layers = list_of(row(role = schema_text(), name = schema_text(), share = num())), responses = list_of(schema_text()), card = list_of(row(name = schema_text(), value = num(), breakdown = list_of(row(label = schema_text(), delta = num())))), strength = num(), weight = num(), toughness = num(), conductivity = num(), heatResistance = num(), corrosionResistance = num(), pressureLimit = num(), resistivity = num(), criticalTemperature = num(), criticalCurrentDensity = num(), specificHeat = num(), phaseCapacity = num(), phaseTemperature = num(), dielectricStrength = num(), meltingPoint = num()))
 
 /// One canonical material presentation for lathes and hand crafting.
 /proc/material_choice_tgui(datum/material/mat, amount)
@@ -250,23 +250,20 @@ UI_SCHEMA(lathe_material_choice, row(id = schema_text(), label = schema_text(), 
 			"color" = mat.icon_colour || "#aaaaaa",
 			"layers" = list(),
 			"responses" = mat.material_response_summary(),
-			"hardness" = round(mat.hardness),
-			"density" = round(mat.density),
-			"integrity" = round(mat.integrity),
-			"elasticity" = round(mat.elasticity),
-			"brittleness" = round(mat.brittleness),
-			"toughness" = round(mat.fracture_toughness),
+			"card" = mat.card_rows(),
+			"strength" = round(mat.strength),
+			"weight" = round(mat.weight),
+			"toughness" = round(mat.toughness),
 			"conductivity" = round(mat.conductivity),
 			"heatResistance" = round(mat.heat_resistance),
-			"thermalInsulation" = round(mat.thermal_insulation),
 			"corrosionResistance" = round(mat.corrosion_resistance),
 			"pressureLimit" = round(mat.pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
-			"resistivity" = mat.electrical_resistivity,
-			"criticalTemperature" = mat.critical_temperature,
-			"criticalCurrentDensity" = mat.critical_current_density,
-			"specificHeat" = mat.specific_heat,
-			"phaseCapacity" = mat.phase_change_capacity,
-			"phaseTemperature" = mat.phase_change_temperature,
-			"dielectricStrength" = mat.dielectric_strength,
-			"meltingPoint" = mat.melting_point,
+			"resistivity" = mat.electrical_resistivity(),
+			"criticalTemperature" = mat.critical_temperature(),
+			"criticalCurrentDensity" = mat.critical_current_density(),
+			"specificHeat" = mat.specific_heat(),
+			"phaseCapacity" = mat.phase_change_capacity(),
+			"phaseTemperature" = mat.phase_change_temperature(),
+			"dielectricStrength" = mat.dielectric_strength(),
+			"meltingPoint" = mat.melting_point(),
 		)

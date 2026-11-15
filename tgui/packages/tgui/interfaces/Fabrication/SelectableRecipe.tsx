@@ -54,18 +54,33 @@ const partProperties = (m: MaterialChoice, role: string) => {
     case 'grip':
     case 'substrate':
     case 'dielectric':
-      return `Thermal isolation ${m.thermalInsulation} · Dielectric strength ${m.dielectricStrength ?? '?'} · Melt ${m.meltingPoint ?? '?'} K`;
+      return `Insulation ${100 - m.conductivity} · Dielectric strength ${m.dielectricStrength ?? '?'} · Melt ${m.meltingPoint ?? '?'} K`;
     case 'liner':
     case 'jacket':
       return `Corrosion resistance ${m.corrosionResistance} · Melt ${m.meltingPoint ?? '?'} K`;
     case 'working surface':
     case 'barrel':
     case 'bearings':
-      return `Hardness ${m.hardness} · Toughness ${m.toughness} · Melt ${m.meltingPoint ?? '?'} K`;
+      return `Strength ${m.strength} · Toughness ${m.toughness} · Melt ${m.meltingPoint ?? '?'} K`;
     default:
-      return `Strength ${m.integrity} · Density ${m.density} · Melt ${m.meltingPoint ?? '?'} K`;
+      return `Strength ${m.strength} · Toughness ${m.toughness} · Weight ${m.weight} · Melt ${m.meltingPoint ?? '?'} K`;
   }
 };
+
+// Every stat and trait with the steps behind it, so a player can see why a number is what it is.
+const cardBreakdown = (m: MaterialChoice) =>
+  (m.card ?? [])
+    .map((row) => {
+      const steps = row.breakdown
+        .map((step) =>
+          step.label === 'base'
+            ? `base ${step.delta}`
+            : `${step.label} ${step.delta > 0 ? '+' : ''}${step.delta}`,
+        )
+        .join(', ');
+      return `${row.name} ${row.value}${row.breakdown.length > 1 ? ` (${steps})` : ''}`;
+    })
+    .join(' · ');
 
 export const ConfigurableRecipeRow = (props: {
   design: Design;
@@ -301,6 +316,7 @@ export const ProductConfigurator = (props: Props) => {
                     <Label mt={0.5}>
                       {partProperties(material, activeSlot.role)}
                     </Label>
+                    <Label mt={0.5}>{cardBreakdown(material)}</Label>
                   </Button>
                 </Stack.Item>
               );
@@ -321,6 +337,8 @@ export const ProductConfigurator = (props: Props) => {
                   label={`${slot.label} — ${material.label}`}
                 >
                   {partProperties(material, slot.role)}
+                  <br />
+                  {cardBreakdown(material)}
                 </LabeledList.Item>
               )
             );

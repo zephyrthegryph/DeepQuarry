@@ -303,7 +303,7 @@
 	var/obj/machinery/portable_atmospherics/canister/vessel = new(run_loc_floor_bottom_left)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/cold = vessel.material_environment_pressure_limit(1000, 100, 4, T20C)
-	var/hot = vessel.material_environment_pressure_limit(1000, 100, 4, (T20C + steel.melting_point) / 2)
+	var/hot = vessel.material_environment_pressure_limit(1000, 100, 4, (T20C + steel.melting_point()) / 2)
 	TEST_ASSERT(abs(cold - 1000) < 0.01, "Factory steel must retain its reference rating")
 	TEST_ASSERT(hot < cold * 0.75, "Hot steel must weaken against a fixed cold reference")
 	qdel(vessel)
@@ -439,18 +439,14 @@
 /datum/material/engineering_test_conductor
 	name = "engineering test conductor"
 	supply_conversion_value = 0
-	critical_temperature = 260
-	critical_current_density = 25
-	electrical_resistivity = 1
 	conductivity = 90
-	thermoelectric_coefficient = 0.2
+	traits = list(MT_SUPERCONDUCTING = 84, MT_THERMOELECTRIC = 20)
 
 /datum/material/engineering_test_buffer
 	name = "engineering test buffer"
 	supply_conversion_value = 0
-	phase_change_temperature = 250
-	phase_change_capacity = 50000
-	specific_heat = 500
+	heat_resistance = 50
+	traits = list(MT_CRYO_BUFFER = 50)
 
 /datum/unit_test/dq_material_cold_assembly_operates
 
@@ -464,7 +460,7 @@
 	service.add_heat(-(service.temperature() - 240) * service.thermal_mass() - service.buffer_energy())
 	TEST_ASSERT(abs(service.temperature() - 240) < 0.01 && service.buffer_energy() == 0, "Actual removed heat must cool and recharge the phase buffer")
 	var/cold = cell.construction_electrical_resistance(1, 1, service.temperature(), 5)
-	var/quenched = cell.construction_electrical_resistance(1, 1, service.temperature(), 50)
+	var/quenched = cell.construction_electrical_resistance(1, 1, service.temperature(), 5000)
 	TEST_ASSERT(quenched > cold * 100, "Exceeding critical current must quench the conductor even while cold")
 	service.add_heat(10 * service.thermal_mass() + 25000)
 	// The heat crosses from Rust as f32: a buffer within a tenth of a millikelvin's worth of the assembly's heat is exact.
@@ -489,7 +485,7 @@
 	TEST_ASSERT(cell.checked_use(10 * envelope), "The enhanced envelope must still debit real stored energy")
 	cell.material_record_enhanced_output(10, envelope)
 	TEST_ASSERT(cell.charge < charge_before - 10, "Enhanced output must cost more energy than an ordinary action")
-	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.temperature()) * service.thermal_mass() + max(initial(buffer_type.phase_change_capacity) - service.buffer_energy(), 0))
+	service.add_heat((get_material_by_name(initial(conductor_type.name)).critical_temperature() + 1 - service.temperature()) * service.thermal_mass() + max(get_material_by_name(initial(buffer_type.name)).phase_change_capacity() - service.buffer_energy(), 0))
 	TEST_ASSERT_EQUAL(cell.material_output_envelope(10), 1, "A hot or quenched conductor must fall back to ordinary device output")
 	qdel(cell)
 
@@ -667,10 +663,10 @@
 /datum/unit_test/dq_material_fingerprint_is_quantity_independent/Run()
 	var/datum/material_batch/small = new
 	small.add_material(MAT_STEEL, 1)
-	small.add_additive("carbon", 1, 0)
+	small.add_substance("carbon", 0.1, 0)
 	var/datum/material_batch/large = new
 	large.add_material(MAT_STEEL, 10)
-	large.add_additive("carbon", 10, 0)
+	large.add_substance("carbon", 1, 0)
 	TEST_ASSERT_EQUAL(small.fingerprint(), large.fingerprint(), "equivalent alloy recipes registered different materials solely because batch size changed")
 	qdel(small)
 	qdel(large)
@@ -762,11 +758,11 @@
 	contract.description = "Test matching assay and shipment."
 	contract.department = DEPARTMENT_RESEARCH
 	contract.reward = 0
-	var/list/checks = list(list("key" = "hardness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50))
+	var/list/checks = list(list("key" = "strength", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50))
 	var/datum/contract_requirement/qualified_material_delivery/requirement = new(checks, 4)
 	contract.add_requirement(requirement)
 	TEST_ASSERT(contract.accept(), "material delivery fixture could not activate")
-	var/datum/contract_event/assay = new(CONTRACT_EVENT_MATERIAL_CERTIFIED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "fingerprint" = "qualified", "material_lot_id" = "LOT-QUALIFIED", "hardness" = 60, "amount" = 4, "contributor_account" = 42))
+	var/datum/contract_event/assay = new(CONTRACT_EVENT_MATERIAL_CERTIFIED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "fingerprint" = "qualified", "material_lot_id" = "LOT-QUALIFIED", "strength" = 60, "amount" = 4, "contributor_account" = 42))
 	TEST_ASSERT(requirement.handle_event(assay), "qualifying assay was rejected")
 	TEST_ASSERT_EQUAL(requirement.state, CONTRACT_REQUIREMENT_PENDING, "assay alone completed a physical stock order")
 	var/datum/contract_event/wrong_shipment = new(CONTRACT_EVENT_ITEM_EXPORTED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "origin_department" = DEPARTMENT_RESEARCH, "handling_department" = DEPARTMENT_CARGO, "material_fingerprint" = "qualified", "material_lot_id" = "LOT-WRONG", "material_amount" = 4))
@@ -918,42 +914,40 @@
 
 /datum/unit_test/dq_material_high_energy_progression/Run()
 	var/datum/material_batch/storage_batch = new
-	storage_batch.add_material(MAT_COPPER, 3, null, 98)
-	storage_batch.add_material(MAT_QUARTZ, 2, null, 98)
+	storage_batch.add_material(MAT_COPPER, 4)
+	storage_batch.add_material(MAT_QUARTZ, 1)
 	storage_batch.add_field_treatment(MATERIAL_FIELD_PARTICLE, 45)
 	storage_batch.add_field_treatment(MATERIAL_FIELD_ENERGY_STORAGE, 30)
 	var/datum/material/storage = get_material_by_name(register_processed_material(storage_batch))
-	TEST_ASSERT(storage.field_energy_capacity >= 1000, "PA-conditioned conductive crystal did not become an energy-storage material")
-	TEST_ASSERT(storage.field_charge_efficiency > 0, "PA-conditioned conductive crystal cannot accept deposited field energy")
+	TEST_ASSERT(storage.trait(MT_FIELD_STORAGE) >= 1, "PA-conditioned conductive crystal did not become an energy-storage material")
 
 	var/datum/material_batch/switch_batch = new
-	switch_batch.add_material(MAT_COPPER, 3, null, 98)
-	switch_batch.add_material(MAT_NICKEL, 2, null, 98)
+	switch_batch.add_material(MAT_COPPER, 3)
+	switch_batch.add_material(MAT_NICKEL, 2)
 	switch_batch.add_field_treatment(MATERIAL_FIELD_FUSION, 50)
 	var/datum/material/thermal_switch = get_material_by_name(register_processed_material(switch_batch))
-	TEST_ASSERT(thermal_switch.thermoelectric_coefficient > 0, "copper-nickel alloy did not gain useful thermoelectric response")
-	TEST_ASSERT(thermal_switch.thermal_switch_temperature > T20C, "fusion-conditioned copper-nickel alloy did not become a thermal switch")
+	TEST_ASSERT(thermal_switch.trait(MT_THERMOELECTRIC) > 0, "copper-nickel alloy did not gain useful thermoelectric response")
+	TEST_ASSERT(thermal_switch.thermal_switch_temperature() > T20C, "fusion-conditioned copper-nickel alloy did not become a thermal switch")
 
 	var/datum/material_batch/heater_batch = new
-	heater_batch.add_material(MAT_TUNGSTEN, 4, null, 98)
-	heater_batch.add_material(MAT_PHORON, 1, null, 98)
+	heater_batch.add_material(MAT_TUNGSTEN, 4)
+	heater_batch.add_material(MAT_PHORON, 1)
 	heater_batch.add_field_treatment(MATERIAL_FIELD_FUSION, 45)
 	var/datum/material/heater = get_material_by_name(register_processed_material(heater_batch))
-	TEST_ASSERT(heater.exothermic_heat_rate >= 25, "fusion-conditioned tungsten-phoron alloy did not become an exothermic heat source")
+	TEST_ASSERT(heater.trait(MT_EXOTHERMIC) >= 5, "fusion-conditioned tungsten-phoron alloy did not become an exothermic heat source")
 
 	var/datum/material_batch/pump_batch = new
-	pump_batch.add_material(MAT_COPPER, 3, null, 98)
-	pump_batch.add_material(MAT_NICKEL, 2, null, 98)
+	pump_batch.add_material(MAT_COPPER, 3)
+	pump_batch.add_material(MAT_NICKEL, 2)
 	pump_batch.add_field_treatment(MATERIAL_FIELD_FUSION, 45)
 	var/datum/material/pump = get_material_by_name(register_processed_material(pump_batch))
-	TEST_ASSERT(pump.heat_pump_coefficient > 0, "fusion-conditioned copper-nickel stock did not become an active heat-pump material")
+	TEST_ASSERT(pump.trait(MT_THERMOELECTRIC) > 0, "fusion-conditioned copper-nickel stock did not become an active heat-pump material")
 	var/datum/material_batch/memory_batch = new
-	memory_batch.add_material(MAT_NICKEL, 2, null, 98)
-	memory_batch.add_material(MAT_TITANIUM, 3, null, 98)
-	memory_batch.homogeneity = 90
-	memory_batch.toughness = 80
+	memory_batch.add_material(MAT_NICKEL, 2)
+	memory_batch.add_material(MAT_TITANIUM, 3)
+	memory_batch.refine(15)
 	var/datum/material/memory = get_material_by_name(register_processed_material(memory_batch))
-	TEST_ASSERT(memory.shape_recovery_rate > 0, "nickel-titanium stock did not gain shape-memory recovery")
+	TEST_ASSERT(memory.trait(MT_SHAPE_MEMORY) > 0, "nickel-titanium stock did not gain shape-memory recovery")
 	qdel(storage_batch)
 	qdel(switch_batch)
 	qdel(heater_batch)

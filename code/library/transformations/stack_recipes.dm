@@ -168,12 +168,12 @@ CAPABILITIES(/transformation/stack)
 
 /// Materials sturdy enough for furniture and doors.
 /transformation/stack/proc/sturdy(datum/material/material)
-	return material.integrity >= 50
+	return material.toughness >= 25
 
 /// Sturdy materials whose icons are the solid wall set.
 /transformation/stack/proc/solid(datum/material/material)
-	return material.integrity >= 50 && material.icon_base == "solid"
+	return material.toughness >= 25 && material.icon_base == "solid"
 
 /// Materials hard enough for blades and cutlery.
 /transformation/stack/proc/hard(datum/material/material)
-	return material.hardness > 50
+	return material.strength > 50

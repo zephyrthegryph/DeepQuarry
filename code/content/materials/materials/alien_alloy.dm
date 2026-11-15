@@ -5,12 +5,10 @@
 	stack_type = null
 	flags = MATERIAL_UNMELTABLE
 	icon_colour = "#6C7364"
-	integrity = 1200
-	melting_point = 6000       // Hull plating.
-	explosion_resistance = 200 // Hull plating.
-	hardness = 500
-	density = 500
-	protectiveness = 80 // 80%
+	toughness = 600
+	heat_resistance = 143.8
+	strength = 500
+	weight = 500
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = 5 // Neat if you somehow manage to sell this
 

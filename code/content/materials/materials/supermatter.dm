@@ -7,18 +7,14 @@
 	ignition_point = PLASMA_MINIMUM_BURN_TEMPERATURE
 	icon_base = "stone"
 	shard_type = SHARD_SHARD
-	hardness = 30
+	strength = 30
 	door_icon_base = "stone"
 	sheet_singular_name = "crystal"
 	sheet_plural_name = "crystals"
 	is_fusion_fuel = 1
 	flags = MATERIAL_UNMELTABLE
 	supply_conversion_value = 30
-
-/datum/material/supermatter/New()
-	. = ..()
-	radioactivity = 20
-	luminescence = 3
+	traits = list(MT_RADIOACTIVE = 20, MT_LUMINESCENT = 3)
 
 /transformation/stack/supermatter__supermatter_shard
 CAPABILITIES(/transformation/stack/supermatter__supermatter_shard)

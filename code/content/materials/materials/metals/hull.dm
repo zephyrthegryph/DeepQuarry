@@ -1,8 +1,7 @@
 /datum/material/steel/hull
 	name = MAT_STEELHULL
 	stack_type = /obj/item/stack/material/steel/hull
-	integrity = 250
-	explosion_resistance = 10
+	toughness = 125
 	icon_base = "hull"
 	table_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
@@ -17,12 +16,11 @@
 /datum/material/plasteel/hull
 	name = MAT_PLASTEELHULL
 	stack_type = /obj/item/stack/material/plasteel/hull
-	integrity = 600
+	toughness = 300
 	icon_base = "hull"
 	table_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
 	icon_colour = "#777788"
-	explosion_resistance = 40
 	flags = MATERIAL_UNMELTABLE | MATERIAL_NO_SYNTH
 	composite_material = list(MAT_PLASTEEL = SHEET_MATERIAL_AMOUNT)
 
@@ -36,7 +34,6 @@
 	table_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
 	icon_colour = "#45829a"
-	explosion_resistance = 90
 	reflectivity = 0.9
 	flags = MATERIAL_UNMELTABLE | MATERIAL_NO_SYNTH
 	composite_material = list(MAT_DURASTEEL = SHEET_MATERIAL_AMOUNT)
@@ -75,7 +72,6 @@
 	table_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
 	icon_colour = "#585658"
-	explosion_resistance = 50
 	flags = MATERIAL_NO_SYNTH
 	composite_material = list(MAT_PLASTITANIUM = SHEET_MATERIAL_AMOUNT)
 
@@ -88,7 +84,6 @@
 	icon_base = "hull"
 	table_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
-	explosion_resistance = 50
 	flags = MATERIAL_NO_SYNTH
 	composite_material = list(MAT_GOLD = SHEET_MATERIAL_AMOUNT)
 

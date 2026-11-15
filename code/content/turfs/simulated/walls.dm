@@ -214,9 +214,9 @@ CAPABILITIES(/turf/simulated/wall)
 
 /// The material cap: plating plus reinforcement.
 /turf/simulated/wall/proc/material_integrity_cap()
-	. = material?.integrity || 0
+	. = (material?.toughness || 0) * MATERIAL_HP_PER_TOUGHNESS
 	if(reinf_material)
-		. += reinf_material.integrity
+		. += reinf_material.toughness * MATERIAL_HP_PER_TOUGHNESS
 	return max(1, .)
 
 /// Wall-rot leaves a tenth of the wall: every hit on a rotting wall counts ten times.
@@ -274,7 +274,7 @@ CAPABILITIES(/turf/simulated/wall)
 		return 0
 	switch(round(severity))
 		if(1)
-			if(girder_material.explosion_resistance >= 25 && prob(girder_material.explosion_resistance))
+			if(girder_material.explosion_resistance() >= 15 && prob(girder_material.explosion_resistance()))
 				new /obj/structure/girder/displaced(src, girder_material.name)
 			ChangeTurf(get_base_turf_by_area(src))
 			return max_integrity
@@ -327,7 +327,7 @@ CAPABILITIES(/turf/simulated/wall)
 	O.set_density(TRUE)
 	O.set_plane(ABOVE_PLANE)
 
-	if(girder_material.integrity >= 150 && !girder_material.is_brittle()) //Strong girders will remain in place when a wall is melted.
+	if(girder_material.toughness >= 75 && !girder_material.is_brittle()) //Strong girders will remain in place when a wall is melted.
 		dismantle_wall(1,1)
 	else
 		src.ChangeTurf(/turf/simulated/floor/plating)
@@ -376,7 +376,7 @@ CAPABILITIES(/turf/simulated/wall)
 		D.ignite(temperature/4)
 
 /turf/simulated/wall/can_engrave()
-	return (material && material.hardness >= 10 && material.hardness <= 100)
+	return (material && material.strength >= 10 && material.strength <= 100)
 
 /turf/simulated/wall/occult_act(mob/living/user)
 	to_chat(user, span_cult("You consecrate the wall."))
@@ -1232,13 +1232,13 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 /turf/simulated/wall/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
-			if(material.integrity > 1000) // Don't decon things like elevatorium.
+			if(material.toughness > 500) // Don't decon things like elevatorium.
 				return FALSE
 			if(reinf_material && !the_rcd.can_remove_rwalls) // Gotta do it the old fashioned way if your RCD can't.
 				return FALSE
-			var/delay_to_use = material.integrity / 3 // Steel has 150 integrity, so it'll take five seconds to down a regular wall.
+			var/delay_to_use = material.toughness * MATERIAL_HP_PER_TOUGHNESS / 3 // Steel has 150 integrity, so it'll take five seconds to down a regular wall.
 			if(reinf_material)
-				delay_to_use += reinf_material.integrity / 3
+				delay_to_use += reinf_material.toughness * MATERIAL_HP_PER_TOUGHNESS / 3
 			return rcd_value_entry(RCD_DECONSTRUCT, delay_to_use, RCD_SHEETS_PER_MATTER_UNIT * 2.5)
 		if(RCD_WALLFRAME)
 			return rcd_value_entry(RCD_WALLFRAME, 1, RCD_SHEETS_PER_MATTER_UNIT * 3)

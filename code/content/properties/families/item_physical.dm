@@ -79,7 +79,7 @@
 	property = TAG_CONDUCTIVE
 
 /datum/property_provider/material/conductive/fold(datum/material/M, amount, acc)
-	return (acc || M.conductive) ? TRUE : FALSE
+	return (acc || M.conductive()) ? TRUE : FALSE
 
 /datum/property_def/heat_capacity
 	id = PROP_HEAT_CAPACITY
@@ -95,7 +95,7 @@
 
 /// Specific heat is J/(kg K), so each material adds kg x specific heat.
 /datum/property_provider/material/heat_capacity/fold(datum/material/M, amount, acc)
-	return (acc || 0) + amount * MATTER_UNIT_KG * M.specific_heat
+	return (acc || 0) + amount * MATTER_UNIT_KG * M.specific_heat()
 
 /datum/property_def/tag/paperwork
 	id = TAG_PAPERWORK
