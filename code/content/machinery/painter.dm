@@ -5,6 +5,7 @@
 	icon_state = "colormate"
 	density = TRUE
 	anchored = TRUE
+	circuit = VARIANT(/obj/item/circuitboard/colormate)
 	var/atom/movable/inserted
 	var/activecolor = "#FFFFFF"
 	var/list/color_matrix_last
@@ -52,6 +53,7 @@ MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
 
 CAPABILITIES(/obj/machinery/gear_painter)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	configure(machine_usage(wrench_time = 40))
 	setup(PROC_REF(seed_colour_matrix))
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)

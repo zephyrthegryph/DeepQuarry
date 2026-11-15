@@ -16,6 +16,8 @@
 
  */
 /proc/split_materials_uniformly(list/custom_materials, multiplier, obj/item/target_object)
+	if(GLOB.fab_trace)
+		log_world("FAB: [target_object] is recorded as made of [fab_matter_text(custom_materials, multiplier)] (what its design cost)")
 	if(!length(target_object.contents)) //most common case where the object is just 1 thing
 		target_object.set_custom_materials(custom_materials, multiplier)
 		return
@@ -26,12 +28,17 @@
 	//Step 2: find the sum of each material type per object and record their amounts into an 2D list
 	var/list/material_map_sum = list()
 	var/list/material_map_amounts = list()
+	// a stack's matter is per unit and breaking it down returns it times its amount, so it takes its share as a whole and records it per unit
+	var/list/unit_counts = list()
 	for(var/obj/item/object as anything in reccursive_contents)
+		var/units = breakdown_units(object)
+		unit_counts += units
 		var/list/item_materials = object.material_totals()
 		for(var/mat as anything in custom_materials)
 			var/mat_amount = 1 //no materials mean we assign this default amount
 			if(length(item_materials))
 				mat_amount = item_materials[mat] || 1 //if this object doesn't have our material type then assign a default value of 1
+			mat_amount *= units
 
 			//record the sum of mats for normalizing
 			material_map_sum[mat] += mat_amount
@@ -55,6 +62,6 @@
 		var/list/final_material_list = list()
 		for(var/mat as anything in material_map_amounts)
 			var/list/mat_per_item = material_map_amounts[mat]
-			final_material_list[mat] = mat_per_item[index]
+			final_material_list[mat] = mat_per_item[index] / unit_counts[index]
 		object.set_custom_materials(final_material_list, multiplier)
 		index += 1

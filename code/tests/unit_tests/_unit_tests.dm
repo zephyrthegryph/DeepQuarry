@@ -471,6 +471,8 @@
 #include "dq_melee_swing_tests.dm"
 #include "dq_movement_tests.dm"
 #include "dq_material_science_tests.dm"
+#include "dq_fab_conservation_tests.dm"
+#include "dq_tabletop_machine_tests.dm"
 #include "dq_preferences_tests.dm"
 #include "dq_looks_preview_tests.dm"
 #include "dq_spawnpoint_audit_tests.dm"

@@ -621,6 +621,11 @@
 	build_path = /obj/machinery/bomb_tester
 	board_type = /datum/frame/frame_types/machine
 	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/scanning_module = 5)
+/obj/item/circuitboard/bookbinder
+	name = T_BOARD("book binder")
+	build_path = /obj/machinery/bookbinder
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 2 )
 /obj/item/circuitboard/borgupload
 	name = T_BOARD("cyborg upload console")
 	build_path = /obj/machinery/computer/borgupload
@@ -649,6 +654,11 @@
 	icon = 'icons/obj/doors/door_assembly.dmi'
 	icon_state = "door_electronics_smoked"
 	board_type = "other"
+/obj/item/circuitboard/bunsen_burner
+	name = T_BOARD("bunsen burner")
+	build_path = /obj/machinery/bunsen_burner
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 3 )
 /obj/item/circuitboard/candymachine
 	name = T_BOARD("candy machine")
 	desc = "The circuitboard for a candy machine."
@@ -666,6 +676,16 @@
 	build_path = /obj/machinery/appliance/mixer/cereal
 	board_type = /datum/frame/frame_types/machine
 	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 2)
+/obj/item/circuitboard/chem_condenser
+	name = T_BOARD("condenser")
+	build_path = /obj/machinery/chem_condenser
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/material/glass = 2)
+/obj/item/circuitboard/chem_hot_plate
+	name = T_BOARD("hot plate")
+	build_path = /obj/machinery/chem_hot_plate
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 5)
 /obj/item/circuitboard/chem_master
 	name = T_BOARD("ChemMaster 3000")
 	build_path = /obj/machinery/chem_master
@@ -694,6 +714,11 @@
 /obj/item/circuitboard/cloning
 	name = T_BOARD("cloning control console")
 	build_path = /obj/machinery/computer/cloning
+/obj/item/circuitboard/colormate
+	name = T_BOARD("color mate")
+	build_path = /obj/machinery/gear_painter
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/console_screen = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/capacitor = 1 )
 /obj/item/circuitboard/comm_monitor
 	name = T_BOARD("telecommunications monitor console")
 	build_path = /obj/machinery/computer/telecomms/monitor
@@ -895,6 +920,11 @@
 	build_path = /obj/machinery/power
 	board_type = /datum/frame/frame_types/machine
 	req_components = list( /obj/item/stock_parts/spring = 1, /obj/item/stock_parts/motor = 2, /obj/item/stack/cable_coil = 10)
+/obj/item/circuitboard/icecream_vat
+	name = T_BOARD("icecream vat")
+	build_path = /obj/machinery/icecream_vat
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/gear = 1 )
 /obj/item/circuitboard/id_restorer
 	name = T_BOARD("ID restoration console")
 	build_path = /obj/machinery/computer/id_restorer
@@ -972,6 +1002,11 @@
 	name = T_BOARD("keycard authenticator")
 	build_path = /obj/machinery/keycard_auth
 	board_type = /datum/frame/frame_types/keycard_authenticator
+/obj/item/circuitboard/libraryscanner
+	name = T_BOARD("book scanner")
+	build_path = /obj/machinery/libraryscanner
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/mass_driver
 	name = T_BOARD("mass driver")
 	build_path = /obj/machinery/mass_driver
@@ -1006,6 +1041,11 @@
 	name = T_BOARD("message server")
 	build_path = /obj/machinery/message_server
 	board_type = /datum/frame/frame_types/machine
+/obj/item/circuitboard/microscope
+	name = T_BOARD("electron microscope")
+	build_path = /obj/machinery/microscope
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/mining_equipment_vendor
 	name = T_BOARD("Mining Equipment Vendor")
 	board_type = /datum/frame/frame_types/machine
@@ -1040,6 +1080,11 @@
 /obj/item/circuitboard/operating
 	name = T_BOARD("patient monitoring console")
 	build_path = /obj/machinery/computer/operating
+/obj/item/circuitboard/optable
+	name = T_BOARD("operating table")
+	build_path = /obj/machinery/optable
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/capacitor = 1 )
 /obj/item/circuitboard/oven
 	name = T_BOARD("oven")
 	desc = "The circuitboard for an oven."
@@ -1118,6 +1163,11 @@
 	board_type = /datum/frame/frame_types/machine
 	build_path = /obj/machinery/power/quantumpad
 	req_components = list( /obj/item/bluespace_crystal = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/radiocarbon_spectrometer
+	name = T_BOARD("radiocarbon spectrometer")
+	build_path = /obj/machinery/radiocarbon_spectrometer
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/rcon_console
 	name = T_BOARD("RCON remote control console")
 	build_path = /obj/machinery/computer/rcon
@@ -1169,6 +1219,11 @@
 	name = T_BOARD("asteroid belt scanning computer")
 	build_path = /obj/machinery/computer/roguezones
 	hidden = TRUE
+/obj/item/circuitboard/scale
+	name = T_BOARD("scale")
+	build_path = /obj/machinery/scale
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/spring = 2, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/scan_consolenew
 	name = T_BOARD("DNA machine")
 	build_path = /obj/machinery/computer/scan_consolenew

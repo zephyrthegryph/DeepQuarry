@@ -13,6 +13,8 @@
 		"doppler_array",
 		// "experimentor",
 		"destructive_analyzer",
+		"microscope",
+		"radiocarbon_spectrometer",
 		// "destructive_scanner",
 		"artifact_harvester",
 		"artifact_scanpad",

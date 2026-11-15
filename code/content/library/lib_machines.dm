@@ -557,6 +557,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	icon_state = "bigscanner"
 	anchored = TRUE
 	density = TRUE
+	circuit = VARIANT(/obj/item/circuitboard/libraryscanner)
 	var/tmp/obj/item/book/cache	// Last scanned book
 
 /obj/machinery/libraryscanner/proc/interaction_insert_book(datum/act/op/A)
@@ -574,6 +575,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	return TRUE
 
 CAPABILITIES(/obj/machinery/libraryscanner)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	ref_one(nameof(cache), /obj/item/book)
 	interface("LibraryScanner", title = "Scanner")
 	ui_shape(has_cache = bool(), cache_name = schema_text(), has_book = bool())
@@ -623,8 +626,11 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	icon_state = "binder"
 	anchored = TRUE
 	density = TRUE
+	circuit = VARIANT(/obj/item/circuitboard/bookbinder)
 
 CAPABILITIES(/obj/machinery/bookbinder)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	climb()
 	op("bind", inputs(item(/obj/item/paper), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Bind"), then(PROC_REF(interaction_bind)))
 

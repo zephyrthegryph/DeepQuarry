@@ -5,6 +5,7 @@
 	name = "monkey processor"
 	desc = "An industrial grinder used to automate the process of monkey recycling."
 	monkeys_per_cube = 1
+	circuit = /obj/item/circuitboard/processor/monkey
 
 /obj/item/circuitboard/processor/monkey
 	name = T_BOARD("monkey processor")

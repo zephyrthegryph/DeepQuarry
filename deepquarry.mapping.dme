@@ -2138,6 +2138,7 @@
 #include "code\content\research\tg\designs\tyrstuff.dm"
 #include "code\content\research\tg\designs\weapon_designs.dm"
 #include "code\content\research\tg\designs\boards\atmos.dm"
+#include "code\content\research\tg\designs\boards\bench_devices.dm"
 #include "code\content\research\tg\designs\boards\boards.dm"
 #include "code\content\research\tg\designs\boards\cargo.dm"
 #include "code\content\research\tg\designs\boards\engineering.dm"

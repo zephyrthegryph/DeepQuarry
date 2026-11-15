@@ -1181,15 +1181,12 @@ CAPABILITIES(/obj/belly)
 		return TRUE
 	else
 		var/list/modified_mats = list()
-		var/trash = 1
-		if(istype(O,/obj/item/trash))
-			trash = 5
-		if(istype(O,/obj/item/stack))
-			var/obj/item/stack/S = O
-			trash = S.amount
+		var/units = breakdown_units(O)
 		var/list/item_matter = O.material_totals()
 		for(var/mat in item_matter)
-			modified_mats[mat] = item_matter[mat] * trash
+			modified_mats[mat] = item_matter[mat] * units
+		if(GLOB.fab_trace)
+			log_world("FAB: [src] digested [O] ([units] unit\s) into debris: [fab_matter_text(item_matter, units)]")
 		for(var/obj/item/debris_pack/digested/D in contents)
 			D.add_materials(modified_mats)
 			if(O.w_class > D.w_class)

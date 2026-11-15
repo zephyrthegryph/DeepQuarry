@@ -190,6 +190,43 @@ UI_SCHEMA(stack_recipe_tree, map_of(schema_text(), one_of(row(res_amount = num()
 		to_chat(user, span_notice("Building [recipe.title] ..."))
 	start_build(user, recipe, required, produced)
 
+/// Set to log what every fabricator print and stack recipe records against what it cost (FAB: lines in the world log).
+GLOBAL_VAR_INIT(fab_trace, FALSE)
+
+/// A material list as text for the FAB trace: name amount, scaled.
+/proc/fab_matter_text(list/matter, scale)
+	var/list/parts = list()
+	for(var/key in matter)
+		var/datum/material/material = istype(key, /datum/material) ? key : get_material_by_name(key)
+		parts += "[istype(material) ? material.name : key] [round(matter[key] * scale)]"
+	return parts.Join(", ") || "nothing"
+
+/// Makes what `recipe` makes at `where` from `required` units of a stack, `produced` of them. The product is recorded as made of exactly what it cost, never
+/// more: its matter is what the units were worth, capped at what an item of its size can hold (stack_recipe_matter()). The build and the conservation
+/// sweep (code/tests/unit_tests/dq_fab_conservation_tests.dm) both read this, so the sweep sees what a player gets.
+/proc/stack_recipe_product(datum/xform/recipe, atom/where, required, produced)
+	var/atom/O
+	if(recipe.use_material)
+		// a stack that is not a material sheet takes its amount as the constructor's first argument, not a material
+		if(ispath(recipe.result, /obj/item/stack) && !ispath(recipe.result, /obj/item/stack/material))
+			O = new recipe.result(where)
+		else
+			O = new recipe.result(where, recipe.use_material)
+		if(isitem(O))
+			stack_recipe_matter(O, recipe.use_material, required, produced)
+	else
+		O = variant_new(recipe.result, where) // a path, or a VARIANT() reference
+		if(recipe.matter_material && isitem(O))
+			stack_recipe_matter(O, recipe.matter_material, required, produced)
+	return O
+
+/// Law of equivalent exchange: the product is made of what it cost, at most what its size can hold.
+/proc/stack_recipe_matter(obj/item/product, material_id, required, produced)
+	var/mattermult = min(SHEET_MATERIAL_AMOUNT, 400 * product.w_class)
+	product.set_single_material(material_id, mattermult / produced * required)
+	if(GLOB.fab_trace)
+		log_world("FAB: stack recipe made [product] of [required] units: recorded [round(mattermult / produced * required)] of [material_id] across [produced] made")
+
 /// Starts the build op: the recipe, what it costs and what it makes ride with the call.
 /obj/item/stack/proc/start_build(mob/user, datum/xform/recipe, required, produced)
 	perform_op(user, src, "build", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("recipe" = recipe, "required" = required, "produced" = produced))
@@ -205,27 +242,7 @@ UI_SCHEMA(stack_recipe_tree, map_of(schema_text(), one_of(row(res_amount = num()
 	var/required = A.arg("required")
 	var/produced = A.arg("produced")
 	if (use(required))
-		var/atom/O
-		if(recipe.use_material)
-			O = new recipe.result(user.loc, recipe.use_material)
-
-			if(istype(O, /obj/item))
-				var/obj/item/Ob = O
-
-				// Law of equivalent exchange: the product is made of exactly what it cost.
-				var/mattermult = istype(Ob, /obj/item) ? min(2000, 400 * Ob.w_class) : 2000
-				Ob.set_single_material(recipe.use_material, mattermult / produced * required)
-
-		else
-			O = variant_new(recipe.result, user.loc) // a path, or a VARIANT() reference
-
-			if(recipe.matter_material)
-				if(istype(O, /obj/item))
-					var/obj/item/Ob = O
-
-					// Law of equivalent exchange: the product is made of exactly what it cost.
-					var/mattermult = istype(Ob, /obj/item) ? min(2000, 400 * Ob.w_class) : 2000
-					Ob.set_single_material(recipe.matter_material, mattermult / produced * required)
+		var/atom/O = stack_recipe_product(recipe, user.loc, required, produced)
 
 		O.set_dir(user.dir)
 		O.add_fingerprint(user)
