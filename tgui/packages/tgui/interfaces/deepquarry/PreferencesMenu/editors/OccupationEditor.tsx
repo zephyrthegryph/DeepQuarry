@@ -13,13 +13,13 @@
 // One job = one tight row. Dept color appears as a 4px left bar on each row.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Dropdown, Stack, Tooltip } from 'tgui-core/components';
 import type {
   PrefEditorOccupation,
   PrefEditorOccupationStatic,
 } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
-import { Label } from 'tgui/components/Label';
 
 type Data = PrefEditorOccupation;
 type Department = PrefEditorOccupationStatic['departments'][string];

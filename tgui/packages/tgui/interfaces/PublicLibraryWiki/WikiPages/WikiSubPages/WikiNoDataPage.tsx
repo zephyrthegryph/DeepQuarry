@@ -1,7 +1,6 @@
-import { Blink, Box, Section, Stack } from 'tgui-core/components';
-
-import { WikiLogo } from '../../WikiCommon/WikiLogo';
 import { Label } from 'tgui/components/Label';
+import { Blink, Box, Section, Stack } from 'tgui-core/components';
+import { WikiLogo } from '../../WikiCommon/WikiLogo';
 
 export const WikiNoDataPage = (props) => {
   return (

@@ -14,6 +14,7 @@ mod chem;
 pub mod entity;
 pub mod frame;
 mod gas;
+mod glow_mask;
 pub use auxcallback::held;
 mod heat;
 mod heat_net;

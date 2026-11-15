@@ -1,4 +1,5 @@
 import { useBackend, useSharedState } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -12,7 +13,6 @@ import {
 } from 'tgui-core/components';
 import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import type { Data, departmentFinance, financeTransaction } from './types';
-import { Label } from 'tgui/components/Label';
 
 const wageMultipliers = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const transferPresets = [250, 500, 1000, 2500, 5000];

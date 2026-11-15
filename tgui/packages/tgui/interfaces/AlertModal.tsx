@@ -1,12 +1,11 @@
 import { type KeyboardEvent, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Autofocus, Button, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-
 import { Loader } from './common/Loader';
 import type { AlertModalActions, AlertModalData } from './generated/AlertModal';
-import { Label } from 'tgui/components/Label';
 
 type Data = AlertModalData;
 

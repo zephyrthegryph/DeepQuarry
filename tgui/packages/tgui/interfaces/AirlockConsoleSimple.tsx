@@ -1,15 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type {
-  AirlockConsoleSimpleActions,
-  AirlockConsoleSimpleData,
-} from './generated/AirlockConsoleSimple';
 import {
   StandardControls,
   StatusDisplay,
 } from './EmbeddedController/EmbeddedControllerHelpers';
 import { PanelOpen } from './EmbeddedController/PanelOpen';
+import type {
+  AirlockConsoleSimpleActions,
+  AirlockConsoleSimpleData,
+} from './generated/AirlockConsoleSimple';
 
 /**
  * Simple airlock consoles are the least complicated airlock controller.

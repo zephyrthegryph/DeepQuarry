@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { AnimatedArrows, AnimatedArrowsLeft } from '../common/AnimatedArrows';
 import type { SpaceBattleActions } from '../generated/SpaceBattle';
@@ -7,7 +8,6 @@ import { gameStateToText, gameTooltip } from './constants';
 import { stateToColor } from './functions';
 import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
-import { Label } from 'tgui/components/Label';
 
 export const PlayerMenu = (props: {
   playerOnePlaceShip: string;

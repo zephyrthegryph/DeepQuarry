@@ -4,6 +4,7 @@
 // sqlite feedback store. Author can optionally be hashed for privacy.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -11,7 +12,6 @@ import type {
   FeedbackFormActions,
   FeedbackFormData,
 } from './generated/FeedbackForm';
-import { Label } from 'tgui/components/Label';
 
 export const FeedbackForm = () => {
   const { data, act } = useBackend<FeedbackFormData, FeedbackFormActions>();

@@ -9,9 +9,9 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { classes } from 'tgui-core/react';
+import type { RpgDiceActions } from '../generated/RpgDice';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameTooltip, MAX_HISTORY, presetDice } from './constants';
-import type { RpgDiceActions } from '../generated/RpgDice';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {

@@ -5,10 +5,10 @@
 // window. "later" just closes without writing to the DB.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { PrivacyPollActions } from './generated/PrivacyPoll';
-import { Label } from 'tgui/components/Label';
 
 type Choice = {
   key: string;

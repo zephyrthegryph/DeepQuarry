@@ -1,10 +1,9 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import { Box, Icon, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
 import { FullscreenNotice } from './common/FullscreenNotice';
-import { StatBar } from 'tgui/components/StatBar';
 
 type Data = {
   detonating: BooleanLike;

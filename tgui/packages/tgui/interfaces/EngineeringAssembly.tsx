@@ -1,3 +1,4 @@
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   LabeledList,
@@ -13,7 +14,6 @@ import type {
   EngineeringAssemblyActions,
   EngineeringAssemblyData,
 } from './generated/EngineeringAssembly';
-import { Label } from 'tgui/components/Label';
 
 const number = (value: number) => Math.round(value).toLocaleString();
 const measurementFields = [

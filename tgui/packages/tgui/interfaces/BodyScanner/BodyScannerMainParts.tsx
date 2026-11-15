@@ -1,8 +1,7 @@
+import { Label } from 'tgui/components/Label';
 import { Box, Section, Table } from 'tgui-core/components';
-
 import type { DiagnosisPart, DiagnosisPartKind } from '../common/Diagnosis';
 import { BAND_INFO } from './constants';
-import { Label } from 'tgui/components/Label';
 
 // Limb and organ rows come straight from the scanner's diagnosis parts
 // (diagnose_parts on the DM side); the UI only renders them.

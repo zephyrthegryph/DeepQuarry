@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, NoticeBox, Section, Tabs } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import { Label } from 'tgui/components/Label';
 
 export type Data = {
   real_name: string;

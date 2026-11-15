@@ -5,6 +5,7 @@
 // picks which one based on whether `selected_severity` is set.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack, Table } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -12,7 +13,6 @@ import type {
   EventManagerPanelActions,
   EventManagerPanelData,
 } from './generated/EventManagerPanel';
-import { Label } from 'tgui/components/Label';
 
 type Data = EventManagerPanelData;
 

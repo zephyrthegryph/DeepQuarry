@@ -1,8 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import type { PdaActions } from '../../generated/Pda';
-import { Label } from 'tgui/components/Label';
 
 type PersonalSupplyOrder = {
   ref: number;

@@ -1,9 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Icon } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
 import { FullscreenNotice } from './FullscreenNotice';
-import { Label } from 'tgui/components/Label';
 
 type machine = { machineType?: string };
 type Data = { scan: BooleanLike; isAI: BooleanLike; isRobot: BooleanLike };

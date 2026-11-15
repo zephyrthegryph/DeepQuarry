@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Button,
@@ -11,7 +12,6 @@ import type {
   AncientDroneFabActions,
   AncientDroneFabData,
 } from './generated/AncientDroneFab';
-import { Label } from 'tgui/components/Label';
 
 export const AncientDroneFab = (props) => {
   const { act, data } = useBackend<

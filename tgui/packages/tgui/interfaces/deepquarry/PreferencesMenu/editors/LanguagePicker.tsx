@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -13,7 +14,6 @@ import {
 } from 'tgui-core/components';
 import type { PrefEditorLanguageStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
-import { Label } from 'tgui/components/Label';
 
 type LangMeta = PrefEditorLanguageStatic['all_languages'][string];
 

@@ -7,8 +7,8 @@
 // Every size is in em so the controls follow the theme font and the display scale.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button, Floating, Input, Slider } from 'tgui-core/components';
 import { Label } from 'tgui/components/Label';
+import { Box, Button, Floating, Input, Slider } from 'tgui-core/components';
 
 /// An on/off switch: a pill with a knob, and the state written beside it.
 export const Switch = ({

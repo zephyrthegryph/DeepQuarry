@@ -14,11 +14,11 @@
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Input, Stack } from 'tgui-core/components';
 import { HtmlRenderer } from '../../../common/HtmlRenderer';
 import type { PrefEditorSpeciesPickerStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
-import { Label } from 'tgui/components/Label';
 
 type SpeciesMeta = PrefEditorSpeciesPickerStatic['all_species'][string];
 

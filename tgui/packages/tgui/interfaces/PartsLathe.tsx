@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -12,8 +14,6 @@ import { toTitleCase } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import type { Material } from './Fabrication/Types';
 import type { PartsLatheActions, PartsLatheData } from './generated/PartsLathe';
-import { StatBar } from 'tgui/components/StatBar';
-import { Label } from 'tgui/components/Label';
 
 export const PartsLathe = (props) => {
   const { act, data } = useBackend<PartsLatheData, PartsLatheActions>();

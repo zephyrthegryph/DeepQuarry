@@ -167,8 +167,27 @@
 	return
 
 
-// What the preview mannequin wears: the loadout, the job outfit. (They replaced the equip_preview_mob bitfield;
-// load_character() migrates an old save.)
+// What the preview mannequin wears: the loadout, the job outfit. Both default on; the character setup's
+// "Show loadout" / "Show job outfit" switches write them.
+/datum/preference/toggle/human/preview_loadout
+	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
+	savefile_key = "preview_loadout"
+	savefile_identifier = PREFERENCE_CHARACTER
+	default_value = TRUE
+	can_randomize = FALSE
+
+/datum/preference/toggle/human/preview_loadout/apply_to_human(mob/living/carbon/human/target, value)
+	return
+
+/datum/preference/toggle/human/preview_job
+	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
+	savefile_key = "preview_job"
+	savefile_identifier = PREFERENCE_CHARACTER
+	default_value = TRUE
+	can_randomize = FALSE
+
+/datum/preference/toggle/human/preview_job/apply_to_human(mob/living/carbon/human/target, value)
+	return
 
 
 // Ears, tail and wings are optional: an empty value (the default) means the character has none, and the

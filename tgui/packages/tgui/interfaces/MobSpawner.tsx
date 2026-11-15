@@ -13,10 +13,7 @@ import {
   Tabs,
   TextArea,
 } from 'tgui-core/components';
-import type {
-  MobSpawnerActions,
-  MobSpawnerData,
-} from './generated/MobSpawner';
+import type { MobSpawnerActions, MobSpawnerData } from './generated/MobSpawner';
 
 export const MobSpawner = (props) => {
   const { data } = useBackend<MobSpawnerData, MobSpawnerActions>();

@@ -5,8 +5,9 @@
  * memory (a window that moves between pages of one process) and in the
  * client's storage (a native window is a fresh page every time).
  */
-import { type RefObject, useLayoutEffect } from 'react';
+
 import { storage } from 'common/storage';
+import { type RefObject, useLayoutEffect } from 'react';
 
 const KEY_PREFIX = 'scroll-';
 const SAVE_DELAY_MS = 500;

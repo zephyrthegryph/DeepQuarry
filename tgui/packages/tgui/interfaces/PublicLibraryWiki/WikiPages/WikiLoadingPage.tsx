@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Divider,
@@ -6,9 +7,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
 import { WikiLogo } from '../WikiCommon/WikiLogo';
-import { Label } from 'tgui/components/Label';
 
 export const WikiLoadingPage = (props: { endTime: number; tipp: string }) => {
   const { endTime, tipp } = props;
