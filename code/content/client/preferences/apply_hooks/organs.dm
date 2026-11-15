@@ -40,6 +40,9 @@
 		// Lost with its amputated parent: the limb's own saved setting does not apply.
 		if(status != "amputated" && dq_limb_lost_through(pref_organ_data, name))
 			continue
+		// A taur body has no legs or feet of its own: they stay Normal, the saved setting kept for when the taur goes.
+		if(preferences.limb_taur_locked(name))
+			continue
 		if(status == "amputated")
 			O.remove_rejuv()
 		else if(status == "cyborg")

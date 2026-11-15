@@ -112,6 +112,29 @@ export const OrgansEditor = ({
         {externalOrder.map((limb) => {
           const state = d.externals?.[limb] ?? { status: 'normal' };
           const lostVia = state.lost_via;
+          // A taur body has no legs or feet of its own: the row greys out and keeps its saved setting.
+          if (state.taur) {
+            return (
+              <Box
+                key={limb}
+                style={{
+                  ...rowStyle(EXTERNAL_STATES, 'normal', focusLimb === limb),
+                  opacity: 0.55,
+                }}
+              >
+                <Box style={{ flex: '0 0 6em' }}>
+                  {externalLabels[limb] ?? limb}
+                </Box>
+                <Segmented
+                  disabled
+                  options={asOptions(EXTERNAL_STATES)}
+                  value="normal"
+                  onSelect={() => {}}
+                />
+                <Label>Replaced by the taur body</Label>
+              </Box>
+            );
+          }
           if (lostVia) {
             const saved = EXTERNAL_STATES.find((o) => o.key === state.status);
             return (

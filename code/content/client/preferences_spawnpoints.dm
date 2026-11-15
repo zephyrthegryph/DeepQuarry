@@ -159,11 +159,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	display_name = "Gateway"
 	msg = "has completed translation from offsite gateway"
 
-/datum/spawnpoint/teleporter
-	landing_list = "latejoin_teleporter"
-	display_name = "Teleporter"
-	msg = "has arrived by teleporter"
-
 /datum/spawnpoint/cryo
 	landing_list = "latejoin_cryo"
 	display_name = "Cryogenic Storage"

@@ -266,6 +266,33 @@
 /// Examine, the More link and the OOC notes in chat style text the way the character setup previews it: emphasis markers and "||" spoilers.
 /datum/unit_test/dq_flavor_and_notes_formatting
 
+/// A taur body has no legs or feet of its own: the limb list greys them, the editor refuses them, the other limbs stay editable.
+/datum/unit_test/dq_taur_locks_leg_limbs
+
+/datum/unit_test/dq_taur_locks_leg_limbs/Run()
+	var/taur_name
+	for(var/key in GLOB.tail_styles_list)
+		var/datum/sprite_accessory/S = GLOB.tail_styles_list[key]
+		if(istype(S) && istaurtail(S))
+			taur_name = S.name
+			break
+	TEST_ASSERT_NOTNULL(taur_name, "there is a taur body")
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN))
+	var/datum/preference_editor/organs/editor = GLOB.preference_editors_by_key["organs"]
+	TEST_ASSERT(!editor.build_ui_data(P)["externals"][BP_L_LEG]["taur"], "a normal body's legs are free")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_L_LEG, "status" = "amputated"), P, null, null), PREF_UPDATE_ACCEPTED, "and can be changed")
+	var/datum/preference_editor/legs/legs = GLOB.preference_editors_by_key["legs"]
+	TEST_ASSERT_EQUAL(legs.handle_action(P, "set_leg_style", list("style" = taur_name), null), PREF_UPDATE_ACCEPTED, "a taur body is chosen")
+	var/list/externals = editor.build_ui_data(P)["externals"]
+	for(var/limb in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT))
+		TEST_ASSERT(externals[limb]["taur"], "[limb] is greyed under a taur body")
+	TEST_ASSERT(!externals[BP_L_ARM]["taur"], "the arms are not")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_R_LEG, "status" = "cyborg"), P, null, null), PREF_UPDATE_REJECTED, "a leg's setting is refused")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_L_ARM, "status" = "cyborg"), P, null, null), PREF_UPDATE_ACCEPTED, "an arm's is not")
+	var/list/organ_data = P.read_preference(/datum/preference/organ_data)
+	TEST_ASSERT_EQUAL(organ_data[BP_L_LEG], "amputated", "the saved leg setting is kept")
+
+
 /datum/unit_test/dq_flavor_and_notes_formatting/Run()
 	var/rendered = dq_render_flavor("A +bold+ |soft| _under_ ||secret|| end")
 	TEST_ASSERT(findtext(rendered, "<b>bold</b>"), "emphasis: [rendered]")

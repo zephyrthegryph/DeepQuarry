@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Character setup: under a taur body the Tail row stays visible but greyed out, and the legs and feet in the limb list are greyed and stay Normal"
+  - bugfix: "Character setup: language tiles no longer overflow, and the language section has one header"
+  - qol: "Character setup: Birthday (month and day) and blood type with blood colour sit on one line, as do a language's prefix and default button"

@@ -4,6 +4,7 @@ import {
   searchVerbs,
   verbCommand,
   verbGroupsOf,
+  viewsOf,
   visibleTabs,
 } from './store';
 
@@ -113,6 +114,13 @@ describe('stat panel store', () => {
     store.receive('update_inspect', { data: { target: 'Pen' }, switch: true });
     expect(visibleTabs(store.state)).toContain('Inspect');
     expect(store.state.currentTab).toBe('Inspect');
+    expect(store.state.view).toBe('Inspect');
+    expect(viewsOf(store.state)).toEqual([
+      'Status',
+      'Actions',
+      'Game',
+      'Inspect',
+    ]);
     expect(store.state.inspect?.target).toBe('Pen');
     expect(sent).toContainEqual(['Set-Tab', { tab: 'Inspect' }]);
   });
@@ -121,6 +129,16 @@ describe('stat panel store', () => {
     const { store } = setup();
     store.receive('update_inspect', { data: { target: 'Pen' }, switch: false });
     expect(store.state.currentTab).toBe('Status');
+    expect(store.state.view).toBe('Status');
+    expect(viewsOf(store.state)).toContain('Inspect');
+  });
+
+  it('clearing inspect while it is shown goes back to Status', () => {
+    const { store } = setup();
+    store.receive('update_inspect', { data: { target: 'Pen' }, switch: true });
+    store.receive('update_inspect', { data: null, switch: false });
+    expect(store.state.view).toBe('Status');
+    expect(viewsOf(store.state)).not.toContain('Inspect');
   });
 
   it('misc tabs come and go', () => {
