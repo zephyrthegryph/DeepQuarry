@@ -364,4 +364,88 @@ describe('dropIndex', () => {
     expect(dropIndex(boxes, 300)).toBe(1);
     expect(dropIndex(boxes, 900)).toBe(2);
   });
+
+  describe('two sizes per window', () => {
+    const update = (host: ColumnHost, wid: string, iface: string) => {
+      host.receive('col/open', { wid, kind: 'tgui' });
+      host.receive('col/msg', {
+        wid,
+        ...msg('update', {
+          config: { interface: { name: iface }, title: iface },
+          data: {},
+        }),
+      });
+    };
+    const heightOf = (host: ColumnHost, iface: string) =>
+      host.state.groups.find((g) =>
+        g.windows.some((id) => host.state.windows[id]?.iface === iface),
+      )?.height;
+    const MAX: [number, number] = [8000, 8000];
+
+    it('pop out, resize popped, pop in, resize docked, pop out again: each mode keeps its own size', () => {
+      const host = new ColumnHost();
+      update(host, 'col-1', 'StatPanel');
+      update(host, 'col-2', 'Apc');
+      update(host, 'col-3', 'Chat');
+      // Docked 200 (its saved inline height).
+      host.dispatch({
+        type: 'resize',
+        group: host.state.groups[1].id,
+        height: 200,
+      });
+      // First pop out: no popped size yet, so the default (not the 200-high entry).
+      const first = host.poppedSize('col-2', 1, MAX);
+      expect(first).toEqual([400, 600]);
+      host.close('col-2');
+      host.receive('col/close', { wid: 'col-2' });
+      // The popped window is resized: its geometry reaches the page.
+      host.receive('col/geometry', {
+        iface: 'Apc',
+        size: [700, 500],
+        pos: [30, 40],
+      });
+      // Docking again (the native window was 500 high): back at its own inline height, not the popped one.
+      host.receive('col/open', {
+        wid: 'col-2',
+        kind: 'tgui',
+        height: 500,
+      });
+      update(host, 'col-2', 'Apc');
+      expect(heightOf(host, 'Apc')).toBe(200);
+      // Resize docked: only the inline height moves.
+      host.dispatch({
+        type: 'resize',
+        group: host.state.groups.find((g) =>
+          g.windows.some((id) => host.state.windows[id]?.iface === 'Apc'),
+        )!.id,
+        height: 320,
+      });
+      expect(host.state.saved.Apc.float?.size).toEqual([700, 500]);
+      // Popping out again opens at the popped size, wherever the docked height went.
+      expect(host.poppedSize('col-2', 1, MAX)).toEqual([700, 500]);
+      // A resize while popped changes the popped size only.
+      host.receive('col/geometry', { iface: 'Apc', size: [640, 480] });
+      expect(host.state.saved.Apc.height).toBe(320);
+      expect(host.poppedSize('col-2', 1, MAX)).toEqual([640, 480]);
+    });
+
+    it('both sizes persist with the layout', () => {
+      const host = new ColumnHost();
+      update(host, 'col-1', 'Apc');
+      update(host, 'col-2', 'Chat');
+      host.receive('col/geometry', {
+        iface: 'Apc',
+        size: [700, 500],
+        pos: [30, 40],
+      });
+      const text = serializeSaved(host.state.saved);
+      const again = new ColumnHost();
+      again.receive('col/init', { saved: text });
+      expect(again.state.saved.Apc.float).toEqual({
+        size: [700, 500],
+        pos: [30, 40],
+      });
+      expect(again.state.saved.Apc.height).toBe(host.state.saved.Apc.height);
+    });
+  });
 });

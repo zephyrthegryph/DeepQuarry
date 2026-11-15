@@ -100,6 +100,6 @@ SCHEMA(/datum/tgui, float_at, schema_text())
 		return "[round(point["x"])],[round(point["y"])],[round(size["x"])],[round(size["y"])]"
 	return "[round(point["x"])],[round(point["y"])]"
 
-/// Hook: a dock message from this UI's page (`wm/dock`, `wm/float`, `wm/dropped`, `wm/log`).
+/// Hook: a dock message from this UI's page (`wm/dock`, `wm/float`, `wm/geometry`, `wm/dropped`, `wm/log`).
 /datum/tgui/proc/dock_message(type, list/payload)
 	return

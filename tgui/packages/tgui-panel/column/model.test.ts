@@ -517,15 +517,167 @@ describe('fitting the entries to the column', () => {
       expect(heights(state)).toEqual([FIT_MIN, 150, 270]);
     });
 
-    it('a window reopened at its saved place takes nothing again', () => {
+    describe('a window leaving the column', () => {
+      const open = (
+        state: DockState,
+        id: string,
+        name: string,
+        height: number,
+        at: number,
+      ) =>
+        dockReduce(state, {
+          type: 'open',
+          window: { ...iface(id, name, height), at },
+        });
+      const chatFirst = () =>
+        dockReduce(emptyDock(), {
+          type: 'open',
+          window: { id: 'c', iface: 'Chat', title: 'Chat' },
+        });
+
+      it('gives its height to Status, not the chat (closed)', () => {
+        let state = dockReduce(chatFirst(), {
+          type: 'open',
+          window: { ...iface('s', 'StatPanel', 300), at: 0 },
+        });
+        state = open(state, 'a', 'APC', 150, 1);
+        const before = heights(state);
+        expect(before.slice(0, 2)).toEqual([150, 150]);
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(order(next)).toEqual([['s'], ['c']]);
+        // Status is back at 300: the freed 150 went to it, and the chat (the rest of the column) is untouched.
+        expect(next.groups[0].height).toBe(300);
+      });
+
+      it('gives its height to Status when it is popped out of a stack as well (its group goes)', () => {
+        let state = dockReduce(chatFirst(), {
+          type: 'open',
+          window: { ...iface('s', 'StatPanel', 200), at: 0 },
+        });
+        state = open(state, 'a', 'APC', 120, 1);
+        state = open(state, 'b', 'Tank', 100, 2);
+        const next = dockReduce(state, { type: 'close', id: 'b' });
+        expect(next.groups.find((g) => g.windows.includes('s'))?.height).toBe(
+          state.groups[0].height + 100,
+        );
+        expect(next.groups.find((g) => g.windows.includes('a'))?.height).toBe(
+          120,
+        );
+      });
+
+      it('with no Status, goes to the entry above the freed slot, never the chat', () => {
+        let state = open(chatFirst(), 'a', 'APC', 150, 0);
+        state = open(state, 'b', 'Tank', 120, 1);
+        state = open(state, 'd', 'Cell', 90, 2);
+        expect(order(state)).toEqual([['a'], ['b'], ['d'], ['c']]);
+        const a = state.groups[0].height;
+        const b = state.groups[1].height;
+        const next = dockReduce(state, { type: 'close', id: 'd' });
+        expect(next.groups.map((g) => g.height).slice(0, 2)).toEqual([
+          a,
+          b + 90,
+        ]);
+      });
+
+      it('with no Status and nothing above, goes to the entry below it', () => {
+        let state = open(chatFirst(), 'a', 'APC', 150, 0);
+        state = open(state, 'b', 'Tank', 120, 1);
+        const b = state.groups[1].height;
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(order(next)).toEqual([['b'], ['c']]);
+        expect(next.groups[0].height).toBe(b + 150);
+      });
+
+      it('leaves the chat as it is: closing the only other window gives it nothing to store', () => {
+        const state = open(chatFirst(), 'a', 'APC', 150, 0);
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(order(next)).toEqual([['c']]);
+        expect(next.groups[0].height).toBe(state.groups[1].height);
+      });
+
+      it('a collapsed entry frees only its header: nothing is handed on', () => {
+        let state = dockReduce(chatFirst(), {
+          type: 'open',
+          window: { ...iface('s', 'StatPanel', 300), at: 0 },
+        });
+        state = open(state, 'a', 'APC', 150, 1);
+        state = dockReduce(state, {
+          type: 'collapse',
+          group: state.groups[1].id,
+          collapsed: true,
+        });
+        const s = state.groups[0].height;
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(next.groups[0].height).toBe(s);
+      });
+
+      it('the chat leaving gives nothing away', () => {
+        let state = dockReduce(emptyDock(), {
+          type: 'open',
+          window: iface('s', 'StatPanel', 300),
+        });
+        state = dockReduce(state, {
+          type: 'open',
+          window: { id: 'c', iface: 'Chat', title: 'Chat' },
+        });
+        const next = dockReduce(state, { type: 'close', id: 'c' });
+        expect(next.groups[0].height).toBe(300);
+      });
+    });
+
+    it('a window that left and docks again takes back what it handed on, so the round trip restores every height', () => {
       const state = column();
       const before = heights(state);
       let next = dockReduce(state, { type: 'close', id: 'a' });
+      // Status took the 200 while it was away.
+      expect(heights(next)[0]).toBe(before[0] + before[1]);
       next = dockReduce(next, {
         type: 'open',
         window: { id: 'a', iface: 'APC', title: 'APC' },
       });
-      expect(heights(next)[0]).toBe(before[0]);
+      expect(heights(next)).toEqual(before);
+    });
+
+    it("docks again at its own saved inline height, not the popped-out window's", () => {
+      const state = column();
+      let next = dockReduce(state, { type: 'close', id: 'a' });
+      // The native window had been resized to 700 while popped out; docking passes that height along.
+      next = dockReduce(next, {
+        type: 'open',
+        window: { id: 'a', iface: 'APC', title: 'APC', height: 700 },
+      });
+      expect(next.groups[1].height).toBe(state.groups[1].height);
+    });
+
+    it('with no Status the space it handed on is taken back from the same entry', () => {
+      let state = dockReduce(emptyDock(), {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('b', 'Tank', 120), at: 0 },
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('a', 'APC', 150), at: 1 },
+      });
+      const before = heights(state);
+      let next = dockReduce(state, { type: 'close', id: 'a' });
+      expect(next.groups[0].height).toBe(before[0] + before[1]);
+      next = dockReduce(next, {
+        type: 'open',
+        window: { id: 'a', iface: 'APC', title: 'APC' },
+      });
+      expect(heights(next)).toEqual(before);
+    });
+
+    it('what it handed on survives the saved text', () => {
+      const state = column();
+      const next = dockReduce(state, { type: 'close', id: 'a' });
+      const back = parseSaved(serializeSaved(next.saved));
+      expect(back.APC.gave).toBe(state.groups[1].height);
+      expect(back.APC.gaveTo).toBe('StatPanel');
     });
   });
 
