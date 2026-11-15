@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The manifest generators (gen_dme, gen_mapping_dme, gen_test_includes) keep per-file facts by stat and read only changed files; analyze's model store patches up to 128 changed files instead of 12 before a full parse"

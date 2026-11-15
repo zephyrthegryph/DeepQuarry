@@ -976,7 +976,11 @@
 	TEST_ASSERT(client_walls_tile() in wall_tile.underlays, "an opaque turf is on the walls plane")
 	wall_tile.directional_opacity = NONE
 	wall_tile.client_glow_wall_sync()
-	TEST_ASSERT(!(client_walls_tile() in wall_tile.underlays), "a clear turf is not on the walls plane")
+	TEST_ASSERT(client_walls_tile() in wall_tile.underlays, "a turf that stops blocking keeps its walls tile until its floor gradient is drawn: it is never unlit between the two")
+	set_global(nameof(GLOB.lighting_smooth_redraws), GLOB.lighting_smooth_redraws) // the draw counts itself; teardown restores
+	lighting_smooth_draw(wall_tile) // what lighting_smooth_step() does for a redraw it reaches
+	client_glow_wall_release(wall_tile)
+	TEST_ASSERT(!(client_walls_tile() in wall_tile.underlays), "a clear turf is not on the walls plane once its gradient is drawn")
 	wall_tile.directional_opacity = old_opacity_dirs
 	for(var/area/shown_area in world)
 		TEST_ASSERT(shown_area.client_visible_shown, "client lighting: [shown_area.type] draws the visibility tile")

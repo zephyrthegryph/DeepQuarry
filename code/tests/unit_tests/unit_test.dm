@@ -1406,6 +1406,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"word_to_uristrune_table" = TRUE, // a lazily built cache (the rune glyphs, made on their first draw)
 		"acceptable_items" = TRUE, // a lazily built cache (the kitchen's accepted ingredients, made on the first microwave check)
 		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, "refresh_dispatched_draws_spared" = TRUE, "lazy_states_made" = TRUE, "lazy_states_cleared" = TRUE, "lazy_state_published" = TRUE, "coalesce_runs" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
+		"footsteps_audible" = TRUE, // a monotonic count of audible steps: a first step from 0 to 1 only looks like a flag flip, and any test that moves a mob near a viewer bumps it
 		"refresh_queue_base" = TRUE, // the refresh queue's place counter: it falls back to 0 whenever a drain empties the queue, so it depends on what ran before, not on what the test did
 	)
 	return ignored
