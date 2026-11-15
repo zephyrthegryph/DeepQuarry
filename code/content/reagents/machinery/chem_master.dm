@@ -482,6 +482,8 @@ CAPABILITIES(/obj/machinery/chem_master)
 	var/datum/reagents/R = beaker.reagents
 	if(!id || !amount || amount <= 0) // negative amounts pass a bare falsy check and reach trans_id_to
 		return
+	if(contaminant_refused(A.actor, id, R))
+		return
 	R.trans_id_to(src, id, amount)
 
 /obj/machinery/chem_master/proc/ui_act_remove(datum/act/op/A, amount, id)
@@ -491,10 +493,22 @@ CAPABILITIES(/obj/machinery/chem_master)
 		return
 	if(!id || !amount || amount <= 0) // see "add": reject crafted negative amounts
 		return
+	if(contaminant_refused(A.actor, id, reagents))
+		return
 	if(mode)
 		reagents.trans_id_to(beaker, id, amount)
 	else
 		reagents.remove_reagent(id, amount)
+
+/// A contaminant is not a reagent anyone picks out of a mixture, moves on its own or throws away: it travels with the mixture it is in (a transfer of a stock
+/// reagent carries its share, code/domains/world_model/reagents/holder.dm draw_portion()). Says so, and logs it, when `id` is one.
+/obj/machinery/chem_master/proc/contaminant_refused(mob/user, id, datum/reagents/from)
+	if(!contaminant_def(id))
+		return FALSE
+	to_chat(user, span_warning("\The [src] cannot separate [id] out of the mixture: an impurity only goes where its mixture goes."))
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] refused to move or discard [id] on its own in [from.my_atom]")
+	return TRUE
 
 /obj/machinery/chem_master/proc/ui_act_eject(datum/act/op/A)
 	var/mob/user = A.actor

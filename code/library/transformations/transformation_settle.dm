@@ -42,6 +42,8 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		return FALSE
 	if(X.needs_grade && !xform_grades_met(X, holder))
 		return FALSE
+	if(!holder.reaction_temperature_ok(X))
+		return FALSE
 	if(!isnull(X.holds) && !xform_cond_holds(X, holder, X.holds))
 		return FALSE
 	return TRUE
@@ -75,6 +77,9 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	var/amt_produced = X.result_amount * reaction_progress
 	if(X.result)
 		holder.add_reagent(X.result, amt_produced, data, safety = 1, was_from_belly = belly_reagent)
+		holder.apply_temperature_effects(X, amt_produced)
+		for(var/list/byproduct as anything in X.byproducts)
+			holder.add_reagent(byproduct[1], byproduct[2] * reaction_progress, safety = 1)
 
 	xform_effects(X, holder, owner, amt_produced)
 	if(SScontracts && X.result && amt_produced > 0)

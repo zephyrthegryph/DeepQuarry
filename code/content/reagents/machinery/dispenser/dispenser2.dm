@@ -224,6 +224,11 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 		return
 	var/datum/reagents/R = container.reagents
 	var/id = reagent
+	if(contaminant_def(id))
+		to_chat(user, span_warning("\The [src] cannot take [id] out of the mixture on its own: an impurity stays with its mixture."))
+		if(GLOB.chem_trace)
+			log_world("CHEM: [src] refused to remove [id] from [container] on its own")
+		return TRUE
 	if(amount_out > 0)
 		R.remove_reagent(id, amount_out)
 	else if(amount_out == -1) // Isolate

@@ -313,8 +313,8 @@ Contaminants
 Impurities are reagents (`/datum/reagent/contaminant`, `code/content/reagents/reagents/content/contaminants.dm`): 2u of "Heavy metals" is 2u in the
 beaker, with its own volume. It is added, transferred, mixed, splashed, ingested and metabolised like any reagent and does its own harm from its own
 metabolism, by role: toxic (organ or general toxin damage per unit), reactive (a chance of a burn per cycle), biological (toxin and a fever), inert
-(nothing). No transformation takes or makes one, so a contaminant never reacts: it rides along and dilutes. Nothing is attached to another reagent;
-there is no per-reagent fraction and no potency scaling.
+(nothing). No ordinary recipe takes or makes one, so a contaminant rides along and dilutes (only neutralisation reacts with a residue, see
+"Purification"). Nothing is attached to another reagent; there is no per-reagent fraction and no potency scaling.
 
 Purity belongs to the mixture: 1 minus the contaminant volume over the holder's total volume (`purity()`, computed, never stored), and its grade
 (`grade()`: Crude under 60%, Standard 60-90%, Pharma 90-99%, Reagent 99% and over). A transformation's `needs_grade = GRADE_PHARMA` asks for a minimum
@@ -326,3 +326,32 @@ with it, recharges with it (`add_stock()`, used by the dispenser and the synthes
 (`dispense_to()`: the stock asked for and the contaminants that sit with it). Scanners, the chem master, the analyzer and the health scanner list each
 contaminant as a line of its own and say the mixture's grade; the medical book's Purity tab is read from the contaminant types. `GLOB.chem_trace` logs
 source rolls, stock added, dispenses, refused graded reactions and effects on a patient.
+
+Purification
+------------
+How a mixture is made clean again (or dirty), all of it logged under `GLOB.chem_trace`:
+
+* **Temperature.** A holder has the temperature of what holds it (`get_temperature()`; a beaker's heat body, else the room). Every instant-regime chemistry
+  recipe has a working range and a narrower ideal band, filed by class in `code/content/reagents/reactions/reaction_temperatures.dm` (ambient: drinks, food,
+  paint, virology; gentle: the default, room temperature is ideal; warm; hot; violent). Inside the ideal band the product is clean; inside the range but off the
+  band the recipe still goes but leaves contaminants (too cold: organic residue; too hot: reactive impurity and a loss of product), scaled by the distance
+  (0 at the band's edge, 1 at the range's edge); outside the range nothing reacts. Only a holder in a loose reagent container is gated: a mob's blood, a
+  machine's buffer, a grenade or a slime extract are not. `reaction_temperature_state()` / `apply_temperature_effects()` in
+  `code/domains/world_model/reagents/chem_temperature.dm`.
+* **Catalyst.** A sheet of a material with catalytic activity dropped into a glass container (click it on the container; "Take out the catalyst" from the
+  menu) widens the ideal band and the range by `activity * CATALYST_BAND_PER_POINT` kelvin each side.
+* **Hot plate** (`/obj/machinery/chem_hot_plate`): stand a glass container on it, set the dial in Celsius (radial menu), switch it on. Each second it feeds the
+  container's heat body up to `HOT_PLATE_POWER` joules, never past the dial, draws its active power while on, lets the contents react and boils them.
+* **Boiling** (`code/domains/world_model/reagents/boiling.dm`, points in `code/content/reagents/reagents/boiling_points.dm`): every reagent has `boiling_point_k()`.
+  `boil_step(seconds)` removes what is above its point, gradually, taking latent heat out of the container; it returns the vapour. Nothing boils by itself: the
+  hot plate and the bunsen burner ask for it. Vapour is deleted unless a **condenser** (`/obj/machinery/chem_condenser`) on or next to the hot plate collects it into
+  the container under its spout (`condense()`): distillation, so a contaminant that never boils stays in the flask.
+* **Funnel and filters** (`code/content/reagents/purification/`): a funnel fits on a glass container, a filter goes in the funnel, and every pour into that
+  container (`trans_to_holder()`) goes through the filter first (`trans_through_filter()`). Paper takes particulate, charcoal oils and organic residue, a
+  sorbent filter (a paper filter lined with a material sheet) takes by the material's sorption, catalytic and antimicrobial stats. A filter has a capacity that
+  every unit caught and every unit of product kept back uses up, it works less as it fills and a full one passes everything.
+* **Neutralisation** (`code/content/reagents/reactions/instant/neutralisation.dm`): acid residue and a base, or base residue and an acid, make salts and water.
+  A rule's reagent terms after the first in `makes` are by-products made beside the product.
+* **No free purification.** A contaminant cannot be picked out of a mixture: `trans_id_to()` and `trans_type_to()` of a stock reagent carry its share of the
+  contaminants (`draw_portion()`) and refuse a contaminant, `isolate_reagent()` keeps the contaminants, and the chem master and the dispenser refuse to move or
+  discard one on its own.

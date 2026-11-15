@@ -1,6 +1,6 @@
 // The contaminant reagents (code/domains/world_model/reagents/contaminants.dm). Each is a reagent with a volume of its own: it is added, moved, mixed,
-// splashed, ingested and metabolised like any other, and does its own harm when the body metabolises it. None is part of any transformation, so a
-// contaminant never reacts: it rides along in the beaker and counts against the mixture's purity.
+// splashed, ingested and metabolised like any other, and does its own harm when the body metabolises it. None is part of any ordinary recipe, so a
+// contaminant rides along in the beaker and counts against the mixture's purity (only neutralisation spends an acid or base residue).
 //
 // A role is a type under /datum/reagent/contaminant (toxic, reactive, biological, inert); the row of a contaminant is the type that carries its numbers.
 
@@ -84,6 +84,7 @@
 	name = REAGENT_CONTAMINANT_HEAVY_METAL
 	id = REAGENT_ID_CONTAMINANT_HEAVY_METAL
 	description = "Traces of lead, mercury and cadmium left from the source ore."
+	boiling_point = BOILING_POINT_NEVER
 	effect_text = "Slowly poisons the liver."
 	source_weight = 2
 	organ = O_LIVER
@@ -93,6 +94,7 @@
 	name = REAGENT_CONTAMINANT_SULFUR
 	id = REAGENT_ID_CONTAMINANT_SULFUR
 	description = "Sulfides and sulfates carried over from refining."
+	boiling_point = T0C + 445
 	effect_text = "Slowly damages the kidneys."
 	source_weight = 2
 	organ = O_KIDNEYS
@@ -102,6 +104,7 @@
 	name = REAGENT_CONTAMINANT_ORGANIC_RESIDUE
 	id = REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE
 	description = "Solvent and by-product left in the batch."
+	boiling_point = T0C + 250
 	effect_text = "A mild, general toxin."
 	source_weight = 3
 	rate = 0.1
@@ -110,6 +113,7 @@
 	name = REAGENT_CONTAMINANT_SALTS
 	id = REAGENT_ID_CONTAMINANT_SALTS
 	description = "Dissolved salts from neutralisation and washing."
+	boiling_point = BOILING_POINT_NEVER
 	effect_text = "Strains the kidneys, lightly."
 	source_weight = 3
 	organ = O_KIDNEYS
@@ -119,6 +123,7 @@
 	name = REAGENT_CONTAMINANT_ACID_RESIDUE
 	id = REAGENT_ID_CONTAMINANT_ACID_RESIDUE
 	description = "Unneutralised acid left from the reaction."
+	boiling_point = T0C + 160
 	effect_text = "Occasionally burns on contact with tissue."
 	source_weight = 1.5
 	rate = 0.5
@@ -128,6 +133,7 @@
 	name = REAGENT_CONTAMINANT_BASE_RESIDUE
 	id = REAGENT_ID_CONTAMINANT_BASE_RESIDUE
 	description = "Unneutralised base left from the reaction."
+	boiling_point = T0C + 300
 	effect_text = "Occasionally burns on contact with tissue."
 	source_weight = 1.5
 	rate = 0.5
@@ -137,6 +143,7 @@
 	name = REAGENT_CONTAMINANT_OILY_RESIDUE
 	id = REAGENT_ID_CONTAMINANT_OILY_RESIDUE
 	description = "Lubricant and fat carried through the process."
+	boiling_point = T0C + 350
 	effect_text = "Harmless, but takes up room in the dose."
 	source_weight = 3
 
@@ -144,6 +151,7 @@
 	name = REAGENT_CONTAMINANT_INERT_FILLER
 	id = REAGENT_ID_CONTAMINANT_INERT_FILLER
 	description = "Binder and bulk that does nothing."
+	boiling_point = BOILING_POINT_NEVER
 	effect_text = "Harmless, but takes up room in the dose."
 	source_weight = 4
 
@@ -151,6 +159,7 @@
 	name = REAGENT_CONTAMINANT_BIOLOGICAL
 	id = REAGENT_ID_CONTAMINANT_BIOLOGICAL
 	description = "Bacterial remnants from a poorly kept batch."
+	boiling_point = BOILING_POINT_NEVER
 	effect_text = "A toxin that also raises the patient's temperature."
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 	source_weight = 0.5
@@ -161,6 +170,7 @@
 	name = REAGENT_CONTAMINANT_REACTIVE
 	id = REAGENT_ID_CONTAMINANT_REACTIVE
 	description = "An unstable by-product."
+	boiling_point = T0C + 60
 	effect_text = "Occasionally burns the patient."
 	source_weight = 1
 	rate = 0.6

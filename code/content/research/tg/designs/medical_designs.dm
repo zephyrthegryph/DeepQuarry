@@ -35,6 +35,42 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
 
+/datum/design_techweb/chem_funnel
+	name = "Funnel"
+	id = "chem_funnel"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 200)
+	build_path = /obj/item/chem_funnel
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/paper_filter
+	name = "Paper Filter"
+	id = "paper_filter"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 50)
+	build_path = /obj/item/chem_filter/paper
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/charcoal_filter
+	name = "Charcoal Filter"
+	id = "charcoal_filter"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 50, MAT_GRAPHITE = 100)
+	build_path = /obj/item/chem_filter/charcoal
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
 /datum/design_techweb/scalpel
 	name = "Scalpel"
 	id = "scalpel"

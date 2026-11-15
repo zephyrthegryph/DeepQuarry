@@ -21,7 +21,8 @@
 //   rate          how far one step goes, a fraction of the limit: RATE_INSTANT (the default), half_life(n), rate(r).
 //   yield         below 1, the rule is inhibited while the product is a large share of the mixture (1: no limit).   floor: a remainder under
 //                 this many reaction units completes the rule.
-//   makes         the terms produced.   The product of a reagent rule is its first reagent term.
+//   makes         the terms produced.   The product of a reagent rule is its first reagent term; its further reagent terms are by-products, made per reaction unit
+//                 alongside it (a neutralisation makes salts and water).
 //   made          units per reaction unit that the tail is told were made when the rule has no product term (a rule that spawns things reports how many).
 //   data          TYPE_PROC_REF(/type, x): x(holder, extent) returns the data of the product, read before anything is taken.
 //   with_data     the constant data of the product (a paint's colour), for a rule whose data does not depend on the settle.
@@ -232,6 +233,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	/// The reagent a reagent rule makes and how much per reaction unit.
 	var/result
 	var/result_amount = 0
+	/// The reagent terms a reagent rule makes after its product, as rows of list(reagent id, units per reaction unit), or null.
+	var/list/byproducts
 	/// The number of terms taken: the specificity of the rule.
 	var/specificity = 0
 	/// The type a subject_is() condition pins, or null.
@@ -470,6 +473,14 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 				X.result = row[2]
 				X.set_result_amount(row[3])
 				break
+		var/passed_product = FALSE
+		for(var/list/row as anything in X.makes)
+			if(row[1] != XCUR_REAGENT)
+				continue
+			if(!passed_product)
+				passed_product = TRUE
+				continue
+			LAZYADD(X.byproducts, list(list(row[2], row[3])))
 		if(!X.result && !isnull(arguments["made"]))
 			X.set_result_amount(arguments["made"])
 	if(X.medium == MEDIUM_GAS)

@@ -1,7 +1,7 @@
 // Contaminant reagents (code/domains/world_model/reagents/contaminants.dm, code/content/reagents/reagents/content/contaminants.dm): impurities are reagents with
 // a volume of their own. Purity and grade are properties of a mixture; a cartridge's source profile says how many units of each contaminant come with a unit
 // of stock; dispensing, recharging, transferring and ingesting carry them like any reagent; each role does its own harm from its own metabolism; a recipe's
-// needs_grade reads the holder; and no contaminant ever reacts.
+// needs_grade reads the holder; and no recipe makes or takes a contaminant but neutralisation (code/content/reagents/reactions/instant/neutralisation.dm).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -225,13 +225,16 @@ CAPABILITIES(/transformation/dq_contam/graded)
 	empty.trans_to_holder(stocked, 23)
 	TEST_ASSERT(dq_contam_near(stocked.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 2), "the contaminants arrived whole")
 	TEST_ASSERT(dq_contam_near(stocked.purity(), 1 - 3 / 46), "3u of contaminant in 46u")
-	// By id, a reagent is a reagent: a contaminant moves on its own like any other.
+	// By id, a stock reagent moves with its share of the contaminants; a contaminant is never picked out on its own (code/domains/world_model/reagents/holder.dm draw_portion()).
 	var/datum/reagents/by_type = dq_contam_holder()
-	TEST_ASSERT(dq_contam_near(stocked.trans_type_to(by_type, REAGENT_ID_CONTAMINANT_SALTS, 0.5), 0.5), "a contaminant can be moved by id")
-	TEST_ASSERT(dq_contam_near(by_type.get_reagent_amount(REAGENT_ID_CONTAMINANT_SALTS), 0.5), "and arrives")
+	TEST_ASSERT_NULL(stocked.trans_type_to(by_type, REAGENT_ID_CONTAMINANT_SALTS, 0.5), "a contaminant cannot be moved by id")
+	TEST_ASSERT_EQUAL(by_type.total_volume, 0, "and nothing arrives")
 	var/obj/item/reagent_containers/glass/beaker/target = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
-	stocked.trans_id_to(target, REAGENT_ID_CONTAMINANT_HEAVY_METAL, 1)
-	TEST_ASSERT(dq_contam_near(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 1), "trans_id_to moves it too")
+	TEST_ASSERT_NULL(stocked.trans_id_to(target, REAGENT_ID_CONTAMINANT_HEAVY_METAL, 1), "nor by trans_id_to")
+	TEST_ASSERT_EQUAL(target.reagents.total_volume, 0, "which moves nothing")
+	stocked.trans_id_to(target, REAGENT_ID_DEXALIN, 5)
+	TEST_ASSERT(dq_contam_near(target.reagents.get_reagent_amount(REAGENT_ID_DEXALIN), 5), "a stock reagent moves by id")
+	TEST_ASSERT(dq_contam_near(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 2 * 5 / 43), "with the share of the contaminants that goes with that much of the stock")
 	// Ingested: into the stomach with the mixture, then on into the blood as it is absorbed.
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	source.trans_to_holder(H.ingested, 20)
@@ -347,7 +350,7 @@ CAPABILITIES(/transformation/dq_contam/graded)
 	// Topping the batch up with stock lifts the mixture over the line (the contaminants are diluted).
 	low.add_reagent(REAGENT_ID_FLUORINE, 30, safety = 1)
 	TEST_ASSERT(xform_matches(X, low), "3u in 53u is Pharma")
-/// No contaminant is part of any transformation: they never react, and what a reaction does leaves them where they are.
+/// No contaminant is part of any transformation but neutralisation (an acid or base residue is spent, salts are made): what any other reaction does leaves them where they are.
 /datum/unit_test/dq_contaminant_never_reacts
 	boot_needs = list()
 
@@ -355,6 +358,9 @@ CAPABILITIES(/transformation/dq_contam/graded)
 	var/list/ids = contaminant_ids()
 	for(var/datum/xform/X as anything in GLOB.xform_rules)
 		if(X.medium != MEDIUM_REAGENTS)
+			continue
+		if(ispath(X.rule_type, /transformation/chem/instant/neutralise_acid) || ispath(X.rule_type, /transformation/chem/instant/neutralise_base))
+			TEST_ASSERT(X.result == REAGENT_ID_CONTAMINANT_SALTS, "[X.rule_type] makes salts")
 			continue
 		for(var/id in ids)
 			TEST_ASSERT(!(id in X.reagent_takes) && !(id in X.reagent_catalysts) && !(id in X.reagent_blocked) && X.result != id, "[X.rule_type] names the contaminant [id]")

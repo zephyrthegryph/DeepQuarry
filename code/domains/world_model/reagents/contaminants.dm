@@ -2,7 +2,9 @@
 //
 // A contaminant is a /datum/reagent/contaminant with a volume of its own: 2u of "Heavy metals" sits in the beaker beside the stock. It is added, moved,
 // mixed, splashed, ingested and metabolised like any reagent, does its own harm when the body metabolises it, and is part of no transformation, so it
-// never reacts. Nothing is attached to another reagent: dilution is physical, and a transfer carries a contaminant exactly as far as it carries any reagent.
+// never reacts but through neutralisation (an acid or base residue is spent: code/content/reagents/reactions/instant/neutralisation.dm). Nothing is attached to
+// another reagent: dilution is physical, and a transfer carries a contaminant exactly as far as it carries any reagent. How a mixture is purified (temperature,
+// boiling and condensing, filters, neutralisation): code/content/reagents/README.md "Purification".
 //
 //   * Purity is a property of the mixture: 1 minus the contaminant volume over the holder's total volume, computed, never stored. The grade (GRADE_*) is
 //     the band it falls in. A recipe's `needs_grade` asks for a minimum of the holder (xform_matches()).

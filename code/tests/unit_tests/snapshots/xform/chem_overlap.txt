@@ -1319,6 +1319,10 @@ instant/myelamine_sap + instant/osteodaxon => fired=instant/osteodaxon; end=blue
 instant/myelamine_sap + instant/peridaxon => fired=instant/peridaxon; end=bluesap:4 iron:8 kelotane:4 peridaxon:8 phoron:5; spawned=-
 instant/napalm + instant/silicate => fired=instant/silicate; end=phoron:4 sacid:4 silicate:12; spawned=-
 instant/napalm + instant/thermite => fired=instant/thermite; end=phoron:4 sacid:4 thermite:12; spawned=-
+instant/neutralise_acid/ammonia + instant/neutralise_acid/diethylamine => fired=instant/neutralise_acid/ammonia; end=contaminant_salts:4 diethylamine:4 water:4; spawned=-
+instant/neutralise_acid/ammonia + instant/neutralise_acid/lye => fired=instant/neutralise_acid/lye; end=ammonia:4 contaminant_salts:4 water:4; spawned=-
+instant/neutralise_acid/diethylamine + instant/neutralise_acid/lye => fired=instant/neutralise_acid/lye; end=contaminant_salts:4 diethylamine:4 water:4; spawned=-
+instant/neutralise_base/polytrinic + instant/neutralise_base/sulphuric => fired=instant/neutralise_base/sulphuric; end=contaminant_salts:4 pacid:4 water:4; spawned=-
 instant/neutralize_carpotoxin + instant/neutralize_spidertoxin => fired=instant/neutralize_carpotoxin; end=protein:4 spidertoxin:4; spawned=-
 instant/neutralize_neurotoxic_protein + instant/tercozolam => fired=instant/neutralize_neurotoxic_protein; end=ethanol:4 lithium:4 protein:8; spawned=-
 instant/normalcillin + instant/virus_food_size => fired=instant/normalcillin; end=normalcillin:4 phoronvirusfood:4; spawned=-

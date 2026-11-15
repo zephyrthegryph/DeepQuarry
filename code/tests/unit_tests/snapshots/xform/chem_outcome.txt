@@ -496,6 +496,11 @@ instant/napalm => important=0; match=1; fired=instant/napalm; end=-; spawned=-; 
 instant/neoliquidfire => important=0; match=1; fired=instant/neoliquidfire; end=neoliquidfire:4 phoron:4.6; spawned=-; contract=1; uses=-
 instant/neurotoxin => important=0; match=1; fired=instant/neurotoxin; end=neurotoxin:8; spawned=-; contract=1; uses=-
 instant/neuter_virus => important=0; match=1; fired=instant/neuter_virus; end=blood:1; spawned=-; contract=0; uses=-
+instant/neutralise_acid/ammonia => important=0; match=1; fired=instant/neutralise_acid/ammonia; end=contaminant_salts:4 water:4; spawned=-; contract=1; uses=-
+instant/neutralise_acid/diethylamine => important=0; match=1; fired=instant/neutralise_acid/diethylamine; end=contaminant_salts:4 water:4; spawned=-; contract=1; uses=-
+instant/neutralise_acid/lye => important=0; match=1; fired=instant/neutralise_acid/lye; end=contaminant_salts:4 water:4; spawned=-; contract=1; uses=-
+instant/neutralise_base/polytrinic => important=0; match=1; fired=instant/neutralise_base/polytrinic; end=contaminant_salts:4 water:4; spawned=-; contract=1; uses=-
+instant/neutralise_base/sulphuric => important=0; match=1; fired=instant/neutralise_base/sulphuric; end=contaminant_salts:4 water:4; spawned=-; contract=1; uses=-
 instant/neutralize_carpotoxin => important=0; match=1; fired=instant/neutralize_carpotoxin; end=protein:4; spawned=-; contract=1; uses=-
 instant/neutralize_neurotoxic_protein => important=0; match=1; fired=instant/neutralize_neurotoxic_protein; end=protein:8; spawned=-; contract=1; uses=-
 instant/neutralize_spidertoxin => important=0; match=1; fired=instant/neutralize_spidertoxin; end=protein:4; spawned=-; contract=1; uses=-

@@ -250,9 +250,15 @@ CAPABILITIES(/datum/reagents)
 	if(my_atom)
 		my_atom.on_reagent_change()
 
+/// Throws away every reagent but `reagent`. Contaminants are not reagents anyone picks out of a mixture: they stay (isolating cannot purify), and a contaminant cannot
+/// be the one kept.
 /datum/reagents/proc/isolate_reagent(reagent)
-	for(var/datum/reagent/R as anything in reagent_list)
-		if(R.id != reagent)
+	if(contaminant_def(reagent))
+		if(GLOB.chem_trace)
+			log_world("CHEM: isolating [reagent] in [my_atom] refused: a contaminant cannot be picked out of a mixture")
+		return
+	for(var/datum/reagent/R as anything in reagent_list.Copy())
+		if(R.id != reagent && !istype(R, /datum/reagent/contaminant))
 			del_reagent(R.id)
 			update_total()
 
@@ -373,6 +379,14 @@ CAPABILITIES(/datum/reagents)
 	if(!amount)
 		return
 
+	// A funnel with a filter on the container being poured into: the liquid goes through the filter first.
+	var/obj/item/chem_filter/gate = target.inflow_filter()
+	if(gate)
+		return trans_through_filter(target, gate, amount, multiplier, copy, can_dialysis)
+	return transfer_contents(target, amount, multiplier, copy, can_dialysis)
+
+/// The move of trans_to_holder() once the amount is settled and no filter is in the way: `amount` of everything, in proportion.
+/datum/reagents/proc/transfer_contents(datum/reagents/target, amount, multiplier, copy, can_dialysis)
 	var/part = amount / total_volume
 
 	var/target_is_belly = isbelly(target.my_atom) // Sending reagents into bellies turns them into belly reagents
@@ -388,6 +402,25 @@ CAPABILITIES(/datum/reagents)
 		handle_reactions()
 	target.handle_reactions()
 	return amount
+
+/// The filter at the mouth of the container this holder is in (a funnel with a filter in it), or null.
+/datum/reagents/proc/inflow_filter()
+	RETURN_TYPE(/obj/item/chem_filter)
+	var/obj/item/reagent_containers/glass/vessel = my_atom
+	if(!istype(vessel))
+		return null
+	return vessel.funnel_filter()
+
+/// trans_to_holder() through `gate`: the liquid lands in an open basin first, the filter takes what it takes out of it, and what is left goes into `target`.
+/// Returns the amount that left this holder.
+/datum/reagents/proc/trans_through_filter(datum/reagents/target, obj/item/chem_filter/gate, amount, multiplier, copy, can_dialysis)
+	var/datum/reagents/basin = new /datum/reagents(max(amount * max(multiplier, 1), 1))
+	var/moved = trans_to_holder(basin, amount, multiplier, copy, can_dialysis)
+	if(!moved)
+		return moved
+	gate.filter_mixture(basin, target.my_atom)
+	basin.transfer_contents(target, basin.total_volume, 1, FALSE, can_dialysis)
+	return moved
 
 /* Holder-to-atom and similar procs */
 
@@ -418,12 +451,39 @@ CAPABILITIES(/datum/reagents)
 	if(!trans_to(target, amount, multiplier, copy, user = user))
 		touch(target, amount, user)
 
+/// Draws `amount` of the stock `id` out of the mixture into a new holder, with the contaminants that sit with it: each contaminant moves in proportion to the share of
+/// the mixture's stock that is being drawn, so what is drawn has the mixture's purity and picking a reagent out never separates a contaminant from the stock.
+/// Null when `id` is a contaminant (those are never picked out, only moved with the mixture) or there is none of it.
+/datum/reagents/proc/draw_portion(id, amount)
+	RETURN_TYPE(/datum/reagents)
+	if(contaminant_def(id))
+		if(GLOB.chem_trace)
+			log_world("CHEM: drawing [id] out of [my_atom] refused: a contaminant cannot be separated from its mixture")
+		return null
+	amount = min(amount, get_reagent_amount(id))
+	if(amount <= 0)
+		return null
+	var/stock = total_volume - contaminant_volume()
+	var/share = stock > 0 ? min(amount / stock, 1) : 0
+	var/list/carried = list()
+	var/total = amount
+	for(var/datum/reagent/R as anything in reagent_list)
+		if(istype(R, /datum/reagent/contaminant))
+			carried[R.id] = R.volume * share
+			total += carried[R.id]
+	var/datum/reagents/portion = new /datum/reagents(total)
+	portion.add_reagent(id, amount, get_data(id), safety = 1)
+	remove_reagent(id, amount, safety = 1)
+	for(var/contaminant_id in carried)
+		portion.add_reagent(contaminant_id, carried[contaminant_id], safety = 1)
+		remove_reagent(contaminant_id, carried[contaminant_id], safety = 1)
+	handle_reactions()
+	if(GLOB.chem_trace)
+		log_world("CHEM: drew [round(amount, 0.001)]u of [id] out of [my_atom] with contaminants [contaminants_text(carried)]")
+	return portion
+
 /datum/reagents/proc/trans_type_to(target, rtype, amount = 1)
 	if (!target)
-		return
-
-	var/datum/reagent/transfering_reagent = get_reagent(rtype)
-	if(!transfering_reagent)
 		return
 
 	if (istype(target, /atom))
@@ -431,36 +491,24 @@ CAPABILITIES(/datum/reagents)
 		if (!A.reagents || !atom_rules_of(A).simulated)
 			return
 
-	amount = min(amount, transfering_reagent.volume)
-
-	if(!amount)
+	var/datum/reagents/F = draw_portion(rtype, amount)
+	if(!F)
 		return
 
-	var/datum/reagents/F = new /datum/reagents(amount)
-	var/tmpdata = get_data(rtype)
-	F.add_reagent(rtype, amount, tmpdata)
-	remove_reagent(rtype, amount)
-
 	if (istype(target, /atom))
-		return F.trans_to(target, amount) // Let this proc check the atom's type
+		return F.trans_to(target, F.total_volume) // Let this proc check the atom's type
 	else if (istype(target, /datum/reagents))
-		return F.trans_to_holder(target, amount)
+		return F.trans_to_holder(target, F.total_volume)
 
 /datum/reagents/proc/trans_id_to(atom/target, id, amount = 1, force_open_container = FALSE)
 	if (!target || !target.reagents)
 		return
 
-	amount = min(amount, get_reagent_amount(id))
-
-	if(!amount)
+	var/datum/reagents/F = draw_portion(id, amount)
+	if(!F)
 		return
 
-	var/datum/reagents/F = new /datum/reagents(amount)
-	var/tmpdata = get_data(id)
-	F.add_reagent(id, amount, tmpdata)
-	remove_reagent(id, amount)
-
-	return F.trans_to(target, amount, force_open_container = force_open_container) // Let this proc check the atom's type
+	return F.trans_to(target, F.total_volume, force_open_container = force_open_container) // Let this proc check the atom's type
 
 // When applying reagents to an atom externally, touch() is called to trigger any on-touch effects of the reagent.
 // This does not handle transferring reagents to things.

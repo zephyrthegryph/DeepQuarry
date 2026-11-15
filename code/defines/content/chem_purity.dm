@@ -47,3 +47,46 @@
 
 /// A purity band is rolled this far inside its edges, so a rolled source never sits on a boundary.
 #define CONTAMINANT_ROLL_MARGIN 0.02
+
+// ---- Purification by temperature, boiling and filtering (code/domains/world_model/reagents/chem_temperature.dm, boiling.dm, code/content/reagents/purification/) ----
+
+/// The temperature classes a reaction is filed under (code/content/reagents/reactions/reaction_temperatures.dm): the working range and the ideal band inside it.
+#define REACTION_TEMP_AMBIENT "ambient"
+#define REACTION_TEMP_GENTLE "gentle"
+#define REACTION_TEMP_WARM "warm"
+#define REACTION_TEMP_HOT "hot"
+#define REACTION_TEMP_VIOLENT "violent"
+
+/// Off the ideal band but inside the working range, a reaction makes contaminants and loses product, each scaled by how far off it is (0 at the band's edge, 1 at the
+/// edge of the range): units of contaminant per unit of product at the far end of the range, and the share of the product lost to heat.
+#define REACTION_COLD_RESIDUE_RATE 0.6
+#define REACTION_HOT_IMPURITY_RATE 0.4
+#define REACTION_HOT_LOSS_SHARE 0.25
+/// Kelvin a catalyst of catalytic activity 100 widens the ideal band (and the range) by, on each side.
+#define CATALYST_BAND_PER_POINT 0.3
+
+/// A reagent with no boiling point of its own boils at this temperature, K.
+#define BOILING_POINT_DEFAULT (T0C + 200)
+/// A reagent that effectively never boils (salts, heavy metals).
+#define BOILING_POINT_NEVER 5000
+/// Units per second boiled off per kelvin above the boiling point, never less than the minimum rate (units per second) while above it.
+#define BOIL_RATE_PER_KELVIN 0.08
+#define BOIL_RATE_MINIMUM 0.2
+/// Joules a unit of boiled-off reagent carries away from the container.
+#define BOIL_LATENT_HEAT 1800
+
+/// The power of a hot plate's element, W, and the hottest it can be set.
+#define HOT_PLATE_POWER 4000
+#define HOT_PLATE_MAX_TEMP (T0C + 300)
+/// The share of the product a filter keeps back (units of product held per unit passed), by filter.
+#define FILTER_RETENTION_PAPER 0.02
+#define FILTER_RETENTION_CHARCOAL 0.04
+#define FILTER_RETENTION_SORBENT 0.03
+/// The most of any one contaminant class a filter can take out of a unit passing (before saturation and the material's stats).
+#define FILTER_STRENGTH_MAX 0.9
+
+/// What the temperature of a holder says about a reaction (reaction_temperature_state()): inside the ideal band, below it, above it, outside the working range.
+#define REACTION_TEMP_STATE_IDEAL 0
+#define REACTION_TEMP_STATE_COLD -1
+#define REACTION_TEMP_STATE_HOT 1
+#define REACTION_TEMP_STATE_OUT 2

@@ -308,6 +308,29 @@ type PurityData = {
     grade: string;
     band: string;
   }[];
+  temperature_classes?: {
+    id: string;
+    range_low: number;
+    ideal_low: number;
+    ideal_high: number;
+    range_high: number;
+  }[];
+  recipe_temperatures?: {
+    id: string;
+    name: string;
+    class: string;
+    range_low: number;
+    ideal_low: number;
+    ideal_high: number;
+    range_high: number;
+  }[];
+  boiling_points?: {
+    id: string;
+    name: string;
+    celsius: number;
+    never: boolean;
+  }[];
+  methods?: { name: string; text: string }[];
 };
 
 type Data = {
@@ -1439,9 +1462,10 @@ const PurityTab = (props: {
     <Section title="Grades and contaminants" fill scrollable>
       <Box mb={1}>
         A mixture has a purity: one minus the share of it that is contaminant.
-        Contaminants are reagents with a volume of their own; they never react,
-        they dilute whatever they are mixed with, and they act on the patient
-        as listed below. Some recipes ask for a minimum grade of the mixture.
+        Contaminants are reagents with a volume of their own; only
+        neutralisation reacts with them, they dilute whatever they are mixed
+        with, and they act on the patient as listed below. Some recipes ask for
+        a minimum grade of the mixture.
       </Box>
       <Section title="Grades">
         <LabeledList>
@@ -1462,6 +1486,50 @@ const PurityTab = (props: {
             <Box color="average">{c.effect}</Box>
           </Box>
         ))}
+      </Section>
+      <Section title="Ways to purify" mt={1}>
+        {(purity.methods ?? []).map((m) => (
+          <Box key={m.name} mb={1}>
+            <Box bold>{m.name}</Box>
+            <Box>{m.text}</Box>
+          </Box>
+        ))}
+      </Section>
+      <Section title="Reaction temperatures" mt={1}>
+        <Box mb={1}>
+          Ordinary medicines are clean at room temperature. The classes below
+          are in degrees Celsius: clean inside the ideal band, contaminated
+          inside the range, no reaction outside it.
+        </Box>
+        <LabeledList>
+          {(purity.temperature_classes ?? []).map((c) => (
+            <LabeledList.Item key={c.id} label={c.id}>
+              ideal {c.ideal_low} to {c.ideal_high}, range {c.range_low} to{' '}
+              {c.range_high}
+            </LabeledList.Item>
+          ))}
+        </LabeledList>
+        <Box mt={1}>
+          {(purity.recipe_temperatures ?? []).map((r, i) => (
+            <Box key={`${r.id}-${i}`} mb="2px">
+              <Button compact onClick={() => props.goToReagent(r.id)}>
+                {r.name}
+              </Button>
+              <Label inline ml={1}>
+                {r.class}: ideal {r.ideal_low} to {r.ideal_high} C
+              </Label>
+            </Box>
+          ))}
+        </Box>
+      </Section>
+      <Section title="Boiling points" mt={1}>
+        <LabeledList>
+          {(purity.boiling_points ?? []).map((b) => (
+            <LabeledList.Item key={b.id} label={b.name}>
+              {b.never ? 'never boils' : `${b.celsius} C`}
+            </LabeledList.Item>
+          ))}
+        </LabeledList>
       </Section>
       <Section title="Graded recipes" mt={1}>
         {purity.graded_recipes.length ? (

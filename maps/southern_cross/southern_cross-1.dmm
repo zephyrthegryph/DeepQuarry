@@ -65214,6 +65214,16 @@
 /obj/structure/table/reinforced,
 /obj/item/storage/box/beakers,
 /obj/item/reagent_containers/dropper,
+/obj/machinery/chem_hot_plate,
+/obj/machinery/chem_condenser,
+/obj/item/chem_funnel,
+/obj/item/chem_funnel,
+/obj/item/chem_filter/paper,
+/obj/item/chem_filter/paper,
+/obj/item/chem_filter/paper,
+/obj/item/chem_filter/charcoal,
+/obj/item/chem_filter/charcoal,
+/obj/item/chem_filter/charcoal,
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
 "cyt" = (

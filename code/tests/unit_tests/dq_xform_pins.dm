@@ -222,6 +222,10 @@
 	else
 		subject = new /obj/item/reagent_containers/glass/beaker(T)
 	subject.reagents.set_maximum_volume(DQ_XFORM_VOLUME)
+	// A recipe settles in its ideal band (a harsh one needs a hot plate in play: code/content/reagents/reactions/reaction_temperatures.dm).
+	var/list/band = istype(subject, /obj/item/reagent_containers) && R.rule ? reaction_temperature_profile(R.rule.rule_type) : null
+	if(band)
+		subject.inherit_heat((band[2] + band[3]) / 2)
 	return subject
 
 // ---- the outcome pin ----
