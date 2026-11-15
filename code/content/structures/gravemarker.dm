@@ -86,7 +86,7 @@ CAPABILITIES(/obj/structure/gravemarker)
 	return msg_text("You start taking down \the [src.name].", "[A.actor] starts taking down \the [src.name].")
 
 /obj/structure/gravemarker/proc/wrench_duration(datum/act/op/A)
-	return material.hardness
+	return material.strength
 
 /obj/structure/gravemarker/proc/wrench_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor

@@ -1,7 +1,7 @@
 // Material behaviours — the working implementation.
 //
 // A material's three active behaviours (luminescence, radioactivity, toxicity)
-// are plain numeric magnitudes on /datum/material (see material.dm). This file
+// are traits of /datum/material (see material.dm). This file
 // owns: the read API, the item-side application, and the component that actually
 // makes the behaviour happen. It replaces the earlier half-wired component layer
 // (which only carried magnitudes and never irradiated/poisoned anything). The old
@@ -12,13 +12,13 @@
 // through these so the storage can change without touching every site.
 
 /proc/dq_material_luminescence(datum/material/M)
-	return M ? M.luminescence : 0
+	return M ? M.trait(MT_LUMINESCENT) : 0
 
 /proc/dq_material_radioactivity(datum/material/M)
-	return M ? M.radioactivity : 0
+	return M ? M.trait(MT_RADIOACTIVE) : 0
 
 /proc/dq_material_toxicity(datum/material/M)
-	return M ? M.toxicity : 0
+	return M ? M.trait(MT_TOXIC) : 0
 
 // ---- Item application ------------------------------------------------------
 // Called from each material item's set_material once the material is assigned.
@@ -30,7 +30,7 @@
 	// Geometry-specific consumers can override thickness; ordinary fabricated
 	// items use a five-millimeter representative path through their material.
 	I.set_rad_insulation(radiation_transmission(5))
-	I.configure_material_behaviors(luminescence, radioactivity, toxicity, icon_colour)
+	I.configure_material_behaviors(trait(MT_LUMINESCENT), trait(MT_RADIOACTIVE), trait(MT_TOXIC), icon_colour)
 	dq_apply_material_responses(I)
 
 // ---- The emission behaviour ------------------------------------------------

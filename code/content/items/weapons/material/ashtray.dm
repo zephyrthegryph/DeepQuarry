@@ -21,7 +21,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	if(!material)
 		spent(src)
 		return
-	set_max_butts(round(material.hardness/5)) //This is arbitrary but whatever.
+	set_max_butts(round(material.strength/5)) //This is arbitrary but whatever.
 	set_color(null)
 	set_base_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
 	sync_butts()

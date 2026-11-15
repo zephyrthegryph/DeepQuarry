@@ -47,6 +47,18 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
 
+/datum/design_techweb/chem_electrode
+	name = "Electrode Pair"
+	id = "chem_electrode"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 100, MAT_GRAPHITE = 100)
+	build_path = /obj/item/chem_electrode
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
 /datum/design_techweb/paper_filter
 	name = "Paper Filter"
 	id = "paper_filter"

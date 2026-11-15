@@ -14,77 +14,68 @@
 /datum/material/exotic_feedstock/voltaic
 	name = MAT_VOLTAIC_CRYSTAL
 	icon_colour = "#6fd0ff"
-	hardness = 52
-	integrity = 48
-	conductive = TRUE
+	strength = 52
+	toughness = 24
 	conductivity = 82
-	piezoelectric_coefficient = 0.42
+	traits = list(MT_PIEZOELECTRIC = 42)
 
 /datum/material/exotic_feedstock/thermic
 	name = MAT_THERMIC_CERAMIC
 	icon_colour = "#ff8b52"
-	hardness = 46
-	integrity = 62
+	strength = 46
+	toughness = 31
 	conductivity = 12
 	heat_resistance = 88
-	thermal_insulation = 58
-	phase_change_temperature = T0C + 40
-	phase_change_capacity = 65000
+	traits = list(MT_THERMAL_BUFFER = 65)
 
 /datum/material/exotic_feedstock/kinetic
 	name = MAT_KINETIC_CRYSTAL
 	icon_colour = "#b7c0ce"
-	hardness = 78
-	integrity = 55
-	brittleness = 24
+	strength = 78
+	toughness = 27
 	conductivity = 36
-	piezoelectric_coefficient = 0.68
+	traits = list(MT_PIEZOELECTRIC = 68)
 
 /datum/material/exotic_feedstock/ward
 	name = MAT_WARD_METAL
 	icon_colour = "#72e8b5"
-	hardness = 64
-	integrity = 82
+	strength = 64
+	toughness = 41
 	conductivity = 31
-	reactive_energy_capacity = 2400
+	traits = list(MT_REACTIVE = 48)
 
 /datum/material/exotic_feedstock/spore
 	name = MAT_SPORE_BIOMASS
 	icon_colour = "#8fcf5a"
-	hardness = 18
-	integrity = 35
-	conductivity = 4
-	biocompatibility = 72
-	hemostatic_activity = 58
-	reagent_porosity = 14
+	strength = 18
+	toughness = 18
+	conductivity = 8
+	traits = list(MT_HEMOSTATIC = 65, MT_SORBENT = 56)
 
 /datum/material/exotic_feedstock/etching
 	name = MAT_ETCHING_CERAMIC
 	icon_colour = "#caff4d"
-	hardness = 58
-	integrity = 52
+	strength = 58
+	toughness = 26
 	conductivity = 8
 	corrosion_resistance = 94
-	catalytic_activity = 64
+	traits = list(MT_CATALYTIC = 64)
 
 /datum/material/exotic_feedstock/lumen
 	name = MAT_LUMEN_CRYSTAL
 	icon_colour = "#fff36f"
-	hardness = 48
-	integrity = 45
+	strength = 48
+	toughness = 22
 	conductivity = 54
-	luminescence = 48
-	scintillation_efficiency = 0.72
+	traits = list(MT_LUMINESCENT = 48)
 
 /datum/material/exotic_feedstock/rift
 	name = MAT_RIFT_GLASS
 	icon_colour = "#a86fff"
-	hardness = 62
-	integrity = 42
-	brittleness = 35
+	strength = 62
+	toughness = 21
 	conductivity = 18
-	gas_sorption_capacity = 18
-	reagent_porosity = 8
+	traits = list(MT_SORBENT = 72)
 
 /obj/item/stack/material/exotic_feedstock
 	name = "exotic material sample"

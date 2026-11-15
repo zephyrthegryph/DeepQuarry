@@ -23,6 +23,6 @@
 	TEST_ASSERT_EQUAL(girder.reinf_material, steel, "the completed real action installs the actual steel reinforcement")
 	TEST_ASSERT_EQUAL(sheets.get_amount(), 1, "completed real reinforcement consumes exactly one steel sheet")
 	TEST_ASSERT_EQUAL(girder.state, 2, "completed real reinforcement advances the girder's actual state")
-	TEST_ASSERT_EQUAL(girder.max_integrity, integrity_before + round(steel.integrity / 2), "completed reinforcement adds the actual steel integrity allowance")
-	TEST_ASSERT_EQUAL(girder.cover, steel.hardness, "completed reinforcement derives cover from the actual steel hardness")
+	TEST_ASSERT_EQUAL(girder.max_integrity, integrity_before + round(steel.toughness), "completed reinforcement adds the actual steel integrity allowance")
+	TEST_ASSERT_EQUAL(girder.cover, steel.strength, "completed reinforcement derives cover from the actual steel strength")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), sheets, "completed reinforcement leaves the actual remaining sheet held")

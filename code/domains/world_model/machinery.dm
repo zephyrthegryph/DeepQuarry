@@ -493,8 +493,8 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		if(!material)
 			continue
 		part_count++
-		total_integrity += material.integrity
-		total_dielectric += material.dielectric_strength
+		total_integrity += material.toughness * MATERIAL_HP_PER_TOUGHNESS
+		total_dielectric += material.dielectric_strength()
 		manifest += "[part.name]: [material.display_name]"
 	STATE_SET(src, machinery_misc, material_component_manifest, length(manifest) ? manifest : null)
 	if(!part_count)

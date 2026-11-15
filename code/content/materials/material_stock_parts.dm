@@ -54,34 +54,34 @@
 		var/datum/material/contacts = part.material_for_role(MATERIAL_ROLE_CONTACTS)
 		var/datum/material/casing = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
 		if(!electrode || !dielectric || !contacts || !casing) return 0
-		raw = electrode.conductivity * 0.35 + dielectric.dielectric_strength * 0.3 + contacts.conductivity * 0.2 + casing.heat_resistance * 0.15
+		raw = electrode.conductivity * 0.35 + dielectric.dielectric_strength() * 0.3 + contacts.conductivity * 0.2 + (casing.heat_resistance - MATERIAL_REFERENCE_HEAT) * 0.15
 	if(istype(part, /obj/item/stock_parts/manipulator))
 		var/datum/material/actuator = part.material_for_role(MATERIAL_ROLE_ACTUATOR)
 		var/datum/material/bearings = part.material_for_role(MATERIAL_ROLE_BEARINGS)
 		var/datum/material/frame = part.material_for_role(MATERIAL_ROLE_FRAME)
 		var/datum/material/insulation = part.material_for_role(MATERIAL_ROLE_INSULATION)
 		if(!actuator || !bearings || !frame || !insulation) return 0
-		raw = actuator.conductivity * 0.3 + bearings.elasticity * 0.25 + frame.integrity * 0.25 + insulation.dielectric_strength * 0.2
+		raw = actuator.conductivity * 0.3 + (bearings.toughness - MATERIAL_REFERENCE_TOUGHNESS) * 0.25 + frame.toughness * MATERIAL_HP_PER_TOUGHNESS * 0.25 + insulation.dielectric_strength() * 0.2
 	if(istype(part, /obj/item/stock_parts/matter_bin))
 		var/datum/material/chamber = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
 		var/datum/material/liner = part.material_for_role(MATERIAL_ROLE_LINER)
 		var/datum/material/frame = part.material_for_role(MATERIAL_ROLE_FRAME)
 		if(!chamber || !liner || !frame) return 0
-		raw = chamber.integrity * 0.45 + liner.corrosion_resistance * 0.25 + frame.integrity * 0.3
+		raw = chamber.toughness * MATERIAL_HP_PER_TOUGHNESS * 0.45 + (liner.corrosion_resistance - MATERIAL_REFERENCE_CORROSION) * 0.25 + frame.toughness * MATERIAL_HP_PER_TOUGHNESS * 0.3
 	if(istype(part, /obj/item/stock_parts/scanning_module))
 		var/datum/material/sensor = part.material_for_role(MATERIAL_ROLE_SENSOR)
 		var/datum/material/optics = part.material_for_role(MATERIAL_ROLE_OPTICAL)
 		var/datum/material/traces = part.material_for_role(MATERIAL_ROLE_CONDUCTOR)
 		var/datum/material/housing = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
 		if(!sensor || !optics || !traces || !housing) return 0
-		raw = (sensor.magnetism + sensor.reactivity) * 0.2 + optics.purity_equivalent() * 0.25 + traces.conductivity * 0.25 + housing.integrity * 0.1
+		raw = max(0, MATERIAL_REFERENCE_CORROSION - sensor.corrosion_resistance) * 0.2 + optics.quality() * 0.25 + traces.conductivity * 0.25 + housing.toughness * MATERIAL_HP_PER_TOUGHNESS * 0.1
 	if(istype(part, /obj/item/stock_parts/micro_laser))
 		var/datum/material/emitter = part.material_for_role(MATERIAL_ROLE_EMITTER)
 		var/datum/material/optics = part.material_for_role(MATERIAL_ROLE_OPTICAL)
 		var/datum/material/thermal = part.material_for_role(MATERIAL_ROLE_THERMAL)
 		var/datum/material/mount = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
 		if(!emitter || !optics || !thermal || !mount) return 0
-		raw = (dq_material_luminescence(emitter) + emitter.conductivity) * 0.2 + optics.purity_equivalent() * 0.25 + thermal.conductivity * (1 - thermal.thermal_insulation / 125) * 0.2 + mount.integrity * 0.15
+		raw = (dq_material_luminescence(emitter) + emitter.conductivity) * 0.2 + optics.quality() * 0.25 + thermal.conductivity * 0.2 + mount.toughness * MATERIAL_HP_PER_TOUGHNESS * 0.15
 	return raw > 0 ? _dq_part_rating_value(raw / 25) : 0
 
 
@@ -94,22 +94,17 @@
 		// Capacitor stores charge — driven by conductivity.
 		return _dq_part_rating_value(M.conductivity / 25)
 	if(istype(P, /obj/item/stock_parts/scanning_module))
-		// Scanning module senses fields — magnetism + reactivity.
-		return _dq_part_rating_value((M.magnetism + M.reactivity) / 50)
+		// Scanning module senses its surroundings: the more reactive the sensor, the finer it reads.
+		return _dq_part_rating_value(max(0, MATERIAL_REFERENCE_CORROSION - M.corrosion_resistance) / 50)
 	if(istype(P, /obj/item/stock_parts/manipulator))
-		// Manipulator moves matter — density + elasticity.
-		return _dq_part_rating_value((M.density + M.elasticity) / 50)
+		// Manipulator moves matter: weight and how much tougher than steel it is.
+		return _dq_part_rating_value((M.weight + (M.toughness - MATERIAL_REFERENCE_TOUGHNESS)) / 50)
 	if(istype(P, /obj/item/stock_parts/micro_laser))
 		// Laser emits coherent light — luminescence + conductivity.
 		return _dq_part_rating_value((dq_material_luminescence(M) + M.conductivity) / 50)
 	if(istype(P, /obj/item/stock_parts/matter_bin))
-		// Matter bin holds compressed matter — density + integrity.
-		// Operator precedence fix: the prior formula was
-		// `(M.density + M.integrity / 50) / 30` which DM parses as
-		// `(M.density + (M.integrity / 50)) / 30`. Every sibling
-		// formula uses `(a + b) / 50`, the parens belong around the
-		// add.
-		return _dq_part_rating_value((M.density + M.integrity) / 50)
+		// Matter bin holds compressed matter: weight and hit points.
+		return _dq_part_rating_value((M.weight + M.toughness * MATERIAL_HP_PER_TOUGHNESS) / 50)
 	return 0
 
 

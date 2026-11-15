@@ -28,15 +28,21 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 	REACTION_TEMP_VIOLENT = list(
 		/transformation/chem/instant/explosion_potassium,
 		/transformation/chem/instant/flash_powder,
-		/transformation/chem/instant/nitroglycerin,
 		/transformation/chem/instant/emp_pulse,
 		/transformation/chem/instant/napalm,
 		/transformation/chem/instant/neoliquidfire,
 	),
 	REACTION_TEMP_HOT = list(
 		/transformation/chem/instant/pacid,
+		/transformation/chem/instant/nitricacid,
+		/transformation/chem/instant/phosphoricacid,
+		/transformation/chem/instant/sodaash,
+		/transformation/chem/instant/hydride,
+		/transformation/chem/instant/strongoxidiser,
+		/transformation/chem/instant/causticdigest,
+		/transformation/chem/instant/shortcut_paracetamol,
+		/transformation/chem/instant/shortcut_hyperzine,
 		/transformation/chem/instant/thermite,
-		/transformation/chem/instant/mutagen,
 		/transformation/chem/instant/neurotoxin,
 		/transformation/chem/instant/zombiepowder,
 		/transformation/chem/instant/titanium_oxidation,
@@ -44,11 +50,11 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 		/transformation/chem/instant/deuterium,
 	),
 	REACTION_TEMP_WARM = list(
+		/transformation/chem/instant/couplingagent,
+		/transformation/chem/instant/chlorinatingagent,
+		/transformation/chem/instant/shortcut_bicaridine,
+		/transformation/chem/instant/shortcut_dylovene,
 		/transformation/chem/instant/mortiferin,
-		/transformation/chem/instant/chloralhydrate,
-		/transformation/chem/instant/soporific,
-		/transformation/chem/instant/mindbreaker,
-		/transformation/chem/instant/bliss,
 		/transformation/chem/instant/carpotoxin,
 		/transformation/chem/instant/left4zed,
 	),
@@ -56,7 +62,6 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 		/transformation/chem/instant/drinks,
 		/transformation/chem/instant/food,
 		/transformation/chem/instant/water,
-		/transformation/chem/instant/lube,
 		/transformation/chem/instant/soapification,
 		/transformation/chem/instant/glucose,
 		/transformation/chem/instant/sorbitol,
@@ -92,7 +97,7 @@ GLOBAL_LIST_INIT(reaction_temperature_ambient_words, list("_paint", "carpet", "v
 	static_entries_ensure("build_reaction_temperature_table")
 	var/list/table = list()
 	for(var/datum/xform/X as anything in GLOB.xform_rules)
-		if(X.medium == MEDIUM_REAGENTS && X.regime == REGIME_INSTANT && ispath(X.rule_type, /transformation/chem))
+		if(X.medium == MEDIUM_REAGENTS && X.regime == REGIME_INSTANT && !X.route_id && ispath(X.rule_type, /transformation/chem))
 			table[X.rule_type] = GLOB.reaction_temperature_classes[reaction_temperature_class(X.rule_type)]
 	return table
 

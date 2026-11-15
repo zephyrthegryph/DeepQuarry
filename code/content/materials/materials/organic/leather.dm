@@ -5,11 +5,10 @@
 	stack_type = /obj/item/stack/material/leather
 	flags = MATERIAL_PADDING
 	ignition_point = T0C+300
-	melting_point = T0C+300
-	protectiveness = 3 // 13%
-	conductive = 0
-	integrity = 40
+	heat_resistance = 8.1
+	toughness = 20
 	supply_conversion_value = 2
+	conductivity = 2
 
 /transformation/stack/leather__bedsheet
 CAPABILITIES(/transformation/stack/leather__bedsheet)

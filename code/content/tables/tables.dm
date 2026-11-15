@@ -194,18 +194,18 @@ CAPABILITIES(/obj/structure/table)
 
 /// The strength of the table follows what it is made of.
 /obj/structure/table/proc/update_material()
-	var/old_max = max_integrity
+	// The damage taken so far, read before the maximum changes: an intact table reports its maximum, so reading it after would count the new maximum twice.
+	var/damage = max_integrity - get_integrity()
 	if(!material())
 		set_max_integrity(10)
 	else
-		set_max_integrity(material().integrity / 2)
+		set_max_integrity(material().toughness * MATERIAL_HP_PER_TOUGHNESS / 2)
 
 		if(reinforced())
-			set_max_integrity(max_integrity + (reinforced().integrity / 2))
+			set_max_integrity(max_integrity + (reinforced().toughness * MATERIAL_HP_PER_TOUGHNESS / 2))
 
-	// Preserve absolute damage accrued so far when the max changes (mirrors the old
-	// `health += maxhealth - old_maxhealth` behaviour).
-	update_integrity(get_integrity() + (max_integrity - old_max))
+	// Preserve absolute damage accrued so far when the max changes.
+	update_integrity(max_integrity - damage)
 
 /obj/structure/table/proc/update_desc()
 	if(material())

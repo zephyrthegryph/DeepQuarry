@@ -6,7 +6,7 @@
 	basestate = "panel"
 	max_integrity = 350
 	glasstype = /obj/item/stack/tile/maintenance_panel // Yes these are technically windows, drops into their panel on deconstruct and shatter
-	maximal_heat = /datum/material/steel::melting_point
+	maximal_heat = 250 + MATERIAL_REFERENCE_HEAT * 40 // steel melting point (a material melting point is 250 K + 40 per point of heat resistance)
 	force_threshold = 5
 	shardtype = null
 	opacity = 1 // Difficult to see past

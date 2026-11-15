@@ -317,8 +317,8 @@ metabolism, by role: toxic (organ or general toxin damage per unit), reactive (a
 "Purification"). Nothing is attached to another reagent; there is no per-reagent fraction and no potency scaling.
 
 Purity belongs to the mixture: 1 minus the contaminant volume over the holder's total volume (`purity()`, computed, never stored), and its grade
-(`grade()`: Crude under 60%, Standard 60-90%, Pharma 90-99%, Reagent 99% and over). A transformation's `needs_grade = GRADE_PHARMA` asks for a minimum
-grade of the holder it runs in.
+(`grade()`: Crude under 60%, Standard 60-90%, Pharma 90-99%, Reagent 99% and over). The grade is a readout (scanners, the book): no recipe asks for one
+(`needs_grade` is gone), purity is only the natural fallout of how a batch was made.
 
 A source (a chemical dispenser cartridge) rolls a profile per round (`chem_source_profile(reagent, source_key, grade)`, deterministic for the round
 seed): the units of each contaminant that come with each unit of stock. `add_sourced_reagent()` adds stock and contaminants together; the cartridge fills
@@ -338,8 +338,9 @@ How a mixture is made clean again (or dirty), all of it logged under `GLOB.chem_
   (0 at the band's edge, 1 at the range's edge); outside the range nothing reacts. Only a holder in a loose reagent container is gated: a mob's blood, a
   machine's buffer, a grenade or a slime extract are not. `reaction_temperature_state()` / `apply_temperature_effects()` in
   `code/domains/world_model/reagents/chem_temperature.dm`.
-* **Catalyst.** A sheet of a material with catalytic activity dropped into a glass container (click it on the container; "Take out the catalyst" from the
-  menu) widens the ideal band and the range by `activity * CATALYST_BAND_PER_POINT` kelvin each side.
+* **Catalyst.** A catalyst belongs to a process (see "Block structures and processes"). A sheet of a material with catalytic activity dropped into a glass
+  container (click it on the container; "Take out the catalyst" from the menu) is the solid catalyst of the routes that run on one; it no longer widens the band of
+  every recipe.
 * **Hot plate** (`/obj/machinery/chem_hot_plate`): stand a glass container on it, set the dial in Celsius (radial menu), switch it on. Each second it feeds the
   container's heat body up to `HOT_PLATE_POWER` joules, never past the dial, draws its active power while on, lets the contents react and boils them.
 * **Boiling** (`code/domains/world_model/reagents/boiling.dm`, points in `code/content/reagents/reagents/boiling_points.dm`): every reagent has `boiling_point_k()`.
@@ -347,11 +348,83 @@ How a mixture is made clean again (or dirty), all of it logged under `GLOB.chem_
   hot plate and the bunsen burner ask for it. Vapour is deleted unless a **condenser** (`/obj/machinery/chem_condenser`) on or next to the hot plate collects it into
   the container under its spout (`condense()`): distillation, so a contaminant that never boils stays in the flask.
 * **Funnel and filters** (`code/content/reagents/purification/`): a funnel fits on a glass container, a filter goes in the funnel, and every pour into that
-  container (`trans_to_holder()`) goes through the filter first (`trans_through_filter()`). Paper takes particulate, charcoal oils and organic residue, a
-  sorbent filter (a paper filter lined with a material sheet) takes by the material's sorption, catalytic and antimicrobial stats. A filter has a capacity that
+  container (`trans_to_holder()`) goes through the filter first (`trans_through_filter()`). A filter takes by TAG (a contaminant's tags come from its block
+  structure): paper the solids, charcoal the organics, a sorbent filter (an ion-exchange filter: a paper filter lined with a material sheet) the ionic, metallic,
+  sulfurous and nonpolar by the material's sorption, oxidisers and sulfur by its catalytic activity, biological by its antimicrobial activity. Every contaminant has a
+  floor (`filter_floor`, a share of the mixture): no filter takes it below that, so a trace of dioxin stays. A filter has a capacity that
   every unit caught and every unit of product kept back uses up, it works less as it fills and a full one passes everything.
-* **Neutralisation** (`code/content/reagents/reactions/instant/neutralisation.dm`): acid residue and a base, or base residue and an acid, make salts and water.
-  A rule's reagent terms after the first in `makes` are by-products made beside the product.
+* **Neutralisation** is the `neutralise` process (generated: every acid with every base): an acid and a base make the salt (a chemical when one has that
+  structure, else salts) and water. A rule's reagent terms after the first in `makes` are by-products made beside the product.
 * **No free purification.** A contaminant cannot be picked out of a mixture: `trans_id_to()` and `trans_type_to()` of a stock reagent carry its share of the
   contaminants (`draw_portion()`) and refuse a contaminant, `isolate_reagent()` keeps the contaminants, and the chem master and the dispenser refuse to move or
   discard one on its own.
+
+
+Block structures and processes
+------------------------------
+`code/domains/world_model/reagents/blocks/` (the machinery) and `code/content/reagents/blocks/` (the declarations).
+
+* **Structures.** A chemistry reagent is built of blocks, declared by reagent id in `GLOB.chem_declared_structures` (`structures.dm`; by id, because a
+  subtype inherits a var and every vodka is not an ethanol): `cores` (short chain, long chain, ring, double ring, sugar ring, amino, steroid, nitrogen
+  ring, siloxane, phoron lattice), `groups` hung on them (hydroxyl, carbonyl, carboxyl, amine, nitro, halide, thiol, phosphate, metal centre; a group named twice
+  is two), `links` (ester, amide), or, for an inorganic, a `cation` and an `anion`. The formula, the class ("alcohol", "ester", "acid", "salt"...) and the tags
+  (organic, polar, nonpolar, ionic, acidic, basic, metallic, sulfurous, halogenated, nitrogenous, oxidiser, biological) are derived from the structure
+  (`chem_structure_of(id)`, `.formula()`, `.class_name()`, `.tags`). Contaminants have structures too: their tags are what filters take them by. Cores
+  come from feedstock; nothing builds a core from elements.
+* **Processes** (`processes.dm`; fifteen): oxidise, reduce, halogenate, nitrate, substitute (a halide for an amine, a thiol or a nitrile; a carbonyl, ammonia
+  and hydrogen for an amine), phosphorylate, decarboxylate, condense (an ester with a dissolved or solid acid; an amide, warm, with no acid in the mixture),
+  hydrolyse, ferment, crack, neutralise (an acid and a base, a hydroxide, a carbonate or an amine; sand in hot lye is silicate), displace (a metal for a metal, an
+  acid dissolving a metal, two salts swapping ions, a metal bound to a medicine out of a salt or a base), electrolyse (a clip-on electrode pair,
+  `/obj/item/chem_electrode`, on a container on a plate that is on), polymerise (two silanols into silicone oil: lube; the workshop polymers, which are materials,
+  are the materials lane's). A variant can carry its own catalyst kinds, blockers, band and fallout (`chem_variant()`), and a process its `rank` (amination before
+  reduction). A process says which structures it acts on and what they become
+  (`variants()`), what it adds (an oxidiser, a nitrating acid, water), the catalyst kinds it runs on, its temperature band, and the trace-potent contaminants it leaves
+  (`fallout()`). It never names a chemical it makes.
+* **Routes.** At boot every process is run over every structure (`chem_routes_build()`): a variant whose end structure is a chemical that exists is a route that
+  makes it, one whose end structure nobody has is a route that makes organic residue (salts, for neutralisation). Byproducts are balanced, one unit being one
+  part. Each route is written once per catalyst kind and compiled into the transformation table (rule type `/transformation/process_route`, `route_id` on the
+  rule; a declared recipe wins a shared reactant). `chem_routes_dump()` lists them all and `dq_chem_routes_pinned` pins the list
+  (`code/tests/unit_tests/snapshots/xform/chem_routes.txt`; `--bless` after reading what changed: a cheap route to something gated is the thing to catch).
+  A route only runs in a loose container, and outside the temperature band of its process it does not run.
+* **Catalyst kinds.** None (heat and the added reagent only, 80% selective), dissolved acid or base (sulphuric acid, lye: lowers the band, spent into acid or base
+  residue), solid metal or solid acid (a sheet in the container: its catalytic activity lowers the band and raises the selectivity; porous material is a solid
+  acid; sulfur and heavy metals poison it), enzyme (gentle heat only, spent into endotoxin, killed by heavy metals). The share of a product a catalyst was not
+  selective for is organic residue: that and the fallout are the natural purity.
+* **Trace-potent contaminants**, one clear symptom each, strong at a trace, made by processes and carried by no source: hydrochloric acid (burns; freed by
+  halogenation), dioxin (skin lesions; hot halogenation of a ring with a hydroxyl), nitrosamine (slow genetic damage; nitrating an amine), peroxide (detonates when
+  its container is heated: `detonate_peroxide()` in `boil_step()`; a hot uncatalysed oxidation), methanol (blindness; fermentation), plasticiser (slows the
+  metabolism; hot condensation of a ring), tar (strains the lungs; cracking, decarboxylating), plus heavy metals (liver) and endotoxin (toxin and fever), now
+  stronger.
+* **Interference.** Acid and base cancel into salts; sulfur and heavy metals poison a metal catalyst, heavy metals an enzyme; water blocks a condensation and
+  drives hydrolysis, which is its reverse; an oxidiser left over oxidises the next product (the routes chain); peroxide detonates on heating.
+* **The book** shows each reagent's block diagram (formula, class, tags, blocks), the processes that act on it and what they give, and for a generated recipe
+  its process, catalyst and clean temperature. The burn medicines are the first family converted: silicate and an acid make kelotane (a siloxane with a
+  hydroxyl) and leave salts; kelotane and phosphorus, hot, make dermaline (a phosphate on it) and water.
+
+The three tiers of the chemistry (stage 3)
+------------------------------------------
+`doc/rewrite/proposals/chemistry_redesign.md` is the design and `chemistry_recipes.md` the recipe book (section 14 there says what was built and where it differs
+from the draft). Every chemistry reagent of tiers 1 to 3 has a block structure (`blocks/structures.dm`) and a tier (`blocks/tiers.dm`: staples 1, standard 2,
+advanced 3; the book shows it, and says for each recipe whether it is the clean route, a process chemical poured in, a one-pot dirty shortcut, or a clash). The
+old element-mixing recipes of a converted chemical are deleted: the route its structure gives is the recipe.
+
+* **Building blocks and intermediates** (`reagents/content/chemistry/blocks.dm`): hydrochloric, nitric, phosphoric and acetic acid, bleach, soda ash, phenol, wood
+  aldehyde, salicylic acid, fatty acid, pyridine base, plant alkaloid base, sterol, amino acid, the metal salts, sand, and the intermediates a ladder passes through
+  (chlorohydrin, nitrosalicylic acid, chlorophoron, alkaloid acid, pyridone, halogenated spaceacillin). `GLOB.chem_building_blocks` lists the ones the clashes leave
+  alone.
+* **Process chemicals** (`blocks/agents.dm`, machinery in `world_model/reagents/blocks/agents.dm`): a chemical that is a process. Poured in it does the process,
+  without the usual setup, less selectively, leaving its own residue (`/datum/chem_agent`: `variants()`, `selectivity`, `leaves`, `trace()`): hydride (reduce and
+  aminate), strong oxidiser (all the way to a carboxyl), bleach (oxidise one step, halogenate a ring), nitrating mix, chlorinating agent, coupling agent (condense in
+  water), caustic digest (hydrolyse anything), yeast (ferment). Their routes are kind `agent`. The dry agent and the scavenger resin act on contact (below).
+* **Dirty shortcuts** of the staples are either the route of a process chemical or a one-pot recipe (`reactions/instant/chemistry.dm`, `shortcut_*`) whose makes list
+  carries the trace-potent contaminants.
+* **Clashes** (`blocks/clashes.dm`): two finished chemicals that meet react by the groups they carry (an acid group and an amine make a salt; a thiol takes a metal
+  centre; a nitro compound and an amine make nitrosamine; a nitro compound takes a thiol or a hydroxyl; a halide and an amine, warm, join into residue; a
+  phosphate drops out against calcium or iron; a nitro compound and a reducer run hot). They run in a loose container and in the stomach (`ingested`), never in the
+  bloodstream or on the skin (`holder.clash_allowed()`); a pair that condenses into a chemical that exists is a recipe, not a clash.
+* **Byproducts are real chemicals**: a halogenation frees hydrochloric acid, a nitrile substitution potassium chloride and cyanide, a neutralisation water; the
+  trace-potent contaminants are still there for what no chemical is.
+* **Stock**: the chemical closet starts with three boxes of bottles (`reagent_containers/precursors.dm`: sixteen precursors, silicate standing in for silanol, which
+  is kelotane) and cargo sells a crate (`/datum/supply_pack/med/chemprecursors`).
+* **Metal centres** are an organic's `cation`: dexalin plus is dexalin with iron, clonexadone cryoxadone with sodium; the daxons differ by their metal. The
+  tenth group, the nitrile (`cyanide`), is what the cyanide arm of substitution hangs.

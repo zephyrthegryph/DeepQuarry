@@ -4,15 +4,14 @@
 	stack_type = /obj/item/stack/material/wisp
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	integrity = 30
-	density = 10
+	toughness = 15
+	weight = 10
 	ignition_point = T0C+600
-	melting_point = T0C+800
-	protectiveness = 5
-	conductive = 0
+	heat_resistance = 20.6
 	opacity = 0.5
 	reflectivity = 30
 	supply_conversion_value = 6
+	conductivity = 2
 
 /obj/item/stack/material/wisp
 	name = "Strange Wisp"
@@ -30,15 +29,14 @@
 	stack_type = /obj/item/stack/material/frostscale
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	integrity = 250
-	density = 50
+	toughness = 125
+	weight = 50
 	ignition_point = T0C+20
-	melting_point = T0C+40
-	protectiveness = 30
-	conductive = 0
+	heat_resistance = 1.6
 	opacity = 0.5
 	reflectivity = 0
 	supply_conversion_value = 8
+	conductivity = 2
 
 /obj/item/stack/material/frostscale
 	name = "Frost Scale"
@@ -57,14 +55,13 @@
 	stack_type = /obj/item/stack/material/crystalscale
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	integrity = 250
-	density = 10
+	toughness = 125
+	weight = 10
 	radiation_resistance = 25 //less then lead because it's lighter then lead.
-	protectiveness = 30
-	conductive = 0
 	opacity = 0.25
 	reflectivity = 0.6
 	supply_conversion_value = 4
+	conductivity = 2
 
 /obj/item/stack/material/crystalscale
 	name = "Crystak Scale"
@@ -83,11 +80,10 @@
 	stack_type = /obj/item/stack/material/dreamscale
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	integrity = 200
-	density = 30
+	toughness = 100
+	weight = 30
 	ignition_point = T0C+200
-	melting_point = T0C+400
-	protectiveness = 60
+	heat_resistance = 10.6
 	reflectivity = 0.3
 	supply_conversion_value = 1
 
@@ -107,11 +103,10 @@
 	stack_type = /obj/item/stack/material/shellchitin
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	integrity = 250
-	density = 70
+	toughness = 125
+	weight = 70
 	ignition_point = T0C+300
-	melting_point = T0C+600
-	protectiveness = 50
+	heat_resistance = 15.6
 	reflectivity = 0
 	supply_conversion_value = 1
 

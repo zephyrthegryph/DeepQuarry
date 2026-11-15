@@ -112,6 +112,20 @@ export const EngineeringAssembly = () => {
                   corrosion resistance
                 </Label>
                 <Label mt={0.5}>{part.purpose}</Label>
+                <Label mt={0.5}>
+                  {(part.stats ?? [])
+                    .map((stat) => {
+                      const steps = stat.breakdown
+                        .map((step) =>
+                          step.label === 'base'
+                            ? `base ${step.delta}`
+                            : `${step.label} ${step.delta > 0 ? '+' : ''}${step.delta}`,
+                        )
+                        .join(', ');
+                      return `${stat.name} ${stat.value}${stat.breakdown.length > 1 ? ` (${steps})` : ''}`;
+                    })
+                    .join(' · ')}
+                </Label>
               </LabeledList.Item>
             ))}
           </LabeledList>

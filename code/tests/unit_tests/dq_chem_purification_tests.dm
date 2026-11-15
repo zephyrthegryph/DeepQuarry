@@ -51,9 +51,13 @@
 	var/datum/material/M = new /datum/material/processed_alloy
 	M.set_name(name)
 	M.set_display_name(name)
-	M.reagent_porosity = porosity
-	M.catalytic_activity = catalysis
-	M.antimicrobial_activity = antimicrobial
+	// A sorbent trait of s sorbs s / 100 (porosity p is s = 4p).
+	if(porosity)
+		LAZYSET(M.traits, MT_SORBENT, porosity * 4)
+	if(catalysis)
+		LAZYSET(M.traits, MT_CATALYTIC, catalysis)
+	if(antimicrobial)
+		LAZYSET(M.traits, MT_ANTIMICROBIAL, antimicrobial)
 	GLOB.name_to_material[name] = M
 	return M
 
@@ -126,10 +130,10 @@
 		TEST_ASSERT(!isnull(GLOB.reaction_temperature_classes[reaction_temperature_class(X.rule_type)]), "[X.rule_type] is filed under a class that exists")
 		checked++
 	TEST_ASSERT(checked > 100, "the instant recipes were checked ([checked])")
-	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/inaprovaline), REACTION_TEMP_GENTLE, "a plain medicine is gentle")
+	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/anticonvulsant), REACTION_TEMP_GENTLE, "a plain medicine is gentle")
 	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/drinks/grapejuice), REACTION_TEMP_AMBIENT, "a bar drink is ambient")
-	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/pacid), REACTION_TEMP_HOT, "an acid is hot")
-	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/nitroglycerin), REACTION_TEMP_VIOLENT, "an explosive is violent")
+	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/hydride), REACTION_TEMP_HOT, "a hydride is hot")
+	TEST_ASSERT_EQUAL(reaction_temperature_class(/transformation/chem/instant/explosion_potassium), REACTION_TEMP_VIOLENT, "an explosive is violent")
 	var/list/gentle = GLOB.reaction_temperature_classes[REACTION_TEMP_GENTLE]
 	var/list/hot = GLOB.reaction_temperature_classes[REACTION_TEMP_HOT]
 	var/list/violent = GLOB.reaction_temperature_classes[REACTION_TEMP_VIOLENT]
@@ -141,10 +145,10 @@
 
 /datum/unit_test/dq_pur_reaction_clean_in_the_ideal_band/Run()
 	var/obj/item/reagent_containers/glass/beaker/B = dq_pur_beaker()
-	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/inaprovaline, 10, 25)
+	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/anticonvulsant, 10, 25)
 	TEST_ASSERT_EQUAL(B.reagents.reaction_temperature_state(X)[1], REACTION_TEMP_STATE_IDEAL, "25 C is inside the ideal band")
 	B.reagents.handle_reactions()
-	TEST_ASSERT(dq_pur_near(B.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "ten reaction units made 30u of product")
+	TEST_ASSERT(dq_pur_near(B.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 30), "ten reaction units made 30u of product")
 	TEST_ASSERT_EQUAL(B.reagents.contaminant_volume(), 0, "and not a unit of contaminant")
 	TEST_ASSERT_EQUAL(B.reagents.grade(), GRADE_REAGENT, "Reagent grade")
 
@@ -153,23 +157,23 @@
 
 /datum/unit_test/dq_pur_reaction_off_ideal_makes_contaminants/Run()
 	var/obj/item/reagent_containers/glass/beaker/cold = dq_pur_beaker()
-	dq_pur_fill_for(cold, /transformation/chem/instant/inaprovaline, 10, 5)
+	dq_pur_fill_for(cold, /transformation/chem/instant/anticonvulsant, 10, 5)
 	cold.reagents.handle_reactions()
-	TEST_ASSERT(dq_pur_near(cold.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "a cold run still makes all the product")
+	TEST_ASSERT(dq_pur_near(cold.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 30), "a cold run still makes all the product")
 	var/residue = cold.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE)
 	TEST_ASSERT(residue > 1, "too cold leaves organic residue ([residue]u)")
 	TEST_ASSERT_EQUAL(cold.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_REACTIVE), 0, "and no reactive impurity")
 	TEST_ASSERT(cold.reagents.purity() < 1 && cold.reagents.grade() < GRADE_REAGENT, "so the batch is no longer Reagent grade")
 	// Colder is dirtier.
 	var/obj/item/reagent_containers/glass/beaker/colder = dq_pur_beaker()
-	dq_pur_fill_for(colder, /transformation/chem/instant/inaprovaline, 10, 1)
+	dq_pur_fill_for(colder, /transformation/chem/instant/anticonvulsant, 10, 1)
 	colder.reagents.handle_reactions()
 	TEST_ASSERT(colder.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE) > residue, "the further from the band, the more residue")
 	var/obj/item/reagent_containers/glass/beaker/hot = dq_pur_beaker()
-	dq_pur_fill_for(hot, /transformation/chem/instant/inaprovaline, 10, 60)
+	dq_pur_fill_for(hot, /transformation/chem/instant/anticonvulsant, 10, 60)
 	hot.reagents.handle_reactions()
 	var/impurity = hot.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_REACTIVE)
-	var/product = hot.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE)
+	var/product = hot.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT)
 	TEST_ASSERT(impurity > 1, "too hot leaves a reactive impurity ([impurity]u)")
 	TEST_ASSERT(product < 30 && product > 20, "and burns off some of the product ([product]u of 30)")
 	TEST_ASSERT_EQUAL(hot.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE), 0, "but leaves no organic residue")
@@ -179,19 +183,19 @@
 
 /datum/unit_test/dq_pur_reaction_refused_out_of_range/Run()
 	var/obj/item/reagent_containers/glass/beaker/freezing = dq_pur_beaker()
-	var/datum/xform/X = dq_pur_fill_for(freezing, /transformation/chem/instant/inaprovaline, 10, -20)
+	var/datum/xform/X = dq_pur_fill_for(freezing, /transformation/chem/instant/anticonvulsant, 10, -20)
 	freezing.reagents.handle_reactions()
-	TEST_ASSERT_EQUAL(freezing.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 0, "too cold: no product")
-	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_OXYGEN), 10), "the reactants are untouched")
+	TEST_ASSERT_EQUAL(freezing.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 0, "too cold: no product")
+	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_SUGAR), 10), "the reactants are untouched")
 	TEST_ASSERT_EQUAL(freezing.reagents.reaction_temperature_state(X)[1], REACTION_TEMP_STATE_OUT, "-20 C is outside the range")
 	var/obj/item/reagent_containers/glass/beaker/boiling = dq_pur_beaker()
-	dq_pur_fill_for(boiling, /transformation/chem/instant/inaprovaline, 10, 120)
+	dq_pur_fill_for(boiling, /transformation/chem/instant/anticonvulsant, 10, 120)
 	boiling.reagents.handle_reactions()
-	TEST_ASSERT_EQUAL(boiling.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 0, "too hot: no product either")
+	TEST_ASSERT_EQUAL(boiling.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 0, "too hot: no product either")
 	// And warmed into the range it goes.
 	dq_pur_set_temp(freezing, 25)
 	freezing.reagents.handle_reactions()
-	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "back in the band the mixture reacts at once")
+	TEST_ASSERT(dq_pur_near(freezing.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT), 30), "back in the band the mixture reacts at once")
 
 /// A harsh recipe needs a hot plate; a bar drink does not.
 /datum/unit_test/dq_pur_harsh_needs_heat_and_drinks_do_not
@@ -228,35 +232,40 @@
 	var/obj/item/reagent_containers/glass/beaker/B = dq_pur_beaker()
 	TEST_ASSERT(B.reagents.temperature_gated(), "a beaker is")
 
-/// A catalyst in the beaker widens the ideal band by its activity.
-/datum/unit_test/dq_p2_reagents/dq_pur_catalyst_widens_the_ideal_band
+/// A solid catalyst belongs to the processes that run on one: a sheet in the beaker lowers their band (it does not widen any other recipe's), and no sheet, no route.
+/datum/unit_test/dq_p2_reagents/dq_pur_solid_catalyst_lowers_a_process_band
 
-/datum/unit_test/dq_p2_reagents/dq_pur_catalyst_widens_the_ideal_band/run_gate()
+/datum/unit_test/dq_p2_reagents/dq_pur_solid_catalyst_lowers_a_process_band/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/glass/beaker/large/B = allocate(/obj/item/reagent_containers/glass/beaker/large, run_loc_floor_bottom_left)
-	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/inaprovaline, 10, 5)
-	var/list/before = B.reagents.reaction_temperature_state(X)
-	TEST_ASSERT_EQUAL(before[1], REACTION_TEMP_STATE_COLD, "5 C is below the ideal band")
+	B.reagents.add_reagent(REAGENT_ID_ETHANOL, 10, safety = 1)
+	B.reagents.add_reagent(REAGENT_ID_OXYGEN, 10, safety = 1)
+	dq_pur_set_temp(B, 40)
+	var/datum/chem_route/route = GLOB.chem_routes["oxidise:ethanol:solid_metal>contaminant_organic_residue"]
+	TEST_ASSERT_NOTNULL(route, "oxidising ethanol on a solid metal is a generated route")
+	var/datum/xform/X = dq_route_rule(route)
+	TEST_ASSERT(!xform_matches(X, B.reagents), "with no sheet the route does not hold")
+	TEST_ASSERT_NULL(B.reagents.solid_catalyst(), "there is no solid catalyst")
 	var/obj/item/stack/material/exotic_feedstock/sheets = allocate(/obj/item/stack/material/exotic_feedstock, run_loc_floor_bottom_left)
 	sheets.set_stack_material(MAT_ETCHING_CERAMIC)
 	sheets.set_amount(3)
-	TEST_ASSERT(sheets.material.catalytic_activity > 0, "etching ceramic is catalytic")
+	TEST_ASSERT(sheets.material.trait(MT_CATALYTIC) > 0, "etching ceramic is catalytic")
 	var/material_name = sheets.material.name
 	rc_click(H, B, sheets)
 	TEST_ASSERT_NOTNULL(B.catalyst, "the sheet went into the beaker")
 	TEST_ASSERT_EQUAL(sheets.get_amount(), 2, "one sheet of three")
 	TEST_ASSERT_EQUAL(B.catalyst.material.name, material_name, "of the material")
-	TEST_ASSERT(dq_pur_near(B.catalyst_activity(), sheets.material.catalytic_activity), "its activity is the beaker's")
-	var/list/after = B.reagents.reaction_temperature_state(X)
-	TEST_ASSERT_EQUAL(after[1], REACTION_TEMP_STATE_IDEAL, "the band reaches 5 C now")
-	TEST_ASSERT(dq_pur_near(B.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "and the reaction went the moment the catalyst was in")
-	TEST_ASSERT_EQUAL(B.reagents.contaminant_volume(), 0, "clean")
-	// Without it, the same mixture at 5 C is dirty.
-	var/obj/item/reagent_containers/glass/beaker/large/plain = allocate(/obj/item/reagent_containers/glass/beaker/large, run_loc_floor_bottom_left)
-	dq_pur_fill_for(plain, /transformation/chem/instant/inaprovaline, 10, 5)
-	plain.reagents.handle_reactions()
-	TEST_ASSERT(plain.reagents.contaminant_volume() > 0, "without a catalyst it is dirty")
+	TEST_ASSERT(dq_pur_near(B.catalyst_activity(), sheets.material.trait(MT_CATALYTIC)), "its activity is the beaker's")
+	var/list/solid = B.reagents.solid_catalyst()
+	TEST_ASSERT_EQUAL(solid[1], B.catalyst_kind(), "its kind is the beaker's")
+	var/list/lowered = route.band_in(B.reagents)
+	TEST_ASSERT(dq_pur_near(route.band_base[2] - lowered[2], solid[2] * CHEM_SOLID_REDUCTION_PER_POINT, 0.01), "the band came down by the activity")
+	// Poisoned by sulfur: the activity and the reduction go.
+	B.reagents.add_reagent(REAGENT_ID_CONTAMINANT_SULFUR, 2, safety = 1)
+	var/list/poisoned = B.reagents.solid_catalyst()
+	TEST_ASSERT(poisoned[2] < solid[2], "sulfur poisons the sheet")
 	// A sheet that is no catalyst is refused.
+	var/obj/item/reagent_containers/glass/beaker/large/plain = allocate(/obj/item/reagent_containers/glass/beaker/large, run_loc_floor_bottom_left)
 	var/obj/item/stack/material/steel/plate = allocate(/obj/item/stack/material/steel, run_loc_floor_bottom_left)
 	rc_click(H, plain, plate)
 	TEST_ASSERT_NULL(plain.catalyst, "a steel sheet is not a catalyst")
@@ -422,7 +431,8 @@
 	source.reagents.trans_to_holder(target.reagents, 1000)
 	TEST_ASSERT(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_OILY_RESIDUE) < 1, "oily residue is mostly gone")
 	TEST_ASSERT(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE) < 1.5, "and organic residue")
-	for(var/id in list(REAGENT_ID_CONTAMINANT_INERT_FILLER, REAGENT_ID_CONTAMINANT_HEAVY_METAL, REAGENT_ID_CONTAMINANT_SULFUR, REAGENT_ID_CONTAMINANT_REACTIVE, REAGENT_ID_CONTAMINANT_BIOLOGICAL))
+	TEST_ASSERT(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_BIOLOGICAL) < 1.5, "and endotoxin, which is organic too")
+	for(var/id in list(REAGENT_ID_CONTAMINANT_INERT_FILLER, REAGENT_ID_CONTAMINANT_HEAVY_METAL, REAGENT_ID_CONTAMINANT_SULFUR, REAGENT_ID_CONTAMINANT_REACTIVE))
 		TEST_ASSERT(dq_pur_near(target.reagents.get_reagent_amount(id), 5), "charcoal takes no [id]")
 	TEST_ASSERT(target.reagents.purity() > dirty_purity, "the mixture is purer than it was")
 
@@ -487,8 +497,9 @@
 	for(var/id in list(REAGENT_ID_CONTAMINANT_HEAVY_METAL, REAGENT_ID_CONTAMINANT_OILY_RESIDUE, REAGENT_ID_CONTAMINANT_SULFUR))
 		TEST_ASSERT(sponge[id] < 1, "a sponge takes [id] ([sponge[id]]u left of 5)")
 		TEST_ASSERT(half[id] > sponge[id] + 0.5 && half[id] < 5, "half the sorption takes less of [id] ([half[id]] against [sponge[id]])")
-	for(var/id in list(REAGENT_ID_CONTAMINANT_REACTIVE, REAGENT_ID_CONTAMINANT_BIOLOGICAL, REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE, REAGENT_ID_CONTAMINANT_INERT_FILLER))
+	for(var/id in list(REAGENT_ID_CONTAMINANT_BIOLOGICAL, REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE, REAGENT_ID_CONTAMINANT_INERT_FILLER))
 		TEST_ASSERT(dq_pur_near(sponge[id], 5), "a sponge does not take [id]")
+	TEST_ASSERT(sponge[REAGENT_ID_CONTAMINANT_REACTIVE] < 1, "but being ion exchange it takes the ionic reactive impurity")
 	// Catalytic activity: reactive impurity and sulfur.
 	TEST_ASSERT(catalyst[REAGENT_ID_CONTAMINANT_REACTIVE] < 1, "a catalytic filter takes the reactive impurity")
 	TEST_ASSERT(catalyst[REAGENT_ID_CONTAMINANT_SULFUR] < 1, "and sulfur")

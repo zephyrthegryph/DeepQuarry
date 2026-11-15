@@ -9,15 +9,61 @@
 #define MATERIAL_SURFACE_SLIME_CORROSION "corrosion-resistant slime skin"
 #define MATERIAL_SURFACE_SLIME_CATALYTIC "catalytic slime skin"
 #define MATERIAL_SURFACE_SLIME_BLUESPACE "bluespace slime skin"
-#define MATERIAL_SURFACE_PLATING "chemical plating"
-#define MATERIAL_SURFACE_OXIDE "oxide scale"
 
 #define MATERIAL_FIELD_PARTICLE "particle-conditioned lattice"
-#define MATERIAL_FIELD_MAGNETIC "magnetically aligned lattice"
 #define MATERIAL_FIELD_EMITTER "emitter-charged lattice"
 #define MATERIAL_FIELD_FUSION "fusion-field stabilized lattice"
 #define MATERIAL_FIELD_RADIATION_HARDENED "radiation-hardened lattice"
 #define MATERIAL_FIELD_ENERGY_STORAGE "energized storage lattice"
+
+// The card: the six core stats every material has, on one scale (steel is 60 strength, 75 toughness, about 39 heat
+// resistance; exotic stock may run past 100). Everything else a material does is a trait (traits below), present only
+// when the material has it.
+#define MATERIAL_STAT_STRENGTH "strength"
+#define MATERIAL_STAT_TOUGHNESS "toughness"
+#define MATERIAL_STAT_HEAT_RESISTANCE "heat_resistance"
+#define MATERIAL_STAT_CONDUCTIVITY "conductivity"
+#define MATERIAL_STAT_CORROSION_RESISTANCE "corrosion_resistance"
+#define MATERIAL_STAT_WEIGHT "weight"
+/// The card's stats in display order.
+#define MATERIAL_CARD_STATS list(MATERIAL_STAT_STRENGTH, MATERIAL_STAT_TOUGHNESS, MATERIAL_STAT_HEAT_RESISTANCE, MATERIAL_STAT_CONDUCTIVITY, MATERIAL_STAT_CORROSION_RESISTANCE, MATERIAL_STAT_WEIGHT)
+
+// Traits: id -> one strength (0-100). A trait the material lacks has no entry.
+#define MT_SUPERCONDUCTING "superconducting"
+#define MT_THERMAL_BUFFER "thermal buffer"
+#define MT_CRYO_BUFFER "cryogenic buffer"
+#define MT_THERMAL_SWITCH "thermal switch"
+#define MT_SHAPE_MEMORY "shape memory"
+#define MT_PIEZOELECTRIC "piezoelectric"
+#define MT_THERMOELECTRIC "thermoelectric"
+#define MT_RADIOVOLTAIC "radiovoltaic"
+#define MT_FIELD_STORAGE "field storage"
+#define MT_EXOTHERMIC "exothermic"
+#define MT_REACTIVE "reactive"
+#define MT_CATALYTIC "catalytic"
+#define MT_SORBENT "sorbent"
+#define MT_ANTIMICROBIAL "antimicrobial"
+#define MT_HEMOSTATIC "hemostatic"
+#define MT_LUMINESCENT "luminescent"
+#define MT_RADIOACTIVE "radioactive"
+#define MT_TOXIC "toxic"
+
+/// Traits that are measured, not fixed: a batch's composition and treatment can lower or raise them.
+#define MATERIAL_TRAIT_IDS list(MT_SUPERCONDUCTING, MT_THERMAL_BUFFER, MT_CRYO_BUFFER, MT_THERMAL_SWITCH, MT_SHAPE_MEMORY, MT_PIEZOELECTRIC, MT_THERMOELECTRIC, MT_RADIOVOLTAIC, MT_FIELD_STORAGE, MT_EXOTHERMIC, MT_REACTIVE, MT_CATALYTIC, MT_SORBENT, MT_ANTIMICROBIAL, MT_HEMOSTATIC, MT_LUMINESCENT, MT_RADIOACTIVE, MT_TOXIC)
+
+/// Steel's toughness and heat resistance: calibration formulas that were authored against a steel part measure a part against these.
+#define MATERIAL_REFERENCE_TOUGHNESS 75
+#define MATERIAL_REFERENCE_HEAT 38.75
+#define MATERIAL_REFERENCE_CORROSION 50
+/// Hit points one point of toughness gives a structure (a wall, a girder, a door, a weapon's wear).
+#define MATERIAL_HP_PER_TOUGHNESS 2
+/// The temperatures a trait's fixed threshold sits at (one strength is all a trait carries).
+#define MATERIAL_THERMAL_BUFFER_TEMPERATURE (T0C + 40)
+#define MATERIAL_CRYO_BUFFER_TEMPERATURE 250
+#define MATERIAL_SHAPE_MEMORY_TEMPERATURE (T0C + 80)
+/// A batch's temper and flaws at rest: tempered halfway, a little flawed.
+#define MATERIAL_TEMPER_DEFAULT 30
+#define MATERIAL_FLAWS_DEFAULT 20
 
 // Rare feedstocks are concrete phases, not spell-like effect payloads. They
 // enter the same batch/composite model as ordinary metals and ceramics.
@@ -37,26 +83,10 @@
 #define MATERIAL_PROCESS_PURIFY "purify"
 #define MATERIAL_PROCESS_HOMOGENIZE "homogenize"
 #define MATERIAL_PROCESS_SOLUTION_TREAT "solution treat"
+#define MATERIAL_PROCESS_ANNEAL "anneal"
 
-#define MATERIAL_STRUCTURE_SOFT "soft matrix"
-#define MATERIAL_STRUCTURE_HARDENED "hardened matrix"
-#define MATERIAL_STRUCTURE_PRECIPITATE "precipitate"
-#define MATERIAL_STRUCTURE_REINFORCEMENT "reinforcement"
-#define MATERIAL_STRUCTURE_AMORPHOUS "amorphous"
-#define MATERIAL_STRUCTURE_DEFECT "defect"
-
+/// A spectrometer reading: the one assay, it reveals the traces in a stack or lot.
 #define MATERIAL_TEST_SPECTROMETRY "spectrometry"
-#define MATERIAL_TEST_MICROSCOPY "microscopy"
-#define MATERIAL_TEST_HARDNESS "hardness indentation"
-#define MATERIAL_TEST_CONDUCTIVITY "conductivity probe"
-#define MATERIAL_TEST_TENSILE "tensile test"
-#define MATERIAL_TEST_CORROSION "corrosion exposure"
-#define MATERIAL_TEST_FIELD "fabricated article field test"
-
-#define MATERIAL_ATMOSPHERE_AIR "air"
-#define MATERIAL_ATMOSPHERE_INERT "nitrogen"
-#define MATERIAL_ATMOSPHERE_VACUUM "vacuum"
-#define MATERIAL_ATMOSPHERE_REDUCING "hydrogen"
 
 #define MATERIAL_APPLICATION_TOOL "engineering tool"
 #define MATERIAL_APPLICATION_SURGICAL "surgical instrument"

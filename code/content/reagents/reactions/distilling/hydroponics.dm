@@ -1,12 +1,4 @@
 // Hydroponics refinery fun
-/transformation/chem/distilling/fertilizer
-
-CAPABILITIES(/transformation/chem/distilling/fertilizer)
-	configure(transformation(name = REAGENT_FERTILIZER, id = "distill_fertilizer",
-		takes = list(reagent(REAGENT_ID_WATER, 5), reagent(REAGENT_ID_NUTRIMENT, 1), reagent(REAGENT_ID_PHOSPHORUS, 1), reagent(REAGENT_ID_SULFUR, 1)),
-		makes = list(reagent(REAGENT_ID_FERTILIZER, 3)),
-		holds = xform_all(temperature_in(T20C + 40, T20C + 60), ambient_gas_over(GAS_CO2, 10), ambient_gas_under(GAS_N2, 1))))
-
 
 /transformation/chem/distilling/eznutrient
 

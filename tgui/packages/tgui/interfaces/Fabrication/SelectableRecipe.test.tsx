@@ -33,15 +33,21 @@ const choice = (id: string, label: string): MaterialChoice => ({
   color: '#ffffff',
   layers: [],
   responses: ['thermoelectric generation'],
-  hardness: 80,
-  density: 70,
-  integrity: 75,
-  elasticity: 60,
-  brittleness: 20,
+  card: [
+    {
+      name: 'Toughness',
+      value: 85,
+      breakdown: [
+        { label: 'base', delta: 90 },
+        { label: 'sulfur', delta: -5 },
+      ],
+    },
+  ],
+  strength: 80,
+  weight: 70,
   toughness: 85,
   conductivity: 90,
   heatResistance: 65,
-  thermalInsulation: 40,
   corrosionResistance: 88,
   pressureLimit: 42,
 });

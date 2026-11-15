@@ -35,3 +35,5 @@ SYSTEM_DEF(chemistry)
 		if(D.name == REAGENT_DEVELOPER_WARNING)
 			continue
 		chemical_reagents[D.id] = D
+	// The block structures and the routes the processes make of them (code/domains/world_model/reagents/blocks/).
+	chem_blocks_build(chemical_reagents)

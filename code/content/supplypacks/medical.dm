@@ -204,6 +204,19 @@
 	containername = JOB_CHEMIST + " equipment"
 	access = ACCESS_CHEMISTRY
 
+/datum/supply_pack/med/chemprecursors
+	name = "Chemical precursor crate"
+	desc = "Three boxes of the sixteen common chemical precursors (acids, bleach, phenol, salicylic acid, wood aldehyde, glycerol, sterol and the rest). Requires Chemistry access."
+	contains = list(
+			/obj/item/storage/box/precursors_inorganic,
+			/obj/item/storage/box/precursors_ring,
+			/obj/item/storage/box/precursors_bio
+			)
+	cost = 30
+	containertype = /obj/structure/closet/crate/secure/nanomed
+	containername = "Chemical precursor crate"
+	access = ACCESS_CHEMISTRY
+
 /datum/supply_pack/med/paramedicgear
 	name = JOB_PARAMEDIC + " equipment"
 	desc = "Standard equipment for Paramedics and EMTs. Requires Medical Equipment access."

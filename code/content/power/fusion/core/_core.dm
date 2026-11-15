@@ -160,7 +160,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 	var/field_work = clamp(round(field_strength / 25 + owned_field.plasma_temperature / 2500), 2, 30)
 	var/old_fusion_strength = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0
 	batch.add_field_treatment(MATERIAL_FIELD_FUSION, field_work)
-	batch.homogeneity = clamp(batch.homogeneity + round(field_work / 6), 0, 100)
+	batch.refine(round(field_work / 6))
 	batch.add_batch_heat(max(100, owned_field.plasma_temperature * batch.amount * 0.04), HEAT_SOURCE_DEVICE)
 	batch.record_electricity(power_of(src).active * 5)
 	var/phoron_key
@@ -174,10 +174,10 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 	var/phoron = phoron_key ? (owned_field.dormant_reactant_quantities[phoron_key] || 0) : 0
 	var/hydrogen = hydrogen_key ? (owned_field.dormant_reactant_quantities[hydrogen_key] || 0) : 0
 	if(phoron > 5)
-		batch.add_dissolved_gas("fusion phoron", min(phoron / 50, field_work))
+		batch.add_substance("phoron gas", min(phoron / 50, field_work) * 0.01, 0, MATERIAL_COST_MEDIA)
 		owned_field.dormant_reactant_quantities[phoron_key] = max(0, phoron - 5)
 	if(hydrogen > 5)
-		batch.add_dissolved_gas("fusion hydrogen", min(hydrogen / 50, field_work))
+		batch.add_substance("hydrogen", min(hydrogen / 50, field_work) * 0.01, 0, MATERIAL_COST_MEDIA)
 		owned_field.dormant_reactant_quantities[hydrogen_key] = max(0, hydrogen - 5)
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(material_sample, batch, src)
 	rel_set(src, nameof(material_sample), replacement)

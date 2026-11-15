@@ -1,0 +1,487 @@
+# Recipe draft: every chemical, material and feedstock item
+
+Draft for review. Structures for invented medicines are invented, but each is modelled on a real drug of the same job where one exists (named in brackets). Notation: `[core] + groups`; two cores joined are `[core]-link-[core]`. "Cat." is the catalyst kind: acid, base, metal (solid, material science), enzyme.
+
+Processes: oxidise, reduce, halogenate, nitrate, substitute (swap a halide for amine, thiol or cyanide; this widens "aminate"), phosphorylate, decarboxylate, condense, hydrolyse, ferment, crack, neutralise, displace (also binds a metal to an acid group), electrolyse, polymerise.
+
+## 0. New reagents this needs
+
+| New reagent | What it is | Made by |
+|---|---|---|
+| Hydrochloric acid | [H][Cl] | hydrogen + chlorine |
+| Nitric acid | [H][NO3] | oxidise ammonia over a metal catalyst, add water |
+| Phosphoric acid | [H][PO4] | oxidise phosphorus, add water; or sulphuric acid on ground bone |
+| Acetic acid (vinegar) | [short chain] + carboxyl | oxidise ethanol (enzyme: gentle, clean; oxidiser: fast, leaves aldehyde) |
+| Bleach | [Na][OCl] | chlorine into lye |
+| Soda ash | [Na][CO3] | wood ash in water, or lye + carbon dioxide |
+| Phenol | [ring] + hydroxyl | crack wood tar or coal; decarboxylate salicylic acid |
+| Wood aldehyde (vanillin) | [ring] + hydroxyl, carbonyl | oxidise lignin from wood pulp |
+| Salicylic acid | [ring] + hydroxyl, carboxyl | oxidise wood aldehyde; willow bark, aloe |
+| Ring diacid | [ring] + carboxyl x2 | hydrolyse plastic |
+| Glycol (this is Coolant) | [short chain] + hydroxyl x2 | hydrolyse plastic; existing coolant reagent |
+| Fatty acid | [long chain] + carboxyl | hydrolyse fat or oil with lye (also gives soap and glycerol) |
+| Cellulose pulp | polymer of [sugar ring] | existing wood pulp and paper reagents |
+| Glucose | [sugar ring] + hydroxyl | hydrolyse cellulose or sugar (acid or enzyme); exists |
+| Collagen / keratin | polymer of [amino]; keratin carries thiol | leather, hair, fur, bone |
+| Amino acid | [amino] + amine, carboxyl | hydrolyse protein, meat, collagen |
+| Sterol | [steroid] + hydroxyl | organs, blood, eggs, mushrooms |
+| Plant alkaloid base | [double ring] + amine | ambrosia, poppy, mould |
+| Pyridine base | [nitrogen ring] | tobacco, coffee, tea, bone tar |
+| Silanol | [siloxane] + hydroxyl | sand or glass in hot lye, then acid |
+
+## 0a. Tiers (approved 2026-11-15)
+
+Every chemical and material has a tier. Routes are shortened or lengthened to fit, even where real chemistry is longer. The family tables (sections 1 to 8) are the CLEAN routes; a staple also has a dirty shortcut (section 0c).
+
+| Tier | Steps | Inputs | Chemicals |
+|---|---|---|---|
+| 1. Staples | 1 to 2 | dispenser + stocked precursors | inaprovaline, bicaridine, kelotane, dylovene, dexalin, paracetamol, sterilizine, iron saline, space cleaner, lye, the acids, ammonia, salt, glycerol, soap, fertilizers, lube, glycol/coolant, foaming agent |
+| 2. Standard | 2 to 3 | a staple + one process | dermaline, dexalin plus, tricordrazine, tramadol, leporazine, carthatoline, hyronalin, spaceacillin, synaptizine, adranol, anticonvulsant, ethylredoxrazine, chloral hydrate, soporific, cryoxadone, myelamine, diethylamine, luminol, plant-b-gone, thermite, cyanide, prussian blue, hyperzine, nicotine drugs, menthol, condensed capsaicin, fluorosurfactant, glue, plasticide |
+| 3. Advanced | 4 to 5 | a material-science catalyst or another department's feedstock | arithrazine, alkysine, imidazoline, panacillin, corophizine, immunosuprizine, clonexadone, lexorin, oxycodone, mindbreaker, psilocybin, bliss, the mood drugs, impedrezene, tercozolam, methylphenidate, rezadone, the organ daxons, osteodaxon, the rovirs, lipozilase, lipostipo, mutagen, nitroglycerin, potassium chlorophoride, bullvalene, numbing enzyme |
+| 4. Exotic | 5+ | expedition, xenobiology or creature inputs | peridaxon, necroxadone, mortiferin, zombie powder, lich powder, malish-qualem, soul dew, liquid healer, phoenix breath, juggernog, performance peaker, blood sealer, the size drugs, combat blends |
+
+Materials: tier 1 plastic, glass, paper, cloth, soap, wax, steel; tier 2 rubber, nylon, silicone, hard plastic, guncotton, borosilicate; tier 3 aramid, carbon fibre, plasteel; tier 4 durasteel and exotic-feedstock materials.
+
+Tier 1 rules: one or two steps, gentle or warm heat, no solid catalyst needed, every input either on the dispenser or in a stocked precursor bottle.
+
+**Stocked precursors** (the chem lab starts with bottles; cargo sells crates; each rolls per-round traces): phenol, salicylic acid, wood aldehyde, nitric acid, hydrochloric acid, phosphoric acid, acetic acid, bleach, soda ash, glycerol, silanol, fatty acid, pyridine base, plant alkaloid base, sterol, amino acid. Making them from wood, plastic, fat and so on is the cheaper or cleaner option, never required.
+
+## 0b. Process chemicals (a chemical that IS a process)
+
+Pour one in and it performs the process on whatever it can act on, without the usual setup. Each is consumed, is less selective than the proper method, and leaves its own residue. These are what make shortcuts possible.
+
+| Process chemical | Performs | Replaces | Leaves behind | Made from |
+|---|---|---|---|---|
+| Hydride (strong reducer) | reduce, no hydrogen or metal catalyst | hydrogen + metal cat. | base residue, boron salts; reduces EVERY reducible group | foaming agent + boron |
+| Strong oxidiser (permanganate type) | oxidise all the way to carboxyl | controlled oxidation | heavy metals; over-oxidises | potash + ore oxide + bleach |
+| Bleach | oxidise one step | enzyme oxidation | halide; dioxin risk on rings if hot | chlorine into lye |
+| Nitrating mix | nitrate | separate nitric acid + acid cat. | acid residue; nitrosamine with amines | nitric + sulphuric acid |
+| Chlorinating agent | halogenate a hydroxyl cleanly | chlorine gas | hydrochloric acid, sulfur | sulfur + chlorine + oxygen |
+| Coupling agent | condense without removing water | acid cat. + drying | organic residue | cyanide + amine |
+| Dry agent (exists) | removes water so condensations finish | boiling off | salts | calcium carbonate + hydrochloric acid |
+| Caustic digest (hot lye) | hydrolyse anything, break polymers | acid or enzyme hydrolysis | base residue, soap, tar | lye, hot |
+| Yeast | ferment | — | endotoxin; methanol if warm | botany, kitchen |
+| Enzyme (exists) | gentle, selective hydrolyse or oxidise | — | endotoxin | botany, xenobiology |
+| Phoron (catalytic) | drives the exotic blends | — | reactive impurity | mining |
+| Scavenger resin | strips one named contaminant class down to its floor | a filter pass | inert filler | ground material-science sorbent |
+
+## 0c. Dirty shortcuts for the staples
+
+Each staple has a clean route (family tables) and a one-step shortcut. The shortcut always works but leaves trace-potent contaminants.
+
+| Staple | Clean route | Dirty shortcut | Shortcut leaves |
+|---|---|---|---|
+| Inaprovaline | wood aldehyde + ammonia + hydrogen, metal cat. | wood aldehyde + ammonia + hydride | base residue, unreacted aldehyde |
+| Bicaridine | nitrate salicylic acid, reduce over metal cat. | salicylic acid + nitrating mix + hydride, one pot | nitrosamine, acid residue |
+| Kelotane | silanol from sand in lye, neutralised | silicon + lye, not neutralised | base residue |
+| Dylovene | halogenate glycerol, substitute sulfide | glycerol + sulfur + chlorinating agent | hydrochloric acid, sulfur |
+| Dexalin | gentle oxidation of phoron, cold | phoron + bleach | halide, reactive impurity |
+| Paracetamol | nitrate phenol, reduce, condense with acetic acid | phenol + nitrating mix + hydride + acetic acid, one pot, hot | nitrosamine, tar, aldehyde |
+| Sterilizine | halogenate phenol, cold | phenol + bleach | dioxin if warm |
+| Tricordrazine | condense inaprovaline + dylovene, dried | mix with coupling agent | organic residue |
+| Hyperzine | clean amination, metal cat. | Stimm route: cracked fuel + fertilizer | tar, heavy metals, sulfur |
+| Glycerol and soap | fat + lye, washed | caustic digest of any meat or oil | base residue, endotoxin |
+| Ethanol | ferment sugar, distil | ferment paper or wood pulp warm, no distilling | methanol |
+| Plastic | polymerise clean ring diacid + glycol | melt down ground plastic items | plasticiser, flame retardant |
+
+## 1. Inorganic toolkit
+
+| Chemical | Structure | Route | Gives off / leaves |
+|---|---|---|---|
+| Water | [H][OH] | burn hydrogen in oxygen; electrolyse to split | — |
+| Ammonia | [N][H3] | nitrogen + hydrogen, metal cat. (iron), hot | unreacted gas |
+| Sulphuric acid | [H][SO4] | oxidise sulfur over a metal cat., add water; roast sulfide ore | — |
+| Lye | [Na][OH] | sodium + water; electrolyse brine; soda ash + lime | hydrogen; chlorine from brine |
+| Table salt | [Na][Cl] | neutralise lye + hydrochloric acid | water |
+| Potassium chloride | [K][Cl] | neutralise potash + hydrochloric acid | water |
+| Calcium carbonate | [Ca][CO3] | grind marble, shells, eggshell; lime water + carbon dioxide | — |
+| Dry agent | [Ca][Cl] (real desiccant) | neutralise calcium carbonate + hydrochloric acid, boil dry | carbon dioxide, water |
+| Titanium dioxide | [Ti][O] | oxidise titanium; grind rutile | — |
+| Titanium | element | halogenate rutile, displace with sodium (existing recipe, real Kroll route) | table salt |
+| Silicate | [Na][SiO3] | sand in hot lye | — |
+| Polytrinic acid | mixed acid | sulphuric + nitric + hydrochloric acid, cold | fumes if warm |
+| Cyanide | [K][CN] | ammonia + carbon, metal cat., violent heat; then potash | hydrogen |
+| Prussian blue | [Fe][CN] complex | displace: iron salt + cyanide | salt |
+| Thermite | mixture | oxidise iron to rust, mix with aluminum powder | — |
+| Foaming agent | [Li][H] | lithium + hydrogen, hot | — |
+| Iron saline | mixture | iron salt + salt + water | — |
+| Fertilizer / EZ Nutrient | ammonium phosphate | neutralise ammonia + phosphoric acid | water |
+| Robust Harvest | adds potassium nitrate | neutralise potash + nitric acid into fertilizer | water |
+| Left-4-Zed | fertilizer + mutagen | mix | — |
+| Space cleaner | mixture | ammonia + water (unchanged) | — |
+| Flash powder, potassium + water, EMP mix | mixtures | unchanged triggers | — |
+| Deuterium, tritium, helium-3, lithium-6, boron-11 | isotopes | not chemistry; unchanged | — |
+
+## 2. Ring family (from wood, plastic, coal)
+
+| Chemical | Structure (modelled on) | Route | Gives off / leaves |
+|---|---|---|---|
+| Inaprovaline | [ring] + hydroxyl, amine (adrenaline family) | substitute ammonia onto wood aldehyde with hydrogen, metal cat. | water |
+| Adrenaline | [ring] + hydroxyl x2, amine | enzyme oxidation of inaprovaline; adrenal organs | — |
+| Bicaridine | [ring] + hydroxyl, carboxyl, amine | nitrate salicylic acid, then reduce (metal cat.) | water; nitrosamine if amine meets leftover nitric acid |
+| Myelamine | [ring] + carboxyl, amine (tranexamic acid) | decarboxylate ring diacid once, nitrate, reduce | carbon dioxide, water |
+| Paracetamol | [ring] + hydroxyl -amide- [short chain] (real) | nitrate phenol, reduce, condense with acetic acid | water |
+| Leporazine | [ring] + carboxyl -ester- [short chain] (aspirin) | condense salicylic acid with acetic acid, acid cat. | water |
+| Tramadol | [ring] + hydroxyl, amine -[short chain] | condense paracetamol with ethanol, reduce | water |
+| Sterilizine | [ring] + hydroxyl, halide (chloroxylenol) | halogenate phenol | hydrochloric acid; dioxin if hot |
+| Plant-B-Gone | [ring] + halide x2 -[short chain] + carboxyl (2,4-D) | halogenate phenol twice, condense with acetic acid | hydrochloric acid; dioxin if hot |
+| Phenethylamine | [ring] -[short chain] + amine | decarboxylate a ring amino acid (from protein) | carbon dioxide |
+| Hyperzine | phenethylamine + extra carbon (amphetamine) | substitute ammonia onto ring ketone, reduce | water |
+| Stimm | crude hyperzine | crack welding fuel, substitute with fertilizer; no cleanup | tar, heavy metals, sulfur |
+| Luminol | [ring] + amine, amide x2 (real) | nitrate ring diacid, reduce, condense with ammonia | water |
+| Condensed capsaicin | [ring] + hydroxyl -amide- [long chain] (real) | substitute ammonia onto wood aldehyde, condense with fatty acid; or concentrate chilli extract | water |
+| Menthol | [ring, saturated] + hydroxyl | mint; or reduce a ring ketone | — |
+| Tannin | [ring] + hydroxyl x3, carboxyl | tea, bark, leather offcuts | — |
+| Plasticide | ring diacid + glycol, unlinked | hydrolyse plastic | plasticiser |
+| Ultra glue | [short chain] + carbonyl, cyanide | condense acetic acid with cyanide | water |
+
+## 3. Chelators and radiation (short chain)
+
+| Chemical | Structure (modelled on) | Route | Gives off / leaves |
+|---|---|---|---|
+| Glycerol | [short chain] + hydroxyl x3 | hydrolyse fat or oil with lye | soap |
+| Nitroglycerin | glycerol with nitro x3 | nitrate glycerol, acid cat., cold | water; detonates if warm or acid left in |
+| Dylovene | [short chain] + thiol x2, hydroxyl (dimercaprol, a real antidote) | halogenate glycerol twice, substitute with sulfide | hydrochloric acid, sulfur |
+| Carthatoline | dylovene with carboxyl (DMSA) | oxidise dylovene's hydroxyl | water; over-oxidising burns the thiols |
+| Hyronalin | [short chain] + amine x2, carboxyl x2 (EDTA family) | halogenate glycol, substitute ammonia, condense with acetic acid | hydrochloric acid |
+| Arithrazine | [short chain] + amine x2, thiol, phosphate (amifostine) | substitute sulfide onto a halogenated hyronalin base, phosphorylate | hydrochloric acid, water |
+| Chloral hydrate | [short chain] + halide x3, hydroxyl x2 (real) | halogenate ethanol fully, add water | hydrochloric acid |
+| Soporific | chloral -ester- [short chain] | condense chloral hydrate with glycol | water |
+| Diethylamine | [short chain] x2 + amine | ethanol + ammonia over solid acid cat. | water |
+| Unstable mutagen | [short chain] x2 + halide x2, amine (nitrogen mustard) | halogenate diethylamine's alcohol form | hydrochloric acid |
+| Ethylredoxrazine | [nitrogen ring] + carboxyl (niacin family) | oxidise pyridine base side chain | water |
+| Fluorosurfactant | [long chain] + halide (fluorine), acid group | halogenate fatty acid with fluorine, treat with sulphuric acid | acid residue |
+| Firefighting foam | mixture | fluorosurfactant + water | — |
+
+## 4. Burn and skin (siloxane)
+
+| Chemical | Structure | Route | Gives off / leaves |
+|---|---|---|---|
+| Kelotane | [siloxane] + hydroxyl (silicone burn gel) | sand or glass in hot lye, neutralise with acid | salts |
+| Dermaline | kelotane + phosphate | phosphorylate kelotane | water |
+| Space lube | linked [siloxane] chain | polymerise silanol short | water |
+| Bullvalene | dermaline with copper centre | displace copper salt onto dermaline, with orange sap | acid residue |
+
+## 5. Oxygen and cryo (phoron lattice)
+
+| Chemical | Structure | Route | Gives off / leaves |
+|---|---|---|---|
+| Dexalin | [phoron lattice] + hydroxyl | oxidise phoron gently | — ; burns if hot |
+| Dexalin Plus | dexalin + iron centre (like haem) | displace iron salt onto dexalin | acid residue |
+| Cryoxadone | [phoron lattice] + hydroxyl x2 | oxidise dexalin again in water, cold | reactive impurity if warm |
+| Clonexadone | cryoxadone + sodium centre | displace with lye | water |
+| Necroxadone | clonexadone + thiol | substitute sulfide; needs lich powder as template | sulfur |
+| Mortiferin | clonexadone -amide- corophizine | condense | water |
+| Lexorin | [phoron lattice] + amine | substitute ammonia onto halogenated phoron | hydrochloric acid |
+| Hydrophoron | [phoron lattice], hydrogen-loaded | reduce phoron | — |
+| Potassium chlorophoride | [phoron lattice] + halide, potassium | halogenate phoron, displace potassium chloride | — |
+
+## 6. Antibiotics, steroids, organ repair
+
+| Chemical | Structure (modelled on) | Route | Gives off / leaves |
+|---|---|---|---|
+| Spaceacillin | [amino] -amide- [amino] + thiol (penicillin) | ferment mould on sugar; extract | endotoxin |
+| Panacillin | spaceacillin with second sulfur group | substitute sulfide onto halogenated spaceacillin | hydrochloric acid |
+| Corophizine | [nitrogen ring] + halide (fluorine), carboxyl (fluoroquinolone) | halogenate pyridine acid with fluorine | acid residue |
+| Immunosuprizine | [steroid] + hydroxyl x2, carbonyl (cortisone) | oxidise sterol one step, enzyme adds hydroxyl | — |
+| Amorphorovir | [steroid] bare | reduce sterol fully | water |
+| Androrovir | [steroid] + hydroxyl, carbonyl | oxidise one hydroxyl of a diol sterol | water |
+| Gynorovir | [steroid] + hydroxyl x2 | reduce androrovir | — |
+| Androgynorovir | [steroid] + carbonyl x2 | oxidise androrovir | water |
+| Lipozilase / Lipostipo | [steroid] + carboxyl / + halide | oxidise sterol fully / halogenate | water / hydrochloric acid |
+| Osteodaxon | [amino] chain + phosphate, calcium centre | phosphorylate collagen peptide, displace calcium | — |
+| Cordradaxon | [amino] chain + potassium centre | displace potassium onto amino acid chain | — |
+| Gastirodaxon | [amino] chain + thiol | hydrolyse keratin part way (enzyme) | endotoxin |
+| Hepanephrodaxon | [amino] chain + lithium centre | displace lithium | — |
+| Respirodaxon | [amino] -amide- dexalin plus | condense | water |
+| Peridaxon | the four daxons condensed, or bicaridine -ester- clonexadone | condense, enzyme | water |
+| Rezadone | [sugar ring] - [nitrogen ring] + phosphate (a nucleotide) | condense glucose with pyridine base, phosphorylate | water |
+| Numbing enzyme | [amino] chain | ferment protein with tramadol template | endotoxin |
+| Synthetic blood | mixture | protein + antibodies + bicaridine (unchanged) | — |
+| Biomass, protein, nutriment, virus food | biological mixtures | cultures (unchanged) | endotoxin |
+
+## 7. Brain, mood and street drugs (nitrogen ring and double ring)
+
+| Chemical | Structure (modelled on) | Route | Gives off / leaves |
+|---|---|---|---|
+| Nicotine | [nitrogen ring] x2 | tobacco | alkaloid traces |
+| Synaptizine | [nitrogen ring] + amine | reduce a nitrated pyridine base | water |
+| Alkysine | [nitrogen ring] + halide, amine | halogenate synaptizine | hydrochloric acid |
+| Imidazoline | [nitrogen ring] + amine x2 | nitrate and reduce synaptizine | water |
+| Adranol | [nitrogen ring] + hydroxyl | enzyme oxidation of pyridine base | — |
+| Anticonvulsant | [nitrogen ring] + carbonyl x2 (barbiturate) | condense urea-like amide with a diacid | water |
+| Methylphenidate | [ring] -ester- [nitrogen ring] (real) | condense ring acid with pyridine alcohol, reduce | water |
+| Cryptobiolin | [double ring] + carbonyl | oxidise plant alkaloid base | water |
+| Mindbreaker | [double ring] + amine -amide- diethylamine (LSD) | condense mould alkaloid acid with diethylamine | water |
+| Psilocybin | [double ring] + amine, phosphate (real) | mushrooms; phosphorylate the alkaloid alcohol | water |
+| Bliss | [double ring] + amine, hydroxyl | enzyme oxidation of plant alkaloid base | — |
+| Oxycodone | [double ring] + carbonyl, hydroxyl, amine (real) | oxidise poppy alkaloid | water |
+| Impedrezene | [double ring] + halide, amide (benzodiazepine) | halogenate, condense | hydrochloric acid |
+| Tercozolam | [double ring] + thiol, halide, amine (phenothiazine) | substitute sulfide, halogenate | hydrochloric acid, sulfur |
+| Citalopram | [double ring] + halide (fluorine), amine, cyanide | halogenate, substitute cyanide | cyanide traces |
+| Paroxetine | [double ring] + halide (fluorine), amine | halogenate with fluorine, reduce | hydrochloric acid |
+| Qerr-quem / Talum-quem | nicotine / bliss derivatives | condense with glucose | water |
+| Malish-Qualem | immunosuprizine -ester- qerr-quem | condense | water |
+| Benzilate, odd goo | paracetamol -ester- mindbreaker | condense | water |
+
+## 8. Poisons from creatures and exotic blends
+
+These are source-only chemicals, usable as feedstock. Hydrolysing any of them gives amino acids.
+
+| Chemical | Structure | Source or route |
+|---|---|---|
+| Carpotoxin, spidertoxin, venoms, toxic protein, amatoxin | [amino] chains with thiol or amide groups | carp, spiders, mobs, mushrooms |
+| Zombie powder | carpotoxin -amide- soporific, copper centre | condense, displace copper |
+| Lich powder | zombie powder -ester- leporazine | condense |
+| Toxin (generic) | concentrated tar and cyanide residue | boil down cracking residue |
+| Slime jelly, saps, liquid life, liquid fire, dragon and deathclaw blood, glamour, earthsblood, holy water, supermatter | exotic cores | source only |
+| Soul dew, liquid healer, phoenix breath, juggernog, claridyl, performance peaker, blood sealer, the size and "-cillin" drugs, combat blends | exotic blends | condense the same listed ingredients as today, enzyme or phoron cat. |
+| Nanites | machines | not chemistry; unchanged |
+| Paint, inks, crayon dust, liquid carpet | pigment mixtures | unchanged mixing; pigments are the metal salts above |
+
+## 9. Materials: what each is and how it is made or broken down
+
+| Material | Is | Break down (feedstock) | Make |
+|---|---|---|---|
+| Plastic | polyester: ring diacid -ester- glycol | hydrolyse to ring diacid + glycol | polymerise the two, acid cat. |
+| Hard plastic (new, bakelite) | phenol linked by carbonyl | crack to phenol, tar | polymerise phenol + wood aldehyde; heat-proof casings |
+| Aramid (new) | ring diamine -amide- ring diacid | hydrolyse (slow) | polymerise; armour, fire suits |
+| Nylon (new) | [long chain] diacid -amide- diamine | hydrolyse | polymerise; cloth, rope |
+| Rubber (new) | [long chain] cross-linked by thiol | crack to chains + sulfur | polymerise chain with sulfur; gloves, seals |
+| Silicone | linked [siloxane] | hot lye to silanol | polymerise silanol; lube, seals, burn gel |
+| Cloth | cellulose | hydrolyse to glucose | spin cellulose pulp |
+| Paper, cardboard | cellulose + filler | hydrolyse to glucose | press wood pulp |
+| Guncotton (new) | cellulose with nitro | — | nitrate cloth or paper; propellant, flash paper |
+| Wood | cellulose + lignin | pulp; oxidise lignin to wood aldehyde; crack for tar, methanol, charcoal | grown |
+| Leather | collagen + tannin | hydrolyse to amino acids | tan hide with tannin (existing tanning) |
+| Fur, hair | keratin | hydrolyse to amino acids + thiol | grown |
+| Wax | [long chain] ester | hydrolyse to fatty acid + alcohol | condense fatty acid + alcohol |
+| Soap | [long chain] + sodium | acid gives fatty acid back | hydrolyse fat with lye |
+| Glass | silica + soda ash + lime | hot lye to silicate | melt the three |
+| Borosilicate glass (exists) | glass + boron | hot lye to silicate | existing sheet; it is the acid-proof vessel liner |
+| Concrete | calcium silicate hydrate | acid gives calcium salt + silica | lime + silicate + water |
+| Carbon fibre (new) | carbon | — | crack aramid or nylon fibre under nitrogen |
+| Steel | iron + carbon | acid dissolves iron | reduce iron ore with carbon, blow out excess |
+| Plasteel, durasteel | steel + platinum | mixed acid recovers platinum | alloy |
+
+## 10. Ores and metal refining
+
+| Metal | Ore is | Route | Slag / trace risk |
+|---|---|---|---|
+| Iron | iron oxide | reduce with carbon, lime flux | sulfur, phosphorus |
+| Aluminum | bauxite (oxide) | dissolve in lye, settle, electrolyse | iron, silica |
+| Titanium | rutile | halogenate, displace with sodium | chloride |
+| Copper | copper sulfide | roast (oxidise), reduce; or leach with sulphuric acid and displace with scrap iron | sulfur, arsenic-type heavy metals |
+| Lead | lead sulfide | roast, reduce | sulfur, silver |
+| Tin | tin oxide | reduce with carbon | iron |
+| Silver | native or in lead ore | dissolve in nitric acid, displace with copper | copper |
+| Gold | native | dissolve in mixed acid, displace | copper, silver |
+| Platinum, osmium | native | mixed acid, precipitate with ammonia salt | iron |
+| Uranium | uranium oxide | leach with acid, displace | radium |
+| Silicon | sand, quartz | reduce with carbon; halogenate and boil for pure | carbon, iron |
+| Coal | carbon + tar | crack for tar (phenol, pyridine base), leaves coke | sulfur |
+| Phoron | crystal | grind; lattice core | — |
+
+## 11. Items that feed in
+
+Default rule: any item grinds into the feedstock of what it is made of (items already list their materials for the lathe and recycler). The rows below are the bespoke ones worth writing by hand.
+
+| Item | Gives | Carries |
+|---|---|---|
+| Circuit boards | gold, copper, tin, glass fibre | brominated flame retardant (halide) |
+| Light tubes and bulbs | glass, tungsten | mercury |
+| Power cells | lithium, sulphuric acid | heavy metals |
+| Cable coil | copper, plastic insulation | plasticiser |
+| Insulated, latex, nitrile gloves | rubber; nitrile gives chain + cyanide group | sulfur |
+| Cigarettes, cigars | nicotine | tar |
+| Coffee, tea | pyridine base (caffeine), tannin | — |
+| Chillies | capsaicin | — |
+| Mint | menthol | — |
+| Poppy, ambrosia, mould | plant alkaloid base | alkaloid traces |
+| Mushrooms | psilocybin or amatoxin, sterol | — |
+| Meat, eggs | protein, sterol, fat | endotoxin |
+| Milk | casein protein (makes milk plastic) | — |
+| Blood | protein, iron | endotoxin |
+| Bones, teeth, shells, eggshell | calcium carbonate, phosphate, collagen | — |
+| Cooking oil, corn oil, candles, crayons | fat or wax; crayons add pigment | oily residue |
+| Flour, potatoes | starch (hydrolyses to glucose) | — |
+| Wood ash (burn wood) | potash, soda ash | — |
+| Welding fuel | long chains, rings | sulfur, heavy metals |
+| Matches, flares | phosphorus, sulfur, oxidiser salt | — |
+| Glowsticks | luminol-type dye, peroxide | — |
+| Soap, cleaner, bleach bottles | soap, ammonia, bleach | — |
+| Toner, pens, spray paint | carbon black, pigment, solvent | — |
+| Books, paper, clothing | cellulose (synthetic cloth gives nylon or polyester) | inert filler |
+| Expired pills | their cores back | degraded residue |
+
+### 11b. More items (not built from a material; each gets a hand-written row)
+
+| Item | Gives | Carries |
+|---|---|---|
+| Soap bars | soap (acid gives fatty acid back; more lye gives glycerol) | perfume oils |
+| Candles | wax, cotton wick (cellulose) | oily residue |
+| Crayons, markers, pens | wax or solvent + pigment metal salt | heavy metals from pigment |
+| Toothpaste, mouthwash | fluoride salt, menthol, glycerol | — |
+| Shampoo, hair dye | surfactant (long chain acid), ammonia, peroxide | — |
+| Lipstick, makeup | wax, pigment | heavy metals |
+| Bandages, gauze, cotton swabs | cellulose | — |
+| Ointment, bruise packs, pills, autoinjectors | their medicine + wax or filler base | inert filler |
+| Broken syringes, beakers, bottles | plastic or glass | whatever they held |
+| Cigarette butts, ashtray contents | tar, nicotine, ash (potash) | heavy metals |
+| Lighters, lighter fluid | short chain fuel | — |
+| Fire extinguisher | firefoam or carbon dioxide | — |
+| Glowsticks, flares, matches | dye + peroxide; oxidiser salt; phosphorus + sulfur | — |
+| Batteries, flashlights | lithium, acid, tungsten bulb | heavy metals |
+| Toner, printer paper, photos | carbon black + plastic; silver salts in photos | — |
+| Spray paint, paint cans | pigment, solvent | organic residue |
+| Balloons, rubber ducks, toys | rubber or plastic | plasticiser |
+| Snacks, candy, gum | sugar, fat, starch; gum is rubber | flavour esters |
+| Eggs, cheese, milk, butter | protein, sterol, fat, casein | endotoxin if spoiled |
+| Bread, flour, rice, potatoes | starch | mould toxin if old |
+| Fruit, vegetables | sugars, fruit acid (short chain + carboxyl x3) | pesticide trace |
+| Spices, salt, pepper, vinegar, hot sauce | salt, capsaicin, acetic acid | — |
+| Drinks | ethanol, sugar, caffeine, by drink | — |
+| Tea bags, coffee grounds | tannin, pyridine base | — |
+| Flowers, perfume | scent esters (ring -ester- short chain) | — |
+| Feathers, wool, silk, webbing | keratin or silk protein (amino) | — |
+| Bone, horn, shell, coral | calcium phosphate or carbonate, collagen | — |
+| Organs, brains, limbs | protein, sterol, phosphate fats; adrenal gland gives adrenaline | endotoxin |
+| Scooped vomit, gibs, blood | protein, stomach acid | endotoxin |
+| Soil, sand, ash, snow, ice | silica, minerals, potash, water | salts |
+| Ore slag, rust, scrap | metal oxides | heavy metals |
+| Cleaning grenades, pest spray, weed killer | cleaner, toxin, plant-b-gone | — |
+
+### 11c. Branded containers become generic container + contents
+
+A cleaner spray bottle, plant-b-gone sprayer, pepper spray, lube bottle, sterilizine sprayer, hair dye bottle, glue tube, extinguisher and similar become a few generic container types (spray bottle, squeeze bottle, tube, pressurised can) with a starting fill and a label. Any of them can be emptied, refilled with something else and relabelled. Stage 4 must first check which of these are already ordinary reagent containers.
+
+## 12. Exotic blends: real routes (tier 4; replaces the "condense the listed ingredients" row in section 8)
+
+Exotic cores: [life] (liquid life), [fire] (dragon blood), [slime] (slime jelly), [sap] (the three saps), [venom] = amino chain from carp, spider or deathclaw.
+
+| Chemical | Structure | Route | Gives off / leaves |
+|---|---|---|---|
+| Neon liquid fire | [fire] + thiol | substitute sulfide onto halogenated liquid fire, phoron cat. | hydrochloric acid, sulfur compounds |
+| Blood sealer | [fire] + thiol -ester- [sugar ring] | condense neon liquid fire with glucose, then reduce | water; burns if warm |
+| Soul dew | [nitrogen ring] + halide, amine, thiol | substitute sulfide onto alkysine (keeps the amine) | hydrochloric acid, sulfur compounds |
+| Liquid healer | [life] -amide- bicaridine, + [venom] fragment | hydrolyse carpotoxin part way (enzyme), condense fragment and bicaridine onto liquid life | carpotoxin fragments (nerve toxin), endotoxin |
+| Performance peaker | [life] -amide- hyperzine | condense, dried | water; unreacted hyperzine |
+| Phoenix breath | [phoron lattice] + hydroxyl x2 -ester- bicaridine, charged | condense cryoxadone with bicaridine, then oxidise with 200 V present | peroxide |
+| Juggernog | [fire] + iron centre -amide- tricordrazine | displace iron onto neon liquid fire, condense with tricordrazine | acid residue, radium trace if radium salt used |
+| Claridyl | [short chain] + lithium centre, hydroxyl x3 | displace lithium onto glycerol, phoron cat. | base residue |
+| Sense enhancer | [life] -amide- mindbreaker | condense | water; unreacted mindbreaker |
+| Heat nullifier | leporazine -amide- [venom] | hydrolyse spidertoxin, condense fragment with leporazine | toxin fragments |
+| Oceanic cure | dylovene -amide- [venom] (carp) | hydrolyse carpotoxin fully, condense with dylovene | carpotoxin |
+| Deathclaw mutagen | arithrazine -amide- [venom] (deathclaw) + halide | hydrolyse irradiating blood, condense, halogenate | radium trace, blistering fragments |
+| Energy booster | hyperzine + phosphate, charged | phosphorylate hyperzine with 200 V present | water, peroxide |
+| Berserk medicine | [amino] chain -amide- hyperzine x2 | condense biomass peptide with hyperzine, phoron cat. | endotoxin |
+| Sizeoxadone | tramadol + sodium centre | displace with lye, phoron cat. | water |
+| Macrocillin / Microcillin / Normalcillin | sizeoxadone + amine / + halide / -ester- leporazine | substitute diethylamine / halogenate / condense | hydrochloric acid / water |
+| Advanced mutation toxin | [slime] + halide, amine | halogenate mutation toxin in slime jelly, phoron cat. | reactive impurity |
+| Nutriment from sap | [sap] sugars | hydrolyse the three saps together, enzyme | — |
+| Cryoslurry, ickypak, sorbitol blends | mixtures | unchanged mixing | — |
+
+## 13. Tier 4 rules (user, 2026-11-15; overrides section 0a and 12 where they differ)
+
+- Peridaxon and the size drugs (sizeoxadone, macrocillin, microcillin, normalcillin) are tier 3, with no exotic input.
+- Every other tier 4 chemical needs at least one exotic core that cannot be made on the station; yields are small; there is no dirty shortcut; a failed step wastes the core.
+- Gates: dragon blood (juggernog, blood sealer); deathclaw blood (deathclaw mutagen); liquid life (liquid healer, performance peaker, sense enhancer, soul dew); carp and spider toxin (oceanic cure, heat nullifier, zombie and lich powder, necroxadone); slime (advanced mutation toxin, brute juice); 200 V (phoenix breath, energy booster); expedition rare feedstock (claridyl, malish-qualem, mortiferin).
+- Soul Dew: route becomes liquid life -amide- alkysine with a thiol; it is the only thing that repairs a brain at full (100) damage. No other neural repair works on a brain-dead brain.
+
+## 14. Tier 4 as trees per exotic core (user approved 2026-11-15; replaces section 12 for these chemicals)
+
+A process can never change one exotic core into another. Each core has a tree: every arrow is one process step and is reversible by the opposite process where one exists (oxidise/reduce, condense/hydrolyse), at a small loss of core. Small yields, no dirty shortcuts. Plants are unchanged as a source.
+
+**[fire] dragon blood**
+- Liquid fire = [fire] + hydroxyl (source)
+- halogenate, then substitute sulfide -> Neon liquid fire = [fire] + thiol
+- Neon liquid fire, oxidise -> Blood Sealer = [fire] + thiol, carbonyl
+- Neon liquid fire, displace iron -> Juggernog = [fire] + thiol, iron centre
+- Blood Sealer, displace iron -> Juggernog variant is not allowed (no chemical with that structure: gives residue)
+
+**[death] deathclaw blood**
+- Irradiating blood = [death] + hydroxyl (source; carries radium trace)
+- halogenate -> Deathclaw Mutagen = [death] + halide
+- Deathclaw Mutagen, substitute ammonia -> Heat Nullifier = [death] + amine   (moved here from the venom family so this core has a tree)
+
+**[life] liquid life**
+- Liquid life = [life] + hydroxyl (source)
+- oxidise -> Performance Peaker = [life] + carbonyl
+- Performance Peaker, substitute ammonia with reducer -> Sense Enhancer = [life] + amine
+- Sense Enhancer, condense with alkysine acid form, then substitute sulfide -> Soul Dew = [life] + amine, thiol -amide- alkysine. Only repair for a brain at full damage.
+- Liquid life, condense with bicaridine -> Liquid Healer = [life] -ester- bicaridine
+
+**[venom] carp and spider toxin (amino chains)**
+- Carpotoxin / Spidertoxin (source)
+- hydrolyse part way (enzyme) -> Oceanic Cure = [venom] fragment + carboxyl
+- Carpotoxin, condense with soporific, displace copper -> Zombie Powder
+- Zombie Powder, condense with leporazine -> Lich Powder
+- Lich Powder, substitute sulfide in clonexadone -> Necroxadone
+
+**[slime] slime jelly and extracts**
+- Slime jelly = [slime] + hydroxyl (source); Mutation toxin = [slime] + amine (source)
+- Mutation toxin, halogenate -> Advanced Mutation Toxin = [slime] + amine, halide
+- Slime jelly, nitrate -> Brute juice = [slime] + nitro
+- Brute juice, reduce -> Mutation toxin (lets a chemist cross the tree)
+
+**[volt] 200 V**
+- 200 V = [volt] + metal centre (source)
+- phosphorylate -> Energy Booster = [volt] + phosphate
+- 200 V, condense with cryoxadone, oxidise -> Phoenix Breath = [volt] -ester- cryoxadone + carbonyl
+
+**Expedition rare feedstocks (one core each, found not grown)**
+- Claridyl, Malish-Qualem, Mortiferin: each is a rare-feedstock core plus one or two groups, reached from the raw find by two process steps; Malish-Qualem and Mortiferin share a core and convert into each other by oxidise/reduce.
+
+## 14. As built (stage 3, lane L3)
+
+Where the build differs from the draft above. The engine is `code/domains/world_model/reagents/blocks/`, the declarations `code/content/reagents/blocks/` (`structures.dm`, `processes.dm`, `agents.dm`, `clashes.dm`, `tiers.dm`), the pinned routes `snapshots/xform/chem_routes.txt`, and every row below is checked by `dq_chem_families_*` (`code/tests/unit_tests/dq_chem_families_tests.dm`).
+
+**One rule shaped the ladders.** A route can only pass through a chemical that exists, so a chain of single-group steps needs a reagent at every rung. Where the draft's chain had a hidden rung, the structure was changed so the rungs are medicines, or one intermediate was added (chlorohydrin, nitrosalicylic acid, chlorophoron, alkaloid acid, pyridone, halogenated spaceacillin). Structures of invented medicines are invented anyway.
+
+### Vocabulary added
+- A tenth group, the nitrile (`cyanide`), for the cyanide arm of substitution (citalopram) and the glues.
+- A metal centre carries its metal as the structure's `cation` (iron, sodium, calcium, potassium, lithium, copper), so dexalin plus, clonexadone, the four daxons and bullvalene are told apart.
+- Ions: hypochlorite, phosphate, cyanide, hydride, lithium, iron, copper. Carbonates are bases. Elements (sodium, potassium, calcium, lithium, iron, copper) are declared so displacement can move them.
+- Process variants carry their own catalyst kinds, blockers, band and fallout. Substitute also turns a carbonyl, ammonia and hydrogen into an amine (ranked before reduction), and swaps a halide for a nitrile (leaving cyanide). Oxidise hangs a hydroxyl on a bare phoron lattice, gently, and (enzyme) on a ring or a steroid or (enzyme or metal sheet) a double ring, takes a bare pyridine to an acid or (enzyme) a hydroxyl, and takes ethanol to acetic acid (enzyme). Reduce takes a hydroxyl off (not from a lattice). Halogenate swaps a hydroxyl on a polyol, hangs a halide on anything else; fluorine is a second arm.
+- Condense: an ester needs a dissolved or solid acid; an amide runs warm (40 to 150 C) with no sulphuric acid in the mixture (the acid ties the amine up and the same two make the ester).
+- Displace: an acid dissolves a metal into its salt (iron salt, copper salt, lithium salt, calcium chloride), two salts swap their ions (prussian blue from iron salt and cyanide), a metal binds to a medicine out of a salt or a base.
+- Neutralise: sand is an acid that wants hot lye (silicate, from sand or, later, glass).
+- Displace moves a metal only to a less reactive one (potassium, sodium, lithium, calcium, iron, copper), and two salts swap their ions in one direction only, so no displacement is its own reverse.
+- Neutralise: a finished amine does not spend the acid its own making frees (hydrochloric acid stays until lye or ammonia takes it); only an ionic base, or a building-block amine (diethylamine), does. An acid group and an amine meeting is the clash, not the neutralisation.
+- Condense writes only the joins that make a chemical (no route to residue for every acid and alcohol pair: that was thousands of rows).
+- Polymerise: two silanols make lube, hot (85 to 110 C). The workshop polymers stay with the materials lane.
+- Electrolyse: a `/obj/item/chem_electrode` clipped on the container, on a plate that is on (the conductive sheet stand-in is gone).
+- Byproducts: the hydrogen chloride of a halogenation is real hydrochloric acid (the contaminant of the same name is kept for sources). Polytrinic acid is a mixture of sulphuric, nitric and hydrochloric acid and has no structure; nitric acid is what a nitration takes.
+
+### Tier 1 changes against the draft
+| Chemical | Draft | Built |
+|---|---|---|
+| Inaprovaline | wood aldehyde + ammonia + hydrogen, metal catalyst | the same, but the metal sheet is only the cleaner kind: warm, uncatalysed, 80 percent selective also works (tier 1 allows no solid catalyst). Shortcut: the hydride. |
+| Bicaridine | nitrate salicylic acid, reduce | the same, with nitrosalicylic acid as the rung. Shortcut: one pot, nitrating mix and hydride (`shortcut_bicaridine`). |
+| Dylovene | halogenate glycerol twice, substitute sulfide | one halogenation and one substitution: chlorohydrin, then a thiol. Dylovene is a glycerol with one thiol (two hydroxyls kept). Shortcut: one pot with the chlorinating agent. |
+| Dexalin | oxidise phoron gently | the same; shortcut phoron and bleach. |
+| Paracetamol | nitrate phenol, reduce, condense | condense acetic acid with inaprovaline (an amide, warm, no acid). Shortcut: one pot, hot, `shortcut_paracetamol`. |
+| Sterilizine | halogenate phenol | the same; shortcut phenol and bleach (dioxin when warm). |
+| Kelotane | silanol from sand in lye | sand and hot lye make silicate, an acid makes kelotane (silanol is kelotane: the bottle is silicate). Shortcut: silicon and lye, un-neutralised. |
+| Lube | polymerise silanol | the same. |
+| Glycol (coolant) | hydrolyse plastic | glycerol and hydrogen (a hydroxyl off). |
+| Salt, potassium chloride, dry agent | neutralise and boil | neutralise lye (or soda ash) with hydrochloric acid; potassium displaces sodium in salt; calcium carbonate and hydrochloric acid; no boiling. |
+| Fertilizer | neutralise ammonia and phosphoric acid | the same; the distilling recipe is gone. |
+| Acetic acid | oxidise ethanol (enzyme) | the same; a strong oxidiser does it dirty. |
+
+Kept as recipes (no route can make them): water, ammonia, lye, sulphuric acid (dispenser), calcium carbonate, glycerol (fat is a food mixture, stage 4), diethylamine (a solid acid catalyst and a substitution of a hydroxyl: not a process), cyanide (its distilling recipe), foaming agent, space cleaner, iron saline, thermite, the nutrients. Staples with no shortcut because they are one mixing step already: the acids, lye, ammonia, salt, glycerol, fertilizer, coolant, lube, foaming agent. Hydrochloric, nitric, phosphoric acid, bleach and soda ash are mixed from the dispenser (`reactions/instant/chemistry.dm`).
+
+### Tier 2 and 3 ladders (all verified by `dq_chem_families_clean_routes_exist`)
+Ring family: inaprovaline, then adrenaline (enzyme), paracetamol, tramadol (oxidise paracetamol), luminol (oxidise inaprovaline), hyperzine (hydroxyl off inaprovaline; shortcut the Stimm route), spaceacillin (amino acid and inaprovaline), condensed capsaicin (fatty acid and inaprovaline), leporazine (acetic and salicylic acid, an ester), plant-b-gone (acetic acid and sterilizine), myelamine (hydroxyl off bicaridine). Chelators: hyronalin (chlorohydrin and ammonia), arithrazine (phosphorylate hyronalin), carthatoline (strong oxidiser on dylovene), tricordrazine (carthatoline and inaprovaline, an amide), chloral hydrate (ethanol and chlorine), soporific (acetic acid and chloral hydrate), mutagen (diethylamine and chlorine; the approved route), ethylredoxrazine (oxidise pyridine), fluorosurfactant (fatty acid and fluorine), nitroglycerin (nitrate glycerol; it still goes off when made). Lattice: dexalin plus, cryoxadone, clonexadone, lexorin and potassium chlorophoride (via chlorophoron), peridaxon (bicaridine and clonexadone, an ester). Size drugs: sizeoxadone is tramadol with sodium (out of lye); macrocillin, microcillin and normalcillin are three more steps on it (ammonia and hydrogen, hydrogen, chlorine). Steroids: sterol, gynorovir, androrovir, androgynorovir, immunosuprizine (enzyme and oxidiser), amorphorovir (hydroxyl off), lipozilase (strong oxidiser), lipostipo (halogenate). Organ drugs: amino acid with a metal centre (calcium, potassium, lithium, sodium) for the four daxons (gastirodaxon has sodium, not a thiol), respirodaxon (amino acid and dexalin plus, an ester). Brain: pyridine, adranol, pyridone, synaptizine, alkysine, imidazoline, ethylredoxrazine, corophizine, methylphenidate; plant alkaloid, bliss, cryptobiolin, oxycodone, psilocybin, mindbreaker (alkaloid acid and diethylamine), paroxetine, citalopram (the cyanide arm), tercozolam, impedrezene.
+
+### Not converted in this lane (tier 1 to 3, left as recipes)
+Anticonvulsant, rezadone, numbing enzyme (all need protein, a template or a nucleotide), qerr-quem, talum-quem, benzilate, phenethylamine (feedstock), menthol, tannin, plasticide, glue (feedstock or no process), prussian blue is converted. Tier 4 (every other exotic blend, soul dew included) is untouched and keeps its old recipes, which name the converted chemicals by id.
+
+### Open points
+- Stocked bottles are filled clean: the rolled traces per round belong to stage 4.
+- Tier 4 recipes keep their old recipes and mix medicines that now clash (liquid healer: bicaridine with cryptobiolin; phoenix breath: bicaridine with mindbreaker; the souldew, oceanic cure and berserk families). Those pairs salt out in the beaker before the recipe runs, and the distilling ones never get to their window. Amino-acid chemicals (the daxons) are exempt as their own salt. This wants the tier 4 routes (or a list of intended mixtures) before the exotic blends are playable again.
+- Peridaxon's second recipe (the four daxons, `peridaxon_ch`) is kept beside the route (bicaridine and clonexadone).
+- `nitroglycerin` goes off when its route makes it (an explosion row on the generated rule, `chem_route_effects()`); the route runs at the nitration band, not cold.
+- Fluorine and chlorine hang the same halide group; the structure does not tell them apart.
+- A nitro compound and a reducer run hot (a clash that makes reactive impurity) does not ignite.
+- The step count of a staple counts a mixed acid or ammonia as stock; the check is `dq_chem_families_staples_are_one_or_two_steps`.

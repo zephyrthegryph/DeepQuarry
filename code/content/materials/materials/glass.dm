@@ -4,13 +4,11 @@
 	flags = MATERIAL_BRITTLE
 	icon_colour = "#00E1FF"
 	opacity = 0.3
-	integrity = 100
+	toughness = 50
 	shard_type = SHARD_SHARD
 	tableslam_noise = 'sound/effects/Glasshit.ogg'
-	hardness = 30
-	density = 15
-	protectiveness = 0 // 0%
-	conductive = 0
+	strength = 30
+	weight = 15
 	conductivity = 1 // Glass shards don't conduct.
 	corrosion_resistance = 100
 	door_icon_base = "stone"
@@ -105,7 +103,7 @@
 	window_build_stage(A.request.answerer, A.request.subject, TRUE, A.answer.value)
 
 /datum/material/glass/proc/is_reinforced()
-	return (hardness > 35) //todo
+	return (strength > 35) //todo
 
 /datum/material/glass/reinforced
 	name = MAT_RGLASS
@@ -114,11 +112,11 @@
 	flags = MATERIAL_BRITTLE
 	icon_colour = "#00E1FF"
 	opacity = 0.3
-	integrity = 100
+	toughness = 50
 	shard_type = SHARD_SHARD
 	tableslam_noise = 'sound/effects/Glasshit.ogg'
-	hardness = 40
-	density = 30
+	strength = 40
+	weight = 30
 	composite_material = list(MAT_STEEL = SHEET_MATERIAL_AMOUNT / 2, MAT_GLASS = SHEET_MATERIAL_AMOUNT)
 	window_options = list("One Direction" = 1, "Full Window" = 4, "Windoor" = 2)
 	created_window = /obj/structure/window/reinforced
@@ -132,7 +130,7 @@
 	display_name = MAT_PGLASS
 	stack_type = /obj/item/stack/material/glass/phoronglass
 	flags = MATERIAL_BRITTLE
-	integrity = 100
+	toughness = 50
 	icon_colour = "#FC2BC5"
 	window_options = list("One Direction" = 1, "Full Window" = 4)
 	created_window = /obj/structure/window/phoronbasic
@@ -148,8 +146,8 @@
 	window_options = list("One Direction" = 1, "Full Window" = 4)
 	created_window = /obj/structure/window/phoronreinforced
 	created_fulltile_window = /obj/structure/window/phoronreinforced/full
-	hardness = 40
-	density = 30
+	strength = 40
+	weight = 30
 	composite_material = list(MAT_STEEL = SHEET_MATERIAL_AMOUNT / 2, MAT_PGLASS = SHEET_MATERIAL_AMOUNT)
 	rod_product = null
 	flags = MATERIAL_UNMELTABLE
@@ -160,9 +158,9 @@
 	name = MAT_TITANIUMGLASS
 	display_name = "titanium glass"
 	stack_type = /obj/item/stack/material/glass/titanium
-	integrity = 150
-	hardness = 50
-	density = 50
+	toughness = 75
+	strength = 50
+	weight = 50
 	flags = MATERIAL_BRITTLE
 	icon_colour = "#A7A3A6"
 	window_options = list("One Direction" = 1, "Full Window" = 4)
@@ -176,9 +174,9 @@
 	name = MAT_PLASTITANIUMGLASS
 	display_name = "plas-titanium glass"
 	stack_type = /obj/item/stack/material/glass/plastitanium
-	integrity = 200
-	hardness = 60
-	density = 80
+	toughness = 100
+	strength = 60
+	weight = 80
 	flags = MATERIAL_BRITTLE
 	icon_colour = "#676366"
 	window_options = list("One Direction" = 1, "Full Window" = 4)

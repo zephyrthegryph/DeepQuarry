@@ -381,3 +381,6 @@ CAPABILITIES(/obj/item/material/twohanded/staff)
 
 /obj/item/material/twohanded/sledgehammer/get_mechanics_info(list/additional_information)
 	return ..(list("This weapon can cleave, striking nearby lesser, hostile enemies close to the primary target. It must be held in both hands to do this.") + additional_information)
+
+// The force a wielded two-hander swings with: a number from its material (edge or blunt damage) and its divisor.
+SCHEMA(/obj/item/material/twohanded, force_wielded, num())

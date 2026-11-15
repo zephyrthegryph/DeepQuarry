@@ -29,7 +29,7 @@ CAPABILITIES(/obj/structure/barricade)
 	name = "[material.display_name] barricade"
 	desc = "This space is blocked off by a barricade made of [material.display_name]."
 	set_color(material.icon_colour)
-	set_max_integrity(material.integrity)
+	set_max_integrity(material.toughness * MATERIAL_HP_PER_TOUGHNESS)
 	update_integrity(max_integrity)
 
 /obj/structure/barricade/get_material()
@@ -127,7 +127,7 @@ CAPABILITIES(/obj/structure/barricade/sandbag)
 		return
 	name = "[material.display_name] [initial(name)]"
 	set_color(null)
-	set_max_integrity(material.integrity * 2)	// These things are, commonly, used to stop bullets where possible.
+	set_max_integrity(material.toughness * MATERIAL_HP_PER_TOUGHNESS * 2)	// These things are, commonly, used to stop bullets where possible.
 	update_integrity(max_integrity)
 	update_connections(1)
 
@@ -177,5 +177,5 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 			var/obj/item/projectile/P = mover
 
 			if(P.firer && get_dist(P.firer, src) > 1)	// If you're firing from adjacent turfs, you are unobstructed.
-				if(combat_of(P).armor_penetration < (material.protectiveness + material.hardness) || prob(33))
+				if(combat_of(P).armor_penetration < (material.protectiveness() + material.strength) || prob(33))
 					return FALSE

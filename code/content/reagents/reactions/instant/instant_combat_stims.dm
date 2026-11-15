@@ -1,12 +1,5 @@
 // Combat stimulant recipes: the reagents live in code/content/reagents/reagents/content/combat_stims/.
 
-/transformation/chem/instant/hyperzine
-
-CAPABILITIES(/transformation/chem/instant/hyperzine)
-	configure(transformation(name = REAGENT_HYPERZINE, id = REAGENT_ID_HYPERZINE,
-		takes = list(reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_PHOSPHORUS, 1), reagent(REAGENT_ID_SULFUR, 1)),
-		makes = list(reagent(REAGENT_ID_HYPERZINE, 3))))
-
 /transformation/chem/instant/claridyl
 
 CAPABILITIES(/transformation/chem/instant/claridyl)

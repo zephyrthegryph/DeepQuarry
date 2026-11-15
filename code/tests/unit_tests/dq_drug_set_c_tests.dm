@@ -150,10 +150,6 @@
 				makes_it = TRUE
 		TEST_ASSERT(makes_it, "the recipe makes [reagent_id]")
 		TEST_ASSERT(length(X.reagent_takes) >= 2, "[reagent_id] needs ingredients")
-	var/datum/xform/tram = xform_of(/transformation/chem/instant/tramadol)
-	TEST_ASSERT_EQUAL(tram.needs_grade, GRADE_PHARMA, "tramadol needs a pharma-grade mixture")
-	var/datum/xform/oxy = xform_of(/transformation/chem/instant/oxycodone)
-	TEST_ASSERT_EQUAL(oxy.needs_grade, GRADE_PHARMA, "oxycodone needs a pharma-grade mixture")
 
 
 // --- Runtime ------------------------------------------------------------------------------------------------

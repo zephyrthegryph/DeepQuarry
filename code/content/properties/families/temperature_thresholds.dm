@@ -16,9 +16,9 @@
 	unit = PROP_UNIT_KELVIN
 
 /datum/property_provider/material/melting_point/fold(datum/material/M, amount, acc)
-	if(isnull(M.melting_point))
+	if(isnull(M.melting_point()))
 		return acc
-	return isnull(acc) ? M.melting_point : min(acc, M.melting_point)
+	return isnull(acc) ? M.melting_point() : min(acc, M.melting_point())
 
 /datum/property_def/ignition_point
 	id = PROP_IGNITION_POINT

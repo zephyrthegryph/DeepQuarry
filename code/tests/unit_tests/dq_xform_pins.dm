@@ -382,8 +382,8 @@
 /datum/unit_test/dq_xform_debug_path
 
 /datum/unit_test/dq_xform_debug_path/Run()
-	var/datum/xform/K = xform_of(/transformation/chem/instant/kelotane)
-	TEST_ASSERT(K, "kelotane is a compiled rule")
+	var/datum/xform/K = xform_of(/transformation/chem/instant/nitratingmix)
+	TEST_ASSERT(K, "the nitrating mix is a compiled rule")
 	TEST_ASSERT(K.important, "a rule marked important keeps the mark")
 	var/before = length(GLOB.chemical_reaction_logs)
 	log_chemical_reaction(test_floor(), K, 1)
@@ -391,7 +391,7 @@
 	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker, test_floor())
 	B.reagents.set_maximum_volume(1000)
 	var/emitted = dq_xform_contract_emissions()
-	B.reagents.add_reagent(REAGENT_ID_SILICON, 5)
-	B.reagents.add_reagent(REAGENT_ID_CARBON, 5)
-	TEST_ASSERT(B.reagents.has_reagent(REAGENT_ID_KELOTANE), "the rule fired")
+	B.reagents.add_reagent(REAGENT_ID_NITRICACID, 5)
+	B.reagents.add_reagent(REAGENT_ID_SACID, 5)
+	TEST_ASSERT(B.reagents.has_reagent(REAGENT_ID_NITRATINGMIX), "the rule fired")
 	TEST_ASSERT(dq_xform_contract_emissions() > emitted, "its product emitted a contract event")
