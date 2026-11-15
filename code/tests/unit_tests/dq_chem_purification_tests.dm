@@ -70,6 +70,7 @@
 
 /datum/unit_test/dq_pur_hot_plate_heats_toward_target/Run()
 	var/obj/machinery/chem_hot_plate/P = allocate(/obj/machinery/chem_hot_plate, test_floor())
+	P.set_anchored(TRUE) // a machine works only while it is bolted down
 	P.set_powered(TRUE)
 	var/obj/item/reagent_containers/glass/beaker/B = dq_pur_beaker()
 	B.reagents.add_reagent(REAGENT_ID_WATER, 40, safety = 1)
@@ -310,6 +311,7 @@
 
 /datum/unit_test/dq_pur_hot_plate_boils_above_the_boiling_point/Run()
 	var/obj/machinery/chem_hot_plate/P = allocate(/obj/machinery/chem_hot_plate, test_floor())
+	P.set_anchored(TRUE) // a machine works only while it is bolted down
 	P.set_powered(TRUE)
 	var/obj/item/reagent_containers/glass/beaker/B = dq_pur_beaker()
 	B.reagents.add_reagent(REAGENT_ID_WATER, 40, safety = 1)
@@ -331,8 +333,10 @@
 
 /datum/unit_test/dq_pur_condenser_collects_the_vapour/Run()
 	var/obj/machinery/chem_hot_plate/P = allocate(/obj/machinery/chem_hot_plate, test_floor())
+	P.set_anchored(TRUE) // a machine works only while it is bolted down
 	P.set_powered(TRUE)
 	var/obj/machinery/chem_condenser/C = allocate(/obj/machinery/chem_condenser, test_floor())
+	C.set_anchored(TRUE) // a machine works only while it is bolted down
 	C.set_powered(TRUE)
 	var/obj/item/reagent_containers/glass/beaker/flask = dq_pur_beaker()
 	flask.reagents.add_reagent(REAGENT_ID_WATER, 40, safety = 1)
@@ -357,6 +361,7 @@
 
 /datum/unit_test/dq_pur_condenser_needs_power_and_a_container/Run()
 	var/obj/machinery/chem_condenser/C = allocate(/obj/machinery/chem_condenser, test_floor())
+	C.set_anchored(TRUE) // a machine works only while it is bolted down
 	var/list/vapour = list(REAGENT_ID_WATER = list(5, null))
 	C.set_powered(TRUE)
 	TEST_ASSERT(!C.collect(vapour), "with no container there is nothing to collect into")

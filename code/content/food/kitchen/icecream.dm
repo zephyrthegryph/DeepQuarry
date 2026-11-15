@@ -50,6 +50,7 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		add_product_types(5)
 
 CAPABILITIES(/obj/machinery/icecream_vat)
+	tabletop()
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	setup(PROC_REF(prepare_product_selections))
@@ -60,7 +61,7 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
 	op("make_type", ui_act("make_type", arg("amount", num()), arg("index", num())), then(PROC_REF(ui_act_make_type)))
 	op("clear_reagent", ui_act("clear_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_clear_reagent)))
-	op("icecream_vat_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(icecream_vat_interaction_item)))
+	op("icecream_vat_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bolted()), then(PROC_REF(icecream_vat_interaction_item)))
 
 /obj/machinery/icecream_vat/proc/build_icecream_data(list/ice_types)
 	var/ice_data = list()

@@ -8,6 +8,7 @@
 	circuit = VARIANT(/obj/item/circuitboard/scale)
 
 CAPABILITIES(/obj/machinery/scale)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	configure(uses_power(idle = 0, active = 0))

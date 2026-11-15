@@ -94,6 +94,7 @@ MSG_DEF_SELF(radiocarbon_spectrometer/no_item, "insert an item to scan")
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	configure(uses_power(idle = 20, active = 300))

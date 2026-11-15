@@ -17,6 +17,7 @@
 	var/obj/item/reagent_containers/glass/held_container
 
 CAPABILITIES(/obj/machinery/chem_condenser)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(idle = 10))

@@ -26,12 +26,13 @@
 
 
 CAPABILITIES(/obj/machinery/processor)
+	tabletop()
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
-	every(1 SECOND, then(PROC_REF(processing_step)), when = nameof(processing))
-	op("start", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), needs(req_is(nameof(processing), FALSE, because = MSG(processor/processing))), then(PROC_REF(interaction_start)))
-	op("eject", menu(), label("Eject Processor"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
-	op("insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
+	every(1 SECOND, then(PROC_REF(processing_step)), when = all_of(nameof(processing), nameof(anchored)))
+	op("start", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), needs(req_bolted(), req_is(nameof(processing), FALSE, because = MSG(processor/processing))), then(PROC_REF(interaction_start)))
+	op("eject", menu(), label("Eject Processor"), needs(req_bolted(), req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
+	op("insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_bolted()), then(PROC_REF(interaction_insert)))
 	ref_many(nameof(to_be_processed))
 
 MSG_DEF_SELF(processor/processing, "the processor is in the process of processing")

@@ -52,6 +52,7 @@
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
 
 CAPABILITIES(/obj/machinery/gear_painter)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	configure(machine_usage(wrench_time = 40))

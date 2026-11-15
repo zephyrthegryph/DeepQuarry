@@ -28,6 +28,7 @@
 	var/static/radial_remove = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject_input")
 
 CAPABILITIES(/obj/machinery/chem_hot_plate)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(idle = 5, active = HOT_PLATE_POWER))
