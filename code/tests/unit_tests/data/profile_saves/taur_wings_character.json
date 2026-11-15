@@ -1,0 +1,80 @@
+{
+ "species": "Human",
+ "gender": "male",
+ "id_gender": "male",
+ "skin_tone": -75,
+ "skin_color": "primary",
+ "hair_style_name": "Beehive",
+ "facial_style_name": "Very Long Beard",
+ "hair_color": "extra1",
+ "facial_color": "extra1",
+ "eyes_color": "tertiary",
+ "ear_style": "",
+ "ear_secondary_style": "",
+ "ear_secondary_colors": [
+  "#c66ba0"
+ ],
+ "tail_style": "Fat Wolf 3-color (Taur)",
+ "wing_style": "Cyber dragon wing (red)",
+ "tail_color1": "primary",
+ "tail_color2": "secondary",
+ "tail_color3": "tertiary",
+ "wing_color1": "secondary",
+ "wing_color2": "extra1",
+ "wing_color3": "secondary",
+ "ears_color1": "#e23272",
+ "ears_color2": "secondary",
+ "ears_color3": "#f29f04",
+ "body_markings": [],
+ "organ_data": {
+  "l_arm": "cyborg",
+  "r_hand": "cyborg",
+  "l_leg": "cyborg",
+  "heart": "digital",
+  "lungs": "digital",
+  "liver": "digital",
+  "kidneys": "digital",
+  "spleen": "digital",
+  "stomach": "digital",
+  "intestine": "digital",
+  "voicebox": "digital",
+  "eyes": "digital",
+  "brain": "digital",
+  "r_arm": "amputated"
+ },
+ "rlimb_data": {
+  "l_arm": "Talon LLC"
+ },
+ "limb_colors": {
+  "l_arm": "#e23272",
+  "r_hand": "extra2",
+  "l_leg": "#e23272",
+  "l_hand": "primary"
+ },
+ "limb_colors_set": 1,
+ "tail_style_under_taur": "",
+ "digitigrade": 0,
+ "size_multiplier": 1.75,
+ "palette_primary": "#f29f04",
+ "palette_secondary": "#c66ba0",
+ "palette_tertiary": "#e23272",
+ "palette_extra1": "#883ee5",
+ "palette_extra2": "#a374bd",
+ "palette_linked": 1,
+ "synth_always": 1,
+ "synth_color": 0,
+ "synth_color_rgb": "tertiary",
+ "blood_color": "#a10808",
+ "b_type": "A+",
+ "real_name": "Taur Fixture",
+ "gear_list": {
+  "_default": {
+   "cut top, grey": {
+    "4": [
+     "extra1"
+    ]
+   }
+  }
+ },
+ "gear_slot": "_default"
+}

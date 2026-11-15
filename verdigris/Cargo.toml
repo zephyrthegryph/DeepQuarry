@@ -64,6 +64,19 @@ lto = false
 debug = "line-tables-only"
 incremental = true
 
+# The profile the local test server's DLL is built with (DQ_VERDIGRIS_PROFILE=server, set by tools/dq_test_server.sh; tools/build/build.ts
+# VerdigrisServerTarget): full opt-level 3 for the whole workspace so the playtest runs at production speed, but no LTO, line-table debug info,
+# 16 codegen units and incremental, so an edit relinks in a minute or two, not ~17 min. panic stays "unwind" (panic_safe needs it).
+# Production, CI, benchmarks and the GCP deploy keep `release`.
+[profile.server]
+inherits = "release"
+opt-level = 3
+lto = false
+codegen-units = 16
+incremental = true
+debug = "line-tables-only"
+split-debuginfo = "off"
+
 [profile.dev]
 debug = "full"
 opt-level = 0
