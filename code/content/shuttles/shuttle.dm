@@ -116,6 +116,7 @@ CAPABILITIES(/datum/shuttle)
 /datum/shuttle/proc/set_process_state(new_state)
 	var/wrote = FALSE
 	if(process_state != new_state)
+		log_shuttle("Shuttle [src] process state [process_state] -> [new_state] (moving [moving_status])")
 		process_state = new_state
 		tracked_changed(src, nameof(process_state))
 		wrote = TRUE

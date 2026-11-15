@@ -6,6 +6,8 @@
 	/// Relation view: who holds the launch lock (the user or console that launched it). Tells the controller whether this shuttle needs processing, also attempts to prevent double-use
 	var/tmp/datum/in_use
 	var/last_dock_attempt_time = 0
+	/// When the launch was queued (the wait for the docking port to undock is bounded by DOCK_ATTEMPT_TIMEOUT from it).
+	var/launch_queued_at = 0
 
 	var/docking_controller_tag = null // ID of the controller on the shuttle (If multiple, this is the default one)
 	var/datum/docking_port/shuttle_docking_controller // Controller on the shuttle (the one in use)
@@ -137,6 +139,11 @@ SETTER(/datum/shuttle/autodock, shuttle_docking_controller)
 			if(check_undocked())
 				//*** ready to go
 				process_launch()
+			else if(ELAPSED(src, launch_queued_at, CLOCK_WORLD) > DOCK_ATTEMPT_TIMEOUT)
+				// The docking port never finished undocking (a stuck airlock cycle): leave anyway, as the arrival wait does.
+				log_shuttle("Shuttle [src] waited over [DOCK_ATTEMPT_TIMEOUT / 10] s to undock from [current_dock_target() || "none"]; forcing the undock and launching")
+				force_undock()
+				process_launch()
 
 		if (FORCE_LAUNCH)
 			process_launch()
@@ -198,6 +205,7 @@ SETTER(/datum/shuttle/autodock, shuttle_docking_controller)
 	rel_set(src, nameof(in_use), user)	//obtain an exclusive lock on the shuttle
 
 	set_process_state(WAIT_LAUNCH)
+	STAMP(src, launch_queued_at, CLOCK_WORLD)
 	undock()
 
 // Queue shuttle for forced undock and launch by shuttle subsystem.
