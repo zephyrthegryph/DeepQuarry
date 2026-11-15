@@ -581,7 +581,7 @@ let verdigrisPendingStore: { cache: string; key: string; commit: string } | null
 // server and benchmarks; `lane` (verdigris/Cargo.toml [profile.lane]: no LTO, line-table debug info, incremental, optimised enough
 // for gas simulations in tests) is what test targets load in a lane. A sidecar records the profile so a lane DLL is never taken
 // for a production one, and the shared cache keys the profile too.
-type VerdigrisProfile = 'release' | 'lane';
+type VerdigrisProfile = 'release' | 'lane' | 'server';
 const VERDIGRIS_PROFILE_STAMP = `${VERDIGRIS_LIB}.profile`;
 /** Test targets: `lane` unless CI, enforced provenance or DQ_VERDIGRIS_PROFILE=release asks for production. */
 const verdigrisTestProfile = (): VerdigrisProfile => {
@@ -590,6 +590,10 @@ const verdigrisTestProfile = (): VerdigrisProfile => {
   if (want === 'release' || want === 'lane') return want;
   return process.env.CI ? 'release' : 'lane';
 };
+/** The local test server (tools/dq_test_server.sh sets DQ_VERDIGRIS_PROFILE=server): `server` (verdigris/Cargo.toml [profile.server]: opt-level 3,
+ * no LTO, incremental) so a Rust edit rebuilds in minutes; anything else, and any enforced-provenance or CI build, stays `release`. */
+const verdigrisServerProfile = (): VerdigrisProfile =>
+  !VERDIGRIS_PROVENANCE_ENFORCED && !process.env.CI && process.env.DQ_VERDIGRIS_PROFILE === 'server' ? 'server' : 'release';
 const verdigrisBuiltProfile = (): string | null => {
   try {
     return fs.readFileSync(VERDIGRIS_PROFILE_STAMP, 'utf-8').trim();
@@ -773,6 +777,8 @@ const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.
 /** Production, CI, the server and benchmarks: always the `release` profile. */
 export const VerdigrisTarget = makeVerdigrisTarget(() => 'release');
 /** Test targets: the `lane` profile by default (verdigrisTestProfile). */
+/** The server target: `release` unless DQ_VERDIGRIS_PROFILE=server (verdigrisServerProfile). */
+export const VerdigrisServerTarget = makeVerdigrisTarget(verdigrisServerProfile);
 export const VerdigrisLaneTarget = makeVerdigrisTarget(verdigrisTestProfile);
 
 // the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
@@ -3970,9 +3976,14 @@ function startAssetWebroot() {
   };
 }
 
+// BuildTarget with the server's verdigris profile (VerdigrisServerTarget).
+const ServerBuildTarget = new Juke.Target({
+  dependsOn: [TguiTarget, DmTarget, VerdigrisServerTarget],
+});
+
 export const ServerTarget = new Juke.Target({
   parameters: [DmVersionParameter, PortParameter],
-  dependsOn: [BuildTarget],
+  dependsOn: [ServerBuildTarget],
   executes: async ({ get }) => {
     const port = get(PortParameter) || '1337';
     const options = {
