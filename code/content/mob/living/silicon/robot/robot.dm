@@ -1103,7 +1103,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		if(I_HELP)
 			if(grabbable)
 				attempt_to_scoop(H)
-			else if(client && FALSE) // migrated pref
+			else if(client && !client.prefs.read_preference(/datum/preference/toggle/human/borg_petting)) // migrated pref
 				act_message(H, src, others = span_notice("%U% reaches out for %T%, but quickly refrains from petting."))
 			else
 				act_message(H, src, others = span_notice("%U% pets %T%."))

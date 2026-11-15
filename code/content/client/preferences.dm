@@ -411,7 +411,7 @@ CAPABILITIES(/datum/preferences)
 			continue
 		if(preference_type == /datum/preference/flavor_texts && !copy_flavour)
 			continue
-		if(preference_type == /datum/preference/name/real_name && !copy_name)
+		if((preference_type == /datum/preference/name/real_name || preference_type == /datum/preference/name/nickname) && !copy_name)
 			continue
 		if(preference_type in GLOB.vanity_ooc_pref_types)
 			if(!copy_ooc_notes)

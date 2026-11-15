@@ -57,6 +57,7 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_groups, list(
 	"preview",  // Animations toggle / preview_loadout / preview_job don't apply to chassis-sprite previews.
 	"nif",      // Cyborgs don't have NIFs (those are neural interfaces for organic brains).
 	"pai",      // Cyborgs aren't pAIs.
+	"shadekin", // Flicker settings seed the Shadekin panel of an organic body.
 	"demographics",  // Age / bday is meaningless for cyborgs.
 	"background",    // Birthplace, citizenship, religion etc. don't apply to a cyborg in chargen.
 	"records",       // Medical/security records are for organic chars.
@@ -100,6 +101,7 @@ GLOBAL_LIST_INIT(dq_pai_mode_hidden_groups, list(
 	"persistence",   // Body resleeve / mind scan — pAIs don't have bodies.
 	"nif",           // pAIs don't have neural interfaces.
 	"directory",     // Vore directory — pAIs aren't on it.
+	"shadekin",      // Flicker settings seed the Shadekin panel of a body.
 	"roleplay",      // RP flavor tied to physical bodies.
 ))
 
@@ -208,7 +210,7 @@ GLOBAL_LIST_INIT(dq_group_display_merge, list("gender" = "name", "demographics" 
 GLOBAL_LIST_INIT(dq_group_order, list(
 	"identity"    = list("name", "species", "spawn", "blood", "language", "background", "speech_verbs", "voice", "size", "flavor", "directory", "records", "ooc_notes"),
 	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "markings", "organs", "preview"),
-	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
+	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai", "shadekin"),
 ))
 
 /datum/preference_middleware/character_setup/proc/dq_build_category_structure(category_filter, include_details = TRUE)

@@ -144,10 +144,16 @@
 	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/bday_day), 29, "the day follows the shorter month")
 	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_day", list("value" = "30"), null), PREF_UPDATE_REJECTED, "February 30th is refused")
 
-/// A named hiss applies on another species; Default follows the species; tooltips come from the maps.
+/// Old levels map to Default at that level; a named hiss applies on another species; Default follows the species; tooltips come from the maps.
 /datum/unit_test/dq_autohiss_exact_types
 
 /datum/unit_test/dq_autohiss_exact_types/Run()
+	var/datum/preference/text/human/autohiss/pref = GLOB.preference_entries[/datum/preference/text/human/autohiss]
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Full", null), "Default (Full)", "old Full")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Basic", null), "Default (Basic)", "old Basic")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Off", null), "Off", "Off stays")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Tajaran r-roll", null), "Tajaran r-roll", "a chosen type stays")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("junk", null), "Default (Full)", "junk is the default")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/language/common = GLOB.all_languages[LANGUAGE_GALCOM]
 	TEST_ASSERT_EQUAL(H.autohiss_by_choice("sir", common, "Off"), "sir", "Off changes nothing")

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Character setup: background (home system, birthplace, citizenship, religion, economic status), records, speech verbs, autohiss, speech bubble, footsteps, species sounds, nickname, directory gender and sexuality tags, pAI texts, Shadekin flicker, blood reagent, size rates, fuzzy, offset override, egg type, ignore shoes, borg petting, sensor default, resleeve lock and auto backup implant are saved settings again"
+  - refactor: "Directory tags seed the mind from a saved character through seed_directory_from()"

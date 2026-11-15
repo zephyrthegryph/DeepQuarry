@@ -20,6 +20,24 @@
 
 
 
+/datum/preference/text/human/blood_reagents
+	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
+	savefile_key = "blood_reagents"
+	savefile_identifier = PREFERENCE_CHARACTER
+	can_randomize = FALSE
+	maximum_value_length = MAX_NAME_LEN
+	var/static/list/blood_reagent_choices = list("default", "blood", "ammonia", "vinegar", "milk", "water", "wine")
+
+/datum/preference/text/human/blood_reagents/create_default_value()
+	return "default"
+
+/datum/preference/text/human/blood_reagents/get_pref_choices(datum/preferences/preferences)
+	return blood_reagent_choices
+
+/datum/preference/text/human/blood_reagents/apply_to_human(mob/living/carbon/human/target, value)
+	return
+
+
 /datum/preference/text/human/h_style
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "hair_style_name"  // disk-key match
