@@ -16,6 +16,7 @@ import {
 } from 'tgui/embedded';
 import { configAtom } from 'tgui/events/store';
 import { prepareRequestedInterface } from 'tgui/interfacePreparation';
+import { getStaticWindowGeometry } from 'tgui/windowGeometry';
 import { mainBounds, measureColumn } from '../layout/geometry';
 import { rectContains } from '../layout/model';
 import type { FloatFollow } from './floatDrag';
@@ -136,6 +137,16 @@ export class ColumnHost {
         return true;
       case 'col/close':
         if (typeof payload?.wid === 'string') this.closed(payload.wid);
+        return true;
+      case 'col/geometry':
+        if (typeof payload?.iface === 'string') {
+          this.dispatch({
+            type: 'floatGeometry',
+            iface: payload.iface,
+            size: payload.size,
+            pos: payload.pos,
+          });
+        }
         return true;
       case 'col/floated':
         this.floated(payload);
@@ -379,6 +390,28 @@ export class ColumnHost {
     this.trace('float', { wid, at, size });
     sendFor(wid, 'wm/float', at ? { at, ...(size ? { size } : {}) } : {});
     return true;
+  }
+
+  /**
+   * The size (physical px) a window pops out at: the one it last had popped out (kept apart from its docked height), else its
+   * interface's own default window size, never the size of its entry in the column.
+   */
+  poppedSize(
+    wid: string,
+    ratio: number,
+    max: [number, number],
+  ): [number, number] {
+    const iface = this.state.windows[wid]?.iface ?? '';
+    const saved = this.state.saved[iface]?.float?.size;
+    const fallback = getStaticWindowGeometry(iface);
+    const css: [number, number] = fallback
+      ? [fallback.width, fallback.height]
+      : [400, 600];
+    const size = saved ?? [css[0] * ratio, css[1] * ratio];
+    return [
+      Math.round(Math.min(max[0], size[0])),
+      Math.round(Math.min(max[1], size[1])),
+    ];
   }
 
   /** A drag, pop-out or size decision: in the page's console always, and in the server's tgui log while profiling. */

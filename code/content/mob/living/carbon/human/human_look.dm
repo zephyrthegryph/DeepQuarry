@@ -194,17 +194,7 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	var/list/key_result = body_icon_key(look)
 	var/icon_key = "[key_result[1]][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
 	var/template = species.icon_template ? species.icon_template : 'icons/mob/human.dmi'
-	if(can_layer_body(husk, skeleton))
-		return human_look_icon("layered_body|[template]|[icon_key]", "build_layered_body_look", template, hulk, skeleton)
-	return human_look_icon("body|[template]|[icon_key]", "build_body_look", template, key_result[2], husk, hulk, skeleton)
-
-/mob/living/carbon/human/proc/build_body_look(template, wholeicontransparent, husk, hulk, skeleton)
-	human_icon_op(2 + length(organs) * 3) // a new icon, one blend and one or more inserts a limb
-	var/icon/stand_icon = new(template, icon_state = "blank")
-	stand_icon.Blend(build_body_icon(wholeicontransparent, husk, hulk, skeleton), ICON_OVERLAY)
-	var/image/body = image(stand_icon)
-	body.layer = BODY_LAYER + BODYPARTS_LAYER
-	return list(stand_icon, body)
+	return human_look_icon("layered_body|[template]|[icon_key]", "build_layered_body_look", template, hulk, skeleton, husk, key_result[2])
 
 /// The body icon cache key from the species, skin, eyes and every visible part, and whether every part is transparent: list(key, whole icon
 /// transparent).
@@ -261,9 +251,13 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	if(looks.digitigrade && (part.organ_tag in list(BP_R_LEG, BP_L_LEG, BP_R_FOOT, BP_L_FOOT)))
 		. += "_digi"
 
+/// Whether a taur tail's lower half stands in for the legs (the tail has a clip mask).
+/mob/living/carbon/human/proc/body_taur_cuts()
+	return istype(tail_style, /datum/sprite_accessory/tail/taur) && tail_style.clip_mask
+
 /// A taur tail's leg "cookie cutter" (preserved areas inverted): list(icon, x offset, y offset), or null.
 /mob/living/carbon/human/proc/body_taur_cutter()
-	if(!istype(tail_style, /datum/sprite_accessory/tail/taur) || !tail_style.clip_mask)
+	if(!body_taur_cuts())
 		return null
 	var/icon/Cutter = new(icon = (tail_style.clip_mask_icon ? tail_style.clip_mask_icon : tail_style.icon), icon_state = tail_style.clip_mask_state)
 	Cutter.Blend("#000000", ICON_MULTIPLY)	// Make it all black.
@@ -271,67 +265,6 @@ GLOBAL_LIST_EMPTY(human_look_recent)
 	Cutter.SwapColor("#000000FF", "#00000000")	// Everywhere black, make empty.
 	Cutter.Blend("#000000", ICON_MULTIPLY)	// Black again.
 	return list(Cutter, tail_style.offset_x, tail_style.offset_y)
-
-/// Compose the body icon from every visible part, then tint it for husk or hulk. A cache builder (body_look()).
-/mob/living/carbon/human/proc/build_body_icon(wholeicontransparent, husk, hulk, skeleton)
-	var/obj/item/organ/external/chest = limb_tagged(BP_TORSO)
-	var/icon/base_icon = new(chest?.get_icon(skeleton, !wholeicontransparent, item_layers = FALSE))
-
-	var/apply_extra_transparency_leg = limb_tagged(BP_L_LEG) && limb_tagged(BP_R_LEG)
-	var/apply_extra_transparency_foot = limb_tagged(BP_L_FOOT) && limb_tagged(BP_R_FOOT)
-	var/list/cutter = body_taur_cutter()
-
-	for(var/obj/item/organ/external/part in organs)
-		if(part.is_stump() || part == chest || limb_hidden(part)) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
-			continue
-		var/icon/temp = new(part.get_icon(skeleton, !wholeicontransparent, item_layers = FALSE))
-
-		if(cutter && (part.organ_tag in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
-			temp.Blend(cutter[1], ICON_AND, x = cutter[2], y = cutter[3])
-
-		//That part makes left and right legs drawn topmost and lowermost when human looks WEST or EAST
-		//And no change in rendering for other parts (they icon_position is 0, so goes to 'else' part)
-		if(part.icon_position & (LEFT | RIGHT))
-			var/icon/temp2 = new(species.icon_template ? species.icon_template : 'icons/mob/human.dmi', icon_state = "blank")
-			temp2.Insert(new/icon(temp,dir=NORTH),dir=NORTH)
-			temp2.Insert(new/icon(temp,dir=SOUTH),dir=SOUTH)
-			if(!(part.icon_position & LEFT))
-				temp2.Insert(new/icon(temp,dir=EAST),dir=EAST)
-			if(!(part.icon_position & RIGHT))
-				temp2.Insert(new/icon(temp,dir=WEST),dir=WEST)
-			base_icon.Blend(temp2, ICON_OVERLAY)
-			temp2 = new(species.icon_template ? species.icon_template : 'icons/mob/human.dmi', icon_state = "blank")
-			if(part.icon_position & LEFT)
-				temp2.Insert(new/icon(temp,dir=EAST),dir=EAST)
-			if(part.icon_position & RIGHT)
-				temp2.Insert(new/icon(temp,dir=WEST),dir=WEST)
-			if(part.transparent && !wholeicontransparent) //apply a little (a lot) extra transparency to make it look better.
-				if((istype(part, /obj/item/organ/external/leg) && apply_extra_transparency_leg) || (istype(part, /obj/item/organ/external/foot) && apply_extra_transparency_foot))
-					temp2 += rgb(,,,30)
-			base_icon.Blend(temp2, ICON_UNDERLAY)
-		else if(part.icon_position & UNDER)
-			base_icon.Blend(temp, ICON_UNDERLAY)
-		else
-			base_icon.Blend(temp, ICON_OVERLAY)
-
-	if(wholeicontransparent) // A whole-slime body; a lone solid limb would look uneven, but that's rare.
-		base_icon += rgb(,,,180)
-
-	if(!skeleton)
-		if(husk)
-			base_icon.ColorTone(rgb(96,88,80))
-		else if(hulk)
-			var/list/tone = rgb2num(rgb(48,224,40))
-			base_icon.MapColors(rgb(tone[1],0,0),rgb(0,tone[2],0),rgb(0,0,tone[3]))
-
-	//Handle husk overlay.
-	if(husk && icon_exists(species.icobase, "overlay_husk"))
-		var/icon/mask = new(base_icon)
-		var/icon/husk_over = new(species.icobase,"overlay_husk")
-		mask.MapColors(0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,0)
-		husk_over.Blend(mask, ICON_ADD)
-		base_icon.Blend(husk_over, ICON_OVERLAY)
-	return base_icon
 
 /// What the body look does besides drawing: a taur or a long tail moves the whole mob (its offsets are the mob's), a rideable taur is mountable,
 /// and a shadekin recomputes what its body changes. Effects run once the look is applied, outside the draw.

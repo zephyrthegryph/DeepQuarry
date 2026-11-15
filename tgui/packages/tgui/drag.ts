@@ -247,6 +247,11 @@ export async function storeWindowGeometry(): Promise<void> {
   };
   geometryCache.set(windowKey, geometry);
   storage.set(windowKey, geometry);
+  // A popped-out window's size is kept by the column page too (saved with its layout), so the next pop out opens at it.
+  Byond.sendMessage('wm/geometry', {
+    size: geometry.size.map(Math.round),
+    pos: geometry.pos.map(Math.round),
+  });
   // Update the list of stored geometries
   const [geometries, trimmedKey] = touchRecents(
     (await storage.get('geometries')) || [],

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Opening a bag and putting an item in or taking one out no longer makes the box around each stored item flash"

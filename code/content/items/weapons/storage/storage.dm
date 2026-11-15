@@ -541,6 +541,8 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	/// Relation list view: items placed on screen, in layout order (one per type with
 	/// display_contents_with_number). on_destroy() unpins each.
 	var/list/obj/item/shown
+	/// The catchers the running layout() has not matched to an item yet (null between layouts).
+	var/list/layout_stale
 
 CAPABILITIES(/datum/storage_hud)
 	owns_one(nameof(closer), /atom/movable/screen/close)
@@ -593,8 +595,10 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /// Places the items and sizes the backdrop.
 /datum/storage_hud/proc/layout()
-	rel_clear(src, nameof(catchers))
-	rel_set(src, nameof(catchers), list())
+	// The catchers (and the box segments they carry) are kept across a re-layout: one that still stands for a shown item is moved in place, a
+	// new item gets a new one drawn at once, and only the ones left over are deleted. Making them all again leaves the new ones undrawn until the
+	// draw queue reaches them, which shows as the box around every stored item flashing on each insert and removal.
+	layout_stale = catchers ? catchers.Copy() : list()
 	var/list/items = storage.hud_order(storage.stored_items())
 	var/list/counts
 	if(storage.display_contents_with_number)
@@ -616,12 +620,23 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		boxes_layout(counts)
 	else
 		bar_layout()
+	for(var/atom/movable/storage_slot/gone as anything in layout_stale)
+		rel_remove(src, nameof(catchers), gone)
+	layout_stale = null
 
+/// The catcher that stands for `I`: the one it had before this layout, else a new one.
 /datum/storage_hud/proc/add_catcher(obj/item/I)
-	var/atom/movable/storage_slot/SS = new(null, I)
+	var/atom/movable/storage_slot/SS
+	for(var/atom/movable/storage_slot/old as anything in layout_stale)
+		if(old.held_item == I)
+			SS = old
+			layout_stale -= old
+			break
+	if(!SS)
+		SS = new(null, I)
+		rel_add(src, nameof(catchers), SS)
 	SS.screen_loc = I.screen_loc
 	SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
-	rel_add(src, nameof(catchers), SS)
 	return SS
 
 /// Fixed-size storage (belts, boxes): a grid up to seven wide.
@@ -713,6 +728,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		// The three bar images are shared and mutated per item, so each slot keeps a snapshot of how they look for it now.
 		SS.set_bars(list(new /mutable_appearance(stored_start), new /mutable_appearance(stored_continue), new /mutable_appearance(stored_end)))
 		SS.set_segment(M_catch)
+		draw_now(SS) // its box segments are on it before the client sees the layout
 		log_world("storage_hud: [storage] bar slot for [I] spans [startpoint]..[endpoint] px from the bar start")
 		vis_add(bar_start, SS)
 

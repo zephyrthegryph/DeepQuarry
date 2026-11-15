@@ -34,7 +34,7 @@ import {
 } from 'tgui/dq';
 import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import 'tgui/embeddedStyles';
-import { floatSize, type Pair, TITLE_GRAB } from 'tgui/floatPlacement';
+import { type Pair, TITLE_GRAB } from 'tgui/floatPlacement';
 import { EmbeddedInterface } from 'tgui/routes';
 import { Button } from 'tgui-core/components';
 import { MapSplitHandle } from '../layout/ChatLayout';
@@ -155,7 +155,7 @@ function screenPoint(e: PointerEvent) {
   };
 }
 
-/** The float button: the window leaves the column at the size its entry had, so a pop out keeps what the player sized. */
+/** The float button: the window leaves the column at the size it last had popped out (else its default), at the entry's place. */
 function floatEntry(host: ColumnHost, group: DockGroup) {
   const rect = document
     .querySelector<HTMLElement>(`[data-column-group="${group.id}"]`)
@@ -165,11 +165,11 @@ function floatEntry(host: ColumnHost, group: DockGroup) {
     return;
   }
   const ratio = window.devicePixelRatio || 1;
-  const size = floatSize({ w: rect.width, h: rect.height }, ratio, [
+  const size = host.poppedSize(group.active, ratio, [
     window.screen.width * ratio,
     window.screen.height * ratio,
   ]);
-  // It opens where the entry was (the title bar's middle at the entry's top), as tall and wide as the entry was.
+  // It opens where the entry was (the title bar's middle at the entry's top).
   const point = {
     x: Math.round((window.screenX + rect.left + rect.width / 2) * ratio),
     y: Math.round((window.screenY + rect.top) * ratio + TITLE_GRAB),
@@ -223,11 +223,11 @@ function runDrag(
     );
     const rect = node?.getBoundingClientRect();
     const ratio = window.devicePixelRatio || 1;
-    const size = floatSize(
-      { w: rect?.width ?? 0, h: rect?.height ?? 0 },
-      ratio,
-      [window.screen.width * ratio, window.screen.height * ratio],
-    );
+    // The size it last had popped out (else its default), not the entry's.
+    const size = host.poppedSize(pulled ?? groupOf?.active ?? '', ratio, [
+      window.screen.width * ratio,
+      window.screen.height * ratio,
+    ]);
     const point = screenPoint(e);
     const at: Pair = [point.x, point.y];
     host.trace('drag left the column: floating live', {

@@ -1,3 +1,12 @@
+/// A playsound() that takes this long (ms) is traced (PLAYSOUND_SLOW), at most once every PLAYSOUND_SLOW_LOG_EVERY.
+#define PLAYSOUND_SLOW_MS 6
+#define PLAYSOUND_SLOW_LOG_EVERY (2 SECONDS)
+GLOBAL_VAR_INIT(playsound_slow_log_next, 0)
+/// Milliseconds the sends (`src << S`) of the playsound() in progress have taken, and how many sounds playsound() has played and how many hearers it reached (counters for the trace and tests).
+GLOBAL_VAR_INIT(playsound_send_ms, 0)
+GLOBAL_VAR_INIT(playsounds_played, 0)
+GLOBAL_VAR_INIT(playsound_hearers, 0)
+
 /proc/playsound(atom/source, soundin, vol as num, vary, extrarange as num, falloff, is_global, frequency = null, channel = 0, pressure_affected = TRUE, ignore_walls = TRUE, preference = null, volume_channel = null)
 	if(Kernel.current_runlevel < RUNLEVEL_LOBBY)
 		return
@@ -5,6 +14,9 @@
 	var/turf/turf_source = get_turf(source)
 	if(!turf_source)
 		return
+	var/started = TICK_USAGE_REAL
+	GLOB.playsound_send_ms = 0
+	var/hearers = 0
 	var/area/area_source = turf_source.loc
 
 	//allocate a channel if necessary now so its the same for everyone
@@ -17,6 +29,7 @@
 	var/sound/S
 	// The pressure at the source, read once for every hearer (each read crosses into the atmos backend: two a hearer, a footstep was 1.5-3 ms of them and the rest).
 	var/source_pressure = null
+	var/heard = FALSE
 
 	// Looping through the player list has the added bonus of working for mobs inside containers.
 	// Iterated in place: nothing below can add or remove players.
@@ -46,7 +59,18 @@
 					var/datum/gas_mixture/source_env = turf_source.return_air()
 					source_pressure = source_env ? source_env.return_pressure() : SOUND_NO_AIR
 			hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T, source_pressure)
-			SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
+			heard = TRUE
+			hearers++
+	// One echo roll for the sound, not one per hearer (a ping raises a notice for every motion tracker listener).
+	if(heard)
+		GLOB.playsounds_played++
+		GLOB.playsound_hearers += hearers
+		var/ping_started = TICK_USAGE_REAL
+		SSmotiontracker.ping(source, vol) // Nearly everything pings this, the quieter the less likely
+		var/total_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+		if(total_ms >= PLAYSOUND_SLOW_MS && COOLDOWN_FINISHED(GLOB, playsound_slow_log_next))
+			COOLDOWN_START(GLOB, playsound_slow_log_next, PLAYSOUND_SLOW_LOG_EVERY)
+			log_world("PLAYSOUND_SLOW: [soundin] from [source.type] took [round(total_ms, 0.1)] ms for [hearers] hearer(s): sends [round(GLOB.playsound_send_ms, 0.1)] ms, motion tracker ping [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - ping_started), 0.1)] ms, tick usage [round(TICK_USAGE_REAL, 1)]%")
 
 /// TRUE if any player could hear a playsound() from `turf_source` within `max_distance`.
 /// Mirrors playsound()'s listener rules, minus soundproofing and walls.
@@ -95,8 +119,7 @@
 
 	// I'm not sure if you can modify S.volume, but I'd rather not try to find out what
 	// horrible things lurk in BYOND's internals, so we're just gonna do vol *=
-	vol *= client.get_preference_volume_channel(volume_channel)
-	vol *= client.get_preference_volume_channel(VOLUME_CHANNEL_MASTER)
+	vol *= client.get_sound_volume_factor(volume_channel)
 	S.volume = vol
 
 	if(vary || frequency)
@@ -159,7 +182,9 @@
 		S.y = 1
 		S.falloff = (falloff ? falloff : FALLOFF_SOUNDS)
 
+	var/send_started = TICK_USAGE_REAL
 	src << S
+	GLOB.playsound_send_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - send_started)
 
 /mob/proc/stop_sound_channel(chan)
 	src << sound(null, repeat = 0, wait = 0, channel = chan)
