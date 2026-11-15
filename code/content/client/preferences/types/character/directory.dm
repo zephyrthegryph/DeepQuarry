@@ -95,20 +95,25 @@ TYPE_TABLE(/datum/preference/choiced/human/directory_erptag, pref_choices, GLOB.
 
 // --- sensorpref ------------------------------------------------------------
 
-/datum/preference/numeric/human/sensorpref
+/// Saved as the mode's name (GLOB.sensorpreflist); the body keeps the 1-5 level the suit reads.
+/datum/preference/choiced/human/sensorpref
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "sensorpref"
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
-	minimum = 1
-	maximum = 5
-	step = 1
 
-/datum/preference/numeric/human/sensorpref/create_default_value()
-	return 5
+TYPE_TABLE(/datum/preference/choiced/human/sensorpref, pref_choices, GLOB.sensorpreflist)
+/datum/preference/choiced/human/sensorpref/create_default_value()
+	return SENSORPREF_RANDOM
 
-/datum/preference/numeric/human/sensorpref/apply_to_human(mob/living/carbon/human/target, value)
-	target.bio.sensorpref = value
+/// Old saves hold the 1-5 level; it becomes that mode's name, anything else out of range the default.
+/datum/preference/choiced/human/sensorpref/pref_deserialize(input, datum/preferences/preferences)
+	if(isnum(input) && input >= 1 && input <= length(GLOB.sensorpreflist) && input == round(input))
+		input = GLOB.sensorpreflist[input]
+	return sanitize_inlist(input, get_choices(), create_default_value())
+
+/datum/preference/choiced/human/sensorpref/apply_to_human(mob/living/carbon/human/target, value)
+	target.bio.sensorpref = GLOB.sensorpreflist.Find(value) || length(GLOB.sensorpreflist)
 
 
 // --- capture_crystal -------------------------------------------------------

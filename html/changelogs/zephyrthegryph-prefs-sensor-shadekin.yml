@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Game tab: Sensor Default is a dropdown of the suit sensor modes (Off, Binary, Vitals, Tracking, Random); old saved levels carry over"
+  - bugfix: "Game tab: the Shadekin flicker settings show only for a Shadekin character (a custom species based on one included)"

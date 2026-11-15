@@ -177,7 +177,7 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// (player-facing ad copy) goes to Identity/Directory. Thermal messages
 	// and personal kink prefs go to Game/Roleplay.
 	tag_pref(., /datum/preference/text/human/vore_egg_type, "game", "roleplay")
-	tag_pref(., /datum/preference/numeric/human/sensorpref, "game", "input")
+	tag_pref(., /datum/preference/choiced/human/sensorpref, "game", "input")
 	tag_pref(., /datum/preference/toggle/human/ignore_shoes, "game", "roleplay")
 	// Backup / persistence
 	tag_pref(., /datum/preference/toggle/human/capture_crystal, "game", "persistence")

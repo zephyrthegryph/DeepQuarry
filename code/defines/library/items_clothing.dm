@@ -159,6 +159,8 @@
 #define SUIT_SENSOR_BINARY   1
 #define SUIT_SENSOR_VITAL    2
 #define SUIT_SENSOR_TRACKING 3
+/// The sensor preference that picks a random mode each round (the last entry of GLOB.sensorpreflist).
+#define SENSORPREF_RANDOM "Random"
 
 // Hair Defines
 #define HAIR_VERY_SHORT 0x1

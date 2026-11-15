@@ -1544,7 +1544,7 @@ GLOBAL_LIST_EMPTY(latejoin_tyrvillage) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_thedark) //NYI - Used downstream
 // Every visitable overmap object; Flight Operations uses it to list destinations.
 
-GLOBAL_LIST_INIT(sensorpreflist, list("Off", "Binary", "Vitals", "Tracking", "No Preference"))
+GLOBAL_LIST_INIT(sensorpreflist, list("Off", "Binary", "Vitals", "Tracking", SENSORPREF_RANDOM))
 
 // Used by the ban panel to determine what departments are offmap departments. All these share an 'offmap roles' ban.
 GLOBAL_LIST_INIT(offmap_departments, list(DEPARTMENT_TALON))
