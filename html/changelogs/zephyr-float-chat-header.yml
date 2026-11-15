@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A popped-out chat window shows its tab row, buttons and tabs again: the chat page sat under the window's title bar, which covered and blocked them."
