@@ -249,22 +249,33 @@ def parse_file(args):
     return {p: (t.procs, t.caps, t.newvars, t.overrides, t.files) for p, t in types.items()}
 
 
-def analyse(root):
-    """Scans root/code; returns {type path: T}."""
+def analyse(root, cache=None):
+    """Scans root/code; returns {type path: T}. `cache` (tools/build/dm_filecache.FileCache) keeps each file's parse by its stat, so
+    a run after a few edits parses only those files (the result is the same)."""
     # Serial on purpose: a process pool started from the bun build runner on Windows stalled ~30 min and then raised
     # BrokenProcessPool (spawned workers re-run the parent's startup under the runner's inherited handles), and with clean()
     # copying ordinary text in bulk the whole scan takes a few seconds, so workers bought nothing.
     jobs = []
-    for dp, dn, fn in os.walk(os.path.join(root, "code")):
-        dn.sort()
-        for f in sorted(fn):
-            if f.endswith(".dm"):
-                full = os.path.join(dp, f)
-                rel = os.path.relpath(full, root).replace("\\", "/")
-                if not rel.startswith(SKIP_DIRS):
-                    jobs.append((full, rel))
+    if cache is not None:
+        sys.path.insert(0, os.path.join(root, "tools", "build"))
+        import dm_filecache
+
+        for rel, full, size, mtime in dm_filecache.walk(os.path.join(root, "code"), root):
+            if not rel.startswith(SKIP_DIRS):
+                jobs.append((rel, full, size, mtime))
+        parts = [cache.get(("census", rel), size, mtime, lambda full=full, rel=rel: parse_file((full, rel))) for rel, full, size, mtime in jobs]
+    else:
+        for dp, dn, fn in os.walk(os.path.join(root, "code")):
+            dn.sort()
+            for f in sorted(fn):
+                if f.endswith(".dm"):
+                    full = os.path.join(dp, f)
+                    rel = os.path.relpath(full, root).replace("\\", "/")
+                    if not rel.startswith(SKIP_DIRS):
+                        jobs.append((full, rel))
+        parts = map(parse_file, jobs)
     types = {}
-    for part in map(parse_file, jobs):
+    for part in parts:
         for p, (procs, caps, newvars, overrides, files) in part.items():
             t = types.get(p)
             if t is None:
