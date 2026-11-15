@@ -12,6 +12,8 @@
 	var/list/vapour = list()
 	if(!length(reagent_list) || seconds <= 0)
 		return vapour
+	if(detonate_peroxide())
+		return vapour // heated peroxide went off
 	var/temperature = reaction_temperature()
 	var/boiled = 0
 	for(var/datum/reagent/R as anything in reagent_list.Copy())

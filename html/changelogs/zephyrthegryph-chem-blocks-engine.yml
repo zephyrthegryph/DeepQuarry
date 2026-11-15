@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Chemicals are now built of blocks (cores, groups, links, ions); formula, class and tags derive from them, and the medical book shows each block diagram and what the fifteen chemical processes do to it"
+  - rscadd: "Reactions between block-built chemicals are generated from processes (oxidise, condense, neutralise, ...) with catalyst kinds: dissolved acid or base, solid sheets that lower the temperature and are poisoned by sulfur and heavy metals, and enzymes"
+  - rscadd: "Trace-potent contaminants: hydrochloric acid, dioxin, nitrosamine, peroxide (detonates when heated), methanol, plasticiser and tar, each with one clear symptom"
+  - balance: "Kelotane is now made from silicate and an acid, and dermaline from kelotane and phosphorus, through the new processes; purity is the natural fallout and no recipe asks for a grade"
+  - balance: "Filters catch contaminants by tag and cannot take a trace below its floor; a catalyst sheet no longer widens every recipe's temperature band"

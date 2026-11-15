@@ -7,7 +7,7 @@
 // boiling and condensing, filters, neutralisation): code/content/reagents/README.md "Purification".
 //
 //   * Purity is a property of the mixture: 1 minus the contaminant volume over the holder's total volume, computed, never stored. The grade (GRADE_*) is
-//     the band it falls in. A recipe's `needs_grade` asks for a minimum of the holder (xform_matches()).
+//     the band it falls in. It is a readout (scanners, the book): no recipe asks for a grade, purity is only the natural fallout of how a batch was made.
 //   * Sources: a dispenser cartridge is rolled a profile per round (chem_source_profile()): units of each contaminant that come with each unit of stock,
 //     deterministic for the round seed and the source key. add_sourced_reagent() puts the stock and its contaminants in the holder together; the cartridge
 //     fills with it, recharges with it (so a recharge never raises purity) and dispenses stock plus the contaminants that sit with it.

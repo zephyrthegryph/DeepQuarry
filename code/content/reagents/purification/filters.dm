@@ -3,14 +3,18 @@
 //
 // A funnel fits on a glass container (code/content/reagents/purification/funnel_and_catalyst.dm) and takes one filter. The liquid poured in lands in an open basin,
 // the filter takes out what it takes out of that, a little of the product stays in the filter, and what is left goes into the container. A filter takes
-// contaminants by class, each with a strength (0..1: the share of that class it takes from what passes, while it is fresh):
+// contaminants by TAG (the tags of a contaminant come from its block structure, code/domains/world_model/reagents/blocks/structure.dm), each tag with a strength
+// (0..1: the share it takes from what passes, while it is fresh); a contaminant with several tags is taken at the strongest:
 //
-//   paper     the particulate (inert filler)
-//   charcoal  the oily and the organic residue
-//   sorbent   made from a sheet of a material (a processed alloy): the material's stats decide what it takes and how well:
-//               sorption (reagent porosity, gas sorption)  heavy metals, oils and sulfur
-//               catalytic activity                         reactive impurity and sulfur
-//               antimicrobial activity                     endotoxin
+//   paper     solid                          the particulate
+//   charcoal  nonpolar, organic              oils, tar, dioxin, organic residue, endotoxin
+//   sorbent   (an ion-exchange sorbent) made from a sheet of a material, the material's stats decide the tags and how well:
+//               sorption (reagent porosity, gas sorption)  ionic, metallic, sulfurous, nonpolar: salts, heavy metals, sulfur, oils
+//               catalytic activity                         oxidiser, sulfurous: reactive impurity, peroxide, sulfur
+//               antimicrobial activity                     biological: endotoxin
+//
+// A contaminant also has a floor (/datum/reagent/contaminant/filter_floor): the share of the mixture below which no filter takes it any further. A trace of
+// dioxin or nitrosamine goes through whatever it is poured through; only not making it keeps it out.
 //
 // A filter has a capacity: every unit it takes out and every unit of product it keeps back uses it up, it works less well as it fills (linearly: half full, half
 // as good), and a full filter passes everything. Nothing here is a free purification: the product it keeps back is lost yield. Every filtering is written to
@@ -83,9 +87,15 @@ MSG_DEF_SELF(chem_funnel/has_filter, "There is a filter in the funnel already.")
 /obj/item/chem_filter/proc/freshness()
 	return clamp(1 - used / max(capacity, 0.01), 0, 1)
 
-/// contaminant id => strength (0..1) of this filter against it, fresh.
-/obj/item/chem_filter/proc/class_strengths()
+/// tag => strength (0..1) of this filter against it, fresh.
+/obj/item/chem_filter/proc/tag_strengths()
 	return list()
+
+/// The strength (0..1) of a filter with these tag strengths against one contaminant: its strongest tag. Tags of a contaminant: its structure's, `solid` when it is one.
+/proc/chem_filter_strength_against(list/strengths, datum/reagent/R)
+	. = 0
+	for(var/tag in chem_tags_of(R))
+		. = max(., strengths[tag] || 0)
 
 /obj/item/chem_filter/examine(mob/user)
 	. = ..()
@@ -101,17 +111,20 @@ MSG_DEF_SELF(chem_funnel/has_filter, "There is a filter in the funnel already.")
 		if(GLOB.chem_trace)
 			log_world("CHEM: [src] is full and passed [round(mixture.total_volume, 0.001)]u into [where] unfiltered")
 		return
-	var/list/strengths = class_strengths()
+	var/list/strengths = tag_strengths()
 	var/room = capacity - used
+	var/total = mixture.total_volume
 	var/caught = 0
 	var/list/caught_text = list()
 	for(var/datum/reagent/R as anything in mixture.reagent_list.Copy())
 		if(!istype(R, /datum/reagent/contaminant))
 			continue
-		var/strength = strengths[R.id]
+		var/strength = chem_filter_strength_against(strengths, R)
 		if(!strength)
 			continue
-		var/taken = min(R.volume * strength * fresh, room - caught)
+		var/datum/reagent/contaminant/C = R
+		var/above_floor = max(R.volume - C.filter_floor * total, 0)
+		var/taken = min(R.volume * strength * fresh, above_floor, room - caught)
 		if(taken <= 0)
 			continue
 		caught += taken
@@ -129,13 +142,23 @@ MSG_DEF_SELF(chem_funnel/has_filter, "There is a filter in the funnel already.")
 	if(GLOB.chem_trace)
 		log_world("CHEM: [src] caught [round(caught, 0.001)]u ([jointext(caught_text, ", ") || "nothing"]) and kept back [round(max(kept, 0), 0.001)]u of product from a pour into [where]; [round(freshness() * 100)]% fresh")
 
-/// What a paper or charcoal filter takes: contaminant id => strength (0..1) while fresh. The book reads it by type.
+/// What a paper or charcoal filter takes: tag => strength (0..1) while fresh. The book reads it by type.
 /proc/chem_filter_strengths(filter_type)
 	if(ispath(filter_type, /obj/item/chem_filter/paper))
-		return list(REAGENT_ID_CONTAMINANT_INERT_FILLER = FILTER_STRENGTH_MAX)
+		return list(CHEM_TAG_SOLID = FILTER_STRENGTH_MAX)
 	if(ispath(filter_type, /obj/item/chem_filter/charcoal))
-		return list(REAGENT_ID_CONTAMINANT_OILY_RESIDUE = FILTER_STRENGTH_MAX, REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE = FILTER_STRENGTH_MAX * 0.85)
+		return list(CHEM_TAG_NONPOLAR = FILTER_STRENGTH_MAX, CHEM_TAG_ORGANIC = FILTER_STRENGTH_MAX * 0.85)
 	return list()
+
+/// The contaminants (reagent id => strength) a filter with these tag strengths takes while fresh: what the book prints.
+/proc/chem_filter_catches(list/strengths)
+	var/list/caught = list()
+	for(var/id in contaminant_ids())
+		var/datum/reagent/contaminant/C = contaminant_def(id)
+		var/strength = chem_filter_strength_against(strengths, C)
+		if(strength > 0)
+			caught[id] = strength
+	return caught
 
 /// Paper: catches the particulate.
 /obj/item/chem_filter/paper
@@ -144,7 +167,7 @@ MSG_DEF_SELF(chem_funnel/has_filter, "There is a filter in the funnel already.")
 	capacity = 30
 	retention = FILTER_RETENTION_PAPER
 
-/obj/item/chem_filter/paper/class_strengths()
+/obj/item/chem_filter/paper/tag_strengths()
 	return chem_filter_strengths(type)
 
 /// Charcoal: catches oils and organic residue.
@@ -155,13 +178,13 @@ MSG_DEF_SELF(chem_funnel/has_filter, "There is a filter in the funnel already.")
 	capacity = 60
 	retention = FILTER_RETENTION_CHARCOAL
 
-/obj/item/chem_filter/charcoal/class_strengths()
+/obj/item/chem_filter/charcoal/tag_strengths()
 	return chem_filter_strengths(type)
 
 /// A sorbent filter, made of a sheet of an engineered material: what it takes follows the material's sorption, catalytic and antimicrobial stats.
 /obj/item/chem_filter/sorbent
 	name = "sorbent filter"
-	desc = "A filter lined with an engineered material. What it takes out of a pour depends on the material."
+	desc = "An ion-exchange filter lined with an engineered material. What it takes out of a pour depends on the material."
 	capacity = 40
 	retention = FILTER_RETENTION_SORBENT
 	/// The registered name of the material it is made of.
@@ -194,15 +217,16 @@ CAPABILITIES(/obj/item/chem_filter/sorbent)
 	var/datum/material/M = get_material_by_name(material_name)
 	return M ? clamp(M.antimicrobial_activity / 100, 0, 1) : 0
 
-/obj/item/chem_filter/sorbent/class_strengths()
-	var/sorbed = sorption()
-	var/catalysed = catalysis()
+/obj/item/chem_filter/sorbent/tag_strengths()
+	var/sorbed = sorption() * FILTER_STRENGTH_MAX
+	var/catalysed = catalysis() * FILTER_STRENGTH_MAX
 	return list(
-		REAGENT_ID_CONTAMINANT_HEAVY_METAL = sorbed * FILTER_STRENGTH_MAX,
-		REAGENT_ID_CONTAMINANT_OILY_RESIDUE = sorbed * FILTER_STRENGTH_MAX,
-		REAGENT_ID_CONTAMINANT_SULFUR = max(sorbed, catalysed) * FILTER_STRENGTH_MAX,
-		REAGENT_ID_CONTAMINANT_REACTIVE = catalysed * FILTER_STRENGTH_MAX,
-		REAGENT_ID_CONTAMINANT_BIOLOGICAL = antimicrobial() * FILTER_STRENGTH_MAX,
+		CHEM_TAG_IONIC = sorbed,
+		CHEM_TAG_METALLIC = sorbed,
+		CHEM_TAG_NONPOLAR = sorbed,
+		CHEM_TAG_SULFUROUS = max(sorbed, catalysed),
+		CHEM_TAG_OXIDISER = catalysed,
+		CHEM_TAG_BIOLOGICAL = antimicrobial() * FILTER_STRENGTH_MAX,
 	)
 
 // A paper filter and a sheet of a material make a sorbent filter: the paper lines the sheet. The material is the sheet's; the stats are the batch's.

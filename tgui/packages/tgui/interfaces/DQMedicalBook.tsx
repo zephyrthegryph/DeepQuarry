@@ -184,10 +184,13 @@ type RecipeIngredient = {
 type RecipeEntry = {
   distilling: 0 | 1;
   result_amount: number;
-  // The minimum grade the mixture must be ("Pharma"), when the recipe is
-  // graded, and the purity band that grade covers.
-  grade?: string;
-  grade_band?: string;
+  // A recipe the process generator wrote: the process, what runs it, the
+  // temperature it is clean at, and whether it makes a chemical (else residue).
+  process?: string;
+  catalyst_kind?: string;
+  ideal_low?: number;
+  ideal_high?: number;
+  product?: boolean;
   required: RecipeIngredient[];
   catalysts: { id: string; name: string }[];
   inhibitors: { id: string; name: string }[];
@@ -237,6 +240,27 @@ type OverdoseInfo = {
   effects?: string[];
 };
 
+type BlockDiagram = {
+  formula: string;
+  class: string;
+  tags: string[];
+  cores: string[];
+  groups: string[];
+  links: string[];
+  cation: string | null;
+  anion: string | null;
+};
+
+type ProcessRoute = {
+  process: string;
+  kind: string;
+  with: string[];
+  gives: string[];
+  product: boolean;
+  low: number;
+  high: number;
+};
+
 type ReagentEntry = {
   id: string;
   name: string;
@@ -246,6 +270,9 @@ type ReagentEntry = {
   cures: ReagentConditionRef[];
   worsens: ReagentConditionRef[];
   recipe: RecipeEntry[] | null;
+  // The reagent's blocks (null: none declared) and the processes that act on it.
+  blocks?: BlockDiagram | null;
+  acted_on?: ProcessRoute[];
   used_in: { id: string; name: string }[];
   overdose: OverdoseInfo | null;
   // The reagent's body factors at a standard dose, one line each.
@@ -301,12 +328,14 @@ type PurityData = {
     role: string;
     description: string;
     effect: string;
+    floor?: number;
   }[];
-  graded_recipes: {
+  processes?: {
     id: string;
     name: string;
-    grade: string;
-    band: string;
+    text: string;
+    kinds: string[];
+    reserved: boolean;
   }[];
   temperature_classes?: {
     id: string;
@@ -1351,6 +1380,44 @@ const ReagentDetail = (props: {
         </Section>
       ) : null}
 
+      {r.blocks ? (
+        <Section title="Blocks" mt={1}>
+          <Box>
+            {r.blocks.formula} ({r.blocks.class})
+          </Box>
+          <Box color="grey" fontSize="0.85em">
+            {[...r.blocks.cores.map((c) => `[${c.replace('_', ' ')}]`)]
+              .concat(r.blocks.groups.map((g) => `+ ${g.replace('_', ' ')}`))
+              .concat(r.blocks.links.map((l) => `- ${l} -`))
+              .concat(
+                r.blocks.cation && r.blocks.anion
+                  ? [`[${r.blocks.cation}] [${r.blocks.anion}]`]
+                  : [],
+              )
+              .join(' ')}
+          </Box>
+          <Box color="grey" fontSize="0.85em">
+            {r.blocks.tags.join(', ')}
+          </Box>
+        </Section>
+      ) : null}
+
+      {r.acted_on?.length ? (
+        <Section title="Processes that act on it" mt={1}>
+          {r.acted_on.map((a, i) => (
+            <Box key={`${a.process}-${i}`} mb="2px">
+              {a.process}
+              {a.with.length ? ` with ${a.with.join(', ')}` : ''}
+              {a.kind !== 'none' ? ` on ${a.kind.replace('_', ' ')}` : ''}
+              {' → '}
+              {a.gives.join(' + ')}
+              {a.product ? '' : ' (residue)'}
+              {` at ${a.low}-${a.high} C`}
+            </Box>
+          ))}
+        </Section>
+      ) : null}
+
       {r.recipe?.length ? (
         <Section title="Recipe" mt={1}>
           {r.recipe.map((rcp, i) => (
@@ -1385,9 +1452,16 @@ const ReagentDetail = (props: {
                   {rcp.temp_min ? ` at ${rcp.temp_min}-${rcp.temp_max} K` : ''}
                 </Box>
               ) : null}
-              {rcp.grade ? (
+              {rcp.process ? (
                 <Box color="grey" fontSize="0.85em" ml={1}>
-                  Mixture must be {rcp.grade} grade or better ({rcp.grade_band})
+                  {rcp.process}
+                  {rcp.catalyst_kind && rcp.catalyst_kind !== 'none'
+                    ? ` on ${rcp.catalyst_kind.replace('_', ' ')}`
+                    : ''}
+                  {rcp.product ? '' : ' (leaves only residue)'}
+                  {rcp.ideal_low !== undefined
+                    ? `, clean at ${rcp.ideal_low}-${rcp.ideal_high} C`
+                    : ''}
                 </Box>
               ) : null}
               {rcp.catalysts.length ? (
@@ -1464,8 +1538,10 @@ const PurityTab = (props: {
         A mixture has a purity: one minus the share of it that is contaminant.
         Contaminants are reagents with a volume of their own; only
         neutralisation reacts with them, they dilute whatever they are mixed
-        with, and they act on the patient as listed below. Some recipes ask for
-        a minimum grade of the mixture.
+        with, and they act on the patient as listed below. No recipe asks for a
+        grade: purity is the natural fallout of how a batch was made. A filter
+        takes a contaminant by tag and never below its floor, so a trace
+        stays.
       </Box>
       <Section title="Grades">
         <LabeledList>
@@ -1531,21 +1607,18 @@ const PurityTab = (props: {
           ))}
         </LabeledList>
       </Section>
-      <Section title="Graded recipes" mt={1}>
-        {purity.graded_recipes.length ? (
-          purity.graded_recipes.map((r, i) => (
-            <Box key={`${r.id}-${i}`} mb="2px">
-              <Button compact onClick={() => props.goToReagent(r.id)}>
-                {r.name}
-              </Button>
-              <Label inline ml={1}>
-                needs a {r.grade} mixture ({r.band})
-              </Label>
+      <Section title="Processes" mt={1}>
+        {(purity.processes ?? []).map((pr) => (
+          <Box key={pr.id} mb="2px">
+            <Box bold inline>
+              {pr.name}
             </Box>
-          ))
-        ) : (
-          <Box color="grey">No recipe asks for a minimum grade.</Box>
-        )}
+            <Label inline ml={1}>
+              {pr.text}
+              {pr.reserved ? ' (not yet in use)' : ''}
+            </Label>
+          </Box>
+        ))}
       </Section>
     </Section>
   );

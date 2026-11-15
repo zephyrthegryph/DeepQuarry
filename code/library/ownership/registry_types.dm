@@ -38,6 +38,8 @@ REGISTRY_TYPE(/datum/map_template, GLOBAL_PROC_REF(registry_map_template))
 REGISTRY_TYPE(/datum/suit_cycler_choice, GLOBAL_PROC_REF(registry_suit_cycler_choice))
 REGISTRY_TYPE(/datum/trade_destination, GLOBAL_PROC_REF(registry_trade_destination))
 REGISTRY_TYPE(/datum/reagent, GLOBAL_PROC_REF(registry_reagent))
+REGISTRY_TYPE(/datum/chem_structure, GLOBAL_PROC_REF(registry_chem_structure))
+REGISTRY_TYPE(/datum/chem_route, GLOBAL_PROC_REF(registry_chem_route))
 REGISTRY_TYPE(/datum/seed, GLOBAL_PROC_REF(registry_seed))
 REGISTRY_TYPE(/datum/robot_sprite, GLOBAL_PROC_REF(registry_robot_sprite))
 REGISTRY_TYPE(/datum/ai_icon, GLOBAL_PROC_REF(registry_ai_icon))
@@ -210,6 +212,12 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 
 /proc/registry_reagent(datum/reagent/D)
 	return SSchemistry.ready()?.chemical_reagents[D.id]
+
+/proc/registry_chem_structure(datum/chem_structure/D)
+	return GLOB.chem_structures[D.reagent_id] == D ? D : null // a structure a process makes along the way is not registered
+
+/proc/registry_chem_route(datum/chem_route/D)
+	return GLOB.chem_routes[D.id] == D ? D : null
 
 /proc/registry_seed(datum/seed/D)
 	return SSplants?.seeds[D.name]

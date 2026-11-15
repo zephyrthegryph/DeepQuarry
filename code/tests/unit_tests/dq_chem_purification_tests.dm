@@ -228,15 +228,20 @@
 	var/obj/item/reagent_containers/glass/beaker/B = dq_pur_beaker()
 	TEST_ASSERT(B.reagents.temperature_gated(), "a beaker is")
 
-/// A catalyst in the beaker widens the ideal band by its activity.
-/datum/unit_test/dq_p2_reagents/dq_pur_catalyst_widens_the_ideal_band
+/// A solid catalyst belongs to the processes that run on one: a sheet in the beaker lowers their band (it does not widen any other recipe's), and no sheet, no route.
+/datum/unit_test/dq_p2_reagents/dq_pur_solid_catalyst_lowers_a_process_band
 
-/datum/unit_test/dq_p2_reagents/dq_pur_catalyst_widens_the_ideal_band/run_gate()
+/datum/unit_test/dq_p2_reagents/dq_pur_solid_catalyst_lowers_a_process_band/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/glass/beaker/large/B = allocate(/obj/item/reagent_containers/glass/beaker/large, run_loc_floor_bottom_left)
-	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/inaprovaline, 10, 5)
-	var/list/before = B.reagents.reaction_temperature_state(X)
-	TEST_ASSERT_EQUAL(before[1], REACTION_TEMP_STATE_COLD, "5 C is below the ideal band")
+	B.reagents.add_reagent(REAGENT_ID_ETHANOL, 10, safety = 1)
+	B.reagents.add_reagent(REAGENT_ID_OXYGEN, 10, safety = 1)
+	dq_pur_set_temp(B, 40)
+	var/datum/chem_route/route = GLOB.chem_routes["oxidise:ethanol:solid_metal>contaminant_organic_residue"]
+	TEST_ASSERT_NOTNULL(route, "oxidising ethanol on a solid metal is a generated route")
+	var/datum/xform/X = dq_route_rule(route)
+	TEST_ASSERT(!xform_matches(X, B.reagents), "with no sheet the route does not hold")
+	TEST_ASSERT_NULL(B.reagents.solid_catalyst(), "there is no solid catalyst")
 	var/obj/item/stack/material/exotic_feedstock/sheets = allocate(/obj/item/stack/material/exotic_feedstock, run_loc_floor_bottom_left)
 	sheets.set_stack_material(MAT_ETCHING_CERAMIC)
 	sheets.set_amount(3)
@@ -247,16 +252,16 @@
 	TEST_ASSERT_EQUAL(sheets.get_amount(), 2, "one sheet of three")
 	TEST_ASSERT_EQUAL(B.catalyst.material.name, material_name, "of the material")
 	TEST_ASSERT(dq_pur_near(B.catalyst_activity(), sheets.material.catalytic_activity), "its activity is the beaker's")
-	var/list/after = B.reagents.reaction_temperature_state(X)
-	TEST_ASSERT_EQUAL(after[1], REACTION_TEMP_STATE_IDEAL, "the band reaches 5 C now")
-	TEST_ASSERT(dq_pur_near(B.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 30), "and the reaction went the moment the catalyst was in")
-	TEST_ASSERT_EQUAL(B.reagents.contaminant_volume(), 0, "clean")
-	// Without it, the same mixture at 5 C is dirty.
-	var/obj/item/reagent_containers/glass/beaker/large/plain = allocate(/obj/item/reagent_containers/glass/beaker/large, run_loc_floor_bottom_left)
-	dq_pur_fill_for(plain, /transformation/chem/instant/inaprovaline, 10, 5)
-	plain.reagents.handle_reactions()
-	TEST_ASSERT(plain.reagents.contaminant_volume() > 0, "without a catalyst it is dirty")
+	var/list/solid = B.reagents.solid_catalyst()
+	TEST_ASSERT_EQUAL(solid[1], B.catalyst_kind(), "its kind is the beaker's")
+	var/list/lowered = route.band_in(B.reagents)
+	TEST_ASSERT(dq_pur_near(route.band_base[2] - lowered[2], solid[2] * CHEM_SOLID_REDUCTION_PER_POINT, 0.01), "the band came down by the activity")
+	// Poisoned by sulfur: the activity and the reduction go.
+	B.reagents.add_reagent(REAGENT_ID_CONTAMINANT_SULFUR, 2, safety = 1)
+	var/list/poisoned = B.reagents.solid_catalyst()
+	TEST_ASSERT(poisoned[2] < solid[2], "sulfur poisons the sheet")
 	// A sheet that is no catalyst is refused.
+	var/obj/item/reagent_containers/glass/beaker/large/plain = allocate(/obj/item/reagent_containers/glass/beaker/large, run_loc_floor_bottom_left)
 	var/obj/item/stack/material/steel/plate = allocate(/obj/item/stack/material/steel, run_loc_floor_bottom_left)
 	rc_click(H, plain, plate)
 	TEST_ASSERT_NULL(plain.catalyst, "a steel sheet is not a catalyst")
@@ -422,7 +427,8 @@
 	source.reagents.trans_to_holder(target.reagents, 1000)
 	TEST_ASSERT(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_OILY_RESIDUE) < 1, "oily residue is mostly gone")
 	TEST_ASSERT(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE) < 1.5, "and organic residue")
-	for(var/id in list(REAGENT_ID_CONTAMINANT_INERT_FILLER, REAGENT_ID_CONTAMINANT_HEAVY_METAL, REAGENT_ID_CONTAMINANT_SULFUR, REAGENT_ID_CONTAMINANT_REACTIVE, REAGENT_ID_CONTAMINANT_BIOLOGICAL))
+	TEST_ASSERT(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_BIOLOGICAL) < 1.5, "and endotoxin, which is organic too")
+	for(var/id in list(REAGENT_ID_CONTAMINANT_INERT_FILLER, REAGENT_ID_CONTAMINANT_HEAVY_METAL, REAGENT_ID_CONTAMINANT_SULFUR, REAGENT_ID_CONTAMINANT_REACTIVE))
 		TEST_ASSERT(dq_pur_near(target.reagents.get_reagent_amount(id), 5), "charcoal takes no [id]")
 	TEST_ASSERT(target.reagents.purity() > dirty_purity, "the mixture is purer than it was")
 
@@ -487,8 +493,9 @@
 	for(var/id in list(REAGENT_ID_CONTAMINANT_HEAVY_METAL, REAGENT_ID_CONTAMINANT_OILY_RESIDUE, REAGENT_ID_CONTAMINANT_SULFUR))
 		TEST_ASSERT(sponge[id] < 1, "a sponge takes [id] ([sponge[id]]u left of 5)")
 		TEST_ASSERT(half[id] > sponge[id] + 0.5 && half[id] < 5, "half the sorption takes less of [id] ([half[id]] against [sponge[id]])")
-	for(var/id in list(REAGENT_ID_CONTAMINANT_REACTIVE, REAGENT_ID_CONTAMINANT_BIOLOGICAL, REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE, REAGENT_ID_CONTAMINANT_INERT_FILLER))
+	for(var/id in list(REAGENT_ID_CONTAMINANT_BIOLOGICAL, REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE, REAGENT_ID_CONTAMINANT_INERT_FILLER))
 		TEST_ASSERT(dq_pur_near(sponge[id], 5), "a sponge does not take [id]")
+	TEST_ASSERT(sponge[REAGENT_ID_CONTAMINANT_REACTIVE] < 1, "but being ion exchange it takes the ionic reactive impurity")
 	// Catalytic activity: reactive impurity and sulfur.
 	TEST_ASSERT(catalyst[REAGENT_ID_CONTAMINANT_REACTIVE] < 1, "a catalytic filter takes the reactive impurity")
 	TEST_ASSERT(catalyst[REAGENT_ID_CONTAMINANT_SULFUR] < 1, "and sulfur")

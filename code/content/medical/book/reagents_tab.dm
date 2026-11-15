@@ -102,6 +102,8 @@
 		entry["cures"]       = by_id[id]["cures"] || list()
 		entry["worsens"]     = by_id[id]["worsens"] || list()
 		entry["recipe"]          = _dq_reagent_recipe(id)
+		entry["blocks"]          = _dq_reagent_blocks(id)
+		entry["acted_on"]        = _dq_reagent_routes_from(id)
 		// Filter the Used-In list: only show destinations that are
 		// themselves in the medical index, and dedupe by id (some
 		// reagents have multiple recipes that produce the same
@@ -138,7 +140,7 @@
 /proc/_dq_build_used_in_index()
 	var/list/out = list()
 	for(var/datum/xform/CR as anything in GLOB.xform_rules)
-		if(CR.medium != MEDIUM_REAGENTS || !ispath(CR.rule_type, /transformation/chem))
+		if(CR.medium != MEDIUM_REAGENTS || (!CR.route_id && !ispath(CR.rule_type, /transformation/chem)))
 			continue
 		if(CR.wiki & WIKI_SPOILER)
 			continue
@@ -194,10 +196,15 @@
 			"amount" = LAZYACCESS(CR.reagent_takes, RQ),
 		)
 		reqs += list(ingredient)
-	// The minimum grade the mixture must be (`needs_grade`), by name.
-	if(CR.needs_grade)
-		entry["grade"] = grade_name(CR.needs_grade)
-		entry["grade_band"] = purity_band_text(CR.needs_grade)
+	// A generated route says which process makes it, what runs it and where it is clean.
+	var/datum/chem_route/route = chem_route_of(CR)
+	if(route)
+		var/datum/chem_process/P = chem_process_of(route.process_id)
+		entry["process"] = P?.name
+		entry["catalyst_kind"] = route.kind
+		entry["ideal_low"] = _dq_book_celsius(route.band_base[2])
+		entry["ideal_high"] = _dq_book_celsius(route.band_base[3])
+		entry["product"] = route.matched
 	entry["required"] = reqs
 	var/list/catal = list()
 	for(var/CL in CR.reagent_catalysts)
@@ -459,3 +466,46 @@ GLOBAL_LIST_INIT(dq_reagent_category_by_id, list(
 
 /proc/dq_reagent_category_table()
 	return GLOB.dq_reagent_category_by_id
+
+
+/// The block diagram of a reagent: its cores, groups, links or ions, and what is derived from them (formula, class, tags). Null for a reagent with no structure.
+/proc/_dq_reagent_blocks(reagent_id)
+	var/datum/chem_structure/S = chem_structure_of(reagent_id)
+	if(!S)
+		return null
+	return list(
+		"formula" = S.formula(),
+		"class"   = S.class_name(),
+		"tags"    = S.tags.Copy(),
+		"cores"   = S.cores.Copy(),
+		"groups"  = S.groups.Copy(),
+		"links"   = S.links.Copy(),
+		"cation"  = S.cation,
+		"anion"   = S.anion,
+	)
+
+/// The processes that act on a reagent and what they give: one row per generated route that has it among its substrates.
+/proc/_dq_reagent_routes_from(reagent_id)
+	var/list/out = list()
+	for(var/route_id in GLOB.chem_routes)
+		var/datum/chem_route/R = GLOB.chem_routes[route_id]
+		if(!(reagent_id in R.from))
+			continue
+		var/datum/chem_process/P = chem_process_of(R.process_id)
+		var/list/partners = list()
+		for(var/id in R.takes)
+			if(id != reagent_id)
+				partners += dq_reagent_display_name(id)
+		var/list/gives = list()
+		for(var/list/row as anything in R.makes)
+			gives += dq_reagent_display_name(row[1])
+		out += list(list(
+			"process"  = P?.name,
+			"kind"     = R.kind,
+			"with"     = partners,
+			"gives"    = gives,
+			"product"  = R.matched,
+			"low"      = _dq_book_celsius(R.band_base[2]),
+			"high"     = _dq_book_celsius(R.band_base[3]),
+		))
+	return out

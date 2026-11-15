@@ -460,6 +460,7 @@
 #include "dq_drug_set_c_tests.dm"
 #include "dq_contaminant_tests.dm"
 #include "dq_chem_purification_tests.dm"
+#include "dq_chem_blocks_tests.dm"
 #include "dq_book_chem_tests.dm"
 #include "dq_stabilisation_tests.dm"
 #include "dq_vital_systems_tests.dm"

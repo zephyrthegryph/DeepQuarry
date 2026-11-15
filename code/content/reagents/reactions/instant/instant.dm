@@ -24,7 +24,6 @@ CAPABILITIES(/transformation/chem/instant/dylovene)
 CAPABILITIES(/transformation/chem/instant/carthatoline)
 	configure(transformation(name = REAGENT_CARTHATOLINE, id = REAGENT_ID_CARTHATOLINE,
 		takes = list(reagent(REAGENT_ID_ANTITOXIN, 1), reagent(REAGENT_ID_CARBON, 2), reagent(REAGENT_ID_PHORON, 0.1)),
-		needs_grade = GRADE_PHARMA,
 		catalysts = list(reagent(REAGENT_ID_PHORON, 1)), makes = list(reagent(REAGENT_ID_CARTHATOLINE, 2))))
 
 /transformation/chem/instant/paracetamol
@@ -32,7 +31,6 @@ CAPABILITIES(/transformation/chem/instant/carthatoline)
 CAPABILITIES(/transformation/chem/instant/paracetamol)
 	configure(transformation(name = REAGENT_PARACETAMOL, id = REAGENT_ID_PARACETAMOL,
 		takes = list(reagent(REAGENT_ID_INAPROVALINE, 1), reagent(REAGENT_ID_NITROGEN, 1), reagent(REAGENT_ID_WATER, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_PARACETAMOL, 2))))
 
 /transformation/chem/instant/tramadol
@@ -40,7 +38,6 @@ CAPABILITIES(/transformation/chem/instant/paracetamol)
 CAPABILITIES(/transformation/chem/instant/tramadol)
 	configure(transformation(name = REAGENT_TRAMADOL, id = REAGENT_ID_TRAMADOL,
 		takes = list(reagent(REAGENT_ID_PARACETAMOL, 1), reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_OXYGEN, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_TRAMADOL, 3))))
 
 /transformation/chem/instant/oxycodone
@@ -48,7 +45,6 @@ CAPABILITIES(/transformation/chem/instant/tramadol)
 CAPABILITIES(/transformation/chem/instant/oxycodone)
 	configure(transformation(name = REAGENT_OXYCODONE, id = REAGENT_ID_OXYCODONE,
 		takes = list(reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_TRAMADOL, 1)),
-		needs_grade = GRADE_PHARMA,
 		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), makes = list(reagent(REAGENT_ID_OXYCODONE, 1))))
 
 /transformation/chem/instant/sterilizine
@@ -119,7 +115,6 @@ CAPABILITIES(/transformation/chem/instant/synaptizine)
 CAPABILITIES(/transformation/chem/instant/hyronalin)
 	configure(transformation(name = REAGENT_HYRONALIN, id = REAGENT_ID_HYRONALIN,
 		takes = list(reagent(REAGENT_ID_RADIUM, 1), reagent(REAGENT_ID_ANTITOXIN, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_HYRONALIN, 2))))
 
 /transformation/chem/instant/arithrazine
@@ -127,7 +122,6 @@ CAPABILITIES(/transformation/chem/instant/hyronalin)
 CAPABILITIES(/transformation/chem/instant/arithrazine)
 	configure(transformation(name = REAGENT_ARITHRAZINE, id = REAGENT_ID_ARITHRAZINE,
 		takes = list(reagent(REAGENT_ID_HYRONALIN, 1), reagent(REAGENT_ID_HYDROGEN, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_ARITHRAZINE, 2))))
 
 /transformation/chem/instant/impedrezene
@@ -137,19 +131,11 @@ CAPABILITIES(/transformation/chem/instant/impedrezene)
 		takes = list(reagent(REAGENT_ID_MERCURY, 1), reagent(REAGENT_ID_OXYGEN, 1), reagent(REAGENT_ID_SUGAR, 1)),
 		makes = list(reagent(REAGENT_ID_IMPEDREZENE, 2))))
 
-/transformation/chem/instant/kelotane
-
-CAPABILITIES(/transformation/chem/instant/kelotane)
-	configure(transformation(name = REAGENT_KELOTANE, id = REAGENT_ID_KELOTANE,
-		takes = list(reagent(REAGENT_ID_SILICON, 1), reagent(REAGENT_ID_CARBON, 1)),
-		blocked_by = list(reagent(REAGENT_ID_WATER, 1)), makes = list(reagent(REAGENT_ID_KELOTANE, 2)), important = TRUE))
-
 /transformation/chem/instant/peridaxon
 
 CAPABILITIES(/transformation/chem/instant/peridaxon)
 	configure(transformation(name = REAGENT_PERIDAXON, id = REAGENT_ID_PERIDAXON,
 		takes = list(reagent(REAGENT_ID_BICARIDINE, 2), reagent(REAGENT_ID_CLONEXADONE, 2)),
-		needs_grade = GRADE_PHARMA,
 		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), makes = list(reagent(REAGENT_ID_PERIDAXON, 2))))
 
 /transformation/chem/instant/osteodaxon
@@ -157,7 +143,6 @@ CAPABILITIES(/transformation/chem/instant/peridaxon)
 CAPABILITIES(/transformation/chem/instant/osteodaxon)
 	configure(transformation(name = REAGENT_OSTEODAXON, id = REAGENT_ID_OSTEODAXON,
 		takes = list(reagent(REAGENT_ID_BICARIDINE, 2), reagent(REAGENT_ID_PHORON, 0.1), reagent(REAGENT_ID_CARPOTOXIN, 1)),
-		needs_grade = GRADE_PHARMA,
 		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), blocked_by = list(reagent(REAGENT_ID_CLONEXADONE, 1)),
 		makes = list(reagent(REAGENT_ID_OSTEODAXON, 2))))
 
@@ -167,7 +152,6 @@ CAPABILITIES(/transformation/chem/instant/respirodaxon)
 	configure(transformation(name = REAGENT_RESPIRODAXON, id = REAGENT_ID_RESPIRODAXON,
 		takes = list(reagent(REAGENT_ID_DEXALINP, 2), reagent(REAGENT_ID_BIOMASS, 2), reagent(REAGENT_ID_PHORON, 1)),
 		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), blocked_by = list(reagent(REAGENT_ID_DEXALIN, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_RESPIRODAXON, 2))))
 
 /transformation/chem/instant/gastirodaxon
@@ -176,7 +160,6 @@ CAPABILITIES(/transformation/chem/instant/gastirodaxon)
 	configure(transformation(name = REAGENT_GASTIRODAXON, id = REAGENT_ID_GASTIRODAXON,
 		takes = list(reagent(REAGENT_ID_CARTHATOLINE, 1), reagent(REAGENT_ID_BIOMASS, 2), reagent(REAGENT_ID_TUNGSTEN, 2)),
 		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), blocked_by = list(reagent(REAGENT_ID_LITHIUM, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_GASTIRODAXON, 3))))
 
 /transformation/chem/instant/hepanephrodaxon
@@ -185,7 +168,6 @@ CAPABILITIES(/transformation/chem/instant/hepanephrodaxon)
 	configure(transformation(name = REAGENT_HEPANEPHRODAXON, id = REAGENT_ID_HEPANEPHRODAXON,
 		takes = list(reagent(REAGENT_ID_CARTHATOLINE, 2), reagent(REAGENT_ID_BIOMASS, 2), reagent(REAGENT_ID_LITHIUM, 1)),
 		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), blocked_by = list(reagent(REAGENT_ID_TUNGSTEN, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_HEPANEPHRODAXON, 2))))
 
 /transformation/chem/instant/cordradaxon
@@ -194,7 +176,6 @@ CAPABILITIES(/transformation/chem/instant/cordradaxon)
 	configure(transformation(name = REAGENT_CORDRADAXON, id = REAGENT_ID_CORDRADAXON,
 		takes = list(reagent(REAGENT_ID_POTASSIUMCHLOROPHORIDE, 1), reagent(REAGENT_ID_BIOMASS, 2), reagent(REAGENT_ID_BICARIDINE, 2)),
 		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), blocked_by = list(reagent(REAGENT_ID_CLONEXADONE, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_CORDRADAXON, 2))))
 
 /transformation/chem/instant/virus_food
@@ -222,7 +203,6 @@ CAPABILITIES(/transformation/chem/instant/cryptobiolin)
 CAPABILITIES(/transformation/chem/instant/tricordrazine)
 	configure(transformation(name = REAGENT_TRICORDRAZINE, id = REAGENT_ID_TRICORDRAZINE,
 		takes = list(reagent(REAGENT_ID_INAPROVALINE, 1), reagent(REAGENT_ID_ANTITOXIN, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_TRICORDRAZINE, 2))))
 
 /transformation/chem/instant/alkysine
@@ -240,20 +220,11 @@ CAPABILITIES(/transformation/chem/instant/dexalin)
 		catalysts = list(reagent(REAGENT_ID_PHORON, 1)),
 		blocked_by = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_TIN, 1)), makes = list(reagent(REAGENT_ID_DEXALIN, 1))))
 
-/transformation/chem/instant/dermaline
-
-CAPABILITIES(/transformation/chem/instant/dermaline)
-	configure(transformation(name = REAGENT_DERMALINE, id = REAGENT_ID_DERMALINE,
-		takes = list(reagent(REAGENT_ID_OXYGEN, 1), reagent(REAGENT_ID_PHOSPHORUS, 1), reagent(REAGENT_ID_KELOTANE, 1)),
-		needs_grade = GRADE_PHARMA,
-		makes = list(reagent(REAGENT_ID_DERMALINE, 3))))
-
 /transformation/chem/instant/dexalinp
 
 CAPABILITIES(/transformation/chem/instant/dexalinp)
 	configure(transformation(name = REAGENT_DEXALINP, id = REAGENT_ID_DEXALINP,
 		takes = list(reagent(REAGENT_ID_DEXALIN, 1), reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_IRON, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_DEXALINP, 3))))
 
 /transformation/chem/instant/bicaridine
@@ -261,7 +232,6 @@ CAPABILITIES(/transformation/chem/instant/dexalinp)
 CAPABILITIES(/transformation/chem/instant/bicaridine)
 	configure(transformation(name = REAGENT_BICARIDINE, id = REAGENT_ID_BICARIDINE,
 		takes = list(reagent(REAGENT_ID_INAPROVALINE, 1), reagent(REAGENT_ID_CARBON, 1)),
-		needs_grade = GRADE_PHARMA,
 		blocked_by = list(reagent(REAGENT_ID_SUGAR, 1)), makes = list(reagent(REAGENT_ID_BICARIDINE, 2))))
 
 /transformation/chem/instant/myelamine
@@ -269,7 +239,6 @@ CAPABILITIES(/transformation/chem/instant/bicaridine)
 CAPABILITIES(/transformation/chem/instant/myelamine)
 	configure(transformation(name = REAGENT_MYELAMINE, id = REAGENT_ID_MYELAMINE,
 		takes = list(reagent(REAGENT_ID_BICARIDINE, 1), reagent(REAGENT_ID_IRON, 2), reagent(REAGENT_ID_SPIDERTOXIN, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_MYELAMINE, 2))))
 
 /transformation/chem/instant/stimm
@@ -311,7 +280,6 @@ CAPABILITIES(/transformation/chem/instant/spaceacillin)
 CAPABILITIES(/transformation/chem/instant/panacillin)
 	configure(transformation(name = REAGENT_PANACILLIN, id = REAGENT_ID_PANACILLIN,
 		takes = list(reagent(REAGENT_ID_SPACEACILLIN, 1), reagent(REAGENT_ID_ANTITOXIN, 1), reagent(REAGENT_ID_SULFUR, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_PANACILLIN, 2))))
 
 /transformation/chem/instant/corophizine
@@ -319,7 +287,7 @@ CAPABILITIES(/transformation/chem/instant/panacillin)
 CAPABILITIES(/transformation/chem/instant/corophizine)
 	configure(transformation(name = REAGENT_COROPHIZINE, id = REAGENT_ID_COROPHIZINE,
 		takes = list(reagent(REAGENT_ID_SPACEACILLIN, 1), reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_PHORON, 0.1)),
-		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), needs_grade = GRADE_PHARMA,
+		catalysts = list(reagent(REAGENT_ID_PHORON, 5)),
 		makes = list(reagent(REAGENT_ID_COROPHIZINE, 2))))
 
 /transformation/chem/instant/immunosuprizine
@@ -520,7 +488,6 @@ CAPABILITIES(/transformation/chem/instant/coolant)
 CAPABILITIES(/transformation/chem/instant/rezadone)
 	configure(transformation(name = REAGENT_REZADONE, id = REAGENT_ID_REZADONE,
 		takes = list(reagent(REAGENT_ID_CARPOTOXIN, 1), reagent(REAGENT_ID_CRYPTOBIOLIN, 1), reagent(REAGENT_ID_COPPER, 1)),
-		needs_grade = GRADE_REAGENT,
 		makes = list(reagent(REAGENT_ID_REZADONE, 3))))
 
 /transformation/chem/instant/lexorin
@@ -1300,7 +1267,6 @@ CAPABILITIES(/transformation/chem/instant/glucose)
 CAPABILITIES(/transformation/chem/instant/myelamine_sap)
 	configure(transformation(name = REAGENT_MYELAMINE, id = REAGENT_ID_MYELAMINE + "sap",
 		takes = list(reagent(REAGENT_ID_BICARIDINE, 1), reagent(REAGENT_ID_IRON, 2), reagent(REAGENT_ID_KELOTANE, 1), reagent(REAGENT_ID_BLUESAP, 1)),
-		needs_grade = GRADE_PHARMA,
 		makes = list(reagent(REAGENT_ID_MYELAMINE, 1))))
 
 /transformation/chem/instant/bullvalene
