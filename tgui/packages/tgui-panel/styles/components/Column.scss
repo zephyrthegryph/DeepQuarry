@@ -189,3 +189,10 @@
 .column-window .ChatConsole::after {
   display: none;
 }
+
+// A docked window sits inside its entry's frame, so the entry owns the outer frame: the window's sections draw none (their titles
+// keep their rule). (`:root:root` outranks the console theme's `.theme-console:root .Section` frame.)
+:root:root .column-window .Section {
+  border: 0;
+  box-shadow: none;
+}

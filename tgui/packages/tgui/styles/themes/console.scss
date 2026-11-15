@@ -53,7 +53,10 @@
     @include console.console-glow;
   }
 
+  // A window's top-level section is its frame; a section inside one is a group within it, set off by its title's rule, not boxed again a
+  // few pixels inside the first.
   .Section .Section {
+    border: 0;
     box-shadow: none;
   }
 
