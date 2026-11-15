@@ -3,7 +3,7 @@
 // A contaminant is a reagent (/datum/reagent/contaminant, code/content/reagents/reagents/content/contaminants.dm) with a volume of its own. A holder's purity
 // is 1 minus the contaminant volume over its total volume, computed, never stored; its grade is the band the purity falls in.
 
-/// Grades, worst to best (a recipe asks for a minimum of the holder: `needs_grade = GRADE_PHARMA`).
+/// Grades, worst to best: a readout of a mixture's purity (no recipe asks for one).
 #define GRADE_CRUDE 1
 #define GRADE_STANDARD 2
 #define GRADE_PHARMA 3
@@ -38,6 +38,21 @@
 #define REAGENT_ID_CONTAMINANT_BIOLOGICAL "contaminant_biological"
 #define REAGENT_CONTAMINANT_REACTIVE "Reactive impurity"
 #define REAGENT_ID_CONTAMINANT_REACTIVE "contaminant_reactive"
+// The trace-potent contaminants: made by processes, strong at a trace (code/content/reagents/blocks/).
+#define REAGENT_CONTAMINANT_HYDROCHLORIC "Hydrochloric acid"
+#define REAGENT_ID_CONTAMINANT_HYDROCHLORIC "contaminant_hydrochloric"
+#define REAGENT_CONTAMINANT_DIOXIN "Dioxin"
+#define REAGENT_ID_CONTAMINANT_DIOXIN "contaminant_dioxin"
+#define REAGENT_CONTAMINANT_NITROSAMINE "Nitrosamine"
+#define REAGENT_ID_CONTAMINANT_NITROSAMINE "contaminant_nitrosamine"
+#define REAGENT_CONTAMINANT_PEROXIDE "Peroxide"
+#define REAGENT_ID_CONTAMINANT_PEROXIDE "contaminant_peroxide"
+#define REAGENT_CONTAMINANT_METHANOL "Methanol"
+#define REAGENT_ID_CONTAMINANT_METHANOL "contaminant_methanol"
+#define REAGENT_CONTAMINANT_PLASTICISER "Plasticiser"
+#define REAGENT_ID_CONTAMINANT_PLASTICISER "contaminant_plasticiser"
+#define REAGENT_CONTAMINANT_TAR "Tar"
+#define REAGENT_ID_CONTAMINANT_TAR "contaminant_tar"
 
 // Roles: what a contaminant does to the patient.
 #define CONTAMINANT_ROLE_TOXIC "toxic"           // slow organ damage per unit
@@ -62,8 +77,6 @@
 #define REACTION_COLD_RESIDUE_RATE 0.6
 #define REACTION_HOT_IMPURITY_RATE 0.4
 #define REACTION_HOT_LOSS_SHARE 0.25
-/// Kelvin a catalyst of catalytic activity 100 widens the ideal band (and the range) by, on each side.
-#define CATALYST_BAND_PER_POINT 0.3
 
 /// A reagent with no boiling point of its own boils at this temperature, K.
 #define BOILING_POINT_DEFAULT (T0C + 200)

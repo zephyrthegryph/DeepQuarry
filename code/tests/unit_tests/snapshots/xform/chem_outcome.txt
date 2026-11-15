@@ -131,7 +131,6 @@ instant/corophizine => important=0; match=1; fired=instant/corophizine; end=coro
 instant/cryoxadone => important=0; match=1; fired=instant/cryoxadone; end=cryoxadone:12; spawned=-; contract=1; uses=-
 instant/cryptobiolin => important=0; match=1; fired=instant/cryptobiolin; end=cryptobiolin:12; spawned=-; contract=1; uses=-
 instant/cube/sagaru => important=0; match=1; fired=instant/cube/sagaru; end=-; spawned=/obj/item/reagent_containers/food/snacks/monkeycube/sarucube+4; contract=0; uses=-
-instant/dermaline => important=0; match=1; fired=instant/dermaline; end=dermaline:12; spawned=-; contract=1; uses=-
 instant/deuterium => important=0; match=1; fired=instant/deuterium; end=deuterium:12; spawned=-; contract=1; uses=-
 instant/dexalin => important=0; match=1; fired=instant/dexalin; end=dexalin:4 phoron:0.6; spawned=-; contract=1; uses=-
 instant/dexalinp => important=0; match=1; fired=instant/dexalinp; end=dexalinp:12; spawned=-; contract=1; uses=-
@@ -449,7 +448,6 @@ instant/instanttea/green => important=0; match=1; fired=instant/instanttea/green
 instant/instantteapowder/green => important=0; match=1; fired=instant/instantteapowder/green; end=instantteapowdergreen:40; spawned=-; contract=1; uses=-
 instant/ironfoam => important=0; match=1; fired=instant/ironfoam; end=-; spawned=/obj/effect/effect/foam+1; contract=0; uses=-
 instant/ironsaline => important=0; match=1; fired=instant/ironsaline; end=ironsaline:16; spawned=-; contract=1; uses=-
-instant/kelotane => important=1; match=1; fired=instant/kelotane; end=kelotane:8; spawned=-; contract=1; uses=-
 instant/left4zed => important=0; match=1; fired=instant/left4zed; end=left4zed:12; spawned=-; contract=1; uses=-
 instant/lemon_juice_metal_paint => important=0; match=1; fired=instant/lemon_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/lemon_juice_paint => important=0; match=1; fired=instant/lemon_juice_paint; end=paint:20; spawned=-; contract=1; uses=-

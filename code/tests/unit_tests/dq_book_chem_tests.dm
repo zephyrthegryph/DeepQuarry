@@ -147,34 +147,32 @@
 	TEST_ASSERT_EQUAL(length(listed), length(ids), "every contaminant reagent is listed")
 	for(var/id in ids)
 		TEST_ASSERT(id in listed, "contaminant [id] is not in the purity section")
-	TEST_ASSERT(length(purity["graded_recipes"]), "the purity section lists the recipes that ask for a grade")
+	TEST_ASSERT_EQUAL(length(purity["processes"]), 15, "the purity section lists the fifteen processes")
 
 
-/// A recipe that needs a grade shows the grade's name on the recipe.
-/datum/unit_test/dq_book_recipe_shows_grade
+/// The block diagram and the processes of a reagent are in its entry, and a generated route shows its process on the recipe.
+/datum/unit_test/dq_book_reagent_blocks_and_routes
 
-/datum/unit_test/dq_book_recipe_shows_grade/Run()
+/datum/unit_test/dq_book_reagent_blocks_and_routes/Run()
 	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
 	var/list/reagents = book._dq_book_reagents()
-	var/checked = 0
-	for(var/datum/xform/CR as anything in GLOB.xform_rules)
-		if(CR.medium != MEDIUM_REAGENTS || !ispath(CR.rule_type, /transformation/chem) || !CR.needs_grade || !CR.result)
-			continue
-		if(CR.wiki & WIKI_SPOILER)
-			continue
-		var/list/entry = _book_reagent_entry(reagents, CR.result)
-		if(!entry)
-			continue
-		for(var/list/recipe in entry["recipe"])
-			// Two recipes can make one drug: only the entry with this rule's own ingredients speaks for it.
-			var/same_rule = length(recipe["required"]) == length(CR.reagent_takes)
-			for(var/list/ingredient in recipe["required"])
-				if(!(ingredient["id"] in CR.reagent_takes))
-					same_rule = FALSE
-			if(!same_rule)
-				continue
-			TEST_ASSERT_EQUAL(recipe["grade"], grade_name(CR.needs_grade), "[CR.result] shows the grade its mixture needs")
-			checked++
-	TEST_ASSERT(checked, "at least one graded recipe was read back")
+	var/list/kelotane = _book_reagent_entry(reagents, REAGENT_ID_KELOTANE)
+	TEST_ASSERT_NOTNULL(kelotane, "kelotane is in the book")
+	var/list/blocks = kelotane["blocks"]
+	TEST_ASSERT_NOTNULL(blocks, "kelotane has a block diagram")
+	TEST_ASSERT(CHEM_CORE_SILOXANE in blocks["cores"], "a siloxane")
+	TEST_ASSERT(CHEM_GROUP_HYDROXYL in blocks["groups"], "with a hydroxyl")
+	TEST_ASSERT_EQUAL(blocks["formula"], chem_structure_of(REAGENT_ID_KELOTANE).formula(), "the formula is the structure's")
+	var/found_route = FALSE
+	for(var/list/recipe in kelotane["recipe"])
+		if(recipe["process"])
+			found_route = TRUE
+	TEST_ASSERT(found_route, "kelotane's recipe is a generated route and says its process")
+	var/list/acted = kelotane["acted_on"]
+	var/found_dermaline = FALSE
+	for(var/list/row in acted)
+		if(row["process"] == "Phosphorylate" && (dq_reagent_display_name(REAGENT_ID_DERMALINE) in row["gives"]))
+			found_dermaline = TRUE
+	TEST_ASSERT(found_dermaline, "the book lists phosphorylation of kelotane, and that it gives dermaline")
 
 #endif

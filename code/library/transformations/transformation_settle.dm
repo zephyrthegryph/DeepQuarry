@@ -40,7 +40,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		return FALSE
 	if(holder.has_any_reagent(X.reagent_blocked))
 		return FALSE
-	if(X.needs_grade && !xform_grades_met(X, holder))
+	if(X.route_id && !chem_route_of(X)?.can_run(holder))
 		return FALSE
 	if(!holder.reaction_temperature_ok(X))
 		return FALSE
@@ -78,6 +78,8 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	if(X.result)
 		holder.add_reagent(X.result, amt_produced, data, safety = 1, was_from_belly = belly_reagent)
 		holder.apply_temperature_effects(X, amt_produced)
+		if(X.route_id)
+			chem_route_of(X)?.after_step(holder, amt_produced)
 		for(var/list/byproduct as anything in X.byproducts)
 			holder.add_reagent(byproduct[1], byproduct[2] * reaction_progress, safety = 1)
 
@@ -100,7 +102,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		seen[1] += reaction_progress
 		seen[2] += amt_produced
 	if(GLOB.xform_trace)
-		log_world("XFORM: [X.rule_type] stepped [reaction_progress] in [holder.my_atom] ([holder.my_atom?.type]); made [amt_produced] of [X.result || "nothing"]")
+		log_world("XFORM: [X.route_id || X.rule_type] stepped [reaction_progress] in [holder.my_atom] ([holder.my_atom?.type]); made [amt_produced] of [X.result || "nothing"]")
 	return reaction_progress
 
 /// What a step does besides moving reagents, in the order the old on_reaction() ran it: the gas taken from the air, the energy booked, what it spawns, the rule's tail.

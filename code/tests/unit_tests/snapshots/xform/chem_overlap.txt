@@ -319,7 +319,6 @@ instant/brown_paint + instant/red_paint => fired=instant/red_paint; end=marker_i
 instant/brown_paint + instant/tomato_juice_paint => fired=instant/brown_paint; end=paint:20 tomatojuice:20; spawned=-
 instant/brown_paint + instant/watermelon_juice_paint => fired=instant/brown_paint; end=paint:20 watermelonjuice:20; spawned=-
 instant/brown_paint + instant/yellow_paint => fired=instant/yellow_paint; end=marker_ink_brown:4 paint:20; spawned=-
-instant/calciumcarbonate + instant/dermaline => fired=instant/dermaline,instant/calciumcarbonate; end=calcium:1.3333 calciumcarbonate:5.3333 carbon:1.3333 dermaline:12; spawned=-
 instant/calciumcarbonate + instant/dexalin => fired=instant/dexalin; end=calcium:4 carbon:4 dexalin:6 phoron:0.4; spawned=-
 instant/calciumcarbonate + instant/ethylredoxrazine => fired=instant/ethylredoxrazine; end=calcium:4 ethylredoxrazine:12 oxygen:8; spawned=-
 instant/calciumcarbonate + instant/inaprovaline => fired=instant/inaprovaline; end=calcium:4 inaprovaline:12 oxygen:8; spawned=-
@@ -416,10 +415,6 @@ instant/cordradaxon + instant/zombiepowder/alt => fired=instant/cordradaxon,inst
 instant/corophizine + instant/falter_virus => fired=instant/corophizine; end=blood:1 corophizine:8 phoron:4.6; spawned=-
 instant/corophizine + instant/panacillin => fired=instant/panacillin; end=carbon:4 panacillin:8 phoron:5; spawned=-
 instant/cryoxadone + instant/dexalinp => fired=instant/dexalinp; end=dexalinp:12 oxygen:4 water:4; spawned=-
-instant/dermaline + instant/dexalin => fired=instant/dexalin; end=dexalin:4 kelotane:4 phoron:0.6 phosphorus:4; spawned=-
-instant/dermaline + instant/ethylredoxrazine => fired=instant/dermaline; end=anti_toxin:4 carbon:4 dermaline:12; spawned=-
-instant/dermaline + instant/inaprovaline => fired=instant/inaprovaline; end=inaprovaline:12 kelotane:4 phosphorus:4; spawned=-
-instant/dermaline + instant/water => fired=instant/water; end=kelotane:4 phosphorus:4 water:4; spawned=-
 instant/dexalin + instant/ethylredoxrazine => fired=instant/dexalin; end=anti_toxin:4 carbon:4 dexalin:4 phoron:0.6; spawned=-
 instant/dexalin + instant/inaprovaline => fired=instant/inaprovaline,instant/dexalin; end=dexalin:2 inaprovaline:12 phoron:0.8; spawned=-
 instant/dexalin + instant/water => fired=instant/water; end=oxygen:4 phoron:1 water:4; spawned=-
@@ -1098,7 +1093,6 @@ instant/dyloteane + instant/neutralize_neurotoxic_protein => fired=instant/neutr
 instant/dyloteane + instant/tercozolam => fired=instant/tercozolam; end=tea:4 tercozolam:12; spawned=-
 instant/dyloteane/super + instant/neutralize_neurotoxic_protein => fired=instant/neutralize_neurotoxic_protein; end=protein:8 sugar:4 tea:4; spawned=-
 instant/dyloteane/super + instant/tercozolam => fired=instant/tercozolam; end=sugar:4 tea:4 tercozolam:12; spawned=-
-instant/dylovene + instant/kelotane => fired=instant/dylovene; end=anti_toxin:12 carbon:4; spawned=-
 instant/dylovene + instant/leporazine => fired=instant/dylovene; end=anti_toxin:12 copper:4 phoron:5; spawned=-
 instant/dylovene + instant/mindbreaker => fired=instant/dylovene; end=anti_toxin:16 hydrogen:4; spawned=-
 instant/emp_pulse + instant/mix_virus/mix_virus_4 => fired=instant/emp_pulse; end=-; spawned=-
@@ -1215,8 +1209,6 @@ instant/ickypak + instant/performancepeaker => fired=instant/ickypak; end=ickypa
 instant/imidazoline + instant/prussian_blue => fired=instant/imidazoline,instant/prussian_blue; end=imidazoline:8 iron:1.3333 nitrogen:4 prussian_blue:18.6667; spawned=-
 instant/inaprovaline + instant/water => fired=instant/inaprovaline; end=hydrogen:8 inaprovaline:12; spawned=-
 instant/ironfoam + instant/ironsaline => fired=instant/ironsaline,instant/ironfoam; end=foaming_agent:1.3333 ironsaline:16 pacid:1.3333; spawned=/obj/effect/effect/foam+1
-instant/kelotane + instant/leporazine => fired=instant/kelotane; end=copper:4 kelotane:8 phoron:5; spawned=-
-instant/kelotane + instant/mindbreaker => fired=instant/kelotane; end=anti_toxin:4 hydrogen:4 kelotane:8; spawned=-
 instant/lemon_juice_metal_paint + instant/lime_juice_metal_paint => fired=instant/lime_juice_metal_paint; end=lemonjuice:20 paint:20; spawned=-
 instant/lemon_juice_metal_paint + instant/metal_paint => fired=instant/metal_paint; end=lemonjuice:20 paint:20; spawned=-
 instant/lemon_juice_metal_paint + instant/orange_juice_metal_paint => fired=instant/orange_juice_metal_paint; end=lemonjuice:20 paint:20; spawned=-

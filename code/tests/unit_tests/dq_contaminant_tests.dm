@@ -1,7 +1,7 @@
 // Contaminant reagents (code/domains/world_model/reagents/contaminants.dm, code/content/reagents/reagents/content/contaminants.dm): impurities are reagents with
 // a volume of their own. Purity and grade are properties of a mixture; a cartridge's source profile says how many units of each contaminant come with a unit
 // of stock; dispensing, recharging, transferring and ingesting carry them like any reagent; each role does its own harm from its own metabolism; a recipe's
-// needs_grade reads the holder; and no recipe makes or takes a contaminant but neutralisation (code/content/reagents/reactions/instant/neutralisation.dm).
+// and no recipe makes or takes a contaminant but neutralisation (code/content/reagents/reactions/instant/neutralisation.dm).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -23,12 +23,6 @@ CAPABILITIES(/transformation/dq_contam)
 
 CAPABILITIES(/transformation/dq_contam/plain)
 	configure(transformation(takes = list(reagent(REAGENT_ID_MERCURY, 1), reagent(REAGENT_ID_CHLORINE, 1)), makes = list(reagent(REAGENT_ID_TIN, 2))))
-
-/// Takes fluorine and calcium, but only in a mixture of Pharma grade or better.
-/transformation/dq_contam/graded
-
-CAPABILITIES(/transformation/dq_contam/graded)
-	configure(transformation(takes = list(reagent(REAGENT_ID_FLUORINE, 1), reagent(REAGENT_ID_CALCIUM, 1)), makes = list(reagent(REAGENT_ID_CARBON, 1)), needs_grade = GRADE_PHARMA))
 
 /// A beaker's holder (the reagents of a real container, in the test world).
 /datum/unit_test/proc/dq_contam_holder(type = /obj/item/reagent_containers/glass/beaker/large)
@@ -256,7 +250,7 @@ CAPABILITIES(/transformation/dq_contam/graded)
 
 /datum/unit_test/dq_contaminant_effects/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/reagents/holder = dq_contam_holder()
+	var/datum/reagents/holder = dq_contam_regime_holder() // a holder that does not react: an acid and a base would cancel in a beaker
 	for(var/id in contaminant_ids())
 		holder.add_reagent(id, 10, safety = 1)
 	// Toxic, with an organ: the liver.
@@ -318,38 +312,6 @@ CAPABILITIES(/transformation/dq_contam/graded)
 	TEST_ASSERT(findtext(mixed.get_reagent(REAGENT_ID_CONTAMINANT_SALTS).listing_description(), "Standard"), "a contaminant's listing says the mixture is Standard grade")
 	TEST_ASSERT_EQUAL(mixed.get_reagent(REAGENT_ID_DEXALIN).listing_description(), mixed.get_reagent(REAGENT_ID_DEXALIN).description, "a stock reagent's is its description")
 
-/// A recipe's needs_grade reads the grade of the holder's mixture: a contaminated holder refuses, a pure one fires, diluting it with stock lifts it.
-/datum/unit_test/dq_contaminant_needs_grade
-	boot_needs = list()
-
-/datum/unit_test/dq_contaminant_needs_grade/Run()
-	var/datum/xform/X = xform_of(/transformation/dq_contam/graded)
-	TEST_ASSERT_NOTNULL(X, "the graded rule compiled")
-	TEST_ASSERT_EQUAL(X.needs_grade, GRADE_PHARMA, "needs_grade is kept on the rule as the holder's minimum grade")
-	var/datum/reagents/dq_contam/low = dq_contam_regime_holder()
-	low.add_reagent(REAGENT_ID_FLUORINE, 10, safety = 1)
-	low.add_reagent(REAGENT_ID_CALCIUM, 10, safety = 1)
-	low.add_reagent(REAGENT_ID_CONTAMINANT_INERT_FILLER, 3, safety = 1)
-	TEST_ASSERT_EQUAL(low.grade(), GRADE_STANDARD, "3u in 23u is a Standard mixture")
-	TEST_ASSERT(!xform_matches(X, low), "a Standard mixture does not meet a Pharma requirement")
-	TEST_ASSERT_EQUAL(length(xform_settle_reagents(low)), 0, "so nothing reacts")
-	TEST_ASSERT(dq_contam_near(low.get_reagent_amount(REAGENT_ID_FLUORINE), 10), "and nothing is taken")
-	var/datum/reagents/dq_contam/high = dq_contam_regime_holder()
-	high.add_reagent(REAGENT_ID_FLUORINE, 10, safety = 1)
-	high.add_reagent(REAGENT_ID_CALCIUM, 10, safety = 1)
-	high.add_reagent(REAGENT_ID_CONTAMINANT_INERT_FILLER, 1, safety = 1)
-	TEST_ASSERT_EQUAL(high.grade(), GRADE_PHARMA, "1u in 21u is Pharma")
-	TEST_ASSERT(xform_matches(X, high), "a Pharma mixture meets it")
-	TEST_ASSERT_EQUAL(length(xform_settle_reagents(high)), 1, "and the rule fires")
-	TEST_ASSERT(dq_contam_near(high.get_reagent_amount(REAGENT_ID_CONTAMINANT_INERT_FILLER), 1), "the contaminant is still there, untouched, after it")
-	var/datum/reagents/dq_contam/pure = dq_contam_regime_holder()
-	pure.add_reagent(REAGENT_ID_FLUORINE, 10, safety = 1)
-	pure.add_reagent(REAGENT_ID_CALCIUM, 10, safety = 1)
-	TEST_ASSERT(xform_matches(X, pure), "a pure holder meets any grade")
-	TEST_ASSERT_EQUAL(length(xform_settle_reagents(pure)), 1, "and fires")
-	// Topping the batch up with stock lifts the mixture over the line (the contaminants are diluted).
-	low.add_reagent(REAGENT_ID_FLUORINE, 30, safety = 1)
-	TEST_ASSERT(xform_matches(X, low), "3u in 53u is Pharma")
 /// No contaminant is part of any transformation but neutralisation (an acid or base residue is spent, salts are made): what any other reaction does leaves them where they are.
 /datum/unit_test/dq_contaminant_never_reacts
 	boot_needs = list()
@@ -359,9 +321,8 @@ CAPABILITIES(/transformation/dq_contam/graded)
 	for(var/datum/xform/X as anything in GLOB.xform_rules)
 		if(X.medium != MEDIUM_REAGENTS)
 			continue
-		if(ispath(X.rule_type, /transformation/chem/instant/neutralise_acid) || ispath(X.rule_type, /transformation/chem/instant/neutralise_base))
-			TEST_ASSERT(X.result == REAGENT_ID_CONTAMINANT_SALTS, "[X.rule_type] makes salts")
-			continue
+		if(X.route_id)
+			continue // a generated route (neutralise spends the residues; the others make them): the route tests read those
 		for(var/id in ids)
 			TEST_ASSERT(!(id in X.reagent_takes) && !(id in X.reagent_catalysts) && !(id in X.reagent_blocked) && X.result != id, "[X.rule_type] names the contaminant [id]")
 	var/datum/reagents/dq_contam/H = dq_contam_regime_holder()
@@ -380,13 +341,19 @@ CAPABILITIES(/transformation/dq_contam/graded)
 	TEST_ASSERT_EQUAL(length(xform_settle_reagents(only)), 0, "contaminants together do nothing")
 	TEST_ASSERT_EQUAL(only.grade(), GRADE_CRUDE, "a mixture of nothing but contaminant is Crude")
 	// A real beaker, with the real recipes: a recipe's product does not take a contaminant with it.
+	// (An acid and a base cancel in a real beaker: that is the neutralise process, tested with the routes.)
 	var/datum/reagents/real = dq_contam_holder()
+	var/list/untouched = list()
 	for(var/id in ids)
+		var/datum/chem_structure/S = chem_structure_of(id)
+		if(S?.is_acid() || S?.is_base())
+			continue
+		untouched += id
 		real.add_reagent(id, 2, safety = 1)
 	real.add_reagent(REAGENT_ID_HYDROGEN, 5, safety = 1)
 	real.add_reagent(REAGENT_ID_OXYGEN, 5, safety = 1)
 	real.handle_reactions()
-	for(var/id in ids)
+	for(var/id in untouched)
 		TEST_ASSERT(dq_contam_near(real.get_reagent_amount(id), 2), "[id] is still 2u in a beaker that settled")
 
 #endif

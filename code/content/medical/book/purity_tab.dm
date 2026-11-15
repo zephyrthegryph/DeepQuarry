@@ -1,8 +1,8 @@
 // DQ Medical Reference — Purity tab builder.
 //
 // What a mixture carries besides its reagents (code/domains/world_model/reagents/contaminants.dm): the four grades with their purity
-// bands, every contaminant reagent (what it is and what it does to a patient), and the recipes that ask for a minimum grade of the
-// mixture (`needs_grade`), and the ways to purify one: the temperature each recipe wants (code/content/reagents/reactions/reaction_temperatures.dm), the boiling
+// bands (a readout: no recipe asks for one), every contaminant reagent (what it is and what it does to a patient), the processes that make
+// chemicals out of block structures, and the ways to purify a mixture: the temperature each recipe wants (code/content/reagents/reactions/reaction_temperatures.dm), the boiling
 // points (code/content/reagents/reagents/boiling_points.dm), the filters (code/content/reagents/purification/filters.dm), neutralisation and the hot plate and
 // condenser. All of it is read from the reagent types, the tables and the transformation rules, never written out here.
 
@@ -25,22 +25,14 @@
 			"role"        = C.contaminant_role,
 			"description" = C.description,
 			"effect"      = C.effect_text,
+			"floor"       = C.filter_floor,
 		))
 	out["contaminants"] = contaminants
-	// Where graded recipes apply: every chemistry rule with a minimum grade of the mixture.
-	var/list/graded = list()
-	for(var/datum/xform/CR as anything in GLOB.xform_rules)
-		if(CR.medium != MEDIUM_REAGENTS || !ispath(CR.rule_type, /transformation/chem) || !CR.needs_grade)
-			continue
-		if(CR.wiki & WIKI_SPOILER)
-			continue
-		graded += list(list(
-			"id"    = CR.result,
-			"name"  = dq_reagent_display_name(CR.result),
-			"grade" = grade_name(CR.needs_grade),
-			"band"  = purity_band_text(CR.needs_grade),
-		))
-	out["graded_recipes"] = graded
+	var/list/processes = list()
+	for(var/process_id in GLOB.chem_processes)
+		var/datum/chem_process/P = GLOB.chem_processes[process_id]
+		processes += list(list("id" = P.id, "name" = P.name, "text" = P.desc, "kinds" = P.kinds.Copy(), "reserved" = P.reserved))
+	out["processes"] = processes
 	out["temperature_classes"] = _dq_book_temperature_classes()
 	out["recipe_temperatures"] = _dq_book_recipe_temperatures()
 	out["boiling_points"] = _dq_book_boiling_points()
@@ -104,16 +96,18 @@
 /// The ways to purify a mixture: what each does and what it takes out.
 /proc/_dq_book_methods()
 	var/list/out = list()
-	out += list(list("name" = "Temperature", "text" = "A recipe is clean inside its ideal band. Off the band but inside its range it still goes, but leaves organic residue (too cold) or a reactive impurity and a loss of product (too hot), more the further off it is. Outside its range nothing happens. A catalyst (a sheet of a catalytic material dropped into the beaker) widens the band."))
+	out += list(list("name" = "Temperature", "text" = "A recipe is clean inside its ideal band. Off the band but inside its range it still goes, but leaves organic residue (too cold) or a reactive impurity and a loss of product (too hot), more the further off it is. Outside its range nothing happens."))
+	out += list(list("name" = "Catalysts", "text" = "A catalyst belongs to a process. A dissolved acid (sulphuric) or base (lye) lowers its band and is spent into acid or base residue; an enzyme works at gentle heat and leaves endotoxin; a sheet of catalytic metal or porous material lying in the beaker lowers the band by its catalytic activity and makes the step cleaner. Sulfur and heavy metals poison a sheet, and heavy metals kill an enzyme."))
+	out += list(list("name" = "Interference", "text" = "Acid and base cancel into salts. Water undoes a condensation (an ester or amide splits back into its acid and alcohol or amine). Oxidiser left over attacks the next product. Peroxide detonates when its container is heated."))
 	out += list(list("name" = "Hot plate", "text" = "Stand a beaker on a hot plate, set the dial in Celsius and switch it on: the beaker warms toward the dial over seconds, drawing power. Switch it off and the beaker cools on its own."))
 	out += list(list("name" = "Boiling and the condenser", "text" = "A container hotter than a reagent's boiling point loses that reagent, gradually, and the vapour is gone. A condenser on or next to the hot plate collects the vapour into a container under its spout: distillation. What boils comes over; what never boils (salts, heavy metals) stays behind."))
 	out += list(list("name" = "Neutralisation", "text" = "Acid residue and a base (lye, ammonia, diethylamine), or base residue and an acid (sulphuric, polytrinic), make salts and water. Measure it: too little leaves residue, too much leaves the base or the acid."))
 	for(var/list/row in list(list("paper filter", chem_filter_strengths(/obj/item/chem_filter/paper)), list("charcoal filter", chem_filter_strengths(/obj/item/chem_filter/charcoal))))
 		var/list/taken = list()
-		var/list/strengths = row[2]
+		var/list/strengths = chem_filter_catches(row[2])
 		for(var/id in strengths)
 			var/datum/reagent/contaminant/C = contaminant_def(id)
 			taken += "[C.name] ([round(strengths[id] * 100)]%)"
 		out += list(list("name" = row[1], "text" = "Fit a funnel on a beaker and put the filter in it: what is poured in is filtered. It takes [jointext(taken, ", ")] while fresh, keeps a little of the product, and clogs when it fills."))
-	out += list(list("name" = "Sorbent filter", "text" = "Line a paper filter with a sheet of an engineered material. Its sorption stat takes heavy metals, oils and sulfur; its catalytic activity takes reactive impurity and sulfur; its antimicrobial activity takes endotoxin."))
+	out += list(list("name" = "Ion-exchange (sorbent) filter", "text" = "Line a paper filter with a sheet of an engineered material. Its sorption stat takes ionic, metallic, sulfurous and oily contaminants (salts, heavy metals, sulfur, oils); its catalytic activity takes oxidisers and sulfur; its antimicrobial activity takes endotoxin."))
 	return out

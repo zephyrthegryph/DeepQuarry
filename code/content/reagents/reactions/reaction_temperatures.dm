@@ -92,7 +92,7 @@ GLOBAL_LIST_INIT(reaction_temperature_ambient_words, list("_paint", "carpet", "v
 	static_entries_ensure("build_reaction_temperature_table")
 	var/list/table = list()
 	for(var/datum/xform/X as anything in GLOB.xform_rules)
-		if(X.medium == MEDIUM_REAGENTS && X.regime == REGIME_INSTANT && ispath(X.rule_type, /transformation/chem))
+		if(X.medium == MEDIUM_REAGENTS && X.regime == REGIME_INSTANT && !X.route_id && ispath(X.rule_type, /transformation/chem))
 			table[X.rule_type] = GLOB.reaction_temperature_classes[reaction_temperature_class(X.rule_type)]
 	return table
 

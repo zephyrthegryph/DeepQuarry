@@ -13,9 +13,6 @@
 //   regime        which holders run the rule (REGIME_X); a holder declares the regime it runs. Default REGIME_INSTANT.
 //   takes         the terms consumed. The first one is the index key (the anchor): the rule is a candidate in a subject holding it.
 //   catalysts     present at least this much, not consumed.        blocked_by: present at least this much blocks the rule.
-//   needs_grade   GRADE_PHARMA: the minimum grade (GRADE_CRUDE..GRADE_REAGENT, code/defines/content/chem_purity.dm) of the holder's mixture for the rule to hold
-//                 (the contaminant volume over the total volume, code/domains/world_model/reagents/contaminants.dm); a holder below it does not react. A holder
-//                 with no contaminant is Reagent grade, so it meets any. Reagents medium only.
 //   holds         the conditions under which the rule holds (code/library/transformations/transformation_conditions.dm); a subtype's `holds` is ANDed over the one
 //                 it inherits. (Not `when`: that keyword is the op conditions', and the handler lints read it as one.)
 //   rate          how far one step goes, a fraction of the limit: RATE_INSTANT (the default), half_life(n), rate(r).
@@ -65,14 +62,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 	return list(reagent_id, key, default)
 
 /proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, spawns = null, effects = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null,
-		with_data = null, data_from = null, spends = null, spends_all = null, needs_grade = null)
+		with_data = null, data_from = null, spends = null, spends_all = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
 		"notice" = notice, "spawns" = spawns, "effects" = effects, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
 		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen, "crafted" = crafted, \
-		"with_data" = with_data, "data_from" = data_from, "spends" = spends, "spends_all" = spends_all, "needs_grade" = needs_grade))
+		"with_data" = with_data, "data_from" = data_from, "spends" = spends, "spends_all" = spends_all))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
 /proc/half_life(ticks)
@@ -141,8 +138,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/list/reagent_takes
 	var/list/reagent_catalysts
 	var/list/reagent_blocked
-	/// The minimum GRADE_* of the holder's mixture (`needs_grade =`), or null.
-	var/needs_grade
+	/// The id of the generated route this rule is (code/domains/world_model/reagents/blocks/routes.dm), or null for a declared rule.
+	var/route_id
 	/// The gas terms of a gas rule as gas type => minimum moles (the shape the dispatcher reads the mixture's readings in), or null.
 	var/list/gas_takes
 	/// A gas rule's temperature window (null: open), read from its temperature_in() condition.
@@ -330,34 +327,42 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	sortTim(GLOB.xform_rules, GLOBAL_PROC_REF(cmp_xform_asc))
 	for(var/datum/xform/X as anything in GLOB.xform_rules)
 		GLOB.xform_owners[X.rule_type] = new X.rule_type
-		var/list/by_regime = GLOB.xform_index[X.medium]
-		if(!by_regime)
-			by_regime = list()
-			GLOB.xform_index[X.medium] = by_regime
-		var/list/by_key = by_regime[X.regime]
-		if(!by_key)
-			by_key = list()
-			by_regime[X.regime] = by_key
-		LAZYINITLIST(by_key[X.anchor])
-		by_key[X.anchor] += X
-		var/list/listed_by_regime = GLOB.xform_by_regime[X.medium]
-		if(!listed_by_regime)
-			listed_by_regime = list()
-			GLOB.xform_by_regime[X.medium] = listed_by_regime
-		LAZYINITLIST(listed_by_regime[X.regime])
-		listed_by_regime[X.regime] += X
-		if(X.result)
-			var/list/products_by_regime = GLOB.xform_by_product[X.medium]
-			if(!products_by_regime)
-				products_by_regime = list()
-				GLOB.xform_by_product[X.medium] = products_by_regime
-			var/list/by_product = products_by_regime[X.regime]
-			if(!by_product)
-				by_product = list()
-				products_by_regime[X.regime] = by_product
-			LAZYINITLIST(by_product[X.result])
-			by_product[X.result] += X
+		xform_index_rule(X)
+	chem_routes_install() // the generated chemistry routes join the table when the reagents are known
 	log_world("Transformations compiled: [length(GLOB.xform_rules)] rule(s) in [(REALTIMEOFDAY - started) / 10] s")
+
+/// Files one compiled rule in the indexes (by anchor, by regime, by product). `touched` collects the lists it added to, for a caller that sorts them afterwards.
+/proc/xform_index_rule(datum/xform/X, list/touched = null)
+	var/list/by_regime = GLOB.xform_index[X.medium]
+	if(!by_regime)
+		by_regime = list()
+		GLOB.xform_index[X.medium] = by_regime
+	var/list/by_key = by_regime[X.regime]
+	if(!by_key)
+		by_key = list()
+		by_regime[X.regime] = by_key
+	LAZYINITLIST(by_key[X.anchor])
+	by_key[X.anchor] += X
+	touched?.Add(list(by_key[X.anchor]))
+	var/list/listed_by_regime = GLOB.xform_by_regime[X.medium]
+	if(!listed_by_regime)
+		listed_by_regime = list()
+		GLOB.xform_by_regime[X.medium] = listed_by_regime
+	LAZYINITLIST(listed_by_regime[X.regime])
+	listed_by_regime[X.regime] += X
+	touched?.Add(list(listed_by_regime[X.regime]))
+	if(X.result)
+		var/list/products_by_regime = GLOB.xform_by_product[X.medium]
+		if(!products_by_regime)
+			products_by_regime = list()
+			GLOB.xform_by_product[X.medium] = products_by_regime
+		var/list/by_product = products_by_regime[X.regime]
+		if(!by_product)
+			by_product = list()
+			products_by_regime[X.regime] = by_product
+		LAZYINITLIST(by_product[X.result])
+		by_product[X.result] += X
+		touched?.Add(list(by_product[X.result]))
 
 /// One rule's flyweight from its merged entry, or null (and a report) when it cannot compile.
 /proc/xform_compile(type, datum/entry/E, order, origin)
@@ -462,12 +467,6 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.reagent_takes = xform_assoc(X.takes, XCUR_REAGENT)
 		X.reagent_catalysts = xform_assoc(X.catalysts, XCUR_REAGENT)
 		X.reagent_blocked = xform_assoc(X.blocked_by, XCUR_REAGENT)
-		if(arguments["needs_grade"])
-			var/grade = arguments["needs_grade"]
-			if(!isnum(grade) || grade < GRADE_CRUDE || grade > GRADE_REAGENT)
-				declare_report("[origin]: [type]: needs_grade must be a GRADE_* constant")
-				return null
-			X.needs_grade = grade
 		for(var/list/row as anything in X.makes)
 			if(row[1] == XCUR_REAGENT)
 				X.result = row[2]

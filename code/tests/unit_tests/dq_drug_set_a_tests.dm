@@ -29,7 +29,6 @@
 	TEST_ASSERT(REAGENT_ID_TRICORDRAZINE in GLOB.reagent_addictive_slow, "tricordrazine stays mildly addictive")
 	var/datum/xform/X = xform_of(/transformation/chem/instant/tricordrazine)
 	TEST_ASSERT_NOTNULL(X, "the tricordrazine recipe compiled")
-	TEST_ASSERT_EQUAL(X.needs_grade, GRADE_PHARMA, "tricordrazine needs a pharma-grade mixture")
 
 	R = _set_a_reagent(REAGENT_ID_PERIDAXON)
 	_set_a_tags(R, list(TREAT_OCULAR, TREAT_RESPIRATORY, TREAT_HEPATORENAL, TREAT_CARDIAC, TREAT_DIGESTIVE, TREAT_NEURAL_REPAIR))
@@ -51,7 +50,6 @@
 	TEST_ASSERT(R.strains?[O_KIDNEYS] > 0, "panacillin strains the kidneys")
 	var/datum/xform/X = xform_of(/transformation/chem/instant/panacillin)
 	TEST_ASSERT_NOTNULL(X, "the panacillin recipe compiled")
-	TEST_ASSERT_EQUAL(X.needs_grade, GRADE_PHARMA, "panacillin needs a pharma-grade mixture")
 	var/datum/affliction/chem_interaction/clash = dq_proto(/datum/affliction/chem_interaction/panacillin_corophizine)
 	TEST_ASSERT(clash.interferes_with?[REAGENT_ID_COROPHIZINE] < 1, "panacillin weakens corophizine")
 	var/datum/affliction/nausea/panacillin/nausea = dq_proto(/datum/affliction/nausea/panacillin)
@@ -67,7 +65,6 @@
 	TEST_ASSERT_EQUAL(R.strains?[O_LIVER], DRUG_STRAIN_HEAVY, "rezadone strains the liver heavily")
 	var/datum/xform/X = xform_of(/transformation/chem/instant/rezadone)
 	TEST_ASSERT_NOTNULL(X, "the rezadone recipe compiled")
-	TEST_ASSERT_EQUAL(X.needs_grade, GRADE_REAGENT, "rezadone needs a reagent-grade mixture")
 	var/datum/affliction/chem_interaction/cancel = dq_proto(/datum/affliction/chem_interaction/rezadone_arithrazine_cancel)
 	TEST_ASSERT_EQUAL(cancel.interferes_with?[REAGENT_ID_ARITHRAZINE], 0, "rezadone cancels arithrazine")
 

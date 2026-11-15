@@ -34,8 +34,8 @@
 /obj/item/stack/material/glass => sheet: silicon; ground: silicon=60
 /obj/item/stack/material/glass/phoronglass => sheet: platinum,silicon,silicon,silicon; ground: platinum=15,silicon=45
 /obj/item/stack/material/glass/phoronrglass => sheet: silicon,silicon,silicon,phoron,phoron; ground: phoron=24,silicon=36
-/obj/item/stack/material/glass/plastitanium => sheet: titanium,silicon,iron,carbon,platinum; ground: iron=12,kelotane=24,platinum=12,titanium=12
-/obj/item/stack/material/glass/reinforced => sheet: silicon,silicon,silicon,iron,carbon; ground: iron=12,kelotane=24,silicon=24
+/obj/item/stack/material/glass/plastitanium => sheet: titanium,silicon,iron,carbon,platinum; ground: carbon=12,iron=12,platinum=12,silicon=12,titanium=12
+/obj/item/stack/material/glass/reinforced => sheet: silicon,silicon,silicon,iron,carbon; ground: carbon=12,iron=12,silicon=36
 /obj/item/stack/material/glass/titanium => sheet: titanium,silicon; ground: silicon=30,titanium=30
 /obj/item/stack/material/gold => sheet: gold; ground: gold=60
 /obj/item/stack/material/graphite => sheet: carbon; ground: carbon=60
@@ -53,7 +53,7 @@
 /obj/item/stack/material/plasteel/hull => sheet: iron,iron,carbon,carbon,platinum; ground: carbon=48,iron=48,platinum=24
 /obj/item/stack/material/plasteel/rebar => sheet: iron,iron,carbon,carbon,platinum; ground: carbon=24,iron=24,platinum=12
 /obj/item/stack/material/plastic => sheet: carbon,carbon,oxygen,chlorine,sulfur; ground: carbon=24,chlorine=12,oxygen=12,sulfur=12
-/obj/item/stack/material/plastitanium/hull => sheet: titanium,silicon,iron,carbon,platinum; ground: iron=12,kelotane=24,platinum=12,titanium=12
+/obj/item/stack/material/plastitanium/hull => sheet: titanium,silicon,iron,carbon,platinum; ground: carbon=12,iron=12,platinum=12,silicon=12,titanium=12
 /obj/item/stack/material/platinum => sheet: platinum; ground: platinum=60
 /obj/item/stack/material/sandstone => sheet: silicon,oxygen; ground: oxygen=30,silicon=30
 /obj/item/stack/material/silver => sheet: silver; ground: silver=60

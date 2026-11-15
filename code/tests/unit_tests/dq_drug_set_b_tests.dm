@@ -85,26 +85,6 @@
 	TEST_ASSERT(space.treatment_tags[TREAT_ANTIMICROBIAL] < coro.treatment_tags[TREAT_ANTIMICROBIAL], "spaceacillin is the weaker antimicrobial")
 
 
-// --- Recipes need graded ingredients -----------------------------------------------------------------------------------------------
-
-/datum/unit_test/dq_drug_set_b_recipes_need_pharma
-	boot_needs = list()
-
-/datum/unit_test/dq_drug_set_b_recipes_need_pharma/Run()
-	var/list/expected = list(
-		/transformation/chem/instant/cordradaxon,
-		/transformation/chem/instant/respirodaxon,
-		/transformation/chem/instant/hepanephrodaxon,
-		/transformation/chem/instant/gastirodaxon,
-		/transformation/chem/instant/dexalinp,
-		/transformation/chem/instant/corophizine,
-	)
-	for(var/rule_type in expected)
-		var/datum/xform/X = xform_of(rule_type)
-		TEST_ASSERT_NOTNULL(X, "[rule_type] compiled")
-		TEST_ASSERT_EQUAL(X.needs_grade, GRADE_PHARMA, "[rule_type] needs a Pharma grade mixture")
-
-
 // --- Interactions ----------------------------------------------------------------------------------------------------------------
 
 /// Epinephrine together with synaptizine raises the adrenergic overload; either alone does not.

@@ -1,6 +1,6 @@
 // What a glass container takes besides its contents (code/content/reagents/purification/): a funnel on its mouth (with a filter in the funnel everything poured in
-// goes through it, code/content/reagents/purification/filters.dm) and a catalyst in the glass (a sheet of a material with catalytic activity, which widens every
-// recipe's ideal temperature band, code/domains/world_model/reagents/chem_temperature.dm).
+// goes through it, code/content/reagents/purification/filters.dm) and a catalyst in the glass (a sheet of a material with catalytic activity: the solid catalyst
+// of the processes that run on one, code/domains/world_model/reagents/blocks/routes.dm).
 
 /obj/item/reagent_containers/glass
 	/// The funnel on the mouth of the container, or null.
@@ -78,6 +78,12 @@ CAPABILITY_DEF(glass_purification, CAP_GLASS_PURIFICATION, key = NONE)
 /obj/item/reagent_containers/glass/proc/catalyst_activity()
 	return catalyst?.material ? clamp(catalyst.material.trait(MT_CATALYTIC), 0, 100) : 0
 
+/// The kind of the solid catalyst in the glass (CHEM_CATALYST_SOLID_ACID for a porous material, else CHEM_CATALYST_SOLID_METAL), or null with none.
+/obj/item/reagent_containers/glass/proc/catalyst_kind()
+	if(!catalyst?.material)
+		return null
+	return catalyst.material.sorbed_volume() >= CHEM_SOLID_ACID_POROSITY ? CHEM_CATALYST_SOLID_ACID : CHEM_CATALYST_SOLID_METAL
+
 /obj/item/reagent_containers/glass/proc/catalyst_added(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/stack/material/sheet = A.held
@@ -87,10 +93,10 @@ CAPABILITY_DEF(glass_purification, CAP_GLASS_PURIFICATION, key = NONE)
 	if(!move_into(src, nameof(src.catalyst), part, user))
 		part.forceMove(get_turf(src))
 		return OP_OK
-	to_chat(user, span_notice("You drop a sheet of [catalyst.material.display_name] into \the [src]; it will help whatever reacts in it."))
+	to_chat(user, span_notice("You drop a sheet of [catalyst.material.display_name] into \the [src]; it will help the processes that run on a solid catalyst."))
 	if(GLOB.chem_trace)
-		log_world("CHEM: [user] put a catalyst of activity [catalyst_activity()] ([catalyst.material.name]) in [src]")
-	reagents?.handle_reactions() // the bands are wider now
+		log_world("CHEM: [user] put a [catalyst_kind()] catalyst of activity [catalyst_activity()] ([catalyst.material.name]) in [src]")
+	reagents?.handle_reactions() // a route that runs on it may go now
 	return OP_OK
 
 /obj/item/reagent_containers/glass/proc/catalyst_removed(datum/act/op/A)
