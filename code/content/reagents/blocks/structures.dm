@@ -1,8 +1,8 @@
 // What each chemistry reagent is built of (the machinery and what is derived: code/domains/world_model/reagents/blocks/structure.dm).
 //
 // chem_structure_make(cores, groups, links, cation, anion). A group named twice is two of it. An organic that carries a metal centre names the metal as its cation.
-// Every chemistry reagent of the first three tiers is declared here (doc/rewrite/proposals/chemistry_redesign.md section 8; the recipe book: chemistry_recipes.md);
-// the mixtures (drinks, food, cultures, paints, cleaner, iron saline, thermite), the tier 4 blends and the source-only chemicals are not. A declaration is a decision
+// Every chemistry reagent of the four tiers is declared here (doc/rewrite/proposals/chemistry_redesign.md section 8; the recipe book: chemistry_recipes.md);
+// the mixtures (drinks, food, cultures, paints, cleaner, iron saline, thermite), the source-only chemicals that carry no route are not. A declaration is a decision
 // about what the reagent is: a process that ends in this structure makes this reagent, and a declared reagent whose route generates has no recipe of its own.
 // Adding one adds the routes the processes make of it (the pin test, dq_chem_routes_pinned, says which).
 
@@ -135,6 +135,53 @@ GLOBAL_LIST_INIT(chem_declared_structures, list(
 	REAGENT_ID_CITALOPRAM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CYANIDE)),
 	REAGENT_ID_TERCOZOLAM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_THIOL)),
 	REAGENT_ID_IMPEDREZENE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBONYL, CHEM_GROUP_HALIDE)),
+	// ---- the leftovers of tiers 2 and 3: a pyridine acid joined to an amine (a nikethamide) or a sugar (a nucleoside), an alkaloid acid on paracetamol ----
+	REAGENT_ID_ANTICONVULSANT = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), null, list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_REZADONE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_SUGAR_RING), null, list(CHEM_LINK_ESTER)),
+	REAGENT_ID_BENZILATE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_AMINE), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER)),
+	// ---- tier 4, the exotic trees (chemistry_recipes.md section 14): every tree starts from a core that cannot be made on the station, and no process changes one exotic core into another ----
+	// [fire] dragon blood: halogenate, then sulfur, makes neon liquid fire; oxidise that for blood sealer, bind iron to it for juggernog
+	REAGENT_ID_LIQUIDFIRE = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_CHLOROFIRE = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_NEOLIQUIDFIRE = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL)),
+	REAGENT_ID_BLOODSEALER = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_THIOL)),
+	REAGENT_ID_JUGGERNOG = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_IRON),
+	// [death] deathclaw blood: halogenate for the mutagen, then ammonia for the heat nullifier
+	REAGENT_ID_DEATHBLOOD = chem_structure_make(list(CHEM_CORE_DEATH), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_DEATHCLAWMUTAGEN = chem_structure_make(list(CHEM_CORE_DEATH), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_HEATNULLIFER = chem_structure_make(list(CHEM_CORE_DEATH), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	// [life] liquid life: oxidise for the peaker, aminate that for the sense enhancer; oxidise it again for the acid and join alkysine to it for soul dew; an ester of bicaridine is the liquid healer
+	REAGENT_ID_LIQUIDLIFE = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_PERFORMANCEPEAKER = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_SENSEENHANCER = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_LIFEACID = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_HALOSOULDEW = chem_structure_make(list(CHEM_CORE_LIFE, CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_HALIDE), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_SOULDEW = chem_structure_make(list(CHEM_CORE_LIFE, CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_LIQUIDHEALER = chem_structure_make(list(CHEM_CORE_LIFE, CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE), list(CHEM_LINK_ESTER)),
+	// [venom] carp and spider toxin: an enzyme cuts either part way for oceanic cure; carpotoxin and a sedative make zombie powder, and so on up
+	REAGENT_ID_CARPOTOXIN = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_HYDROXYL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_SPIDERTOXIN = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_OCEANICCURE = chem_structure_make(list(CHEM_CORE_VENOM), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_ZOMBIEPOWDER = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER)),
+	REAGENT_ID_LICHPOWDER = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HALIDE), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER, CHEM_LINK_ESTER, CHEM_LINK_ESTER)),
+	REAGENT_ID_NECROXADONE = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER, CHEM_LINK_ESTER, CHEM_LINK_ESTER)),
+	// [slime] slime jelly: nitrate for brute juice, reduce that for mutation toxin, halogenate for the advanced one
+	REAGENT_ID_SLIMEJELLY = chem_structure_make(list(CHEM_CORE_SLIME)),
+	REAGENT_ID_BERSERKMED = chem_structure_make(list(CHEM_CORE_SLIME), list(CHEM_GROUP_NITRO)),
+	REAGENT_ID_MUTATIONTOXIN = chem_structure_make(list(CHEM_CORE_SLIME), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_ADVMUTATIONTOXIN = chem_structure_make(list(CHEM_CORE_SLIME), list(CHEM_GROUP_AMINE, CHEM_GROUP_HALIDE)),
+	// [volt] 200 V: phosphorylate for the energy booster; bicaridine on it is phoenix breath
+	REAGENT_ID_SHOCKCHEM = chem_structure_make(list(CHEM_CORE_VOLT), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_COPPER),
+	REAGENT_ID_ENERGYBOOSTER = chem_structure_make(list(CHEM_CORE_VOLT), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE, CHEM_GROUP_PHOSPHATE), null, CHEM_ION_COPPER),
+	REAGENT_ID_PHOENIXBREATH = chem_structure_make(list(CHEM_CORE_VOLT, CHEM_CORE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_ESTER), CHEM_ION_COPPER),
+	// the expedition finds: relic ichor (oxidise, then bind lithium: claridyl) and void amber (halogenate, aminate: mortiferin; oxidise that: malish-qualem, and back)
+	REAGENT_ID_RELICICHOR = chem_structure_make(list(CHEM_CORE_RELIC), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_RELICESSENCE = chem_structure_make(list(CHEM_CORE_RELIC), list(CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_CLARIDYL = chem_structure_make(list(CHEM_CORE_RELIC), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_LITHIUM),
+	REAGENT_ID_VOIDAMBER = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_CHLOROVOID = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_MORTIFERIN = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	REAGENT_ID_MALISHQUALEM = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_AMINE)),
 	// ---- the contaminants ----
 	REAGENT_ID_CONTAMINANT_HEAVY_METAL = chem_structure_make(null, null, null, CHEM_ION_HEAVY_METAL, CHEM_ION_CARBONATE),
 	REAGENT_ID_CONTAMINANT_SULFUR = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_SULFATE),
@@ -161,4 +208,7 @@ GLOBAL_LIST_INIT(chem_building_blocks, list(
 	REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID,
 	REAGENT_ID_CHLOROHYDRIN, REAGENT_ID_NITROSALICYLIC, REAGENT_ID_CHLOROPHORON, REAGENT_ID_ALKALOIDACID, REAGENT_ID_PYRIDONE, REAGENT_ID_HALOSPACEACILLIN,
 	REAGENT_ID_SCAVENGERRESIN,
+	// the exotic inputs and the rungs between them and the blends: mixed on purpose, like the stock
+	REAGENT_ID_LIQUIDFIRE, REAGENT_ID_DEATHBLOOD, REAGENT_ID_LIQUIDLIFE, REAGENT_ID_CARPOTOXIN, REAGENT_ID_SPIDERTOXIN, REAGENT_ID_SLIMEJELLY, REAGENT_ID_SHOCKCHEM,
+	REAGENT_ID_RELICICHOR, REAGENT_ID_VOIDAMBER, REAGENT_ID_CHLOROFIRE, REAGENT_ID_LIFEACID, REAGENT_ID_HALOSOULDEW, REAGENT_ID_RELICESSENCE, REAGENT_ID_CHLOROVOID,
 ))

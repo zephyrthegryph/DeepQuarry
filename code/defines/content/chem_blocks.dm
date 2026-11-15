@@ -15,6 +15,15 @@
 #define CHEM_CORE_NITROGEN_RING "nitrogen_ring"
 #define CHEM_CORE_SILOXANE "siloxane"
 #define CHEM_CORE_PHORON_LATTICE "phoron_lattice"
+// The exotic cores: what a creature, a slime or an expedition gives. They cannot be built on the station and no process turns one into another (code/content/reagents/blocks/structures.dm).
+#define CHEM_CORE_FIRE "fire"
+#define CHEM_CORE_DEATH "death"
+#define CHEM_CORE_LIFE "life"
+#define CHEM_CORE_VENOM "venom"
+#define CHEM_CORE_SLIME "slime"
+#define CHEM_CORE_VOLT "volt"
+#define CHEM_CORE_RELIC "relic"
+#define CHEM_CORE_VOID "void"
 
 // ---- groups ----
 #define CHEM_GROUP_HYDROXYL "hydroxyl"
@@ -139,6 +148,9 @@
 
 /// Where a generated rule's order starts: after every declared rule, so a declared recipe wins a shared reactant.
 #define CHEM_ROUTE_ORDER_BASE 1000000
+
+/// Units of an exotic-core chemical a step spends for each unit of product (the yields of the exotic trees are small: a step wastes a third of its core).
+#define CHEM_EXOTIC_TAKE 1.5
 
 /// A structure with its groups at most this many (a process does not hang a fifth group on a core).
 #define CHEM_GROUPS_MAX 4

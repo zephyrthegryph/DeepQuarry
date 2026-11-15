@@ -61,8 +61,7 @@
 	var/datum/reagent/R = _set_a_reagent(REAGENT_ID_REZADONE)
 	_set_a_tags(R, list(TREAT_GENETIC_REPAIR, TREAT_TISSUE_REPAIR, TREAT_BURN_CARE, TREAT_ANTITOXIN))
 	TEST_ASSERT_EQUAL(R.strains?[O_LIVER], DRUG_STRAIN_HEAVY, "rezadone strains the liver heavily")
-	var/datum/xform/X = xform_of(/transformation/chem/instant/rezadone)
-	TEST_ASSERT_NOTNULL(X, "the rezadone recipe compiled")
+	TEST_ASSERT(length(dq_fam_makers(REAGENT_ID_REZADONE)), "rezadone has a generated route")
 	var/datum/affliction/chem_interaction/cancel = dq_proto(/datum/affliction/chem_interaction/rezadone_arithrazine_cancel)
 	TEST_ASSERT_EQUAL(cancel.interferes_with?[REAGENT_ID_ARITHRAZINE], 0, "rezadone cancels arithrazine")
 

@@ -23,3 +23,5 @@
 		M.mend(TREAT_TISSUE_REPAIR, 3 * removed * chem_effective)
 		M.mend(TREAT_BURN_CARE, 3 * removed * chem_effective)
 		M.mend(TREAT_ANTITOXIN, 3 * removed * chem_effective)
+		// The only thing that repairs a brain at full damage: alkysine, synaptizine, peridaxon and dexalin all stop at brain death (lesions.dm heal()).
+		M.mend(TREAT_SOULMEND, 3 * removed * chem_effective)

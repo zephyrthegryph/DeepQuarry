@@ -139,7 +139,6 @@
 /datum/unit_test/dq_drug_c_new_reagents_craftable/Run()
 	var/list/recipes = list(
 		REAGENT_ID_IRONSALINE = /transformation/chem/instant/ironsaline,
-		REAGENT_ID_ANTICONVULSANT = /transformation/chem/instant/anticonvulsant,
 	)
 	for(var/reagent_id in recipes)
 		var/datum/xform/X = xform_of(recipes[reagent_id])

@@ -38,13 +38,6 @@ CAPABILITIES(/transformation/chem/instant/stimm)
 	configure(transformation(name = REAGENT_STIMM, id = REAGENT_ID_STIMM, takes = list(reagent(REAGENT_ID_LEFT4ZED, 1), reagent(REAGENT_ID_FUEL, 1)),
 		catalysts = list(reagent(REAGENT_ID_FUEL, 5)), makes = list(reagent(REAGENT_ID_STIMM, 2))))
 
-/transformation/chem/instant/mortiferin
-
-CAPABILITIES(/transformation/chem/instant/mortiferin)
-	configure(transformation(name = REAGENT_MORTIFERIN, id = REAGENT_ID_MORTIFERIN,
-		takes = list(reagent(REAGENT_ID_CRYPTOBIOLIN, 1), reagent(REAGENT_ID_CLONEXADONE, 1), reagent(REAGENT_ID_COROPHIZINE, 1)),
-		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), makes = list(reagent(REAGENT_ID_MORTIFERIN, 2))))
-
 /transformation/chem/instant/ironsaline
 
 CAPABILITIES(/transformation/chem/instant/ironsaline)
@@ -52,33 +45,12 @@ CAPABILITIES(/transformation/chem/instant/ironsaline)
 		takes = list(reagent(REAGENT_ID_IRON, 1), reagent(REAGENT_ID_SODIUMCHLORIDE, 1), reagent(REAGENT_ID_WATER, 2)),
 		makes = list(reagent(REAGENT_ID_IRONSALINE, 4))))
 
-/transformation/chem/instant/anticonvulsant
-
-CAPABILITIES(/transformation/chem/instant/anticonvulsant)
-	configure(transformation(name = REAGENT_ANTICONVULSANT, id = REAGENT_ID_ANTICONVULSANT,
-		takes = list(reagent(REAGENT_ID_ANTITOXIN, 1), reagent(REAGENT_ID_SODIUM, 1), reagent(REAGENT_ID_SUGAR, 1)),
-		makes = list(reagent(REAGENT_ID_ANTICONVULSANT, 3))))
-
 /transformation/chem/instant/calciumcarbonate
 
 CAPABILITIES(/transformation/chem/instant/calciumcarbonate)
 	configure(transformation(name = "Calcium Carbonate", id = REAGENT_ID_CALCIUMCARBONATE,
 		takes = list(reagent(REAGENT_ID_OXYGEN, 3), reagent(REAGENT_ID_CALCIUM, 1), reagent(REAGENT_ID_CARBON, 1)),
 		makes = list(reagent(REAGENT_ID_CALCIUMCARBONATE, 2))))
-
-/transformation/chem/instant/zombiepowder
-
-CAPABILITIES(/transformation/chem/instant/zombiepowder)
-	configure(transformation(name = REAGENT_ZOMBIEPOWDER, id = REAGENT_ID_ZOMBIEPOWDER,
-		takes = list(reagent(REAGENT_ID_CARPOTOXIN, 5), reagent(REAGENT_ID_STOXIN, 5), reagent(REAGENT_ID_COPPER, 5)),
-		makes = list(reagent(REAGENT_ID_ZOMBIEPOWDER, 2))))
-
-/transformation/chem/instant/zombiepowder/alt
-
-CAPABILITIES(/transformation/chem/instant/zombiepowder/alt)
-	configure(transformation(name = REAGENT_ZOMBIEPOWDER + "_alternative_mix", id = REAGENT_ID_ZOMBIEPOWDER + "_alternative_mix",
-		takes = list(reagent(REAGENT_ID_POTASSIUMCHLOROPHORIDE, 5), reagent(REAGENT_ID_STOXIN, 5), reagent(REAGENT_ID_CHLORALHYDRATE, 5), reagent(REAGENT_ID_MERCURY, 5)),
-		makes = list(reagent(REAGENT_ID_ZOMBIEPOWDER, 2))))
 
 /transformation/chem/instant/carpotoxin
 
@@ -149,13 +121,6 @@ CAPABILITIES(/transformation/chem/instant/glycerol)
 	configure(transformation(name = REAGENT_GLYCEROL, id = REAGENT_ID_GLYCEROL,
 		takes = list(reagent(REAGENT_ID_CORNOIL, 3), reagent(REAGENT_ID_SACID, 1)), makes = list(reagent(REAGENT_ID_GLYCEROL, 1))))
 
-/transformation/chem/instant/rezadone
-
-CAPABILITIES(/transformation/chem/instant/rezadone)
-	configure(transformation(name = REAGENT_REZADONE, id = REAGENT_ID_REZADONE,
-		takes = list(reagent(REAGENT_ID_CARPOTOXIN, 1), reagent(REAGENT_ID_CRYPTOBIOLIN, 1), reagent(REAGENT_ID_COPPER, 1)),
-		makes = list(reagent(REAGENT_ID_REZADONE, 3))))
-
 /transformation/chem/instant/neurotoxin
 
 CAPABILITIES(/transformation/chem/instant/neurotoxin)
@@ -212,7 +177,6 @@ CAPABILITIES(/transformation/chem/instant/solidification/hydrogen)
 	configure(transformation(name = "Solid Hydrogen", id = "solidhydrogen",
 		takes = list(reagent(REAGENT_ID_FROSTOIL, 100), reagent(REAGENT_ID_HYDROGEN, REAGENTS_PER_SHEET)),
 		spawns = spawns(/obj/item/stack/material/mhydrogen, 1, per = SPAWN_STACK_MADE)))
-
 
 // These are from Xenobio.
 /transformation/chem/instant/solidification/steel
@@ -346,7 +310,6 @@ CAPABILITIES(/transformation/chem/instant/napalm)
 	configure(transformation(name = "Napalm", id = "napalm",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 1), reagent(REAGENT_ID_PHORON, 1), reagent(REAGENT_ID_SACID, 1)), made = 1,
 		effects = sets_off(kind = XFORM_FX_BURN, gases = list(GAS_VOLATILE_FUEL = 1), scale_by_made = TRUE, temperature = 400 + T0C, hotspot = list(700, 400), range = 0, floors_only = TRUE, consumes = "napalm")))
-
 
 /transformation/chem/instant/chemsmoke
 
@@ -548,7 +511,6 @@ CAPABILITIES(/transformation/chem/instant/aluminum_paint)
 		takes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_WATER, 3), reagent(REAGENT_ID_ALUMINIUM, 1)),
 		makes = list(reagent(REAGENT_ID_PAINT, 5)), with_data = "#F0F8FF"))
 
-
 /*Carpet Recoloring*/
 /transformation/chem/instant/carpetdye
 
@@ -599,7 +561,6 @@ CAPABILITIES(/transformation/chem/instant/carpetdye/orange)
 		takes = list(reagent(REAGENT_ID_LIQUIDCARPET, 5), reagent(REAGENT_ID_ORANGEJUICE, 1)),
 		makes = list(reagent(REAGENT_ID_LIQUIDCARPETO, 5))))
 
-
 //R-UST Port
 /transformation/chem/instant/hydrophoron
 
@@ -630,13 +591,6 @@ CAPABILITIES(/transformation/chem/instant/qerr_quem)
 	configure(transformation(name = REAGENT_QERRQUEM, id = REAGENT_ID_QERRQUEM,
 		takes = list(reagent(REAGENT_ID_NICOTINE, 1), reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_SUGAR, 2)),
 		makes = list(reagent(REAGENT_ID_QERRQUEM, 4))))
-
-/transformation/chem/instant/malish_qualem
-
-CAPABILITIES(/transformation/chem/instant/malish_qualem)
-	configure(transformation(name = REAGENT_MALISHQUALEM, id = REAGENT_ID_MALISHQUALEM,
-		takes = list(reagent(REAGENT_ID_IMMUNOSUPRIZINE, 1), reagent(REAGENT_ID_QERRQUEM, 1), reagent(REAGENT_ID_INAPROVALINE, 1)),
-		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), makes = list(reagent(REAGENT_ID_MALISHQUALEM, 2))))
 
 // Biomass, for cloning and bioprinters
 /transformation/chem/instant/biomass
@@ -840,7 +794,6 @@ CAPABILITIES(/transformation/chem/instant/aphrodisiac)
 		takes = list(reagent(REAGENT_ID_CARBON, 2), reagent(REAGENT_ID_HYDROGEN, 2), reagent(REAGENT_ID_OXYGEN, 2), reagent(REAGENT_ID_WATER, 1)),
 		makes = list(reagent(REAGENT_ID_APHRODISIAC, 6))))
 
-
 // === merged from instant_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 
 /transformation/chem/instant/dyloteane
@@ -892,7 +845,6 @@ CAPABILITIES(/transformation/chem/instant/nutrient)
 		takes = list(reagent(REAGENT_PURPLESAP, 1), reagent(REAGENT_ID_ORANGESAP, 1), reagent(REAGENT_ID_BLUESAP, 1)),
 		catalysts = list(reagent(REAGENT_ID_WATER, 5)), makes = list(reagent(REAGENT_ID_NUTRIMENT, 3))))
 
-
 // Frost oil reactions for material sheets
 /transformation/chem/instant/solidification/aluminium
 
@@ -909,12 +861,6 @@ CAPABILITIES(/transformation/chem/instant/solidification/copper)
 		spawns = spawns(/obj/item/stack/material/copper, 1, per = SPAWN_STACK_MADE)))
 
 //YW stuff
-/transformation/chem/instant/benzilate
-
-CAPABILITIES(/transformation/chem/instant/benzilate)
-	configure(transformation(name = "Benzilate", id = REAGENT_ID_BENZILATE,
-		takes = list(reagent(REAGENT_ID_PARACETAMOL, 1), reagent(REAGENT_ID_MINDBREAKER, 1)),
-		makes = list(reagent(REAGENT_ID_BENZILATE, 2))))
 
 /transformation/chem/instant/phenethylamine
 
@@ -933,7 +879,6 @@ CAPABILITIES(/transformation/chem/instant/xenolazarus)
 
 /// Discount Lazarus settled in a body: a xenochimera's state answers it (xenochimera/lazarus_reacted()).
 /datum/notice/transformed/xenolazarus
-
 
 // === merged from instant_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 ///////////////////////////////////////////////////////////////////////////////////
@@ -1030,57 +975,11 @@ CAPABILITIES(/transformation/chem/instant/plantcolony)
 ///////////////////////////////
 //SLIME-RELATED BELOW HERE///////
 ///////////////////////////////
-/transformation/chem/instant/slimeify
-
-CAPABILITIES(/transformation/chem/instant/slimeify)
-	configure(transformation(name = REAGENT_ADVMUTATIONTOXIN, id = "advmutationtoxin2",
-		takes = list(reagent(REAGENT_ID_PHORON, 15), reagent(REAGENT_ID_SLIMEJELLY, 15), reagent(REAGENT_ID_MUTATIONTOXIN, 15)),
-		makes = list(reagent(REAGENT_ID_ADVMUTATIONTOXIN, 1))))
-
 
 // === merged from instant_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Chemist update
 
-//tier 1
-/transformation/chem/instant/souldew
-
-CAPABILITIES(/transformation/chem/instant/souldew)
-	configure(transformation(name = REAGENT_ID_SOULDEW, id = REAGENT_ID_SOULDEW,
-		takes = list(reagent(REAGENT_ID_ALKYSINE, 1), reagent(REAGENT_ID_TRICORDRAZINE, 1), reagent(REAGENT_ID_SULFUR, 1)),
-		makes = list(reagent(REAGENT_ID_SOULDEW, 3))))
-
-//tier 2
-/*
-/transformation/chem/instant/juggernog
-
-CAPABILITIES(/transformation/chem/instant/juggernog)
-	configure(transformation(name = REAGENT_JUGGERNOG, id = REAGENT_ID_JUGGERNOG,
-		takes = list(reagent(REAGENT_ID_PARACETAMOL, 1), reagent(REAGENT_ID_TRAMADOL, 1), reagent(REAGENT_ID_SYNAPTIZINE, 1), reagent(REAGENT_ID_MERCURY, 1)),
-		makes = list(reagent(REAGENT_ID_JUGGERNOG, 4))))
-*/
-
-//tier 3
-/transformation/chem/instant/liquidhealer
-
-CAPABILITIES(/transformation/chem/instant/liquidhealer)
-	configure(transformation(name = REAGENT_LIQUIDHEALER, id = REAGENT_ID_LIQUIDHEALER,
-		takes = list(reagent(REAGENT_ID_BICARIDINE, 1), reagent(REAGENT_ID_KELOTANE, 1), reagent(REAGENT_ID_LIQUIDLIFE, 1), reagent(REAGENT_ID_CARPOTOXIN, 1), reagent(REAGENT_ID_TRICORDRAZINE, 1), reagent(REAGENT_ID_CRYPTOBIOLIN, 1)),
-		makes = list(reagent(REAGENT_ID_LIQUIDHEALER, 6))))
-/*
-/transformation/chem/instant/phoenixbreath
-
-CAPABILITIES(/transformation/chem/instant/phoenixbreath)
-	configure(transformation(name = REAGENT_PHOENIXBREATH, id = REAGENT_ID_PHOENIXBREATH,
-		takes = list(reagent(REAGENT_ID_BICARIDINE, 1), reagent(REAGENT_ID_LIQUIDLIFE, 1), reagent(REAGENT_ID_NEOLIQUIDFIRE, 1), reagent(REAGENT_ID_SOULDEW, 1), reagent(REAGENT_ID_PHORON, 1), reagent(REAGENT_ID_DERMALINE, 1)),
-		makes = list(reagent(REAGENT_ID_PHOENIXBREATH, 6))))
-*/
 //Xenobotany update
-/transformation/chem/instant/neoliquidfire
-
-CAPABILITIES(/transformation/chem/instant/neoliquidfire)
-	configure(transformation(name = REAGENT_ID_NEOLIQUIDFIRE, id = REAGENT_ID_NEOLIQUIDFIRE,
-		takes = list(reagent(REAGENT_ID_LIQUIDFIRE, 1), reagent(REAGENT_ID_SULFUR, 1), reagent(REAGENT_ID_PHORON, 0.1)),
-		catalysts = list(reagent(REAGENT_ID_PHORON, 5)), makes = list(reagent(REAGENT_ID_NEOLIQUIDFIRE, 1))))
 
 //Some extra metal solidification reactions
 /transformation/chem/instant/solidification/deuterium

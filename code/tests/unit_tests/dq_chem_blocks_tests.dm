@@ -203,7 +203,7 @@
 /datum/unit_test/dq_chem_routes_make_nothing_gated/Run()
 	// Nitroglycerin and mutagen have approved routes (nitrate glycerol, halogenate diethylamine). Cyanide is made by its own recipe; the only route that ends in it is
 	// the ion exchange of prussian blue with potassium, which gives back the cyanide that made it.
-	var/list/gated = list(REAGENT_ID_PHORON, REAGENT_ID_THERMITE, REAGENT_ID_PACID, REAGENT_ID_LIQUIDFIRE, REAGENT_ID_NEOLIQUIDFIRE, REAGENT_ID_CYANIDE)
+	var/list/gated = list(REAGENT_ID_PHORON, REAGENT_ID_THERMITE, REAGENT_ID_PACID, REAGENT_ID_LIQUIDFIRE, REAGENT_ID_CYANIDE)
 	for(var/route_id in GLOB.chem_routes)
 		var/datum/chem_route/R = GLOB.chem_routes[route_id]
 		for(var/id in R.products)
@@ -395,9 +395,9 @@
 /datum/unit_test/dq_chem_blocks_no_recipe_asks_for_a_grade/Run()
 	var/obj/item/reagent_containers/glass/beaker/B = dq_blk_beaker()
 	B.reagents.add_reagent(REAGENT_ID_CONTAMINANT_INERT_FILLER, 40, safety = 1)
-	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/anticonvulsant, 10)
+	var/datum/xform/X = dq_pur_fill_for(B, /transformation/chem/instant/lipozine, 10)
 	B.reagents.handle_reactions()
 	TEST_ASSERT(B.reagents.purity() < PURITY_STANDARD, "the mixture is Crude")
-	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_ANTICONVULSANT) > 0, "and a recipe that used to want Pharma goes: [X.name]")
+	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_LIPOZINE) > 0, "and a recipe that used to want Pharma goes: [X.name]")
 
 #endif

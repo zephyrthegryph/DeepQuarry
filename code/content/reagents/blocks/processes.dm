@@ -285,7 +285,7 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/hydrolyse
 	id = CHEM_PROCESS_HYDROLYSE
 	name = "Hydrolyse"
-	desc = "Water splits an ester or an amide into the acid and the alcohol or amine it was condensed from. It wants a base or an enzyme, and a cool mixture."
+	desc = "Water splits an ester or an amide into the acid and the alcohol or amine it was condensed from. It wants a base or an enzyme, and a cool mixture. An enzyme cuts a venom chain part way: the acid end is kept."
 	kinds = list(CHEM_CATALYST_BASE, CHEM_CATALYST_ENZYME)
 	fixed_band = TRUE
 
@@ -295,6 +295,13 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/hydrolyse/chem_variants(substrate_id, datum/chem_structure/S, datum/chem_gen/G)
 	. = list()
 	if(!(CHEM_LINK_ESTER in S.links) && !(CHEM_LINK_AMIDE in S.links))
+		return
+	// A venom chain (two venom cores joined by an amide: carpotoxin, spidertoxin) is cut part way by an enzyme only: the acid end is oceanic cure, the amine end is waste.
+	if(length(S.cores) == 2 && S.has_core(CHEM_CORE_VENOM) && S.cores[1] == S.cores[2] && length(S.links) == 1 && (CHEM_LINK_AMIDE in S.links))
+		var/list/tail_groups = S.groups.Copy()
+		tail_groups += CHEM_GROUP_AMINE
+		var/datum/chem_variant/cut = chem_variant(list(substrate_id), list(chem_structure_make(list(CHEM_CORE_VENOM), list(CHEM_GROUP_CARBOXYL)), chem_structure_make(list(CHEM_CORE_VENOM), tail_groups)), list(REAGENT_ID_WATER = 1), null, null, list(CHEM_CATALYST_ENZYME))
+		. += cut
 		return
 	var/list/pairs = G.condensed[S.key]
 	if(!length(pairs))
