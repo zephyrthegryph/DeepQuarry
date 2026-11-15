@@ -482,6 +482,7 @@
 #include "dq_profile_records.dm"
 #include "dq_amputated_limb_tests.dm"
 #include "dq_body_render_real.dm"
+#include "dq_arm_hole.dm"
 #include "dq_limb_variant_tests.dm"
 #include "dq_hair_gradient_tests.dm"
 #include "dq_ui_capture.dm"

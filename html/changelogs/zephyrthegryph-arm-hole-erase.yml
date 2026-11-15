@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added a test that the playtest character (taur, wings, lost arm) is drawn with no layer that erases another"
