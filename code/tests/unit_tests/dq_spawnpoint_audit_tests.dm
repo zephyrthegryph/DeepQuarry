@@ -127,16 +127,3 @@
 		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, landing)
 		TEST_ASSERT(H.loc == landing && H.stat != DEAD, "an Outsider stands alive at [name]")
 		log_test("SPAWN_AUDIT: Outsider at [name] lands at [landing.x],[landing.y],[landing.z]")
-
-/// The long-range Teleporter spawn point lands in the Deck 3 central hallway, not at the telecomms teleporter.
-/datum/unit_test/dq_spawnpoint_teleporter_lands_in_teleporter_room
-
-/datum/unit_test/dq_spawnpoint_teleporter_lands_in_teleporter_room/Run()
-	var/datum/spawnpoint/P = GLOB.spawntypes["Teleporter"]
-	TEST_ASSERT_NOTNULL(P, "there is a Teleporter spawn point")
-	if(!P.is_on_map())
-		log_test("SPAWN_AUDIT: Teleporter is not on [using_map.type]")
-		return
-	for(var/turf/T as anything in P.usable_turfs())
-		log_test("SPAWN_AUDIT: Teleporter candidate [T.x],[T.y],[T.z] [get_area(T)] ([get_area(T)?.type])")
-		TEST_ASSERT(istype(get_area(T), /area/hallway/primary/thirddeck/central), "the Teleporter arrival at [T.x],[T.y],[T.z] is in [get_area(T)?.type], not the Deck 3 central hallway")

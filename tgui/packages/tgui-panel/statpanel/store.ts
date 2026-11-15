@@ -119,7 +119,9 @@ export function viewsOf(state: State): PanelView[] {
       const view = placeOf(verb[0]).view;
       return view === 'Staff' || view === 'Server';
     });
-  return admin ? ADMIN_VIEWS : PLAYER_VIEWS;
+  const base = admin ? ADMIN_VIEWS : PLAYER_VIEWS;
+  // Inspect is its own tab beside Status and Actions while something is inspected.
+  return state.inspect ? [...base, 'Inspect'] : base;
 }
 
 /** The verbs a view shows, grouped (layout.ts places each category), groups in layout order, verbs by name. */
@@ -480,7 +482,10 @@ export class StatStore {
           inspect: payload.data ?? null,
           permanentTabs: payload.data ? this.withTab(tabs, 'Inspect') : tabs,
         });
-        if (payload.switch) this.setTab('Inspect');
+        // A new inspect selects the Inspect tab; a refresh keeps the current one. Clearing it while shown goes home.
+        if (payload.data && payload.switch) this.setView('Inspect');
+        else if (!payload.data && this.state.view === 'Inspect')
+          this.setView('Status');
         break;
       case 'update_abilities': {
         const shown = hasAbilities(payload);
