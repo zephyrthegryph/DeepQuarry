@@ -631,6 +631,49 @@
 	for(var/box_type in list(/obj/item/storage/box/precursors_inorganic, /obj/item/storage/box/precursors_ring, /obj/item/storage/box/precursors_bio))
 		TEST_ASSERT(box_type in sold, "cargo sells [box_type]")
 
+/// The chemistry supplies closet holds each tool, catalyst, filter, liner and process stock that tier 1 to 3 chemistry needs and the dispenser does not carry.
+/datum/unit_test/dq_chem_lab_supplies_closet_holds_every_input
+
+/datum/unit_test/dq_chem_lab_supplies_closet_holds_every_input/Run()
+	var/obj/structure/closet/secure_closet/chemical_supplies/closet = allocate(/obj/structure/closet/secure_closet/chemical_supplies, test_floor())
+	var/list/held = list()
+	for(var/obj/item/thing in closet.contents)
+		held[thing.type] += 1
+	for(var/needed in list(/obj/item/chem_funnel, /obj/item/chem_filter/paper, /obj/item/chem_filter/charcoal, /obj/item/chem_electrode, /obj/item/stack/material/tungsten, \
+			/obj/item/stack/material/glass/phoronglass, /obj/item/reagent_containers/glass/beaker/large, /obj/item/reagent_containers/glass/bottle/boron11, \
+			/obj/item/reagent_containers/food/condiment/enzyme, /obj/item/reagent_containers/food/condiment/yeast))
+		TEST_ASSERT(held[needed], "the chemistry supplies closet holds [needed]")
+	var/obj/item/reagent_containers/glass/bottle/boron11/boron = locate() in closet.contents
+	TEST_ASSERT(boron.reagents.has_reagent(REAGENT_ID_BORON11, 60), "the boron-11 bottle is full of boron-11")
+	TEST_ASSERT(closet.req_access ~= list(ACCESS_CHEMISTRY), "the closet is a chemist's")
+
+/// On the live map every chemistry workstation has a hot plate and a condenser, and the lab has the supplies closet and the chemical closet.
+/datum/unit_test/dq_chem_lab_map_is_stocked
+
+/datum/unit_test/dq_chem_lab_map_is_stocked/Run()
+	var/list/turfs = get_area_turfs(/area/medical/chemistry)
+	if(!length(turfs))
+		return // the unit-test map has no chemistry lab
+	var/plates = 0
+	var/condensers = 0
+	var/supplies = 0
+	var/chemical = 0
+	for(var/turf/T as anything in turfs)
+		for(var/obj/machinery/chem_hot_plate/plate in T)
+			TEST_ASSERT(plate.anchored, "the map-placed hot plate at [T.x],[T.y] is bolted")
+			plates++
+		for(var/obj/machinery/chem_condenser/condenser in T)
+			TEST_ASSERT(condenser.anchored, "the map-placed condenser at [T.x],[T.y] is bolted")
+			condensers++
+		if(locate(/obj/structure/closet/secure_closet/chemical_supplies) in T)
+			supplies++
+		if(locate(/obj/structure/closet/secure_closet/chemical) in T)
+			chemical++
+	TEST_ASSERT(plates >= 3, "three hot plates in the chemistry lab ([plates])")
+	TEST_ASSERT_EQUAL(condensers, plates, "a condenser for every hot plate")
+	TEST_ASSERT(supplies >= 1, "the chemistry lab has its supplies closet")
+	TEST_ASSERT(chemical >= 1, "the chemistry lab has its chemical closet")
+
 // ---- tier 4: the exotic trees ----
 
 /// Every chemical with an exotic core is tier 4, and nothing else is: the tier says what the structure says.

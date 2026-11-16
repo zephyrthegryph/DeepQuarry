@@ -90,6 +90,14 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bottle/precursor)
 	name = "amino acid bottle"
 	prefill = list(REAGENT_ID_AMINOACID = 60)
 
+/// Boron-11 is no dispenser cartridge, and the hydride (a process chemical, with foaming agent) is made from it: the lab's supplies closet holds the bottles.
+/obj/item/reagent_containers/glass/bottle/boron11
+	name = "boron-11 bottle"
+	desc = "A small bottle of boron-11, the boron a chemist makes hydride from."
+	icon = 'icons/obj/chemical.dmi'
+	icon_state = "bottle-3"
+	prefill = list(REAGENT_ID_BORON11 = 60)
+
 // ---- the boxes: sixteen bottles in three ----
 
 /obj/item/storage/box/precursors_inorganic

@@ -64231,6 +64231,8 @@
 /obj/structure/table/reinforced,
 /obj/item/reagent_containers/glass/beaker/large,
 /obj/item/reagent_containers/dropper,
+/obj/machinery/chem_hot_plate,
+/obj/machinery/chem_condenser,
 /obj/machinery/firealarm{
 	pixel_y = 24
 	},
@@ -64265,6 +64267,8 @@
 /obj/structure/table/reinforced,
 /obj/item/reagent_containers/glass/beaker/large,
 /obj/item/reagent_containers/dropper,
+/obj/machinery/chem_hot_plate,
+/obj/machinery/chem_condenser,
 /obj/structure/extinguisher_cabinet{
 	pixel_y = 30
 	},
@@ -65973,6 +65977,10 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
 "czX" = (
+/turf/simulated/floor/tiled/white,
+/area/medical/chemistry)
+"aLx" = (
+/obj/structure/closet/secure_closet/chemical_supplies,
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
 "czY" = (
@@ -219146,7 +219154,7 @@ cwu
 cyr
 czX
 cBK
-czX
+aLx
 cEX
 cww
 cIl

@@ -164,6 +164,28 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 		/obj/item/storage/fancy/vials)
 
 
+/// The chemistry lab's supplies: every tool, catalyst, filter, liner and process stock that tier 1 to 3 chemistry needs and the dispenser does not carry
+/// (doc/rewrite/proposals/chemistry_recipes.md, "Chemistry lab stock"). Tier 4 exotic inputs are not here: they come from expeditions, xenobiology and creatures.
+/obj/structure/closet/secure_closet/chemical_supplies
+	name = "chemistry supplies closet"
+	desc = "Filters, funnels, electrodes, catalyst sheets and process stock for the chemistry lab."
+	req_access = list(ACCESS_CHEMISTRY)
+	closet_appearance = /datum/decl/closet_appearance/secure_closet/medical/chemistry
+	storage_capacity = 80
+
+	starts_with = list(
+		/obj/item/chem_funnel = 4,
+		/obj/item/chem_filter/paper = 8,
+		/obj/item/chem_filter/charcoal = 8,
+		/obj/item/chem_electrode = 3,
+		/obj/item/stack/material/tungsten = 6,
+		/obj/item/stack/material/glass/phoronglass = 4,
+		/obj/item/reagent_containers/glass/beaker/large = 4,
+		/obj/item/reagent_containers/glass/bottle/boron11 = 2,
+		/obj/item/reagent_containers/food/condiment/enzyme = 2,
+		/obj/item/reagent_containers/food/condiment/yeast = 2)
+
+
 /obj/structure/closet/secure_closet/psych
 	name = "psychiatric cabinet"
 	desc = "Store psychology tools and medicines in here."

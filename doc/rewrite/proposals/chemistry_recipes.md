@@ -534,3 +534,30 @@ Chemistry makes the units; the furnace polymerises them (`POLYMER_UNITS_PER_SHEE
 
 ### Branded containers
 The spray bottle family is one refillable container: `/obj/item/reagent_containers/spray.starting_fill` is the fill (cleaner, sterilizine, weed killer, window sealant, luminol and the pepper spray's condensed capsaicin are a name, a description and a fill), a pen relabels it (`label`), and emptying and refilling work as for any container. The types keep their paths (forty spawn sites and map files name them); collapsing them into `variant` rows is open.
+
+## Chemistry lab stock (Southern Cross, audit 2026-11-15)
+
+Every input a tier 1 to 3 route needs, and where a chemist gets it. Tier 4 exotic inputs stay off the map (expeditions, xenobiology, creatures).
+
+| Input | Source before | Now |
+|---|---|---|
+| Elements, water, ethanol, sugar, sulphuric acid, tungsten (reagent) | Chem dispensers (2 `full`, deck 1 lab) | unchanged |
+| 16 precursor bottles (phenol, salicylic acid, wood aldehyde, nitric, hydrochloric, phosphoric, acetic acid, bleach, soda ash, glycerol, silicate, fatty acid, pyridine base, alkaloid base, sterol, amino acid) | chemical closet `starts_with` (3 boxes) and the cargo precursor crate | unchanged |
+| Process chemicals: nitrating mix, strong oxidiser, chlorinating agent, coupling agent, caustic digest, scavenger resin, dry agent | made on the bench from dispenser elements and stocked acids/bleach | unchanged (no stock needed) |
+| Hydride (foaming agent + boron-11) | boron-11 is not on the dispenser: **missing** | 2 boron-11 bottles (`/obj/item/reagent_containers/glass/bottle/boron11`) in the supplies closet |
+| Enzyme, yeast (ferment, gentle oxidise and hydrolyse) | kitchen and botany only | 2 of each (condiment bottles) in the supplies closet |
+| Paper and charcoal filters, funnels | 1 funnel pair, 3 paper, 3 charcoal on the "cys" bench | the bench stays; the supplies closet adds 4 funnels, 8 paper, 8 charcoal |
+| Clip-on electrodes (electrolysis) | none | 3 in the supplies closet |
+| Tungsten sheets (the refractory catalyst; also does what a solid metal does) | none (mining only) | 6 sheets in the supplies closet |
+| Borosilicate (`phoronglass`) sheets | cargo and the smelter only | 4 sheets in the supplies closet |
+| Large beakers | 1 box of beakers plus loose large ones on the benches | +4 in the supplies closet |
+| Hot plate and condenser | 1 pair, "cys" bench | 3 pairs, one per workstation (the two outer benches added); map-placed ones bolt themselves |
+| Grinder, distillery, chemical analyzer, advanced spectrometer, chem masters | already in the lab | unchanged |
+
+Where it is: `/obj/structure/closet/secure_closet/chemical_supplies` (chemistry access, `code/content/structures/crates_lockers/closets/secure/medical.dm`) on deck 1 in `/area/medical/chemistry`, beside the chemical closet.
+
+Gaps, on purpose or open:
+- Solid-acid sheets (a porous catalytic material) and a non-tungsten solid metal catalyst (platinum-doped stock) come from the materials workshop's engineered batches, a tier 3 input from another department; they are not stocked.
+- No vessel-liner mechanic reads the borosilicate sheet yet (it is stocked for the liner and the sorbent-filter lining); stock follows the design, the behaviour is the materials lane's.
+- Tier 4 exotic inputs (soul-dew sources, slime extracts, creature organs) are not stocked.
+- Tests: `dq_chem_lab_supplies_closet_holds_every_input`, `dq_chem_lab_map_is_stocked` (full map).
