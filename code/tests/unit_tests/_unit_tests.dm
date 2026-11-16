@@ -238,6 +238,7 @@
 #include "dq_mob_living_init_chain_tests.dm"
 #include "dq_spill_nullspace_tests.dm"
 #include "dq_lifeform_input_tests.dm"
+#include "dq_hover_popup_tests.dm"
 #include "dq_input_entry_tests.dm"
 #include "dq_input_events.dm"
 #include "dq_input_one_path_tests.dm"

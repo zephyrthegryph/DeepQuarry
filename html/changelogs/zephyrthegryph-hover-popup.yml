@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Hover popups appear faster (inventory items after 0.2s, map popups without re-measuring the map), and no longer stick on screen when a mouse exit arrives late, the hovered thing moves or is deleted, or the view changes"

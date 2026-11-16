@@ -101,6 +101,11 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/proc/expired()
 	return !isnull(max_wait) && (op_now() - arrived_clock) > max_wait
 
+/// May a full inbox shed this event (when it can coalesce)? An input that only ever undoes something (a tooltip's close) must not be lost: what it
+/// closes would stay open.
+/datum/input_event/proc/sheddable()
+	return TRUE
+
 /// Does the work, as `actor`. Returns the op's /datum/op_result or null.
 /datum/input_event/proc/resolve()
 	return null
@@ -243,6 +248,13 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/click/hover/coalesce_key()
 	return target ? "hover:[REF(target)]" : "hover"
 
+/// An exit closes what the enter opened (a tooltip, a lit slice): it is run however late it is and never shed, or that stays open (a tooltip stuck on screen).
+/datum/input_event/click/hover/expired()
+	return entered && ..()
+
+/datum/input_event/click/hover/sheddable()
+	return entered
+
 /datum/input_event/click/hover/event_key()
 	return "input.hover"
 
@@ -265,6 +277,10 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 
 /datum/input_event/click/pressed/coalesce_key()
 	return null
+
+/// A press closes the tooltip of what it lands on: run however late it is.
+/datum/input_event/click/pressed/expired()
+	return FALSE
 
 /datum/input_event/click/pressed/resolve()
 	actor.input_pressed(target, params)
@@ -609,12 +625,12 @@ SYSTEM_DEF(input)
 		var/dropped = FALSE
 		for(var/i in 1 to length(queue))
 			var/datum/input_event/older = queue[i]
-			if(older.queued_key)
+			if(older.queued_key && older.sheddable())
 				queue.Cut(i, i + 1)
 				note_drop(older, "the inbox is full")
 				dropped = TRUE
 				break
-		if(!dropped && key)
+		if(!dropped && key && E.sheddable())
 			// Nothing in the inbox can be shed and this one could be: it goes.
 			note_drop(E, "the inbox is full of inputs that cannot be dropped")
 			return
