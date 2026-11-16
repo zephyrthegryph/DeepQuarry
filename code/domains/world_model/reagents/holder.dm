@@ -110,6 +110,9 @@ CAPABILITIES(/datum/reagents)
 	// The holder's heat capacity changed with its contents (H3).
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
 		my_atom.heat_capacity_changed()
+		if(istype(my_atom, /obj/item/reagent_containers))
+			var/obj/item/reagent_containers/C = my_atom
+			C.watch_reaction_bands() // the contents changed: so did the temperatures that matter to them
 	return
 
 /// update_total() for a holder that held nothing before `R` (one reagent, at or above the minimum volume) went in: the total, colour and master are

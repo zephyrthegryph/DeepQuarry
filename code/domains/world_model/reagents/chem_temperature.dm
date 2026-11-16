@@ -20,6 +20,21 @@
 /datum/reagents/proc/reaction_temperature()
 	return get_temperature()
 
+/// The temperatures at which this holder's instant recipes change state (the edges of the working range and the ideal band of every recipe its reagents could
+/// take part in), increasing. A container senses its own temperature against them (code/content/reagents/reagent_containers/reaction_watch.dm).
+/datum/reagents/proc/reaction_band_edges()
+	var/list/edges = list()
+	for(var/datum/reagent/R as anything in reagent_list)
+		for(var/datum/xform/X as anything in xform_candidates(MEDIUM_REAGENTS, REGIME_INSTANT, R.id))
+			var/list/band
+			if(X.route_id)
+				band = chem_route_of(X)?.band_in(src)
+			else if(ispath(X.rule_type, /transformation/chem))
+				band = reaction_temperature_profile(X.rule_type)
+			for(var/edge in band)
+				edges |= edge
+	return sortTim(edges, GLOBAL_PROC_REF(cmp_numeric_asc))
+
 /// How the holder's temperature stands against `X`'s band: list(REACTION_TEMP_STATE_*, deviation 0..1), or null when the rule is not gated here (another regime,
 /// an ungated holder, or a recipe with no band).
 /datum/reagents/proc/reaction_temperature_state(datum/xform/X)

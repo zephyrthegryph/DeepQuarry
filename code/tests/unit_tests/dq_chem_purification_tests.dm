@@ -89,7 +89,7 @@
 	TEST_ASSERT(after_one > start + 0.5, "one second warms the beaker ([start] -> [after_one])")
 	TEST_ASSERT(after_one < T0C + 80, "but not to the dial: it approaches it over seconds")
 	var/previous = after_one
-	for(var/second in 1 to 60)
+	for(var/second in 1 to 120) // it closes on the dial in proportion to the gap
 		P.heat_step(1)
 		TEST_ASSERT(B.get_temperature() >= previous - 0.001 && B.get_temperature() <= T0C + 80.5, "it never overshoots the dial")
 		previous = B.get_temperature()
