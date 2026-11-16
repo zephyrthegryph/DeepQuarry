@@ -289,9 +289,23 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	Fire(A,user,params) //Otherwise, fire normally.
 */
 
+/// Does this gun harm no one it is fired at, so its holder may fire it at themselves in any stance (a size gun, a medigun)? A gun that does harm is fired at
+/// its holder only in combat mode.
+/obj/item/gun/proc/self_fire_safe()
+	return FALSE
+
 /obj/item/gun/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if (A == user && hud_of(user)?.zone_sel?.selecting == O_MOUTH && !mouthshoot)
 		handle_suicide(user)
+		return ITEM_INTERACT_SUCCESS
+	else if(stance != I_HURT && self_fire_safe())
+		// A gun that harms no one (a size gun, a medigun) fires at whoever is clicked, its holder included, in any stance.
+		Fire(A, user, null, 1, 0, stance)
+		return ITEM_INTERACT_SUCCESS
+	else if(A == user && stance != I_HURT)
+		// A gun that does harm is fired at its holder only in combat mode: say so, so the click is never just dropped.
+		to_chat(user, span_warning("You refrain from pointing \the [src] at yourself out of combat mode."))
+		log_input("Input: [key_name(user)] clicked themselves with [src] ([type]) out of combat mode: refused, the gun is not safe to fire at its holder.")
 		return ITEM_INTERACT_SUCCESS
 	else if(stance == I_HURT) //point blank shooting
 		if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A && A != user)

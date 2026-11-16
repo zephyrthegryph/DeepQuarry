@@ -27,6 +27,10 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	op("spin_dial", menu(), label("Spin Size Dial"), needs(carried(), req_capable()), then(PROC_REF(dial_spun)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
+/// A size gun changes size and harms no one: its holder may fire it at themselves in any stance.
+/obj/item/gun/energy/sizegun/self_fire_safe()
+	return TRUE
+
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): set the size.
 /obj/item/gun/energy/sizegun/gun_operate(datum/act/op/A, callback)
 	. = ..()

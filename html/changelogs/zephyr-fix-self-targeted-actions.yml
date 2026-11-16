@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Size guns, mouse rays and mediguns fire at whoever you click, yourself included, in any stance; other guns and weapons say why they will not fire at you out of combat mode, and a click in combat mode on yourself with a gun is no longer lost to a melee swing"
