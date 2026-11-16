@@ -853,7 +853,7 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 		if(QDELETED(src))
 			return
 		if(((src in user) || isstorage(loc)))
-			after(src, ITEM_TOOLTIP_DELAY, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user, user?.tooltip_epoch))
+			after(src, ITEM_TOOLTIP_DELAY, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user, tooltip_of(user)?.epoch))
 	else
 		cancel_after(src, "tip_timer")
 		closeToolTip(user, src)

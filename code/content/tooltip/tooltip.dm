@@ -16,13 +16,17 @@
 // CSS pointer-events. DM here only pushes the content/data and toggles hide;
 // React owns is-visible (it shows the element after sizing it).
 
-/// Counts every close of this mob's tooltip, kept on the mob because a close may come before any tooltip exists. A show that waited (an item's
-/// delayed one) carries the count it saw when the mouse entered and is refused if a close has happened since: an exit that beats its show leaves it hidden.
-/mob/var/tmp/tooltip_epoch = 0
-
 /// Is a show that began at `epoch` out of date, the tooltip having been closed since the mouse entered? (null: a show that did not wait.)
-/proc/tooltip_show_stale(mob/user, epoch)
-	return !isnull(epoch) && epoch != user.tooltip_epoch
+/proc/tooltip_show_stale(datum/tooltip/T, epoch)
+	return !isnull(epoch) && epoch != T.epoch
+
+/// `user`'s client's tooltip, made on first need (not at login: the window it opens is nothing the first frame needs, JOIN_TIMING_LOGIN). Null without a client.
+/proc/tooltip_of(mob/user) as /datum/tooltip
+	if(!istype(user) || !user.client)
+		return null
+	if(!user.client.tooltips)
+		rel_set(user.client, nameof(user.client.tooltips), new /datum/tooltip(user.client))
+	return user.client.tooltips
 
 /datum/tooltip
 	var/tmp/client/owner
@@ -45,6 +49,9 @@
 	// Monotonically identifies a hover. It prevents a queued MouseExited from an
 	// older atom from hiding a newer tooltip that reused the same browser.
 	var/_revision = 0
+	/// Counts every close. A show that waited (an item's delayed one) carries the count it saw when the mouse entered and is refused if a close has
+	/// happened since: an exit that beats its show leaves it hidden.
+	var/epoch = 0
 
 CAPABILITIES(/datum/tooltip)
 	op("dismiss", ui_act(), then(PROC_REF(ui_act_dismiss)))
@@ -147,10 +154,8 @@ CAPABILITIES(/datum/tooltip)
 	// than MouseEntered used. Do not reject dismissal based on object identity;
 	// doing so leaves the native browser permanently visible.
 	var/hide_revision = _revision
+	epoch++
 	if(owner())
-		var/mob/viewer = owner().mob
-		if(viewer)
-			viewer.tooltip_epoch++
 		log_input("Tooltip: hidden for [key_name(owner())] (revision [_revision], was [_visible ? "shown" : "hidden"][expected_target ? ", closed by [expected_target]" : ""]).")
 	// Hide the native control synchronously. Waiting for a TGUI update here can
 	// leave the old tooltip painted indefinitely when MouseExited is the last
@@ -212,30 +217,23 @@ CAPABILITIES(/datum/tooltip)
 //Includes sanity checks
 /// `epoch` is the client's tooltip_epoch when the mouse entered, for a show that waited: refused when the tooltip was closed since.
 /proc/openToolTip(mob/user = null, atom/movable/tip_src = null, params = null, title = "", content = "", theme = "", epoch = null)
-	if(!istype(user) || !user.client)
+	var/datum/tooltip/T = tooltip_of(user)
+	if(!T)
 		return
-	if(tooltip_show_stale(user, epoch))
+	if(tooltip_show_stale(T, epoch))
 		log_input("Tooltip: a delayed show for [key_name(user)] on [tip_src] was dropped: the tooltip was closed since the mouse entered.")
 		return
-	// Made on the first tooltip, not at login: the window it opens is nothing the first frame needs (JOIN_TIMING_LOGIN).
-	if(!user.client.tooltips)
-		rel_set(user.client, nameof(user.client.tooltips), new /datum/tooltip(user.client))
 	var/ui_style = GLOB.all_tooltip_styles[1]
 	if(!theme && ui_style)
 		theme = lowertext(ui_style)
 	if(!theme)
 		theme = "midnight"
-	user.client.tooltips.show(tip_src, params, title, content, theme)
+	T.show(tip_src, params, title, content, theme)
 
 //Arbitrarily close a user's tooltip
 //Includes sanity checks.
 /proc/closeToolTip(mob/user, atom/tip_src)
-	if(!istype(user))
-		return
-	user.tooltip_epoch++ // even with nothing open: a show that waited for this exit must not land after it
-	if(!user.client?.tooltips)
-		return
-	user.client.tooltips.hide(tip_src)
+	tooltip_of(user)?.hide(tip_src)
 
 
 /// The last_target this refers to (a relation view: null once that is deleted).

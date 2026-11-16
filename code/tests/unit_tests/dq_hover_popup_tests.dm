@@ -44,11 +44,13 @@
 
 /// An exit between an enter and the show that waited for it makes that show stale.
 /datum/unit_test/dq_hover_popup/exit_beats_show/Run()
-	var/turf/T = dq_containment_floor()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
-	var/seen = user.tooltip_epoch
-	TEST_ASSERT(!tooltip_show_stale(user, seen), "a show whose mouse is still on the target is current")
-	TEST_ASSERT(!tooltip_show_stale(user, null), "a show that did not wait is never stale")
-	closeToolTip(user, null)
-	TEST_ASSERT(tooltip_show_stale(user, seen), "an exit that arrives before the waiting show leaves it hidden, with no tooltip open to close")
-	TEST_ASSERT(!tooltip_show_stale(user, user.tooltip_epoch), "a later hover starts from the new count")
+	var/datum/tooltip/T = new /datum/tooltip(null)
+	own(T)
+	var/seen = T.epoch
+	TEST_ASSERT(!tooltip_show_stale(T, seen), "a show whose mouse is still on the target is current")
+	TEST_ASSERT(!tooltip_show_stale(T, null), "a show that did not wait is never stale")
+	T.hide()
+	TEST_ASSERT(tooltip_show_stale(T, seen), "an exit that arrives before the waiting show leaves it hidden")
+	T.hide()
+	TEST_ASSERT(tooltip_show_stale(T, seen), "a second close does not revive it")
+	TEST_ASSERT(!tooltip_show_stale(T, T.epoch), "a later hover starts from the new count")
