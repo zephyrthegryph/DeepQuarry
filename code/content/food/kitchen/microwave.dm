@@ -212,7 +212,7 @@ CAPABILITIES(/obj/machinery/microwave)
 	if(dirty < MAX_MICROWAVE_DIRTINESS)
 		return FALSE
 
-	if(!is_type_in_list(O, list(/obj/item/soap, /obj/item/reagent_containers/spray/cleaner, /obj/item/reagent_containers/glass/rag)))
+	if(!is_type_in_list(O, list(/obj/item/soap, /obj/item/reagent_containers/spray, /obj/item/reagent_containers/glass/rag)))
 		to_chat(user, span_warning("It's dirty!"))
 		return TRUE
 
@@ -222,7 +222,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 
 /// Requirement: a full dirty, unbroken microwave and a cleaner in hand (anything else falls through to handle_dirty()'s refusal).
 /obj/machinery/microwave/proc/can_clean(datum/act/op/A)
-	return (dirty >= MAX_MICROWAVE_DIRTINESS && broken <= NOT_BROKEN && is_type_in_list(A.held, list(/obj/item/soap, /obj/item/reagent_containers/spray/cleaner, /obj/item/reagent_containers/glass/rag))) ? null : /datum/msg/req_failed
+	return (dirty >= MAX_MICROWAVE_DIRTINESS && broken <= NOT_BROKEN && is_type_in_list(A.held, list(/obj/item/soap, /obj/item/reagent_containers/spray, /obj/item/reagent_containers/glass/rag))) ? null : /datum/msg/req_failed
 
 /obj/machinery/microwave/proc/clean_done(datum/act/op/A)
 	act_message(A.actor, src, MSG_SELF(span_notice("You have cleaned %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has cleaned %T%.")))

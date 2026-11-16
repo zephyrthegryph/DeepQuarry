@@ -66,7 +66,7 @@ NOTICE: Do not leave trailing commas!!!!
 	/obj/item/ammo_casing, \
 	/obj/item/melee, \
 	/obj/item/material/knife, \
-	/obj/item/reagent_containers/spray/pepper, \
+	/obj/item/reagent_containers/spray, \
 	/obj/item/handcuffs, \
 	/obj/item/clothing/head/helmet, \
 	/obj/item/grenade, \
@@ -146,7 +146,7 @@ NOTICE: Do not leave trailing commas!!!!
 	/obj/item/roller
 
 #define POCKET_HYDROPONICS \
-	/obj/item/reagent_containers/spray/plantbgone, \
+	/obj/item/reagent_containers/spray, \
 	/obj/item/seeds, \
 	/obj/item/reagent_containers/glass/bottle, \
 	/obj/item/material/minihoe

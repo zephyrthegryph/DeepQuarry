@@ -212,7 +212,7 @@
 		var/hit_key = hit ? hit.key : "no op"
 		var/hit_outcome = hit ? hit.outcome : "-"
 		qdel(bar)
-		var/obj/item/reagent_containers/spray/cleaner/spray = allocate(/obj/item/reagent_containers/spray/cleaner, side)
+		var/obj/item/reagent_containers/spray/spray = own(variant_new(VARIANT(/obj/item/reagent_containers/spray/cleaner), side))
 		H.put_in_hands(spray)
 		H.set_combat_mode(FALSE)
 		var/volume = spray.reagents?.total_volume

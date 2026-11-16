@@ -27017,7 +27017,9 @@
 "bca" = (
 /obj/structure/table/standard,
 /obj/machinery/recharger,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 4
 	},
@@ -30062,9 +30064,15 @@
 	dir = 4;
 	max_integrity = 1e+006
 	},
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/machinery/door/window/northright,
 /turf/simulated/floor/tiled,
 /area/security/security_ses)
@@ -32420,7 +32428,9 @@
 /obj/structure/disposalpipe/segment{
 	dir = 4
 	},
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/item/flash,
 /turf/simulated/floor/lino,
 /area/security/detectives_office)
@@ -35040,7 +35050,9 @@
 /area/security/detectives_office)
 "bqc" = (
 /obj/structure/table/reinforced,
-/obj/item/reagent_containers/spray/luminol,
+/obj/item/reagent_containers/spray{
+	variant = "luminol"
+	},
 /obj/item/uv_light,
 /obj/item/clothing/gloves/sterile/latex,
 /obj/machinery/requests_console{
@@ -35106,7 +35118,9 @@
 /area/security/detectives_office)
 "bqj" = (
 /obj/structure/closet/secure_closet/detective,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/item/flash,
 /turf/simulated/floor/lino,
 /area/security/detectives_office)
@@ -37999,12 +38013,16 @@
 	departmentType = 1;
 	pixel_y = 28
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/structure/table/steel,
 /obj/item/storage/box/mousetraps,
 /obj/item/storage/box/lights/mixed,
 /obj/item/storage/box/lights/mixed,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/machinery/newscaster{
 	pixel_x = 30
 	},
@@ -51617,7 +51635,9 @@
 	pixel_x = 5
 	},
 /obj/item/t_scanner,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/random/tech_supply,
 /obj/random/tech_supply,
 /turf/simulated/floor/tiled,
@@ -61234,7 +61254,9 @@
 	pixel_x = -6;
 	pixel_y = 8
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/machinery/requests_console{
 	department = "Virology";
 	name = "Virology Requests Console";
@@ -65817,10 +65839,13 @@
 /obj/structure/table/glass,
 /obj/item/reagent_containers/food/drinks/britcup,
 /obj/random/medical,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = -5
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/effect/floor_decal/corner/paleblue/diagonal{
 	dir = 4
 	},
@@ -68696,7 +68721,8 @@
 /obj/effect/floor_decal/corner/beige/border{
 	dir = 6
 	},
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the 'Space' from Space Cleaner and written in Chemistry. Scrawled on the back is, 'Okay, whoever filled this with polytrinic acid, it was only funny the first time. It was hard enough replacing the CMO's first cat!'";
 	name = "Chemistry Cleaner"
 	},
@@ -72159,7 +72185,8 @@
 	pixel_y = -22
 	},
 /obj/machinery/recharger,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = -5
 	},
 /turf/simulated/floor/tiled/dark,
@@ -75530,11 +75557,13 @@
 /area/medical/sleeper)
 "cRA" = (
 /obj/structure/table/glass,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = 2;
 	pixel_y = 2
 	},
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = -2;
 	pixel_y = -2
 	},
@@ -81496,7 +81525,8 @@
 /obj/item/surgical/bonegel,
 /obj/item/stack/nanopaste,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -81908,7 +81938,8 @@
 /obj/structure/table/standard,
 /obj/item/surgical/surgicaldrill,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -81996,7 +82027,8 @@
 /obj/structure/table/standard,
 /obj/item/surgical/surgicaldrill,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -106461,7 +106493,9 @@
 "eae" = (
 /obj/structure/table/standard,
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /turf/simulated/floor/tiled,
 /area/rnd/xenobiology)
 "eaf" = (

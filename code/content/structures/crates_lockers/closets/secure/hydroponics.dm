@@ -17,7 +17,7 @@
 		/obj/item/material/knife/machete/hatchet,
 		/obj/item/reagent_containers/glass/beaker = 2,
 		/obj/item/tool/wirecutters/clippers/trimmers,
-		/obj/item/reagent_containers/spray/plantbgone,
+		VARIANT(/obj/item/reagent_containers/spray/plantbgone),
 		/obj/item/clothing/suit/storage/hooded/wintercoat/hydro,
 		/obj/item/clothing/shoes/boots/winter/hydro,
 		/obj/item/storage/belt/hydro,

@@ -435,21 +435,61 @@
 	var/obj/item/reagent_containers/spray/plain = allocate(/obj/item/reagent_containers/spray, floor)
 	TEST_ASSERT_EQUAL(plain.reagents.total_volume, 0, "the generic bottle comes empty")
 	var/list/fills = list(\
-		/obj/item/reagent_containers/spray/cleaner = REAGENT_ID_CLEANER, \
-		/obj/item/reagent_containers/spray/sterilizine = REAGENT_ID_STERILIZINE, \
-		/obj/item/reagent_containers/spray/plantbgone = REAGENT_ID_PLANTBGONE, \
-		/obj/item/reagent_containers/spray/pepper = REAGENT_ID_CONDENSEDCAPSAICIN, \
-		/obj/item/reagent_containers/spray/windowsealant = REAGENT_ID_SILICATE, \
-		/obj/item/reagent_containers/spray/luminol = REAGENT_ID_LUMINOL)
-	for(var/path in fills)
-		var/obj/item/reagent_containers/spray/bottle = allocate(path, floor)
-		TEST_ASSERT(bottle.starting_fill && bottle.starting_fill[fills[path]], "[path] is a starting fill of [fills[path]]")
-		TEST_ASSERT(bottle.reagents.get_reagent_amount(fills[path]) > 0, "[path] comes holding it")
+		VARIANT(/obj/item/reagent_containers/spray/cleaner) = REAGENT_ID_CLEANER, \
+		VARIANT(/obj/item/reagent_containers/spray/sterilizine) = REAGENT_ID_STERILIZINE, \
+		VARIANT(/obj/item/reagent_containers/spray/plantbgone) = REAGENT_ID_PLANTBGONE, \
+		VARIANT(/obj/item/reagent_containers/spray/pepper) = REAGENT_ID_CONDENSEDCAPSAICIN, \
+		VARIANT(/obj/item/reagent_containers/spray/windowsealant) = REAGENT_ID_SILICATE, \
+		VARIANT(/obj/item/reagent_containers/spray/luminol) = REAGENT_ID_LUMINOL)
+	for(var/ref in fills)
+		var/obj/item/reagent_containers/spray/bottle = own(variant_new(ref, floor))
+		TEST_ASSERT(bottle.starting_fill && bottle.starting_fill[fills[ref]], "[ref] is a starting fill of [fills[ref]]")
+		TEST_ASSERT(bottle.reagents.get_reagent_amount(fills[ref]) > 0, "[ref] comes holding it")
 	// Refill it with something else and the fill is what it holds now.
-	var/obj/item/reagent_containers/spray/cleaner/cleaner = allocate(/obj/item/reagent_containers/spray/cleaner, floor)
+	var/obj/item/reagent_containers/spray/cleaner = own(variant_new(VARIANT(/obj/item/reagent_containers/spray/cleaner), floor))
 	cleaner.reagents.clear_reagents()
 	cleaner.reagents.add_reagent(REAGENT_ID_WATER, 30)
 	TEST_ASSERT_EQUAL(cleaner.reagents.get_reagent_amount(REAGENT_ID_WATER), 30, "it is refilled with water")
 	TEST_ASSERT_EQUAL(cleaner.reagents.get_reagent_amount(REAGENT_ID_CLEANER), 0, "and holds no cleaner")
+
+/// Every spray bottle that was a type of its own is a row of one type, and keeps what made it that bottle: its name, description, sprite, size, fill and (the
+/// pepper spray) its safety. No subtype of the spray bottle is left that only set data.
+/datum/unit_test/dq_spray_variants_keep_their_look
+	boot_needs = list()
+
+/datum/unit_test/dq_spray_variants_keep_their_look/Run()
+	var/turf/floor = test_floor()
+	// key = list(name, icon file, icon_state, item_state, volume, reagent, units, safety lock)
+	var/list/expected = list(
+		"cleaner" = list("space cleaner", 'icons/obj/janitor.dmi', "cleaner", "cleaner", 250, REAGENT_ID_CLEANER, 250, FALSE),
+		"drone_cleaner" = list("space cleaner", 'icons/obj/janitor.dmi', "cleaner", "cleaner", 50, REAGENT_ID_CLEANER, 50, FALSE),
+		"sterilizine" = list(REAGENT_ID_STERILIZINE, 'icons/obj/janitor.dmi', "cleaner", "cleaner", 250, REAGENT_ID_STERILIZINE, 250, FALSE),
+		"pepper" = list("pepperspray", 'icons/obj/weapons.dmi', "pepperspray", "pepperspray", 40, REAGENT_ID_CONDENSEDCAPSAICIN, 40, TRUE),
+		"luminol" = list("luminol bottle", 'icons/obj/forensics.dmi', "luminol", "cleaner", 250, REAGENT_ID_LUMINOL, 250, FALSE),
+		"plantbgone" = list(REAGENT_PLANTBGONE, 'icons/obj/hydroponics_machines.dmi', "plantbgone", "plantbgone", 100, REAGENT_ID_PLANTBGONE, 100, FALSE),
+		"windowsealant" = list("Krak-b-gone", 'icons/obj/items.dmi', "windowsealant", "spraycan", 80, REAGENT_ID_SILICATE, 80, FALSE))
+	for(var/key in expected)
+		var/list/row = expected[key]
+		var/ref = variant_ref(/obj/item/reagent_containers/spray, key)
+		var/obj/item/reagent_containers/spray/S = own(variant_new(ref, floor))
+		TEST_ASSERT_EQUAL(S.type, /obj/item/reagent_containers/spray, "[ref] is made as the one spray type")
+		TEST_ASSERT_EQUAL(S.variant, key, "[ref] keeps its key")
+		TEST_ASSERT_EQUAL(S.name, row[1], "[ref]: name")
+		TEST_ASSERT_EQUAL("[S.icon]", "[row[2]]", "[ref]: icon file")
+		TEST_ASSERT_EQUAL(S.icon_state, row[3], "[ref]: icon_state")
+		TEST_ASSERT_EQUAL(S.item_state, row[4], "[ref]: in-hand sprite")
+		TEST_ASSERT_EQUAL(S.volume, row[5], "[ref]: volume")
+		TEST_ASSERT_EQUAL(round(S.reagents.get_reagent_amount(row[6]), 0.01), row[7], "[ref]: starts holding its fill")
+		TEST_ASSERT_EQUAL(S.reagents.total_volume, row[7], "[ref]: and nothing else")
+		TEST_ASSERT_EQUAL(S.safety_lock, row[8], "[ref]: safety lock")
+		TEST_ASSERT_EQUAL(S.safety, row[8], "[ref]: safety starts on where there is one")
+	// The old paths are gone as types: only the behaviours that differ (the chem sprayer, the hose nozzle, the water flower) are subtypes.
+	for(var/key in expected)
+		TEST_ASSERT_NULL(text2path("/obj/item/reagent_containers/spray/[key]"), "/obj/item/reagent_containers/spray/[key] is no type any more")
+	for(var/path in subtypesof(/obj/item/reagent_containers/spray))
+		TEST_ASSERT(ispath(path, /obj/item/reagent_containers/spray/chemsprayer) || path == /obj/item/reagent_containers/spray/waterflower, "[path] is a subtype of the spray bottle that is not a behaviour")
+	// The old path still resolves for a map (variant_alias_of): the row's vars on the one type.
+	for(var/key in expected)
+		TEST_ASSERT(variant_alias_of("/obj/item/reagent_containers/spray/[key]"), "the old map path of [key] still resolves")
 
 #endif

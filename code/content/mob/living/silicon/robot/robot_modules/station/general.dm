@@ -7,7 +7,7 @@
 	rel_add(src, nameof(modules), new /obj/item/melee/robotic/baton(src))
 	rel_add(src, nameof(modules), new /obj/item/gun/energy/robotic/taser(src))
 	rel_add(src, nameof(modules), new /obj/item/taperoll/police(src))
-	rel_add(src, nameof(modules), new /obj/item/reagent_containers/spray/pepper(src))
+	rel_add(src, nameof(modules), variant_new(VARIANT(/obj/item/reagent_containers/spray/pepper), src))
 	rel_add(src, nameof(modules), new /obj/item/gripper/security(src))
 	rel_add(src, nameof(modules), new /obj/item/gun/energy/robotic/phasegun(src)) // Phasegun for regular sec cyborg.
 	rel_add(src, nameof(modules), new /obj/item/ticket_printer(src))

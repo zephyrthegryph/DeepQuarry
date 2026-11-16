@@ -69,7 +69,7 @@ CAPABILITIES(/datum/closet_fill)
 			var/path = left[1]
 			C.set_starts_with(left.Copy(2))
 			what = "[path] in [C.type]"
-			new path(C)
+			variant_new(path, C)
 			items_made++
 		else
 			what = "loose items of [C.type]"

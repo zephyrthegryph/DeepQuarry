@@ -149,7 +149,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	if(id)
 		H.equip_to_slot_or_del(new id(H),SLOT_ID_ID)
 	if(l_pocket)
-		H.equip_to_slot_or_del(new l_pocket(H),SLOT_ID_POCKET_L)
+		H.equip_to_slot_or_del(variant_new(l_pocket, H),SLOT_ID_POCKET_L)
 	if(r_pocket)
 		H.equip_to_slot_or_del(new r_pocket(H),SLOT_ID_POCKET_R)
 	if(suit_store)

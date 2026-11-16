@@ -40,6 +40,7 @@ GLOBAL_LIST_INIT(dq_variant_tables, list(
 	/obj/fruitspawner = "dq_variants_fruitspawner",
 	/obj/item/seeds = "dq_variants_seeds",
 	/obj/item/reagent_containers/chem_disp_cartridge = "dq_variants_chem_cartridges",
+	/obj/item/reagent_containers/spray = "dq_variants_spray",
 	/obj/item/toy/figure = "dq_variants_toy_figures",
 	/obj/item/clothing/under/rank = "dq_variants_under_rank",
 	/obj/fiftyspawner = "dq_variants_fiftyspawner",

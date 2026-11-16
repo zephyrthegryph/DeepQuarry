@@ -34,24 +34,24 @@
 
 /datum/unit_test/dq_p2_reagents/sprays_start_as_declared/run_gate()
 	var/list/expected = list(
-		list(/obj/item/reagent_containers/spray/cleaner, 250, 10, 250),
-		list(/obj/item/reagent_containers/spray/cleaner/drone, 50, 10, 50),
-		list(/obj/item/reagent_containers/spray/sterilizine, 250, 10, 250),
-		list(/obj/item/reagent_containers/spray/pepper, 40, 10, 40),
+		list(VARIANT(/obj/item/reagent_containers/spray/cleaner), 250, 10, 250),
+		list(VARIANT(/obj/item/reagent_containers/spray/drone_cleaner), 50, 10, 50),
+		list(VARIANT(/obj/item/reagent_containers/spray/sterilizine), 250, 10, 250),
+		list(VARIANT(/obj/item/reagent_containers/spray/pepper), 40, 10, 40),
 		list(/obj/item/reagent_containers/spray/waterflower, 10, 1, 10),
 		list(/obj/item/reagent_containers/spray/chemsprayer, 600, 10, 0),
 		list(/obj/item/reagent_containers/spray/chemsprayer/hosed, 600, 10, 0),
-		list(/obj/item/reagent_containers/spray/plantbgone, 100, 10, 100),
-		list(/obj/item/reagent_containers/spray/windowsealant, 80, 10, 80),
+		list(VARIANT(/obj/item/reagent_containers/spray/plantbgone), 100, 10, 100),
+		list(VARIANT(/obj/item/reagent_containers/spray/windowsealant), 80, 10, 80),
 	)
 	for(var/list/row in expected)
 		var/path = row[1]
-		var/obj/item/reagent_containers/spray/S = allocate(path)
+		var/obj/item/reagent_containers/spray/S = own(variant_new(path, run_loc_floor_bottom_left))
 		TEST_ASSERT_EQUAL(rc_capacity(S), row[2], "[path]: capacity")
 		TEST_ASSERT_EQUAL(S.amount_per_transfer_from_this, row[3], "[path]: the amount of one spray")
 		TEST_ASSERT_EQUAL(rc_units(S), row[4], "[path]: what it holds at the start")
 		TEST_ASSERT(rc_open(S), "[path]: a spray bottle is open (its top is unscrewed)")
-	var/obj/item/reagent_containers/spray/pepper/pepper = allocate(/obj/item/reagent_containers/spray/pepper)
+	var/obj/item/reagent_containers/spray/pepper = own(variant_new(VARIANT(/obj/item/reagent_containers/spray/pepper), run_loc_floor_bottom_left))
 	TEST_ASSERT(pepper.safety, "the pepper spray starts with its safety on")
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -64,7 +64,7 @@
 
 /datum/unit_test/dq_p2_reagents/spray_puffs_at_a_floor_and_at_a_person/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/spray/cleaner/S = allocate(/obj/item/reagent_containers/spray/cleaner)
+	var/obj/item/reagent_containers/spray/S = own(variant_new(VARIANT(/obj/item/reagent_containers/spray/cleaner), run_loc_floor_bottom_left))
 	var/turf/T = get_turf(H)
 	TEST_ASSERT_EQUAL(rc_puffs(T), 0, "no spray in the air to start")
 	rc_click(H, T, S, I_HELP, FALSE)
@@ -83,7 +83,7 @@
 
 /datum/unit_test/dq_p2_reagents/spray_works_at_range/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/spray/cleaner/S = allocate(/obj/item/reagent_containers/spray/cleaner)
+	var/obj/item/reagent_containers/spray/S = own(variant_new(VARIANT(/obj/item/reagent_containers/spray/cleaner), run_loc_floor_bottom_left))
 	var/turf/far = run_loc_floor_top_right
 	TEST_ASSERT(get_dist(H, far) > 3, "the target is far away")
 	rc_click(H, far, S, I_HELP, FALSE)
@@ -110,7 +110,7 @@
 
 /datum/unit_test/dq_p2_reagents/spray_leaves_containers_and_furniture_alone/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/spray/cleaner/S = allocate(/obj/item/reagent_containers/spray/cleaner)
+	var/obj/item/reagent_containers/spray/S = own(variant_new(VARIANT(/obj/item/reagent_containers/spray/cleaner), run_loc_floor_bottom_left))
 	var/list/things = list(
 		allocate(/obj/item/reagent_containers/glass/beaker),
 		allocate(/obj/structure/table),
@@ -142,7 +142,7 @@
 
 /datum/unit_test/dq_p2_reagents/pepper_spray_safety/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/item/reagent_containers/spray/pepper/S = allocate(/obj/item/reagent_containers/spray/pepper)
+	var/obj/item/reagent_containers/spray/S = own(variant_new(VARIANT(/obj/item/reagent_containers/spray/pepper), run_loc_floor_bottom_left))
 	var/turf/T = get_turf(H)
 	rc_click(H, T, S, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_units(S), 40, "with the safety on nothing comes out")

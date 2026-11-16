@@ -15,11 +15,17 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	/// What it comes full of, reagent id => units (null: empty). This is the whole difference between a bottle of cleaner, of weed killer and of sterilizine: a spray bottle is
 	/// one refillable container, a starting fill and a label (doc/rewrite/proposals/chemistry_recipes.md section 11c). Empty it and fill it with anything else, and label it with a pen.
 	var/list/starting_fill
+	/// Whether it has a safety, worked in hand (the pepper spray's): while the safety is on nothing comes out.
+	var/safety_lock = FALSE
+	var/safety = FALSE
+	/// Where the sprite balances when put on a table (y): a bottle's own, a taller pepper spray's higher.
+	var/table_center_y = 10
 	/// The label a pen wrote on it (empty: the bottle's own name stands).
 	var/label_text = ""
 	var/base_name
 	var/base_desc
 
+// The bottles of the spray family are rows of dq_variants_spray (code/content/variants/spray.dm): variants() applies the row the instance's variant names.
 // A spray bottle sprays one amount at what it is clicked on, near or far (a puff of it at the floor and at the air, a splash over a dense thing next to
 // the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
 // closet, a sink, a janitor's cart, storage and other containers. The Empty verb pours it out over the floor. Its amount is fixed.
@@ -37,15 +43,21 @@ CAPABILITIES(/obj/item/reagent_containers/spray)
 		transfer_default = nameof(amount_per_transfer_from_this),
 		taps = list(/obj/structure/reagent_dispensers),
 		rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart))
+	variants(nameof(variant), PROC_REF(variant_table))
 	setup(PROC_REF(remember_base_text))
+	setup(PROC_REF(place_sprite))
 	op("empty", menu(), label("Empty Spray Bottle"), confirms("Are you sure you want to empty that?"), then(PROC_REF(emptied)))
 	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
 		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:"), step = "label"), \
 		needs(req_answer(PROC_REF(label_refusal), step = "label")), then(PROC_REF(label_applied)))
 	examine_line(PROC_REF(units_left))
+	op("safety", in_hand(), label("Toggle safety"), needs(req_is(nameof(safety_lock), TRUE, because = MSG(spray/no_safety))), toggles(nameof(safety)), then(PROC_REF(safety_toggled)))
+	examine_line(PROC_REF(safety_text))
 	extend("reagent_container.spray", reach(REACH_ANY), then(PROC_REF(spray_logged)))
+	extend("reagent_container.spray", needs(req_is(nameof(safety), FALSE, because = MSG(spray/safety_on))))
 
 MSG_DEF_SELF(spray/safety_on, "The safety is on!")
+MSG_DEF_SELF(spray/no_safety, "It has no safety.")
 
 /// What a spray makes of one amount aimed at `target`: a splash over a dense thing next to the sprayer, else a puff of it travelling to the target.
 /obj/item/reagent_containers/spray/reagent_spray_at(atom/target, mob/user, amount)
@@ -70,6 +82,28 @@ MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 	if(reagents.has_reagent(REAGENT_ID_LUBE))
 		log_and_message_admins("fired Space lube from \a [src].", A.actor)
 	return OP_OK
+
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/reagent_containers/spray/proc/variant_table()
+	return GLOB.dq_variants_spray
+
+/// The sprite balances on a table at its row's height.
+/obj/item/reagent_containers/spray/proc/place_sprite()
+	if(handling_of(src).center_y != table_center_y)
+		set_center_of_mass_y(table_center_y)
+
+/// The safety was switched, by whoever holds it.
+/obj/item/reagent_containers/spray/proc/safety_toggled(datum/act/op/A)
+	balloon_alert(A.actor, "safety [safety ? "on" : "off"].")
+	if(GLOB.chem_trace)
+		log_world("CHEM: [A.actor] switched the safety of [src] [safety ? "on" : "off"]")
+	return OP_OK
+
+/// Whoever is next to it can see its safety, when it has one.
+/obj/item/reagent_containers/spray/proc/safety_text(datum/act/op/A)
+	if(!safety_lock || !Adjacent(A.actor))
+		return null
+	return "The safety is [safety ? "on" : "off"]."
 
 /// The bottle's own name and description, which a label is written over.
 /obj/item/reagent_containers/spray/proc/remember_base_text()
@@ -112,51 +146,6 @@ MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 	balloon_alert(user, "emptied \the [src] onto the floor.")
 	reagents.splash(user.loc, reagents.total_volume, user = user)
 	return OP_OK
-
-//space cleaner
-/obj/item/reagent_containers/spray/cleaner
-	name = "space cleaner"
-	desc = "BLAM!-brand non-foaming space cleaner!"
-	starting_fill = list(REAGENT_ID_CLEANER = 250)
-
-/obj/item/reagent_containers/spray/cleaner/drone
-	name = "space cleaner"
-	desc = "BLAM!-brand non-foaming space cleaner!"
-	volume = 50
-	starting_fill = list(REAGENT_ID_CLEANER = 50)
-
-/obj/item/reagent_containers/spray/sterilizine
-	name = REAGENT_ID_STERILIZINE
-	desc = "Great for hiding incriminating bloodstains and sterilizing scalpels."
-	starting_fill = list(REAGENT_ID_STERILIZINE = 250)
-
-/obj/item/reagent_containers/spray/pepper
-	name = "pepperspray"
-	desc = "Manufactured by UhangInc, used to blind and down an opponent quickly."
-	icon = 'icons/obj/weapons.dmi'
-	icon_state = "pepperspray"
-	item_state = "pepperspray"
-	max_transfer_amount = null
-	volume = 40
-	starting_fill = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40)
-	var/safety = TRUE
-
-// The pepper spray has a safety, worked in hand: while it is on nothing comes out. It is loaded with 40 units of condensed capsaicin.
-CAPABILITIES(/obj/item/reagent_containers/spray/pepper)
-	configure(item_handling(center_x = 16, center_y = 16))
-	op("safety", in_hand(), label("Toggle safety"), toggles(nameof(safety)), then(PROC_REF(safety_toggled)))
-	examine_line(PROC_REF(safety_text))
-	extend("reagent_container.spray", needs(req_is(nameof(safety), FALSE, because = MSG(spray/safety_on))))
-
-/obj/item/reagent_containers/spray/pepper/proc/safety_toggled(datum/act/op/A)
-	balloon_alert(A.actor, "safety [safety ? "on" : "off"].")
-	return OP_OK
-
-/// Whoever is next to it can see its safety.
-/obj/item/reagent_containers/spray/pepper/proc/safety_text(datum/act/op/A)
-	if(!Adjacent(A.actor))
-		return null
-	return "The safety is [safety ? "on" : "off"]."
 
 /obj/item/reagent_containers/spray/waterflower
 	name = "water flower"
@@ -206,15 +195,6 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer)
 		reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 		D.tint_from_reagents()
 		D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
-
-/obj/item/reagent_containers/spray/plantbgone
-	name = REAGENT_PLANTBGONE
-	desc = "Kills those pesky weeds!"
-	icon = 'icons/obj/hydroponics_machines.dmi'
-	icon_state = "plantbgone"
-	item_state = "plantbgone"
-	volume = 100
-	starting_fill = list(REAGENT_ID_PLANTBGONE = 100)
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed
 	name = "hose nozzle"
@@ -305,13 +285,3 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
 			W.set_up(my_target, user = user)
 
 		return
-
-/obj/item/reagent_containers/spray/windowsealant
-	name = "Krak-b-gone"
-	desc = "A spray bottle of silicate sealant for rapid window repair."
-	icon = 'icons/obj/items.dmi'
-	icon_state = "windowsealant"
-	item_state = "spraycan"
-	max_transfer_amount = null
-	volume = 80
-	starting_fill = list(REAGENT_ID_SILICATE = 80)
