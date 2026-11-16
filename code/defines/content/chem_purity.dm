@@ -82,16 +82,19 @@
 #define BOILING_POINT_DEFAULT (T0C + 200)
 /// A reagent that effectively never boils (salts, heavy metals).
 #define BOILING_POINT_NEVER 5000
-/// Units per second boiled off per kelvin above the boiling point, never less than the minimum rate (units per second) while above it.
-#define BOIL_RATE_PER_KELVIN 0.08
-#define BOIL_RATE_MINIMUM 0.2
 /// Units per second a dissolved gas (a boiling point under 0 C) leaves a heated container, whatever the gap to its point.
 #define BOIL_RATE_DISSOLVED_GAS 0.05
 /// Joules a unit of boiled-off reagent carries away from the container.
 #define BOIL_LATENT_HEAT 1800
 
-/// The power of a hot plate's element, W, and the hottest it can be set.
-#define HOT_PLATE_POWER 4000
+/// The most band edges a container senses at once (the sensing takes 24 levels: verdigris/ffi/src/sense.rs MAX_LEVELS): the ones nearest its temperature, moved as it crosses them.
+#define REACTION_WATCH_MAX_LEVELS 24
+
+/// The most a hot plate's element delivers, W, how many watts it delivers per kelvin between the dial and the container (up to that most), and the hottest it can be set.
+#define HOT_PLATE_POWER 6000
+#define HOT_PLATE_COUPLING 100
+/// A container within this many kelvin of the plate's own temperature counts as at room temperature (its readout is cleared).
+#define HOT_PLATE_ROOM_TOLERANCE 0.5
 #define HOT_PLATE_MAX_TEMP (T0C + 300)
 /// The share of the product a filter keeps back (units of product held per unit passed), by filter.
 #define FILTER_RETENTION_PAPER 0.02
