@@ -1,13 +1,3 @@
-/datum/design_techweb/board/industrial_reagent_filter
-	SET_CIRCUIT_DESIGN_NAMEDESC("Industrial Reagent Filter")
-	id = "industrial_reagent_filter"
-	// req_tech = list(TECH_DATA = 1)
-	build_path = VARIANT(/obj/item/circuitboard/industrial_reagent_filter)
-	category = list(
-		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_REFINERY
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
-
 /datum/design_techweb/board/industrial_reagent_furnace
 	SET_CIRCUIT_DESIGN_NAMEDESC("Industrial Reagent Furnace")
 	id = "industrial_reagent_furnace"

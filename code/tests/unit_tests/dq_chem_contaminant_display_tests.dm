@@ -114,5 +114,15 @@
 	TEST_ASSERT_EQUAL(vat.reagents.total_volume, 0, "the vat empties as a whole")
 	var/obj/item/mecha_parts/mecha_equipment/tool/sleeper/mecha_sleeper = allocate(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, test_floor())
 	TEST_ASSERT(!hascall(mecha_sleeper, "inject_reagent"), "the mecha sleeper has no per-reagent injection from the gun's stock")
+	TEST_ASSERT(isnull(text2path("/obj/machinery/smart_centrifuge")), "the centrifuge that isolated each reagent is gone")
+	TEST_ASSERT(isnull(text2path("/obj/machinery/reagent_refinery/filter")), "the refinery filter that passed one chosen reagent is gone")
+	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/rig_module/chem_dispenser/rig_dispenser = allocate(/obj/item/rig_module/chem_dispenser, test_floor())
+	var/obj/item/reagent_containers/glass/beaker/mixed = allocate(/obj/item/reagent_containers/glass/beaker, test_floor())
+	mixed.reagents.add_reagent(REAGENT_ID_ANTITOXIN, 10, safety = 1)
+	mixed.reagents.add_reagent(REAGENT_ID_PHORON, 10, safety = 1)
+	rig_dispenser.accepts_item(mixed, wearer)
+	TEST_ASSERT(abs(mixed.reagents.get_reagent_amount(REAGENT_ID_ANTITOXIN) - 10) < 0.001, "the rig dispenser leaves a mix it cannot wholly store untouched")
+	TEST_ASSERT(abs(mixed.reagents.get_reagent_amount(REAGENT_ID_PHORON) - 10) < 0.001, "and does not strip out the part it could store")
 
 #endif

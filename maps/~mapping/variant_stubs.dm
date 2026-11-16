@@ -929,11 +929,6 @@
 	name = T_BOARD("ID restoration console")
 	build_path = /obj/machinery/computer/id_restorer
 	board_type = /datum/frame/frame_types/id_restorer
-/obj/item/circuitboard/industrial_reagent_filter
-	name = T_BOARD("industrial chemical filter")
-	build_path = /obj/machinery/reagent_refinery/filter
-	board_type = /datum/frame/frame_types/industrial_reagent_filter
-	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 1, /obj/item/stack/material/glass/reinforced = 1)
 /obj/item/circuitboard/industrial_reagent_furnace
 	name = T_BOARD("industrial chemical sintering furnace")
 	build_path = /obj/machinery/reagent_refinery/furnace
@@ -1275,11 +1270,6 @@
 	name = T_BOARD("sleeper console")
 	build_path = /obj/machinery/sleep_console
 	board_type = /datum/frame/frame_types/medical_console
-/obj/item/circuitboard/smart_centrifuge
-	name = T_BOARD("smart centrifuge")
-	build_path = /obj/machinery/smart_centrifuge
-	board_type = /datum/frame/frame_types/machine
-	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 3, /obj/item/stack/material/glass/reinforced = 1)
 /obj/item/circuitboard/solar_control
 	name = T_BOARD("solar control console")
 	build_path = /obj/machinery/power/solar_control

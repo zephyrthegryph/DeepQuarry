@@ -366,7 +366,6 @@
 	description = "Reacting and distilling reagents into more complex and useful forms."
 	prereq_ids = list(TECHWEB_NODE_CHEM_SYNTHESIS)
 	design_ids = list(
-		"industrial_reagent_filter",
 		"industrial_reagent_furnace",
 		"industrial_reagent_grinder",
 		"industrial_reagent_hub",

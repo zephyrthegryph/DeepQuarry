@@ -88,7 +88,6 @@
 	prereq_ids = list(TECHWEB_NODE_CHEM_SYNTHESIS)
 	design_ids = list(
 		"chem_analyzer",
-		"smart_centrifuge",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_2_POINTS)
 	announce_channels = list(CHANNEL_ENGINEERING,CHANNEL_MEDICAL)

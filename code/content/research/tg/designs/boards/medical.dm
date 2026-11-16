@@ -117,16 +117,6 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
 
-/datum/design_techweb/board/smart_centrifuge
-	SET_CIRCUIT_DESIGN_NAMEDESC("smart centrifuge")
-	id = "smart_centrifuge"
-	// req_tech = list(TECH_MAGNET = 2, TECH_DATA = 1, TECH_MATERIAL = 2)
-	build_path = VARIANT(/obj/item/circuitboard/smart_centrifuge)
-	category = list(
-		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_MEDICAL
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
-
 /datum/design_techweb/board/chem_analyzer
 	SET_CIRCUIT_DESIGN_NAMEDESC("chem analyzer PRO")
 	id = "chem_analyzer"

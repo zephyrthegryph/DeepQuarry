@@ -71,14 +71,14 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 			look.overlay(dot)
 		look.overlay(update_input_connection_overlays(look, "reactor_intakes"))
 
-/obj/machinery/reagent_refinery/reactor/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
+/obj/machinery/reagent_refinery/reactor/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate)
 	// no back/forth, filters don't use just their forward, they send the side too!
 	if(dir == GLOB.reverse_dir[source_forward_dir])
 		return 0
 	// locked until distilling mode
 	if(toggle_mode == REACTOR_MODE_OUTPUT)
 		return 0
-	. = ..(origin_machine, RT, source_forward_dir, transfer_rate, filter_id)
+	. = ..(origin_machine, RT, source_forward_dir, transfer_rate)
 
 /obj/machinery/reagent_refinery/reactor/examine(mob/user, infix, suffix)
 	. = ..()

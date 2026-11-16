@@ -52,28 +52,29 @@
 		to_chat(user, "\The [input_item] is empty.")
 		return 0
 
-	// Magical chemical filtration system, do not question it.
-	var/total_transferred = 0
+	// The reservoir takes a container whole or not at all: one holding anything it cannot store, or more than it has room for, is refused.
+	var/list/to_store = list()
 	for(var/datum/reagent/R in input_item.reagents.reagent_list)
+		var/datum/rig_charge/charge
 		for(var/chargetype in charges)
-			var/datum/rig_charge/charge = charges[chargetype]
-			if(charge.display_name == R.id)
-
-				var/chems_to_transfer = R.volume
-
-				if((charge.charges + chems_to_transfer) > max_reagent_volume)
-					chems_to_transfer = max_reagent_volume - charge.charges
-
-				charge.set_charges(charge.charges + chems_to_transfer)
-				input_item.reagents.remove_reagent(R.id, chems_to_transfer)
-				total_transferred += chems_to_transfer
-
+			var/datum/rig_charge/candidate = charges[chargetype]
+			if(candidate.display_name == R.id)
+				charge = candidate
 				break
+		if(!charge)
+			to_chat(user, span_danger("\The [input_item] holds something the reservoir cannot store."))
+			return 0
+		if(charge.charges + R.volume > max_reagent_volume)
+			to_chat(user, span_danger("The reservoir has no room for all of \the [input_item]."))
+			return 0
+		to_store[charge] = R.volume
 
-	if(total_transferred)
-		to_chat(user, span_blue("You transfer [total_transferred] units into the suit reservoir."))
-	else
-		to_chat(user, span_danger("None of the reagents seem suitable."))
+	var/total_transferred = 0
+	for(var/datum/rig_charge/charge as anything in to_store)
+		charge.set_charges(charge.charges + to_store[charge])
+		total_transferred += to_store[charge]
+	input_item.reagents.clear_reagents()
+	to_chat(user, span_blue("You transfer [total_transferred] units into the suit reservoir."))
 	return 1
 
 /obj/item/rig_module/chem_dispenser/engage(atom/target, notify_ai, mob/user)

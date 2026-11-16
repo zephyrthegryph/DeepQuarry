@@ -246,11 +246,6 @@ GLOBAL_LIST(construction_frame_floor)
 	icon_override = 'icons/obj/stock_parts_refinery.dmi'
 	frame_class = FRAME_CLASS_MACHINE
 
-/datum/frame/frame_types/industrial_reagent_filter
-	name = "Industrial Chemical Filter"
-	icon_override = 'icons/obj/stock_parts_refinery.dmi'
-	frame_class = FRAME_CLASS_MACHINE
-
 /datum/frame/frame_types/industrial_reagent_vat
 	name = "Industrial Chemical Vat"
 	icon_override = 'icons/obj/stock_parts_refinery.dmi'

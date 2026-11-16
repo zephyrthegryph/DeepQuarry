@@ -8,7 +8,6 @@
 // That should keep everything inline and not cause any cargo exploits.
 
 #define REFINERY_TUTORIAL_INPUT (1 << 0)
-#define REFINERY_TUTORIAL_FILTER (1 << 1)
 #define REFINERY_TUTORIAL_HUB (1 << 2)
 #define REFINERY_TUTORIAL_NOPOWER (1 << 3)
 #define REFINERY_TUTORIAL_NOINPUT (1 << 4)
