@@ -315,6 +315,112 @@ fn priority_class() -> u64 {
     0
 }
 
+/// Publishes how much of the process's address space is left, as gauges (`process.virtual_total_bytes`, `process.virtual_avail_bytes`,
+/// `process.virtual_largest_free_bytes`, `process.virtual_free_regions`). dd.exe is a 32-bit process: private bytes alone hide a heap that has run out
+/// of address space or fragmented it, and the first sign of that is a Rust allocation failing ("memory allocation of N bytes failed", an abort).
+/// The walk is one `VirtualQuery` per region (a few thousand), at most every 10 s with the rest of the reading.
+#[cfg(windows)]
+fn publish_address_space() {
+    #[repr(C)]
+    struct MemoryStatus {
+        length: u32,
+        load: u32,
+        total_phys: u64,
+        avail_phys: u64,
+        total_page_file: u64,
+        avail_page_file: u64,
+        total_virtual: u64,
+        avail_virtual: u64,
+        avail_extended_virtual: u64,
+    }
+    #[repr(C)]
+    struct RegionInfo {
+        base: usize,
+        allocation_base: usize,
+        allocation_protect: u32,
+        #[cfg(target_pointer_width = "64")]
+        partition: u32,
+        size: usize,
+        state: u32,
+        protect: u32,
+        kind: u32,
+        #[cfg(target_pointer_width = "64")]
+        tail: u32,
+    }
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GlobalMemoryStatusEx(status: *mut MemoryStatus) -> i32;
+        fn VirtualQuery(address: usize, info: *mut RegionInfo, length: usize) -> usize;
+    }
+    const MEM_FREE: u32 = 0x1_0000;
+    const MAX_REGIONS: u32 = 1_000_000;
+    let registry = crate::metrics::registry();
+    let mut status = MemoryStatus {
+        length: 0,
+        load: 0,
+        total_phys: 0,
+        avail_phys: 0,
+        total_page_file: 0,
+        avail_page_file: 0,
+        total_virtual: 0,
+        avail_virtual: 0,
+        avail_extended_virtual: 0,
+    };
+    #[allow(clippy::cast_possible_truncation)]
+    {
+        status.length = std::mem::size_of::<MemoryStatus>() as u32;
+    }
+    // SAFETY: GlobalMemoryStatusEx fills the struct passed, whose length field is set to its size as the API requires.
+    #[allow(clippy::cast_precision_loss)]
+    if unsafe { GlobalMemoryStatusEx(&mut status) } != 0 {
+        registry
+            .gauge("process.virtual_total_bytes")
+            .set(status.total_virtual as f64);
+        registry
+            .gauge("process.virtual_avail_bytes")
+            .set(status.avail_virtual as f64);
+    }
+    let (mut largest, mut free_regions, mut address) = (0usize, 0u32, 0usize);
+    for _ in 0..MAX_REGIONS {
+        let mut info = RegionInfo {
+            base: 0,
+            allocation_base: 0,
+            allocation_protect: 0,
+            #[cfg(target_pointer_width = "64")]
+            partition: 0,
+            size: 0,
+            state: 0,
+            protect: 0,
+            kind: 0,
+            #[cfg(target_pointer_width = "64")]
+            tail: 0,
+        };
+        // SAFETY: VirtualQuery writes at most `length` bytes into the struct passed (laid out as MEMORY_BASIC_INFORMATION for this pointer width) and
+        // reads nothing from the address, which only names a place in the address space.
+        let got = unsafe { VirtualQuery(address, &mut info, std::mem::size_of::<RegionInfo>()) };
+        if got == 0 || info.size == 0 {
+            break;
+        }
+        if info.state == MEM_FREE {
+            free_regions += 1;
+            largest = largest.max(info.size);
+        }
+        let Some(next) = info.base.checked_add(info.size) else {
+            break;
+        };
+        address = next;
+    }
+    #[allow(clippy::cast_precision_loss)]
+    {
+        registry
+            .gauge("process.virtual_largest_free_bytes")
+            .set(largest as f64);
+        registry
+            .gauge("process.virtual_free_regions")
+            .set(f64::from(free_regions));
+    }
+}
+
 /// [`OsReading`] now (Windows `GetProcessTimes`, `GetSystemTimes`, `K32GetProcessMemoryInfo`, `GetProcessIoCounters`; zeros elsewhere or when a call fails).
 #[cfg(windows)]
 fn os_reading() -> OsReading {
@@ -389,6 +495,7 @@ fn os_reading() -> OsReading {
                     .set(memory.sizes[6] as f64);
             }
         }
+        publish_address_space();
         let mut io = IoCounters::default();
         if GetProcessIoCounters(process, &mut io) != 0 {
             reading.io_ops = io.read_ops + io.write_ops + io.other_ops;

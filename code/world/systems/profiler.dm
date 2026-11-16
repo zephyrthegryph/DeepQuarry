@@ -253,7 +253,7 @@ CAPABILITIES(/datum/profile_sample)
 			S.encode_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - encode_started)
 			return !length(S.sections)
 		if(PROFILE_STAGE_WRITE)
-			// The three log lines, one a turn; the summary goes with the last.
+			// The four log lines, one a turn; the summary goes with the last.
 			var/write_started = TICK_USAGE_REAL
 			switch(S.substep)
 				if(1)
@@ -263,10 +263,15 @@ CAPABILITIES(/datum/profile_sample)
 				if(2)
 					// Keep the stable specialized records consumed by existing benchmark tools.
 					log_runtime("ATMOS_PROFILE [S.atmos_json]")
-				else
+				if(3)
 					log_runtime("RUST_ALLOC_PROFILE [S.alloc_json]")
+				else
+					// One greppable line of how much address space dd.exe (32-bit) has left: private bytes alone hide an exhausted or fragmented heap,
+					// the cause of "memory allocation of N bytes failed" aborts from the native libraries.
+					var/list/rust_metrics = S.rust_metrics
+					log_runtime("NATIVE_MEMORY private=[rust_metrics?["process.private_bytes"]] working_set=[rust_metrics?["process.working_set_bytes"]] virtual_total=[rust_metrics?["process.virtual_total_bytes"]] virtual_avail=[rust_metrics?["process.virtual_avail_bytes"]] largest_free_block=[rust_metrics?["process.virtual_largest_free_bytes"]] free_regions=[rust_metrics?["process.virtual_free_regions"]] rust_heap=[rust_metrics?["alloc.total.current_bytes"]] rust_heap_peak=[rust_metrics?["alloc.heap.peak_bytes"]]")
 			S.write_ms += TICK_DELTA_TO_MS(TICK_USAGE_REAL - write_started)
-			if(S.substep++ < 3)
+			if(S.substep++ < 4)
 				return FALSE
 			logger.Log(LOG_CATEGORY_DEBUG, "PROFILER SAMPLE: native reads [round(S.native_ms, 0.1)] ms, systems and tables [round(S.build_ms - S.native_ms - S.encode_ms - S.write_ms, 0.1)] ms (the attribution and ledger walks [round(S.walk_ms, 0.1)] of them), encode [round(S.encode_ms, 0.1)] ms, write [round(S.write_ms, 0.1)] ms, in [S.turns] turn(s) over [round((REALTIMEOFDAY - S.started_real) / 10, 0.1)] s, the dearest turn [round(S.max_turn_ms, 0.1)] ms (stage [S.max_turn_stage]), [S.over_cap_turns] turn(s) past [PROFILE_TURN_CAP_MS] ms, [S.deferrals] put off to a calmer tick")
 			return TRUE
