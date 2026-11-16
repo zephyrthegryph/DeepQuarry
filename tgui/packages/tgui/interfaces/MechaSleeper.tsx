@@ -30,7 +30,7 @@ export const MechaSleeper = () => {
     body_temp_c,
     body_temp_f,
     reagents,
-    injectables,
+    syringe_volume,
   } = data;
 
   if (!has_occupant) {
@@ -89,7 +89,10 @@ export const MechaSleeper = () => {
           ) : (
             <Stack vertical>
               {reagents.map((r) => (
-                <Stack.Item key={r.name}>
+                <Stack.Item
+                  key={r.name}
+                  color={r.contaminant ? 'grey' : undefined}
+                >
                   <Box inline bold>
                     {r.name}
                   </Box>
@@ -101,22 +104,12 @@ export const MechaSleeper = () => {
         </Section>
 
         <Section title="Inject from connected syringe gun">
-          {injectables.length === 0 ? (
+          {syringe_volume <= 0 ? (
             <EmptyState>No syringe gun loaded with reagents.</EmptyState>
           ) : (
-            <Stack vertical>
-              {injectables.map((i) => (
-                <Stack.Item key={i.id}>
-                  <Button
-                    fluid
-                    icon="syringe"
-                    onClick={() => act('inject', { reagent: i.id })}
-                  >
-                    Inject {i.name}
-                  </Button>
-                </Stack.Item>
-              ))}
-            </Stack>
+            <Button fluid icon="syringe" onClick={() => act('inject')}>
+              Inject a measure of the mix ({syringe_volume} held)
+            </Button>
           )}
         </Section>
       </Window.Content>

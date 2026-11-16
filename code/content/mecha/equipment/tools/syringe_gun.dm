@@ -20,10 +20,9 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	reagents(nameof(max_volume))
 	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
 	interface("MechaSyringeGun")
-	ui_shape(synth_speed = int(), total_volume = num(), max_volume = num(), known_reagents = list_of(row(id = schema_text(), name = schema_text(), selected = bool())), current_reagents = list_of(row(id = schema_text(), name = schema_text(), volume = num())))
+	ui_shape(synth_speed = int(), total_volume = num(), max_volume = num(), known_reagents = list_of(row(id = schema_text(), name = schema_text(), selected = bool())), current_reagents = list_of(row(id = schema_text(), name = schema_text(), volume = num(), contaminant = bool())))
 	without("ui_open")
 	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
-	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
 	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
 	every(0.2 SECONDS, then(PROC_REF(syringe_gun_step)), when = nameof(synthesizing))
 
@@ -132,12 +131,13 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	data["known_reagents"] = known
 	var/list/current = list()
 	if(reagents)
-		for(var/datum/reagent/R in reagents.reagent_list)
+		for(var/datum/reagent/R as anything in reagents.listed_reagents()) // the contaminants last
 			if(R.volume > 0)
 				current += list(list(
 					"id" = R.id,
 					"name" = "[R]",
 					"volume" = round(R.volume, 0.001),
+					"contaminant" = istype(R, /datum/reagent/contaminant),
 				))
 	data["current_reagents"] = current
 	return data
@@ -158,11 +158,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	set_synthesizing(synthesis_wanted())
 	if(processed_reagents.len)
 		src.mecha_log_message("Reagent processing started.")
-	return TRUE
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_reagent(datum/act/op/A, id)
-	if(id)
-		reagents.del_reagent(id)
 	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_all(datum/act/op/A)

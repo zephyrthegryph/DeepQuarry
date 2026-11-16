@@ -26,9 +26,16 @@ export const Dartgun = () => {
                   ) : (
                     <>
                       <Label ml={1}>
-                        {b.reagents
-                          .map((r) => `${r.volume}u ${r.name}`)
-                          .join(', ')}
+                        {b.reagents.map((r, i) => (
+                          <Box
+                            key={r.name}
+                            inline
+                            color={r.contaminant ? 'grey' : undefined}
+                          >
+                            {i > 0 ? ', ' : ''}
+                            {`${r.volume}u ${r.name}`}
+                          </Box>
+                        ))}
                       </Label>
                       <Box mt="2px">
                         <Button

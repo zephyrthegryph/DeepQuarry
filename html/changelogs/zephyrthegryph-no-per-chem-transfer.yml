@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - balance: "The mecha syringe gun can no longer purge one reagent, the mecha sleeper injects a measure of the gun's whole mix instead of a chosen reagent, and the ice cream vat empties as a whole instead of per reagent."

@@ -31,13 +31,10 @@ export const MechaSyringeGun = () => {
             <>
               <Stack vertical>
                 {data.current_reagents.map((r) => (
-                  <Stack.Item key={r.id}>
-                    <Button
-                      color="bad"
-                      onClick={() => act('purge_reagent', { id: r.id })}
-                    >
-                      Purge
-                    </Button>{' '}
+                  <Stack.Item
+                    key={r.id}
+                    color={r.contaminant ? 'grey' : undefined}
+                  >
                     {r.name}: {r.volume}
                   </Stack.Item>
                 ))}

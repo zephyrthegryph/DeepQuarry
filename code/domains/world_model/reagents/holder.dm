@@ -253,18 +253,6 @@ CAPABILITIES(/datum/reagents)
 	if(my_atom)
 		my_atom.on_reagent_change()
 
-/// Throws away every reagent but `reagent`. Contaminants are not reagents anyone picks out of a mixture: they stay (isolating cannot purify), and a contaminant cannot
-/// be the one kept.
-/datum/reagents/proc/isolate_reagent(reagent)
-	if(contaminant_def(reagent))
-		if(GLOB.chem_trace)
-			log_world("CHEM: isolating [reagent] in [my_atom] refused: a contaminant cannot be picked out of a mixture")
-		return
-	for(var/datum/reagent/R as anything in reagent_list.Copy())
-		if(R.id != reagent && !istype(R, /datum/reagent/contaminant))
-			del_reagent(R.id)
-			update_total()
-
 /datum/reagents/proc/remove_reagent(id, amount, safety = 0)
 	if(!isnum(amount))
 		return 0
@@ -454,35 +442,19 @@ CAPABILITIES(/datum/reagents)
 	if(!trans_to(target, amount, multiplier, copy, user = user))
 		touch(target, amount, user)
 
-/// Draws `amount` of the stock `id` out of the mixture into a new holder, with the contaminants that sit with it: each contaminant moves in proportion to the share of
-/// the mixture's stock that is being drawn, so what is drawn has the mixture's purity and picking a reagent out never separates a contaminant from the stock.
-/// Null when `id` is a contaminant (those are never picked out, only moved with the mixture) or there is none of it.
+/// Draws `amount` of the reagent `id` (a contaminant as much as any other: each is a reagent of its own) out of the mixture into a new holder. Null when there is
+/// none of it.
 /datum/reagents/proc/draw_portion(id, amount)
 	RETURN_TYPE(/datum/reagents)
-	if(contaminant_def(id))
-		if(GLOB.chem_trace)
-			log_world("CHEM: drawing [id] out of [my_atom] refused: a contaminant cannot be separated from its mixture")
-		return null
 	amount = min(amount, get_reagent_amount(id))
 	if(amount <= 0)
 		return null
-	var/stock = total_volume - contaminant_volume()
-	var/share = stock > 0 ? min(amount / stock, 1) : 0
-	var/list/carried = list()
-	var/total = amount
-	for(var/datum/reagent/R as anything in reagent_list)
-		if(istype(R, /datum/reagent/contaminant))
-			carried[R.id] = R.volume * share
-			total += carried[R.id]
-	var/datum/reagents/portion = new /datum/reagents(total)
+	var/datum/reagents/portion = new /datum/reagents(amount)
 	portion.add_reagent(id, amount, get_data(id), safety = 1)
 	remove_reagent(id, amount, safety = 1)
-	for(var/contaminant_id in carried)
-		portion.add_reagent(contaminant_id, carried[contaminant_id], safety = 1)
-		remove_reagent(contaminant_id, carried[contaminant_id], safety = 1)
 	handle_reactions()
 	if(GLOB.chem_trace)
-		log_world("CHEM: drew [round(amount, 0.001)]u of [id] out of [my_atom] with contaminants [contaminants_text(carried)]")
+		log_world("CHEM: drew [round(amount, 0.001)]u of [id] out of [my_atom]")
 	return portion
 
 /datum/reagents/proc/trans_type_to(target, rtype, amount = 1)

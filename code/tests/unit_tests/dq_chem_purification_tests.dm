@@ -566,65 +566,38 @@
 
 // ---- the loopholes ----
 
-/// Drawing a reagent out of a mixture carries its share of the contaminants; a contaminant is never drawn on its own.
-/datum/unit_test/dq_pur_picking_a_reagent_carries_the_contaminants
+/// A contaminant is a reagent of its own: drawing a reagent out by id takes that reagent and nothing else, and a contaminant can be drawn the same way.
+/datum/unit_test/dq_pur_contaminants_are_independent_of_their_chems
 
-/datum/unit_test/dq_pur_picking_a_reagent_carries_the_contaminants/Run()
+/datum/unit_test/dq_pur_contaminants_are_independent_of_their_chems/Run()
 	var/obj/item/reagent_containers/glass/beaker/bluespace/source = dq_pur_dirty_source(40, 4)
 	var/obj/item/reagent_containers/glass/beaker/bluespace/target = dq_pur_beaker(/obj/item/reagent_containers/glass/beaker/bluespace)
-	var/purity = source.reagents.purity()
+	var/contaminants = source.reagents.contaminant_volume()
 	var/moved = source.reagents.trans_id_to(target, REAGENT_ID_DEXALIN, 20)
 	TEST_ASSERT(moved > 0, "the stock moved")
 	TEST_ASSERT(dq_pur_near(target.reagents.get_reagent_amount(REAGENT_ID_DEXALIN), 20), "20u of it")
-	TEST_ASSERT(dq_pur_near(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 2), "with half the heavy metals (half of the stock moved)")
-	TEST_ASSERT(dq_pur_near(target.reagents.purity(), purity, 0.001), "so picking a reagent by id did not purify it")
-	TEST_ASSERT(dq_pur_near(source.reagents.purity(), purity, 0.001), "nor dirty what stayed")
-	// A contaminant cannot be separated out.
-	var/before = source.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_SALTS)
-	TEST_ASSERT_NULL(source.reagents.trans_id_to(target, REAGENT_ID_CONTAMINANT_HEAVY_METAL, 2), "trans_id_to refuses a contaminant")
-	TEST_ASSERT_NULL(source.reagents.trans_type_to(target, REAGENT_ID_CONTAMINANT_HEAVY_METAL, 2), "and so does trans_type_to")
-	TEST_ASSERT(dq_pur_near(source.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 2), "nothing left the mixture")
-	TEST_ASSERT(dq_pur_near(source.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_SALTS), before), "not even a trace")
-	// Isolating a reagent keeps the contaminants (and cannot isolate one).
-	var/obj/item/reagent_containers/glass/beaker/bluespace/mixed = dq_pur_dirty_source(40, 4)
-	mixed.reagents.add_reagent(REAGENT_ID_ANTITOXIN, 10, safety = 1)
-	var/contaminants = mixed.reagents.contaminant_volume()
-	mixed.reagents.isolate_reagent(REAGENT_ID_DEXALIN)
-	TEST_ASSERT(dq_pur_near(mixed.reagents.get_reagent_amount(REAGENT_ID_ANTITOXIN), 0), "isolating threw the other stock away")
-	TEST_ASSERT(dq_pur_near(mixed.reagents.get_reagent_amount(REAGENT_ID_DEXALIN), 40), "kept the one asked for")
-	TEST_ASSERT(dq_pur_near(mixed.reagents.contaminant_volume(), contaminants), "and every contaminant")
-	mixed.reagents.isolate_reagent(REAGENT_ID_CONTAMINANT_SALTS)
-	TEST_ASSERT(dq_pur_near(mixed.reagents.get_reagent_amount(REAGENT_ID_DEXALIN), 40), "isolating a contaminant does nothing")
+	TEST_ASSERT(dq_pur_near(target.reagents.total_volume, 20), "and only it: no contaminant went along")
+	TEST_ASSERT(dq_pur_near(source.reagents.contaminant_volume(), contaminants), "every contaminant stayed behind")
+	source.reagents.trans_id_to(target, REAGENT_ID_CONTAMINANT_HEAVY_METAL, 2)
+	TEST_ASSERT(dq_pur_near(target.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 2), "a contaminant moves on its own by id")
+	TEST_ASSERT(dq_pur_near(source.reagents.get_reagent_amount(REAGENT_ID_DEXALIN), 20), "without moving any stock")
 
-/// The chem master and the dispenser cannot discard or move a contaminant on its own, and what they move of a stock reagent carries its share.
-/datum/unit_test/dq_pur_machines_cannot_strip_contaminants
+/// No machine pulls one chemical out of a mixture: the chem master moves the whole mix, and the dispenser has no per-reagent remove or isolate.
+/datum/unit_test/dq_pur_machines_move_only_the_whole_mix
 
-/datum/unit_test/dq_pur_machines_cannot_strip_contaminants/Run()
+/datum/unit_test/dq_pur_machines_move_only_the_whole_mix/Run()
 	var/obj/machinery/chem_master/M = allocate(/obj/machinery/chem_master, test_floor())
 	var/obj/item/reagent_containers/glass/beaker/bluespace/B = dq_pur_dirty_source(40, 4)
 	move_into(M, nameof(M.beaker), B)
 	var/datum/act/op/stub = new
-	M.ui_act_add(stub, 10, REAGENT_ID_CONTAMINANT_HEAVY_METAL)
-	TEST_ASSERT_EQUAL(M.reagents.total_volume, 0, "the chem master will not load a contaminant by itself")
-	M.ui_act_add(stub, 20, REAGENT_ID_DEXALIN)
-	TEST_ASSERT(dq_pur_near(M.reagents.get_reagent_amount(REAGENT_ID_DEXALIN), 20), "it loads stock")
-	TEST_ASSERT(dq_pur_near(M.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 2), "with the contaminants that go with it")
-	var/volume = M.reagents.total_volume
-	M.ui_act_remove(stub, 1, REAGENT_ID_CONTAMINANT_HEAVY_METAL)
-	TEST_ASSERT(dq_pur_near(M.reagents.total_volume, volume), "it will not discard one either")
-	M.ui_act_remove(stub, 1, REAGENT_ID_CONTAMINANT_SULFUR)
-	TEST_ASSERT(dq_pur_near(M.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_SULFUR), 2), "the buffer still holds all its sulfur")
-	// The dispenser.
-	var/obj/machinery/chemical_dispenser/ert/D = allocate(/obj/machinery/chemical_dispenser/ert, test_floor())
-	var/obj/item/reagent_containers/glass/beaker/bluespace/vessel = dq_pur_dirty_source(40, 4)
-	move_into(D, nameof(D.container), vessel)
-	D.ui_act_remove(stub, 4, REAGENT_ID_CONTAMINANT_HEAVY_METAL)
-	TEST_ASSERT(dq_pur_near(vessel.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL), 4), "the dispenser will not remove a contaminant")
-	D.ui_act_remove(stub, -1, REAGENT_ID_CONTAMINANT_HEAVY_METAL)
-	TEST_ASSERT(dq_pur_near(vessel.reagents.get_reagent_amount(REAGENT_ID_DEXALIN), 40), "and isolating a contaminant does nothing")
-	D.ui_act_remove(stub, -1, REAGENT_ID_DEXALIN)
-	TEST_ASSERT(dq_pur_near(vessel.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_SULFUR), 4), "isolating the stock keeps the contaminants")
-	TEST_ASSERT(vessel.reagents.purity() < 0.9, "so it is still the same dirty mixture")
+	var/purity = B.reagents.purity()
+	M.ui_act_add(stub, 22)
+	TEST_ASSERT(dq_pur_near(M.reagents.total_volume, 22), "the chem master loads 22u of the mix")
+	TEST_ASSERT(dq_pur_near(M.reagents.purity(), purity, 0.001), "with every reagent in its share: the transfer purified nothing")
+	TEST_ASSERT(dq_pur_near(B.reagents.purity(), purity, 0.001), "and dirtied nothing")
+	M.ui_act_remove(stub, 11)
+	TEST_ASSERT(dq_pur_near(M.reagents.total_volume, 11), "it discards the mix by the unit")
+	TEST_ASSERT(dq_pur_near(M.reagents.purity(), purity, 0.001), "in the same shares")
 
 /// Refilling a cartridge from a pure supply is mixing: the contaminants stay, so the purity is the mixture's and never above what was poured in.
 /datum/unit_test/dq_pur_refilling_a_cartridge_is_only_mixing
