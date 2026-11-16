@@ -10,7 +10,7 @@
 //     the band it falls in. It is a readout (scanners, the book): no recipe asks for a grade, purity is only the natural fallout of how a batch was made.
 //   * Sources: a dispenser cartridge is rolled a profile per round (chem_source_profile()): units of each contaminant that come with each unit of stock,
 //     deterministic for the round seed and the source key. add_sourced_reagent() puts the stock and its contaminants in the holder together; the cartridge
-//     fills with it, recharges with it (so a recharge never raises purity) and dispenses stock plus the contaminants that sit with it.
+//     fills with it and recharges with it (so a recharge never raises purity); a dispense of N units is N units of the mixture, contaminants included.
 //   * Scanners show every contaminant as a line of its own, with its volume, and the mixture's grade (purity_summary()).
 //
 // GLOB.chem_trace (code/content/reagents/drug_profile.dm) logs every path: a source roll, a stock added, a dispense, an effect on a patient.
@@ -100,21 +100,37 @@ GLOBAL_TABLE(contaminant_ids_table, GLOBAL_PROC_REF(build_contaminant_ids))
 	var/current_purity = purity()
 	return "[grade_name(grade_of_purity(current_purity))] [round(current_purity * 100)]%"
 
-/// Total volume per unit of stock: how much of the mixture holds one unit of what is not contaminant (1 when pure or when there is no stock).
-/datum/reagents/proc/stock_scale()
-	var/contaminants = contaminant_volume()
-	var/stock = total_volume - contaminants
-	if(contaminants <= 0 || stock <= 0)
-		return 1
-	return total_volume / stock
+/// The holder's reagents in the order a window lists them: the real chemicals first, the contaminants after them (each group in the holder's own order).
+/// A window that numbers its rows and acts on a row by number (the ChemMaster's analysis) must index this list, not reagent_list.
+/datum/reagents/proc/listed_reagents()
+	var/list/real = list()
+	var/list/traces = list()
+	for(var/datum/reagent/R as anything in reagent_list)
+		if(istype(R, /datum/reagent/contaminant))
+			traces += R
+		else
+			real += R
+	return real + traces
 
-/// Adds `amount` units of the stock `id` together with the contaminants of `profile` (contaminant id -> units per unit of stock, chem_source_profile(); null
-/// for none), as much as fits: the stock is `amount` or what leaves room for its contaminants. Returns the units of stock added.
+/// The rows of a window's reagent listing: name, id, volume and `contaminant` (TRUE for an impurity, which the window draws grey), contaminants last. With
+/// `describe` each row also carries the reagent's catalogue line.
+/datum/reagents/proc/ui_rows(describe = FALSE)
+	var/list/rows = list()
+	for(var/datum/reagent/R as anything in listed_reagents())
+		var/list/row = list("name" = R.name, "id" = R.id, "volume" = R.volume, "contaminant" = istype(R, /datum/reagent/contaminant))
+		if(describe)
+			row["description"] = R.listing_description()
+		rows[++rows.len] = row
+	return rows
+
+/// Adds `amount` units in all of the stock `id` together with the contaminants of `profile` (contaminant id -> units per unit of stock, chem_source_profile(); null
+/// for none): the impurities are taken out of the `amount`, never added to it, so the holder gains `amount` units (as much as fits). Returns the units added.
 /datum/reagents/proc/add_sourced_reagent(id, amount, list/profile, data = null, safety = 0)
 	var/scale = 1
 	for(var/contaminant_id in profile)
 		scale += profile[contaminant_id]
-	var/stock = min(amount, get_free_space() / scale)
+	var/total = min(amount, get_free_space())
+	var/stock = total / scale
 	if(stock <= 0)
 		return 0
 	// The contaminants first, without reactions; the stock last, so the holder settles once with everything in.
@@ -122,8 +138,8 @@ GLOBAL_TABLE(contaminant_ids_table, GLOBAL_PROC_REF(build_contaminant_ids))
 		add_reagent(contaminant_id, stock * profile[contaminant_id], safety = 1)
 	add_reagent(id, stock, data, safety = safety)
 	if(GLOB.chem_trace)
-		log_world("CHEM: [id] stock [round(stock, 0.001)]u added to [my_atom] with contaminants [contaminants_text(profile)] per unit; mixture now [purity_summary() || "pure"]")
-	return stock
+		log_world("CHEM: [id] [round(total, 0.001)]u added ([round(stock, 0.001)]u of it stock) to [my_atom] with contaminants [contaminants_text(profile)] per unit; mixture now [purity_summary() || "pure"]")
+	return total
 
 /// "contaminant_heavy_metal 0.12, contaminant_sulfur 0.05" for the trace log.
 /proc/contaminants_text(list/amounts)

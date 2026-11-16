@@ -4,7 +4,7 @@ import { BeakerContents } from 'tgui/interfaces/common/BeakerContents';
 import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
 import { Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import { transferAmounts } from './constants';
+import { MixTransfer } from './MixTransfer';
 import type { reagent } from './types';
 
 export const ChemMasterBeaker = (props: {
@@ -32,67 +32,34 @@ export const ChemMasterBeaker = (props: {
   return (
     <Section title="Beaker" buttons={headerButton}>
       {beaker ? (
-        <BeakerContents
-          beakerLoaded
-          beakerContents={beakerReagents}
-          buttons={(chemical: reagent, i: number) => (
-            <Stack mb={i < beakerReagents.length - 1 && '2px'}>
-              <Stack.Item>
-                <Button
-                  mb="0"
-                  onClick={() =>
-                    modalOpen('analyze', {
-                      idx: i + 1,
-                      beaker: 1,
-                    })
-                  }
-                >
-                  Analyze
-                </Button>
-              </Stack.Item>
-              {transferAmounts.map((am, j) => (
-                <Stack.Item key={j}>
+        <>
+          <MixTransfer
+            action="add"
+            custom="addcustom"
+            reagents={beakerReagents}
+          />
+          <BeakerContents
+            beakerLoaded
+            beakerContents={beakerReagents}
+            buttons={(chemical: reagent, i: number) => (
+              <Stack mb={i < beakerReagents.length - 1 && '2px'}>
+                <Stack.Item>
                   <Button
                     mb="0"
                     onClick={() =>
-                      act('add', {
-                        id: chemical.id,
-                        amount: am,
+                      modalOpen('analyze', {
+                        idx: i + 1,
+                        beaker: 1,
                       })
                     }
                   >
-                    {am}
+                    Analyze
                   </Button>
                 </Stack.Item>
-              ))}
-              <Stack.Item>
-                <Button
-                  mb="0"
-                  onClick={() =>
-                    act('add', {
-                      id: chemical.id,
-                      amount: chemical.volume,
-                    })
-                  }
-                >
-                  All
-                </Button>
-              </Stack.Item>
-              <Stack.Item>
-                <Button
-                  mb="0"
-                  onClick={() =>
-                    modalOpen('addcustom', {
-                      id: chemical.id,
-                    })
-                  }
-                >
-                  Custom...
-                </Button>
-              </Stack.Item>
-            </Stack>
-          )}
-        />
+              </Stack>
+            )}
+          />
+        </>
       ) : (
         <Label>No beaker loaded.</Label>
       )}

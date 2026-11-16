@@ -103,7 +103,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	interface("MechaSleeper", title = "Mounted Sleeper")
-	ui_shape(has_occupant = bool(), occupant_name = schema_text(), status = schema_text(), health_percent = num(), diagnosis = nullable(diagnosis_report()), body_temp_c = num(), body_temp_f = num(), reagents = list_of(row(name = schema_text(), volume = num())), injectables = list_of(row(id = schema_text(), name = schema_text())))
+	ui_shape(has_occupant = bool(), occupant_name = schema_text(), status = schema_text(), health_percent = num(), diagnosis = nullable(diagnosis_report()), body_temp_c = num(), body_temp_f = num(), reagents = list_of(row(name = schema_text(), volume = num(), contaminant = bool())), injectables = list_of(row(id = schema_text(), name = schema_text())))
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("inject", ui_act("inject", arg("reagent", schema_text(64))), then(PROC_REF(ui_act_inject)))
@@ -142,9 +142,9 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	data["body_temp_f"] = round(occupant.body_temperature() * 1.8 - 459.67, 0.1)
 	var/list/rlist = list()
 	if(occupant.reagents)
-		for(var/datum/reagent/R in occupant.reagents.reagent_list)
+		for(var/datum/reagent/R as anything in occupant.reagents.listed_reagents()) // the contaminants last
 			if(R.volume > 0)
-				rlist += list(list("name" = "[R]", "volume" = round(R.volume, 0.01)))
+				rlist += list(list("name" = "[R]", "volume" = round(R.volume, 0.01), "contaminant" = istype(R, /datum/reagent/contaminant)))
 	data["reagents"] = rlist
 	var/list/inj = list()
 	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate_within(chassis, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)

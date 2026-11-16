@@ -72,7 +72,10 @@ export const SleeperPatient = (props: { name: string }) => {
       )}
       {!!our_patient.ingested_reagents &&
         our_patient.ingested_reagents.map((reagent) => (
-          <Stack.Item key={reagent.name}>
+          <Stack.Item
+            key={reagent.name}
+            color={reagent.contaminant ? 'grey' : undefined}
+          >
             <Label inline preserveWhitespace>
               {`${reagent.name}: `}
             </Label>

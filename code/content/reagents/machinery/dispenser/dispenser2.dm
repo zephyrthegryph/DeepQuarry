@@ -39,7 +39,6 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	extend("ui_observe", needs(req(PROC_REF(not_broken), silent = TRUE)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
 	op("dispense", ui_act("dispense", arg("reagent", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
-	op("remove", ui_act("remove", arg("amount", num()), arg("reagent")), then(PROC_REF(ui_act_remove)))
 	op("ejectBeaker", ui_act("ejectBeaker"), then(PROC_REF(ui_act_ejectbeaker)))
 	op("import_config", ui_act("import_config", arg("config")), then(PROC_REF(ui_act_import_config)))
 	op("record_recipe", ui_act("record_recipe"), then(PROC_REF(ui_act_record_recipe)))
@@ -167,8 +166,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 	var/list/beakerContents = list()
 	if(container && container.reagents && container.reagents.reagent_list.len)
-		for(var/datum/reagent/R in container.reagents.reagent_list)
-			beakerContents.Add(list(list("name" = R.name, "id" = R.id, "volume" = R.volume))) // list in a list because Byond merges the first list...
+		beakerContents = container.reagents.ui_rows() // the contaminants last, flagged
 	data["beakerContents"] = beakerContents
 
 	if(container)
@@ -215,24 +213,6 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		C.dispense_to(container, amount)
 		work_start(src)
-	. = TRUE
-
-/obj/machinery/chemical_dispenser/proc/ui_act_remove(datum/act/op/A, amount_out, reagent)
-	var/mob/user = A.actor
-	add_fingerprint(user)
-	if(!container || !amount_out || recording_recipe)
-		return
-	var/datum/reagents/R = container.reagents
-	var/id = reagent
-	if(contaminant_def(id))
-		to_chat(user, span_warning("\The [src] cannot take [id] out of the mixture on its own: an impurity stays with its mixture."))
-		if(GLOB.chem_trace)
-			log_world("CHEM: [src] refused to remove [id] from [container] on its own")
-		return TRUE
-	if(amount_out > 0)
-		R.remove_reagent(id, amount_out)
-	else if(amount_out == -1) // Isolate
-		R.isolate_reagent(id)
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_ejectbeaker(datum/act/op/A)

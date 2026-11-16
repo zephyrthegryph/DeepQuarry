@@ -15,7 +15,10 @@ export const BodyScannerMainReagents = (props: { occupant: occupant }) => {
               <Table.Cell textAlign="right">Amount</Table.Cell>
             </Table.Row>
             {occupant.reagents.map((reagent) => (
-              <Table.Row key={reagent.name}>
+              <Table.Row
+                key={reagent.name}
+                color={reagent.contaminant ? 'grey' : undefined}
+              >
                 <Table.Cell>{reagent.name}</Table.Cell>
                 <Table.Cell textAlign="right">
                   {reagent.amount} Units{' '}
@@ -36,7 +39,10 @@ export const BodyScannerMainReagents = (props: { occupant: occupant }) => {
               <Table.Cell textAlign="right">Amount</Table.Cell>
             </Table.Row>
             {occupant.ingested.map((reagent) => (
-              <Table.Row key={reagent.name}>
+              <Table.Row
+                key={reagent.name}
+                color={reagent.contaminant ? 'grey' : undefined}
+              >
                 <Table.Cell>{reagent.name}</Table.Cell>
                 <Table.Cell textAlign="right">
                   {reagent.amount} Units{' '}

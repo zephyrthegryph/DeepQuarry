@@ -89,7 +89,10 @@ export const MechaSleeper = () => {
           ) : (
             <Stack vertical>
               {reagents.map((r) => (
-                <Stack.Item key={r.name}>
+                <Stack.Item
+                  key={r.name}
+                  color={r.contaminant ? 'grey' : undefined}
+                >
                   <Box inline bold>
                     {r.name}
                   </Box>

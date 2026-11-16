@@ -61,7 +61,7 @@ About the Holder:
     	Contaminants are reagents too (see "Contaminants" below), so every add, transfer and ingest moves them like any other reagent.
 
     add_sourced_reagent(var/id, var/amount, list/profile, ...)
-    	Adds up to [amount] units of stock [id] with the contaminants of [profile] (contaminant id -> units per unit of stock, chem_source_profile()). Returns the stock added.
+    	Adds up to [amount] units in all of [id] with the contaminants of [profile] (contaminant id -> units per unit of stock, chem_source_profile()), the contaminants taken out of the amount. Returns the units added.
 
     remove_reagent(var/id, var/amount, var/safety = 0)
     	Ditto, but removes reagent. Returns 1 if successful, 0 otherwise.
@@ -323,7 +323,7 @@ Purity belongs to the mixture: 1 minus the contaminant volume over the holder's 
 A source (a chemical dispenser cartridge) rolls a profile per round (`chem_source_profile(reagent, source_key, grade)`, deterministic for the round
 seed): the units of each contaminant that come with each unit of stock. `add_sourced_reagent()` adds stock and contaminants together; the cartridge fills
 with it, recharges with it (`add_stock()`, used by the dispenser and the synthesizer, so a recharge never raises purity) and dispenses with it
-(`dispense_to()`: the stock asked for and the contaminants that sit with it). Scanners, the chem master, the analyzer and the health scanner list each
+(`dispense_to()`: N units asked for is N units of the mixture, contaminants included). Scanners, the chem master, the analyzer and the health scanner list each
 contaminant as a line of its own and say the mixture's grade; the medical book's Purity tab is read from the contaminant types. `GLOB.chem_trace` logs
 source rolls, stock added, dispenses, refused graded reactions and effects on a patient.
 
@@ -355,9 +355,8 @@ How a mixture is made clean again (or dirty), all of it logged under `GLOB.chem_
   every unit caught and every unit of product kept back uses up, it works less as it fills and a full one passes everything.
 * **Neutralisation** is the `neutralise` process (generated: every acid with every base): an acid and a base make the salt (a chemical when one has that
   structure, else salts) and water. A rule's reagent terms after the first in `makes` are by-products made beside the product.
-* **No free purification.** A contaminant cannot be picked out of a mixture: `trans_id_to()` and `trans_type_to()` of a stock reagent carry its share of the
-  contaminants (`draw_portion()`) and refuse a contaminant, `isolate_reagent()` keeps the contaminants, and the chem master and the dispenser refuse to move or
-  discard one on its own.
+* **No free purification.** No machine picks one chemical out of a mixture: the chemical dispenser has no per-reagent remove or isolate, and the chem master moves
+  and discards the mixture as it is (a transfer takes the same share of every reagent). A contaminant is a reagent like any other and is attached to no other one.
 
 
 Block structures and processes

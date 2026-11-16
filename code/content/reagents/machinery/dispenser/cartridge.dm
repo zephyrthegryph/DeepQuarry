@@ -31,34 +31,25 @@
 	if(spawn_reagent)
 		add_stock(spawn_reagent, volume)
 
-/// Units of stock held: everything that is not contaminant.
-/obj/item/reagent_containers/chem_disp_cartridge/proc/stock_volume()
-	return reagents.total_volume - reagents.contaminant_volume()
-
 /// Units the cartridge holds, traces included: what its fill gauge and the dispenser's grid show. A starting cartridge is full: its volume, whatever
-/// share of it is the source's trace impurities (the stock itself is stock_volume()).
+/// share of it is the source's trace impurities.
 /obj/item/reagent_containers/chem_disp_cartridge/proc/fill_volume()
 	return round(reagents.total_volume, 0.01)
 
-/// The mixture that holds `stock_units` of stock: the stock and the contaminants that sit with it.
-/obj/item/reagent_containers/chem_disp_cartridge/proc/draw_amount(stock_units)
-	return stock_units * reagents.stock_scale()
-
-/// Dispenses `stock_units` of stock, with its contaminants, into `target` (an atom: a beaker). Returns the units of stock moved.
-/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to(atom/target, stock_units)
-	var/scale = reagents.stock_scale()
-	var/moved = reagents.trans_to(target, stock_units * scale) || 0
+/// Dispenses `units` of the mixture into `target` (an atom: a beaker): exactly that many units in all, the source's impurities taken out of them, never added to
+/// them. Returns the units moved (less when the cartridge or the target runs short).
+/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to(atom/target, units)
+	var/moved = reagents.trans_to(target, units) || 0
 	if(GLOB.chem_trace)
-		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of mixture ([round(moved / scale, 0.001)]u of stock) into [target]")
-	return moved / scale
+		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of [round(units, 0.001)]u asked into [target], contaminants [round(target.reagents?.contaminant_volume(), 0.001)]u of the beaker now")
+	return moved
 
-/// Dispenses `stock_units` of stock, with its contaminants, into the holder `target`. Returns the units of stock moved.
-/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to_holder(datum/reagents/target, stock_units)
-	var/scale = reagents.stock_scale()
-	var/moved = reagents.trans_to_holder(target, stock_units * scale) || 0
+/// Dispenses `units` of the mixture into the holder `target`, as dispense_to() does. Returns the units moved.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to_holder(datum/reagents/target, units)
+	var/moved = reagents.trans_to_holder(target, units) || 0
 	if(GLOB.chem_trace)
-		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of mixture ([round(moved / scale, 0.001)]u of stock) into a holder")
-	return moved / scale
+		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of [round(units, 0.001)]u asked into a holder")
+	return moved
 
 /obj/item/reagent_containers/chem_disp_cartridge/proc/label_initial_chemical()
 	if(spawn_reagent)
