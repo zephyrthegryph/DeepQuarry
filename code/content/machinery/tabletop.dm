@@ -23,10 +23,6 @@ CAPABILITY_TYPE(tabletop, CAP_TABLETOP, /datum/capability/tabletop, key = NONE, 
 
 /datum/capability/tabletop/entries()
 	var/list/entries = list(contributes(STAT_OPERABLE, nameof(/atom/movable::anchored), key = "bolted_operable", reason = MSG(tabletop/unbolted)))
-	// A wrench bolts and unbolts above the machine's own empty-hand controls: those match a hand holding a tool too (the hot plate's radial, a condenser's
-	// "take the container"), and at the machine's own tier they answered a wrench click before the base machine's secure and unsecure ops did.
-	entries += extend("machine_anchor", priority(OP_PRIORITY_PART))
-	entries += extend("machine_unanchor", priority(OP_PRIORITY_PART))
 	if(carry)
 		// Above the machine's own empty-hand controls: a loose machine is picked up, not used.
 		entries += op("tabletop_pick_up", hand(), ungated(), priority(OP_PRIORITY_PART), label("Pick up"),

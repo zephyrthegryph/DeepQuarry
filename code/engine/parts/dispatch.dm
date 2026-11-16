@@ -10,7 +10,7 @@
 //             declaration (op_fast_side()), interned until the holder's capability generation moves.
 //   groups    the rows of one side that tie on intent rank and tier. Binding specificity reorders survivors within such a run, and which rows
 //             survive is an instance fact (reach, a tool's quality, an at_target() filter), so a group's gates are asked together, its survivors
-//             ordered exactly as op_specificity_sort() orders them, then handed on. Groups of the three sides merge by (rank, tier, side), the
+//             ordered exactly as op_specificity_sort() orders them, then handed on. Groups of the three sides merge by (rank, band, tier, side), the
 //             order op_cand_precedes() gives.
 //   order     a relative priority (priority(above/below())) or a click_order() moves an op next to another survivor, so when a shape has one the
 //             whole order is made first and moved exactly as op_resolution_sort() moves it; otherwise groups are made only as the walk needs them.
@@ -40,12 +40,14 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 #define FAST_SEQ 6
 #define FAST_REACH 7
 #define FAST_SPECIFICITY 8
+#define FAST_BAND 9
 // A group of a side table: list(first row, last row, rank, tier, its survivors need the specificity order).
 #define FAST_GROUP_FIRST 1
 #define FAST_GROUP_LAST 2
 #define FAST_GROUP_RANK 3
 #define FAST_GROUP_TIER 4
 #define FAST_GROUP_SPECIFIC 5
+#define FAST_GROUP_BAND 6
 
 /datum/op_resolution
 	/// The compiled walk's state while it has groups left: list(list(side, side table, next group), ...) in side order; null once spent or for a
@@ -146,12 +148,12 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 		if(length(P.priority_rel) || length(P.click_below))
 			relative = TRUE
 		var/needs_reach = op_reach_policy(P, B) != REACH_ANY || op_affordance(P, B, null)
-		// stable insertion by (rank, tier highest first); collection order breaks the rest
-		var/list/entry = list(P, B, acts[i], rank, P.tier, i, needs_reach, op_binding_specificity(B))
+		// stable insertion by (rank, band, tier highest first); collection order breaks the rest
+		var/list/entry = list(P, B, acts[i], rank, P.tier, i, needs_reach, op_binding_specificity(B), P.band)
 		var/at = length(entries) + 1
 		for(var/j in 1 to length(entries))
 			var/list/other = entries[j]
-			if(rank < other[FAST_RANK] || (rank == other[FAST_RANK] && P.tier > other[FAST_TIER]))
+			if(rank < other[FAST_RANK] || (rank == other[FAST_RANK] && (P.band > other[FAST_BAND] || (P.band == other[FAST_BAND] && P.tier > other[FAST_TIER]))))
 				at = j
 				break
 		entries.Insert(at, list(entry))
@@ -170,11 +172,11 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 			if(stop >= length(entries))
 				break
 			var/list/following = entries[stop + 1]
-			if(following[FAST_RANK] != first[FAST_RANK] || following[FAST_TIER] != first[FAST_TIER])
+			if(following[FAST_RANK] != first[FAST_RANK] || following[FAST_BAND] != first[FAST_BAND] || following[FAST_TIER] != first[FAST_TIER])
 				break
 			stop++
 		// only a group with held-item bindings of different specificities is reordered (op_specificity_sort() is stable)
-		groups += list(list(start, stop, first[FAST_RANK], first[FAST_TIER], specific > 1 && length(kinds) > 1))
+		groups += list(list(start, stop, first[FAST_RANK], first[FAST_TIER], specific > 1 && length(kinds) > 1, first[FAST_BAND]))
 		start = stop + 1
 	table = list(entries, groups, relative, side)
 	by_stance[stance_key] = table
@@ -221,7 +223,7 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 			if(at > length(groups))
 				continue
 			var/list/group = groups[at]
-			if(!best || group[FAST_GROUP_RANK] < best_group[FAST_GROUP_RANK] || (group[FAST_GROUP_RANK] == best_group[FAST_GROUP_RANK] && group[FAST_GROUP_TIER] > best_group[FAST_GROUP_TIER]))
+			if(!best || group[FAST_GROUP_RANK] < best_group[FAST_GROUP_RANK] || (group[FAST_GROUP_RANK] == best_group[FAST_GROUP_RANK] && (group[FAST_GROUP_BAND] > best_group[FAST_GROUP_BAND] || (group[FAST_GROUP_BAND] == best_group[FAST_GROUP_BAND] && group[FAST_GROUP_TIER] > best_group[FAST_GROUP_TIER]))))
 				best = state
 				best_group = group
 		if(!best)
@@ -483,6 +485,7 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 #undef FAST_ACTIVATION
 #undef FAST_RANK
 #undef FAST_TIER
+#undef FAST_BAND
 #undef FAST_SEQ
 #undef FAST_REACH
 #undef FAST_SPECIFICITY
@@ -490,4 +493,5 @@ GLOBAL_VAR_INIT(op_count_compiled, 0)
 #undef FAST_GROUP_LAST
 #undef FAST_GROUP_RANK
 #undef FAST_GROUP_TIER
+#undef FAST_GROUP_BAND
 #undef FAST_GROUP_SPECIFIC

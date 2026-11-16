@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "A tool, item or stack op now always answers a click with that thing in hand before the target's own empty-hand op, even where it pinned a low priority"

@@ -36,8 +36,9 @@
 	var/dropped_by
 	var/dropped_reason
 	var/dropped_cond
-	/// The tier it sits at.
+	/// The tier it sits at, and its band (the order's first key: the tier raised to OP_PRIORITY_PART for a tool, item, stack or put_in binding).
 	var/tier = OP_PRIORITY_NORMAL
+	var/band = OP_PRIORITY_NORMAL
 	/// The type its item() or stack() binding takes, or null.
 	var/item_type
 	/// How specific its binding is about the held item (op_binding_specificity): 0 for a binding that names no held item.
@@ -509,6 +510,7 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	C.activation = granted_by // ALLOW(ownership): a transient record of one resolution: dropped with it
 	C.cap = granted_by ? granted_by.def : P.owner_def
 	C.tier = P.tier
+	C.band = P.band
 	if(B.bind_kind == BIND_ITEM || B.bind_kind == BIND_STACK)
 		C.item_type = B.args["type"]
 	C.specificity = op_binding_specificity(B)
@@ -704,7 +706,7 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 	var/static/list/depth = list(GATE_ACTOR = 1, GATE_ORIGIN = 2, GATE_PROVIDER = 3, GATE_REACH = 4)
 	return (depth[A.dropped_by] || 0) > (depth[B.dropped_by] || 0)
 
-/// Sorts the survivors: intent rank, tier, then target before held before actor, then binding specificity, then declaration order; then explicit
+/// Sorts the survivors: intent rank, band, tier, then target before held before actor, then binding specificity, then declaration order; then explicit
 /// relative priorities and click orders, which win over all of these.
 /proc/op_resolution_sort(datum/op_resolution/R)
 	// A total order (declaration order breaks every tie), so any sort gives the one result: a merge sort, not an insertion over the survivors.
@@ -790,7 +792,7 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 		var/stop = start
 		while(stop < n)
 			var/datum/op_cand/next = sorted[stop + 1]
-			if(next.rank != first.rank || next.tier != first.tier || next.side != first.side)
+			if(next.rank != first.rank || next.band != first.band || next.tier != first.tier || next.side != first.side)
 				break
 			stop++
 		if(stop > start)
@@ -822,6 +824,8 @@ GLOBAL_VAR_INIT(op_resolver_legacy, FALSE)
 /proc/op_cand_precedes(datum/op_cand/A, datum/op_cand/B)
 	if(A.rank != B.rank)
 		return A.rank < B.rank
+	if(A.band != B.band)
+		return A.band > B.band
 	if(A.tier != B.tier)
 		return A.tier > B.tier
 	if(A.side != B.side)
