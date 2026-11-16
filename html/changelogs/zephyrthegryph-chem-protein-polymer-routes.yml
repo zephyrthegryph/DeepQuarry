@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Menthol, tannin, plasticide, ultra glue, phenethylamine, the numbing enzyme, qerr-quem and talum-quem are made by generated chemistry routes (a protein path, polyester and amino-acid polymerisation, ring saturation) instead of plain recipes"

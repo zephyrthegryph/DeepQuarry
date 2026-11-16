@@ -15,6 +15,8 @@
 #define CHEM_CORE_NITROGEN_RING "nitrogen_ring"
 #define CHEM_CORE_SILOXANE "siloxane"
 #define CHEM_CORE_PHORON_LATTICE "phoron_lattice"
+/// A ring with all its bonds saturated (a cyclohexane: what hydrogen makes of a benzene ring).
+#define CHEM_CORE_SATURATED_RING "saturated_ring"
 // The exotic cores: what a creature, a slime or an expedition gives. They cannot be built on the station and no process turns one into another (code/content/reagents/blocks/structures.dm).
 #define CHEM_CORE_FIRE "fire"
 #define CHEM_CORE_DEATH "death"

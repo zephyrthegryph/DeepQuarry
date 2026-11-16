@@ -25,14 +25,14 @@
 			return R
 	return null
 
-/// The base of the chemistry: what a chemist has before any step (the dispenser, the toolkit that is mixed or stocked, the stocked precursors).
+/// The base of the chemistry: what a chemist has before any step (the dispenser, the toolkit that is mixed or stocked, the stocked precursors, and the nicotine that tobacco and cigarettes grind to).
 /datum/unit_test/proc/dq_fam_base()
 	return list(REAGENT_ID_CARBON, REAGENT_ID_CHLORINE, REAGENT_ID_FLUORINE, REAGENT_ID_HYDROGEN, REAGENT_ID_OXYGEN, REAGENT_ID_NITROGEN, REAGENT_ID_PHOSPHORUS, REAGENT_ID_SULFUR, \
 		REAGENT_ID_POTASSIUM, REAGENT_ID_SODIUM, REAGENT_ID_LITHIUM, REAGENT_ID_CALCIUM, REAGENT_ID_IRON, REAGENT_ID_COPPER, REAGENT_ID_ALUMINIUM, REAGENT_ID_SILICON, \
 		REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_PHORON, REAGENT_ID_BORON11, REAGENT_ID_FUEL, REAGENT_ID_ENZYME, REAGENT_ID_YEAST, \
 		REAGENT_ID_AMMONIA, REAGENT_ID_LYE, REAGENT_ID_DIETHYLAMINE, REAGENT_ID_CYANIDE, REAGENT_ID_CALCIUMCARBONATE, REAGENT_ID_FOAMINGAGENT, REAGENT_ID_SAND, \
 		REAGENT_ID_PHENOL, REAGENT_ID_SALICYLICACID, REAGENT_ID_WOODALDEHYDE, REAGENT_ID_NITRICACID, REAGENT_ID_HYDROCHLORIC, REAGENT_ID_PHOSPHORICACID, REAGENT_ID_ACETICACID, \
-		REAGENT_ID_BLEACH, REAGENT_ID_SODAASH, REAGENT_ID_GLYCEROL, REAGENT_ID_SILICATE, REAGENT_ID_FATTYACID, REAGENT_ID_PYRIDINE, REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID) + dq_fam_exotic_inputs()
+		REAGENT_ID_BLEACH, REAGENT_ID_SODAASH, REAGENT_ID_GLYCEROL, REAGENT_ID_SILICATE, REAGENT_ID_FATTYACID, REAGENT_ID_PYRIDINE, REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID, REAGENT_ID_NICOTINE) + dq_fam_exotic_inputs()
 
 /// What a creature, a slime or an expedition gives: the exotic cores, the one thing the tier 4 trees cannot be reached without.
 /datum/unit_test/proc/dq_fam_exotic_inputs()
@@ -115,7 +115,7 @@
 		counted++
 	TEST_ASSERT(counted > 100, "the declared chemistry was counted ([counted])")
 	TEST_ASSERT_NULL(text2path("/transformation/chem/instant/inaprovaline"), "the element mix of inaprovaline is gone")
-	for(var/gone in list("bicaridine", "dylovene", "dexalin", "paracetamol", "sterilizine", "silicate", "lube", "tricordrazine", "hyronalin", "arithrazine", "lexorin", "mindbreaker", "sodiumchloride", "prussian_blue", "coolant", "anticonvulsant", "rezadone", "benzilate", "souldew", "liquidhealer", "neoliquidfire", "performancepeaker", "bloodsealer", "claridyl", "mortiferin", "malish_qualem", "zombiepowder", "slimeify"))
+	for(var/gone in list("bicaridine", "dylovene", "dexalin", "paracetamol", "sterilizine", "silicate", "lube", "tricordrazine", "hyronalin", "arithrazine", "lexorin", "mindbreaker", "sodiumchloride", "prussian_blue", "coolant", "anticonvulsant", "rezadone", "benzilate", "souldew", "liquidhealer", "neoliquidfire", "performancepeaker", "bloodsealer", "claridyl", "mortiferin", "malish_qualem", "zombiepowder", "slimeify", "talum_quem", "qerr_quem", "phenethylamine", "numbingenzyme"))
 		TEST_ASSERT_NULL(text2path("/transformation/chem/instant/[gone]"), "the old [gone] recipe is gone")
 	for(var/gone in list("juggernog", "phoenixbreath", "energybooster", "oceaniccure", "deathclawmutagen", "senseenhancer", "heatnullifer", "lichpowder", "necroxadone", "berserkjuice"))
 		TEST_ASSERT_NULL(text2path("/transformation/chem/distilling/[gone]"), "the old distilling [gone] recipe is gone")
@@ -205,6 +205,21 @@
 		list(REAGENT_ID_RESPIRODAXON, list(REAGENT_ID_AMINOACID, REAGENT_ID_DEXALINP), CHEM_CATALYST_ACID),
 		list(REAGENT_ID_BULLVALENE, list(REAGENT_ID_DERMALINE, REAGENT_ID_COPPERSALT), CHEM_CATALYST_NONE),
 		list(REAGENT_ID_IMPEDREZENE, list(REAGENT_ID_CRYPTOBIOLIN, REAGENT_ID_CHLORINE), CHEM_CATALYST_NONE),
+		// the last plain recipes: resins, a saturated ring, a trace amine, the nitrile, the peptide chain, the Katish sedatives
+		list(REAGENT_ID_MENTHOL, list(REAGENT_ID_PHENOL, REAGENT_ID_HYDROGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_TANNIN, list(REAGENT_ID_SALICYLICACID, REAGENT_ID_OXYGEN), CHEM_CATALYST_ENZYME),
+		list(REAGENT_ID_PLASTICIDE, list(REAGENT_ID_SALICYLICACID, REAGENT_ID_COOLANT), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_HALOACETIC, list(REAGENT_ID_ACETICACID, REAGENT_ID_CHLORINE), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_GLUE, list(REAGENT_ID_HALOACETIC, REAGENT_ID_CYANIDE), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_RINGAMINOACID, list(REAGENT_ID_PHENOL, REAGENT_ID_AMINOACID), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_PHENETHYLAMINE, list(REAGENT_ID_RINGAMINOACID), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_PEPTIDE, list(REAGENT_ID_AMINOACID), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_NUMBENZYME, list(REAGENT_ID_PEPTIDE, REAGENT_ID_AMINOACID), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_AMINOACID, list(REAGENT_ID_PEPTIDE, REAGENT_ID_WATER), CHEM_CATALYST_ENZYME),
+		list(REAGENT_ID_AMINOACID, list(REAGENT_ID_NUMBENZYME, REAGENT_ID_WATER), CHEM_CATALYST_BASE),
+		list(REAGENT_ID_NICOTINICACID, list(REAGENT_ID_NICOTINE, REAGENT_ID_OXYGEN), CHEM_CATALYST_NONE),
+		list(REAGENT_ID_QERRQUEM, list(REAGENT_ID_NICOTINICACID, REAGENT_ID_SUGAR), CHEM_CATALYST_ACID),
+		list(REAGENT_ID_TALUMQUEM, list(REAGENT_ID_ALKALOIDACID, REAGENT_ID_SUGAR), CHEM_CATALYST_ACID),
 		// the leftovers of tiers 2 and 3
 		list(REAGENT_ID_ANTICONVULSANT, list(REAGENT_ID_ETHYLREDOXRAZINE, REAGENT_ID_DIETHYLAMINE), CHEM_CATALYST_NONE),
 		list(REAGENT_ID_REZADONE, list(REAGENT_ID_ETHYLREDOXRAZINE, REAGENT_ID_SUGAR), CHEM_CATALYST_ACID),
@@ -290,7 +305,7 @@
 	for(var/id in list(REAGENT_ID_HYDROCHLORIC, REAGENT_ID_NITRICACID, REAGENT_ID_PHOSPHORICACID, REAGENT_ID_ACETICACID, REAGENT_ID_BLEACH, REAGENT_ID_SODAASH, REAGENT_ID_PHENOL, \
 			REAGENT_ID_WOODALDEHYDE, REAGENT_ID_SALICYLICACID, REAGENT_ID_FATTYACID, REAGENT_ID_PYRIDINE, REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID, \
 			REAGENT_ID_IRONSALT, REAGENT_ID_COPPERSALT, REAGENT_ID_LITHIUMSALT, REAGENT_ID_SAND, REAGENT_ID_CHLOROHYDRIN, REAGENT_ID_NITROSALICYLIC, REAGENT_ID_CHLOROPHORON, \
-			REAGENT_ID_ALKALOIDACID, REAGENT_ID_PYRIDONE, REAGENT_ID_HALOSPACEACILLIN))
+			REAGENT_ID_ALKALOIDACID, REAGENT_ID_PYRIDONE, REAGENT_ID_HALOSPACEACILLIN, REAGENT_ID_PEPTIDE, REAGENT_ID_RINGAMINOACID, REAGENT_ID_HALOACETIC, REAGENT_ID_NICOTINICACID, REAGENT_ID_NICOTINE))
 		TEST_ASSERT_NOTNULL(reagents[id], "[id] is a reagent")
 		TEST_ASSERT_NOTNULL(chem_structure_of(id), "[id] has a structure")
 		var/datum/reagent/R = reagents[id]
@@ -386,6 +401,167 @@
 	plate.set_heating(FALSE)
 	TEST_ASSERT(!B.reagents.current_flows(), "and with the plate off it stops")
 	TEST_ASSERT_NOTNULL(text2path("/datum/design_techweb/chem_electrode"), "the lathe can make the pair")
+
+// ---- the last plain recipes: the protein path, the resins, the saturated ring, the sedatives ----
+
+/// The eight chemicals that were plain recipes or source-only each have a structure, a tier and a generated clean route; the tier 1 and 2 ones also have a dirty way.
+/datum/unit_test/dq_chem_families_last_plain_chemicals_have_routes
+
+/datum/unit_test/dq_chem_families_last_plain_chemicals_have_routes/Run()
+	var/list/tiers = list(REAGENT_ID_MENTHOL = CHEM_TIER_STANDARD, REAGENT_ID_TANNIN = CHEM_TIER_STANDARD, REAGENT_ID_PLASTICIDE = CHEM_TIER_STANDARD, REAGENT_ID_GLUE = CHEM_TIER_STANDARD, \
+		REAGENT_ID_PHENETHYLAMINE = CHEM_TIER_STANDARD, REAGENT_ID_NUMBENZYME = CHEM_TIER_ADVANCED, REAGENT_ID_QERRQUEM = CHEM_TIER_ADVANCED, REAGENT_ID_TALUMQUEM = CHEM_TIER_ADVANCED)
+	for(var/id in tiers)
+		TEST_ASSERT_NOTNULL(chem_structure_of(id), "[id] has a structure")
+		TEST_ASSERT_EQUAL(chem_tier_of(id), tiers[id], "[id] has its tier")
+		TEST_ASSERT(length(dq_fam_makers(id)) > 0, "[id] has a route")
+		for(var/datum/xform/X as anything in dq_fam_makers(id))
+			TEST_ASSERT(chem_route_of(X) || findtext("[X.rule_type]", "shortcut_"), "[id] is made by a route or a shortcut, not a plain recipe ([X.rule_type])")
+	// Tier 1 and 2: the dirty way is a process chemical poured in, or a one-pot shortcut recipe.
+	TEST_ASSERT_NOTNULL(dq_fam_route(REAGENT_ID_MENTHOL, list(REAGENT_ID_PHENOL, REAGENT_ID_HYDRIDE), CHEM_CATALYST_AGENT), "the hydride saturates phenol in one pot")
+	TEST_ASSERT_NOTNULL(dq_fam_route(REAGENT_ID_TANNIN, list(REAGENT_ID_SALICYLICACID, REAGENT_ID_STRONGOXIDISER), CHEM_CATALYST_AGENT), "the strong oxidiser hangs the hydroxyls on in one pot")
+	for(var/shortcut in list("plasticide", "glue", "phenethylamine"))
+		TEST_ASSERT_NOTNULL(text2path("/transformation/chem/instant/shortcut_[shortcut]"), "the [shortcut] shortcut exists")
+	// The peptide chain: the coupling agent joins the amino acids without drying.
+	TEST_ASSERT_NOTNULL(dq_fam_route(REAGENT_ID_NUMBENZYME, list(REAGENT_ID_PEPTIDE, REAGENT_ID_COUPLINGAGENT), CHEM_CATALYST_AGENT), "the coupling agent joins a peptide to an amino acid in a wet bath")
+	// The structures say what they are.
+	TEST_ASSERT_EQUAL(chem_structure_of(REAGENT_ID_MENTHOL).class_name(), "alcohol", "menthol is an alcohol")
+	TEST_ASSERT_EQUAL(chem_structure_of(REAGENT_ID_MENTHOL).formula(), "C6H12O", "on a saturated ring")
+	TEST_ASSERT_EQUAL(chem_structure_of(REAGENT_ID_TANNIN).class_name(), "carboxylic acid", "tannin is an acid")
+	TEST_ASSERT_EQUAL(chem_structure_of(REAGENT_ID_PLASTICIDE).class_name(), "ester", "plasticide is an ester")
+	TEST_ASSERT_EQUAL(chem_structure_of(REAGENT_ID_PEPTIDE).class_name(), "amide", "a peptide is an amide")
+	TEST_ASSERT(chem_structure_of(REAGENT_ID_NUMBENZYME).tags.Find(CHEM_TAG_BIOLOGICAL), "the numbing enzyme is biological")
+	TEST_ASSERT(chem_structure_of(REAGENT_ID_GLUE).has_group(CHEM_GROUP_CYANIDE), "ultra glue carries a nitrile")
+
+/// The protein path: amino acids join by amides into a peptide and then the numbing enzyme (no acid in the bath: the amide), and water with an enzyme or a base cuts them back.
+/datum/unit_test/dq_chem_families_protein_path_joins_and_cuts
+
+/datum/unit_test/dq_chem_families_protein_path_joins_and_cuts/Run()
+	var/obj/item/reagent_containers/glass/beaker/join = dq_blk_beaker(80)
+	join.reagents.add_reagent(REAGENT_ID_AMINOACID, 20)
+	TEST_ASSERT(dq_blk_near(join.reagents.get_reagent_amount(REAGENT_ID_PEPTIDE), 10, 1), "two amino acids join into a peptide ([join.reagents.get_reagents()])")
+	TEST_ASSERT(dq_blk_near(join.reagents.get_reagent_amount(REAGENT_ID_WATER), 10, 1), "giving up water")
+	var/obj/item/reagent_containers/glass/beaker/longer = dq_blk_beaker(80)
+	longer.reagents.add_reagent(REAGENT_ID_PEPTIDE, 10, safety = 1)
+	longer.reagents.add_reagent(REAGENT_ID_AMINOACID, 10)
+	TEST_ASSERT(dq_blk_near(longer.reagents.get_reagent_amount(REAGENT_ID_NUMBENZYME), 10, 1), "a peptide and an amino acid make the numbing enzyme ([longer.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/acid = dq_blk_beaker(80)
+	acid.reagents.add_reagent(REAGENT_ID_SACID, 2, safety = 1)
+	acid.reagents.add_reagent(REAGENT_ID_AMINOACID, 20)
+	TEST_ASSERT_EQUAL(acid.reagents.get_reagent_amount(REAGENT_ID_PEPTIDE), 0, "with sulphuric acid in the bath the amine is tied up and no amide forms")
+	var/obj/item/reagent_containers/glass/beaker/cut = dq_blk_beaker(30)
+	cut.reagents.add_reagent(REAGENT_ID_NUMBENZYME, 10, safety = 1)
+	cut.reagents.add_reagent(REAGENT_ID_WATER, 10, safety = 1)
+	cut.reagents.add_reagent(REAGENT_ID_ENZYME, 2)
+	TEST_ASSERT(cut.reagents.get_reagent_amount(REAGENT_ID_NUMBENZYME) < 3, "an enzyme cuts the numbing enzyme in water ([cut.reagents.get_reagents()])")
+	TEST_ASSERT(cut.reagents.get_reagent_amount(REAGENT_ID_AMINOACID) + cut.reagents.get_reagent_amount(REAGENT_ID_PEPTIDE) > 5, "back into amino acids and peptide")
+
+/// The resins: two ring acids and a glycol, hot and dry, make the polyester unit (plasticide, leaving plasticiser); a phenol and an amino acid add at violent heat and the ring amino acid
+/// loses its carboxyl (phenethylamine).
+/datum/unit_test/dq_chem_families_resins_and_the_trace_amine
+
+/datum/unit_test/dq_chem_families_resins_and_the_trace_amine/Run()
+	var/obj/item/reagent_containers/glass/beaker/resin = dq_blk_beaker(75)
+	resin.reagents.add_reagent(REAGENT_ID_SALICYLICACID, 20, safety = 1)
+	resin.reagents.add_reagent(REAGENT_ID_COOLANT, 10)
+	TEST_ASSERT(dq_blk_near(resin.reagents.get_reagent_amount(REAGENT_ID_PLASTICIDE), 10, 1), "two salicylic acids and a glycol make plasticide ([resin.reagents.get_reagents()])")
+	TEST_ASSERT(dq_blk_near(resin.reagents.get_reagent_amount(REAGENT_ID_WATER), 20, 2), "giving up two waters a unit")
+	TEST_ASSERT(resin.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_PLASTICISER) > 0.1, "and plasticiser when it runs warm ([resin.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/wet = dq_blk_beaker(75)
+	wet.reagents.add_reagent(REAGENT_ID_WATER, 5, safety = 1)
+	wet.reagents.add_reagent(REAGENT_ID_SALICYLICACID, 20, safety = 1)
+	wet.reagents.add_reagent(REAGENT_ID_COOLANT, 10)
+	TEST_ASSERT_EQUAL(wet.reagents.get_reagent_amount(REAGENT_ID_PLASTICIDE), 0, "water in the melt stops it")
+	var/obj/item/reagent_containers/glass/beaker/graft = dq_blk_beaker(170)
+	graft.reagents.add_reagent(REAGENT_ID_PHENOL, 10, safety = 1)
+	graft.reagents.add_reagent(REAGENT_ID_AMINOACID, 10)
+	TEST_ASSERT(graft.reagents.get_reagent_amount(REAGENT_ID_RINGAMINOACID) + graft.reagents.get_reagent_amount(REAGENT_ID_PHENETHYLAMINE) > 8, "phenol and an amino acid add ([graft.reagents.get_reagents()])")
+	TEST_ASSERT(graft.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_TAR) > 0.2, "leaving tar")
+	var/obj/item/reagent_containers/glass/beaker/amine = dq_blk_beaker(170)
+	amine.reagents.add_reagent(REAGENT_ID_RINGAMINOACID, 10)
+	TEST_ASSERT(amine.reagents.get_reagent_amount(REAGENT_ID_PHENETHYLAMINE) > 8, "heat drives the carboxyl off: phenethylamine ([amine.reagents.get_reagents()])")
+
+/// Menthol (three hydrogens on phenol, or the hydride), tannin (two hydroxyls on salicylic acid under an enzyme, or the strong oxidiser): the clean way and the dirty way.
+/datum/unit_test/dq_chem_families_menthol_and_tannin_clean_and_dirty
+
+/datum/unit_test/dq_chem_families_menthol_and_tannin_clean_and_dirty/Run()
+	var/obj/item/reagent_containers/glass/beaker/menthol = dq_blk_beaker(100)
+	menthol.reagents.add_reagent(REAGENT_ID_PHENOL, 10, safety = 1)
+	menthol.reagents.add_reagent(REAGENT_ID_HYDROGEN, 30)
+	TEST_ASSERT(menthol.reagents.get_reagent_amount(REAGENT_ID_MENTHOL) > 7, "three hydrogens saturate phenol: menthol ([menthol.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/dirty_menthol = dq_blk_beaker(55)
+	dirty_menthol.reagents.add_reagent(REAGENT_ID_PHENOL, 10, safety = 1)
+	dirty_menthol.reagents.add_reagent(REAGENT_ID_HYDRIDE, 10)
+	TEST_ASSERT(dirty_menthol.reagents.get_reagent_amount(REAGENT_ID_MENTHOL) > 4, "the hydride does it in one pot ([dirty_menthol.reagents.get_reagents()])")
+	TEST_ASSERT(dirty_menthol.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_BASE_RESIDUE) > 0.5, "and leaves base residue")
+	var/obj/item/reagent_containers/glass/beaker/tannin = dq_blk_beaker(30)
+	tannin.reagents.add_reagent(REAGENT_ID_SALICYLICACID, 10, safety = 1)
+	tannin.reagents.add_reagent(REAGENT_ID_OXYGEN, 20, safety = 1)
+	tannin.reagents.add_reagent(REAGENT_ID_ENZYME, 2)
+	TEST_ASSERT(tannin.reagents.get_reagent_amount(REAGENT_ID_TANNIN) > 8, "an enzyme hangs two hydroxyls on salicylic acid: tannin ([tannin.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/dirty_tannin = dq_blk_beaker(40)
+	dirty_tannin.reagents.add_reagent(REAGENT_ID_SALICYLICACID, 10, safety = 1)
+	dirty_tannin.reagents.add_reagent(REAGENT_ID_STRONGOXIDISER, 10)
+	TEST_ASSERT(dirty_tannin.reagents.get_reagent_amount(REAGENT_ID_TANNIN) > 4, "the strong oxidiser does it in one pot ([dirty_tannin.reagents.get_reagents()])")
+	TEST_ASSERT(dirty_tannin.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_HEAVY_METAL) > 0.2, "and leaves heavy metals")
+
+/// Ultra glue: acetic acid takes a halide, cyanide takes its place (cyanide traces left); the one-pot shortcut leaves more.
+/datum/unit_test/dq_chem_families_glue_is_a_nitrile
+
+/datum/unit_test/dq_chem_families_glue_is_a_nitrile/Run()
+	var/obj/item/reagent_containers/glass/beaker/halo = dq_blk_beaker(55)
+	halo.reagents.add_reagent(REAGENT_ID_ACETICACID, 10, safety = 1)
+	halo.reagents.add_reagent(REAGENT_ID_CHLORINE, 10)
+	TEST_ASSERT(halo.reagents.get_reagent_amount(REAGENT_ID_HALOACETIC) > 7, "chlorine hangs a halide on acetic acid ([halo.reagents.get_reagents()])")
+	TEST_ASSERT(dq_blk_near(halo.reagents.get_reagent_amount(REAGENT_ID_HYDROCHLORIC), halo.reagents.get_reagent_amount(REAGENT_ID_HALOACETIC), 1), "and frees hydrochloric acid")
+	var/obj/item/reagent_containers/glass/beaker/glue = dq_blk_beaker(55)
+	glue.reagents.add_reagent(REAGENT_ID_HALOACETIC, 10, safety = 1)
+	glue.reagents.add_reagent(REAGENT_ID_CYANIDE, 10)
+	TEST_ASSERT(glue.reagents.get_reagent_amount(REAGENT_ID_GLUE) > 7, "cyanide takes the halide's place: ultra glue ([glue.reagents.get_reagents()])")
+	TEST_ASSERT(glue.reagents.get_reagent_amount(REAGENT_ID_POTASSIUMCHLORIDE) > 7, "and potassium chloride")
+	TEST_ASSERT(glue.reagents.get_reagent_amount(REAGENT_ID_CYANIDE) > 0.2, "with cyanide left in the batch")
+	var/obj/item/reagent_containers/glass/beaker/one_pot = dq_blk_beaker(55)
+	one_pot.reagents.add_reagent(REAGENT_ID_ACETICACID, 10, safety = 1)
+	one_pot.reagents.add_reagent(REAGENT_ID_CHLORINE, 10, safety = 1)
+	one_pot.reagents.add_reagent(REAGENT_ID_CYANIDE, 10)
+	TEST_ASSERT(one_pot.reagents.get_reagent_amount(REAGENT_ID_GLUE) > 7, "the one-pot shortcut makes it too ([one_pot.reagents.get_reagents()])")
+	TEST_ASSERT(one_pot.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE) > 0.2, "and leaves organic residue")
+
+/// The one-pot shortcuts of the resin and the trace amine.
+/datum/unit_test/dq_chem_families_resin_and_amine_shortcuts_leave_traces
+
+/datum/unit_test/dq_chem_families_resin_and_amine_shortcuts_leave_traces/Run()
+	var/obj/item/reagent_containers/glass/beaker/resin = dq_blk_beaker(40)
+	resin.reagents.add_reagent(REAGENT_ID_SALICYLICACID, 20, safety = 1)
+	resin.reagents.add_reagent(REAGENT_ID_COOLANT, 10, safety = 1)
+	resin.reagents.add_reagent(REAGENT_ID_COUPLINGAGENT, 10)
+	TEST_ASSERT(resin.reagents.get_reagent_amount(REAGENT_ID_PLASTICIDE) > 7, "plasticide in one pot with the coupling agent ([resin.reagents.get_reagents()])")
+	TEST_ASSERT(resin.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_PLASTICISER) > 0.5, "leaves plasticiser")
+	var/obj/item/reagent_containers/glass/beaker/amine = dq_blk_beaker(95)
+	amine.reagents.add_reagent(REAGENT_ID_PHENOL, 10, safety = 1)
+	amine.reagents.add_reagent(REAGENT_ID_AMINOACID, 10, safety = 1)
+	amine.reagents.add_reagent(REAGENT_ID_SACID, 10)
+	TEST_ASSERT(amine.reagents.get_reagent_amount(REAGENT_ID_PHENETHYLAMINE) > 7, "phenethylamine burnt in acid ([amine.reagents.get_reagents()])")
+	TEST_ASSERT(amine.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_TAR) > 0.5 && amine.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ACID_RESIDUE) > 0.5, "leaves tar and acid residue ([amine.reagents.get_reagents()])")
+
+/// The Katish sedatives: nicotine is burnt to its acid and joined to sugar (qerr-quem); the alkaloid acid is joined to sugar (talum-quem). Both need an acid in the bath for the ester.
+/datum/unit_test/dq_chem_families_katish_sedatives_by_condensation
+
+/datum/unit_test/dq_chem_families_katish_sedatives_by_condensation/Run()
+	var/obj/item/reagent_containers/glass/beaker/acid = dq_blk_beaker(100)
+	acid.reagents.add_reagent(REAGENT_ID_NICOTINE, 10, safety = 1)
+	acid.reagents.add_reagent(REAGENT_ID_OXYGEN, 10)
+	TEST_ASSERT(acid.reagents.get_reagent_amount(REAGENT_ID_NICOTINICACID) > 7, "nicotine burnt hot gives its acid ([acid.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/qerr = dq_blk_beaker(100)
+	qerr.reagents.add_reagent(REAGENT_ID_NICOTINICACID, 10, safety = 1)
+	qerr.reagents.add_reagent(REAGENT_ID_SACID, 2, safety = 1)
+	qerr.reagents.add_reagent(REAGENT_ID_SUGAR, 10)
+	TEST_ASSERT(qerr.reagents.get_reagent_amount(REAGENT_ID_QERRQUEM) > 7, "the acid and sugar make qerr-quem ([qerr.reagents.get_reagents()])")
+	var/obj/item/reagent_containers/glass/beaker/talum = dq_blk_beaker(100)
+	talum.reagents.add_reagent(REAGENT_ID_ALKALOIDACID, 10, safety = 1)
+	talum.reagents.add_reagent(REAGENT_ID_SACID, 2, safety = 1)
+	talum.reagents.add_reagent(REAGENT_ID_SUGAR, 10)
+	TEST_ASSERT(talum.reagents.get_reagent_amount(REAGENT_ID_TALUMQUEM) > 7, "the alkaloid acid and sugar make talum-quem ([talum.reagents.get_reagents()])")
+	TEST_ASSERT(talum.reagents.get_reagent_amount(REAGENT_ID_WATER) > 5, "giving up water")
 
 // ---- the process chemicals and the dirty shortcuts ----
 

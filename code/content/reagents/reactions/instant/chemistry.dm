@@ -128,3 +128,24 @@ CAPABILITIES(/transformation/chem/instant/shortcut_hyperzine)
 	configure(transformation(name = "Hyperzine, the Stimm route", id = "shortcut_hyperzine",
 		takes = list(reagent(REAGENT_ID_FUEL, 1), reagent(REAGENT_ID_FERTILIZER, 1)),
 		makes = list(reagent(REAGENT_ID_HYPERZINE, 1), reagent(REAGENT_ID_CONTAMINANT_TAR, 0.1), reagent(REAGENT_ID_CONTAMINANT_HEAVY_METAL, 0.08), reagent(REAGENT_ID_CONTAMINANT_SULFUR, 0.08))))
+
+/transformation/chem/instant/shortcut_plasticide
+
+CAPABILITIES(/transformation/chem/instant/shortcut_plasticide)
+	configure(transformation(name = "Plasticide, one pot", id = "shortcut_plasticide",
+		takes = list(reagent(REAGENT_ID_SALICYLICACID, 2), reagent(REAGENT_ID_COOLANT, 1), reagent(REAGENT_ID_COUPLINGAGENT, 1)),
+		makes = list(reagent(REAGENT_ID_PLASTICIDE, 1), reagent(REAGENT_ID_CONTAMINANT_PLASTICISER, 0.15), reagent(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE, 0.1))))
+
+/transformation/chem/instant/shortcut_glue
+
+CAPABILITIES(/transformation/chem/instant/shortcut_glue)
+	configure(transformation(name = "Ultra glue, one pot", id = "shortcut_glue",
+		takes = list(reagent(REAGENT_ID_ACETICACID, 1), reagent(REAGENT_ID_CHLORINE, 1), reagent(REAGENT_ID_CYANIDE, 1)),
+		makes = list(reagent(REAGENT_ID_GLUE, 1), reagent(REAGENT_ID_HYDROCHLORIC, 0.15), reagent(REAGENT_ID_CYANIDE, 0.1), reagent(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE, 0.1))))
+
+/transformation/chem/instant/shortcut_phenethylamine
+
+CAPABILITIES(/transformation/chem/instant/shortcut_phenethylamine)
+	configure(transformation(name = "Phenethylamine, burnt in acid", id = "shortcut_phenethylamine",
+		takes = list(reagent(REAGENT_ID_PHENOL, 1), reagent(REAGENT_ID_AMINOACID, 1), reagent(REAGENT_ID_SACID, 1)),
+		makes = list(reagent(REAGENT_ID_PHENETHYLAMINE, 1), reagent(REAGENT_ID_CONTAMINANT_TAR, 0.1), reagent(REAGENT_ID_CONTAMINANT_ACID_RESIDUE, 0.12))))

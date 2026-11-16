@@ -105,6 +105,38 @@
 	reagent_state = SOLID
 	color = "#EAD8C0"
 
+/datum/reagent/chem_block/peptide
+	name = REAGENT_PEPTIDE
+	id = REAGENT_ID_PEPTIDE
+	description = "Two amino acids joined by an amide. A rung of the protein path: more amino acids make a longer chain, and water (with a base or an enzyme) cuts it back."
+	taste_description = "savoury"
+	reagent_state = SOLID
+	color = "#E6D2B0"
+
+/datum/reagent/chem_block/ringaminoacid
+	name = REAGENT_RINGAMINOACID
+	id = REAGENT_ID_RINGAMINOACID
+	description = "A ring hung on an amino acid (the tyrosine kind). Heat drives its carboxyl off and leaves the trace amine."
+	taste_description = "bitter"
+	reagent_state = SOLID
+	color = "#DCCDB4"
+
+/datum/reagent/chem_block/haloacetic
+	name = REAGENT_HALOACETIC
+	id = REAGENT_ID_HALOACETIC
+	description = "Acetic acid with a halide hung on it. A rung on the way to the nitriles: cyanide takes the halide's place."
+	taste_description = "stinging acid"
+	reagent_state = LIQUID
+	color = "#E4E8C8"
+
+/datum/reagent/chem_block/nicotinicacid
+	name = REAGENT_NICOTINICACID
+	id = REAGENT_ID_NICOTINICACID
+	description = "Nicotine burnt to its acid: two nitrogen rings and a carboxyl. A sugar joins it to make a Katish sedative."
+	taste_description = "bitter"
+	reagent_state = SOLID
+	color = "#D8D0B8"
+
 /datum/reagent/chem_block/sterol
 	name = REAGENT_STEROL
 	id = REAGENT_ID_STEROL

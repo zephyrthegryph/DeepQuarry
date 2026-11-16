@@ -577,21 +577,6 @@ CAPABILITIES(/transformation/chem/instant/deuterium)
 		takes = list(reagent(REAGENT_ID_HYDROPHORON, 1), reagent(REAGENT_ID_WATER, 2)),
 		makes = list(reagent(REAGENT_ID_DEUTERIUM, 3))))
 
-//Skrellian crap.
-/transformation/chem/instant/talum_quem
-
-CAPABILITIES(/transformation/chem/instant/talum_quem)
-	configure(transformation(name = REAGENT_TALUMQUEM, id = REAGENT_ID_TALUMQUEM,
-		takes = list(reagent(REAGENT_ID_BLISS, 2), reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_AMATOXIN, 1)),
-		makes = list(reagent(REAGENT_ID_TALUMQUEM, 4))))
-
-/transformation/chem/instant/qerr_quem
-
-CAPABILITIES(/transformation/chem/instant/qerr_quem)
-	configure(transformation(name = REAGENT_QERRQUEM, id = REAGENT_ID_QERRQUEM,
-		takes = list(reagent(REAGENT_ID_NICOTINE, 1), reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_SUGAR, 2)),
-		makes = list(reagent(REAGENT_ID_QERRQUEM, 4))))
-
 // Biomass, for cloning and bioprinters
 /transformation/chem/instant/biomass
 
@@ -860,15 +845,6 @@ CAPABILITIES(/transformation/chem/instant/solidification/copper)
 		takes = list(reagent(REAGENT_ID_FROSTOIL, 5), reagent(REAGENT_ID_COPPER, REAGENTS_PER_SHEET)),
 		spawns = spawns(/obj/item/stack/material/copper, 1, per = SPAWN_STACK_MADE)))
 
-//YW stuff
-
-/transformation/chem/instant/phenethylamine
-
-CAPABILITIES(/transformation/chem/instant/phenethylamine)
-	configure(transformation(name = REAGENT_PHENETHYLAMINE, id = REAGENT_ID_PHENETHYLAMINE,
-		takes = list(reagent(REAGENT_ID_PAROXETINE, 1), reagent(REAGENT_ID_BENZILATE, 1)),
-		makes = list(reagent(REAGENT_ID_PHENETHYLAMINE, 2))))
-
 // Xenochem stuff
 /transformation/chem/instant/xenolazarus // Moved here because upstream axed it and this file cannot conflict
 
@@ -996,10 +972,3 @@ CAPABILITIES(/transformation/chem/instant/succubi_paralize)
 	configure(transformation(name = "paralyzingfluid", id = "paralyzingfluid",
 		takes = list(reagent(REAGENT_ID_BENZILATE, 1), reagent(REAGENT_ID_CRYPTOBIOLIN, 1)),
 		makes = list(reagent("succubi_paralize", 2))))
-
-/transformation/chem/instant/numbingenzyme
-
-CAPABILITIES(/transformation/chem/instant/numbingenzyme)
-	configure(transformation(name = "numbingenzyme", id = "numbingenzyme",
-		takes = list(reagent(REAGENT_ID_TRAMADOL, 1), reagent(REAGENT_ID_PROTEIN, 2), reagent(REAGENT_ID_ADRANOL, 1)),
-		makes = list(reagent(REAGENT_ID_NUMBENZYME, 4))))

@@ -1,5 +1,5 @@
 // The processes (the machinery: code/domains/world_model/reagents/blocks/process.dm, routes.dm). Fifteen; polymerise makes the chemistry-side products only (a
-// silicone chain), the materials lane's polymers come with the workshop.
+// silicone chain, the polyester unit, the ring amino acid), the materials lane's polymers are the furnace's.
 //
 // Each process says which structures it acts on and what they become (chem_variants()), what it adds (an oxidiser, a nitrating acid, water), the catalyst kinds it runs
 // on and the temperature it wants, and which trace-potent contaminants it leaves (fallout()): the generator writes the reactions from that. A process never names a
@@ -36,6 +36,31 @@ GLOBAL_LIST_INIT(chem_metal_reactivity, list(
 /proc/chem_group_count(datum/chem_structure/S, group)
 	return S.count_of(S.groups, group)
 
+/// Is this a salicylic-acid shape: one ring with a hydroxyl and a carboxyl and nothing else?
+/proc/chem_is_hydroxy_ring_acid(datum/chem_structure/S)
+	return length(S.cores) == 1 && S.has_core(CHEM_CORE_RING) && length(S.groups) == 2 && S.has_group(CHEM_GROUP_HYDROXYL) && S.has_group(CHEM_GROUP_CARBOXYL) && !length(S.links)
+
+/// Is this a phenol shape: one ring with a hydroxyl and nothing else?
+/proc/chem_is_hydroxy_ring(datum/chem_structure/S)
+	return length(S.cores) == 1 && S.has_core(CHEM_CORE_RING) && length(S.groups) == 1 && S.has_group(CHEM_GROUP_HYDROXYL) && !length(S.links)
+
+/// Is this a bare pyridine or nicotine: one or two nitrogen rings and nothing else?
+/proc/chem_is_bare_nitrogen_ring(datum/chem_structure/S)
+	if(!length(S.cores) || length(S.cores) > 2 || length(S.groups) || length(S.links))
+		return FALSE
+	for(var/core in S.cores)
+		if(core != CHEM_CORE_NITROGEN_RING)
+			return FALSE
+	return TRUE
+
+/// Is this a bare amino acid: the amino core with an amine and a carboxyl?
+/proc/chem_is_amino_acid(datum/chem_structure/S)
+	return length(S.cores) == 1 && S.has_core(CHEM_CORE_AMINO) && length(S.groups) == 2 && S.has_group(CHEM_GROUP_AMINE) && S.has_group(CHEM_GROUP_CARBOXYL) && !length(S.links)
+
+/// Is this a glycol: one short chain with two hydroxyls?
+/proc/chem_is_glycol(datum/chem_structure/S)
+	return length(S.cores) == 1 && S.has_core(CHEM_CORE_SHORT_CHAIN) && length(S.groups) == 2 && chem_group_count(S, CHEM_GROUP_HYDROXYL) == 2 && !length(S.links)
+
 /// The kinds a clean no-solid-catalyst variant runs on.
 GLOBAL_LIST_INIT(chem_kinds_uncatalysed, list(CHEM_CATALYST_NONE, CHEM_CATALYST_SOLID_METAL))
 
@@ -53,7 +78,7 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/oxidise
 	id = CHEM_PROCESS_OXIDISE
 	name = "Oxidise"
-	desc = "Oxygen takes a hydroxyl to a carbonyl (and a water), and a carbonyl on to a carboxyl; it hangs a hydroxyl on a bare phoron lattice at gentle heat. An enzyme hangs one on a ring or a steroid, and a metal sheet on a double ring. Uncatalysed and hot it also leaves peroxide."
+	desc = "Oxygen takes a hydroxyl to a carbonyl (and a water), and a carbonyl on to a carboxyl; it hangs a hydroxyl on a bare phoron lattice at gentle heat. An enzyme hangs one on a ring or a steroid (two on salicylic acid: tannin), and a metal sheet on a double ring. Uncatalysed and hot it also leaves peroxide."
 	kinds = list(CHEM_CATALYST_NONE, CHEM_CATALYST_SOLID_METAL, CHEM_CATALYST_ENZYME)
 	band_class = REACTION_TEMP_HOT
 
@@ -63,6 +88,9 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 		return
 	var/hydroxyls = chem_group_count(S, CHEM_GROUP_HYDROXYL)
 	var/room = length(S.groups) < CHEM_GROUPS_MAX
+	// An enzyme hangs two hydroxyls on salicylic acid (the gallic acid kind: tannin). Written before the one-hydroxyl arm below, which would take the same oxygen to residue.
+	if(chem_is_hydroxy_ring_acid(S))
+		. += chem_variant(list(substrate_id), list(chem_structure_make(S.cores, S.groups + list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL))), list(REAGENT_ID_OXYGEN = 2), null, null, list(CHEM_CATALYST_ENZYME))
 	// A bare phoron lattice takes a hydroxyl, and a lattice with one a second: gently, or it burns.
 	if(room && length(S.cores) == 1 && S.has_core(CHEM_CORE_PHORON_LATTICE) && hydroxyls < 2 && !S.has_group(CHEM_GROUP_METAL_CENTRE))
 		. += chem_variant(list(substrate_id), list(S.with_group(CHEM_GROUP_HYDROXYL)), list(REAGENT_ID_OXYGEN = 1), null, null, GLOB.chem_kinds_uncatalysed, null, chem_band_of(REACTION_TEMP_GENTLE))
@@ -81,8 +109,8 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	// An enzyme takes ethanol all the way to the acid, gently and clean (vinegar); an oxidiser does it fast and dirty.
 	if(length(S.cores) == 1 && S.has_core(CHEM_CORE_SHORT_CHAIN) && length(S.groups) == 1 && S.has_group(CHEM_GROUP_HYDROXYL) && !length(S.links))
 		. += chem_variant(list(substrate_id), list(chem_structure_make(S.cores, list(CHEM_GROUP_CARBOXYL))), list(REAGENT_ID_OXYGEN = 1), list(REAGENT_ID_WATER = 1), null, list(CHEM_CATALYST_ENZYME))
-	// A bare pyridine takes an acid on its side chain (hot), or a hydroxyl under an enzyme (gentle).
-	if(room && length(S.cores) == 1 && S.has_core(CHEM_CORE_NITROGEN_RING) && !length(S.groups) && !length(S.links))
+	// A bare pyridine (or nicotine, two of them) takes an acid on its side chain (hot), or a hydroxyl under an enzyme (gentle).
+	if(room && chem_is_bare_nitrogen_ring(S))
 		. += chem_variant(list(substrate_id), list(S.with_group(CHEM_GROUP_CARBOXYL)), list(REAGENT_ID_OXYGEN = 1), null, null, GLOB.chem_kinds_uncatalysed)
 		. += chem_variant(list(substrate_id), list(S.with_group(CHEM_GROUP_HYDROXYL)), list(REAGENT_ID_OXYGEN = 1), null, null, list(CHEM_CATALYST_ENZYME))
 
@@ -96,7 +124,7 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/reduce
 	id = CHEM_PROCESS_REDUCE
 	name = "Reduce"
-	desc = "Hydrogen takes a carboxyl to a carbonyl, a carbonyl to a hydroxyl, a nitro to an amine and a hydroxyl off altogether, giving up water. Hot enough, a sheet of tungsten (the one catalyst that does not sinter) takes a hydroxyl off cleanly."
+	desc = "Hydrogen takes a carboxyl to a carbonyl, a carbonyl to a hydroxyl, a nitro to an amine and a hydroxyl off altogether, giving up water; three of it saturate the ring of a phenol (menthol). Hot enough, a sheet of tungsten (the one catalyst that does not sinter) takes a hydroxyl off cleanly."
 	kinds = list(CHEM_CATALYST_SOLID_METAL, CHEM_CATALYST_NONE)
 	band_class = REACTION_TEMP_HOT
 
@@ -104,6 +132,9 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	. = list()
 	if(!S.is_organic())
 		return
+	// Three hydrogens saturate the ring of a phenol (menthol). Written before the hydroxyl-off arm below, which would take the same hydrogen to residue.
+	if(chem_is_hydroxy_ring(S))
+		. += chem_variant(list(substrate_id), list(S.swap_core(CHEM_CORE_RING, CHEM_CORE_SATURATED_RING)), list(REAGENT_ID_HYDROGEN = 3))
 	var/datum/chem_structure/T = S.swap_group(CHEM_GROUP_CARBOXYL, CHEM_GROUP_CARBONYL)
 	if(T)
 		. += chem_variant(list(substrate_id), list(T), list(REAGENT_ID_HYDROGEN = 1), list(REAGENT_ID_WATER = 1))
@@ -223,9 +254,11 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	. = list()
 	if(!S.is_organic())
 		return
+	if(chem_is_amino_acid(S))
+		return // an amino acid is joined (the peptide) or added to a ring (polymerise), not burnt to residue
 	var/datum/chem_structure/T = S.swap_group(CHEM_GROUP_CARBOXYL, null)
-	if(T)
-		. += chem_variant(list(substrate_id), list(T))
+	if(T && !chem_is_bare_nitrogen_ring(T))
+		. += chem_variant(list(substrate_id), list(T)) // a pyridine or nicotine acid does not lose its carboxyl again: that would undo the oxidation that made it
 
 /datum/chem_process/decarboxylate/fallout(kind, datum/chem_structure/S, temperature)
 	if(kind == CHEM_CATALYST_NONE)
@@ -237,7 +270,7 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/condense
 	id = CHEM_PROCESS_CONDENSE
 	name = "Condense"
-	desc = "A carboxyl and a hydroxyl join as an ester (a dissolved or solid acid helps), a carboxyl and an amine as an amide (warm, with no acid in the mixture: an acid ties the amine up), giving up water. Water in the mixture stops it (and undoes what it made: hydrolysis). Hot, on a ring, it leaves plasticiser."
+	desc = "A carboxyl and a hydroxyl join as an ester (a dissolved or solid acid helps), a carboxyl and an amine as an amide (warm, with no acid in the mixture: an acid ties the amine up), giving up water; an amino acid joins another (or a chain of them) into a peptide. Water in the mixture stops it (and undoes what it made: hydrolysis). Hot, on a ring, it leaves plasticiser."
 	kinds = list(CHEM_CATALYST_ACID, CHEM_CATALYST_SOLID_ACID)
 	fixed_band = TRUE
 	blocked_by_water = TRUE
@@ -250,15 +283,21 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	. = list()
 	if(!S.is_organic() || !S.has_group(CHEM_GROUP_CARBOXYL))
 		return
+	var/list/partners = list()
 	for(var/partner_id in G.ids)
-		if(partner_id == substrate_id || chem_is_contaminant_id(G, partner_id))
-			continue
+		if(partner_id != substrate_id && !chem_is_contaminant_id(G, partner_id))
+			partners += partner_id
+	partners += substrate_id // last: an acid with an amine (or a hydroxyl) of its own joins itself (the protein path: amino acids make a peptide), after every other partner has had its turn
+	for(var/partner_id in partners)
 		var/datum/chem_structure/P = G.structures[partner_id]
 		if(!P.is_organic())
 			continue
 		for(var/link in list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER))
 			var/consumed = link == CHEM_LINK_ESTER ? CHEM_GROUP_HYDROXYL : CHEM_GROUP_AMINE
 			if(!P.has_group(consumed))
+				continue
+			// Two chains that each carry an amine and a carboxyl join the same way from either end: only the one that goes on in the alphabet is written.
+			if(link == CHEM_LINK_AMIDE && partner_id < substrate_id && P.has_group(CHEM_GROUP_CARBOXYL) && S.has_group(CHEM_GROUP_AMINE))
 				continue
 			var/list/cores = S.cores + P.cores
 			var/list/groups = S.groups.Copy()
@@ -285,7 +324,7 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/hydrolyse
 	id = CHEM_PROCESS_HYDROLYSE
 	name = "Hydrolyse"
-	desc = "Water splits an ester or an amide into the acid and the alcohol or amine it was condensed from. It wants a base or an enzyme, and a cool mixture. An enzyme cuts a venom chain part way: the acid end is kept."
+	desc = "Water splits an ester or an amide into the acid and the alcohol or amine it was condensed from (a peptide back into amino acids). It wants a base or an enzyme, and a cool mixture. An enzyme cuts a venom chain part way: the acid end is kept."
 	kinds = list(CHEM_CATALYST_BASE, CHEM_CATALYST_ENZYME)
 	fixed_band = TRUE
 
@@ -307,7 +346,14 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	if(!length(pairs))
 		. += chem_variant(list(substrate_id), list(chem_nothing()), list(REAGENT_ID_WATER = 1))
 		return
+	var/list/seen = list()
 	for(var/list/pair as anything in pairs)
+		var/list/halves = list(pair[1], pair[2])
+		sortTim(halves, GLOBAL_PROC_REF(cmp_text_asc))
+		var/half_key = jointext(halves, "+")
+		if(half_key in seen)
+			continue // a chain that is cut the same two ways from either end is one route
+		seen += half_key
 		. += chem_variant(list(substrate_id), list(pair[1], pair[2]), list(REAGENT_ID_WATER = 1))
 
 // ---- ferment ----
@@ -501,12 +547,19 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 /datum/chem_process/polymerise
 	id = CHEM_PROCESS_POLYMERISE
 	name = "Polymerise"
-	desc = "Two silanols join into a siloxane chain, giving up water (the chemistry side: silicone oil is lube). The workshop's polymers, which are materials, are the materials lane's."
+	desc = "Units join end to end. Two silanols join into a siloxane chain, giving up water (silicone oil is lube). Warm and dry (just under the heat that burns a carboxyl off), two ring acids and a glycol make a polyester unit, giving up two waters (plasticide; it leaves plasticiser). A phenol and an amino acid add, nothing lost, past the heat at which an amide forms (the ring amino acid, with tar). The workshop polymers, which are materials, are the furnace's."
 	kinds = list(CHEM_CATALYST_NONE)
 	band_class = REACTION_TEMP_HOT
 	residue_routes = FALSE
 
 /datum/chem_process/polymerise/chem_variants(substrate_id, datum/chem_structure/S, datum/chem_gen/G)
+	. = list()
+	. += silicone_chain(substrate_id, S)
+	. += polyester(substrate_id, S, G)
+	. += graft(substrate_id, S, G)
+
+/// Two silanols join into a siloxane chain, giving up water.
+/datum/chem_process/polymerise/proc/silicone_chain(substrate_id, datum/chem_structure/S)
 	. = list()
 	if(length(S.cores) != 1 || !S.has_core(CHEM_CORE_SILOXANE) || !S.has_group(CHEM_GROUP_HYDROXYL) || length(S.links) || S.has_group(CHEM_GROUP_METAL_CENTRE))
 		return
@@ -515,3 +568,38 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	var/list/groups = rest + rest
 	var/datum/chem_structure/T = chem_structure_make(list(CHEM_CORE_SILOXANE, CHEM_CORE_SILOXANE), groups)
 	. += chem_variant(list(substrate_id, substrate_id), list(T), null, list(REAGENT_ID_WATER = 1))
+
+/// Two ring acids and a glycol: both carboxyls are esterified by the glycol's two hydroxyls, two waters given up. Water in the mixture stops it (a dry melt).
+/datum/chem_process/polymerise/proc/polyester(substrate_id, datum/chem_structure/S, datum/chem_gen/G)
+	. = list()
+	if(length(S.cores) != 1 || !S.has_core(CHEM_CORE_RING) || !S.has_group(CHEM_GROUP_CARBOXYL) || length(S.links) || length(S.groups) > 2)
+		return
+	for(var/glycol_id in G.ids)
+		if(chem_is_contaminant_id(G, glycol_id))
+			continue
+		var/datum/chem_structure/glycol = G.structures[glycol_id]
+		if(!chem_is_glycol(glycol))
+			continue
+		var/list/rest = S.groups.Copy()
+		rest -= CHEM_GROUP_CARBOXYL
+		var/datum/chem_structure/unit = chem_structure_make(S.cores + S.cores + glycol.cores, rest + rest, list(CHEM_LINK_ESTER, CHEM_LINK_ESTER))
+		. += chem_variant(list(substrate_id, substrate_id, glycol_id), list(unit), null, list(REAGENT_ID_WATER = 2), null, null, list(REAGENT_ID_WATER), list(T0C + 50, T0C + 62, T0C + 78, T0C + 84))
+
+/// A phenol and an amino acid add, nothing lost (an alkylation: the ring amino acid).
+/datum/chem_process/polymerise/proc/graft(substrate_id, datum/chem_structure/S, datum/chem_gen/G)
+	. = list()
+	if(!chem_is_hydroxy_ring(S))
+		return
+	for(var/acid_id in G.ids)
+		if(chem_is_contaminant_id(G, acid_id))
+			continue
+		var/datum/chem_structure/acid = G.structures[acid_id]
+		if(!chem_is_amino_acid(acid))
+			continue
+		var/datum/chem_structure/joined = chem_structure_make(S.cores + acid.cores, S.groups + acid.groups)
+		. += chem_variant(list(substrate_id, acid_id), list(joined), null, null, null, null, null, list(T0C + 150, T0C + 160, T0C + 190, T0C + 220), list(REAGENT_ID_CONTAMINANT_TAR = 0.05))
+
+/datum/chem_process/polymerise/fallout(kind, datum/chem_structure/S, temperature)
+	if(S && S.has_group(CHEM_GROUP_CARBOXYL) && chem_has_ring(S))
+		return list(REAGENT_ID_CONTAMINANT_PLASTICISER = 0.04)
+	return list()

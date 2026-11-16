@@ -19,6 +19,7 @@ GLOBAL_LIST_INIT(chem_core_atoms, list(
 	CHEM_CORE_SHORT_CHAIN = list("C" = 2, "H" = 6),
 	CHEM_CORE_LONG_CHAIN = list("C" = 12, "H" = 26),
 	CHEM_CORE_RING = list("C" = 6, "H" = 6),
+	CHEM_CORE_SATURATED_RING = list("C" = 6, "H" = 12),
 	CHEM_CORE_DOUBLE_RING = list("C" = 10, "H" = 8),
 	CHEM_CORE_SUGAR_RING = list("C" = 5, "H" = 10, "O" = 5),
 	CHEM_CORE_AMINO = list("C" = 2, "H" = 7, "N" = 1),

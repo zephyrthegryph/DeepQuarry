@@ -375,8 +375,8 @@ Block structures and processes
   and hydrogen for an amine), phosphorylate, decarboxylate, condense (an ester with a dissolved or solid acid; an amide, warm, with no acid in the mixture),
   hydrolyse, ferment, crack, neutralise (an acid and a base, a hydroxide, a carbonate or an amine; sand in hot lye is silicate), displace (a metal for a metal, an
   acid dissolving a metal, two salts swapping ions, a metal bound to a medicine out of a salt or a base), electrolyse (a clip-on electrode pair,
-  `/obj/item/chem_electrode`, on a container on a plate that is on), polymerise (two silanols into silicone oil: lube; the workshop polymers, which are materials,
-  are the materials lane's). A variant can carry its own catalyst kinds, blockers, band and fallout (`chem_variant()`), and a process its `rank` (amination before
+  `/obj/item/chem_electrode`, on a container on a plate that is on), polymerise (two silanols into silicone oil: lube; two ring acids and a glycol, hot and dry, into the polyester unit plasticide; a phenol and an amino acid into the ring amino acid; the
+  workshop polymers, which are materials, are the furnace's; an amino acid joins another into a peptide by condense, which hydrolyse cuts back). A variant can carry its own catalyst kinds, blockers, band and fallout (`chem_variant()`), and a process its `rank` (amination before
   reduction). A process says which structures it acts on and what they become
   (`variants()`), what it adds (an oxidiser, a nitrating acid, water), the catalyst kinds it runs on, its temperature band, and the trace-potent contaminants it leaves
   (`fallout()`). It never names a chemical it makes.
