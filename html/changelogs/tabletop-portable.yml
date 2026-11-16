@@ -1,0 +1,5 @@
+author: "deepquarry"
+delete-after: true
+changes:
+  - rscadd: "Table-top devices (hot plate, condenser, bunsen burner, scale, microscope, book scanner and binder, color mate, spectrometer) can be picked up with an empty hand while unbolted, carried and set down again with everything they hold."
+  - balance: "Table-top and bulky machines (operating table, ice cream vat, processors) only work while bolted to the floor; mapped ones start bolted."

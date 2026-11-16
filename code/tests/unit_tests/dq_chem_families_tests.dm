@@ -369,6 +369,7 @@
 
 /datum/unit_test/dq_chem_families_electrolysis_needs_the_electrode_pair/Run()
 	var/obj/machinery/chem_hot_plate/plate = allocate(/obj/machinery/chem_hot_plate, test_floor())
+	plate.set_anchored(TRUE) // a machine works only while it is bolted down
 	var/obj/item/reagent_containers/glass/beaker/large/B = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
 	B.inherit_heat(T20C)
 	B.forceMove(plate)

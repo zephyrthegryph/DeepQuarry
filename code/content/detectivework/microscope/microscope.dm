@@ -108,6 +108,7 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 	rel_clear(src, nameof(sample))
 
 CAPABILITIES(/obj/machinery/microscope)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	ref_one(nameof(sample), /obj/item)

@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "A table-top machine carried in a pack no longer draws power from the area it was picked up in; it joins the power of the area it is set down in"
+  - bugfix: "A carried table-top machine's pack looks like the machine, including what stands on it"

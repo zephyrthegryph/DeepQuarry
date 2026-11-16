@@ -90,6 +90,7 @@
 /// Boils its container; runs while heating (declared).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/bunsen_burner)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	owns_one(nameof(held_container), /obj/item/reagent_containers)

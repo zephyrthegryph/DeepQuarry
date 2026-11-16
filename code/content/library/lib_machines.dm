@@ -575,6 +575,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	return TRUE
 
 CAPABILITIES(/obj/machinery/libraryscanner)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	ref_one(nameof(cache), /obj/item/book)
@@ -629,6 +630,7 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	circuit = VARIANT(/obj/item/circuitboard/bookbinder)
 
 CAPABILITIES(/obj/machinery/bookbinder)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	climb()

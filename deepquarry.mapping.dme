@@ -1477,6 +1477,7 @@
 #include "code\content\machinery\suit_storage_unit.dm"
 #include "code\content\machinery\supply_display.dm"
 #include "code\content\machinery\syndicatebeacon.dm"
+#include "code\content\machinery\tabletop.dm"
 #include "code\content\machinery\transportpod.dm"
 #include "code\content\machinery\traptiles.dm"
 #include "code\content\machinery\turrets.dm"

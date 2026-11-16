@@ -13,6 +13,7 @@
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 /obj/machinery/optable/var/mob/living/carbon/human/victim
 CAPABILITIES(/obj/machinery/optable)
+	tabletop()
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	default_parts()
 	configure(atom_rules(throwpass = 1))
@@ -23,10 +24,10 @@ CAPABILITIES(/obj/machinery/optable)
 	configure(uses_power(idle = 1, active = 5))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))
-	op("optable_interaction_hand", hand(), ungated(), then(PROC_REF(optable_interaction_hand)))
-	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), then(PROC_REF(optable_interaction_drag)))
-	op("optable_interaction_item", item(/obj/item), then(PROC_REF(optable_interaction_item)))
-	op("optable_climb_onto", menu(), label("Climb On Table"), then(PROC_REF(optable_climb_onto)))
+	op("optable_interaction_hand", hand(), ungated(), needs(req_bolted()), then(PROC_REF(optable_interaction_hand)))
+	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), needs(req_bolted()), then(PROC_REF(optable_interaction_drag)))
+	op("optable_interaction_item", item(/obj/item), needs(req_bolted()), then(PROC_REF(optable_interaction_item)))
+	op("optable_climb_onto", menu(), label("Climb On Table"), needs(req_bolted()), then(PROC_REF(optable_climb_onto)))
 	ref_one(nameof(victim), /mob/living/carbon/human)
 
 /// A light blast may knock the table flat.
