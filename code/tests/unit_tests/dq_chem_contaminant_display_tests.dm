@@ -103,5 +103,16 @@
 	M.ui_act_add(stub, 20)
 	TEST_ASSERT(abs(M.reagents.get_reagent_amount(REAGENT_ID_DEXALIN) - 15) < 0.001, "the chem master takes the mix: half the dexalin")
 	TEST_ASSERT(abs(M.reagents.get_reagent_amount(REAGENT_ID_ANTITOXIN) - 5) < 0.001, "and half the antitoxin")
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/gun = allocate(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, test_floor())
+	TEST_ASSERT(!hascall(gun, "ui_act_purge_reagent"), "the mecha syringe gun cannot purge one reagent")
+	var/obj/machinery/icecream_vat/vat = allocate(/obj/machinery/icecream_vat, test_floor())
+	TEST_ASSERT(!hascall(vat, "ui_act_clear_reagent"), "the ice cream vat cannot drop one reagent")
+	vat.reagents.clear_reagents()
+	vat.reagents.add_reagent(REAGENT_ID_SUGAR, 10, safety = 1)
+	vat.reagents.add_reagent(REAGENT_ID_MILK, 10, safety = 1)
+	vat.ui_act_clear_reagents(stub)
+	TEST_ASSERT_EQUAL(vat.reagents.total_volume, 0, "the vat empties as a whole")
+	var/obj/item/mecha_parts/mecha_equipment/tool/sleeper/mecha_sleeper = allocate(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, test_floor())
+	TEST_ASSERT(!hascall(mecha_sleeper, "inject_reagent"), "the mecha sleeper has no per-reagent injection from the gun's stock")
 
 #endif

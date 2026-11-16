@@ -35,12 +35,6 @@ export const MechaSyringeGun = () => {
                     key={r.id}
                     color={r.contaminant ? 'grey' : undefined}
                   >
-                    <Button
-                      color="bad"
-                      onClick={() => act('purge_reagent', { id: r.id })}
-                    >
-                      Purge
-                    </Button>{' '}
                     {r.name}: {r.volume}
                   </Stack.Item>
                 ))}

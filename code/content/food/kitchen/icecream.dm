@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 	without("ui_open")
 	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
 	op("make_type", ui_act("make_type", arg("amount", num()), arg("index", num())), then(PROC_REF(ui_act_make_type)))
-	op("clear_reagent", ui_act("clear_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_clear_reagent)))
+	op("clear_reagents", ui_act("clear_reagents"), then(PROC_REF(ui_act_clear_reagents)))
 	op("icecream_vat_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bolted()), then(PROC_REF(icecream_vat_interaction_item)))
 
 /obj/machinery/icecream_vat/proc/build_icecream_data(list/ice_types)
@@ -118,11 +118,9 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 	make(user, index, amount)
 	return TRUE
 
-/obj/machinery/icecream_vat/proc/ui_act_clear_reagent(datum/act/op/A, id)
-	var/reagent_id = id
-	if(!reagent_id)
-		return FALSE
-	reagents.del_reagent(reagent_id)
+/// Empties the whole vat; there is no way to drop one reagent from the mix.
+/obj/machinery/icecream_vat/proc/ui_act_clear_reagents(datum/act/op/A)
+	reagents.clear_reagents()
 	return TRUE
 
 /// Old attackby.

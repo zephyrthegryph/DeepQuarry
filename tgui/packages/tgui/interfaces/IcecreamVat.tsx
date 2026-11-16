@@ -82,23 +82,28 @@ export const IcecreamVat = (props) => {
             </Section>
           </Stack.Item>
           <Stack.Item grow>
-            <Section fill title="Reagents" scrollable>
+            <Section
+              fill
+              title="Reagents"
+              scrollable
+              buttons={
+                <Button.Confirm
+                  icon="trash"
+                  onClick={() => act('clear_reagents')}
+                >
+                  Empty vat
+                </Button.Confirm>
+              }
+            >
               <Table collapsing>
                 <Table.Row>
                   <Table.Cell>Reagent</Table.Cell>
                   <Table.Cell>Amount</Table.Cell>
-                  <Table.Cell />
                 </Table.Row>
                 {reagent_data.map((reagent) => (
                   <Table.Row key={reagent.id}>
                     <Table.Cell color="label">{`${reagent.name}:`}</Table.Cell>
                     <Table.Cell textAlign="center">{reagent.volume}</Table.Cell>
-                    <Table.Cell>
-                      <Button.Confirm
-                        icon="trash"
-                        onClick={() => act('clear_reagent', { id: reagent.id })}
-                      />
-                    </Table.Cell>
                   </Table.Row>
                 ))}
               </Table>
