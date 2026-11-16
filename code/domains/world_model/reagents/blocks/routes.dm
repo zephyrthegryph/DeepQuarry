@@ -246,12 +246,19 @@ GLOBAL_LIST_EMPTY(chem_route_rules)
 	if(!length(GLOB.chem_routes) || !length(GLOB.xform_rules))
 		return // nothing generated yet, or the transformations are not compiled yet: xform_build() calls this when they are
 	if(!length(GLOB.chem_route_rules))
+		// Routes that make a chemical that exists take their place before the routes that end in residue only: a settle steps its candidates in this order and a step
+		// takes what it can, so where a substrate could go either way (another group of it, or a bare heat route like decarboxylation) the product route has the
+		// reagents first, and residue is what is left when the conditions are wrong (too little of the reagent, too hot, a dirty batch), not a coin flip that beats the
+		// clean route at the clean conditions.
 		var/order = CHEM_ROUTE_ORDER_BASE
-		for(var/route_id in GLOB.chem_routes)
-			var/datum/chem_route/R = GLOB.chem_routes[route_id]
-			var/datum/xform/X = chem_route_compile(R, ++order)
-			if(X)
-				GLOB.chem_route_rules += X
+		for(var/products_first in list(TRUE, FALSE))
+			for(var/route_id in GLOB.chem_routes)
+				var/datum/chem_route/R = GLOB.chem_routes[route_id]
+				if(R.matched != products_first)
+					continue
+				var/datum/xform/X = chem_route_compile(R, ++order)
+				if(X)
+					GLOB.chem_route_rules += X
 	var/touched = list()
 	var/added = 0
 	for(var/datum/xform/X as anything in GLOB.chem_route_rules)

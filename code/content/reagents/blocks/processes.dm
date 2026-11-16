@@ -250,6 +250,11 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 	kinds = list(CHEM_CATALYST_NONE, CHEM_CATALYST_SOLID_ACID)
 	band_class = REACTION_TEMP_VIOLENT
 
+/datum/chem_process/decarboxylate/declare()
+	// Heat alone with nothing to select what it hits: it must not start inside the bands of the processes that run in a hot plate's ordinary range (reduce, oxidise,
+	// condense: up to 110 C ideal), or a carboxyl product (bicaridine, salicylic acid) is driven off as it is made. It starts above them, where the heat cooks the rest.
+	band = list(T0C + 125, T0C + 140, T0C + 170, T0C + 220)
+
 /datum/chem_process/decarboxylate/chem_variants(substrate_id, datum/chem_structure/S, datum/chem_gen/G)
 	. = list()
 	if(!S.is_organic())

@@ -400,4 +400,182 @@
 	TEST_ASSERT(B.reagents.purity() < PURITY_STANDARD, "the mixture is Crude")
 	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_LIPOZINE) > 0, "and a recipe that used to want Pharma goes: [X.name]")
 
+// ---- product beats residue, and nothing runs below its range ----
+//
+// The chains run the real reaction and assert the product dominates; the sample and the sweep assert, for every route, that no residue route is stepped ahead of it.
+
+/// A beaker at `celsius` holding exactly the takes and catalysts of `R`, `scale` times over (scaled down to fit), settled once. Returns list(beaker, scale).
+/datum/unit_test/proc/dq_chem_run_route(datum/chem_route/R, celsius, scale = 5)
+	var/total = 0
+	for(var/take_id in R.takes)
+		total += R.takes[take_id]
+	for(var/catalyst_id in R.catalysts)
+		total += R.catalysts[catalyst_id]
+	var/obj/item/reagent_containers/glass/beaker/B = dq_blk_beaker(celsius)
+	scale = min(scale, round(B.reagents.maximum_volume * 0.8 / max(total, 1)))
+	for(var/take_id in R.takes)
+		B.reagents.add_reagent(take_id, R.takes[take_id] * scale, safety = 1)
+	for(var/catalyst_id in R.catalysts)
+		B.reagents.add_reagent(catalyst_id, R.catalysts[catalyst_id] * scale, safety = 1)
+	B.reagents.handle_reactions()
+	return list(B, scale)
+
+/// The middle of the route's ideal band, in celsius (what a chemist who read the book sets the plate to).
+/datum/unit_test/proc/dq_chem_ideal_celsius(datum/chem_route/R)
+	return ((R.band_base[2] + R.band_base[3]) / 2) - T0C
+
+/// Runs a generated route at the middle of its ideal band with exact stoichiometric inputs and says how it went: null when the product is at least `share` of what
+/// the route makes, else a line naming what the beaker holds.
+/datum/unit_test/proc/dq_chem_route_outcome(datum/chem_route/R, celsius = null, share = 0.8)
+	if(isnull(celsius))
+		celsius = dq_chem_ideal_celsius(R)
+	var/list/ran = dq_chem_run_route(R, celsius)
+	var/obj/item/reagent_containers/glass/beaker/B = ran[1]
+	var/expected = ran[2] * R.makes[1][2]
+	var/made = B.reagents.get_reagent_amount(R.products[1])
+	var/result
+	if(made < expected * share)
+		result = "[R.id] at [round(celsius)] C made [round(made, 0.01)]u of [R.products[1]], wanted [round(expected * share, 0.01)]u: [B.reagents.get_reagents()]"
+	qdel(B)
+	return result
+
+/// What a settle would step first in a beaker holding exactly what `R` takes (and its catalysts) at the middle of its ideal band: null when a route that makes a chemical
+/// goes first (or nothing in the route table does), else a line naming the residue route that would pre-empt it.
+/datum/unit_test/proc/dq_chem_first_step(datum/chem_route/R)
+	var/obj/item/reagent_containers/glass/beaker/B = dq_blk_beaker(dq_chem_ideal_celsius(R))
+	for(var/take_id in R.takes)
+		B.reagents.add_reagent(take_id, R.takes[take_id] * 4, safety = 1)
+	for(var/catalyst_id in R.catalysts)
+		B.reagents.add_reagent(catalyst_id, R.catalysts[catalyst_id] * 4, safety = 1)
+	var/list/lookup = xform_bucket_table(MEDIUM_REAGENTS, REGIME_INSTANT)
+	var/list/eligible = list()
+	for(var/datum/reagent/held as anything in B.reagents.reagent_list)
+		if(lookup[held.id])
+			eligible |= lookup[held.id]
+	var/result
+	for(var/datum/xform/X as anything in eligible)
+		if(!xform_matches(X, B.reagents))
+			continue
+		var/datum/chem_route/first = chem_route_of(X)
+		if(first && !first.matched)
+			result = "[R.id] at [round(dq_chem_ideal_celsius(R))] C is pre-empted by the residue route [first.id]"
+		break
+	qdel(B)
+	return result
+
+/// The routes with a product that a plain beaker can run: no solid catalyst, no clash, no electrode current.
+/datum/unit_test/proc/dq_chem_plain_product_routes(prefix = null)
+	var/list/found = list()
+	for(var/route_id in GLOB.chem_routes)
+		var/datum/chem_route/R = GLOB.chem_routes[route_id]
+		if(!R.matched || R.kind == CHEM_CATALYST_CONTACT || R.needs_current || !R.band_base)
+			continue
+		if(R.kind == CHEM_CATALYST_SOLID_METAL || R.kind == CHEM_CATALYST_SOLID_ACID || R.kind == CHEM_CATALYST_SOLID_REFRACTORY)
+			continue
+		if(prefix && !findtext(route_id, prefix))
+			continue
+		found += R
+	return found
+
+/// Real chains, run in a beaker at the temperature a chemist would set: the product is most of what the route can make, not organic residue.
+/datum/unit_test/dq_chem_product_beats_residue_chains
+
+/datum/unit_test/dq_chem_product_beats_residue_chains/Run()
+	var/list/chains = list(
+		list(REAGENT_ID_BICARIDINE, list(REAGENT_ID_NITROSALICYLIC, REAGENT_ID_HYDROGEN), CHEM_CATALYST_NONE, 95),
+		list(REAGENT_ID_BICARIDINE, list(REAGENT_ID_NITROSALICYLIC, REAGENT_ID_HYDRIDE), CHEM_CATALYST_AGENT, 50),
+		list(REAGENT_ID_DEXALIN, list(REAGENT_ID_PHORON, REAGENT_ID_OXYGEN), null, 25),
+		list(REAGENT_ID_CRYOXADONE, list(REAGENT_ID_DEXALIN, REAGENT_ID_OXYGEN), null, 25),
+		list(REAGENT_ID_CLONEXADONE, list(REAGENT_ID_CRYOXADONE, REAGENT_ID_SODAASH), null, 25),
+		list(REAGENT_ID_PERIDAXON, list(REAGENT_ID_BICARIDINE, REAGENT_ID_CLONEXADONE, REAGENT_ID_COUPLINGAGENT), CHEM_CATALYST_AGENT, 40),
+		list(REAGENT_ID_PERIDAXON, list(REAGENT_ID_BICARIDINE, REAGENT_ID_CLONEXADONE, REAGENT_ID_SACID), CHEM_CATALYST_ACID, 110),
+	)
+	for(var/list/chain in chains)
+		var/datum/chem_route/R = dq_fam_route(chain[1], chain[2], chain[3])
+		TEST_ASSERT_NOTNULL(R, "a route makes [chain[1]] from [jointext(chain[2], " + ")]")
+		var/failure = dq_chem_route_outcome(R, chain[4])
+		TEST_ASSERT(isnull(failure), failure)
+
+/// Nitrosalicylic acid and hydrogen with the leftovers of making it (sulphuric acid, nitric acid, a little water): below the working range of every reduction nothing
+/// happens. The rules that fired are logged.
+/datum/unit_test/dq_chem_nitrosalicylic_hydrogen_waits_for_heat
+
+/datum/unit_test/dq_chem_nitrosalicylic_hydrogen_waits_for_heat/Run()
+	var/traced = GLOB.xform_trace
+	GLOB.xform_trace = TRUE
+	for(var/celsius in list(20, 45))
+		var/obj/item/reagent_containers/glass/beaker/B = dq_blk_beaker(celsius)
+		B.reagents.add_reagent(REAGENT_ID_NITROSALICYLIC, 10, safety = 1)
+		B.reagents.add_reagent(REAGENT_ID_SACID, 1, safety = 1)
+		B.reagents.add_reagent(REAGENT_ID_NITRICACID, 1, safety = 1)
+		B.reagents.add_reagent(REAGENT_ID_WATER, 2, safety = 1)
+		B.reagents.add_reagent(REAGENT_ID_HYDROGEN, 30, safety = 1)
+		var/before = B.reagents.get_reagents()
+		var/list/fired = xform_settle_reagents(B.reagents)
+		B.reagents.update_total()
+		var/list/names = list()
+		for(var/datum/xform/X as anything in fired)
+			names += X.route_id || "[X.rule_type]"
+		log_world("CHEM TEST: nitrosalicylic + hydrogen at [celsius] C fired [jointext(names, ", ") || "nothing"]; [before] -> [B.reagents.get_reagents()]")
+		TEST_ASSERT_EQUAL(B.reagents.get_reagent_amount(REAGENT_ID_NITROSALICYLIC), 10, "nitrosalicylic acid is untouched at [celsius] C (fired: [jointext(names, ", ")]; [B.reagents.get_reagents()])")
+		TEST_ASSERT_EQUAL(B.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE), 0, "no residue at [celsius] C (fired: [jointext(names, ", ")])")
+		qdel(B)
+	GLOB.xform_trace = traced
+
+/// No generated route holds in a loose container just below the bottom of its working range, with everything it takes there.
+/datum/unit_test/dq_chem_no_route_fires_below_its_range
+
+/datum/unit_test/dq_chem_no_route_fires_below_its_range/Run()
+	var/list/rules = list()
+	for(var/datum/xform/X as anything in GLOB.chem_route_rules)
+		rules[X.route_id] = X
+	var/checked = 0
+	for(var/route_id in GLOB.chem_routes)
+		var/datum/chem_route/R = GLOB.chem_routes[route_id]
+		if(R.kind == CHEM_CATALYST_CONTACT || !R.band_base)
+			continue
+		var/datum/xform/X = rules[route_id]
+		if(!X)
+			continue
+		var/obj/item/reagent_containers/glass/beaker/B = dq_blk_beaker(R.band_base[1] - T0C - 5)
+		for(var/take_id in R.takes)
+			B.reagents.add_reagent(take_id, R.takes[take_id], safety = 1)
+		for(var/catalyst_id in R.catalysts)
+			B.reagents.add_reagent(catalyst_id, R.catalysts[catalyst_id], safety = 1)
+		TEST_ASSERT(!xform_matches(X, B.reagents), "[route_id] holds at [round(R.band_base[1] - T0C - 5)] C, below its range")
+		qdel(B)
+		checked++
+	TEST_ASSERT(checked > 500, "the routes were checked ([checked])")
+
+/// A normal-tier sample of the sweep below: every plain route of salicylic and nitrosalicylic acid, plus a thin slice of the rest.
+/datum/unit_test/dq_chem_product_beats_residue_representative
+
+/datum/unit_test/dq_chem_product_beats_residue_representative/Run()
+	var/list/failures = list()
+	var/seen = 0
+	for(var/datum/chem_route/R as anything in dq_chem_plain_product_routes())
+		if(!findtext(R.id, "salicyl") && (++seen % 25))
+			continue
+		var/failure = dq_chem_first_step(R)
+		if(failure)
+			failures += failure
+	TEST_ASSERT(!length(failures), "[length(failures)] route(s) lose to residue at their ideal band: [jointext(failures.Copy(1, min(length(failures), 12) + 1), " || ")]")
+
+/// Every route that makes a chemical, in a beaker at the middle of its ideal band holding exactly what it takes, is stepped before any route that ends in residue.
+/datum/unit_test/dq_chem_product_beats_residue_sweep
+	tier = TEST_TIER_EXHAUSTIVE
+	is_sweep_test = TRUE
+
+/datum/unit_test/dq_chem_product_beats_residue_sweep/Run()
+	var/list/failures = list()
+	var/ran = 0
+	for(var/datum/chem_route/R as anything in dq_chem_plain_product_routes())
+		var/failure = dq_chem_first_step(R)
+		ran++
+		if(failure)
+			failures += failure
+	log_world("CHEM TEST: sweep ran [ran] routes, [length(failures)] lose to residue: [jointext(failures, "\n")]")
+	TEST_ASSERT(ran > 300, "routes were run ([ran])")
+	TEST_ASSERT(!length(failures), "[length(failures)] route(s) lose to residue at their ideal band: [jointext(failures.Copy(1, min(length(failures), 12) + 1), " || ")]")
+
 #endif
