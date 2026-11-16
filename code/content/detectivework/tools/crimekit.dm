@@ -3,7 +3,7 @@
 	starts_with = list(
 		/obj/item/storage/box/swabs = 1,
 		/obj/item/storage/box/fingerprints = 1,
-		/obj/item/reagent_containers/spray/luminol = 1,
+		VARIANT(/obj/item/reagent_containers/spray/luminol) = 1,
 		/obj/item/uv_light = 1,
 		/obj/item/forensics/sample_kit = 1,
 		/obj/item/forensics/sample_kit/powder = 1,

@@ -135,7 +135,7 @@ CAPABILITIES(/obj/random/maintenance/security)
 			/obj/item/storage/belt/security = 2,
 			/obj/item/grenade/flashbang = 1,
 			/obj/item/melee/baton = 1,
-			/obj/item/reagent_containers/spray/pepper = 1,
+			VARIANT(/obj/item/reagent_containers/spray/pepper) = 1,
 			/obj/item/clothing/shoes/boots/jackboots = 3,
 			/obj/item/clothing/shoes/boots/swat = 1,
 			/obj/item/clothing/shoes/boots/combat = 1,

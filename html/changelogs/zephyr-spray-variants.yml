@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Spray bottles (space cleaner, sterilizine, pepper spray, luminol, Plant-B-Gone, Krak-b-gone) are variant rows of one refillable spray type, keeping their names, sprites, fills and the pepper spray's safety"

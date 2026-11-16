@@ -7398,7 +7398,8 @@
 "gki" = (
 /obj/structure/table/standard,
 /obj/item/defib_kit/loaded,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -18041,8 +18042,12 @@
 /obj/item/grenade/chem_grenade/cleaner,
 /obj/item/grenade/chem_grenade/cleaner,
 /obj/item/grenade/chem_grenade/cleaner,
-/obj/item/reagent_containers/spray/cleaner,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/janitorial)
 "oLH" = (

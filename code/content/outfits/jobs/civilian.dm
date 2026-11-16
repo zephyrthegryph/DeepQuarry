@@ -171,7 +171,7 @@
 
 /datum/decl/hierarchy/outfit/job/assistant/entrepreneur/bodyguard
 	glasses = /obj/item/clothing/glasses/sunglasses
-	l_pocket = /obj/item/reagent_containers/spray/pepper
+	l_pocket = VARIANT(/obj/item/reagent_containers/spray/pepper)
 	suit = /obj/item/clothing/accessory/sweater/blackneck
 
 /datum/decl/hierarchy/outfit/job/assistant/entrepreneur/personal_physician

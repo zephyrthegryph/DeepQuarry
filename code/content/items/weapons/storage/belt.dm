@@ -308,7 +308,7 @@ CAPABILITIES(/obj/item/storage/belt/medical)
 CAPABILITIES(/obj/item/storage/belt/security)
 	configure(storage(accepts = list(
 		/obj/item/grenade,
-		/obj/item/reagent_containers/spray/pepper,
+		/obj/item/reagent_containers/spray,
 		/obj/item/handcuffs,
 		/obj/item/flash,
 		/obj/item/clothing/glasses,
@@ -354,7 +354,7 @@ CAPABILITIES(/obj/item/storage/belt/detective)
 		/obj/item/clothing/glasses,
 		/obj/item/flashlight,
 		/obj/item/cell/device,
-		/obj/item/reagent_containers/spray/luminol,
+		/obj/item/reagent_containers/spray,
 		/obj/item/sample,
 		/obj/item/forensics/sample_kit/powder,
 		/obj/item/forensics/swab,
@@ -375,7 +375,7 @@ CAPABILITIES(/obj/item/storage/belt/detective)
 		/obj/item/radio/headset,
 		/obj/item/clothing/gloves,
 		/obj/item/taperoll,
-		/obj/item/reagent_containers/spray/pepper,
+		/obj/item/reagent_containers/spray,
 		/obj/item/handcuffs,
 		/obj/item/flash,
 		/obj/item/flame/lighter,
@@ -489,7 +489,7 @@ CAPABILITIES(/obj/item/storage/belt/champion)
 CAPABILITIES(/obj/item/storage/belt/security/tactical)
 	configure(storage(accepts = list(
 		/obj/item/grenade,
-		/obj/item/reagent_containers/spray/pepper,
+		/obj/item/reagent_containers/spray,
 		/obj/item/handcuffs,
 		/obj/item/flash,
 		/obj/item/clothing/glasses,
@@ -827,7 +827,7 @@ CAPABILITIES(/obj/item/storage/belt/hydro)
 		/obj/item/tool/wirecutters,
 		/obj/item/material/minihoe,
 		/obj/item/material/knife/machete/hatchet,
-		/obj/item/reagent_containers/spray/plantbgone,
+		/obj/item/reagent_containers/spray,
 		/obj/item/plantspray,
 		/obj/item/gun/energy/floragun,
 		/obj/item/seeds), max_size = ITEMSIZE_LARGE))

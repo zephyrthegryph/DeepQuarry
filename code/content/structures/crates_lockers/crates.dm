@@ -677,7 +677,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 
 /obj/structure/closet/crate/hydroponics/prespawned
 	starts_with = list(
-		/obj/item/reagent_containers/spray/plantbgone = 2,
+		VARIANT(/obj/item/reagent_containers/spray/plantbgone) = 2,
 		/obj/item/material/minihoe)
 
 //Laundry Cart

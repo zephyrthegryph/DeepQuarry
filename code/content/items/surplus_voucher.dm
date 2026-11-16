@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(3);/obj/item/toy/cultsword,
 					prob(1);/obj/structure/plushie/ian)
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
-	return new path(T)
+	return variant_new(path, T)
 
 /obj/item/surplus_voucher/eng
 	name = "Engineering Surplus Voucher"
@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(2);/obj/item/grenade/chem_grenade/metalfoam,
 					prob(1);VARIANT(/obj/item/toy/figure/engineer))
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
-	return new path(T)
+	return variant_new(path, T)
 
 
 
@@ -101,7 +101,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(4);/obj/item/backup_implanter,
 					prob(2);/obj/item/toy/plushie/borgplushie/medihound)
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
-	return new path(T)
+	return variant_new(path, T)
 
 /obj/item/surplus_voucher/sci
 	name = "Science Surplus Voucher"
@@ -129,7 +129,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(3);/obj/item/storage/box/monkeycubes,
 					prob(1);VARIANT(/obj/item/toy/figure/borg))
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
-	return new path(T)
+	return variant_new(path, T)
 
 /obj/item/surplus_voucher/sec
 	name = "Security Surplus Voucher"
@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(4);/obj/item/storage/box/flare,
 					prob(5);/obj/item/storage/box/donut,
 					prob(4);/obj/item/storage/box/handcuffs,
-					prob(3);/obj/item/reagent_containers/spray/pepper,
+					prob(3);VARIANT(/obj/item/reagent_containers/spray/pepper),
 					prob(3);/obj/item/melee/baton/loaded,
 					prob(2);/obj/item/ammo_magazine/ammo_box/b12g/beanbag,
 					prob(2);/obj/item/ammo_magazine/ammo_box/b12g/stunshell,
@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(2);/obj/item/cell/device/weapon,
 					prob(1);/obj/item/toy/plushie/borgplushie)
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
-	return new path(T)
+	return variant_new(path, T)
 
 /obj/item/surplus_voucher/ser
 	name = "Service Surplus Voucher"
@@ -163,10 +163,10 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(4);/obj/item/reagent_containers/food/drinks/soymilk,
 					prob(4);/obj/item/storage/fancy/egg_box,
 					prob(3);/obj/item/reagent_containers/food/snacks/meat,
-					prob(3);/obj/item/reagent_containers/spray/cleaner,
+					prob(3);VARIANT(/obj/item/reagent_containers/spray/cleaner),
 					prob(2);/obj/item/grenade/chem_grenade/cleaner,
 					prob(1);/obj/item/storage/box/monkeycubes,
-					prob(3);/obj/item/reagent_containers/spray/plantbgone,
+					prob(3);VARIANT(/obj/item/reagent_containers/spray/plantbgone),
 					prob(2);VARIANT(/obj/item/seeds/sunflowerseed),
 					prob(2);VARIANT(/obj/item/seeds/cornseed),
 					prob(2);VARIANT(/obj/item/seeds/berryseed),
@@ -174,4 +174,4 @@ CAPABILITIES(/obj/item/surplus_voucher)
 					prob(2);VARIANT(/obj/item/seeds/orangeseed),
 					prob(1);VARIANT(/obj/item/toy/figure/bartender))
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
-	return new path(T)
+	return variant_new(path, T)

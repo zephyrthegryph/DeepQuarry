@@ -73,7 +73,7 @@
 		BIOGEN_ITEM("Robust Harvest", /obj/item/reagent_containers/glass/bottle/robustharvest, 5, 50),
 		BIOGEN_ITEM("Diethylamine", /obj/item/reagent_containers/glass/bottle/diethylamine, 5, 60),
 		BIOGEN_ITEM("Mutagen", /obj/item/reagent_containers/glass/bottle/mutagen, 15, 50),
-		BIOGEN_ITEM("Plant-B-Gone", /obj/item/reagent_containers/spray/plantbgone, 5, 50),
+		BIOGEN_ITEM("Plant-B-Gone", VARIANT(/obj/item/reagent_containers/spray/plantbgone), 5, 50),
 	)
 	.["Exotic Seeds"] = list(
 		BIOGEN_ITEM("Mystery seed pack", /obj/item/seeds/random, 5, 150),

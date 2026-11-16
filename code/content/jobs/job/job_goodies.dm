@@ -134,7 +134,7 @@
 /datum/alt_title/disposal_sorter
 	mail_goodies = list(
 		/obj/item/clothing/gloves/black = 300,
-		/obj/item/reagent_containers/spray/sterilizine = 300,
+		VARIANT(/obj/item/reagent_containers/spray/sterilizine) = 300,
 		/obj/item/storage/bag/trash = 300,
 		/obj/item/coin/silver = 80,
 		/obj/item/storage/bag/trash/holding = 20
@@ -212,7 +212,7 @@
 		/obj/item/reagent_containers/glass/bottle/eznutrient = 200,
 		/obj/item/reagent_containers/glass/bottle/left4zed = 200,
 		/obj/item/reagent_containers/glass/bottle/robustharvest = 200,
-		/obj/item/reagent_containers/spray/plantbgone = 150,
+		VARIANT(/obj/item/reagent_containers/spray/plantbgone) = 150,
 		/obj/item/reagent_containers/glass/bottle/diethylamine = 100,
 		/obj/item/gun/energy/floragun = 75,
 		/obj/item/grenade/chem_grenade/antiweed = 75
@@ -222,7 +222,7 @@
 /datum/job/janitor
 	mail_goodies = list(
 		/obj/item/storage/box/lights/mixed = 200,
-		/obj/item/reagent_containers/spray/cleaner = 200,
+		VARIANT(/obj/item/reagent_containers/spray/cleaner) = 200,
 		/obj/item/lightreplacer = 150,
 		/obj/item/lightpainter = 150,
 		/obj/item/soap = 100,
@@ -475,7 +475,7 @@
 /datum/job/doctor
 	mail_goodies = list(
 		/obj/item/reagent_containers/syringe/antiviral = 200,
-		/obj/item/reagent_containers/spray/sterilizine = 200,
+		VARIANT(/obj/item/reagent_containers/spray/sterilizine) = 200,
 		/obj/item/storage/pill_bottle/tramadol = 125,
 		/obj/item/storage/pill_bottle/antitox = 125,
 		/obj/item/reagent_containers/blood/OMinus = 125,
@@ -486,7 +486,7 @@
 
 /datum/alt_title/surgeon
 	mail_goodies = list(
-		/obj/item/reagent_containers/spray/sterilizine = 300,
+		VARIANT(/obj/item/reagent_containers/spray/sterilizine) = 300,
 		/obj/item/healthanalyzer/improved = 170,
 		/obj/item/reagent_containers/blood/OMinus = 170,
 		/obj/item/stack/medical/advanced/bruise_pack = 150,
@@ -618,7 +618,7 @@
 	mail_goodies = list(
 		/obj/item/reagent_containers/glass/bottle/mutagen = 350,
 		/obj/item/reagent_containers/glass/bottle/diethylamine = 350,
-		/obj/item/reagent_containers/spray/plantbgone = 150,
+		VARIANT(/obj/item/reagent_containers/spray/plantbgone) = 150,
 		/obj/item/gun/energy/floragun = 100,
 		/obj/item/grenade/chem_grenade/antiweed = 50
 	)

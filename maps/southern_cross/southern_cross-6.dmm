@@ -2476,10 +2476,18 @@
 /obj/item/material/knife/tacknife/combatknife,
 /obj/item/material/knife/tacknife/combatknife,
 /obj/structure/table/reinforced,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /turf/open/fixed/floor{
 	icon_state = "vault";
 	dir = 5
@@ -2818,16 +2826,22 @@
 /obj/item/clothing/suit/bio_suit/janitor,
 /obj/item/clothing/gloves/purple,
 /obj/item/clothing/glasses/science,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = 6;
 	pixel_y = 3
 	},
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = 6;
 	pixel_y = 3
 	},
-/obj/item/reagent_containers/spray/plantbgone,
-/obj/item/reagent_containers/spray/plantbgone,
+/obj/item/reagent_containers/spray{
+	variant = "plantbgone"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "plantbgone"
+	},
 /obj/item/storage/box/lights/mixed,
 /obj/item/storage/box/lights/mixed,
 /obj/item/grenade/chem_grenade/cleaner,
@@ -4040,10 +4054,18 @@
 /obj/item/clothing/accessory/stethoscope,
 /obj/item/packageWrap,
 /obj/item/hand_labeler,
-/obj/item/reagent_containers/spray/cleaner,
-/obj/item/reagent_containers/spray/cleaner,
-/obj/item/reagent_containers/spray/sterilizine,
-/obj/item/reagent_containers/spray/sterilizine,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "sterilizine"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "sterilizine"
+	},
 /obj/item/flashlight/pen,
 /obj/item/flashlight/pen,
 /turf/open/fixed/floor{
@@ -4712,7 +4734,9 @@
 	max_integrity = 1e+006
 	},
 /obj/structure/table/rack,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /turf/simulated/shuttle/plating,
 /area/centcom/evac)
 "akc" = (
@@ -6799,7 +6823,9 @@
 /area/shuttle/administration/centcom)
 "apb" = (
 /obj/item/multitool,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/structure/table/reinforced,
 /turf/simulated/shuttle/floor/red,
 /area/shuttle/administration/centcom)
@@ -7792,8 +7818,12 @@
 /obj/structure/table/standard,
 /obj/item/flash,
 /obj/item/flash,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/item/clothing/glasses/sunglasses/sechud/tactical,
 /obj/item/clothing/glasses/sunglasses,
 /obj/item/clothing/glasses/sunglasses,
@@ -8923,7 +8953,8 @@
 /obj/structure/table/standard,
 /obj/item/surgical/surgicaldrill,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -10937,7 +10968,9 @@
 /obj/structure/closet{
 	name = "custodial"
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/item/reagent_containers/glass/bucket,
 /obj/item/mop,
 /turf/simulated/shuttle/floor/black,
@@ -18762,7 +18795,9 @@
 	name = "custodial"
 	},
 /obj/item/mop,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/item/reagent_containers/glass/bucket,
 /turf/simulated/shuttle/floor/voidcraft/dark,
 /area/syndicate_station/start)

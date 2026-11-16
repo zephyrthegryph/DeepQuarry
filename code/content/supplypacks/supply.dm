@@ -71,7 +71,7 @@
 			/obj/item/clothing/suit/caution = 4,
 			/obj/item/storage/bag/trash,
 			/obj/item/lightreplacer,
-			/obj/item/reagent_containers/spray/cleaner,
+			VARIANT(/obj/item/reagent_containers/spray/cleaner),
 			/obj/item/reagent_containers/glass/rag,
 			/obj/item/grenade/chem_grenade/cleaner = 3,
 			/obj/item/vac_attachment,
