@@ -148,7 +148,9 @@ CAPABILITIES(/datum/tooltip)
 	// doing so leaves the native browser permanently visible.
 	var/hide_revision = _revision
 	if(owner())
-		owner().mob?.tooltip_epoch++
+		var/mob/viewer = owner().mob
+		if(viewer)
+			viewer.tooltip_epoch++
 		log_input("Tooltip: hidden for [key_name(owner())] (revision [_revision], was [_visible ? "shown" : "hidden"][expected_target ? ", closed by [expected_target]" : ""]).")
 	// Hide the native control synchronously. Waiting for a TGUI update here can
 	// leave the old tooltip painted indefinitely when MouseExited is the last
