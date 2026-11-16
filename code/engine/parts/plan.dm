@@ -88,6 +88,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	var/label_state_text
 	/// An explicit OP_PRIORITY_X, or null.
 	var/priority_tier
+	/// The first key of the click order, ahead of the tier: the tier, raised to OP_PRIORITY_PART for an op bound to a tool, item, stack or put_in (op_plan_finish()).
+	var/band = OP_PRIORITY_NORMAL
 	/// list("above"|"below", key), or null.
 	var/list/priority_rel
 	/// What a canonical click_order() puts this op above: list(list(input, key pattern, ...), ...), nearest first; or null.
@@ -481,17 +483,22 @@ GLOBAL_VAR_INIT(op_plans_built, 0)
 			P.topic_key = B.args["key"]
 			P.topic_namespace = B.args["namespace"]
 	// Tier: an explicit priority, else the highest tier the parts yield.
+	var/part_floor = OP_PRIORITY_NORMAL
+	for(var/datum/entry/part/bind/B as anything in P.bindings)
+		part_floor = max(part_floor, B.yielded_tier())
+	for(var/datum/entry/part/effect/F as anything in P.effects)
+		part_floor = max(part_floor, F.yielded_tier())
 	if(!isnull(P.priority_tier))
 		P.tier = P.priority_tier
 	else
 		var/tier = OP_PRIORITY_NORMAL
 		if(P.hostile)
 			tier = max(tier, OP_PRIORITY_ATTACK)
-		for(var/datum/entry/part/bind/B as anything in P.bindings)
-			tier = max(tier, B.yielded_tier())
-		for(var/datum/entry/part/effect/F as anything in P.effects)
-			tier = max(tier, F.yielded_tier())
-		P.tier = tier
+		P.tier = max(tier, part_floor)
+	// Band: the order's first key, ahead of the tier. What a tool, item, stack or put_in yields (OP_PRIORITY_PART) is a floor no pin goes under: a legacy
+	// OP_PRIORITY_DEFAULT - 1 on a wrench op would let the holder's own hand() op answer a click with the tool in hand, and the more specific held-item op
+	// always wins (final_api.html section 1 "Precedence"). The pin still orders such ops among themselves (the tier is the second key).
+	P.band = max(P.tier, part_floor)
 	op_derive_claims(P)
 	if(length(P.captured) && !length(P.steps))
 		op_problem(T, P, report, RULE_OP_PART, "captures() on an op with no wait(), asks() or confirms()", "captures() snapshots fields when the op first suspends at a workflow step: an op without one has nothing to capture")

@@ -26,7 +26,8 @@ CAPABILITIES(/obj/machinery/optable)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))
 	op("optable_interaction_hand", hand(), ungated(), needs(req_bolted()), then(PROC_REF(optable_interaction_hand)))
 	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), needs(req_bolted()), then(PROC_REF(optable_interaction_drag)))
-	op("optable_interaction_item", item(/obj/item), needs(req_bolted()), then(PROC_REF(optable_interaction_item)))
+	// The old attackby stopped every item here: the last resort, so a tool the machine answers itself (a wrench, a screwdriver) is not swallowed by it.
+	op("optable_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req_bolted()), then(PROC_REF(optable_interaction_item)))
 	op("optable_climb_onto", menu(), label("Climb On Table"), needs(req_bolted()), then(PROC_REF(optable_climb_onto)))
 	ref_one(nameof(victim), /mob/living/carbon/human)
 
