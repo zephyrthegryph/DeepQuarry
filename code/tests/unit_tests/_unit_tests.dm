@@ -476,6 +476,7 @@
 #include "dq_vessel_leaching_tests.dm"
 #include "dq_tabletop_machine_tests.dm"
 #include "dq_tabletop_portable_tests.dm"
+#include "dq_tabletop_clicks.dm"
 #include "dq_preferences_tests.dm"
 #include "dq_looks_preview_tests.dm"
 #include "dq_spawnpoint_audit_tests.dm"

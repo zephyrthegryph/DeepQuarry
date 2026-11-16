@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "A wrench now bolts and unbolts a hot plate, a condenser and the other table-top machines; their own controls no longer answer the wrench first"
+  - bugfix: "Shift-clicking (and alt-clicking) an item shown in an open container's storage bar examines it instead of using it"

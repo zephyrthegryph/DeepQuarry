@@ -783,8 +783,13 @@ CAPABILITIES(/atom/movable/storage_slot)
 /// The native Click's actor, handed over by the engine (click_on()): clicking a slot is clicking the stored item, through the clicker's input inbox.
 /atom/movable/storage_slot/proc/slot_click(datum/act/input/A)
 	var/obj/item/I = held_item
-	if(I)
-		input_submit(new /datum/input_event/click(A.actor, slot_click_target(A.actor, I)))
+	if(!I)
+		log_input("Input: [key_name(A.actor)] clicked a storage slot ([src]) that holds nothing: refused.")
+		return TRUE
+	// The click's own params go on with it: a shift click on a stored item is an examine, an alt click its alternate, not a plain use.
+	if(GLOB.fab_trace)
+		log_input("Input: [key_name(A.actor)] clicked the storage slot of [I] ([I.type]) in [I.loc] with params '[A.params]'.")
+	input_submit(new /datum/input_event/click(A.actor, slot_click_target(A.actor, I), null, null, A.params))
 	return TRUE
 
 /// What a click on this slot lands on: with another item in hand, the bag (the hand's item goes into it); with an empty hand, the stored item.
