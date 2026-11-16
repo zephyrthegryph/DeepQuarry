@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - server: "The profiler now logs a NATIVE_MEMORY line each sample (private bytes, address space left, largest free block, Rust heap) so a native out-of-memory abort shows its lead-up"
