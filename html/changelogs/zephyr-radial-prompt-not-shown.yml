@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Radial menus (hot plate, bells, appliances, tools) show again; one that cannot be shown now says so and cancels."

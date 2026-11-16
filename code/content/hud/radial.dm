@@ -328,18 +328,40 @@ CAPABILITIES(/datum/radial_menu)
 		set_current_page(WRAP(current_page + 1,1,pages+1))
 		update_screen_objects()
 
+/// Builds the blank image the ring hangs on, with every slice and the centre button in its vis_contents. Returns the number of things it shows
+/// (a ring that shows none is invisible to the client), 0 when there is no anchor.
+/datum/radial_menu/proc/build_holder(offset_x = 0, offset_y = 0)
+	if(!anchor())
+		return 0
+	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor(),icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
+	menu_holder.plane = PLANE_PLAYER_HUD_ABOVE
+	menu_holder.appearance_flags |= KEEP_APART|RESET_ALPHA|RESET_COLOR|RESET_TRANSFORM
+	return vis_image_add(menu_holder, elements + close_button)
+
+/// Shows the ring to `M`. Returns TRUE when the client was given the ring; a ring that could not be shown says why in the world log.
 /datum/radial_menu/proc/show_to(mob/M, offset_x = 0, offset_y = 0)
 	if(current_user())
 		hide()
 	if(!M.client || !anchor())
-		return
+		log_world("RADIAL: not shown to [key_name(M)]: [M.client ? "no anchor" : "no client"]")
+		unshown(M)
+		return FALSE
 	rel_set(src, nameof(current_user), M.client)
-	//Blank
-	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor(),icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
-	menu_holder.plane = PLANE_PLAYER_HUD_ABOVE
-	menu_holder.appearance_flags |= KEEP_APART|RESET_ALPHA|RESET_COLOR|RESET_TRANSFORM
-	vis_add(menu_holder, elements + close_button)
+	var/expected = length(elements) + 1
+	var/shown = build_holder(offset_x, offset_y)
+	if(shown < expected)
+		log_world("RADIAL: not shown to [key_name(M)]: its image holds [shown] of [expected] parts")
+		unshown(M)
+		return FALSE
 	current_user().images += menu_holder
+	log_world("RADIAL: shown to [key_name(M)] on [anchor()]: [shown] parts, [length(choices)] choices")
+	return TRUE
+
+/// A ring nobody can see must not leave its question waiting: the player is told and the ring closes (a prompt ring cancels its question) on the next tick.
+/datum/radial_menu/proc/unshown(mob/M)
+	if(M?.client)
+		to_chat(M, span_warning("The menu could not be shown."))
+	after(src, 1 TICK, TYPE_PROC_REF(/datum/radial_menu, close_menu), key = "radial_unshown")
 
 /datum/radial_menu/proc/hide()
 	if(current_user())

@@ -477,6 +477,7 @@
 #include "dq_tabletop_machine_tests.dm"
 #include "dq_tabletop_portable_tests.dm"
 #include "dq_tabletop_clicks.dm"
+#include "dq_radial_prompt_shown.dm"
 #include "dq_preferences_tests.dm"
 #include "dq_looks_preview_tests.dm"
 #include "dq_spawnpoint_audit_tests.dm"

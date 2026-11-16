@@ -16,6 +16,22 @@
 	else if(isturf(holder))
 		var/turf/T = holder
 		T.vis_contents += thing
+	else
+		// an /image is not a movable or a turf: it has its own verb, vis_image_add(). Dropping the write silently hid the radial ring from every client.
+		log_world("VIS: vis_add() on [holder] ([holder.type]) is neither a movable nor a turf, nothing was shown; an image takes vis_image_add()")
+
+/// Shows `thing` (an atom, or a list of them) through the image `holder`'s vis_contents. Returns how many things the image shows afterwards.
+/proc/vis_image_add(image/holder, thing)
+	if(!holder || isnull(thing))
+		return 0
+	if(islist(thing))
+		var/list/things = thing
+		for(var/atom/movable/shown as anything in things)
+			if(!datum_deleted(shown))
+				holder.vis_contents += shown
+	else if(!datum_deleted(thing))
+		holder.vis_contents += thing
+	return length(holder.vis_contents)
 
 /// Stops showing `thing` (an atom, or a list) through `holder`.
 /proc/vis_remove(atom/holder, thing)
