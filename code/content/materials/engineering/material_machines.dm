@@ -175,7 +175,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return null
 	if(firing)
 		return "the furnace is still firing"
-	if(!LAZYLEN(feedstock) && !polymer_recipe_for(src, TRUE))
+	if(!LAZYLEN(feedstock) && !polymer_recipe_loaded(src))
 		return "the furnace is empty; load material sheets, or the units of a polymer, before firing it"
 	if(!operable())
 		return "the furnace has no power or requires repairs"

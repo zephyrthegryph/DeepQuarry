@@ -67,9 +67,8 @@ GLOBAL_LIST_INIT(polymer_recipes, build_polymer_recipes())
 		table[recipe.id] = recipe
 	return table
 
-/// How many sheets of the recipe the furnace holds the makings of (0: it does not fit). `skip_atmosphere` leaves the chamber's gas out of it (a requirement may not read it:
-/// the gas is not tracked; the firing reads it).
-/datum/polymer_recipe/proc/sheets_possible(obj/machinery/material_furnace/furnace, skip_atmosphere = FALSE)
+/// How many sheets of the recipe the furnace holds the makings of in its medium and its charge (0: it does not fit). It reads no gas: a requirement asks it.
+/datum/polymer_recipe/proc/sheets_possible(obj/machinery/material_furnace/furnace)
 	var/possible = POLYMER_SHEETS_PER_FIRING
 	for(var/reagent_id in inputs)
 		possible = min(possible, round(furnace.reagents.get_reagent_amount(reagent_id) / inputs[reagent_id]))
@@ -79,20 +78,35 @@ GLOBAL_LIST_INIT(polymer_recipes, build_polymer_recipes())
 			if(stock.material?.name in sheet_sources)
 				have += stock.get_amount()
 		possible = min(possible, have)
-	if(atmosphere && !skip_atmosphere)
-		var/datum/gas_mixture/air = furnace.chamber_air
-		if(air.get_moles(atmosphere) < MATERIAL_ROAST_OXYGEN || air.get_moles(/datum/gas/oxygen) >= 1)
-			return 0
 	return max(possible, 0)
 
-/// The recipe the furnace holds the makings of now, or null.
-/proc/polymer_recipe_for(obj/machinery/material_furnace/furnace, skip_atmosphere = FALSE)
+/// Does the furnace's chamber hold the atmosphere the recipe needs (the gas it is full of, and no oxygen to burn in)? Read when the furnace fires, never by a requirement
+/// (the chamber's gas is not tracked).
+/datum/polymer_recipe/proc/atmosphere_fits(obj/machinery/material_furnace/furnace)
+	if(!atmosphere)
+		return TRUE
+	var/datum/gas_mixture/air = furnace.chamber_air
+	return air.get_moles(atmosphere) >= MATERIAL_ROAST_OXYGEN && air.get_moles(/datum/gas/oxygen) < 1
+
+/// The recipe whose makings the furnace holds in its medium and charge, whatever its chamber holds, or null (what a requirement asks: can it be fired with no sheets in it).
+/proc/polymer_recipe_loaded(obj/machinery/material_furnace/furnace)
 	RETURN_TYPE(/datum/polymer_recipe)
 	if(!furnace.reagents?.total_volume && !LAZYLEN(furnace.feedstock))
 		return null
 	for(var/recipe_id in GLOB.polymer_recipes)
 		var/datum/polymer_recipe/recipe = GLOB.polymer_recipes[recipe_id]
-		if(recipe.sheets_possible(furnace, skip_atmosphere) > 0)
+		if(recipe.sheets_possible(furnace) > 0)
+			return recipe
+	return null
+
+/// The recipe the furnace makes now: the makings are in it and its chamber is right, or null.
+/proc/polymer_recipe_for(obj/machinery/material_furnace/furnace)
+	RETURN_TYPE(/datum/polymer_recipe)
+	if(!furnace.reagents?.total_volume && !LAZYLEN(furnace.feedstock))
+		return null
+	for(var/recipe_id in GLOB.polymer_recipes)
+		var/datum/polymer_recipe/recipe = GLOB.polymer_recipes[recipe_id]
+		if(recipe.sheets_possible(furnace) > 0 && recipe.atmosphere_fits(furnace))
 			return recipe
 	return null
 
