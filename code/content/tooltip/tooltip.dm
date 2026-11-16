@@ -16,6 +16,18 @@
 // CSS pointer-events. DM here only pushes the content/data and toggles hide;
 // React owns is-visible (it shows the element after sizing it).
 
+/// Is a show that began at `epoch` out of date, the tooltip having been closed since the mouse entered? (null: a show that did not wait.)
+/proc/tooltip_show_stale(datum/tooltip/T, epoch)
+	return !isnull(epoch) && epoch != T.epoch
+
+/// `user`'s client's tooltip, made on first need (not at login: the window it opens is nothing the first frame needs, JOIN_TIMING_LOGIN). Null without a client.
+/proc/tooltip_of(mob/user) as /datum/tooltip
+	if(!istype(user) || !user.client)
+		return null
+	if(!user.client.tooltips)
+		rel_set(user.client, nameof(user.client.tooltips), new /datum/tooltip(user.client))
+	return user.client.tooltips
+
 /datum/tooltip
 	var/tmp/client/owner
 	var/control = "mapwindow.tooltip"
@@ -37,6 +49,9 @@
 	// Monotonically identifies a hover. It prevents a queued MouseExited from an
 	// older atom from hiding a newer tooltip that reused the same browser.
 	var/_revision = 0
+	/// Counts every close. A show that waited (an item's delayed one) carries the count it saw when the mouse entered and is refused if a close has
+	/// happened since: an exit that beats its show leaves it hidden.
+	var/epoch = 0
 
 CAPABILITIES(/datum/tooltip)
 	op("dismiss", ui_act(), then(PROC_REF(ui_act_dismiss)))
@@ -93,12 +108,15 @@ CAPABILITIES(/datum/tooltip)
 
 	if(!isnull(last_target()))
 		unobserve(last_target(), /datum/notice/qdeleting, src)
+		unobserve(last_target(), /datum/notice/moved, src)
 	observe(thing, /datum/notice/qdeleting, src, then(PROC_REF(on_target_qdel)))
+	observe(thing, /datum/notice/moved, src, then(PROC_REF(on_target_moved)))
 	rel_set(src, nameof(last_target), thing)
 	set__revision(_revision + 1)
 	queueHide = FALSE
 
 	showing = 1
+	log_input("Tooltip: shown for [key_name(owner())] on [thing] ([thing.type]), revision [_revision].")
 
 	if(title && content)
 		title = "<h1>[title]</h1>"
@@ -136,6 +154,9 @@ CAPABILITIES(/datum/tooltip)
 	// than MouseEntered used. Do not reject dismissal based on object identity;
 	// doing so leaves the native browser permanently visible.
 	var/hide_revision = _revision
+	epoch++
+	if(owner())
+		log_input("Tooltip: hidden for [key_name(owner())] (revision [_revision], was [_visible ? "shown" : "hidden"][expected_target ? ", closed by [expected_target]" : ""]).")
 	// Hide the native control synchronously. Waiting for a TGUI update here can
 	// leave the old tooltip painted indefinitely when MouseExited is the last
 	// mouse event received.
@@ -157,6 +178,16 @@ CAPABILITIES(/datum/tooltip)
 	hide()
 	rel_clear(src, nameof(last_target))
 
+/// The hovered atom moved: the popup was placed at the cursor beside where it was, so it closes.
+/datum/tooltip/proc/on_target_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	hide()
+
+/// The client's view changed (its eye, its mob): the cursor's tile is no longer the one the popup was placed for.
+/client/proc/hide_tooltip()
+	if(tooltips)
+		tooltips.hide()
+
 /datum/tooltip/proc/do_hide(hide_revision)
 	if(hide_revision != _revision)
 		queueHide = FALSE
@@ -166,6 +197,7 @@ CAPABILITIES(/datum/tooltip)
 		return
 	if(last_target())
 		unobserve(last_target(), /datum/notice/qdeleting, src)
+		unobserve(last_target(), /datum/notice/moved, src)
 	rel_clear(src, nameof(last_target))
 	set__visible(FALSE)
 	SStgui.update_uis(src)
@@ -183,25 +215,25 @@ CAPABILITIES(/datum/tooltip)
 //Open a tooltip for user, at a location based on params
 //Theme is a CSS class in Tooltip.tsx, by default this wrapper chooses a CSS class based on the user's UI_style (Midnight, Plasmafire, Retro, etc)
 //Includes sanity checks
-/proc/openToolTip(mob/user = null, atom/movable/tip_src = null, params = null, title = "", content = "", theme = "")
-	if(!istype(user) || !user.client)
+/// `epoch` is the client's tooltip_epoch when the mouse entered, for a show that waited: refused when the tooltip was closed since.
+/proc/openToolTip(mob/user = null, atom/movable/tip_src = null, params = null, title = "", content = "", theme = "", epoch = null)
+	var/datum/tooltip/T = tooltip_of(user)
+	if(!T)
 		return
-	// Made on the first tooltip, not at login: the window it opens is nothing the first frame needs (JOIN_TIMING_LOGIN).
-	if(!user.client.tooltips)
-		rel_set(user.client, nameof(user.client.tooltips), new /datum/tooltip(user.client))
+	if(tooltip_show_stale(T, epoch))
+		log_input("Tooltip: a delayed show for [key_name(user)] on [tip_src] was dropped: the tooltip was closed since the mouse entered.")
+		return
 	var/ui_style = GLOB.all_tooltip_styles[1]
 	if(!theme && ui_style)
 		theme = lowertext(ui_style)
 	if(!theme)
 		theme = "midnight"
-	user.client.tooltips.show(tip_src, params, title, content, theme)
+	T.show(tip_src, params, title, content, theme)
 
 //Arbitrarily close a user's tooltip
 //Includes sanity checks.
 /proc/closeToolTip(mob/user, atom/tip_src)
-	if(!istype(user) || !user.client?.tooltips)
-		return
-	user.client.tooltips.hide(tip_src)
+	tooltip_of(user)?.hide(tip_src)
 
 
 /// The last_target this refers to (a relation view: null once that is deleted).

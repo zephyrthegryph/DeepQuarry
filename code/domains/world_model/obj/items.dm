@@ -853,13 +853,13 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 		if(QDELETED(src))
 			return
 		if(((src in user) || isstorage(loc)))
-			after(src, 0.5 SECONDS, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user))
+			after(src, ITEM_TOOLTIP_DELAY, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user, tooltip_of(user)?.epoch))
 	else
 		cancel_after(src, "tip_timer")
 		closeToolTip(user, src)
 
-/obj/item/proc/openTip(location, control, params, user)
-	openToolTip(user, src, params, title = name, content = desc)
+/obj/item/proc/openTip(location, control, params, user, epoch)
+	openToolTip(user, src, params, title = name, content = desc, epoch = epoch)
 
 // These procs are for RPEDs and part ratings. The concept for this was borrowed from /vg/station.
 // Gets the rating of the item, used in stuff like machine construction.

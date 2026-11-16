@@ -1048,6 +1048,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	if(new_eye == eye)
 		return
 	eye = new_eye
+	hide_tooltip()
 	SSproximity.eye_update(src)
 
 /mob/proc/is_remote_viewing()

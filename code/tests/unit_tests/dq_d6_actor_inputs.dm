@@ -127,7 +127,7 @@
 	var/tip_actor_id
 	var/tip_calls = 0
 
-/obj/item/dq_d6_tip_probe/openTip(location, control, params, user)
+/obj/item/dq_d6_tip_probe/openTip(location, control, params, user, epoch)
 	tip_actor_id = REF(user)
 	tip_calls++
 
