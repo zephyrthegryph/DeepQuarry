@@ -1,7 +1,7 @@
 // Boiling (the boiling points: code/content/reagents/reagents/boiling_points.dm).
 //
 // A holder hotter than a reagent's boiling point loses that reagent, gradually: BOIL_RATE_PER_KELVIN units a second for every kelvin above the point (never
-// less than BOIL_RATE_MINIMUM while above it). Each unit that boils carries BOIL_LATENT_HEAT joules out of the container, so a container held just above a
+// less than BOIL_RATE_MINIMUM while above it); a dissolved gas (a point under 0 C) leaves at BOIL_RATE_DISSOLVED_GAS a second whatever the gap. Each unit that boils carries BOIL_LATENT_HEAT joules out of the container, so a container held just above a
 // boiling point sits near it while the reagent lasts. Nothing in the world boils by itself: a heater asks for it (boil_step(): the hot plate, the bunsen burner).
 //
 // The vapour is not a gas and never reaches the air: boil_step() returns it as a list, and the caller either deletes it (the default: it is gone) or hands it to
@@ -20,7 +20,13 @@
 		var/point = R.boiling_point_k()
 		if(temperature <= point)
 			continue
-		var/units = min(R.volume, max(BOIL_RATE_MINIMUM, (temperature - point) * BOIL_RATE_PER_KELVIN) * seconds)
+		var/units
+		if(point < T0C)
+			// A gas held in the liquid (hydrogen, oxygen, nitrogen, chlorine) is far past its point at any lab temperature: it leaves slowly, not at the rate of the gap, so a
+			// reagent dosed into a warming beaker is still there when the beaker reaches the band that uses it.
+			units = min(R.volume, BOIL_RATE_DISSOLVED_GAS * seconds)
+		else
+			units = min(R.volume, max(BOIL_RATE_MINIMUM, (temperature - point) * BOIL_RATE_PER_KELVIN) * seconds)
 		if(units <= 0)
 			continue
 		vapour[R.id] = list(units, R.get_data())

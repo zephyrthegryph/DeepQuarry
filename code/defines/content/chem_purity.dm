@@ -85,6 +85,8 @@
 /// Units per second boiled off per kelvin above the boiling point, never less than the minimum rate (units per second) while above it.
 #define BOIL_RATE_PER_KELVIN 0.08
 #define BOIL_RATE_MINIMUM 0.2
+/// Units per second a dissolved gas (a boiling point under 0 C) leaves a heated container, whatever the gap to its point.
+#define BOIL_RATE_DISSOLVED_GAS 0.05
 /// Joules a unit of boiled-off reagent carries away from the container.
 #define BOIL_LATENT_HEAT 1800
 
