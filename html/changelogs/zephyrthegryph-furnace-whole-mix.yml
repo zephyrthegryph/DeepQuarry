@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscdel: "The Industrial Chemical Furnace no longer picks one chemical; it sinters the whole mix, and whatever has no sheet form is burnt off"

@@ -114,6 +114,10 @@
 	TEST_ASSERT_EQUAL(vat.reagents.total_volume, 0, "the vat empties as a whole")
 	var/obj/item/mecha_parts/mecha_equipment/tool/sleeper/mecha_sleeper = allocate(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, test_floor())
 	TEST_ASSERT(!hascall(mecha_sleeper, "inject_reagent"), "the mecha sleeper has no per-reagent injection from the gun's stock")
+	var/obj/machinery/reagent_refinery/furnace/furnace = allocate(/obj/machinery/reagent_refinery/furnace, test_floor())
+	TEST_ASSERT(!hascall(furnace, "interaction_set_filter") && !hascall(furnace, "filter_choice_table"), "the furnace has no reagent pick")
+	TEST_ASSERT(!("filter_reagent_id" in furnace.vars), "and holds no chosen reagent")
+	TEST_ASSERT(!hascall(furnace, "interaction_use") && !hascall(furnace, "set_filter_choices"), "and no op handler to choose one")
 	TEST_ASSERT(isnull(text2path("/obj/machinery/smart_centrifuge")), "the centrifuge that isolated each reagent is gone")
 	TEST_ASSERT(isnull(text2path("/obj/machinery/reagent_refinery/filter")), "the refinery filter that passed one chosen reagent is gone")
 	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human, test_floor())
@@ -126,3 +130,24 @@
 	TEST_ASSERT(abs(mixed.reagents.get_reagent_amount(REAGENT_ID_PHORON) - 10) < 0.001, "and does not strip out the part it could store")
 
 #endif
+
+/// The furnace takes the whole mix: what has a sheet form becomes sheets in proportion, the rest is spent, and nothing is left in the tank.
+/datum/unit_test/dq_furnace_sinters_whole_mix
+	boot_needs = list()
+
+/datum/unit_test/dq_furnace_sinters_whole_mix/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/reagent_refinery/furnace/F = allocate(/obj/machinery/reagent_refinery/furnace, T)
+	F.reagents.add_reagent(REAGENT_ID_IRON, 40, safety = 1)
+	F.reagents.add_reagent(REAGENT_ID_COPPER, 20, safety = 1)
+	F.reagents.add_reagent(REAGENT_ID_CONTAMINANT_SULFUR, 10, safety = 1)
+	F.reagents.add_reagent(REAGENT_ID_DEXALIN, 15, safety = 1)
+	TEST_ASSERT(!GLOB.reagent_sheets[REAGENT_ID_DEXALIN] && !GLOB.reagent_sheets[REAGENT_ID_CONTAMINANT_SULFUR], "the fixture's spent reagents have no sheet form")
+	var/list/made = F.sinter_mix()
+	TEST_ASSERT_EQUAL(made[MAT_IRON], 40 / REAGENTS_PER_SHEET, "iron makes sheets by its own share")
+	TEST_ASSERT_EQUAL(made[MAT_COPPER], 20 / REAGENTS_PER_SHEET, "copper makes sheets by its own share")
+	TEST_ASSERT_EQUAL(made.len, 2, "the reagents with no sheet form make none")
+	TEST_ASSERT_EQUAL(F.reagents.total_volume, 0, "the whole input is consumed")
+	TEST_ASSERT(!length(F.sinter_mix()), "an empty tank makes nothing")
+	for(var/obj/item/stack/material/S in get_step(T, turn(F.dir, 90)))
+		qdel(S)

@@ -1,13 +1,12 @@
 /obj/machinery/reagent_refinery/furnace
 	name = "Industrial Chemical Furnace"
-	desc = "Extracts specific chemicals, compressing and heating them until they solidify."
+	desc = "Compresses and heats the whole mix it is fed. Whatever has a sheet form solidifies into sheets; the rest is burnt off."
 	icon_state = "furnace_l"
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	circuit = VARIANT(/obj/item/circuitboard/industrial_reagent_furnace)
 	VAR_PROTECTED/filter_side = -1 // L
-	VAR_PRIVATE/filter_reagent_id = ""
 
 	default_max_vol = 60
 	VAR_PRIVATE/obj/item/reagent_containers/beaker = null // Safer than retooling all of reagent code to support a second reagent var inside this one object
@@ -23,8 +22,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 	without("reagent_refinery_set_transfer_amount")
 	climb()
 	owns_one(nameof(beaker), starts = /obj/item/reagent_containers/glass/beaker/bluespace)
-	op("furnace_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(set_filter_question)), "title" = "Chemical Select", "choices" = computed(PROC_REF(set_filter_choices)), "timeout" = 0), step = "chemical"), then(PROC_REF(interaction_use)))
-	op("furnace_set_filter", menu(), label("Set Sintering Chemical"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(set_filter_question)), "title" = "Chemical Select", "choices" = computed(PROC_REF(set_filter_choices)), "timeout" = 0), step = "chemical"), then(PROC_REF(interaction_set_filter)))
 	op("furnace_flip", menu(), label("Flip Furnace Direction"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_flip)))
 
 
@@ -36,35 +33,41 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 	if(!operable())
 		return
 
-	// extract and filter side products
-	if(filter_reagent_id == "")
-		return // MUST BE SET
-	if(amount_per_transfer_from_this <= 0)
-		return
-	if(filter_reagent_id != "-1") // disabled check, and "all" check
-		var/check_dir = 0
-		if(filter_side == 1)
-			check_dir = turn(src.dir, 270)
+	sinter_mix()
+
+/// Takes the whole mix in the tank. Every reagent with a sheet form goes into the mold and becomes sheets in proportion to its own amount
+/// (REAGENTS_PER_SHEET each, the remainder waits in the mold for the next step); everything with no sheet form, contaminants included, is spent and gone.
+/// Returns a list of material name -> sheets made.
+/obj/machinery/reagent_refinery/furnace/proc/sinter_mix()
+	var/list/made = list()
+	if(!reagents || reagents.total_volume <= 0)
+		return made
+	var/check_dir = filter_side == 1 ? turn(src.dir, 270) : turn(src.dir, 90)
+	var/turf/spawn_t = get_step(get_turf(src), check_dir)
+
+	// Everything in the tank is processed: the sinterable part moves to the mold, the rest is spent.
+	var/list/taken = list()
+	var/list/spent = list()
+	var/list/ids = list()
+	for(var/datum/reagent/R in reagents.reagent_list)
+		ids[R.id] = R.volume
+	for(var/id in ids)
+		var/amount = ids[id]
+		if(GLOB.reagent_sheets[id])
+			reagents.trans_id_to(beaker, id, amount)
+			taken[id] = amount
 		else
-			check_dir = turn(src.dir, 90)
-		var/turf/spawn_t = get_step(get_turf(src),check_dir)
+			reagents.remove_reagent(id, amount)
+			spent[id] = amount
 
-		// Suck out the reagent we're looking for into temporary holding
-		if(reagents.total_volume > 0)
-			for(var/datum/reagent/R in reagents.reagent_list)
-				if(R && R.id == filter_reagent_id)
-					reagents.trans_id_to(beaker, R.id, R.volume)
-
-		// while loop is sane here because the beaker should always be cleaned when changing filter type,
-		// and it should never end up mixed with more than 1 type of reagent
-		// For sanity, and if admemes break something, I will do a clearing anyway....
-		if(beaker.reagents.reagent_list.len > 1)
-			beaker.reagents.clear_reagents() // Highlander rules
-		var/played_sound = FALSE
-		while(beaker.reagents.total_volume >= REAGENTS_PER_SHEET) // at least enough reagents to bother checking
-			var/datum/reagent/R = beaker.reagents.reagent_list[1]
-			var/mat_id = GLOB.reagent_sheets[R.id]
-			beaker.reagents.remove_reagent(R.id,REAGENTS_PER_SHEET)
+	var/played_sound = FALSE
+	var/list/ready = list()
+	for(var/datum/reagent/R in beaker.reagents.reagent_list)
+		ready += R.id
+	for(var/id in ready)
+		var/mat_id = GLOB.reagent_sheets[id]
+		while(beaker.reagents.get_reagent_amount(id) >= REAGENTS_PER_SHEET)
+			beaker.reagents.remove_reagent(id, REAGENTS_PER_SHEET)
 			switch(mat_id)
 				if(REFINERY_SINTERING_SMOKE)
 					// Smoke em out sometimes
@@ -78,6 +81,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 						smoke.attach(src)
 						smoke.set_up(10, 0, get_turf(src), 300)
 						smoke.start()
+					made[mat_id] = (made[mat_id] || 0) + 1
 				if(REFINERY_SINTERING_EXPLODE)
 					// Detonate
 					if(!played_sound)
@@ -85,6 +89,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 						played_sound = TRUE
 					explosion(loc, 0, 1, 2, 4)
 					visible_message("\The [src.name] detonates!")
+					made[mat_id] = (made[mat_id] || 0) + 1
 				if(REFINERY_SINTERING_SPIDERS)
 					// Spawns some spiders
 					if(!played_sound)
@@ -97,6 +102,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 						i = rand(1,2)
 						while(i-- > 0)
 							new /obj/effect/spider/spiderling/varied(spawn_t)
+					made[mat_id] = (made[mat_id] || 0) + 1
 				else
 					var/datum/material/printing = get_material_by_name(mat_id)
 					if(printing)
@@ -105,13 +111,26 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 							play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
 							played_sound = TRUE
 						var/obj/item/stack/material/S = printing.place_sheet(src, 1) // One at a time
-						S.forceMove(spawn_t) // autostack
 						if(!istype(S))
 							warning("[src] tried to eject material '[printing]', which didn't generate a proper stack when asked!")
-	// dump reagents to next refinery machine if all of the target reagent has been filtered out
-	var/obj/machinery/reagent_refinery/target = locate_within(get_step(get_turf(src),dir), /obj/machinery/reagent_refinery)
-	if(target && reagents.total_volume > 0)
-		transfer_tank( reagents, target, dir)
+							continue
+						S.forceMove(spawn_t) // autostack
+						made[mat_id] = (made[mat_id] || 0) + 1
+
+	var/list/in_text = list()
+	for(var/id in ids)
+		in_text += "[id] [ids[id]]u"
+	var/list/sheet_text = list()
+	for(var/id in made)
+		sheet_text += "[id] x[made[id]]"
+	var/list/spent_text = list()
+	for(var/id in spent)
+		spent_text += "[id] [spent[id]]u"
+	var/list/mold_text = list()
+	for(var/datum/reagent/R in beaker.reagents.reagent_list)
+		mold_text += "[R.id] [R.volume]u"
+	log_world("CHEM: furnace [REF(src)] sintered [jointext(in_text, ", ")]; sheets [jointext(sheet_text, ", ") || "none"]; spent [jointext(spent_text, ", ") || "none"]; left in the mold [jointext(mold_text, ", ") || "none"]")
+	return made
 
 /// The furnace sintering to its side, with what it holds (its own, else its beaker's) shown in the colour of it. The beaker is watched: its level redraws the furnace.
 /obj/machinery/reagent_refinery/furnace/draw(datum/look/look)
@@ -122,68 +141,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 		look.overlay(look_overlay_image(icon, "[drawn_state]_r", color = reagents.get_color(), dir = dir))
 	else if(beaker && beaker.reagents && beaker.reagents.total_volume > 0)
 		look.overlay(look_overlay_image(icon, "[drawn_state]_r", color = beaker.reagents.get_color(), dir = dir))
-
-/// The touch sets the sintering chemical.
-/obj/machinery/reagent_refinery/furnace/proc/interaction_use(datum/act/op/A)
-	return interaction_set_filter(A)
-
-/// What the question says the furnace is doing now.
-/obj/machinery/reagent_refinery/furnace/proc/filter_description()
-	var/filter = "disabled"
-	if(filter_reagent_id == "-1")
-		filter = "sintering out nothing"
-	else if(filter_reagent_id != "")
-		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
-		filter = "sintering [R.name]"
-	return filter
-
-/obj/machinery/reagent_refinery/furnace/proc/set_filter_question(datum/act/op/A)
-	return "Select chemical to sinter. It is currently [filter_description()]."
-
-/// The names of what can be selected, in the order of the sintering table.
-/obj/machinery/reagent_refinery/furnace/proc/set_filter_choices(datum/act/op/A)
-	var/list/names = list()
-	for(var/choice in filter_choice_table())
-		names += choice
-	return names
-
-/// Name -> reagent id of what can be selected: the reagents currently inside that sinter into something.
-/obj/machinery/reagent_refinery/furnace/proc/filter_choice_table()
-	// Get a list of reagents currently inside!
-	var/list/tgui_list = list("Disabled" = "","Bypass" = "-1")
-	for(var/datum/reagent/R in reagents.reagent_list)
-		if(R)
-			var/mat_id = GLOB.reagent_sheets[R.id]
-			if(!mat_id) // No reaction
-				continue
-			var/id_string = "[R.name] - ???"
-			switch(mat_id)
-				if(REFINERY_SINTERING_SMOKE)
-					id_string = "[R.name] - DANGER"
-				if(REFINERY_SINTERING_EXPLODE)
-					id_string = "[R.name] - DANGER"
-				if(REFINERY_SINTERING_SPIDERS)
-					id_string = "[R.name] - DANGER"
-				else
-					var/datum/material/C = get_material_by_name(mat_id)
-					if(C)
-						id_string = "[R.name] - [C.display_name] [C.sheet_plural_name]"
-			tgui_list[id_string] = R.id
-	return tgui_list
-
-/obj/machinery/reagent_refinery/furnace/proc/interaction_set_filter(datum/act/op/A)
-	var/mob/user = A.actor
-	if (user.stat || user.restrained())
-		return OP_OK
-
-	var/select = A.step_value("chemical")
-	var/list/tgui_list = filter_choice_table()
-
-	// Select if possible
-	if(select && select != "")
-		filter_reagent_id = tgui_list[select]
-		beaker.reagents.clear_reagents()
-	return OP_OK
 
 /obj/machinery/reagent_refinery/furnace/proc/interaction_flip(datum/act/op/A)
 	var/mob/user = A.actor
@@ -201,13 +158,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 
 /obj/machinery/reagent_refinery/furnace/examine(mob/user, infix, suffix)
 	. = ..()
-	var/filter = "disabled"
-	if(filter_reagent_id == "-1")
-		filter = "sintering out nothing"
-	else if(filter_reagent_id != "")
-		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
-		filter = "sintering [R.name]"
-	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is currently [filter]."
+	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	. += "The sintering mold is [ (beaker.reagents.total_volume / REAGENTS_PER_SHEET) * 100 ]% full."
 	tutorial(REFINERY_TUTORIAL_INPUT, .)
 
