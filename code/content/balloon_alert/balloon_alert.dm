@@ -10,7 +10,9 @@
 /atom/proc/balloon_alert(mob/viewer, text)
 	SHOULD_NOT_SLEEP(TRUE)
 
+#ifdef UNIT_TESTS
 	test_chat_note(viewer, text)
+#endif
 	var/client/viewer_client = viewer?.client
 	// The text's height is measured on the viewer's client (a round trip): DX-exec answers later.
 	dx_measure_text(src, viewer_client, text, null, BALLOON_TEXT_WIDTH, PROC_REF(balloon_alert_perform), viewer, text)
