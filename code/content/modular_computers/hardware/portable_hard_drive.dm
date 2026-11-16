@@ -32,10 +32,7 @@
 /obj/item/computer_hardware/hard_drive/portable/is_critical_slot()
 	return FALSE
 
-/obj/item/computer_hardware/hard_drive/portable/proc/reset_files()
-	stored_files = list()
-	recalculate_size()
-
-CAPABILITIES(/obj/item/computer_hardware/hard_drive/portable)
-	setup(PROC_REF(reset_files))
-
+/// A portable drive starts empty: it takes none of the default programs the internal drives are built with. (It once installed them and then dropped the list, which left the
+/// programs stamped as owned by a table that no longer held them.)
+/obj/item/computer_hardware/hard_drive/portable/install_programs()
+	return

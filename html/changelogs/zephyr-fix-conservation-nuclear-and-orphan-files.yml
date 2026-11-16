@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Exosuit generators no longer come with a free fuel stack inside; portable data crystals start empty"
