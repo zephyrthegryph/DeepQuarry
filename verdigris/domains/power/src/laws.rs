@@ -8,7 +8,31 @@
 
 use vg_core::vg;
 
+use vg_core::rate::RateStore;
+use vg_core::units::Seconds;
+
 use crate::components::{Apc, ApcEvent, Producer, Smes, SmesInputTerminal, setting};
+
+/// The game time one "step" of a storage rate constant stands for, in seconds. `CELLRATE` and `SMESRATE` (code/defines/library/machinery.dm) say how
+/// many stored units a watt costs per machine service interval, which was 2 s (`MACHINE_SERVICE_INTERVAL`); the world steps every
+/// `PIPE_DEVICE_PERIOD` (0.5 s), and shortens that while gas asks for it. Charging and discharging a store over one step moves `dt / this` of what the
+/// constant names, so a watt costs the same stored units per second whatever the step is.
+pub const STORE_RATE_STEP_SECONDS: f64 = 2.0;
+
+/// How many service intervals one world step of `dt` is: the factor a store's rate constant takes for that step.
+#[must_use]
+pub fn store_step_scale(dt: Seconds) -> f64 {
+    dt.0 / STORE_RATE_STEP_SECONDS
+}
+
+/// Runs `f` on `cell` with its rate constant scaled to one step of `scale` service intervals, and puts the unscaled constant back.
+fn scaled_cell<R>(cell: &mut RateStore, scale: f64, f: impl FnOnce(&mut RateStore) -> R) -> R {
+    let rate = cell.rate;
+    cell.rate = rate * scale;
+    let r = f(cell);
+    cell.rate = rate;
+    r
+}
 
 /// Power's events: about a region, not a component, so domain events
 /// (the DM generator dispatches them to global handlers).
@@ -36,7 +60,7 @@ fn draw(avail: f64, load: &mut f64, watts: f64) -> f64 {
 /// cell_charged)` watts this tick, for the caller's conservation books:
 /// `cell_discharged` never reaches `grid` (the cell covers the area
 /// directly); `cell_charged` does, through [`draw`].
-pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], avail: f64, load: &mut f64) -> (f64, f64) {
+pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], avail: f64, load: &mut f64, scale: f64) -> (f64, f64) {
     apc.oneoff = [0.0; 3];
     if !apc.active {
         return (0.0, 0.0);
@@ -44,7 +68,7 @@ pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], avail: f64, load: &mut f64) -> 
     let total: f64 = demand.iter().sum();
     let excess = avail - *load;
     if apc.has_cell && !apc.shorted_or_grid_check {
-        with_cell(apc, excess, total, avail, load)
+        with_cell(apc, excess, total, avail, load, scale)
     } else {
         (apc.charging, apc.chargecount) = (0, 0);
         apc.channels = apc.channels.map(|v| setting::autoset(v, 0));
@@ -54,8 +78,10 @@ pub fn apc_tick(apc: &mut Apc, demand: [f64; 3], avail: f64, load: &mut f64) -> 
     }
 }
 
-fn with_cell(apc: &mut Apc, excess: f64, total: f64, avail: f64, load: &mut f64) -> (f64, f64) {
+fn with_cell(apc: &mut Apc, excess: f64, total: f64, avail: f64, load: &mut f64, scale: f64) -> (f64, f64) {
+    let rate = apc.rate;
     let mut cell = apc.cell();
+    cell.rate = rate * scale;
     let mut discharged = 0.0;
     if excess >= total {
         draw(avail, load, total);
@@ -72,11 +98,13 @@ fn with_cell(apc: &mut Apc, excess: f64, total: f64, avail: f64, load: &mut f64)
             apc.autoflag = 0;
         }
     }
+    cell.rate = rate;
     apc.set_cell(cell);
 
     update_channels(apc);
 
     let mut cell = apc.cell();
+    cell.rate = rate * scale;
     let mut charged = 0.0;
     if apc.chargemode && apc.charging == 1 && apc.operating {
         if excess > 0.0 {
@@ -106,6 +134,7 @@ fn with_cell(apc: &mut Apc, excess: f64, total: f64, avail: f64, load: &mut f64)
     } else {
         (apc.charging, apc.chargecount) = (0, 0);
     }
+    cell.rate = rate;
     apc.set_cell(cell);
     (discharged, charged)
 }
@@ -141,13 +170,13 @@ fn update_channels(apc: &mut Apc) {
 }
 
 /// What a SMES offers its output region this step.
-pub fn smes_offer(smes: &Smes) -> f64 {
-    if smes.output_enabled && smes.charge > 0.0 { (smes.charge / smes.rate).min(smes.output_level).max(0.0) } else { 0.0 }
+pub fn smes_offer(smes: &Smes, scale: f64) -> f64 {
+    if smes.output_enabled && smes.charge > 0.0 { (smes.charge / (smes.rate * scale)).min(smes.output_level).max(0.0) } else { 0.0 }
 }
 
 /// What a SMES asks of its input region this step.
-pub fn smes_ask(smes: &Smes) -> f64 {
-    if smes.input_enabled { ((smes.capacity - smes.charge) / smes.rate).clamp(0.0, smes.input_level) } else { 0.0 }
+pub fn smes_ask(smes: &Smes, scale: f64) -> f64 {
+    if smes.input_enabled { ((smes.capacity - smes.charge) / (smes.rate * scale)).clamp(0.0, smes.input_level) } else { 0.0 }
 }
 
 /// A region browns out when it has no supply at all, or its planned
@@ -212,8 +241,8 @@ vg_core::law! {
     /// `Smes` row through [`Foreign`]) and credits it into its own region's
     /// `avail`/`smes_offer_total`, ordered before `PowerBalance`'s consumers
     /// so the offer is part of what they can draw against.
-    pub SmesOutputPlan("power_smes_output_plan"): Smes => InRegion<Cables>, |ctx, _dt| {
-        let offer = smes_offer(ctx.reads);
+    pub SmesOutputPlan("power_smes_output_plan"): Smes => InRegion<Cables>, |ctx, dt| {
+        let offer = smes_offer(ctx.reads, store_step_scale(dt));
         ctx.writes.payload.avail += offer;
         ctx.writes.payload.smes_offer_total += offer;
         Settle::Active
@@ -224,11 +253,11 @@ vg_core::law! {
     /// As [`SmesOutputPlan`], the input side: sums what every SMES input
     /// terminal on a region would like this step (not itself supply, so not
     /// credited into `avail`).
-    pub SmesInputPlan("power_smes_input_plan"): Foreign<SmesInputTerminal, Smes> => InRegion<Cables>, |ctx, _dt| {
+    pub SmesInputPlan("power_smes_input_plan"): Foreign<SmesInputTerminal, Smes> => InRegion<Cables>, |ctx, dt| {
         let Some(smes) = &ctx.reads.value else {
             return Settle::Active;
         };
-        let target = smes_ask(smes);
+        let target = smes_ask(smes, store_step_scale(dt));
         ctx.writes.payload.smes_ask_total += target;
         Settle::Active
     }
@@ -295,7 +324,8 @@ vg_core::law! {
     /// The channel autoset ladder and charge mode, per APC, every tick
     /// ([`apc_tick`]), drawing against its region's `avail` (now including
     /// every producer and SMES output offer this step).
-    pub ApcTick("power_apc_tick"): () => (Apc, Option<InRegion<Cables>>), |ctx, _dt| {
+    pub ApcTick("power_apc_tick"): () => (Apc, Option<InRegion<Cables>>), |ctx, dt| {
+        let scale = store_step_scale(dt);
         let (apc, region) = &mut ctx.writes;
         let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
         let channels_before = apc.channels;
@@ -309,7 +339,7 @@ vg_core::law! {
             Some(r) => (r.payload.avail, &mut r.payload.load),
             None => (0.0, &mut spare_load),
         };
-        let (discharged, charged) = apc_tick(apc, demand, avail, load);
+        let (discharged, charged) = apc_tick(apc, demand, avail, load, scale);
         let key = apc_report_key(apc, status);
         let report = (key != apc.reported).then(|| {
             apc.reported = key;
@@ -326,8 +356,8 @@ vg_core::law! {
         // Watts (`RateStore`'s API) to the cell's own units, as the field moved.
         let (rate, alarm) = (apc.rate, apc.alarm);
         let channels_changed = apc.channels != channels_before;
-        ctx.ledger().source("power_apc_charge", charged * rate);
-        ctx.ledger().sink("power_apc_charge", discharged * rate);
+        ctx.ledger().source("power_apc_charge", charged * rate * scale);
+        ctx.ledger().sink("power_apc_charge", discharged * rate * scale);
         // The event says a channel *changed* (the shedding ladder moved, or a manual override landed). It used to go out every tick for every
         // APC whose alarm was up, which is any APC that has shed or has no cell: a notice per APC per tick that nothing on the DM side hears.
         if alarm && channels_changed {
@@ -378,14 +408,15 @@ vg_core::law! {
     /// Discharges one SMES's pro-rata share of its region's storage-financed
     /// load, ordered after `PowerSettle` so `storage_used`/`smes_offer_total`
     /// are final for this step.
-    pub SmesOutputApply("power_smes_output_apply"): InRegion<Cables> => Smes, |ctx, _dt| {
-        let offer = smes_offer(ctx.writes);
+    pub SmesOutputApply("power_smes_output_apply"): InRegion<Cables> => Smes, |ctx, dt| {
+        let scale = store_step_scale(dt);
+        let offer = smes_offer(ctx.writes, scale);
         let region = &ctx.reads.payload;
         let share = storage_output_share(offer, region.smes_offer_total, region.storage_used);
         let rate = ctx.writes.rate;
-        let delivered = ctx.writes.with_cell(|c| c.discharge_out(share));
+        let delivered = ctx.writes.with_cell(|c| scaled_cell(c, scale, |c| c.discharge_out(share)));
         ctx.writes.output_used = delivered;
-        ctx.ledger().sink("power_smes_charge", delivered * rate);
+        ctx.ledger().sink("power_smes_charge", delivered * rate * scale);
         Settle::Active
     }
 }
@@ -393,18 +424,19 @@ vg_core::law! {
 vg_core::law! {
     /// Charges one SMES input terminal's pro-rata share of its region's
     /// leftover supply, ordered after `PowerSettle`.
-    pub SmesInputApply("power_smes_input_apply"): InRegion<Cables> => Foreign<SmesInputTerminal, Smes>, |ctx, _dt| {
+    pub SmesInputApply("power_smes_input_apply"): InRegion<Cables> => Foreign<SmesInputTerminal, Smes>, |ctx, dt| {
+        let scale = store_step_scale(dt);
         let Some(smes) = &mut ctx.writes.value else {
             return Settle::Active;
         };
-        let target = smes_ask(smes);
+        let target = smes_ask(smes, scale);
         let region = &ctx.reads.payload;
         let share = storage_input_share(target, region.smes_ask_total, region.region_excess);
         let rate = smes.rate;
-        let absorbed = smes.with_cell(|c| c.charge_in(share));
+        let absorbed = smes.with_cell(|c| scaled_cell(c, scale, |c| c.charge_in(share)));
         smes.input_used += absorbed;
         smes.input_available += region.region_excess.max(0.0);
-        ctx.ledger().source("power_smes_charge", absorbed * rate);
+        ctx.ledger().source("power_smes_charge", absorbed * rate * scale);
         Settle::Active
     }
 }
@@ -423,7 +455,7 @@ mod tests {
     }
 
     fn tick(apc: &mut Apc, demand: [f64; 3], g: &mut TestGrid) -> (f64, f64) {
-        apc_tick(apc, demand, g.avail, &mut g.load)
+        apc_tick(apc, demand, g.avail, &mut g.load, 1.0)
     }
 
     fn apc_with(max_charge: f64, charge: f64) -> Apc {
@@ -540,18 +572,18 @@ mod tests {
         assert_eq!(
             {
                 smes.output_enabled = false;
-                let o = smes_offer(&smes);
+                let o = smes_offer(&smes, 1.0);
                 smes.output_enabled = true;
                 o
             },
             0.0,
             "not connected"
         );
-        assert!(smes_offer(&smes) > 0.0);
+        assert!(smes_offer(&smes, 1.0) > 0.0);
         let mut cell = smes.cell();
         cell.charge = 0.0;
         smes.set_cell(cell);
-        assert_eq!(smes_offer(&smes), 0.0, "empty");
+        assert_eq!(smes_offer(&smes, 1.0), 0.0, "empty");
     }
 
     #[test]
@@ -559,7 +591,7 @@ mod tests {
         let mut smes = smes_with(0.0, 1e6, 0.033_33);
         smes.input_enabled = true;
         smes.input_level = 100.0;
-        assert_eq!(smes_ask(&smes), 100.0, "capped by input_level despite huge room");
+        assert_eq!(smes_ask(&smes, 1.0), 100.0, "capped by input_level despite huge room");
     }
 
     #[test]
@@ -571,6 +603,19 @@ mod tests {
         let delivered = smes.with_cell(|c| c.discharge_out(1000.0));
         assert_eq!(delivered, 100.0, "capped by what's stored, not the request");
         assert_eq!(smes.cell().charge, 0.0);
+    }
+
+    #[test]
+    fn a_watt_costs_the_same_stored_units_per_second_whatever_the_step() {
+        // One 0.5 s step moves a quarter of what the 2 s the constant names would: four of them cost one service interval.
+        let quarter = store_step_scale(Seconds(0.5));
+        assert!((quarter - 0.25).abs() < 1e-12);
+        let mut smes = smes_with(1000.0, 2000.0, 0.5);
+        let delivered = smes.with_cell(|c| scaled_cell(c, quarter, |c| c.discharge_out(100.0)));
+        assert_eq!(delivered, 100.0);
+        assert!((smes.cell().charge - (1000.0 - 100.0 * 0.5 * 0.25)).abs() < 1e-9);
+        assert_eq!(smes.rate, 0.5, "the stored rate constant is never left scaled");
+        assert!((smes_offer(&smes_with(100.0, 2000.0, 0.5), quarter) - 800.0).abs() < 1e-9, "a quarter-step offer is four times the watts a full one is");
     }
 
     #[test]

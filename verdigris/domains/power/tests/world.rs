@@ -113,9 +113,9 @@ fn a_smes_shares_storage_per_terminal_across_two_regions() {
     let smes_charge = world.get(unit_e, smes, field::<Smes>("charge"), 0).unwrap();
     assert!(smes_charge < 1_000_000.0, "the output terminal's region asked for storage help: {smes_charge}");
     let discharged = 1_000_000.0 - smes_charge;
-    // 50 W of storage-financed load, two ticks (`step_blocking` ran
-    // twice), at SMESRATE charge units per watt-tick.
-    let expected = 2.0 * 50.0 * 0.033_33;
+    // 50 W of storage-financed load, two steps (`step_blocking` ran twice), at SMESRATE charge units per watt per service interval (2 s),
+    // over the world's step.
+    let expected = 2.0 * 50.0 * 0.033_33 * world.dt().0 / vg_power::laws::STORE_RATE_STEP_SECONDS;
     assert!((discharged - expected).abs() < 1e-6, "discharged {discharged}, expected {expected}");
 
     // The step's flow readings: the 50 W storage share went out; region B has no supply, so nothing came in and nothing was offered.

@@ -96128,7 +96128,7 @@
 	icon_state = "0-2"
 	},
 /obj/machinery/power/solar_control{
-	auto_start = 2;
+	auto_start = 1;
 	dir = 4;
 	id = "foreportsolar";
 	name = "Fore Port Solar Control"
@@ -104603,7 +104603,7 @@
 "dWE" = (
 /obj/structure/cable/yellow,
 /obj/machinery/power/solar_control{
-	auto_start = 2;
+	auto_start = 1;
 	dir = 4;
 	id = "aftportsolar";
 	name = "Aft Port Solar Control"
@@ -104741,7 +104741,7 @@
 "dWX" = (
 /obj/structure/cable/yellow,
 /obj/machinery/power/solar_control{
-	auto_start = 2;
+	auto_start = 1;
 	dir = 8;
 	id = "aftstarboardsolar";
 	name = "Aft Starboard Solar Control"
