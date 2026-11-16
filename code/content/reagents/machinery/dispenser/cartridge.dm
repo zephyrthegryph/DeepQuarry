@@ -35,6 +35,11 @@
 /obj/item/reagent_containers/chem_disp_cartridge/proc/stock_volume()
 	return reagents.total_volume - reagents.contaminant_volume()
 
+/// Units the cartridge holds, traces included: what its fill gauge and the dispenser's grid show. A starting cartridge is full: its volume, whatever
+/// share of it is the source's trace impurities (the stock itself is stock_volume()).
+/obj/item/reagent_containers/chem_disp_cartridge/proc/fill_volume()
+	return round(reagents.total_volume, 0.01)
+
 /// The mixture that holds `stock_units` of stock: the stock and the contaminants that sit with it.
 /obj/item/reagent_containers/chem_disp_cartridge/proc/draw_amount(stock_units)
 	return stock_units * reagents.stock_scale()
