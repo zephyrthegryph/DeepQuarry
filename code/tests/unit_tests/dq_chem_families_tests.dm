@@ -814,16 +814,70 @@
 	var/obj/structure/closet/secure_closet/chemical_supplies/closet = allocate(/obj/structure/closet/secure_closet/chemical_supplies, test_floor())
 	var/list/held = list()
 	for(var/obj/item/thing in closet.contents)
-		held[thing.type] += 1
+		TEST_ASSERT(istype(thing, /obj/item/storage/box), "[thing] is a box, not a loose item in the supplies closet")
+		for(var/obj/item/inside in thing.contents)
+			held[inside.type] += 1
 	for(var/needed in list(/obj/item/chem_funnel, /obj/item/chem_filter/paper, /obj/item/chem_filter/charcoal, /obj/item/chem_electrode, /obj/item/stack/material/tungsten, \
 			/obj/item/stack/material/glass/phoronglass, /obj/item/reagent_containers/glass/beaker/large, /obj/item/reagent_containers/glass/bottle/boron11, \
 			/obj/item/reagent_containers/food/condiment/enzyme, /obj/item/reagent_containers/food/condiment/yeast))
-		TEST_ASSERT(held[needed], "the chemistry supplies closet holds [needed]")
-	var/obj/item/reagent_containers/glass/bottle/boron11/boron = locate() in closet.contents
+		TEST_ASSERT(held[needed], "the chemistry supplies closet holds [needed] in its boxes")
+	TEST_ASSERT_EQUAL(held[/obj/item/chem_funnel], 4, "four funnels")
+	TEST_ASSERT_EQUAL(held[/obj/item/chem_filter/paper], 8, "eight paper filters")
+	TEST_ASSERT_EQUAL(held[/obj/item/chem_filter/charcoal], 8, "eight charcoal filters")
+	var/obj/item/reagent_containers/glass/bottle/boron11/boron
+	for(var/obj/item/storage/box/chem_process_stock/stock in closet.contents)
+		boron = locate() in stock.contents
+	TEST_ASSERT_NOTNULL(boron, "the process stock box holds the boron-11 bottle")
 	TEST_ASSERT(boron.reagents.has_reagent(REAGENT_ID_BORON11, 60), "the boron-11 bottle is full of boron-11")
 	TEST_ASSERT(closet.req_access ~= list(ACCESS_CHEMISTRY), "the closet is a chemist's")
 
-/// On the live map every chemistry workstation has a hot plate and a condenser, and the lab has the supplies closet and the chemical closet.
+/// The chemistry lockers keep their stock in boxes: the chemical closet holds boxes and the vial case, the supplies closet one box of each kind.
+/datum/unit_test/dq_chem_lab_lockers_hold_boxes
+
+/datum/unit_test/dq_chem_lab_lockers_hold_boxes/Run()
+	var/obj/structure/closet/secure_closet/chemical/closet = allocate(/obj/structure/closet/secure_closet/chemical, test_floor())
+	var/list/have = list()
+	for(var/obj/item/thing in closet.contents)
+		have += thing.type
+		TEST_ASSERT(istype(thing, /obj/item/storage), "[thing] is a box or case, not a loose item in the chemical closet")
+	TEST_ASSERT(/obj/item/storage/box/chem_bench_bottles in have, "the chemical closet holds the bench bottles box")
+	TEST_ASSERT(/obj/item/storage/box/precursors_inorganic in have, "the chemical closet holds the inorganic precursors box")
+	var/obj/structure/closet/secure_closet/chemical_supplies/supplies = allocate(/obj/structure/closet/secure_closet/chemical_supplies, test_floor())
+	var/list/boxes = list()
+	for(var/obj/item/storage/box/B in supplies.contents)
+		boxes += B.type
+	for(var/box_type in list(/obj/item/storage/box/chem_funnels, /obj/item/storage/box/chem_electrodes, /obj/item/storage/box/chem_catalysts, /obj/item/storage/box/chem_large_beakers, /obj/item/storage/box/chem_process_stock))
+		TEST_ASSERT(box_type in boxes, "the supplies closet holds [box_type]")
+
+/// Every chemistry lab box holds what it starts with inside its own capacity: the box was not grown to fit, and each item is let back in through the front door.
+/datum/unit_test/dq_chem_lab_boxes_fit_their_contents
+
+/datum/unit_test/dq_chem_lab_boxes_fit_their_contents/Run()
+	for(var/box_type in list(/obj/item/storage/box/chem_funnels, /obj/item/storage/box/chem_electrodes, /obj/item/storage/box/chem_catalysts, /obj/item/storage/box/chem_large_beakers, \
+			/obj/item/storage/box/chem_process_stock, /obj/item/storage/box/chem_bench_bottles))
+		var/obj/item/storage/box/B = allocate(box_type, test_floor())
+		var/declared = initial(B.max_storage_space)
+		TEST_ASSERT(length(B.contents), "[box_type] starts with its stock")
+		TEST_ASSERT_EQUAL(B.max_storage_space, declared, "[box_type] was not grown to fit what it starts with")
+		var/total = 0
+		var/list/stock = list()
+		for(var/obj/item/I in B.contents)
+			total += I.get_storage_cost()
+			stock += I
+		TEST_ASSERT(total <= declared, "[box_type] holds [total] of [declared] units")
+		for(var/obj/item/I as anything in stock)
+			I.forceMove(test_floor())
+		for(var/obj/item/I as anything in stock)
+			if(QDELETED(I))
+				continue // a sheet that merged into the stack put in before it
+			TEST_ASSERT_NULL(B.insert_refusal(I, null), "[I] goes in [box_type]")
+			TEST_ASSERT(B.insert_item(I, null, TRUE), "[I] is put in [box_type]")
+		var/refilled = 0
+		for(var/obj/item/I in B.contents)
+			refilled += I.get_storage_cost()
+		TEST_ASSERT(refilled && refilled <= declared, "[box_type] holds its stock again within [declared] units")
+
+/// On the live map the chemistry lab has three hot plates and one condenser, beside one plate; nothing but the plate stands on a plate's tile; and the lab has the supplies closet and the chemical closet.
 /datum/unit_test/dq_chem_lab_map_is_stocked
 
 /datum/unit_test/dq_chem_lab_map_is_stocked/Run()
@@ -831,22 +885,32 @@
 	if(!length(turfs))
 		return // the unit-test map has no chemistry lab
 	var/plates = 0
-	var/condensers = 0
 	var/supplies = 0
 	var/chemical = 0
+	var/list/plate_turfs = list()
+	var/list/condenser_turfs = list()
 	for(var/turf/T as anything in turfs)
 		for(var/obj/machinery/chem_hot_plate/plate in T)
 			TEST_ASSERT(plate.anchored, "the map-placed hot plate at [T.x],[T.y] is bolted")
 			plates++
+			plate_turfs += T
+			for(var/obj/item/loose in T)
+				TEST_FAIL("[loose] is stacked on the hot plate at [T.x],[T.y]")
 		for(var/obj/machinery/chem_condenser/condenser in T)
 			TEST_ASSERT(condenser.anchored, "the map-placed condenser at [T.x],[T.y] is bolted")
-			condensers++
+			condenser_turfs += T
 		if(locate(/obj/structure/closet/secure_closet/chemical_supplies) in T)
 			supplies++
 		if(locate(/obj/structure/closet/secure_closet/chemical) in T)
 			chemical++
 	TEST_ASSERT(plates >= 3, "three hot plates in the chemistry lab ([plates])")
-	TEST_ASSERT_EQUAL(condensers, plates, "a condenser for every hot plate")
+	TEST_ASSERT_EQUAL(length(condenser_turfs), 1, "one condenser in the chemistry lab")
+	var/turf/home = condenser_turfs[1]
+	var/beside = 0
+	for(var/turf/T as anything in plate_turfs)
+		if(get_dist(T, home) <= 1)
+			beside++
+	TEST_ASSERT_EQUAL(beside, 1, "exactly one hot plate is beside the condenser")
 	TEST_ASSERT(supplies >= 1, "the chemistry lab has its supplies closet")
 	TEST_ASSERT(chemical >= 1, "the chemistry lab has its chemical closet")
 

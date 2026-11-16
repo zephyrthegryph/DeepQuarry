@@ -155,9 +155,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 		/obj/item/storage/box/beakers,
 		/obj/item/storage/box/autoinjectors,
 		/obj/item/storage/box/syringes,
-		/obj/item/reagent_containers/dropper = 2,
-		/obj/item/reagent_containers/glass/bottle/inaprovaline = 2,
-		/obj/item/reagent_containers/glass/bottle/antitoxin = 2,
+		/obj/item/storage/box/chem_bench_bottles,
 		/obj/item/storage/box/precursors_inorganic,
 		/obj/item/storage/box/precursors_ring,
 		/obj/item/storage/box/precursors_bio,
@@ -174,16 +172,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 	storage_capacity = 80
 
 	starts_with = list(
-		/obj/item/chem_funnel = 4,
-		/obj/item/chem_filter/paper = 8,
-		/obj/item/chem_filter/charcoal = 8,
-		/obj/item/chem_electrode = 3,
-		/obj/item/stack/material/tungsten = 6,
-		/obj/item/stack/material/glass/phoronglass = 4,
-		/obj/item/reagent_containers/glass/beaker/large = 4,
-		/obj/item/reagent_containers/glass/bottle/boron11 = 2,
-		/obj/item/reagent_containers/food/condiment/enzyme = 2,
-		/obj/item/reagent_containers/food/condiment/yeast = 2)
+		/obj/item/storage/box/chem_funnels = 2,
+		/obj/item/storage/box/chem_electrodes,
+		/obj/item/storage/box/chem_catalysts,
+		/obj/item/storage/box/chem_large_beakers,
+		/obj/item/storage/box/chem_process_stock)
 
 
 /obj/structure/closet/secure_closet/psych
