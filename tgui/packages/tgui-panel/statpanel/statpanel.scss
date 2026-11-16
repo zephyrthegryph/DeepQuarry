@@ -700,6 +700,10 @@
   flex: none;
   align-items: center;
   justify-content: center;
+  box-sizing: content-box;
+  // Reserved at the largest picture size, so the picture arriving does not shift the layout.
+  width: 160px;
+  height: 160px;
   padding: 6px;
   background-color: var(--stat-section);
   border: 1px solid console.$console-border;

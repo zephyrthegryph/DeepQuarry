@@ -5,8 +5,6 @@ export type Chip = { label: string; state: string; tone: string };
 
 export type Worn = { slot: string; name: string; ref: string };
 
-export type InspectTabRef = { ref: string; name: string; active: boolean };
-
 /** What the server sends for the Inspect tab (inspect_panel.dm payload()). */
 export type InspectData = {
   target: string;
@@ -17,7 +15,6 @@ export type InspectData = {
   notes?: [string, string][];
   worn?: Worn[];
   body?: Chip[];
-  tabs?: InspectTabRef[];
   portrait?: string | null;
   flavor?: string | null;
   show_flavor?: boolean;

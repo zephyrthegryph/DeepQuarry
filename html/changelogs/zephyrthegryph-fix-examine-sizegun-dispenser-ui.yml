@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The Inspect tab shows the one thing you examined, with no tabs, and keeps a fixed empty box for its picture so the text no longer shifts when the picture loads"
+  - bugfix: "Chemical dispenser grids show each starting cartridge at its full 500u, traces included, instead of only the stock part"
+  - bugfix: "The number input windows (the size gun's size window) lay their buttons out evenly"

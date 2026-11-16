@@ -16,7 +16,7 @@
 	process_id = CHEM_PROCESS_REDUCE
 	selectivity = 0.55
 	leaves = list(REAGENT_ID_CONTAMINANT_BASE_RESIDUE = 0.12, REAGENT_ID_CONTAMINANT_SALTS = 0.08)
-	desc = "A strong reducer: the reduction needs no hydrogen and no metal sheet. It reduces every reducible group it meets and leaves base residue and boron salts."
+	desc = "A strong reducer: the reduction needs no hydrogen and no metal sheet. It reduces every reducible group it meets (the ring of a phenol too) and leaves base residue and boron salts."
 
 /datum/chem_agent/hydride_reduce/New()
 	..()
@@ -26,6 +26,8 @@
 	. = list()
 	if(!S.is_organic())
 		return
+	if(chem_is_hydroxy_ring(S))
+		. += chem_variant(list(substrate_id), list(S.swap_core(CHEM_CORE_RING, CHEM_CORE_SATURATED_RING)), list(REAGENT_ID_HYDRIDE = 1))
 	var/datum/chem_structure/T = S.swap_group(CHEM_GROUP_CARBOXYL, CHEM_GROUP_CARBONYL)
 	if(T)
 		. += chem_variant(list(substrate_id), list(T), list(REAGENT_ID_HYDRIDE = 1), list(REAGENT_ID_WATER = 1))
@@ -63,7 +65,7 @@
 	process_id = CHEM_PROCESS_OXIDISE
 	selectivity = 0.6
 	leaves = list(REAGENT_ID_CONTAMINANT_HEAVY_METAL = 0.08)
-	desc = "A permanganate-type oxidiser: it takes a hydroxyl or a carbonyl all the way to a carboxyl, burning what else it can. It leaves heavy metals."
+	desc = "A permanganate-type oxidiser: it takes a hydroxyl or a carbonyl all the way to a carboxyl (and hangs the two hydroxyls of tannin on salicylic acid), burning what else it can. It leaves heavy metals."
 
 /datum/chem_agent/strong_oxidiser/New()
 	..()
@@ -73,13 +75,15 @@
 	. = list()
 	if(!S.is_organic())
 		return
+	if(chem_is_hydroxy_ring_acid(S))
+		. += chem_variant(list(substrate_id), list(chem_structure_make(S.cores, S.groups + list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL))), list(REAGENT_ID_STRONGOXIDISER = 1))
 	var/datum/chem_structure/T = S.swap_group(CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBOXYL)
 	if(T)
 		. += chem_variant(list(substrate_id), list(T), list(REAGENT_ID_STRONGOXIDISER = 1), list(REAGENT_ID_WATER = 1))
 	T = S.swap_group(CHEM_GROUP_CARBONYL, CHEM_GROUP_CARBOXYL)
 	if(T)
 		. += chem_variant(list(substrate_id), list(T), list(REAGENT_ID_STRONGOXIDISER = 1))
-	if(length(S.cores) == 1 && S.has_core(CHEM_CORE_NITROGEN_RING) && !length(S.groups) && !length(S.links))
+	if(chem_is_bare_nitrogen_ring(S))
 		. += chem_variant(list(substrate_id), list(S.with_group(CHEM_GROUP_CARBOXYL)), list(REAGENT_ID_STRONGOXIDISER = 1))
 
 // ---- bleach: oxidise one step, or halogenate a ring ----

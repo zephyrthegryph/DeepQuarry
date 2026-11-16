@@ -41,7 +41,7 @@ export function NumberInputModal(props) {
   }
 
   return (
-    <Window fitContent title={title} width={270} height={windowHeight}>
+    <Window fitContent title={title} width={340} height={windowHeight}>
       {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
@@ -50,7 +50,7 @@ export function NumberInputModal(props) {
               <Label>{message}</Label>
             </Stack.Item>
             <Stack.Item>
-              <Stack fill>
+              <Stack fill align="center">
                 <Stack.Item>
                   <Button
                     disabled={value === min_value || min_value === -Infinity}

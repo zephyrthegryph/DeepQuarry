@@ -111,9 +111,9 @@
 		var/datum/chem_route/R = GLOB.chem_routes[route_id]
 		if(R.process_id == CHEM_PROCESS_POLYMERISE)
 			polymerised++
-			TEST_ASSERT(R.products[1] == REAGENT_ID_LUBE, "[route_id]: the only polymer a chemist makes is silicone oil")
+			TEST_ASSERT(R.products[1] in list(REAGENT_ID_LUBE, REAGENT_ID_PLASTICIDE, REAGENT_ID_RINGAMINOACID), "[route_id]: a chemist polymerises only the silicone chain, the polyester unit and the ring amino acid")
 		TEST_ASSERT_NOTNULL(dq_route_rule(R), "[route_id] compiled into a rule")
-	TEST_ASSERT_EQUAL(polymerised, 1, "one route polymerises: kelotane into lube")
+	TEST_ASSERT_EQUAL(polymerised, 3, "three routes polymerise: kelotane into lube, two ring acids and a glycol into plasticide, a phenol and an amino acid into the ring amino acid")
 
 /// What each process does to a structure, with structures of its own (so no reagent has to exist).
 /datum/unit_test/dq_chem_blocks_processes_change_structures

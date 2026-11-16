@@ -2,7 +2,7 @@
 // (code/content/examine/inspect_panel.dm). Buttons go back as "Inspect-Act" messages.
 
 import { memo, useState } from 'react';
-import { Tabs, TitleBar } from 'tgui/dq';
+import { TitleBar } from 'tgui/dq';
 import { HtmlRenderer } from 'tgui/interfaces/common/HtmlRenderer';
 import {
   chipText,
@@ -16,25 +16,31 @@ import {
 const act = (name: string, params: Record<string, string> = {}) =>
   Byond.sendMessage('Inspect-Act', { act: name, ...params });
 
-/** The portrait, drawn at a whole-number multiple of its own size so pixels stay square. */
-const Portrait = ({ src }: { src: string }) => {
+/**
+ * The portrait, drawn at a whole-number multiple of its own size so pixels stay square. The box is always the full
+ * budget size, empty while the picture renders, so the picture arriving does not move the text.
+ */
+const Portrait = ({ src }: { src: string | null | undefined }) => {
   const [size, setSize] = useState<[number, number] | null>(null);
   const scale = size ? portraitScale(size[0], size[1]) : 1;
   return (
     <div className="inspect__portrait">
-      <img
-        alt=""
-        src={`data:image/png;base64,${src}`}
-        onLoad={(event) => {
-          const img = event.currentTarget;
-          setSize([img.naturalWidth, img.naturalHeight]);
-        }}
-        style={
-          size
-            ? { width: size[0] * scale, height: size[1] * scale }
-            : { visibility: 'hidden' }
-        }
-      />
+      {!!src && (
+        <img
+          key={src}
+          alt=""
+          src={`data:image/png;base64,${src}`}
+          onLoad={(event) => {
+            const img = event.currentTarget;
+            setSize([img.naturalWidth, img.naturalHeight]);
+          }}
+          style={
+            size
+              ? { width: size[0] * scale, height: size[1] * scale }
+              : { visibility: 'hidden' }
+          }
+        />
+      )}
     </div>
   );
 };
@@ -66,7 +72,6 @@ export const InspectTab = memo(({ data }: { data: InspectData | null }) => {
     notes = [],
     worn = [],
     body = [],
-    tabs = [],
     portrait,
     flavor,
     show_flavor,
@@ -80,18 +85,6 @@ export const InspectTab = memo(({ data }: { data: InspectData | null }) => {
         title={target}
         subtitle={inspectSubtitle(kind, role, distance)}
       />
-      {tabs.length > 1 && (
-        <Tabs
-          size="small"
-          tabs={tabs.map((tab) => ({
-            id: tab.ref,
-            label: tab.name.toUpperCase(),
-            title: tab.name,
-            selected: !!tab.active,
-          }))}
-          onSelect={(ref) => act('select', { ref })}
-        />
-      )}
       <div className="inspect__body">
         <div className="inspect__main">
           {description.map((line, index) => (
@@ -136,7 +129,7 @@ export const InspectTab = memo(({ data }: { data: InspectData | null }) => {
             </div>
           )}
         </div>
-        {!!portrait && <Portrait key={portrait} src={portrait} />}
+        <Portrait src={portrait} />
       </div>
       {(!!flavor || !!has_ooc || !!primary) && (
         <div className="inspect__buttons">

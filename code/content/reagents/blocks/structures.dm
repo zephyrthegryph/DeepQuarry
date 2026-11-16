@@ -182,6 +182,25 @@ GLOBAL_LIST_INIT(chem_declared_structures, list(
 	REAGENT_ID_CHLOROVOID = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
 	REAGENT_ID_MORTIFERIN = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
 	REAGENT_ID_MALISHQUALEM = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_AMINE)),
+	// ---- the last plain recipes (chemistry_recipes.md "Protein, resin and sedative ladders"): a peptide chain, the resins, a saturated ring, a trace amine, the Katish sedatives ----
+	// [protein] amino acids join by amides: a peptide, then the numbing enzyme (three), and water with a base or an enzyme cuts them back
+	REAGENT_ID_PEPTIDE = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_NUMBENZYME = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_AMINO, CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL), list(CHEM_LINK_AMIDE, CHEM_LINK_AMIDE)),
+	// [ring] a ring added to an amino acid, its carboxyl driven off: the trace amine (phenethylamine keeps the ring's hydroxyl)
+	REAGENT_ID_RINGAMINOACID = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_AMINO), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_PHENETHYLAMINE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_AMINO), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	// [ring] hydrogen saturates phenol (menthol); an enzyme hangs two hydroxyls on salicylic acid (tannin); two salicylic acids and a glycol make the polyester unit (plasticide)
+	REAGENT_ID_MENTHOL = chem_structure_make(list(CHEM_CORE_SATURATED_RING), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_TANNIN = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_PLASTICIDE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL), list(CHEM_LINK_ESTER, CHEM_LINK_ESTER)),
+	// [nitrile] acetic acid takes a halide, cyanide takes its place: ultra glue
+	REAGENT_ID_HALOACETIC = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_GLUE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_CYANIDE)),
+	// [Katish] tobacco nicotine (two nitrogen rings) burnt to its acid, joined to sugar: qerr-quem; the alkaloid acid joined to sugar: talum-quem
+	REAGENT_ID_NICOTINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_NITROGEN_RING)),
+	REAGENT_ID_NICOTINICACID = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_QERRQUEM = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_NITROGEN_RING, CHEM_CORE_SUGAR_RING), null, list(CHEM_LINK_ESTER)),
+	REAGENT_ID_TALUMQUEM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING, CHEM_CORE_SUGAR_RING), list(CHEM_GROUP_AMINE), list(CHEM_LINK_ESTER)),
 	// ---- the contaminants ----
 	REAGENT_ID_CONTAMINANT_HEAVY_METAL = chem_structure_make(null, null, null, CHEM_ION_HEAVY_METAL, CHEM_ION_CARBONATE),
 	REAGENT_ID_CONTAMINANT_SULFUR = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_SULFATE),
@@ -208,6 +227,8 @@ GLOBAL_LIST_INIT(chem_building_blocks, list(
 	REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID,
 	REAGENT_ID_CHLOROHYDRIN, REAGENT_ID_NITROSALICYLIC, REAGENT_ID_CHLOROPHORON, REAGENT_ID_ALKALOIDACID, REAGENT_ID_PYRIDONE, REAGENT_ID_HALOSPACEACILLIN,
 	REAGENT_ID_SCAVENGERRESIN,
+	// the protein path, the resin and sedative rungs, and what tobacco gives
+	REAGENT_ID_PEPTIDE, REAGENT_ID_RINGAMINOACID, REAGENT_ID_HALOACETIC, REAGENT_ID_NICOTINICACID, REAGENT_ID_NICOTINE,
 	// the exotic inputs and the rungs between them and the blends: mixed on purpose, like the stock
 	REAGENT_ID_LIQUIDFIRE, REAGENT_ID_DEATHBLOOD, REAGENT_ID_LIQUIDLIFE, REAGENT_ID_CARPOTOXIN, REAGENT_ID_SPIDERTOXIN, REAGENT_ID_SLIMEJELLY, REAGENT_ID_SHOCKCHEM,
 	REAGENT_ID_RELICICHOR, REAGENT_ID_VOIDAMBER, REAGENT_ID_CHLOROFIRE, REAGENT_ID_LIFEACID, REAGENT_ID_HALOSOULDEW, REAGENT_ID_RELICESSENCE, REAGENT_ID_CHLOROVOID,

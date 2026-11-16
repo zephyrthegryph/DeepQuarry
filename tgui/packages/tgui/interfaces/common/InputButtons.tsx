@@ -79,7 +79,9 @@ export const InputButtons = (props: InputButtonsProps) => {
       justify="space-around"
     >
       {large_buttons ? (
-        <Stack.Item grow>{cancelButton}</Stack.Item>
+        <Stack.Item grow basis={0}>
+          {cancelButton}
+        </Stack.Item>
       ) : (
         <Stack.Item>{cancelButton}</Stack.Item>
       )}
@@ -89,7 +91,9 @@ export const InputButtons = (props: InputButtonsProps) => {
         </Stack.Item>
       )}
       {large_buttons ? (
-        <Stack.Item grow>{submitButton}</Stack.Item>
+        <Stack.Item grow basis={0}>
+          {submitButton}
+        </Stack.Item>
       ) : (
         <Stack.Item>{submitButton}</Stack.Item>
       )}

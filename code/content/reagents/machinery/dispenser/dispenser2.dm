@@ -181,7 +181,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	var/list/chemicals = list()
 	for(var/label in cartridges)
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
-		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.stock_volume()))) // list in a list because Byond merges the first list...
+		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.fill_volume()))) // list in a list because Byond merges the first list...
 	data["chemicals"] = chemicals
 
 	data["recipes"] = (saved_recipes || list())

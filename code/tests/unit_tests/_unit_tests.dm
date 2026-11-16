@@ -848,6 +848,7 @@
 #include "dq_hc_items2_b.dm"
 #include "dq_hc_struct_behaviour.dm"
 #include "dq_hc_tgui_behaviour.dm"
+#include "dq_dispenser_sizegun_ui_tests.dm"
 #include "dq_hc_machinery_behaviour.dm"
 #include "dq_silicon_entry_tests.dm"
 #include "dq_silicon_provider_tests.dm"

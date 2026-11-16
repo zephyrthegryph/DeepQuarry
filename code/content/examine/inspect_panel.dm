@@ -6,11 +6,9 @@
  * One panel per client (the client owns it). The data goes to the stat panel as an "update_inspect" message
  * (tgui-panel/statpanel); its buttons come back as "Inspect-Act" messages (/client/on_stat_panel_message). The target's
  * examine() text is the description; types with structure add it through inspect_sections() (a human's worn
- * items and body status) and the portrait. The last few targets stay as tabs; a worn item in the list inspects
+ * items and body status) and the portrait. The panel shows the one current target; a worn item in the list inspects
  * that item.
  */
-/// How many targets stay as tabs.
-#define INSPECT_PANEL_RECENT_MAX 5
 /// The way the portrait faces.
 #define INSPECT_PORTRAIT_DIR NORTH
 
@@ -29,8 +27,6 @@
 	var/list/description
 	/// Extra labelled sections, each list(title, text): mechanics, fluff, antag, interaction notes.
 	var/list/notes
-	/// Handles of the last targets examined, newest first (handles, so a deleted target just drops out).
-	var/list/recent
 	/// Is the target's full flavor text open?
 	var/show_flavor = FALSE
 
@@ -51,7 +47,7 @@ CAPABILITIES(/datum/inspect_panel)
 /datum/inspect_panel/proc/target()
 	return QDELETED(target) ? null : target
 
-/// `new_target`, its text and its portrait, now shown (and put first in the tabs), and the stat panel switched to the Inspect tab.
+/// `new_target`, its text and its portrait, now shown and the stat panel switched to the Inspect tab.
 /datum/inspect_panel/proc/show(mob/user, atom/new_target, list/new_description, list/new_notes)
 	if(new_target != target())
 		set_show_flavor(FALSE)
@@ -60,11 +56,6 @@ CAPABILITIES(/datum/inspect_panel)
 	set_description(new_description)
 	set_notes(new_notes)
 	request_portrait(new_target, INSPECT_PORTRAIT_DIR)
-	var/list/handles = list(handle_of(new_target))
-	for(var/handle in recent)
-		if(handle != handles[1] && handle_get(handle))
-			handles += handle
-	set_recent(handles.Copy(1, min(length(handles), INSPECT_PANEL_RECENT_MAX) + 1))
 	log_input("Input: [key_name(user)] inspected [new_target] ([new_target.type]) in the Inspect tab.")
 	push(TRUE)
 
@@ -84,8 +75,6 @@ CAPABILITIES(/datum/inspect_panel)
 	switch(action)
 		if("inspect")
 			return act_inspect(user, params["ref"])
-		if("select")
-			return act_select(user, params["ref"])
 		if("flavor")
 			set_show_flavor(!show_flavor)
 			push()
@@ -112,14 +101,6 @@ CAPABILITIES(/datum/inspect_panel)
 	user.examinate(item)
 	return TRUE
 
-/// A tab was clicked: examine that target again.
-/datum/inspect_panel/proc/act_select(mob/user, ref)
-	var/atom/picked = istext(ref) ? handle_get(ref) : null
-	if(!istype(picked) || QDELETED(picked) || !(handle_of(picked) in recent))
-		return FALSE
-	user.examinate(picked)
-	return TRUE
-
 /datum/inspect_panel/proc/act_ooc(mob/user)
 	var/atom/shown = target()
 	if(!isliving(shown))
@@ -133,12 +114,7 @@ CAPABILITIES(/datum/inspect_panel)
 	var/atom/shown = target()
 	if(!shown)
 		return null
-	var/list/tabs = list()
-	for(var/handle in recent)
-		var/atom/tab_target = handle_get(handle)
-		if(tab_target && !QDELETED(tab_target))
-			tabs += list(list("ref" = handle, "name" = capitalize(tab_target.name), "active" = tab_target == shown))
-	var/list/extra = list("tabs" = tabs, "portrait" = portrait, "show_flavor" = show_flavor)
+	var/list/extra = list("portrait" = portrait, "show_flavor" = show_flavor)
 	return inspect_panel_data(user, shown, description, notes) + extra
 
 /// What the panel shows for `target` as seen by `user`: name, kind/role/distance for the subtitle, the description

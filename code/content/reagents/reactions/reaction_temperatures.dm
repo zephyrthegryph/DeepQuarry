@@ -41,6 +41,7 @@ GLOBAL_LIST_INIT(reaction_temperature_assignments, list(
 		/transformation/chem/instant/causticdigest,
 		/transformation/chem/instant/shortcut_paracetamol,
 		/transformation/chem/instant/shortcut_hyperzine,
+		/transformation/chem/instant/shortcut_phenethylamine,
 		/transformation/chem/instant/thermite,
 		/transformation/chem/instant/neurotoxin,
 		/transformation/chem/instant/titanium_oxidation,
