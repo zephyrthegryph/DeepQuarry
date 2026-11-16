@@ -119,3 +119,19 @@
 #define TRACE_LOT_DIRT 1.6
 /// Units of a contaminant that come out of one ground ore at full strength.
 #define TRACE_ORE_UNITS 0.8
+
+// ---- Vessel leaching (code/content/reagents/vessel_leaching.dm) ----
+
+/// Units of a contaminant a vessel gives up per step or second at full strength (one harsh share, a fully susceptible material), before the material's resistance.
+#define VESSEL_LEACH_UNIT 0.05
+/// The least a leach gives up (twice the least volume a holder keeps).
+#define VESSEL_LEACH_MINIMUM (MINIMUM_CHEMICAL_VOLUME * 2)
+/// The share of the contents that is harsh (strong acid or base, process chemical, oxidiser) below which the vessel leaches nothing for it.
+#define VESSEL_HARSH_FLOOR 0.05
+/// How far above the material's hot point (K) the contents add one more unit of leaching, and the most a heat term counts.
+#define VESSEL_HOT_SPAN 100
+#define VESSEL_HOT_MAX 3
+/// The temperature (K) above which a metal or a plastic leaches into what it holds, harsh or not.
+#define VESSEL_HOT_POINT (T0C + 60)
+/// The temperature (K) above which ordinary glass gives up a silicate trace.
+#define VESSEL_GLASS_HOT_POINT (T0C + 150)

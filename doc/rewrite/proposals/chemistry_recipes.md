@@ -258,7 +258,7 @@ These are source-only chemicals, usable as feedstock. Hydrolysing any of them gi
 | Wax | [long chain] ester | hydrolyse to fatty acid + alcohol | condense fatty acid + alcohol |
 | Soap | [long chain] + sodium | acid gives fatty acid back | hydrolyse fat with lye |
 | Glass | silica + soda ash + lime | hot lye to silicate | melt the three |
-| Borosilicate glass (exists) | glass + boron | hot lye to silicate | existing sheet; it is the acid-proof vessel liner |
+| Borosilicate glass (exists) | glass + boron | hot lye to silicate | existing sheet; printed into a beaker it is the acid-proof vessel (no liners: every vessel leaches its own material, borosilicate leaches nothing) |
 | Concrete | calcium silicate hydrate | acid gives calcium salt + silica | lime + silicate + water |
 | Carbon fibre (new) | carbon | — | crack aramid or nylon fibre under nitrogen |
 | Steel | iron + carbon | acid dissolves iron | reduce iron ore with carbon, blow out excess |
@@ -558,6 +558,6 @@ Where it is: `/obj/structure/closet/secure_closet/chemical_supplies` (chemistry 
 
 Gaps, on purpose or open:
 - Solid-acid sheets (a porous catalytic material) and a non-tungsten solid metal catalyst (platinum-doped stock) come from the materials workshop's engineered batches, a tier 3 input from another department; they are not stocked.
-- No vessel-liner mechanic reads the borosilicate sheet yet (it is stocked for the liner and the sorbent-filter lining); stock follows the design, the behaviour is the materials lane's.
+- Vessel leaching reads the vessel's material (`code/content/reagents/vessel_leaching.dm`): there are no liners, and the borosilicate sheet is stocked so the chemist can print a borosilicate beaker (the beaker designs are material-selectable) and for the sorbent-filter lining.
 - Tier 4 exotic inputs (soul-dew sources, slime extracts, creature organs) are not stocked.
 - Tests: `dq_chem_lab_supplies_closet_holds_every_input`, `dq_chem_lab_map_is_stocked` (full map).

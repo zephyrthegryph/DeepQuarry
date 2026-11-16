@@ -131,6 +131,7 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 		C.add_heat(joules)
 	if(!C.reagents?.total_volume)
 		return
+	C.vessel_leach(seconds) // hot contents take up a trace of the vessel for every second on the plate
 	C.reagents.handle_reactions() // the temperature moved: what could not react a second ago may now
 	var/list/vapour = C.reagents.boil_step(seconds)
 	if(length(vapour))

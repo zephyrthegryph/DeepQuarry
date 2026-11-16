@@ -149,6 +149,10 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	if(air)
 		heat_add(air, X.energy, XFORM_HEAT_SOURCE)
 
+/// `steps` rules fired in a settle of this atom's reagents, before they are announced. A vessel overrides it (its material leaches into what it holds); nothing else does.
+/atom/proc/xform_steps_settled(steps)
+	return
+
 /// Settles the reagents of `holder`: steps every rule that holds until none does. Returns the rules that fired, in the order they first did.
 /// Announces them (says, plays, notice) before returning; the caller updates the holder's totals and publishes what it publishes.
 /proc/xform_settle_reagents(datum/reagents/holder)
@@ -180,6 +184,8 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 			log_world("XFORM: settle of [holder.my_atom] ([holder.my_atom?.type]) stopped after [passes] passes; fired: [jointext(names, ", ")]")
 			break
 	while(occurred)
+	if(length(fired))
+		holder.my_atom?.xform_steps_settled(length(fired))
 	for(var/datum/xform/X as anything in fired)
 		xform_announce(X, holder, ledger[X])
 	return fired

@@ -203,6 +203,9 @@ ACTION(material_facts_changed, FIXED, notice = /datum/notice/material_facts_chan
 
 /obj/item/reagent_containers/examine(mob/user)
 	. = ..()
+	var/vessel_text = vessel_description()
+	if(vessel_text)
+		. += span_notice(vessel_text)
 	var/datum/material/material = construction_liner_material()
 	if(material)
 		. += span_notice("Liner integrity [round(material_assembly_view(src).liner_integrity)]%; catalytic rate [round(material_reaction_rate_multiplier(), 0.01)]x.")

@@ -117,7 +117,7 @@ Poisons by accident are intended and are not rationed: they come out wherever th
 - **Trace effects** act per stat at low amounts (sulfur and dissolved hydrogen lower toughness; lead lowers strength and poisons tools).
 - **Stacks** behave like a beaker of solid: same material merges and traces average; a merged stack is unassayed if either half was; different temper does not merge. Ordinary building ignores traces. Only workshop-made things carry a stat card.
 - **Refining** uses the shared processes (reduce is smelting, oxidise is roasting, displace is fluxing, electrolyse is electrorefining, vacuum degassing boils off gas), each with a per-type floor.
-- **Polymers** bridge the departments: chemistry makes the units, the workshop polymerises them. New materials: rubber, nylon, hard plastic, guncotton, aramid, carbon fibre. Existing borosilicate glass is the acid-proof vessel liner.
+- **Polymers** bridge the departments: chemistry makes the units, the workshop polymerises them. New materials: rubber, nylon, hard plastic, guncotton, aramid, carbon fibre. There are no liners: every reagent vessel leaches its own material into harsh or hot contents (metal gives heavy metals, plastic plasticiser, ordinary glass a silicate trace only when very hot or in a strong base), and the acid-proof choice is a beaker printed entirely in borosilicate glass, which leaches nothing (`code/content/reagents/vessel_leaching.dm`; the beaker designs take any material from the lathe's material picker).
 - Leaching runs both ways: a dirty catalyst or unlined vessel puts metal into the medicine, and a dirty chemical poured into a melt carries its traces into the metal.
 
 ## 11. The book

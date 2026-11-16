@@ -2024,6 +2024,7 @@
 #include "code\content\reagents\chemistry_service.dm"
 #include "code\content\reagents\drug_profile.dm"
 #include "code\content\reagents\trace_sources.dm"
+#include "code\content\reagents\vessel_leaching.dm"
 #include "code\content\reagents\blocks\agents.dm"
 #include "code\content\reagents\blocks\clashes.dm"
 #include "code\content\reagents\blocks\processes.dm"
