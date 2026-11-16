@@ -68,6 +68,64 @@
 	TEST_ASSERT_EQUAL(C.loc, there, "clicking the next tile with the pack sets the condenser down there ([rc_last_click?.reason])")
 	TEST_ASSERT(QDELETED(pack), "and the pack is gone")
 
+/// A packed machine draws nothing and belongs to no area's power; set down, it joins the area it is set down in.
+/datum/unit_test/dq_p2_reagents/dq_tabletop_packed_machine_draws_no_power
+
+/datum/unit_test/dq_p2_reagents/dq_tabletop_packed_machine_draws_no_power/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/turf/T = run_loc_floor_bottom_left
+	var/area/here = get_area(T)
+	var/before = stat_value(here, STAT_DEMAND_EQUIP) || 0
+	var/obj/machinery/chem_hot_plate/P = allocate(/obj/machinery/chem_hot_plate, T)
+	P.set_anchored(FALSE)
+	TEST_ASSERT_EQUAL(P.power_area, here, "a plate on the floor belongs to its area's power")
+	var/loose = stat_value(here, STAT_DEMAND_EQUIP) || 0
+	TEST_ASSERT(loose > before, "and its idle draw is in the area's demand")
+	rc_click(H, P, null)
+	var/obj/item/tabletop_pack/pack = dq_tt_pack_in_hand(H)
+	TEST_ASSERT_NOTNULL(pack, "the loose plate is picked up")
+	TEST_ASSERT_NULL(P.power_area, "packed, it belongs to no area's power")
+	TEST_ASSERT(!(P in here.power_machines), "it is not among the area's power machines")
+	TEST_ASSERT_EQUAL(stat_value(here, STAT_DEMAND_EQUIP) || 0, before, "and the area's demand is as it was without it")
+	// The pack moves to another area with the machine inside: still nothing registered.
+	var/area/other = null
+	for(var/area/A in world)
+		if(A != here && length(A.contents))
+			other = A
+			break
+	if(other)
+		var/turf/far = locate(/turf) in other
+		if(far)
+			pack.forceMove(far)
+			TEST_ASSERT_NULL(P.power_area, "carried into another area it still belongs to none")
+			pack.forceMove(H)
+	rc_use(H, pack)
+	TEST_ASSERT(isturf(P.loc), "the plate is set down")
+	TEST_ASSERT_EQUAL(P.power_area, get_area(P), "set down, it joins the power of the area it stands in")
+	TEST_ASSERT_EQUAL(stat_value(here, STAT_DEMAND_EQUIP) || 0, loose, "and its draw is back in the demand")
+
+/// The pack looks like the machine inside it, the beaker on a hot plate included.
+/datum/unit_test/dq_p2_reagents/dq_tabletop_pack_look_shows_the_machine
+
+/datum/unit_test/dq_p2_reagents/dq_tabletop_pack_look_shows_the_machine/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/obj/machinery/chem_hot_plate/P = allocate(/obj/machinery/chem_hot_plate, run_loc_floor_bottom_left)
+	P.set_anchored(FALSE)
+	rc_click(H, P, null)
+	var/obj/item/tabletop_pack/pack = dq_tt_pack_in_hand(H)
+	TEST_ASSERT_NOTNULL(pack, "the loose plate is picked up")
+	draw_now(P)
+	draw_now(pack)
+	TEST_ASSERT_EQUAL(pack.icon, P.icon, "the pack wears the plate's icon")
+	TEST_ASSERT_EQUAL(pack.icon_state, P.icon_state, "and its state")
+	var/bare = length(pack.overlays)
+	var/obj/item/reagent_containers/glass/beaker/B = rc_filled(/obj/item/reagent_containers/glass/beaker, 30)
+	TEST_ASSERT(move_into(P, nameof(P.held_container), B), "a beaker is put on the packed plate")
+	draw_now(P)
+	draw_now(pack)
+	TEST_ASSERT(length(pack.overlays) > bare, "the pack now shows the beaker ([length(pack.overlays)] overlays, was [bare])")
+	TEST_ASSERT_EQUAL(length(pack.overlays), length(P.overlays), "exactly what the plate shows")
+
 /// Bolted, an empty hand uses the machine instead of picking it up: a condenser gives its container back.
 /datum/unit_test/dq_p2_reagents/dq_tabletop_bolted_machine_is_used_not_picked_up
 

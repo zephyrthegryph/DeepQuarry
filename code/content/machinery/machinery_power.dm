@@ -176,14 +176,23 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 
 /obj/machinery/proc/update_power_on_move(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(loc, /obj/item/tabletop_pack))
+		return // carried: the pack's own moves change no area's power
 	var/datum/notice/movable_attempted_move/event = A
 	power_area_moved(event.old_loc, event.new_loc)
 
 /obj/machinery/proc/power_area_moved(atom/old_loc, atom/new_loc)
-	var/area/old_area = get_area(old_loc)
-	var/area/new_area = get_area(new_loc)
+	var/area/old_area = power_served_area(old_loc)
+	var/area/new_area = power_served_area(new_loc)
 	if(old_area != new_area)
 		area_changed(old_area, new_area)
+
+/// The area whose power a machine standing in `where` draws on: its area, and none while it is carried inside a tabletop pack (it draws nothing and
+/// belongs to no area's power until it is set down).
+/obj/machinery/proc/power_served_area(atom/where)
+	if(istype(where, /obj/item/tabletop_pack))
+		return null
+	return get_area(where)
 
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
 	if(old_area == new_area)

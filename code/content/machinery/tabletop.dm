@@ -72,8 +72,13 @@ CAPABILITIES(/obj/item/tabletop_pack)
 	rel_set(src, nameof(machine), M) // adopts the machine where it is: it already moved in
 	name = M.name
 	desc = "[M.desc] It is not bolted down."
-	set_icon(M.icon)
-	set_icon_state(M.icon_state)
+	if(GLOB.fab_trace)
+		log_world("TABLETOP: [src] packs [M] ([M.type]); its power area is [M.power_area || "none"]")
+
+/// The pack looks like the machine it carries, overlays and all (a beaker on a hot plate), and follows the machine when it is redrawn.
+/obj/item/tabletop_pack/draw(datum/look/look)
+	..()
+	look.mimic(machine)
 
 /// Why the machine can't be set down on `T`, or null.
 /obj/item/tabletop_pack/proc/spot_refusal(turf/T)
@@ -108,6 +113,8 @@ CAPABILITIES(/obj/item/tabletop_pack)
 		return OP_REFUSED
 	M.forceMove(T)
 	rel_take(src, nameof(machine))
+	if(GLOB.fab_trace)
+		log_world("TABLETOP: [M] left its pack for [T]; its power area is [M.power_area || "none"]")
 	to_chat(user, span_notice("You set \the [M] down."))
 	if(GLOB.fab_trace)
 		log_world("TABLETOP: [user] set [M] ([M.type]) down at [T] (bolted [M.anchored ? "yes" : "no"])")
