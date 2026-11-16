@@ -840,6 +840,7 @@
 #include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_p2_lights_behaviour.dm"
 #include "dq_lighting_blackness_test.dm"
+#include "dq_self_action_matrix.dm"
 #include "dq_hc_items_behaviour.dm"
 #include "dq_hc_items2_stacks.dm"
 #include "dq_hc_items2_c.dm"

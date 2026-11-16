@@ -410,6 +410,10 @@ CAPABILITIES(/obj/item/gun/energy/medigun)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 5))
 
+/// A medigun heals: its holder may fire it at themselves in any stance.
+/obj/item/gun/energy/medigun/self_fire_safe()
+	return TRUE
+
 /obj/item/gun/energy/bfgtaser
 	name = "9000-series Ball Lightning Taser"
 	desc = "The brainchild of Hephaestus Industries Civil Pacification Division, the BLT-9000 was intended for riot control but despite enthusiastic interest from law-enforcement agencies across the Commonwealth and beyond, its indiscriminate nature led to it being banned from civilian use in virtually all jurisdictions. As a result, most pieces are found in the hands of collectors."

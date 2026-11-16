@@ -257,7 +257,7 @@ GLOBAL_ALIST_EMPTY(interaction_entry_attack_modifier)
 	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
 	// tiles, then resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant
 	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
-	if(isliving(user) && stance == I_HURT && combat_of(I).force && !(I.flags & NOBLUDGEON))
+	if(isliving(user) && user != src && stance == I_HURT && combat_of(I).force && !(I.flags & NOBLUDGEON))
 		var/mob/living/attacker = user
 		if(STATE_GET(attacker, melee_swing, is_swinging))
 			return FALSE // already mid-swing — ignore the queued attack click
@@ -291,6 +291,8 @@ GLOBAL_ALIST_EMPTY(interaction_entry_attack_modifier)
 	if(!combat_of(src).force || (flags & NOBLUDGEON))
 		return ITEM_INTERACT_FAILURE
 	if(M == user && stance != I_HURT)
+		to_chat(user, span_warning("You refrain from hitting yourself with \the [src] out of combat mode."))
+		log_input("Input: [key_name(user)] clicked themselves with [src] ([type]) out of combat mode: refused, no self-attack outside combat mode.")
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
