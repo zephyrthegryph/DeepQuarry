@@ -20,6 +20,13 @@
 	/// The share of a mixture below which a filter cannot take it out any further (code/content/reagents/purification/filters.dm): a trace stays.
 	var/filter_floor = 0
 
+/// A contaminant does its harm silently (INJURE_SILENT), so the patient gets a mild unwell cue now and then. The scanner names the
+/// substance at the improved tier (scannable = SCANNABLE_ADVANCED); the cue never does.
+/datum/reagent/contaminant/proc/feel_unwell(mob/living/carbon/M)
+	if(M.stat != CONSCIOUS || !prob(10))
+		return
+	to_chat(M, span_warning(pick("You feel queasy.", "Your stomach turns for a moment.", "You feel a little off, as if something you took disagreed with you.")))
+
 /// A contaminant's catalogue line in a machine's listing also says what the mixture it sits in is graded.
 /datum/reagent/contaminant/listing_description()
 	var/summary = holder?.purity_summary()
@@ -42,6 +49,7 @@
 		M.injure(INJURY_BLUNT, amount, O, src, affliction = /datum/affliction/lesion/toxic_injury, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	else
 		M.injure(INJURY_TOXIN, amount, source = src, flags = INJURE_SILENT)
+	feel_unwell(M)
 	if(GLOB.chem_trace)
 		log_world("CHEM: [id] ([round(removed, 0.0001)]u metabolised) strains [organ || "the body"] of [M] for [round(amount, 0.0001)]")
 
@@ -58,6 +66,7 @@
 	if(amount <= 0 || !prob(burn_chance))
 		return
 	M.injure(INJURY_BURN, amount, source = src, flags = INJURE_SILENT)
+	feel_unwell(M)
 	if(GLOB.chem_trace)
 		log_world("CHEM: [id] ([round(removed, 0.0001)]u metabolised) burns [M] for [round(amount, 0.0001)]")
 
@@ -73,6 +82,7 @@
 	var/amount = removed * rate
 	if(amount > 0)
 		M.injure(INJURY_TOXIN, amount, source = src, flags = INJURE_SILENT)
+		feel_unwell(M)
 	if(fever > 0)
 		warm_body(M, fever, removed, max_temp = T0C + 39)
 	if(GLOB.chem_trace)
@@ -272,6 +282,7 @@
 	if(istype(H) && length(H.organs))
 		zone = pick(H.organs)
 	M.injure(INJURY_CORROSIVE, amount, zone, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	feel_unwell(M)
 	if(GLOB.chem_trace)
 		log_world("CHEM: [id] ([round(removed, 0.0001)]u metabolised) leaves a lesion on [M] for [round(amount, 0.0001)]")
 
@@ -293,5 +304,6 @@
 	if(amount <= 0)
 		return
 	M.injure(INJURY_CELLULAR, amount, source = src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	feel_unwell(M)
 	if(GLOB.chem_trace)
 		log_world("CHEM: [id] ([round(removed, 0.0001)]u metabolised) damages the cells of [M] for [round(amount, 0.0001)]")

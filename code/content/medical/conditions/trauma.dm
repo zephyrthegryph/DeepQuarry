@@ -193,11 +193,12 @@ CAPABILITIES(/datum/affliction/hypovolemic_shock)
 	treated_by = list(TREAT_BONE_REPAIR = 1.2, TREAT_BONE_SETTING = 1)
 	worsened_by_tags = list(TREAT_STIMULANT = 0.5)
 	symptom_pool = list(
+		/datum/affliction_symptom/bone_crepitus = 100,
 		/datum/affliction_symptom/sharp_pain    = 80,
 		/datum/affliction_symptom/throbbing_pain = 60,
 	)
 	min_symptoms = 1
-	max_symptoms = 2
+	max_symptoms = 3
 
 /// Fracture pain and slowdown are body factors, by region and by whether a
 /// splint holds the bone still. A splint doesn't knit the bone; it cuts the
@@ -206,7 +207,7 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 	"Unset leg" = list( \
 		"name" = "untreated fracture", \
 		"description" = "A broken leg bone, unset and unsupported. Every step grinds the fragments.", \
-		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
+		"symptom_pool" = list(/datum/affliction_symptom/bone_crepitus = 100, /datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
 		"factors" = alist(STAT_SLOWDOWN = 1.5, STAT_PAIN = 15), \
 	), \
 	"Splinted leg" = list( \
@@ -218,7 +219,7 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 	"Unset arm" = list( \
 		"name" = "untreated fracture", \
 		"description" = "A broken arm bone, unset and unsupported.", \
-		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
+		"symptom_pool" = list(/datum/affliction_symptom/bone_crepitus = 100, /datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
 		"factors" = alist(STAT_ACCURACY = -15, STAT_PAIN = 15), \
 	), \
 	"Splinted arm" = list( \
@@ -230,7 +231,7 @@ TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
 	"Unset" = list( \
 		"name" = "untreated fracture", \
 		"description" = "A broken bone, unset and unsupported.", \
-		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
+		"symptom_pool" = list(/datum/affliction_symptom/bone_crepitus = 100, /datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
 		"factors" = alist(STAT_SLOWDOWN = 0.5, STAT_PAIN = 15), \
 	), \
 	"Splinted" = list( \

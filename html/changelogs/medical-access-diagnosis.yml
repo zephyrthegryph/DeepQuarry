@@ -1,0 +1,9 @@
+author: "DeepQuarry"
+delete-after: true
+changes:
+  - rscadd: "The Doctor's Encyclopedia is in the medbay bookcase, the CMO locker and the library archive."
+  - rscadd: "Medbay lockers stock a field stabilisation kit, a resuscitation kit (bag-valve mask, airway kit, decompression needles) and a vitals kit (thermometer, BP cuff, pulse oximeter); tourniquets, gauze, pressure bandages, chest seals and the instruments can be made at medical lathes."
+  - qol: "The basic health analyzer reads vitals-level signs: shock, fever with infection suspected, suspected fracture, suspected internal bleeding, organ damage by organ, low oxygenation and hypothermia. It reads ear damage and withdrawal too."
+  - qol: "Contaminant poisoning gives a mild queasy cue; sepsis shows on examine; cellulitis, fractures, profane corruption and neurotoxic stings have scanner phrases; the body scanner names growths as tissue masses or parasites."
+  - qol: "Analyzer guidance now covers every treatment mechanism. Withdrawal and ear damage have book entries."
+  - bugfix: "Removed an undefined treatment tag and a duplicated bone repair kit definition."

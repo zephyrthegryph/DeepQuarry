@@ -43,12 +43,13 @@
 	simple_load_rate = 0.5
 	treated_by = list(TREAT_ANTITOXIN = 0.6)
 	symptom_pool = list(
+		/datum/affliction_symptom/tainted_blood   = 100,
 		/datum/affliction_symptom/fever_sensation = 85,
 		/datum/affliction_symptom/confusion       = 70,
 		/datum/affliction_symptom/headache        = 60,
 		/datum/affliction_symptom/jittery         = 40,
 	)
 	min_symptoms = 1
-	max_symptoms = 3
+	max_symptoms = 4
 	spontaneous_emotes = list("twitch", "shiver")
 	spontaneous_emote_prob = 3

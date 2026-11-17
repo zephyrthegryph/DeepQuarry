@@ -145,6 +145,7 @@ Book Cart End
 
 CAPABILITIES(/obj/structure/bookcase/manuals/medical)
 	initial_contents(/obj/item/book/manual/medical_cloning)
+	initial_contents(/obj/item/book/dq_medical_reference)
 	initial_contents(/obj/item/book/manual/wiki/medical_diagnostics_manual, count = 3)
 
 /obj/structure/bookcase/manuals/engineering

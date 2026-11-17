@@ -312,7 +312,50 @@
 			entry["raised_by"] = _dq_seizure_proneness_sources()
 
 		out += list(entry)
+	out += _dq_book_body_state_conditions()
 	return out
+
+/// Conditions the body keeps as state rather than as an affliction (withdrawal, ear damage): a plain entry each, so a doctor can look them up
+/// and learn what the scanners read for them. Same shape as the entries above.
+/proc/_dq_book_body_state_conditions()
+	return list(
+		_dq_plain_condition_entry("body_state/withdrawal", "withdrawal", "Dependence", \
+			"A body that has come to depend on a chemical goes into withdrawal when it runs short: cravings, chills, weakness and vomiting that get worse the longer it goes without. The basic analyzer reads \"chemical dependance, with signs of withdrawal\"; the improved analyzer names the drug; the advanced analyzer also recommends treatment. A dose of the drug ends it for a while.", \
+			"fades very slowly without the drug, and ends the moment the dependence is gone", \
+			list(list("id" = REAGENT_ID_INAPROVALINE, "name" = dq_reagent_display_name(REAGENT_ID_INAPROVALINE), "band" = dq_describe_cure_strength(0.4))), \
+			list("cravings (\"You're dying for some...\")", "chills and pallor", "weakness and vomiting")),
+		_dq_plain_condition_entry("body_state/ear_damage", "ear damage and deafness", "Senses", \
+			"Flashbangs, concussive blasts and loud weapons damage the ears. Mild damage rings and muffles and heals on its own; wearing ear protection speeds it up. Past a heavy dose the damage does not heal by itself. The basic analyzer reads the degree of ear damage and any deafness.", \
+			"mild damage heals slowly; severe damage does not", \
+			list(), \
+			list("ringing and muffled hearing", "deafness")),
+	)
+
+/// One book entry for a body-state condition: the whole shape of a catalogue entry, with the lists a state has no data for left empty.
+/proc/_dq_plain_condition_entry(id, name, category, description, progression, list/cures, list/symptom_names)
+	var/list/symptoms = list()
+	for(var/symptom_name in symptom_names)
+		symptoms += list(list("id" = "[id]/[symptom_name]", "name" = symptom_name, "frequency" = dq_describe_symptom_frequency(60)))
+	return list(
+		"id" = id,
+		"name" = name,
+		"category" = category,
+		"subcategory" = null,
+		"description" = description,
+		"progression" = progression,
+		"cures" = cures,
+		"mechanisms" = list(),
+		"harmful_mechanisms" = list(),
+		"od_cures" = list(),
+		"cure_type" = "stabilising",
+		"worsens" = list(),
+		"causes" = list(),
+		"caused_by_reagents" = list(),
+		"complications" = list(),
+		"surgeries" = list(),
+		"stages" = list(list("id" = null, "name" = null, "description" = null, "symptoms" = symptoms, "effects" = list())),
+		"symptoms" = symptoms,
+	)
 
 
 /// Build one stage entry for the book: id, name (override), description,
