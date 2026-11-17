@@ -120,6 +120,7 @@
 
 /datum/affliction_symptom/synthetic
 	category = "Synthetic"
+	abstract_type = /datum/affliction_symptom/synthetic
 
 /datum/affliction_symptom/synthetic/coolant_drip
 	name = "coolant leaking"
@@ -274,6 +275,7 @@ TYPE_TABLE(/datum/affliction_symptom/synthetic/power_warning, get_patient_messag
 
 /datum/affliction_trigger/progression/coolant_to_runaway
 	name = "Coolant loss becomes thermal runaway"
+	description = "A synthetic that keeps leaking coolant loses the means to shed its heat. Past a point the chassis overheats faster than it can cool and goes into thermal runaway."
 	subcategory = "Synthetic"
 	source_condition = /datum/affliction/synthetic/coolant_leak
 	threshold = 60

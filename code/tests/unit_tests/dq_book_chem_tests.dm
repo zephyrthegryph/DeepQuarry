@@ -29,8 +29,7 @@
 /datum/unit_test/dq_book_lists_every_drug
 
 /datum/unit_test/dq_book_lists_every_drug/Run()
-	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
-	var/list/reagents = book._dq_book_reagents()
+	var/list/reagents = _dq_book_reagents()
 	for(var/reagent_id in dq_book_drug_ids())
 		var/list/entry = _book_reagent_entry(reagents, reagent_id)
 		TEST_ASSERT_NOTNULL(entry, "the book has no entry for [reagent_id]")
@@ -45,8 +44,7 @@
 /datum/unit_test/dq_book_shows_strains_and_hides
 
 /datum/unit_test/dq_book_shows_strains_and_hides/Run()
-	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
-	var/list/reagents = book._dq_book_reagents()
+	var/list/reagents = _dq_book_reagents()
 	var/strained = 0
 	var/hiding = 0
 	for(var/list/entry in reagents)
@@ -78,9 +76,8 @@
 /datum/unit_test/dq_book_conditions_nausea_seizure_malunion
 
 /datum/unit_test/dq_book_conditions_nausea_seizure_malunion/Run()
-	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
 	var/list/by_id = list()
-	for(var/list/entry in book._dq_book_conditions())
+	for(var/list/entry in _dq_book_conditions())
 		by_id[entry["id"]] = entry
 	for(var/condition_type in list(/datum/affliction/nausea, /datum/affliction/seizure, /datum/affliction/malunion))
 		var/list/condition = by_id["[condition_type]"]
@@ -91,7 +88,7 @@
 	var/list/malunion = by_id["[/datum/affliction/malunion]"]
 	TEST_ASSERT(length(malunion["surgeries"]), "the crooked fracture lists the surgery that corrects it")
 	// The drug that adds nausea lists it, with its kind.
-	var/list/panacillin = _book_reagent_entry(book._dq_book_reagents(), REAGENT_ID_PANACILLIN)
+	var/list/panacillin = _book_reagent_entry(_dq_book_reagents(), REAGENT_ID_PANACILLIN)
 	var/found = FALSE
 	for(var/list/side in panacillin["side_effects"])
 		if(side["id"] == "[/datum/affliction/nausea/panacillin]")
@@ -104,8 +101,7 @@
 /datum/unit_test/dq_book_shows_declared_drawbacks
 
 /datum/unit_test/dq_book_shows_declared_drawbacks/Run()
-	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
-	var/list/reagents = book._dq_book_reagents()
+	var/list/reagents = _dq_book_reagents()
 	for(var/list/entry in reagents)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[entry["id"]]
 		if(!R)
@@ -131,8 +127,7 @@
 /datum/unit_test/dq_book_purity_section
 
 /datum/unit_test/dq_book_purity_section/Run()
-	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
-	var/list/purity = book._dq_book_purity()
+	var/list/purity = _dq_book_purity()
 	var/list/grades = purity["grades"]
 	TEST_ASSERT_EQUAL(length(grades), 4, "four grades")
 	for(var/list/grade in grades)
@@ -154,8 +149,7 @@
 /datum/unit_test/dq_book_reagent_blocks_and_routes
 
 /datum/unit_test/dq_book_reagent_blocks_and_routes/Run()
-	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
-	var/list/reagents = book._dq_book_reagents()
+	var/list/reagents = _dq_book_reagents()
 	var/list/kelotane = _book_reagent_entry(reagents, REAGENT_ID_KELOTANE)
 	TEST_ASSERT_NOTNULL(kelotane, "kelotane is in the book")
 	var/list/blocks = kelotane["blocks"]

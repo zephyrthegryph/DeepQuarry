@@ -36,7 +36,7 @@ GLOBAL_TABLE(surgical_steps_answering_table, GLOBAL_PROC_REF(build_surgical_step
 	for(var/quality in S.allowed_tool_qualities)
 		. |= "Any tool with the [quality] quality"
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_surgeries()
+/proc/_dq_book_surgeries()
 	var/list/out = list()
 	out += list(_dq_book_access_entry())
 	for(var/datum/surgical_step/S as anything in surgical_steps())
@@ -45,7 +45,7 @@ GLOBAL_TABLE(surgical_steps_answering_table, GLOBAL_PROC_REF(build_surgical_step
 	return out
 
 /// Opening and closing: the only fixed part of any operation.
-/obj/item/book/dq_medical_reference/proc/_dq_book_access_entry()
+/proc/_dq_book_access_entry()
 	var/list/entry = list()
 	entry["id"] = "surgery_access"
 	entry["name"] = "Opening and closing a site"
@@ -67,7 +67,7 @@ GLOBAL_TABLE(surgical_steps_answering_table, GLOBAL_PROC_REF(build_surgical_step
 	entry["treats"] = list()
 	return entry
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_step_entry(datum/surgical_step/S)
+/proc/_dq_book_step_entry(datum/surgical_step/S)
 	var/list/entry = list()
 	entry["id"] = "[S.type]"
 	entry["name"] = S.name

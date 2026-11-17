@@ -531,6 +531,7 @@
 #include "dq_surgery_tests.dm"
 #include "dq_sys_fields_tests.dm"
 #include "dq_wires_behaviour.dm"
+#include "dq_wiki_tests.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_world_watch_tests.dm"

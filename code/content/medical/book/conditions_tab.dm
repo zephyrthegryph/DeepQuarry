@@ -6,7 +6,7 @@
 // causes, forward complications (via severity_gate + organ_damage
 // causes), surgeries that treat it, and per-stage symptom/effect data.
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_conditions()
+/proc/_dq_book_conditions()
 	var/list/out = list()
 	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = dq_proto(T)

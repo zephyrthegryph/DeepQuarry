@@ -1,0 +1,8 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - rscadd: "Added the Station Wiki: open it from the Status panel's quick row. Sections fold open and shut, search finds any page, every name links to its page, and back and forward work."
+  - rscadd: "The Doctor's Encyclopedia now opens the wiki's medical pages: every condition, drug, symptom, trigger, organ, surgical step and treatment mechanism has its own linked page."
+  - qol: "Medical pages list treatments by mechanism, with the drugs that provide each, and gather every cause of a condition (injuries, other conditions, chemicals, forms)."
+  - qol: "The purity guide is tabbed, linked and up to date: contaminants are reagents, transfers move the whole mixture, no machine separates one chemical, ice baths and the current catalyst rules."
+  - bugfix: "Wounds, venoms, poisonings and synthetic conditions are listed in the medical reference again."

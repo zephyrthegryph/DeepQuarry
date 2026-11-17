@@ -5,7 +5,7 @@
 // emits one entry per symptom with audiences, scanner phrase, patient
 // messages, public emotes, and the conditions it appears in.
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_symptoms()
+/proc/_dq_book_symptoms()
 	var/list/condition_index = list()
 	for(var/CT in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/cproto = dq_proto(CT)
@@ -49,6 +49,9 @@
 	var/list/out = list()
 	for(var/T in subtypesof(/datum/affliction_symptom))
 		var/datum/affliction_symptom/proto = dq_proto(T)
+		// A family base only groups its subtypes (the nanite and synthetic families).
+		if(proto.abstract_type == T)
+			continue
 		var/list/entry = list()
 		entry["id"]          = "[T]"
 		entry["name"]        = proto.name

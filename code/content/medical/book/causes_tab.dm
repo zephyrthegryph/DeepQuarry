@@ -6,7 +6,7 @@
 // can produce. Also holds the trigger-shape helpers used elsewhere:
 // _affliction_trigger_kind, _affliction_trigger_link, and _dq_cure_type_for.
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_causes()
+/proc/_dq_book_causes()
 	var/list/out = list()
 	for(var/datum/affliction_trigger/c as anything in affliction_triggers_registry())
 		var/list/entry = list()

@@ -52,6 +52,7 @@ export const textModeCommand = (on: boolean) => mapSet('text-mode', `${on}`);
 
 export const HELP_ITEMS: MenuItem[] = [
   { label: 'Admin help (F1)', command: 'request-help' },
+  { label: 'Station Wiki', command: 'station-wiki' },
   { label: 'Hotkeys', command: 'hotkeys-help' },
   { label: 'Character Setup', command: 'character-setup' },
   { label: 'Game Options', command: 'game-options' },

@@ -24,17 +24,17 @@
 /datum/affliction/load
 	catalogued = FALSE
 
-// Abstract family bases: only their concrete subtypes are real diagnoses.
+// Abstract family bases: only their concrete subtypes are real diagnoses (abstract_type, so the subtypes stay catalogued).
 /datum/affliction/venom
-	catalogued = FALSE
+	abstract_type = /datum/affliction/venom
 /datum/affliction/poisoning
-	catalogued = FALSE
+	abstract_type = /datum/affliction/poisoning
 /datum/affliction/synthetic
-	catalogued = FALSE
+	abstract_type = /datum/affliction/synthetic
 /datum/affliction/wound
-	catalogued = FALSE
+	abstract_type = /datum/affliction/wound
 /datum/affliction/wound/synthetic
-	catalogued = FALSE
+	abstract_type = /datum/affliction/wound/synthetic
 // Marker left on a stump; not something to diagnose or treat.
 /datum/affliction/wound/lost_limb
 	catalogued = FALSE

@@ -609,6 +609,7 @@ TYPE_TABLE(/datum/affliction_symptom/agonal_gasping, get_public_emotes, list("ga
 
 /datum/affliction_symptom/rhythm_finding
 	name = "abnormal cardiac rhythm"
+	clinical_description = "A heart rhythm the monitor reads as wrong: too fast, irregular, fibrillating or flat. Only instruments that read the heart show it; the rhythm decides whether to shock, compress or give drugs."
 	category = "Diagnosable"
 	subcategory = "Circulation"
 	audiences = SYMPTOM_AUDIENCE_SCANNER

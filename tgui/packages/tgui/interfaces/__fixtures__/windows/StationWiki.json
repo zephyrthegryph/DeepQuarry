@@ -1,0 +1,54 @@
+{
+	"index": [
+		["home", "Station Wiki", "Welcome", "Start here."],
+		["med/index", "Medical reference", "Medical", ""],
+		[
+			"med/cond/concussion",
+			"Concussion",
+			"Medical/Conditions/Neurological",
+			""
+		],
+		["chem/bicaridine", "Bicaridine", "Medical/Drugs/Trauma", ""],
+		["chem/water", "Water", "Chemistry/Reagents/Other", ""]
+	],
+	"article": {
+		"id": "med/cond/concussion",
+		"title": "Concussion",
+		"path": "Medical/Conditions/Neurological",
+		"summary": null,
+		"blocks": [
+			{
+				"k": "p",
+				"t": "A blow to the head. See [[med/index|the medical pages]] and **rest**."
+			},
+			{ "k": "kv", "rows": [["Course", "Self-resolving"]] },
+			{ "k": "h", "t": "Treatment" },
+			{
+				"k": "links",
+				"t": "[[med/index|Neural repair]] (moderate)",
+				"items": [
+					{
+						"id": "chem/bicaridine",
+						"name": "Bicaridine",
+						"note": "mild",
+						"tone": "good"
+					},
+					{ "id": null, "name": "Plain", "note": null, "tone": null }
+				]
+			},
+			{ "k": "ol", "items": ["First", "Second"] },
+			{ "k": "ul", "items": ["A [[chem/water]] bullet"] },
+			{ "k": "note", "t": "Careful.", "tone": "bad" },
+			{ "k": "table", "head": ["A", "B"], "rows": [["1", "[[chem/water]]"]] },
+			{
+				"k": "tabs",
+				"tabs": [
+					{ "name": "One", "blocks": [{ "k": "p", "t": "First tab" }] },
+					{ "name": "Two", "blocks": [] }
+				]
+			}
+		]
+	},
+	"requested": "med/cond/concussion",
+	"home": "home"
+}

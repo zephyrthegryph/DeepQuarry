@@ -480,6 +480,7 @@ TYPE_TABLE(/datum/affliction/lesion/synthetic/component_fault, get_full_repair_t
 
 /datum/affliction_symptom/lesion_finding
 	name = "organ lesion"
+	clinical_description = "A scanner finding of damaged tissue inside an organ: a bruise, a tear or dead tissue. It shows only on instruments that look inside the body; the specific kind names what surgery answers it."
 	category = "Diagnosable"
 	audiences = SYMPTOM_AUDIENCE_SCANNER
 

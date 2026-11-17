@@ -627,8 +627,7 @@
 /datum/unit_test/dq_pur_book_lists_the_methods
 
 /datum/unit_test/dq_pur_book_lists_the_methods/Run()
-	var/obj/item/book/dq_medical_reference/book = allocate(/obj/item/book/dq_medical_reference)
-	var/list/purity = book._dq_book_purity()
+	var/list/purity = _dq_book_purity()
 	TEST_ASSERT(length(purity["methods"]) >= 5, "the book lists the methods")
 	TEST_ASSERT_EQUAL(length(purity["temperature_classes"]), length(GLOB.reaction_temperature_classes), "every temperature class")
 	var/found_acid = FALSE

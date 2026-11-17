@@ -1,26 +1,7 @@
-// DQ Medical Reference — TGUI book documenting the cascading-condition
-// system. Six tabs:
-//
-//   Conditions — each condition's clinical picture, cures, what causes
-//                it (mixed: causes + upstream conditions), and what it
-//                leads to (forward links to downstream conditions and
-//                organ-damage outcomes).
-//   Symptoms   — symptom catalogue with audiences, scanner phrases,
-//                examine lines, and the conditions they appear in.
-//   Reagents   — every cure/contraindicated reagent grouped by use.
-//   Triggers   — every /datum/affliction_trigger (injury events, organ
-//                integrity thresholds, blood loss, infection thresholds,
-//                metrics) and what each produces.
-//   Purity     — the four grades and their purity bands, every contaminant, and
-//                the recipes that ask for a minimum grade.
-//   Surgeries  — every procedure, its steps, tools, the conditions it
-//                treats, and (where applicable) which organs it repairs.
-//
-// Each tab's data builder lives in its own *_tab.dm file in this
-// directory; the tgui_data shell below dispatches to them. Builders read
-// long-lived prototypes via dq_proto() (see .../proto_cache.dm)
-// so the book renders without re-allocating every subtype on each open.
-
+// DQ Medical Reference: the medical half of the station wiki (code/content/wiki/). The book is a way into the wiki: reading it opens the wiki
+// on the medical index. The data builders in this directory (one per kind: conditions, symptoms, reagents, triggers, surgery, purity) read the
+// condition, reagent and surgery prototypes through dq_proto() (.../proto_cache.dm); the wiki's medical source (code/content/wiki/sources/medical.dm)
+// turns their entries into articles. Everything is built once per world (dq_medical_book_data) and each article's body once, on first read.
 
 /obj/item/book/dq_medical_reference
 	name = "Doctor's Encyclopedia"
@@ -33,28 +14,25 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/book/dq_medical_reference)
-	op("read_reference", in_hand(), label("Read"), opens_ui())
-	interface("DQMedicalBook", state = nameof(GLOB.tgui_physical_state))
-	without("ui_open")
-	ui_shape(conditions = any, symptoms = any, reagents = any, causes = any, surgeries = any, purity = any)
+	op("read_reference", in_hand(), label("Read"), then(PROC_REF(read_reference)))
 
-/// /obj/item/book/dq_medical_reference's window data: none that changes. The book's text is the same for every reader and every copy for the
-/// life of the world (it is built from the condition prototypes), so it is sent once per open as static data, built once per world.
-/obj/item/book/dq_medical_reference/ui_data(datum/act/eval/A)
-	return list()
+/// Reading the book opens the station wiki on its medical index.
+/obj/item/book/dq_medical_reference/proc/read_reference(datum/act/op/A)
+	wiki_open(A.actor, WIKI_ID_MEDICAL_INDEX)
+	return OP_OK
 
-/obj/item/book/dq_medical_reference/ui_static_data(datum/act/eval/A)
-	return CACHED_KEY(dq_medical_book_data, "book", src)
+/// The medical data (about 550 KB, 235 ms to build): every kind's entries, built once per world.
+GLOBAL_TABLE(dq_medical_book_data, GLOBAL_PROC_REF(build_dq_medical_book_data))
 
-/// The whole book (about 550 KB of text, 235 ms to build): every tab's entries.
-DECLARE_SHARED_CACHE(dq_medical_book_data, GLOBAL_PROC_REF(build_dq_medical_book_data), SC_NEVER)
+/proc/dq_medical_book_data()
+	return GLOBAL_TABLE_GET(dq_medical_book_data)
 
-/proc/build_dq_medical_book_data(obj/item/book/dq_medical_reference/book)
+/proc/build_dq_medical_book_data()
 	var/list/data = list()
-	data["conditions"] = book._dq_book_conditions()
-	data["symptoms"]   = book._dq_book_symptoms()
-	data["reagents"]   = book._dq_book_reagents()
-	data["causes"]     = book._dq_book_causes()
-	data["surgeries"]  = book._dq_book_surgeries()
-	data["purity"]     = book._dq_book_purity()
+	data["conditions"] = _dq_book_conditions()
+	data["symptoms"]   = _dq_book_symptoms()
+	data["reagents"]   = _dq_book_reagents()
+	data["causes"]     = _dq_book_causes()
+	data["surgeries"]  = _dq_book_surgeries()
+	data["purity"]     = _dq_book_purity()
 	return data

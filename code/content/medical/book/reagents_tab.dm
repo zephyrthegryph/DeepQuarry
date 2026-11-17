@@ -12,7 +12,7 @@
 //   - the recipe(s) that produce it (chemistry service)
 //   - a clinical category for grouping in the left-pane index
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_reagents()
+/proc/_dq_book_reagents()
 	var/list/by_id = list()
 
 	// First pass: invert cured_by / worsened_by AND collect every

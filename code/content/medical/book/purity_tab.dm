@@ -6,7 +6,7 @@
 // points (code/content/reagents/reagents/boiling_points.dm), the filters (code/content/reagents/purification/filters.dm), neutralisation and the hot plate and
 // condenser. All of it is read from the reagent types, the tables and the transformation rules, never written out here.
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_purity()
+/proc/_dq_book_purity()
 	var/list/out = list()
 	var/list/grades = list()
 	for(var/grade in list(GRADE_CRUDE, GRADE_STANDARD, GRADE_PHARMA, GRADE_REAGENT))
@@ -97,9 +97,10 @@
 /proc/_dq_book_methods()
 	var/list/out = list()
 	out += list(list("name" = "Temperature", "text" = "A recipe is clean inside its ideal band. Off the band but inside its range it still goes, but leaves organic residue (too cold) or a reactive impurity and a loss of product (too hot), more the further off it is. Outside its range nothing happens."))
-	out += list(list("name" = "Catalysts", "text" = "A catalyst belongs to a process. A dissolved acid (sulphuric) or base (lye) lowers its band and is spent into acid or base residue; an enzyme works at gentle heat and leaves endotoxin; a sheet of catalytic metal or porous material lying in the beaker lowers the band by its catalytic activity and makes the step cleaner. Sulfur and heavy metals poison a sheet, and heavy metals kill an enzyme."))
+	out += list(list("name" = "Catalysts", "text" = "A catalyst belongs to a process. A dissolved acid (sulphuric) or base (lye) is spent into acid or base residue; an enzyme works at gentle heat and leaves endotoxin. A sheet of a material with catalytic activity, dropped into a glass container (\"Take out the catalyst\" from its menu), is the solid catalyst of the routes that run on one: it no longer widens the band of every recipe. Sulfur and heavy metals poison a sheet, and heavy metals kill an enzyme."))
 	out += list(list("name" = "Interference", "text" = "Acid and base cancel into salts. Water undoes a condensation (an ester or amide splits back into its acid and alcohol or amine). Oxidiser left over attacks the next product. Peroxide detonates when its container is heated."))
-	out += list(list("name" = "Hot plate", "text" = "Stand a beaker on a hot plate, set the dial in Celsius and switch it on: the beaker warms toward the dial over seconds, drawing power. Switch it off and the beaker cools on its own."))
+	out += list(list("name" = "Hot plate", "text" = "Stand a glass container on a hot plate, set the dial in Celsius and switch it on: it feeds heat into the container up to the dial, never past it, drawing power while on, and lets the contents react and boil. It only heats: a container hotter than the dial cools on its own."))
+	out += list(list("name" = "Ice and baths", "text" = "Water below 0 C freezes into ice and ice above 0 C melts, each unit taking or giving heat, so ice and water hold a container at 0 C while any ice is left. The ice machine chills a container of water into ice. Stand a smaller open container in a larger one (grab-stance click, \"Stand it in the bath\") and their heat is shared: an ice bath chills the inner container into the band of a cold recipe, and a warm bath on the hot plate warms it. A pour into a bath goes into the bath, never the inner container."))
 	out += list(list("name" = "Boiling and the condenser", "text" = "A container hotter than a reagent's boiling point loses that reagent, gradually, and the vapour is gone. A condenser on or next to the hot plate collects the vapour into a container under its spout: distillation. What boils comes over; what never boils (salts, heavy metals) stays behind."))
 	out += list(list("name" = "Neutralisation", "text" = "Acid residue and a base (lye, ammonia, diethylamine), or base residue and an acid (sulphuric, polytrinic), make salts and water. Measure it: too little leaves residue, too much leaves the base or the acid."))
 	for(var/list/row in list(list("paper filter", chem_filter_strengths(/obj/item/chem_filter/paper)), list("charcoal filter", chem_filter_strengths(/obj/item/chem_filter/charcoal))))
