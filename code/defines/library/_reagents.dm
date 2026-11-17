@@ -525,6 +525,7 @@
 #define REAGENT_ID_MUSHROOMSOUP "mushroom_soup"
 #define REAGENT_CHICKENNOODLESOUP "Chicken Noodle Soup"
 #define REAGENT_ID_CHICKENNOODLESOUP "chicken_noodle_soup"
+#define REAGENT_ID_CHICKENSOUP "chicken_soup" // the retired soup: only the test that bans it as a cure names it
 #define REAGENT_ONIONSOUP "Onion Soup"
 #define REAGENT_ID_ONIONSOUP "onion_soup"
 #define REAGENT_VEGETABLESOUP "Vegetable Soup"
