@@ -179,6 +179,7 @@ CAPABILITIES(/obj/item/mecha_parts/chassis/firefighter)
 
 /obj/item/mecha_parts/chassis/phazon
 	name = "Phazon Chassis"
+	desc = "The frame of a Phazon exosuit, the phase-shifting experimental walker. Fit its parts, boards and an anomaly core to finish it."
 	blueprint = /datum/mecha_blueprint/phazon
 
 CAPABILITIES(/obj/item/mecha_parts/chassis/phazon)
@@ -186,26 +187,32 @@ CAPABILITIES(/obj/item/mecha_parts/chassis/phazon)
 
 /obj/item/mecha_parts/part/phazon_torso
 	name="Phazon Torso"
+	desc = "The torso of a Phazon exosuit: it holds the pilot, the power cell and the phase drive."
 	icon_state = "phazon_harness"
 
 /obj/item/mecha_parts/part/phazon_head
 	name="Phazon Head"
+	desc = "The sensor head of a Phazon exosuit."
 	icon_state = "phazon_head"
 
 /obj/item/mecha_parts/part/phazon_left_arm
 	name="Phazon Left Arm"
+	desc = "The left arm of a Phazon exosuit."
 	icon_state = "phazon_l_arm"
 
 /obj/item/mecha_parts/part/phazon_right_arm
 	name="Phazon Right Arm"
+	desc = "The right arm of a Phazon exosuit."
 	icon_state = "phazon_r_arm"
 
 /obj/item/mecha_parts/part/phazon_left_leg
 	name="Phazon Left Leg"
+	desc = "The left leg of a Phazon exosuit."
 	icon_state = "phazon_l_leg"
 
 /obj/item/mecha_parts/part/phazon_right_leg
 	name="Phazon Right Leg"
+	desc = "The right leg of a Phazon exosuit."
 	icon_state = "phazon_r_leg"
 
 ///////// Odysseus
@@ -384,6 +391,7 @@ CAPABILITIES(/obj/item/mecha_parts/fighter/chassis/baron)
 
 /obj/item/mecha_parts/chassis/scarab
 	name = "Scarab Chassis"
+	desc = "The frame of a Scarab exosuit. Fit its torso, limbs and circuit boards to build the walker."
 	icon = 'icons/mecha/mech_construct_ch.dmi'
 	icon_state = "scarab_chassis"
 	blueprint = /datum/mecha_blueprint/scarab

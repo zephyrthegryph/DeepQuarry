@@ -7,6 +7,7 @@
 
 /obj/machinery/portable_atmospherics/canister
 	name = "canister"
+	desc = "A pressurised gas canister. Connect it to a port to fill or drain a pipe network, or open its valve to release gas into the room. A tank fits in it to be filled."
 	icon = 'icons/obj/atmos.dmi'
 	icon_state = "yellow"
 	density = TRUE

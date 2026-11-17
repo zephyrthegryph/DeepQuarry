@@ -397,6 +397,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 
 /obj/item/toner
 	name = "toner cartridge"
+	desc = "A toner cartridge for the photocopier. Insert it when the copier runs dry."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "tonercartridge"
 	var/toner_amount = 30

@@ -142,6 +142,7 @@ CAPABILITIES(/obj/item/photo)
 **************/
 /obj/item/storage/photo_album
 	name = "Photo album"
+	desc = "An album that holds photographs."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "album"
 	item_state = "briefcase"

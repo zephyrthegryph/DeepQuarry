@@ -224,6 +224,7 @@
 //R-UST port
 /obj/item/book/manual/rust_engine // Updating the R-UST manual
 	name = "R-UST Operating Manual"
+	desc = "The operating manual of the R-UST fusion reactor."
 	icon = 'icons/obj/library_ch.dmi'
 	icon_state = "bookRusty" // Changed this to a new unique R-UST manual icon rather than just re-using the Supermatter book cover sprite
 	item_state = "book15"
@@ -494,6 +495,7 @@
 
 /obj/item/book/manual/ripley_build_and_repair
 	name = "APLU \"Ripley\" Construction and Operation Manual"
+	desc = "How to build, operate and repair the APLU Ripley exosuit."
 	icon_state ="book"
 	item_state = "book"
 	author = "Randall Varn, Einstein Engines Senior Mechanic"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned

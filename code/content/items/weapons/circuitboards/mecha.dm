@@ -56,6 +56,7 @@
 		icon_state = "mainboard"
 
 /obj/item/circuitboard/mecha/phazon
+	desc = "A circuit board for a Phazon exosuit. Each walker needs its main, peripherals and targeting boards."
 
 /obj/item/circuitboard/mecha/phazon/peripherals
 		name = T_BOARD_MECHA("Phazon peripherals control")
@@ -169,6 +170,7 @@
 //renaming CHmecha for Chomp mecha to allow for more to be made if needed.
 
 /obj/item/circuitboard/mecha/scarab
+	desc = "A circuit board for a Scarab exosuit. Each walker needs its main, peripherals and targeting boards."
 
 /obj/item/circuitboard/mecha/scarab/peripherals
 		name = T_BOARD_CHMECHA("Scarab peripherals control")

@@ -60,6 +60,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	src.name = "packet of [seed().seed_name] cuttings"
 
 /obj/item/seeds/random
+	desc = "A packet of unidentified seeds. Plant them to find out what grows."
 	seed_type = null
 
 /// A random packet is a seed of its own making whatever it was given (the param's apply, at init).

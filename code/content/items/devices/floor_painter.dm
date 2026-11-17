@@ -1,5 +1,6 @@
 /obj/item/floor_painter
 	name = "paint sprayer"
+	desc = "A hand sprayer that paints floor tiles and decals in a chosen colour and pattern."
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "labeler1"
 

@@ -123,3 +123,44 @@
 	var/list/static_data = wiki.ui_static_data(null)
 	TEST_ASSERT(length(static_data["index"]) > 100, "the index lists the articles")
 	TEST_ASSERT(wiki_article(WIKI_ID_MEDICAL_INDEX), "the medical index is an article")
+
+/// Every catalogued item and machine has a description of its own (its design's or its type's), and is filed in a department or the
+/// uncategorised bucket.
+/datum/unit_test/dq_wiki_catalogue_described
+
+/datum/unit_test/dq_wiki_catalogue_described/Run()
+	var/list/index = wiki_index()
+	var/list/missing = list()
+	var/count = 0
+	for(var/id in index)
+		if(findtext(id, "cat/") != 1)
+			continue
+		count++
+		var/list/article = index[id]
+		if(!wiki_catalogue_description(article["body_key"]))
+			missing += "[article["body_key"]]"
+		var/list/parts = splittext(article["path"], "/")
+		TEST_ASSERT(parts[1] == "Uncategorised" || (length(parts) >= 3 && parts[2] == "Catalogue"), "[id] is filed at [article["path"]]")
+	TEST_ASSERT(count > 100, "the catalogue lists the station's things ([count])")
+	TEST_ASSERT(!length(missing), "[length(missing)] catalogued thing(s) with no description: [english_list(missing.Copy(1, min(length(missing), 40) + 1))]")
+
+/// The departments, their jobs, the manuals and the lore are in the wiki.
+/datum/unit_test/dq_wiki_station_content
+
+/datum/unit_test/dq_wiki_station_content/Run()
+	var/list/index = wiki_index()
+	for(var/id in list(wiki_dept_id(DEPARTMENT_ENGINEERING), wiki_dept_id(DEPARTMENT_MEDICAL), wiki_dept_id(DEPARTMENT_RESEARCH), wiki_dept_id(DEPARTMENT_CARGO), wiki_dept_id(DEPARTMENT_SECURITY)))
+		TEST_ASSERT(index[id], "no department page [id]")
+	var/jobs = 0
+	var/lore = 0
+	var/manuals = 0
+	for(var/id in index)
+		if(findtext(id, "job/") == 1)
+			jobs++
+		else if(findtext(id, "lore/") == 1)
+			lore++
+		else if(findtext(id, "manual/") == 1)
+			manuals++
+	TEST_ASSERT(jobs >= 10, "the jobs have pages ([jobs])")
+	TEST_ASSERT(lore >= 10, "the lore has pages ([lore])")
+	TEST_ASSERT(manuals >= 5, "the manuals have pages ([manuals])")

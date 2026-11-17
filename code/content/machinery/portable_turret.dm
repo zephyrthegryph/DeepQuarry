@@ -623,6 +623,7 @@ CAPABILITIES(/obj/machinery/porta_turret/industrial)
 
 /obj/machinery/porta_turret/lasertag
 	name = "lasertag turret"
+	desc = "A turret that fires harmless lasertag beams at players of the other team."
 	turret_type = "normal"
 	req_one_access = list()
 	installation = /obj/item/gun/energy/lasertag/omni

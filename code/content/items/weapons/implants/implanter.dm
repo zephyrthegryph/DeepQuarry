@@ -1,6 +1,7 @@
 MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 500, MAT_GLASS = 500))
 /obj/item/implanter
 	name = "implanter"
+	desc = "A one-shot injector that places an implant under the skin. Load an implant case, aim at the patient and use it."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "implanter0_1"
 	item_state = "syringe_0"

@@ -54,6 +54,7 @@ CAPABILITIES(/obj/item/storage/fancy)
 	icon_state = "eggbox"
 	icon_type = REAGENT_ID_EGG
 	name = "egg box"
+	desc = "A carton that holds a dozen eggs."
 	storage_slots = 12
 	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
 
@@ -528,6 +529,7 @@ CAPABILITIES(/obj/item/storage/lockbox/vials)
 /obj/item/storage/fancy/heartbox
 	icon_state = "heartbox"
 	name = "box of chocolates"
+	desc = "A heart-shaped box of chocolates."
 	icon_type = "chocolate"
 
 	var/startswith = 6

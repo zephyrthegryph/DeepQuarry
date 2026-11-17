@@ -11,6 +11,14 @@
 - Sections fold open and shut. The section of the page you are reading opens by itself.
 - Search matches titles, sections and summaries.
 ## Departments
-- \[\[med/index|Medical]]: conditions, drugs, treatment mechanisms, symptoms, triggers, organs and surgery.
-- \[\[chem/purity|Chemistry]]: every reagent, how it is made, and how clean a mixture is.
+- \[\[dept/command|Command]]: the heads of staff, communications and paperwork.
+- \[\[dept/security|Security]]: the officers, their weapons, armour and restraints.
+- \[\[dept/engineering|Engineering]]: power, atmospherics, construction, tools and the engines.
+- \[\[dept/medical|Medical]] and the \[\[med/index|medical reference]]: conditions, drugs, treatment mechanisms, symptoms, triggers, organs and surgery.
+- \[\[dept/research|Research]]: research nodes, robotics, exosuits, machine parts and \[\[chem/purity|chemistry]].
+- \[\[dept/cargo|Cargo]]: supply packs, mining and ordering.
+- \[\[dept/civilian|Civilian]]: service, botany, the kitchen and the bar.
+## The wider world
+- \[\[lore/index|The Traveler's Guide]]: the places, peoples, companies and governments of human space.
+- Anything not yet filed under a department is under Uncategorised, at the bottom of the index.
 > The medical and chemistry pages are generated from the game's own data, so they always match what happens on the station."}

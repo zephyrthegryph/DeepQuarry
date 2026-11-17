@@ -47,6 +47,8 @@ GLOBAL_LIST_INIT(wiki_sources, list(
 	GLOBAL_PROC_REF(wiki_source_authored),
 	GLOBAL_PROC_REF(wiki_source_medical),
 	GLOBAL_PROC_REF(wiki_source_chemistry),
+	GLOBAL_PROC_REF(wiki_source_catalogue),
+	GLOBAL_PROC_REF(wiki_source_station),
 ))
 
 /// id -> article. Built once.

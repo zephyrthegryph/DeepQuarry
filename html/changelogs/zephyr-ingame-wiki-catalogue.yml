@@ -1,0 +1,6 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - rscadd: "The Station Wiki catalogues what the station prints and orders, filed by department: what it is, how it is made, the research that unlocks it, the supply packs it comes in and what it recycles into. Research nodes and supply packs have pages too."
+  - rscadd: "The Station Wiki has a page for every department and job, the station's operating manuals and the Traveler's Guide lore."
+  - spellcheck: "Gave descriptions to Phazon and Scarab parts, canisters, the pAI card, the implanter and other things that had none."

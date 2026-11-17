@@ -5,6 +5,7 @@
 
 /obj/item/paicard
 	name = "personal AI device"
+	desc = "A pocket-sized personal AI. Insert it in your hand to ask a pAI personality to join; it can then talk, read records and run its software."
 	icon = 'icons/obj/pda.dmi'
 	icon_state = "pai"
 	item_state = "electronic"

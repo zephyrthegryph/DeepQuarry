@@ -308,6 +308,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 /obj/item/stack/material/algae
 	name = "algae sheet"
+	desc = "Sheets of pressed algae, the feedstock of the algae farm that turns carbon dioxide into oxygen."
 	icon_state = "sheet-uranium"
 	color = "#557722"
 	default_type = MAT_ALGAE
