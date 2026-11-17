@@ -147,36 +147,6 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 		to_chat(src, span_notice("You toggle cascading on"))
 
 
-/obj/item/implant/reagent_generator/egg/slow
-	name = "slow egg laying implant"
-	usable_volume = 3000
-	transfer_amount = 600
-
-/obj/item/implant/reagent_generator/egg/veryslow
-	name = "very slow egg laying implant"
-	usable_volume = 6000
-	transfer_amount = 1200
-
-/obj/item/implant/reagent_generator/egg/hicap
-	name = "high capacity egg laying implant" // Note that the capacity does not affect the regeneration rate, rather, the transfer amount does
-	usable_volume = 3000 // Effectively, the transfer_amount is the cost/time of making an egg. Usable volume is simply the max number of eggs.
-	transfer_amount = 300
-
-/obj/item/implant/reagent_generator/egg/doublehicap
-	name = "extreme capacity egg laying implant"
-	usable_volume = 6000
-	transfer_amount = 300
-
-/obj/item/implant/reagent_generator/egg/slowlowcap
-	name = "slow, low capacity egg laying implant"
-	usable_volume = 3000
-	transfer_amount = 3000
-
-/obj/item/implant/reagent_generator/egg/veryslowlowcap
-	name = "very slow, low capacity egg laying implant"
-	usable_volume = 6000
-	transfer_amount = 6000
-
 
 /obj/item/implant/reagent_generator
 	name = "reagent generator implant"
@@ -205,15 +175,6 @@ CAPABILITIES(/obj/item/implant/reagent_generator)
 	per_type(nameof(empty_message), PROC_REF(build_empty_message), copy_on_write = TRUE)
 	reagents(nameof(usable_volume))
 	every(2 SECONDS, then(PROC_REF(reagent_step)), when = nameof(generating))
-
-/obj/item/implanter/reagent_generator
-	var/implant_type = /obj/item/implant/reagent_generator
-
-CAPABILITIES(/obj/item/implanter/reagent_generator)
-	owns_one(nameof(imp), starts = nameof(implant_type), on_destroy = ON_DESTROY_CONTAINED)
-
-/obj/item/implanter/reagent_generator
-	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
 	set_generating(TRUE)

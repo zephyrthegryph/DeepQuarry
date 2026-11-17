@@ -69,9 +69,3 @@
 	LR?.Charge(R, amount)
 	..()
 	return
-
-/obj/item/robot_module/drone/talon
-	name = "talon drone module"
-	idcard_type = /obj/item/card/id/talon
-	channels = list(CHANNEL_TALON = 1)
-	networks = list(NETWORK_TALON_SHIP)

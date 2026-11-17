@@ -35,12 +35,6 @@
 	max_ammo = 9
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/mfoam_dart/pistol/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/mfoam_dart/pistol/riot
-	ammo_type = /obj/item/ammo_casing/afoam_dart/riot
-
 // SMG
 /obj/item/ammo_magazine/mfoam_dart/smg
 	name = "\improper Donk-Soft smg magazine"
@@ -52,9 +46,6 @@
 	caliber = "foam"
 	max_ammo = 20
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/mfoam_dart/smg/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/mfoam_dart/smg/riot
 	ammo_type = /obj/item/ammo_casing/afoam_dart/riot
@@ -104,10 +95,6 @@
 	icon_state = "T38"
 	ammo_type = /obj/item/ammo_casing/a38/rubber
 
-/obj/item/ammo_magazine/s38/emp
-	name = "speedloader (.38 haywire)"
-	ammo_type = /obj/item/ammo_casing/a38/emp
-
 // Makarov
 /obj/item/ammo_magazine/m38/makarov
 	name = "makarov magazine (.38)"
@@ -118,10 +105,6 @@
 	ammo_type = /obj/item/ammo_casing/a38
 	max_ammo = 8
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m38/makarov/rubber
-	name = "makarov magazine (.38 rubber)"
-	ammo_type = /obj/item/ammo_casing/a38/rubber
 
 // Giskard
 /obj/item/ammo_magazine/m38/giskard
@@ -134,10 +117,6 @@
 	max_ammo = 10
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/m38/giskard/rubber
-	name = "makarov magazine (.38 rubber)"
-	ammo_type = /obj/item/ammo_casing/a38/rubber
-
 ///////// .45 /////////
 
 /obj/item/ammo_magazine/m45
@@ -149,9 +128,6 @@
 	caliber = ".45"
 	max_ammo = 7
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m45/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m45/rubber
 	name = "magazine (.45 rubber)"
@@ -206,9 +182,6 @@
 	name = "Tommy Gun magazine (.45 AP)"
 	ammo_type = /obj/item/ammo_casing/a45/ap
 
-/obj/item/ammo_magazine/m45tommy/empty
-	initial_ammo = 0
-
 /obj/item/ammo_magazine/m45tommydrum
 	name = "Tommy Gun drum magazine (.45)"
 	icon_state = "tomdrum"
@@ -219,9 +192,6 @@
 	caliber = ".45"
 	max_ammo = 50
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m45tommydrum/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m45tommydrum/ap
 	name = "Tommy Gun drum magazine (.45 AP)"
@@ -238,18 +208,6 @@
 	max_ammo = 9
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/clip/c45/rubber
-	name = "ammo clip (.45 rubber)"
-	ammo_type = /obj/item/ammo_casing/a45/rubber
-
-/obj/item/ammo_magazine/clip/c45/practice
-	name = "ammo clip (.45 practice)"
-	ammo_type = /obj/item/ammo_casing/a45/practice
-
-/obj/item/ammo_magazine/clip/c45/flash
-	name = "ammo clip (.45 flash)"
-	ammo_type = /obj/item/ammo_casing/a45/flash
-
 // Speedloader
 /obj/item/ammo_magazine/s45
 	name = "speedloader (.45)"
@@ -260,9 +218,6 @@
 	max_ammo = 6
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/s45/empty
-	initial_ammo = 0
-
 /obj/item/ammo_magazine/s45/rubber
 	name = "speedloader (.45 rubber)"
 	ammo_type = /obj/item/ammo_casing/a45/rubber
@@ -270,10 +225,6 @@
 /obj/item/ammo_magazine/s45/practice
 	name = "speedloader (.45 practice)"
 	ammo_type = /obj/item/ammo_casing/a45/practice
-
-/obj/item/ammo_magazine/s45/flash
-	name = "speedloader (.45 flash)"
-	ammo_type = /obj/item/ammo_casing/a45/flash
 
 /obj/item/ammo_magazine/s45/ap
 	name = "speedloader (.45 AP)"
@@ -289,9 +240,6 @@
 	mag_type = MAGAZINE
 	max_ammo = 30
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m5mmcaseless/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m5mmcaseless/stun
 	icon_state = "caseless-mag-alt"
@@ -336,9 +284,6 @@
 	max_ammo = 17
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/m9mm/large/empty
-	initial_ammo = 0
-
 /obj/item/ammo_magazine/m9mm/large/preban // Sold by traders.
 	desc = "A large capacity magazine that was built before the SolGov Assault Weapons Ban, so it's legal to own."
 
@@ -356,9 +301,6 @@
 	ammo_type = /obj/item/ammo_casing/a9mm
 	max_ammo = 8
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m9mm/compact/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m9mm/compact/flash
 	name = "compact magazine (9mm flash)"
@@ -383,13 +325,6 @@
 	max_ammo = 8
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/m9mm/luger/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/m9mm/luger/rubber
-	name = "\improper \"Mäuse\" magazine (9mm rubber)"
-	ammo_type = /obj/item/ammo_casing/a9mm/rubber
-
 // SMG
 /obj/item/ammo_magazine/m9mmt
 	name = "top mounted magazine (9mm)"
@@ -400,9 +335,6 @@
 	caliber = "9mm"
 	max_ammo = 20
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m9mmt/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m9mmt/rubber
 	name = "top mounted magazine (9mm rubber)"
@@ -431,14 +363,7 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m9mmt/ap, list(MAT_STEEL = 500, MAT_PLASTEE
 	max_ammo = 50
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/m9mmp90/empty
-	initial_ammo = 0
-
-MATERIAL_MIX(/obj/item/ammo_magazine/m9mmp90/rubber, list(MAT_STEEL = 2000, MAT_PLASTIC = 1000))
 // begin
-/obj/item/ammo_magazine/m9mmp90/rubber
-	name = "large capacity top mounted magazine (9mm rubber)"
-	ammo_type = /obj/item/ammo_casing/a9mm/rubber
 // end
 
 // Stripper Clip
@@ -452,18 +377,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m9mmp90/rubber, list(MAT_STEEL = 2000, MAT_
 	max_ammo = 9
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/clip/c9mm/rubber
-	name = "ammo clip (.45 rubber)"
-	ammo_type = /obj/item/ammo_casing/a9mm/rubber
-
-/obj/item/ammo_magazine/clip/c9mm/practice
-	name = "ammo clip (.45 practice)"
-	ammo_type = /obj/item/ammo_casing/a9mm/practice
-
-/obj/item/ammo_magazine/clip/c9mm/flash
-	name = "ammo clip (.45 flash)"
-	ammo_type = /obj/item/ammo_casing/a9mm/flash
-
 // Advanced SMG
 /obj/item/ammo_magazine/m9mmAdvanced
 	desc = "A very high capacity double stack magazine made specially for the Advanced SMG. Filled with 21 9mm bullets."
@@ -474,15 +387,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m9mmp90/rubber, list(MAT_STEEL = 2000, MAT_
 	caliber = "9mm"
 	max_ammo = 21
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m9mmAdvanced/ap
-	desc = "A high capacity double stack magazine made specially for the Advanced SMG. Filled with 21 9mm armor piercing bullets."
-	icon_state = "S9mm"
-	ammo_type = /obj/item/ammo_casing/a9mm/ap
-	MATERIAL_BULK(MAT_STEEL, 2000)
-
-/obj/item/ammo_magazine/m9mmAdvanced/empty
-	initial_ammo = 0
 
 ///////// 10mm /////////
 
@@ -495,9 +399,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m9mmp90/rubber, list(MAT_STEEL = 2000, MAT_
 	ammo_type = /obj/item/ammo_casing/a10mm
 	max_ammo = 20
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m10mm/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m10mm/practice
 	name = "magazine (10mm practice)"
@@ -535,9 +436,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	name = "magazine (10mm haywire)"
 	ammo_type = /obj/item/ammo_casing/a10mm/emp
 
-/obj/item/ammo_magazine/m10mm/pistol/empty
-	initial_ammo = 0
-
 ///////// 5.45mm /////////
 
 /obj/item/ammo_magazine/m545
@@ -549,9 +447,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	ammo_type = /obj/item/ammo_casing/a545
 	max_ammo = 20
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m545/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m545/practice
 	name = "magazine (5.45mm practice)"
@@ -571,19 +466,8 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	MATERIAL_BULK(MAT_STEEL, 2250)
 	max_ammo = 30
 
-/obj/item/ammo_magazine/m545/ext/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/m545/practice/ext
-	name = "extended magazine (5.45mm practice)"
-	max_ammo = 30
-
 /obj/item/ammo_magazine/m545/ap/ext
 	name = "extended magazine (5.45mm armor-piercing)"
-	max_ammo = 30
-
-/obj/item/ammo_magazine/m545/hunter/ext
-	name = "extended magazine (5.45mm hunting)"
 	max_ammo = 30
 
 // Reduced
@@ -592,21 +476,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	icon_state = "m545-small"
 	MATERIAL_BULK(MAT_STEEL, 900)
 	max_ammo = 10
-
-/obj/item/ammo_magazine/m545/small/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/m545/small/practice
-	name = "magazine (5.45mm practice)"
-	ammo_type = /obj/item/ammo_casing/a545/practice
-
-/obj/item/ammo_magazine/m545/small/ap
-	name = "magazine (5.45mm armor-piercing)"
-	ammo_type = /obj/item/ammo_casing/a545/ap
-
-/obj/item/ammo_magazine/m545/small/hunter
-	name = "magazine (5.45mm hunting)"
-	ammo_type = /obj/item/ammo_casing/a545/hunter
 
 // Stripper Clip
 /obj/item/ammo_magazine/clip/c545
@@ -617,14 +486,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	MATERIAL_BULK(MAT_STEEL, 450) // metal costs are very roughly based around one 10mm casing = 180 metal
 	max_ammo = 5
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/clip/c545/ap
-	name = "rifle clip (5.45mm armor-piercing)"
-	ammo_type = /obj/item/ammo_casing/a545/ap
-
-/obj/item/ammo_magazine/clip/c545/hunter
-	name = "rifle clip (5.45mm hunting)"
-	ammo_type = /obj/item/ammo_casing/a545/hunter
 
 /obj/item/ammo_magazine/clip/c545/practice
 	name = "rifle clip (5.45mm practice)"
@@ -641,9 +502,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	w_class = ITEMSIZE_NORMAL // This should NOT fit in your pocket!!
 	max_ammo = 50
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m545saw/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m545saw/ap
 	name = "magazine box (5.45mm armor-piercing)"
@@ -664,9 +522,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	ammo_type = /obj/item/ammo_casing/a44
 	max_ammo = 7
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m44/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m44/rubber
 	desc = "magazine (.44 rubber)"
@@ -693,9 +548,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	max_ammo = 6
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/s44/empty
-	initial_ammo = 0
-
 /obj/item/ammo_magazine/s44/rubber
 	name = "speedloader (.44 rubber)"
 	icon_state = "R44"
@@ -718,9 +570,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	max_ammo = 10
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/m762/empty
-	initial_ammo = 0
-
 /obj/item/ammo_magazine/m762/ap
 	name = "magazine (7.62mm armor-piercing)"
 	ammo_type = /obj/item/ammo_casing/a762/ap
@@ -731,9 +580,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	icon_state = "m762"
 	MATERIAL_BULK(MAT_STEEL, 4000)
 	max_ammo = 20
-
-/obj/item/ammo_magazine/m762/ext/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m762/ext/ap
 	name = "magazine (7.62mm armor-piercing)"
@@ -754,9 +600,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	name = "garand clip (7.62mm armor-piercing)"
 	ammo_type = /obj/item/ammo_casing/a762/ap
 
-/obj/item/ammo_magazine/m762enbloc/empty
-	initial_ammo = 0
-
 // Stripper Clip
 /obj/item/ammo_magazine/clip/c762
 	name = "ammo clip (7.62mm)"
@@ -766,10 +609,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	MATERIAL_BULK(MAT_STEEL, 1000) // metal costs are very roughly based around one 7.62 casing = 200 metal
 	max_ammo = 5
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/clip/c762/ap
-	name = "rifle clip (7.62mm armor-piercing)"
-	ammo_type = /obj/item/ammo_casing/a762/ap
 
 /obj/item/ammo_magazine/clip/c762/practice
 	name = "rifle clip (7.62mm practice)"
@@ -790,13 +629,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	max_ammo = 10
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/m762svd/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/m762svd/ap
-	name = "\improper SVD magazine (7.62mm armor-piercing)"
-	ammo_type = /obj/item/ammo_casing/a762/ap
-
 ///////// 12g /////////
 
 /obj/item/ammo_magazine/m12gdrum
@@ -808,9 +640,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	ammo_type = /obj/item/ammo_casing/a12g
 	max_ammo = 24
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m12gdrum/empty
-	initial_ammo = 0
 
 /obj/item/ammo_magazine/m12gdrum/beanbag
 	name = "magazine (12 gauge beanbag)"
@@ -858,9 +687,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	multiple_sprites = 1
 	max_ammo = 4
 
-/obj/item/ammo_magazine/m75/empty
-	initial_ammo = 0
-
 /************************************************************************/
 /*
 #    An explaination of the naming format for guns and ammo:
@@ -888,14 +714,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 ///////// 12g /////////
 
 
-/obj/item/ammo_magazine/clip/c12g/scatter
-	name = "ammo clip (12g scatter)"
-	icon = 'icons/obj/ammo_yw.dmi'
-	icon_state = "12gclipscatter"
-	desc = "A color-coded metal clip for holding and quickly loading shotgun shells. This one is loaded with scattershot."
-	ammo_type = /obj/item/ammo_casing/a12g/scatter
-	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 1337)
-
 
 ///////// .45 /////////
 
@@ -912,25 +730,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	max_ammo = 7
 	multiple_sprites = 1
 
-/obj/item/ammo_magazine/m2024/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/m2024/rubber
-	name = "m2024 magazine (.45 rubber)"
-	ammo_type = /obj/item/ammo_casing/a45/rubber
-
-/obj/item/ammo_magazine/m2024/practice
-	name = "m2024 magazine (.45 practice)"
-	ammo_type = /obj/item/ammo_casing/a45/practice
-
-/obj/item/ammo_magazine/m2024/flash
-	name = "m2024 magazine (.45 flash)"
-	ammo_type = /obj/item/ammo_casing/a45/flash
-
-/obj/item/ammo_magazine/m2024/ap
-	name = "m2024 magazine (.45 AP)"
-	ammo_type = /obj/item/ammo_casing/a45/ap
-
 ///////// 9mm /////////
 
 // 9mm glock //
@@ -945,20 +744,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	max_ammo = 17
 	multiple_sprites = 0
 
-/obj/item/ammo_magazine/mglock9mm/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/mglock9mm/flash
-	ammo_type = /obj/item/ammo_casing/a9mm/flash
-
-/obj/item/ammo_magazine/mglock9mm/rubber
-	name = "glock magazine (9mm rubber)"
-	ammo_type = /obj/item/ammo_casing/a9mm/rubber
-
-/obj/item/ammo_magazine/mglock9mm/practice
-	name = "glock magazine (9mm practice)"
-	ammo_type = /obj/item/ammo_casing/a9mm/practice
-
 // MG42 //
 /obj/item/ammo_magazine/mg42
 	name = "drum mag (7.92x57mm Mauser)"
@@ -971,6 +756,3 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 	w_class = ITEMSIZE_NORMAL
 	mag_type = MAGAZINE
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 10000)
-
-/obj/item/ammo_magazine/mg42/empty
-	initial_ammo = 0

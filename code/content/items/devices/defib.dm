@@ -674,15 +674,6 @@ CAPABILITIES(/obj/item/shockpaddles/standalone)
 		set_fail_counter(new_fail)
 
 /* From the Bay port, this doesn't seem to have a sprite.
-/obj/item/shockpaddles/standalone/traitor
-	name = "defibrillator paddles"
-	desc = "A pair of unusual looking paddles powered by an experimental miniaturized reactor. It possesses both the ability to penetrate armor and to deliver powerful shocks."
-	icon = 'icons/obj/weapons.dmi'
-	icon_state = "defibpaddles0"
-	item_state = "defibpaddles0"
-	combat = 1
-	safety = 0
-	chargetime = (1 SECONDS)
 */
 
 //FBP Defibs

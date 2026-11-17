@@ -280,11 +280,3 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	return results
 
 
-/obj/item/melee/shock_maul/harmless
-	name = "rubber concussion maul"
-	desc = "A variant of the concussion maul that staggers and weakens victims. Despite their screams, does no real damage."
-	launch_force = 0
-
-CAPABILITIES(/obj/item/melee/shock_maul/harmless)
-	configure(item_combat(injury_kind = INJURY_PAIN))
-

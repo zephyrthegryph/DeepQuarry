@@ -95,9 +95,6 @@ CAPABILITIES(/obj/item/ghost_trap)
 		return
 	look.state(initial(icon_state))
 
-/obj/item/ghost_trap/start_active
-	deployed = TRUE
-
 /// Watches its catch every 2 s while it holds one (declared above); empty, it sleeps.
 /obj/item/ghost_trap/proc/ghost_trap_step(datum/act/timer/A)
 	if(captured_entity)

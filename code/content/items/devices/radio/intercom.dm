@@ -49,10 +49,6 @@ CAPABILITIES(/obj/item/radio/intercom)
 	broadcasting = 1
 	listening = 0
 
-/obj/item/radio/intercom/interrogation/observation
-	listening = 1
-	broadcasting = 0
-
 /obj/item/radio/intercom/private
 	name = "station intercom (Private)"
 	frequency = AI_FREQ
@@ -236,8 +232,3 @@ CAPABILITIES(/obj/item/radio/intercom/omni)
 /obj/item/radio/intercom/locked/confessional
 	name = "confessional intercom"
 	frequency = LOCKED_COM_FREQ
-
-/obj/item/radio/intercom/locked/entertainment
-	name = "entertainment PA"
-	frequency = ENT_FREQ
-	broadcasting = TRUE

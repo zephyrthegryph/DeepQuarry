@@ -66,21 +66,6 @@ CAPABILITIES(/obj/item/brokenbug)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 
-/obj/item/brokenbug/spy
-	name = "broken bug"
-	desc = ""	//Even when it's broken it's inconspicuous
-	icon = 'icons/obj/weapons.dmi'
-	icon_state = "eshield"
-	item_state = "nothing"
-	layer = TURF_LAYER+0.2
-	w_class = ITEMSIZE_TINY
-
-CAPABILITIES(/obj/item/brokenbug/spy)
-	configure(movable_motion(throw_range = 15, throw_speed = 3))
-	configure(item_worn(slots = SLOT_EARS))
-	configure(item_thrown(force = 5.0))
-	configure(item_combat(force = 0))
-
 /obj/item/camerabug/spy
 	name = "bug"
 	desc = ""	//Nothing to see here

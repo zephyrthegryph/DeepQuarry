@@ -63,35 +63,3 @@ CAPABILITIES(/obj/item/toy/desk)
 CAPABILITIES(/obj/item/toy/desk/newtoncradle)
 	configure(atom_rules(description_fluff = "Aside from car radios, Eridanian Dregs are reportedly notorious for stealing these things. It is often \
 	theorized that the very same ball bearings are used in black-market cybernetics."))
-
-/obj/item/toy/desk/fan
-	name = "office fan"
-	desc = "Your greatest fan."
-	icon_state = "fan"
-
-CAPABILITIES(/obj/item/toy/desk/fan)
-	configure(atom_rules(description_fluff = "For weeks, the atmospherics department faced a conundrum on how to lower temperatures in a localized \
-	area through complicated pipe channels and ventilation systems. The problem was promptly solved by ordering several desk fans."))
-
-/obj/item/toy/desk/officetoy
-	name = "office toy"
-	desc = "A generic microfusion powered office desk toy. Only generates magnetism and ennui."
-	icon_state = "desktoy"
-
-CAPABILITIES(/obj/item/toy/desk/officetoy)
-	configure(atom_rules(description_fluff = "The mechanism inside is a Hephasteus trade secret. No peeking!"))
-
-/obj/item/toy/desk/dippingbird
-	name = "dipping bird toy"
-	desc = "Engineers marvel at this scale model of a primitive thermal engine. It's highly debated why the majority of owners \
-	were in low-level bureaucratic jobs."
-	icon_state = "dippybird"
-
-CAPABILITIES(/obj/item/toy/desk/dippingbird)
-	configure(atom_rules(description_fluff = "One of the key essentials for every Eridanian suit - it's practically a rite of passage to own one \
-	of these things."))
-
-/obj/item/toy/desk/stellardelight
-	name = "\improper Stellar Delight model"
-	desc = "A scale model of the Stellar Delight. Includes flashing lights!"
-	icon_state = "stellar_delight"

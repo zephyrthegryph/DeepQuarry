@@ -331,19 +331,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/compact/warden)
 	name = "drum magazine (12 gauge beanbag)"
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
-/obj/item/ammo_magazine/m12gdrumjack/pellet
-	name = "drum magazine (12 gauge pellet)"
-	ammo_type = /obj/item/ammo_casing/a12g/pellet
-
-/obj/item/ammo_magazine/m12gdrumjack/flash
-	name = "drum magazine (12 gauge flash)"
-	ammo_type = /obj/item/ammo_casing/a12g/flash
-
-/obj/item/ammo_magazine/m12gdrumjack/empty
-	name = "drum magazine (12 gauge)"
-	initial_ammo = 0
-	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 1625) //Why these cost so much ? the normal ones have 13000 matter so i just multiplied by 1.25(default) don't know why it costs so much
-
 //scattering shots, old buckshot
 /obj/item/ammo_casing/a12g/scatter
 	name = "scatter shotgun shell"
@@ -367,6 +354,3 @@ CAPABILITIES(/obj/item/projectile/bullet/shotgun/scatterprojectile)
 	icon_state = "scattershot_box"
 	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
 	starts_with = list(/obj/item/ammo_casing/a12g/scatter = 8)
-
-/obj/item/storage/box/scattershot/large
-	starts_with = list(/obj/item/ammo_casing/a12g/scatter = 16)

@@ -944,15 +944,6 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/white)
 		consume(src, user)
 	return OP_OK
 
-/obj/item/grenade/anti_photon/rubberducky/black
-	desc = "Good work NanoTrasen Employee, you struck fear within the Syndicate."
-	name = "rubber ducky"
-	icon = 'icons/obj/watercloset.dmi'
-	icon_state = "rubberducky_black"
-	item_state = "rubberducky_black"
-	light_sound = SFX_VOICE_QUACK
-	blast_sound = SFX_VOICE_QUACK
-
 /obj/item/bikehorn/rubberducky/gold
 	name = "rubber ducky"
 	desc = "You could give your very life for this duck."

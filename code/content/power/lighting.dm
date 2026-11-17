@@ -1058,14 +1058,6 @@ CAPABILITIES(/obj/machinery/light)
 	brightness_color = "#028bda"
 	init_brightness_range = 4
 
-/obj/item/light/bulb/fire
-	name = "fire bulb"
-	desc = "A replacement fire bulb."
-	icon_state = "fbulb"
-	base_state = "fbulb"
-	item_state = "egg4"
-	MATERIAL_BULK(MAT_GLASS, 100)
-
 
 CAPABILITIES(/obj/item/light)
 	configure(item_thrown(force = 5))

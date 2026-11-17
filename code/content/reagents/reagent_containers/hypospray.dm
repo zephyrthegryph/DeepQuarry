@@ -342,13 +342,6 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray/autoinjector)
 	ruin your genetic health, turn you into a Five Points violation, or both!"
 	filled_reagents = list(REAGENT_ID_MUTAGEN = 15)
 
-/obj/item/reagent_containers/hypospray/autoinjector/biginjector/lexorin
-	name = "lexorin injector"
-	desc = "A refined version of the standard autoinjector, allowing greater capacity. \
-	This contains lexorin, a dangerous toxin that stops respiration, and has been \
-	implicated in several high-profile assassinations in the past."
-	filled_reagents = list(REAGENT_ID_LEXORIN = 15)
-
 /obj/item/reagent_containers/hypospray/autoinjector/biginjector/healing_nanites
 	name = "medical nanite injector"
 	desc = "A refined version of the standard autoinjector, allowing greater capacity. \

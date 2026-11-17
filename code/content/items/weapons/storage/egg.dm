@@ -83,11 +83,6 @@ CAPABILITIES(/obj/item/storage/vore_egg)
 	desc = "An egg with a soft and squishy interior, coated with slime."
 	icon_state = "egg_slime"
 
-/obj/item/storage/vore_egg/special //Not actually used, but the sprites are in, and it's there in case any admins need to spawn in the egg for any specific reasons.
-	name = "special egg"
-	desc = "This egg has a very unique look to it."
-	icon_state = "egg_unique"
-
 /obj/item/storage/vore_egg/scree
 	name = "Chimera egg"
 	desc = "...You don't know what type of creature laid this egg."

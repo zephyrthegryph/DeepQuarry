@@ -200,9 +200,6 @@ CAPABILITIES(/obj/item/tool/crowbar/hybrid/alien)
 CAPABILITIES(/obj/item/tool/screwdriver/hybrid/alien)
 	configure(item_tooling(speed = 0.2))
 
-/obj/item/weldingtool/experimental/hybrid/alien
-	eye_safety_modifier = 0
-
 //Rad Storm
 /obj/item/pickaxe/diamonddrill/alien
 	name = "alien mining drill"

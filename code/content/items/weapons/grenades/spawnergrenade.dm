@@ -38,9 +38,6 @@
 /obj/item/grenade/spawnergrenade/manhacks/mercenary
 	spawner_type = /mob/living/simple_mob/mechanical/viscerator/mercenary
 
-/obj/item/grenade/spawnergrenade/manhacks/raider
-	spawner_type = /mob/living/simple_mob/mechanical/viscerator/raider
-
 /obj/item/grenade/spawnergrenade/manhacks/station
 	desc = "It is set to detonate in 5 seconds. It will deploy three weaponized survey drones."
 	deliveryamt = 3
@@ -63,18 +60,6 @@
 	deliveryamt = 3
 
 //Sometimes you just need a sudden influx of spiders.
-/obj/item/grenade/spawnergrenade/spider/briefcase
-	name = "briefcase"
-	desc = "It's made of AUTHENTIC faux-leather and has a price-tag still attached. Its owner must be a real professional."
-	icon_state = "briefcase"
-	item_state = "briefcase"
-	w_class = ITEMSIZE_LARGE
-	deliveryamt = 6
-
-CAPABILITIES(/obj/item/grenade/spawnergrenade/spider/briefcase)
-	configure(movable_motion(throw_range = 4, throw_speed = 1))
-	configure(item_combat(force = 8.0))
-
 /obj/item/grenade/spawnergrenade/manhacks/station/locked
 	desc = "It is set to detonate in 5 seconds. It will deploy three weaponized survey drones. This one has a safety interlock that prevents release if used while in proximity to the facility."
 	req_access = list(ACCESS_ARMORY) //for toggling safety
@@ -122,58 +107,3 @@ CAPABILITIES(/obj/item/grenade/spawnergrenade/manhacks/station/locked)
 	icon = 'icons/obj/casino.dmi'
 	icon_state = "generic_delivery"
 	flash = FALSE
-
-/obj/item/grenade/spawnergrenade/loadout/penguin
-	desc = "It is set to detonate in 5 seconds. It will release a penguin from the grenade!"
-	name = "Creature Container (Penguin)"
-	spawner_type = /mob/living/simple_mob/animal/passive/penguin
-
-/obj/item/grenade/spawnergrenade/loadout/chicken
-	desc = "It is set to detonate in 5 seconds. It will release a chicken from the grenade!"
-	name = "Creature Container (Chicken)"
-	spawner_type = /mob/living/simple_mob/animal/passive/chicken
-
-/obj/item/grenade/spawnergrenade/loadout/cow
-	desc = "It is set to detonate in 5 seconds. It will release a cow from the grenade!"
-	name = "Creature Container (Cow)"
-	spawner_type = /mob/living/simple_mob/animal/passive/cow
-
-/obj/item/grenade/spawnergrenade/loadout/corgi
-	desc = "It is set to detonate in 5 seconds. It will release a corgi from the grenade!"
-	name = "Creature Container (Corgi)"
-	spawner_type = /mob/living/simple_mob/animal/passive/dog/corgi
-
-/obj/item/grenade/spawnergrenade/loadout/fox
-	desc = "It is set to detonate in 5 seconds. It will release a fox from the grenade!"
-	name = "Creature Container (Fox)"
-	spawner_type = /mob/living/simple_mob/animal/passive/fox
-
-/obj/item/grenade/spawnergrenade/loadout/fennec
-	desc = "It is set to detonate in 5 seconds. It will release a fennec from the grenade!"
-	name = "Creature Container (Fennec)"
-	spawner_type = /mob/living/simple_mob/vore/fennec
-
-/obj/item/grenade/spawnergrenade/loadout/snake
-	desc = "It is set to detonate in 5 seconds. It will release a snake from the grenade!"
-	name = "Creature Container (Snake)"
-	spawner_type = /mob/living/simple_mob/animal/passive/snake
-
-/obj/item/grenade/spawnergrenade/loadout/redpanda
-	desc = "It is set to detonate in 5 seconds. It will release a red panda from the grenade!"
-	name = "Creature Container (Red panda)"
-	spawner_type = /mob/living/simple_mob/vore/redpanda
-
-/obj/item/grenade/spawnergrenade/loadout/otie
-	desc = "It is set to detonate in 5 seconds. It will release a otie from the grenade!"
-	name = "Creature Container (Otie)"
-	spawner_type = /mob/living/simple_mob/vore/otie/friendly
-
-/obj/item/grenade/spawnergrenade/loadout/goldcrest
-	desc = "It is set to detonate in 5 seconds. It will release a bird from the grenade!"
-	name = "Creature Container (Bird)"
-	spawner_type = /mob/living/simple_mob/animal/passive/bird/goldcrest
-
-/obj/item/grenade/spawnergrenade/loadout/teppi
-	desc = "It is set to detonate in 5 seconds. It will release a teppi from the grenade!"
-	name = "Creature Container (Teppi)"
-	spawner_type = /mob/living/simple_mob/vore/alienanimals/teppi

@@ -34,15 +34,6 @@
 	set_is_printing(FALSE)
 	set_print_end_time(0)
 
-/obj/item/integrated_circuit_printer/all_upgrades
-	upgraded = TRUE
-	illegal_upgraded = TRUE
-	can_clone = TRUE
-
-/obj/item/integrated_circuit_printer/illegal
-	illegal_upgraded = TRUE
-	can_clone = TRUE
-
 /obj/item/integrated_circuit_printer/upgraded
 	upgraded = TRUE
 	can_clone = TRUE

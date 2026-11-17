@@ -4,6 +4,3 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "implant"
 	initialize_loc = BP_HEAD
-
-/obj/item/implant/dud/torso
-	initialize_loc = BP_TORSO

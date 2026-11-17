@@ -909,34 +909,18 @@ CAPABILITIES(/obj/item/radio/subspace)
 /obj/item/radio/emergency/starting_channels()
 	return GLOB.default_medbay_channels.Copy()
 
-/obj/item/bluespaceradio/tether_prelinked
-	name = "bluespace radio (tether)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/tether_prelinked
-
 /obj/item/radio/bluespacehandset/linked/tether_prelinked
 	bs_tx_preload_id = "tether_rx" //Transmit to a receiver
 	bs_rx_preload_id = "tether_tx" //Recveive from a transmitter
-
-/obj/item/bluespaceradio/talon_prelinked
-	name = "bluespace radio (talon)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/talon_prelinked
 
 /obj/item/radio/bluespacehandset/linked/talon_prelinked
 	bs_tx_preload_id = "talon_aio" //Transmit to a receiver
 	bs_rx_preload_id = "talon_aio" //Recveive from a transmitter
 
 //* Bluespace Radio *//
-/obj/item/bluespaceradio/relicbase_prelinked
-	name = "bluespace radio (forbearance)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/relicbase_prelinked
-
 /obj/item/radio/bluespacehandset/linked/relicbase_prelinked // Same as Southern Cross. We use their tcomms setup after all
 	bs_tx_preload_id = "Receiver A" //Transmit to a receiver
 	bs_rx_preload_id = "Broadcaster A" //Recveive from a transmitter
-
-/obj/item/bluespaceradio/cryogaia_prelinked
-	name = "bluespace radio (Cryogaia)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
 
 /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
 	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver

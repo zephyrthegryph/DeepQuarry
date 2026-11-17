@@ -140,7 +140,3 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_tracking)
 		return list()
 	var/obj/mecha/M = loc
 	return M.get_log_tgui()
-
-/obj/item/storage/box/mechabeacons
-	name = "Exosuit Tracking Beacons"
-	starts_with = list(/obj/item/mecha_parts/mecha_tracking = 7)

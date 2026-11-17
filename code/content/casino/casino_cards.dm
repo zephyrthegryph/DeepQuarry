@@ -7,16 +7,6 @@
 	card_icon = "card_back"
 	back_icon = "card_back"
 
-/obj/item/deck/casino
-	w_class = ITEMSIZE_SMALL
-	icon = 'icons/obj/playing_cards.dmi'
-
-/obj/item/deck/holder/casino //WIP In future do a cool holder
-	name = "card box"
-	desc = "A small leather case to show how classy you are compared to everyone else."
-	icon = 'icons/obj/playing_cards.dmi'
-	icon_state = "card_holder"
-
 /obj/item/deck/cards/casino
 	name = "deck of casino cards"
 	desc = "A deck of playing cards from the golden goose casino, comes without a joker card!"

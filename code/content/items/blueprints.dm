@@ -428,10 +428,6 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 
 //Blueprint Subtypes
 
-/obj/item/areaeditor/blueprints/cyborg
-	name = "station schematics"
-	desc = "A digital copy of the station blueprints stored in your memory."
-
 /proc/set_area_machinery(area/area, title, oldtitle)
 	if(!oldtitle) // or replacetext goes to infinite loop
 		return

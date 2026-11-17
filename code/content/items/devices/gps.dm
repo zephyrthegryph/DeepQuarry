@@ -337,22 +337,13 @@ CAPABILITIES(/obj/item/gps)
 	icon_state = "gps-com"
 	gps_tag = "COM0"
 
-/obj/item/gps/command/on
-	tracking = TRUE
-
 /obj/item/gps/security
 	icon_state = "gps-sec"
 	gps_tag = "SEC0"
 
-/obj/item/gps/security/on
-	tracking = TRUE
-
 /obj/item/gps/security/hos
 	icon_state = "gps-sec-hos"
 	gps_tag = "HOS0"
-
-/obj/item/gps/security/hos/on
-	tracking = TRUE
 
 /obj/item/gps/medical
 	icon_state = "gps-med"
@@ -365,59 +356,35 @@ CAPABILITIES(/obj/item/gps)
 	icon_state = "gps-med-cmo"
 	gps_tag = "CMO0"
 
-/obj/item/gps/medical/cmo/on
-	tracking = TRUE
-
 /obj/item/gps/science
 	icon_state = "gps-sci"
 	gps_tag = "SCI0"
-
-/obj/item/gps/science/on
-	tracking = TRUE
 
 /obj/item/gps/science/rd
 	icon_state = "gps-sci-rd"
 	gps_tag = "RD0"
 
-/obj/item/gps/science/rd/on
-	tracking = TRUE
-
 /obj/item/gps/engineering
 	icon_state = "gps-eng"
 	gps_tag = "ENG0"
-
-/obj/item/gps/engineering/on
-	tracking = TRUE
 
 /obj/item/gps/engineering/atmos
 	icon_state = "gps-eng-atm"
 	gps_tag = "ATM0"
 
-/obj/item/gps/engineering/atmos/on
-	tracking = TRUE
-
 /obj/item/gps/engineering/ce
 	icon_state = "gps-eng-ce"
 	gps_tag = "CE0"
-
-/obj/item/gps/engineering/ce/on
-	tracking = TRUE
 
 /obj/item/gps/mining
 	icon_state = "gps-mine"
 	gps_tag = "MINE0"
 	desc = "A positioning system helpful for rescuing trapped or injured miners, keeping one on you at all times while mining might just save your life. Alt+click to toggle power."
 
-/obj/item/gps/mining/on
-	tracking = TRUE
-
 /obj/item/gps/explorer
 	icon_state = "gps-exp"
 	gps_tag = "EXP0"
 	desc = "A positioning system helpful for rescuing trapped or injured explorers, keeping one on you at all times while exploring might just save your life. Alt+click to toggle power."
-
-/obj/item/gps/explorer/on
-	tracking = TRUE
 
 /obj/item/gps/robot
 	icon_state = "gps-borg"
@@ -433,10 +400,6 @@ CAPABILITIES(/obj/item/gps)
 	invisibility = INVISIBILITY_MAXIMUM
 	tracking = TRUE // Meant to point to a location, so it needs to be on.
 	anchored = TRUE
-
-/obj/item/gps/internal/base
-	gps_tag = "NT_BASE"
-	desc = "A homing signal from NanoTrasen's outpost."
 
 /obj/item/gps/internal/poi
 	gps_tag = "Unidentified Signal"

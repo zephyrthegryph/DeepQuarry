@@ -54,11 +54,6 @@
 	name = "Creature Container (Otie)"
 	spawner_type = /mob/living/simple_mob/vore/otie/friendly
 
-/obj/item/grenade/spawnergrenade/casino/goldcrest
-	desc = "It is set to detonate in 5 seconds. It will release a bird won from the prize vendor!"
-	name = "Creature Container (Bird)"
-	spawner_type = /mob/living/simple_mob/animal/passive/bird/goldcrest
-
 //
 // Mecha
 //
@@ -87,23 +82,3 @@
 //
 /obj/item/grenade/spawnergrenade/casino/fighter
 	desc = "You feel great power inside this small round sphere, with great powers comes great responsibilities!"
-
-/obj/item/grenade/spawnergrenade/casino/fighter/gunpod
-	name = "Fighter Container (Gunpod)"
-	spawner_type = /obj/mecha/combat/fighter/gunpod/loaded
-
-/obj/item/grenade/spawnergrenade/casino/fighter/baron
-	name = "Fighter Container (Baron)"
-	spawner_type = /obj/mecha/combat/fighter/baron/loaded
-
-/obj/item/grenade/spawnergrenade/casino/fighter/scoralis
-	name = "Fighter Container (Scoralis)"
-	spawner_type = /obj/mecha/combat/fighter/scoralis/loaded
-
-/obj/item/grenade/spawnergrenade/casino/fighter/allure
-	name = "Fighter Container (Allure)"
-	spawner_type = /obj/mecha/combat/fighter/allure/loaded
-
-/obj/item/grenade/spawnergrenade/casino/fighter/pinnace
-	name = "Fighter Container (Pinnace)"
-	spawner_type = /obj/mecha/combat/fighter/pinnace/loaded

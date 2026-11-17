@@ -186,16 +186,6 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes/tricky/tricordrazine)
 	desc = "An ominous briefcase that has the unmistakeable smell of old, stale, cigarette smoke, and gives those who look at it a bad feeling."
 	starts_with = list(/obj/item/spacecash/c1000 = 10)
 
-/obj/item/storage/box/syndie_kit/combat_armor
-	name = "combat armor kit"
-	desc = "Contains a full set of combat armor."
-	starts_with = list(
-		/obj/item/clothing/head/helmet/combat,
-		/obj/item/clothing/suit/armor/combat,
-		/obj/item/clothing/gloves/arm_guard/combat,
-		/obj/item/clothing/shoes/leg_guard/combat
-	)
-
 /obj/item/storage/box/syndie_kit/demolitions
 	starts_with = list(
 		/obj/item/syndie/c4explosive,

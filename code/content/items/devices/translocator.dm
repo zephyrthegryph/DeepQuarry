@@ -567,13 +567,6 @@ CAPABILITIES(/obj/item/perfect_tele/frontier)
 		return
 	..()
 
-/obj/item/perfect_tele/frontier/staff
-	name = "centcom translocator"
-	desc = "Similar to translocator technology, however, most of its destinations are hardcoded."
-	charge_cost = 1200 // Enough for one person and their partner
-	loc_network = "centcom"
-	longrange = 1
-
 /obj/item/perfect_tele/frontier/unknown
 	name = "modified translocator"
 	desc = "This crank-charged translocator has only one beacon, but it already has a destination preprogrammed into it."
@@ -583,17 +576,6 @@ CAPABILITIES(/obj/item/perfect_tele/frontier)
 
 /obj/item/perfect_tele/frontier/unknown/one
 	loc_network = "unkone"
-/obj/item/perfect_tele/frontier/unknown/two
-	loc_network = "unktwo"
-/obj/item/perfect_tele/frontier/unknown/three
-	loc_network = "unkthree"
-/obj/item/perfect_tele/frontier/unknown/four
-	loc_network = "unkfour"
-/obj/item/perfect_tele/frontier/unknown/five
-	loc_network = "unkfive"
-/obj/item/perfect_tele/frontier/unknown/six
-	loc_network = "unksix"
-
 /// Relation view: destination (reads null once it is gone).
 /obj/item/perfect_tele/proc/destination() as /obj/item/perfect_tele_beacon
 	return destination

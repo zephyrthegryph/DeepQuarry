@@ -4,13 +4,6 @@
 	icon = 'icons/obj/casino.dmi'
 	icon_state = "casino_box"
 
-/obj/item/storage/box/casino/costume_marine
-	name = "ruin marine costume"
-	starts_with = list(
-	/obj/item/clothing/head/marine,
-	/obj/item/clothing/suit/marine
-	)
-
 /obj/item/storage/box/casino/costume_pirate
 	name = "pirate costume"
 	starts_with = list(
@@ -40,15 +33,6 @@
 	starts_with = list(
 	/obj/item/clothing/suit/bio_suit/plaguedoctorsuit,
 	/obj/item/clothing/head/plaguedoctorhat
-	)
-
-/obj/item/storage/box/casino/costume_cowboy
-	name = "cowboy costume"
-	starts_with = list(
-	/obj/item/clothing/under/cowboy,
-	/obj/item/clothing/accessory/holster/hip,
-	/obj/item/clothing/head/cowboy/ranger,
-	/obj/item/clothing/shoes/boots/cowboy/brown
 	)
 
 /obj/item/storage/box/roulette_balls_normal

@@ -409,7 +409,7 @@ Notes: declare the var (`var/datum/burn_state/burn`) and the entry; the state ty
 #### `links(a_end, b_end, ...)`
 Need: a paired relation whose two ends are kept in step.
 Defined: `code/engine/declare/entries.dm:219`
-Example: `links(/obj/structure/redgate::target, /obj/structure/redgate::target)`, `code/content/awaymissions/redgate.dm:608`
+Example: `links(/obj/structure/redgate::target, /obj/structure/redgate::target)`, `code/content/awaymissions/redgate.dm:587`
 Replaces / bans: the `REL` pair macros.
 Notes: `analyze gen declare` rewrites the call to `entry_link()`; calling `links()` directly crashes. A `sparse = TRUE` pair keeps its ends in the holders' records and is written with `LINK_END`.
 

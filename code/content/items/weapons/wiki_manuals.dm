@@ -67,15 +67,6 @@ CAPABILITIES(/obj/item/book/manual/wiki)
 
 	page_link = "Hacking"
 
-/obj/item/book/manual/wiki/robotics_manual
-	name = "Guide to Robotics"
-	icon_state ="evabook"
-	item_state = "book3"
-	author = "Simple Robotics"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned
-	title = "Guide to Robotics"
-
-	page_link = "Guide_to_Robotics"
-
 /obj/item/book/manual/wiki/security_space_law
 	name = "Corporate Regulations"
 	desc = "A set of corporate guidelines for keeping law and order on privately-owned space stations."

@@ -102,12 +102,6 @@
 /obj/item/ammo_magazine/ak74/plum
 	icon_state = "545plum"
 
-/obj/item/ammo_magazine/ak74/plum/rubber
-	name = "AK74 magazine (5.45mm less-lethal)"
-	icon_state = "545plumrubber"
-	MATERIAL_BULK(MAT_STEEL, 650)
-	ammo_type = /obj/item/ammo_casing/a545/rubber
-
 /obj/item/ammo_magazine/m16
 	name = "M16 magazine (5.56mm)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -153,14 +147,6 @@
 	multiple_sprites = 1
 	ammo_type = /obj/item/ammo_casing/a10x24
 
-/obj/item/ammo_magazine/m41/rubber
-	name = "M41A magazine (10x24mm)"
-	icon = 'icons/obj/ammo_ch.dmi'
-	icon_state = "m41rubbermag"
-	max_ammo = 40
-	MATERIAL_BULK(MAT_STEEL, 7000)
-	ammo_type = /obj/item/ammo_casing/a10x24/rubber
-
 /obj/item/ammo_magazine/t12
 	name = "T-12 magazine (10x24mm)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -181,11 +167,6 @@
 	MATERIAL_BULK(MAT_STEEL, 400)
 	ammo_type = /obj/item/ammo_casing/a762
 
-/obj/item/ammo_magazine/clip/sks/ap
-	name = "Ammo clip(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 700)
-	ammo_type = /obj/item/ammo_casing/a762/ap
-
 /obj/item/ammo_magazine/clip/mosin
 	name = "Ammo clip(7.62mm)"
 	icon_state = "clip_rifle"
@@ -194,11 +175,6 @@
 	multiple_sprites = 1
 	MATERIAL_BULK(MAT_STEEL, 300)
 	ammo_type = /obj/item/ammo_casing/a762
-
-/obj/item/ammo_magazine/clip/mosin/ap
-	name = "Ammo clip(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 600)
-	ammo_type = /obj/item/ammo_casing/a762/ap
 
 /obj/item/ammo_magazine/type901
 	name = "Type-901 magazine(7.62mm)"
@@ -211,11 +187,6 @@
 	MATERIAL_BULK(MAT_STEEL, 2400)
 	ammo_type = /obj/item/ammo_casing/a762
 
-/obj/item/ammo_magazine/type901/ap
-	name = "Type-901 magazine(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 3000)
-	ammo_type = /obj/item/ammo_casing/a762/ap
-
 /obj/item/ammo_magazine/ar10
 	name = "AR-10 magazine(7.62mm)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -226,11 +197,6 @@
 	multiple_sprites = 1
 	MATERIAL_BULK(MAT_STEEL, 1800)
 	ammo_type = /obj/item/ammo_casing/a762
-
-/obj/item/ammo_magazine/ar10/ap
-	name = "AR-10 magazine(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 2400)
-	ammo_type = /obj/item/ammo_casing/a762/ap
 
 /obj/item/ammo_magazine/fal
 	name = "FAL magazine(7.62mm)"
@@ -243,11 +209,6 @@
 	MATERIAL_BULK(MAT_STEEL, 1800)
 	ammo_type = /obj/item/ammo_casing/a762
 
-/obj/item/ammo_magazine/fal/ap
-	name = "FAL magazine(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 2400)
-	ammo_type = /obj/item/ammo_casing/a762/ap
-
 /obj/item/ammo_magazine/awp
 	name = "AWP magazine(.338 Lapua)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -259,11 +220,6 @@
 	MATERIAL_BULK(MAT_STEEL, 2400)
 	ammo_type = /obj/item/ammo_casing/a338
 
-/obj/item/ammo_magazine/awp/ap
-	name = "AWP magazine(.338 Lapua armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 3000)
-	ammo_type = /obj/item/ammo_casing/a338/ap
-
 /obj/item/ammo_magazine/hectate
 	name = "Hectate II magazine(.50 BMG)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -274,11 +230,6 @@
 	multiple_sprites = 1
 	MATERIAL_BULK(MAT_STEEL, 4000)
 	ammo_type = /obj/item/ammo_casing/a50bmg
-
-/obj/item/ammo_magazine/hectate/ap
-	name = "Hectate II magazine(.50 BMG armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 5000)
-	ammo_type = /obj/item/ammo_casing/a50bmg/ap
 
 /obj/item/ammo_magazine/ppsh
 	name = "PPSH-17b drum magazine(.45)"
@@ -324,10 +275,6 @@
 	MATERIAL_BULK(MAT_STEEL, 800)
 	ammo_type = /obj/item/ammo_casing/a12g/pellet
 
-/obj/item/ammo_magazine/strela/slug
-	name = "Strela magazine(12 gauge slug)"
-	ammo_type = /obj/item/ammo_casing/a12g
-
 /obj/item/ammo_magazine/molniya
 	name = "Molniya magazine box(7.62mm)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -338,11 +285,6 @@
 	multiple_sprites = 1
 	MATERIAL_BULK(MAT_STEEL, 8000)
 	ammo_type = /obj/item/ammo_casing/a762
-
-/obj/item/ammo_magazine/molniya/ap
-	name = "Molniya magazine box(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 10000)
-	ammo_type = /obj/item/ammo_casing/a762/ap
 
 /obj/item/ammo_magazine/kord
 	name = "Kord magazine box(12.7x108mm)"
@@ -366,11 +308,6 @@
 	MATERIAL_BULK(MAT_STEEL, 8000)
 	ammo_type = /obj/item/ammo_casing/a762
 
-/obj/item/ammo_magazine/pkm/ap
-	name = "PKM magazine box(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 10000)
-	ammo_type = /obj/item/ammo_casing/a762/ap
-
 /obj/item/ammo_magazine/rpd
 	name = "RPD Drum magazine(7.62mm)" //Lil side note. These mags don't work with the AK, because the rounds inside are actually on a belt, but they might still fit inside an AK and just break it? Couldn't find any more details on what happens if you try.
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -381,11 +318,6 @@
 	multiple_sprites = 1
 	MATERIAL_BULK(MAT_STEEL, 8000)
 	ammo_type = /obj/item/ammo_casing/a762
-
-/obj/item/ammo_magazine/rpd/ap
-	name = "PPD Drum magazine(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 10000)
-	ammo_type = /obj/item/ammo_casing/a762/ap
 
 /obj/item/ammo_magazine/akm/drum
 	name = "RPK Drum magazine(7.62mm)" //These ARE interchangeable with AK magazines in the same caliber
@@ -414,12 +346,6 @@
 	MATERIAL_BULK(MAT_STEEL, 400)
 	ammo_type = /obj/item/ammo_casing/a10mm
 
-/obj/item/ammo_magazine/ssp4/rubber
-	name = "SSP4 magazine(10mm)"
-	ammo_type = /obj/item/ammo_casing/a10mm/rubber
-	icon_state = "10mmrubbermag"
-	MATERIAL_BULK(MAT_STEEL, 300)
-
 /obj/item/ammo_magazine/makarov
 	name = "Makarov magazine(9mm)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -430,11 +356,6 @@
 	multiple_sprites = 1
 	MATERIAL_BULK(MAT_STEEL, 400)
 	ammo_type = /obj/item/ammo_casing/a9mm
-
-/obj/item/ammo_magazine/makarov/rubber
-	name = "Makarov magazine(9mm Makarov rubber)"
-	ammo_type = /obj/item/ammo_casing/a9mm/rubber
-	icon_state = "9mmrubbermag"
 
 /obj/item/ammo_magazine/m9mm/vp70
 	name = "VP70 magazine (9mm)"
@@ -472,15 +393,6 @@
 	multiple_sprites = 1
 	ammo_type = /obj/item/ammo_casing/a44
 
-/obj/item/ammo_magazine/tp23s/rubber
-	name = "TP-23 TS magazine (.44 magnum less-lethal)"
-	ammo_type = /obj/item/ammo_casing/a44/rubber
-
-/obj/item/ammo_magazine/tp23s/highpower
-	name = "TP-23 TS magazine (.44 magnum +P)"
-	desc = "This will probably void your warranty... If you have one."
-	ammo_type = /obj/item/ammo_casing/a44/rifle
-
 /obj/item/ammo_magazine/tp23
 	name = "TP-23 magazine (.45 ACP)"
 	icon = 'icons/obj/ammo_ch.dmi'
@@ -495,22 +407,6 @@
 /obj/item/ammo_magazine/tp23/rubber
 	name = "TP-23 magazine (.45 ACP rubber)"
 	ammo_type = /obj/item/ammo_casing/a45/rubber
-
-/obj/item/ammo_magazine/tp23/flash
-	name = "TP-23 magazine (.45 ACP flash)"
-	ammo_type = /obj/item/ammo_casing/a45/flash
-
-/obj/item/ammo_magazine/tp23/hp
-	name = "TP-23 magazine (.45 ACP hollow-point)"
-	ammo_type = /obj/item/ammo_casing/a45/hp
-
-/obj/item/ammo_magazine/tp23/ap
-	name = "TP-23 magazine (.45 ACP armor piercing)"
-	ammo_type = /obj/item/ammo_casing/a45/ap
-
-/obj/item/ammo_magazine/tp23/emp
-	name = "TP-23 magazine (.45 ACP low-yield EMP)"
-	ammo_type = /obj/item/ammo_casing/a45/emp
 
 /obj/item/ammo_magazine/mp5mag
 	name = "mp5 magazine(9mm)"

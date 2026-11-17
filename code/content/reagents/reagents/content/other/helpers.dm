@@ -24,12 +24,3 @@ CAPABILITIES(/obj/item/reagent_containers/pill/phenethylamine)
 	starts_with = list(
 		/obj/item/reagent_containers/pill/benzilate = 7,
 	)
-
-/obj/item/storage/pill_bottle/phenethylamine
-	name = "bottle of Phenethylamine pills"
-	desc = "Looks like someone drew a happy face on the label, replacing whatever was previously present."
-
-/obj/item/storage/pill_bottle/phenethylamine
-	starts_with = list(
-		/obj/item/reagent_containers/pill/phenethylamine = 7,
-	)

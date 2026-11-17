@@ -159,20 +159,6 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	var/datum/shuttle/autodock/ferry/S = shuttles_shuttles()["Belter"]
 	S.launch(user)
 
-/obj/item/paper/rogueminer
-	name = "R-38 Scanner Console Guide"
-	info = {"<h4>Getting Started</h4>
-	Congratulations, your station has purchased the R-38 industrial asteroid belt scanner!<br>
-	Using the R-38 is almost as simple as brain surgery! Simply press the scan button to scan for a new mineral-rich asteroid belt location!<br>
-	<b>That's all there is to it!</b><br>
-	Notice, scan may cause extreme brain damage to those present in asteroid belt, so scanning will be disabled in that case.<br>
-	Existing minerals and living creatures interfere with the scans, so the more minerals extracted and creatures 'removed'/made-not-living in the belt, the more accurate future scans will be.<br>
-	<h4>Traveling to the belt</h4>
-	When a new zone has been scanned, your station's shuttle destination will be updated to direct it to the newly discovered area automatically.<br>
-	You can then travel to the new area to mine in that location.<br>
-	<br>
-	<br> "} + span_small("This technology produced under license from Thinktronic Systems, LTD.")
-
 
 #undef OUTPOST_Z
 #undef TRANSIT_Z

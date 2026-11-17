@@ -123,9 +123,6 @@ CAPABILITIES(/obj/item/material/fishing_rod/modern)
 	configure(item_tooling(speed = 0.75))
 	configure(item_combat(reach = 4, attack_speed = 2 SECONDS))
 
-/obj/item/material/fishing_rod/modern/built
-	strung = FALSE
-
 /obj/item/material/fishing_rod/modern/cheap //A rod sold by the fishing vendor. Done so that the rod sold by mining reward vendors doesn't loose its value.
 	name = "cheap fishing rod"
 	desc = "Mass produced, but somewhat reliable."

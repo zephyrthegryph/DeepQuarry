@@ -383,53 +383,11 @@ MSG_DEF_SELF(pill_bottle/label_too_long, "The label can be at most 50 characters
 	desc = "Contains pills used to feed people."
 	starts_with = list(/obj/item/reagent_containers/pill/nutriment = 7, /obj/item/reagent_containers/pill/protein = 7)
 
-/obj/item/storage/pill_bottle/rezadone
-	name = "pill bottle (" + REAGENT_REZADONE + ")"
-	desc = "A powder with almost magical properties, this substance can effectively treat genetic damage in humanoids, though excessive consumption has side effects."
-	starts_with = list(/obj/item/reagent_containers/pill/rezadone = 14)
-	wrapper_color = COLOR_GREEN_GRAY
-
-/obj/item/storage/pill_bottle/peridaxon
-	name = "pill bottle (" + REAGENT_PERIDAXON + ")"
-	desc = "Used to encourage recovery of internal organs and nervous systems. Medicate cautiously."
-	starts_with = list(/obj/item/reagent_containers/pill/peridaxon = 14)
-	wrapper_color = COLOR_PURPLE
-
 /obj/item/storage/pill_bottle/carthatoline
 	name = "pill bottle (" + REAGENT_CARTHATOLINE + ")"
 	desc = REAGENT_CARTHATOLINE + " is strong evacuant used to treat severe poisoning."
 	starts_with = list(/obj/item/reagent_containers/pill/carthatoline = 14)
 	wrapper_color = COLOR_GREEN_GRAY
-
-/obj/item/storage/pill_bottle/alkysine
-	name = "pill bottle (" + REAGENT_ALKYSINE + ")"
-	desc = REAGENT_ALKYSINE + " is a drug used to lessen the damage to neurological tissue after a catastrophic injury. Can heal brain tissue."
-	starts_with = list(/obj/item/reagent_containers/pill/alkysine = 14)
-	wrapper_color = COLOR_YELLOW
-
-/obj/item/storage/pill_bottle/imidazoline
-	name = "pill bottle (" + REAGENT_IMIDAZOLINE + ")"
-	desc = "Heals eye damage."
-	starts_with = list(/obj/item/reagent_containers/pill/imidazoline = 14)
-	wrapper_color = COLOR_PURPLE_GRAY
-
-/obj/item/storage/pill_bottle/osteodaxon
-	name = "pill bottle (" + REAGENT_OSTEODAXON + ")"
-	desc = "An experimental drug used to heal bone fractures."
-	starts_with = list(/obj/item/reagent_containers/pill/osteodaxon = 14)
-	wrapper_color = COLOR_WHITE
-
-/obj/item/storage/pill_bottle/myelamine
-	name = "pill bottle (Myelamine)"
-	desc = "Used to rapidly clot internal hemorrhages by increasing the effectiveness of platelets."
-	starts_with = list(/obj/item/reagent_containers/pill/myelamine = 14)
-	wrapper_color = COLOR_PALE_PURPLE_GRAY
-
-/obj/item/storage/pill_bottle/hyronalin
-	name = "pill bottle (" + REAGENT_HYRONALIN + ")"
-	desc = REAGENT_HYRONALIN + " is a medicinal drug used to counter the effect of radiation poisoning."
-	starts_with = list(/obj/item/reagent_containers/pill/hyronalin = 14)
-	wrapper_color = COLOR_TEAL
 
 /obj/item/storage/pill_bottle/arithrazine
 	name = "pill bottle (" + REAGENT_ARITHRAZINE + ")"
@@ -453,9 +411,6 @@ MSG_DEF_SELF(pill_bottle/label_too_long, "The label can be at most 50 characters
 	desc = "A rare cure provided by Vey-Medical that helps counteract negative side effects of using imperfect resleeving machinery."
 	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure = 7)
 
-/obj/item/storage/pill_bottle/sleevingcure/full
-	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure = 14)
-
 /obj/item/storage/mrebag/pill
 	name = "vacuum-sealed pill"
 	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
@@ -465,10 +420,6 @@ CAPABILITIES(/obj/item/storage/mrebag/pill)
 	configure(storage(accepts = list(/obj/item/reagent_containers/pill), max_size = ITEMSIZE_TINY))
 
 /*
-/obj/item/storage/mrebag/pill/sleevingcure
-	name = "vacuum-sealed pill (" + REAGENT_SLEEVINGCURE + ")"
-	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
-	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure)
 */
 
 

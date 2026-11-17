@@ -178,9 +178,6 @@ CAPABILITIES(/obj/item/holder/diona)
 /obj/item/holder/drone
 	item_state = "repairbot"
 
-/obj/item/holder/drone/swarm
-	item_state = "constructiondrone"
-
 /obj/item/holder/pai
 
 /obj/item/holder/pai/take_held(mob/held)
@@ -253,9 +250,6 @@ CAPABILITIES(/obj/item/holder/diona)
 /obj/item/holder/lisa
 	item_state = "lisa"
 
-/obj/item/holder/old_corgi
-	item_state = "old_corgi"
-
 /obj/item/holder/void_puppy
 	item_state = "void_puppy"
 
@@ -267,12 +261,6 @@ CAPABILITIES(/obj/item/holder/diona)
 
 /obj/item/holder/fox
 	item_state = "fox"
-
-/obj/item/holder/pug
-	item_state = "pug"
-
-/obj/item/holder/sloth
-	item_state = "sloth"
 
 /obj/item/holder/borer
 	item_state = "brainslug"

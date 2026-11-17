@@ -187,20 +187,5 @@ CAPABILITIES(/obj/item/beach_ball)
 	user.drop_item()
 	src.throw_at(target, motion_of(src).throw_range, motion_of(src).throw_speed, user)
 
-/obj/item/beach_ball/dodgeball
-	icon = 'icons/obj/balls_vr.dmi'
-	icon_state = "dodgeball"
-	item_state = "dodgeball"
-	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_balls_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_balls_vr.dmi')
-	name = "dodgeball"
-	desc = "Think fast, chucklenuts!"
-	w_class = ITEMSIZE_LARGE //Stops people from hiding it in their bags/pockets
-
-CAPABILITIES(/obj/item/beach_ball/dodgeball)
-	configure(movable_motion(throw_range = 15, throw_speed = 5))
-	configure(item_thrown(force = 0.1))
-	configure(item_combat(force = 0.1))
-	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER, hit = SFX_WEAPONS_DODGEBALL))
-
 /obj/effect/spawner
 	name = "object spawner"

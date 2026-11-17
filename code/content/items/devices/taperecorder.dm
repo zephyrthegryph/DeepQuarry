@@ -39,9 +39,6 @@ CAPABILITIES(/obj/item/taperecorder)
 	op("playback", menu(), label("Playback Tape"), needs(carried(), req(PROC_REF(playback_refusal))), then(PROC_REF(verb_playback)))
 	op("print", menu(), label("Print Transcript"), needs(carried(), req(PROC_REF(print_refusal))), then(PROC_REF(verb_print)))
 
-/obj/item/taperecorder/empty
-	mytape = null
-
 /obj/item/taperecorder/var/recording = 0
 // The requirements as op parts: each old check is TRUE or why not.
 

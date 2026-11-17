@@ -444,21 +444,6 @@ CAPABILITIES(/obj/item/storage/fancy/cigar)
 	set_open(FALSE)
 	..()
 
-/obj/item/storage/fancy/cigar/choiba
-	name = "\improper Choiba cigar case"
-	desc = "A fancy case for holding your cigars when you are not smoking them."
-	icon_state = "cohibacase"
-	icon = 'icons/obj/cigarettes.dmi'
-	icon_type = "cigar"
-	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba = 5)
-
-CAPABILITIES(/obj/item/storage/fancy/cigar/choiba)
-	configure(atom_rules(description_fluff = "The exquisite wooden case bears the markings of the \
-	Choiba cigar company based out of Cuba. The perfectly humidized case keeps \
-	the companies signature Cigars in premium condidtion even when traveling \
-	long distances within a vacuume. The custom case itself can sell for quite \
-	a lot in some places."))
-
 /obj/item/storage/fancy/cigar/havana
 	name = "\improper Havana cigar case"
 	desc = "A fancy case for holding your cigars when you are not smoking them."
