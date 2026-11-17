@@ -327,6 +327,7 @@ function StatusView({ state }: { state: State }) {
           </Button>
         ))}
       </div>
+      <VerbGroups state={state} view="Status" />
     </>
   );
 }

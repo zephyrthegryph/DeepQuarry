@@ -173,3 +173,12 @@
 	for(var/id in list("guide/chemistry/lab", "guide/medical/triage", "guide/medical/surgery", "guide/engineering/power", "guide/engineering/atmos", "guide/research/basics", "guide/cargo/ordering", "guide/cargo/trade_ships", "guide/cargo/haggling", "guide/cargo/black_market", "guide/cargo/salvage"))
 		TEST_ASSERT(index[id], "no guide [id]")
 		TEST_ASSERT(findtext(index[id]["path"], "/Guides"), "[id] is filed at [index[id]["path"]], not under a department's guides")
+
+/// The wiki is a client verb (every client has it from connecting, in the lobby and as an observer too), listed in the stat panel's Status view.
+/datum/unit_test/dq_wiki_verb_is_a_listed_client_verb
+
+/datum/unit_test/dq_wiki_verb_is_a_listed_client_verb/Run()
+	var/procpath/wiki_verb = /client/verb/open_station_wiki
+	TEST_ASSERT_EQUAL(wiki_verb.name, "Station Wiki", "the verb is named Station Wiki")
+	TEST_ASSERT_EQUAL(wiki_verb.category, VERB_CAT_STATUS, "the verb is filed under Status")
+	TEST_ASSERT(verb_panel_listed(/client/verb/open_station_wiki), "the verb is on the stat panel")

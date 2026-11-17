@@ -33,6 +33,7 @@ type Place = { view: PanelView; group: string };
 
 /** Category (as the verb declares it, "Head.Sub" or "Head") to its place. Order inside a view is GROUP_ORDER's. */
 const CATEGORY_PLACES: Record<string, Place> = {
+  Status: { view: 'Status', group: 'Help' },
   IC: { view: 'Actions', group: 'In character' },
   'IC.Game': { view: 'Actions', group: 'Round' },
   'IC.Event': { view: 'Actions', group: 'Round' },

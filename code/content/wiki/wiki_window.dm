@@ -60,9 +60,10 @@ CAPABILITIES(/datum/station_wiki)
 	SStgui.update_user_uis(A.actor, src)
 	return OP_OK
 
-/// The Status panel's quick row (tgui-panel/statpanel/menu.ts) runs this.
+/// A client verb, so every player has it from connecting (lobby and observers included), listed in the stat panel's Status view and run by the
+/// Help menu's "Station Wiki" entry (tgui-panel/statpanel/menu.ts) and the Status quick row.
 /client/verb/open_station_wiki()
 	set name = "Station Wiki"
-	set hidden = TRUE // the Status panel's Station Wiki entry
+	set category = VERB_CAT_STATUS
 	set desc = "Opens the station wiki: every department's reference, guides and lore."
 	wiki_open(mob, WIKI_ID_HOME)
