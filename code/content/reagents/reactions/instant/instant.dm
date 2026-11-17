@@ -30,7 +30,7 @@ CAPABILITIES(/transformation/chem/instant/pacid)
 
 CAPABILITIES(/transformation/chem/instant/virus_food)
 	configure(transformation(name = REAGENT_VIRUSFOOD, id = REAGENT_ID_VIRUSFOOD,
-		takes = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_MILK, 1)), makes = list(reagent(REAGENT_ID_VIRUSFOOD, 5))))
+		takes = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_MILK, 1)), makes = list(reagent(REAGENT_ID_VIRUSFOOD, 2))))
 
 /transformation/chem/instant/stimm
 
@@ -106,7 +106,7 @@ CAPABILITIES(/transformation/chem/instant/robustharvest)
 
 CAPABILITIES(/transformation/chem/instant/space_cleaner)
 	configure(transformation(name = REAGENT_CLEANER, id = REAGENT_ID_CLEANER,
-		takes = list(reagent(REAGENT_ID_AMMONIA, 1), reagent(REAGENT_ID_WATER, 1)), makes = list(reagent(REAGENT_ID_CLEANER, 2))))
+		takes = list(reagent(REAGENT_ID_AMMONIA, 1), reagent(REAGENT_ID_WATER, 9)), makes = list(reagent(REAGENT_ID_CLEANER, 10)))) // a dilution: a few units of water in a reaction beaker never turn its ammonia into cleaner
 
 /transformation/chem/instant/foaming_agent
 
@@ -578,13 +578,6 @@ CAPABILITIES(/transformation/chem/instant/deuterium)
 		makes = list(reagent(REAGENT_ID_DEUTERIUM, 3))))
 
 // Biomass, for cloning and bioprinters
-/transformation/chem/instant/biomass
-
-CAPABILITIES(/transformation/chem/instant/biomass)
-	configure(transformation(name = REAGENT_BIOMASS, id = REAGENT_ID_BIOMASS,
-		takes = list(reagent(REAGENT_ID_PROTEIN, 1), reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_PHORON, 1)),
-		makes = list(reagent(REAGENT_ID_BIOMASS, 6))))
-
 // Neutralization.
 
 /transformation/chem/instant/neutralize_neurotoxic_protein
@@ -794,13 +787,6 @@ CAPABILITIES(/transformation/chem/instant/dyloteane/super)
 		takes = list(reagent(REAGENT_ID_ANTITOXIN, 1), reagent(REAGENT_ID_TEA, 1), reagent(REAGENT_ID_SUGAR, 1)),
 		makes = list(reagent(REAGENT_ID_DYLOTEANE, 10))))
 
-/transformation/chem/instant/peridaxon_ch
-
-CAPABILITIES(/transformation/chem/instant/peridaxon_ch)
-	configure(transformation(name = REAGENT_PERIDAXON, id = "peridaxon_ch",
-		takes = list(reagent(REAGENT_ID_CORDRADAXON, 1), reagent(REAGENT_ID_GASTIRODAXON, 1), reagent(REAGENT_ID_HEPANEPHRODAXON, 1), reagent(REAGENT_ID_RESPIRODAXON, 1)),
-		makes = list(reagent(REAGENT_ID_PERIDAXON, 12))))
-
 /transformation/chem/instant/sorbitol
 
 CAPABILITIES(/transformation/chem/instant/sorbitol)
@@ -901,14 +887,13 @@ CAPABILITIES(/transformation/chem/instant/foam/softdrink)
 /transformation/chem/instant/firefightingfoam //TODO: Make it so we can add this to the foam tanks to refill them
 
 CAPABILITIES(/transformation/chem/instant/firefightingfoam)
-	configure(transformation(name = REAGENT_FIREFOAM, id = "firefighting foam", takes = list(reagent(REAGENT_ID_WATER, 1)),
-		catalysts = list(reagent(REAGENT_ID_FLUORINE, 10)), makes = list(reagent(REAGENT_ID_FIREFOAM, 1))))
+	configure(transformation(name = REAGENT_FIREFOAM, id = "firefighting foam", takes = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_FOAMINGAGENT, 1)), makes = list(reagent(REAGENT_ID_FIREFOAM, 2))))
 
 /transformation/chem/instant/firefightingfoamqol //Please don't abuse this and make us remove it. Seriously.
 
 CAPABILITIES(/transformation/chem/instant/firefightingfoamqol)
 	configure(transformation(name = "Firefighting Foam EZ", id = "firefighting foam ez", takes = list(reagent(REAGENT_ID_WATER, 1)),
-		catalysts = list(reagent(REAGENT_ID_FIREFOAM, 5)), blocked_by = list(reagent(REAGENT_ID_FLUORINE, 0.01)),
+		catalysts = list(reagent(REAGENT_ID_FIREFOAM, 5)),
 		makes = list(reagent(REAGENT_ID_FIREFOAM, 1))))
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -937,14 +922,14 @@ CAPABILITIES(/transformation/chem/instant/unsorbitol)
 CAPABILITIES(/transformation/chem/instant/meatcolony)
 	configure(transformation(name = REAGENT_ID_PROTEIN, id = REAGENT_ID_MEATCOLONY,
 		takes = list(reagent(REAGENT_ID_MEATCOLONY, 5), reagent(REAGENT_ID_VIRUSFOOD, 5)),
-		makes = list(reagent(REAGENT_ID_PROTEIN, 60))))
+		makes = list(reagent(REAGENT_ID_PROTEIN, 10))))
 
 /transformation/chem/instant/plantcolony
 
 CAPABILITIES(/transformation/chem/instant/plantcolony)
 	configure(transformation(name = REAGENT_ID_NUTRIMENT, id = REAGENT_ID_PLANTCOLONY,
 		takes = list(reagent(REAGENT_ID_PLANTCOLONY, 5), reagent(REAGENT_ID_VIRUSFOOD, 5)),
-		makes = list(reagent(REAGENT_ID_NUTRIMENT, 60))))
+		makes = list(reagent(REAGENT_ID_NUTRIMENT, 10))))
 
 ///////////////////////////////////////////////////////////////////////////////////
 /// Upstream Adjustments

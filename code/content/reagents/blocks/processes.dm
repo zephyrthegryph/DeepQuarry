@@ -536,8 +536,8 @@ GLOBAL_LIST_INIT(chem_fallout_electrolyse, list(REAGENT_ID_CONTAMINANT_HEAVY_MET
 
 /datum/chem_process/electrolyse/chem_variants(substrate_id, datum/chem_structure/S, datum/chem_gen/G)
 	. = list()
-	if(!S.is_ionic() || S.is_acid() || chem_is_contaminant_id(G, substrate_id))
-		return
+	if(!S.is_ionic() || S.is_acid() || (S.anion == CHEM_ION_HYDROXIDE && S.cation != CHEM_ION_HYDROGEN) || chem_is_contaminant_id(G, substrate_id))
+		return // a hydroxide is not taken apart: lye is made from sodium, hydrogen and oxygen at three units for three, and a split into two would grow it each round
 	var/from_cation = GLOB.chem_ion_elements[S.cation]
 	var/from_anion = GLOB.chem_ion_elements[S.anion]
 	if(!from_cation || !from_anion)

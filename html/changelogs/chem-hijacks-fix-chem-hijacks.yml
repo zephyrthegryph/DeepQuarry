@@ -1,0 +1,6 @@
+author: "deepquarry"
+delete-after: true
+changes:
+  - bugfix: "Instant chemistry recipes no longer eat the inputs of generated routes: nitrating mix forms only cold, caustic digest only hot, space cleaner is a 1:9 dilution, firefighting foam needs foaming agent"
+  - balance: "Virus food, colony growth, distilled hydrogen and biomass no longer make more than goes in; lye is no longer electrolysed"
+  - code_imp: "Removed hand recipes duplicating a generated route or another recipe (peridaxon, instant biomass, distilled left4zed and robustharvest, the inaprovaline virus food copy)"

@@ -33,13 +33,6 @@ CAPABILITIES(/transformation/chem/instant/virus_food_mutagen_sugar)
 		takes = list(reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_MUTAGENVIRUSFOOD, 1)),
 		makes = list(reagent(REAGENT_ID_SUGARVIRUSFOOD, 2))))
 
-/transformation/chem/instant/virus_food_mutagen_inaprovaline
-
-CAPABILITIES(/transformation/chem/instant/virus_food_mutagen_inaprovaline)
-	configure(transformation(name = REAGENT_SUGARVIRUSFOOD, id = "inaprovalinevirusfood",
-		takes = list(reagent(REAGENT_ID_INAPROVALINE, 1), reagent(REAGENT_ID_MUTAGENVIRUSFOOD, 1)),
-		makes = list(reagent(REAGENT_ID_SUGARVIRUSFOOD, 2))))
-
 /transformation/chem/instant/virus_food_uranium
 
 CAPABILITIES(/transformation/chem/instant/virus_food_uranium)

@@ -48,7 +48,8 @@ CAPABILITIES(/transformation/chem/instant/sodaash)
 CAPABILITIES(/transformation/chem/instant/nitratingmix)
 	configure(transformation(name = REAGENT_NITRATINGMIX, id = REAGENT_ID_NITRATINGMIX,
 		takes = list(reagent(REAGENT_ID_NITRICACID, 1), reagent(REAGENT_ID_SACID, 1)),
-		makes = list(reagent(REAGENT_ID_NITRATINGMIX, 2)), important = TRUE))
+		makes = list(reagent(REAGENT_ID_NITRATINGMIX, 2)), important = TRUE,
+		holds = temperature_in(T0C - 40, T0C + 12))) // mixed on ice: at the 20 C and up of the dissolved-acid nitration the two acids stay apart, the splash of sulphuric acid its catalyst
 
 /transformation/chem/instant/hydride
 
@@ -83,7 +84,7 @@ CAPABILITIES(/transformation/chem/instant/couplingagent)
 CAPABILITIES(/transformation/chem/instant/causticdigest)
 	configure(transformation(name = REAGENT_CAUSTICDIGEST, id = REAGENT_ID_CAUSTICDIGEST,
 		takes = list(reagent(REAGENT_ID_LYE, 2), reagent(REAGENT_ID_WATER, 1)),
-		makes = list(reagent(REAGENT_ID_CAUSTICDIGEST, 3))))
+		makes = list(reagent(REAGENT_ID_CAUSTICDIGEST, 3)), holds = temperature_in(T0C + 65, T0C + 250))) // hot only: below that lye and water are the base catalyst of hydrolysis (processes.dm)
 
 /transformation/chem/instant/scavengerresin
 
