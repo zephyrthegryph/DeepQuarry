@@ -728,17 +728,6 @@
 	nutrition = 5
 	adj_temp = 5
 
-/datum/reagent/drink/sweetsundaeramen
-	name = REAGENT_DESSERTRAMEN
-	id = REAGENT_ID_DESSERTRAMEN
-	description = "How many things can you add to a cup of ramen before it begins to question its existance?"
-	taste_description = "unbearable sweetness"
-	color = "#4444FF"
-	nutrition = 5
-
-	glass_name = "Sweet Sundae Ramen"
-	glass_desc = "How many things can you add to a cup of ramen before it begins to question its existance?"
-
 /datum/reagent/drink/nothing
 	name = REAGENT_NOTHING
 	id = REAGENT_ID_NOTHING

@@ -53,13 +53,6 @@
 	allergen_type = ALLERGEN_EGGS //Eggs contain egg
 	cup_prefix = "eggy"
 
-/datum/reagent/nutriment/protein/murk
-	name = REAGENT_MURK_PROTEIN
-	id = REAGENT_ID_MURK_PROTEIN
-	taste_description = "mud"
-	color = "#664330"
-	allergen_type = ALLERGEN_FISH //Murkfin is fish
-
 /datum/reagent/nutriment/protein/bean
 	name = REAGENT_BEANPROTEIN
 	id = REAGENT_ID_BEANPROTEIN

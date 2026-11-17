@@ -1,6 +1,5 @@
 /datum/reagent/drink/syrup
-	name = REAGENT_SYRUP
-	id = REAGENT_ID_SYRUP
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 	description = "A generic, sugary syrup."
 	taste_description = "sweetness"
 	color = "#fffbe8"

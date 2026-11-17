@@ -200,7 +200,7 @@ CAPABILITIES(/transformation/grinding/stack_material_plasteel)
 /transformation/grinding/stack_material_sandstone
 CAPABILITIES(/transformation/grinding/stack_material_sandstone)
 	configure(transformation(takes = list(stack_term(/obj/item/stack/material/sandstone, 1)),
-		makes = list(reagent(REAGENT_ID_SILICON, 1), reagent(REAGENT_ID_OXYGEN, 1))))
+		makes = list(reagent(REAGENT_ID_SAND, 2))))
 
 /transformation/grinding/stack_material_marble
 CAPABILITIES(/transformation/grinding/stack_material_marble)

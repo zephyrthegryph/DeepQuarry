@@ -11,7 +11,7 @@
 	spread_text = "Airborne"
 	spread_flags = DISEASE_SPREAD_AIRBORNE
 	cure_text = "Rest & " + REAGENT_SPACEACILLIN
-	cures = list(REAGENT_ID_SPACEACILLIN, REAGENT_ID_CHICKENSOUP, REAGENT_ID_CHICKENNOODLESOUP)
+	cures = list(REAGENT_ID_SPACEACILLIN, REAGENT_ID_CHICKENNOODLESOUP)
 	virus_modifiers = NONE //Does NOT have needs_all_cures
 	agent = "XY-rhinovirus"
 	permeability_mod = 0.5

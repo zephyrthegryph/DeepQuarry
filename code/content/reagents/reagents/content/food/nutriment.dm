@@ -125,27 +125,6 @@
 	allergen_type = ALLERGEN_COFFEE | ALLERGEN_STIMULANT //Again, coffee contains coffee
 	wiki_flag = WIKI_DRINK
 
-/datum/reagent/nutriment/tea
-	name = REAGENT_TEAPOWDER
-	id = REAGENT_ID_TEAPOWDER
-	description = "A dark, tart powder made from black tea leaves."
-	taste_description = "tartness"
-	taste_mult = 1.3
-	nutriment_factor = 1
-	color = "#101000"
-	allergen_type = ALLERGEN_STIMULANT //Strong enough to contain caffeine
-	wiki_flag = WIKI_DRINK
-
-/datum/reagent/nutriment/decaf_tea
-	name = REAGENT_DECAFTEAPOWDER
-	id = REAGENT_ID_DECAFTEAPOWDER
-	description = "A dark, tart powder made from black tea leaves, treated to remove caffeine content."
-	taste_description = "tartness"
-	taste_mult = 1.3
-	nutriment_factor = 1
-	color = "#101000"
-	wiki_flag = WIKI_DRINK
-
 /datum/reagent/nutriment/coco
 	name = REAGENT_COCO
 	id = REAGENT_ID_COCO
@@ -170,8 +149,7 @@
 	cup_prefix = REAGENT_ID_CHOCOLATE
 
 /datum/reagent/nutriment/instantjuice
-	name = REAGENT_INSTANTJUICE
-	id = REAGENT_ID_INSTANTJUICE
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 	description = "Dehydrated, powdered juice of some kind."
 	taste_mult = 1.3
 	nutriment_factor = 1

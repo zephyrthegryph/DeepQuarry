@@ -152,21 +152,6 @@
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 	coolant_modifier = 1 // It's ALMOST water
 
-/datum/reagent/hydrogen/tritium
-	name = REAGENT_TRITIUM
-	id = REAGENT_ID_TRITIUM
-	description = "A radioactive isotope of hydrogen. It has two extra neutrons, and shares all other chemical characteristics with hydrogen."
-	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
-	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
-	coolant_modifier = 1 // It's ALMOST water
-
-/datum/reagent/lithium/lithium6
-	name = REAGENT_LITHIUM6
-	id = REAGENT_ID_LITHIUM6
-	description = "An isotope of lithium. It has 3 neutrons, but shares all chemical characteristics with regular lithium."
-	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
-	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
-
 /datum/reagent/helium/helium3
 	name = REAGENT_HELIUM3
 	id = REAGENT_ID_HELIUM3
@@ -320,15 +305,6 @@
 	nutriment_factor = 15
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_FOOD
-
-/datum/reagent/nutriment/paper //Paper is made from cellulose. You can eat it. It doesn't fill you up very much at all.
-	name = "Paper"
-	id = "paper"
-	description = "Soggy, ground up paper"
-	taste_description = "paper"
-	reagent_state = SOLID
-	color = "e6e6e6" //not quite white
-	nutriment_factor = 2 // 5 times worse than nutriment
 
 /datum/reagent/carpet
 	name = REAGENT_LIQUIDCARPET

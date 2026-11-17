@@ -772,7 +772,7 @@ SCHEMA(/datum/system/internal_wiki, highest_cached_donator, schema_text())
 	PRIVATE_PROC(TRUE)
 
 	// This is used to filter out some of the base reagent types, such as admin only reagents
-	if(!reagent_id || reagent_id == "" || reagent_id == REAGENT_ID_DEVELOPER_WARNING || reagent_id == REAGENT_ID_DRINK || reagent_id == REAGENT_DRUGS || reagent_id == REAGENT_ID_ADMINORDRAZINE)
+	if(!reagent_id || reagent_id == "" || reagent_id == REAGENT_ID_DEVELOPER_WARNING || reagent_id == REAGENT_ID_DRINK || reagent_id == REAGENT_ID_ADMINORDRAZINE)
 		return FALSE
 	return TRUE
 
