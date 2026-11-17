@@ -193,7 +193,7 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_catalysts, RR), safety = 1) // Does not need to scale
 		var/obj/item/reagent_containers/glass/beaker/recipe_bath/bath = fake_beaker
 		if(istype(bath)) // a recipe has a temperature band: the takes go in at a temperature it works at, as in the lab
-			bath.bath_temperature = recipe_temperature(CR, bath.reagents)
+			bath.set_bath_temperature(recipe_temperature(CR, bath.reagents))
 		if(CR.reagent_takes)
 			for(var/RR in CR.reagent_takes)
 				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_takes, RR) * scale, safety = 1) // everything goes in before anything is let to react: the recipe is judged on the whole mixture, not on the first reagent a catalyst or a route finds alone
@@ -209,7 +209,7 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		var/list/still_window = CR.bands[1]
 		DD.current_temp = LERP(still_window[1], still_window[2], temp_test) // the still is at this step's temperature before anything is poured out of it (it starts at 0 K), and the instant recipes are tried at it
 		var/obj/item/reagent_containers/glass/beaker/recipe_bath/instant_bath = instant_beaker
-		instant_bath.bath_temperature = DD.current_temp
+		instant_bath.set_bath_temperature(DD.current_temp)
 		check_instants()
 		DD.test_distilling(CR,temp_test)
 		check_instants()

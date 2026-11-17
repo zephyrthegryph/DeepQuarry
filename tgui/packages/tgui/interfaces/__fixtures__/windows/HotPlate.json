@@ -1,16 +1,8 @@
 {
-	"has_container": true,
-	"container_name": "large beaker",
 	"temperature": 100,
-	"nested_name": null,
-	"nested_temperature": null,
 	"target": 150,
 	"min_target": 20,
 	"max_target": 300,
 	"heating": true,
-	"powered": true,
-	"reagents": [
-		{ "name": "Water", "volume": 42.5, "boiling_point": 100, "boiling": true },
-		{ "name": "Sodium Chloride", "volume": 5, "boiling_point": 1465, "boiling": false }
-	]
+	"powered": true
 }

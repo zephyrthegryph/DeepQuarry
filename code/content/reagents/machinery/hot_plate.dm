@@ -37,18 +37,28 @@ CAPABILITIES(/obj/machinery/chem_hot_plate)
 	default_parts()
 	started_work(step = PROC_REF(work_step), interval = 1 SECONDS, starts = TRUE, gate = PROC_REF(step_needed), wakes_on = list(nameof(heating), nameof(held_container)), gate_waits = TRUE)
 	op("place_container", item(/obj/item/reagent_containers/glass), label("Stand it on the plate"), needs(req(PROC_REF(plate_free))), then(PROC_REF(container_placed)))
-	// The window (tgui/packages/tgui/interfaces/HotPlate.tsx): the container's temperature, the dial, the element and what in the container boils. An empty hand on the
-	// bolted plate opens it; it refreshes every tick while open, since the container's temperature is not a tracked var.
-	interface("HotPlate", autoupdate = TRUE)
-	ui_shape(has_container = bool(), container_name = nullable(schema_text()), temperature = nullable(num()), nested_name = nullable(schema_text()), nested_temperature = nullable(num()), target = num(), min_target = num(), max_target = num(), heating = bool(), powered = bool(), reagents = list_of(row(name = schema_text(), volume = num(), boiling_point = num(), boiling = bool())))
+	// The window (tgui/packages/tgui/interfaces/HotPlate.tsx): the container's temperature, the dial, the element switch and the power. It refreshes every tick while
+	// open, since the container's temperature is not a tracked var. It opens from the context menu, from an alternate click (always), and from an empty hand
+	// when no container stands on the plate; an empty hand on a plate with a container takes the container off instead.
+	interface("HotPlate", autoupdate = TRUE, input = menu())
+	ui_shape(temperature = nullable(num()), target = num(), min_target = num(), max_target = num(), heating = bool(), powered = bool())
+	op("hand_plate", hand(), ungated(), label("Use"), then(PROC_REF(plate_handled)))
+	op("open_window_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Open controls"), opens_ui())
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("set_dial", ui_act("set_dial", arg("celsius", num())), then(PROC_REF(ui_act_set_dial)))
-	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
 
 MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 
 /obj/machinery/chem_hot_plate/proc/plate_free(datum/act/op/A)
 	return held_container ? MSG(hot_plate/occupied) : null
+
+/// An empty hand: a container on the plate comes off into the hand (no window); a bare plate opens the window.
+/obj/machinery/chem_hot_plate/proc/plate_handled(datum/act/op/A)
+	if(held_container)
+		remove_container(A.actor)
+	else
+		tgui_interact(A.actor)
+	return OP_OK
 
 /obj/machinery/chem_hot_plate/proc/container_placed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -72,32 +82,16 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 	to_chat(A.actor, span_notice("You set the dial to [round(target_temp - T0C)] C."))
 	return OP_OK
 
-/obj/machinery/chem_hot_plate/proc/ui_act_remove(datum/act/op/A)
-	remove_container(A.actor)
-	return OP_OK
-
-/// The window's data: temperatures in Celsius, and each reagent of the container on the plate with its boiling point and whether it is boiling now.
+/// The window's data: the container's temperature (null: none on the plate), the dial and its range in Celsius, the element and whether the plate has power.
 /obj/machinery/chem_hot_plate/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/obj/item/reagent_containers/glass/C = held_container
-	data["has_container"] = !!C
-	data["container_name"] = C ? "[C]" : null
 	data["temperature"] = C ? round(C.get_temperature() - T0C, 0.1) : null
-	var/obj/item/reagent_containers/glass/inner = C?.nested
-	data["nested_name"] = inner ? "[inner]" : null
-	data["nested_temperature"] = inner ? round(inner.get_temperature() - T0C, 0.1) : null
 	data["target"] = round(target_temp - T0C)
 	data["min_target"] = HOT_PLATE_MIN_TEMP - T0C
 	data["max_target"] = HOT_PLATE_MAX_TEMP - T0C
 	data["heating"] = heating
 	data["powered"] = operable()
-	var/list/rows = list()
-	if(C?.reagents)
-		var/kelvin = C.reagents.reaction_temperature()
-		for(var/datum/reagent/R as anything in C.reagents.reagent_list)
-			var/point = R.boiling_point_k()
-			rows += list(list("name" = R.name, "volume" = round(R.volume, 0.01), "boiling_point" = round(point - T0C, 0.1), "boiling" = heating && kelvin > point))
-	data["reagents"] = rows
 	return data
 
 /// Sets the dial, K.

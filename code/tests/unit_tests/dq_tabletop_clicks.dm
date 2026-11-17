@@ -36,13 +36,20 @@
 	var/obj/item/reagent_containers/glass/beaker/B = rc_filled(/obj/item/reagent_containers/glass/beaker, 10)
 	rc_click(H, P, B)
 	TEST_ASSERT_EQUAL(P.held_container, B, "bolted, a beaker click stands it on the plate ([rc_last_click?.reason])")
-	// bolted: an empty hand asks the radial
+	// bolted, a beaker on it: an alternate click opens the window and leaves the beaker; an empty hand takes the beaker into the hand, with no window
+	rc_click_alt(H, P)
+	TEST_ASSERT_EQUAL(rc_last_click?.key, "open_window_alt", "an alternate click opens the window ([rc_last_click ? "[rc_last_click.key] [rc_last_click.outcome] [rc_last_click.reason]" : "none"])")
+	TEST_ASSERT_EQUAL(P.held_container, B, "and leaves the beaker on the plate")
 	test_prompts_reset()
-	rc_click(H, P, null, settle = FALSE)
-	TEST_ASSERT(length(GLOB.test_prompts), "bolted, an empty hand opens the radial (result [rc_last_click ? "[rc_last_click.key] [rc_last_click.outcome] [rc_last_click.reason]" : "none"])")
-	test_answer(H, "remove")
-	rc_settle()
-	TEST_ASSERT_NULL(P.held_container, "the radial's remove took the beaker off")
+	rc_click(H, P, null)
+	TEST_ASSERT_EQUAL(rc_last_click?.key, "hand_plate", "an empty hand on a plate with a beaker takes it off ([rc_last_click ? "[rc_last_click.key] [rc_last_click.outcome] [rc_last_click.reason]" : "none"])")
+	TEST_ASSERT_NULL(P.held_container, "the beaker leaves the plate")
+	TEST_ASSERT_EQUAL(B.loc, H, "into the hand")
+	TEST_ASSERT(!length(GLOB.test_prompts), "with no question asked")
+	// bolted, nothing on it: an empty hand opens the window
+	H.drop_item()
+	rc_click(H, P, null)
+	TEST_ASSERT_EQUAL(rc_last_click?.key, "hand_plate", "an empty hand on a bare plate opens the window ([rc_last_click ? "[rc_last_click.key] [rc_last_click.outcome] [rc_last_click.reason]" : "none"])")
 	// unbolted: an empty hand picks it up, a beaker is refused with a reason
 	P.set_anchored(FALSE)
 	rc_click(H, P, null)

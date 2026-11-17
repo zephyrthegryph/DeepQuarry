@@ -105,7 +105,7 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_LIPOZINE) > 0, "warmed into the band the reaction runs by itself ([B.get_temperature()] K, watch [B.reaction_watch ? "yes" : "no"], heard [SSsense.records_heard])")
 
-/// The plate shows nothing over itself: its window shows the beaker's temperature, the dial, the element and what boils; examine shows the dial.
+/// The plate shows nothing over itself: its window shows the beaker's temperature, the dial, the element and the power; examine shows the dial.
 /datum/unit_test/dq_hp_window_shows_the_temperature
 
 /datum/unit_test/dq_hp_window_shows_the_temperature/Run()
@@ -115,25 +115,22 @@
 	test_time(20 SECONDS)
 	TEST_ASSERT_EQUAL(P.maptext, null, "no readout over the plate ([P.maptext])")
 	var/list/data = P.ui_data(null)
-	TEST_ASSERT(data["has_container"], "the window sees the beaker")
 	TEST_ASSERT_EQUAL(data["target"], 150, "the window shows the dial")
 	TEST_ASSERT(data["heating"], "the window shows the element on")
+	TEST_ASSERT(data["powered"], "the window shows the power")
 	TEST_ASSERT(data["temperature"] > 30, "the window shows the beaker's temperature ([data["temperature"]])")
-	var/list/rows = data["reagents"]
-	TEST_ASSERT_EQUAL(length(rows), 1, "one reagent row")
-	var/list/row = rows[1]
-	TEST_ASSERT_EQUAL(row["boiling_point"], 100, "the row shows water's boiling point")
-	TEST_ASSERT(row["boiling"] == (data["temperature"] > 100), "the row is boiling exactly when the beaker is past it ([data["temperature"]] C)")
+	TEST_ASSERT(isnull(data["reagents"]) && isnull(data["nested_temperature"]), "and nothing of the contents")
+	P.remove_container(null)
+	TEST_ASSERT_NULL(P.ui_data(null)["temperature"], "with no beaker there is no temperature")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	TEST_ASSERT(findtext(jointext(P.examine(H), " "), "150 C"), "examining it shows the dial")
 
-/// The window's buttons work through the op path a player's press takes: switch, dial, take the beaker.
+/// The window's buttons work through the op path a player's press takes: the dial and the switch. It has no button to take the beaker off.
 /datum/unit_test/dq_hp_window_controls
 
 /datum/unit_test/dq_hp_window_controls/Run()
 	var/obj/machinery/chem_hot_plate/P = dq_hp_plate(20)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
-	var/obj/item/reagent_containers/glass/B = P.held_container
 	var/datum/op_result/R = test_ui(H, P, "set_dial", list("celsius" = 85))
 	TEST_ASSERT_EQUAL(round(P.target_temp - T0C), 85, "the dial is set from the window ([R?.reason])")
 	test_ui(H, P, "set_dial", list("celsius" = 9000))
@@ -143,5 +140,4 @@
 	test_ui(H, P, "toggle", list())
 	TEST_ASSERT(!P.heating, "and off")
 	test_ui(H, P, "remove", list())
-	TEST_ASSERT_NULL(P.held_container, "the window takes the beaker off")
-	TEST_ASSERT(B.loc == H || B.loc == get_turf(P), "into the hand or onto the floor")
+	TEST_ASSERT_NOTNULL(P.held_container, "the window has no button that takes the beaker off")

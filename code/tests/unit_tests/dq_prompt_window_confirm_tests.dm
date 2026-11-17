@@ -19,7 +19,17 @@
 	var/datum/shown = P.present(user)
 	TEST_ASSERT_NOTNULL(shown, "the [kind] prompt has a window")
 	rel_set(P, nameof(P.window), shown)
-	return list(P, shown, probe)
+	// A test person has no client: the window is made open by hand, so closing it is observable.
+	var/datum/tgui/ui = new(user, shown, "HcTest")
+	ui.status = STATUS_INTERACTIVE
+	ui.set_state(GLOB.tgui_always_state)
+	SStgui.on_open(ui)
+	return list(P, shown, probe, ui)
+
+/// The window of a confirmed prompt is closed: its tgui is gone or no longer open for `user`.
+/datum/unit_test/proc/dq_prompt_window_assert_closed(mob/user, list/got, kind)
+	var/datum/tgui/ui = got[4]
+	TEST_ASSERT(QDELETED(ui) || !SStgui.get_open_ui(user, got[2]), "the [kind] window closes on confirm")
 
 /// The number window's confirm commits the number.
 /datum/unit_test/dq_prompt_window_number_confirm
@@ -36,6 +46,7 @@
 	TEST_ASSERT_EQUAL(P.outcome, REQ_ANSWERED, "the confirm answers the prompt ([R?.outcome] [R?.reason])")
 	TEST_ASSERT(probe.answered, "the asker hears the answer")
 	TEST_ASSERT_EQUAL(probe.value, 85, "with the number confirmed")
+	dq_prompt_window_assert_closed(H, got, "number")
 
 /// The text window's confirm commits the text.
 /datum/unit_test/dq_prompt_window_text_confirm
@@ -51,6 +62,7 @@
 	test_time(0.1 SECONDS)
 	TEST_ASSERT_EQUAL(P.outcome, REQ_ANSWERED, "the confirm answers the prompt ([R?.outcome] [R?.reason])")
 	TEST_ASSERT_EQUAL(probe.value, "flask", "with the text confirmed")
+	dq_prompt_window_assert_closed(H, got, "text")
 
 /// The yes/no window's yes button commits a yes.
 /datum/unit_test/dq_prompt_window_yes_no_confirm
@@ -66,3 +78,4 @@
 	test_time(0.1 SECONDS)
 	TEST_ASSERT_EQUAL(P.outcome, REQ_ANSWERED, "the confirm answers the prompt ([R?.outcome] [R?.reason])")
 	TEST_ASSERT_EQUAL(probe.value, TRUE, "with a yes")
+	dq_prompt_window_assert_closed(H, got, "yes/no")
