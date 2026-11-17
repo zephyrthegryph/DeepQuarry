@@ -1,6 +1,10 @@
 // The hot plate: a table-top element that heats the container standing on it toward a dial setting (code/content/reagents/reactions/reaction_temperatures.dm
 // says what each recipe needs; code/domains/world_model/reagents/boiling.dm says what boils).
 //
+// It only heats: the dial goes from room temperature up. Cold comes from ice (code/domains/world_model/reagents/freezing.dm), an ice machine
+// (code/content/reagents/machinery/ice_machine.dm) and a bath (code/content/reagents/purification/nesting.dm); a bath on the plate heats the small container standing in
+// it through the heat system, so a warm water bath works.
+//
 // Put a beaker on it, set the dial (Celsius), switch it on. Each second it feeds the container's heat body HOT_PLATE_COUPLING watts for every kelvin between the dial and the container (up to HOT_PLATE_POWER), never past the setting
 // (the container warms over seconds and cools on its own when the plate is off), draws its active power while the element is on, lets the container's reagents react at the new
 // temperature and boils off what is above its boiling point. The vapour is collected by a condenser next to the plate (code/content/reagents/machinery/condenser.dm)
@@ -38,7 +42,7 @@ CAPABILITIES(/obj/machinery/chem_hot_plate)
 	op("place_container", item(/obj/item/reagent_containers/glass), label("Stand it on the plate"), needs(req(PROC_REF(plate_free))), then(PROC_REF(container_placed)))
 	op("hot_plate_radial", hand(), ungated(), label("Use"),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(radial_choices)), "radial" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "choice"),
-		asks(/datum/prompt/number, fields = list("question" = "Set the dial (degrees Celsius).", "title" = "Temperature", "min_value" = 0, "max_value" = HOT_PLATE_MAX_TEMP - T0C, "default" = computed(PROC_REF(dial_celsius)), "timeout" = 0), step = "temp", when = PROC_REF(chose_set_temp)),
+		asks(/datum/prompt/number, fields = list("question" = "Set the dial (degrees Celsius).", "title" = "Temperature", "min_value" = HOT_PLATE_MIN_TEMP - T0C, "max_value" = HOT_PLATE_MAX_TEMP - T0C, "default" = computed(PROC_REF(dial_celsius)), "timeout" = 0), step = "temp", when = PROC_REF(chose_set_temp)),
 		then(PROC_REF(radial_chosen)))
 
 MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
@@ -81,7 +85,7 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 		if("dial")
 			var/celsius = A.step_value("temp")
 			if(isnum(celsius))
-				set_dial(clamp(celsius, 0, HOT_PLATE_MAX_TEMP - T0C) + T0C)
+				set_dial(clamp(celsius, HOT_PLATE_MIN_TEMP - T0C, HOT_PLATE_MAX_TEMP - T0C) + T0C)
 				to_chat(user, span_notice("You set the dial to [round(target_temp - T0C)] C."))
 		if("remove")
 			remove_container(user)
@@ -89,7 +93,7 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 
 /// Sets the dial, K.
 /obj/machinery/chem_hot_plate/proc/set_dial(kelvin)
-	set_target_temp(clamp(kelvin, T0C, HOT_PLATE_MAX_TEMP))
+	set_target_temp(clamp(kelvin, HOT_PLATE_MIN_TEMP, HOT_PLATE_MAX_TEMP))
 	update_readout()
 	if(GLOB.chem_trace)
 		log_world("CHEM: [src] dial set to [round(target_temp - T0C, 0.1)] C")
@@ -127,15 +131,27 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 /obj/machinery/chem_hot_plate/proc/step_needed()
 	return heating || container_off_room()
 
-/// A container stands on the plate at a temperature other than the room's.
+/// A container stands on the plate at a temperature other than the room's, or the container standing in its bath is.
 /obj/machinery/chem_hot_plate/proc/container_off_room()
-	return !isnull(held_container) && abs(held_container.get_temperature() - get_temperature()) > HOT_PLATE_ROOM_TOLERANCE
+	if(isnull(held_container))
+		return FALSE
+	var/room = get_temperature()
+	return abs(held_container.get_temperature() - room) > HOT_PLATE_ROOM_TOLERANCE || (held_container.nested && abs(held_container.nested.get_temperature() - room) > HOT_PLATE_ROOM_TOLERANCE)
+
+/// The temperatures the readout and examine show: "40C", or "40C (31C)" with the temperature of the container standing in the bath in brackets.
+/obj/machinery/chem_hot_plate/proc/temperature_text()
+	if(!held_container)
+		return "--"
+	var/text = "[round(held_container.get_temperature() - T0C)]C"
+	if(held_container.nested)
+		text += " ([round(held_container.nested.get_temperature() - T0C)]C)"
+	return text
 
 /// The live readout over the plate: the container's temperature and the dial, in Celsius, shown while the element is on or a container on it is away from room temperature.
 /obj/machinery/chem_hot_plate/proc/update_readout()
 	var/text = ""
 	if(heating || container_off_room())
-		var/shown = held_container ? "[round(held_container.get_temperature() - T0C)]C" : "--"
+		var/shown = temperature_text()
 		text = "<span style='font-size:6px;color:[heating ? "#ff8040" : "#c0c0c0"];text-align:center;'>[shown]/[round(target_temp - T0C)]C</span>"
 	if(maptext != text)
 		maptext = text
@@ -150,7 +166,7 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 	if(!heating || !C)
 		return
 	var/current = C.get_temperature()
-	var/target = clamp(target_temp, T0C, HOT_PLATE_MAX_TEMP)
+	var/target = clamp(target_temp, HOT_PLATE_MIN_TEMP, HOT_PLATE_MAX_TEMP)
 	if(current < target - 0.25)
 		var/list/properties = C.thermal_properties()
 		// The element delivers heat in proportion to the gap between the dial and the container, up to its power: a high dial heats and boils fast, one just above a
@@ -158,12 +174,16 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 		var/watts = min(HOT_PLATE_POWER, HOT_PLATE_COUPLING * (target - current))
 		var/joules = min(watts * seconds, (target - current) * properties[THERMAL_CAPACITY])
 		C.add_heat(joules)
-	else if(current > target + 0.25)
-		// A dial set below the container cools it the same way, down to the dial and never past it (the mixed acids of the nitrating mix are made on a plate dialled to 5 C).
-		var/list/chill = C.thermal_properties()
-		var/removed = min(HOT_PLATE_POWER, HOT_PLATE_COUPLING * (current - target)) * seconds
-		C.add_heat(-min(removed, (current - target) * chill[THERMAL_CAPACITY]))
 	update_readout()
+	process_container(C, seconds)
+	var/obj/item/reagent_containers/glass/inner = C.nested
+	if(inner)
+		process_container(inner, seconds) // the container standing in the bath: warmed by the bath through the heat system, it reacts and boils at its own temperature
+	update_readout()
+
+/// `seconds` of what a container on the plate (or standing in a bath on it) gets at its temperature: its vessel leaches, its contents react, what lies in it dissolves, and what
+/// is above its boiling point boils off.
+/obj/machinery/chem_hot_plate/proc/process_container(obj/item/reagent_containers/glass/C, seconds)
 	if(!C.reagents?.total_volume)
 		return
 	C.vessel_leach(seconds) // hot contents take up a trace of the vessel for every second on the plate
@@ -190,6 +210,8 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 	. += span_notice("The dial is set to [round(target_temp - T0C)] C and the element is [heating ? "on" : "off"].")
 	if(held_container)
 		. += span_notice("\A [held_container] stands on it, at [round(held_container.get_temperature() - T0C, 0.1)] C of the [round(target_temp - T0C)] C set.")
+		if(held_container.nested)
+			. += span_notice("\A [held_container.nested] stands in it, at [round(held_container.nested.get_temperature() - T0C, 0.1)] C.")
 
 /// The plate, what stands on it, and the glow of the element while it is on.
 /obj/machinery/chem_hot_plate/draw(datum/look/look)

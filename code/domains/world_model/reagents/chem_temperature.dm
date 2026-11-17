@@ -33,6 +33,10 @@
 				band = reaction_temperature_profile(X.rule_type)
 			for(var/edge in band)
 				edges |= edge
+			for(var/list/window as anything in X.bands) // a recipe that holds only inside a temperature_in() window (the nitrating mix) changes state at its ends too
+				for(var/end in window)
+					if(!isnull(end))
+						edges |= end
 	return sortTim(edges, GLOBAL_PROC_REF(cmp_numeric_asc))
 
 /// How the holder's temperature stands against `X`'s band: list(REACTION_TEMP_STATE_*, deviation 0..1), or null when the rule is not gated here (another regime,

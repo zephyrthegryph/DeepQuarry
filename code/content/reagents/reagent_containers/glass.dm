@@ -70,8 +70,10 @@ CAPABILITIES(/obj/item/reagent_containers/glass)
 	owns_one(nameof(electrode), /obj/item/chem_electrode)
 	glass_handling()
 	glass_purification()
+	glass_nesting()
 	glass_container()
 	every(2 SECONDS, then(PROC_REF(dissolve_ticked)), when = PROC_REF(solids_lying_now))
+	owns_one(nameof(nested), /obj/item/reagent_containers/glass)
 
 MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.")
 MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too recently, try again later.")
@@ -381,6 +383,27 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 	user.put_in_hands(new /obj/item/clothing/head/helmet/bucket)
 	consume(src, user)
 	return OP_OK
+
+/// A wide basin, bigger than any beaker: stand a small container in it with ice or warm water round it for a bath (code/content/reagents/purification/nesting.dm).
+/obj/item/reagent_containers/glass/basin
+	name = "chemistry basin"
+	desc = "A wide steel basin for baths: stand a small beaker in it with ice or warm water round it. Can hold up to 200 units."
+	icon = 'icons/obj/janitor.dmi'
+	icon_state = "bucket"
+	item_state = "bucket"
+	MATERIAL_BULK(MAT_STEEL, 200)
+	w_class = ITEMSIZE_NORMAL
+	amount_per_transfer_from_this = 20
+	max_transfer_amount = 200
+	volume = 200
+	flags = NONE
+
+/obj/item/reagent_containers/glass/basin/draw(datum/look/look)
+	. = ..()
+	draw_glass(look, initial(icon_state), FALSE, FALSE)
+
+CAPABILITIES(/obj/item/reagent_containers/glass/basin)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/glass/bucket/wood
 	desc = "An old wooden bucket."

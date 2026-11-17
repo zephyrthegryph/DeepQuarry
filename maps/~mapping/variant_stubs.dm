@@ -686,6 +686,11 @@
 	build_path = /obj/machinery/chem_hot_plate
 	board_type = /datum/frame/frame_types/machine
 	req_components = list( /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/chem_ice_machine
+	name = T_BOARD("ice machine")
+	build_path = /obj/machinery/chem_ice_machine
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 5)
 /obj/item/circuitboard/chem_master
 	name = T_BOARD("ChemMaster 3000")
 	build_path = /obj/machinery/chem_master

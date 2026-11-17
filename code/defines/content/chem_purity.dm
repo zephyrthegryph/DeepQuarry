@@ -96,6 +96,19 @@
 /// A container within this many kelvin of the plate's own temperature counts as at room temperature (its readout is cleared).
 #define HOT_PLATE_ROOM_TOLERANCE 0.5
 #define HOT_PLATE_MAX_TEMP (T0C + 300)
+/// The coolest the dial goes: room temperature (the plate only heats; cold comes from ice, code/content/reagents/machinery/ice_machine.dm).
+#define HOT_PLATE_MIN_TEMP T20C
+
+/// Joules a unit of ice takes in to melt (and gives out as water freezes): water's 334 J/g scaled by the same factor as BOIL_LATENT_HEAT (1800 against water's 2260 J/g).
+#define ICE_MELT_LATENT_HEAT 270
+/// A phase change under this many kelvin from the freezing point is left alone (a bath of ice and water settles within it, and no pass ping-pongs on rounding).
+#define ICE_PHASE_TOLERANCE 0.05
+/// The ice machine: watts of heat its coil draws out of the container, the electrical watts it draws while running, and the coldest it takes the contents (K).
+#define ICE_MACHINE_COOLING 600
+#define ICE_MACHINE_POWER 500
+#define ICE_MACHINE_TEMP (T0C - 10)
+/// A small container stood in a larger one (a bath): the conductance, W/K, between the inner container and the liquid of the outer, through the glass.
+#define NEST_CONDUCTANCE 12
 /// The share of the product a filter keeps back (units of product held per unit passed), by filter.
 #define FILTER_RETENTION_PAPER 0.02
 #define FILTER_RETENTION_CHARCOAL 0.04

@@ -6,6 +6,7 @@
 	reagent_state = SOLID
 	color = "#619494"
 	adj_temp = -5
+	specific_heat = 2.1 // J/K per unit: half of water's (REAGENT_SPECIFIC_HEAT_WATER)
 
 	glass_name = REAGENT_ID_ICE
 	glass_desc = "Generally, you're supposed to put something else in there too..."

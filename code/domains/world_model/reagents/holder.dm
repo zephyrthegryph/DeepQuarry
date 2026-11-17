@@ -16,6 +16,8 @@
 	var/master_id
 	var/maximum_volume = 100
 	var/tmp/atom/my_atom = null
+	/// The temperature (K) the contents of a holder with no object of its own carry (the basin a filter catches a pour in): the temperature of what was poured into it.
+	var/tmp/carried_temperature
 	/// Nesting depth of begin_batch()/end_batch(). While positive, removals
 	/// defer their reaction check and change notification to end_batch().
 	var/tmp/batch_depth = 0
@@ -125,6 +127,8 @@ CAPABILITIES(/datum/reagents)
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
 		my_atom.heat_capacity_changed()
 
+SCHEMA(/datum/reagents, carried_temperature, num())
+
 /// Heat capacity of the contents, J/K: each reagent's volume x specific heat.
 /datum/reagents/proc/heat_capacity()
 	. = 0
@@ -157,6 +161,8 @@ CAPABILITIES(/datum/reagents)
 		return FALSE
 	if(my_atom.flags & NOREACT)
 		return FALSE
+	if(reagent_by_id[REAGENT_ID_ICE] || reagent_by_id[REAGENT_ID_WATER])
+		phase_step() // ice that is warm melts and water that is cold freezes before anything else reacts (code/domains/world_model/reagents/freezing.dm)
 	var/list/effect_reactions = xform_settle_reagents(src)
 	update_total()
 	on_reactions_handled(effect_reactions)
@@ -381,18 +387,45 @@ CAPABILITIES(/datum/reagents)
 	var/part = amount / total_volume
 
 	var/target_is_belly = isbelly(target.my_atom) // Sending reagents into bellies turns them into belly reagents
+	var/source_temperature = content_temperature() // what is poured brings its temperature with it (receive_heat())
+	var/target_temperature = target.content_temperature()
+	var/carried_capacity = 0
 
 	for(var/datum/reagent/current in reagent_list)
 		var/amount_to_transfer = current.volume * part
 		if(current.dialysis_returnable || (!current.dialysis_returnable && ismob(target))) //Prevents duplication of reagents.
 			target.add_reagent(current.id, amount_to_transfer * multiplier, current.get_data(), safety = 1, was_from_belly = (current.from_belly || target_is_belly), can_dialysis = can_dialysis) // We don't react until everything is in place
+			carried_capacity += amount_to_transfer * multiplier * current.specific_heat
 		if(!copy)
 			remove_reagent(current.id, amount_to_transfer, 1)
+	target.receive_heat(source_temperature, target_temperature, carried_capacity, my_atom)
 
 	if(!copy)
 		handle_reactions()
 	target.handle_reactions()
 	return amount
+
+/// The temperature of the contents of this holder, K: its object's (a mob's blood and a turf have none that is theirs to mix), or what a holder with no object carries; null when neither.
+/datum/reagents/proc/content_temperature()
+	if(my_atom && !ismob(my_atom) && !isturf(my_atom))
+		return my_atom.get_temperature()
+	return carried_temperature
+
+/// Reagents with `carried_capacity` J/K of heat capacity at `source_temperature` were just poured in, the holder having been at `own_temperature` before: it settles at the
+/// heat-capacity-weighted mix of the two, by add_heat() on its object (the heat system moves it from there). A holder with no object of its own just carries the temperature on.
+/// Nothing is mixed into a mob's blood, a belly or a turf, or when either temperature is unknown.
+/datum/reagents/proc/receive_heat(source_temperature, own_temperature, carried_capacity, atom/source)
+	if(isnull(source_temperature) || !(carried_capacity > 0))
+		return
+	if(!my_atom)
+		carried_temperature = source_temperature
+		return
+	if(isnull(own_temperature) || !isobj(my_atom) || isbelly(my_atom) || abs(source_temperature - own_temperature) < 0.05)
+		return
+	var/joules = carried_capacity * (source_temperature - own_temperature)
+	my_atom.add_heat(joules)
+	if(GLOB.chem_trace)
+		log_world("CHEM: [round(carried_capacity / REAGENT_SPECIFIC_HEAT_WATER, 0.1)]u (water-equivalent) poured from [source || "a holder"] at [round(source_temperature - T0C, 0.1)] C into [my_atom] at [round(own_temperature - T0C, 0.1)] C: [round(joules)] J, now [round(my_atom.get_temperature() - T0C, 0.1)] C")
 
 /// The filter at the mouth of the container this holder is in (a funnel with a filter in it), or null.
 /datum/reagents/proc/inflow_filter()
@@ -442,14 +475,16 @@ CAPABILITIES(/datum/reagents)
 	if(!trans_to(target, amount, multiplier, copy, user = user))
 		touch(target, amount, user)
 
-/// Draws `amount` of the reagent `id` (a contaminant as much as any other: each is a reagent of its own) out of the mixture into a new holder. Null when there is
-/// none of it.
+/// Draws `amount` of the reagent `id` (a contaminant as much as any other: each is a reagent of its own) out of the mixture into a new holder, which carries the
+/// temperature of this one (every pour that goes by way of a portion, trans_id_to() and trans_type_to() among them, brings its heat the way trans_to_holder() does). Null
+/// when there is none of it.
 /datum/reagents/proc/draw_portion(id, amount)
 	RETURN_TYPE(/datum/reagents)
 	amount = min(amount, get_reagent_amount(id))
 	if(amount <= 0)
 		return null
 	var/datum/reagents/portion = new /datum/reagents(amount)
+	portion.carried_temperature = content_temperature()
 	portion.add_reagent(id, amount, get_data(id), safety = 1)
 	remove_reagent(id, amount, safety = 1)
 	handle_reactions()

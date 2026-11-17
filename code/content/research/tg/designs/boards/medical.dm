@@ -38,6 +38,15 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
 
+/datum/design_techweb/board/chem_ice_machine
+	SET_CIRCUIT_DESIGN_NAMEDESC("ice machine")
+	id = "chem_ice_machine"
+	build_path = VARIANT(/obj/item/circuitboard/chem_ice_machine)
+	category = list(
+		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_CHEMISTRY
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
 /datum/design_techweb/board/chem_condenser
 	SET_CIRCUIT_DESIGN_NAMEDESC("condenser")
 	id = "chem_condenser"

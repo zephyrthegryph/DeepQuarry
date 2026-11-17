@@ -125,25 +125,4 @@
 		for(var/datum/xform/X as anything in GLOB.xform_rules)
 			TEST_ASSERT(!(X.medium == MEDIUM_REAGENTS && !X.route_id && X.result == product_id && !ispath(X.rule_type, /transformation/chem/instant/slime)), "[product_id] is also made by the hand recipe [X.rule_type]")
 
-/// The real path to the nitrating mix: nitric and sulphuric acid at room temperature stay apart (the dissolved-acid nitration is theirs to run), and on a plate dialled
-/// to 5 C the beaker is chilled to the mixing band and they make the mix.
-/datum/unit_test/dq_chem_nitrating_mix_is_made_on_a_chilled_plate
-
-/datum/unit_test/dq_chem_nitrating_mix_is_made_on_a_chilled_plate/Run()
-	var/obj/machinery/chem_hot_plate/P = allocate(/obj/machinery/chem_hot_plate, test_floor())
-	P.set_anchored(TRUE)
-	P.set_powered(TRUE)
-	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
-	B.inherit_heat(T0C + 20)
-	move_into(P, nameof(P.held_container), B)
-	B.reagents.add_reagent(REAGENT_ID_NITRICACID, 20, safety = 1)
-	B.reagents.add_reagent(REAGENT_ID_SACID, 20, safety = 1)
-	TEST_ASSERT_EQUAL(B.reagents.get_reagent_amount(REAGENT_ID_NITRATINGMIX), 0, "the acids stay apart at room temperature")
-	P.switch_element(null, TRUE)
-	P.set_dial(T0C + 5)
-	for(var/second in 1 to 180)
-		P.heat_step(1)
-	TEST_ASSERT(B.get_temperature() <= T0C + 12, "the plate chilled the beaker to [round(B.get_temperature() - T0C, 0.1)] C")
-	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_NITRATINGMIX) > 0, "the chilled acids made the nitrating mix: [B.reagents.get_reagents()]")
-
 #endif

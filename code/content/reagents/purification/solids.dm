@@ -92,6 +92,8 @@ CAPABILITIES(/datum/solid_progress)
 
 /obj/item/reagent_containers/glass/examine(mob/user)
 	. = ..()
+	if(get_dist(user, src) <= 2)
+		. += nest_examine_lines()
 	if(!length(solids) || get_dist(user, src) > 2)
 		return
 	for(var/obj/item/O as anything in solids)
