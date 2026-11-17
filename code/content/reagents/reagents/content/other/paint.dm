@@ -1,40 +1,16 @@
-/datum/reagent/paint
-	name = REAGENT_PAINT
-	id = REAGENT_ID_PAINT
-	description = "This paint will stick to almost any object."
-	taste_description = "chalk"
-	reagent_state = LIQUID
-	dermal_absorption = 0 //NOOOOOOOOOOO
-	color = "#808080"
-	overdose = REAGENTS_OVERDOSE * 0.5
-	color_weight = 20
-	scannable = SCANNABLE_ADVANCED
-	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
-	industrial_use = REFINERYEXPORT_REASON_COSMETIC
+/// A reagent whose colour is its data: what it is added with sets its colour, and mixing two blends them by volume.
+/datum/reagent/pigment
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 
-/datum/reagent/paint/touch_turf(turf/T)
-	..()
-	if(istype(T) && !istype(T, /turf/space))
-		T.set_color(color)
-
-/datum/reagent/paint/touch_obj(obj/O)
-	..()
-	if(istype(O))
-		O.set_color(color)
-
-/datum/reagent/paint/touch_mob(mob/M)
-	..()
-	if(istype(M) && !istype(M, /mob/observer)) //painting ghosts: not allowed
-		M.set_color(color) //maybe someday change this to paint only clothes and exposed body parts for human mobs.
-
-/datum/reagent/paint/get_data()
+/datum/reagent/pigment/get_data()
 	return color
 
-/datum/reagent/paint/initialize_data(newdata)
-	set_color(newdata)
+/datum/reagent/pigment/initialize_data(newdata)
+	if(!isnull(newdata))
+		set_color(newdata)
 	return
 
-/datum/reagent/paint/mix_data(newdata, newamount)
+/datum/reagent/pigment/mix_data(newdata, newamount)
 	var/list/colors = list(0, 0, 0, 0)
 	var/tot_w = 0
 
@@ -59,3 +35,32 @@
 
 	set_color(rgb(colors[1] / tot_w, colors[2] / tot_w, colors[3] / tot_w, colors[4] / tot_w))
 	return
+
+/datum/reagent/pigment/paint
+	name = REAGENT_PAINT
+	id = REAGENT_ID_PAINT
+	description = "This paint will stick to almost any object."
+	taste_description = "chalk"
+	reagent_state = LIQUID
+	dermal_absorption = 0 //NOOOOOOOOOOO
+	color = "#808080"
+	overdose = REAGENTS_OVERDOSE * 0.5
+	color_weight = 20
+	scannable = SCANNABLE_ADVANCED
+	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
+	industrial_use = REFINERYEXPORT_REASON_COSMETIC
+
+/datum/reagent/pigment/paint/touch_turf(turf/T)
+	..()
+	if(istype(T) && !istype(T, /turf/space))
+		T.set_color(color)
+
+/datum/reagent/pigment/paint/touch_obj(obj/O)
+	..()
+	if(istype(O))
+		O.set_color(color)
+
+/datum/reagent/pigment/paint/touch_mob(mob/M)
+	..()
+	if(istype(M) && !istype(M, /mob/observer)) //painting ghosts: not allowed
+		M.set_color(color) //maybe someday change this to paint only clothes and exposed body parts for human mobs.

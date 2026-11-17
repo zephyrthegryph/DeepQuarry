@@ -59,11 +59,11 @@
 	TEST_ASSERT(HIDE_LUNG_HEART in dex.hides, "dexalin plus hides lung and heart damage")
 	TEST_ASSERT_NULL(text2path("/datum/affliction/chem_side_effect/dexalinp_dysphoria"), "dexalin plus has no mood side effect")
 
-	var/datum/reagent/epi = _drug_b_reagent(REAGENT_ID_EPINEPHRINE)
-	TEST_ASSERT(epi.treatment_tags[TREAT_VASOPRESSOR] > 0, "epinephrine is a vasopressor")
-	TEST_ASSERT(epi.factors[STAT_BLEEDING] > 1, "epinephrine makes wounds bleed faster")
-	TEST_ASSERT(epi.factors[STAT_ALLERGY] < 0, "epinephrine blunts an allergic reaction")
-	TEST_ASSERT(epi.strains[O_HEART] > 0, "epinephrine strains the heart")
+	var/datum/reagent/epi = _drug_b_reagent(REAGENT_ID_ADRENALINE)
+	TEST_ASSERT(epi.treatment_tags[TREAT_VASOPRESSOR] > 0, "adrenaline is a vasopressor")
+	TEST_ASSERT(epi.factors[STAT_BLEEDING] > 1, "adrenaline makes wounds bleed faster")
+	TEST_ASSERT(epi.factors[STAT_ALLERGY] < 0, "adrenaline blunts an allergic reaction")
+	TEST_ASSERT(epi.strains[O_HEART] > 0, "adrenaline strains the heart")
 
 	var/datum/reagent/nor = _drug_b_reagent(REAGENT_ID_NOREPINEPHRINE)
 	TEST_ASSERT(nor.factors[STAT_BP_SYSTOLIC] > 0, "norepinephrine raises the blood pressure")
@@ -87,20 +87,20 @@
 
 // --- Interactions ----------------------------------------------------------------------------------------------------------------
 
-/// Epinephrine together with synaptizine raises the adrenergic overload; either alone does not.
-/datum/unit_test/dq_drug_set_b_epinephrine_synaptizine
+/// Adrenaline together with synaptizine raises the adrenergic overload; either alone does not.
+/datum/unit_test/dq_drug_set_b_adrenaline_synaptizine
 
-/datum/unit_test/dq_drug_set_b_epinephrine_synaptizine/Run()
+/datum/unit_test/dq_drug_set_b_adrenaline_synaptizine/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.bloodstr.add_reagent(REAGENT_ID_EPINEPHRINE, 5)
+	H.bloodstr.add_reagent(REAGENT_ID_ADRENALINE, 5)
 	H.dq_check_chem_conditions()
-	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/chem_interaction/epinephrine_synaptizine_tachycardia), "epinephrine alone raises no interaction")
+	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/chem_interaction/adrenaline_synaptizine_tachycardia), "adrenaline alone raises no interaction")
 	H.bloodstr.add_reagent(REAGENT_ID_SYNAPTIZINE, 5)
 	H.dq_check_chem_conditions()
-	TEST_ASSERT_NOTNULL(H.body.find_affliction(/datum/affliction/chem_interaction/epinephrine_synaptizine_tachycardia), "epinephrine with synaptizine raises the interaction")
+	TEST_ASSERT_NOTNULL(H.body.find_affliction(/datum/affliction/chem_interaction/adrenaline_synaptizine_tachycardia), "adrenaline with synaptizine raises the interaction")
 	H.bloodstr.remove_reagent(REAGENT_ID_SYNAPTIZINE, 5)
 	H.dq_check_chem_conditions()
-	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/chem_interaction/epinephrine_synaptizine_tachycardia), "the interaction clears with the synaptizine")
+	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/chem_interaction/adrenaline_synaptizine_tachycardia), "the interaction clears with the synaptizine")
 
 /// Dexalin plus with dylovene is the cyanide antidote: the interaction is raised only with both in the blood.
 /datum/unit_test/dq_drug_set_b_cyanide_antidote

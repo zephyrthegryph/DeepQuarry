@@ -197,5 +197,5 @@ TYPE_TABLE(/obj/item/glass_jar/fish, glass_jar_mobs, list(/mob/living/simple_mob
 /obj/item/glass_jar/fish/plastic
 	name = "plastic tank"
 	desc = "A large plastic tank."
-	MATERIAL_BULK(MAT_PLASTIC, 4000)
+	MATERIAL_BULK(MAT_PLASTIC, 250)
 

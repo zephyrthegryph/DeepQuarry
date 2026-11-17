@@ -145,6 +145,7 @@ CAPABILITIES(/obj/item/cell/infinite)
 	name = "potato battery"
 	desc = "A rechargable starch based power cell."
 	icon_state = "potato"
+	material_total = 100
 	charge = 100
 	maxcharge = 300
 	minor_fault = 1

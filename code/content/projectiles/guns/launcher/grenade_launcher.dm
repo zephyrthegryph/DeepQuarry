@@ -14,7 +14,6 @@
 	var/tmp/obj/item/grenade/chambered
 	var/list/grenades
 	var/max_grenades = 5 //holds this + one in the chamber
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	special_handling = TRUE
 	var/underslung = FALSE
 

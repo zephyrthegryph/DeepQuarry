@@ -4,7 +4,7 @@
  *
  */
 
-MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
+MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 15,MAT_GLASS = 5))
 /obj/item/multitool
 	name = "multitool"
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors."

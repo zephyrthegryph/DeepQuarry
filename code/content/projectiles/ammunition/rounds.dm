@@ -405,7 +405,7 @@ MATERIAL_MIX(/obj/item/ammo_casing/a145, list(MAT_STEEL = 4000, MAT_PLASTEEL = 5
 	caliber = "14.5mm"
 	projectile_type = /obj/item/projectile/bullet/rifle/a145
 
-MATERIAL_MIX(/obj/item/ammo_casing/a145/highvel, list(MAT_STEEL = 4000, MAT_PLASTEEL = 1000)) // Makes them a bit more expensive
+MATERIAL_MIX(/obj/item/ammo_casing/a145/highvel, list(MAT_STEEL = 1245, MAT_PLASTEEL = 310)) // Makes them a bit more expensive
 /obj/item/ammo_casing/a145/highvel
 	desc = "A 14.5mm sabot shell."
 	projectile_type = /obj/item/projectile/bullet/rifle/a145/highvel

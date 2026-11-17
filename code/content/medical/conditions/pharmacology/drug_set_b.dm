@@ -1,5 +1,5 @@
 // Drawbacks and interactions of the organ, brain, circulation and infection drugs (cordradaxon, respirodaxon, hepanephrodaxon, gastirodaxon,
-// norepinephrine, epinephrine, synaptizine, dexalin plus). Strains and hidden readings are declared on the reagents themselves
+// norepinephrine, adrenaline, synaptizine, dexalin plus). Strains and hidden readings are declared on the reagents themselves
 // (code/content/reagents/drug_profile.dm); what a drug adds is here. Families and the stage template: _pharmacology.dm.
 
 // --- Side effects -----------------------------------------------------------------------------------------------------------
@@ -37,9 +37,9 @@
 
 // --- Interactions -----------------------------------------------------------------------------------------------------------
 
-/datum/affliction/chem_interaction/epinephrine_synaptizine_tachycardia
+/datum/affliction/chem_interaction/adrenaline_synaptizine_tachycardia
 	name = "adrenergic overload"
-	clinical_description = "Epinephrine and synaptizine together drive the heart into a fast, irritable rhythm: palpitations, a racing pulse and an unstable rhythm that degenerates sooner. Never give them together. Resolves when either chem clears."
+	clinical_description = "Adrenaline and synaptizine together drive the heart into a fast, irritable rhythm: palpitations, a racing pulse and an unstable rhythm that degenerates sooner. Never give them together. Resolves when either chem clears."
 	symptom_pool = list(
 		/datum/affliction_symptom/palpitations = 95,
 		/datum/affliction_symptom/short_breath = 50,
@@ -48,7 +48,7 @@
 	max_symptoms = 2
 	factors = alist(STAT_HEART_RATE = 35, STAT_BP_SYSTOLIC = 15, STAT_CARDIAC_IRRITABILITY = 2)
 	caused_by_chems = list(
-		REAGENT_ID_EPINEPHRINE = 1,
+		REAGENT_ID_ADRENALINE = 1,
 		REAGENT_ID_SYNAPTIZINE = 1,
 	)
 	caused_by_chems_organ = O_HEART

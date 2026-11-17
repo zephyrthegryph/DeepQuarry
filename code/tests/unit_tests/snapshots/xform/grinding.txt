@@ -61,7 +61,7 @@
 /obj/item/stack/material/plastitanium/hull => sheet: titanium,silicon,iron,carbon,platinum; ground: carbon=12,iron=12,platinum=12,silicon=12,titanium=12
 /obj/item/stack/material/platinum => sheet: platinum; ground: platinum=60
 /obj/item/stack/material/rubber => sheet: fattyacid,sulfur; ground: fattyacid=30,sulfur=30
-/obj/item/stack/material/sandstone => sheet: silicon,oxygen; ground: oxygen=30,silicon=30
+/obj/item/stack/material/sandstone => sheet: sand; ground: sand=60
 /obj/item/stack/material/silver => sheet: silver; ground: silver=60
 /obj/item/stack/material/snow => sheet: water,ice; ground: ice=30,water=30
 /obj/item/stack/material/steel => sheet: iron,carbon; ground: carbon=30,iron=30

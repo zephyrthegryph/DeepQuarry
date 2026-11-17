@@ -4,8 +4,7 @@
 */
 
 /datum/reagent/drugs
-	name = REAGENT_DRUGS
-	id = REAGENT_ID_DRUGS
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 	description = "Some generic drugs."
 	taste_description = "a bad investment"
 	taste_mult = 1.2 /// The overwhelming flavor of a good(?) time!

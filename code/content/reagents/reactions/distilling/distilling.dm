@@ -33,7 +33,7 @@ CAPABILITIES(/transformation/chem/distilling/synthplas)
 CAPABILITIES(/transformation/chem/distilling/beer)
 	configure(transformation(name = "Distilling Beer", id = "distill_beer",
 		takes = list(reagent(REAGENT_ID_NUTRIMENT, 1), reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_SUGAR, 1)),
-		makes = list(reagent(REAGENT_ID_BEER, 2)), rate = half_life(30), holds = temperature_in(T20C, T20C + 2)))
+		makes = list(reagent(REAGENT_ID_BEER, 2)), rate = half_life(30), holds = temperature_in(T20C, T20C + 10)))
 
 /transformation/chem/distilling/ale
 
@@ -59,42 +59,3 @@ CAPABILITIES(/transformation/chem/distilling/cryogel)
 		blocked_by = list(reagent(REAGENT_ID_WATER, 5)), makes = list(reagent(REAGENT_ID_CRYOSLURRY, 1)),
 		energy = per_step(20 * 1000), holds = temperature_in(T0C + 10, T20C + 15),
 		effects = sets_off(kind = XFORM_FX_FROST, chance = 1, amount = 6)))
-
-// I know this doesn't make sense, and this is a baindaid fix but distiller code refuses to go this low, even with correct variables
-
-/transformation/chem/distilling/hydrogen
-
-CAPABILITIES(/transformation/chem/distilling/hydrogen)
-	configure(transformation(name = "Distilling Hydrogen", id = "distill_hydrogen", takes = list(reagent(REAGENT_ID_WATER, 1)),
-		catalysts = list(reagent(REAGENT_ID_PLATINUM, 1)), blocked_by = list(reagent(REAGENT_ID_CARBON, 1)),
-		makes = list(reagent(REAGENT_ID_HYDROGEN, 1)), energy = per_step(1 * 1000),
-		holds = xform_all(temperature_in(T20C + 110, T20C + 290), ambient_gas_over(GAS_N2, 10), ambient_gas_under(GAS_O2, 1))))
-
-/transformation/chem/distilling/oxygen
-
-CAPABILITIES(/transformation/chem/distilling/oxygen)
-	configure(transformation(name = "Distilling Oxygen", id = "distill_oxygen", takes = list(reagent(REAGENT_ID_WATER, 1)),
-		catalysts = list(reagent(REAGENT_ID_PLATINUM, 1)), blocked_by = list(reagent(REAGENT_ID_CARBON, 1)),
-		makes = list(reagent(REAGENT_ID_OXYGEN, 1)), energy = per_step(3 * 1000),
-		holds = xform_all(temperature_in(T20C + 150, T20C + 320), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_O2, 1))))
-
-/transformation/chem/distilling/mineralized_sodium
-
-CAPABILITIES(/transformation/chem/distilling/mineralized_sodium)
-	configure(transformation(name = "Distilling Sodium", id = "distill_sodium", takes = list(reagent(REAGENT_ID_MINERALIZEDFLUID, 1)),
-		makes = list(reagent(REAGENT_ID_SODIUM, 1)), energy = per_step(-1 * 1000),
-		holds = xform_all(temperature_in(T20C + 600, T20C + 800), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_O2, 1))))
-
-/transformation/chem/distilling/mineralized_carbon
-
-CAPABILITIES(/transformation/chem/distilling/mineralized_carbon)
-	configure(transformation(name = "Distilling Carbon", id = "distill_carbon", takes = list(reagent(REAGENT_ID_MINERALIZEDFLUID, 1)),
-		makes = list(reagent(REAGENT_ID_CARBON, 1)), energy = per_step(-1 * 1000),
-		holds = xform_all(temperature_in(T20C + 400, T20C + 800), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
-
-/transformation/chem/distilling/reduce_salt
-
-CAPABILITIES(/transformation/chem/distilling/reduce_salt)
-	configure(transformation(name = "Distilling Sodium", id = "distill_reduce_tablesalt", takes = list(reagent(REAGENT_ID_SODIUMCHLORIDE, 1)),
-		makes = list(reagent(REAGENT_ID_SODIUM, 0.5)), energy = per_step(-1 * 1000),
-		holds = temperature_in(T20C + 800, T20C + 1000)))

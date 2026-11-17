@@ -9,6 +9,9 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DIET
 
+/datum/reagent/lipozine/affect_blood(mob/living/carbon/M, alien, removed)
+	M.adjust_nutrition(-20 * removed)
+
 /datum/reagent/blackpepper
 	name = REAGENT_BLACKPEPPER
 	id = REAGENT_ID_BLACKPEPPER

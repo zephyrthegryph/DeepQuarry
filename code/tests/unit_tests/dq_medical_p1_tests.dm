@@ -162,8 +162,6 @@
 	var/alist/merged = R.merged_species_factors(IS_SLIME)
 	TEST_ASSERT(merged?[STAT_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
 	TEST_ASSERT(merged?[STAT_ANALGESIA], "and get their own analgesia")
-	var/datum/reagent/bloodburn = SSchemistry.chemical_reagents[REAGENT_ID_BLOODBURN]
-	TEST_ASSERT(!length(bloodburn.factors), "bloodburn does not inherit claridyl's factors")
 
 /// B12: a cold drink cools a hot body toward the target and never heats it.
 /datum/unit_test/dq_p1_b12_cold_drink_cools

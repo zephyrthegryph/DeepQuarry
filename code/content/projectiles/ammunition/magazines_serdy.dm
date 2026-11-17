@@ -26,19 +26,19 @@
 	max_ammo = 20
 	mag_type = MAGAZINE
 	caliber = "9mm"
-	MATERIAL_BULK(MAT_STEEL, 1000)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	multiple_sprites = 1
 	ammo_type = /obj/item/ammo_casing/a9mm
 
 /obj/item/ammo_magazine/asval/ap
 	name = "AS-Val magazine(9mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 1200)
+	MATERIAL_BULK(MAT_STEEL, 950)
 	ammo_type = /obj/item/ammo_casing/a9mm/ap
 
 /obj/item/ammo_magazine/asval/rubber
 	name = "AS-Val magazine(9mm less-lethal)"
 	icon_state = "asvalrubber"
-	MATERIAL_BULK(MAT_STEEL, 1000)
+	MATERIAL_BULK(MAT_STEEL, 500)
 	ammo_type = /obj/item/ammo_casing/a9mm/rubber
 /obj/item/ammo_magazine/akm
 	name = "AKM magazine (7.62mm)"
@@ -47,18 +47,18 @@
 	max_ammo = 30
 	mag_type = MAGAZINE
 	caliber = "7.62mm"
-	MATERIAL_BULK(MAT_STEEL, 1600)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	multiple_sprites = 1
 	ammo_type = /obj/item/ammo_casing/a762
 
 /obj/item/ammo_magazine/akm/ap
 	name = "AKM magazine (7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 2000)
+	MATERIAL_BULK(MAT_STEEL, 950)
 	ammo_type = /obj/item/ammo_casing/a762/ap
 
 /obj/item/ammo_magazine/akm/hp
 	name = "AKM magazine (7.62mm hollow-point)"
-	MATERIAL_BULK(MAT_STEEL, 2000)
+	MATERIAL_BULK(MAT_STEEL, 850)
 	ammo_type = /obj/item/ammo_casing/a762/hp
 
 /obj/item/ammo_magazine/akm/rubber
@@ -68,7 +68,7 @@
 	max_ammo = 30
 	mag_type = MAGAZINE
 	caliber = "7.62mm"
-	MATERIAL_BULK(MAT_STEEL, 1200)
+	MATERIAL_BULK(MAT_STEEL, 500)
 	multiple_sprites = 1
 	ammo_type = /obj/item/ammo_casing/a762/rubber
 
@@ -79,24 +79,24 @@
 	max_ammo = 30
 	mag_type = MAGAZINE
 	caliber = "5.45mm"
-	MATERIAL_BULK(MAT_STEEL, 1400)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	multiple_sprites = 1
 	ammo_type = /obj/item/ammo_casing/a545
 
 /obj/item/ammo_magazine/ak74/ap
 	name = "AK74 magazine (5.45mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 1800)
+	MATERIAL_BULK(MAT_STEEL, 950)
 	ammo_type = /obj/item/ammo_casing/a545/ap
 
 /obj/item/ammo_magazine/ak74/hp
 	name = "AK74 magazine (5.45mm hollow-point)"
-	MATERIAL_BULK(MAT_STEEL, 1800)
+	MATERIAL_BULK(MAT_STEEL, 850)
 	ammo_type = /obj/item/ammo_casing/a545/hp
 
 /obj/item/ammo_magazine/ak74/rubber
 	name = "AK74 magazine (5.45mm less-lethal)"
 	icon_state = "545bakerubber"
-	MATERIAL_BULK(MAT_STEEL, 1200)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	ammo_type = /obj/item/ammo_casing/a545/rubber
 
 /obj/item/ammo_magazine/ak74/plum
@@ -105,7 +105,7 @@
 /obj/item/ammo_magazine/ak74/plum/rubber
 	name = "AK74 magazine (5.45mm less-lethal)"
 	icon_state = "545plumrubber"
-	MATERIAL_BULK(MAT_STEEL, 1200)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	ammo_type = /obj/item/ammo_casing/a545/rubber
 
 /obj/item/ammo_magazine/m16
@@ -115,30 +115,30 @@
 	max_ammo = 30
 	mag_type = MAGAZINE
 	caliber = "5.56mm"
-	MATERIAL_BULK(MAT_STEEL, 1400)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	multiple_sprites = 1
 	ammo_type = /obj/item/ammo_casing/a556
 
 /obj/item/ammo_magazine/m16/ap
 	name = "M16 magazine (5.56mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 1700)
+	MATERIAL_BULK(MAT_STEEL, 950)
 	ammo_type = /obj/item/ammo_casing/a556/ap
 
 /obj/item/ammo_magazine/m16/rubber
 	name = "M16 magazine (5.56mm less-lethal)"
 	icon_state = "556rubbermag"
-	MATERIAL_BULK(MAT_STEEL, 1700)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	ammo_type = /obj/item/ammo_casing/a556/rubber
 
 
 /obj/item/ammo_magazine/m16/hp
 	name = "M16 magazine (5.56mm hollow-point)"
-	MATERIAL_BULK(MAT_STEEL, 1700)
+	MATERIAL_BULK(MAT_STEEL, 850)
 	ammo_type = /obj/item/ammo_casing/a556/hp
 
 /obj/item/ammo_magazine/m16/patriot
 	name = "Patriot magazine (5.56mm)"
-	MATERIAL_BULK(MAT_STEEL, 5000)
+	MATERIAL_BULK(MAT_STEEL, 650)
 	max_ammo = 100
 	icon_state = "patriotmag"
 
@@ -395,12 +395,12 @@
 	max_ammo = 75
 	mag_type = MAGAZINE
 	multiple_sprites = 1
-	MATERIAL_BULK(MAT_STEEL, 6000)
+	MATERIAL_BULK(MAT_STEEL, 1700)
 	ammo_type = /obj/item/ammo_casing/a762
 
 /obj/item/ammo_magazine/akm/drum/ap
 	name = "RPK magazine box(7.62mm armor-piercing)"
-	MATERIAL_BULK(MAT_STEEL, 7500)
+	MATERIAL_BULK(MAT_STEEL, 2250)
 	ammo_type = /obj/item/ammo_casing/a762/ap
 
 /obj/item/ammo_magazine/ssp4

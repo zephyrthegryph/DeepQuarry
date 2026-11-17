@@ -482,6 +482,7 @@
 #include "dq_material_science_tests.dm"
 #include "dq_fab_conservation_tests.dm"
 #include "dq_recycle_conservation_tests.dm"
+#include "dq_item_compositions_tests.dm"
 #include "dq_vessel_leaching_tests.dm"
 #include "dq_tabletop_machine_tests.dm"
 #include "dq_tabletop_portable_tests.dm"

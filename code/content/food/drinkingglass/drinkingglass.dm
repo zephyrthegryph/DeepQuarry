@@ -19,7 +19,7 @@
 	min_transfer_amount = 1
 
 	material_template = /datum/material_template/container
-	material_total = 60
+	material_total = 50
 
 /obj/item/reagent_containers/food/drinks/glass2/examine(mob/M as mob)
 	. = ..()

@@ -244,7 +244,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	desc = "A large beaker."
 	icon_state = "beakerlarge"
 	material_template = /datum/material_template/container
-	material_total = 5000
+	material_total = 1000
 	volume = 120
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 120
@@ -287,7 +287,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker/bluespace)
 	desc = "A small glass vial."
 	icon_state = "vial"
 	material_template = /datum/material_template/container
-	material_total = 250
+	material_total = 100
 	volume = 30
 	w_class = ITEMSIZE_TINY
 	amount_per_transfer_from_this = 10

@@ -1,9 +1,9 @@
 /* Paint and crayons */
 
-/datum/reagent/crayon_dust
+/datum/reagent/pigment/crayon_dust
 	name = REAGENT_CRAYONDUST
 	id = REAGENT_ID_CRAYONDUST
-	description = "Intensely coloured powder obtained by grinding crayons."
+	description = "Intensely coloured powder obtained by grinding crayons. Its colour is the crayon's."
 	taste_description = "powdered wax"
 	reagent_state = SOLID
 	dermal_absorption = 0 //no
@@ -12,46 +12,6 @@
 	scannable = SCANNABLE_ADVANCED
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_COSMETIC
-
-/datum/reagent/crayon_dust/red
-	name = REAGENT_CRAYONDUSTRED
-	id = REAGENT_ID_CRAYONDUSTRED
-	color = "#FE191A"
-
-/datum/reagent/crayon_dust/orange
-	name = REAGENT_CRAYONDUSTORANGE
-	id = REAGENT_ID_CRAYONDUSTORANGE
-	color = "#FFBE4F"
-
-/datum/reagent/crayon_dust/yellow
-	name = REAGENT_CRAYONDUSTYELLOW
-	id = REAGENT_ID_CRAYONDUSTYELLOW
-	color = "#FDFE7D"
-
-/datum/reagent/crayon_dust/green
-	name = REAGENT_CRAYONDUSTGREEN
-	id = REAGENT_ID_CRAYONDUSTGREEN
-	color = "#18A31A"
-
-/datum/reagent/crayon_dust/blue
-	name = REAGENT_CRAYONDUSTBLUE
-	id = REAGENT_ID_CRAYONDUSTBLUE
-	color = "#247CFF"
-
-/datum/reagent/crayon_dust/purple
-	name = REAGENT_CRAYONDUSTPURPLE
-	id = REAGENT_ID_CRAYONDUSTPURPLE
-	color = "#CC0099"
-
-/datum/reagent/crayon_dust/grey //Mime
-	name = REAGENT_CRAYONDUSTGREY
-	id = REAGENT_ID_CRAYONDUSTGREY
-	color = "#808080"
-
-/datum/reagent/crayon_dust/brown //Rainbow
-	name = REAGENT_CRAYONDUSTBROWN
-	id = REAGENT_ID_CRAYONDUSTBROWN
-	color = "#846F35"
 
 /datum/reagent/marker_ink
 	name = REAGENT_MARKERINK
@@ -151,21 +111,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 	coolant_modifier = 1 // It's ALMOST water
-
-/datum/reagent/hydrogen/tritium
-	name = REAGENT_TRITIUM
-	id = REAGENT_ID_TRITIUM
-	description = "A radioactive isotope of hydrogen. It has two extra neutrons, and shares all other chemical characteristics with hydrogen."
-	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
-	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
-	coolant_modifier = 1 // It's ALMOST water
-
-/datum/reagent/lithium/lithium6
-	name = REAGENT_LITHIUM6
-	id = REAGENT_ID_LITHIUM6
-	description = "An isotope of lithium. It has 3 neutrons, but shares all chemical characteristics with regular lithium."
-	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
-	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/helium/helium3
 	name = REAGENT_HELIUM3
@@ -320,15 +265,6 @@
 	nutriment_factor = 15
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_FOOD
-
-/datum/reagent/nutriment/paper //Paper is made from cellulose. You can eat it. It doesn't fill you up very much at all.
-	name = "Paper"
-	id = "paper"
-	description = "Soggy, ground up paper"
-	taste_description = "paper"
-	reagent_state = SOLID
-	color = "e6e6e6" //not quite white
-	nutriment_factor = 2 // 5 times worse than nutriment
 
 /datum/reagent/carpet
 	name = REAGENT_LIQUIDCARPET

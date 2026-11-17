@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - balance: "Electronics, mech and robot parts, melee weapons, grenades, hyposprays, bottles, blood packs, toys, instruments, flags, tiles, clothing and guns now break down into what they are made of (steel, glass, copper, plastic, fibers), so a crusher, a lathe or a grinder can take them apart"
+  - balance: "Guns are steel, plastic and a little copper, more of it the bigger the gun; armour made of a material crushes to that material"
+  - balance: "Power cells, vials, large beakers, magazines, welders, multitools, implanters, bear traps and other gear that was worth more recycled than it costs to print are brought down to their print cost"
+  - code_imp: "The recycling conservation test now holds every item type to its design cost"

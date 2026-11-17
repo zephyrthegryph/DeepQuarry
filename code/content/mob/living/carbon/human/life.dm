@@ -380,7 +380,7 @@
 				life_radiation_sickness_lethal(damage, rad_mod)
 
 	damage *= rad_mod
-	src.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
+	src.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, null, INJURE_CONTINUOUS)
 	if(organic && length(src.organs))
 		var/obj/item/organ/external/O = pick(src.organs)
 		if(istype(O))

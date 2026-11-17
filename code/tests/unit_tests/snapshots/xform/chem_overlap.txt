@@ -23,24 +23,9 @@ distilling/drinks/cherrytea + distilling/drinks/limetea => fired=-; end=cherryje
 distilling/drinks/cherrytea + distilling/drinks/minttea => fired=-; end=cherryjelly:3.0116 cherrytea:5.9307 mint:0.9884 minttea:18.0693; spawned=-
 distilling/drinks/cherrytea + distilling/drinks/orangetea => fired=-; end=cherryjelly:3.0116 cherrytea:5.9307 orangejuice:0.9884 orangetea:18.0693; spawned=-
 distilling/drinks/cherrytea + distilling/drinks/watermelontea => fired=-; end=cherryjelly:0.9884 cherrytea:18.0693 watermelonjuice:3.0116 watermelontea:5.9307; spawned=-
-distilling/drinks/coffee + distilling/drinks/decaftea => fired=-; end=coffee:15.0578 coffeepowder:0.9884 decafteapowder:3.0116 teadecaf:4.9422; spawned=-
 distilling/drinks/coffee + distilling/drinks/hot_coco => fired=-; end=coco:3.0116 coffee:15.0578 coffeepowder:0.9884 hot_coco:4.9422; spawned=-
 distilling/drinks/coffee + distilling/drinks/hot_ramen => fired=-; end=coffee:18.2974 coffeepowder:0.3405 dry_ramen:6.8922 hot_ramen:5.1078; spawned=-
-distilling/drinks/coffee + distilling/drinks/tea => fired=-; end=coffee:15.0578 coffeepowder:0.9884 tea:4.9422 teapowder:3.0116; spawned=-
-distilling/drinks/coffee + distilling/hydrogen => fired=-; end=coffee:14.7138 coffeepowder:1.0572 hydrogen:10.5723 platinum:1; spawned=-
-distilling/drinks/coffee + distilling/oxygen => fired=-; end=coffee:14.7138 coffeepowder:1.0572 hydrogen:10.5723 platinum:1; spawned=-
-distilling/drinks/decaftea + distilling/drinks/hot_coco => fired=-; end=coco:3.0116 decafteapowder:0.9884 hot_coco:4.9422 teadecaf:15.0578; spawned=-
-distilling/drinks/decaftea + distilling/drinks/hot_ramen => fired=-; end=decafteapowder:0.3405 dry_ramen:6.8922 hot_ramen:5.1078 teadecaf:18.2974; spawned=-
-distilling/drinks/decaftea + distilling/drinks/tea => fired=-; end=decafteapowder:3.0116 tea:15.0578 teadecaf:4.9422 teapowder:0.9884; spawned=-
-distilling/drinks/decaftea + distilling/hydrogen => fired=-; end=decafteapowder:1.0572 hydrogen:10.5723 platinum:1 teadecaf:14.7138; spawned=-
-distilling/drinks/decaftea + distilling/oxygen => fired=-; end=decafteapowder:1.0572 hydrogen:10.5723 platinum:1 teadecaf:14.7138; spawned=-
 distilling/drinks/hot_coco + distilling/drinks/hot_ramen => fired=-; end=coco:0.3405 dry_ramen:6.8922 hot_coco:18.2974 hot_ramen:5.1078; spawned=-
-distilling/drinks/hot_coco + distilling/drinks/tea => fired=-; end=coco:3.0116 hot_coco:4.9422 tea:15.0578 teapowder:0.9884; spawned=-
-distilling/drinks/hot_coco + distilling/hydrogen => fired=-; end=coco:1.0572 hot_coco:14.7138 hydrogen:10.5723 platinum:1; spawned=-
-distilling/drinks/hot_coco + distilling/oxygen => fired=-; end=coco:1.0572 hot_coco:14.7138 hydrogen:10.5723 platinum:1; spawned=-
-distilling/drinks/hot_ramen + distilling/drinks/tea => fired=-; end=dry_ramen:6.8922 hot_ramen:5.1078 tea:18.2974 teapowder:0.3405; spawned=-
-distilling/drinks/hot_ramen + distilling/hydrogen => fired=-; end=dry_ramen:9.0347 hot_ramen:2.9653 hydrogen:6.0231 platinum:1; spawned=-
-distilling/drinks/hot_ramen + distilling/oxygen => fired=-; end=dry_ramen:9.0347 hot_ramen:2.9653 hydrogen:6.0231 platinum:1; spawned=-
 distilling/drinks/lemontea + distilling/drinks/limetea => fired=-; end=lemonjuice:0.9884 lemontea:18.0693 limejuice:3.0116 limetea:5.9307; spawned=-
 distilling/drinks/lemontea + distilling/drinks/minttea => fired=-; end=lemonjuice:3.0116 lemontea:5.9307 mint:0.9884 minttea:18.0693; spawned=-
 distilling/drinks/lemontea + distilling/drinks/orangetea => fired=-; end=lemonjuice:0.9884 lemontea:18.0693 orangejuice:3.0116 orangetea:5.9307; spawned=-
@@ -53,16 +38,12 @@ distilling/drinks/limetea + distilling/drinks/orangetea => fired=-; end=limejuic
 distilling/drinks/limetea + distilling/drinks/watermelontea => fired=-; end=limejuice:0.9884 limetea:18.0693 watermelonjuice:3.0116 watermelontea:5.9307; spawned=-
 distilling/drinks/limetea_decaf + distilling/drinks/minttea_decaf => fired=-; end=limejuice:3.0116 limeteadecaf:5.9307 mint:0.9884 mintteadecaf:18.0693; spawned=-
 distilling/drinks/limetea_decaf + distilling/drinks/orangetea_decaf => fired=-; end=limejuice:0.9884 limeteadecaf:18.0693 orangejuice:3.0116 orangeteadecaf:5.9307; spawned=-
-distilling/drinks/matcha + distilling/drinks/matcha_latte => fired=-; end=matcha:1.9769 matcha_latte:15.0578 milk:4.9422 water:6.0231; spawned=-
 distilling/drinks/minttea + distilling/drinks/orangetea => fired=-; end=mint:0.9884 minttea:18.0693 orangejuice:3.0116 orangetea:5.9307; spawned=-
 distilling/drinks/minttea + distilling/drinks/watermelontea => fired=-; end=mint:0.9884 minttea:18.0693 watermelonjuice:3.0116 watermelontea:5.9307; spawned=-
 distilling/drinks/minttea_decaf + distilling/drinks/orangetea_decaf => fired=-; end=mint:0.9884 mintteadecaf:18.0693 orangejuice:3.0116 orangeteadecaf:5.9307; spawned=-
 distilling/drinks/orangetea + distilling/drinks/watermelontea => fired=-; end=orangejuice:0.9884 orangetea:18.0693 watermelonjuice:3.0116 watermelontea:5.9307; spawned=-
-distilling/drinks/tea + distilling/hydrogen => fired=-; end=hydrogen:10.5723 platinum:1 tea:14.7138 teapowder:1.0572; spawned=-
-distilling/drinks/tea + distilling/oxygen => fired=-; end=hydrogen:10.5723 platinum:1 tea:14.7138 teapowder:1.0572; spawned=-
 distilling/eznutrient + distilling/leftforzed => fired=-; end=calcium:4 eznutrient:4 radium:8; spawned=-
 distilling/eznutrient + distilling/robustharvest => fired=-; end=bicaridine:4 eznutrient:4; spawned=-
-distilling/hydrogen + distilling/oxygen => fired=-; end=hydrogen:8 platinum:1; spawned=-
 distilling/leftforzed + distilling/robustharvest => fired=-; end=bicaridine:3.0116 calcium:1.9769 carbon:6.0231 left4zed:3.0116 radium:1.9769 robustharvest:0.9884; spawned=-
 distilling/marker_ink_black + distilling/marker_ink_blue => fired=-; end=carbon:0.9884 marker_ink_black:3.0116 marker_ink_blue:0.9884 prussian_blue:3.0116; spawned=-
 distilling/marker_ink_black + distilling/marker_ink_green => fired=-; end=carbon:0.9884 copper:3.0116 marker_ink_black:3.0116 marker_ink_green:0.9884; spawned=-
@@ -82,7 +63,6 @@ distilling/marker_ink_grey + distilling/marker_ink_red => fired=-; end=iron:0.98
 distilling/marker_ink_grey + distilling/marker_ink_yellow => fired=-; end=marker_ink_grey:0.9884 marker_ink_yellow:3.0116 sulfur:0.9884 tin:3.0116; spawned=-
 distilling/marker_ink_orange + distilling/marker_ink_purple => fired=-; end=marker_ink_blue:3.0116 marker_ink_orange:3.0116 marker_ink_purple:0.9884 marker_ink_yellow:0.9884; spawned=-
 distilling/marker_ink_red + distilling/marker_ink_yellow => fired=-; end=iron:0.9884 marker_ink_red:3.0116 marker_ink_yellow:0.9884 sulfur:3.0116; spawned=-
-distilling/mineralized_carbon + distilling/mineralized_sodium => fired=-; end=carbon:4; spawned=-
 instant/aluminum_paint + instant/banana_juice_paint => fired=instant/banana_juice_paint; end=aluminum:4 paint:20; spawned=-
 instant/aluminum_paint + instant/berry_juice_paint => fired=instant/berry_juice_paint; end=aluminum:4 paint:20; spawned=-
 instant/aluminum_paint + instant/blood_paint => fired=instant/blood_paint; end=aluminum:4 paint:20; spawned=-

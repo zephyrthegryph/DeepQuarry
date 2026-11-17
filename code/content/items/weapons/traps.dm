@@ -11,7 +11,7 @@
 	icon_state = "beartrap0"
 	desc = "A mechanically activated leg trap. Low-tech, but reliable. Looks like it could really hurt if you set it off."
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 18750)
+	MATERIAL_BULK(MAT_STEEL, 6000)
 	var/deployed = FALSE
 	var/camo_net = FALSE
 	var/stun_length = 0.25 SECONDS

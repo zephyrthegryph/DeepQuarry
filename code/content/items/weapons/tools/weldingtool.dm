@@ -2,7 +2,7 @@
 /*
  * Welding Tool
  */
-MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
+MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 25, MAT_GLASS = 10))
 /obj/item/weldingtool
 	name = "\improper welding tool"
 	icon = 'icons/obj/tools.dmi'
@@ -319,7 +319,7 @@ MATERIAL_MIX(/obj/item/weldingtool/largetank, list(MAT_STEEL = 70, MAT_GLASS = 6
 	icon_state = "indwelder"
 	max_fuel = 40
 
-MATERIAL_MIX(/obj/item/weldingtool/hugetank, list(MAT_STEEL = 70, MAT_GLASS = 120))
+MATERIAL_MIX(/obj/item/weldingtool/hugetank, list(MAT_STEEL = 25, MAT_GLASS = 15))
 /obj/item/weldingtool/hugetank
 	name = "upgraded welding tool"
 	desc = "A much larger welder with a huge tank."
@@ -327,7 +327,7 @@ MATERIAL_MIX(/obj/item/weldingtool/hugetank, list(MAT_STEEL = 70, MAT_GLASS = 12
 	max_fuel = 80
 	w_class = ITEMSIZE_NORMAL
 
-MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_STEEL = 30, MAT_GLASS = 10))
+MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_STEEL = 20, MAT_GLASS = 5))
 /obj/item/weldingtool/mini
 	name = "emergency welding tool"
 	desc = "A miniature welder used during emergencies."

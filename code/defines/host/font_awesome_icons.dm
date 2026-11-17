@@ -511,7 +511,6 @@
 #define FA_ICON_DASHBOARD "fa-dashboard"
 #define FA_ICON_DATABASE "fa-database"
 #define FA_ICON_DEAF "fa-deaf"
-#define FA_ICON_DEAFNESS "fa-deafness"
 #define FA_ICON_DEDENT "fa-dedent"
 #define FA_ICON_DELETE_LEFT "fa-delete-left"
 #define FA_ICON_DEMOCRAT "fa-democrat"

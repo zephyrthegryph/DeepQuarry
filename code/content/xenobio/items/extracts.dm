@@ -591,19 +591,19 @@ CAPABILITIES(/transformation/chem/instant/slime/green_uranium)
 
 CAPABILITIES(/transformation/chem/instant/slime/pink_bone_fix)
 	configure(transformation(name = "Slime Bone Med", id = "m_pink_bone_fixer", takes = list(reagent(REAGENT_ID_PHORON, 5)),
-		makes = list(reagent(REAGENT_ID_SLIMEBONEFIXER, 30)), holds = subject_is(/obj/item/slime_extract/pink)))
+		makes = list(reagent(REAGENT_ID_OSTEODAXON, 30)), holds = subject_is(/obj/item/slime_extract/pink)))
 
 /transformation/chem/instant/slime/pink_clotting
 
 CAPABILITIES(/transformation/chem/instant/slime/pink_clotting)
 	configure(transformation(name = "Slime Clotting Med", id = "m_pink_clotting", takes = list(reagent(REAGENT_ID_BLOOD, 5)),
-		makes = list(reagent(REAGENT_ID_SLIMEBLEEDFIXER, 30)), holds = subject_is(/obj/item/slime_extract/pink)))
+		makes = list(reagent(REAGENT_ID_MYELAMINE, 30)), holds = subject_is(/obj/item/slime_extract/pink)))
 
 /transformation/chem/instant/slime/pink_organ_fix
 
 CAPABILITIES(/transformation/chem/instant/slime/pink_organ_fix)
 	configure(transformation(name = "Slime Organ Med", id = "m_pink_organ_fixer", takes = list(reagent(REAGENT_ID_WATER, 5)),
-		makes = list(reagent(REAGENT_ID_SLIMEORGANFIXER, 30)), holds = subject_is(/obj/item/slime_extract/pink)))
+		makes = list(reagent(REAGENT_ID_PERIDAXON, 30)), holds = subject_is(/obj/item/slime_extract/pink)))
 
 /transformation/chem/instant/slime/pink_heal_pulse
 

@@ -13,19 +13,6 @@ CAPABILITIES(/transformation/chem/distilling/drinks/coffee)
 		takes = list(reagent(REAGENT_ID_WATER, 5), reagent(REAGENT_ID_COFFEEPOWDER, 1)),
 		makes = list(reagent(REAGENT_ID_COFFEE, 5)), holds = temperature_in(T0C + 100, T0C + 500)))
 
-/transformation/chem/distilling/drinks/tea
-
-CAPABILITIES(/transformation/chem/distilling/drinks/tea)
-	configure(transformation(name = "Black tea", id = REAGENT_ID_TEA, takes = list(reagent(REAGENT_ID_WATER, 5), reagent(REAGENT_ID_TEAPOWDER, 1)),
-		makes = list(reagent(REAGENT_ID_TEA, 5)), holds = temperature_in(T0C + 100, T0C + 500)))
-
-/transformation/chem/distilling/drinks/decaftea
-
-CAPABILITIES(/transformation/chem/distilling/drinks/decaftea)
-	configure(transformation(name = REAGENT_TEADECAF, id = REAGENT_ID_TEADECAF,
-		takes = list(reagent(REAGENT_ID_WATER, 5), reagent(REAGENT_ID_DECAFTEAPOWDER, 1)),
-		makes = list(reagent(REAGENT_ID_TEADECAF, 5)), holds = temperature_in(T0C + 100, T0C + 500)))
-
 /transformation/chem/distilling/drinks/hot_coco
 
 CAPABILITIES(/transformation/chem/distilling/drinks/hot_coco)
@@ -124,21 +111,8 @@ CAPABILITIES(/transformation/chem/distilling/drinks/watermelontea)
 		takes = list(reagent(REAGENT_ID_TEA, 5), reagent(REAGENT_ID_WATERMELONJUICE, 1)),
 		makes = list(reagent(REAGENT_ID_WATERMELONTEA, 6)), holds = temperature_in(T0C + 100, T0C + 500)))
 
-/transformation/chem/distilling/drinks/matcha_latte
-
-CAPABILITIES(/transformation/chem/distilling/drinks/matcha_latte)
-	configure(transformation(name = REAGENT_MATCHALATTE, id = REAGENT_ID_MATCHALATTE,
-		takes = list(reagent(REAGENT_ID_MATCHAPOWDER, 1), reagent(REAGENT_ID_MILK, 5)),
-		makes = list(reagent(REAGENT_ID_MATCHALATTE, 5)), holds = temperature_in(T0C + 100, T0C + 500)))
-
 /transformation/chem/distilling/drinks/greenteafresh
 
 CAPABILITIES(/transformation/chem/distilling/drinks/greenteafresh)
 	configure(transformation(id = REAGENT_ID_FRESHTEAGREEN, takes = list(reagent(REAGENT_ID_TEALEAVESGREEN, 1), reagent(REAGENT_ID_WATER, 9)),
 		makes = list(reagent(REAGENT_ID_FRESHTEAGREEN, 10)), holds = temperature_in(T0C + 100, T0C + 500)))
-
-/transformation/chem/distilling/drinks/matcha
-
-CAPABILITIES(/transformation/chem/distilling/drinks/matcha)
-	configure(transformation(id = REAGENT_ID_MATCHA, takes = list(reagent(REAGENT_ID_MATCHAPOWDER, 1), reagent(REAGENT_ID_WATER, 2)),
-		makes = list(reagent(REAGENT_ID_MATCHA, 2)), holds = temperature_in(T0C + 100, T0C + 500)))

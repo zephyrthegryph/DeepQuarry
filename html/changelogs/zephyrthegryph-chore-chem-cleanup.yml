@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Removed dead reagents (bloodburn, docility toxin, tritium, lithium-6, vat stabiliser, paper, murkfin protein, slime drink, lettuce juice, dessert ramen, decaf iced tea, matcha, tea powders, chicken soup) and forty-odd unused reagent ids; the abstract reagent bases are no longer obtainable"
+  - refactor: "Epinephrine is now adrenaline, the slime fixers yield myelamine, osteodaxon and peridaxon, and crayon dust is one reagent that carries its colour"
+  - balance: "Panacillin now clears advanced infections that spaceacillin cannot; sandstone grinds to sand; beer brews over a 10 degree band; decarboxylation starts above 200 C; the legacy distillery recipes that repeated dispenser staples are gone"
+  - balance: "The common cold absorbs the ICE9 cold, the three GBS variants are one disease, and chronic radiation and radiation poisoning are folded into radiation sickness"

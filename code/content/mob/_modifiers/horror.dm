@@ -437,8 +437,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(!state.armor_deployed && (unfortunate_soul.has_status(STAT_STUNNED) || unfortunate_soul.has_status(STAT_WEAKENED) || unfortunate_soul.has_status(STAT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
 		if(assume_battle_stance(unfortunate_soul, state))
 			unfortunate_soul.mend(TREAT_ANALGESIC, 200) //WAKE UP SAMURI
-			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 5)
-			unfortunate_soul.reagents.add_reagent(REAGENT_ID_EPINEPHRINE, 5)
+			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 10)
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_NUMBENZYME, 1)
 			to_chat(unfortunate_soul, span_large(span_bolddanger("Your body surges with adrenaline, and every cell ignites with a primal fight or flight. Your instincts are screaming through every fiber of your body: Escape the danger. Kill the threats. Protect your body. SURVIVE.")))
 			return

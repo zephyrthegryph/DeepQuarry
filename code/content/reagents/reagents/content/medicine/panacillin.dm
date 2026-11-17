@@ -2,7 +2,8 @@
 	// The broad antimicrobial: any infection, a little poisoning; slow, hard on the kidneys, and a long course leaves the patient nauseous
 	// (/datum/affliction/nausea/panacillin). It weakens corophizine (/datum/affliction/chem_interaction/panacillin_corophizine).
 	treatment_tags = list(TREAT_ANTIMICROBIAL = 0.8, TREAT_ANTITOXIN = 0.2)
-	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_NORM)
+	// Strong enough to hold an advanced infection (level three), which spaceacillin is not; corophizine is stronger still.
+	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_OD)
 	strains = alist(O_KIDNEYS = DRUG_STRAIN_MODERATE)
 	name = REAGENT_PANACILLIN
 	id = REAGENT_ID_PANACILLIN

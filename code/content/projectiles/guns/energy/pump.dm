@@ -5,7 +5,6 @@
 	icon_state = "ge_pistol"
 	item_state = "ge_pistol"
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	fire_sound = SFX_WEAPONS_MANDALORIAN
 	projectile_type = /obj/item/projectile/beam/imperial
 

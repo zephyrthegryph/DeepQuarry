@@ -5,7 +5,6 @@
 	item_state = "meep"
 	fire_delay = 8
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 1000)
 	projectile_type = /obj/item/projectile/beam/meeplaser
 	charge_cost = 400
 
@@ -19,7 +18,6 @@ CAPABILITIES(/obj/item/gun/energy/altevian)
 	icon_state = "altevian-pdw"
 	item_state = "altevian-pdw"
 	w_class = ITEMSIZE_LARGE
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/meeplaser/strong
 	charge_cost = 200
 
@@ -72,7 +70,6 @@ CAPABILITIES(/obj/effect/projectile/impact/meeplaser)
 	item_state = "altevian-miner"
 	fire_delay = 12
 	w_class = ITEMSIZE_HUGE
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/scatter/ratminer
 	charge_cost = 400
 	fire_sound = SFX_WEAPONS_LASER3

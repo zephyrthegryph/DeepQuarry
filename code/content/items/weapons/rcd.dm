@@ -290,7 +290,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo, list(DEFAULT_WALL_MATERIAL = 30000,MAT_GLASS = 
 	w_class = ITEMSIZE_SMALL
 	var/remaining = RCD_MAX_CAPACITY / 0.75
 
-MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GLASS = 22500))
+MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 30000,MAT_GLASS = 15000))
 /obj/item/rcd_ammo/large
 	name = "high-capacity matter cartridge"
 	desc = "Do not ingest."

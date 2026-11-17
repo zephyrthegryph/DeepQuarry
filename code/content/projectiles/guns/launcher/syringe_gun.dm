@@ -90,7 +90,6 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 	icon_state = "syringegun"
 	item_state = "syringegun"
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 2000)
 
 	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic thunk"
