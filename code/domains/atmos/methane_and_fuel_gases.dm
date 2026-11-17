@@ -31,3 +31,28 @@
 	base_value = 0.1
 	desc = "Vaporized fuel — combustible at low temperatures."
 	primary_color = "#ffaa00"
+
+// Chemistry gases (code/domains/world_model/reagents/vapour.dm routes a boiled-off reagent to the gas of its id).
+
+/datum/gas/chlorine
+	idx = GAS_ID_CHLORINE
+	id = GAS_CHLORINE
+	specific_heat = 34
+	name = "Chlorine"
+	dangerous = TRUE
+	gas_overlay = "nitryl"
+	moles_visible = MOLES_GAS_VISIBLE
+	rarity = 150
+	base_value = 1.5
+	desc = "A dense yellow-green gas. It burns the lungs and eyes."
+	primary_color = "#b5d33d"
+
+/datum/gas/ammonia
+	idx = GAS_ID_AMMONIA
+	id = GAS_AMMONIA
+	specific_heat = 36
+	name = "Ammonia"
+	rarity = 120
+	base_value = 1
+	desc = "A pungent colourless gas. It irritates the airway."
+	primary_color = "#9fd8ff"

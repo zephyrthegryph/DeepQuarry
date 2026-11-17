@@ -599,6 +599,7 @@
 	var/exhale_quality = life_breathing_exhaled_gas_buildup(breath, breath_moles, breath_pressure)
 	var/quality = inhale_quality * exhale_quality * life_breathing_methane_displacement(breath, breath_moles, breath_pressure)
 	src.breathe_poison(breath, src.species.poison_type || GAS_PHORON, breath_moles, breath_pressure)
+	src.breathe_irritant_gases(breath, breath_moles, breath_pressure)
 	src.breathe_sleeping_gas(breath, breath_moles, breath_pressure)
 	life_breathing_hallucinated_breath_alerts()
 

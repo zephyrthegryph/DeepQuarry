@@ -236,7 +236,7 @@
 
 /// The reading of `air` on gas channel `ch`, as Rust computes it (cell.rs gas_ch).
 /proc/air_watch_reading(datum/gas_mixture/air, ch)
-	var/static/list/kpa_gases = list("[CH_GAS_O2_KPA]" = /datum/gas/oxygen, "[CH_GAS_N2_KPA]" = /datum/gas/nitrogen, "[CH_GAS_CO2_KPA]" = /datum/gas/carbon_dioxide, 		"[CH_GAS_PLASMA_KPA]" = /datum/gas/plasma, "[CH_GAS_N2O_KPA]" = /datum/gas/nitrous_oxide, "[CH_GAS_CH4_KPA]" = /datum/gas/methane, "[CH_GAS_FUEL_KPA]" = /datum/gas/volatile_fuel)
+	var/static/list/kpa_gases = list("[CH_GAS_O2_KPA]" = /datum/gas/oxygen, "[CH_GAS_N2_KPA]" = /datum/gas/nitrogen, "[CH_GAS_CO2_KPA]" = /datum/gas/carbon_dioxide, 		"[CH_GAS_PLASMA_KPA]" = /datum/gas/plasma, "[CH_GAS_N2O_KPA]" = /datum/gas/nitrous_oxide, "[CH_GAS_CH4_KPA]" = /datum/gas/methane, "[CH_GAS_FUEL_KPA]" = /datum/gas/volatile_fuel, "[CH_GAS_CL2_KPA]" = /datum/gas/chlorine, "[CH_GAS_NH3_KPA]" = /datum/gas/ammonia)
 	var/gas = kpa_gases["[ch]"]
 	if(gas)
 		var/total = air.total_moles()
@@ -304,6 +304,8 @@
 		GAS_N2O = CH_GAS_N2O_KPA,
 		GAS_CH4 = CH_GAS_CH4_KPA,
 		GAS_VOLATILE_FUEL = CH_GAS_FUEL_KPA,
+		GAS_CHLORINE = CH_GAS_CL2_KPA,
+		GAS_AMMONIA = CH_GAS_NH3_KPA,
 	)
 	return gas ? channels[gas] : null
 
@@ -332,6 +334,8 @@
 		air_watch_add(., air_watch_gas_channel(S.poison_type || GAS_PHORON), list(BREATH_TOXINS_MIN, BREATH_TOXINS_MAX))
 		air_watch_add(., CH_GAS_PLASMA_KPA, list(BREATH_TOXINS_MIN))
 		air_watch_add(., CH_GAS_N2O_KPA, list(BREATH_N2O_GIGGLE, BREATH_N2O_PARALYSE, BREATH_N2O_SLEEP))
+		air_watch_add(., CH_GAS_CL2_KPA, list(BREATH_TOXINS_MIN, BREATH_TOXINS_MAX))
+		air_watch_add(., CH_GAS_NH3_KPA, list(BREATH_TOXINS_MIN, BREATH_TOXINS_MAX))
 		if(breath_type != GAS_CH4)
 			air_watch_add(., CH_GAS_CH4_KPA, list(BREATH_TOXINS_MIN, BREATH_TOXINS_MAX))
 		// Breath temperature: harm and discomfort.

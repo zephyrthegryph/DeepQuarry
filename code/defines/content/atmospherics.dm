@@ -123,11 +123,11 @@
 /// A filter leg that takes the gases in its mask / the one that takes every gas no mask claims.
 #define RUST_ROLE_OUTPUT 0
 #define RUST_ROLE_CLEAN 1
-/// Every registered gas's bit set (`GAS_COUNT` gases, `verdigris/domains/gas/src/gas/ids.rs`):
+/// Every registered gas's bit set (`GAS_COUNT` gases: 24, the most a DM float mask holds exactly, `verdigris/domains/gas/src/gas/ids.rs`):
 /// a filter's "everything not filtered" flow masks this with `~filtered_mask`
 /// to get a non-negative complement (DM's `~` is a 32-bit signed complement,
 /// which a raw `~mask` would turn negative for the `DeviceFlow.gases: u32` field).
-#define RUST_ALL_GASES_MASK 0x3FFFFF
+#define RUST_ALL_GASES_MASK 0xFFFFFF
 
 // A DeviceFlow row's `direction` (device.rs's direction mod).
 #define RUST_DIR_FORCED 0

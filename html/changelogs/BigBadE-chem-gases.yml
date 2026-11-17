@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Added chlorine and ammonia as atmos gases; chlorine burns the lungs and ammonia irritates the airway"
+  - rscadd: "A reagent that is a real gas (hydrogen, oxygen, nitrogen, water, phoron, fuel, chlorine, ammonia) that boils off a hot plate or bunsen burner with no condenser now enters the air of its tile as that gas, carrying its heat"

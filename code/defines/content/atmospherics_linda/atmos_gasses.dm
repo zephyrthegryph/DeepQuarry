@@ -26,6 +26,9 @@
 #define GAS_PHORON GAS_PLASMA
 #define GAS_CH4 "methane"
 #define GAS_VOLATILE_FUEL "volatile_fuel"
+/// Chemistry gases: a boiled-off chlorine or ammonia reagent enters the air as these (code/domains/world_model/reagents/vapour.dm).
+#define GAS_CHLORINE "chlorine"
+#define GAS_AMMONIA "ammonia"
 
 /// Numeric Rust gas ID (GAS_ID_*) for a gas given as a GAS_ID_* number, a /datum/gas
 /// path, its path text or its short id ("o2"). Gas binds take only numbers.

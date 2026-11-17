@@ -6,10 +6,11 @@
 // component first. A dissolved gas (a point under 0 C) leaves at BOIL_RATE_DISSOLVED_GAS a second whatever the heat, so a reagent dosed into a warming beaker is
 // still there when the beaker reaches the band that uses it. Nothing in the world boils by itself: a heater asks for it (boil_step(): the hot plate, the bunsen burner).
 //
-// The vapour is not a gas and never reaches the air: boil_step() returns it as a list, and the caller either deletes it (the default: it is gone) or hands it to
-// a condenser, which collects it into a second container (real distillation). Every boil is written to the world log under GLOB.chem_trace.
+// boil_step() returns the vapour as a list. The caller hands it to a condenser, which collects it into a second container (real distillation), and what is left
+// goes into the world (code/domains/world_model/reagents/vapour.dm: a reagent that is a real gas becomes that atmos gas on its tile). Every boil is written to the
+// world log under GLOB.chem_trace.
 
-/// Boils the contents for `seconds` at the holder's own temperature. Returns the vapour as list(reagent id => list(units, data)), empty when nothing boiled.
+/// Boils the contents for `seconds` at the holder's own temperature. Returns the vapour as list(reagent id => list(units, data, kelvin it left at)), empty when nothing boiled.
 /datum/reagents/proc/boil_step(seconds)
 	var/list/vapour = list()
 	if(!length(reagent_list) || seconds <= 0)
@@ -48,7 +49,7 @@
 			spare -= units * BOIL_LATENT_HEAT
 		if(units <= 0)
 			continue
-		vapour[R.id] = list(units, R.get_data())
+		vapour[R.id] = list(units, R.get_data(), temperature)
 		boiled += units
 	for(var/id in vapour)
 		remove_reagent(id, vapour[id][1], safety = 1)

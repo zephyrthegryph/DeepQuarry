@@ -85,6 +85,19 @@ GLOBAL_LIST_INIT(reagent_boiling_points, list(
 	REAGENT_ID_CHLOROVOID = T0C + 260,
 ))
 
+/// reagent id => the atmos gas (GAS_*) that reagent is: a boiled-off unit of it enters the air as that gas (code/domains/world_model/reagents/vapour.dm). Any
+/// other reagent's vapour is not a gas the air knows.
+GLOBAL_LIST_INIT(reagent_vapour_gases, list(
+	REAGENT_ID_HYDROGEN = GAS_HYDROGEN,
+	REAGENT_ID_OXYGEN = GAS_O2,
+	REAGENT_ID_NITROGEN = GAS_N2,
+	REAGENT_ID_WATER = GAS_WATER_VAPOR,
+	REAGENT_ID_PHORON = GAS_PHORON,
+	REAGENT_ID_FUEL = GAS_VOLATILE_FUEL,
+	REAGENT_ID_CHLORINE = GAS_CHLORINE,
+	REAGENT_ID_AMMONIA = GAS_AMMONIA,
+))
+
 /// The boiling point of a reagent type's category, K: the first row its type belongs to, so a narrower category goes above a wider one.
 /// Anything else is an organic compound of the lab shelf (BOILING_POINT_DEFAULT).
 GLOBAL_LIST_INIT(reagent_boiling_categories, list(

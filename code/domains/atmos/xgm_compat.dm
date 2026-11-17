@@ -294,6 +294,8 @@ GLOBAL_LIST_INIT(dq_linda_only_molar_masses, list(
 	"zauker" = 0.040,             // fictional
 	"bz" = 0.150,                 // fictional anaesthetic
 	"antinoblium" = 0.300,        // fictional
+	"chlorine" = 0.071,           // Cl2
+	"ammonia" = 0.017,            // NH3
 ))
 
 // Populate every list from /datum/decl/xgm_gas/* subtypes (code/defines/gases.dm).

@@ -120,7 +120,9 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	// Slosh and toss. We use an internal distilling container, react it in there, then pass it back.
 	held_container.reagents.trans_to_obj(src, held_container.reagents.total_volume)
 	reagents.handle_reactions()
-	reagents.boil_step(MACHINE_SERVICE_INTERVAL / (1 SECONDS)) // what is above its boiling point leaves as vapour, which is deleted (the condenser works with the hot plate)
+	var/list/vapour = reagents.boil_step(MACHINE_SERVICE_INTERVAL / (1 SECONDS)) // what is above its boiling point leaves as vapour, into the air of the burner's tile (the condenser works with the hot plate)
+	if(length(vapour))
+		vent_vapour_at(get_turf(src), vapour, src)
 	reagents.trans_to_obj(held_container, reagents.total_volume)
 
 	// every 25 degree step, do a message to show we are working

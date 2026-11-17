@@ -94,6 +94,31 @@ SETTER(/mob/living/carbon, does_not_breathe)
 	else
 		clear_alert("tox_in_air")
 
+/// Chemistry gases in the breath (code/domains/world_model/reagents/vapour.dm puts them into the air): chlorine burns the airway and lungs, ammonia irritates it
+/// (a milder toxin). Past BREATH_TOXINS_MIN the breather smells or tastes it; past BREATH_TOXINS_MAX it injures, scaled with the partial pressure like a poison gas.
+/mob/living/carbon/human/proc/breathe_irritant_gases(datum/gas_mixture/breath, breath_moles, breath_pressure)
+	var/chlorine = LINDA_GAS_AMT(breath, GAS_CHLORINE)
+	var/ammonia = LINDA_GAS_AMT(breath, GAS_AMMONIA)
+	if(!chlorine && !ammonia)
+		return
+	var/chlorine_pp = (chlorine / breath_moles) * breath_pressure
+	var/ammonia_pp = (ammonia / breath_moles) * breath_pressure
+	if(chlorine_pp > BREATH_TOXINS_MIN || ammonia_pp > BREATH_TOXINS_MIN)
+		set_breath_hazard(TRUE)
+		if(prob(20))
+			emote("cough")
+	if(chlorine_pp > BREATH_TOXINS_MAX)
+		if(prob(30))
+			to_chat(src, span_danger("Your lungs burn as you breathe in the choking gas!"))
+		injure(INJURY_BURN, clamp(chlorine_pp * BREATH_POISON_INJURY_PER_KPA, BREATH_POISON_INJURY_MIN, BREATH_POISON_INJURY_MAX), BP_TORSO, source = src, flags = INJURE_CONTINUOUS)
+		breath.adjust_gas(GAS_CHLORINE, -chlorine / 6) //update after
+		throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
+	if(ammonia_pp > BREATH_TOXINS_MAX)
+		if(prob(30))
+			to_chat(src, span_warning("The sharp smell of ammonia stings your nose and throat."))
+		injure(INJURY_TOXIN, clamp(ammonia_pp * BREATH_POISON_INJURY_PER_KPA * 0.5, BREATH_POISON_INJURY_MIN, BREATH_POISON_INJURY_MAX), source = src, flags = INJURE_CONTINUOUS)
+		breath.adjust_gas(GAS_AMMONIA, -ammonia / 6) //update after
+
 /// Nitrous oxide in the breath: giggles, then paralysis, then sleep.
 /mob/living/carbon/human/proc/breathe_sleeping_gas(datum/gas_mixture/breath, breath_moles, breath_pressure)
 	var/n2o = LINDA_GAS_AMT(breath, GAS_N2O)
@@ -216,6 +241,7 @@ SETTER(/mob/living/carbon, does_not_breathe)
 	STATE_SET(H, living_misc, photosynthesis_boost, (inhaling && min_pressure > 0) ? clamp(inhale_pp, 0, min_pressure) / min_pressure : 0)
 
 	H.breathe_poison(breath, S.poison_type, breath_total, breath_pressure)
+	H.breathe_irritant_gases(breath, breath_total, breath_pressure)
 	H.breathe_sleeping_gas(breath, breath_total, breath_pressure)
 
 	STATE_SET(H, breath_hazard, failed_last_breath, failed ? 1 : 0)
