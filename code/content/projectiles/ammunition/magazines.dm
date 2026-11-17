@@ -330,7 +330,7 @@
 	desc = "\"FOR LAW ENFORCEMENT/MILITARY USE ONLY\" is clearly etched on the magazine. This is probably illegal for you to have." // Remember, Security is not Law Enforcement, so it's illegal for Security to use as well.
 	icon_state = "m93"
 	mag_type = MAGAZINE
-	MATERIAL_BULK(MAT_STEEL, 1000)
+	MATERIAL_BULK(MAT_STEEL, 750)
 	caliber = "9mm"
 	ammo_type = /obj/item/ammo_casing/a9mm
 	max_ammo = 17
@@ -416,7 +416,7 @@
 	name = "top mounted magazine (9mm practice)"
 	ammo_type = /obj/item/ammo_casing/a9mm/practice
 
-MATERIAL_MIX(/obj/item/ammo_magazine/m9mmt/ap, list(MAT_STEEL = 1000, MAT_PLASTEEL = 2000))
+MATERIAL_MIX(/obj/item/ammo_magazine/m9mmt/ap, list(MAT_STEEL = 500, MAT_PLASTEEL = 1000))
 /obj/item/ammo_magazine/m9mmt/ap
 	name = "top mounted magazine (9mm armor piercing)"
 	ammo_type = /obj/item/ammo_casing/a9mm/ap
@@ -568,7 +568,7 @@ MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MA
 // Extended
 /obj/item/ammo_magazine/m545/ext
 	name = "extended magazine (5.45mm)"
-	MATERIAL_BULK(MAT_STEEL, 2700)
+	MATERIAL_BULK(MAT_STEEL, 2250)
 	max_ammo = 30
 
 /obj/item/ammo_magazine/m545/ext/empty

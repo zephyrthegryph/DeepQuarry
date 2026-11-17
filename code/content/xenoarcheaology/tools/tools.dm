@@ -325,7 +325,7 @@ CAPABILITIES(/obj/item/beacon_locator)
 	set_frequency(new_frequency)
 	return TRUE
 
-MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
+MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 2665,MAT_GLASS = 1330))
 /obj/item/xenoarch_multi_tool
 	name = "xenoarcheology multitool"
 	desc = "Has the features of the Alden-Saraspova counter, a measuring tape, and a depth analysis scanner all in one!"

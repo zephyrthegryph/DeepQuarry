@@ -1,4 +1,4 @@
-MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 4000, MAT_GLASS = 6000))
+MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 3600, MAT_GLASS = 5400))
 //Programs nanopaste into NIF repair nanites
 /obj/item/nifrepairer
 	name = "advanced NIF repair tool"

@@ -358,13 +358,13 @@ MATERIAL_MIX(/obj/item/stock_parts/subspace/amplifier, list(MAT_STEEL = 30,MAT_G
 	icon_state = "subspace_amplifier"
 	desc = "A compact micro-machine capable of amplifying weak subspace transmissions."
 
-MATERIAL_MIX(/obj/item/stock_parts/subspace/treatment, list(MAT_STEEL = 30,MAT_GLASS = 10))
+MATERIAL_MIX(/obj/item/stock_parts/subspace/treatment, list(MAT_STEEL = 20,MAT_GLASS = 5))
 /obj/item/stock_parts/subspace/treatment
 	name = "subspace treatment disk"
 	icon_state = "treatment_disk"
 	desc = "A compact micro-machine capable of stretching out hyper-compressed radio waves."
 
-MATERIAL_MIX(/obj/item/stock_parts/subspace/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 10))
+MATERIAL_MIX(/obj/item/stock_parts/subspace/analyzer, list(MAT_STEEL = 15,MAT_GLASS = 5))
 /obj/item/stock_parts/subspace/analyzer
 	name = "subspace wavelength analyzer"
 	icon_state = "wavelength_analyzer"

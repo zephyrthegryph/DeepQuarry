@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/radio/beacon, list(MAT_STEEL = 20, MAT_GLASS = 10))
 /obj/item/radio/beacon
 	name = "tracking beacon"
 	desc = "A beacon used by a teleporter."

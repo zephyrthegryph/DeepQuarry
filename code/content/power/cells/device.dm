@@ -7,6 +7,7 @@
 	icon_state = "m_st"
 	item_state = "egg6"
 	w_class = ITEMSIZE_SMALL
+	material_total = 350
 	charge = 480
 	maxcharge = 480
 	charge_amount = 5

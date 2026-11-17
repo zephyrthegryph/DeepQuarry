@@ -38,7 +38,7 @@ MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b9mm/ap, list(MAT_STEEL = 1200, MA
 	max_ammo = 24
 	multiple_sprites = 1
 
-MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b9mm/rubber, list(MAT_STEEL = 1100, MAT_PLASTIC = 360))
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b9mm/rubber, list(MAT_STEEL = 825, MAT_PLASTIC = 270))
 /obj/item/ammo_magazine/ammo_box/b9mm/rubber
 	name = "ammo box (9mm rubber)"
 	desc = "A box of 9mm rubber rounds"

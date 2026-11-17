@@ -1,4 +1,4 @@
-// Recycling a spawned (not printed) item must not out-earn what the same thing costs to print.
+// Recycling a spawned (not printed) item must not out-earn what the same thing costs to print. Every item type is held to it.
 //
 // dq_fab_conservation (dq_fab_conservation_tests.dm) rewrites a printed product's composition to what the lathe took, so it cannot see the composition a type declares: the
 // items a player never prints (kit contents, vendor stock, mapped gear) go straight into a crusher with the declared one. These tests read the declared composition of every
@@ -12,28 +12,6 @@
 
 /// The most material units an item type with no design may break down into (ten sheets).
 #define DQ_RECYCLE_CAP_UNITS 20000
-
-/// The item families already brought under the design cost and the cap. A finding in one of them fails the test; a finding anywhere else is a backlog, logged and counted
-/// (beakers and vials, coffee mugs, cells, ammunition, implanters, welders, multitools, laser pointers and a few more at the time of writing) so it is seen and not hidden.
-/proc/dq_recycle_enforced_families()
-	var/static/list/families = list(
-		/obj/item/surgical,
-		/obj/item/pipe_dispenser,
-		/obj/item/rig_module,
-		/obj/item/mecha_parts/mecha_equipment/tool,
-		/obj/item/pickaxe,
-		/obj/item/t_scanner,
-		/obj/item/geiger,
-		/obj/item/gun/energy/crossbow,
-		/obj/item/stack,
-	)
-	return families
-
-/proc/dq_recycle_enforced(path)
-	for(var/family in dq_recycle_enforced_families())
-		if(ispath(path, family))
-			return TRUE
-	return FALSE
 
 /// Every item type a composition test looks at: a real item, not a projectile (which sits in the item tree and is never recycled).
 /proc/dq_recycle_item_types()
@@ -100,7 +78,6 @@
 	var/list/costs = dq_recycle_design_costs()
 	var/list/gains = list()
 	var/list/over_cap = list()
-	var/list/backlog = list()
 	var/with_design = 0
 	var/without_design = 0
 	for(var/path in dq_recycle_item_types())
@@ -117,25 +94,17 @@
 		if(design_path)
 			with_design++
 			if(total > design_cost)
-				if(dq_recycle_enforced(path))
-					gains += "[path] returns [round(total)] units, [design_path] costs [round(design_cost)]"
-				else
-					backlog += "[path] returns [round(total)] units, [design_path] costs [round(design_cost)]"
+				gains += "[path] returns [round(total)] units, [design_path] costs [round(design_cost)]"
 		else
 			without_design++
 			if(total > DQ_RECYCLE_CAP_UNITS)
-				if(dq_recycle_enforced(path))
-					over_cap += "[path] returns [round(total)] units"
-				else
-					backlog += "[path] returns [round(total)] units, no design"
+				over_cap += "[path] returns [round(total)] units"
 	TEST_ASSERT(with_design > 0, "no item type was matched to a design")
 	for(var/line in gains)
 		log_world("CONSERVATION: declared composition above its design: [line]")
-	for(var/line in backlog)
-		log_world("CONSERVATION: backlog (not enforced): [line]")
 	for(var/line in over_cap)
 		log_world("CONSERVATION: no design, above the cap of [DQ_RECYCLE_CAP_UNITS] units: [line]")
-	TEST_NOTICE(src, "[with_design] item types with a design above them ([length(gains)] return more than it costs in the enforced families), [without_design] without ([length(over_cap)] above the cap in the enforced families), [length(backlog)] more in other families logged as backlog")
+	TEST_NOTICE(src, "[with_design] item types with a design above them ([length(gains)] return more than it costs), [without_design] without ([length(over_cap)] above the cap)")
 	TEST_ASSERT(!length(gains), "[length(gains)] item types break down into more than the design that prints them costs: [jointext(gains.Copy(1, min(length(gains), 12) + 1), " | ")]")
 	TEST_ASSERT(!length(over_cap), "[length(over_cap)] item types with no design break down into more than [DQ_RECYCLE_CAP_UNITS] units: [jointext(over_cap.Copy(1, min(length(over_cap), 12) + 1), " | ")]")
 

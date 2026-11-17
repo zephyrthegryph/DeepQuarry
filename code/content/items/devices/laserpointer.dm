@@ -1,4 +1,4 @@
-MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
+MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 75, MAT_STEEL = 75))
 /obj/item/laser_pointer
 	name = "laser pointer"
 	desc = "Don't shine it in your eyes!"

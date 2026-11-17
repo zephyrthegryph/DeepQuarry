@@ -4,7 +4,7 @@
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "caseless-mag"
 	w_class = ITEMSIZE_SMALL
-	MATERIAL_BULK(MAT_STEEL, 1800)
+	MATERIAL_BULK(MAT_STEEL, 1050)
 	var/remaining = 9
 
 CAPABILITIES(/obj/item/magnetic_ammo)

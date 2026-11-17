@@ -42,7 +42,6 @@
 		)
 	icon_state = "detective"
 	item_state = "gun"
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled

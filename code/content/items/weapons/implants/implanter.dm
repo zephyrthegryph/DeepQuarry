@@ -1,4 +1,4 @@
-MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 1000, MAT_GLASS = 1000))
+MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 500, MAT_GLASS = 500))
 /obj/item/implanter
 	name = "implanter"
 	icon = 'icons/obj/items.dmi'

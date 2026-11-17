@@ -8,7 +8,7 @@ SCHEMA(/obj/item/cell, c_uid, num())
 
 /obj/item/cell
 	material_template = /datum/material_template/cell
-	material_total = 2 * SHEET_MATERIAL_AMOUNT
+	material_total = 700
 	name = "power cell"
 	desc = "A rechargable electrochemical power cell."
 	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
