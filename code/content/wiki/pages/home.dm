@@ -18,6 +18,11 @@
 - \[\[dept/research|Research]]: research nodes, robotics, exosuits, machine parts and \[\[chem/purity|chemistry]].
 - \[\[dept/cargo|Cargo]]: supply packs, mining and ordering.
 - \[\[dept/civilian|Civilian]]: service, botany, the kitchen and the bar.
+## Guides
+- \[\[guide/medical/triage|Treating a patient]] and \[\[guide/medical/surgery|operating]].
+- \[\[guide/chemistry/lab|Working the chemistry lab]] and \[\[guide/research/basics|research and fabrication]].
+- \[\[guide/engineering/power|Keeping the power on]] and \[\[guide/engineering/atmos|atmospherics basics]].
+- \[\[guide/cargo/ordering|Ordering supplies]].
 ## The wider world
 - \[\[lore/index|The Traveler's Guide]]: the places, peoples, companies and governments of human space.
 - Anything not yet filed under a department is under Uncategorised, at the bottom of the index.

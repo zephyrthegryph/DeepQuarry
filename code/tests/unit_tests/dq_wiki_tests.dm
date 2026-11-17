@@ -164,3 +164,12 @@
 	TEST_ASSERT(jobs >= 10, "the jobs have pages ([jobs])")
 	TEST_ASSERT(lore >= 10, "the lore has pages ([lore])")
 	TEST_ASSERT(manuals >= 5, "the manuals have pages ([manuals])")
+
+/// Every department with work to explain has at least one guide, and the guides are filed under their department.
+/datum/unit_test/dq_wiki_guides
+
+/datum/unit_test/dq_wiki_guides/Run()
+	var/list/index = wiki_index()
+	for(var/id in list("guide/chemistry/lab", "guide/medical/triage", "guide/medical/surgery", "guide/engineering/power", "guide/engineering/atmos", "guide/research/basics", "guide/cargo/ordering"))
+		TEST_ASSERT(index[id], "no guide [id]")
+		TEST_ASSERT(findtext(index[id]["path"], "/Guides"), "[id] is filed at [index[id]["path"]], not under a department's guides")

@@ -100,6 +100,20 @@ GLOBAL_LIST_INIT(wiki_manual_excluded, list(/obj/item/book/manual/nuclear))
 		blocks += list(wiki_links("Led by", heads))
 	if(length(jobs))
 		blocks += list(wiki_links("Jobs", jobs))
+	// Its guides and manuals: every article filed under <department>/Guides or <department>/Manuals.
+	var/list/guides = list()
+	var/list/manuals = list()
+	var/list/index = wiki_index()
+	for(var/id in index)
+		var/list/article = index[id]
+		if(article["path"] == "[name]/Guides")
+			guides += list(wiki_link(id, article["title"]))
+		else if(article["path"] == "[name]/Manuals")
+			manuals += list(wiki_link(id, article["title"]))
+	if(length(guides))
+		blocks += list(wiki_links("Guides", guides))
+	if(length(manuals))
+		blocks += list(wiki_links("Manuals", manuals))
 	return blocks
 
 /proc/wiki_job_body(title)

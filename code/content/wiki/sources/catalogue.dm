@@ -316,5 +316,5 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		items += list(wiki_link(wiki_title(id) ? id : null, capitalize(initial(O.name) || "[path]"), counts[path] > 1 ? "x[counts[path]]" : null))
 	if(length(items))
 		blocks += list(wiki_links("Contains", items))
-	blocks += list(wiki_note("Order it at a supply console with the department's points."))
+	blocks += list(wiki_note("Order it at a supply console; see [wiki_ref("guide/cargo/ordering", "ordering supplies")]."))
 	return blocks

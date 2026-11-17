@@ -6749,6 +6749,7 @@
 #include "code\content\weapons\staves.dm"
 #include "code\content\wiki\wiki.dm"
 #include "code\content\wiki\wiki_window.dm"
+#include "code\content\wiki\pages\guides.dm"
 #include "code\content\wiki\pages\home.dm"
 #include "code\content\wiki\sources\catalogue.dm"
 #include "code\content\wiki\sources\chemistry.dm"
