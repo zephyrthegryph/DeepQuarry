@@ -54,7 +54,7 @@
 		if(46 to 50)
 			new/obj/item/clothing/under/chameleon(src)
 			for(var/i = 0, i < 7, i++)
-				new/obj/item/clothing/accessory/tie/horrible(src)
+				variant_new(VARIANT(/obj/item/clothing/accessory/tie/horrible), src)
 		if(51 to 52) // Uncommon, 2% each
 			new/obj/item/melee/classic_baton(src)
 		if(53 to 54)
@@ -124,7 +124,7 @@
 			new/obj/item/pen/crayon/rainbow(src)
 			new/obj/item/reagent_containers/spray/waterflower(src)
 		if(95)
-			new/obj/item/clothing/under/mime(src)
+			variant_new(VARIANT(/obj/item/clothing/under/mime), src)
 			new/obj/item/clothing/shoes/black(src)
 			new/obj/item/pda/mime(src)
 			new/obj/item/clothing/gloves/white(src)
@@ -283,7 +283,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 			list(pick(subtypesof(/obj/item/soap)), 1) = 2,
 			list(/obj/item/clothing/under/shorts/red, 1) = 2,
 			list(/obj/item/clothing/under/shorts/blue, 1) = 2,
-			list(/obj/item/clothing/accessory/tie/horrible, 1) = 2,
+			list(VARIANT(/obj/item/clothing/accessory/tie/horrible), 1) = 2,
 			list(pick(subtypesof(/obj/item/stock_parts) - /obj/item/stock_parts/subspace), 2) = 3,
 			list(/obj/item/latexballon, 2) = 2,
 			list(/obj/item/toy/syndicateballoon, 3) = 2,
@@ -391,7 +391,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 
 /obj/item/storage/backpack/mime/loaded
 	starts_with = list(
-		/obj/item/clothing/under/mime,
+		VARIANT(/obj/item/clothing/under/mime),
 		/obj/item/clothing/shoes/black,
 		/obj/item/pda/mime,
 		/obj/item/clothing/gloves/white,

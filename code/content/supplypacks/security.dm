@@ -159,15 +159,15 @@
 	desc = "Various identifying tags for attachment to a plate carrier set."
 	contains = list(
 			/obj/item/clothing/accessory/armor/tag,
-			/obj/item/clothing/accessory/armor/tag/nt,
-			/obj/item/clothing/accessory/armor/tag/opos,
-			/obj/item/clothing/accessory/armor/tag/oneg,
-			/obj/item/clothing/accessory/armor/tag/apos,
-			/obj/item/clothing/accessory/armor/tag/aneg,
-			/obj/item/clothing/accessory/armor/tag/bpos,
-			/obj/item/clothing/accessory/armor/tag/bneg,
-			/obj/item/clothing/accessory/armor/tag/abpos,
-			/obj/item/clothing/accessory/armor/tag/abneg
+			VARIANT(/obj/item/clothing/accessory/armor/tag/nt),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/opos),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/oneg),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/apos),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/aneg),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/bpos),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/bneg),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/abpos),
+			VARIANT(/obj/item/clothing/accessory/armor/tag/abneg)
 			)
 	cost = 20
 	containertype = /obj/structure/closet/crate/secure/scg

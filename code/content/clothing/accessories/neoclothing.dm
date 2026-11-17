@@ -6,9 +6,3 @@ this file deals with accessories. */
 	desc = "A heavy cloak, suitable for recoloring."
 	icon_state = "neo_pcloak_color"
 	item_state = "neo_pcloak_color"
-
-/obj/item/clothing/accessory/poncho/roles/cloak/neo_pcloak
-	name = "\improper Nanotrasen flowing cloak"
-	desc = "A heavy cloak, decorated with red-and-golden embellishments."
-	icon_state = "neo_pcloak"
-	item_state = "neo_pcloak"

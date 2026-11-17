@@ -41,7 +41,9 @@
 /area/holodeck/source_picnicarea)
 "aaj" = (
 /obj/structure/table/rack/holorack,
-/obj/item/clothing/under/dress/dress_saloon,
+/obj/item/clothing/under/dress{
+	variant = "dress_saloon"
+	},
 /obj/item/clothing/head/pin/flower,
 /turf/simulated/floor/holofloor/tiled/dark,
 /area/holodeck/source_theatre)
@@ -4605,7 +4607,9 @@
 "ajQ" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/red,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/tdome/red,
 /obj/item/clothing/head/helmet/thunderdome,
 /obj/item/melee/baton/loaded,
@@ -4843,7 +4847,9 @@
 "aks" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/red,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/vest,
 /obj/item/clothing/head/helmet/swat,
 /obj/item/gun/energy/laser,
@@ -4890,7 +4896,9 @@
 "akx" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/red,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/melee/energy/axe,
 /turf/open/fixed/floor{
 	icon_state = "vault";
@@ -7004,7 +7012,9 @@
 "apC" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/green,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/vest,
 /obj/item/clothing/head/helmet/swat,
 /obj/item/gun/energy/laser,
@@ -7031,7 +7041,9 @@
 "apF" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/green,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/melee/energy/axe,
 /turf/open/fixed/floor{
 	icon_state = "vault";
@@ -7930,7 +7942,9 @@
 "arQ" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/green,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/tdome/green,
 /obj/item/clothing/head/helmet/thunderdome,
 /obj/item/melee/baton/loaded,
@@ -11111,16 +11125,24 @@
 "aze" = (
 /obj/structure/table/steel_reinforced,
 /obj/item/clothing/under/cheongsam,
-/obj/item/clothing/under/hosformalmale,
-/obj/item/clothing/under/hosformalfem,
+/obj/item/clothing/under{
+	variant = "hosformalmale"
+	},
+/obj/item/clothing/under{
+	variant = "hosformalfem"
+	},
 /obj/item/clothing/under/harness,
 /obj/item/clothing/under/gladiator,
 /obj/item/clothing/under/ert,
 /obj/item/clothing/under/schoolgirl,
-/obj/item/clothing/under/redcoat,
+/obj/item/clothing/under{
+	variant = "redcoat"
+	},
 /obj/item/clothing/under/sexymime,
 /obj/item/clothing/under/sexyclown,
-/obj/item/clothing/under/soviet,
+/obj/item/clothing/under{
+	variant = "soviet"
+	},
 /obj/item/clothing/under/space,
 /obj/item/clothing/under/swimsuit/stripper/mankini,
 /obj/item/clothing/under/suit_jacket/female,
@@ -11129,12 +11151,20 @@
 /obj/item/clothing/under/syndicate/combat,
 /obj/item/clothing/under/syndicate/tacticool,
 /obj/item/clothing/under/syndicate/tacticool,
-/obj/item/clothing/under/dress/sailordress,
-/obj/item/clothing/under/dress/redeveninggown,
-/obj/item/clothing/under/dress/dress_saloon,
+/obj/item/clothing/under/dress{
+	variant = "sailordress"
+	},
+/obj/item/clothing/under/dress{
+	variant = "redeveninggown"
+	},
+/obj/item/clothing/under/dress{
+	variant = "dress_saloon"
+	},
 /obj/item/clothing/under/dress/blacktango,
 /obj/item/clothing/under/dress/blacktango/alt,
-/obj/item/clothing/under/dress/dress_orange,
+/obj/item/clothing/under/dress{
+	variant = "dress_orange"
+	},
 /obj/item/clothing/under/dress/maid/janitor,
 /turf/simulated/shuttle/floor/black,
 /area/shuttle/merchant/home)
@@ -11515,9 +11545,15 @@
 /obj/item/clothing/accessory/storage/brown_vest,
 /obj/item/clothing/accessory/storage/brown_vest,
 /obj/item/clothing/accessory/scarf/white,
-/obj/item/clothing/accessory/scarf/lightblue,
-/obj/item/clothing/accessory/scarf/red,
-/obj/item/clothing/accessory/scarf/purple,
+/obj/item/clothing/accessory/scarf{
+	variant = "lightblue"
+	},
+/obj/item/clothing/accessory/scarf{
+	variant = "red"
+	},
+/obj/item/clothing/accessory/scarf{
+	variant = "purple"
+	},
 /obj/item/clothing/accessory/armband/science,
 /obj/item/clothing/accessory/armband/med,
 /obj/item/clothing/accessory/armband/engine,

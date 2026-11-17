@@ -136,7 +136,7 @@
 
 /datum/gear/uniform/suit/amish  //amish
 	display_name = "suit, amish"
-	path = /obj/item/clothing/under/sl_suit
+	path = VARIANT(/obj/item/clothing/under/sl_suit)
 
 /datum/gear/uniform/suit/gentle
 	display_name = "suit, gentlemen"
@@ -181,7 +181,7 @@
 
 /datum/gear/uniform/oldwoman
 	display_name = "old woman attire"
-	path = /obj/item/clothing/under/oldwoman
+	path = VARIANT(/obj/item/clothing/under/oldwoman)
 
 /datum/gear/uniform/sundress
 	display_name = "sundress"
@@ -193,11 +193,11 @@
 
 /datum/gear/uniform/dress_fire
 	display_name = "flame dress"
-	path = /obj/item/clothing/under/dress/dress_fire
+	path = VARIANT(/obj/item/clothing/under/dress/dress_fire)
 
 /datum/gear/uniform/shortplaindress
 	display_name = "plain dress"
-	path = /obj/item/clothing/under/dress/white3
+	path = VARIANT(/obj/item/clothing/under/dress/white3)
 
 /datum/gear/uniform/shortplaindress/New()
 	..()
@@ -229,7 +229,7 @@
 
 /datum/gear/uniform/reddress
 	display_name = "red dress with belt"
-	path = /obj/item/clothing/under/dress/darkred
+	path = VARIANT(/obj/item/clothing/under/dress/darkred)
 
 /datum/gear/uniform/whitewedding
 	display_name= "white wedding dress"
@@ -241,11 +241,11 @@
 
 /datum/gear/uniform/dresses
 	display_name = "sailor dress"
-	path = /obj/item/clothing/under/dress/sailordress
+	path = VARIANT(/obj/item/clothing/under/dress/sailordress)
 
 /datum/gear/uniform/dresses/eveninggown
 	display_name = "red evening gown"
-	path = /obj/item/clothing/under/dress/redeveninggown
+	path = VARIANT(/obj/item/clothing/under/dress/redeveninggown)
 
 /datum/gear/uniform/dresses/maid
 	display_name = "maid uniform selection"
@@ -264,7 +264,7 @@
 
 /datum/gear/uniform/frontier
 	display_name = "outfit, frontier"
-	path = 	/obj/item/clothing/under/frontier
+	path = 	VARIANT(/obj/item/clothing/under/frontier)
 
 /datum/gear/uniform/yogapants
 	display_name = "yoga pants"
@@ -288,15 +288,15 @@
 
 /datum/gear/uniform/bathrobe
 	display_name = "bathrobe"
-	path = /obj/item/clothing/under/bathrobe
+	path = VARIANT(/obj/item/clothing/under/bathrobe)
 
 /datum/gear/uniform/flamenco
 	display_name = "flamenco dress"
-	path = /obj/item/clothing/under/dress/flamenco
+	path = VARIANT(/obj/item/clothing/under/dress/flamenco)
 
 /datum/gear/uniform/westernbustle
 	display_name = "western bustle"
-	path = /obj/item/clothing/under/dress/westernbustle
+	path = VARIANT(/obj/item/clothing/under/dress/westernbustle)
 
 /datum/gear/uniform/circuitry
 	display_name = "jumpsuit, circuitry (empty)"
@@ -331,7 +331,7 @@
 
 /datum/gear/uniform/ascetic
 	display_name = "plain ascetic garb"
-	path = /obj/item/clothing/under/ascetic
+	path = VARIANT(/obj/item/clothing/under/ascetic)
 
 /datum/gear/uniform/pleated
 	display_name = "pleated skirt"
@@ -343,7 +343,7 @@
 
 /datum/gear/uniform/lilacdress
 	display_name = "lilac dress"
-	path = /obj/item/clothing/under/dress/lilacdress
+	path = VARIANT(/obj/item/clothing/under/dress/lilacdress)
 
 /datum/gear/uniform/polka
 	display_name = "polka dot dress"
@@ -355,19 +355,19 @@
 
 /datum/gear/uniform/cropdress
 	display_name = "crop dress"
-	path = /obj/item/clothing/under/dress/cropdress
+	path = VARIANT(/obj/item/clothing/under/dress/cropdress)
 
 /datum/gear/uniform/vneckdress
 	display_name = "v-neck dress"
-	path = /obj/item/clothing/under/dress/vneck
+	path = VARIANT(/obj/item/clothing/under/dress/vneck)
 
 /datum/gear/uniform/bluedress
 	display_name = "blue dress"
-	path = /obj/item/clothing/under/dress/bluedress
+	path = VARIANT(/obj/item/clothing/under/dress/bluedress)
 
 /datum/gear/uniform/wench
 	display_name = "wench's dress"
-	path = /obj/item/clothing/under/dress/wench
+	path = VARIANT(/obj/item/clothing/under/dress/wench)
 
 /datum/gear/uniform/littleblackdress
 	display_name = "little black dress"
@@ -383,11 +383,11 @@
 
 /datum/gear/uniform/haltertop
 	display_name = "halter top"
-	path = /obj/item/clothing/under/haltertop
+	path = VARIANT(/obj/item/clothing/under/haltertop)
 
 /datum/gear/uniform/tanktop
 	display_name = "tank top"
-	path = /obj/item/clothing/under/tanktop
+	path = VARIANT(/obj/item/clothing/under/tanktop)
 
 /datum/gear/uniform/revealingdress
 	display_name = "revealing dress"
@@ -395,7 +395,7 @@
 
 /datum/gear/uniform/rippedpunk
 	display_name = "ripped punk jeans"
-	path = /obj/item/clothing/under/rippedpunk
+	path = VARIANT(/obj/item/clothing/under/rippedpunk)
 
 /datum/gear/uniform/gothic
 	display_name = "gothic dress"
@@ -407,11 +407,11 @@
 
 /datum/gear/uniform/pentagram
 	display_name = "pentagram dress"
-	path = /obj/item/clothing/under/dress/pentagram
+	path = VARIANT(/obj/item/clothing/under/dress/pentagram)
 
 /datum/gear/uniform/yellowswoop
 	display_name = "yellow swooped dress"
-	path = /obj/item/clothing/under/dress/yellowswoop
+	path = VARIANT(/obj/item/clothing/under/dress/yellowswoop)
 
 /datum/gear/uniform/greenasym
 	display_name = "green asymmetrical jumpsuit"
@@ -435,19 +435,19 @@
 
 /datum/gear/uniform/blackngold
 	display_name = "black and gold gown"
-	path = /obj/item/clothing/under/blackngold
+	path = VARIANT(/obj/item/clothing/under/blackngold)
 
 /datum/gear/uniform/sheerblue
 	display_name = "sheer blue dress"
-	path = /obj/item/clothing/under/sheerblue
+	path = VARIANT(/obj/item/clothing/under/sheerblue)
 
 /datum/gear/uniform/disheveled
 	display_name = "disheveled suit"
-	path = /obj/item/clothing/under/disheveled
+	path = VARIANT(/obj/item/clothing/under/disheveled)
 
 /datum/gear/uniform/orangedress
 	display_name = "orange dress"
-	path = /obj/item/clothing/under/dress/dress_orange
+	path = VARIANT(/obj/item/clothing/under/dress/dress_orange)
 
 /datum/gear/uniform/sundress_pink
 	display_name = "pink sundress"
@@ -475,7 +475,7 @@
 
 /datum/gear/uniform/gothic2
 	display_name = "lacey gothic dress"
-	path = /obj/item/clothing/under/dress/gothic2
+	path = VARIANT(/obj/item/clothing/under/dress/gothic2)
 
 /datum/gear/uniform/flowerskirt
 	display_name = "flower skirt"
@@ -487,11 +487,11 @@
 
 /datum/gear/uniform/countess
 	display_name = "countess dress"
-	path = /obj/item/clothing/under/dress/countess
+	path = VARIANT(/obj/item/clothing/under/dress/countess)
 
 /datum/gear/uniform/verglasdress
 	display_name = "verglas dress"
-	path = /obj/item/clothing/under/dress/verglasdress
+	path = VARIANT(/obj/item/clothing/under/dress/verglasdress)
 
 /datum/gear/uniform/fashionminiskirt
 	display_name = "fashionable miniskirt"
@@ -503,11 +503,11 @@
 
 /datum/gear/uniform/tourist_1
 	display_name = "tourist outfit, white"
-	path = /obj/item/clothing/under/tourist_1
+	path = VARIANT(/obj/item/clothing/under/tourist_1)
 
 /datum/gear/uniform/tourist_2
 	display_name = "tourist outfit, blue"
-	path = /obj/item/clothing/under/tourist_2
+	path = VARIANT(/obj/item/clothing/under/tourist_2)
 
 /datum/gear/uniform/cowboy_outfits
 	display_name = "cowboy outfit selection"
@@ -525,7 +525,7 @@
 
 /datum/gear/uniform/hightrousers
 	display_name = "high-waisted trousers"
-	path = /obj/item/clothing/under/dress/hightrousers
+	path = VARIANT(/obj/item/clothing/under/dress/hightrousers)
 
 /*
  * 80s
@@ -551,11 +551,11 @@
 //leotards
 /datum/gear/uniform/leotard
 	display_name = "leotard, black"
-	path = /obj/item/clothing/under/leotard
+	path = VARIANT(/obj/item/clothing/under/leotard)
 
 /datum/gear/uniform/leotardcolor
 	display_name = "leotard, colorable"
-	path = /obj/item/clothing/under/leotardcolor
+	path = VARIANT(/obj/item/clothing/under/leotardcolor)
 
 /datum/gear/uniform/leotardcolor/New()
 	..()
@@ -622,16 +622,16 @@
 //half-moon outfit
 /datum/gear/uniform/halfmoon
 	display_name = "half moon outfit"
-	path = /obj/item/clothing/under/half_moon
+	path = VARIANT(/obj/item/clothing/under/half_moon)
 
 //fiend clothes
 /datum/gear/uniform/fiendsuit
 	display_name = "fiendish suit"
-	path = /obj/item/clothing/under/fiendsuit
+	path = VARIANT(/obj/item/clothing/under/fiendsuit)
 
 /datum/gear/uniform/fienddress
 	display_name = "fiendish dress"
-	path = /obj/item/clothing/under/fienddress
+	path = VARIANT(/obj/item/clothing/under/fienddress)
 
 //tabard dresses
 /datum/gear/uniform/tabarddress
@@ -650,17 +650,17 @@
 
 /datum/gear/uniform/bunnysuit
 	display_name = "bunny suit selection, colorable"
-	path = /obj/item/clothing/under/bunnysuit
+	path = VARIANT(/obj/item/clothing/under/bunnysuit)
 
 /datum/gear/uniform/bunnysuit/New()
 	..()
 	var/list/bunnysuit = list(
-	"bunnysuit"=/obj/item/clothing/under/bunnysuit,
-	"maid bunnysuit"=/obj/item/clothing/under/bunnysuit_maid,
-	"reverse bunnysuit"=/obj/item/clothing/under/reverse_bunnysuit,
-	"maid reverse bunnysuit"=/obj/item/clothing/under/reverse_bunnysuit_maid,
-	"reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop,
-	"maid reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop_maid
+	"bunnysuit"=VARIANT(/obj/item/clothing/under/bunnysuit),
+	"maid bunnysuit"=VARIANT(/obj/item/clothing/under/bunnysuit_maid),
+	"reverse bunnysuit"=VARIANT(/obj/item/clothing/under/reverse_bunnysuit),
+	"maid reverse bunnysuit"=VARIANT(/obj/item/clothing/under/reverse_bunnysuit_maid),
+	"reverse bunnysuit, no legs"=VARIANT(/obj/item/clothing/under/reverse_bunnytop),
+	"maid reverse bunnysuit, no legs"=VARIANT(/obj/item/clothing/under/reverse_bunnytop_maid)
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(bunnysuit))
 	legacy_colour_index = length(gear_tweaks) + 1
@@ -793,20 +793,20 @@ Talon jumpsuit
 	..()
 	var/list/skirts = list(
 	"casual skirt"=/obj/item/clothing/under/skirt/colorable,
-	"puffy skirt"=/obj/item/clothing/under/skirt/colorable/puffy,
-	"skater skirt"=/obj/item/clothing/under/skirt/colorable/skater,
+	"puffy skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/puffy),
+	"skater skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/skater),
 	"pleated skirt"=/obj/item/clothing/under/skirt/colorable/pleated,
 	"pleated skirt, alt"=/obj/item/clothing/under/skirt/colorable/pleated/alt,
-	"pencil skirt"=/obj/item/clothing/under/skirt/colorable/pencil,
-	"plaid skirt"=/obj/item/clothing/under/skirt/colorable/plaid,
-	"tube skirt"=/obj/item/clothing/under/skirt/colorable/tube,
-	"long skirt"=/obj/item/clothing/under/skirt/colorable/long,
-	"high skirt"=/obj/item/clothing/under/skirt/colorable/high,
-	"swept skirt"=/obj/item/clothing/under/skirt/colorable/swept,
-	"jumper skirt"=/obj/item/clothing/under/skirt/colorable/jumper,
-	"jumper dress"=/obj/item/clothing/under/skirt/colorable/jumperdress,
-	"short skirt"=/obj/item/clothing/under/skirt/colorable/short,
-	"short skirt (split)"=/obj/item/clothing/under/skirt/colorable/short_split
+	"pencil skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/pencil),
+	"plaid skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/plaid),
+	"tube skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/tube),
+	"long skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/long),
+	"high skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/high),
+	"swept skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/swept),
+	"jumper skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/jumper),
+	"jumper dress"=VARIANT(/obj/item/clothing/under/skirt/colorable/jumperdress),
+	"short skirt"=VARIANT(/obj/item/clothing/under/skirt/colorable/short),
+	"short skirt (split)"=VARIANT(/obj/item/clothing/under/skirt/colorable/short_split)
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(skirts))
 	legacy_colour_index = length(gear_tweaks) + 1
@@ -815,13 +815,13 @@ Talon jumpsuit
 
 /datum/gear/uniform/stripeddungarees
 	display_name = "striped dungarees"
-	path = /obj/item/clothing/under/stripeddungarees
+	path = VARIANT(/obj/item/clothing/under/stripeddungarees)
 
 // recolorable flame dress
 
 /datum/gear/uniform/cdress_fire
 	display_name = "flame dress, colorable"
-	path = /obj/item/clothing/under/dress/cdress_fire
+	path = VARIANT(/obj/item/clothing/under/dress/cdress_fire)
 
 /datum/gear/uniform/cdress_fire/New()
 	..()
@@ -830,7 +830,7 @@ Talon jumpsuit
 // recolorable yellow dress
 /datum/gear/uniform/cbridesmaid
 	display_name = "fancy dress, colorable"
-	path = /obj/item/clothing/under/dress/cbridesmaid
+	path = VARIANT(/obj/item/clothing/under/dress/cbridesmaid)
 
 /datum/gear/uniform/cbridesmaid/New()
 	..()
@@ -839,7 +839,7 @@ Talon jumpsuit
 // recolorable orange swoop dress
 /datum/gear/uniform/cswoopdress
 	display_name = "swoop dress, recolorable"
-	path = /obj/item/clothing/under/dress/cswoopdress
+	path = VARIANT(/obj/item/clothing/under/dress/cswoopdress)
 
 /datum/gear/uniform/cswoopdress/New()
 	..()
@@ -849,4 +849,4 @@ Talon jumpsuit
 /datum/gear/uniform/waiter
 	display_name = "waiter's outfit"
 	description = "It's a very smart uniform with a special pocket for tip."
-	path = /obj/item/clothing/under/waiter
+	path = VARIANT(/obj/item/clothing/under/waiter)

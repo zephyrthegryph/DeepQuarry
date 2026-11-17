@@ -20,7 +20,7 @@
 		"corporate"=/obj/item/clothing/under/rank/security/corp,
 		"formal, navy"=/obj/item/clothing/under/rank/security/navyblue,
 		"formal, tan"=/obj/item/clothing/under/rank/security/tan,
-		"Proxima Centauri Risk Control"=/obj/item/clothing/under/corp/pcrc,
+		"Proxima Centauri Risk Control"=VARIANT(/obj/item/clothing/under/corp/pcrc),
 		"TG&C jumpsuit"=/obj/item/clothing/under/rank/neo_sec_red,
 		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_sec_red_skirt,
 		"TG&C blue jumpsuit"=/obj/item/clothing/under/rank/neo_sec_blue,

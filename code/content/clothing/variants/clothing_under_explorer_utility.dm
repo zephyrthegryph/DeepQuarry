@@ -9,8 +9,8 @@ GLOBAL_LIST_INIT(dq_variants_under_explorer_utility, list(
 
 CAPABILITIES(/obj/item/clothing/under/explorer/utility)
 	configure(atom_rules(armor_spec = "bio=10;rad=10"))
-	variants(nameof(variant), PROC_REF(variant_table))
+	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).
-/obj/item/clothing/under/explorer/utility/proc/variant_table()
+/obj/item/clothing/under/explorer/utility/proc/own_variant_table()
 	return GLOB.dq_variants_under_explorer_utility

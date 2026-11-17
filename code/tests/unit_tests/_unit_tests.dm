@@ -257,6 +257,7 @@
 #include "dq_lifeform_per_type_tests.dm"
 #include "dq_lifeform_variants_tests.dm"
 #include "dq_variant_alias_tests.dm"
+#include "dq_variant_clothing_tests.dm"
 #include "dq_variant_gear_tests.dm"
 #include "dq_variant_persistence_tests.dm"
 #include "dq_variant_refs_tests.dm"

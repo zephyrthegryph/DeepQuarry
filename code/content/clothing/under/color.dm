@@ -62,11 +62,6 @@
 	icon_state = "yellow"
 	rolled_sleeves = 0
 
-/obj/item/clothing/under/psyche
-	name = "psychedelic jumpsuit"
-	desc = "Groovy!"
-	icon_state = "psyche"
-
 /obj/item/clothing/under/color/lightblue
 	name = "lightblue jumpsuit"
 	desc = "A light blue jumpsuit."

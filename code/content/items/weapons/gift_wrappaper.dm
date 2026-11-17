@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/a_gift)
 		/obj/item/paicard,
 		/obj/item/instrument/violin,
 		/obj/item/storage/belt/utility/full,
-		/obj/item/clothing/accessory/tie/horrible)
+		VARIANT(/obj/item/clothing/accessory/tie/horrible))
 
 	if(!ispath(gift_type,/obj/item))	return OP_OK
 

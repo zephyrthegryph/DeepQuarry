@@ -15,8 +15,8 @@
 /datum/decl/hierarchy/outfit/job/medical/cmo
 	name = OUTFIT_JOB_NAME(JOB_CHIEF_MEDICAL_OFFICER)
 	uniform = /obj/item/clothing/under/rank/chief_medical_officer
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/cmo
-	shoes = /obj/item/clothing/shoes/brown
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmo)
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	l_hand = /obj/item/storage/firstaid/adv
 	r_pocket = /obj/item/healthanalyzer
 	id_type = /obj/item/card/id/medical/head
@@ -70,7 +70,7 @@
 /datum/decl/hierarchy/outfit/job/medical/chemist
 	name = OUTFIT_JOB_NAME(JOB_CHEMIST)
 	uniform = /obj/item/clothing/under/rank/chemist
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/chemist
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/chemist)
 	backpack = /obj/item/storage/backpack/chemistry
 	satchel_one = /obj/item/storage/backpack/satchel/chem
 	sports_bag = /obj/item/storage/backpack/sport/chem
@@ -80,7 +80,7 @@
 /datum/decl/hierarchy/outfit/job/medical/geneticist
 	name = OUTFIT_JOB_NAME(JOB_GENETICIST)
 	uniform = /obj/item/clothing/under/rank/geneticist
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/genetics
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/genetics)
 	backpack = /obj/item/storage/backpack/genetics
 	r_pocket = /obj/item/flashlight/pen
 	satchel_one = /obj/item/storage/backpack/satchel/gen
@@ -118,7 +118,7 @@
 /datum/decl/hierarchy/outfit/job/medical/paramedic/emt
 	name = OUTFIT_JOB_NAME(JOB_ALT_EMERGENCY_MEDICAL_TECHNICIAN)
 	uniform = /obj/item/clothing/under/rank/medical/paramedic_alt
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/emt
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/emt)
 
 
 /datum/decl/hierarchy/outfit/job/medical/doctor/virologist

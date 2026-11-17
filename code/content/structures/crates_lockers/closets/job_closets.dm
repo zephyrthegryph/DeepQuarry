@@ -32,11 +32,11 @@
 		/obj/item/clothing/head/pin/flower/blue,
 		/obj/item/clothing/head/pin/pink,
 		/obj/item/clothing/head/pin/magnetic,
-		/obj/item/clothing/under/sl_suit = 2,
+		VARIANT(/obj/item/clothing/under/sl_suit) = 2,
 		/obj/item/clothing/under/rank/bartender = 2,
 		/obj/item/clothing/under/rank/bartender/skirt,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/bar,
-		/obj/item/clothing/under/dress/dress_saloon,
+		VARIANT(/obj/item/clothing/under/dress/dress_saloon),
 		/obj/item/clothing/accessory/wcoat = 2,
 		/obj/item/clothing/shoes/black = 2,
 		/obj/item/clothing/shoes/laceup
@@ -52,13 +52,13 @@
 
 	starts_with = list(
 		/obj/item/clothing/under/sundress,
-		/obj/item/clothing/under/waiter = 2,
+		VARIANT(/obj/item/clothing/under/waiter) = 2,
 		/obj/item/radio/headset/service = 2,
 		/obj/item/radio/headset/alt/service = 2,
 		/obj/item/radio/headset/earbud/service = 2,
 		/obj/item/storage/box/mousetraps = 2,
 		/obj/item/clothing/under/rank/chef,
-		/obj/item/clothing/head/chefhat,
+		VARIANT(/obj/item/clothing/head/chefhat),
 		/obj/item/storage/bag/food = 2
 		)
 
@@ -113,7 +113,7 @@
 		/obj/item/clothing/under/lawyer/purpsuit = 2,
 		/obj/item/clothing/under/lawyer/purpsuit/skirt = 2,
 		/obj/item/clothing/suit/storage/toggle/lawyer/purpjacket = 2,
-		/obj/item/clothing/shoes/brown = 2,
+		VARIANT(/obj/item/clothing/shoes/brown) = 2,
 		/obj/item/clothing/shoes/black = 2,
 		/obj/item/clothing/shoes/laceup = 2,
 		/obj/item/clothing/glasses/sunglasses/big = 2,

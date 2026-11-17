@@ -37,7 +37,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/scientist)
 		/obj/item/clothing/under/rank/research_director/dress_rd,
 		/obj/item/clothing/suit/storage/toggle/labcoat,
 		/obj/item/clothing/suit/storage/toggle/labcoat/modern,
-		/obj/item/clothing/suit/storage/toggle/labcoat/rd,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/rd),
 		VARIANT(/obj/item/clothing/under/rank/neo_rd_turtle),
 		VARIANT(/obj/item/clothing/under/rank/neo_rd_turtle_skirt),
 		VARIANT(/obj/item/clothing/under/rank/neo_rd_suit),

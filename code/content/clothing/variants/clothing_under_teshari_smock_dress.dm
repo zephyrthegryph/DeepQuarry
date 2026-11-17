@@ -8,8 +8,8 @@ GLOBAL_LIST_INIT(dq_variants_under_teshari_smock_dress, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/under/teshari/smock/dress)
-	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's
+	variants(nameof(variant), PROC_REF(family_variant_table)) // its own rows replace the parent family's
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).
-/obj/item/clothing/under/teshari/smock/dress/proc/own_variant_table()
+/obj/item/clothing/under/teshari/smock/dress/proc/family_variant_table()
 	return GLOB.dq_variants_under_teshari_smock_dress

@@ -49,7 +49,7 @@ CAPABILITIES(/transformation/stack/leather__gloves)
 
 /transformation/stack/leather__wig
 CAPABILITIES(/transformation/stack/leather__wig)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/head/powdered_wig, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(VARIANT(/obj/item/clothing/head/powdered_wig), 1)),
 		chosen = chosen(title = "wig",
 			subject = /datum/material/leather,
 			build_time = 10 SECONDS,

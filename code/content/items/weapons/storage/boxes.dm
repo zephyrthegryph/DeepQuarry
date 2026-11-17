@@ -732,7 +732,7 @@ CAPABILITIES(/obj/item/storage/box/altevian_ammo)
 	starts_with = list(
 	/obj/item/clothing/mask/gas/sexymime,
 	/obj/item/clothing/under/sexymime,
-	/obj/item/clothing/shoes/mime,
+	VARIANT(/obj/item/clothing/shoes/mime),
 	/obj/item/clothing/head/soft/mime
 	)
 

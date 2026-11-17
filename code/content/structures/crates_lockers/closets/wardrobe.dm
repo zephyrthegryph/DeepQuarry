@@ -43,7 +43,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/red)
 	starts_with = list(
 		/obj/item/clothing/head/det = 2,
 		/obj/item/clothing/head/det/grey = 2,
-		/obj/item/clothing/shoes/brown = 2,
+		VARIANT(/obj/item/clothing/shoes/brown) = 2,
 		/obj/item/clothing/shoes/laceup = 2,
 		/obj/item/clothing/under/det = 2,
 		/obj/item/clothing/under/det/waistcoat = 2,
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/red)
 
 	starts_with = list(
 		/obj/item/clothing/under/color/pink = 3,
-		/obj/item/clothing/shoes/brown = 3)
+		VARIANT(/obj/item/clothing/shoes/brown) = 3)
 
 /obj/structure/closet/wardrobe/pink/empty
 	starts_with = null
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/red)
 
 	starts_with = list(
 		/obj/item/clothing/under/color/green = 3,
-		/obj/item/clothing/shoes/green = 3,
+		VARIANT(/obj/item/clothing/shoes/green) = 3,
 		/obj/item/clothing/head/soft/green = 3,
 		/obj/item/clothing/mask/bandana/green = 3)
 
@@ -178,7 +178,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/red)
 
 	starts_with = list(
 		/obj/item/clothing/under/color/yellow = 3,
-		/obj/item/clothing/shoes/yellow = 3,
+		VARIANT(/obj/item/clothing/shoes/yellow) = 3,
 		/obj/item/clothing/head/soft/yellow = 3,
 		/obj/item/clothing/mask/bandana/gold = 3)
 
@@ -303,7 +303,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/robotics_black)
 		/obj/item/clothing/under/rank/chemist = 2,
 		/obj/item/clothing/under/rank/chemist/skirt = 2,
 		/obj/item/clothing/shoes/white = 2,
-		/obj/item/clothing/suit/storage/toggle/labcoat/chemist = 2,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/chemist) = 2,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/medical/chemist,
 		/obj/item/storage/backpack/chemistry = 2,
 		/obj/item/storage/backpack/satchel/chem = 2,
@@ -318,7 +318,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/robotics_black)
 		/obj/item/clothing/under/rank/geneticist = 2,
 		/obj/item/clothing/under/rank/geneticist/skirt = 2,
 		/obj/item/clothing/shoes/white = 2,
-		/obj/item/clothing/suit/storage/toggle/labcoat/genetics = 2,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/genetics) = 2,
 		/obj/item/storage/backpack/genetics = 2,
 		/obj/item/storage/backpack/satchel/gen = 2)
 
@@ -395,11 +395,11 @@ CAPABILITIES(/obj/structure/closet/wardrobe/robotics_black)
 		/obj/item/clothing/under/skirt/outfit/plaid_blue,
 		/obj/item/clothing/under/skirt/outfit/plaid_red,
 		/obj/item/clothing/under/skirt/outfit/plaid_purple,
-		/obj/item/clothing/shoes/blue,
-		/obj/item/clothing/shoes/yellow,
-		/obj/item/clothing/shoes/green,
-		/obj/item/clothing/shoes/purple,
-		/obj/item/clothing/shoes/red,
+		VARIANT(/obj/item/clothing/shoes/blue),
+		VARIANT(/obj/item/clothing/shoes/yellow),
+		VARIANT(/obj/item/clothing/shoes/green),
+		VARIANT(/obj/item/clothing/shoes/purple),
+		VARIANT(/obj/item/clothing/shoes/red),
 		/obj/item/clothing/shoes/laceup/brown,
 		/obj/item/clothing/under/pants/classicjeans,
 		/obj/item/clothing/under/pants/mustangjeans,
@@ -473,7 +473,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/tactical)
 	closet_appearance = /datum/decl/closet_appearance/wardrobe/suit
 
 	starts_with = list(
-		/obj/item/clothing/under/assistantformal,
+		VARIANT(/obj/item/clothing/under/assistantformal),
 		/obj/item/clothing/under/suit_jacket/charcoal,
 		/obj/item/clothing/under/suit_jacket/charcoal/skirt,
 		/obj/item/clothing/under/suit_jacket/navy,
@@ -484,7 +484,7 @@ CAPABILITIES(/obj/structure/closet/wardrobe/tactical)
 		/obj/item/clothing/under/suit_jacket/checkered/skirt,
 		/obj/item/clothing/under/suit_jacket/tan,
 		/obj/item/clothing/under/suit_jacket/tan/skirt,
-		/obj/item/clothing/under/sl_suit,
+		VARIANT(/obj/item/clothing/under/sl_suit),
 		/obj/item/clothing/under/suit_jacket,
 		/obj/item/clothing/under/suit_jacket/female,
 		/obj/item/clothing/under/suit_jacket/female/skirt,
@@ -517,12 +517,12 @@ CAPABILITIES(/obj/structure/closet/wardrobe/tactical)
 		VARIANT(/obj/item/clothing/under/rank/neo_captain_kilt),
 		VARIANT(/obj/item/clothing/under/rank/neo_captain_blacksuit),
 		VARIANT(/obj/item/clothing/under/rank/neo_commandutil),
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/gloves/captain,
 		/obj/item/clothing/under/dress/dress_cap,
 		/obj/item/storage/backpack/satchel/cap,
 		/obj/item/clothing/head/caphat/formal,
-		/obj/item/clothing/under/captainformal,
+		VARIANT(/obj/item/clothing/under/captainformal),
 		/obj/item/clothing/suit/storage/hooded/wintercoat/captain,
 		/obj/item/clothing/shoes/boots/winter/command,
 		/obj/item/clothing/head/beret/centcom/captain,

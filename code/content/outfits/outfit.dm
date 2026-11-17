@@ -245,7 +245,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	l_pocket = /obj/item/ammo_magazine/s44
 	r_pocket = /obj/item/ammo_magazine/s44
 	r_hand = /obj/item/clothing/accessory/holster/hip
-	l_hand = /obj/item/clothing/accessory/tie/black
+	l_hand = VARIANT(/obj/item/clothing/accessory/tie/black)
 
 	headset = /obj/item/radio/headset/centcom
 	headset_alt = /obj/item/radio/headset/centcom
@@ -290,7 +290,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	head = /obj/item/clothing/head/helmet/combat/imperial
 	shoes =/obj/item/clothing/shoes/leg_guard/combat/imperial
 	gloves = /obj/item/clothing/gloves/arm_guard/combat/imperial
-	uniform = /obj/item/clothing/under/imperial
+	uniform = VARIANT(/obj/item/clothing/under/imperial)
 	mask = /obj/item/clothing/mask/gas/imperial
 	suit = /obj/item/clothing/suit/armor/combat/imperial
 	back = /obj/item/storage/backpack/satchel
@@ -310,7 +310,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	head = /obj/item/clothing/head/helmet/combat/imperial/centurion
 	shoes = /obj/item/clothing/shoes/leg_guard/combat/imperial
 	gloves = /obj/item/clothing/gloves/arm_guard/combat/imperial
-	uniform = /obj/item/clothing/under/imperial
+	uniform = VARIANT(/obj/item/clothing/under/imperial)
 	mask = /obj/item/clothing/mask/gas/imperial
 	suit = /obj/item/clothing/suit/armor/combat/imperial/centurion
 	belt = /obj/item/storage/belt/security/tactical/bandolier

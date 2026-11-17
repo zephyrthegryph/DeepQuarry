@@ -60,9 +60,9 @@
 		VARIANT(/obj/item/clothing/under/rank/neo_hop_turtle),
 		VARIANT(/obj/item/clothing/under/rank/neo_hop_turtle_skirt),
 		/obj/item/clothing/under/rank/neo_gorka/command,
-		/obj/item/clothing/suit/storage/toggle/labcoat/neo_hopformal,
-		/obj/item/clothing/suit/storage/toggle/labcoat/neo_civ_dep,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_hopformal),
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_civ_dep),
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/shoes/black,
 		/obj/item/clothing/shoes/laceup,
 		/obj/item/clothing/shoes/laceup/brown,
@@ -337,11 +337,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/closet/secure_closet/brig, REGISTRY_BRIG_CLOS
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/courtroom
 
 	starts_with = list(
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/paper/Court = 3,
 		/obj/item/pen,
 		/obj/item/clothing/suit/judgerobe,
-		/obj/item/clothing/head/powdered_wig,
+		VARIANT(/obj/item/clothing/head/powdered_wig),
 		/obj/item/storage/briefcase)
 
 
@@ -382,8 +382,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/closet/secure_closet/brig, REGISTRY_BRIG_CLOS
 		/obj/item/clothing/under/rank/neo_hos_parade_blue,
 		/obj/item/clothing/under/rank/neo_hos_parade_blue_fem,
 		/obj/item/clothing/under/rank/neo_gorka/hos,
-		/obj/item/clothing/suit/storage/toggle/labcoat/neo_hos_parade,
-		/obj/item/clothing/suit/storage/toggle/labcoat/neo_hosformal_blue,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_hos_parade),
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_hosformal_blue),
 		/obj/item/clothing/suit/storage/vest/wardencoat/neo_armsco_trench,
 		/obj/item/clothing/head/helmet/HoS/hat/blue,
 		/obj/item/clothing/head/helmet/dermal,
@@ -401,7 +401,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/closet/secure_closet/brig, REGISTRY_BRIG_CLOS
 		/obj/item/clothing/mask/gas/half,
 		/obj/item/clothing/head/helmet/HoS/hat/red,
 		/obj/item/clothing/suit/storage/vest/hoscoat/neo_hos_parade_jacket,
-		/obj/item/clothing/accessory/poncho/roles/cloak/neo_pcloak)
+		VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/neo_pcloak))
 
 /obj/structure/closet/secure_closet/hos2
 	name = "head of security's gear"

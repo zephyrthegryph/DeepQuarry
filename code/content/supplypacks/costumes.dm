@@ -68,20 +68,20 @@
 			/obj/item/clothing/under/suit_jacket/teal,
 			/obj/item/clothing/under/lawyer/purpsuit,
 			VARIANT(/obj/item/clothing/under/rank/mailman),
-			/obj/item/clothing/under/dress/dress_saloon,
+			VARIANT(/obj/item/clothing/under/dress/dress_saloon),
 			/obj/item/clothing/suit/suspenders,
-			/obj/item/clothing/suit/storage/toggle/labcoat/mad,
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/mad),
 			/obj/item/clothing/suit/bio_suit/plaguedoctorsuit,
 			/obj/item/clothing/under/schoolgirl,
-			/obj/item/clothing/under/owl,
-			/obj/item/clothing/under/waiter,
+			VARIANT(/obj/item/clothing/under/owl),
+			VARIANT(/obj/item/clothing/under/waiter),
 			/obj/item/clothing/under/gladiator,
-			/obj/item/clothing/under/soviet,
+			VARIANT(/obj/item/clothing/under/soviet),
 			/obj/item/clothing/under/scratch,
 			/obj/item/clothing/under/wedding/bride_white,
 			/obj/item/clothing/suit/chef,
 			/obj/item/clothing/suit/storage/apron/overalls,
-			/obj/item/clothing/under/redcoat,
+			VARIANT(/obj/item/clothing/under/redcoat),
 			/obj/item/clothing/under/kilt
 			)
 	name = "Costumes crate"
@@ -139,7 +139,7 @@
 			/obj/item/clothing/head/plaguedoctorhat,
 			/obj/item/clothing/head/pirate,
 			/obj/item/clothing/head/hasturhood,
-			/obj/item/clothing/head/powdered_wig,
+			VARIANT(/obj/item/clothing/head/powdered_wig),
 			/obj/item/clothing/head/pin/flower,
 			/obj/item/clothing/head/pin/flower/yellow,
 			/obj/item/clothing/head/pin/flower/blue,
@@ -166,11 +166,11 @@
 			/obj/item/clothing/under/wedding/bride_red,
 			/obj/item/clothing/under/wedding/bride_white,
 			/obj/item/clothing/under/sundress,
-			/obj/item/clothing/under/dress/dress_green,
-			/obj/item/clothing/under/dress/dress_pink,
-			/obj/item/clothing/under/dress/dress_orange,
-			/obj/item/clothing/under/dress/dress_yellow,
-			/obj/item/clothing/under/dress/dress_saloon
+			VARIANT(/obj/item/clothing/under/dress/dress_green),
+			VARIANT(/obj/item/clothing/under/dress/dress_pink),
+			VARIANT(/obj/item/clothing/under/dress/dress_orange),
+			VARIANT(/obj/item/clothing/under/dress/dress_yellow),
+			VARIANT(/obj/item/clothing/under/dress/dress_saloon)
 			)
 
 /datum/supply_pack/costumes/xenowear_vr
@@ -240,17 +240,17 @@
 	num_contained = 4
 	contains = list(
 			/obj/item/clothing/suit/storage/teshari/cloak/standard/white,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/white_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/red_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/orange_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/yellow_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/green_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/blue_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/purple_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/pink_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/brown_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/rainbow,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/orange
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/white_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/red_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/orange_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/yellow_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/green_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/blue_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/purple_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/pink_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/brown_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/rainbow),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/orange)
 			)
 	cost = 40
 	containertype = /obj/structure/closet/crate
@@ -262,18 +262,18 @@
 	num_contained = 4
 	contains = list(
 			/obj/item/clothing/suit/storage/teshari/cloak,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_red,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_orange,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_yellow,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_green,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_blue,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_purple,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_pink,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_brown,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_grey,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_white,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/black_glow,
-			/obj/item/clothing/suit/storage/teshari/cloak/standard/dark_retrowave
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_red),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_orange),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_yellow),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_green),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_blue),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_purple),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_pink),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_brown),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_grey),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_white),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/black_glow),
+			VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/dark_retrowave)
 			)
 	cost = 40
 	containertype = /obj/structure/closet/crate

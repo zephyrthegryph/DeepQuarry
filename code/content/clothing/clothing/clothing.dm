@@ -32,7 +32,7 @@
 /obj/item/clothing/proc/attach_starting_accessories()
 	if(starting_accessories)
 		for(var/T in starting_accessories)
-			var/obj/item/clothing/accessory/tie = new T(src)
+			var/obj/item/clothing/accessory/tie = variant_new(T, src)
 			src.attach_accessory(null, tie)
 
 /// Clothing's own blood and gurgle layers come from the item's look (/obj/item/draw()).

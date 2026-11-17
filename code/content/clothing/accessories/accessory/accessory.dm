@@ -88,51 +88,6 @@ CAPABILITIES(/obj/item/clothing/accessory)
 	icon_state = "bluetie"
 	slot = ACCESSORY_SLOT_TIE
 
-/obj/item/clothing/accessory/tie/red
-	name = "red tie"
-	icon_state = "redtie"
-
-/obj/item/clothing/accessory/tie/blue_clip
-	name = "blue tie with a clip"
-	icon_state = "bluecliptie"
-
-/obj/item/clothing/accessory/tie/blue_long
-	name = "blue long tie"
-	icon_state = "bluelongtie"
-
-/obj/item/clothing/accessory/tie/red_clip
-	name = "red tie with a clip"
-	icon_state = "redcliptie"
-
-/obj/item/clothing/accessory/tie/red_long
-	name = "red long tie"
-	icon_state = "redlongtie"
-
-/obj/item/clothing/accessory/tie/black
-	name = "black tie"
-	icon_state = "blacktie"
-
-/obj/item/clothing/accessory/tie/darkgreen
-	name = "dark green tie"
-	icon_state = "dgreentie"
-
-/obj/item/clothing/accessory/tie/yellow
-	name = "yellow tie"
-	icon_state = "yellowtie"
-
-/obj/item/clothing/accessory/tie/navy
-	name = "navy tie"
-	icon_state = "navytie"
-
-/obj/item/clothing/accessory/tie/white
-	name = "white tie"
-	icon_state = "whitetie"
-
-/obj/item/clothing/accessory/tie/horrible
-	name = "horrible tie"
-	desc = "A neosilk clip-on tie. This one is disgusting."
-	icon_state = "horribletie"
-
 /obj/item/clothing/accessory/bowtie
 	name = "red bow tie"
 	desc = "Snazzy!"
@@ -238,57 +193,9 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	icon_state = "greenscarf"
 	slot = ACCESSORY_SLOT_DECOR
 
-/obj/item/clothing/accessory/scarf/red
-	name = "red scarf"
-	icon_state = "redscarf"
-
-/obj/item/clothing/accessory/scarf/darkblue
-	name = "dark blue scarf"
-	icon_state = "darkbluescarf"
-
-/obj/item/clothing/accessory/scarf/purple
-	name = "purple scarf"
-	icon_state = "purplescarf"
-
-/obj/item/clothing/accessory/scarf/yellow
-	name = "yellow scarf"
-	icon_state = "yellowscarf"
-
-/obj/item/clothing/accessory/scarf/orange
-	name = "orange scarf"
-	icon_state = "orangescarf"
-
-/obj/item/clothing/accessory/scarf/lightblue
-	name = "light blue scarf"
-	icon_state = "lightbluescarf"
-
 /obj/item/clothing/accessory/scarf/white
 	name = "white scarf"
 	icon_state = "whitescarf"
-
-/obj/item/clothing/accessory/scarf/black
-	name = "black scarf"
-	icon_state = "blackscarf"
-
-/obj/item/clothing/accessory/scarf/zebra
-	name = "zebra scarf"
-	icon_state = "zebrascarf"
-
-/obj/item/clothing/accessory/scarf/christmas
-	name = "christmas scarf"
-	icon_state = "christmasscarf"
-
-/obj/item/clothing/accessory/scarf/stripedred
-	name = "striped red scarf"
-	icon_state = "stripedredscarf"
-
-/obj/item/clothing/accessory/scarf/stripedgreen
-	name = "striped green scarf"
-	icon_state = "stripedgreenscarf"
-
-/obj/item/clothing/accessory/scarf/stripedblue
-	name = "striped blue scarf"
-	icon_state = "stripedbluescarf"
 
 /obj/item/clothing/accessory/scarf/teshari/neckscarf
 	name = "small neckscarf"
@@ -439,12 +346,6 @@ CAPABILITIES(/obj/item/clothing/accessory/antediluvian/loincloth)
 
 //The cloaks below belong to this _vr file but their sprites are contained in non-_vr icon files due to
 //the way the poncho/cloak equipped() proc works. Sorry for the inconvenience
-/obj/item/clothing/accessory/poncho/roles/cloak/antediluvian
-	name = "antediluvian cloak"
-	desc = "A regal looking cloak of white with specks of gold woven into the fabric."
-	icon_state = "antediluvian_cloak"
-	item_state = "antediluvian_cloak"
-
 //Other clothes that I'm too lazy to port to Polaris
 /obj/item/clothing/accessory/poncho/roles/cloak/chapel
 	name = "bishop's cloak"

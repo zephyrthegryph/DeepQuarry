@@ -20,15 +20,15 @@
 
 /datum/gear/shoes/sneakerspurple
 	display_name = "sneakers, purple"
-	path = /obj/item/clothing/shoes/sneakerspurple
+	path = VARIANT(/obj/item/clothing/shoes/sneakerspurple)
 
 /datum/gear/shoes/sneakersblue
 	display_name = "sneakers, blue"
-	path = /obj/item/clothing/shoes/sneakersblue
+	path = VARIANT(/obj/item/clothing/shoes/sneakersblue)
 
 /datum/gear/shoes/sneakersred
 	display_name = "sneakers, red"
-	path = /obj/item/clothing/shoes/sneakersred
+	path = VARIANT(/obj/item/clothing/shoes/sneakersred)
 
 /datum/gear/shoes/jackboots
 	display_name = "jackboots"
@@ -72,11 +72,11 @@
 
 /datum/gear/shoes/blue
 	display_name = "shoes, blue"
-	path = /obj/item/clothing/shoes/blue
+	path = VARIANT(/obj/item/clothing/shoes/blue)
 
 /datum/gear/shoes/brown
 	display_name = "shoes, brown"
-	path = /obj/item/clothing/shoes/brown
+	path = VARIANT(/obj/item/clothing/shoes/brown)
 
 /datum/gear/shoes/lacey
 	display_name = "shoes, oxford selection"
@@ -92,7 +92,7 @@
 
 /datum/gear/shoes/green
 	display_name = "shoes, green"
-	path = /obj/item/clothing/shoes/green
+	path = VARIANT(/obj/item/clothing/shoes/green)
 
 /datum/gear/shoes/orange
 	display_name = "shoes, orange"
@@ -100,15 +100,15 @@
 
 /datum/gear/shoes/purple
 	display_name = "shoes, purple"
-	path = /obj/item/clothing/shoes/purple
+	path = VARIANT(/obj/item/clothing/shoes/purple)
 
 /datum/gear/shoes/rainbow
 	display_name = "shoes, rainbow"
-	path = /obj/item/clothing/shoes/rainbow
+	path = VARIANT(/obj/item/clothing/shoes/rainbow)
 
 /datum/gear/shoes/red
 	display_name = "shoes, red"
-	path = /obj/item/clothing/shoes/red
+	path = VARIANT(/obj/item/clothing/shoes/red)
 
 /datum/gear/shoes/white
 	display_name = "shoes, white"
@@ -116,7 +116,7 @@
 
 /datum/gear/shoes/yellow
 	display_name = "shoes, yellow"
-	path = /obj/item/clothing/shoes/yellow
+	path = VARIANT(/obj/item/clothing/shoes/yellow)
 
 /datum/gear/shoes/hitops/
 	display_name = "high-top selection"
@@ -132,7 +132,7 @@
 
 /datum/gear/shoes/flipflops
 	display_name = "flip flops"
-	path = /obj/item/clothing/shoes/flipflop
+	path = VARIANT(/obj/item/clothing/shoes/flipflop)
 
 /datum/gear/shoes/flipflops/New()
 	..()
@@ -140,7 +140,7 @@
 
 /datum/gear/shoes/athletic
 	display_name = "athletic shoes"
-	path = /obj/item/clothing/shoes/athletic
+	path = VARIANT(/obj/item/clothing/shoes/athletic)
 
 /datum/gear/shoes/athletic/New()
 	..()
@@ -148,7 +148,7 @@
 
 /datum/gear/shoes/skater
 	display_name = "skater shoes"
-	path = /obj/item/clothing/shoes/skater
+	path = VARIANT(/obj/item/clothing/shoes/skater)
 
 /datum/gear/shoes/skater/New()
 	..()
@@ -202,7 +202,7 @@
 
 /datum/gear/shoes/heels
 	display_name = "high heels"
-	path = /obj/item/clothing/shoes/heels
+	path = VARIANT(/obj/item/clothing/shoes/heels)
 
 /datum/gear/shoes/heels/New()
 	..()
@@ -261,7 +261,7 @@
 
 /datum/gear/shoes/ballet
 	display_name = "pointe shoes"
-	path = /obj/item/clothing/shoes/ballet
+	path = VARIANT(/obj/item/clothing/shoes/ballet)
 
 /datum/gear/shoes/ballet/New()
 	..()
@@ -273,7 +273,7 @@
 
 /datum/gear/shoes/sandals
 	display_name = "sandals, colorable"
-	path = /obj/item/clothing/shoes/sandals
+	path = VARIANT(/obj/item/clothing/shoes/sandals)
 
 /datum/gear/shoes/sandals/New()
 	..()
@@ -293,7 +293,7 @@
 
 /datum/gear/shoes/antediluvian
 	display_name = "legwraps, antediluvian"
-	path = /obj/item/clothing/shoes/antediluvian
+	path = VARIANT(/obj/item/clothing/shoes/antediluvian)
 
 /datum/gear/shoes/flats/alt
 	display_name = "flats, alt"
@@ -301,7 +301,7 @@
 
 /datum/gear/shoes/sandals_elegant
 	display_name = "sandals, elegant"
-	path = /obj/item/clothing/shoes/sandals_elegant
+	path = VARIANT(/obj/item/clothing/shoes/sandals_elegant)
 
 /datum/gear/shoes/sandals_elegant/New()
 	..()

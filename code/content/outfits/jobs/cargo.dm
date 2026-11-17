@@ -8,7 +8,7 @@
 /datum/decl/hierarchy/outfit/job/cargo/qm
 	name = OUTFIT_JOB_NAME("Cargo")
 	uniform = /obj/item/clothing/under/rank/cargo
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	glasses = /obj/item/clothing/glasses/sunglasses
 	l_hand = /obj/item/clipboard
 	id_type = /obj/item/card/id/cargo/head
@@ -41,6 +41,6 @@
 /datum/decl/hierarchy/outfit/job/cargo/cargo_tech/mailman
 	name = OUTFIT_JOB_NAME(JOB_ALT_MAILMAN)
 	uniform = /obj/item/clothing/under/rank/mailman2
-	head = /obj/item/clothing/head/mailman2
+	head = VARIANT(/obj/item/clothing/head/mailman2)
 	pda_slot = SLOT_ID_POCKET_L
 	backpack_contents = list(/obj/item/storage/bag/mail = 1, /obj/item/mail_scanner = 1)

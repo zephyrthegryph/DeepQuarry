@@ -38,6 +38,7 @@
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	variants(nameof(variant), PROC_REF(variant_table))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN)))
 	fits_as(FIT_NO_TESHARI_VOX)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))

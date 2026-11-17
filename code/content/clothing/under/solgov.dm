@@ -420,7 +420,7 @@ CAPABILITIES(/obj/item/clothing/under/solgov/service)
 	desc = "The service uniform of the USDF Fleet, made from immaculate white fabric."
 	icon_state = "whiteservice"
 	worn_state = "whiteservice"
-	starting_accessories = list(/obj/item/clothing/accessory/tie/navy)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/navy))
 
 /obj/item/clothing/under/solgov/service/fleet/skirt
 	name = "fleet service skirt"
@@ -433,7 +433,7 @@ CAPABILITIES(/obj/item/clothing/under/solgov/service)
 	desc = "The service uniform of the USDF Marines. Slimming."
 	icon_state = "greenservice"
 	worn_state = "greenservice"
-	starting_accessories = list(/obj/item/clothing/accessory/tie/darkgreen)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/darkgreen))
 
 /obj/item/clothing/under/solgov/service/army/skirt
 	name = "marine service skirt"
@@ -446,7 +446,7 @@ CAPABILITIES(/obj/item/clothing/under/solgov/service)
 	desc = "The service uniform of the USDF Marines. Slimming and stylish."
 	icon_state = "greenservice_com"
 	worn_state = "greenservice_com"
-	starting_accessories = list(/obj/item/clothing/accessory/tie/darkgreen)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/darkgreen))
 
 /obj/item/clothing/under/solgov/service/army/command/skirt
 	name = "marine officer's service skirt"
@@ -555,13 +555,6 @@ CAPABILITIES(/obj/item/clothing/under/saare/service)
 	worn_state = "terranservice_comm"
 
 //Galactic Survey
-
-/obj/item/clothing/under/gsa
-	name = "\improper Galactic Survey utility uniform"
-	desc = "A jumpsuit belonging to the Galactic Survey Administration, SolGov's scientific exploration division."
-	icon_state = "gsa"
-	worn_state = "gsa"
-	rolled_sleeves = 0
 
 /obj/item/clothing/under/gsa_work
 	name = "\improper Galactic Survey worksuit"

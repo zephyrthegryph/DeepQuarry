@@ -17,7 +17,7 @@
 		/obj/item/clothing/head/hardhat/white,
 		// /obj/item/clothing/head/welding, // Removal: Locker bloat, grr. They get fancy goggles or can raid the welding supplies locker for one of these.
 		/obj/item/clothing/gloves/heavy_engineer, // chief gets the good shit
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/cartridge/ce,
 		/obj/item/radio/headset/heads/ce,
 		/obj/item/radio/headset/alt/heads/ce,

@@ -10,40 +10,60 @@ the rule in `code/content/variants/README.md` still decides each family (no beha
 | Root | Declared types | Data-only leaves |
 |---|---:|---:|
 | `/area` | 470 | 362 |
-| `/atom` | 254 | 119 |
-| `/datum` | 17908 | 10089 |
-| `/mob` | 1291 | 390 |
-| `/obj` | 18696 | 8623 |
-| `/turf` | 326 | 145 |
-| **all** | **38945** | **19728** |
+| `/atom` | 247 | 120 |
+| `/datum` | 17986 | 10102 |
+| `/mob` | 1298 | 390 |
+| `/obj` | 17959 | 7935 |
+| `/turf` | 330 | 146 |
+| **all** | **38290** | **19055** |
 
 Declared types are the paths the source names (a type that exists only as a parent of a declared one is not counted, and types made
 by macros or by the build's generated files are not seen). The compiled type count is higher; the memory report has it.
 
-9639 leaves are /atom types (118 MB modelled) and 10089 are /datum types (39 MB modelled), in 4068 families.
+8953 leaves are /atom types (109 MB modelled) and 10102 are /datum types (39 MB modelled), in 4036 families.
 
 ## Converted
 
-36 families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps
+57 families are a parent type and a row table (`code/content/variants/`); the leaves below are what is left. `python3 tools/ci/check_variants.py` keeps
 a new data-only leaf out of them.
 
 | Rows | Parent |
 |---:|---|
-| 166 | `/obj/item/reagent_containers/chem_disp_cartridge` |
+| 187 | `/obj/item/circuitboard` |
+| 165 | `/obj/item/reagent_containers/chem_disp_cartridge` |
 | 97 | `/obj/item/seeds` |
+| 92 | `/obj/item/clothing/under/rank` |
 | 76 | `/obj/fruitspawner` |
+| 74 | `/obj/fiftyspawner` |
 | 70 | `/obj/item/trash` |
 | 60 | `/obj/item/toy/figure` |
+| 55 | `/obj/item/clothing/under` |
+| 39 | `/obj/item/clothing/suit/storage/toggle/labcoat` |
 | 37 | `/obj/structure/sign/department` |
+| 29 | `/obj/item/clothing/under/dress` |
 | 29 | `/obj/structure/sign/directions` |
 | 28 | `/obj/structure/sign/warning` |
 | 25 | `/obj/item/clothing/head/tesh_hood/standard` |
 | 25 | `/obj/item/clothing/suit/storage/teshari/beltcloak/standard` |
+| 23 | `/obj/item/clothing/suit/storage/teshari/cloak/standard` |
+| 21 | `/obj/item/clothing/shoes` |
 | 21 | `/obj/structure/sign/levels` |
+| 19 | `/obj/item/clothing/under/teshari/undercoat/jobs` |
+| 17 | `/obj/item/clothing/under/color/fjumpsuit` |
+| 16 | `/obj/item/clothing/accessory/poncho/roles/cloak` |
+| 16 | `/obj/item/clothing/head` |
+| 16 | `/obj/item/clothing/under/corp` |
+| 14 | `/obj/item/clothing/accessory/armor/tag` |
 | 13 | `/obj/item/clothing/head/beret/solgov` |
+| 12 | `/obj/item/clothing/accessory/scarf` |
 | 12 | `/obj/item/clothing/accessory/solgov/rank/fleet/enlisted` |
+| 12 | `/obj/item/clothing/suit/storage/toggle/hoodie` |
+| 12 | `/obj/item/clothing/under/skirt/colorable` |
 | 12 | `/obj/item/clothing/under/teshari/smock` |
 | 11 | `/obj/item/clothing/accessory/solgov/rank/marine/enlisted` |
+| 11 | `/obj/item/clothing/accessory/sweater` |
+| 11 | `/obj/item/clothing/accessory/tie` |
+| 11 | `/obj/item/clothing/under/pants/baggy` |
 | 11 | `/obj/item/clothing/under/turtlebaggy` |
 | 10 | `/obj/item/clothing/accessory/poncho/roles/cloak/boat` |
 | 10 | `/obj/item/clothing/accessory/poncho/roles/cloak/shroud` |
@@ -52,6 +72,7 @@ a new data-only leaf out of them.
 | 8 | `/obj/item/clothing/accessory/poncho/roles/cloak/crop_jacket` |
 | 8 | `/obj/item/clothing/accessory/poncho/roles/ranger` |
 | 7 | `/obj/item/clothing/accessory/poncho/roles/cloak/mantle` |
+| 7 | `/obj/item/reagent_containers/spray` |
 | 6 | `/obj/item/clothing/accessory/altevian_badge/aquila` |
 | 6 | `/obj/item/clothing/accessory/solgov/rank/fleet/officer` |
 | 6 | `/obj/item/clothing/suit/storage/snowsuit` |
@@ -73,7 +94,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 
 | Family | Data-only leaves |
 |---|---:|
-| Techweb designs and nodes | 1007 |
+| Techweb designs and nodes | 1021 |
 | Sprite accessories (hair, markings, ears, tails, wings) | 1768 |
 | Alternate job titles | 203 |
 | Perks | 278 |
@@ -83,26 +104,20 @@ the registries, saves and templates use, and areas are looked up and templated b
 
 | Leaves | ~MB | Parent | Vars the leaves set (most common) |
 |---:|---:|---|---|
-| 178 | 2.17 | `/obj/item/circuitboard` | `build_path`, `name`, `board_type`, `req_components`, `hidden`, `desc` |
-| 92 | 1.12 | `/obj/item/clothing/under/rank` | `desc`, `icon_state`, `name`, `rolled_sleeves`, `rolled_down`, `item_state_slots` |
-| 74 | 0.90 | `/obj/fiftyspawner` | `name`, `type_to_spawn` |
-| 55 | 0.67 | `/obj/item/clothing/under` | `desc`, `icon_state`, `name`, `item_state_slots`, `worn_state`, `rolled_sleeves` |
+| 62 | 0.76 | `/obj/item/storage/box` | `name`, `starts_with`, `desc`, `icon_state`, `icon`, `item_state_slots` |
 | 50 | 0.61 | `/obj/item/reagent_containers/food/snacks` | `desc`, `icon_state`, `name`, `nutriment_amt`, `nutriment_desc`, `icon` |
 | 49 | 0.60 | `/obj/item/mecha_parts/part` | `icon_state`, `name`, `desc`, `icon` |
 | 46 | 0.56 | `/obj/item/reagent_containers/glass/bottle` | `desc`, `icon_state`, `name`, `prefill`, `icon`, `persist_storable` |
-| 46 | 0.56 | `/obj/item/storage/pill_bottle` | `desc`, `name`, `starts_with`, `wrapper_color`, `max_storage_space` |
 | 44 | 0.54 | `/obj/structure/sign` | `desc`, `name`, `icon_state`, `icon` |
 | 42 | 0.51 | `/obj/structure/closet/crate` | `desc`, `closet_appearance`, `name`, `icon`, `icon_state`, `close_sound` |
+| 40 | 0.49 | `/obj/item/storage/pill_bottle` | `desc`, `name`, `starts_with`, `wrapper_color`, `max_storage_space` |
 | 40 | 0.49 | `/obj/machinery/vending` | `desc`, `name`, `icon_state`, `vend_delay`, `product_slogans`, `product_ads` |
-| 39 | 0.48 | `/obj/item/clothing/suit/storage/toggle/labcoat` | `desc`, `icon_state`, `name`, `item_state_slots` |
+| 39 | 0.48 | `/obj/item/stack/material` | `default_type`, `icon_state`, `name`, `no_variants`, `apply_colour`, `exotic_no_autolathe_reprint` |
 | 36 | 0.44 | `/area/expoutpost` | `flags` |
 | 36 | 0.44 | `/atom/movable/screen/alert` | `desc`, `icon_state`, `name`, `alerttooltipstyle`, `no_underlay`, `timeout` |
-| 33 | 0.40 | `/obj/item/stack/material` | `default_type`, `icon_state`, `name`, `no_variants`, `apply_colour`, `coin_type` |
-| 33 | 0.40 | `/obj/item/storage/box` | `name`, `starts_with`, `desc`, `icon_state`, `icon`, `item_state_slots` |
 | 33 | 0.40 | `/obj/item/storage/vore_egg` | `desc`, `icon_state`, `name` |
 | 32 | 0.39 | `/obj/item/book/manual` | `author`, `dat`, `icon_state`, `name`, `title`, `item_state` |
 | 32 | 0.39 | `/obj/item/reagent_containers/glass/bottle/potion` | `desc`, `name`, `prefill` |
-| 29 | 0.35 | `/obj/item/clothing/under/dress` | `desc`, `icon_state`, `name`, `addblends`, `item_state_slots` |
 | 29 | 0.35 | `/obj/item/pda` | `icon_state`, `default_cartridge`, `ttone`, `detonate`, `desc`, `hidden` |
 | 28 | 0.34 | `/obj/item/radio/headset` | `icon_state`, `desc`, `name`, `ks2type`, `adhoc_fallback`, `ks1type` |
 | 27 | 0.33 | `/area` | `name`, `icon_state`, `ambience`, `requires_power`, `dynamic_lighting`, `flags` |
@@ -113,15 +128,13 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 25 | 0.31 | `/obj/item/reagent_containers/food/drinks/glass2/coffeemug` | `base_icon`, `desc`, `name`, `fillsource` |
 | 24 | 0.29 | `/obj/item/clothing/suit/storage/hooded/teshari/standard` | `hoodtype`, `icon_state`, `name`, `variant` |
 | 24 | 0.29 | `/obj/item/encryptionkey` | `channels`, `icon_state`, `name`, `syndie`, `icon`, `translate_binary` |
-| 24 | 0.29 | `/obj/item/gun/projectile/automatic/serdy` | `caliber`, `desc`, `icon_state`, `load_method`, `name`, `projectile_type` |
 | 24 | 0.29 | `/obj/item/ore` | `name`, `icon_state`, `material`, `desc` |
 | 24 | 0.29 | `/obj/structure/blob/core` | `desired_blob_type`, `difficulty_threshold`, `ai_controlled`, `difficulty_floor` |
 | 24 | 0.29 | `/obj/structure/flora/pottedplant` | `desc`, `icon_state`, `name` |
 | 23 | 0.28 | `/area/survivalpod/superpose` | `requires_power` |
-| 23 | 0.28 | `/obj/item/aiModule` | `desc`, `laws`, `name` |
-| 23 | 0.28 | `/obj/item/clothing/suit/storage/teshari/cloak/standard` | `icon_state`, `name` |
-| 23 | 0.28 | `/obj/item/clothing/under/teshari/undercoat/standard` | `icon_state`, `name` |
+| 23 | 0.28 | `/obj/item/aiModule` | `desc`, `laws_type`, `name` |
 | 23 | 0.28 | `/obj/item/paper` | `name`, `info`, `icon_state`, `item_state`, `anchored` |
+| 23 | 0.28 | `/obj/item/reagent_containers/glass/beaker/vial` | `name`, `prefill`, `desc` |
 | 22 | 0.27 | `/area/holodeck` | `name`, `sound_env`, `flags`, `has_gravity`, `requires_power` |
 | 22 | 0.27 | `/obj/item/bedsheet` | `icon_state`, `item_state`, `icon`, `name` |
 | 22 | 0.27 | `/obj/item/cartridge` | `name`, `icon_state`, `programs`, `desc`, `charges`, `messenger_plugins` |
@@ -132,8 +145,6 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 21 | 0.26 | `/mob/living/simple_mob/clowns/big` | `desc`, `icon`, `icon_dead`, `icon_gib`, `icon_living`, `icon_state` |
 | 21 | 0.26 | `/mob/living/simple_mob/clowns/big/c_shift` | `desc`, `icon`, `icon_dead`, `icon_gib`, `icon_living`, `icon_state` |
 | 21 | 0.26 | `/obj/item/ammo_casing/microbattery/medical` | `name`, `projectile_type`, `type_color`, `type_name` |
-| 21 | 0.26 | `/obj/item/clothing/shoes` | `icon_state`, `name`, `desc`, `item_state`, `addblends`, `item_state_slots` |
-| 21 | 0.26 | `/obj/item/reagent_containers/glass/beaker/vial` | `name`, `prefill`, `desc` |
 | 21 | 0.26 | `/obj/item/survivalcapsule` | `desc`, `name`, `template_id`, `unique_id`, `is_ship`, `w_class` |
 | 21 | 0.26 | `/obj/structure/barricade/cutout` | `construct_name`, `icon_state`, `fake_name`, `human_name` |
 | 21 | 0.26 | `/obj/structure/largecrate/animal` | `name`, `starts_with`, `desc`, `icon_state` |
@@ -142,41 +153,40 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 20 | 0.24 | `/obj/machinery/door/airlock` | `icon`, `name`, `close_sound_powered`, `open_sound_powered`, `assembly_type`, `security_level` |
 | 20 | 0.24 | `/obj/structure/closet` | `closet_appearance`, `name`, `desc`, `starts_with`, `anchored`, `icon` |
 | 19 | 0.23 | `/obj/item/clothing/suit/storage/teshari/cloak/jobs` | `desc`, `icon_state`, `name` |
-| 19 | 0.23 | `/obj/item/clothing/under/teshari/undercoat/jobs` | `desc`, `icon_state`, `name` |
 | 19 | 0.23 | `/obj/item/disk/limb` | `company`, `icon`, `icon_state` |
 | 19 | 0.23 | `/obj/item/radio/headset/alt` | `icon_state`, `desc`, `name`, `ks2type`, `adhoc_fallback`, `centComm` |
 | 19 | 0.23 | `/obj/item/stamp` | `icon_state`, `name` |
 | 19 | 0.23 | `/obj/item/storage/backpack` | `icon_state`, `name`, `desc`, `item_state` |
 | 19 | 0.23 | `/obj/machinery/gear_dispenser` | `name`, `dispenses`, `desc`, `dispenser_flags`, `icon_state`, `one_setting` |
 | 19 | 0.23 | `/obj/machinery/vending/wardrobe` | `desc`, `has_logs`, `icon_state`, `name`, `product_slogans`, `req_access` |
+| 19 | 0.23 | `/obj/structure/closet/secure_closet` | `name`, `req_access`, `starts_with`, `closet_appearance`, `desc`, `close_sound` |
 | 18 | 0.22 | `/obj/effect/floor_decal/steeldecal` | `icon_state` |
 | 18 | 0.22 | `/obj/item/clothing/suit/storage/teshari/beltcloak/jobs` | `desc`, `icon_state`, `name` |
 | 18 | 0.22 | `/obj/item/grenade/spawnergrenade/casino` | `desc`, `name`, `spawner_type` |
 | 18 | 0.22 | `/obj/item/mecha_parts/micro/part` | `icon_state`, `name`, `desc` |
 | 18 | 0.22 | `/obj/item/stack/cable_coil` | `color`, `stacktype` |
 | 18 | 0.22 | `/obj/item/stack/tile/floor/eris/steel` | `icon_state`, `name`, `singular_name` |
-| 18 | 0.22 | `/obj/structure/closet/secure_closet` | `name`, `req_access`, `starts_with`, `closet_appearance`, `desc`, `close_sound` |
 | 17 | 0.21 | `/area/security` | `icon_state`, `name`, `flags`, `ambience`, `sound_env` |
 | 17 | 0.21 | `/mob/living/carbon/human` | `species_at_make`, `real_name` |
 | 17 | 0.21 | `/obj/effect/floor_decal/emblem` | `icon_state` |
-| 17 | 0.21 | `/obj/item/clothing/under/color/fjumpsuit` | `icon_state`, `name`, `worn_state` |
 | 17 | 0.21 | `/obj/item/fake_coin` | `desc`, `icon_state`, `name` |
 | 17 | 0.21 | `/obj/item/storage/box/fluff/swimsuit` | `has_items`, `name` |
 | 17 | 0.21 | `/obj/structure/closet/wardrobe` | `closet_appearance`, `name`, `starts_with`, `close_sound`, `desc`, `open_sound` |
 | 16 | 0.20 | `/obj/effect/fancy_shuttle` | `icon`, `split_file` |
 | 16 | 0.20 | `/obj/effect/fancy_shuttle_floor_preview` | `icon` |
 | 16 | 0.20 | `/obj/effect/floor_decal/ss13` | `icon_state`, `name` |
-| 16 | 0.20 | `/obj/item/clothing/accessory/poncho/roles/cloak` | `desc`, `icon_state`, `item_state`, `name` |
-| 16 | 0.20 | `/obj/item/clothing/head` | `desc`, `icon_state`, `name`, `icon`, `item_state`, `sprite_sheets` |
-| 16 | 0.20 | `/obj/item/clothing/under/corp` | `desc`, `icon_state`, `name`, `worn_state`, `rolled_sleeves`, `item_state` |
+| 16 | 0.20 | `/obj/item` | `icon`, `icon_state`, `name`, `desc`, `w_class`, `gender` |
 | 16 | 0.20 | `/obj/item/gun/energy/mouseray` | `name`, `tf_type`, `charge_cost`, `charge_meter`, `cooldown_time`, `icon_state` |
 | 16 | 0.20 | `/obj/item/paper/notice` | `info`, `name`, `stamp_marks`, `stamped` |
+| 16 | 0.20 | `/obj/item/reagent_containers/glass/bottle/precursor` | `name`, `prefill` |
 | 16 | 0.20 | `/obj/item/stack/tile/carpet` | `desc`, `icon_state` |
+| 16 | 0.20 | `/obj/item/storage/box/casino` | `name`, `starts_with` |
+| 16 | 0.20 | `/obj/item/storage/box/syndie_kit` | `starts_with`, `name`, `desc` |
 | 16 | 0.20 | `/obj/structure/door_assembly` | `airlock_type`, `base_icon_state`, `base_name`, `glass_type`, `glass` |
 | 16 | 0.20 | `/obj/structure/simple_door` | `material_name`, `knock_sound`, `icon`, `icon_state`, `name` |
 | 15 | 0.18 | `/area/maintenance` | `name`, `icon_state`, `flags` |
+| 15 | 0.18 | `/atom/movable/screen` | `screen_loc`, `icon`, `icon_state`, `name`, `mouse_opacity`, `plane` |
 | 15 | 0.18 | `/obj/effect/floor_decal/cetus` | `icon_state`, `name` |
-| 15 | 0.18 | `/obj/item` | `icon`, `icon_state`, `name`, `desc`, `w_class`, `gender` |
 | 15 | 0.18 | `/obj/item/stack/tile/floor/eris/dark` | `icon_state`, `name`, `singular_name` |
 | 15 | 0.18 | `/obj/item/stack/tile/floor/eris/white` | `icon_state`, `name`, `singular_name` |
 | 15 | 0.18 | `/obj/machinery/requests_console/preset` | `department`, `departmentType`, `name`, `announcementConsole` |
@@ -186,10 +196,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 14 | 0.17 | `/area/shuttle` | `icon_state`, `name`, `requires_power`, `flags`, `ambience`, `base_turf` |
 | 14 | 0.17 | `/obj/effect/decal/mecha_wreckage` | `icon_state`, `name`, `desc`, `icon`, `bound_height`, `bound_width` |
 | 14 | 0.17 | `/obj/item/clothing/accessory` | `desc`, `icon_state`, `name`, `slot`, `item_state`, `overlay_state` |
-| 14 | 0.17 | `/obj/item/clothing/accessory/armor/tag` | `desc`, `icon_state`, `name` |
 | 14 | 0.17 | `/obj/item/mecha_parts/fighter/part` | `icon_state`, `name` |
-| 14 | 0.17 | `/obj/item/storage/box/casino` | `name`, `starts_with` |
-| 13 | 0.16 | `/atom/movable/screen` | `icon`, `icon_state`, `screen_loc`, `name`, `mouse_opacity`, `plane` |
 | 13 | 0.16 | `/atom/movable/screen/fullscreen` | `icon_state`, `layer`, `icon`, `screen_loc`, `plane`, `show_when_dead` |
 | 13 | 0.16 | `/obj/item/flame/lighter/zippo` | `icon_state`, `name`, `desc`, `item_state` |
 | 13 | 0.16 | `/obj/item/organ/internal/malignant/engineered/chemorgan` | `chemid`, `icon_state`, `name`, `deg_chance`, `deg_intensity`, `side_effect_multiplier` |
@@ -203,29 +210,26 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 12 | 0.15 | `/obj/effect/decal/cleanable` | `desc`, `icon`, `icon_state`, `name`, `anchored`, `density` |
 | 12 | 0.15 | `/obj/effect/decal/remains` | `desc`, `icon_state`, `name`, `crumble_into`, `crumble_message`, `icon` |
 | 12 | 0.15 | `/obj/effect/floor_decal/rust` | `icon_state` |
+| 12 | 0.15 | `/obj/effect/overlay` | `icon`, `plane`, `anchored`, `icon_state`, `name`, `layer` |
 | 12 | 0.15 | `/obj/item/capture_crystal` | `spawn_mob_type`, `name`, `capture_chance_modifier`, `animation_icon`, `animation_time`, `desc` |
-| 12 | 0.15 | `/obj/item/clothing/accessory/scarf` | `icon_state`, `name` |
 | 12 | 0.15 | `/obj/item/clothing/head/soft` | `desc`, `icon_state`, `name`, `item_state_slots`, `icon` |
-| 12 | 0.15 | `/obj/item/clothing/suit/storage/toggle/hoodie` | `desc`, `icon_state`, `item_state_slots`, `name` |
-| 12 | 0.15 | `/obj/item/clothing/under/skirt/colorable` | `icon_state`, `item_state`, `worn_state`, `desc`, `name` |
 | 12 | 0.15 | `/obj/item/clothing/under/swimsuit` | `desc`, `icon_state`, `name` |
 | 12 | 0.15 | `/obj/item/digestion_remains/skull` | `desc`, `icon_state` |
 | 12 | 0.15 | `/obj/item/dnainjector` | `random_pools`, `random_disable`, `random_labeled`, `desc`, `name` |
 | 12 | 0.15 | `/obj/item/pen` | `desc`, `icon_state`, `colour` |
+| 12 | 0.15 | `/obj/item/storage/backpack/dufflebag` | `desc`, `icon_state`, `name`, `starts_with` |
 | 12 | 0.15 | `/obj/item/storage/box/fluff` | `desc`, `has_items`, `name` |
+| 12 | 0.15 | `/obj/item/storage/box/halloween` | `name`, `starts_with` |
 | 12 | 0.15 | `/obj/item/storage/box/syndie_kit/imp_aug` | `case_type` |
+| 12 | 0.15 | `/obj/item/storage/firstaid` | `icon_state`, `starts_with`, `name`, `desc`, `item_state_slots`, `max_storage_space` |
 | 12 | 0.15 | `/obj/item/toy/chess` | `desc`, `icon_state`, `name` |
 | 12 | 0.15 | `/obj/structure/flora/underwater` | `icon_state` |
 | 12 | 0.15 | `/turf/simulated/floor/carpet` | `icon_state`, `initial_flooring`, `name` |
 | 12 | 0.15 | `/turf/simulated/floor/tiled` | `name`, `icon_state`, `initial_flooring`, `icon`, `color`, `initial_gas_mix` |
 | 11 | 0.13 | `/area/centcom` | `name`, `icon_state`, `flags`, `ambience` |
 | 11 | 0.13 | `/area/rnd` | `icon_state`, `name`, `flags` |
-| 11 | 0.13 | `/obj/effect/overlay` | `icon`, `plane`, `anchored`, `icon_state`, `name`, `layer` |
 | 11 | 0.13 | `/obj/item/card/id/event/altcard` | `icon_state` |
-| 11 | 0.13 | `/obj/item/clothing/accessory/sweater` | `desc`, `icon_state`, `name` |
-| 11 | 0.13 | `/obj/item/clothing/accessory/tie` | `icon_state`, `name`, `desc` |
 | 11 | 0.13 | `/obj/item/clothing/head/helmet/space/rig` | `camera_networks`, `light_overlay`, `name` |
-| 11 | 0.13 | `/obj/item/clothing/under/pants/baggy` | `desc`, `icon_state`, `name` |
 | 11 | 0.13 | `/obj/item/firework_star/weather` | `icon_state`, `name`, `weather_type`, `desc` |
 | 11 | 0.13 | `/obj/item/grenade/spawnergrenade/loadout` | `desc`, `name`, `spawner_type` |
 | 11 | 0.13 | `/obj/item/holder` | `item_state`, `color` |
@@ -259,11 +263,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 10 | 0.12 | `/obj/item/clothing/under/rank/neo_gorka` | `desc`, `name`, `starting_accessories` |
 | 10 | 0.12 | `/obj/item/clothing/under/solgov/utility/army` | `starting_accessories`, `desc`, `icon_state`, `name`, `item_state`, `worn_state` |
 | 10 | 0.12 | `/obj/item/grenade/spawnergrenade/casino/gygax` | `name`, `spawner_type` |
-| 10 | 0.12 | `/obj/item/gun/energy` | `desc`, `icon_state`, `name`, `projectile_type`, `item_state`, `icon` |
-| 10 | 0.12 | `/obj/item/organ/external/head` | `eye_icon`, `eye_icon_location`, `cannot_amputate`, `cannot_gib`, `cannot_break`, `dislocated` |
 | 10 | 0.12 | `/obj/item/rig_module/device` | `desc`, `device_type`, `icon_state`, `interface_desc`, `interface_name`, `name` |
-| 10 | 0.12 | `/obj/item/storage/backpack/dufflebag` | `desc`, `icon_state`, `name` |
-| 10 | 0.12 | `/obj/item/storage/firstaid` | `icon_state`, `starts_with`, `name`, `desc`, `item_state_slots`, `max_storage_space` |
 | 10 | 0.12 | `/obj/item/toy/plushie/carp` | `icon_state`, `name` |
 | 10 | 0.12 | `/obj/machinery/suit_cycler` | `model_text`, `name`, `req_access`, `icon_state`, `limit_departments`, `departments` |
 | 10 | 0.12 | `/obj/machinery/suit_storage_unit` | `helmet_type`, `mask_type`, `suit_type` |
@@ -271,6 +271,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 10 | 0.12 | `/obj/structure/prop/statue` | `icon_state`, `icon`, `desc`, `name`, `density` |
 | 10 | 0.12 | `/turf/simulated/floor` | `name`, `icon`, `icon_state`, `initial_flooring`, `desc`, `barefootstep` |
 | 9 | 0.11 | `/area/generated_station` | `name` |
+| 9 | 0.11 | `/atom/movable/screen/plane_master` | `plane`, `alpha`, `appearance_flags`, `blend_mode`, `render_target`, `color` |
 | 9 | 0.11 | `/mob/living/simple_mob/vore/demon` | `icon_dead`, `icon_living`, `icon_rest`, `icon_state`, `name`, `vore_icons` |
 | 9 | 0.11 | `/mob/living/simple_mob/vore/demonAI` | `icon_dead`, `icon_living`, `icon_rest`, `icon_state`, `name`, `vore_icons` |
 | 9 | 0.11 | `/obj/item/circuitboard/telecomms` | `build_path`, `name`, `req_components` |
@@ -292,7 +293,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 9 | 0.11 | `/obj/item/slime_extract` | `icon_state`, `name`, `slime_type` |
 | 9 | 0.11 | `/obj/item/spacecash` | `desc`, `icon_state`, `name`, `worth` |
 | 9 | 0.11 | `/obj/item/storage/backpack/messenger` | `icon_state`, `item_state_slots`, `name`, `desc` |
-| 9 | 0.11 | `/obj/item/storage/box/syndie_kit` | `starts_with`, `name`, `desc` |
+| 9 | 0.11 | `/obj/item/storage/mrebag` | `starts_with` |
 | 9 | 0.11 | `/obj/machinery/atmospherics/pipe/manifold/hidden` | `color`, `connect_types`, `desc`, `icon_connect_type`, `icon_state`, `layer` |
 | 9 | 0.11 | `/obj/machinery/atmospherics/pipe/simple/hidden` | `color`, `connect_types`, `desc`, `icon_connect_type`, `icon_state`, `layer` |
 | 9 | 0.11 | `/obj/machinery/door/airlock/angled_bay/double/glass` | `door_color`, `name`, `stripe_color`, `req_access`, `req_one_access` |
@@ -319,6 +320,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 8 | 0.10 | `/obj/item/clothing/under/solgov/service/sifguard/command/skirt` | `starting_accessories` |
 | 8 | 0.10 | `/obj/item/clothing/under/solgov/service/sifguard/skirt` | `starting_accessories` |
 | 8 | 0.10 | `/obj/item/clothing/under/solgov/utility/sifguard/officer` | `starting_accessories` |
+| 8 | 0.10 | `/obj/item/organ/external/head` | `eye_icon`, `eye_icon_location`, `cannot_amputate`, `cannot_gib`, `head_offset`, `headgib_exempt` |
 | 8 | 0.10 | `/obj/item/organ/internal/brain` | `icon_state`, `can_assist`, `desc`, `icon`, `name`, `parent_organ` |
 | 8 | 0.10 | `/obj/item/reagent_containers/food/snacks/egg` | `icon_state` |
 | 8 | 0.10 | `/obj/item/reagent_containers/hypospray/autoinjector` | `icon_state`, `name`, `filled_reagents`, `desc`, `filled`, `item_state` |
@@ -451,6 +453,8 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 6 | 0.07 | `/obj/item/electronic_assembly/drone` | `name`, `desc`, `icon_state` |
 | 6 | 0.07 | `/obj/item/electronic_assembly/large` | `name`, `desc`, `icon_state` |
 | 6 | 0.07 | `/obj/item/electronic_assembly/medium` | `name`, `desc`, `icon_state`, `item_icons`, `item_state` |
+| 6 | 0.07 | `/obj/item/gun/energy` | `desc`, `icon_state`, `name`, `projectile_type`, `item_state`, `icon` |
+| 6 | 0.07 | `/obj/item/gun/projectile/automatic/serdy` | `allowed_magazines`, `caliber`, `desc`, `icon_state`, `load_method`, `magazine_type` |
 | 6 | 0.07 | `/obj/item/gun/projectile/revolver` | `icon_state`, `desc`, `name`, `icon`, `ammo_type`, `caliber` |
 | 6 | 0.07 | `/obj/item/holder/mouse` | `item_state` |
 | 6 | 0.07 | `/obj/item/implant/reagent_generator/egg` | `name`, `transfer_amount`, `usable_volume` |
@@ -481,7 +485,6 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 6 | 0.07 | `/obj/structure/sign/atmos` | `icon_state`, `name` |
 | 6 | 0.07 | `/obj/structure/sign/bigname` | `icon_state` |
 | 6 | 0.07 | `/turf/simulated/shuttle/wall/voidcraft` | `stripe_color`, `icon_state`, `join_group`, `name` |
-| 5 | 0.06 | `/atom/movable/screen/plane_master` | `plane`, `alpha`, `color`, `desired_alpha`, `appearance_flags`, `blend_mode` |
 | 5 | 0.06 | `/mob/living/simple_mob/animal/passive/fish` | `icon_dead`, `icon_living`, `icon_state`, `name`, `tt_desc` |
 | 5 | 0.06 | `/mob/living/simple_mob/humanoid/astral_collective/ranged` | `desc`, `icon_living`, `icon_state`, `ranged_cooldown`, `special_attack_cooldown`, `endurance` |
 | 5 | 0.06 | `/mob/living/simple_mob/vore/scel` | `icon_dead`, `icon_living`, `icon_rest`, `icon_state`, `random_skin` |
@@ -552,6 +555,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 5 | 0.06 | `/obj/item/pickaxe` | `desc`, `digspeed`, `icon_state`, `item_state`, `name`, `drill_verb` |
 | 5 | 0.06 | `/obj/item/projectile/beam` | `damage`, `name`, `icon_state`, `impact_type`, `muzzle_type`, `tracer_type` |
 | 5 | 0.06 | `/obj/item/projectile/energy/homing_bolt/wizard` | `modifier_duration`, `modifier_type_to_apply`, `icon_state`, `damage` |
+| 5 | 0.06 | `/obj/item/radio/bluespacehandset/linked` | `bs_rx_preload_id`, `bs_tx_preload_id` |
 | 5 | 0.06 | `/obj/item/radio/headset/heads` | `desc`, `icon_state`, `ks2type`, `name` |
 | 5 | 0.06 | `/obj/item/reagent_containers/food/snacks/customizable` | `desc`, `icon_state`, `name`, `addTop`, `fullyCustom`, `ingMax` |
 | 5 | 0.06 | `/obj/item/reagent_containers/food/snacks/winegum` | `icon_state`, `nutriment_desc` |
@@ -563,6 +567,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 5 | 0.06 | `/obj/item/stack/tile/wood/pine` | `icon_state`, `name`, `singular_name` |
 | 5 | 0.06 | `/obj/item/stack/tile/wood/redwood` | `icon_state`, `name`, `singular_name` |
 | 5 | 0.06 | `/obj/item/stack/tile/wood/sif` | `icon_state`, `name`, `singular_name` |
+| 5 | 0.06 | `/obj/item/storage/secure/briefcase` | `starts_with`, `name`, `desc` |
 | 5 | 0.06 | `/obj/item/toy/plushie/squid` | `desc`, `icon_state`, `name`, `pokephrase` |
 | 5 | 0.06 | `/obj/item/toy/plushie/therapy` | `desc`, `icon_state`, `item_state`, `name` |
 | 5 | 0.06 | `/obj/item/toy/tennis` | `desc`, `icon_state`, `item_state`, `name` |
@@ -591,13 +596,13 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 5 | 0.06 | `/obj/structure/sign/levels/engineering` | `desc`, `icon_state`, `name` |
 | 5 | 0.06 | `/obj/structure/sign/levels/security` | `desc`, `icon_state`, `name` |
 
-2465 further families have fewer than 5 leaves and are not listed.
+2444 further families have fewer than 5 leaves and are not listed.
 
 ## /datum families
 
 | Leaves | ~MB | Parent | Vars the leaves set (most common) |
 |---:|---:|---|---|
-| 419 | 1.64 | `/datum/design_techweb` | `name`, `build_path`, `category`, `id`, `materials`, `build_type` |
+| 433 | 1.69 | `/datum/design_techweb` | `name`, `build_path`, `category`, `id`, `materials`, `build_type` |
 | 327 | 1.28 | `/datum/sprite_accessory/hair` | `icon_state`, `name`, `flags`, `icon_add`, `icon`, `gender` |
 | 325 | 1.27 | `/datum/sprite_accessory/marking` | `body_parts`, `icon_state`, `name`, `color_blend_mode`, `species_allowed`, `hide_body_parts` |
 | 200 | 0.78 | `/datum/alt_title` | `title`, `title_blurb`, `title_outfit`, `mail_goodies` |
@@ -617,42 +622,42 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 88 | 0.34 | `/datum/perk/body` | `cost`, `desc`, `icon_name`, `name`, `tree`, `requires` |
 | 79 | 0.31 | `/datum/robolimb` | `company`, `desc`, `icon`, `unavailable_to_build`, `modular_bodyparts`, `parts` |
 | 75 | 0.29 | `/datum/gear/uniform` | `display_name`, `path`, `sort_category`, `description`, `whitelisted`, `cost` |
-| 72 | 0.28 | `/datum/config_entry/number` | `default`, `min_val`, `integer`, `protection`, `config_entry_value`, `max_val` |
-| 66 | 0.26 | `/datum/preference/toggle` | `category`, `savefile_identifier`, `savefile_key`, `default_value` |
+| 73 | 0.29 | `/datum/config_entry/number` | `default`, `min_val`, `integer`, `protection`, `config_entry_value`, `max_val` |
 | 63 | 0.25 | `/datum/decl/emote/visible` | `emote_message_3p`, `key`, `check_restraints`, `emote_message_3p_target`, `conscious`, `check_range` |
 | 62 | 0.24 | `/datum/category_item/underwear/undershirt` | `name`, `icon_state`, `has_color`, `always_last`, `is_default` |
+| 62 | 0.24 | `/datum/material` | `name`, `supply_conversion_value`, `icon_colour`, `stack_type`, `conductivity`, `strength` |
 | 61 | 0.24 | `/datum/trait/neutral` | `desc`, `name`, `custom_only`, `cost`, `var_changes`, `hidden` |
 | 60 | 0.23 | `/datum/maint_recycler_vendor_entry` | `ad_message`, `desc`, `name`, `object_type_to_spawn`, `vendor_category`, `per_person_cap` |
-| 60 | 0.23 | `/datum/prompt/choice` | `timeout`, `question`, `title`, `recheck_on_open`, `rights`, `choices` |
 | 59 | 0.23 | `/datum/belly_overlays` | `belly_icon` |
+| 59 | 0.23 | `/datum/prompt/choice` | `timeout`, `question`, `title`, `recheck_on_open`, `rights`, `choices` |
 | 58 | 0.23 | `/datum/trait/positive` | `cost`, `desc`, `name`, `var_changes`, `custom_only`, `excludes` |
 | 57 | 0.22 | `/datum/body_effect` | `stacks`, `factors`, `name`, `desc`, `on_created_text`, `on_expired_text` |
 | 56 | 0.22 | `/datum/trait/negative` | `cost`, `desc`, `name`, `custom_only`, `var_changes`, `hidden` |
-| 55 | 0.21 | `/datum/config_entry/flag` | `default`, `protection` |
 | 55 | 0.21 | `/datum/map_template/shelter/superpose` | `mappath`, `name`, `shelter_id`, `description` |
-| 55 | 0.21 | `/datum/reagent` | `color`, `description`, `id`, `industrial_use`, `name`, `supply_conversion_value` |
-| 54 | 0.21 | `/datum/material` | `name`, `supply_conversion_value`, `icon_colour`, `stack_type`, `hardness`, `protectiveness` |
-| 51 | 0.20 | `/datum/reagent/drink` | `id`, `name`, `taste_description`, `color`, `description`, `glass_desc` |
+| 53 | 0.21 | `/datum/config_entry/flag` | `default`, `protection` |
 | 51 | 0.20 | `/datum/technomancer/spell` | `category`, `cost`, `desc`, `name`, `obj_path`, `ability_icon_state` |
 | 50 | 0.20 | `/datum/locations` | `name`, `desc` |
+| 50 | 0.20 | `/datum/reagent` | `color`, `description`, `id`, `industrial_use`, `name`, `supply_conversion_value` |
 | 49 | 0.19 | `/datum/category_item/underwear/socks` | `name`, `icon_state`, `has_color`, `always_last` |
 | 48 | 0.19 | `/datum/action/item_action` | `name` |
+| 48 | 0.19 | `/datum/reagent/drink` | `id`, `name`, `taste_description`, `color`, `description`, `glass_desc` |
 | 48 | 0.19 | `/datum/uplink_item/item/tools` | `item_cost`, `name`, `path`, `desc`, `antag_roles`, `blacklisted` |
 | 46 | 0.18 | `/datum/uplink_item/item/medical` | `item_cost`, `name`, `path`, `antag_roles`, `blacklisted`, `desc` |
 | 44 | 0.17 | `/datum/ai_icon` | `alive_icon`, `name`, `alive_light`, `dead_icon`, `dead_light` |
 | 43 | 0.17 | `/datum/power/changeling` | `desc`, `genomecost`, `name`, `verbpath`, `helptext`, `ability_icon_state` |
 | 43 | 0.17 | `/datum/supply_pack/materials` | `containername`, `containertype`, `contains`, `cost`, `name`, `desc` |
-| 42 | 0.16 | `/datum/frame/frame_types` | `frame_class`, `name`, `frame_size`, `icon_override`, `frame_style`, `x_offset` |
 | 42 | 0.16 | `/datum/supply_pack/security` | `containername`, `containertype`, `cost`, `name`, `contains`, `desc` |
+| 41 | 0.16 | `/datum/frame/frame_types` | `frame_class`, `name`, `frame_size`, `icon_override`, `frame_style`, `x_offset` |
 | 41 | 0.16 | `/datum/sprite_accessory/facial_hair` | `icon_state`, `name`, `gender`, `color_blend_mode`, `icon` |
 | 40 | 0.16 | `/datum/design_techweb/mechfab/equipment` | `build_path`, `category`, `id`, `name`, `materials`, `desc` |
 | 40 | 0.16 | `/datum/gear/suit` | `display_name`, `path`, `cost`, `allowed_roles`, `show_roles`, `description` |
 | 40 | 0.16 | `/datum/uplink_item/item/visible_weapons` | `item_cost`, `name`, `path`, `desc`, `antag_roles` |
+| 39 | 0.15 | `/datum/affliction/overdose` | `caused_by_chems`, `caused_by_chems_organ`, `clinical_description`, `max_symptoms`, `min_symptoms`, `name` |
 | 39 | 0.15 | `/datum/sprite_accessory/hair/taj` | `icon_state`, `name`, `icon_add` |
-| 38 | 0.15 | `/datum/affliction/overdose` | `caused_by_chems`, `caused_by_chems_organ`, `clinical_description`, `max_symptoms`, `min_symptoms`, `name` |
 | 37 | 0.14 | `/datum/design_techweb/mechfab/modsuit/modules` | `build_path`, `desc`, `id`, `materials`, `name`, `category` |
+| 37 | 0.14 | `/datum/reagent/toxin` | `color`, `description`, `id`, `name`, `strength`, `taste_description` |
+| 36 | 0.14 | `/datum/supply_pack/med` | `containertype`, `contains`, `cost`, `name`, `containername`, `desc` |
 | 35 | 0.14 | `/datum/map_template/shelter` | `door_locations`, `mappath`, `name`, `shelter_id`, `description` |
-| 35 | 0.14 | `/datum/supply_pack/med` | `containertype`, `contains`, `cost`, `name`, `containername`, `desc` |
 | 33 | 0.13 | `/datum/gear/shoes` | `display_name`, `path`, `cost`, `sort_category`, `whitelisted` |
 | 33 | 0.13 | `/datum/log_category` | `category`, `config_flag`, `master_category`, `secret`, `entry_flags` |
 | 32 | 0.12 | `/datum/supply_pack/munitions` | `containername`, `containertype`, `contains`, `cost`, `name`, `access` |
@@ -668,7 +673,6 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 29 | 0.11 | `/datum/language` | `desc`, `key`, `name`, `colour`, `speech_verb`, `syllables` |
 | 29 | 0.11 | `/datum/reagent/drink/soda` | `color`, `description`, `glass_desc`, `glass_name`, `id`, `name` |
 | 28 | 0.11 | `/datum/supply_pack/recreation` | `containertype`, `contains`, `cost`, `name`, `desc`, `containername` |
-| 27 | 0.11 | `/datum/affliction` | `clinical_description`, `max_symptoms`, `min_symptoms`, `name`, `progression_rate`, `treated_by` |
 | 27 | 0.11 | `/datum/body_effect/trait` | `desc`, `name`, `factors`, `client_color`, `wire_colors_replace`, `on_created_text` |
 | 27 | 0.11 | `/datum/category_item/catalogue/technology` | `desc`, `name`, `value` |
 | 27 | 0.11 | `/datum/robot_sprite/engineering` | `name`, `sprite_icon_state`, `has_custom_open_sprites`, `has_dead_sprite`, `hat_offset`, `sprite_icon` |
@@ -682,7 +686,6 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 25 | 0.10 | `/datum/sprite_accessory/hair/una` | `icon_state`, `name`, `icon`, `icon_add` |
 | 24 | 0.09 | `/datum/job` | `departments`, `faction`, `outfit_type`, `supervisors`, `title`, `total_positions` |
 | 24 | 0.09 | `/datum/pai_sprite` | `name`, `sprite_icon`, `sprite_icon_state`, `has_eye_sprites`, `flying`, `belly_states` |
-| 24 | 0.09 | `/datum/reagent/nutriment` | `color`, `description`, `id`, `name`, `taste_description`, `nutriment_factor` |
 | 23 | 0.09 | `/datum/category_item/underwear/top` | `icon_state`, `name`, `has_color` |
 | 23 | 0.09 | `/datum/decl/closet_appearance/crate/secure` | `extra_decals`, `color`, `decals` |
 | 23 | 0.09 | `/datum/robot_sprite/janitor` | `name`, `sprite_icon_state`, `has_custom_open_sprites`, `hat_offset`, `has_dead_sprite`, `has_eye_sprites` |
@@ -696,16 +699,17 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 21 | 0.08 | `/datum/gear/uniform/dept/undercoat` | `allowed_roles`, `display_name`, `path` |
 | 21 | 0.08 | `/datum/particle_smasher_recipe` | `display_name`, `probability`, `required_energy_max`, `required_energy_min`, `required_material`, `result` |
 | 21 | 0.08 | `/datum/perk_tree/mind` | `category`, `display_name`, `icon_name`, `id` |
+| 21 | 0.08 | `/datum/reagent/nutriment` | `color`, `description`, `id`, `name`, `taste_description`, `nutriment_factor` |
 | 21 | 0.08 | `/datum/sprite_accessory/tail/taur` | `icon_state`, `name`, `extra_overlay`, `icon_sprite_tag`, `can_loaf`, `loaf_offset` |
 | 20 | 0.08 | `/datum/decl/closet_appearance/wall_double` | `color`, `decals`, `extra_decals` |
 | 20 | 0.08 | `/datum/design_techweb/mechfab/equipment/weapon` | `build_path`, `id`, `name`, `materials`, `desc` |
+| 20 | 0.08 | `/datum/game_mode` | `config_tag`, `extended_round_description`, `name`, `required_players`, `round_description`, `antag_tags` |
 | 20 | 0.08 | `/datum/looping_sound` | `mid_length`, `mid_sounds`, `volume`, `end_sound`, `start_sound`, `start_length` |
 | 20 | 0.08 | `/datum/lore/organization/tsc` | `acronym`, `desc`, `headquarters`, `history`, `motto`, `name` |
 | 20 | 0.08 | `/datum/ore` | `display_name`, `name`, `ore`, `reagent`, `scan_icon`, `result_amount` |
 | 20 | 0.08 | `/datum/supply_pack/vending_refills` | `contains`, `cost`, `desc`, `name` |
 | 20 | 0.08 | `/datum/technomancer/equipment` | `cost`, `desc`, `name`, `obj_path` |
 | 19 | 0.07 | `/datum/asset/spritesheet_batched/robot_icons` | `module_type`, `name` |
-| 19 | 0.07 | `/datum/game_mode` | `config_tag`, `extended_round_description`, `name`, `required_players`, `round_description`, `antag_tags` |
 | 19 | 0.07 | `/datum/reagent/drink/syrup` | `color`, `cup_prefix`, `description`, `id`, `name`, `taste_description` |
 | 19 | 0.07 | `/datum/uplink_item/item/ammo` | `name`, `path`, `item_cost`, `antag_roles`, `blacklisted` |
 | 18 | 0.07 | `/datum/category_item/underwear/bottom` | `name`, `icon_state`, `has_color`, `always_last` |
@@ -717,17 +721,20 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 18 | 0.07 | `/datum/node/expression/op/binary` | `precedence` |
 | 18 | 0.07 | `/datum/prompt/text` | `timeout`, `question`, `title`, `recheck_on_open`, `rights`, `max_len` |
 | 18 | 0.07 | `/datum/supply_pack/voidsuits` | `containertype`, `contains`, `cost`, `name`, `access`, `desc` |
+| 17 | 0.07 | `/datum/affliction/chem_side_effect` | `caused_by_chems`, `caused_by_chems_organ`, `clinical_description`, `max_symptoms`, `min_symptoms`, `name` |
 | 17 | 0.07 | `/datum/category_item/catalogue/anomalous/precursor_a` | `desc`, `name`, `value`, `unlocked_by_all`, `unlocked_by_any` |
 | 17 | 0.07 | `/datum/gear_disp` | `name`, `to_spawn`, `amount` |
 | 17 | 0.07 | `/datum/robot_sprite/medical` | `name`, `sprite_icon_state`, `has_custom_open_sprites`, `has_dead_sprite`, `has_eye_sprites`, `has_rest_sprites` |
 | 17 | 0.07 | `/datum/sprite_accessory/marking/ch/xenomorph` | `body_parts`, `icon_state`, `name`, `hide_body_parts`, `digitigrade_acceptance`, `icon` |
+| 17 | 0.07 | `/datum/trace_source` | `extras`, `extras_max`, `id`, `signature`, `extras_min` |
 | 17 | 0.07 | `/datum/uplink_item/item/implants` | `item_cost`, `name`, `path` |
-| 16 | 0.06 | `/datum/asset/simple` | `assets`, `keep_local_name`, `legacy` |
 | 16 | 0.06 | `/datum/decl/flooring/carpet` | `build_type`, `icon_base`, `name`, `flags` |
 | 16 | 0.06 | `/datum/design_techweb/pda_cartridge` | `build_path`, `id`, `departmental_flags` |
 | 16 | 0.06 | `/datum/property_provider/type_var/tag/slot_flag` | `flag`, `property` |
 | 16 | 0.06 | `/datum/relation_definition/slot/body` | `holder`, `name`, `order`, `slot_id`, `roles`, `required_parts` |
 | 16 | 0.06 | `/datum/supply_pack/sci` | `containertype`, `cost`, `name`, `containername`, `access`, `desc` |
+| 15 | 0.06 | `/datum/affliction/chem_interaction` | `caused_by_chems`, `caused_by_chems_organ`, `clinical_description`, `max_symptoms`, `min_symptoms`, `name` |
+| 15 | 0.06 | `/datum/asset/simple` | `assets`, `keep_local_name`, `legacy` |
 | 15 | 0.06 | `/datum/category_item/catalogue/anomalous` | `desc`, `name`, `value`, `unlocked_by_any` |
 | 15 | 0.06 | `/datum/decl/flooring` | `desc`, `icon`, `icon_base`, `name`, `build_type`, `flags` |
 | 15 | 0.06 | `/datum/decl/flooring/tiling/eris/dark` | `build_type`, `icon_base`, `has_base_range` |
@@ -744,15 +751,14 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 14 | 0.05 | `/datum/supply_pack` | `containername`, `containertype`, `contains`, `cost`, `name`, `group` |
 | 14 | 0.05 | `/datum/uplink_category` | `name` |
 | 14 | 0.05 | `/datum/uplink_item/item/stealthy_weapons` | `item_cost`, `name`, `path`, `desc` |
+| 13 | 0.05 | `/datum/affliction` | `category`, `clinical_description`, `max_symptoms`, `min_symptoms`, `name`, `progression_rate` |
 | 13 | 0.05 | `/datum/design_techweb/firework_star` | `build_path`, `build_type`, `desc`, `id`, `materials`, `name` |
 | 13 | 0.05 | `/datum/design_techweb/prosfab` | `build_path`, `id`, `materials`, `name`, `desc` |
 | 13 | 0.05 | `/datum/design_techweb/prosfab/pros/internal` | `build_path`, `id`, `materials`, `name` |
-| 13 | 0.05 | `/datum/dq_surgery` | `body_region`, `category`, `description`, `name`, `procedure`, `steps` |
 | 13 | 0.05 | `/datum/gear/mask` | `display_name`, `path`, `cost`, `sort_category`, `variant`, `whitelisted` |
 | 13 | 0.05 | `/datum/gear/suit/roles` | `allowed_roles`, `display_name`, `path`, `show_roles`, `cost`, `variant` |
 | 13 | 0.05 | `/datum/instrument/hardcoded` | `id`, `legacy_instrument_ext`, `legacy_instrument_path`, `name` |
 | 13 | 0.05 | `/datum/nifsoft` | `cost`, `desc`, `list_pos`, `name`, `a_drain`, `access` |
-| 13 | 0.05 | `/datum/property_def` | `desc`, `id`, `min_value`, `name`, `unit`, `aggregator` |
 | 13 | 0.05 | `/datum/reagent/drink/coffee` | `adj_temp`, `allergen_type`, `color`, `cup_desc`, `cup_icon_state`, `cup_name` |
 | 13 | 0.05 | `/datum/species` | `spawn_flags`, `appearance_flags`, `icobase`, `max_age`, `min_age`, `name` |
 | 13 | 0.05 | `/datum/sprite_accessory/tail/robolimb` | `icon`, `name`, `icon_state` |
@@ -764,8 +770,9 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 12 | 0.05 | `/datum/design_techweb/mechfab/pinnace` | `build_path`, `id`, `materials`, `name` |
 | 12 | 0.05 | `/datum/design_techweb/prosfab/cyborg/component` | `build_path`, `id`, `name`, `materials` |
 | 12 | 0.05 | `/datum/experiment/scanning/points` | `description`, `name`, `required_atoms`, `required_points` |
-| 12 | 0.05 | `/datum/reagent/drink/juice` | `color`, `cup_prefix`, `description`, `glass_desc`, `glass_name`, `id` |
-| 12 | 0.05 | `/datum/reagent/toxin` | `color`, `description`, `id`, `name`, `strength`, `taste_description` |
+| 12 | 0.05 | `/datum/preference/toggle` | `category`, `savefile_identifier`, `savefile_key`, `default_value` |
+| 12 | 0.05 | `/datum/property_def` | `desc`, `id`, `min_value`, `name`, `unit`, `aggregator` |
+| 12 | 0.05 | `/datum/reagent/chem_block` | `color`, `description`, `id`, `name`, `reagent_state`, `taste_description` |
 | 12 | 0.05 | `/datum/relation_definition/slot/occupant` | `holder`, `name`, `slot_id`, `drop_policy`, `damage_transmission` |
 | 12 | 0.05 | `/datum/robot_sprite/dogborg/tall/engineering` | `hat_offset`, `name`, `rest_sprite_options`, `sprite_icon_state`, `has_eye_light_sprites`, `has_vore_belly_sprites` |
 | 12 | 0.05 | `/datum/robot_sprite/dogborg/tall/mining` | `name`, `rest_sprite_options`, `sprite_icon_state`, `has_eye_light_sprites`, `has_vore_belly_sprites`, `hat_offset` |
@@ -780,10 +787,11 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 11 | 0.04 | `/datum/design_techweb/mechfab/durand` | `build_path`, `id`, `materials`, `name` |
 | 11 | 0.04 | `/datum/design_techweb/mechfab/gygax` | `build_path`, `id`, `materials`, `name` |
 | 11 | 0.04 | `/datum/gear/suit/wintercoat` | `display_name`, `path`, `allowed_roles`, `show_roles` |
-| 11 | 0.04 | `/datum/material/cloth` | `name`, `display_name`, `icon_colour`, `use_name`, `wiki_flag`, `hardness` |
+| 11 | 0.04 | `/datum/material/cloth` | `name`, `display_name`, `icon_colour`, `use_name`, `wiki_flag`, `heat_resistance` |
 | 11 | 0.04 | `/datum/material_template/product` | `application`, `roles` |
 | 11 | 0.04 | `/datum/matter_synth` | `name`, `max_energy`, `recharge_rate` |
 | 11 | 0.04 | `/datum/msg/interaction/construction/frame` | `self` |
+| 11 | 0.04 | `/datum/reagent/drink/juice` | `allergen_type`, `color`, `cup_prefix`, `description`, `glass_desc`, `glass_name` |
 | 11 | 0.04 | `/datum/robot_sprite/dogborg/engineering` | `name`, `sprite_icon_state`, `has_eye_light_sprites`, `hat_offset`, `sprite_hud_icon_state`, `has_dead_sprite_overlay` |
 | 11 | 0.04 | `/datum/robot_sprite/dogborg/janitor` | `name`, `sprite_icon_state`, `has_eye_light_sprites`, `hat_offset`, `has_dead_sprite_overlay`, `sprite_hud_icon_state` |
 | 11 | 0.04 | `/datum/robot_sprite/dogborg/security` | `name`, `sprite_icon_state`, `has_eye_light_sprites`, `sprite_hud_icon_state`, `hat_offset`, `sprite_flags` |
@@ -795,7 +803,6 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 11 | 0.04 | `/datum/trait/neutral/allergy_reaction` | `cost`, `custom_only`, `desc`, `name`, `reaction`, `hidden` |
 | 11 | 0.04 | `/datum/weather/sif` | `name`, `transition_chances`, `observed_message`, `transition_messages`, `indoor_sounds_type`, `outdoor_sounds_type` |
 | 11 | 0.04 | `/datum/weather/thor` | `name`, `observed_message`, `transition_chances`, `transition_messages`, `imminent_transition_message`, `light_modifier` |
-| 10 | 0.04 | `/datum/affliction/chem_side_effect` | `caused_by_chems`, `caused_by_chems_organ`, `clinical_description`, `max_symptoms`, `min_symptoms`, `name` |
 | 10 | 0.04 | `/datum/affliction_symptom/nanite` | `audiences`, `clinical_description`, `name`, `examine_line`, `scanner_phrase` |
 | 10 | 0.04 | `/datum/category_item/catalogue/information/organization` | `datum_to_copy`, `name` |
 | 10 | 0.04 | `/datum/decl/flooring/tiling/eris` | `build_type`, `floor_smooth`, `icon`, `icon_base`, `name`, `smooth_movable_atom` |
@@ -806,12 +813,11 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 10 | 0.04 | `/datum/gear/eyes/glasses` | `display_name`, `path` |
 | 10 | 0.04 | `/datum/gear/uniform/suit` | `display_name`, `path`, `allowed_roles` |
 | 10 | 0.04 | `/datum/gear_disp/voidsuit` | `name`, `voidsuit_type`, `voidhelmet_type`, `refit` |
+| 10 | 0.04 | `/datum/material_trace` | `effects`, `id`, `label`, `floors`, `contaminant`, `absorbs` |
 | 10 | 0.04 | `/datum/mecha_blueprint` | `feedback_key`, `icon_finished`, `icon_prefix`, `id`, `ladder`, `mecha_parts` |
 | 10 | 0.04 | `/datum/robot_sprite/dogborg/crisis` | `name`, `sprite_icon_state`, `has_eye_light_sprites`, `has_sleeper_light_indicator`, `hat_offset`, `sprite_hud_icon_state` |
 | 10 | 0.04 | `/datum/robot_sprite/dogborg/science` | `name`, `sprite_icon_state`, `has_eye_light_sprites`, `hat_offset`, `sprite_hud_icon_state`, `has_dead_sprite_overlay` |
 | 10 | 0.04 | `/datum/robot_sprite/dogborg/tall/science` | `hat_offset`, `name`, `rest_sprite_options`, `sprite_icon_state`, `has_eye_light_sprites`, `has_custom_open_sprites` |
-| 10 | 0.04 | `/datum/rule/heat_behaviour` | `applies_to`, `effect_proc`, `name`, `once`, `skip_generated_test` |
-| 10 | 0.04 | `/datum/spawnpoint` | `display_name`, `landing_list`, `msg`, `restrict_job`, `allowed_mob_types` |
 | 10 | 0.04 | `/datum/sprite_accessory/tail/taur/lizard` | `icon_state`, `name`, `extra_overlay`, `can_loaf`, `icon_loaf`, `loaf_offset` |
 | 10 | 0.04 | `/datum/suit_cycler_choice/species` | `name` |
 | 10 | 0.04 | `/datum/supply_pack/robotics` | `containername`, `containertype`, `contains`, `cost`, `desc`, `name` |
@@ -829,16 +835,17 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 9 | 0.04 | `/datum/gear/shoes/boots/winter` | `display_name`, `path`, `allowed_roles` |
 | 9 | 0.04 | `/datum/generated_room_feature` | `atom_type`, `id` |
 | 9 | 0.04 | `/datum/maint_recycler_vendor_entry/collar` | `ad_message`, `desc`, `name`, `object_type_to_spawn`, `vendor_category` |
-| 9 | 0.04 | `/datum/material/wood` | `name`, `stack_type`, `icon_colour`, `icon_base`, `density`, `hardness` |
+| 9 | 0.04 | `/datum/material/wood` | `name`, `stack_type`, `icon_colour`, `icon_base`, `icon_reinf`, `strength` |
 | 9 | 0.04 | `/datum/reagent/drink/coffee/nukie` | `color`, `id`, `name`, `taste_description` |
 | 9 | 0.04 | `/datum/reagent/marker_ink` | `color`, `id`, `name` |
-| 9 | 0.04 | `/datum/reagent/modapplying` | `color`, `description`, `id`, `modifier_duration`, `modifier_to_add`, `name` |
 | 9 | 0.04 | `/datum/reputation_faction` | `acronym`, `color`, `description`, `grid_x`, `grid_y`, `id` |
 | 9 | 0.04 | `/datum/robot_sprite/clerical` | `name`, `sprite_icon_state`, `has_custom_open_sprites`, `default_sprite`, `has_dead_sprite` |
 | 9 | 0.04 | `/datum/robot_sprite/crisis` | `name`, `sprite_icon_state`, `has_custom_open_sprites`, `has_dead_sprite`, `hat_offset` |
 | 9 | 0.04 | `/datum/robot_sprite/dogborg/tall/medical` | `has_eye_light_sprites`, `hat_offset`, `name`, `rest_sprite_options`, `sprite_icon_state`, `has_custom_open_sprites` |
 | 9 | 0.04 | `/datum/robot_sprite/dogborg/tall/security` | `hat_offset`, `name`, `rest_sprite_options`, `sprite_icon_state`, `has_eye_light_sprites`, `has_custom_open_sprites` |
 | 9 | 0.04 | `/datum/robot_sprite/surgical` | `name`, `sprite_icon_state`, `has_custom_open_sprites`, `has_dead_sprite`, `hat_offset`, `has_dead_sprite_overlay` |
+| 9 | 0.04 | `/datum/rule/heat_behaviour` | `applies_to`, `effect_proc`, `name`, `once`, `skip_generated_test` |
+| 9 | 0.04 | `/datum/spawnpoint` | `display_name`, `landing_list`, `msg`, `restrict_job`, `allowed_mob_types` |
 | 9 | 0.04 | `/datum/species/shapeshifter/promethean/avatar` | `appearance_flags`, `deform`, `has_limbs`, `icobase`, `name`, `tail` |
 | 9 | 0.04 | `/datum/spell/targeted/construct_advanced` | `desc`, `hud_state`, `name`, `spell_obj`, `charge_max` |
 | 9 | 0.04 | `/datum/sprite_accessory/tail/taur/wolf` | `icon_state`, `name`, `extra_overlay`, `extra_overlay2`, `ani_state`, `extra_overlay2_w` |
@@ -846,6 +853,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 9 | 0.04 | `/datum/supply_pack/robotics/robolimbs` | `access`, `containername`, `containertype`, `contains`, `cost`, `desc` |
 | 9 | 0.04 | `/datum/surgical_step/treat` | `begin_text`, `complication_amount`, `complication_kind`, `end_text`, `fail_text`, `name` |
 | 9 | 0.04 | `/datum/uplink_item/item/stealth_items` | `item_cost`, `name`, `path`, `desc` |
+| 8 | 0.03 | `/datum/affliction_symptom` | `audiences`, `category`, `clinical_description`, `name`, `scanner_phrase`, `examine_line` |
 | 8 | 0.03 | `/datum/body_effect/aura` | `factors`, `aura_max_distance`, `name`, `stacks`, `desc`, `on_created_text` |
 | 8 | 0.03 | `/datum/decl/flooring/desert_planet` | `desc`, `icon_base`, `name`, `has_base_range`, `flags` |
 | 8 | 0.03 | `/datum/decl/hierarchy/outfit/costume` | `name`, `shoes`, `uniform`, `suit`, `gloves`, `head` |
@@ -854,10 +862,10 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 8 | 0.03 | `/datum/design_techweb/prosfab/robot_upgrade/restricted` | `build_path`, `id`, `materials`, `name`, `category`, `desc` |
 | 8 | 0.03 | `/datum/gear/gloves` | `display_name`, `path`, `cost`, `allowed_roles`, `sort_category`, `whitelisted` |
 | 8 | 0.03 | `/datum/material/carpet` | `icon_colour`, `name`, `stack_type` |
-| 8 | 0.03 | `/datum/material/exotic_feedstock` | `conductivity`, `hardness`, `icon_colour`, `integrity`, `name`, `brittleness` |
+| 8 | 0.03 | `/datum/material/exotic_feedstock` | `conductivity`, `icon_colour`, `name`, `strength`, `toughness`, `traits` |
 | 8 | 0.03 | `/datum/pai_sprite/large` | `name`, `sprite_icon`, `sprite_icon_state`, `can_rest`, `resting_belly` |
-| 8 | 0.03 | `/datum/reagent/crayon_dust` | `color`, `id`, `name` |
-| 8 | 0.03 | `/datum/reagent/drink/soup` | `allergen_type`, `color`, `description`, `id`, `name`, `taste_description` |
+| 8 | 0.03 | `/datum/reagent/acid` | `color`, `description`, `id`, `industrial_use`, `meltdose`, `name` |
+| 8 | 0.03 | `/datum/reagent/modapplying` | `color`, `description`, `id`, `modifier_duration`, `modifier_to_add`, `name` |
 | 8 | 0.03 | `/datum/robot_sprite/combat` | `name`, `sprite_icon_state`, `sprite_flags`, `has_custom_open_sprites`, `has_dead_sprite`, `hat_offset` |
 | 8 | 0.03 | `/datum/robot_sprite/dogborg/mining` | `name`, `sprite_icon_state`, `has_eye_light_sprites`, `has_vore_belly_resting_sprites`, `hat_offset`, `sprite_icon` |
 | 8 | 0.03 | `/datum/say_list/cyber_horror` | `threaten_sound` |
@@ -865,8 +873,6 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 8 | 0.03 | `/datum/sprite_accessory/tail/taur/bigleggy` | `extra_overlay2`, `extra_overlay2_w`, `name`, `extra_overlay`, `extra_overlay_w`, `icon_state` |
 | 8 | 0.03 | `/datum/supply_pack/hardsuits` | `containername`, `containertype`, `contains`, `cost`, `desc`, `name` |
 | 8 | 0.03 | `/datum/trade_destination` | `description`, `distance`, `mundane_probability`, `name`, `viable_random_events` |
-| 7 | 0.03 | `/datum/affliction/chem_interaction` | `caused_by_chems`, `caused_by_chems_organ`, `clinical_description`, `max_symptoms`, `min_symptoms`, `name` |
-| 7 | 0.03 | `/datum/affliction_symptom` | `audiences`, `category`, `clinical_description`, `name`, `scanner_phrase`, `subcategory` |
 | 7 | 0.03 | `/datum/affliction_symptom/lesion_finding` | `clinical_description`, `name`, `scanner_phrase`, `category` |
 | 7 | 0.03 | `/datum/affliction_symptom/synthetic` | `audiences`, `clinical_description`, `name`, `scanner_phrase`, `examine_line` |
 | 7 | 0.03 | `/datum/body_effect/mmo_drop` | `puddleitem` |
@@ -888,7 +894,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 7 | 0.03 | `/datum/perk_category/mind` | `color`, `description`, `display_name`, `icon_name`, `id` |
 | 7 | 0.03 | `/datum/power/lleill` | `ability_icon_state`, `desc`, `name`, `verbpath` |
 | 7 | 0.03 | `/datum/reagent/carpet` | `color`, `description`, `id`, `name`, `reagent_state`, `taste_description` |
-| 7 | 0.03 | `/datum/reagent/nutriment/protein` | `allergen_type`, `color`, `id`, `name`, `taste_description`, `cup_prefix` |
+| 7 | 0.03 | `/datum/reagent/drink/soup` | `allergen_type`, `color`, `description`, `id`, `name`, `taste_description` |
 | 7 | 0.03 | `/datum/remote_view_config` | `forbid_movement`, `will_blind`, `will_paralyze`, `will_sleep`, `will_stun`, `will_weaken` |
 | 7 | 0.03 | `/datum/robot_sprite/fluff/argonne` | `module_type`, `sprite_icon_state`, `sprite_hud_icon_state` |
 | 7 | 0.03 | `/datum/species/monkey` | `default_language`, `deform`, `greater_form`, `icobase`, `name`, `skull_type` |
@@ -918,9 +924,11 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 6 | 0.02 | `/datum/gear_disp/adventure_box` | `amount`, `name`, `to_spawn` |
 | 6 | 0.02 | `/datum/gear_disp/ert` | `name`, `to_spawn` |
 | 6 | 0.02 | `/datum/gear_disp/voidsuit/station` | `name`, `refit`, `req_one_access`, `voidhelmet_type`, `voidsuit_type`, `magboots_type` |
-| 6 | 0.02 | `/datum/preference/toggle/holder` | `category`, `default_value`, `savefile_identifier`, `savefile_key` |
+| 6 | 0.02 | `/datum/polymer_recipe` | `id`, `material`, `inputs`, `chem_process`, `sheet_sources`, `atmosphere` |
 | 6 | 0.02 | `/datum/prompt/number` | `timeout`, `max_value`, `min_value`, `question`, `step`, `title` |
 | 6 | 0.02 | `/datum/property_provider/constant` | `applies_to`, `overrides`, `property`, `unit`, `value` |
+| 6 | 0.02 | `/datum/reagent/contaminant/toxic` | `boiling_point`, `description`, `effect_text`, `filter_floor`, `id`, `name` |
+| 6 | 0.02 | `/datum/reagent/nutriment/protein` | `allergen_type`, `color`, `id`, `name`, `taste_description`, `cup_prefix` |
 | 6 | 0.02 | `/datum/robot_sprite/dogborg/tall/syndie` | `has_custom_open_sprites`, `has_eye_light_sprites`, `hat_offset`, `name`, `rest_sprite_options`, `sprite_icon_state` |
 | 6 | 0.02 | `/datum/runtimeError` | `message`, `name` |
 | 6 | 0.02 | `/datum/sprite_accessory/marking/replikant` | `body_parts`, `color_blend_mode`, `icon_state`, `name` |
@@ -931,7 +939,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 6 | 0.02 | `/datum/uplink_item/item/telecrystal` | `item_cost`, `name` |
 | 5 | 0.02 | `/datum/affliction/poisoning` | `clinical_description`, `name`, `symptom_pool`, `treated_by`, `consciousness_at_max`, `organ_damage_per_tick` |
 | 5 | 0.02 | `/datum/affliction/venom` | `clinical_description`, `max_symptoms`, `min_symptoms`, `name`, `pain_at_max`, `progression_rate` |
-| 5 | 0.02 | `/datum/affliction/wound/burn` | `stages` |
+| 5 | 0.02 | `/datum/affliction/wound/burn` | `stages`, `treated_by` |
 | 5 | 0.02 | `/datum/affliction/wound/puncture` | `max_bleeding_stage`, `stages` |
 | 5 | 0.02 | `/datum/artifact_master` | `make_effects` |
 | 5 | 0.02 | `/datum/body_effect/stasis` | `factors`, `name` |
@@ -961,6 +969,7 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 5 | 0.02 | `/datum/instrument/piano` | `id`, `name`, `real_samples` |
 | 5 | 0.02 | `/datum/preference/color/human/color_slot` | `display_label`, `fallback`, `old_palette_index`, `savefile_key`, `seed_key` |
 | 5 | 0.02 | `/datum/prompt/color` | `timeout`, `question`, `ask_flags`, `title`, `usable_state` |
+| 5 | 0.02 | `/datum/reagent/contaminant/reactive` | `boiling_point`, `burn_chance`, `description`, `effect_text`, `filter_floor`, `id` |
 | 5 | 0.02 | `/datum/reagent/ethanol/coffee` | `color`, `description`, `glass_desc`, `glass_icon_state`, `glass_name`, `id` |
 | 5 | 0.02 | `/datum/relation_definition/slot` | `exposure`, `holder`, `name`, `slot_id`, `drop_policy`, `damage_transmission` |
 | 5 | 0.02 | `/datum/robot_component` | `max_damage`, `name`, `external_type`, `active_usage`, `idle_usage` |
@@ -976,4 +985,4 @@ the registries, saves and templates use, and areas are looked up and templated b
 | 5 | 0.02 | `/datum/trait_state/radiation_effects` | `glow_toggle`, `glows`, `radiation_immunity`, `radiation_nutrition`, `nutrition_toggle`, `show_panel` |
 | 5 | 0.02 | `/datum/weather_holder` | `allowed_weather_types`, `roundstart_weather_chances`, `temperature` |
 
-718 further families have fewer than 5 leaves and are not listed.
+719 further families have fewer than 5 leaves and are not listed.

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "About 450 data-only clothing types (jumpsuits, dresses, labcoats, shoes, hats, Teshari cloaks and undercoats, ties, scarves, sweaters, hoodies, ponchos, skirts, pants, armour tags) became rows of variant tables; the old paths still resolve for maps and saves"
+  - code_imp: "The costume box and outfit for the slasher movie cop hand out the holster separately instead of through a starting-accessory override"

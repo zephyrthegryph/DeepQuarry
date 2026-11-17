@@ -19,7 +19,7 @@
 
 /datum/decl/hierarchy/outfit/soviet_soldier
 	name = "Soviet soldier"
-	uniform = /obj/item/clothing/under/soviet
+	uniform = VARIANT(/obj/item/clothing/under/soviet)
 	shoes = /obj/item/clothing/shoes/boots/combat
 	head = /obj/item/clothing/head/ushanka/soviet
 	gloves = /obj/item/clothing/gloves/combat
