@@ -280,6 +280,10 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		var/datum/reagent/R = new Rpath()
 		if(!length(R.treatment_tags))
 			continue
+		if(R.name == REAGENT_DEVELOPER_WARNING)
+			var/datum/reagent/parent_reagent = new R.parent_type()
+			if(parent_reagent.treatment_tags ~= R.treatment_tags)
+				continue // an abstract base that only inherits its parent's tags: its subtypes are the reagents
 		checked++
 		TEST_ASSERT(R.id != REAGENT_ID_DEVELOPER_WARNING && R.name != REAGENT_DEVELOPER_WARNING, "[Rpath]: treatment_tags sit on a type that is not a real reagent (no id/name); check for a misspelled path.")
 		for(var/tag in R.treatment_tags)

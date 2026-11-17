@@ -476,7 +476,7 @@
 	graft.reagents.add_reagent(REAGENT_ID_AMINOACID, 10)
 	TEST_ASSERT(graft.reagents.get_reagent_amount(REAGENT_ID_RINGAMINOACID) + graft.reagents.get_reagent_amount(REAGENT_ID_PHENETHYLAMINE) > 8, "phenol and an amino acid add ([graft.reagents.get_reagents()])")
 	TEST_ASSERT(graft.reagents.get_reagent_amount(REAGENT_ID_CONTAMINANT_TAR) > 0.2, "leaving tar")
-	var/obj/item/reagent_containers/glass/beaker/amine = dq_blk_beaker(170)
+	var/obj/item/reagent_containers/glass/beaker/amine = dq_blk_beaker(240) // decarboxylation starts above condense's 200 C
 	amine.reagents.add_reagent(REAGENT_ID_RINGAMINOACID, 10)
 	TEST_ASSERT(amine.reagents.get_reagent_amount(REAGENT_ID_PHENETHYLAMINE) > 8, "heat drives the carboxyl off: phenethylamine ([amine.reagents.get_reagents()])")
 

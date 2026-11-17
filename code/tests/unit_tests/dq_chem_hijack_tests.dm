@@ -110,7 +110,8 @@
 			continue
 		TEST_ASSERT(!(REAGENT_ID_LYE in R.takes), "[route_id] takes lye apart")
 
-/// A product with a generated route has no hand-written recipe of its own beside it (peridaxon once made twelve from four on top of its three routes).
+/// A product with a generated route has no hand-written recipe of its own beside it (peridaxon once made twelve from four on top of its three routes). A slime
+/// extract's own reaction is not a chemistry recipe: the pink extract yields the base reagent.
 /datum/unit_test/dq_chem_routed_products_have_no_hand_recipe
 
 /datum/unit_test/dq_chem_routed_products_have_no_hand_recipe/Run()
@@ -122,7 +123,7 @@
 				routed++
 		TEST_ASSERT(routed > 0, "[product_id] has a generated route")
 		for(var/datum/xform/X as anything in GLOB.xform_rules)
-			TEST_ASSERT(!(X.medium == MEDIUM_REAGENTS && !X.route_id && X.result == product_id), "[product_id] is also made by the hand recipe [X.rule_type]")
+			TEST_ASSERT(!(X.medium == MEDIUM_REAGENTS && !X.route_id && X.result == product_id && !ispath(X.rule_type, /transformation/chem/instant/slime)), "[product_id] is also made by the hand recipe [X.rule_type]")
 
 /// The real path to the nitrating mix: nitric and sulphuric acid at room temperature stay apart (the dissolved-acid nitration is theirs to run), and on a plate dialled
 /// to 5 C the beaker is chilled to the mixing band and they make the mix.
