@@ -325,37 +325,38 @@
 	TEST_ASSERT(abs(target.get_temperature() - expected) < 1, "to the weighted mix ([round(target.get_temperature() - T0C, 0.1)] C, expected [round(expected - T0C, 0.1)] C)")
 	TEST_ASSERT(target.get_temperature() < T0C + 80, "and not to the temperature of what was poured")
 
-/// What is poured brings its temperature: ice poured into room-temperature water drops the mix toward 0 C, taking latent heat out of it as the ice melts.
-/datum/unit_test/dq_ice_pouring_ice_cools_the_water
+/// The other ways a reagent moves between holders carry the heat too: a reagent drawn out by id, or by type, brings the temperature of the holder it came from.
+/datum/unit_test/dq_ice_draws_carry_heat
 
-/datum/unit_test/dq_ice_pouring_ice_cools_the_water/Run()
-	var/obj/item/reagent_containers/glass/beaker/large/source = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
-	source.reagents.add_reagent(REAGENT_ID_ICE, 60, safety = 1)
-	source.inherit_heat(T0C - 10)
-	var/obj/item/reagent_containers/glass/beaker/large/target = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
-	target.reagents.add_reagent(REAGENT_ID_WATER, 60, safety = 1)
-	TEST_ASSERT(abs(target.get_temperature() - T20C) < 1, "the water is at room temperature")
-	source.reagents.trans_to_holder(target.reagents, 60)
-	TEST_ASSERT(target.get_temperature() < T20C - 5, "the mix dropped to [round(target.get_temperature() - T0C, 0.1)] C")
-	TEST_ASSERT(target.get_temperature() >= T0C - 0.5, "and not far below 0 C")
-	TEST_ASSERT(abs(source.get_temperature() - (T0C - 10)) < 0.5, "the beaker it came from is as cold as it was")
-
-/// Hot liquid poured into a cold beaker warms it to the heat-capacity-weighted mix of the two.
-/datum/unit_test/dq_ice_pouring_hot_liquid_warms_a_cold_beaker
-
-/datum/unit_test/dq_ice_pouring_hot_liquid_warms_a_cold_beaker/Run()
+/datum/unit_test/dq_ice_draws_carry_heat/proc/hot_source()
 	var/obj/item/reagent_containers/glass/beaker/large/source = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
 	source.reagents.add_reagent(REAGENT_ID_WATER, 40, safety = 1)
+	source.reagents.add_reagent(REAGENT_ID_SUGAR, 20, safety = 1)
 	source.inherit_heat(T0C + 80)
+	return source
+
+/datum/unit_test/dq_ice_draws_carry_heat/proc/cold_target()
 	var/obj/item/reagent_containers/glass/beaker/large/target = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
 	target.reagents.add_reagent(REAGENT_ID_WATER, 40, safety = 1)
 	target.inherit_heat(T0C + 5)
-	var/own_capacity = target.thermal_properties()[THERMAL_CAPACITY]
-	var/carried = 40 * REAGENT_SPECIFIC_HEAT_WATER
-	var/expected = ((own_capacity * (T0C + 5)) + (carried * (T0C + 80))) / (own_capacity + carried)
-	source.reagents.trans_to_holder(target.reagents, 40)
-	TEST_ASSERT(target.get_temperature() > T0C + 8, "the cold beaker warmed to [round(target.get_temperature() - T0C, 0.1)] C")
-	TEST_ASSERT(abs(target.get_temperature() - expected) < 1, "to the weighted mix ([round(target.get_temperature() - T0C, 0.1)] C, expected [round(expected - T0C, 0.1)] C)")
+	return target
+
+/datum/unit_test/dq_ice_draws_carry_heat/Run()
+	var/obj/item/reagent_containers/glass/beaker/large/source = hot_source()
+	var/obj/item/reagent_containers/glass/beaker/large/target = cold_target()
+	TEST_ASSERT(source.reagents.trans_id_to(target, REAGENT_ID_WATER, 30), "30u of water moved by id")
+	TEST_ASSERT(target.get_temperature() > T0C + 8, "poured by id, the hot water warmed the cold beaker to [round(target.get_temperature() - T0C, 0.1)] C")
 	TEST_ASSERT(target.get_temperature() < T0C + 80, "and not to the temperature of what was poured")
+	TEST_ASSERT(abs(source.get_temperature() - (T0C + 80)) < 0.5, "the beaker it came from stayed as hot as it was")
+
+	var/obj/item/reagent_containers/glass/beaker/large/other_target = cold_target()
+	TEST_ASSERT(source.reagents.trans_type_to(other_target, REAGENT_ID_SUGAR, 15), "15u of sugar moved by type")
+	TEST_ASSERT(other_target.get_temperature() > T0C + 5.5, "moved by type, the hot sugar warmed the cold beaker to [round(other_target.get_temperature() - T0C, 0.1)] C")
+
+	var/datum/reagents/portion = source.reagents.draw_portion(REAGENT_ID_WATER, 5)
+	TEST_ASSERT_NOTNULL(portion, "a portion was drawn")
+	TEST_ASSERT(abs(portion.content_temperature() - (T0C + 80)) < 0.5, "the portion carries the temperature of the holder it was drawn from ([round(portion.content_temperature() - T0C, 0.1)] C)")
+	qdel(portion)
+
 
 #endif

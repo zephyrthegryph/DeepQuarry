@@ -369,6 +369,8 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
 /datum/effect/effect/system/smoke_spread/proc/emit_one_smoke(color_override)
 	if(holder)
 		rel_set(src, nameof(location), get_turf(holder))
+	if(!src.get_location())
+		return // a source in nullspace (a slime extract in a test, a held-in-nothing item) has no air to fill: a puff made there is placed nowhere, owned by no one, with timers running
 	var/obj/effect/effect/smoke/smoke = new smoke_type(src.get_location())
 	src.total_smoke++
 	if(color_override)

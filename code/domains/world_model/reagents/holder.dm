@@ -127,6 +127,8 @@ CAPABILITIES(/datum/reagents)
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
 		my_atom.heat_capacity_changed()
 
+SCHEMA(/datum/reagents, carried_temperature, num())
+
 /// Heat capacity of the contents, J/K: each reagent's volume x specific heat.
 /datum/reagents/proc/heat_capacity()
 	. = 0
@@ -473,14 +475,16 @@ CAPABILITIES(/datum/reagents)
 	if(!trans_to(target, amount, multiplier, copy, user = user))
 		touch(target, amount, user)
 
-/// Draws `amount` of the reagent `id` (a contaminant as much as any other: each is a reagent of its own) out of the mixture into a new holder. Null when there is
-/// none of it.
+/// Draws `amount` of the reagent `id` (a contaminant as much as any other: each is a reagent of its own) out of the mixture into a new holder, which carries the
+/// temperature of this one (every pour that goes by way of a portion, trans_id_to() and trans_type_to() among them, brings its heat the way trans_to_holder() does). Null
+/// when there is none of it.
 /datum/reagents/proc/draw_portion(id, amount)
 	RETURN_TYPE(/datum/reagents)
 	amount = min(amount, get_reagent_amount(id))
 	if(amount <= 0)
 		return null
 	var/datum/reagents/portion = new /datum/reagents(amount)
+	portion.carried_temperature = content_temperature()
 	portion.add_reagent(id, amount, get_data(id), safety = 1)
 	remove_reagent(id, amount, safety = 1)
 	handle_reactions()
