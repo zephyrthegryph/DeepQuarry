@@ -135,6 +135,10 @@ GLOBAL_LIST_INIT(chem_declared_structures, list(
 	REAGENT_ID_CITALOPRAM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CYANIDE)),
 	REAGENT_ID_TERCOZOLAM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_THIOL)),
 	REAGENT_ID_IMPEDREZENE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBONYL, CHEM_GROUP_HALIDE)),
+	// ---- the cures the first aid book was missing: oxycodone with its carbonyl reduced is the opioid antagonist (naloxone); a nitrated synaptizine repairs the ear (cochlexine); a halogenated adranol is the anti-parasitic (anthelmin) ----
+	REAGENT_ID_NALOXONE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_COCHLEXINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_NITRO)),
+	REAGENT_ID_ANTHELMIN = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
 	// ---- the leftovers of tiers 2 and 3: a pyridine acid joined to an amine (a nikethamide) or a sugar (a nucleoside), an alkaloid acid on paracetamol ----
 	REAGENT_ID_ANTICONVULSANT = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), null, list(CHEM_LINK_AMIDE)),
 	REAGENT_ID_REZADONE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_SUGAR_RING), null, list(CHEM_LINK_ESTER)),

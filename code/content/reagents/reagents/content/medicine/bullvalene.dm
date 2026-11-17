@@ -4,10 +4,11 @@
 		TREAT_TISSUE_REPAIR = 0.3,
 		TREAT_BURN_CARE = 0.3,
 		TREAT_OXYGENATION = 0.2,
+		TREAT_BURN_DEEP = 0.4, // a second route for deep burns when no dermaline is to hand, at the cost of the toxins
 	)
 	name = REAGENT_BULLVALENE
 	id = REAGENT_ID_BULLVALENE
-	description = "A catalytic chemical that can treat a wide variety of ailments at the cost of toxifying the host's body."
+	description = "A catalytic chemical that can treat a wide variety of ailments (including, slowly, deep burns) at the cost of toxifying the host's body."
 	taste_description = "sulfur"
 	reagent_state = LIQUID
 	color = "#163851"

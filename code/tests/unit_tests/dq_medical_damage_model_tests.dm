@@ -40,7 +40,7 @@
 	var/list/cures = proto.effective_cures()
 	TEST_ASSERT(cures[REAGENT_ID_BICARIDINE] > 0, "bicaridine should cure internal_hemorrhage via the hemostatic tag")
 	TEST_ASSERT(cures[REAGENT_ID_TRICORDRAZINE] > 0, "tricordrazine should cure internal_hemorrhage via the hemostatic tag")
-	TEST_ASSERT(cures[REAGENT_ID_BICARIDINE] > cures[REAGENT_ID_TRICORDRAZINE], "the specialist should outperform the generic")
+	TEST_ASSERT(cures[REAGENT_ID_MYELAMINE] > cures[REAGENT_ID_TRICORDRAZINE], "the specialist (myelamine) should outperform the generic")
 	var/list/worsens = proto.effective_worsens()
 	TEST_ASSERT(worsens[REAGENT_ID_HYPERZINE] > 0, "hyperzine should worsen internal_hemorrhage via the stimulant tag")
 

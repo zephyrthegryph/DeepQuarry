@@ -327,8 +327,28 @@
 		_dq_plain_condition_entry("body_state/ear_damage", "ear damage and deafness", "Senses", \
 			"Flashbangs, concussive blasts and loud weapons damage the ears. Mild damage rings and muffles and heals on its own; wearing ear protection speeds it up. Past a heavy dose the damage does not heal by itself. The basic analyzer reads the degree of ear damage and any deafness.", \
 			"mild damage heals slowly; severe damage does not", \
-			list(), \
+			list(list("id" = REAGENT_ID_COCHLEXINE, "name" = dq_reagent_display_name(REAGENT_ID_COCHLEXINE), "band" = dq_describe_cure_strength(2))), \
 			list("ringing and muffled hearing", "deafness")),
+		_dq_plain_condition_entry("body_state/destroyed_eardrum", "destroyed eardrum", "Senses", \
+			"Heavy noise or blast can destroy an eardrum outright (ear damage past the permanent line). No drug rebuilds it. The basic analyzer reads severe, permanent-looking damage to the ears. The Repair Eardrum surgery on the opened head rebuilds the drum; cochlexine then heals what is left.", \
+			"does not heal; needs the Repair Eardrum surgery, then cochlexine", \
+			list(list("id" = REAGENT_ID_COCHLEXINE, "name" = dq_reagent_display_name(REAGENT_ID_COCHLEXINE), "band" = dq_describe_cure_strength(2))), \
+			list("deafness")),
+		_dq_plain_condition_entry("body_state/cataracts", "cataracts", "Senses", \
+			"A clouded lens that blinds the patient, from a welding flash or other eye injury. The body scanner reads cataracts, and the advanced analyzer's guidance names the cure: the Remove Cataracts surgery on the opened head. Imidazoline mends the eye itself but cannot clear a clouded lens.", \
+			"does not clear on its own; needs the Remove Cataracts surgery", \
+			list(), \
+			list("blindness")),
+		_dq_plain_condition_entry("body_state/abnormal_tissue_mass", "abnormal tissue mass (tumour)", "Growths", \
+			"A tumour grows in a limb or the torso, from radiation or other causes, and eventually does its host harm. The body scanner reads an abnormal tissue mass and where it is. It does not answer to drugs: the Resect Necrotic Tissue surgery cuts it out (so does Remove Organ).", \
+			"keeps growing; needs surgery", \
+			list(), \
+			list("pain at the site", "malaise")),
+		_dq_plain_condition_entry("body_state/parasitic_organism", "parasitic organism", "Growths", \
+			"A parasite lodged in the head, chest or abdomen feeds on its host and does odd things to them. The body scanner reads a parasitic organism and where it is. Anthelmin kills it over a few minutes; the Resect Necrotic Tissue surgery cuts it out.", \
+			"stays until it is killed or cut out", \
+			list(list("id" = REAGENT_ID_ANTHELMIN, "name" = dq_reagent_display_name(REAGENT_ID_ANTHELMIN), "band" = dq_describe_cure_strength(1))), \
+			list("hunger", "odd urges")),
 	)
 
 /// One book entry for a body-state condition: the whole shape of a catalogue entry, with the lists a state has no data for left empty.

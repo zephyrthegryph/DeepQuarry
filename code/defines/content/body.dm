@@ -111,6 +111,10 @@
 #define TREAT_DIGESTIVE        "digestive"  // stomach / intestine / appendix tissue repair
 #define TREAT_ANTIEMETIC       "antiemetic"  // settles nausea (calcium carbonate)
 #define TREAT_ANTICONVULSANT   "anticonvulsant"  // stops and prevents seizures
+/// Ear damage (mob.ear_damage): at 15 hearing is impaired; at 100 the ears are destroyed and do not heal without surgery (surgery/ears.dm).
+#define EAR_DAMAGE_IMPAIRED    15
+#define EAR_DAMAGE_PERMANENT   100
+#define TREAT_OPIOID_ANTAGONIST "opioid_antagonist"  // knocks opioids off their receptors: reverses an opioid overdose (naloxone)
 // Field stabilisation mechanisms (code/modules/medical/stabilisation/).
 #define TREAT_WOUND_PACKING    "wound_packing"  // packs / dresses a bleeding wound shut (hemostatic gauze, pressure bandage); amount = wounds
 #define TREAT_OCCLUSIVE_SEAL   "occlusive_seal"  // airtight seal over an open chest wound (chest seal); amount = wounds

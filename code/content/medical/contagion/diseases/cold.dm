@@ -10,8 +10,8 @@
 	max_stages = 3
 	spread_text = "Airborne"
 	spread_flags = DISEASE_SPREAD_AIRBORNE
-	cure_text = "Rest & " + REAGENT_SPACEACILLIN
-	cures = list(REAGENT_ID_SPACEACILLIN, REAGENT_ID_CHICKENSOUP, REAGENT_ID_CHICKENNOODLESOUP)
+	cure_text = "Rest, fluids (" + REAGENT_IRONSALINE + ") or " + REAGENT_SPACEACILLIN
+	cures = list(REAGENT_ID_SPACEACILLIN, REAGENT_ID_IRONSALINE)
 	virus_modifiers = NONE //Does NOT have needs_all_cures
 	agent = "XY-rhinovirus"
 	permeability_mod = 0.5

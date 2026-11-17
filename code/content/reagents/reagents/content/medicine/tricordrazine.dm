@@ -6,11 +6,15 @@
 		TREAT_BURN_CARE = 0.3,
 		TREAT_ANTITOXIN = 0.3,
 		TREAT_OXYGENATION = 0.3,
+		// The mid-tier organ repair: a slow share of what the daxons and imidazoline do, so ordinary blunt trauma and vacuum exposure are treatable without them.
+		TREAT_CARDIAC = 0.25,
+		TREAT_RESPIRATORY = 0.25,
+		TREAT_OCULAR = 0.25,
 	)
 	strains = alist(O_LIVER = DRUG_STRAIN_MODERATE)
 	name = REAGENT_TRICORDRAZINE
 	id = REAGENT_ID_TRICORDRAZINE
-	description = REAGENT_TRICORDRAZINE + " is a highly potent stimulant, originally derived from cordrazine. A weak generic: it treats low-grade tissue damage (bleeding included), burns, poisoning and oxygen starvation at once, so it works when nothing is diagnosed, but a specialist drug does each job better. It strains the liver, is mildly addictive, and an overdose is severely toxic."
+	description = REAGENT_TRICORDRAZINE + " is a highly potent stimulant, originally derived from cordrazine. A weak generic: it treats low-grade tissue damage (bleeding included), burns, poisoning and oxygen starvation at once, and mends damaged hearts, lungs and eyes slowly (a quarter of the speed of cordradaxon, respirodaxon or imidazoline), so it works when nothing is diagnosed, but a specialist drug does each job better. It strains the liver, is mildly addictive, and an overdose is severely toxic."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

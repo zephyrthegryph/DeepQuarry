@@ -461,6 +461,9 @@ GLOBAL_LIST_INIT(dq_reagent_category_by_id, list(
 		REAGENT_ID_TRAMADOL       = "Analgesic",
 		REAGENT_ID_OXYCODONE      = "Analgesic",
 		REAGENT_ID_ANTICONVULSANT = "Neurological",
+		REAGENT_ID_NALOXONE       = "Analgesic",
+		REAGENT_ID_COCHLEXINE     = "Organ repair",
+		REAGENT_ID_ANTHELMIN      = "Anti-infective",
 		REAGENT_ID_CALCIUMCARBONATE = "Gastrointestinal",
 		REAGENT_ID_ADRANOL        = "Neurological",
 		// --- Combat stimulants (code/content/reagents/reagents/content/combat_stims/; not medicine) ---

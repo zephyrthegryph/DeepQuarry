@@ -1,0 +1,7 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscadd: "Added naloxone (opioid overdose antidote), cochlexine (ear repair) and anthelmin (anti-parasitic), all made from the starting chemicals; Repair Eardrum and Remove Cataracts surgeries; tumours and parasites are listed in the medical book and cut out by resection"
+  - balance: "Tricordrazine slowly repairs hearts, lungs and eyes; adranol, menthol and bullvalene are second providers for seizures, nausea and deep burns"
+  - balance: "Chicken soup and holy water no longer cure diseases: colds, flu and food poisoning respond to rest, fluids and medicine, and horror and unnatural wasting to rezadone and adranol"
+  - spellcheck: "Spaceacillin and sepsis text now agree: any antimicrobial cures it, the stronger ones faster"
