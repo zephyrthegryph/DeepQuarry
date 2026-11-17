@@ -303,18 +303,18 @@
 	containername = "Postal Service crate"
 
 
-/datum/supply_pack/supply/cargo_appraisers
-	name = "Cargo appraiser crate"
-	desc = "Two handheld cargo appraisers for estimating freight value before haggling with trade ships."
-	contains = list(/obj/item/cargo_appraiser = 2)
+/datum/supply_pack/supply/salvage_lot
+	name = "Salvage lot"
+	desc = "An unsorted lot of scrap electronics, parts and odds and ends from decommissioned stations, sold as seen. Appraise it, resell it or break it down."
+	lot_table = /loot/cargo_lot/salvage
+	cost = 25
+	containertype = /obj/structure/closet/crate
+	containername = "Salvage lot crate"
+
+/datum/supply_pack/supply/surplus_lot
+	name = "Surplus freight lot"
+	desc = "Unclaimed general freight, sold unopened: boxes of whatever was in them, sundries and medicine. Appraise it, resell it or break it down."
+	lot_table = /loot/cargo_lot/surplus
 	cost = 15
 	containertype = /obj/structure/closet/crate
-	containername = "Cargo appraiser crate"
-
-/datum/supply_pack/supply/salvage_smelter
-	name = "Salvage smelter"
-	desc = "A Cargo induction smelter that melts salvage and junk down to material sheets. Set it up on a power line and feed it by hand or conveyor."
-	contains = list(/obj/machinery/recycling/salvage_smelter)
-	cost = 60
-	containertype = /obj/structure/largecrate
-	containername = "Salvage smelter crate"
+	containername = "Surplus freight lot crate"

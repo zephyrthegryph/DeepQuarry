@@ -1821,8 +1821,11 @@
 
 	var/valuation = SSsupply.trade_ship_valuation(visit, crate)
 	TEST_ASSERT(valuation > 0, "the ship valued the crate at nothing")
+	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparty(visit.counterparty_id)
+	var/trader_before = counterparty.trader_standing
 	var/datum/trade_offer/offer = SSsupply.negotiate_trade_offer(visit, crate, valuation * 3, trader)
 	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_OPEN, "a greedy ask was not rejected")
+	TEST_ASSERT_EQUAL(counterparty.trader_standing, trader_before + TRADE_TRADER_STANDING_INSULT, "an insulting ask did not cost the trader's regard")
 	TEST_ASSERT_EQUAL(offer.patience, TRADE_OFFER_PATIENCE - 2, "a rejection did not cost patience")
 	TEST_ASSERT(visit.mood < 1, "an insulting ask did not sour the ship's mood")
 	valuation = SSsupply.trade_ship_valuation(visit, crate)
@@ -1834,7 +1837,9 @@
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
 	var/cargo_before = cargo.money
 	var/counter = offer.counter
+	var/trader_mid = counterparty.trader_standing
 	TEST_ASSERT(SSsupply.take_trade_counter(visit, offer, trader), "taking the counter failed")
+	TEST_ASSERT_EQUAL(counterparty.trader_standing, trader_mid + TRADE_TRADER_STANDING_SALE, "a haggled sale did not raise the trader's regard")
 	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_SETTLED, "the deal did not settle")
 	TEST_ASSERT(QDELETED(crate) || isnull(crate.loc), "the sold crate stayed aboard")
 	TEST_ASSERT(cargo.money - cargo_before >= counter - 1 && cargo.money - cargo_before <= counter + 1, "Cargo was paid [cargo.money - cargo_before], not the agreed [counter]")
@@ -1854,11 +1859,12 @@
 	TEST_ASSERT_EQUAL(fair.settled_price, 1, "an accepted ask paid other than the ask")
 
 	SSsupply.depart_trade_ship(visit)
+	counterparty.change_trader_standing(trader_before - counterparty.trader_standing)
 	qdel(second)
 	qdel(trader)
 
-/// Black-market ships: hidden from an ordinary console, deal contraband through an unlocked one, and a caught deal costs
-/// NanoTrasen standing; heat rises with every deal.
+/// Black-market ships: hidden from an ordinary console, deal contraband through an unlocked one, and a deal carries no
+/// customs risk (no interdiction, no NanoTrasen standing lost).
 /datum/unit_test/dq_black_market_ship
 
 /datum/unit_test/dq_black_market_ship/Run()
@@ -1878,21 +1884,16 @@
 			contraband_pack = pack
 			break
 	TEST_ASSERT_NOTNULL(contraband_pack, "the black-market ship offered no contraband")
-	visit.profile.catch_chance = 0
-	visit.profile.heat_per_deal = 0
 	TEST_ASSERT(!SSsupply.request_special_order(visit, contraband_pack, dealer, "test", FALSE, FALSE), "a locked console special-ordered from the black market")
+	var/nt_before = get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN)
+	var/nt_cargo_before = get_department_faction_reputation(DEPARTMENT_CARGO, REPUTATION_FACTION_NANOTRASEN)
 	var/datum/supply_order/order = SSsupply.request_special_order(visit, contraband_pack, dealer, "test", FALSE, TRUE)
 	TEST_ASSERT_NOTNULL(order, "an unlocked console could not special-order contraband")
-	TEST_ASSERT_EQUAL(visit.heat, 1, "a black-market deal did not raise the heat")
-
-	var/standing_before = get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN)
-	visit.profile.catch_chance = 100
-	TEST_ASSERT(SSsupply.black_market_exposure(visit, dealer, "a test deal"), "a certain interdiction was not caught")
-	TEST_ASSERT(get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN) < standing_before, "a caught deal cost no NanoTrasen standing")
-	adjust_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN, standing_before - get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN))
+	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN), nt_before, "a black-market deal cost NanoTrasen standing (the customs system is removed)")
+	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_CARGO, REPUTATION_FACTION_NANOTRASEN), nt_cargo_before, "a black-market deal cost Cargo NanoTrasen standing")
+	TEST_ASSERT(!hascall(SSsupply, "black_market_exposure"), "the customs interdiction proc is still defined")
 
 	var/datum/trade_ship_visit/lawful = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/guild_trader)
-	TEST_ASSERT(!SSsupply.black_market_exposure(lawful, dealer, "a lawful deal"), "a lawful ship's deal risked interdiction")
 	TEST_ASSERT(SSsupply.trade_ship_visible(lawful, dealer, FALSE), "a lawful ship was hidden")
 
 	SSsupply.depart_trade_ship(visit)
@@ -1908,35 +1909,145 @@
 	qdel(order)
 	qdel(dealer)
 
-/// The salvage smelter returns exactly its efficiency share of what things are made of, never more, keeps partial sheets in
-/// its melt, and refuses material sheets.
-/datum/unit_test/dq_salvage_smelter_conserves
+/// Prices follow three standing layers (station, department, trader), each shown and summed: better standing makes a
+/// ship's special orders cheaper and its valuation of a crate higher; worse standing the reverse.
+/datum/unit_test/dq_trade_standing_layers
 
-/datum/unit_test/dq_salvage_smelter_conserves/Run()
+/datum/unit_test/dq_trade_standing_layers/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
-	var/obj/machinery/recycling/salvage_smelter/smelter = new(test_turf)
-	smelter.set_dir(EAST)
-	var/obj/item/stack/material/steel/sheet = new(test_turf, 5)
-	TEST_ASSERT_EQUAL(smelter.recycle_refusal(sheet), /datum/msg/recycling/wrong_input, "the smelter took material sheets (a free re-melt)")
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/guild_trader)
+	TEST_ASSERT_NOTNULL(visit, "no trade ship docked")
+	visit.mood = 1
+	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparty(visit.counterparty_id)
+	var/faction_id = counterparty.faction_id
+	var/station_before = get_station_faction_reputation(faction_id)
+	var/cargo_before = get_department_faction_reputation(DEPARTMENT_CARGO, faction_id)
+	var/trader_before = counterparty.trader_standing
+	var/list/layers = SSsupply.trade_standing_layers(counterparty)
+	TEST_ASSERT_EQUAL(length(layers), 3, "prices did not have three standing layers")
+	var/list/names = list()
+	var/sum = 0
+	for(var/list/layer as anything in layers)
+		names += layer["layer"]
+		sum += layer["effect"]
+	TEST_ASSERT(names ~= list(TRADE_STANDING_STATION, TRADE_STANDING_DEPARTMENT, TRADE_STANDING_TRADER), "the layers were [jointext(names, ", ")]")
+	TEST_ASSERT(abs(SSsupply.trade_standing_effect(counterparty) - sum) < 0.0001, "the price effect is not the sum of the layers")
+
+	var/datum/supply_pack/special
+	for(var/datum/supply_pack/candidate as anything in SSsupply.trade_ship_special_packs(visit))
+		if(!special || SSsupply.pack_price(candidate) > SSsupply.pack_price(special))
+			special = candidate
+	var/obj/structure/closet/crate/crate = new(test_turf)
+	new /obj/item/tool/wrench(crate)
+	new /obj/item/tool/screwdriver(crate)
+	// Each layer moves the price on its own.
+	var/base_special = SSsupply.trade_ship_special_price(visit, special)
+	var/base_value = SSsupply.trade_ship_valuation(visit, crate)
+	adjust_station_faction_reputation(faction_id, REPUTATION_REVERED - get_station_faction_reputation(faction_id))
+	var/station_special = SSsupply.trade_ship_special_price(visit, special)
+	TEST_ASSERT(station_special < base_special, "station standing did not cheapen a special order ([station_special] vs [base_special])")
+	adjust_department_faction_reputation(DEPARTMENT_CARGO, faction_id, REPUTATION_REVERED - get_department_faction_reputation(DEPARTMENT_CARGO, faction_id))
+	var/department_special = SSsupply.trade_ship_special_price(visit, special)
+	TEST_ASSERT(department_special < station_special, "Cargo's standing did not cheapen a special order ([department_special] vs [station_special])")
+	counterparty.change_trader_standing(REPUTATION_REVERED - counterparty.trader_standing)
+	var/trader_special = SSsupply.trade_ship_special_price(visit, special)
+	TEST_ASSERT(trader_special < department_special, "the trader's regard did not cheapen a special order ([trader_special] vs [department_special])")
+	TEST_ASSERT(abs(SSsupply.trade_standing_effect(counterparty) - (TRADE_STANDING_STATION_WEIGHT + TRADE_STANDING_DEPARTMENT_WEIGHT + TRADE_STANDING_TRADER_WEIGHT)) < 0.0001, "full standing on every layer is not the sum of the weights")
+	TEST_ASSERT(SSsupply.trade_ship_valuation(visit, crate) > base_value, "good standing did not raise a ship's valuation of a crate")
+	var/list/ui = SSsupply.trade_standing_ui_data(counterparty)
+	TEST_ASSERT_EQUAL(length(ui["layers"]), 3, "the console did not show three standing layers")
+	TEST_ASSERT(ui["effect"] > 0, "the console showed no price effect at full standing")
+	// Poor standing the other way.
+	counterparty.change_trader_standing(REPUTATION_HATED - counterparty.trader_standing)
+	adjust_station_faction_reputation(faction_id, REPUTATION_HATED - get_station_faction_reputation(faction_id))
+	adjust_department_faction_reputation(DEPARTMENT_CARGO, faction_id, REPUTATION_HATED - get_department_faction_reputation(DEPARTMENT_CARGO, faction_id))
+	TEST_ASSERT(SSsupply.trade_ship_special_price(visit, special) > base_special, "poor standing did not raise a special order's price")
+	TEST_ASSERT(SSsupply.trade_ship_valuation(visit, crate) < base_value, "poor standing did not lower a ship's valuation")
+
+	adjust_station_faction_reputation(faction_id, station_before - get_station_faction_reputation(faction_id))
+	if(isnum(cargo_before))
+		adjust_department_faction_reputation(DEPARTMENT_CARGO, faction_id, cargo_before - get_department_faction_reputation(DEPARTMENT_CARGO, faction_id))
+	counterparty.change_trader_standing(trader_before - counterparty.trader_standing)
+	SSsupply.depart_trade_ship(visit)
+	for(var/obj/item/thing in crate)
+		qdel(thing)
+	qdel(crate)
+
+/// A cargo lot is data: a supply pack naming a pure loot table of existing items, delivered unlisted and appraised as one
+/// lot, with Cargo staff reading it tighter than anyone else. The cargo appraiser tool is gone.
+/datum/unit_test/dq_cargo_lot_pack
+
+/datum/unit_test/dq_cargo_lot_pack/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	TEST_ASSERT(!ispath(text2path("/obj/item/cargo_appraiser")), "the cargo appraiser tool still exists")
+	for(var/pack_path in list(/datum/supply_pack/supply/salvage_lot, /datum/supply_pack/supply/surplus_lot))
+		var/datum/supply_pack/pack = new pack_path
+		TEST_ASSERT(ispath(pack.lot_table, /loot), "[pack_path] names no loot table")
+		TEST_ASSERT(!length(pack.contains), "[pack_path] lists fixed contents beside its lot")
+		TEST_ASSERT_NOTNULL(loot_decl_for(pack.lot_table), "[pack.lot_table] declares no loot")
+		var/obj/structure/closet/crate/crate = new(test_turf)
+		var/list/lot = SSsupply.fill_supply_lot(pack, crate)
+		TEST_ASSERT(length(lot) > 0, "[pack_path] delivered an empty lot")
+		for(var/atom/movable/thing in lot)
+			TEST_ASSERT(QDELETED(thing) || thing.loc == crate || (thing.loc in crate.get_all_contents()), "a lot item ([thing.type]) landed outside its crate")
+		var/mob/living/carbon/human/stranger = new(test_turf)
+		var/mob/living/carbon/human/cargo_tech = new(test_turf)
+		cargo_tech.set_job(JOB_CARGO_TECHNICIAN)
+		TEST_ASSERT(SSsupply.trade_appraisal_spread(cargo_tech) < SSsupply.trade_appraisal_spread(stranger), "Cargo staff did not appraise a lot tighter than a stranger")
+		var/spot = SSsupply.trade_crate_spot_value(crate)
+		var/estimate = SSsupply.estimate_trade_crate(crate, cargo_tech)
+		TEST_ASSERT(abs(estimate - spot) <= spot * TRADE_APPRAISAL_SPREAD_TRAINED + 1, "a lot appraisal ([estimate]) fell outside the trained spread of [spot]")
+		TEST_ASSERT_EQUAL(crate.trade_appraiser, cargo_tech.name, "the lot appraisal did not record who made it")
+		for(var/turf/T in range(1, test_turf))
+			own_turf_contents(T)
+		for(var/atom/movable/thing in crate.get_all_contents())
+			if(thing != crate)
+				qdel(thing)
+		qdel(crate)
+		qdel(stranger)
+		qdel(cargo_tech)
+		qdel(pack)
+
+/// The recycling crusher breaks an item and everything in it into debris at its efficiency, never more than the parts are
+/// made of (the salvage path that replaced the salvage smelter).
+/datum/unit_test/dq_crusher_breaks_down_contents
+
+/datum/unit_test/dq_crusher_breaks_down_contents/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	TEST_ASSERT(!ispath(text2path("/obj/machinery/recycling/salvage_smelter")), "the salvage smelter still exists")
+	var/obj/machinery/recycling/crusher/crusher = new(test_turf)
+	crusher.set_dir(EAST)
+	var/obj/item/storage/toolbox/mechanical/box = new(test_turf)
 	var/list/paid = list()
-	var/list/poured = list()
-	for(var/i in 1 to 12)
-		var/obj/item/tool/wrench/scrap = new(test_turf)
-		var/list/composition = smelter.salvage_composition(scrap)
-		TEST_ASSERT(length(composition), "a wrench had no recorded composition")
-		for(var/material_name in composition)
-			paid[material_name] += composition[material_name]
-		var/list/sheets = smelter.smelt(scrap)
-		TEST_ASSERT(QDELETED(scrap) || scrap.loc != test_turf, "a smelted wrench survived")
-		for(var/material_name in sheets)
-			poured[material_name] += sheets[material_name]
-	for(var/material_name in paid)
-		var/recovered = poured[material_name] * SHEET_MATERIAL_AMOUNT + (smelter.salvage_melt?[material_name] || 0)
-		var/expected = paid[material_name] * smelter.efficiency
-		TEST_ASSERT(abs(recovered - expected) < 0.01, "[material_name]: the smelter recovered [recovered] units of [paid[material_name]] (expected [expected])")
-		TEST_ASSERT(poured[material_name] * SHEET_MATERIAL_AMOUNT <= paid[material_name], "[material_name]: the smelter poured more than the scrap was made of")
-		TEST_ASSERT((smelter.salvage_melt?[material_name] || 0) < SHEET_MATERIAL_AMOUNT, "[material_name]: a whole sheet stayed in the melt")
-	qdel(sheet)
-	for(var/obj/item/stack/material/output in get_step(smelter, EAST))
-		qdel(output)
-	qdel(smelter)
+	for(var/obj/item/part as anything in box.get_all_contents_type(/obj/item))
+		var/list/part_matter = part.material_totals()
+		for(var/mat in part_matter)
+			paid[mat] += part_matter[mat] * breakdown_units(part)
+	TEST_ASSERT(length(paid), "a toolbox and its tools are made of nothing")
+	var/list/crushed = crusher.crush_matter(box)
+	for(var/mat in paid)
+		TEST_ASSERT(abs((crushed[mat] || 0) - paid[mat]) < 0.01, "[mat]: the crusher read [crushed[mat]] units, its parts are made of [paid[mat]]")
+	var/obj/item/toolbox_alone = new /obj/item/storage/toolbox/mechanical(test_turf)
+	for(var/obj/item/inner in toolbox_alone.contents)
+		qdel(inner)
+	var/list/alone = crusher.crush_matter(toolbox_alone)
+	var/alone_total = 0
+	var/full_total = 0
+	for(var/mat in alone)
+		alone_total += alone[mat]
+	for(var/mat in crushed)
+		full_total += crushed[mat]
+	TEST_ASSERT(full_total > alone_total, "the crusher ignored what was inside the toolbox")
+	qdel(toolbox_alone)
+	var/effic = crusher.effic_factor
+	TEST_ASSERT(effic > 0 && effic <= 1, "the crusher's efficiency was [effic]")
+	box.forceMove(crusher)
+	crusher.crush_done(box)
+	var/obj/item/debris_pack/debris = locate() in get_step(crusher, EAST)
+	TEST_ASSERT_NOTNULL(debris, "crushing left no debris")
+	var/list/debris_matter = debris.material_totals()
+	for(var/mat in paid)
+		TEST_ASSERT((debris_matter[mat] || 0) <= paid[mat] + 0.01, "[mat]: the debris holds more ([debris_matter[mat]]) than the parts were made of ([paid[mat]])")
+		TEST_ASSERT(abs((debris_matter[mat] || 0) - paid[mat] * effic) < 0.5, "[mat]: the debris holds [debris_matter[mat]], expected [paid[mat] * effic]")
+	qdel(debris)
+	qdel(crusher)

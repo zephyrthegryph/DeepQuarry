@@ -23,9 +23,23 @@ export type CargoMarketCounterparty = {
   description: string;
   faction: string;
   color: string;
-  standing: number;
-  standing_tier: string;
+  standing: TradeStanding;
   covert: BooleanLike;
+};
+
+export type TradeStandingLayer = {
+  layer: 'station' | 'department' | 'trader';
+  label: string;
+  standing: number;
+  tier: string;
+  /** Price effect of this layer, in percent. */
+  effect: number;
+};
+
+export type TradeStanding = {
+  layers: TradeStandingLayer[];
+  /** Combined price effect, in percent. */
+  effect: number;
 };
 
 export type CargoMarketListing = {
@@ -111,9 +125,7 @@ export type TradeShip = {
   description: string;
   counterparty: string;
   covert: BooleanLike;
-  heat: number;
-  standing: number;
-  standing_tier: string;
+  standing: TradeStanding;
   departs: string;
   sell_rate: number;
   buy_rate: number;

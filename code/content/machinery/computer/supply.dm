@@ -366,7 +366,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 	if(isnull(estimate))
 		to_chat(user, span_warning("Only crates aboard the supply shuttle can be appraised for a trade ship."))
 		return FALSE
-	to_chat(user, span_notice("You reckon [appraised] is worth about [estimate] Thalers, give or take [round(appraised.trade_appraisal_spread * 100)]%."))
+	to_chat(user, span_notice("You reckon the lot in [appraised] ([length(appraised.contents)] things together) is worth about [estimate] Thalers, give or take [round(appraised.trade_appraisal_spread * 100)]%."))
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/ui_act_trade_offer(datum/act/op/A, ship, crate)

@@ -10,6 +10,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { SupplyConsoleActions } from '../generated/SupplyConsole';
+import { TradeStanding } from './TradeStanding';
 import type { Data, TradeCrate, TradeShip } from './types';
 
 const percent = (rate: number) => `${Math.round(rate * 100)}%`;
@@ -122,7 +123,7 @@ const Haggling = (props: { ship: TradeShip; crates: TradeCrate[] }) => {
               </Table.Cell>
               <Table.Cell>
                 {crate.appraiser
-                  ? `~${crate.appraisal}₮ ±${crate.spread}% (${crate.appraiser})`
+                  ? `Lot ~${crate.appraisal}₮ ±${crate.spread}% (${crate.appraiser})`
                   : 'Not appraised'}
               </Table.Cell>
               <Table.Cell>
@@ -138,7 +139,7 @@ const Haggling = (props: { ship: TradeShip; crates: TradeCrate[] }) => {
                 <Button
                   icon="magnifying-glass-dollar"
                   disabled={!canTrade}
-                  tooltip="Appraise the crate (an appraiser in hand helps)"
+                  tooltip="Appraise everything in the crate as one lot (Cargo staff read freight better)"
                   onClick={() => act('trade_appraise', { crate: crate.ref })}
                 />
                 <Button
@@ -197,17 +198,13 @@ export const SupplyConsoleTradeShips = () => {
       {traffic.ships.map((ship) => (
         <Section key={ship.id} title={ship.name}>
           <Box mb={0.5}>{ship.description}</Box>
-          {!!ship.covert && (
-            <NoticeBox danger>
-              Off-the-books dealer. Customs watches these lanes: each deal has
-              about a {ship.heat}% chance of being caught, rising with every
-              deal. A caught deal is reported to Security under the paying
-              account holder and costs NanoTrasen standing.
-            </NoticeBox>
-          )}
+          {!!ship.covert && <NoticeBox danger>Off-the-books dealer.</NoticeBox>}
           <LabeledList>
             <LabeledList.Item label="Trading for">
-              {ship.counterparty} · {ship.standing_tier} ({ship.standing})
+              {ship.counterparty}
+            </LabeledList.Item>
+            <LabeledList.Item label="Standing">
+              <TradeStanding standing={ship.standing} />
             </LabeledList.Item>
             <LabeledList.Item label="Departs in">
               {ship.departs}

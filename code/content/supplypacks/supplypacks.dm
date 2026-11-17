@@ -42,6 +42,9 @@ GLOBAL_LIST_INIT(all_supply_groups, list("Atmospherics",
 	var/one_access = FALSE
 	var/contraband = 0
 	var/num_contained = 0		//number of items picked to be contained in a /randomised crate
+	/// A mystery lot: the pure loot table (/loot/cargo_lot/...) rolled into the crate on delivery, in place of `contains`.
+	/// Its manifest does not list what came; the crate is appraised as one lot (code/content/loot/tables/cargo_lots.dm).
+	var/lot_table
 	var/group = "Miscellaneous"
 
 /datum/supply_pack/New()
@@ -53,6 +56,8 @@ GLOBAL_LIST_INIT(all_supply_groups, list("Atmospherics",
 
 /datum/supply_pack/proc/get_html_manifest()
 	var/dat = ""
+	if(lot_table)
+		return "An unsorted lot, sold as seen: appraise it once it arrives."
 	if(num_contained)
 		dat +="Contains any [num_contained] of:"
 	dat += "<ul>"

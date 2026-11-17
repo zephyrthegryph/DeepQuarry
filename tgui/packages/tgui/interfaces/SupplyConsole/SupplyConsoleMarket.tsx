@@ -13,6 +13,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { SupplyConsoleActions } from '../generated/SupplyConsole';
+import { TradeStanding } from './TradeStanding';
 import type { CargoMarketBid, Data } from './types';
 
 const bidLabel = (bid: CargoMarketBid) =>
@@ -206,7 +207,7 @@ export const SupplyConsoleMarket = () => {
                 <Table.Cell bold>{party.name}</Table.Cell>
                 <Table.Cell>{party.faction}</Table.Cell>
                 <Table.Cell>
-                  {party.standing_tier} ({party.standing})
+                  <TradeStanding standing={party.standing} />
                 </Table.Cell>
                 <Table.Cell>{party.description}</Table.Cell>
               </Table.Row>

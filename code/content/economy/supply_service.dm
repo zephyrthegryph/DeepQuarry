@@ -744,6 +744,12 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 				if(slip)
 					slip.set_info(slip.info + ("<li>[B2.name]</li>")) //add the item to the manifest
 
+		if(SP.lot_table)
+			var/list/lot = fill_supply_lot(SP, A || pickedloc)
+			log_game("Supply: order #[SO.ordernum] ([SP.name]) delivered a lot of [length(lot)] things from [SP.lot_table].")
+			if(slip)
+				slip.set_info(slip.info + ("<li>One unsorted lot ([length(lot)] items), sold as seen</li>"))
+
 		trace_lot_end()
 
 		//manifest finalisation
@@ -755,6 +761,18 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 		rel_remove(src, nameof(shoppinglist), shipped)
 	log_game(shopping_log)
 	return
+
+/// Roll the pack's lot table into the holder (a crate, or the shuttle floor). A spawner in the table that drops its item on the
+/// turf has it moved into the crate, so the whole lot arrives together. Returns what was made.
+/datum/system/supply/proc/fill_supply_lot(datum/supply_pack/pack, atom/holder)
+	. = loot_spawn(pack.lot_table, holder) || list()
+	if(isturf(holder))
+		return
+	var/turf/holder_turf = get_turf(holder)
+	var/list/inside = holder.get_all_contents()
+	for(var/atom/movable/lot_thing in .)
+		if(!QDELETED(lot_thing) && !(lot_thing in inside) && get_turf(lot_thing) == holder_turf)
+			lot_thing.forceMove(holder)
 
 // Will attempt to purchase the specified order, returning TRUE on success, FALSE on failure
 /datum/system/supply/proc/approve_order(datum/supply_order/O, mob/user)

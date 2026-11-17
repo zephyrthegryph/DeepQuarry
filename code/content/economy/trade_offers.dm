@@ -1,15 +1,8 @@
-// Haggling with visiting trade ships. A crate on the supply shuttle is appraised at a supply console, then offered to a
-// docked ship at a price the player names. The ship values the crate from what the spot market would pay for its
-// contents, how much of it the ship wants (the profiles of its buy bids), the station's standing with its faction and
-// the ship's mood, then accepts, counters or rejects. An accepted deal ships the crate at once and pays Cargo.
-
-/// A handheld cargo appraiser: held while appraising at a supply console, it narrows the estimate's error.
-/obj/item/cargo_appraiser
-	name = "cargo appraiser"
-	desc = "A handheld freight scanner with live commodity feeds. Hold it while appraising a crate at a supply console for a far tighter estimate."
-	icon = 'icons/obj/device.dmi'
-	icon_state = "deep_scan_device"
-	w_class = ITEMSIZE_SMALL
+// Haggling with visiting trade ships. A crate on the supply shuttle is appraised at a supply console as one lot (all of
+// its contents valued together, with the appraiser's own error), then offered to a docked ship at a price the player
+// names. The ship values the crate from what the spot market would pay for its contents, how much of it the ship wants
+// (the profiles of its buy bids), the three standing layers (station, Cargo and the trader's own regard; cargo_market.dm)
+// and the ship's mood, then accepts, counters or rejects. An accepted deal ships the crate at once and pays Cargo.
 
 /obj/structure/closet/crate
 	/// The last appraisal of this crate at a supply console: an estimate in Thalers, its claimed error and who made it.
@@ -43,16 +36,13 @@ CAPABILITIES(/datum/trade_offer)
 	/// Offers made to this ship, keyed by offer id.
 	var/list/trade_offers
 
-/// The appraisal error a person brings: a fraction of the true value. Cargo staff read freight better; an appraiser in hand reads it far better.
+/// The appraisal error a person brings to a whole lot: a fraction of its true value. Cargo staff read freight better.
 /datum/system/supply/proc/trade_appraisal_spread(mob/living/user)
-	var/spread = TRADE_APPRAISAL_SPREAD_UNTRAINED
 	if(ishuman(user))
 		var/mob/living/carbon/human/human_user = user
 		if(human_user.job in list(JOB_QUARTERMASTER, JOB_CARGO_TECHNICIAN))
-			spread = TRADE_APPRAISAL_SPREAD_TRAINED
-	if(user?.is_holding_item_of_type(/obj/item/cargo_appraiser))
-		spread *= TRADE_APPRAISAL_TOOL_FACTOR
-	return spread
+			return TRADE_APPRAISAL_SPREAD_TRAINED
+	return TRADE_APPRAISAL_SPREAD_UNTRAINED
 
 /// What the spot market would pay for `crate` as it stands, in Thalers: the crate fee plus each sellable thing in it.
 /datum/system/supply/proc/trade_crate_spot_value(obj/structure/closet/crate/crate)
@@ -87,7 +77,7 @@ CAPABILITIES(/datum/trade_offer)
 	var/want = 1 + trade_crate_wanted_share(visit, crate) * (visit.profile.buy_rate - 1)
 	return round(spot * want * (1 + trade_ship_standing_factor(visit)) * visit.mood)
 
-/// Appraise `crate` for `user`: an estimate that is off by up to the person's spread. Returns the estimate.
+/// Appraise `crate` for `user` as one lot: one estimate for everything in it, off by up to the person's spread. Returns the estimate.
 /datum/system/supply/proc/appraise_trade_crate(obj/structure/closet/crate/crate, mob/living/user)
 	if(!crate_is_on_supply_shuttle(crate))
 		return null
@@ -104,7 +94,7 @@ CAPABILITIES(/datum/trade_offer)
 	crate.trade_appraisal = max(0, round(spot * (1 + error)))
 	crate.trade_appraisal_spread = spread
 	crate.trade_appraiser = user?.name
-	log_game("Trade offers: [key_name(user)] appraised [crate.name] at [crate.trade_appraisal] Thalers (spot [spot], spread [round(spread * 100)]%).")
+	log_game("Trade offers: [key_name(user)] appraised [crate.name] ([length(crate.contents)] things, one lot) at [crate.trade_appraisal] Thalers (spot [spot], spread [round(spread * 100)]%, bias [round(error * 100)]%).")
 	return crate.trade_appraisal
 
 /// The open offer for `crate` to `visit`, if any.
@@ -148,10 +138,11 @@ CAPABILITIES(/datum/trade_offer)
 	offer.ask = ask
 	offer.rounds++
 	var/valuation = trade_ship_valuation(visit, crate)
+	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[visit.counterparty_id]
 	var/insult_line = valuation * TRADE_OFFER_COUNTER_CEILING
 	if(valuation > 0 && ask <= valuation)
 		offer.last_reply = "Accepted at [ask] Thalers."
-		log_game("Trade offers: [visit.name] accepted [key_name(user)]'s ask of [ask] for [crate.name] (valuation [valuation], round [offer.rounds]).")
+		log_game("Trade offers: [visit.name] accepted [key_name(user)]'s ask of [ask] for [crate.name] (valuation [valuation], round [offer.rounds], [trade_standing_log_text(counterparty)]).")
 		settle_trade_offer(visit, offer, ask, user)
 		return offer
 	if(valuation > 0 && ask <= insult_line)
@@ -164,6 +155,7 @@ CAPABILITIES(/datum/trade_offer)
 	else
 		offer.patience -= 2
 		visit.mood = max(TRADE_SHIP_MOOD_MIN, visit.mood - TRADE_OFFER_INSULT_MOOD)
+		adjust_trader_standing(counterparty, TRADE_TRADER_STANDING_INSULT, "insulting ask of [ask] for [crate.name] to [visit.name]")
 		offer.counter = 0
 		offer.status = TRADE_OFFER_OPEN
 		offer.last_reply = valuation > 0 ? "Rejected: that is far above what the ship will pay." : "Rejected: the ship sees nothing of value in that crate."
@@ -171,7 +163,8 @@ CAPABILITIES(/datum/trade_offer)
 		offer.status = TRADE_OFFER_WALKED
 		offer.counter = 0
 		offer.last_reply = "The ship has stopped negotiating for this crate."
-	log_game("Trade offers: [visit.name] answered [key_name(user)]'s ask of [ask] for [crate.name]: [offer.last_reply] (valuation [valuation], patience [offer.patience], mood [visit.mood]).")
+		adjust_trader_standing(counterparty, TRADE_TRADER_STANDING_WALKED, "[visit.name] walked away from [crate.name]")
+	log_game("Trade offers: [visit.name] answered [key_name(user)]'s ask of [ask] for [crate.name]: [offer.last_reply] (valuation [valuation], patience [offer.patience], mood [visit.mood], [trade_standing_log_text(counterparty)]).")
 	return offer
 
 /// `user` takes the ship's standing counteroffer on `offer`.
@@ -232,6 +225,7 @@ CAPABILITIES(/datum/trade_offer)
 	if(counterparty)
 		adjust_station_faction_reputation(counterparty.faction_id, 1)
 		adjust_department_faction_reputation(DEPARTMENT_CARGO, counterparty.faction_id, 3)
+		adjust_trader_standing(counterparty, TRADE_TRADER_STANDING_SALE, "bought [crate.name] for [price]")
 		if(offer.offered_by_account)
 			adjust_personal_faction_reputation(offer.offered_by_account, counterparty.faction_id, 3)
 	offer.status = TRADE_OFFER_SETTLED
@@ -240,7 +234,6 @@ CAPABILITIES(/datum/trade_offer)
 	offer.last_reply = "Sold for [price] Thalers."
 	rel_clear(offer, nameof(offer.crate))
 	log_game("Trade offers: [visit.name] bought [crate.name] for [price] Thalers (spot [spot], premium [premium]) from [key_name(user)].")
-	black_market_exposure(visit, user, "the sale of [crate.name]")
 	spent(crate)
 	return TRUE
 

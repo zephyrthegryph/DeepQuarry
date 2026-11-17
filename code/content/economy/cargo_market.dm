@@ -136,6 +136,8 @@ TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, li
 	var/allows_contraband = FALSE
 	var/legal_class = CARGO_MARKET_LEGAL_PUBLIC
 	var/active_cover_name
+	/// The trader's own regard for the station, earned deal by deal (one of the three standing layers that set its prices).
+	var/trader_standing = REPUTATION_NEUTRAL
 
 TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, seller_groups, list())
 
@@ -143,6 +145,9 @@ TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, buyer_profiles, list())
 
 /// Names a covert counterparty trades under (one is picked per rotation). Null: its own name.
 TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, cargo_cover_names, null)
+
+/datum/cargo_market_counterparty/proc/change_trader_standing(delta)
+	trader_standing = CLAMP(trader_standing + delta, REPUTATION_MINIMUM, REPUTATION_MAXIMUM)
 
 /datum/cargo_market_counterparty/proc/rotate_cover()
 	var/list/names = TYPE_TABLE_GET(src, cargo_cover_names)
@@ -370,24 +375,77 @@ CAPABILITIES(/datum/cargo_market_bid)
 		rel_add(src, nameof(market_counterparties), counterparty, counterparty.id)
 	refresh_cargo_market()
 
-/datum/system/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
-	if(!counterparty?.faction_id)
-		return REPUTATION_NEUTRAL
-	var/station_standing = get_station_faction_reputation(counterparty.faction_id)
-	var/cargo_standing = get_department_faction_reputation(DEPARTMENT_CARGO, counterparty.faction_id)
-	if(!isnum(cargo_standing))
-		cargo_standing = station_standing
-	return round((station_standing + cargo_standing) / 2)
+/// The three layers of standing that set a trader's prices for the station: the station's standing with the trader's faction,
+/// the trading department's standing with that faction, and the trader's own regard for the station (earned deal by deal).
+/// Each layer moves prices by up to its weight at full standing (Revered or Hated). Returns one row per layer.
+/datum/system/supply/proc/trade_standing_layers(datum/cargo_market_counterparty/counterparty, department = DEPARTMENT_CARGO)
+	var/list/layers = list()
+	if(!counterparty)
+		return layers
+	var/station_standing = counterparty.faction_id ? get_station_faction_reputation(counterparty.faction_id) : REPUTATION_NEUTRAL
+	var/department_standing = counterparty.faction_id ? get_department_faction_reputation(department, counterparty.faction_id) : null
+	if(!isnum(department_standing))
+		department_standing = station_standing
+	layers += list(trade_standing_layer(TRADE_STANDING_STATION, "Station", station_standing, TRADE_STANDING_STATION_WEIGHT))
+	layers += list(trade_standing_layer(TRADE_STANDING_DEPARTMENT, department, department_standing, TRADE_STANDING_DEPARTMENT_WEIGHT))
+	layers += list(trade_standing_layer(TRADE_STANDING_TRADER, "Trader", counterparty.trader_standing, TRADE_STANDING_TRADER_WEIGHT))
+	return layers
+
+/datum/system/supply/proc/trade_standing_layer(layer, label, standing, weight)
+	var/clamped = CLAMP(standing, REPUTATION_HATED, REPUTATION_REVERED)
+	return list(
+		"layer" = layer,
+		"label" = label,
+		"standing" = round(standing),
+		"tier" = reputation_rank(standing),
+		"effect" = round(clamped / REPUTATION_REVERED * weight, 0.001),
+	)
+
+/// The combined price effect of the three standing layers, -0.15..+0.15: buying is that much cheaper, selling that much dearer.
+/datum/system/supply/proc/trade_standing_effect(datum/cargo_market_counterparty/counterparty, department = DEPARTMENT_CARGO)
+	. = 0
+	for(var/list/layer as anything in trade_standing_layers(counterparty, department))
+		. += layer["effect"]
+
+/// The layers and their sum as one log fragment.
+/datum/system/supply/proc/trade_standing_log_text(datum/cargo_market_counterparty/counterparty, department = DEPARTMENT_CARGO)
+	var/list/parts = list()
+	var/total = 0
+	for(var/list/layer as anything in trade_standing_layers(counterparty, department))
+		parts += "[layer["label"]] [layer["standing"]] ([layer["effect"] >= 0 ? "+" : ""][round(layer["effect"] * 100, 0.1)]%)"
+		total += layer["effect"]
+	return "standing [jointext(parts, ", ")] = [total >= 0 ? "+" : ""][round(total * 100, 0.1)]%"
+
+/// The standing layers for a console window: each layer's standing, tier and price effect in percent, and the total.
+/datum/system/supply/proc/trade_standing_ui_data(datum/cargo_market_counterparty/counterparty, department = DEPARTMENT_CARGO)
+	var/list/rows = list()
+	var/total = 0
+	for(var/list/layer as anything in trade_standing_layers(counterparty, department))
+		rows += list(list(
+			"layer" = layer["layer"],
+			"label" = layer["label"],
+			"standing" = layer["standing"],
+			"tier" = layer["tier"],
+			"effect" = round(layer["effect"] * 100, 0.1),
+		))
+		total += layer["effect"]
+	return list("layers" = rows, "effect" = round(total * 100, 0.1))
+
+/// Change a trader's own regard for the station by `delta` (logged with why).
+/datum/system/supply/proc/adjust_trader_standing(datum/cargo_market_counterparty/counterparty, delta, reason)
+	if(!counterparty || !delta)
+		return
+	var/before = counterparty.trader_standing
+	counterparty.change_trader_standing(delta)
+	log_game("Trade standing: [counterparty.name] ([counterparty.id]) trader standing [before] -> [counterparty.trader_standing] ([delta > 0 ? "+" : ""][delta], [reason]).")
 
 /datum/system/supply/proc/cargo_market_seller_price(datum/cargo_market_counterparty/counterparty, datum/supply_pack/pack)
-	var/standing = CLAMP(cargo_market_standing(counterparty), REPUTATION_HATED, REPUTATION_REVERED)
-	var/reputation_factor = 1 - (standing / 3000)
+	var/reputation_factor = 1 - trade_standing_effect(counterparty)
 	var/market_factor = rand(90, 115) / 100
 	return max(1, round(pack_price(pack) * counterparty.seller_price_multiplier * reputation_factor * market_factor))
 
 /datum/system/supply/proc/cargo_market_buyer_multiplier(datum/cargo_market_counterparty/counterparty, datum/cargo_market_profile/profile)
-	var/standing = CLAMP(cargo_market_standing(counterparty), REPUTATION_HATED, REPUTATION_REVERED)
-	var/reputation_factor = 1 + (standing / 5000)
+	var/reputation_factor = 1 + trade_standing_effect(counterparty)
 	var/market_factor = rand(90, 115) / 100
 	return max(1.05, round(profile.base_price_multiplier * counterparty.buyer_price_multiplier * reputation_factor * market_factor, 0.01))
 
@@ -547,7 +605,6 @@ CAPABILITIES(/datum/cargo_market_bid)
 			admin_order.set_paid_amount(order.paid_amount)
 			admin_order.set_market_contract_funded(order.market_contract_funded)
 			break
-	black_market_exposure(trade_ship(listing.visit_id), user, "a purchase of [listing.pack.name]")
 	return order
 
 /datum/system/supply/proc/release_market_contract_funding(datum/supply_order/order)
@@ -581,6 +638,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	var/datum/cargo_market_transaction/transaction = record_market_transaction(CARGO_MARKET_BUY, counterparty.id, "Purchased [order.supply_pack_of().name] (order #[order.ordernum])", order.paid_amount, order.market_requester_account, order.market_cover_name, order.market_contract_key)
 	adjust_station_faction_reputation(counterparty.faction_id, 1)
 	adjust_department_faction_reputation(order.funding_department, counterparty.faction_id, 2)
+	adjust_trader_standing(counterparty, TRADE_TRADER_STANDING_PURCHASE, "order #[order.ordernum] completed")
 	if(order.market_requester_account)
 		adjust_personal_faction_reputation(order.market_requester_account, counterparty.faction_id, 4)
 	var/datum/supply_pack/order_pack = order.supply_pack_of()
@@ -692,6 +750,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		STAMP(bid, completed_at, CLOCK_WORLD)
 		adjust_station_faction_reputation(counterparty.faction_id, 2)
 		adjust_department_faction_reputation(DEPARTMENT_CARGO, counterparty.faction_id, 6)
+		adjust_trader_standing(counterparty, TRADE_TRADER_STANDING_BID, "bid [bid.id] filled")
 		if(export.market_router_account)
 			adjust_personal_faction_reputation(export.market_router_account, counterparty.faction_id, 8)
 	return TRUE
@@ -937,8 +996,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			"description" = counterparty.covert && !market_true_identity_visible(counterparty, user) ? "An encrypted broker offering privately authenticated commercial routes." : counterparty.description,
 			"faction" = counterparty.covert && !market_true_identity_visible(counterparty, user) ? "Private network" : (faction?.short_name || counterparty.faction_id),
 			"color" = faction?.color || "#888888",
-			"standing" = cargo_market_standing(counterparty),
-			"standing_tier" = reputation_rank(cargo_market_standing(counterparty)),
+			"standing" = trade_standing_ui_data(counterparty),
 			"covert" = counterparty.covert,
 		)))
 	for(var/listing_id in market_listings)

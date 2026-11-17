@@ -30,6 +30,7 @@ import {
   Section,
   Stack,
   Table,
+  Tooltip,
 } from 'tgui-core/components';
 
 /** One index row: id, title, path ("Medical/Conditions/Cardiac"), summary. */
@@ -146,9 +147,11 @@ function Inline(props: { text?: string | null; ctx: Ctx }) {
         const label = part.label || title || part.id;
         if (!title)
           return (
-            <Box key={i} as="span" color="bad" title={`No article: ${part.id}`}>
-              {label}
-            </Box>
+            <Tooltip key={i} content={`No article: ${part.id}`}>
+              <Box as="span" color="bad">
+                {label}
+              </Box>
+            </Tooltip>
           );
         return (
           <Box

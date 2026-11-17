@@ -24,13 +24,10 @@
 	/// Relative chance of being the next ship to call.
 	var/weight = 10
 	/// A black-market ship: not announced, seen and dealt with only through an unlocked console or the faction's own
-	/// agents (its counterparty's covert access), and every deal risks a customs interdiction.
+	/// agents (its counterparty's covert access).
 	var/covert = FALSE
 	/// Its cargo and special orders include contraband packs from any group.
 	var/deals_contraband = FALSE
-	/// The chance (percent) one deal is caught by customs; each further deal this visit adds `heat_per_deal`.
-	var/catch_chance = 0
-	var/heat_per_deal = 0
 
 /// Supply pack groups the ship's cargo is drawn from.
 TYPE_TABLE_DECLARE(/datum/trade_ship_profile, ship_cargo_groups, list())
@@ -111,7 +108,7 @@ TYPE_TABLE(/datum/trade_ship_profile/chimera_tender, ship_special_groups, list("
 /datum/trade_ship_profile/black_market
 	id = "black_market"
 	name = "Unregistered tramp freighter"
-	description = "A transponder-dark freighter dealing arms and pharmaceuticals off the books. Customs watches the lanes."
+	description = "A transponder-dark freighter dealing arms and pharmaceuticals off the books."
 	counterparty_id = "syndicate_brokerage"
 	covert = TRUE
 	deals_contraband = TRUE
@@ -119,8 +116,6 @@ TYPE_TABLE(/datum/trade_ship_profile/chimera_tender, ship_special_groups, list("
 	buy_rate = 1.9
 	special_markup = 1.8
 	stay_time = 10 MINUTES
-	catch_chance = 10
-	heat_per_deal = 6
 	weight = 5
 
 TYPE_TABLE(/datum/trade_ship_profile/black_market, ship_cargo_groups, list("Munitions", "Security"))
@@ -139,8 +134,6 @@ TYPE_TABLE(/datum/trade_ship_profile/black_market, ship_cover_names, list("Lucky
 	buy_rate = 2
 	special_markup = 1.9
 	stay_time = 8 MINUTES
-	catch_chance = 8
-	heat_per_deal = 8
 	weight = 4
 
 TYPE_TABLE(/datum/trade_ship_profile/pharma_runner, ship_cargo_groups, list("Medical"))
@@ -156,8 +149,6 @@ TYPE_TABLE(/datum/trade_ship_profile/pharma_runner, ship_cover_names, list("Merc
 	var/name
 	var/counterparty_id
 	var/arrived_at = 0
-	/// Deals struck with a black-market ship this visit; each raises the next one's catch chance.
-	var/heat = 0
 	COOLDOWN_DECLARE(departs_at)
 	/// Market listing and bid ids the ship opened.
 	var/list/listing_ids
@@ -220,11 +211,10 @@ CAPABILITIES(/datum/trade_ship_visit)
 		weights[profile_path] = initial(prototype.weight)
 	return length(weights) ? pickweight(weights) : null
 
-/// The standing discount or premium a ship gives the station: -0.15..+0.15 across the reputation range.
-/datum/system/supply/proc/trade_ship_standing_factor(datum/trade_ship_visit/visit)
-	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[visit?.counterparty_id]
-	var/standing = CLAMP(cargo_market_standing(counterparty), REPUTATION_HATED, REPUTATION_REVERED)
-	return standing / REPUTATION_REVERED * 0.15
+/// The standing discount or premium a ship gives the station: the three standing layers (station, department, trader) of
+/// its counterparty, -0.15..+0.15 (trade_standing_layers(), cargo_market.dm).
+/datum/system/supply/proc/trade_ship_standing_factor(datum/trade_ship_visit/visit, department = DEPARTMENT_CARGO)
+	return trade_standing_effect(market_counterparties?[visit?.counterparty_id], department)
 
 /// The price a docked ship asks for `pack`: its sell rate, better with standing.
 /datum/system/supply/proc/trade_ship_sell_price(datum/trade_ship_visit/visit, datum/supply_pack/pack)
@@ -287,7 +277,7 @@ CAPABILITIES(/datum/trade_ship_visit)
 		bid.cover_name = visit.name
 		rel_add(src, nameof(market_bids), bid, bid.id)
 		LAZYADD(visit.bid_ids, bid.id)
-	log_game("Trade ships: [visit.name] ([visit.id], for [counterparty.name]) docked for [DisplayTimeText(profile.stay_time)] with [LAZYLEN(visit.listing_ids)] listings and [LAZYLEN(visit.bid_ids)] bids.")
+	log_game("Trade ships: [visit.name] ([visit.id], for [counterparty.name]) docked for [DisplayTimeText(profile.stay_time)] with [LAZYLEN(visit.listing_ids)] listings and [LAZYLEN(visit.bid_ids)] bids; prices set at [trade_standing_log_text(counterparty)].")
 	announce_trade_ship(visit, TRADE_SHIP_ARRIVED)
 	return visit
 
@@ -342,10 +332,11 @@ CAPABILITIES(/datum/trade_ship_visit)
 		if(admin_order.ordernum == order.ordernum)
 			admin_order.set_market_cover_name(visit.name)
 			break
-	log_game("Trade ships: [key_name(user)] special-ordered [pack.name] from [visit.name] for [price] Thalers (order #[order.ordernum], [personal_funding ? "personal" : "department"]).")
+	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[visit.counterparty_id]
+	log_game("Trade ships: [key_name(user)] special-ordered [pack.name] from [visit.name] for [price] Thalers (order #[order.ordernum], [personal_funding ? "personal" : "department"], [trade_standing_log_text(counterparty)]).")
 	if(visit.profile.covert)
 		record_market_transaction(CARGO_MARKET_BUY, visit.counterparty_id, "Special order of [pack.name] from [visit.name] (order #[order.ordernum])", price, order.market_requester_account, visit.name)
-	black_market_exposure(visit, user, "a special order of [pack.name]")
+	adjust_trader_standing(counterparty, TRADE_TRADER_STANDING_SPECIAL, "special order #[order.ordernum] from [visit.name]")
 	return order
 
 /// Whether `user` at a console may see and deal with `visit`: open ships always; a black-market ship as its counterparty allows.
@@ -358,28 +349,6 @@ CAPABILITIES(/datum/trade_ship_visit)
 	if(!visit?.profile.covert)
 		return TRUE
 	return market_counterparty_access(market_counterparties?[visit.counterparty_id], user, console_unlocked)
-
-/// A deal with a black-market ship may be caught by customs. Caught: Security hears of it, the dealer is named, the
-/// station and the dealer lose standing with NanoTrasen and the dealer's exposure rises. Returns TRUE when caught.
-/datum/system/supply/proc/black_market_exposure(datum/trade_ship_visit/visit, mob/living/user, description)
-	if(!visit?.profile.covert)
-		return FALSE
-	var/chance = CLAMP(visit.profile.catch_chance + visit.heat * visit.profile.heat_per_deal, 0, BLACK_MARKET_MAX_CATCH)
-	visit.heat++
-	var/datum/money_account/account = contract_account_for_mob(user)
-	var/caught = prob(chance)
-	log_game("Black market: [key_name(user)] dealt with [visit.name] ([visit.id]): [description]; catch chance [chance]%, [caught ? "CAUGHT" : "not caught"] (heat now [visit.heat]).")
-	if(!caught)
-		return FALSE
-	var/dealer = account?.owner_name || user?.name || "an unknown party"
-	GLOB.global_announcer?.autosay("Customs interdiction: encrypted trade traffic from the supply office matched a known smuggling vessel, \"[visit.name]\" ([description]). Account holder of record: [dealer].", "Customs Monitor", CHANNEL_SECURITY)
-	adjust_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN, -BLACK_MARKET_STATION_PENALTY)
-	adjust_department_faction_reputation(DEPARTMENT_CARGO, REPUTATION_FACTION_NANOTRASEN, -BLACK_MARKET_STATION_PENALTY * 2)
-	if(account)
-		adjust_personal_faction_reputation(account.account_number, REPUTATION_FACTION_NANOTRASEN, -BLACK_MARKET_PERSONAL_PENALTY)
-		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[visit.counterparty_id]
-		GLOB.station_faction_relations.add_agent_exposure(account.account_number, counterparty?.faction_id, BLACK_MARKET_EXPOSURE, "Customs caught a black-market deal with [visit.name].", "BLACKMARKET-[visit.id]-[visit.heat]")
-	return TRUE
 
 /datum/system/supply/proc/trade_ship_ui_data(mob/living/user, station_trade_authorized = FALSE, console_unlocked = FALSE)
 	var/list/ships = list()
@@ -404,9 +373,7 @@ CAPABILITIES(/datum/trade_ship_visit)
 			"description" = visit.profile.description,
 			"counterparty" = market_display_name(counterparty, user, visit.name),
 			"covert" = visit.profile.covert,
-			"heat" = visit.profile.covert ? CLAMP(visit.profile.catch_chance + visit.heat * visit.profile.heat_per_deal, 0, BLACK_MARKET_MAX_CATCH) : 0,
-			"standing" = cargo_market_standing(counterparty),
-			"standing_tier" = reputation_rank(cargo_market_standing(counterparty)),
+			"standing" = trade_standing_ui_data(counterparty),
 			"departs" = DisplayTimeText(max(0, visit.departs_at - world.time), 1),
 			"sell_rate" = visit.profile.sell_rate,
 			"buy_rate" = visit.profile.buy_rate,
