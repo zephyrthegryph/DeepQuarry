@@ -238,6 +238,7 @@ CAPABILITIES(/datum/affliction_trigger)
 	/// /mob/living/carbon/human/proc/dq_get_metric().
 	///   "radiation"        — acute rad value
 	///   "accumulated_rads" — chronic accumulated dose
+	///   "radiation_load"   — the live dose, or half the accumulated dose when that is higher
 	///   "temp_above"       — bodytemperature above normal (kelvin)
 	///   "temp_below"       — drop below normal (positive number)
 	/// (Oxy/tox/clone are not metrics any more — they ARE the severity of

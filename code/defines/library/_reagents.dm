@@ -310,22 +310,6 @@
 #define REAGENT_ID_SHOCKCHEM "shockchem"
 #define REAGENT_CRAYONDUST "Crayon dust"
 #define REAGENT_ID_CRAYONDUST "crayon_dust"
-#define REAGENT_CRAYONDUSTRED "Red crayon dust"
-#define REAGENT_ID_CRAYONDUSTRED "crayon_dust_red"
-#define REAGENT_CRAYONDUSTORANGE "Orange crayon dust"
-#define REAGENT_ID_CRAYONDUSTORANGE "crayon_dust_orange"
-#define REAGENT_CRAYONDUSTYELLOW "Yellow crayon dust"
-#define REAGENT_ID_CRAYONDUSTYELLOW "crayon_dust_yellow"
-#define REAGENT_CRAYONDUSTGREEN "Green crayon dust"
-#define REAGENT_ID_CRAYONDUSTGREEN "crayon_dust_green"
-#define REAGENT_CRAYONDUSTBLUE "Blue crayon dust"
-#define REAGENT_ID_CRAYONDUSTBLUE "crayon_dust_blue"
-#define REAGENT_CRAYONDUSTPURPLE "Purple crayon dust"
-#define REAGENT_ID_CRAYONDUSTPURPLE "crayon_dust_purple"
-#define REAGENT_CRAYONDUSTGREY "Grey crayon dust"
-#define REAGENT_ID_CRAYONDUSTGREY "crayon_dust_grey"
-#define REAGENT_CRAYONDUSTBROWN "Brown crayon dust"
-#define REAGENT_ID_CRAYONDUSTBROWN "crayon_dust_brown"
 #define REAGENT_MARKERINK "Marker ink"
 #define REAGENT_ID_MARKERINK "marker_ink"
 #define REAGENT_MARKERINKBLACK "Black marker ink"
@@ -366,8 +350,6 @@
 #define REAGENT_ID_SUPERMATTER "supermatter"
 #define REAGENT_ADRENALINE "Adrenaline"
 #define REAGENT_ID_ADRENALINE "adrenaline"
-#define REAGENT_EPINEPHRINE "Epinephrine"
-#define REAGENT_ID_EPINEPHRINE "epinephrine"
 #define REAGENT_NOREPINEPHRINE "Norepinephrine"
 #define REAGENT_ID_NOREPINEPHRINE "norepinephrine"
 #define REAGENT_HOLYWATER "Holy Water"
@@ -1349,9 +1331,6 @@
 
 
 // Xenoslimes
-#define REAGENT_ID_SLIMEBLEEDFIXER "slime_bleed_fixer"
-#define REAGENT_ID_SLIMEBONEFIXER "slime_bone_fixer"
-#define REAGENT_ID_SLIMEORGANFIXER "slime_organ_fixer"
 
 //Scanning difficulty. The higher the # the higher it is to find.
 #define SCANNABLE_BENEFICIAL 0

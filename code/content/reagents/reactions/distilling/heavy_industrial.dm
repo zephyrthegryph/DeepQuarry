@@ -17,32 +17,6 @@ CAPABILITIES(/transformation/chem/distilling/concentrate_radium)
 		holds = xform_all(temperature_in(T20C + 1500, T20C + 2000), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_N2, 1))))
 
 
-/transformation/chem/distilling/cyanide
-
-CAPABILITIES(/transformation/chem/distilling/cyanide)
-	configure(transformation(name = REAGENT_CYANIDE, id = "distill_cyanide",
-		takes = list(reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_NITROGEN, 1), reagent(REAGENT_ID_WATER, 2)),
-		makes = list(reagent(REAGENT_ID_CYANIDE, 1)),
-		holds = xform_all(temperature_in(T0C + 150, T0C + 170), ambient_gas_over(GAS_N2, 10), ambient_gas_under(GAS_O2, 1))))
-
-
-/transformation/chem/distilling/sacid
-
-CAPABILITIES(/transformation/chem/distilling/sacid)
-	configure(transformation(name = REAGENT_SACID, id = "distill_sacid", takes = list(reagent(REAGENT_ID_HYDROGEN, 2), reagent(REAGENT_ID_SULFUR, 1)),
-		makes = list(reagent(REAGENT_ID_SACID, 1)), energy = per_step(5 * 1000),
-		holds = xform_all(temperature_in(T0C + 200, T0C + 300), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_N2, 1))))
-
-
-/transformation/chem/distilling/toxin
-
-CAPABILITIES(/transformation/chem/distilling/toxin)
-	configure(transformation(name = REAGENT_TOXIN, id = "distill_rawtoxin", takes = list(reagent(REAGENT_ID_SACID, 2), reagent(REAGENT_ID_CYANIDE, 1)),
-		makes = list(reagent(REAGENT_ID_TOXIN, 1)), energy = per_step(2 * 1000),
-		holds = xform_all(temperature_in(T0C + 120, T0C + 580), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_N2, 1))))
-
-
-
 // Marker ink for paint production
 /transformation/chem/distilling/marker_ink_black
 

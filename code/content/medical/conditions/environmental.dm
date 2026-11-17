@@ -3,22 +3,26 @@
 // scalar via /datum/affliction_trigger/metric (see causes); toxin,
 // hypoxia and genetic damage are the old damage pools themselves.
 
-// --- Acute radiation sickness -------------------------------------------
+// --- Radiation sickness -------------------------------------------------
 //
-// One staged condition. Stage chosen by the metric dispatcher reading
-// the `radiation` value against per-outcome thresholds in the
+// One staged condition for every radiation dose: a high single dose, the
+// poisoning of the dead cells it leaves (a toxin injury, so antitoxin clears
+// the debris) and the accumulated dose that lingers after it. Stage chosen by
+// the metric dispatcher reading the radiation load (the live dose, or half the
+// accumulated dose when that is higher) against per-outcome thresholds in the
 // /datum/affliction_trigger/metric/acute_radiation cause. Symptoms
 // fully swap when stage changes (no carryover).
 
 /datum/affliction/acute_radiation
-	name = "acute radiation sickness"
+	name = "radiation sickness"
 	category = "Radiation"
-	clinical_description = "Symptoms of high-dose radiation exposure. Mild doses cause nausea and fatigue; severe doses produce spontaneous bleeding as the body's blood-forming tissues fail."
+	clinical_description = "Symptoms of high-dose or long-lingering radiation exposure. Mild doses cause nausea and fatigue; severe doses produce spontaneous bleeding as the body's blood-forming tissues fail."
 	progression_rate = 0
 	// Arithrazine is the strong anti-rad drug but harsh on the body;
 	// hyronalin is gentler but slower. Authoring the strong one first
-	// makes the encyclopedia surface it as the primary treatment.
-	treated_by = list(TREAT_ANTIRADIATION = 1.2)
+	// makes the encyclopedia surface it as the primary treatment. Rezadone
+	// repairs the cellular damage of a long-lingering dose at the genomic level.
+	treated_by = list(TREAT_ANTIRADIATION = 1.2, TREAT_GENETIC_REPAIR = 0.3)
 
 TYPE_TABLE(/datum/affliction/acute_radiation, affliction_stages, list( \
 	"Mild" = list( \
@@ -62,30 +66,6 @@ TYPE_TABLE(/datum/affliction/acute_radiation, affliction_stages, list( \
 		"max_symptoms" = 6, \
 	), \
 ))
-
-
-// --- Chronic radiation accumulation ------------------------------------
-//
-// Long-term cumulative dose (upstream `accumulated_rads`). Less acute
-// but lingers after the acute exposure clears. Loss of taste, fatigue.
-
-/datum/affliction/chronic_radiation
-	name = "chronic radiation accumulation"
-	category = "Radiation"
-	clinical_description = "Accumulated radiation dose from sustained exposure. Slow to clear and subtle in presentation — vague fatigue, mild GI complaints."
-	progression_rate = 0
-	// Chronic dose responds to the gentler chems; arithrazine is too
-	// harsh for slow steady clearance. Rezadone repairs cellular damage
-	// at the genomic level.
-	treated_by = list(TREAT_ANTIRADIATION = 1.6, TREAT_GENETIC_REPAIR = 0.3)
-	symptom_pool = list(
-		/datum/affliction_symptom/fatigue            = 80,
-		/datum/affliction_symptom/nausea             = 50,
-		/datum/affliction_symptom/headache           = 40,
-		/datum/affliction_symptom/radiation_reading  = 80,
-	)
-	min_symptoms = 2
-	max_symptoms = 3
 
 
 // --- Toxic poisoning ---------------------------------------------------

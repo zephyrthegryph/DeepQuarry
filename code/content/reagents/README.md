@@ -244,45 +244,46 @@ About Reagents:
 
 About Recipes:
 
-    Recipes are simple datums that contain a list of required reagents and a result.
-    They also have a proc that is called when the recipe is matched.
+    A recipe is a transformation: a type under /transformation (for chemistry, /transformation/chem/instant,
+    /transformation/chem/distilling and so on) whose CAPABILITIES block holds one transformation(...) entry. Nobody makes
+    the type: the compile makes one owner instance per rule and the holder's regime picks the rules it runs.
+    The entry is documented in code/library/transformations/transformation_entry.dm. The ones a reagent recipe uses:
 
-    Vars:
+    name, id
+    	Display name and id of the rule, for the wiki, the book and the logs. The type path is the rule's key.
 
-    name
-    	Name of the reaction, currently unused.
+    regime
+    	Which holders run the rule (REGIME_INSTANT, REGIME_DISTILLING, ...). A base type sets it once for its subtypes.
 
-    id
-    	ID of the reaction, must be unique.
+    takes = list(reagent(id, amount), ...)
+    	The terms consumed. The first is the index key: the rule is a candidate in a holder that has it.
 
-    result
-    	ID of the resulting reagent. Can be null.
+    catalysts = list(reagent(id, amount), ...)
+    	Present at least this much and not consumed.
 
-    list/required_reagents
-    	Reagents that are required for the reaction and are used up during it.
+    blocked_by = list(reagent(id, amount), ...)
+    	Present at least this much and the rule does not run.
 
-    list/catalysts
-    	Ditto, but not used up.
+    makes = list(reagent(id, amount), ...)
+    	The terms produced. The first is the product; the others are by-products.
 
-    list/inhibitors
-    	Opposite, prevent the reaction from happening.
+    holds = temperature_in(low, high) (or xform_all(...) with ambient_gas_over(), ambient_gas_under(), ...)
+    	The conditions under which the rule runs. A subtype's holds is ANDed over its parent's.
 
-    result_amount
-    	Amount of resulting reagent.
+    rate, yield, energy
+    	How far a step goes (RATE_INSTANT, half_life(n)), whether the rule is inhibited while its product is a large share of
+    	the mixture, and the heat a step books into the air or the holder (per_step(joules)).
 
-    mix_message
-    	Message that is shown to mobs when reaction happens.
+    says, plays, effects, spawns, then
+    	The message and sound of a settle, side effects (sets_off(), spawns()) and the bespoke tail, a proc named
+    	TYPE_PROC_REF(/the/rule/type, x).
 
-    Procs:
+    with_data, data_from, data
+    	The data the product is made with: a constant (paint's colour), a key of the data another reagent in the holder carries
+    	(blood paint takes the blood's colour), or a proc's answer.
 
-    can_happen(var/datum/reagents/holder)
-    	Customizable. If it returns 0, reaction will not happen. Defaults to always returning 1. Used by slime core reactions.
-
-    on_reaction(var/datum/reagents/holder, var/created_volume)
-    	Called when reaction happens. Used by explosives.
-
-    send_data(var/datum/reagents/T)
-    	Sets resulting reagent's data. Used by blood paint.
+    A declared rule wins a shared reactant over a generated route (see Routes below). A chemistry reagent whose route is
+    generated from the structure table has no recipe of its own.
 
 About the Tools:
 
@@ -313,7 +314,8 @@ Contaminants
 Impurities are reagents (`/datum/reagent/contaminant`, `code/content/reagents/reagents/content/contaminants.dm`): 2u of "Heavy metals" is 2u in the
 beaker, with its own volume. It is added, transferred, mixed, splashed, ingested and metabolised like any reagent and does its own harm from its own
 metabolism, by role: toxic (organ or general toxin damage per unit), reactive (a chance of a burn per cycle), biological (toxin and a fever), inert
-(nothing). No ordinary recipe takes or makes one, so a contaminant rides along and dilutes (only neutralisation reacts with a residue, see
+(nothing). A contaminant rides along and dilutes. The generated routes leave them as fallout (the process tables say which) and the one-pot
+shortcuts of `reactions/instant/chemistry.dm` make them on purpose; no other recipe takes or makes one, and only neutralisation reacts with a residue (see
 "Purification"). Nothing is attached to another reagent; there is no per-reagent fraction and no potency scaling.
 
 Purity belongs to the mixture: 1 minus the contaminant volume over the holder's total volume (`purity()`, computed, never stored), and its grade

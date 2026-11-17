@@ -2,7 +2,8 @@
 	symptom_pool = list(
 		/datum/affliction_symptom/wet_cough = 70,
 		/datum/affliction_symptom/fatigue = 40,
-		/datum/affliction_symptom/headache = 30
+		/datum/affliction_symptom/headache = 30,
+		/datum/affliction_symptom/chills = 20
 	)
 	factors = alist(STAT_TEMPERATURE = 0.5)
 	name = "The Cold"

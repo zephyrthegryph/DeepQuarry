@@ -1,9 +1,9 @@
 /* Paint and crayons */
 
-/datum/reagent/crayon_dust
+/datum/reagent/pigment/crayon_dust
 	name = REAGENT_CRAYONDUST
 	id = REAGENT_ID_CRAYONDUST
-	description = "Intensely coloured powder obtained by grinding crayons."
+	description = "Intensely coloured powder obtained by grinding crayons. Its colour is the crayon's."
 	taste_description = "powdered wax"
 	reagent_state = SOLID
 	dermal_absorption = 0 //no
@@ -12,46 +12,6 @@
 	scannable = SCANNABLE_ADVANCED
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_COSMETIC
-
-/datum/reagent/crayon_dust/red
-	name = REAGENT_CRAYONDUSTRED
-	id = REAGENT_ID_CRAYONDUSTRED
-	color = "#FE191A"
-
-/datum/reagent/crayon_dust/orange
-	name = REAGENT_CRAYONDUSTORANGE
-	id = REAGENT_ID_CRAYONDUSTORANGE
-	color = "#FFBE4F"
-
-/datum/reagent/crayon_dust/yellow
-	name = REAGENT_CRAYONDUSTYELLOW
-	id = REAGENT_ID_CRAYONDUSTYELLOW
-	color = "#FDFE7D"
-
-/datum/reagent/crayon_dust/green
-	name = REAGENT_CRAYONDUSTGREEN
-	id = REAGENT_ID_CRAYONDUSTGREEN
-	color = "#18A31A"
-
-/datum/reagent/crayon_dust/blue
-	name = REAGENT_CRAYONDUSTBLUE
-	id = REAGENT_ID_CRAYONDUSTBLUE
-	color = "#247CFF"
-
-/datum/reagent/crayon_dust/purple
-	name = REAGENT_CRAYONDUSTPURPLE
-	id = REAGENT_ID_CRAYONDUSTPURPLE
-	color = "#CC0099"
-
-/datum/reagent/crayon_dust/grey //Mime
-	name = REAGENT_CRAYONDUSTGREY
-	id = REAGENT_ID_CRAYONDUSTGREY
-	color = "#808080"
-
-/datum/reagent/crayon_dust/brown //Rainbow
-	name = REAGENT_CRAYONDUSTBROWN
-	id = REAGENT_ID_CRAYONDUSTBROWN
-	color = "#846F35"
 
 /datum/reagent/marker_ink
 	name = REAGENT_MARKERINK

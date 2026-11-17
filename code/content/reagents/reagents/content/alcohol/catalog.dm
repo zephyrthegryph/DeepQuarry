@@ -1638,9 +1638,6 @@
 	color = "#fff200"
 	wiki_flag = WIKI_DRINK
 
-/datum/reagent/lipozine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjust_nutrition(-20 * removed)
-
 /datum/reagent/ethanol/pink_russian
 	name = REAGENT_PINKRUSSIAN
 	id = REAGENT_ID_PINKRUSSIAN

@@ -454,7 +454,7 @@ GLOBAL_LIST_INIT(dq_reagent_category_by_id, list(
 		REAGENT_ID_NUTRIMENT      = "Vital stabiliser",
 		REAGENT_ID_IRON           = "Vital stabiliser",
 		REAGENT_ID_IRONSALINE     = "Vital stabiliser",
-		REAGENT_ID_EPINEPHRINE    = "Vital stabiliser",
+		REAGENT_ID_ADRENALINE     = "Vital stabiliser",
 		REAGENT_ID_NOREPINEPHRINE = "Vital stabiliser",
 		// --- Analgesia ---
 		REAGENT_ID_PARACETAMOL    = "Analgesic",

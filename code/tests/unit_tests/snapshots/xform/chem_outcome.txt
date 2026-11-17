@@ -10,12 +10,10 @@ distilling/condense_nitrox => important=0; p0=0.0903; p50=0.0903; end50=coolant:
 distilling/condense_oxygen => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 oxygen:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
 distilling/condense_phoron => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 phoron:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
 distilling/cryogel => important=0; p0=4; p50=4; end50=cryoslurry:4; gas50=2.7; spawned50=/obj/effect/effect/smoke/elemental/frost+6; p100=4; below=0; above=0
-distilling/cyanide => important=0; p0=4; p50=4; end50=cyanide:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/drinks/berrytea => important=0; p0=24; p50=24; end50=berrytea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/berrytea_decaf => important=0; p0=24; p50=24; end50=berryteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/cherrytea => important=0; p0=24; p50=24; end50=cherrytea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/coffee => important=0; p0=20; p50=20; end50=coffee:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
-distilling/drinks/decaftea => important=0; p0=20; p50=20; end50=teadecaf:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
 distilling/drinks/greenteafresh => important=0; p0=40; p50=40; end50=freshteagreen:40; gas50=2.7; spawned50=-; p100=40; below=0; above=0
 distilling/drinks/hot_coco => important=0; p0=20; p50=20; end50=hot_coco:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
 distilling/drinks/hot_ramen => important=0; p0=12; p50=12; end50=hot_ramen:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
@@ -23,18 +21,13 @@ distilling/drinks/lemontea => important=0; p0=24; p50=24; end50=lemontea:24; gas
 distilling/drinks/lemontea_decaf => important=0; p0=24; p50=24; end50=lemonteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/limetea => important=0; p0=24; p50=24; end50=limetea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/limetea_decaf => important=0; p0=24; p50=24; end50=limeteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
-distilling/drinks/matcha => important=0; p0=8; p50=8; end50=matcha:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
-distilling/drinks/matcha_latte => important=0; p0=20; p50=20; end50=matcha_latte:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
 distilling/drinks/minttea => important=0; p0=24; p50=24; end50=minttea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/minttea_decaf => important=0; p0=24; p50=24; end50=mintteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/orangetea => important=0; p0=24; p50=24; end50=orangetea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/drinks/orangetea_decaf => important=0; p0=24; p50=24; end50=orangeteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
-distilling/drinks/tea => important=0; p0=20; p50=20; end50=tea:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
 distilling/drinks/watermelontea => important=0; p0=24; p50=24; end50=watermelontea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
 distilling/ethanol => important=0; p0=8; p50=8; end50=ethanol:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/eznutrient => important=0; p0=4; p50=4; end50=eznutrient:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/fuel_phoron => important=0; p0=3; p50=3; end50=phoron:3; gas50=2.7; spawned50=-; p100=3; below=1; above=1
-distilling/hydrogen => important=0; p0=8; p50=8; end50=hydrogen:8 platinum:1; gas50=2.7; spawned50=-; p100=8; below=0; above=0
 distilling/leftforzed => important=0; p0=4; p50=4; end50=left4zed:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/marker_ink_black => important=0; p0=4; p50=4; end50=marker_ink_black:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/marker_ink_blue => important=0; p0=4; p50=4; end50=marker_ink_blue:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
@@ -45,16 +38,9 @@ distilling/marker_ink_orange => important=0; p0=4; p50=4; end50=marker_ink_orang
 distilling/marker_ink_purple => important=0; p0=4; p50=4; end50=marker_ink_purple:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/marker_ink_red => important=0; p0=4; p50=4; end50=marker_ink_red:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 distilling/marker_ink_yellow => important=0; p0=4; p50=4; end50=marker_ink_yellow:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/mineralized_carbon => important=0; p0=4; p50=4; end50=carbon:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/mineralized_sodium => important=0; p0=4; p50=4; end50=sodium:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/oxygen => important=0; p0=4; p50=4; end50=oxygen:4 platinum:1; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/reduce_salt => important=0; p0=2; p50=2; end50=sodium:2; gas50=2.7; spawned50=-; p100=2; below=0; above=0
 distilling/robustharvest => important=0; p0=4; p50=4; end50=robustharvest:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/sacid => important=0; p0=4; p50=4; end50=sacid:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/sugar => important=0; p0=3; p50=3; end50=sugar:3 water:1; gas50=2.7; spawned50=-; p100=3; below=1; above=1
 distilling/synthplas => important=0; p0=12; p50=12; end50=synthblood_dilute:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
 distilling/titanium_refine => important=0; p0=4; p50=4; end50=titanium:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
-distilling/toxin => important=0; p0=4; p50=4; end50=toxin:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
 instant/aluminum_paint => important=0; match=1; fired=instant/aluminum_paint; end=paint:20; spawned=-; contract=1; uses=-
 instant/ammonia => important=0; match=1; fired=instant/ammonia; end=ammonia:12; spawned=-; contract=1; uses=-
 instant/androgynorovir_bootleg => important=0; match=1; fired=instant/androgynorovir_bootleg; end=androgynorovir:4; spawned=-; contract=1; uses=-
@@ -533,10 +519,10 @@ instant/slime/orange_fire => important=0; match=1; fired=instant/slime/orange_fi
 instant/slime/orange_heatwave => important=0; match=1; fired=instant/slime/orange_heatwave; end=-; spawned=-; contract=0; uses=0
 instant/slime/orange_pyrotoxin => important=0; match=1; fired=instant/slime/orange_pyrotoxin; end=thermite_v:120; spawned=-; contract=1; uses=0
 instant/slime/orange_smoke => important=0; match=1; fired=instant/slime/orange_smoke; end=-; spawned=/obj/effect/effect/smoke/chem+1; contract=0; uses=0
-instant/slime/pink_bone_fix => important=0; match=1; fired=instant/slime/pink_bone_fix; end=slime_bone_fixer:120; spawned=-; contract=1; uses=0
-instant/slime/pink_clotting => important=0; match=1; fired=instant/slime/pink_clotting; end=slime_bleed_fixer:120; spawned=-; contract=1; uses=0
+instant/slime/pink_bone_fix => important=0; match=1; fired=instant/slime/pink_bone_fix; end=osteodaxon:120; spawned=-; contract=1; uses=0
+instant/slime/pink_clotting => important=0; match=1; fired=instant/slime/pink_clotting; end=myelamine:120; spawned=-; contract=1; uses=0
 instant/slime/pink_heal_pulse => important=0; match=1; fired=instant/slime/pink_heal_pulse; end=-; spawned=-; contract=0; uses=0
-instant/slime/pink_organ_fix => important=0; match=1; fired=instant/slime/pink_organ_fix; end=slime_organ_fixer:120; spawned=-; contract=1; uses=0
+instant/slime/pink_organ_fix => important=0; match=1; fired=instant/slime/pink_organ_fix; end=peridaxon:120; spawned=-; contract=1; uses=0
 instant/slime/plague_toxin => important=0; match=1; fired=instant/slime/plague_toxin; end=neurophage_nanites:120; spawned=-; contract=1; uses=0
 instant/slime/purple_fertility => important=0; match=1; fired=instant/slime/purple_fertility; end=-; spawned=/obj/item/slimepotion/fertility+1; contract=0; uses=0
 instant/slime/purple_infertility => important=0; match=1; fired=instant/slime/purple_infertility; end=-; spawned=/obj/item/slimepotion/infertility+1; contract=0; uses=0

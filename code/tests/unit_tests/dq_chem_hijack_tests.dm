@@ -80,12 +80,12 @@
 			return X
 	return null
 
-/// A recipe never makes more than it takes: the virus food and its colonies, the distilled hydrogen and the biomass once multiplied what went in.
+/// A recipe never makes more than it takes: the virus food and its colonies, the biomass once multiplied what went in.
 /datum/unit_test/dq_chem_recipes_do_not_create_mass
 
 /datum/unit_test/dq_chem_recipes_do_not_create_mass/Run()
 	var/checked = 0
-	for(var/rule_id in list(REAGENT_ID_VIRUSFOOD, REAGENT_ID_MEATCOLONY, REAGENT_ID_PLANTCOLONY, "distill_hydrogen", "distill_oxygen", "distill_biomass"))
+	for(var/rule_id in list(REAGENT_ID_VIRUSFOOD, REAGENT_ID_MEATCOLONY, REAGENT_ID_PLANTCOLONY, "distill_biomass"))
 		var/datum/xform/X = dq_chem_declared_rule(rule_id)
 		if(!X)
 			continue
@@ -97,7 +97,7 @@
 			made += byproduct[2]
 		TEST_ASSERT(made <= took + 0.001, "[rule_id] makes [made]u from [took]u")
 		checked++
-	TEST_ASSERT(checked >= 5, "the recipes were found ([checked])")
+	TEST_ASSERT(checked >= 3, "the recipes were found ([checked])")
 
 /// No route takes lye apart: the instant recipe composes it from sodium, hydrogen and oxygen at three units for three, so a route that decomposes one lye into
 /// more units grows it without bound (sodium and oxygen from lye, then lye from them and a little hydrogen).

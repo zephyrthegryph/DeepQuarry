@@ -47,16 +47,3 @@
 				host.delayed_gib()
 		else
 			return
-
-/datum/affliction/contagion/gbs/curable
-	name = "Non-Contagious GBS"
-	medical_name = "Non-Contagious Guillain-Barré Syndrome"
-	desc = "If left untreated death will occur."
-	stage_prob = 5
-	spread_text = "Non-contagious"
-	spread_flags = DISEASE_SPREAD_NON_CONTAGIOUS
-	cure_text = REAGENT_CRYOXADONE
-	cures = list(REAGENT_ID_CRYOXADONE)
-	cure_chance = 10
-	agent = "gibbis"
-	disease_flags = CURABLE|CAN_NOT_POPULATE

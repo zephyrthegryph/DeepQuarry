@@ -288,27 +288,6 @@ CAPABILITIES(/obj/item/slime_irradiator)
 
 //Slime Chems
 
-/datum/reagent/myelamine/slime
-	name = "Agent A"
-	id = REAGENT_ID_SLIMEBLEEDFIXER
-	description = "A slimy liquid which appears to rapidly clot internal hemorrhages by increasing the effectiveness of platelets at low quantities.  Toxic in high quantities."
-	taste_description = "slime"
-	overdose = 5
-
-/datum/reagent/osteodaxon/slime
-	name = "Agent B"
-	id = REAGENT_ID_SLIMEBONEFIXER
-	description = "A slimy liquid which can be used to heal bone fractures at low quantities.  Toxic in high quantities."
-	taste_description = "slime"
-	overdose = 5
-
-/datum/reagent/peridaxon/slime
-	name = "Agent C"
-	id = REAGENT_ID_SLIMEORGANFIXER
-	description = "A slimy liquid which is used to encourage recovery of internal organs and nervous systems in low quantities.  Toxic in high quantities."
-	taste_description = "slime"
-	overdose = 5
-
 /datum/reagent/nutriment/glucose/slime
 	name = "Slime Goop"
 	id = "slime_goop"

@@ -315,6 +315,8 @@
 			return radiation
 		if("accumulated_rads")
 			return accumulated_rads()
+		if("radiation_load")
+			return max(radiation, accumulated_rads() / 2) // an accumulated dose of 100 (2 Gy) reads as a mild dose of 50
 		if("temp_above")
 			// Kelvin above the species' normal body temperature.
 			return max(0, body_temperature() - dq_normal_body_temperature())

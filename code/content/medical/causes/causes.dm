@@ -378,10 +378,10 @@
 // per-outcome `threshold` to declare each tier's metric value.
 
 /datum/affliction_trigger/metric/acute_radiation
-	name = "Acute radiation exposure"
+	name = "Radiation exposure"
 	subcategory = "Radiation"
-	description = "A high single dose of ionising radiation. Mild doses cause nausea and fatigue; severe doses cause spontaneous bleeding and organ failure."
-	metric = "radiation"
+	description = "A high single dose of ionising radiation, or a dose accumulated over time that has not yet cleared. Mild doses cause nausea and fatigue; severe doses cause spontaneous bleeding and organ failure."
+	metric = "radiation_load"
 	host_organ = O_HEART  // host: bone-marrow stand-in
 
 /datum/affliction_trigger/metric/acute_radiation/setup()
@@ -389,18 +389,6 @@
 	declare(/datum/affliction/acute_radiation, threshold = 50,  tier = "Mild")
 	declare(/datum/affliction/acute_radiation, threshold = 100, tier = "Moderate")
 	declare(/datum/affliction/acute_radiation, threshold = 300, tier = "Severe")
-
-
-/datum/affliction_trigger/metric/chronic_radiation
-	name = "Chronic radiation dose"
-	subcategory = "Radiation"
-	description = "Sustained or accumulated radiation exposure over time. Persists after acute symptoms have cleared; clears slowly without treatment."
-	metric = "accumulated_rads"
-	host_organ = O_HEART
-
-/datum/affliction_trigger/metric/chronic_radiation/setup()
-	..()
-	declare(/datum/affliction/chronic_radiation, threshold = 100)
 
 
 /datum/affliction_trigger/metric/cold_exposure

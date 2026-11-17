@@ -203,9 +203,9 @@ CAPABILITIES(/obj/item/pen/crayon)
 		user.adjust_nutrition(1)
 		if(ishuman(user))
 			var/mob/living/carbon/human/human = user
-			human.ingested.add_reagent(REAGENT_ID_CRAYONDUST,min(5,uses)/3)
+			human.ingested.add_reagent(REAGENT_ID_CRAYONDUST, min(5, uses) / 3, colour)
 		else
-			user.reagents.add_reagent(REAGENT_ID_CRAYONDUST,min(5,uses)/3)
+			user.reagents.add_reagent(REAGENT_ID_CRAYONDUST, min(5, uses) / 3, colour)
 		if(uses)
 			uses -= 5
 			if(uses <= 0)

@@ -1,7 +1,7 @@
 // Afflictions raised by a human's own Life() environment handling
 // (code/modules/mob/living/carbon/human/life.dm): the tissue effects of a
-// heavy radiation dose. The dose itself is the `radiation` metric (acute /
-// chronic radiation sickness, environmental.dm); these are the injuries it
+// heavy radiation dose. The dose itself is the `radiation` metric (radiation
+// sickness, environmental.dm); these are the injuries it
 // leaves behind.
 
 // --- Radiation burns --------------------------------------------------------
@@ -25,25 +25,3 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-
-// --- Radiation poisoning -----------------------------------------------------
-// The toxic load of cells dying en masse after a dose: metabolic debris the
-// liver and kidneys can't keep up with. Routed here instead of generic toxic
-// poisoning so scanners name the real cause.
-/datum/affliction/radiation_poisoning
-	name = "radiation poisoning"
-	category = "Radiation"
-	clinical_description = "Blood toxicity from widespread radiation-induced cell death. Nausea, vomiting, weakness and pallor that persist until the dose is purged. Antitoxins clear the debris; anti-radiation drugs stop more from forming."
-	injury_category = INJURY_CATEGORY_TOXIC
-	progression_rate = 0
-	consciousness_at_max = 60
-	treated_by = list(TREAT_ANTITOXIN = 1.2, TREAT_ANTIRADIATION = 0.8)
-	symptom_pool = list(
-		/datum/affliction_symptom/nausea            = 90,
-		/datum/affliction_symptom/fatigue           = 80,
-		/datum/affliction_symptom/pallor            = 70,
-		/datum/affliction_symptom/radiation_reading = 90,
-		/datum/affliction_symptom/dizziness         = 40,
-	)
-	min_symptoms = 2
-	max_symptoms = 4
